@@ -1632,6 +1632,14 @@
       instante, e compara imagem por imagem, mais o que o Chromium faz sozinho nos campos.
     - **O ruído é zero**: o Electron 33 contra ele mesmo deu as 61 telas idênticas ponto por
       ponto. Qualquer diferença entre duas versões é do Chromium, não da medição.
+    - **Mas toda versão do Chromium muda a suavização do contorno das letras**: no 33 × 36,
+      todas as 61 telas mudaram (até 0,5% dos pontos), sem nada que se enxergue. Por isso cada
+      tela tem duas medidas: "cru" e **"a olho"** (as duas imagens passam por um desfoque de 1,5
+      ponto antes, o que apaga o contorno e mantém o resto; pegou uma barra de 6 pontos).
+    - **Duas armadilhas da primeira rodada**: a sessão de mentira caiu bem na hora da foto (saiu
+      a tela de login); e a barra de rolagem desenhada pelo app (`AreaRolavel`) às vezes guarda a
+      medida da tela anterior, então a foto dependia da ordem das telas. A ferramenta repete a
+      cena quando a foto sai sem o menu lateral e manda um `resize` antes de cada foto.
     - **Na primeira rodada ela já achou um defeito antigo**: a rodinha do mouse **muda** o campo
       de número (ver o item 41, corrigido).
     - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
