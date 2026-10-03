@@ -191,7 +191,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
   `import.meta.env` com `||`, nunca `??`; conta de dinheiro nunca dentro de tela (`src/schemas/`);
   dia de calendário com `hojeLocal()`/`diaLocal()`, nunca `toISOString().slice`.
 - **Validar antes de mesclar**: `npm run typecheck`/`lint`/`test:fusos`/`contraste`; tela mexida →
-  olhar renderizada; mudança de Electron → `npm run test:electron`. Teste só prova o que se viu
+  olhar renderizada (`contraste:telas` e `largura:telas`); mudança de Electron → `npm run
+  test:electron`. **PR grande: uma revisão de código do zero antes de mesclar** (`/code-review`;
+  em 03/10 ela achou 2 problemas reais que os testes não pegavam), conferindo cada ponto antes de
+  mexer, porque a revisão também erra. Teste só prova o que se viu
   ele reprovar (quebrar de propósito).
 - **Validação incerta é aviso, nunca tranca** (`docs/licoes.md`, item 33).
 - **Rascunho que só existe no computador da sessão se perde**: quando a sessão fica parada, o
@@ -203,33 +206,41 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425)
+### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425) e a `v0.9.49`
 
-**Estado do código**: PR #431 mesclado. `main` na **`v0.9.49`**, **publicada só no canal de
-teste** (03/10, com a aprovação dela); as outras lojas seguem na `0.9.47`. Banco na **`0064`**
-(nada de banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/historico.md`.
+**Estado do código**: `main` na **`v0.9.49`**, **publicada só no canal de teste** em 03/10 (ela
+aprovou; o instalador e o `latest.yml` conferidos na release). As outras lojas seguem na `0.9.47`.
+Banco na **`0064`** (nada de banco nesta leva). Ela viu e achou ótimo. O marco anterior (CNPJ
+aberto) está no topo de `docs/historico.md`.
 
-#### O que foi feito
+#### O que foi feito (PRs #431 e #432)
 - **Notas Fiscais**: coluna "Situação" (Autorizada / Cancelada / Enviada à mão) e o texto do topo
   atualizado (#362, #363).
 - **Clientes**: "Ver veículos" no lugar da coluna de placas; carro sem placa aparece como "sem
   placa" (#417).
 - **Tabelas largas** (#425): nada mais passa da janela, a tabela rola dentro da própria caixa, e
-  a **lista de OS cabe inteira em 1366** (versão "B", escolhida por ela pela imagem).
+  a **lista de OS cabe inteira de 1366 pra cima** (versão "B", escolhida por ela pela imagem).
 - **Janelas opacas** (#361, versão "sólida", escolhida por ela pela imagem).
-- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280, 1366, 1536 e 1600.
-  Detalhe em `docs/modulos.md` e na lição 81 de `docs/licoes.md`.
-- **Como ela escolheu**: uma página privada com as fotos de cada versão (Artifact), e ela
-  respondeu "sólida e B". Funcionou bem pra decisão de aparência.
+- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280, 1366,
+  1536 e 1600. Detalhe em `docs/modulos.md` e na lição 81 de `docs/licoes.md`.
+- **Revisão de código antes de mesclar**: achou a lista de OS estourando em 1536 (notebook Full HD
+  com zoom de 125%) e a folga apertada em 1366; os dois corrigidos antes do merge.
 
-#### Por onde a próxima sessão começa
-1. **`v0.9.49` no Balcão**: perguntar como ficaram as telas novas com os dados de verdade
-   (sobretudo a lista de OS). Liberar pras outras lojas só quando ela pedir.
-2. **Avisos da abertura da empresa**, quando ela mandar: pedir pra adicionar o
-   `caranovavidanova/sakura-corp` (seção 1) e seguir "Abertura: o que falta" do `EMPRESA.md`.
-3. **PR da tarefa 2 do Gustavo (#351)**, quando ele abrir (`docs/painel.md`, "O que a Sofia faz").
-4. **A lista "O que depende dela"** (seção 8): a fatura da Focus em **10/10**; a partir de
-   **16/10**, o que depende do dinheiro da empresa (no privado); liberar a `v0.9.49`. Sugestão,
-   se ela perguntar o que fazer: **trocar as três credenciais fiscais expostas**, ou o grupo 2 de
-   tarefas que não mexe no banco (atualizar o Electron #385, busca com Ctrl+K #372, listas com
-   páginas #373).
+#### Por onde a próxima sessão começa: **atualizar o Electron (#385)**, decidido por ela em 03/10
+1. **Ler a #385 e o item 14 de `docs/pendencias-e-futuro.md`**, e rodar `npm run
+   checar-versao-electron` pra saber quais linhas recebem correção hoje (em setembro: 42, 43 e 44;
+   o programa está na 33).
+2. **Antes de mexer, uma decisão dela** (opções + recomendação): a #385 diz "uma linha por vez,
+   cada uma sozinha numa versão, testada na loja". Da 33 até uma linha com suporte são uns 9
+   saltos, ou seja, 9 versões e 9 testes na loja. Mostrar o custo de cada caminho (todas as linhas
+   × saltos maiores com teste mais cuidadoso) e deixar ela escolher.
+3. **Em cada salto**: `npm run test:electron`, `test:fusos`, `contraste:telas`, `largura:telas`,
+   olhar os formulários renderizados (o item 41 de `docs/licoes.md` foi num campo numérico),
+   conferir as chavinhas (`scripts/ligar-fuses.mjs`) e o atualizador. Publicar no teste e ela
+   testar no Windows dela e no Balcão antes do próximo salto. Junto de um dos saltos, o
+   electron-builder 26 destrava a chavinha de integridade do asar.
+4. **Ainda vale**: perguntar como a `v0.9.49` está indo no Balcão; liberar pras outras lojas só
+   quando ela pedir. Os avisos da abertura da empresa (pedir pra adicionar o
+   `caranovavidanova/sakura-corp`, seção 1) e o PR da tarefa 2 do Gustavo (#351), quando vierem.
+   Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que depende do dinheiro da
+   empresa (no privado).
