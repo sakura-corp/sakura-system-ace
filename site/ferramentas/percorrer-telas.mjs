@@ -1,8 +1,9 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { instalarBancoFalso } from "./banco-falso.mjs";
-import { carregarChromium } from "./playwright.mjs";
+import { carregarChromium, carregarElectron } from "./playwright.mjs";
 import { CENAS } from "./cenas.mjs";
 import { TABELAS } from "./dados-demo.mjs";
 
@@ -49,24 +50,21 @@ const ESPERA_POR_BOTAO = 30_000;
  * @param {(cena: object) => boolean} [incluir]
  *        Pra visitar só algumas cenas (ex.: fotografar a tela que mudou, sem
  *        esperar o passeio inteiro). Sem ele, visita todas.
+ * @param {{ electron?: string, horaFixa?: Date }} [opcoes]
+ *        `electron`: o executável de um Electron, pra abrir as telas DENTRO
+ *        dele em vez de num Chromium avulso (ver electron-telas.mjs). A
+ *        variável de ambiente TELAS_NO_ELECTRON=1 faz o mesmo com o Electron
+ *        do projeto, pra qualquer varredura.
+ *        `horaFixa`: o relógio da tela parado nesse instante — pra duas
+ *        rodadas desenharem o mesmo "hoje" e a mesma hora.
  */
-export async function percorrerTelas(aoChegar, incluir = () => true) {
+export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}) {
   const cenas = CENAS.filter(incluir);
-  const chromium = await carregarChromium();
-  const navegador = await chromium.launch({
-    args: ["--lang=pt-BR"],
-    env: { ...process.env, LANG: "pt_BR.UTF-8", LANGUAGE: "pt_BR" },
-  });
-  const contexto = await navegador.newContext({
-    viewport: { width: 1600, height: 1000 },
-    deviceScaleFactor: 1,
-    locale: "pt-BR",
-    timezoneId: "America/Sao_Paulo",
-  });
+  const { contexto, pagina, fechar } = await abrirNavegador(opcoes);
 
   await instalarBancoFalso(contexto);
+  if (opcoes.horaFixa) await contexto.clock.setFixedTime(opcoes.horaFixa);
 
-  const pagina = await contexto.newPage();
   const errosDeConsole = [];
   pagina.on("console", (m) => {
     if (m.type() === "error") errosDeConsole.push(m.text().slice(0, 200));
@@ -243,6 +241,58 @@ export async function percorrerTelas(aoChegar, incluir = () => true) {
     console.log(`\nImagens das telas que falharam: ${PASTA_FALHAS}`);
   }
 
-  await navegador.close();
+  await fechar();
   return { feitas, falhas, errosDeConsole };
+}
+
+// O Electron do projeto, pra quem pede TELAS_NO_ELECTRON=1.
+function electronDoProjeto() {
+  return join(process.cwd(), "node_modules", ".bin", "electron");
+}
+
+async function abrirNavegador(opcoes) {
+  const executavel =
+    opcoes.electron ?? (process.env.TELAS_NO_ELECTRON === "1" ? electronDoProjeto() : null);
+  const ambiente = {
+    ...process.env,
+    LANG: "pt_BR.UTF-8",
+    LANGUAGE: "pt_BR",
+    // No Chromium avulso o fuso é escolhido no contexto; no Electron não
+    // existe essa opção, então vai pelo fuso do processo.
+    TZ: "America/Sao_Paulo",
+  };
+
+  if (!executavel) {
+    const chromium = await carregarChromium();
+    const navegador = await chromium.launch({ args: ["--lang=pt-BR"], env: ambiente });
+    const contexto = await navegador.newContext({
+      viewport: { width: 1600, height: 1000 },
+      deviceScaleFactor: 1,
+      locale: "pt-BR",
+      timezoneId: "America/Sao_Paulo",
+    });
+    const pagina = await contexto.newPage();
+    return { contexto, pagina, fechar: () => navegador.close() };
+  }
+
+  const electron = await carregarElectron();
+  const pastaDados = mkdtempSync(join(tmpdir(), "sakura-telas-electron-"));
+  const app = await electron.launch({
+    executablePath: executavel,
+    args: [
+      fileURLToPath(new URL("./electron-telas.mjs", import.meta.url)),
+      "--lang=pt-BR",
+      "--force-device-scale-factor=1",
+    ],
+    env: { ...ambiente, TELAS_PASTA_DADOS: pastaDados, TELAS_LARGURA: "1600", TELAS_ALTURA: "1000" },
+  });
+  const pagina = await app.firstWindow();
+  return {
+    contexto: app.context(),
+    pagina,
+    fechar: async () => {
+      await app.close();
+      rmSync(pastaDados, { recursive: true, force: true });
+    },
+  };
 }

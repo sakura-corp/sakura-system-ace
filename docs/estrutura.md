@@ -105,6 +105,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
 | `npm run test:sql` / `test:rls` / `test:atualizar-bancos` | Testes com Postgres de verdade. **Só no CI (Linux)** |
 | `npm run test:electron` | Abre o programa **no Electron de verdade** e confere a ponte, as travas da janela e a CSP. Único teste que pega preload quebrado em silêncio. Só no CI |
 | `npm run checar-versao-electron` | "O Electron ainda recebe correção de segurança?" |
+| `npm run comparar:electron -- 36` | Abre todas as telas **dentro de dois Electrons** (o do projeto e o pedido; ou `-- 36 40`) e compara imagem por imagem, mais o que o Chromium faz sozinho nos campos (setas e rodinha no número, digitar a data). Gera um `relatorio.html` com antes, depois e onde mudou. É o teste de laboratório de cada salto do Electron (#385). Leva uns 10 minutos; não está no CI |
 
 | Workflow | O que faz |
 |---|---|
@@ -125,7 +126,10 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   programa num navegador com um Supabase de mentira (`banco-falso.mjs` + `dados-demo.mjs`) e serve
   a quatro coisas: as imagens do site, o catálogo das telas, o `contraste:telas` e o
   `largura:telas` (os dois últimos sobem o servidor pelo `servidor-telas.mjs`). Pra passar só por
-  algumas cenas, `percorrerTelas` aceita um filtro como segundo argumento.
+  algumas cenas, `percorrerTelas` aceita um filtro como segundo argumento. **O navegador é um
+  Chromium avulso**, que não muda quando o Electron muda; pra abrir as telas dentro do Electron do
+  projeto, `TELAS_NO_ELECTRON=1` (vale pra qualquer varredura) ou o terceiro argumento
+  (`{ electron, horaFixa }`), que é o que o `comparar:electron` usa (lição 82).
 - **`apresentacao/`**: o levantamento do sistema e o script das fotos da apresentação comercial.
 - **`painel/`**: o painel da equipe (ainda não existe; `docs/painel.md`).
 - **Documentos**: `PROJETO_STATUS.md` + `docs/` (a memória), `MELHORIAS.md` (o guia de melhorias,
