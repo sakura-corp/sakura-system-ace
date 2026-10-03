@@ -99,7 +99,8 @@ cheque (só se uma loja pedir).
 **Decisões dela, sem prazo:**
 - o valor da mensalidade das lojas novas (privado);
 - levar o `ANTES-DA-PRIMEIRA-VENDA.md` a um advogado ou à contabilidade (item 10);
-- atualizar o Electron (item 14, tarefa #385);
+- atualizar o Electron (item 14, tarefa #385): **ela decidiu em 03/10 começar na próxima
+  sessão**; falta escolher o ritmo dos saltos (uma linha por vez ou saltos maiores);
 - os próximos lotes de permissão no banco: clientes, peças/estoque e OS (item 1 da seção 6;
   tarefas #365 a #367, cada uma diz o que ela precisa decidir);
 - a parte 2 do `TR-04.2`, apagar a cópia antiga do token (liberada desde 28/09; tarefa #368);
@@ -109,7 +110,10 @@ cheque (só se uma loja pedir).
   `scripts/gerar-instalacao-completa.test.ts`: o caminho vem com `\` e o fim de linha em CRLF).
   Quem achou foi o Gustavo, no PR #424, em 01/10. O CI, que roda em Linux, passa, e o app não é
   afetado. Só atrapalha quem roda os testes no PC;
-- o repositório só de versões e fechar o código (item 12).
+- o repositório só de versões e fechar o código (item 12);
+- **as duas janelas de importação** (XML do fornecedor e notas no estoque) foram montadas à mão e
+  não têm o que o `Modal` tem: Esc pra fechar, Tab preso dentro e `role="dialog"`. Achado na
+  revisão de 03/10; o conserto é passar as duas a usar o `Modal`, com uma opção de largura.
 
 **Segurança, fora do código:**
 - **trocar as três credenciais fiscais expostas** no histórico público (CSC da SEFAZ, token do
