@@ -11,13 +11,14 @@ import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
-import { LinkPlaca } from "@/components/LinkPlaca";
+import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 export function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Cliente | null>(null);
+  const [veiculosDe, setVeiculosDe] = useState<Cliente | null>(null);
 
   async function carregar() {
     if (!isSupabaseConfigured) {
@@ -119,13 +120,12 @@ export function ClientesPage() {
           Nenhum cliente cadastrado ainda.
         </p>
       ) : (
-        <div className="overflow-hidden sakura-card">
+        <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
             <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
               <tr>
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">Telefone</th>
-                <th className="px-4 py-3 font-medium">Veículos</th>
                 <th className="px-4 py-3 font-medium">Cidade/UF</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -136,23 +136,21 @@ export function ClientesPage() {
                   <td className="px-4 py-3">{cliente.nome}</td>
                   <td className="px-4 py-3">{cliente.telefone || "—"}</td>
                   <td className="px-4 py-3">
-                    {cliente.veiculos && cliente.veiculos.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {cliente.veiculos.map((v) => (
-                          <LinkPlaca key={v.id} veiculoId={v.id} placa={v.placa} />
-                        ))}
-                      </div>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
                     {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <AcoesDaLinha
                       descricao={`o cliente ${cliente.nome}`}
                       acoes={[
+                        ...(cliente.veiculos && cliente.veiculos.length > 0
+                          ? [
+                              {
+                                tipo: "texto" as const,
+                                rotulo: "Ver veículos",
+                                aoClicar: () => setVeiculosDe(cliente),
+                              },
+                            ]
+                          : []),
                         { tipo: "editar", aoClicar: () => setFormulario(cliente) },
                         {
                           tipo: "menu",
@@ -168,6 +166,10 @@ export function ClientesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {veiculosDe && (
+        <VeiculosDoClienteModal cliente={veiculosDe} onFechar={() => setVeiculosDe(null)} />
       )}
     </div>
   );

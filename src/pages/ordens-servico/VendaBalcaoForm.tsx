@@ -284,7 +284,7 @@ export function VendaBalcaoForm({
                 Nenhuma peça ainda.
               </p>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-sakura-gray/25">
+              <div className="overflow-x-auto rounded-xl border border-sakura-gray/25">
                 <table className="w-full text-left text-corpo">
                   <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                     <tr>

@@ -1604,3 +1604,18 @@
     - **Regra**: toda chamada que ENVIA algo e depois espera a resposta precisa de um caminho pra
       retomar a espera mais tarde, com o identificador do que foi enviado. Desistir de esperar não
       é o mesmo que a coisa não ter acontecido.
+
+81. **Lista de OS passando do lado direito da janela, sem rolagem (visto na loja em 01/10/2026,
+    #425).** No Balcão (1366 de largura), "Faturar" e "Fechamento" ficavam fora da tela; a lista
+    ia até 1627px. Em 1024 (o mínimo da janela), mais 15 telas passavam.
+    - **Causa**: o `<main>` do `App.tsx` é item de uma linha flex e não tinha `min-w-0`. Item flex
+      tem largura mínima automática = a do filho mais largo, então ele crescia até a tabela; o
+      contêiner de fora (`overflow-hidden`) cortava o resto. E toda tabela morava num
+      `overflow-hidden sakura-card`, que também corta.
+    - **Por que ninguém viu**: as telas só eram olhadas em monitor largo, e as imagens do catálogo
+      e a varredura de contraste rodam em 1600px.
+    - **Conserto**: `min-w-0` no `<main>`; envoltório das tabelas com `overflow-x-auto`; o item da
+      OS em grade de 2 ou 4 colunas (4 a partir de 1280 de janela). E a varredura **`npm run
+      largura:telas`**, no CI, que abre cada tela em 1024, 1280, 1366, 1536 e 1600.
+    - **Regra**: item flex que pode receber conteúdo largo leva `min-w-0`; caixa em volta de
+      tabela é `overflow-x-auto`, nunca `overflow-hidden`. Tela nova se olha também em 1024.

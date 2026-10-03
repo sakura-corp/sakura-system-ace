@@ -104,15 +104,6 @@ cheque (só se uma loja pedir).
 - a parte 2 do `TR-04.2`, apagar a cópia antiga do token (liberada desde 28/09; tarefa #368);
 - **cancelar uma nota deveria estornar estoque e Caixa?** (pergunta de desenho nunca respondida,
   desde 03/09; conversa com a devolução, #399);
-- os três ajustes que ela pediu em 28/09, **já planejados como tarefas no GitHub** (30/09): as
-  janelas com o fundo vazando (#361), a situação da nota na lista de Notas Fiscais (#362) e o
-  texto velho no topo de Notas Fiscais (#363). Pra ela fazer comigo quando quiser. Mais um, de
-  01/10: as placas na coluna Veículos da lista de Clientes viram um botão "Ver veículos" (#417);
-- **telas com tabela larga passam do lado direito da janela, sem dar pra rolar** (#425, visto na
-  loja em 01/10 na lista de OS, que não cabe nem em 1366 de largura). Duas partes: um conserto
-  geral pequeno (a tela para de crescer além da janela e a tabela rola dentro da caixa), e a
-  lista de OS redesenhada pra caber. A lista de OS é decisão de aparência, então se mostra em
-  imagem. Ela pediu em 01/10 **só anotar**, sem fazer ainda;
 - **6 testes de `npm run test:fusos` reprovam no Windows** (`scripts/atualizar-bancos.test.ts` e
   `scripts/gerar-instalacao-completa.test.ts`: o caminho vem com `\` e o fim de linha em CRLF).
   Quem achou foi o Gustavo, no PR #424, em 01/10. O CI, que roda em Linux, passa, e o app não é
@@ -295,7 +286,8 @@ nem perguntar; só retomar se ela trouxer.
 
 Conforme o uso real e o que ela pedir. O cardápio de ideias é o `MELHORIAS.md`, e o que o
 concorrente tem e nós não está em `docs/comparativo-anexar.md`. **Nada disso é pra construir sem
-ela pedir.** Os três ajustes que ela pediu em 28/09 são as tarefas #361, #362 e #363.
+ela pedir.** Os três ajustes que ela pediu em 28/09 (#361, #362 e #363) foram feitos em 03/10,
+junto da #417 e da #425.
 
 ### 5. Fornecedores: completo
 

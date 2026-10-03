@@ -9,7 +9,11 @@ import { percorrerTelas } from "./percorrer-telas.mjs";
 //
 // Uso (a partir da raiz do repositório, com o vite já rodando):
 //   npx vite --config site/ferramentas/vite.telas.config.ts
-//   node site/ferramentas/gerar-catalogo-telas.mjs <pasta-de-saida>
+//   node site/ferramentas/gerar-catalogo-telas.mjs <pasta-de-saida> [cenas]
+//
+// `cenas` é opcional: nomes de cena separados por vírgula (os de cenas.mjs,
+// ex.: "07-ordens,42-cancelar-nota"), pra fotografar só as telas que mudaram
+// em vez de esperar o passeio inteiro.
 //
 // Quem abre o navegador, faz login e caminha pelas telas é o
 // percorrer-telas.mjs — inclusive o que é preciso ter no .env da raiz. A
@@ -19,11 +23,15 @@ import { percorrerTelas } from "./percorrer-telas.mjs";
 // tela — é o que o documento em PDF usa pra montar as legendas.
 
 const SAIDA = process.argv[2] || "/tmp/telas-catalogo";
+const SO_ESTAS = process.argv[3] ? process.argv[3].split(",") : null;
 mkdirSync(SAIDA, { recursive: true });
 
-const { feitas, falhas, errosDeConsole } = await percorrerTelas(async (cena, pagina) => {
-  await pagina.screenshot({ path: `${SAIDA}/${cena.arquivo}.jpg`, type: "jpeg", quality: 80 });
-});
+const { feitas, falhas, errosDeConsole } = await percorrerTelas(
+  async (cena, pagina) => {
+    await pagina.screenshot({ path: `${SAIDA}/${cena.arquivo}.jpg`, type: "jpeg", quality: 80 });
+  },
+  (cena) => !SO_ESTAS || SO_ESTAS.includes(cena.arquivo),
+);
 
 feitas.sort((a, b) => a.arquivo.localeCompare(b.arquivo));
 writeFileSync(

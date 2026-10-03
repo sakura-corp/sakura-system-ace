@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diaLocal, diasEntre, hojeLocal, primeiroDiaDoMesLocal } from "./datas";
+import { dataCurta, diaLocal, diasEntre, hojeLocal, primeiroDiaDoMesLocal } from "./datas";
 
 describe("diaLocal", () => {
   it("devolve o dia no formato YYYY-MM-DD", () => {
@@ -57,5 +57,24 @@ describe("diasEntre", () => {
     } finally {
       process.env.TZ = fusoOriginal;
     }
+  });
+});
+
+describe("dataCurta", () => {
+  // Os instantes são montados na hora LOCAL, pra o teste valer igual nos
+  // dois fusos em que a suíte roda (São Paulo e UTC).
+  const instante = (ano: number, mes: number, dia: number, hora = 12, minuto = 0) =>
+    new Date(ano, mes - 1, dia, hora, minuto).toISOString();
+
+  it("do mesmo ano: só dia e mês", () => {
+    expect(dataCurta(instante(2026, 10, 3), "2026-10-03")).toBe("03/10");
+  });
+
+  it("de outro ano: com o ano, pra não confundir", () => {
+    expect(dataCurta(instante(2025, 12, 15), "2026-01-05")).toBe("15/12/2025");
+  });
+
+  it("às 23h30 continua no mesmo dia, mesmo que em UTC já seja o seguinte", () => {
+    expect(dataCurta(instante(2026, 12, 31, 23, 30), "2026-12-31")).toBe("31/12");
   });
 });

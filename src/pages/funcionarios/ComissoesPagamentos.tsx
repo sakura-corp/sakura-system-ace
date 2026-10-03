@@ -216,7 +216,7 @@ export function HistoricoPagamentos({
     <section>
       <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pagamentos já registrados</h2>
       {erro && <p className="mb-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      <div className="overflow-hidden sakura-card">
+      <div className="overflow-x-auto sakura-card">
         <table className="w-full text-left text-corpo">
           <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
             <tr>

@@ -61,3 +61,17 @@ export function diasEntre(inicio: string, fim: string): number {
     (new Date(a2, m2 - 1, d2).getTime() - new Date(a1, m1 - 1, d1).getTime()) / 86_400_000,
   );
 }
+
+/**
+ * A data de um instante do banco, curta: "03/10" quando é do mesmo ano que
+ * `hoje`, "15/12/2025" quando não é. Usada na coluna "Abertura" da lista de
+ * OS, que precisava caber numa janela de 1366 (#425): o ano repetido em
+ * toda linha ocupava espaço sem dizer nada.
+ *
+ * Passa pelo `diaLocal`, então o dia é o do fuso de quem usa (uma OS aberta
+ * às 23h do dia 31/12 continua sendo de 31/12, não de 1º/1 em UTC).
+ */
+export function dataCurta(dataIso: string, hoje: string = hojeLocal()): string {
+  const [ano, mes, dia] = diaLocal(dataIso).split("-");
+  return ano === hoje.slice(0, 4) ? `${dia}/${mes}` : `${dia}/${mes}/${ano}`;
+}

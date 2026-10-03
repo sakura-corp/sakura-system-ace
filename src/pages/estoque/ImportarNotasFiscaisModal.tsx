@@ -154,11 +154,11 @@ export function ImportarNotasFiscaisModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="sakura-modal-fundo"
       onClick={onFechar}
     >
       <div
-        className="sakura-card max-h-[90vh] w-full max-w-5xl overflow-y-auto p-6"
+        className="sakura-modal max-h-[90vh] w-full max-w-5xl overflow-y-auto p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-4">

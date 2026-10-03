@@ -46,8 +46,12 @@ const ESPERA_POR_BOTAO = 30_000;
  * @param {(cena: object, pagina: object) => Promise<void>} aoChegar
  *        Chamado com a tela já montada. Uma exceção aqui conta como falha
  *        daquela cena e não derruba o passeio inteiro.
+ * @param {(cena: object) => boolean} [incluir]
+ *        Pra visitar só algumas cenas (ex.: fotografar a tela que mudou, sem
+ *        esperar o passeio inteiro). Sem ele, visita todas.
  */
-export async function percorrerTelas(aoChegar) {
+export async function percorrerTelas(aoChegar, incluir = () => true) {
+  const cenas = CENAS.filter(incluir);
   const chromium = await carregarChromium();
   const navegador = await chromium.launch({
     args: ["--lang=pt-BR"],
@@ -194,17 +198,17 @@ export async function percorrerTelas(aoChegar) {
   // As telas de antes do login primeiro, pra não precisar deslogar no meio.
   await pagina.goto(BASE, { waitUntil: "networkidle" });
   await pagina.waitForTimeout(1200);
-  for (const cena of CENAS.filter((c) => c.deslogado)) await visitar(cena, 1200);
+  for (const cena of cenas.filter((c) => c.deslogado)) await visitar(cena, 1200);
 
   console.log((await entrar()) ? "login simulado: OK" : "login simulado: FALHOU");
 
-  for (const cena of CENAS.filter((c) => !c.deslogado && !c.trocarSenha)) {
+  for (const cena of cenas.filter((c) => !c.deslogado && !c.trocarSenha)) {
     await visitar(cena, 1600);
   }
 
   // A tela de troca de senha obrigatória só aparece pra um operador marcado
   // como "precisa trocar a senha" — então essa resposta é trocada só no fim.
-  const cenaSenha = CENAS.find((c) => c.trocarSenha);
+  const cenaSenha = cenas.find((c) => c.trocarSenha);
   if (cenaSenha) {
     try {
       await contexto.route("**demo.supabase.co/rest/v1/operadores**", async (rota) => {

@@ -139,8 +139,13 @@ export function ItemOSRow({
         />
       )}
 
-      <div className="flex gap-2">
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+      {/* Quatro colunas a partir de 1280 de janela; duas abaixo disso
+          (#425). Era uma linha flex, e em 1024 o campo Técnico ficava
+          espremido ("Ser") e saía pra fora do cartão. O item só aparece no
+          formulário de OS, que ocupa a largura toda da tela, então a medida
+          pela janela basta. */}
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Quantidade
           <input
             type="number"
@@ -151,7 +156,7 @@ export function ItemOSRow({
           />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Preço unitário
           <input
             type="number"
@@ -162,7 +167,7 @@ export function ItemOSRow({
           />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Desconto
           <input
             type="number"
@@ -173,7 +178,7 @@ export function ItemOSRow({
           />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Técnico
           <Combobox
             opcoes={funcionarios.map((funcionario) => ({

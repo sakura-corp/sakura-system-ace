@@ -20,6 +20,7 @@
     "typecheck": "tsc -b",
     "test:fusos": "node scripts/testar-nos-dois-fusos.mjs",
     "contraste:telas": "node scripts/varredura-contraste-dom.mjs",
+    "largura:telas": "node scripts/varredura-largura-telas.mjs",
     "test:rls": "node supabase/testes-rls/rodar.mjs",
     "test:atualizar-bancos": "node scripts/atualizar-bancos.integracao.mjs",
     "test:sql": "node scripts/testar-sql.mjs",

@@ -176,23 +176,25 @@ export function ItemExistenteRow({
         />
       )}
 
-      <div className="flex gap-2">
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+      {/* A mesma grade do ItemOSRow: quatro colunas a partir de 1280 de
+          janela, duas abaixo disso (#425). */}
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Quantidade
           <input type="number" min="0.01" step="0.01" {...register("quantidade")} className={inputClasse} />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Preço unitário
           <input type="number" min="0" step="0.01" {...register("preco_unitario")} className={inputClasse} />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Desconto
           <input type="number" min="0" step="0.01" {...register("desconto")} className={inputClasse} />
         </label>
 
-        <label className="flex flex-1 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Técnico
           <Combobox
             opcoes={funcionarios.map((funcionario) => ({

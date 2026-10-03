@@ -98,7 +98,7 @@ export function RelatoriosEstoqueSection({
         {pecasFiltradasPorSaldo.length === 0 ? (
           <p className="mt-4 text-corpo text-sakura-muted">Nenhum produto nessa situação.</p>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-xl border border-sakura-gray/20">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-sakura-gray/20">
             <table className="w-full text-left text-corpo">
               <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                 <tr>

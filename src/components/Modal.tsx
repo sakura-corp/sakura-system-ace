@@ -138,7 +138,7 @@ export function Modal({ titulo, onFechar, children }: ModalProps) {
   return (
     <div
       ref={sobreposicaoRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="sakura-modal-fundo"
       onClick={onFechar}
     >
       <div
@@ -147,7 +147,7 @@ export function Modal({ titulo, onFechar, children }: ModalProps) {
         aria-modal="true"
         aria-labelledby={tituloId}
         tabIndex={-1}
-        className="sakura-card max-h-[85vh] w-full max-w-lg overflow-y-auto p-6"
+        className="sakura-modal max-h-[85vh] w-full max-w-lg overflow-y-auto p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-4">

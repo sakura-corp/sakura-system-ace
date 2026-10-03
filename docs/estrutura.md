@@ -100,6 +100,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
 | `npm run typecheck` / `lint` | TypeScript e ESLint (o lint tem a trava contra cortar o dia em UTC, item 48) |
 | `npm test` / `npm run test:fusos` | Os testes; o segundo roda duas vezes, em São Paulo e em UTC (em `.mjs` porque `TZ=x npm test` não funciona no PowerShell dela) |
 | `npm run contraste` / `contraste:telas` | Contraste nas classes / nas 54 telas renderizadas, compondo o vidro com o que está atrás (`divida-de-contraste.mjs` só encolhe) |
+| `npm run largura:telas` | Abre todas as telas em 1024, 1280, 1366, 1536 e 1600 de largura e reprova conteúdo que passa da janela sem dar pra rolar (`medir-largura.mjs` explica o que conta, #425) |
 | `npm run gerar-instalacao` | Regera o `instalacao-completa.sql`; o `npm test` reprova se estiver atrasado |
 | `npm run test:sql` / `test:rls` / `test:atualizar-bancos` | Testes com Postgres de verdade. **Só no CI (Linux)** |
 | `npm run test:electron` | Abre o programa **no Electron de verdade** e confere a ponte, as travas da janela e a CSP. Único teste que pega preload quebrado em silêncio. Só no CI |
@@ -107,7 +108,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
 
 | Workflow | O que faz |
 |---|---|
-| `ci.yml` | Em todo push e PR: typecheck, lint, testes nos dois fusos, contraste, instalação em dia; e os jobs de contraste nas telas, matriz de RLS (com o botão de bancos e os testes de migration), Electron de verdade e **segredos** (gitleaks + certificado versionado). Não builda o instalador |
+| `ci.yml` | Em todo push e PR: typecheck, lint, testes nos dois fusos, contraste, instalação em dia; e os jobs de contraste nas telas, largura nas telas, matriz de RLS (com o botão de bancos e os testes de migration), Electron de verdade e **segredos** (gitleaks + certificado versionado). Não builda o instalador |
 | `release.yml` | **Só "Run workflow" na `main`, com a aprovação dela.** Builda e publica a versão como pré-lançamento (canal de teste); o `latest.yml` sobe por último (item 66) |
 | `liberar-versao.yml` + `scripts/liberar-versao.mjs` | Libera uma versão pra todas as lojas; confere a release antes e de fora depois. Voltar atrás = liberar a anterior |
 | `atualizar-bancos.yml` + `scripts/atualizar-bancos.mjs` | O botão de atualizar os bancos (item 11 da seção 8) |
@@ -122,7 +123,9 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
 
 - **`site/`**: o site de apresentação, **parado** (item 9 da seção 8). `site/ferramentas/` abre o
   programa num navegador com um Supabase de mentira (`banco-falso.mjs` + `dados-demo.mjs`) e serve
-  a três coisas: as imagens do site, o catálogo das 54 telas e o `contraste:telas`.
+  a quatro coisas: as imagens do site, o catálogo das telas, o `contraste:telas` e o
+  `largura:telas` (os dois últimos sobem o servidor pelo `servidor-telas.mjs`). Pra passar só por
+  algumas cenas, `percorrerTelas` aceita um filtro como segundo argumento.
 - **`apresentacao/`**: o levantamento do sistema e o script das fotos da apresentação comercial.
 - **`painel/`**: o painel da equipe (ainda não existe; `docs/painel.md`).
 - **Documentos**: `PROJETO_STATUS.md` + `docs/` (a memória), `MELHORIAS.md` (o guia de melhorias,

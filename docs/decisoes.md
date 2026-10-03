@@ -56,7 +56,9 @@ Três fases, nessa ordem, sem pressa de pular etapa:
     telas renderizadas), itens 17 e 58 da seção 6.
 - **Vidro escuro**: blocos arredondados translúcidos (`sakura-card`, com `backdrop-filter: blur` e
   um brilho neon sutil) sobre um fundo escuro com brilho difuso (`sakura-shell-bg`), em quase toda
-  tela. O Login usa `public/sakura-login-bg-premium.png` de fundo. Os cartões do Início mostram só
+  tela. **A janela (modal) é a exceção**: painel opaco (`sakura-modal` + `sakura-modal-fundo`),
+  porque no vidro o texto da tela de trás atrapalhava a leitura (#361, escolhido por ela em
+  03/10/2026). O Login usa `public/sakura-login-bg-premium.png` de fundo. Os cartões do Início mostram só
   valor grande + seta `›`, sem gráfico (seção 7).
 - **Barra de rolagem própria** (`src/components/AreaRolavel.tsx`): a nativa do Windows não respeita
   canto arredondado, então ela é escondida e o "polegar" é uma div comum, arrastável. Vale no

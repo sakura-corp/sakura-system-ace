@@ -100,3 +100,30 @@ export function agruparNotasPorOrdem(
   }
   return porOrdem;
 }
+
+// A etiqueta que cada nota ganha na lista de Notas Fiscais. O tom diz a cor
+// (quem escolhe a classe é a tela); o rótulo é o texto que aparece.
+export type TomSituacaoNota = "autorizada" | "cancelada" | "manual" | "outra";
+
+export interface SituacaoNota {
+  tom: TomSituacaoNota;
+  rotulo: string;
+}
+
+// A ordem das perguntas importa. "Cancelada" vem antes de tudo porque é o
+// que mais precisa aparecer: uma nota cancelada não vale mais, venha de onde
+// vier. Depois, o XML que alguém subiu à mão não tem status nenhum da
+// SEFAZ/prefeitura guardado (o sistema só recebeu o arquivo), então não dá
+// pra chamar de "Autorizada" — é só "Enviada à mão". Qualquer outro status
+// que a Focus NFe devolver (ex.: "processando_autorizacao") aparece como
+// veio, só sem o sublinhado, em vez de sumir.
+export function situacaoDaNota(
+  nota: Pick<NotaFiscalArquivo, "origem" | "status">,
+): SituacaoNota {
+  if (nota.status === "cancelado") return { tom: "cancelada", rotulo: "Cancelada" };
+  if (nota.origem === "manual") return { tom: "manual", rotulo: "Enviada à mão" };
+  if (nota.status === "autorizado") return { tom: "autorizada", rotulo: "Autorizada" };
+  const texto = nota.status?.trim().replace(/_/g, " ");
+  if (!texto) return { tom: "outra", rotulo: "Sem situação" };
+  return { tom: "outra", rotulo: texto.charAt(0).toUpperCase() + texto.slice(1) };
+}

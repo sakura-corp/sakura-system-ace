@@ -41,6 +41,9 @@ const veiculos = [
   { id: "v3", cliente_id: "c3", placa: "PVE-8H55", marca: "Chevrolet", modelo: "Onix LTZ", ano: 2022, cor: "preto", tipo: "sedan", km_atual: 33980 },
   { id: "v4", cliente_id: "c4", placa: "SBK-3C19", marca: "Jeep", modelo: "Renegade", ano: 2020, cor: "vermelho", tipo: "suv", km_atual: 67200 },
   { id: "v5", cliente_id: "c5", placa: "MJU-9F44", marca: "Honda", modelo: "CG 160 Fan", ano: 2023, cor: "azul", tipo: "moto", km_atual: 12750 },
+  // Carro cadastrado sem placa (o cadastro aceita): é o caso que a lista de
+  // Clientes mostrava como uma caixinha vazia antes do "Ver veículos" (#417).
+  { id: "v6", cliente_id: "c1", placa: "", marca: "Fiat", modelo: "Uno Mille", ano: 2009, cor: "branco", tipo: "hatch", km_atual: 182400 },
 ];
 
 export const clientes = [

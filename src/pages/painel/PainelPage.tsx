@@ -325,7 +325,7 @@ export function PainelPage() {
                   Nenhuma ordem de serviço em aberto no momento.
                 </p>
               ) : (
-                <div className="overflow-hidden rounded-xl border border-white/50">
+                <div className="overflow-x-auto rounded-xl border border-white/50">
                   <table className="w-full text-left text-corpo">
                     <thead className="bg-white/10 text-sakura-pink">
                       <tr>

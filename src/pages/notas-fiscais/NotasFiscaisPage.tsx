@@ -14,8 +14,8 @@ export function NotasFiscaisPage() {
         <div>
           <h1 className="text-titulo font-semibold text-sakura-purple-dark">Notas Fiscais</h1>
           <p className="text-corpo text-sakura-muted">
-            Arquivos XML de NFe e NFS-e, organizados por mês — a emissão automática ainda
-            não existe, então por enquanto é upload manual das notas já emitidas por fora
+            As notas de cada mês: as emitidas pelo sistema entram aqui sozinhas, e as feitas
+            por fora você envia pelo XML.
           </p>
         </div>
       </header>

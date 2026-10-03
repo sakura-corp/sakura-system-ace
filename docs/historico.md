@@ -33,6 +33,40 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 02/10/2026: a Sakura Corp tem CNPJ (aberta em um dia)
+
+**Estado do código**: nada mudou no código nesta sessão. `main` na **`v0.9.48`**, **publicada só
+no canal de teste** (o Balcão da loja já está nela; as outras lojas seguem na `0.9.47`). Banco na
+**`0064`**. O marco anterior (painel no ar, tarefa 1 do Gustavo) está no topo de
+`docs/historico.md`.
+
+#### O que foi feito
+- **Empresa aberta em 02/10**, tudo no mesmo dia: contrato social conferido com ela página por
+  página antes de assinar, assinado pelo gov.br, deferido na Junta, **Simples Nacional** escolhido
+  no Módulo Tributário da Receita, CNPJ emitido e cartão CNPJ baixado. O número, como ficou o
+  contrato e **o que falta** estão no privado (`EMPRESA.md`, seção "Abertura: o que falta").
+- **Esperando outras pessoas** (nada pra ela fazer até chegar aviso): a liberação da conta da
+  empresa, a entrevista do certificado digital da empresa e a inscrição na prefeitura. Um cuidado
+  anotado no privado: **não desligar a verificação em duas etapas do gov.br** sem conversar antes.
+- **Contas de outubro e novembro revistas** com um combinado novo de datas (no privado).
+- **Painel**: o processo da tarefa 1 foi conferido (certo dos dois lados). O PR que anotava a
+  Cloudflare ligada (#427, de outra sessão) estava parado e foi mesclado. O Gustavo está na
+  tarefa 2 (#351); em 03/10 ainda não tinha PR aberto.
+
+#### Por onde a próxima sessão começa
+1. **Avisos da abertura**, quando ela mandar (conta liberada, Certisign marcando a entrevista,
+   etapa da procuração no gov.br, prefeitura): pedir pra adicionar o `caranovavidanova/sakura-corp`
+   (seção 1) e seguir a lista "Abertura: o que falta" do `EMPRESA.md`, um passo por vez, com
+   print antes de cada botão que não volta atrás.
+2. **PR da tarefa 2 do Gustavo (#351)**, quando ele abrir: conferir o CI, o código e o "Pronto
+   quando", explicar em português, e guiar ela a aprovar e mesclar (`docs/painel.md`, "O que a
+   Sofia faz"). **Antes da tarefa 3** a Cloudflare já está ligada; **antes da tarefa 4** ela cria
+   os dois GitHub Apps com o Claude dela.
+3. **A lista "O que depende dela"** (seção 8). Com data: a fatura da Focus em **10/10**; a partir
+   de **16/10**, o que depende do dinheiro da empresa (no privado). Liberar a `v0.9.48` e fazer a
+   #425 quando ela quiser. Sugestão de começo, se ela perguntar: **trocar as três credenciais
+   fiscais expostas**.
+
 ### 01/10/2026, à noite: painel no ar, tarefa 1 do Gustavo aprovada, tela larga anotada
 
 **Estado do código**: `main` na **`v0.9.48`**, **publicada só no canal de teste**. O Balcão da

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarJurosParcelas } from "@/lib/configuracoes";
+import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   custoDosItens,
@@ -70,25 +71,12 @@ import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
 
-function primeiroDiaDoMes(): string {
-  const hoje = new Date();
-  return new Date(hoje.getFullYear(), hoje.getMonth(), 1).toLocaleDateString("sv-SE");
-}
-
-function hojeStr(): string {
-  return new Date().toLocaleDateString("sv-SE");
-}
-
-// `data_abertura` vem do banco em UTC — não dá pra pegar o "dia" com um
-// `.slice(0, 10)` na string, porque isso pega o dia em UTC, não no fuso
-// local. No Brasil (UTC-3), qualquer OS aberta depois das ~21h vira "amanhã"
-// em UTC e sumiria do filtro "Até: hoje" (que é calculado em hora local) até
-// a data virar de verdade. Convertendo pra `Date` e formatando com
-// `toLocaleDateString`, o "dia" bate com o fuso local, igual ao Caixa Diário
-// já faz (`DiarioSection.tsx` → `paraDataLocal`).
-function paraDataLocal(dataIso: string): string {
-  return new Date(dataIso).toLocaleDateString("sv-SE");
-}
+// Coluna que só aparece em janela de 1600px ou mais. Ver o comentário em
+// cima da tabela. Não é o `2xl` (1536) do Tailwind de propósito: em 1536 a
+// tabela com as duas colunas precisa de 1202px e a caixa tem 1198, então a
+// lista voltava a rolar de lado — e 1536 é a largura de um notebook Full HD
+// com o zoom de 125% do Windows.
+const SO_EM_TELA_GRANDE = "hidden min-[1600px]:table-cell";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -130,8 +118,8 @@ export function OrdensServicoPage() {
   const [vendaParaNota, setVendaParaNota] = useState<OrdemServico | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [lista, setLista] = useState<"os" | "vendas">("os");
-  const [dataInicio, setDataInicio] = useState(primeiroDiaDoMes());
-  const [dataFim, setDataFim] = useState(hojeStr());
+  const [dataInicio, setDataInicio] = useState(primeiroDiaDoMesLocal());
+  const [dataFim, setDataFim] = useState(hojeLocal());
   const [busca, setBusca] = useState("");
   const funcionarioAtualId =
     funcionarios.find((f) => f.operador_id === operador?.id)?.id ?? "";
@@ -164,7 +152,10 @@ export function OrdensServicoPage() {
         return nomeCliente.includes(buscaNormalizada) || placa.includes(buscaNormalizada);
       }
       if (ordem.status !== "faturada") return true;
-      const dia = paraDataLocal(ordem.data_abertura);
+      // `data_abertura` vem do banco em UTC: o dia tem de ser o do fuso local
+      // (`diaLocal`), senão uma OS aberta depois das ~21h vira "amanhã" e
+      // some do filtro "Até: hoje".
+      const dia = diaLocal(ordem.data_abertura);
       return dia >= dataInicio && dia <= dataFim;
     });
   }, [ordens, busca, dataInicio, dataFim]);
@@ -680,20 +671,32 @@ export function OrdensServicoPage() {
             : "Nenhuma ordem de serviço encontrada com esse filtro."}
         </p>
       ) : (
-        <div className="overflow-hidden sakura-card">
+        <div className="overflow-x-auto sakura-card">
+          {/* A lista precisa caber numa janela de 1366, a do Balcão (#425, versão
+              "B", escolhida por ela pela imagem em 03/10/2026): abaixo de
+              1600, Peças e Serviços somem (o Total e o Lucro ficam, e o
+              detalhe está dentro da OS); a data perde o ano quando é do ano
+              corrente; nome de cliente comprido quebra até no meio da palavra
+              se precisar; e as células têm um respiro menor que o das outras
+              listas. Coluna nova aqui precisa caber na folga —
+              `npm run largura:telas` confere em 1366, 1536 e 1600. */}
           <table className="w-full text-left text-corpo">
             <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
               <tr>
-                <th className="px-4 py-3 font-medium">Nº</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                {lista === "os" && <th className="px-4 py-3 font-medium">Veículo</th>}
-                <th className="px-4 py-3 font-medium">{lista === "os" ? "Aberta em" : "Data"}</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                {lista === "os" && <th className="px-4 py-3 font-medium">Peças</th>}
-                {lista === "os" && <th className="px-4 py-3 font-medium">Serviços</th>}
-                <th className="px-4 py-3 font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Lucro</th>
-                <th className="px-4 py-3" />
+                <th className="px-2.5 py-3 font-medium">Nº</th>
+                <th className="px-2.5 py-3 font-medium">Cliente</th>
+                {lista === "os" && <th className="px-2.5 py-3 font-medium">Veículo</th>}
+                <th className="px-2.5 py-3 font-medium">{lista === "os" ? "Abertura" : "Data"}</th>
+                <th className="px-2.5 py-3 font-medium">Status</th>
+                {lista === "os" && (
+                  <th className={`${SO_EM_TELA_GRANDE} px-2.5 py-3 font-medium`}>Peças</th>
+                )}
+                {lista === "os" && (
+                  <th className={`${SO_EM_TELA_GRANDE} px-2.5 py-3 font-medium`}>Serviços</th>
+                )}
+                <th className="px-2.5 py-3 font-medium">Total</th>
+                <th className="px-2.5 py-3 font-medium">Lucro</th>
+                <th className="px-2.5 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -711,12 +714,14 @@ export function OrdensServicoPage() {
                   }}
                   className="cursor-pointer border-t border-sakura-gray/20 hover:bg-sakura-pink-soft/30"
                 >
-                  <td className="whitespace-nowrap px-4 py-3 text-sakura-muted">
+                  <td className="whitespace-nowrap px-2.5 py-3 text-sakura-muted">
                     {nomeOrdem(ordem.numero, ordem.tipo)}
                   </td>
-                  <td className="px-4 py-3">{ordem.cliente?.nome ?? "—"}</td>
+                  <td className="px-2.5 py-3 [overflow-wrap:anywhere]">
+                    {ordem.cliente?.nome ?? "—"}
+                  </td>
                   {lista === "os" && (
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-2.5 py-3">
                       {ordem.veiculo_id && ordem.veiculo?.placa ? (
                         <LinkPlaca veiculoId={ordem.veiculo_id} placa={ordem.veiculo.placa} />
                       ) : (
@@ -724,25 +729,23 @@ export function OrdensServicoPage() {
                       )}
                     </td>
                   )}
-                  <td className="px-4 py-3">
-                    {new Date(ordem.data_abertura).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="px-4 py-3">
+                  <td className="whitespace-nowrap px-2.5 py-3">{dataCurta(ordem.data_abertura)}</td>
+                  <td className="px-2.5 py-3">
                     <StatusOrdem ordem={ordem} notas={notasPorOrdem.get(ordem.id) ?? []} />
                   </td>
                   {lista === "os" && (
-                    <td className="px-4 py-3">
+                    <td className={`${SO_EM_TELA_GRANDE} px-2.5 py-3`}>
                       {formatarMoeda(totalPorTipo(ordem.itens ?? [], "peca"))}
                     </td>
                   )}
                   {lista === "os" && (
-                    <td className="px-4 py-3">
+                    <td className={`${SO_EM_TELA_GRANDE} px-2.5 py-3`}>
                       {formatarMoeda(totalPorTipo(ordem.itens ?? [], "servico"))}
                     </td>
                   )}
-                  <td className="px-4 py-3">{formatarMoeda(totalOrdem(ordem.itens ?? []))}</td>
-                  <td className="px-4 py-3">{formatarMoeda(lucroOrdem(ordem))}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2.5 py-3">{formatarMoeda(totalOrdem(ordem.itens ?? []))}</td>
+                  <td className="px-2.5 py-3">{formatarMoeda(lucroOrdem(ordem))}</td>
+                  <td className="px-2.5 py-3 text-right">
                     <div
                       onClick={(e) => e.stopPropagation()}
                       className="flex items-center justify-end gap-2"

@@ -53,7 +53,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/decisoes.md` | o que é o projeto, plano de expansão (fases 1-3), identidade visual, **tabela de decisões técnicas** (antiga seção 2 e 3) | antes de qualquer decisão estrutural |
 | `docs/estrutura.md` | pastas, padrão de código, **padrão de formulário** (react-hook-form + zod) (antiga seção 4) | antes de criar arquivo/módulo novo |
 | `docs/banco.md` | as migrations `0001`-`0064`, cada tabela, multi-loja, RLS (antiga seção 5) | antes de mexer em banco/migration |
-| `docs/licoes.md` | as dívidas técnicas e os 80 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
+| `docs/licoes.md` | as dívidas técnicas e os 81 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
 | `docs/modulos.md` | estado de cada tela/módulo hoje (antiga seção 7) | antes de mexer num módulo |
 | `docs/pendencias-e-futuro.md` | **"O que depende dela", numa lista só**; o que não existe; parte fiscal (playbook por loja nova); linha do tempo (antiga seção 8) | ao planejar próximo passo, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar versão**, backup, atualizar bancos, voltar versão (antigas seções 9 e 11) | ao publicar, rodar migration ou instalar loja |
@@ -135,7 +135,9 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   que, o "Pronto quando" e o que não fazer. Ela revisa o rascunho antes de virar issue.
 - **Mudança de aparência se decide por imagem, não por número** (12/09/2026): mostrar a mesma
   tela renderizada em duas ou três versões e deixar ela escolher. Foi assim com a borda dos campos
-  e com ícone × palavra nas ações das listas.
+  e com ícone × palavra nas ações das listas. Em 03/10 as fotos foram numa página privada
+  (Artifact), com o jeito de responder escrito no topo ("janela: sólida", "lista: B"), e ela
+  respondeu em duas palavras.
 - **Faxina da memória** (30/09/2026): ela quer a memória enxuta e clara: **apagar o que não
   acrescenta** (história de "como foi feito", "nesta sessão", status que envelheceu) e
   **esclarecer** o que ficou ambíguo ou contraditório. O que é decisão ou lição fica; o texto antigo
@@ -201,36 +203,33 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 02/10/2026: a Sakura Corp tem CNPJ (aberta em um dia)
+### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425)
 
-**Estado do código**: nada mudou no código nesta sessão. `main` na **`v0.9.48`**, **publicada só
-no canal de teste** (o Balcão da loja já está nela; as outras lojas seguem na `0.9.47`). Banco na
-**`0064`**. O marco anterior (painel no ar, tarefa 1 do Gustavo) está no topo de
-`docs/historico.md`.
+**Estado do código**: tudo no PR #431 (a mesclar com o ok dela nas fotos). `main` na **`v0.9.48`**,
+**publicada só no canal de teste**; nenhuma versão nova publicada. Banco na **`0064`** (nada de
+banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Empresa aberta em 02/10**, tudo no mesmo dia: contrato social conferido com ela página por
-  página antes de assinar, assinado pelo gov.br, deferido na Junta, **Simples Nacional** escolhido
-  no Módulo Tributário da Receita, CNPJ emitido e cartão CNPJ baixado. O número, como ficou o
-  contrato e **o que falta** estão no privado (`EMPRESA.md`, seção "Abertura: o que falta").
-- **Esperando outras pessoas** (nada pra ela fazer até chegar aviso): a liberação da conta da
-  empresa, a entrevista do certificado digital da empresa e a inscrição na prefeitura. Um cuidado
-  anotado no privado: **não desligar a verificação em duas etapas do gov.br** sem conversar antes.
-- **Contas de outubro e novembro revistas** com um combinado novo de datas (no privado).
-- **Painel**: o processo da tarefa 1 foi conferido (certo dos dois lados). O PR que anotava a
-  Cloudflare ligada (#427, de outra sessão) estava parado e foi mesclado. O Gustavo está na
-  tarefa 2 (#351); em 03/10 ainda não tinha PR aberto.
+- **Notas Fiscais**: coluna "Situação" (Autorizada / Cancelada / Enviada à mão) e o texto do topo
+  atualizado (#362, #363).
+- **Clientes**: "Ver veículos" no lugar da coluna de placas; carro sem placa aparece como "sem
+  placa" (#417).
+- **Tabelas largas** (#425): nada mais passa da janela, a tabela rola dentro da própria caixa, e
+  a **lista de OS cabe inteira em 1366** (versão "B", escolhida por ela pela imagem).
+- **Janelas opacas** (#361, versão "sólida", escolhida por ela pela imagem).
+- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280, 1366, 1536 e 1600.
+  Detalhe em `docs/modulos.md` e na lição 81 de `docs/licoes.md`.
+- **Como ela escolheu**: uma página privada com as fotos de cada versão (Artifact), e ela
+  respondeu "sólida e B". Funcionou bem pra decisão de aparência.
 
 #### Por onde a próxima sessão começa
-1. **Avisos da abertura**, quando ela mandar (conta liberada, Certisign marcando a entrevista,
-   etapa da procuração no gov.br, prefeitura): pedir pra adicionar o `caranovavidanova/sakura-corp`
-   (seção 1) e seguir a lista "Abertura: o que falta" do `EMPRESA.md`, um passo por vez, com
-   print antes de cada botão que não volta atrás.
-2. **PR da tarefa 2 do Gustavo (#351)**, quando ele abrir: conferir o CI, o código e o "Pronto
-   quando", explicar em português, e guiar ela a aprovar e mesclar (`docs/painel.md`, "O que a
-   Sofia faz"). **Antes da tarefa 3** a Cloudflare já está ligada; **antes da tarefa 4** ela cria
-   os dois GitHub Apps com o Claude dela.
-3. **A lista "O que depende dela"** (seção 8). Com data: a fatura da Focus em **10/10**; a partir
-   de **16/10**, o que depende do dinheiro da empresa (no privado). Liberar a `v0.9.48` e fazer a
-   #425 quando ela quiser. Sugestão de começo, se ela perguntar: **trocar as três credenciais
-   fiscais expostas**.
+1. **PR #431**: se ainda estiver aberto, mesclar quando ela der o ok nas fotos. Depois, se ela
+   quiser, publicar uma versão no canal de teste com essas telas (só quando ela pedir).
+2. **Avisos da abertura da empresa**, quando ela mandar: pedir pra adicionar o
+   `caranovavidanova/sakura-corp` (seção 1) e seguir "Abertura: o que falta" do `EMPRESA.md`.
+3. **PR da tarefa 2 do Gustavo (#351)**, quando ele abrir (`docs/painel.md`, "O que a Sofia faz").
+4. **A lista "O que depende dela"** (seção 8): a fatura da Focus em **10/10**; a partir de
+   **16/10**, o que depende do dinheiro da empresa (no privado); liberar a `v0.9.48`. Sugestão,
+   se ela perguntar o que fazer: **trocar as três credenciais fiscais expostas**, ou o grupo 2 de
+   tarefas que não mexe no banco (atualizar o Electron #385, busca com Ctrl+K #372, listas com
+   páginas #373).

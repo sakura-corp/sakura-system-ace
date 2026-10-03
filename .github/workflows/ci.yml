@@ -2,9 +2,10 @@ name: CI
 
 # Roda, em toda alteração enviada ao GitHub, as MESMAS cinco checagens que até
 # hoje eram feitas à mão, sessão a sessão: tipos, lint, testes (nos dois
-# fusos), contraste de cores e o SQL único de instalação — mais a varredura de
-# contraste NAS TELAS, que abre o app de verdade e mede a cor que a pessoa
-# enxerga (item TR-01.3 do guia de melhorias).
+# fusos), contraste de cores e o SQL único de instalação — mais as varreduras
+# NAS TELAS, que abrem o app de verdade: a de contraste mede a cor que a
+# pessoa enxerga (item TR-01.3 do guia de melhorias), e a de largura procura
+# conteúdo passando da janela em tela pequena (#425).
 #
 # Por que isto vale a pena: cada sessão nova que trabalha neste projeto começa
 # sem memória da conversa anterior. Um erro conhecido — cortar o dia em UTC,
@@ -102,6 +103,33 @@ jobs:
       # retorno rápido de tipos, lint e testes.
       - name: Contraste nas telas
         run: npm run contraste:telas
+
+  largura-telas:
+    name: Largura nas telas (1024 a 1600)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Mesmo motivo do job de contraste: o Playwright entra só nesta rodada.
+      - name: Playwright (só nesta rodada)
+        run: |
+          npm i --no-save playwright
+          npx playwright install --with-deps chromium
+
+      # Abre cada tela em 1024 (o mínimo da janela do programa), 1280, 1366,
+      # 1536 e 1600 e reprova se algum conteúdo passar da janela sem dar pra
+      # rolar até ele. A lista de OS passou meses com "Faturar" fora da tela em 1366
+      # sem ninguém ver, porque as telas só eram olhadas em monitor largo
+      # (#425).
+      - name: Largura nas telas
+        run: npm run largura:telas
 
   electron:
     name: Electron de verdade (segurança e preload)

@@ -164,7 +164,7 @@ export function ContasReceberPage() {
             {pendentes.length === 0 ? (
               <p className="text-corpo text-sakura-muted">Nenhuma conta a receber pendente.</p>
             ) : (
-              <div className="overflow-hidden sakura-card">
+              <div className="overflow-x-auto sakura-card">
                 <table className="w-full text-left text-corpo">
                   <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                     <tr>
@@ -266,7 +266,7 @@ export function ContasReceberPage() {
               <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
                 Recebidas recentemente
               </h2>
-              <div className="overflow-hidden sakura-card">
+              <div className="overflow-x-auto sakura-card">
                 <table className="w-full text-left text-corpo">
                   <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                     <tr>

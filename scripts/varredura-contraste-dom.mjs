@@ -15,15 +15,11 @@
 // atrás dele até chegar num opaco. É lento (uns 3 minutos) porque precisa de
 // navegador — por isso os dois existem, e não um só.
 //
-// Não precisa de .env: as variáveis do Supabase de mentira vão direto pro
-// processo do vite (Vite expõe qualquer VITE_* que esteja no ambiente). Sem
-// isso, este script herdaria as duas armadilhas conhecidas do gerador de
-// telas — app abrindo na tela de conexão, e hostname que vaza pra rede de
-// verdade (seção 6, itens 53 e 56).
+// Não precisa de .env: quem sobe o app com o Supabase de mentira é o
+// site/ferramentas/servidor-telas.mjs (o mesmo da varredura de largura).
 
-import { spawn } from "node:child_process";
-import { setTimeout as esperar } from "node:timers/promises";
-import { percorrerTelas, BASE } from "../site/ferramentas/percorrer-telas.mjs";
+import { percorrerTelas } from "../site/ferramentas/percorrer-telas.mjs";
+import { comServidorDeTelas } from "../site/ferramentas/servidor-telas.mjs";
 import { MEDIR_CONTRASTE } from "./medir-contraste.mjs";
 import {
   DIVIDA_DE_CONTRASTE,
@@ -31,71 +27,10 @@ import {
   ehDividaConhecida,
 } from "./divida-de-contraste.mjs";
 
-async function respondendo() {
-  try {
-    return (await fetch(BASE)).ok;
-  } catch {
-    return false;
-  }
-}
+process.exit(await comServidorDeTelas(varrer));
 
-// Se a porta JÁ estiver ocupada, a varredura não sobe servidor nenhum (o
-// config usa strictPort) e passaria a medir as telas servidas por um
-// estranho — tipicamente um `npm run dev` esquecido aberto, ou o servidor de
-// uma rodada anterior que não morreu. Isso não dá erro em lugar nenhum: as
-// telas até abrem, mas sem as variáveis do Supabase de mentira o app esconde
-// os botões de cadastrar, e 36 das 54 cenas "falham" com um timeout que não
-// sugere a causa em nada. Aconteceu de verdade ao construir esta varredura —
-// é o primo do item 56 da seção 6. Melhor parar e dizer o que fazer.
-if (await respondendo()) {
-  console.error(
-    `Já tem alguma coisa respondendo em ${BASE}.\n` +
-      "Feche esse servidor antes de rodar a varredura (ela precisa subir o\n" +
-      "dela, com o Supabase de mentira configurado).",
-  );
-  process.exit(1);
-}
-
-// `detached` + matar o GRUPO no fim: o `npx` é só um intermediário, e matar
-// ele deixaria o vite de verdade vivo segurando a porta pra próxima rodada.
-const servidor = spawn(
-  "npx",
-  ["vite", "--config", "site/ferramentas/vite.telas.config.ts", "--logLevel", "warn"],
-  {
-    stdio: "inherit",
-    detached: true,
-    env: {
-      ...process.env,
-      VITE_SUPABASE_URL: "https://demo.supabase.co",
-      VITE_SUPABASE_ANON_KEY: "chave-de-mentira",
-    },
-  },
-);
-
-function encerrarServidor() {
-  try {
-    process.kill(-servidor.pid, "SIGTERM");
-  } catch {
-    servidor.kill();
-  }
-}
-
-async function esperarServidor() {
-  for (let tentativa = 0; tentativa < 60; tentativa++) {
-    if (await respondendo()) return true;
-    await esperar(500);
-  }
-  return false;
-}
-
-let saida = 0;
-try {
-  if (!(await esperarServidor())) {
-    console.error("O servidor de telas não subiu em 30s.");
-    encerrarServidor();
-    process.exit(1);
-  }
-
+async function varrer() {
+  let saida = 0;
   const achadosPorTela = [];
   const { feitas, falhas } = await percorrerTelas(async (cena, pagina) => {
     const achados = await pagina.evaluate(MEDIR_CONTRASTE);
@@ -168,8 +103,5 @@ try {
     for (const d of resolvidos) console.log(`  ${d.id}`);
     saida = 1;
   }
-} finally {
-  encerrarServidor();
+  return saida;
 }
-
-process.exit(saida);

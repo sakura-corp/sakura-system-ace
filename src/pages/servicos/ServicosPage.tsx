@@ -150,7 +150,7 @@ export function ServicosPage() {
           Nenhum serviço cadastrado ainda.
         </p>
       ) : (
-        <div className="overflow-hidden sakura-card">
+        <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
             <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
               <tr>

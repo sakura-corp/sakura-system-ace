@@ -3,6 +3,7 @@ import {
   agruparNotasPorOrdem,
   notasNecessarias,
   ordemEstaFinalizada,
+  situacaoDaNota,
   situacaoFiscalOrdem,
 } from "./situacaoFiscal";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
@@ -127,5 +128,43 @@ describe("agruparNotasPorOrdem", () => {
     expect(grupos.get("os-1")).toHaveLength(2);
     expect(grupos.get("os-2")).toHaveLength(1);
     expect(grupos.size).toBe(2);
+  });
+});
+
+describe("situacaoDaNota", () => {
+  it("nota emitida pelo sistema e autorizada: Autorizada", () => {
+    expect(situacaoDaNota({ origem: "automatica", status: "autorizado" })).toEqual({
+      tom: "autorizada",
+      rotulo: "Autorizada",
+    });
+  });
+
+  it("nota cancelada: Cancelada, venha de onde vier", () => {
+    expect(situacaoDaNota({ origem: "automatica", status: "cancelado" }).tom).toBe("cancelada");
+    expect(situacaoDaNota({ origem: "manual", status: "cancelado" }).tom).toBe("cancelada");
+  });
+
+  it("XML enviado à mão: Enviada à mão, mesmo sem status", () => {
+    expect(situacaoDaNota({ origem: "manual", status: null })).toEqual({
+      tom: "manual",
+      rotulo: "Enviada à mão",
+    });
+  });
+
+  it("XML enviado à mão nunca aparece como Autorizada", () => {
+    // O sistema só guardou o arquivo: não sabe o que a SEFAZ disse dele.
+    expect(situacaoDaNota({ origem: "manual", status: "autorizado" }).tom).toBe("manual");
+  });
+
+  it("outro status da Focus aparece escrito como veio, sem o sublinhado", () => {
+    expect(situacaoDaNota({ origem: "automatica", status: "processando_autorizacao" })).toEqual({
+      tom: "outra",
+      rotulo: "Processando autorizacao",
+    });
+  });
+
+  it("nota do sistema sem status nenhum: Sem situação, nunca uma etiqueta vazia", () => {
+    expect(situacaoDaNota({ origem: "automatica", status: null }).rotulo).toBe("Sem situação");
+    expect(situacaoDaNota({ origem: "automatica", status: "  " }).rotulo).toBe("Sem situação");
   });
 });

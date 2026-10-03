@@ -64,7 +64,7 @@ export function ReceberPedidoModal({ pedido, onConfirmar, onFechar }: ReceberPed
 
         {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>}
 
-        <div className="overflow-hidden rounded-xl border border-sakura-gray/30">
+        <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
           <table className="w-full text-left text-corpo">
             <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
               <tr>

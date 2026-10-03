@@ -31,18 +31,24 @@ export const CENAS = [
   { arquivo: "05-clientes", modulo: "Clientes", titulo: "Lista de clientes",
     rota: "/clientes",
     descricao: "Todos os clientes da empresa com busca por nome, telefone ou placa. O cadastro é compartilhado entre as lojas da mesma empresa, então um cliente que passa em duas lojas tem um histórico só." },
+  { arquivo: "05b-cliente-veiculos", modulo: "Clientes", titulo: "Veículos de um cliente",
+    rota: "/clientes", passos: [{ clicar: "Ver veículos" }],
+    descricao: "Os carros de um cliente, abertos pelo 'Ver veículos' da lista. Cada carro leva pra ficha dele; carro cadastrado sem placa aparece pela marca e pelo modelo." },
   { arquivo: "06-cliente-form", modulo: "Clientes", titulo: "Cadastro de cliente e veículos",
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
     descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
 
   { arquivo: "06b-ficha-veiculo", modulo: "Clientes", titulo: "Ficha do veículo",
     rota: "/veiculos/v1",
-    descricao: "Tudo que já foi feito num carro, por placa: dono atual, KM mais recente e quanto ele costuma rodar por mês, quanto já foi gasto nele, de quanto em quanto tempo ele volta, as peças que ainda estão na garantia e a linha do tempo de todas as OS, com data, KM, itens e total. Abre clicando na placa em Clientes, na lista de OS ou em Garantias." },
+    descricao: "Tudo que já foi feito num carro, por placa: dono atual, KM mais recente e quanto ele costuma rodar por mês, quanto já foi gasto nele, de quanto em quanto tempo ele volta, as peças que ainda estão na garantia e a linha do tempo de todas as OS, com data, KM, itens e total. Abre pelo 'Ver veículos' em Clientes, ou clicando na placa na lista de OS ou em Garantias." },
 
   // -------------------------------------------------------- ordens de serviço
   { arquivo: "07-ordens", modulo: "Ordens de Serviço", titulo: "Lista de ordens de serviço",
     rota: "/ordens-servico",
-    descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra peças, serviços, total e lucro de cada ordem." },
+    // A lista inteira cabe em 1366 (o Balcão), sem rolar de lado (#425).
+    // Conferido pelo `npm run largura:telas`.
+    semRolarAPartirDe: 1366,
+    descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra total e lucro de cada ordem (e, em tela larga, quanto foi de peças e de serviços)." },
   { arquivo: "08-os-form", modulo: "Ordens de Serviço", titulo: "Abertura de ordem de serviço",
     rota: "/ordens-servico", passos: [{ clicar: "+ Nova ordem de serviço" }],
     descricao: "Escolhe cliente e veículo, quilometragem de entrada, vendedor responsável e vai lançando os itens — peça ou serviço, cada um com quantidade, preço, desconto e o técnico que executou. Peça lançada aqui já dá baixa no estoque sozinha." },

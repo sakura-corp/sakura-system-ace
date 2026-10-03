@@ -298,7 +298,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
       ) : (
         <section>
           <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Vendas por dia</h2>
-          <div className="overflow-hidden sakura-card">
+          <div className="overflow-x-auto sakura-card">
             <table className="w-full text-left text-corpo">
               <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                 <tr>

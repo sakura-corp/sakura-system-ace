@@ -144,7 +144,7 @@ export default function App() {
     <div className="sakura-shell-bg flex h-screen gap-4 overflow-hidden p-4">
       <VersaoApp />
       <Sidebar />
-      <main className="min-h-0 flex-1">
+      <main className="min-h-0 min-w-0 flex-1">
         <AreaRolavel className="p-4">
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>

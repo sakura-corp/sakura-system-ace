@@ -142,7 +142,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
             Margem por peça/serviço
           </h2>
-          <div className="overflow-hidden sakura-card">
+          <div className="overflow-x-auto sakura-card">
             <table className="w-full text-left text-corpo">
               <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
                 <tr>

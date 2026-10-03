@@ -72,6 +72,37 @@ Funcionários, Contas a Pagar, Notas Fiscais e Operadores. **Ela viu a tela rend
 manter o ícone** (11/09/2026) — "Editar" e "Inativar" ficam como lápis e afins, com o nome no
 balãozinho do mouse. Assunto fechado, não reabrir.
 
+**Tabela larga rola de lado, dentro da própria caixa** (03/10/2026, #425): numa janela de 1366
+(o Balcão) a lista de OS passava do lado direito, e "Faturar"/"Fechamento" ficavam fora da tela,
+sem barra pra chegar neles. Duas causas: o `<main>` do `App.tsx` não tinha `min-w-0` (numa linha
+flex, ele crescia até a largura da tabela mais larga), e toda tabela morava num `overflow-hidden
+sakura-card`, que corta. Agora o `<main>` tem `min-w-0` e o envoltório das tabelas é
+`overflow-x-auto sakura-card`: o que não couber rola dentro da caixa da tabela. **Tabela nova usa
+`overflow-x-auto`, nunca `overflow-hidden`.** O item da OS (Quantidade, Preço, Desconto, Técnico)
+virou grade de 2 colunas abaixo de 1280 de janela e 4 a partir daí: em 1024 o Técnico saía
+pra fora. Quem confere é o `npm run largura:telas` (todas as telas em 1024, 1280, 1366, 1536 e 1600), que
+roda no CI.
+
+**Lista de OS cabe inteira em 1366** (03/10/2026, #425, **versão "B", escolhida por ela pela
+imagem**; a outra opção juntava Total e Lucro numa coluna só): **abaixo de 1600px de janela,
+Peças e Serviços somem** (Total e Lucro ficam; de 1600 pra cima as duas voltam); a coluna
+"Abertura" mostra a data **sem o ano quando é do ano corrente** ("03/10"; `dataCurta` em
+`src/lib/datas.ts`); nome de cliente comprido pode quebrar no meio da palavra; a placa não quebra
+linha; e as células têm `px-2.5` em vez de `px-4`. **Não é o `2xl` (1536) do Tailwind**: em 1536
+a tabela com as duas colunas não cabia (1202px numa caixa de 1198), e 1536 é a largura de um
+notebook Full HD com zoom de 125%. Folga medida: 56px em 1366, 226 em 1536, 92 em 1600. A cena
+`07-ordens` tem `semRolarAPartirDe: 1366`, então o `largura:telas` **reprova se a lista precisar
+rolar de lado** de 1366 pra cima (coluna nova aqui precisa caber nessa folga).
+
+**Janela (modal) opaca** (03/10/2026, #361, **versão "sólida", escolhida por ela pela imagem**; a
+outra opção borrava a tela de trás): o painel era o vidro do `sakura-card` e o texto da tela de
+trás aparecia através dele. Agora as três janelas (`Modal.tsx`, `ImportarNotaFiscalXmlModal.tsx`,
+`ImportarNotasFiscaisModal.tsx`) usam `sakura-modal-fundo` (tela de trás nítida, escurecida a
+60%) e `sakura-modal` (painel opaco, mesma borda, brilho e sombra do card), em
+`src/styles/globals.css`. **Janela nova usa esses dois**, nunca `sakura-card` +
+`bg-black/40`. O `sakura-modal-fundo` zera a margem: dentro de um `space-y-*`, a margem do filho
+encurtava o fundo fixo (a janela de importar XML deixava 24px sem escurecer no pé da tela).
+
 **Modal com foco preso** (11/09/2026, item `TR-02.3` do guia): o `Modal.tsx` — usado em
 confirmação de dinheiro e de documento fiscal — deixava o Tab escapar pra tela de trás. Agora
 prende o Tab, fecha no `Esc`, devolve o foco pro botão que abriu e marca o fundo como inerte. O
@@ -172,7 +203,12 @@ Quatro coisas que valem saber:
   mas Placa em branco era descartado em silêncio ao salvar (ver item 26 da seção 6); campo "Marca"
   agora sugere uma lista de ~80 montadoras via Combobox, mas aceita digitar qualquer coisa que não
   esteja na lista (`permitirLivre`, ver seção 4); "Modelo" continua texto livre sem sugestão (tem
-  modelo demais no mundo pra listar, pedido explícito da usuária).
+  modelo demais no mundo pra listar, pedido explícito da usuária). **"Ver veículos" (03/10/2026,
+  #417)**: a lista não tem mais a coluna Veículos (uma caixinha de placa por carro, poluída, e
+  carro sem placa virava caixinha vazia). No lugar, um botão "Ver veículos" nas ações da linha,
+  igual ao "Ver DANFE", só em cliente com carro; abre uma janela com os carros
+  (`VeiculosDoClienteModal.tsx`), cada um levando pra ficha. Carro sem placa aparece como "sem
+  placa", com marca e modelo.
 - **Estoque**: 4 abas — Produtos (cadastro completo com campos fiscais NCM/CFOP/CST-CSOSN/ICMS,
   categoria, garantia em dias, margem calculada nos dois sentidos), Movimentações (com filtro por
   produto e campo/coluna de Depósito), Contagem (inventário físico, agora
@@ -422,8 +458,8 @@ Quatro coisas que valem saber:
     estoque, nas comissões, no recibo de comissão e na garantia.
 - **Ficha do veículo** (27/09/2026, item `FN-04`, sem migration, `v0.9.46` — **ainda não
   testada por ela na loja**): tudo que já foi feito num carro,
-  por placa. Rota `/veiculos/:id`, sem entrada no menu — abre **clicando na placa** em
-  Clientes, na lista de OS e em Garantias. É a pergunta que chega no balcão junto com o carro ("quando foi a última troca?", "esse pneu ainda
+  por placa. Rota `/veiculos/:id`, sem entrada no menu — abre pelo **"Ver veículos"** em
+  Clientes, ou **clicando na placa** na lista de OS e em Garantias. É a pergunta que chega no balcão junto com o carro ("quando foi a última troca?", "esse pneu ainda
   está na garantia?"), e é a base do lembrete de revisão (`FN-06`). O que a tela mostra:
   - **Dono atual** (o cliente em cujo cadastro o carro está hoje) e telefone;
   - **KM mais recente** — o da OS mais recente, nunca o maior já digitado (mesma regra do
@@ -601,8 +637,13 @@ Quatro coisas que valem saber:
   continua sabendo quais OS o cliente ainda não pagou (quem tem Funcionários lê a lista). Se o
   banco recusar uma gravação por permissão, a tela diz em português a quem pedir, em vez de
   "violates row-level security policy" (`MENSAGEM_SEM_PERMISSAO`, `src/lib/errors.ts`).
-- **Notas Fiscais**: upload manual de XML (NFe/NFS-e) organizado por mês de competência
-  (Supabase Storage), vínculo opcional com uma OS. **Baixar o mês inteiro (02/09/2026)**: cada
+- **Notas Fiscais**: as notas de cada mês — as emitidas pelo sistema entram sozinhas, e as feitas
+  por fora entram por upload manual do XML (NFe/NFS-e), organizado por mês de competência
+  (Supabase Storage), vínculo opcional com uma OS. **Coluna "Situação" (03/10/2026, #362)**: cada
+  linha diz se a nota está **Autorizada** (verde), **Cancelada** (vermelho) ou **Enviada à mão**
+  (XML que alguém subiu: o sistema não sabe o que a SEFAZ disse dele); outro status da Focus
+  aparece escrito como veio. A regra é `situacaoDaNota` (`src/schemas/situacaoFiscal.ts`). O
+  texto do topo da tela dizia que a emissão automática "ainda não existe" até 03/10 (#363). **Baixar o mês inteiro (02/09/2026)**: cada
   faixa de mês tem um botão "Baixar XMLs do mês (N)" que junta os XMLs daquela competência num
   `.zip` só (`nfse-2026-08.zip`) — é o formato que a contabilidade pede, e evita clicar nota por
   nota. O `.zip` é montado sem biblioteca externa (`src/lib/zip.ts`, formato "stored", sem

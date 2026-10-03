@@ -260,6 +260,53 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     0 0 25px rgba(255, 77, 206, 0.08); /* Glow mais visível */
 }
 
+/* Janela (modal) por cima da tela — #361, versão "sólida", escolhida por
+   ela pela imagem em 03/10/2026.
+
+   A janela usava o sakura-card, que é vidro (35% de opacidade), por cima de
+   um fundo pouco escurecido: o texto da tela de trás aparecia através dela e
+   atrapalhava a leitura (visto por ela em 28/09, na janela da nota fiscal).
+   Aqui o painel é OPACO (a cor é o tom do card já composto sobre o fundo do
+   app) e a tela de trás fica nítida, só escurecida. Borda, brilho e sombra
+   são os mesmos do sakura-card, pra janela continuar com a cara do resto do
+   app. O `largura:telas` confere que o fundo cobre a tela inteira.
+
+   NÃO trocar o sakura-card por isto fora das janelas: ele é usado em quase
+   toda tela, e só a janela precisa esconder o que está atrás. */
+@utility sakura-modal-fundo {
+  position: fixed;
+  inset: 0;
+  /* A janela costuma nascer dentro de um "space-y-*" da tela, que dá margem
+     embaixo de cada filho. Num elemento fixo com inset 0, essa margem
+     encurtava o fundo escuro: a janela de importar XML deixava uma faixa de
+     24px sem escurecer no pé da tela. */
+  margin: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(6, 3, 6, 0.6);
+}
+
+@utility sakura-modal {
+  border-radius: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: #170f16;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.01) 40%,
+    rgba(182, 36, 255, 0.05) 100%
+  );
+  box-shadow:
+    0 12px 40px -10px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 25px rgba(255, 77, 206, 0.08);
+}
+
 /* Botão circular de vidro escuro */
 @utility sakura-icon-button {
   display: inline-flex;
