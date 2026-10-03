@@ -135,7 +135,7 @@ export function ItemExistenteRow({
   }
 
   return (
-    <div className="@container space-y-2 rounded-lg border border-sakura-pink/40 bg-black/20 p-3">
+    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-black/20 p-3">
       <div className="flex gap-2">
         <select
           value={tipo}
@@ -176,9 +176,9 @@ export function ItemExistenteRow({
         />
       )}
 
-      {/* A mesma grade do ItemOSRow: quatro colunas se o cartão tem espaço,
-          duas se não tem (#425). */}
-      <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
+      {/* A mesma grade do ItemOSRow: quatro colunas a partir de 1280 de
+          janela, duas abaixo disso (#425). */}
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
         <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Quantidade
           <input type="number" min="0.01" step="0.01" {...register("quantidade")} className={inputClasse} />

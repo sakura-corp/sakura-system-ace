@@ -3,9 +3,9 @@
 // Roda com: npm run largura:telas
 //
 // Abre o app de verdade, visita todas as telas (as mesmas cenas do catálogo e
-// da varredura de contraste) e, em cada uma, mede em três larguras de
-// janela: 1024 (o mínimo que o Electron deixa a janela ficar), 1280 e 1366
-// (a tela de notebook mais comum, e a do computador do Balcão). Reprova se
+// da varredura de contraste) e, em cada uma, mede em cinco larguras de
+// janela: 1024 (o mínimo que o Electron deixa a janela ficar), 1280, 1366
+// (a tela de notebook mais comum, e a do computador do Balcão), 1536 e 1600. Reprova se
 // algum conteúdo passar da janela sem dar pra rolar até ele. Cena com
 // `semRolarAPartirDe: N` (em cenas.mjs) também reprova, a partir de N de
 // largura, se precisar rolar de lado. O que a medição procura está explicado
@@ -20,7 +20,10 @@ import { percorrerTelas } from "../site/ferramentas/percorrer-telas.mjs";
 import { comServidorDeTelas } from "../site/ferramentas/servidor-telas.mjs";
 import { MEDIR_LARGURA } from "./medir-largura.mjs";
 
-const LARGURAS = [1024, 1280, 1366];
+// 1536 e 1600 entram por causa da lista de OS, que esconde duas colunas
+// abaixo de 1600 (#425): é onde a folga é menor. 1536 é a largura de um
+// notebook Full HD com o zoom de 125% do Windows.
+const LARGURAS = [1024, 1280, 1366, 1536, 1600];
 const ALTURA = 768;
 
 process.exit(await comServidorDeTelas(varrer));
@@ -48,7 +51,7 @@ async function varrer() {
     }
   });
 
-  // A mesma caixa costuma reprovar nas três larguras, e a mesma linha de
+  // A mesma caixa costuma reprovar em várias larguras, e a mesma linha de
   // tabela em várias telas. O que importa é quantos LUGARES estão errados.
   const grupos = new Map();
   for (const achado of achados) {
@@ -67,9 +70,12 @@ async function varrer() {
   console.log(`\n${feitas.length} telas percorridas, cada uma em ${LARGURAS.join(", ")} de largura.`);
   if (falhas.length) console.log("telas que falharam:", falhas.map(([a]) => a).join(", "));
 
+  // Tela que falhou é tela que não foi medida — inclusive a lista de OS,
+  // que é a razão de esta varredura existir. Passar verde sem medir seria
+  // pior que reprovar.
   if (grupos.size === 0) {
     console.log("\nNenhum conteúdo passando da janela.");
-    return 0;
+    return falhas.length ? 1 : 0;
   }
 
   console.log(`\nREPROVADO — conteúdo que passa da janela sem dar pra rolar (${grupos.size}):\n`);

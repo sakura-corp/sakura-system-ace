@@ -18,7 +18,11 @@
 //    rola na vertical). Texto com reticências (`truncate`) é corte de
 //    propósito e fica de fora. Num campo vazio, conta a dica (placeholder)
 //    que não cabe.
-// 3. Alguma janela (modal) passa do lado direito da janela?
+// 3. Alguma janela (modal) passa do lado direito da janela? E o fundo
+//    escurecido dela cobre a tela inteira? Ele é fixo, mas encolhe se
+//    herdar margem (a de um space-y-*, que deixava uma faixa sem escurecer)
+//    ou se algum ancestral prender elementos fixos (backdrop-filter,
+//    transform, contain).
 // 4. Só nas telas que pedem (`semRolar`): alguma caixa precisa rolar de lado?
 //    A lista de OS tem que caber inteira em 1366, sem rolar (#425): a barra
 //    de rolar de lado fica no pé da tabela, e com a lista comprida ninguém
@@ -73,7 +77,11 @@ export const MEDIR_LARGURA = ({ semRolar = false } = {}) => {
     const rolaComBarra =
       (estilo.overflowX === "auto" || estilo.overflowX === "scroll") && !rolaSemBarra;
     if (corta && estilo.textOverflow === "ellipsis") continue;
-    if (rolaComBarra && semRolar) {
+    // Só a caixa de uma TABELA conta aqui: uma lista de opções aberta
+    // (overflow-y-auto, que o navegador também calcula como auto na
+    // horizontal) ou um campo de texto comprido não são a tela rolando.
+    const caixaDeTabela = elemento.querySelector(":scope > table") !== null;
+    if (rolaComBarra && semRolar && caixaDeTabela) {
       achados.push({
         tipo: "precisa rolar de lado (esta tela tem que caber inteira)",
         caminho: caminho(elemento),
@@ -100,7 +108,28 @@ export const MEDIR_LARGURA = ({ semRolar = false } = {}) => {
     });
   }
 
-  for (const dialogo of document.querySelectorAll("[role='dialog']")) {
+  const alturaJanela = document.documentElement.clientHeight;
+  for (const fundo of document.querySelectorAll(".sakura-modal-fundo")) {
+    if (!visivel(fundo)) continue;
+    const r = fundo.getBoundingClientRect();
+    const cobre =
+      r.left <= FOLGA &&
+      r.top <= FOLGA &&
+      r.right >= larguraJanela - FOLGA &&
+      r.bottom >= alturaJanela - FOLGA;
+    if (!cobre) {
+      achados.push({
+        tipo: "o fundo da janela (modal) não cobre a tela inteira",
+        caminho: caminho(fundo),
+        // Quantos pixels faltam, no lado em que falta mais.
+        excesso: Math.round(
+          Math.max(r.left, r.top, larguraJanela - r.right, alturaJanela - r.bottom),
+        ),
+      });
+    }
+  }
+
+  for (const dialogo of document.querySelectorAll("[role='dialog'], .sakura-modal")) {
     if (!visivel(dialogo)) continue;
     const direita = Math.round(dialogo.getBoundingClientRect().right);
     if (direita > larguraJanela + FOLGA) {

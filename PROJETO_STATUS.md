@@ -217,7 +217,7 @@ banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/histori
 - **Tabelas largas** (#425): nada mais passa da janela, a tabela rola dentro da própria caixa, e
   a **lista de OS cabe inteira em 1366** (versão "B", escolhida por ela pela imagem).
 - **Janelas opacas** (#361, versão "sólida", escolhida por ela pela imagem).
-- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280 e 1366.
+- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280, 1366, 1536 e 1600.
   Detalhe em `docs/modulos.md` e na lição 81 de `docs/licoes.md`.
 - **Como ela escolheu**: uma página privada com as fotos de cada versão (Artifact), e ela
   respondeu "sólida e B". Funcionou bem pra decisão de aparência.

@@ -79,18 +79,20 @@ flex, ele crescia até a largura da tabela mais larga), e toda tabela morava num
 sakura-card`, que corta. Agora o `<main>` tem `min-w-0` e o envoltório das tabelas é
 `overflow-x-auto sakura-card`: o que não couber rola dentro da caixa da tabela. **Tabela nova usa
 `overflow-x-auto`, nunca `overflow-hidden`.** O item da OS (Quantidade, Preço, Desconto, Técnico)
-virou grade de 2 ou 4 colunas conforme a largura do cartão (`@container`): em 1024 o Técnico saía
-pra fora. Quem confere é o `npm run largura:telas` (todas as telas em 1024, 1280 e 1366), que
+virou grade de 2 colunas abaixo de 1280 de janela e 4 a partir daí: em 1024 o Técnico saía
+pra fora. Quem confere é o `npm run largura:telas` (todas as telas em 1024, 1280, 1366, 1536 e 1600), que
 roda no CI.
 
 **Lista de OS cabe inteira em 1366** (03/10/2026, #425, **versão "B", escolhida por ela pela
-imagem**; a outra opção juntava Total e Lucro numa coluna só): em tela até 1536px, **Peças e
-Serviços somem** (Total e Lucro ficam; em monitor maior as duas voltam); a coluna "Abertura" mostra
-a data **sem o ano quando é do ano corrente** ("03/10"; `dataCurta` em `src/lib/datas.ts`); a
-placa não quebra linha; e as células têm `px-2.5` em vez de `px-4`. A tabela mínima ficou em
-1002px pra uma caixa de 1028. A cena `07-ordens` tem `semRolarAPartirDe: 1366`, então o
-`largura:telas` **reprova se a lista voltar a precisar rolar de lado** em 1366 (coluna nova aqui
-precisa caber nessa folga).
+imagem**; a outra opção juntava Total e Lucro numa coluna só): **abaixo de 1600px de janela,
+Peças e Serviços somem** (Total e Lucro ficam; de 1600 pra cima as duas voltam); a coluna
+"Abertura" mostra a data **sem o ano quando é do ano corrente** ("03/10"; `dataCurta` em
+`src/lib/datas.ts`); nome de cliente comprido pode quebrar no meio da palavra; a placa não quebra
+linha; e as células têm `px-2.5` em vez de `px-4`. **Não é o `2xl` (1536) do Tailwind**: em 1536
+a tabela com as duas colunas não cabia (1202px numa caixa de 1198), e 1536 é a largura de um
+notebook Full HD com zoom de 125%. Folga medida: 56px em 1366, 226 em 1536, 92 em 1600. A cena
+`07-ordens` tem `semRolarAPartirDe: 1366`, então o `largura:telas` **reprova se a lista precisar
+rolar de lado** de 1366 pra cima (coluna nova aqui precisa caber nessa folga).
 
 **Janela (modal) opaca** (03/10/2026, #361, **versão "sólida", escolhida por ela pela imagem**; a
 outra opção borrava a tela de trás): o painel era o vidro do `sakura-card` e o texto da tela de

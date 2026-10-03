@@ -100,7 +100,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
 | `npm run typecheck` / `lint` | TypeScript e ESLint (o lint tem a trava contra cortar o dia em UTC, item 48) |
 | `npm test` / `npm run test:fusos` | Os testes; o segundo roda duas vezes, em São Paulo e em UTC (em `.mjs` porque `TZ=x npm test` não funciona no PowerShell dela) |
 | `npm run contraste` / `contraste:telas` | Contraste nas classes / nas 54 telas renderizadas, compondo o vidro com o que está atrás (`divida-de-contraste.mjs` só encolhe) |
-| `npm run largura:telas` | Abre todas as telas em 1024, 1280 e 1366 de largura e reprova conteúdo que passa da janela sem dar pra rolar (`medir-largura.mjs` explica o que conta, #425) |
+| `npm run largura:telas` | Abre todas as telas em 1024, 1280, 1366, 1536 e 1600 de largura e reprova conteúdo que passa da janela sem dar pra rolar (`medir-largura.mjs` explica o que conta, #425) |
 | `npm run gerar-instalacao` | Regera o `instalacao-completa.sql`; o `npm test` reprova se estiver atrasado |
 | `npm run test:sql` / `test:rls` / `test:atualizar-bancos` | Testes com Postgres de verdade. **Só no CI (Linux)** |
 | `npm run test:electron` | Abre o programa **no Electron de verdade** e confere a ponte, as travas da janela e a CSP. Único teste que pega preload quebrado em silêncio. Só no CI |

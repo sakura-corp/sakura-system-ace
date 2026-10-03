@@ -263,13 +263,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 /* Janela (modal) por cima da tela — #361, versão "sólida", escolhida por
    ela pela imagem em 03/10/2026.
 
-   O sakura-card é vidro: 35% de opacidade, e o desfoque dele não alcança a
-   tela de trás quando a janela está dentro de outro card (o backdrop-filter
-   de um ancestral vira o limite do desfoque do filho). Resultado: o texto da
-   tela de trás aparecia através da janela e atrapalhava a leitura. Aqui o
-   painel é OPACO (a cor é o tom do card já composto sobre o fundo do app) e
-   a tela de trás fica nítida, só escurecida. Borda, brilho e sombra são os
-   mesmos do sakura-card, pra janela continuar com a cara do resto do app.
+   A janela usava o sakura-card, que é vidro (35% de opacidade), por cima de
+   um fundo pouco escurecido: o texto da tela de trás aparecia através dela e
+   atrapalhava a leitura (visto por ela em 28/09, na janela da nota fiscal).
+   Aqui o painel é OPACO (a cor é o tom do card já composto sobre o fundo do
+   app) e a tela de trás fica nítida, só escurecida. Borda, brilho e sombra
+   são os mesmos do sakura-card, pra janela continuar com a cara do resto do
+   app. O `largura:telas` confere que o fundo cobre a tela inteira.
 
    NÃO trocar o sakura-card por isto fora das janelas: ele é usado em quase
    toda tela, e só a janela precisa esconder o que está atrás. */

@@ -1615,7 +1615,7 @@
     - **Por que ninguém viu**: as telas só eram olhadas em monitor largo, e as imagens do catálogo
       e a varredura de contraste rodam em 1600px.
     - **Conserto**: `min-w-0` no `<main>`; envoltório das tabelas com `overflow-x-auto`; o item da
-      OS em grade de 2 ou 4 colunas pela largura do cartão. E a varredura **`npm run
-      largura:telas`**, no CI, que abre cada tela em 1024, 1280 e 1366.
+      OS em grade de 2 ou 4 colunas (4 a partir de 1280 de janela). E a varredura **`npm run
+      largura:telas`**, no CI, que abre cada tela em 1024, 1280, 1366, 1536 e 1600.
     - **Regra**: item flex que pode receber conteúdo largo leva `min-w-0`; caixa em volta de
       tabela é `overflow-x-auto`, nunca `overflow-hidden`. Tela nova se olha também em 1024.

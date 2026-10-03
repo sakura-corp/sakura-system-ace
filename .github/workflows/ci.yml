@@ -105,7 +105,7 @@ jobs:
         run: npm run contraste:telas
 
   largura-telas:
-    name: Largura nas telas (1024, 1280 e 1366)
+    name: Largura nas telas (1024 a 1600)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,9 +123,9 @@ jobs:
           npm i --no-save playwright
           npx playwright install --with-deps chromium
 
-      # Abre cada tela em 1024 (o mínimo da janela do programa), 1280 e 1366
-      # e reprova se algum conteúdo passar da janela sem dar pra rolar até
-      # ele. A lista de OS passou meses com "Faturar" fora da tela em 1366
+      # Abre cada tela em 1024 (o mínimo da janela do programa), 1280, 1366,
+      # 1536 e 1600 e reprova se algum conteúdo passar da janela sem dar pra
+      # rolar até ele. A lista de OS passou meses com "Faturar" fora da tela em 1366
       # sem ninguém ver, porque as telas só eram olhadas em monitor largo
       # (#425).
       - name: Largura nas telas

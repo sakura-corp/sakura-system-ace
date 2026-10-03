@@ -90,7 +90,7 @@ export function ItemOSRow({
   const avisoCusto = avisoPecaSemCusto(pecaEscolhida);
 
   return (
-    <div className="@container space-y-2 rounded-lg border border-sakura-gray/30 p-3">
+    <div className="space-y-2 rounded-lg border border-sakura-gray/30 p-3">
       <div className="flex gap-2">
         <select
           value={tipo}
@@ -139,12 +139,12 @@ export function ItemOSRow({
         />
       )}
 
-      {/* Quatro colunas quando o cartão do item tem espaço; duas quando
-          não tem (janela de 1024, #425). Era uma linha flex, e o campo
-          Técnico ficava espremido e saía pra fora do cartão. A medida é do
-          CARTÃO, não da janela, porque o mesmo item aparece em lugares de
-          larguras diferentes. */}
-      <div className="grid grid-cols-2 gap-2 @2xl:grid-cols-4">
+      {/* Quatro colunas a partir de 1280 de janela; duas abaixo disso
+          (#425). Era uma linha flex, e em 1024 o campo Técnico ficava
+          espremido ("Ser") e saía pra fora do cartão. O item só aparece no
+          formulário de OS, que ocupa a largura toda da tela, então a medida
+          pela janela basta. */}
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
         <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
           Quantidade
           <input
