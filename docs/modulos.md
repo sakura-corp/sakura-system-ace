@@ -992,3 +992,4 @@ Quatro coisas que valem saber:
   | `v0.9.46` | 27/09 | Ficha do veículo |
   | `v0.9.47` | 29/09 | Só o endereço novo do atualizador (`sakura-corp/sakura-system-ace`) |
   | `v0.9.48` | 01/10 (só no teste) | NFS-e: "Conferir de novo" quando a prefeitura demora, e registrar nota pela referência (`docs/licoes.md`, item 80) |
+  | `v0.9.49` | 03/10 (só no teste) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
