@@ -25,9 +25,10 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Liberar a `v0.9.48` pras outras lojas** quando ela achar que rodou o bastante (publicada em
-1º/10 só no canal de teste; o Balcão já está nela). Hoje a Pneus Amigão é a única empresa, então
-não tem pressa.
+**Liberar a `v0.9.49` pras outras lojas** quando ela achar que rodou o bastante (publicada em
+03/10 só no canal de teste; leva junto a `v0.9.48`, que nunca foi liberada). Hoje a Pneus Amigão
+é a única empresa, então não tem pressa. Na loja, vale olhar a lista de OS no Balcão com os dados
+de verdade (nomes e valores maiores que os de demonstração).
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): **10/10** a primeira
 fatura da Focus; a partir de **16/10** o que depende do dinheiro da empresa (licença da prefeitura,

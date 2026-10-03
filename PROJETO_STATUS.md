@@ -205,9 +205,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425)
 
-**Estado do código**: tudo no PR #431 (a mesclar com o ok dela nas fotos). `main` na **`v0.9.48`**,
-**publicada só no canal de teste**; nenhuma versão nova publicada. Banco na **`0064`** (nada de
-banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/historico.md`.
+**Estado do código**: PR #431 mesclado. `main` na **`v0.9.49`**, **publicada só no canal de
+teste** (03/10, com a aprovação dela); as outras lojas seguem na `0.9.47`. Banco na **`0064`**
+(nada de banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/historico.md`.
 
 #### O que foi feito
 - **Notas Fiscais**: coluna "Situação" (Autorizada / Cancelada / Enviada à mão) e o texto do topo
@@ -223,13 +223,13 @@ banco nesta leva). O marco anterior (CNPJ aberto) está no topo de `docs/histori
   respondeu "sólida e B". Funcionou bem pra decisão de aparência.
 
 #### Por onde a próxima sessão começa
-1. **PR #431**: se ainda estiver aberto, mesclar quando ela der o ok nas fotos. Depois, se ela
-   quiser, publicar uma versão no canal de teste com essas telas (só quando ela pedir).
+1. **`v0.9.49` no Balcão**: perguntar como ficaram as telas novas com os dados de verdade
+   (sobretudo a lista de OS). Liberar pras outras lojas só quando ela pedir.
 2. **Avisos da abertura da empresa**, quando ela mandar: pedir pra adicionar o
    `caranovavidanova/sakura-corp` (seção 1) e seguir "Abertura: o que falta" do `EMPRESA.md`.
 3. **PR da tarefa 2 do Gustavo (#351)**, quando ele abrir (`docs/painel.md`, "O que a Sofia faz").
 4. **A lista "O que depende dela"** (seção 8): a fatura da Focus em **10/10**; a partir de
-   **16/10**, o que depende do dinheiro da empresa (no privado); liberar a `v0.9.48`. Sugestão,
+   **16/10**, o que depende do dinheiro da empresa (no privado); liberar a `v0.9.49`. Sugestão,
    se ela perguntar o que fazer: **trocar as três credenciais fiscais expostas**, ou o grupo 2 de
    tarefas que não mexe no banco (atualizar o Electron #385, busca com Ctrl+K #372, listas com
    páginas #373).
