@@ -150,6 +150,11 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   e explico em português simples, e só então ela clica. Foi assim a abertura inteira do CNPJ, num
   dia, sem erro. Os dados pessoais que aparecem nesses documentos (nome civil, CPF, RG, endereço)
   **nunca** vão pra memória, nem pra privada.
+- **Defeito achado de passagem vira tarefa no GitHub na hora** (04/10/2026), no formato da #425
+  ("o que acontece", "por quê", "o que fazer", "Pronto quando"), mesmo que o conserto venha
+  depois. O **cartão de "tarefa sugerida"** que o app mostra é só um atalho pra abrir outra
+  sessão: ele não entra na memória e eu não consigo ver os de outras sessões. Ela perguntou "esses
+  defeitos têm que ser documentados, não?!" ao descobrir isso.
 - **Sempre que eu aprender uma preferência de trabalho nova**, documentar aqui — não só nas
   decisões técnicas da seção 3, mas qualquer coisa sobre *como* ela quer que eu trabalhe. Sessões
   futuras não têm memória da conversa, só deste arquivo.
@@ -206,12 +211,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 04/10/2026: o Electron começou a subir (#385), a `v0.9.50` (Electron 36) pronta
+### 04/10/2026: o Electron começou a subir (#385), a `v0.9.50` (Electron 36) no teste
 
-**Estado do código**: `main` na **`v0.9.50`**, que é **só o Electron 33 → 36**, **pronta e ainda
-não publicada** (publicar é decisão dela). O canal de teste segue na `0.9.49`; as outras lojas na
-`0.9.47`. Banco na **`0064`**. O marco anterior (os cinco bugs de tela) está no topo de
-`docs/historico.md`.
+**Estado do código**: `main` na **`v0.9.50`**, que é **só o Electron 33 → 36**, **publicada no
+canal de teste em 04/10** (ela aprovou; o instalador e o `latest.yml` conferidos na release). As
+outras lojas seguem na `0.9.47`. Banco na **`0064`**. O marco anterior (os cinco bugs de tela)
+está no topo de `docs/historico.md`.
 
 #### O que foi feito
 - **Ela escolheu o ritmo**: três saltos, **33 → 36 → 40 → 44**, cada um numa versão sozinha e
@@ -221,21 +226,19 @@ não publicada** (publicar é decisão dela). O canal de teste segue na `0.9.49`
   tela usavam um Chromium avulso e não enxergavam o Electron. Ela abre as 61 telas dentro de dois
   Electrons e compara "a olho" (sem a suavização das letras) e o comportamento dos campos.
   **33 × 36: nada mudou a olho**; o programa empacotado na 36 abre, e as chavinhas continuam.
-- **Achado de passagem: a rodinha do mouse muda o campo de número** quando a tela não tem mais
-  pra onde rolar (topo + girar pra cima: 2 vira 2,01), na 33 e na 36. **O conserto está pronto
-  mas guardado** pra `v0.9.51` (não pode ir junto do Electron). Se o rascunho se perdeu: em
-  `src/hooks/useNaoMexerNoNumeroSemDigitar.ts`, um `wheel` passivo no `document` que, quando o
-  alvo é `input[type=number]` e é o `document.activeElement`, chama `blur()` (bloquear a rodinha
-  impediria rolar a tela); atualizar o comentário do hook e o item 41 de `docs/licoes.md`.
-  Testado na 33 e na 36: o valor fica, a tela rola, digitar e as setas continuam como antes.
+- **Dois defeitos achados de passagem, os dois viraram tarefa**:
+  - **#436, a rodinha do mouse muda o campo de número** quando a tela não tem mais pra onde rolar
+    (topo + girar pra cima: 2 vira 2,01), na 33 e na 36. **Conserto pronto e guardado** pra
+    `v0.9.51` (não pode ir junto do Electron): commit `2273ecc` na branch
+    `claude/kind-euler-8s461d`, sem PR. Se o commit se perdeu, a #436 diz como refazer.
+  - **#437, a barrinha de rolagem do app fica com a medida da tela anterior** (visual, pequeno).
 
 #### Por onde a próxima sessão começa
-1. **Perguntar se ela publicou a `v0.9.50`** (ou publicar quando ela pedir: Release na `main`,
-   aprovação dela no cofre `lojas`; passo a passo em `docs/operacao.md`). O roteiro de teste dela
-   está em "O que depende dela" (seção 8): o Diagnóstico mostra `36.9.5 / 136...`, uso normal e
+1. **Perguntar como foi o teste da `v0.9.50`** no Windows dela e no Balcão. O roteiro está em
+   "O que depende dela" (seção 8): o Diagnóstico mostra `36.9.5 / 136...`, uso normal e
    **imprimir** garantia, recibo e nota.
-2. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (prova também o atualizador da
-   36), e então o **salto 2 (40)**: `npm run comparar:electron -- 40` (lembrar que a 40 troca o
+2. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit `2273ecc`,
+   `Closes #436`; prova também o atualizador da 36), e então o **salto 2 (40)**: `npm run comparar:electron -- 40` (lembrar que a 40 troca o
    Node pra 24), as checagens de sempre, `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o
    Electron não se baixa sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar
    ela em qual antes.
