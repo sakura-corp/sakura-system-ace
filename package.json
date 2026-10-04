@@ -25,7 +25,8 @@
     "test:atualizar-bancos": "node scripts/atualizar-bancos.integracao.mjs",
     "test:sql": "node scripts/testar-sql.mjs",
     "test:electron": "xvfb-run -a node scripts/testar-electron.mjs",
-    "checar-versao-electron": "node scripts/checar-versao-electron.mjs"
+    "checar-versao-electron": "node scripts/checar-versao-electron.mjs",
+    "comparar:electron": "xvfb-run -a -s \"-screen 0 1920x1080x24\" node scripts/comparar-telas-electron.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",

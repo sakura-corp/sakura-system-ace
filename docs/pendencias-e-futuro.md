@@ -99,8 +99,8 @@ cheque (só se uma loja pedir).
 **Decisões dela, sem prazo:**
 - o valor da mensalidade das lojas novas (privado);
 - levar o `ANTES-DA-PRIMEIRA-VENDA.md` a um advogado ou à contabilidade (item 10);
-- atualizar o Electron (item 14, tarefa #385): **ela decidiu em 03/10 começar na próxima
-  sessão**; falta escolher o ritmo dos saltos (uma linha por vez ou saltos maiores);
+- atualizar o Electron (item 14, tarefa #385): **em andamento desde 03/10**, em três saltos
+  (33 → 36 → 40 → 44); cada um precisa do teste dela na loja antes do próximo;
 - os próximos lotes de permissão no banco: clientes, peças/estoque e OS (item 1 da seção 6;
   tarefas #365 a #367, cada uma diz o que ela precisa decidir);
 - a parte 2 do `TR-04.2`, apagar a cópia antiga do token (liberada desde 28/09; tarefa #368);
@@ -370,16 +370,27 @@ tempo real. Depois, a **leva 1** (a linha de produção completa: pegar tarefa, 
 por pessoa, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
 O exemplo de DRE está no repositório privado (`dre/`).
 
-### 14. Atualizar o Electron (decisão dela, em aberto desde 17/09/2026; tarefa #385)
+### 14. Atualizar o Electron (tarefa #385; ritmo decidido por ela em 03/10/2026)
 
-O programa está na **linha 33 do Electron**, que **não recebe mais correção de segurança** (em
-setembro, as linhas com suporte eram a 42, 43 e 44). Ou seja, o Chromium que desenha as telas está
-parado. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 por isso, e está certo.
-**Não fazer por conta própria**: trocar o Electron troca o Chromium, e isso já mudou o comportamento
-de campo de formulário neste projeto (item 41 da seção 6). O caminho proposto: subir **uma linha
-por vez**, rodar `npm run test:electron`, publicar cada uma **sozinha** (sem outras mudanças junto)
-e ela testar na loja entre uma e outra. São algumas sessões. Junto disso, subir o electron-builder
-pra 26 destrava a chavinha de integridade do asar (`scripts/ligar-fuses.mjs`).
+O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de segurança desde
+2025. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 por isso, e está certo.
+- **Destino: a linha 44**, não a 42: sai uma linha nova a cada 8 semanas e o suporte é das três
+  últimas, então a 42 perde o suporte quando a 45 sair (~20/10/2026). A 44 vai até ~fev/2027.
+- **Ritmo escolhido por ela: três saltos, 33 → 36 → 40 → 44** (em vez de 11 versões, uma por
+  linha). Os cortes caem onde o Node troca de versão grande (22 na 35, 24 na 40): cada salto
+  troca no máximo um. Cada salto é **uma versão sozinha**, sem nenhuma outra mudança junto,
+  publicada no teste, testada por ela no Windows dela e no Balcão, e só então o próximo.
+- **Em cada salto**: `npm run comparar:electron -- <linha>` (as telas e os campos dentro de
+  cada Electron, lição 82), `test:electron`, `test:fusos`, typecheck, lint, e o build com as
+  chavinhas (`scripts/ligar-fuses.mjs`). O que o laboratório não alcança e a loja testa:
+  **imprimir** (garantia, recibo, nota, comissões) e o uso do dia a dia. O atualizador da versão
+  nova só é posto à prova na versão SEGUINTE (é ela que vai chegar por ele).
+- **O que muda no código**: a lista oficial da 34 à 44 não toca em nada que o programa usa. Na
+  **42**, o Electron para de se baixar sozinho no `npm ci` (afeta o CI e o `test:electron`); na
+  **44**, deixa de existir Windows 32 bits (o instalador já é só 64).
+- **O electron-builder 26** (destrava a chavinha de integridade do asar) vai junto de um dos
+  saltos; avisar ela em qual antes.
+- **Depois de chegar na 44**: um salto a cada ~4 meses mantém o programa com suporte.
 
 ### Futuro, só com pedido explícito
 

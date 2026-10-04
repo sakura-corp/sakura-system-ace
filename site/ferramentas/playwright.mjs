@@ -11,6 +11,16 @@
 // costumam rodar); senão, explica o que fazer em vez de morrer com
 // "Cannot find module".
 export async function carregarChromium() {
+  return carregar("chromium");
+}
+
+// O controle do Electron, pra abrir as telas dentro do Electron do programa
+// em vez de num Chromium avulso (ver percorrer-telas.mjs).
+export async function carregarElectron() {
+  return carregar("_electron");
+}
+
+async function carregar(parte) {
   const tentativas = [
     "playwright",
     // Caminho do ambiente de nuvem onde estas ferramentas rodam hoje.
@@ -20,7 +30,7 @@ export async function carregarChromium() {
   for (const caminho of tentativas) {
     try {
       const modulo = await import(caminho);
-      if (modulo.chromium) return modulo.chromium;
+      if (modulo[parte]) return modulo[parte];
     } catch {
       // tenta o próximo
     }

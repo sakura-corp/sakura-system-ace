@@ -1619,3 +1619,30 @@
       largura:telas`**, no CI, que abre cada tela em 1024, 1280, 1366, 1536 e 1600.
     - **Regra**: item flex que pode receber conteúdo largo leva `min-w-0`; caixa em volta de
       tabela é `overflow-x-auto`, nunca `overflow-hidden`. Tela nova se olha também em 1024.
+
+82. **As varreduras de tela não enxergavam o Electron (achado em 03/10/2026, ao começar a #385).**
+    O `contraste:telas`, o `largura:telas` e o catálogo abrem o app num **Chromium avulso** (o do
+    Playwright), que é o mesmo com qualquer Electron instalado. Ou seja: subir o Electron e rodar
+    essas varreduras não prova nada sobre o Chromium novo, e a lista de "o que rodar em cada
+    salto" pedia justamente elas.
+    - **Conserto**: `percorrer-telas.mjs` abre as telas dentro de um Electron quando pedido
+      (`TELAS_NO_ELECTRON=1`, ou `{ electron }` no terceiro argumento), com um processo principal
+      mínimo (`site/ferramentas/electron-telas.mjs`). E **`npm run comparar:electron -- 36`**
+      percorre as telas no Electron do projeto e no pedido, com o relógio parado no mesmo
+      instante, e compara imagem por imagem, mais o que o Chromium faz sozinho nos campos.
+    - **O ruído é zero**: o Electron 33 contra ele mesmo deu as 61 telas idênticas ponto por
+      ponto. Qualquer diferença entre duas versões é do Chromium, não da medição.
+    - **Mas toda versão do Chromium muda a suavização do contorno das letras**: no 33 × 36,
+      todas as 61 telas mudaram (até 0,5% dos pontos), sem nada que se enxergue. Por isso cada
+      tela tem duas medidas: "cru" e **"a olho"** (as duas imagens passam por um desfoque de 1,5
+      ponto antes, o que apaga o contorno e mantém o resto; pegou uma barra de 6 pontos).
+    - **Duas armadilhas da primeira rodada**: a sessão de mentira caiu bem na hora da foto (saiu
+      a tela de login); e a barra de rolagem desenhada pelo app (`AreaRolavel`) às vezes guarda a
+      medida da tela anterior, então a foto dependia da ordem das telas. A ferramenta repete a
+      cena quando a foto sai sem o menu lateral e manda um `resize` antes de cada foto.
+    - **Na primeira rodada ela já achou um defeito antigo**: a rodinha do mouse **muda** o campo
+      de número quando a tela não tem mais pra onde rolar (no topo, girando pra cima): 2 vira
+      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. O conserto
+      sai numa versão própria, logo depois do primeiro salto do Electron.
+    - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
+      qualquer responde outra coisa (o item 41 já tinha visto isso com o 141 do sandbox).
