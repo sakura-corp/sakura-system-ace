@@ -1,5 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { instalarBancoFalso } from "./banco-falso.mjs";
@@ -245,9 +246,11 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
   return { feitas, falhas, errosDeConsole };
 }
 
-// O Electron do projeto, pra quem pede TELAS_NO_ELECTRON=1.
+// O Electron do projeto, pra quem pede TELAS_NO_ELECTRON=1: o programa de
+// verdade (o pacote "electron" devolve o caminho dele), e não o atalho de
+// node_modules/.bin, que no Windows é um script que não abre assim.
 function electronDoProjeto() {
-  return join(process.cwd(), "node_modules", ".bin", "electron");
+  return createRequire(import.meta.url)("electron");
 }
 
 async function abrirNavegador(opcoes) {
