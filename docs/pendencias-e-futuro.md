@@ -25,6 +25,13 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
+**Publicar e testar a `v0.9.50` (Electron 36, o 1º salto da #385)**: pronta em 04/10, falta ela
+pedir pra publicar no canal de teste. Depois, no Windows dela e no Balcão: abrir o Diagnóstico
+(o "i" ao lado do nome, embaixo à esquerda) e ver "Electron / Chromium" = `36.9.5 / 136...`;
+usar normalmente; **imprimir** uma garantia, um recibo e uma nota (a impressão é a única coisa
+que o laboratório não testa). Só depois disso vem a `v0.9.51` (o conserto da rodinha, item 41 de
+`docs/licoes.md`), que de quebra prova que o atualizador da 36 funciona, e então o salto pra 40.
+
 **Liberar a `v0.9.49` pras outras lojas** quando ela achar que rodou o bastante (publicada em
 03/10 só no canal de teste; leva junto a `v0.9.48`, que nunca foi liberada). Hoje a Pneus Amigão
 é a única empresa, então não tem pressa. Na loja, vale olhar a lista de OS no Balcão com os dados
@@ -100,7 +107,8 @@ cheque (só se uma loja pedir).
 - o valor da mensalidade das lojas novas (privado);
 - levar o `ANTES-DA-PRIMEIRA-VENDA.md` a um advogado ou à contabilidade (item 10);
 - atualizar o Electron (item 14, tarefa #385): **em andamento desde 03/10**, em três saltos
-  (33 → 36 → 40 → 44); cada um precisa do teste dela na loja antes do próximo;
+  (33 → 36 → 40 → 44); cada um precisa do teste dela na loja antes do próximo (o 1º, a
+  `v0.9.50`, está pronto pra publicar);
 - os próximos lotes de permissão no banco: clientes, peças/estoque e OS (item 1 da seção 6;
   tarefas #365 a #367, cada uma diz o que ela precisa decidir);
 - a parte 2 do `TR-04.2`, apagar a cópia antiga do token (liberada desde 28/09; tarefa #368);
@@ -376,6 +384,8 @@ O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de 
 2025. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 por isso, e está certo.
 - **Destino: a linha 44**, não a 42: sai uma linha nova a cada 8 semanas e o suporte é das três
   últimas, então a 42 perde o suporte quando a 45 sair (~20/10/2026). A 44 vai até ~fev/2027.
+- **Andamento**: salto 1 (**36**) pronto em 04/10 como `v0.9.50`; no laboratório, nenhuma das
+  61 telas mudou a olho e os campos se comportaram igual. Falta publicar e ela testar.
 - **Ritmo escolhido por ela: três saltos, 33 → 36 → 40 → 44** (em vez de 11 versões, uma por
   linha). Os cortes caem onde o Node troca de versão grande (22 na 35, 24 na 40): cada salto
   troca no máximo um. Cada salto é **uma versão sozinha**, sem nenhuma outra mudança junto,
