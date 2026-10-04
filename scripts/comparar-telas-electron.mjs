@@ -74,37 +74,39 @@ if (!depoisPedido) {
 
 /** Devolve { rotulo, versao, executavel } de "projeto", "36" ou "36.9.5". */
 function prepararElectron(pedido) {
-  const require = createRequire(import.meta.url);
+  let pacote;
   if (pedido === "projeto") {
-    const versao = JSON.parse(
-      fs.readFileSync(path.join(RAIZ, "node_modules/electron/package.json"), "utf8"),
-    ).version;
-    return { rotulo: `projeto-${versao}`, versao, executavel: require(path.join(RAIZ, "node_modules/electron")) };
+    pacote = path.join(RAIZ, "node_modules/electron");
+  } else {
+    if (!/^\d+(\.\d+\.\d+)?$/.test(pedido)) {
+      throw new Error(`"${pedido}" não é uma versão: use "projeto", uma linha (36) ou uma versão (36.9.5).`);
+    }
+    // Guardada por linha: "36" baixa a última 36.x na primeira vez e reusa
+    // depois. Pra pegar uma correção mais nova da mesma linha, apagar a pasta.
+    const pasta = path.join(CACHE, pedido);
+    pacote = path.join(pasta, "node_modules/electron");
+    if (!fs.existsSync(path.join(pacote, "package.json"))) {
+      console.log(`Baixando o Electron ${pedido} (só na primeira vez)...`);
+      fs.mkdirSync(pasta, { recursive: true });
+      const instalacao = spawnSync(
+        "npm",
+        ["install", "--prefix", pasta, `electron@${pedido}`, "--no-save", "--no-package-lock",
+          "--no-audit", "--no-fund", "--loglevel=error"],
+        { stdio: "inherit" },
+      );
+      if (instalacao.status !== 0) throw new Error(`Não consegui instalar o electron@${pedido}.`);
+    }
   }
-  if (!/^\d+(\.\d+\.\d+)?$/.test(pedido)) {
-    throw new Error(`"${pedido}" não é uma versão: use "projeto", uma linha (36) ou uma versão (36.9.5).`);
-  }
-  const pasta = path.join(CACHE, pedido);
-  const pacote = path.join(pasta, "node_modules/electron");
-  if (!fs.existsSync(path.join(pacote, "package.json"))) {
-    console.log(`Baixando o Electron ${pedido} (só na primeira vez)...`);
-    fs.mkdirSync(pasta, { recursive: true });
-    const instalacao = spawnSync(
-      "npm",
-      ["install", "--prefix", pasta, `electron@${pedido}`, "--no-save", "--no-package-lock",
-        "--no-audit", "--no-fund", "--loglevel=error"],
-      { stdio: "inherit" },
-    );
-    if (instalacao.status !== 0) throw new Error(`Não consegui instalar o electron@${pedido}.`);
-  }
-  // Da linha 42 em diante, o Electron não se baixa mais sozinho ao instalar:
-  // o programa de verdade só vem na primeira vez que alguém o chama.
+  // Da linha 42 em diante, instalar o pacote não baixa mais o programa do
+  // Electron: ele só vem na primeira vez que alguém o chama, ou pelo
+  // `install.js` (o "install-electron"), que é o que se faz aqui.
   if (!fs.existsSync(path.join(pacote, "path.txt"))) {
     const baixar = spawnSync("node", [path.join(pacote, "install.js")], { cwd: pacote, stdio: "inherit" });
     if (baixar.status !== 0) throw new Error(`Não consegui baixar o programa do Electron ${pedido}.`);
   }
   const versao = JSON.parse(fs.readFileSync(path.join(pacote, "package.json"), "utf8")).version;
-  return { rotulo: versao, versao, executavel: require(pacote) };
+  const executavel = createRequire(import.meta.url)(pacote);
+  return { rotulo: pedido === "projeto" ? `projeto-${versao}` : versao, versao, executavel };
 }
 
 // O que o Chromium faz sozinho num campo, sem passar pelo código do app.
@@ -113,9 +115,9 @@ const SONDAS = {
   "12-produto-form": async (pagina) => {
     // Item 41: seta pra baixo num campo de número com step 0,01 virava 1,99,
     // e a rodinha também mexe no valor quando a tela não tem mais pra onde
-    // rolar. O app bloqueia as duas (useNaoMexerNoNumeroSemDigitar); aqui se
-    // confere que continua assim. O campo fica selecionado, como fica logo
-    // depois de alguém digitar.
+    // rolar. O certo é o valor continuar "2" nos três casos (quem segura é o
+    // useNaoMexerNoNumeroSemDigitar). O campo fica selecionado, como fica
+    // logo depois de alguém digitar.
     const campo = pagina.locator('input[type="number"]:visible').first();
     const rolarProTopo = () =>
       campo.evaluate((el) => {
@@ -164,7 +166,7 @@ const SONDAS = {
   },
 };
 
-async function rodada(electron, pasta, horaFixa) {
+async function rodada(electron, pasta, horaFixa, incluir = () => true) {
   fs.mkdirSync(pasta, { recursive: true });
   const comportamento = {};
   let chromium = "";
@@ -199,7 +201,7 @@ async function rodada(electron, pasta, horaFixa) {
   }
 
   console.log(`\n== Electron ${electron.versao} ==`);
-  const primeira = await percorrerTelas(aoChegar, () => true, {
+  const primeira = await percorrerTelas(aoChegar, incluir, {
     electron: electron.executavel,
     horaFixa,
   });
@@ -302,7 +304,9 @@ function escapar(texto) {
   return String(texto).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 }
 
-function relatorioHtml({ antes, depois, aOlho, soContorno, iguais, soNumLado, comportamento, falhas, erros }) {
+function relatorioHtml({
+  antes, depois, aOlho, soContorno, iguais, instaveis, soNumLado, comportamento, falhas, erros,
+}) {
   const linhasComportamento = comportamento
     .map(
       ([chave, a, b]) =>
@@ -344,6 +348,7 @@ ${falhas.length ? `<h2>Telas que falharam</h2><ul>${falhas.map((f) => `<li>${esc
 ${erros.length ? `<h2>Erros de console que só aparecem depois</h2><ul>${erros.map((e) => `<li>${escapar(e)}</li>`).join("")}</ul>` : ""}
 <h2>Telas que mudaram a olho</h2>
 ${aOlho.map(cartao).join("\n") || "<p>Nenhuma.</p>"}
+${instaveis.length ? `<h2>Mudaram só na primeira visita</h2><p>Visitadas de novo, deram iguais a olho: foi a medição (uma tela que ainda não tinha terminado de abrir), não o Electron.</p><details><summary>${instaveis.length} tela(s): a primeira visita</summary>${instaveis.map(cartao).join("\n")}</details>` : ""}
 <h2>Telas que mudaram só no contorno das letras</h2>
 ${soContorno.length ? `<details><summary>${soContorno.length} tela(s): abrir as imagens</summary>${soContorno.map(cartao).join("\n")}</details>` : "<p>Nenhuma.</p>"}
 <h2>Telas idênticas</h2><p>${escapar(iguais.join(", ")) || "—"}</p>
@@ -373,27 +378,54 @@ process.exit(
     const chromium = await carregarChromium();
     const navegador = await chromium.launch();
     const pagina = await navegador.newPage();
-    fs.mkdirSync(path.join(saida, "diferenca"), { recursive: true });
     const aOlho = [];
     const soContorno = [];
     const iguais = [];
-    const nosDois = ra.feitas.filter((c) => rb.feitas.includes(c));
-    for (const cena of nosDois) {
+    const instaveis = [];
+
+    async function comparar(cena, sufixo = "") {
       const r = await compararImagens(
         pagina,
-        path.join(saida, "antes", `${cena}.png`),
-        path.join(saida, "depois", `${cena}.png`),
+        path.join(saida, `antes${sufixo}`, `${cena}.png`),
+        path.join(saida, `depois${sufixo}`, `${cena}.png`),
       );
-      if (r.cru === 0 && r.mesmaMedida) {
-        iguais.push(cena);
-        continue;
+      fs.mkdirSync(path.join(saida, `diferenca${sufixo}`), { recursive: true });
+      if (r.cru > 0 || !r.mesmaMedida) {
+        fs.writeFileSync(
+          path.join(saida, `diferenca${sufixo}`, `${cena}.png`),
+          Buffer.from(r.imagem.split(",")[1], "base64"),
+        );
       }
-      fs.writeFileSync(
-        path.join(saida, "diferenca", `${cena}.png`),
-        Buffer.from(r.imagem.split(",")[1], "base64"),
-      );
-      const item = { cena, cru: r.cru, aOlho: r.aOlho, total: r.total, mesmaMedida: r.mesmaMedida };
-      (r.aOlho > 0 || !r.mesmaMedida ? aOlho : soContorno).push(item);
+      return { cena, cru: r.cru, aOlho: r.aOlho, total: r.total, mesmaMedida: r.mesmaMedida };
+    }
+
+    const nosDois = ra.feitas.filter((c) => rb.feitas.includes(c));
+    const suspeitas = [];
+    for (const cena of nosDois) {
+      const item = await comparar(cena);
+      if (item.cru === 0 && item.mesmaMedida) iguais.push(cena);
+      else if (item.aOlho > 0 || !item.mesmaMedida) suspeitas.push(item);
+      else soContorno.push(item);
+    }
+
+    // Uma tela que mudou a olho é visitada de novo, só ela, nos dois
+    // Electrons. A diferença só conta se repetir: na segunda rodada do
+    // 33 × 36, a tela de conexão "mudou" porque o clique ainda não tinha
+    // trocado de tela na hora da foto, na primeira tela que o app abre.
+    if (suspeitas.length > 0) {
+      const repetir = suspeitas.map((m) => m.cena);
+      console.log(`\nConferindo de novo o que mudou a olho: ${repetir.join(", ")}`);
+      const so = (c) => repetir.includes(c.arquivo);
+      const ra2 = await rodada(antes, path.join(saida, "antes-2"), horaFixa, so);
+      const rb2 = await rodada(depois, path.join(saida, "depois-2"), horaFixa, so);
+      for (const primeira of suspeitas) {
+        const deNovo =
+          ra2.feitas.includes(primeira.cena) && rb2.feitas.includes(primeira.cena)
+            ? await comparar(primeira.cena, "-2")
+            : null;
+        if (deNovo && deNovo.aOlho === 0 && deNovo.mesmaMedida) instaveis.push(primeira);
+        else aOlho.push(primeira);
+      }
     }
     await navegador.close();
     aOlho.sort((x, y) => y.aOlho - x.aOlho);
@@ -411,7 +443,9 @@ process.exit(
     ];
     const erros = [...new Set(rb.errosDeConsole.filter((e) => !ra.errosDeConsole.includes(e)))];
 
-    const resultado = { antes, depois, aOlho, soContorno, iguais, soNumLado, comportamento, falhas, erros };
+    const resultado = {
+      antes, depois, aOlho, soContorno, iguais, instaveis, soNumLado, comportamento, falhas, erros,
+    };
     fs.writeFileSync(path.join(saida, "relatorio.html"), relatorioHtml(resultado));
     fs.writeFileSync(path.join(saida, "resultado.json"), JSON.stringify(resultado, null, 2));
 
@@ -425,6 +459,9 @@ process.exit(
         `${iguais.length} idênticas.`,
     );
     for (const m of aOlho) console.log(`  ${porcento(m.aOlho, m.total).padStart(7)} a olho  ${m.cena}`);
+    if (instaveis.length) {
+      console.log(`Mudaram só na primeira visita (a medição, não o Electron): ${instaveis.map((m) => m.cena).join(", ")}`);
+    }
     if (soNumLado.length) console.log(`\nSó abriram de um lado: ${soNumLado.join(", ")}`);
     if (falhas.length) console.log(`\nFalharam:\n  ${falhas.join("\n  ")}`);
     if (erros.length) console.log(`\nErros de console que só aparecem depois:\n  ${erros.join("\n  ")}`);

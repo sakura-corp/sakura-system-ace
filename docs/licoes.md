@@ -1641,6 +1641,8 @@
       medida da tela anterior, então a foto dependia da ordem das telas. A ferramenta repete a
       cena quando a foto sai sem o menu lateral e manda um `resize` antes de cada foto.
     - **Na primeira rodada ela já achou um defeito antigo**: a rodinha do mouse **muda** o campo
-      de número (ver o item 41, corrigido).
+      de número quando a tela não tem mais pra onde rolar (no topo, girando pra cima): 2 vira
+      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. O conserto
+      sai numa versão própria, logo depois do primeiro salto do Electron.
     - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
       qualquer responde outra coisa (o item 41 já tinha visto isso com o 141 do sandbox).
