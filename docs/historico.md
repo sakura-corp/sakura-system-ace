@@ -33,6 +33,45 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425) e a `v0.9.49`
+
+**Estado do código**: `main` na **`v0.9.49`**, **publicada só no canal de teste** em 03/10 (ela
+aprovou; o instalador e o `latest.yml` conferidos na release). As outras lojas seguem na `0.9.47`.
+Banco na **`0064`** (nada de banco nesta leva). Ela viu e achou ótimo. O marco anterior (CNPJ
+aberto) está no topo de `docs/historico.md`.
+
+#### O que foi feito (PRs #431 e #432)
+- **Notas Fiscais**: coluna "Situação" (Autorizada / Cancelada / Enviada à mão) e o texto do topo
+  atualizado (#362, #363).
+- **Clientes**: "Ver veículos" no lugar da coluna de placas; carro sem placa aparece como "sem
+  placa" (#417).
+- **Tabelas largas** (#425): nada mais passa da janela, a tabela rola dentro da própria caixa, e
+  a **lista de OS cabe inteira de 1366 pra cima** (versão "B", escolhida por ela pela imagem).
+- **Janelas opacas** (#361, versão "sólida", escolhida por ela pela imagem).
+- **Varredura nova `npm run largura:telas`**, com job no CI: todas as telas em 1024, 1280, 1366,
+  1536 e 1600. Detalhe em `docs/modulos.md` e na lição 81 de `docs/licoes.md`.
+- **Revisão de código antes de mesclar**: achou a lista de OS estourando em 1536 (notebook Full HD
+  com zoom de 125%) e a folga apertada em 1366; os dois corrigidos antes do merge.
+
+#### Por onde a próxima sessão começa: **atualizar o Electron (#385)**, decidido por ela em 03/10
+1. **Ler a #385 e o item 14 de `docs/pendencias-e-futuro.md`**, e rodar `npm run
+   checar-versao-electron` pra saber quais linhas recebem correção hoje (em setembro: 42, 43 e 44;
+   o programa está na 33).
+2. **Antes de mexer, uma decisão dela** (opções + recomendação): a #385 diz "uma linha por vez,
+   cada uma sozinha numa versão, testada na loja". Da 33 até uma linha com suporte são uns 9
+   saltos, ou seja, 9 versões e 9 testes na loja. Mostrar o custo de cada caminho (todas as linhas
+   × saltos maiores com teste mais cuidadoso) e deixar ela escolher.
+3. **Em cada salto**: `npm run test:electron`, `test:fusos`, `contraste:telas`, `largura:telas`,
+   olhar os formulários renderizados (o item 41 de `docs/licoes.md` foi num campo numérico),
+   conferir as chavinhas (`scripts/ligar-fuses.mjs`) e o atualizador. Publicar no teste e ela
+   testar no Windows dela e no Balcão antes do próximo salto. Junto de um dos saltos, o
+   electron-builder 26 destrava a chavinha de integridade do asar.
+4. **Ainda vale**: perguntar como a `v0.9.49` está indo no Balcão; liberar pras outras lojas só
+   quando ela pedir. Os avisos da abertura da empresa (pedir pra adicionar o
+   `caranovavidanova/sakura-corp`, seção 1) e o PR da tarefa 2 do Gustavo (#351), quando vierem.
+   Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que depende do dinheiro da
+   empresa (no privado).
+
 ### 02/10/2026: a Sakura Corp tem CNPJ (aberta em um dia)
 
 **Estado do código**: nada mudou no código nesta sessão. `main` na **`v0.9.48`**, **publicada só
