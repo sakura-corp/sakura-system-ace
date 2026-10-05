@@ -25,8 +25,9 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Testar a `v0.9.50` (Electron 36, o 1º salto da #385)**: publicada no canal de teste em 04/10
-(o Balcão recebe na próxima vez que o programa abrir na loja). No Windows dela e no Balcão: abrir o Diagnóstico
+**Testar a `v0.9.50` (Electron 36, o 1º salto da #385)**: publicada no canal de teste em 04/10;
+**o Balcão atualizou sozinho em 05/10** e ela está usando. A impressora da loja estava parada:
+testar a impressão pela "Microsoft Print to PDF". No Windows dela e no Balcão: abrir o Diagnóstico
 (o "i" ao lado do nome, embaixo à esquerda) e ver "Electron / Chromium" = `36.9.5 / 136...`;
 usar normalmente; **imprimir** uma garantia, um recibo e uma nota (a impressão é a única coisa
 que o laboratório não testa). Só depois disso vem a `v0.9.51` (o conserto da rodinha, #436), que
@@ -384,8 +385,13 @@ O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de 
 2025. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 por isso, e está certo.
 - **Destino: a linha 44**, não a 42: sai uma linha nova a cada 8 semanas e o suporte é das três
   últimas, então a 42 perde o suporte quando a 45 sair (~20/10/2026). A 44 vai até ~fev/2027.
-- **Andamento**: salto 1 (**36**) publicado no teste em 04/10 como `v0.9.50`; no laboratório,
-  nenhuma das 61 telas mudou a olho e os campos se comportaram igual. Falta ela testar.
+- **Andamento**: salto 1 (**36**) publicado no teste em 04/10 como `v0.9.50`, e no Balcão desde
+  05/10; no laboratório, nenhuma das 61 telas mudou a olho e os campos se comportaram igual.
+  Falta o teste dela. **Salto 2 (40) já passou no laboratório** (05/10): 36 × 40 deu as 61 telas
+  idênticas ponto por ponto.
+- **O Balcão é Windows 10 Home 22H2**: nenhuma linha até a 46 deixa de rodar nele (o Electron
+  exige Windows 10 ou mais novo desde a 23). Ficar de olho quando o Chromium anunciar o fim do
+  Windows 10.
 - **Ritmo escolhido por ela: três saltos, 33 → 36 → 40 → 44** (em vez de 11 versões, uma por
   linha). Os cortes caem onde o Node troca de versão grande (22 na 35, 24 na 40): cada salto
   troca no máximo um. Cada salto é **uma versão sozinha**, sem nenhuma outra mudança junto,
