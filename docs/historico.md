@@ -16,7 +16,8 @@
   quem trabalha é ela, **mescla direto** (seção 3 do `PROJETO_STATUS.md`). Os PRs guardam o
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
-  "Empacotamento", seção 7). Em 30/09/2026: `v0.9.47` publicada e liberada; banco na `0064`.
+  "Empacotamento", seção 7). Em 05/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
+  no canal de teste, a `v0.9.50`; banco na `0064`.
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
   trabalho bem maior feito com outra ferramenta de IA (Antigravity: Fornecedores com Pedido de
@@ -32,6 +33,49 @@ Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **
 deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
+
+### 04 e 05/10/2026: o Electron começou a subir (#385), a `v0.9.50` (Electron 36) no Balcão
+
+**Estado do código**: `main` na **`v0.9.50`**, que é **só o Electron 33 → 36**, publicada no
+canal de teste em 04/10. **O Balcão atualizou sozinho em 05/10** (Diagnóstico: `0.9.50`, Electron
+`36.9.5` / Chromium `136`, Node `22`, Windows 10 Home 22H2; nenhuma linha do Electron até a 46
+deixa de rodar no Windows 10). As outras lojas seguem na `0.9.47`. Banco na **`0064`**. O marco
+anterior (os cinco bugs de tela) está logo abaixo.
+
+#### O que foi feito
+- **Ela escolheu o ritmo**: três saltos, **33 → 36 → 40 → 44**, cada um numa versão sozinha e
+  testado na loja antes do próximo. O destino é a 44 porque a 42 perde o suporte ~20/10 (item 14
+  de `docs/pendencias-e-futuro.md`).
+- **Ferramenta nova, `npm run comparar:electron -- 36`** (PR #434, lição 82): abre as 61 telas
+  dentro de dois Electrons e compara "a olho" (sem a suavização das letras) e o comportamento dos
+  campos. **33 × 36: nada mudou a olho. 36 × 40 (já rodado, 05/10): as 61 telas idênticas ponto
+  por ponto** e os campos iguais. O salto 2 está pronto no laboratório.
+- **Dois defeitos achados de passagem, os dois viraram tarefa**:
+  - **#436, a rodinha do mouse muda o campo de número** quando a tela não tem mais pra onde rolar
+    (2 vira 2,01). **Conserto pronto e guardado** pra `v0.9.51`: o commit "Rodinha do mouse não
+    muda mais o campo de número (guardado pra 0.9.51)", na branch `claude/kind-euler-8s461d`, sem
+    PR (o número do commit muda quando ele é reaplicado; procurar pelo título). Conferido na 33,
+    na 36 e na 40. Se o commit se perdeu, a #436 diz como refazer.
+  - **#437, a barrinha de rolagem do app fica com a medida da tela anterior** (visual, pequeno).
+- **A abertura da empresa andou** (licenciamento da prefeitura, SenhaWeb) e ela mandou em 05/10
+  uma mensagem com cinco perguntas pra Contabilizei: tudo no privado, `EMPRESA.md`, "Abertura: o
+  que falta".
+
+#### Por onde a próxima sessão começa
+1. **Ela volta com as respostas da Contabilizei** (e a validade do licenciamento): ler o item 6
+   de "Abertura: o que falta", no privado, e seguir a ordem combinada lá. Antes de qualquer
+   clique em tela oficial, o print.
+2. **Como foi o dia dela com a `v0.9.50` no Balcão.** A **impressora da loja estava parada**: a
+   impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
+   abre e o PDF sai certo, a parte do programa está boa).
+3. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
+   `Closes #436`; prova também o atualizador da 36), e então o **salto 2 (40)**: o laboratório já
+   passou; faltam as checagens de sempre (`test:electron`, `test:fusos`, o empacotado com as
+   chavinhas) e a `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o Electron não se baixa
+   sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar ela em qual antes.
+4. **Ainda vale**: liberar pras outras lojas só quando ela pedir. O PR da tarefa 2 do Gustavo
+   (#351), quando vier. Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que
+   depende do dinheiro da empresa (no privado).
 
 ### 03/10/2026: os cinco bugs de tela (#361, #362, #363, #417, #425) e a `v0.9.49`
 

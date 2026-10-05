@@ -53,7 +53,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/decisoes.md` | o que é o projeto, plano de expansão (fases 1-3), identidade visual, **tabela de decisões técnicas** (antiga seção 2 e 3) | antes de qualquer decisão estrutural |
 | `docs/estrutura.md` | pastas, padrão de código, **padrão de formulário** (react-hook-form + zod) (antiga seção 4) | antes de criar arquivo/módulo novo |
 | `docs/banco.md` | as migrations `0001`-`0064`, cada tabela, multi-loja, RLS (antiga seção 5) | antes de mexer em banco/migration |
-| `docs/licoes.md` | as dívidas técnicas e os 81 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
+| `docs/licoes.md` | as dívidas técnicas e os 82 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
 | `docs/modulos.md` | estado de cada tela/módulo hoje (antiga seção 7) | antes de mexer num módulo |
 | `docs/pendencias-e-futuro.md` | **"O que depende dela", numa lista só**; o que não existe; parte fiscal (playbook por loja nova); linha do tempo (antiga seção 8) | ao planejar próximo passo, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar versão**, backup, atualizar bancos, voltar versão (antigas seções 9 e 11) | ao publicar, rodar migration ou instalar loja |
@@ -110,7 +110,14 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   mim? / preciso receber X de volta"*. Ela rejeitou explicitamente uma primeira versão longa e
   formal ("quero mais humano, mais simples, sem precisar desse contexto todo"). Vale pra qualquer
   texto que sai da nossa conversa pro mundo — o cuidado com contexto completo é pro
-  `PROJETO_STATUS.md`, não pro WhatsApp dela.
+  `PROJETO_STATUS.md`, não pro WhatsApp dela. **Curta, mas completa** (05/10/2026: "planeja bem a
+  pergunta pra não ter que perguntar mais"): tudo o que falta saber numa mensagem só, numerada,
+  dizendo o caminho que ela já tentou, pra quem responde não mandar o mesmo de novo. Atendimento
+  de WhatsApp que responde genérico costuma ser robô: pedir uma pessoa.
+- **Quando ela disser "calma, não entendi"** (05/10/2026): parar e explicar, em poucas linhas, o
+  objetivo e a corrente de passos (o que destrava o quê e por que o próximo vem antes) antes do
+  próximo clique. Foi o que destravou o certificado da empresa: "o número do pedido só existe
+  depois do pedido".
 - **"Estou pensando em fazer X com você no fim de semana" é PLANO, não autorização pra começar
   agora** (aprendido em 28/08/2026, do jeito ruim). Ela disse "to pensando em pegar firme esse fim
   de semana com você pra fazer um site" — eu tratei como sinal verde, alinhei três decisões por
@@ -167,8 +174,8 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
 
 ## 2. O projeto em um parágrafo
 
-**Sakura Corp** é a empresa (ainda só um nome) por trás do **Sakura System**, uma linha de sistemas
-de gestão por nicho. O primeiro é o **SSACE — Sakura System AutoCenter Edition**, pra
+**Sakura Corp** é a empresa (aberta em 02/10/2026; os detalhes ficam no privado) por trás do
+**Sakura System**, uma linha de sistemas de gestão por nicho. O primeiro é o **SSACE — Sakura System AutoCenter Edition**, pra
 autocenters/borracharias: app desktop Windows (Electron + React + Vite + TypeScript + Tailwind v4),
 dados no Supabase (um projeto por empresa cliente; uma empresa pode ter várias lojas). Rodando de
 verdade na borracharia do pai dela ("Pneus Amigão", Araraquara), com NFC-e e NFS-e em produção via
@@ -211,45 +218,43 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 04 e 05/10/2026: o Electron começou a subir (#385), a `v0.9.50` (Electron 36) no Balcão
+### 05/10/2026, à tarde: a abertura destravou e a faxina da memória
 
-**Estado do código**: `main` na **`v0.9.50`**, que é **só o Electron 33 → 36**, publicada no
-canal de teste em 04/10. **O Balcão atualizou sozinho em 05/10** (Diagnóstico: `0.9.50`, Electron
-`36.9.5` / Chromium `136`, Node `22`, Windows 10 Home 22H2; nenhuma linha do Electron até a 46
-deixa de rodar no Windows 10). As outras lojas seguem na `0.9.47`. Banco na **`0064`**. O marco
-anterior (os cinco bugs de tela) está no topo de `docs/historico.md`.
+**Estado do código**: nada mudou no código desde o marco anterior. `main` na **`v0.9.50`** (só o
+Electron 33 → 36), no canal de teste desde 04/10 e **no Balcão desde 05/10**; os computadores do
+canal normal seguem na `0.9.47`. Banco na **`0064`**. O conserto da rodinha (#436) continua
+guardado no commit "Rodinha do mouse não muda mais o campo de número (guardado pra 0.9.51)", na
+branch `claude/kind-euler-8s461d` (conferido em 05/10; o número do commit muda quando ele é
+reaplicado, então procurar pelo título). O marco anterior (o Electron começou a subir) está no
+topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Ela escolheu o ritmo**: três saltos, **33 → 36 → 40 → 44**, cada um numa versão sozinha e
-  testado na loja antes do próximo. O destino é a 44 porque a 42 perde o suporte ~20/10 (item 14
-  de `docs/pendencias-e-futuro.md`).
-- **Ferramenta nova, `npm run comparar:electron -- 36`** (PR #434, lição 82): abre as 61 telas
-  dentro de dois Electrons e compara "a olho" (sem a suavização das letras) e o comportamento dos
-  campos. **33 × 36: nada mudou a olho. 36 × 40 (já rodado, 05/10): as 61 telas idênticas ponto
-  por ponto** e os campos iguais. O salto 2 está pronto no laboratório.
-- **Dois defeitos achados de passagem, os dois viraram tarefa**:
-  - **#436, a rodinha do mouse muda o campo de número** quando a tela não tem mais pra onde rolar
-    (2 vira 2,01). **Conserto pronto e guardado** pra `v0.9.51`: o commit "Rodinha do mouse não
-    muda mais o campo de número (guardado pra 0.9.51)", na branch `claude/kind-euler-8s461d`, sem
-    PR (o número do commit muda quando ele é reaplicado; procurar pelo título). Conferido na 33,
-    na 36 e na 40. Se o commit se perdeu, a #436 diz como refazer.
-  - **#437, a barrinha de rolagem do app fica com a medida da tela anterior** (visual, pequeno).
-- **A abertura da empresa andou** (licenciamento da prefeitura, SenhaWeb) e ela mandou em 05/10
-  uma mensagem com cinco perguntas pra Contabilizei: tudo no privado, `EMPRESA.md`, "Abertura: o
-  que falta".
+- **Abertura da empresa** (tudo no privado, `EMPRESA.md`, "Abertura: o que falta"): a
+  Contabilizei respondeu as cinco perguntas, umas pelo robô do WhatsApp e outras por pessoas, que
+  corrigiram o robô numa delas. O certificado da empresa estava travado por um erro de cadastro
+  deles, que estão corrigindo, e vai ser presencial. O licenciamento saiu e vale 5 anos. **Em
+  05/10, nada dependia dela**: ela espera três avisos.
+- **Faxina da memória** nos dois repositórios, a pedido dela: o que tinha envelhecido foi
+  atualizado (pendências, linha do tempo, preços, o rascunho do acordo, a LGPD com a empresa
+  aberta), apontadores pra seções antigas foram corrigidos, e as dúvidas que sobraram foram
+  perguntadas a ela.
 
 #### Por onde a próxima sessão começa
-1. **Ela volta com as respostas da Contabilizei** (e a validade do licenciamento): ler o item 6
-   de "Abertura: o que falta", no privado, e seguir a ordem combinada lá. Antes de qualquer
-   clique em tela oficial, o print.
+1. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, a conta
+   PJ aprovada): pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
+   (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Com o pedido liberado e o contrato
+   em mãos, agendar o presencial na Certisign. Antes de qualquer clique em tela oficial, o print.
 2. **Como foi o dia dela com a `v0.9.50` no Balcão.** A **impressora da loja estava parada**: a
    impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
    abre e o PDF sai certo, a parte do programa está boa).
 3. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
-   `Closes #436`; prova também o atualizador da 36), e então o **salto 2 (40)**: o laboratório já
-   passou; faltam as checagens de sempre (`test:electron`, `test:fusos`, o empacotado com as
-   chavinhas) e a `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o Electron não se baixa
-   sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar ela em qual antes.
-4. **Ainda vale**: liberar pras outras lojas só quando ela pedir. O PR da tarefa 2 do Gustavo
-   (#351), quando vier. Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que
-   depende do dinheiro da empresa (no privado).
+   `Closes #436`; prova também o atualizador da 36; o mesmo commit corrige o item 41 de
+   `docs/licoes.md`, que hoje ainda diz que a rodinha não mexe no número), e então o **salto 2
+   (40)**: o laboratório já passou; faltam as checagens de sempre (`test:electron`, `test:fusos`, o
+   empacotado com as chavinhas) e a `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o
+   Electron não se baixa sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar
+   ela em qual antes.
+4. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
+   Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que depende do dinheiro da
+   empresa (no privado); **antes de 1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e
+   da loja muda pro Ambiente Nacional nessa data (seção 8, "Perguntas pra fora").

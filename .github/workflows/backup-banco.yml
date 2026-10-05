@@ -146,7 +146,7 @@ jobs:
           # quem não programa. A conferência acontece aqui, com a explicação
           # em português — e antes de qualquer coisa começar.
           if ! echo "$BACKUP_EMPRESAS" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            echo "::error::O secret BACKUP_EMPRESAS não está no formato certo. Ele precisa ser a LISTA inteira, começando com [ e terminando com ], com um bloco { ... } por empresa — não só a chave ou só um pedaço. O modelo está no PROJETO_STATUS.md, seção 9, em 'Backup do banco'."
+            echo "::error::O secret BACKUP_EMPRESAS não está no formato certo. Ele precisa ser a LISTA inteira, começando com [ e terminando com ], com um bloco { ... } por empresa — não só a chave ou só um pedaço. O modelo está no docs/operacao.md, em 'Backup do banco'."
             exit 1
           fi
 

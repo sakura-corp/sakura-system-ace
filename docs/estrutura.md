@@ -131,7 +131,8 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   projeto, `TELAS_NO_ELECTRON=1` (vale pra qualquer varredura) ou o terceiro argumento
   (`{ electron, horaFixa }`), que é o que o `comparar:electron` usa (lição 82).
 - **`apresentacao/`**: o levantamento do sistema e o script das fotos da apresentação comercial.
-- **`painel/`**: o painel da equipe (ainda não existe; `docs/painel.md`).
+- **`painel/`**: o painel da equipe, projeto separado (Vite + React + TypeScript, com `package.json`
+  próprio), no ar na Cloudflare desde 01/10/2026 (`docs/painel.md`).
 - **Documentos**: `PROJETO_STATUS.md` + `docs/` (a memória), `MELHORIAS.md` (o guia de melhorias,
   aberto só quando ela cita um item), `ANTES-DA-PRIMEIRA-VENDA.md` (LGPD), `RESTAURAR-BACKUP.md`
   ("deu problema no banco, e agora?"; a primeira tabela manda **não** usar backup na maioria dos
