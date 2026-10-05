@@ -7,6 +7,12 @@
 > contrato que sair dele) **para um advogado ou para a sua contabilidade**. É uma conversa de
 > uma hora, e é bem mais barata antes da venda do que depois de um problema.
 
+> **Atualização de 05/10/2026**: a Sakura Corp tem CNPJ desde 02/10, e o contrato com as lojas
+> sai em nome da empresa. Onde este texto diz "você", leia **a Sakura Corp**: é a empresa que
+> assina como operadora. As contas dos serviços (Supabase, Anthropic, Focus NFe) foram abertas no
+> seu nome, antes da empresa existir: vale perguntar ao advogado se elas precisam passar pra
+> empresa.
+
 ## Por que isso aparece agora
 
 A decisão de 28/08/2026 foi: **tudo na sua conta** — Supabase, Anthropic e Focus NFe. O dono da

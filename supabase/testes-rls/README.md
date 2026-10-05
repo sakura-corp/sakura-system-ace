@@ -8,7 +8,8 @@ Prova, a cada rodada, que **cada papel enxerga e mexe exatamente no que o
 ## Por que isto existe
 
 A RLS do Postgres é a única defesa real deste sistema: a permissão por módulo
-é checada só na interface do app (`PROJETO_STATUS.md`, seção 6, item 1). E ela
+ainda é checada, em boa parte, só na interface do app (`docs/licoes.md`, item 1;
+RH, Contas e Caixa já são checados no banco). E ela
 falha em **silêncio** — policy faltando não dá erro, filtra a zero linhas, e do
 lado do app isso é indistinguível de "deu certo". Foi assim que o botão
 "excluir loja" passou meses sem fazer nada (item 15 da mesma seção).

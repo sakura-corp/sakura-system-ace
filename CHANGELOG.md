@@ -1,5 +1,8 @@
 # Changelog
 
+> **Parou na 0.9.2 (30/07/2026).** As versões seguintes estão nas releases do GitHub, e o que
+> cada uma trouxe, em `docs/modulos.md` ("Empacotamento e versões").
+
 Todas as mudanças notáveis do Sakura System — AutoCenter Edition são registradas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto usa [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 

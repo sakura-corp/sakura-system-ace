@@ -33,7 +33,7 @@ Três fases, nessa ordem, sem pressa de pular etapa:
    Configurações → Lojas). A parte fiscal vem depois, por CNPJ (playbook no item 1 da seção 8).
    **Recomendado antes da primeira loja de terceiro** (25/09): o contrato e a LGPD (item 10 da
    seção 8), os lotes de permissão que faltam no banco (item 1 da seção 6), a parte 2 do porteiro
-   e a decisão sobre o Electron. O que um dono de 2 lojas deve pedir e **não existe**: ver as
+   e o Electron atualizado (em andamento desde 03/10, item 14 da seção 8). O que um dono de 2 lojas deve pedir e **não existe**: ver as
    lojas somadas, transferir peça entre elas, preço diferente por loja (seção 5, "Fora de
    escopo"); esperar ele pedir. **Preço, custo e contrato ficam no repositório privado
    `caranovavidanova/sakura-corp`.**

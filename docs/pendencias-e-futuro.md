@@ -7,7 +7,7 @@
 
 ## 8. O que NÃO existe ainda (próximos passos possíveis)
 
-**Estado geral (30/09/2026)**: o sistema está em uso real na Pneus Amigão (cadastro, OS, venda de
+**Estado geral (05/10/2026)**: o sistema está em uso real na Pneus Amigão (cadastro, OS, venda de
 balcão, estoque, caixa, contas, comissões, fornecedores), **com NFC-e e NFS-e emitidas em produção**.
 A fase atual é preparar a venda pra outras empresas (seção 2). Os itens abaixo mantêm a numeração
 antiga porque outros arquivos citam "item N da seção 8".
@@ -17,8 +17,8 @@ antiga porque outros arquivos citam "item N da seção 8".
 Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs/historico.md`.
 **Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
 
-**Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão chegou na
-`0.9.47`, conferido em 1º/10):
+**Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na
+`0.9.50` desde 05/10):
 - venda de balcão com o leitor, a NFC-e dela e o caixa do dia batendo;
 - ficha do veículo; Fechamento do Caixa; "Registrar pagamento" de comissão; a trava do desconto;
 - pagar e desfazer uma conta; faturar OS "recebido agora" e "a receber";
@@ -39,13 +39,15 @@ de quebra prova que o atualizador da 36 funciona, e então o salto pra 40.
 de verdade (nomes e valores maiores que os de demonstração).
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): **10/10** a primeira
-fatura da Focus; a partir de **16/10** o que depende do dinheiro da empresa (licença da prefeitura,
-capital, Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no
-repositório privado).
+fatura da Focus; a partir de **16/10** o que depende do dinheiro da empresa (a TFE, que é a taxa
+anual da prefeitura de SP; o capital; o Claude Team); trocar a Focus do Solo pro Start **antes do
+2º CNPJ** (esses estão no repositório privado); **antes de 1º/11**, a pergunta do Ambiente
+Nacional da NFS-e (abaixo, em "Perguntas pra fora").
 
-**Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples. O que falta (conta da empresa,
-certificado digital, procuração no gov.br, inscrição na prefeitura e a 1ª NFS-e da Pneus Amigão)
-está no privado, `EMPRESA.md`, seção "Abertura: o que falta".
+**Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
+em 05/10. O que falta (a conta PJ, esperando aprovação; o certificado digital, travado num erro de
+cadastro que a Contabilizei está corrigindo; a procuração; a TFE; e a 1ª NFS-e da Pneus Amigão,
+prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção "Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
@@ -135,8 +137,9 @@ cheque (só se uma loja pedir).
   Varredura de segredo, Electron de verdade, Contraste nas telas). Admin continua isenta.
 
 **Perguntas pra fora:**
-- **contabilidade**: com CSOSN `500`, as peças deveriam levar ICMS-ST retido? (item 1, "frágil"
-  2); a migração do Simples pro Ambiente Nacional da NFS-e em **1º/11/2026** vale pra loja?;
+- **contabilidade** (a da Pneus Amigão): com CSOSN `500`, as peças deveriam levar ICMS-ST retido?
+  (item 1, "frágil" 2); a migração do Simples pro Ambiente Nacional da NFS-e em **1º/11/2026**
+  vale pra loja? (**perguntar antes dessa data**: se valer, a NFS-e da loja pode mudar de portal);
 - **Focus NFe**: o formato do CNPJ com letras na API ("frágil" 6);
 - **prefeitura**: o "Processado: Não" das notas e o `cNBS` errado no cadastro da empresa.
 
@@ -329,8 +332,9 @@ um WhatsApp (hoje o contato é só o e-mail dela).
 
 Não é código: **ela precisa levar isso a um advogado ou à contabilidade.** O texto de uma página
 está em **`ANTES-DA-PRIMEIRA-VENDA.md`**, na raiz: os seis pontos da cláusula de dados e o registro
-de operações de tratamento. Como toda a infraestrutura é da conta dela, na LGPD **a loja é a
-controladora** dos dados dos clientes e **ela é a operadora**. **Não escrever contrato por ela nem
+de operações de tratamento. Na LGPD **a loja é a controladora** dos dados dos clientes e **a
+operadora é a empresa dela** (a Sakura Corp, com CNPJ desde 02/10/2026; as contas dos serviços
+foram abertas no nome dela antes disso, e se precisam passar pra empresa é pergunta pro advogado). **Não escrever contrato por ela nem
 dar como aconselhamento jurídico.** O ponto mais fácil de esquecer: o que acontece quando o
 contrato acaba (cópia dos dados pra loja, exclusão do resto, e em quantos dias). **O contrato é de
 adesão** (termos aceitos pela loja, detalhe no privado). Ideia anotada, não pedida: o sistema
@@ -441,3 +445,7 @@ e 8. Conferir a versão publicada nas releases do GitHub, nunca só por esta tab
 | 28/09 | Testes na loja (NFS-e cancelada pelo porteiro) e a preparação do painel. |
 | 29/09 | Comparativo com o Anexar e o exemplo de DRE (privado). |
 | 29-30/09 | Repositório na organização **`sakura-corp`** (`v0.9.47`, só o endereço do atualizador). Senhas no Bitwarden, **cofres** `backup` e `lojas`, rulesets `main protegida` e `versões`, aprovação dela no Release, Liberar e Atualizar bancos. Seção 0 da memória, manual do painel e **leva 0** (#350 a #355). |
+| 01/10 | **Painel no ar** na Cloudflare e a tarefa 1 do Gustavo mesclada (PR #424). NFS-e que demorou na prefeitura: "Conferir de novo" e registrar pela referência (item 80 da seção 6); `v0.9.48`, só no teste. |
+| 02/10 | **A Sakura Corp tem CNPJ** (detalhes no privado). |
+| 03/10 | Cinco bugs de tela (#361, #362, #363, #417, #425) e a varredura `largura:telas` (item 81 da seção 6); `v0.9.49`, só no teste. |
+| 04-05/10 | **Electron 33 → 36** (`v0.9.50`, só no teste; no Balcão desde 05/10), a ferramenta `comparar:electron` (item 82 da seção 6) e o salto pra 40 aprovado no laboratório. Abertura da empresa: licenciamento emitido, certificado sendo destravado (privado). |
