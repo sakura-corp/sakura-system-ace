@@ -16,7 +16,7 @@
   quem trabalha é ela, **mescla direto** (seção 3 do `PROJETO_STATUS.md`). Os PRs guardam o
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
-  "Empacotamento", seção 7). Em 05/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
+  "Empacotamento", seção 7). Em 06/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
   no canal de teste, a `v0.9.50`; banco na `0064`.
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
@@ -33,6 +33,47 @@ Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **
 deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
+
+### 05/10/2026, à tarde: a abertura destravou e a faxina da memória
+
+**Estado do código**: nada mudou no código desde o marco anterior. `main` na **`v0.9.50`** (só o
+Electron 33 → 36), no canal de teste desde 04/10 e **no Balcão desde 05/10**; os computadores do
+canal normal seguem na `0.9.47`. Banco na **`0064`**. O conserto da rodinha (#436) continua
+guardado no commit "Rodinha do mouse não muda mais o campo de número (guardado pra 0.9.51)", na
+branch `claude/kind-euler-8s461d` (conferido em 05/10; o número do commit muda quando ele é
+reaplicado, então procurar pelo título). O marco anterior (o Electron começou a subir) está no
+topo de `docs/historico.md`.
+
+#### O que foi feito
+- **Abertura da empresa** (tudo no privado, `EMPRESA.md`, "Abertura: o que falta"): a
+  Contabilizei respondeu as cinco perguntas, umas pelo robô do WhatsApp e outras por pessoas, que
+  corrigiram o robô numa delas. O certificado da empresa estava travado por um erro de cadastro
+  deles, que estão corrigindo, e vai ser presencial. O licenciamento saiu e vale 5 anos. **Em
+  05/10, nada dependia dela**: ela espera três avisos.
+- **Faxina da memória** nos dois repositórios, a pedido dela: o que tinha envelhecido foi
+  atualizado (pendências, linha do tempo, preços, o rascunho do acordo, a LGPD com a empresa
+  aberta), apontadores pra seções antigas foram corrigidos, e as dúvidas que sobraram foram
+  perguntadas a ela.
+
+#### Por onde a próxima sessão começa
+1. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, a conta
+   PJ aprovada): pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
+   (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Com o pedido liberado e o contrato
+   em mãos, agendar o presencial na Certisign. Antes de qualquer clique em tela oficial, o print.
+2. **Como foi o dia dela com a `v0.9.50` no Balcão.** A **impressora da loja estava parada**: a
+   impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
+   abre e o PDF sai certo, a parte do programa está boa).
+3. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
+   `Closes #436`; prova também o atualizador da 36; o mesmo commit corrige o item 41 de
+   `docs/licoes.md`, que hoje ainda diz que a rodinha não mexe no número), e então o **salto 2
+   (40)**: o laboratório já passou; faltam as checagens de sempre (`test:electron`, `test:fusos`, o
+   empacotado com as chavinhas) e a `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o
+   Electron não se baixa sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar
+   ela em qual antes.
+4. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
+   Com data: a partir de **16/10**, o que depende do dinheiro da empresa (no privado); **antes de
+   1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e da loja muda pro Ambiente
+   Nacional nessa data (seção 8, "Perguntas pra fora").
 
 ### 04 e 05/10/2026: o Electron começou a subir (#385), a `v0.9.50` (Electron 36) no Balcão
 
