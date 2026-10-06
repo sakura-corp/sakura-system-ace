@@ -255,6 +255,6 @@ topo de `docs/historico.md`.
    Electron não se baixa sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar
    ela em qual antes.
 4. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
-   Com data: a fatura da Focus em **10/10**; a partir de **16/10**, o que depende do dinheiro da
-   empresa (no privado); **antes de 1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e
-   da loja muda pro Ambiente Nacional nessa data (seção 8, "Perguntas pra fora").
+   Com data: a partir de **16/10**, o que depende do dinheiro da empresa (no privado); **antes de
+   1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e da loja muda pro Ambiente
+   Nacional nessa data (seção 8, "Perguntas pra fora").

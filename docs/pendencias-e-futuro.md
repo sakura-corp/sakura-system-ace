@@ -38,11 +38,11 @@ de quebra prova que o atualizador da 36 funciona, e então o salto pra 40.
 é a única empresa, então não tem pressa. Na loja, vale olhar a lista de OS no Balcão com os dados
 de verdade (nomes e valores maiores que os de demonstração).
 
-**Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): **10/10** a primeira
-fatura da Focus; a partir de **16/10** o que depende do dinheiro da empresa (a TFE, que é a taxa
-anual da prefeitura de SP; o capital; o Claude Team); trocar a Focus do Solo pro Start **antes do
-2º CNPJ** (esses estão no repositório privado); **antes de 1º/11**, a pergunta do Ambiente
-Nacional da NFS-e (abaixo, em "Perguntas pra fora").
+**Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
+que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
+Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
+privado); **antes de 1º/11**, a pergunta do Ambiente Nacional da NFS-e (abaixo, em "Perguntas pra
+fora").
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
 em 05/10. O que falta (a conta PJ, esperando aprovação; o certificado digital, travado num erro de
