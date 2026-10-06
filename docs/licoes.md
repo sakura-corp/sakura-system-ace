@@ -1559,8 +1559,11 @@
       próprio workflow, com esse token, e o GitHub não deixa isentá-lo da regra. Por isso o
       ruleset `versões` só bloqueia mudar e apagar.
     - **Cofre com aprovação obrigatória e ruleset são grátis em repositório público.** Em
-      repositório privado, pelo que se sabia em 29/09 (sem ter conseguido abrir a documentação do
-      GitHub), pedem plano pago. **Conferir antes de fechar o código.**
+      repositório privado (conferido em 06/10/2026): ruleset e cofre (segredo + restrição à
+      `main`) pedem o plano **Team**; **aprovação obrigatória e tempo de espera no cofre, só no
+      Enterprise**. No plano grátis, nada disso. Ou seja: fechando o código com o Team, a
+      aprovação dela no cofre `lojas` tem que virar outra trava (por exemplo, o workflow só segue
+      se quem disparou for ela, numa regra que só muda por PR aprovado por ela).
     - **Na hora de montar, três escorregões reais**:
       - o nome do cofre é o do cofre (`backup`), e não o de um segredo: ela criou um environment
         chamado `BACKUP_EMPRESAS` por engano;
