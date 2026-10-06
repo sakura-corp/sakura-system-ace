@@ -257,10 +257,10 @@ reaplicado). O marco anterior (05/10, a faxina da memória) está no topo de `do
 2. **Como foi o dia dela na loja (07/10) com a `v0.9.50`.** A impressora da loja estava parada: a
    impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
    abre e o PDF sai certo, a parte do programa está boa).
-3. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, o
-   documento novo pra conta PJ): pedir pra adicionar o `caranovavidanova/sakura-corp` com as
-   palavras certas (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Antes de qualquer
-   clique em tela oficial, o print.
+3. **Avisos da abertura**, quando ela mandar (o certificado liberado; o documento novo pra conta
+   PJ, agendado pra 08/10; o contrato social já chegou em 06/10): pedir pra adicionar o
+   `caranovavidanova/sakura-corp` com as palavras certas (seção 1) e seguir "Abertura: o que
+   falta" no `EMPRESA.md`. Antes de qualquer clique em tela oficial, o print.
 4. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
    `Closes #436`; prova também o atualizador da 36; o mesmo commit corrige o item 41 de
    `docs/licoes.md`), e então o **salto 2 (40)**: faltam as checagens de sempre
