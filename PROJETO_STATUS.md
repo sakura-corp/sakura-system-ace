@@ -229,9 +229,10 @@ reaplicado). O marco anterior (05/10, a faxina da memória) está no topo de `do
 
 #### O que foi feito
 - **Abertura da empresa** (no privado, `EMPRESA.md`, "Abertura: o que falta"): o documento da
-  conta PJ foi reenviado; a 1ª fatura da Focus foi paga; a declaração dos Bombeiros do
-  licenciamento foi perguntada à Contabilizei (o robô respondeu genérico; a mensagem sugerida,
-  que pede uma pessoa, está no privado). **Decidido**: o Claude Team logo depois de 16/10.
+  conta PJ foi recusado de novo, e o caminho é ela tirar um documento novo (detalhe no
+  privado); a 1ª fatura da Focus foi paga; a dúvida da declaração dos Bombeiros no
+  licenciamento foi **resolvida** (é o padrão da Contabilizei pro escritório virtual, sem
+  correção). **Decidido**: o Claude Team logo depois de 16/10.
 - **Fechar o código**: ela perguntou as opções. Conferido em 06/10: em repositório privado,
   ruleset e cofre pedem o plano Team, e a aprovação obrigatória no cofre só existe no Enterprise
   (item 78 de `docs/licoes.md`); ninguém fez cópia (fork) do repositório; nos últimos 30 dias o
@@ -256,8 +257,8 @@ reaplicado). O marco anterior (05/10, a faxina da memória) está no topo de `do
 2. **Como foi o dia dela na loja (07/10) com a `v0.9.50`.** A impressora da loja estava parada: a
    impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
    abre e o PDF sai certo, a parte do programa está boa).
-3. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, a conta
-   PJ, a resposta dos Bombeiros): pedir pra adicionar o `caranovavidanova/sakura-corp` com as
+3. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, o
+   documento novo pra conta PJ): pedir pra adicionar o `caranovavidanova/sakura-corp` com as
    palavras certas (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Antes de qualquer
    clique em tela oficial, o print.
 4. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
