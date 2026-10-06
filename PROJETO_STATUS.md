@@ -218,43 +218,56 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 05/10/2026, à tarde: a abertura destravou e a faxina da memória
+### 06/10/2026, de manhã: as opções de fechar o código e a abertura esperando
 
-**Estado do código**: nada mudou no código desde o marco anterior. `main` na **`v0.9.50`** (só o
-Electron 33 → 36), no canal de teste desde 04/10 e **no Balcão desde 05/10**; os computadores do
-canal normal seguem na `0.9.47`. Banco na **`0064`**. O conserto da rodinha (#436) continua
-guardado no commit "Rodinha do mouse não muda mais o campo de número (guardado pra 0.9.51)", na
-branch `claude/kind-euler-8s461d` (conferido em 05/10; o número do commit muda quando ele é
-reaplicado, então procurar pelo título). O marco anterior (o Electron começou a subir) está no
-topo de `docs/historico.md`.
+**Estado do código**: nada mudou no código. `main` na **`v0.9.50`** (Electron 36), no canal de
+teste desde 04/10 e **no Balcão desde 05/10**; os computadores do canal normal seguem na `0.9.47`.
+Banco na **`0064`**. O conserto da rodinha (#436) continua guardado no commit "Rodinha do mouse
+não muda mais o campo de número (guardado pra 0.9.51)", na branch `claude/kind-euler-8s461d`
+(conferida em 06/10; procurar pelo título, porque o número do commit muda quando ele é
+reaplicado). O marco anterior (05/10, a faxina da memória) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Abertura da empresa** (tudo no privado, `EMPRESA.md`, "Abertura: o que falta"): a
-  Contabilizei respondeu as cinco perguntas, umas pelo robô do WhatsApp e outras por pessoas, que
-  corrigiram o robô numa delas. O certificado da empresa estava travado por um erro de cadastro
-  deles, que estão corrigindo, e vai ser presencial. O licenciamento saiu e vale 5 anos. **Em
-  05/10, nada dependia dela**: ela espera três avisos.
-- **Faxina da memória** nos dois repositórios, a pedido dela: o que tinha envelhecido foi
-  atualizado (pendências, linha do tempo, preços, o rascunho do acordo, a LGPD com a empresa
-  aberta), apontadores pra seções antigas foram corrigidos, e as dúvidas que sobraram foram
-  perguntadas a ela.
+- **Abertura da empresa** (no privado, `EMPRESA.md`, "Abertura: o que falta"): o documento da
+  conta PJ foi reenviado; a 1ª fatura da Focus foi paga; a declaração dos Bombeiros do
+  licenciamento foi perguntada à Contabilizei (o robô respondeu genérico; a mensagem sugerida,
+  que pede uma pessoa, está no privado). **Decidido**: o Claude Team logo depois de 16/10.
+- **Fechar o código**: ela perguntou as opções. Conferido em 06/10: em repositório privado,
+  ruleset e cofre pedem o plano Team, e a aprovação obrigatória no cofre só existe no Enterprise
+  (item 78 de `docs/licoes.md`); ninguém fez cópia (fork) do repositório; nos últimos 30 dias o
+  Actions gastou ~5.600 minutos, e o ritmo da última semana daria 11 a 15 mil por mês (o Team
+  inclui 3.000; o custo em reais está no privado, `PRECOS-E-CUSTOS.md`). Virou a tarefa **#442**
+  (o CI roda duas vezes por commit, não tem limite de tempo, e PR só de memória roda tudo).
+
+#### Esperando a resposta dela (perguntado em 06/10)
+1. **Fechar o código: qual opção.** **A**: deixar aberto por enquanto (R$ 0). **B**: fechar com o
+   plano Team do GitHub, com as versões num repositório aberto só de versões, uma versão de
+   transição liberada em todos os computadores antes, e a aprovação dela trocada por "a automação
+   só roda se quem apertou foi ela"; de bônus, fecha o furo de 30/09 (item 78). **C**: fechar no
+   plano grátis (as travas param e só 2.000 minutos; não recomendado). **Recomendado: A agora,
+   preparando a B**: a #442 de graça, medir de novo, e fechar antes da primeira loja nova, já
+   sabendo o custo.
+2. **A #442: agora ou depois do teste dela na loja** (07/10)?
+3. **Apagar as branches velhas** (mais de 100, de sessões antigas), guardando a da rodinha e as
+   que não foram mescladas?
 
 #### Por onde a próxima sessão começa
-1. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, a conta
-   PJ aprovada): pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
-   (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Com o pedido liberado e o contrato
-   em mãos, agendar o presencial na Certisign. Antes de qualquer clique em tela oficial, o print.
-2. **Como foi o dia dela com a `v0.9.50` no Balcão.** A **impressora da loja estava parada**: a
+1. **As respostas acima.**
+2. **Como foi o dia dela na loja (07/10) com a `v0.9.50`.** A impressora da loja estava parada: a
    impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
    abre e o PDF sai certo, a parte do programa está boa).
-3. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
+3. **Avisos da abertura**, quando ela mandar (o certificado liberado, o contrato social, a conta
+   PJ, a resposta dos Bombeiros): pedir pra adicionar o `caranovavidanova/sakura-corp` com as
+   palavras certas (seção 1) e seguir "Abertura: o que falta" no `EMPRESA.md`. Antes de qualquer
+   clique em tela oficial, o print.
+4. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
    `Closes #436`; prova também o atualizador da 36; o mesmo commit corrige o item 41 de
-   `docs/licoes.md`, que hoje ainda diz que a rodinha não mexe no número), e então o **salto 2
-   (40)**: o laboratório já passou; faltam as checagens de sempre (`test:electron`, `test:fusos`, o
-   empacotado com as chavinhas) e a `v0.9.52`. O salto 3 (44) mexe no CI (da 42 em diante o
-   Electron não se baixa sozinho no `npm ci`). O electron-builder 26 vai num dos saltos; avisar
-   ela em qual antes.
-4. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
-   Com data: a partir de **16/10**, o que depende do dinheiro da empresa (no privado); **antes de
+   `docs/licoes.md`), e então o **salto 2 (40)**: faltam as checagens de sempre
+   (`test:electron`, `test:fusos`, o empacotado com as chavinhas) e a `v0.9.52`. O salto 3 (44)
+   mexe no CI (da 42 em diante o Electron não se baixa sozinho no `npm ci`). O electron-builder 26
+   vai num dos saltos; avisar ela em qual antes. Se ela escolher fechar o código, a `v0.9.51`
+   pode ser a versão de transição (publicada nos dois lugares).
+5. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
+   Com data: a partir de **16/10**, o Claude Team, a TFE e o capital (no privado); **antes de
    1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e da loja muda pro Ambiente
    Nacional nessa data (seção 8, "Perguntas pra fora").

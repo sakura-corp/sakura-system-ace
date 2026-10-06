@@ -121,7 +121,10 @@ cheque (só se uma loja pedir).
   `scripts/gerar-instalacao-completa.test.ts`: o caminho vem com `\` e o fim de linha em CRLF).
   Quem achou foi o Gustavo, no PR #424, em 01/10. O CI, que roda em Linux, passa, e o app não é
   afetado. Só atrapalha quem roda os testes no PC;
-- o repositório só de versões e fechar o código (item 12);
+- **fechar o código** e o repositório só de versões (item 12): as opções foram apresentadas em
+  06/10 (aberto por enquanto, fechar com o plano Team ou fechar no grátis; o custo está no
+  privado), e falta a escolha dela. Recomendado: aberto por enquanto, enxugando o CI antes
+  (tarefa #442), e fechar antes da primeira loja nova;
 - **as duas janelas de importação** (XML do fornecedor e notas no estoque) foram montadas à mão e
   não têm o que o `Modal` tem: Esc pra fechar, Tab preso dentro e `role="dialog"`. Achado na
   revisão de 03/10; o conserto é passar as duas a usar o `Modal`, com uma opção de largura.
