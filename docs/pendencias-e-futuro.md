@@ -45,9 +45,10 @@ privado); **antes de 1º/11**, a pergunta do Ambiente Nacional da NFS-e (abaixo,
 fora").
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. O que falta (a conta PJ, esperando aprovação; o certificado digital, travado num erro de
-cadastro que a Contabilizei está corrigindo; a procuração; a TFE; e a 1ª NFS-e da Pneus Amigão,
-prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção "Abertura: o que falta".
+em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
+travado num erro de cadastro que a Contabilizei está corrigindo; a procuração; a TFE; e a 1ª
+NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
+"Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
