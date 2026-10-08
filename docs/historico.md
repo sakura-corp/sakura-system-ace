@@ -17,7 +17,7 @@
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
   "Empacotamento", seção 7). Em 08/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
-  no canal de teste, a `v0.9.50`; banco na `0064`. Da `0.9.51` em diante, as versões moram no
+  no canal de teste, a `v0.9.51`; banco na `0064`. Da `0.9.51` em diante, as versões moram no
   `sakura-corp/ssace-versoes` (PR #447; `docs/operacao.md`, "Onde as versões moram").
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
