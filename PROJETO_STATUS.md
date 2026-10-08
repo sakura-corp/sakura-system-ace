@@ -218,49 +218,49 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 08/10/2026: as versões ganham endereço próprio (preparado, sem mesclar)
+### 08/10/2026: a `v0.9.51` saiu, e as versões têm endereço próprio
 
-**Estado do código**: a `main` não mudou. **`v0.9.50`** no canal de teste e no Balcão; o canal
-normal na `0.9.47`; banco na **`0064`**. **PR #447, em rascunho, NÃO mesclar ainda**: as versões
-passam a morar no `sakura-corp/ssace-versoes`, e ele entra junto com a `v0.9.51`. O conserto da
-rodinha (#436) continua no commit "Rodinha do mouse não muda mais o campo de número (guardado pra
-0.9.51)", na branch `claude/kind-euler-8s461d`. O marco anterior (06/10) está no topo de
+**Estado do código**: `main` na **`v0.9.51`**, publicada em 08/10 **no canal de teste, nos dois
+endereços** (`ssace-versoes` e a cópia no `sakura-system-ace`); **o PC dela já está nela**
+(atualizou sozinho, conferido no Diagnóstico). O Balcão pega quando abrirem o programa na loja. O
+canal normal segue na `0.9.47`. Banco na **`0064`**. O marco anterior (06/10) está no topo de
 `docs/historico.md`.
 
 #### O que foi feito
-- **Fechar o código: ela escolheu a B sem pagar** (08/10): separar as versões agora, de graça, e
-  fechar o código só quando o custo couber. Ela criou o **`sakura-corp/ssace-versoes`** (público,
-  base role Read, só ela escreve) e a chave **`TOKEN_VERSOES`** (granulação fina, só esse
-  repositório, só Contents, **vence em 09/10/2027**), guardada no Bitwarden e no cofre `lojas`.
-  O PR #447 faz:
-  - o Release publicar no endereço novo e mandar uma cópia pro antigo;
-  - o Liberar liberar nos dois;
-  - o programa procurar atualização no novo.
+- **Teste da `v0.9.50` na loja: aprovado** (08/10): versão certa, uso normal, notas certas e
+  impressão (o recibo de comissão pela "Microsoft Print to PDF"). A garantia não deu pra testar:
+  **a loja não tem o "Texto de garantia" configurado** (Configurações), e sem ele o programa não
+  imprime.
+- **Fechar o código: escolhida a B sem pagar.** Ela criou o **`sakura-corp/ssace-versoes`**
+  (público, base role Read, só ela escreve) e a chave **`TOKEN_VERSOES`** (granulação fina, só
+  esse repositório, só Contents, **vence em 09/10/2027**; no Bitwarden e no cofre `lojas`).
+- **A `v0.9.51` (PR #447)** levou:
+  - **as versões no endereço novo**: o Release prova que a chave escreve, publica no
+    `ssace-versoes` (um commit `VERSAO.txt` por versão) e copia pro antigo; o Liberar libera nos
+    dois; o programa procura no novo;
+  - **a rodinha (#436)**.
   
-  Detalhe em "Onde as versões moram", no `docs/operacao.md` do PR. O furo do item 78 fecha quando
-  todos os computadores passarem da `0.9.51`.
+  Passou por uma revisão de código do zero, que achou e corrigiu problemas reais: rodar o Release
+  de novo mexia no endereço bom, o canal de teste podia ver as versões fora de ordem, e o Liberar
+  não conseguia segurar os computadores antigos. Detalhe em `docs/operacao.md`, "Onde as versões
+  moram". A chave funcionou de primeira.
+- **Faxina das branches** (PR #449): um botão de uso único que ela apertou. Das 136, **saíram
+  132**. O botão já foi tirado do código.
 - **#442 (enxugar o CI)**: ela deixou pendente.
-- **Branches velhas**: ela autorizou apagar 131. São 129 já mescladas e as 2 obsoletas de 27/07;
-  só a da rodinha fica. **O acesso desta sessão ao GitHub recusa apagar branch**: tentei todas
-  juntas e depois só uma, e nada foi apagado. Falta ela escolher (abaixo).
-- **Abertura** (no privado): a CIN com o nome social hoje, 13:45, no Poupatempo; a entrevista do
-  certificado em 14/10, 14h, na Certisign; a senha de emissão já está salva.
-- O teste da `v0.9.50` na loja ela ainda não fez.
+- **Abertura** (no privado): a CIN com o nome social hoje, 13:45; a entrevista do certificado em
+  14/10, 14h; a senha de emissão salva.
 
 #### Por onde a próxima sessão começa
-1. **O teste dela na loja com a `v0.9.50`**: imprimir uma garantia pela "Microsoft Print to PDF".
-2. **Depois do teste, a `v0.9.51` de transição**:
-   - **antes de mesclar o #447**, se ela quiser liberar a `0.9.49` ou a `0.9.50` pelo botão, tem
-     que ser antes (depois, o Liberar só conhece o endereço novo);
-   - o PR da rodinha (o commit acima, `Closes #436`);
-   - tirar o #447 do rascunho e mesclar;
-   - subir a versão pra `0.9.51` e rodar o Release, que publica nos dois endereços;
-   - conferir a release no `ssace-versoes` (com `add_repo` de leitura);
-   - **depois de liberada**, trocar o link de baixar pro endereço novo (`site/index.html`,
-     `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`).
-3. **As branches velhas**: ela escolhe entre deixar como estão ou um botão de uso único que ela
-   mesma aperta. Em qualquer caso, sugerir ligar "Automatically delete head branches" (Settings →
-   General), pras próximas não acumularem.
+1. **O teste da `v0.9.51`**:
+   - a rodinha (campo de número selecionado, tela no topo, girar: o valor não muda);
+   - o Balcão atualizando sozinho.
+2. **Liberar a `0.9.51`** pras outras lojas, quando ela pedir. Ela leva a 0.9.48, a 0.9.49 e a
+   0.9.50 juntas. **Depois de liberada**, trocar o link de baixar pro endereço novo
+   (`site/index.html`, `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`).
+3. **Duas coisas rápidas no GitHub, com ela**:
+   - apagar as 3 branches que sobraram (`claude/kind-euler-8s461d`, `claude/versao-0-9-51` e
+     `claude/versoes-no-ssace-versoes`, todas já dentro da `main`), pela página de branches;
+   - ligar "Automatically delete head branches" (Settings → General).
 4. **Avisos da abertura**, quando ela mandar:
    - a CIN digital sai: mandar o PDF pra Debora;
    - a entrevista de 14/10: depois, a senha de emissão no painel;
@@ -269,9 +269,9 @@ rodinha (#436) continua no commit "Rodinha do mouse não muda mais o campo de n�
    Pra isso, pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
    (seção 1).
 5. **Ainda vale**:
-   - liberar só quando ela pedir;
-   - o salto 2 do Electron (40), depois da `0.9.51`;
+   - o salto 2 do Electron (40), agora que a 0.9.51 provou o atualizador da 36;
    - a #442, quando ela quiser;
+   - o "Texto de garantia" da loja, quando ela e o pai decidirem;
    - o PR da tarefa 2 do Gustavo (#351), quando vier;
    - a partir de **16/10**: o Claude Team, a TFE e o capital;
    - **antes de 1º/11**: perguntar à contabilidade da Pneus Amigão sobre o Ambiente Nacional da

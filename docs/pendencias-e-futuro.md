@@ -25,18 +25,16 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Testar a `v0.9.50` (Electron 36, o 1º salto da #385)**: publicada no canal de teste em 04/10;
-**o Balcão atualizou sozinho em 05/10** e ela está usando. A impressora da loja estava parada:
-testar a impressão pela "Microsoft Print to PDF". No Windows dela e no Balcão: abrir o Diagnóstico
-(o "i" ao lado do nome, embaixo à esquerda) e ver "Electron / Chromium" = `36.9.5 / 136...`;
-usar normalmente; **imprimir** uma garantia, um recibo e uma nota (a impressão é a única coisa
-que o laboratório não testa). Só depois disso vem a `v0.9.51` (o conserto da rodinha, #436), que
-de quebra prova que o atualizador da 36 funciona, e então o salto pra 40.
+**Testar a `v0.9.51`** (publicada em 08/10 no canal de teste; **o PC dela já atualizou
+sozinho**): a rodinha (campo de número selecionado, tela no topo, girar a rodinha: o valor não
+muda) e o Balcão pegando a versão ao abrir o programa. A `v0.9.50` foi aprovada na loja em 08/10
+(versão, uso, notas e impressão pelo recibo). **A garantia não imprime enquanto a loja não tiver o
+"Texto de garantia"** (Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40.
 
-**Liberar a `v0.9.49` pras outras lojas** quando ela achar que rodou o bastante (publicada em
-03/10 só no canal de teste; leva junto a `v0.9.48`, que nunca foi liberada). Hoje a Pneus Amigão
-é a única empresa, então não tem pressa. **Pelo botão, só até o PR #447 entrar**: depois, o
-Liberar só conhece o endereço novo, e o caminho natural é liberar a `0.9.51`, que leva tudo. Na loja, vale olhar a lista de OS no Balcão com os dados
+**Liberar a `v0.9.51` pras outras lojas** quando ela achar que rodou o bastante. Ela leva junto a
+`0.9.48`, a `0.9.49` e a `0.9.50`, que nunca foram liberadas. Hoje a Pneus Amigão é a única
+empresa, então não tem pressa. **Depois de liberada**, trocar o link de baixar pro endereço novo
+(`site/index.html`, `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`). Na loja, vale olhar a lista de OS no Balcão com os dados
 de verdade (nomes e valores maiores que os de demonstração).
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
@@ -47,11 +45,11 @@ fora"); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo 
 `docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
 motivo escrito.
 
-**Branches velhas no GitHub** (08/10): ela autorizou apagar 131, as já mescladas e as 2
-obsoletas de 27/07, guardando só a da rodinha (`claude/kind-euler-8s461d`). Mas o acesso da
-sessão ao GitHub não deixa apagar branch. Falta escolher entre deixar como estão ou um botão de
-uso único que ela mesma aperta. Em qualquer caso, vale ligar "Automatically delete head branches"
-(Settings → General), pras próximas não acumularem.
+**Branches no GitHub** (08/10): a faxina saiu por um botão de uso único que ela apertou (a sessão
+não consegue apagar branch): das 136, saíram 132. Faltam, com ela: apagar as 3 que sobraram
+(`claude/kind-euler-8s461d`, `claude/versao-0-9-51`, `claude/versoes-no-ssace-versoes`, todas já
+na `main`) pela página de branches, e ligar "Automatically delete head branches" (Settings →
+General), pras próximas não acumularem.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
 em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
@@ -381,7 +379,7 @@ está na seção 9.** O que ele faz:
 - **Ideia, não pedida**: o Release conferir, antes de publicar, que nenhum banco está atrás da
   última migration.
 
-### 12. Repositório só de versões: preparado em 08/10/2026 (PR #447, entra com a `0.9.51`)
+### 12. Repositório só de versões: feito em 08/10/2026 (PR #447, `v0.9.51`)
 
 Ela escolheu fazer agora, sem pagar nada ("B sem pagar"; o código continua público). Já existem
 o **`sakura-corp/ssace-versoes`** (público, só ela escreve) e a chave **`TOKEN_VERSOES`** no
@@ -390,11 +388,11 @@ cofre `lojas`. O PR #447 faz:
 - o Liberar liberar nos dois;
 - o programa procurar atualização lá.
 
-Ele **entra junto com a `v0.9.51`**, a versão de transição, depois do teste dela na loja. Fecha o
-furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`. Fechar o código
-depois fica sendo só o plano Team e parar a cópia no endereço antigo (custo no privado; antes,
-a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste só chegar no PC
-dela.
+A `v0.9.51`, a versão de transição, saiu em 08/10 nos dois endereços, e o PC dela já atualizou
+por ela. Fecha o furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`.
+Fechar o código depois fica sendo só o plano Team e parar a cópia no endereço antigo (custo no
+privado; antes, a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste
+só chegar no PC dela.
 
 ### 13. Painel da equipe (`docs/painel.md`)
 
