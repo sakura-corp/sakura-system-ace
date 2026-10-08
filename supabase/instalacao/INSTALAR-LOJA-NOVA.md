@@ -116,7 +116,7 @@ marcada como `secret` / `service_role`.
 
 1. No computador da loja, baixe o instalador **da versão liberada** por este endereço, que sempre
    entrega a certa:
-   `https://github.com/sakura-corp/sakura-system-ace/releases/latest/download/SakuraSystem-Setup.exe`
+   `https://github.com/sakura-corp/ssace-versoes/releases/latest/download/SakuraSystem-Setup.exe`
    - **Não pegue "o de cima" da página de Releases.** Desde o canal de teste (item TR-09.1), a
      versão do topo pode estar marcada **Pre-release** — ainda em teste, só pros computadores de
      teste. A liberada é a marcada **Latest**.
