@@ -203,6 +203,33 @@ saídas:
 - **ele não será afetado** (como em 26/09, quando ninguém na loja tinha o perfil que a `0062`
   quebrava): `aplicar` com **"aplicar mesmo com computadores atrasados"** marcado.
 
+### Onde as versões moram (desde a `0.9.51`)
+
+As versões (instalador, `.blockmap` e `latest.yml`) moram no **`sakura-corp/ssace-versoes`**, um
+repositório **público e só de versões**, criado em 08/10/2026. **Só ela escreve lá**: a equipe
+tem escrita no código, mas não nas versões. Antes, quem tinha escrita no código conseguia publicar
+sem a aprovação dela (item 78 da seção 6). É também o que deixa o código fechar um dia sem quebrar
+a atualização automática (item 21).
+
+- **Onde o programa procura**: `build.publish` do `package.json`. Da `0.9.51` em diante, no
+  `ssace-versoes`.
+- **A chave `TOKEN_VERSOES`**, no cofre `lojas`: chave de granulação fina (fine-grained) da conta
+  dela, só pro `ssace-versoes`, com só **Contents: Read and write**. O Release e o Liberar usam
+  essa chave pro endereço novo. Ela está no Bitwarden ("GitHub: chave ssace-versoes-publicar").
+  **Vence em 09/10/2027.** Pra renovar: em `github.com/settings/personal-access-tokens`, abrir a
+  `ssace-versoes-publicar` e clicar em "Regenerate token"; colar a nova no Bitwarden e no cofre
+  (Settings → Environments → `lojas` → `TOKEN_VERSOES` → editar). Chave vencida não estraga
+  nada: o Release para no primeiro passo, com o motivo escrito.
+- **O endereço antigo** (`sakura-system-ace`) **continua recebendo cópia** de cada versão,
+  porque os computadores até a `0.9.50` só procuram lá. A cópia é o que leva eles até a `0.9.51`,
+  e da `0.9.51` em diante eles passam a procurar no endereço novo. Ela para quando o código fechar
+  (esvaziar `ENDERECO_ANTIGO` no `release.yml`). **Antes de fechar**, conferir em Configurações →
+  "Computadores desta empresa", em cada empresa, que nenhum computador está abaixo da `0.9.51`.
+  Senão ele fica parado pra sempre e só volta reinstalando à mão.
+- **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) continua no endereço
+  antigo **até a `0.9.51` ser liberada**. Antes disso, o endereço novo ainda não tem versão
+  liberada e o link daria 404. Depois, trocar pelo novo.
+
 ### Publicar uma versão nova (canal de teste)
 
 **Só existe um jeito, desde 30/09/2026**, e é o mesmo pra ela e pra mim:
@@ -215,8 +242,10 @@ saídas:
    **Pelo celular**, o app do GitHub não mostra o botão "Review deployments": mandar ela abrir o
    link da rodada no **Safari** (ou no computador), e avisar pra **não tocar em "Cancelar
    workflow"**, que é o único botão que o app mostra ali (aconteceu em 1º/10/2026).
-3. Conferir com `mcp__github__get_release_by_tag` (`tag: "vX.Y.Z"`) até aparecerem o `.exe` **e** o
-   `latest.yml` (5 a 10 minutos). `prerelease: true` é o certo: é o canal de teste.
+3. Conferir com `mcp__github__get_release_by_tag` (`owner: "sakura-corp"`, `repo:
+   "ssace-versoes"`, `tag: "vX.Y.Z"`; a sessão pode precisar do `add_repo` pra ler esse
+   repositório) até aparecerem o `.exe` **e** o `latest.yml` (10 a 15 minutos, porque sobe nos
+   dois endereços). `prerelease: true` é o certo: é o canal de teste.
 
 A tag nasce dentro do workflow, com o número do `package.json`. Não existe mais publicar por
 `git push` de tag nem pela tela `releases/new` (os dois já causaram incidentes, seção 7,
@@ -227,6 +256,8 @@ circulou nunca se reusa**: cada leva que precisa chegar no programa instalado ga
 `gh` sobe **arquivo por arquivo**, conferindo o tamanho, e o `latest.yml` **por último**. A ordem é
 a trava: o `latest.yml` é o anúncio, e anunciar antes do instalador deixou a `v0.9.38` pela metade
 e o canal de todas as lojas quebrado (item 66 da seção 6). Não inverter e não juntar num comando só.
+Desde a `0.9.51`, isso roda **duas vezes**: primeiro no `ssace-versoes`, depois no endereço antigo
+(ver "Onde as versões moram"). Se o novo falha, o antigo nem recebe.
 
 **Se o build falhar, NÃO concluir que nada foi publicado.** Conferir a release: precisa ter
 `SakuraSystem-Setup.exe` **e** `latest.yml`. Sem o `latest.yml`, o canal está quebrado mesmo com a
@@ -234,7 +265,8 @@ release parecendo normal (sintoma: `releases/latest/download/latest.yml` dá 404
 **rodar o Release de novo** (ele completa o que faltar, sem queimar número). Daqui da sessão não dá
 pra mexer em release nem subir arquivo.
 
-O instalador aparece em `github.com/sakura-corp/sakura-system-ace/releases`. O Windows avisa
+O instalador aparece em `github.com/sakura-corp/ssace-versoes/releases` (até a `0.9.50`, só em
+`github.com/sakura-corp/sakura-system-ace/releases`). O Windows avisa
 "editor desconhecido" (sem certificado pago): "Mais informações → Executar assim mesmo". O
 `VITE_SUPABASE_*` **não** vai no build: embutido, o instalador de um cliente apontaria pro banco de
 outra empresa.
@@ -258,6 +290,11 @@ Por API: `workflow_id: "liberar-versao.yml"`, `ref: "main"`, `inputs: { "versao"
 `latest.yml` e a impressão digital batendo). Quase sempre o conserto é rodar o Release de novo
 naquela versão e liberar outra vez.
 
+**Os dois endereços**: libera primeiro no `ssace-versoes` (a versão tem que estar lá) e depois no
+endereço antigo, se ela estiver lá também. O resumo da rodada lista onde liberou. Se o novo deu
+certo e o antigo falhou, rodar o Liberar de novo com a mesma versão (liberar duas vezes não
+estraga nada).
+
 **Quando liberar**: depois de uns dias no teste sem reclamação. Correção urgente pode sair publicada
 e liberada em seguida, sabendo que aí o teste não protegeu nada. **Uma versão pode ficar no teste
 pra sempre**: se a seguinte corrige, libera-se direto a seguinte.
@@ -273,7 +310,9 @@ release ruim não desfaz nada em quem já atualizou. Por isso, duas metades:
 1. **Estancar** (quem ainda não pegou): como a versão nasce no teste, normalmente só chegou em dois
    computadores. Se foi liberada, rodar o **Liberar com a versão boa anterior**: ela volta a ser a
    de todas as lojas. Apagar a release **e a tag** (lugares separados no GitHub) tira a versão
-   também do teste, mas apaga o registro: só se ela for perigosa.
+   também do teste, mas apaga o registro: só se ela for perigosa. **Voltar pra uma versão de
+   antes da `0.9.51` pelo Liberar não dá**: ela não existe no `ssace-versoes`, e o Liberar recusa.
+   Aí o caminho é o 2, abaixo.
 2. **Desfazer** (quem já pegou): **publicar uma versão NOVA com o código da antiga**. Se a `0.9.35`
    saiu ruim e a `0.9.34` era boa: `git revert` do que a `0.9.35` trouxe (ou
    `git checkout v0.9.34 -- .`), `package.json` na `0.9.36`, PR, merge, Release. A loja recebe a

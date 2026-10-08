@@ -314,7 +314,10 @@
     `anon`/publishable do Supabase, que é feita pra ser pública). **Lição**: `electron-updater` com
     provider `github` **exige repositório público** pra funcionar sem configuração extra — se um dia
     o repositório precisar voltar a ser privado (ex: código sensível de verdade), rever esse
-    mecanismo de atualização antes, não depois de publicar uma tag.
+    mecanismo de atualização antes, não depois de publicar uma tag. **Revisto em 08/10/2026**: o
+    "repositório-espelho só com os binários" virou o caminho (`sakura-corp/ssace-versoes`, da
+    `0.9.51` em diante; item 78 e `docs/operacao.md`, "Onde as versões moram"), então o código
+    já pode fechar sem quebrar a atualização.
 22. **Repositório renomeado**: `amigao` → `sakura-system-ace` (pedido da usuária, nome
     antigo era resquício do projeto anterior em Next.js). O GitHub redireciona automaticamente o
     nome antigo pro novo por um tempo (não quebra na hora), mas `package.json` →
@@ -1555,6 +1558,15 @@
       release, subir arquivo e mudar a marca de pré-lançamento**, ou seja, publicar e liberar sem
       passar pela aprovação. A aprovação do cofre `lojas` só vale pro workflow oficial. A trava
       de verdade é as versões morarem num **repositório onde o colaborador não escreve**.
+    - **Fechado assim (preparado em 08/10/2026, vale da `0.9.51` em diante)**: as versões moram
+      no `sakura-corp/ssace-versoes` (público, só ela escreve; base role da organização =
+      Read). O Release e o Liberar escrevem lá com a `TOKEN_VERSOES`, uma chave de granulação
+      fina só pra esse repositório e só com Contents, guardada no cofre `lojas`. Um workflow
+      modificado numa branch não recebe a chave, e o token automático do código não alcança o
+      outro repositório. Sobra o furo só pros computadores até a `0.9.50`, que ainda procuram no
+      endereço antigo, até todos passarem da `0.9.51`. Um teste confere que a chave só aparece
+      em workflow do cofre `lojas` (`scripts/liberar-versao.test.ts`). Detalhes em
+      `docs/operacao.md`, "Onde as versões moram".
     - **Ruleset de tag que bloqueia CRIAR `v*` quebra o Release**, porque quem cria a tag é o
       próprio workflow, com esse token, e o GitHub não deixa isentá-lo da regra. Por isso o
       ruleset `versões` só bloqueia mudar e apagar.

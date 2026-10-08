@@ -52,8 +52,12 @@ jobs:
 
       # A versão digitada entra por variável de ambiente, e nunca direto no
       # comando: texto digitado num campo de formulário é dado, não código.
+      # Duas chaves, uma por endereço (ver "DOIS ENDEREÇOS" no script): a
+      # TOKEN_VERSOES abre o ssace-versoes e só existe dentro do cofre; o
+      # token automático abre o endereço antigo (este repositório).
       - name: Conferir e liberar
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN_VERSOES: ${{ secrets.TOKEN_VERSOES }}
+          TOKEN_DO_CODIGO: ${{ secrets.GITHUB_TOKEN }}
           VERSAO: ${{ inputs.versao }}
         run: node scripts/liberar-versao.mjs "$VERSAO"

@@ -88,7 +88,7 @@
     "publish": {
       "provider": "github",
       "owner": "sakura-corp",
-      "repo": "sakura-system-ace",
+      "repo": "ssace-versoes",
       "releaseType": "release"
     },
     "afterPack": "scripts/ligar-fuses.mjs",

@@ -32,6 +32,13 @@
 // versão pedida. Computador que já tinha atualizado continua onde está (o
 // atualizador nunca instala versão mais velha); o conserto pra ele é uma
 // versão nova, ver "Voltar uma versão" na seção 9 do PROJETO_STATUS.md.
+//
+// DOIS ENDEREÇOS (desde a 0.9.51, item 78 de docs/licoes.md): as versões
+// moram no `ssace-versoes`, um repositório só de versões em que só ela
+// escreve. O endereço antigo (o repositório do código) continua recebendo
+// cópia enquanto existir computador numa versão até a 0.9.50, que só sabe
+// procurar lá. Liberar mexe nos dois: primeiro no novo (obrigatório), depois
+// no antigo, se a versão estiver lá.
 
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -42,6 +49,18 @@ import path from "node:path";
 
 export const INSTALADOR = "SakuraSystem-Setup.exe";
 export const ANUNCIO = "latest.yml";
+
+/**
+ * Onde o programa instalado procura atualização (o `build.publish` do
+ * package.json). A equipe que escreve no código não escreve aqui: é isso que
+ * impede alguém de publicar versão sem a aprovação dela.
+ */
+export const ENDERECO_DAS_VERSOES = "sakura-corp/ssace-versoes";
+/**
+ * Onde as versões moravam até a 0.9.50 — e onde os computadores nessas
+ * versões ainda procuram. Recebe cópia até o código fechar (aí some).
+ */
+export const ENDERECO_ANTIGO = "sakura-corp/sakura-system-ace";
 
 /** Quantas vezes a conferência pública tenta, e quanto espera entre elas. */
 export const TENTATIVAS_DE_CONFERENCIA = 6;
@@ -144,7 +163,7 @@ export async function liberarVersao(pedido, dependencias) {
     );
   } catch {
     throw new Error(
-      `Não achei a versão ${tag} no GitHub. Confira o número na lista de Releases — ela precisa ter sido publicada pelo workflow Release antes.`,
+      `Não achei a versão ${tag} em ${repositorio}. Confira o número na lista de Releases — ela precisa ter sido publicada pelo workflow Release antes.`,
     );
   }
   if (release.isDraft) {
@@ -234,15 +253,64 @@ export async function liberarVersao(pedido, dependencias) {
   );
 }
 
+/**
+ * @typedef {Dependencias & { obrigatorio: boolean }} Destino
+ *   `obrigatorio`: a versão TEM que estar ali. Num destino não obrigatório (o
+ *   endereço antigo), versão que não está lá é pulada, e não erro.
+ */
+
+/**
+ * Libera a mesma versão em cada endereço, na ordem dada. O primeiro é o
+ * obrigatório: se ele recusa, os outros nem são tocados.
+ *
+ * @param {string} pedido
+ * @param {Destino[]} destinos
+ * @returns {Promise<Array<{ repositorio: string, tag: string, devolvidasAoTeste: string[] }>>}
+ */
+export async function liberarNosEnderecos(pedido, destinos) {
+  const tag = normalizarTag(pedido);
+  const resultados = [];
+  for (const destino of destinos) {
+    const log = destino.log ?? ((m) => console.log(m));
+    if (!destino.obrigatorio) {
+      try {
+        await destino.gh(["release", "view", tag, "--json", "tagName"]);
+      } catch (erro) {
+        // Só "não existe" vira pulo. Qualquer outra falha (rede, chave) é
+        // erro de verdade: pular calado deixaria computador antigo sem saber
+        // da versão, e ninguém veria.
+        const mensagem = erro instanceof Error ? erro.message : String(erro);
+        if (!/not found/i.test(mensagem)) throw erro;
+        log(`${tag} não está em ${destino.repositorio}: nada a liberar lá.`);
+        continue;
+      }
+    }
+    const resultado = await liberarVersao(tag, destino);
+    resultados.push({ repositorio: destino.repositorio, ...resultado });
+  }
+  return resultados;
+}
+
 // --- Rodando de verdade (no workflow) ---------------------------------------
 
-function ghDeVerdade(args) {
-  return new Promise((resolve, reject) => {
-    execFile("gh", args, { maxBuffer: 16 * 1024 * 1024 }, (erro, saida, saidaDeErro) => {
-      if (erro) reject(new Error(`gh ${args.join(" ")}: ${saidaDeErro || erro.message}`));
-      else resolve(saida);
+/**
+ * Um `gh` preso a um repositório e a uma chave. Cada endereço tem a sua: o
+ * novo usa a TOKEN_VERSOES (do cofre `lojas`), o antigo, o token automático.
+ */
+function ghPara(repositorio, token) {
+  return (args) =>
+    new Promise((resolve, reject) => {
+      const comRepo = [...args, "--repo", repositorio];
+      execFile(
+        "gh",
+        comRepo,
+        { maxBuffer: 16 * 1024 * 1024, env: { ...process.env, GH_TOKEN: token } },
+        (erro, saida, saidaDeErro) => {
+          if (erro) reject(new Error(`gh ${comRepo.join(" ")}: ${saidaDeErro || erro.message}`));
+          else resolve(saida);
+        },
+      );
     });
-  });
 }
 
 async function publicoDeVerdade(url, accept) {
@@ -257,20 +325,38 @@ async function publicoDeVerdade(url, accept) {
 if (process.argv[1] && process.argv[1].endsWith("liberar-versao.mjs")) {
   const resumo = process.env.GITHUB_STEP_SUMMARY;
   try {
-    const { tag, devolvidasAoTeste } = await liberarVersao(process.argv[2], {
-      gh: ghDeVerdade,
-      publico: publicoDeVerdade,
-      repositorio: process.env.GITHUB_REPOSITORY ?? "sakura-corp/sakura-system-ace",
-    });
+    if (!process.env.TOKEN_VERSOES) {
+      throw new Error(
+        `Falta a chave TOKEN_VERSOES no cofre "lojas": sem ela não dá pra mexer em ${ENDERECO_DAS_VERSOES}. Nada foi liberado.`,
+      );
+    }
+    const resultados = await liberarNosEnderecos(process.argv[2], [
+      {
+        repositorio: ENDERECO_DAS_VERSOES,
+        gh: ghPara(ENDERECO_DAS_VERSOES, process.env.TOKEN_VERSOES),
+        publico: publicoDeVerdade,
+        obrigatorio: true,
+      },
+      {
+        repositorio: ENDERECO_ANTIGO,
+        gh: ghPara(ENDERECO_ANTIGO, process.env.TOKEN_DO_CODIGO ?? ""),
+        publico: publicoDeVerdade,
+        obrigatorio: false,
+      },
+    ]);
     if (resumo) {
+      const { tag } = resultados[0];
       const linhas = [
         `### ✅ ${tag} liberada para todas as lojas`,
         "",
         "Os computadores no canal normal recebem esta versão na próxima vez que o programa for aberto.",
-        ...(devolvidasAoTeste.length > 0
-          ? ["", `Voltaram para o canal de teste: ${devolvidasAoTeste.join(", ")}.`]
-          : []),
       ];
+      for (const { repositorio, devolvidasAoTeste } of resultados) {
+        linhas.push("", `- Liberada em \`${repositorio}\`.`);
+        if (devolvidasAoTeste.length > 0) {
+          linhas.push(`  Voltaram para o canal de teste lá: ${devolvidasAoTeste.join(", ")}.`);
+        }
+      }
       await appendFile(resumo, `${linhas.join("\n")}\n`);
     }
   } catch (erro) {

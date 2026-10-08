@@ -15,11 +15,27 @@ name: Release
 # número do package.json da `main`. É por isso também que a regra de tag do
 # repositório bloqueia MUDAR e APAGAR `v*`, mas não CRIAR: quem cria é este
 # workflow, com o token automático, e o GitHub não deixa isentá-lo da regra.
+#
+# DOIS ENDEREÇOS, desde a 0.9.51 (item 78 de docs/licoes.md). A versão vai
+# primeiro pro `ssace-versoes`, um repositório só de versões em que a equipe
+# não escreve, com a chave TOKEN_VERSOES — que mora no cofre `lojas` e por
+# isso só existe nesta rodada aprovada por ela. Antes, qualquer pessoa com
+# escrita no código conseguia, rodando um workflow modificado na própria
+# branch, criar release aqui com o token automático e pular a aprovação.
+# Depois vai uma cópia pro endereço antigo (este repositório), porque os
+# computadores até a 0.9.50 só sabem procurar aqui: é a cópia que leva eles
+# até a 0.9.51, e da 0.9.51 em diante o programa procura no endereço novo.
+# Pra parar a cópia (quando o código fechar), esvaziar ENDERECO_ANTIGO.
 on:
   workflow_dispatch: {}
 
 permissions:
   contents: write
+
+env:
+  # Os mesmos de scripts/liberar-versao.mjs; o teste confere que batem.
+  ENDERECO_DAS_VERSOES: sakura-corp/ssace-versoes
+  ENDERECO_ANTIGO: sakura-corp/sakura-system-ace
 
 jobs:
   build-and-release:
@@ -30,6 +46,23 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # Antes do build (que leva uns 10 minutos), e não depois: chave vencida
+      # ou faltando tem que aparecer na hora, com o motivo escrito.
+      - name: Conferir a chave do repositório de versões
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN_VERSOES }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::Falta a chave TOKEN_VERSOES no cofre lojas. Sem ela a versão não chega em $ENDERECO_DAS_VERSOES (docs/operacao.md, 'Onde as versões moram')."
+            exit 1
+          fi
+          if ! gh api "repos/$ENDERECO_DAS_VERSOES" --jq .full_name; then
+            echo "::error::A chave TOKEN_VERSOES não abre $ENDERECO_DAS_VERSOES. Ela vale até 09/10/2027: se venceu, criar outra e trocar no cofre lojas (docs/operacao.md, 'Onde as versões moram')."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -64,41 +97,26 @@ jobs:
       - name: Publicar no GitHub Releases
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN_VERSOES: ${{ secrets.TOKEN_VERSOES }}
+          TOKEN_DO_CODIGO: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
           versao="$(node -p "require('./package.json').version")"
           tag="v$versao"
 
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "A release $tag já existe — vou completar o que faltar nela."
-          else
-            # `--prerelease` é o que põe a versão no canal de teste: o
-            # GitHub nunca responde um pré-lançamento como "a release mais
-            # recente", e é essa a pergunta que os computadores do canal
-            # normal fazem. Tirar esta marca = liberar pra todas as lojas,
-            # e isso é trabalho do liberar-versao.yml, nunca daqui.
-            #
-            # Numa release que JÁ existe (rodada de novo pra completar
-            # arquivo), a marca não é mexida: se ela já tinha sido liberada,
-            # continua liberada.
-            echo "Criando a release $tag no canal de teste."
-            gh release create "$tag" --target "$GITHUB_SHA" --title "$versao" --notes "" --prerelease
-          fi
-
           subir() {
             caminho="$1"
             nome="$(basename "$caminho")"
             for tentativa in 1 2 3; do
-              if gh release upload "$tag" "$caminho" --clobber; then
+              if gh release upload "$tag" "$caminho" --clobber -R "$repo"; then
                 echo "  subiu: $nome"
                 return 0
               fi
               echo "  tentativa $tentativa falhou em $nome"
               sleep $(( tentativa * 30 ))
             done
-            echo "::error::Não consegui subir $nome depois de 3 tentativas."
+            echo "::error::Não consegui subir $nome em $repo depois de 3 tentativas."
             return 1
           }
 
@@ -110,61 +128,110 @@ jobs:
             caminho="$1"
             nome="$(basename "$caminho")"
             esperado="$(stat -c%s "$caminho")"
-            publicado="$(gh release view "$tag" --json assets \
+            publicado="$(gh release view "$tag" -R "$repo" --json assets \
               --jq '.assets[] | "\(.name) \(.size)"' \
               | awk -v n="$nome" '$1 == n { print $2 }')"
             if [ "$publicado" != "$esperado" ]; then
-              echo "::error::$nome está publicado com '${publicado:-nada}' bytes, esperado $esperado."
+              echo "::error::$nome está publicado em $repo com '${publicado:-nada}' bytes, esperado $esperado."
               return 1
             fi
             echo "  conferido: $nome ($esperado bytes)"
           }
 
-          # A ORDEM É A PARTE QUE IMPORTA. O latest.yml é o que anuncia a
-          # versão nova pro app já instalado, e ele aponta pro instalador pelo
-          # nome e pela impressão digital. Ele sobe POR ÚLTIMO, só depois do
-          # instalador estar publicado E conferido — ao contrário, toda loja
-          # seria avisada de uma versão cujo arquivo não existe.
-          subir    "release/SakuraSystem-Setup.exe"
-          conferir "release/SakuraSystem-Setup.exe"
-          subir    "release/SakuraSystem-Setup.exe.blockmap"
-          subir    "release/latest.yml"
-          conferir "release/latest.yml"
+          # Publica a versão inteira num endereço. `repo` e `GH_TOKEN` valem
+          # pra tudo o que roda aqui dentro (subir, conferir).
+          publicar_em() {
+            repo="$1"
+            export GH_TOKEN="$2"
+            echo "== $repo"
 
-          echo "Publicado em $tag:"
-          gh release view "$tag" --json assets --jq '.assets[] | "  \(.name) — \(.size) bytes"'
-
-          # Conferência de fora, pelo mesmo endereço que o app instalado usa:
-          # uma versão recém-publicada NÃO pode ser a "mais recente" pro
-          # canal normal. Se for, a marca de pré-lançamento não pegou, e
-          # todas as lojas vão receber uma versão que ninguém testou — o job
-          # fica vermelho pra que isso seja visto (e o conserto é marcar a
-          # release como pré-lançamento na tela do GitHub, ou rodar o
-          # Liberar com a versão anterior).
-          #
-          # Falha de rede aqui vira só aviso: a publicação em si já deu
-          # certo, e um job vermelho por causa disso mandaria procurar
-          # problema onde não há.
-          if [ "$(gh release view "$tag" --json isPrerelease --jq .isPrerelease)" = "true" ]; then
-            mais_recente="$(curl -sSL --max-time 30 -H 'Accept: application/json' \
-              "https://github.com/$GITHUB_REPOSITORY/releases/latest" \
-              | node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{try{console.log(JSON.parse(t).tag_name||"")}catch{console.log("")}})' \
-              || true)"
-            if [ -z "$mais_recente" ]; then
-              echo "::warning::Não consegui perguntar ao GitHub qual é a versão das outras lojas. A $tag foi publicada no canal de teste."
-            elif [ "$mais_recente" = "$tag" ]; then
-              echo "::error::A $tag está aparecendo como a versão de TODAS as lojas, mas era pra estar só no canal de teste."
-              exit 1
+            if gh release view "$tag" -R "$repo" >/dev/null 2>&1; then
+              echo "A release $tag já existe em $repo — vou completar o que faltar nela."
             else
-              echo "Canal de teste: $tag. Todas as lojas continuam em $mais_recente."
+              # `--prerelease` é o que põe a versão no canal de teste: o
+              # GitHub nunca responde um pré-lançamento como "a release mais
+              # recente", e é essa a pergunta que os computadores do canal
+              # normal fazem. Tirar esta marca = liberar pra todas as lojas,
+              # e isso é trabalho do liberar-versao.yml, nunca daqui.
+              #
+              # Numa release que JÁ existe (rodada de novo pra completar
+              # arquivo), a marca não é mexida: se ela já tinha sido liberada,
+              # continua liberada.
+              #
+              # A tag aponta pro commit do código só aqui mesmo: no
+              # repositório de versões esse commit não existe, e a tag nasce
+              # no ramo principal dele. O commit de onde a versão saiu vai
+              # escrito nas notas, nos dois.
+              alvo=()
+              if [ "$repo" = "$GITHUB_REPOSITORY" ]; then alvo=(--target "$GITHUB_SHA"); fi
+              echo "Criando a release $tag no canal de teste de $repo."
+              gh release create "$tag" -R "$repo" ${alvo[@]+"${alvo[@]}"} --title "$versao" --notes "Feita a partir de https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --prerelease
             fi
+
+            # A ORDEM É A PARTE QUE IMPORTA. O latest.yml é o que anuncia a
+            # versão nova pro app já instalado, e ele aponta pro instalador
+            # pelo nome e pela impressão digital. Ele sobe POR ÚLTIMO, só
+            # depois do instalador estar publicado E conferido — ao contrário,
+            # toda loja seria avisada de uma versão cujo arquivo não existe.
+            subir    "release/SakuraSystem-Setup.exe"
+            conferir "release/SakuraSystem-Setup.exe"
+            subir    "release/SakuraSystem-Setup.exe.blockmap"
+            subir    "release/latest.yml"
+            conferir "release/latest.yml"
+
+            echo "Publicado em $repo, $tag:"
+            gh release view "$tag" -R "$repo" --json assets --jq '.assets[] | "  \(.name) — \(.size) bytes"'
+
+            # Conferência de fora, pelo mesmo endereço que o app instalado usa:
+            # uma versão recém-publicada NÃO pode ser a "mais recente" pro
+            # canal normal. Se for, a marca de pré-lançamento não pegou, e
+            # todas as lojas vão receber uma versão que ninguém testou — o
+            # job fica vermelho pra que isso seja visto (e o conserto é marcar
+            # a release como pré-lançamento na tela do GitHub, ou rodar o
+            # Liberar com a versão anterior).
+            #
+            # Falha de rede aqui vira só aviso: a publicação em si já deu
+            # certo, e um job vermelho por causa disso mandaria procurar
+            # problema onde não há. Endereço sem nenhuma versão liberada (o
+            # novo, antes do primeiro Liberar) responde 404, e isso é normal.
+            if [ "$(gh release view "$tag" -R "$repo" --json isPrerelease --jq .isPrerelease)" = "true" ]; then
+              resposta="$(mktemp)"
+              situacao="$(curl -sSL --max-time 30 -H 'Accept: application/json' \
+                -o "$resposta" -w '%{http_code}' \
+                "https://github.com/$repo/releases/latest" || true)"
+              mais_recente="$(node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{try{console.log(JSON.parse(t).tag_name||"")}catch{console.log("")}})' < "$resposta" || true)"
+              if [ "$situacao" = "404" ]; then
+                echo "Canal de teste: $tag. Ainda não há versão liberada em $repo."
+              elif [ -z "$mais_recente" ]; then
+                echo "::warning::Não consegui perguntar ao GitHub qual é a versão das outras lojas em $repo. A $tag foi publicada no canal de teste."
+              elif [ "$mais_recente" = "$tag" ]; then
+                echo "::error::A $tag está aparecendo em $repo como a versão de TODAS as lojas, mas era pra estar só no canal de teste."
+                exit 1
+              else
+                echo "Canal de teste: $tag. Todas as lojas continuam em $mais_recente ($repo)."
+              fi
+              ficou_no_teste="sim"
+            else
+              echo "A $tag já estava liberada em $repo — esta rodada só completou os arquivos."
+            fi
+          }
+
+          ficou_no_teste="nao"
+          # O novo primeiro: se ele falhar, o antigo nem recebe — e computador
+          # antigo não vai parar numa versão que procura um endereço vazio.
+          publicar_em "$ENDERECO_DAS_VERSOES" "$TOKEN_VERSOES"
+          if [ -n "${ENDERECO_ANTIGO:-}" ]; then
+            publicar_em "$ENDERECO_ANTIGO" "$TOKEN_DO_CODIGO"
+          fi
+
+          if [ "$ficou_no_teste" = "sim" ]; then
             {
               echo "### $tag publicada no canal de teste"
               echo ""
               echo "Só os computadores marcados como **teste** recebem esta versão agora."
               echo "Quando ela estiver aprovada, libere para todas as lojas em"
               echo "Actions → **Liberar versão para todas as lojas** → Run workflow → \`$tag\`."
+              echo ""
+              echo "Publicada em \`$ENDERECO_DAS_VERSOES\`${ENDERECO_ANTIGO:+ e, como cópia pros computadores antigos, em \`$ENDERECO_ANTIGO\`}."
             } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "A $tag já estava liberada para todas as lojas — esta rodada só completou os arquivos."
           fi
