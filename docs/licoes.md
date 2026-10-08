@@ -314,7 +314,10 @@
     `anon`/publishable do Supabase, que é feita pra ser pública). **Lição**: `electron-updater` com
     provider `github` **exige repositório público** pra funcionar sem configuração extra — se um dia
     o repositório precisar voltar a ser privado (ex: código sensível de verdade), rever esse
-    mecanismo de atualização antes, não depois de publicar uma tag.
+    mecanismo de atualização antes, não depois de publicar uma tag. **Revisto em 08/10/2026**: o
+    "repositório-espelho só com os binários" virou o caminho (`sakura-corp/ssace-versoes`, da
+    `0.9.51` em diante; item 78 e `docs/operacao.md`, "Onde as versões moram"), então o código
+    já pode fechar sem quebrar a atualização.
 22. **Repositório renomeado**: `amigao` → `sakura-system-ace` (pedido da usuária, nome
     antigo era resquício do projeto anterior em Next.js). O GitHub redireciona automaticamente o
     nome antigo pro novo por um tempo (não quebra na hora), mas `package.json` →
@@ -697,12 +700,18 @@
     do app, não só a quantidade — o mesmo acidente num preço de venda mudaria 1 centavo sem deixar
     rastro em tela nenhuma.
     **Lição de método, que quase virou o terceiro chute do item 33**: a primeira hipótese foi a
-    **rodinha do mouse** (o clássico "wheel muda input number"), e ela estava **errada** — testado
-    no Electron real (Chromium 130), a rodinha não mexe mais no valor; o Chromium tirou esse
-    comportamento. Só apareceu porque a hipótese foi testada antes de virar correção, e não depois.
-    Testar cedo também evitou o inverso: o Chromium **141** avulso do sandbox e o **130** de dentro
-    do Electron respondem diferente, então validar comportamento de campo nativo tem que ser no
-    Electron do projeto, nunca num Chromium qualquer.
+    **rodinha do mouse** (o clássico "wheel muda input number"), e testada no Electron real
+    (Chromium 130) ela não mexeu no valor. Só apareceu porque a hipótese foi testada antes de virar
+    correção, e não depois. Testar cedo também evitou o inverso: o Chromium **141** avulso do
+    sandbox e o **130** de dentro do Electron respondem diferente, então validar comportamento de
+    campo nativo tem que ser no Electron do projeto, nunca num Chromium qualquer.
+    **Mas a rodinha muda, sim (achado em 03/10/2026 pelo `comparar:electron`, lição 82)**: ela só
+    rola a tela enquanto a tela tem pra onde rolar. Com o formulário no topo, girar pra cima com o
+    cursor em cima do campo selecionado faz 2 virar 2,01 (e o mesmo no fim, girando pra baixo). O
+    teste de agosto foi no meio do formulário. **Corrigido** no mesmo hook: a rodinha em cima do
+    campo selecionado **tira a seleção** em vez de ser bloqueada (bloquear impediria rolar a tela
+    com o cursor em cima de um campo). Conferido na 33 e na 36. **Lição**: um "não acontece"
+    testado num caso só vale só praquele caso; testar nas bordas (topo, fim, vazio).
 
 42. **Padrão de bug: `toISOString().slice(0, 10)` grava o dia em UTC, não o dia de quem está
     usando** (achado em 02/09/2026, numa varredura de cálculo pedida por ela). É o item 34 de
@@ -1555,6 +1564,15 @@
       release, subir arquivo e mudar a marca de pré-lançamento**, ou seja, publicar e liberar sem
       passar pela aprovação. A aprovação do cofre `lojas` só vale pro workflow oficial. A trava
       de verdade é as versões morarem num **repositório onde o colaborador não escreve**.
+    - **Fechado assim (preparado em 08/10/2026, vale da `0.9.51` em diante)**: as versões moram
+      no `sakura-corp/ssace-versoes` (público, só ela escreve; base role da organização =
+      Read). O Release e o Liberar escrevem lá com a `TOKEN_VERSOES`, uma chave de granulação
+      fina só pra esse repositório e só com Contents, guardada no cofre `lojas`. Um workflow
+      modificado numa branch não recebe a chave, e o token automático do código não alcança o
+      outro repositório. Sobra o furo só pros computadores até a `0.9.50`, que ainda procuram no
+      endereço antigo, até todos passarem da `0.9.51`. Um teste confere que a chave só aparece
+      em workflow do cofre `lojas` (`scripts/liberar-versao.test.ts`). Detalhes em
+      `docs/operacao.md`, "Onde as versões moram".
     - **Ruleset de tag que bloqueia CRIAR `v*` quebra o Release**, porque quem cria a tag é o
       próprio workflow, com esse token, e o GitHub não deixa isentá-lo da regra. Por isso o
       ruleset `versões` só bloqueia mudar e apagar.
@@ -1645,7 +1663,7 @@
       cena quando a foto sai sem o menu lateral e manda um `resize` antes de cada foto.
     - **Na primeira rodada ela já achou um defeito antigo**: a rodinha do mouse **muda** o campo
       de número quando a tela não tem mais pra onde rolar (no topo, girando pra cima): 2 vira
-      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. O conserto
-      sai numa versão própria, logo depois do primeiro salto do Electron.
+      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. Corrigido
+      numa versão própria, a seguinte ao primeiro salto do Electron (ver o item 41).
     - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
       qualquer responde outra coisa (o item 41 já tinha visto isso com o 141 do sandbox).

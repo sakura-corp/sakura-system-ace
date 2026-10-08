@@ -8,17 +8,21 @@
 // programa. Por isso o teste cobre muito mais o "recusou e não mexeu em nada"
 // do que o caminho feliz.
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   ANUNCIO,
+  ENDERECO_ANTIGO,
+  ENDERECO_DAS_VERSOES,
   INSTALADOR,
   compararVersoes,
   lerAnuncio,
+  liberarNosEnderecos,
   liberarVersao,
   normalizarTag,
+  planejarDestinos,
   // @ts-expect-error — script utilitário em .mjs puro, sem tipos
 } from "./liberar-versao.mjs";
 
@@ -316,6 +320,131 @@ describe("liberarVersao — a conferência de fora", () => {
   });
 });
 
+// Desde a 0.9.51 a mesma versão mora em dois endereços: o novo (onde o
+// programa procura) e o antigo (onde os computadores até a 0.9.50 procuram).
+describe("liberarNosEnderecos — os dois endereços", () => {
+  function destinos(novo: ReleaseFalsa[], antigo: ReleaseFalsa[]) {
+    const githubNovo = githubFalso(novo);
+    const githubAntigo = githubFalso(antigo);
+    return {
+      githubNovo,
+      githubAntigo,
+      lista: [
+        { ...githubNovo.dependencias, repositorio: "dono/novo", obrigatorio: true },
+        { ...githubAntigo.dependencias, repositorio: "dono/antigo", obrigatorio: false },
+      ],
+    };
+  }
+
+  it("libera nos dois quando a versão está nos dois", async () => {
+    const { githubNovo, githubAntigo, lista } = destinos(
+      [publicada("0.9.51", true)],
+      [publicada("0.9.51", true), publicada("0.9.50", false)],
+    );
+    const resultados = await liberarNosEnderecos("v0.9.51", lista);
+    expect(resultados.map((r: { repositorio: string }) => r.repositorio)).toEqual([
+      "dono/novo",
+      "dono/antigo",
+    ]);
+    expect(githubNovo.achar("v0.9.51")).toMatchObject({ isPrerelease: false, isLatest: true });
+    expect(githubAntigo.achar("v0.9.51")).toMatchObject({ isPrerelease: false, isLatest: true });
+  });
+
+  it("pula o antigo quando a versão não foi pra lá", async () => {
+    const { githubAntigo, lista } = destinos(
+      [publicada("0.9.52", true), publicada("0.9.51", false)],
+      [publicada("0.9.51", false)],
+    );
+    const resultados = await liberarNosEnderecos("v0.9.52", lista);
+    expect(resultados).toHaveLength(1);
+    expect(githubAntigo.edicoes).toEqual([]);
+  });
+
+  it("se o novo recusa, o antigo nem é tocado", async () => {
+    // Voltar pra uma versão de antes da mudança: ela só existe no antigo.
+    const { githubAntigo, lista } = destinos(
+      [publicada("0.9.51", false)],
+      [publicada("0.9.51", false), publicada("0.9.50", false)],
+    );
+    await expect(liberarNosEnderecos("v0.9.50", lista)).rejects.toThrow(
+      /Não achei a versão v0\.9\.50 em dono\/novo/,
+    );
+    expect(githubAntigo.edicoes).toEqual([]);
+  });
+
+  it("falha de rede no antigo é erro, e não pulo calado", async () => {
+    const { lista } = destinos([publicada("0.9.51", true)], [publicada("0.9.51", true)]);
+    lista[1].gh = async () => {
+      throw new Error("connection reset by peer");
+    };
+    await expect(liberarNosEnderecos("v0.9.51", lista)).rejects.toThrow(/connection reset/);
+  });
+
+  // O endereço inteiro sumido (nome errado, sem acesso) também responde "Not
+  // Found". Se isso virasse pulo, a rodada ficava verde e os computadores
+  // antigos nunca veriam a versão.
+  it("o endereço antigo inteiro inacessível é erro, e não pulo", async () => {
+    const { lista } = destinos([publicada("0.9.51", true)], [publicada("0.9.51", true)]);
+    lista[1].gh = async () => {
+      throw new Error("gh release list: HTTP 404: Not Found (https://api.github.com/repos/x)");
+    };
+    await expect(liberarNosEnderecos("v0.9.51", lista)).rejects.toThrow(/HTTP 404/);
+  });
+
+  // Um endereço já mudou: dizer "nada foi liberado" faria ela achar que pode
+  // ir embora com as lojas ainda na versão anterior.
+  it("se o antigo falha depois do novo, diz que o novo JÁ foi liberado", async () => {
+    const quebrada = publicada("0.9.51", true);
+    delete quebrada.arquivos[ANUNCIO];
+    const { githubNovo, lista } = destinos([publicada("0.9.51", true)], [quebrada]);
+    await expect(liberarNosEnderecos("v0.9.51", lista)).rejects.toThrow(
+      /JÁ FOI LIBERADA em dono\/novo, mas em dono\/antigo deu erro/,
+    );
+    expect(githubNovo.achar("v0.9.51")).toMatchObject({ isPrerelease: false });
+  });
+});
+
+describe("planejarDestinos", () => {
+  it("da 0.9.51 em diante: o novo obrigatório e o antigo se tiver", () => {
+    expect(planejarDestinos("v0.9.51", { antigo: "dono/antigo" })).toEqual([
+      { repositorio: ENDERECO_DAS_VERSOES, obrigatorio: true, chave: "versoes" },
+      { repositorio: "dono/antigo", obrigatorio: false, chave: "codigo" },
+    ]);
+  });
+
+  // É o "estancar" da transição: se a 0.9.51 sair ruim, liberar a 0.9.50 no
+  // antigo segura os computadores que ainda procuram lá.
+  it("antes da 0.9.51: só o antigo, e obrigatório", () => {
+    expect(planejarDestinos("v0.9.50", { antigo: "dono/antigo" })).toEqual([
+      { repositorio: "dono/antigo", obrigatorio: true, chave: "codigo" },
+    ]);
+  });
+
+  it("com a cópia parada: só o novo, e versão antiga é recusada", () => {
+    expect(planejarDestinos("v0.9.52", { antigo: "" })).toEqual([
+      { repositorio: ENDERECO_DAS_VERSOES, obrigatorio: true, chave: "versoes" },
+    ]);
+    expect(() => planejarDestinos("v0.9.50", { antigo: "" })).toThrow(/não recebe mais cópia/);
+  });
+});
+
+describe("liberarVersao — chave com problema", () => {
+  // Depois de 09/10/2027 a chave vence. "Confira o número" mandaria ela
+  // procurar um erro de digitação que não existe.
+  it("chave vencida não vira 'número errado'", async () => {
+    const github = githubFalso([publicada("0.9.51", true)]);
+    const dependencias = {
+      ...github.dependencias,
+      gh: async () => {
+        throw new Error("gh release view: HTTP 401: Bad credentials");
+      },
+    };
+    const promessa = liberarVersao("v0.9.51", dependencias);
+    await expect(promessa).rejects.toThrow(/Não consegui consultar .*Bad credentials/);
+    await expect(liberarVersao("v0.9.51", dependencias)).rejects.not.toThrow(/Não achei/);
+  });
+});
+
 // As travas do lado dos workflows. São verificação de texto, e não de
 // comportamento — o comportamento do GitHub não dá pra rodar aqui —, mas
 // pegam o esquecimento mais provável: alguém "simplificar" o Release e tirar a
@@ -352,5 +481,51 @@ describe("workflows", () => {
     expect(ler("liberar-versao.yml")).toMatch(/^\s+environment: lojas$/m);
     expect(ler("atualizar-bancos.yml")).toMatch(/^\s+environment: lojas$/m);
     expect(ler("backup-banco.yml")).toMatch(/^\s+environment: backup$/m);
+  });
+
+  // O endereço onde o programa procura atualização, o do Release e o do
+  // Liberar têm que ser o mesmo. Se um mudar sozinho, a versão vai pra um
+  // lugar e os computadores procuram em outro, sem erro nenhum à vista.
+  it("o programa procura atualização onde o Release e o Liberar publicam", () => {
+    const pacote = JSON.parse(
+      readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+    );
+    const { owner, repo } = pacote.build.publish;
+    expect(`${owner}/${repo}`).toBe(ENDERECO_DAS_VERSOES);
+    const release = ler("release.yml");
+    expect(release).toMatch(new RegExp(`^\\s+ENDERECO_DAS_VERSOES: ${ENDERECO_DAS_VERSOES}$`, "m"));
+    // Cópia parada = vazio nos dois lugares ("" no YAML).
+    expect(release).toMatch(
+      new RegExp(`^\\s+ENDERECO_ANTIGO: ${ENDERECO_ANTIGO || '""'}$`, "m"),
+    );
+  });
+
+  // O novo primeiro: se ele falhar, o antigo nem recebe, e computador antigo
+  // não instala uma versão que procura atualização num endereço vazio.
+  it("o Release publica primeiro no endereço novo, com a chave do cofre", () => {
+    const release = ler("release.yml");
+    const novo = release.indexOf('publicar_em "$ENDERECO_DAS_VERSOES" "$TOKEN_VERSOES"');
+    const antigo = release.indexOf('publicar_em "$ENDERECO_ANTIGO" "$TOKEN_DO_CODIGO"');
+    expect(novo).toBeGreaterThan(-1);
+    expect(antigo).toBeGreaterThan(novo);
+    expect(release).toMatch(/TOKEN_VERSOES: \$\{\{ secrets\.TOKEN_VERSOES \}\}/);
+    expect(ler("liberar-versao.yml")).toMatch(/TOKEN_VERSOES: \$\{\{ secrets\.TOKEN_VERSOES \}\}/);
+  });
+
+  // A trava tem duas metades. A de verdade é a chave existir SÓ como segredo
+  // do cofre `lojas` (só a `main`, com a aprovação dela): isso é configuração
+  // do GitHub, e nenhum teste daqui enxerga. Esta é a outra: nenhum workflow
+  // da `main` pede a chave fora do cofre. Uma branch modificada pode pedir,
+  // mas só recebe se alguém criar a chave também fora do cofre — por isso o
+  // docs/operacao.md proíbe isso com todas as letras.
+  it("a chave TOKEN_VERSOES só aparece em workflow do cofre lojas", () => {
+    const pasta = new URL("../.github/workflows/", import.meta.url);
+    const comChave = readdirSync(pasta).filter((nome) =>
+      /secrets\.TOKEN_VERSOES/.test(ler(nome)),
+    );
+    expect(comChave.sort()).toEqual(["liberar-versao.yml", "release.yml"]);
+    for (const nome of comChave) {
+      expect(ler(nome)).toMatch(/^\s+environment: lojas$/m);
+    }
   });
 });

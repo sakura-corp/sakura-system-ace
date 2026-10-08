@@ -35,6 +35,6 @@ Gera o instalador do Windows em `release/`.
 
 ## Status
 
-Em uso real numa loja, com NFC-e e NFS-e em produção. As versões publicadas estão nas [releases do GitHub](https://github.com/sakura-corp/sakura-system-ace/releases), e o que cada uma trouxe, em `docs/modulos.md` ("Empacotamento e versões"). O `CHANGELOG.md` parou na 0.9.2.
+Em uso real numa loja, com NFC-e e NFS-e em produção. As versões publicadas estão nas [releases do `ssace-versoes`](https://github.com/sakura-corp/ssace-versoes/releases) (até a 0.9.50, nas [deste repositório](https://github.com/sakura-corp/sakura-system-ace/releases)), e o que cada uma trouxe, em `docs/modulos.md` ("Empacotamento e versões"). O `CHANGELOG.md` parou na 0.9.2.
 
 A memória do projeto (decisões, estado de cada módulo, pendências) começa no `PROJETO_STATUS.md`. Quem entra na equipe começa pela seção 0 dele e pelo `docs/painel.md`.

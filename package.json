@@ -1,6 +1,6 @@
 {
   "name": "sakura-system-autocenter",
-  "version": "0.9.50",
+  "version": "0.9.51",
   "private": true,
   "type": "module",
   "description": "Sakura System — AutoCenter Edition",
@@ -88,7 +88,7 @@
     "publish": {
       "provider": "github",
       "owner": "sakura-corp",
-      "repo": "sakura-system-ace",
+      "repo": "ssace-versoes",
       "releaseType": "release"
     },
     "afterPack": "scripts/ligar-fuses.mjs",
