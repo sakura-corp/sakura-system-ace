@@ -16,8 +16,9 @@
   quem trabalha é ela, **mescla direto** (seção 3 do `PROJETO_STATUS.md`). Os PRs guardam o
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
-  "Empacotamento", seção 7). Em 06/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
-  no canal de teste, a `v0.9.50`; banco na `0064`.
+  "Empacotamento", seção 7). Em 08/10/2026: a última liberada pra todas as lojas é a `v0.9.47`;
+  no canal de teste, a `v0.9.50`; banco na `0064`. Da `0.9.51` em diante, as versões moram no
+  `sakura-corp/ssace-versoes` (PR #447; `docs/operacao.md`, "Onde as versões moram").
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
   trabalho bem maior feito com outra ferramenta de IA (Antigravity: Fornecedores com Pedido de
@@ -33,6 +34,61 @@ Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **
 deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
+
+### 06/10/2026, de manhã: as opções de fechar o código e a abertura esperando
+
+**Estado do código**: nada mudou no código. `main` na **`v0.9.50`** (Electron 36), no canal de
+teste desde 04/10 e **no Balcão desde 05/10**; os computadores do canal normal seguem na `0.9.47`.
+Banco na **`0064`**. O conserto da rodinha (#436) continua guardado no commit "Rodinha do mouse
+não muda mais o campo de número (guardado pra 0.9.51)", na branch `claude/kind-euler-8s461d`
+(conferida em 06/10; procurar pelo título, porque o número do commit muda quando ele é
+reaplicado). O marco anterior (05/10, a faxina da memória) está no topo de `docs/historico.md`.
+
+#### O que foi feito
+- **Abertura da empresa** (no privado, `EMPRESA.md`, "Abertura: o que falta"): o documento da
+  conta PJ foi recusado de novo, e o caminho é ela tirar um documento novo (detalhe no
+  privado); a 1ª fatura da Focus foi paga; a dúvida da declaração dos Bombeiros no
+  licenciamento foi **resolvida** (é o padrão da Contabilizei pro escritório virtual, sem
+  correção). **Decidido**: o Claude Team logo depois de 16/10.
+- **Fechar o código**: ela perguntou as opções. Conferido em 06/10: em repositório privado,
+  ruleset e cofre pedem o plano Team, e a aprovação obrigatória no cofre só existe no Enterprise
+  (item 78 de `docs/licoes.md`); ninguém fez cópia (fork) do repositório; nos últimos 30 dias o
+  Actions gastou ~5.600 minutos, e o ritmo da última semana daria 11 a 15 mil por mês (o Team
+  inclui 3.000; o custo em reais está no privado, `PRECOS-E-CUSTOS.md`). Virou a tarefa **#442**
+  (o CI roda duas vezes por commit, não tem limite de tempo, e PR só de memória roda tudo).
+
+#### Esperando a resposta dela (perguntado em 06/10)
+1. **Fechar o código: qual opção.** **A**: deixar aberto por enquanto (R$ 0). **B**: fechar com o
+   plano Team do GitHub, com as versões num repositório aberto só de versões, uma versão de
+   transição liberada em todos os computadores antes, e a aprovação dela trocada por "a automação
+   só roda se quem apertou foi ela"; de bônus, fecha o furo de 30/09 (item 78). **C**: fechar no
+   plano grátis (as travas param e só 2.000 minutos; não recomendado). **Recomendado: A agora,
+   preparando a B**: a #442 de graça, medir de novo, e fechar antes da primeira loja nova, já
+   sabendo o custo.
+2. **A #442: agora ou depois do teste dela na loja** (07/10)?
+3. **Apagar as branches velhas** (mais de 100, de sessões antigas), guardando a da rodinha e as
+   que não foram mescladas?
+
+#### Por onde a próxima sessão começa
+1. **As respostas acima.**
+2. **Como foi o dia dela na loja (07/10) com a `v0.9.50`.** A impressora da loja estava parada: a
+   impressão se testa mandando imprimir uma garantia na "Microsoft Print to PDF" (se a janela
+   abre e o PDF sai certo, a parte do programa está boa).
+3. **Avisos da abertura**, quando ela mandar (o certificado liberado; o documento novo pra conta
+   PJ, agendado pra 08/10; o contrato social já chegou em 06/10): pedir pra adicionar o
+   `caranovavidanova/sakura-corp` com as palavras certas (seção 1) e seguir "Abertura: o que
+   falta" no `EMPRESA.md`. Antes de qualquer clique em tela oficial, o print.
+4. **Depois do teste dela**: a `v0.9.51` com o conserto da rodinha (PR com o commit acima,
+   `Closes #436`; prova também o atualizador da 36; o mesmo commit corrige o item 41 de
+   `docs/licoes.md`), e então o **salto 2 (40)**: faltam as checagens de sempre
+   (`test:electron`, `test:fusos`, o empacotado com as chavinhas) e a `v0.9.52`. O salto 3 (44)
+   mexe no CI (da 42 em diante o Electron não se baixa sozinho no `npm ci`). O electron-builder 26
+   vai num dos saltos; avisar ela em qual antes. Se ela escolher fechar o código, a `v0.9.51`
+   pode ser a versão de transição (publicada nos dois lugares).
+5. **Ainda vale**: liberar só quando ela pedir; o PR da tarefa 2 do Gustavo (#351), quando vier.
+   Com data: a partir de **16/10**, o Claude Team, a TFE e o capital (no privado); **antes de
+   1º/11**, perguntar à contabilidade da Pneus Amigão se a NFS-e da loja muda pro Ambiente
+   Nacional nessa data (seção 8, "Perguntas pra fora").
 
 ### 05/10/2026, à tarde: a abertura destravou e a faxina da memória
 
