@@ -58,7 +58,9 @@ export const ANUNCIO = "latest.yml";
 export const ENDERECO_DAS_VERSOES = "sakura-corp/ssace-versoes";
 /**
  * Onde as versões moravam até a 0.9.50 — e onde os computadores nessas
- * versões ainda procuram. Recebe cópia até o código fechar (aí some).
+ * versões ainda procuram. Recebe cópia até o código fechar. Pra parar a
+ * cópia, esvaziar aqui ("") E no ENDERECO_ANTIGO do release.yml (o teste
+ * confere que os dois batem).
  */
 export const ENDERECO_ANTIGO = "sakura-corp/sakura-system-ace";
 
@@ -161,9 +163,17 @@ export async function liberarVersao(pedido, dependencias) {
     release = JSON.parse(
       await gh(["release", "view", tag, "--json", "tagName,isDraft,isPrerelease,assets"]),
     );
-  } catch {
+  } catch (erro) {
+    const mensagem = erro instanceof Error ? erro.message : String(erro);
+    if (/release not found/i.test(mensagem)) {
+      throw new Error(
+        `Não achei a versão ${tag} em ${repositorio}. Confira o número na lista de Releases — ela precisa ter sido publicada pelo workflow Release antes.`,
+      );
+    }
+    // Chave vencida ou rede: não é número errado, e dizer que é mandaria
+    // procurar o problema no lugar errado.
     throw new Error(
-      `Não achei a versão ${tag} em ${repositorio}. Confira o número na lista de Releases — ela precisa ter sido publicada pelo workflow Release antes.`,
+      `Não consegui consultar ${repositorio} no GitHub (${mensagem.trim()}). Se fala em "Bad credentials", a chave TOKEN_VERSOES venceu ou foi revogada (docs/operacao.md, "Onde as versões moram"). Nada foi liberado.`,
     );
   }
   if (release.isDraft) {
@@ -259,6 +269,36 @@ export async function liberarVersao(pedido, dependencias) {
  *   endereço antigo), versão que não está lá é pulada, e não erro.
  */
 
+/** A primeira versão publicada também no endereço novo (a de transição). */
+export const PRIMEIRA_NO_ENDERECO_NOVO = "v0.9.51";
+
+/**
+ * Onde liberar cada versão, na ordem.
+ *
+ * - Da 0.9.51 em diante: o novo (obrigatório) e, se houver, o antigo (só se a
+ *   versão estiver lá).
+ * - Antes da 0.9.51: só o antigo, obrigatório. Essas versões nunca foram pro
+ *   novo, e liberar uma delas no antigo é o jeito de **segurar** os
+ *   computadores que ainda procuram lá, se a versão de transição sair ruim.
+ *
+ * @param {string} tag
+ * @param {{ antigo: string }} enderecos  `antigo` vazio = a cópia parou
+ * @returns {Array<{ repositorio: string, obrigatorio: boolean, chave: "versoes" | "codigo" }>}
+ */
+export function planejarDestinos(tag, { antigo }) {
+  if (compararVersoes(tag, PRIMEIRA_NO_ENDERECO_NOVO) < 0) {
+    if (!antigo) {
+      throw new Error(
+        `A ${tag} é de antes da ${PRIMEIRA_NO_ENDERECO_NOVO} e só existe no endereço antigo, que não recebe mais cópia. Nada foi liberado.`,
+      );
+    }
+    return [{ repositorio: antigo, obrigatorio: true, chave: "codigo" }];
+  }
+  const destinos = [{ repositorio: ENDERECO_DAS_VERSOES, obrigatorio: true, chave: "versoes" }];
+  if (antigo) destinos.push({ repositorio: antigo, obrigatorio: false, chave: "codigo" });
+  return destinos;
+}
+
 /**
  * Libera a mesma versão em cada endereço, na ordem dada. O primeiro é o
  * obrigatório: se ele recusa, os outros nem são tocados.
@@ -272,21 +312,29 @@ export async function liberarNosEnderecos(pedido, destinos) {
   const resultados = [];
   for (const destino of destinos) {
     const log = destino.log ?? ((m) => console.log(m));
-    if (!destino.obrigatorio) {
-      try {
-        await destino.gh(["release", "view", tag, "--json", "tagName"]);
-      } catch (erro) {
-        // Só "não existe" vira pulo. Qualquer outra falha (rede, chave) é
-        // erro de verdade: pular calado deixaria computador antigo sem saber
-        // da versão, e ninguém veria.
-        const mensagem = erro instanceof Error ? erro.message : String(erro);
-        if (!/not found/i.test(mensagem)) throw erro;
-        log(`${tag} não está em ${destino.repositorio}: nada a liberar lá.`);
-        continue;
+    try {
+      if (!destino.obrigatorio) {
+        // Pela lista, e não pelo erro do `view`: um "Not Found" do
+        // repositório inteiro (endereço errado, sem acesso) também diria "não
+        // existe", e pular calado deixaria computador antigo sem a versão.
+        const lista = JSON.parse(
+          await destino.gh(["release", "list", "--limit", "1000", "--json", "tagName"]),
+        );
+        if (!lista.some((r) => r.tagName === tag)) {
+          log(`${tag} não está em ${destino.repositorio}: nada a liberar lá.`);
+          continue;
+        }
       }
+      const resultado = await liberarVersao(tag, destino);
+      resultados.push({ repositorio: destino.repositorio, ...resultado });
+    } catch (erro) {
+      if (resultados.length === 0) throw erro;
+      // Um endereço já mudou: dizer "nada foi liberado" seria mentira.
+      const mensagem = erro instanceof Error ? erro.message : String(erro);
+      throw new Error(
+        `A ${tag} JÁ FOI LIBERADA em ${resultados.map((r) => r.repositorio).join(", ")}, mas em ${destino.repositorio} deu erro: ${mensagem} Resolvido o problema, rode o Liberar de novo com a mesma versão (liberar duas vezes não estraga nada).`,
+      );
     }
-    const resultado = await liberarVersao(tag, destino);
-    resultados.push({ repositorio: destino.repositorio, ...resultado });
   }
   return resultados;
 }
@@ -325,25 +373,26 @@ async function publicoDeVerdade(url, accept) {
 if (process.argv[1] && process.argv[1].endsWith("liberar-versao.mjs")) {
   const resumo = process.env.GITHUB_STEP_SUMMARY;
   try {
-    if (!process.env.TOKEN_VERSOES) {
+    const tag = normalizarTag(process.argv[2]);
+    const plano = planejarDestinos(tag, { antigo: ENDERECO_ANTIGO });
+    if (plano.some((d) => d.chave === "versoes") && !process.env.TOKEN_VERSOES) {
       throw new Error(
         `Falta a chave TOKEN_VERSOES no cofre "lojas": sem ela não dá pra mexer em ${ENDERECO_DAS_VERSOES}. Nada foi liberado.`,
       );
     }
-    const resultados = await liberarNosEnderecos(process.argv[2], [
-      {
-        repositorio: ENDERECO_DAS_VERSOES,
-        gh: ghPara(ENDERECO_DAS_VERSOES, process.env.TOKEN_VERSOES),
+    const chaves = {
+      versoes: process.env.TOKEN_VERSOES ?? "",
+      codigo: process.env.TOKEN_DO_CODIGO ?? "",
+    };
+    const resultados = await liberarNosEnderecos(
+      tag,
+      plano.map(({ repositorio, obrigatorio, chave }) => ({
+        repositorio,
+        obrigatorio,
+        gh: ghPara(repositorio, chaves[chave]),
         publico: publicoDeVerdade,
-        obrigatorio: true,
-      },
-      {
-        repositorio: ENDERECO_ANTIGO,
-        gh: ghPara(ENDERECO_ANTIGO, process.env.TOKEN_DO_CODIGO ?? ""),
-        publico: publicoDeVerdade,
-        obrigatorio: false,
-      },
-    ]);
+      })),
+    );
     if (resumo) {
       const { tag } = resultados[0];
       const linhas = [

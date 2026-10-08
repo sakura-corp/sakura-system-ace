@@ -218,14 +218,31 @@ a atualização automática (item 21).
   essa chave pro endereço novo. Ela está no Bitwarden ("GitHub: chave ssace-versoes-publicar").
   **Vence em 09/10/2027.** Pra renovar: em `github.com/settings/personal-access-tokens`, abrir a
   `ssace-versoes-publicar` e clicar em "Regenerate token"; colar a nova no Bitwarden e no cofre
-  (Settings → Environments → `lojas` → `TOKEN_VERSOES` → editar). Chave vencida não estraga
-  nada: o Release para no primeiro passo, com o motivo escrito.
+  (Settings → Environments → `lojas` → `TOKEN_VERSOES` → editar). Chave vencida ou sem permissão
+  de escrita não estraga nada: o Release para no primeiro passo (ele cria e apaga um ramo de
+  mentira no `ssace-versoes` pra provar que a chave escreve), e o Liberar diz que não conseguiu
+  consultar, com a mensagem do GitHub.
+- **NUNCA criar a `TOKEN_VERSOES` fora do cofre** (em Settings → Secrets and variables → Actions).
+  Lá fora, qualquer workflow de qualquer branch recebe a chave, e o furo do item 78 volta. O teste
+  só confere que os workflows da `main` não pedem a chave fora do cofre; onde ela mora, só a tela
+  do GitHub mostra.
+- **Cada versão ganha um commit no `ssace-versoes`** (o arquivo `VERSAO.txt`, com o número e o
+  commit do código), e a tag aponta pra ele. O GitHub data a release pelo commit da tag, e é
+  nessa ordem que o canal de teste enxerga as versões. Não apagar nem reescrever esse histórico.
+- **Rodar o Release de novo não mexe numa versão que já está inteira** (com o `latest.yml`) num
+  endereço: só completa o que estiver pela metade. Uma build nova não é idêntica byte a byte, e
+  trocar o instalador de uma versão que as lojas estão baixando quebraria a conferência delas.
 - **O endereço antigo** (`sakura-system-ace`) **continua recebendo cópia** de cada versão,
   porque os computadores até a `0.9.50` só procuram lá. A cópia é o que leva eles até a `0.9.51`,
-  e da `0.9.51` em diante eles passam a procurar no endereço novo. Ela para quando o código fechar
-  (esvaziar `ENDERECO_ANTIGO` no `release.yml`). **Antes de fechar**, conferir em Configurações →
-  "Computadores desta empresa", em cada empresa, que nenhum computador está abaixo da `0.9.51`.
-  Senão ele fica parado pra sempre e só volta reinstalando à mão.
+  e da `0.9.51` em diante eles passam a procurar no endereço novo. Ela para quando o código fechar:
+  esvaziar o `ENDERECO_ANTIGO` **nos dois lugares**, no `release.yml` (`""`) e no
+  `scripts/liberar-versao.mjs` (o teste confere que batem). **Antes de fechar**, conferir em
+  Configurações → "Computadores desta empresa", em cada empresa, que nenhum computador está
+  abaixo da `0.9.51`. Senão ele fica parado pra sempre e só volta reinstalando à mão.
+- **Liberar uma versão de antes da `0.9.51`** mexe só no endereço antigo. É o jeito de **segurar**
+  os computadores que ainda procuram lá, se a `0.9.51` sair ruim: liberar a `0.9.50` faz ela
+  voltar a ser a versão deles (os que já passaram pra `0.9.51` não voltam; ver "Voltar uma
+  versão").
 - **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) continua no endereço
   antigo **até a `0.9.51` ser liberada**. Antes disso, o endereço novo ainda não tem versão
   liberada e o link daria 404. Depois, trocar pelo novo.
@@ -310,9 +327,10 @@ release ruim não desfaz nada em quem já atualizou. Por isso, duas metades:
 1. **Estancar** (quem ainda não pegou): como a versão nasce no teste, normalmente só chegou em dois
    computadores. Se foi liberada, rodar o **Liberar com a versão boa anterior**: ela volta a ser a
    de todas as lojas. Apagar a release **e a tag** (lugares separados no GitHub) tira a versão
-   também do teste, mas apaga o registro: só se ela for perigosa. **Voltar pra uma versão de
-   antes da `0.9.51` pelo Liberar não dá**: ela não existe no `ssace-versoes`, e o Liberar recusa.
-   Aí o caminho é o 2, abaixo.
+   também do teste, mas apaga o registro: só se ela for perigosa. **Liberar uma versão de antes
+   da `0.9.51`** mexe só no endereço antigo: segura quem ainda procura lá, mas não tem efeito em
+   quem já está na `0.9.51` ou acima (eles procuram no `ssace-versoes`). Pra esses, o caminho é
+   o 2, abaixo.
 2. **Desfazer** (quem já pegou): **publicar uma versão NOVA com o código da antiga**. Se a `0.9.35`
    saiu ruim e a `0.9.34` era boa: `git revert` do que a `0.9.35` trouxe (ou
    `git checkout v0.9.34 -- .`), `package.json` na `0.9.36`, PR, merge, Release. A loja recebe a

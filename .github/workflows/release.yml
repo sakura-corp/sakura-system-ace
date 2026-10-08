@@ -59,10 +59,19 @@ jobs:
             echo "::error::Falta a chave TOKEN_VERSOES no cofre lojas. Sem ela a versão não chega em $ENDERECO_DAS_VERSOES (docs/operacao.md, 'Onde as versões moram')."
             exit 1
           fi
-          if ! gh api "repos/$ENDERECO_DAS_VERSOES" --jq .full_name; then
-            echo "::error::A chave TOKEN_VERSOES não abre $ENDERECO_DAS_VERSOES. Ela vale até 09/10/2027: se venceu, criar outra e trocar no cofre lojas (docs/operacao.md, 'Onde as versões moram')."
+          # Ler não prova nada: o repositório é público, e qualquer chave
+          # válida lê. A prova de que ela ESCREVE é criar e apagar um ramo
+          # de mentira (não mexe em arquivo nenhum).
+          if ! principal="$(gh api "repos/$ENDERECO_DAS_VERSOES" --jq .default_branch)" \
+            || ! base="$(gh api "repos/$ENDERECO_DAS_VERSOES/git/ref/heads/$principal" --jq .object.sha)" \
+            || ! gh api -X POST "repos/$ENDERECO_DAS_VERSOES/git/refs" \
+                 -f ref="refs/heads/conferir-chave-$GITHUB_RUN_ID" -f sha="$base" >/dev/null; then
+            echo "::error::A chave TOKEN_VERSOES não consegue escrever em $ENDERECO_DAS_VERSOES. Ela vale até 09/10/2027 e precisa de 'Contents: Read and write' só nesse repositório: se venceu ou está errada, criar outra e trocar no cofre lojas (docs/operacao.md, 'Onde as versões moram')."
             exit 1
           fi
+          gh api -X DELETE "repos/$ENDERECO_DAS_VERSOES/git/refs/heads/conferir-chave-$GITHUB_RUN_ID" >/dev/null \
+            || echo "::warning::Não consegui apagar o ramo conferir-chave-$GITHUB_RUN_ID em $ENDERECO_DAS_VERSOES (pode apagar à mão; não atrapalha nada)."
+          echo "A chave escreve em $ENDERECO_DAS_VERSOES."
 
       - uses: actions/setup-node@v4
         with:
@@ -140,13 +149,46 @@ jobs:
 
           # Publica a versão inteira num endereço. `repo` e `GH_TOKEN` valem
           # pra tudo o que roda aqui dentro (subir, conferir).
+          # Cada versão ganha um commit próprio no repositório de versões (o
+          # VERSAO.txt), e a tag aponta pra ele. O GitHub data a release pela
+          # data do commit da tag, e o feed que o canal de teste lê
+          # (releases.atom) vem nessa ordem: com todas as tags no mesmo
+          # commit, a ordem entre as versões ficaria por conta do GitHub, e o
+          # computador de teste podia não enxergar a mais nova.
+          marcar_versao() {
+            local conteudo sha_antigo
+            local -a antigo=()
+            conteudo="$(printf 'Versão %s\nFeita a partir de https://github.com/%s/commit/%s\n' \
+              "$versao" "$GITHUB_REPOSITORY" "$GITHUB_SHA" | base64 -w0)"
+            if sha_antigo="$(gh api "repos/$repo/contents/VERSAO.txt" --jq .sha 2>/dev/null)"; then
+              antigo=(-f sha="$sha_antigo")
+            fi
+            gh api -X PUT "repos/$repo/contents/VERSAO.txt" \
+              -f message="Versão $versao" -f content="$conteudo" ${antigo[@]+"${antigo[@]}"} \
+              --jq .commit.sha
+          }
+
           publicar_em() {
             repo="$1"
             export GH_TOKEN="$2"
             echo "== $repo"
 
-            if gh release view "$tag" -R "$repo" >/dev/null 2>&1; then
-              echo "A release $tag já existe em $repo — vou completar o que faltar nela."
+            if existe="$(gh release view "$tag" -R "$repo" --json assets \
+                 --jq '[.assets[] | select(.name == "latest.yml" and .size > 0)] | length' 2>&1)"; then
+              # O latest.yml só sobe depois do instalador conferido (a ordem
+              # lá embaixo). Se ele está lá, a versão está inteira neste
+              # endereço, e não se mexe: esta build não é idêntica byte a
+              # byte à primeira, e trocar o instalador de uma versão que as
+              # lojas já estão baixando quebraria a conferência delas. É o
+              # caso de rodar de novo só pra completar o OUTRO endereço.
+              if [ "$existe" != "0" ]; then
+                echo "A $tag já está inteira em $repo — não mexo nela."
+                return 0
+              fi
+              echo "A release $tag já existe em $repo, pela metade — vou completar."
+            elif ! printf '%s' "$existe" | grep -qi "release not found"; then
+              echo "::error::Não consegui consultar a $tag em $repo: $existe"
+              return 1
             else
               # `--prerelease` é o que põe a versão no canal de teste: o
               # GitHub nunca responde um pré-lançamento como "a release mais
@@ -158,14 +200,17 @@ jobs:
               # arquivo), a marca não é mexida: se ela já tinha sido liberada,
               # continua liberada.
               #
-              # A tag aponta pro commit do código só aqui mesmo: no
-              # repositório de versões esse commit não existe, e a tag nasce
-              # no ramo principal dele. O commit de onde a versão saiu vai
+              # A tag aponta pro commit do código aqui mesmo, e pro commit
+              # do VERSAO.txt no repositório de versões (onde o commit do
+              # código não existe). O commit de onde a versão saiu vai
               # escrito nas notas, nos dois.
-              alvo=()
-              if [ "$repo" = "$GITHUB_REPOSITORY" ]; then alvo=(--target "$GITHUB_SHA"); fi
+              if [ "$repo" = "$GITHUB_REPOSITORY" ]; then
+                alvo="$GITHUB_SHA"
+              else
+                alvo="$(marcar_versao)"
+              fi
               echo "Criando a release $tag no canal de teste de $repo."
-              gh release create "$tag" -R "$repo" ${alvo[@]+"${alvo[@]}"} --title "$versao" --notes "Feita a partir de https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --prerelease
+              gh release create "$tag" -R "$repo" --target "$alvo" --title "$versao" --notes "Feita a partir de https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --prerelease
             fi
 
             # A ORDEM É A PARTE QUE IMPORTA. O latest.yml é o que anuncia a
@@ -195,15 +240,21 @@ jobs:
             # problema onde não há. Endereço sem nenhuma versão liberada (o
             # novo, antes do primeiro Liberar) responde 404, e isso é normal.
             if [ "$(gh release view "$tag" -R "$repo" --json isPrerelease --jq .isPrerelease)" = "true" ]; then
-              resposta="$(mktemp)"
-              situacao="$(curl -sSL --max-time 30 -H 'Accept: application/json' \
-                -o "$resposta" -w '%{http_code}' \
-                "https://github.com/$repo/releases/latest" || true)"
-              mais_recente="$(node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{try{console.log(JSON.parse(t).tag_name||"")}catch{console.log("")}})' < "$resposta" || true)"
-              if [ "$situacao" = "404" ]; then
-                echo "Canal de teste: $tag. Ainda não há versão liberada em $repo."
-              elif [ -z "$mais_recente" ]; then
-                echo "::warning::Não consegui perguntar ao GitHub qual é a versão das outras lojas em $repo. A $tag foi publicada no canal de teste."
+              mais_recente="$(curl -sSL --max-time 30 -H 'Accept: application/json' \
+                "https://github.com/$repo/releases/latest" \
+                | node -e 'let t="";process.stdin.on("data",d=>t+=d).on("end",()=>{try{console.log(JSON.parse(t).tag_name||"")}catch{console.log("")}})' \
+                || true)"
+              if [ -z "$mais_recente" ]; then
+                # Sem resposta pode ser rede, ou o endereço ainda não ter
+                # nenhuma versão liberada (o novo, antes do primeiro
+                # Liberar). Só o segundo caso é normal.
+                liberadas="$(gh release list -R "$repo" --exclude-pre-releases --exclude-drafts \
+                  --limit 1 --json tagName --jq length 2>/dev/null || echo "?")"
+                if [ "$liberadas" = "0" ]; then
+                  echo "Canal de teste: $tag. Ainda não há versão liberada em $repo."
+                else
+                  echo "::warning::Não consegui perguntar ao GitHub qual é a versão das outras lojas em $repo. A $tag foi publicada no canal de teste."
+                fi
               elif [ "$mais_recente" = "$tag" ]; then
                 echo "::error::A $tag está aparecendo em $repo como a versão de TODAS as lojas, mas era pra estar só no canal de teste."
                 exit 1
