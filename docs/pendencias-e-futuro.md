@@ -35,14 +35,23 @@ de quebra prova que o atualizador da 36 funciona, e então o salto pra 40.
 
 **Liberar a `v0.9.49` pras outras lojas** quando ela achar que rodou o bastante (publicada em
 03/10 só no canal de teste; leva junto a `v0.9.48`, que nunca foi liberada). Hoje a Pneus Amigão
-é a única empresa, então não tem pressa. Na loja, vale olhar a lista de OS no Balcão com os dados
+é a única empresa, então não tem pressa. **Pelo botão, só até o PR #447 entrar**: depois, o
+Liberar só conhece o endereço novo, e o caminho natural é liberar a `0.9.51`, que leva tudo. Na loja, vale olhar a lista de OS no Balcão com os dados
 de verdade (nomes e valores maiores que os de demonstração).
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
 Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
 privado); **antes de 1º/11**, a pergunta do Ambiente Nacional da NFS-e (abaixo, em "Perguntas pra
-fora").
+fora"); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo em
+`docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
+motivo escrito.
+
+**Branches velhas no GitHub** (08/10): ela autorizou apagar 131, as já mescladas e as 2
+obsoletas de 27/07, guardando só a da rodinha (`claude/kind-euler-8s461d`). Mas o acesso da
+sessão ao GitHub não deixa apagar branch. Falta escolher entre deixar como estão ou um botão de
+uso único que ela mesma aperta. Em qualquer caso, vale ligar "Automatically delete head branches"
+(Settings → General), pras próximas não acumularem.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
 em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
@@ -372,13 +381,20 @@ está na seção 9.** O que ele faz:
 - **Ideia, não pedida**: o Release conferir, antes de publicar, que nenhum banco está atrás da
   última migration.
 
-### 12. Repositório só de versões (combinado em 30/09/2026, pra depois)
+### 12. Repositório só de versões: preparado em 08/10/2026 (PR #447, entra com a `0.9.51`)
 
-As versões (instalador + `latest.yml`) passariam a ser publicadas num repositório público separado,
-onde colaborador não escreve, com um token dela no cofre `lojas`. Fecha o furo do item 78 da seção
-6 e é o pré-requisito pra deixar o `sakura-system-ace` privado. A transição e os custos estão no
-marco de 29-30/09 do `docs/historico.md`. **Cuidado barato até lá**: o Balcão no canal normal, pra
-versão de teste só chegar no PC dela.
+Ela escolheu fazer agora, sem pagar nada ("B sem pagar"; o código continua público). Já existem
+o **`sakura-corp/ssace-versoes`** (público, só ela escreve) e a chave **`TOKEN_VERSOES`** no
+cofre `lojas`. O PR #447 faz:
+- o Release publicar lá e mandar uma cópia pro endereço antigo;
+- o Liberar liberar nos dois;
+- o programa procurar atualização lá.
+
+Ele **entra junto com a `v0.9.51`**, a versão de transição, depois do teste dela na loja. Fecha o
+furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`. Fechar o código
+depois fica sendo só o plano Team e parar a cópia no endereço antigo (custo no privado; antes,
+a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste só chegar no PC
+dela.
 
 ### 13. Painel da equipe (`docs/painel.md`)
 
