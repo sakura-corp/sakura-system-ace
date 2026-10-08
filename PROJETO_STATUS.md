@@ -244,31 +244,27 @@ canal normal segue na `0.9.47`. Banco na **`0064`**. O marco anterior (06/10) es
   de novo mexia no endereço bom, o canal de teste podia ver as versões fora de ordem, e o Liberar
   não conseguia segurar os computadores antigos. Detalhe em `docs/operacao.md`, "Onde as versões
   moram". A chave funcionou de primeira.
-- **Faxina das branches** (PR #449): um botão de uso único que ela apertou. Das 136, **saíram
-  132**. O botão já foi tirado do código.
+- **Faxina das branches**: um botão de uso único que ela apertou (PR #449) tirou 132 das 136, e
+  ela apagou as últimas à mão; **só sobrou a `main`**. O botão já saiu do código, e ficou ligado o
+  "Automatically delete head branches": a branch some sozinha quando o PR entra.
 - **#442 (enxugar o CI)**: ela deixou pendente.
 - **Abertura** (no privado): a CIN com o nome social hoje, 13:45; a entrevista do certificado em
   14/10, 14h; a senha de emissão salva.
 
 #### Por onde a próxima sessão começa
-1. **O teste da `v0.9.51`**:
-   - a rodinha (campo de número selecionado, tela no topo, girar: o valor não muda);
-   - o Balcão atualizando sozinho.
+1. **O Balcão pegar a `v0.9.51`** ao abrirem o programa na loja (conferir no Diagnóstico). No PC
+   dela, a rodinha foi testada e está certa (08/10).
 2. **Liberar a `0.9.51`** pras outras lojas, quando ela pedir. Ela leva a 0.9.48, a 0.9.49 e a
    0.9.50 juntas. **Depois de liberada**, trocar o link de baixar pro endereço novo
    (`site/index.html`, `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`).
-3. **Duas coisas rápidas no GitHub, com ela**:
-   - apagar as 3 branches que sobraram (`claude/kind-euler-8s461d`, `claude/versao-0-9-51` e
-     `claude/versoes-no-ssace-versoes`, todas já dentro da `main`), pela página de branches;
-   - ligar "Automatically delete head branches" (Settings → General).
-4. **Avisos da abertura**, quando ela mandar:
+3. **Avisos da abertura**, quando ela mandar:
    - a CIN digital sai: mandar o PDF pra Debora;
    - a entrevista de 14/10: depois, a senha de emissão no painel;
    - a procuração no e-CAC.
    
    Pra isso, pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
    (seção 1).
-5. **Ainda vale**:
+4. **Ainda vale**:
    - o salto 2 do Electron (40), agora que a 0.9.51 provou o atualizador da 36;
    - a #442, quando ela quiser;
    - o "Texto de garantia" da loja, quando ela e o pai decidirem;

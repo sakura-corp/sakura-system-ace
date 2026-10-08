@@ -25,9 +25,8 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Testar a `v0.9.51`** (publicada em 08/10 no canal de teste; **o PC dela já atualizou
-sozinho**): a rodinha (campo de número selecionado, tela no topo, girar a rodinha: o valor não
-muda) e o Balcão pegando a versão ao abrir o programa. A `v0.9.50` foi aprovada na loja em 08/10
+**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 no canal de teste): ele pega a versão ao
+abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10
 (versão, uso, notas e impressão pelo recibo). **A garantia não imprime enquanto a loja não tiver o
 "Texto de garantia"** (Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40.
 
@@ -45,11 +44,8 @@ fora"); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo 
 `docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
 motivo escrito.
 
-**Branches no GitHub** (08/10): a faxina saiu por um botão de uso único que ela apertou (a sessão
-não consegue apagar branch): das 136, saíram 132. Faltam, com ela: apagar as 3 que sobraram
-(`claude/kind-euler-8s461d`, `claude/versao-0-9-51`, `claude/versoes-no-ssace-versoes`, todas já
-na `main`) pela página de branches, e ligar "Automatically delete head branches" (Settings →
-General), pras próximas não acumularem.
+**Branches no GitHub**: feito em 08/10. Só sobrou a `main`, e o "Automatically delete head
+branches" está ligado.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
 em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
