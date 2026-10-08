@@ -1,0 +1,42 @@
+name: Apagar branches velhas (uso único)
+
+# Faxina das branches que já entraram na `main` (08/10/2026). A sessão do
+# Claude não consegue apagar branch, então o botão é dela: Actions → "Apagar
+# branches velhas (uso único)" → Run workflow → aprovar.
+#
+# Só apaga o que já está na `main`, e nunca a da rodinha nem branch com PR
+# aberto. As regras e o porquê estão em scripts/apagar-branches-velhas.mjs.
+# O resumo da rodada lista o que saiu e o que ficou.
+#
+# Uso único: depois de rodado, este arquivo e o script podem sair do
+# repositório.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: apagar-branches-velhas
+  cancel-in-progress: false
+
+jobs:
+  apagar:
+    # Cofre "lojas": só a `main` abre, e a rodada espera a aprovação dela.
+    environment: lojas
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apagar as branches que já entraram
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/apagar-branches-velhas.mjs
