@@ -25,16 +25,19 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 no canal de teste): ele pega a versão ao
-abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10
-(versão, uso, notas e impressão pelo recibo). **A garantia não imprime enquanto a loja não tiver o
-"Texto de garantia"** (Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40.
+**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 e **liberada pra todas as lojas no mesmo
+dia**): ele pega a versão ao abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha
+foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10 (versão, uso, notas e impressão
+pelo recibo). **A garantia não imprime enquanto a loja não tiver o "Texto de garantia"**
+(Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40. Na loja, vale olhar a
+lista de OS no Balcão com os dados de verdade (nomes e valores maiores que os de demonstração).
 
-**Liberar a `v0.9.51` pras outras lojas** quando ela achar que rodou o bastante. Ela leva junto a
-`0.9.48`, a `0.9.49` e a `0.9.50`, que nunca foram liberadas. Hoje a Pneus Amigão é a única
-empresa, então não tem pressa. **Depois de liberada**, trocar o link de baixar pro endereço novo
-(`site/index.html`, `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`). Na loja, vale olhar a lista de OS no Balcão com os dados
-de verdade (nomes e valores maiores que os de demonstração).
+**Comissão, pra decidir quando a loja passar a usar** (08/10, no teste do recibo): o "A pagar"
+sai zero porque nenhum funcionário tem "Comissão (%)" cadastrada (a loja ainda não registra
+pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com "sem custo" nos
+**serviços** (peça ela sempre cadastra com custo): sem custo, o lucro conta o preço inteiro do
+serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
+gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
@@ -48,9 +51,9 @@ motivo escrito.
 branches" está ligado.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
-travado num erro de cadastro que a Contabilizei está corrigindo; a procuração; a TFE; e a 1ª
-NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
+em 05/10. O que falta (a conta PJ, esperando a CIN com o nome social, pedida em 08/10; o
+certificado digital, com a entrevista em 14/10; a procuração; a TFE; e a 1ª NFS-e da Pneus
+Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
 "Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
@@ -384,8 +387,9 @@ cofre `lojas`. O PR #447 faz:
 - o Liberar liberar nos dois;
 - o programa procurar atualização lá.
 
-A `v0.9.51`, a versão de transição, saiu em 08/10 nos dois endereços, e o PC dela já atualizou
-por ela. Fecha o furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`.
+A `v0.9.51`, a versão de transição, saiu em 08/10 nos dois endereços e foi **liberada no mesmo
+dia**; o PC dela já atualizou por ela, e o link de baixar o instalador passou pro endereço novo.
+Fecha o furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`.
 Fechar o código depois fica sendo só o plano Team e parar a cópia no endereço antigo (custo no
 privado; antes, a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste
 só chegar no PC dela.

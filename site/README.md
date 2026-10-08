@@ -44,12 +44,13 @@ A partir daí, todo envio para a `main` republica o site sozinho.
 Para usar um endereço próprio depois (ex: `sakurasystem.com.br`), é só comprar o domínio e
 adicioná-lo em **Settings → Domains** — não muda nada no código.
 
-## ⚠️ O botão de download só funciona a partir da próxima versão publicada
+## O botão de download
 
-Os botões apontam para:
+Os botões apontam para o repositório das versões (desde a 0.9.51; antes, para o próprio
+`sakura-system-ace`):
 
 ```
-https://github.com/sakura-corp/sakura-system-ace/releases/latest/download/SakuraSystem-Setup.exe
+https://github.com/sakura-corp/ssace-versoes/releases/latest/download/SakuraSystem-Setup.exe
 ```
 
 Esse endereço entrega **sempre a última versão liberada**, sem precisar mexer no site a cada

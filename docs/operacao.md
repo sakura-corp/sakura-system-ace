@@ -243,9 +243,9 @@ a atualização automática (item 21).
   os computadores que ainda procuram lá, se a `0.9.51` sair ruim: liberar a `0.9.50` faz ela
   voltar a ser a versão deles (os que já passaram pra `0.9.51` não voltam; ver "Voltar uma
   versão").
-- **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) continua no endereço
-  antigo **até a `0.9.51` ser liberada**. Antes disso, o endereço novo ainda não tem versão
-  liberada e o link daria 404. Depois, trocar pelo novo.
+- **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) é o do endereço novo
+  desde 08/10, quando a `0.9.51` foi liberada. Antes disso, o endereço novo não tinha versão
+  liberada e o link daria 404. O link antigo continua funcionando enquanto houver a cópia.
 
 ### Publicar uma versão nova (canal de teste)
 
@@ -349,6 +349,17 @@ banco novo, e isso só funciona porque migration **acrescenta**, nunca tira. Da�
 > `0033` (tirou o `id` das configurações ao trocar pra `loja_id`), só deu certo porque havia uma
 > loja e uma máquina, e é por isso que três migrations anteriores precisam de guarda (item 36 da
 > seção 6).
+
+### O que a sessão do Claude não consegue fazer no GitHub (visto em 08/10/2026)
+
+- **Apagar branch**: o Git da sessão recusa (erro 403), mesmo uma só.
+- **Criar repositório na organização**: recusado (403, "Resource not accessible by integration").
+- **Mexer numa release ou subir arquivo nela** (ver "Publicar uma versão nova").
+
+O caminho: ela faz pelo site, guiada um passo de cada vez (foi assim que nasceu o
+`ssace-versoes`). Quando é coisa demais pra fazer à mão, um **botão de uso único**: um workflow
+que ela dispara e aprova no cofre `lojas`, e que sai do código depois de usado. Foi assim que
+saíram 132 branches de uma vez (PR #449). Não procurar outro jeito de contornar a recusa.
 
 ## 11. Trabalhando de outro computador
 
