@@ -350,6 +350,17 @@ banco novo, e isso só funciona porque migration **acrescenta**, nunca tira. Da�
 > loja e uma máquina, e é por isso que três migrations anteriores precisam de guarda (item 36 da
 > seção 6).
 
+### O que a sessão do Claude não consegue fazer no GitHub (visto em 08/10/2026)
+
+- **Apagar branch**: o Git da sessão recusa (erro 403), mesmo uma só.
+- **Criar repositório na organização**: recusado (403, "Resource not accessible by integration").
+- **Mexer numa release ou subir arquivo nela** (ver "Publicar uma versão nova").
+
+O caminho: ela faz pelo site, guiada um passo de cada vez (foi assim que nasceu o
+`ssace-versoes`). Quando é coisa demais pra fazer à mão, um **botão de uso único**: um workflow
+que ela dispara e aprova no cofre `lojas`, e que sai do código depois de usado. Foi assim que
+saíram 132 branches de uma vez (PR #449). Não procurar outro jeito de contornar a recusa.
+
 ## 11. Trabalhando de outro computador
 
 Código no GitHub e banco no Supabase: dá pra continuar de qualquer computador com internet. Em

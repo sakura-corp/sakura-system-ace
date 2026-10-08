@@ -32,6 +32,13 @@ pelo recibo). **A garantia não imprime enquanto a loja não tiver o "Texto de g
 (Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40. Na loja, vale olhar a
 lista de OS no Balcão com os dados de verdade (nomes e valores maiores que os de demonstração).
 
+**Comissão, pra decidir quando a loja passar a usar** (08/10, no teste do recibo): o "A pagar"
+sai zero porque nenhum funcionário tem "Comissão (%)" cadastrada (a loja ainda não registra
+pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com "sem custo" nos
+**serviços** (peça ela sempre cadastra com custo): sem custo, o lucro conta o preço inteiro do
+serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
+gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
+
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
 Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
@@ -44,9 +51,9 @@ motivo escrito.
 branches" está ligado.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. O que falta (a conta PJ, esperando um documento novo dela; o certificado digital,
-travado num erro de cadastro que a Contabilizei está corrigindo; a procuração; a TFE; e a 1ª
-NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
+em 05/10. O que falta (a conta PJ, esperando a CIN com o nome social, pedida em 08/10; o
+certificado digital, com a entrevista em 14/10; a procuração; a TFE; e a 1ª NFS-e da Pneus
+Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
 "Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)

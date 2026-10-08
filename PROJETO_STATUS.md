@@ -157,6 +157,9 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   e explico em português simples, e só então ela clica. Foi assim a abertura inteira do CNPJ, num
   dia, sem erro. Os dados pessoais que aparecem nesses documentos (nome civil, CPF, RG, endereço)
   **nunca** vão pra memória, nem pra privada.
+- **O que levar ou fazer num órgão** (Poupatempo, cartório, certificadora, banco; 08/10/2026):
+  conferir na página oficial antes de responder. Eu disse que o Poupatempo dava lá o formulário
+  do nome social, e não dá: foi a busca dela no Google que mostrou, a tempo.
 - **Defeito achado de passagem vira tarefa no GitHub na hora** (04/10/2026), no formato da #425
   ("o que acontece", "por quê", "o que fazer", "Pronto quando"), mesmo que o conserto venha
   depois. O **cartão de "tarefa sugerida"** que o app mostra é só um atalho pra abrir outra
@@ -196,7 +199,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **Publicar ≠ liberar**: versão nasce no canal de teste; só chega nas lojas pelo workflow
   "Liberar versão para todas as lojas". Não publicar nem liberar sem ela pedir. Desde 30/09 o
   Release, o Liberar e o Atualizar bancos **esperam a aprovação dela no GitHub** (cofre `lojas`):
-  depois de disparar, avisar que ela precisa aprovar.
+  depois de disparar, avisar que ela precisa aprovar, **já com o link direto da rodada** (08/10:
+  "cadê o link").
 - **Antes de dizer qual é a última versão**, conferir as releases reais no GitHub — este arquivo já
   errou isso.
 - **Código**: erro do Supabase → `mensagemDeErro()`; nunca `window.prompt()`; fallback de
