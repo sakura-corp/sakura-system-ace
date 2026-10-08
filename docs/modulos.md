@@ -955,7 +955,8 @@ Quatro coisas que valem saber:
     `%APPDATA%\Sakura System - AutoCenter Edition\atualizacoes.log`.
   - **Instalador de nome fixo desde a `v0.9.22`** (`SakuraSystem-Setup.exe`): o endereço
     `/releases/latest/download/SakuraSystem-Setup.exe` sempre entrega a última versão **liberada**.
-    As releases anteriores têm o número no nome.
+    As releases anteriores têm o número no nome. Desde 08/10 (a `0.9.51` liberada), o link do site
+    e do passo a passo de loja nova é o do `sakura-corp/ssace-versoes`.
   - **Desde a `v0.9.40`, publicar não chega em todas as lojas**: nasce no canal de teste e só chega
     no resto pelo "Liberar". Uma loja nova que baixa o instalador também recebe a liberada.
   - **Incidentes que moldaram o processo** (o detalhe está no histórico do Git deste arquivo):
@@ -991,7 +992,7 @@ Quatro coisas que valem saber:
   | `v0.9.45` | 26/09 (liberada 27/09) | Venda de balcão (`0064`) |
   | `v0.9.46` | 27/09 | Ficha do veículo |
   | `v0.9.47` | 29/09 | Só o endereço novo do atualizador (`sakura-corp/sakura-system-ace`) |
-  | `v0.9.48` | 01/10 (só no teste) | NFS-e: "Conferir de novo" quando a prefeitura demora, e registrar nota pela referência (`docs/licoes.md`, item 80) |
-  | `v0.9.49` | 03/10 (só no teste) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
-  | `v0.9.50` | 04/10 (só no teste) | **Só o Electron 33 → 36** (Chromium 130 → 136, Node 20 → 22), o 1º dos três saltos da #385; nada mais junto |
-  | `v0.9.51` | 08/10 (só no teste) | A rodinha do mouse não muda mais campo de número (#436, item 41); **a versão de transição pro `ssace-versoes`**: sai nos dois endereços, e da 0.9.51 em diante o programa procura atualização lá (#447; `docs/operacao.md`, "Onde as versões moram") |
+  | `v0.9.48` | 01/10 (só no teste; chegou nas lojas com a 0.9.51) | NFS-e: "Conferir de novo" quando a prefeitura demora, e registrar nota pela referência (`docs/licoes.md`, item 80) |
+  | `v0.9.49` | 03/10 (só no teste; chegou nas lojas com a 0.9.51) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
+  | `v0.9.50` | 04/10 (só no teste; chegou nas lojas com a 0.9.51) | **Só o Electron 33 → 36** (Chromium 130 → 136, Node 20 → 22), o 1º dos três saltos da #385; nada mais junto |
+  | `v0.9.51` | 08/10 (liberada 08/10) | A rodinha do mouse não muda mais campo de número (#436, item 41); **a versão de transição pro `ssace-versoes`**: sai nos dois endereços, e da 0.9.51 em diante o programa procura atualização lá (#447; `docs/operacao.md`, "Onde as versões moram") |

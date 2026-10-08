@@ -25,16 +25,12 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 - confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
   apelido (senão, esquecer esse computador).
 
-**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 no canal de teste): ele pega a versão ao
-abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10
-(versão, uso, notas e impressão pelo recibo). **A garantia não imprime enquanto a loja não tiver o
-"Texto de garantia"** (Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40.
-
-**Liberar a `v0.9.51` pras outras lojas** quando ela achar que rodou o bastante. Ela leva junto a
-`0.9.48`, a `0.9.49` e a `0.9.50`, que nunca foram liberadas. Hoje a Pneus Amigão é a única
-empresa, então não tem pressa. **Depois de liberada**, trocar o link de baixar pro endereço novo
-(`site/index.html`, `site/README.md`, `supabase/instalacao/INSTALAR-LOJA-NOVA.md`). Na loja, vale olhar a lista de OS no Balcão com os dados
-de verdade (nomes e valores maiores que os de demonstração).
+**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 e **liberada pra todas as lojas no mesmo
+dia**): ele pega a versão ao abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha
+foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10 (versão, uso, notas e impressão
+pelo recibo). **A garantia não imprime enquanto a loja não tiver o "Texto de garantia"**
+(Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40. Na loja, vale olhar a
+lista de OS no Balcão com os dados de verdade (nomes e valores maiores que os de demonstração).
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
@@ -384,8 +380,9 @@ cofre `lojas`. O PR #447 faz:
 - o Liberar liberar nos dois;
 - o programa procurar atualização lá.
 
-A `v0.9.51`, a versão de transição, saiu em 08/10 nos dois endereços, e o PC dela já atualizou
-por ela. Fecha o furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`.
+A `v0.9.51`, a versão de transição, saiu em 08/10 nos dois endereços e foi **liberada no mesmo
+dia**; o PC dela já atualizou por ela, e o link de baixar o instalador passou pro endereço novo.
+Fecha o furo do item 78 da seção 6 quando todos os computadores passarem da `0.9.51`.
 Fechar o código depois fica sendo só o plano Team e parar a cópia no endereço antigo (custo no
 privado; antes, a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste
 só chegar no PC dela.

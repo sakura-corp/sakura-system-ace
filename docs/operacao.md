@@ -243,9 +243,9 @@ a atualização automática (item 21).
   os computadores que ainda procuram lá, se a `0.9.51` sair ruim: liberar a `0.9.50` faz ela
   voltar a ser a versão deles (os que já passaram pra `0.9.51` não voltam; ver "Voltar uma
   versão").
-- **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) continua no endereço
-  antigo **até a `0.9.51` ser liberada**. Antes disso, o endereço novo ainda não tem versão
-  liberada e o link daria 404. Depois, trocar pelo novo.
+- **O link de baixar o instalador** (o site e o `INSTALAR-LOJA-NOVA.md`) é o do endereço novo
+  desde 08/10, quando a `0.9.51` foi liberada. Antes disso, o endereço novo não tinha versão
+  liberada e o link daria 404. O link antigo continua funcionando enquanto houver a cópia.
 
 ### Publicar uma versão nova (canal de teste)
 
