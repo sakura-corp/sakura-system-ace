@@ -700,12 +700,18 @@
     do app, não só a quantidade — o mesmo acidente num preço de venda mudaria 1 centavo sem deixar
     rastro em tela nenhuma.
     **Lição de método, que quase virou o terceiro chute do item 33**: a primeira hipótese foi a
-    **rodinha do mouse** (o clássico "wheel muda input number"), e ela estava **errada** — testado
-    no Electron real (Chromium 130), a rodinha não mexe mais no valor; o Chromium tirou esse
-    comportamento. Só apareceu porque a hipótese foi testada antes de virar correção, e não depois.
-    Testar cedo também evitou o inverso: o Chromium **141** avulso do sandbox e o **130** de dentro
-    do Electron respondem diferente, então validar comportamento de campo nativo tem que ser no
-    Electron do projeto, nunca num Chromium qualquer.
+    **rodinha do mouse** (o clássico "wheel muda input number"), e testada no Electron real
+    (Chromium 130) ela não mexeu no valor. Só apareceu porque a hipótese foi testada antes de virar
+    correção, e não depois. Testar cedo também evitou o inverso: o Chromium **141** avulso do
+    sandbox e o **130** de dentro do Electron respondem diferente, então validar comportamento de
+    campo nativo tem que ser no Electron do projeto, nunca num Chromium qualquer.
+    **Mas a rodinha muda, sim (achado em 03/10/2026 pelo `comparar:electron`, lição 82)**: ela só
+    rola a tela enquanto a tela tem pra onde rolar. Com o formulário no topo, girar pra cima com o
+    cursor em cima do campo selecionado faz 2 virar 2,01 (e o mesmo no fim, girando pra baixo). O
+    teste de agosto foi no meio do formulário. **Corrigido** no mesmo hook: a rodinha em cima do
+    campo selecionado **tira a seleção** em vez de ser bloqueada (bloquear impediria rolar a tela
+    com o cursor em cima de um campo). Conferido na 33 e na 36. **Lição**: um "não acontece"
+    testado num caso só vale só praquele caso; testar nas bordas (topo, fim, vazio).
 
 42. **Padrão de bug: `toISOString().slice(0, 10)` grava o dia em UTC, não o dia de quem está
     usando** (achado em 02/09/2026, numa varredura de cálculo pedida por ela). É o item 34 de
@@ -1657,7 +1663,7 @@
       cena quando a foto sai sem o menu lateral e manda um `resize` antes de cada foto.
     - **Na primeira rodada ela já achou um defeito antigo**: a rodinha do mouse **muda** o campo
       de número quando a tela não tem mais pra onde rolar (no topo, girando pra cima): 2 vira
-      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. O conserto
-      sai numa versão própria, logo depois do primeiro salto do Electron.
+      2,01. O item 41 tinha concluído o contrário porque testou no meio do formulário. Corrigido
+      numa versão própria, a seguinte ao primeiro salto do Electron (ver o item 41).
     - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
       qualquer responde outra coisa (o item 41 já tinha visto isso com o 141 do sandbox).

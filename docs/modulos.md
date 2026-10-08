@@ -994,3 +994,4 @@ Quatro coisas que valem saber:
   | `v0.9.48` | 01/10 (só no teste) | NFS-e: "Conferir de novo" quando a prefeitura demora, e registrar nota pela referência (`docs/licoes.md`, item 80) |
   | `v0.9.49` | 03/10 (só no teste) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
   | `v0.9.50` | 04/10 (só no teste) | **Só o Electron 33 → 36** (Chromium 130 → 136, Node 20 → 22), o 1º dos três saltos da #385; nada mais junto |
+  | `v0.9.51` | 08/10 (só no teste) | A rodinha do mouse não muda mais campo de número (#436, item 41); **a versão de transição pro `ssace-versoes`**: sai nos dois endereços, e da 0.9.51 em diante o programa procura atualização lá (#447; `docs/operacao.md`, "Onde as versões moram") |
