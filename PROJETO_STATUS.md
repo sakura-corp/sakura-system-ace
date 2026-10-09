@@ -256,14 +256,14 @@ anterior (06/10) está no topo de `docs/historico.md`.
   ela apagou as últimas à mão; **só sobrou a `main`**. O botão já saiu do código, e ficou ligado o
   "Automatically delete head branches": a branch some sozinha quando o PR entra.
 - **#442 (enxugar o CI)**: ela deixou pendente.
-- **Abertura** (no privado): a CIN com o nome social foi pedida (deu certo; agora é esperar
-  sair); a entrevista do certificado em 14/10, 14h; a senha de emissão salva.
+- **Abertura** (no privado): a CIN com o nome social saiu em 09/10 e já foi mandada ao banco; a
+  entrevista do certificado em 14/10, 14h; a senha de emissão salva.
 
 #### Por onde a próxima sessão começa
 1. **O Balcão pegar a `v0.9.51`** ao abrirem o programa na loja (conferir no Diagnóstico). No PC
    dela, a rodinha foi testada e está certa (08/10).
 2. **Avisos da abertura**, quando ela mandar:
-   - a CIN digital sai: mandar o PDF pra Debora;
+   - a resposta do banco sobre a conta PJ (a CIN foi mandada em 09/10);
    - a entrevista de 14/10: depois, a senha de emissão no painel;
    - a procuração no e-CAC.
    
