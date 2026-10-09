@@ -51,7 +51,7 @@ motivo escrito.
 branches" está ligado.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. O que falta (a conta PJ, esperando a CIN com o nome social, pedida em 08/10; o
+em 05/10. O que falta (a conta PJ, esperando o banco aprovar a CIN com o nome social, mandada em 09/10; o
 certificado digital, com a entrevista em 14/10; a procuração; a TFE; e a 1ª NFS-e da Pneus
 Amigão, prevista entre ~17/10 e ~01/11) está no privado, `EMPRESA.md`, seção
 "Abertura: o que falta".
