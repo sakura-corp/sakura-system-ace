@@ -13,6 +13,10 @@
 > seu nome, antes da empresa existir: vale perguntar ao advogado se elas precisam passar pra
 > empresa.
 
+> **Atualização de 12/10/2026**: o contrato com as lojas, com esta cláusula de dados como anexo,
+> está escrito e foi **revisado pelo advogado**. Mora no repositório privado
+> (`contratos/contrato-lojas.md`), porque leva preço.
+
 ## Por que isso aparece agora
 
 A decisão de 28/08/2026 foi: **tudo na sua conta** — Supabase, Anthropic e Focus NFe. O dono da

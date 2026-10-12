@@ -246,6 +246,9 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
   pra onda 1 e precisa ser compatível com tudo.
 - **A mensagem pra contabilidade da Pneus Amigão** escrita e **mandada por ela**, juntando as
   três perguntas que esperavam a mesma pessoa (seção 8, "Perguntas pra fora").
+- **Os contratos** (no privado, `contratos/README.md`): o das lojas (com a parte da LGPD do
+  `ANTES-DA-PRIMEIRA-VENDA.md`), o da equipe e a cessão do código dela pra empresa. Escritos e
+  **revisados pelo advogado** no mesmo dia.
 
 #### Por onde a próxima sessão começa
 1. **A resposta da contabilidade** (mandada em 12/10, esperando): anotar na #383 e na seção 8. A do Ambiente Nacional da NFS-e
@@ -255,8 +258,13 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
 3. **Abertura** (no privado): a entrevista do certificado em **14/10, 14h**; a resposta do banco
    sobre a conta PJ; depois, a procuração no e-CAC. Pedir pra adicionar o
    `caranovavidanova/sakura-corp` com as palavras certas (seção 1).
-4. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
-5. **Ainda vale**:
+4. **Contratos** (no privado, `contratos/README.md`, "O que ainda falta"):
+   - assinar a **cessão dela** primeiro, pela empresa com o certificado e-CNPJ, que sai depois de
+     14/10;
+   - o WhatsApp e o horário do suporte;
+   - o **acordo de vesting ou memorando com os amigos**, que o advogado pediu pra não demorar.
+5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
+6. **Ainda vale**:
    - o Balcão pegar a `v0.9.51` (conferir no Diagnóstico);
    - o salto 2 do Electron (40);
    - a #442;
