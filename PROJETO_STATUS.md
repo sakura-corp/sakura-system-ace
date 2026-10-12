@@ -244,11 +244,11 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
   linha de prioridade (a #385 também com o andamento do Electron).
 - **As lojas da fase 2 usam outro sistema**, que exporta planilhas: a importação (#457) subiu
   pra onda 1 e precisa ser compatível com tudo.
-- **A mensagem pra contabilidade da Pneus Amigão** escrita, juntando as três perguntas que
-  esperavam a mesma pessoa (seção 8, "Perguntas pra fora").
+- **A mensagem pra contabilidade da Pneus Amigão** escrita e **mandada por ela**, juntando as
+  três perguntas que esperavam a mesma pessoa (seção 8, "Perguntas pra fora").
 
 #### Por onde a próxima sessão começa
-1. **A resposta da contabilidade**: anotar na #383 e na seção 8. A do Ambiente Nacional da NFS-e
+1. **A resposta da contabilidade** (mandada em 12/10, esperando): anotar na #383 e na seção 8. A do Ambiente Nacional da NFS-e
    vale **antes de 1º/11**.
 2. **Pra #457**: o nome do sistema que as lojas usam e a primeira linha (o cabeçalho) de cada
    planilha exportada, **sem dado de cliente**.

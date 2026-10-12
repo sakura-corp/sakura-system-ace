@@ -39,8 +39,9 @@ pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com
 serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
 gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
-**Da visão** (12/10, `docs/visao.md`): mandar a mensagem pra contabilidade da Pneus Amigão (as
-três perguntas, em "Perguntas pra fora", abaixo); e, pra importação (#457), descobrir **o nome do
+**Da visão** (12/10, `docs/visao.md`): a mensagem pra contabilidade da Pneus Amigão **foi
+mandada em 12/10** e espera resposta (as três perguntas, em "Perguntas pra fora", abaixo); e, pra
+importação (#457), descobrir **o nome do
 sistema** que as lojas da fase 2 usam e conseguir **só o cabeçalho** de cada planilha que ele
 exporta, sem dado de cliente.
 
@@ -166,8 +167,8 @@ cheque (só se uma loja pedir).
   (item 1, "frágil" 2); a migração do Simples pro Ambiente Nacional da NFS-e em **1º/11/2026**
   vale pra loja? (**perguntar antes dessa data**: se valer, a NFS-e da loja pode mudar de portal);
   e o pacote do fim do mês (#383): o que eles gostariam de receber, em que formato e por onde.
-  **As três foram juntadas numa mensagem só em 12/10**, no tom de "como seria o ideal pra
-  vocês" (ela já manda os XMLs todo mês). Anotar a resposta na #383 e aqui;
+  **As três foram numa mensagem só, mandada por ela em 12/10**, no tom de "como seria o ideal
+  pra vocês" (ela já manda os XMLs todo mês). **Esperando a resposta**: anotar na #383 e aqui;
 - **Focus NFe**: o formato do CNPJ com letras na API ("frágil" 6);
 - **prefeitura**: o "Processado: Não" das notas e o `cNBS` errado no cadastro da empresa.
 
