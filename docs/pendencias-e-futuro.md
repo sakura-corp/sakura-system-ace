@@ -39,6 +39,11 @@ pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com
 serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
 gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
+**Da visão** (12/10, `docs/visao.md`): mandar a mensagem pra contabilidade da Pneus Amigão (as
+três perguntas, em "Perguntas pra fora", abaixo); e, pra importação (#457), descobrir **o nome do
+sistema** que as lojas da fase 2 usam e conseguir **só o cabeçalho** de cada planilha que ele
+exporta, sem dado de cliente.
+
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
 Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
@@ -106,6 +111,16 @@ só ela (com o Claude dela) mexe nessas: a equipe fica no painel até ela avisar
 | #409, #410 | NF-e modelo 55; manifestação do destinatário (MD-e). Fiscal: só com ela |
 | #411 | Boleto (levantamento) |
 | #412 | App de celular pro mecânico (levantamento; decisão estrutural) |
+| **Da visão** (12/10, `docs/visao.md`) | |
+| #454 | Central do dia: o que precisa de atenção hoje, no Início (o assistente sem IA) |
+| #455 | Clientes que sumiram (`FN-11`) |
+| #456 | Pix copia e cola na cobrança e no faturamento |
+| #457 | Importar do sistema antigo, por planilha (`FN-15`); as lojas da fase 2 usam outro sistema |
+| #458 | Desenho do assistente de IA (conversa, sem código) |
+| #459 | Pedir avaliação no Google depois do serviço |
+
+**A ordem** (sem custo primeiro, em ondas) está em `docs/visao.md`, "Prioridade", e cada tarefa
+tem a linha "**Prioridade** (12/10)".
 
 O orçamento rápido no balcão entrou na #379, e a assinatura do cliente na #380. Ficaram **sem
 tarefa**, de propósito: MDF-e, SPED (é da contabilidade), SMS (o WhatsApp cobre), expedição e
@@ -150,6 +165,9 @@ cheque (só se uma loja pedir).
 - **contabilidade** (a da Pneus Amigão): com CSOSN `500`, as peças deveriam levar ICMS-ST retido?
   (item 1, "frágil" 2); a migração do Simples pro Ambiente Nacional da NFS-e em **1º/11/2026**
   vale pra loja? (**perguntar antes dessa data**: se valer, a NFS-e da loja pode mudar de portal);
+  e o pacote do fim do mês (#383): o que eles gostariam de receber, em que formato e por onde.
+  **As três foram juntadas numa mensagem só em 12/10**, no tom de "como seria o ideal pra
+  vocês" (ela já manda os XMLs todo mês). Anotar a resposta na #383 e aqui;
 - **Focus NFe**: o formato do CNPJ com letras na API ("frágil" 6);
 - **prefeitura**: o "Processado: Não" das notas e o `cNBS` errado no cadastro da empresa.
 
@@ -432,9 +450,9 @@ O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de 
 
 ### Futuro, só com pedido explícito
 
-Integração com maquininha de cartão (TEF), assistente de IA pro estoque, importador de dados de
-outros sistemas, app de celular, outras edições do Sakura System. Manter a arquitetura aberta pra
-isso, sem construir.
+Integração com maquininha de cartão (TEF), assistente de IA (a direção dela está em
+`docs/visao.md`), importador de dados de outros sistemas, app de celular, outras edições do Sakura
+System. Manter a arquitetura aberta pra isso, sem construir.
 
 ## Linha do tempo (o que cada sessão deixou pronto)
 
