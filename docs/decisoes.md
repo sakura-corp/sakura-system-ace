@@ -27,7 +27,8 @@ Três fases, nessa ordem, sem pressa de pular etapa:
    (canal de teste e "Liberar", seção 9).
 2. **Mais 2 ou 3 lojas de conhecidos do pai dela, também em Araraquara**: **é a fase atual**
    (preparar a venda). Duas empresas estão pra entrar: a de um amigo do pai, com 2 lojas, e outra
-   com 1 loja. **Cada empresa (dono diferente) tem o próprio projeto Supabase**, totalmente
+   com 1 loja. **Elas usam outro sistema, que exporta planilhas** (12/10; não se sabe ainda se
+   exporta tudo): por isso a importação (#457) subiu pra onda 1 de `docs/visao.md`. **Cada empresa (dono diferente) tem o próprio projeto Supabase**, totalmente
    isolado; várias lojas da mesma empresa usam o multi-loja dentro do mesmo projeto (seção 5). Um
    instalador só serve qualquer empresa: cada computador escolhe a conexão na primeira abertura
    ("Conexão com o banco", seção 7). **Pra começar a usar, nada de código**: cada empresa segue o

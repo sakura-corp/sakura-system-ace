@@ -114,7 +114,10 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   `PROJETO_STATUS.md`, não pro WhatsApp dela. **Curta, mas completa** (05/10/2026: "planeja bem a
   pergunta pra não ter que perguntar mais"): tudo o que falta saber numa mensagem só, numerada,
   dizendo o caminho que ela já tentou, pra quem responde não mandar o mesmo de novo. Atendimento
-  de WhatsApp que responde genérico costuma ser robô: pedir uma pessoa.
+  de WhatsApp que responde genérico costuma ser robô: pedir uma pessoa. **Pra quem já conhece
+  ela** (o contador da loja, 12/10): começar relembrando quem ela é, em tom de lembrete; e
+  pergunta sobre o que a pessoa precisa vai no tom de **"como seria o ideal pra você"**, pensando
+  no que fica bom pros dois lados (o contador e o dono da loja).
 - **Quando ela disser "calma, não entendi"** (05/10/2026): parar e explicar, em poucas linhas, o
   objetivo e a corrente de passos (o que destrava o quê e por que o próximo vem antes) antes do
   próximo clique. Foi o que destravou o certificado da empresa: "o número do pedido só existe
@@ -223,58 +226,40 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 08/10/2026: a `v0.9.51` saiu e foi liberada, e as versões têm endereço próprio
+### 12/10/2026: a visão de futuro e a prioridade das tarefas
 
-**Estado do código**: `main` na **`v0.9.51`**, publicada em 08/10 nos dois endereços
-(`ssace-versoes` e a cópia no `sakura-system-ace`) e **liberada pra todas as lojas no mesmo dia**
-(o canal normal saiu da `0.9.47` direto pra ela). **O PC dela já está nela** (conferido no
-Diagnóstico); o Balcão pega quando abrirem o programa na loja. Banco na **`0064`**. O marco
-anterior (06/10) está no topo de `docs/historico.md`.
+**Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
+em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Teste da `v0.9.50` na loja: aprovado** (08/10): versão certa, uso normal, notas certas e
-  impressão (o recibo de comissão pela "Microsoft Print to PDF"). A garantia não deu pra testar:
-  **a loja não tem o "Texto de garantia" configurado** (Configurações), e sem ele o programa não
-  imprime.
-- **Fechar o código: escolhida a B sem pagar.** Ela criou o **`sakura-corp/ssace-versoes`**
-  (público, base role Read, só ela escreve) e a chave **`TOKEN_VERSOES`** (granulação fina, só
-  esse repositório, só Contents, **vence em 09/10/2027**; no Bitwarden e no cofre `lojas`).
-- **A `v0.9.51` (PR #447)** levou:
-  - **as versões no endereço novo**: o Release prova que a chave escreve, publica no
-    `ssace-versoes` (um commit `VERSAO.txt` por versão) e copia pro antigo; o Liberar libera nos
-    dois; o programa procura no novo;
-  - **a rodinha (#436)**.
-  
-  Passou por uma revisão de código do zero, que achou e corrigiu problemas reais: rodar o Release
-  de novo mexia no endereço bom, o canal de teste podia ver as versões fora de ordem, e o Liberar
-  não conseguia segurar os computadores antigos. Detalhe em `docs/operacao.md`, "Onde as versões
-  moram". A chave funcionou de primeira.
-- **Liberada pra todas as lojas** (08/10, a pedido dela), levando junto a 0.9.48, a 0.9.49 e a
-  0.9.50. Conferido: a `0.9.51` é a versão das lojas nos dois endereços, e o
-  `releases/latest/download` do `ssace-versoes` entrega ela. **O link de baixar o instalador**
-  (site e `INSTALAR-LOJA-NOVA.md`) passou pro endereço novo.
-- **Faxina das branches**: um botão de uso único que ela apertou (PR #449) tirou 132 das 136, e
-  ela apagou as últimas à mão; **só sobrou a `main`**. O botão já saiu do código, e ficou ligado o
-  "Automatically delete head branches": a branch some sozinha quando o PR entra.
-- **#442 (enxugar o CI)**: ela deixou pendente.
-- **Abertura** (no privado): a CIN com o nome social saiu em 09/10 e já foi mandada ao banco; a
-  entrevista do certificado em 14/10, 14h; a senha de emissão salva.
+- **A visão dela, documentada e aprovada** (`docs/visao.md`), a partir do artigo "Services: The
+  New Software" (Sequoia): um programa só pra loja inteira, o máximo automático, integração com o
+  WhatsApp e, mais pra frente, um assistente de IA. Os princípios que ela confirmou: **a IA
+  sugere, a pessoa confirma**, com a dinâmica do assistente muito bem planejada antes de qualquer
+  código; e **muitas funções, cada uma simples** (automatizar é tirar trabalho). O WhatsApp que
+  manda sozinho (número e custo) ela adiou.
+- **A prioridade em ondas, sem custo primeiro**, aprovada por ela. **6 tarefas novas** (#454
+  Central do dia, #455 Clientes que sumiram, #456 Pix copia e cola, #457 Importar do sistema
+  antigo, #458 Desenho do assistente, #459 Pedir avaliação no Google) e **42 tarefas** com a
+  linha de prioridade (a #385 também com o andamento do Electron).
+- **As lojas da fase 2 usam outro sistema**, que exporta planilhas: a importação (#457) subiu
+  pra onda 1 e precisa ser compatível com tudo.
+- **A mensagem pra contabilidade da Pneus Amigão** escrita, juntando as três perguntas que
+  esperavam a mesma pessoa (seção 8, "Perguntas pra fora").
 
 #### Por onde a próxima sessão começa
-1. **O Balcão pegar a `v0.9.51`** ao abrirem o programa na loja (conferir no Diagnóstico). No PC
-   dela, a rodinha foi testada e está certa (08/10).
-2. **Avisos da abertura**, quando ela mandar:
-   - a resposta do banco sobre a conta PJ (a CIN foi mandada em 09/10);
-   - a entrevista de 14/10: depois, a senha de emissão no painel;
-   - a procuração no e-CAC.
-   
-   Pra isso, pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas
-   (seção 1).
-3. **Ainda vale**:
-   - o salto 2 do Electron (40), agora que a 0.9.51 provou o atualizador da 36;
-   - a #442, quando ela quiser;
-   - o "Texto de garantia" da loja, quando ela e o pai decidirem;
-   - o PR da tarefa 2 do Gustavo (#351), quando vier;
-   - a partir de **16/10**: o Claude Team, a TFE e o capital;
-   - **antes de 1º/11**: perguntar à contabilidade da Pneus Amigão sobre o Ambiente Nacional da
-     NFS-e.
+1. **A resposta da contabilidade**: anotar na #383 e na seção 8. A do Ambiente Nacional da NFS-e
+   vale **antes de 1º/11**.
+2. **Pra #457**: o nome do sistema que as lojas usam e a primeira linha (o cabeçalho) de cada
+   planilha exportada, **sem dado de cliente**.
+3. **Abertura** (no privado): a entrevista do certificado em **14/10, 14h**; a resposta do banco
+   sobre a conta PJ; depois, a procuração no e-CAC. Pedir pra adicionar o
+   `caranovavidanova/sakura-corp` com as palavras certas (seção 1).
+4. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
+5. **Ainda vale**:
+   - o Balcão pegar a `v0.9.51` (conferir no Diagnóstico);
+   - o salto 2 do Electron (40);
+   - a #442;
+   - o "Texto de garantia" da loja;
+   - o PR da tarefa 2 do Gustavo (#351);
+   - a partir de **16/10**: o Claude Team, a TFE e o capital.

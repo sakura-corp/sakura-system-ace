@@ -1,4 +1,4 @@
-# Pra onde o SSACE vai: a visão dela (rascunho em discussão, 12/10/2026)
+# Pra onde o SSACE vai: a visão dela (aprovada em 12/10/2026)
 
 > Parte da memória do projeto. O índice é o `PROJETO_STATUS.md`. Abrir ao planejar
 > funcionalidade nova. **É direção, não ordem de construir**: cada item só começa quando ela
@@ -93,14 +93,14 @@ deixar prontos. A lista com a ordem está em "Prioridade", abaixo.
 - **O que ela quer** (12/10): organizar a visualização, os dados, a urgência, o que precisa ser
   feito e o que dá para melhorar.
 - **O caminho proposto**, em dois passos:
-  1. **A "Central do dia", sem IA** (tarefa nova A, abaixo): uma lista no Início com tudo que
+  1. **A "Central do dia", sem IA** (#454): uma lista no Início com tudo que
      precisa de atenção, por urgência, cada linha com o botão de agir. É o assistente feito de
      regras, sem custo por uso, e é o esqueleto em que a IA vai trabalhar depois.
-  2. **O desenho do assistente** (tarefa nova E): um documento planejado com ela antes de
+  2. **O desenho do assistente** (#458): um documento planejado com ela antes de
      qualquer código. Diz o que ele vê, o que sugere, o que nunca faz sozinho, como a pessoa
      confirma, quanto custa por loja e como testar na Pneus Amigão.
 
-## Prioridade (análise de 12/10, a confirmar com ela)
+## Prioridade (aprovada por ela em 12/10)
 
 **Como foi ordenado**: primeiro o que **não tem custo por mês nem por uso**; dentro disso, o que
 dá **mais resultado pelo menor tamanho**. O resultado se mede de dois jeitos: quanto trabalho
@@ -115,11 +115,12 @@ LGPD (item 10 da seção 8).
 
 | Tarefa | Tamanho | Por quê |
 |---|---|---|
-| **Nova A**: Central do dia | média | o "assistente sem IA"; junta numa lista o que precisa de atenção, com o botão de agir |
+| #454 Central do dia | média | o "assistente sem IA"; junta numa lista o que precisa de atenção, com o botão de agir |
 | #397 Resumo pro dono no WhatsApp | pequena | o dono fica sabendo sem abrir o programa |
-| **Nova B**: Clientes que sumiram (`FN-11`) | pequena | traz cliente de volta com dado que já existe |
-| **Nova C**: Pix copia e cola na cobrança e no recibo | pequena a média | o cliente paga o valor certo sem digitar, sem banco intermediário |
-| **Nova F**: Pedir avaliação no Google depois do serviço | pequena | ajuda a loja a ganhar cliente, e isso vende o sistema |
+| #455 Clientes que sumiram (`FN-11`) | pequena | traz cliente de volta com dado que já existe |
+| #456 Pix copia e cola na cobrança e no faturamento | pequena a média | o cliente paga o valor certo sem digitar, sem banco intermediário |
+| #459 Pedir avaliação no Google depois do serviço | pequena | ajuda a loja a ganhar cliente, e isso vende o sistema |
+| #457 Importar do sistema antigo, por planilha (`FN-15`) | grande, em partes | subiu da onda 2: as lojas da próxima fase **usam outro sistema**, que exporta planilhas (ela, 12/10). Precisa ser **compatível com tudo**, porque não se sabe o que a exportação traz |
 | #381 Lembrete de revisão | média | os concorrentes vendem "alerta automático de revisão" |
 | #382 Sugestão de compra | média | o pedido já sai montado |
 | #383 Pacote do contador | média | espera a resposta do contador (perguntar já) |
@@ -131,13 +132,12 @@ LGPD (item 10 da seção 8).
 |---|---|---|
 | #379 Orçamento com aprovação | grande | o que mais aparece na vitrine dos concorrentes |
 | #380 Checklist com fotos | grande | idem; o custo é só o espaço das fotos |
-| **Nova D**: Importar clientes, veículos e peças de planilha (`FN-15`) | média a grande | a maior barreira para uma loja trocar de sistema |
 | #373 Listas longas com páginas | média | necessária quando a loja importar milhares de clientes |
 | #371 Menu agrupado | média | com mais funções, é o que mantém o programa fácil |
 | #384 Modo demonstração | média | mostrar o sistema na hora de vender |
 | #386 → #387 → #388 DRE, #389 Fluxo projetado, #390 Curva ABC, #393 Tela do cliente | médias e uma grande | o "financeiro de dono", com dados que já existem |
 | #399 Devolução, #400 Agenda | média, grande | buracos do dia a dia |
-| **Nova E**: Desenho do assistente (sem código) | conversa | depois da Central do dia |
+| #458 Desenho do assistente (sem código) | conversa | depois da Central do dia |
 
 ### Onda 3: sem custo, quando uma loja pedir
 
@@ -161,39 +161,16 @@ filtro livre, #406 horas do mecânico, #407 tabela de preço, #408 convênio.
 O resto das tarefas abertas é a base técnica (#369, #370, #374, #375, #376, #378) e segue no
 trilho dela, fora desta análise.
 
-## Tarefas novas propostas (rascunho, viram issue depois que ela aprovar)
+## As tarefas (criadas e atualizadas em 12/10)
 
-- **A. Central do dia.** Uma lista no Início com o que precisa de atenção hoje, da mais urgente
-  para a menos: OS paradas há dias, carro pronto sem aviso ao cliente, conta a receber vencida,
-  conta a pagar vencendo, peça abaixo do mínimo, cliente para lembrar da revisão, nota com erro,
-  caixa de ontem sem fechar. Cada linha com o botão que resolve ("Avisar", "Cobrar", "Montar
-  pedido"). **A decidir com ela**: a OS ganhar "esperando peça", "esperando o cliente" e
-  "prometido para", porque hoje são só três etapas (em andamento, concluída, faturada), e isso
-  foi uma decisão de simplificar.
-- **B. Clientes que sumiram** (`FN-11`). Em Clientes, o filtro "sem vir há mais de X meses",
-  com o total já gasto e o último serviço, e o botão de WhatsApp com mensagem pronta.
-- **C. Pix copia e cola.** Com a chave Pix da loja em Configurações, a cobrança no WhatsApp e o
-  recibo levam o Pix já com o valor. É o Pix "estático", que qualquer um gera sem banco
-  intermediário. O sistema não fica sabendo que foi pago: a baixa continua à mão (a automática
-  é a #411, com custo).
-- **D. Importar de planilha** (`FN-15`). A pessoa sobe a planilha, diz qual coluna é o quê, vê
-  as primeiras linhas e importa, com o relatório do que deu erro. Primeiro clientes e veículos,
-  depois peças.
-- **E. Desenho do assistente.** Um documento, sem código, feito com ela (ver a frente 4).
-- **F. Pedir avaliação no Google.** Depois do serviço faturado, um botão de WhatsApp com o link
-  de avaliação da loja no Google (guardado em Configurações).
-
-## Mudanças nas tarefas que já existem (rascunho)
-
-- **#381** (revisão): a lista de quem lembrar hoje aparece na Central do dia. O envio continua
-  pelo botão; mandar sozinho depende do WhatsApp oficial (adiado).
-- **#382** (compra): a sugestão aparece na Central do dia quando houver peça abaixo do mínimo.
-- **#383** (contador): a pergunta ao contador vai junto das outras duas que já estavam
-  esperando (Ambiente Nacional da NFS-e e o ICMS-ST), numa mensagem só; e ganha a "versão 2", o
-  pacote chegar sozinho.
-- **#379** (orçamento): ganha a "versão 2", a aprovação pelo cliente num link.
-- **#371** (menu): ganha o motivo novo, o programa com mais funções continuar fácil.
-- **Todas as da análise**: uma linha apontando para este arquivo e para a onda.
+- **Novas**: #454 Central do dia, #455 Clientes que sumiram, #456 Pix copia e cola, #457
+  Importar do sistema antigo, #458 Desenho do assistente, #459 Pedir avaliação no Google.
+- **Todas as tarefas da análise** ganharam a linha "**Prioridade** (12/10)" com a onda. As que
+  mudaram de conteúdo: #381 e #382 (aparecem na Central do dia), #383 (a pergunta à
+  contabilidade e a versão 2, o pacote chegar sozinho), #379 (a versão 2, a aprovação por link) e
+  #371 (o motivo novo).
+- **Decidido que fica pra hora da #454** (ela, 12/10): a OS ganhar "esperando peça", "esperando
+  o cliente" e "prometido para".
 
 ## Na gaveta
 
