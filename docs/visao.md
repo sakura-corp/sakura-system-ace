@@ -29,16 +29,21 @@ ir para o lado do autopiloto.
    pessoa fazer. Exemplo: em vez de "uma tela para montar o pacote do contador", o contador
    recebe tudo sozinho.
 3. **Integração com as ferramentas que a loja já usa**, a começar pelo WhatsApp.
-4. **Um assistente de IA dentro do programa** (mais para frente), que organize as OS e o resto.
+4. **Um assistente de IA dentro do programa** (mais para frente). Nas palavras dela (12/10): que
+   faça **tudo o que puder para organizar a visualização, os dados, a urgência, o que precisa
+   ser feito e o que dá para melhorar**.
 
-## Como isso se encaixa no que já foi decidido
+## Os princípios (confirmados por ela em 12/10)
 
-- **"Simples e moderno de usar" continua sendo o diferencial** (`docs/decisoes.md`, seção 2).
-  Automatizar é **esconder trabalho, não acrescentar tela**: cada coisa nova deveria tirar
-  cliques, não pôr. O risco de "o máximo de coisas" é virar o S3Auto, de tela densa.
+- **Automatizar é tirar trabalho, não acrescentar tela.** Cada coisa nova deveria tirar
+  cliques, não pôr. **Mas o produto precisa de muitas funções para entrar na disputa**: quem
+  compara sistemas olha a lista do que cada um faz. As duas coisas valem juntas: muitas funções,
+  cada uma simples, e um menu que continue fácil de achar (#371). O risco a vigiar é virar o
+  S3Auto, de tela densa.
 - **A IA sugere, a pessoa confirma**, em tudo que mexe com dinheiro, nota ou cliente. É a mesma
   linha do item 33 da seção 6 ("validação incerta é aviso, nunca tranca") e do WhatsApp, que
-  registra "conversa aberta", nunca "enviada". *Proposta, a confirmar com ela.*
+  registra "conversa aberta", nunca "enviada". E **a dinâmica do assistente tem que ser muito
+  bem definida e planejada antes de qualquer código** (ela, 12/10).
 - **O que custa por uso** (IA, WhatsApp automático) entra na regra "a infraestrutura das lojas é
   paga por ela" (`docs/decisoes.md`, 28/08) e pesa no preço. A conta vai para o repositório
   privado.
@@ -63,17 +68,7 @@ ir para o lado do autopiloto.
 ### 2. Trabalhos prontos dentro da loja
 
 São trabalhos de regra e conta que hoje alguém faz na mão (ou ninguém faz) e que o SSACE pode
-deixar prontos:
-
-| Trabalho pronto | Onde está |
-|---|---|
-| O pedido de compra já sai montado | #382 (`FN-07`) |
-| O lembrete de revisão vai para o cliente certo, na hora certa | #381 (`FN-06`) |
-| O resumo do dia ou do mês chega ao dono no WhatsApp | #397 |
-| A lista de quem parou de vir, com a mensagem pronta | `FN-11` (sem tarefa) |
-| A conta atrasada renegociada | #396 |
-| O resultado do mês (DRE), com a taxa da maquininha | #386 → #387 → #388 |
-| Conferir o que caiu da maquininha e do Pix contra o caixa | sem tarefa; a integração com maquininha (TEF) está em "Futuro" na seção 8 |
+deixar prontos. A lista com a ordem está em "Prioridade", abaixo.
 
 ### 3. WhatsApp
 
@@ -88,37 +83,120 @@ deixar prontos:
     ela está mudando para cobrança em reais em 2026.
 - **Não fazer**: robô "não oficial" que controla o WhatsApp Web. É contra as regras do
   WhatsApp, e **o número da loja pode ser banido**.
-- **Em aberto**:
-  - de quem é o número: de cada loja (o cliente reconhece) ou um da Sakura;
-  - quem paga as mensagens;
-  - qual mensagem automática vem primeiro.
+- **Adiado por ela (12/10)**: de quem é o número (de cada loja ou um da Sakura) e quem paga as
+  mensagens. Até lá, tudo continua "abre a conversa com o texto pronto", que é de graça.
 
 ### 4. Assistente de IA
 
 - **Hoje**: só o leitor de nota fiscal por foto, no Estoque, que fica de fora das lojas novas
-  (`docs/decisoes.md`, 27/09). O "assistente de IA pro estoque" estava em "Futuro, só com pedido
-  explícito" (seção 8).
-- **O que ela imagina** (12/10): um assistente dentro do programa que organize as OS e o resto.
-- **Para conversar antes de desenhar**:
-  1. O que é "organizar as OS" para ela e para o pai. Pode ser dizer qual OS fazer primeiro;
-     montar a OS a partir de um áudio, uma foto ou uma mensagem do cliente; avisar o que está
-     parado ou atrasado; ou responder perguntas ("quanto vendi hoje?", "o que esse carro já
-     fez?").
-  2. Quem vai usar: o pai, o funcionário do balcão ou ela.
-  3. O custo por uso (cada pergunta à IA custa) e quem paga.
-- **Sugestão**: a IA vem **depois** das frentes 1 a 3. Ela fica boa quando os dados já estão
-  organizados e as automações simples já existem. E começa por **um uso pequeno**, testado na
-  Pneus Amigão.
+  (`docs/decisoes.md`, 27/09).
+- **O que ela quer** (12/10): organizar a visualização, os dados, a urgência, o que precisa ser
+  feito e o que dá para melhorar.
+- **O caminho proposto**, em dois passos:
+  1. **A "Central do dia", sem IA** (tarefa nova A, abaixo): uma lista no Início com tudo que
+     precisa de atenção, por urgência, cada linha com o botão de agir. É o assistente feito de
+     regras, sem custo por uso, e é o esqueleto em que a IA vai trabalhar depois.
+  2. **O desenho do assistente** (tarefa nova E): um documento planejado com ela antes de
+     qualquer código. Diz o que ele vê, o que sugere, o que nunca faz sozinho, como a pessoa
+     confirma, quanto custa por loja e como testar na Pneus Amigão.
+
+## Prioridade (análise de 12/10, a confirmar com ela)
+
+**Como foi ordenado**: primeiro o que **não tem custo por mês nem por uso**; dentro disso, o que
+dá **mais resultado pelo menor tamanho**. O resultado se mede de dois jeitos: quanto trabalho
+tira da loja e quanto pesa na escolha de quem compara sistemas (a vitrine dos concorrentes está
+em `MELHORIAS.md`, "Mercado", e em `docs/comparativo-anexar.md`).
+
+**Continua na frente de tudo**, porque já foi combinado como base para vender: permissões no
+banco (#365, #366, #367), o token antigo da Focus (#368), o Electron (#385), e o contrato e a
+LGPD (item 10 da seção 8).
+
+### Onda 1: sem custo, rápidas, tiram trabalho já
+
+| Tarefa | Tamanho | Por quê |
+|---|---|---|
+| **Nova A**: Central do dia | média | o "assistente sem IA"; junta numa lista o que precisa de atenção, com o botão de agir |
+| #397 Resumo pro dono no WhatsApp | pequena | o dono fica sabendo sem abrir o programa |
+| **Nova B**: Clientes que sumiram (`FN-11`) | pequena | traz cliente de volta com dado que já existe |
+| **Nova C**: Pix copia e cola na cobrança e no recibo | pequena a média | o cliente paga o valor certo sem digitar, sem banco intermediário |
+| **Nova F**: Pedir avaliação no Google depois do serviço | pequena | ajuda a loja a ganhar cliente, e isso vende o sistema |
+| #381 Lembrete de revisão | média | os concorrentes vendem "alerta automático de revisão" |
+| #382 Sugestão de compra | média | o pedido já sai montado |
+| #383 Pacote do contador | média | espera a resposta do contador (perguntar já) |
+| #372 Busca geral (Ctrl+K) | média | tira cliques o dia todo |
+
+### Onda 2: sem custo, maiores, pesam na escolha de quem compra
+
+| Tarefa | Tamanho | Por quê |
+|---|---|---|
+| #379 Orçamento com aprovação | grande | o que mais aparece na vitrine dos concorrentes |
+| #380 Checklist com fotos | grande | idem; o custo é só o espaço das fotos |
+| **Nova D**: Importar clientes, veículos e peças de planilha (`FN-15`) | média a grande | a maior barreira para uma loja trocar de sistema |
+| #373 Listas longas com páginas | média | necessária quando a loja importar milhares de clientes |
+| #371 Menu agrupado | média | com mais funções, é o que mantém o programa fácil |
+| #384 Modo demonstração | média | mostrar o sistema na hora de vender |
+| #386 → #387 → #388 DRE, #389 Fluxo projetado, #390 Curva ABC, #393 Tela do cliente | médias e uma grande | o "financeiro de dono", com dados que já existem |
+| #399 Devolução, #400 Agenda | média, grande | buracos do dia a dia |
+| **Nova E**: Desenho do assistente (sem código) | conversa | depois da Central do dia |
+
+### Onda 3: sem custo, quando uma loja pedir
+
+#391 limite de crédito, #392 vales, #394 várias contas, #395 centro de custo, #396 renegociar,
+#398 metas, #401 reserva, #402 etiqueta, #403 equipamentos, #404 relatório por modelo, #405
+filtro livre, #406 horas do mecânico, #407 tabela de preço, #408 convênio.
+
+### Com custo: decidir uma por uma, depois
+
+| O quê | O custo |
+|---|---|
+| WhatsApp que manda sozinho | por mensagem, à Meta (adiado por ela) |
+| Assistente de IA | por uso (depois do desenho) |
+| O pacote do contador chegar sozinho por e-mail | perto de zero, mas precisa de um serviço de envio |
+| Aprovação do orçamento pelo cliente num link (versão 2 da #379) | perto de zero, mas exige uma página aberta na internet: decisão estrutural |
+| #411 Boleto | por boleto, ao banco intermediário |
+| #377 Assinar o instalador | certificado por ano |
+| #409 NF-e e #410 MD-e | conferir o plano da Focus |
+| #412 App de celular | projeto novo inteiro |
+
+O resto das tarefas abertas é a base técnica (#369, #370, #374, #375, #376, #378) e segue no
+trilho dela, fora desta análise.
+
+## Tarefas novas propostas (rascunho, viram issue depois que ela aprovar)
+
+- **A. Central do dia.** Uma lista no Início com o que precisa de atenção hoje, da mais urgente
+  para a menos: OS paradas há dias, carro pronto sem aviso ao cliente, conta a receber vencida,
+  conta a pagar vencendo, peça abaixo do mínimo, cliente para lembrar da revisão, nota com erro,
+  caixa de ontem sem fechar. Cada linha com o botão que resolve ("Avisar", "Cobrar", "Montar
+  pedido"). **A decidir com ela**: a OS ganhar "esperando peça", "esperando o cliente" e
+  "prometido para", porque hoje são só três etapas (em andamento, concluída, faturada), e isso
+  foi uma decisão de simplificar.
+- **B. Clientes que sumiram** (`FN-11`). Em Clientes, o filtro "sem vir há mais de X meses",
+  com o total já gasto e o último serviço, e o botão de WhatsApp com mensagem pronta.
+- **C. Pix copia e cola.** Com a chave Pix da loja em Configurações, a cobrança no WhatsApp e o
+  recibo levam o Pix já com o valor. É o Pix "estático", que qualquer um gera sem banco
+  intermediário. O sistema não fica sabendo que foi pago: a baixa continua à mão (a automática
+  é a #411, com custo).
+- **D. Importar de planilha** (`FN-15`). A pessoa sobe a planilha, diz qual coluna é o quê, vê
+  as primeiras linhas e importa, com o relatório do que deu erro. Primeiro clientes e veículos,
+  depois peças.
+- **E. Desenho do assistente.** Um documento, sem código, feito com ela (ver a frente 4).
+- **F. Pedir avaliação no Google.** Depois do serviço faturado, um botão de WhatsApp com o link
+  de avaliação da loja no Google (guardado em Configurações).
+
+## Mudanças nas tarefas que já existem (rascunho)
+
+- **#381** (revisão): a lista de quem lembrar hoje aparece na Central do dia. O envio continua
+  pelo botão; mandar sozinho depende do WhatsApp oficial (adiado).
+- **#382** (compra): a sugestão aparece na Central do dia quando houver peça abaixo do mínimo.
+- **#383** (contador): a pergunta ao contador vai junto das outras duas que já estavam
+  esperando (Ambiente Nacional da NFS-e e o ICMS-ST), numa mensagem só; e ganha a "versão 2", o
+  pacote chegar sozinho.
+- **#379** (orçamento): ganha a "versão 2", a aprovação pelo cliente num link.
+- **#371** (menu): ganha o motivo novo, o programa com mais funções continuar fácil.
+- **Todas as da análise**: uma linha apontando para este arquivo e para a onda.
 
 ## Na gaveta
 
 - **Vender "sistema + contabilidade"**, com um escritório contábil parceiro (a opção 3 da
   conversa de 12/10; ela escolheu a 1 e a 2). Contabilidade exige contador com registro no CRC,
   e a Sakura Corp só tem a atividade de software.
-
-## Ordem sugerida (a decidir com ela)
-
-1. **#383**, o pacote do contador, perguntando antes ao contador da loja.
-2. **#397, #382 e #381**: trabalhos prontos que não custam nada por uso.
-3. **WhatsApp automático**: decidir o número e quem paga; depois, a primeira mensagem.
-4. **Assistente de IA**: um uso pequeno primeiro.
