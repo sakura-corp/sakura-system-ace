@@ -14,6 +14,8 @@ diferencial do SSACE é ser simples e moderno de usar, sem perder as funções e
 SSACE, a ideia é fazer outras edições (ex: Supermarket Edition) reaproveitando a base. O concorrente
 direto que ela acompanha é o Anexar (`docs/comparativo-anexar.md`).
 
+**Pra onde o produto vai** (a visão dela, 12/10/2026): `docs/visao.md`.
+
 ### Plano de expansão (definido por ela)
 
 Três fases, nessa ordem, sem pressa de pular etapa:

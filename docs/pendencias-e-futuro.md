@@ -432,9 +432,9 @@ O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de 
 
 ### Futuro, só com pedido explícito
 
-Integração com maquininha de cartão (TEF), assistente de IA pro estoque, importador de dados de
-outros sistemas, app de celular, outras edições do Sakura System. Manter a arquitetura aberta pra
-isso, sem construir.
+Integração com maquininha de cartão (TEF), assistente de IA (a direção dela está em
+`docs/visao.md`), importador de dados de outros sistemas, app de celular, outras edições do Sakura
+System. Manter a arquitetura aberta pra isso, sem construir.
 
 ## Linha do tempo (o que cada sessão deixou pronto)
 

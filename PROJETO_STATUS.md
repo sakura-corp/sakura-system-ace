@@ -58,6 +58,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/pendencias-e-futuro.md` | **"O que depende dela", numa lista só**; o que não existe; parte fiscal (playbook por loja nova); linha do tempo (antiga seção 8) | ao planejar próximo passo, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar versão**, backup, atualizar bancos, voltar versão (antigas seções 9 e 11) | ao publicar, rodar migration ou instalar loja |
 | `docs/historico.md` | estado do Git e os marcos "onde parou" antigos, do mais novo pro mais velho (antiga seção 10) | quase nunca |
+| `docs/visao.md` | **pra onde o SSACE vai** (a visão dela, 12/10): um programa só pra loja inteira, o máximo automático, WhatsApp, assistente de IA; as quatro frentes e o que está em aberto | ao planejar funcionalidade nova ou conversar sobre o futuro |
 | `docs/comparativo-anexar.md` | o que o concorrente Anexar anuncia × o que temos, e a tarefa de cada coisa que falta (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
 | `docs/painel.md` | o painel da equipe: o que é, como a equipe trabalha (levas, tarefas), decisões técnicas, 1ª versão, andamento | ao mexer no painel ou planejar leva |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
