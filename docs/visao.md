@@ -57,8 +57,15 @@ ir para o lado do autopiloto.
   canceladas.
 - **Para onde vai**: além da tela, o pacote **chega sozinho** ao contador da loja todo mês, sem
   o dono juntar nada. Isso também faz o contador recomendar o SSACE para outros clientes dele.
-- **Antes de construir**: perguntar ao contador da Pneus Amigão exatamente o que ele pede (já
-  está no `FN-13`).
+- **O que a contabilidade da Pneus Amigão respondeu (13/10)**:
+  - o sistema deles **já puxa as notas sozinho** do governo; mesmo assim, eles gostam de receber
+    as notas **até o dia 7**, pra conferir se falta alguma;
+  - **o que eles não conseguem puxar é o extrato do banco**: até o **dia 10**, em OFX e PDF. É o
+    que mais falta pra eles, e hoje eles pedem duas vezes por ano a quem não manda;
+  - então o pacote encolhe: **as notas do mês em XML e PDF**, e um **lembrete do extrato**. As
+    planilhas de vendas e despesas que o `FN-13` previa **ninguém pediu**.
+- **Ideia pra depois**: o extrato só o banco dá. Puxar o extrato direto do banco (Open Finance) é
+  um projeto grande e com custo, mas é exatamente o trabalho que o contador mais precisa.
 - **Em aberto**:
   - por onde o pacote chega: por e-mail automático, que precisa de um serviço de envio, ou pelo
     WhatsApp automático, da frente 3;
@@ -123,7 +130,7 @@ LGPD (item 10 da seção 8).
 | #457 Importar do sistema antigo, por planilha (`FN-15`) | grande, em partes | subiu da onda 2: as lojas da próxima fase **usam outro sistema**, que exporta planilhas (ela, 12/10). Precisa ser **compatível com tudo**, porque não se sabe o que a exportação traz |
 | #381 Lembrete de revisão | média | os concorrentes vendem "alerta automático de revisão" |
 | #382 Sugestão de compra | média | o pedido já sai montado |
-| #383 Pacote do contador | média | espera a resposta do contador (perguntar já) |
+| #383 Pacote do contador | pequena a média | a contabilidade respondeu (13/10): as notas até o dia 7 e o lembrete do extrato até o dia 10 |
 | #372 Busca geral (Ctrl+K) | média | tira cliques o dia todo |
 
 ### Onda 2: sem custo, maiores, pesam na escolha de quem compra

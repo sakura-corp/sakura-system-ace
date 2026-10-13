@@ -39,17 +39,17 @@ pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com
 serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
 gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
-**Da visão** (12/10, `docs/visao.md`): a mensagem pra contabilidade da Pneus Amigão **foi
-mandada em 12/10** e espera resposta (as três perguntas, em "Perguntas pra fora", abaixo); e, pra
-importação (#457), descobrir **o nome do
-sistema** que as lojas da fase 2 usam e conseguir **só o cabeçalho** de cada planilha que ele
-exporta, sem dado de cliente.
+**Da visão** (12/10, `docs/visao.md`): a contabilidade da Pneus Amigão **respondeu em 13/10** as
+três perguntas ("Perguntas pra fora", abaixo). Falta só confirmar com eles que as notas vão em
+**XML** (a mensagem escrita diz "OFX", que é formato de extrato de banco). E, pra importação
+(#457), descobrir **o nome do sistema** que as lojas da fase 2 usam e conseguir **só o
+cabeçalho** de cada planilha que ele exporta, sem dado de cliente.
 
 **Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
 que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
 Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
-privado); **antes de 1º/11**, a pergunta do Ambiente Nacional da NFS-e (abaixo, em "Perguntas pra
-fora"); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo em
+privado); **antes de 1º/11**, o manual da contabilidade sobre o Ambiente Nacional da NFS-e, se a
+prefeitura mudar alguma coisa (item 3 da parte fiscal, abaixo); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo em
 `docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
 motivo escrito.
 
@@ -163,12 +163,15 @@ cheque (só se uma loja pedir).
   Varredura de segredo, Electron de verdade, Contraste nas telas). Admin continua isenta.
 
 **Perguntas pra fora:**
-- **contabilidade** (a da Pneus Amigão): com CSOSN `500`, as peças deveriam levar ICMS-ST retido?
-  (item 1, "frágil" 2); a migração do Simples pro Ambiente Nacional da NFS-e em **1º/11/2026**
-  vale pra loja? (**perguntar antes dessa data**: se valer, a NFS-e da loja pode mudar de portal);
-  e o pacote do fim do mês (#383): o que eles gostariam de receber, em que formato e por onde.
-  **As três foram numa mensagem só, mandada por ela em 12/10**, no tom de "como seria o ideal
-  pra vocês" (ela já manda os XMLs todo mês). **Esperando a resposta**: anotar na #383 e aqui;
+- **contabilidade** (a da Pneus Amigão): **respondeu as três em 13/10** (mensagem de 12/10):
+  - **CSOSN `500`**: não leva ICMS-ST retido na venda ao consumidor final (item 1, "frágil" 2);
+  - **Ambiente Nacional**: a prefeitura já manda as notas pra lá (item 1, "Ambiente Nacional");
+    eles avisam com um manual antes de 1º/11, se mudar;
+  - **o pacote do mês** (#383): as notas **até o dia 7** e o **extrato do banco até o dia 10**,
+    em OFX e PDF. O sistema deles já puxa as notas sozinho, mas eles gostam de receber pra
+    conferir. **O extrato é a única coisa que eles não conseguem puxar.** Na primeira vez, pode ir
+    um extrato só, desde a abertura da empresa.
+  - Falta confirmar: as notas em **XML**, e não em OFX como está escrito;
 - **Focus NFe**: o formato do CNPJ com letras na API ("frágil" 6);
 - **prefeitura**: o "Processado: Não" das notas e o `cNBS` errado no cadastro da empresa.
 
@@ -227,9 +230,13 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
    pendente da prefeitura). O usuário é o número de inscrição.
 2. **CSC e ID Token da NFC-e** saem do portal da SEFAZ-SP, com certificado digital, e **homologação
    e produção são pares separados**.
-3. **O "Ambiente Nacional" da NFS-e foi descartado**: a Focus avisa que só vale pra empresa
-   obrigada (ex: MEI), e a loja é Ltda no Simples. **Fato novo possível**: perguntar à
-   contabilidade se a migração do Simples pro Ambiente Nacional em **1º/11/2026** vale pra ela.
+3. **O "Ambiente Nacional" da NFS-e**: a Focus avisa que só vale pra empresa obrigada (ex: MEI),
+   e a loja é Ltda no Simples. **Resposta da contabilidade (13/10)**: a prefeitura de Araraquara
+   já manda tudo pro ambiente nacional, inclusive a última nota da loja, e o sistema deles puxa
+   certinho. Eles estão conferindo, prefeitura por prefeitura, se o portal municipal vai ser
+   desligado ou se continua mandando pro nacional (o comum); se mudar, mandam um manual antes de
+   1º/11. **Se o portal municipal for desligado**, a emissão pela Focus precisa passar pro padrão
+   nacional: conferir com a Focus na hora.
 
 > ⚠️ **Credenciais que já estiveram neste repositório** (o CSC da SEFAZ, o token do Giap e a senha
 > do portal da prefeitura) foram tiradas em 02/09, mas **continuam no histórico do Git**: o certo
@@ -252,10 +259,11 @@ Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de 
    - **acima do limite da UF (em geral R$ 10.000)** a SEFAZ exige o destinatário identificado, e
      o sistema não avisa disso antes.
 2. **CSOSN `500` vai sem os campos de ICMS-ST** (`vBCSTRet`, `vICMSSTRet` e afins). A Focus **não**
-   completa campo fiscal que a gente não manda (suporte, 03/09). As notas continuam autorizadas,
-   então **não mexer às cegas**: é pergunta pra contabilidade ("essas peças deveriam levar ICMS-ST
-   retido?"). Se sim, a mudança é em `montarItemNFCe()`. Rejeição falando em substituição
-   tributária: olhar aqui primeiro.
+   completa campo fiscal que a gente não manda (suporte, 03/09). **Respondido pela contabilidade
+   (13/10)**: o CSOSN 500 quer dizer que o ICMS já foi recolhido antes, e na venda ao
+   **consumidor final** não tem ICMS-ST retido; **só na revenda pra outra oficina**. Ou seja, a
+   NFC-e está certa como está, e a questão volta na **NF-e modelo 55** (#409), que é a nota de
+   venda pra empresa. Rejeição falando em substituição tributária: olhar aqui primeiro.
 3. **Nada no banco impede duas notas do mesmo tipo pra mesma OS**: a proteção é da tela. Os dois
    caminhos que furavam isso têm aviso (item 46 da seção 6). Um índice único sozinho seria **pior**
    (revisto em 25/09, `TR-05.2`): a nota só é gravada **depois** que a SEFAZ autoriza, então o
