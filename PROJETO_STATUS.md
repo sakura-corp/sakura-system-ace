@@ -259,9 +259,9 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
    manual deles se o Ambiente Nacional mudar alguma coisa.
 2. **Pra #457**: o nome do sistema que as lojas usam e a primeira linha (o cabeçalho) de cada
    planilha exportada, **sem dado de cliente**.
-3. **Abertura** (no privado): a entrevista do certificado em **14/10, 14h**; a resposta do banco
-   sobre a conta PJ; depois, a procuração no e-CAC. Pedir pra adicionar o
-   `caranovavidanova/sakura-corp` com as palavras certas (seção 1).
+3. **Abertura** (no privado): a **conta PJ abriu em 13/10** (falta ver o cartão e transferir o
+   capital depois de 16/10); a entrevista do certificado em **14/10, 14h**; depois, a procuração
+   no e-CAC. Pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas (seção 1).
 4. **Contratos** (no privado, `contratos/README.md`, "O que ainda falta"):
    - assinar a **cessão dela** primeiro, pela empresa com o certificado e-CNPJ, que sai depois de
      14/10;
