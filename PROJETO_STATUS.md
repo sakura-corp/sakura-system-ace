@@ -226,7 +226,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 12/10/2026: a visão de futuro e a prioridade das tarefas
+### 12 e 13/10/2026: a visão de futuro, a prioridade das tarefas e os contratos
 
 **Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
 em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
@@ -244,15 +244,19 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
   linha de prioridade (a #385 também com o andamento do Electron).
 - **As lojas da fase 2 usam outro sistema**, que exporta planilhas: a importação (#457) subiu
   pra onda 1 e precisa ser compatível com tudo.
-- **A mensagem pra contabilidade da Pneus Amigão** escrita e **mandada por ela**, juntando as
-  três perguntas que esperavam a mesma pessoa (seção 8, "Perguntas pra fora").
+- **A contabilidade da Pneus Amigão respondeu (13/10)** as três perguntas (seção 8, "Perguntas
+  pra fora"):
+  - a NFC-e com CSOSN 500 está certa;
+  - o Ambiente Nacional já recebe as notas da loja, e eles avisam se mudar até 1º/11;
+  - pro pacote do mês, eles querem as notas até o dia 7 e o **extrato do banco** até o dia 10. A
+    #383 encolheu pra isso.
 - **Os contratos** (no privado, `contratos/README.md`): o das lojas (com a parte da LGPD do
   `ANTES-DA-PRIMEIRA-VENDA.md`), o da equipe e a cessão do código dela pra empresa. Escritos e
   **revisados pelo advogado** no mesmo dia.
 
 #### Por onde a próxima sessão começa
-1. **A resposta da contabilidade** (mandada em 12/10, esperando): anotar na #383 e na seção 8. A do Ambiente Nacional da NFS-e
-   vale **antes de 1º/11**.
+1. **Contabilidade**: confirmar que as notas vão em XML (a mensagem diz "OFX"); e, até 1º/11, o
+   manual deles se o Ambiente Nacional mudar alguma coisa.
 2. **Pra #457**: o nome do sistema que as lojas usam e a primeira linha (o cabeçalho) de cada
    planilha exportada, **sem dado de cliente**.
 3. **Abertura** (no privado): a entrevista do certificado em **14/10, 14h**; a resposta do banco
