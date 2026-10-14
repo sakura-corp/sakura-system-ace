@@ -36,6 +36,9 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
 
 - **Leva** é o pacote de trabalho do período, com **várias tarefas**, de várias pessoas. Cada
   leva tem uma etiqueta no GitHub: `leva-0`, `leva-1`, `leva-2`…
+  **Uma leva de cada vez, pra todo mundo**: as tarefas do programa das lojas entram na mesma
+  leva que as do painel (decidido pela Sofia em 14/10/2026). Por isso a `leva-0` vai ter também
+  as primeiras tarefas do programa, e o painel continua mostrando uma leva só.
 - **Tarefa** é uma issue com a etiqueta da leva. **Um dono** (o "responsável", *assignee*) e
   **um PR**, que fecha a issue quando entra (`Closes #N` na descrição do PR).
 - **Estado de uma tarefa**:
@@ -307,3 +310,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   e a #355 a 7. A #353 ganhou as permissões **Actions** e **Contents** (ler) e a #355 passou a
   repassar também os avisos de robô e de branch. **A ordem continua uma de cada vez: a #467
   começa depois que a #351 for aprovada.**
+- **14/10/2026, à noite**: **as tarefas do programa das lojas vão entrar na `leva-0`** (decisão
+  da Sofia), quando os outros dois da equipe começarem (o plano é a #474). Pro painel, isso não
+  muda nada no desenho: a tela da leva mostra todas as tarefas com a etiqueta `leva-0`, do
+  painel e do programa. A ordem "uma de cada vez" vale só entre as tarefas do painel.
