@@ -256,8 +256,8 @@ anterior (o jeito de trabalhar com o Claude) está no topo de `docs/historico.md
      #457 (importar clientes de uma planilha qualquer);
   4. as tarefas do programa **entram na `leva-0`**, junto com as do painel (`docs/painel.md`);
   5. **verificação em duas etapas obrigatória** na organização do GitHub.
-- O privado foi lido, mas **não foi atualizado**: a sessão tinha só leitura. O `EQUIPE.md` ainda
-  precisa receber as decisões 1, 2 e 5.
+- No privado, as decisões foram anotadas no `EQUIPE.md` (e o "mesmo acordo pra todos" saiu do
+  que falta decidir em `contratos/README.md`).
 
 #### Por onde a próxima sessão começa
 1. **A #474, etapa 1**: a mensagem pros três (o rascunho está na conversa de 14/10; se perdeu,
