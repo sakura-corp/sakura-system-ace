@@ -23,6 +23,11 @@ Na prática, hoje:
   e privado; aí sim um Supabase faz sentido. Decidir com a Sofia quando chegar.
 - O desenho já nasce preparado pra crescer: uma barra lateral com uma seção por assunto ("Levas"
   hoje; "Financeiro" aparece desativado, escrito "em breve").
+- **A sala da Sakura** (decidido pela Sofia em 14/10/2026): uma página em que cada pessoa e cada
+  robô (as sessões do Claude e os trabalhos automáticos do GitHub) aparece como um bonequinho
+  numa sala, mostrando o que está fazendo e o que **precisa de quem está olhando**. Bem simples
+  de desenhar, e cedo na leva 0 (tarefas 3 e 8). Ela vê o que passa pelo GitHub: uma sessão do
+  Claude que só conversa, sem branch, não aparece.
 
 **Tudo aqui é público**, porque o repositório é público: o código do painel, as issues, os PRs.
 Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente ou senha.
@@ -129,6 +134,16 @@ Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço
 | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
 | Feita | `#2B6534` / `#E4F1E6` | `#8FD19C` / `#233A28` |
 
+**Estados da sala** (tarefas 3 e 8): reaproveitam as cores acima, mais uma de erro, conferida no
+contraste em 14/10 (5,75:1 no claro e 6,76:1 no escuro).
+
+| Estado do bonequinho | Usa as cores de | Claro (texto / fundo) | Escuro (texto / fundo) |
+|---|---|---|---|
+| Trabalhando | Em andamento | `#A81F74` / `#FBE7F3` | `#F59BD2` / `#43243A` |
+| Precisa de você | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
+| Com erro | (nova) | `#B42318` / `#FDECEA` | `#F59B92` / `#45201D` |
+| Dormindo e livre | Livre | `#5F5D57` / `#EFEDE6` | `#C9C6BD` / `#34332F` |
+
 ## Decisões técnicas (já tomadas)
 
 - **Onde mora**: na pasta `painel/` deste repositório, como **projeto separado**, com
@@ -163,20 +178,25 @@ Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço
 3. **A leva atual**: o contador (livres, em andamento, em revisão, feitas, horas) e a lista das
    tarefas agrupadas por estado, com os dados de verdade das issues.
 4. **Tempo real**: o painel de todo mundo muda sozinho quando uma tarefa muda no GitHub.
+5. **A sala da Sakura**: as pessoas e os robôs como bonequinhos, ao vivo (ver "O que é").
 
-As 6 tarefas da leva 0, com o passo a passo de cada uma, são as issues **#350 a #355**, com a
-etiqueta `leva-0` (criadas em 30/09/2026). Nesta leva uma depende da outra, então **a próxima só
+As 8 tarefas da leva 0, com o passo a passo de cada uma, são as issues **#350, #351, #467, #352,
+#353, #354, #355 e #468**, nesta ordem, com a etiqueta `leva-0` (as 6 primeiras criadas em
+30/09/2026; as duas da sala, #467 e #468, em 14/10, quando as antigas foram renumeradas de "x/6"
+pra "x/8"). Nesta leva uma depende da outra, então **a próxima só
 começa depois que a anterior foi aprovada pela Sofia e entrou na `main`**.
 
 ### O caminho da leva 0
 ```
-tarefa 1 → PR → Sofia aprova
-tarefa 2 → PR → Sofia aprova          + Sofia liga a Cloudflare
-tarefa 3 → PR → Sofia aprova e confere o endereço no ar
-                                      + Sofia cria os apps de login
-tarefa 4 → PR → Sofia aprova
-tarefa 5 → PR → Sofia aprova          + Sofia liga o aviso automático (webhook)
-tarefa 6 → PR → Sofia aprova  →  fim da leva 0 (ver "Fim de uma leva")
+tarefa 1 (#350) projeto       → PR → Sofia aprova
+tarefa 2 (#351) visual        → PR → Sofia aprova      + Sofia liga a Cloudflare (feito)
+tarefa 3 (#467) a sala        → PR → Sofia aprova
+tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no ar
+                                                       + Sofia cria os apps de login
+tarefa 5 (#353) login         → PR → Sofia aprova
+tarefa 6 (#354) dados         → PR → Sofia aprova      + Sofia liga o aviso automático (webhook)
+tarefa 7 (#355) tempo real    → PR → Sofia aprova
+tarefa 8 (#468) sala ao vivo  → PR → Sofia aprova  →  fim da leva 0 (ver "Fim de uma leva")
 ```
 
 ### O que a Sofia faz (com o Claude dela guiando, na hora de cada tarefa)
@@ -193,13 +213,15 @@ Cada coisa que ela faz, o Claude dela **anota em "Andamento" do `docs/painel.md`
 
   Depois disso, o Claude dela anota em "Andamento" que a próxima tarefa pode começar.
 - **Antes da tarefa 1**: ~~criar a etiqueta `leva-0` e as issues~~ (feito em 30/09) e ~~convidar o Gustavo~~ (feito em 30/09).
-- **Antes da tarefa 3**: ~~na Cloudflare, ligar o repositório ("Workers Builds")~~ (feito em
+- **Antes da tarefa 4**: ~~na Cloudflare, ligar o repositório ("Workers Builds")~~ (feito em
   01/10; como ficou está em "Andamento").
-- **Antes da tarefa 4**: criar os dois GitHub Apps na `sakura-corp` e cadastrar
+- **Antes da tarefa 5**: criar os dois GitHub Apps na `sakura-corp`, com as permissões da #353
+  (inclusive **Actions** e **Contents**, só leitura, que a sala usa), e cadastrar
   `GITHUB_APP_CLIENT_SECRET` e `CHAVE_DA_SESSAO` na Cloudflare. Passar o segredo do app **de
   teste** pro Gustavo pelo **Bitwarden Send** (um link cifrado que se apaga sozinho), nunca por mensagem.
-- **Antes da tarefa 6**: no "Sakura Painel", ligar o webhook (endereço
-  `https://<painel>/api/webhook`, eventos Issues, Pull request e Label) e cadastrar
+- **Antes da tarefa 7**: no "Sakura Painel", ligar o webhook (endereço
+  `https://<painel>/api/webhook`, eventos **Issues, Pull request, Label, Workflow runs, Push,
+  Create e Delete**; os quatro últimos são da sala, e já vão juntos pra não mexer duas vezes) e cadastrar
   `GITHUB_WEBHOOK_SECRET` na Cloudflare.
 - **Depois do painel**: a conferência automática (CI) do painel, feita pelo Claude dela.
 
@@ -247,7 +269,7 @@ dependências dela, separadas das do programa das lojas:
 - O **Vitest está fixo na versão `4.1.10`**, inclusive em `overrides`. Não trocar por `^4...`:
   um complemento opcional dele puxa o Vitest 5, e o `npm install` quebra com o erro
   `Cannot read properties of null (reading 'edgesOut')`.
-- A configuração do login no PC entra aqui na tarefa 4 (o arquivo `painel/.dev.vars`, que o Git
+- A configuração do login no PC entra aqui na tarefa 5 (o arquivo `painel/.dev.vars`, que o Git
   já ignora).
 
 ## Andamento
@@ -263,7 +285,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **01/10/2026**: tarefa 1 (#350) feita pelo Gustavo: o projeto do painel existe em `painel/`
   (Vite + React + TypeScript + Tailwind), com uma página "Painel da Sakura" e um teste.
   **Aprovada e mesclada pela Sofia em 01/10 (PR #424). A tarefa 2 já pode começar.** A parte da
-  Sofia na Cloudflare só é necessária antes da tarefa 3.
+  Sofia na Cloudflare só é necessária antes da tarefa 4 (#352, renumerada em 14/10).
 - **01/10/2026**: **Cloudflare ligada.** Worker **`sakura-painel`**, no ar em
   **https://sakura-painel.caranovavidanova.workers.dev**. Por enquanto mostra a página da tarefa 1:
   a Cloudflare publicou a página mesmo sem o `wrangler.jsonc`. Como ficou:
@@ -274,8 +296,14 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
     "Preview" do endereço também;
   - **Build watch paths**: só `painel/*`, então mudança no programa das lojas não dispara
     publicação do painel;
-  - **pra tarefa 3**: o `name` do `wrangler.jsonc` tem que ser `sakura-painel`, o mesmo da
+  - **pra tarefa 4 (#352)**: o `name` do `wrangler.jsonc` tem que ser `sakura-painel`, o mesmo da
     Cloudflare. Pôr também `"workers_dev": true` e `"preview_urls": false`, pra cada publicação
     não religar a prévia nem desligar o endereço (a chave do endereço veio desligada no
     começo);
-  - **a tarefa 3 já pode começar depois que a 2 for aprovada.**
+  - **a tarefa 4 (#352) já pode começar depois que a 3 (#467) for aprovada.**
+- **14/10/2026**: **a sala da Sakura entrou na leva 0** (decisão da Sofia): duas tarefas novas,
+  **#467** (a sala com dados de exemplo, logo depois do visual) e **#468** (a sala de verdade, ao
+  vivo, no fim). As antigas foram renumeradas pra "x/8": a #352 virou a 4, a #353 a 5, a #354 a 6
+  e a #355 a 7. A #353 ganhou as permissões **Actions** e **Contents** (ler) e a #355 passou a
+  repassar também os avisos de robô e de branch. **A ordem continua uma de cada vez: a #467
+  começa depois que a #351 for aprovada.**
