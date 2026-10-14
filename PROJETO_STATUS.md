@@ -238,44 +238,37 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 14/10/2026, à noite: o jeito de trabalhar com o Claude, e a sala da Sakura no painel
+### 14/10/2026, à noite (2): o plano até a equipe começar
 
 **Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`
 estava na **`v0.9.51`**, liberada pra todas as lojas em 08/10, e o banco na **`0064`**. O marco
-anterior (13 e 14/10) está no topo de `docs/historico.md`.
+anterior (o jeito de trabalhar com o Claude) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Uma conversa sobre como trabalhar com o Claude**: onde trabalhar, sessões, skills, agentes,
-  trancas, o que mostrar na tela. Tudo aprovado por ela e anotado em
-  **`docs/jeito-de-trabalhar.md`**: as gavetas e a fila.
-- **A fila virou tarefa**: [#470](https://github.com/sakura-corp/sakura-system-ace/issues/470)
-  (T1, segredo barrado antes de sair do computador) →
-  [#471](https://github.com/sakura-corp/sakura-system-ace/issues/471) (o `/fechar` e o aviso de
-  conversa comprida) → [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472) (o
-  que depende dela vira tarefa, e o resumo da segunda). O resto vira tarefa quando chegar a vez.
-- **A sala da Sakura entrou na leva 0 do painel**: #467 (a 3ª tarefa, com dados de exemplo) e
-  #468 (a última, ao vivo). As antigas foram renumeradas pra "x/8" (PR #469, `docs/painel.md`).
-- A seção 1 do índice foi corrigida (ela usa o app no desktop e o celular de controle; plano Pro)
-  e ganhou duas preferências: uma sessão por assunto, e "o que se repete vira proposta de skill".
+- **O plano do que falta até a equipe começar**, aprovado por ela, virou a tarefa
+  [#474](https://github.com/sakura-corp/sakura-system-ace/issues/474), em 5 etapas: já; contas;
+  papéis assinados; o programa pronto pra equipe; começar. Resumo em `docs/pendencias-e-futuro.md`
+  ("A equipe no programa das lojas").
+- **As 5 decisões dela**:
+  1. o Termo de Colaboração é assinado **antes** do acesso ao código (o Gustavo assina junto);
+  2. é **o mesmo Termo pra todos**;
+  3. primeiro, **uma tarefa de aquecimento pra cada um** (#455 e #459); depois, a 1ª parte da
+     #457 (importar clientes de uma planilha qualquer);
+  4. as tarefas do programa **entram na `leva-0`**, junto com as do painel (`docs/painel.md`);
+  5. **verificação em duas etapas obrigatória** na organização do GitHub.
+- O privado foi lido, mas **não foi atualizado**: a sessão tinha só leitura. O `EQUIPE.md` ainda
+  precisa receber as decisões 1, 2 e 5.
 
 #### Por onde a próxima sessão começa
-1. **O próximo assunto, pedido por ela**: **o que precisa estar pronto até a equipe começar**,
-   do e-mail de cada um (inclusive o dela) até eles programarem, e **como vai ser a organização
-   na prática** (por quais tarefas começar). Já se sabe que entram nessa conta:
-   - o Claude Team, as caixas no Zoho e os nomes dos e-mails;
-   - os acordos assinados (na ordem do privado, `contratos/README.md`);
-   - o Supabase de teste e a regra da seção 0 ("só o painel");
-   - o **T1** e o **T2** de `docs/jeito-de-trabalhar.md`;
-   - as tarefas da onda 1 escritas no formato da equipe.
-
-   Ler o `EQUIPE.md` do privado antes.
-2. **Depois, a fila**: #470 → #471 → #472, uma sessão cada.
-3. **Ficou pra depois, por decisão dela**: arquivar as sessões antigas (A4) e arrumar o PC
+1. **A #474, etapa 1**: a mensagem pros três (o rascunho está na conversa de 14/10; se perdeu,
+   refazer: nome do e-mail, usuário do GitHub, Windows ou Mac, horas por semana, e a #351 pro
+   Gustavo), a cessão dela e a **#470**, que precisa estar pronta antes de os novos começarem.
+2. **Depois de 16/10**: as contas (etapa 2 da #474).
+3. **Depois, a fila**: #471 → #472, uma sessão cada.
+4. **Ficou pra depois, por decisão dela**: arquivar as sessões antigas (A4) e arrumar o PC
    (`docs/jeito-de-trabalhar.md`, no fim). O **marketing** fica pra uma conversa própria.
-4. **Ainda vale** do marco anterior:
+5. **Ainda vale** do marco anterior:
    - **abertura**: agora é com a contabilidade (1ª nota ~17/10 a 01/11);
-   - **assinaturas**: começam pela cessão dela;
-   - perguntar ao Gustavo como está a #351;
    - a contabilidade (XML × "OFX") e o cabeçalho das planilhas pra #457;
    - o capital, o Claude Team e a TFE depois de 16/10;
    - o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".

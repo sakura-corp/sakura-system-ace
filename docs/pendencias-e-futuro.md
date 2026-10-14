@@ -39,11 +39,27 @@ pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com
 serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
 gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
-**A equipe no programa das lojas** (decidido em 13/10; detalhe no privado, `EQUIPE.md`): antes
-de alguém da equipe pegar tarefa fora do painel, ela (1) cria um **Supabase de teste**, separado
-do banco da Pneus Amigão, e (2) muda a regra da seção 0 do `PROJETO_STATUS.md` ("só o painel").
-Depois, as tarefas da onda 1 saem planejadas, primeiro as que deixam a entrada de loja nova mais
-rápida (#457).
+**A equipe no programa das lojas** (decidido em 13/10; o plano até começar, aprovado em 14/10, é
+a [#474](https://github.com/sakura-corp/sakura-system-ace/issues/474); o que é da empresa fica no
+privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A ordem:
+1. **já**: a mensagem pros três (nome do e-mail, usuário do GitHub, Windows ou Mac, horas por
+   semana), a cessão dela e a #470 (segredo barrado antes de sair do computador), **pronta antes
+   de os novos começarem**;
+2. **contas, depois de 16/10**: e-mail da Sakura, Claude Team e **verificação em duas etapas
+   obrigatória na organização do GitHub** (antes de ligar, conferir que o Gustavo já usa: quem não
+   usa sai da organização na hora);
+3. **papéis**: o Termo de Colaboração, **o mesmo pra todos**, assinado **antes de ter acesso ao
+   código** (o Gustavo assina junto); depois o memorando. Só então os dois novos são convidados;
+4. **o programa pronto pra equipe**: o **Supabase de teste** (separado da Pneus Amigão, com dados
+   de exemplo e um login pra cada um), a regra nova da seção 0 ("só o painel" muda), um manual da
+   equipe e as primeiras tarefas no formato da equipe, **na `leva-0`** (`docs/painel.md`);
+5. **começar**: o "Primeiro dia" de cada um, e a primeira tarefa.
+
+**As primeiras tarefas do programa** (ela, 14/10): uma de **aquecimento** pra cada um, pequena e
+sem dinheiro, nota nem migration (#455 e #459); depois, a **1ª parte da #457**: importar clientes
+de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa parte não depende do
+cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
+PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
 
 **Da visão** (12/10, `docs/visao.md`): a contabilidade da Pneus Amigão **respondeu em 13/10** as
 três perguntas ("Perguntas pra fora", abaixo). Falta só confirmar com eles que as notas vão em
