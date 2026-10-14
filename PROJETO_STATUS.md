@@ -226,52 +226,27 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 12 e 13/10/2026: a visão de futuro, a prioridade das tarefas e os contratos
+### 13 e 14/10/2026: assuntos da empresa com a equipe, e a equipe no programa das lojas
 
 **Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
-em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
+em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **A visão dela, documentada e aprovada** (`docs/visao.md`), a partir do artigo "Services: The
-  New Software" (Sequoia): um programa só pra loja inteira, o máximo automático, integração com o
-  WhatsApp e, mais pra frente, um assistente de IA. Os princípios que ela confirmou: **a IA
-  sugere, a pessoa confirma**, com a dinâmica do assistente muito bem planejada antes de qualquer
-  código; e **muitas funções, cada uma simples** (automatizar é tirar trabalho). O WhatsApp que
-  manda sozinho (número e custo) ela adiou.
-- **A prioridade em ondas, sem custo primeiro**, aprovada por ela. **6 tarefas novas** (#454
-  Central do dia, #455 Clientes que sumiram, #456 Pix copia e cola, #457 Importar do sistema
-  antigo, #458 Desenho do assistente, #459 Pedir avaliação no Google) e **42 tarefas** com a
-  linha de prioridade (a #385 também com o andamento do Electron).
-- **As lojas da fase 2 usam outro sistema**, que exporta planilhas: a importação (#457) subiu
-  pra onda 1 e precisa ser compatível com tudo.
-- **A contabilidade da Pneus Amigão respondeu (13/10)** as três perguntas (seção 8, "Perguntas
-  pra fora"):
-  - a NFC-e com CSOSN 500 está certa;
-  - o Ambiente Nacional já recebe as notas da loja, e eles avisam se mudar até 1º/11;
-  - pro pacote do mês, eles querem as notas até o dia 7 e o **extrato do banco** até o dia 10. A
-    #383 encolheu pra isso.
-- **Os contratos** (no privado, `contratos/README.md`): o das lojas (com a parte da LGPD do
-  `ANTES-DA-PRIMEIRA-VENDA.md`), o da equipe e a cessão do código dela pra empresa. Escritos e
-  **revisados pelo advogado** no mesmo dia.
+- **Assuntos da empresa com a equipe**, decididos e revisados pelo advogado em 14/10: ficam **no
+  privado** (`EMPRESA.md` e `contratos/README.md` do `caranovavidanova/sakura-corp`).
+- **A equipe vai mexer também no programa das lojas** (decidido em 13/10): uma pessoa no painel e
+  duas no programa, com tarefas da onda 1 de `docs/visao.md`, primeiro as que deixam a entrada de
+  loja nova mais rápida (ex.: a #457). Detalhe no privado, `EQUIPE.md`.
+- **O painel estava parado em 13/10**: a tarefa 2 (#351) com o Gustavo desde 01/10, sem PR.
 
 #### Por onde a próxima sessão começa
-1. **Contabilidade**: confirmar que as notas vão em XML (a mensagem diz "OFX"); e, até 1º/11, o
-   manual deles se o Ambiente Nacional mudar alguma coisa.
-2. **Pra #457**: o nome do sistema que as lojas usam e a primeira linha (o cabeçalho) de cada
-   planilha exportada, **sem dado de cliente**.
-3. **Abertura** (no privado): a **conta PJ abriu em 13/10** (falta ver o cartão e transferir o
-   capital depois de 16/10); a entrevista do certificado em **14/10, 14h**; depois, a procuração
-   no e-CAC. Pedir pra adicionar o `caranovavidanova/sakura-corp` com as palavras certas (seção 1).
-4. **Contratos** (no privado, `contratos/README.md`, "O que ainda falta"):
-   - assinar a **cessão dela** primeiro, pela empresa com o certificado e-CNPJ, que sai depois de
-     14/10;
-   - o WhatsApp e o horário do suporte;
-   - o **acordo de vesting ou memorando com os amigos**, que o advogado pediu pra não demorar.
-5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
-6. **Ainda vale**:
-   - o Balcão pegar a `v0.9.51` (conferir no Diagnóstico);
-   - o salto 2 do Electron (40);
-   - a #442;
-   - o "Texto de garantia" da loja;
-   - o PR da tarefa 2 do Gustavo (#351);
-   - a partir de **16/10**: o Claude Team, a TFE e o capital.
+1. **Assinaturas, na ordem do privado** (`contratos/README.md`): começa pela cessão dela, com o
+   certificado da empresa, que sai da entrevista de 14/10, 14h.
+2. **Antes de abrir o programa das lojas pra equipe**: criar um **Supabase de teste** e mudar a
+   regra da seção 0 ("só o painel"), que é dela.
+3. **Antes do Claude Team** (logo depois de 16/10): o nome de cada um no e-mail
+   `@sakuracorp.com.br` e as caixas no Zoho.
+4. Perguntar ao Gustavo como está a #351.
+5. **Ainda vale** do marco anterior: a contabilidade (XML × "OFX"); o cabeçalho das planilhas pra
+   #457; a abertura (certificado em 14/10, procuração no e-CAC, capital depois de 16/10); o
+   Balcão na `v0.9.51`; o salto 2 do Electron; a #442; o "Texto de garantia"; a TFE.

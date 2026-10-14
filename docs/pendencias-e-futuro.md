@@ -39,6 +39,12 @@ pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com
 serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
 gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
 
+**A equipe no programa das lojas** (decidido em 13/10; detalhe no privado, `EQUIPE.md`): antes
+de alguém da equipe pegar tarefa fora do painel, ela (1) cria um **Supabase de teste**, separado
+do banco da Pneus Amigão, e (2) muda a regra da seção 0 do `PROJETO_STATUS.md` ("só o painel").
+Depois, as tarefas da onda 1 saem planejadas, primeiro as que deixam a entrada de loja nova mais
+rápida (#457).
+
 **Da visão** (12/10, `docs/visao.md`): a contabilidade da Pneus Amigão **respondeu em 13/10** as
 três perguntas ("Perguntas pra fora", abaixo). Falta só confirmar com eles que as notas vão em
 **XML** (a mensagem escrita diz "OFX", que é formato de extrato de banco). E, pra importação
