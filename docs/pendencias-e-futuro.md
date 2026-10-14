@@ -63,8 +63,8 @@ motivo escrito.
 branches" está ligado.
 
 **Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. A **conta PJ abriu em 13/10**. O que falta (o certificado digital, com a entrevista em
-14/10; a procuração; a TFE; e a 1ª NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está
+em 05/10. A **conta PJ abriu em 13/10**; o **certificado e a procuração saíram em 14/10**. O que
+falta (a TFE e a 1ª NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está
 no privado, `EMPRESA.md`, seção "Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
