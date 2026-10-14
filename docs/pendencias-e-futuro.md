@@ -59,6 +59,10 @@ prefeitura mudar alguma coisa (item 3 da parte fiscal, abaixo); **antes de 09/10
 `docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
 motivo escrito.
 
+**Do jeito de trabalhar** (14/10, `docs/jeito-de-trabalhar.md`): a fila #470 → #471 → #472
+(a #472 tira esta lista do texto e passa pra tarefas no GitHub). **Depois**, quando ela quiser:
+arrumar o PC dela (numa sessão no PC) e arquivar as sessões antigas que estiverem seguras.
+
 **Branches no GitHub**: feito em 08/10. Só sobrou a `main`, e o "Automatically delete head
 branches" está ligado.
 

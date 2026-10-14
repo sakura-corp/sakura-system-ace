@@ -60,6 +60,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/historico.md` | estado do Git e os marcos "onde parou" antigos, do mais novo pro mais velho (antiga seção 10) | quase nunca |
 | `docs/visao.md` | **pra onde o SSACE vai** (a visão dela, 12/10): um programa só pra loja inteira, o máximo automático, WhatsApp, assistente de IA; as quatro frentes, **a prioridade das tarefas (ondas, sem custo primeiro)** e o que está em aberto | ao planejar funcionalidade nova ou conversar sobre o futuro |
 | `docs/comparativo-anexar.md` | o que o concorrente Anexar anuncia × o que temos, e a tarefa de cada coisa que falta (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
+| `docs/jeito-de-trabalhar.md` | **o jeito de trabalhar com o Claude** (14/10): as gavetas (memória, skills, trancas, afazeres, ver), a fila (#470, #471, #472), onde trabalhar, uma sessão por assunto | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/painel.md` | o painel da equipe: o que é, como a equipe trabalha (levas, tarefas), decisões técnicas, 1ª versão, andamento | ao mexer no painel ou planejar leva |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
 
@@ -80,8 +81,11 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
 - Antes de decisões estruturais importantes (arquitetura, bibliotecas, modelagem de dados),
   **apresentar opções + recomendação e esperar confirmação** — não decidir sozinho.
 - Construir em **etapas pequenas e testáveis**. Mostrar funcionando antes de avançar.
-- A usuária testa em uma máquina Windows local (terminal integrado do VS Code / PowerShell). Ela
-  copia e cola os comandos que eu forneço — eu não tenho acesso à máquina dela.
+- Ela trabalha pelo **app do Claude no desktop** (PC Windows) e usa o **celular como controle
+  remoto**; quase não abre o VS Code nem o PowerShell (corrigido em 14/10). As sessões do SSACE
+  rodam **na nuvem**, então eu não alcanço a máquina dela: o que precisa do PC (testar o
+  programa, mexer nos arquivos dela) vai numa sessão **no PC** (`docs/jeito-de-trabalhar.md`).
+  Plano dela hoje: **Pro** (até o Claude Team).
 - **Instalador Windows**: ela baixa e instala primeiro na **própria máquina dela** (não a da
   borracharia) pra testar antes de levar pra loja de verdade — bom lembrar disso ao dar
   instruções de instalação/teste, não assumir que já está testando no ambiente de produção.
@@ -169,6 +173,14 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   depois. O **cartão de "tarefa sugerida"** que o app mostra é só um atalho pra abrir outra
   sessão: ele não entra na memória e eu não consigo ver os de outras sessões. Ela perguntou "esses
   defeitos têm que ser documentados, não?!" ao descobrir isso.
+- **Uma sessão por assunto** (14/10/2026): acabou o assunto, fecha com o "Onde parou"; passou de
+  uns 30 a 40% de contexto, fecha e abre outra. Sessão de "continuação" não precisa: a memória faz
+  a ponte. Ela disse que às vezes estica sem querer, então **eu aviso** quando chegar lá.
+- **O que se repete vira proposta de skill, e o método é revisto todo mês** (14/10/2026): quando
+  algo se repetir umas 3 vezes, eu proponho transformar em skill, e **ela aprova antes**. Skill
+  que falhou é consertada na hora. Uma vez por mês, a revisão do método (R1 de
+  `docs/jeito-de-trabalhar.md`). **Ferramenta nova vista em vídeo** (ela acompanha muitos no
+  Instagram) passa pelo mesmo filtro do produto: **isso tira trabalho de verdade?**
 - **Sempre que eu aprender uma preferência de trabalho nova**, documentar aqui — não só nas
   decisões técnicas da seção 3, mas qualquer coisa sobre *como* ela quer que eu trabalhe. Sessões
   futuras não têm memória da conversa, só deste arquivo.
@@ -226,28 +238,44 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 13 e 14/10/2026: assuntos da empresa com a equipe, e a equipe no programa das lojas
+### 14/10/2026, à noite: o jeito de trabalhar com o Claude, e a sala da Sakura no painel
 
-**Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
-em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `docs/historico.md`.
+**Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`
+estava na **`v0.9.51`**, liberada pra todas as lojas em 08/10, e o banco na **`0064`**. O marco
+anterior (13 e 14/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **Assuntos da empresa com a equipe**, decididos e revisados pelo advogado em 14/10: ficam **no
-  privado** (`EMPRESA.md` e `contratos/README.md` do `caranovavidanova/sakura-corp`).
-- **A equipe vai mexer também no programa das lojas** (decidido em 13/10): uma pessoa no painel e
-  duas no programa, com tarefas da onda 1 de `docs/visao.md`, primeiro as que deixam a entrada de
-  loja nova mais rápida (ex.: a #457). Detalhe no privado, `EQUIPE.md`.
-- **O painel estava parado em 13/10**: a tarefa 2 (#351) com o Gustavo desde 01/10, sem PR.
+- **Uma conversa sobre como trabalhar com o Claude**: onde trabalhar, sessões, skills, agentes,
+  trancas, o que mostrar na tela. Tudo aprovado por ela e anotado em
+  **`docs/jeito-de-trabalhar.md`**: as gavetas e a fila.
+- **A fila virou tarefa**: [#470](https://github.com/sakura-corp/sakura-system-ace/issues/470)
+  (T1, segredo barrado antes de sair do computador) →
+  [#471](https://github.com/sakura-corp/sakura-system-ace/issues/471) (o `/fechar` e o aviso de
+  conversa comprida) → [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472) (o
+  que depende dela vira tarefa, e o resumo da segunda). O resto vira tarefa quando chegar a vez.
+- **A sala da Sakura entrou na leva 0 do painel**: #467 (a 3ª tarefa, com dados de exemplo) e
+  #468 (a última, ao vivo). As antigas foram renumeradas pra "x/8" (PR #469, `docs/painel.md`).
+- A seção 1 do índice foi corrigida (ela usa o app no desktop e o celular de controle; plano Pro)
+  e ganhou duas preferências: uma sessão por assunto, e "o que se repete vira proposta de skill".
 
 #### Por onde a próxima sessão começa
-1. **Abertura da empresa: a parte dela terminou em 14/10** (detalhe no privado, `EMPRESA.md`).
-   Agora é com a contabilidade; a 1ª nota pra Pneus Amigão deve sair entre ~17/10 e 01/11.
-   **Assinaturas, na ordem do privado** (`contratos/README.md`): começa pela cessão dela.
-2. **Antes de abrir o programa das lojas pra equipe**: criar um **Supabase de teste** e mudar a
-   regra da seção 0 ("só o painel"), que é dela.
-3. **Antes do Claude Team** (logo depois de 16/10): o nome de cada um no e-mail
-   `@sakuracorp.com.br` e as caixas no Zoho.
-4. Perguntar ao Gustavo como está a #351.
-5. **Ainda vale** do marco anterior: a contabilidade (XML × "OFX"); o cabeçalho das planilhas pra
-   #457; o capital e o Claude Team depois de 16/10; o
-   Balcão na `v0.9.51`; o salto 2 do Electron; a #442; o "Texto de garantia"; a TFE.
+1. **O próximo assunto, pedido por ela**: **o que precisa estar pronto até a equipe começar**,
+   do e-mail de cada um (inclusive o dela) até eles programarem, e **como vai ser a organização
+   na prática** (por quais tarefas começar). Já se sabe que entram nessa conta:
+   - o Claude Team, as caixas no Zoho e os nomes dos e-mails;
+   - os acordos assinados (na ordem do privado, `contratos/README.md`);
+   - o Supabase de teste e a regra da seção 0 ("só o painel");
+   - o **T1** e o **T2** de `docs/jeito-de-trabalhar.md`;
+   - as tarefas da onda 1 escritas no formato da equipe.
+
+   Ler o `EQUIPE.md` do privado antes.
+2. **Depois, a fila**: #470 → #471 → #472, uma sessão cada.
+3. **Ficou pra depois, por decisão dela**: arquivar as sessões antigas (A4) e arrumar o PC
+   (`docs/jeito-de-trabalhar.md`, no fim). O **marketing** fica pra uma conversa própria.
+4. **Ainda vale** do marco anterior:
+   - **abertura**: agora é com a contabilidade (1ª nota ~17/10 a 01/11);
+   - **assinaturas**: começam pela cessão dela;
+   - perguntar ao Gustavo como está a #351;
+   - a contabilidade (XML × "OFX") e o cabeçalho das planilhas pra #457;
+   - o capital, o Claude Team e a TFE depois de 16/10;
+   - o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".
