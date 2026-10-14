@@ -35,6 +35,32 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 13 e 14/10/2026: assuntos da empresa com a equipe, e a equipe no programa das lojas
+
+**Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
+em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `docs/historico.md`.
+
+#### O que foi feito
+- **Assuntos da empresa com a equipe**, decididos e revisados pelo advogado em 14/10: ficam **no
+  privado** (`EMPRESA.md` e `contratos/README.md` do `caranovavidanova/sakura-corp`).
+- **A equipe vai mexer também no programa das lojas** (decidido em 13/10): uma pessoa no painel e
+  duas no programa, com tarefas da onda 1 de `docs/visao.md`, primeiro as que deixam a entrada de
+  loja nova mais rápida (ex.: a #457). Detalhe no privado, `EQUIPE.md`.
+- **O painel estava parado em 13/10**: a tarefa 2 (#351) com o Gustavo desde 01/10, sem PR.
+
+#### Por onde a próxima sessão começa
+1. **Abertura da empresa: a parte dela terminou em 14/10** (detalhe no privado, `EMPRESA.md`).
+   Agora é com a contabilidade; a 1ª nota pra Pneus Amigão deve sair entre ~17/10 e 01/11.
+   **Assinaturas, na ordem do privado** (`contratos/README.md`): começa pela cessão dela.
+2. **Antes de abrir o programa das lojas pra equipe**: criar um **Supabase de teste** e mudar a
+   regra da seção 0 ("só o painel"), que é dela.
+3. **Antes do Claude Team** (logo depois de 16/10): o nome de cada um no e-mail
+   `@sakuracorp.com.br` e as caixas no Zoho.
+4. Perguntar ao Gustavo como está a #351.
+5. **Ainda vale** do marco anterior: a contabilidade (XML × "OFX"); o cabeçalho das planilhas pra
+   #457; o capital e o Claude Team depois de 16/10; o
+   Balcão na `v0.9.51`; o salto 2 do Electron; a #442; o "Texto de garantia"; a TFE.
+
 ### 12 e 13/10/2026: a visão de futuro, a prioridade das tarefas e os contratos
 
 **Estado do código**: nada mudou no código. `main` na **`v0.9.51`**, liberada pra todas as lojas
