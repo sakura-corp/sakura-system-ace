@@ -137,15 +137,41 @@ Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço
 | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
 | Feita | `#2B6534` / `#E4F1E6` | `#8FD19C` / `#233A28` |
 
-**Estados da sala** (tarefas 3 e 8): reaproveitam as cores acima, mais uma de erro, conferida no
-contraste em 14/10 (5,75:1 no claro e 6,76:1 no escuro).
+### Visual da Sala (B, o da Bibi; decidido em 15/10/2026)
 
-| Estado do bonequinho | Usa as cores de | Claro (texto / fundo) | Escuro (texto / fundo) |
+A Sala (tarefas 3 e 8) é uma **janela sempre escura dentro do painel**, com visual próprio. O resto do
+painel (barra lateral, leva, lista) **continua no estilo claro e calmo** descrito acima. A referência
+renderizada, nos dois visuais, está em `docs/referencia/sala-duas-versoes.html` (a coluna **B** vale).
+Cada ponto de luz (pessoa, robô do Claude, robô da casa) é um SVG: halo, anel e núcleo, com um
+símbolo dentro. **O estado é o jeito de brilhar** e nunca depende só de animação (o anel e o balão
+dizem o estado sozinhos).
+
+- **Fonte**: Plus Jakarta Sans (`@fontsource-variable/plus-jakarta-sans`, pelo npm, só dentro da Sala).
+- **Fundo da janela**: `#120e12`, com dois brilhos malva nos cantos. **Vidro**: branco a 4,5% com borda a 9% e
+  `backdrop-filter: blur(10px)`; sem suporte, cai pra `#1d191d`.
+- **Cores** (todas conferidas no contraste WCAG em 15/10: o menor par deu 6,2:1; o "Fundo" é a janela, o "Vidro" é o quadro):
+
+| Papel | Cor | Contraste |
+|---|---|---|
+| Texto | `#F4ECF0` | 16,5:1 no fundo, 15,0:1 no vidro |
+| Texto secundário | `#B7A3AE` | 8,1:1 no fundo, 7,3:1 no vidro |
+| Destaque (malva) | `#C98FAE` | 7,3:1 no fundo, 6,6:1 no vidro; texto `#120E12` em cima: 7,3:1 |
+| Malva claro / escuro | `#E2B0C9` / `#8E5A77` | só pra brilho e detalhe, nunca pra texto |
+
+| Estado do ponto | Texto do balão | Fundo do balão | Contraste |
 |---|---|---|---|
-| Trabalhando | Em andamento | `#A81F74` / `#FBE7F3` | `#F59BD2` / `#43243A` |
-| Precisa de você | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
-| Com erro | (nova) | `#B42318` / `#FDECEA` | `#F59B92` / `#45201D` |
-| Dormindo e livre | Livre | `#5F5D57` / `#EFEDE6` | `#C9C6BD` / `#34332F` |
+| Trabalhando | `#E2B0C9` | malva `#C98FAE` a 16% | 7,1:1 |
+| Precisa de você | `#F2C46B` | âmbar a 14% | 7,8:1 |
+| Com erro | `#F59B92` | vermelho a 14% | 6,4:1 |
+| Dormindo e livre | `#B7A3AE` | branco a 6% | 6,2:1 |
+
+- **Como brilha**: trabalhando = halo que pulsa devagar; precisa de você = brilho parado com anel;
+  com erro = brilho vermelho com anel tracejado; dormindo = quase apagado; livre = brilho fraco.
+  Com `prefers-reduced-motion`, o halo do "trabalhando" vira um anel pontilhado fixo.
+- **Modo TV**: `/sala?tv` mostra só a sala, grande, pra um segundo monitor.
+- **Link**: o cartão e a lista só abrem endereço que começa com `https://github.com/sakura-corp/`.
+- **Sem nota por pessoa**: nem ranking nem número de produtividade individual (a Sala mostra o que
+  espera cada um, não quanto cada um rendeu).
 
 ## Decisões técnicas (já tomadas)
 
@@ -314,3 +340,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   da Sofia), quando os outros dois da equipe começarem (o plano é a #474). Pro painel, isso não
   muda nada no desenho: a tela da leva mostra todas as tarefas com a etiqueta `leva-0`, do
   painel e do programa. A ordem "uma de cada vez" vale só entre as tarefas do painel.
+- **15/10/2026**: **visual da Sala decidido: o B, o da Bibi** (a Sofia escolheu olhando as duas versões
+  lado a lado, `docs/referencia/sala-duas-versoes.html`). Só a Sala muda; o resto do painel
+  continua claro e calmo. Cada ponto de luz passa a ter o estado no jeito de brilhar. **Tarefas
+  atualizadas**: **#467** (estimativa de 6 h pra **8 h**: visual B, regra de tempo sem pegadinha, filtro de
+  link, modo TV, foto da tela no PR), **#468** (estado da conexão de verdade, "só dado de verdade" quando
+  uma busca falha) e **#355** (o `useTempoReal()` devolve `estado` e `ultimaAtualizacao`). A **#351**
+  (com o Gustavo) **não mudou**; ele recebeu um comentário com dois acréscimos pequenos (o "em breve"
+  do Financeiro diz do que depende; foto da tela no PR). Nenhuma linha de código do painel mudou.

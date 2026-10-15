@@ -17,6 +17,11 @@ antiga porque outros arquivos citam "item N da seção 8".
 Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs/historico.md`.
 **Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
 
+**Da sessão de 15/10 (a #470 e a Sala)**:
+- **Aprovar e mesclar o PR #477** (a #470) e **provar o gatilho numa sessão nova** (pedir pra tentar
+  commitar uma chave falsa de propósito; se barrar, fechar a #470).
+- **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.
+
 **Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na
 `0.9.50` desde 05/10):
 - venda de balcão com o leitor, a NFC-e dela e o caixa do dia batendo;

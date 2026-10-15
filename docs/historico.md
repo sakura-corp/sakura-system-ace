@@ -35,6 +35,41 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 14/10/2026, à noite (2): o plano até a equipe começar
+
+**Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`
+estava na **`v0.9.51`**, liberada pra todas as lojas em 08/10, e o banco na **`0064`**. O marco
+anterior (o jeito de trabalhar com o Claude) está no topo de `docs/historico.md`.
+
+#### O que foi feito
+- **O plano do que falta até a equipe começar**, aprovado por ela, virou a tarefa
+  [#474](https://github.com/sakura-corp/sakura-system-ace/issues/474), em 5 etapas: já; contas;
+  papéis assinados; o programa pronto pra equipe; começar. Resumo em `docs/pendencias-e-futuro.md`
+  ("A equipe no programa das lojas").
+- **As 5 decisões dela**:
+  1. o Termo de Colaboração é assinado **antes** do acesso ao código (o Gustavo assina junto);
+  2. é **o mesmo Termo pra todos**;
+  3. primeiro, **uma tarefa de aquecimento pra cada um** (#455 e #459); depois, a 1ª parte da
+     #457 (importar clientes de uma planilha qualquer);
+  4. as tarefas do programa **entram na `leva-0`**, junto com as do painel (`docs/painel.md`);
+  5. **verificação em duas etapas obrigatória** na organização do GitHub.
+- No privado, as decisões foram anotadas no `EQUIPE.md` (e o "mesmo acordo pra todos" saiu do
+  que falta decidir em `contratos/README.md`).
+
+#### Por onde a próxima sessão começa
+1. **A #474, etapa 1**: a mensagem pros três (o rascunho está na conversa de 14/10; se perdeu,
+   refazer: nome do e-mail, usuário do GitHub, Windows ou Mac, horas por semana, e a #351 pro
+   Gustavo), a cessão dela e a **#470**, que precisa estar pronta antes de os novos começarem.
+2. **Depois de 16/10**: as contas (etapa 2 da #474).
+3. **Depois, a fila**: #471 → #472, uma sessão cada.
+4. **Ficou pra depois, por decisão dela**: arquivar as sessões antigas (A4) e arrumar o PC
+   (`docs/jeito-de-trabalhar.md`, no fim). O **marketing** fica pra uma conversa própria.
+5. **Ainda vale** do marco anterior:
+   - **abertura**: agora é com a contabilidade (1ª nota ~17/10 a 01/11);
+   - a contabilidade (XML × "OFX") e o cabeçalho das planilhas pra #457;
+   - o capital, o Claude Team e a TFE depois de 16/10;
+   - o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".
+
 ### 14/10/2026, à noite: o jeito de trabalhar com o Claude, e a sala da Sakura no painel
 
 **Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`

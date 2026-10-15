@@ -1,0 +1,353 @@
+<title>Sala da Sakura</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Conceito: a mesma sala, dois visuais lado a lado. A = o do painel (claro, calmo, Inter/Source Serif). B = o da Bibi (escuro, vidro, malva, Plus Jakarta Sans). */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap");
+
+:root {
+  --pg-bg: #f6f4ee;
+  --pg-fg: #1f1e1d;
+  --pg-soft: #6b6963;
+  --pg-line: #dedacd;
+  --pg-chip: #ffffff;
+  --serif: "Source Serif 4", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --jakarta: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pg-bg: #171517; --pg-fg: #f2f0ea; --pg-soft: #a8a59c; --pg-line: #35313a; --pg-chip: #221f24;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --pg-bg: #171517; --pg-fg: #f2f0ea; --pg-soft: #a8a59c; --pg-line: #35313a; --pg-chip: #221f24;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--pg-bg); color: var(--pg-fg); font-family: var(--sans); line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.pagina { max-width: 1240px; margin: 0 auto; display: grid; gap: 24px; }
+h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(1.6rem, 3vw, 2.1rem); margin: 0; text-wrap: balance; }
+.intro { display: grid; gap: 14px; }
+.intro p { margin: 0; color: var(--pg-soft); max-width: 70ch; }
+.responder {
+  border: 1px solid var(--pg-line); background: var(--pg-chip); border-radius: 12px; padding: 14px 16px;
+  display: grid; gap: 6px; max-width: 70ch;
+}
+.responder b { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--pg-soft); font-weight: 600; }
+.responder code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
+.aviso-exemplo { font-size: .85rem; color: var(--pg-soft); }
+
+.duas { display: grid; gap: 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+@media (max-width: 960px) { .duas { grid-template-columns: minmax(0, 1fr); } }
+.versao { display: grid; gap: 10px; min-width: 0; }
+.versao > .nome { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.versao > .nome strong { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
+.versao > .nome span { color: var(--pg-soft); font-size: .9rem; }
+
+/* ===== A: o visual do painel (claro por padrão, escuro quando o sistema está escuro) ===== */
+.va {
+  --bg: #faf9f5; --card: #ffffff; --borda: #e6e3da; --tx: #1f1e1d; --tx2: #6b6963; --dest: #b8237f; --dest-tx: #ffffff;
+  --e-trab: #a81f74; --e-trab-bg: #fbe7f3;
+  --e-prec: #7a4f00; --e-prec-bg: #fbefd9;
+  --e-erro: #b42318; --e-erro-bg: #fdeceb;
+  --e-livre: #5f5d57; --e-livre-bg: #efede6;
+  --mesa: #efede6; --piso: #f3f1ea;
+  --halo-blur: 0px; --halo-op: .22;
+  font-family: var(--sans);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .va {
+    --bg: #1f1e1d; --card: #2a2927; --borda: #3a3936; --tx: #f2f0ea; --tx2: #a8a59c; --dest: #f07cc4; --dest-tx: #1f1e1d;
+    --e-trab: #f59bd2; --e-trab-bg: #43243a;
+    --e-prec: #f2c46b; --e-prec-bg: #3f3322;
+    --e-erro: #f59b92; --e-erro-bg: #45201d;
+    --e-livre: #c9c6bd; --e-livre-bg: #34332f;
+    --mesa: #34332f; --piso: #252422;
+  }
+}
+:root[data-theme="dark"] .va {
+  --bg: #1f1e1d; --card: #2a2927; --borda: #3a3936; --tx: #f2f0ea; --tx2: #a8a59c; --dest: #f07cc4; --dest-tx: #1f1e1d;
+  --e-trab: #f59bd2; --e-trab-bg: #43243a;
+  --e-prec: #f2c46b; --e-prec-bg: #3f3322;
+  --e-erro: #f59b92; --e-erro-bg: #45201d;
+  --e-livre: #c9c6bd; --e-livre-bg: #34332f;
+  --mesa: #34332f; --piso: #252422;
+}
+
+/* ===== B: o visual da Bibi (sempre escuro) ===== */
+.vb {
+  --bg: #120e12; --card: rgba(255,255,255,.045); --borda: rgba(255,255,255,.09); --tx: #f4ecf0; --tx2: #b7a3ae; --dest: #c98fae; --dest-tx: #120e12;
+  --e-trab: #e2b0c9; --e-trab-bg: rgba(201,143,174,.16);
+  --e-prec: #f2c46b; --e-prec-bg: rgba(242,196,107,.14);
+  --e-erro: #f59b92; --e-erro-bg: rgba(245,155,146,.14);
+  --e-livre: #b7a3ae; --e-livre-bg: rgba(255,255,255,.06);
+  --mesa: rgba(255,255,255,.05); --piso: transparent;
+  --halo-blur: 7px; --halo-op: .55;
+  font-family: var(--jakarta);
+}
+
+.janela {
+  background: var(--bg); color: var(--tx); border: 1px solid var(--borda); border-radius: 16px; padding: 18px;
+  display: grid; gap: 16px; min-width: 0; overflow: hidden;
+}
+.vb .janela {
+  background:
+    radial-gradient(420px 260px at 8% -5%, rgba(201,143,174,.20), transparent 70%),
+    radial-gradient(380px 260px at 100% 105%, rgba(142,90,119,.22), transparent 70%),
+    #120e12;
+}
+.topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.topo h2 { margin: 0; font-size: 1.35rem; font-weight: 600; font-family: var(--serif); }
+.vb .topo h2 { font-family: var(--jakarta); letter-spacing: -.01em; }
+.topo .sub { color: var(--tx2); font-size: .85rem; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: .85rem; font-weight: 500;
+  background: var(--e-prec-bg); color: var(--e-prec); border: 1px solid transparent;
+}
+.va .pill { border-radius: 8px; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.conexao { display: inline-flex; gap: 7px; align-items: center; font-size: .78rem; color: var(--tx2); }
+.conexao i { width: 7px; height: 7px; border-radius: 50%; background: var(--e-livre); }
+.conexao.vivo i { background: #4caf6a; }
+
+.sala {
+  background: var(--piso); border: 1px solid var(--borda); border-radius: 14px; padding: 16px;
+  display: grid; gap: 14px;
+}
+.vb .sala { background: var(--card); backdrop-filter: blur(10px); border-radius: 22px; }
+.fileira-titulo { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
+.fileira { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.mesa {
+  appearance: none; font: inherit; color: inherit; text-align: center; cursor: pointer;
+  background: var(--mesa); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 8px 10px;
+  display: grid; justify-items: center; gap: 6px; min-width: 0;
+}
+.vb .mesa { border-radius: 999px 999px 18px 18px; padding-top: 14px; background: var(--card); }
+.mesa:hover { border-color: var(--dest); }
+.mesa:focus-visible { outline: 2px solid var(--dest); outline-offset: 2px; }
+.mesa[aria-pressed="true"] { border-color: var(--dest); }
+.mesa .nome { font-size: .82rem; font-weight: 600; overflow-wrap: anywhere; line-height: 1.2; }
+.mesa .faz { font-size: .72rem; color: var(--tx2); line-height: 1.25; overflow-wrap: anywhere; min-height: 2.5em; }
+.mesa .balao {
+  font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--eb); color: var(--ec);
+}
+
+/* o ponto de luz */
+.luz { width: 58px; height: 58px; overflow: visible; }
+.luz .halo { fill: var(--ec); opacity: var(--halo-op); filter: blur(var(--halo-blur)); transform-origin: 29px 29px; }
+.luz .nucleo { fill: var(--ec); }
+.luz .anel { fill: none; stroke: var(--ec); stroke-width: 2; opacity: 0; }
+.luz .marca { fill: var(--bg); }
+.luz .marca-traco { stroke: var(--bg); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.luz .iniciais { fill: var(--bg); font-size: 15px; font-weight: 600; font-family: inherit; }
+.e-trabalhando { --ec: var(--e-trab); --eb: var(--e-trab-bg); }
+.e-precisa     { --ec: var(--e-prec); --eb: var(--e-prec-bg); }
+.e-erro        { --ec: var(--e-erro); --eb: var(--e-erro-bg); }
+.e-dormindo    { --ec: var(--e-livre); --eb: var(--e-livre-bg); }
+.e-livre       { --ec: var(--e-livre); --eb: var(--e-livre-bg); }
+.e-dormindo .nucleo { opacity: .35; } .e-dormindo .halo { opacity: .08; }
+.e-livre .nucleo { opacity: .75; } .e-livre .halo { opacity: calc(var(--halo-op) * .35); }
+.e-precisa .anel { opacity: 1; }
+.e-erro .anel { opacity: .6; stroke-dasharray: 3 4; }
+
+@keyframes pulsa { 0%, 100% { transform: scale(1); opacity: var(--halo-op); } 50% { transform: scale(1.35); opacity: calc(var(--halo-op) * .45); } }
+.e-trabalhando .halo { animation: pulsa 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .e-trabalhando .halo { animation: none; transform: scale(1.25); }
+  .e-trabalhando .anel { opacity: 1; stroke-dasharray: 2 5; }
+}
+
+.cartao {
+  border: 1px solid var(--borda); background: var(--card); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; font-size: .88rem;
+}
+.vb .cartao { border-radius: 18px; }
+.cartao strong { font-size: .98rem; }
+.cartao .linha { color: var(--tx2); font-size: .82rem; }
+.cartao a { color: var(--dest); font-weight: 600; width: fit-content; }
+.lista { display: grid; gap: 6px; }
+.lista h3 { margin: 6px 0 0; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--tx2); font-weight: 600; }
+.lista ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.lista li { display: flex; gap: 8px; align-items: baseline; font-size: .84rem; }
+.lista li i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ec); translate: 0 -1px; }
+.lista li span { color: var(--tx2); }
+.modo-tv { font-size: .76rem; color: var(--tx2); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.modo-tv kbd { font-family: ui-monospace, Menlo, monospace; border: 1px solid var(--borda); border-radius: 6px; padding: 1px 6px; }
+
+.compara { display: grid; gap: 8px; }
+.compara h2 { font-family: var(--serif); font-size: 1.15rem; margin: 0; }
+.tabela { overflow-x: auto; border: 1px solid var(--pg-line); border-radius: 12px; background: var(--pg-chip); }
+.tabela table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: .88rem; }
+.tabela th, .tabela td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--pg-line); vertical-align: top; }
+.tabela th { font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--pg-soft); font-weight: 600; }
+.tabela tr:last-child td { border-bottom: 0; }
+</style>
+
+<div class="pagina">
+  <header class="intro">
+    <h1>Sala da Sakura</h1>
+    <p>A mesma sala nos dois visuais, com os mesmos dados de exemplo (nenhum é real). Clique nos pontos de luz, mude o tema do computador e estreite a janela pra ver como cada um se comporta.</p>
+    <div class="responder">
+      <b>Como responder</b>
+      <div>Escreva <code>Sala: A</code>, <code>Sala: B</code> ou <code>Sala: mistura</code> (e diga o que de cada).</div>
+    </div>
+    <div class="aviso-exemplo">Quem aparece: Sofia, Gustavo, três robôs do Claude e os seis robôs da casa. Você é a Sofia, então "precisa de você" conta o que espera a sua ação.</div>
+  </header>
+
+  <div class="duas" id="duas"></div>
+
+  <section class="compara">
+    <h2>O que muda de uma pra outra</h2>
+    <div class="tabela">
+      <table>
+        <thead><tr><th></th><th>A. Visual do painel</th><th>B. Visual da Bibi</th></tr></thead>
+        <tbody>
+          <tr><td>Clima</td><td>Calmo e claro (escuro quando o computador está escuro), igual ao resto do painel</td><td>Escuro, vidro e brilho malva, igual à Bibi</td></tr>
+          <tr><td>Estados</td><td>Cores já conferidas no contraste do <code>docs/painel.md</code>, com o balão colorido</td><td>Cores novas, que precisam ser conferidas no contraste antes de valer</td></tr>
+          <tr><td>Combina com</td><td>O contador, a lista de tarefas e o login, todos no mesmo estilo</td><td>Só a Sala. O resto do painel teria que mudar junto, ou a Sala parece outro programa</td></tr>
+          <tr><td>Trabalho extra</td><td>Nenhum além da tarefa #467</td><td>Fontes novas, desfoque e um segundo conjunto de cores, e a leva ganha umas 2 h</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+/* Dados de exemplo (nada aqui é real). "agora" fixo só pra legenda do cartão. */
+var PESSOAS = [
+  { id: "p1", tipo: "pessoa", nome: "Sofia", estado: "livre", faz: "sem tarefa em andamento", quando: "agora há pouco", iniciais: "SO" },
+  { id: "p2", tipo: "pessoa", nome: "Gustavo", estado: "trabalhando", faz: "#351 O visual e a tela da leva", quando: "há 2 h", iniciais: "GU" }
+];
+var CLAUDES = [
+  { id: "c1", tipo: "claude", nome: "Segredo barrado", estado: "trabalhando", faz: "PR #477 em andamento", quando: "commit há 20 min" },
+  { id: "c2", tipo: "claude", nome: "Rascunho da Sala", estado: "precisa", faz: "PR esperando a sua revisão", quando: "pedido há 1 h" },
+  { id: "c3", tipo: "claude", nome: "Sessão esquecida", estado: "dormindo", faz: "claude/ajuste-antigo", quando: "sem commit há 4 dias" }
+];
+var CASA = [
+  { id: "h1", tipo: "casa", nome: "Conferência", estado: "trabalhando", faz: "rodando no PR #477", quando: "começou há 3 min" },
+  { id: "h2", tipo: "casa", nome: "Publicar", estado: "livre", faz: "última rodada deu certo", quando: "ontem" },
+  { id: "h3", tipo: "casa", nome: "Liberar", estado: "precisa", faz: "rodada esperando a sua aprovação", quando: "há 40 min" },
+  { id: "h4", tipo: "casa", nome: "Atualizar bancos", estado: "livre", faz: "última rodada deu certo", quando: "há 2 dias" },
+  { id: "h5", tipo: "casa", nome: "Cópia do banco", estado: "livre", faz: "última rodada deu certo", quando: "hoje cedo" },
+  { id: "h6", tipo: "casa", nome: "Aviso do Electron", estado: "erro", faz: "a última rodada falhou", quando: "há 6 h" }
+];
+var TODOS = PESSOAS.concat(CLAUDES, CASA);
+var ROTULO = { trabalhando: "trabalhando", precisa: "precisa de você", erro: "com erro", dormindo: "dormindo", livre: "livre" };
+var BALAO = { trabalhando: "digitando…", precisa: "!", erro: "×", dormindo: "zZ", livre: "" };
+var ORDEM = ["precisa", "erro", "trabalhando", "dormindo", "livre"];
+
+function el(tag, attrs, filhos) {
+  var e = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) {
+    if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]);
+  });
+  (filhos || []).forEach(function (f) { e.appendChild(f); });
+  return e;
+}
+function svg(tag, attrs) {
+  var e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+  return e;
+}
+
+function luz(b) {
+  var s = svg("svg", { "class": "luz", viewBox: "0 0 58 58", "aria-hidden": "true" });
+  s.appendChild(svg("circle", { "class": "halo", cx: 29, cy: 29, r: 24 }));
+  s.appendChild(svg("circle", { "class": "anel", cx: 29, cy: 29, r: 27 }));
+  s.appendChild(svg("circle", { "class": "nucleo", cx: 29, cy: 29, r: 18 }));
+  if (b.tipo === "pessoa") {
+    var t = svg("text", { "class": "iniciais", x: 29, y: 34.5, "text-anchor": "middle" });
+    t.textContent = b.iniciais; s.appendChild(t);
+  } else if (b.tipo === "claude") {
+    s.appendChild(svg("circle", { "class": "marca", cx: 23, cy: 27, r: 2.6 }));
+    s.appendChild(svg("circle", { "class": "marca", cx: 35, cy: 27, r: 2.6 }));
+    s.appendChild(svg("path", { "class": "marca-traco", d: "M23 35 Q29 39 35 35" }));
+  } else {
+    s.appendChild(svg("path", { "class": "marca-traco", d: "M22 23 H36 M22 29 H36 M22 35 H36" }));
+  }
+  return s;
+}
+
+function mesa(b, aoClicar) {
+  var btn = el("button", { "class": "mesa e-" + b.estado, type: "button", "aria-pressed": "false",
+    "aria-label": b.nome + ", " + ROTULO[b.estado] + ", " + b.faz });
+  btn.appendChild(luz(b));
+  btn.appendChild(el("div", { "class": "nome", text: b.nome }));
+  btn.appendChild(el("div", { "class": "faz", text: b.faz }));
+  if (BALAO[b.estado]) btn.appendChild(el("div", { "class": "balao", text: BALAO[b.estado] }));
+  btn.addEventListener("click", function () { aoClicar(b, btn); });
+  return btn;
+}
+
+function fileira(titulo, itens, aoClicar) {
+  var f = el("div", { "class": "fileira" });
+  itens.forEach(function (b) { f.appendChild(mesa(b, aoClicar)); });
+  return el("div", {}, [el("div", { "class": "fileira-titulo", text: titulo }), f]);
+}
+
+function montar(classe, nome, sub) {
+  var conta = TODOS.filter(function (b) { return b.estado === "precisa"; }).length;
+  var cartao = el("div", { "class": "cartao", "aria-live": "polite" });
+  function mostrar(b, btn) {
+    document.querySelectorAll("." + classe + " .mesa").forEach(function (m) { m.setAttribute("aria-pressed", "false"); });
+    btn.setAttribute("aria-pressed", "true");
+    cartao.className = "cartao e-" + b.estado;
+    cartao.replaceChildren(
+      el("strong", { text: b.nome }),
+      el("div", { "class": "linha", text: ROTULO[b.estado] + " · " + b.quando }),
+      el("div", { text: b.faz }),
+      el("a", { href: "https://github.com/sakura-corp/sakura-system-ace", target: "_blank", rel: "noopener noreferrer", text: "Abrir no GitHub" })
+    );
+  }
+  cartao.appendChild(el("div", { "class": "linha", text: "Clique num ponto de luz pra ver o cartão." }));
+
+  var lista = el("div", { "class": "lista" });
+  ORDEM.forEach(function (est) {
+    var grupo = TODOS.filter(function (b) { return b.estado === est; });
+    if (!grupo.length) return;
+    var ul = el("ul");
+    grupo.forEach(function (b) {
+      var li = el("li", { "class": "e-" + b.estado }, [el("i"), el("strong", { text: b.nome }), el("span", { text: b.faz })]);
+      ul.appendChild(li);
+    });
+    lista.appendChild(el("h3", { text: ROTULO[est] + " (" + grupo.length + ")" }));
+    lista.appendChild(ul);
+  });
+
+  var janela = el("div", { "class": "janela" }, [
+    el("div", { "class": "topo" }, [
+      el("div", {}, [
+        el("h2", { text: "Sala" }),
+        el("div", { "class": "sub", text: "Leva 0 · dados de exemplo" })
+      ]),
+      el("div", { style: "display:grid;gap:6px;justify-items:end" }, [
+        el("span", { "class": "pill e-precisa" }, [el("i"), document.createTextNode(conta + " coisas precisam de você")]),
+        el("span", { "class": "conexao vivo" }, [el("i"), document.createTextNode("ao vivo · atualizado agora há pouco")])
+      ])
+    ]),
+    el("div", { "class": "sala" }, [
+      fileira("Pessoas", PESSOAS, mostrar),
+      fileira("Robôs do Claude", CLAUDES, mostrar),
+      fileira("Robôs da casa", CASA, mostrar)
+    ]),
+    cartao,
+    lista,
+    el("div", { "class": "modo-tv" }, [el("span", { text: "Modo TV, pro segundo monitor:" }), el("kbd", { text: "/sala?tv" })])
+  ]);
+
+  return el("section", { "class": "versao " + classe }, [
+    el("div", { "class": "nome" }, [el("strong", { text: nome }), el("span", { text: sub })]),
+    janela
+  ]);
+}
+
+var raiz = document.getElementById("duas");
+raiz.appendChild(montar("va", "A", "o visual do painel"));
+raiz.appendChild(montar("vb", "B", "o visual da Bibi"));
+</script>
