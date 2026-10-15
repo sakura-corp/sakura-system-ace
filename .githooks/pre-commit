@@ -1,0 +1,7 @@
+#!/bin/sh
+# Trava de segredo do git (#470): olha o que está na área de preparo, na hora do commit.
+# Instalada por `git config core.hooksPath .githooks` (o `npm install` e o início de toda
+# sessão do Claude fazem isso). Pra ignorar de propósito: git commit --no-verify.
+command -v node >/dev/null 2>&1 || exit 0
+raiz="$(cd "$(dirname "$0")/.." && pwd)"
+node "$raiz/scripts/checar-segredos.mjs" --staged

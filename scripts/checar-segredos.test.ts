@@ -124,3 +124,70 @@ describe("o gatilho de ponta a ponta", () => {
     expect(r.status).toBe(0);
   });
 });
+
+describe("os ganchos do git (pre-commit e pre-push)", () => {
+  const pastas: string[] = [];
+  afterEach(() => {
+    for (const p of pastas.splice(0)) rmSync(p, { recursive: true, force: true });
+  });
+
+  const ganchos = join(__dirname, "..", ".githooks");
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t",
+  };
+
+  /** Repositório de mentira com os ganchos DESTE repositório ligados, e um remoto de mentira. */
+  function repo() {
+    const pasta = mkdtempSync(join(tmpdir(), "ganchos-"));
+    pastas.push(pasta);
+    const remoto = join(pasta, "remoto.git");
+    const local = join(pasta, "local");
+    const git = (cwd: string, ...args: string[]) =>
+      spawnSync("git", ["-c", "commit.gpgsign=false", ...args], { cwd, env, encoding: "utf8" });
+    git(pasta, "init", "-q", "--bare", remoto);
+    git(pasta, "init", "-q", local);
+    git(local, "config", "core.hooksPath", ganchos);
+    git(local, "remote", "add", "origin", remoto);
+    return { local, remoto, git };
+  }
+
+  it("o commit com chave é barrado e NÃO entra, mesmo sem passar pelo gatilho do Claude", () => {
+    const { local, git } = repo();
+    writeFileSync(join(local, "a.txt"), `chave = ${chaveAnthropic()}\n`);
+    git(local, "add", "a.txt");
+    const r = git(local, "commit", "-m", "x");
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("BARRADO");
+    expect(git(local, "rev-parse", "--verify", "HEAD").status).not.toBe(0); // nenhum commit nasceu
+  });
+
+  it("o commit com 'senha: abc123' segue, com aviso", () => {
+    const { local, git } = repo();
+    writeFileSync(join(local, "a.txt"), "senha: abc123\n");
+    git(local, "add", "a.txt");
+    const r = git(local, "commit", "-m", "x");
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain("AVISO");
+  });
+
+  it("o push de um commit que já tem chave é barrado e nada chega no remoto", () => {
+    const { local, remoto, git } = repo();
+    writeFileSync(join(local, "a.txt"), `chave = ${chaveAnthropic()}\n`);
+    git(local, "add", "a.txt");
+    expect(git(local, "commit", "--no-verify", "-m", "x").status).toBe(0); // fura o pre-commit de propósito
+    const r = git(local, "push", "origin", "HEAD:refs/heads/main");
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toContain("BARRADO");
+    expect(git(remoto, "show-ref").stdout).toBe(""); // o remoto continua vazio
+  });
+
+  it("o push de commit limpo passa", () => {
+    const { local, remoto, git } = repo();
+    writeFileSync(join(local, "a.txt"), "tudo certo\n");
+    git(local, "add", "a.txt");
+    expect(git(local, "commit", "-m", "x").status).toBe(0);
+    expect(git(local, "push", "origin", "HEAD:refs/heads/main").status).toBe(0);
+    expect(git(remoto, "show-ref").stdout).toContain("refs/heads/main");
+  });
+});

@@ -1,0 +1,6 @@
+#!/bin/sh
+# Trava de segredo do git (#470): olha os commits que ainda não estão no GitHub.
+# O git manda as linhas "<ref local> <sha local> <ref remota> <sha remoto>" na entrada.
+command -v node >/dev/null 2>&1 || exit 0
+raiz="$(cd "$(dirname "$0")/.." && pwd)"
+node "$raiz/scripts/checar-segredos.mjs" --push
