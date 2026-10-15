@@ -238,37 +238,33 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 14/10/2026, à noite (2): o plano até a equipe começar
+### 15/10/2026: a #470 pronta pra aprovar, as caixas de e-mail da equipe e o visual da Sala
 
-**Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`
-estava na **`v0.9.51`**, liberada pra todas as lojas em 08/10, e o banco na **`0064`**. O marco
-anterior (o jeito de trabalhar com o Claude) está no topo de `docs/historico.md`.
+**Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
+Há um PR aberto, o **#477** (a #470), com o CI verde, esperando a aprovação dela.
 
 #### O que foi feito
-- **O plano do que falta até a equipe começar**, aprovado por ela, virou a tarefa
-  [#474](https://github.com/sakura-corp/sakura-system-ace/issues/474), em 5 etapas: já; contas;
-  papéis assinados; o programa pronto pra equipe; começar. Resumo em `docs/pendencias-e-futuro.md`
-  ("A equipe no programa das lojas").
-- **As 5 decisões dela**:
-  1. o Termo de Colaboração é assinado **antes** do acesso ao código (o Gustavo assina junto);
-  2. é **o mesmo Termo pra todos**;
-  3. primeiro, **uma tarefa de aquecimento pra cada um** (#455 e #459); depois, a 1ª parte da
-     #457 (importar clientes de uma planilha qualquer);
-  4. as tarefas do programa **entram na `leva-0`**, junto com as do painel (`docs/painel.md`);
-  5. **verificação em duas etapas obrigatória** na organização do GitHub.
-- No privado, as decisões foram anotadas no `EQUIPE.md` (e o "mesmo acordo pra todos" saiu do
-  que falta decidir em `contratos/README.md`).
+- **#470, segredo barrado antes de sair do computador**: um gatilho (`PreToolUse`, em
+  `.claude/settings.json`) roda `scripts/checar-segredos.mjs` antes de todo `git commit` e `git push`
+  do Claude. **Barra** chave com formato e certificado; **só avisa** de "cara de senha". 11 testes (vistos
+  reprovar ao quebrar uma regra). A **push protection do GitHub foi ligada por ela** (print conferido).
+  Detalhe no item 50 de `docs/licoes.md`.
+- **Equipe**: as 5 caixas do Zoho foram criadas (as 5 licenças em uso) e as senhas provisórias foram
+  entregues em particular. Os nomes e as horas ficam no privado (`EQUIPE.md`).
+- **A Sala da Sakura**: ela escolheu o **visual B** (o da Bibi) **só pra Sala**; o resto do painel
+  continua claro e calmo. **#467 (agora 8 h), #468 e #355 foram atualizadas**, a #351 recebeu um
+  comentário pro Gustavo, e o `docs/painel.md` ganhou a seção "Visual da Sala" (cores com contraste
+  conferido). A referência é `docs/referencia/sala-duas-versoes.html`.
+- **A Bibi não vira escritório da empresa**: continua pessoal, num repositório privado dela. O que
+  se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
 
 #### Por onde a próxima sessão começa
-1. **A #474, etapa 1**: a mensagem pros três (o rascunho está na conversa de 14/10; se perdeu,
-   refazer: nome do e-mail, usuário do GitHub, Windows ou Mac, horas por semana, e a #351 pro
-   Gustavo), a cessão dela e a **#470**, que precisa estar pronta antes de os novos começarem.
-2. **Depois de 16/10**: as contas (etapa 2 da #474).
-3. **Depois, a fila**: #471 → #472, uma sessão cada.
-4. **Ficou pra depois, por decisão dela**: arquivar as sessões antigas (A4) e arrumar o PC
-   (`docs/jeito-de-trabalhar.md`, no fim). O **marketing** fica pra uma conversa própria.
-5. **Ainda vale** do marco anterior:
-   - **abertura**: agora é com a contabilidade (1ª nota ~17/10 a 01/11);
-   - a contabilidade (XML × "OFX") e o cabeçalho das planilhas pra #457;
-   - o capital, o Claude Team e a TFE depois de 16/10;
-   - o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".
+1. **A #470 fecha em 2 passos dela**: aprovar e mesclar o PR #477 e, numa **sessão nova**, pedir pra tentar commitar
+   uma chave falsa. Se o gatilho barrar, fechar a issue.
+2. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
+   etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
+3. **Depois de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
+4. **Depois, a fila**: #471 → #472, uma sessão cada.
+5. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
+   cabeçalho das planilhas pra #457), o capital e a TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2
+   do Electron, a #442 e o "Texto de garantia".
