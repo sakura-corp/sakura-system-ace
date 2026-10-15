@@ -213,6 +213,43 @@ function mensagemAviso(achados) {
   return `AVISO (não barrei): ${onde} tem cara de senha ou token escrito direto. Se for de verdade, tire do arquivo antes de seguir. A regra está no topo do PROJETO_STATUS.md.`;
 }
 
+/**
+ * Modo "gancho do git" (`--staged` no pre-commit, `--push` no pre-push, em `.githooks/`).
+ * Diferente do gatilho do Claude, aqui o git já montou o commit: o que está na área de
+ * preparo é exatamente o que vai entrar, não importa como o comando foi escrito (inclusive
+ * `echo chave > f && git add f && git commit`, que o gatilho do Claude não enxerga porque
+ * roda antes do comando inteiro). Saída: 1 barra (é assim que o git entende "não"), 0 segue.
+ *
+ * @param {"--staged" | "--push"} modo
+ * @param {string} entrada no pre-push, as linhas que o git manda: `<ref local> <sha local> <ref remota> <sha remoto>`
+ */
+export function modoGit(modo, entrada, cwd = process.cwd()) {
+  let diff = "";
+  if (modo === "--staged") {
+    diff = git(["diff", "--cached", "--unified=0", "--no-color"], cwd) ?? "";
+  } else {
+    const zeros = /^0+$/;
+    for (const linha of entrada.split("\n").filter(Boolean)) {
+      const [, local, , remoto] = linha.split(" ");
+      if (!local || zeros.test(local)) continue; // apagar branch não leva commit
+      const faixa = remoto && !zeros.test(remoto) ? [`${remoto}..${local}`] : [local, "--not", "--remotes"];
+      const commits = (git(["rev-list", "--max-count=200", ...faixa], cwd) ?? "").split("\n").filter(Boolean);
+      for (const sha of commits) diff += git(["show", "--unified=0", "--no-color", "--format=", sha], cwd) ?? "";
+    }
+  }
+  const { barrar, avisar } = analisarDiff(diff);
+  if (barrar.length > 0) {
+    const extra =
+      modo === "--push"
+        ? "Isso já está num commit local: desfaça com `git reset --soft HEAD~N`, tire a credencial e commite de novo. Nunca reescreva histórico que já foi enviado.\n"
+        : "";
+    process.stderr.write(`${mensagemBarrou(barrar)}\n${extra}Pra ignorar de propósito (só com certeza): --no-verify.\n`);
+    return 1;
+  }
+  if (avisar.length > 0) process.stderr.write(`${mensagemAviso(avisar)}\n`);
+  return 0;
+}
+
 /** Entrada: o JSON do gatilho na entrada padrão. Saída: exit 2 barra; exit 0 deixa seguir. */
 function principal(entrada) {
   let dados;
@@ -246,11 +283,16 @@ function principal(entrada) {
   return 0;
 }
 
-if (process.argv[1] && process.argv[1].endsWith("checar-segredos.mjs")) {
+if (process.argv[1] && process.argv[1].endsWith("checar-segredos.mjs") && process.argv[2] === "--staged") {
+  // O pre-commit não recebe nada na entrada padrão: não esperar por ela (travaria o commit).
+  process.exitCode = modoGit("--staged", "");
+} else if (process.argv[1] && process.argv[1].endsWith("checar-segredos.mjs")) {
   const pedacos = [];
   process.stdin.setEncoding("utf8");
   process.stdin.on("data", (p) => pedacos.push(p));
   process.stdin.on("end", () => {
-    process.exitCode = principal(pedacos.join(""));
+    const modo = process.argv[2];
+    process.exitCode =
+      modo === "--staged" || modo === "--push" ? modoGit(modo, pedacos.join("")) : principal(pedacos.join(""));
   });
 }

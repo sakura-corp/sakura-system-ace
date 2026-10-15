@@ -241,12 +241,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 ### 15/10/2026: a #470 pronta pra aprovar, as caixas de e-mail da equipe e o visual da Sala
 
 **Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
-Há um PR aberto, o **#477** (a #470), com o CI verde, esperando a aprovação dela.
+O PR **#477** (a #470) e o **#478** foram mesclados; um PR novo traz os **ganchos do git** (`.githooks/`), porque o 1º teste da #470 numa sessão nova **falhou** (ver abaixo).
 
 #### O que foi feito
 - **#470, segredo barrado antes de sair do computador**: um gatilho (`PreToolUse`, em
   `.claude/settings.json`) roda `scripts/checar-segredos.mjs` antes de todo `git commit` e `git push`
-  do Claude. **Barra** chave com formato e certificado; **só avisa** de "cara de senha". 11 testes (vistos
+  do Claude. **Barra** chave com formato e certificado; **só avisa** de "cara de senha". 15 testes (vistos
   reprovar ao quebrar uma regra). A **push protection do GitHub foi ligada por ela** (print conferido).
   Detalhe no item 50 de `docs/licoes.md`.
 - **Equipe**: as 5 caixas do Zoho foram criadas (as 5 licenças em uso) e as senhas provisórias foram
@@ -259,8 +259,9 @@ Há um PR aberto, o **#477** (a #470), com o CI verde, esperando a aprovação d
   se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
 
 #### Por onde a próxima sessão começa
-1. **A #470 fecha em 2 passos dela**: aprovar e mesclar o PR #477 e, numa **sessão nova**, pedir pra tentar commitar
-   uma chave falsa. Se o gatilho barrar, fechar a issue.
+1. **A #470 fecha repetindo o teste**: mesclar o PR dos ganchos do git e, numa **sessão nova**, pedir pra commitar
+   uma chave falsa **criada no mesmo comando do commit**. Se barrar, fechar a issue. (O 1º teste falhou: o gatilho do
+   Claude roda antes do comando inteiro e não via o arquivo; o gancho do git vê o commit montado. `docs/licoes.md`, item 50.)
 2. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
    etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
 3. **Depois de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.

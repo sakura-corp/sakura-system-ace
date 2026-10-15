@@ -18,8 +18,9 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 **Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
 
 **Da sessão de 15/10 (a #470 e a Sala)**:
-- **Aprovar e mesclar o PR #477** (a #470) e **provar o gatilho numa sessão nova** (pedir pra tentar
-  commitar uma chave falsa de propósito; se barrar, fechar a #470).
+- **Mesclar o PR dos ganchos do git** (a #470) e **repetir o teste numa sessão nova**: o 1º teste
+  falhou (o gatilho do Claude não via arquivo criado no mesmo comando do commit); o gancho do git
+  fecha o furo. Se o commit com chave falsa for barrado, fechar a #470.
 - **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.
 
 **Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na

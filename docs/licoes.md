@@ -894,17 +894,28 @@
     digital é a identidade fiscal da empresa, e o repositório é público.
     **Camadas novas (#470, 15/10/2026)**, porque o CI só olha DEPOIS que a chave já chegou ao
     GitHub: (1) **push protection** do GitHub (Settings → Code security), que barra na hora do
-    envio as chaves de formato conhecido; (2) um **gatilho em `.claude/settings.json`**
-    (`PreToolUse`, em `Bash`) que roda `scripts/checar-segredos.mjs` antes de todo `git commit` e
-    `git push` do Claude, na nuvem e no PC, de quem for. Ele olha só o que vai sair (a área de
-    preparo; no `push`, o que o `origin` ainda não tem; e, se o mesmo comando faz `git add` ou
-    `commit -a`, também o que ainda não foi preparado). **Barra** chave com formato (as 3 regras do
-    `.gitleaks.toml` mais chave privada, token do GitHub, AWS e Slack) e arquivo `.pfx`/`.p12`/
-    `conexao.json`; **só avisa** de "cara de senha" (`senha: abc123`), porque validação incerta é
-    aviso, nunca tranca (item 33). O CI continua como rede de quem commita sem o Claude. **Limite
-    honesto**: o gatilho só vigia comando do Claude. Quem digita `git commit` no próprio terminal
-    só tem a push protection e o CI. E ele erra pro lado de olhar demais (`echo git push` conta
-    como push), nunca pro lado de deixar passar.
+    envio as chaves de formato conhecido; (2) **ganchos do git** em `.githooks/` (`pre-commit` e
+    `pre-push`), que rodam `scripts/checar-segredos.mjs` com o que o git **de fato** vai commitar
+    ou enviar. Valem pra qualquer um que rode `git` nesta pasta: são ligados por
+    `git config core.hooksPath .githooks`, que o `npm install` (script `prepare`) e o início de
+    toda sessão do Claude (`SessionStart`) fazem sozinhos (`scripts/instalar-ganchos.mjs`).
+    **Barram** chave com formato (as 3 regras do `.gitleaks.toml` mais chave privada, token do
+    GitHub, AWS e Slack) e arquivo `.pfx`/`.p12`/`conexao.json`; **só avisam** de "cara de senha"
+    (`senha: abc123`), porque validação incerta é aviso, nunca tranca (item 33); (3) um **gatilho
+    em `.claude/settings.json`** (`PreToolUse`, em `Bash`) que roda o mesmo script antes de todo
+    `git commit` e `git push` do Claude, só pra explicar o motivo logo na conversa. O CI continua
+    como rede de quem commita sem os ganchos.
+    **Lição do primeiro teste (15/10)**: o gatilho do Claude **sozinho não bastava**. Ele roda
+    *antes* do comando inteiro, então `echo chave > f && git add f && git commit` passava: na hora em
+    que ele olhava, o arquivo ainda não existia. Numa sessão nova, o Claude fez exatamente isso e o
+    commit passou. Por isso a barreira de verdade é o gancho do git, que vê o commit já montado. O
+    teste que vale **commita pra valer** (`scripts/checar-segredos.test.ts`, em repositório de
+    mentira), em vez de só simular a chamada do gatilho.
+    **Limites honestos**: (a) `git commit --no-verify` e `git push --no-verify` pulam os ganchos
+    (existem pra ser pulados de propósito; o CI e a push protection continuam); (b) quem clona e
+    não roda `npm install` nem abre sessão do Claude não tem os ganchos até rodar
+    `node scripts/instalar-ganchos.mjs`; (c) o gatilho do Claude erra pro lado de olhar demais
+    (`echo git push` conta como push) e, pelo motivo acima, às vezes pro de não ver.
 
 51. **Classe do Tailwind vence CSS de `@layer base` — o lado inverso do item 14 (11/09/2026).**
     Ao dar foco de teclado ao app (`TR-02.2`), a regra `:focus-visible` foi escrita em
