@@ -17,10 +17,7 @@ antiga porque outros arquivos citam "item N da seção 8".
 Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs/historico.md`.
 **Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
 
-**Da sessão de 15/10 (a #470 e a Sala)**:
-- **Mesclar o PR dos ganchos do git** (a #470) e **repetir o teste numa sessão nova**: o 1º teste
-  falhou (o gatilho do Claude não via arquivo criado no mesmo comando do commit); o gancho do git
-  fecha o furo. Se o commit com chave falsa for barrado, fechar a #470.
+**Da sessão de 15/10 (a Sala e a equipe)**:
 - **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.
 
 **Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na

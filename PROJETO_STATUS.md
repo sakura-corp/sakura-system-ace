@@ -238,17 +238,17 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 
 
-### 15/10/2026: a #470 pronta pra aprovar, as caixas de e-mail da equipe e o visual da Sala
+### 15/10/2026: a #470 pronta e provada, as caixas de e-mail da equipe e o visual da Sala
 
 **Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
-O PR **#477** (a #470) e o **#478** foram mesclados; um PR novo traz os **ganchos do git** (`.githooks/`), porque o 1º teste da #470 numa sessão nova **falhou** (ver abaixo).
+Os PRs **#477**, **#478** e **#479** foram mesclados. A **#470 está fechada**.
 
 #### O que foi feito
-- **#470, segredo barrado antes de sair do computador**: um gatilho (`PreToolUse`, em
-  `.claude/settings.json`) roda `scripts/checar-segredos.mjs` antes de todo `git commit` e `git push`
-  do Claude. **Barra** chave com formato e certificado; **só avisa** de "cara de senha". 15 testes (vistos
-  reprovar ao quebrar uma regra). A **push protection do GitHub foi ligada por ela** (print conferido).
-  Detalhe no item 50 de `docs/licoes.md`.
+- **#470, segredo barrado antes de sair do computador (fechada)**: *push protection* do GitHub (ligada por
+  ela), **ganchos do git** em `.githooks/` (barram chave com formato e certificado; só avisam de "cara
+  de senha") e o gatilho do Claude. O **1º teste numa sessão nova falhou** (o gatilho do Claude roda antes
+  do comando inteiro e não via arquivo criado no mesmo comando do commit); o gancho do git fechou o furo
+  e o **2º teste passou**. 15 testes, vistos reprovar. Detalhe e limites no item 50 de `docs/licoes.md`.
 - **Equipe**: as 5 caixas do Zoho foram criadas (as 5 licenças em uso) e as senhas provisórias foram
   entregues em particular. Os nomes e as horas ficam no privado (`EQUIPE.md`).
 - **A Sala da Sakura**: ela escolheu o **visual B** (o da Bibi) **só pra Sala**; o resto do painel
@@ -259,13 +259,10 @@ O PR **#477** (a #470) e o **#478** foram mesclados; um PR novo traz os **gancho
   se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
 
 #### Por onde a próxima sessão começa
-1. **A #470 fecha repetindo o teste**: mesclar o PR dos ganchos do git e, numa **sessão nova**, pedir pra commitar
-   uma chave falsa **criada no mesmo comando do commit**. Se barrar, fechar a issue. (O 1º teste falhou: o gatilho do
-   Claude roda antes do comando inteiro e não via o arquivo; o gancho do git vê o commit montado. `docs/licoes.md`, item 50.)
-2. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
+1. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
    etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
-3. **Depois de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
-4. **Depois, a fila**: #471 → #472, uma sessão cada.
-5. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
+2. **Depois de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
+3. **Depois, a fila**: #471 → #472, uma sessão cada.
+4. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
    cabeçalho das planilhas pra #457), o capital e a TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2
    do Electron, a #442 e o "Texto de garantia".
