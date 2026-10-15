@@ -38,7 +38,7 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 ## A lista (todas aprovadas em 14/10)
 
 **A fila** (uma sessão por item, cada uma com a sua tarefa no GitHub):
-1. **T1**: segredo barrado antes de sair do computador: [#470](https://github.com/sakura-corp/sakura-system-ace/issues/470). **Feita em 15/10: gatilho do Claude + ganchos do git (`.githooks/`) + *push protection* (ligada por ela, print conferido). O 1º teste numa sessão nova falhou e mostrou o furo do gatilho sozinho; o gancho do git o fecha. Falta repetir o teste numa sessão nova, depois do PR do gancho.**
+1. ~~**T1**: segredo barrado antes de sair do computador~~ **feita e provada em 15/10** ([#470](https://github.com/sakura-corp/sakura-system-ace/issues/470), fechada): push protection + ganchos do git + gatilho do Claude (`docs/licoes.md`, item 50).
 2. **S1 + A3**: a skill `/fechar` e o aviso de conversa comprida: [#471](https://github.com/sakura-corp/sakura-system-ace/issues/471).
 3. **A1 + A2**: o que depende dela vira tarefa, e o resumo da segunda de manhã: [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472).
 4. O resto, aos poucos. **Cada item só vira tarefa no GitHub quando chegar a vez dele**, pra não
@@ -82,8 +82,7 @@ Já existiam em 14/10:
 - as versões no `ssace-versoes`.
 
 As novas:
-- **T1.** Segredo barrado antes de sair do computador (#470). Código pronto em 15/10 (gatilho + ganchos do git); push
-  protection ligada por ela; o 1º teste numa sessão nova falhou e levou aos ganchos; falta repetir.
+- **T1.** Segredo barrado antes de sair do computador (#470): **feita e provada em 15/10** (o 1º teste numa sessão nova falhou e levou aos ganchos do git; o 2º passou).
 - **T2.** As regras da equipe (seção 0 do índice) viram configuração: o Claude deles fica
   impedido de publicar, liberar, mexer em banco ou adicionar o repositório privado. Com o Claude
   Team, isso se trava de um lugar só.
