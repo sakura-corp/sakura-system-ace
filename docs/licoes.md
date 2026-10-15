@@ -892,6 +892,19 @@
     auto-update e invalidaria as releases) é uma checagem que todo mundo aprende a ignorar; (b) há
     um passo separado que reprova se um `.pfx`/`.p12`/`conexao.json` for versionado — certificado
     digital é a identidade fiscal da empresa, e o repositório é público.
+    **Camadas novas (#470, 15/10/2026)**, porque o CI só olha DEPOIS que a chave já chegou ao
+    GitHub: (1) **push protection** do GitHub (Settings → Code security), que barra na hora do
+    envio as chaves de formato conhecido; (2) um **gatilho em `.claude/settings.json`**
+    (`PreToolUse`, em `Bash`) que roda `scripts/checar-segredos.mjs` antes de todo `git commit` e
+    `git push` do Claude, na nuvem e no PC, de quem for. Ele olha só o que vai sair (a área de
+    preparo; no `push`, o que o `origin` ainda não tem; e, se o mesmo comando faz `git add` ou
+    `commit -a`, também o que ainda não foi preparado). **Barra** chave com formato (as 3 regras do
+    `.gitleaks.toml` mais chave privada, token do GitHub, AWS e Slack) e arquivo `.pfx`/`.p12`/
+    `conexao.json`; **só avisa** de "cara de senha" (`senha: abc123`), porque validação incerta é
+    aviso, nunca tranca (item 33). O CI continua como rede de quem commita sem o Claude. **Limite
+    honesto**: o gatilho só vigia comando do Claude. Quem digita `git commit` no próprio terminal
+    só tem a push protection e o CI. E ele erra pro lado de olhar demais (`echo git push` conta
+    como push), nunca pro lado de deixar passar.
 
 51. **Classe do Tailwind vence CSS de `@layer base` — o lado inverso do item 14 (11/09/2026).**
     Ao dar foco de teclado ao app (`TR-02.2`), a regra `:focus-visible` foi escrita em
