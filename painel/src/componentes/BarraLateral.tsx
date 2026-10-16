@@ -89,22 +89,24 @@ export function BarraLateral({ levas, pagina = "leva", usuario }: Props) {
       </div>
 
       {usuario && (
-        <div className="flex flex-wrap items-center gap-2 md:border-t md:border-borda md:pt-4">
-          <Avatar login={usuario.login} avatar={usuario.avatar} />
-          <span className="min-w-0 truncate text-sm font-medium">{usuario.login}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setSaidaFalhou(false);
-              void sair().then((saiu) => setSaidaFalhou(!saiu));
-            }}
-            className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-texto-2 hover:bg-livre-fundo hover:text-texto"
-          >
-            <LogOut aria-hidden="true" className="size-3.5" />
-            Sair
-          </button>
+        <div className="min-w-0 max-w-full md:border-t md:border-borda md:pt-4">
+          <div className="flex items-center gap-2">
+            <Avatar login={usuario.login} avatar={usuario.avatar} />
+            <span className="min-w-0 truncate text-sm font-medium" title={usuario.login}>{usuario.login}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setSaidaFalhou(false);
+                void sair().then((saiu) => setSaidaFalhou(!saiu));
+              }}
+              className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-sm text-texto-2 hover:bg-livre-fundo hover:text-texto"
+            >
+              <LogOut aria-hidden="true" className="size-3.5" />
+              Sair
+            </button>
+          </div>
           {saidaFalhou && (
-            <p role="alert" className="basis-full text-xs text-revisao">
+            <p role="alert" className="mt-2 text-xs text-revisao">
               Não deu pra sair. Tente de novo.
             </p>
           )}

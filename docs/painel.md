@@ -263,7 +263,7 @@ conferidas contra o fundo da janela (`#120e12`) e o vidro sem suporte (`#1d191d`
 | Equipe | `#E9B48A` (pêssego) | 10,4:1 / 9,4:1 |
 
 **Desenho decidido pela Sofia (16/10/2026)**: as salas ficam **em roda** em volta do Cérebro (como já está); o **nome do agente
-aparece no mapa**, junto do ponto de luz (hoje só o balão aparece: falta fazer, quando ela pedir a próxima mexida no Escritório);
+aparece no mapa**, embaixo do ponto de luz (feito em 16/10/2026; nome que não cabe no espaço da sala termina com reticências, e o nome inteiro fica na dica do ponto e na lista de texto);
 as **6 cores das equipes** da tabela acima ficam como estão.
 
 **Pra ligar de verdade falta decidir de onde vêm os agentes** (a decisão é da Sofia; aqui só as opções):
@@ -467,3 +467,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   apagada e a página mostra "Sua sessão acabou". As consultas foram conferidas contra o esquema público do GitHub, mas
   **só rodaram de verdade no endereço público**, com o login dela. A Sala e o Escritório continuam de exemplo. **A tarefa 7
   (#355) depende da Sofia ligar o webhook** (ver "O que a Sofia faz").
+- **16/10/2026, mutirão (branch `mutirao/painel-pequenos`)**: dois pequenos do "Onde parou". **(1) "Sair" com nome comprido**:
+  reproduzido renderizado (320 px): o nome empurrava o "Sair" pra linha de baixo e ainda alargava a barra lateral. Agora o
+  nome encolhe com reticências (com o nome inteiro na dica) e o "Sair" não encolhe nem desce; a mensagem "Não deu pra sair"
+  ficou numa linha própria. **(2) Nome do agente no mapa do Escritório**, embaixo do ponto de luz (regra `abreviarNome`
+  em `painel/src/logica/escritorio.ts`). Os dois testes novos foram vistos reprovar. Não mexi na regra de "issue fechada
+  como não planejada" (pergunta pendente da Sofia), nem na #355 e #468.

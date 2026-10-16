@@ -80,6 +80,16 @@ describe("App", () => {
     expect(logada).toMatch(/<button[^>]*>.*Sair<\/button>/);
     expect(html("/")).not.toContain("Sair");
   });
+
+  it("nome comprido: o nome encolhe com reticências e o Sair não desce de linha nem encolhe", () => {
+    const h = renderToString(<App caminho="/" busca="" usuario={{ login: "um-nome-de-usuario-muito-comprido", avatar: "" }} />);
+    const nome = h.match(/<span class="([^"]*)"[^>]*>um-nome-de-usuario-muito-comprido<\/span>/)?.[1] ?? "";
+    expect(nome).toContain("truncate");
+    expect(nome).toContain("min-w-0");
+    expect(h.match(/<button[^>]*class="([^"]*)"[^>]*>(?:(?!<\/button>).)*Sair/)?.[1]).toContain("shrink-0");
+    // a linha do nome e do Sair não pode quebrar (flex-wrap era o que jogava o Sair pra baixo)
+    expect(h).not.toMatch(/class="[^"]*flex-wrap[^"]*"><img|class="[^"]*flex-wrap[^"]*"><span aria-hidden/);
+  });
 });
 
 describe("App com as tarefas de verdade (#354)", () => {
