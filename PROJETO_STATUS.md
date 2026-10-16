@@ -18,19 +18,20 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 (`mcp__github__get_me`, ou `gh api user --jq .login`) ou o e-mail do Git (`git config user.email`).
 Se não der pra saber, perguntar.
 
-**Quando NÃO é a Sofia** (hoje, o Gustavo, que constrói o painel da equipe; depois, outras pessoas
-da equipe), valem estas regras, e elas passam na frente de qualquer outra deste arquivo:
-- **Escopo, por enquanto: só o painel** (pasta `painel/` e `docs/painel.md`). Depois todos vão
-  mexer no sistema; quando isso mudar, é a Sofia quem avisa, e esta linha muda.
+**Quando NÃO é a Sofia** (a equipe; manual: `docs/equipe.md`), valem estas regras, e elas passam
+na frente de qualquer outra deste arquivo:
+- **Escopo**: o Gustavo, **só o painel** (pasta `painel/` e `docs/painel.md`); os outros dois, **o
+  programa das lojas**, sempre contra o **Supabase de teste**, nunca o de uma loja. Mudar isso é
+  com a Sofia, e esta linha muda.
 - **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão da Sofia no PR e para ali. A
   `main` nem aceita sem a aprovação dela (ruleset `main protegida`).
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
-  "Atualizar o banco". Não roda SQL nem migration no Supabase de loja nenhuma. Migration nova pode
-  ser escrita num PR, mas quem aplica é ela.
+  "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
+  nova pode ser escrita num PR, mas quem aplica é ela.
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
-- **Não substitui o "Onde parou"**, que é da Sofia. O andamento do painel vai no `docs/painel.md`
-  e na descrição do PR.
+- **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do
+  painel, também no `docs/painel.md`).
 - **Não adiciona à sessão o repositório privado `caranovavidanova/sakura-corp`** (preço, sócios,
   contratos).
 - **Guiar passo a passo, com calma, em tudo que não for programar** (pedido da Sofia, 30/09):
@@ -39,7 +40,7 @@ da equipe), valem estas regras, e elas passam na frente de qualquer outra deste 
   antes do próximo. Programar e ajustar código é com o Claude; o resto, a pessoa faz guiada.
 - **Quando a pessoa disser o nome ou o número de uma tarefa**: ler a issue inteira, explicar em
   português simples o que ela é, o que o Claude vai fazer sozinho e o que a pessoa vai precisar
-  fazer, e só então começar (roteiro completo em `docs/painel.md`, "Como começar uma tarefa").
+  fazer, e só então começar (roteiro completo em `docs/equipe.md`, "Como começar uma tarefa").
 - Se a pessoa pedir alguma dessas coisas, explicar que é regra da Sofia e sugerir falar com ela.
 
 ## Como esta memória funciona (reorganizada em 27/09/2026)
@@ -61,6 +62,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/visao.md` | **pra onde o SSACE vai** (a visão dela, 12/10): um programa só pra loja inteira, o máximo automático, WhatsApp, assistente de IA; as quatro frentes, **a prioridade das tarefas (ondas, sem custo primeiro)** e o que está em aberto | ao planejar funcionalidade nova ou conversar sobre o futuro |
 | `docs/comparativo-anexar.md` | o que o concorrente Anexar anuncia × o que temos, e a tarefa de cada coisa que falta (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
 | `docs/jeito-de-trabalhar.md` | **o jeito de trabalhar com o Claude** (14/10): as gavetas (memória, skills, trancas, afazeres, ver), a fila (#470, #471, #472), onde trabalhar, uma sessão por assunto | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
+| `docs/equipe.md` | **o manual de quem entra na equipe** (Windows e Mac): primeiro dia, como começar uma tarefa, o dia a dia, o que nunca fazer | quando quem trabalha não é a Sofia |
 | `docs/painel.md` | o painel da equipe: o que é, como a equipe trabalha (levas, tarefas), decisões técnicas, 1ª versão, andamento | ao mexer no painel ou planejar leva |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
 
