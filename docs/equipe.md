@@ -15,7 +15,7 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
 
 ## Primeiro dia (computador pronto, sem programar)
 
-**O que precisa ter antes** (a Sofia manda):
+**O que precisa ter antes** (os convites e as chaves, a Sofia manda):
 - a **conta do Claude Team da Sakura**, pelo convite que chega no **e-mail da Sakura**;
 - a **conta do GitHub com o e-mail da Sakura**, com a **verificação em duas etapas** ligada, e o
   convite pra organização `sakura-corp` aceito;
