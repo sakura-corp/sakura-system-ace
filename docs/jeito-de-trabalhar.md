@@ -35,11 +35,34 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 - **Modelo por tarefa**: o mais forte onde o erro custa caro (nota, dinheiro, migration,
   publicação); o mais rápido pra só ler e resumir.
 
+## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
+
+**O `/fechar`** (`.claude/skills/fechar/SKILL.md`): digitar `/` mostra ele na lista; ou dizer "vamos
+fechar". Ele junta **o que foi decidido, o que ficou aberto e o que vai ser anotado (e onde)** e
+**para pra ela conferir**; só depois grava nos arquivos de `docs/`, troca o "Onde parou" (movendo o
+antigo pro topo de `docs/historico.md`), faz o commit e o PR (mescla só se for ela), e termina com a
+frase "Abra uma sessão nova e diga: …". Se quem fecha é da equipe, ele não mexe no "Onde parou" nem
+mescla.
+
+**O aviso** (`scripts/aviso-conversa-comprida.mjs`, ligado em `.claude/settings.json` como gatilho
+`UserPromptSubmit`): a cada mensagem ele mede o tamanho da conversa pela última resposta do Claude
+no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, pra sugerir o `/fechar`.
+- **Mudar o limite**: no topo do script, `LIMITE_PERCENTUAL` (hoje 35) e `JANELA_TOKENS` (hoje
+  1.000.000, a janela das sessões na nuvem, que mostram `max_tokens` de 1 milhão). Se o app mostrar uma porcentagem diferente da que o aviso
+  diz, ajustar a `JANELA_TOKENS`.
+- **Testar com o limite baixado** (sem mexer no arquivo): `SSACE_AVISO_LIMITE_PERCENTUAL=1` e
+  `SSACE_AVISO_PASTA=<pasta qualquer>` na frente do comando; o teste `npm test --
+  scripts/aviso-conversa-comprida` já faz isso.
+- **Limite do que foi provado**: o script e o formato do histórico foram provados rodando de verdade;
+  que o app dispara o gatilho a cada mensagem e entrega o texto ao Claude é comportamento do Claude
+  Code, não foi visto de dentro do app. Conferir na primeira sessão comprida de verdade e, se não
+  aparecer, avisar (a lição vira item de `docs/licoes.md`).
+
 ## A lista (todas aprovadas em 14/10)
 
 **A fila** (uma sessão por item, cada uma com a sua tarefa no GitHub):
 1. ~~**T1**: segredo barrado antes de sair do computador~~ **feita e provada em 15/10** ([#470](https://github.com/sakura-corp/sakura-system-ace/issues/470), fechada): push protection + ganchos do git + gatilho do Claude (`docs/licoes.md`, item 50).
-2. **S1 + A3**: a skill `/fechar` e o aviso de conversa comprida: [#471](https://github.com/sakura-corp/sakura-system-ace/issues/471).
+2. ~~**S1 + A3**: a skill `/fechar` e o aviso de conversa comprida~~ **feitos** ([#471](https://github.com/sakura-corp/sakura-system-ace/issues/471)); como usar, logo abaixo.
 3. **A1 + A2**: o que depende dela vira tarefa, e o resumo da segunda de manhã: [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472).
 4. O resto, aos poucos. **Cada item só vira tarefa no GitHub quando chegar a vez dele**, pra não
    encher a lista à toa.
@@ -55,7 +78,7 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 ### Skills (o `/gerar-modulo` já existe)
 | # | Skill | O que faz |
 |---|---|---|
-| S1 | `/fechar` | fim de sessão (#471) |
+| S1 | `/fechar` | fim de sessão (#471) — **feita**, ver "Como usar o `/fechar` e o aviso" |
 | S2 | `/nova-tarefa` | tarefa no formato da #425, ou no formato da equipe (arquivos, estimativa, leva) |
 | S3 | `/publicar` | publica no canal de teste e, quando ela pedir, libera, com o link da rodada |
 | S4 | `/atualizar-bancos` | ensaia e aplica a migration em todas as empresas |
@@ -96,7 +119,7 @@ As novas:
 ### Afazeres
 - **A1.** O que depende dela vira tarefa no GitHub (#472).
 - **A2.** O resumo da segunda de manhã (#472).
-- **A3.** O aviso de conversa comprida (#471).
+- **A3.** O aviso de conversa comprida (#471): **feito**, ver "Como usar o `/fechar` e o aviso".
 - **A4.** Arquivar as sessões antigas que estiverem seguras: **depois** (ela, 14/10). O Claude
   confere quais têm trabalho fora do GitHub e mostra a lista antes de arquivar.
 
