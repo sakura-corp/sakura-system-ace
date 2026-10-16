@@ -1,17 +1,21 @@
 import { criarMovimentoCaixa, excluirMovimentoCaixa } from "./caixa";
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { ContaPagar, NovaContaPagar } from "@/types/contaPagar";
 
 const SELECT_CONTA = "*, categoria:categorias_caixa(nome)";
 
 export async function listarContasPagar(lojaId: string): Promise<ContaPagar[]> {
-  const { data, error } = await supabase
-    .from("contas_pagar")
-    .select(SELECT_CONTA)
-    .eq("loja_id", lojaId)
-    .order("vencimento", { ascending: true });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("contas_pagar")
+      .select(SELECT_CONTA)
+      .eq("loja_id", lojaId)
+      .order("vencimento", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as unknown as ContaPagar[];
 }
 
