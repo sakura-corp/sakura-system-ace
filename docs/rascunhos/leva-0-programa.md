@@ -2,8 +2,10 @@
 
 > **Rascunho pra Sofia revisar.** Nada disto virou issue ainda. Cada bloco "Rascunho N" abaixo
 > está pronto pra colar como **corpo** da issue (o título vai no campo de título). Depois de
-> revisado, as issues #455, #459 e #457 recebem a etiqueta `leva-0`, e o texto delas é trocado por
-> este (ou a 1ª parte da #457 vira uma issue nova, ligada à #457; ver pergunta 4).
+> revisado, as issues #455 e #459 recebem a etiqueta `leva-0` e o texto delas é trocado por este.
+> **A 1ª parte da #457 vira uma issue nova** (decidido em 16/10), com a etiqueta `leva-0` e ligada
+> à #457 como parte dela; a #457 **não é editada nem substituída**: continua sendo a tarefa grande,
+> o guia de todas as partes.
 >
 > Conferido no código em 16/10/2026, na `main` da `v0.9.51` (banco na `0064`).
 
@@ -13,7 +15,7 @@
 |---|---|---|---|---|
 | 1 (em paralelo) | #455, Clientes que sumiram | pessoa A | 6 h | não |
 | 1 (em paralelo) | #459, Pedir avaliação no Google | pessoa B | 4 h | não (decisão abaixo) |
-| 2 | #457, 1ª parte: importar clientes de uma planilha | quem terminar primeiro | 12 h, em 2 PRs | não |
+| 2 | issue nova, parte 1 de #457: importar clientes de uma planilha | quem terminar primeiro | 12 h, em 2 PRs | não |
 
 As duas de aquecimento são pequenas, sem dinheiro novo, sem nota fiscal, sem migration, e usam
 peças que já existem (o botão de WhatsApp, os modelos de mensagem). Servem pra cada pessoa aprender
@@ -26,8 +28,8 @@ o caminho inteiro (branch, testes, fotos, PR, revisão) numa coisa pequena.
   `src/schemas/whatsapp.test.ts`. O conflito é pequeno e previsível: **quem tiver o PR aprovado
   depois** atualiza o branch com a `main` e mantém os dois modelos. O Claude da pessoa resolve, e a
   pessoa só confirma.
-- **#455 e #457 mexem em `src/pages/clientes/ClientesPage.tsx`** (a #455 põe o filtro; a #457, o
-  botão "Importar planilha"). Por isso **a #457 depende da #455 aprovada**.
+- **#455 e a parte 1 de #457 mexem em `src/pages/clientes/ClientesPage.tsx`** (a #455 põe o
+  filtro; a parte 1, o botão "Importar planilha"). Por isso **a parte 1 depende da #455 aprovada**.
 - **#459 mexe em `src/pages/ordens-servico/OrdensServicoPage.tsx`**, que nenhuma das outras toca.
 - Nenhuma das três mexe em banco, em `supabase/` ou em `electron/`.
 
@@ -60,8 +62,8 @@ o caminho inteiro (branch, testes, fotos, PR, revisão) numa coisa pequena.
    sai do aquecimento e vira tarefa com migration.
 4. **#457: a importação pode chegar às lojas sem o "desfazer"**, ou só junto com a parte seguinte?
    Recomendo **só junto** (a 1ª parte entra na `main`, mas a versão que vai pras lojas espera a
-   parte com desfazer). E: a 1ª parte vira **issue nova** ligada à #457 (recomendo, pra #457
-   continuar sendo o guia das partes) ou troca o texto da #457?
+   parte com desfazer).
+   *(Já decidido em 16/10, não precisa perguntar: a 1ª parte vira issue nova ligada à #457.)*
 
 ---
 
@@ -300,12 +302,16 @@ Empresa no Google (ela ou o pai, guiados) e colar no texto, quando a versão che
 
 ## Rascunho 3
 
-**Título**: `Programa 3: Importar clientes de uma planilha CSV, escolhendo qual coluna é o quê (#457, parte 1)`
+**Título**: `Programa 3: Importar clientes de uma planilha CSV, escolhendo qual coluna é o quê (parte 1 de #457)`
+
+> **Issue nova** (não substitui a #457). Ao criar, ligar como parte da #457 (sub-issue), pra ela
+> aparecer na lista de partes da tarefa grande.
 
 ```markdown
 Estimativa: 12 h
 
-**Tarefa do programa das lojas, `leva-0`.** É a 1ª parte da #457 (importar do sistema antigo). Ela
+**Tarefa do programa das lojas, `leva-0`.** É a **parte 1 de #457** (importar do sistema antigo);
+a #457 continua aberta, como o guia de todas as partes, e não fecha com esta. Ela
 **não depende de saber qual sistema as lojas usam**: funciona com qualquer planilha, porque a
 pessoa diz qual coluna é o quê.
 
@@ -463,7 +469,8 @@ segundo.
 - **Pôr o seu nome** na tarefa (campo *Assignees*) antes de começar. **Uma tarefa por vez.**
 - **Só o Supabase de teste.** Banco de loja de verdade, publicar e liberar versão são da Sofia.
 - **No fim de cada PR**: conferir o "Pronto quando" item por item; abrir o PR (o 1º com
-  `Parte de #<esta issue>`, o 2º com `Closes #<esta issue>`) e pedir a revisão da
+  `Parte de #<esta issue>`, o 2º com `Closes #<esta issue>`; nunca `Closes #457`, que continua
+  aberta pras partes seguintes) e pedir a revisão da
   `caranovavidanova` (**não mesclar**); o Claude escreve a mensagem de WhatsApp pra Sofia; esperar
   a aprovação antes de seguir.
 - **Nada privado** aqui: o repositório é público.

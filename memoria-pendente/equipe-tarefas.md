@@ -22,8 +22,13 @@
    (precisam de coluna nova, ou seja, migration; vão pra parte seguinte, com a Sofia aplicando).
    Assim a importação só acrescenta e não estraga cadastro existente.
 4. **#457 em 2 PRs** (funções puras primeiro, tela depois), pra caber na revisão dela.
-5. **#457 depende da #455 aprovada** (as duas mexem em `ClientesPage.tsx`). #455 e #459 andam juntas
+5. **A parte 1 de #457 depende da #455 aprovada** (as duas mexem em `ClientesPage.tsx`). #455 e #459 andam juntas
    e batem só em `src/schemas/whatsapp.ts` (conflito pequeno, resolvido por quem entrar depois).
+
+6. **A 1ª parte da #457 vira ISSUE NOVA, ligada à #457 como sub-issue** (decisão da sessão-mãe,
+   16/10). A #457 não é editada nem substituída: continua como a tarefa grande, o guia das partes,
+   e o PR da parte 1 nunca usa `Closes #457`. *Descartado*: trocar o texto da #457 pelo rascunho
+   (a #457 perderia o plano das partes 2 a 4).
 
 ## Achados de passagem (conferidos no código)
 - A trava `ck_clientes_cnpj_juridica` (migration 0060) recusa pessoa jurídica com documento que não
@@ -46,6 +51,7 @@
 2. "X meses" padrão da #455 = 6?
 3. #459: o link dentro do texto (sem migration) serve?
 4. #457: a importação vai pras lojas sem o "desfazer" ou só junto com a parte seguinte (recomendo
-   só junto)? E a parte 1 vira issue nova ligada à #457 (recomendo) ou troca o texto da #457?
-5. Revisar os rascunhos e criar/atualizar as issues com a etiqueta `leva-0`.
+   só junto)? (A parte 1 virar issue nova já foi decidido: decisão 6.)
+5. Revisar os rascunhos; atualizar #455 e #459 com a etiqueta `leva-0`; criar a issue nova da
+   parte 1 de #457 (etiqueta `leva-0`, ligada à #457).
 6. Fora das tarefas: pegar o link de avaliação da Pneus Amigão no Google, quando a versão chegar lá.
