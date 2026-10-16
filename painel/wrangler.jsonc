@@ -1,0 +1,22 @@
+// Publicação do painel na Cloudflare (tarefa #352; docs/painel.md, "Andamento", 01/10).
+// Quem publica é a Cloudflare, a partir da `main` ("Workers Builds"); não há script de publicar aqui.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Tem que ser o mesmo nome do Worker criado na Cloudflare.
+  "name": "sakura-painel",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  // Mantém o endereço sakura-painel.caranovavidanova.workers.dev ligado e a prévia desligada
+  // a cada publicação.
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    // Deixa o worker entregar a página (env.ASSETS) quando precisar.
+    "binding": "ASSETS",
+    // Caminho que não é arquivo (/sala, /sala?tv, /escritorio) recebe o index.html.
+    "not_found_handling": "single-page-application",
+    // Só /api/* passa pelo worker; o resto é servido direto dos arquivos da página.
+    "run_worker_first": ["/api/*"]
+  }
+}

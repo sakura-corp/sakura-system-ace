@@ -11,6 +11,7 @@
 painel/node_modules
 painel/dist
 painel/.dev.vars
+painel/.wrangler
 
 # env files (copie .env.example para .env e preencha localmente)
 .env
