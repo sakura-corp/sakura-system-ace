@@ -179,7 +179,7 @@ começa depois que a anterior foi aprovada pela Sofia e entrou na `main`**.
 tarefa 1 (#350) projeto       → PR → Sofia aprova
 tarefa 2 (#351) visual        → PR → Sofia aprova      + Sofia liga a Cloudflare (feito)
 tarefa 3 (#467) a sala        → PR → Sofia aprova
-tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no ar
+tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no ar (feito)
                                                        + Sofia cria os apps de login
 tarefa 5 (#353) login         → PR → Sofia aprova
 tarefa 6 (#354) dados         → PR → Sofia aprova      + Sofia liga o aviso automático (webhook)
@@ -258,6 +258,10 @@ conferidas contra o fundo da janela (`#120e12`) e o vidro sem suporte (`#1d191d`
 | Fiscal e contabilidade | `#7FCBC0` (verde-água) | 10,2:1 / 9,3:1 |
 | Site | `#9CCB86` (verde) | 10,3:1 / 9,3:1 |
 | Equipe | `#E9B48A` (pêssego) | 10,4:1 / 9,4:1 |
+
+**Desenho decidido pela Sofia (16/10/2026)**: as salas ficam **em roda** em volta do Cérebro (como já está); o **nome do agente
+aparece no mapa**, junto do ponto de luz (hoje só o balão aparece: falta fazer, quando ela pedir a próxima mexida no Escritório);
+as **6 cores das equipes** da tabela acima ficam como estão.
 
 **Pra ligar de verdade falta decidir de onde vêm os agentes** (a decisão é da Sofia; aqui só as opções):
 
@@ -382,7 +386,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   exemplo também (#485). **A tarefa 4 (#352) já pode começar.** No `wrangler.jsonc` dela, além do que está no item de
   01/10, pôr `assets.not_found_handling: "single-page-application"`, pra `/sala`, `/sala?tv` e `/escritorio` abrirem
   direto.
-- **16/10/2026, à noite**: **tarefa 4 (#352) pronta, em PR**: `painel/wrangler.jsonc` (nome `sakura-painel`, endereço
-  `workers.dev` ligado, prévia desligada, `/sala` e `/escritorio` abrindo direto) e o worker com `/api/saude`.
-  Provado no `wrangler dev` (as 6 rotas) e nos testes, cada regra vista falhar de propósito. **Falta a Sofia mesclar e
-  conferir o endereço no ar.**
+- **16/10/2026, à noite**: **tarefa 4 (#352) feita: o painel está no ar.** PR #488, mesclado pela Sofia pelo celular. A
+  Cloudflare publicou sozinha, e a Sofia conferiu no celular: `/api/saude` responde `{"ok":true}`, e `/sala`, `/sala?tv` e
+  `/escritorio` abrem direto. **A próxima é a tarefa 5 (#353, login)**, que depende da Sofia criar os dois GitHub Apps (ver
+  "O que a Sofia faz").

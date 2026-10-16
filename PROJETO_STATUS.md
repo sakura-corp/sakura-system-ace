@@ -243,40 +243,29 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 16/10/2026, à tarde: a base do painel na `main` (leva, Escritório de exemplo, Sala)
+### 16/10/2026, à noite: o painel no ar (#352)
 
-**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). No **painel** entraram
-3 PRs, mesclados por ela pelo celular: **#484** (tela da leva, **fecha a #351**), **#485** (Escritório de
-agentes, só exemplo) e **#486** (a Sala, **fecha a #467**). A Cloudflare publica o painel sozinha a cada
-mudança em `painel/` na `main`.
+**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O **painel está no ar** em
+**https://sakura-painel.caranovavidanova.workers.dev**: PR **#488** (fecha a **#352**), mesclado por ela pelo celular.
+A Cloudflare publica sozinha a cada mudança em `painel/` na `main`.
 
 #### O que foi feito
-- **#351**: a tela olhada renderizada (claro, escuro, 375 px, tela grande) e consertada; teste das horas
-  reforçado (não pegava uma conta quebrada). Fotos em `docs/referencia/fotos-painel/`.
-- **Escritório de agentes** (`/escritorio`): a ideia da "fábrica virtual" como **tela de exemplo**, sem
-  agente, sessão, token nem chave de verdade. As opções pra ligar de verdade (A ler o GitHub, B sessões do
-  Claude Code, C serviço próprio; **recomendação A**, sem decidir) e o aviso de **conferir as regras das
-  assinaturas antes de automatizar** estão no `docs/painel.md`, seção "Escritório de agentes". As
-  referências novas dela (3D, prédio com andares, "descanso") estão descritas, sem imagem, em
-  `docs/referencia/escritorio-de-agentes.md`.
-- **#467, a Sala** (`/sala` e `/sala?tv`): visual B, cartão, lista, modo TV. Regras de tempo e de link
-  comuns em `painel/src/logica/tempo.ts` e `link.ts`.
-- **Provado**: 50 testes do painel, cada regra vista falhar de propósito; fotos Playwright; CI verde nos 3.
-  **Não provado**: nada aberto num PC ou celular de verdade.
-- **Memória consertada**: o PR #483 tinha cortado o fim da seção 3 e o título desta seção 4 (recuperados).
-- **Lição de mesclar PRs empilhados** (16/10): ao mesclar o de baixo com "squash", o de cima fica com
-  conflito; o Claude junta a `main` na branch (fica com o lado da branch, que já contém tudo) e ela mescla
-  o próximo. Tocar em "Excluir branch" faz o GitHub apontar o próximo PR pra `main` sozinho.
-- **Empresa** (detalhe só no privado, `EMPRESA.md`): a 1ª metade do empréstimo caiu na conta PJ em 16/10.
+- **#352**: `painel/wrangler.jsonc` (`sakura-painel`, `workers_dev: true`, `preview_urls: false`, `binding: "ASSETS"`,
+  `not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`) e `painel/worker/index.ts`
+  (`/api/saude` → `{"ok":true}`). Script `npm run dev:worker`; sem script de publicar.
+- **Provado**: testes do worker vistos falhar de propósito; as 6 rotas no `wrangler dev`; o `wrangler deploy --dry-run`
+  pegou que faltava o `binding` (consertado); CI verde (12 verificações). **No ar, conferido por ela no celular**:
+  `/api/saude`, `/sala`, `/sala?tv`, `/escritorio`.
+- **As 3 perguntas do Escritório, respondidas**: salas **em roda**; **nome do agente no mapa** (ainda não feito:
+  entra quando ela pedir a próxima mexida no Escritório); **as 6 cores ficam**. Em `docs/painel.md`.
+- **Lição**: a trava de segredos do `git push` compara com a `origin/main` local. Se a sessão começou sem ela (HEAD
+  solto), a trava acusa arquivos antigos que já estão na `main`; um `git fetch origin main` resolve.
 
 #### Por onde a próxima sessão começa
-1. **#352, publicar o painel na Cloudflare** (`wrangler.jsonc` com `name: "sakura-painel"`, `workers_dev:
-   true`, `preview_urls: false` e `assets.not_found_handling: "single-page-application"`, pra `/sala` e
-   `/escritorio` abrirem direto). PR → guiar ela a mesclar **pelo celular, com links diretos**.
-2. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`): a TFE
-   (como pagar; talvez uma mensagem), a pergunta ao contador sobre como registrar o dinheiro que entrou, e o
-   Claude Team, que ela assina **na segunda, 19/10**.
-3. **3 perguntas sobre o desenho do Escritório**, ainda sem resposta: salas em roda ou em fileiras; nome do
-   agente no mapa; as 6 cores das equipes.
-4. **Ainda vale** do marco anterior (`docs/historico.md`, 16/10 de manhã): a equipe começa na segunda (Termos,
-   convites, Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela autorizou
+   com escrita em 16/10): a TFE (como pagar; talvez uma mensagem curta), a pergunta ao contador sobre como registrar o
+   dinheiro do empréstimo que entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
+2. **Painel, tarefa 5 (#353, login)**: antes, ela cria os dois GitHub Apps na `sakura-corp` (`docs/painel.md`, "O que
+   a Sofia faz"), guiada passo a passo.
+3. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
+   Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
