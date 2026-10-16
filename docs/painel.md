@@ -227,6 +227,55 @@ pessoa, relatório e aprovação); depois vem o financeiro.
   "Andamento" abaixo e na descrição do PR.
 - Um PR por tarefa, com `Closes #N`.
 
+## Escritório de agentes (só de exemplo, 16/10/2026)
+
+A ideia da Sofia (a "fábrica virtual", descrita em `docs/referencia/escritorio-de-agentes.md`) ganhou **uma tela de exemplo**
+em `/escritorio`, com o item "Escritório (exemplo)" na barra lateral. **É só a tela**: nenhum agente de verdade roda, nenhuma
+sessão é aberta, nenhum token é gasto, nenhuma chave ou login existe. A página diz isso no topo.
+
+**O que tem (tudo de exemplo)**: a vista de cima, escura, com o visual da Sala; 6 salas (Programa das lojas, Painel, Bibi, Fiscal
+e contabilidade, Site, Equipe) em roda em volta do **Cérebro**, com caminhos até ele; os agentes como pontos de luz, com os
+**mesmos estados e o mesmo jeito de brilhar da Sala** (#467); a barra do topo (Escritório, Tarefas, Cérebro; Agenda "em breve");
+o painel da sala (Visão geral e Tarefas; Agenda e Ajustes "em breve"); o quadro do dia (Rodando, Esperando você com Aprovar e
+Revisar **desativados**, Feitas hoje); avisos "ao vivo" fixos; a legenda "Roda em". Tudo o que está no desenho está também na
+lista de texto, que é o que o celular mostra. **Ficou de fora**: minimapa e zoom (não cabiam sem exagero), bonequinhos andando
+e sub-agentes aparecendo.
+
+**Regras**, em `painel/src/logica/escritorio.ts`, com testes: o estado de cada agente (precisa de você > com erro > trabalhando >
+dormindo > livre; trabalhando = rodando com atividade há menos de 2 h; dormindo = 3 dias ou mais, **tempo corrido**, nunca
+dia de calendário), as contagens ("N agentes · M rodando"), a ordem, o quadro do dia ("feitas hoje" = mesmo dia no fuso do
+computador) e o filtro de link (só `https://github.com/sakura-corp/`). Os tipos `EstadoBonequinho` e `TipoBonequinho` em
+`painel/src/tipos.ts` são os da #467, pra Sala usar os mesmos.
+
+**Cores das equipes** (só na borda e no fundo da sala e nas etiquetas; o estado nunca é dito pela cor da equipe). Todas
+conferidas contra o fundo da janela (`#120e12`) e o vidro sem suporte (`#1d191d`); passam até como texto:
+
+| Equipe | Cor | Contraste |
+|---|---|---|
+| Programa das lojas | `#8FB8F0` (azul) | 9,4:1 no fundo, 8,5:1 no vidro |
+| Painel | `#C98FAE` (malva, o destaque) | 7,3:1 / 6,6:1 |
+| Bibi | `#B9A3F0` (lilás) | 8,7:1 / 7,9:1 |
+| Fiscal e contabilidade | `#7FCBC0` (verde-água) | 10,2:1 / 9,3:1 |
+| Site | `#9CCB86` (verde) | 10,3:1 / 9,3:1 |
+| Equipe | `#E9B48A` (pêssego) | 10,4:1 / 9,4:1 |
+
+**Pra ligar de verdade falta decidir de onde vêm os agentes** (a decisão é da Sofia; aqui só as opções):
+
+| Opção | Como | A favor | Contra |
+|---|---|---|---|
+| **A. Ler o GitHub** | cada branch `claude/...`, PR e rodada do GitHub vira um agente, pelo mesmo caminho da Sala ao vivo (#468) | não custa nada a mais; o painel já vai ler isso; não guarda chave nova | só **mostra**: não cria nem comanda agente; sessão que só conversa, sem branch, não aparece |
+| **B. As ferramentas de sessão do Claude Code** | o painel pede pra listar, criar e mandar mensagem a sessões na nuvem | é o que daria pra "criar o agente e escolher as skills" de dentro do painel | precisa de uma peça com credencial fora do navegador (o painel só tem o Worker da Cloudflare); gasta a cota das assinaturas; **regras de uso a conferir** |
+| **C. Um serviço próprio** | um programa rodando fora do painel (ex.: com o Agent SDK), pago por uso da API | controle total do que cada agente faz | custo por token, que não é o da assinatura; mais uma coisa pra manter no ar |
+
+**Recomendação (não decidida)**: começar pela **A**, junto com a #468, porque é de graça e não guarda segredo novo; deixar
+"criar e comandar agentes" (B ou C) pra depois de **conferir as regras de uso das assinaturas** (Pro e Team) sobre sessões
+automáticas e sobre usar a cota de uma pessoa pra trabalho disparado por outra. Antes de qualquer automação, essa
+conferência vem primeiro.
+
+**Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
+que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
+`npm run preview` já fazem isso sozinhos.
+
 ## Fim de uma leva
 
 Quando a última tarefa da leva é aprovada:
@@ -315,3 +364,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   lista ficava escondido (agora aparece inteiro) e o exemplo não pede mais foto de usuário de mentira ao GitHub.
   O teste das horas **não pegava** uma conta quebrada de propósito; ganhou um caso e agora pega. **PR aberto, esperando
   a revisão da Sofia. A #467 começa depois que ele entrar na `main`.**
+- **16/10/2026, mais tarde**: **Escritório de agentes, só de exemplo**, em `/escritorio` (seção "Escritório de agentes"
+  acima), em PR separado, em cima do PR da #351. Nada de verdade ligado. **Depende da Sofia**: escolher de onde vêm os
+  agentes reais (A, B ou C) e conferir as regras de uso das assinaturas antes de automatizar sessões.

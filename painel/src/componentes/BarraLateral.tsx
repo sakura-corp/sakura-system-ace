@@ -1,8 +1,9 @@
 import { Lock } from "lucide-react";
+import type { Pagina } from "../tipos";
 
-type Props = { levas: string[]; atual: string };
+type Props = { levas: string[]; atual: string; pagina?: Pagina };
 
-export function BarraLateral({ levas, atual }: Props) {
+export function BarraLateral({ levas, atual, pagina = "leva" }: Props) {
   return (
     <nav
       aria-label="Menu do painel"
@@ -16,10 +17,10 @@ export function BarraLateral({ levas, atual }: Props) {
           {levas.map((leva) => (
             <li key={leva}>
               <a
-                href="#"
-                aria-current={leva === atual ? "page" : undefined}
+                href="/"
+                aria-current={pagina === "leva" && leva === atual ? "page" : undefined}
                 className={`block rounded-lg px-3 py-1.5 text-sm ${
-                  leva === atual ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
+                  pagina === "leva" && leva === atual ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
                 }`}
               >
                 {leva}
@@ -27,6 +28,19 @@ export function BarraLateral({ levas, atual }: Props) {
             </li>
           ))}
         </ul>
+      </div>
+
+      <div>
+        <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-texto-2 md:block">Agentes</p>
+        <a
+          href="/escritorio"
+          aria-current={pagina === "escritorio" ? "page" : undefined}
+          className={`block rounded-lg px-3 py-1.5 text-sm ${
+            pagina === "escritorio" ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
+          }`}
+        >
+          Escritório <span className={pagina === "escritorio" ? "" : "text-texto-2"}>(exemplo)</span>
+        </a>
       </div>
 
       <div className="md:mt-auto">
