@@ -60,52 +60,11 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   Sofia aprova, e só então vem banco e "Liberar versão". **Bug de loja não espera a leva.**
 - **As tarefas nascem nas conversas da Sofia com o Claude dela**, que cria as issues.
 
-## Primeiro dia (de quem entra na equipe)
+## Primeiro dia e como começar uma tarefa
 
-Antes da primeira tarefa, a pessoa instala o **Claude Code no PC** (não a versão pela internet:
-ela vai precisar abrir o painel no navegador pra testar), entra com a conta Claude dela, e cola
-isto como **primeira mensagem**. O texto foi aprovado pela Sofia em 30/09/2026 e é o mesmo pra
-todo mundo que entrar (o do Gustavo é Windows; pra quem usar Mac, trocar a primeira linha).
-
-> Oi, Claude. Vou trabalhar no projeto **Sakura System**, que está no GitHub no repositório
-> **`sakura-corp/sakura-system-ace`**. Meu computador é **Windows**. Me guie **um passo por vez**,
-> como se eu nunca tivesse feito isso: diga exatamente onde clicar ou o que digitar, o que deve
-> aparecer na tela, e **espere eu responder "feito"** antes do próximo passo.
->
-> Hoje o objetivo é **só deixar meu computador pronto**, sem programar nada:
-> 1. Confira o que já tenho instalado e me ajude a instalar o que faltar: **Git**, **Node.js
->    versão 22** e **GitHub CLI** (o programa `gh`).
-> 2. Me ajude a entrar na minha conta do GitHub pelo GitHub CLI (`gh auth login`, pelo navegador).
-> 3. **Clone** o repositório com `gh repo clone sakura-corp/sakura-system-ace`, numa pasta que você
->    vai me ajudar a escolher. **Não baixe como ZIP.** Precisa ser clonado, pra eu conseguir
->    entregar meu trabalho depois.
-> 4. Me explique como abrir o Claude Code **dentro dessa pasta** e espere eu abrir.
-> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/painel.md`**, e me
->    explique em português simples, em poucas linhas, como vai ser o meu trabalho.
->
-> **Hoje não mude nada no projeto, não crie branch e não pegue tarefa.** Quando tudo estiver
-> pronto, diga "tudo pronto" e pare.
-
-## Como começar uma tarefa
-
-A pessoa abre o Claude dela e diz só o nome ou o número da tarefa (ex: *"quero fazer a tarefa
-#12"*). A partir daí, o Claude:
-1. **Confere quem é** (seção 0 do `PROJETO_STATUS.md`) e **lê a issue inteira** e este manual.
-   **Confere o "Depende de"**: se ainda não dá pra começar, explica o motivo, escreve a mensagem
-   de WhatsApp pra Sofia e para aqui.
-2. **Explica em português simples**, antes de mexer em qualquer coisa:
-   - o que é a tarefa e pra que ela serve no painel;
-   - o que o Claude vai fazer sozinho (o código);
-   - o que a pessoa vai precisar fazer (instalar, testar, abrir o PR), e quanto tempo deve levar.
-3. **Guia a pessoa a pôr o nome dela na tarefa** no GitHub, se ainda não pôs, passo a passo.
-4. Programa. Sempre que a pessoa precisar fazer alguma coisa que não seja só esperar o código
-   (rodar um comando, abrir o navegador, testar, clicar numa tela), o Claude **guia um passo por
-   vez, com calma**: onde clicar, o que digitar, o que deve aparecer, e espera ela confirmar
-   antes do próximo passo. Nada de despejar dez passos de uma vez.
-5. No fim, confere o "Pronto quando" da tarefa com a pessoa, item por item, e guia a abertura do
-   PR (com `Closes #N`) e o pedido de revisão da Sofia. **Não mescla.**
-6. Escreve a mensagem de WhatsApp pra Sofia (ex: *"Oi Sofia! Terminei a tarefa 2 (visual do
-   painel). O PR é o #58, tá esperando sua revisão."*), e a pessoa manda.
+Estão no manual da equipe, que vale pro painel e pro programa das lojas, em Windows e Mac:
+`docs/equipe.md` ("Primeiro dia" e "Como começar uma tarefa"). Quem é do painel roda o painel
+pelos comandos de "Como rodar no PC", abaixo.
 
 ## Design (parecido com o do Claude)
 
