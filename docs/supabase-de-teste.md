@@ -222,6 +222,7 @@ entrar na hora.
 |---|---|
 | `PAREI: este banco tem token da Focus NFe...` / `...nota em produção` / `...nota fiscal registrada` | você está no projeto de uma loja. Não rode nada; troque pro `ssace-teste` |
 | `PAREI: este banco já tem clientes cadastrados e nunca recebeu os dados de exemplo` | idem, ou um banco que já foi usado. Me mande o print |
+| `PAREI: este banco tem ordem de serviço fora da loja de exemplo` | no `ssace-teste`, alguém abriu OS na "Loja 1" (é por isso que a equipe só tem a loja de exemplo). Me chame: a gente apaga essa OS e roda de novo |
 | `PAREI: a loja de exemplo ainda não existe` | rode o Passo 5 antes do Passo 6 |
 | `PAREI: faltou trocar o usuário e o nome` | troque as linhas `<<< TROCAR` do `ligar-login.sql` |
 | `PAREI: não achei o login <usuario>@sakura.local` | o e-mail do Passo 6b está diferente (um espaço a mais, outro domínio, outro usuário) |
