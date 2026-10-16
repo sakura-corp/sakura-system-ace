@@ -367,3 +367,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **16/10/2026, mais tarde**: **Escritório de agentes, só de exemplo**, em `/escritorio` (seção "Escritório de agentes"
   acima), em PR separado, em cima do PR da #351. Nada de verdade ligado. **Depende da Sofia**: escolher de onde vêm os
   agentes reais (A, B ou C) e conferir as regras de uso das assinaturas antes de automatizar sessões.
+- **16/10/2026, à tarde**: **a Sala (#467), com dados de exemplo**, em `/sala` (e `/sala?tv`), em PR separado, em cima do
+  PR do Escritório (a Sofia pediu pra continuar construindo a base enquanto estava no trabalho). As regras de tempo e de link
+  ficaram em `painel/src/logica/tempo.ts` e `link.ts`, usadas pela Sala e pelo Escritório. **A ordem de revisão é: #351,
+  depois o Escritório, depois a Sala.** A #352 (publicar) só começa depois que a #467 entrar na `main`.

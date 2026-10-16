@@ -1,0 +1,125 @@
+/* A Sala (#467): janela sempre escura, visual B (docs/painel.md, "Visual da Sala"; referência em
+   docs/referencia/sala-duas-versoes.html, coluna B). Nenhuma cor fora da tabela. Fonte só aqui dentro. */
+.sala-j {
+  --bg: #120e12;
+  --vidro-solido: #1d191d;
+  --vidro: rgba(255, 255, 255, 0.045);
+  --borda: rgba(255, 255, 255, 0.09);
+  --tx: #f4ecf0;
+  --tx2: #b7a3ae;
+  --dest: #c98fae;
+  --dest-tx: #120e12;
+  --e-trab: #e2b0c9;
+  --e-trab-bg: rgba(201, 143, 174, 0.16);
+  --e-prec: #f2c46b;
+  --e-prec-bg: rgba(242, 196, 107, 0.14);
+  --e-erro: #f59b92;
+  --e-erro-bg: rgba(245, 155, 146, 0.14);
+  --e-livre: #b7a3ae;
+  --e-livre-bg: rgba(255, 255, 255, 0.06);
+
+  font-family: "Plus Jakarta Sans Variable", system-ui, sans-serif;
+  color: var(--tx);
+  background:
+    radial-gradient(420px 260px at 8% -5%, rgba(201, 143, 174, 0.2), transparent 70%),
+    radial-gradient(380px 260px at 100% 105%, rgba(142, 90, 119, 0.22), transparent 70%),
+    var(--bg);
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.sala-j :focus-visible { outline: 2px solid var(--dest); outline-offset: 2px; }
+.sala-j h1, .sala-j h2, .sala-j h3, .sala-j p { margin: 0; }
+.sala-j ul { margin: 0; padding: 0; list-style: none; }
+
+.sala-vidro { background: var(--vidro-solido); border: 1px solid var(--borda); }
+@supports (backdrop-filter: blur(10px)) {
+  .sala-vidro { background: var(--vidro); backdrop-filter: blur(10px); }
+}
+
+.sala-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.sala-topo h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.01em; }
+.sala-sub { color: var(--tx2); font-size: 0.85rem; }
+.sala-topo-direita { display: grid; gap: 6px; justify-items: end; }
+.sala-pilula {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+  background: var(--e-prec-bg); color: var(--e-prec); text-decoration: none;
+}
+.sala-pilula i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sala-conexao { display: inline-flex; gap: 7px; align-items: center; font-size: 0.78rem; color: var(--tx2); }
+.sala-conexao i { width: 7px; height: 7px; border-radius: 50%; background: var(--dest); }
+
+/* a sala desenhada: some no celular (a lista é a versão do celular) */
+.sala-desenho { display: none; gap: 14px; }
+@media (min-width: 768px) { .sala-desenho { display: grid; } }
+.sala-quadro { border-radius: 22px; padding: 16px; display: grid; gap: 14px; }
+.sala-fileira-titulo { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx2); font-weight: 600; margin-bottom: 8px; }
+.sala-fileira { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 168px)); gap: 10px; }
+.sala-mesa {
+  appearance: none; font: inherit; color: inherit; text-align: center; cursor: pointer;
+  background: var(--vidro); border: 1px solid var(--borda); border-radius: 999px 999px 18px 18px; padding: 14px 8px 10px;
+  display: grid; justify-items: center; align-content: start; gap: 6px; min-width: 0;
+}
+.sala-mesa:hover, .sala-mesa[aria-pressed="true"] { border-color: var(--dest); }
+.sala-mesa .nome { font-size: 0.82rem; font-weight: 600; overflow-wrap: anywhere; line-height: 1.2; }
+.sala-mesa .faz { font-size: 0.72rem; color: var(--tx2); line-height: 1.25; overflow-wrap: anywhere; min-height: 2.5em; }
+.sala-balao { font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--eb); color: var(--ec); }
+
+/* o ponto de luz */
+.sala-luz { width: 58px; height: 58px; overflow: visible; }
+.sala-luz .halo { fill: var(--ec); opacity: 0.55; filter: blur(7px); transform-origin: 29px 29px; }
+.sala-luz .nucleo { fill: var(--ec); }
+.sala-luz .anel { fill: none; stroke: var(--ec); stroke-width: 2; opacity: 0; }
+.sala-luz .marca { fill: var(--bg); }
+.sala-luz .marca-traco { stroke: var(--bg); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.sala-luz .iniciais { fill: var(--bg); font-size: 15px; font-weight: 700; font-family: inherit; }
+.s-trabalhando { --ec: var(--e-trab); --eb: var(--e-trab-bg); }
+.s-precisa { --ec: var(--e-prec); --eb: var(--e-prec-bg); }
+.s-erro { --ec: var(--e-erro); --eb: var(--e-erro-bg); }
+.s-dormindo, .s-livre { --ec: var(--e-livre); --eb: var(--e-livre-bg); }
+.s-dormindo .sala-luz .nucleo { opacity: 0.35; }
+.s-dormindo .sala-luz .halo { opacity: 0.08; }
+.s-livre .sala-luz .nucleo { opacity: 0.75; }
+.s-livre .sala-luz .halo { opacity: 0.2; }
+.s-precisa .sala-luz .anel { opacity: 1; }
+.s-erro .sala-luz .anel { opacity: 0.6; stroke-dasharray: 3 4; }
+@keyframes sala-pulsa { 0%, 100% { transform: scale(1); opacity: 0.55; } 50% { transform: scale(1.35); opacity: 0.25; } }
+.s-trabalhando .sala-luz .halo { animation: sala-pulsa 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .s-trabalhando .sala-luz .halo { animation: none; transform: scale(1.25); }
+  .s-trabalhando .sala-luz .anel { opacity: 1; stroke-dasharray: 2 5; }
+}
+
+.sala-cartao { border-radius: 18px; padding: 12px 14px; display: grid; gap: 4px; font-size: 0.88rem; }
+.sala-cartao strong { font-size: 0.98rem; }
+.sala-cartao .linha { color: var(--tx2); font-size: 0.82rem; }
+.sala-link { color: var(--dest); font-weight: 600; width: fit-content; }
+.sala-endereco { color: var(--tx2); font-size: 0.78rem; overflow-wrap: anywhere; }
+
+.sala-lista { display: grid; gap: 6px; }
+.sala-lista h2 { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tx2); font-weight: 700; margin-top: 6px; scroll-margin-top: 16px; }
+.sala-lista ul { display: grid; gap: 6px; }
+.sala-lista li { display: grid; grid-template-columns: auto 1fr; gap: 0 8px; font-size: 0.84rem; }
+.sala-lista li > i { width: 8px; height: 8px; border-radius: 50%; background: var(--ec); margin-top: 6px; }
+.sala-lista li.s-dormindo > i { opacity: 0.4; }
+.sala-lista .linha { grid-column: 2; color: var(--tx2); font-size: 0.78rem; }
+.sala-estado { color: var(--ec); font-weight: 600; }
+
+.sala-tv-dica { font-size: 0.76rem; color: var(--tx2); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.sala-tv-dica a { color: var(--dest); font-family: ui-monospace, Menlo, monospace; }
+
+/* modo TV: só a sala, grande, legendas maiores */
+.sala-tv { min-height: 100vh; border-radius: 0; border: 0; padding: 28px; align-content: start; }
+.sala-tv .sala-desenho { display: grid; }
+.sala-tv .sala-topo h1 { font-size: 2rem; }
+.sala-tv .sala-sub, .sala-tv .sala-conexao { font-size: 1rem; }
+.sala-tv .sala-pilula { font-size: 1.1rem; }
+.sala-tv .sala-fileira { grid-template-columns: repeat(auto-fill, minmax(190px, 250px)); gap: 16px; }
+.sala-tv .sala-fileira-titulo { font-size: 0.95rem; }
+.sala-tv .sala-mesa .nome { font-size: 1.1rem; }
+.sala-tv .sala-mesa .faz { font-size: 0.95rem; }
+.sala-tv .sala-balao { font-size: 0.9rem; }
+.sala-tv .sala-luz { width: 84px; height: 84px; }
