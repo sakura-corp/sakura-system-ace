@@ -3,13 +3,22 @@ import { agentesDeExemplo, equipesDeExemplo, QUEM_ESTA_OLHANDO_NO_EXEMPLO, taref
 import type { Agente, TarefaDoEscritorio } from "../tipos";
 import {
   agentesDaEquipe, comEstado, contarAgentes, contarPorModelo, estadoDoAgente, haQuantoTempo, limitarProgresso,
-  linkSeguro, ordenarAgentes, pontosDoMiniGrafico, posicoesEmRoda, quadroDoDia, textoDaContagem,
+  abreviarNome, linkSeguro, ordenarAgentes, pontosDoMiniGrafico, posicoesEmRoda, quadroDoDia, textoDaContagem,
 } from "./escritorio";
 
 const agora = new Date("2026-10-16T15:00:00-03:00");
 const ha = (min: number, de = agora) => new Date(de.getTime() - min * 60_000).toISOString();
 const ag = (extra: Partial<Agente> = {}): Agente => ({
   id: "x", nome: "X", equipe: "painel", modelo: "sonnet", fazendo: "", ultimaAtividade: ha(10), ...extra,
+});
+
+describe("abreviarNome", () => {
+  it("nome que cabe fica igual; o que passa é cortado com reticências e nunca passa do máximo", () => {
+    expect(abreviarNome("Caixa e OS", 13)).toBe("Caixa e OS");
+    expect(abreviarNome("Planilhas do contador", 13)).toBe("Planilhas do…");
+    expect(abreviarNome("Planilhas do contador", 13)).toHaveLength(13);
+    expect(abreviarNome("Treze letras!", 13)).toBe("Treze letras!");
+  });
 });
 
 describe("estadoDoAgente", () => {
