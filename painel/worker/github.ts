@@ -87,3 +87,34 @@ export async function ehMembro(token: string, login: string): Promise<"sim" | "n
   if (resposta.status === 404 || resposta.status === 302) return "nao";
   return "erro";
 }
+
+export const REPOSITORIO = "sakura-system-ace";
+
+/**
+ * Uma consulta GraphQL com o token de quem está logado (#354).
+ * `sem-acesso` = o GitHub recusou o token (401); `erro` = qualquer outra falha (fora do ar,
+ * limite, resposta sem `data`). Com `data` e `errors` juntos (um PR de outro repositório que o
+ * app não lê, por exemplo), vale o que veio: o que faltou chega como null.
+ * Nunca devolve a resposta do GitHub como texto de erro.
+ */
+export async function consultar<T>(
+  token: string,
+  consulta: string,
+  variaveis: Record<string, unknown>,
+): Promise<{ tipo: "ok"; dados: T } | { tipo: "sem-acesso" } | { tipo: "erro" }> {
+  const resposta = await fetch("https://api.github.com/graphql", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+      "user-agent": AGENTE,
+    },
+    body: JSON.stringify({ query: consulta, variables: variaveis }),
+  });
+  if (resposta.status === 401) return { tipo: "sem-acesso" };
+  if (!resposta.ok) return { tipo: "erro" };
+  const corpo = (await resposta.json()) as { data?: T | null };
+  if (!corpo.data) return { tipo: "erro" };
+  return { tipo: "ok", dados: corpo.data };
+}

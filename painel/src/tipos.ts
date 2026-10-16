@@ -95,3 +95,13 @@ export type TarefaDoEscritorio = {
 // ---- Login (#353) ----
 /** Quem entrou: o que o worker devolve em /api/eu. O token nunca chega na página. */
 export type Usuario = { login: string; avatar: string };
+
+// ---- As tarefas de verdade (#354) ----
+/** Uma leva, como /api/levas devolve: a etiqueta `leva-<numero>` e quantas tarefas abertas ela tem. */
+export type Leva = { numero: number; nome: string; abertas: number };
+
+/** O que /api/levas devolve. `atual` é null quando ainda não existe etiqueta `leva-N`. */
+export type RespostaDasLevas = { levas: Leva[]; atual: number | null };
+
+/** O que /api/leva/<n> devolve. `cortada`: a leva tem mais de 100 tarefas, e só as 100 primeiras vieram. */
+export type RespostaDaLeva = { numero: number; tarefas: Tarefa[]; cortada: boolean };

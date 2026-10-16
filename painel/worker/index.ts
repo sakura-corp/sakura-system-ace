@@ -1,11 +1,11 @@
-// O worker do painel (tarefas #352 e #353). Só responde /api/*; o resto é a página, servida
+// O worker do painel (tarefas #352, #353 e #354). Só responde /api/*; o resto é a página, servida
 // pela Cloudflare a partir de ./dist (ver wrangler.jsonc). O webhook (#355) entra aqui depois.
 //
 // Login (#353): GitHub App "Sakura Painel" da sakura-corp. Só entra quem é membro da
 // organização. O token da pessoa fica no cookie `sessao`, cifrado; a página nunca vê ele.
 // Nunca escrever token, cookie ou segredo em log, erro ou resposta.
 
-import { buscarUsuario, ehMembro, renovarToken, trocarCodigo } from "./github";
+import { buscarUsuario, consultar, ehMembro, renovarToken, trocarCodigo } from "./github";
 import {
   COOKIE_ESTADO,
   COOKIE_SESSAO,
@@ -24,6 +24,15 @@ import {
   sessaoVencida,
   type Sessao,
 } from "./sessao";
+import {
+  CONSULTA_DA_LEVA,
+  CONSULTA_DAS_LEVAS,
+  levaDosDados,
+  levasDosDados,
+  variaveisDoRepositorio,
+  type DadosDaLeva,
+  type DadosDasLevas,
+} from "./tarefas";
 
 export interface Ambiente {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -118,7 +127,7 @@ async function voltaDoLogin(request: Request, url: URL, config: Configuracao, ag
  * A sessão de quem fez o pedido, já com o token renovado se ele venceu (os do GitHub App
  * duram 8 h). Ao renovar, confere de novo se a pessoa ainda é da sakura-corp.
  * Os `cookies` voltam na resposta: o novo, ou o que apaga a sessão.
- * As próximas rotas que usam o GitHub (#354) passam por aqui.
+ * Toda rota que usa o GitHub (/api/eu, /api/levas, /api/leva/<n>) passa por aqui.
  *
  * Só apaga a sessão quando ela é ruim de verdade (adulterada, passou dos 30 dias, a pessoa
  * saiu da sakura-corp). Se a renovação falhar (o GitHub fora do ar, ou duas abas renovando
@@ -151,6 +160,41 @@ export async function sessaoAtual(request: Request, config: Configuracao, agora 
   }
 }
 
+/** /api/leva/3 → 3; outro caminho → null. */
+export function levaDoCaminho(caminho: string): number | null {
+  const achou = /^\/api\/leva\/(\d{1,4})$/.exec(caminho);
+  return achou ? Number(achou[1]) : null;
+}
+
+/**
+ * As rotas com dados (#354): /api/levas e /api/leva/<n>, sempre com o token de quem está logado.
+ * A página pede /api/eu antes destas (ver ComLogin), pra o token ser renovado uma vez só.
+ */
+async function dados(request: Request, config: Configuracao, leva: number | null): Promise<Response> {
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  const falhou = () => json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+  // O GitHub recusou o token (a pessoa tirou o acesso do app, por exemplo): entra de novo.
+  const semAcesso = () => json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(new URL(request.url)).apagar(COOKIE_SESSAO)]);
+
+  try {
+    if (leva === null) {
+      const r = await consultar<DadosDasLevas>(sessao.token, CONSULTA_DAS_LEVAS, variaveisDoRepositorio);
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      return json(levasDosDados(r.dados), 200, cookies);
+    }
+    const r = await consultar<DadosDaLeva>(sessao.token, CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${leva}` });
+    if (r.tipo === "sem-acesso") return semAcesso();
+    if (r.tipo === "erro") return falhou();
+    const resposta = levaDosDados(leva, r.dados);
+    return resposta ? json(resposta, 200, cookies) : falhou();
+  } catch {
+    console.error("dados: falha ao falar com o GitHub");
+    return falhou();
+  }
+}
+
 export default {
   async fetch(request: Request, env: Ambiente): Promise<Response> {
     const url = new URL(request.url);
@@ -177,6 +221,14 @@ export default {
       const { sessao, cookies } = await sessaoAtual(request, config);
       if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
       return json({ login: sessao.login, avatar: sessao.avatar }, 200, cookies);
+    }
+
+    const leva = levaDoCaminho(pathname);
+    if (pathname === "/api/levas" || leva !== null) {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      return dados(request, config, leva);
     }
 
     if (pathname === "/api" || pathname.startsWith("/api/")) {

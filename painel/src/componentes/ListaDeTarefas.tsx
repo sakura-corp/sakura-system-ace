@@ -29,16 +29,15 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
                     </span>
                     <span className="flex flex-wrap items-center gap-3 text-sm">
                       <Selo estado={t.estado} />
-                      <span className="flex items-center gap-1.5 text-texto-2">
-                        {t.dono ? (
-                          <>
-                            <Avatar login={t.dono.login} avatar={t.dono.avatar} />
-                            {t.dono.login}
-                          </>
-                        ) : (
-                          "livre"
-                        )}
-                      </span>
+                      {/* Livre já diz no selo que não tem dono; nos outros estados, avisa. */}
+                      {t.dono ? (
+                        <span className="flex items-center gap-1.5 text-texto-2">
+                          <Avatar login={t.dono.login} avatar={t.dono.avatar} />
+                          {t.dono.login}
+                        </span>
+                      ) : (
+                        t.estado !== "livre" && <span className="text-texto-2">sem responsável</span>
+                      )}
                       {t.estimativaHoras !== undefined && (
                         <span className="tabular-nums text-texto-2">{String(t.estimativaHoras).replace(".", ",")} h</span>
                       )}

@@ -418,3 +418,12 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   dados passa por `sessaoAtual()`, e devolve os `cookies` dela na resposta. Cuidado com duas chamadas ao mesmo
   tempo com o token vencido: o GitHub aceita cada `refresh` uma vez só, e a segunda derruba a sessão (fazer a
   página pedir `/api/eu` antes das outras resolve).
+- **16/10/2026, mais tarde à noite**: **tarefa 6 (#354), as tarefas de verdade, feita pela Sofia com o Claude dela** (PR
+  aberto, esperando ela mesclar). O worker ganhou `/api/levas` (as etiquetas `leva-N`, com quantas tarefas abertas cada uma
+  tem, e qual é a atual) e `/api/leva/<n>` (uma consulta GraphQL; devolve no formato `Tarefa`), em `painel/worker/tarefas.ts`.
+  As regras (estado, estimativa, leva atual) estão em `painel/src/logica/estado.ts`; a busca da página, em
+  `painel/src/logica/dados.ts`, pede **uma rota depois da outra**, sempre depois do `/api/eu` (o `refresh` vale uma vez só).
+  A leva atual abre em `/`; as outras em `/leva/<n>`, pela barra lateral. Se o GitHub recusar o token (401), a sessão é
+  apagada e a página mostra "Sua sessão acabou". As consultas foram conferidas contra o esquema público do GitHub, mas
+  **só rodaram de verdade no endereço público**, com o login dela. A Sala e o Escritório continuam de exemplo. **A tarefa 7
+  (#355) depende da Sofia ligar o webhook** (ver "O que a Sofia faz").
