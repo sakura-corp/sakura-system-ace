@@ -259,9 +259,17 @@ Os PRs **#477**, **#478** e **#479** foram mesclados. A **#470 está fechada**.
   se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
 
 #### Por onde a próxima sessão começa
+0. **O plano combinado em 16/10 (a equipe começar na segunda, 19/10)**: ela quer **assinar na
+   segunda**. **No fim de semana**, numa sessão do SSACE: (a) a parte do Claude na etapa 4 da #474:
+   os dados de exemplo e um login pra cada um no banco de teste, a regra nova da seção 0, o manual
+   da equipe pro programa das lojas, e as tarefas #455, #459 e a 1ª parte da #457 no formato da
+   equipe, **como rascunho pra ela revisar**; (b) com ela, guiada: criar o Supabase de teste
+   (conferir antes se cabe no plano grátis). **Na segunda**: os Termos, o Claude Team e os convites,
+   a verificação em duas etapas (depois do "sim" do Gustavo), os dois novos convidados (só depois do
+   Termo) e o "Primeiro dia". Perguntar a ela se o texto do Termo já está pronto (fica no privado).
 1. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
    etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
-2. **Depois de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
+2. **A partir de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
 3. **Depois, a fila**: #471 → #472, uma sessão cada.
 4. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
    cabeçalho das planilhas pra #457), o capital e a TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2
