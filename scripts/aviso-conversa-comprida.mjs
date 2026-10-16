@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 /** A partir de quantos % da janela o aviso aparece. Combinado: começar com uns 35. */
 export const LIMITE_PERCENTUAL = 35;
 /** Tamanho da janela de contexto, em tokens. Se o app usar uma janela maior, mude aqui. */
-export const JANELA_TOKENS = 200_000;
+export const JANELA_TOKENS = 1_000_000;
 
 /** Tokens da conversa na última resposta do Claude (entrada + cache), ou null se não achou. */
 export function tokensDaConversa(textoDoHistorico) {

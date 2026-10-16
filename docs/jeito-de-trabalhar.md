@@ -48,7 +48,7 @@ mescla.
 `UserPromptSubmit`): a cada mensagem ele mede o tamanho da conversa pela última resposta do Claude
 no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, pra sugerir o `/fechar`.
 - **Mudar o limite**: no topo do script, `LIMITE_PERCENTUAL` (hoje 35) e `JANELA_TOKENS` (hoje
-  200.000, o tamanho da janela de contexto). Se o app mostrar uma porcentagem diferente da que o aviso
+  1.000.000, a janela das sessões na nuvem, que mostram `max_tokens` de 1 milhão). Se o app mostrar uma porcentagem diferente da que o aviso
   diz, ajustar a `JANELA_TOKENS`.
 - **Testar com o limite baixado** (sem mexer no arquivo): `SSACE_AVISO_LIMITE_PERCENTUAL=1` e
   `SSACE_AVISO_PASTA=<pasta qualquer>` na frente do comando; o teste `npm test --
