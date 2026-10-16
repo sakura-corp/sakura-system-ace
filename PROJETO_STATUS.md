@@ -184,6 +184,8 @@ envelhece e ninguém relê. Se este índice passar de ~30 KB, é hora de enxugar
   que falhou é consertada na hora. Uma vez por mês, a revisão do método (R1 de
   `docs/jeito-de-trabalhar.md`). **Ferramenta nova vista em vídeo** (ela acompanha muitos no
   Instagram) passa pelo mesmo filtro do produto: **isso tira trabalho de verdade?**
+- **Sempre em português** (16/10/2026): numa sessão longa eu escorreguei pro inglês, e ela pediu pra voltar.
+  Tudo o que ela lê (respostas, avisos, PR) é em português.
 - **Pelo celular, com links diretos** (16/10/2026): quando ela está fora (no trabalho), quer ser guiada
   pelo celular com **o link exato de cada passo e o mínimo de cliques**, um passo por vez, esperando o
   "mesclei". Mesclar o PR dela pelo app do GitHub é "Ignorar regras e combinar por squash" (ela é a
@@ -243,33 +245,32 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 16/10/2026, mais tarde à noite: o login do painel no ar e testado (#353)
+### 16/10/2026, mais tarde à noite (2): o painel com as tarefas de verdade (#354)
 
 **Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel
-(**https://sakura-painel.caranovavidanova.workers.dev**) agora **pede login pelo GitHub** e só deixa entrar quem
-é da `sakura-corp`: PR **#490** (fecha a **#353**), mesclado por ela. **Testado por ela no endereço público**:
-entrou com a conta dela (foto, nome e "Sair" na barra lateral), saiu e entrou de novo direto.
+(**https://sakura-painel.caranovavidanova.workers.dev**) agora mostra **as issues de verdade** da `leva-0`:
+estado, dono com foto, horas e o contador. PR **#492** (fecha a **#354**), mesclado por ela. **Testado por ela no
+endereço público**: 6 feitas e 2 livres, 29 h de 41 h, as fotos do GitHub.
 
 #### O que foi feito
-- **A parte dela, guiada passo a passo**: o GitHub App **"Sakura Painel"** na `sakura-corp` (Client ID no
-  `wrangler.jsonc`, não é segredo), instalado só no `sakura-system-ace`; os segredos `GITHUB_APP_CLIENT_SECRET` e
-  `CHAVE_DA_SESSAO` na Cloudflare (só Production) e no Bitwarden dela. **O app de teste não foi criado**: ela testa
-  sozinha por enquanto, e não mandou nada pro Gustavo. Detalhe em `docs/painel.md`, "Andamento".
-- **O código**: `painel/worker/sessao.ts` (cookie cifrado AES-GCM, 30 dias), `github.ts` e as rotas `/api/login`,
-  `/api/login/volta`, `/api/eu`, `/api/sair`; a tela de entrada e o "Sair". 95 testes, os novos vistos falhar.
-  A revisão do zero achou 6 pontos reais, todos consertados antes de mesclar.
-- **Lições** (as duas do GitHub e da Cloudflare de hoje, pra próxima configuração): o GitHub mudou as telas do
-  app (o "Callback URL" virou **"Redirect URI"**; as senhas ficam em **"Credentials"**, com "Client secrets" e
-  "Key pairs"); e o **Bitwarden ofereceu "Atualizar credencial existente"** nas senhas do R2 ao colar um segredo
-  na Cloudflare: avisar ela pra fechar no X, sempre que colar senha num site.
+- **O worker** ganhou `/api/levas` e `/api/leva/<n>` (`painel/worker/tarefas.ts`), com uma consulta GraphQL cada,
+  pelo token da sessão. As regras (estado, estimativa, leva atual) ficaram em `painel/src/logica/estado.ts`. A
+  página pede as rotas uma depois da outra, sempre depois do `/api/eu` (`painel/src/logica/dados.ts`). Leva atual
+  em `/`, as outras em `/leva/<n>`. 143 testes, os novos vistos falhar. A revisão do zero achou 4 pontos reais,
+  consertados antes de mesclar; os que ficaram como estão estão explicados no PR #492.
+- **Lição**: a sessão na nuvem **não consegue** fazer pergunta ao GitHub com o login dela (e a trava recusou usar o
+  token da sessão pra isso). Por isso as consultas foram **conferidas contra o esquema público do GitHub**
+  (`octokit/graphql-schema`, com o `graphql` do npm) antes de mesclar, e a prova final foi ela no endereço público.
+  Funcionou de primeira.
 
 #### Por onde a próxima sessão começa
 1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela
    autorizou com escrita em 16/10): a TFE (como pagar), a pergunta ao contador sobre o dinheiro do empréstimo que
    entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
-2. **Painel, tarefa 6 (#354, as tarefas de verdade do GitHub)**: não depende de nada dela. Toda rota nova passa
-   por `sessaoAtual()` (ver o "Andamento" de 16/10 no `docs/painel.md`).
-3. **Pequeno, quando ela quiser**: na barra lateral, o "Sair" desce pra linha de baixo quando o nome é comprido
-   (o dela); e o nome do agente no mapa do Escritório.
+2. **Painel, tarefa 7 (#355, tempo real)**: **depende dela** ligar o webhook no app "Sakura Painel" e cadastrar o
+   `GITHUB_WEBHOOK_SECRET` na Cloudflare (`docs/painel.md`, "O que a Sofia faz"). Guiar pelo celular, um passo por vez.
+3. **Pequeno, quando ela quiser**: o teste "pegar uma tarefa e recarregar" (se ela não fez); o "Sair" que desce de
+   linha com nome comprido; o nome do agente no mapa do Escritório; e, se ela quiser, issue fechada como "não
+   planejada" deixar de contar como feita (hoje conta, pela regra da #354).
 4. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
    Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.

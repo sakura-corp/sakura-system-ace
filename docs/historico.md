@@ -35,6 +35,37 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026, mais tarde à noite: o login do painel no ar e testado (#353)
+
+**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel
+(**https://sakura-painel.caranovavidanova.workers.dev**) agora **pede login pelo GitHub** e só deixa entrar quem
+é da `sakura-corp`: PR **#490** (fecha a **#353**), mesclado por ela. **Testado por ela no endereço público**:
+entrou com a conta dela (foto, nome e "Sair" na barra lateral), saiu e entrou de novo direto.
+
+#### O que foi feito
+- **A parte dela, guiada passo a passo**: o GitHub App **"Sakura Painel"** na `sakura-corp` (Client ID no
+  `wrangler.jsonc`, não é segredo), instalado só no `sakura-system-ace`; os segredos `GITHUB_APP_CLIENT_SECRET` e
+  `CHAVE_DA_SESSAO` na Cloudflare (só Production) e no Bitwarden dela. **O app de teste não foi criado**: ela testa
+  sozinha por enquanto, e não mandou nada pro Gustavo. Detalhe em `docs/painel.md`, "Andamento".
+- **O código**: `painel/worker/sessao.ts` (cookie cifrado AES-GCM, 30 dias), `github.ts` e as rotas `/api/login`,
+  `/api/login/volta`, `/api/eu`, `/api/sair`; a tela de entrada e o "Sair". 95 testes, os novos vistos falhar.
+  A revisão do zero achou 6 pontos reais, todos consertados antes de mesclar.
+- **Lições** (as duas do GitHub e da Cloudflare de hoje, pra próxima configuração): o GitHub mudou as telas do
+  app (o "Callback URL" virou **"Redirect URI"**; as senhas ficam em **"Credentials"**, com "Client secrets" e
+  "Key pairs"); e o **Bitwarden ofereceu "Atualizar credencial existente"** nas senhas do R2 ao colar um segredo
+  na Cloudflare: avisar ela pra fechar no X, sempre que colar senha num site.
+
+#### Por onde a próxima sessão começa
+1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela
+   autorizou com escrita em 16/10): a TFE (como pagar), a pergunta ao contador sobre o dinheiro do empréstimo que
+   entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
+2. **Painel, tarefa 6 (#354, as tarefas de verdade do GitHub)**: não depende de nada dela. Toda rota nova passa
+   por `sessaoAtual()` (ver o "Andamento" de 16/10 no `docs/painel.md`).
+3. **Pequeno, quando ela quiser**: na barra lateral, o "Sair" desce pra linha de baixo quando o nome é comprido
+   (o dela); e o nome do agente no mapa do Escritório.
+4. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
+   Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+
 ### 16/10/2026, à noite: o painel no ar (#352)
 
 **Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O **painel está no ar** em
