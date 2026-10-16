@@ -12,49 +12,38 @@ balcão, estoque, caixa, contas, comissões, fornecedores), **com NFC-e e NFS-e 
 A fase atual é preparar a venda pra outras empresas (seção 2). Os itens abaixo mantêm a numeração
 antiga porque outros arquivos citam "item N da seção 8".
 
-### O que depende dela, numa lista só (juntada em 30/09/2026)
+### O que depende dela: virou tarefa no GitHub (A1 da #472, 16/10/2026)
 
-Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs/historico.md`.
-**Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
+Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma tarefa com a etiqueta `sofia`**:
 
-**Do painel (16/10, à tarde)**:
-- **Escolher de onde vêm os agentes de verdade** do Escritório (A ler o GitHub, B sessões do Claude Code, C serviço
-  próprio; recomendação A) e, antes de B ou C, **conferir as regras de uso das assinaturas** (`docs/painel.md`).
-- **Quando alguém da equipe for mexer no login no PC**: criar o app de teste "Sakura Painel (teste)" e mandar o
-  client secret dele pelo Bitwarden Send (`docs/painel.md`, "O que a Sofia faz"). O app de verdade já existe (16/10).
+- **Tudo o que depende dela, no sistema e na loja**: [github.com/sakura-corp/sakura-system-ace/issues?q=is:issue+is:open+label:sofia](https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aissue+is%3Aopen+label%3Asofia).
+  Quando surgir algo novo que dependa dela, abrir a tarefa com a etiqueta `sofia` (e a **data no título**
+  quando houver, ex.: "Até 09/10/2027: renovar a chave `TOKEN_VERSOES`"). Feito, fecha a tarefa.
+- **Já tinham tarefa antes e continuam valendo**: a equipe no programa das lojas (#474), criar operador
+  no programa instalado (#482), enxugar o CI (#442), atualizar o Electron (#385, em saltos), os lotes de
+  permissão no banco (#365 a #367), apagar a cópia antiga do token da Focus (#368), a paginação das
+  listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em 1.000 linhas pelo Supabase),
+  e a cobrança do painel em tempo real (#355).
+- **Assuntos da EMPRESA ficam no repositório privado** (`caranovavidanova/sakura-corp`), nunca aqui, e não
+  são detalhados neste arquivo. Os que continuam pendentes, só pelo nome: **a TFE; o capital; o Claude Team
+  (assinatura marcada para 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
+  novas; o Termo de Colaboração, a cessão e o memorando da equipe; a conversa com o contador sobre o dinheiro
+  que entrou; levar o contrato e a LGPD (item 10) a um advogado ou à contabilidade; e o que falta da abertura
+  da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
+  (`add_repo`, com a autorização dela) e ler lá.
+- **Depende do horário dela e do privado, ainda sem tarefa**: o resumo agendado da segunda de manhã (A2 da
+  #472; `docs/jeito-de-trabalhar.md`).
 
-**Da sessão de 16/10 (a equipe começar na segunda, 19/10)**:
-- **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.
-- **Revisar** o `docs/equipe.md` e os rascunhos de `docs/rascunhos/leva-0-programa.md`; criar as issues (`leva-0`; a parte 1
-  da #457 como sub-issue da #457). Perguntas pra ela: textos das 2 mensagens de WhatsApp, "X meses" = 6, link de avaliação
-  no texto, importação sem "desfazer", **login administrador no banco de teste**, e "nem SQL no Supabase de teste".
-- **Criar o Supabase de teste, guiada**, pelo `docs/supabase-de-teste.md` (organização grátis, `ssace-teste`, esquema,
-  exemplo, 3 logins, Sends). Decidir se ele entra no botão "Atualizar o banco de todas as empresas" (recomendo não).
-- **A #482** (criar operador no programa instalado), e a **paginação**: `listarClientes()` e a busca de ordens não paginam
-  (o Supabase corta em 1.000 linhas); os rascunhos já pedem páginas, mas a lista de Clientes de uma loja grande tem o mesmo
-  limite hoje.
+**Conferência dela, ainda por fazer**: abrir a busca `label:sofia` acima e dizer se falta algo que estava na
+lista antiga (a versão antiga está no histórico do Git, no PR que trouxe esta mudança).
 
-**Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na
-`0.9.50` desde 05/10):
-- venda de balcão com o leitor, a NFC-e dela e o caixa do dia batendo;
-- ficha do veículo; Fechamento do Caixa; "Registrar pagamento" de comissão; a trava do desconto;
-- pagar e desfazer uma conta; faturar OS "recebido agora" e "a receber";
-- confirmar que o `DESKTOP-PKJ2A3B` (`0.9.44`, canal de teste) é o PC da casa dela e dar um
-  apelido (senão, esquecer esse computador).
-
-**Conferir o Balcão na `v0.9.51`** (publicada em 08/10 e **liberada pra todas as lojas no mesmo
-dia**): ele pega a versão ao abrirem o programa na loja. No PC dela a 0.9.51 já está, e a rodinha
-foi testada (08/10). A `v0.9.50` foi aprovada na loja em 08/10 (versão, uso, notas e impressão
-pelo recibo). **A garantia não imprime enquanto a loja não tiver o "Texto de garantia"**
-(Configurações): o texto é dela e do pai. Depois da 0.9.51, o salto pra 40. Na loja, vale olhar a
-lista de OS no Balcão com os dados de verdade (nomes e valores maiores que os de demonstração).
-
-**Comissão, pra decidir quando a loja passar a usar** (08/10, no teste do recibo): o "A pagar"
-sai zero porque nenhum funcionário tem "Comissão (%)" cadastrada (a loja ainda não registra
-pagamento de comissão pelo sistema), e isso está certo. Mas as OS aparecem com "sem custo" nos
-**serviços** (peça ela sempre cadastra com custo): sem custo, o lucro conta o preço inteiro do
-serviço e a comissão sairia maior que a real. Decidir com ela se serviço ganha custo (material
-gasto) ou se o aviso e a conta ignoram serviço. Não é defeito, por isso não virou tarefa.
+**O que já foi respondido pela contabilidade da Pneus Amigão** (13/10, pra consulta; as perguntas que
+faltam viraram tarefa `sofia`):
+- **CSOSN `500`**: não leva ICMS-ST retido na venda ao consumidor final (item 1, "frágil" 2);
+- **Ambiente Nacional**: a prefeitura já manda as notas pra lá (item 1, "Ambiente Nacional");
+- **o pacote do mês** (#383): as notas **até o dia 7** e o **extrato do banco até o dia 10**, em OFX e PDF.
+  O sistema deles já puxa as notas sozinho, mas eles gostam de receber pra conferir. **O extrato é a única
+  coisa que eles não conseguem puxar.** Na primeira vez, pode ir um extrato só, desde a abertura da empresa.
 
 **A equipe no programa das lojas** (decidido em 13/10; o plano até começar, aprovado em 14/10, é
 a [#474](https://github.com/sakura-corp/sakura-system-ace/issues/474); o que é da empresa fica no
@@ -78,32 +67,6 @@ sem dinheiro, nota nem migration (#455 e #459); depois, a **1ª parte da #457**:
 de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa parte não depende do
 cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
 PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
-
-**Da visão** (12/10, `docs/visao.md`): a contabilidade da Pneus Amigão **respondeu em 13/10** as
-três perguntas ("Perguntas pra fora", abaixo). Falta só confirmar com eles que as notas vão em
-**XML** (a mensagem escrita diz "OFX", que é formato de extrato de banco). E, pra importação
-(#457), descobrir **o nome do sistema** que as lojas da fase 2 usam e conseguir **só o
-cabeçalho** de cada planilha que ele exporta, sem dado de cliente.
-
-**Com data** (a alíquota de 10/2026 foi cadastrada em 1º/10 e conferida): a partir de **16/10** o
-que depende do dinheiro da empresa (a TFE, que é a taxa anual da prefeitura de SP; o capital; o
-Claude Team); trocar a Focus do Solo pro Start **antes do 2º CNPJ** (esses estão no repositório
-privado); **antes de 1º/11**, o manual da contabilidade sobre o Ambiente Nacional da NFS-e, se a
-prefeitura mudar alguma coisa (item 3 da parte fiscal, abaixo); **antes de 09/10/2027**, renovar a chave `TOKEN_VERSOES` (passo a passo em
-`docs/operacao.md`, "Onde as versões moram"). Vencida, o Release para no primeiro passo, com o
-motivo escrito.
-
-**Do jeito de trabalhar** (14/10, `docs/jeito-de-trabalhar.md`): a fila #470 → #471 → #472
-(a #472 tira esta lista do texto e passa pra tarefas no GitHub). **Depois**, quando ela quiser:
-arrumar o PC dela (numa sessão no PC) e arquivar as sessões antigas que estiverem seguras.
-
-**Branches no GitHub**: feito em 08/10. Só sobrou a `main`, e o "Automatically delete head
-branches" está ligado.
-
-**Abertura da empresa**: o **CNPJ saiu em 02/10**, já no Simples, e o licenciamento da prefeitura
-em 05/10. A **conta PJ abriu em 13/10**; o **certificado e a procuração saíram em 14/10**. O que
-falta (a TFE e a 1ª NFS-e da Pneus Amigão, prevista entre ~17/10 e ~01/11) está
-no privado, `EMPRESA.md`, seção "Abertura: o que falta".
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
@@ -171,52 +134,6 @@ tarefa**, de propósito: MDF-e, SPED (é da contabilidade), SMS (o WhatsApp cobr
 cheque (só se uma loja pedir).
 
 **Quando uma tarefa `guia` for feita**: o PR fecha a issue (`Closes #N`) e a linha sai desta tabela.
-
-**Decisões dela, sem prazo:**
-- o valor da mensalidade das lojas novas (privado);
-- levar o `ANTES-DA-PRIMEIRA-VENDA.md` a um advogado ou à contabilidade (item 10);
-- atualizar o Electron (item 14, tarefa #385): **em andamento desde 03/10**, em três saltos
-  (33 → 36 → 40 → 44); cada um precisa do teste dela na loja antes do próximo (o 1º, a
-  `v0.9.50`, está no canal de teste desde 04/10);
-- os próximos lotes de permissão no banco: clientes, peças/estoque e OS (item 1 da seção 6;
-  tarefas #365 a #367, cada uma diz o que ela precisa decidir);
-- a parte 2 do `TR-04.2`, apagar a cópia antiga do token (liberada desde 28/09; tarefa #368);
-- **cancelar uma nota deveria estornar estoque e Caixa?** (pergunta de desenho nunca respondida,
-  desde 03/09; conversa com a devolução, #399);
-- **6 testes de `npm run test:fusos` reprovam no Windows** (`scripts/atualizar-bancos.test.ts` e
-  `scripts/gerar-instalacao-completa.test.ts`: o caminho vem com `\` e o fim de linha em CRLF).
-  Quem achou foi o Gustavo, no PR #424, em 01/10. O CI, que roda em Linux, passa, e o app não é
-  afetado. Só atrapalha quem roda os testes no PC;
-- **fechar o código** e o repositório só de versões (item 12): as opções foram apresentadas em
-  06/10 (aberto por enquanto, fechar com o plano Team ou fechar no grátis; o custo está no
-  privado), e falta a escolha dela. Recomendado: aberto por enquanto, enxugando o CI antes
-  (tarefa #442), e fechar antes da primeira loja nova;
-- **as duas janelas de importação** (XML do fornecedor e notas no estoque) foram montadas à mão e
-  não têm o que o `Modal` tem: Esc pra fechar, Tab preso dentro e `role="dialog"`. Achado na
-  revisão de 03/10; o conserto é passar as duas a usar o `Modal`, com uma opção de largura.
-
-**Segurança, fora do código:**
-- **trocar as três credenciais fiscais expostas** no histórico público (CSC da SEFAZ, token do
-  Giap, senha do portal da prefeitura; passo a passo no item 1). A varredura automática não pega
-  essas (item 50 da seção 6);
-- trocar a chave `sb_secret_...` do Supabase que um dia foi colada no chat, se ainda não trocou
-  (item 3 da seção 6);
-- ~~conferir se o ruleset `main protegida` exige o CI verde~~: **feito em 30/09**. Ela ligou
-  "Require status checks to pass" com os 5 testes do CI (Tipos/lint/testes, Matriz de RLS,
-  Varredura de segredo, Electron de verdade, Contraste nas telas). Admin continua isenta.
-
-**Perguntas pra fora:**
-- **contabilidade** (a da Pneus Amigão): **respondeu as três em 13/10** (mensagem de 12/10):
-  - **CSOSN `500`**: não leva ICMS-ST retido na venda ao consumidor final (item 1, "frágil" 2);
-  - **Ambiente Nacional**: a prefeitura já manda as notas pra lá (item 1, "Ambiente Nacional");
-    eles avisam com um manual antes de 1º/11, se mudar;
-  - **o pacote do mês** (#383): as notas **até o dia 7** e o **extrato do banco até o dia 10**,
-    em OFX e PDF. O sistema deles já puxa as notas sozinho, mas eles gostam de receber pra
-    conferir. **O extrato é a única coisa que eles não conseguem puxar.** Na primeira vez, pode ir
-    um extrato só, desde a abertura da empresa.
-  - Falta confirmar: as notas em **XML**, e não em OFX como está escrito;
-- **Focus NFe**: o formato do CNPJ com letras na API ("frágil" 6);
-- **prefeitura**: o "Processado: Não" das notas e o `cNBS` errado no cadastro da empresa.
 
 ### 1. Parte fiscal: funcionando em produção desde 27/08/2026
 

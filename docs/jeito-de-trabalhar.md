@@ -40,7 +40,7 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 **A fila** (uma sessão por item, cada uma com a sua tarefa no GitHub):
 1. ~~**T1**: segredo barrado antes de sair do computador~~ **feita e provada em 15/10** ([#470](https://github.com/sakura-corp/sakura-system-ace/issues/470), fechada): push protection + ganchos do git + gatilho do Claude (`docs/licoes.md`, item 50).
 2. **S1 + A3**: a skill `/fechar` e o aviso de conversa comprida: [#471](https://github.com/sakura-corp/sakura-system-ace/issues/471).
-3. **A1 + A2**: o que depende dela vira tarefa, e o resumo da segunda de manhã: [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472).
+3. **A1 + A2**: o que depende dela vira tarefa, e o resumo da segunda de manhã: [#472](https://github.com/sakura-corp/sakura-system-ace/issues/472). **A1 feita em 16/10** (parte pública: etiqueta `sofia`; os da empresa ficam no privado); **A2 depende dela** (horário do resumo e leitura do privado), ainda não feita.
 4. O resto, aos poucos. **Cada item só vira tarefa no GitHub quando chegar a vez dele**, pra não
    encher a lista à toa.
 
@@ -94,8 +94,8 @@ As novas:
 - **T4.** Um aviso automático se o índice da memória passar de 30 KB.
 
 ### Afazeres
-- **A1.** O que depende dela vira tarefa no GitHub (#472).
-- **A2.** O resumo da segunda de manhã (#472).
+- **A1.** O que depende dela vira tarefa no GitHub (#472): **feita a parte pública em 16/10**. Os itens do sistema e da loja são tarefas com a etiqueta `sofia` (busca `label:sofia`); os da empresa continuam no repositório privado e na lista de `docs/pendencias-e-futuro.md`, só pelo nome.
+- **A2.** O resumo da segunda de manhã (#472): **depende dela** (escolher o horário, de Brasília) e de ler o repositório privado, por isso ainda não foi criado. Quando ela escolher, a sessão cria a tarefa agendada.
 - **A3.** O aviso de conversa comprida (#471).
 - **A4.** Arquivar as sessões antigas que estiverem seguras: **depois** (ela, 14/10). O Claude
   confere quais têm trabalho fora do GitHub e mostra a lista antes de arquivar.
