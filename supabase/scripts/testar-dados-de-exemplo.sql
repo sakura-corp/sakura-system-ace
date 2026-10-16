@@ -77,12 +77,12 @@ end $$;
 -- ===================================================================
 -- A. A trava: banco com cara de loja → o exemplo não grava nada
 -- ===================================================================
-\set ON_ERROR_STOP 0
-
 -- A1. Já tem cliente de verdade e nunca recebeu o exemplo
 insert into clientes (id, nome) values ('a1a1a1a1-0000-4000-8000-000000000001', 'Cliente de verdade');
+\set ON_ERROR_STOP 0
 \echo '(A1: o erro "PAREI" logo abaixo é esperado)'
 \ir ../exemplo/dados-de-exemplo.sql
+\set ON_ERROR_STOP 1
 delete from clientes where id = 'a1a1a1a1-0000-4000-8000-000000000001';
 do $$ begin
   if exists (select 1 from lojas where id = 'eeee0001-0000-4000-8000-000000000001')
@@ -94,8 +94,10 @@ end $$;
 -- A2. Tem token da Focus NFe no cofre
 insert into segredos_fiscais_loja (loja_id, focus_nfe_token)
   values ('00000000-0000-0000-0000-000000000001', 'token-de-mentira-do-teste');
+\set ON_ERROR_STOP 0
 \echo '(A2: o erro "PAREI" logo abaixo é esperado)'
 \ir ../exemplo/dados-de-exemplo.sql
+\set ON_ERROR_STOP 1
 delete from segredos_fiscais_loja;
 do $$ begin
   if exists (select 1 from lojas where id = 'eeee0001-0000-4000-8000-000000000001') then
@@ -106,8 +108,10 @@ end $$;
 -- A3. Tem loja emitindo nota em produção
 update configuracoes_fiscais_loja set focus_nfe_ambiente = 'producao'
   where loja_id = '00000000-0000-0000-0000-000000000001';
+\set ON_ERROR_STOP 0
 \echo '(A3: o erro "PAREI" logo abaixo é esperado)'
 \ir ../exemplo/dados-de-exemplo.sql
+\set ON_ERROR_STOP 1
 update configuracoes_fiscais_loja set focus_nfe_ambiente = 'homologacao'
   where loja_id = '00000000-0000-0000-0000-000000000001';
 do $$ begin
@@ -120,8 +124,10 @@ end $$;
 insert into ordens_servico (id, loja_id, cliente_id)
   values ('a4a4a4a4-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000001',
           '00000000-0000-0000-0000-00000000c000');
+\set ON_ERROR_STOP 0
 \echo '(A4: o erro "PAREI" logo abaixo é esperado)'
 \ir ../exemplo/dados-de-exemplo.sql
+\set ON_ERROR_STOP 1
 delete from ordens_servico where id = 'a4a4a4a4-0000-4000-8000-000000000001';
 do $$ begin
   if exists (select 1 from lojas where id = 'eeee0001-0000-4000-8000-000000000001') then
@@ -130,15 +136,15 @@ do $$ begin
 end $$;
 
 -- A5. O "ligar login" sem os campos trocados, e antes de existir a loja de exemplo
+\set ON_ERROR_STOP 0
 \echo '(A5: o erro "PAREI" logo abaixo é esperado)'
 \ir ../exemplo/ligar-login.sql
+\set ON_ERROR_STOP 1
 do $$ begin
   if exists (select 1 from operadores) then
     raise exception 'FALHOU (A5): o ligar-login criou operador sem loja de exemplo / sem os campos trocados';
   end if;
 end $$;
-
-\set ON_ERROR_STOP 1
 
 do $$ begin
   if exists (
