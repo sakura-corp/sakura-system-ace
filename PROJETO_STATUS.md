@@ -63,6 +63,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/comparativo-anexar.md` | o que o concorrente Anexar anuncia × o que temos, e a tarefa de cada coisa que falta (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
 | `docs/jeito-de-trabalhar.md` | **o jeito de trabalhar com o Claude** (14/10): as gavetas (memória, skills, trancas, afazeres, ver), a fila (#470, #471, #472), onde trabalhar, uma sessão por assunto | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/equipe.md` | **o manual de quem entra na equipe** (Windows e Mac): primeiro dia, como começar uma tarefa, o dia a dia, o que nunca fazer | quando quem trabalha não é a Sofia |
+| `docs/supabase-de-teste.md` | **o banco de teste da equipe**: criar o Supabase `ssace-teste`, os dados de exemplo (loja fictícia), os logins, zerar e recomeçar, erros | ao montar ou manter o banco de teste, ou ao mexer em `supabase/exemplo/` |
 | `docs/painel.md` | o painel da equipe: o que é, como a equipe trabalha (levas, tarefas), decisões técnicas, 1ª versão, andamento | ao mexer no painel ou planejar leva |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
 
@@ -233,46 +234,56 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **Validação incerta é aviso, nunca tranca** (`docs/licoes.md`, item 33).
 - **Rascunho que só existe no computador da sessão se perde**: quando a sessão fica parada, o
   container pode ser desligado. O que ela ainda vai revisar vai pro repositório antes de ela sair.
-- **Endereço**: `sakura-corp/sakura-system-ace` desde 29/09/2026. **Nunca criar um repositório
-  `sakura-system-ace` na conta pessoal dela** (quebra o redirecionamento do endereço antigo).
+- **Endereço**: `sakura-corp/sak### 16/10/2026: a parte do Claude pra equipe começar na segunda (manual, tarefas, banco de teste)
 
-## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
-
-
-
-### 15/10/2026: a #470 pronta e provada, as caixas de e-mail da equipe e o visual da Sala
-
-**Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
-Os PRs **#477**, **#478** e **#479** foram mesclados. A **#470 está fechada**.
+**Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada do programa das lojas mudou
+(só documentos, rascunhos e scripts do banco de teste). O **PR deste marco** juntou 3 trabalhos feitos em
+paralelo e revisados do zero (a revisão achou 8 pontos; os reais foram consertados).
 
 #### O que foi feito
-- **#470, segredo barrado antes de sair do computador (fechada)**: *push protection* do GitHub (ligada por
-  ela), **ganchos do git** em `.githooks/` (barram chave com formato e certificado; só avisam de "cara
-  de senha") e o gatilho do Claude. O **1º teste numa sessão nova falhou** (o gatilho do Claude roda antes
-  do comando inteiro e não via arquivo criado no mesmo comando do commit); o gancho do git fechou o furo
-  e o **2º teste passou**. 15 testes, vistos reprovar. Detalhe e limites no item 50 de `docs/licoes.md`.
-- **Equipe**: as 5 caixas do Zoho foram criadas (as 5 licenças em uso) e as senhas provisórias foram
-  entregues em particular. Os nomes e as horas ficam no privado (`EQUIPE.md`).
-- **A Sala da Sakura**: ela escolheu o **visual B** (o da Bibi) **só pra Sala**; o resto do painel
-  continua claro e calmo. **#467 (agora 8 h), #468 e #355 foram atualizadas**, a #351 recebeu um
-  comentário pro Gustavo, e o `docs/painel.md` ganhou a seção "Visual da Sala" (cores com contraste
-  conferido). A referência é `docs/referencia/sala-duas-versoes.html`.
-- **A Bibi não vira escritório da empresa**: continua pessoal, num repositório privado dela. O que
-  se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
+- **A regra nova da seção 0** e o **manual da equipe** (`docs/equipe.md`, Windows e Mac): o Gustavo no painel; os
+  outros dois no programa das lojas, **sempre contra o Supabase de teste**. Ficaram todas as proibições (nunca
+  mescla, não publica nem libera, não mexe em banco de loja, versão, tag, secret, ruleset...). **Decisão**: ninguém
+  da equipe roda SQL nem migration, **nem no de teste** (a Sofia monta e mantém).
+- **Os 3 rascunhos de tarefa** em `docs/rascunhos/leva-0-programa.md`, prontos pra colar como issue: **#455**
+  (clientes que sumiram, 6 h), **#459** (pedir avaliação no Google, 4 h) e a **1ª parte da #457** (importar
+  clientes de CSV, 12 h em 2 PRs, que vira **issue nova ligada à #457**, sem editar a #457). **Nenhuma issue foi criada
+  nem editada.**
+- **O banco de teste da equipe**: `supabase/exemplo/` (**loja fictícia "Autocenter Exemplo (TESTE)"**: 8 clientes,
+  9 veículos, 12 peças, **14 ordens** em todas as fases, caixa, contas), `ligar-login.sql`, `apagar-dados-de-exemplo.sql`,
+  o teste `supabase/scripts/testar-dados-de-exemplo.sql` (entra no `npm run test:sql` e no CI) e o guia
+  **`docs/supabase-de-teste.md`**. Tem **trava**: o exemplo se recusa a rodar em banco com cara de banco de loja.
+- **Achado de passagem**: criar operador no programa instalado provavelmente não funciona (usa um endereço de mentira
+  do Supabase): **#482**.
+- **A revisão** conferiu cada ponto no código. Consertados: o exemplo não tinha cliente que "sumiu" (ganhou as OS 13 e
+  14, de 200 e 330 dias atrás, pra a #455 poder ser conferida), 5 serviços do catálogo sem preço, linhas "de hoje" que
+  ficavam no futuro se o script rodasse cedo (o teste agora reprova isso), a paginação (`listarClientes` não pagina e o
+  Supabase corta em **1.000 linhas**: os rascunhos da #455 e da #457 agora exigem ler em páginas), e a contradição "o
+  botão de importar é só de admin, mas os logins da equipe não são" (virou pergunta pra Sofia). Descartado, com motivo:
+  a trava do exemplo também barra quem salvou token de homologação no banco de teste (a equipe não tem o módulo de
+  Notas Fiscais; está no guia, na tabela de erros).
+- **Provado**: `npm run test:sql` (os **12** testes, vistos reprovar quando o exemplo é quebrado de propósito), `typecheck`,
+  `lint` e **844** testes do vitest.
+- **NÃO provado**: nada foi rodado num Supabase de verdade (os cliques do guia vêm de `INSTALAR-LOJA-NOVA.md` e podem ter
+  mudado); ninguém seguiu o manual num PC, **nem num Mac** (o programa abrir no Mac com `npm run dev` é suposição); o
+  programa aberto contra o exemplo não foi olhado; as estimativas de horas dos rascunhos são palpite; os limites do plano
+  grátis do Supabase (2 projetos, pausa depois de uns 7 dias) vêm de sites de terceiros.
+
+#### O que depende dela
+1. **Revisar** o `docs/equipe.md` (principalmente a mensagem nova do "Primeiro dia") e os **rascunhos** das tarefas;
+   depois criar as issues (etiqueta `leva-0`; a da parte 1 da #457 como sub-issue da #457).
+2. **Decidir**: os textos padrão das 2 mensagens de WhatsApp; "X meses" padrão = 6?; o link de avaliação dentro do texto
+   (sem migration) serve?; a importação vai pras lojas sem "desfazer"?; **o banco de teste ganha um login administrador**
+   (pra testar a importação)?; confirmar "nem SQL no Supabase de teste".
+3. **Criar o Supabase de teste, guiada** (`docs/supabase-de-teste.md`): organização grátis "Sakura Teste", projeto
+   `ssace-teste`, instalar, o exemplo, os 3 logins, os Sends. Conferir antes o plano grátis.
+4. Decidir se o `ssace-teste` entra no botão "Atualizar o banco de todas as empresas" (mexe no cofre; recomendo não).
 
 #### Por onde a próxima sessão começa
-0. **O plano combinado em 16/10 (a equipe começar na segunda, 19/10)**: ela quer **assinar na
-   segunda**. **No fim de semana**, numa sessão do SSACE: (a) a parte do Claude na etapa 4 da #474:
-   os dados de exemplo e um login pra cada um no banco de teste, a regra nova da seção 0, o manual
-   da equipe pro programa das lojas, e as tarefas #455, #459 e a 1ª parte da #457 no formato da
-   equipe, **como rascunho pra ela revisar**; (b) com ela, guiada: criar o Supabase de teste
-   (conferir antes se cabe no plano grátis). **Na segunda**: os Termos, o Claude Team e os convites,
-   a verificação em duas etapas (depois do "sim" do Gustavo), os dois novos convidados (só depois do
-   Termo) e o "Primeiro dia". Perguntar a ela se o texto do Termo já está pronto (fica no privado).
-1. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
-   etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
-2. **A partir de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
-3. **Depois, a fila**: #471 → #472, uma sessão cada.
-4. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
-   cabeçalho das planilhas pra #457), o capital e a TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2
-   do Electron, a #442 e o "Texto de garantia".
+1. **Segunda 19/10, a equipe começa**: os Termos assinados (antes de qualquer acesso ao código), o Claude Team, os
+   convites (só depois do Termo), a verificação em duas etapas na organização (**só depois do "sim" do Gustavo**) e o
+   "Primeiro dia". Faltam o usuário do GitHub do Lázaro e do Tiago. Antes do Primeiro dia: o item 3 acima (o Supabase de
+   teste) e a revisão do manual.
+2. **A #482** (criar operador no instalado) e **a fila**: #471 → #472, uma sessão cada.
+3. **Ainda vale**: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o cabeçalho das planilhas pra #457), o capital e a
+   TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".

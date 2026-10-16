@@ -173,9 +173,9 @@ begin
       ('funcionarios',        (select count(*) from funcionarios where loja_id = loja), 3),
       ('pecas',               (select count(*) from pecas where id::text like 'eeee%'), 12),
       ('fornecedores',        (select count(*) from fornecedores where id::text like 'eeee%'), 2),
-      ('ordens_servico',      (select count(*) from ordens_servico where loja_id = loja), 12),
-      ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 28),
-      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 12),
+      ('ordens_servico',      (select count(*) from ordens_servico where loja_id = loja), 14),
+      ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 32),
+      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 14),
       ('contas_pagar',        (select count(*) from contas_pagar where loja_id = loja), 5),
       ('contas_receber',      (select count(*) from contas_receber where loja_id = loja), 3),
       ('depositos',           (select count(*) from depositos where loja_id = loja), 1)
@@ -193,6 +193,31 @@ begin
   select count(distinct tipo) into quantas from ordens_servico where loja_id = loja;
   if quantas <> 2 then
     raise exception 'FALHOU (B2): esperava OS e venda de balcão, achei % tipo(s)', quantas;
+  end if;
+
+  -- B2b. clientes que "sumiram" (a tarefa dos clientes que sumiram precisa deles pra ser conferida):
+  -- pelo menos 2 clientes cuja última ordem FATURADA tem mais de 6 meses, e o Consumidor não conta.
+  select count(*) into quantas from (
+    select o.cliente_id
+      from ordens_servico o
+     where o.loja_id = loja and o.status = 'faturada' and o.cliente_id <> '00000000-0000-0000-0000-00000000c000'
+     group by o.cliente_id
+    having max(o.data_fechamento) < now() - interval '180 days'
+  ) sumidos;
+  if quantas < 2 then
+    raise exception 'FALHOU (B2b): esperava 2 clientes sem vir há mais de 6 meses, achei %', quantas;
+  end if;
+
+  -- B2c. todos os serviços padrão saem com preço (não sobra catálogo vazio)
+  select count(*) into quantas from servicos where preco_padrao is null;
+  if quantas > 0 then
+    raise exception 'FALHOU (B2c): % serviço(s) do catálogo ficaram sem preço', quantas;
+  end if;
+
+  -- B2d. nada de exemplo está datado no futuro (rodar o script cedo de manhã não pode criar venda "de amanhã")
+  if exists (select 1 from ordens_servico where loja_id = loja and (data_abertura > now() or data_fechamento > now()))
+     or exists (select 1 from caixa_movimentos where loja_id = loja and data > now()) then
+    raise exception 'FALHOU (B2d): o exemplo gravou ordem ou lançamento de caixa no futuro';
   end if;
 
   -- B3. nenhuma credencial fiscal, e a loja em homologação
@@ -302,7 +327,7 @@ begin
   loop
     raise exception 'FALHOU (C): a segunda rodada mudou % de % pra % linhas', linha.tabela, linha.antes, linha.depois;
   end loop;
-  if (select max(numero) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 12 then
+  if (select max(numero) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 14 then
     raise exception 'FALHOU (C): a segunda rodada gastou número de OS';
   end if;
 end $$;
@@ -362,12 +387,12 @@ do $$
 declare quantas int;
 begin
   select count(*) into quantas from ordens_servico;
-  if quantas <> 12 then
-    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % OS (esperava as 12 da loja de exemplo, e nenhuma da Loja 1)', quantas;
+  if quantas <> 14 then
+    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % OS (esperava as 14 da loja de exemplo, e nenhuma da Loja 1)', quantas;
   end if;
   select count(*) into quantas from caixa_movimentos;
-  if quantas <> 12 then
-    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 12)', quantas;
+  if quantas <> 14 then
+    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 14)', quantas;
   end if;
   select count(*) into quantas from clientes where id::text like 'eeee%';
   if quantas <> 8 then
@@ -388,7 +413,7 @@ insert into segredos_fiscais_loja (loja_id, focus_nfe_token)
 \set ON_ERROR_STOP 1
 delete from segredos_fiscais_loja;
 do $$ begin
-  if (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 12 then
+  if (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 14 then
     raise exception 'FALHOU (E1): com token no banco, o apagar apagou mesmo assim';
   end if;
 end $$;

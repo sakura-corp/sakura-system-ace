@@ -35,6 +35,43 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 15/10/2026: a #470 pronta e provada, as caixas de e-mail da equipe e o visual da Sala
+
+**Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
+Os PRs **#477**, **#478** e **#479** foram mesclados. A **#470 está fechada**.
+
+#### O que foi feito
+- **#470, segredo barrado antes de sair do computador (fechada)**: *push protection* do GitHub (ligada por
+  ela), **ganchos do git** em `.githooks/` (barram chave com formato e certificado; só avisam de "cara
+  de senha") e o gatilho do Claude. O **1º teste numa sessão nova falhou** (o gatilho do Claude roda antes
+  do comando inteiro e não via arquivo criado no mesmo comando do commit); o gancho do git fechou o furo
+  e o **2º teste passou**. 15 testes, vistos reprovar. Detalhe e limites no item 50 de `docs/licoes.md`.
+- **Equipe**: as 5 caixas do Zoho foram criadas (as 5 licenças em uso) e as senhas provisórias foram
+  entregues em particular. Os nomes e as horas ficam no privado (`EQUIPE.md`).
+- **A Sala da Sakura**: ela escolheu o **visual B** (o da Bibi) **só pra Sala**; o resto do painel
+  continua claro e calmo. **#467 (agora 8 h), #468 e #355 foram atualizadas**, a #351 recebeu um
+  comentário pro Gustavo, e o `docs/painel.md` ganhou a seção "Visual da Sala" (cores com contraste
+  conferido). A referência é `docs/referencia/sala-duas-versoes.html`.
+- **A Bibi não vira escritório da empresa**: continua pessoal, num repositório privado dela. O que
+  se aprendeu com ela entrou nas tarefas da Sala; nada da memória da Bibi veio pra cá.
+
+#### Por onde a próxima sessão começa
+0. **O plano combinado em 16/10 (a equipe começar na segunda, 19/10)**: ela quer **assinar na
+   segunda**. **No fim de semana**, numa sessão do SSACE: (a) a parte do Claude na etapa 4 da #474:
+   os dados de exemplo e um login pra cada um no banco de teste, a regra nova da seção 0, o manual
+   da equipe pro programa das lojas, e as tarefas #455, #459 e a 1ª parte da #457 no formato da
+   equipe, **como rascunho pra ela revisar**; (b) com ela, guiada: criar o Supabase de teste
+   (conferir antes se cabe no plano grátis). **Na segunda**: os Termos, o Claude Team e os convites,
+   a verificação em duas etapas (depois do "sim" do Gustavo), os dois novos convidados (só depois do
+   Termo) e o "Primeiro dia". Perguntar a ela se o texto do Termo já está pronto (fica no privado).
+1. **A #474, etapa 1**: faltam o usuário do GitHub do Lázaro e do Tiago, e saber se o Gustavo usa duas
+   etapas (antes de ligar a obrigatoriedade na organização). O Termo de cada um vem antes do convite.
+2. **A partir de 16/10**: as contas (etapa 2 da #474): Claude Team e a verificação em duas etapas.
+3. **Depois, a fila**: #471 → #472, uma sessão cada.
+4. **Ainda vale** do marco anterior: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o
+   cabeçalho das planilhas pra #457), o capital e a TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2
+   do Electron, a #442 e o "Texto de garantia".
+
 ### 14/10/2026, à noite (2): o plano até a equipe começar
 
 **Estado do código**: nada mudou no código nesta sessão. Na última conferência (13/10), a `main`

@@ -22,6 +22,8 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
 - **quem vai trabalhar no programa das lojas**: o endereço e a chave do **Supabase de teste** e o
   **login de teste** de cada um. Tudo isso chega **só por um link do Bitwarden Send**, que se
   apaga sozinho. **Nunca** por WhatsApp, e-mail, conversa com o Claude nem pelo repositório.
+  (Como o banco de teste foi montado está em `docs/supabase-de-teste.md`: é da Sofia, e quem trabalha
+  **não roda nada dele**, nem SQL.)
 
 Com isso em mãos, a pessoa instala o **Claude Code no PC** (não a versão pela internet: vai
 precisar abrir o programa ou o painel no próprio computador pra testar), entra com a **conta da

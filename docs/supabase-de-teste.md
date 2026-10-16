@@ -94,7 +94,7 @@ Deve terminar sem nenhuma linha `ERROR`. Avisos `NOTICE: ... does not exist, ski
    `https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/main/supabase/exemplo/dados-de-exemplo.sql`
 2. **SQL Editor** → **New query** → cole → **Run**.
 
-Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 12 ordens, 12 peças."**
+Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 peças."**
 
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
@@ -146,6 +146,10 @@ e as duas lojas.
 Serviços, Caixa, Contas a Pagar e a Receber, Relações e Garantias. **Não enxerga**: Configurações
 (só admin), Notas Fiscais e Funcionários. Se uma tarefa precisar de um módulo a mais, você marca em
 **Configurações → Operadores**, entrando no programa com o seu login de teste.
+
+**Se uma tarefa pedir um login administrador** (a importação de planilha de clientes só aparece pra
+admin): é o mesmo passo, com `v_admin = true`, num login de teste a mais (ex: `admin-teste`). O banco é
+fictício, então o risco é só a pessoa bagunçar o exemplo, e o "zerar" resolve. Decisão sua.
 
 > Por que não criar os logins pela tela **Configurações → Operadores** do programa? Porque, olhando
 > o código em 16/10, essa tela parece só funcionar no `npm run dev` e não no programa instalado (ela
@@ -205,6 +209,10 @@ cole e rode `supabase/exemplo/apagar-dados-de-exemplo.sql`, depois rode de novo 
 ("destructive operation"): é esperado, confirme. Os logins continuam valendo; ninguém precisa ser ligado de novo.
 O que a equipe cadastrou fora do exemplo (um cliente novo, por exemplo) fica, e não atrapalha.
 
+**Rodar o exemplo de novo sem "zerar"** só acrescenta o que falta, e **só se ninguém mexeu nas ordens de
+exemplo**. Se a equipe apagou uma OS de exemplo ou abriu uma nova no meio (o número dela pode coincidir
+com o de uma do exemplo), o script pode parar com erro: aí use o "zerar e recomeçar" acima.
+
 **Quando sair migration nova**: colar de novo o `instalacao-completa.sql` (Passo 3) no
 `ssace-teste`. É seguro rodar de novo. Faça isso **antes** de a equipe testar o PR que depende da
 migration. (Pôr o teste no botão "Atualizar o banco de todas as empresas" seria mexer no cofre, e
@@ -222,6 +230,7 @@ entrar na hora.
 |---|---|
 | `PAREI: este banco tem token da Focus NFe...` / `...nota em produção` / `...nota fiscal registrada` | você está no projeto de uma loja. Não rode nada; troque pro `ssace-teste` |
 | `PAREI: este banco já tem clientes cadastrados e nunca recebeu os dados de exemplo` | idem, ou um banco que já foi usado. Me mande o print |
+| `PAREI: este banco tem token da Focus NFe guardado` (e você sabe que é o `ssace-teste`) | você, como admin, salvou um token de **homologação** pra testar nota fiscal. Os scripts de exemplo e o `ligar-login.sql` param de propósito quando acham token, porque não sabem se é banco de loja. Me chame: a gente tira o token do teste (ou decide o que fazer) antes de rodar de novo |
 | `PAREI: este banco tem ordem de serviço fora da loja de exemplo` | no `ssace-teste`, alguém abriu OS na "Loja 1" (é por isso que a equipe só tem a loja de exemplo). Me chame: a gente apaga essa OS e roda de novo |
 | `PAREI: a loja de exemplo ainda não existe` | rode o Passo 5 antes do Passo 6 |
 | `PAREI: faltou trocar o usuário e o nome` | troque as linhas `<<< TROCAR` do `ligar-login.sql` |

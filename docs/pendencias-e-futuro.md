@@ -17,8 +17,16 @@ antiga porque outros arquivos citam "item N da seção 8".
 Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs/historico.md`.
 **Manter aqui**: quando uma sair, riscar ou apagar; quando surgir outra, acrescentar.
 
-**Da sessão de 15/10 (a Sala e a equipe)**:
+**Da sessão de 16/10 (a equipe começar na segunda, 19/10)**:
 - **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.
+- **Revisar** o `docs/equipe.md` e os rascunhos de `docs/rascunhos/leva-0-programa.md`; criar as issues (`leva-0`; a parte 1
+  da #457 como sub-issue da #457). Perguntas pra ela: textos das 2 mensagens de WhatsApp, "X meses" = 6, link de avaliação
+  no texto, importação sem "desfazer", **login administrador no banco de teste**, e "nem SQL no Supabase de teste".
+- **Criar o Supabase de teste, guiada**, pelo `docs/supabase-de-teste.md` (organização grátis, `ssace-teste`, esquema,
+  exemplo, 3 logins, Sends). Decidir se ele entra no botão "Atualizar o banco de todas as empresas" (recomendo não).
+- **A #482** (criar operador no programa instalado), e a **paginação**: `listarClientes()` e a busca de ordens não paginam
+  (o Supabase corta em 1.000 linhas); os rascunhos já pedem páginas, mas a lista de Clientes de uma loja grande tem o mesmo
+  limite hoje.
 
 **Testes na loja que faltam** (lista de 28/09; nada disso dá pra testar daqui; o Balcão está na
 `0.9.50` desde 05/10):
@@ -53,7 +61,8 @@ privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A 
    usa sai da organização na hora);
 3. **papéis**: o Termo de Colaboração, **o mesmo pra todos**, assinado **antes de ter acesso ao
    código** (o Gustavo assina junto); depois o memorando. Só então os dois novos são convidados;
-4. **o programa pronto pra equipe**: o **Supabase de teste** (separado da Pneus Amigão, com dados
+4. **o programa pronto pra equipe** (a parte do Claude ficou pronta em 16/10: `docs/equipe.md`, `docs/rascunhos/`,
+   `docs/supabase-de-teste.md`; falta a Sofia revisar e criar o banco): o **Supabase de teste** (separado da Pneus Amigão, com dados
    de exemplo e um login pra cada um), a regra nova da seção 0 ("só o painel" muda), um manual da
    equipe e as primeiras tarefas no formato da equipe, **na `leva-0`** (`docs/painel.md`);
 5. **começar**: o "Primeiro dia" de cada um, e a primeira tarefa.

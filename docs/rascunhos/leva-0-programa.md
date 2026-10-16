@@ -64,6 +64,11 @@ o caminho inteiro (branch, testes, fotos, PR, revisão) numa coisa pequena.
    Recomendo **só junto** (a 1ª parte entra na `main`, mas a versão que vai pras lojas espera a
    parte com desfazer).
    *(Já decidido em 16/10, não precisa perguntar: a 1ª parte vira issue nova ligada à #457.)*
+5. **O banco de teste ganha um login administrador só pra testar tarefa que pede admin** (como o
+   botão "Importar planilha", que é só de administrador)? Hoje os 2 logins da equipe são comuns, e só
+   o seu é admin. Recomendo **sim**: o banco é fictício, e é o mesmo Passo 6 do
+   `docs/supabase-de-teste.md`, com `v_admin = true`. Sem isso, você mesma roda essa parte do teste
+   na revisão.
 
 ---
 
@@ -110,7 +115,10 @@ sistema: são as OS e as vendas de balcão faturadas. Hoje ninguém consegue ver
 2. **A busca**: uma função em `src/lib/clientes.ts` (ex: `listarOrdensFaturadasParaSumidos(lojaId)`)
    que busca em `ordens_servico` só as colunas do item 1, com os itens
    (`quantidade, preco_unitario, desconto`), filtrando `loja_id` e `status = faturada`. Nada de
-   `select("*")`.
+   `select("*")`. **E ler em páginas**: o Supabase corta em **1.000 linhas** sem avisar, e numa loja
+   grande o "último serviço" e o "total gasto" sairiam errados sem ninguém ver. Leia em lotes de 1.000
+   com `.range(de, ate)`, ordenando por `id`, até acabar (a leitura por páginas numa função pura que
+   recebe a "busca de uma página", pra testar com uma busca falsa de mais de 1.000 ordens).
 3. **A tela**: `src/pages/clientes/ClientesPage.tsx`.
    - O filtro (caixa de marcar + campo de meses, número inteiro de 1 a 36) fica acima da tabela. A
      busca do item 2 só roda quando o filtro é ligado. A loja vem de `useAuth().lojaAtual`, como em
@@ -146,8 +154,11 @@ sistema: são as OS e as vendas de balcão faturadas. Hoje ninguém consegue ver
       aberta às 22h (o dia certo, no fuso do Brasil). **Cada teste foi visto falhar** quebrando a conta
       de propósito.
 - [ ] No **Supabase de teste** (nunca no da Pneus Amigão; ver `docs/supabase-de-teste.md`), com
-      os dados de exemplo: o filtro de 6 meses mostra os clientes certos, e o total de 2 deles foi
-      conferido na mão, somando as OS deles na lista de OS. Os números batem.
+      os dados de exemplo: o filtro de 6 meses mostra **exatamente 2 clientes**, os que "sumiram" no
+      exemplo: **Fernanda Oliveira** (última vez: OS 13, há uns 200 dias, total **R$ 140,00**) e
+      **José Antônio Pereira** (OS 14, há uns 330 dias, total **R$ 130,00**). Os outros clientes não
+      aparecem (os recentes, e os que nunca tiveram ordem faturada). Os totais foram conferidos na
+      mão, somando os itens das OS 13 e 14 na lista de OS.
 - [ ] Entrando com um login **sem** a permissão de Relações, a coluna de valor não aparece.
 - [ ] O botão abre o WhatsApp com a mensagem certa. Cliente sem telefone com DDD mostra o aviso do
       próprio botão, sem quebrar a tela.
@@ -422,8 +433,13 @@ segundo.
       "Baixar relatório" (CSV com linha, nome, situação e motivo; usar `src/lib/download.ts`).
    - Antes de gravar, a confirmação é um botão **"Importar N clientes"** com o número escrito. Sem
      `window.prompt()` nem `confirm()`.
-   - Pra achar repetidos, a lista de quem já existe vem de `listarClientes()`, que já existe e já
-     deixa o Consumidor de fora.
+   - Pra achar repetidos, **não usar `listarClientes()`**: ela não pagina, e o Supabase corta em
+     **1.000 linhas** sem avisar (uma loja com mais de 1.000 clientes, ou a 2ª importação de uma planilha
+     de 2.000, passaria como "não existe" e **duplicaria**). Fazer uma função nova em
+     `src/lib/clientes.ts` (ex: `listarChavesDeClientes()`), que busca só `id, nome, cpf_cnpj, celular`
+     (o Consumidor fica de fora) **em páginas de 1.000 com `.range(de, ate)`, ordenando por `id`, até
+     acabar**. Deixe a leitura por páginas numa função pura que recebe a "busca de uma página" (pra
+     testar com uma busca falsa de mais de 1.000 clientes).
 5. `src/pages/clientes/ClientesPage.tsx`: o botão "Importar planilha" ao lado de "+ Novo cliente",
    **só pra administrador** (`operador.admin`, de `useAuth()`). No fim, recarrega a lista.
 6. **Catálogo de telas** (`site/ferramentas/cenas.mjs`): uma cena com o modal aberto no passo 2 ou
@@ -438,10 +454,13 @@ segundo.
   - [ ] o relatório aponta as linhas com problema, e o número de "entraram" bate com a lista de
         Clientes;
   - [ ] **importar a mesma planilha duas vezes não duplica nada**: na 2ª vez, tudo sai como "já
-        existe";
+        existe" (inclusive com **mais de 1.000** clientes já no banco: a busca de repetidos lê em
+        páginas, e há teste disso);
   - [ ] uma planilha de 2.000 linhas inventadas vai até o fim sem a tela congelar, mostrando o
         andamento;
-  - [ ] um login que não é administrador não vê o botão;
+  - [ ] o login **comum** da equipe não vê o botão (ele é só de administrador). A importação em si
+        precisa de um login **administrador do banco de teste**: ver a pergunta 5 (se a Sofia não
+        liberar um, ela roda esta parte do teste na revisão, e o PR diz isso);
   - [ ] fechar a janela antes de "Importar N clientes" não grava nada.
 - [ ] Rodaram limpos: `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:fusos`,
       `npm run contraste`, `npm run contraste:telas` e `npm run largura:telas`.

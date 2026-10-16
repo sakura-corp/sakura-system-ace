@@ -10,7 +10,7 @@
 -- (TESTE)", pra quem programa ter o que ver em cada tela: 3 funcionários,
 -- 8 clientes (6 pessoas e 2 empresas, mais o "Consumidor" que já vem com a
 -- instalação), 9 veículos, 12 peças com custo, preço e estoque, preço nos
--- serviços padrão, 2 fornecedores, 12 ordens de serviço e vendas de balcão
+-- serviços padrão, 2 fornecedores, 14 ordens de serviço e vendas de balcão (2 antigas, de clientes que "sumiram")
 -- em todas as fases (em andamento, concluída, faturada à vista, dividida,
 -- parcelada no cartão, a prazo), lançamentos de caixa, contas a pagar e a
 -- receber (pagas, abertas e atrasadas). As datas são contadas a partir do dia
@@ -80,8 +80,11 @@ returns timestamptz
 language sql
 stable
 as $$
-  select (((now() at time zone 'America/Sao_Paulo')::date - dias_atras) + hora::time)
-         at time zone 'America/Sao_Paulo';
+  -- Nunca no futuro: rodando o script cedo de manhã, as linhas "de hoje" com hora mais tarde que agora
+  -- ficam 1 minuto atrás (em vez de datadas de daqui a algumas horas).
+  select least((((now() at time zone 'America/Sao_Paulo')::date - dias_atras) + hora::time)
+                 at time zone 'America/Sao_Paulo',
+               now() - interval '1 minute');
 $$;
 
 create or replace function pg_temp.ex_dia(dias_atras int)
@@ -243,7 +246,12 @@ from (values
   ('Retífica de Disco de Freio', 60.00, 0.00),
   ('Higienização de Freio', 50.00, 5.00),
   ('Sangria de Freio', 45.00, 0.00),
-  ('Serviço técnico – Outros', 50.00, 0.00)
+  ('Serviço técnico – Outros', 50.00, 0.00),
+  ('Cambagem Dianteira Direita', 35.00, 0.00),
+  ('Cambagem Dianteira Esquerda', 35.00, 0.00),
+  ('Caster Dianteiro Direito', 35.00, 0.00),
+  ('Caster Dianteiro Esquerdo', 35.00, 0.00),
+  ('Eixo Traseiro Completo', 90.00, 10.00)
 ) as v(descricao, preco, custo)
 where s.descricao = v.descricao and s.preco_padrao is null;
 
@@ -261,9 +269,9 @@ from (values (1, 16), (2, 12), (3, 8), (4, 6), (5, 6), (6, 6), (7, 10), (8, 3),
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
--- 7. Ordens de serviço e vendas de balcão (12, em todas as fases)
+-- 7. Ordens de serviço e vendas de balcão (14, em todas as fases; 2 antigas, de clientes que "sumiram")
 -- ---------------------------------------------------------------------------
--- O número vai explícito (1 a 12) pra a segunda rodada não gastar número.
+-- O número vai explícito (1 a 14) pra a segunda rodada não gastar número.
 insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
                             descricao_problema, forma_pagamento, parcelas, vendedor_id,
                             data_abertura, data_fechamento) values
@@ -326,7 +334,17 @@ insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, s
   ('eeee0008-0000-4000-8000-000000000012', 'eeee0001-0000-4000-8000-000000000001', 12, 'os',
    'eeee0004-0000-4000-8000-000000000008', 'eeee0005-0000-4000-8000-000000000009', 'em_andamento', 18500,
    'Vibração no volante acima de 80 km/h', null, 1, 'eeee0003-0000-4000-8000-000000000003',
-   pg_temp.ex_quando(0, '10:45'), null)
+   pg_temp.ex_quando(0, '10:45'), null),
+  -- 13: faturada há 200 dias (~6,5 meses), Pix: o cliente 3 "sumiu" (a última vez que veio foi essa)
+  ('eeee0008-0000-4000-8000-000000000013', 'eeee0001-0000-4000-8000-000000000001', 13, 'os',
+   'eeee0004-0000-4000-8000-000000000003', 'eeee0005-0000-4000-8000-000000000004', 'faturada', 70200,
+   'Alinhamento depois de trocar a roda', 'Pix', 1, 'eeee0003-0000-4000-8000-000000000001',
+   pg_temp.ex_quando(200, '09:00'), pg_temp.ex_quando(200, '10:30')),
+  -- 14: faturada há 330 dias (~11 meses), dinheiro: o cliente 6 também "sumiu"
+  ('eeee0008-0000-4000-8000-000000000014', 'eeee0001-0000-4000-8000-000000000001', 14, 'os',
+   'eeee0004-0000-4000-8000-000000000006', 'eeee0005-0000-4000-8000-000000000006', 'faturada', 40300,
+   'Revisão de freios antes de viajar', 'Dinheiro', 1, 'eeee0003-0000-4000-8000-000000000002',
+   pg_temp.ex_quando(330, '08:30'), pg_temp.ex_quando(330, '11:00'))
 on conflict do nothing;
 
 -- Os itens. O serviço é procurado pelo nome (os padrão da instalação).
@@ -383,7 +401,12 @@ from (values
   ('eeee0009-0000-4000-8000-000000000026', 11, 'servico', null, 'Alinhamento Dianteiro', 1, 80.00, 0, 3),
   -- OS 12: em andamento
   ('eeee0009-0000-4000-8000-000000000027', 12, 'servico', null, 'Balanceamento',        4, 15.00, 0, 3),
-  ('eeee0009-0000-4000-8000-000000000028', 12, 'peca',    3,  null, 1, 579.90, 0, null)
+  ('eeee0009-0000-4000-8000-000000000028', 12, 'peca',    3,  null, 1, 579.90, 0, null),
+  -- OS 13 e 14 (antigas): só serviço, pra não mexer no estoque
+  ('eeee0009-0000-4000-8000-000000000029', 13, 'servico', null, 'Alinhamento Dianteiro', 1, 80.00, 0, 1),
+  ('eeee0009-0000-4000-8000-000000000030', 13, 'servico', null, 'Balanceamento',         4, 15.00, 0, 1),
+  ('eeee0009-0000-4000-8000-000000000031', 14, 'servico', null, 'Rodízio de Pneus',     1, 40.00, 0, 3),
+  ('eeee0009-0000-4000-8000-000000000032', 14, 'servico', null, 'Serviço técnico – Freios', 1, 90.00, 0, 3)
 ) as v(id, os, tipo, peca, descricao, qtd, preco, desconto, tecnico)
 on conflict do nothing;
 
@@ -429,7 +452,9 @@ from (values
   ('eeee000a-0000-4000-8000-000000000009', 0,  '08:55', 9,  'entrada', 'dinheiro',       null, 50.00, 'Faturamento da OS 9', null),
   ('eeee000a-0000-4000-8000-000000000010', 0,  '09:22', 10, 'entrada', 'pix',            null, 0, 'Faturamento da Venda 10', null),
   ('eeee000a-0000-4000-8000-000000000011', 5,  '16:00', null, 'entrada', 'dinheiro',     40.00, 0, 'Venda de pneus velhos pra reciclagem (exemplo)', 'Outros'),
-  ('eeee000a-0000-4000-8000-000000000012', 1,  '17:30', null, 'saida', 'dinheiro',       35.50, 0, 'Café e material de limpeza (exemplo)', 'Outros')
+  ('eeee000a-0000-4000-8000-000000000012', 1,  '17:30', null, 'saida', 'dinheiro',       35.50, 0, 'Café e material de limpeza (exemplo)', 'Outros'),
+  ('eeee000a-0000-4000-8000-000000000013', 200, '10:30', 13, 'entrada', 'pix',            null, 0, 'Faturamento da OS 13', null),
+  ('eeee000a-0000-4000-8000-000000000014', 330, '11:00', 14, 'entrada', 'dinheiro',       null, 0, 'Faturamento da OS 14', null)
 ) as v(id, dias, hora, os, tipo, forma, valor, menos, descricao, categoria)
 on conflict do nothing;
 
