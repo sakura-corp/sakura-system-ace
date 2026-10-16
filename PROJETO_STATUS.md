@@ -264,6 +264,13 @@ endereço público**: 6 feitas e 2 livres, 29 h de 41 h, as fotos do GitHub.
   Funcionou de primeira.
 
 #### Por onde a próxima sessão começa
+0. **A conversa sobre os agentes do Escritório** (ela pediu pra próxima sessão, 16/10): a ideia dela é ter **vários
+   agentes bem específicos**, cada um com as suas skills, **liderados por um chefe de cada área** do escritório
+   virtual; ela **fala só com os chefes**, não com os "funcionários"; e os agentes **evoluem as skills sozinhos**.
+   É **conversa de alinhamento, não construção**: trazer opções e recomendação, e ela revisa antes de virar decisão
+   (seção 1). Pontos de partida: as opções A, B e C de "de onde vêm os agentes" e a conferência das regras de uso das
+   assinaturas (`docs/painel.md`, "Escritório de agentes"; `docs/referencia/escritorio-de-agentes.md`), e o filtro
+   "isso tira trabalho de verdade?" pra skill nova (`docs/jeito-de-trabalhar.md`).
 1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela
    autorizou com escrita em 16/10): a TFE (como pagar), a pergunta ao contador sobre o dinheiro do empréstimo que
    entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
