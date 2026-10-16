@@ -178,13 +178,6 @@ async function rodada(electron, pasta, horaFixa, incluir = () => true) {
     if (!cena.deslogado && !cena.trocarSenha && (await pagina.locator("aside").count()) === 0) {
       throw new Error("a sessão caiu antes da foto");
     }
-    // A barra de rolagem desenhada pelo app (AreaRolavel) só se recalcula
-    // quando a tela redesenha ou a janela muda de tamanho. Sem este aviso,
-    // ela às vezes fica com a medida da tela ANTERIOR, e a foto passa a
-    // depender da ordem em que as telas foram visitadas — foi o que fez 34
-    // telas "mudarem" no primeiro 33 × 36.
-    await pagina.evaluate(() => window.dispatchEvent(new Event("resize")));
-    await pagina.waitForTimeout(150);
     // A versão do Chromium de verdade, pra constar no relatório.
     chromium ||= await pagina.evaluate(
       () => `Chromium ${navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[1] ?? "?"}`,
