@@ -109,7 +109,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
 
 | Workflow | O que faz |
 |---|---|
-| `ci.yml` | Em todo push e PR: typecheck, lint, testes nos dois fusos, contraste, instalação em dia; e os jobs de contraste nas telas, largura nas telas, matriz de RLS (com o botão de bancos e os testes de migration), Electron de verdade e **segredos** (gitleaks + certificado versionado). Não builda o instalador |
+| `ci.yml` | Em push na main e em todo PR (PR só de `.md`/`docs/` pula telas, Electron e RLS; segredos roda sempre; todo job tem `timeout-minutes`): typecheck, lint, testes nos dois fusos, contraste, instalação em dia; e os jobs de contraste nas telas, largura nas telas, matriz de RLS (com o botão de bancos e os testes de migration), Electron de verdade e **segredos** (gitleaks + certificado versionado). Não builda o instalador |
 | `release.yml` | **Só "Run workflow" na `main`, com a aprovação dela.** Builda e publica a versão como pré-lançamento (canal de teste); o `latest.yml` sobe por último (item 66) |
 | `liberar-versao.yml` + `scripts/liberar-versao.mjs` | Libera uma versão pra todas as lojas; confere a release antes e de fora depois. Voltar atrás = liberar a anterior |
 | `atualizar-bancos.yml` + `scripts/atualizar-bancos.mjs` | O botão de atualizar os bancos (item 11 da seção 8) |
