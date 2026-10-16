@@ -35,3 +35,31 @@ As imagens **não** ficam no repositório (público); só esta descrição.
 - **A ligar depois** (cada um é decisão dela, com opções + recomendação): de onde vêm os agentes reais (as ferramentas de sessão do
   Claude Code? um serviço fora do painel? as branches `claude/...` e PRs do GitHub, que o painel já consegue ler?), e **conferir as regras
   de uso das assinaturas antes de automatizar sessões**.
+
+## Mais referências (16/10/2026, à tarde): onde ela quer chegar, não a base
+
+A Sofia mandou mais prints, de dois vídeos, dizendo que são **projetos ambiciosos** e que **a base não precisa ser assim**:
+servem pra mostrar o destino. Como antes, as imagens **não** ficam no repositório; só esta descrição.
+
+**"My AI Office" (o mesmo vídeo de antes, outros momentos)**
+- Salas em **3D isométrico** (vista inclinada de cima, como maquete), com mesas, cadeiras, computadores, plantas, sofá;
+  bonequinhos sentados trabalhando e outros **andando pelas estradinhas** até o Cérebro.
+- O Cérebro é um **disco de luz com um feixe subindo**, linhas finas ligando ele a cada sala.
+- Abrir uma sala dá **zoom pra dentro dela**: cada agente na mesa dele, com a legenda do papel ("Video Editor", "Copy & Captions").
+- No canto de baixo à direita, **minimapa com − + ⤢**; embaixo à esquerda, "RUNS ON Opus · Sonnet · Haiku · headless · cloud".
+- O quadro de tarefas fica **à esquerda, do lado do mapa**, com Approve (destacado) e Review.
+
+**"Prédio" de uma empresa de operações (outro vídeo)**
+- Um **prédio com andares**: no topo, "Prédio · todos os andares", e cada andar é um escritório ("01 · seu escritório", "02 ·
+  …"). **Rolar troca de andar**; clicar num andar entra nele.
+- Cada andar é uma **sala isométrica com bordas de neon** (amarelo), com mesas agrupadas por equipe, cada grupo com etiqueta, e
+  uma área de **"descanso"** pra quem não está trabalhando.
+- No topo, **um número grande do dia** e a contagem "3 em operação · 1 em descanso".
+- Dicas na tela: **"clique no agente pra ver detalhes · arraste pra andar pela sala · botão direito gira · roda aproxima"**.
+
+**Como isso conversa com o nosso** (ideias pra conversar, nada decidido)
+- "**Descanso**" = o nosso estado *dormindo/livre*: uma área separada da sala pode mostrar isso sem depender de cor.
+- **Andares** podem ser um jeito de crescer quando houver mais de um produto (SSACE, outros sistemas da Sakura): um andar por
+  produto, as salas das equipes dentro.
+- **3D, girar e andar pela sala** pedem uma biblioteca de 3D (pesada) e muito desenho; fica pra depois que os agentes forem de
+  verdade, e só se tirar trabalho de verdade.
