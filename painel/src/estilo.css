@@ -1,0 +1,85 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/source-serif-4";
+
+/* Cores e fontes: exatamente as tabelas da seção "Design" do docs/painel.md.
+   Nenhuma cor fora delas. Claro por padrão; escuro quando o computador está no modo escuro. */
+:root {
+  --c-fundo: #faf9f5;
+  --c-cartao: #ffffff;
+  --c-borda: #e6e3da;
+  --c-texto: #1f1e1d;
+  --c-texto-2: #6b6963;
+  --c-destaque: #b8237f;
+  --c-sobre-destaque: #ffffff;
+
+  --c-livre: #5f5d57;
+  --c-livre-fundo: #efede6;
+  --c-andamento: #a81f74;
+  --c-andamento-fundo: #fbe7f3;
+  --c-revisao: #7a4f00;
+  --c-revisao-fundo: #fbefd9;
+  --c-feita: #2b6534;
+  --c-feita-fundo: #e4f1e6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-fundo: #1f1e1d;
+    --c-cartao: #2a2927;
+    --c-borda: #3a3936;
+    --c-texto: #f2f0ea;
+    --c-texto-2: #a8a59c;
+    --c-destaque: #f07cc4;
+    --c-sobre-destaque: #1f1e1d;
+
+    --c-livre: #c9c6bd;
+    --c-livre-fundo: #34332f;
+    --c-andamento: #f59bd2;
+    --c-andamento-fundo: #43243a;
+    --c-revisao: #f2c46b;
+    --c-revisao-fundo: #3f3322;
+    --c-feita: #8fd19c;
+    --c-feita-fundo: #233a28;
+  }
+}
+
+@theme inline {
+  --color-fundo: var(--c-fundo);
+  --color-cartao: var(--c-cartao);
+  --color-borda: var(--c-borda);
+  --color-texto: var(--c-texto);
+  --color-texto-2: var(--c-texto-2);
+  --color-destaque: var(--c-destaque);
+  --color-sobre-destaque: var(--c-sobre-destaque);
+  --color-livre: var(--c-livre);
+  --color-livre-fundo: var(--c-livre-fundo);
+  --color-andamento: var(--c-andamento);
+  --color-andamento-fundo: var(--c-andamento-fundo);
+  --color-revisao: var(--c-revisao);
+  --color-revisao-fundo: var(--c-revisao-fundo);
+  --color-feita: var(--c-feita);
+  --color-feita-fundo: var(--c-feita-fundo);
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", Georgia, serif;
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--c-fundo);
+  color: var(--c-texto);
+  font-family: var(--font-sans);
+}
+
+/* Foco do teclado sempre visível. Dentro de @layer base pra que uma classe do Tailwind
+   (ex.: o contorno pra dentro das linhas da lista, que têm overflow-hidden) possa ajustar. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--c-destaque);
+    outline-offset: 2px;
+  }
+}

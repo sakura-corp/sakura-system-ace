@@ -307,3 +307,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   uma busca falha) e **#355** (o `useTempoReal()` devolve `estado` e `ultimaAtualizacao`). A **#351**
   (com o Gustavo) **não mudou**; ele recebeu um comentário com dois acréscimos pequenos (o "em breve"
   do Financeiro diz do que depende; foto da tela no PR). Nenhuma linha de código do painel mudou.
+- **16/10/2026**: **a Sofia assumiu a #351** (o Gustavo foi avisado na issue; não havia branch nem PR dele). A
+  tela da leva, com dados de exemplo, ficou pronta e foi **olhada renderizada** (Playwright, claro e escuro, 375 px e
+  tela grande; fotos em `docs/referencia/fotos-painel/`). Consertado ao olhar: o título quebrava "Leva / 0" no
+  celular (agora "Painel da Sakura" em cima e "Leva 0" grande), títulos longos eram cortados no celular (agora
+  quebram linha), os grupos "Livre (4)"/"Feita (1)" viraram "Livres"/"Feitas", o contorno de foco das linhas da
+  lista ficava escondido (agora aparece inteiro) e o exemplo não pede mais foto de usuário de mentira ao GitHub.
+  O teste das horas **não pegava** uma conta quebrada de propósito; ganhou um caso e agora pega. **PR aberto, esperando
+  a revisão da Sofia. A #467 começa depois que ele entrar na `main`.**
