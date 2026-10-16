@@ -58,23 +58,23 @@ describe("principal", () => {
   it("avisa uma vez só por sessão", () => {
     const marcas = pasta();
     const entrada = { session_id: "abc", transcript_path: historico(100_000) };
-    const a = principal({ entrada, pastaDeMarcas: marcas });
+    const a = principal({ entrada, pastaDeMarcas: marcas, janelaTokens: 200_000 });
     expect(a).toContain("/fechar");
-    expect(principal({ entrada, pastaDeMarcas: marcas })).toBeNull();
+    expect(principal({ entrada, pastaDeMarcas: marcas, janelaTokens: 200_000 })).toBeNull();
     // outra sessão ainda recebe o seu aviso
-    expect(principal({ entrada: { ...entrada, session_id: "def" }, pastaDeMarcas: marcas })).toContain("/fechar");
+    expect(principal({ entrada: { ...entrada, session_id: "def" }, pastaDeMarcas: marcas, janelaTokens: 200_000 })).toContain("/fechar");
   });
   it("fica calado abaixo do limite e não gasta o aviso", () => {
     const marcas = pasta();
     const curto = { session_id: "abc", transcript_path: historico(10_000) };
-    expect(principal({ entrada: curto, pastaDeMarcas: marcas })).toBeNull();
+    expect(principal({ entrada: curto, pastaDeMarcas: marcas, janelaTokens: 200_000 })).toBeNull();
     const comprido = { session_id: "abc", transcript_path: historico(100_000) };
-    expect(principal({ entrada: comprido, pastaDeMarcas: marcas })).not.toBeNull();
+    expect(principal({ entrada: comprido, pastaDeMarcas: marcas, janelaTokens: 200_000 })).not.toBeNull();
   });
   it("entrada estranha: sai calado, sem estourar", () => {
     const marcas = pasta();
-    expect(principal({ entrada: null, pastaDeMarcas: marcas })).toBeNull();
-    expect(principal({ entrada: { session_id: "x", transcript_path: "/nao/existe" }, pastaDeMarcas: marcas })).toBeNull();
+    expect(principal({ entrada: null, pastaDeMarcas: marcas, janelaTokens: 200_000 })).toBeNull();
+    expect(principal({ entrada: { session_id: "x", transcript_path: "/nao/existe" }, pastaDeMarcas: marcas, janelaTokens: 200_000 })).toBeNull();
   });
 });
 
@@ -86,7 +86,7 @@ describe("rodando como o Claude Code roda (processo, entrada pelo stdin)", () =>
       spawnSync("node", ["scripts/aviso-conversa-comprida.mjs"], {
         input: entrada,
         encoding: "utf8",
-        env: { ...process.env, SSACE_AVISO_LIMITE_PERCENTUAL: "10", SSACE_AVISO_PASTA: marcas },
+        env: { ...process.env, SSACE_AVISO_LIMITE_PERCENTUAL: "10", SSACE_AVISO_JANELA_TOKENS: "200000", SSACE_AVISO_PASTA: marcas },
       });
     const primeira = rodar();
     expect(primeira.status).toBe(0);
