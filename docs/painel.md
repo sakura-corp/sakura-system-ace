@@ -371,3 +371,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   PR do Escritório (a Sofia pediu pra continuar construindo a base enquanto estava no trabalho). As regras de tempo e de link
   ficaram em `painel/src/logica/tempo.ts` e `link.ts`, usadas pela Sala e pelo Escritório. **A ordem de revisão é: #351,
   depois o Escritório, depois a Sala.** A #352 (publicar) só começa depois que a #467 entrar na `main`.
+- **16/10/2026, fim da tarde**: **#351 e #467 aprovadas e mescladas pela Sofia** (PRs #484 e #486), e o Escritório de
+  exemplo também (#485). **A tarefa 4 (#352) já pode começar.** No `wrangler.jsonc` dela, além do que está no item de
+  01/10, pôr `assets.not_found_handling: "single-page-application"`, pra `/sala`, `/sala?tv` e `/escritorio` abrirem
+  direto.

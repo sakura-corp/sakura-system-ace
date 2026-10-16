@@ -35,6 +35,60 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026: a parte do Claude pra equipe começar na segunda (manual, tarefas, banco de teste)
+
+**Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada do programa das lojas mudou
+(só documentos, rascunhos e scripts do banco de teste). O **PR deste marco** juntou 3 trabalhos feitos em
+paralelo e revisados do zero (a revisão achou 8 pontos; os reais foram consertados).
+
+#### O que foi feito
+- **A regra nova da seção 0** e o **manual da equipe** (`docs/equipe.md`, Windows e Mac): o Gustavo no painel; os
+  outros dois no programa das lojas, **sempre contra o Supabase de teste**. Ficaram todas as proibições (nunca
+  mescla, não publica nem libera, não mexe em banco de loja, versão, tag, secret, ruleset...). **Decisão**: ninguém
+  da equipe roda SQL nem migration, **nem no de teste** (a Sofia monta e mantém).
+- **Os 3 rascunhos de tarefa** em `docs/rascunhos/leva-0-programa.md`, prontos pra colar como issue: **#455**
+  (clientes que sumiram, 6 h), **#459** (pedir avaliação no Google, 4 h) e a **1ª parte da #457** (importar
+  clientes de CSV, 12 h em 2 PRs, que vira **issue nova ligada à #457**, sem editar a #457). **Nenhuma issue foi criada
+  nem editada.**
+- **O banco de teste da equipe**: `supabase/exemplo/` (**loja fictícia "Autocenter Exemplo (TESTE)"**: 8 clientes,
+  9 veículos, 12 peças, **14 ordens** em todas as fases, caixa, contas), `ligar-login.sql`, `apagar-dados-de-exemplo.sql`,
+  o teste `supabase/scripts/testar-dados-de-exemplo.sql` (entra no `npm run test:sql` e no CI) e o guia
+  **`docs/supabase-de-teste.md`**. Tem **trava**: o exemplo se recusa a rodar em banco com cara de banco de loja.
+- **Achado de passagem**: criar operador no programa instalado provavelmente não funciona (usa um endereço de mentira
+  do Supabase): **#482**.
+- **A revisão** conferiu cada ponto no código. Consertados: o exemplo não tinha cliente que "sumiu" (ganhou as OS 13 e
+  14, de 200 e 330 dias atrás, pra a #455 poder ser conferida), 5 serviços do catálogo sem preço, linhas "de hoje" que
+  ficavam no futuro se o script rodasse cedo (o teste agora reprova isso), a paginação (`listarClientes` não pagina e o
+  Supabase corta em **1.000 linhas**: os rascunhos da #455 e da #457 agora exigem ler em páginas), e a contradição "o
+  botão de importar é só de admin, mas os logins da equipe não são" (virou pergunta pra Sofia). Descartado, com motivo:
+  a trava do exemplo também barra quem salvou token de homologação no banco de teste (a equipe não tem o módulo de
+  Notas Fiscais; está no guia, na tabela de erros).
+- **Provado**: `npm run test:sql` (os **12** testes, vistos reprovar quando o exemplo é quebrado de propósito), `typecheck`,
+  `lint` e **844** testes do vitest.
+- **NÃO provado**: nada foi rodado num Supabase de verdade (os cliques do guia vêm de `INSTALAR-LOJA-NOVA.md` e podem ter
+  mudado); ninguém seguiu o manual num PC, **nem num Mac** (o programa abrir no Mac com `npm run dev` é suposição); o
+  programa aberto contra o exemplo não foi olhado; as estimativas de horas dos rascunhos são palpite; os limites do plano
+  grátis do Supabase (2 projetos, pausa depois de uns 7 dias) vêm de sites de terceiros.
+
+#### O que depende dela
+1. **Revisar** o `docs/equipe.md` (principalmente a mensagem nova do "Primeiro dia") e os **rascunhos** das tarefas;
+   depois criar as issues (etiqueta `leva-0`; a da parte 1 da #457 como sub-issue da #457).
+2. **Decidir**: os textos padrão das 2 mensagens de WhatsApp; "X meses" padrão = 6?; o link de avaliação dentro do texto
+   (sem migration) serve?; a importação vai pras lojas sem "desfazer"?; **o banco de teste ganha um login administrador**
+   (pra testar a importação)?; confirmar "nem SQL no Supabase de teste".
+3. **Criar o Supabase de teste, guiada** (`docs/supabase-de-teste.md`): organização grátis "Sakura Teste", projeto
+   `ssace-teste`, instalar, o exemplo, os 3 logins, os Sends. Conferir antes o plano grátis.
+4. Decidir se o `ssace-teste` entra no botão "Atualizar o banco de todas as empresas" (mexe no cofre; recomendo não).
+
+#### Por onde a próxima sessão começa
+1. **Segunda 19/10, a equipe começa**: os Termos assinados (antes de qualquer acesso ao código), o Claude Team, os
+   convites (só depois do Termo), a verificação em duas etapas na organização (**só depois do "sim" do Gustavo**) e o
+   "Primeiro dia". Faltam o usuário do GitHub do Lázaro e do Tiago. Antes do Primeiro dia: o item 3 acima (o Supabase de
+   teste) e a revisão do manual.
+2. **A #482** (criar operador no instalado) e **a fila**: #471 → #472, uma sessão cada.
+3. **Ainda vale**: a contabilidade (1ª nota ~17/10 a 01/11, XML × "OFX", o cabeçalho das planilhas pra #457), o capital e a
+   TFE depois de 16/10, o Balcão na `v0.9.51`, o salto 2 do Electron, a #442 e o "Texto de garantia".
+
 ### 15/10/2026: a #470 pronta e provada, as caixas de e-mail da equipe e o visual da Sala
 
 **Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada de programa das lojas mudou.
