@@ -20,8 +20,6 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 **Do painel (16/10, à tarde)**:
 - **Escolher de onde vêm os agentes de verdade** do Escritório (A ler o GitHub, B sessões do Claude Code, C serviço
   próprio; recomendação A) e, antes de B ou C, **conferir as regras de uso das assinaturas** (`docs/painel.md`).
-- **Responder as 3 perguntas do desenho do Escritório**: salas em roda ou em fileiras; nome do agente no mapa; as cores
-  das equipes.
 - **Antes da #353 (login)**: criar os 2 GitHub Apps na `sakura-corp` (passo a passo na #353).
 
 **Da sessão de 16/10 (a equipe começar na segunda, 19/10)**:

@@ -35,6 +35,44 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026, à tarde: a base do painel na `main` (leva, Escritório de exemplo, Sala)
+
+**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). No **painel** entraram
+3 PRs, mesclados por ela pelo celular: **#484** (tela da leva, **fecha a #351**), **#485** (Escritório de
+agentes, só exemplo) e **#486** (a Sala, **fecha a #467**). A Cloudflare publica o painel sozinha a cada
+mudança em `painel/` na `main`.
+
+#### O que foi feito
+- **#351**: a tela olhada renderizada (claro, escuro, 375 px, tela grande) e consertada; teste das horas
+  reforçado (não pegava uma conta quebrada). Fotos em `docs/referencia/fotos-painel/`.
+- **Escritório de agentes** (`/escritorio`): a ideia da "fábrica virtual" como **tela de exemplo**, sem
+  agente, sessão, token nem chave de verdade. As opções pra ligar de verdade (A ler o GitHub, B sessões do
+  Claude Code, C serviço próprio; **recomendação A**, sem decidir) e o aviso de **conferir as regras das
+  assinaturas antes de automatizar** estão no `docs/painel.md`, seção "Escritório de agentes". As
+  referências novas dela (3D, prédio com andares, "descanso") estão descritas, sem imagem, em
+  `docs/referencia/escritorio-de-agentes.md`.
+- **#467, a Sala** (`/sala` e `/sala?tv`): visual B, cartão, lista, modo TV. Regras de tempo e de link
+  comuns em `painel/src/logica/tempo.ts` e `link.ts`.
+- **Provado**: 50 testes do painel, cada regra vista falhar de propósito; fotos Playwright; CI verde nos 3.
+  **Não provado**: nada aberto num PC ou celular de verdade.
+- **Memória consertada**: o PR #483 tinha cortado o fim da seção 3 e o título desta seção 4 (recuperados).
+- **Lição de mesclar PRs empilhados** (16/10): ao mesclar o de baixo com "squash", o de cima fica com
+  conflito; o Claude junta a `main` na branch (fica com o lado da branch, que já contém tudo) e ela mescla
+  o próximo. Tocar em "Excluir branch" faz o GitHub apontar o próximo PR pra `main` sozinho.
+- **Empresa** (detalhe só no privado, `EMPRESA.md`): a 1ª metade do empréstimo caiu na conta PJ em 16/10.
+
+#### Por onde a próxima sessão começa
+1. **#352, publicar o painel na Cloudflare** (`wrangler.jsonc` com `name: "sakura-painel"`, `workers_dev:
+   true`, `preview_urls: false` e `assets.not_found_handling: "single-page-application"`, pra `/sala` e
+   `/escritorio` abrirem direto). PR → guiar ela a mesclar **pelo celular, com links diretos**.
+2. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`): a TFE
+   (como pagar; talvez uma mensagem), a pergunta ao contador sobre como registrar o dinheiro que entrou, e o
+   Claude Team, que ela assina **na segunda, 19/10**.
+3. **3 perguntas sobre o desenho do Escritório**, ainda sem resposta: salas em roda ou em fileiras; nome do
+   agente no mapa; as 6 cores das equipes.
+4. **Ainda vale** do marco anterior (`docs/historico.md`, 16/10 de manhã): a equipe começa na segunda (Termos,
+   convites, Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+
 ### 16/10/2026: a parte do Claude pra equipe começar na segunda (manual, tarefas, banco de teste)
 
 **Estado do código**: a `main` continua na **`v0.9.51`** (banco na `0064`); nada do programa das lojas mudou
