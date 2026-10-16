@@ -180,8 +180,8 @@ tarefa 1 (#350) projeto       → PR → Sofia aprova
 tarefa 2 (#351) visual        → PR → Sofia aprova      + Sofia liga a Cloudflare (feito)
 tarefa 3 (#467) a sala        → PR → Sofia aprova
 tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no ar (feito)
-                                                       + Sofia cria os apps de login
-tarefa 5 (#353) login         → PR → Sofia aprova
+                                                       + Sofia cria os apps de login (o de verdade, feito)
+tarefa 5 (#353) login         → PR → Sofia aprova (feito)
 tarefa 6 (#354) dados         → PR → Sofia aprova      + Sofia liga o aviso automático (webhook)
 tarefa 7 (#355) tempo real    → PR → Sofia aprova
 tarefa 8 (#468) sala ao vivo  → PR → Sofia aprova  →  fim da leva 0 (ver "Fim de uma leva")
@@ -410,7 +410,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   `GITHUB_APP_CLIENT_SECRET` e `CHAVE_DA_SESSAO` estão na Cloudflare (só em Production) e no Bitwarden dela. A chave
   privada que o GitHub exige pra instalar foi gerada e apagada: o painel não usa. **O app de teste não foi
   criado** (a Sofia testa sozinha no endereço público, por enquanto); ver "O que a Sofia faz".
-- **16/10/2026, à noite**: **tarefa 5 (#353), o login, feita pela Sofia com o Claude dela.** O worker ganhou
+- **16/10/2026, à noite**: **tarefa 5 (#353), o login, feita pela Sofia com o Claude dela** (PR #490, mesclado; a
+  Sofia entrou, saiu e entrou de novo no endereço público). **A tarefa 6 (#354) já pode começar.** O worker ganhou
   `/api/login`, `/api/login/volta`, `/api/eu` e `/api/sair` (`painel/worker/sessao.ts` e `github.ts`); a página
   mostra a tela de entrada pra quem não entrou, e a foto, o nome e "Sair" no canto da barra lateral. Ao renovar o
   token (a cada 8 h), o worker confere de novo se a pessoa ainda é da `sakura-corp`. **Pra #354**: toda rota com

@@ -20,7 +20,8 @@ Antes desta lista, essas coisas estavam espalhadas pelos marcos antigos do `docs
 **Do painel (16/10, à tarde)**:
 - **Escolher de onde vêm os agentes de verdade** do Escritório (A ler o GitHub, B sessões do Claude Code, C serviço
   próprio; recomendação A) e, antes de B ou C, **conferir as regras de uso das assinaturas** (`docs/painel.md`).
-- **Antes da #353 (login)**: criar os 2 GitHub Apps na `sakura-corp` (passo a passo na #353).
+- **Quando alguém da equipe for mexer no login no PC**: criar o app de teste "Sakura Painel (teste)" e mandar o
+  client secret dele pelo Bitwarden Send (`docs/painel.md`, "O que a Sofia faz"). O app de verdade já existe (16/10).
 
 **Da sessão de 16/10 (a equipe começar na segunda, 19/10)**:
 - **Mandar o usuário do GitHub** do Lázaro e do Tiago, e confirmar com o Gustavo a verificação em duas etapas.

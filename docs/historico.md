@@ -35,6 +35,33 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026, à noite: o painel no ar (#352)
+
+**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O **painel está no ar** em
+**https://sakura-painel.caranovavidanova.workers.dev**: PR **#488** (fecha a **#352**), mesclado por ela pelo celular.
+A Cloudflare publica sozinha a cada mudança em `painel/` na `main`.
+
+#### O que foi feito
+- **#352**: `painel/wrangler.jsonc` (`sakura-painel`, `workers_dev: true`, `preview_urls: false`, `binding: "ASSETS"`,
+  `not_found_handling: "single-page-application"`, `run_worker_first: ["/api/*"]`) e `painel/worker/index.ts`
+  (`/api/saude` → `{"ok":true}`). Script `npm run dev:worker`; sem script de publicar.
+- **Provado**: testes do worker vistos falhar de propósito; as 6 rotas no `wrangler dev`; o `wrangler deploy --dry-run`
+  pegou que faltava o `binding` (consertado); CI verde (12 verificações). **No ar, conferido por ela no celular**:
+  `/api/saude`, `/sala`, `/sala?tv`, `/escritorio`.
+- **As 3 perguntas do Escritório, respondidas**: salas **em roda**; **nome do agente no mapa** (ainda não feito:
+  entra quando ela pedir a próxima mexida no Escritório); **as 6 cores ficam**. Em `docs/painel.md`.
+- **Lição**: a trava de segredos do `git push` compara com a `origin/main` local. Se a sessão começou sem ela (HEAD
+  solto), a trava acusa arquivos antigos que já estão na `main`; um `git fetch origin main` resolve.
+
+#### Por onde a próxima sessão começa
+1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela autorizou
+   com escrita em 16/10): a TFE (como pagar; talvez uma mensagem curta), a pergunta ao contador sobre como registrar o
+   dinheiro do empréstimo que entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
+2. **Painel, tarefa 5 (#353, login)**: antes, ela cria os dois GitHub Apps na `sakura-corp` (`docs/painel.md`, "O que
+   a Sofia faz"), guiada passo a passo.
+3. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
+   Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+
 ### 16/10/2026, à tarde: a base do painel na `main` (leva, Escritório de exemplo, Sala)
 
 **Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). No **painel** entraram
