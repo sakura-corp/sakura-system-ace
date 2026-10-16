@@ -3,7 +3,10 @@ import { useState } from "react";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
 
-type Props = { levas: string[]; atual: string; pagina?: Pagina; usuario?: Usuario };
+/** Uma leva na barra lateral: `atual` = é a que está na tela (quando a página é a da leva). */
+export type ItemDeLeva = { nome: string; href: string; atual: boolean };
+
+type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario };
 
 /**
  * Sai do painel (#353): o worker apaga a sessão, e a página volta pra tela de entrada.
@@ -20,7 +23,7 @@ async function sair(): Promise<boolean> {
   return true;
 }
 
-export function BarraLateral({ levas, atual, pagina = "leva", usuario }: Props) {
+export function BarraLateral({ levas, pagina = "leva", usuario }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   return (
     <nav
@@ -33,15 +36,15 @@ export function BarraLateral({ levas, atual, pagina = "leva", usuario }: Props) 
         <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-texto-2 md:block">Levas</p>
         <ul className="flex flex-wrap gap-1 md:flex-col">
           {levas.map((leva) => (
-            <li key={leva}>
+            <li key={leva.href}>
               <a
-                href="/"
-                aria-current={pagina === "leva" && leva === atual ? "page" : undefined}
+                href={leva.href}
+                aria-current={pagina === "leva" && leva.atual ? "page" : undefined}
                 className={`block rounded-lg px-3 py-1.5 text-sm ${
-                  pagina === "leva" && leva === atual ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
+                  pagina === "leva" && leva.atual ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
                 }`}
               >
-                {leva}
+                {leva.nome}
               </a>
             </li>
           ))}

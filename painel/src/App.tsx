@@ -1,15 +1,16 @@
-import { BarraLateral } from "./componentes/BarraLateral";
-import { Contador } from "./componentes/Contador";
+import { useEffect, useState } from "react";
+import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
-import { ListaDeTarefas } from "./componentes/ListaDeTarefas";
 import { Sala } from "./componentes/sala/Sala";
+import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
+import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLeva";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
-import { pessoasComVariasEmAndamento } from "./logica/contador";
+import { carregarLeva, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
+import { paginaPraVoltar } from "./logica/login";
 import { ehModoTv } from "./logica/sala";
 import type { Pagina, Usuario } from "./tipos";
 
-
-/** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são só três. */
+/** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são poucas. */
 export function paginaDoCaminho(caminho: string): Pagina {
   const limpo = caminho.replace(/\/+$/, "");
   if (limpo === "/escritorio") return "escritorio";
@@ -20,27 +21,70 @@ export function paginaDoCaminho(caminho: string): Pagina {
 const caminhoAtual = () => (typeof window === "undefined" ? "/" : window.location.pathname);
 const buscaAtual = () => (typeof window === "undefined" ? "" : window.location.search);
 
-// Tarefa 2 (#351): a leva ainda é de exemplo. A tarefa 6 liga nos dados do GitHub.
-// O Escritório de agentes também é só de exemplo (docs/painel.md, "Escritório de agentes").
+/** As levas e as tarefas de verdade (#354), buscadas no worker. `ativo` = false não busca nada. */
+function useLeva(pedida: number | null, ativo: boolean): [EstadoDaLeva, () => void] {
+  const [estado, setEstado] = useState<EstadoDaLeva>({ tipo: "carregando" });
+  const [tentativa, setTentativa] = useState(0);
+  useEffect(() => {
+    if (!ativo) return;
+    let vivo = true;
+    setEstado({ tipo: "carregando" });
+    void carregarLeva(pedida).then((novo) => {
+      if (vivo) setEstado(novo);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [pedida, ativo, tentativa]);
+  return [estado, () => setTentativa((n) => n + 1)];
+}
+
+const LINK_DA_ETIQUETA = (numero: number) =>
+  `https://github.com/sakura-corp/sakura-system-ace/issues?q=${encodeURIComponent(`label:leva-${numero}`)}`;
+
+// A leva vem do GitHub (#354). Sem login (só no `npm run dev`, sem o worker), mostra a de exemplo.
+// A Sala continua de exemplo até a tarefa 8 (#468), e o Escritório também (docs/painel.md).
 export default function App({
   caminho = caminhoAtual(),
   busca = buscaAtual(),
   usuario,
+  leva: levaFixa,
 }: {
   caminho?: string;
   busca?: string;
-  /** Quem entrou (#353). Sem ele (só no `npm run dev`), a barra lateral não mostra o "Sair". */
+  /** Quem entrou (#353). Sem ele (só no `npm run dev`), a barra lateral não mostra o "Sair" e a leva é de exemplo. */
   usuario?: Usuario;
+  /** Só nos testes: o estado da leva, em vez de buscar no worker. */
+  leva?: EstadoDaLeva;
 }) {
   const pagina = paginaDoCaminho(caminho);
+  const tv = pagina === "sala" && ehModoTv(busca);
+  const exemplo = !usuario && levaFixa === undefined;
+  const pedida = levaPedida(caminho);
+  const [buscada, tentarDeNovo] = useLeva(pedida, !exemplo && !tv && levaFixa === undefined);
+  const estado = levaFixa ?? buscada;
+
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
-  if (pagina === "sala" && ehModoTv(busca)) return <Sala tv />;
-  const tarefas = tarefasDeExemplo;
-  const avisos = pessoasComVariasEmAndamento(tarefas);
+  if (tv) return <Sala tv />;
+  if (!exemplo && estado.tipo === "fora") {
+    return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
+  }
+
+  let levas: ItemDeLeva[];
+  let mostrada: number | null = null;
+  if (exemplo) {
+    levas = [{ nome: nomeDaLevaDeExemplo, href: "/", atual: true }];
+  } else if (estado.tipo === "pronto") {
+    mostrada = estado.leva.numero;
+    levas = estado.levas.map((l) => ({ nome: l.nome, href: enderecoDaLeva(l.numero, estado.atual), atual: l.numero === mostrada }));
+  } else {
+    // Enquanto busca (ou se deu erro), um caminho de volta pra leva atual.
+    levas = [{ nome: "Leva atual", href: "/", atual: true }];
+  }
 
   return (
     <div className="min-h-screen md:flex">
-      <BarraLateral levas={[nomeDaLevaDeExemplo]} atual={nomeDaLevaDeExemplo} pagina={pagina} usuario={usuario} />
+      <BarraLateral levas={levas} pagina={pagina} usuario={usuario} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
           <Sala />
@@ -51,26 +95,44 @@ export default function App({
         </main>
       ) : (
         <main className="mx-auto w-full max-w-[960px] flex-1 px-4 py-8 md:px-8">
-          <p className="text-sm font-medium text-texto-2">Painel da Sakura</p>
-          <h1 className="font-serif text-3xl font-semibold">{nomeDaLevaDeExemplo}</h1>
-          <p className="mt-1 text-sm text-texto-2">Dados de exemplo: ainda sem ligação com o GitHub.</p>
-
-          {avisos.length > 0 && (
-            <div role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
-              {avisos.map((a) => (
-                <p key={a.login}>
-                  {a.login} está com {a.quantas} tarefas em andamento (a regra é uma por vez).
-                </p>
-              ))}
-            </div>
+          {exemplo ? (
+            <TelaDaLeva nome={nomeDaLevaDeExemplo} tarefas={tarefasDeExemplo} subtitulo="Dados de exemplo: ainda sem ligação com o GitHub." />
+          ) : estado.tipo === "pronto" ? (
+            <TelaDaLeva
+              nome={`Leva ${estado.leva.numero}`}
+              tarefas={estado.leva.tarefas}
+              cortada={estado.leva.cortada}
+              subtitulo={
+                <>
+                  As tarefas com a etiqueta <code>leva-{estado.leva.numero}</code>.{" "}
+                  <a
+                    href={LINK_DA_ETIQUETA(estado.leva.numero)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-texto"
+                  >
+                    Ver no GitHub<span className="sr-only"> (abre em aba nova)</span>
+                  </a>
+                </>
+              }
+            />
+          ) : estado.tipo === "erro" ? (
+            <>
+              <p className="text-sm font-medium text-texto-2">Painel da Sakura</p>
+              <h1 className="mb-6 font-serif text-3xl font-semibold">{pedida === null ? "Leva atual" : `Leva ${pedida}`}</h1>
+              <ErroDaLeva mensagem={estado.mensagem} tentarDeNovo={tentarDeNovo} />
+            </>
+          ) : estado.tipo === "sem-levas" ? (
+            <>
+              <p className="text-sm font-medium text-texto-2">Painel da Sakura</p>
+              <h1 className="font-serif text-3xl font-semibold">Nenhuma leva ainda</h1>
+              <p className="mt-2 text-sm text-texto-2">
+                Uma leva é uma etiqueta <code>leva-0</code>, <code>leva-1</code>… nas issues do GitHub. Quando a primeira existir, ela aparece aqui.
+              </p>
+            </>
+          ) : (
+            <EsqueletoDaLeva />
           )}
-
-          <div className="mt-6">
-            <Contador tarefas={tarefas} />
-          </div>
-          <div className="mt-8">
-            <ListaDeTarefas tarefas={tarefas} />
-          </div>
         </main>
       )}
     </div>

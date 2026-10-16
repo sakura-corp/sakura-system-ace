@@ -229,3 +229,103 @@ describe("/api/eu e /api/sair", () => {
     expect(cookies(r).find((c) => c.startsWith("sessao="))).toContain("Max-Age=0");
   });
 });
+
+describe("/api/levas e /api/leva/<n> (#354)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async (s: Sessao = base) => `sessao=${await cifrarSessao(s, CHAVE)}`;
+  const issue = {
+    number: 354, title: "Painel 6/8", url: "https://github.com/sakura-corp/sakura-system-ace/issues/354", state: "OPEN",
+    body: "Estimativa: 5 h", assignees: { nodes: [] }, closedByPullRequestsReferences: { nodes: [] },
+  };
+
+  /** Finge o GitHub GraphQL (e a renovação do token). `resposta` decide o que o /graphql devolve. */
+  function fingirGraphQL(resposta: () => Response) {
+    const consultas: { autorizacao: string | null; variaveis: Record<string, unknown> }[] = [];
+    let renovacoes = 0;
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entrada);
+      if (url === "https://api.github.com/graphql") {
+        const corpo = JSON.parse(String(init?.body)) as { variables: Record<string, unknown> };
+        consultas.push({ autorizacao: new Headers(init?.headers).get("authorization"), variaveis: corpo.variables });
+        return resposta();
+      }
+      if (url === "https://github.com/login/oauth/access_token") {
+        renovacoes += 1;
+        return Response.json({ access_token: "ghu_novo", refresh_token: "ghr_novo", expires_in: 28800 });
+      }
+      if (url === "https://api.github.com/orgs/sakura-corp/members/fulana") return new Response(null, { status: 204 });
+      return new Response("inesperado", { status: 500 });
+    });
+    return { consultas, renovacoes: () => renovacoes };
+  }
+
+  it("sem sessão: 401, e não pergunta nada ao GitHub", async () => {
+    const g = fingirGraphQL(() => Response.json({}));
+    for (const caminho of ["/api/levas", "/api/leva/0"]) expect((await pedir(caminho)).status).toBe(401);
+    expect(g.consultas).toEqual([]);
+  });
+
+  it("sem os segredos: 503; outro método: 405; leva que não é número: 404", async () => {
+    expect((await pedir("/api/levas", { env: { ASSETS: ambiente.ASSETS } })).status).toBe(503);
+    expect((await pedir("/api/levas", { method: "POST", cookie: await comSessao() })).status).toBe(405);
+    for (const caminho of ["/api/leva/x", "/api/leva/", "/api/leva/1/2", "/api/leva/12345"]) {
+      expect((await pedir(caminho, { cookie: await comSessao() })).status).toBe(404);
+    }
+  });
+
+  it("/api/levas: consulta com o token da sessão e devolve as levas e a atual, sem o token", async () => {
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { labels: { nodes: [{ name: "leva-0", issues: { totalCount: 3 } }, { name: "bug", issues: { totalCount: 1 } }] } } } }));
+    const r = await pedir("/api/levas", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    const texto = await r.text();
+    expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3 }], atual: 0 });
+    expect(texto).not.toContain("ghu_");
+    expect(g.consultas[0]).toEqual({ autorizacao: "Bearer ghu_a", variaveis: { dono: "sakura-corp", nome: "sakura-system-ace" } });
+  });
+
+  it("/api/leva/0: pede a etiqueta leva-0 e devolve as tarefas no formato da página", async () => {
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { issues: { totalCount: 1, nodes: [issue] } } } }));
+    const r = await pedir("/api/leva/0", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({
+      numero: 0,
+      cortada: false,
+      tarefas: [{ numero: 354, titulo: "Painel 6/8", url: issue.url, estado: "livre", estimativaHoras: 5 }],
+    });
+    expect(g.consultas[0].variaveis).toMatchObject({ etiqueta: "leva-0" });
+  });
+
+  it("o GitHub responde com `errors`, 500 ou fora do ar: 502 sem detalhe do GitHub", async () => {
+    for (const resposta of [
+      () => Response.json({ data: null, errors: [{ message: "segredo ghu_a vazou" }] }),
+      () => new Response("ghu_a", { status: 500 }),
+      () => {
+        throw new TypeError("fetch failed");
+      },
+    ]) {
+      fingirGraphQL(resposta);
+      const r = await pedir("/api/leva/0", { cookie: await comSessao() });
+      expect(r.status).toBe(502);
+      const texto = await r.text();
+      expect(JSON.parse(texto)).toEqual({ ok: false, erro: "o GitHub não respondeu" });
+      expect(texto).not.toContain("ghu_");
+    }
+  });
+
+  it("o GitHub recusa o token (401): 401 e a sessão é apagada, pra entrar de novo", async () => {
+    fingirGraphQL(() => new Response(null, { status: 401 }));
+    const r = await pedir("/api/levas", { cookie: await comSessao() });
+    expect(r.status).toBe(401);
+    expect(valorDoCookie(r, "sessao")).toBe("");
+  });
+
+  it("token vencido: renova uma vez, consulta com o novo e grava o cookie novo", async () => {
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { labels: { nodes: [] } } } }));
+    const r = await pedir("/api/levas", { cookie: await comSessao({ ...base, expiraEm: Date.now() - 1000 }) });
+    expect(r.status).toBe(200);
+    expect(g.renovacoes()).toBe(1);
+    expect(g.consultas[0].autorizacao).toBe("Bearer ghu_novo");
+    expect(await decifrarSessao(valorDoCookie(r, "sessao")!, CHAVE)).toMatchObject({ token: "ghu_novo" });
+  });
+});
