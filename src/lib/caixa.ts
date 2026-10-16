@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 
 const SELECT_MOVIMENTO =
@@ -10,13 +11,16 @@ const SELECT_MOVIMENTO =
   "categoria:categorias_caixa(nome)";
 
 export async function listarMovimentosCaixa(lojaId: string): Promise<MovimentoCaixa[]> {
-  const { data, error } = await supabase
-    .from("caixa_movimentos")
-    .select(SELECT_MOVIMENTO)
-    .eq("loja_id", lojaId)
-    .order("data", { ascending: false });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("caixa_movimentos")
+      .select(SELECT_MOVIMENTO)
+      .eq("loja_id", lojaId)
+      .order("data", { ascending: false })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as unknown as MovimentoCaixa[];
 }
 

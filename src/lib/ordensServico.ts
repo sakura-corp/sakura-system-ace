@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
@@ -33,14 +34,17 @@ const SELECT_ORDEM =
   "itens:ordens_servico_itens(*)";
 
 export async function listarOrdens(lojaId: string): Promise<OrdemServico[]> {
-  const { data, error } = await supabase
-    .from("ordens_servico")
-    .select(SELECT_ORDEM)
-    .eq("loja_id", lojaId)
-    .order("data_abertura", { ascending: false });
-
-  if (error) throw error;
-  const ordens = data as unknown as OrdemServico[];
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata aberturas iguais.
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico")
+      .select(SELECT_ORDEM)
+      .eq("loja_id", lojaId)
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
+  const ordens = dados as unknown as OrdemServico[];
   return nomearFuncionarios(ordens, await buscarNomesDeFuncionarios(ordens));
 }
 

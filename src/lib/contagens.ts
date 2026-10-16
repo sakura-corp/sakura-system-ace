@@ -1,15 +1,19 @@
 import { criarMovimento } from "./estoque";
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { ContagemEstoque } from "@/types/contagem";
 
 export async function listarContagens(lojaId: string): Promise<ContagemEstoque[]> {
-  const { data, error } = await supabase
-    .from("contagens_estoque")
-    .select("*")
-    .eq("loja_id", lojaId)
-    .order("criado_em", { ascending: false });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("contagens_estoque")
+      .select("*")
+      .eq("loja_id", lojaId)
+      .order("criado_em", { ascending: false })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as ContagemEstoque[];
 }
 

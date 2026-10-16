@@ -8,6 +8,7 @@ import {
   FocusNfeError,
 } from "./focusNfe";
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import { salvarComoDownload } from "./download";
 import { criarZip, type ArquivoParaZip } from "./zip";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
@@ -21,15 +22,18 @@ export async function listarArquivos(
   tipo: TipoNotaFiscal,
   lojaId: string,
 ): Promise<NotaFiscalArquivo[]> {
-  const { data, error } = await supabase
-    .from("notas_fiscais_arquivos")
-    .select(SELECT_ARQUIVO)
-    .eq("tipo", tipo)
-    .eq("loja_id", lojaId)
-    .order("competencia", { ascending: false })
-    .order("criado_em", { ascending: false });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("notas_fiscais_arquivos")
+      .select(SELECT_ARQUIVO)
+      .eq("tipo", tipo)
+      .eq("loja_id", lojaId)
+      .order("competencia", { ascending: false })
+      .order("criado_em", { ascending: false })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as unknown as NotaFiscalArquivo[];
 }
 

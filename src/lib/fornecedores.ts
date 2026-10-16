@@ -1,13 +1,17 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { Fornecedor, NovoFornecedor } from "@/types/fornecedor";
 
 export async function listarFornecedores(): Promise<Fornecedor[]> {
-  const { data, error } = await supabase
-    .from("fornecedores")
-    .select("*")
-    .order("nome", { ascending: true });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("fornecedores")
+      .select("*")
+      .order("nome", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as Fornecedor[];
 }
 
