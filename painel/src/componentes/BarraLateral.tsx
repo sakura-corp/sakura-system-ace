@@ -27,6 +27,17 @@ export function BarraLateral({ levas, atual, pagina = "leva" }: Props) {
               </a>
             </li>
           ))}
+          <li>
+            <a
+              href="/sala"
+              aria-current={pagina === "sala" ? "page" : undefined}
+              className={`block rounded-lg px-3 py-1.5 text-sm ${
+                pagina === "sala" ? "bg-destaque font-medium text-sobre-destaque" : "text-texto hover:bg-livre-fundo"
+              }`}
+            >
+              Sala
+            </a>
+          </li>
         </ul>
       </div>
 

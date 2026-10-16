@@ -1,5 +1,5 @@
 /** As páginas do painel. */
-export type Pagina = "leva" | "escritorio";
+export type Pagina = "leva" | "sala" | "escritorio";
 
 export type EstadoTarefa = "livre" | "andamento" | "revisao" | "feita";
 
@@ -17,6 +17,35 @@ export type Tarefa = {
 // Os estados são os mesmos da Sala (#467): o Escritório usa o mesmo jeito de brilhar.
 export type TipoBonequinho = "pessoa" | "claude" | "casa";
 export type EstadoBonequinho = "trabalhando" | "precisa" | "erro" | "dormindo" | "livre";
+
+export type Bonequinho = {
+  id: string;
+  tipo: TipoBonequinho;
+  nome: string;
+  estado: EstadoBonequinho;
+  fazendo?: string; // ex.: "#454 Central do dia" ou "Publicando a v0.9.52"
+  url?: string; // onde clicar no GitHub
+  avatar?: string; // só pessoas
+  ultimaAtividade?: string; // ISO; usada pro "dormindo"
+};
+
+/** O que se sabe de um bonequinho antes de decidir o estado (a tarefa 8, #468, preenche isto com o GitHub). */
+export type SinaisDoBonequinho = {
+  /** Pessoa: tem tarefa em andamento. */
+  tarefaEmAndamento?: boolean;
+  /** Robô da casa: rodando agora. */
+  rodando?: boolean;
+  /** Robô da casa: como terminou a última rodada. */
+  ultimaRodada?: "deu-certo" | "falhou";
+  /** Logins a quem um PR pediu revisão. */
+  revisaoPedidaA?: string[];
+  /** Logins cuja aprovação uma rodada espera. */
+  aprovacaoEsperadaDe?: string[];
+  /** Login do dono do PR em que a conferência ficou vermelha. */
+  conferenciaVermelhaNoPrDe?: string;
+};
+
+export type EntradaDaSala = Omit<Bonequinho, "estado"> & { sinais: SinaisDoBonequinho };
 
 export type Modelo = "opus" | "sonnet" | "haiku";
 

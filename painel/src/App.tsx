@@ -2,29 +2,41 @@ import { BarraLateral } from "./componentes/BarraLateral";
 import { Contador } from "./componentes/Contador";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { ListaDeTarefas } from "./componentes/ListaDeTarefas";
+import { Sala } from "./componentes/sala/Sala";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { pessoasComVariasEmAndamento } from "./logica/contador";
+import { ehModoTv } from "./logica/sala";
 import type { Pagina } from "./tipos";
 
 
-/** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são só duas. */
+/** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são só três. */
 export function paginaDoCaminho(caminho: string): Pagina {
-  return caminho.replace(/\/+$/, "") === "/escritorio" ? "escritorio" : "leva";
+  const limpo = caminho.replace(/\/+$/, "");
+  if (limpo === "/escritorio") return "escritorio";
+  if (limpo === "/sala") return "sala";
+  return "leva";
 }
 
 const caminhoAtual = () => (typeof window === "undefined" ? "/" : window.location.pathname);
+const buscaAtual = () => (typeof window === "undefined" ? "" : window.location.search);
 
 // Tarefa 2 (#351): a leva ainda é de exemplo. A tarefa 6 liga nos dados do GitHub.
 // O Escritório de agentes também é só de exemplo (docs/painel.md, "Escritório de agentes").
-export default function App({ caminho = caminhoAtual() }: { caminho?: string }) {
+export default function App({ caminho = caminhoAtual(), busca = buscaAtual() }: { caminho?: string; busca?: string }) {
   const pagina = paginaDoCaminho(caminho);
+  // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
+  if (pagina === "sala" && ehModoTv(busca)) return <Sala tv />;
   const tarefas = tarefasDeExemplo;
   const avisos = pessoasComVariasEmAndamento(tarefas);
 
   return (
     <div className="min-h-screen md:flex">
       <BarraLateral levas={[nomeDaLevaDeExemplo]} atual={nomeDaLevaDeExemplo} pagina={pagina} />
-      {pagina === "escritorio" ? (
+      {pagina === "sala" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
+          <Sala />
+        </main>
+      ) : pagina === "escritorio" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 px-4 py-6 md:px-6">
           <Escritorio />
         </main>
