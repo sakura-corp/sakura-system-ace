@@ -279,6 +279,45 @@ as **6 cores das equipes** da tabela acima ficam como estão.
 automáticas e sobre usar a cota de uma pessoa pra trabalho disparado por outra. Antes de qualquer automação, essa
 conferência vem primeiro.
 
+### Como os agentes de verdade vão funcionar (combinado com a Sofia, 16/10/2026)
+
+Conversa de alinhamento: **o desenho está decidido, nada foi construído**. Isto vale mais que a "Recomendação (não decidida)" acima.
+
+**O fluxo**
+1. A Sofia e o Claude escrevem a tarefa, já completa (formato da equipe), e ela vai pro GitHub.
+2. Ela aparece no painel. A pessoa clica em **começar**.
+3. O painel leva a pessoa a uma sessão do Claude **na nuvem, no login dela**, com o **chefe da área** daquela tarefa.
+4. O chefe chama os agentes específicos (cada um com as suas skills); eles devolvem o resultado **pro chefe**.
+5. **A tarefa sempre termina na sessão do chefe**: PR aberto e relatório pronto, e a pessoa só revisa.
+
+**Regras**
+- **Cada pessoa gasta a própria cota.** Não existe cota juntada: o limite do Team é por pessoa. O chefe e os agentes de uma tarefa gastam a cota de **quem clicou**, e agentes em paralelo gastam proporcionalmente mais.
+- **Nuvem primeiro.** Sessão no PC só pra testar o programa vendo funcionar.
+- **O chefe só encerra com PR aberto e relatório**, dizendo o que cada agente fez. Se a cota acabar no meio, grava **onde parou** na descrição do PR ou na tarefa, pra outra sessão retomar. Nunca mescla, nunca publica (regra da equipe, seção 0).
+- **A pessoa decide.** Nada executa sem ela mandar, e o painel só leva tarefas já escritas, nunca texto livre.
+- **Evolução de skill é proposta**: o agente propõe, ela aprova. Consertar skill que falhou segue valendo na hora.
+- **Plano mínimo, se o painel não abrir a sessão direto**: o painel mostra o **número da tarefa** (e o link), a pessoa abre o Claude dela, e a tarefa manda abrir o chefe.
+
+**Pesquisa de como o painel liga a pessoa à sessão (16/10/2026, só documentação oficial da Anthropic)**
+
+| Caminho | O que faz | Serve? |
+|---|---|---|
+| **Link pré-preenchido** de `claude.ai/code` | `?prompt=...&repositories=sakura-corp/sakura-system-ace&environment=...` abre o formulário já com o texto, o repositório e o ambiente. **Não envia sozinho**: a pessoa aperta Enter. A documentação cita "um botão no seu gerenciador de tarefas" como o uso previsto. | **Sim, é o 1º passo.** Cota da própria pessoa, sem credencial nenhuma no painel. Cobre também o plano mínimo: o mesmo botão mostra o número da tarefa. |
+| **Rotina com gatilho de API** (`/fire`) | O painel chamaria uma rotina por HTTP. | **Não.** A rotina é da conta de quem a criou: gasta a cota dessa conta e os commits e PRs saem no nome dela. Quebra o "cada um gasta a sua". |
+| **Remote Control** | Controla do celular ou navegador uma sessão que já roda num PC. | **Não pra isso.** Quem inicia é a pessoa, no PC; não há API pra abrir de fora. |
+| **`claude -p "..." --cloud <sessão>`** | Manda mensagem pra sessão que já existe, pelo terminal. | Útil depois, mas pede o CLI e o login da pessoa: não sai do navegador. |
+| **Projetos** do Claude Code | Uma conversa que coordena várias sessões em paralelo e junta o resultado (parecido com chefe + agentes). | **Ainda não:** beta só em Pro e Max, **não está no Team**. Reavaliar quando chegar. |
+
+**Chefe e agentes**: o jeito mais simples e que já existe é o chefe usar **subagentes dentro da própria sessão** (mesma cota, mesma máquina, o resultado volta pro chefe sozinho). Sessões separadas só se uma tarefa precisar. Os "agent teams" são experimentais e vêm desligados.
+
+**A conferir quando ela assinar o Team (segunda, 19/10)**
+- **O assento precisa incluir Claude Code** (a documentação manda o Owner atribuir um assento que inclua; a página dos assentos premium cita o Claude Code como parte do premium). Conferir o que o assento padrão inclui antes de convidar a equipe.
+- O Owner liga o conector do GitHub (Configurações da organização, Conectores) e, se quiser, o "Quick setup"; **cada pessoa** conecta o próprio GitHub e cria o ambiente `Default`.
+- Se liga os **créditos de uso** (custo extra quando a cota acaba).
+- Reler a Política de Uso e a página de limites: a regra de sessão automática já mudou de planos antes.
+
+**Próximo passo (quando ela mandar começar)**: botão **"Começar com o Claude"** no cartão da tarefa, que monta o link com um texto curto (número da tarefa, "você é o chefe da área X, leia a issue inteira"), e a lista de áreas com chefe. Em aberto: quais áreas têm chefe (as 6 salas ou outras) e as skills de cada uma.
+
 **Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
 `npm run preview` já fazem isso sozinhos.
