@@ -48,6 +48,9 @@ export function AreaRolavel({ className = "", children }: AreaRolavelProps) {
     if (!el) return;
     const observer = new ResizeObserver(atualizar);
     observer.observe(el);
+    // O contêiner tem altura fixa: quando o conteúdo cresce ou encolhe sozinho
+    // (a lista carrega depois de trocar de tela), só o filho muda de medida.
+    if (el.firstElementChild) observer.observe(el.firstElementChild);
     window.addEventListener("resize", atualizar);
     return () => {
       observer.disconnect();

@@ -1,13 +1,17 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { NovoServico, Servico } from "@/types/servico";
 
 export async function listarServicos(): Promise<Servico[]> {
-  const { data, error } = await supabase
-    .from("servicos")
-    .select("*")
-    .order("descricao", { ascending: true });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("servicos")
+      .select("*")
+      .order("descricao", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as Servico[];
 }
 

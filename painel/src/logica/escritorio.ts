@@ -122,6 +122,12 @@ export function pontosDoMiniGrafico(serie: number[], largura: number, altura: nu
     .join(" ");
 }
 
+/** Nome que cabe no espaço do mapa: se passar de `max` letras, corta e termina com reticências (o nome inteiro fica no <title>). */
+export function abreviarNome(nome: string, max: number): string {
+  if (max < 2 || nome.length <= max) return nome;
+  return `${nome.slice(0, max - 1).trimEnd()}…`;
+}
+
 const round = (n: number) => Math.round(n * 10) / 10;
 
 /** Posição de cada sala numa roda (elipse) em volta do centro, começando no alto e indo no sentido do relógio. */

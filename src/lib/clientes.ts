@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type {
   Cliente,
@@ -13,14 +14,17 @@ import type {
 // escolhida numa OS — ver `CLIENTE_CONSUMIDOR_ID`. A venda de balcão o
 // oferece pela própria constante.
 export async function listarClientes(): Promise<Cliente[]> {
-  const { data, error } = await supabase
-    .from("clientes")
-    .select("*, veiculos(*)")
-    .neq("id", CLIENTE_CONSUMIDOR_ID)
-    .order("nome", { ascending: true });
-
-  if (error) throw error;
-  return data as Cliente[];
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata nomes iguais.
+  const clientes = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("clientes")
+      .select("*, veiculos(*)")
+      .neq("id", CLIENTE_CONSUMIDOR_ID)
+      .order("nome", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
+  return clientes as unknown as Cliente[];
 }
 
 export async function criarCliente(

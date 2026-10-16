@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import { agentesDaEquipe, BALAO_DO_ESTADO, contarAgentes, posicoesEmRoda, textoDaContagem, type AgenteComEstado } from "../../logica/escritorio";
+import { abreviarNome, agentesDaEquipe, BALAO_DO_ESTADO, contarAgentes, posicoesEmRoda, textoDaContagem, type AgenteComEstado } from "../../logica/escritorio";
 import type { EstadoBonequinho, Equipe } from "../../tipos";
 
 // Vista de cima: as salas em roda em volta do Cérebro, ligadas a ele por caminhos.
@@ -106,6 +106,9 @@ export function Mapa({ equipes, agentes, notasDoCerebro, salaAberta, aoAbrirSala
                 <g key={a.id} aria-hidden="true">
                   <rect className="esc-mesa" x={cx - 28} y={y0 + 108} width={56} height={14} rx={5} />
                   <PontoDeLuz estado={a.estado} cx={cx} cy={y0 + 90} titulo={`${a.nome}: ${a.fazendo}`} />
+                  <text className="esc-agente-nome" x={cx} y={y0 + 142} textAnchor="middle">
+                    {abreviarNome(a.nome, Math.floor((espaco - 4) / 5.8))}
+                  </text>
                 </g>
               );
             })}

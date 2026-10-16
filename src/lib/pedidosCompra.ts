@@ -2,6 +2,7 @@ import { registrarCotacoes } from "./cotacoesPecas";
 import { hojeLocal } from "./datas";
 import { criarMovimento } from "./estoque";
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import { nomePedido } from "@/types/pedidoCompra";
 import type {
   NovoItemPedidoCompra,
@@ -13,13 +14,16 @@ const SELECT_PEDIDO =
   "*, fornecedor:fornecedores(nome), itens:pedidos_compra_itens(*, peca:pecas(descricao, unidade))";
 
 export async function listarPedidos(lojaId: string): Promise<PedidoCompra[]> {
-  const { data, error } = await supabase
-    .from("pedidos_compra")
-    .select(SELECT_PEDIDO)
-    .eq("loja_id", lojaId)
-    .order("criado_em", { ascending: false });
-
-  if (error) throw error;
+  // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("pedidos_compra")
+      .select(SELECT_PEDIDO)
+      .eq("loja_id", lojaId)
+      .order("criado_em", { ascending: false })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
   return data as unknown as PedidoCompra[];
 }
 

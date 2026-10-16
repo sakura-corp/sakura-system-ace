@@ -137,6 +137,7 @@
 .esc-sala:focus-visible .esc-sala-foco { opacity: 1; }
 .esc-mesa { fill: var(--vidro); stroke: var(--borda); }
 .esc-sala-nome { fill: var(--tx); font-size: 19px; font-weight: 700; }
+.esc-agente-nome { fill: var(--tx); font-size: 11px; font-weight: 600; }
 .esc-sala-conta { fill: var(--tx2); font-size: 15px; }
 
 .esc-cerebro { cursor: pointer; }
