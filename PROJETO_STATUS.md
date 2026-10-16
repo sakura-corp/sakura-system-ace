@@ -245,39 +245,26 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 16/10/2026, mais tarde à noite (2): o painel com as tarefas de verdade (#354)
+### 16/10/2026, noite: o mutirão das pendências (sem a Sofia)
 
-**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel
-(**https://sakura-painel.caranovavidanova.workers.dev**) agora mostra **as issues de verdade** da `leva-0`:
-estado, dono com foto, horas e o contador. PR **#492** (fecha a **#354**), mesclado por ela. **Testado por ela no
-endereço público**: 6 feitas e 2 livres, 29 h de 41 h, as fotos do GitHub.
+**Estado do código**: a `main` tem 4 mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas que passam de 1.000 linhas (paginação) e o painel ("Sair" e nome do agente). Entram na próxima versão, **quando ela decidir publicar**.
 
-#### O que foi feito
-- **O worker** ganhou `/api/levas` e `/api/leva/<n>` (`painel/worker/tarefas.ts`), com uma consulta GraphQL cada,
-  pelo token da sessão. As regras (estado, estimativa, leva atual) ficaram em `painel/src/logica/estado.ts`. A
-  página pede as rotas uma depois da outra, sempre depois do `/api/eu` (`painel/src/logica/dados.ts`). Leva atual
-  em `/`, as outras em `/leva/<n>`. 143 testes, os novos vistos falhar. A revisão do zero achou 4 pontos reais,
-  consertados antes de mesclar; os que ficaram como estão estão explicados no PR #492.
-- **Lição**: a sessão na nuvem **não consegue** fazer pergunta ao GitHub com o login dela (e a trava recusou usar o
-  token da sessão pra isso). Por isso as consultas foram **conferidas contra o esquema público do GitHub**
-  (`octokit/graphql-schema`, com o `graphql` do npm) antes de mesclar, e a prova final foi ela no endereço público.
-  Funcionou de primeira.
+#### O que foi feito (a chefe abriu 5 sessões filhas; cada uma abriu PR, a chefe validou e mesclou)
+- **#495** (fecha #482): `criarOperador` usa a conexão salva (`conexaoAtual()`), não o endereço de mentira. Teste visto reprovar. **Não testado no instalado.**
+- **#522** (fecha #437): a barra de rolagem acompanha o conteúdo. Reproduzido num Chromium, 61 telas idênticas.
+- **#509**: `buscarTudoEmPaginas()` (`src/lib/paginacao.ts`) e 13 listas (clientes, ordens, peças, caixa, estoque, contas, pedidos, notas...) agora vêm em páginas de 1.000, com `id` de desempate. Visto reprovar com 2.500 linhas. Ficou de fora a #498.
+- **#512**: painel, o "Sair" não desce de linha e o nome do agente aparece no mapa.
+- **#496** (fecha #471): a skill `/fechar` e o aviso de conversa comprida (gatilho `UserPromptSubmit`, `scripts/aviso-conversa-comprida.mjs`). A chefe trocou a janela de 200 mil pra **1 milhão de tokens** (a das sessões na nuvem); com 200 mil o aviso saía com ~7%. **Não provado dentro do app** que o gatilho dispara.
+- **#521** (parte pública da #472): etiqueta **`sofia`** e 20 tarefas com ela (a lista "O que depende dela" virou a busca `label:sofia`). Os assuntos da empresa ficaram **só pelo nome** ("no privado").
+- **#523** (fecha #442, itens 1 a 3): `timeout-minutes` em todo job, uma rodada por commit e PR só de documentação sem telas/Electron/RLS (job `mudancas` + `if:`, sem `paths-ignore`). **Limite da prova**: a regra `main protegida` não foi exercitada de verdade; o primeiro PR só de `.md` depois dele confirma.
 
-#### Por onde a próxima sessão começa
-0. **A conversa sobre os agentes do Escritório** (ela pediu pra próxima sessão, 16/10): a ideia dela é ter **vários
-   agentes bem específicos**, cada um com as suas skills, **liderados por um chefe de cada área** do escritório
-   virtual; ela **fala só com os chefes**, não com os "funcionários"; e os agentes **evoluem as skills sozinhos**.
-   É **conversa de alinhamento, não construção**: trazer opções e recomendação, e ela revisa antes de virar decisão
-   (seção 1). Pontos de partida: as opções A, B e C de "de onde vêm os agentes" e a conferência das regras de uso das
-   assinaturas (`docs/painel.md`, "Escritório de agentes"; `docs/referencia/escritorio-de-agentes.md`), e o filtro
-   "isso tira trabalho de verdade?" pra skill nova (`docs/jeito-de-trabalhar.md`).
-1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela
-   autorizou com escrita em 16/10): a TFE (como pagar), a pergunta ao contador sobre o dinheiro do empréstimo que
-   entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
-2. **Painel, tarefa 7 (#355, tempo real)**: **depende dela** ligar o webhook no app "Sakura Painel" e cadastrar o
-   `GITHUB_WEBHOOK_SECRET` na Cloudflare (`docs/painel.md`, "O que a Sofia faz"). Guiar pelo celular, um passo por vez.
-3. **Pequeno, quando ela quiser**: o teste "pegar uma tarefa e recarregar" (se ela não fez); o "Sair" que desce de
-   linha com nome comprido; o nome do agente no mapa do Escritório; e, se ela quiser, issue fechada como "não
-   planejada" deixar de contar como feita (hoje conta, pela regra da #354).
-4. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
-   Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+#### O que depende dela (um passo por vez, guiar pelo celular)
+1. **Publicar a próxima versão** no canal de teste quando quiser, e **testar no instalado**: criar um operador (#482), uma lista grande, a barra de rolagem. Publicar e liberar só com ela pedindo.
+2. **Conferir a busca `label:sofia`** (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia): o que falta da lista antiga; **criar no privado as issues da empresa**; escolher o **horário do resumo de segunda** (A2 da #472, ainda não criado).
+3. **Rodar o `/fechar`** numa sessão e ver se o aviso de conversa comprida aparece (#471). Se não aparecer, vira lição em `docs/licoes.md`.
+4. **#442**: o item 4 (medir de novo uma semana depois, ~23/10, e anotar no privado) fica pra ela; e conferir que o primeiro PR só de `.md` fica mesclável.
+5. **A Bibi**: não mudou hoje; o andamento dela mora só no repositório dela (a memória da Bibi não vem pra cá).
+6. **Empresa**: o que saiu da conversa com o contador está no repositório privado.
+
+#### Continua valendo do marco anterior
+A conversa sobre os agentes do Escritório (alinhamento, não construção); o Claude Team na segunda, 19/10, e a TFE (no privado); a tarefa 7 do painel (#355, depende do webhook e do `GITHUB_WEBHOOK_SECRET` dela); a equipe começando na segunda; a fila #472 (A2).
