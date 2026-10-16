@@ -1,27 +1,182 @@
-// O worker do painel (tarefa #352). Só responde /api/*; o resto é a página, servida pela
-// Cloudflare a partir de ./dist (ver wrangler.jsonc). O login (#353) e o webhook (#355)
-// entram aqui depois.
+// O worker do painel (tarefas #352 e #353). Só responde /api/*; o resto é a página, servida
+// pela Cloudflare a partir de ./dist (ver wrangler.jsonc). O webhook (#355) entra aqui depois.
+//
+// Login (#353): GitHub App "Sakura Painel" da sakura-corp. Só entra quem é membro da
+// organização. O token da pessoa fica no cookie `sessao`, cifrado; a página nunca vê ele.
+// Nunca escrever token, cookie ou segredo em log, erro ou resposta.
 
-interface Ambiente {
+import { buscarUsuario, ehMembro, renovarToken, trocarCodigo } from "./github";
+import {
+  COOKIE_ESTADO,
+  COOKIE_SESSAO,
+  COOKIE_VOLTA,
+  DURACAO_DA_SESSAO_S,
+  DURACAO_DO_ESTADO_S,
+  apagarCookie,
+  caminhoDeVolta,
+  cifrarSessao,
+  decifrarSessao,
+  estadoConfere,
+  lerCookie,
+  montarCookie,
+  novoEstado,
+  precisaRenovar,
+  sessaoVencida,
+  type Sessao,
+} from "./sessao";
+
+export interface Ambiente {
   ASSETS: { fetch(request: Request): Promise<Response> };
+  /** Não é segredo: vem do wrangler.jsonc (ou do .dev.vars, com o app de teste). */
+  GITHUB_APP_CLIENT_ID?: string;
+  /** Segredos da Cloudflare (ou do .dev.vars no PC). */
+  GITHUB_APP_CLIENT_SECRET?: string;
+  CHAVE_DA_SESSAO?: string;
 }
 
-function json(corpo: unknown, status = 200): Response {
-  return new Response(JSON.stringify(corpo), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8" },
-  });
+const CAMINHO_DO_LOGIN = "/api/login";
+
+function comCookies(headers: Headers, cookies: string[]): Headers {
+  for (const c of cookies) headers.append("set-cookie", c);
+  return headers;
+}
+
+function json(corpo: unknown, status = 200, cookies: string[] = []): Response {
+  const headers = new Headers({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  return new Response(JSON.stringify(corpo), { status, headers: comCookies(headers, cookies) });
+}
+
+function redirecionar(destino: string, cookies: string[] = []): Response {
+  const headers = new Headers({ location: destino, "cache-control": "no-store" });
+  return new Response(null, { status: 302, headers: comCookies(headers, cookies) });
+}
+
+type Configuracao = { clientId: string; clientSecret: string; chave: string };
+
+function configuracao(env: Ambiente): Configuracao | null {
+  const clientId = env.GITHUB_APP_CLIENT_ID ?? "";
+  const clientSecret = env.GITHUB_APP_CLIENT_SECRET ?? "";
+  const chave = env.CHAVE_DA_SESSAO ?? "";
+  if (!clientId || !clientSecret || chave.length < 32) return null;
+  return { clientId, clientSecret, chave };
+}
+
+/** Os cookies desta resposta: `Secure`, menos no http://localhost do PC (ver `montarCookie`). */
+function cookiesDe(url: URL) {
+  const seguro = url.protocol === "https:";
+  return {
+    gravar: (nome: string, valor: string, maxAgeS: number, caminho = "/") => montarCookie(nome, valor, maxAgeS, caminho, seguro),
+    apagar: (nome: string, caminho = "/") => apagarCookie(nome, caminho, seguro),
+  };
+}
+
+const enderecoDeVolta = (url: URL) => `${url.origin}/api/login/volta`;
+
+function login(url: URL, config: Configuracao): Response {
+  const cookie = cookiesDe(url);
+  const estado = novoEstado();
+  const destino = new URL("https://github.com/login/oauth/authorize");
+  destino.searchParams.set("client_id", config.clientId);
+  destino.searchParams.set("redirect_uri", enderecoDeVolta(url));
+  destino.searchParams.set("state", estado);
+  destino.searchParams.set("allow_signup", "false");
+  return redirecionar(destino.toString(), [
+    cookie.gravar(COOKIE_ESTADO, estado, DURACAO_DO_ESTADO_S, CAMINHO_DO_LOGIN),
+    cookie.gravar(COOKIE_VOLTA, encodeURIComponent(caminhoDeVolta(url.searchParams.get("volta"))), DURACAO_DO_ESTADO_S, CAMINHO_DO_LOGIN),
+  ]);
+}
+
+async function voltaDoLogin(request: Request, url: URL, config: Configuracao, agora = Date.now()): Promise<Response> {
+  const cookie = cookiesDe(url);
+  // O `state` vale uma vez só: apaga sempre, deu certo ou não.
+  const limpa = [cookie.apagar(COOKIE_ESTADO, CAMINHO_DO_LOGIN), cookie.apagar(COOKIE_VOLTA, CAMINHO_DO_LOGIN)];
+  const falhou = () => redirecionar("/?erro=falha-login", limpa);
+
+  const codigo = url.searchParams.get("code");
+  if (!codigo || !estadoConfere(lerCookie(request, COOKIE_ESTADO), url.searchParams.get("state"))) return falhou();
+
+  try {
+    const tokens = await trocarCodigo(config.clientId, config.clientSecret, codigo, enderecoDeVolta(url), agora);
+    if (!tokens) return falhou();
+    const usuario = await buscarUsuario(tokens.token);
+    if (!usuario) return falhou();
+    const membro = await ehMembro(tokens.token, usuario.login);
+    if (membro === "nao") return redirecionar("/?erro=nao-membro", [...limpa, cookie.apagar(COOKIE_SESSAO)]);
+    if (membro === "erro") return falhou();
+    const sessao: Sessao = { ...tokens, ...usuario, entrouEm: agora };
+    return redirecionar(caminhoDeVolta(lerCookie(request, COOKIE_VOLTA)), [
+      ...limpa,
+      cookie.gravar(COOKIE_SESSAO, await cifrarSessao(sessao, config.chave), DURACAO_DA_SESSAO_S),
+    ]);
+  } catch {
+    console.error("login: falha ao falar com o GitHub");
+    return falhou();
+  }
+}
+
+/**
+ * A sessão de quem fez o pedido, já com o token renovado se ele venceu (os do GitHub App
+ * duram 8 h). Ao renovar, confere de novo se a pessoa ainda é da sakura-corp.
+ * Os `cookies` voltam na resposta: o novo, ou o que apaga a sessão.
+ * As próximas rotas que usam o GitHub (#354) passam por aqui.
+ *
+ * Só apaga a sessão quando ela é ruim de verdade (adulterada, passou dos 30 dias, a pessoa
+ * saiu da sakura-corp). Se a renovação falhar (o GitHub fora do ar, ou duas abas renovando
+ * ao mesmo tempo, já que cada `refresh` vale uma vez só), responde "sem sessão" mas deixa o
+ * cookie como está: a outra aba pode já ter gravado o novo.
+ */
+export async function sessaoAtual(request: Request, config: Configuracao, agora = Date.now()) {
+  const cookie = cookiesDe(new URL(request.url));
+  const nada = { sessao: null, cookies: [] as string[] };
+  const sair = { sessao: null, cookies: [cookie.apagar(COOKIE_SESSAO)] };
+
+  const valor = lerCookie(request, COOKIE_SESSAO);
+  if (!valor) return nada;
+  const sessao = await decifrarSessao(valor, config.chave);
+  if (!sessao || sessaoVencida(sessao, agora)) return sair;
+  if (!precisaRenovar(sessao, agora)) return { sessao, cookies: [] as string[] };
+  if (!sessao.refresh) return sair;
+
+  try {
+    const tokens = await renovarToken(config.clientId, config.clientSecret, sessao.refresh, agora);
+    if (!tokens) return nada;
+    // Os tokens novos já gastaram o refresh antigo: daqui pra frente, só grava ou apaga.
+    if ((await ehMembro(tokens.token, sessao.login).catch(() => "erro" as const)) === "nao") return sair;
+    const nova: Sessao = { ...sessao, ...tokens };
+    const restanteS = Math.max(0, Math.floor((nova.entrouEm + DURACAO_DA_SESSAO_S * 1000 - agora) / 1000));
+    return { sessao: nova, cookies: [cookie.gravar(COOKIE_SESSAO, await cifrarSessao(nova, config.chave), restanteS)] };
+  } catch {
+    console.error("login: falha ao renovar o token");
+    return nada;
+  }
 }
 
 export default {
   async fetch(request: Request, env: Ambiente): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const { pathname } = url;
+    const metodo = request.method;
 
     if (pathname === "/api/saude") {
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        return json({ ok: false, erro: "método não permitido" }, 405);
-      }
+      if (metodo !== "GET" && metodo !== "HEAD") return json({ ok: false, erro: "método não permitido" }, 405);
       return json({ ok: true });
+    }
+
+    if (pathname === "/api/login" || pathname === "/api/login/volta" || pathname === "/api/eu" || pathname === "/api/sair") {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+
+      if (pathname === "/api/sair") {
+        if (metodo !== "POST") return json({ ok: false, erro: "método não permitido" }, 405);
+        return json({ ok: true }, 200, [cookiesDe(url).apagar(COOKIE_SESSAO)]);
+      }
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      if (pathname === "/api/login") return login(url, config);
+      if (pathname === "/api/login/volta") return voltaDoLogin(request, url, config);
+
+      const { sessao, cookies } = await sessaoAtual(request, config);
+      if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+      return json({ login: sessao.login, avatar: sessao.avatar }, 200, cookies);
     }
 
     if (pathname === "/api" || pathname.startsWith("/api/")) {

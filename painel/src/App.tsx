@@ -6,7 +6,7 @@ import { Sala } from "./componentes/sala/Sala";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { pessoasComVariasEmAndamento } from "./logica/contador";
 import { ehModoTv } from "./logica/sala";
-import type { Pagina } from "./tipos";
+import type { Pagina, Usuario } from "./tipos";
 
 
 /** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são só três. */
@@ -22,7 +22,16 @@ const buscaAtual = () => (typeof window === "undefined" ? "" : window.location.s
 
 // Tarefa 2 (#351): a leva ainda é de exemplo. A tarefa 6 liga nos dados do GitHub.
 // O Escritório de agentes também é só de exemplo (docs/painel.md, "Escritório de agentes").
-export default function App({ caminho = caminhoAtual(), busca = buscaAtual() }: { caminho?: string; busca?: string }) {
+export default function App({
+  caminho = caminhoAtual(),
+  busca = buscaAtual(),
+  usuario,
+}: {
+  caminho?: string;
+  busca?: string;
+  /** Quem entrou (#353). Sem ele (só no `npm run dev`), a barra lateral não mostra o "Sair". */
+  usuario?: Usuario;
+}) {
   const pagina = paginaDoCaminho(caminho);
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
   if (pagina === "sala" && ehModoTv(busca)) return <Sala tv />;
@@ -31,7 +40,7 @@ export default function App({ caminho = caminhoAtual(), busca = buscaAtual() }: 
 
   return (
     <div className="min-h-screen md:flex">
-      <BarraLateral levas={[nomeDaLevaDeExemplo]} atual={nomeDaLevaDeExemplo} pagina={pagina} />
+      <BarraLateral levas={[nomeDaLevaDeExemplo]} atual={nomeDaLevaDeExemplo} pagina={pagina} usuario={usuario} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
           <Sala />

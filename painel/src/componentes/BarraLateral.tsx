@@ -1,9 +1,27 @@
-import { Lock } from "lucide-react";
-import type { Pagina } from "../tipos";
+import { Lock, LogOut } from "lucide-react";
+import { useState } from "react";
+import type { Pagina, Usuario } from "../tipos";
+import { Avatar } from "./Avatar";
 
-type Props = { levas: string[]; atual: string; pagina?: Pagina };
+type Props = { levas: string[]; atual: string; pagina?: Pagina; usuario?: Usuario };
 
-export function BarraLateral({ levas, atual, pagina = "leva" }: Props) {
+/**
+ * Sai do painel (#353): o worker apaga a sessão, e a página volta pra tela de entrada.
+ * Se não der (sem internet), avisa, em vez de fingir que saiu.
+ */
+async function sair(): Promise<boolean> {
+  try {
+    const resposta = await fetch("/api/sair", { method: "POST" });
+    if (!resposta.ok) return false;
+  } catch {
+    return false;
+  }
+  window.location.assign("/");
+  return true;
+}
+
+export function BarraLateral({ levas, atual, pagina = "leva", usuario }: Props) {
+  const [saidaFalhou, setSaidaFalhou] = useState(false);
   return (
     <nav
       aria-label="Menu do painel"
@@ -66,6 +84,29 @@ export function BarraLateral({ levas, atual, pagina = "leva" }: Props) {
           </span>
         </p>
       </div>
+
+      {usuario && (
+        <div className="flex flex-wrap items-center gap-2 md:border-t md:border-borda md:pt-4">
+          <Avatar login={usuario.login} avatar={usuario.avatar} />
+          <span className="min-w-0 truncate text-sm font-medium">{usuario.login}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setSaidaFalhou(false);
+              void sair().then((saiu) => setSaidaFalhou(!saiu));
+            }}
+            className="ml-auto inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm text-texto-2 hover:bg-livre-fundo hover:text-texto"
+          >
+            <LogOut aria-hidden="true" className="size-3.5" />
+            Sair
+          </button>
+          {saidaFalhou && (
+            <p role="alert" className="basis-full text-xs text-revisao">
+              Não deu pra sair. Tente de novo.
+            </p>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

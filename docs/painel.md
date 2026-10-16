@@ -203,10 +203,12 @@ Cada coisa que ela faz, o Claude dela **anota em "Andamento" do `docs/painel.md`
 - **Antes da tarefa 1**: ~~criar a etiqueta `leva-0` e as issues~~ (feito em 30/09) e ~~convidar o Gustavo~~ (feito em 30/09).
 - **Antes da tarefa 4**: ~~na Cloudflare, ligar o repositório ("Workers Builds")~~ (feito em
   01/10; como ficou está em "Andamento").
-- **Antes da tarefa 5**: criar os dois GitHub Apps na `sakura-corp`, com as permissões da #353
-  (inclusive **Actions** e **Contents**, só leitura, que a sala usa), e cadastrar
-  `GITHUB_APP_CLIENT_SECRET` e `CHAVE_DA_SESSAO` na Cloudflare. Passar o segredo do app **de
-  teste** pro Gustavo pelo **Bitwarden Send** (um link cifrado que se apaga sozinho), nunca por mensagem.
+- **Antes da tarefa 5**: ~~criar o GitHub App "Sakura Painel" e cadastrar os segredos na Cloudflare~~
+  (feito em 16/10; como ficou está em "Andamento"). **Falta só o app de teste**, quando alguém da
+  equipe for mexer no login no PC: criar o **"Sakura Painel (teste)"** igual ao de verdade (mesmas
+  permissões, instalado só no `sakura-system-ace`), com o Redirect URI
+  `http://localhost:8787/api/login/volta`, e passar o client secret dele pelo **Bitwarden Send**
+  (um link cifrado que se apaga sozinho), nunca por mensagem.
 - **Antes da tarefa 7**: no "Sakura Painel", ligar o webhook (endereço
   `https://<painel>/api/webhook`, eventos **Issues, Pull request, Label, Workflow runs, Push,
   Create e Delete**; os quatro últimos são da sala, e já vão juntos pra não mexer duas vezes) e cadastrar
@@ -317,8 +319,18 @@ dependências dela, separadas das do programa das lojas:
 - O **Vitest está fixo na versão `4.1.10`**, inclusive em `overrides`. Não trocar por `^4...`:
   um complemento opcional dele puxa o Vitest 5, e o `npm install` quebra com o erro
   `Cannot read properties of null (reading 'edgesOut')`.
-- A configuração do login no PC entra aqui na tarefa 5 (o arquivo `painel/.dev.vars`, que o Git
-  já ignora).
+- **O login no PC** (#353): o `npm run dev` sozinho não tem worker, então mostra o painel de exemplo
+  sem login. Pra testar o login de verdade, use o `npm run dev:worker` com o app **de teste** e um
+  arquivo `painel/.dev.vars` (o Git já ignora ele; **nunca** colar o conteúdo em tarefa, PR ou
+  conversa). Ele tem três linhas, no formato `NOME=valor`:
+  - `GITHUB_APP_CLIENT_ID=`, o Client ID do "Sakura Painel (teste)" (troca o do app de verdade,
+    que está no `wrangler.jsonc`);
+  - `GITHUB_APP_CLIENT_SECRET=`, o client secret do app de teste, que a Sofia manda pelo Bitwarden Send;
+  - `CHAVE_DA_SESSAO=`, uma senha qualquer **sua**, de 32 caracteres ou mais (letras e números),
+    gerada no Bitwarden. Não precisa ser a da Cloudflare, e não deve.
+
+  Sem esse arquivo, o `npm run dev:worker` mostra a tela de entrada, e o botão responde "login não
+  configurado".
 
 ## Andamento
 
@@ -390,3 +402,18 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   Cloudflare publicou sozinha, e a Sofia conferiu no celular: `/api/saude` responde `{"ok":true}`, e `/sala`, `/sala?tv` e
   `/escritorio` abrem direto. **A próxima é a tarefa 5 (#353, login)**, que depende da Sofia criar os dois GitHub Apps (ver
   "O que a Sofia faz").
+- **16/10/2026, mais tarde**: **app de login criado** pela Sofia: o GitHub App **"Sakura Painel"** da `sakura-corp`
+  (Client ID `Iv23liveky5fWf6C7oO2`, que não é segredo e está no `wrangler.jsonc`), com as permissões da #353
+  (Actions, Contents, Pull requests e Metadata só leitura; Issues leitura e escrita; Members da organização só
+  leitura), "Expire user authorization tokens" ligado, webhook desligado, instalado **só** no `sakura-system-ace`.
+  Redirect URI: `https://sakura-painel.caranovavidanova.workers.dev/api/login/volta`. Os segredos
+  `GITHUB_APP_CLIENT_SECRET` e `CHAVE_DA_SESSAO` estão na Cloudflare (só em Production) e no Bitwarden dela. A chave
+  privada que o GitHub exige pra instalar foi gerada e apagada: o painel não usa. **O app de teste não foi
+  criado** (a Sofia testa sozinha no endereço público, por enquanto); ver "O que a Sofia faz".
+- **16/10/2026, à noite**: **tarefa 5 (#353), o login, feita pela Sofia com o Claude dela.** O worker ganhou
+  `/api/login`, `/api/login/volta`, `/api/eu` e `/api/sair` (`painel/worker/sessao.ts` e `github.ts`); a página
+  mostra a tela de entrada pra quem não entrou, e a foto, o nome e "Sair" no canto da barra lateral. Ao renovar o
+  token (a cada 8 h), o worker confere de novo se a pessoa ainda é da `sakura-corp`. **Pra #354**: toda rota com
+  dados passa por `sessaoAtual()`, e devolve os `cookies` dela na resposta. Cuidado com duas chamadas ao mesmo
+  tempo com o token vencido: o GitHub aceita cada `refresh` uma vez só, e a segunda derruba a sessão (fazer a
+  página pedir `/api/eu` antes das outras resolve).

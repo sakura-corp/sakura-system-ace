@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App";
+import { ComLogin } from "./ComLogin";
 import "./estilo.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <ComLogin />
   </StrictMode>,
 );
