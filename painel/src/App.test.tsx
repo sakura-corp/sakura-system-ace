@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import App, { paginaDoCaminho } from "./App";
+import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 
 const html = (caminho: string, busca = "") => renderToString(<App caminho={caminho} busca={busca} />).replace(/<!-- -->/g, "");
 
@@ -69,5 +70,29 @@ describe("App", () => {
     expect(paginaDoCaminho("/sala")).toBe("sala");
     expect(paginaDoCaminho("/")).toBe("leva");
     expect(paginaDoCaminho("/qualquer")).toBe("leva");
+  });
+
+  it("logada: foto, nome e Sair no canto da barra lateral; sem login, nada disso", () => {
+    const logada = renderToString(<App caminho="/" busca="" usuario={{ login: "fulana", avatar: "" }} />);
+    expect(logada).toContain("fulana");
+    expect(logada).toMatch(/<button[^>]*>.*Sair<\/button>/);
+    expect(html("/")).not.toContain("Sair");
+  });
+});
+
+describe("TelaDeEntrada", () => {
+  it("mostra o botão que leva ao /api/login, e a mensagem de erro quando tem", () => {
+    const h = renderToString(<TelaDeEntrada erro="Esta conta não faz parte da Sakura Corp." />);
+    expect(h).toContain('href="/api/login"');
+    expect(h).toContain("Entrar com o GitHub");
+    expect(h).toMatch(/role="alert"[^>]*>Esta conta não faz parte da Sakura Corp\.</);
+    expect(renderToString(<TelaDeEntrada />)).not.toContain('role="alert"');
+    expect(renderToString(<TelaDeEntrada volta="/sala?tv" />)).toContain('href="/api/login?volta=%2Fsala%3Ftv"');
+  });
+
+  it("enquanto confere, não mostra o botão", () => {
+    const h = renderToString(<TelaDeEntrada carregando />);
+    expect(h).toContain("Conferindo o login");
+    expect(h).not.toContain("/api/login");
   });
 });

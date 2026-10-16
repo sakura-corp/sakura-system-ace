@@ -91,3 +91,7 @@ export type TarefaDoEscritorio = {
   feitaEm?: string;
   url?: string;
 };
+
+// ---- Login (#353) ----
+/** Quem entrou: o que o worker devolve em /api/eu. O token nunca chega na página. */
+export type Usuario = { login: string; avatar: string };

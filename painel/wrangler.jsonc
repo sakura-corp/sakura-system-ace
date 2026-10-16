@@ -10,6 +10,11 @@
   // a cada publicação.
   "workers_dev": true,
   "preview_urls": false,
+  // Login (#353). O Client ID do app "Sakura Painel" não é segredo. O client secret e a
+  // CHAVE_DA_SESSAO são segredos: só na Cloudflare (e no .dev.vars de quem programa).
+  "vars": {
+    "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2"
+  },
   "assets": {
     "directory": "./dist",
     // Deixa o worker entregar a página (env.ASSETS) quando precisar.
