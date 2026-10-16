@@ -299,6 +299,13 @@ dependências dela, separadas das do programa das lojas:
 | `npm run build` | confere os tipos e monta a versão final na pasta `painel/dist` |
 | `npm run typecheck` | só confere os tipos |
 | `npm test` | roda os testes do painel |
+| `npm run dev:worker` | roda a página **e** o worker juntos (`wrangler dev`), em `http://localhost:8787`, do jeito que fica na Cloudflare. Precisa de um `npm run build` antes, porque ele serve a pasta `dist`. `http://localhost:8787/api/saude` responde `{"ok":true}` |
+
+**No ar**: **https://sakura-painel.caranovavidanova.workers.dev** (a leva), mais `/sala`, `/sala?tv`,
+`/escritorio` e `/api/saude`. Quem publica é a Cloudflare, sozinha, a cada mudança em `painel/` na `main`
+(não existe script de publicar). O que ela usa está em `painel/wrangler.jsonc`: o worker
+(`painel/worker/index.ts`) só responde `/api/*`; o resto é a página, e caminho que não é arquivo recebe o
+`index.html`.
 
 - **No Windows (PowerShell)**, se aparecer *"a execução de scripts foi desabilitada neste
   sistema"*, trocar `npm` por **`npm.cmd`** em todos os comandos (ex: `npm.cmd run dev`). Não
@@ -375,3 +382,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   exemplo também (#485). **A tarefa 4 (#352) já pode começar.** No `wrangler.jsonc` dela, além do que está no item de
   01/10, pôr `assets.not_found_handling: "single-page-application"`, pra `/sala`, `/sala?tv` e `/escritorio` abrirem
   direto.
+- **16/10/2026, à noite**: **tarefa 4 (#352) pronta, em PR**: `painel/wrangler.jsonc` (nome `sakura-painel`, endereço
+  `workers.dev` ligado, prévia desligada, `/sala` e `/escritorio` abrindo direto) e o worker com `/api/saude`.
+  Provado no `wrangler dev` (as 6 rotas) e nos testes, cada regra vista falhar de propósito. **Falta a Sofia mesclar e
+  conferir o endereço no ar.**
