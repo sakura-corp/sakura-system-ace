@@ -182,7 +182,8 @@ tarefa 3 (#467) a sala        → PR → Sofia aprova
 tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no ar (feito)
                                                        + Sofia cria os apps de login (o de verdade, feito)
 tarefa 5 (#353) login         → PR → Sofia aprova (feito)
-tarefa 6 (#354) dados         → PR → Sofia aprova      + Sofia liga o aviso automático (webhook)
+tarefa 6 (#354) dados         → PR → Sofia aprova (feito)
+                                                       + Sofia liga o aviso automático (webhook), antes da 7
 tarefa 7 (#355) tempo real    → PR → Sofia aprova
 tarefa 8 (#468) sala ao vivo  → PR → Sofia aprova  →  fim da leva 0 (ver "Fim de uma leva")
 ```
@@ -419,7 +420,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tempo com o token vencido: o GitHub aceita cada `refresh` uma vez só, e a segunda derruba a sessão (fazer a
   página pedir `/api/eu` antes das outras resolve).
 - **16/10/2026, mais tarde à noite**: **tarefa 6 (#354), as tarefas de verdade, feita pela Sofia com o Claude dela** (PR
-  aberto, esperando ela mesclar). O worker ganhou `/api/levas` (as etiquetas `leva-N`, com quantas tarefas abertas cada uma
+  #492, mesclado; **testado por ela no endereço público**: a `leva-0` de verdade, 6 feitas e 2 livres). O worker ganhou `/api/levas` (as etiquetas `leva-N`, com quantas tarefas abertas cada uma
   tem, e qual é a atual) e `/api/leva/<n>` (uma consulta GraphQL; devolve no formato `Tarefa`), em `painel/worker/tarefas.ts`.
   As regras (estado, estimativa, leva atual) estão em `painel/src/logica/estado.ts`; a busca da página, em
   `painel/src/logica/dados.ts`, pede **uma rota depois da outra**, sempre depois do `/api/eu` (o `refresh` vale uma vez só).
