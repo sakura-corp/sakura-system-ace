@@ -50,8 +50,16 @@ describe("carregarLeva", () => {
     for (const r of [() => json({ ok: false }, 502), () => new Response("<html>", { headers: { "content-type": "text/html" } }), () => json({ levas: "x" })]) {
       expect(await carregarLeva(null, fingirWorker({ "/api/levas": r }).buscar)).toMatchObject({ tipo: "erro", mensagem: expect.stringContaining("GitHub") });
     }
-    const w = fingirWorker({ "/api/levas": () => json(levas), "/api/leva/1": () => json({ tarefas: [{ numero: "1" }] }) });
-    expect(await carregarLeva(null, w.buscar)).toMatchObject({ tipo: "erro" });
+    for (const ruim of [{ numero: "1" }, { ...tarefa, estado: "bloqueada" }, { ...tarefa, dono: "fulana" }, { ...tarefa, url: undefined }]) {
+      const w = fingirWorker({ "/api/levas": () => json(levas), "/api/leva/1": () => json({ tarefas: [ruim] }) });
+      expect(await carregarLeva(null, w.buscar)).toMatchObject({ tipo: "erro" });
+    }
+  });
+
+  it("só as levas (Sala e Escritório): não pede as tarefas", async () => {
+    const w = fingirWorker({ "/api/levas": () => json(levas) });
+    expect(await carregarLeva(null, w.buscar, true)).toEqual({ tipo: "pronto", levas: levas.levas, atual: 1, leva: { numero: 1, tarefas: [], cortada: false } });
+    expect(w.pedidos).toEqual(["/api/levas"]);
   });
 
   it("sem internet: erro de conexão", async () => {

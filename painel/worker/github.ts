@@ -93,7 +93,9 @@ export const REPOSITORIO = "sakura-system-ace";
 /**
  * Uma consulta GraphQL com o token de quem está logado (#354).
  * `sem-acesso` = o GitHub recusou o token (401); `erro` = qualquer outra falha (fora do ar,
- * limite, resposta com `errors`). Nunca devolve a resposta do GitHub como texto de erro.
+ * limite, resposta sem `data`). Com `data` e `errors` juntos (um PR de outro repositório que o
+ * app não lê, por exemplo), vale o que veio: o que faltou chega como null.
+ * Nunca devolve a resposta do GitHub como texto de erro.
  */
 export async function consultar<T>(
   token: string,
@@ -112,7 +114,7 @@ export async function consultar<T>(
   });
   if (resposta.status === 401) return { tipo: "sem-acesso" };
   if (!resposta.ok) return { tipo: "erro" };
-  const corpo = (await resposta.json()) as { data?: T | null; errors?: unknown[] };
-  if (!corpo.data || (Array.isArray(corpo.errors) && corpo.errors.length > 0)) return { tipo: "erro" };
+  const corpo = (await resposta.json()) as { data?: T | null };
+  if (!corpo.data) return { tipo: "erro" };
   return { tipo: "ok", dados: corpo.data };
 }

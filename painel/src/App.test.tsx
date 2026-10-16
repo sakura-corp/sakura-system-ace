@@ -142,6 +142,9 @@ describe("App com as tarefas de verdade (#354)", () => {
     expect(h).toContain("Não deu pra buscar as tarefas no GitHub agora.");
     expect(h).toMatch(/<button[^>]*>.*Tentar de novo<\/button>/);
     expect(h).toMatch(/<a href="\/"[^>]*>Leva atual<\/a>/);
+    const na0 = de({ tipo: "carregando" }, "/leva/0");
+    expect(na0).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>Leva 0<\/a>/);
+    expect(na0).not.toContain("Leva atual");
   });
 
   it("sessão acabou: a tela de entrada, voltando pra mesma página", () => {

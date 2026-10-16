@@ -296,9 +296,20 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(g.consultas[0].variaveis).toMatchObject({ etiqueta: "leva-0" });
   });
 
-  it("o GitHub responde com `errors`, 500 ou fora do ar: 502 sem detalhe do GitHub", async () => {
+  it("resposta parcial (`data` com `errors`, ex.: um PR que o app não lê): mostra o que veio", async () => {
+    fingirGraphQL(() => Response.json({
+      data: { repository: { issues: { totalCount: 1, nodes: [{ ...issue, closedByPullRequestsReferences: { nodes: [null] } }] } } },
+      errors: [{ message: "Resource not accessible by integration" }],
+    }));
+    const r = await pedir("/api/leva/0", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ tarefas: [{ numero: 354, estado: "livre" }] });
+  });
+
+  it("o GitHub responde só com `errors`, 500 ou fora do ar: 502 sem detalhe do GitHub", async () => {
     for (const resposta of [
       () => Response.json({ data: null, errors: [{ message: "segredo ghu_a vazou" }] }),
+      () => Response.json({ errors: [{ message: "segredo ghu_a vazou" }] }),
       () => new Response("ghu_a", { status: 500 }),
       () => {
         throw new TypeError("fetch failed");

@@ -25,8 +25,20 @@ export function levaPedida(caminho: string): number | null {
 /** Endereço de uma leva na página: a atual é "/", as outras /leva/<n>. */
 export const enderecoDaLeva = (numero: number, atual: number | null) => (numero === atual ? "/" : `/leva/${numero}`);
 
-const ehTarefa = (t: unknown): t is Tarefa =>
-  typeof t === "object" && t !== null && typeof (t as Tarefa).numero === "number" && typeof (t as Tarefa).titulo === "string";
+const ESTADOS_VALIDOS: readonly string[] = ["livre", "andamento", "revisao", "feita"];
+
+const ehTarefa = (t: unknown): t is Tarefa => {
+  if (typeof t !== "object" || t === null) return false;
+  const { numero, titulo, url, estado, dono } = t as Record<string, unknown>;
+  return (
+    typeof numero === "number" &&
+    typeof titulo === "string" &&
+    typeof url === "string" &&
+    typeof estado === "string" &&
+    ESTADOS_VALIDOS.includes(estado) &&
+    (dono === undefined || (typeof dono === "object" && dono !== null && typeof (dono as { login?: unknown }).login === "string"))
+  );
+};
 
 async function pedirJson(buscar: Buscar, endereco: string): Promise<{ tipo: "ok"; corpo: unknown } | Exclude<EstadoDaLeva, { tipo: "pronto" | "carregando" | "sem-levas" }>> {
   let resposta: Response;
@@ -49,9 +61,10 @@ async function pedirJson(buscar: Buscar, endereco: string): Promise<{ tipo: "ok"
 /**
  * Busca as levas e depois as tarefas da leva pedida (ou da atual), uma depois da outra: se o
  * token precisar ser renovado, só o primeiro pedido renova (cada `refresh` vale uma vez só).
- * Leva pedida que não existe abre a atual.
+ * Leva pedida que não existe abre a atual. `soAsLevas` (Sala e Escritório, que só precisam da
+ * barra lateral): não busca as tarefas, e devolve a leva com a lista vazia.
  */
-export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch): Promise<EstadoDaLeva> {
+export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch, soAsLevas = false): Promise<EstadoDaLeva> {
   const r1 = await pedirJson(buscar, "/api/levas");
   if (r1.tipo !== "ok") return r1;
   const corpo1 = r1.corpo as Partial<RespostaDasLevas>;
@@ -60,6 +73,7 @@ export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch
   const atual = typeof corpo1.atual === "number" ? corpo1.atual : null;
   if (atual === null || levas.length === 0) return { tipo: "sem-levas" };
   const numero = pedida !== null && levas.some((l) => l.numero === pedida) ? pedida : atual;
+  if (soAsLevas) return { tipo: "pronto", levas, atual, leva: { numero, tarefas: [], cortada: false } };
 
   const r2 = await pedirJson(buscar, `/api/leva/${numero}`);
   if (r2.tipo !== "ok") return r2;

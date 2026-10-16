@@ -21,21 +21,24 @@ export function paginaDoCaminho(caminho: string): Pagina {
 const caminhoAtual = () => (typeof window === "undefined" ? "/" : window.location.pathname);
 const buscaAtual = () => (typeof window === "undefined" ? "" : window.location.search);
 
-/** As levas e as tarefas de verdade (#354), buscadas no worker. `ativo` = false não busca nada. */
-function useLeva(pedida: number | null, ativo: boolean): [EstadoDaLeva, () => void] {
+/**
+ * As levas e as tarefas de verdade (#354), buscadas no worker. `ativo` = false não busca nada;
+ * `soAsLevas`: só a lista da barra lateral (na Sala e no Escritório).
+ */
+function useLeva(pedida: number | null, ativo: boolean, soAsLevas: boolean): [EstadoDaLeva, () => void] {
   const [estado, setEstado] = useState<EstadoDaLeva>({ tipo: "carregando" });
   const [tentativa, setTentativa] = useState(0);
   useEffect(() => {
     if (!ativo) return;
     let vivo = true;
     setEstado({ tipo: "carregando" });
-    void carregarLeva(pedida).then((novo) => {
+    void carregarLeva(pedida, fetch, soAsLevas).then((novo) => {
       if (vivo) setEstado(novo);
     });
     return () => {
       vivo = false;
     };
-  }, [pedida, ativo, tentativa]);
+  }, [pedida, ativo, soAsLevas, tentativa]);
   return [estado, () => setTentativa((n) => n + 1)];
 }
 
@@ -61,7 +64,7 @@ export default function App({
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined;
   const pedida = levaPedida(caminho);
-  const [buscada, tentarDeNovo] = useLeva(pedida, !exemplo && !tv && levaFixa === undefined);
+  const [buscada, tentarDeNovo] = useLeva(pedida, !exemplo && !tv && levaFixa === undefined, pagina !== "leva");
   const estado = levaFixa ?? buscada;
 
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
@@ -78,8 +81,8 @@ export default function App({
     mostrada = estado.leva.numero;
     levas = estado.levas.map((l) => ({ nome: l.nome, href: enderecoDaLeva(l.numero, estado.atual), atual: l.numero === mostrada }));
   } else {
-    // Enquanto busca (ou se deu erro), um caminho de volta pra leva atual.
-    levas = [{ nome: "Leva atual", href: "/", atual: true }];
+    // Enquanto busca (ou se deu erro), um caminho de volta pra leva da tela (ou pra atual).
+    levas = [pedida === null ? { nome: "Leva atual", href: "/", atual: true } : { nome: `Leva ${pedida}`, href: `/leva/${pedida}`, atual: true }];
   }
 
   return (
