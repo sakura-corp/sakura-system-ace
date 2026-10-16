@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { emailInterno } from "./auth";
+import { conexaoAtual } from "./conexao";
 import { definirLojasDoOperador } from "./lojas";
 import { supabase } from "./supabase";
 import type { NovoOperador, Operador } from "@/types/operador";
@@ -14,19 +15,29 @@ export async function listarOperadores(): Promise<Operador[]> {
   return data as Operador[];
 }
 
+// Um client isolado (sem persistir sessão) evita que criar um operador novo
+// troque a sessão de quem está logado agora (o supabase-js loga
+// automaticamente como o usuário recém-criado ao chamar signUp). Usa a mesma
+// conexão do resto do programa: no app instalado o `.env` é ignorado, então
+// ler `import.meta.env` aqui mandava o cadastro pra um endereço de mentira.
+export function criarClienteTemporario() {
+  const conexao = conexaoAtual();
+  if (!conexao) {
+    throw new Error(
+      "Este computador ainda não está ligado a nenhuma empresa. Configure a conexão antes de cadastrar operadores.",
+    );
+  }
+  return createClient(conexao.url, conexao.chave, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 export async function criarOperador(
   operador: NovoOperador,
   senha: string,
   lojaIds: string[],
 ): Promise<void> {
-  // Um client isolado (sem persistir sessão) evita que criar um operador novo
-  // troque a sessão de quem está logado agora (o supabase-js loga
-  // automaticamente como o usuário recém-criado ao chamar signUp).
-  const clienteTemporario = createClient(
-    import.meta.env.VITE_SUPABASE_URL || "https://placeholder.supabase.co",
-    import.meta.env.VITE_SUPABASE_ANON_KEY || "placeholder-anon-key",
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  const clienteTemporario = criarClienteTemporario();
 
   const { data, error } = await clienteTemporario.auth.signUp({
     email: emailInterno(operador.usuario),
