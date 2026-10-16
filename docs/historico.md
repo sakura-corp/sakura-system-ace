@@ -35,6 +35,43 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026, mais tarde à noite (2): o painel com as tarefas de verdade (#354)
+
+**Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel
+(**https://sakura-painel.caranovavidanova.workers.dev**) agora mostra **as issues de verdade** da `leva-0`:
+estado, dono com foto, horas e o contador. PR **#492** (fecha a **#354**), mesclado por ela. **Testado por ela no
+endereço público**: 6 feitas e 2 livres, 29 h de 41 h, as fotos do GitHub.
+
+#### O que foi feito
+- **O worker** ganhou `/api/levas` e `/api/leva/<n>` (`painel/worker/tarefas.ts`), com uma consulta GraphQL cada,
+  pelo token da sessão. As regras (estado, estimativa, leva atual) ficaram em `painel/src/logica/estado.ts`. A
+  página pede as rotas uma depois da outra, sempre depois do `/api/eu` (`painel/src/logica/dados.ts`). Leva atual
+  em `/`, as outras em `/leva/<n>`. 143 testes, os novos vistos falhar. A revisão do zero achou 4 pontos reais,
+  consertados antes de mesclar; os que ficaram como estão estão explicados no PR #492.
+- **Lição**: a sessão na nuvem **não consegue** fazer pergunta ao GitHub com o login dela (e a trava recusou usar o
+  token da sessão pra isso). Por isso as consultas foram **conferidas contra o esquema público do GitHub**
+  (`octokit/graphql-schema`, com o `graphql` do npm) antes de mesclar, e a prova final foi ela no endereço público.
+  Funcionou de primeira.
+
+#### Por onde a próxima sessão começa
+0. **A conversa sobre os agentes do Escritório** (ela pediu pra próxima sessão, 16/10): a ideia dela é ter **vários
+   agentes bem específicos**, cada um com as suas skills, **liderados por um chefe de cada área** do escritório
+   virtual; ela **fala só com os chefes**, não com os "funcionários"; e os agentes **evoluem as skills sozinhos**.
+   É **conversa de alinhamento, não construção**: trazer opções e recomendação, e ela revisa antes de virar decisão
+   (seção 1). Pontos de partida: as opções A, B e C de "de onde vêm os agentes" e a conferência das regras de uso das
+   assinaturas (`docs/painel.md`, "Escritório de agentes"; `docs/referencia/escritorio-de-agentes.md`), e o filtro
+   "isso tira trabalho de verdade?" pra skill nova (`docs/jeito-de-trabalhar.md`).
+1. **Assuntos da empresa, com ela em casa** (no privado; adicionar o `caranovavidanova/sakura-corp`, que ela
+   autorizou com escrita em 16/10): a TFE (como pagar), a pergunta ao contador sobre o dinheiro do empréstimo que
+   entrou, e o **Claude Team, que ela assina na segunda, 19/10**.
+2. **Painel, tarefa 7 (#355, tempo real)**: **depende dela** ligar o webhook no app "Sakura Painel" e cadastrar o
+   `GITHUB_WEBHOOK_SECRET` na Cloudflare (`docs/painel.md`, "O que a Sofia faz"). Guiar pelo celular, um passo por vez.
+3. **Pequeno, quando ela quiser**: o teste "pegar uma tarefa e recarregar" (se ela não fez); o "Sair" que desce de
+   linha com nome comprido; o nome do agente no mapa do Escritório; e, se ela quiser, issue fechada como "não
+   planejada" deixar de contar como feita (hoje conta, pela regra da #354).
+4. **Ainda vale** do marco de 16/10 de manhã (`docs/historico.md`): a equipe começa na segunda (Termos, convites,
+   Supabase de teste guiado, revisão do manual e dos rascunhos), a #482 e a fila #471 → #472.
+
 ### 16/10/2026, mais tarde à noite: o login do painel no ar e testado (#353)
 
 **Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel
