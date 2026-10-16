@@ -15,8 +15,13 @@ name: CI
 #
 # NÃO builda o instalador do Windows de propósito: isso é lento e já tem lugar
 # próprio (release.yml, disparado por tag ou manualmente).
+#
+# Uma rodada só por commit (#442): `push` só na main, e as branches são cobertas
+# pelo `pull_request`. Antes, cada commit de PR rodava duas vezes (as duas não
+# se cancelavam, porque o `github.ref` é diferente nos dois eventos).
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch: {}
 
@@ -30,9 +35,44 @@ permissions:
   contents: read
 
 jobs:
+  # PR só de documentação (.md e docs/) não precisa abrir o app, o Electron nem
+  # o banco. O filtro é AQUI dentro, e não em `paths-ignore`, de propósito: o
+  # ruleset `main protegida` exige estes checks pelo nome, e com `paths-ignore`
+  # o workflow inteiro nem começaria — o PR ficaria esperando um check que
+  # nunca chega. Job pulado por `if:` conta como aprovado.
+  # Tipos/lint/testes e a varredura de segredo rodam SEMPRE (credencial já
+  # vazou por arquivo de memória). Na dúvida (diff vazio, push na main, rodada
+  # manual), `codigo` = true e roda tudo.
+  mudancas:
+    name: Quais arquivos mudaram
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      codigo: ${{ steps.filtro.outputs.codigo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - id: filtro
+        env:
+          EVENTO: ${{ github.event_name }}
+        run: |
+          codigo=true
+          if [ "$EVENTO" = "pull_request" ]; then
+            # Em PR o checkout é o commit de mesclagem: HEAD^1 é a base.
+            arquivos=$(git diff --name-only HEAD^1 HEAD)
+            if [ -n "$arquivos" ] && ! echo "$arquivos" | grep -qvE '(\.md$|^docs/)'; then
+              codigo=false
+            fi
+            echo "Arquivos mudados:"; echo "$arquivos"
+          fi
+          echo "Roda telas, Electron e RLS: $codigo"
+          echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
   checagens:
     name: Tipos, lint, testes, contraste e SQL
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +114,9 @@ jobs:
   contraste-telas:
     name: Contraste nas telas (WCAG, no DOM)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: mudancas
+    if: needs.mudancas.outputs.codigo == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -107,6 +150,9 @@ jobs:
   largura-telas:
     name: Largura nas telas (1024 a 1600)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: mudancas
+    if: needs.mudancas.outputs.codigo == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -134,6 +180,9 @@ jobs:
   electron:
     name: Electron de verdade (segurança e preload)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: mudancas
+    if: needs.mudancas.outputs.codigo == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -167,6 +216,9 @@ jobs:
   matriz-rls:
     name: Matriz de RLS
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: mudancas
+    if: needs.mudancas.outputs.codigo == 'true'
 
     # A RLS é a única defesa real deste sistema (a permissão por módulo é
     # checada só na tela), e ela falha em SILÊNCIO: policy faltando não dá
@@ -227,6 +279,7 @@ jobs:
   segredos:
     name: Varredura de segredo
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
