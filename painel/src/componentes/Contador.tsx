@@ -1,13 +1,6 @@
-import type { EstadoTarefa, Tarefa } from "../tipos";
+import type { Tarefa } from "../tipos";
 import { contarPorEstado, ESTADOS, horas, total } from "../logica/contador";
-import { ROTULOS } from "./Selo";
-
-const PLURAL: Record<EstadoTarefa, string> = {
-  livre: "Livres",
-  andamento: "Em andamento",
-  revisao: "Em revisão",
-  feita: "Feitas",
-};
+import { PLURAL } from "./Selo";
 
 const formatar = (n: number) => String(n).replace(".", ",");
 
@@ -23,7 +16,7 @@ export function Contador({ tarefas }: { tarefas: Tarefa[] }) {
         {ESTADOS.map((estado) => (
           <li key={estado} className="rounded-xl border border-borda bg-cartao px-4 py-3">
             <p className="text-2xl font-semibold tabular-nums">{porEstado[estado]}</p>
-            <p className="text-sm text-texto-2" title={ROTULOS[estado]}>{PLURAL[estado]}</p>
+            <p className="text-sm text-texto-2">{PLURAL[estado]}</p>
           </li>
         ))}
       </ul>

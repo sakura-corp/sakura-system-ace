@@ -21,6 +21,10 @@ describe("horas", () => {
   it("soma só as feitas e todas; sem estimativa não conta", () => {
     expect(horas([t(1, "feita", { estimativaHoras: 2.5 }), t(2, "livre", { estimativaHoras: 4 }), t(3, "feita")])).toEqual({ feitas: 2.5, todas: 6.5 });
   });
+  it("em andamento e em revisão contam no total, mas não nas feitas", () => {
+    expect(horas([t(1, "andamento", { estimativaHoras: 1 }), t(2, "revisao", { estimativaHoras: 2 }), t(3, "feita", { estimativaHoras: 3 })])).toEqual({ feitas: 3, todas: 6 });
+    expect(horas(tarefasDeExemplo)).toEqual({ feitas: 3, todas: 36 });
+  });
 });
 
 describe("pessoasComVariasEmAndamento", () => {
@@ -33,7 +37,7 @@ describe("pessoasComVariasEmAndamento", () => {
     ];
     expect(pessoasComVariasEmAndamento(lista)).toEqual([{ login: "a", quantas: 2 }]);
   });
-  it("nos dados de exemplo, a Bruno tem 2", () => {
+  it("nos dados de exemplo, bruno-exemplo tem 2", () => {
     expect(pessoasComVariasEmAndamento(tarefasDeExemplo)).toEqual([{ login: "bruno-exemplo", quantas: 2 }]);
   });
 });

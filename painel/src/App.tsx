@@ -13,7 +13,8 @@ export default function App() {
     <div className="min-h-screen md:flex">
       <BarraLateral levas={[nomeDaLevaDeExemplo]} atual={nomeDaLevaDeExemplo} />
       <main className="mx-auto w-full max-w-[960px] flex-1 px-4 py-8 md:px-8">
-        <h1 className="font-serif text-3xl font-semibold">Painel da Sakura · {nomeDaLevaDeExemplo}</h1>
+        <p className="text-sm font-medium text-texto-2">Painel da Sakura</p>
+        <h1 className="font-serif text-3xl font-semibold">{nomeDaLevaDeExemplo}</h1>
         <p className="mt-1 text-sm text-texto-2">Dados de exemplo: ainda sem ligação com o GitHub.</p>
 
         {avisos.length > 0 && (

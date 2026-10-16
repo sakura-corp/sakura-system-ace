@@ -1,7 +1,7 @@
 import type { Tarefa } from "../tipos";
 import { agruparPorEstado } from "../logica/contador";
 import { Avatar } from "./Avatar";
-import { ROTULOS, Selo } from "./Selo";
+import { PLURAL, Selo } from "./Selo";
 
 export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
   return (
@@ -11,7 +11,7 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
         .map((g) => (
           <section key={g.estado} aria-labelledby={`grupo-${g.estado}`}>
             <h2 id={`grupo-${g.estado}`} className="mb-2 text-sm font-medium text-texto-2">
-              {ROTULOS[g.estado]} <span className="tabular-nums">({g.tarefas.length})</span>
+              {PLURAL[g.estado]} <span className="tabular-nums">({g.tarefas.length})</span>
             </h2>
             <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
               {g.tarefas.map((t) => (
@@ -20,11 +20,11 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col gap-1 px-4 py-3 hover:bg-fundo sm:flex-row sm:items-center sm:gap-4"
+                    className="flex flex-col gap-1 px-4 py-3 hover:bg-fundo focus-visible:-outline-offset-2 sm:flex-row sm:items-center sm:gap-4"
                   >
                     <span className="flex min-w-0 flex-1 items-baseline gap-2">
                       <span className="shrink-0 text-sm tabular-nums text-texto-2">#{t.numero}</span>
-                      <span className="min-w-0 truncate font-medium">{t.titulo}</span>
+                      <span className="min-w-0 font-medium sm:truncate" title={t.titulo}>{t.titulo}</span>
                       <span className="sr-only"> (abre no GitHub, em aba nova)</span>
                     </span>
                     <span className="flex flex-wrap items-center gap-3 text-sm">

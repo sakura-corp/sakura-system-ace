@@ -7,6 +7,13 @@ export const ROTULOS: Record<EstadoTarefa, string> = {
   feita: "Feita",
 };
 
+export const PLURAL: Record<EstadoTarefa, string> = {
+  livre: "Livres",
+  andamento: "Em andamento",
+  revisao: "Em revisão",
+  feita: "Feitas",
+};
+
 const CORES: Record<EstadoTarefa, string> = {
   livre: "bg-livre-fundo text-livre",
   andamento: "bg-andamento-fundo text-andamento",

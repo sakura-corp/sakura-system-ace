@@ -1,5 +1,7 @@
 # Continuar o painel (rascunho de passagem, 16/10/2026)
 
+**Atualização (16/10, mais tarde)**: os 4 itens abaixo foram feitos; o PR da #351 está aberto, esperando a Sofia.
+
 **Onde parou**: a Sofia assumiu a #351 do Gustavo (ele foi avisado num comentário na issue; não havia branch nem PR dele).
 A tela da leva, com dados de exemplo, está **escrita, com testes e `npm run build` passando**, na branch
 `claude/quirky-cori-fgfcor` (pasta `painel/`). **Falta**:

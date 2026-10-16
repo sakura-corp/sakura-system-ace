@@ -2,7 +2,8 @@ import type { Tarefa } from "../tipos";
 
 // Leva de mentira (a tarefa 6 troca pelos dados do GitHub). Cobre os 4 estados e tem
 // uma pessoa com 2 tarefas em andamento, pra testar o aviso da regra "uma por vez".
-const avatar = (login: string) => `https://github.com/${login}.png?size=64`;
+// Sem foto: os logins são de mentira, então o Avatar mostra a inicial (a tarefa 6 traz a foto do GitHub).
+const avatar = (_login: string) => "";
 const url = (n: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${n}`;
 
 export const nomeDaLevaDeExemplo = "Leva 0";
