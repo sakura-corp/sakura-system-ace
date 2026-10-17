@@ -33,7 +33,8 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
   sessão comprida gasta o limite e trabalha pior. Em 14/10, 21 das 75 sessões na nuvem passavam
   de 500 mil tokens.
 - **Modelo por tarefa**: o mais forte onde o erro custa caro (nota, dinheiro, migration,
-  publicação); o mais rápido pra só ler e resumir.
+  publicação); o mais rápido pra só ler e resumir. A tabela das categorias (forte, médio, rápido), com o
+  modelo de reserva quando um falha, está em `docs/tarefas.md` (17/10).
 
 ## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
 
@@ -79,7 +80,7 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | # | Skill | O que faz |
 |---|---|---|
 | S1 | `/fechar` | fim de sessão (#471) — **feita**, ver "Como usar o `/fechar` e o aviso" |
-| S2 | `/nova-tarefa` | tarefa no formato da #425, ou no formato da equipe (arquivos, estimativa, leva) |
+| S2 | `/nova-tarefa` | tarefa no **modelo único** de `docs/tarefas.md` — **rascunho de 17/10**, junto com a skill `ritual-de-tarefa` (sessão mãe) |
 | S3 | `/publicar` | publica no canal de teste e, quando ela pedir, libera, com o link da rodada |
 | S4 | `/atualizar-bancos` | ensaia e aplica a migration em todas as empresas |
 | S5 | `/nova-migration` | as regras da seção 3 do índice |

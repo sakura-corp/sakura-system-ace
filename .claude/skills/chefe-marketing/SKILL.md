@@ -41,13 +41,15 @@ publica e quem envia é uma pessoa.
 - Sempre em português.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
-| Papel | Quando |
-|---|---|
-| **Explorador** (só lê) | levantar o que o sistema realmente faz (módulos) antes de escrever |
-| **Redator** | rascunhar o texto, em 1 ou 2 versões de tom |
-| **Conferidor de fatos** | cada frase que cita função, número ou prazo é conferida no `docs/` |
-| **Caçador de vazamento** | procurar preço, margem, sócio, dado pessoal ou credencial no rascunho |
-| **Conferidor visual** | se mexeu no `site/`, abrir renderizado e olhar (celular e PC) |
+**Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
+
+| Papel | Quando | Modelo |
+|---|---|---|
+| **Explorador** (só lê) | levantar o que o sistema realmente faz (módulos) antes de escrever | rápido |
+| **Redator** | rascunhar o texto, em 1 ou 2 versões de tom | médio |
+| **Conferidor de fatos** | cada frase que cita função, número ou prazo é conferida no `docs/` | rápido |
+| **Caçador de vazamento** | procurar preço, margem, sócio, dado pessoal ou credencial no rascunho | rápido |
+| **Conferidor visual** | se mexeu no `site/`, abrir renderizado e olhar (celular e PC) | médio |
 
 ## 5. Como termina
 PR com os rascunhos (`Closes #N`) e **parar**. Relatório, formato fixo:

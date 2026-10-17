@@ -48,13 +48,15 @@ Tela e aparência são do chefe de frontend; revisão de segurança é do chefe 
   empresas", ensaiar e depois aplicar). Na nuvem o `*.supabase.co` nem é alcançável (item 6).
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
-| Papel | Quando |
-|---|---|
-| **Explorador** (só lê) | achar tabelas, policies e quem chama a função; conferir o número da próxima migration |
-| **Escritor de migration** | escrever o `.sql`, o `testar-*.sql` e o ajuste na matriz de RLS |
-| **Escritor de lib/schema** | funções em `src/lib`, cálculos em `src/schemas`, com teste unitário |
-| **Testador de banco** | rodar `test:sql`/`test:rls` num Postgres descartável (se houver no ambiente) e **quebrar de propósito** a regra pra ver o teste reprovar |
-| **Revisor** | ler o diff do zero (`/code-review`); conferir cada achado antes de mexer |
+**Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
+
+| Papel | Quando | Modelo |
+|---|---|---|
+| **Explorador** (só lê) | achar tabelas, policies e quem chama a função; conferir o número da próxima migration | rápido |
+| **Escritor de migration** | escrever o `.sql`, o `testar-*.sql` e o ajuste na matriz de RLS | forte |
+| **Escritor de lib/schema** | funções em `src/lib`, cálculos em `src/schemas`, com teste unitário | médio (forte se for dinheiro ou nota) |
+| **Testador de banco** | rodar `test:sql`/`test:rls` num Postgres descartável (se houver no ambiente) e **quebrar de propósito** a regra pra ver o teste reprovar | médio |
+| **Revisor** | ler o diff do zero (`/code-review`); conferir cada achado antes de mexer | forte |
 
 ## 5. Como termina
 Rodar `npm run typecheck`, `npm run lint`, `npm run test:fusos`, `npm run gerar-instalacao` e, se

@@ -352,6 +352,8 @@ A tarefa ganha a etiqueta `chefe:<função>` no GitHub (as etiquetas **ainda nã
 desconhecida, o texto manda o Claude perguntar à pessoa qual chefe usar. **Em aberto**: as skills `chefe-<função>` (outra sessão cuida);
 sem elas o chefe não é achado; e o botão **ainda não foi testado com o login dela** (a consulta nova foi conferida contra o esquema público do GitHub, não rodou de verdade).
 
+**Modelo único de tarefa e sessão mãe (rascunho de 17/10/2026)**: toda tarefa que o botão abre segue `docs/tarefas.md` (cabeçalho fixo `Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`) e o ritual da skill `ritual-de-tarefa`. Provado em 17/10: uma sessão consegue abrir outra já no modelo escolhido e receber mensagem dela; uma sessão aberta num modelo sem crédito (Fable) aparece como **falhou**, com o motivo, em segundos. Pro painel ler o cabeçalho (mostrar chefe e estimativa, desligar o botão com `Depende de` aberto, avisar "tarefa incompleta"): tarefa própria, a escrever quando a leva 1 for montada.
+
 **Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
 `npm run preview` já fazem isso sozinhos.
