@@ -35,6 +35,14 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 - **Modelo por tarefa**: o mais forte onde o erro custa caro (nota, dinheiro, migration,
   publicação); o mais rápido pra só ler e resumir. A tabela das categorias (forte, médio, rápido), com o
   modelo de reserva quando um falha, está em `docs/tarefas.md` (17/10).
+- **Trabalho de noite, sem ela** (17/10, quando ela pediu "adianta tudo enquanto eu durmo"):
+  - listar os repositórios **sem filtro**: filtrar pelo nome dela (`caranovavidanova`) esconde os da
+    organização `sakura-corp` (este e o `ssace-versoes`), e o SSACE ficou de fora na primeira tentativa;
+  - o `ssace-versoes` **não se mexe** (é por onde a atualização chega nas lojas);
+  - **não pegar tarefa de leva** (é da equipe) nem a de uma sessão mãe que ela deixou rodando: conferir
+    no GitHub se ela ainda está aberta antes de contar com isso (o status escrito envelhece);
+  - tudo em **branch de rascunho, sem mesclar**; o resultado vai **na conversa** (relatório mandado como
+    arquivo pra ela), nunca só numa pasta da sessão, que ela não vê.
 
 ## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
 
