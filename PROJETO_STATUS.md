@@ -246,19 +246,21 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 17/10/2026, madrugada (3): o modelo único de tarefa e a sessão mãe
+### 17/10/2026, madrugada (4): a leva 1 montada e o painel v2 sendo planejado de noite
 
-**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). **A leva 0 do painel terminou**: a #468 (sala ao vivo) entrou pelo PR #533.
+**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). Só mudou documentação.
 
-#### O modelo único de tarefa (PR #534, mesclado em 17/10)
-- **Toda tarefa segue `docs/tarefas.md`**: cabeçalho fixo (`Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`), etapas com a **categoria** do modelo (forte, médio, rápido), "Pronto quando" no PR e depois de publicar. Decisão que falta vira issue `sofia` no `Depende de`.
-- **Sessão mãe, híbrido** (skill `ritual-de-tarefa`): ajudantes dentro da sessão por padrão; sessão filha só se a issue pedir. **Provado em 17/10**: filha no Haiku respondeu à mãe; filha no Fable falhou em segundos por crédito, e a mãe viu o motivo.
-- **Modelos**: uma tabela só, com reserva; **o Fable fica fora** até todo mundo ter crédito. Sessão que falhar: `/model claude-opus-5-5` e "Tentar novamente", sem mexer na issue.
-- **Reescrever só ao entrar numa leva** (skill `nova-tarefa`, ela aprova o rascunho). O **resumo de segunda** (fixado no Opus) agora lista as tarefas fora do modelo.
+#### A leva 1 (montada e aprovada em 17/10)
+- **Painel**: #536 o cartão lê o cabeçalho (5 h), #538 pegar e largar tarefa (6 h, espera a #536), #539 horas por pessoa (3 h). **Programa**: #510 janelas no Modal (3 h), #511 testes no Windows (2 h), #455 clientes que sumiram (6 h). Total 25 h, todas no modelo único, com `leva-1` e `chefe:`. Detalhe em `docs/painel.md`, "Andamento".
+- Decidido junto: o "Começar com o Claude" aparece **só pra quem pegou**; horas por pessoa **contadas na leva**; na #455, **6 meses** e o texto padrão da issue.
+- **Leva 2**: "fases da leva" e "relatório e aprovação" pedem uma conversa de desenho com ela antes.
+
+#### O painel v2, de noite (sem ela)
+- A pedido dela, foi aberta uma **sessão mãe** pra planejar as abas, os dados e o visual do painel, com as abas das funções futuras em "em breve", referências e **duas ou três versões visuais em páginas de exemplo** (sessão `session_0158Dwe3s7gWC25Ktu1Hifij`). Tudo num **PR só, não mesclado**, sem mexer no código de `painel/` (a leva 1 mexe nos mesmos arquivos, e o painel publica sozinho da `main`). No máximo **6 sessões filhas**, 3 ao mesmo tempo, por causa da cota do Pro.
 
 #### O que depende dela
-1. ~~Montar a leva 1~~ (feito em 17/10: #536, #538, #539, #510, #511, #455; `docs/painel.md`, "Andamento"). Próximo: a equipe pega as tarefas depois do Team; "fases da leva" e "relatório" pedem conversa de desenho pra leva 2.
-2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474).
+1. **De manhã**: abrir o PR do painel v2, olhar a página de comparação e responder as escolhas ("abas: B" etc.); depois, aprovar os rascunhos de tarefa que vierem nele.
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). Aí a equipe pega a leva 1; a #536 é a que mais destrava.
 3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
 4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
 5. Conferir `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado; empresa (Team, lançamento, Pix): no privado.

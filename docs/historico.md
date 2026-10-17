@@ -35,6 +35,24 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, madrugada (3): o modelo único de tarefa e a sessão mãe
+
+**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). **A leva 0 do painel terminou**: a #468 (sala ao vivo) entrou pelo PR #533.
+
+#### O modelo único de tarefa (PR #534, mesclado em 17/10)
+- **Toda tarefa segue `docs/tarefas.md`**: cabeçalho fixo (`Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`), etapas com a **categoria** do modelo (forte, médio, rápido), "Pronto quando" no PR e depois de publicar. Decisão que falta vira issue `sofia` no `Depende de`.
+- **Sessão mãe, híbrido** (skill `ritual-de-tarefa`): ajudantes dentro da sessão por padrão; sessão filha só se a issue pedir. **Provado em 17/10**: filha no Haiku respondeu à mãe; filha no Fable falhou em segundos por crédito, e a mãe viu o motivo.
+- **Modelos**: uma tabela só, com reserva; **o Fable fica fora** até todo mundo ter crédito. Sessão que falhar: `/model claude-opus-5-5` e "Tentar novamente", sem mexer na issue.
+- **Reescrever só ao entrar numa leva** (skill `nova-tarefa`, ela aprova o rascunho). O **resumo de segunda** (fixado no Opus) agora lista as tarefas fora do modelo.
+
+#### O que depende dela
+1. ~~Montar a leva 1~~ (feito em 17/10: #536, #538, #539, #510, #511, #455; `docs/painel.md`, "Andamento"). Próximo: a equipe pega as tarefas depois do Team; "fases da leva" e "relatório" pedem conversa de desenho pra leva 2.
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474).
+3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
+4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
+5. Conferir `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado; empresa (Team, lançamento, Pix): no privado.
+6. A #442: medir o CI ~23/10. O aviso automático de conversa comprida ainda não foi visto (#471).
+
 ### 17/10/2026, de madrugada (2): o tempo real no ar e o 1º chefe de verdade
 
 **Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas na loja** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas e o painel. Entram na próxima versão, **quando ela decidir publicar**. O **painel** (Cloudflare) já publicou sozinho a #355. Do mutirão de 16/10 o detalhe está em `docs/historico.md`.
