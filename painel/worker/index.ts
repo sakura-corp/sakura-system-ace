@@ -1,5 +1,5 @@
 // O worker do painel (tarefas #352, #353 e #354). Só responde /api/*; o resto é a página, servida
-// pela Cloudflare a partir de ./dist (ver wrangler.jsonc). O webhook (#355) entra aqui depois.
+// pela Cloudflare a partir de ./dist (ver wrangler.jsonc).
 //
 // Login (#353): GitHub App "Sakura Painel" da sakura-corp. Só entra quem é membro da
 // organização. O token da pessoa fica no cookie `sessao`, cifrado; a página nunca vê ele.
@@ -33,6 +33,16 @@ import {
   type DadosDaLeva,
   type DadosDasLevas,
 } from "./tarefas";
+import { SalaDoPainel } from "./sala";
+import { assinaturaConfere, avisoDoEvento } from "./webhook";
+
+export { SalaDoPainel };
+
+/** O binding do Durable Object `SalaDoPainel` (wrangler.jsonc). */
+export interface LigacaoDaSala {
+  idFromName(nome: string): unknown;
+  get(id: unknown): { fetch(entrada: string | Request, init?: RequestInit): Promise<Response> };
+}
 
 export interface Ambiente {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -41,6 +51,9 @@ export interface Ambiente {
   /** Segredos da Cloudflare (ou do .dev.vars no PC). */
   GITHUB_APP_CLIENT_SECRET?: string;
   CHAVE_DA_SESSAO?: string;
+  /** O segredo do webhook do app "Sakura Painel" (#355): o mesmo no GitHub e na Cloudflare. */
+  GITHUB_WEBHOOK_SECRET?: string;
+  SALA?: LigacaoDaSala;
 }
 
 const CAMINHO_DO_LOGIN = "/api/login";
@@ -195,6 +208,62 @@ async function dados(request: Request, config: Configuracao, leva: number | null
   }
 }
 
+const NOME_DA_SALA = "painel";
+const salaDoPainel = (env: Ambiente) => env.SALA?.get(env.SALA.idFromName(NOME_DA_SALA));
+
+/**
+ * O aviso do GitHub (#355). Confere a assinatura antes de qualquer outra coisa (401 se não bater),
+ * escolhe o que repassar e entrega à sala. O corpo da tarefa nunca sai daqui.
+ */
+async function webhook(request: Request, env: Ambiente): Promise<Response> {
+  const segredo = env.GITHUB_WEBHOOK_SECRET ?? "";
+  if (!segredo) return json({ ok: false, erro: "webhook não configurado" }, 503);
+
+  const corpo = await request.text();
+  if (!(await assinaturaConfere(corpo, request.headers.get("x-hub-signature-256"), segredo))) {
+    return json({ ok: false, erro: "assinatura inválida" }, 401);
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(corpo);
+  } catch {
+    return json({ ok: false, erro: "corpo inválido" }, 400);
+  }
+  const aviso = avisoDoEvento(request.headers.get("x-github-event"), payload);
+  if (!aviso) return json({ ok: true, ignorado: true });
+
+  const sala = salaDoPainel(env);
+  if (!sala) return json({ ok: false, erro: "sala não configurada" }, 503);
+  try {
+    await sala.fetch("https://sala/aviso", { method: "POST", body: JSON.stringify(aviso) });
+  } catch {
+    console.error("webhook: falha ao falar com a sala");
+    return json({ ok: false, erro: "a sala não respondeu" }, 502);
+  }
+  return json({ ok: true });
+}
+
+/**
+ * Abre o WebSocket com a sala (#355). Só com sessão válida e vindo da própria página (`Origin`).
+ * Não usa o token do GitHub, então só decifra o cookie: sem renovar (renovar gasta o `refresh`, e
+ * numa resposta 101 o cookie novo não chegaria à página). Quem sai da sakura-corp perde a sessão na
+ * próxima renovação; o que passa por aqui é só "a tarefa N mudou", sem dado nenhum.
+ */
+async function tempoReal(request: Request, url: URL, config: Configuracao, env: Ambiente): Promise<Response> {
+  const valor = lerCookie(request, COOKIE_SESSAO);
+  const sessao = valor ? await decifrarSessao(valor, config.chave) : null;
+  if (!sessao || sessaoVencida(sessao, Date.now())) return json({ ok: false, erro: "sem sessão" }, 401);
+  const origem = request.headers.get("origin");
+  if (origem && origem !== url.origin) return json({ ok: false, erro: "origem não permitida" }, 403);
+  if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
+    return json({ ok: false, erro: "esta rota espera uma conexão WebSocket" }, 426);
+  }
+  const sala = salaDoPainel(env);
+  if (!sala) return json({ ok: false, erro: "sala não configurada" }, 503);
+  return sala.fetch(request);
+}
+
 export default {
   async fetch(request: Request, env: Ambiente): Promise<Response> {
     const url = new URL(request.url);
@@ -221,6 +290,18 @@ export default {
       const { sessao, cookies } = await sessaoAtual(request, config);
       if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
       return json({ login: sessao.login, avatar: sessao.avatar }, 200, cookies);
+    }
+
+    if (pathname === "/api/webhook") {
+      if (metodo !== "POST") return json({ ok: false, erro: "método não permitido" }, 405);
+      return webhook(request, env);
+    }
+
+    if (pathname === "/api/tempo-real") {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      return tempoReal(request, url, config, env);
     }
 
     const leva = levaDoCaminho(pathname);

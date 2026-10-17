@@ -158,6 +158,18 @@ dizem o estado sozinhos).
   - O token da pessoa não vai pra lugar nenhum além do navegador dela e da API do GitHub, e
     nunca aparece em log.
 - **Dados**: vêm da **API do GitHub**, com o token de quem está logado. **Sem banco próprio.**
+- **Tempo real** (#355), em 5 linhas:
+  1. O GitHub avisa o worker (`POST /api/webhook`, `painel/worker/webhook.ts`): a assinatura
+     `X-Hub-Signature-256` é conferida antes de tudo (401 se não bater), e só passa evento deste repositório.
+  2. Passam `issues`, `pull_request` e `label` (com o número da tarefa, quando há) e `workflow_run`, `push`,
+     `create` e `delete` (só o tipo, pra Sala da #468). O aviso **não leva dado nenhum da tarefa**.
+  3. Um Durable Object, `SalaDoPainel` (`painel/worker/sala.ts`, uma sala só, com SQLite e WebSocket com
+     hibernação), repassa o aviso a todos os painéis abertos em `GET /api/tempo-real` (só com sessão).
+  4. A página (`painel/src/logica/tempoReal.ts`, `useTempoReal()`) busca a leva de novo a cada aviso de tarefa
+     (juntando avisos de 1 s), reconecta sozinha (1, 2, 5, 10, até 30 s) e, de reserva, busca a cada 2 minutos
+     e quando a janela volta ao foco.
+  5. O hook devolve `estado` (`aovivo`, `reconectando`, `desatualizado`: mais de 2 minutos sem busca com
+     sucesso) e `ultimaAtualizacao`; a barra lateral mostra o ponto e a Sala da #468 vai usar os dois.
 
 ## 1ª versão (leva 0)
 
@@ -183,7 +195,7 @@ tarefa 4 (#352) no ar         → PR → Sofia aprova e confere o endereço no a
                                                        + Sofia cria os apps de login (o de verdade, feito)
 tarefa 5 (#353) login         → PR → Sofia aprova (feito)
 tarefa 6 (#354) dados         → PR → Sofia aprova (feito)
-                                                       + Sofia liga o aviso automático (webhook), antes da 7
+                                                       + Sofia liga o aviso automático (webhook), antes da 7 (feito)
 tarefa 7 (#355) tempo real    → PR → Sofia aprova
 tarefa 8 (#468) sala ao vivo  → PR → Sofia aprova  →  fim da leva 0 (ver "Fim de uma leva")
 ```
@@ -210,10 +222,10 @@ Cada coisa que ela faz, o Claude dela **anota em "Andamento" do `docs/painel.md`
   permissões, instalado só no `sakura-system-ace`), com o Redirect URI
   `http://localhost:8787/api/login/volta`, e passar o client secret dele pelo **Bitwarden Send**
   (um link cifrado que se apaga sozinho), nunca por mensagem.
-- **Antes da tarefa 7**: no "Sakura Painel", ligar o webhook (endereço
-  `https://<painel>/api/webhook`, eventos **Issues, Pull request, Label, Workflow runs, Push,
-  Create e Delete**; os quatro últimos são da sala, e já vão juntos pra não mexer duas vezes) e cadastrar
-  `GITHUB_WEBHOOK_SECRET` na Cloudflare.
+- **Antes da tarefa 7**: ~~no "Sakura Painel", ligar o webhook e cadastrar `GITHUB_WEBHOOK_SECRET` na
+  Cloudflare~~ (feito em 17/10; como ficou está em "Andamento"). Endereço `https://<painel>/api/webhook`,
+  eventos **Issues, Pull request, Label, Workflow runs, Push, Create e Delete** (os quatro últimos são da
+  sala, e já vão juntos pra não mexer duas vezes).
 - **Depois do painel**: a conferência automática (CI) do painel, feita pelo Claude dela.
 
 A **leva 1** é a linha de produção completa (botão de pegar tarefa, fases da leva, horas por
@@ -374,7 +386,8 @@ dependências dela, separadas das do programa das lojas:
     gerada no Bitwarden. Não precisa ser a da Cloudflare, e não deve.
 
   Sem esse arquivo, o `npm run dev:worker` mostra a tela de entrada, e o botão responde "login não
-  configurado".
+  configurado". Pra testar o tempo real no PC, uma quarta linha: `GITHUB_WEBHOOK_SECRET=` (uma senha **só
+  de teste**, nunca a de verdade); sem ela, `/api/webhook` responde 503.
 
 ## Andamento
 
@@ -504,3 +517,19 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   escuro, copiando com sucesso e com falha: sem rolagem lateral. Testes novos **vistos reprovar** (texto copiado diferente, falha que
   não cai no plano B, texto do link diferente do copiado, botão em tarefa feita). **Ainda não provado**: que "Copiar texto" funciona
   no celular dela (a área de transferência do celular não foi testada; o caminho pelo navegador já foi).
+- **17/10/2026, webhook ligado** (pela Sofia, no PC, guiada pelo Claude): no GitHub App "Sakura Painel" o webhook
+  foi ligado em `https://sakura-painel.caranovavidanova.workers.dev/api/webhook`, com os eventos Issues, Pull
+  request, Label, Workflow run, Push, Create e Delete e um segredo gerado no Bitwarden. O mesmo segredo está na
+  Cloudflare como `GITHUB_WEBHOOK_SECRET` (Secret, só em Production). **A tarefa 7 (#355) já pode começar.**
+  O primeiro "ping" do GitHub volta com erro até a #355 entrar na `main` (a rota ainda não existia): esperado.
+- **17/10/2026, tarefa 7 (#355), tempo real, feita pelo chefe de backend** (branch `claude/serene-goodall-en04xq`,
+  PR aberto, **esperando a revisão da Sofia**). Como funciona está em "Decisões técnicas". Arquivos:
+  `painel/worker/webhook.ts` (assinatura e escolha dos eventos), `painel/worker/sala.ts` (o Durable Object),
+  rotas `/api/webhook` e `/api/tempo-real` em `painel/worker/index.ts`, `wrangler.jsonc` (binding `SALA` e a
+  migration `new_sqlite_classes`), e na página `painel/src/logica/tempoReal.ts`, `useTempoReal.ts` e o ponto
+  "ao vivo" na barra lateral. Testes novos **vistos reprovar** (14 quebras de propósito, todas pegas). Rodado
+  de verdade no `wrangler dev` (workerd com a sala real): dois painéis recebem o aviso assinado, assinatura
+  errada leva 401 e ninguém recebe. Num navegador de verdade a página mudou sozinha em ~1,4 s, juntou 3 avisos
+  em 1 busca, ignorou `push`, mostrou "reconectando…" com o servidor fora e voltou a "ao vivo". **Falta ver**:
+  o teste do "Pronto quando" com o GitHub de verdade (dois navegadores, pôr o nome numa tarefa), só possível
+  depois de publicar. A primeira publicação com o Durable Object aplica a migration `v1` sozinha.
