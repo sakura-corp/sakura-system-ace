@@ -2,12 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
+import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLeva";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
+import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { paginaPraVoltar } from "./logica/login";
 import { ehModoTv } from "./logica/sala";
 import { useSala } from "./useSala";
@@ -20,6 +22,9 @@ export function paginaDoCaminho(caminho: string): Pagina {
   const limpo = caminho.replace(/\/+$/, "");
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
+  // As páginas "em breve" (#544): a barra marca o item da página aberta.
+  const emBreve = textoEmBreve(idDoEmBreve(limpo) ?? "");
+  if (emBreve) return emBreve.id;
   return "leva";
 }
 
@@ -90,11 +95,13 @@ export default function App({
   sala?: EstadoDaSala;
 }) {
   const pagina = paginaDoCaminho(caminho);
+  // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
+  const emBreve = idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined;
   const pedida = levaPedida(caminho);
   const buscando = !exemplo && !tv && levaFixa === undefined;
-  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, pagina !== "leva");
+  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, pagina !== "leva" || emBreve !== null);
   const estado = levaFixa ?? buscada;
 
   // A Sala de verdade (#468), com o mesmo login. No modo TV não busca a leva, só a sala.
@@ -162,6 +169,10 @@ export default function App({
             tentarDeNovo={tempoReal.atualizar}
             recarregarTudo={tentarSalaDeNovo}
           />
+        </main>
+      ) : emBreve !== null ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <PaginaEmBreve id={emBreve} />
         </main>
       ) : pagina === "escritorio" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">

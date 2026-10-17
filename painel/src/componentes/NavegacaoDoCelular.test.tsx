@@ -17,10 +17,26 @@ describe("NavegacaoDoCelular", () => {
     expect(barra).toMatch(/<a href="\/sala" aria-current="page"/);
     expect(barra).toContain('Início</span><span class="sr-only"> (em breve)</span>');
     expect(barra).toContain('Pessoas</span><span class="sr-only"> (em breve)</span>');
-    expect(barra.match(/aria-disabled="true"/g)).toHaveLength(2);
-    expect(barra.match(/<a /g)).toHaveLength(2);
+    // Em breve (#544) também tem endereço: é link pra página que explica, apagado e com o aviso.
+    expect(barra).toMatch(/<a href="\/em-breve\/inicio"(?![^>]*aria-current)[^>]*text-texto-2/);
+    expect(barra).toMatch(/<a href="\/em-breve\/pessoas"(?![^>]*aria-current)[^>]*text-texto-2/);
+    expect(barra.match(/<a /g)).toHaveLength(4);
     expect(barra).toContain('aria-haspopup="dialog"');
     expect(barra).toContain('aria-expanded="false"');
+  });
+
+  it("na página em breve da barra (Pessoas): o aria-current fica nela, e não no Mais", () => {
+    const { barra, folha } = partes(html({ levas: LEVA, pagina: "pessoas" }));
+    expect(barra).toMatch(/<a href="\/em-breve\/pessoas" aria-current="page"/);
+    expect(barra.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(folha).not.toContain("aria-current");
+  });
+
+  it("página em breve da folha (Financeiro): o item da folha, com cadeado e o que falta, é a página atual", () => {
+    const { barra, folha } = partes(html({ levas: LEVA, pagina: "financeiro" }));
+    expect(barra).not.toContain("aria-current");
+    expect(folha).toMatch(/<a href="\/em-breve\/financeiro" aria-current="page"/);
+    expect(folha).toContain("depende do banco privado");
   });
 
   it("página fora da barra (Escritório): o aria-current fica na folha e o Mais ganha destaque", () => {

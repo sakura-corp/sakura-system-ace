@@ -36,6 +36,9 @@
 - A folha aberta e a janela alargada pra 1000 px: com o `md:hidden` no `<dialog>`, o "Fechar" ficou invisível e o script
   não conseguiu clicar (a página travada). Sem ele, a folha continua visível e fecha.
 
+- Depois de mesclar a `main` com a #544 (os itens em breve viraram links pra `/em-breve/<id>`): com a barra de baixo
+  pintando Início e Pessoas como item normal (sem olhar o `item.emBreve`), o teste da barra reprovou. Desfeito.
+
 ## O que passou sem eu ter visto reprovar
 - `tsc -b` e os 435 testes do painel (9 novos).
 - No Chromium, em `/`, `/sala` e `/escritorio`, 320 e 375 px, claro e escuro: a barra de baixo aparece, a lateral some, sem
@@ -45,14 +48,15 @@
   toque no fundo fecham; o foco volta ao "Mais"; `aria-expanded` false → true → false.
 - `aria-current`: um só na tela (em `/sala`, na barra; em `/escritorio`, dentro da folha).
 - A folha em 320 px encosta embaixo, largura total, linhas de 44 px ou mais.
-- Fotos em `docs/relatorios/fotos/tarefa-543/`.
+- Depois da #544: na barra de baixo, Início e Pessoas são links pra página que explica, apagados (5,49 claro, 5,9 escuro)
+  e com " (em breve)" pro leitor de tela; na folha, os em breve usam o mesmo item da barra lateral (cadeado e a frase do
+  que falta), e o da página aberta leva o `aria-current`. Em `/em-breve/pessoas` (375 px, claro e escuro) o fim da página
+  fica 77 px acima da barra, sem rolagem lateral, e o único `aria-current` é o do Pessoas.
+- Fotos em `docs/relatorios/fotos/tarefa-543/` (as da folha refeitas depois da #544, e `em-breve-pessoas-375-claro.jpg`).
 
 ## O que ficou de fora
 - **`env(safe-area-inset-bottom)` dá 0 hoje**: falta `viewport-fit=cover` na tag `viewport` do `painel/index.html`, que está
   fora da lista de arquivos da tarefa. Não faz mal (o Safari não desenha por baixo da barrinha do iPhone sem isso).
-- **Item em breve que ganhar link (#544)**: a barra e a folha decidem "link ou não" por `item.href`, como pedido. Quando a
-  #544 der `/em-breve/<id>` ao Início e a Pessoas, eles viram links e perdem o visual apagado e o " (em breve)" do leitor
-  de tela. Quem mesclar por último ajusta (o visual por `item.emBreve`, o link por `item.href`).
 - No celular não há nome "Sakura Corp" no topo (a issue não pede barra de cima); o ponto "ao vivo" e o "Sair" estão no "Mais".
 - O lint da raiz ignora `painel/` e o painel não tem lint próprio (igual à #542).
 

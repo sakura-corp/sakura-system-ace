@@ -18,6 +18,27 @@ describe("App", () => {
     expect(h).toContain('target="_blank"');
   });
 
+  it("/em-breve/financeiro mostra a página que explica, sem número de dinheiro (#544)", () => {
+    const h = html("/em-breve/financeiro/");
+    expect(h).toContain("Empresa / ");
+    expect(h).toMatch(/<h1[^>]*>Financeiro<\/h1>/);
+    expect(h).toContain("Ainda não está pronto");
+    expect(h).toContain("nunca mora no GitHub");
+    // Nenhum algarismo nem "R$" na página (a barra lateral tem "#546" e fica de fora).
+    const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/<[^>]*>/g, " ");
+    expect(pagina).toContain("Financeiro");
+    expect(pagina).not.toMatch(/R\$|\d/);
+    expect(h).not.toContain("1 de 8 tarefas feitas");
+  });
+
+  it("/em-breve/<id que não existe> mostra 'Página não encontrada', e não a leva (#544)", () => {
+    const h = html("/em-breve/nao-existe");
+    expect(h).toContain("Página não encontrada");
+    expect(h).not.toContain("1 de 8 tarefas feitas");
+    expect(paginaDoCaminho("/em-breve/dre")).toBe("dre");
+    expect(paginaDoCaminho("/em-breve/nao-existe")).toBe("leva");
+  });
+
   it("/escritorio mostra o Escritório, marcado como exemplo, com o que ainda não existe desativado", () => {
     const h = html("/escritorio");
     expect(h).toContain("Escritório de agentes");

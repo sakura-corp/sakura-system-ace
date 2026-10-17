@@ -64,11 +64,16 @@ function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: 
   );
 }
 
-/** Item sem endereço: não é link; diz do que depende. */
-export function ItemEmBreve({ item }: { item: ItemDaNavegacao }) {
+/** Item em breve: apagado, com cadeado e o que falta; leva à página que explica (#544). Também na folha do "Mais". */
+export function ItemEmBreve({ item, atual }: { item: Extract<ItemDaNavegacao, { emBreve: true }>; atual: boolean }) {
   const Icone = ICONES[item.icone];
   return (
-    <div aria-disabled="true" className={`${LINHA} flex-wrap content-center gap-y-0 text-texto-2`}>
+    <a
+      href={item.href}
+      aria-current={atual ? "page" : undefined}
+      className={`${LINHA} flex-wrap content-center gap-y-0 text-texto-2 hover:bg-livre-fundo ${atual ? "bg-livre-fundo" : ""}`}
+    >
+      {atual && <span aria-hidden="true" className="absolute inset-y-[7px] left-0 w-[3px] rounded-full bg-destaque" />}
       <Icone aria-hidden="true" className="size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">
         {item.rotulo}
@@ -76,7 +81,7 @@ export function ItemEmBreve({ item }: { item: ItemDaNavegacao }) {
       </span>
       <Lock aria-hidden="true" className="size-3.5 shrink-0" />
       <span className="-mt-0.5 basis-full pl-[26px] text-xs font-normal leading-snug">{item.dependeDe}</span>
-    </div>
+    </a>
   );
 }
 
@@ -111,7 +116,7 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
     if (item.emBreve) {
       return (
         <li key={item.id}>
-          <ItemEmBreve item={item} />
+          <ItemEmBreve item={item} atual={pagina === item.id} />
         </li>
       );
     }

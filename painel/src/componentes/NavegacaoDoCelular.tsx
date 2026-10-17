@@ -75,17 +75,24 @@ function AlvoDaBarra({ item, atual, comAriaCurrent }: { item: ItemDaNavegacao; a
       <span className="max-w-full truncate">{rotulo}</span>
     </>
   );
+  // O link vem do endereço; o visual apagado e o "(em breve)", do emBreve (#544: em breve também tem endereço).
+  const cor = atual ? "font-semibold text-destaque" : item.emBreve ? "text-texto-2" : "text-texto";
+  const conteudoComAviso = (
+    <>
+      {conteudo}
+      {item.emBreve && <span className="sr-only"> (em breve)</span>}
+    </>
+  );
   if (item.href) {
     return (
-      <a href={item.href} aria-current={comAriaCurrent ? "page" : undefined} className={`${base} ${atual ? "font-semibold text-destaque" : "text-texto"}`}>
-        {conteudo}
+      <a href={item.href} aria-current={comAriaCurrent ? "page" : undefined} className={`${base} ${cor}`}>
+        {conteudoComAviso}
       </a>
     );
   }
   return (
-    <span aria-disabled="true" className={`${base} text-texto-2`}>
-      {conteudo}
-      <span className="sr-only"> (em breve)</span>
+    <span aria-disabled="true" className={`${base} ${cor}`}>
+      {conteudoComAviso}
     </span>
   );
 }
@@ -197,10 +204,10 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
               <ul className="flex flex-col gap-0.5">
                 {grupo.itens.map((item) => (
                   <li key={item.id} className="min-w-0">
-                    {item.href ? (
-                      <LinhaDaFolha href={item.href} rotulo={item.rotulo} etiqueta={item.etiqueta} Icone={ICONES[item.icone]} atual={pagina === item.id} />
+                    {item.emBreve ? (
+                      <ItemEmBreve item={item} atual={pagina === item.id} />
                     ) : (
-                      <ItemEmBreve item={item} />
+                      <LinhaDaFolha href={item.href} rotulo={item.rotulo} etiqueta={item.etiqueta} Icone={ICONES[item.icone]} atual={pagina === item.id} />
                     )}
                   </li>
                 ))}
