@@ -69,7 +69,7 @@ a.item.breve { cursor: pointer; }
 
 /* ---------- Leva ---------- */
 .leva-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-.col-a, .col-b { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.col-a, .col-b { min-width: 0; display: grid; gap: 16px; align-content: start; }
 @media (min-width: 1100px) {
   .leva-grade { grid-template-columns: minmax(0, 1fr) 320px; }
   .detalhe { position: sticky; top: 16px; }
