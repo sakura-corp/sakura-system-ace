@@ -21,6 +21,7 @@ export const CONSULTA_DOS_ROBOS = `
 query Robos($dono: String!, $nome: String!) {
   repository(owner: $dono, name: $nome) {
     refs(refPrefix: "refs/heads/${PREFIXO_DOS_ROBOS}", first: 100) {
+      pageInfo { hasNextPage }
       nodes {
         name
         target { ... on Commit { committedDate } }
@@ -40,6 +41,7 @@ query Robos($dono: String!, $nome: String!) {
 export type DadosDosRobos = {
   repository: {
     refs: {
+      pageInfo?: { hasNextPage?: boolean };
       nodes: ({
         name: string;
         target: { committedDate?: string } | null;
@@ -60,6 +62,8 @@ export type DadosDosRobos = {
 export function robosDoClaudeDosDados(dados: DadosDosRobos): EntradaDaSala[] | null {
   const nos = dados.repository?.refs?.nodes;
   if (!nos) return null;
+  // Mais de 100 branches: a lista veio incompleta, então o grupo falha (nunca mostra metade como se fosse tudo).
+  if (dados.repository?.refs?.pageInfo?.hasNextPage) return null;
   const entradas: EntradaDaSala[] = [];
   for (const no of nos) {
     if (!no || typeof no.name !== "string") continue;

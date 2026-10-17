@@ -46,6 +46,12 @@ describe("robôs do Claude", () => {
     expect(robosDoClaudeDosDados({ repository: { refs: null } })).toBeNull();
   });
 
+  it("mais de 100 branches (lista incompleta) é falha do grupo, não sala pela metade", () => {
+    const d = dados([{ name: "a", target: null, associatedPullRequests: { nodes: [] } }]);
+    d.repository!.refs!.pageInfo = { hasNextPage: true };
+    expect(robosDoClaudeDosDados(d)).toBeNull();
+  });
+
   it("commit de agora trabalha, de 4 dias dorme (as regras são as de sala.ts)", () => {
     const e = robosDoClaudeDosDados(dados([
       { name: "novo", target: { committedDate: ha(5) }, associatedPullRequests: { nodes: [] } },
