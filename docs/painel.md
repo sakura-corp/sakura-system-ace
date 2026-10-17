@@ -48,8 +48,19 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   - **feita** = fechada.
 - **Pegar tarefa**: a pessoa pega **uma livre** (ninguém distribui), **põe o nome dela antes de
   começar**, e segura **uma por vez**. Só pega outra depois que o PR da atual foi aberto.
-- **"Depende de"**: tarefa que diz "Depende de: tarefa X aprovada" só começa **depois que a X
-  entrou na `main`** (a Sofia aprovou). Tarefa que depende de algo que a Sofia faz (ligar a
+  **Pelo painel** (#538): o botão **"Pegar tarefa"** no cartão da tarefa livre põe o nome da pessoa
+  no GitHub, com o login dela. O worker confere tudo de novo na hora, e o botão vem desligado, dizendo
+  o porquê, quando a tarefa:
+  - tem dono;
+  - não é da leva atual;
+  - está incompleta;
+  - espera uma dependência;
+  - ou é de quem já está com outra em andamento.
+
+  O **"Começar com o Claude"** só aparece pra quem pegou. **"Largar"** devolve a tarefa: só o dono,
+  e só enquanto não abriu o PR. Ninguém põe outra pessoa numa tarefa pelo painel.
+- **"Depende de"**: tarefa que diz "Depende de: #X" só começa **depois que a X foi fechada como
+  concluída** (normalmente pelo PR que entrou na `main`; decidido pela Sofia em 17/10). Tarefa que depende de algo que a Sofia faz (ligar a
   Cloudflare, criar um app) só começa quando isso aparece em "Andamento", no fim deste arquivo.
 - **Avisar a Sofia**: no fim de toda tarefa, **pelo GitHub** (o pedido de revisão do PR já avisa)
   **e pelo WhatsApp**: o Claude escreve uma mensagem curta e informal, e a pessoa só copia e manda.
