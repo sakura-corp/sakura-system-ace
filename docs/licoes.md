@@ -1691,3 +1691,16 @@
       numa versão própria, a seguinte ao primeiro salto do Electron (ver o item 41).
     - **Regra**: teste de comportamento do Chromium roda no Electron do projeto. Um Chromium
       qualquer responde outra coisa (o item 41 já tinha visto isso com o 141 do sandbox).
+
+83. **Tarefa agendada e modelo sem crédito (17/10/2026, ao padronizar as tarefas).**
+    - **Modelo**: uma sessão aberta por outra nasce no modelo configurado de quem abriu. Esta
+      sessão nasceu no Fable, que a conta não tinha crédito pra usar, e falhou logo de cara
+      ("requires usage credits"). Uma sessão filha de teste no Fable falhou igual, em 3 segundos,
+      e apareceu como "falhou", com o motivo. **Regra**: modelo sempre pela tabela de
+      `docs/tarefas.md` (o Fable fica fora), com reserva; quem vê a falha troca o modelo
+      (`/model claude-opus-5-5`) e tenta de novo, **sem mexer na issue**.
+    - **Tarefa agendada**: a trava do modo automático recusou duas vezes mudar o texto do "Resumo
+      de segunda" ("Instruction Poisoning"), **mesmo com a autorização dela na conversa**. O
+      provável motivo: o texto já trazia uma frase de autorização escrita pra outra sessão ler.
+      Trocar só o modelo passou. **Caminho que funcionou**: o Claude escreve o trecho e ela cola
+      no app. Não contornar a trava nem apagar a frase dela por conta própria.

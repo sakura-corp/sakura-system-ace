@@ -35,6 +35,30 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, de madrugada (2): o tempo real no ar e o 1º chefe de verdade
+
+**Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas na loja** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas e o painel. Entram na próxima versão, **quando ela decidir publicar**. O **painel** (Cloudflare) já publicou sozinho a #355. Do mutirão de 16/10 o detalhe está em `docs/historico.md`.
+
+#### O tempo real do painel (#355, feita e testada ao vivo, 17/10)
+- **Feita pelo `chefe-backend`** (PR #531, mesclado). O GitHub avisa o worker (webhook com assinatura conferida), uma sala (Durable Object) repassa a todos os painéis abertos, e a página busca de novo sozinha; ponto "ao vivo" na barra lateral. Como funciona, em 5 linhas: `docs/painel.md`.
+- **Webhook ligado por ela** (17/10, no PC, passo a passo): app "Sakura Painel", segredo só no Bitwarden e na Cloudflare (`GITHUB_WEBHOOK_SECRET`). **Testado por ela com dois navegadores**: o painel mudou nos dois em 4 a 5 s, sem recarregar. Entregas do app verdes desde a publicação.
+- **A próxima da leva 0 é a #468 (sala ao vivo, 6 h)**, já destravada. Sem etiqueta de chefe; sugestão: `chefe-frontend` liderando, chamando o backend pra parte de dados. O `useTempoReal()` já devolve `estado` e `ultimaAtualizacao` pra ela usar.
+
+#### Os chefes por função (decidido por ela, 17/10)
+- **5 chefes**: `chefe-frontend`, `chefe-backend`, `chefe-seguranca`, `chefe-marketing`, `chefe-tester` (`.claude/skills/`, #526). Tarefa com etiqueta `chefe:<função>` (as 5 já existem no GitHub). Tarefa que mistura funções: um chefe lidera e chama os outros dentro da própria sessão (a cota é de quem clicou). Candidatos a chefe depois: Fiscal e Qualidade.
+- **Botão "Começar com o Claude"** (#527) abriu a sessão da #355 com a tarefa e o repositório certos. **Funciona no navegador do celular; o app do Claude ignora o texto.** O plano B **"Copiar texto"** (#529) entrou na `main`, mas **ainda não foi provado no celular**.
+- **Relatórios dos chefes** (#528): cada chefe grava `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` no PR, com "Como eu agi"; a skill `revisor-de-chefes` propõe melhorias nas skills **só em PR aberto, que ela aprova** (revisão do mês, R1). **O 1º relatório de verdade é o da #355** (`docs/relatorios/2026-10-17-tarefa-355-backend.md`); ele **propõe** acrescentar na `chefe-backend` um item sobre Worker/webhook ("rodar no `wrangler dev` e provar com chamada real") e um aviso contra `pkill -f` com texto do próprio comando. **Falta ela aprovar** (não vale sozinha). Repositório público: relatório nunca leva preço, sócios, dado pessoal ou da empresa.
+- **Resumo de segunda de manhã** (A2 da #472): toda segunda às **9h29** (Brasília), com aviso no celular; só lê. 1º disparo: 19/10.
+- Tarefas da **empresa** viraram issues `sofia` no repositório **privado** (#99 a #108).
+
+#### O que depende dela
+1. **Decidir o chefe da #468** (sugestão: `chefe-frontend`) e **abrir a sessão dela** (próxima da leva 0). Provar o "Copiar texto" no celular, e aprovar ou ajustar a sugestão pra skill `chefe-backend` (acima).
+2. **Publicar a próxima versão** no canal de teste e **testar no instalado** (operador, lista grande, barra de rolagem): só com ela pedindo.
+3. **Conferir** `label:sofia` (público: https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado.
+4. O `/fechar` rodou de verdade em 17/10 e funcionou; **o aviso automático de conversa comprida ainda não foi visto** (#471). A #442 reaberta: falta medir o CI uma semana depois (~23/10) e anotar no privado.
+5. **Empresa**: Claude Team na segunda 19/10, desmembrar o lançamento em novembro, o Pix de 16/11: tudo no privado.
+6. **A Bibi** não mudou; o andamento dela mora só no repositório dela.
+
 ### 17/10/2026, madrugada: os chefes por função, o botão no painel e os relatórios
 
 **Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas, e o painel (botão "Começar com o Claude"). Entram na próxima versão, **quando ela decidir publicar**. Do mutirão de 16/10 (7 PRs, CI novo da #442 em uso) o detalhe está em `docs/historico.md`.
