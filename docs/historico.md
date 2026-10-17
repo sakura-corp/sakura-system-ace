@@ -35,6 +35,26 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, madrugada: os chefes por função, o botão no painel e os relatórios
+
+**Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas, e o painel (botão "Começar com o Claude"). Entram na próxima versão, **quando ela decidir publicar**. Do mutirão de 16/10 (7 PRs, CI novo da #442 em uso) o detalhe está em `docs/historico.md`.
+
+#### Os chefes por função (decidido por ela, 17/10; continuação da conversa sobre os agentes do Escritório)
+- **5 chefes**: `chefe-frontend`, `chefe-backend`, `chefe-seguranca`, `chefe-marketing`, `chefe-tester` (`.claude/skills/`, #526, aprovadas por ela). Sala do Escritório = o projeto; chefe = a função. Tarefa com etiqueta `chefe:<função>` (as 5 etiquetas já existem no GitHub; criadas por ela, 17/10). Tarefa que mistura funções: um chefe lidera e chama os outros dentro da própria sessão (a cota é de quem clicou). Candidatos a chefe depois: Fiscal e Qualidade.
+- **Botão "Começar com o Claude"** no cartão da tarefa (#527): abre `claude.ai/code` com o texto e o repositório já preenchidos; quem aperta Enter é a pessoa. **Limite confirmado por ela (17/10)**: **funciona no navegador do celular; o app do Claude ignora o texto.** Plano B em andamento no PR **#529** ("Copiar texto" + dica só no celular).
+- **Relatórios dos chefes** (#528): cada chefe grava `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` no PR, com a parte "Como eu agi"; a skill `revisor-de-chefes` lê a pasta e propõe melhorias nas skills **só em PR aberto, que ela aprova**; entra na revisão do mês (R1). Repositório público: relatório nunca leva preço, sócios, dado pessoal ou da empresa. **Nada disto foi rodado numa tarefa de verdade ainda**: o 1º uso é o teste.
+- **Resumo de segunda de manhã** (A2 da #472): **criado**, toda segunda às **9h29** (Brasília), com aviso no celular; só lê. 1º disparo: 19/10. Na sessão nova ele pede de novo o acesso de leitura ao privado; se recusado, resume só o público.
+- Tarefas da **empresa** viraram issues `sofia` no repositório **privado** (#99 a #108).
+
+#### O que depende dela
+1. **Aprovar ou ajustar o PR #529** (se ainda aberto) e **testar o botão** no painel pelo navegador do celular, numa tarefa com etiqueta `chefe:...`. O 1º chefe de verdade grava o 1º relatório.
+2. **As duas tarefas que existem hoje na leva-0 não dão pra começar ainda**: a **#355 (tempo real, 6 h)** depende de ela ligar o webhook do app "Sakura Painel" e cadastrar o `GITHUB_WEBHOOK_SECRET` na Cloudflare (`docs/painel.md`, "O que a Sofia faz"; guiar pelo celular, um passo por vez); a **#468 (sala ao vivo)** depende da #355. Sugestão: a #355 é a primeira tarefa pra testar os chefes (`chefe:backend`).
+3. **Publicar a próxima versão** no canal de teste e **testar no instalado** (operador, lista grande, barra de rolagem): só com ela pedindo.
+4. **Conferir** `label:sofia` (público: https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado.
+5. **Rodar o `/fechar`** numa sessão comprida e ver se o aviso aparece (#471). A #442 reaberta: falta medir o CI uma semana depois (~23/10) e anotar no privado.
+6. **Empresa**: Claude Team na segunda 19/10, desmembrar o lançamento em novembro, o Pix de 16/11: tudo no privado.
+7. **A Bibi** não mudou; o andamento dela mora só no repositório dela.
+
 ### 16/10/2026, noite: o mutirão das pendências (sem a Sofia)
 
 **Estado do código**: a `main` tem 4 mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas que passam de 1.000 linhas (paginação) e o painel ("Sair" e nome do agente). Entram na próxima versão, **quando ela decidir publicar**.
