@@ -641,3 +641,10 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   itens que existem, até a #543. A tela de entrada diz "Painel da Sakura Corp". Relatório em
   `docs/relatorios/2026-10-17-tarefa-542-frontend.md`. **A Sofia confere depois de publicar**: a barra nova com o login
   dela, e o "ao vivo" verde.
+- **17/10/2026, #543 a navegação do celular: PR aberto, esperando a revisão da Sofia.** Abaixo de 768 px a barra lateral
+  some e aparece uma barra fixa embaixo: Início, Leva, Sala, Pessoas e Mais, lidos da lista da #542 (Início e Pessoas
+  apagados, em breve). O "Mais" abre uma folha que sobe de baixo com o resto da lista (inclusive os em breve, com a frase
+  do que falta), o "ao vivo" e o "Sair"; fecha com "Fechar", Esc ou toque no fundo, prende o foco e devolve ele ao "Mais".
+  O conteúdo ganhou espaço no fim pra barra não cobrir nada; no `/sala?tv` não tem barra. Olhado em 320 e 375 px, claro e
+  escuro. Relatório em `docs/relatorios/2026-10-17-tarefa-543-frontend.md`. **A Sofia confere depois de publicar**: no
+  celular dela, a barra aparece embaixo e o "Mais" abre e fecha.

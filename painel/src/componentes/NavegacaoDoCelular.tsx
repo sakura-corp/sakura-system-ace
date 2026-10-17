@@ -163,7 +163,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
           // Toque no fundo escurecido: o alvo é o próprio <dialog>.
           if (e.target === e.currentTarget) setAberto(false);
         }}
-        className="m-0 mt-auto max-h-[85vh] w-full max-w-none overflow-y-auto rounded-t-2xl bg-cartao p-0 text-texto backdrop:bg-black/40 md:hidden"
+        className="m-0 mt-auto max-h-[85vh] w-full max-w-none overflow-y-auto rounded-t-2xl bg-cartao p-0 text-texto backdrop:bg-black/40"
       >
         <div
           className="min-w-0 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
