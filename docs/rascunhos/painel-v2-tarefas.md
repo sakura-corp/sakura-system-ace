@@ -8,7 +8,7 @@
 > **`Depende de` com "V2-n"**: o modelo pede número de issue. Ao criar, a ordem é V2-1 primeiro, e cada "V2-n"
 > é trocado pelo número que a issue dela ganhar.
 >
-> **Etiquetas propostas**: `leva-2` (ou a leva que ela escolher) e o `chefe:` de cada uma.
+> **Etiquetas**: `leva-2` (decidido em 17/10) e o `chefe:` de cada uma.
 > As decisões que faltam são as perguntas do PR; como ela responde antes de criar as issues, nenhuma
 > issue `sofia` separada é necessária. Se alguma ficar em aberto, vira issue `sofia` e entra no `Depende de`.
 
@@ -26,7 +26,7 @@ V2-5 ─────────────────────────
 
 | Tarefa | Chefe | Estimativa | Depende de | Mexe em (arquivos que se cruzam com a leva 1?) |
 |---|---|---|---|---|
-| V2-1 barra lateral nova | frontend | 4 h | nada | `BarraLateral.tsx`, `App.tsx` (só a barra), `tipos.ts` (só `Pagina`), `logica/navegacao.ts` novo — **não cruza** com #536/#538/#539 (elas mexem no tipo `Tarefa`, não no `Pagina`) |
+| V2-1 barra lateral nova | frontend | 4 h | nada | `BarraLateral.tsx`, `TelaDeEntrada.tsx` (só o nome), `App.tsx` (só a barra), `tipos.ts` (só `Pagina`), `logica/navegacao.ts` novo — **não cruza** com #536/#538/#539 (elas mexem no tipo `Tarefa`, não no `Pagina`) |
 | V2-2 celular | frontend | 3 h | V2-1 | `NavegacaoDoCelular.tsx` novo, `BarraLateral.tsx`, `App.tsx` |
 | V2-3 páginas "em breve" | frontend | 3 h | V2-1 | `logica/emBreve.ts` e `PaginaEmBreve.tsx` novos, `App.tsx` |
 | V2-4 cabeçalho de página | frontend | 2 h | V2-1 | `CabecalhoDaPagina.tsx` novo; usado só na Sala, no Escritório e no "em breve" (a Leva entra na V2-6) |
@@ -56,9 +56,9 @@ A barra lateral passa a ter os cinco grupos do painel v2 (Início; Trabalho; Equ
 "Sala dentro de Levas" e o "Financeiro" sozinho.
 
 ## Decisões já tomadas
-- A organização e a versão visual escolhidas pela Sofia em `docs/rascunhos/painel-v2.md` (seções 2 e 3) e
-  a referência renderizada em `docs/referencia/painel-v2/versao-<letra>/` (<letra> = a escolhida).
-- Nome único: "Sakura Corp" na barra.
+- A organização e a versão visual escolhidas pela Sofia em 17/10 (`docs/rascunhos/painel-v2.md`, seções 2 e 4):
+  a **versão A**, com a referência renderizada em `docs/referencia/painel-v2/versao-a/`.
+- Nome único (Sofia, 17/10): "Sakura Corp" na barra e "Painel da Sakura Corp" na tela de entrada (`TelaDeEntrada.tsx`, só o texto).
 - Item "em breve": apagado, com cadeado, `aria-disabled`, e uma linha "depende de …". Nesta tarefa ele
   **ainda não abre página** (é a V2-3).
 - Os itens que existem continuam nos mesmos endereços (`/`, `/leva/<n>`, `/sala`, `/escritorio`).
@@ -79,6 +79,7 @@ A barra lateral passa a ter os cinco grupos do painel v2 (Início; Trabalho; Equ
 - `painel/src/componentes/BarraLateral.tsx`.
 - `painel/src/App.tsx`: só o que a barra recebe.
 - `painel/src/tipos.ts`: só o tipo `Pagina`.
+- `painel/src/componentes/TelaDeEntrada.tsx`: só o nome "Painel da Sakura Corp".
 - `docs/painel.md`.
 Mexer fora desta lista: parar e perguntar à Sofia.
 
@@ -126,7 +127,8 @@ Com a barra embaixo, os lugares mais usados ficam sempre à vista, e o resto num
 ## Decisões já tomadas
 - Pesquisa (`docs/referencia/painel-v2/referencias.md`): navegação escondida atrás de um botão reduz o quanto
   as pessoas acham as coisas; no celular, barra embaixo com até 5 itens.
-- Itens da barra de baixo: Início, Leva, Sala, Pessoas (em breve) e Mais (a escolhida pode trocar).
+- A Sofia escolheu a **barra fixa embaixo** (o celular da versão B, `docs/referencia/painel-v2/versao-b/`, em 17/10).
+- Itens da barra de baixo: Início, Leva, Sala, Pessoas (em breve) e Mais.
 - "Mais" abre uma folha com o resto da lista da V2-1 (inclusive os "em breve", o "ao vivo" e o "Sair").
 - A dica do celular sobre o link do Claude passa a aparecer **uma vez** na tela, não em cada tarefa (o texto
   continua o mesmo).
@@ -291,7 +293,7 @@ Uma página que responde "o que eu preciso fazer agora?": o que espera por mim (
 aprovar), a tarefa que eu peguei, a leva em uma linha. Hoje isso só aparece misturado na Sala.
 
 ## Decisões já tomadas
-- A `/` passa a ser o Início; a leva atual vai pra `/leva` (e `/leva/<n>` continua). A `/` antiga **não**
+- A `/` passa a ser o Início (Sofia, 17/10); a leva atual vai pra `/leva` (e `/leva/<n>` continua). A `/` antiga **não**
   quebra link: quem chega numa `/leva/<n>` continua chegando.
 - "Precisa de você" usa a mesma regra da Sala (`montarSala()`, estado `precisa`, de quem olha): nada novo
   inventado, os dois sempre batem.
@@ -352,7 +354,7 @@ A tela da leva fica mais calma e densa: o contador numa faixa só, as tarefas um
 fortes só onde fazem sentido (na tarefa de quem olha). Hoje são 8 botões rosa numa tela de 8 tarefas.
 
 ## Decisões já tomadas
-- O desenho da versão escolhida (`docs/referencia/painel-v2/versao-<letra>/leva.html`).
+- O desenho da versão A (`docs/referencia/painel-v2/versao-a/leva.html`), escolhida pela Sofia em 17/10.
 - **As regras não mudam**: o que a #536 (cabeçalho), a #538 (pegar e largar) e a #539 (horas por pessoa)
   decidiram continua igual. Esta tarefa só redesenha.
 - O estado continua sempre com a palavra.
@@ -388,7 +390,7 @@ Mexer fora desta lista: parar e perguntar à Sofia.
 - [ ] a leva de verdade, no endereço público, no celular e no PC
 
 ## Não fazer
-- Não mudar regra nenhuma (estado, horas, pegar, cabeçalho). Visão em quadro: só se a Sofia pedir (pergunta do PR).
+- Não mudar regra nenhuma (estado, horas, pegar, cabeçalho). Visão em quadro: fica pra depois (Sofia, 17/10).
 
 ---
 Segue o ritual da skill `ritual-de-tarefa` (sessão mãe, modelos, relatório). Não mesclar.
