@@ -44,7 +44,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     titulo: "Equipe",
     itens: [
       { id: "sala", rotulo: "Sala", icone: "pessoas", href: "/sala" },
-      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, dependeDe: "depende da #539" },
+      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, dependeDe: "ainda sem tarefa" },
       { id: "escritorio", rotulo: "Escritório", icone: "maleta", href: "/escritorio", etiqueta: "exemplo" },
     ],
   },

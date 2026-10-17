@@ -21,8 +21,12 @@ Na prática, hoje:
 - **Financeiro e DRE ficam pra depois**, e com um cuidado: dinheiro da empresa **não pode morar
   no GitHub**, que é público. Quando chegar a hora, o financeiro vai precisar de um banco próprio
   e privado; aí sim um Supabase faz sentido. Decidir com a Sofia quando chegar.
-- O desenho já nasce preparado pra crescer: uma barra lateral com uma seção por assunto ("Levas"
-  hoje; "Financeiro" aparece desativado, escrito "em breve").
+- O desenho já nasce preparado pra crescer: a barra lateral tem cinco grupos (Início; Trabalho;
+  Equipe; Empresa; rodapé com Configurações e quem entrou), um ícone por item, e as funções
+  futuras já no lugar, apagadas, com cadeado e a linha do que falta ("depende da #546", "depende
+  do banco privado"). A lista mora em `painel/src/logica/navegacao.ts`, como dado: a barra só
+  desenha o que está lá, e um teste confere que todo "em breve" diz do que depende e que nenhum
+  endereço que existe (`/`, `/sala`, `/escritorio`) sumiu (#542).
 - **A sala da Sakura** (decidido pela Sofia em 14/10/2026): uma página em que cada pessoa e cada
   robô (as sessões do Claude e os trabalhos automáticos do GitHub) aparece como um bonequinho
   numa sala, mostrando o que está fazendo e o que **precisa de quem está olhando**. Bem simples
@@ -629,3 +633,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   mostrar a leva 2 como atual (`levaAtual()`) e a leva 1 sumiria da tela. A leva 1 continua com a equipe a partir de segunda
   (19/10): #510, #511 e #455, uma por pessoa; nenhuma delas mexe em `painel/`. **Só a #547, a #548 e a #549 ficam pra leva 2**, e a
   etiqueta entra quando a leva 1 fechar.
+- **17/10/2026, #542 a barra lateral nova: PR aberto, esperando a revisão da Sofia.** Cinco grupos no visual da versão A, ícone
+  em todo item, o item atual com fundo suave e uma barrinha rosa (acabou o bloco rosa cheio). Em breve, apagados e sem abrir
+  página ainda (é a #544): Início (#546), Levas anteriores (#548), Versões, Fases e Relatório da leva, Pessoas,
+  Financeiro, DRE, Lojas e Configurações. Só a leva atual aparece no grupo Trabalho; quem abre uma leva antiga
+  (`/leva/0`) vê ela logo abaixo, marcada como a página atual. No celular a barra continua um bloco no topo, só com os
+  itens que existem, até a #543. A tela de entrada diz "Painel da Sakura Corp". Relatório em
+  `docs/relatorios/2026-10-17-tarefa-542-frontend.md`. **A Sofia confere depois de publicar**: a barra nova com o login
+  dela, e o "ao vivo" verde.
