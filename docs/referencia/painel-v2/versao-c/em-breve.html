@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Financeiro · Painel da Sakura (versão C)</title>
+<link rel="stylesheet" href="../comum/base.css">
+<link rel="stylesheet" href="../comum/sala.css">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-casa" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-lista" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+<symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-gente" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14c2.4.3 3.8 2 3.8 4.5"/></symbol>
+<symbol id="i-tela" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-mais" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3" stroke-linecap="round"/></symbol>
+<symbol id="i-externo" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></symbol>
+<symbol id="i-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+</defs></svg>
+<div class="faixa-referencia">Desenho de referência (versão C), dados de exemplo</div>
+<div class="app">
+
+<div class="coluna-lateral"><aside class="lateral" aria-label="Navegação">
+  <div class="espaco"><span class="mono" aria-hidden="true">S</span><span class="espaco-txt"><span class="espaco-nome">Sakura Corp<span class="aovivo"><i aria-hidden="true"></i>ao vivo</span></span><span class="espaco-sub">Painel da equipe</span></span></div>
+  <button type="button" class="busca" aria-disabled="true" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-busca"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
+  <nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel" open><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav>
+  <div class="eu"><span class="av">V</span><span class="eu-nome">voce-exemplo</span><a class="eu-sair" href="#" title="Em breve">Sair</a></div>
+</aside></div>
+<div class="coluna-principal">
+
+<header class="topo-cel">
+  <p class="topo-nome">Financeiro</p>
+  <details class="menu-cel"><summary aria-label="Abrir o menu"><svg class="ic grande" aria-hidden="true"><use href="#i-menu"/></svg></summary>
+    <div class="menu-painel"><nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel"><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav></div></details>
+</header>
+
+<main class="principal" id="conteudo">
+
+<header class="cab">
+  <div><h1 class="h1">Financeiro <span class="selo livre">Em breve</span></h1><p class="sub">Empresa · contas da Sakura Corp</p></div>
+</header>
+<div class="pilha">
+  <div class="esqueleto" aria-hidden="true">
+    <div class="tres-esq">
+      <div class="cartao esq-cartao"><p class="esq-rotulo">Entradas</p><i class="esq grande"></i><i class="esq curto"></i></div>
+      <div class="cartao esq-cartao"><p class="esq-rotulo">Saídas</p><i class="esq grande"></i><i class="esq curto"></i></div>
+      <div class="cartao esq-cartao"><p class="esq-rotulo">Resultado do mês</p><i class="esq grande"></i><i class="esq curto"></i></div>
+    </div>
+    <div class="cartao esq-grafico"><i class="esq alto"></i></div>
+    <div class="cartao esq-tabela"><div class="esq-linha"><i class="esq w0"></i><i class="esq curto"></i><i class="esq curto"></i></div><div class="esq-linha"><i class="esq w1"></i><i class="esq curto"></i><i class="esq curto"></i></div><div class="esq-linha"><i class="esq w2"></i><i class="esq curto"></i><i class="esq curto"></i></div><div class="esq-linha"><i class="esq w0"></i><i class="esq curto"></i><i class="esq curto"></i></div><div class="esq-linha"><i class="esq w1"></i><i class="esq curto"></i><i class="esq curto"></i></div></div>
+  </div>
+  <section class="cartao aviso-breve" aria-labelledby="ab-t">
+    <p class="det-eyebrow"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg> Em breve</p>
+    <h2 id="ab-t" class="h2g">Esta página ainda não existe</h2>
+    <p class="ab-rot">Do que depende</p>
+    <p>Escolher o banco privado (decisão da Sofia).</p>
+    <p class="ab-rot">Por quê</p>
+    <p>Dinheiro da empresa nunca mora no GitHub, que é público.</p>
+  </section>
+</div>
+</main>
+<nav class="barra-cel" aria-label="Principal">
+  <a href="inicio.html"><svg class="ic grande" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+  <a href="leva.html"><svg class="ic grande" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva</span></a>
+  <a href="sala.html"><svg class="ic grande" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span></a>
+  <a href="em-breve.html" aria-current="page"><svg class="ic grande" aria-hidden="true"><use href="#i-mais"/></svg><span>Mais</span></a>
+</nav>
+</div>
+</div>
+</body>
+</html>

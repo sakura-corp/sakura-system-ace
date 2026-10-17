@@ -2,7 +2,8 @@
 //
 // Uso (da raiz do repositório):
 //   node docs/referencia/painel-v2/comum/conferir.mjs <pasta> <pagina.html> [<pagina.html> ...]
-// Cada página sai em 375 px e 1280 px, claro e escuro, em <pasta>/fotos/<nome>-<largura>-<tema>.jpg.
+// Cada página sai em 375 px e 1280 px, claro e escuro, em <pasta>/fotos/<nome>-<largura>-<tema>.jpg
+// (e, no celular, só a primeira tela em <nome>-375-<tema>-tela.jpg).
 // O contraste usa a mesma medição do programa das lojas (scripts/medir-contraste.mjs, WCAG 2.2 AA).
 // Também avisa rolagem lateral. Sai com código 1 se achar contraste reprovado ou rolagem lateral.
 import { createRequire } from "node:module";
@@ -37,6 +38,8 @@ for (const pagina of paginas) {
       const achados = await p.evaluate(MEDIR_CONTRASTE);
       const t = tema === "light" ? "claro" : "escuro";
       await p.screenshot({ path: `${fotos}/${nome}-${largura}-${t}.jpg`, fullPage: true, type: "jpeg", quality: 74 });
+      // No celular, também a primeira tela, do jeito que a pessoa vê (a foto inteira põe a barra fixa no meio).
+      if (largura === 375) await p.screenshot({ path: `${fotos}/${nome}-${largura}-${t}-tela.jpg`, type: "jpeg", quality: 74 });
       const linha = `${nome} ${largura} ${t}:`;
       if (lateral > 0) { problemas++; console.log(linha, `ROLAGEM LATERAL de ${lateral}px`); }
       for (const a of achados) { problemas++; console.log(linha, "CONTRASTE", a.medido, "<", a.minimo, JSON.stringify(a.amostra ?? a.tipo), a.frente, "sobre", a.fundo); }
