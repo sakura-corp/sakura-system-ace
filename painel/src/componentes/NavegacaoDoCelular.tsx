@@ -83,7 +83,7 @@ function AlvoDaBarra({ item, atual, comAriaCurrent }: { item: ItemDaNavegacao; a
     );
   }
   return (
-    <span aria-disabled="true" className={`${base} text-texto-2 opacity-60`}>
+    <span aria-disabled="true" className={`${base} text-texto-2`}>
       {conteudo}
       <span className="sr-only"> (em breve)</span>
     </span>
