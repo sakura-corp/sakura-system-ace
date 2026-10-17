@@ -35,6 +35,30 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, tarde (5): a #538 entrou e o painel v2 (#542 a #546) começa antes da leva 1 terminar
+
+**Estado do código**: a loja continua na `v0.9.51`, e o banco na `0064`. Na `main` entraram a #536 (PR #553) e a #538 (PR #554), as duas do painel, que se publica sozinho. Há mudanças pequenas na `main` esperando ela decidir publicar o programa das lojas.
+
+#### Decidido (Sofia, 17/10)
+- **A #542 à #546 são feitas agora, pela Sofia com o Claude**, sem esperar a leva 1 terminar. **Não levam etiqueta de leva**: se levassem `leva-2`, o painel trocaria a leva atual e a leva 1 sumiria da tela. Um comentário em cada uma das cinco issues diz isso.
+- **A leva 1 fica pra equipe a partir de segunda (19/10)**: #510, #511 e #455, uma pra cada pessoa. Nenhuma delas mexe em `painel/`.
+- **Só a #547, a #548 e a #549 continuam na leva 2**, e a etiqueta `leva-2` só entra quando a leva 1 fechar.
+- Uma **sessão coordenadora** abre uma sessão por tarefa, na ordem das dependências:
+  1. a #542;
+  2. a #543 e a #544, juntas;
+  3. a #545;
+  4. a #546.
+
+  Cada sessão de tarefa abre o próprio PR. Ela mescla cada um antes de a coordenadora abrir as tarefas que dependem dele.
+
+#### O que depende dela
+1. **Mesclar os PRs da #542 à #546**, um por vez, conforme a sessão coordenadora avisar, e conferir no endereço do painel o "Depois de publicar" de cada um. A #538 também está nessa lista: pegar uma tarefa, tentar uma segunda e largar.
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). A equipe então pega a #510, a #511 e a #455.
+3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`, e as sugestões de "Como eu agi" dos relatórios da #536 e da #538 pro ritual. Provar o "Copiar texto" do painel no celular.
+4. **Publicar a próxima versão** no canal de teste e testar no programa instalado: só quando ela pedir.
+5. Conferir as issues com `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado. Assuntos da empresa (Team, lançamento, Pix) ficam no privado.
+6. A #442: medir o CI por volta de 23/10. O aviso automático de conversa comprida ainda não foi visto funcionando (#471).
+
 ### 17/10/2026, madrugada (4): a leva 1 montada e o painel v2 sendo planejado de noite
 
 **Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). Só mudou documentação.
