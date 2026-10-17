@@ -12,14 +12,20 @@ describe("BarraLateral", () => {
     expect(h).toMatch(/<a href="\/sala" aria-current="page"/);
   });
 
-  it("item em breve não é link: aria-disabled, texto pro leitor de tela e a frase do que falta", () => {
+  it("item em breve é link pra página que explica (#544), apagado, com o texto pro leitor de tela e a frase do que falta", () => {
     const h = html({ levas: [] });
-    expect(h).toContain('aria-disabled="true"');
-    expect(h).toContain('Versões<span class="sr-only"> (em breve)</span>');
+    expect(h).not.toContain("aria-disabled");
+    expect(h).toMatch(/<a href="\/em-breve\/versoes"[^>]*>(?:(?!<\/a>).)*Versões<span class="sr-only"> \(em breve\)<\/span>/);
     expect(h).toContain("depende da leva 2");
-    expect(h).not.toMatch(/<a [^>]*>(?:(?!<\/a>).)*Versões/);
-    // Só os itens que existem são links: Leva atual, Sala e Escritório.
-    expect(h.match(/<a /g)).toHaveLength(3);
+    // Os 3 que existem (Leva atual, Sala e Escritório) e os 10 em breve.
+    expect(h.match(/<a /g)).toHaveLength(13);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(10);
+  });
+
+  it("na página em breve aberta, só ela tem aria-current", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/", atual: false }], pagina: "financeiro" });
+    expect(h.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(h).toMatch(/<a href="\/em-breve\/financeiro" aria-current="page"/);
   });
 
   it("leva na tela que não é a atual aparece abaixo de Leva atual; a atual deixa de ser a página", () => {

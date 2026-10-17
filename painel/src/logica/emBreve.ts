@@ -90,7 +90,7 @@ export const EM_BREVE: TextoEmBreve[] = [
     subtitulo: "Cada pessoa e o que faz agora.",
     resumo: "Pessoas mostra a tarefa de agora e as horas de cada pessoa na leva. Sem nota e sem ranking.",
     vaiMostrar: ["A tarefa de agora de cada pessoa", "As horas de cada pessoa na leva"],
-    dependeDe: [{ texto: "As horas por pessoa", detalhe: "É a #539. Esta página ainda não tem tarefa própria." }],
+    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe. As horas por pessoa (#539) já estão na leva." }],
   },
   {
     id: "financeiro",
