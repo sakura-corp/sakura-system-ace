@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leva atual · Painel da Sakura (versão C)</title>
+<link rel="stylesheet" href="../comum/base.css">
+<link rel="stylesheet" href="../comum/sala.css">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-casa" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-lista" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+<symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-gente" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14c2.4.3 3.8 2 3.8 4.5"/></symbol>
+<symbol id="i-tela" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-mais" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3" stroke-linecap="round"/></symbol>
+<symbol id="i-externo" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></symbol>
+<symbol id="i-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+</defs></svg>
+<div class="faixa-referencia">Desenho de referência (versão C), dados de exemplo</div>
+<div class="app">
+
+<div class="coluna-lateral"><aside class="lateral" aria-label="Navegação">
+  <div class="espaco"><span class="mono" aria-hidden="true">S</span><span class="espaco-txt"><span class="espaco-nome">Sakura Corp<span class="aovivo"><i aria-hidden="true"></i>ao vivo</span></span><span class="espaco-sub">Painel da equipe</span></span></div>
+  <button type="button" class="busca" aria-disabled="true" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-busca"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
+  <nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel" open><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav>
+  <div class="eu"><span class="av">V</span><span class="eu-nome">voce-exemplo</span><a class="eu-sair" href="#" title="Em breve">Sair</a></div>
+</aside></div>
+<div class="coluna-principal">
+
+<header class="topo-cel">
+  <p class="topo-nome">Leva 1</p>
+  <details class="menu-cel"><summary aria-label="Abrir o menu"><svg class="ic grande" aria-hidden="true"><use href="#i-menu"/></svg></summary>
+    <div class="menu-painel"><nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel"><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav></div></details>
+</header>
+
+<main class="principal" id="conteudo">
+
+<header class="cab">
+  <div><h1 class="h1 so-desk">Leva 1</h1><p class="sub">Leva atual · 7 tarefas · dados de exemplo</p></div>
+</header>
+<div class="abas" role="tablist" aria-label="Jeito de ver a leva">
+  <a class="aba ativa" role="tab" aria-selected="true" href="leva.html">Lista</a>
+  <span class="aba off" role="tab" aria-disabled="true" title="Em breve">Por pessoa <span class="mini">em breve</span></span>
+  <span class="aba off" role="tab" aria-disabled="true" title="Em breve">Por chefe <span class="mini">em breve</span></span>
+</div>
+<div class="leva-grade">
+  <div class="col-a">
+    <div class="resumo-leva">
+    <div class="num-faixa cartao" role="group" aria-label="Contagem por estado">
+      <div class="n"><span class="v num">3</span><span class="r">Livres</span></div>
+      <div class="n"><span class="v num">2</span><span class="r">Em andamento</span></div>
+      <div class="n"><span class="v num">1</span><span class="r">Em revisão</span></div>
+      <div class="n"><span class="v num">1</span><span class="r">Feita</span></div>
+    </div>
+    <div class="prog"><span class="prog-txt"><strong class="num">1 de 7</strong> feitas · <span class="num">6 h de 25 h</span></span><div class="barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="24" aria-label="6 h de 25 h"><i style="width:24%"></i></div></div>
+    </div>
+    
+<div class="cartao tabela-caixa desk-so">
+<table class="tabela">
+<caption class="sr-only">Tarefas da leva 1, por estado</caption>
+<colgroup><col class="c-id"><col><col class="c-chefe"><col class="c-dono"><col class="c-h"><col class="c-estado"><col class="c-acao"></colgroup>
+<thead><tr><th scope="col">#</th><th scope="col">Título</th><th scope="col">Chefe</th><th scope="col">Dono</th><th scope="col" class="dir">Horas</th><th scope="col">Estado</th><th scope="col"><span class="sr-only">Ação</span></th></tr></thead>
+<tbody><tr class="cab-grupo"><th colspan="7" scope="colgroup">Em andamento <span class="cont-g">2</span></th></tr>
+<tr class="linha sel"><td class="id num">536</td><td class="tit"><a href="#detalhe" aria-current="true">Painel: o cartão da tarefa lê o cabeçalho</a></td><td>frontend</td><td class="dono">voce-exemplo</td><td class="dir num">5 h</td><td><span class="selo andamento">Em andamento</span></td><td class="acao"><button type="button" class="btn mini-btn" aria-label="Mais ações da #536" title="Começar com o Claude, copiar texto, largar"><svg class="ic" aria-hidden="true"><use href="#i-mais"/></svg></button></td></tr>
+<tr class="linha"><td class="id num">510</td><td class="tit"><a href="#detalhe">Janelas de importação no Modal</a></td><td>frontend</td><td class="dono">carla-exemplo</td><td class="dir num">3 h</td><td><span class="selo andamento">Em andamento</span></td><td class="acao"><span class="vazio" aria-label="sem valor">—</span></td></tr>
+</tbody>
+<tbody><tr class="cab-grupo"><th colspan="7" scope="colgroup">Em revisão <span class="cont-g">1</span></th></tr>
+<tr class="linha"><td class="id num">539</td><td class="tit"><a href="#detalhe">Painel: horas por pessoa</a></td><td>frontend</td><td class="dono">ana-exemplo</td><td class="dir num">3 h</td><td><span class="selo revisao">Em revisão</span></td><td class="acao"><span class="vazio" aria-label="sem valor">—</span></td></tr>
+</tbody>
+<tbody><tr class="cab-grupo"><th colspan="7" scope="colgroup">Livres <span class="cont-g">3</span></th></tr>
+<tr class="linha"><td class="id num">538</td><td class="tit"><a href="#detalhe">Painel: botão “Pegar tarefa” e “Largar”</a></td><td>backend</td><td class="dono"><span class="vazio" aria-label="sem valor">—</span></td><td class="dir num">6 h</td><td><span class="selo livre">Livre</span></td><td class="acao"><span class="espera" title="Depende da #536, que ainda está aberta">Espera #536</span></td></tr>
+<tr class="linha"><td class="id num">511</td><td class="tit"><a href="#detalhe">Testes no Windows</a></td><td>tester</td><td class="dono"><span class="vazio" aria-label="sem valor">—</span></td><td class="dir num">2 h</td><td><span class="selo livre">Livre</span></td><td class="acao"><button type="button" class="btn prim mini-btn">Pegar</button></td></tr>
+<tr class="linha"><td class="id num">540</td><td class="tit"><a href="#detalhe">Ajuste pequeno sem cabeçalho</a></td><td><span class="vazio" aria-label="sem valor">—</span></td><td class="dono"><span class="vazio" aria-label="sem valor">—</span></td><td class="dir num"><span class="vazio" aria-label="sem valor">—</span></td><td><span class="selo livre">Livre</span></td><td class="acao"><span class="incompleta" title="Falta Chefe e Estimativa no cabeçalho">incompleta</span></td></tr>
+</tbody>
+<tbody><tr class="cab-grupo"><th colspan="7" scope="colgroup">Feitas <span class="cont-g">1</span></th></tr>
+<tr class="linha"><td class="id num">455</td><td class="tit"><a href="#detalhe">Clientes que sumiram</a></td><td>backend</td><td class="dono">bruno-exemplo</td><td class="dir num">6 h</td><td><span class="selo feita">Feita</span></td><td class="acao"><span class="vazio" aria-label="sem valor">—</span></td></tr>
+</tbody>
+</table></div>
+<div class="cel-so lista-cel">
+<section aria-label="Em andamento"><h3 class="cab-grupo-cel">Em andamento <span class="cont-g">2</span></h3>
+<ul class="linhas">
+<li class="lm sel"><a class="lm-tit" href="#detalhe" aria-current="true"><span class="id num">#536</span> Painel: o cartão da tarefa lê o cabeçalho</a>
+<div class="lm-meta"><span class="selo andamento">Em andamento</span><span class="lm-dono">voce-exemplo</span><span class="num">5 h</span><span class="lm-acao"><button type="button" class="btn mini-btn" aria-label="Mais ações da #536" title="Começar com o Claude, copiar texto, largar"><svg class="ic" aria-hidden="true"><use href="#i-mais"/></svg></button></span></div></li>
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#510</span> Janelas de importação no Modal</a>
+<div class="lm-meta"><span class="selo andamento">Em andamento</span><span class="lm-dono">carla-exemplo</span><span class="num">3 h</span><span class="lm-acao"></span></div></li>
+</ul></section>
+<section aria-label="Em revisão"><h3 class="cab-grupo-cel">Em revisão <span class="cont-g">1</span></h3>
+<ul class="linhas">
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#539</span> Painel: horas por pessoa</a>
+<div class="lm-meta"><span class="selo revisao">Em revisão</span><span class="lm-dono">ana-exemplo</span><span class="num">3 h</span><span class="lm-acao"></span></div></li>
+</ul></section>
+<section aria-label="Livres"><h3 class="cab-grupo-cel">Livres <span class="cont-g">3</span></h3>
+<ul class="linhas">
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#538</span> Painel: botão “Pegar tarefa” e “Largar”</a>
+<div class="lm-meta"><span class="selo livre">Livre</span><span class="lm-dono">sem dono</span><span class="num">6 h</span><span class="lm-acao"><span class="espera" title="Depende da #536, que ainda está aberta">Espera #536</span></span></div></li>
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#511</span> Testes no Windows</a>
+<div class="lm-meta"><span class="selo livre">Livre</span><span class="lm-dono">sem dono</span><span class="num">2 h</span><span class="lm-acao"><button type="button" class="btn prim mini-btn">Pegar</button></span></div></li>
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#540</span> Ajuste pequeno sem cabeçalho</a>
+<div class="lm-meta"><span class="selo livre">Livre</span><span class="lm-dono">sem dono</span><span class="num">sem horas</span><span class="lm-acao"><span class="incompleta" title="Falta Chefe e Estimativa no cabeçalho">incompleta</span></span></div></li>
+</ul></section>
+<section aria-label="Feitas"><h3 class="cab-grupo-cel">Feitas <span class="cont-g">1</span></h3>
+<ul class="linhas">
+<li class="lm"><a class="lm-tit" href="#detalhe"><span class="id num">#455</span> Clientes que sumiram</a>
+<div class="lm-meta"><span class="selo feita">Feita</span><span class="lm-dono">bruno-exemplo</span><span class="num">6 h</span><span class="lm-acao"></span></div></li>
+</ul></section>
+</div>
+  </div>
+  <div class="col-b">
+<section class="cartao horas" aria-labelledby="h-titulo">
+  <h2 id="h-titulo" class="h2p">Horas por pessoa</h2>
+  <table class="mini-tab">
+    <thead class="sr-only"><tr><th>Pessoa</th><th>Situação</th><th>Horas</th></tr></thead>
+    <tbody>
+    <tr><td><span class="av">B</span> bruno-exemplo</td><td>entregues</td><td class="dir num">6 h</td></tr>
+    <tr><td><span class="av">V</span> voce-exemplo</td><td>segurando</td><td class="dir num">5 h</td></tr>
+    <tr><td><span class="av">A</span> ana-exemplo</td><td>segurando</td><td class="dir num">3 h</td></tr>
+    <tr><td><span class="av">C</span> carla-exemplo</td><td>segurando</td><td class="dir num">3 h</td></tr>
+    </tbody>
+  </table>
+</section>
+<aside class="cartao detalhe" id="detalhe" aria-labelledby="det-titulo">
+  <p class="det-eyebrow">Tarefa selecionada · a sua</p>
+  <h2 id="det-titulo"><span class="id num">#536</span> Painel: o cartão da tarefa lê o cabeçalho</h2>
+  <p class="det-estado"><span class="selo andamento">Em andamento</span> <span class="sub">dono: voce-exemplo</span></p>
+  <dl class="det-lista">
+    <dt>Chefe</dt><dd>frontend</dd>
+    <dt>Ajudantes</dt><dd>tester</dd>
+    <dt>Estimativa</dt><dd class="num">5 h</dd>
+    <dt>Depende de</dt><dd>nada</dd>
+    <dt>Sessões filhas</dt><dd>nenhuma</dd>
+  </dl>
+  <div class="det-botoes"><button type="button" class="btn prim">Começar com o Claude</button><button type="button" class="btn ">Copiar texto</button></div>
+  <div class="det-rodape"><button type="button" class="btn fantasma">Largar</button><a class="link-ext" href="https://github.com/sakura-corp/sakura-system-ace/issues/536" target="_blank" rel="noopener noreferrer">Abrir no GitHub <svg class="ic" aria-hidden="true"><use href="#i-externo"/></svg><span class="sr-only"> (em aba nova)</span></a></div>
+</aside></div>
+</div>
+</main>
+<nav class="barra-cel" aria-label="Principal">
+  <a href="inicio.html"><svg class="ic grande" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+  <a href="leva.html" aria-current="page"><svg class="ic grande" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva</span></a>
+  <a href="sala.html"><svg class="ic grande" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span></a>
+  <a href="em-breve.html"><svg class="ic grande" aria-hidden="true"><use href="#i-mais"/></svg><span>Mais</span></a>
+</nav>
+</div>
+</div>
+</body>
+</html>

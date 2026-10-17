@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sala · Painel da Sakura (versão C)</title>
+<link rel="stylesheet" href="../comum/base.css">
+<link rel="stylesheet" href="../comum/sala.css">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-casa" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-lista" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></symbol>
+<symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-gente" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14c2.4.3 3.8 2 3.8 4.5"/></symbol>
+<symbol id="i-tela" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-mais" viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01" stroke-width="3" stroke-linecap="round"/></symbol>
+<symbol id="i-externo" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></symbol>
+<symbol id="i-seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+</defs></svg>
+<div class="faixa-referencia">Desenho de referência (versão C), dados de exemplo</div>
+<div class="app">
+
+<div class="coluna-lateral"><aside class="lateral" aria-label="Navegação">
+  <div class="espaco"><span class="mono" aria-hidden="true">S</span><span class="espaco-txt"><span class="espaco-nome">Sakura Corp<span class="aovivo"><i aria-hidden="true"></i>ao vivo</span></span><span class="espaco-sub">Painel da equipe</span></span></div>
+  <button type="button" class="busca" aria-disabled="true" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-busca"/></svg><span>Buscar…</span><kbd>Ctrl K</kbd></button>
+  <nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel" open><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav>
+  <div class="eu"><span class="av">V</span><span class="eu-nome">voce-exemplo</span><a class="eu-sair" href="#" title="Em breve">Sair</a></div>
+</aside></div>
+<div class="coluna-principal">
+
+<header class="topo-cel">
+  <p class="topo-nome">Sala</p>
+  <details class="menu-cel"><summary aria-label="Abrir o menu"><svg class="ic grande" aria-hidden="true"><use href="#i-menu"/></svg></summary>
+    <div class="menu-painel"><nav class="nav">
+<div class="grupo"><p class="g-titulo">Painel</p>
+<a class="item" href="inicio.html"><svg class="ic" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Trabalho</p>
+<a class="item" href="leva.html"><svg class="ic" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva atual</span><span class="cont" title="6 tarefas abertas">6<span class="sr-only"> abertas</span></span></a>
+<a class="item" href="leva.html" title="Fora deste desenho: só existe na lista de páginas"><svg class="ic" aria-hidden="true"><use href="#i-relogio"/></svg><span>Levas anteriores</span></a>
+</div>
+<div class="grupo"><p class="g-titulo">Equipe</p>
+<a class="item" href="sala.html" aria-current="page"><svg class="ic" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span><span class="cont alerta" title="2 coisas precisam de você">2<span class="sr-only"> precisam de você</span></span></a>
+<a class="item" href="#"><svg class="ic" aria-hidden="true"><use href="#i-tela"/></svg><span>Escritório</span><span class="cont">exemplo</span></a>
+</div>
+<details class="grupo recolhivel"><summary class="g-titulo">Em breve <svg class="ic seta" aria-hidden="true"><use href="#i-seta"/></svg></summary>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Versões</span><span class="dep">depende de uma tarefa da leva 2</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Fases da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Relatório da leva</span><span class="dep">depende da conversa de desenho</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Pessoas</span><span class="dep">depende da #539</span></span></span>
+<a class="item breve" href="em-breve.html"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Financeiro</span><span class="dep">depende do banco privado</span></span></a>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">DRE</span><span class="dep">depende do Financeiro</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Lojas</span><span class="dep">depende do banco privado</span></span></span>
+<span class="item breve" title="Em breve"><svg class="ic" aria-hidden="true"><use href="#i-cadeado"/></svg><span class="duas"><span class="nome">Configurações</span><span class="dep">em breve</span></span></span>
+</details></nav></div></details>
+</header>
+
+<main class="principal" id="conteudo">
+
+<section class="sala-j" aria-labelledby="sala-titulo">
+  <header class="sala-topo">
+    <div><h1 id="sala-titulo">Sala</h1><p class="sala-sub">Dados de exemplo</p></div>
+    <div class="sala-topo-direita"><a class="sala-pilula" href="#precisa"><i aria-hidden="true"></i>2 coisas precisam de você</a><span class="sala-conexao c-exemplo"><i aria-hidden="true"></i>dados de exemplo · sem ligação com o GitHub</span></div>
+  </header>
+  <div class="sala-desenho">
+    <div class="sala-vidro sala-quadro" role="group" aria-label="A sala desenhada (a mesma informação está na lista)">
+      <div><p class="sala-fileira-titulo">Pessoas</p><div class="sala-fileira"><button type="button" class="sala-mesa s-trabalhando" aria-pressed="false" aria-label="ana-exemplo, trabalhando, #454 Central do dia"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><text class="iniciais" x="29" y="34.5" text-anchor="middle">AE</text></svg><span class="nome">ana-exemplo</span><span class="faz">#454 Central do dia</span><span class="sala-balao">digitando…</span></button><button type="button" class="sala-mesa s-livre" aria-pressed="false" aria-label="bruno-exemplo, livre, sem tarefa agora"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><text class="iniciais" x="29" y="34.5" text-anchor="middle">BE</text></svg><span class="nome">bruno-exemplo</span><span class="faz">sem tarefa agora</span></button></div></div>
+      <div><p class="sala-fileira-titulo">Robôs do Claude</p><div class="sala-fileira"><button type="button" class="sala-mesa s-precisa" aria-pressed="false" aria-label="Clientes que sumiram, precisa de você, PR pronto, pedindo a sua revisão"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><circle class="marca" cx="23" cy="27" r="2.6"/><circle class="marca" cx="35" cy="27" r="2.6"/><path class="marca-traco" d="M23 35 Q29 39 35 35"/></svg><span class="nome">Clientes que sumiram</span><span class="faz">PR pronto, pedindo a sua revisão</span><span class="sala-balao">!</span></button><button type="button" class="sala-mesa s-trabalhando" aria-pressed="false" aria-label="Painel: a Sala, trabalhando, claude/painel-sala"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><circle class="marca" cx="23" cy="27" r="2.6"/><circle class="marca" cx="35" cy="27" r="2.6"/><path class="marca-traco" d="M23 35 Q29 39 35 35"/></svg><span class="nome">Painel: a Sala</span><span class="faz">claude/painel-sala</span><span class="sala-balao">digitando…</span></button><button type="button" class="sala-mesa s-dormindo" aria-pressed="false" aria-label="Sessão esquecida, dormindo, claude/ajuste-antigo"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><circle class="marca" cx="23" cy="27" r="2.6"/><circle class="marca" cx="35" cy="27" r="2.6"/><path class="marca-traco" d="M23 35 Q29 39 35 35"/></svg><span class="nome">Sessão esquecida</span><span class="faz">claude/ajuste-antigo</span><span class="sala-balao">zZ</span></button></div></div>
+      <div><p class="sala-fileira-titulo">Robôs da casa</p><div class="sala-fileira"><button type="button" class="sala-mesa s-trabalhando" aria-pressed="false" aria-label="Conferência, trabalhando, rodando no PR #477"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Conferência</span><span class="faz">rodando no PR #477</span><span class="sala-balao">digitando…</span></button><button type="button" class="sala-mesa s-livre" aria-pressed="false" aria-label="Publicar, livre, última rodada deu certo"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Publicar</span><span class="faz">última rodada deu certo</span></button><button type="button" class="sala-mesa s-precisa" aria-pressed="false" aria-label="Liberar, precisa de você, rodada esperando a sua aprovação"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Liberar</span><span class="faz">rodada esperando a sua aprovação</span><span class="sala-balao">!</span></button><button type="button" class="sala-mesa s-livre" aria-pressed="false" aria-label="Atualizar bancos, livre, última rodada deu certo"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Atualizar bancos</span><span class="faz">última rodada deu certo</span></button><button type="button" class="sala-mesa s-livre" aria-pressed="false" aria-label="Cópia do banco, livre, última rodada deu certo"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Cópia do banco</span><span class="faz">última rodada deu certo</span></button><button type="button" class="sala-mesa s-erro" aria-pressed="false" aria-label="Aviso do Electron, com erro, a última rodada falhou"><svg class="sala-luz" viewBox="0 0 58 58" aria-hidden="true"><circle class="halo" cx="29" cy="29" r="24"/><circle class="anel" cx="29" cy="29" r="27"/><circle class="nucleo" cx="29" cy="29" r="18"/><path class="marca-traco" d="M22 23 H36 M22 29 H36 M22 35 H36"/></svg><span class="nome">Aviso do Electron</span><span class="faz">a última rodada falhou</span><span class="sala-balao">×</span></button></div></div>
+    </div>
+    <div class="sala-vidro sala-cartao" aria-live="polite"><p class="linha">Clique num ponto de luz (ou Enter, pelo teclado) pra ver o cartão.</p></div>
+  </div>
+  <div class="sala-lista">
+    <section aria-labelledby="precisa"><h2 id="precisa">Precisa de você (2)</h2><ul>
+      <li class="s-precisa"><i aria-hidden="true"></i><span><strong>Clientes que sumiram</strong> · <span class="sala-estado">precisa de você</span></span><span class="linha">PR pronto, pedindo a sua revisão · há 3 h · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/pulls" target="_blank" rel="noopener noreferrer">Revisar no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+      <li class="s-precisa"><i aria-hidden="true"></i><span><strong>Liberar</strong> · <span class="sala-estado">precisa de você</span></span><span class="linha">rodada esperando a sua aprovação · há 40 min · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/actions/workflows/liberar-versao.yml" target="_blank" rel="noopener noreferrer">Aprovar no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+    </ul></section>
+    <section aria-labelledby="sala-grupo-erro"><h2 id="sala-grupo-erro">Com erro (1)</h2><ul>
+      <li class="s-erro"><i aria-hidden="true"></i><span><strong>Aviso do Electron</strong> · <span class="sala-estado">com erro</span></span><span class="linha">a última rodada falhou · há 6 h · <span class="sala-endereco">https://exemplo.com/fora-do-github (fora do GitHub da Sakura: sem link)</span></span></li>
+    </ul></section>
+    <section aria-labelledby="sala-grupo-trabalhando"><h2 id="sala-grupo-trabalhando">Trabalhando (3)</h2><ul>
+      <li class="s-trabalhando"><i aria-hidden="true"></i><span><strong>ana-exemplo</strong> · <span class="sala-estado">trabalhando</span></span><span class="linha">#454 Central do dia · há 25 min · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/issues/454" target="_blank" rel="noopener noreferrer">Abrir no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+      <li class="s-trabalhando"><i aria-hidden="true"></i><span><strong>Painel: a Sala</strong> · <span class="sala-estado">trabalhando</span></span><span class="linha">claude/painel-sala · há 12 min · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/pulls" target="_blank" rel="noopener noreferrer">Abrir no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+      <li class="s-trabalhando"><i aria-hidden="true"></i><span><strong>Conferência</strong> · <span class="sala-estado">trabalhando</span></span><span class="linha">rodando no PR #477 · há 3 min · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/actions/workflows/ci.yml" target="_blank" rel="noopener noreferrer">Abrir no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+    </ul></section>
+    <section aria-labelledby="sala-grupo-dormindo"><h2 id="sala-grupo-dormindo">Dormindo (1)</h2><ul>
+      <li class="s-dormindo"><i aria-hidden="true"></i><span><strong>Sessão esquecida</strong> · <span class="sala-estado">dormindo</span></span><span class="linha">claude/ajuste-antigo · há 4 dias</span></li>
+    </ul></section>
+    <section aria-labelledby="sala-grupo-livre"><h2 id="sala-grupo-livre">Livres (4)</h2><ul>
+      <li class="s-livre"><i aria-hidden="true"></i><span><strong>bruno-exemplo</strong> · <span class="sala-estado">livre</span></span><span class="linha">sem tarefa agora · há 5 h</span></li>
+      <li class="s-livre"><i aria-hidden="true"></i><span><strong>Publicar</strong> · <span class="sala-estado">livre</span></span><span class="linha">última rodada deu certo · há 20 h · <a class="sala-link" href="https://github.com/sakura-corp/sakura-system-ace/actions/workflows/release.yml" target="_blank" rel="noopener noreferrer">Abrir no GitHub<span class="sr-only"> (em aba nova)</span></a></span></li>
+      <li class="s-livre"><i aria-hidden="true"></i><span><strong>Atualizar bancos</strong> · <span class="sala-estado">livre</span></span><span class="linha">última rodada deu certo · há 2 dias</span></li>
+      <li class="s-livre"><i aria-hidden="true"></i><span><strong>Cópia do banco</strong> · <span class="sala-estado">livre</span></span><span class="linha">última rodada deu certo · há 9 h</span></li>
+    </ul></section>
+  </div>
+  <p class="sala-tv-dica">Modo TV, pro segundo monitor: <a href="#">/sala?tv</a></p>
+</section>
+</main>
+<nav class="barra-cel" aria-label="Principal">
+  <a href="inicio.html"><svg class="ic grande" aria-hidden="true"><use href="#i-casa"/></svg><span>Início</span></a>
+  <a href="leva.html"><svg class="ic grande" aria-hidden="true"><use href="#i-lista"/></svg><span>Leva</span></a>
+  <a href="sala.html" aria-current="page"><svg class="ic grande" aria-hidden="true"><use href="#i-gente"/></svg><span>Sala</span></a>
+  <a href="em-breve.html"><svg class="ic grande" aria-hidden="true"><use href="#i-mais"/></svg><span>Mais</span></a>
+</nav>
+</div>
+</div>
+</body>
+</html>

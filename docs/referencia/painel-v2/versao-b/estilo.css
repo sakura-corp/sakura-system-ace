@@ -94,7 +94,7 @@ h1.titulo { font-family: var(--serif); font-weight: 600; font-size: 34px; line-h
 .grade { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .col { display: grid; gap: 16px; min-width: 0; }
 .painel { background: var(--cartao); border: 1px solid var(--borda); border-radius: 12px; padding: 18px 20px 20px; min-width: 0; }
-.painel h2 { font-family: var(--serif); font-size: 20px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+.painel h2 { color: var(--texto); font-family: var(--serif); font-size: 20px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
 .painel.alerta { border: 2px solid var(--revisao); }
 .painel.alerta h2 .qtd { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--revisao); background: var(--revisao-fundo); border-radius: 999px; padding: 2px 10px; }
 .pede { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--borda); }
@@ -158,6 +158,8 @@ h1.titulo { font-family: var(--serif); font-weight: 600; font-size: 34px; line-h
   .numeros { min-width: 0; width: 100%; }
   .pilula { font-size: 13.5px; }
   .grade { grid-template-columns: minmax(0, 1fr); }
+  .col { display: contents; }
+  .painel.alerta { order: 1; } .painel.sua { order: 2; } .painel.resumo { order: 3; } .painel.mudou { order: 4; }
   .painel { padding: 16px; }
   .pede { grid-template-columns: auto minmax(0, 1fr); }
   .pede .btn { grid-column: 1 / -1; }
@@ -176,10 +178,10 @@ h1.titulo { font-family: var(--serif); font-weight: 600; font-size: 34px; line-h
   .seletor input:focus-visible + label { outline: 2px solid var(--destaque); outline-offset: 2px; }
   .quadro { grid-template-columns: minmax(0, 1fr); }
   .quadro .coluna { display: none; }
-  .quadro:has(#r-livres:checked) .c-livres,
-  .quadro:has(#r-andamento:checked) .c-andamento,
-  .quadro:has(#r-revisao:checked) .c-revisao,
-  .quadro:has(#r-feitas:checked) .c-feitas { display: grid; }
+  .qw:has(#r-livres:checked) .c-livres,
+  .qw:has(#r-andamento:checked) .c-andamento,
+  .qw:has(#r-revisao:checked) .c-revisao,
+  .qw:has(#r-feitas:checked) .c-feitas { display: grid; }
 }
 @media (min-width: 768px) and (max-width: 1100px) {
   .conteudo { padding: 24px 20px 48px; }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Financeiro · Sakura Corp (versão A)</title>
+<link rel="stylesheet" href="../comum/base.css">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<div class="faixa-referencia">Desenho de referência (versão A), dados de exemplo</div>
+<input type="checkbox" id="abre" aria-label="Abrir o menu">
+<header class="topo-movel"><span class="nome-pagina">Financeiro</span><label for="abre" class="botao-menu"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</label></header>
+<label for="abre" class="veu" aria-hidden="true"></label>
+<div class="quadro">
+<aside class="barra" id="barra" aria-label="Menu do painel">
+  <div class="barra-interna">
+    <div class="barra-topo"><span class="marca">Sakura Corp</span><span class="aovivo"><i aria-hidden="true"></i>ao vivo</span><label for="abre" class="fechar-menu" aria-label="Fechar o menu"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></label></div>
+    <nav aria-label="Páginas">
+      <a class="item" href="inicio.html"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 11l8-7 8 7M6 10v9h12v-9M10 19v-5h4v5"/></svg><span class="rotulo">Início</span></a>
+      <p class="grupo-titulo">Trabalho</p>
+      <a class="item" href="leva.html"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg><span class="rotulo">Leva atual</span></a>
+      <a class="item" href="#levas"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="rotulo">Levas anteriores</span></a>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h8l8 8-8 8-8-8z"/><circle cx="8.5" cy="8.5" r="1"/></svg><span class="rotulo">Versões<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende da leva 2</span></div>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 19h6v-5h6V9h6"/><path d="M3 5h4"/></svg><span class="rotulo">Fases da leva<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende do desenho</span></div>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg><span class="rotulo">Relatório da leva<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende do desenho</span></div>
+      <p class="grupo-titulo">Equipe</p>
+      <a class="item" href="sala.html"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.2"/><path d="M17 13c2.5 0 4 1.7 4 4"/></svg><span class="rotulo">Sala</span></a>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span class="rotulo">Pessoas<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende da #539</span></div>
+      <a class="item" href="#escritorio"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6h6v2M4 13h16"/></svg><span class="rotulo">Escritório <span class="exemplo">(exemplo)</span></span></a>
+      <p class="grupo-titulo">Empresa</p>
+      <a class="item em-breve" href="em-breve.html" aria-current="page"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14.5h2"/></svg><span class="rotulo">Financeiro<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende do banco privado</span></a>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span class="rotulo">DRE<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende do Financeiro</span></div>
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9l1-5h14l1 5H4zM5 9v11h14V9M10 20v-5h4v5"/></svg><span class="rotulo">Lojas<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">depende do banco privado</span></div>
+    </nav>
+    <div class="barra-rodape">
+      <div class="item em-breve" aria-disabled="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span class="rotulo">Configurações<span class="sr-only"> (em breve)</span></span><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span class="depende">em breve</span></div>
+      <div class="pessoa"><span class="avatar eu" aria-hidden="true">V</span><span class="quem">voce-exemplo</span><a href="#sair">Sair</a></div>
+    </div>
+  </div>
+</aside>
+<main class="principal">
+<div class="miolo">
+<header class="cab">
+  <div class="cab-texto">
+    <p class="trilha">Empresa / <b>Financeiro</b></p>
+    <h1>Financeiro</h1>
+    <p class="sub">As contas da Sakura Corp, num lugar só.</p>
+  </div>
+  <div class="cab-acoes"><span class="selo sel-livre">Em breve</span></div>
+</header>
+
+<section class="cartao em-breve-topo">
+  <span class="cadeado-grande" aria-hidden="true"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg></span>
+  <div><h2>Ainda não está pronto</h2><p>O Financeiro mostra as contas da Sakura Corp. Ele só abre quando houver um lugar seguro, e privado, pra guardar esses dados.</p></div>
+</section>
+<div class="listas">
+  <section class="cartao cartao-pad" aria-labelledby="h-vai">
+    <div class="secao-titulo"><h2 id="h-vai">O que vai mostrar</h2></div>
+    <ul class="lista-calma">
+      <li><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4 4 10-10"/></svg><span>Entradas e saídas do mês</span></li>
+      <li><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4 4 10-10"/></svg><span>Contas a pagar e a receber da Sakura Corp</span></li>
+      <li><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5l4 4 10-10"/></svg><span>O resumo do mês, que alimenta o DRE</span></li>
+    </ul>
+  </section>
+  <section class="cartao cartao-pad" aria-labelledby="h-depende">
+    <div class="secao-titulo"><h2 id="h-depende">Do que depende</h2></div>
+    <ul class="lista-calma">
+      <li><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Escolher o banco privado<small>Decisão da Sofia.</small></span></li>
+      <li><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Ligar o painel a esse banco<small>Só depois da escolha.</small></span></li>
+    </ul>
+  </section>
+</div>
+<div class="aviso-dinheiro" role="note"><svg class="icone " viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16v.5"/></svg><p><strong>Dinheiro da empresa nunca mora no GitHub, que é público.</strong>Por isso esta página fica desligada até o banco privado existir.</p></div>
+</div>
+</main>
+</div>
+</body>
+</html>
