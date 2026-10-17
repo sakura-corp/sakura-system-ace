@@ -667,6 +667,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   com os botões da #538 (Começar com o Claude, Copiar texto, Largar); e a leva atual em uma linha. A leva atual mudou
   pra `/leva` (`/leva/<n>` continua igual), e o "Início" da barra deixou de ser "em breve". A junção mora em
   `painel/src/logica/inicio.ts`; a página escuta os mesmos avisos de tempo real da Sala. Fora da lista da issue, com
-  o OK pedido à Sofia no PR: a navegação (`navegacao.ts`, `emBreve.ts`, as duas barras, a página "em breve") e o
+  autorização da Sofia (17/10, pela coordenadora): a navegação (`navegacao.ts`, `emBreve.ts`, as duas barras, a página "em breve") e o
   `export` do cartão de tarefa em `ListaDeTarefas.tsx`. Relatório em `docs/relatorios/2026-10-17-tarefa-546-frontend.md`.
   **A Sofia confere depois de publicar**: com o login dela, o Início mostra o mesmo "precisa de você" da Sala.

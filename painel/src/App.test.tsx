@@ -380,6 +380,8 @@ describe("Início (#546)", () => {
     }
     expect(de("/sala", "?tv", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala%3Ftv"');
     expect(de("/leva/0", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva%2F0"');
+    expect(de("/leva", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva"');
+    expect(de("/sala", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala"');
   });
 });
 

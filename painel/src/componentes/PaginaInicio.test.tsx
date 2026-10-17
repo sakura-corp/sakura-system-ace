@@ -77,7 +77,14 @@ describe("Página Início (#546)", () => {
   it("(e) sem tarefa: diz isso e aponta pra Leva", () => {
     const h = html({ leva: levaPronta([tarefa(3)]) });
     expect(h).toContain("Você não está com nenhuma tarefa");
-    expect(h).toContain('href="/leva"');
+    // O link do próprio aviso (o "Ver a leva atual" do cabeçalho também vai pra /leva).
+    expect(h).toMatch(/<a href="\/leva"[^>]*>Leva<\/a>/);
+  });
+
+  it("sem tarefa e leva cortada: não afirma que você está sem tarefa", () => {
+    const h = html({ leva: levaPronta([tarefa(3)], true) });
+    expect(h).not.toContain("Você não está com nenhuma tarefa");
+    expect(h).toContain("Nenhuma tarefa sua entre as 100 primeiras da leva");
   });
 
   it("(f) leva cortada: avisa das 100 primeiras", () => {

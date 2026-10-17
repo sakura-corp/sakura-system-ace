@@ -1,6 +1,6 @@
 // A página Início (#546): "o que eu preciso fazer agora?". Cada bloco (sala, sua tarefa, leva) vive do seu
 // próprio estado: a sala pode carregar e a leva falhar, e um erro nunca vira "nada pra fazer".
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CircleAlert, RotateCw } from "lucide-react";
 import { ESTADOS } from "../logica/contador";
 import { montarInicio, type ResumoDaLeva } from "../logica/inicio";
@@ -128,6 +128,22 @@ function BlocoPrecisa({ sala, precisa, tentarDeNovo }: { sala: EstadoDaSala; pre
   );
 }
 
+/**
+ * O aviso de uma tarefa que saiu de "A sua tarefa" (depois de Largar). O cartão sumiu com o foco dentro;
+ * o foco vem pra cá, pra pessoa (e o leitor de tela) não voltar pro começo da página.
+ */
+function AvisoSemCartao({ texto }: { texto: string }) {
+  const p = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (texto) p.current?.focus();
+  }, [texto]);
+  return (
+    <p ref={p} tabIndex={-1} role="status" aria-live="polite" className="mt-2 min-w-0 break-words text-sm text-texto empty:m-0">
+      {texto}
+    </p>
+  );
+}
+
 function BlocoDaTarefa({ props, suaTarefa }: { props: Props; suaTarefa: ReturnType<typeof montarInicio>["suaTarefa"] }) {
   const { leva, login, aoMudar, tentarLevaDeNovo } = props;
   const [aviso, setAviso] = useState<{ numero: number; texto: string } | null>(null);
@@ -135,7 +151,15 @@ function BlocoDaTarefa({ props, suaTarefa }: { props: Props; suaTarefa: ReturnTy
   if (leva.tipo === "carregando" || leva.tipo === "fora") corpo = <Esqueleto texto="Carregando a sua tarefa…" />;
   else if (leva.tipo === "erro") corpo = <Erro mensagem={leva.mensagem} tentarDeNovo={tentarLevaDeNovo} />;
   else if (leva.tipo === "sem-levas") corpo = <Vazio>Ainda não existe leva.</Vazio>;
-  else if (suaTarefa.length === 0) {
+  else if (suaTarefa.length === 0 && leva.leva.cortada) {
+    // Só as 100 primeiras vieram: uma tarefa sua pode estar depois delas.
+    corpo = (
+      <Vazio>
+        Nenhuma tarefa sua entre as 100 primeiras da leva. Confira na{" "}
+        <a href="/leva" className={`font-medium text-texto underline underline-offset-2 ${FOCO}`}>Leva</a>.
+      </Vazio>
+    );
+  } else if (suaTarefa.length === 0) {
     corpo = (
       <Vazio>
         Você não está com nenhuma tarefa: veja as livres na{" "}
@@ -166,7 +190,7 @@ function BlocoDaTarefa({ props, suaTarefa }: { props: Props; suaTarefa: ReturnTy
     <section aria-labelledby="inicio-tarefa" className="min-w-0">
       <h2 id="inicio-tarefa" className="mb-2 flex min-h-11 items-center text-sm font-medium text-texto-2">A sua tarefa</h2>
       {corpo}
-      <p role="status" aria-live="polite" className="mt-2 min-w-0 break-words text-sm text-texto empty:m-0">{avisoOrfao}</p>
+      <AvisoSemCartao texto={avisoOrfao} />
     </section>
   );
 }
