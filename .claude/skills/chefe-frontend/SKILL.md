@@ -69,6 +69,12 @@ foi; `Closes #N`) e **parar**. Depois, o relatório final, neste formato fixo:
 6. **Onde parou**, se a cota acabou: gravar na descrição do PR (ou da tarefa) o que falta, pra outra
    sessão retomar.
 
+**Grave o relatório como arquivo no PR**: `docs/relatorios/AAAA-MM-DD-tarefa-N-frontend.md`, seguindo o
+modelo de `docs/relatorios/README.md` (as seções acima mais **"Como eu agi"**: o que a skill me
+ajudou a fazer, onde errei ou adivinhei, o que faltou nela, sugestão opcional). A descrição do PR
+aponta para esse arquivo. O repositório é público: **nada de credencial, CPF, preço, margem, sócios
+ou dado pessoal** no relatório.
+
 ## 6. Limites (valem sempre)
 **Nunca**: mesclar PR (nem o próprio); publicar ou liberar versão; mexer em secret, cofre
 (environment), ruleset, tag, configuração ou workflow; rodar SQL ou migration em qualquer Supabase;

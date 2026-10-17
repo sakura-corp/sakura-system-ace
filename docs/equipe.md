@@ -122,6 +122,8 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
 - **O que você revisa**: o relatório (o que cada ajudante fez, o que foi testado **e visto
   reprovar**, o que ficou de fora, o que depende de alguém) e o PR. Se o relatório pedir teste no
   PC, o Claude guia você um passo por vez. Depois, pede a revisão da Sofia.
+- **O relatório fica no PR**: o chefe grava o relatório num arquivo em `docs/relatorios/` (sem
+  senha, CPF, preço ou dado pessoal; o repositório é público).
 - **Se a cota acabar no meio**: o chefe grava "onde parou" na descrição do PR ou da tarefa, e outra
   sessão retoma dali.
 - As skills estão em `.claude/skills/chefe-*`. Melhoria nelas é **proposta**; a Sofia aprova.
