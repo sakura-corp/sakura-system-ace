@@ -68,14 +68,14 @@ function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: 
 function ItemEmBreve({ item }: { item: Extract<ItemDaNavegacao, { emBreve: true }> }) {
   const Icone = ICONES[item.icone];
   return (
-    <div aria-disabled="true" className={`${LINHA} flex-wrap text-texto-2`}>
+    <div aria-disabled="true" className={`${LINHA} flex-wrap content-center text-texto-2`}>
       <Icone aria-hidden="true" className="size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">
         {item.rotulo}
         <span className="sr-only"> (em breve)</span>
       </span>
       <Lock aria-hidden="true" className="size-3.5 shrink-0" />
-      <span className="basis-full pl-[26px] text-xs font-normal leading-snug">{item.dependeDe}</span>
+      <span className="-mt-0.5 basis-full pl-[26px] text-xs font-normal leading-snug">{item.dependeDe}</span>
     </div>
   );
 }
