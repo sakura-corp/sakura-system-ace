@@ -4,12 +4,13 @@ import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
+import { PaginaInicio } from "./componentes/PaginaInicio";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLeva";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
-import { carregarLeva, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
+import { carregarLeva, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { paginaPraVoltar } from "./logica/login";
 import { ehModoTv } from "./logica/sala";
@@ -21,6 +22,8 @@ import type { Pagina, Usuario } from "./tipos";
 /** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são poucas. */
 export function paginaDoCaminho(caminho: string): Pagina {
   const limpo = caminho.replace(/\/+$/, "");
+  // A "/" é o Início (#546); a leva atual mora em /leva, e as outras em /leva/<n>.
+  if (limpo === "") return "inicio";
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
@@ -102,15 +105,24 @@ export default function App({
   const exemplo = !usuario && levaFixa === undefined;
   const pedida = levaPedida(caminho);
   const buscando = !exemplo && !tv && levaFixa === undefined;
-  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, pagina !== "leva" || emBreve !== null);
+  // Só a Leva e o Início precisam das tarefas; nas outras páginas, só a lista da barra lateral.
+  const soAsLevas = (pagina !== "leva" && pagina !== "inicio") || emBreve !== null;
+  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, soAsLevas);
   const estado = levaFixa ?? buscada;
 
   // A Sala de verdade (#468), com o mesmo login. No modo TV não busca a leva, só a sala.
+  // O Início (#546) usa a mesma sala (o "precisa de você") e a leva atual inteira.
   const dadosReais = !exemplo && levaFixa === undefined;
-  const naSala = pagina === "sala";
+  const naSala = pagina === "sala" || pagina === "inicio";
   const [salaBuscada, tentarSalaDeNovo, recarregarSala] = useSala(dadosReais && naSala && salaFixa === undefined);
   const salaDeVerdade = salaFixa ?? salaBuscada;
   const [salaDeExemploAgora] = useState<EstadoDaSala>(() => ({ tipo: "pronto", entradas: salaDeExemplo(new Date()), falhas: [], leva: null }));
+  const levaDeExemplo: EstadoDaLeva = {
+    tipo: "pronto",
+    levas: [{ numero: 0, nome: nomeDaLevaDeExemplo, abertas: 0 }],
+    atual: 0,
+    leva: { numero: 0, tarefas: tarefasDeExemplo, cortada: false },
+  };
   const buscarDaSala = useCallback(async () => {
     if (!tv) await recarregar();
     return recarregarSala();
@@ -148,20 +160,35 @@ export default function App({
   let levas: ItemDeLeva[];
   let mostrada: number | null = null;
   if (exemplo) {
-    levas = [{ nome: nomeDaLevaDeExemplo, href: "/", atual: true }];
+    levas = [{ nome: nomeDaLevaDeExemplo, href: ENDERECO_DA_LEVA_ATUAL, atual: true }];
   } else if (estado.tipo === "pronto") {
     mostrada = estado.leva.numero;
     levas = estado.levas.map((l) => ({ nome: l.nome, href: enderecoDaLeva(l.numero, estado.atual), atual: l.numero === mostrada }));
   } else {
     // Enquanto busca (ou se deu erro), um caminho de volta pra leva da tela (ou pra atual).
-    levas = [pedida === null ? { nome: "Leva atual", href: "/", atual: true } : { nome: `Leva ${pedida}`, href: `/leva/${pedida}`, atual: true }];
+    levas = [
+      pedida === null ? { nome: "Leva atual", href: ENDERECO_DA_LEVA_ATUAL, atual: true } : { nome: `Leva ${pedida}`, href: `/leva/${pedida}`, atual: true },
+    ];
   }
 
   return (
     <div className="min-h-screen md:flex">
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       <NavegacaoDoCelular levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
-      {pagina === "sala" ? (
+      {pagina === "inicio" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
+          <PaginaInicio
+            login={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
+            sala={exemplo ? salaDeExemploAgora : salaDeVerdade}
+            leva={exemplo ? levaDeExemplo : estado}
+            agora={new Date()}
+            aoMudar={usuario ? recarregar : undefined}
+            tentarSalaDeNovo={tentarSalaDeNovo}
+            tentarLevaDeNovo={tentarDeNovo}
+            exemplo={exemplo}
+          />
+        </main>
+      ) : pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
           <CabecalhoDaPagina
             trilha="Equipe"

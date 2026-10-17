@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import App, { paginaDoCaminho } from "./App";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import type { EstadoDaLeva } from "./logica/dados";
+import type { EstadoDaSala } from "./logica/salaDados";
 import type { Tarefa } from "./tipos";
 
 const html = (caminho: string, busca = "") => renderToString(<App caminho={caminho} busca={busca} />).replace(/<!-- -->/g, "");
@@ -35,7 +36,7 @@ describe("App", () => {
   });
 
   it("mostra a leva de exemplo: contador, grupos, aviso de uma por vez e o Financeiro desativado", () => {
-    const h = html("/");
+    const h = html("/leva");
     expect(h).toContain("Leva 0");
     expect(h).toContain("1 de 8 tarefas feitas");
     expect(h).toContain("bruno-exemplo está com 2 tarefas em andamento");
@@ -107,7 +108,7 @@ describe("App", () => {
   });
 
   it("todo link aberto da página leva só pra github.com/sakura-corp (ou, no botão Começar com o Claude, pro formulário de claude.ai/code)", () => {
-    for (const caminho of ["/", "/sala", "/escritorio"]) {
+    for (const caminho of ["/", "/leva", "/sala", "/escritorio"]) {
       const links = [...html(caminho).matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((u) => u.startsWith("http"));
       expect(links.length).toBeGreaterThan(0);
       for (const u of links) {
@@ -117,12 +118,15 @@ describe("App", () => {
     }
   });
 
-  it("escolhe a página pelo endereço; /leva/<n> é a página da leva", () => {
+  it("escolhe a página pelo endereço: / é o Início (#546); /leva e /leva/<n> são a página da leva", () => {
     expect(paginaDoCaminho("/leva/2")).toBe("leva");
     expect(paginaDoCaminho("/escritorio")).toBe("escritorio");
     expect(paginaDoCaminho("/escritorio/")).toBe("escritorio");
     expect(paginaDoCaminho("/sala")).toBe("sala");
-    expect(paginaDoCaminho("/")).toBe("leva");
+    expect(paginaDoCaminho("/")).toBe("inicio");
+    expect(paginaDoCaminho("")).toBe("inicio");
+    expect(paginaDoCaminho("/leva")).toBe("leva");
+    expect(paginaDoCaminho("/leva/")).toBe("leva");
     expect(paginaDoCaminho("/qualquer")).toBe("leva");
   });
 
@@ -146,7 +150,7 @@ describe("App", () => {
 
 describe("App com as tarefas de verdade (#354)", () => {
   const usuario = { login: "fulana", avatar: "" };
-  const de = (leva: EstadoDaLeva, caminho = "/") => renderToString(<App caminho={caminho} busca="" usuario={usuario} leva={leva} />).replace(/<!-- -->/g, "");
+  const de = (leva: EstadoDaLeva, caminho = "/leva") => renderToString(<App caminho={caminho} busca="" usuario={usuario} leva={leva} />).replace(/<!-- -->/g, "");
   const pronto: EstadoDaLeva = {
     tipo: "pronto",
     levas: [{ numero: 0, nome: "Leva 0", abertas: 0 }, { numero: 1, nome: "Leva 1", abertas: 2 }],
@@ -204,7 +208,7 @@ describe("App com as tarefas de verdade (#354)", () => {
   });
 
   it("no exemplo (sem login), tarefa livre tem 'Pegar tarefa' desligado e ninguém ganha o botão do Claude", () => {
-    const h = html("/");
+    const h = html("/leva");
     expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa/);
     expect(h).toContain("entre no painel pra pegar uma tarefa");
     expect(h).not.toContain("Começar com o Claude");
@@ -249,13 +253,13 @@ describe("App com as tarefas de verdade (#354)", () => {
     });
   });
 
-  it("na barra lateral, todas as levas: a atual leva pra /, as outras pra /leva/<n>", () => {
+  it("na barra lateral, todas as levas: a atual leva pra /leva, as outras pra /leva/<n>", () => {
     const h = de(pronto);
-    expect(h).toMatch(/<a href="\/" aria-current="page"[^>]*>.*?Leva atual<\/span><\/a>/);
+    expect(h).toMatch(/<a href="\/leva" aria-current="page"[^>]*>.*?Leva atual<\/span><\/a>/);
     expect(h).not.toMatch(/<a href="\/leva\/0"/);
     const outra = de({ ...pronto, leva: { ...pronto.leva, numero: 0 } }, "/leva/0");
-    expect(outra).toMatch(/<a href="\/"[^>]*>(?:(?!<\/a>).)*Leva atual<\/span><\/a>/);
-    expect(outra).not.toMatch(/<a href="\/" aria-current/);
+    expect(outra).toMatch(/<a href="\/leva"[^>]*>(?:(?!<\/a>).)*Leva atual<\/span><\/a>/);
+    expect(outra).not.toMatch(/<a href="\/leva" aria-current/);
     expect(outra).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
   });
 
@@ -267,7 +271,7 @@ describe("App com as tarefas de verdade (#354)", () => {
   });
 
   it("logada e sem estado dado, começa carregando (não mostra o exemplo)", () => {
-    const h = renderToString(<App caminho="/" busca="" usuario={usuario} />);
+    const h = renderToString(<App caminho="/leva" busca="" usuario={usuario} />);
     expect(h).toContain('aria-busy="true"');
     expect(h).not.toContain("bruno-exemplo");
   });
@@ -277,7 +281,7 @@ describe("App com as tarefas de verdade (#354)", () => {
     expect(h).toMatch(/role="alert"/);
     expect(h).toContain("Não deu pra buscar as tarefas no GitHub agora.");
     expect(h).toMatch(/<button[^>]*>.*Tentar de novo<\/button>/);
-    expect(h).toMatch(/<a href="\/"[^>]*>.*?Leva atual<\/span><\/a>/);
+    expect(h).toMatch(/<a href="\/leva"[^>]*>.*?Leva atual<\/span><\/a>/);
     const na0 = de({ tipo: "carregando" }, "/leva/0");
     expect(na0).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
   });
@@ -300,6 +304,84 @@ describe("App com as tarefas de verdade (#354)", () => {
 
   it("mais de 100 tarefas: avisa que só as 100 primeiras aparecem", () => {
     expect(de({ ...pronto, leva: { ...pronto.leva, cortada: true } })).toContain("só as 100 primeiras aparecem");
+  });
+});
+
+describe("Início (#546)", () => {
+  const usuario = { login: "fulana", avatar: "" };
+  const gh = (n: number) => `https://github.com/sakura-corp/sakura-system-ace/pull/${n}`;
+  const sala: EstadoDaSala = {
+    tipo: "pronto",
+    falhas: [],
+    leva: 1,
+    entradas: [
+      { id: "pr-1", tipo: "claude", nome: "PR #1", fazendo: "Revisar o PR #1", url: gh(1), sinais: { revisaoPedidaA: ["fulana"] } },
+      { id: "liberar", tipo: "casa", nome: "Liberar", url: gh(2), sinais: { aprovacaoEsperadaDe: ["fulana"] } },
+      { id: "pr-3", tipo: "claude", nome: "PR #3", fazendo: "Revisar o PR #3", url: gh(3), sinais: { revisaoPedidaA: ["beltrano"] } },
+      { id: "beltrano", tipo: "pessoa", nome: "beltrano", sinais: { tarefaEmAndamento: true } },
+    ],
+  };
+  const leva: EstadoDaLeva = {
+    tipo: "pronto",
+    levas: [{ numero: 0, nome: "Leva 0", abertas: 0 }, { numero: 1, nome: "Leva 1", abertas: 2 }],
+    atual: 1,
+    leva: {
+      numero: 1,
+      cortada: false,
+      tarefas: [
+        { numero: 40, titulo: "A minha", url: "https://github.com/sakura-corp/sakura-system-ace/issues/40", estado: "andamento", dono: { login: "fulana", avatar: "" }, chefe: "frontend" },
+        { numero: 41, titulo: "A do outro", url: "https://github.com/sakura-corp/sakura-system-ace/issues/41", estado: "andamento", dono: { login: "beltrano", avatar: "" }, chefe: "frontend" },
+      ],
+    },
+  };
+  const de = (caminho: string, busca = "", l: EstadoDaLeva = leva, sl: EstadoDaSala = sala) =>
+    renderToString(<App caminho={caminho} busca={busca} usuario={usuario} leva={l} sala={sl} />).replace(/<!-- -->/g, "");
+  const soTexto = (h: string) => h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+
+  it("a / é o Início: um h1, o Início marcado na barra e a Leva atual em /leva", () => {
+    const h = de("/");
+    expect(contarH1(h)).toBe(1);
+    expect(h).toMatch(/<h1[^>]*>Início<\/h1>/);
+    expect(h).toMatch(/<a href="\/" aria-current="page"/);
+    expect(h).toMatch(/<a href="\/leva"(?![^>]*aria-current)[^>]*>(?:(?!<\/a>).)*Leva atual/);
+    expect(h).not.toContain("/em-breve/inicio");
+  });
+
+  it("o 'precisa de você' do Início é o mesmo da Sala", () => {
+    const naSala = soTexto(de("/sala"));
+    const noInicio = soTexto(de("/"));
+    expect(naSala).toContain("2 coisas precisam de você");
+    expect(noInicio).toContain("Precisa de você (2)");
+    expect(noInicio).toContain("Revisar o PR #1");
+    expect(noInicio).not.toContain("Revisar o PR #3");
+  });
+
+  it("A sua tarefa: só a de quem olha, com os botões da #538", () => {
+    const h = soTexto(de("/"));
+    expect(h).toContain("A minha");
+    expect(h).not.toContain("A do outro");
+    expect(h).toContain("Começar com o Claude");
+    expect(h).toContain("Largar");
+  });
+
+  it("as outras páginas continuam abrindo: /leva, /leva/<n>, /sala, /sala?tv, /escritorio", () => {
+    expect(de("/leva")).toMatch(/<h1[^>]*>Leva 1<\/h1>/);
+    expect(de("/leva/0", "", { ...leva, leva: { ...leva.leva, numero: 0 } })).toMatch(/<h1[^>]*>Leva 0<\/h1>/);
+    expect(de("/sala")).toMatch(/<h1[^>]*>Sala<\/h1>/);
+    expect(de("/sala", "?tv")).toMatch(/<h1 id="sala-titulo">Sala<\/h1>/);
+    expect(de("/escritorio")).toMatch(/<h1[^>]*>Escritório de agentes<\/h1>/);
+    for (const c of ["/leva", "/sala", "/escritorio"]) expect(de(c)).not.toMatch(/<h1[^>]*>Início<\/h1>/);
+  });
+
+  it("sessão acabou no Início (pela leva ou pela sala): a entrada volta pra /", () => {
+    for (const h of [de("/", "", { tipo: "fora" }), de("/", "", leva, { tipo: "fora" })]) {
+      expect(h).toContain("Sua sessão acabou. Entre de novo.");
+      expect(h).toContain('href="/api/login"');
+    }
+    expect(de("/sala", "?tv", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala%3Ftv"');
+    expect(de("/leva/0", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva%2F0"');
+    expect(de("/leva", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva"');
+    expect(de("/sala", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala"');
   });
 });
 

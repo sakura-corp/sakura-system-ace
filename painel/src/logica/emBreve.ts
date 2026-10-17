@@ -26,18 +26,6 @@ export type TextoEmBreve = {
 
 export const EM_BREVE: TextoEmBreve[] = [
   {
-    id: "inicio",
-    titulo: "Início",
-    subtitulo: "O que é seu, num lugar só.",
-    resumo: "O Início junta o que precisa de você, a sua tarefa e o que mudou hoje. Ele abre quando a lista de tarefas souber quem pegou o quê.",
-    vaiMostrar: ["O que precisa de você agora", "A sua tarefa de agora", "A leva atual em uma linha", "O que mudou hoje no repositório"],
-    dependeDe: [
-      { texto: "A tarefa do Início", detalhe: "É a #546." },
-      { texto: "Pegar e largar tarefa pelo painel", detalhe: "É a #538, que já entrou." },
-    ],
-    tarefa: 546,
-  },
-  {
     id: "levas",
     grupo: "Trabalho",
     titulo: "Levas anteriores",

@@ -10,21 +10,24 @@ export type EstadoDaLeva =
   | { tipo: "erro"; mensagem: string }
   /** O repositório ainda não tem nenhuma etiqueta `leva-N`. */
   | { tipo: "sem-levas" }
-  | { tipo: "pronto"; levas: Leva[]; /** A leva atual (a que abre em "/"). */ atual: number; leva: RespostaDaLeva };
+  | { tipo: "pronto"; levas: Leva[]; /** A leva atual (a que abre em /leva). */ atual: number; leva: RespostaDaLeva };
 
 type Buscar = (endereco: string, init?: RequestInit) => Promise<Response>;
 
 const ERRO_DO_GITHUB = "Não deu pra buscar as tarefas no GitHub agora.";
 const ERRO_DE_CONEXAO = "Sem conexão com o painel. Confira a internet.";
 
-/** /leva/3 → 3; "/" ou outro caminho → null (a leva atual). */
+/** /leva/3 → 3; "/leva" ou outro caminho → null (a leva atual). */
 export function levaPedida(caminho: string): number | null {
   const achou = /^\/leva\/(\d{1,4})\/?$/.exec(caminho);
   return achou ? Number(achou[1]) : null;
 }
 
-/** Endereço de uma leva na página: a atual é "/", as outras /leva/<n>. */
-export const enderecoDaLeva = (numero: number, atual: number | null) => (numero === atual ? "/" : `/leva/${numero}`);
+/** O endereço da leva atual (#546: a "/" passou a ser o Início). */
+export const ENDERECO_DA_LEVA_ATUAL = "/leva";
+
+/** Endereço de uma leva na página: a atual é /leva, as outras /leva/<n>. */
+export const enderecoDaLeva = (numero: number, atual: number | null) => (numero === atual ? ENDERECO_DA_LEVA_ATUAL : `/leva/${numero}`);
 
 const ESTADOS_VALIDOS: readonly string[] = ["livre", "andamento", "revisao", "feita"];
 

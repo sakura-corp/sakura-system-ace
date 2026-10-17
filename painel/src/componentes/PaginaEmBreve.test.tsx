@@ -18,16 +18,16 @@ describe("PaginaEmBreve", () => {
     expect(html("lojas")).toContain("nome de cliente");
   });
   it("com tarefa: link da issue em aba nova", () => {
-    const h = html("inicio");
-    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/546"');
+    const h = html("levas");
+    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/548"');
     expect(h).toContain('rel="noopener noreferrer"');
     expect(h).toContain("(abre em aba nova)");
     expect(h).not.toContain('role="note"');
   });
-  it("id desconhecido: página não encontrada com volta pra leva", () => {
+  it("id desconhecido: página não encontrada com volta pro Início", () => {
     const h = html("nao-existe");
     expect(h).toContain("Página não encontrada");
-    expect(h).toContain("Voltar pra leva atual");
+    expect(h).toContain("Voltar pro Início");
     expect(h).toContain('href="/"');
   });
 });
