@@ -587,3 +587,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   e 8 rascunhos de tarefa (V2-1 a V2-8, 32 h) em `docs/rascunhos/painel-v2-tarefas.md`, **sem issue criada**. **Escolhido pela Sofia em 17/10, de
   madrugada: versão A, com o celular da B (barra fixa embaixo); a `/` vira o Início; aba Lojas em breve; nome "Sakura Corp"; quadro
   depois; as tarefas entram na leva 2.** Falta ela aprovar os rascunhos antes de virarem issue. As tarefas que mexem no cartão e na tela da leva esperam a #536, a #538 e a #539. **Nenhuma linha de `painel/` mudou.**
+- **17/10/2026, madrugada: as 8 tarefas do painel v2 viraram issues** (aprovadas pela Sofia): **#542** barra lateral nova (4 h),
+  **#543** celular com a barra embaixo (3 h), **#544** páginas "em breve" (3 h), **#545** cabeçalho de página (2 h), **#546** Início
+  (6 h), **#547** a leva redesenhada (6 h), **#548** levas anteriores (4 h), **#549** "O que mudou hoje" (4 h). Total 32 h, todas no modelo
+  único, com `chefe:`. **Ainda sem `leva-2`**: o painel mostra como atual a maior leva com tarefa aberta (`levaAtual()`, em
+  `painel/src/logica/estado.ts`), então pôr a etiqueta agora tiraria a leva 1 da tela. **Quando a leva 1 terminar, pôr `leva-2` nas 8.**

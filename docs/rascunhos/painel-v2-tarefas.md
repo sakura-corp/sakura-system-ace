@@ -1,5 +1,12 @@
 # Painel v2: rascunhos das tarefas (17/10/2026, à noite)
 
+> **Viraram issues em 17/10/2026, com a aprovação da Sofia**: V2-1 = #542, V2-2 = #543, V2-3 = #544,
+> V2-4 = #545, V2-5 = #546, V2-6 = #547, V2-7 = #548, V2-8 = #549. **A issue é que vale**; este arquivo fica
+> só como histórico. Duas correções feitas na hora de criar: a #545 também depende da #544 (usa a página
+> "em breve"), e a dica do celular "uma vez só" passou da #543 pra #547 (ela mora na lista de tarefas).
+> **Sem a etiqueta `leva-2` por enquanto** (decisão da Sofia): o painel mostra como atual a maior leva com
+> tarefa aberta, e a leva 1 sumiria da tela. A etiqueta entra nas 8 quando a leva 1 terminar.
+
 > **Rascunho pra Sofia aprovar. Nenhuma issue foi criada.** Escritos no modelo de `docs/tarefas.md`
 > (skill `nova-tarefa`), partindo da **versão recomendada** em `docs/rascunhos/painel-v2.md`, seção 3 (**A, com o celular da B**).
 > Se ela escolher outra versão (ou misturar: "barra: A, leva: C"), só a parte "Decisões já tomadas" e
