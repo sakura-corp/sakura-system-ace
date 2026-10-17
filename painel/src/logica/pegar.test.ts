@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EstadoTarefa, Tarefa } from "../tipos";
-import { mesmoLogin, motivoPraNaoLargar, motivoPraNaoPegar } from "./pegar";
+import { depoisDaAcao, mesmoLogin, motivoPraNaoLargar, motivoPraNaoPegar } from "./pegar";
 
 const t = (numero: number, estado: EstadoTarefa = "livre", resto: Partial<Tarefa> = {}): Tarefa => ({
   numero,
@@ -115,5 +115,34 @@ describe("motivoPraNaoLargar", () => {
     expect(motivoPraNaoLargar(t(5, "revisao", { dono: de("ana") }), "ana")).toBe("a #5 já tem um PR aberto: não dá pra largar");
     expect(motivoPraNaoLargar(t(5, "feita", { dono: de("ana") }), "ana")).toBe("a #5 já está feita");
     expect(motivoPraNaoLargar(t(5, "livre", { dono: de("ana") }), "ana")).toBe("a #5 não está com ninguém");
+  });
+});
+
+describe("depoisDaAcao", () => {
+  it("deu certo: sem aviso, recarrega", () => {
+    expect(depoisDaAcao(5, { tipo: "ok" })).toEqual({ aviso: "", recarregar: true });
+  });
+
+  it("recusa: recarrega (o cartão não fica velho) e o motivo fica à vista", () => {
+    expect(depoisDaAcao(5, { tipo: "recusado", motivo: "alguém pegou antes: a #5 é de ana" })).toEqual({
+      aviso: "alguém pegou antes: a #5 é de ana",
+      recarregar: true,
+    });
+  });
+
+  it("recusa sem o número no motivo: o aviso ganha o número na frente", () => {
+    expect(depoisDaAcao(5, { tipo: "recusado", motivo: "o GitHub não respondeu; tente de novo" }).aviso).toBe(
+      "#5: o GitHub não respondeu; tente de novo",
+    );
+    // "#50" não é a #5: ganha o número na frente.
+    expect(depoisDaAcao(5, { tipo: "recusado", motivo: "você já está com a #50" }).aviso).toBe("#5: você já está com a #50");
+  });
+
+  it("erro de conexão: mostra a mensagem e não recarrega (a busca falharia igual)", () => {
+    expect(depoisDaAcao(5, { tipo: "erro", mensagem: "Sem conexão." })).toEqual({ aviso: "Sem conexão.", recarregar: false });
+  });
+
+  it("sessão acabou: avisa e recarrega (a página volta pro login)", () => {
+    expect(depoisDaAcao(5, { tipo: "fora" })).toEqual({ aviso: "Sua sessão acabou. Entre de novo.", recarregar: true });
   });
 });
