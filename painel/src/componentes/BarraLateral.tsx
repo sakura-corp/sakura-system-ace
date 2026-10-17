@@ -28,7 +28,7 @@ export type ItemDeLeva = { nome: string; href: string; atual: boolean };
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
 /** Um componente do lucide-react por nome de ícone da lista (NAVEGACAO). */
-const ICONES: Record<NomeDoIcone, LucideIcon> = {
+export const ICONES: Record<NomeDoIcone, LucideIcon> = {
   casa: House,
   lista: ListChecks,
   relogio: History,
@@ -52,7 +52,7 @@ function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: 
     <a
       href={href}
       aria-current={atual ? "page" : undefined}
-      className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo ${atual ? "bg-livre-fundo font-semibold" : ""} ${recuado ? "md:ml-6" : ""}`}
+      className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo ${atual ? "bg-livre-fundo font-semibold" : ""} ${recuado ? "ml-6" : ""}`}
     >
       {atual && <span aria-hidden="true" className="absolute inset-y-[7px] left-0 w-[3px] rounded-full bg-destaque" />}
       {Icone && <Icone aria-hidden="true" className={`size-4 shrink-0 ${atual ? "text-destaque" : "text-texto-2"}`} />}
@@ -64,8 +64,8 @@ function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: 
   );
 }
 
-/** Item em breve: não é link; diz do que depende. Só no computador. */
-function ItemEmBreve({ item }: { item: Extract<ItemDaNavegacao, { emBreve: true }> }) {
+/** Item sem endereço: não é link; diz do que depende. */
+export function ItemEmBreve({ item }: { item: ItemDaNavegacao }) {
   const Icone = ICONES[item.icone];
   return (
     <div aria-disabled="true" className={`${LINHA} flex-wrap content-center gap-y-0 text-texto-2`}>
@@ -81,7 +81,7 @@ function ItemEmBreve({ item }: { item: Extract<ItemDaNavegacao, { emBreve: true 
 }
 
 /** O ponto "ao vivo" (#355): sempre com texto, a cor sozinha não diz nada. */
-const PONTO_DO_TEMPO_REAL: Record<EstadoDoTempoReal, { texto: string; cor: string }> = {
+export const PONTO_DO_TEMPO_REAL: Record<EstadoDoTempoReal, { texto: string; cor: string }> = {
   aovivo: { texto: "ao vivo", cor: "text-feita" },
   reconectando: { texto: "reconectando…", cor: "text-revisao" },
   desatualizado: { texto: "desatualizado", cor: "text-revisao" },
@@ -91,7 +91,7 @@ const PONTO_DO_TEMPO_REAL: Record<EstadoDoTempoReal, { texto: string; cor: strin
  * Sai do painel (#353): o worker apaga a sessão, e a página volta pra tela de entrada.
  * Se não der (sem internet), avisa, em vez de fingir que saiu.
  */
-async function sair(): Promise<boolean> {
+export async function sair(): Promise<boolean> {
   try {
     const resposta = await fetch("/api/sair", { method: "POST" });
     if (!resposta.ok) return false;
@@ -110,7 +110,7 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
   function linhaDe(item: ItemDaNavegacao) {
     if (item.emBreve) {
       return (
-        <li key={item.id} className="hidden md:block">
+        <li key={item.id}>
           <ItemEmBreve item={item} />
         </li>
       );
@@ -143,9 +143,9 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
   return (
     <nav
       aria-label="Menu do painel"
-      className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 border-b border-borda bg-cartao px-4 py-3 md:sticky md:top-0 md:h-screen md:w-62 md:shrink-0 md:flex-col md:flex-nowrap md:items-stretch md:gap-0 md:overflow-y-auto md:border-b-0 md:border-r md:px-3 md:pb-3 md:pt-4"
+      className="hidden min-w-0 border-borda bg-cartao md:sticky md:top-0 md:flex md:h-screen md:w-62 md:shrink-0 md:flex-col md:items-stretch md:overflow-y-auto md:border-r md:px-3 md:pb-3 md:pt-4"
     >
-      <div className="flex items-center justify-between gap-3 md:px-2.5 md:pb-2.5">
+      <div className="flex items-center justify-between gap-3 px-2.5 pb-2.5">
         <p className="font-serif text-xl font-semibold">Sakura Corp</p>
         {tempoReal && (
           <p role="status" className={`flex items-center gap-1.5 text-xs font-medium ${PONTO_DO_TEMPO_REAL[tempoReal].cor}`}>
@@ -155,23 +155,18 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
         )}
       </div>
 
-      {grupos.map((grupo) => {
-        const temLink = grupo.itens.some((i) => !i.emBreve);
-        return (
-          <div key={grupo.id} className={temLink ? "min-w-0 md:block" : "hidden md:block"}>
-            {grupo.titulo && (
-              <p className="hidden px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2 md:block">{grupo.titulo}</p>
-            )}
-            <ul className="flex flex-wrap gap-1 md:flex-col md:gap-0.5">{grupo.itens.map(linhaDe)}</ul>
-          </div>
-        );
-      })}
+      {grupos.map((grupo) => (
+        <div key={grupo.id} className="min-w-0">
+          {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}
+          <ul className="flex flex-col gap-0.5">{grupo.itens.map(linhaDe)}</ul>
+        </div>
+      ))}
 
-      <div className="min-w-0 max-w-full md:mt-auto md:grid md:gap-2 md:border-t md:border-borda md:pt-3.5">
-        {rodape && <ul className="hidden md:block">{rodape.itens.map(linhaDe)}</ul>}
+      <div className="mt-auto grid min-w-0 max-w-full gap-2 border-t border-borda pt-3.5">
+        {rodape && <ul>{rodape.itens.map(linhaDe)}</ul>}
         {usuario && (
           <div className="min-w-0">
-            <div className="flex items-center gap-2 md:px-2.5">
+            <div className="flex items-center gap-2 px-2.5">
               <Avatar login={usuario.login} avatar={usuario.avatar} />
               <span className="min-w-0 truncate text-sm font-medium" title={usuario.login}>{usuario.login}</span>
               <button
@@ -187,7 +182,7 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
               </button>
             </div>
             {saidaFalhou && (
-              <p role="alert" className="mt-2 text-xs text-revisao md:px-2.5">
+              <p role="alert" className="mt-2 text-xs text-revisao px-2.5">
                 Não deu pra sair. Tente de novo.
               </p>
             )}

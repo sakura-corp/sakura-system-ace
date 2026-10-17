@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
+import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
@@ -151,8 +152,9 @@ export default function App({
   return (
     <div className="min-h-screen md:flex">
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
+      <NavegacaoDoCelular levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
-        <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
+        <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
           <Sala
             dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
             quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
@@ -162,11 +164,11 @@ export default function App({
           />
         </main>
       ) : pagina === "escritorio" ? (
-        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 px-4 py-6 md:px-6">
+        <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
           <Escritorio />
         </main>
       ) : (
-        <main className="mx-auto w-full max-w-[960px] flex-1 px-4 py-8 md:px-8">
+        <main className="mx-auto w-full max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           {exemplo ? (
             <TelaDaLeva nome={nomeDaLevaDeExemplo} tarefas={tarefasDeExemplo} subtitulo="Dados de exemplo: ainda sem ligação com o GitHub." />
           ) : estado.tipo === "pronto" ? (
