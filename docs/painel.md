@@ -246,8 +246,10 @@ Cada coisa que ela faz, o Claude dela **anota em "Andamento" do `docs/painel.md`
   sala, e já vão juntos pra não mexer duas vezes).
 - **Depois do painel**: a conferência automática (CI) do painel, feita pelo Claude dela.
 
-A **leva 1** é a linha de produção completa (botão de pegar tarefa, fases da leva, horas por
-pessoa, relatório e aprovação); depois vem o financeiro.
+A **leva 1** (montada em 17/10) tem três tarefas do painel (#536 cabeçalho, #538 pegar tarefa,
+#539 horas por pessoa) e três do programa (#510, #511, #455). **Fases da leva** e **relatório e
+aprovação** ficaram pra leva 2: cada uma pede uma conversa de desenho com a Sofia antes. Depois vem
+o financeiro.
 
 ## Regras pra quem trabalha no painel (resumo da seção 0)
 
@@ -352,7 +354,7 @@ A tarefa ganha a etiqueta `chefe:<função>` no GitHub (as etiquetas **ainda nã
 desconhecida, o texto manda o Claude perguntar à pessoa qual chefe usar. **Em aberto**: as skills `chefe-<função>` (outra sessão cuida);
 sem elas o chefe não é achado; e o botão **ainda não foi testado com o login dela** (a consulta nova foi conferida contra o esquema público do GitHub, não rodou de verdade).
 
-**Modelo único de tarefa e sessão mãe (rascunho de 17/10/2026)**: toda tarefa que o botão abre segue `docs/tarefas.md` (cabeçalho fixo `Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`) e o ritual da skill `ritual-de-tarefa`. Provado em 17/10: uma sessão consegue abrir outra já no modelo escolhido e receber mensagem dela; uma sessão aberta num modelo sem crédito (Fable) aparece como **falhou**, com o motivo, em segundos. Pro painel ler o cabeçalho (mostrar chefe e estimativa, desligar o botão com `Depende de` aberto, avisar "tarefa incompleta"): tarefa própria, a escrever quando a leva 1 for montada.
+**Modelo único de tarefa e sessão mãe (rascunho de 17/10/2026)**: toda tarefa que o botão abre segue `docs/tarefas.md` (cabeçalho fixo `Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`) e o ritual da skill `ritual-de-tarefa`. Provado em 17/10: uma sessão consegue abrir outra já no modelo escolhido e receber mensagem dela; uma sessão aberta num modelo sem crédito (Fable) aparece como **falhou**, com o motivo, em segundos. Pro painel ler o cabeçalho (mostrar chefe e estimativa, desligar o botão com `Depende de` aberto, avisar "tarefa incompleta"): é a tarefa #536 (leva 1).
 
 **Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
@@ -572,3 +574,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   próxima busca (até 2 min, ou no próximo aviso). Pelo que consigo ver, o app "Sakura Painel" já tem as permissões que as buscas pedem (Actions
   e Contents lidos, Pull requests lidos); se alguma busca vier com "não consegui ler isto do GitHub" no endereço público, é por aí que se confere.
 - **17/10/2026, leva 0 terminada**: a tarefa 8 (#468) entrou pelo PR #533, e as 8 tarefas da leva 0 estão feitas. Daqui em diante, toda tarefa segue o **modelo único** de `docs/tarefas.md` (cabeçalho com `Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`) e o ritual da skill `ritual-de-tarefa`. A leva 1 é montada pela skill `nova-tarefa`, com a Sofia aprovando os rascunhos.
+- **17/10/2026, leva 1 montada** (a Sofia escolheu a opção enxuta e aprovou os rascunhos): **#536** o cartão lê o cabeçalho (5 h),
+  **#538** pegar e largar tarefa (6 h, depende da #536), **#539** horas por pessoa (3 h), e do programa **#510** janelas de
+  importação no Modal (3 h), **#511** testes no Windows (2 h) e **#455** clientes que sumiram (6 h). Total 25 h, todas no modelo
+  único, com `leva-1` e `chefe:`. Decidido junto: o "Começar com o Claude" aparece só pra quem pegou a tarefa; horas por pessoa
+  contadas na leva; na #455, 6 meses e o texto padrão da issue. **Fases da leva** e **relatório e aprovação** ficaram pra leva 2.
+  **A #536, a #539 e as três do programa já podem começar; a #538 espera a #536.**

@@ -257,7 +257,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **Reescrever só ao entrar numa leva** (skill `nova-tarefa`, ela aprova o rascunho). O **resumo de segunda** (fixado no Opus) agora lista as tarefas fora do modelo.
 
 #### O que depende dela
-1. **Montar a leva 1** com a `nova-tarefa` e **criar a tarefa do painel que lê o cabeçalho** (rascunho na descrição do PR #534): sessão aberta em 17/10 pra isso.
+1. ~~Montar a leva 1~~ (feito em 17/10: #536, #538, #539, #510, #511, #455; `docs/painel.md`, "Andamento"). Próximo: a equipe pega as tarefas depois do Team; "fases da leva" e "relatório" pedem conversa de desenho pra leva 2.
 2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474).
 3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
 4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
