@@ -246,22 +246,26 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 17/10/2026, madrugada (4): a leva 1 montada e o painel v2 sendo planejado de noite
+### 17/10/2026, tarde (5): a #538 entrou e o painel v2 (#542 a #546) começa antes da leva 1 terminar
 
-**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). Só mudou documentação.
+**Estado do código**: a loja continua na `v0.9.51`, e o banco na `0064`. Na `main` entraram a #536 (PR #553) e a #538 (PR #554), as duas do painel, que se publica sozinho. Há mudanças pequenas na `main` esperando ela decidir publicar o programa das lojas.
 
-#### A leva 1 (montada e aprovada em 17/10)
-- **Painel**: #536 o cartão lê o cabeçalho (5 h), #538 pegar e largar tarefa (6 h, espera a #536), #539 horas por pessoa (3 h). **Programa**: #510 janelas no Modal (3 h), #511 testes no Windows (2 h), #455 clientes que sumiram (6 h). Total 25 h, todas no modelo único, com `leva-1` e `chefe:`. Detalhe em `docs/painel.md`, "Andamento".
-- Decidido junto: o "Começar com o Claude" aparece **só pra quem pegou**; horas por pessoa **contadas na leva**; na #455, **6 meses** e o texto padrão da issue.
-- **Leva 2**: "fases da leva" e "relatório e aprovação" pedem uma conversa de desenho com ela antes.
+#### Decidido (Sofia, 17/10)
+- **A #542 à #546 são feitas agora, pela Sofia com o Claude**, sem esperar a leva 1 terminar. **Não levam etiqueta de leva**: se levassem `leva-2`, o painel trocaria a leva atual e a leva 1 sumiria da tela. Um comentário em cada uma das cinco issues diz isso.
+- **A leva 1 fica pra equipe a partir de segunda (19/10)**: #510, #511 e #455, uma pra cada pessoa. Nenhuma delas mexe em `painel/`.
+- **Só a #547, a #548 e a #549 continuam na leva 2**, e a etiqueta `leva-2` só entra quando a leva 1 fechar.
+- Uma **sessão coordenadora** abre uma sessão por tarefa, na ordem das dependências:
+  1. a #542;
+  2. a #543 e a #544, juntas;
+  3. a #545;
+  4. a #546.
 
-#### O painel v2, de noite (sem ela)
-- A pedido dela, foi aberta uma **sessão mãe** pra planejar as abas, os dados e o visual do painel, com as abas das funções futuras em "em breve", referências e **duas ou três versões visuais em páginas de exemplo** (sessão `session_0158Dwe3s7gWC25Ktu1Hifij`). Tudo num **PR só, não mesclado**, sem mexer no código de `painel/` (a leva 1 mexe nos mesmos arquivos, e o painel publica sozinho da `main`). No máximo **6 sessões filhas**, 3 ao mesmo tempo, por causa da cota do Pro.
+  Cada sessão de tarefa abre o próprio PR. Ela mescla cada um antes de a coordenadora abrir as tarefas que dependem dele.
 
 #### O que depende dela
-1. ~~De manhã: o PR do painel v2~~: **feito** (ela mesclou o #541 e o #550 em 17/10; as tarefas são as #542 a #549, sem `leva-2` até a leva 1 terminar).
-2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). Aí a equipe pega a leva 1; a #536 é a que mais destrava.
-3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
-4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
-5. Conferir `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado; empresa (Team, lançamento, Pix): no privado.
-6. A #442: medir o CI ~23/10. O aviso automático de conversa comprida ainda não foi visto (#471).
+1. **Mesclar os PRs da #542 à #546**, um por vez, conforme a sessão coordenadora avisar, e conferir no endereço do painel o "Depois de publicar" de cada um. A #538 também está nessa lista: pegar uma tarefa, tentar uma segunda e largar.
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). A equipe então pega a #510, a #511 e a #455.
+3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`, e as sugestões de "Como eu agi" dos relatórios da #536 e da #538 pro ritual. Provar o "Copiar texto" do painel no celular.
+4. **Publicar a próxima versão** no canal de teste e testar no programa instalado: só quando ela pedir.
+5. Conferir as issues com `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado. Assuntos da empresa (Team, lançamento, Pix) ficam no privado.
+6. A #442: medir o CI por volta de 23/10. O aviso automático de conversa comprida ainda não foi visto funcionando (#471).
