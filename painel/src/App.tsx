@@ -161,12 +161,10 @@ export default function App({
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
-          {/* A Sala tem o próprio h1 dentro da janela: o título daqui é texto (comoTitulo="p"). */}
           <CabecalhoDaPagina
             trilha="Equipe"
             titulo="Sala"
             explicacao="As pessoas e os robôs, ao vivo."
-            comoTitulo="p"
             acoes={
               <a
                 href="/sala?tv"

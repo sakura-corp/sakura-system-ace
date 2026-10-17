@@ -652,8 +652,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **17/10/2026, #545 o cabeçalho de página: PR aberto, esperando a revisão da Sofia.** A Sala, o Escritório e as
   páginas "em breve" começam igual: trilha ("Equipe / Sala"), título grande em serifa, uma linha de explicação e as
   ações à direita (`painel/src/componentes/CabecalhoDaPagina.tsx`, desenho da versão A). Na Sala a ação é "Modo TV";
-  o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. **Pendente com a Sofia**: o
-  `Sala.tsx` (fora da lista) já tem o próprio `<h1>Sala</h1>` na janela escura; por isso, na Sala, o título do
-  cabeçalho é texto e "Sala" aparece duas vezes na tela. Se ela autorizar mexer numa linha do `Sala.tsx` (vira
-  `<h2>Agora</h2>`, como na referência), o cabeçalho passa a ter o h1. Relatório em
+  o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. Com autorização da Sofia, na
+  janela da Sala (`Sala.tsx`) o título virou "Agora" (`<h2>`) fora do modo TV, como na referência. Relatório em
   `docs/relatorios/2026-10-17-tarefa-545-frontend.md`. **Depois de publicar**: nada pra conferir.

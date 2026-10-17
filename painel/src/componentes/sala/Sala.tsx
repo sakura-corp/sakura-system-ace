@@ -186,7 +186,12 @@ export function Sala({ dados, quemEstaOlhando, conexao, tentarDeNovo, recarregar
     <section className={`sala-j ${tv ? "sala-tv" : ""}`} aria-labelledby="sala-titulo" aria-busy={dados.tipo === "carregando"}>
       <header className="sala-topo">
         <div>
-          <h1 id="sala-titulo">Sala</h1>
+          {tv ? (
+            <h1 id="sala-titulo">Sala</h1>
+          ) : (
+            // Fora do modo TV o h1 é o do cabeçalho da página (#545); o sala.css só estiliza o h1, daí as classes.
+            <h2 id="sala-titulo" className="text-[1.35rem] font-bold tracking-[-0.01em]">Agora</h2>
+          )}
           <p className="sala-sub">{subtitulo}</p>
         </div>
         <div className="sala-topo-direita">

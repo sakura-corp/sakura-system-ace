@@ -20,12 +20,6 @@ describe("CabecalhoDaPagina", () => {
     expect(h.match(/<p/g)?.length).toBe(1);
     expect(h).not.toContain("shrink-0");
   });
-  it('comoTitulo="p": o título vira texto e a página não ganha h1', () => {
-    const h = html(<CabecalhoDaPagina titulo="Sala" comoTitulo="p" />);
-    expect(h).not.toContain("<h1");
-    expect(h).toMatch(/<p[^>]*font-serif[^>]*>Sala<\/p>/);
-    expect(h).toContain('aria-hidden="true"');
-  });
   it("o título e a coluna de texto podem encolher (min-w-0, overflow-wrap)", () => {
     const h = html(<CabecalhoDaPagina titulo="Sala" idDoTitulo="t" />);
     expect(h).toContain("min-w-0");
