@@ -36,6 +36,13 @@ describe("problemasDaNavegacao", () => {
     expect(problemasDaNavegacao(quebrada)).toHaveLength(1);
   });
 
+  it("pega item em breve com endereço que não é /em-breve/<id> (#544)", () => {
+    const outro = copiaComItem("dre", (i) => ({ ...i, href: "/em-breve/lojas" }) as ItemDaNavegacao);
+    expect(problemasDaNavegacao(outro)).toHaveLength(1);
+    const sem = copiaComItem("dre", (i) => ({ ...i, href: undefined }) as never);
+    expect(problemasDaNavegacao(sem)).toHaveLength(1);
+  });
+
   it("pega item que existe sem href", () => {
     const quebrada = copiaComItem("sala", (i) => ({ ...i, href: undefined }) as never);
     expect(problemasDaNavegacao(quebrada)).toHaveLength(1);
@@ -47,7 +54,7 @@ describe("problemasDaNavegacao", () => {
   });
 
   it("pega id repetido e rótulo vazio", () => {
-    const repetida = copiaComItem("dre", (i) => ({ ...i, id: "lojas" }) as ItemDaNavegacao);
+    const repetida = copiaComItem("dre", (i) => ({ ...i, id: "lojas", href: "/em-breve/lojas" }) as ItemDaNavegacao);
     expect(problemasDaNavegacao(repetida)).toHaveLength(1);
     const vazia = copiaComItem("dre", (i) => ({ ...i, rotulo: " " }) as ItemDaNavegacao);
     expect(problemasDaNavegacao(vazia)).toHaveLength(1);
