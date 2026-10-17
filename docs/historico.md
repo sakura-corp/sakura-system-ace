@@ -35,6 +35,24 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, noite (6): o painel v2 inteiro feito; a #546 espera ela mesclar (PR #563)
+
+**Estado do código**: a loja continua na `v0.9.51`, e o banco na `0064`. Na `main` entraram a #542 (PR #556), a #544 (PR #557), a #543 (PR #558) e a #545 (PR #559), todas do painel, que se publica sozinho. A **#546 (página Início)** parou no limite de uso, terminou quando o limite voltou e está no **PR #563**, esperando ela mesclar. Há mudanças pequenas na `main` esperando ela decidir publicar o programa das lojas.
+
+#### Decidido (Sofia, 17/10)
+- **Autorizações fora da lista da tarefa**: na #545, o título da janela da Sala virou "Agora" (`<h2>`) fora do modo TV. Na #546, o Início vai pra `/` e a leva atual pra `/leva` (mexe na navegação, no "em breve" e nas duas barras), e o cartão de tarefa é reaproveitado. Os detalhes estão nos PRs e no comentário da #546.
+- **Convites da equipe**: o convite pra **organização** sai antes do Termo, como Member, e a **escrita** no `sakura-system-ace` só depois do Termo assinado (comentário na #474). O Tiago (`ifreezepvp-droid`) foi convidado em 17/10. Falta o usuário do Lázaro.
+- As sobras da #544 e da #543 viraram as tarefas #560 e #561 (pequenas, sem leva).
+- Continua valendo: as #542 a #546 **sem etiqueta de leva**; a leva 1 (#510, #511, #455) é da equipe a partir de 19/10; a #547, a #548 e a #549 ficam pra leva 2.
+
+#### O que depende dela
+1. **Mesclar o PR #563 (#546)** e, depois de publicar, conferir no endereço público, com o login dela, que o Início mostra o mesmo "precisa de você" da Sala. A sessão coordenadora e a da #546 estão encerradas.
+2. **Conferir no celular** (depois de publicar): a barra de baixo e o "Mais" (#543), e o "Financeiro" abrindo a página que explica (#544). Também provar o "Copiar texto" do painel no celular (#538).
+3. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). A equipe então pega a #510, a #511 e a #455. Mandar o convite do Lázaro quando tiver o usuário dele.
+4. Aprovar ou ajustar as sugestões pros rituais: a do relatório da #355 pra skill `chefe-backend`, as de "Como eu agi" da #536 e da #538, e a da #542 (seção 5 do `ritual-de-tarefa`: "'session limit' vale pra todos os modelos; a mãe faz o que der sozinha e refaz o ajudante quando o limite voltar, anotando no relatório").
+5. **Publicar a próxima versão** no canal de teste e testar no programa instalado: só quando ela pedir.
+6. Conferir as issues com `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado. A #442: medir o CI por volta de 23/10. O aviso automático de conversa comprida ainda não foi visto funcionando (#471).
+
 ### 17/10/2026, tarde (5): a #538 entrou e o painel v2 (#542 a #546) começa antes da leva 1 terminar
 
 **Estado do código**: a loja continua na `v0.9.51`, e o banco na `0064`. Na `main` entraram a #536 (PR #553) e a #538 (PR #554), as duas do painel, que se publica sozinho. Há mudanças pequenas na `main` esperando ela decidir publicar o programa das lojas.

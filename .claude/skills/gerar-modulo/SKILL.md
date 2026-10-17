@@ -13,7 +13,7 @@ julgamento.
 
 O usuário deste projeto **não é programador** — explique tudo em português simples, sem jargão, e
 sempre pergunte antes de assumir algo sobre os dados (nomes de campo, tipos, obrigatoriedade). Ver
-seção 1 do `PROJETO_STATUS.md` pra entender como ele gosta de trabalhar: em etapas pequenas e
+seção 1 do `PROJETO_STATUS.md` (e `docs/sofia.md`) pra entender como ele gosta de trabalhar: em etapas pequenas e
 testáveis, com opções + recomendação antes de decisões estruturais.
 
 ## Antes de gerar qualquer código

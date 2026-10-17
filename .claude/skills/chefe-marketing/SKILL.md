@@ -18,8 +18,8 @@ publica e quem envia é uma pessoa.
 1. Conferir quem trabalha (seção 0 do `PROJETO_STATUS.md`). **Se não é a Sofia, valem as regras da
    equipe** (seção 6).
 2. Ler a **issue inteira**; ler `docs/decisoes.md` (o que é o produto, identidade visual, fases),
-   `docs/visao.md` (pra onde vai), `docs/comparativo-anexar.md` (se for sobre venda) e a seção 1 do
-   `PROJETO_STATUS.md` ("Mensagem que ela vai mandar pra outra pessoa").
+   `docs/visao.md` (pra onde vai), `docs/comparativo-anexar.md` (se for sobre venda) e o
+   `docs/sofia.md` ("Mensagem que ela vai mandar pra outra pessoa").
 3. Se mexer no `site/`, ler `site/README.md`.
 4. Explicar à pessoa o que será escrito, pra quem, e o que ela precisa decidir.
 
