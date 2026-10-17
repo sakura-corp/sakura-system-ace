@@ -662,8 +662,10 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. Com autorização da Sofia, na
   janela da Sala (`Sala.tsx`) o título virou "Agora" (`<h2>`) fora do modo TV, como na referência. Relatório em
   `docs/relatorios/2026-10-17-tarefa-545-frontend.md`. **Depois de publicar**: nada pra conferir.
-- **17/10/2026, #546 a página Início: parada no limite de uso, sem PR.** A branch `claude/tarefa-546-inicio` já tem a
-  função `inicio.ts` (com testes), a página na `/`, a leva atual em `/leva` e as fotos. Falta a revisão final, o
-  relatório e o PR. O detalhe e as autorizações da Sofia pra mexer fora da lista estão no comentário de 17/10 na #546.
+- **17/10/2026, #546 a página Início: PR #563 aberto, esperando a Sofia mesclar.** A `/` virou o Início ("precisa de
+  você" com a mesma regra da Sala, "a sua tarefa" com os botões da #538 e a leva em uma linha), e a leva atual foi pra
+  `/leva`. Com autorização da Sofia, mexeu fora da lista: navegação, "em breve", as duas barras e o cartão de tarefa.
+  Relatório em `docs/relatorios/2026-10-17-tarefa-546-frontend.md`. **A Sofia confere depois de publicar**: o Início
+  mostra o mesmo "precisa de você" da Sala.
   Sobras das tarefas anteriores viraram a #560 ("Leva atual" marcada numa página "em breve" que não existe) e a #561
   (área segura do iPhone na barra de baixo).
