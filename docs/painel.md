@@ -401,8 +401,8 @@ dependências dela, separadas das do programa das lojas:
 | `npm test` | roda os testes do painel |
 | `npm run dev:worker` | roda a página **e** o worker juntos (`wrangler dev`), em `http://localhost:8787`, do jeito que fica na Cloudflare. Precisa de um `npm run build` antes, porque ele serve a pasta `dist`. `http://localhost:8787/api/saude` responde `{"ok":true}` |
 
-**No ar**: **https://sakura-painel.caranovavidanova.workers.dev** (a leva), mais `/sala`, `/sala?tv`,
-`/escritorio` e `/api/saude`. Quem publica é a Cloudflare, sozinha, a cada mudança em `painel/` na `main`
+**No ar**: **https://sakura-painel.caranovavidanova.workers.dev** (o Início, desde a #546), mais `/leva` (a leva
+atual), `/leva/<n>`, `/sala`, `/sala?tv`, `/escritorio`, `/em-breve/<id>` e `/api/saude`. Quem publica é a Cloudflare, sozinha, a cada mudança em `painel/` na `main`
 (não existe script de publicar). O que ela usa está em `painel/wrangler.jsonc`: o worker
 (`painel/worker/index.ts`) só responde `/api/*`; o resto é a página, e caminho que não é arquivo recebe o
 `index.html`.
@@ -662,3 +662,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. Com autorização da Sofia, na
   janela da Sala (`Sala.tsx`) o título virou "Agora" (`<h2>`) fora do modo TV, como na referência. Relatório em
   `docs/relatorios/2026-10-17-tarefa-545-frontend.md`. **Depois de publicar**: nada pra conferir.
+- **17/10/2026, #546 a página Início: PR aberto, esperando a revisão da Sofia.** A `/` agora é o Início ("o que é
+  meu"): "Precisa de você", com a mesma regra da Sala (`montarSala()`, então os dois sempre batem); "A sua tarefa",
+  com os botões da #538 (Começar com o Claude, Copiar texto, Largar); e a leva atual em uma linha. A leva atual mudou
+  pra `/leva` (`/leva/<n>` continua igual), e o "Início" da barra deixou de ser "em breve". A junção mora em
+  `painel/src/logica/inicio.ts`; a página escuta os mesmos avisos de tempo real da Sala. Fora da lista da issue, com
+  o OK pedido à Sofia no PR: a navegação (`navegacao.ts`, `emBreve.ts`, as duas barras, a página "em breve") e o
+  `export` do cartão de tarefa em `ListaDeTarefas.tsx`. Relatório em `docs/relatorios/2026-10-17-tarefa-546-frontend.md`.
+  **A Sofia confere depois de publicar**: com o login dela, o Início mostra o mesmo "precisa de você" da Sala.
