@@ -22,7 +22,11 @@ const base = (id: TextoEmBreve["id"], titulo: string, extra: Partial<TextoEmBrev
   dependeDe: [{ texto: "b" }],
   ...extra,
 });
-const bons = (): TextoEmBreve[] => [base("versoes", "Versões"), base("financeiro", "Financeiro", { semDinheiro: true }), base("dre", "DRE", { semDinheiro: true })];
+const bons = (): TextoEmBreve[] => [
+  base("versoes", "Versões", { grupo: "Trabalho" }),
+  base("financeiro", "Financeiro", { grupo: "Empresa", semDinheiro: true }),
+  base("dre", "DRE", { grupo: "Empresa", semDinheiro: true }),
+];
 
 describe("problemasDoEmBreve", () => {
   it("os textos de verdade batem com a navegação de verdade", () => {
@@ -51,6 +55,18 @@ describe("problemasDoEmBreve", () => {
     const t = bons();
     t[2].resumo = "Resultado 1.234,56";
     expect(problemasDoEmBreve(nav, t).join("|")).toContain("DRE");
+  });
+  it("pega qualquer algarismo na Empresa, mesmo sem vírgula nem R$", () => {
+    for (const frase of ["Custo de 1.500 por loja", "Margem de 30%", "500 reais"]) {
+      const t = bons();
+      t[1].dependeDe = [{ texto: "b", detalhe: frase }];
+      expect(problemasDoEmBreve(nav, t).join("|"), frase).toContain("Financeiro");
+    }
+  });
+  it("pega trilha com o grupo errado", () => {
+    const t = bons();
+    t[1].grupo = "Equipe";
+    expect(problemasDoEmBreve(nav, t).join("|")).toContain('A trilha de "Financeiro"');
   });
   it("pega página da Empresa sem semDinheiro", () => {
     const t = bons();
