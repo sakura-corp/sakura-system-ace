@@ -131,7 +131,7 @@ As novas:
 
 ### Afazeres
 - **A1.** O que depende dela vira tarefa no GitHub (#472): **feita a parte pública em 16/10**. Os itens do sistema e da loja são tarefas com a etiqueta `sofia` (busca `label:sofia`); os da empresa continuam no repositório privado e na lista de `docs/pendencias-e-futuro.md`, só pelo nome.
-- **A2.** O resumo da segunda de manhã (#472): **depende dela** (escolher o horário, de Brasília) e de ler o repositório privado, por isso ainda não foi criado. Quando ela escolher, a sessão cria a tarefa agendada.
+- **A2.** O resumo da segunda de manhã (#472): **criado em 17/10** como tarefa agendada, toda segunda às **9h29** (Brasília), com aviso no celular; só lê. Pra mudar o horário ou desligar, pedir na sessão (a tarefa se chama "Resumo de segunda"). Se o acesso ao privado for recusado na sessão nova, ele resume só o público.
 - **A3.** O aviso de conversa comprida (#471): **feito**, ver "Como usar o `/fechar` e o aviso".
 - **A4.** Arquivar as sessões antigas que estiverem seguras: **depois** (ela, 14/10). O Claude
   confere quais têm trabalho fora do GitHub e mostra a lista antes de arquivar.
