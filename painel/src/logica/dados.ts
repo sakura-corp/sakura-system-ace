@@ -1,6 +1,7 @@
 // O lado da página nas tarefas de verdade (#354): pede as levas e as tarefas ao worker, uma
 // rota depois da outra, e diz o que mostrar. O token nunca passa por aqui (fica no cookie).
 import type { Leva, RespostaDaLeva, RespostaDasLevas, Tarefa } from "../tipos";
+import { numeroValido } from "./comecarComClaude";
 
 export type EstadoDaLeva =
   | { tipo: "carregando" }
@@ -80,4 +81,34 @@ export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch
   const corpo2 = r2.corpo as Partial<RespostaDaLeva>;
   if (!Array.isArray(corpo2.tarefas) || !corpo2.tarefas.every(ehTarefa)) return { tipo: "erro", mensagem: ERRO_DO_GITHUB };
   return { tipo: "pronto", levas, atual, leva: { numero, tarefas: corpo2.tarefas, cortada: corpo2.cortada === true } };
+}
+
+// ---- Pegar e largar (#538) ----
+export type ResultadoDaAcao = { tipo: "ok" } | { tipo: "recusado"; motivo: string } | { tipo: "fora" } | { tipo: "erro"; mensagem: string };
+
+const ERRO_DA_ACAO = "Não deu pra falar com o GitHub agora. Tente de novo.";
+
+/**
+ * POST /api/tarefa/<n>/pegar ou /largar. Quem decide é o worker: recusa (409, 403, 400) vem como
+ * `{ ok: false, motivo }` e é lida pelo corpo, não pelo status (só o 401 é à parte).
+ */
+export async function acaoNaTarefa(numero: number, acao: "pegar" | "largar", buscar: Buscar = fetch): Promise<ResultadoDaAcao> {
+  if (!numeroValido(numero)) return { tipo: "erro", mensagem: "Tarefa inválida." };
+  let resposta: Response;
+  try {
+    resposta = await buscar(`/api/tarefa/${numero}/${acao}`, { method: "POST", headers: { accept: "application/json" } });
+  } catch {
+    return { tipo: "erro", mensagem: ERRO_DE_CONEXAO };
+  }
+  if (resposta.status === 401) return { tipo: "fora" };
+  let corpo: unknown;
+  try {
+    corpo = await resposta.json();
+  } catch {
+    return { tipo: "erro", mensagem: ERRO_DA_ACAO };
+  }
+  const { ok, motivo } = (typeof corpo === "object" && corpo !== null ? corpo : {}) as { ok?: unknown; motivo?: unknown };
+  if (ok === true) return { tipo: "ok" };
+  if (ok === false && typeof motivo === "string" && motivo.trim() !== "") return { tipo: "recusado", motivo: motivo.slice(0, 200) };
+  return { tipo: "erro", mensagem: ERRO_DA_ACAO };
 }
