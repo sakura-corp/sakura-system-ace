@@ -1,0 +1,38 @@
+/* Base comum das versões do painel v2 (páginas de referência, só HTML estático).
+   Fontes: as mesmas do painel (OFL, copiadas de @fontsource-variable; licenças em fontes/).
+   Cores: as da seção "Design" do docs/painel.md. Uma versão pode acrescentar cor nova,
+   mas só depois de passar no conferir.mjs (contraste WCAG AA). */
+@font-face { font-family: "Inter Variable"; font-weight: 100 900; font-display: block; src: url("fontes/inter-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Source Serif 4 Variable"; font-weight: 200 900; font-display: block; src: url("fontes/source-serif-4-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Plus Jakarta Sans Variable"; font-weight: 200 800; font-display: block; src: url("fontes/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2"); }
+
+:root {
+  --fundo: #faf9f5; --cartao: #ffffff; --borda: #e6e3da; --texto: #1f1e1d; --texto-2: #6b6963;
+  --destaque: #b8237f; --sobre-destaque: #ffffff;
+  --livre: #5f5d57; --livre-fundo: #efede6;
+  --andamento: #a81f74; --andamento-fundo: #fbe7f3;
+  --revisao: #7a4f00; --revisao-fundo: #fbefd9;
+  --feita: #2b6534; --feita-fundo: #e4f1e6;
+  --sans: "Inter Variable", system-ui, sans-serif;
+  --serif: "Source Serif 4 Variable", Georgia, serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fundo: #1f1e1d; --cartao: #2a2927; --borda: #3a3936; --texto: #f2f0ea; --texto-2: #a8a59c;
+    --destaque: #f07cc4; --sobre-destaque: #1f1e1d;
+    --livre: #c9c6bd; --livre-fundo: #34332f;
+    --andamento: #f59bd2; --andamento-fundo: #43243a;
+    --revisao: #f2c46b; --revisao-fundo: #3f3322;
+    --feita: #8fd19c; --feita-fundo: #233a28;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
+:focus-visible { outline: 2px solid var(--destaque); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.serif { font-family: var(--serif); }
+.num { font-variant-numeric: tabular-nums; }
+/* Faixa que toda página de referência mostra no topo: é um desenho, não o painel. */
+.faixa-referencia { background: var(--revisao-fundo); color: var(--revisao); font-size: 13px; padding: 6px 16px; text-align: center; }
