@@ -16,7 +16,7 @@ export function TelaDeEntrada({ erro, carregando = false, volta = "/" }: Props) 
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm rounded-xl border border-borda bg-cartao p-8 text-center">
         <p className="text-sm font-medium text-texto-2">Sakura Corp</p>
-        <h1 className="mt-1 font-serif text-3xl font-semibold">Painel da Sakura</h1>
+        <h1 className="mt-1 font-serif text-3xl font-semibold">Painel da Sakura Corp</h1>
 
         {carregando ? (
           <p className="mt-8 text-sm text-texto-2" role="status">
