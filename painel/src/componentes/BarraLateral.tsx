@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { ENDERECO_DA_LEVA_ATUAL } from "../logica/dados";
 import { NAVEGACAO, type ItemDaNavegacao, type NomeDoIcone } from "../logica/navegacao";
 import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
@@ -110,7 +111,7 @@ export async function sair(): Promise<boolean> {
 export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   // A leva na tela que não é a atual (ex.: /leva/0): aparece logo abaixo de "Leva atual".
-  const extra = levas.find((l) => l.atual && l.href !== "/");
+  const extra = levas.find((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
 
   function linhaDe(item: ItemDaNavegacao) {
     if (item.emBreve) {

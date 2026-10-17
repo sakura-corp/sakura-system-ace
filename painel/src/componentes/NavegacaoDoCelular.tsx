@@ -1,5 +1,6 @@
 import { Ellipsis, LogOut, X, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ENDERECO_DA_LEVA_ATUAL } from "../logica/dados";
 import { NAVEGACAO, type ItemDaNavegacao } from "../logica/navegacao";
 import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
@@ -121,7 +122,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
   const folhaRef = useRef<HTMLDialogElement>(null);
   const botaoRef = useRef<HTMLButtonElement>(null);
   // A leva na tela que não é a atual (ex.: /leva/0): vai na folha, e o "Leva" da barra perde o aria-current.
-  const extra = levas.find((l) => l.atual && l.href !== "/");
+  const extra = levas.find((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
   const naBarra = IDS_DA_BARRA.includes(pagina);
 
   useEffect(() => {

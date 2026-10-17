@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { NavegacaoDoCelular, ligarFolha, type FolhaMinima } from "./NavegacaoDoCelular";
 
 const html = (props: Parameters<typeof NavegacaoDoCelular>[0]) => renderToString(<NavegacaoDoCelular {...props} />).replace(/<!-- -->/g, "");
-const LEVA = [{ nome: "Leva atual", href: "/", atual: true }];
+const LEVA = [{ nome: "Leva atual", href: "/leva", atual: true }];
 /** Separa a barra de baixo da folha (<dialog>). */
 const partes = (h: string) => ({ barra: h.slice(0, h.indexOf("<dialog")), folha: h.slice(h.indexOf("<dialog")) });
 
@@ -15,10 +15,12 @@ describe("NavegacaoDoCelular", () => {
     expect([...ordem].sort((a, b) => a - b)).toEqual(ordem);
     expect(barra.match(/aria-current="page"/g)).toHaveLength(1);
     expect(barra).toMatch(/<a href="\/sala" aria-current="page"/);
-    expect(barra).toContain('Início</span><span class="sr-only"> (em breve)</span>');
+    expect(barra).not.toContain('Início</span><span class="sr-only"> (em breve)</span>');
     expect(barra).toContain('Pessoas</span><span class="sr-only"> (em breve)</span>');
     // Em breve (#544) também tem endereço: é link pra página que explica, apagado e com o aviso.
-    expect(barra).toMatch(/<a href="\/em-breve\/inicio"(?![^>]*aria-current)[^>]*text-texto-2/);
+    // O Início existe desde a #546: link de verdade pra "/", e a Leva vai pra "/leva".
+    expect(barra).toMatch(/<a href="\/"(?![^>]*aria-current)/);
+    expect(barra).toMatch(/<a href="\/leva"(?![^>]*aria-current)/);
     expect(barra).toMatch(/<a href="\/em-breve\/pessoas"(?![^>]*aria-current)[^>]*text-texto-2/);
     expect(barra.match(/<a /g)).toHaveLength(4);
     expect(barra).toContain('aria-haspopup="dialog"');

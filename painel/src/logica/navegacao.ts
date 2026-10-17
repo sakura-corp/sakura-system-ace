@@ -28,13 +28,13 @@ export type GrupoDaNavegacao = {
 export const NAVEGACAO: GrupoDaNavegacao[] = [
   {
     id: "topo",
-    itens: [{ id: "inicio", rotulo: "Início", icone: "casa", emBreve: true, href: "/em-breve/inicio", dependeDe: "depende da #546" }],
+    itens: [{ id: "inicio", rotulo: "Início", icone: "casa", href: "/" }],
   },
   {
     id: "trabalho",
     titulo: "Trabalho",
     itens: [
-      { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/" },
+      { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/leva" },
       { id: "levas", rotulo: "Levas anteriores", icone: "relogio", emBreve: true, href: "/em-breve/levas", dependeDe: "depende da #548" },
       { id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, href: "/em-breve/versoes", dependeDe: "depende da leva 2" },
       { id: "fases", rotulo: "Fases da leva", icone: "fases", emBreve: true, href: "/em-breve/fases", dependeDe: "depende do desenho" },

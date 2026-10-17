@@ -15,7 +15,7 @@ export function PaginaEmBreve({ id }: { id: string }) {
           href="/"
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-destaque px-4 py-2 text-sm font-medium text-sobre-destaque hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
         >
-          Voltar pra leva atual
+          Voltar pro Início
         </a>
       </div>
     );
