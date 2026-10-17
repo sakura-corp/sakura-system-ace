@@ -14,7 +14,7 @@
 | 4 | Três versões visuais em paralelo, cada uma só na sua pasta | três ajudantes (médio) | `versao-a/`, `versao-b/`, `versao-c/` |
 | 5 | Pesquisa de referências | sessão mãe | `docs/referencia/painel-v2/referencias.md` |
 | 6 | O retrato de hoje e a nova organização | sessão mãe | este arquivo, seções 1 e 2 |
-| 7 | Olhar todas as fotos, comparar e recomendar | sessão mãe | seção 3 |
+| 7 | Olhar todas as fotos, comparar e recomendar | sessão mãe | seções 3 e 4 |
 | 8 | Página de comparação (privada) | sessão mãe | link no PR |
 | 9 | Rascunhos das tarefas de implementação, no modelo de `docs/tarefas.md` | sessão mãe (`nova-tarefa`) | `docs/rascunhos/painel-v2-tarefas.md` |
 | 10 | Um PR só, **aberto e não mesclado** | sessão mãe | — |
@@ -117,3 +117,59 @@ não existe embaixo, sem atrapalhar. O "ao vivo" fica no topo da barra, junto do
 **dependem de #536, #538 e #539** (começam depois que elas entram na `main`). As que só mexem na moldura
 (barra lateral, cabeçalho de página, Início, páginas "em breve") podem andar junto, porque mexem em
 outros arquivos. A divisão exata está em `docs/rascunhos/painel-v2-tarefas.md`.
+
+## 3. As três versões, e a recomendação
+
+Cada uma é um conjunto de páginas HTML com os **mesmos dados de exemplo** e a **mesma organização** (seção 2):
+o que muda é o desenho. Fotos em `docs/referencia/painel-v2/versao-<letra>/fotos/` (375 e 1280 px, claro e
+escuro; no celular também `-tela`, só a primeira tela, do jeito que a pessoa vê). As três passaram no
+`conferir.mjs`: **contraste AA em todo texto e sem rolagem lateral**, nas 16 fotos de cada uma.
+
+| | **A, "Calma"** | **B, "Quadro"** | **C, "Central"** |
+|---|---|---|---|
+| Ideia | a evolução do painel de hoje, mais perto do jeito do Claude | a leva como quadro de colunas | ferramenta de gestão densa, tabela e detalhe ao lado |
+| Barra lateral | larga, com os cinco grupos, ícones, e cada "em breve" no seu grupo dizendo do que depende | estreita, só ícones com o nome embaixo; o grupo Empresa abre uma lista ao lado | larga, no fundo da página; todos os "em breve" juntos num grupo que recolhe; busca (em breve) |
+| Leva | contador numa faixa, horas por pessoa com barrinhas, **uma tarefa por linha**; botões só na sua | **quatro colunas** (Livres, Em andamento, Em revisão, Feitas) com cartões | **tabela densa** + o **painel de detalhe** da tarefa escolhida |
+| Início | duas colunas: o que é seu à esquerda, a leva e o dia à direita | cartões em grade | saudação, faixa "Precisa de você", três blocos |
+| Celular | barra no topo com botão "Menu" (gaveta) | **barra fixa embaixo** (Início, Leva, Sala, Pessoas, Mais) e uma coluna por vez | barra fixa embaixo (4 itens) e lista de duas linhas |
+| Títulos | serif grande (como hoje) | serif grande | Inter 20 px (serif só na saudação) |
+| A favor | calma, clara, a mais fiel ao `docs/painel.md`; cabe muita tarefa sem rolar | bate o olho e vê o andamento; bom pra reunião | a mais "profissional"; o cabeçalho inteiro da tarefa (#536) aparece no detalhe |
+| Contra | no celular o menu fica escondido atrás de um botão (a pesquisa diz que isso atrapalha) | com muitas tarefas, as colunas ficam compridas; no celular só se vê um estado por vez | mais fria, foge do "parecido com o Claude"; o "em breve" junto perde o desenho por assunto |
+
+### Recomendação: **a versão A**, com **o celular da B**
+
+- **A** é a que melhor cumpre o pedido ("mais claro e profissional") **sem perder o jeito calmo** já decidido no
+  `docs/painel.md`, e a lista de uma linha por tarefa aguenta a leva crescer.
+- **O celular da B**: a barra fixa embaixo deixa os lugares mais usados sempre à vista (é o que a pesquisa
+  mostra, `referencias.md`), em vez do botão "Menu" da A.
+- **Da C, guardar pra depois**: o painel de detalhe da tarefa (cabeçalho inteiro ao lado da lista) é uma boa
+  ideia quando a leva tiver muitas tarefas; e a **visão em quadro da B** pode virar um segundo jeito de ver a
+  mesma leva (pergunta 5).
+- Detalhes a acertar na hora de construir: no celular da A o "Início" aparece três vezes (topo, trilha e
+  título); a C tem um contador "6" ao lado de "Leva atual" que vale copiar pro "Precisa de você".
+
+Os rascunhos das tarefas (`docs/rascunhos/painel-v2-tarefas.md`) partem desta recomendação; se a escolha for
+outra, muda só a referência de cada tarefa.
+
+## 4. Perguntas pra Sofia (responder numa linha)
+
+Jeito de responder: **`versão: A · celular: B · início: sim · lojas: sim · nome: sim · quadro: depois · quando: leva 2`**
+(é a recomendação; troque o que quiser).
+
+1. **Versão** (`versão:`): A, B ou C? Pode misturar por parte: `barra: A`, `leva: C`, `celular: B`, `início: B`.
+   *Recomendo A.*
+2. **Celular** (`celular:`): a barra fixa embaixo (B ou C) ou o botão "Menu" com gaveta (A)? *Recomendo B.*
+3. **Início** (`início:`): a `/` passa a ser o Início, e a leva atual vai pra `/leva`? Os links antigos de
+   `/leva/<n>` continuam funcionando. *Recomendo sim.*
+4. **Lojas** (`lojas:`): mostrar, no grupo Empresa, uma aba "Lojas" (em breve) pra acompanhar a versão e o banco de
+   cada loja cliente? Ela também dependeria do banco privado, porque nome de cliente não pode ir pro GitHub.
+   *Recomendo sim (só como "em breve").*
+5. **Nome** (`nome:`): "Sakura Corp" na barra e "Painel da Sakura Corp" na tela de entrada, no lugar do
+   "Painel da Sakura" de hoje? *Recomendo sim.*
+6. **Quadro** (`quadro:`): a visão em colunas da B como segundo jeito de ver a leva: `agora`, `depois` ou `não`?
+   *Recomendo depois.*
+7. **Quando** (`quando:`): as tarefas do v2 entram na **leva 2** (recomendado: a leva 1 já está cheia e as V2-5
+   e V2-6 dependem dela), ou a V2-1 (barra lateral, que não cruza com a leva 1) entra já na leva 1?
+
+**Não é pergunta pra agora, só lembrete**: o Financeiro, a DRE e as Lojas só saem do "em breve" depois de
+escolher o **banco privado** (decisão estrutural dela, `docs/painel.md`). Nada disso foi decidido aqui.

@@ -16,9 +16,7 @@ Denso e profissional, jeito de ferramenta de gestão: tabela e painel de detalhe
   o que mudou hoje em linha do tempo).
 - **Celular**: topo com o nome da página e o botão de menu (abre a navegação inteira); a tabela vira lista de
   duas alturas (título em cima; selo, dono e horas embaixo), sem rolagem lateral; o detalhe vem logo abaixo
-  como cartão; botões de 44 px. A barra de 4 itens (Início, Leva, Sala, Mais) fica **no fim da página** nas fotos;
-  no programa de verdade ela ficaria presa na parte de baixo da tela (nas fotos, que são da página inteira,
-  uma barra presa apareceria no meio da imagem).
+  como cartão; botões de 44 px. A barra de 4 itens (Início, Leva, Sala, Mais) fica presa na parte de baixo da tela; nas fotos da página inteira ela aparece no meio da imagem (é a foto, não o desenho), e as fotos `-tela` mostram a primeira tela do jeito que a pessoa vê.
 - **Em breve (Financeiro)**: esqueleto apagado (blocos cinza, sem número nenhum) com os rótulos "Entradas",
   "Saídas" e "Resultado do mês", e por cima um cartão com "Em breve", do que depende e por que o dinheiro
   nunca mora no GitHub.
@@ -28,4 +26,4 @@ Denso e profissional, jeito de ferramenta de gestão: tabela e painel de detalhe
 ## Resultado do conferir
 
 `node docs/referencia/painel-v2/comum/conferir.mjs docs/referencia/painel-v2/versao-c inicio.html leva.html sala.html em-breve.html`
-deu **TUDO OK**: as 16 fotos sem problema de contraste e sem rolagem lateral. As 16 fotos foram olhadas uma a uma.
+deu **TUDO OK**: as 16 fotos sem problema de contraste e sem rolagem lateral. As 16 fotos da página inteira e as 8 da primeira tela do celular foram olhadas uma a uma.
