@@ -171,6 +171,24 @@ dizem o estado sozinhos).
   5. O hook devolve `estado` (`aovivo`, `reconectando`, `desatualizado`: mais de 2 minutos sem busca com
      sucesso) e `ultimaAtualizacao`; a barra lateral mostra o ponto e a Sala da #468 vai usar os dois.
 
+- **A Sala de verdade** (#468), de onde vem cada bonequinho (`GET /api/sala`, `painel/worker/dadosDaSala.ts`; três buscas
+  independentes, com o token de quem está logado):
+  1. **Robôs do Claude**: uma consulta GraphQL nos branches `claude/` (`refs(refPrefix: "refs/heads/claude/")`), com a data do
+     último commit e o PR aberto (número, título, link, revisões pedidas). Quando o PR entra, o GitHub apaga o branch e o robô sai.
+  2. **Robôs da casa**: `actions/runs` (as últimas 100); fica a rodada mais nova de cada trabalho. Os 6 trabalhos fixos
+     (`ROBOS_DA_CASA`) sempre aparecem: um que não está nas últimas 100 é buscado sozinho (`workflows/<arquivo>/runs?per_page=1`).
+     Rodada `waiting`: `pending_deployments` diz, pelo `current_user_can_approve`, se **quem olha** pode aprovar ("precisa de você").
+  3. **Pessoas**: os responsáveis das tarefas da leva atual (a mesma consulta da #354), com a foto do GitHub.
+  - A resposta é `{ entradas, falhas, leva }`. O **estado** (trabalhando, dormindo, precisa…) **não** vem do worker: sai de
+    `montarSala()` (`src/logica/sala.ts`) na página, que recalcula a cada minuto sem buscar. O worker só diz o que viu.
+  - **Só dado de verdade**: se uma das três buscas falhar, `falhas` diz qual (`pessoa`, `claude` ou `casa`) e a página mostra
+    "não consegui ler isto do GitHub" com "Tentar de novo", nunca "livre". Falhando as três, é 502 e a página mostra o erro.
+  - **Tempo real**: a Sala escuta `issues`, `pull_request`, `label`, `workflow_run`, `push`, `create` e `delete`, junta avisos
+    de 1 s e busca de novo. A linha do topo (e do `/sala?tv`) diz **"ao vivo · atualizado há N s"**, **"reconectando…"** ou
+    **"desatualizado há N min"** (mais de 2 min sem busca com sucesso).
+  - O link do "precisa de você" abre a própria rodada (onde se aprova) ou o PR; só `https://github.com/sakura-corp/` vira link.
+  - Os dados de exemplo (`src/dados/exemplo-sala.ts`) só aparecem no `npm run dev` sem o worker; logado, nunca.
+
 ## 1ª versão (leva 0)
 
 1. **No ar na Cloudflare**, atualizando sozinho a cada mudança do painel na `main`.
@@ -538,3 +556,17 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   "Recent Deliveries" do app, todas as entregas depois da publicação voltaram verdes; as vermelhas são de antes (a rota
   `/api/webhook` ainda não existia). Assinatura errada recusada (401) só foi provada no teste local. **A tarefa 8 (#468) já
   pode começar.**
+- **17/10/2026, tarefa 8 (#468), a sala de verdade, feita pelo chefe de frontend** (branch `claude/tarefa-468-chefe-9viy7r`, PR aberto,
+  **esperando a revisão da Sofia**). De onde vem cada bonequinho está em "Decisões técnicas" ("A Sala de verdade"). Arquivos:
+  `painel/worker/dadosDaSala.ts` (as três buscas), rota `GET /api/sala` em `painel/worker/index.ts`, `buscarRest` em `github.ts`; na página,
+  `src/logica/salaDados.ts` e `src/useSala.ts` (a busca), `avisoDaSala` e `textoDaConexao` em `src/logica/tempoReal.ts`, a Sala em
+  `src/componentes/sala/Sala.tsx` (esqueleto, aviso de grupo que falhou, foto do GitHub, linha de conexão). Testes novos **vistos reprovar**
+  (14 quebras de propósito, todas pegas). **Olhado renderizado** no Chromium com o GitHub e o WebSocket simulados (fotos
+  `docs/referencia/fotos-painel/sala-468-*.png`): branch novo apareceu em ~1,3 s e saiu em ~1,3 s sem recarregar; com a "internet" derrubada
+  a linha foi a "reconectando…" e, depois de 2 min, a "desatualizado há 2 min", e voltou a "ao vivo" sozinha; grupo que falha mostra o aviso e
+  o "Tentar de novo"; celular de 375 px sem rolagem lateral. **Falta ver com o GitHub de verdade** (só possível depois de publicar): as três
+  buscas com o login dela, o `current_user_can_approve` numa rodada esperando de verdade (Liberar/Publicar/Atualizar bancos) e um branch
+  `claude/` novo aparecendo pelo webhook. Se o webhook `create` chegar antes de a API do GitHub enxergar o branch, a sala só o mostra na
+  próxima busca (até 2 min, ou no próximo aviso). Pelo que consigo ver, o app "Sakura Painel" já tem as permissões que as buscas pedem (Actions
+  e Contents lidos, Pull requests lidos); se alguma busca vier com "não consegui ler isto do GitHub" no endereço público, é por aí que se confere.
+

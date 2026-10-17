@@ -32,12 +32,12 @@ describe("App", () => {
 
   it("/sala mostra a sala, o aviso que leva ao 'Precisa de você', a lista e o link pro modo TV", () => {
     const h = html("/sala");
-    expect(h).toContain("Leva 0 · dados de exemplo");
+    expect(h).toContain("Dados de exemplo");
     expect(h).toContain('href="#precisa"');
     expect(h).toContain("2 coisas precisam de você");
     expect(h).toMatch(/<h2 id="precisa">Precisa de você \(2\)<\/h2>/);
     expect(h).toContain("Robôs da casa");
-    expect(h).toContain("ao vivo · atualizado agora há pouco");
+    expect(h).toContain("dados de exemplo · sem ligação com o GitHub");
     expect(h).toContain('href="/sala?tv"');
     expect(h).toContain('aria-label="Menu do painel"');
   });

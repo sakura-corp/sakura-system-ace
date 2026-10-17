@@ -31,19 +31,40 @@ export function estadoDoTempoReal(conectado: boolean, ultimaBuscaOk: number | nu
   return conectado ? "aovivo" : "reconectando";
 }
 
-/** Os avisos de tarefa fazem buscar de novo; os de robô e de branch (#468) ainda não mudam nada na página. */
+/** Os avisos de tarefa fazem a tela da leva buscar de novo. */
 const EVENTOS_DE_TAREFA = ["issues", "pull_request", "label"];
+/** A Sala (#468) também escuta os de robô (rodadas) e de branch (push, create, delete). */
+const EVENTOS_DA_SALA = [...EVENTOS_DE_TAREFA, "workflow_run", "push", "create", "delete"];
 
-/** O texto que chega da sala, se for um aviso de tarefa. Qualquer outra coisa vira `null`. */
-export function avisoDeTarefa(texto: unknown): { evento: string; numero?: number } | null {
+function avisoDe(texto: unknown, eventos: string[]): { evento: string; numero?: number } | null {
   if (typeof texto !== "string") return null;
   try {
     const aviso = JSON.parse(texto) as { evento?: unknown; numero?: unknown };
-    if (typeof aviso.evento !== "string" || !EVENTOS_DE_TAREFA.includes(aviso.evento)) return null;
+    if (typeof aviso.evento !== "string" || !eventos.includes(aviso.evento)) return null;
     return typeof aviso.numero === "number" ? { evento: aviso.evento, numero: aviso.numero } : { evento: aviso.evento };
   } catch {
     return null;
   }
+}
+
+/** O texto que chega da sala, se for um aviso de tarefa. Qualquer outra coisa vira `null`. */
+export const avisoDeTarefa = (texto: unknown) => avisoDe(texto, EVENTOS_DE_TAREFA);
+
+/** O texto que chega da sala, se for um aviso que muda a Sala (#468). Qualquer outra coisa vira `null`. */
+export const avisoDaSala = (texto: unknown) => avisoDe(texto, EVENTOS_DA_SALA);
+
+/**
+ * A linha de conexão do topo da Sala (#468). O número vem do relógio de quem olha, não do servidor.
+ * "Desatualizado" já vem decidido por `estadoDoTempoReal` (mais de 2 min sem busca com sucesso).
+ */
+export function textoDaConexao(estado: EstadoDoTempoReal, ultimaAtualizacao: number | null, agora: number): string {
+  if (estado === "reconectando") return "reconectando…";
+  const ms = ultimaAtualizacao === null ? null : Math.max(0, agora - ultimaAtualizacao);
+  if (estado === "desatualizado") return ms === null ? "desatualizado" : `desatualizado há ${Math.max(2, Math.floor(ms / 60_000))} min`;
+  if (ms === null) return "ao vivo";
+  const s = Math.floor(ms / 1000);
+  if (s < 1) return "ao vivo · atualizado agora";
+  return s < 60 ? `ao vivo · atualizado há ${s} s` : `ao vivo · atualizado há ${Math.floor(s / 60)} min`;
 }
 
 /** Do jeito que o navegador entrega: a mensagem vem em `data`. */
@@ -59,8 +80,10 @@ export type SituacaoDoTempoReal = { estado: EstadoDoTempoReal; ultimaAtualizacao
 
 export interface OpcoesDoTempoReal {
   abrir: () => ConexaoLike;
-  /** Busca a leva de novo. `true` = deu certo (só então conta como "atualizado"). */
+  /** Busca a leva (ou a Sala) de novo. `true` = deu certo (só então conta como "atualizado"). */
   buscar: () => Promise<boolean>;
+  /** Quais avisos fazem buscar de novo. Padrão: os de tarefa. */
+  aviso?: (texto: unknown) => unknown;
   aoMudar: (situacao: SituacaoDoTempoReal) => void;
   relogio?: () => number;
   agendar?: (f: () => void, ms: number) => unknown;
@@ -74,6 +97,8 @@ export interface TempoReal {
   buscaFeita(): void;
   /** A janela voltou a ficar em foco. */
   voltouAoFoco(): void;
+  /** Busca agora (o "Tentar de novo" da Sala, #468). Se já tem uma busca andando, não faz outra. */
+  atualizar(): Promise<void>;
 }
 
 /**
@@ -82,6 +107,7 @@ export interface TempoReal {
  * (pode ter perdido avisos). De reserva, busca a cada 2 minutos e quando a janela volta ao foco.
  */
 export function criarTempoReal(opcoes: OpcoesDoTempoReal): TempoReal {
+  const aviso = opcoes.aviso ?? avisoDeTarefa;
   const relogio = opcoes.relogio ?? Date.now;
   const agendar = opcoes.agendar ?? ((f, ms) => setTimeout(f, ms));
   const cancelar = opcoes.cancelar ?? ((id) => clearTimeout(id as ReturnType<typeof setTimeout>));
@@ -127,7 +153,7 @@ export function criarTempoReal(opcoes: OpcoesDoTempoReal): TempoReal {
       if (reconectou) void buscarAgora();
     };
     c.onmessage = (e) => {
-      if (c !== conexao || !avisoDeTarefa(e.data) || timerDeAvisos !== null) return;
+      if (c !== conexao || !aviso(e.data) || timerDeAvisos !== null) return;
       timerDeAvisos = agendar(() => {
         timerDeAvisos = null;
         void buscarAgora();
@@ -183,5 +209,6 @@ export function criarTempoReal(opcoes: OpcoesDoTempoReal): TempoReal {
     voltouAoFoco() {
       void buscarAgora();
     },
+    atualizar: buscarAgora,
   };
 }

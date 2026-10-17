@@ -2,7 +2,7 @@ import type { Bonequinho, EntradaDaSala, EstadoBonequinho } from "../tipos";
 import { decorrido, DORMINDO_A_PARTIR_MS, TRABALHANDO_ATE_MS } from "./tempo";
 
 export { haQuantoTempo } from "./tempo";
-export { linkSeguro } from "./link";
+export { fotoSegura, linkSeguro } from "./link";
 
 /** Os robôs da casa: cada trabalho automático do GitHub, no seu cantinho fixo, nesta ordem. */
 export const ROBOS_DA_CASA: { arquivo: string; nome: string }[] = [

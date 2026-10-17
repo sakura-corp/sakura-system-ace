@@ -7,3 +7,8 @@ export function linkSeguro(url: string | undefined): string | undefined {
 export function linkDoClaude(url: string | undefined): string | undefined {
   return url !== undefined && url.startsWith("https://claude.ai/code?") ? url : undefined;
 }
+
+/** A foto de uma pessoa na Sala só vem do servidor de fotos do GitHub (nada de outro endereço). */
+export function fotoSegura(url: string | undefined): string | undefined {
+  return url !== undefined && url.startsWith("https://avatars.githubusercontent.com/") ? url : undefined;
+}

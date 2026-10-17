@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   LIMITE_DESATUALIZADO_MS,
+  avisoDaSala,
   avisoDeTarefa,
   criarTempoReal,
   esperaDaReconexao,
   estadoDoTempoReal,
   type ConexaoLike,
+  textoDaConexao,
   type SituacaoDoTempoReal,
 } from "./tempoReal";
 
@@ -43,6 +45,39 @@ describe("avisoDeTarefa", () => {
     for (const x of ['{"evento":"push"}', '{"evento":"workflow_run"}', "não é json", "{}", "null", 42, undefined]) {
       expect(avisoDeTarefa(x)).toBeNull();
     }
+  });
+});
+
+describe("avisoDaSala (#468)", () => {
+  it("a Sala escuta também os avisos de robô e de branch", () => {
+    for (const e of ["issues", "pull_request", "label", "workflow_run", "push", "create", "delete"]) {
+      expect(avisoDaSala(JSON.stringify({ evento: e }))).toEqual({ evento: e });
+    }
+  });
+  it("lixo e evento que ninguém repassa não fazem buscar", () => {
+    for (const x of ['{"evento":"star"}', "não é json", "{}", "null", 42, undefined]) expect(avisoDaSala(x)).toBeNull();
+  });
+});
+
+describe("textoDaConexao (#468)", () => {
+  const t0 = 10_000_000;
+  it("ao vivo diz há quantos segundos, e depois minutos", () => {
+    expect(textoDaConexao("aovivo", t0, t0 + 7_900)).toBe("ao vivo · atualizado há 7 s");
+    expect(textoDaConexao("aovivo", t0, t0 + 59_999)).toBe("ao vivo · atualizado há 59 s");
+    expect(textoDaConexao("aovivo", t0, t0 + 61_000)).toBe("ao vivo · atualizado há 1 min");
+    expect(textoDaConexao("aovivo", t0, t0 + 300)).toBe("ao vivo · atualizado agora");
+  });
+  it("reconectando é só 'reconectando…', sem número", () => {
+    expect(textoDaConexao("reconectando", t0, t0 + 30_000)).toBe("reconectando…");
+    expect(textoDaConexao("reconectando", null, t0)).toBe("reconectando…");
+  });
+  it("desatualizado diz há quantos minutos (nunca menos de 2)", () => {
+    expect(textoDaConexao("desatualizado", t0, t0 + 121_000)).toBe("desatualizado há 2 min");
+    expect(textoDaConexao("desatualizado", t0, t0 + 7 * 60_000 + 5)).toBe("desatualizado há 7 min");
+    expect(textoDaConexao("desatualizado", t0, t0 + 1000)).toBe("desatualizado há 2 min");
+  });
+  it("relógio atrasado em relação à busca não dá número negativo", () => {
+    expect(textoDaConexao("aovivo", t0 + 5000, t0)).toBe("ao vivo · atualizado agora");
   });
 });
 
@@ -251,6 +286,70 @@ describe("criarTempoReal", () => {
     await avancar(1000);
     conexoes[1].abrir();
     conexoes[0].cair();
+    expect(ultimo().estado).toBe("aovivo");
+    t.parar();
+  });
+  it("a Sala (#468) busca de novo num aviso de robô; a leva, não", async () => {
+    const sala = criarTempoReal({
+      abrir: () => {
+        const c = new Falsa();
+        conexoes.push(c);
+        return c;
+      },
+      buscar: async () => {
+        buscas++;
+        return true;
+      },
+      aviso: avisoDaSala,
+      aoMudar: (s) => situacoes.push(s),
+      relogio: () => agora,
+    });
+    sala.iniciar();
+    conexoes[0].abrir();
+    conexoes[0].receber('{"evento":"create"}');
+    conexoes[0].receber('{"evento":"workflow_run"}');
+    await avancar(1000);
+    expect(buscas).toBe(1);
+    sala.parar();
+
+    const leva = ligar();
+    leva.iniciar();
+    conexoes[1].abrir();
+    conexoes[1].receber('{"evento":"workflow_run"}');
+    await avancar(1500);
+    expect(buscas).toBe(1);
+    leva.parar();
+  });
+
+  it("atualizar busca na hora e conta como atualizado só se deu certo", async () => {
+    const t = ligar();
+    t.iniciar();
+    conexoes[0].abrir();
+    resultado = false;
+    await t.atualizar();
+    expect(buscas).toBe(1);
+    expect(ultimo().ultimaAtualizacao).toBeNull();
+    resultado = true;
+    await t.atualizar();
+    expect(ultimo().ultimaAtualizacao).toBe(agora);
+    t.parar();
+  });
+
+  it("sem internet: reconectando e, passando de 2 minutos sem busca boa, desatualizado; ao voltar, ao vivo sozinho", async () => {
+    const t = ligar();
+    t.iniciar();
+    conexoes[0].abrir();
+    t.buscaFeita();
+    resultado = false;
+    conexoes[0].cair();
+    expect(ultimo().estado).toBe("reconectando");
+    await avancar(LIMITE_DESATUALIZADO_MS + 20_000);
+    expect(ultimo().estado).toBe("desatualizado");
+    resultado = true;
+    await avancar(30_000);
+    const nova = conexoes[conexoes.length - 1];
+    nova.abrir();
+    await avancar(0);
     expect(ultimo().estado).toBe("aovivo");
     t.parar();
   });
