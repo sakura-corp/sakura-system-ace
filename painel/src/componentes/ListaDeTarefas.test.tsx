@@ -41,11 +41,11 @@ describe("Cartão da tarefa: cabeçalho (#536)", () => {
     expect(html({ dependeDeAbertas: [7, 9] })).toContain("Espera #7, #9");
   });
 
-  it("incompleta: 'tarefa incompleta', sem botões, com a dica no title e no sr-only", () => {
+  it("incompleta: 'tarefa incompleta', sem botões, e o que falta à vista (no celular não há dica de mouse)", () => {
     const h = html({ incompleta: ["Chefe", "Estimativa"] });
     expect(h).toContain("tarefa incompleta");
-    expect(h).toContain('title="Chefe; Estimativa"');
-    expect(h).toMatch(/<span class="sr-only">[^<]*Chefe; Estimativa/);
+    expect(h).toContain(">No cabeçalho: Chefe; Estimativa</p>");
+    expect(h).not.toMatch(/<[^>]*class="[^"]*sr-only[^"]*"[^>]*>[^<]*No cabeçalho/);
     expect(temLinkDoClaude(h)).toBe(false);
     expect(temCopiar(h)).toBe(false);
     expect(h).not.toContain("Espera");

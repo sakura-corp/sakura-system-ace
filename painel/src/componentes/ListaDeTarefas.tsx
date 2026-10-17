@@ -33,7 +33,7 @@ const BOTAO =
 
 /**
  * Só em tarefa que não está feita: abre o formulário do Claude (que não envia sozinho) ou copia o mesmo texto.
- * Cabeçalho incompleto → só o aviso "tarefa incompleta" (vale mais que a dependência, que não dá pra confiar).
+ * Cabeçalho incompleto → só o aviso "tarefa incompleta" e o que falta (vale mais que a dependência, que não dá pra confiar).
  * Dependência ainda aberta → o botão aparece desligado com "Espera #N", e sem o "Copiar texto".
  */
 function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: boolean; aoCopiar: (r: ResultadoDaCopia) => void }) {
@@ -47,11 +47,14 @@ function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: 
 
   const faltas = tarefa.incompleta ?? [];
   if (faltas.length > 0) {
+    // O que falta fica à vista (no celular não existe dica de mouse; Sofia, 17/10).
     return (
-      <p className="mx-4 mb-3 min-w-0 break-words text-sm text-texto-2" title={faltas.join("; ")}>
-        tarefa incompleta
-        <span className="sr-only">: falta no cabeçalho da tarefa #{tarefa.numero}: {faltas.join("; ")}</span>
-      </p>
+      <div className="mx-4 mb-3 min-w-0 text-sm text-texto-2">
+        <p>
+          tarefa incompleta<span className="sr-only"> (tarefa #{tarefa.numero})</span>
+        </p>
+        <p className="break-words text-xs">No cabeçalho: {faltas.join("; ")}</p>
+      </div>
     );
   }
 

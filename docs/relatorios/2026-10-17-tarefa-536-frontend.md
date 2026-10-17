@@ -45,7 +45,7 @@
 ## O que depende de alguém
 - **A Sofia**: revisar e mesclar o PR. Depois de publicado, conferir no endereço público que uma tarefa da leva 1 mostra o chefe e a estimativa, e que a #538 mostra "Espera #536" (até a #536 fechar).
 - **A Sofia decide** (perguntas no PR):
-  1. **o que falta na "tarefa incompleta"** só aparece na dica do mouse, como a issue pede, e no celular não há dica. Mostrar o que falta numa linha pequena embaixo?
+  1. ~~o que falta na "tarefa incompleta" só na dica do mouse~~: **decidido (Sofia, 17/10): mostrar numa linha pequena embaixo**, porque no celular não há dica. Feito nesta branch, com teste visto reprovar.
   2. **qual fechamento conta**: o `docs/tarefas.md` diz que a tarefa da qual se depende precisa estar "fechada pelo PR na `main`"; a issue (e o código) aceitam qualquer fechamento, inclusive "não planejada". Qual dos dois vale?
 
 ## Onde parou
