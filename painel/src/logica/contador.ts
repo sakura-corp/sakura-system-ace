@@ -56,7 +56,7 @@ export type HorasDeUmaPessoa = {
   semEstimativa: number;
 };
 
-/** Arredonda a 2 casas pra a soma de 0,1 + 0,2 não virar 0,30000000000000004. */
+/** Arredonda a 2 casas pra soma de 0,1 + 0,2 não virar 0,30000000000000004. */
 const arredondar = (n: number) => Math.round(n * 100) / 100;
 
 /**

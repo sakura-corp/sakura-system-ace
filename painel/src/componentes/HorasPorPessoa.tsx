@@ -2,9 +2,9 @@ import { horasPorPessoa } from "../logica/contador";
 import type { Tarefa } from "../tipos";
 import { Avatar } from "./Avatar";
 
-const horas = (h: number) => String(h).replace(".", ",");
+const formatar = (h: number) => String(h).replace(".", ",");
 
-/** Quadro "Horas por pessoa": o ritmo de cada um na leva, pela estimativa das tarefas. Some se ninguém tem tarefa. */
+/** Quadro "Horas por pessoa": o ritmo de cada um na leva, pela estimativa das tarefas. Some se ninguém tem tarefa com dono (feita, em andamento ou em revisão). */
 export function HorasPorPessoa({ tarefas }: { tarefas: Tarefa[] }) {
   const pessoas = horasPorPessoa(tarefas);
   if (pessoas.length === 0) return null;
@@ -21,7 +21,7 @@ export function HorasPorPessoa({ tarefas }: { tarefas: Tarefa[] }) {
               <span className="min-w-0 break-words">{p.login}</span>
             </span>
             <span className="min-w-0 tabular-nums text-texto-2">
-              {horas(p.entregues)} h entregues · {horas(p.segurando)} h segurando
+              {formatar(p.entregues)} h entregues · {formatar(p.segurando)} h segurando
               {p.semEstimativa > 0 && ` · ${p.semEstimativa} sem estimativa`}
             </span>
           </li>
