@@ -6,7 +6,7 @@ import { linkParaComecar, textoDaTarefa } from "../logica/comecarComClaude";
 import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
 import { acaoNaTarefa } from "../logica/dados";
 import { linkDoClaude } from "../logica/link";
-import { mesmoLogin, motivoPraNaoPegar } from "../logica/pegar";
+import { depoisDaAcao, mesmoLogin, motivoPraNaoPegar } from "../logica/pegar";
 import { PLURAL, Selo } from "./Selo";
 
 type Props = {
@@ -20,6 +20,9 @@ type Props = {
 };
 
 export function ListaDeTarefas({ tarefas, login, aoMudar, ehALevaAtual = true }: Props) {
+  // O aviso da última ação mora aqui, não no cartão: depois de recarregar, o cartão pode mudar de grupo
+  // (ou perder os botões, se outra pessoa pegou) e o aviso vai junto com ele.
+  const [aviso, setAviso] = useState<{ numero: number; texto: string } | null>(null);
   return (
     <div className="space-y-8">
       {agruparPorEstado(tarefas)
@@ -31,7 +34,16 @@ export function ListaDeTarefas({ tarefas, login, aoMudar, ehALevaAtual = true }:
             </h2>
             <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
               {g.tarefas.map((t) => (
-                <ItemDaTarefa key={t.numero} tarefa={t} tarefas={tarefas} login={login} aoMudar={aoMudar} ehALevaAtual={ehALevaAtual} />
+                <ItemDaTarefa
+                  key={t.numero}
+                  tarefa={t}
+                  tarefas={tarefas}
+                  login={login}
+                  aoMudar={aoMudar}
+                  ehALevaAtual={ehALevaAtual}
+                  aviso={aviso?.numero === t.numero ? aviso.texto : ""}
+                  aoAvisar={(texto) => setAviso(texto ? { numero: t.numero, texto } : null)}
+                />
               ))}
             </ul>
           </section>
@@ -57,6 +69,8 @@ type PropsDosBotoes = {
   ehALevaAtual: boolean;
   planoB: boolean;
   aoCopiar: (r: ResultadoDaCopia) => void;
+  /** Põe (ou apaga, com "") o aviso da última ação, que fica à vista no cartão. */
+  aoAvisar: (texto: string) => void;
 };
 
 /**
@@ -67,11 +81,10 @@ type PropsDosBotoes = {
  * - sem dono → "Pegar tarefa"; se não pode, desligado e o motivo à vista (no celular não existe dica de mouse).
  * Quem decide de verdade é o worker; a página só desliga o botão e diz o porquê.
  */
-function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB, aoCopiar }: PropsDosBotoes) {
+function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB, aoCopiar, aoAvisar }: PropsDosBotoes) {
   const [copiado, setCopiado] = useState(false);
   const [ocupado, setOcupado] = useState<Acao | null>(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [mensagem, setMensagem] = useState("");
   const aviso = useRef<number | undefined>(undefined);
   const botaoLargar = useRef<HTMLButtonElement>(null);
   useEffect(() => () => window.clearTimeout(aviso.current), []);
@@ -109,29 +122,19 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB,
   async function agir(acao: Acao) {
     setOcupado(acao);
     setConfirmando(false);
-    setMensagem("");
+    aoAvisar("");
     try {
-      const r = await acaoNaTarefa(tarefa.numero, acao);
-      if (r.tipo === "ok") await aoMudar?.();
-      else if (r.tipo === "recusado") setMensagem(r.motivo);
-      else if (r.tipo === "erro") setMensagem(r.mensagem);
-      else {
-        setMensagem("Sua sessão acabou. Entre de novo.");
-        await aoMudar?.();
-      }
+      const { aviso, recarregar } = depoisDaAcao(tarefa.numero, await acaoNaTarefa(tarefa.numero, acao));
+      aoAvisar(aviso);
+      if (recarregar) await aoMudar?.();
     } catch {
-      setMensagem("Não deu certo agora. Tente de novo.");
+      aoAvisar("Não deu certo agora. Tente de novo.");
     } finally {
       setOcupado(null);
     }
   }
 
   const numero = tarefa.numero;
-  const mensagemNaTela = (
-    <p role="status" aria-live="polite" className="mt-2 break-words text-sm text-texto-2 empty:mt-0">
-      {mensagem}
-    </p>
-  );
 
   if (souEu) {
     return (
@@ -179,7 +182,6 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB,
             {copiado ? `Texto da tarefa #${numero} copiado` : planoB ? "Não deu pra copiar sozinho: o texto está no campo abaixo, já selecionado" : ""}
           </span>
         </div>
-        {mensagemNaTela}
       </div>
     );
   }
@@ -200,20 +202,37 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB,
             </button>
           )}
         </div>
-        {mensagemNaTela}
       </div>
     );
   }
   return (
     <div className="mx-4 mb-3">
       <div className="flex flex-wrap gap-2">
-        <button type="button" disabled className={BOTAO_DESLIGADO}>
+        <button type="button" disabled aria-describedby={`motivo-${numero}`} className={BOTAO_DESLIGADO}>
           Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
         </button>
-        <p className="basis-full break-words text-xs text-texto-2">{motivo}</p>
+        <p id={`motivo-${numero}`} className="basis-full break-words text-xs text-texto-2">
+          {motivo}
+        </p>
       </div>
-      {mensagemNaTela}
     </div>
+  );
+}
+
+/**
+ * O aviso da última ação no cartão (#538). Sempre presente (vazio quando não há), pra ser uma região viva.
+ * Quando aparece, o foco vai pra ele: o botão clicado sumiu, e depois de recarregar o cartão pode ter mudado
+ * de grupo; o foco leva a pessoa (e o leitor de tela) até o motivo.
+ */
+function AvisoDaAcao({ texto }: { texto: string }) {
+  const p = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (texto) p.current?.focus();
+  }, [texto]);
+  return (
+    <p ref={p} tabIndex={-1} role="status" aria-live="polite" className="mx-4 mb-3 break-words text-sm text-texto empty:m-0">
+      {texto}
+    </p>
   );
 }
 
@@ -242,7 +261,17 @@ function CampoDoTexto({ texto, numero }: { texto: string; numero: number }) {
   );
 }
 
-function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual }: { tarefa: Tarefa; tarefas: Tarefa[]; login?: string; aoMudar?: () => Promise<unknown>; ehALevaAtual: boolean }) {
+type PropsDoItem = {
+  tarefa: Tarefa;
+  tarefas: Tarefa[];
+  login?: string;
+  aoMudar?: () => Promise<unknown>;
+  ehALevaAtual: boolean;
+  aviso: string;
+  aoAvisar: (texto: string) => void;
+};
+
+function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual, aviso, aoAvisar }: PropsDoItem) {
   const [planoB, setPlanoB] = useState(false);
   const texto = textoDaTarefa(t.numero, t.chefe);
   return (
@@ -292,7 +321,9 @@ function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual }: { ta
           ehALevaAtual={ehALevaAtual}
           planoB={planoB}
           aoCopiar={(r) => setPlanoB(r === "plano-b")}
+          aoAvisar={aoAvisar}
         />
+        <AvisoDaAcao texto={aviso} />
       </div>
       {planoB && t.estado !== "feita" && texto !== undefined && <CampoDoTexto texto={texto} numero={t.numero} />}
     </li>

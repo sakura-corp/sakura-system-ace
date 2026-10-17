@@ -37,7 +37,8 @@ describe("Cartão da tarefa: Pegar tarefa (#538)", () => {
   it("o botão mantém o alvo de toque (min-h-11) e a linha de aviso 'role=status' fica no cartão", () => {
     const h = html({});
     expect(/<button[^>]*class="([^"]*)"[^>]*>Pegar tarefa/.exec(h)?.[1]).toContain("min-h-11");
-    expect(h).toMatch(/<p role="status" aria-live="polite"[^>]*><\/p>/);
+    // O aviso da ação: região viva, vazia, que recebe o foco quando aparece (tabindex -1).
+    expect(h).toMatch(/<p tabindex="-1" role="status" aria-live="polite"[^>]*><\/p>/);
   });
 
   it("livre com dependência aberta: Pegar desligado e 'espera a #7' à vista (sem opacity)", () => {
@@ -87,10 +88,16 @@ describe("Cartão da tarefa: Pegar tarefa (#538)", () => {
     expect(h).toContain(">entre no painel pra pegar uma tarefa</p>");
   });
 
+  it("o botão desligado aponta pro motivo (aria-describedby), pro leitor de tela ler os dois juntos", () => {
+    const h = html({ dependeDeAbertas: [7] });
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*aria-describedby="motivo-20"/);
+    expect(h).toContain('<p id="motivo-20"');
+  });
+
   it("o motivo fica fora do botão e o botão diz o número da tarefa só pro leitor de tela", () => {
     const h = html({ dependeDeAbertas: [7] });
     expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa<span class="sr-only"> \(tarefa #20\)<\/span><\/button>/);
-    expect(h).toMatch(/<p class="[^"]*text-xs[^"]*text-texto-2[^"]*">espera a #7<\/p>/);
+    expect(h).toMatch(/<p id="motivo-20" class="[^"]*text-xs[^"]*text-texto-2[^"]*">espera a #7<\/p>/);
   });
 });
 
