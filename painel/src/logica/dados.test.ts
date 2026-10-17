@@ -81,11 +81,13 @@ describe("levaPedida e enderecoDaLeva", () => {
     expect(levaPedida("/leva/3")).toBe(3);
     expect(levaPedida("/leva/3/")).toBe(3);
     expect(levaPedida("/")).toBeNull();
+    expect(levaPedida("/leva")).toBeNull();
+    expect(levaPedida("/leva/")).toBeNull();
     expect(levaPedida("/leva/x")).toBeNull();
     expect(levaPedida("/sala")).toBeNull();
   });
-  it("a atual é /, as outras /leva/<n>", () => {
-    expect(enderecoDaLeva(1, 1)).toBe("/");
+  it("a atual é /leva (a / é o Início, #546), as outras /leva/<n>", () => {
+    expect(enderecoDaLeva(1, 1)).toBe("/leva");
     expect(enderecoDaLeva(0, 1)).toBe("/leva/0");
   });
 });
