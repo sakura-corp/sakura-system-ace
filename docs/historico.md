@@ -35,6 +35,26 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, madrugada (4): a leva 1 montada e o painel v2 sendo planejado de noite
+
+**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). Só mudou documentação.
+
+#### A leva 1 (montada e aprovada em 17/10)
+- **Painel**: #536 o cartão lê o cabeçalho (5 h), #538 pegar e largar tarefa (6 h, espera a #536), #539 horas por pessoa (3 h). **Programa**: #510 janelas no Modal (3 h), #511 testes no Windows (2 h), #455 clientes que sumiram (6 h). Total 25 h, todas no modelo único, com `leva-1` e `chefe:`. Detalhe em `docs/painel.md`, "Andamento".
+- Decidido junto: o "Começar com o Claude" aparece **só pra quem pegou**; horas por pessoa **contadas na leva**; na #455, **6 meses** e o texto padrão da issue.
+- **Leva 2**: "fases da leva" e "relatório e aprovação" pedem uma conversa de desenho com ela antes.
+
+#### O painel v2, de noite (sem ela)
+- A pedido dela, foi aberta uma **sessão mãe** pra planejar as abas, os dados e o visual do painel, com as abas das funções futuras em "em breve", referências e **duas ou três versões visuais em páginas de exemplo** (sessão `session_0158Dwe3s7gWC25Ktu1Hifij`). Tudo num **PR só, não mesclado**, sem mexer no código de `painel/` (a leva 1 mexe nos mesmos arquivos, e o painel publica sozinho da `main`). No máximo **6 sessões filhas**, 3 ao mesmo tempo, por causa da cota do Pro.
+
+#### O que depende dela
+1. ~~De manhã: o PR do painel v2~~: **feito** (ela mesclou o #541 e o #550 em 17/10; as tarefas são as #542 a #549, sem `leva-2` até a leva 1 terminar).
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). Aí a equipe pega a leva 1; a #536 é a que mais destrava.
+3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
+4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
+5. Conferir `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado; empresa (Team, lançamento, Pix): no privado.
+6. A #442: medir o CI ~23/10. O aviso automático de conversa comprida ainda não foi visto (#471).
+
 ### 17/10/2026, madrugada (3): o modelo único de tarefa e a sessão mãe
 
 **Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). **A leva 0 do painel terminou**: a #468 (sala ao vivo) entrou pelo PR #533.

@@ -623,3 +623,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   a leva de novo e o motivo acompanha o cartão (Sofia, 17/10). Olhado e clicado em 320 e 1000 px, claro e escuro. Relatório em
   `docs/relatorios/2026-10-17-tarefa-538-backend.md`. **A Sofia confere depois de publicar**: pegar uma tarefa no endereço
   público, tentar pegar uma segunda, e largar.
+- **17/10/2026, tarde: o painel v2 (#542 a #546) começa já, sem esperar a leva 1** (decisão da Sofia). As cinco tarefas são
+  feitas por ela com o Claude: uma sessão coordenadora abre uma sessão por tarefa, na ordem #542 → #543 e #544 juntas → #545 →
+  #546, e ela mescla cada PR antes de a próxima começar. **Elas não levam etiqueta de leva**: com `leva-2`, o painel passaria a
+  mostrar a leva 2 como atual (`levaAtual()`) e a leva 1 sumiria da tela. A leva 1 continua com a equipe a partir de segunda
+  (19/10): #510, #511 e #455, uma por pessoa; nenhuma delas mexe em `painel/`. **Só a #547, a #548 e a #549 ficam pra leva 2**, e a
+  etiqueta entra quando a leva 1 fechar.
