@@ -261,7 +261,7 @@ function CampoDoTexto({ texto, numero }: { texto: string; numero: number }) {
   );
 }
 
-type PropsDoItem = {
+export type PropsDoItem = {
   tarefa: Tarefa;
   tarefas: Tarefa[];
   login?: string;
@@ -271,7 +271,8 @@ type PropsDoItem = {
   aoAvisar: (texto: string) => void;
 };
 
-function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual, aviso, aoAvisar }: PropsDoItem) {
+/** Um cartão de tarefa com os botões da #538; o Início (#546) usa pra "A sua tarefa". */
+export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual, aviso, aoAvisar }: PropsDoItem) {
   const [planoB, setPlanoB] = useState(false);
   const texto = textoDaTarefa(t.numero, t.chefe);
   return (
