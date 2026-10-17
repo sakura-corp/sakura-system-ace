@@ -33,6 +33,10 @@ Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma ta
   (`add_repo`, com a autorização dela) e ler lá.
 - **Depende do horário dela e do privado, ainda sem tarefa**: o resumo agendado da segunda de manhã (A2 da
   #472; `docs/jeito-de-trabalhar.md`).
+- **Assunto importante: segurança contra ataque e contra cópia do código** (ela, 17/10). Não precisa de
+  tudo de uma vez, mas precisa de um caminho que cresce junto com o projeto. As fases propostas (o que
+  fazer agora de graça, em 3 a 12 meses e depois de ~30 lojas) estão no item **B2** do plano de 17/10, no
+  privado (`docs/jeito-de-trabalhar.md`, "A direção"). Cada fase vira tarefa quando ela aprovar.
 
 **Conferência dela, ainda por fazer**: abrir a busca `label:sofia` acima e dizer se falta algo que estava na
 lista antiga (a versão antiga está no histórico do Git, no PR que trouxe esta mudança).
