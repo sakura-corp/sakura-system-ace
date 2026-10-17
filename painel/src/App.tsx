@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CabecalhoDaPagina } from "./componentes/CabecalhoDaPagina";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
@@ -162,13 +163,28 @@ export default function App({
       <NavegacaoDoCelular levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
-          <Sala
-            dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
-            quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
-            conexao={exemplo ? undefined : tempoReal}
-            tentarDeNovo={tempoReal.atualizar}
-            recarregarTudo={tentarSalaDeNovo}
+          <CabecalhoDaPagina
+            trilha="Equipe"
+            titulo="Sala"
+            explicacao="As pessoas e os robôs, ao vivo."
+            acoes={
+              <a
+                href="/sala?tv"
+                className="inline-flex min-h-9 items-center rounded-lg border border-borda px-3.5 text-sm font-medium text-texto hover:bg-livre-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
+              >
+                Modo TV
+              </a>
+            }
           />
+          <div className="mt-6">
+            <Sala
+              dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
+              quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
+              conexao={exemplo ? undefined : tempoReal}
+              tentarDeNovo={tempoReal.atualizar}
+              recarregarTudo={tentarSalaDeNovo}
+            />
+          </div>
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">

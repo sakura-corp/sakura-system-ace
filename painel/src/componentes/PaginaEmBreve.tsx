@@ -1,6 +1,7 @@
 // A página de um item "em breve" da barra lateral: explica o que vai ter ali, do que depende e quem cuida.
 import { Check, Clock, Info, Lock } from "lucide-react";
 import { textoEmBreve } from "../logica/emBreve";
+import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 
 const LINK_DA_TAREFA = (numero: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`;
 
@@ -9,8 +10,7 @@ export function PaginaEmBreve({ id }: { id: string }) {
   if (!texto) {
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <h1 className="font-serif text-3xl font-semibold text-texto">Página não encontrada</h1>
-        <p className="mt-2 text-texto-2">Esse endereço não existe no painel.</p>
+        <CabecalhoDaPagina titulo="Página não encontrada" explicacao="Esse endereço não existe no painel." />
         <a
           href="/"
           className="mt-4 inline-flex items-center gap-2 rounded-lg bg-destaque px-4 py-2 text-sm font-medium text-sobre-destaque hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
@@ -23,17 +23,12 @@ export function PaginaEmBreve({ id }: { id: string }) {
   const cartao = "rounded-xl border border-borda bg-cartao";
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-texto-2">
-            {texto.grupo ? <>{texto.grupo} / </> : null}
-            <b className="font-semibold text-texto">{texto.titulo}</b>
-          </p>
-          <h1 className="mt-1 font-serif text-3xl font-semibold text-texto">{texto.titulo}</h1>
-          <p className="mt-1 text-texto-2">{texto.subtitulo}</p>
-        </div>
-        <span className="inline-flex shrink-0 items-center rounded-full bg-livre-fundo px-2 py-0.5 text-xs font-medium text-livre">Em breve</span>
-      </header>
+      <CabecalhoDaPagina
+        trilha={texto.grupo}
+        titulo={texto.titulo}
+        explicacao={texto.subtitulo}
+        acoes={<span className="inline-flex items-center rounded-full bg-livre-fundo px-2 py-0.5 text-xs font-medium text-livre">Em breve</span>}
+      />
 
       <section className={`${cartao} mt-6 flex items-start gap-4 p-5`}>
         <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-livre-fundo text-livre" aria-hidden="true">

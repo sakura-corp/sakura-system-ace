@@ -656,3 +656,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   O conteúdo ganhou espaço no fim pra barra não cobrir nada; no `/sala?tv` não tem barra. Olhado em 320 e 375 px, claro e
   escuro. Relatório em `docs/relatorios/2026-10-17-tarefa-543-frontend.md`. **A Sofia confere depois de publicar**: no
   celular dela, a barra aparece embaixo e o "Mais" abre e fecha.
+- **17/10/2026, #545 o cabeçalho de página: PR aberto, esperando a revisão da Sofia.** A Sala, o Escritório e as
+  páginas "em breve" começam igual: trilha ("Equipe / Sala"), título grande em serifa, uma linha de explicação e as
+  ações à direita (`painel/src/componentes/CabecalhoDaPagina.tsx`, desenho da versão A). Na Sala a ação é "Modo TV";
+  o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. Com autorização da Sofia, na
+  janela da Sala (`Sala.tsx`) o título virou "Agora" (`<h2>`) fora do modo TV, como na referência. Relatório em
+  `docs/relatorios/2026-10-17-tarefa-545-frontend.md`. **Depois de publicar**: nada pra conferir.

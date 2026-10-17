@@ -7,7 +7,33 @@ import type { Tarefa } from "./tipos";
 
 const html = (caminho: string, busca = "") => renderToString(<App caminho={caminho} busca={busca} />).replace(/<!-- -->/g, "");
 
+// Quantos <h1 a página tem: toda página tem exatamente um.
+const contarH1 = (h: string) => (h.match(/<h1[\s>]/g) ?? []).length;
+
 describe("App", () => {
+  it("toda página tem um só h1, a Sala nos dois modos", () => {
+    for (const caminho of ["/sala", "/escritorio", "/em-breve/financeiro", "/em-breve/nao-existe"]) {
+      expect(contarH1(html(caminho)), caminho).toBe(1);
+    }
+    expect(contarH1(html("/sala", "?tv")), "/sala?tv").toBe(1);
+  });
+
+  it("na Sala o h1 é o do cabeçalho e a janela diz 'Agora'; no modo TV a janela é o h1", () => {
+    const h = html("/sala");
+    expect(h).toMatch(/<h1[^>]*>Sala<\/h1>/);
+    expect(h).toMatch(/<h2 id="sala-titulo"[^>]*>Agora<\/h2>/);
+    expect(html("/sala", "?tv")).toMatch(/<h1 id="sala-titulo">Sala<\/h1>/);
+  });
+
+  it("/sala tem a trilha e a explicação; /sala?tv não tem cabeçalho", () => {
+    const h = html("/sala");
+    expect(h).toContain("Equipe / ");
+    expect(h).toContain("As pessoas e os robôs, ao vivo.");
+    const tv = html("/sala", "?tv");
+    expect(tv).not.toContain("Equipe / ");
+    expect(tv).not.toContain("As pessoas e os robôs, ao vivo.");
+  });
+
   it("mostra a leva de exemplo: contador, grupos, aviso de uma por vez e o Financeiro desativado", () => {
     const h = html("/");
     expect(h).toContain("Leva 0");

@@ -6,6 +6,7 @@ import {
   tarefasDoEscritorioDeExemplo,
 } from "../../dados/exemplo-escritorio";
 import { comEstado, contarAgentes, contarPorModelo, linkSeguro, NOME_DO_MODELO, quadroDoDia, textoDaContagem } from "../../logica/escritorio";
+import { CabecalhoDaPagina } from "../CabecalhoDaPagina";
 import { Mapa } from "./Mapa";
 import { Avisos, DEPENDE, ListaDoEscritorio, PainelDaSala, QuadroDoDia } from "./Partes";
 
@@ -40,91 +41,97 @@ export function Escritorio({ agora = new Date() }: { agora?: Date }) {
   const nomeDaAba = (a: Aba) => (a === "escritorio" ? "Escritório" : a === "tarefas" ? `Tarefas (${totalDoQuadro})` : "Cérebro");
 
   return (
-    <section className="esc" aria-labelledby="esc-titulo">
-      <header className="esc-topo">
-        <div className="esc-marca">
-          <h1 id="esc-titulo">Escritório de agentes</h1>
-          <span className="esc-selo-exemplo">exemplo</span>
-        </div>
-        <div className="esc-abas" role="tablist" aria-label="Vistas do escritório">
-          {ABAS.map((a) => (
-            <button
-              key={a} type="button" role="tab" id={`aba-${a}`} className="esc-aba" aria-selected={aba === a} aria-controls="esc-vista"
-              onClick={() => setAba(a)}
-            >
-              {nomeDaAba(a)}
-            </button>
-          ))}
-          <span className="esc-aba-breve" aria-disabled="true">Agenda <small>· {DEPENDE}</small></span>
-        </div>
-        <div className="esc-direita">
-          <input className="esc-busca" type="search" disabled placeholder="Perguntar a um agente… (em breve)" aria-label="Perguntar a um agente (em breve)" />
-          <span className="esc-pilula"><i aria-hidden="true" />{textoDaContagem(conta)}</span>
-        </div>
-      </header>
+    <>
+      {/* O cabeçalho fica fora da janela escura (.esc): lá dentro as cores do painel não valem. */}
+      <CabecalhoDaPagina
+        trilha="Equipe"
+        titulo="Escritório de agentes"
+        explicacao="Os agentes do Claude trabalhando, por equipe."
+        idDoTitulo="esc-titulo"
+        acoes={<span className="rounded-full bg-revisao-fundo px-2 py-0.5 text-[11px] font-bold tracking-wider text-revisao uppercase">exemplo</span>}
+      />
+      <section className="esc mt-6" aria-labelledby="esc-titulo">
+        <header className="esc-topo">
+          <div className="esc-abas" role="tablist" aria-label="Vistas do escritório">
+            {ABAS.map((a) => (
+              <button
+                key={a} type="button" role="tab" id={`aba-${a}`} className="esc-aba" aria-selected={aba === a} aria-controls="esc-vista"
+                onClick={() => setAba(a)}
+              >
+                {nomeDaAba(a)}
+              </button>
+            ))}
+            <span className="esc-aba-breve" aria-disabled="true">Agenda <small>· {DEPENDE}</small></span>
+          </div>
+          <div className="esc-direita">
+            <input className="esc-busca" type="search" disabled placeholder="Perguntar a um agente… (em breve)" aria-label="Perguntar a um agente (em breve)" />
+            <span className="esc-pilula"><i aria-hidden="true" />{textoDaContagem(conta)}</span>
+          </div>
+        </header>
 
-      <p className="esc-aviso-exemplo">
-        Tudo nesta página é <strong>de exemplo</strong>: nenhum agente de verdade está rodando, nenhuma sessão é aberta e nenhum
-        token é gasto. {conta.precisam > 0 && <>No exemplo, <strong>{conta.precisam} agentes precisam de você</strong>.</>}
-      </p>
+        <p className="esc-aviso-exemplo">
+          Tudo nesta página é <strong>de exemplo</strong>: nenhum agente de verdade está rodando, nenhuma sessão é aberta e nenhum
+          token é gasto. {conta.precisam > 0 && <>No exemplo, <strong>{conta.precisam} agentes precisam de você</strong>.</>}
+        </p>
 
-      <div id="esc-vista" role="tabpanel" aria-labelledby={`aba-${aba}`}>
-        {aba === "escritorio" && (
-          <div className="esc-corpo">
-            <div className="esc-area-mapa">
-              <Avisos avisos={avisosDeExemplo} equipes={equipes} />
-              <div className="esc-vidro esc-mapa-caixa">
-                <Mapa
-                  equipes={equipes} agentes={agentes} notasDoCerebro={NOTAS_DO_CEREBRO_NO_EXEMPLO} salaAberta={salaAberta}
-                  aoAbrirSala={abrirSala} aoAbrirCerebro={() => setAba("cerebro")}
+        <div id="esc-vista" role="tabpanel" aria-labelledby={`aba-${aba}`}>
+          {aba === "escritorio" && (
+            <div className="esc-corpo">
+              <div className="esc-area-mapa">
+                <Avisos avisos={avisosDeExemplo} equipes={equipes} />
+                <div className="esc-vidro esc-mapa-caixa">
+                  <Mapa
+                    equipes={equipes} agentes={agentes} notasDoCerebro={NOTAS_DO_CEREBRO_NO_EXEMPLO} salaAberta={salaAberta}
+                    aoAbrirSala={abrirSala} aoAbrirCerebro={() => setAba("cerebro")}
+                  />
+                  <p className="esc-legenda">
+                    Roda em:{" "}
+                    {contarPorModelo(agentes).map((m, i) => (
+                      <span key={m.modelo}>{i > 0 && " · "}<strong>{NOME_DO_MODELO[m.modelo]}</strong> {m.quantos}</span>
+                    ))}
+                    {" "}(exemplo)
+                  </p>
+                </div>
+              </div>
+              <div className="esc-area-lista">
+                <ListaDoEscritorio equipes={equipes} agentes={agentes} agora={agora} salaAberta={salaAberta} aoAbrirSala={abrirSala} />
+              </div>
+              <div className="esc-area-painel" ref={painelRef}>
+                <PainelDaSala
+                  equipe={equipes.find((e) => e.id === salaAberta)} agentes={agentes} tarefas={tarefas} equipes={equipes} agora={agora}
+                  aba={abaDoPainel} aoTrocarAba={setAbaDoPainel} aoFechar={() => setSalaAberta(null)}
                 />
-                <p className="esc-legenda">
-                  Roda em:{" "}
-                  {contarPorModelo(agentes).map((m, i) => (
-                    <span key={m.modelo}>{i > 0 && " · "}<strong>{NOME_DO_MODELO[m.modelo]}</strong> {m.quantos}</span>
-                  ))}
-                  {" "}(exemplo)
-                </p>
+              </div>
+              <div className="esc-area-quadro">
+                <QuadroDoDia tarefas={tarefas} equipes={equipes} agora={agora} />
               </div>
             </div>
-            <div className="esc-area-lista">
-              <ListaDoEscritorio equipes={equipes} agentes={agentes} agora={agora} salaAberta={salaAberta} aoAbrirSala={abrirSala} />
-            </div>
-            <div className="esc-area-painel" ref={painelRef}>
-              <PainelDaSala
-                equipe={equipes.find((e) => e.id === salaAberta)} agentes={agentes} tarefas={tarefas} equipes={equipes} agora={agora}
-                aba={abaDoPainel} aoTrocarAba={setAbaDoPainel} aoFechar={() => setSalaAberta(null)}
-              />
-            </div>
-            <div className="esc-area-quadro">
-              <QuadroDoDia tarefas={tarefas} equipes={equipes} agora={agora} />
-            </div>
-          </div>
-        )}
+          )}
 
-        {aba === "tarefas" && <QuadroDoDia tarefas={tarefas} equipes={equipes} agora={agora} />}
+          {aba === "tarefas" && <QuadroDoDia tarefas={tarefas} equipes={equipes} agora={agora} />}
 
-        {aba === "cerebro" && (
-          <div className="esc-vidro esc-cerebro-texto">
-            <h2 className="esc-rotulo">O Cérebro (exemplo)</h2>
-            <p>
-              É a memória que todos os agentes leem antes de trabalhar. Hoje ela já existe: é o <strong>PROJETO_STATUS.md</strong> e a
-              pasta <strong>docs/</strong> deste repositório. No exemplo, {NOTAS_DO_CEREBRO_NO_EXEMPLO} notas.
-            </p>
-            <ul>
-              <li><strong>Decisões</strong>: docs/decisoes.md</li>
-              <li><strong>Lições (padrões de bug)</strong>: docs/licoes.md</li>
-              <li><strong>O painel</strong>: docs/painel.md</li>
-              <li><strong>Pra onde o SSACE vai</strong>: docs/visao.md</li>
-            </ul>
-            <p>
-              <a className="esc-link" href={linkSeguro(DOCS)} target="_blank" rel="noopener noreferrer">
-                Ver a pasta docs/ no GitHub<span className="sr-only"> (em aba nova)</span>
-              </a>
-            </p>
-          </div>
-        )}
-      </div>
-    </section>
+          {aba === "cerebro" && (
+            <div className="esc-vidro esc-cerebro-texto">
+              <h2 className="esc-rotulo">O Cérebro (exemplo)</h2>
+              <p>
+                É a memória que todos os agentes leem antes de trabalhar. Hoje ela já existe: é o <strong>PROJETO_STATUS.md</strong> e a
+                pasta <strong>docs/</strong> deste repositório. No exemplo, {NOTAS_DO_CEREBRO_NO_EXEMPLO} notas.
+              </p>
+              <ul>
+                <li><strong>Decisões</strong>: docs/decisoes.md</li>
+                <li><strong>Lições (padrões de bug)</strong>: docs/licoes.md</li>
+                <li><strong>O painel</strong>: docs/painel.md</li>
+                <li><strong>Pra onde o SSACE vai</strong>: docs/visao.md</li>
+              </ul>
+              <p>
+                <a className="esc-link" href={linkSeguro(DOCS)} target="_blank" rel="noopener noreferrer">
+                  Ver a pasta docs/ no GitHub<span className="sr-only"> (em aba nova)</span>
+                </a>
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }
