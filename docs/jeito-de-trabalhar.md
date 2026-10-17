@@ -108,6 +108,10 @@ painel monta esse texto a partir da etiqueta `chefe:<função>`). O chefe chama 
 própria sessão e termina com PR aberto e relatório; nunca mescla nem publica. Manual para quem
 trabalha: `docs/equipe.md`, "Começar uma tarefa com o chefe". Evolução dessas skills é proposta e
 entra na revisão do mês (R1).
+**Relatórios e revisor (17/10)**: cada chefe grava o relatório da tarefa em `docs/relatorios/`
+(formato em `docs/relatorios/README.md`) e a skill `revisor-de-chefes` lê essa pasta e propõe
+melhorias nas skills dos chefes, **sempre em PR aberto** para a Sofia aprovar. Sob demanda: abrir uma
+sessão e escrever "use a skill revisor-de-chefes" (pode dizer o chefe, a tarefa ou o período).
 
 ### Trancas
 Já existiam em 14/10:
@@ -135,7 +139,8 @@ As novas:
 ### Reavaliar
 - **R1.** **Uma vez por mês**, uma sessão agendada traz uma proposta curta: quais skills foram
   usadas e quais nunca; o que se repetiu e ainda não é skill; onde o Claude errou; que ferramenta
-  nova vale testar. Ela aprova ou corta. **Ferramenta vista em vídeo entra aqui**, e passa pelo
+  nova vale testar. **A revisão do mês inclui rodar o `revisor-de-chefes`** (relatórios em
+  `docs/relatorios/`), cujo PR aberto entra nesta mesma proposta. Ela aprova ou corta. **Ferramenta vista em vídeo entra aqui**, e passa pelo
   filtro "isso tira trabalho de verdade?".
 
 ### Ver

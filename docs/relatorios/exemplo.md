@@ -1,0 +1,35 @@
+> **EXEMPLO FICTÍCIO.** Serve só para mostrar o formato. Nenhuma tarefa, PR ou fato abaixo é real.
+> O revisor ignora este arquivo.
+
+# Relatório: tarefa #999, chefe frontend
+
+- **Tarefa**: #999, trocar o texto do botão "Salvar" por "Guardar" na tela de exemplo
+- **Chefe**: frontend
+- **Data**: 2026-01-01
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/0 (fictício)
+
+## O que cada agente fez
+- Explorador: achou as 3 telas que usam o botão.
+- Escritor de tela: trocou o texto e ajustou o teste.
+- Revisor: leu o diff do zero; nenhum achado.
+
+## O que testei e VI reprovar
+- Teste do texto do botão: mudei o texto de volta no código e o teste falhou; desfiz.
+
+## O que passou sem eu ter visto reprovar
+- `typecheck` e `lint`.
+
+## O que ficou de fora
+- A tela de impressão também usa o botão; não estava na tarefa.
+
+## O que depende de alguém
+- Uma pessoa no PC conferir a tela no programa instalado.
+
+## Onde parou
+Terminei.
+
+## Como eu agi
+- **O que a skill me ajudou a fazer**: lembrou de olhar a tela renderizada, não só o código.
+- **Onde eu errei ou tive que adivinhar**: não sabia se a tela de impressão entrava; adivinhei que não.
+- **O que faltou na skill**: um jeito de saber quais telas são "da tarefa" quando o texto é genérico.
+- **Sugestão de ajuste (opcional)**: pedir à pessoa a lista de telas antes de começar.

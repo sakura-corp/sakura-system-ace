@@ -58,6 +58,12 @@ PR com os rascunhos (`Closes #N`) e **parar**. Relatório, formato fixo:
 4. **O que depende de alguém**: preços/dados a preencher, quem vai publicar ou enviar, escolha de tom.
 5. **Onde parou**, se a cota acabou: na descrição do PR ou da tarefa.
 
+**Grave o relatório como arquivo no PR**: `docs/relatorios/AAAA-MM-DD-tarefa-N-marketing.md`, seguindo o
+modelo de `docs/relatorios/README.md` (as seções acima mais **"Como eu agi"**: o que a skill me
+ajudou a fazer, onde errei ou adivinhei, o que faltou nela, sugestão opcional). A descrição do PR
+aponta para esse arquivo. O repositório é público: **nada de credencial, CPF, preço, margem, sócios
+ou dado pessoal** no relatório.
+
 ## 6. Limites (valem sempre)
 **Nunca**: publicar, enviar mensagem, postar ou mexer em conta de rede social; mesclar; liberar
 versão; mexer em secret, cofre, ruleset, tag, configuração ou workflow; rodar SQL; adicionar o

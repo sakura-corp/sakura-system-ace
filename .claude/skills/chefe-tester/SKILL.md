@@ -65,6 +65,12 @@ tarefa pedir. Abrir o PR (`Closes #N`) e **parar**. Relatório, formato fixo:
 6. **Defeitos abertos** (links das issues).
 7. **Onde parou**, se a cota acabou: na descrição do PR ou da tarefa.
 
+**Grave o relatório como arquivo no PR**: `docs/relatorios/AAAA-MM-DD-tarefa-N-tester.md`, seguindo o
+modelo de `docs/relatorios/README.md` (as seções acima mais **"Como eu agi"**: o que a skill me
+ajudou a fazer, onde errei ou adivinhei, o que faltou nela, sugestão opcional). A descrição do PR
+aponta para esse arquivo. O repositório é público: **nada de credencial, CPF, preço, margem, sócios
+ou dado pessoal** no relatório.
+
 ## 6. Limites (valem sempre)
 **Nunca**: mesclar; publicar ou liberar; mexer em secret, cofre, ruleset, tag, configuração ou
 workflow; rodar SQL ou migration em Supabase nenhum (nem no de teste); usar banco de loja; adicionar

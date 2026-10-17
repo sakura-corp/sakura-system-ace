@@ -61,6 +61,12 @@ PR com a revisão/proposta (ou issue no formato da #425: "o que acontece", "por 
 **Se achar uma credencial já commitada: não repita o valor em lugar nenhum** (nem no relatório);
 diga só onde está e que precisa ser trocada.
 
+**Grave o relatório como arquivo no PR**: `docs/relatorios/AAAA-MM-DD-tarefa-N-seguranca.md`, seguindo o
+modelo de `docs/relatorios/README.md` (as seções acima mais **"Como eu agi"**: o que a skill me
+ajudou a fazer, onde errei ou adivinhei, o que faltou nela, sugestão opcional). A descrição do PR
+aponta para esse arquivo. O repositório é público: **nada de credencial, CPF, preço, margem, sócios
+ou dado pessoal** no relatório.
+
 ## 6. Limites (valem sempre)
 **Nunca**: mudar secret, cofre (environment), ruleset, configuração, tag ou workflow; mesclar;
 publicar ou liberar; rodar SQL ou migration em Supabase nenhum; adicionar o repositório privado
