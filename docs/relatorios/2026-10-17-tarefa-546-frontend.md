@@ -3,7 +3,7 @@
 - **Tarefa**: #546, Painel: a página Início ("o que é meu")
 - **Chefe**: frontend
 - **Data**: 2026-10-17
-- **PR**: a ser aberto a partir da branch `claude/tarefa-546-inicio` (link na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/563
 
 ## O que cada agente fez
 - Sessão mãe: leu a issue e o código, achou cedo os arquivos fora da lista e avisou a coordenadora, ligou a rota em `App.tsx` (`/` é o Início e `/leva` a leva atual), mudou a navegação, escreveu os testes do `App`, tirou as fotos e aplicou os achados da revisão.
