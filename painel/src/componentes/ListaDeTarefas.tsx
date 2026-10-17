@@ -2,12 +2,24 @@ import { useEffect, useRef, useState } from "react";
 import type { Tarefa } from "../tipos";
 import { agruparPorEstado } from "../logica/contador";
 import { Avatar } from "./Avatar";
-import { linkParaComecar, numeroValido, textoDaTarefa } from "../logica/comecarComClaude";
+import { linkParaComecar, textoDaTarefa } from "../logica/comecarComClaude";
 import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
+import { acaoNaTarefa } from "../logica/dados";
 import { linkDoClaude } from "../logica/link";
+import { mesmoLogin, motivoPraNaoPegar } from "../logica/pegar";
 import { PLURAL, Selo } from "./Selo";
 
-export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
+type Props = {
+  tarefas: Tarefa[];
+  /** Quem está olhando. Sem login (modo de exemplo), o "Pegar tarefa" fica desligado. */
+  login?: string;
+  /** Depois de pegar ou largar (ou da sessão acabar): busca a leva de novo. */
+  aoMudar?: () => Promise<unknown>;
+  /** Só a leva atual aceita "Pegar tarefa". */
+  ehALevaAtual?: boolean;
+};
+
+export function ListaDeTarefas({ tarefas, login, aoMudar, ehALevaAtual = true }: Props) {
   return (
     <div className="space-y-8">
       {agruparPorEstado(tarefas)
@@ -19,7 +31,7 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
             </h2>
             <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
               {g.tarefas.map((t) => (
-                <ItemDaTarefa key={t.numero} tarefa={t} />
+                <ItemDaTarefa key={t.numero} tarefa={t} tarefas={tarefas} login={login} aoMudar={aoMudar} ehALevaAtual={ehALevaAtual} />
               ))}
             </ul>
           </section>
@@ -31,14 +43,37 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
 const BOTAO =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium hover:opacity-90";
 
+/** O desligado: o mesmo jeito do botão "Espera" de antes (sem opacity, pra o contraste continuar valendo). */
+const BOTAO_DESLIGADO = `${BOTAO} max-w-full min-w-0 cursor-not-allowed break-words border border-borda bg-cartao text-center text-texto-2 hover:opacity-100`;
+const BOTAO_SECUNDARIO = `${BOTAO} border border-borda bg-cartao text-texto`;
+
+type Acao = "pegar" | "largar";
+
+type PropsDosBotoes = {
+  tarefa: Tarefa;
+  tarefas: Tarefa[];
+  login?: string;
+  aoMudar?: () => Promise<unknown>;
+  ehALevaAtual: boolean;
+  planoB: boolean;
+  aoCopiar: (r: ResultadoDaCopia) => void;
+};
+
 /**
- * Só em tarefa que não está feita: abre o formulário do Claude (que não envia sozinho) ou copia o mesmo texto.
- * Cabeçalho incompleto → só o aviso "tarefa incompleta" e o que falta (vale mais que a dependência, que não dá pra confiar).
- * Dependência ainda aberta → o botão aparece desligado com "Espera #N", e sem o "Copiar texto".
+ * Os botões do cartão (#538), por ordem:
+ * - feita → nada; incompleta → só o aviso "tarefa incompleta" e o que falta (vale mais que a dependência);
+ * - com dono, e é quem olha → "Começar com o Claude", "Copiar texto" e, só em andamento, "Largar" (com confirmação aqui dentro);
+ * - com dono, outra pessoa → nada;
+ * - sem dono → "Pegar tarefa"; se não pode, desligado e o motivo à vista (no celular não existe dica de mouse).
+ * Quem decide de verdade é o worker; a página só desliga o botão e diz o porquê.
  */
-function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: boolean; aoCopiar: (r: ResultadoDaCopia) => void }) {
+function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB, aoCopiar }: PropsDosBotoes) {
   const [copiado, setCopiado] = useState(false);
+  const [ocupado, setOcupado] = useState<Acao | null>(null);
+  const [confirmando, setConfirmando] = useState(false);
+  const [mensagem, setMensagem] = useState("");
   const aviso = useRef<number | undefined>(undefined);
+  const botaoLargar = useRef<HTMLButtonElement>(null);
   useEffect(() => () => window.clearTimeout(aviso.current), []);
 
   const texto = textoDaTarefa(tarefa.numero, tarefa.chefe);
@@ -58,24 +93,10 @@ function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: 
     );
   }
 
-  const esperando = (tarefa.dependeDeAbertas ?? []).filter(numeroValido);
-  if (esperando.length > 0) {
-    const lista = esperando.map((n) => `#${n}`).join(", ");
-    return (
-      <div className="mx-4 mb-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled
-          className={`${BOTAO} max-w-full min-w-0 cursor-not-allowed break-words border border-borda bg-cartao text-center text-texto-2 hover:opacity-100`}
-        >
-          <span className="min-w-0">
-            Começar com o Claude · Espera {lista}
-            <span className="sr-only"> (a tarefa #{tarefa.numero} só pode começar quando {lista} for fechada)</span>
-          </span>
-        </button>
-      </div>
-    );
-  }
+  const dono = tarefa.dono?.login;
+  const souEu = !!dono && mesmoLogin(dono, login);
+  // Tem dono e não sou eu: nada a fazer aqui.
+  if (dono && !souEu) return null;
 
   async function copiar() {
     const r = await copiarTexto(texto!, navigator.clipboard);
@@ -85,26 +106,113 @@ function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: 
     if (r === "copiado") aviso.current = window.setTimeout(() => setCopiado(false), 4000);
   }
 
+  async function agir(acao: Acao) {
+    setOcupado(acao);
+    setConfirmando(false);
+    setMensagem("");
+    try {
+      const r = await acaoNaTarefa(tarefa.numero, acao);
+      if (r.tipo === "ok") await aoMudar?.();
+      else if (r.tipo === "recusado") setMensagem(r.motivo);
+      else if (r.tipo === "erro") setMensagem(r.mensagem);
+      else {
+        setMensagem("Sua sessão acabou. Entre de novo.");
+        await aoMudar?.();
+      }
+    } catch {
+      setMensagem("Não deu certo agora. Tente de novo.");
+    } finally {
+      setOcupado(null);
+    }
+  }
+
+  const numero = tarefa.numero;
+  const mensagemNaTela = (
+    <p role="status" aria-live="polite" className="mt-2 break-words text-sm text-texto-2 empty:mt-0">
+      {mensagem}
+    </p>
+  );
+
+  if (souEu) {
+    return (
+      <div className="mx-4 mb-3">
+        <div className="flex flex-wrap gap-2">
+          <a href={href} target="_blank" rel="noopener noreferrer" className={`${BOTAO} bg-destaque text-sobre-destaque`}>
+            Começar com o Claude<span className="sr-only"> (tarefa #{numero}; abre o Claude em aba nova)</span>
+          </a>
+          <button type="button" onClick={copiar} className={BOTAO_SECUNDARIO}>
+            {copiado ? "Copiado" : "Copiar texto"}
+            <span className="sr-only"> (tarefa #{numero})</span>
+          </button>
+          {tarefa.estado === "andamento" &&
+            (confirmando ? (
+              <>
+                <span className="flex min-h-11 items-center text-sm text-texto">Largar mesmo?</span>
+                <button type="button" onClick={() => agir("largar")} className={`${BOTAO} bg-destaque text-sobre-destaque`}>
+                  Sim, largar<span className="sr-only"> (tarefa #{numero})</span>
+                </button>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => {
+                    setConfirmando(false);
+                    window.requestAnimationFrame(() => botaoLargar.current?.focus());
+                  }}
+                  className={BOTAO_SECUNDARIO}
+                >
+                  Cancelar<span className="sr-only"> (largar a tarefa #{numero})</span>
+                </button>
+              </>
+            ) : ocupado === "largar" ? (
+              <button type="button" disabled className={BOTAO_DESLIGADO}>
+                Largando…<span className="sr-only"> (tarefa #{numero})</span>
+              </button>
+            ) : (
+              <button type="button" ref={botaoLargar} onClick={() => setConfirmando(true)} className={BOTAO_SECUNDARIO}>
+                Largar<span className="sr-only"> (tarefa #{numero})</span>
+              </button>
+            ))}
+          <p className="basis-full text-sm text-texto-2 sm:hidden">
+            No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
+          </p>
+          <span className="sr-only" role="status" aria-live="polite">
+            {copiado ? `Texto da tarefa #${numero} copiado` : planoB ? "Não deu pra copiar sozinho: o texto está no campo abaixo, já selecionado" : ""}
+          </span>
+        </div>
+        {mensagemNaTela}
+      </div>
+    );
+  }
+
+  // Sem dono: Pegar tarefa.
+  const motivo = !ehALevaAtual ? "esta tarefa não está na leva atual" : motivoPraNaoPegar(tarefa, tarefas, login);
+  if (motivo === null) {
+    return (
+      <div className="mx-4 mb-3">
+        <div className="flex flex-wrap gap-2">
+          {ocupado === "pegar" ? (
+            <button type="button" disabled className={BOTAO_DESLIGADO}>
+              Pegando…<span className="sr-only"> (tarefa #{numero})</span>
+            </button>
+          ) : (
+            <button type="button" onClick={() => agir("pegar")} className={`${BOTAO} bg-destaque text-sobre-destaque`}>
+              Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
+            </button>
+          )}
+        </div>
+        {mensagemNaTela}
+      </div>
+    );
+  }
   return (
-    <div className="mx-4 mb-3 flex flex-wrap gap-2">
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${BOTAO} bg-destaque text-sobre-destaque`}
-      >
-        Começar com o Claude<span className="sr-only"> (tarefa #{tarefa.numero}; abre o Claude em aba nova)</span>
-      </a>
-      <button type="button" onClick={copiar} className={`${BOTAO} border border-borda bg-cartao text-texto`}>
-        {copiado ? "Copiado" : "Copiar texto"}
-        <span className="sr-only"> (tarefa #{tarefa.numero})</span>
-      </button>
-      <p className="basis-full text-sm text-texto-2 sm:hidden">
-        No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
-      </p>
-      <span className="sr-only" role="status" aria-live="polite">
-        {copiado ? `Texto da tarefa #${tarefa.numero} copiado` : planoB ? "Não deu pra copiar sozinho: o texto está no campo abaixo, já selecionado" : ""}
-      </span>
+    <div className="mx-4 mb-3">
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled className={BOTAO_DESLIGADO}>
+          Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
+        </button>
+        <p className="basis-full break-words text-xs text-texto-2">{motivo}</p>
+      </div>
+      {mensagemNaTela}
     </div>
   );
 }
@@ -134,7 +242,7 @@ function CampoDoTexto({ texto, numero }: { texto: string; numero: number }) {
   );
 }
 
-function ItemDaTarefa({ tarefa: t }: { tarefa: Tarefa }) {
+function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual }: { tarefa: Tarefa; tarefas: Tarefa[]; login?: string; aoMudar?: () => Promise<unknown>; ehALevaAtual: boolean }) {
   const [planoB, setPlanoB] = useState(false);
   const texto = textoDaTarefa(t.numero, t.chefe);
   return (
@@ -176,7 +284,15 @@ function ItemDaTarefa({ tarefa: t }: { tarefa: Tarefa }) {
             </span>
           )}
         </a>
-        <BotoesDoClaude tarefa={t} planoB={planoB} aoCopiar={(r) => setPlanoB(r === "plano-b")} />
+        <BotoesDaTarefa
+          tarefa={t}
+          tarefas={tarefas}
+          login={login}
+          aoMudar={aoMudar}
+          ehALevaAtual={ehALevaAtual}
+          planoB={planoB}
+          aoCopiar={(r) => setPlanoB(r === "plano-b")}
+        />
       </div>
       {planoB && t.estado !== "feita" && texto !== undefined && <CampoDoTexto texto={texto} numero={t.numero} />}
     </li>
