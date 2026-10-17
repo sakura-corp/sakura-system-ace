@@ -58,7 +58,8 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   - ou é de quem já está com outra em andamento.
 
   O **"Começar com o Claude"** só aparece pra quem pegou. **"Largar"** devolve a tarefa: só o dono,
-  e só enquanto não abriu o PR. Ninguém põe outra pessoa numa tarefa pelo painel.
+  e só enquanto não abriu o PR. Ninguém põe outra pessoa numa tarefa pelo painel. Se o worker recusar (ex.: alguém
+  pegou antes), o motivo aparece no cartão e o painel busca a leva de novo.
 - **"Depende de"**: tarefa que diz "Depende de: #X" só começa **depois que a X foi fechada como
   concluída** (normalmente pelo PR que entrou na `main`; decidido pela Sofia em 17/10). Tarefa que depende de algo que a Sofia faz (ligar a
   Cloudflare, criar um app) só começa quando isso aparece em "Andamento", no fim deste arquivo.
@@ -607,9 +608,18 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   login, horas entregues (tarefas feitas), horas segurando (em andamento ou em revisão) e "N sem estimativa" quando houver, contadas
   na leva pela linha `Estimativa:` de cada tarefa. Tarefa sem dono não entra. O contador antigo não mudou. Olhado em 320 e 1000 px,
   claro e escuro, sem rolagem lateral. Relatório em `docs/relatorios/2026-10-17-tarefa-539-frontend.md`.
-- **17/10/2026, #536 o cartão lê o cabeçalho: PR aberto, esperando a revisão da Sofia.** O cartão mostra chefe e ajudantes numa
+- **17/10/2026, #536 o cartão lê o cabeçalho: feita** (PR #553, mesclado pela Sofia em 17/10). O cartão mostra chefe e ajudantes numa
   linha própria. Com um número do `Depende de` ainda aberto, o botão aparece desligado com "Espera #N" (sem o "Copiar texto"); sem as
   cinco linhas do cabeçalho, "tarefa incompleta". O worker faz uma consulta só pros números de fora da leva, montada só com inteiros
   validados (no máximo 50); se ela falhar, contam como abertos e a leva sai igual. Dependência só libera quando foi **fechada como
   concluída** (Sofia, 17/10; "não planejada" ou duplicada continua "Espera #N"). Tarefa incompleta mostra o que falta à vista. Relatório em
   `docs/relatorios/2026-10-17-tarefa-536-frontend.md`. **Depois que entrar na `main`, a #538 pode começar.**
+- **17/10/2026, #538 pegar e largar tarefa: PR aberto, esperando a revisão da Sofia.** Rotas `POST /api/tarefa/<n>/pegar` e
+  `/largar` no worker, que só aceitam pedidos vindos da própria página (`Origin`), com sessão e número válido, e conferem tudo de
+  novo no GitHub na hora (leva atual, dono, cabeçalho, dependências, "uma por vez"), escrevendo só o login de quem pediu. As regras
+  olham todos os responsáveis da issue (até 10). Corrida com outra pessoa: quem chegou depois sai. Duas abas da mesma pessoa: ela
+  fica só com a tarefa de número menor. Se a saída falhar, o aviso diz. No cartão: "Pegar tarefa" na livre (desligado com o motivo
+  quando não dá); "Começar com o Claude", "Copiar texto" e "Largar" (com "Largar mesmo?") só pro dono. Numa recusa, o painel busca
+  a leva de novo e o motivo acompanha o cartão (Sofia, 17/10). Olhado e clicado em 320 e 1000 px, claro e escuro. Relatório em
+  `docs/relatorios/2026-10-17-tarefa-538-backend.md`. **A Sofia confere depois de publicar**: pegar uma tarefa no endereço
+  público, tentar pegar uma segunda, e largar.
