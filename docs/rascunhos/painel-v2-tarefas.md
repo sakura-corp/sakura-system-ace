@@ -5,6 +5,9 @@
 > Se ela escolher outra versão (ou misturar: "barra: A, leva: C"), só a parte "Decisões já tomadas" e
 > as fotos de referência de cada tarefa mudam; a divisão em tarefas continua a mesma.
 >
+> **`Depende de` com "V2-n"**: o modelo pede número de issue. Ao criar, a ordem é V2-1 primeiro, e cada "V2-n"
+> é trocado pelo número que a issue dela ganhar.
+>
 > **Etiquetas propostas**: `leva-2` (ou a leva que ela escolher) e o `chefe:` de cada uma.
 > As decisões que faltam são as perguntas do PR; como ela responde antes de criar as issues, nenhuma
 > issue `sofia` separada é necessária. Se alguma ficar em aberto, vira issue `sofia` e entra no `Depende de`.
