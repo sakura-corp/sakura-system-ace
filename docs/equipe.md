@@ -108,6 +108,24 @@ tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
 7. Escreve a mensagem de WhatsApp pra Sofia (ex: *"Oi Sofia! Terminei a tarefa #455 (clientes
    que sumiram). O PR é o #490, tá esperando sua revisão."*), e a pessoa manda.
 
+## Começar uma tarefa com o chefe (rascunho, a Sofia ainda aprova)
+
+Cada tarefa tem uma etiqueta `chefe:<função>` (frontend, backend, seguranca, marketing ou tester).
+O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**, com o texto
+"Você é o chefe de <função>: use a skill `chefe-<função>`. Leia a issue inteira...". A cota usada é a sua.
+
+- **O que você vê**: o Claude explica a tarefa em português simples, diz o que faz sozinho e o que
+  vai precisar de você. Depois trabalha (chamando ajudantes por dentro da própria sessão) e, no fim,
+  mostra o **PR aberto e um relatório**.
+- **O que o chefe faz**: lê a tarefa inteira, programa/escreve/testa, roda as conferências, abre o
+  PR e **para**. Nunca mescla, nunca publica, nunca roda SQL, nunca mexe em senha, cofre ou regras.
+- **O que você revisa**: o relatório (o que cada ajudante fez, o que foi testado **e visto
+  reprovar**, o que ficou de fora, o que depende de alguém) e o PR. Se o relatório pedir teste no
+  PC, o Claude guia você um passo por vez. Depois, pede a revisão da Sofia.
+- **Se a cota acabar no meio**: o chefe grava "onde parou" na descrição do PR ou da tarefa, e outra
+  sessão retoma dali.
+- As skills estão em `.claude/skills/chefe-*`. Melhoria nelas é **proposta**; a Sofia aprova.
+
 ## O dia a dia
 
 - **Uma branch e um PR por tarefa**, com `Closes #N` na descrição. Commits pequenos, com mensagem
