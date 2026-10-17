@@ -118,3 +118,20 @@ export async function consultar<T>(
   if (!corpo.data) return { tipo: "erro" };
   return { tipo: "ok", dados: corpo.data };
 }
+
+/**
+ * Uma chamada REST (GET) com o token de quem está logado (#468). Como `consultar`, mais o 404:
+ * `sem-acesso` = 401; `nao-existe` = 404; `erro` = qualquer outra falha (fora do ar, limite, 403, resposta que não é JSON).
+ * Nunca devolve a resposta do GitHub como texto de erro.
+ */
+export async function buscarRest<T>(token: string, caminho: string): Promise<{ tipo: "ok"; dados: T } | { tipo: "sem-acesso" } | { tipo: "nao-existe" } | { tipo: "erro" }> {
+  const resposta = await api(caminho, token);
+  if (resposta.status === 401) return { tipo: "sem-acesso" };
+  if (resposta.status === 404) return { tipo: "nao-existe" };
+  if (!resposta.ok) return { tipo: "erro" };
+  try {
+    return { tipo: "ok", dados: (await resposta.json()) as T };
+  } catch {
+    return { tipo: "erro" };
+  }
+}

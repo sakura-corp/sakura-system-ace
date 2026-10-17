@@ -1,30 +1,55 @@
 import "@fontsource-variable/plus-jakarta-sans";
 import "./sala.css";
-import { useState } from "react";
-import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "../../dados/exemplo-sala";
+import { useEffect, useId, useState } from "react";
 import {
-  agruparPorEstado, BALAO, haQuantoTempo, iniciais, linkSeguro, montarSala, quantosPrecisam, ROTULO, textoPrecisam,
+  agruparPorEstado, BALAO, fotoSegura, haQuantoTempo, iniciais, linkSeguro, montarSala, quantosPrecisam, ROTULO, textoPrecisam,
   TITULO_DO_GRUPO,
 } from "../../logica/sala";
+import type { EstadoDaSala } from "../../logica/salaDados";
+import { textoDaConexao, type SituacaoDoTempoReal } from "../../logica/tempoReal";
 import type { Bonequinho, TipoBonequinho } from "../../tipos";
 
 // "precisa" é o alvo do aviso "N coisas precisam de você" do topo.
 const idDoGrupo = (estado: string) => (estado === "precisa" ? "precisa" : `sala-grupo-${estado}`);
 
-const FILEIRAS: { tipo: TipoBonequinho; titulo: string }[] = [
-  { tipo: "pessoa", titulo: "Pessoas" },
-  { tipo: "claude", titulo: "Robôs do Claude" },
-  { tipo: "casa", titulo: "Robôs da casa" },
+const FILEIRAS: { tipo: TipoBonequinho; titulo: string; vazio: string }[] = [
+  { tipo: "pessoa", titulo: "Pessoas", vazio: "Ninguém com tarefa nesta leva." },
+  { tipo: "claude", titulo: "Robôs do Claude", vazio: "Nenhum robô do Claude agora." },
+  { tipo: "casa", titulo: "Robôs da casa", vazio: "Nenhum robô da casa encontrado." },
 ];
 
-/** Halo, anel e núcleo, com o símbolo do tipo: iniciais (pessoa), olhinhos (Claude) ou três traços (casa). */
+/** Relógio que reage a si mesmo: `agoraFixo` (nos testes) para o relógio. */
+function useRelogio(passoMs: number, agoraFixo?: Date, recalcularQuando?: unknown): Date {
+  const [agora, setAgora] = useState(() => agoraFixo ?? new Date());
+  useEffect(() => {
+    if (agoraFixo) return;
+    const t = setInterval(() => setAgora(new Date()), passoMs);
+    return () => clearInterval(t);
+  }, [passoMs, agoraFixo]);
+  // Chegou dado novo: "há quanto tempo" e o "dormindo" partem de agora, não do último tique.
+  useEffect(() => {
+    if (!agoraFixo) setAgora(new Date());
+  }, [recalcularQuando, agoraFixo]);
+  return agoraFixo ?? agora;
+}
+
+/** Halo, anel e núcleo, com o símbolo do tipo: foto ou iniciais (pessoa), olhinhos (Claude) ou três traços (casa). */
 function PontoDeLuz({ b }: { b: Bonequinho }) {
+  const recorte = useId();
+  const [fotoFalhou, setFotoFalhou] = useState(false);
+  const foto = b.tipo === "pessoa" && !fotoFalhou ? fotoSegura(b.avatar) : undefined;
   return (
     <svg className="sala-luz" viewBox="0 0 58 58" aria-hidden="true">
       <circle className="halo" cx="29" cy="29" r="24" />
       <circle className="anel" cx="29" cy="29" r="27" />
       <circle className="nucleo" cx="29" cy="29" r="18" />
-      {b.tipo === "pessoa" && <text className="iniciais" x="29" y="34.5" textAnchor="middle">{iniciais(b.nome)}</text>}
+      {b.tipo === "pessoa" && foto && (
+        <>
+          <clipPath id={recorte}><circle cx="29" cy="29" r="18" /></clipPath>
+          <image className="foto" href={foto} x="11" y="11" width="36" height="36" clipPath={`url(#${recorte})`} preserveAspectRatio="xMidYMid slice" onError={() => setFotoFalhou(true)} />
+        </>
+      )}
+      {b.tipo === "pessoa" && !foto && <text className="iniciais" x="29" y="34.5" textAnchor="middle">{iniciais(b.nome)}</text>}
       {b.tipo === "claude" && (
         <>
           <circle className="marca" cx="23" cy="27" r="2.6" />
@@ -37,13 +62,19 @@ function PontoDeLuz({ b }: { b: Bonequinho }) {
   );
 }
 
+/** O que o link diz: quem precisa de você vê a ação (aprovar a rodada, revisar o PR), não só "abrir". */
+function rotuloDoLink(b: Pick<Bonequinho, "tipo" | "estado">): string {
+  if (b.estado === "precisa") return b.tipo === "casa" ? "Aprovar no GitHub" : "Revisar no GitHub";
+  return "Abrir no GitHub";
+}
+
 /** O link pro GitHub, só se for da sakura-corp; senão o endereço aparece como texto, sem link. */
-export function LinkOuTexto({ url }: { url?: string }) {
+export function LinkOuTexto({ url, rotulo = "Abrir no GitHub" }: { url?: string; rotulo?: string }) {
   if (!url) return null;
   const seguro = linkSeguro(url);
   return seguro ? (
     <a className="sala-link" href={seguro} target="_blank" rel="noopener noreferrer">
-      Abrir no GitHub<span className="sr-only"> (em aba nova)</span>
+      {rotulo}<span className="sr-only"> (em aba nova)</span>
     </a>
   ) : (
     <span className="sala-endereco">{url} (fora do GitHub da Sakura: sem link)</span>
@@ -61,7 +92,7 @@ function Cartao({ b, agora }: { b: Bonequinho | undefined; agora: Date }) {
             {b.ultimaAtividade && ` · ${haQuantoTempo(b.ultimaAtividade, agora)}`}
           </p>
           {b.fazendo && <p>{b.fazendo}</p>}
-          <LinkOuTexto url={b.url} />
+          <LinkOuTexto url={b.url} rotulo={rotuloDoLink(b)} />
         </>
       ) : (
         <p className="linha">Clique num ponto de luz (ou Enter, pelo teclado) pra ver o cartão.</p>
@@ -70,19 +101,93 @@ function Cartao({ b, agora }: { b: Bonequinho | undefined; agora: Date }) {
   );
 }
 
-/** A Sala da Sakura (#467), com DADOS DE EXEMPLO. A tarefa 8 (#468) liga no GitHub. */
-export function Sala({ agora = new Date(), tv = false }: { agora?: Date; tv?: boolean }) {
+/** A linha de conexão do topo (#468): ao vivo, reconectando… ou desatualizado. Tem o próprio relógio de 1 s. */
+function LinhaDeConexao({ conexao, exemplo, agoraFixo }: { conexao?: SituacaoDoTempoReal; exemplo: boolean; agoraFixo?: Date }) {
+  const agora = useRelogio(1000, agoraFixo);
+  if (exemplo || !conexao) {
+    return <span className="sala-conexao c-exemplo"><i aria-hidden="true" />dados de exemplo · sem ligação com o GitHub</span>;
+  }
+  return (
+    <span className={`sala-conexao c-${conexao.estado}`} role="status">
+      <i aria-hidden="true" />
+      {textoDaConexao(conexao.estado, conexao.ultimaAtualizacao, agora.getTime())}
+    </span>
+  );
+}
+
+/** O aviso de um grupo cuja busca falhou: nunca vira "livre" (só dado de verdade). */
+function AvisoDoGrupo({ titulo, tentarDeNovo, tentando }: { titulo: string; tentarDeNovo: () => void; tentando: boolean }) {
+  return (
+    <div className="sala-aviso" role="alert">
+      <p>
+        <strong>{titulo}:</strong> não consegui ler isto do GitHub.
+      </p>
+      <button type="button" className="sala-botao" onClick={tentarDeNovo} disabled={tentando}>
+        {tentando ? "Tentando…" : "Tentar de novo"}
+      </button>
+    </div>
+  );
+}
+
+function Esqueleto() {
+  return (
+    <div className="sala-esqueleto" role="status" aria-label="Carregando a sala">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="sala-vidro sala-esqueleto-bloco" aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
+type Props = {
+  /** O que /api/sala devolveu (ou o exemplo, só no `npm run dev`). */
+  dados: EstadoDaSala;
+  /** Quem está olhando: o "precisa de você" depende disso. */
+  quemEstaOlhando: string;
+  /** O estado da conexão (tempo real). Sem ele, é a sala de exemplo. */
+  conexao?: SituacaoDoTempoReal;
+  /** Busca de novo (grupo que falhou). */
+  tentarDeNovo?: () => Promise<void> | void;
+  /** Tentar de novo depois de um erro na primeira carga (mostra o esqueleto de novo). */
+  recarregarTudo?: () => void;
+  tv?: boolean;
+  /** Só nos testes: trava o relógio. */
+  agora?: Date;
+};
+
+/**
+ * A Sala da Sakura (#467 e #468). Os dados vêm de fora (`dados`); os estados saem de `montarSala()`,
+ * recalculados a cada minuto sem buscar (o "dormindo" muda sozinho).
+ */
+export function Sala({ dados, quemEstaOlhando, conexao, tentarDeNovo, recarregarTudo, tv = false, agora: agoraFixo }: Props) {
   const [aberto, setAberto] = useState<string | null>(null);
-  const sala = montarSala(salaDeExemplo(agora), agora, QUEM_ESTA_OLHANDO_NA_SALA);
+  const [tentando, setTentando] = useState(false);
+  const agora = useRelogio(60_000, agoraFixo, dados);
+  const exemplo = conexao === undefined;
+
+  const pronto = dados.tipo === "pronto" ? dados : null;
+  const sala = pronto ? montarSala(pronto.entradas, agora, quemEstaOlhando) : [];
+  const falhas = pronto?.falhas ?? [];
   const precisam = quantosPrecisam(sala);
   const escolhido = sala.find((b) => b.id === aberto);
 
+  const tentar = async () => {
+    setTentando(true);
+    try {
+      await tentarDeNovo?.();
+    } finally {
+      setTentando(false);
+    }
+  };
+
+  const subtitulo = exemplo ? "Dados de exemplo" : pronto?.leva != null ? `Leva ${pronto.leva}` : "Painel da Sakura";
+
   return (
-    <section className={`sala-j ${tv ? "sala-tv" : ""}`} aria-labelledby="sala-titulo">
+    <section className={`sala-j ${tv ? "sala-tv" : ""}`} aria-labelledby="sala-titulo" aria-busy={dados.tipo === "carregando"}>
       <header className="sala-topo">
         <div>
           <h1 id="sala-titulo">Sala</h1>
-          <p className="sala-sub">Leva 0 · dados de exemplo</p>
+          <p className="sala-sub">{subtitulo}</p>
         </div>
         <div className="sala-topo-direita">
           {precisam > 0 && (
@@ -91,66 +196,92 @@ export function Sala({ agora = new Date(), tv = false }: { agora?: Date; tv?: bo
               {textoPrecisam(precisam)}
             </a>
           )}
-          {/* texto fixo nesta tarefa; a #468 liga ao estado de verdade da conexão */}
-          <span className="sala-conexao"><i aria-hidden="true" />ao vivo · atualizado agora há pouco</span>
+          <LinhaDeConexao conexao={conexao} exemplo={exemplo} agoraFixo={agoraFixo} />
         </div>
       </header>
 
-      <div className="sala-desenho">
-        <div className="sala-vidro sala-quadro" role="group" aria-label="A sala desenhada (a mesma informação está na lista)">
-          {FILEIRAS.map((f) => (
-            <div key={f.tipo}>
-              <p className="sala-fileira-titulo">{f.titulo}</p>
-              <div className="sala-fileira">
-                {sala.filter((b) => b.tipo === f.tipo).map((b) => (
-                  <button
-                    key={b.id}
-                    type="button"
-                    className={`sala-mesa s-${b.estado}`}
-                    aria-pressed={aberto === b.id}
-                    aria-label={`${b.nome}, ${ROTULO[b.estado]}${b.fazendo ? `, ${b.fazendo}` : ""}`}
-                    onClick={() => setAberto(b.id)}
-                  >
-                    <PontoDeLuz b={b} />
-                    <span className="nome">{b.nome}</span>
-                    <span className="faz">{b.fazendo}</span>
-                    {BALAO[b.estado] && <span className="sala-balao">{BALAO[b.estado]}</span>}
-                  </button>
+      {dados.tipo === "carregando" && <Esqueleto />}
+
+      {dados.tipo === "erro" && (
+        <div className="sala-aviso" role="alert">
+          <p>{dados.mensagem}</p>
+          <button type="button" className="sala-botao" onClick={recarregarTudo}>Tentar de novo</button>
+        </div>
+      )}
+
+      {pronto && (
+        <>
+          <div className="sala-desenho">
+            <div className="sala-vidro sala-quadro" role="group" aria-label="A sala desenhada (a mesma informação está na lista)">
+              {FILEIRAS.map((f) => {
+                const doTipo = sala.filter((b) => b.tipo === f.tipo);
+                return (
+                  <div key={f.tipo}>
+                    <p className="sala-fileira-titulo">{f.titulo}</p>
+                    {falhas.includes(f.tipo) ? (
+                      <AvisoDoGrupo titulo={f.titulo} tentarDeNovo={tentar} tentando={tentando} />
+                    ) : doTipo.length === 0 ? (
+                      <p className="sala-vazio">{f.vazio}</p>
+                    ) : (
+                      <div className="sala-fileira">
+                        {doTipo.map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            className={`sala-mesa s-${b.estado}`}
+                            aria-pressed={aberto === b.id}
+                            aria-label={`${b.nome}, ${ROTULO[b.estado]}${b.fazendo ? `, ${b.fazendo}` : ""}`}
+                            onClick={() => setAberto(b.id)}
+                          >
+                            <PontoDeLuz b={b} />
+                            <span className="nome">{b.nome}</span>
+                            <span className="faz">{b.fazendo}</span>
+                            {BALAO[b.estado] && <span className="sala-balao">{BALAO[b.estado]}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {!tv && <Cartao b={escolhido} agora={agora} />}
+          </div>
+
+          {!tv && (
+            <>
+              <div className="sala-lista">
+                {agruparPorEstado(sala).map((g) => (
+                  <section key={g.estado} aria-labelledby={idDoGrupo(g.estado)}>
+                    <h2 id={idDoGrupo(g.estado)}>
+                      {TITULO_DO_GRUPO[g.estado]} ({g.itens.length})
+                    </h2>
+                    <ul>
+                      {g.itens.map((b) => (
+                        <li key={b.id} className={`s-${b.estado}`}>
+                          <i aria-hidden="true" />
+                          <span>
+                            <strong>{b.nome}</strong> · <span className="sala-estado">{ROTULO[b.estado]}</span>
+                          </span>
+                          <span className="linha">
+                            {b.fazendo}
+                            {b.ultimaAtividade && ` · ${haQuantoTempo(b.ultimaAtividade, agora)}`}
+                            {b.url && <> · <LinkOuTexto url={b.url} rotulo={rotuloDoLink(b)} /></>}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+                {FILEIRAS.filter((f) => falhas.includes(f.tipo)).map((f) => (
+                  <section key={f.tipo} aria-label={`${f.titulo}: não consegui ler`}>
+                    <AvisoDoGrupo titulo={f.titulo} tentarDeNovo={tentar} tentando={tentando} />
+                  </section>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-        {!tv && <Cartao b={escolhido} agora={agora} />}
-      </div>
-
-      {!tv && (
-        <>
-          <div className="sala-lista">
-            {agruparPorEstado(sala).map((g) => (
-              <section key={g.estado} aria-labelledby={idDoGrupo(g.estado)}>
-                <h2 id={idDoGrupo(g.estado)}>
-                  {TITULO_DO_GRUPO[g.estado]} ({g.itens.length})
-                </h2>
-                <ul>
-                  {g.itens.map((b) => (
-                    <li key={b.id} className={`s-${b.estado}`}>
-                      <i aria-hidden="true" />
-                      <span>
-                        <strong>{b.nome}</strong> · <span className="sala-estado">{ROTULO[b.estado]}</span>
-                      </span>
-                      <span className="linha">
-                        {b.fazendo}
-                        {b.ultimaAtividade && ` · ${haQuantoTempo(b.ultimaAtividade, agora)}`}
-                        {b.url && <> · <LinkOuTexto url={b.url} /></>}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-          <p className="sala-tv-dica">Modo TV, pro segundo monitor: <a href="/sala?tv">/sala?tv</a></p>
+              <p className="sala-tv-dica">Modo TV, pro segundo monitor: <a href="/sala?tv">/sala?tv</a></p>
+            </>
+          )}
         </>
       )}
     </section>

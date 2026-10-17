@@ -340,3 +340,67 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(await decifrarSessao(valorDoCookie(r, "sessao")!, CHAVE)).toMatchObject({ token: "ghu_novo" });
   });
 });
+
+describe("/api/sala (#468)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;
+
+  /** `falha`: qual pedaço do GitHub responde 500. */
+  function fingirSala(falha: "nenhum" | "casa" | "tudo" | "401" = "nenhum") {
+    const autorizacoes: (string | null)[] = [];
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entrada);
+      autorizacoes.push(new Headers(init?.headers).get("authorization"));
+      if (url === "https://api.github.com/graphql") {
+        if (falha === "tudo") return new Response("x", { status: 500 });
+        if (falha === "401") return new Response("x", { status: 401 });
+        const { query } = JSON.parse(String(init?.body)) as { query: string };
+        if (query.includes("query Robos")) return Response.json({ data: { repository: { refs: { nodes: [] } } } });
+        if (query.includes("query Levas")) return Response.json({ data: { repository: { labels: { nodes: [] } } } });
+      }
+      if (url.includes("/actions/")) return falha === "casa" || falha === "tudo" ? new Response("x", { status: 500 }) : Response.json({ workflow_runs: [] });
+      return new Response("inesperado", { status: 500 });
+    });
+    return autorizacoes;
+  }
+
+  it("sem sessão: 401 e não pergunta nada ao GitHub; sem segredos: 503; POST: 405", async () => {
+    const a = fingirSala();
+    expect((await pedir("/api/sala")).status).toBe(401);
+    expect(a).toEqual([]);
+    expect((await pedir("/api/sala", { env: { ASSETS: ambiente.ASSETS } })).status).toBe(503);
+    expect((await pedir("/api/sala", { method: "POST", cookie: await comSessao() })).status).toBe(405);
+  });
+
+  it("com sessão: pergunta ao GitHub com o token da pessoa e devolve entradas, falhas e leva, sem o token", async () => {
+    const a = fingirSala();
+    const r = await pedir("/api/sala", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    const texto = await r.text();
+    const corpo = JSON.parse(texto) as { entradas: { tipo: string }[]; falhas: string[]; leva: number | null };
+    expect(corpo.falhas).toEqual([]);
+    expect(corpo.leva).toBeNull();
+    expect(corpo.entradas.filter((e) => e.tipo === "casa")).toHaveLength(6);
+    expect(texto).not.toContain("ghu_");
+    expect(new Set(a)).toEqual(new Set(["Bearer ghu_a"]));
+  });
+
+  it("uma busca falha: 200, e a resposta diz qual", async () => {
+    fingirSala("casa");
+    const r = await pedir("/api/sala", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(((await r.json()) as { falhas: string[] }).falhas).toEqual(["casa"]);
+  });
+
+  it("as três falham: 502; o GitHub recusa o token: 401 e apaga a sessão", async () => {
+    fingirSala("tudo");
+    expect((await pedir("/api/sala", { cookie: await comSessao() })).status).toBe(502);
+    vi.unstubAllGlobals();
+    fingirSala("401");
+    const r = await pedir("/api/sala", { cookie: await comSessao() });
+    expect(r.status).toBe(401);
+    expect(cookies(r).find((c) => c.startsWith("sessao="))).toContain("Max-Age=0");
+  });
+});
+

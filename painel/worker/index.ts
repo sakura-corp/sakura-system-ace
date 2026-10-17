@@ -1,4 +1,4 @@
-// O worker do painel (tarefas #352, #353 e #354). Só responde /api/*; o resto é a página, servida
+// O worker do painel (tarefas #352, #353, #354, #355 e #468). Só responde /api/*; o resto é a página, servida
 // pela Cloudflare a partir de ./dist (ver wrangler.jsonc).
 //
 // Login (#353): GitHub App "Sakura Painel" da sakura-corp. Só entra quem é membro da
@@ -33,6 +33,7 @@ import {
   type DadosDaLeva,
   type DadosDasLevas,
 } from "./tarefas";
+import { buscarSala } from "./dadosDaSala";
 import { SalaDoPainel } from "./sala";
 import { assinaturaConfere, avisoDoEvento } from "./webhook";
 
@@ -208,6 +209,20 @@ async function dados(request: Request, config: Configuracao, leva: number | null
   }
 }
 
+/**
+ * A sala de verdade (#468): robôs do Claude, robôs da casa e pessoas, com o token de quem está logado
+ * (o "precisa de você" depende de quem olha). Se uma das três buscas falhar, a resposta diz qual em
+ * `falhas`; se falharem todas, 502.
+ */
+async function sala(request: Request, config: Configuracao): Promise<Response> {
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  const r = await buscarSala(sessao.token, sessao.login);
+  if (r.tipo === "sem-acesso") return json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(new URL(request.url)).apagar(COOKIE_SESSAO)]);
+  if (r.tipo === "erro") return json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+  return json(r.sala, 200, cookies);
+}
+
 const NOME_DA_SALA = "painel";
 const salaDoPainel = (env: Ambiente) => env.SALA?.get(env.SALA.idFromName(NOME_DA_SALA));
 
@@ -302,6 +317,13 @@ export default {
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
       return tempoReal(request, url, config, env);
+    }
+
+    if (pathname === "/api/sala") {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      return sala(request, config);
     }
 
     const leva = levaDoCaminho(pathname);

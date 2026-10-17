@@ -107,3 +107,11 @@ export type RespostaDasLevas = { levas: Leva[]; atual: number | null };
 
 /** O que /api/leva/<n> devolve. `cortada`: a leva tem mais de 100 tarefas, e só as 100 primeiras vieram. */
 export type RespostaDaLeva = { numero: number; tarefas: Tarefa[]; cortada: boolean };
+
+// ---- A sala de verdade (#468) ----
+/**
+ * O que /api/sala devolve. `entradas` já vêm com os sinais; o estado (e o "dormindo") sai de
+ * `montarSala()` na página, que recalcula sem buscar. `falhas`: os grupos cuja busca no GitHub falhou
+ * (a página mostra o aviso, nunca "livre"). `leva`: a leva de onde saíram as pessoas (null se essa busca falhou).
+ */
+export type RespostaDaSala = { entradas: EntradaDaSala[]; falhas: TipoBonequinho[]; leva: number | null };

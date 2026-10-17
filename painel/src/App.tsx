@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { Sala } from "./componentes/sala/Sala";
+import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLeva";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
 import { paginaPraVoltar } from "./logica/login";
 import { ehModoTv } from "./logica/sala";
+import { useSala } from "./useSala";
 import { useTempoReal } from "./useTempoReal";
+import type { EstadoDaSala } from "./logica/salaDados";
 import type { Pagina, Usuario } from "./tipos";
 
 /** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são poucas. */
@@ -68,12 +71,13 @@ const LINK_DA_ETIQUETA = (numero: number) =>
   `https://github.com/sakura-corp/sakura-system-ace/issues?q=${encodeURIComponent(`label:leva-${numero}`)}`;
 
 // A leva vem do GitHub (#354). Sem login (só no `npm run dev`, sem o worker), mostra a de exemplo.
-// A Sala continua de exemplo até a tarefa 8 (#468), e o Escritório também (docs/painel.md).
+// A Sala vem do GitHub (#468), com o mesmo login; o Escritório continua de exemplo (docs/painel.md).
 export default function App({
   caminho = caminhoAtual(),
   busca = buscaAtual(),
   usuario,
   leva: levaFixa,
+  sala: salaFixa,
 }: {
   caminho?: string;
   busca?: string;
@@ -81,6 +85,8 @@ export default function App({
   usuario?: Usuario;
   /** Só nos testes: o estado da leva, em vez de buscar no worker. */
   leva?: EstadoDaLeva;
+  /** Só nos testes: o estado da Sala, em vez de buscar no worker. */
+  sala?: EstadoDaSala;
 }) {
   const pagina = paginaDoCaminho(caminho);
   const tv = pagina === "sala" && ehModoTv(busca);
@@ -89,11 +95,43 @@ export default function App({
   const buscando = !exemplo && !tv && levaFixa === undefined;
   const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, pagina !== "leva");
   const estado = levaFixa ?? buscada;
-  // Tempo real (#355): só com login e com a leva vindo do GitHub; para quando a sessão acaba.
-  const tempoReal = useTempoReal({ ativo: buscando && estado.tipo !== "fora", buscar: recarregar, carregou: estado.tipo === "pronto" });
 
+  // A Sala de verdade (#468), com o mesmo login. No modo TV não busca a leva, só a sala.
+  const dadosReais = !exemplo && levaFixa === undefined;
+  const naSala = pagina === "sala";
+  const [salaBuscada, tentarSalaDeNovo, recarregarSala] = useSala(dadosReais && naSala && salaFixa === undefined);
+  const salaDeVerdade = salaFixa ?? salaBuscada;
+  const [salaDeExemploAgora] = useState<EstadoDaSala>(() => ({ tipo: "pronto", entradas: salaDeExemplo(new Date()), falhas: [], leva: null }));
+  const buscarDaSala = useCallback(async () => {
+    if (!tv) await recarregar();
+    return recarregarSala();
+  }, [tv, recarregar, recarregarSala]);
+
+  // Tempo real (#355): só com login e com os dados vindo do GitHub; para quando a sessão acaba.
+  // Na Sala (#468) escuta também os avisos de robô e de branch, e a busca é a da sala.
+  const tempoReal = useTempoReal({
+    ativo: dadosReais && estado.tipo !== "fora" && salaDeVerdade.tipo !== "fora",
+    buscar: naSala ? buscarDaSala : recarregar,
+    carregou: naSala ? salaDeVerdade.tipo === "pronto" : estado.tipo === "pronto",
+    sala: naSala,
+  });
+
+  if (!exemplo && naSala && salaDeVerdade.tipo === "fora") {
+    return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
+  }
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
-  if (tv) return <Sala tv />;
+  if (tv) {
+    return (
+      <Sala
+        tv
+        dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
+        quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
+        conexao={exemplo ? undefined : tempoReal}
+        tentarDeNovo={tempoReal.atualizar}
+        recarregarTudo={tentarSalaDeNovo}
+      />
+    );
+  }
   if (!exemplo && estado.tipo === "fora") {
     return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
   }
@@ -115,7 +153,13 @@ export default function App({
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
-          <Sala />
+          <Sala
+            dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
+            quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
+            conexao={exemplo ? undefined : tempoReal}
+            tentarDeNovo={tempoReal.atualizar}
+            recarregarTudo={tentarSalaDeNovo}
+          />
         </main>
       ) : pagina === "escritorio" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1440px] flex-1 px-4 py-6 md:px-6">

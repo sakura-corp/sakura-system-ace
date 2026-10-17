@@ -51,6 +51,9 @@
 .sala-pilula i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .sala-conexao { display: inline-flex; gap: 7px; align-items: center; font-size: 0.78rem; color: var(--tx2); }
 .sala-conexao i { width: 7px; height: 7px; border-radius: 50%; background: var(--dest); }
+/* o texto diz o estado sozinho; a cor do ponto só reforça */
+.sala-conexao.c-reconectando i, .sala-conexao.c-desatualizado i { background: var(--e-prec); }
+.sala-conexao.c-desatualizado { color: var(--e-prec); font-weight: 600; }
 
 /* a sala desenhada: some no celular (a lista é a versão do celular) */
 .sala-desenho { display: none; gap: 14px; }
@@ -75,6 +78,8 @@
 .sala-luz .anel { fill: none; stroke: var(--ec); stroke-width: 2; opacity: 0; }
 .sala-luz .marca { fill: var(--bg); }
 .sala-luz .marca-traco { stroke: var(--bg); stroke-width: 2.2; stroke-linecap: round; fill: none; }
+.sala-luz .foto { pointer-events: none; }
+.s-dormindo .sala-luz .foto { opacity: 0.45; }
 .sala-luz .iniciais { fill: var(--bg); font-size: 15px; font-weight: 700; font-family: inherit; }
 .s-trabalhando { --ec: var(--e-trab); --eb: var(--e-trab-bg); }
 .s-precisa { --ec: var(--e-prec); --eb: var(--e-prec-bg); }
@@ -123,3 +128,22 @@
 .sala-tv .sala-mesa .faz { font-size: 0.95rem; }
 .sala-tv .sala-balao { font-size: 0.9rem; }
 .sala-tv .sala-luz { width: 84px; height: 84px; }
+
+/* sem dado: grupo vazio de verdade, aviso de busca que falhou e esqueleto discreto (#468) */
+.sala-vazio { color: var(--tx2); font-size: 0.82rem; }
+.sala-aviso {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 10px 12px; border-radius: 14px;
+  background: var(--e-prec-bg); color: var(--e-prec); font-size: 0.84rem;
+}
+.sala-aviso strong { font-weight: 700; }
+.sala-botao {
+  appearance: none; font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer; min-height: 36px; padding: 6px 14px;
+  border-radius: 999px; border: 1px solid var(--dest); background: var(--dest); color: var(--dest-tx);
+}
+.sala-botao:disabled { cursor: progress; opacity: 0.7; }
+.sala-esqueleto { display: grid; gap: 10px; }
+.sala-esqueleto-bloco { height: 84px; border-radius: 18px; }
+@media (prefers-reduced-motion: no-preference) {
+  .sala-esqueleto-bloco { animation: sala-respira 1.8s ease-in-out infinite; }
+}
+@keyframes sala-respira { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
