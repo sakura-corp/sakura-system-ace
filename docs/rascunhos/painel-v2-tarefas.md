@@ -1,7 +1,7 @@
 # Painel v2: rascunhos das tarefas (17/10/2026, à noite)
 
 > **Rascunho pra Sofia aprovar. Nenhuma issue foi criada.** Escritos no modelo de `docs/tarefas.md`
-> (skill `nova-tarefa`), partindo da **versão recomendada** em `docs/rascunhos/painel-v2.md`, seção 3.
+> (skill `nova-tarefa`), partindo da **versão recomendada** em `docs/rascunhos/painel-v2.md`, seção 3 (**A, com o celular da B**).
 > Se ela escolher outra versão (ou misturar: "barra: A, leva: C"), só a parte "Decisões já tomadas" e
 > as fotos de referência de cada tarefa mudam; a divisão em tarefas continua a mesma.
 >

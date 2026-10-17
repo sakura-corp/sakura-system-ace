@@ -580,3 +580,10 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   único, com `leva-1` e `chefe:`. Decidido junto: o "Começar com o Claude" aparece só pra quem pegou a tarefa; horas por pessoa
   contadas na leva; na #455, 6 meses e o texto padrão da issue. **Fases da leva** e **relatório e aprovação** ficaram pra leva 2.
   **A #536, a #539 e as três do programa já podem começar; a #538 espera a #536.**
+- **17/10/2026, à noite: painel v2 planejado, nada construído** (branch `claude/painel-v2-planejamento`, PR aberto, **esperando a
+  Sofia escolher**). Pedido dela: organizar as abas, deixar mais claro e profissional e adiantar as abas das funções futuras. O
+  retrato de hoje, a nova organização (cinco grupos: Início; Trabalho; Equipe; Empresa; rodapé, com os "em breve" dizendo do que
+  dependem) e as perguntas estão em `docs/rascunhos/painel-v2.md`; as referências em `docs/referencia/painel-v2/referencias.md`; três
+  versões visuais com dados de exemplo em `docs/referencia/painel-v2/versao-a|b|c/` (todas conferidas: contraste AA, sem rolagem lateral);
+  e 8 rascunhos de tarefa (V2-1 a V2-8, 32 h) em `docs/rascunhos/painel-v2-tarefas.md`, **sem issue criada**. Recomendação: **versão A,
+  com o celular da B**. As tarefas que mexem no cartão e na tela da leva esperam a #536, a #538 e a #539. **Nenhuma linha de `painel/` mudou.**
