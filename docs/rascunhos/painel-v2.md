@@ -1,6 +1,6 @@
 # Painel v2: o retrato de hoje e a nova organização (rascunho de 17/10/2026, à noite)
 
-> **Rascunho pra Sofia revisar.** Nada aqui está decidido nem construído: o código de `painel/` não
+> **Rascunho.** As escolhas da seção 4 foram feitas pela Sofia em 17/10; nada foi construído: o código de `painel/` não
 > foi mexido. Pedido dela: "planejar uma atualização nas abas do painel, organizando os dados,
 > deixando mais claro e profissional, adiantar as abas das futuras funções".
 
@@ -152,6 +152,14 @@ Os rascunhos das tarefas (`docs/rascunhos/painel-v2-tarefas.md`) partem desta re
 outra, muda só a referência de cada tarefa.
 
 ## 4. Perguntas pra Sofia (responder numa linha)
+
+> **Respondidas pela Sofia em 17/10/2026, de madrugada (pelo celular): tudo como a recomendação.**
+> `versão: A · celular: B · início: sim · lojas: sim · nome: sim · quadro: depois · quando: leva 2`
+> Ou seja: a versão **A, "Calma"**; no celular, a **barra fixa embaixo** (o da B); a `/` vira o **Início** e a leva
+> vai pra `/leva`; a aba **Lojas** (em breve) entra no grupo Empresa; o nome é **"Sakura Corp"** na barra e
+> **"Painel da Sakura Corp"** na entrada; a **visão em quadro fica pra depois**; as tarefas do v2 entram na **leva 2**.
+> Falta só ela aprovar os rascunhos de `docs/rascunhos/painel-v2-tarefas.md` antes de virarem issue.
+
 
 Jeito de responder: **`versão: A · celular: B · início: sim · lojas: sim · nome: sim · quadro: depois · quando: leva 2`**
 (é a recomendação; troque o que quiser).
