@@ -148,4 +148,4 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **Código**: a loja na `v0.9.51`, o banco na `0064`. O painel v2 inteiro (#542 a #546) está na `main` e se publica sozinho; há mudanças pequenas do programa das lojas esperando ela decidir publicar.
 - **Feito agora**: este índice caiu de 25 KB pra menos de 15 KB; a antiga seção 1 virou `docs/sofia.md`; o CI avisa se o índice passar de 15 KB (T4).
 - **Depende dela**: conferir o Início do painel no endereço público e a navegação no celular (#543, #544, #538); no Team (19/10), os modelos da equipe e o convite do Lázaro; aprovar as sugestões pros rituais. A lista inteira está no marco "noite (6)" do `docs/historico.md` e em `label:sofia`.
-- **Próximo do plano de memória**: a parte do privado do A1 (o `CLAUDE.md` de lá carregar só o `README.md`), e depois o A2.
+- **No privado**, o `CLAUDE.md` carrega só o `README.md` (~2 KB, o índice), e não mais o `EMPRESA.md` inteiro (~37 KB). **Próximo do plano de memória**: o A2 (modelo e esforço por etapa).
