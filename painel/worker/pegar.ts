@@ -1,6 +1,7 @@
 // "Pegar tarefa" e "Largar" (#538). Quem escreve no GitHub é o token da própria pessoa, e só o login dela
 // entra ou sai da tarefa: nunca outra pessoa. O worker confere tudo de novo no GitHub, na hora, e não
 // confia no que a página mandou (a página só desliga o botão). Os erros nunca levam token nem resposta do GitHub.
+import type { Tarefa } from "../src/tipos";
 import { mesmoLogin, motivoPraNaoLargar, motivoPraNaoPegar } from "../src/logica/pegar";
 import { numeroValido } from "../src/logica/comecarComClaude";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
@@ -26,6 +27,12 @@ export type Escrever = (metodo: "POST" | "DELETE", caminho: string, corpo: unkno
 
 export type Resultado = { tipo: "ok" } | { tipo: "recusado"; motivo: string } | { tipo: "sem-acesso" } | { tipo: "erro" };
 
+/**
+ * As regras olham TODOS os responsáveis da issue (até 10), não só o primeiro que a página mostra: quem está
+ * em 2º lugar também segura a tarefa (pode largar, e conta na "uma por vez"). Tirando isso, é a consulta da leva.
+ */
+export const CONSULTA_DA_LEVA_PRA_REGRAS = CONSULTA_DA_LEVA.replace("assignees(first: 1)", "assignees(first: 10)");
+
 /** Uma tarefa só, com os mesmos campos da leva (pra `tarefaDaIssue` dar o mesmo resultado). */
 export const CONSULTA_DA_TAREFA = `
 query Tarefa($dono: String!, $nome: String!, $numero: Int!) {
@@ -38,13 +45,28 @@ query Tarefa($dono: String!, $nome: String!, $numero: Int!) {
       stateReason
       body
       labels(first: 30) { nodes { name } }
-      assignees(first: 1) { nodes { login avatarUrl(size: 40) } }
+      assignees(first: 10) { nodes { login avatarUrl(size: 40) } }
       closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { url state } }
     }
   }
 }`;
 
 const caminhoDosResponsaveis = (numero: number) => `/repos/${ORGANIZACAO}/${REPOSITORIO}/issues/${numero}/assignees`;
+
+/**
+ * A tarefa como as regras devem ver: se `login` é um dos responsáveis (em qualquer posição), ele é o dono.
+ * Assim "uma por vez" e "Largar" valem pra quem está em 2º lugar também.
+ */
+function paraAsRegras(tarefa: Tarefa, issue: IssueDoGitHub | undefined, login: string): Tarefa {
+  const eu = issue?.assignees.nodes.find((a) => a !== null && mesmoLogin(a.login, login));
+  return eu ? { ...tarefa, dono: { login: eu.login, avatar: tarefa.dono?.avatar ?? "" } } : tarefa;
+}
+
+/** As tarefas da leva vistas pelas regras (`paraAsRegras` em cada uma). */
+function tarefasPraRegras(tarefas: Tarefa[], dados: DadosDaLeva, login: string): Tarefa[] {
+  const issues = new Map((dados.repository?.issues.nodes ?? []).filter((i) => i !== null).map((i) => [i.number, i]));
+  return tarefas.map((t) => paraAsRegras(t, issues.get(t.numero), login));
+}
 
 /** Os logins que o GitHub diz que estão na issue, depois de uma escrita em /assignees. */
 function responsaveisDaResposta(dados: unknown): string[] {
@@ -66,7 +88,8 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   const atual = levasDosDados(r1.dados).atual;
   if (atual === null) return { tipo: "recusado", motivo: "não há leva aberta" };
 
-  const r2 = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${atual}` });
+  const variaveisDaLeva = { ...variaveisDoRepositorio, etiqueta: `leva-${atual}` };
+  const r2 = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, variaveisDaLeva);
   if (r2.tipo !== "ok") return r2;
   const leva = levaDosDados(atual, r2.dados);
   if (!leva) return { tipo: "erro" };
@@ -74,8 +97,9 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   if (leva.cortada) return { tipo: "recusado", motivo: "a leva tem tarefas demais pra conferir; peça à Sofia" };
   await marcarDependenciasAbertas(leva, r2.dados, perguntar);
 
-  const tarefa = leva.tarefas.find((t) => t.numero === numero);
-  const motivo = motivoPraNaoPegar(tarefa, leva.tarefas, login);
+  const tarefas = tarefasPraRegras(leva.tarefas, r2.dados, login);
+  const tarefa = tarefas.find((t) => t.numero === numero);
+  const motivo = motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo) return { tipo: "recusado", motivo };
 
   const w = await escrever("POST", caminhoDosResponsaveis(numero), { assignees: [login] });
@@ -87,11 +111,44 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   }
   const outro = ficaram.find((l) => !mesmoLogin(l, login));
   if (outro) {
-    // Alguém pegou no mesmo instante: quem chegou depois sai. Se a saída falhar, a pessoa vê os dois nomes e larga.
-    await escrever("DELETE", caminhoDosResponsaveis(numero), { assignees: [login] }).catch(() => undefined);
+    // Alguém pegou no mesmo instante: quem chegou depois sai.
+    const saida = await sair(numero, login, escrever);
+    if (saida === null) return { tipo: "recusado", motivo: `alguém pegou junto e não deu pra tirar você da #${numero}: largue a tarefa ou peça à Sofia` };
+    // As duas pessoas saíram (cada uma viu a outra): ninguém ficou, e "é de X" seria mentira.
+    if (saida.length === 0) return { tipo: "recusado", motivo: `outra pessoa tentou pegar a #${numero} no mesmo instante; tente de novo` };
     return { tipo: "recusado", motivo: `alguém pegou antes: a #${numero} é de ${outro}` };
   }
+
+  // "Uma por vez" com duas abas: as duas conferências podem ter passado antes de qualquer escrita. Olha a leva
+  // de novo; se a pessoa ficou com mais de uma em andamento, sai desta, a não ser que seja a de número menor
+  // (a regra é a mesma nas duas chamadas, então fica só uma). Se a releitura falhar, fica: o aviso de
+  // "várias em andamento" do painel mostra.
+  const r3 = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, variaveisDaLeva);
+  const releitura = r3.tipo === "ok" ? levaDosDados(atual, r3.dados) : null;
+  if (r3.tipo === "ok" && releitura) {
+    const minhas = tarefasPraRegras(releitura.tarefas, r3.dados, login)
+      .filter((t) => t.estado === "andamento" && mesmoLogin(t.dono?.login, login))
+      .map((t) => t.numero);
+    const menor = Math.min(...minhas);
+    if (minhas.length > 1 && numero !== menor) {
+      const saida = await sair(numero, login, escrever);
+      if (saida === null) return { tipo: "recusado", motivo: `você ficou com a #${menor} e a #${numero} ao mesmo tempo; largue uma delas` };
+      return { tipo: "recusado", motivo: `você já está com a #${menor}` };
+    }
+  }
   return { tipo: "ok" };
+}
+
+/** Tira `login` da issue. Devolve quem ficou, ou null se a saída falhou. Nunca lança erro. */
+async function sair(numero: number, login: string, escrever: Escrever): Promise<string[] | null> {
+  try {
+    const w = await escrever("DELETE", caminhoDosResponsaveis(numero), { assignees: [login] });
+    if (w.tipo !== "ok") return null;
+    const ficaram = responsaveisDaResposta(w.dados);
+    return ficaram.some((l) => mesmoLogin(l, login)) ? null : ficaram;
+  } catch {
+    return null;
+  }
 }
 
 /** Larga a tarefa `numero`: só o dono, e só em andamento (sem PR aberto). Tira só o próprio login. */
@@ -101,7 +158,7 @@ export async function largarTarefa(numero: number, login: string, perguntar: Per
   const r = await perguntar<{ repository: { issue: IssueDoGitHub | null } | null }>(CONSULTA_DA_TAREFA, { ...variaveisDoRepositorio, numero });
   if (r.tipo !== "ok") return r;
   const issue = r.dados.repository?.issue;
-  const motivo = motivoPraNaoLargar(issue ? tarefaDaIssue(issue) : undefined, login);
+  const motivo = motivoPraNaoLargar(issue ? paraAsRegras(tarefaDaIssue(issue), issue, login) : undefined, login);
   if (motivo) return { tipo: "recusado", motivo };
 
   const w = await escrever("DELETE", caminhoDosResponsaveis(numero), { assignees: [login] });
