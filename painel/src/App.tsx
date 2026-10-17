@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CabecalhoDaPagina } from "./componentes/CabecalhoDaPagina";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
@@ -160,13 +161,30 @@ export default function App({
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
-          <Sala
-            dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
-            quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
-            conexao={exemplo ? undefined : tempoReal}
-            tentarDeNovo={tempoReal.atualizar}
-            recarregarTudo={tentarSalaDeNovo}
+          {/* A Sala tem o próprio h1 dentro da janela: o título daqui é texto (comoTitulo="p"). */}
+          <CabecalhoDaPagina
+            trilha="Equipe"
+            titulo="Sala"
+            explicacao="As pessoas e os robôs, ao vivo."
+            comoTitulo="p"
+            acoes={
+              <a
+                href="/sala?tv"
+                className="inline-flex min-h-9 items-center rounded-lg border border-borda px-3.5 text-sm font-medium text-texto hover:bg-livre-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
+              >
+                Modo TV
+              </a>
+            }
           />
+          <div className="mt-6">
+            <Sala
+              dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
+              quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
+              conexao={exemplo ? undefined : tempoReal}
+              tentarDeNovo={tempoReal.atualizar}
+              recarregarTudo={tentarSalaDeNovo}
+            />
+          </div>
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 py-8 md:px-8">
