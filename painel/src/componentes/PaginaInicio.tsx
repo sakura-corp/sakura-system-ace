@@ -122,7 +122,7 @@ function BlocoPrecisa({ sala, precisa, tentarDeNovo }: { sala: EstadoDaSala; pre
   }
   return (
     <section aria-labelledby="inicio-precisa" className="min-w-0">
-      <h2 id="inicio-precisa" className="mb-2 text-sm font-medium text-texto-2">{titulo}</h2>
+      <h2 id="inicio-precisa" className="mb-2 flex min-h-11 items-center text-sm font-medium text-texto-2">{titulo}</h2>
       {corpo}
     </section>
   );
@@ -164,7 +164,7 @@ function BlocoDaTarefa({ props, suaTarefa }: { props: Props; suaTarefa: ReturnTy
   const avisoOrfao = aviso && !suaTarefa.some((t) => t.numero === aviso.numero) ? aviso.texto : "";
   return (
     <section aria-labelledby="inicio-tarefa" className="min-w-0">
-      <h2 id="inicio-tarefa" className="mb-2 text-sm font-medium text-texto-2">A sua tarefa</h2>
+      <h2 id="inicio-tarefa" className="mb-2 flex min-h-11 items-center text-sm font-medium text-texto-2">A sua tarefa</h2>
       {corpo}
       <p role="status" aria-live="polite" className="mt-2 min-w-0 break-words text-sm text-texto empty:m-0">{avisoOrfao}</p>
     </section>
