@@ -68,12 +68,12 @@ export function Escritorio({ agora = new Date() }: { agora?: Date }) {
             <span className="esc-pilula"><i aria-hidden="true" />{textoDaContagem(conta)}</span>
           </div>
         </header>
-  
+
         <p className="esc-aviso-exemplo">
           Tudo nesta página é <strong>de exemplo</strong>: nenhum agente de verdade está rodando, nenhuma sessão é aberta e nenhum
           token é gasto. {conta.precisam > 0 && <>No exemplo, <strong>{conta.precisam} agentes precisam de você</strong>.</>}
         </p>
-  
+
         <div id="esc-vista" role="tabpanel" aria-labelledby={`aba-${aba}`}>
           {aba === "escritorio" && (
             <div className="esc-corpo">
@@ -107,9 +107,9 @@ export function Escritorio({ agora = new Date() }: { agora?: Date }) {
               </div>
             </div>
           )}
-  
+
           {aba === "tarefas" && <QuadroDoDia tarefas={tarefas} equipes={equipes} agora={agora} />}
-  
+
           {aba === "cerebro" && (
             <div className="esc-vidro esc-cerebro-texto">
               <h2 className="esc-rotulo">O Cérebro (exemplo)</h2>

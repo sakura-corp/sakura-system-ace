@@ -30,6 +30,8 @@ export function CabecalhoDaPagina({
         </p>
         <Titulo
           id={idDoTitulo}
+          // Como texto (na Sala), o leitor de tela pularia o "Sala" repetido: a trilha e o h1 da janela já dizem.
+          aria-hidden={comoTitulo === "p" ? true : undefined}
           className="mt-1 font-serif text-3xl leading-[1.1] font-semibold tracking-[-0.015em] text-texto [overflow-wrap:anywhere] md:text-[38px]"
         >
           {titulo}

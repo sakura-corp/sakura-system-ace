@@ -24,6 +24,7 @@ describe("CabecalhoDaPagina", () => {
     const h = html(<CabecalhoDaPagina titulo="Sala" comoTitulo="p" />);
     expect(h).not.toContain("<h1");
     expect(h).toMatch(/<p[^>]*font-serif[^>]*>Sala<\/p>/);
+    expect(h).toContain('aria-hidden="true"');
   });
   it("o título e a coluna de texto podem encolher (min-w-0, overflow-wrap)", () => {
     const h = html(<CabecalhoDaPagina titulo="Sala" idDoTitulo="t" />);
