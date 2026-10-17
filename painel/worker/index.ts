@@ -35,6 +35,8 @@ import {
   type DadosDasLevas,
 } from "./tarefas";
 import { buscarSala } from "./dadosDaSala";
+import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
+import { numeroValido } from "../src/logica/comecarComClaude";
 import { SalaDoPainel } from "./sala";
 import { assinaturaConfere, avisoDoEvento } from "./webhook";
 
@@ -227,6 +229,40 @@ async function sala(request: Request, config: Configuracao): Promise<Response> {
   return json(r.sala, 200, cookies);
 }
 
+/** /api/tarefa/12/pegar → { numero: "12", acao: "pegar" }; outro caminho → null. O número é conferido depois (400). */
+export function acaoDoCaminho(caminho: string): { numero: string; acao: "pegar" | "largar" } | null {
+  const achou = /^\/api\/tarefa\/([^/]{1,20})\/(pegar|largar)$/.exec(caminho);
+  return achou ? { numero: achou[1], acao: achou[2] as "pegar" | "largar" } : null;
+}
+
+/**
+ * Pegar ou largar uma tarefa (#538). Escreve no GitHub, então: só POST, só vindo da própria página
+ * (`Origin` igual, e obrigatório: todo navegador manda em POST) e só com sessão válida. O número é
+ * conferido aqui e o resto (leva, dono, dependências, "uma por vez") de novo no GitHub, em `pegar.ts`.
+ * Recusa → 409 com o motivo em português.
+ */
+async function acaoNaTarefa(request: Request, url: URL, config: Configuracao, numeroTexto: string, acao: "pegar" | "largar"): Promise<Response> {
+  if (request.headers.get("origin") !== url.origin) return json({ ok: false, motivo: "origem não permitida" }, 403);
+  const numero = /^\d{1,7}$/.test(numeroTexto) ? Number(numeroTexto) : NaN;
+  if (!numeroValido(numero)) return json({ ok: false, motivo: "número de tarefa inválido" }, 400);
+
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  const falhou = () => json({ ok: false, motivo: "o GitHub não respondeu; tente de novo" }, 502, cookies);
+  try {
+    const perguntar = <T,>(consulta: string, variaveis: Record<string, unknown>) => consultar<T>(sessao.token, consulta, variaveis);
+    const escrever = (metodo: "POST" | "DELETE", caminho: string, corpo: unknown) => escreverNoGitHub(sessao.token, metodo, caminho, corpo);
+    const r = acao === "pegar" ? await pegarTarefa(numero, sessao.login, perguntar, escrever) : await largarTarefa(numero, sessao.login, perguntar, escrever);
+    if (r.tipo === "ok") return json({ ok: true }, 200, cookies);
+    if (r.tipo === "recusado") return json({ ok: false, motivo: r.motivo }, 409, cookies);
+    if (r.tipo === "sem-acesso") return json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(url).apagar(COOKIE_SESSAO)]);
+    return falhou();
+  } catch {
+    console.error(`tarefa: falha ao ${acao} no GitHub`);
+    return falhou();
+  }
+}
+
 const NOME_DA_SALA = "painel";
 const salaDoPainel = (env: Ambiente) => env.SALA?.get(env.SALA.idFromName(NOME_DA_SALA));
 
@@ -328,6 +364,14 @@ export default {
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
       return sala(request, config);
+    }
+
+    const acao = acaoDoCaminho(pathname);
+    if (acao) {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "POST") return json({ ok: false, erro: "método não permitido" }, 405);
+      return acaoNaTarefa(request, url, config, acao.numero, acao.acao);
     }
 
     const leva = levaDoCaminho(pathname);

@@ -486,3 +486,97 @@ describe("/api/sala (#468)", () => {
   });
 });
 
+
+describe("/api/tarefa/<n>/pegar e /largar (#538)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;
+  const ORIGEM = "https://painel.exemplo";
+  const corpoDaIssue = "Chefe: backend\nAjudantes: tester\nEstimativa: 2 h\nDepende de: nada\nSessões filhas: não\n\n## Pra que serve\nx";
+  const issue = (number: number, dono?: string) => ({
+    number, title: `Tarefa ${number}`, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${number}`, state: "OPEN", stateReason: null,
+    body: corpoDaIssue, labels: { nodes: [{ name: "leva-1" }, { name: "chefe:backend" }] },
+    assignees: { nodes: dono ? [{ login: dono, avatarUrl: "" }] : [] }, closedByPullRequestsReferences: { nodes: [] },
+  });
+
+  /** Finge o GitHub: as consultas e a escrita em /assignees, anotando método, token e corpo de cada escrita. */
+  function fingir(donoDa10?: string) {
+    const escritas: { metodo: string; url: string; autorizacao: string | null; corpo: unknown }[] = [];
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entrada);
+      if (url === "https://api.github.com/graphql") {
+        const { query } = JSON.parse(String(init?.body)) as { query: string };
+        if (query.includes("query Levas(")) return Response.json({ data: { repository: { labels: { nodes: [{ name: "leva-1", issues: { totalCount: 2 } }] } } } });
+        if (query.includes("query Leva(")) return Response.json({ data: { repository: { issues: { totalCount: 2, nodes: [issue(10, donoDa10), issue(11)] } } } });
+        if (query.includes("query Tarefa(")) return Response.json({ data: { repository: { issue: issue(10, donoDa10) } } });
+        return Response.json({ data: { repository: {} } });
+      }
+      if (url.endsWith("/issues/10/assignees")) {
+        const corpo = JSON.parse(String(init?.body)) as { assignees: string[] };
+        escritas.push({ metodo: String(init?.method), url, autorizacao: new Headers(init?.headers).get("authorization"), corpo });
+        return Response.json({ assignees: init?.method === "POST" ? corpo.assignees.map((login) => ({ login })) : [] }, { status: init?.method === "POST" ? 201 : 200 });
+      }
+      return new Response("inesperado", { status: 500 });
+    });
+    return escritas;
+  }
+
+  const postar = async (caminho: string, { origem = ORIGEM as string | null, cookie = undefined as string | undefined, method = "POST" } = {}) => {
+    const headers = new Headers();
+    if (origem) headers.set("origin", origem);
+    if (cookie) headers.set("cookie", cookie);
+    return worker.fetch(new Request(`https://painel.exemplo${caminho}`, { method, headers }), ambiente);
+  };
+
+  it("pega com o token da sessão, pondo só o próprio login", async () => {
+    const escritas = fingir();
+    const r = await postar("/api/tarefa/10/pegar", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ok: true });
+    expect(escritas).toEqual([{ metodo: "POST", url: "https://api.github.com/repos/sakura-corp/sakura-system-ace/issues/10/assignees", autorizacao: "Bearer ghu_a", corpo: { assignees: ["fulana"] } }]);
+  });
+
+  it("larga com DELETE, tirando só o próprio login", async () => {
+    const escritas = fingir("fulana");
+    const r = await postar("/api/tarefa/10/largar", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(escritas.map((e) => [e.metodo, e.corpo])).toEqual([["DELETE", { assignees: ["fulana"] }]]);
+  });
+
+  it("recusa com 409 e o motivo em português: tarefa de outra pessoa", async () => {
+    const escritas = fingir("beltrano");
+    const r = await postar("/api/tarefa/10/pegar", { cookie: await comSessao() });
+    expect(r.status).toBe(409);
+    expect(await r.json()).toEqual({ ok: false, motivo: "alguém pegou antes: a #10 é de beltrano" });
+    const r2 = await postar("/api/tarefa/10/largar", { cookie: await comSessao() });
+    expect(r2.status).toBe(409);
+    expect(await r2.json()).toEqual({ ok: false, motivo: "só quem pegou a #10 pode largar" });
+    expect(escritas).toEqual([]);
+  });
+
+  it("Origin de fora ou sem Origin: 403, sem olhar a sessão nem falar com o GitHub", async () => {
+    const escritas = fingir();
+    for (const origem of ["https://malicioso.exemplo", "http://painel.exemplo", null]) {
+      const r = await postar("/api/tarefa/10/pegar", { origem, cookie: await comSessao() });
+      expect(r.status).toBe(403);
+    }
+    expect(escritas).toEqual([]);
+  });
+
+  it("sem sessão (ou sessão adulterada): 401", async () => {
+    const escritas = fingir();
+    expect((await postar("/api/tarefa/10/pegar")).status).toBe(401);
+    const adulterado = (await comSessao()).slice(0, -3) + "AAA";
+    expect((await postar("/api/tarefa/10/largar", { cookie: adulterado })).status).toBe(401);
+    expect(escritas).toEqual([]);
+  });
+
+  it("número inválido: 400; método que não é POST: 405", async () => {
+    const escritas = fingir();
+    for (const n of ["0", "abc", "1.5", "-3", "12345678", "%31%30"]) {
+      expect((await postar(`/api/tarefa/${n}/pegar`, { cookie: await comSessao() })).status).toBe(400);
+    }
+    expect((await postar("/api/tarefa/10/pegar", { cookie: await comSessao(), method: "GET" })).status).toBe(405);
+    expect((await postar("/api/tarefa/10/apagar", { cookie: await comSessao() })).status).toBe(404);
+    expect(escritas).toEqual([]);
+  });
+});
