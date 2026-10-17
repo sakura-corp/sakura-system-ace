@@ -533,3 +533,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   em 1 busca, ignorou `push`, mostrou "reconectando…" com o servidor fora e voltou a "ao vivo". **Falta ver**:
   o teste do "Pronto quando" com o GitHub de verdade (dois navegadores, pôr o nome numa tarefa), só possível
   depois de publicar. A primeira publicação com o Durable Object aplica a migration `v1` sozinha.
+- **17/10/2026, tarefa 7 (#355) mesclada (PR #531) e testada ao vivo pela Sofia**: com o painel aberto em dois navegadores,
+  pôr o nome dela na #468 e tirar mudou os dois em 4 a 5 segundos, sem recarregar, e o "ao vivo" ficou verde nos dois. Em
+  "Recent Deliveries" do app, todas as entregas depois da publicação voltaram verdes; as vermelhas são de antes (a rota
+  `/api/webhook` ainda não existia). Assinatura errada recusada (401) só foi provada no teste local. **A tarefa 8 (#468) já
+  pode começar.**

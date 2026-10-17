@@ -22,8 +22,8 @@ Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma ta
 - **Já tinham tarefa antes e continuam valendo**: a equipe no programa das lojas (#474), criar operador
   no programa instalado (#482), enxugar o CI (#442), atualizar o Electron (#385, em saltos), os lotes de
   permissão no banco (#365 a #367), apagar a cópia antiga do token da Focus (#368), a paginação das
-  listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em 1.000 linhas pelo Supabase),
-  e a cobrança do painel em tempo real (#355).
+  listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em 1.000 linhas pelo Supabase).
+  O painel em tempo real (#355) saiu daqui: feito e testado ao vivo em 17/10.
 - **Assuntos da EMPRESA ficam no repositório privado** (`caranovavidanova/sakura-corp`), nunca aqui, e não
   são detalhados neste arquivo. Os que continuam pendentes, só pelo nome: **a TFE; o capital; o Claude Team
   (assinatura marcada para 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
