@@ -151,8 +151,8 @@ export function idDoEmBreve(caminho: string): string | null {
   return m ? m[1] : null;
 }
 
-// Algarismo de dinheiro: "R$" ou número com vírgula.
-const DINHEIRO = /R\$|\d,\d/;
+// Nas páginas da Empresa, nenhum algarismo (nem "1.500", nem "30%") e nenhum "R$": o repositório é público.
+const DINHEIRO = /R\$|\d/;
 
 function todosOsTextos(t: TextoEmBreve): string[] {
   return [t.titulo, t.subtitulo, t.resumo, ...t.vaiMostrar, ...t.dependeDe.flatMap((d) => [d.texto, d.detalhe ?? ""])];
@@ -161,7 +161,7 @@ function todosOsTextos(t: TextoEmBreve): string[] {
 /** Uma frase por problema; lista vazia = tudo certo. */
 export function problemasDoEmBreve(navegacao: GrupoDaNavegacao[], textos: TextoEmBreve[]): string[] {
   const problemas: string[] = [];
-  const itens = navegacao.flatMap((g) => g.itens.map((item) => ({ item, grupo: g.id })));
+  const itens = navegacao.flatMap((g) => g.itens.map((item) => ({ item, grupo: g.id, titulo: g.titulo })));
   const emBreve = itens.filter((x) => x.item.emBreve);
   for (const { item } of emBreve) {
     if (!textos.some((t) => t.id === item.id)) problemas.push(`O item em breve "${item.rotulo}" não tem texto.`);
@@ -173,6 +173,7 @@ export function problemasDoEmBreve(navegacao: GrupoDaNavegacao[], textos: TextoE
       continue;
     }
     if (achado.item.rotulo !== t.titulo) problemas.push(`O título "${t.titulo}" é diferente do rótulo "${achado.item.rotulo}".`);
+    if (t.grupo !== achado.titulo) problemas.push(`A trilha de "${t.titulo}" diz "${t.grupo ?? "(nada)"}", mas o grupo é "${achado.titulo ?? "(nada)"}".`);
     if (achado.grupo === "empresa") {
       if (!t.semDinheiro) problemas.push(`"${t.titulo}" é da Empresa e precisa de semDinheiro.`);
       if (todosOsTextos(t).some((s) => DINHEIRO.test(s))) problemas.push(`"${t.titulo}" tem número de dinheiro no texto.`);
