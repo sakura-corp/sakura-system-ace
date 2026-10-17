@@ -100,6 +100,15 @@ Como as skills funcionam:
 - **Quando uma skill falhar**, ou ela corrigir o Claude no meio de uma, a skill é consertada na
   hora, como as lições.
 
+### Os chefes por função (rascunho de 17/10, a Sofia ainda aprova)
+Cinco skills, uma por função, em `.claude/skills/chefe-<função>/`: `chefe-frontend`,
+`chefe-backend` (backend e dados), `chefe-seguranca`, `chefe-marketing` (marketing e conteúdo) e
+`chefe-tester`. Só são acionadas quando o texto da tarefa pede "você é o chefe de <função>" (o
+painel monta esse texto a partir da etiqueta `chefe:<função>`). O chefe chama ajudantes dentro da
+própria sessão e termina com PR aberto e relatório; nunca mescla nem publica. Manual para quem
+trabalha: `docs/equipe.md`, "Começar uma tarefa com o chefe". Evolução dessas skills é proposta e
+entra na revisão do mês (R1).
+
 ### Trancas
 Já existiam em 14/10:
 - o CI (tipos, lint, fusos, contraste, telas, Electron, permissões, migrations, `gitleaks`);
