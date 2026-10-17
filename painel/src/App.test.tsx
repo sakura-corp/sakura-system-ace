@@ -149,6 +149,30 @@ describe("App com as tarefas de verdade (#354)", () => {
     expect(h).not.toContain("bruno-exemplo");
   });
 
+  it("quadro Horas por pessoa: aparece com os números certos e some se ninguém tem tarefa com dono", () => {
+    const base = "https://github.com/sakura-corp/sakura-system-ace/issues/";
+    const com = de({
+      ...pronto,
+      leva: {
+        ...pronto.leva,
+        tarefas: [
+          { numero: 20, titulo: "A", url: base + "20", estado: "feita", estimativaHoras: 1.5, dono: { login: "fulana", avatar: "" } },
+          { numero: 21, titulo: "B", url: base + "21", estado: "revisao", estimativaHoras: 2, dono: { login: "fulana", avatar: "" } },
+          { numero: 22, titulo: "C", url: base + "22", estado: "andamento", dono: { login: "fulana", avatar: "" } },
+        ],
+      },
+    });
+    expect(com).toMatch(/<h2 id="horas-por-pessoa"[^>]*>Horas por pessoa<\/h2>/);
+    expect(com).toContain("1,5 h entregues · 2 h segurando · 1 sem estimativa");
+    const sem = de(pronto);
+    expect(sem).toContain("1,5 h entregues · 0 h segurando");
+    const ninguem = de({
+      ...pronto,
+      leva: { ...pronto.leva, tarefas: [{ ...pronto.leva.tarefas[0] }, { ...pronto.leva.tarefas[1], dono: undefined }] },
+    });
+    expect(ninguem).not.toContain("Horas por pessoa");
+  });
+
   it("tarefa sem responsável: a livre não repete 'livre'; a feita diz 'sem responsável'", () => {
     const h = de({ ...pronto, leva: { ...pronto.leva, tarefas: [{ ...pronto.leva.tarefas[0] }, { ...pronto.leva.tarefas[1], dono: undefined }] } });
     expect(h).toContain("sem responsável");

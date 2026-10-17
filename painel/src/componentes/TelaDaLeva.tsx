@@ -2,6 +2,7 @@ import { RotateCw } from "lucide-react";
 import { pessoasComVariasEmAndamento } from "../logica/contador";
 import type { Tarefa } from "../tipos";
 import { Contador } from "./Contador";
+import { HorasPorPessoa } from "./HorasPorPessoa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
 
 type Props = {
@@ -46,6 +47,7 @@ export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false }: Props)
           <div className="mt-6">
             <Contador tarefas={tarefas} />
           </div>
+          <HorasPorPessoa tarefas={tarefas} />
           <div className="mt-8">
             <ListaDeTarefas tarefas={tarefas} />
           </div>
