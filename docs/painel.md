@@ -649,16 +649,21 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   "Página não encontrada". A Sofia autorizou mexer no `BarraLateral.tsx` pra virar link. Relatório em
   `docs/relatorios/2026-10-17-tarefa-544-frontend.md`. **A Sofia confere depois de publicar**: clicar em "Financeiro"
   abre a página que explica.
-- **17/10/2026, #543 a navegação do celular: PR aberto, esperando a revisão da Sofia.** Abaixo de 768 px a barra lateral
+- **17/10/2026, #543 a navegação do celular: mesclada (PR #558).** Abaixo de 768 px a barra lateral
   some e aparece uma barra fixa embaixo: Início, Leva, Sala, Pessoas e Mais, lidos da lista da #542 (Início e Pessoas
   apagados, em breve). O "Mais" abre uma folha que sobe de baixo com o resto da lista (inclusive os em breve, com a frase
   do que falta), o "ao vivo" e o "Sair"; fecha com "Fechar", Esc ou toque no fundo, prende o foco e devolve ele ao "Mais".
   O conteúdo ganhou espaço no fim pra barra não cobrir nada; no `/sala?tv` não tem barra. Olhado em 320 e 375 px, claro e
   escuro. Relatório em `docs/relatorios/2026-10-17-tarefa-543-frontend.md`. **A Sofia confere depois de publicar**: no
   celular dela, a barra aparece embaixo e o "Mais" abre e fecha.
-- **17/10/2026, #545 o cabeçalho de página: PR aberto, esperando a revisão da Sofia.** A Sala, o Escritório e as
+- **17/10/2026, #545 o cabeçalho de página: mesclado (PR #559).** A Sala, o Escritório e as
   páginas "em breve" começam igual: trilha ("Equipe / Sala"), título grande em serifa, uma linha de explicação e as
   ações à direita (`painel/src/componentes/CabecalhoDaPagina.tsx`, desenho da versão A). Na Sala a ação é "Modo TV";
   o `/sala?tv` continua sem cabeçalho. Um teste confere um só `<h1>` por página. Com autorização da Sofia, na
   janela da Sala (`Sala.tsx`) o título virou "Agora" (`<h2>`) fora do modo TV, como na referência. Relatório em
   `docs/relatorios/2026-10-17-tarefa-545-frontend.md`. **Depois de publicar**: nada pra conferir.
+- **17/10/2026, #546 a página Início: parada no limite de uso, sem PR.** A branch `claude/tarefa-546-inicio` já tem a
+  função `inicio.ts` (com testes), a página na `/`, a leva atual em `/leva` e as fotos. Falta a revisão final, o
+  relatório e o PR. O detalhe e as autorizações da Sofia pra mexer fora da lista estão no comentário de 17/10 na #546.
+  Sobras das tarefas anteriores viraram a #560 ("Leva atual" marcada numa página "em breve" que não existe) e a #561
+  (área segura do iPhone na barra de baixo).
