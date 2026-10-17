@@ -35,10 +35,16 @@ export function textoParaOClaude(numero: number, chefe?: Chefe): string {
   return texto.slice(0, LIMITE_DO_TEXTO);
 }
 
+/** O texto que o link leva (e que o botão "Copiar texto" copia): uma regra só pros dois. Número inválido → undefined. */
+export function textoDaTarefa(numero: unknown, etiquetaOuChefe?: string): string | undefined {
+  if (!numeroValido(numero)) return undefined;
+  return textoParaOClaude(numero, CHEFES.find((c) => c === etiquetaOuChefe));
+}
+
 /** O link, ou undefined se o número não é válido. `chefe` desconhecido cai no texto geral. */
 export function linkParaComecar(numero: unknown, etiquetaOuChefe?: string): string | undefined {
-  if (!numeroValido(numero)) return undefined;
-  const chefe = CHEFES.find((c) => c === etiquetaOuChefe);
-  const prompt = encodeURIComponent(textoParaOClaude(numero, chefe));
+  const texto = textoDaTarefa(numero, etiquetaOuChefe);
+  if (texto === undefined) return undefined;
+  const prompt = encodeURIComponent(texto);
   return `${BASE_DO_CLAUDE}?prompt=${prompt}&repositories=${REPOSITORIO_DO_LINK}`;
 }

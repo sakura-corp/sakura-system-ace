@@ -490,3 +490,17 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   contraste do botão 5,86 (claro) e 6,65 (escuro), sem rolagem lateral. O cartão deixou de ser um link só: o título leva ao GitHub e o botão é um
   segundo link ao lado (um link dentro de outro não vale). **Observação**: em 1000 px o botão toma espaço e títulos longos ficam cortados
   (o nome inteiro está na dica).
+- **17/10/2026, defeito: o link pode abrir o Claude sem a mensagem + plano B "Copiar texto"** (branch `chefes/copiar-texto`, PR aberto,
+  **esperando a revisão da Sofia**). **O defeito**: a Sofia, no celular, tocou em "Começar com o Claude", o Claude abriu e **nenhuma
+  mensagem apareceu no campo**. O formato do link está certo segundo a documentação oficial (`code.claude.com/docs/en/web-quickstart`,
+  "Pre-fill sessions": `prompt` e `repositories`), então a causa provável é o app do Claude no celular (ou um redirecionamento de
+  login) abrir o endereço **sem levar os parâmetros**. **Causa provável, não provada**: não dá pra reproduzir daqui. **Plano B**: ao
+  lado do botão, **"Copiar texto"**, que copia o **mesmo texto** que o link leva (`textoDaTarefa()`, a mesma regra de chefe/etiqueta;
+  o link passou a usar a mesma função, e um teste decodifica o `prompt` do link e compara). Depois de copiar, o botão mostra "Copiado"
+  por 4 segundos (e avisa o leitor de tela). Se a área de transferência não existir ou for recusada (`copiarTexto()`, em
+  `painel/src/logica/copiarTexto.ts`), aparece o texto num campo já selecionado, pra copiar à mão. Em tarefa feita não aparece nenhum
+  dos dois. **O formato do link não mudou.** Os botões têm 44 px de altura e ficam numa linha própria **abaixo do título** (em 1000 px
+  os dois botões lado a lado espremiam o título; agora ele volta a aparecer inteiro). Olhado renderizado em 320 px e 1000 px, claro e
+  escuro, copiando com sucesso e com falha: sem rolagem lateral. Testes novos **vistos reprovar** (texto copiado diferente, falha que
+  não cai no plano B, texto do link diferente do copiado, botão em tarefa feita). **Ainda não provado**: que "Copiar texto" resolve
+  no celular dela (a área de transferência do celular não foi testada).
