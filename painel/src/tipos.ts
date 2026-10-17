@@ -11,6 +11,8 @@ export type Tarefa = {
   dono?: { login: string; avatar: string };
   estimativaHoras?: number;
   prUrl?: string;
+  /** A função do chefe (etiqueta `chefe:<função>`), só se for uma das 5 conhecidas. */
+  chefe?: string;
 };
 
 // ---- Sala (#467) e Escritório de agentes ----
