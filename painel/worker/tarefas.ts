@@ -1,6 +1,7 @@
 // As tarefas de verdade (#354): as consultas ao GitHub e a conversão pro formato `Tarefa` da página.
 // O texto da issue só serve pra ler a estimativa: não vai pra página.
 import { estadoDaTarefa, lerEstimativa, levaAtual, numeroDaLeva } from "../src/logica/estado";
+import { chefeDaEtiqueta } from "../src/logica/comecarComClaude";
 import { linkSeguro } from "../src/logica/link";
 import type { Leva, RespostaDaLeva, RespostaDasLevas, Tarefa } from "../src/tipos";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
@@ -28,6 +29,7 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
         url
         state
         body
+        labels(first: 30) { nodes { name } }
         assignees(first: 1) { nodes { login avatarUrl(size: 40) } }
         closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { url state } }
       }
@@ -47,6 +49,7 @@ export type IssueDoGitHub = {
   url: string;
   state: "OPEN" | "CLOSED";
   body: string | null;
+  labels?: { nodes: ({ name: string } | null)[] } | null;
   assignees: { nodes: ({ login: string; avatarUrl: string } | null)[] };
   closedByPullRequestsReferences: { nodes: ({ url: string; state: "OPEN" | "CLOSED" | "MERGED" } | null)[] } | null;
 };
@@ -83,6 +86,8 @@ export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
   if (dono) tarefa.dono = { login: dono.login, avatar: dono.avatarUrl.startsWith("https://") ? dono.avatarUrl : "" };
   const estimativa = lerEstimativa(issue.body);
   if (estimativa !== undefined) tarefa.estimativaHoras = estimativa;
+  const chefe = (issue.labels?.nodes ?? []).map((l) => (l ? chefeDaEtiqueta(l.name) : undefined)).find((c) => c !== undefined);
+  if (chefe) tarefa.chefe = chefe;
   const prUrl = linkSeguro(prDoLink?.url);
   if (prUrl) tarefa.prUrl = prUrl;
   return tarefa;

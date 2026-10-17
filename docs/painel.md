@@ -316,7 +316,11 @@ Conversa de alinhamento: **o desenho está decidido, nada foi construído**. Ist
 - Se liga os **créditos de uso** (custo extra quando a cota acaba).
 - Reler a Política de Uso e a página de limites: a regra de sessão automática já mudou de planos antes.
 
-**Próximo passo (quando ela mandar começar)**: botão **"Começar com o Claude"** no cartão da tarefa, que monta o link com um texto curto (número da tarefa, "você é o chefe da área X, leia a issue inteira"), e a lista de áreas com chefe. Em aberto: quais áreas têm chefe (as 6 salas ou outras) e as skills de cada uma.
+**Próximo passo: FEITO em 17/10/2026** (branch `chefes/botao-comecar`): botão **"Começar com o Claude"** no cartão da tarefa.
+Os chefes são **por função, 5**: `frontend`, `backend`, `seguranca`, `marketing`, `tester` (decidido pela Sofia em 17/10).
+A tarefa ganha a etiqueta `chefe:<função>` no GitHub (as etiquetas **ainda não existem**: criar é com ela); sem etiqueta, ou com função
+desconhecida, o texto manda o Claude perguntar à pessoa qual chefe usar. **Em aberto**: as skills `chefe-<função>` (outra sessão cuida);
+sem elas o chefe não é achado; e o botão **ainda não foi testado com o login dela** (a consulta nova foi conferida contra o esquema público do GitHub, não rodou de verdade).
 
 **Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
@@ -473,3 +477,16 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   ficou numa linha própria. **(2) Nome do agente no mapa do Escritório**, embaixo do ponto de luz (regra `abreviarNome`
   em `painel/src/logica/escritorio.ts`). Os dois testes novos foram vistos reprovar. Não mexi na regra de "issue fechada
   como não planejada" (pergunta pendente da Sofia), nem na #355 e #468.
+- **17/10/2026, botão "Começar com o Claude"** (branch `chefes/botao-comecar`, PR aberto, **esperando a revisão da Sofia**). A
+  regra é uma função pura, `painel/src/logica/comecarComClaude.ts`: monta `https://claude.ai/code?prompt=...&repositories=sakura-corp/sakura-system-ace`,
+  **sem** `environment` (é de cada pessoa) e **sem texto livre**: o único dado variável é o número da tarefa (inteiro positivo; outro
+  valor não gera link). O formato do link foi **conferido na documentação oficial** (`code.claude.com/docs/en/web-quickstart`, seção
+  "Pre-fill sessions": `prompt`, `repositories`, `environment`; não envia sozinho). O worker (`painel/worker/tarefas.ts`) passou a pedir
+  `labels(first: 30) { nodes { name } }` e devolve só `chefe` (uma das 5 funções), nunca a lista de etiquetas. A consulta foi validada
+  com o pacote `graphql` contra `@octokit/graphql-schema` (e reprova com um campo errado). O botão abre em aba nova com
+  `rel="noopener noreferrer"`, só pra endereço que passe `linkDoClaude()` (`claude.ai/code`), e não aparece em tarefa feita. Sem chave
+  nova, sem rota nova, sem credencial. Testes novos **vistos reprovar** (sem codificar, número sem validar, chefe desconhecido
+  aceito, `environment` no link, texto sem corte, botão em tarefa feita). Olhado renderizado em 320 px e 1000 px, claro e escuro:
+  contraste do botão 5,86 (claro) e 6,65 (escuro), sem rolagem lateral. O cartão deixou de ser um link só: o título leva ao GitHub e o botão é um
+  segundo link ao lado (um link dentro de outro não vale). **Observação**: em 1000 px o botão toma espaço e títulos longos ficam cortados
+  (o nome inteiro está na dica).

@@ -57,12 +57,32 @@ describe("App", () => {
     expect(h).toContain("Robôs do Claude");
   });
 
-  it("todo link aberto da página leva só pra github.com/sakura-corp", () => {
+  it("todo link aberto da página leva só pra github.com/sakura-corp (ou, no botão Começar com o Claude, pro formulário de claude.ai/code)", () => {
     for (const caminho of ["/", "/sala", "/escritorio"]) {
       const links = [...html(caminho).matchAll(/href="([^"]+)"/g)].map((m) => m[1]).filter((u) => u.startsWith("http"));
       expect(links.length).toBeGreaterThan(0);
-      for (const u of links) expect(u.startsWith("https://github.com/sakura-corp/")).toBe(true);
+      for (const u of links) {
+        const doBotao = u.startsWith("https://claude.ai/code?prompt=") && u.endsWith("&amp;repositories=sakura-corp/sakura-system-ace");
+        expect(u.startsWith("https://github.com/sakura-corp/") || doBotao).toBe(true);
+      }
     }
+  });
+
+  it("o botão Começar com o Claude aparece em tarefa não feita e não em feita, e abre em aba nova", () => {
+    const h = html("/");
+    expect((h.match(/Começar com o Claude/g) ?? []).length).toBeGreaterThan(0);
+    const botoes = [...h.matchAll(/<a [^>]*href="https:\/\/claude\.ai\/code\?[^>]*>/g)].map((m) => m[0]);
+    expect(botoes.length).toBeGreaterThan(0);
+    for (const b of botoes) expect(b).toContain('rel="noopener noreferrer"');
+    for (const b of botoes) expect(b).toContain('target="_blank"');
+  });
+
+  it("tarefa feita não ganha o botão: um botão por tarefa que não está feita", () => {
+    const h = html("/");
+    const feitas = Number(/(\d+) de \d+ tarefas feitas/.exec(h)?.[1]);
+    const total = Number(/\d+ de (\d+) tarefas feitas/.exec(h)?.[1]);
+    expect(feitas).toBeGreaterThan(0);
+    expect((h.match(/Começar com o Claude/g) ?? []).length).toBe(total - feitas);
   });
 
   it("escolhe a página pelo endereço; /leva/<n> é a página da leva", () => {

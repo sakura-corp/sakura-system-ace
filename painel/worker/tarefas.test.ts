@@ -59,6 +59,18 @@ describe("tarefaDaIssue", () => {
   });
 });
 
+describe("etiqueta chefe:* (botão Começar com o Claude)", () => {
+  const com = (...nomes: (string | null)[]) => issue({ labels: { nodes: nomes.map((name) => (name === null ? null : { name })) } });
+  it("devolve só a função conhecida, ignorando as outras etiquetas", () => {
+    expect(tarefaDaIssue(com("leva-0", null, "chefe:tester")).chefe).toBe("tester");
+  });
+  it("etiqueta desconhecida ou sem etiqueta: não tem chefe", () => {
+    expect(tarefaDaIssue(com("chefe:gerente")).chefe).toBeUndefined();
+    expect("chefe" in tarefaDaIssue(issue())).toBe(false);
+    expect("chefe" in tarefaDaIssue(issue({ labels: null }))).toBe(false);
+  });
+});
+
 describe("levasDosDados", () => {
   it("só as etiquetas leva-N, em ordem, e a atual", () => {
     const dados = {

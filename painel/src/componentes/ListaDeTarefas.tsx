@@ -1,6 +1,8 @@
 import type { Tarefa } from "../tipos";
 import { agruparPorEstado } from "../logica/contador";
 import { Avatar } from "./Avatar";
+import { linkParaComecar } from "../logica/comecarComClaude";
+import { linkDoClaude } from "../logica/link";
 import { PLURAL, Selo } from "./Selo";
 
 export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
@@ -15,12 +17,12 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
             </h2>
             <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
               {g.tarefas.map((t) => (
-                <li key={t.numero}>
+                <li key={t.numero} className="flex flex-col hover:bg-fundo sm:flex-row sm:items-center">
                   <a
                     href={t.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-col gap-1 px-4 py-3 hover:bg-fundo focus-visible:-outline-offset-2 sm:flex-row sm:items-center sm:gap-4"
+                    className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-3 focus-visible:-outline-offset-2 sm:flex-row sm:items-center sm:gap-4"
                   >
                     <span className="flex min-w-0 flex-1 items-baseline gap-2">
                       <span className="shrink-0 text-sm tabular-nums text-texto-2">#{t.numero}</span>
@@ -43,11 +45,31 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
                       )}
                     </span>
                   </a>
+                  <BotaoComecar tarefa={t} />
                 </li>
               ))}
             </ul>
           </section>
         ))}
     </div>
+  );
+}
+
+/** Só em tarefa que não está feita; abre o formulário do Claude, que não envia sozinho. */
+function BotaoComecar({ tarefa }: { tarefa: Tarefa }) {
+  if (tarefa.estado === "feita") return null;
+  
+
+  const href = linkDoClaude(linkParaComecar(tarefa.numero, tarefa.chefe));
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mx-4 mb-3 inline-flex shrink-0 items-center justify-center self-start rounded-lg bg-destaque px-3 py-1.5 text-sm font-medium text-sobre-destaque hover:opacity-90 sm:m-0 sm:mr-4 sm:self-center"
+    >
+      Começar com o Claude<span className="sr-only"> (tarefa #{tarefa.numero}; abre o Claude em aba nova)</span>
+    </a>
   );
 }
