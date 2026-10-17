@@ -81,8 +81,10 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
   assunto pede.
 - **M2.** Saem dela, aos poucos: as receitas (viram skills), as regras (viram trancas) e as
   listas de afazeres (viram tarefas). O "Onde parou" fica curto.
-- **M3.** Corrigir o que envelheceu: **feito em 14/10** (seção 1 do índice).
-- **M4.** As preferências novas: **feito em 14/10** (seção 1 do índice).
+- **M3.** Corrigir o que envelheceu: **feito em 14/10** (seção 1 do índice, hoje `docs/sofia.md`).
+- **M4.** As preferências novas: **feito em 14/10** (idem).
+- **M5.** O índice em até 15 KB (17/10): a seção 1 virou `docs/sofia.md` (no índice ficam só as 10
+  regras que valem sempre) e o "Onde parou" tem no máximo 8 linhas.
 
 ### Skills (o `/gerar-modulo` já existe)
 | # | Skill | O que faz |
@@ -93,7 +95,7 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S4 | `/atualizar-bancos` | ensaia e aplica a migration em todas as empresas |
 | S5 | `/nova-migration` | as regras da seção 3 do índice |
 | S6 | `/validar` | as conferências antes de mesclar, e a revisão de código em PR grande |
-| S7 | `/mensagem` | texto pra outra pessoa: curto, informal e completo (seção 1 do índice) |
+| S7 | `/mensagem` | texto pra outra pessoa: curto, informal e completo (`docs/sofia.md`) |
 | S8 | `/comparar-visual` | mudança de aparência em 2 ou 3 versões numa página, pra ela escolher |
 | S9 | `/loja-nova` | instalação + o roteiro fiscal de loja nova |
 | S10 | `/faxina-memoria` | a faxina da memória |
@@ -136,7 +138,7 @@ As novas:
   Team, isso se trava de um lugar só.
 - **T3.** As regras de código da seção 3 do índice que ainda são só texto viram lint (o `??` no
   `import.meta.env`, o `toISOString().slice`, o `window.prompt`).
-- **T4.** Um aviso automático se o índice da memória passar de 30 KB.
+- **T4.** Um aviso automático se o índice da memória passar de **15 KB** (era 30 KB; baixou em 17/10, no A1 do plano de memória): **feita em 17/10**, um passo do CI ("Tamanho do índice da memória") que só avisa, nunca reprova; a skill `fechar` também mede.
 
 ### Afazeres
 - **A1.** O que depende dela vira tarefa no GitHub (#472): **feita a parte pública em 16/10**. Os itens do sistema e da loja são tarefas com a etiqueta `sofia` (busca `label:sofia`); os da empresa continuam no repositório privado e na lista de `docs/pendencias-e-futuro.md`, só pelo nome.

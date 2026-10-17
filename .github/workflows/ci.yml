@@ -69,6 +69,17 @@ jobs:
           fi
           echo "Roda telas, Electron e RLS: $codigo"
           echo "codigo=$codigo" >> "$GITHUB_OUTPUT"
+
+      # T4 (docs/jeito-de-trabalhar.md): o índice da memória carrega sozinho em
+      # toda sessão, e cada KB a mais é token gasto em toda conversa. Passou de
+      # 15 KB, é hora de enxugar. É só AVISO (licoes.md, item 33): nunca reprova.
+      - name: Tamanho do índice da memória
+        run: |
+          tamanho=$(wc -c < PROJETO_STATUS.md)
+          echo "PROJETO_STATUS.md: $tamanho bytes (limite: 15360)"
+          if [ "$tamanho" -gt 15360 ]; then
+            echo "::warning file=PROJETO_STATUS.md::O índice da memória tem $tamanho bytes, acima de 15 KB. Enxugar: o 'Onde parou' em até 8 linhas e o detalhe pro docs/ certo."
+          fi
   checagens:
     name: Tipos, lint, testes, contraste e SQL
     runs-on: ubuntu-latest
