@@ -15,8 +15,11 @@
   `BarraLateral.test.tsx` e as asserções da barra em `App.test.tsx`.
 - **Ajudante tester**: escreveu o script de fotos e contraste e rodou a primeira vez; parou por limite de uso antes de relatar.
   A mãe rodou o mesmo script de novo depois dos ajustes.
-- **Ajudante revisor**: a primeira tentativa parou por limite de uso; a segunda leu o diff do zero numa cópia (worktree).
-  O que ela achou e o que foi feito está em "O que ficou de fora" e no PR.
+- **Ajudante revisor**: a primeira tentativa parou por limite de uso; a segunda leu o diff do zero numa cópia (worktree) e
+  achou um teste que não provava o que dizia (o "em breve não é link" passava mesmo com o item virando link). Consertado,
+  junto com três sugestões: a leva antiga virou um subitem de verdade (lista dentro da lista, com o mesmo desenho dos outros
+  itens), o "Leva atual" usa o endereço da lista direto, e o teste dos endereços tem `/`, `/sala` e `/escritorio` escritos
+  nele mesmo, em vez de importar da lista que ele confere.
 
 ## Modelos usados
 - Planejar: forte (Opus), na sessão mãe.
@@ -32,7 +35,9 @@
 - Teste da lista: com o `dependeDe` de "Levas anteriores" trocado por `""`, reprovou ("está em breve mas não diz do que
   depende"); com o `href` da Sala trocado por `/salinha`, reprovou ("os endereços que já existem continuam existindo").
   As duas quebras foram desfeitas.
-- Teste da barra: sem o `aria-current`, o teste do item atual reprovou.
+- Teste da barra: sem o `aria-current`, o teste do item atual reprovou. Com o item "Versões" virando link
+  (`<a href="/x" aria-disabled>`), o teste "item em breve não é link" reprovou (antes do conserto da revisão, passava).
+- O teste dos endereços, já com os endereços escritos nele: com a Sala em `/salinha`, reprovou.
 
 ## O que passou sem eu ter visto reprovar
 - `tsc -b`, os 426 testes do painel e o `vite build`.

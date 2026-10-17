@@ -47,7 +47,7 @@ const ICONES: Record<NomeDoIcone, LucideIcon> = {
 const LINHA = "relative flex min-h-8 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm";
 
 /** Item que existe: link. O atual leva a barrinha de destaque à esquerda. */
-function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: string; rotulo: string; etiqueta?: string; Icone: LucideIcon; atual: boolean; recuado?: boolean }) {
+function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: string; rotulo: string; etiqueta?: string; Icone?: LucideIcon; atual: boolean; recuado?: boolean }) {
   return (
     <a
       href={href}
@@ -55,7 +55,7 @@ function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: 
       className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo ${atual ? "bg-livre-fundo font-semibold" : ""} ${recuado ? "md:ml-6" : ""}`}
     >
       {atual && <span aria-hidden="true" className="absolute inset-y-[7px] left-0 w-[3px] rounded-full bg-destaque" />}
-      <Icone aria-hidden="true" className={`size-4 shrink-0 ${atual ? "text-destaque" : "text-texto-2"}`} />
+      {Icone && <Icone aria-hidden="true" className={`size-4 shrink-0 ${atual ? "text-destaque" : "text-texto-2"}`} />}
       <span className="min-w-0 truncate">
         {rotulo}
         {etiqueta && <span className="font-normal text-texto-2 text-xs"> ({etiqueta})</span>}
@@ -104,7 +104,6 @@ async function sair(): Promise<boolean> {
 
 export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
-  const hrefDaAtual = levas.find((l) => l.href === "/")?.href ?? "/";
   // A leva na tela que não é a atual (ex.: /leva/0): aparece logo abaixo de "Leva atual".
   const extra = levas.find((l) => l.atual && l.href !== "/");
 
@@ -120,18 +119,13 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
     if (item.id === "leva") {
       return (
         <li key={item.id} className="min-w-0">
-          <ItemComLink href={hrefDaAtual} rotulo={item.rotulo} Icone={Icone} atual={pagina === "leva" && !extra} />
+          <ItemComLink href={item.href} rotulo={item.rotulo} Icone={Icone} atual={pagina === "leva" && !extra} />
           {extra && (
-            <div className="mt-0.5">
-              <a
-                href={extra.href}
-                aria-current={pagina === "leva" ? "page" : undefined}
-                className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo md:ml-6 ${pagina === "leva" ? "bg-livre-fundo font-semibold" : ""}`}
-              >
-                {pagina === "leva" && <span aria-hidden="true" className="absolute inset-y-[7px] left-0 w-[3px] rounded-full bg-destaque" />}
-                <span className="min-w-0 truncate">{extra.nome}</span>
-              </a>
-            </div>
+            <ul className="mt-0.5">
+              <li className="min-w-0">
+                <ItemComLink href={extra.href} rotulo={extra.nome} atual={pagina === "leva"} recuado />
+              </li>
+            </ul>
           )}
         </li>
       );
