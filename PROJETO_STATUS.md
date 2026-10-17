@@ -54,7 +54,7 @@ sessão. O resto mora em `docs/` e **só é aberto quando o assunto pede**:
 | `docs/decisoes.md` | o que é o projeto, plano de expansão (fases 1-3), identidade visual, **tabela de decisões técnicas** (antiga seção 2 e 3) | antes de qualquer decisão estrutural |
 | `docs/estrutura.md` | pastas, padrão de código, **padrão de formulário** (react-hook-form + zod) (antiga seção 4) | antes de criar arquivo/módulo novo |
 | `docs/banco.md` | as migrations `0001`-`0064`, cada tabela, multi-loja, RLS (antiga seção 5) | antes de mexer em banco/migration |
-| `docs/licoes.md` | as dívidas técnicas e os 82 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
+| `docs/licoes.md` | as dívidas técnicas e os 83 **padrões de bug** já vividos (antiga seção 6) | ao investigar bug, e antes de mexer em área sensível |
 | `docs/modulos.md` | estado de cada tela/módulo hoje (antiga seção 7) | antes de mexer num módulo |
 | `docs/pendencias-e-futuro.md` | **"O que depende dela", numa lista só**; o que não existe; parte fiscal (playbook por loja nova); linha do tempo (antiga seção 8) | ao planejar próximo passo, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar versão**, backup, atualizar bancos, voltar versão (antigas seções 9 e 11) | ao publicar, rodar migration ou instalar loja |
@@ -246,26 +246,20 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 17/10/2026, de madrugada (2): o tempo real no ar e o 1º chefe de verdade
+### 17/10/2026, madrugada (3): o modelo único de tarefa e a sessão mãe
 
-**Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas na loja** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas e o painel. Entram na próxima versão, **quando ela decidir publicar**. O **painel** (Cloudflare) já publicou sozinho a #355. Do mutirão de 16/10 o detalhe está em `docs/historico.md`.
+**Estado do código**: igual ao marco anterior (loja na `v0.9.51`, banco na `0064`, mudanças pequenas na `main` esperando ela decidir publicar). **A leva 0 do painel terminou**: a #468 (sala ao vivo) entrou pelo PR #533.
 
-#### O tempo real do painel (#355, feita e testada ao vivo, 17/10)
-- **Feita pelo `chefe-backend`** (PR #531, mesclado). O GitHub avisa o worker (webhook com assinatura conferida), uma sala (Durable Object) repassa a todos os painéis abertos, e a página busca de novo sozinha; ponto "ao vivo" na barra lateral. Como funciona, em 5 linhas: `docs/painel.md`.
-- **Webhook ligado por ela** (17/10, no PC, passo a passo): app "Sakura Painel", segredo só no Bitwarden e na Cloudflare (`GITHUB_WEBHOOK_SECRET`). **Testado por ela com dois navegadores**: o painel mudou nos dois em 4 a 5 s, sem recarregar. Entregas do app verdes desde a publicação.
-- **A próxima da leva 0 é a #468 (sala ao vivo, 6 h)**, já destravada. Sem etiqueta de chefe; sugestão: `chefe-frontend` liderando, chamando o backend pra parte de dados. O `useTempoReal()` já devolve `estado` e `ultimaAtualizacao` pra ela usar.
-
-#### Os chefes por função (decidido por ela, 17/10)
-- **5 chefes**: `chefe-frontend`, `chefe-backend`, `chefe-seguranca`, `chefe-marketing`, `chefe-tester` (`.claude/skills/`, #526). Tarefa com etiqueta `chefe:<função>` (as 5 já existem no GitHub). Tarefa que mistura funções: um chefe lidera e chama os outros dentro da própria sessão (a cota é de quem clicou). Candidatos a chefe depois: Fiscal e Qualidade.
-- **Botão "Começar com o Claude"** (#527) abriu a sessão da #355 com a tarefa e o repositório certos. **Funciona no navegador do celular; o app do Claude ignora o texto.** O plano B **"Copiar texto"** (#529) entrou na `main`, mas **ainda não foi provado no celular**.
-- **Relatórios dos chefes** (#528): cada chefe grava `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` no PR, com "Como eu agi"; a skill `revisor-de-chefes` propõe melhorias nas skills **só em PR aberto, que ela aprova** (revisão do mês, R1). **O 1º relatório de verdade é o da #355** (`docs/relatorios/2026-10-17-tarefa-355-backend.md`); ele **propõe** acrescentar na `chefe-backend` um item sobre Worker/webhook ("rodar no `wrangler dev` e provar com chamada real") e um aviso contra `pkill -f` com texto do próprio comando. **Falta ela aprovar** (não vale sozinha). Repositório público: relatório nunca leva preço, sócios, dado pessoal ou da empresa.
-- **Resumo de segunda de manhã** (A2 da #472): toda segunda às **9h29** (Brasília), com aviso no celular; só lê. 1º disparo: 19/10.
-- Tarefas da **empresa** viraram issues `sofia` no repositório **privado** (#99 a #108).
+#### O modelo único de tarefa (PR #534, mesclado em 17/10)
+- **Toda tarefa segue `docs/tarefas.md`**: cabeçalho fixo (`Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`), etapas com a **categoria** do modelo (forte, médio, rápido), "Pronto quando" no PR e depois de publicar. Decisão que falta vira issue `sofia` no `Depende de`.
+- **Sessão mãe, híbrido** (skill `ritual-de-tarefa`): ajudantes dentro da sessão por padrão; sessão filha só se a issue pedir. **Provado em 17/10**: filha no Haiku respondeu à mãe; filha no Fable falhou em segundos por crédito, e a mãe viu o motivo.
+- **Modelos**: uma tabela só, com reserva; **o Fable fica fora** até todo mundo ter crédito. Sessão que falhar: `/model claude-opus-5-5` e "Tentar novamente", sem mexer na issue.
+- **Reescrever só ao entrar numa leva** (skill `nova-tarefa`, ela aprova o rascunho). O **resumo de segunda** (fixado no Opus) agora lista as tarefas fora do modelo.
 
 #### O que depende dela
-1. **Decidir o chefe da #468** (sugestão: `chefe-frontend`) e **abrir a sessão dela** (próxima da leva 0). Provar o "Copiar texto" no celular, e aprovar ou ajustar a sugestão pra skill `chefe-backend` (acima).
-2. **Publicar a próxima versão** no canal de teste e **testar no instalado** (operador, lista grande, barra de rolagem): só com ela pedindo.
-3. **Conferir** `label:sofia` (público: https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado.
-4. O `/fechar` rodou de verdade em 17/10 e funcionou; **o aviso automático de conversa comprida ainda não foi visto** (#471). A #442 reaberta: falta medir o CI uma semana depois (~23/10) e anotar no privado.
-5. **Empresa**: Claude Team na segunda 19/10, desmembrar o lançamento em novembro, o Pix de 16/11: tudo no privado.
-6. **A Bibi** não mudou; o andamento dela mora só no repositório dela.
+1. **Montar a leva 1** com a `nova-tarefa` e **criar a tarefa do painel que lê o cabeçalho** (rascunho na descrição do PR #534): sessão aberta em 17/10 pra isso.
+2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474).
+3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
+4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
+5. Conferir `label:sofia` (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado; empresa (Team, lançamento, Pix): no privado.
+6. A #442: medir o CI ~23/10. O aviso automático de conversa comprida ainda não foi visto (#471).

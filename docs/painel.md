@@ -571,4 +571,4 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   `claude/` novo aparecendo pelo webhook. Se o webhook `create` chegar antes de a API do GitHub enxergar o branch, a sala só o mostra na
   próxima busca (até 2 min, ou no próximo aviso). Pelo que consigo ver, o app "Sakura Painel" já tem as permissões que as buscas pedem (Actions
   e Contents lidos, Pull requests lidos); se alguma busca vier com "não consegui ler isto do GitHub" no endereço público, é por aí que se confere.
-
+- **17/10/2026, leva 0 terminada**: a tarefa 8 (#468) entrou pelo PR #533, e as 8 tarefas da leva 0 estão feitas. Daqui em diante, toda tarefa segue o **modelo único** de `docs/tarefas.md` (cabeçalho com `Chefe:`, `Ajudantes:`, `Estimativa:`, `Depende de:`, `Sessões filhas:`) e o ritual da skill `ritual-de-tarefa`. A leva 1 é montada pela skill `nova-tarefa`, com a Sofia aprovando os rascunhos.
