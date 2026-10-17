@@ -494,13 +494,13 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   **esperando a revisão da Sofia**). **O defeito**: a Sofia, no celular, tocou em "Começar com o Claude", o Claude abriu e **nenhuma
   mensagem apareceu no campo**. O formato do link está certo segundo a documentação oficial (`code.claude.com/docs/en/web-quickstart`,
   "Pre-fill sessions": `prompt` e `repositories`), então a causa provável é o app do Claude no celular (ou um redirecionamento de
-  login) abrir o endereço **sem levar os parâmetros**. **Causa provável, não provada**: não dá pra reproduzir daqui. **Plano B**: ao
+  login) abrir o endereço **sem levar os parâmetros**. **Causa CONFIRMADA pela Sofia, no aparelho dela (17/10)**: o link **funciona aberto pelo navegador do celular** (o texto aparece no campo); só falha quando abre pelo **app do Claude**, que ignora os parâmetros. **Jeito recomendado no celular**: abrir pelo navegador (Safari/Chrome) ou usar "Copiar texto". Não dá pra reproduzir daqui; a confirmação veio dela. **Plano B**: ao
   lado do botão, **"Copiar texto"**, que copia o **mesmo texto** que o link leva (`textoDaTarefa()`, a mesma regra de chefe/etiqueta;
   o link passou a usar a mesma função, e um teste decodifica o `prompt` do link e compara). Depois de copiar, o botão mostra "Copiado"
   por 4 segundos (e avisa o leitor de tela). Se a área de transferência não existir ou for recusada (`copiarTexto()`, em
   `painel/src/logica/copiarTexto.ts`), aparece o texto num campo já selecionado, pra copiar à mão. Em tarefa feita não aparece nenhum
-  dos dois. **O formato do link não mudou.** Os botões têm 44 px de altura e ficam numa linha própria **abaixo do título** (em 1000 px
+  dos dois. Em tela estreita (celular) aparece também uma dica curta: "No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto." **O formato do link não mudou.** Os botões têm 44 px de altura e ficam numa linha própria **abaixo do título** (em 1000 px
   os dois botões lado a lado espremiam o título; agora ele volta a aparecer inteiro). Olhado renderizado em 320 px e 1000 px, claro e
   escuro, copiando com sucesso e com falha: sem rolagem lateral. Testes novos **vistos reprovar** (texto copiado diferente, falha que
-  não cai no plano B, texto do link diferente do copiado, botão em tarefa feita). **Ainda não provado**: que "Copiar texto" resolve
-  no celular dela (a área de transferência do celular não foi testada).
+  não cai no plano B, texto do link diferente do copiado, botão em tarefa feita). **Ainda não provado**: que "Copiar texto" funciona
+  no celular dela (a área de transferência do celular não foi testada; o caminho pelo navegador já foi).

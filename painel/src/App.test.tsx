@@ -90,6 +90,7 @@ describe("App", () => {
     const feitas = Number(/(\d+) de \d+ tarefas feitas/.exec(h)?.[1]);
     const total = Number(/\d+ de (\d+) tarefas feitas/.exec(h)?.[1]);
     expect((h.match(/<button[^>]*>Copiar texto/g) ?? []).length).toBe(total - feitas);
+    expect((h.match(/No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto\./g) ?? []).length).toBe(total - feitas);
     expect(h).not.toContain("Copiado");
     expect(h).not.toContain("<textarea");
   });

@@ -63,6 +63,9 @@ function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: 
         {copiado ? "Copiado" : "Copiar texto"}
         <span className="sr-only"> (tarefa #{tarefa.numero})</span>
       </button>
+      <p className="basis-full text-sm text-texto-2 sm:hidden">
+        No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
+      </p>
       <span className="sr-only" role="status" aria-live="polite">
         {copiado ? `Texto da tarefa #${tarefa.numero} copiado` : planoB ? "Não deu pra copiar sozinho: o texto está no campo abaixo, já selecionado" : ""}
       </span>
