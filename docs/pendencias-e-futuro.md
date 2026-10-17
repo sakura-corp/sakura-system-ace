@@ -384,8 +384,8 @@ só chegar no PC dela.
 ### 13. Painel da equipe (`docs/painel.md`)
 
 A **leva 0** foi criada em 30/09 (issues #350 a #355): o painel no ar, login, a leva com contador e
-tempo real. Depois, a **leva 1** (a linha de produção completa: pegar tarefa, fases da leva, horas
-por pessoa, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
+tempo real. Depois, a **leva 1** (montada em 17/10: cabeçalho, pegar tarefa, horas por pessoa e três do
+programa; ver `docs/painel.md`, "Andamento"), a leva 2 (fases da leva, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
 O exemplo de DRE está no repositório privado (`dre/`).
 
 ### 14. Atualizar o Electron (tarefa #385; ritmo decidido por ela em 03/10/2026)
