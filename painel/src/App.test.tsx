@@ -163,9 +163,11 @@ describe("App com as tarefas de verdade (#354)", () => {
       },
     });
     expect(com).toMatch(/<h2 id="horas-por-pessoa"[^>]*>Horas por pessoa<\/h2>/);
-    expect(com).toContain("1,5 h entregues · 2 h segurando · 1 sem estimativa");
+    // Só o texto: cada pedaço do quadro mora num <span> próprio (pra não quebrar no meio no celular).
+    const soTexto = (html: string) => html.replace(/<[^>]+>/g, "");
+    expect(soTexto(com)).toContain("1,5 h entregues · 2 h segurando · 1 sem estimativa");
     const sem = de(pronto);
-    expect(sem).toContain("1,5 h entregues · 0 h segurando");
+    expect(soTexto(sem)).toContain("1,5 h entregues · 0 h segurando");
     const ninguem = de({
       ...pronto,
       leva: { ...pronto.leva, tarefas: [{ ...pronto.leva.tarefas[0] }, { ...pronto.leva.tarefas[1], dono: undefined }] },

@@ -21,8 +21,16 @@ export function HorasPorPessoa({ tarefas }: { tarefas: Tarefa[] }) {
               <span className="min-w-0 break-words">{p.login}</span>
             </span>
             <span className="min-w-0 tabular-nums text-texto-2">
-              {formatar(p.entregues)} h entregues · {formatar(p.segurando)} h segurando
-              {p.semEstimativa > 0 && ` · ${p.semEstimativa} sem estimativa`}
+              {/* Cada pedaço quebra inteiro no celular (nunca "1" numa linha e "sem estimativa" na outra). */}
+              <span className="whitespace-nowrap">{formatar(p.entregues)} h entregues</span>
+              {" · "}
+              <span className="whitespace-nowrap">{formatar(p.segurando)} h segurando</span>
+              {p.semEstimativa > 0 && (
+                <>
+                  {" · "}
+                  <span className="whitespace-nowrap">{p.semEstimativa} sem estimativa</span>
+                </>
+              )}
             </span>
           </li>
         ))}
