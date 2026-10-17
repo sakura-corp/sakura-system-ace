@@ -13,7 +13,8 @@ describe("App", () => {
     expect(h).toContain("Leva 0");
     expect(h).toContain("1 de 8 tarefas feitas");
     expect(h).toContain("bruno-exemplo está com 2 tarefas em andamento");
-    expect(h).toContain("em breve, depende do banco próprio da Sakura");
+    expect(h).toContain("Financeiro<span class=\"sr-only\"> (em breve)</span>");
+    expect(h).toContain("depende do banco privado");
     expect(h).toContain('target="_blank"');
   });
 
@@ -203,10 +204,12 @@ describe("App com as tarefas de verdade (#354)", () => {
 
   it("na barra lateral, todas as levas: a atual leva pra /, as outras pra /leva/<n>", () => {
     const h = de(pronto);
-    expect(h).toMatch(/<a href="\/" aria-current="page"[^>]*>Leva 1<\/a>/);
-    expect(h).toMatch(/<a href="\/leva\/0"[^>]*>Leva 0<\/a>/);
+    expect(h).toMatch(/<a href="\/" aria-current="page"[^>]*>.*?Leva atual<\/span><\/a>/);
+    expect(h).not.toMatch(/<a href="\/leva\/0"/);
     const outra = de({ ...pronto, leva: { ...pronto.leva, numero: 0 } }, "/leva/0");
-    expect(outra).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>Leva 0<\/a>/);
+    expect(outra).toMatch(/<a href="\/"[^>]*>(?:(?!<\/a>).)*Leva atual<\/span><\/a>/);
+    expect(outra).not.toMatch(/<a href="\/" aria-current/);
+    expect(outra).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
   });
 
   it("carregando: o esqueleto, sem tarefas de exemplo", () => {
@@ -227,10 +230,9 @@ describe("App com as tarefas de verdade (#354)", () => {
     expect(h).toMatch(/role="alert"/);
     expect(h).toContain("Não deu pra buscar as tarefas no GitHub agora.");
     expect(h).toMatch(/<button[^>]*>.*Tentar de novo<\/button>/);
-    expect(h).toMatch(/<a href="\/"[^>]*>Leva atual<\/a>/);
+    expect(h).toMatch(/<a href="\/"[^>]*>.*?Leva atual<\/span><\/a>/);
     const na0 = de({ tipo: "carregando" }, "/leva/0");
-    expect(na0).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>Leva 0<\/a>/);
-    expect(na0).not.toContain("Leva atual");
+    expect(na0).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
   });
 
   it("sessão acabou: a tela de entrada, voltando pra mesma página", () => {
