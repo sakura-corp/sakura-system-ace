@@ -31,7 +31,6 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     id: "trabalho",
     titulo: "Trabalho",
     itens: [
-      // A barra troca o "/" pelo endereço da leva atual (vem de /api/levas).
       { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/" },
       { id: "levas", rotulo: "Levas anteriores", icone: "relogio", emBreve: true, dependeDe: "depende da #548" },
       { id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, dependeDe: "depende da leva 2" },
@@ -62,13 +61,6 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     itens: [{ id: "configuracoes", rotulo: "Configurações", icone: "ajustes", emBreve: true, dependeDe: "ainda sem tarefa" }],
   },
 ];
-
-/** Os endereços que já existem e não podem mudar nem sumir (decisão da #542). */
-export const ENDERECOS_QUE_EXISTEM: Record<"leva" | "sala" | "escritorio", string> = {
-  leva: "/",
-  sala: "/sala",
-  escritorio: "/escritorio",
-};
 
 /** Uma frase por problema na lista; lista vazia = tudo certo. */
 export function problemasDaNavegacao(grupos: GrupoDaNavegacao[]): string[] {

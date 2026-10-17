@@ -17,7 +17,9 @@ describe("BarraLateral", () => {
     expect(h).toContain('aria-disabled="true"');
     expect(h).toContain('Versões<span class="sr-only"> (em breve)</span>');
     expect(h).toContain("depende da leva 2");
-    expect(h).not.toMatch(/<a [^>]*>[^<]*(<[^a/][^>]*>)*Versões/);
+    expect(h).not.toMatch(/<a [^>]*>(?:(?!<\/a>).)*Versões/);
+    // Só os itens que existem são links: Leva atual, Sala e Escritório.
+    expect(h.match(/<a /g)).toHaveLength(3);
   });
 
   it("leva na tela que não é a atual aparece abaixo de Leva atual; a atual deixa de ser a página", () => {

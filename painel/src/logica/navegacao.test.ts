@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { ENDERECOS_QUE_EXISTEM, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
+import { NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
+
+// Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
+const ENDERECOS_QUE_EXISTEM = { leva: "/", sala: "/sala", escritorio: "/escritorio" };
 
 const todosOsItens = NAVEGACAO.flatMap((g) => g.itens);
 
