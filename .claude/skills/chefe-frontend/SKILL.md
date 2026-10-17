@@ -43,14 +43,17 @@ backend; se a tarefa precisar, diga no relatório e não invente).
 - Módulo/cadastro novo inteiro: usar a skill `gerar-modulo`, não montar à mão.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
+**Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
+
 Cada um recebe um pedido pequeno e fechado, e devolve o resultado **pra você**. Sem necessidade,
 não chame: cada agente gasta cota.
-| Papel | Quando |
-|---|---|
-| **Explorador** (só lê) | achar onde a tela vive, quem usa o componente, qual padrão o módulo já segue |
-| **Construtor de tela** | escrever a mudança numa tela/formulário, dentro do padrão acima |
-| **Conferidor visual** | abrir a tela renderizada (Playwright) e olhar: contraste, largura, foco, teclado |
-| **Revisor** | ler o diff do zero, com olhar adversarial, em PR grande (`/code-review`); conferir cada achado antes de mexer |
+
+| Papel | Quando | Modelo |
+|---|---|---|
+| **Explorador** (só lê) | achar onde a tela vive, quem usa o componente, qual padrão o módulo já segue | rápido |
+| **Construtor de tela** | escrever a mudança numa tela/formulário, dentro do padrão acima | médio |
+| **Conferidor visual** | abrir a tela renderizada (Playwright) e olhar: contraste, largura, foco, teclado | médio |
+| **Revisor** | ler o diff do zero, com olhar adversarial, em PR grande (`/code-review`); conferir cada achado antes de mexer | forte |
 Agentes em paralelo gastam mais cota: só quando os pedaços são mesmo independentes.
 
 ## 5. Como termina

@@ -33,6 +33,12 @@ escreva o valor.
 ## O que cada agente fez
 - <agente>: <uma linha>  ("nenhum" se não chamou)
 
+## Modelos usados
+- <etapa>: <categoria> (<modelo>)  ; se trocou por falha: "trocou de <x> pra <y>: <motivo>"
+
+## Sessões filhas
+- <"nenhuma", ou cada parte: branch e a última mensagem dela (estado)>
+
 ## O que testei e VI reprovar
 - <o que, e como quebrei de propósito>
 

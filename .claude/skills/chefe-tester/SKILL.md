@@ -45,13 +45,15 @@ a issue.
   ficar verde.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
-| Papel | Quando |
-|---|---|
-| **Explorador** (só lê) | achar testes existentes do módulo e o que já cobrem |
-| **Escritor de teste** | escrever o teste novo ao lado do arquivo (`<arquivo>.test.ts`) |
-| **Quebrador** | estragar o código de propósito, ver o teste reprovar, e desfazer (conferir que o diff final não traz a quebra) |
-| **Conferidor visual** | abrir o app renderizado (banco de teste/dados de exemplo) e checar tela por tela o "Pronto quando" |
-| **Redator de roteiro** | montar o roteiro curto pra quem for testar no PC |
+**Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
+
+| Papel | Quando | Modelo |
+|---|---|---|
+| **Explorador** (só lê) | achar testes existentes do módulo e o que já cobrem | rápido |
+| **Escritor de teste** | escrever o teste novo ao lado do arquivo (`<arquivo>.test.ts`) | médio |
+| **Quebrador** | estragar o código de propósito, ver o teste reprovar, e desfazer (conferir que o diff final não traz a quebra) | médio |
+| **Conferidor visual** | abrir o app renderizado (banco de teste/dados de exemplo) e checar tela por tela o "Pronto quando" | médio |
+| **Redator de roteiro** | montar o roteiro curto pra quem for testar no PC | rápido |
 
 ## 5. Como termina
 Rodar `npm run typecheck`, `npm run lint`, `npm run test:fusos`, `npm run contraste` e o que a

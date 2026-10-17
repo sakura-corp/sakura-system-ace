@@ -42,12 +42,14 @@ silencioso.** O conserto pequeno e dentro da tarefa pode ir no PR; o resto vira 
   (o review de bot também erra).
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
-| Papel | Quando |
-|---|---|
-| **Explorador** (só lê) | mapear policies, quem lê/grava cada tabela, onde entra variável de ambiente |
-| **Caçador de segredo** | procurar valor de credencial, CPF, preço no diff e nos arquivos (`gitleaks` se houver; senão busca por padrões) |
-| **Revisor de RLS** | conferir policy × `expectativas.csv`; apontar operação sem policy |
-| **Revisor** | ler o diff do zero com olhar adversarial (`/security-review`, `/code-review`) e conferir cada achado |
+**Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
+
+| Papel | Quando | Modelo |
+|---|---|---|
+| **Explorador** (só lê) | mapear policies, quem lê/grava cada tabela, onde entra variável de ambiente | rápido |
+| **Caçador de segredo** | procurar valor de credencial, CPF, preço no diff e nos arquivos (`gitleaks` se houver; senão busca por padrões) | rápido |
+| **Revisor de RLS** | conferir policy × `expectativas.csv`; apontar operação sem policy | forte |
+| **Revisor** | ler o diff do zero com olhar adversarial (`/security-review`, `/code-review`) e conferir cada achado | forte |
 
 ## 5. Como termina
 PR com a revisão/proposta (ou issue no formato da #425: "o que acontece", "por quê", "o que fazer",

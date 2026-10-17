@@ -124,6 +124,13 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
   PC, o Claude guia você um passo por vez. Depois, pede a revisão da Sofia.
 - **O relatório fica no PR**: o chefe grava o relatório num arquivo em `docs/relatorios/` (sem
   senha, CPF, preço ou dado pessoal; o repositório é público).
+- **Se a sessão falhar logo no começo** com aviso de crédito, limite ou modelo indisponível (ex.:
+  "requires usage credits"): digite `/model claude-opus-5-5`, Enter, e clique em **"Tentar
+  novamente"**. Não mexa na issue. O passo a passo inteiro está em `docs/tarefas.md`, "Quando o
+  modelo falha".
+- **Como a tarefa anda é sempre igual** (skill `ritual-de-tarefa`): a sessão que você abriu é a
+  **sessão mãe**; ela chama ajudantes e, se a tarefa pedir, outras sessões (as filhas), junta tudo e
+  fecha com um PR só e o relatório.
 - **Se a cota acabar no meio**: o chefe grava "onde parou" na descrição do PR ou da tarefa, e outra
   sessão retoma dali.
 - As skills estão em `.claude/skills/chefe-*`. Melhoria nelas é **proposta**; a Sofia aprova.
