@@ -1,7 +1,8 @@
 // As tarefas de verdade (#354): as consultas ao GitHub e a conversão pro formato `Tarefa` da página.
-// O texto da issue só serve pra ler a estimativa: não vai pra página.
+// O texto da issue só serve pra ler a estimativa e o cabeçalho (#536): não vai pra página.
+import { lerCabecalho } from "../src/logica/cabecalho";
 import { estadoDaTarefa, lerEstimativa, levaAtual, numeroDaLeva } from "../src/logica/estado";
-import { chefeDaEtiqueta } from "../src/logica/comecarComClaude";
+import { chefeDaEtiqueta, numeroValido } from "../src/logica/comecarComClaude";
 import { linkSeguro } from "../src/logica/link";
 import type { Leva, RespostaDaLeva, RespostaDasLevas, Tarefa } from "../src/tipos";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
@@ -28,6 +29,7 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
         title
         url
         state
+        stateReason
         body
         labels(first: 30) { nodes { name } }
         assignees(first: 1) { nodes { login avatarUrl(size: 40) } }
@@ -48,6 +50,8 @@ export type IssueDoGitHub = {
   title: string;
   url: string;
   state: "OPEN" | "CLOSED";
+  /** Por que foi fechada: COMPLETED (concluída), NOT_PLANNED, DUPLICATE... Null em issue aberta. */
+  stateReason?: string | null;
   body: string | null;
   labels?: { nodes: ({ name: string } | null)[] } | null;
   assignees: { nodes: ({ login: string; avatarUrl: string } | null)[] };
@@ -90,6 +94,11 @@ export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
   if (chefe) tarefa.chefe = chefe;
   const prUrl = linkSeguro(prDoLink?.url);
   if (prUrl) tarefa.prUrl = prUrl;
+  // O cabeçalho (#536), conferindo a linha Chefe com a etiqueta (sem etiqueta = incompleta).
+  const cabecalho = lerCabecalho(issue.body, { etiquetaChefe: chefe });
+  if (cabecalho.ajudantes) tarefa.ajudantes = cabecalho.ajudantes;
+  // Tarefa feita nunca aparece como "incompleta": o cabeçalho dela não importa mais.
+  if (cabecalho.falta.length > 0 && tarefa.estado !== "feita") tarefa.incompleta = cabecalho.falta;
   return tarefa;
 }
 
@@ -98,4 +107,122 @@ export function levaDosDados(numero: number, dados: DadosDaLeva): RespostaDaLeva
   if (!issues) return null;
   const tarefas = issues.nodes.filter((i) => i !== null).map(tarefaDaIssue);
   return { numero, tarefas, cortada: issues.totalCount > tarefas.length };
+}
+
+// ---- O "Depende de" (#536) ----
+// O botão "Começar com o Claude" fica desligado enquanto algum número do Depende de estiver aberto.
+// Conta como resolvido só quando a issue foi FECHADA COMO CONCLUÍDA (Sofia, 17/10): é assim que o PR na `main` fecha.
+// Fechada como "não planejada" ou duplicada não libera: o trabalho não foi feito. Na dúvida, conta como aberto.
+
+/** A issue foi fechada como concluída (o único fechamento que libera quem depende dela). */
+export const concluida = (issue: { state?: string; stateReason?: string | null } | null | undefined): boolean =>
+  issue?.state === "CLOSED" && issue.stateReason === "COMPLETED";
+
+/** No máximo isto de números de fora da leva numa consulta só; os que sobram contam como abertos (o lado seguro). */
+export const MAXIMO_DE_DEPENDENCIAS = 50;
+
+/** A resposta da consulta das dependências: um apelido `d<N>` por número; null = não existe (ou não deu pra ler). */
+export type DadosDasDependencias = {
+  repository: Record<string, { state?: string; stateReason?: string | null } | null> | null;
+};
+
+type RespostaDoGitHub = { tipo: "ok"; dados: DadosDasDependencias } | { tipo: "sem-acesso" } | { tipo: "erro" };
+/** A chamada ao GitHub, de fora (no worker, `consultar` com o token da sessão); nos testes, fingida. */
+export type PerguntarAoGitHub = (consulta: string, variaveis: Record<string, unknown>) => Promise<RespostaDoGitHub>;
+
+/**
+ * De cada tarefa NÃO feita e COMPLETA (sem `incompleta`), os números do Depende de. Tarefa feita ou
+ * incompleta não entra: não precisa consultar nada pra ela. O próprio número é ignorado (uma tarefa
+ * não espera por ela mesma; senão o botão ficaria desligado pra sempre).
+ */
+export function dependenciasDaLeva(dados: DadosDaLeva): Map<number, number[]> {
+  const pendencias = new Map<number, number[]>();
+  for (const issue of dados.repository?.issues.nodes ?? []) {
+    if (!issue || issue.state === "CLOSED") continue;
+    const chefe = (issue.labels?.nodes ?? []).map((l) => (l ? chefeDaEtiqueta(l.name) : undefined)).find((c) => c !== undefined);
+    const cabecalho = lerCabecalho(issue.body, { etiquetaChefe: chefe });
+    if (cabecalho.falta.length > 0) continue;
+    const numeros = [...new Set(cabecalho.dependeDe.filter((n) => numeroValido(n) && n !== issue.number))];
+    if (numeros.length > 0) pendencias.set(issue.number, numeros);
+  }
+  return pendencias;
+}
+
+/** O estado de cada issue que JÁ veio na leva: true = fechada como concluída. */
+export function estadosDaLeva(dados: DadosDaLeva): Map<number, boolean> {
+  const estados = new Map<number, boolean>();
+  for (const issue of dados.repository?.issues.nodes ?? []) {
+    if (issue) estados.set(issue.number, concluida(issue));
+  }
+  return estados;
+}
+
+/**
+ * Os números que precisam de consulta (não estão na leva): só inteiros válidos, sem repetir, no máximo
+ * `MAXIMO_DE_DEPENDENCIAS`. O resto não é consultado e conta como aberto.
+ */
+export function numerosDeFora(pendencias: Map<number, number[]>, naLeva: Map<number, boolean>): number[] {
+  const fora = new Set<number>();
+  for (const numeros of pendencias.values()) {
+    for (const n of numeros) if (numeroValido(n) && !naLeva.has(n)) fora.add(n);
+  }
+  return [...fora].slice(0, MAXIMO_DE_DEPENDENCIAS);
+}
+
+/**
+ * A consulta, com um apelido `d<N>` por número. Confere de novo cada número com `numeroValido` (só
+ * inteiro entra no texto da consulta), tira os repetidos e corta em `MAXIMO_DE_DEPENDENCIAS`.
+ */
+export function consultaDasDependencias(numeros: number[]): string {
+  const validos = [...new Set(numeros.filter((n) => numeroValido(n)))].slice(0, MAXIMO_DE_DEPENDENCIAS);
+  const linhas = validos.map((n) => `    d${n}: issue(number: ${n}) { state stateReason }`);
+  return `
+query Dependencias($dono: String!, $nome: String!) {
+  repository(owner: $dono, name: $nome) {
+${linhas.join("\n")}
+  }
+}`;
+}
+
+/** Quais números a resposta diz que estão FECHADOS COMO CONCLUÍDOS. Qualquer outra coisa não entra (conta como aberto). */
+export function fechadasDaResposta(numeros: number[], dados: DadosDasDependencias | null | undefined): Set<number> {
+  const fechadas = new Set<number>();
+  const repositorio = dados?.repository;
+  if (!repositorio) return fechadas;
+  for (const n of numeros) {
+    if (numeroValido(n) && concluida(repositorio[`d${n}`])) fechadas.add(n);
+  }
+  return fechadas;
+}
+
+/** Põe `dependeDeAbertas` nas tarefas (só quando tem algum aberto). Fechada = está em `fechadas`. */
+export function aplicarDependencias(tarefas: Tarefa[], pendencias: Map<number, number[]>, fechadas: Set<number>): void {
+  for (const tarefa of tarefas) {
+    const abertas = (pendencias.get(tarefa.numero) ?? []).filter((n) => !fechadas.has(n));
+    if (abertas.length > 0) tarefa.dependeDeAbertas = abertas;
+  }
+}
+
+/**
+ * Descobre quais números do Depende de ainda estão abertos e marca nas tarefas da `resposta`.
+ * Os da própria leva usam o estado que já veio; os de fora, UMA consulta só (e nenhuma se não houver).
+ * Nunca lança erro: se a consulta falhar (rede, GitHub, token), os de fora contam como abertos.
+ */
+export async function marcarDependenciasAbertas(resposta: RespostaDaLeva, dados: DadosDaLeva, perguntar: PerguntarAoGitHub): Promise<RespostaDaLeva> {
+  const pendencias = dependenciasDaLeva(dados);
+  if (pendencias.size === 0) return resposta;
+  const naLeva = estadosDaLeva(dados);
+  const fechadas = new Set([...naLeva].filter(([, fechada]) => fechada).map(([n]) => n));
+  const fora = numerosDeFora(pendencias, naLeva);
+  if (fora.length > 0) {
+    try {
+      const r = await perguntar(consultaDasDependencias(fora), variaveisDoRepositorio);
+      if (r.tipo === "ok") for (const n of fechadasDaResposta(fora, r.dados)) fechadas.add(n);
+      else console.error(`dependências: o GitHub não respondeu (${r.tipo}); as de fora contam como abertas`);
+    } catch {
+      console.error("dependências: falha ao falar com o GitHub");
+    }
+  }
+  aplicarDependencias(resposta.tarefas, pendencias, fechadas);
+  return resposta;
 }

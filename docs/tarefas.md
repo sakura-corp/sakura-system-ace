@@ -85,8 +85,10 @@ Segue o ritual da skill `ritual-de-tarefa` (sessão mãe, modelos, relatório). 
 ```
 
 Regras do modelo:
-- **`Depende de`**: só números de issue, separados por vírgula, ou `nada`. Tarefa: precisa estar
-  **fechada pelo PR na `main`**. Issue `sofia`: precisa estar **fechada**.
+- **`Depende de`**: só números de issue, separados por vírgula, ou `nada`. Tarefa ou issue `sofia`:
+  precisa estar **fechada como concluída** (o PR que entra na `main` fecha assim; à mão, "Close as
+  completed"). Fechada como "não planejada" ou duplicada **não libera**: o painel continua mostrando
+  "Espera #N" (Sofia, 17/10).
 - **`Sessões filhas: sim`** só quando a tarefa tem **partes independentes** (ex.: banco e tela em
   paralelo) ou uma etapa longa que encheria a conversa da mãe. Aí a seção "Etapas e modelos" diz
   quais etapas são filhas, cada uma com os **seus arquivos** (duas filhas nunca mexem no mesmo arquivo).

@@ -291,7 +291,11 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(await r.json()).toEqual({
       numero: 0,
       cortada: false,
-      tarefas: [{ numero: 354, titulo: "Painel 6/8", url: issue.url, estado: "livre", estimativaHoras: 5 }],
+      // Sem o cabeçalho de 5 linhas: vem incompleta (#536), e o texto da issue não vai.
+      tarefas: [{
+        numero: 354, titulo: "Painel 6/8", url: issue.url, estado: "livre", estimativaHoras: 5,
+        incompleta: ["falta a linha Chefe", "falta a linha Ajudantes", "falta a linha Depende de", "falta a linha Sessões filhas"],
+      }],
     });
     expect(g.consultas[0].variaveis).toMatchObject({ etiqueta: "leva-0" });
   });
@@ -338,6 +342,84 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(g.renovacoes()).toBe(1);
     expect(g.consultas[0].autorizacao).toBe("Bearer ghu_novo");
     expect(await decifrarSessao(valorDoCookie(r, "sessao")!, CHAVE)).toMatchObject({ token: "ghu_novo" });
+  });
+});
+
+describe("/api/leva/<n>: o cabeçalho e o Depende de (#536)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;
+  const MARCADOR = "MARCADOR_DO_CORPO_536_ghp_nao_vai";
+  const corpo = (depende: string) =>
+    `Chefe: backend\nAjudantes: tester (conferir)\nEstimativa: 4 h\nDepende de: ${depende}\nSessões filhas: não\n\n## Pra que serve\n${MARCADOR}`;
+  const issue = (number: number, depende: string, state = "OPEN") => ({
+    number, title: `Tarefa ${number}`, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${number}`, state,
+    stateReason: state === "CLOSED" ? "COMPLETED" : null,
+    body: corpo(depende), labels: { nodes: [{ name: "leva-1" }, { name: "chefe:backend" }] },
+    assignees: { nodes: [] }, closedByPullRequestsReferences: { nodes: [] },
+  });
+  const LEVA = { data: { repository: { issues: { totalCount: 3, nodes: [issue(1, "nada", "CLOSED"), issue(2, "#1, #500, #501"), issue(3, "#2")] } } } };
+
+  /** Finge o GraphQL: a consulta da leva e a das dependências respondem coisas diferentes. */
+  function fingir(dependencias: () => Response) {
+    const consultas: { query: string; autorizacao: string | null }[] = [];
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      if (String(entrada) !== "https://api.github.com/graphql") return new Response("inesperado", { status: 500 });
+      const { query } = JSON.parse(String(init?.body)) as { query: string };
+      consultas.push({ query, autorizacao: new Headers(init?.headers).get("authorization") });
+      return query.includes("query Leva(") ? Response.json(LEVA) : dependencias();
+    });
+    return consultas;
+  }
+
+  it("chefe, ajudantes, estimativa e as dependências abertas chegam; o texto da issue não aparece na resposta", async () => {
+    const consultas = fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED", stateReason: "COMPLETED" }, d501: { state: "OPEN" } } } }));
+    const r = await pedir("/api/leva/1", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    const texto = await r.text();
+    expect(texto).not.toContain("MARCADOR_DO_CORPO_536");
+    expect(texto).not.toContain("ghp_");
+    expect(texto).not.toContain("Pra que serve");
+    const { tarefas } = JSON.parse(texto) as { tarefas: Record<string, unknown>[] };
+    expect(tarefas[0]).toEqual({ numero: 1, titulo: "Tarefa 1", url: issue(1, "").url, estado: "feita", chefe: "backend", ajudantes: "tester (conferir)", estimativaHoras: 4 });
+    expect(tarefas[1]).toMatchObject({ numero: 2, chefe: "backend", ajudantes: "tester (conferir)", estimativaHoras: 4, dependeDeAbertas: [501] });
+    expect(tarefas[2]).toMatchObject({ numero: 3, dependeDeAbertas: [2] });
+    // Duas consultas, as duas com o token da sessão; a segunda só com os números de fora da leva.
+    expect(consultas.map((c) => c.autorizacao)).toEqual(["Bearer ghu_a", "Bearer ghu_a"]);
+    expect(consultas[1].query.match(/issue\(number: \d+\)/g)).toEqual(["issue(number: 500)", "issue(number: 501)"]);
+  });
+
+  it("a consulta das dependências falha (500, só errors, 401, fora do ar): a leva sai 200 e os de fora contam como abertos", async () => {
+    for (const falha of [
+      () => new Response("x", { status: 500 }),
+      () => Response.json({ errors: [{ type: "NOT_FOUND" }] }),
+      () => new Response(null, { status: 401 }),
+      () => {
+        throw new TypeError("fetch failed");
+      },
+    ]) {
+      fingir(falha);
+      const r = await pedir("/api/leva/1", { cookie: await comSessao() });
+      expect(r.status).toBe(200);
+      expect(cookies(r)).toEqual([]);
+      const { tarefas } = (await r.json()) as { tarefas: { numero: number; dependeDeAbertas?: number[] }[] };
+      expect(tarefas.map((t) => t.dependeDeAbertas)).toEqual([undefined, [500, 501], [2]]);
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("número que não existe (null com errors NOT_FOUND) conta como aberto", async () => {
+    fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED", stateReason: "COMPLETED" }, d501: null } }, errors: [{ type: "NOT_FOUND", path: ["repository", "d501"] }] }));
+    const r = await pedir("/api/leva/1", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(((await r.json()) as { tarefas: { dependeDeAbertas?: number[] }[] }).tarefas[1].dependeDeAbertas).toEqual([501]);
+  });
+
+  it("continua exigindo sessão: sem cookie ou com cookie adulterado, 401 e nenhuma consulta", async () => {
+    const consultas = fingir(() => Response.json({}));
+    expect((await pedir("/api/leva/1")).status).toBe(401);
+    const adulterado = (await comSessao()).slice(0, -3) + "AAA";
+    expect((await pedir("/api/leva/1", { cookie: adulterado })).status).toBe(401);
+    expect(consultas).toEqual([]);
   });
 });
 

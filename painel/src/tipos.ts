@@ -13,6 +13,12 @@ export type Tarefa = {
   prUrl?: string;
   /** A função do chefe (etiqueta `chefe:<função>`), só se for uma das 5 conhecidas. */
   chefe?: string;
+  /** Quem ajuda, como está na linha Ajudantes do cabeçalho (até 200 caracteres). */
+  ajudantes?: string;
+  /** Os números do Depende de que ainda estão abertos. */
+  dependeDeAbertas?: number[];
+  /** O que falta no cabeçalho da issue; só vem preenchido quando a tarefa está incompleta. */
+  incompleta?: string[];
 };
 
 // ---- Sala (#467) e Escritório de agentes ----
