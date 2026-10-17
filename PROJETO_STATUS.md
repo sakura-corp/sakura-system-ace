@@ -259,7 +259,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - A pedido dela, foi aberta uma **sessão mãe** pra planejar as abas, os dados e o visual do painel, com as abas das funções futuras em "em breve", referências e **duas ou três versões visuais em páginas de exemplo** (sessão `session_0158Dwe3s7gWC25Ktu1Hifij`). Tudo num **PR só, não mesclado**, sem mexer no código de `painel/` (a leva 1 mexe nos mesmos arquivos, e o painel publica sozinho da `main`). No máximo **6 sessões filhas**, 3 ao mesmo tempo, por causa da cota do Pro.
 
 #### O que depende dela
-1. **De manhã**: abrir o PR do painel v2, olhar a página de comparação e responder as escolhas ("abas: B" etc.); depois, aprovar os rascunhos de tarefa que vierem nele.
+1. ~~De manhã: o PR do painel v2~~: **feito** (ela mesclou o #541 e o #550 em 17/10; as tarefas são as #542 a #549, sem `leva-2` até a leva 1 terminar).
 2. **No Team (19/10)**: conferir que a equipe tem os três modelos da tabela e consegue abrir sessões filhas (comentário na #474). Aí a equipe pega a leva 1; a #536 é a que mais destrava.
 3. Aprovar ou ajustar a sugestão do relatório da #355 pra skill `chefe-backend`; provar o "Copiar texto" do painel no celular.
 4. **Publicar a próxima versão** no canal de teste e testar no instalado: só com ela pedindo.
