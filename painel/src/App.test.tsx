@@ -25,7 +25,7 @@ describe("App", () => {
     expect(h).toContain("Ainda não está pronto");
     expect(h).toContain("nunca mora no GitHub");
     // Nenhum algarismo nem "R$" na página (a barra lateral tem "#546" e fica de fora).
-    const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>"));
+    const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/<[^>]*>/g, " ");
     expect(pagina).toContain("Financeiro");
     expect(pagina).not.toMatch(/R\$|\d/);
     expect(h).not.toContain("1 de 8 tarefas feitas");
