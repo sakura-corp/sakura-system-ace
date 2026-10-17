@@ -8,7 +8,7 @@ const completo = (extra: Partial<Record<"chefe" | "ajudantes" | "estimativa" | "
 
 describe("lerCabecalho", () => {
   it("cabeçalho completo não falta nada", () => {
-    expect(lerCabecalho(completo(), "frontend")).toEqual({
+    expect(lerCabecalho(completo(), { etiquetaChefe: "frontend" })).toEqual({
       chefe: "frontend",
       ajudantes: "tester (conferir o Pronto quando)",
       estimativaHoras: 5,
@@ -71,20 +71,20 @@ describe("lerCabecalho", () => {
   });
 
   it("chefe desconhecido entra em falta e não vira chefe", () => {
-    const r = lerCabecalho(completo({ chefe: "cozinha" }), "frontend");
+    const r = lerCabecalho(completo({ chefe: "cozinha" }), { etiquetaChefe: "frontend" });
     expect(r.chefe).toBeUndefined();
     expect(r.falta).toEqual(["a linha Chefe não tem um chefe conhecido"]);
   });
 
   it("Chefe diferente da etiqueta entra em falta", () => {
-    const r = lerCabecalho(completo({ chefe: "backend" }), "frontend");
+    const r = lerCabecalho(completo({ chefe: "backend" }), { etiquetaChefe: "frontend" });
     expect(r.chefe).toBe("backend");
     expect(r.falta).toEqual(["a linha Chefe e a etiqueta chefe: não dizem o mesmo"]);
   });
 
   it("etiqueta ausente (passada vazia) entra em falta; sem o 2º parâmetro não confere", () => {
-    expect(lerCabecalho(completo(), undefined).falta).toEqual(["a linha Chefe e a etiqueta chefe: não dizem o mesmo"]);
-    expect(lerCabecalho(completo(), "").falta).toEqual(["a linha Chefe e a etiqueta chefe: não dizem o mesmo"]);
+    expect(lerCabecalho(completo(), { etiquetaChefe: undefined }).falta).toEqual(["a linha Chefe e a etiqueta chefe: não dizem o mesmo"]);
+    expect(lerCabecalho(completo(), { etiquetaChefe: "" }).falta).toEqual(["a linha Chefe e a etiqueta chefe: não dizem o mesmo"]);
     expect(lerCabecalho(completo()).falta).toEqual([]);
   });
 
@@ -95,7 +95,7 @@ describe("lerCabecalho", () => {
   });
 
   it("linhas em branco no começo são ignoradas, mas o cabeçalho acaba na primeira linha em branco", () => {
-    expect(lerCabecalho("\n\n" + completo(), "frontend").falta).toEqual([]);
+    expect(lerCabecalho("\n\n" + completo(), { etiquetaChefe: "frontend" }).falta).toEqual([]);
     const r = lerCabecalho("Chefe: frontend\nAjudantes: x\n\nEstimativa: 1 h\nDepende de: nada\nSessões filhas: sim");
     expect(r.falta).toEqual(["falta a linha Estimativa", "falta a linha Depende de", "falta a linha Sessões filhas"]);
   });
@@ -111,7 +111,7 @@ describe("lerCabecalho", () => {
   it("negrito, marcador e maiúsculas são aceitos", () => {
     const r = lerCabecalho(
       "**Chefe**: Frontend\n- AJUDANTES: tester\n**Estimativa:** 2 h\n__Depende de__: NADA\nSESSÕES FILHAS: SIM\n",
-      "frontend",
+      { etiquetaChefe: "frontend" },
     );
     expect(r).toEqual({ chefe: "frontend", ajudantes: "tester", estimativaHoras: 2, dependeDe: [], sessoesFilhas: true, falta: [] });
   });
@@ -134,5 +134,16 @@ describe("lerCabecalho", () => {
   it("ajudantes é cortado em 200 caracteres", () => {
     const r = lerCabecalho(completo({ ajudantes: "a".repeat(500) }));
     expect(r.ajudantes).toHaveLength(200);
+  });
+
+  it("acento guardado separado da letra (NFD, como vem de cópia no Mac) é lido igual", () => {
+    const r = lerCabecalho(completo().normalize("NFD"), { etiquetaChefe: "frontend" });
+    expect(r.falta).toEqual([]);
+    expect(r.sessoesFilhas).toBe(false);
+  });
+
+  it("linha Ajudantes inteira em negrito não deixa ** no fim", () => {
+    const r = lerCabecalho(completo().replace(/^Ajudantes: (.*)$/m, "**Ajudantes: $1**"));
+    expect(r.ajudantes).toBe("tester (conferir o Pronto quando)");
   });
 });

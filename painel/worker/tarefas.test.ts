@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   MAXIMO_DE_DEPENDENCIAS,
   consultaDasDependencias,
@@ -264,6 +264,20 @@ describe("Depende de (#536): dentro e fora da leva", () => {
       const r = await rodar(dados, perguntar);
       expect(r.tarefas).toHaveLength(2);
       expect(tarefa(r, 2).dependeDeAbertas).toEqual([500]);
+    }
+  });
+
+  it("a consulta volta com erro ou sem acesso: fica registrado (senão todo botão desligaria sem rastro)", async () => {
+    const espiao = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      for (const tipo of ["erro", "sem-acesso"] as const) {
+        espiao.mockClear();
+        await rodar(leva(daLeva(2, {}, { depende: "#500" })), async () => ({ tipo }));
+        expect(espiao).toHaveBeenCalledTimes(1);
+        expect(String(espiao.mock.calls[0][0])).toContain(tipo);
+      }
+    } finally {
+      espiao.mockRestore();
     }
   });
 

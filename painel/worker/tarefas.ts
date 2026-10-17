@@ -91,8 +91,8 @@ export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
   if (chefe) tarefa.chefe = chefe;
   const prUrl = linkSeguro(prDoLink?.url);
   if (prUrl) tarefa.prUrl = prUrl;
-  // O cabeçalho (#536). O chefe da etiqueta vai sempre como 2º argumento (mesmo vazio), pra conferir com a linha Chefe.
-  const cabecalho = lerCabecalho(issue.body, chefe);
+  // O cabeçalho (#536), conferindo a linha Chefe com a etiqueta (sem etiqueta = incompleta).
+  const cabecalho = lerCabecalho(issue.body, { etiquetaChefe: chefe });
   if (cabecalho.ajudantes) tarefa.ajudantes = cabecalho.ajudantes;
   // Tarefa feita nunca aparece como "incompleta": o cabeçalho dela não importa mais.
   if (cabecalho.falta.length > 0 && tarefa.estado !== "feita") tarefa.incompleta = cabecalho.falta;
@@ -132,7 +132,7 @@ export function dependenciasDaLeva(dados: DadosDaLeva): Map<number, number[]> {
   for (const issue of dados.repository?.issues.nodes ?? []) {
     if (!issue || issue.state === "CLOSED") continue;
     const chefe = (issue.labels?.nodes ?? []).map((l) => (l ? chefeDaEtiqueta(l.name) : undefined)).find((c) => c !== undefined);
-    const cabecalho = lerCabecalho(issue.body, chefe);
+    const cabecalho = lerCabecalho(issue.body, { etiquetaChefe: chefe });
     if (cabecalho.falta.length > 0) continue;
     const numeros = [...new Set(cabecalho.dependeDe.filter((n) => numeroValido(n) && n !== issue.number))];
     if (numeros.length > 0) pendencias.set(issue.number, numeros);
@@ -210,6 +210,7 @@ export async function marcarDependenciasAbertas(resposta: RespostaDaLeva, dados:
     try {
       const r = await perguntar(consultaDasDependencias(fora), variaveisDoRepositorio);
       if (r.tipo === "ok") for (const n of fechadasDaResposta(fora, r.dados)) fechadas.add(n);
+      else console.error(`dependências: o GitHub não respondeu (${r.tipo}); as de fora contam como abertas`);
     } catch {
       console.error("dependências: falha ao falar com o GitHub");
     }

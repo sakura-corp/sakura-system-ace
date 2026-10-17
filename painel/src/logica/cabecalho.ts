@@ -33,7 +33,8 @@ const REGEX_DAS_LINHAS = LINHAS.map((l) => ({
 
 /** O trecho do começo do texto: pula linhas em branco iniciais e vai até a primeira linha em branco ou título (`#`). */
 function linhasDoCabecalho(texto: string): string[] {
-  const todas = texto.replace(/^﻿/, "").split(/\r?\n/);
+  // NFC: "Sessões" copiado de alguns lugares (Mac) vem com o acento separado da letra e não bateria com a regra.
+  const todas = texto.normalize("NFC").replace(/^﻿/, "").split(/\r?\n/);
   let i = 0;
   while (i < todas.length && todas[i].trim() === "") i++;
   const achadas: string[] = [];
@@ -67,13 +68,15 @@ function lerDependencias(valor: string, falta: string[]): number[] {
   return numeros;
 }
 
+/** Pra conferir a linha Chefe com a etiqueta `chefe:` da issue. `etiquetaChefe` vazio ou ausente = a issue não tem a etiqueta. */
+export type ConferirEtiqueta = { etiquetaChefe: string | undefined };
+
 /**
  * Lê o cabeçalho da issue. Nunca lança erro: o que não der pra ler vai em `falta`.
- * `chefeDaEtiqueta`: se for passado (mesmo vazio), confere se a etiqueta `chefe:` diz o mesmo que a linha Chefe.
- * Sem o 2º parâmetro, não confere a etiqueta.
+ * Com `etiqueta`, confere se a etiqueta `chefe:` diz o mesmo que a linha Chefe (sem etiqueta = não bate).
+ * Sem `etiqueta`, não confere.
  */
-export function lerCabecalho(texto: string | null | undefined, chefeDaEtiqueta?: string): Cabecalho {
-  const conferirEtiqueta = arguments.length >= 2;
+export function lerCabecalho(texto: string | null | undefined, etiqueta?: ConferirEtiqueta): Cabecalho {
   const resultado: Cabecalho = { dependeDe: [], falta: [] };
   try {
     const linhas = linhasDoCabecalho(typeof texto === "string" ? texto : "");
@@ -104,7 +107,7 @@ export function lerCabecalho(texto: string | null | undefined, chefeDaEtiqueta?:
       const conhecido = CHEFES.find((c) => c === nome);
       if (conhecido) {
         resultado.chefe = conhecido;
-        if (conferirEtiqueta && chefeDaEtiqueta !== conhecido) {
+        if (etiqueta && etiqueta.etiquetaChefe !== conhecido) {
           resultado.falta.push("a linha Chefe e a etiqueta chefe: não dizem o mesmo");
         }
       } else {
@@ -114,7 +117,8 @@ export function lerCabecalho(texto: string | null | undefined, chefeDaEtiqueta?:
 
     const ajudantes = achadas.get("ajudantes");
     if (ajudantes) {
-      const texto200 = ajudantes.valor.slice(0, LIMITE_AJUDANTES).trim();
+      // Tira o negrito que sobra no fim quando a linha inteira está em negrito (`**Ajudantes: tester**`).
+      const texto200 = ajudantes.valor.replace(/[*_]+$/, "").slice(0, LIMITE_AJUDANTES).trim();
       if (texto200 === "") resultado.falta.push("a linha Ajudantes está vazia");
       else resultado.ajudantes = texto200;
     }
