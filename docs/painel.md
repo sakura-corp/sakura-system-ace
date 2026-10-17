@@ -599,5 +599,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **17/10/2026, #536 o cartão lê o cabeçalho: PR aberto, esperando a revisão da Sofia.** O cartão mostra chefe e ajudantes numa
   linha própria. Com um número do `Depende de` ainda aberto, o botão aparece desligado com "Espera #N" (sem o "Copiar texto"); sem as
   cinco linhas do cabeçalho, "tarefa incompleta". O worker faz uma consulta só pros números de fora da leva, montada só com inteiros
-  validados (no máximo 50); se ela falhar, contam como abertos e a leva sai igual. Relatório em
+  validados (no máximo 50); se ela falhar, contam como abertos e a leva sai igual. Dependência só libera quando foi **fechada como
+  concluída** (Sofia, 17/10; "não planejada" ou duplicada continua "Espera #N"). Tarefa incompleta mostra o que falta à vista. Relatório em
   `docs/relatorios/2026-10-17-tarefa-536-frontend.md`. **Depois que entrar na `main`, a #538 pode começar.**

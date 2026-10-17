@@ -353,6 +353,7 @@ describe("/api/leva/<n>: o cabeçalho e o Depende de (#536)", () => {
     `Chefe: backend\nAjudantes: tester (conferir)\nEstimativa: 4 h\nDepende de: ${depende}\nSessões filhas: não\n\n## Pra que serve\n${MARCADOR}`;
   const issue = (number: number, depende: string, state = "OPEN") => ({
     number, title: `Tarefa ${number}`, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${number}`, state,
+    stateReason: state === "CLOSED" ? "COMPLETED" : null,
     body: corpo(depende), labels: { nodes: [{ name: "leva-1" }, { name: "chefe:backend" }] },
     assignees: { nodes: [] }, closedByPullRequestsReferences: { nodes: [] },
   });
@@ -371,7 +372,7 @@ describe("/api/leva/<n>: o cabeçalho e o Depende de (#536)", () => {
   }
 
   it("chefe, ajudantes, estimativa e as dependências abertas chegam; o texto da issue não aparece na resposta", async () => {
-    const consultas = fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED" }, d501: { state: "OPEN" } } } }));
+    const consultas = fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED", stateReason: "COMPLETED" }, d501: { state: "OPEN" } } } }));
     const r = await pedir("/api/leva/1", { cookie: await comSessao() });
     expect(r.status).toBe(200);
     const texto = await r.text();
@@ -407,7 +408,7 @@ describe("/api/leva/<n>: o cabeçalho e o Depende de (#536)", () => {
   });
 
   it("número que não existe (null com errors NOT_FOUND) conta como aberto", async () => {
-    fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED" }, d501: null } }, errors: [{ type: "NOT_FOUND", path: ["repository", "d501"] }] }));
+    fingir(() => Response.json({ data: { repository: { d500: { state: "CLOSED", stateReason: "COMPLETED" }, d501: null } }, errors: [{ type: "NOT_FOUND", path: ["repository", "d501"] }] }));
     const r = await pedir("/api/leva/1", { cookie: await comSessao() });
     expect(r.status).toBe(200);
     expect(((await r.json()) as { tarefas: { dependeDeAbertas?: number[] }[] }).tarefas[1].dependeDeAbertas).toEqual([501]);

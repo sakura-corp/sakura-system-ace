@@ -29,6 +29,7 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
         title
         url
         state
+        stateReason
         body
         labels(first: 30) { nodes { name } }
         assignees(first: 1) { nodes { login avatarUrl(size: 40) } }
@@ -49,6 +50,8 @@ export type IssueDoGitHub = {
   title: string;
   url: string;
   state: "OPEN" | "CLOSED";
+  /** Por que foi fechada: COMPLETED (concluída), NOT_PLANNED, DUPLICATE... Null em issue aberta. */
+  stateReason?: string | null;
   body: string | null;
   labels?: { nodes: ({ name: string } | null)[] } | null;
   assignees: { nodes: ({ login: string; avatarUrl: string } | null)[] };
@@ -108,14 +111,19 @@ export function levaDosDados(numero: number, dados: DadosDaLeva): RespostaDaLeva
 
 // ---- O "Depende de" (#536) ----
 // O botão "Começar com o Claude" fica desligado enquanto algum número do Depende de estiver aberto.
-// Conta como resolvido só quando a issue está FECHADA (de qualquer jeito). Na dúvida, conta como aberto.
+// Conta como resolvido só quando a issue foi FECHADA COMO CONCLUÍDA (Sofia, 17/10): é assim que o PR na `main` fecha.
+// Fechada como "não planejada" ou duplicada não libera: o trabalho não foi feito. Na dúvida, conta como aberto.
+
+/** A issue foi fechada como concluída (o único fechamento que libera quem depende dela). */
+export const concluida = (issue: { state?: string; stateReason?: string | null } | null | undefined): boolean =>
+  issue?.state === "CLOSED" && issue.stateReason === "COMPLETED";
 
 /** No máximo isto de números de fora da leva numa consulta só; os que sobram contam como abertos (o lado seguro). */
 export const MAXIMO_DE_DEPENDENCIAS = 50;
 
 /** A resposta da consulta das dependências: um apelido `d<N>` por número; null = não existe (ou não deu pra ler). */
 export type DadosDasDependencias = {
-  repository: Record<string, { state?: string } | null> | null;
+  repository: Record<string, { state?: string; stateReason?: string | null } | null> | null;
 };
 
 type RespostaDoGitHub = { tipo: "ok"; dados: DadosDasDependencias } | { tipo: "sem-acesso" } | { tipo: "erro" };
@@ -140,11 +148,11 @@ export function dependenciasDaLeva(dados: DadosDaLeva): Map<number, number[]> {
   return pendencias;
 }
 
-/** O estado de cada issue que JÁ veio na leva: true = fechada. */
+/** O estado de cada issue que JÁ veio na leva: true = fechada como concluída. */
 export function estadosDaLeva(dados: DadosDaLeva): Map<number, boolean> {
   const estados = new Map<number, boolean>();
   for (const issue of dados.repository?.issues.nodes ?? []) {
-    if (issue) estados.set(issue.number, issue.state === "CLOSED");
+    if (issue) estados.set(issue.number, concluida(issue));
   }
   return estados;
 }
@@ -167,7 +175,7 @@ export function numerosDeFora(pendencias: Map<number, number[]>, naLeva: Map<num
  */
 export function consultaDasDependencias(numeros: number[]): string {
   const validos = [...new Set(numeros.filter((n) => numeroValido(n)))].slice(0, MAXIMO_DE_DEPENDENCIAS);
-  const linhas = validos.map((n) => `    d${n}: issue(number: ${n}) { state }`);
+  const linhas = validos.map((n) => `    d${n}: issue(number: ${n}) { state stateReason }`);
   return `
 query Dependencias($dono: String!, $nome: String!) {
   repository(owner: $dono, name: $nome) {
@@ -176,13 +184,13 @@ ${linhas.join("\n")}
 }`;
 }
 
-/** Quais números a resposta diz que estão FECHADOS. Null, sem `state` ou outro estado: não entra (conta como aberto). */
+/** Quais números a resposta diz que estão FECHADOS COMO CONCLUÍDOS. Qualquer outra coisa não entra (conta como aberto). */
 export function fechadasDaResposta(numeros: number[], dados: DadosDasDependencias | null | undefined): Set<number> {
   const fechadas = new Set<number>();
   const repositorio = dados?.repository;
   if (!repositorio) return fechadas;
   for (const n of numeros) {
-    if (numeroValido(n) && repositorio[`d${n}`]?.state === "CLOSED") fechadas.add(n);
+    if (numeroValido(n) && concluida(repositorio[`d${n}`])) fechadas.add(n);
   }
   return fechadas;
 }

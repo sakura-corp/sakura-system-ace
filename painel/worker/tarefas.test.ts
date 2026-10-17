@@ -175,8 +175,8 @@ describe("consultaDasDependencias (#536): só inteiros validados entram no texto
   it("monta um apelido d<N> por número, dentro de repository(owner:$dono, name:$nome)", () => {
     const q = consultaDasDependencias([7, 12]);
     expect(q).toContain("repository(owner: $dono, name: $nome)");
-    expect(q).toContain("d7: issue(number: 7) { state }");
-    expect(q).toContain("d12: issue(number: 12) { state }");
+    expect(q).toContain("d7: issue(number: 7) { state stateReason }");
+    expect(q).toContain("d12: issue(number: 12) { state stateReason }");
   });
 
   it("o que não é inteiro válido nunca entra (mesmo forçado direto na função)", () => {
@@ -215,7 +215,7 @@ describe("consultaDasDependencias (#536): só inteiros validados entram no texto
 });
 
 describe("Depende de (#536): dentro e fora da leva", () => {
-  const respondendo = (estados: Record<string, { state?: string } | null>) => {
+  const respondendo = (estados: Record<string, { state?: string; stateReason?: string } | null>) => {
     const consultas: string[] = [];
     const perguntar: PerguntarAoGitHub = async (q) => {
       consultas.push(q);
@@ -228,14 +228,14 @@ describe("Depende de (#536): dentro e fora da leva", () => {
 
   it("dentro da leva: a fechada está resolvida, a aberta conta; e não pergunta nada ao GitHub", async () => {
     const g = respondendo({});
-    const dados = leva(daLeva(1, { state: "CLOSED" }), daLeva(2), daLeva(3, {}, { depende: "#1, #2" }));
+    const dados = leva(daLeva(1, { state: "CLOSED", stateReason: "COMPLETED" }), daLeva(2), daLeva(3, {}, { depende: "#1, #2" }));
     const r = await rodar(dados, g.perguntar);
     expect(tarefa(r, 3).dependeDeAbertas).toEqual([2]);
     expect(g.consultas).toEqual([]);
   });
 
   it("fora da leva: FECHADA resolvida; ABERTA e inexistente (null) contam; uma consulta só", async () => {
-    const g = respondendo({ d500: { state: "CLOSED" }, d501: { state: "OPEN" }, d502: null });
+    const g = respondendo({ d500: { state: "CLOSED", stateReason: "COMPLETED" }, d501: { state: "OPEN" }, d502: null });
     const dados = leva(daLeva(1, {}, { depende: "#500, #501, #502, #503" }), daLeva(2, {}, { depende: "#500, #501" }));
     const r = await rodar(dados, g.perguntar);
     // #503 nem veio na resposta: conta como aberto.
@@ -245,8 +245,19 @@ describe("Depende de (#536): dentro e fora da leva", () => {
     expect(g.consultas[0].match(/issue\(number:/g)).toHaveLength(4);
   });
 
+  it("fechada como não planejada, duplicada ou sem motivo NÃO libera, dentro e fora da leva (Sofia, 17/10)", async () => {
+    const g = respondendo({ d500: { state: "CLOSED", stateReason: "NOT_PLANNED" }, d501: { state: "CLOSED", stateReason: "DUPLICATE" }, d502: { state: "CLOSED" } });
+    const dados = leva(
+      daLeva(1, { state: "CLOSED", stateReason: "NOT_PLANNED" }),
+      daLeva(2, { state: "CLOSED", stateReason: "COMPLETED" }),
+      daLeva(3, {}, { depende: "#1, #2, #500, #501, #502" }),
+    );
+    const r = await rodar(dados, g.perguntar);
+    expect(tarefa(r, 3).dependeDeAbertas).toEqual([1, 500, 501, 502]);
+  });
+
   it("tudo fechado: o campo nem aparece", async () => {
-    const r = await rodar(leva(daLeva(1, {}, { depende: "#500" })), respondendo({ d500: { state: "CLOSED" } }).perguntar);
+    const r = await rodar(leva(daLeva(1, {}, { depende: "#500" })), respondendo({ d500: { state: "CLOSED", stateReason: "COMPLETED" } }).perguntar);
     expect("dependeDeAbertas" in tarefa(r, 1)).toBe(false);
   });
 
@@ -260,7 +271,7 @@ describe("Depende de (#536): dentro e fora da leva", () => {
       async () => ({ tipo: "ok", dados: { repository: null } }),
     ];
     for (const perguntar of falhas) {
-      const dados = leva(daLeva(1, { state: "CLOSED" }), daLeva(2, {}, { depende: "#1, #500" }));
+      const dados = leva(daLeva(1, { state: "CLOSED", stateReason: "COMPLETED" }), daLeva(2, {}, { depende: "#1, #500" }));
       const r = await rodar(dados, perguntar);
       expect(r.tarefas).toHaveLength(2);
       expect(tarefa(r, 2).dependeDeAbertas).toEqual([500]);
@@ -289,7 +300,7 @@ describe("Depende de (#536): dentro e fora da leva", () => {
 
   it("tarefa feita ou incompleta não ganha dependeDeAbertas e não gera consulta", async () => {
     const g = respondendo({});
-    const dados = leva(daLeva(1, { state: "CLOSED" }, { depende: "#500" }), daLeva(2, {}, { depende: "#501", chefe: "frontend" }));
+    const dados = leva(daLeva(1, { state: "CLOSED", stateReason: "COMPLETED" }, { depende: "#500" }), daLeva(2, {}, { depende: "#501", chefe: "frontend" }));
     const r = await rodar(dados, g.perguntar);
     expect("dependeDeAbertas" in tarefa(r, 1)).toBe(false);
     expect("dependeDeAbertas" in tarefa(r, 2)).toBe(false);
@@ -305,7 +316,7 @@ describe("Depende de (#536): dentro e fora da leva", () => {
 
   it("mais de 50 números de fora: consulta só 50, os que sobram contam como abertos", async () => {
     const numeros = Array.from({ length: 60 }, (_, i) => 1000 + i);
-    const tudoFechado = Object.fromEntries(numeros.map((n) => [`d${n}`, { state: "CLOSED" }]));
+    const tudoFechado = Object.fromEntries(numeros.map((n) => [`d${n}`, { state: "CLOSED", stateReason: "COMPLETED" }]));
     const g = respondendo(tudoFechado);
     const r = await rodar(leva(daLeva(1, {}, { depende: numeros.map((n) => `#${n}`).join(", ") })), g.perguntar);
     expect(g.consultas[0].match(/issue\(number:/g)).toHaveLength(50);
@@ -315,17 +326,18 @@ describe("Depende de (#536): dentro e fora da leva", () => {
 
 describe("as funções pequenas do Depende de (#536)", () => {
   it("dependenciasDaLeva: só tarefas abertas e completas, sem si mesma", () => {
-    const dados = leva(daLeva(1, {}, { depende: "#1, #2" }), daLeva(2, { state: "CLOSED" }, { depende: "#3" }), daLeva(3, {}, { ajudantes: null, depende: "#4" }), daLeva(4));
+    const dados = leva(daLeva(1, {}, { depende: "#1, #2" }), daLeva(2, { state: "CLOSED", stateReason: "COMPLETED" }, { depende: "#3" }), daLeva(3, {}, { ajudantes: null, depende: "#4" }), daLeva(4));
     expect([...dependenciasDaLeva(dados)]).toEqual([[1, [2]]]);
   });
   it("estadosDaLeva e numerosDeFora: sem repetir e sem os da leva", () => {
-    const naLeva = estadosDaLeva(leva(daLeva(1, { state: "CLOSED" }), daLeva(2)));
+    const naLeva = estadosDaLeva(leva(daLeva(1, { state: "CLOSED", stateReason: "COMPLETED" }), daLeva(2)));
     expect([...naLeva]).toEqual([[1, true], [2, false]]);
     expect(numerosDeFora(new Map([[2, [1, 9, 9]], [5, [9, 8]]]), naLeva)).toEqual([9, 8]);
   });
-  it("fechadasDaResposta: só CLOSED conta; null, sem state ou outro valor não", () => {
-    const r = fechadasDaResposta([1, 2, 3, 4], { repository: { d1: { state: "CLOSED" }, d2: { state: "OPEN" }, d3: null, d4: {} } });
+  it("fechadasDaResposta: só CLOSED como COMPLETED conta; null, sem state, outro valor ou outro motivo não", () => {
+    const r = fechadasDaResposta([1, 2, 3, 4], { repository: { d1: { state: "CLOSED", stateReason: "COMPLETED" }, d2: { state: "OPEN" }, d3: null, d4: {} } });
     expect([...r]).toEqual([1]);
     expect([...fechadasDaResposta([1], null)]).toEqual([]);
+    expect([...fechadasDaResposta([1], { repository: { d1: { state: "CLOSED", stateReason: "NOT_PLANNED" } } })]).toEqual([]);
   });
 });

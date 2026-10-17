@@ -44,9 +44,9 @@
 
 ## O que depende de alguém
 - **A Sofia**: revisar e mesclar o PR. Depois de publicado, conferir no endereço público que uma tarefa da leva 1 mostra o chefe e a estimativa, e que a #538 mostra "Espera #536" (até a #536 fechar).
-- **A Sofia decide** (perguntas no PR):
+- **Decidido pela Sofia no meio da tarefa** (17/10):
   1. ~~o que falta na "tarefa incompleta" só na dica do mouse~~: **decidido (Sofia, 17/10): mostrar numa linha pequena embaixo**, porque no celular não há dica. Feito nesta branch, com teste visto reprovar.
-  2. **qual fechamento conta**: o `docs/tarefas.md` diz que a tarefa da qual se depende precisa estar "fechada pelo PR na `main`"; a issue (e o código) aceitam qualquer fechamento, inclusive "não planejada". Qual dos dois vale?
+  2. ~~qual fechamento conta~~: **decidido (Sofia, 17/10): só "fechada como concluída"** (`stateReason: COMPLETED`), o lado seguro. A issue dizia "de qualquer jeito" e o `docs/tarefas.md` dizia "fechada pelo PR na `main`". Exigir o PR pediria outra consulta e travaria tarefa fechada à mão já pronta. Feito nesta branch: o `docs/tarefas.md` foi alinhado e as duas consultas pedem `stateReason`. As consultas foram validadas contra o esquema público do GitHub (`graphql` + `@octokit/graphql-schema`, fora do projeto), e um campo errado de propósito foi recusado. Com a regra antiga ("qualquer fechamento"), o teste novo reprova. Issue fechada antes de o GitHub guardar o motivo vem sem motivo e conta como aberta.
 
 ## Onde parou
 Terminei.
