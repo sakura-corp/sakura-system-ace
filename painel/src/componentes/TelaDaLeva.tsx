@@ -12,10 +12,16 @@ type Props = {
   subtitulo: React.ReactNode;
   /** A leva tem mais de 100 tarefas, e só as 100 primeiras vieram. */
   cortada?: boolean;
+  /** Quem está olhando (pra "Pegar tarefa" e "Largar"). Sem login, os botões ficam desligados. */
+  login?: string;
+  /** Busca a leva de novo depois de pegar ou largar. */
+  aoMudar?: () => Promise<unknown>;
+  /** A leva mostrada é a atual (só nela dá pra pegar tarefa). */
+  ehALevaAtual?: boolean;
 };
 
 /** A leva: título, aviso de "uma por vez", contador e a lista agrupada por estado. */
-export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false }: Props) {
+export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, ehALevaAtual }: Props) {
   const avisos = pessoasComVariasEmAndamento(tarefas);
   return (
     <>
@@ -49,7 +55,7 @@ export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false }: Props)
           </div>
           <HorasPorPessoa tarefas={tarefas} />
           <div className="mt-8">
-            <ListaDeTarefas tarefas={tarefas} />
+            <ListaDeTarefas tarefas={tarefas} login={login} aoMudar={aoMudar} ehALevaAtual={ehALevaAtual} />
           </div>
         </>
       )}

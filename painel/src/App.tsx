@@ -174,6 +174,9 @@ export default function App({
               nome={`Leva ${estado.leva.numero}`}
               tarefas={estado.leva.tarefas}
               cortada={estado.leva.cortada}
+              login={usuario?.login}
+              aoMudar={usuario ? recarregar : undefined}
+              ehALevaAtual={estado.leva.numero === estado.atual}
               subtitulo={
                 <>
                   As tarefas com a etiqueta <code>leva-{estado.leva.numero}</code>.{" "}

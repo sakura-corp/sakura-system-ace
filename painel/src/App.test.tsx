@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import App, { paginaDoCaminho } from "./App";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import type { EstadoDaLeva } from "./logica/dados";
+import type { Tarefa } from "./tipos";
 
 const html = (caminho: string, busca = "") => renderToString(<App caminho={caminho} busca={busca} />).replace(/<!-- -->/g, "");
 
@@ -66,33 +67,6 @@ describe("App", () => {
         expect(u.startsWith("https://github.com/sakura-corp/") || doBotao).toBe(true);
       }
     }
-  });
-
-  it("o botão Começar com o Claude aparece em tarefa não feita e não em feita, e abre em aba nova", () => {
-    const h = html("/");
-    expect((h.match(/Começar com o Claude/g) ?? []).length).toBeGreaterThan(0);
-    const botoes = [...h.matchAll(/<a [^>]*href="https:\/\/claude\.ai\/code\?[^>]*>/g)].map((m) => m[0]);
-    expect(botoes.length).toBeGreaterThan(0);
-    for (const b of botoes) expect(b).toContain('rel="noopener noreferrer"');
-    for (const b of botoes) expect(b).toContain('target="_blank"');
-  });
-
-  it("tarefa feita não ganha o botão: um botão por tarefa que não está feita", () => {
-    const h = html("/");
-    const feitas = Number(/(\d+) de \d+ tarefas feitas/.exec(h)?.[1]);
-    const total = Number(/\d+ de (\d+) tarefas feitas/.exec(h)?.[1]);
-    expect(feitas).toBeGreaterThan(0);
-    expect((h.match(/Começar com o Claude/g) ?? []).length).toBe(total - feitas);
-  });
-
-  it("o botão Copiar texto vem junto do Começar com o Claude: um por tarefa não feita, nenhum em tarefa feita", () => {
-    const h = html("/");
-    const feitas = Number(/(\d+) de \d+ tarefas feitas/.exec(h)?.[1]);
-    const total = Number(/\d+ de (\d+) tarefas feitas/.exec(h)?.[1]);
-    expect((h.match(/<button[^>]*>Copiar texto/g) ?? []).length).toBe(total - feitas);
-    expect((h.match(/No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto\./g) ?? []).length).toBe(total - feitas);
-    expect(h).not.toContain("Copiado");
-    expect(h).not.toContain("<textarea");
   });
 
   it("escolhe a página pelo endereço; /leva/<n> é a página da leva", () => {
@@ -179,6 +153,52 @@ describe("App com as tarefas de verdade (#354)", () => {
     const h = de({ ...pronto, leva: { ...pronto.leva, tarefas: [{ ...pronto.leva.tarefas[0] }, { ...pronto.leva.tarefas[1], dono: undefined }] } });
     expect(h).toContain("sem responsável");
     expect(h.match(/>livre</g)).toBeNull();
+  });
+
+  it("no exemplo (sem login), tarefa livre tem 'Pegar tarefa' desligado e ninguém ganha o botão do Claude", () => {
+    const h = html("/");
+    expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa/);
+    expect(h).toContain("entre no painel pra pegar uma tarefa");
+    expect(h).not.toContain("Começar com o Claude");
+    expect(h).not.toContain("Largar");
+  });
+
+  describe("botões do cartão com login (#538)", () => {
+    const url = (n: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${n}`;
+    const comTarefas = (tarefas: Tarefa[], levaMostrada = 1): EstadoDaLeva => ({ ...pronto, leva: { numero: levaMostrada, cortada: false, tarefas } });
+    const mista: Tarefa[] = [
+      { numero: 30, titulo: "Minha", url: url(30), estado: "andamento", dono: { login: "Fulana", avatar: "" }, chefe: "frontend" },
+      { numero: 31, titulo: "Do outro", url: url(31), estado: "andamento", dono: { login: "beltrano", avatar: "" }, chefe: "frontend" },
+      { numero: 32, titulo: "Livre", url: url(32), estado: "livre", chefe: "frontend" },
+      { numero: 33, titulo: "Feita", url: url(33), estado: "feita", dono: { login: "fulana", avatar: "" } },
+    ];
+
+    it("o botão Começar com o Claude e o Copiar texto aparecem só na tarefa de quem olha, e abrem em aba nova", () => {
+      const h = de(comTarefas(mista));
+      expect((h.match(/Começar com o Claude/g) ?? []).length).toBe(1);
+      expect((h.match(/<button[^>]*>Copiar texto/g) ?? []).length).toBe(1);
+      expect((h.match(/No celular, se o texto não aparecer/g) ?? []).length).toBe(1);
+      const botoes = [...h.matchAll(/<a [^>]*href="https:\/\/claude\.ai\/code\?[^>]*>/g)].map((m) => m[0]);
+      expect(botoes.length).toBe(1);
+      expect(botoes[0]).toContain('rel="noopener noreferrer"');
+      expect(botoes[0]).toContain('target="_blank"');
+      expect(h).not.toContain("Copiado");
+      expect(h).not.toContain("<textarea");
+    });
+
+    it("a livre ganha 'Pegar tarefa' desligado (ela já está com a #30), sem botão do Claude, e a feita fica sem botão", () => {
+      const h = de(comTarefas(mista));
+      expect((h.match(/Pegar tarefa<span/g) ?? []).length).toBe(1);
+      expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa/);
+      expect(h).toContain("você já está com a #30");
+      expect((h.match(/>Largar</g) ?? []).length).toBe(1);
+    });
+
+    it("a leva mostrada que não é a atual não deixa pegar", () => {
+      const h = de(comTarefas([mista[2]], 0), "/leva/0");
+      expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa/);
+      expect(h).toContain("esta tarefa não está na leva atual");
+    });
   });
 
   it("na barra lateral, todas as levas: a atual leva pra /, as outras pra /leva/<n>", () => {
