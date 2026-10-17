@@ -29,6 +29,7 @@ import {
   CONSULTA_DAS_LEVAS,
   levaDosDados,
   levasDosDados,
+  marcarDependenciasAbertas,
   variaveisDoRepositorio,
   type DadosDaLeva,
   type DadosDasLevas,
@@ -202,7 +203,10 @@ async function dados(request: Request, config: Configuracao, leva: number | null
     if (r.tipo === "sem-acesso") return semAcesso();
     if (r.tipo === "erro") return falhou();
     const resposta = levaDosDados(leva, r.dados);
-    return resposta ? json(resposta, 200, cookies) : falhou();
+    if (!resposta) return falhou();
+    // #536: quais números do Depende de ainda estão abertos. Se essa consulta falhar, contam como abertos e a leva sai igual.
+    await marcarDependenciasAbertas(resposta, r.dados, (consulta, variaveis) => consultar(sessao.token, consulta, variaveis));
+    return json(resposta, 200, cookies);
   } catch {
     console.error("dados: falha ao falar com o GitHub");
     return falhou();

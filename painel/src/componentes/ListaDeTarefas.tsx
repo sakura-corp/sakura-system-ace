@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Tarefa } from "../tipos";
 import { agruparPorEstado } from "../logica/contador";
 import { Avatar } from "./Avatar";
-import { linkParaComecar, textoDaTarefa } from "../logica/comecarComClaude";
+import { linkParaComecar, numeroValido, textoDaTarefa } from "../logica/comecarComClaude";
 import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
 import { linkDoClaude } from "../logica/link";
 import { PLURAL, Selo } from "./Selo";
@@ -31,7 +31,11 @@ export function ListaDeTarefas({ tarefas }: { tarefas: Tarefa[] }) {
 const BOTAO =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium hover:opacity-90";
 
-/** Só em tarefa que não está feita: abre o formulário do Claude (que não envia sozinho) ou copia o mesmo texto. */
+/**
+ * Só em tarefa que não está feita: abre o formulário do Claude (que não envia sozinho) ou copia o mesmo texto.
+ * Cabeçalho incompleto → só o aviso "tarefa incompleta" (vale mais que a dependência, que não dá pra confiar).
+ * Dependência ainda aberta → o botão aparece desligado com "Espera #N", e sem o "Copiar texto".
+ */
 function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: boolean; aoCopiar: (r: ResultadoDaCopia) => void }) {
   const [copiado, setCopiado] = useState(false);
   const aviso = useRef<number | undefined>(undefined);
@@ -40,6 +44,35 @@ function BotoesDoClaude({ tarefa, planoB, aoCopiar }: { tarefa: Tarefa; planoB: 
   const texto = textoDaTarefa(tarefa.numero, tarefa.chefe);
   const href = linkDoClaude(linkParaComecar(tarefa.numero, tarefa.chefe));
   if (tarefa.estado === "feita" || !href || texto === undefined) return null;
+
+  const faltas = tarefa.incompleta ?? [];
+  if (faltas.length > 0) {
+    return (
+      <p className="mx-4 mb-3 min-w-0 break-words text-sm text-texto-2" title={faltas.join("; ")}>
+        tarefa incompleta
+        <span className="sr-only">: falta no cabeçalho da tarefa #{tarefa.numero}: {faltas.join("; ")}</span>
+      </p>
+    );
+  }
+
+  const esperando = (tarefa.dependeDeAbertas ?? []).filter(numeroValido);
+  if (esperando.length > 0) {
+    const lista = esperando.map((n) => `#${n}`).join(", ");
+    return (
+      <div className="mx-4 mb-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled
+          className={`${BOTAO} max-w-full min-w-0 cursor-not-allowed break-words border border-borda bg-cartao text-center text-texto-2 hover:opacity-100`}
+        >
+          <span className="min-w-0">
+            Começar com o Claude · Espera {lista}
+            <span className="sr-only"> (a tarefa #{tarefa.numero} só pode começar quando {lista} for fechada)</span>
+          </span>
+        </button>
+      </div>
+    );
+  }
 
   async function copiar() {
     const r = await copiarTexto(texto!, navigator.clipboard);
@@ -115,7 +148,7 @@ function ItemDaTarefa({ tarefa: t }: { tarefa: Tarefa }) {
             <span className="min-w-0 font-medium sm:truncate" title={t.titulo}>{t.titulo}</span>
             <span className="sr-only"> (abre no GitHub, em aba nova)</span>
           </span>
-          <span className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <Selo estado={t.estado} />
             {/* Livre já diz no selo que não tem dono; nos outros estados, avisa. */}
             {t.dono ? (
@@ -129,6 +162,8 @@ function ItemDaTarefa({ tarefa: t }: { tarefa: Tarefa }) {
             {t.estimativaHoras !== undefined && (
               <span className="tabular-nums text-texto-2">{String(t.estimativaHoras).replace(".", ",")} h</span>
             )}
+            {t.chefe && <span className="min-w-0 max-w-full break-words text-texto-2">Chefe: {t.chefe}</span>}
+            {t.ajudantes && <span className="min-w-0 max-w-full break-words text-texto-2">Ajudantes: {t.ajudantes}</span>}
           </span>
         </a>
         <BotoesDoClaude tarefa={t} planoB={planoB} aoCopiar={(r) => setPlanoB(r === "plano-b")} />
