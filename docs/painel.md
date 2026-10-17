@@ -592,3 +592,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   (6 h), **#547** a leva redesenhada (6 h), **#548** levas anteriores (4 h), **#549** "O que mudou hoje" (4 h). Total 32 h, todas no modelo
   único, com `chefe:`. **Ainda sem `leva-2`**: o painel mostra como atual a maior leva com tarefa aberta (`levaAtual()`, em
   `painel/src/logica/estado.ts`), então pôr a etiqueta agora tiraria a leva 1 da tela. **Quando a leva 1 terminar, pôr `leva-2` nas 8.**
+- **17/10/2026, #539 horas por pessoa: PR aberto, esperando a revisão da Sofia.** A tela da leva ganhou o quadro "Horas por pessoa":
+  login, horas entregues (tarefas feitas), horas segurando (em andamento ou em revisão) e "N sem estimativa" quando houver, contadas
+  na leva pela linha `Estimativa:` de cada tarefa. Tarefa sem dono não entra. O contador antigo não mudou. Olhado em 320 e 1000 px,
+  claro e escuro, sem rolagem lateral. Relatório em `docs/relatorios/2026-10-17-tarefa-539-frontend.md`.
