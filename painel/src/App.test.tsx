@@ -85,6 +85,16 @@ describe("App", () => {
     expect((h.match(/Começar com o Claude/g) ?? []).length).toBe(total - feitas);
   });
 
+  it("o botão Copiar texto vem junto do Começar com o Claude: um por tarefa não feita, nenhum em tarefa feita", () => {
+    const h = html("/");
+    const feitas = Number(/(\d+) de \d+ tarefas feitas/.exec(h)?.[1]);
+    const total = Number(/\d+ de (\d+) tarefas feitas/.exec(h)?.[1]);
+    expect((h.match(/<button[^>]*>Copiar texto/g) ?? []).length).toBe(total - feitas);
+    expect((h.match(/No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto\./g) ?? []).length).toBe(total - feitas);
+    expect(h).not.toContain("Copiado");
+    expect(h).not.toContain("<textarea");
+  });
+
   it("escolhe a página pelo endereço; /leva/<n> é a página da leva", () => {
     expect(paginaDoCaminho("/leva/2")).toBe("leva");
     expect(paginaDoCaminho("/escritorio")).toBe("escritorio");
