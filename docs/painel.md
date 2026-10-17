@@ -641,3 +641,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   itens que existem, até a #543. A tela de entrada diz "Painel da Sakura Corp". Relatório em
   `docs/relatorios/2026-10-17-tarefa-542-frontend.md`. **A Sofia confere depois de publicar**: a barra nova com o login
   dela, e o "ao vivo" verde.
+- **17/10/2026, #544 as páginas "em breve": PR aberto, esperando a revisão da Sofia.** Cada item em breve da barra
+  agora é um link (apagado, com cadeado e a frase do que falta) pra `/em-breve/<id>`. A página diz o que vai ter ali,
+  do que depende e qual tarefa cuida, quando há uma. Os textos ficam em `painel/src/logica/emBreve.ts`, e um teste
+  confere que todo item em breve tem página. Financeiro, DRE e Lojas avisam que dinheiro (e nome de cliente) nunca
+  mora no GitHub e não têm **algarismo nenhum**: o teste reprova qualquer número. Endereço desconhecido mostra
+  "Página não encontrada". A Sofia autorizou mexer no `BarraLateral.tsx` pra virar link. Relatório em
+  `docs/relatorios/2026-10-17-tarefa-544-frontend.md`. **A Sofia confere depois de publicar**: clicar em "Financeiro"
+  abre a página que explica.
