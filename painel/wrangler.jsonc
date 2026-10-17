@@ -15,6 +15,13 @@
   "vars": {
     "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2"
   },
+  // Tempo real (#355): a sala que repassa os avisos do GitHub a todos os painéis abertos.
+  // `new_sqlite_classes` = Durable Object com SQLite, que está no plano grátis.
+  // O segredo GITHUB_WEBHOOK_SECRET fica só na Cloudflare (e no .dev.vars de quem programa).
+  "durable_objects": {
+    "bindings": [{ "name": "SALA", "class_name": "SalaDoPainel" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SalaDoPainel"] }],
   "assets": {
     "directory": "./dist",
     // Deixa o worker entregar a página (env.ASSETS) quando precisar.

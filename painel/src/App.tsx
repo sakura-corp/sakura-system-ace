@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { Sala } from "./componentes/sala/Sala";
@@ -8,6 +8,7 @@ import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
 import { paginaPraVoltar } from "./logica/login";
 import { ehModoTv } from "./logica/sala";
+import { useTempoReal } from "./useTempoReal";
 import type { Pagina, Usuario } from "./tipos";
 
 /** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são poucas. */
@@ -25,9 +26,13 @@ const buscaAtual = () => (typeof window === "undefined" ? "" : window.location.s
  * As levas e as tarefas de verdade (#354), buscadas no worker. `ativo` = false não busca nada;
  * `soAsLevas`: só a lista da barra lateral (na Sala e no Escritório).
  */
-function useLeva(pedida: number | null, ativo: boolean, soAsLevas: boolean): [EstadoDaLeva, () => void] {
+function useLeva(pedida: number | null, ativo: boolean, soAsLevas: boolean): [EstadoDaLeva, () => void, () => Promise<boolean>] {
   const [estado, setEstado] = useState<EstadoDaLeva>({ tipo: "carregando" });
   const [tentativa, setTentativa] = useState(0);
+  const chave = useRef("");
+  chave.current = `${pedida}|${soAsLevas}`;
+  const carregando = useRef(true);
+  carregando.current = estado.tipo === "carregando";
   useEffect(() => {
     if (!ativo) return;
     let vivo = true;
@@ -39,7 +44,24 @@ function useLeva(pedida: number | null, ativo: boolean, soAsLevas: boolean): [Es
       vivo = false;
     };
   }, [pedida, ativo, soAsLevas, tentativa]);
-  return [estado, () => setTentativa((n) => n + 1)];
+
+  // Busca de novo sem piscar (tempo real, #355): só troca a tela se deu certo (ou se a sessão acabou).
+  // Erro não apaga o que já está na tela; quem avisa que ficou velho é o `estado` do tempo real.
+  const recarregar = useCallback(async () => {
+    // A primeira carga ainda está rodando: duas buscas juntas com o token vencido renovariam duas vezes,
+    // e cada `refresh` do GitHub vale uma vez só (docs/painel.md, #353).
+    if (carregando.current) return false;
+    const minha = `${pedida}|${soAsLevas}`;
+    const novo = await carregarLeva(pedida, fetch, soAsLevas);
+    if (minha !== chave.current) return false;
+    if (novo.tipo === "pronto") {
+      setEstado(novo);
+      return true;
+    }
+    if (novo.tipo === "fora") setEstado(novo);
+    return false;
+  }, [pedida, soAsLevas]);
+  return [estado, () => setTentativa((n) => n + 1), recarregar];
 }
 
 const LINK_DA_ETIQUETA = (numero: number) =>
@@ -64,8 +86,11 @@ export default function App({
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined;
   const pedida = levaPedida(caminho);
-  const [buscada, tentarDeNovo] = useLeva(pedida, !exemplo && !tv && levaFixa === undefined, pagina !== "leva");
+  const buscando = !exemplo && !tv && levaFixa === undefined;
+  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, pagina !== "leva");
   const estado = levaFixa ?? buscada;
+  // Tempo real (#355): só com login e com a leva vindo do GitHub; para quando a sessão acaba.
+  const tempoReal = useTempoReal({ ativo: buscando && estado.tipo !== "fora", buscar: recarregar, carregou: estado.tipo === "pronto" });
 
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.
   if (tv) return <Sala tv />;
@@ -87,7 +112,7 @@ export default function App({
 
   return (
     <div className="min-h-screen md:flex">
-      <BarraLateral levas={levas} pagina={pagina} usuario={usuario} />
+      <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 py-6 md:px-6">
           <Sala />

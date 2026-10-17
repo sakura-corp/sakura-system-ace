@@ -1,12 +1,20 @@
 import { Lock, LogOut } from "lucide-react";
 import { useState } from "react";
+import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
 
 /** Uma leva na barra lateral: `atual` = é a que está na tela (quando a página é a da leva). */
 export type ItemDeLeva = { nome: string; href: string; atual: boolean };
 
-type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario };
+type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
+
+/** O ponto "ao vivo" (#355): sempre com texto, a cor sozinha não diz nada. */
+const PONTO_DO_TEMPO_REAL: Record<EstadoDoTempoReal, { texto: string; cor: string }> = {
+  aovivo: { texto: "ao vivo", cor: "text-feita" },
+  reconectando: { texto: "reconectando…", cor: "text-revisao" },
+  desatualizado: { texto: "desatualizado", cor: "text-revisao" },
+};
 
 /**
  * Sai do painel (#353): o worker apaga a sessão, e a página volta pra tela de entrada.
@@ -23,14 +31,22 @@ async function sair(): Promise<boolean> {
   return true;
 }
 
-export function BarraLateral({ levas, pagina = "leva", usuario }: Props) {
+export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   return (
     <nav
       aria-label="Menu do painel"
       className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-borda bg-cartao px-4 py-3 md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:flex-col md:items-stretch md:gap-y-6 md:border-b-0 md:border-r md:px-5 md:py-6"
     >
-      <p className="font-serif text-xl font-semibold">Sakura Corp</p>
+      <div>
+        <p className="font-serif text-xl font-semibold">Sakura Corp</p>
+        {tempoReal && (
+          <p role="status" className={`flex items-center gap-1.5 text-xs font-medium ${PONTO_DO_TEMPO_REAL[tempoReal].cor}`}>
+            <span aria-hidden="true" className="size-2 rounded-full bg-current" />
+            {PONTO_DO_TEMPO_REAL[tempoReal].texto}
+          </p>
+        )}
+      </div>
 
       <div>
         <p className="mb-1 hidden text-xs font-medium uppercase tracking-wide text-texto-2 md:block">Levas</p>
