@@ -35,6 +35,30 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/10/2026, noite: o mutirão das pendências (sem a Sofia)
+
+**Estado do código**: a `main` tem 4 mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas que passam de 1.000 linhas (paginação) e o painel ("Sair" e nome do agente). Entram na próxima versão, **quando ela decidir publicar**.
+
+#### O que foi feito (a chefe abriu 5 sessões filhas; cada uma abriu PR, a chefe validou e mesclou)
+- **#495** (fecha #482): `criarOperador` usa a conexão salva (`conexaoAtual()`), não o endereço de mentira. Teste visto reprovar. **Não testado no instalado.**
+- **#522** (fecha #437): a barra de rolagem acompanha o conteúdo. Reproduzido num Chromium, 61 telas idênticas.
+- **#509**: `buscarTudoEmPaginas()` (`src/lib/paginacao.ts`) e 13 listas (clientes, ordens, peças, caixa, estoque, contas, pedidos, notas...) agora vêm em páginas de 1.000, com `id` de desempate. Visto reprovar com 2.500 linhas. Ficou de fora a #498.
+- **#512**: painel, o "Sair" não desce de linha e o nome do agente aparece no mapa.
+- **#496** (fecha #471): a skill `/fechar` e o aviso de conversa comprida (gatilho `UserPromptSubmit`, `scripts/aviso-conversa-comprida.mjs`). A chefe trocou a janela de 200 mil pra **1 milhão de tokens** (a das sessões na nuvem); com 200 mil o aviso saía com ~7%. **Não provado dentro do app** que o gatilho dispara.
+- **#521** (parte pública da #472): etiqueta **`sofia`** e 20 tarefas com ela (a lista "O que depende dela" virou a busca `label:sofia`). Os assuntos da empresa ficaram **só pelo nome** ("no privado").
+- **#523** (fecha #442, itens 1 a 3): `timeout-minutes` em todo job, uma rodada por commit e PR só de documentação sem telas/Electron/RLS (job `mudancas` + `if:`, sem `paths-ignore`). **Limite da prova**: a regra `main protegida` não foi exercitada de verdade; o primeiro PR só de `.md` depois dele confirma.
+
+#### O que depende dela (um passo por vez, guiar pelo celular)
+1. **Publicar a próxima versão** no canal de teste quando quiser, e **testar no instalado**: criar um operador (#482), uma lista grande, a barra de rolagem. Publicar e liberar só com ela pedindo.
+2. **Conferir a busca `label:sofia`** (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia): o que falta da lista antiga; **criar no privado as issues da empresa**; escolher o **horário do resumo de segunda** (A2 da #472, ainda não criado).
+3. **Rodar o `/fechar`** numa sessão e ver se o aviso de conversa comprida aparece (#471). Se não aparecer, vira lição em `docs/licoes.md`.
+4. **#442**: o item 4 (medir de novo uma semana depois, ~23/10, e anotar no privado) fica pra ela; e conferir que o primeiro PR só de `.md` fica mesclável.
+5. **A Bibi**: não mudou hoje; o andamento dela mora só no repositório dela (a memória da Bibi não vem pra cá).
+6. **Empresa**: o que saiu da conversa com o contador está no repositório privado.
+
+#### Continua valendo do marco anterior
+A conversa sobre os agentes do Escritório (alinhamento, não construção); o Claude Team na segunda, 19/10, e a TFE (no privado); a tarefa 7 do painel (#355, depende do webhook e do `GITHUB_WEBHOOK_SECRET` dela); a equipe começando na segunda; a fila #472 (A2).
+
 ### 16/10/2026, mais tarde à noite (2): o painel com as tarefas de verdade (#354)
 
 **Estado do código**: o programa das lojas não mudou (`v0.9.51`, banco na `0064`). O painel

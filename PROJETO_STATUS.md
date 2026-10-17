@@ -245,26 +245,22 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (o marco mais recente — os anteriores estão em `docs/historico.md`)
 
-### 16/10/2026, noite: o mutirão das pendências (sem a Sofia)
+### 17/10/2026, madrugada: os chefes por função, o botão no painel e os relatórios
 
-**Estado do código**: a `main` tem 4 mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas que passam de 1.000 linhas (paginação) e o painel ("Sair" e nome do agente). Entram na próxima versão, **quando ela decidir publicar**.
+**Estado do código**: a `main` tem mudanças pequenas **ainda não publicadas** (a loja segue na `v0.9.51`, banco na `0064`, sem migration): criar operador no instalado (#482), barra de rolagem (#437), listas acima de 1.000 linhas, e o painel (botão "Começar com o Claude"). Entram na próxima versão, **quando ela decidir publicar**. Do mutirão de 16/10 (7 PRs, CI novo da #442 em uso) o detalhe está em `docs/historico.md`.
 
-#### O que foi feito (a chefe abriu 5 sessões filhas; cada uma abriu PR, a chefe validou e mesclou)
-- **#495** (fecha #482): `criarOperador` usa a conexão salva (`conexaoAtual()`), não o endereço de mentira. Teste visto reprovar. **Não testado no instalado.**
-- **#522** (fecha #437): a barra de rolagem acompanha o conteúdo. Reproduzido num Chromium, 61 telas idênticas.
-- **#509**: `buscarTudoEmPaginas()` (`src/lib/paginacao.ts`) e 13 listas (clientes, ordens, peças, caixa, estoque, contas, pedidos, notas...) agora vêm em páginas de 1.000, com `id` de desempate. Visto reprovar com 2.500 linhas. Ficou de fora a #498.
-- **#512**: painel, o "Sair" não desce de linha e o nome do agente aparece no mapa.
-- **#496** (fecha #471): a skill `/fechar` e o aviso de conversa comprida (gatilho `UserPromptSubmit`, `scripts/aviso-conversa-comprida.mjs`). A chefe trocou a janela de 200 mil pra **1 milhão de tokens** (a das sessões na nuvem); com 200 mil o aviso saía com ~7%. **Não provado dentro do app** que o gatilho dispara.
-- **#521** (parte pública da #472): etiqueta **`sofia`** e 20 tarefas com ela (a lista "O que depende dela" virou a busca `label:sofia`). Os assuntos da empresa ficaram **só pelo nome** ("no privado").
-- **#523** (fecha #442, itens 1 a 3): `timeout-minutes` em todo job, uma rodada por commit e PR só de documentação sem telas/Electron/RLS (job `mudancas` + `if:`, sem `paths-ignore`). **Limite da prova**: a regra `main protegida` não foi exercitada de verdade; o primeiro PR só de `.md` depois dele confirma.
+#### Os chefes por função (decidido por ela, 17/10; continuação da conversa sobre os agentes do Escritório)
+- **5 chefes**: `chefe-frontend`, `chefe-backend`, `chefe-seguranca`, `chefe-marketing`, `chefe-tester` (`.claude/skills/`, #526, aprovadas por ela). Sala do Escritório = o projeto; chefe = a função. Tarefa com etiqueta `chefe:<função>` (as 5 etiquetas já existem no GitHub; criadas por ela, 17/10). Tarefa que mistura funções: um chefe lidera e chama os outros dentro da própria sessão (a cota é de quem clicou). Candidatos a chefe depois: Fiscal e Qualidade.
+- **Botão "Começar com o Claude"** no cartão da tarefa (#527): abre `claude.ai/code` com o texto e o repositório já preenchidos; quem aperta Enter é a pessoa. **Limite confirmado por ela (17/10)**: **funciona no navegador do celular; o app do Claude ignora o texto.** Plano B em andamento no PR **#529** ("Copiar texto" + dica só no celular).
+- **Relatórios dos chefes** (#528): cada chefe grava `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` no PR, com a parte "Como eu agi"; a skill `revisor-de-chefes` lê a pasta e propõe melhorias nas skills **só em PR aberto, que ela aprova**; entra na revisão do mês (R1). Repositório público: relatório nunca leva preço, sócios, dado pessoal ou da empresa. **Nada disto foi rodado numa tarefa de verdade ainda**: o 1º uso é o teste.
+- **Resumo de segunda de manhã** (A2 da #472): **criado**, toda segunda às **9h29** (Brasília), com aviso no celular; só lê. 1º disparo: 19/10. Na sessão nova ele pede de novo o acesso de leitura ao privado; se recusado, resume só o público.
+- Tarefas da **empresa** viraram issues `sofia` no repositório **privado** (#99 a #108).
 
-#### O que depende dela (um passo por vez, guiar pelo celular)
-1. **Publicar a próxima versão** no canal de teste quando quiser, e **testar no instalado**: criar um operador (#482), uma lista grande, a barra de rolagem. Publicar e liberar só com ela pedindo.
-2. **Conferir a busca `label:sofia`** (https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia): o que falta da lista antiga; **criar no privado as issues da empresa**; escolher o **horário do resumo de segunda** (A2 da #472, ainda não criado).
-3. **Rodar o `/fechar`** numa sessão e ver se o aviso de conversa comprida aparece (#471). Se não aparecer, vira lição em `docs/licoes.md`.
-4. **#442**: o item 4 (medir de novo uma semana depois, ~23/10, e anotar no privado) fica pra ela; e conferir que o primeiro PR só de `.md` fica mesclável.
-5. **A Bibi**: não mudou hoje; o andamento dela mora só no repositório dela (a memória da Bibi não vem pra cá).
-6. **Empresa**: o que saiu da conversa com o contador está no repositório privado.
-
-#### Continua valendo do marco anterior
-A conversa sobre os agentes do Escritório (alinhamento, não construção); o Claude Team na segunda, 19/10, e a TFE (no privado); a tarefa 7 do painel (#355, depende do webhook e do `GITHUB_WEBHOOK_SECRET` dela); a equipe começando na segunda; a fila #472 (A2).
+#### O que depende dela
+1. **Aprovar ou ajustar o PR #529** (se ainda aberto) e **testar o botão** no painel pelo navegador do celular, numa tarefa com etiqueta `chefe:...`. O 1º chefe de verdade grava o 1º relatório.
+2. **As duas tarefas que existem hoje na leva-0 não dão pra começar ainda**: a **#355 (tempo real, 6 h)** depende de ela ligar o webhook do app "Sakura Painel" e cadastrar o `GITHUB_WEBHOOK_SECRET` na Cloudflare (`docs/painel.md`, "O que a Sofia faz"; guiar pelo celular, um passo por vez); a **#468 (sala ao vivo)** depende da #355. Sugestão: a #355 é a primeira tarefa pra testar os chefes (`chefe:backend`).
+3. **Publicar a próxima versão** no canal de teste e **testar no instalado** (operador, lista grande, barra de rolagem): só com ela pedindo.
+4. **Conferir** `label:sofia` (público: https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aopen+label%3Asofia) e as do privado.
+5. **Rodar o `/fechar`** numa sessão comprida e ver se o aviso aparece (#471). A #442 reaberta: falta medir o CI uma semana depois (~23/10) e anotar no privado.
+6. **Empresa**: Claude Team na segunda 19/10, desmembrar o lançamento em novembro, o Pix de 16/11: tudo no privado.
+7. **A Bibi** não mudou; o andamento dela mora só no repositório dela.
