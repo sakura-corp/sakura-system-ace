@@ -137,9 +137,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 18/10/2026, noite: a #608 (second brain) decidida e reescrita
+### 18/10/2026, noite: a etapa 1 da #608 pronta (o caderno da Sofia)
 - **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado).
-- **Entrou**: a entrevista da #608. Cada pessoa terá um `segundo-cerebro` privado na própria conta do GitHub (Obsidian grátis, só no PC), que diz ao Claude dela o jeito de trabalhar. O da Sofia vem primeiro e vira o tutorial. A #608 foi reescrita em 3 etapas. O Claudian serviu só de referência.
-- **Próximas sessões**: a etapa 1 da #608 (o caderno dela, e tirar do público o que é sobre ela), depois as etapas 2 e 3; depois a #609 (o Ruflo). Curtas, uma sessão direto cada: a #604 e a #605.
+- **Entrou** (#613): o caderno `caranovavidanova/segundo-cerebro` (privado, no Obsidian do PC, puxa e envia a cada 10 min); o `docs/sofia.md` saiu do público, e a seção 1 do índice virou as regras de todos + o caderno de quem trabalha. O roteiro do PC está no relatório da #608.
+- **Próximas sessões**: as etapas 2 e 3 da #608; depois a #609 (o Ruflo). Curtas: a #604 e a #605.
 - **Em paralelo**: os Termos (falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e o memorando.
-- **Depende dela**: a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+- **Depende dela**: conferir que uma sessão nova abre o caderno; a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
