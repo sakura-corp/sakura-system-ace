@@ -1,6 +1,6 @@
 ---
 name: entrevista
-description: RASCUNHO (a Sofia ainda vai revisar). Entrevista a pessoa em rodadas curtas, com uma recomendação em cada pergunta, até fechar todas as pontas de um plano ou ideia, antes de qualquer tarefa ser escrita. Use SÓ quando a pessoa digitar /entrevista ou pedir "me entrevista", "me sabatina", "fecha as pontas do plano" ou "faz as perguntas antes de planejar". Não use em pedido comum de planejar nem pra escrever a tarefa (isso é a `nova-tarefa`, que vem DEPOIS).
+description: RASCUNHO (a Sofia ainda vai revisar). Entrevista a pessoa em rodadas curtas, com uma recomendação em cada pergunta, até fechar todas as pontas de um plano ou ideia, antes de qualquer tarefa ser escrita. Use por conta própria, sem esperar pedirem, quando a pessoa trouxer uma ideia ou plano ainda aberto ("estou pensando em…", "queria que…", "e se o sistema…", uma funcionalidade nova sem detalhe), antes de escrever a tarefa com a `nova-tarefa`. Use também quando ela digitar /entrevista ou pedir "me entrevista", "me sabatina", "fecha as pontas do plano" ou "faz as perguntas antes de planejar". Não use em defeito ou ajuste pequeno (esses são pra fazer na hora), nem em pedido já fechado e detalhado, nem pra escrever a tarefa (isso é a `nova-tarefa`, que vem DEPOIS), nem quando ela só pedir pra guardar a ideia (isso é a `ideia`).
 model: opus
 effort: medium
 ---

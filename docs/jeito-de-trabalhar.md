@@ -115,9 +115,9 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S10 | `/faxina-memoria` | a faxina da memória |
 | S11 | `/ideia` | guarda uma ideia solta numa issue curta com a etiqueta `ideia` (só guarda; barra empresa/preço, sócios, dado pessoal e credencial; print só em texto) — **18/10**, #568 |
 | S12 | `/coordenar` | a **sessão coordenadora**: toca 2 ou mais tarefas independentes de uma vez, abrindo uma sessão por tarefa e sendo a ponte com ela; não programa — **rascunho de 18/10**, #573 |
-| S13 | `/entrevista` | antes de planejar: o Claude pergunta em rodadas curtas, com a recomendação em cada pergunta, até fechar todas as pontas, e entrega as decisões prontas pra `nova-tarefa` — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
-| S14 | `/teste-primeiro` | o teste antes do código, uma fatia por vez, visto reprovar pelo motivo certo; os chefes de código usam ao escrever código — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
-| S15 | `/diagnostico` | achar a causa de um defeito antes de consertar: um comando que reproduz, hipóteses com previsão, teste de regressão e limpeza; os chefes de código usam ao investigar defeito — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
+| S13 | `/entrevista` | **dispara sozinha** quando chega uma ideia ou plano ainda aberto ("estou pensando em…"), e não em defeito, ajuste pequeno nem pedido já fechado (#586); antes de planejar: o Claude pergunta em rodadas curtas, com a recomendação em cada pergunta, até fechar todas as pontas, e entrega as decisões prontas pra `nova-tarefa` — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
+| S14 | `/teste-primeiro` | **dispara sozinha** sempre que for escrever ou mudar código com comportamento testável, e não em mudança só de texto, documentação ou aparência (#586); o teste antes do código, uma fatia por vez, visto reprovar pelo motivo certo; os chefes de código usam ao escrever código — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
+| S15 | `/diagnostico` | **dispara sozinha** num defeito de causa ainda desconhecida ("não funciona", "às vezes some"), e não quando o conserto é óbvio e de uma linha (#586); achar a causa de um defeito antes de consertar: um comando que reproduz, hipóteses com previsão, teste de regressão e limpeza; os chefes de código usam ao investigar defeito — **rascunho de 18/10**, #578 (adaptada do `mattpocock/skills`, MIT) |
 
 **S3, S4 e S5 rodam sempre no modelo mais forte.**
 
