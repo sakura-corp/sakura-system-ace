@@ -155,7 +155,7 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
   return (
     <nav
       aria-label="Menu do painel"
-      className="hidden min-w-0 border-borda bg-cartao md:sticky md:top-0 md:flex md:h-screen md:w-62 md:shrink-0 md:flex-col md:items-stretch md:overflow-y-auto md:border-r md:px-3 md:pb-3 md:pt-4"
+      className="hidden min-w-0 border-borda bg-cartao md:sticky md:top-0 md:flex md:h-screen md:w-62 md:shrink-0 md:flex-col md:items-stretch md:border-r md:px-3 md:pb-3 md:pt-4"
     >
       <div className="flex items-center justify-between gap-3 px-2.5 pb-2.5">
         <p className="font-serif text-xl font-semibold">Sakura Corp</p>
@@ -167,14 +167,17 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
         )}
       </div>
 
-      {grupos.map((grupo) => (
-        <div key={grupo.id} className="min-w-0">
-          {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}
-          <ul className="flex flex-col gap-0.5">{grupo.itens.map(linhaDe)}</ul>
-        </div>
-      ))}
+      {/* Só a lista dos andares rola (#601): Configurações e o usuário ficam sempre à vista, mesmo em tela baixa. */}
+      <div className="-mx-3 min-h-0 flex-1 overflow-y-auto px-3 pb-1">
+        {grupos.map((grupo) => (
+          <div key={grupo.id} className="min-w-0">
+            {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}
+            <ul className="flex flex-col gap-0.5">{grupo.itens.map(linhaDe)}</ul>
+          </div>
+        ))}
+      </div>
 
-      <div className="mt-auto grid min-w-0 max-w-full gap-2 border-t border-borda pt-3.5">
+      <div className="grid min-w-0 max-w-full shrink-0 gap-2 border-t border-borda pt-3.5">
         {rodape && <ul>{rodape.itens.map(linhaDe)}</ul>}
         {usuario && (
           <div className="min-w-0">

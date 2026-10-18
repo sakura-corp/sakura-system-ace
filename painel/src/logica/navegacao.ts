@@ -96,6 +96,27 @@ export function andarDoItem(id: string): GrupoDaNavegacao | undefined {
   return NAVEGACAO.find((g) => g.itens.some((i) => i.id === id));
 }
 
+/** Como a página "em breve" chama a área de cada chefe (#601): por área e em português, com o artigo que a frase pede. */
+const AREA_DO_CHEFE: Record<string, string> = {
+  frontend: "das telas",
+  backend: "dos dados",
+  tester: "dos testes",
+  marketing: "do marketing",
+  segurança: "da segurança",
+};
+
+/**
+ * O que a página "em breve" diz sobre quem cuida do andar, como o fim da linha "Quem cuida: …".
+ * Com tarefa a frase continua a da tarefa ("…#548" + ", no andar das telas…"); sem tarefa ela começa pelo
+ * andar. Andar sem chefe diz que ainda não tem (a linha nunca some).
+ */
+export function fraseDoAndar(chefes: string[], comTarefa: boolean): string {
+  if (chefes.length === 0) return comTarefa ? ". O andar ainda não tem chefe." : "o andar ainda não tem chefe.";
+  const areas = chefes.map((c) => AREA_DO_CHEFE[c] ?? `de ${c}`);
+  const lista = areas.length === 1 ? areas[0] : `${areas.slice(0, -1).join(", ")} e ${areas[areas.length - 1]}`;
+  return comTarefa ? `, no andar ${lista}.` : `o andar ${lista}.`;
+}
+
 /** O endereço da página que explica um item em breve (#544). */
 export function enderecoEmBreve(id: string): string {
   return `/em-breve/${id}`;

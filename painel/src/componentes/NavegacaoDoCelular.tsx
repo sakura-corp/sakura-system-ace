@@ -124,6 +124,8 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
   // A leva na tela que não é a atual (ex.: /leva/0): vai na folha, e o "Leva" da barra perde o aria-current.
   const extra = levas.find((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
   const naBarra = IDS_DA_BARRA.includes(pagina);
+  // A página não encontrada (#560) não mora na barra nem na folha: o "Mais" não ganha destaque por causa dela.
+  const naFolha = !naBarra && pagina !== "nao-encontrada";
 
   useEffect(() => {
     const folha = folhaRef.current;
@@ -145,7 +147,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
     <>
       <nav
         aria-label="Menu do celular"
-        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-borda bg-cartao px-1 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] md:hidden"
+        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-borda bg-cartao pl-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))] pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] md:hidden"
       >
         {ITENS_DA_BARRA.map((item) => {
           const atual = pagina === item.id;
@@ -157,7 +159,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
           aria-haspopup="dialog"
           aria-expanded={aberto}
           onClick={() => setAberto(true)}
-          className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg text-[11.5px] ${!naBarra ? "font-semibold text-destaque" : "text-texto"}`}
+          className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg text-[11.5px] ${naFolha ? "font-semibold text-destaque" : "text-texto"}`}
         >
           <Ellipsis aria-hidden="true" className="size-5 shrink-0" />
           <span>Mais</span>
@@ -174,7 +176,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
         className="m-0 mt-auto max-h-[85vh] w-full max-w-none overflow-y-auto rounded-t-2xl bg-cartao p-0 text-texto backdrop:bg-black/40"
       >
         <div
-          className="min-w-0 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          className="min-w-0 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
           onClick={(e) => {
             if ((e.target as HTMLElement).closest("a")) setAberto(false);
           }}
@@ -200,7 +202,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
           )}
 
           {grupos.map((grupo) => (
-            <div key={grupo.id} className="min-w-0">
+            <div key={grupo.id} className={`min-w-0 ${grupo.id === "rodape" ? "mt-3 border-t border-borda pt-2" : ""}`}>
               {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}
               <ul className="flex flex-col gap-0.5">
                 {grupo.itens.map((item) => (

@@ -1,5 +1,6 @@
 /** As páginas do painel. */
-export type Pagina = "inicio" | "leva" | "levas" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes";
+export type Pagina = "inicio" | "leva" | "levas" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes" | "nao-encontrada";
+// "nao-encontrada" (#560): /em-breve/<id que não existe>. Não é item da barra: nada fica marcado.
 
 export type EstadoTarefa = "livre" | "andamento" | "revisao" | "feita";
 

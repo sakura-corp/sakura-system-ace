@@ -4,12 +4,50 @@ import { BarraLateral } from "./BarraLateral";
 
 const html = (props: Parameters<typeof BarraLateral>[0]) => renderToString(<BarraLateral {...props} />).replace(/<!-- -->/g, "");
 
+/** O elemento <div> que começa em `inicio`, até o </div> que o fecha (conta só <div>, que é como a barra se organiza). */
+function divDe(h: string, inicio: number): string {
+  let fundo = 0;
+  for (const m of h.slice(inicio).matchAll(/<div[\s>]|<\/div>/g)) {
+    fundo += m[0] === "</div>" ? -1 : 1;
+    if (fundo === 0) return h.slice(inicio, inicio + m.index! + m[0].length);
+  }
+  return h.slice(inicio);
+}
+
 describe("BarraLateral", () => {
+  it("Configurações e o usuário ficam fora da parte que rola, então aparecem sem rolar em tela baixa (#601)", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "leva", usuario: { login: "sofia", avatar: "" } });
+    const marca = h.indexOf("overflow-y-auto");
+    expect(marca, "tem que existir uma parte que rola").toBeGreaterThan(-1);
+    // A barra inteira não rola mais: quem rola é só a lista dos andares.
+    expect(h.slice(0, h.indexOf(">")), "a própria barra").not.toContain("overflow-y-auto");
+    const rolavel = divDe(h, h.lastIndexOf("<div", marca));
+    // Sem o min-h-0 a lista não encolhe e empurra o rodapé pra fora da tela; a margem negativa com o mesmo
+    // enchimento deixa o contorno de foco (que sai uns 4 px do link) caber dentro da parte que rola.
+    const abertura = rolavel.slice(0, rolavel.indexOf(">"));
+    expect(abertura).toContain("min-h-0");
+    expect(abertura).toContain("flex-1");
+    expect(abertura).toContain("-mx-3");
+    expect(abertura).toContain("px-3");
+    expect(rolavel).toContain("Leva atual");
+    expect(rolavel).toContain("Decisões da Sofia");
+    expect(rolavel).not.toContain("Configurações");
+    expect(rolavel).not.toContain("Sair");
+    const depois = h.slice(h.indexOf(rolavel) + rolavel.length);
+    expect(depois).toContain("Configurações");
+    expect(depois).toContain("Sair");
+  });
+
   it("desenha os grupos da lista; só o item da página tem aria-current", () => {
     const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "sala" });
     for (const t of ["Sala", "Escritório", "(exemplo)"]) expect(h).toContain(t);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
     expect(h).toMatch(/<a href="\/sala" aria-current="page"/);
+  });
+
+  it("página não encontrada (#560): nenhum item da barra é a página atual", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "nao-encontrada" });
+    expect(h).not.toContain("aria-current");
   });
 
   it("item em breve é link pra página que explica (#544), apagado, com o texto pro leitor de tela e a frase do que falta", () => {

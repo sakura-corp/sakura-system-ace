@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { andarDoItem, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
+import { andarDoItem, fraseDoAndar, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
 
 // Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
 const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio" };
@@ -107,5 +107,31 @@ describe("problemasDaNavegacao", () => {
     expect(problemasDaNavegacao(repetida)).toHaveLength(1);
     const vazia = copiaComItem("dre", (i) => ({ ...i, rotulo: " " }) as ItemDaNavegacao);
     expect(problemasDaNavegacao(vazia)).toHaveLength(1);
+  });
+});
+
+describe("fraseDoAndar (#601): o que a página em breve diz de quem cuida do andar, sem nome de chefe em inglês", () => {
+  it("com tarefa e chefes: a frase continua a da tarefa, com os chefes por área", () => {
+    expect(fraseDoAndar(["frontend", "backend", "tester"], true)).toBe(", no andar das telas, dos dados e dos testes.");
+  });
+  it("chefe único: marketing e segurança, cada um com o seu artigo", () => {
+    expect(fraseDoAndar(["marketing"], true)).toBe(", no andar do marketing.");
+    expect(fraseDoAndar(["segurança"], false)).toBe("o andar da segurança.");
+  });
+  it("sem tarefa: a frase começa pelo andar", () => {
+    expect(fraseDoAndar(["frontend", "backend", "tester"], false)).toBe("o andar das telas, dos dados e dos testes.");
+  });
+  it("andar sem chefe: diz que ainda não tem, com ou sem tarefa (a linha nunca some)", () => {
+    expect(fraseDoAndar([], true)).toBe(". O andar ainda não tem chefe.");
+    expect(fraseDoAndar([], false)).toBe("o andar ainda não tem chefe.");
+  });
+  it("função que a lista não conhece: usa o nome dela, sem quebrar", () => {
+    expect(fraseDoAndar(["juridico"], false)).toBe("o andar de juridico.");
+  });
+  it("nenhum chefe da lista aparece em inglês", () => {
+    for (const g of NAVEGACAO) {
+      const frase = fraseDoAndar(g.chefes ?? [], true);
+      expect(frase, g.id).not.toMatch(/frontend|backend|tester/);
+    }
   });
 });

@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import App, { paginaDoCaminho } from "./App";
+import paginaHtml from "../index.html?raw";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import type { EstadoDaLeva } from "./logica/dados";
 import type { EstadoDaSala } from "./logica/salaDados";
@@ -78,7 +79,32 @@ describe("App", () => {
     expect(h).toContain("Página não encontrada");
     expect(h).not.toContain("1 de 8 tarefas feitas");
     expect(paginaDoCaminho("/em-breve/dre")).toBe("dre");
-    expect(paginaDoCaminho("/em-breve/nao-existe")).toBe("leva");
+    expect(paginaDoCaminho("/em-breve/nao-existe")).toBe("nao-encontrada");
+  });
+
+  it("/em-breve/xyz (#560): a barra do PC e a do celular não marcam item nenhum, e o Mais não ganha destaque", () => {
+    expect(paginaDoCaminho("/em-breve/xyz")).toBe("nao-encontrada");
+    const h = html("/em-breve/xyz");
+    expect(h).toContain("Página não encontrada");
+    expect(h).not.toContain("aria-current");
+    // O "Mais" só ganha destaque quando a página aberta mora na folha; aqui não mora em lugar nenhum.
+    expect(h).not.toMatch(/<button[^>]*text-destaque/);
+    // As páginas que existem continuam marcando o item delas.
+    expect(html("/em-breve/dre")).toContain('aria-current="page"');
+  });
+
+  it("deitado, a barra do PC e o conteúdo respeitam a área segura dos lados (#561)", () => {
+    const h = html("/leva");
+    const fora = h.slice(0, h.indexOf(">"));
+    expect(fora).toContain("safe-area-inset-left");
+    expect(fora).toContain("safe-area-inset-right");
+  });
+
+  it("a meta viewport tem viewport-fit=cover (#561): sem ele o iPhone ignora a área segura da barra de baixo", () => {
+    const meta = /<meta\s+name="viewport"\s+content="([^"]*)"/.exec(paginaHtml);
+    expect(meta).not.toBeNull();
+    expect(meta![1]).toContain("viewport-fit=cover");
+    expect(meta![1]).toContain("width=device-width");
   });
 
   it("/escritorio mostra o Escritório, marcado como exemplo, com o que ainda não existe desativado", () => {
