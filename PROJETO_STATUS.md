@@ -144,9 +144,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 17/10/2026, noite (7): o índice encolheu (A1 do plano de memória)
-- **Código**: a loja na `v0.9.51`, o banco na `0064`. O painel v2 inteiro (#542 a #546) está na `main` e se publica sozinho; há mudanças pequenas do programa das lojas esperando ela decidir publicar.
-- **Feito agora**: este índice caiu de 25 KB pra menos de 15 KB; a antiga seção 1 virou `docs/sofia.md`; o CI avisa se o índice passar de 15 KB (T4).
-- **Depende dela**: conferir o Início do painel no endereço público e a navegação no celular (#543, #544, #538); no Team (19/10), os modelos da equipe e o convite do Lázaro; aprovar as sugestões pros rituais. A lista inteira está no marco "noite (6)" do `docs/historico.md` e em `label:sofia`.
-- **Plano de 17/10** (memória, fluxos e próximos passos): no privado, `planos/2026-10-17-memoria-e-fluxos.md`, em ordem do que mais otimiza; a direção ("*agentic engineers*") em `docs/jeito-de-trabalhar.md`. **Até segunda (19/10), dela**: o item C1 (assinar o Team ou esperar o programa de startups, pausado).
-- **No privado**, o `CLAUDE.md` carrega só o `README.md` (~2 KB, o índice), e não mais o `EMPRESA.md` inteiro (~37 KB). **Próximo do plano de memória**: o A2 (modelo e esforço por etapa).
+### 18/10/2026: o plano de memória, levas 1 a 3 na `main`
+- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado desde 17/10). Nenhum PR aberto.
+- **Entrou em 18/10** (plano de memória e fluxos): A2 modelo e esforço por etapa (#574), A5 a skill `/ideia` (#571), A9 a sala "Próximos projetos" no painel (#572), A7 o "Gasto" nos relatórios (#575), a skill `/coordenar` (#576), A4 a tarefa começa com `/goal` (#579, #582), A6 as skills `entrevista`, `teste-primeiro` e `diagnostico` (#581), e os ajustes #584, #585 e #588.
+- **Depende dela**: o C1 até segunda (19/10); conferir no painel público a sala "Próximos projetos"; aprovar as skills em rascunho; e o que vinha de 17/10 (Início do painel, modelos da equipe e convite do Lázaro no Team). A lista inteira em `label:sofia`.
+- **Próximo do plano** (esperando o "sim" dela): A3, A8, e as ondas B e C. O plano mora no privado, `planos/2026-10-17-memoria-e-fluxos.md`.

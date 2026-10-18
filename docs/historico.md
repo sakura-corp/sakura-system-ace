@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/10/2026, noite (7): o índice encolheu (A1 do plano de memória)
+- **Código**: a loja na `v0.9.51`, o banco na `0064`. O painel v2 inteiro (#542 a #546) está na `main` e se publica sozinho; há mudanças pequenas do programa das lojas esperando ela decidir publicar.
+- **Feito agora**: este índice caiu de 25 KB pra menos de 15 KB; a antiga seção 1 virou `docs/sofia.md`; o CI avisa se o índice passar de 15 KB (T4).
+- **Depende dela**: conferir o Início do painel no endereço público e a navegação no celular (#543, #544, #538); no Team (19/10), os modelos da equipe e o convite do Lázaro; aprovar as sugestões pros rituais. A lista inteira está no marco "noite (6)" do `docs/historico.md` e em `label:sofia`.
+- **Plano de 17/10** (memória, fluxos e próximos passos): no privado, `planos/2026-10-17-memoria-e-fluxos.md`, em ordem do que mais otimiza; a direção ("*agentic engineers*") em `docs/jeito-de-trabalhar.md`. **Até segunda (19/10), dela**: o item C1 (assinar o Team ou esperar o programa de startups, pausado).
+- **No privado**, o `CLAUDE.md` carrega só o `README.md` (~2 KB, o índice), e não mais o `EMPRESA.md` inteiro (~37 KB). **Próximo do plano de memória**: o A2 (modelo e esforço por etapa).
+
 ### 17/10/2026, noite (6): o painel v2 inteiro feito; a #546 espera ela mesclar (PR #563)
 
 **Estado do código**: a loja continua na `v0.9.51`, e o banco na `0064`. Na `main` entraram a #542 (PR #556), a #544 (PR #557), a #543 (PR #558) e a #545 (PR #559), todas do painel, que se publica sozinho. A **#546 (página Início)** parou no limite de uso, terminou quando o limite voltou e está no **PR #563**, esperando ela mesclar. Há mudanças pequenas na `main` esperando ela decidir publicar o programa das lojas.
