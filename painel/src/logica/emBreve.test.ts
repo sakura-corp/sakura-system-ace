@@ -83,6 +83,23 @@ describe("problemasDoEmBreve", () => {
     t[1].grupo = "Cobertura · Diretoria";
     expect(problemasDoEmBreve(nav, t).join("|")).toContain('A trilha de "Financeiro"');
   });
+  it("pega algarismo no andar Financeiro mesmo sem semDinheiro", () => {
+    const t = bons();
+    delete t[1].semDinheiro;
+    t[1].resumo = "Saldo de 300";
+    expect(problemasDoEmBreve(nav, t).join("|")).toContain('"Financeiro" tem número de dinheiro');
+  });
+  it("pega algarismo no andar Comercial, mesmo sem semDinheiro (é o andar que fala de preço)", () => {
+    const comercial: GrupoDaNavegacao = {
+      id: "comercial",
+      titulo: "2º · Comercial e pós-venda",
+      itens: [{ id: "posvenda", rotulo: "Pós-venda", icone: "suporte", emBreve: true, dependeDe: "x", href: "/em-breve/posvenda" }],
+    };
+    const t = [...bons(), base("posvenda", "Pós-venda", { grupo: "2º · Comercial e pós-venda", resumo: "Plano de 99 por mês" })];
+    expect(problemasDoEmBreve([...nav, comercial], t).join("|")).toContain('"Pós-venda" tem número de dinheiro');
+    t[3].resumo = "Os pedidos de ajuda";
+    expect(problemasDoEmBreve([...nav, comercial], t)).toEqual([]);
+  });
   it("pega página do andar Financeiro sem semDinheiro", () => {
     const t = bons();
     delete t[1].semDinheiro;

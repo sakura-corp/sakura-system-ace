@@ -166,7 +166,7 @@ export function idDoEmBreve(caminho: string): string | null {
   return m ? m[1] : null;
 }
 
-// No andar Financeiro e em todo texto com semDinheiro, nenhum algarismo (nem "1.500", nem "30%") e nenhum "R$": o repositório é público.
+// Nos andares Financeiro e Comercial e em todo texto com semDinheiro, nenhum algarismo (nem "1.500", nem "30%") e nenhum "R$": o repositório é público.
 const DINHEIRO = /R\$|\d/;
 
 function todosOsTextos(t: TextoEmBreve): string[] {
@@ -191,7 +191,8 @@ export function problemasDoEmBreve(navegacao: GrupoDaNavegacao[], textos: TextoE
     if (t.grupo !== achado.titulo) problemas.push(`A trilha de "${t.titulo}" diz "${t.grupo ?? "(nada)"}", mas o grupo é "${achado.titulo ?? "(nada)"}".`);
     const doFinanceiro = achado.grupo === "financeiro";
     if (doFinanceiro && !t.semDinheiro) problemas.push(`"${t.titulo}" é do andar Financeiro e precisa de semDinheiro.`);
-    if ((doFinanceiro || t.semDinheiro) && todosOsTextos(t).some((s) => DINHEIRO.test(s))) problemas.push(`"${t.titulo}" tem número de dinheiro no texto.`);
+    const semAlgarismo = doFinanceiro || achado.grupo === "comercial" || t.semDinheiro;
+    if (semAlgarismo && todosOsTextos(t).some((s) => DINHEIRO.test(s))) problemas.push(`"${t.titulo}" tem número de dinheiro no texto.`);
   }
   return problemas;
 }

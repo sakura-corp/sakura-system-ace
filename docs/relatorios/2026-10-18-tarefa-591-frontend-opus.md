@@ -10,7 +10,7 @@
 - Explorador (`ajudante-rapido`): achou todos os usos de `NAVEGACAO`, dos grupos e do tipo `Pagina`; apontou que `App.tsx` já abre qualquer `/em-breve/<id>` que tenha texto (não precisou mexer) e que `App.test.tsx` usa a trilha antiga.
 - Construtor (`ajudante-medio`): escreveu o código e os testes com a skill `teste-primeiro`, fatia por fatia, vendo reprovar antes; parou quando 1 teste fora da lista (`App.test.tsx`) reprovou, como mandei.
 - Conferidor visual (`ajudante-medio`): abriu o painel no Chromium, tirou os prints (computador e celular, claro e escuro) e mediu ordem, corte, rolagem lateral, contraste e as 13 rotas antigas.
-- Revisor (`ajudante-forte`, esforço alto): REVISAO_PENDENTE
+- Revisor (`ajudante-forte`, esforço alto): leu o diff do zero e trouxe 6 achados. Conferi cada um: (1) o "3º" da trilha punha um algarismo dentro da página do Financeiro, o que reprovaria a proteção do `App.test.tsx` (já resolvido do jeito que a Sofia autorizou: a trilha fica fora dessa conta); (2) o andar Comercial ficou sem trava de algarismo, e consertei; (3) faltava um teste pra metade da regra nova, e acrescentei; (4), (5) e (6) ficaram como estão (ver "O que ficou de fora").
 
 ## Modelos usados
 - Ler a issue e planejar: forte (a sessão mãe, Opus), esforço médio.
@@ -24,7 +24,11 @@
 - Nenhuma (a issue diz `Sessões filhas: não`).
 
 ## Gasto
-GASTO_PENDENTE
+- **Uso da sessão mãe** (via arquivo, medido depois da revisão final e antes do PR; o PR e este relatório ficam de fora): 47 respostas; entrada 102, cache criado 168.098, cache lido 8.051.976, saída 29.345 tokens.
+- **Ajudantes** (4). Pelo aviso (`subagent_tokens`): explorador (rápido) 82.532; construtor (médio) 116.608; conferidor visual (médio) 82.327; revisor (forte, esforço alto) 130.034. Pelo arquivo (cache criado / cache lido): explorador 78.614 / 128.531; construtor 114.541 / 971.411; conferidor 39.009 / 845.278; revisor 126.266 / 2.785.374. A saída dos ajudantes no arquivo (de 112 a 945) parece baixa demais pra ser a conta toda; não confio nela.
+- **Sessões filhas**: nenhuma.
+- **Conselheiro (`/advisor`)**: não consultei nenhuma vez (sessão "Opus sozinho").
+- **`/goal`**: ligado pela pessoa na tela, com limite de 40 turnos; segue ligado na hora em que escrevo isto (ainda falta o PR e o CI). Os turnos estão contados na conversa.
 
 ## O que testei e VI reprovar
 - **Os testes novos, antes do código** (o construtor): em `navegacao.test.ts`, 9 de 17 reprovaram (andares, itens novos, `andarDoItem`/`quemCuidaDoAndar` inexistentes, chefe repetido); em `emBreve.test.ts`, 8 (trilha com o nome antigo, regra do dinheiro ainda no grupo "empresa", textos novos inexistentes); nos componentes, 16 (ícones novos sem mapa, frase "quem cuida" faltando).
@@ -35,7 +39,9 @@ GASTO_PENDENTE
 ## O que passou sem eu ter visto reprovar
 - `npm run typecheck` do painel (`tsc -b`).
 - Medições no navegador: sem rolagem lateral em 1280 e 390; nenhum título de andar cortado; contraste do título do andar 5,49:1 (claro) e 5,90:1 (escuro); as 13 rotas antigas abrem sem "Página não encontrada"; a frase "Quem cuida deste andar" nas 3 páginas novas.
-- VERIFICACOES_PENDENTES
+- Painel: `npx vitest run` com 30 arquivos e 509 testes passando; `npm run typecheck`.
+- Raiz: `npm run typecheck`, `npm run lint` (0 erros; 1 aviso que já existia), `npm run test:fusos` e `npm run contraste`. O `contraste:telas` e o `largura:telas` são do programa das lojas e não olham o painel; a largura e o contraste do painel foram medidos no navegador (acima).
+- **O CI não roda os testes do painel**: ele confere só o programa das lojas. Os testes do painel foram provados nesta sessão.
 
 Fotos em `docs/relatorios/fotos/tarefa-591-opus/`:
 - `barra-computador.jpg` e `barra-computador-escuro.jpg`: a barra com os andares e a página Pós-venda com "Quem cuida deste andar: o chefe de marketing.".
@@ -44,7 +50,8 @@ Fotos em `docs/relatorios/fotos/tarefa-591-opus/`:
 
 ## O que ficou de fora
 - O desenho de prédio, o conteúdo dos andares novos, a #560 e a #561 (a issue manda não fazer).
-- FORA_DA_LISTA_PENDENTE
+- **Fora da lista, autorizados pela Sofia (pela coordenadora)**: `painel/src/App.tsx` e `painel/src/componentes/escritorio/Escritorio.tsx` (a trilha "Equipe" vira "1º · Produção"; vi o teste reprovar antes) e `painel/src/App.test.tsx` (a trilha do Financeiro vira "3º · Financeiro", e a proteção "nenhum algarismo" ignora só a trilha). As fotos também ficam fora da lista, em `docs/relatorios/fotos/tarefa-591-opus/`, como nas tarefas 545, 546 e 569.
+- **Achados opcionais da revisão, não feitos**: (4) o teste dos endereços antigos confere a lista, e não a página que abre (o `App.test.tsx` já abre algumas, e `paginaDoCaminho` usa os mesmos textos); (5) na página Levas anteriores aparecem duas linhas seguidas, "Quem cuida: a tarefa #548" e "Quem cuida deste andar…", e os nomes "frontend/backend/tester" são termos em inglês; (6) o título do andar é um `<p>` solto, sem `aria-labelledby` na lista (já era assim antes). Os três mexem em aparência ou texto: pra Sofia decidir.
 - **Aparência, pra Sofia decidir (não mexi; mudança de aparência se decide por imagem)**: (1) no computador, a barra rola por dentro em telas com menos de uns 980 px de altura, e aí Configurações só aparece rolando (já era assim antes, com menos itens; agora piora um pouco); (2) na folha do celular, Configurações aparece colado abaixo de "Decisões da Sofia", sem separação, como se fosse da Cobertura (antes ficava colado à Empresa).
 
 ## O que depende de alguém
@@ -55,6 +62,6 @@ Terminei.
 
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: o ritual deixou claro quem faz cada etapa e o que pedir a cada ajudante; a regra "mexer fora da lista: parar e perguntar" segurou o construtor no `App.test.tsx` em vez de ele "consertar" sozinho.
-- **Onde eu errei ou tive que adivinhar**: a issue não diz o que a página em breve mostra num andar **sem chefe** (Cobertura, Financeiro); escolhi "ainda nenhum chefe". Também escolhi os ids dos andares, os ícones novos e o texto das 3 páginas novas. A regra do dinheiro (antes presa ao grupo "Empresa") passou a ser: o andar Financeiro exige o aviso, e toda página com o aviso não pode ter algarismo; as Lojas continuam com o aviso.
+- **Onde eu errei ou tive que adivinhar**: a issue não diz o que a página em breve mostra num andar **sem chefe** (Cobertura, Financeiro); escolhi "ainda nenhum chefe". Também escolhi os ids dos andares, que o andar Comercial proíbe algarismo (como o Financeiro) sem exigir o aviso do banco privado,, os ícones novos e o texto das 3 páginas novas. A regra do dinheiro (antes presa ao grupo "Empresa") passou a ser: o andar Financeiro exige o aviso, e toda página com o aviso não pode ter algarismo; as Lojas continuam com o aviso.
 - **O que faltou na skill**: a lista de arquivos da issue não previu os testes de fora que conferem a trilha (`App.test.tsx`) nem as trilhas escritas à mão (Sala, Escritório). Uma linha na `nova-tarefa` ("procure quem usa o texto que vai mudar antes de fechar a lista de arquivos") evitaria a parada.
 - **Sugestão de ajuste (opcional)**: no `chefe-frontend`, dizer que os testes do painel (`cd painel && npx vitest run`) **não rodam no CI**; a seção 5 lista só as conferências do programa das lojas.

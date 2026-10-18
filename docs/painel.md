@@ -65,8 +65,9 @@ seus chefes (as skills `chefe-<função>`). Por enquanto é só a **estrutura**;
   continuam abrindo a mesma página (há teste). Os novos: `/em-breve/posvenda`, `/em-breve/bancos` e
   `/em-breve/decisoes`.
 - **Dinheiro**: o andar Financeiro exige o aviso "dinheiro nunca mora no GitHub" (`semDinheiro`); as
-  Lojas, agora no 2º andar, continuam com ele. Em qualquer página com esse aviso, nenhum algarismo
-  nem "R$" no texto (teste).
+  Lojas, agora no 2º andar, continuam com ele. Nos andares Financeiro e Comercial, e em toda página
+  com o aviso, nenhum algarismo nem "R$" no texto da página (teste em `emBreve.test.ts`). O número
+  do andar na trilha ("3º · Financeiro") não é dinheiro e fica de fora dessa conta.
 
 ## Como a equipe trabalha (é isso que o painel mostra)
 
@@ -704,3 +705,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   **A Sofia confere depois de publicar**: com o login dela, o Início mostra o mesmo "precisa de você" da Sala.
   Sobras das tarefas anteriores viraram a #560 ("Leva atual" marcada numa página "em breve" que não existe) e a #561
   (área segura do iPhone na barra de baixo).
+- **18/10/2026, #591 os andares: PR aberto (sessão "opus"), esperando a revisão da Sofia.** Os grupos da barra viraram os
+  6 andares do prédio (seção "Os andares"), com os chefes como dado e 3 páginas em breve novas (Pós-venda, Bancos e
+  backups, Decisões da Sofia). Fora da lista, autorizado pela Sofia: a trilha da Sala e do Escritório ("1º · Produção") e
+  uma linha do `App.test.tsx`. Relatório em `docs/relatorios/2026-10-18-tarefa-591-frontend-opus.md`.
