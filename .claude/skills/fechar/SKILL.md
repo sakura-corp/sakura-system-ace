@@ -30,7 +30,7 @@ Montar, em linguagem simples e curto, três listas:
    - banco/migration → `docs/banco.md`; bug novo ou lição → `docs/licoes.md`;
    - estado de uma tela → `docs/modulos.md`; método de trabalho → `docs/jeito-de-trabalhar.md`;
    - publicar/rodar/instalar → `docs/operacao.md`; painel → `docs/painel.md`;
-   - preferência dela sobre *como* trabalhar → `docs/sofia.md`;
+   - preferência da pessoa sobre *como* trabalhar → o caderno dela (seção 1 do índice);
    - **o que depende dela** → as tarefas com a etiqueta `sofia` (ver `docs/pendencias-e-futuro.md`);
    - assunto da empresa (sócios, dinheiro, contrato, preço) → **nunca neste repositório**, que é
      público: fica no privado `caranovavidanova/sakura-corp`, e só se ela autorizar adicioná-lo.
@@ -48,7 +48,7 @@ Terminar com a pergunta: **"Confere? Posso gravar assim?"** — e **esperar a re
    máximo 8 linhas** (estado do código, o que foi feito, o que depende dela, o próximo passo), e mover o
    antigo pro **topo** dos marcos em `docs/historico.md`. O detalhe vai pra tarefa ou pro `docs/` certo.
 4. Medir o índice (`wc -c PROJETO_STATUS.md`): **até 15 KB** (15360 bytes). Passou, enxugar antes do
-   commit (o CI também avisa). Preferência nova da Sofia vai pra `docs/sofia.md`, não pro índice.
+   commit (o CI também avisa). Preferência nova vai pro caderno da pessoa, não pro índice.
 
 ## 3. Entregar
 

@@ -51,7 +51,6 @@ pede**:
 
 | Arquivo | O que tem | Abrir quando |
 |---|---|---|
-| `docs/sofia.md` | **como trabalhar com ela**, por assunto (a antiga seção 1 inteira) | mensagem pra outra pessoa, passo a passo longo, documento oficial, aparência, planejamento, tarefa pra equipe, faxina da memória |
 | `docs/decisoes.md` | o projeto, as fases, identidade visual, **tabela de decisões técnicas** | antes de qualquer decisão estrutural |
 | `docs/estrutura.md` | pastas, padrão de código, **padrão de formulário** (react-hook-form + zod) | antes de criar arquivo/módulo novo |
 | `docs/banco.md` | as migrations, cada tabela, multi-loja, RLS | antes de mexer em banco/migration |
@@ -71,33 +70,27 @@ pede**:
 
 **Referências antigas continuam valendo**: "item 33 da seção 6" é `docs/licoes.md`; a seção 5 é
 `docs/banco.md`, a 7 `docs/modulos.md`, a 8 `docs/pendencias-e-futuro.md`, a 9 `docs/operacao.md`.
-"Seção 1" de antes de 17/10 é `docs/sofia.md`.
+A seção 1 de antes de 18/10 (e o arquivo que nasceu dela em 17/10) está no caderno da Sofia.
 
 **Como manter**: ao fim de cada sessão (skill `fechar`), **substituir** o "Onde parou" lá embaixo
 por um novo de **no máximo 8 linhas** e mover o antigo pro topo dos marcos em `docs/historico.md`.
 O detalhe vai pra tarefa (issue/PR) ou pro `docs/` certo, nunca aqui; **o que depende dela vira
-tarefa com a etiqueta `sofia`**. Preferência nova dela vai pra `docs/sofia.md`, e só ganha linha na
-seção 1 se valer em toda conversa.
+tarefa com a etiqueta `sofia`**. Preferência nova de quem trabalha vai pro caderno da pessoa (seção 1),
+nunca aqui.
 
-## 1. Como trabalhar com ela (o que vale sempre; o resto em `docs/sofia.md`)
+## 1. Como trabalhar com quem está na tela (o jeito de cada um mora no caderno da pessoa)
 
-1. **Sofia**, conta `caranovavidanova`; nunca presumir o nome por outra fonte. Sem experiência em
-   programação: **português simples, sempre em português**, sem jargão.
-2. **Decisão estrutural** (arquitetura, biblioteca, modelagem): opções + recomendação, e esperar o
-   "sim". Construir em etapas pequenas, mostrando funcionando.
-3. **"Estou pensando em…" é plano, não ordem**: alinhar e perguntar se é pra começar agora. Bug e
-   ajuste pequeno que ela relatou são pra fazer na hora.
-4. **Fora do código, um passo por vez**: onde clicar, o que deve aparecer, e esperar ela confirmar.
-   Print que ela manda se confere com atenção antes de responder. Pelo celular: o link exato de cada passo.
-5. **Ela revisa antes de eu documentar**: no fim, o que foi decidido, o que está aberto e o que vou
-   anotar; o que ela mandar "deixar na gaveta" é adiado, não decidido.
-6. **Documento oficial sem volta** (contrato, Receita, banco, certificado): ela manda antes de
-   clicar, eu confiro. Dado pessoal (nome civil, CPF, RG, endereço) nunca vai pra memória.
-7. **Defeito achado de passagem vira tarefa no GitHub na hora**, no formato da #425.
-8. **Uma sessão por assunto**; eu aviso quando passar de uns 30 a 40% de contexto.
-9. **Repositório privado** só com autorização com todas as letras, e só pro assunto pedido.
-10. Ela trabalha pelo **app do Claude no PC (Windows) e no celular**; a sessão na nuvem não alcança
-    o PC dela. Instalador novo: ela testa primeiro na máquina dela, não na loja.
+1. **Português simples, sempre em português**, sem jargão: ninguém aqui precisa saber programar
+   pra entender a resposta.
+2. **Fora do código, um passo por vez**: onde clicar, o que deve aparecer, e esperar a pessoa
+   confirmar antes do próximo.
+3. **Decisão estrutural** (arquitetura, biblioteca, modelagem): opções + recomendação, e esperar
+   o "sim" da Sofia. Construir em etapas pequenas, mostrando funcionando.
+4. **O caderno de quem está trabalhando**: o repositório privado `<usuário>/segundo-cerebro`, na
+   conta do GitHub da própria pessoa (o da Sofia: `caranovavidanova/segundo-cerebro`). Abrir no
+   começo da sessão (`add_repo`) e seguir o `CLAUDE.md` de lá: é ele que diz o jeito da pessoa.
+5. **Se o caderno não abrir** (não existe ainda, ou a sessão não alcança): avisar, dizer se dá ou
+   não pra fazer a tarefa sem ele e **perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
 
 ## 2. O projeto em um parágrafo
 

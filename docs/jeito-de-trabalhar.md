@@ -95,10 +95,10 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
   assunto pede.
 - **M2.** Saem dela, aos poucos: as receitas (viram skills), as regras (viram trancas) e as
   listas de afazeres (viram tarefas). O "Onde parou" fica curto.
-- **M3.** Corrigir o que envelheceu: **feito em 14/10** (seção 1 do índice, hoje `docs/sofia.md`).
+- **M3.** Corrigir o que envelheceu: **feito em 14/10** (a antiga seção 1 do índice, hoje no caderno da Sofia).
 - **M4.** As preferências novas: **feito em 14/10** (idem).
-- **M5.** O índice em até 15 KB (17/10): a seção 1 virou `docs/sofia.md` (no índice ficam só as 10
-  regras que valem sempre) e o "Onde parou" tem no máximo 8 linhas.
+- **M5.** O índice em até 15 KB (17/10): a seção 1 saiu do índice, e em 18/10 foi pro caderno da Sofia
+  (#608) e o "Onde parou" tem no máximo 8 linhas.
 
 ### Skills (o `/gerar-modulo` já existe)
 | # | Skill | O que faz |
@@ -109,7 +109,7 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S4 | `/atualizar-bancos` | ensaia e aplica a migration em todas as empresas |
 | S5 | `/nova-migration` | as regras da seção 3 do índice |
 | S6 | `/validar` | as conferências antes de mesclar, e a revisão de código em PR grande |
-| S7 | `/mensagem` | texto pra outra pessoa: curto, informal e completo (`docs/sofia.md`) |
+| S7 | `/mensagem` | texto pra outra pessoa: curto, informal e completo (caderno da Sofia, `mensagens.md`) |
 | S8 | `/comparar-visual` | mudança de aparência em 2 ou 3 versões numa página, pra ela escolher |
 | S9 | `/loja-nova` | o roteiro da loja nova, do contrato à primeira venda com nota e ao acompanhamento dos 30 dias (aponta pros documentos, não copia) — **rascunho de 18/10**, #590 |
 | S10 | `/faxina-memoria` | a faxina da memória |

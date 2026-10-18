@@ -2,7 +2,7 @@
 
 > Parte da memória do projeto. O índice é o `PROJETO_STATUS.md`. Abrir ao planejar
 > funcionalidade nova. **É direção, não ordem de construir**: cada item só começa quando ela
-> pedir (seção 1 do índice e `docs/sofia.md`), e nada daqui passa na frente do que está marcado pra antes da
+> pedir, e nada daqui passa na frente do que está marcado pra antes da
 > primeira loja de terceiro (`docs/decisoes.md`, fase 2).
 
 ## De onde veio

@@ -21,7 +21,7 @@ publica e quem envia é uma pessoa.
    equipe** (seção 6).
 2. Ler a **issue inteira**; ler `docs/decisoes.md` (o que é o produto, identidade visual, fases),
    `docs/visao.md` (pra onde vai), `docs/comparativo-anexar.md` (se for sobre venda) e o
-   `docs/sofia.md` ("Mensagem que ela vai mandar pra outra pessoa").
+   `mensagens.md` do caderno de quem está trabalhando (seção 1 do índice).
 3. Se mexer no `site/`, ler `site/README.md`.
 4. Explicar à pessoa o que será escrito, pra quem, e o que ela precisa decidir.
 
@@ -39,7 +39,7 @@ publica e quem envia é uma pessoa.
 - **Não prometer o que o sistema não faz.** Conferir cada funcionalidade citada em
   `docs/modulos.md` e `docs/pendencias-e-futuro.md` ("o que não existe").
 - **Mudança de aparência do site se decide por imagem**: 2 ou 3 versões renderizadas, ela escolhe.
-- "Estou pensando em fazer X" é plano, não ordem: perguntar se é pra começar agora (seção 1).
+- "Estou pensando em fazer X" é plano, não ordem: perguntar se é pra começar agora.
 - Sempre em português.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)

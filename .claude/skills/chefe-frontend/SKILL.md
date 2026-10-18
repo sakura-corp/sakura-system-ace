@@ -41,7 +41,7 @@ backend; se a tarefa precisar, diga no relatório e não invente).
 - **Largura**: item flex precisa de `min-w-0`, senão a tela passa da janela (item 81).
 - **Validação incerta é aviso, nunca tranca** (item 33).
 - **Mudança de aparência se decide por imagem**: mostrar 2 ou 3 versões renderizadas e deixar a
-  Sofia escolher; não decidir sozinho (`docs/sofia.md`, "Decidir e planejar").
+  Sofia escolher; não decidir sozinho (caderno da Sofia, `planejar.md`).
 - Módulo/cadastro novo inteiro: usar a skill `gerar-modulo`, não montar à mão.
 - **Ao escrever código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
 
