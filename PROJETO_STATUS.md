@@ -144,9 +144,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 18/10/2026, tarde: a leva 4 (o teste do conselheiro) na `main`
+### 18/10/2026, noite: a leva 5 (guia de instalação e acabamentos do painel) na `main`
 - **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado). Nenhum PR aberto.
-- **Entrou**: a skill `/loja-nova` (#590, PR #594, rascunho), os andares do painel (#591, PR #596), a conclusão do teste A3 (PR #598) e a `teste-primeiro` sem parar pra combinar (#587, PR #599).
-- **A3**: o Sonnet + conselheiro deu o mesmo resultado no código gastando menos, e o Opus foi mais a fundo no texto. A recomendação está em `docs/relatorios/2026-10-18-teste-a3-conselheiro.md`; mudar a tabela de modelos é decisão dela, depois de mais 2 ou 3 tarefas.
-- **Próximo**: uma coordenadora nova com A (#592 e #595, o guia de instalação) e B (o painel: os 3 detalhes de aparência do PR #597, a #560 e a #561; ela escolhe por imagem). Depois, a sessão do Claude Team.
-- **Depende dela**: o C1 (Team) na segunda; testar o `/loja-nova` de mentira até o passo 2; aprovar as skills em rascunho; conferir no painel público os andares e a sala "Próximos projetos".
+- **Entrou**: o guia de loja nova sem a Parte 4, com a `redefinir-senha-operador` obrigatória, o `BACKUP_EMPRESAS` nos dois cofres e a impressora (#592 e #595, PR #602); os acabamentos dos andares do painel, escolhidos por ela por imagem (1A, 2A, 3A), com a #560 e a #561 (#601, PR #603). Mesclados pela coordenadora, com autorização dela.
+- **Novas, sem sessão**: a #604 (margem segura do modo TV e da tela de entrada) e a #605 (o nome da ferramenta de mensagem e o `/goal` conferido pelo registro, nas skills `ritual-de-tarefa` e `coordenar`). São curtas: uma sessão direto cada, sem coordenadora.
+- **Depende dela**: a #606 (conferir no painel público e, na próxima loja nova, o guia); o C1 (Team) na segunda; aprovar as skills em rascunho. A lista inteira em `label:sofia`.
