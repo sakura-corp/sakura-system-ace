@@ -24,6 +24,19 @@ describe("PaginaEmBreve", () => {
     expect(h).toContain("(abre em aba nova)");
     expect(h).not.toContain('role="note"');
   });
+  it("quem cuida do andar: os chefes de cada um", () => {
+    expect(html("posvenda")).toContain("Quem cuida deste andar: o chefe de marketing.");
+    expect(html("bancos")).toContain("Quem cuida deste andar: o chefe de segurança.");
+    expect(html("decisoes")).toContain("Quem cuida deste andar: ainda nenhum chefe.");
+    expect(html("levas")).toContain("Quem cuida deste andar: os chefes de frontend, backend e tester.");
+  });
+  it("no rodapé (Configurações) não tem a linha do andar", () => {
+    expect(html("configuracoes")).not.toContain("Quem cuida deste andar");
+  });
+  it("a trilha mostra o nome do andar", () => {
+    expect(html("posvenda")).toContain("2º · Comercial e pós-venda");
+    expect(html("bancos")).toContain("4º · Segurança e operação");
+  });
   it("id desconhecido: página não encontrada com volta pro Início", () => {
     const h = html("nao-existe");
     expect(h).toContain("Página não encontrada");

@@ -1,5 +1,5 @@
 /** As páginas do painel. */
-export type Pagina = "inicio" | "leva" | "levas" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "configuracoes";
+export type Pagina = "inicio" | "leva" | "levas" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes";
 
 export type EstadoTarefa = "livre" | "andamento" | "revisao" | "feita";
 

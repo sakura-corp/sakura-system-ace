@@ -58,10 +58,16 @@ describe("NavegacaoDoCelular", () => {
     expect(folha).toMatch(/<a href="\/leva\/0" aria-current="page"/);
   });
 
-  it("a folha tem Fechar, os grupos e não repete os itens da barra", () => {
+  it("a folha tem Fechar, os andares, na ordem, e não repete os itens da barra", () => {
     const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
     expect(folha).toContain('aria-labelledby="titulo-da-folha"');
-    for (const t of ["Fechar", "Mais", "Trabalho", "Equipe", "Empresa", "Levas anteriores", "Escritório", "Configurações", "depende da #548"]) expect(folha).toContain(t);
+    const andares = ["1º · Produção", "2º · Comercial e pós-venda", "3º · Financeiro", "4º · Segurança e operação", "Cobertura · Diretoria"];
+    const posicoes = andares.map((t) => folha.indexOf(t));
+    expect(posicoes.every((n) => n >= 0)).toBe(true);
+    expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes);
+    for (const t of ["Trabalho", "Equipe", "Empresa", "Térreo"]) expect(folha).not.toContain(t);
+    for (const t of ["Pós-venda", "Bancos e backups", "Decisões da Sofia"]) expect(folha).toContain(t);
+    for (const t of ["Fechar", "Mais", "Levas anteriores", "Escritório", "Configurações", "depende da #548"]) expect(folha).toContain(t);
     for (const t of ["Início", "Leva atual", "Sala", "Pessoas"]) expect(folha).not.toContain(t);
   });
 

@@ -2,9 +2,12 @@ import {
   BriefcaseBusiness,
   ChartColumn,
   CreditCard,
+  DatabaseBackup,
   FileText,
   History,
   House,
+  Landmark,
+  LifeBuoy,
   ListChecks,
   Lock,
   LogOut,
@@ -43,6 +46,9 @@ export const ICONES: Record<NomeDoIcone, LucideIcon> = {
   grafico: ChartColumn,
   loja: Store,
   ajustes: SlidersHorizontal,
+  suporte: LifeBuoy,
+  banco: DatabaseBackup,
+  decisoes: Landmark,
 };
 
 const LINHA = "relative flex min-h-8 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm";

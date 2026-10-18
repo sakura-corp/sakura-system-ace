@@ -9,7 +9,7 @@ export { enderecoEmBreve } from "./navegacao";
 export type TextoEmBreve = {
   /** o mesmo id da navegacao.ts */
   id: Pagina;
-  /** pra trilha: "Trabalho", "Equipe", "Empresa"; sem grupo no topo e no rodapé */
+  /** pra trilha: o título do andar (ex.: "1º · Produção"), igual ao da navegação; sem grupo no rodapé */
   grupo?: string;
   /** igual ao rótulo da navegação */
   titulo: string;
@@ -20,14 +20,14 @@ export type TextoEmBreve = {
   dependeDe: { texto: string; detalhe?: string }[];
   /** a issue que cuida, se houver */
   tarefa?: number;
-  /** Financeiro, DRE e Lojas: mostra o aviso de que dinheiro nunca mora no GitHub */
+  /** Financeiro, DRE e Lojas (semDinheiro): mostra o aviso de que dinheiro nunca mora no GitHub */
   semDinheiro?: true;
 };
 
 export const EM_BREVE: TextoEmBreve[] = [
   {
     id: "levas",
-    grupo: "Trabalho",
+    grupo: "1º · Produção",
     titulo: "Levas anteriores",
     subtitulo: "O que cada leva entregou.",
     resumo: "Aqui ficam as levas que já terminaram, uma a uma. Ainda falta o painel descobrir quando cada leva acabou.",
@@ -40,7 +40,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "versoes",
-    grupo: "Trabalho",
+    grupo: "4º · Segurança e operação",
     titulo: "Versões",
     subtitulo: "O que saiu pras lojas.",
     resumo: "Versões mostra o que saiu no canal de teste e o que já foi liberado pras lojas. Os dados já são públicos, falta só a tela.",
@@ -49,7 +49,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "fases",
-    grupo: "Trabalho",
+    grupo: "1º · Produção",
     titulo: "Fases da leva",
     subtitulo: "A leva em etapas.",
     resumo: "Fases da leva mostra em que etapa a leva está: planejar, fazer, congelar, testar e liberar.",
@@ -61,7 +61,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "relatorio",
-    grupo: "Trabalho",
+    grupo: "1º · Produção",
     titulo: "Relatório da leva",
     subtitulo: "O fim da leva, por escrito.",
     resumo: "O Relatório da leva traz o que foi feito e onde a Sofia aprova o fim da leva.",
@@ -73,7 +73,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "pessoas",
-    grupo: "Equipe",
+    grupo: "1º · Produção",
     titulo: "Pessoas",
     subtitulo: "Cada pessoa e o que faz agora.",
     resumo: "Pessoas mostra a tarefa de agora e as horas de cada pessoa na leva. Sem nota e sem ranking.",
@@ -82,7 +82,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "financeiro",
-    grupo: "Empresa",
+    grupo: "3º · Financeiro",
     titulo: "Financeiro",
     subtitulo: "As contas da Sakura Corp, num lugar só.",
     resumo: "O Financeiro mostra as contas da Sakura Corp. Ele só abre quando houver um lugar seguro, e privado, pra guardar esses dados.",
@@ -95,7 +95,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "dre",
-    grupo: "Empresa",
+    grupo: "3º · Financeiro",
     titulo: "DRE",
     subtitulo: "O resultado do mês.",
     resumo: "O DRE mostra se a empresa ganhou ou perdeu no mês. Ele nasce do Financeiro, então só abre depois dele.",
@@ -108,7 +108,7 @@ export const EM_BREVE: TextoEmBreve[] = [
   },
   {
     id: "lojas",
-    grupo: "Empresa",
+    grupo: "2º · Comercial e pós-venda",
     titulo: "Lojas",
     subtitulo: "Cada loja cliente e a versão que usa.",
     resumo: "Lojas mostra, loja por loja, a versão instalada e se o banco está atualizado. Ela só abre quando houver um lugar privado pra guardar os nomes.",
@@ -118,6 +118,33 @@ export const EM_BREVE: TextoEmBreve[] = [
       { texto: "Ligar o painel a esse banco", detalhe: "Só depois da escolha." },
     ],
     semDinheiro: true,
+  },
+  {
+    id: "posvenda",
+    grupo: "2º · Comercial e pós-venda",
+    titulo: "Pós-venda",
+    subtitulo: "O que acontece depois que a loja compra.",
+    resumo: "Pós-venda vai mostrar como cada loja está depois de começar a usar o sistema: os pedidos de ajuda e os sinais de que ela pode desistir.",
+    vaiMostrar: ["Os pedidos de ajuda das lojas", "Os sinais de que uma loja pode sair"],
+    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe issue." }],
+  },
+  {
+    id: "bancos",
+    grupo: "4º · Segurança e operação",
+    titulo: "Bancos e backups",
+    subtitulo: "Os bancos das lojas e as cópias de segurança.",
+    resumo: "Bancos e backups vai mostrar se o banco de cada empresa está na versão certa e quando foi feita a última cópia de segurança.",
+    vaiMostrar: ["A versão do banco de cada empresa", "Quando foi feita a última cópia de segurança"],
+    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe issue." }],
+  },
+  {
+    id: "decisoes",
+    grupo: "Cobertura · Diretoria",
+    titulo: "Decisões da Sofia",
+    subtitulo: "O que está esperando a Sofia decidir.",
+    resumo: "Decisões da Sofia vai juntar num lugar só as tarefas que esperam uma decisão dela, as da etiqueta sofia no GitHub.",
+    vaiMostrar: ["As tarefas com a etiqueta sofia", "Há quanto tempo cada uma espera"],
+    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe issue." }],
   },
   {
     id: "configuracoes",
@@ -139,7 +166,7 @@ export function idDoEmBreve(caminho: string): string | null {
   return m ? m[1] : null;
 }
 
-// Nas páginas da Empresa, nenhum algarismo (nem "1.500", nem "30%") e nenhum "R$": o repositório é público.
+// No andar Financeiro e em todo texto com semDinheiro, nenhum algarismo (nem "1.500", nem "30%") e nenhum "R$": o repositório é público.
 const DINHEIRO = /R\$|\d/;
 
 function todosOsTextos(t: TextoEmBreve): string[] {
@@ -162,10 +189,9 @@ export function problemasDoEmBreve(navegacao: GrupoDaNavegacao[], textos: TextoE
     }
     if (achado.item.rotulo !== t.titulo) problemas.push(`O título "${t.titulo}" é diferente do rótulo "${achado.item.rotulo}".`);
     if (t.grupo !== achado.titulo) problemas.push(`A trilha de "${t.titulo}" diz "${t.grupo ?? "(nada)"}", mas o grupo é "${achado.titulo ?? "(nada)"}".`);
-    if (achado.grupo === "empresa") {
-      if (!t.semDinheiro) problemas.push(`"${t.titulo}" é da Empresa e precisa de semDinheiro.`);
-      if (todosOsTextos(t).some((s) => DINHEIRO.test(s))) problemas.push(`"${t.titulo}" tem número de dinheiro no texto.`);
-    }
+    const doFinanceiro = achado.grupo === "financeiro";
+    if (doFinanceiro && !t.semDinheiro) problemas.push(`"${t.titulo}" é do andar Financeiro e precisa de semDinheiro.`);
+    if ((doFinanceiro || t.semDinheiro) && todosOsTextos(t).some((s) => DINHEIRO.test(s))) problemas.push(`"${t.titulo}" tem número de dinheiro no texto.`);
   }
   return problemas;
 }

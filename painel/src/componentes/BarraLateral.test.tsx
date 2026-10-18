@@ -7,7 +7,7 @@ const html = (props: Parameters<typeof BarraLateral>[0]) => renderToString(<Barr
 describe("BarraLateral", () => {
   it("desenha os grupos da lista; só o item da página tem aria-current", () => {
     const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "sala" });
-    for (const t of ["Trabalho", "Equipe", "Empresa", "Sala", "Escritório", "(exemplo)"]) expect(h).toContain(t);
+    for (const t of ["Térreo · Recepção", "1º · Produção", "Sala", "Escritório", "(exemplo)"]) expect(h).toContain(t);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
     expect(h).toMatch(/<a href="\/sala" aria-current="page"/);
   });
@@ -17,9 +17,9 @@ describe("BarraLateral", () => {
     expect(h).not.toContain("aria-disabled");
     expect(h).toMatch(/<a href="\/em-breve\/versoes"[^>]*>(?:(?!<\/a>).)*Versões<span class="sr-only"> \(em breve\)<\/span>/);
     expect(h).toContain("depende da leva 2");
-    // Os 4 que existem (Início, Leva atual, Sala e Escritório) e os 9 em breve.
-    expect(h.match(/<a /g)).toHaveLength(13);
-    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(9);
+    // Os 4 que existem (Início, Leva atual, Sala e Escritório) e os 12 em breve.
+    expect(h.match(/<a /g)).toHaveLength(16);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(12);
   });
 
   it("na página em breve aberta, só ela tem aria-current", () => {
@@ -40,5 +40,33 @@ describe("BarraLateral", () => {
     expect(h).toMatch(/<a href="\/leva"(?![^>]*aria-current)/);
     expect(h).toMatch(/<a href="\/leva\/0" aria-current="page"/);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
+  });
+
+  it("os andares aparecem nessa ordem, e cada item fica depois do título do seu andar e antes do próximo", () => {
+    const h = html({ levas: [] });
+    const andares: [string, string[]][] = [
+      ["Térreo · Recepção", ["Início"]],
+      ["1º · Produção", ["Leva atual", "Levas anteriores", "Fases da leva", "Relatório da leva", "Sala", "Escritório", "Pessoas"]],
+      ["2º · Comercial e pós-venda", ["Lojas", "Pós-venda"]],
+      ["3º · Financeiro", ["Financeiro", "DRE"]],
+      ["4º · Segurança e operação", ["Versões", "Bancos e backups"]],
+      ["Cobertura · Diretoria", ["Decisões da Sofia"]],
+    ];
+    const posicoes = andares.map(([titulo]) => h.indexOf(`>${titulo}<`));
+    expect(posicoes.every((n) => n >= 0)).toBe(true);
+    expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes);
+    andares.forEach(([titulo, itens], n) => {
+      const fim = n + 1 < andares.length ? posicoes[n + 1] : h.length;
+      for (const item of itens) {
+        const onde = h.indexOf(`>${item}`, posicoes[n]);
+        expect(onde, `${item} depois de ${titulo}`).toBeGreaterThan(posicoes[n]);
+        expect(onde, `${item} antes do próximo andar`).toBeLessThan(fim);
+      }
+    });
+  });
+
+  it("os chefes não aparecem na barra", () => {
+    const h = html({ levas: [] });
+    for (const t of ["frontend", "backend", "marketing", "tester", "chefe"]) expect(h.toLowerCase()).not.toContain(t);
   });
 });

@@ -3,10 +3,10 @@ import { EM_BREVE, enderecoEmBreve, idDoEmBreve, problemasDoEmBreve, textoEmBrev
 import { NAVEGACAO, type GrupoDaNavegacao } from "./navegacao";
 
 const nav: GrupoDaNavegacao[] = [
-  { id: "trabalho", titulo: "Trabalho", itens: [{ id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, dependeDe: "x", href: "/em-breve/versoes" }] },
+  { id: "producao", titulo: "1º · Produção", itens: [{ id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, dependeDe: "x", href: "/em-breve/versoes" }] },
   {
-    id: "empresa",
-    titulo: "Empresa",
+    id: "financeiro",
+    titulo: "3º · Financeiro",
     itens: [
       { id: "financeiro", rotulo: "Financeiro", icone: "cartao", emBreve: true, dependeDe: "x", href: "/em-breve/financeiro" },
       { id: "dre", rotulo: "DRE", icone: "grafico", emBreve: true, dependeDe: "x", href: "/em-breve/dre" },
@@ -23,9 +23,9 @@ const base = (id: TextoEmBreve["id"], titulo: string, extra: Partial<TextoEmBrev
   ...extra,
 });
 const bons = (): TextoEmBreve[] => [
-  base("versoes", "Versões", { grupo: "Trabalho" }),
-  base("financeiro", "Financeiro", { grupo: "Empresa", semDinheiro: true }),
-  base("dre", "DRE", { grupo: "Empresa", semDinheiro: true }),
+  base("versoes", "Versões", { grupo: "1º · Produção" }),
+  base("financeiro", "Financeiro", { grupo: "3º · Financeiro", semDinheiro: true }),
+  base("dre", "DRE", { grupo: "3º · Financeiro", semDinheiro: true }),
 ];
 
 describe("problemasDoEmBreve", () => {
@@ -56,19 +56,34 @@ describe("problemasDoEmBreve", () => {
     t[2].resumo = "Resultado 1.234,56";
     expect(problemasDoEmBreve(nav, t).join("|")).toContain("DRE");
   });
-  it("pega qualquer algarismo na Empresa, mesmo sem vírgula nem R$", () => {
+  it("pega qualquer algarismo no andar Financeiro, mesmo sem vírgula nem R$", () => {
     for (const frase of ["Custo de 1.500 por loja", "Margem de 30%", "500 reais"]) {
       const t = bons();
       t[1].dependeDe = [{ texto: "b", detalhe: frase }];
       expect(problemasDoEmBreve(nav, t).join("|"), frase).toContain("Financeiro");
     }
   });
+  it("pega algarismo num texto com semDinheiro fora do andar Financeiro", () => {
+    const t = bons();
+    t[0].semDinheiro = true;
+    t[0].resumo = "Custo de 30 por loja";
+    expect(problemasDoEmBreve(nav, t).join("|")).toContain("Versões");
+  });
+  it("lojas, nos dados de verdade, continua com semDinheiro (andar comercial)", () => {
+    expect(textoEmBreve("lojas")?.semDinheiro).toBe(true);
+    expect(textoEmBreve("lojas")?.grupo).toBe("2º · Comercial e pós-venda");
+  });
+  it("os três textos novos existem, com a trilha do andar", () => {
+    expect(textoEmBreve("posvenda")?.grupo).toBe("2º · Comercial e pós-venda");
+    expect(textoEmBreve("bancos")?.grupo).toBe("4º · Segurança e operação");
+    expect(textoEmBreve("decisoes")?.grupo).toBe("Cobertura · Diretoria");
+  });
   it("pega trilha com o grupo errado", () => {
     const t = bons();
-    t[1].grupo = "Equipe";
+    t[1].grupo = "Cobertura · Diretoria";
     expect(problemasDoEmBreve(nav, t).join("|")).toContain('A trilha de "Financeiro"');
   });
-  it("pega página da Empresa sem semDinheiro", () => {
+  it("pega página do andar Financeiro sem semDinheiro", () => {
     const t = bons();
     delete t[1].semDinheiro;
     expect(problemasDoEmBreve(nav, t).join("|")).toContain("semDinheiro");

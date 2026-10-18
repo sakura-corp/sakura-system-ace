@@ -1,6 +1,7 @@
 // A página de um item "em breve" da barra lateral: explica o que vai ter ali, do que depende e quem cuida.
 import { Check, Clock, Info, Lock } from "lucide-react";
 import { textoEmBreve } from "../logica/emBreve";
+import { andarDoItem, quemCuidaDoAndar } from "../logica/navegacao";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 
 const LINK_DA_TAREFA = (numero: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`;
@@ -20,6 +21,7 @@ export function PaginaEmBreve({ id }: { id: string }) {
       </div>
     );
   }
+  const andar = andarDoItem(texto.id);
   const cartao = "rounded-xl border border-borda bg-cartao";
   return (
     <div className="mx-auto w-full max-w-4xl">
@@ -82,6 +84,8 @@ export function PaginaEmBreve({ id }: { id: string }) {
           </a>
         </p>
       ) : null}
+
+      {andar?.titulo ? <p className="mt-4 text-sm text-texto-2">{quemCuidaDoAndar(andar)}</p> : null}
 
       {texto.semDinheiro ? (
         <div role="note" className="mt-4 flex min-w-0 items-start gap-3 rounded-xl border border-borda bg-revisao-fundo px-4 py-3 text-sm text-revisao">
