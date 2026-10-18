@@ -97,6 +97,10 @@
   português simples, e só então ela clica (assim foi a abertura inteira do CNPJ, num dia, sem
   erro). Os dados pessoais desses documentos (nome civil, CPF, RG, endereço) **nunca** vão pra
   memória, nem pra privada.
+- **Contrato com várias assinaturas (18/10)**: **ela assina por último**. Cada pessoa devolve o
+  arquivo assinado, eu confiro a assinatura (válida, de quem, texto igual ao gerado) antes de ela
+  assinar, e no fim **mando de volta a via final** pra ela salvar no PC, com o nome dizendo que
+  está assinada por todos. O como fica no privado (`contratos/README.md`).
 - **O que levar ou fazer num órgão** (Poupatempo, cartório, certificadora, banco; 08/10): conferir
   na página oficial antes de responder. Eu disse que o Poupatempo dava lá o formulário do nome
   social, e não dá: foi a busca dela no Google que mostrou, a tempo.
