@@ -22,6 +22,13 @@ describe("BarraLateral", () => {
     // A barra inteira não rola mais: quem rola é só a lista dos andares.
     expect(h.slice(0, h.indexOf(">")), "a própria barra").not.toContain("overflow-y-auto");
     const rolavel = divDe(h, h.lastIndexOf("<div", marca));
+    // Sem o min-h-0 a lista não encolhe e empurra o rodapé pra fora da tela; a margem negativa com o mesmo
+    // enchimento deixa o contorno de foco (que sai uns 4 px do link) caber dentro da parte que rola.
+    const abertura = rolavel.slice(0, rolavel.indexOf(">"));
+    expect(abertura).toContain("min-h-0");
+    expect(abertura).toContain("flex-1");
+    expect(abertura).toContain("-mx-3");
+    expect(abertura).toContain("px-3");
     expect(rolavel).toContain("Leva atual");
     expect(rolavel).toContain("Decisões da Sofia");
     expect(rolavel).not.toContain("Configurações");

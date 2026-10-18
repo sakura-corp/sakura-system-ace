@@ -175,7 +175,7 @@ export default function App({
   }
 
   return (
-    <div className="min-h-screen md:flex">
+    <div className="min-h-screen pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:flex">
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       <NavegacaoDoCelular levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "inicio" ? (

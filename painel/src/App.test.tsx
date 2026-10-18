@@ -93,6 +93,13 @@ describe("App", () => {
     expect(html("/em-breve/dre")).toContain('aria-current="page"');
   });
 
+  it("deitado, a barra do PC e o conteúdo respeitam a área segura dos lados (#561)", () => {
+    const h = html("/leva");
+    const fora = h.slice(0, h.indexOf(">"));
+    expect(fora).toContain("safe-area-inset-left");
+    expect(fora).toContain("safe-area-inset-right");
+  });
+
   it("a meta viewport tem viewport-fit=cover (#561): sem ele o iPhone ignora a área segura da barra de baixo", () => {
     const meta = /<meta\s+name="viewport"\s+content="([^"]*)"/.exec(paginaHtml);
     expect(meta).not.toBeNull();

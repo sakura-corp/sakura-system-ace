@@ -168,7 +168,7 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
       </div>
 
       {/* Só a lista dos andares rola (#601): Configurações e o usuário ficam sempre à vista, mesmo em tela baixa. */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="-mx-3 min-h-0 flex-1 overflow-y-auto px-3 pb-1">
         {grupos.map((grupo) => (
           <div key={grupo.id} className="min-w-0">
             {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}

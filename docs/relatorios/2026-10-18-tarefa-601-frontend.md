@@ -8,7 +8,7 @@
 ## O que cada agente fez
 - Sessão mãe: leu a issue, montou as opções em foto, esperou a escolha da Sofia, escreveu os testes antes do código e o código, tirou as fotos de depois.
 - Ajudante tester: conferiu o "Pronto quando", rodou tudo e quebrou cada comportamento de propósito.
-- Ajudante revisor: revisão final do diff, do zero (resultado em "O que ficou de fora" e "Como eu agi").
+- Ajudante revisor: revisão final do diff, do zero. Achou 4 pontos reais, os 3 consertáveis dentro da lista foram feitos (contorno de foco cortado na lista que rola, `min-h-0` sem teste, margem segura dos lados no App com o celular deitado) e o 4º era o relatório, que já estava no commit seguinte.
 
 ## Modelos usados
 - Ler a issue, planejar, opções, código e testes: médio (Sonnet), esforço médio. O conselheiro (Opus) foi ligado pela Sofia no começo e consultado uma vez, antes do código; ele mandou refazer o script das fotos (caminho do navegador, linha do usuário na barra de teste, rolar até o alvo) e incluir os casos de chefe único, andar sem chefe e sem tarefa no detalhe 3.
@@ -21,7 +21,7 @@
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (nenhum canal entrega o total ao modelo).
-- **Ajudantes**: 2. Tester, médio: cerca de 81 mil tokens (via aviso do próprio retorno). Revisor, forte: ver o retorno dele, não medido aqui.
+- **Ajudantes**: 2. Tester, médio: cerca de 81 mil tokens (via aviso do próprio retorno). Revisor, forte: cerca de 121 mil tokens (via aviso do próprio retorno).
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: ligado pela Sofia na tela depois de eu ter mandado o texto pela coordenadora; a sessão parou duas vezes esperando a escolha dela (PRECISO DE VOCÊ), e o resto andou até o PR dentro do limite de 40 turnos.
 
@@ -31,6 +31,7 @@
 - Detalhe 1: o teste "Configurações e o usuário ficam fora da parte que rola" reprovou com a barra inteira rolando (`overflow-y-auto` na `nav`).
 - Detalhe 2: o teste da linha de separação reprovou antes da classe `border-t` no grupo do rodapé.
 - Detalhe 3: os testes de `fraseDoAndar` e da página "em breve" reprovaram antes da função existir (duas linhas "Quem cuida", nomes em inglês).
+- Revisor: o teste da barra passou a exigir `min-h-0`, `flex-1` e a margem do contorno de foco; o do App passou a exigir a margem segura dos lados. Os dois reprovaram antes do código.
 - O tester repetiu cada quebra no código pronto e viu cada teste reprovar, restaurando em seguida.
 
 ## O que passou sem eu ter visto reprovar
@@ -38,6 +39,7 @@
 - Os testes de PC/escuro/claro por foto não são automáticos: as fotos foram conferidas a olho.
 
 ## O que ficou de fora
+- Deitado, o modo TV (`/sala?tv`) e a tela de entrada saem do `App` por outro caminho e não ganharam a margem segura dos lados. O lugar limpo seria o `body` no `estilo.css`, que está fora da lista da issue; fica pra Sofia decidir (pergunta no PR).
 - A área segura do iPhone: o Chromium de teste não simula a barrinha do sistema. As fotos de 375 px só mostram que nada fica cortado. Conferir num iPhone depois de publicar.
 - O texto sem tarefa e sem chefe ("o andar ainda não tem chefe") e o caso com tarefa e sem chefe (". O andar ainda não tem chefe.") só estão provados em teste, nenhuma página de hoje cai neles com tarefa.
 - A frase do 3A com tarefa e andar sem chefe ficou ". O andar ainda não tem chefe." (a mensagem das opções dizia "…e o andar ainda não tem chefe"; o sentido é o mesmo, a frase ficou mais clara).
