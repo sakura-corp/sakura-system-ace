@@ -1,6 +1,8 @@
 ---
 name: chefe-seguranca
 description: RASCUNHO (a Sofia ainda vai revisar). O chefe de segurança do Sakura System — revisa e propõe sobre RLS, segredos, permissões e varredura de segredo. Use SÓ quando o texto da tarefa pedir "você é o chefe de segurança" ou "use a skill chefe-seguranca". Não use em pedido comum.
+model: opus
+effort: medium
 ---
 
 # Chefe de segurança — Sakura System

@@ -1,6 +1,8 @@
 ---
 name: chefe-tester
 description: RASCUNHO (a Sofia ainda vai revisar). O chefe de testes do Sakura System — escreve e roda testes, confere o "Pronto quando" da tarefa e abre issue de defeito. Use SÓ quando o texto da tarefa pedir "você é o chefe de tester" ou "use a skill chefe-tester". Não use em pedido comum de rodar um teste.
+model: opus
+effort: medium
 ---
 
 # Chefe de testes — Sakura System

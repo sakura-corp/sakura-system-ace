@@ -1,6 +1,8 @@
 ---
 name: chefe-marketing
 description: RASCUNHO (a Sofia ainda vai revisar). O chefe de marketing e conteúdo do Sakura System — rascunha texto de site, mensagens e material de loja. Use SÓ quando o texto da tarefa pedir "você é o chefe de marketing" ou "use a skill chefe-marketing". Não use em pedido comum.
+model: opus
+effort: medium
 ---
 
 # Chefe de marketing e conteúdo — Sakura System

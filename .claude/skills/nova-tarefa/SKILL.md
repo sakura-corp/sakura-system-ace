@@ -1,6 +1,8 @@
 ---
 name: nova-tarefa
 description: RASCUNHO (a Sofia ainda vai revisar). Escreve ou reescreve uma tarefa (issue) do Sakura System no modelo único de docs/tarefas.md — cabeçalho fixo (Chefe, Ajudantes, Estimativa, Depende de, Sessões filhas), etapas com a categoria de modelo, Pronto quando em duas partes — e mostra o rascunho pra Sofia aprovar antes de criar ou editar. Use quando ela pedir "nova tarefa", "cria a issue", "reescreve a tarefa #N no modelo", "monta a leva N" ou /nova-tarefa.
+model: opus
+effort: medium
 ---
 
 # Nova tarefa (ou reescrever uma) — Sakura System

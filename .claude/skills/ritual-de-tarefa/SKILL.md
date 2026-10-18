@@ -1,6 +1,8 @@
 ---
 name: ritual-de-tarefa
 description: RASCUNHO (a Sofia ainda vai revisar). O ritual fixo de conduzir uma tarefa do Sakura System como "sessão mãe" — ajudantes por modelo, sessões filhas, mensagens entre sessões, modelo que falha, junção das branches, PR e relatório. Use quando uma skill chefe-* mandar seguir o ritual, ou quando o texto pedir "sessão mãe" ou "use a skill ritual-de-tarefa". Não use em pedido comum.
+model: opus
+effort: medium
 ---
 
 # Ritual de tarefa (a sessão mãe) — Sakura System
@@ -29,13 +31,24 @@ Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
 4. Criar a branch da tarefa: `claude/tarefa-N-<curto>`.
 
 ## 3. Ajudantes (o padrão)
-Cada etapa da tabela "Etapas e modelos" da issue vira um **ajudante dentro desta sessão** (a
-ferramenta de agente, com o `model` da categoria: `opus`, `sonnet` ou `haiku`, conforme a tabela de
-`docs/tarefas.md`). O resultado volta sozinho pra mãe.
-- A **mãe planeja e faz a revisão final** na categoria **forte**, mesmo que a sessão tenha aberto
-  em outro modelo: nesse caso, a revisão final vai pra um ajudante forte.
+Cada etapa da tabela "Etapas e modelos" da issue vira um **ajudante dentro desta sessão**. Chame
+cada um pelo **agente pronto da categoria** (`ajudante-forte`, `ajudante-medio`, `ajudante-rapido`,
+em `.claude/agents/`), que já traz o modelo, o esforço e o limite de turnos da tabela de
+`docs/tarefas.md`. O resultado volta sozinho pra mãe.
+- A **mãe planeja** (forte, esforço médio). A **revisão final vai sempre pro `ajudante-forte` com
+  `effort: high`**: o `model:` do cabeçalho desta skill só vale no turno em que ela carrega, e
+  depois a mãe volta ao modelo da sessão.
 - Ajudante que só lê: **rápido**. Nunca use um modelo que não está na tabela (o Fable não está).
+- No **forte**, passe `effort: high` na chamada quando a etapa é migration, RLS, dinheiro, nota
+  fiscal, segurança ou revisão final (o esforço padrão do agente é médio).
+- O **rápido não relê a memória do projeto** (`omitClaudeMd`). O pedido leva tudo que ele precisa,
+  inclusive as regras do projeto que importam pra etapa. Se faltar algo, ele devolve dizendo o que
+  faltou, em vez de adivinhar. O médio e o forte leem a memória (as regras de código moram nela).
 - Diga a cada ajudante: a etapa, os arquivos dele, o que entregar e o que **não** fazer.
+- Se o agente pronto não aparecer (a sessão abriu antes de a pasta `.claude/agents/` existir:
+  reiniciar resolve; ou a branch não tem a pasta), chame o agente comum com o `model` e o `effort`
+  da tabela de `docs/tarefas.md`.
+- No relatório, em "Modelos usados", anote o modelo **e o esforço** de cada ajudante.
 
 ## 4. Sessões filhas (só se a issue disser `Sessões filhas: sim`)
 Filha custa mais: nasce sem a conversa da mãe e gasta perto de **70 mil tokens só pra começar**
