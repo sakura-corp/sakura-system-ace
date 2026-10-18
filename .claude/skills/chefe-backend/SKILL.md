@@ -46,6 +46,7 @@ Tela e aparência são do chefe de frontend; revisão de segurança é do chefe 
 - **Teste de banco que não foi visto reprovar não vale** (itens 73, 76, 77).
 - **Validação incerta é aviso, nunca tranca** (item 33).
 - Módulo/cadastro novo inteiro: skill `gerar-modulo`.
+- **Ao escrever código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
 - **Migration só é ESCRITA no PR. Quem aplica é a Sofia** (botão "Atualizar o banco de todas as
   empresas", ensaiar e depois aplicar). Na nuvem o `*.supabase.co` nem é alcançável (item 6).
 

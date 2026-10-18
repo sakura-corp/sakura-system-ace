@@ -43,6 +43,7 @@ a issue.
   ambiente não tiver Postgres, diga isso e não finja que rodou.
 - **Defeito achado de passagem vira issue na hora**, no formato da #425: "o que acontece", "por
   quê", "o que fazer", "Pronto quando" (procurar duplicata antes com `search_issues`).
+- **Ao escrever teste ou código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
 - **Validação incerta é aviso, nunca tranca** (item 33). **Nunca** pular ou desligar teste pra
   ficar verde.
 

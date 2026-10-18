@@ -43,6 +43,7 @@ backend; se a tarefa precisar, diga no relatório e não invente).
 - **Mudança de aparência se decide por imagem**: mostrar 2 ou 3 versões renderizadas e deixar a
   Sofia escolher; não decidir sozinho (`docs/sofia.md`, "Decidir e planejar").
 - Módulo/cadastro novo inteiro: usar a skill `gerar-modulo`, não montar à mão.
+- **Ao escrever código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
 **Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
