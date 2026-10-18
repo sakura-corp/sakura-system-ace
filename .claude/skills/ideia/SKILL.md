@@ -37,7 +37,8 @@ Só o que faltar, numa mensagem só (se a pessoa já disse, não pergunte de nov
 3. **O que tiraria de trabalho**, e de quem (a loja, a Sofia, a equipe). "Não sei" vale.
 
 **Print ou imagem nunca sobe pro repositório.** Se a pessoa mandou um, descreva **em texto** o que
-importa nele (e confira que não aparece nada da lista da seção 1).
+importa nele (e confira que não aparece nada da lista do aviso no topo do índice: credencial, assunto
+pessoal ou de preço).
 
 ## 3. Mostrar o rascunho antes de criar
 Primeiro, procurar ideia parecida (`search_issues` com `label:ideia`); se já existir, mostrar o
