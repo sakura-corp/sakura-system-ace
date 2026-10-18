@@ -35,6 +35,12 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 18/10/2026: o plano de memória, levas 1 a 3 na `main`
+- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado desde 17/10). Nenhum PR aberto.
+- **Entrou em 18/10** (plano de memória e fluxos): A2 modelo e esforço por etapa (#574), A5 a skill `/ideia` (#571), A9 a sala "Próximos projetos" no painel (#572), A7 o "Gasto" nos relatórios (#575), a skill `/coordenar` (#576), A4 a tarefa começa com `/goal` (#579, #582), A6 as skills `entrevista`, `teste-primeiro` e `diagnostico` (#581), e os ajustes #584, #585 e #588.
+- **Depende dela**: o C1 até segunda (19/10); conferir no painel público a sala "Próximos projetos"; aprovar as skills em rascunho; e o que vinha de 17/10 (Início do painel, modelos da equipe e convite do Lázaro no Team). A lista inteira em `label:sofia`.
+- **Próximo do plano** (esperando o "sim" dela): A3, A8, e as ondas B e C. O plano mora no privado, `planos/2026-10-17-memoria-e-fluxos.md`.
+
 ### 17/10/2026, noite (7): o índice encolheu (A1 do plano de memória)
 - **Código**: a loja na `v0.9.51`, o banco na `0064`. O painel v2 inteiro (#542 a #546) está na `main` e se publica sozinho; há mudanças pequenas do programa das lojas esperando ela decidir publicar.
 - **Feito agora**: este índice caiu de 25 KB pra menos de 15 KB; a antiga seção 1 virou `docs/sofia.md`; o CI avisa se o índice passar de 15 KB (T4).

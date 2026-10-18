@@ -144,8 +144,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 18/10/2026: o plano de memória, levas 1 a 3 na `main`
-- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado desde 17/10). Nenhum PR aberto.
-- **Entrou em 18/10** (plano de memória e fluxos): A2 modelo e esforço por etapa (#574), A5 a skill `/ideia` (#571), A9 a sala "Próximos projetos" no painel (#572), A7 o "Gasto" nos relatórios (#575), a skill `/coordenar` (#576), A4 a tarefa começa com `/goal` (#579, #582), A6 as skills `entrevista`, `teste-primeiro` e `diagnostico` (#581), e os ajustes #584, #585 e #588.
-- **Depende dela**: o C1 até segunda (19/10); conferir no painel público a sala "Próximos projetos"; aprovar as skills em rascunho; e o que vinha de 17/10 (Início do painel, modelos da equipe e convite do Lázaro no Team). A lista inteira em `label:sofia`.
-- **Próximo do plano** (esperando o "sim" dela): A3, A8, e as ondas B e C. O plano mora no privado, `planos/2026-10-17-memoria-e-fluxos.md`.
+### 18/10/2026, tarde: a leva 4 (o teste do conselheiro) na `main`
+- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado). Nenhum PR aberto.
+- **Entrou**: a skill `/loja-nova` (#590, PR #594, rascunho), os andares do painel (#591, PR #596), a conclusão do teste A3 (PR #598) e a `teste-primeiro` sem parar pra combinar (#587, PR #599).
+- **A3**: o Sonnet + conselheiro deu o mesmo resultado no código gastando menos, e o Opus foi mais a fundo no texto. A recomendação está em `docs/relatorios/2026-10-18-teste-a3-conselheiro.md`; mudar a tabela de modelos é decisão dela, depois de mais 2 ou 3 tarefas.
+- **Próximo**: uma coordenadora nova com A (#592 e #595, o guia de instalação) e B (o painel: os 3 detalhes de aparência do PR #597, a #560 e a #561; ela escolhe por imagem). Depois, a sessão do Claude Team.
+- **Depende dela**: o C1 (Team) na segunda; testar o `/loja-nova` de mentira até o passo 2; aprovar as skills em rascunho; conferir no painel público os andares e a sala "Próximos projetos".
