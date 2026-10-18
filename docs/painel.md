@@ -284,7 +284,7 @@ A ideia da Sofia (a "fábrica virtual", descrita em `docs/referencia/escritorio-
 em `/escritorio`, com o item "Escritório (exemplo)" na barra lateral. **É só a tela**: nenhum agente de verdade roda, nenhuma
 sessão é aberta, nenhum token é gasto, nenhuma chave ou login existe. A página diz isso no topo.
 
-**O que tem (tudo de exemplo)**: a vista de cima, escura, com o visual da Sala; 6 salas (Programa das lojas, Painel, Bibi, Fiscal
+**O que tem (tudo de exemplo)**: a vista de cima, escura, com o visual da Sala; 6 salas (Programa das lojas, Painel, Próximos projetos, Fiscal
 e contabilidade, Site, Equipe) em roda em volta do **Cérebro**, com caminhos até ele; os agentes como pontos de luz, com os
 **mesmos estados e o mesmo jeito de brilhar da Sala** (#467); a barra do topo (Escritório, Tarefas, Cérebro; Agenda "em breve");
 o painel da sala (Visão geral e Tarefas; Agenda e Ajustes "em breve"); o quadro do dia (Rodando, Esperando você com Aprovar e
@@ -305,7 +305,7 @@ conferidas contra o fundo da janela (`#120e12`) e o vidro sem suporte (`#1d191d`
 |---|---|---|
 | Programa das lojas | `#8FB8F0` (azul) | 9,4:1 no fundo, 8,5:1 no vidro |
 | Painel | `#C98FAE` (malva, o destaque) | 7,3:1 / 6,6:1 |
-| Bibi | `#B9A3F0` (lilás) | 8,7:1 / 7,9:1 |
+| Próximos projetos | `#B9A3F0` (lilás) | 8,7:1 / 7,9:1 |
 | Fiscal e contabilidade | `#7FCBC0` (verde-água) | 10,2:1 / 9,3:1 |
 | Site | `#9CCB86` (verde) | 10,3:1 / 9,3:1 |
 | Equipe | `#E9B48A` (pêssego) | 10,4:1 / 9,4:1 |
