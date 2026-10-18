@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
+import { andarDoItem, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
 
 // Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
 const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio" };
+
+// Todos os endereços que já existiam antes dos andares (#591): escritos aqui, a lista não pode mudar nenhum.
+const ENDERECOS_EM_BREVE_ANTIGOS = ["levas", "versoes", "fases", "relatorio", "pessoas", "financeiro", "dre", "lojas", "configuracoes"];
+
+// Os andares como a Sofia decidiu na #591, de cima da barra pra baixo (a ordem de uso, começando pelo Térreo).
+const ANDARES = [
+  { id: "terreo", titulo: "Térreo · Recepção", itens: ["inicio"], chefes: [] },
+  { id: "producao", titulo: "1º · Produção", itens: ["leva", "levas", "fases", "relatorio", "sala", "escritorio", "pessoas"], chefes: ["frontend", "backend", "tester"] },
+  { id: "comercial", titulo: "2º · Comercial e pós-venda", itens: ["lojas", "posvenda"], chefes: ["marketing"] },
+  { id: "financeiro", titulo: "3º · Financeiro", itens: ["financeiro", "dre"], chefes: [] },
+  { id: "seguranca", titulo: "4º · Segurança e operação", itens: ["versoes", "bancos"], chefes: ["segurança"] },
+  { id: "diretoria", titulo: "Cobertura · Diretoria", itens: ["decisoes"], chefes: [] },
+];
 
 const todosOsItens = NAVEGACAO.flatMap((g) => g.itens);
 
@@ -24,9 +37,45 @@ describe("NAVEGACAO", () => {
     }
   });
 
-  it("tem os cinco grupos, nessa ordem, e todo item tem ícone", () => {
-    expect(NAVEGACAO.map((g) => g.id)).toEqual(["topo", "trabalho", "equipe", "empresa", "rodape"]);
+  it("tem os 6 andares na ordem da tabela, com os itens e os chefes certos, e o rodapé por último", () => {
+    const andares = NAVEGACAO.filter((g) => g.id !== "rodape");
+    expect(andares.map((g) => g.id)).toEqual(ANDARES.map((a) => a.id));
+    for (const [i, esperado] of ANDARES.entries()) {
+      expect(andares[i].titulo, esperado.id).toBe(esperado.titulo);
+      expect(andares[i].itens.map((x) => x.id), esperado.id).toEqual(esperado.itens);
+      expect(andares[i].chefes ?? [], esperado.id).toEqual(esperado.chefes);
+    }
+    expect(NAVEGACAO.at(-1)?.id).toBe("rodape");
+    expect(NAVEGACAO.at(-1)?.itens.map((x) => x.id)).toEqual(["configuracoes"]);
     for (const i of todosOsItens) expect(i.icone, i.id).toBeTruthy();
+  });
+
+  it("os 3 itens novos são em breve, com endereço /em-breve/<id> e do que dependem", () => {
+    for (const id of ["posvenda", "bancos", "decisoes"]) {
+      const item = todosOsItens.find((i) => i.id === id);
+      expect(item?.emBreve, id).toBe(true);
+      expect(item?.href, id).toBe(`/em-breve/${id}`);
+    }
+  });
+
+  it("todos os endereços em breve que já existiam continuam abrindo a mesma página", () => {
+    for (const id of ENDERECOS_EM_BREVE_ANTIGOS) {
+      const item = todosOsItens.find((i) => i.id === id);
+      expect(item?.emBreve, id).toBe(true);
+      expect(item?.href, id).toBe(`/em-breve/${id}`);
+    }
+  });
+});
+
+describe("andarDoItem", () => {
+  it("acha o andar do item, com os chefes", () => {
+    expect(andarDoItem("pessoas")?.titulo).toBe("1º · Produção");
+    expect(andarDoItem("pessoas")?.chefes).toEqual(["frontend", "backend", "tester"]);
+    expect(andarDoItem("bancos")?.titulo).toBe("4º · Segurança e operação");
+    expect(andarDoItem("decisoes")?.titulo).toBe("Cobertura · Diretoria");
+  });
+  it("item que não existe → undefined", () => {
+    expect(andarDoItem("nao-existe")).toBeUndefined();
   });
 });
 

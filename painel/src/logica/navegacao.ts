@@ -2,7 +2,7 @@
 import type { Pagina } from "../tipos";
 
 /** Os ícones da barra (nomes do lucide-react). A BarraLateral mapeia cada nome pro componente. */
-export type NomeDoIcone = "casa" | "lista" | "relogio" | "etiqueta" | "fases" | "relatorio" | "pessoas" | "pessoa" | "maleta" | "cartao" | "grafico" | "loja" | "ajustes";
+export type NomeDoIcone = "casa" | "lista" | "relogio" | "etiqueta" | "fases" | "relatorio" | "pessoas" | "pessoa" | "maleta" | "cartao" | "grafico" | "loja" | "ajustes" | "suporte" | "backup" | "coroa";
 
 type Base = {
   id: Pagina;
@@ -19,51 +19,82 @@ export type ItemQueExiste = Base & { href: string; emBreve?: undefined; dependeD
  */
 export type ItemEmBreve = Base & { emBreve: true; dependeDe: string; href: string };
 export type ItemDaNavegacao = ItemQueExiste | ItemEmBreve;
+/**
+ * Um andar do "prédio" da Sakura (#591): uma área da empresa, com os seus chefes. A barra desenha de cima pra baixo
+ * começando pelo Térreo (a ordem de uso). O "rodape" não é andar: guarda as Configurações.
+ */
 export type GrupoDaNavegacao = {
-  id: "topo" | "trabalho" | "equipe" | "empresa" | "rodape";
+  id: "terreo" | "producao" | "comercial" | "financeiro" | "seguranca" | "diretoria" | "rodape";
   titulo?: string;
+  /** Quem cuida do andar (as funções, como na tabela da #591). Aparece na página "em breve", não na barra. */
+  chefes?: string[];
   itens: ItemDaNavegacao[];
 };
 
 export const NAVEGACAO: GrupoDaNavegacao[] = [
   {
-    id: "topo",
+    id: "terreo",
+    titulo: "Térreo · Recepção",
+    chefes: [],
     itens: [{ id: "inicio", rotulo: "Início", icone: "casa", href: "/" }],
   },
   {
-    id: "trabalho",
-    titulo: "Trabalho",
+    id: "producao",
+    titulo: "1º · Produção",
+    chefes: ["frontend", "backend", "tester"],
     itens: [
       { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/leva" },
       { id: "levas", rotulo: "Levas anteriores", icone: "relogio", emBreve: true, href: "/em-breve/levas", dependeDe: "depende da #548" },
-      { id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, href: "/em-breve/versoes", dependeDe: "depende da leva 2" },
       { id: "fases", rotulo: "Fases da leva", icone: "fases", emBreve: true, href: "/em-breve/fases", dependeDe: "depende do desenho" },
       { id: "relatorio", rotulo: "Relatório da leva", icone: "relatorio", emBreve: true, href: "/em-breve/relatorio", dependeDe: "depende do desenho" },
-    ],
-  },
-  {
-    id: "equipe",
-    titulo: "Equipe",
-    itens: [
       { id: "sala", rotulo: "Sala", icone: "pessoas", href: "/sala" },
-      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, href: "/em-breve/pessoas", dependeDe: "ainda sem tarefa" },
       { id: "escritorio", rotulo: "Escritório", icone: "maleta", href: "/escritorio", etiqueta: "exemplo" },
+      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, href: "/em-breve/pessoas", dependeDe: "ainda sem tarefa" },
     ],
   },
   {
-    id: "empresa",
-    titulo: "Empresa",
+    id: "comercial",
+    titulo: "2º · Comercial e pós-venda",
+    chefes: ["marketing"],
+    itens: [
+      { id: "lojas", rotulo: "Lojas", icone: "loja", emBreve: true, href: "/em-breve/lojas", dependeDe: "depende do banco privado" },
+      { id: "posvenda", rotulo: "Pós-venda", icone: "suporte", emBreve: true, href: "/em-breve/posvenda", dependeDe: "ainda sem tarefa" },
+    ],
+  },
+  {
+    id: "financeiro",
+    titulo: "3º · Financeiro",
+    chefes: [],
     itens: [
       { id: "financeiro", rotulo: "Financeiro", icone: "cartao", emBreve: true, href: "/em-breve/financeiro", dependeDe: "depende do banco privado" },
       { id: "dre", rotulo: "DRE", icone: "grafico", emBreve: true, href: "/em-breve/dre", dependeDe: "depende do Financeiro" },
-      { id: "lojas", rotulo: "Lojas", icone: "loja", emBreve: true, href: "/em-breve/lojas", dependeDe: "depende do banco privado" },
     ],
+  },
+  {
+    id: "seguranca",
+    titulo: "4º · Segurança e operação",
+    chefes: ["segurança"],
+    itens: [
+      { id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, href: "/em-breve/versoes", dependeDe: "depende da leva 2" },
+      { id: "bancos", rotulo: "Bancos e backups", icone: "backup", emBreve: true, href: "/em-breve/bancos", dependeDe: "ainda sem tarefa" },
+    ],
+  },
+  {
+    id: "diretoria",
+    titulo: "Cobertura · Diretoria",
+    chefes: [],
+    itens: [{ id: "decisoes", rotulo: "Decisões da Sofia", icone: "coroa", emBreve: true, href: "/em-breve/decisoes", dependeDe: "ainda sem tarefa" }],
   },
   {
     id: "rodape",
     itens: [{ id: "configuracoes", rotulo: "Configurações", icone: "ajustes", emBreve: true, href: "/em-breve/configuracoes", dependeDe: "ainda sem tarefa" }],
   },
 ];
+
+/** O andar onde um item mora (pra mostrar "quem cuida deste andar"); undefined se o id não está na lista. */
+export function andarDoItem(id: string): GrupoDaNavegacao | undefined {
+  return NAVEGACAO.find((g) => g.itens.some((i) => i.id === id));
+}
 
 /** O endereço da página que explica um item em breve (#544). */
 export function enderecoEmBreve(id: string): string {

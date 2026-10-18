@@ -2,8 +2,11 @@ import {
   BriefcaseBusiness,
   ChartColumn,
   CreditCard,
+  Crown,
+  DatabaseBackup,
   FileText,
   History,
+  Headset,
   House,
   ListChecks,
   Lock,
@@ -43,6 +46,9 @@ export const ICONES: Record<NomeDoIcone, LucideIcon> = {
   grafico: ChartColumn,
   loja: Store,
   ajustes: SlidersHorizontal,
+  suporte: Headset,
+  backup: DatabaseBackup,
+  coroa: Crown,
 };
 
 const LINHA = "relative flex min-h-8 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm";
