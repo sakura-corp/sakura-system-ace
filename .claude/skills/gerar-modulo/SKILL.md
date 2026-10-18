@@ -1,6 +1,6 @@
 ---
 name: gerar-modulo
-description: Gera o andaime completo (migration SQL, types, lib, página de lista, formulário, e registro de rota/permissão) de um módulo/cadastro novo no Sakura System, seguindo exatamente o padrão de código já estabelecido no projeto. Use sempre que o usuário pedir pra criar um módulo, cadastro ou entidade nova (ex: "Fornecedores", "Depósito", "Categorias de produto", "Garantias") — mesmo que ele não diga a palavra "módulo" ou "skill". Frases como "quero uma tela pra cadastrar X", "preciso de um cadastro de X", "cria uma entidade nova pra X" também devem acionar esta skill. NÃO use pra mudanças pequenas em um módulo que já existe (isso é edição normal, não geração de módulo novo).
+description: Gera o andaime completo (migration SQL, types, lib, página de lista, formulário, e registro de rota/permissão) de um módulo/cadastro novo no Sakura System, seguindo exatamente o padrão de código já estabelecido no projeto. Use sempre que o usuário pedir pra criar um módulo, cadastro ou entidade nova (por exemplo "Fornecedores", "Depósito", "Categorias de produto", "Garantias") — mesmo que ele não diga a palavra "módulo" ou "skill". Frases como "quero uma tela pra cadastrar X", "preciso de um cadastro de X", "cria uma entidade nova pra X" também devem acionar esta skill. NÃO use pra mudanças pequenas em um módulo que já existe (isso é edição normal, não geração de módulo novo).
 ---
 
 # Gerar módulo novo — Sakura System
