@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 18/10/2026, noite: a #608 (second brain) decidida e reescrita
+- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado).
+- **Entrou**: a entrevista da #608. Cada pessoa terá um `segundo-cerebro` privado na própria conta do GitHub (Obsidian grátis, só no PC), que diz ao Claude dela o jeito de trabalhar. O da Sofia vem primeiro e vira o tutorial. A #608 foi reescrita em 3 etapas. O Claudian serviu só de referência.
+- **Próximas sessões**: a etapa 1 da #608 (o caderno dela, e tirar do público o que é sobre ela), depois as etapas 2 e 3; depois a #609 (o Ruflo). Curtas, uma sessão direto cada: a #604 e a #605.
+- **Em paralelo**: os Termos (falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e o memorando.
+- **Depende dela**: a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+
 ### 18/10/2026, noite: a leva 5 (guia de instalação e acabamentos do painel) na `main`
 - **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado). Nenhum PR aberto.
 - **Entrou**: o guia de loja nova sem a Parte 4, com a `redefinir-senha-operador` obrigatória, o `BACKUP_EMPRESAS` nos dois cofres e a impressora (#592 e #595, PR #602); os acabamentos dos andares do painel, escolhidos por ela por imagem (1A, 2A, 3A), com a #560 e a #561 (#601, PR #603). Mesclados pela coordenadora, com autorização dela.
