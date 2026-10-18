@@ -12,6 +12,11 @@ describe("BarraLateral", () => {
     expect(h).toMatch(/<a href="\/sala" aria-current="page"/);
   });
 
+  it("página não encontrada (#560): nenhum item da barra é a página atual", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "nao-encontrada" });
+    expect(h).not.toContain("aria-current");
+  });
+
   it("item em breve é link pra página que explica (#544), apagado, com o texto pro leitor de tela e a frase do que falta", () => {
     const h = html({ levas: [] });
     expect(h).not.toContain("aria-disabled");

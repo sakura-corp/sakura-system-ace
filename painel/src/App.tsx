@@ -27,8 +27,11 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
-  const emBreve = textoEmBreve(idDoEmBreve(limpo) ?? "");
+  const idEmBreve = idDoEmBreve(limpo);
+  const emBreve = textoEmBreve(idEmBreve ?? "");
   if (emBreve) return emBreve.id;
+  // /em-breve/<id que não existe> (#560): a página "não encontrada", sem item marcado na barra.
+  if (idEmBreve !== null) return "nao-encontrada";
   return "leva";
 }
 

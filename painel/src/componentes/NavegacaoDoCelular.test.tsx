@@ -41,6 +41,21 @@ describe("NavegacaoDoCelular", () => {
     expect(folha).toContain("depende do banco privado");
   });
 
+  it("com viewport-fit=cover (#561), a barra de baixo e a folha respeitam a área segura de baixo e dos lados", () => {
+    const { barra, folha } = partes(html({ levas: LEVA, pagina: "leva" }));
+    for (const lado of ["bottom", "left", "right"]) {
+      expect(barra, `barra ${lado}`).toContain(`safe-area-inset-${lado}`);
+      expect(folha, `folha ${lado}`).toContain(`safe-area-inset-${lado}`);
+    }
+  });
+
+  it("página não encontrada (#560): nada na barra nem na folha é a página atual, e o Mais não ganha destaque", () => {
+    const { barra, folha } = partes(html({ levas: LEVA, pagina: "nao-encontrada" }));
+    expect(barra).not.toContain("aria-current");
+    expect(folha).not.toContain("aria-current");
+    expect(barra).not.toMatch(/<button[^>]*text-destaque/);
+  });
+
   it("página fora da barra (Escritório): o aria-current fica na folha e o Mais ganha destaque", () => {
     const { barra, folha } = partes(html({ levas: LEVA, pagina: "escritorio" }));
     expect(barra).not.toContain("aria-current");
