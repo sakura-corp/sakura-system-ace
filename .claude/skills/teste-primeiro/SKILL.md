@@ -1,6 +1,6 @@
 ---
 name: teste-primeiro
-description: RASCUNHO (a Sofia ainda vai revisar). Escreve o teste ANTES do código, uma fatia por vez (vê o teste reprovar, faz o mínimo pra passar, repete), testando pela porta pública e sem teste que passa por construção. Use SÓ quando a pessoa digitar /teste-primeiro ou pedir "teste primeiro" ou "escreve o teste antes", ou quando uma skill chefe-* mandar usar ao escrever código. Não use em pedido comum de rodar teste.
+description: Escreve o teste antes do código, uma fatia por vez, vendo ele reprovar antes de passar. Use sozinha sempre que for escrever ou mudar código com comportamento testável (conta, regra, validação, tela, função), ou em /teste-primeiro, "teste primeiro". Defeito de causa desconhecida começa pela `diagnostico`. Não use em mudança só de texto, documentação ou aparência pura.
 ---
 
 # Teste primeiro — Sakura System

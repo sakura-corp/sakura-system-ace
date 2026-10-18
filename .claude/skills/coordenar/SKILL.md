@@ -57,7 +57,9 @@ Pergunte de uma vez o que só ela decide, pra não parar no meio:
    - `model`: o do **forte** (tabela de `docs/tarefas.md`);
    - `source_url`: o repositório; `outcome_branch`: `claude/tarefa-N-<curto>`, **uma por tarefa**;
    - `title`: "Tarefa #N: <curto>";
-   - `prompt`: o **texto padrão** da seção 5, preenchido;
+   - `prompt`: o **texto padrão** da seção 5, preenchido; a linha "Skills que devem ajudar" você
+     preenche olhando a issue (código novo → `teste-primeiro`; defeito → `diagnostico`). As skills
+     disparam sozinhas; a linha só reforça;
    - **não** passe `permission_mode: "plan"`: a sessão fica parada esperando uma aprovação que
      ninguém vai dar.
    Abra as sessões da mesma leva juntas. Anote o id de cada uma (vai pro andamento, passo 7).
@@ -86,6 +88,7 @@ momentos, sem falhar.
 ```
 Tarefa #N (sakura-corp/sakura-system-ace). Você é o chefe de <função>: leia a issue inteira e
 siga a skill `ritual-de-tarefa`. <Se depende de outra: "A #M, de que ela depende, já está na main.">
+Skills que devem ajudar nesta tarefa: <por exemplo, `teste-primeiro`, `diagnostico`>
 
 Como esta sessão funciona:
 - Quem trabalha é a Sofia (conta `caranovavidanova`), mas ela **não fala com você diretamente**.
