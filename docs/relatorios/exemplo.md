@@ -13,6 +13,23 @@
 - Escritor de tela: trocou o texto e ajustou o teste.
 - Revisor: leu o diff do zero; nenhum achado.
 
+## Modelos usados
+- Planejar: sessão mãe, forte (`claude-opus-5-5`), esforço médio.
+- Explorador: rápido (`haiku`), esforço baixo.
+- Escritor de tela: médio (`sonnet`), esforço médio.
+- Revisor: forte (`opus`), esforço alto.
+- Nenhuma troca por falha.
+
+## Sessões filhas
+- nenhuma
+
+## Gasto
+- **Uso da sessão mãe**: 40 respostas; entrada 120, cache criado 90.000, cache lido 1.800.000, saída 25.000 tokens (medido antes de abrir o PR).
+- **Ajudantes**: 3. Explorador (rápido, baixo): saída 1.500. Escritor (médio, médio): saída 9.000. Revisor (forte, alto): saída 6.000.
+- **Sessões filhas**: nenhuma.
+- **`/goal`**: não usei.
+- **Colado pela pessoa (opcional)**: nada.
+
 ## O que testei e VI reprovar
 - Teste do texto do botão: mudei o texto de volta no código e o teste falhou; desfiz.
 

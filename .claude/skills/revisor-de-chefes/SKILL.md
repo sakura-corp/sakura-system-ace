@@ -27,6 +27,11 @@ Procure o que **se repete em mais de um relatório** (ou pesa muito num só):
 - coisa que o relatório pede e a skill não manda (ou o contrário);
 - tarefa que não coube em nenhum chefe;
 - o que se repete umas 3 vezes e ainda não é skill (candidato a skill nova).
+- **gasto** (seção "Gasto" e "Modelos usados"): comparar **tarefas parecidas** (mesmo chefe, mesmo
+  tipo de etapa) e procurar o modelo ou esforço que gastou muito mais sem ganho (ex.: "o ajudante
+  explorador em médio gastou 3 vezes o de rápido, e achou a mesma coisa"), ou o contrário (o
+  rápido errou e a etapa teve que ser refeita). Só tokens e quantidades, nunca dinheiro.
+  Relatório com "não medido" não entra na conta; se nenhum tiver "Gasto", dizer isso no PR.
 
 **Cada achado precisa de evidência**: o nome do arquivo de relatório (e a frase) que o prova. Sem
 arquivo citado, não é achado. Não invente padrão a partir de um relatório só sem dizer que é um só.
@@ -38,7 +43,11 @@ Branch `revisor/AAAA-MM`. Mudanças possíveis, todas pequenas e justificadas po
 - skill nova em `.claude/skills/<nome>/SKILL.md` (frontmatter válido; `description` que só dispara
   quando o texto pede);
 - arquivar os relatórios **já revisados**: começo do mês seguinte, mover para
-  `docs/relatorios/arquivo/AAAA-MM/` (`git mv`).
+  `docs/relatorios/arquivo/AAAA-MM/` (`git mv`);
+- trocar o modelo ou o esforço de uma etapa: **só como proposta na descrição do PR**, com os
+  relatórios que provam (os dois lados da comparação). **Nunca** mexer direto na tabela de modelos
+  de `docs/tarefas.md`, no cabeçalho de skill ou em `.claude/agents/`: quem muda é a Sofia, depois de
+  aprovar.
 
 A descrição do PR traz a **lista de achados**, cada um com: o que se repete, **a evidência (arquivo)**,
 a mudança proposta e o que a Sofia perde se ela cortar. Achado sem mudança vai na lista como
