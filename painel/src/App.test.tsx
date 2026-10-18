@@ -28,10 +28,11 @@ describe("App", () => {
 
   it("/sala tem a trilha e a explicação; /sala?tv não tem cabeçalho", () => {
     const h = html("/sala");
-    expect(h).toContain("Equipe / ");
+    // A trilha é o andar (#591).
+    expect(h).toContain("1º · Produção / ");
     expect(h).toContain("As pessoas e os robôs, ao vivo.");
     const tv = html("/sala", "?tv");
-    expect(tv).not.toContain("Equipe / ");
+    expect(tv).not.toContain("1º · Produção / ");
     expect(tv).not.toContain("As pessoas e os robôs, ao vivo.");
   });
 
@@ -47,12 +48,12 @@ describe("App", () => {
 
   it("/em-breve/financeiro mostra a página que explica, sem número de dinheiro (#544)", () => {
     const h = html("/em-breve/financeiro/");
-    expect(h).toContain("Empresa / ");
+    expect(h).toContain("3º · Financeiro / ");
     expect(h).toMatch(/<h1[^>]*>Financeiro<\/h1>/);
     expect(h).toContain("Ainda não está pronto");
     expect(h).toContain("nunca mora no GitHub");
-    // Nenhum algarismo nem "R$" na página (a barra lateral tem "#546" e fica de fora).
-    const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/<[^>]*>/g, " ");
+    // Nenhum algarismo nem "R$" na página (a barra lateral tem "#546" e fica de fora; a trilha, o "3º" do andar).
+    const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/<[^>]*>/g, " ").replace("3º · Financeiro", "");
     expect(pagina).toContain("Financeiro");
     expect(pagina).not.toMatch(/R\$|\d/);
     expect(h).not.toContain("1 de 8 tarefas feitas");
@@ -69,6 +70,7 @@ describe("App", () => {
   it("/escritorio mostra o Escritório, marcado como exemplo, com o que ainda não existe desativado", () => {
     const h = html("/escritorio");
     expect(h).toContain("Escritório de agentes");
+    expect(h).toContain("1º · Produção / ");
     expect(h).toContain("nenhum agente de verdade está rodando");
     expect(h).toContain("15 agentes · 5 rodando");
     expect(h).toContain("O Cérebro");
