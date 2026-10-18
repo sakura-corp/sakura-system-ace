@@ -191,7 +191,7 @@ export default function App({
       ) : pagina === "sala" ? (
         <main className="mx-auto w-full min-w-0 max-w-[1100px] flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-6">
           <CabecalhoDaPagina
-            trilha="Equipe"
+            trilha="1º · Produção"
             titulo="Sala"
             explicacao="As pessoas e os robôs, ao vivo."
             acoes={

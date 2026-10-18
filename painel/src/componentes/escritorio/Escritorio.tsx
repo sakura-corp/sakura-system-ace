@@ -44,7 +44,7 @@ export function Escritorio({ agora = new Date() }: { agora?: Date }) {
     <>
       {/* O cabeçalho fica fora da janela escura (.esc): lá dentro as cores do painel não valem. */}
       <CabecalhoDaPagina
-        trilha="Equipe"
+        trilha="1º · Produção"
         titulo="Escritório de agentes"
         explicacao="Os agentes do Claude trabalhando, por equipe."
         idDoTitulo="esc-titulo"
