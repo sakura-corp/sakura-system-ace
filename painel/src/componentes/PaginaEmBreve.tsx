@@ -1,9 +1,17 @@
 // A página de um item "em breve" da barra lateral: explica o que vai ter ali, do que depende e quem cuida.
 import { Check, Clock, Info, Lock } from "lucide-react";
 import { textoEmBreve } from "../logica/emBreve";
+import { andarDoItem } from "../logica/navegacao";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 
 const LINK_DA_TAREFA = (numero: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`;
+
+/** "frontend, backend e tester"; andar sem chefe diz que ainda não tem, a linha nunca some. */
+function textoDosChefes(chefes: string[]): string {
+  if (chefes.length === 0) return "ainda sem chefe";
+  if (chefes.length === 1) return chefes[0];
+  return `${chefes.slice(0, -1).join(", ")} e ${chefes[chefes.length - 1]}`;
+}
 
 export function PaginaEmBreve({ id }: { id: string }) {
   const texto = textoEmBreve(id);
@@ -21,6 +29,9 @@ export function PaginaEmBreve({ id }: { id: string }) {
     );
   }
   const cartao = "rounded-xl border border-borda bg-cartao";
+  // Os chefes moram no andar (navegacao.ts); o rodapé não é andar e não tem a linha.
+  const andar = andarDoItem(texto.id);
+  const chefes = andar?.chefes;
   return (
     <div className="mx-auto w-full max-w-4xl">
       <CabecalhoDaPagina
@@ -80,6 +91,12 @@ export function PaginaEmBreve({ id }: { id: string }) {
             #{texto.tarefa}
             <span className="sr-only"> (abre em aba nova)</span>
           </a>
+        </p>
+      ) : null}
+
+      {chefes ? (
+        <p className="mt-4 text-sm text-texto-2">
+          {`Quem cuida deste andar: ${textoDosChefes(chefes)}`}
         </p>
       ) : null}
 

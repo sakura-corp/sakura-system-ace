@@ -61,8 +61,20 @@ describe("NavegacaoDoCelular", () => {
   it("a folha tem Fechar, os grupos e não repete os itens da barra", () => {
     const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
     expect(folha).toContain('aria-labelledby="titulo-da-folha"');
-    for (const t of ["Fechar", "Mais", "Trabalho", "Equipe", "Empresa", "Levas anteriores", "Escritório", "Configurações", "depende da #548"]) expect(folha).toContain(t);
+    for (const t of ["Fechar", "Mais", "Levas anteriores", "Escritório", "Configurações", "depende da #548"]) expect(folha).toContain(t);
     for (const t of ["Início", "Leva atual", "Sala", "Pessoas"]) expect(folha).not.toContain(t);
+  });
+
+  it("a folha tem os andares com os mesmos nomes da barra do computador, na ordem; sem o Térreo, que só tem o Início (da barra de baixo) (#591)", () => {
+    const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
+    const andares = ["1º · Produção", "2º · Comercial e pós-venda", "3º · Financeiro", "4º · Segurança e operação", "Cobertura · Diretoria"];
+    const posicoes = andares.map((t) => folha.indexOf(t));
+    expect(posicoes.every((n) => n >= 0), andares.filter((t) => folha.indexOf(t) < 0).join(", ")).toBe(true);
+    expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
+    expect(folha).not.toContain("Térreo");
+    for (const t of ["Pós-venda", "Bancos e backups", "Decisões da Sofia", "Lojas", "Financeiro", "DRE", "Versões"]) expect(folha, t).toContain(t);
+    for (const antigo of ["Trabalho", "Equipe", "Empresa"]) expect(folha, antigo).not.toContain(antigo);
+    expect(folha).not.toContain("quem cuida");
   });
 
   it("ao vivo e Sair só aparecem quando vêm as props", () => {

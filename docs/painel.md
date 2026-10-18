@@ -21,8 +21,8 @@ Na prática, hoje:
 - **Financeiro e DRE ficam pra depois**, e com um cuidado: dinheiro da empresa **não pode morar
   no GitHub**, que é público. Quando chegar a hora, o financeiro vai precisar de um banco próprio
   e privado; aí sim um Supabase faz sentido. Decidir com a Sofia quando chegar.
-- O desenho já nasce preparado pra crescer: a barra lateral tem cinco grupos (Início; Trabalho;
-  Equipe; Empresa; rodapé com Configurações e quem entrou), um ícone por item, e as funções
+- O desenho já nasce preparado pra crescer: a barra lateral tem seis andares (veja "Os andares", abaixo)
+  e o rodapé com Configurações e quem entrou, um ícone por item, e as funções
   futuras já no lugar, apagadas, com cadeado e a linha do que falta ("depende da #546", "depende
   do banco privado"). A lista mora em `painel/src/logica/navegacao.ts`, como dado: a barra só
   desenha o que está lá, e um teste confere que todo "em breve" diz do que depende e que nenhum
@@ -147,6 +147,37 @@ dizem o estado sozinhos).
 - **Link**: o cartão e a lista só abrem endereço que começa com `https://github.com/sakura-corp/`.
 - **Sem nota por pessoa**: nem ranking nem número de produtividade individual (a Sala mostra o que
   espera cada um, não quanto cada um rendeu).
+
+## Os andares (#591, 18/10/2026)
+
+O painel é o "prédio" da Sakura: cada **andar** é uma área da empresa, com os seus chefes (as skills `chefe-*`). Os
+antigos grupos da barra (Trabalho, Equipe, Empresa) viraram andares. **Só a estrutura**: o desenho de prédio
+(isométrico, rolar de andar) é leva própria, depois da Sala ao vivo (#468).
+
+| Andar | Itens | Chefes |
+|---|---|---|
+| Térreo · Recepção | Início | — |
+| 1º · Produção | Leva atual, Levas anteriores, Fases da leva, Relatório da leva, Sala, Escritório, Pessoas | frontend, backend, tester |
+| 2º · Comercial e pós-venda | Lojas, Pós-venda (em breve) | marketing |
+| 3º · Financeiro | Financeiro, DRE | — |
+| 4º · Segurança e operação | Versões, Bancos e backups (em breve) | segurança |
+| Cobertura · Diretoria | Decisões da Sofia (em breve; vai ser a lista `sofia`) | — |
+
+Configurações continua no rodapé (não é andar).
+
+- **Ordem na barra**: de cima pra baixo começando pelo Térreo (a ordem de uso), não do topo do prédio.
+- **Onde mora**: tudo em `painel/src/logica/navegacao.ts` (id, título e `chefes` de cada andar; `andarDoItem()` acha o andar
+  de um item). A barra do computador e a folha "Mais" do celular só desenham o título que está lá, então os nomes são
+  iguais. A folha mostra 5 andares: o Térreo só tem o Início, que já está na barra de baixo, e andar vazio some.
+- **Chefes na página "em breve"**, não na barra: a linha "Quem cuida deste andar" (`PaginaEmBreve`). Andar sem chefe
+  diz "ainda sem chefe"; a linha não some. Configurações (rodapé) não tem a linha.
+- **A trilha da página "em breve"** (`grupo` em `emBreve.ts`) é o título do andar, e um teste confere que é igual ao da
+  navegação.
+- **Dinheiro**: a regra "sem algarismo e com o aviso" vale por item (Financeiro, DRE e Lojas), não por andar. A Lojas
+  mudou pro 2º andar e não perdeu a proteção; o Pós-venda, que mora no mesmo andar, não é afetado.
+- **Endereços**: nenhum mudou. Os três itens novos usam `/em-breve/posvenda`, `/em-breve/bancos` e `/em-breve/decisoes`.
+- **Fora desta tarefa** (de propósito): o conteúdo de verdade dos andares novos (pós-venda, sinais de saída, bancos), a barra
+  marcando "Leva atual" no "em breve" (#560) e a área segura do iPhone (#561).
 
 ## Decisões técnicas (já tomadas)
 
