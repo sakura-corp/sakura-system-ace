@@ -114,11 +114,17 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S9 | `/loja-nova` | instalação + o roteiro fiscal de loja nova |
 | S10 | `/faxina-memoria` | a faxina da memória |
 | S11 | `/ideia` | guarda uma ideia solta numa issue curta com a etiqueta `ideia` (só guarda; barra empresa/preço, sócios, dado pessoal e credencial; print só em texto) — **18/10**, #568 |
+| S12 | `/coordenar` | a **sessão coordenadora**: toca 2 ou mais tarefas independentes de uma vez, abrindo uma sessão por tarefa e sendo a ponte com ela; não programa — **rascunho de 18/10**, #573 |
 
 **S3, S4 e S5 rodam sempre no modelo mais forte.**
 
 **As três portas** (18/10, #568): **ideia solta** → `/ideia`; **planejar** (só a Sofia) →
 `nova-tarefa`; **fazer** (todo mundo) → o botão "Começar com o Claude" do painel. Nenhuma outra.
+
+**Quando usar a `/coordenar`** (18/10, #573): com **2 ou mais tarefas independentes** que ela quer
+tocar ao mesmo tempo, só a Sofia por enquanto. Pra uma tarefa só, ou curta, uma sessão direta sai
+mais barato (cada sessão nova gasta perto de 70 mil tokens só pra começar). Não é uma quarta porta:
+as tarefas continuam sendo escritas com a `nova-tarefa`.
 
 Como as skills funcionam:
 - **Não precisa decorar**: o Claude reconhece pelo pedido, e digitar `/` mostra a lista.
