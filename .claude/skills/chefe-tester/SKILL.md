@@ -44,6 +44,17 @@ a issue.
 - **Defeito achado de passagem vira issue na hora**, no formato da #425: "o que acontece", "por
   quê", "o que fazer", "Pronto quando" (procurar duplicata antes com `search_issues`).
 - **Ao escrever teste ou código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
+- **Skill nova ou mexida: como ensaiar** (como na #578):
+  1. o cabeçalho passa no `yaml.safe_load` (o texto entre os dois `---`);
+  2. o ensaio é com o **ajudante rápido**, que **não lê a memória do projeto**: assim o resultado
+     depende só da skill (o médio leria as regras do índice e estragaria o ensaio). Ele lê **só a
+     skill** e responde a um pedido de exemplo;
+  3. duas cópias: **uma boa** (a skill inteira) e **uma quebrada** (sem o trecho que a tarefa quer
+     provar). Só vale se a quebrada fizer diferente; se as duas fizerem igual, o comportamento não
+     vem da skill, e isso vai pro relatório;
+  4. **nome neutro** nas cópias: no arquivo (`e1`, `e2`…, sem "boa" ou "quebrada") e também no
+     nome da skill dentro dela, quando o nome já puxa o comportamento (na #578, `entrevista` virou
+     `planejar` nas duas cópias, pra o nome não ajudar).
 - **Validação incerta é aviso, nunca tranca** (item 33). **Nunca** pular ou desligar teste pra
   ficar verde.
 
