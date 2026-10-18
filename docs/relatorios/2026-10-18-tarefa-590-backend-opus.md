@@ -22,6 +22,12 @@
   0 a 10 que tinha virado "indicaria?" em vez de satisfação, e "portal do cliente"); rodou as
   conferências e a varredura de segredo.
 
+- **Ajustes pedidos pela Sofia** (pela coordenadora, depois do PR aberto, 2º commit): o marco de 7
+  dias virou dois (marco 1, a loja vendendo até 3 dias depois da instalação; marco 2, a primeira
+  nota até 7 dias depois de a parte fiscal ficar pronta, com atraso de terceiro anotado, avisado à
+  loja antes e sem contar como falha dela; novo modelo 7 em `mensagens.md`); os 3 itens da
+  impressora com a #595; e "RASCUNHO" no `description` e na linha S9. Feitos pela sessão mãe.
+
 ## Modelos usados
 - Ler e planejar (sessão mãe): forte (Opus), esforço médio.
 - Achar as seções: rápido (`ajudante-rapido`), esforço baixo.
@@ -48,8 +54,8 @@
     saída dos ajudantes como **não medida**.
 - **Sessões filhas**: nenhuma.
 - **Conselheiro (`/advisor`)**: não usado (0 vezes), como pedia o teste.
-- **`/goal`**: a pessoa colou o `/goal` no turno 8 (limite de 30 turnos). Como parou: ver a
-  conversa; no momento deste relatório ainda estava ativo, esperando o PR e o CI.
+- **`/goal`**: a pessoa colou o `/goal` no turno 8 (limite de 30 turnos). O 1º commit chegou ao PR
+  com o CI verde no turno 22; os ajustes da Sofia vieram no turno 23, com o `/goal` ainda ativo.
 
 ## O que testei e VI reprovar
 - **Varredura de segredo**: copiei a pasta da skill para fora do repositório, acrescentei uma chave

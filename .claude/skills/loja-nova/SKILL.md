@@ -1,6 +1,6 @@
 ---
 name: loja-nova
-description: O roteiro da loja nova do Sakura System, do contrato à primeira venda com nota e ao acompanhamento dos primeiros 30 dias, um passo por vez. Aponta pros documentos de instalação e do fiscal, sem copiar. Use quando a Sofia digitar /loja-nova ou pedir "loja nova", "instalar loja", "instalar uma empresa nova" ou "começar uma loja cliente". Não use pra criar uma loja a mais dentro de uma empresa que já usa o sistema (isso é só cadastrar a loja no programa).
+description: RASCUNHO (a Sofia ainda vai revisar). O roteiro da loja nova do Sakura System, do contrato à primeira venda com nota e ao acompanhamento dos primeiros 30 dias, um passo por vez. Aponta pros documentos de instalação e do fiscal, sem copiar. Use quando a Sofia digitar /loja-nova ou pedir "loja nova", "instalar loja", "instalar uma empresa nova" ou "começar uma loja cliente". Não use pra criar uma loja a mais dentro de uma empresa que já usa o sistema (isso é só cadastrar a loja no programa).
 model: opus
 effort: medium
 ---
@@ -37,12 +37,14 @@ senha. Cada coisa tem o seu lugar:
   **obrigatória**. Até a #592 ser resolvida: publicar a `redefinir-senha-operador`; a
   `ler-notas-fiscais`, não. A #592 também registra que o guia fala de "o secret"
   `BACKUP_EMPRESAS`, e o `docs/operacao.md` manda trocar **nos dois cofres**: vale o operacao.
-- **Lembretes**: ao fechar cada fase, diga a data da próxima (contando do 1º pagamento) e sugira
-  que ela ponha um lembrete no celular. A skill não cria tarefa agendada sozinha.
+- **Lembretes**: ao fechar cada fase, diga a data da próxima e sugira que ela ponha um lembrete no
+  celular. As conversas contam do 1º pagamento; o marco 1, da instalação; o marco 2, do dia em que
+  a parte fiscal fica pronta (Fase 4). A skill não cria tarefa agendada sozinha.
 
 ## 3. Fase 0: o começo
 Pergunte, numa mensagem só: (1) **em que fase a loja está** (pode começar no meio); (2) **o dia do
-1º pagamento**, pra contar os dias. Mostre a lista das fases abaixo, marcando onde está.
+1º pagamento**, da instalação e, se já houver, o dia em que a parte fiscal ficou pronta, pra contar
+os dias. Mostre a lista das fases abaixo, marcando onde está.
 
 ## 4. As fases
 **Fase 1. Antes de começar**
@@ -50,7 +52,7 @@ Pergunte, numa mensagem só: (1) **em que fase a loja está** (pode começar no 
 - O que fazer: ter o contrato assinado e escolher o "campeão" da loja (o dono + 1 funcionário, quem
   aprende primeiro e ensina os outros). **Já pedir agora** o que demora e depende de terceiros: o
   certificado digital e o contato da contabilidade, porque a Parte 5 do guia avisa que o fiscal
-  leva "dias a semanas" e a meta de 7 dias depende disso.
+  leva "dias a semanas", e o marco 2 (a primeira nota) só começa a contar quando ele fica pronto.
 - Documento que manda: `docs/pendencias-e-futuro.md`, item "10. ⚠️ Contrato e papéis de LGPD,
   antes da primeira venda pra terceiro" (que manda ler o `ANTES-DA-PRIMEIRA-VENDA.md`, na raiz);
   e o "Playbook de habilitação fiscal por loja nova", parte C.
@@ -58,7 +60,8 @@ Pergunte, numa mensagem só: (1) **em que fase a loja está** (pode começar no 
   contabilidade pedidos.
 
 **Fase 2. Minutos depois do 1º pagamento**
-- O que fazer: WhatsApp de boas-vindas, com "o que acontece nos próximos 7 dias" e quem atende.
+- O que fazer: WhatsApp de boas-vindas, com o que acontece nos próximos dias (os dois marcos) e
+  quem atende.
 - Documento que manda: `mensagens.md`, modelo 1.
 - Pronto quando: a mensagem foi mandada.
 
@@ -74,22 +77,30 @@ Pergunte, numa mensagem só: (1) **em que fase a loja está** (pode começar no 
   ninguém avisa.
 - Edge Function: publicar a `redefinir-senha-operador` (aviso da #592; o jeito de publicar está em
   `docs/operacao.md`, "Publicar uma Edge Function (a pegadinha do nome)").
-- Impressora: nenhum documento do projeto explica. No dia da instalação, **imprimir um teste de
-  cada coisa que a loja vai imprimir**. Se não sair, anotar o problema numa issue (sem dado da loja).
+- Impressora (o guia ainda não tem esse passo: vai ganhar pela **#595**). O programa imprime pela
+  janela comum de impressão do Windows. Em cada computador que imprime: (a) instalar o driver no
+  Windows e deixar a impressora como **padrão**; (b) imprimir uma nota ou recibo de teste pelo
+  programa; (c) conferir que saiu inteiro, sem cortar as bordas.
 - Pronto quando: todo computador da loja entra com o login; operadores criados (dono e campeão);
-  cadastros básicos conferidos (Parte 3); impressora imprimiu o teste; a `redefinir-senha-operador`
-  publicada (o botão "Redefinir senha" de um operador, em Configurações, funciona); empresa no
+  cadastros básicos conferidos (Parte 3); impressora padrão e o teste saiu inteiro; a
+  `redefinir-senha-operador` publicada (o botão "Redefinir senha" de um operador, em Configurações, funciona); empresa no
   `BACKUP_EMPRESAS` dos dois cofres.
 
-**Fase 4. A primeira vitória, até o dia 7**
-- O que fazer: a primeira venda com nota emitida e o caixa fechado. É o marco de sucesso da loja.
-- Documento que manda: `docs/pendencias-e-futuro.md`, "Playbook de habilitação fiscal por loja
-  nova" (partes B e C); e `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 5 — Nota fiscal"
-  (a função `focus-nfe` e o token, que a Sofia cola na tela do programa e **nunca na conversa**).
-- A parte C é a que trava: os passos dela dependem de terceiros. Siga um por vez, pelo playbook.
-- Pronto quando: uma nota **autorizada de verdade** e o caixa daquele dia fechado.
-- Chegou o dia 7 sem isso: diga à Sofia **qual passo da parte C trava** e mande a mensagem "dia 7"
-  na versão "ainda não" (`mensagens.md`, modelo 2).
+**Fase 4. A primeira vitória, em dois marcos**
+- **Marco 1, a loja vendendo**: até **3 dias depois da instalação**, a primeira venda registrada e
+  o caixa fechado. Depende só de nós e da loja. Pronto quando: a venda está no programa e o caixa
+  daquele dia foi fechado. Passou dos 3 dias: diga à Sofia o que trava, pra resolver com a loja.
+- **Marco 2, a primeira nota**: em até **7 dias contados de quando a parte fiscal da loja fica
+  pronta** (certificado e autorizações da SEFAZ e da prefeitura), não do contrato.
+  - Documento que manda: `docs/pendencias-e-futuro.md`, "Playbook de habilitação fiscal por loja
+    nova" (partes B e C); e `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 5 — Nota fiscal"
+    (a função `focus-nfe` e o token, que a Sofia cola na tela do programa e **nunca na conversa**).
+  - A parte C é a que trava: os passos dela dependem de terceiros. Siga um por vez, pelo playbook.
+  - Pronto quando: uma nota **autorizada de verdade**.
+- **Atraso de terceiro** (SEFAZ, prefeitura, contabilidade): anote o motivo (qual passo da parte C
+  e quem está devendo, sem dado da loja no público) e peça à Sofia pra **avisar a loja antes de ela
+  perguntar** (`mensagens.md`, modelo 7). Atraso de terceiro **não conta como falha da loja** (nem,
+  no futuro, nos "sinais de que a loja vai embora").
 
 **Fase 5. Dias 7, 14 e 30**
 - O que fazer: conversa curta no WhatsApp em cada data (`mensagens.md`, modelos 2, 3 e 4).
