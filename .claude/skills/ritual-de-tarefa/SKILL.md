@@ -33,9 +33,10 @@ Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
    mensagem**, pronto pra copiar. Com ele, depois de cada turno (cada resposta do Claude) um modelo
    avaliador lê a conversa e confere se a condição já vale; a sessão segue sozinha até o PR.
    **Quem liga é a pessoa que está na tela**: o `/goal` é comando de tela, e nem o modelo nem uma
-   skill conseguem disparar (conferido em 18/10). Peça: "cole isto como a próxima mensagem". Em
-   sessão aberta pela coordenadora, ainda não se sabe se um `/goal` no texto de abertura pega:
-   mostre o texto à coordenadora e, sem ele, siga do jeito de antes. O texto, sempre assim:
+   skill conseguem disparar (conferido em 18/10). Peça: "cole isto como a próxima mensagem". Um
+   `/goal` mandado **por mensagem de outra sessão não liga** (chega como dado; testado em 18/10), e
+   no texto de abertura de uma sessão criada pela coordenadora ainda não foi testado: mostre o
+   texto à coordenadora e, sem ele, siga do jeito de antes. O texto, sempre assim:
    ```
    /goal o PR da branch claude/tarefa-N-<curto> (Closes #N) está aberto, com o relatório em docs/relatorios/ commitado, cada item do "Pronto quando no PR" da issue #N marcado na descrição com a prova mostrada nesta conversa, e o resultado do CI desse PR mostrado aqui, todo verde; ou pare quando precisar de uma decisão da pessoa (escreva PRECISO DE VOCÊ e o motivo), quando o CI falhar por motivo fora da tarefa, ou depois de <T> turnos. Nunca mesclar, publicar, liberar nem mexer em banco.
    ```
