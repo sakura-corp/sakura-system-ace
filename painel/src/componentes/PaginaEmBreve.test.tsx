@@ -30,14 +30,31 @@ describe("PaginaEmBreve", () => {
     expect(h).toContain("Voltar pro Início");
     expect(h).toContain('href="/"');
   });
-  it("mostra \"quem cuida deste andar\" com os chefes do andar (#591)", () => {
-    expect(html("pessoas")).toContain("Quem cuida deste andar: frontend, backend e tester");
-    expect(html("posvenda")).toContain("Quem cuida deste andar: marketing");
-    expect(html("bancos")).toContain("Quem cuida deste andar: segurança");
+  const texto = (h: string) => h.replace(/<[^>]*>/g, "");
+  it("sem tarefa: uma linha só, \"Quem cuida: o andar …\", com os chefes por área em português (#601)", () => {
+    expect(texto(html("pessoas"))).toContain("Quem cuida: o andar das telas, dos dados e dos testes.");
+    expect(texto(html("posvenda"))).toContain("Quem cuida: o andar do marketing.");
+    expect(texto(html("bancos"))).toContain("Quem cuida: o andar da segurança.");
+    expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
+  });
+  it("com tarefa: a mesma linha leva o link da tarefa e o andar, sem uma segunda linha \"Quem cuida\" (#601)", () => {
+    const h = html("levas");
+    expect(texto(h).match(/Quem cuida/g)).toHaveLength(1);
+    expect(texto(h)).toMatch(/Quem cuida: a tarefa #548[^,]*, no andar das telas, dos dados e dos testes\./);
+    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/548"');
+    expect(h).not.toContain("deste andar");
+  });
+  it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
+    for (const id of ["levas", "fases", "relatorio", "pessoas", "lojas", "posvenda", "financeiro", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
+      expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
+    }
   });
   it("andar sem chefe não esconde a linha: diz que ainda não tem", () => {
-    expect(html("decisoes")).toContain("Quem cuida deste andar: ainda sem chefe");
-    expect(html("financeiro")).toContain("Quem cuida deste andar: ainda sem chefe");
+    expect(texto(html("decisoes"))).toContain("Quem cuida: o andar ainda não tem chefe.");
+    expect(texto(html("financeiro"))).toContain("Quem cuida: o andar ainda não tem chefe.");
+  });
+  it("Configurações (no rodapé, sem andar) não mostra a linha dos chefes", () => {
+    expect(texto(html("configuracoes"))).not.toContain("Quem cuida");
   });
   it("as 3 páginas novas abrem, com a trilha do andar e o 'em breve'", () => {
     for (const [id, titulo, trilha] of [

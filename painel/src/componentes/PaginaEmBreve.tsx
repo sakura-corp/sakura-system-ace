@@ -1,17 +1,10 @@
 // A página de um item "em breve" da barra lateral: explica o que vai ter ali, do que depende e quem cuida.
 import { Check, Clock, Info, Lock } from "lucide-react";
 import { textoEmBreve } from "../logica/emBreve";
-import { andarDoItem } from "../logica/navegacao";
+import { andarDoItem, fraseDoAndar } from "../logica/navegacao";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 
 const LINK_DA_TAREFA = (numero: number) => `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`;
-
-/** "frontend, backend e tester"; andar sem chefe diz que ainda não tem, a linha nunca some. */
-function textoDosChefes(chefes: string[]): string {
-  if (chefes.length === 0) return "ainda sem chefe";
-  if (chefes.length === 1) return chefes[0];
-  return `${chefes.slice(0, -1).join(", ")} e ${chefes[chefes.length - 1]}`;
-}
 
 export function PaginaEmBreve({ id }: { id: string }) {
   const texto = textoEmBreve(id);
@@ -79,24 +72,26 @@ export function PaginaEmBreve({ id }: { id: string }) {
         </section>
       </div>
 
-      {texto.tarefa ? (
+      {texto.tarefa || chefes ? (
         <p className="mt-4 text-sm text-texto-2">
-          Quem cuida: a tarefa{" "}
-          <a
-            href={LINK_DA_TAREFA(texto.tarefa)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-texto underline underline-offset-2 hover:text-destaque"
-          >
-            #{texto.tarefa}
-            <span className="sr-only"> (abre em aba nova)</span>
-          </a>
-        </p>
-      ) : null}
-
-      {chefes ? (
-        <p className="mt-4 text-sm text-texto-2">
-          {`Quem cuida deste andar: ${textoDosChefes(chefes)}`}
+          Quem cuida:{" "}
+          {texto.tarefa ? (
+            <>
+              a tarefa{" "}
+              <a
+                href={LINK_DA_TAREFA(texto.tarefa)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-texto underline underline-offset-2 hover:text-destaque"
+              >
+                #{texto.tarefa}
+                <span className="sr-only"> (abre em aba nova)</span>
+              </a>
+              {chefes ? fraseDoAndar(chefes, true) : null}
+            </>
+          ) : (
+            fraseDoAndar(chefes ?? [], false)
+          )}
         </p>
       ) : null}
 

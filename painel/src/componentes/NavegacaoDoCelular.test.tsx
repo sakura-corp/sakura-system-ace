@@ -49,6 +49,17 @@ describe("NavegacaoDoCelular", () => {
     }
   });
 
+  it("na folha, Configurações fica separada da Cobertura por uma linha (#601)", () => {
+    const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
+    // Só a Configurações mora no bloco que tem a linha de separação em cima.
+    const m = /<div class="[^"]*border-t[^"]*"><ul[^>]*>(.*?)<\/ul>/.exec(folha.slice(0, folha.indexOf("ao vivo") > 0 ? folha.indexOf("ao vivo") : undefined));
+    expect(m, "bloco separado").not.toBeNull();
+    expect(m![1]).toContain("Configurações");
+    expect(m![1]).not.toContain("Decisões da Sofia");
+    // A Cobertura continua no bloco dela, antes.
+    expect(folha.indexOf("Decisões da Sofia")).toBeLessThan(folha.indexOf(m![0]));
+  });
+
   it("página não encontrada (#560): nada na barra nem na folha é a página atual, e o Mais não ganha destaque", () => {
     const { barra, folha } = partes(html({ levas: LEVA, pagina: "nao-encontrada" }));
     expect(barra).not.toContain("aria-current");

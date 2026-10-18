@@ -202,7 +202,7 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
           )}
 
           {grupos.map((grupo) => (
-            <div key={grupo.id} className="min-w-0">
+            <div key={grupo.id} className={`min-w-0 ${grupo.id === "rodape" ? "mt-3 border-t border-borda pt-2" : ""}`}>
               {grupo.titulo && <p className="px-2.5 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-texto-2">{grupo.titulo}</p>}
               <ul className="flex flex-col gap-0.5">
                 {grupo.itens.map((item) => (

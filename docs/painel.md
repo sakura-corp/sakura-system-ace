@@ -703,3 +703,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   **A Sofia confere depois de publicar**: com o login dela, o Início mostra o mesmo "precisa de você" da Sala.
   Sobras das tarefas anteriores viraram a #560 ("Leva atual" marcada numa página "em breve" que não existe) e a #561
   (área segura do iPhone na barra de baixo).
+- **18/10/2026**: **acabamentos dos andares (#601, com a #560 e a #561)**: a barra do PC rola só a
+  lista dos andares, e Configurações e o usuário ficam sempre à vista; na folha "Mais" do celular,
+  Configurações ganhou uma linha de separação da Cobertura; as duas linhas "Quem cuida" viraram uma
+  só, com os chefes por área em português; `/em-breve/<id que não existe>` não marca item na barra
+  (#560); e a meta `viewport` tem `viewport-fit=cover`, com as áreas seguras dos lados (#561).

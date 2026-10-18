@@ -4,7 +4,33 @@ import { BarraLateral } from "./BarraLateral";
 
 const html = (props: Parameters<typeof BarraLateral>[0]) => renderToString(<BarraLateral {...props} />).replace(/<!-- -->/g, "");
 
+/** O elemento <div> que começa em `inicio`, até o </div> que o fecha (conta só <div>, que é como a barra se organiza). */
+function divDe(h: string, inicio: number): string {
+  let fundo = 0;
+  for (const m of h.slice(inicio).matchAll(/<div[\s>]|<\/div>/g)) {
+    fundo += m[0] === "</div>" ? -1 : 1;
+    if (fundo === 0) return h.slice(inicio, inicio + m.index! + m[0].length);
+  }
+  return h.slice(inicio);
+}
+
 describe("BarraLateral", () => {
+  it("Configurações e o usuário ficam fora da parte que rola, então aparecem sem rolar em tela baixa (#601)", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "leva", usuario: { login: "sofia", avatar: "" } });
+    const marca = h.indexOf("overflow-y-auto");
+    expect(marca, "tem que existir uma parte que rola").toBeGreaterThan(-1);
+    // A barra inteira não rola mais: quem rola é só a lista dos andares.
+    expect(h.slice(0, h.indexOf(">")), "a própria barra").not.toContain("overflow-y-auto");
+    const rolavel = divDe(h, h.lastIndexOf("<div", marca));
+    expect(rolavel).toContain("Leva atual");
+    expect(rolavel).toContain("Decisões da Sofia");
+    expect(rolavel).not.toContain("Configurações");
+    expect(rolavel).not.toContain("Sair");
+    const depois = h.slice(h.indexOf(rolavel) + rolavel.length);
+    expect(depois).toContain("Configurações");
+    expect(depois).toContain("Sair");
+  });
+
   it("desenha os grupos da lista; só o item da página tem aria-current", () => {
     const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "sala" });
     for (const t of ["Sala", "Escritório", "(exemplo)"]) expect(h).toContain(t);
