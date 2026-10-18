@@ -29,6 +29,23 @@ Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
    - **`Depende de`** com issue ainda aberta: pare e diga qual.
 3. Explicar à pessoa: o que é a tarefa, o que o Claude faz sozinho, o que ela vai precisar fazer.
 4. Criar a branch da tarefa: `claude/tarefa-N-<curto>`.
+5. **Montar o `/goal`** ([goal](https://code.claude.com/docs/en/goal.md)) e mostrá-lo **na primeira
+   mensagem**, pronto pra copiar. Com ele, depois de cada turno um modelo avaliador confere se a
+   condição já vale, e a sessão segue sozinha até o PR. **Quem liga é a pessoa** (ou a coordenadora,
+   no texto que abre a sessão): o `/goal` é comando de tela, e nem o modelo nem uma skill conseguem
+   disparar (conferido em 18/10). Peça: "cole isto como a próxima mensagem". O texto, sempre assim:
+   ```
+   /goal o PR da branch claude/tarefa-N-<curto> (Closes #N) está aberto, com cada item do "Pronto quando no PR" da issue #N marcado na descrição, e o CI desse PR verde; ou pare depois de <T> turnos. Nunca mesclar, publicar, liberar nem mexer em banco.
+   ```
+   - **Sempre com freio**: `<T>` = 10 turnos por hora da `Estimativa`, **no máximo 80**. O limite
+     não é parâmetro do comando: é a cláusula "ou pare depois de T turnos", e o avaliador julga
+     pela conversa. Por isso, **diga em cada turno quantos já foram** ("turno 4 de 20").
+   - Usa **só o "Pronto quando no PR"**. O "depois de publicar" fica de fora (a sessão não prova).
+   - **Nunca** põe na condição mesclar, publicar, liberar, banco, SQL ou migration aplicada: isso é
+     da Sofia ou da coordenadora, e um `/goal` que precisa disso nunca para sozinho.
+   - Se a pessoa não colar o `/goal`, a tarefa anda do jeito de antes (pedido por pedido). Não
+     insista, e anote no relatório. Laço que repete o mesmo pedido, `/loop` e tarefa agendada
+     **não** entram no lugar dele.
 
 ## 3. Ajudantes (o padrão)
 Cada etapa da tabela "Etapas e modelos" da issue vira um **ajudante dentro desta sessão**. Chame
@@ -98,7 +115,10 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
    publicar" copiado pra Sofia conferir.
 3. **O relatório** em `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` (modelo em
    `docs/relatorios/README.md`), incluindo **"Modelos usados"** (cada etapa, o modelo, e se trocou)
-   e **"Sessões filhas"** (quantas, e a última mensagem de cada).
+   e **"Sessões filhas"** (quantas, e a última mensagem de cada). Em **"Gasto"**, no campo
+   **`/goal`**, diga como ele parou: cumprido, pelo limite de turnos, sem progresso, limpo por erro
+   ou pela pessoa, ou "não usei" (a pessoa não colou). Se parou pelo limite com item aberto, o que
+   falta vai em "Onde parou".
 4. Se a cota acabar no meio: "onde parou" na descrição do PR ou da issue, com a lista das filhas e
    das branches, pra outra sessão retomar.
 
