@@ -30,16 +30,24 @@ Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
 3. Explicar à pessoa: o que é a tarefa, o que o Claude faz sozinho, o que ela vai precisar fazer.
 4. Criar a branch da tarefa: `claude/tarefa-N-<curto>`.
 5. **Montar o `/goal`** ([goal](https://code.claude.com/docs/en/goal.md)) e mostrá-lo **na primeira
-   mensagem**, pronto pra copiar. Com ele, depois de cada turno um modelo avaliador confere se a
-   condição já vale, e a sessão segue sozinha até o PR. **Quem liga é a pessoa** (ou a coordenadora,
-   no texto que abre a sessão): o `/goal` é comando de tela, e nem o modelo nem uma skill conseguem
-   disparar (conferido em 18/10). Peça: "cole isto como a próxima mensagem". O texto, sempre assim:
+   mensagem**, pronto pra copiar. Com ele, depois de cada turno (cada resposta do Claude) um modelo
+   avaliador lê a conversa e confere se a condição já vale; a sessão segue sozinha até o PR.
+   **Quem liga é a pessoa que está na tela**: o `/goal` é comando de tela, e nem o modelo nem uma
+   skill conseguem disparar (conferido em 18/10). Peça: "cole isto como a próxima mensagem". Em
+   sessão aberta pela coordenadora, ainda não se sabe se um `/goal` no texto de abertura pega:
+   mostre o texto à coordenadora e, sem ele, siga do jeito de antes. O texto, sempre assim:
    ```
-   /goal o PR da branch claude/tarefa-N-<curto> (Closes #N) está aberto, com cada item do "Pronto quando no PR" da issue #N marcado na descrição, e o CI desse PR verde; ou pare depois de <T> turnos. Nunca mesclar, publicar, liberar nem mexer em banco.
+   /goal o PR da branch claude/tarefa-N-<curto> (Closes #N) está aberto, com o relatório em docs/relatorios/ commitado, cada item do "Pronto quando no PR" da issue #N marcado na descrição com a prova mostrada nesta conversa, e o resultado do CI desse PR mostrado aqui, todo verde; ou pare quando precisar de uma decisão da pessoa (escreva PRECISO DE VOCÊ e o motivo), quando o CI falhar por motivo fora da tarefa, ou depois de <T> turnos. Nunca mesclar, publicar, liberar nem mexer em banco.
    ```
-   - **Sempre com freio**: `<T>` = 10 turnos por hora da `Estimativa`, **no máximo 80**. O limite
-     não é parâmetro do comando: é a cláusula "ou pare depois de T turnos", e o avaliador julga
-     pela conversa. Por isso, **diga em cada turno quantos já foram** ("turno 4 de 20").
+   - **Sempre com freio**: `<T>` = 10 turnos por hora da `Estimativa` (arredonde pra cima; se for
+     faixa, o maior número), **no mínimo 10 e no máximo 80**. O limite não é parâmetro do comando:
+     é a cláusula "ou pare depois de T turnos", e o avaliador só sabe a conta pela conversa. Por
+     isso, **escreva em cada turno "turno N de T"**; depois de um resumo da conversa, continue do
+     último número visível, nunca do zero.
+   - **O avaliador não abre arquivo nem roda comando**: o que conta como pronto (saída do teste, o
+     resultado do CI) tem que aparecer na conversa.
+   - **Hora de perguntar**: escreva PRECISO DE VOCÊ e pare. Se a sessão seguir assim mesmo, peça à
+     pessoa `/goal clear`; nunca adivinhe a resposta pra continuar.
    - Usa **só o "Pronto quando no PR"**. O "depois de publicar" fica de fora (a sessão não prova).
    - **Nunca** põe na condição mesclar, publicar, liberar, banco, SQL ou migration aplicada: isso é
      da Sofia ou da coordenadora, e um `/goal` que precisa disso nunca para sozinho.
@@ -116,8 +124,9 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
 3. **O relatório** em `docs/relatorios/AAAA-MM-DD-tarefa-N-<chefe>.md` (modelo em
    `docs/relatorios/README.md`), incluindo **"Modelos usados"** (cada etapa, o modelo, e se trocou)
    e **"Sessões filhas"** (quantas, e a última mensagem de cada). Em **"Gasto"**, no campo
-   **`/goal`**, diga como ele parou: cumprido, pelo limite de turnos, sem progresso, limpo por erro
-   ou pela pessoa, ou "não usei" (a pessoa não colou). Se parou pelo limite com item aberto, o que
+   **`/goal`**, diga como ele parou, com um dos casos do modelo em `docs/relatorios/README.md`
+   (cumprido, impossível, sem progresso, pelo limite de turnos, limpo por erro ou pela pessoa), ou
+   "não usei" e por quê. Se parou pelo limite com item aberto, o que
    falta vai em "Onde parou".
 4. Se a cota acabar no meio: "onde parou" na descrição do PR ou da issue, com a lista das filhas e
    das branches, pra outra sessão retomar.

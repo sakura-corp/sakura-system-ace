@@ -118,7 +118,8 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
   vai precisar de você. Depois trabalha (chamando ajudantes por dentro da própria sessão) e, no fim,
   mostra o **PR aberto e um relatório**.
 - **Cole o `/goal` que ele mostrar na primeira mensagem**: com ele, a sessão vai sozinha até o PR,
-  sem você mandar "continua", e para no limite de turnos que está escrito nele.
+  sem você mandar "continua" (turno = cada resposta do Claude), e para no limite de turnos escrito
+  nele ou quando precisar de você. Se passar do limite ou ficar repetindo, digite `/goal clear`.
 - **O que o chefe faz**: lê a tarefa inteira, programa/escreve/testa, roda as conferências, abre o
   PR e **para**. Nunca mescla, nunca publica, nunca roda SQL, nunca mexe em senha, cofre ou regras.
 - **O que você revisa**: o relatório (o que cada ajudante fez, o que foi testado **e visto
