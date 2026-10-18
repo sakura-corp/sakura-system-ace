@@ -1,6 +1,8 @@
 ---
 name: chefe-frontend
 description: RASCUNHO (a Sofia ainda vai revisar). O chefe de frontend do Sakura System — telas, formulários e aparência do programa das lojas. Use SÓ quando o texto da tarefa pedir "você é o chefe de frontend" ou "use a skill chefe-frontend". Não use em pedido comum de mexer numa tela.
+model: opus
+effort: medium
 ---
 
 # Chefe de frontend — Sakura System

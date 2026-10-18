@@ -31,6 +31,7 @@ formatos de issue convivendo, e nenhuma das 80 abertas tinha chefe ou leva.
 | `chefe:<função>` | o chefe que lidera: `frontend`, `backend`, `seguranca`, `marketing` ou `tester`. **Uma só por tarefa.** |
 | `sofia` | **só a Sofia faz ou decide** (decisão, conta, órgão, loja). **Nunca** em tarefa de programar. |
 | `guia` | ideia do guia de melhorias, ainda **fora do modelo** (vira tarefa no modelo quando entrar numa leva) |
+| `ideia` | ideia solta guardada pela skill `/ideia`; **não é tarefa**, é lida na revisão do mês (R1) |
 
 Decisão que trava uma tarefa **vira uma issue `sofia` própria** e entra no `Depende de` da tarefa.
 Nada de "Precisa da Sofia?" escondido no meio do texto: o painel não enxerga.
@@ -102,12 +103,13 @@ Regras do modelo:
 A issue diz só a **categoria**. É esta tabela que diz qual modelo é cada uma. Quando sair modelo
 novo, **muda só aqui**.
 
-| Categoria | Para quê | Modelo | Ajudante (nome curto) | Reserva, se falhar |
-|---|---|---|---|---|
-| **forte** | planejar, migration, RLS, dinheiro, nota fiscal, segurança, revisão final, publicar | `claude-opus-5-5` | `opus` | `claude-opus-5` |
-| **médio** | escrever código ou texto com o plano pronto, testar | `claude-sonnet-5-5` | `sonnet` | `claude-opus-5-5` |
-| **rápido** | achar arquivos, rodar comando, resumir, conferir texto | `claude-haiku-5-5` | `haiku` | `claude-sonnet-5-5` |
+| Categoria | Para quê | Modelo | Esforço | Ajudante (nome curto) | Reserva, se falhar |
+|---|---|---|---|---|---|
+| **forte** | planejar, migration, RLS, dinheiro, nota fiscal, segurança, revisão final, publicar | `claude-opus-5-5` | **alto** (`high`) em migration, RLS, dinheiro, nota fiscal, segurança e revisão final; **médio** (`medium`) no resto (planejar, publicar) | `opus` | `claude-opus-5` |
+| **médio** | escrever código ou texto com o plano pronto, testar | `claude-sonnet-5-5` | médio (`medium`) | `sonnet` | `claude-opus-5-5` |
+| **rápido** | achar arquivos, rodar comando, resumir, conferir texto | `claude-haiku-5-5` | baixo (`low`) | `haiku` | `claude-sonnet-5-5` |
 
+- **O esforço** muda o gasto tanto quanto o modelo. O ajudante é chamado com o `model` e o `effort` da linha (a ferramenta de agente aceita os dois por chamada) ou pelo agente pronto da categoria em `.claude/agents/` (`ajudante-forte`, `ajudante-medio`, `ajudante-rapido`), que já traz o modelo, o esforço e o limite de turnos. A skill declara o dela no cabeçalho (`model:` e `effort:`). Pede o **Claude Code v2.1.293 ou mais novo** (antes disso o `haiku` e o `sonnet` apontam pra modelos mais velhos e o esforço na chamada não existe). Campos conferidos na documentação em 18/10: [skills](https://code.claude.com/docs/en/skills.md), [agentes](https://code.claude.com/docs/en/sub-agents.md).
 - **O Fable não está na tabela de propósito**: em 17/10 uma sessão aberta no Fable falhou por falta
   de crédito. Só entra quando **todo mundo da equipe** tiver acesso a ele.
 - **A conferir no Team (19/10)**: que os três modelos acima aparecem pra todo mundo da equipe.

@@ -1,6 +1,8 @@
 ---
 name: chefe-backend
 description: RASCUNHO (a Sofia ainda vai revisar). O chefe de backend e dados do Sakura System — banco (migrations, RLS), funções em src/lib, cálculos em src/schemas, integrações. Use SÓ quando o texto da tarefa pedir "você é o chefe de backend" ou "use a skill chefe-backend". Não use em pedido comum de mexer no banco.
+model: opus
+effort: medium
 ---
 
 # Chefe de backend e dados — Sakura System

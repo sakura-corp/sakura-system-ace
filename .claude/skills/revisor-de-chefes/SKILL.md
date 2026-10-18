@@ -1,6 +1,8 @@
 ---
 name: revisor-de-chefes
 description: RASCUNHO (a Sofia ainda vai revisar). O revisor dos chefes do Sakura System — lê os relatórios em docs/relatorios/ e as skills chefe-*, acha padrões que se repetem e propõe melhorias como PR ABERTO. Use SÓ quando o texto pedir "revisar os chefes", "revisar os relatórios dos chefes" ou "use a skill revisor-de-chefes" (inclui a revisão do mês). Não use em pedido comum.
+model: opus
+effort: medium
 ---
 
 # Revisor de chefes — Sakura System
