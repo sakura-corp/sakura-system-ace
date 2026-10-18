@@ -131,6 +131,7 @@ as tarefas continuam sendo escritas com a `nova-tarefa`.
 
 Como as skills funcionam:
 - **Não precisa decorar**: o Claude reconhece pelo pedido, e digitar `/` mostra a lista.
+- **`description` curta (até ~3 linhas, umas 300 a 400 letras)**: ela carrega em toda sessão; o corpo só carrega quando a skill é usada. Diz a situação de usar e a de não usar (18/10, #586).
 - **Skill nova só com a aprovação dela**: quando algo se repetir umas 3 vezes, o Claude propõe.
 - **Skill que "evolui sozinha" (16/10)**: o agente só **propõe** a skill nova ou a mudança, e ela
   aprova antes. A proposta natural é a revisão do mês (R1). Mexer em trancas (publicar, liberar,

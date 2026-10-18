@@ -1,6 +1,6 @@
 ---
 name: diagnostico
-description: RASCUNHO (a Sofia ainda vai revisar). Acha a causa de um defeito com método, primeiro montando um comando que reproduz o defeito de verdade, depois levantando hipóteses, consertando com teste e limpando. Use por conta própria, sem esperar pedirem, sempre que for investigar um defeito cuja causa ainda não se sabe ("não funciona", "deu erro", "às vezes some", "o valor saiu errado", "travou"), antes de mexer no código pra consertar. Use também quando a pessoa digitar /diagnostico ou pedir "diagnostica esse defeito" ou "acha a causa", ou quando uma skill chefe-* mandar. Não use quando a causa já é óbvia e o conserto é de uma linha (um erro de digitação, um texto trocado), nem em ajuste pequeno ou pedido de funcionalidade nova.
+description: Acha a causa de um defeito com método, reproduzindo, levantando hipóteses, consertando com teste e limpando. Use sozinha ao investigar defeito de causa ainda desconhecida ("não funciona", "deu erro", "às vezes some", "o valor saiu errado"), ou em /diagnostico, "acha a causa". Não use quando a causa é óbvia e o conserto é de uma linha (erro de digitação, texto trocado).
 model: opus
 effort: medium
 ---
