@@ -28,20 +28,29 @@ Jeitos, mais ou menos nesta ordem:
 - **teste Vitest** na porta que alcança o defeito;
 - `npm run test:fusos`, se for dia ou hora;
 - **script Playwright** nas telas (os de `contraste:telas` e `largura:telas` sobem as telas com dados de exemplo);
-- `npm run test:electron`, se for ponte ou preload;
+- `npm run test:electron`, se for ponte ou preload (feito pro CI: se não rodar aqui, diga isso e não finja);
+- defeito de banco ou RLS: um `supabase/scripts/testar-*.sql` ou a matriz de RLS, que **só rodam no CI**;
 - **script avulso** com entrada fixa;
 - **comparar duas versões** (`git bisect run`).
 
-**Último recurso**, quando só uma pessoa no PC reproduz (app instalado, impressora, nota, banco da
-loja): um roteiro curto, **um passo por vez**, sempre contra o **Supabase de TESTE**, nunca o de
+**Último recurso**, quando só uma pessoa no PC reproduz (app instalado, impressora, nota): um roteiro curto, **um passo por vez**, sempre contra o **Supabase de TESTE**, nunca o de
 uma loja, e ela devolve o que apareceu. Na nuvem o `*.supabase.co` não é alcançável (item 6 de
-`docs/licoes.md`).
+`docs/licoes.md`). Se o defeito só aparece com os dados de uma loja, **só a Sofia olha**, sem
+gravar nada, e devolve o que viu.
+
+**Apertar o laço**: mais rápido (corte o que não importa), sintoma mais certeiro (confira o
+valor errado, não "não deu erro") e sempre igual (fixe a hora e o dia: aqui isso importa muito,
+itens 34 e 42).
+
+**Defeito que só às vezes aparece**: a meta é fazer ele aparecer **mais vezes** (repetir 100
+vezes, forçar o tempo), não exigir que apareça sempre. Metade das vezes já dá pra investigar.
 
 **Sem laço possível**: pare, diga o que tentou e peça acesso, print ou log **tapado**.
 
 ## Fase 2. Reproduzir e encolher
 - Veja vermelho com **o mesmo sintoma** que a pessoa contou. Defeito errado = conserto errado.
-- Rode **várias vezes**: o resultado tem que se repetir.
+- Rode **várias vezes**: o resultado tem que se repetir (ou, no defeito que só às vezes aparece,
+  aparecer numa taxa alta o bastante).
 - **Encolha**: corte uma coisa por vez (dado, passo, configuração) e rode de novo, até tudo que
   sobrou ser necessário pro defeito aparecer.
 

@@ -54,7 +54,7 @@ expect(totalDaVenda([{ preco: 10 }, { preco: 5 }])).toBe(15)
 - **Vitest**, com o teste ao lado do arquivo: `<arquivo>.test.ts` (`docs/estrutura.md`).
 - **"Só vale o teste que eu VI reprovar."** Passou de primeira? **Desconfie.** Quebre o código de
   propósito, veja ficar vermelho, desfaça e confira com `git diff` que a quebra **não ficou**
-  (itens 76 e 77).
+  (itens 53, 76 e 77).
 - **jsdom não tem layout**: `offsetParent` é sempre `null` (item 77). Código que depende disso
   (como o Enter que pula de campo) não faz nada no teste, e o teste passa sem provar nada: simule
   o que falta só naquele teste.
@@ -69,5 +69,6 @@ expect(totalDaVenda([{ preco: 10 }, { preco: 5 }])).toBe(15)
 ## 5. No fim: as conferências
 `npm run typecheck`, `npm run lint`, `npm run test:fusos`, `npm run contraste`. Mexeu em tela?
 Também `npm run contraste:telas` e `npm run largura:telas`.
+Mexeu em Electron (ponte, preload, `electron/`)? Também `npm run test:electron` (feito pro CI).
 
 No relatório ou PR, diga **o que você viu reprovar e como quebrou** o código pra ver.

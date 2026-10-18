@@ -21,7 +21,8 @@ A **fronteira** são as perguntas que já dá pra fazer agora, sem adivinhar a r
 ainda está aberta. Pergunta que depende de outra da mesma rodada fica pra rodada seguinte.
 
 ## 2. Como montar uma rodada
-- **No máximo umas 5 perguntas** por rodada, em português simples, sem jargão.
+- **No máximo umas 5 perguntas** por rodada, em português simples, sem jargão. Se a fronteira
+  tiver mais, as que sobram vão na rodada seguinte, primeiro as que destravam mais decisões.
 - Cada pergunta é numerada e traz a **sua recomendação**, escrita de modo que **"sim" aceita a
   recomendação**.
 - Decisão estrutural (arquitetura, biblioteca, modelagem): dê **opções + recomendação** e espere
@@ -49,7 +50,7 @@ Depois espere as respostas. Cada resposta muda a árvore: recalcule a fronteira 
 - **Decisão** (o que fazer, o que priorizar, como a loja quer) é da pessoa: pergunte e espere.
 
 ## 4. Afiar a linguagem
-- **Termo vago**: desafie na hora. "Loja ou empresa?" "Venda de balcão ou ordem de serviço?"
+- **Termo vago**: desafie na hora, conferindo com o nome que `docs/` já usa. "Loja ou empresa?" "Venda de balcão ou ordem de serviço?"
   Proponha o termo certo e peça pra confirmar.
 - **Cenário concreto**: pra testar a borda, invente um caso ("e se o cliente paga metade no
   cartão e metade no dinheiro?") e veja se a resposta dela aguenta.
@@ -70,16 +71,18 @@ Uma lista curta, em português simples:
 - **Decisões**: o que ficou decidido, uma linha cada, **pronta pra colar** na seção "Decisões já
   tomadas" da `nova-tarefa`.
 - **Na gaveta**: o que ela mandou deixar pra depois. É adiado, **não** decidido.
-- **Ficou aberto**: o que ainda precisa de resposta, e de quem.
+- **Ficou aberto**: o que ainda precisa de resposta, e de quem. O que depende da Sofia vira
+  tarefa com a etiqueta `sofia`.
 
 Sugira seguir com a `nova-tarefa`. **Só a Sofia escreve tarefa**: se quem entrevistou é outra
 pessoa, diga que a lista vai pra ela.
 
 ## 8. O que NÃO fazer
 - Não crie `GLOSSARY.md` nem `docs/adr/`: não são do nosso jeito.
-- Não grave nada em `docs/` por conta própria. **Ela revisa antes de eu documentar.** Só depois de
-  ela conferir: decisão estrutural que vale pro projeto vai pra `docs/decisoes.md`; preferência
-  dela, pra `docs/sofia.md`.
+- Não grave nada em `docs/` por conta própria. **Ela revisa antes de você documentar.** Só depois de
+  ela conferir: preferência dela vai pra `docs/sofia.md`; decisão vai pra `docs/decisoes.md` só
+  se valerem as três: **difícil de voltar atrás**, **estranha pra quem não viu a conversa** e
+  **escolha de verdade entre opções**. As outras ficam só na tarefa.
 - **Nada de preço, sócio, dado pessoal ou credencial** no que for pro repositório (ele é público).
   Se a conversa tocar nesses assuntos, não repita o dado: avise que isso vai pro repositório
   privado, só com autorização dela.
