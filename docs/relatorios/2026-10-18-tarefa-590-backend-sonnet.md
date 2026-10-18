@@ -11,13 +11,13 @@
 ## Modelos usados
 - Planejar: sessão mãe no Sonnet (`claude-sonnet-5-5`) + conselheiro Opus, 1 consulta (a tabela pede forte; o teste A3 troca isso pelo conselheiro).
 - Escrever a skill e as mensagens: o próprio Sonnet da sessão, em vez do ajudante médio (mesmo modelo da categoria médio), esforço padrão da sessão.
-- Revisão final: feita por mim mesma, sem ajudante forte (regra do teste A3); não houve segunda consulta ao conselheiro ainda (ver "Conselheiro").
+- Revisão final: feita por mim mesma, sem ajudante forte (regra do teste A3), com a 2ª consulta ao conselheiro (ver "Conselheiro").
 - Não houve troca por falha de modelo.
 - Cabeçalho da skill: `model: opus`, `effort: medium`, igual ao `ritual-de-tarefa`, porque a skill decide e conduz a Sofia por passos com consequência (certificado, banco, nota fiscal); a tabela de `docs/tarefas.md` põe "planejar" na categoria forte, esforço médio.
 
 ## Conselheiro
-- Consultado **1 vez**, antes de escrever. Ajudou em: (1) a skill precisa perguntar primeiro se é empresa nova ou segunda unidade, porque `INSTALAR-LOJA-NOVA.md` abre com essa distinção e o nome "loja nova" colide com ela; (2) o marco de 7 dias depende da nota fiscal, que leva dias ou semanas, então o pedido ao contador começa na fase 1 (sem mudar o marco decidido); (3) Claude guia e a Sofia faz, com o guarda da seção 0; (4) a skill não guarda estado, então pergunta "em que passo estamos?" e entrega as datas dos dias 7/14/30/90 pra agenda dela; (5) apontar títulos exatos em vez de copiar; (6) como provar o "Pronto quando" sem abrir arquivo na conversa. Aceitei todos.
-- Onde não ajudou ou não consultei de novo: a revisão final.
+- Consultado **2 vezes**: antes de escrever e antes do PR. Ajudou em: (1) a skill precisa perguntar primeiro se é empresa nova ou segunda unidade, porque `INSTALAR-LOJA-NOVA.md` abre com essa distinção e o nome "loja nova" colide com ela; (2) o marco de 7 dias depende da nota fiscal, que leva dias ou semanas, então o pedido ao contador começa na fase 1 (sem mudar o marco decidido); (3) Claude guia e a Sofia faz, com o guarda da seção 0; (4) a skill não guarda estado, então pergunta "em que passo estamos?" e entrega as datas dos dias 7/14/30/90 pra agenda dela; (5) apontar títulos exatos em vez de copiar; (6) como provar o "Pronto quando" sem abrir arquivo na conversa. Aceitei todos.
+- A 2ª consulta (antes do PR) pegou o que eu não tinha visto: eu citava partes do documento que não tinha lido (a fase 3 prometia impressora, que o documento não tem; faltava a `redefinir-senha-operador`, que está na Parte 4); a skill decidia sozinha como contar o marco de 7 dias (é da Sofia, virou pergunta); uma frase de boas-vindas prometia nota em 7 dias ao cliente. Corrigi tudo.
 
 ## Sessões filhas
 - nenhuma
@@ -26,16 +26,16 @@
 - **Uso da sessão mãe** (via arquivo, medido antes do commit e do PR; o que vem depois fica de fora): 13 respostas, entrada 28, cache criado 88.639, cache lido 1.514.533, saída 10.171. O conselheiro e as chamadas feitas pelo harness fora do arquivo da conversa não entram nessa soma.
 - **Ajudantes**: nenhum.
 - **Sessões filhas**: nenhuma.
-- **`/goal`**: ligado pela Sofia, com limite de 30 turnos; ver o fim do PR para como parou.
-- **Conselheiro**: 1 consulta (Opus), tokens não medidos (o arquivo da conversa não separa).
+- **`/goal`**: ligado pela Sofia, com limite de 30 turnos. Para como cumprido quando o PR estiver aberto com o CI verde; se o CI ficar vermelho, a descrição do PR diz.
+- **Conselheiro**: 2 consultas (Opus), tokens não medidos (o arquivo da conversa não separa).
 
 ## O que testei e VI reprovar
-- Nada reprovado de propósito: o trabalho é texto, sem código. A conferência de caminhos reprovou 3 nomes curtos (`INSTALAR-LOJA-NOVA.md`, `instalacao-completa.sql`, `mensagens.md`) por serem citados sem a pasta; corrigi o do `.sql` para o caminho completo, os outros dois são citados dentro de frases com o caminho completo na tabela do começo.
+- Nada reprovado de propósito: o trabalho é texto, sem código. A conferência de caminhos listou 3 nomes curtos como "FALTA" (`INSTALAR-LOJA-NOVA.md`, `instalacao-completa.sql`, `mensagens.md`) por serem citados sem a pasta; corrigi o do `.sql` para o caminho completo, os outros dois são citados dentro de frases com o caminho completo na tabela do começo.
 
 ## O que passou sem eu ter visto reprovar
 - O cabeçalho YAML (carregou com `yaml.safe_load`: `name`, `description`, `model`, `effort`) e a skill apareceu na lista de skills **da própria sessão** logo depois de criada.
-- Os 11 títulos citados existem nos três documentos (conferido com `grep -c`, todos 1).
-- A varredura de segredo do gatilho (`scripts/checar-segredos.mjs`) roda no commit; o CI roda o `gitleaks`.
+- Os títulos citados existem nos três documentos (conferido com `grep -c`, todos 1).
+- Nenhum dado de cliente, preço ou credencial: só a varredura de segredo do CI (job "Varredura de segredo") prova; fica no resultado do CI do PR.
 
 ## O que ficou de fora
 - Os "sinais de que a loja vai embora", o portal do cliente, a cobrança e o preço (tudo na lista "Não fazer" da issue).

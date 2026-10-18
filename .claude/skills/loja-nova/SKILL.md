@@ -66,13 +66,19 @@ Perguntar antes de tudo. É a distinção que abre `INSTALAR-LOJA-NOVA.md`:
 
 ### Fase 3 — Dias 1 a 3: instalação
 - **Pronto quando**: o sistema abre na loja, com o admin criado e **vinculado à loja**
-  (`operador_lojas`, o erro mais fácil de cometer), os cadastros básicos feitos e a impressora
-  imprimindo. Presencial, se der.
-- **Banco e Edge Functions**: `INSTALAR-LOJA-NOVA.md`, "Parte 1" a "Parte 3"; a pegadinha do nome
-  da função está em `docs/operacao.md`, "Publicar uma Edge Function". O "Importar por foto" é
-  opcional (Parte 4).
-- **Computadores**: "Parte 2" (instalador e tela de conexão). Computador de loja nova fica no canal
-  **Normal**.
+  (`operador_lojas`, o erro mais fácil de cometer), a loja configurada e as peças e os preços dos
+  serviços cadastrados. Presencial, se der.
+- **Banco e login**: `INSTALAR-LOJA-NOVA.md`, "Parte 1" (projeto Supabase, plano pago com backup,
+  o arquivo único, as duas opções de login, o primeiro admin, URL e chave).
+- **Computadores**: "Parte 2" (instalador da versão liberada, tela de conexão, uma vez por PC). Computador
+  de loja nova fica no canal **Normal**.
+- **Configurar a loja**: "Parte 3" (nome da loja, dados fiscais, operadores, categorias, juros,
+  garantia), mais as peças e os serviços que a loja precisa cadastrar antes da primeira OS.
+- **Funções**: a `redefinir-senha-operador` é publicada pelo passo 4 da "Parte 4" do mesmo arquivo
+  (sem secret), mesmo que a loja não use o "Importar por foto" (que é opcional). A pegadinha do nome
+  da função está em `docs/operacao.md`, "Publicar uma Edge Function".
+- **Impressora**: o documento **não tem** passo de impressora. Perguntar à Sofia o que ela faz hoje, e
+  se ela pedir, abrir issue no formato da #425 pra isso entrar no documento.
 - **Depois de entregue**: as quatro coisas do bloco "Depois de entregue" do mesmo arquivo —
   conferir o backup, o bloco da empresa no `BACKUP_EMPRESAS` (**nos dois cofres**), a atualização
   e o suporte. Sem o bloco, a empresa fica de fora do backup e do botão de atualizar, e ninguém
@@ -86,9 +92,8 @@ Perguntar antes de tudo. É a distinção que abre `INSTALAR-LOJA-NOVA.md`:
 - **Roteiro fiscal**: `INSTALAR-LOJA-NOVA.md`, "Parte 5", e o playbook de `docs/pendencias-e-futuro.md`
   (bloqueios A, B e C). Usar e emitir são **duas ativações separadas**: a loja usa cadastro, OS,
   estoque e caixa desde o primeiro dia, e a emissão entra quando o bloco (C) estiver pronto.
-- **Se o prazo de 7 dias não vai fechar** (SEFAZ ou prefeitura atrasaram): isso não é falha da
-  instalação. Dizer à Sofia, combinar com o cliente o que ele já ganha usando o sistema sem nota, e
-  contar o marco a partir do dia em que a nota ficar liberada.
+- **Se o prazo de 7 dias não vai fechar** (SEFAZ ou prefeitura atrasaram): **avisar a Sofia** e
+  perguntar como ela quer contar o marco. Não decidir sozinha.
 
 ### Fase 5 — Dias 7, 14 e 30: conversa curta
 - **Pronto quando**: a Sofia mandou uma conversa curta de WhatsApp em cada data, e anotou (no lugar
@@ -103,7 +108,7 @@ Perguntar antes de tudo. É a distinção que abre `INSTALAR-LOJA-NOVA.md`:
 - **Nota até 6 vira ligação** da Sofia, no mesmo dia. Não responder por mensagem.
 
 ## 3. Quando algo der errado
-`INSTALAR-LOJA-NOVA.md`, "Quando algo der errado", e os erros do porteiro em `docs/operacao.md`
+`INSTALAR-LOJA-NOVA.md`, "Quando algo der errado" (uma tabela de sintoma e causa), e os erros do porteiro em `docs/operacao.md`
 ("falta publicar o porteiro", "Token do Focus NFe não configurado"). Suporte hoje é por WhatsApp
 com print; pedir sempre o número da versão (canto inferior direito).
 

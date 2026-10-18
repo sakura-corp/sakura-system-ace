@@ -11,14 +11,15 @@ Espaços usados: `[nome]` (de quem recebe), `[nome da loja]`, `[quem atende]`, `
 
 ## Boas-vindas (minutos depois do primeiro pagamento)
 
-> Oi, [nome]! Aqui é a [quem atende], do Sakura System. Que bom ter a [nome da loja] com a gente! 🌸
+> Oi, [nome]! Aqui é [quem atende], do Sakura System. Que bom ter a [nome da loja] com a gente! 🌸
 >
 > Pra você saber o que vem pela frente nos próximos 7 dias:
 > 1. Dias 1 a 3: a gente instala o sistema aí na loja, cadastra o básico e deixa a impressora
 >    funcionando.
 > 2. Em paralelo, a nota fiscal: preciso falar com o seu contador sobre o certificado digital. Pode
 >    me passar o contato dele?
-> 3. Até o dia 7: a meta é a primeira venda de vocês com nota emitida e o caixa fechado.
+> 3. A meta é a primeira venda de vocês com nota emitida e o caixa fechado, logo que a parte da
+>    nota estiver liberada. Eu te aviso de cada passo.
 >
 > Quem te atende em tudo isso sou eu, por aqui mesmo. Se travar em qualquer coisa, manda um print
 > que eu resolvo.
