@@ -111,7 +111,7 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S6 | `/validar` | as conferências antes de mesclar, e a revisão de código em PR grande |
 | S7 | `/mensagem` | texto pra outra pessoa: curto, informal e completo (`docs/sofia.md`) |
 | S8 | `/comparar-visual` | mudança de aparência em 2 ou 3 versões numa página, pra ela escolher |
-| S9 | `/loja-nova` | instalação + o roteiro fiscal de loja nova |
+| S9 | `/loja-nova` | o roteiro da loja nova, do contrato à primeira venda com nota e ao acompanhamento dos 30 dias (aponta pros documentos, não copia) — **feita** em 18/10, #590 |
 | S10 | `/faxina-memoria` | a faxina da memória |
 | S11 | `/ideia` | guarda uma ideia solta numa issue curta com a etiqueta `ideia` (só guarda; barra empresa/preço, sócios, dado pessoal e credencial; print só em texto) — **18/10**, #568 |
 | S12 | `/coordenar` | a **sessão coordenadora**: toca 2 ou mais tarefas independentes de uma vez, abrindo uma sessão por tarefa e sendo a ponte com ela; não programa — **rascunho de 18/10**, #573 |
