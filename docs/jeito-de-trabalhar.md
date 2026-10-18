@@ -8,6 +8,20 @@
 **Ela abre o app, diz o assunto, e o Claude já sabe tudo, já sabe fazer, não consegue fazer
 besteira e avisa o que falta**, sem ela precisar repetir, lembrar ou conferir.
 
+**A direção (Sofia, 17/10)**: não somos *vibecoders*, somos ***agentic engineers***: a gente define
+o método, as regras e a conferência, e os agentes executam, construindo produto completo, com todas
+as camadas, pra vender de verdade. Daí três metas:
+- **fluxos padronizados pros sócios**: a mesma entrada, o mesmo formato de tarefa e o mesmo ritual
+  pra todo mundo. O jeito solto de uma sessão de planejamento dela (muitos prints e mensagens) **não
+  vira padrão**;
+- **tudo o mais atualizável e "se melhorando sozinho" possível**, sempre do jeito seguro: o agente
+  mede e propõe, ela aprova (trancas, publicação e banco nunca mudam sozinhos);
+- **memória e tokens primeiro**: o que otimiza o fluxo vem antes de qualquer outra coisa.
+
+O plano que desdobra isso (memória, tokens, entrada única, pós-venda, segurança, próximos projetos)
+está **no privado**: `planos/2026-10-17-memoria-e-fluxos.md` do `caranovavidanova/sakura-corp`.
+Os itens são citados pelo código (A1, A2…). O A1 (índice em até 15 KB) foi feito em 17/10.
+
 Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta certa**:
 
 | Gaveta | O que guarda | Onde fica |

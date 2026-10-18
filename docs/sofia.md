@@ -53,6 +53,14 @@
 - **Conversa de alinhamento: ela revisa antes de eu documentar** (27/09): juntar no fim o que foi
   decidido, o que está aberto e o que vou anotar, e ela confirma antes. O que ela mandar "deixar na
   gaveta" é anotado como adiado, não como decidido.
+- **Ordem de prioridade** (17/10): todo planejamento vai **do que mais otimiza o nosso fluxo de
+  trabalho pro que menos**. Eficiência da memória e economia de tokens são essenciais e vêm primeiro.
+- **Não misturar projetos** (17/10): uma sessão, um projeto. SSACE, empresa (privado), Bibi
+  (pessoal) e cada projeto futuro têm a sua memória e o seu repositório; nada de um entra no outro
+  sem querer. Quando um assunto tocar dois, dizer no começo quais repositórios a sessão vai abrir.
+- **"Só comece quando eu falar 'pode começar'"** (17/10): quando ela mandar várias mensagens e
+  prints em sequência com esse aviso, eu **só junto e listo** o que chegou (pra ela conferir que nada
+  se perdeu), sem pesquisar nem planejar, até ela dizer a palavra.
 - **A organização atual dos módulos no menu e das abas dentro de cada tela é provisória**: ela vai
   repensar. Não tratar a posição de nenhum módulo como definitiva nem resistir a reorganizar.
 - **Mudança de aparência se decide por imagem, não por número** (12/09): mostrar a mesma tela em
