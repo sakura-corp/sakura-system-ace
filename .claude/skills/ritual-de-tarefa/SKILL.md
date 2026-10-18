@@ -41,9 +41,9 @@ em `.claude/agents/`), que já traz o modelo, o esforço e o limite de turnos da
 - Ajudante que só lê: **rápido**. Nunca use um modelo que não está na tabela (o Fable não está).
 - No **forte**, passe `effort: high` na chamada quando a etapa é migration, RLS, dinheiro, nota
   fiscal, segurança ou revisão final (o esforço padrão do agente é médio).
-- O **médio e o rápido não releem a memória do projeto** (`omitClaudeMd`). O pedido leva tudo que
-  eles precisam, inclusive as regras do projeto que importam pra etapa. Se faltar algo, eles devolvem
-  dizendo o que faltou, em vez de adivinhar.
+- O **rápido não relê a memória do projeto** (`omitClaudeMd`). O pedido leva tudo que ele precisa,
+  inclusive as regras do projeto que importam pra etapa. Se faltar algo, ele devolve dizendo o que
+  faltou, em vez de adivinhar. O médio e o forte leem a memória (as regras de código moram nela).
 - Diga a cada ajudante: a etapa, os arquivos dele, o que entregar e o que **não** fazer.
 - Se o agente pronto não aparecer (a sessão abriu antes de a pasta `.claude/agents/` existir:
   reiniciar resolve; ou a branch não tem a pasta), chame o agente comum com o `model` e o `effort`

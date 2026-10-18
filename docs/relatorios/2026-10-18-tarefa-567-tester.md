@@ -28,7 +28,7 @@
 | `maxTurns` | **não existe hoje** | existe | **não existe hoje** |
 | `omitClaudeMd` (não reler a memória) | **não existe hoje** | existe (v2.1.271+) | **não existe hoje** |
 
-Links: [skills](https://code.claude.com/docs/en/skills.md), [agentes](https://code.claude.com/docs/en/sub-agents.md). Por isso valeu o passo 6 da issue: os ajudantes nasceram em `.claude/agents/`.
+Links: [skills](https://code.claude.com/docs/en/skills.md), [agentes](https://code.claude.com/docs/en/sub-agents.md). Por isso valeu o passo 6 da issue: os ajudantes nasceram em `.claude/agents/`. Só o `ajudante-rapido` não relê a memória: a Sofia decidiu (18/10, pela coordenadora) que o médio volta a ler, porque escreve código e as regras de código moram na memória (o índice custa ~4 mil tokens).
 
 ## O que testei e VI reprovar
 - Script que lê os 8 cabeçalhos (YAML válido, `name` e `description` iguais aos da `main`, só `model`/`effort` novos e com valor permitido, corpo igual ao da `main` fora da seção 3 do ritual). Vi reprovar com: um `effort: [medium` (YAML quebrado), um `effort: alto` (valor inválido) e uma linha a mais no corpo do `revisor-de-chefes`. Desfeito; passa com o diff final.
