@@ -31,7 +31,8 @@ Procure o que **se repete em mais de um relatório** (ou pesa muito num só):
   tipo de etapa) e procurar o modelo ou esforço que gastou muito mais sem ganho (ex.: "o ajudante
   explorador em médio gastou 3 vezes o de rápido, e achou a mesma coisa"), ou o contrário (o
   rápido errou e a etapa teve que ser refeita). Só tokens e quantidades, nunca dinheiro.
-  Relatório com "não medido" não entra na conta; se nenhum tiver "Gasto", dizer isso no PR.
+  Só comparar números da **mesma via** (o relatório diz: "aviso" ou "arquivo"; são contas
+  diferentes). Relatório com "não medido" não entra na conta; se nenhum tiver "Gasto", dizer isso no PR.
 
 **Cada achado precisa de evidência**: o nome do arquivo de relatório (e a frase) que o prova. Sem
 arquivo citado, não é achado. Não invente padrão a partir de um relatório só sem dizer que é um só.

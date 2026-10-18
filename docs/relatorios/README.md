@@ -40,10 +40,10 @@ escreva o valor.
 - <"nenhuma", ou cada parte: branch e a última mensagem dela (estado)>
 
 ## Gasto
-- **Uso da sessão mãe**: <tokens de entrada, cache criado, cache lido e saída; ou "não medido: <por quê>">
-- **Ajudantes**: <quantos; cada um com modelo, esforço e tokens, se medidos>
+- **Uso da sessão mãe**: <tokens de entrada, cache criado, cache lido e saída (via arquivo); ou "não medido: <por quê>">
+- **Ajudantes**: <quantos; cada um com modelo, esforço e tokens, dizendo a via (aviso ou arquivo), se medidos>
 - **Sessões filhas**: <quantas, e o uso de cada, se medido; ou "nenhuma">
-- **`/goal`**: <"não usei", ou como parou: cumprido ("achieved"), impossível ("failed"), sem progresso, ou pelo limite escrito na condição; `/goal` sem nada mostra os turnos e os tokens da meta ([goal](https://code.claude.com/docs/en/goal.md))>
+- **`/goal`**: <"não usei", ou como parou: cumprido ("achieved"), impossível ("failed"), sem progresso, pelo limite escrito na condição, limpo por erro (crédito, modelo, contexto cheio) ou limpo pela pessoa (`/goal clear`); `/goal` sem nada mostra **pra pessoa** os turnos e os tokens da meta ([goal](https://code.claude.com/docs/en/goal.md))>
 - **Colado pela pessoa (opcional)**: <o resultado do `/usage`, se ela quiser colar>
 
 ## O que testei e VI reprovar
@@ -79,25 +79,32 @@ total de tokens da própria sessão. O `/usage` mostra pra **pessoa**
 ([custos](https://code.claude.com/docs/en/costs.md)); a ferramenta de agente não devolve contagem
 ([subagentes](https://code.claude.com/docs/en/sub-agents.md)); e o formato do arquivo da conversa é
 interno e pode mudar entre versões ([sessões](https://code.claude.com/docs/en/sessions.md)). Por
-isso as duas vias abaixo são **o que funcionou na prática**, não garantia:
+isso as duas vias abaixo são **o que funcionou na prática**, não garantia. Cada número do "Gasto"
+diz de qual via veio (**aviso** ou **arquivo**):
 
 - **O aviso de fim de ajudante**: quando um ajudante em segundo plano termina, o aviso que chega na
-  sessão traz `subagent_tokens` (o total dele) e quantas ferramentas usou. Anotar esse número.
+  sessão traz `subagent_tokens` e quantas ferramentas usou. **Não é a mesma conta** da soma do
+  arquivo (abaixo): em 18/10, o mesmo ajudante deu uns 100 mil num e uns 420 mil no outro. Serve pra
+  comparar ajudantes entre si.
 - **A conversa da sessão** fica em `~/.claude/projects/<pasta>/<id>.jsonl`, e cada resposta do
   modelo traz um campo `usage` (entrada, cache criado, cache lido, saída). Os ajudantes ficam ao
   lado, em `<id>/subagents/agent-*.jsonl`. Somar uma vez por resposta (a mesma resposta aparece em
   várias linhas com o mesmo `message.id`):
   ```bash
-  python3 -I -c 'import json,sys
+  f=$(ls -t ~/.claude/projects/*/*.jsonl | head -1)
+  python3 -I -c 'import json,sys,os
   for a in sys.argv[1:]:
+    if not os.path.exists(a): print(a.split("/")[-1], "não existe"); continue
     u={}
     for l in open(a):
       e=json.loads(l); m=e.get("message") or {}
       if e.get("type")=="assistant" and m.get("usage"): u[m.get("id")]=m["usage"]
     k=["input_tokens","cache_creation_input_tokens","cache_read_input_tokens","output_tokens"]
     print(a.split("/")[-1], len(u), "respostas", {x: sum(v.get(x,0) for v in u.values()) for x in k})' \
-    $(ls -t ~/.claude/projects/*/*.jsonl | head -1) ~/.claude/projects/*/*/subagents/agent-*.jsonl
+    "$f" "${f%.jsonl}"/subagents/agent-*.jsonl
   ```
+  Roda no terminal da sessão na nuvem (no PC, só no Git Bash, não no PowerShell). A primeira linha
+  é a sessão mãe; as outras, os ajudantes desta sessão (sem ajudante, aparece "não existe").
   Se o arquivo não existir ou o comando der erro (o formato mudou), "não medido". Medir **no fim**,
   depois da revisão final: o que vem depois (o PR, o relatório) fica de fora, e o
   relatório diz isso.

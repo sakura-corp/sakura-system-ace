@@ -14,7 +14,7 @@
 - Revisor: leu o diff do zero; nenhum achado.
 
 ## Modelos usados
-- Planejar: sessão mãe, forte (`claude-opus-5-5`), esforço médio.
+- Planejar: sessão mãe, forte (`opus`), esforço médio.
 - Explorador: rápido (`haiku`), esforço baixo.
 - Escritor de tela: médio (`sonnet`), esforço médio.
 - Revisor: forte (`opus`), esforço alto.
@@ -24,8 +24,8 @@
 - nenhuma
 
 ## Gasto
-- **Uso da sessão mãe**: 40 respostas; entrada 120, cache criado 90.000, cache lido 1.800.000, saída 25.000 tokens (medido antes de abrir o PR).
-- **Ajudantes**: 3. Explorador (rápido, baixo): saída 1.500. Escritor (médio, médio): saída 9.000. Revisor (forte, alto): saída 6.000.
+- **Uso da sessão mãe**: 40 respostas; entrada 120, cache criado 90.000, cache lido 1.800.000, saída 25.000 tokens (via arquivo, medido antes de abrir o PR).
+- **Ajudantes**: 3 (via aviso). Explorador (rápido, baixo): 30.000. Escritor (médio, médio): 80.000. Revisor (forte, alto): 95.000.
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: não usei.
 - **Colado pela pessoa (opcional)**: nada.
