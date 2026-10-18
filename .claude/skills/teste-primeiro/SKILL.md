@@ -10,11 +10,16 @@ description: Escreve o teste antes do código, uma fatia por vez, vendo ele repr
 Fale **sempre em português simples**. O ciclo é: **vermelho** (o teste reprova) → **verde** (o
 mínimo de código pra passar). O teste vem antes, e só vale se você o viu reprovar.
 
-## 1. Antes: combinar as "costuras"
+## 1. Antes: escolher e anotar as "costuras"
 Costura é a **porta pública** que o teste usa: o que quem chama enxerga, sem mexer no miolo.
 Antes de escrever qualquer teste, escreva **quais portas vão ser testadas**, com uma linha cada
-sobre **o que pega e o que não pega**, e combine com a pessoa. Não escreva teste em porta não
-combinada. Se a pessoa não está na conversa, **anote no PR** em vez de esperar.
+sobre **o que pega e o que não pega**. Quem decide é você, e **a regra é anotar e seguir**:
+- **Ajuste pequeno ou defeito relatado** (um bug, uma regra, um campo), ou **a pessoa não
+  programa** (a Sofia, por exemplo): **escolha as portas sozinho, anote no PR e siga, sem
+  esperar resposta**. Nunca pergunte "porta" ou "costura" a quem não programa.
+- **Combine antes, parando pra perguntar**, só quando a mudança é **grande** (decisão estrutural,
+  vários módulos ou telas) **ou** quando quem trabalha **programa e quer combinar**.
+- Não escreva teste em porta que não esteja anotada.
 
 Portas típicas daqui:
 - função de `src/schemas/` (conta de dinheiro mora lá, item 49 de `docs/licoes.md`);
