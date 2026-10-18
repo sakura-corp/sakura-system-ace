@@ -8,7 +8,7 @@
 ## O que cada agente fez
 - Sessão mãe: leu a issue e o comentário da rodada de 18/10, escreveu a skill `coordenar`, a linha em `docs/jeito-de-trabalhar.md` e este relatório. A issue diz `Ajudantes: nenhum`, mas a tabela de etapas põe a escrita num ajudante médio; segui o cabeçalho, como na #568 (texto curto, plano pronto), e usei ajudantes só pra ensaiar e revisar.
 - Três ajudantes de ensaio (médio): cada um leu só o arquivo da skill e respondeu a casos de exemplo, sem criar nada: (1) a skill inteira com três casos (uma tarefa só; duas tarefas no mesmo arquivo; o limite acabando); (2) uma cópia sem a seção "Quando usar"; (3) uma cópia sem a seção e sem o "2 ou mais" da `description`.
-- Ajudante revisor (forte, esforço alto): revisão final do diff. Achou 5 ajustes, nenhum bloqueio; conferi os campos do `get_session` nesta própria sessão e fiz os 5: a conferência de segurança para quando nenhuma sessão está trabalhando; o `resetsAt` é um número em segundos (UTC) e vem com o `rateLimitType`; o `usage` não existe e o `context_usage` pode vir 0; arquivar as sessões só com o "sim" da Sofia; não abrir sessão no modo de plano.
+- Ajudante revisor (forte, esforço alto): revisão final do diff. Achou 5 ajustes, nenhum bloqueio; conferi os campos do `get_session` nesta própria sessão e fiz os 5: a conferência de segurança para quando nenhuma sessão está trabalhando; o `resetsAt` é um número em segundos (UTC) e vem com o `rateLimitType`; o `usage` não existe e o `context_usage` pode vir 0 (depois a coordenadora mandou tirar essa lição; a skill só diz pra não medir assim); arquivar as sessões só com o "sim" da Sofia; não abrir sessão no modo de plano.
 
 ## Modelos usados
 - Ler, planejar e escrever: forte (a própria sessão).
@@ -38,7 +38,7 @@
 | Limite acabando: guardar o andamento, `send_later`, horário pelo `rate_limit_info.resetsAt` (não chutar) | seção 6 |
 | A conferência de segurança cai depois da volta do limite | seção 6 |
 | Sessão que não chamou ajudante numa troca pequena e anotou: aceitar | seção 7, item 5 |
-| `get_session` mostra os tokens: medir o gasto | seção 6, "O gasto" (conferi nesta sessão: só existe o `context_usage`, e veio 0 com a sessão trabalhando; o `usage` não apareceu) |
+| ~~`get_session` mostra os tokens: medir o gasto~~ | **não virou regra**: a coordenadora corrigiu (a sessão da #570 testou: `used_tokens` 0 e nenhum `usage` numa sessão em andamento; conferi o mesmo nesta). A skill diz pra não medir assim e aponta "Como medir o Gasto" de `docs/relatorios/README.md` (#570) |
 | Avisos do GitHub dos PRs da própria coordenadora não precisam de resposta | seção 4, passo 7 |
 
 ## O que testei e VI reprovar

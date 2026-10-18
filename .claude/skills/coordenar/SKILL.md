@@ -122,9 +122,9 @@ Como esta sessão funciona:
      **Não chute**: em 18/10 a coordenadora chutou 4h30 e o certo era 1h10;
   3. marque a volta com `send_later` **para depois desse horário**. A conferência de segurança
      também cai **depois da volta do limite**, senão gasta o fim do limite à toa.
-- **O gasto**: o `get_session` pode mostrar o uso de tokens da sessão
-  (`external_metadata.context_usage`; confira se o número faz sentido, porque já veio 0 numa sessão
-  trabalhando). Anote no andamento o da coordenadora e o de cada sessão, pra medir quanto a rodada custou.
+- **O gasto**: **não** meça pelo `get_session` da própria sessão (numa sessão em andamento ele
+  mostra `used_tokens` 0 e nenhum `usage`). Como medir está em `docs/relatorios/README.md`, seção
+  "Como medir o Gasto" (#570). Valor em dinheiro nunca vai pra nada público.
 
 ## 7. Conferir um PR antes de dizer "pronto pra mesclar"
 1. **Os arquivos do PR contra a lista "Arquivos" da tarefa.** Arquivo fora da lista: pergunte à
