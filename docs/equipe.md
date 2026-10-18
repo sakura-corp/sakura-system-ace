@@ -137,6 +137,13 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
 
 ## O dia a dia
 
+**As três portas** (aprovadas pela Sofia em 18/10): tudo entra por uma delas, e por nenhuma outra.
+1. **Ideia solta** (um vídeo, um print, um "e se…"): digite `/ideia`. Vira uma issue curta com a
+   etiqueta `ideia`, lida na revisão do mês. Ideia sobre empresa, dinheiro, preço, sócios, dado
+   pessoal ou senha não entra aqui: leve direto pra Sofia. Print não sobe, só a descrição em texto.
+2. **Planejar**: só a Sofia, com o Claude, pela skill `nova-tarefa`.
+3. **Fazer**: o botão "Começar com o Claude" do painel (o chefe da tarefa, depois o PR e o relatório).
+
 - **Uma branch e um PR por tarefa**, com `Closes #N` na descrição. Commits pequenos, com mensagem
   em português dizendo o que mudou.
 - **Antes do PR, o Claude roda as conferências** do programa das lojas (as mesmas que o GitHub

@@ -113,8 +113,12 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
 | S8 | `/comparar-visual` | mudança de aparência em 2 ou 3 versões numa página, pra ela escolher |
 | S9 | `/loja-nova` | instalação + o roteiro fiscal de loja nova |
 | S10 | `/faxina-memoria` | a faxina da memória |
+| S11 | `/ideia` | guarda uma ideia solta numa issue curta com a etiqueta `ideia` (só guarda; barra empresa/preço, sócios, dado pessoal e credencial; print só em texto) — **18/10**, #568 |
 
 **S3, S4 e S5 rodam sempre no modelo mais forte.**
+
+**As três portas** (18/10, #568): **ideia solta** → `/ideia`; **planejar** (só a Sofia) →
+`nova-tarefa`; **fazer** (todo mundo) → o botão "Começar com o Claude" do painel. Nenhuma outra.
 
 Como as skills funcionam:
 - **Não precisa decorar**: o Claude reconhece pelo pedido, e digitar `/` mostra a lista.
