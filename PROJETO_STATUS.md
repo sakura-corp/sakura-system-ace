@@ -144,9 +144,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 18/10/2026, noite: a leva 5 (guia de instalação e acabamentos do painel) na `main`
-- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado). Nenhum PR aberto.
-- **Entrou**: o guia de loja nova sem a Parte 4, com a `redefinir-senha-operador` obrigatória, o `BACKUP_EMPRESAS` nos dois cofres e a impressora (#592 e #595, PR #602); os acabamentos dos andares do painel, escolhidos por ela por imagem (1A, 2A, 3A), com a #560 e a #561 (#601, PR #603). Mesclados pela coordenadora, com autorização dela.
-- **Novas, sem sessão**: a #604 (margem segura do modo TV e da tela de entrada) e a #605 (o nome da ferramenta de mensagem e o `/goal` conferido pelo registro, nas skills `ritual-de-tarefa` e `coordenar`). São curtas: uma sessão direto cada, sem coordenadora.
-- **Próximas sessões (pedido dela, 18/10)**: primeiro a #608 (um second brain no Obsidian pra cada pessoa da equipe; começar pela `entrevista`), depois a #609 (investigar o Ruflo e ver o que aplicar). Em paralelo, numa sessão que fica aberta: os Termos (Lázaro e Tiago assinados; falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e depois o memorando.
-- **Depende dela**: a #606 (conferir no painel público e, na próxima loja nova, o guia); o C1 (Team) na segunda; aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+### 18/10/2026, noite: a #608 (second brain) decidida e reescrita
+- **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado).
+- **Entrou**: a entrevista da #608. Cada pessoa terá um `segundo-cerebro` privado na própria conta do GitHub (Obsidian grátis, só no PC), que diz ao Claude dela o jeito de trabalhar. O da Sofia vem primeiro e vira o tutorial. A #608 foi reescrita em 3 etapas. O Claudian serviu só de referência.
+- **Próximas sessões**: a etapa 1 da #608 (o caderno dela, e tirar do público o que é sobre ela), depois as etapas 2 e 3; depois a #609 (o Ruflo). Curtas, uma sessão direto cada: a #604 e a #605.
+- **Em paralelo**: os Termos (falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e o memorando.
+- **Depende dela**: a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
