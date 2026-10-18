@@ -25,7 +25,7 @@ As imagens **não** ficam no repositório (público); só esta descrição.
 
 ## Como isso vira o nosso (decisões da Sofia, 16/10/2026, e o que ainda é pergunta)
 
-- **Equipes** = as frentes do trabalho dela (ex.: Programa das lojas, Painel, Bibi, Fiscal e contabilidade, Site, Equipe). **Agentes** =
+- **Equipes** = as frentes do trabalho dela (ex.: Programa das lojas, Painel, Próximos projetos, Fiscal e contabilidade, Site, Equipe). **Agentes** =
   sessões do Claude com um papel e skills que **ela define**. **O Cérebro** = a memória compartilhada (hoje: `PROJETO_STATUS.md` e `docs/`).
 - **Meta**: ela cria os agentes, escolhe as skills de cada um e os agentes trabalham de verdade, gastando os tokens das assinaturas da equipe
   (uma "fábrica virtual"). **Isto é a meta, não a primeira entrega.**
