@@ -11,17 +11,17 @@ Passo a passo pra colocar o sistema rodando pra um cliente novo, do zero.
   loja nova no cadastro de quem vai ter acesso a ela.
 
 > **Regra de custo (decidida em 28/08/2026):** todos os custos ficam **na sua conta** — Supabase,
-> Anthropic, Focus NFe. O dono da loja **não cria conta em lugar nenhum** e nunca vê nenhum desses
-> serviços; ele só usa o Sakura System e te paga a mensalidade. Isso é o que justifica a
+> Focus NFe (e a Anthropic, só se o "Importar por foto" for religado). O dono da loja **não cria
+> conta em lugar nenhum** e nunca vê nenhum desses serviços; ele só usa o Sakura System e te paga a mensalidade. Isso é o que justifica a
 > mensalidade e o que te deixa dar suporte de verdade. Em troca, o dado dos clientes dele fica sob
 > sua responsabilidade — por isso o backup (Parte 1, passo 2) não é opcional.
 
-Tempo estimado: **40 a 60 minutos**, sendo que a parte de nota fiscal (Parte 5) não entra nessa
+Tempo estimado: **40 a 60 minutos**, sendo que a parte de nota fiscal (Parte 4) não entra nessa
 conta — ela leva dias ou semanas e depende de terceiros.
 
 ---
 
-## Parte 1 — Banco de dados (~15 min)
+## Parte 1 — Banco de dados (~20 min)
 
 ### 1. Criar o projeto no Supabase
 
@@ -110,6 +110,21 @@ Project Settings → **API**:
 São esses dois valores que você vai digitar no computador da loja. **Não** use nenhuma chave
 marcada como `secret` / `service_role`.
 
+### 7. Publicar a função de redefinir senha (obrigatório)
+
+Sem ela, quando um funcionário esquecer a senha, não tem como redefinir.
+
+**Edge Functions** → **Deploy a new function** → **Via Editor** → digite o nome
+`redefinir-senha-operador` **antes** de clicar em Deploy (renomear depois não muda o endereço real,
+e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
+`supabase/functions/redefinir-senha-operador/index.ts` → **Deploy function**.
+
+**Não precisa de secret nenhum.** O teste é na Parte 3, passo 3, depois de criar os operadores.
+
+> **Só essa e a `focus-nfe` (Parte 4).** A `ler-notas-fiscais` **não** vai nas lojas novas
+> (decisão de 27/09): o "Importar por foto" está desligado no programa desde 25/09
+> (`docs/operacao.md`, "Publicar uma Edge Function").
+
 ---
 
 ## Parte 2 — Deixar o app rodando na loja (~10 min)
@@ -130,6 +145,17 @@ marcada como `secret` / `service_role`.
 5. **Não mexa em "Atualizações deste computador"** (Configurações). Computador novo já nasce no
    canal **normal**, que é o certo pra loja de cliente: ele só recebe versão depois que ela for
    liberada. O canal de teste é só pro seu computador e o da Pneus Amigão.
+6. **Impressora**, em cada computador que imprime. O programa imprime pela janela comum de
+   impressão do Windows: sem isso, o primeiro documento impresso (a garantia, e depois a nota) não
+   sai, e só se descobre na hora do cliente.
+   - **a)** Instale o driver da impressora no Windows e deixe ela como **impressora padrão**
+     (no Windows: Configurações → **Impressoras e scanners**).
+   - **b)** No programa, imprima um documento de teste. Loja recém-instalada não tem OS ainda,
+     então este item é feito **na primeira OS do treino** (depois da Parte 3), antes da primeira
+     venda de verdade: na OS, **Encerrar OS** (a tela de faturar que abre sozinha pode ser
+     cancelada) → na lista de OS, botão **Fechamento** → **Ver garantia** → **Imprimir**. A aba
+     Fechamento só aparece em OS concluída ou faturada.
+   - **c)** Confira que saiu **inteiro**, sem cortar as bordas.
 
 ---
 
@@ -143,6 +169,11 @@ Tudo dentro do app, em **Configurações**:
 3. **Operadores** → crie um usuário pra cada funcionário, marcando só os módulos que cada um
    precisa. (Todo operador criado aqui vira automaticamente um funcionário selecionável como
    técnico/vendedor.)
+   **Teste da função do passo 7 da Parte 1**, num operador recém-criado: menu de três pontinhos
+   da linha dele → **Redefinir senha** → confirme → anote a senha da janela "Senha temporária
+   gerada" → saia → entre com o operador e essa senha → deve aparecer **"Crie uma senha nova"**.
+   Crie a senha nova junto com o funcionário. Se der erro, a função não foi publicada ou saiu com
+   outro nome.
 4. **Categorias de produto / serviço / caixa** → já vêm com as padrão; ajuste se a loja usar
    nomes diferentes.
 5. **Juros de parcelamento** → se a loja parcela no cartão.
@@ -156,28 +187,7 @@ O que a loja precisa cadastrar antes de abrir a primeira OS: **peças** (com pre
 
 ---
 
-## Parte 4 — "Importar por foto" (opcional, ~10 min)
-
-Só se a loja for usar a leitura de nota de fornecedor por foto/PDF. Como o custo é seu, a chave da
-Anthropic é sua.
-
-1. `console.anthropic.com` → Settings → API Keys → **Create Key**.
-   **Crie uma chave separada por loja** (ex: "Sakura – Auto Center do Zé"). Todas na sua conta,
-   mas assim você desliga uma sem derrubar as outras — e enxerga quanto cada loja consome.
-2. No projeto Supabase da loja: **Edge Functions** → **Deploy a new function** → **Via Editor** →
-   digite o nome `ler-notas-fiscais` **antes** de clicar em Deploy (renomear depois não muda o
-   endereço real, e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
-   `supabase/functions/ler-notas-fiscais/index.ts` → **Deploy function**.
-3. Na função criada → aba **Secrets** → nome `ANTHROPIC_API_KEY`, valor a chave do passo 1.
-4. Repita o passo 2 para `redefinir-senha-operador` (conteúdo de
-   `supabase/functions/redefinir-senha-operador/index.ts`). Essa **não precisa de secret** — é o
-   que permite você redefinir a senha de um funcionário que esqueceu.
-
-Testar: Estoque → Produtos → "Importar por foto/PDF".
-
----
-
-## Parte 5 — Nota fiscal (etapa separada, dias a semanas)
+## Parte 4 — Nota fiscal (etapa separada, dias a semanas)
 
 **Não tente fazer isso junto com a instalação.** Trate como uma segunda etapa de ativação: a loja
 começa usando cadastro, OS, estoque e caixa no primeiro dia, e a emissão entra depois — foi
@@ -206,13 +216,15 @@ Quando essa etapa chegar, a parte do **sistema** são dois passos, e levam 5 min
 ## Depois de entregue
 
 - **Backup**: já é automático (Parte 1, passo 2). Vale conferir uma vez que está aparecendo.
-- **Acrescentar a empresa no secret `BACKUP_EMPRESAS`** do GitHub (um bloco a mais na lista —
-  modelo em `docs/operacao.md`, "Backup do banco"). É **um bloco por empresa**, não por
-  loja. Isso faz duas coisas de uma vez: a cópia de segurança própria de todo dia (a do Supabase
+- **Acrescentar a empresa no `BACKUP_EMPRESAS`** do GitHub, **nos dois cofres**: `backup` e
+  `lojas` (Settings → Environments; um bloco a mais na lista — modelo em `docs/operacao.md`,
+  "Backup do banco", "Os secrets: nos cofres"). É **um bloco por empresa**, não por loja.
+  Isso faz duas coisas de uma vez: a cópia de segurança própria de todo dia (a do Supabase
   guarda só 7 dias) e o botão **"Atualizar o banco de todas as empresas"**, que passa a levar as
   migrations novas a este banco junto com os outros. Sem o bloco, a empresa fica de fora dos dois
-  — e ninguém avisa. **Cuidado**: a caixa de editar secret aparece sempre vazia; monte a lista
-  inteira no Bloco de Notas e cole pronta.
+  — e ninguém avisa. O backup lê o cofre `backup` e o botão lê o `lojas`: esquecer um dos dois
+  deixa a empresa fora de uma das coisas. **Cuidado**: a caixa de editar secret aparece sempre
+  vazia; monte a lista inteira no Bloco de Notas e cole pronta, igual nos dois.
 - **Atualização**: uma versão nova chega primeiro só nos computadores marcados como **Teste**
   (Configurações → "Atualizações deste computador"), e nas outras lojas só depois que você rodar o
   "Liberar versão para todas as lojas" (`docs/operacao.md`). Computador de loja nova
@@ -228,7 +240,8 @@ Quando essa etapa chegar, a parte do **sistema** são dois passos, e levam 5 min
 | "Email logins are disabled" no login | "Enable email provider" desligado (passo 4) |
 | Login aceito mas não entra | "Confirm email" ligado (passo 4) |
 | Tela de conexão pedindo os dados de novo | Normal em computador novo — é uma vez por PC |
-| "Importar por foto" com erro de crédito | Crédito da Anthropic acabou — recarregue em Billing |
-| Emitir nota diz "falta publicar o porteiro" | A Edge Function `focus-nfe` não foi publicada (Parte 5) |
+| "Redefinir senha" dá erro | A Edge Function `redefinir-senha-operador` não foi publicada, ou saiu com outro nome (Parte 1, passo 7) |
+| A impressão não sai, ou sai cortada | Impressora não instalada ou não marcada como padrão no Windows (Parte 2, passo 6) |
+| Emitir nota diz "falta publicar o porteiro" | A Edge Function `focus-nfe` não foi publicada (Parte 4) |
 | Botão que "não faz nada", sem erro | Quase sempre é RLS sem policy pra aquela ação (`docs/licoes.md`, item 15) |
 | Faixa "o banco desta empresa ainda não foi atualizado" | Uma migration nova não chegou neste banco — rode o "Atualizar o banco de todas as empresas" (`docs/operacao.md`). Se a empresa não aparece na tabela do resultado, falta o bloco dela no `BACKUP_EMPRESAS` |

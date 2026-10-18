@@ -32,11 +32,6 @@ senha. Cada coisa tem o seu lugar:
 - **O Claude nunca roda SQL nem mexe em Supabase, secret, cofre ou workflow.** Quem clica é a
   Sofia; o Claude guia e confere o que ela mostra (print se confere com atenção).
 - Achou erro num documento: **não corrija**; abra issue no formato da #425.
-- Erro conhecido, a **#592**: a Parte 4 do guia manda publicar a `ler-notas-fiscais`, que pela
-  decisão de 27/09 **não vai** nas lojas novas, e esconde ali a `redefinir-senha-operador`, que é
-  **obrigatória**. Até a #592 ser resolvida: publicar a `redefinir-senha-operador`; a
-  `ler-notas-fiscais`, não. A #592 também registra que o guia fala de "o secret"
-  `BACKUP_EMPRESAS`, e o `docs/operacao.md` manda trocar **nos dois cofres**: vale o operacao.
 - **Lembretes**: ao fechar cada fase, diga a data da próxima e sugira que ela ponha um lembrete no
   celular. As conversas contam do 1º pagamento; o marco 1, da instalação; o marco 2, do dia em que
   a parte fiscal fica pronta (Fase 4). A skill não cria tarefa agendada sozinha.
@@ -51,7 +46,7 @@ os dias. Mostre a lista das fases abaixo, marcando onde está.
 - Quando: antes de instalar qualquer coisa.
 - O que fazer: ter o contrato assinado e escolher o "campeão" da loja (o dono + 1 funcionário, quem
   aprende primeiro e ensina os outros). **Já pedir agora** o que demora e depende de terceiros: o
-  certificado digital e o contato da contabilidade, porque a Parte 5 do guia avisa que o fiscal
+  certificado digital e o contato da contabilidade, porque a Parte 4 do guia avisa que o fiscal
   leva "dias a semanas", e o marco 2 (a primeira nota) só começa a contar quando ele fica pronto.
 - Documento que manda: `docs/pendencias-e-futuro.md`, item "10. ⚠️ Contrato e papéis de LGPD,
   antes da primeira venda pra terceiro" (que manda ler o `ANTES-DA-PRIMEIRA-VENDA.md`, na raiz);
@@ -70,17 +65,15 @@ os dias. Mostre a lista das fases abaixo, marcando onde está.
 - Documento que manda: `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 1 — Banco de dados",
   "Parte 2 — Deixar o app rodando na loja", "Parte 3 — Configurar o sistema pra loja" e "Depois de
   entregue"; e `docs/operacao.md`, "Instalar uma empresa nova". Se algo falhar: "Quando algo der
-  errado". Lembrar do aviso da #592 (seção 2).
+  errado".
 - Atenção: em "Depois de entregue" está o bloco do `BACKUP_EMPRESAS`, que é a Sofia que cola,
   **nos dois cofres**, `backup` e `lojas` (`docs/operacao.md`, "Os secrets: nos cofres (Settings →
   Environments)"). Sem ele a empresa fica fora do backup e do botão de atualizar o banco, e
   ninguém avisa.
-- Edge Function: publicar a `redefinir-senha-operador` (aviso da #592; o jeito de publicar está em
-  `docs/operacao.md`, "Publicar uma Edge Function (a pegadinha do nome)").
-- Impressora (o guia ainda não tem esse passo: vai ganhar pela **#595**). O programa imprime pela
-  janela comum de impressão do Windows. Em cada computador que imprime: (a) instalar o driver no
-  Windows e deixar a impressora como **padrão**; (b) imprimir uma nota ou recibo de teste pelo
-  programa; (c) conferir que saiu inteiro, sem cortar as bordas.
+- Edge Function: a `redefinir-senha-operador` é obrigatória (guia, Parte 1, passo 7, com o teste
+  na Parte 3, passo 3). A `ler-notas-fiscais` **não** vai.
+- Impressora: guia, Parte 2, passo 6 (os itens a, b e c), em cada computador que imprime. O item b
+  é feito na primeira OS do treino, então o treino entra nesta fase.
 - Pronto quando: todo computador da loja entra com o login; operadores criados (dono e campeão);
   cadastros básicos conferidos (Parte 3); impressora padrão e o teste saiu inteiro; a
   `redefinir-senha-operador` publicada (o botão "Redefinir senha" de um operador, em Configurações, funciona); empresa no
@@ -93,7 +86,7 @@ os dias. Mostre a lista das fases abaixo, marcando onde está.
 - **Marco 2, a primeira nota**: em até **7 dias contados de quando a parte fiscal da loja fica
   pronta** (certificado e autorizações da SEFAZ e da prefeitura), não do contrato.
   - Documento que manda: `docs/pendencias-e-futuro.md`, "Playbook de habilitação fiscal por loja
-    nova" (partes B e C); e `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 5 — Nota fiscal"
+    nova" (partes B e C); e `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 4 — Nota fiscal"
     (a função `focus-nfe` e o token, que a Sofia cola na tela do programa e **nunca na conversa**).
   - A parte C é a que trava: os passos dela dependem de terceiros. Siga um por vez, pelo playbook.
   - Pronto quando: uma nota **autorizada de verdade**.
