@@ -32,7 +32,7 @@ export interface ModeloWhatsapp {
  *
  * O tom é o de quem manda mensagem no balcão: curto, sem "prezado cliente".
  * É a mesma regra que vale pra qualquer texto deste projeto que sai pro
- * mundo (ver PROJETO_STATUS.md, seção 1).
+ * mundo: curto, informal e completo.
  */
 export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
   {

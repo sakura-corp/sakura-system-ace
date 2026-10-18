@@ -39,7 +39,7 @@ Pergunte de uma vez o que só ela decide, pra não parar no meio:
 
 ## 4. O roteiro (sempre nesta ordem)
 1. **Confirmar o "sim", item por item.** Liste o que ela pediu, um item por linha, e pergunte qual
-   é "sim" agora. "Estou pensando em…" é plano, não ordem (seção 1 do índice). Só segue o que ela
+   é "sim" agora. "Estou pensando em…" é plano, não ordem (caderno da Sofia). Só segue o que ela
    disse "sim".
 2. **Conferir na `main` os arquivos de cada item e montar as levas.** Para cada item, abra a `main`
    e liste os arquivos que ele vai mexer de verdade (não só os que o plano diz). **Dentro de uma
@@ -77,7 +77,7 @@ Pergunte de uma vez o que só ela decide, pra não parar no meio:
    `main` atualizada).
 7. **Marcar o andamento onde o plano mora**: a tabela de levas do plano (cada tarefa: número,
    sessão, branch, PR, estado). Se o plano mora no repositório privado, só com a autorização da
-   Sofia nesta sessão (seção 1 do índice, regra 9), e só nesta sessão coordenadora, nunca nas das
+   Sofia nesta sessão, com todas as letras, e só nesta sessão coordenadora, nunca nas das
    tarefas. Avisos do GitHub dos **PRs da própria coordenadora** (aberto, mesclado) chegam como
    notificação e **não precisam de resposta à Sofia**.
 

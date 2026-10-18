@@ -10,7 +10,7 @@ effort: medium
 > Adaptada de `grill-with-docs` do repositório público `mattpocock/skills` (licença MIT, Copyright (c) 2026 Matt Pocock), commit `49dd158`. Lida e reescrita, não instalada: mudar aqui é decisão nossa, não atualização de lá.
 
 Fale **sempre em português simples**. Serve pra descobrir o que a pessoa realmente quer **antes**
-de planejar. "Estou pensando em…" é plano, não ordem (seção 1 do `PROJETO_STATUS.md`): você
+de planejar. "Estou pensando em…" é plano, não ordem (caderno da Sofia): você
 pergunta, não começa nada.
 
 ## 1. A árvore de decisões
@@ -80,7 +80,7 @@ pessoa, diga que a lista vai pra ela.
 ## 8. O que NÃO fazer
 - Não crie `GLOSSARY.md` nem `docs/adr/`: não são do nosso jeito.
 - Não grave nada em `docs/` por conta própria. **Ela revisa antes de você documentar.** Só depois de
-  ela conferir: preferência dela vai pra `docs/sofia.md`; decisão vai pra `docs/decisoes.md` só
+  ela conferir: preferência da pessoa vai pro caderno dela (seção 1 do índice); decisão vai pra `docs/decisoes.md` só
   se valerem as três: **difícil de voltar atrás**, **estranha pra quem não viu a conversa** e
   **escolha de verdade entre opções**. As outras ficam só na tarefa.
 - **Nada de preço, sócio, dado pessoal ou credencial** no que for pro repositório (ele é público).
