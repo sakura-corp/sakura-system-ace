@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, meio-dia: as três credenciais fiscais trocadas (#505)
+- **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação (PR #628).
+- **Feito**: trocados o token do Giap e o CSC da NFC-e (o `000001` revogado; o `000002` na Focus) e a senha do portal da prefeitura (a que vazou ainda abria o portal). As novas no Bitwarden dela; o caminho de cada troca em `docs/pendencias-e-futuro.md`, parte fiscal.
+- **Falta da #505**: a contabilidade confirmar que entra com a senha nova; a primeira NFC-e e a primeira NFS-e autorizadas com as novas. Ela avisa; aí fechar a tarefa.
+- **Equipe**: o Tiago diz que a #620 está quase pronta; o sinal é o PR do relatório pedindo a revisão dela (revisar numa sessão própria). O resto como em `docs/historico.md` (19/10, #517).
+- **Próxima sessão**: a #506 (a chave secreta do Supabase). Depois: a #609 (o Ruflo), a #604 e a #605.
+- **Depende dela**: os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); a #625; a #606. A lista inteira em `label:sofia`.
+
 ### 19/10/2026: o banco de teste da equipe criado (#517)
 - **Código**: nada publicado (a loja e o banco como em 18/10).
 - **Feito**: o `ssace-teste` (passos 1 a 7 de `docs/supabase-de-teste.md`), com esquema 64, a loja de exemplo e os logins (o dela, admin, e os três da equipe). Decidido: **os três no programa das lojas**, com o mesmo acesso (seção 0, #624); o Gustavo recebe o acesso antes de o Termo voltar.
