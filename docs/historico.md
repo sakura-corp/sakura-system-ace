@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, fim da noite: a ordem até o fim do mês, o orçamento e o financeiro do painel
+- **Código**: nada mudou (só tarefas e memória).
+- **Decidido** (entrevista): primeiro o painel (a leva 2 + o financeiro), depois o programa das lojas, começando pelo orçamento pro tio dela. A regra "o programa espera a leva 1 fechar" caiu: a `leva-2` foi posta (11 tarefas, #644 a #650, #547 a #549 e #654).
+- **Tarefas novas**: financeiro do painel (#654, no Cloudflare D1, decisão #652; equipe vê os totais, só ela o detalhe); orçamento como etapa da OS (#379 reescrita); aviso de peça parecida (#653); peça avulsa no orçamento (#655); juntar peças repetidas (#656). Essas quatro viram a leva 3.
+- **Equipe**: Tiago começa pela #644; Gustavo e Lázaro fazem o caderno (#618, #619) pelo link `/leva/1` do painel (o painel agora abre na leva 2); o Lázaro ainda termina o primeiro dia.
+- **Próxima sessão**: acompanhar a leva 2 e a leva 1 até fecharem; depois pôr a `leva-3` (#653, #379, #655, #656).
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+
 ### 19/10/2026, noite: a leva 2 do painel montada e a #511 do Tiago na main
 - **Código**: nada publicado pras lojas. No painel (publica sozinho da `main`): a #604 (área segura dos lados, laterais escuras no modo TV).
 - **Feito**: #636 do Tiago (#511) mesclado, com a prova do Windows na descrição; #605 e #604 mescladas; a **leva 2 do painel** montada depois de uma entrevista sobre Fases e Relatório: #644 a #650, mais #547, #548 e #549 (`docs/painel.md`, Andamento). Etiqueta `defeito` criada. As sessões terminadas de hoje foram arquivadas.
