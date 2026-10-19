@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, tarde: o Claude Team assinado e a equipe convidada
+### 19/10/2026: o banco de teste da equipe criado (#517)
 - **Código**: nada publicado (a loja e o banco como em 18/10).
-- **Feito**: o C1 (o Team assinado e os três convidados). O Tiago está pronto (organização, duas etapas, escrita no repositório, Team) e começou a #620.
-- **Conferido**: uma sessão nova pela conta do Team abriu o caderno sozinha (ambiente na nuvem "sakura corporation", rede Limitado).
-- **Falta da equipe**: o Lázaro e o Gustavo aceitarem o Team e ligarem as duas etapas; o Termo do Gustavo; o e-mail da Sakura no GitHub dos três. Detalhe no privado (`EQUIPE.md`, "A RECEBER").
-- **Próximas sessões**, já pela conta do Team: a #609 (o Ruflo). Curtas: a #604 e a #605.
-- **Depende dela**: a #606; aprovar as skills em rascunho; não cancelar o plano pessoal até o Team estar firme. A lista inteira em `label:sofia`.
+- **Feito**: o `ssace-teste` (passos 1 a 7 de `docs/supabase-de-teste.md`), com esquema 64, a loja de exemplo e os logins (o dela, admin, e os três da equipe). Decidido: **os três no programa das lojas**, com o mesmo acesso (seção 0, #624); o Gustavo recebe o acesso antes de o Termo voltar.
+- **Também**: o "Resumo de segunda" passou pra conta do Team (1ª vez em 26/10); o da pessoal está pausado (#625).
+- **Falta da equipe**: o caderno de cada um (#618, #619, #620; o Tiago pega a dele no painel); depois, entrar no programa contra o banco de teste. O resto no privado (`EQUIPE.md`, "A RECEBER").
+- **Próxima sessão**: a #505 (trocar as credenciais fiscais expostas). Depois: a #506, a #609 (o Ruflo), a #604 e a #605.
+- **Depende dela**: mandar os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); confirmar que o banco de teste fica fora do botão "Atualizar o banco"; a #625; a #606. A lista inteira em `label:sofia`.
