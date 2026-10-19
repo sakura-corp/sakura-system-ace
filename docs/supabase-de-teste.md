@@ -11,7 +11,7 @@
 > trava (param se o banco tiver token da Focus NFe, nota, ou OS de outra loja), mas a trava é a
 > segunda proteção, não a primeira.
 
-**Pra que serve**: os dois da equipe que vão mexer no programa das lojas (tarefa #474, etapa 4)
+**Pra que serve**: os três da equipe, que mexem no programa das lojas (tarefa #474, etapa 4)
 precisam de um banco pra rodar o programa com `npm run dev`, cheio de dado com cara de loja, onde
 errar não custa nada. É este. Cada um tem um login próprio, só com os módulos do dia a dia.
 
@@ -22,6 +22,12 @@ Supabase. **Os scripts precisam estar na `main`** antes (os links abaixo apontam
 rodam, rodar duas vezes não duplica nada, as travas param com a mensagem certa, o login da equipe só
 enxerga a loja de exemplo, e o "zerar" volta tudo ao começo. **O que não foi provado**: os cliques no
 painel do Supabase (as telas podem ter mudado de nome) e o programa aberto contra este banco.
+
+**Situação (19/10/2026)**: os passos 1 a 7 foram feitos pela Sofia, e as telas já estão descritas
+como eram nesse dia (a #517). O banco existe, com o esquema na versão 64, a loja de exemplo e quatro
+logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). Os Sends
+ficaram prontos, mas ela só manda os links quando o caderno (`segundo-cerebro`) de cada um estiver
+pronto; eles vencem em 26/10, e depois disso é só criar um Send novo com o mesmo texto.
 
 ---
 
@@ -46,16 +52,22 @@ Clique em **Create organization**. Deve aparecer a organização nova, vazia.
 
 ## Passo 2 — O projeto
 
-Dentro da `Sakura Teste` → **New project**:
+Dentro da `Sakura Teste` → **New project**. Se aparecer "You need additional permissions to create
+a project" logo depois de criar a organização, é o painel que ainda não percebeu que você é a dona:
+**Cancel**, **F5**, e **New project** de novo.
 
 | Campo | O que colocar |
 |---|---|
 | Organization | `Sakura Teste` (**confira**: não pode ser a organização das lojas) |
 | Project name | `ssace-teste` |
 | Database Password | clique em **Generate a password** → copie → salve no Bitwarden, item `Supabase ssace-teste – senha do banco` |
-| Region | South America (São Paulo) |
+| GitHub (optional) | deixar em branco |
+| Region | clique em **Need a specific region?** → South America (São Paulo) |
+| Enable Data API | **ligado** (o programa conversa com o banco por aqui) |
+| Automatically expose new tables | **ligado**, mesmo com o Supabase recomendando desligar: o `instalacao-completa.sql` conta com isso pra liberar as tabelas pro programa (só tem `grant` explícito em uma). Quem protege os dados são as regras de RLS que o próprio script cria |
+| Enable automatic RLS | **desligado** (o script cuida disso, tabela por tabela, igual nas lojas) |
 
-Clique em **Create new project** e espere uns 2 minutos, até sumir o "Setting up project".
+Não mexer em **Advanced configuration**. Clique em **Create new project** e espere uns 2 minutos, até sumir o "Setting up project".
 
 **Não fazer**:
 - **Não ligar cobrança** nem "Upgrade to Pro" neste projeto ou nesta organização.
@@ -75,18 +87,26 @@ semana parada, o programa para de conectar; aí é entrar no projeto e clicar em
 2. Selecione tudo (Ctrl+A), copie.
 3. No `ssace-teste`: **SQL Editor** → **New query** → cole → **Run**.
 
-Deve terminar sem nenhuma linha `ERROR`. Avisos `NOTICE: ... does not exist, skipping` são normais.
+Antes de rodar, o Supabase mostra "Potential issues detected" (operações destrutivas, e a tabela
+`travas_resultado` sem RLS): clique em **Run without RLS**. A `travas_resultado` é uma tabela
+temporária, que só mostra o resultado das travas e some no fim; o botão verde mexeria no script.
+
+Deve terminar sem nenhuma linha `ERROR`, com uma tabelinha de travas, todas **"criada"**. Pra
+confirmar que rodou até o fim: **New query** → `select max(versao) from schema_versao;` → tem que
+dar o número da última linha do script (64 em 19/10/2026).
 
 ## Passo 4 — Ajustar o login (2 cliques)
 
-**Authentication** → **Sign In / Providers** → **Email**:
+**Authentication** → **Sign In / Providers**. Em 19/10/2026 as duas opções ficavam em lugares
+diferentes da mesma página:
 
-| Opção | Como deixar |
-|---|---|
-| Enable email provider | **ligado** |
-| Confirm email | **desligado** (os e-mails são inventados, `@sakura.local`; ninguém confirmaria) |
+| Opção | Onde | Como deixar |
+|---|---|---|
+| Email | lista **Auth Providers**, embaixo | **Enabled** (já vem assim) |
+| Confirm email | seção **User Signups**, em cima | **desligado** (os e-mails são inventados, `@sakura.local`; ninguém confirmaria) |
+| Allow new users to sign up | seção **User Signups** | **ligado** (a tela de Operadores do programa cria login por aqui) |
 
-**Save**.
+**Save changes**: aparece "Successfully updated settings".
 
 ## Passo 5 — Os dados de exemplo
 
@@ -99,10 +119,12 @@ Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 pe
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
 
-## Passo 6 — Os três logins (um de cada vez)
+## Passo 6 — Os logins (um de cada vez)
 
-São três: **o seu** (admin, pra mexer em Configurações quando uma tarefa pedir) e **um pra cada
-pessoa da equipe** que mexe no programa. A senha nasce no Bitwarden e não passa por mais lugar
+São quatro: **o seu** (admin, pra mexer em Configurações quando uma tarefa pedir) e **um pra cada
+pessoa da equipe** (Gustavo, Lázaro e Tiago, todos sem admin). Dá pra criar as senhas e os usuários
+de todos primeiro e depois rodar o `ligar-login.sql` uma vez por pessoa, na mesma aba, trocando só
+as três linhas. A senha nasce no Bitwarden e não passa por mais lugar
 nenhum.
 
 Pra **cada** pessoa, nesta ordem:
@@ -158,7 +180,10 @@ fictício, então o risco é só a pessoa bagunçar o exemplo, e o "zerar" resol
 
 ## Passo 7 — Entregar a chave pra cada pessoa
 
-**Project Settings** → **API** (ou **API Keys**). Você vai precisar de duas coisas:
+**Project Settings** (a engrenagem, embaixo no menu da esquerda) → **API Keys**. Use a aba
+**Legacy anon, service_role API keys** e a chave **anon** (`eyJ…`): é a mesma que as lojas usam.
+A **publishable** (`sb_publishable_…`) também funciona com o programa, mas não é a das lojas.
+Você vai precisar de duas coisas:
 
 | O quê | Onde está | Vai pra equipe? |
 |---|---|---|
@@ -166,7 +191,10 @@ fictício, então o risco é só a pessoa bagunçar o exemplo, e o "zerar" resol
 | anon / publishable key | a chave marcada **anon** ou **publishable** | sim |
 | service_role / secret | a chave marcada **secret** | **NUNCA**. Nem você precisa dela pra isto |
 
-No Bitwarden: **Send** → **New Send** → **Text**, um por pessoa:
+No Bitwarden: **Send** → **New Send** → **Text**, um por pessoa. O Send **não** está no botão
+**Adicionar** do cofre (esse cria item guardado): na extensão é o ícone **Send** na barra de baixo; no
+site, **Send** no menu da esquerda. Em português: **Send nome**, **Texto para compartilhar**,
+**Ocultar texto por padrão**, **Número máximo de acessos**.
 
 | Campo | O que colocar |
 |---|---|

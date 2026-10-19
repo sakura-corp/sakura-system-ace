@@ -3,9 +3,9 @@
 Pra quem entra na equipe da Sakura, em **Windows ou Mac**. As regras valem por cima de tudo e
 estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalhar com elas.
 
-- **Quem faz o quê**: o Gustavo trabalha **só no painel** (`painel/`, com o manual dele em
-  `docs/painel.md`); os outros dois, **no programa das lojas** (o resto do repositório), sempre
-  contra o **Supabase de teste**, nunca o banco de uma loja.
+- **Quem faz o quê**: os três (Gustavo, Lázaro e Tiago) trabalham **no programa das lojas**, com
+  o mesmo acesso, sempre contra o **Supabase de teste** (`docs/supabase-de-teste.md`), nunca o
+  banco de uma loja (decidido pela Sofia em 19/10/2026; antes o Gustavo era só o painel).
 - **Antes de ter acesso ao código**, cada um assina o Termo de Colaboração (detalhe no privado).
 - **Programar e ajustar código é com o Claude.** O resto (instalar, rodar comando, testar, abrir
   PR) a pessoa faz, guiada pelo Claude **um passo por vez**.

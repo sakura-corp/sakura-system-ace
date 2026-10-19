@@ -61,8 +61,8 @@ privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A 
 3. **papéis**: o Termo de Colaboração, **o mesmo pra todos**, assinado **antes de ter acesso ao
    código** (o Gustavo assina junto); depois o memorando. Só então os dois novos são convidados;
 4. **o programa pronto pra equipe** (a parte do Claude ficou pronta em 16/10: `docs/equipe.md`, `docs/rascunhos/`,
-   `docs/supabase-de-teste.md`; falta a Sofia revisar e criar o banco): o **Supabase de teste** (separado da Pneus Amigão, com dados
-   de exemplo e um login pra cada um), a regra nova da seção 0 ("só o painel" muda), um manual da
+   `docs/supabase-de-teste.md`; o banco foi criado pela Sofia em 19/10, #517): o **Supabase de teste** (separado da Pneus Amigão, com dados
+   de exemplo e um login pra cada um), a regra nova da seção 0 (mudou em 19/10: os três no programa das lojas), um manual da
    equipe e as primeiras tarefas no formato da equipe, **na `leva-0`** (`docs/painel.md`);
 5. **começar**: o "Primeiro dia" de cada um, e a primeira tarefa.
 
