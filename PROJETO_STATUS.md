@@ -149,4 +149,4 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **Também**: o "Resumo de segunda" passou pra conta do Team (1ª vez em 26/10); o da pessoal está pausado (#625).
 - **Falta da equipe**: o caderno de cada um (#618, #619, #620; o Tiago pega a dele no painel); depois, entrar no programa contra o banco de teste. O resto no privado (`EQUIPE.md`, "A RECEBER").
 - **Próxima sessão**: a #505 (trocar as credenciais fiscais expostas). Depois: a #506, a #609 (o Ruflo), a #604 e a #605.
-- **Depende dela**: mandar os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); confirmar que o banco de teste fica fora do botão "Atualizar o banco"; a #625; a #606. A lista inteira em `label:sofia`.
+- **Depende dela**: mandar os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); a #625; a #606. A lista inteira em `label:sofia`.
