@@ -93,11 +93,24 @@ describe("App", () => {
     expect(html("/em-breve/dre")).toContain('aria-current="page"');
   });
 
-  it("deitado, a barra do PC e o conteúdo respeitam a área segura dos lados (#561)", () => {
-    const h = html("/leva");
-    const fora = h.slice(0, h.indexOf(">"));
-    expect(fora).toContain("safe-area-inset-left");
-    expect(fora).toContain("safe-area-inset-right");
+  it("deitado, toda tela respeita a área segura dos lados, num lugar só: o body (#561, #604)", async () => {
+    // O modo TV e a tela de entrada saem do App antes do layout principal; o body vale pra todas.
+    // O `?raw` de CSS chega vazio no Vitest (ele não processa CSS), então lê o arquivo direto.
+    // O painel não tem os tipos do Node: daí o nome do módulo numa variável e o tipo na mão.
+    const fs = "node:fs";
+    const { readFileSync } = (await import(/* @vite-ignore */ fs)) as { readFileSync: (u: URL, c: "utf8") => string };
+    const estiloCss = readFileSync(new URL("./estilo.css", import.meta.url), "utf8");
+    const body = /^body\s*\{([^}]*)\}/m.exec(estiloCss);
+    expect(body).not.toBeNull();
+    expect(body![1]).toMatch(/padding-left:\s*env\(safe-area-inset-left\)/);
+    expect(body![1]).toMatch(/padding-right:\s*env\(safe-area-inset-right\)/);
+    // Sem margem dobrada: o layout principal, o modo TV e a tela de entrada não repetem a do body.
+    // (A barra de baixo e a folha do celular são fixed e têm a delas: NavegacaoDoCelular.test.tsx.)
+    for (const [caminho, busca] of [["/leva", ""], ["/sala", "?tv"]]) {
+      const h = html(caminho, busca);
+      expect(h.slice(0, h.indexOf(">")), caminho + busca).not.toContain("safe-area-inset");
+    }
+    expect(renderToString(<TelaDeEntrada />)).not.toContain("safe-area-inset");
   });
 
   it("a meta viewport tem viewport-fit=cover (#561): sem ele o iPhone ignora a área segura da barra de baixo", () => {
