@@ -33,47 +33,50 @@ Procure o que **se repete em mais de um relatório** (ou pesa muito num só):
   rápido errou e a etapa teve que ser refeita). Só tokens e quantidades, nunca dinheiro.
   Só comparar números da **mesma via** (o relatório diz: "aviso" ou "arquivo"; são contas
   diferentes). Relatório com "não medido" não entra na conta; se nenhum tiver "Gasto", dizer isso no PR.
-- **gasto por resultado** (ideia copiada do Ruflo, #609 e #635): quanto custa **um PR aceito** em
-  cada jeito de trabalhar, e não só cada sessão.
-  1. **Classificar pelo GitHub, nunca pelo relatório**: o relatório é escrito antes da revisão da
-     Sofia e não sabe se o PR foi aceito. Pra cada relatório do mês, abrir o PR da linha "PR" no
-     GitHub e pôr num dos três:
-     - **mesclado de primeira**: mesclado sem pedido de mudança e sem commit novo depois da
+- **gasto por resultado** (ideia copiada do Ruflo, #609 e #635): quantos tokens gasta **um PR
+  aceito** em cada jeito de trabalhar, e não só cada sessão. A unidade é **o relatório**.
+  1. **Classificar pelo GitHub, nunca pelo relatório** (ele é escrito antes da revisão da Sofia e não
+     sabe se o PR foi aceito). Achar o PR pela linha "PR", pela branch ou pelo `Closes #N`
+     (o relatório quase nunca traz o link). Pôr num dos três:
+     - **mesclado de primeira**: mesclou sem pedido de mudança e sem commit novo depois da
        primeira revisão;
-     - **mesclado depois de refazer**: mesclado, mas teve pedido de mudança ("changes requested")
-       ou commit novo depois da primeira revisão (comentário pedindo ajuste também conta). Também
-       conta um **segundo PR da mesma tarefa** aberto depois de o primeiro mesclar (um
-       "complemento"): os dois PRs valem como um resultado só;
-     - **fechado sem mesclar**: fechado sem mesclar (refeito noutro PR, ou abandonado).
-     **Quando não há revisão no GitHub** (o comum: a Sofia mescla sem aprovar ali e pede ajuste pela
-     coordenadora), a primeira revisão é **a abertura do PR**: olhar os commits com data depois
-     dela. Conta como refazer o commit que atende um pedido (da Sofia, da coordenadora, de um
-     revisor; a mensagem do commit ou o relatório costumam dizer). **Não conta** o commit da
-     própria sessão só pra pôr o link do PR no relatório ou consertar o CI. Na dúvida, marcar
-     "refazer?" e dizer qual commit; número incerto é aviso.
-     PR ainda aberto não entra (dizer quantos). Sem link de PR no relatório (é o comum: o relatório
-     nasce antes do PR): procurar o PR pela branch ou pelo `Closes #N` da tarefa; sem achar, fica
-     fora e conta como "sem PR".
-  2. **A tabela "tokens por PR mesclado"**, uma linha por valor da linha **"Jeito"** (sessão
-     direta, com ajudantes, com sessões filhas, aberta pela /coordenar):
-     | Jeito | Via | Relatórios | De primeira | Depois de refazer | Fechados | Tokens somados | Tokens por PR mesclado |
-     - "Tokens somados" é o total do "Gasto" desses relatórios (mãe + ajudantes + filhas medidas),
-       **todos dos três resultados**, inclusive os fechados: o gasto dos que voltaram ou morreram
-       também é custo do jeito. Na via "arquivo", somar as quatro contas (entrada, cache criado,
-       cache lido, saída); se o relatório dá só parte delas, entra o que ele dá e a linha diz. O
-       gasto costuma ser medido **antes** do PR, então o trabalho de refazer quase nunca está nele:
-       escrever isso embaixo da tabela. "Tokens por PR mesclado" = tokens somados ÷ (de primeira + depois de
-       refazer). Sem PR mesclado na linha: "—".
-     - **Só números da mesma via**: uma tabela pra "arquivo" e outra pra "aviso" (são contas
-       diferentes; nunca somar uma com a outra). Se um relatório mistura vias, entra só a parte da
-       via da tabela, e isso vai escrito.
-     - **Fica fora, e diz quantos**: relatório com "não medido" no gasto e relatório **sem a linha
-       "Jeito"** (os anteriores à #635). Embaixo da tabela: "ficaram fora: X sem a linha Jeito, Y
-       não medidos, Z com PR aberto, W sem PR". Nunca adivinhar o jeito de um relatório antigo.
-  3. **Se um jeito sair muito mais caro por PR aceito** (ex.: o dobro de outro, com pelo menos 3
-     relatórios de cada lado) ou se voltar pra refazer bem mais vezes, **propor** o ajuste do
-     `ritual-de-tarefa` ou da `/coordenar` na descrição do PR do mês, com a tabela como evidência.
-     Só propor: quem decide é a Sofia. Com poucos relatórios, a tabela vai como "só observação".
+     - **mesclado depois de refazer**: teve "changes requested", comentário de uma pessoa ou da
+       coordenadora pedindo ajuste (aviso de robô não conta), ou commit novo depois da primeira
+       revisão. Também quando um **segundo PR sem relatório próprio** conserta ou completa o que o
+       primeiro entregou, ou refaz um PR fechado, e mescla: os dois valem como um resultado só;
+     - **fechado sem mesclar**: nada daquele relatório chegou a mesclar.
+     **Sem revisão no GitHub** (o comum: a Sofia mescla sem aprovar ali e pede ajuste pela
+     coordenadora), a primeira revisão é **a abertura do PR**. Conta como refazer o commit depois
+     dela que atende um pedido (a mensagem do commit ou o relatório costumam dizer). **Não conta**:
+     commit da própria sessão só pra pôr o link do PR ou consertar o CI; segundo PR que só mexe no
+     relatório (o #582 da #577); etapa planejada com relatório próprio (as da #608), que é
+     classificada sozinha. Na dúvida, "refazer?": conta em "depois de refazer", com asterisco e o
+     commit numa nota. A tabela não vê pedido de mudança feito antes de o PR abrir.
+  2. **A tabela "tokens por PR mesclado"**, uma linha por valor da linha **"Jeito"**, e **uma
+     tabela por via**, com o título "via arquivo" ou "via aviso" (nunca somar uma com a outra):
+     | Jeito | Relatórios | De primeira | Depois de refazer | Fechados | Tokens somados | Tokens por PR mesclado |
+     - **Tokens somados**: o "Gasto" de todos os relatórios da linha (mãe + ajudantes + filhas
+       medidas), inclusive os fechados, que também são gasto do jeito. Na via "arquivo", somar as
+       quatro contas (entrada, cache criado, cache lido, saída). **Tokens por PR mesclado** =
+       tokens somados ÷ (de primeira + depois de refazer); sem PR mesclado, "—".
+     - **A comparação principal é a "via arquivo"**. A "via aviso" só tem ajudantes (a mãe nunca
+       tem número de aviso), então mede só eles. Relatório sem número numa via não entra na
+       tabela dessa via.
+     - **Fica fora, e diz quantos**: relatório **sem a linha "Jeito"** (os anteriores à #635; nunca
+       adivinhar o jeito), relatório em que **a mãe** é "não medido" na via da tabela, ou em que
+       falta cache lido ou cache criado (sem eles, parece muitas vezes mais barato), PR ainda
+       aberto e "sem PR". Embaixo da tabela: "ficaram fora: X sem Jeito, Y não medidos, Z com PR
+       aberto, W sem PR", cada relatório contado uma vez só, no primeiro motivo dessa ordem. Se só
+       um ajudante ou uma filha não foi medido, o relatório entra e a linha diz "parcial: N".
+     - Escrever também embaixo da tabela: o gasto costuma ser medido **antes** do PR, então o
+       trabalho de refazer quase nunca está nele; e "com sessões filhas" e "aberta pela
+       /coordenar" saem **sempre por baixo** (as filhas quase nunca são medidas, e a coordenadora
+       não tem relatório), então gastar menos nesses dois jeitos não é evidência.
+  3. **Propor** o ajuste do `ritual-de-tarefa` ou da `/coordenar`, na descrição do PR do mês e com
+     a tabela como evidência, quando, na mesma tabela, um jeito gastar **o dobro ou mais** por PR
+     mesclado que outro, ou tiver o dobro da fração (refazer + fechados) ÷ relatórios, com **pelo
+     menos 3 PRs mesclados** em cada jeito comparado. Abaixo disso, "só observação". Só propor:
+     quem decide é a Sofia.
 
 **Cada achado precisa de evidência**: o nome do arquivo de relatório (e a frase) que o prova. Sem
 arquivo citado, não é achado. Não invente padrão a partir de um relatório só sem dizer que é um só.

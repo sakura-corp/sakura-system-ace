@@ -73,7 +73,8 @@ escreva o valor.
 
 A linha **"Jeito"** (lá no topo do modelo) diz como a tarefa foi feita, com **um** dos quatro
 valores: **sessão direta** (sem ajudante nem filha), **com ajudantes**, **com sessões filhas** ou
-**aberta pela /coordenar** (vale mesmo que ela também tenha usado ajudantes). É com ela que o
+**aberta pela /coordenar**. Usou mais de um? Vale o primeiro desta ordem: aberta pela /coordenar,
+com sessões filhas, com ajudantes, sessão direta. É com ela que o
 revisor soma o "tokens por PR mesclado" na revisão do mês; o relatório não diz se o PR foi aceito,
 porque é escrito antes da revisão da Sofia (quem descobre é o revisor, no GitHub).
 
