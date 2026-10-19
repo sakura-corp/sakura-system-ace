@@ -19,10 +19,11 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 Se não der pra saber, perguntar.
 
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo` de
-`<usuário>/segundo-cerebro`, só o da própria pessoa, e seguir o `CLAUDE.md` de lá, **a não ser que
-a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não existe ainda, ou
-a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e **perguntar se a
-pessoa quer seguir**. É aviso, nunca tranca.
+`<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
+na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
+**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não
+existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e
+**perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
 
 **Quando NÃO é a Sofia** (a equipe; manual: `docs/equipe.md`), valem estas regras, e elas passam
 na frente de qualquer outra deste arquivo:
