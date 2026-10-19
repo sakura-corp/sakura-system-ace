@@ -72,6 +72,9 @@ foi; `Closes #N`) e **parar**. Depois, o relatório final, neste formato fixo:
 3. **O que foi testado e passou, sem eu ter visto reprovar.**
 4. **O que ficou de fora** (e por quê).
 5. **O que depende de alguém** (a Sofia, ou uma pessoa no PC: o instalado e a loja a nuvem não prova).
+   Teste no PC: aponte pra `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem
+   fez", e diga só o caso (A: só comando de teste; B: abrir o programa), a branch e o roteiro
+   curto; não copie os passos, e nunca peça a chave, o endereço ou o login.
 6. **Onde parou**, se a cota acabou: gravar na descrição do PR (ou da tarefa) o que falta, pra outra
    sessão retomar.
 
