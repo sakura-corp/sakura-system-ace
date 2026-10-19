@@ -68,11 +68,22 @@ html {
   color-scheme: light dark;
 }
 
+/* Área segura dos lados (celular deitado, com o viewport-fit=cover da #561): aqui no body ela vale
+   pra todas as telas, inclusive o modo TV e a tela de entrada, que saem do App antes do layout
+   (#604). A barra de baixo e a folha do celular são fixed e cuidam da delas. */
 body {
   margin: 0;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   background: var(--c-fundo);
   color: var(--c-texto);
   font-family: var(--font-sans);
+}
+
+/* No modo TV a Sala é sempre escura: a faixa da franja (a margem acima) fica com o mesmo escuro,
+   e não com o fundo claro do tema (opção B da Sofia, #604). A cor é o --bg da .sala-j (sala.css). */
+body:has(.sala-tv) {
+  background: #120e12;
 }
 
 /* Foco do teclado sempre visível. Dentro de @layer base pra que uma classe do Tailwind
