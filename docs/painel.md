@@ -723,3 +723,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   a leva 1 fechar" caiu. Como o painel abre na maior leva com tarefa aberta, **quem ainda tem tarefa da leva 1** (os cadernos
   #618 e #619, a #510 e a #455) entra por `/leva/1`. Depois da leva 2, o painel para e vem o programa das lojas (a leva 3:
   #653, #379, #655, #656).
+- **19/10/2026, mais tarde: as outras levas na barra lateral** (pedido da Sofia: com a leva 2 posta, a leva 1 sumiu da
+  tela e ninguém via as 4 tarefas abertas dela). A barra do PC e a folha "Mais" do celular listam as outras levas logo
+  abaixo de "Leva atual", da mais nova pra mais velha, com "(N abertas)" quando ainda têm tarefa. É um atalho até a
+  página das levas (#548), que continua na leva 2 com o resumo (total, horas, quando terminou).

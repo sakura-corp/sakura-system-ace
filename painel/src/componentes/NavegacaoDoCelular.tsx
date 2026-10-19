@@ -5,7 +5,7 @@ import { NAVEGACAO, type ItemDaNavegacao } from "../logica/navegacao";
 import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
-import { ICONES, ItemEmBreve, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
+import { etiquetaDasAbertas, ICONES, ItemEmBreve, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
 
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
@@ -121,8 +121,9 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   const folhaRef = useRef<HTMLDialogElement>(null);
   const botaoRef = useRef<HTMLButtonElement>(null);
-  // A leva na tela que não é a atual (ex.: /leva/0): vai na folha, e o "Leva" da barra perde o aria-current.
-  const extra = levas.find((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
+  // As outras levas (ex.: /leva/1, /leva/0) vão na folha; com uma delas na tela, o "Leva" da barra perde o aria-current.
+  const outras = levas.filter((l) => l.href !== ENDERECO_DA_LEVA_ATUAL);
+  const extra = outras.some((l) => l.atual);
   const naBarra = IDS_DA_BARRA.includes(pagina);
   // A página não encontrada (#560) não mora na barra nem na folha: o "Mais" não ganha destaque por causa dela.
   const naFolha = !naBarra && pagina !== "nao-encontrada";
@@ -193,11 +194,13 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
             </button>
           </div>
 
-          {extra && (
-            <ul className="mt-1">
-              <li className="min-w-0">
-                <LinhaDaFolha href={extra.href} rotulo={extra.nome} atual={pagina === "leva"} />
-              </li>
+          {outras.length > 0 && (
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {outras.map((l) => (
+                <li key={l.href} className="min-w-0">
+                  <LinhaDaFolha href={l.href} rotulo={l.nome} etiqueta={etiquetaDasAbertas(l.abertas)} atual={pagina === "leva" && l.atual} />
+                </li>
+              ))}
             </ul>
           )}
 

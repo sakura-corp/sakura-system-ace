@@ -166,7 +166,10 @@ export default function App({
     levas = [{ nome: nomeDaLevaDeExemplo, href: ENDERECO_DA_LEVA_ATUAL, atual: true }];
   } else if (estado.tipo === "pronto") {
     mostrada = estado.leva.numero;
-    levas = estado.levas.map((l) => ({ nome: l.nome, href: enderecoDaLeva(l.numero, estado.atual), atual: l.numero === mostrada }));
+    // Da mais nova pra mais velha: na barra, as outras levas aparecem abaixo de "Leva atual" nessa ordem.
+    levas = [...estado.levas]
+      .sort((a, b) => b.numero - a.numero)
+      .map((l) => ({ nome: l.nome, href: enderecoDaLeva(l.numero, estado.atual), atual: l.numero === mostrada, abertas: l.abertas }));
   } else {
     // Enquanto busca (ou se deu erro), um caminho de volta pra leva da tela (ou pra atual).
     levas = [

@@ -328,7 +328,7 @@ describe("App com as tarefas de verdade (#354)", () => {
   it("na barra lateral, todas as levas: a atual leva pra /leva, as outras pra /leva/<n>", () => {
     const h = de(pronto);
     expect(h).toMatch(/<a href="\/leva" aria-current="page"[^>]*>.*?Leva atual<\/span><\/a>/);
-    expect(h).not.toMatch(/<a href="\/leva\/0"/);
+    expect(h).toMatch(/<a href="\/leva\/0"(?![^>]*aria-current)/);
     const outra = de({ ...pronto, leva: { ...pronto.leva, numero: 0 } }, "/leva/0");
     expect(outra).toMatch(/<a href="\/leva"[^>]*>(?:(?!<\/a>).)*Leva atual<\/span><\/a>/);
     expect(outra).not.toMatch(/<a href="\/leva" aria-current/);
