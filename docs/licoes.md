@@ -885,7 +885,9 @@
     estando lá. O motivo é simples e vale entender: essas três são **texto comum**, sem formato
     que as distinga de uma palavra qualquer. Nenhuma ferramenta pega. **Conclusão prática**: a
     varredura é uma rede pra chave de API; a proteção contra colar senha de portal é a regra no
-    topo deste arquivo, e trocar as três credenciais continua sendo obrigatório.
+    topo deste arquivo. As três foram trocadas em 19/10/2026 (#505); a senha do portal que vazou
+    em agosto **ainda abria o portal** sete semanas depois, então credencial vazada se troca na
+    hora, não "quando der".
     **Duas decisões de desenho, pra não serem "corrigidas" depois**: (a) o CI varre a árvore de
     arquivos **como ela está agora** (`--no-git`), não o histórico — uma checagem que nunca pode
     ficar verde (o histórico já carrega segredo, e reescrever histórico está proibido: quebraria o
