@@ -18,8 +18,8 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 (`mcp__github__get_me`, ou `gh api user --jq .login`) ou o e-mail do Git (`git config user.email`).
 Se não der pra saber, perguntar.
 
-**Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo` de
-`<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
+**Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
+de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
 **a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não
 existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e

@@ -45,7 +45,17 @@
   recusado; com a Sofia foi de primeira.
 
 ## O que testei e VI reprovar
-- (preencher com o resultado do ajudante revisor)
+- **A revisão final achou dois problemas reais**, consertados neste PR:
+  - o passo 4 mandava gravar o caderno logo depois do "confere", e a skill `entrevista` diz que
+    quem grava é a `fechar`: o passo agora diz que é o passo 2.5 da `fechar`, adiantado;
+  - a seção 0 mandava `add_repo` sem dizer "com escrita": do jeito padrão (só leitura), a `fechar`
+    não conseguiria gravar no caderno.
+  - E três de clareza: no Mac, `Cmd + Shift + H` em vez de "a casinha" (que nem sempre aparece);
+    "o Claude roda na nuvem, mas você precisa estar no computador"; no PC, aprovar a primeira
+    leitura da pasta `segundo-cerebro`.
+- `grep` por `docs/sofia.md` e pelo e-mail dela no público (fora do histórico e dos relatórios):
+  só o botão do `site/index.html`, que é de propósito.
+- `wc -c PROJETO_STATUS.md`: 12464 bytes (limite 15360).
 
 ## O que passou sem eu ter visto reprovar
 - **O passo 2 na conta de alguém da equipe**: com a Sofia não precisou de clique; o caminho de
@@ -53,7 +63,9 @@
   passou por ele ainda. O Gustavo é o primeiro.
 - **Os passos do Mac** (instalar o Obsidian, abrir o terminal e a pasta): ninguém da equipe usou
   ainda; escritos pelo jeito padrão do Mac.
-- O texto em geral (só texto).
+- Os links e os nomes das telas: o revisor não conseguiu abrir os sites daqui; os do Obsidian são
+  os que a Sofia viu em 18/10.
+- A leitura da pasta local pelo Claude do PC: a prova final (passo 11) testa só a nuvem.
 
 ## O que ficou de fora
 - **As três tarefas (Gustavo, Lázaro, Tiago)**: rascunhadas e mostradas à Sofia; viram issue só

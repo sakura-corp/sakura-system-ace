@@ -97,7 +97,8 @@ grava lá depois do seu "confere". O da Sofia já existe; este roteiro é o cami
 com ela (18/10).
 
 - **A tarefa** tem o seu nome no título e se faz como as outras: botão "Começar com o Claude" do
-  painel, com você **no seu computador**. Uns 2 h, quase tudo cliques. O Git veio do primeiro dia.
+  painel. O Claude roda na nuvem, mas **você precisa estar no seu computador**: os passos 5 a 10
+  são nele. Uns 2 h, quase tudo cliques. O Git veio do primeiro dia.
 - **Só você e o seu Claude enxergam o caderno.** Nunca entra nada da empresa (preço, sócios,
   contrato), documento pessoal (CPF, RG, endereço) nem senha.
 - **Ninguém cria o caderno por você**: nem a Sofia, nem o Claude (a ligação dele com o GitHub não
@@ -126,7 +127,8 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    que vale sempre"** (lista curta), **"Os outros arquivos"** (tabela "arquivo → abrir quando") e
    **"Como este caderno é mantido"** (o Claude propõe no fim da sessão, você aprova, ele grava;
    até ~3 KB; nada da empresa, documento pessoal ou senha). Você confere e diz "confere"; o
-   Claude grava direto, sem PR.
+   Claude grava direto no caderno, sem PR (é o passo 2.5 da skill `fechar`, adiantado: sem o
+   caderno gravado, os passos seguintes não têm o que testar).
 5. **Instalar o Obsidian**: https://obsidian.md/download.
    - **Windows**: **Windows** → abrir o arquivo baixado → **Sim**.
    - **Mac**: **macOS** → abrir o arquivo `.dmg` → arrastar o Obsidian pra pasta **Aplicativos**
@@ -139,8 +141,9 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    (no Git Bash: botão direito → **Paste**) `gh repo clone <seu-usuário>/segundo-cerebro` → Enter.
    Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou `/Users/<usuário do Mac>/segundo-cerebro`.
 7. **Abrir no Obsidian**: **Abrir** (em "Abrir pasta como um cofre") → a pasta `segundo-cerebro`
-   do passo 6 (**Windows**: Este Computador → C: → Usuários → `<usuário do Windows>`; **Mac**: a
-   casinha com o seu nome) → **Selecionar pasta** (no Mac, **Abrir**). Aparecem os arquivos do
+   do passo 6 (**Windows**: Este Computador → C: → Usuários → `<usuário do Windows>`; **Mac**:
+   apertar **Cmd + Shift + H**, que vai pra pasta do seu usuário) → **Selecionar pasta** (no Mac,
+   **Abrir**). Aparecem os arquivos do
    caderno na coluna da esquerda. O ícone vermelho riscado no canto de baixo é o Obsidian Sync
    (pago, não usamos): ignorar.
 8. **O plugin Git**: engrenagem ⚙️ (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
@@ -171,10 +174,11 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 
 A pessoa abre o Claude dela **dentro da pasta do repositório** e diz só o nome ou o número da
 tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
-1. **Confere quem é** e **abre o caderno da pessoa** (seção 0 do `PROJETO_STATUS.md`); **lê a
-   issue inteira**, os comentários e
-   este manual (e o `docs/painel.md`, se for do painel). **Confere o "Depende de"**: se ainda não
-   dá pra começar, explica o motivo, escreve a mensagem de WhatsApp pra Sofia e para aqui.
+1. **Confere quem é** e **abre o caderno da pessoa** (seção 0 do `PROJETO_STATUS.md`; no PC, o
+   Claude pede licença pra ler a pasta `segundo-cerebro` na primeira vez: é só aprovar); **lê a
+   issue inteira**, os comentários e este manual (e o `docs/painel.md`, se for do painel).
+   **Confere o "Depende de"**: se ainda não dá pra começar, explica o motivo, escreve a mensagem
+   de WhatsApp pra Sofia e para aqui.
 2. **Explica em português simples**, antes de mexer em qualquer coisa:
    - o que é a tarefa e pra que ela serve na loja (ou no painel);
    - o que o Claude vai fazer sozinho (o código);
