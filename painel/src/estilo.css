@@ -80,6 +80,12 @@ body {
   font-family: var(--font-sans);
 }
 
+/* No modo TV a Sala é sempre escura: a faixa da franja (a margem acima) fica com o mesmo escuro,
+   e não com o fundo claro do tema (opção B da Sofia, #604). A cor é o --bg da .sala-j (sala.css). */
+body:has(.sala-tv) {
+  background: #120e12;
+}
+
 /* Foco do teclado sempre visível. Dentro de @layer base pra que uma classe do Tailwind
    (ex.: o contorno pra dentro das linhas da lista, que têm overflow-hidden) possa ajustar. */
 @layer base {

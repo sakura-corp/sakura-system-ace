@@ -36,15 +36,19 @@
 ## Fotos
 Em `docs/relatorios/fotos/tarefa-604/`: o modo TV (`tv-*`), a tela de entrada (`entrada-*`) e a Leva (`leva-*`), em 375 px e deitado (812×375), claro e escuro. As `*-com-franja` imitam a área segura do iPhone deitado (o Chromium não tem franja): trocam o `env()` por 47 px e pintam a faixa da franja de vermelho. Nada cortado, nada passa da largura.
 
+## A escolha da Sofia: opção B
+- No tema claro, o modo TV (sempre escuro) ganhava duas faixas claras onde fica a franja (`opcoes/A-tv-claro-franja-fundo-do-body.png`). Mostrei A e B; a Sofia escolheu a **B** ("B e pode mesclar", 19/10): `body:has(.sala-tv) { background: #120e12 }` no `estilo.css`, a mesma cor do `--bg` da `.sala-j` (`opcoes/B-tv-claro-franja-fundo-escuro.png`).
+- Teste **visto reprovar** antes da regra (a regra não existia); ele confere que a cor é a mesma do `--bg` da `sala.css`, pra não desencontrar se a Sala mudar de cor.
+- Foto com a regra de verdade (só a franja imitada, sem vermelho): `tv-deitado-812x375-claro-com-franja-sem-vermelho.png`. A tela de entrada continua clara (a regra só vale com a Sala de TV na tela).
+
 ## O que ficou de fora
-- **Uma escolha de aparência, pra Sofia** (`opcoes/`): no tema claro, o modo TV (que é sempre escuro) ganha duas faixas claras nas laterais, onde fica a franja (`A-tv-claro-franja-fundo-do-body.png`). A opção B pinta o fundo do body de escuro quando o modo TV está aberto (`body:has(.sala-tv)`, `B-tv-claro-franja-fundo-escuro.png`). Recomendo a B (uma linha no `estilo.css`); não fiz porque aparência se decide por imagem com ela. Só aparece em celular com franja deitado; na TV e no PC a área segura é zero.
+- Nada.
 
 ## O que depende de alguém
-- A Sofia: escolher A ou B acima.
 - Depois de publicar: num iPhone deitado, o modo TV e a tela de entrada não encostam na franja (sem iPhone à mão, anotar e seguir).
 
 ## Onde parou
-Terminei (falta só a escolha A/B).
+Terminei.
 
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: o "conferir que nada dobra" levou ao teste que reprova com a margem repetida.

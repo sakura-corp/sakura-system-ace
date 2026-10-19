@@ -115,6 +115,20 @@ describe("App", () => {
     expect(renderToString(<TelaDeEntrada />)).not.toContain("safe-area-inset");
   });
 
+  it("modo TV deitado no tema claro (#604, opção B da Sofia): a faixa da franja fica com o escuro da Sala", async () => {
+    // A margem do body é pintada com o fundo do body; a Sala é sempre escura (--bg da .sala-j).
+    const fs = "node:fs";
+    const { readFileSync } = (await import(/* @vite-ignore */ fs)) as { readFileSync: (u: URL, c: "utf8") => string };
+    const estiloCss = readFileSync(new URL("./estilo.css", import.meta.url), "utf8");
+    const salaCss = readFileSync(new URL("./componentes/sala/sala.css", import.meta.url), "utf8");
+    const fundoDaSala = /\.sala-j\s*\{[^}]*--bg:\s*(#[0-9a-f]{6})/i.exec(salaCss)?.[1];
+    expect(fundoDaSala).toBeDefined();
+    const regra = /body:has\(\.sala-tv\)\s*\{([^}]*)\}/.exec(estiloCss);
+    expect(regra).not.toBeNull();
+    expect(regra![1]).toMatch(new RegExp(`background:\\s*${fundoDaSala}`, "i"));
+    expect(html("/sala", "?tv")).toContain("sala-tv");
+  });
+
   it("a meta viewport tem viewport-fit=cover (#561): sem ele o iPhone ignora a área segura da barra de baixo", () => {
     const meta = /<meta\s+name="viewport"\s+content="([^"]*)"/.exec(paginaHtml);
     expect(meta).not.toBeNull();
