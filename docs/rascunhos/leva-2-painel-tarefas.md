@@ -1,6 +1,9 @@
 # Leva 2 do painel: rascunhos das tarefas novas (19/10/2026)
 
-> **Rascunho pra Sofia aprovar. Nenhuma issue foi criada.** Escritos no modelo de `docs/tarefas.md`
+> **Viraram issues em 19/10/2026, com a aprovação da Sofia**: F1 = #644, F2 = #645, F3 = #646, F4 = #647,
+> D1 = #648, D2 = #649, D3 = #650. **A issue é que vale**; este arquivo fica só como histórico.
+>
+> Escritos no modelo de `docs/tarefas.md`
 > (skill `nova-tarefa`). As decisões vieram da entrevista de 19/10 com a Sofia (duas rodadas, "sim pra
 > tudo" nas duas). Depois de criadas, **a issue é que vale**; este arquivo fica só como histórico.
 >
