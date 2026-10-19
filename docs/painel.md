@@ -709,3 +709,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   Configurações ganhou uma linha de separação da Cobertura; as duas linhas "Quem cuida" viraram uma
   só, com os chefes por área em português; `/em-breve/<id que não existe>` não marca item na barra
   (#560); e a meta `viewport` tem `viewport-fit=cover`, com as áreas seguras dos lados (#561).
+- **19/10/2026, noite: a leva 2 montada** (Sofia aprovou os rascunhos de `docs/rascunhos/leva-2-painel-tarefas.md`). Além da
+  #547, #548 e #549: **#644** a fase de cada leva (5 h), **#645** as fases na tela (4 h), **#646** a fase Testando (4 h), **#647** a
+  página do Relatório e o modelo de cinco partes (5 h), **#648** Decisões da Sofia (3 h), **#649** Versões (4 h), **#650** Pessoas (3 h).
+  **Fases e Relatório** (entrevista com a Sofia): Montando, Trabalhando, Testando, Relatório, Aprovada, lidas sozinhas do GitHub;
+  o relatório é `docs/relatorios/leva-N.md` num PR, e aprovar é ela mesclar; defeito do teste nasce com a etiqueta `defeito` (criada
+  em 19/10), sem `leva-N`; **a leva atual passa a ser a mais antiga ainda não aprovada** (#644), e a seguinte fica em Montando. A
+  leva 0 é "antes das fases"; a leva 1 estreia as fases. **Até a leva 2 fechar, o programa das lojas não ganha tarefa nova**
+  (a #510 e a #455 terminam com quem está nelas). A `leva-2` entra quando a leva 1 fechar.

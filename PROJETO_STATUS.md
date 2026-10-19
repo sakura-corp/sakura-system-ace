@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, fim da tarde: o Ruflo pesquisado e o teste no PC no manual
-- **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação e skills.
-- **Feito**: #609 (Ruflo: não instalar; copiada só a ideia do gasto por PR aceito, feita na #635, PR #637); o caderno do Tiago (#620) e o roteiro ajustado (#634); o manual ganhou "Testar no seu computador" e quando usar o Send (#638). Tudo por sessões filhas, esta sessão como ponte.
-- **Memorando**: até 26/10, no máximo, sem esperar as ferramentas (#632).
-- **Tiago**: o PR da #511 (#636) está verde no CI; falta ele rodar `test:fusos` no Windows (comentário na #511). Com o verde, mesclar. O Send dele já foi.
-- **Próxima sessão**: mesclar o #636 quando chegar a prova do Windows; depois, a #604 e a #605.
-- **Depende dela**: o Send do Gustavo e do Lázaro quando o caderno de cada um ficar pronto (#618, #619; vencem em 26/10); o memorando (#632); fechar a #505 depois das primeiras notas; a #625; a #606. A lista inteira em `label:sofia`.
+### 19/10/2026, noite: a leva 2 do painel montada e a #511 do Tiago na main
+- **Código**: nada publicado pras lojas. No painel (publica sozinho da `main`): a #604 (área segura dos lados, laterais escuras no modo TV).
+- **Feito**: #636 do Tiago (#511) mesclado, com a prova do Windows na descrição; #605 e #604 mescladas; a **leva 2 do painel** montada depois de uma entrevista sobre Fases e Relatório: #644 a #650, mais #547, #548 e #549 (`docs/painel.md`, Andamento). Etiqueta `defeito` criada. As sessões terminadas de hoje foram arquivadas.
+- **Decidido**: o programa das lojas não ganha tarefa nova até a leva 2 fechar (a #510 e a #455 terminam com quem está nelas). A `leva-2` entra quando a leva 1 fechar.
+- **Pagamento da Pneus Amigão**: tratado só na sessão própria (assunto do privado), depois da conversa dela com o pai em 20/10.
+- **Próxima sessão**: acompanhar a leva 1 até fechar (#510, #455, #618, #619) e então pôr a `leva-2`; a #644 é a primeira do painel.
+- **Depende dela**: conferir a #604 num iPhone deitado (#606); o Send do Gustavo e do Lázaro (#618, #619; até 26/10); o memorando (#632); a #505, a #625. Lista inteira em `label:sofia`.

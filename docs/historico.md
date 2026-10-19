@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, fim da tarde: o Ruflo pesquisado e o teste no PC no manual
+- **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação e skills.
+- **Feito**: #609 (Ruflo: não instalar; copiada só a ideia do gasto por PR aceito, feita na #635, PR #637); o caderno do Tiago (#620) e o roteiro ajustado (#634); o manual ganhou "Testar no seu computador" e quando usar o Send (#638). Tudo por sessões filhas, esta sessão como ponte.
+- **Memorando**: até 26/10, no máximo, sem esperar as ferramentas (#632).
+- **Tiago**: o PR da #511 (#636) está verde no CI; falta ele rodar `test:fusos` no Windows (comentário na #511). Com o verde, mesclar. O Send dele já foi.
+- **Próxima sessão**: mesclar o #636 quando chegar a prova do Windows; depois, a #604 e a #605.
+- **Depende dela**: o Send do Gustavo e do Lázaro quando o caderno de cada um ficar pronto (#618, #619; vencem em 26/10); o memorando (#632); fechar a #505 depois das primeiras notas; a #625; a #606. A lista inteira em `label:sofia`.
+
 ### 19/10/2026, tarde: a chave `sb_secret_` apagada (#506 fechada)
 - **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação.
 - **Feito (#506)**: apagada a única `sb_secret_` do banco da loja (`aaaaa`); nada usava ela (o backup usa a `service_role` da aba Legacy, intocada, e rodou verde hoje). A `default` do banco de teste nasceu depois do vazamento e ficou. Registro em `docs/licoes.md`, item 3.
