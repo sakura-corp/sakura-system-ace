@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { estadoDaTarefa, lerEstimativa, levaAtual, numeroDaLeva } from "./estado";
+import { estadoDaTarefa, lerEstimativa, levaAceitaPegar, levaAtual, numeroDaLeva } from "./estado";
 
 describe("estadoDaTarefa", () => {
   const s = (fechada: boolean, temResponsavel: boolean, temPrAberto: boolean) => estadoDaTarefa({ fechada, temResponsavel, temPrAberto });
@@ -68,5 +68,18 @@ describe("levaAtual", () => {
   it("não depende da ordem, e sem levas é null", () => {
     expect(levaAtual([{ numero: 3, abertas: 0 }, { numero: 0, abertas: 1 }])).toBe(0);
     expect(levaAtual([])).toBeNull();
+  });
+});
+
+describe("levaAceitaPegar", () => {
+  const levas = [{ numero: 0, abertas: 0 }, { numero: 1, abertas: 4 }, { numero: 2, abertas: 11 }];
+  it("a atual e as anteriores com tarefa aberta aceitam; a anterior sem tarefa aberta e a que não existe, não", () => {
+    expect(levaAceitaPegar(2, levas, 2)).toBe(true);
+    expect(levaAceitaPegar(1, levas, 2)).toBe(true);
+    expect(levaAceitaPegar(0, levas, 2)).toBe(false);
+    expect(levaAceitaPegar(7, levas, 2)).toBe(false);
+  });
+  it("a atual aceita mesmo com tudo fechado (é a de maior número)", () => {
+    expect(levaAceitaPegar(0, [{ numero: 0, abertas: 0 }], 0)).toBe(true);
   });
 });

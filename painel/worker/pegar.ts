@@ -4,6 +4,7 @@
 import type { Tarefa } from "../src/tipos";
 import { mesmoLogin, motivoPraNaoLargar, motivoPraNaoPegar } from "../src/logica/pegar";
 import { numeroValido } from "../src/logica/comecarComClaude";
+import { levaAceitaPegar } from "../src/logica/estado";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
 import {
   CONSULTA_DA_LEVA,
@@ -76,28 +77,41 @@ function responsaveisDaResposta(dados: unknown): string[] {
 }
 
 /**
- * Pega a tarefa `numero` pra `login`. Confere, nesta ordem: a leva atual, a tarefa nela (aberta, livre, com o
- * cabeçalho completo, sem dependência aberta) e se a pessoa já não está com outra em andamento. Depois de
- * escrever, olha quem ficou na issue: se outra pessoa entrou junto (dois cliques ao mesmo tempo), sai e avisa.
+ * As tarefas de todas as levas abertas (a atual e as anteriores com tarefa aberta, `levaAceitaPegar`), juntas e
+ * vistas pelas regras: a tarefa pode estar em qualquer uma, e a "uma por vez" vale entre elas.
+ */
+async function tarefasDasLevasAbertas(numeros: number[], login: string, perguntar: Perguntar, comDependencias: boolean): Promise<Tarefa[] | Resultado> {
+  const porNumero = new Map<number, Tarefa>();
+  for (const n of numeros) {
+    const r = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, { ...variaveisDoRepositorio, etiqueta: `leva-${n}` });
+    if (r.tipo !== "ok") return r;
+    const leva = levaDosDados(n, r.dados);
+    if (!leva) return { tipo: "erro" };
+    // Com mais de 100 tarefas, a "uma por vez" poderia não ver a outra tarefa da pessoa: na dúvida, não pega.
+    if (leva.cortada) return { tipo: "recusado", motivo: "a leva tem tarefas demais pra conferir; peça à Sofia" };
+    if (comDependencias) await marcarDependenciasAbertas(leva, r.dados, perguntar);
+    for (const t of tarefasPraRegras(leva.tarefas, r.dados, login)) if (!porNumero.has(t.numero)) porNumero.set(t.numero, t);
+  }
+  return [...porNumero.values()];
+}
+
+/**
+ * Pega a tarefa `numero` pra `login`. Confere, nesta ordem: as levas abertas, a tarefa numa delas (aberta, livre,
+ * com o cabeçalho completo, sem dependência aberta) e se a pessoa já não está com outra em andamento, em qualquer
+ * leva aberta. Depois de escrever, olha quem ficou na issue: se outra pessoa entrou junto (dois cliques ao mesmo
+ * tempo), sai e avisa.
  */
 export async function pegarTarefa(numero: number, login: string, perguntar: Perguntar, escrever: Escrever): Promise<Resultado> {
   if (!numeroValido(numero)) return { tipo: "recusado", motivo: "número de tarefa inválido" };
 
   const r1 = await perguntar<DadosDasLevas>(CONSULTA_DAS_LEVAS, variaveisDoRepositorio);
   if (r1.tipo !== "ok") return r1;
-  const atual = levasDosDados(r1.dados).atual;
+  const { levas, atual } = levasDosDados(r1.dados);
   if (atual === null) return { tipo: "recusado", motivo: "não há leva aberta" };
+  const abertas = levas.filter((l) => levaAceitaPegar(l.numero, levas, atual)).map((l) => l.numero);
 
-  const variaveisDaLeva = { ...variaveisDoRepositorio, etiqueta: `leva-${atual}` };
-  const r2 = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, variaveisDaLeva);
-  if (r2.tipo !== "ok") return r2;
-  const leva = levaDosDados(atual, r2.dados);
-  if (!leva) return { tipo: "erro" };
-  // Com mais de 100 tarefas, a "uma por vez" poderia não ver a outra tarefa da pessoa: na dúvida, não pega.
-  if (leva.cortada) return { tipo: "recusado", motivo: "a leva tem tarefas demais pra conferir; peça à Sofia" };
-  await marcarDependenciasAbertas(leva, r2.dados, perguntar);
-
-  const tarefas = tarefasPraRegras(leva.tarefas, r2.dados, login);
+  const tarefas = await tarefasDasLevasAbertas(abertas, login, perguntar, true);
+  if (!Array.isArray(tarefas)) return tarefas;
   const tarefa = tarefas.find((t) => t.numero === numero);
   const motivo = motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo) return { tipo: "recusado", motivo };
@@ -123,10 +137,9 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   // de novo; se a pessoa ficou com mais de uma em andamento, sai desta, a não ser que seja a de número menor
   // (a regra é a mesma nas duas chamadas, então fica só uma). Se a releitura falhar, fica: o aviso de
   // "várias em andamento" do painel mostra.
-  const r3 = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, variaveisDaLeva);
-  const releitura = r3.tipo === "ok" ? levaDosDados(atual, r3.dados) : null;
-  if (r3.tipo === "ok" && releitura) {
-    const minhas = tarefasPraRegras(releitura.tarefas, r3.dados, login)
+  const releitura = await tarefasDasLevasAbertas(abertas, login, perguntar, false);
+  if (Array.isArray(releitura)) {
+    const minhas = releitura
       .filter((t) => t.estado === "andamento" && mesmoLogin(t.dono?.login, login))
       .map((t) => t.numero);
     const menor = Math.min(...minhas);

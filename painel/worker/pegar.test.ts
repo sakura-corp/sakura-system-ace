@@ -77,12 +77,28 @@ describe("pegarTarefa (#538)", () => {
     ["incompleta", () => [issue(10, { chefe: "cozinha" })], "a #10 está incompleta: falta coisa no cabeçalho"],
     ["dependência aberta na leva", () => [issue(10, { depende: "#11" }), issue(11)], "espera a #11"],
     ["já com outra em andamento", () => [issue(10), issue(11, { dono: "fulana" })], "você já está com a #11"],
-    ["de outra leva", () => [issue(10, { leva: "leva-0" }), issue(11)], "esta tarefa não está na leva atual"],
-    ["que não existe", () => [issue(11)], "esta tarefa não está na leva atual"],
+    ["de uma leva sem tarefa aberta", () => [issue(10, { leva: "leva-0" }), issue(11)], "esta tarefa não está numa leva aberta"],
+    ["que não existe", () => [issue(11)], "esta tarefa não está numa leva aberta"],
   ])("recusa tarefa %s, sem escrever nada", async (_nome, leva, motivo) => {
     const g = fingirGitHub({ leva });
     expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo });
     expect(g.escritas).toEqual([]);
+  });
+
+  it("tarefa de uma leva anterior que ainda tem tarefa aberta: pega", async () => {
+    const levas = [{ nome: "leva-1", abertas: 1 }, { nome: "leva-2", abertas: 1 }];
+    const g = fingirGitHub({ levas, leva: () => [issue(10), issue(20, { leva: "leva-2" })] });
+    expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "ok" });
+    expect(g.escritas).toEqual([{ metodo: "POST", caminho: CAMINHO(10), corpo: { assignees: ["fulana"] } }]);
+  });
+
+  it("uma por vez vale entre levas: com uma em andamento na leva atual, não pega a da anterior (e vice-versa)", async () => {
+    const levas = [{ nome: "leva-1", abertas: 1 }, { nome: "leva-2", abertas: 1 }];
+    const naAtual = fingirGitHub({ levas, leva: () => [issue(10), issue(20, { leva: "leva-2", dono: "fulana" })] });
+    expect(await pegarTarefa(10, "fulana", naAtual.perguntar, naAtual.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #20" });
+    const naAnterior = fingirGitHub({ levas, leva: () => [issue(10, { dono: "fulana" }), issue(20, { leva: "leva-2" })] });
+    expect(await pegarTarefa(20, "fulana", naAnterior.perguntar, naAnterior.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #10" });
+    expect([...naAtual.escritas, ...naAnterior.escritas]).toEqual([]);
   });
 
   it("dependência de fora da leva: pergunta ao GitHub; aberta recusa, concluída libera", async () => {

@@ -16,12 +16,12 @@ type Props = {
   login?: string;
   /** Busca a leva de novo depois de pegar ou largar. */
   aoMudar?: () => Promise<unknown>;
-  /** A leva mostrada é a atual (só nela dá pra pegar tarefa). */
-  ehALevaAtual?: boolean;
+  /** Dá pra pegar tarefa da leva mostrada: a atual, ou uma anterior com tarefa aberta (`levaAceitaPegar`). */
+  levaAberta?: boolean;
 };
 
 /** A leva: título, aviso de "uma por vez", contador e a lista agrupada por estado. */
-export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, ehALevaAtual }: Props) {
+export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, levaAberta }: Props) {
   const avisos = pessoasComVariasEmAndamento(tarefas);
   return (
     <>
@@ -55,7 +55,7 @@ export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, a
           </div>
           <HorasPorPessoa tarefas={tarefas} />
           <div className="mt-8">
-            <ListaDeTarefas tarefas={tarefas} login={login} aoMudar={aoMudar} ehALevaAtual={ehALevaAtual} />
+            <ListaDeTarefas tarefas={tarefas} login={login} aoMudar={aoMudar} levaAberta={levaAberta} />
           </div>
         </>
       )}

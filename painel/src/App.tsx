@@ -13,6 +13,7 @@ import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { paginaPraVoltar } from "./logica/login";
+import { levaAceitaPegar } from "./logica/estado";
 import { ehModoTv } from "./logica/sala";
 import { useSala } from "./useSala";
 import { useTempoReal } from "./useTempoReal";
@@ -238,7 +239,7 @@ export default function App({
               cortada={estado.leva.cortada}
               login={usuario?.login}
               aoMudar={usuario ? recarregar : undefined}
-              ehALevaAtual={estado.leva.numero === estado.atual}
+              levaAberta={levaAceitaPegar(estado.leva.numero, estado.levas, estado.atual)}
               subtitulo={
                 <>
                   As tarefas com a etiqueta <code>leva-{estado.leva.numero}</code>.{" "}

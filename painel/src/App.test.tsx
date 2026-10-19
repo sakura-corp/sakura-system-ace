@@ -318,10 +318,17 @@ describe("App com as tarefas de verdade (#354)", () => {
       expect((h.match(/>Largar</g) ?? []).length).toBe(1);
     });
 
-    it("a leva mostrada que não é a atual não deixa pegar", () => {
+    it("a leva anterior sem tarefa aberta não deixa pegar", () => {
       const h = de(comTarefas([mista[2]], 0), "/leva/0");
       expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Pegar tarefa/);
-      expect(h).toContain("esta tarefa não está na leva atual");
+      expect(h).toContain("esta tarefa não está numa leva aberta");
+    });
+
+    it("a leva anterior que ainda tem tarefa aberta deixa pegar", () => {
+      const levas = [{ numero: 0, nome: "Leva 0", abertas: 1 }, ...pronto.levas.slice(1)];
+      const h = de({ ...pronto, levas, leva: { numero: 0, cortada: false, tarefas: [pronto.leva.tarefas[0]] } }, "/leva/0");
+      expect(h).not.toContain("esta tarefa não está numa leva aberta");
+      expect(h).toMatch(/<button type="button" class="[^"]*">Pegar tarefa/);
     });
   });
 

@@ -176,7 +176,7 @@ function BlocoDaTarefa({ props, suaTarefa }: { props: Props; suaTarefa: ReturnTy
             tarefas={leva.leva.tarefas}
             login={login}
             aoMudar={aoMudar}
-            ehALevaAtual={true}
+            levaAberta={true}
             aviso={aviso?.numero === t.numero ? aviso.texto : ""}
             aoAvisar={(texto) => setAviso(texto ? { numero: t.numero, texto } : null)}
           />
