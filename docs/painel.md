@@ -18,9 +18,10 @@ Na prática, hoje:
   (`sakura-corp/sakura-system-ace`), e o que o painel mostra vem de lá.
 - **Tempo real**: quando alguém pega, entrega ou fecha uma tarefa no GitHub, o painel de todo
   mundo muda sozinho, em segundos, sem recarregar a página.
-- **Financeiro e DRE ficam pra depois**, e com um cuidado: dinheiro da empresa **não pode morar
-  no GitHub**, que é público. Quando chegar a hora, o financeiro vai precisar de um banco próprio
-  e privado; aí sim um Supabase faz sentido. Decidir com a Sofia quando chegar.
+- **Financeiro**: dinheiro da empresa **não pode morar no GitHub**, que é público. **Decidido em
+  19/10 (#652): fica no Cloudflare D1**, o banco da própria Cloudflare onde o painel mora (sem conta
+  nem chave nova). A Sofia digita os lançamentos; a equipe vê os totais e os gráficos, só ela vê
+  cada lançamento, e o corte é feito no worker (#654, leva 2). O DRE vem depois.
 - O desenho já nasce preparado pra crescer: a barra lateral tem seis andares (veja "Os andares", abaixo)
   e o rodapé com Configurações e quem entrou, um ícone por item, e as funções
   futuras já no lugar, apagadas, com cadeado e a linha do que falta ("depende da #546", "depende
@@ -717,3 +718,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   em 19/10), sem `leva-N`; **a leva atual passa a ser a mais antiga ainda não aprovada** (#644), e a seguinte fica em Montando. A
   leva 0 é "antes das fases"; a leva 1 estreia as fases. **Até a leva 2 fechar, o programa das lojas não ganha tarefa nova**
   (a #510 e a #455 terminam com quem está nelas). A `leva-2` entra quando a leva 1 fechar.
+- **19/10/2026, fim da noite: a `leva-2` posta** (Sofia, depois de uma entrevista sobre a ordem até o fim do mês): as 10 do
+  painel (#644 a #650, #547 a #549) mais o **financeiro (#654)**, no Cloudflare D1 (decisão #652). A regra "o programa espera
+  a leva 1 fechar" caiu. Como o painel abre na maior leva com tarefa aberta, **quem ainda tem tarefa da leva 1** (os cadernos
+  #618 e #619, a #510 e a #455) entra por `/leva/1`. Depois da leva 2, o painel para e vem o programa das lojas (a leva 3:
+  #653, #379, #655, #656).

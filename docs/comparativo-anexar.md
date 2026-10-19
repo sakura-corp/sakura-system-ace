@@ -38,7 +38,7 @@ importação da nota do fornecedor por XML.
 | Controle de estoque | ✅ | Estoque (saldo, mínimo, "precisa comprar", leitor de código de barras) |
 | Inventário | ✅ | Estoque → Contagem (gera o ajuste sozinho) |
 | Tabelas de preço | ❌ | Hoje cada peça tem **um** preço. Falta preço por tipo de cliente (varejo/frota/revenda) ou por forma de pagamento (tarefa #407) |
-| Orçamentos | ❌ | `FN-01` (orçamento separado da OS, com aprovação do cliente) (tarefa #379) |
+| Orçamentos | ❌ | `FN-01` (orçamento como etapa da OS, com aprovação do cliente) (tarefa #379, reescrita em 19/10; junto: peça avulsa #655, aviso de peça parecida #653, juntar peças repetidas #656) |
 | Consultas sintéticas | 🟡 | Relatórios de estoque e Relações dão os totais; faltam consultas prontas por período/cliente/peça (tarefa #405) |
 | Centro de armazenamento de estoque | ✅ | Depósitos (Configurações → Depósitos) |
 
