@@ -52,14 +52,15 @@
   final não tem mudança nos `.mjs`.
 - ✅ **`test:fusos` verde** aqui: 863 de 863 nos dois fusos. Também `typecheck`, `lint` e
   `contraste` verdes. ⏳ **CI**: roda no PR.
-- ⏳ **Alguém roda `npm run test:fusos` no Windows e passa**: só no PC (roteiro abaixo).
+- ✅ **Alguém roda `npm run test:fusos` no Windows e passa**: o Tiago rodou no Windows dele (Git
+  Bash), guiado pelo roteiro do comentário da Sofia na issue. Na `main`: **6 failed | 853 passed
+  (859)**. Na branch da tarefa: **863 passed (863)**, "A suíte passou nos dois fusos".
 
 ## O que testei e VI reprovar
 - tudo acima (imitação sem o conserto, e scripts quebrados de propósito).
 
 ## O que passou sem eu ter visto reprovar
-- os 4 testes antigos de `listarMigrations` no Windows de verdade: no Linux eles nunca reprovaram;
-  a prova é a imitação, que passa pelo mesmo caminho.
+- nada: os 6 testes antigos reprovaram no Windows do Tiago na `main` e passaram na branch.
 
 ## O que ficou de fora
 - O próprio robô `atualizar-bancos.mjs` também recusaria rodar num Windows (mesma trava). Não é
@@ -68,12 +69,7 @@
   código). Nenhum teste conferia ela antes.
 
 ## O que depende de alguém
-- **Uma pessoa da equipe no Windows** (Git Bash), depois de o PR ser mesclado:
-  1. `git checkout main` e depois `git pull` (pega a versão nova). Deve aparecer a lista de arquivos
-     baixados.
-  2. `npm ci` (instala as bibliotecas). Termina sem erro vermelho.
-  3. `npm run test:fusos`. Deve aparecer duas vezes "Tests ... passed", sem nenhum "failed".
-  4. Se reprovar, copiar o nome do teste e o erro e mandar pra Sofia.
+- só a revisão da Sofia. A conferência no Windows já foi feita (acima).
 
 ## Defeitos abertos
 - nenhum
@@ -86,5 +82,8 @@ Terminei.
   imitação do Windows no Linux antes do conserto, e a quebrar os scripts no fim.
 - **Onde eu errei ou tive que adivinhar**: a issue não listava os 6 testes; deduzi pela leitura do
   código (a trava contra `\` e o CRLF). A conta bateu em 6, mas não vi rodar no Windows.
-- **O que faltou na skill**: nada pra esta tarefa.
+- **Onde errei (2)**: abri o PR antes de o Tiago conferir no Windows. O comentário da Sofia pedindo
+  isso chegou depois da minha leitura da issue, e eu não li de novo antes do PR. O Tiago avisou, e a
+  conferência foi feita com o PR já aberto.
+- **O que faltou na skill**: mandar ler os comentários da issue **de novo** logo antes de abrir o PR.
 - **Sugestão de ajuste (opcional)**: nenhuma.
