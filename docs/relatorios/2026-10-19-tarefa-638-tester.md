@@ -3,7 +3,7 @@
 - **Tarefa**: #638, manual da equipe: testar no PC o que a sessão da nuvem fez (e quando usar o Send)
 - **Chefe**: tester
 - **Data**: 2026-10-19
-- **PR**: (o PR desta branch, `claude/tarefa-638-testar-no-pc`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/639
 - **Jeito**: aberta pela /coordenar
 
 ## O que cada agente fez
