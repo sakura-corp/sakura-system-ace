@@ -40,8 +40,8 @@ a issue.
   uma pessoa no PC e **monte o roteiro curto**: um passo por vez, onde clicar e o que deve aparecer,
   sempre contra o **Supabase de teste**, nunca o de uma loja.
   Como a pessoa traz a branch e testa no PC (casos A e B, Windows e Mac): `docs/equipe.md`, "Testar
-  no seu computador o que a sessão da nuvem fez". Aponte pra lá e diga só o caso, a branch e o
-  que rodar ou clicar; não copie os passos, e nunca peça a chave, o endereço ou o login.
+  no seu computador o que a sessão da nuvem fez". Aponte pra lá e diga só o caso (A: só comando de
+  teste; B: abrir o programa), a branch e o que rodar ou clicar; não copie os passos, e nunca peça a chave, o endereço ou o login.
 - Teste de banco (`test:sql`, `test:rls`, `test:atualizar-bancos`) **só roda no CI (Linux)**; se o
   ambiente não tiver Postgres, diga isso e não finja que rodou.
 - **Defeito achado de passagem vira issue na hora**, no formato da #425: "o que acontece", "por
