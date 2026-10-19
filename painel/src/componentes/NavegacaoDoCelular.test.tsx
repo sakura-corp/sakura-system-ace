@@ -84,6 +84,19 @@ describe("NavegacaoDoCelular", () => {
     expect(folha).toMatch(/<a href="\/leva\/0" aria-current="page"/);
   });
 
+  it("as outras levas vão na folha, com as tarefas abertas; a da tela leva o aria-current", () => {
+    const levas = [
+      { nome: "Leva 2", href: "/leva", atual: false, abertas: 11 },
+      { nome: "Leva 1", href: "/leva/1", atual: true, abertas: 1 },
+      { nome: "Leva 0", href: "/leva/0", atual: false, abertas: 0 },
+    ];
+    const { barra, folha } = partes(html({ levas, pagina: "leva" }));
+    expect(barra).not.toContain("aria-current");
+    expect(folha).toMatch(/<a href="\/leva\/1" aria-current="page"/);
+    expect(folha).toContain("(1 aberta)");
+    expect(folha).toMatch(/<a href="\/leva\/0"(?![^>]*aria-current)/);
+  });
+
   it("a folha tem Fechar, os grupos e não repete os itens da barra", () => {
     const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
     expect(folha).toContain('aria-labelledby="titulo-da-folha"');

@@ -26,8 +26,11 @@ import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
 
-/** Uma leva na barra lateral: `atual` = é a que está na tela (quando a página é a da leva). */
-export type ItemDeLeva = { nome: string; href: string; atual: boolean };
+/** Uma leva na barra lateral: `atual` = é a que está na tela (quando a página é a da leva); `abertas` = tarefas abertas. */
+export type ItemDeLeva = { nome: string; href: string; atual: boolean; abertas?: number };
+
+/** "4 abertas", ao lado do nome das outras levas; nada quando não tem tarefa aberta. */
+export const etiquetaDasAbertas = (abertas?: number) => (abertas ? `${abertas} ${abertas === 1 ? "aberta" : "abertas"}` : undefined);
 
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
@@ -116,8 +119,9 @@ export async function sair(): Promise<boolean> {
 
 export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
-  // A leva na tela que não é a atual (ex.: /leva/0): aparece logo abaixo de "Leva atual".
-  const extra = levas.find((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
+  // As outras levas (ex.: /leva/1, /leva/0) aparecem logo abaixo de "Leva atual", até existir a página das levas (#548).
+  const outras = levas.filter((l) => l.href !== ENDERECO_DA_LEVA_ATUAL);
+  const extra = outras.some((l) => l.atual);
 
   function linhaDe(item: ItemDaNavegacao) {
     if (item.emBreve) {
@@ -132,11 +136,13 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
       return (
         <li key={item.id} className="min-w-0">
           <ItemComLink href={item.href} rotulo={item.rotulo} Icone={Icone} atual={pagina === "leva" && !extra} />
-          {extra && (
-            <ul className="mt-0.5">
-              <li className="min-w-0">
-                <ItemComLink href={extra.href} rotulo={extra.nome} atual={pagina === "leva"} recuado />
-              </li>
+          {outras.length > 0 && (
+            <ul className="mt-0.5 flex flex-col gap-0.5">
+              {outras.map((l) => (
+                <li key={l.href} className="min-w-0">
+                  <ItemComLink href={l.href} rotulo={l.nome} etiqueta={etiquetaDasAbertas(l.abertas)} atual={pagina === "leva" && l.atual} recuado />
+                </li>
+              ))}
             </ul>
           )}
         </li>
