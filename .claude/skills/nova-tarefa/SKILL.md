@@ -1,6 +1,6 @@
 ---
 name: nova-tarefa
-description: RASCUNHO (a Sofia ainda vai revisar). Escreve ou reescreve uma tarefa (issue) do Sakura System no modelo único de docs/tarefas.md — cabeçalho fixo (Chefe, Ajudantes, Estimativa, Depende de, Sessões filhas), etapas com a categoria de modelo, Pronto quando em duas partes — e mostra o rascunho pra Sofia aprovar antes de criar ou editar. Use quando ela pedir "nova tarefa", "cria a issue", "reescreve a tarefa #N no modelo", "monta a leva N" ou /nova-tarefa.
+description: RASCUNHO (a Sofia ainda vai revisar). Escreve ou reescreve uma tarefa (issue) do Sakura System no modelo único de docs/tarefas.md — cabeçalho fixo (Chefe, Ajudantes, Estimativa, Depende de, Sessões filhas, e Second brain quando não precisa), etapas com a categoria de modelo, Pronto quando em duas partes — e mostra o rascunho pra Sofia aprovar antes de criar ou editar. Use quando ela pedir "nova tarefa", "cria a issue", "reescreve a tarefa #N no modelo", "monta a leva N" ou /nova-tarefa.
 model: opus
 effort: medium
 ---
@@ -18,9 +18,14 @@ Fale **sempre em português simples**. O formato, as etiquetas e a tabela de mod
    de verdade, com caminho certo.
 3. Separar **o que já está decidido** do que falta. **Cada decisão que falta vira uma issue
    `sofia` própria** (curta: a pergunta, as opções, a recomendação), e entra no `Depende de`.
+4. Perguntar à Sofia: **"essa tarefa precisa do second brain?"** (o caderno de quem vai fazer, seção
+   0 do `PROJETO_STATUS.md`). Recomendar "precisa" (o padrão, sem linha nenhuma); "não precisa"
+   só pra tarefa pequena demais (trocar um texto, conferir um número, ajuste de uma linha).
+   Várias tarefas de uma vez: uma pergunta só, com a recomendação de cada uma.
 
 ## 2. Escrever no modelo
-- O cabeçalho com as **cinco linhas fixas**, nesta ordem, uma por linha.
+- O cabeçalho com as **cinco linhas fixas**, nesta ordem, uma por linha. Se a Sofia disse que não
+  precisa do second brain, uma sexta logo abaixo: `Second brain: não precisa` (com estas palavras).
 - **Um chefe só** (o da maior parte do trabalho); os outros em `Ajudantes`, cada um com o porquê.
 - **Etapas e modelos**: cada etapa com quem faz e a **categoria** (forte, médio, rápido), nunca o
   nome do modelo. Migration, RLS, dinheiro, nota fiscal, segurança e revisão final: **forte**.
@@ -38,6 +43,7 @@ a issue, pôr as etiquetas e, ao reescrever, **tirar a `guia`** e escrever um co
 "reescrita no modelo de `docs/tarefas.md` em <data>".
 
 ## 4. Conferir
-- O cabeçalho lê certo (as cinco linhas, com os nomes exatos).
+- O cabeçalho lê certo (as cinco linhas, com os nomes exatos; a sexta, se houver, é exatamente
+  `Second brain: não precisa`).
 - Cada número de `Depende de` existe.
 - A etiqueta `chefe:` bate com a linha `Chefe:`.

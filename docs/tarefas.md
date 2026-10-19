@@ -38,7 +38,8 @@ Nada de "Precisa da Sofia?" escondido no meio do texto: o painel não enxerga.
 
 ## O modelo único de issue
 
-O cabeçalho são **linhas fixas**, uma por linha, exatamente com estes nomes (o painel vai ler):
+O cabeçalho são **linhas fixas**, uma por linha, exatamente com estes nomes (o painel vai ler). A
+sexta, `Second brain`, é **opcional**: só aparece quando é `não precisa` (regras abaixo).
 
 ```markdown
 Chefe: backend
@@ -46,6 +47,7 @@ Ajudantes: frontend (a tela de Configurações), tester (conferir o Pronto quand
 Estimativa: 4 h
 Depende de: #386, #507
 Sessões filhas: não
+Second brain: não precisa
 
 ## Pra que serve
 <uma ou duas frases: o que muda pra loja (ou pro painel) e por quê>
@@ -94,6 +96,11 @@ Regras do modelo:
   paralelo) ou uma etapa longa que encheria a conversa da mãe. Aí a seção "Etapas e modelos" diz
   quais etapas são filhas, cada uma com os **seus arquivos** (duas filhas nunca mexem no mesmo arquivo).
 - **`Estimativa`** em horas, sempre. Nada de "pequena/média/grande".
+- **`Second brain: não precisa`** (Sofia, 18/10, #608): por padrão, a sessão abre o caderno de quem
+  está trabalhando (`<usuário>/segundo-cerebro`, seção 0 do índice) e não há linha nenhuma. A linha
+  só entra, sempre com estas palavras, quando a tarefa é **pequena demais** pra valer abrir o
+  caderno (trocar um texto, conferir um número, ajuste de uma linha). Nunca `Second brain: precisa`.
+  O painel não lê esta linha; quem lê é a sessão.
 - **Nada privado**: preço, sócio, dado pessoal ou credencial nunca entram (o repositório é público).
 - Defeito achado de passagem continua no formato da #425 enquanto não entra numa leva; ao entrar,
   vira este modelo (o "o que acontece / por quê" vai em "Pra que serve").
