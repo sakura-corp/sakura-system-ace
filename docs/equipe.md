@@ -12,6 +12,8 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
 - **As tarefas** são as issues do GitHub, já planejadas pela Sofia com o Claude dela: o que fazer,
   em quais arquivos, `Estimativa: N h`, "Pronto quando" e o que não fazer. Como a equipe se
   organiza em levas: `docs/painel.md`, "Como a equipe trabalha".
+- **A primeira tarefa de todo mundo** é montar o seu caderno, o `segundo-cerebro` (roteiro
+  abaixo), antes das tarefas da leva.
 
 ## Primeiro dia (computador pronto, sem programar)
 
@@ -84,13 +86,99 @@ precisa mexer na trava de segurança do Windows.
 automática). Pra programar ele abre igual, mas se alguma coisa só funcionar no Windows, a pessoa
 anota na descrição do PR e a Sofia testa no dela.
 
+## A primeira tarefa: o seu caderno (`segundo-cerebro`)
+
+Antes de qualquer tarefa da leva, cada um monta o **seu caderno**: notas que dizem ao Claude **como
+trabalhar com você** (como você gosta de explicação, o que já sabe, como prefere os passos). Ele
+mora num repositório **privado na sua conta do GitHub** (a do e-mail da Sakura), sempre com o nome
+`<seu-usuário>/segundo-cerebro`. Você lê e edita no **Obsidian**, no PC; o Claude abre o caderno
+sozinho no começo de toda sessão (seção 0 do `PROJETO_STATUS.md`) e, no fim, propõe o que mudou e
+grava lá depois do seu "confere". O da Sofia já existe; este roteiro é o caminho que deu certo
+com ela (18/10).
+
+- **A tarefa** tem o seu nome no título e se faz como as outras: botão "Começar com o Claude" do
+  painel. O Claude roda na nuvem, mas **você precisa estar no seu computador**: os passos 5 a 10
+  são nele. Uns 2 h, quase tudo cliques. O Git veio do primeiro dia.
+- **Só você e o seu Claude enxergam o caderno.** Nunca entra nada da empresa (preço, sócios,
+  contrato), documento pessoal (CPF, RG, endereço) nem senha.
+- **Ninguém cria o caderno por você**: nem a Sofia, nem o Claude (a ligação dele com o GitHub não
+  tem permissão; dá `403 Resource not accessible by integration`).
+- **Nada é pago**: o Obsidian é grátis. Não ligar o **Obsidian Sync** nem o **Publish**.
+- **No celular, não instale o Obsidian** (o plugin do Git é instável lá): no celular, quem lê o
+  caderno é o Claude.
+
+Os passos, um por vez (o Claude guia e espera o seu "feito"):
+
+1. **Criar o repositório** (você, no navegador): https://github.com/new, entrando com a conta da
+   Sakura. Em **Owner**, a **sua conta** (não a `sakura-corp`); nome `segundo-cerebro`;
+   **Private**; marcar **Add a README file**; **Create repository**.
+2. **Deixar o Claude enxergar o caderno**: o Claude tenta adicionar o repositório à sessão
+   (`add_repo`, com escrita). Com a Sofia, foi de primeira, sem clique nenhum. Se for recusado:
+   em https://github.com/apps/claude/installations/select_target escolha a **sua conta** (não a
+   `sakura-corp`) → **Only select repositories** → `segundo-cerebro` → **Install** (ou **Save**,
+   se já estava instalado). Se mesmo assim não der, confira em https://claude.ai/connect-github
+   que o GitHub ligado é o da conta da Sakura. Depois, o Claude tenta de novo.
+3. **Não mandar a pasta do Obsidian**: o Claude grava no caderno um `.gitignore` com a linha
+   `.obsidian/`. (Sem isso, o primeiro envio da Sofia levou 255 KB do próprio plugin, e essa pasta
+   muda toda hora, até ao trocar de aba.)
+4. **A entrevista**: o Claude usa a skill `entrevista` pra conhecer o seu jeito, em rodadas
+   curtas, e monta o `CLAUDE.md` do caderno (**até ~3 KB**, o único que carrega sempre) e, se
+   precisar, arquivos por assunto. No modelo do da Sofia: título "O caderno de <seu nome>", **"O
+   que vale sempre"** (lista curta), **"Os outros arquivos"** (tabela "arquivo → abrir quando") e
+   **"Como este caderno é mantido"** (o Claude propõe no fim da sessão, você aprova, ele grava;
+   até ~3 KB; nada da empresa, documento pessoal ou senha). Você confere e diz "confere"; o
+   Claude grava direto no caderno, sem PR (é o passo 2.5 da skill `fechar`, adiantado: sem o
+   caderno gravado, os passos seguintes não têm o que testar).
+5. **Instalar o Obsidian**: https://obsidian.md/download.
+   - **Windows**: **Windows** → abrir o arquivo baixado → **Sim**.
+   - **Mac**: **macOS** → abrir o arquivo `.dmg` → arrastar o Obsidian pra pasta **Aplicativos**
+     → abrir pelos Aplicativos (na primeira vez o Mac pergunta se quer mesmo abrir: **Abrir**).
+
+   Ele abre com "Início rápido", "Criar um novo cofre", "Abrir pasta como um cofre" e "Conectar ao
+   Obsidian Sync". Não clicar ainda.
+6. **Trazer o caderno pro computador**: abrir o terminal (**Windows**: menu Iniciar → `Git Bash`;
+   **Mac**: Spotlight, `Cmd + Espaço` → `Terminal`). Ele já abre na pasta do seu usuário. Colar
+   (no Git Bash: botão direito → **Paste**) `gh repo clone <seu-usuário>/segundo-cerebro` → Enter.
+   Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou `/Users/<usuário do Mac>/segundo-cerebro`.
+7. **Abrir no Obsidian**: **Abrir** (em "Abrir pasta como um cofre") → a pasta `segundo-cerebro`
+   do passo 6 (**Windows**: Este Computador → C: → Usuários → `<usuário do Windows>`; **Mac**:
+   apertar **Cmd + Shift + H**, que vai pra pasta do seu usuário) → **Selecionar pasta** (no Mac,
+   **Abrir**). Aparecem os arquivos do
+   caderno na coluna da esquerda. O ícone vermelho riscado no canto de baixo é o Obsidian Sync
+   (pago, não usamos): ignorar.
+8. **O plugin Git**: engrenagem ⚙️ (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
+   o nome em português) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
+   "Ligar", já está liberado) → **Procurar** → buscar `Git` → o **Git, por Vinzent** (antigo
+   "Obsidian Git") → **Instalar** → **Ativar**. Ele fica em "Plugins instalados" com o interruptor
+   roxo, e no rodapé do Obsidian aparece `✓ main`.
+9. **Puxar e enviar sozinho**: engrenagem → **Plugins não oficiais** → **Git**. As opções estão
+   em inglês e em páginas: **Automatic** → `Auto commit-and-sync interval (minutes)` = `10` e
+   `Auto pull interval (minutes)` = `10`; setinha `<` → **Sync** → ligar **Pull on startup** (os
+   dois "on commit-and-sync" já vêm ligados).
+10. **Testar a ida e a volta**: o Claude grava uma nota de teste no caderno; no Obsidian,
+    **Ctrl + P** (Mac: **Cmd + P**) → `Git: Pull` → aparece "Pulled 1 file from remote" e a nota.
+    Apagar a nota → **Ctrl + P** (Mac: **Cmd + P**) → `Git: Commit-and-sync` → o Claude confere no
+    GitHub que ela sumiu. **Se o envio for recusado** com `push declined due to email privacy
+    restrictions`: a sua conta esconde o e-mail. Em https://github.com/settings/emails, copiar o
+    e-mail de fachada (`<número>+<usuário>@users.noreply.github.com`) e, no terminal do passo 6,
+    rodar `cd segundo-cerebro` e `git config user.email "<o e-mail de fachada>"` (sem `--global`:
+    só vale pro caderno). Certo = nenhuma resposta. Repetir o `Git: Commit-and-sync`.
+11. **A prova final**: abrir uma **sessão nova** do Claude na nuvem (https://claude.ai/code, no
+    repositório `sakura-corp/sakura-system-ace`) e perguntar "você abriu o meu caderno?". Ela tem
+    que dizer que abriu e falar do seu jeito. Se avisar que não abriu, voltar ao passo 2.
+12. **Fechar**: o relatório da tarefa vai no PR, como em toda tarefa, **sem nada do conteúdo do
+    caderno**, mas com **todo passo que estava diferente na tela** (nome de botão, tropeço e o
+    conserto): é assim que este roteiro melhora pra quem vem depois. Pedir a revisão da Sofia.
+
 ## Como começar uma tarefa
 
 A pessoa abre o Claude dela **dentro da pasta do repositório** e diz só o nome ou o número da
 tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
-1. **Confere quem é** (seção 0 do `PROJETO_STATUS.md`) e **lê a issue inteira**, os comentários e
-   este manual (e o `docs/painel.md`, se for do painel). **Confere o "Depende de"**: se ainda não
-   dá pra começar, explica o motivo, escreve a mensagem de WhatsApp pra Sofia e para aqui.
+1. **Confere quem é** e **abre o caderno da pessoa** (seção 0 do `PROJETO_STATUS.md`; no PC, o
+   Claude pede licença pra ler a pasta `segundo-cerebro` na primeira vez: é só aprovar); **lê a
+   issue inteira**, os comentários e este manual (e o `docs/painel.md`, se for do painel).
+   **Confere o "Depende de"**: se ainda não dá pra começar, explica o motivo, escreve a mensagem
+   de WhatsApp pra Sofia e para aqui.
 2. **Explica em português simples**, antes de mexer em qualquer coisa:
    - o que é a tarefa e pra que ela serve na loja (ou no painel);
    - o que o Claude vai fazer sozinho (o código);
