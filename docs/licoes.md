@@ -63,8 +63,10 @@
    (ex: PIN numérico em vez de senha via Supabase Auth) e sem ela pedir explicitamente.
 3. **Uma chave secreta do Supabase (`sb_secret_...`) foi colada no chat pela usuária em algum
    momento**, por engano (só a `anon`/publishable era necessária). Não foi usada nem guardada no
-   código. **Não se sabe se ela já trocou** (Settings → API Keys do Supabase): está na lista "O
-   que depende dela" da seção 8.
+   código. **Resolvido em 19/10/2026 (#506)**: a única `sb_secret_` do banco da loja (`aaaaa`)
+   foi apagada, e nada usava ela (o app usa a `anon`; o backup e as Edge Functions, a
+   `service_role` da aba Legacy, que não foi tocada). A do banco de teste (`default`) nasceu junto
+   com o projeto, depois do vazamento, e ficou.
 4. **Testes automatizados: o que cobrem e o que não** (Vitest). Cobre principalmente **funções puras de cálculo**
    isoladas dos componentes durante a migração pro `react-hook-form` (juros/parcelas/split de
    pagamento em `schemas/faturamento.ts`, margem de peça em `schemas/peca.ts`, totais de OS/Pedido
