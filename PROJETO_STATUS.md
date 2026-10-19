@@ -5,7 +5,7 @@
 > O repositório é **público** (precisa ser, pro auto-update funcionar — `docs/licoes.md`, item 21).
 > Tudo que está aqui qualquer pessoa lê, e apagar depois não resolve: fica no histórico do Git.
 > - **Senha, token, chave, CSC, certificado**: o lugar é o painel do próprio serviço. O CSC da SEFAZ,
->   o token do Giap e a senha do portal da prefeitura já vazaram por aqui e precisam ser trocados.
+>   o token do Giap e a senha do portal da prefeitura já vazaram por aqui (trocados em 19/10, #505).
 > - **Assuntos da empresa e pessoais** (sócios e porcentagens, abertura do CNPJ, preço, custo por
 >   loja, margem, plano de equipe): vão no repositório **privado** `caranovavidanova/sakura-corp`.
 >   Uma loja cliente não pode ler a margem dela aqui. Não é carregado sozinho: quando o assunto for

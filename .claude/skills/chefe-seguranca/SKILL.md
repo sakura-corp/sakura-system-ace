@@ -27,8 +27,8 @@ silencioso.** O conserto pequeno e dentro da tarefa pode ir no PR; o resto vira 
 
 ## 3. Regras duras e o que se sabe
 - **O repositório é público**: apagar não resolve, fica no histórico do Git. O CSC da SEFAZ, o token
-  do Giap e a senha do portal da prefeitura já vazaram e **precisam ser trocados** (cabeçalho do
-  `PROJETO_STATUS.md`). Credencial vive no painel do próprio serviço.
+  do Giap e a senha do portal da prefeitura já vazaram e foram trocados em 19/10 (#505; o caminho
+  de cada troca está em `docs/pendencias-e-futuro.md`, parte fiscal). Credencial vive no painel do próprio serviço.
 - **A varredura automática não pega tudo** (itens 50, 64): as regras de fábrica do `gitleaks`
   deixavam passar `sb_secret_...` e `sk-ant-...`; há regras próprias em `.gitleaks.toml`.
 - **Permissão por módulo** só vale no banco em RH, contas e Caixa; nas outras é só na tela (item 1).

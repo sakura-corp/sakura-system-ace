@@ -163,7 +163,7 @@ aqui está no histórico do Git; o que uma sessão nova precisa saber é isto:
   faixa no Início e dentro da janela de emitir NFS-e, com o botão "Já cadastrei" (seção 7, "Aviso
   da alíquota do mês"). Desde 26/09 isso é responsabilidade da contabilidade de cada empresa
   (seção 3).
-  - **Onde**: portal do Giap (site da prefeitura → Serviços Empresa → Nota Fiscal Eletrônica →
+  - **Onde**: portal do Giap (`https://araraquara.giap.com.br/ords/pma/f?p=559:70` →
     Contribuintes; o usuário é o número de inscrição) → **Emissor/Consulta NFS-e** → **Cadastro de
     Alíquota**. Mês/Ano (ex: `10/2026`), Alíquota (`3`), Atividade, e **"Replicar Alíquota"** (é o
     botão de salvar).
@@ -202,11 +202,19 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
    1º/11. **Se o portal municipal for desligado**, a emissão pela Focus precisa passar pro padrão
    nacional: conferir com a Focus na hora.
 
-> ⚠️ **Credenciais que já estiveram neste repositório** (o CSC da SEFAZ, o token do Giap e a senha
-> do portal da prefeitura) foram tiradas em 02/09, mas **continuam no histórico do Git**: o certo
-> é **trocar as três** (SEFAZ → Gerenciar Cód Segurança; Giap → Dados Cadastrais → Gerar Token; a
-> senha do portal, com a contabilidade) e atualizar no painel da Focus. **Nunca colar credencial
-> aqui**: o lugar é o painel do serviço.
+> **Credenciais que já estiveram neste repositório** (o CSC da SEFAZ, o token do Giap e a senha
+> do portal da prefeitura) continuam no histórico do Git, mas **foram trocadas em 19/10/2026**
+> (#505): as que estão lá não valem mais. As novas estão no Bitwarden dela (itens "Pneus Amigão –
+> …"). **Nunca colar credencial aqui**: o lugar é o painel do serviço. Se precisar trocar de novo,
+> o caminho que funcionou, sempre gerando a nova, colando na Focus e só então matando a antiga:
+> - **Token do Giap** (vai na Focus, NFSe → "Login prefeitura" → Senha): portal da NFS-e
+>   (`https://araraquara.giap.com.br/ords/pma/f?p=559:70`) → Contribuintes → **Dados Cadastrais**
+>   → link "Gerar Token". O token antigo deixa de valer na hora.
+> - **CSC da NFC-e** (vai na Focus, NFCe → CSC e ID Token de produção): portal da NFC-e da
+>   SEFAZ-SP → **Gerenciar Cód Segurança**, com o e-CNPJ da loja → "Novo Cód Segurança" (ganha o
+>   próximo ID, e os dois ficam ativos) → trocar na Focus → marcar o antigo e "Revogar".
+> - **Senha do portal** (não vai na Focus): portal da NFS-e → **Alterar Senha**. Avisar a
+>   contabilidade, que entra lá todo mês pra cadastrar a alíquota.
 
 #### O que ainda está frágil na parte fiscal
 
