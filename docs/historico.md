@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026: o banco de teste da equipe criado (#517)
+- **Código**: nada publicado (a loja e o banco como em 18/10).
+- **Feito**: o `ssace-teste` (passos 1 a 7 de `docs/supabase-de-teste.md`), com esquema 64, a loja de exemplo e os logins (o dela, admin, e os três da equipe). Decidido: **os três no programa das lojas**, com o mesmo acesso (seção 0, #624); o Gustavo recebe o acesso antes de o Termo voltar.
+- **Também**: o "Resumo de segunda" passou pra conta do Team (1ª vez em 26/10); o da pessoal está pausado (#625).
+- **Falta da equipe**: o caderno de cada um (#618, #619, #620; o Tiago pega a dele no painel); depois, entrar no programa contra o banco de teste. O resto no privado (`EQUIPE.md`, "A RECEBER").
+- **Próxima sessão**: a #505 (trocar as credenciais fiscais expostas). Depois: a #506, a #609 (o Ruflo), a #604 e a #605.
+- **Depende dela**: mandar os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); a #625; a #606. A lista inteira em `label:sofia`.
+
 ### 19/10/2026, tarde: o Claude Team assinado e a equipe convidada
 - **Código**: nada publicado (a loja e o banco como em 18/10).
 - **Feito**: o C1 (o Team assinado e os três convidados). O Tiago está pronto (organização, duas etapas, escrita no repositório, Team) e começou a #620.
