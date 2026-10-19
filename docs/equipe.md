@@ -112,8 +112,11 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 1. **Criar o repositório** (você, no navegador): https://github.com/new, entrando com a conta da
    Sakura. Em **Owner**, a **sua conta** (não a `sakura-corp`); nome `segundo-cerebro`;
    **Private**; marcar **Add a README file**; **Create repository**.
-2. **Deixar o Claude enxergar o caderno**: o Claude tenta adicionar o repositório à sessão
-   (`add_repo`, com escrita). Com a Sofia, foi de primeira, sem clique nenhum. Se for recusado:
+2. **Deixar o Claude enxergar o caderno** (só depois do passo 1: sem o repositório criado, não
+   dá certo): o Claude tenta adicionar o repositório à sessão (`add_repo`, com escrita). **Vai
+   aparecer um pedido de permissão na tela: aprovar.** (O Tiago recusou na primeira vez, sem
+   querer, e teve que repetir.) Com a Sofia e com o Tiago, foi de primeira depois disso, sem clique
+   nenhum no GitHub. Se for recusado:
    em https://github.com/apps/claude/installations/select_target escolha a **sua conta** (não a
    `sakura-corp`) → **Only select repositories** → `segundo-cerebro` → **Install** (ou **Save**,
    se já estava instalado). Se mesmo assim não der, confira em https://claude.ai/connect-github
@@ -137,22 +140,42 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    Ele abre com "Início rápido", "Criar um novo cofre", "Abrir pasta como um cofre" e "Conectar ao
    Obsidian Sync". Não clicar ainda.
 6. **Trazer o caderno pro computador**: abrir o terminal (**Windows**: menu Iniciar → `Git Bash`;
-   **Mac**: Spotlight, `Cmd + Espaço` → `Terminal`). Ele já abre na pasta do seu usuário. Colar
-   `gh repo clone <seu-usuário>/segundo-cerebro` → Enter. Fica em
-   `C:\Users\<usuário do Windows>\segundo-cerebro` ou `/Users/<usuário do Mac>/segundo-cerebro`.
-   Depois, na mesma janela: `cd segundo-cerebro && git config core.autocrlf false` → Enter (certo =
-   nenhuma resposta). **No Windows isso é obrigatório**: o Git do Windows troca o fim das linhas e o
-   Obsidian salva do outro jeito; sem esta linha, o Git acha que você mudou os arquivos e **para de
-   puxar sem avisar** (aconteceu com a Sofia em 18/10). No Mac não faz mal.
+   **Mac**: Spotlight, `Cmd + Espaço` → `Terminal`). Ele já abre na pasta do seu usuário. Um
+   comando por vez, cada um com Enter:
+   - **Baixar o caderno**: `git clone https://github.com/<seu-usuário>/segundo-cerebro.git`
+     (não use o `gh repo clone`: ele precisa do GitHub CLI, que pode não estar instalado, e aí dá
+     `gh: command not found`). Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou
+     `/Users/<usuário do Mac>/segundo-cerebro`. Como o caderno é privado, pode abrir uma janela
+     do GitHub pedindo pra entrar ou autorizar: entrar com a conta da Sakura e aceitar.
+   - **Entrar na pasta do caderno**: `cd segundo-cerebro` (certo = nenhuma resposta). Os comandos
+     de baixo valem **só pra essa pasta**, por isso vêm depois deste.
+   - **O fim das linhas**: `git config core.autocrlf false` (certo = nenhuma resposta). **No
+     Windows isso é obrigatório**: o Git do Windows troca o fim das linhas e o Obsidian salva do
+     outro jeito; sem esta linha, o Git acha que você mudou os arquivos e **para de puxar sem
+     avisar** (aconteceu com a Sofia em 18/10). No Mac não faz mal.
+   - **O seu nome no caderno**: `git config user.name "<seu primeiro nome>"` (certo = nenhuma
+     resposta). Sem ele e sem o e-mail de baixo, o primeiro envio do passo 10 dá `Author identity
+     unknown` (aconteceu com o Tiago).
+   - **Achar o seu e-mail de fachada** (no navegador): https://github.com/settings/emails, com a
+     conta da Sakura. Na parte **Keep my email addresses private** aparece um endereço que termina
+     em `@users.noreply.github.com` (começa com um número, o seu id, e depois `+<seu-usuário>`).
+     Copiar esse endereço inteiro. É ele, e não o e-mail da Sakura, que vai no caderno: assim o
+     GitHub não recusa o envio por privacidade.
+   - **O e-mail no caderno** (de volta no terminal): `git config user.email "<o e-mail de
+     fachada>"` (certo = nenhuma resposta). **Sem `--global`**, de propósito: só vale pro caderno.
    - **Colar no Git Bash**: sempre **botão direito → Paste**. Com **Ctrl + V** aparece `^[[200~` na
      frente e o comando não roda (dá `command not found`); é só colar de novo pelo botão direito.
-7. **Abrir no Obsidian**: **Abrir** (em "Abrir pasta como um cofre") → a pasta `segundo-cerebro`
+7. **Abrir no Obsidian**: **Abrir** (em "Abrir pasta como um cofre"; **se o Obsidian já abre
+   direto num outro cofre** e essa tela não aparece: ícone de cofre no canto de baixo à esquerda →
+   **Gerenciar cofres**, e ela aparece) → a pasta `segundo-cerebro`
    do passo 6 (**Windows**: Este Computador → C: → Usuários → `<usuário do Windows>`; **Mac**:
    apertar **Cmd + Shift + H**, que vai pra pasta do seu usuário) → **Selecionar pasta** (no Mac,
    **Abrir**). Aparecem os arquivos do
    caderno na coluna da esquerda. O ícone vermelho riscado no canto de baixo é o Obsidian Sync
    (pago, não usamos): ignorar.
-8. **O plugin Git**: engrenagem ⚙️ (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
+8. **O plugin Git** (só depois do passo 7, com o `segundo-cerebro` aberto): **o plugin é por
+   cofre**, então quem já instalou num outro cofre instala de novo aqui dentro. Engrenagem ⚙️
+   (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
    o nome em português) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
    "Ligar", já está liberado) → **Procurar** → buscar `Git` → o **Git, por Vinzent** (antigo
    "Obsidian Git") → **Instalar** → **Ativar**. Ele fica em "Plugins instalados" com o interruptor
@@ -169,10 +192,9 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
     to the following files would be overwritten by merge`, faltou a linha do `core.autocrlf` do
     passo 6: parar e pedir ao Claude, que confere com `git diff --stat origin/main` se a diferença é
     só de fim de linha antes de mandar trazer tudo do GitHub. **Se o envio for recusado** com `push declined due to email privacy
-    restrictions`: a sua conta esconde o e-mail. Em https://github.com/settings/emails, copiar o
-    e-mail de fachada (`<número>+<usuário>@users.noreply.github.com`) e, no terminal do passo 6,
-    rodar `cd segundo-cerebro` e `git config user.email "<o e-mail de fachada>"` (sem `--global`:
-    só vale pro caderno). Certo = nenhuma resposta. Repetir o `Git: Commit-and-sync`.
+    restrictions` ou der `Author identity unknown`: faltaram as linhas do nome e do e-mail de
+    fachada do passo 6. Abrir o terminal, rodar `cd segundo-cerebro` e fazer essas linhas do passo
+    6; depois, repetir o `Git: Commit-and-sync`.
 11. **A prova final**: abrir uma **sessão nova** do Claude na nuvem (https://claude.ai/code, no
     repositório `sakura-corp/sakura-system-ace`) e perguntar "você abriu o meu caderno?". Ela tem
     que dizer que abriu e falar do seu jeito. Se avisar que não abriu, voltar ao passo 2.
