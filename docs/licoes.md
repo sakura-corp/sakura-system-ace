@@ -1713,3 +1713,9 @@
     O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
     mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
     o PR olha se a issue fechou junto.
+
+85. **Link de Send num print de conversa (19/10/2026).** Um print do WhatsApp mandado pra sessão
+    mostrava o link inteiro de um Bitwarden Send (o que vem depois do `#` é a chave que abre). A
+    pessoa já tinha usado, então o Send foi apagado. **Regra**: antes de mandar print, cobrir link
+    de Send, senha ou chave; quando aparecer um, o Claude avisa na hora, nunca repete o link, e
+    pede pra apagar o Send no Bitwarden (Send → os três pontinhos → Excluir).
