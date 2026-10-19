@@ -45,11 +45,16 @@
 ## O que ficou de fora
 - **A revisão final do texto pelo ajudante forte** (tabela da issue): fica pra etapa 3, quando o
   texto da tarefa inteira estiver pronto.
-- **Ajudantes e sessões filhas abrem o caderno?** A seção 0 fala da sessão; o ritual não diz nada.
-  Fora da lista de arquivos da tarefa (a `ritual-de-tarefa` não está nela).
+
+## Decidido com a Sofia nesta sessão
+- **Ajudantes e sessões filhas não abrem o caderno** (não conversam com a pessoa): uma linha na
+  `ritual-de-tarefa`, fora da lista de arquivos da tarefa, com o "sim" dela.
+- No caderno dela (direto, sem PR): o próprio caderno é exceção à regra do repositório privado e
+  abre sozinho em toda sessão. No privado da empresa, a linha que apontava pro `docs/sofia.md`
+  passou a apontar pro caderno.
 
 ## O que depende de alguém
-- A Sofia: a pergunta acima (ajudantes e filhas) e a sugestão do caderno dela na descrição do PR.
+- Nada além do "Pronto quando depois de publicar".
 
 ## Onde parou
 Terminei a etapa 2. Próxima: a etapa 3 (o primeiro dia da equipe), numa sessão nova.
