@@ -7,7 +7,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DIAS_PARA_CONSIDERAR_EM_USO, compararVersoes as compararVersoesDaTela } from "../src/schemas/computadores";
 import {
   atualizarBancos,
@@ -28,6 +28,35 @@ import {
   ultimaMigrationIniciada,
   // @ts-expect-error — script utilitário em .mjs puro, sem tipos
 } from "./atualizar-bancos.mjs";
+
+// No Windows, `path.resolve` devolve o caminho com `\` (C:\...\0057_x.sql), e
+// listarMigrations recusa `\` (ele vai dentro do `\i '...'` do psql). O robô
+// de verdade só roda no CI (Linux), então o conserto fica SÓ no teste (#511):
+// o caminho é passado pra `/` antes de o script conferir — o Windows aceita
+// `C:/...` pra ler o arquivo. `comoNoWindows` liga a imitação no Linux, pra
+// provar o conserto sem precisar de um PC (a última describe deste arquivo).
+// Efeito colateral: neste arquivo a trava contra `\` do script nunca dispara;
+// um teste dessa trava precisa morar em outro arquivo, sem este mock.
+const windows = vi.hoisted(() => ({ imitar: false }));
+vi.mock("node:path", async (importOriginal) => {
+  const original = await importOriginal<typeof import("node:path")>();
+  const resolve = (...partes: string[]) => {
+    const caminho = original.resolve(...partes);
+    const comBarraDoWindows = windows.imitar ? caminho.replaceAll("/", "\\") : caminho;
+    return comBarraDoWindows.replaceAll("\\", "/");
+  };
+  const comResolve = { ...original, resolve };
+  return { ...comResolve, default: comResolve };
+});
+
+function comoNoWindows<T>(fazer: () => T): T {
+  windows.imitar = true;
+  try {
+    return fazer();
+  } finally {
+    windows.imitar = false;
+  }
+}
 
 interface BancoFalso {
   /** null = banco sem schema_versao (anterior à 0055). */
@@ -545,5 +574,31 @@ describe("versão mínima do programa (migration 0063)", () => {
     });
     expect(r.sucesso).toBe(true);
     expect(bancos.a.consultasComputadores ?? 0).toBe(0);
+  });
+});
+
+describe("no Windows (caminho com \\ e fim de linha CRLF, #511)", () => {
+  it("listarMigrations lê a pasta mesmo com o caminho vindo com \\", () => {
+    const pasta = mkdtempSync(join(tmpdir(), "migrations-"));
+    try {
+      writeFileSync(join(pasta, "0071_b.sql"), "select 1;\r\n");
+      writeFileSync(join(pasta, "0070_a.sql"), "-- versao-minima-do-programa: 0.9.45\r\nselect 1;\r\n");
+      const lista = comoNoWindows(() => listarMigrations(pasta));
+      expect(lista.map((m: { numero: number }) => m.numero)).toEqual([70, 71]);
+      expect(lista.map((m: { versaoMinima: string | null }) => m.versaoMinima)).toEqual(["0.9.45", null]);
+    } finally {
+      rmSync(pasta, { recursive: true, force: true });
+    }
+  });
+
+  it("a trava do número repetido continua acusando o número, e não o caminho", () => {
+    const pasta = mkdtempSync(join(tmpdir(), "migrations-"));
+    try {
+      writeFileSync(join(pasta, "0058_a.sql"), "");
+      writeFileSync(join(pasta, "0058_b.sql"), "");
+      expect(() => comoNoWindows(() => listarMigrations(pasta))).toThrow(/número 58/);
+    } finally {
+      rmSync(pasta, { recursive: true, force: true });
+    }
   });
 });
