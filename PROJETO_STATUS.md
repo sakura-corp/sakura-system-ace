@@ -143,9 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, madrugada: a etapa 2 da #608 pronta (o mecanismo do caderno)
+### 19/10/2026, noite: a #608 (o caderno de cada um) terminou
 - **Código**: nada publicado nesta sessão (a loja e o banco como em 18/10).
-- **Entrou** (#615): toda sessão abre o caderno de quem trabalha (seção 0), a não ser com `Second brain: não precisa` (`docs/tarefas.md`). A `nova-tarefa` pergunta, a `fechar` propõe e grava no caderno, e ajudantes e filhas não abrem.
-- **Próximas sessões**: a etapa 3 da #608; depois a #609 (o Ruflo). Curtas: a #604 e a #605.
-- **Em paralelo**: os Termos (falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e o memorando.
-- **Depende dela**: conferir que uma sessão nova abre o caderno sozinha; a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+- **Entrou** (#617): o caderno (`segundo-cerebro`) é a primeira tarefa de quem entra, com roteiro no `docs/equipe.md`; #618, #619 e #620, uma por pessoa, na leva 1. O conserto do roteiro no Windows (#621) vai no PR deste fechamento.
+- **Conferido**: uma sessão nova abre o caderno da Sofia sozinha; o Obsidian do PC dela puxa e envia (estava parado desde 18/10 pelo fim de linha do Windows; consertado).
+- **A equipe ainda não está pronta**: o que falta receber de cada um está no privado (`EQUIPE.md`, "A RECEBER"). O Gustavo começa só depois do Termo assinado.
+- **Próximas sessões**: conferir o "A RECEBER"; a #609 (o Ruflo). Curtas: a #604 e a #605.
+- **Depende dela**: o C1 (assinar o Team e convidar os três); a #606; aprovar as skills em rascunho. A lista inteira em `label:sofia`.

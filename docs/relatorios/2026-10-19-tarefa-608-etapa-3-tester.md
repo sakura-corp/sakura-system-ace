@@ -56,6 +56,10 @@
 - `grep` por `docs/sofia.md` e pelo e-mail dela no público (fora do histórico e dos relatórios):
   só o botão do `site/index.html`, que é de propósito.
 - `wc -c PROJETO_STATUS.md`: 12464 bytes (limite 15360).
+- **Depois de mesclar (19/10), a conferência do Obsidian reprovou de verdade**: o PC da Sofia não
+  puxava desde 18/10 (`Your local changes ... would be overwritten by merge`). Causa: o Git do
+  Windows troca o fim das linhas e o Obsidian salva do outro jeito. Consertado no PC dela
+  (`core.autocrlf false` só no caderno) e no roteiro (#621). A sessão nova abriu o caderno sozinha.
 
 ## O que passou sem eu ter visto reprovar
 - **O passo 2 na conta de alguém da equipe**: com a Sofia não precisou de clique; o caminho de

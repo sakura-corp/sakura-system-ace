@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, madrugada: a etapa 2 da #608 pronta (o mecanismo do caderno)
+- **Código**: nada publicado nesta sessão (a loja e o banco como em 18/10).
+- **Entrou** (#615): toda sessão abre o caderno de quem trabalha (seção 0), a não ser com `Second brain: não precisa` (`docs/tarefas.md`). A `nova-tarefa` pergunta, a `fechar` propõe e grava no caderno, e ajudantes e filhas não abrem.
+- **Próximas sessões**: a etapa 3 da #608; depois a #609 (o Ruflo). Curtas: a #604 e a #605.
+- **Em paralelo**: os Termos (falta o Gustavo), a escrita do Tiago quando ele aceitar o convite, e o memorando.
+- **Depende dela**: conferir que uma sessão nova abre o caderno sozinha; a #606, o C1 (Team) na segunda, aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+
 ### 18/10/2026, noite: a etapa 1 da #608 pronta (o caderno da Sofia)
 - **Código**: a loja continua na `v0.9.51` e o banco na `0064` (nada publicado).
 - **Entrou** (#613): o caderno `caranovavidanova/segundo-cerebro` (privado, no Obsidian do PC, puxa e envia a cada 10 min); o `docs/sofia.md` saiu do público, e a seção 1 do índice virou as regras de todos + o caderno de quem trabalha. O roteiro do PC está no relatório da #608.
