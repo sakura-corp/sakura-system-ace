@@ -45,3 +45,12 @@ export function levaAtual(levas: ResumoDaLeva[]): number | null {
   const candidatas = comAbertas.length > 0 ? comAbertas : levas;
   return Math.max(...candidatas.map((l) => l.numero));
 }
+
+/**
+ * Dá pra pegar tarefa desta leva? A atual sempre; uma anterior, enquanto ainda tiver tarefa aberta (Sofia,
+ * 19/10: quando a leva 2 entrou, as tarefas abertas da leva 1 ficaram sem ninguém poder pegar).
+ */
+export function levaAceitaPegar(numero: number, levas: ResumoDaLeva[], atual: number | null): boolean {
+  if (numero === atual) return true;
+  return levas.some((l) => l.numero === numero && l.abertas > 0);
+}

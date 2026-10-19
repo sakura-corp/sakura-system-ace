@@ -14,7 +14,7 @@ export function mesmoLogin(a: string | undefined | null, b: string | undefined |
 /** null = pode pegar; senão, o motivo em português, curto, pra aparecer no cartão. */
 export function motivoPraNaoPegar(tarefa: Tarefa | undefined, tarefasDaLeva: Tarefa[], login: string | undefined): string | null {
   if (!login) return "entre no painel pra pegar uma tarefa";
-  if (!tarefa) return "esta tarefa não está na leva atual";
+  if (!tarefa) return "esta tarefa não está numa leva aberta";
   const n = tarefa.numero;
   if (tarefa.estado === "feita") return `a #${n} já está feita`;
   const dono = tarefa.dono?.login;

@@ -6,14 +6,14 @@ import { ListaDeTarefas } from "./ListaDeTarefas";
 const base: Tarefa = { numero: 20, titulo: "Tarefa de teste", url: "https://github.com/sakura-corp/sakura-system-ace/issues/20", estado: "livre", chefe: "frontend" };
 const ELA = { login: "Fulana", avatar: "" };
 const OUTRO = { login: "beltrano", avatar: "" };
-type Opcoes = { login?: string | null; atual?: boolean; outras?: Tarefa[] };
+type Opcoes = { login?: string | null; aberta?: boolean; outras?: Tarefa[] };
 // login padrão: "fulana"; null = sem login.
 const html = (t: Partial<Tarefa>, o: Opcoes = {}) =>
   renderToString(
     <ListaDeTarefas
       tarefas={[{ ...base, ...t }, ...(o.outras ?? [])]}
       login={o.login === null ? undefined : (o.login ?? "fulana")}
-      ehALevaAtual={o.atual ?? true}
+      levaAberta={o.aberta ?? true}
     />,
   ).replace(/<!-- -->/g, "");
 const temLinkDoClaude = (h: string) => h.includes("https://claude.ai/code");
@@ -76,10 +76,10 @@ describe("Cartão da tarefa: Pegar tarefa (#538)", () => {
     expect(h).toMatch(/<button type="button" class="[^"]*">Pegar tarefa/);
   });
 
-  it("leva que não é a atual: desligado e 'esta tarefa não está na leva atual'", () => {
-    const h = html({}, { atual: false });
+  it("leva que não está aberta: desligado e 'esta tarefa não está numa leva aberta'", () => {
+    const h = html({}, { aberta: false });
     expect(pegarDesligado(h)).toBe(true);
-    expect(h).toContain(">esta tarefa não está na leva atual</p>");
+    expect(h).toContain(">esta tarefa não está numa leva aberta</p>");
   });
 
   it("sem login (modo de exemplo): desligado e 'entre no painel pra pegar uma tarefa'", () => {
@@ -141,8 +141,8 @@ describe("Cartão da tarefa: quem já pegou (#538)", () => {
     expect(html({ estado: "andamento", dono: ELA }, { login: null })).not.toContain("<button");
   });
 
-  it("o dono ainda vê o Largar numa leva que não é a atual (largar não depende da leva)", () => {
-    expect(temLargar(html({ estado: "andamento", dono: ELA }, { atual: false }))).toBe(true);
+  it("o dono ainda vê o Largar numa leva que não está aberta (largar não depende da leva)", () => {
+    expect(temLargar(html({ estado: "andamento", dono: ELA }, { aberta: false }))).toBe(true);
   });
 });
 

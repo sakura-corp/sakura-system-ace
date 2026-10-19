@@ -57,10 +57,11 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   no GitHub, com o login dela. O worker confere tudo de novo na hora, e o botão vem desligado, dizendo
   o porquê, quando a tarefa:
   - tem dono;
-  - não é da leva atual;
+  - não está numa leva aberta (a atual, ou uma anterior que ainda tem tarefa aberta; decidido em 19/10);
   - está incompleta;
   - espera uma dependência;
-  - ou é de quem já está com outra em andamento.
+  - ou é de quem já está com outra em andamento (em qualquer leva aberta; a página só vê a leva da tela, o worker
+    confere todas).
 
   O **"Começar com o Claude"** só aparece pra quem pegou. **"Largar"** devolve a tarefa: só o dono,
   e só enquanto não abriu o PR. Ninguém põe outra pessoa numa tarefa pelo painel. Se o worker recusar (ex.: alguém
@@ -727,3 +728,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tela e ninguém via as 4 tarefas abertas dela). A barra do PC e a folha "Mais" do celular listam as outras levas logo
   abaixo de "Leva atual", da mais nova pra mais velha, com "(N abertas)" quando ainda têm tarefa. É um atalho até a
   página das levas (#548), que continua na leva 2 com o resumo (total, horas, quando terminou).
+- **19/10/2026, mais tarde: dá pra pegar tarefa de leva anterior** (Sofia): com a leva 2 posta, as tarefas abertas
+  da leva 1 apareciam com o botão desligado ("não está na leva atual"). A regra agora é `levaAceitaPegar()`
+  (`painel/src/logica/estado.ts`): a atual, ou uma anterior que ainda tem tarefa aberta. O worker lê todas as levas
+  abertas pra decidir, e a "uma por vez" vale entre elas.

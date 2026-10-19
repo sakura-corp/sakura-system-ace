@@ -34,7 +34,7 @@ describe("motivoPraNaoPegar", () => {
   });
 
   it("2. sem tarefa", () => {
-    expect(motivoPraNaoPegar(undefined, [], "ana")).toBe("esta tarefa não está na leva atual");
+    expect(motivoPraNaoPegar(undefined, [], "ana")).toBe("esta tarefa não está numa leva aberta");
   });
 
   it("3. feita", () => {

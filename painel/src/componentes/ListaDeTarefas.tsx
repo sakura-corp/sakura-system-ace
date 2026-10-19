@@ -15,11 +15,11 @@ type Props = {
   login?: string;
   /** Depois de pegar ou largar (ou da sessão acabar): busca a leva de novo. */
   aoMudar?: () => Promise<unknown>;
-  /** Só a leva atual aceita "Pegar tarefa". */
-  ehALevaAtual?: boolean;
+  /** A leva aceita "Pegar tarefa": a atual, ou uma anterior com tarefa aberta (`levaAceitaPegar`). */
+  levaAberta?: boolean;
 };
 
-export function ListaDeTarefas({ tarefas, login, aoMudar, ehALevaAtual = true }: Props) {
+export function ListaDeTarefas({ tarefas, login, aoMudar, levaAberta = true }: Props) {
   // O aviso da última ação mora aqui, não no cartão: depois de recarregar, o cartão pode mudar de grupo
   // (ou perder os botões, se outra pessoa pegou) e o aviso vai junto com ele.
   const [aviso, setAviso] = useState<{ numero: number; texto: string } | null>(null);
@@ -40,7 +40,7 @@ export function ListaDeTarefas({ tarefas, login, aoMudar, ehALevaAtual = true }:
                   tarefas={tarefas}
                   login={login}
                   aoMudar={aoMudar}
-                  ehALevaAtual={ehALevaAtual}
+                  levaAberta={levaAberta}
                   aviso={aviso?.numero === t.numero ? aviso.texto : ""}
                   aoAvisar={(texto) => setAviso(texto ? { numero: t.numero, texto } : null)}
                 />
@@ -66,7 +66,7 @@ type PropsDosBotoes = {
   tarefas: Tarefa[];
   login?: string;
   aoMudar?: () => Promise<unknown>;
-  ehALevaAtual: boolean;
+  levaAberta: boolean;
   planoB: boolean;
   aoCopiar: (r: ResultadoDaCopia) => void;
   /** Põe (ou apaga, com "") o aviso da última ação, que fica à vista no cartão. */
@@ -81,7 +81,7 @@ type PropsDosBotoes = {
  * - sem dono → "Pegar tarefa"; se não pode, desligado e o motivo à vista (no celular não existe dica de mouse).
  * Quem decide de verdade é o worker; a página só desliga o botão e diz o porquê.
  */
-function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB, aoCopiar, aoAvisar }: PropsDosBotoes) {
+function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, aoCopiar, aoAvisar }: PropsDosBotoes) {
   const [copiado, setCopiado] = useState(false);
   const [ocupado, setOcupado] = useState<Acao | null>(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -187,7 +187,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, ehALevaAtual, planoB,
   }
 
   // Sem dono: Pegar tarefa.
-  const motivo = !ehALevaAtual ? "esta tarefa não está na leva atual" : motivoPraNaoPegar(tarefa, tarefas, login);
+  const motivo = !levaAberta ? "esta tarefa não está numa leva aberta" : motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo === null) {
     return (
       <div className="mx-4 mb-3">
@@ -266,13 +266,13 @@ export type PropsDoItem = {
   tarefas: Tarefa[];
   login?: string;
   aoMudar?: () => Promise<unknown>;
-  ehALevaAtual: boolean;
+  levaAberta: boolean;
   aviso: string;
   aoAvisar: (texto: string) => void;
 };
 
 /** Um cartão de tarefa com os botões da #538; o Início (#546) usa pra "A sua tarefa". */
-export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual, aviso, aoAvisar }: PropsDoItem) {
+export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, aoAvisar }: PropsDoItem) {
   const [planoB, setPlanoB] = useState(false);
   const texto = textoDaTarefa(t.numero, t.chefe);
   return (
@@ -319,7 +319,7 @@ export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, ehALevaAtual,
           tarefas={tarefas}
           login={login}
           aoMudar={aoMudar}
-          ehALevaAtual={ehALevaAtual}
+          levaAberta={levaAberta}
           planoB={planoB}
           aoCopiar={(r) => setPlanoB(r === "plano-b")}
           aoAvisar={aoAvisar}
