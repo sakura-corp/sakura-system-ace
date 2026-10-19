@@ -19,26 +19,80 @@ import {
 
 const ARQUIVO = "supabase/instalacao/instalacao-completa.sql";
 
+// No Windows, o Git entrega os .sql com fim de linha CRLF (\r\n), e o arquivo
+// gravado e o montado diferem só nisso (#511). O que importa é o conteúdo:
+// o fim de linha é passado pra \n antes de comparar, nos dois lados.
+const semCRLF = (texto: string) => texto.replace(/\r\n/g, "\n");
+
+function confereAtualizado(gravado: string, esperado: string) {
+  expect(
+    semCRLF(gravado),
+    "O arquivo de instalação está desatualizado. Rode: npm run gerar-instalacao",
+  ).toBe(semCRLF(esperado));
+}
+
+/** Onde cada migration aparece como cabeçalho de seção no arquivo gerado (-1 = não aparece). */
+function posicoesDasMigrations(gravado: string, migrations: string[]) {
+  const texto = semCRLF(gravado);
+  return migrations.map((nome) => texto.indexOf(`\n-- ${nome}\n`));
+}
+
 describe("arquivo de instalação completa", () => {
   it("está atualizado com as migrations de hoje", () => {
     const gravado = readFileSync(ARQUIVO, "utf8");
     const esperado: string = montarInstalacaoCompleta();
 
-    expect(
-      gravado,
-      "O arquivo de instalação está desatualizado. Rode: npm run gerar-instalacao",
-    ).toBe(esperado);
+    confereAtualizado(gravado, esperado);
   });
 
   it("inclui todas as migrations, na ordem numérica", () => {
     const gravado = readFileSync(ARQUIVO, "utf8");
     const migrations: string[] = listarMigrations();
 
-    // cada migration aparece como um cabeçalho de seção no arquivo gerado
-    const posicoes = migrations.map((nome) => gravado.indexOf(`\n-- ${nome}\n`));
+    const posicoes = posicoesDasMigrations(gravado, migrations);
 
     expect(posicoes.every((p) => p >= 0), "alguma migration ficou de fora").toBe(true);
     expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
+  });
+});
+
+// A prova no Linux, imitando o checkout do Windows: as migrations e o arquivo
+// gravado com CRLF. As duas checagens de cima têm que continuar valendo —
+// passar quando está em dia e reprovar quando não está.
+describe("no Windows (fim de linha CRLF, #511)", () => {
+  const comCRLF = (texto: string) => texto.replace(/\r?\n/g, "\r\n");
+
+  function pastaComCRLF() {
+    const pasta = mkdtempSync(join(tmpdir(), "migrations-"));
+    writeFileSync(join(pasta, "0001_a.sql"), comCRLF("create table a ();\ninsert into a values (1);\n"));
+    writeFileSync(join(pasta, "0002_b.sql"), comCRLF("create table b ();\n"));
+    return pasta;
+  }
+
+  it("o arquivo em dia passa, mesmo com tudo em CRLF", () => {
+    const pasta = pastaComCRLF();
+    try {
+      const gravado = comCRLF(montarInstalacaoCompleta(pasta));
+      expect(gravado).toContain("\r\n");
+      confereAtualizado(gravado, montarInstalacaoCompleta(pasta));
+      const posicoes = posicoesDasMigrations(gravado, listarMigrations(pasta));
+      expect(posicoes.every((p) => p >= 0)).toBe(true);
+      expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
+    } finally {
+      rmSync(pasta, { recursive: true, force: true });
+    }
+  });
+
+  it("e o arquivo desatualizado continua reprovando", () => {
+    const pasta = pastaComCRLF();
+    try {
+      const gravado = comCRLF(montarInstalacaoCompleta(pasta));
+      writeFileSync(join(pasta, "0003_nova.sql"), comCRLF("create table c ();\n"));
+      expect(() => confereAtualizado(gravado, montarInstalacaoCompleta(pasta))).toThrow(/desatualizado/);
+      expect(posicoesDasMigrations(gravado, listarMigrations(pasta))).toContain(-1);
+    } finally {
+      rmSync(pasta, { recursive: true, force: true });
+    }
   });
 });
 
