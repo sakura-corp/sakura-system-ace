@@ -175,7 +175,7 @@ export default function App({
   }
 
   return (
-    <div className="min-h-screen pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:flex">
+    <div className="min-h-screen md:flex">
       <BarraLateral levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       <NavegacaoDoCelular levas={levas} pagina={pagina} usuario={usuario} tempoReal={buscando ? tempoReal.estado : undefined} />
       {pagina === "inicio" ? (
@@ -225,7 +225,7 @@ export default function App({
           <Escritorio />
         </main>
       ) : (
-        <main className="mx-auto w-full max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           {exemplo ? (
             <TelaDaLeva nome={nomeDaLevaDeExemplo} tarefas={tarefasDeExemplo} subtitulo="Dados de exemplo: ainda sem ligação com o GitHub." />
           ) : estado.tipo === "pronto" ? (
