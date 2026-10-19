@@ -27,9 +27,9 @@ existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra faze
 
 **Quando NÃO é a Sofia** (a equipe; manual: `docs/equipe.md`), valem estas regras, e elas passam
 na frente de qualquer outra deste arquivo:
-- **Escopo**: o Gustavo, **só o painel** (pasta `painel/` e `docs/painel.md`); os outros dois, **o
-  programa das lojas**, sempre contra o **Supabase de teste**, nunca o de uma loja. Mudar isso é
-  com a Sofia, e esta linha muda.
+- **Escopo**: os três (Gustavo, Lázaro e Tiago), **o programa das lojas**, com o mesmo acesso,
+  sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
+  Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
 - **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão da Sofia no PR e para ali. A
   `main` nem aceita sem a aprovação dela (ruleset `main protegida`).
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o

@@ -300,8 +300,9 @@ o financeiro.
 
 ## Regras pra quem trabalha no painel (resumo da seção 0)
 
-- Mexe **só no painel**: a pasta `painel/` e este arquivo (mais as 3 linhas da raiz que a
-  tarefa #350 manda mudar). Se precisar mexer fora disso, avisa a Sofia antes.
+- Numa tarefa do painel, mexe **só no painel**: a pasta `painel/` e este arquivo (mais as 3 linhas
+  da raiz que a tarefa #350 manda mudar). Se precisar mexer fora disso, avisa a Sofia antes. (Desde
+  19/10/2026 os três da equipe trabalham no programa das lojas; ver a seção 0.)
 - Branch → PR → **pede a revisão da Sofia** e para. **Nunca mescla.**
 - Não publica, não libera, não mexe em banco, versão, tag, secret, cofre, ruleset nem
   configuração do repositório. Nem por um workflow novo.
