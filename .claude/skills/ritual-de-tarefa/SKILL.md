@@ -91,9 +91,11 @@ Filha custa mais: nasce sem a conversa da mãe e gasta perto de **70 mil tokens 
   3. "Siga a skill `chefe-<função>` só nas regras da função. Não abra o caderno de ninguém (o
      `segundo-cerebro`). **Não abra PR**: faça commit e push na
      sua branch.";
-  4. "**Mande mensagem à mãe** (ferramenta de mandar mensagem, `session_id` da mãe) nestes momentos,
-     no formato abaixo: quando começar, se travar, e **sempre ao terminar**. Sem a mensagem final,
-     a mãe não fica sabendo que você terminou."
+  4. "**Mande mensagem à mãe** (ferramenta `mcp__claude-code-remote__send_message`, `session_id`
+     da mãe) nestes momentos, no formato abaixo: quando começar, se travar, e **sempre ao
+     terminar**. Sem a mensagem final, a mãe não fica sabendo que você terminou. O `SendMessage`
+     **não** chega a outra sessão: só alcança agentes de dentro da sua (em 18/10, na #601, a
+     primeira mensagem se perdeu assim)."
 
 **Formato da mensagem da filha** (uma mensagem curta, sempre igual):
 ```
@@ -130,8 +132,10 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
    e **"Sessões filhas"** (quantas, e a última mensagem de cada). Em **"Gasto"**, no campo
    **`/goal`**, diga como ele parou, com um dos casos do modelo em `docs/relatorios/README.md`
    (cumprido, impossível, sem progresso, pelo limite de turnos, limpo por erro ou pela pessoa), ou
-   "não usei" e por quê. Se parou pelo limite com item aberto, o que
-   falta vai em "Onde parou".
+   "não usei" e por quê. **Não adivinhe**: a sessão não sabe com certeza se o `/goal` foi ligado
+   na tela. Sem certeza, escreva "não sei se foi ligado (a coordenadora confere)", **nunca**
+   "ninguém colou" (em 18/10 a #592 escreveu isso e o registro mostrava a meta cumprida). Se parou
+   pelo limite com item aberto, o que falta vai em "Onde parou".
 4. Se a cota acabar no meio: "onde parou" na descrição do PR ou da issue, com a lista das filhas e
    das branches, pra outra sessão retomar.
 
