@@ -26,6 +26,9 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   apaga sozinho. **Nunca** por WhatsApp, e-mail, conversa com o Claude nem pelo repositório.
   (Como o banco de teste foi montado está em `docs/supabase-de-teste.md`: é da Sofia, e quem trabalha
   **não roda nada dele**, nem SQL.)
+  **Quando o Send é preciso**: só pra **abrir o programa** no seu computador (o `.env`, passo 6
+  abaixo); tarefa só de testes automáticos não usa. A chave e o endereço vão **só no arquivo
+  `.env`**, e o login só na tela do programa: nunca na conversa com o Claude, nunca no GitHub.
 
 Com isso em mãos, a pessoa instala o **Claude Code no PC** (não a versão pela internet: vai
 precisar abrir o programa ou o painel no próprio computador pra testar), entra com a **conta da
@@ -61,8 +64,8 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 1. Roda `npm install` na pasta do repositório (na primeira vez demora uns minutos). Esse comando
    também liga as **travas de segredo** do Git (`.githooks/`), que barram uma chave antes de ela
    sair do computador.
-2. Cria o arquivo **`.env`** copiando o `.env.example` (no Windows, `copy .env.example .env`; no
-   Mac, `cp .env.example .env`). Ele tem duas linhas, `VITE_SUPABASE_URL=` e
+2. Cria o arquivo **`.env`** copiando o `.env.example` (no PowerShell, `copy .env.example .env`;
+   no Git Bash e no Mac, `cp .env.example .env`). Ele tem duas linhas, `VITE_SUPABASE_URL=` e
    `VITE_SUPABASE_ANON_KEY=`.
 3. Guia a pessoa a abrir o `.env` num editor de texto (Bloco de Notas no Windows, TextEdit no Mac,
    em modo de texto simples) e colar, depois do `=`, o endereço e a chave do **Supabase de
@@ -244,7 +247,8 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
   PR e **para**. Nunca mescla, nunca publica, nunca roda SQL, nunca mexe em senha, cofre ou regras.
 - **O que você revisa**: o relatório (o que cada ajudante fez, o que foi testado **e visto
   reprovar**, o que ficou de fora, o que depende de alguém) e o PR. Se o relatório pedir teste no
-  PC, o Claude guia você um passo por vez. Depois, pede a revisão da Sofia.
+  PC, o Claude guia você um passo por vez ("Testar no seu computador o que a sessão da nuvem fez",
+  abaixo). Depois, pede a revisão da Sofia.
 - **O relatório fica no PR**: o chefe grava o relatório num arquivo em `docs/relatorios/` (sem
   senha, CPF, preço ou dado pessoal; o repositório é público).
 - **Se a sessão falhar logo no começo** com aviso de crédito, limite ou modelo indisponível (ex.:
@@ -257,6 +261,58 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
 - **Se a cota acabar no meio**: o chefe grava "onde parou" na descrição do PR ou da tarefa, e outra
   sessão retoma dali.
 - As skills estão em `.claude/skills/chefe-*`. Melhoria nelas é **proposta**; a Sofia aprova.
+
+## Testar no seu computador o que a sessão da nuvem fez
+
+A sessão do botão "Começar com o Claude" roda **na nuvem**: escreve o código e abre o PR, mas não
+alcança o seu computador. Quando a tarefa pede teste no PC, é você quem traz a branch da nuvem pra
+sua pasta e testa ali. A sessão diz **qual caso é** (A ou B), **o nome exato da branch** e o que
+rodar ou clicar; o resto está aqui. **Um passo por vez**: faça um, conte à sessão o que apareceu
+(ou "feito") e só então o próximo. **Em qualquer passo**, se aparecer *error*, *fatal* ou *would be
+overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
+
+1. **Abrir o terminal e ir pra pasta do projeto.**
+   - **Windows**: menu Iniciar → digite `Git Bash` → abrir. Pra colar, **botão direito → Paste**
+     (o `Ctrl+V` não cola ali).
+   - **Mac**: `Cmd+Espaço` → digite `Terminal` → Enter. Pra colar, `Cmd+V`.
+   - Digite `cd sakura-system-ace` (ou o caminho da pasta que você escolheu no "Primeiro dia"; no
+     Git Bash a barra é `/`, ex: `cd Documents/sakura-system-ace`) e Enter. Se aparecer *"No such
+     file or directory"*, pergunte à sessão; se a pasta ainda não existe, volte ao "Primeiro dia"
+     (acima). Sem o `gh`, dá pra clonar com
+     `git clone https://github.com/sakura-corp/sakura-system-ace.git`.
+2. **Trazer a branch da nuvem**: `git fetch origin` e depois `git switch <branch>`, com o nome que
+   a sessão disser (ex: `claude/tarefa-511-...`). Deve aparecer *"Switched to a new branch"* (ou
+   *"Switched to branch"*, se você já testou essa branch antes; aí rode também `git pull`, pra
+   pegar o que a sessão enviou depois).
+3. **Instalar as dependências**: `npm install` (na primeira vez demora uns minutos). No Git Bash e
+   no Mac é assim mesmo; no **PowerShell**, se aparecer o erro de scripts desabilitados,
+   `npm.cmd install` (ver "Primeiro dia").
+4. **Caso A, só testes automáticos** (ex: #511). **Não precisa do banco de teste** nem do `.env`.
+   - Rode o comando que a sessão disser (ex: `npm run test:fusos`).
+   - Se a tarefa pede **ver reprovar** (a prova de que o teste mede alguma coisa): primeiro
+     `git switch main`, `git pull` (pra `main` estar em dia) e o comando, e devem aparecer os
+     testes reprovando que a sessão disse; depois `git switch <branch>` e o comando de novo, tudo
+     passando. Se a sessão disser que a tarefa mexe nas dependências (`package.json`), rode
+     `npm install` de novo depois de cada `git switch`.
+   - Mande à sessão o fim do texto que apareceu, ou um print.
+5. **Caso B, abrir o programa** (ex: #510, #455). Este é o único caso que precisa do **banco de
+   teste**.
+   - **Só na primeira vez** (se o "Primeiro dia" já fez o `.env`, pule): o arquivo `.env` com o
+     endereço e a chave que vieram pelo Bitwarden Send, como no passo 6 do "Primeiro dia" (itens 2
+     a 4). No Git Bash e no Mac, o comando de copiar é `cp -n .env.example .env` (o `-n` não apaga
+     um `.env` que já exista); pra abrir o arquivo, `notepad .env` (Git Bash) ou `open -e .env`
+     (Mac). Você cola no arquivo, no seu computador: **nunca na conversa com o Claude** (nem com a
+     da nuvem) e nunca no GitHub. Se você não tem o link, peça à Sofia.
+   - `npm run dev`: abre a janela do programa. Entre com o seu **login de teste**. Se aparecer a
+     tela pedindo o endereço do Supabase, **não preencha nada**: o `.env` ficou errado; volte ao
+     item 3 do passo 6 do "Primeiro dia".
+   - Siga o roteiro curto que a sessão mandou, um passo por vez, contando o que apareceu.
+   - Pra fechar: `Ctrl+C` no terminal (no Mac também é `Control+C`, não `Cmd`).
+6. **Levar o resultado pro PR**: mande o print ou o texto **pra conversa com a sessão da nuvem**;
+   ela põe na descrição do PR e no relatório. Antes de mandar o print, confira que **não aparece o
+   `.env`, a chave, o endereço do Supabase nem o seu login ou senha de teste** (o repositório é
+   público).
+7. **Voltar pra `main`**: `git switch main`. Pronto: a pasta fica como estava, pra próxima tarefa.
 
 ## O dia a dia
 
