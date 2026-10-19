@@ -100,6 +100,8 @@ describe("App", () => {
     const fs = "node:fs";
     const { readFileSync } = (await import(/* @vite-ignore */ fs)) as { readFileSync: (u: URL, c: "utf8") => string };
     const estiloCss = readFileSync(new URL("./estilo.css", import.meta.url), "utf8");
+    // Um bloco body só: um segundo, mais abaixo, poderia zerar a margem sem o teste ver.
+    expect(estiloCss.match(/(^|[\s,}])body\s*[{,]/g)).toHaveLength(1);
     const body = /^body\s*\{([^}]*)\}/m.exec(estiloCss);
     expect(body).not.toBeNull();
     expect(body![1]).toMatch(/padding-left:\s*env\(safe-area-inset-left\)/);

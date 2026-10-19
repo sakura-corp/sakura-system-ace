@@ -7,7 +7,7 @@
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
-- ajudante-forte (revisor): leu o diff do zero atrás do que o teste não pega. Resultado em "Revisão final", abaixo.
+- ajudante-forte (revisor): leu o diff do zero e fez o build numa cópia. Nada tranca. Achou (1) as faixas claras do modo TV no tema claro (virou a escolha A/B abaixo) e (2) que o teste não pegava um segundo bloco `body` zerando a margem; o teste agora confere que só há um (visto reprovar). Conferiu também que a regra do body fica fora de `@layer` no CSS final e ganha do reset do Tailwind.
 
 ## Modelos usados
 - Ler a issue e fazer: a sessão (forte), esforço baixo. Sem troca por falha.
@@ -18,7 +18,7 @@
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (a sessão fez outras tarefas junto: o #636 e a #605).
-- **Ajudantes**: 1 (forte, esforço alto); tokens não medidos.
+- **Ajudantes**: 1 (forte, esforço alto): 77 mil tokens, 16 ferramentas (via aviso).
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: não usei (sessão aberta por outra sessão, sem ninguém na tela pra colar).
 
@@ -26,6 +26,7 @@
 - O teste novo de `painel/src/App.test.tsx` ("toda tela respeita a área segura dos lados, num lugar só: o body"):
   - antes do conserto, reprovou: o `body` do `estilo.css` não tinha `padding-left: env(safe-area-inset-left)`;
   - tirando de propósito só o `padding-right` do body, reprovou;
+  - acrescentando de propósito `body { padding: 0; }` no fim do CSS, reprovou (achado do revisor);
   - pondo de volta de propósito a margem no `div` de fora do App, reprovou (`/leva: ... not to contain 'safe-area-inset'`): é a prova de que a margem não dobra.
 - Largura com a área segura imitada (47 px de cada lado, 812×375): o `<main>` da Leva passava 20 px da janela (`scrollWidth` 832 em 812). **Já acontecia na `main`** (medido com a margem no `div` antigo). Com `min-w-0` nesse `<main>` (lição 81), 812 em 812.
 
