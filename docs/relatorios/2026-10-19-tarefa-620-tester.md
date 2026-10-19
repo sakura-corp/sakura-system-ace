@@ -31,7 +31,7 @@
   veio antes de gravar.
 - [x] **A ida e a volta**: o Claude gravou `teste-do-claude.md`; o `Git: Pull` trouxe a nota pro
   Obsidian; o Tiago apagou a nota e o `Git: Commit-and-sync` mandou. No GitHub, o commit
-  `vault backup` (autor Tiago Imperatori) apaga a nota. A pasta `.obsidian/` não subiu.
+  `vault backup` (autor: o Tiago) apaga a nota. A pasta `.obsidian/` não subiu.
 - [x] **Uma sessão nova disse que abriu o caderno**: respondeu que abriu `tigasss1/segundo-cerebro`
   e listou o jeito dele (respostas curtas, um passo por vez, comandos explicados).
 
