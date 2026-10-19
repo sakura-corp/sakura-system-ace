@@ -3,7 +3,7 @@
 - **Tarefa**: #635, medir o gasto por PR aceito (a ideia do Ruflo, #609)
 - **Chefe**: tester
 - **Data**: 2026-10-19
-- **PR**: o da branch `claude/tarefa-635-gasto-por-pr` (link na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/637
 - **Jeito**: aberta pela /coordenar
 
 ## O que cada agente fez
