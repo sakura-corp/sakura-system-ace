@@ -29,6 +29,7 @@ escreva o valor.
 - **Chefe**: <função>
 - **Data**: AAAA-MM-DD
 - **PR**: <link>
+- **Jeito**: sessão direta | com ajudantes | com sessões filhas | aberta pela /coordenar
 
 ## O que cada agente fez
 - <agente>: <uma linha>  ("nenhum" se não chamou)
@@ -69,6 +70,12 @@ escreva o valor.
 ```
 
 ### Como medir o "Gasto"
+
+A linha **"Jeito"** (lá no topo do modelo) diz como a tarefa foi feita, com **um** dos quatro
+valores: **sessão direta** (sem ajudante nem filha), **com ajudantes**, **com sessões filhas** ou
+**aberta pela /coordenar** (vale mesmo que ela também tenha usado ajudantes). É com ela que o
+revisor soma o "tokens por PR mesclado" na revisão do mês; o relatório não diz se o PR foi aceito,
+porque é escrito antes da revisão da Sofia (quem descobre é o revisor, no GitHub).
 
 Só tokens e quantidades, **nunca dinheiro** (o repositório é público; a ferramenta da sessão também
 mostra um valor em dinheiro, que **não** entra). Número incerto é aviso, nunca trava (`docs/licoes.md`,
