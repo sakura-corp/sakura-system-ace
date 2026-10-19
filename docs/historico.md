@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, noite: a #608 (o caderno de cada um) terminou
+- **Código**: nada publicado nesta sessão (a loja e o banco como em 18/10).
+- **Entrou** (#617): o caderno (`segundo-cerebro`) é a primeira tarefa de quem entra, com roteiro no `docs/equipe.md`; #618, #619 e #620, uma por pessoa, na leva 1. O conserto do roteiro no Windows (#621) vai no PR deste fechamento.
+- **Conferido**: uma sessão nova abre o caderno da Sofia sozinha; o Obsidian do PC dela puxa e envia (estava parado desde 18/10 pelo fim de linha do Windows; consertado).
+- **A equipe ainda não está pronta**: o que falta receber de cada um está no privado (`EQUIPE.md`, "A RECEBER"). O Gustavo começa só depois do Termo assinado.
+- **Próximas sessões**: conferir o "A RECEBER"; a #609 (o Ruflo). Curtas: a #604 e a #605.
+- **Depende dela**: o C1 (assinar o Team e convidar os três); a #606; aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+
 ### 19/10/2026, madrugada: a etapa 2 da #608 pronta (o mecanismo do caderno)
 - **Código**: nada publicado nesta sessão (a loja e o banco como em 18/10).
 - **Entrou** (#615): toda sessão abre o caderno de quem trabalha (seção 0), a não ser com `Second brain: não precisa` (`docs/tarefas.md`). A `nova-tarefa` pergunta, a `fechar` propõe e grava no caderno, e ajudantes e filhas não abrem.

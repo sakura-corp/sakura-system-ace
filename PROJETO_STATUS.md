@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, noite: a #608 (o caderno de cada um) terminou
-- **Código**: nada publicado nesta sessão (a loja e o banco como em 18/10).
-- **Entrou** (#617): o caderno (`segundo-cerebro`) é a primeira tarefa de quem entra, com roteiro no `docs/equipe.md`; #618, #619 e #620, uma por pessoa, na leva 1. O conserto do roteiro no Windows (#621) vai no PR deste fechamento.
-- **Conferido**: uma sessão nova abre o caderno da Sofia sozinha; o Obsidian do PC dela puxa e envia (estava parado desde 18/10 pelo fim de linha do Windows; consertado).
-- **A equipe ainda não está pronta**: o que falta receber de cada um está no privado (`EQUIPE.md`, "A RECEBER"). O Gustavo começa só depois do Termo assinado.
-- **Próximas sessões**: conferir o "A RECEBER"; a #609 (o Ruflo). Curtas: a #604 e a #605.
-- **Depende dela**: o C1 (assinar o Team e convidar os três); a #606; aprovar as skills em rascunho. A lista inteira em `label:sofia`.
+### 19/10/2026, tarde: o Claude Team assinado e a equipe convidada
+- **Código**: nada publicado (a loja e o banco como em 18/10).
+- **Feito**: o C1 (o Team assinado e os três convidados). O Tiago está pronto (organização, duas etapas, escrita no repositório, Team) e começou a #620.
+- **Conferido**: uma sessão nova pela conta do Team abriu o caderno sozinha (ambiente na nuvem "sakura corporation", rede Limitado).
+- **Falta da equipe**: o Lázaro e o Gustavo aceitarem o Team e ligarem as duas etapas; o Termo do Gustavo; o e-mail da Sakura no GitHub dos três. Detalhe no privado (`EQUIPE.md`, "A RECEBER").
+- **Próximas sessões**, já pela conta do Team: a #609 (o Ruflo). Curtas: a #604 e a #605.
+- **Depende dela**: a #606; aprovar as skills em rascunho; não cancelar o plano pessoal até o Team estar firme. A lista inteira em `label:sofia`.
