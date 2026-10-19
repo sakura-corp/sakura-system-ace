@@ -1708,3 +1708,8 @@
       provável motivo: o texto já trazia uma frase de autorização escrita pra outra sessão ler.
       Trocar só o modelo passou. **Caminho que funcionou**: o Claude escreve o trecho e ela cola
       no app. Não contornar a trava nem apagar a frase dela por conta própria.
+84. **"Fecha #620" não fecha a tarefa (19/10/2026, PR #631).** O GitHub só fecha a issue
+    sozinho com as palavras em inglês na descrição do PR (`Closes`, `Fixes`, `Resolves` + `#N`).
+    O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
+    mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
+    o PR olha se a issue fechou junto.
