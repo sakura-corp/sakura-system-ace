@@ -243,8 +243,8 @@ com o de uma do exemplo), o script pode parar com erro: aí use o "zerar e recom
 
 **Quando sair migration nova**: colar de novo o `instalacao-completa.sql` (Passo 3) no
 `ssace-teste`. É seguro rodar de novo. Faça isso **antes** de a equipe testar o PR que depende da
-migration. (Pôr o teste no botão "Atualizar o banco de todas as empresas" seria mexer no cofre, e
-fica pra você decidir se vale.)
+migration. (O teste fica **fora** do botão "Atualizar o banco de todas as empresas": decidido pela Sofia em
+19/10/2026, #517.)
 
 **Começar do zero de verdade** (raro): Project Settings → General → **Delete project**, e refazer
 do Passo 2. Os logins somem junto; refaça o Passo 6 e mande Sends novos.
