@@ -138,8 +138,14 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    Obsidian Sync". Não clicar ainda.
 6. **Trazer o caderno pro computador**: abrir o terminal (**Windows**: menu Iniciar → `Git Bash`;
    **Mac**: Spotlight, `Cmd + Espaço` → `Terminal`). Ele já abre na pasta do seu usuário. Colar
-   (no Git Bash: botão direito → **Paste**) `gh repo clone <seu-usuário>/segundo-cerebro` → Enter.
-   Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou `/Users/<usuário do Mac>/segundo-cerebro`.
+   `gh repo clone <seu-usuário>/segundo-cerebro` → Enter. Fica em
+   `C:\Users\<usuário do Windows>\segundo-cerebro` ou `/Users/<usuário do Mac>/segundo-cerebro`.
+   Depois, na mesma janela: `cd segundo-cerebro && git config core.autocrlf false` → Enter (certo =
+   nenhuma resposta). **No Windows isso é obrigatório**: o Git do Windows troca o fim das linhas e o
+   Obsidian salva do outro jeito; sem esta linha, o Git acha que você mudou os arquivos e **para de
+   puxar sem avisar** (aconteceu com a Sofia em 18/10). No Mac não faz mal.
+   - **Colar no Git Bash**: sempre **botão direito → Paste**. Com **Ctrl + V** aparece `^[[200~` na
+     frente e o comando não roda (dá `command not found`); é só colar de novo pelo botão direito.
 7. **Abrir no Obsidian**: **Abrir** (em "Abrir pasta como um cofre") → a pasta `segundo-cerebro`
    do passo 6 (**Windows**: Este Computador → C: → Usuários → `<usuário do Windows>`; **Mac**:
    apertar **Cmd + Shift + H**, que vai pra pasta do seu usuário) → **Selecionar pasta** (no Mac,
@@ -158,7 +164,11 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 10. **Testar a ida e a volta**: o Claude grava uma nota de teste no caderno; no Obsidian,
     **Ctrl + P** (Mac: **Cmd + P**) → `Git: Pull` → aparece "Pulled 1 file from remote" e a nota.
     Apagar a nota → **Ctrl + P** (Mac: **Cmd + P**) → `Git: Commit-and-sync` → o Claude confere no
-    GitHub que ela sumiu. **Se o envio for recusado** com `push declined due to email privacy
+    GitHub que ela sumiu. **No primeiro envio, pode abrir uma janela do GitHub pedindo pra entrar ou
+    autorizar**: aceitar; o envio fica parado até isso. **Se o `Git: Pull` der** `Your local changes
+    to the following files would be overwritten by merge`, faltou a linha do `core.autocrlf` do
+    passo 6: parar e pedir ao Claude, que confere com `git diff --stat origin/main` se a diferença é
+    só de fim de linha antes de mandar trazer tudo do GitHub. **Se o envio for recusado** com `push declined due to email privacy
     restrictions`: a sua conta esconde o e-mail. Em https://github.com/settings/emails, copiar o
     e-mail de fachada (`<número>+<usuário>@users.noreply.github.com`) e, no terminal do passo 6,
     rodar `cd segundo-cerebro` e `git config user.email "<o e-mail de fachada>"` (sem `--global`:
