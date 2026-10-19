@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, tarde: a chave `sb_secret_` apagada (#506 fechada)
+- **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação.
+- **Feito (#506)**: apagada a única `sb_secret_` do banco da loja (`aaaaa`); nada usava ela (o backup usa a `service_role` da aba Legacy, intocada, e rodou verde hoje). A `default` do banco de teste nasceu depois do vazamento e ficou. Registro em `docs/licoes.md`, item 3.
+- **#505**: as três credenciais trocadas e **a contabilidade já confirmou que entra com a senha nova**. Só falta a primeira NFC-e e a primeira NFS-e autorizadas com as novas; ela avisa ("fecha a #505"), aí fechar.
+- **Equipe**: o Termo do Gustavo voltou conferido, com as duas assinaturas. O Tiago diz que a #620 está quase pronta; o sinal é o PR do relatório pedindo a revisão dela (sessão própria).
+- **Próxima sessão**: a #609 (o Ruflo). Depois: a #604 e a #605.
+- **Depende dela**: os links do banco de teste quando o caderno de cada um estiver pronto (vencem em 26/10); a #625; a #606. A lista inteira em `label:sofia`.
+
 ### 19/10/2026, meio-dia: as três credenciais fiscais trocadas (#505)
 - **Código**: nada publicado (a loja e o banco como em 18/10). Só documentação (PR #628).
 - **Feito**: trocados o token do Giap e o CSC da NFC-e (o `000001` revogado; o `000002` na Focus) e a senha do portal da prefeitura (a que vazou ainda abria o portal). As novas no Bitwarden dela; o caminho de cada troca em `docs/pendencias-e-futuro.md`, parte fiscal.
