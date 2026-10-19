@@ -73,6 +73,8 @@ Uma lista curta, em português simples:
 - **Na gaveta**: o que ela mandou deixar pra depois. É adiado, **não** decidido.
 - **Ficou aberto**: o que ainda precisa de resposta, e de quem. O que depende da Sofia vira
   tarefa com a etiqueta `sofia`.
+- **Pro caderno**: o que a entrevista mostrou do jeito da pessoa (como ela gosta de decidir, de
+  receber pergunta), se mudou algo. Só anotado aqui; quem grava é a `fechar`, depois do "confere".
 
 Sugira seguir com a `nova-tarefa`. **Só a Sofia escreve tarefa**: se quem entrevistou é outra
 pessoa, diga que a lista vai pra ela.
@@ -80,7 +82,8 @@ pessoa, diga que a lista vai pra ela.
 ## 8. O que NÃO fazer
 - Não crie `GLOSSARY.md` nem `docs/adr/`: não são do nosso jeito.
 - Não grave nada em `docs/` por conta própria. **Ela revisa antes de você documentar.** Só depois de
-  ela conferir: preferência da pessoa vai pro caderno dela (seção 1 do índice); decisão vai pra `docs/decisoes.md` só
+  ela conferir: preferência nova da pessoa vai pro caderno dela (`<usuário>/segundo-cerebro`,
+  gravado como na lista 4 da skill `fechar`); decisão vai pra `docs/decisoes.md` só
   se valerem as três: **difícil de voltar atrás**, **estranha pra quem não viu a conversa** e
   **escolha de verdade entre opções**. As outras ficam só na tarefa.
 - **Nada de preço, sócio, dado pessoal ou credencial** no que for pro repositório (ele é público).

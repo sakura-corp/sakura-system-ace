@@ -18,6 +18,12 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 (`mcp__github__get_me`, ou `gh api user --jq .login`) ou o e-mail do Git (`git config user.email`).
 Se não der pra saber, perguntar.
 
+**Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo` de
+`<usuário>/segundo-cerebro`, só o da própria pessoa, e seguir o `CLAUDE.md` de lá, **a não ser que
+a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não existe ainda, ou
+a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e **perguntar se a
+pessoa quer seguir**. É aviso, nunca tranca.
+
 **Quando NÃO é a Sofia** (a equipe; manual: `docs/equipe.md`), valem estas regras, e elas passam
 na frente de qualquer outra deste arquivo:
 - **Escopo**: o Gustavo, **só o painel** (pasta `painel/` e `docs/painel.md`); os outros dois, **o
@@ -87,10 +93,9 @@ nunca aqui.
 3. **Decisão estrutural** (arquitetura, biblioteca, modelagem): opções + recomendação, e esperar
    o "sim" da Sofia. Construir em etapas pequenas, mostrando funcionando.
 4. **O caderno de quem está trabalhando**: o repositório privado `<usuário>/segundo-cerebro`, na
-   conta do GitHub da própria pessoa (o da Sofia: `caranovavidanova/segundo-cerebro`). Abrir no
-   começo da sessão (`add_repo`) e seguir o `CLAUDE.md` de lá: é ele que diz o jeito da pessoa.
-5. **Se o caderno não abrir** (não existe ainda, ou a sessão não alcança): avisar, dizer se dá ou
-   não pra fazer a tarefa sem ele e **perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
+   conta do GitHub da própria pessoa (o da Sofia: `caranovavidanova/segundo-cerebro`). É o
+   `CLAUDE.md` de lá que diz o jeito da pessoa; quando abrir está na seção 0. O que mudou no jeito
+   dela é proposto no fim da sessão (skill `fechar`) e gravado direto lá, sem PR, depois do "confere".
 
 ## 2. O projeto em um parágrafo
 

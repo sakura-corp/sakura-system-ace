@@ -67,6 +67,8 @@ em `.claude/agents/`), que já traz o modelo, o esforço e o limite de turnos da
 - Ajudante que só lê: **rápido**. Nunca use um modelo que não está na tabela (o Fable não está).
 - No **forte**, passe `effort: high` na chamada quando a etapa é migration, RLS, dinheiro, nota
   fiscal, segurança ou revisão final (o esforço padrão do agente é médio).
+- **Ajudante e filha não abrem o caderno** de quem trabalha (seção 0 do índice): não conversam com
+  a pessoa. Se algo do jeito dela importa pra etapa, vai no pedido (Sofia, 19/10).
 - O **rápido não relê a memória do projeto** (`omitClaudeMd`). O pedido leva tudo que ele precisa,
   inclusive as regras do projeto que importam pra etapa. Se faltar algo, ele devolve dizendo o que
   faltou, em vez de adivinhar. O médio e o forte leem a memória (as regras de código moram nela).
@@ -86,7 +88,8 @@ Filha custa mais: nasce sem a conversa da mãe e gasta perto de **70 mil tokens 
 - `prompt`, sempre com estes itens:
   1. "Você é uma **sessão filha** da tarefa #N. A mãe é a sessão `<id da mãe>`."
   2. a parte, **os arquivos dela** (e só eles), o "pronto quando" da parte e o que não fazer;
-  3. "Siga a skill `chefe-<função>` só nas regras da função. **Não abra PR**: faça commit e push na
+  3. "Siga a skill `chefe-<função>` só nas regras da função. Não abra o caderno de ninguém (o
+     `segundo-cerebro`). **Não abra PR**: faça commit e push na
      sua branch.";
   4. "**Mande mensagem à mãe** (ferramenta de mandar mensagem, `session_id` da mãe) nestes momentos,
      no formato abaixo: quando começar, se travar, e **sempre ao terminar**. Sem a mensagem final,
