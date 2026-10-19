@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, noite: a leva 2 do painel montada e a #511 do Tiago na main
-- **Código**: nada publicado pras lojas. No painel (publica sozinho da `main`): a #604 (área segura dos lados, laterais escuras no modo TV).
-- **Feito**: #636 do Tiago (#511) mesclado, com a prova do Windows na descrição; #605 e #604 mescladas; a **leva 2 do painel** montada depois de uma entrevista sobre Fases e Relatório: #644 a #650, mais #547, #548 e #549 (`docs/painel.md`, Andamento). Etiqueta `defeito` criada. As sessões terminadas de hoje foram arquivadas.
-- **Decidido**: o programa das lojas não ganha tarefa nova até a leva 2 fechar (a #510 e a #455 terminam com quem está nelas). A `leva-2` entra quando a leva 1 fechar.
-- **Pagamento da Pneus Amigão**: tratado só na sessão própria (assunto do privado), depois da conversa dela com o pai em 20/10.
-- **Próxima sessão**: acompanhar a leva 1 até fechar (#510, #455, #618, #619) e então pôr a `leva-2`; a #644 é a primeira do painel.
-- **Depende dela**: conferir a #604 num iPhone deitado (#606); o Send do Gustavo e do Lázaro (#618, #619; até 26/10); o memorando (#632); a #505, a #625. Lista inteira em `label:sofia`.
+### 19/10/2026, fim da noite: a ordem até o fim do mês, o orçamento e o financeiro do painel
+- **Código**: nada mudou (só tarefas e memória).
+- **Decidido** (entrevista): primeiro o painel (a leva 2 + o financeiro), depois o programa das lojas, começando pelo orçamento pro tio dela. A regra "o programa espera a leva 1 fechar" caiu: a `leva-2` foi posta (11 tarefas, #644 a #650, #547 a #549 e #654).
+- **Tarefas novas**: financeiro do painel (#654, no Cloudflare D1, decisão #652; equipe vê os totais, só ela o detalhe); orçamento como etapa da OS (#379 reescrita); aviso de peça parecida (#653); peça avulsa no orçamento (#655); juntar peças repetidas (#656). Essas quatro viram a leva 3.
+- **Equipe**: Tiago começa pela #644; Gustavo e Lázaro fazem o caderno (#618, #619) pelo link `/leva/1` do painel (o painel agora abre na leva 2); o Lázaro ainda termina o primeiro dia.
+- **Próxima sessão**: acompanhar a leva 2 e a leva 1 até fecharem; depois pôr a `leva-3` (#653, #379, #655, #656).
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
