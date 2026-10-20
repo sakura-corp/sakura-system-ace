@@ -5,14 +5,17 @@ import { PaginaEmBreve } from "./PaginaEmBreve";
 const html = (id: string) => renderToStaticMarkup(<PaginaEmBreve id={id} />);
 
 describe("PaginaEmBreve", () => {
-  it("Financeiro: título, aviso de dinheiro e nenhum R$", () => {
-    const h = html("financeiro");
-    expect(h).toContain("Financeiro");
+  it("DRE: título, aviso de dinheiro e nenhum R$", () => {
+    const h = html("dre");
+    expect(h).toContain("DRE");
     expect(h).toContain("Ainda não está pronto");
     expect(h).toContain('role="note"');
     expect(h).toContain("Dinheiro da empresa nunca mora no GitHub");
     expect(h).not.toContain("R$");
     expect(h).not.toContain("issues/");
+  });
+  it("Financeiro já existe (#654): /em-breve/financeiro não é mais uma página \"em breve\"", () => {
+    expect(html("financeiro")).toContain("Página não encontrada");
   });
   it("Lojas fala também de nome de cliente", () => {
     expect(html("lojas")).toContain("nome de cliente");
@@ -34,13 +37,13 @@ describe("PaginaEmBreve", () => {
     expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
   });
   it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
-    for (const id of ["fases", "relatorio", "pessoas", "lojas", "posvenda", "financeiro", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
+    for (const id of ["fases", "relatorio", "pessoas", "lojas", "posvenda", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
       expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
     }
   });
   it("andar sem chefe não esconde a linha: diz que ainda não tem", () => {
     expect(texto(html("decisoes"))).toContain("Quem cuida: o andar ainda não tem chefe.");
-    expect(texto(html("financeiro"))).toContain("Quem cuida: o andar ainda não tem chefe.");
+    expect(texto(html("dre"))).toContain("Quem cuida: o andar ainda não tem chefe.");
   });
   it("Configurações (no rodapé, sem andar) não mostra a linha dos chefes", () => {
     expect(texto(html("configuracoes"))).not.toContain("Quem cuida");

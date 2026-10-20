@@ -5,7 +5,10 @@ import paginaHtml from "../index.html?raw";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import type { EstadoDaLeva, EstadoDoResumo } from "./logica/dados";
 import type { EstadoDaSala } from "./logica/salaDados";
+import type { TotalDoMes } from "./logica/financeiro";
 import type { Tarefa } from "./tipos";
+
+const total = (mes: string, entrou: number, saiu: number): TotalDoMes => ({ mes, entrouCentavos: entrou, saiuCentavos: saiu, saldoCentavos: entrou - saiu, crescimentoPercentual: null });
 
 const html = (caminho: string, busca = "") => renderToString(<App caminho={caminho} busca={busca} />).replace(/<!-- -->/g, "");
 
@@ -14,7 +17,7 @@ const contarH1 = (h: string) => (h.match(/<h1[\s>]/g) ?? []).length;
 
 describe("App", () => {
   it("toda página tem um só h1, a Sala nos dois modos", () => {
-    for (const caminho of ["/sala", "/escritorio", "/em-breve/financeiro", "/em-breve/nao-existe"]) {
+    for (const caminho of ["/sala", "/escritorio", "/em-breve/dre", "/em-breve/nao-existe"]) {
       expect(contarH1(html(caminho)), caminho).toBe(1);
     }
     expect(contarH1(html("/sala", "?tv")), "/sala?tv").toBe(1);
@@ -37,13 +40,15 @@ describe("App", () => {
     expect(tv).not.toContain("As pessoas e os robôs, ao vivo.");
   });
 
-  it("mostra a leva de exemplo: contador, grupos, aviso de uma por vez e o Financeiro desativado", () => {
+  it("mostra a leva de exemplo: contador, grupos, aviso de uma por vez e o DRE desativado", () => {
     const h = html("/leva");
     expect(h).toContain("Leva 0");
     expect(h).toContain("1 de 8 tarefas feitas");
     expect(h).toContain("bruno-exemplo está com 2 tarefas em andamento");
-    expect(h).toContain("Financeiro<span class=\"sr-only\"> (em breve)</span>");
-    expect(h).toContain("depende do banco privado");
+    expect(h).toContain("DRE<span class=\"sr-only\"> (em breve)</span>");
+    expect(h).toContain("depende do Financeiro");
+    // O Financeiro (#654) já existe: link de verdade, sem "em breve".
+    expect(h).not.toContain("Financeiro<span class=\"sr-only\"> (em breve)</span>");
     expect(h).toContain('target="_blank"');
   });
 
@@ -51,7 +56,7 @@ describe("App", () => {
     // Escritos aqui, não importados da lista: mudar um endereço ou um título tem que reprovar.
     const paginas: [string, string][] = [
       ["versoes", "Versões"], ["fases", "Fases da leva"], ["relatorio", "Relatório da leva"],
-      ["pessoas", "Pessoas"], ["financeiro", "Financeiro"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
+      ["pessoas", "Pessoas"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
       ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"], ["decisoes", "Decisões da Sofia"],
     ];
     for (const [id, titulo] of paginas) {
@@ -61,17 +66,41 @@ describe("App", () => {
     }
   });
 
-  it("/em-breve/financeiro mostra a página que explica, sem número de dinheiro (#544)", () => {
-    const h = html("/em-breve/financeiro/");
+  it("/em-breve/dre mostra a página que explica, sem número de dinheiro (#544)", () => {
+    const h = html("/em-breve/dre/");
     expect(h).toContain("3º · Financeiro / ");
-    expect(h).toMatch(/<h1[^>]*>Financeiro<\/h1>/);
+    expect(h).toMatch(/<h1[^>]*>DRE<\/h1>/);
     expect(h).toContain("Ainda não está pronto");
     expect(h).toContain("nunca mora no GitHub");
     // Nenhum algarismo nem "R$" na página (a barra lateral tem "#546" e fica de fora; a trilha leva o número do andar, "3º").
     const pagina = h.slice(h.indexOf("<main"), h.indexOf("</main>")).replace(/3º · Financeiro \//, "").replace(/<[^>]*>/g, " ");
-    expect(pagina).toContain("Financeiro");
+    expect(pagina).toContain("DRE");
     expect(pagina).not.toMatch(/R\$|\d/);
     expect(h).not.toContain("1 de 8 tarefas feitas");
+  });
+
+  it("/financeiro (#654) é a página do Financeiro; /em-breve/financeiro não existe mais", () => {
+    expect(paginaDoCaminho("/financeiro")).toBe("financeiro");
+    expect(paginaDoCaminho("/financeiro/")).toBe("financeiro");
+    expect(paginaDoCaminho("/em-breve/financeiro")).toBe("nao-encontrada");
+    expect(html("/em-breve/financeiro")).toContain("Página não encontrada");
+  });
+
+  it("/financeiro: um só h1, a trilha do andar, e quem não é dona não recebe formulário nem lista (#654)", () => {
+    const resumo = { mesAtual: total("2026-10", 1000, 400), meses: [total("2026-10", 1000, 400)], saidasPorCategoria: [] };
+    const h = renderToString(
+      <App caminho="/financeiro" busca="" usuario={{ login: "fulana", avatar: "" }} financeiro={{ tipo: "pronto", mes: "2026-10", resumo, podeLancar: false, lista: null }} />,
+    ).replace(/<!-- -->/g, "");
+    expect(contarH1(h)).toBe(1);
+    expect(h).toContain("3º · Financeiro / ");
+    expect(h).toContain("R$ 10,00");
+    expect(h).not.toContain("<form");
+    expect(h).toMatch(/<a href="\/financeiro" aria-current="page"/);
+  });
+
+  it("/financeiro com a sessão acabada (401) volta pra tela de entrada (#654)", () => {
+    const h = renderToString(<App caminho="/financeiro" busca="" usuario={{ login: "fulana", avatar: "" }} financeiro={{ tipo: "fora" }} />);
+    expect(h).toContain("Sua sessão acabou");
   });
 
   it("/em-breve/<id que não existe> mostra 'Página não encontrada', e não a leva (#544)", () => {

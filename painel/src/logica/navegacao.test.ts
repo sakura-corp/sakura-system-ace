@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { andarDoItem, fraseDoAndar, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
 
 // Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
-const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas" };
+const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas", financeiro: "/financeiro" };
 
 // Todos os endereços que já existiam antes dos andares (#591): escritos aqui, a lista não pode mudar nenhum.
-const ENDERECOS_EM_BREVE_ANTIGOS = ["versoes", "fases", "relatorio", "pessoas", "financeiro", "dre", "lojas", "configuracoes"];
+const ENDERECOS_EM_BREVE_ANTIGOS = ["versoes", "fases", "relatorio", "pessoas", "dre", "lojas", "configuracoes"];
 
 // Os andares como a Sofia decidiu na #591, de cima da barra pra baixo (a ordem de uso, começando pelo Térreo).
 const ANDARES = [

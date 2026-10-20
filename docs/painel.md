@@ -114,6 +114,14 @@ Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço
 | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
 | Feita | `#2B6534` / `#E4F1E6` | `#8FD19C` / `#233A28` |
 
+| Gráfico do Financeiro (#654) | Claro | Escuro |
+|---|---|---|
+| Entrou | `#1F7A3D` | `#34A15A` |
+| Saiu | `#B8237F` | `#D9559F` |
+
+As duas séries têm cor própria porque o verde de "Feita" é escuro demais pra ficar ao lado do rosa num gráfico
+(conferido com o validador da skill `dataviz`, inclusive pra daltônico).
+
 ### Visual da Sala (B, o da Bibi; decidido em 15/10/2026)
 
 A Sala (tarefas 3 e 8) é uma **janela sempre escura dentro do painel**, com visual próprio. O resto do

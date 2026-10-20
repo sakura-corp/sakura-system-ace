@@ -88,15 +88,15 @@ describe("problemasDoEmBreve", () => {
     expect(trilha("versoes")).toBe("4º · Segurança e operação");
     expect(trilha("pessoas")).toBe("1º · Produção");
     expect(trilha("lojas")).toBe("2º · Comercial e pós-venda");
-    expect(trilha("financeiro")).toBe("3º · Financeiro");
+    expect(trilha("dre")).toBe("3º · Financeiro");
     expect(trilha("posvenda")).toBe("2º · Comercial e pós-venda");
     expect(trilha("bancos")).toBe("4º · Segurança e operação");
     expect(trilha("decisoes")).toBe("Cobertura · Diretoria");
     expect(textoEmBreve("decisoes")?.titulo).toBe("Decisões da Sofia");
     expect(textoEmBreve("configuracoes")?.grupo).toBeUndefined();
   });
-  it("lojas, financeiro e DRE continuam com semDinheiro nos textos de verdade", () => {
-    for (const id of ["lojas", "financeiro", "dre"]) expect(textoEmBreve(id)?.semDinheiro, id).toBe(true);
+  it("lojas e DRE continuam com semDinheiro nos textos de verdade", () => {
+    for (const id of ["lojas", "dre"]) expect(textoEmBreve(id)?.semDinheiro, id).toBe(true);
   });
   it("pega página da Empresa sem semDinheiro", () => {
     const t = bons();
@@ -119,6 +119,8 @@ describe("idDoEmBreve e textoEmBreve", () => {
   });
   it("id que não existe → undefined", () => {
     expect(textoEmBreve("nao-existe")).toBeUndefined();
-    expect(textoEmBreve("financeiro")?.titulo).toBe("Financeiro");
+    // O Financeiro já existe (#654): não tem mais texto "em breve".
+    expect(textoEmBreve("financeiro")).toBeUndefined();
+    expect(textoEmBreve("dre")?.titulo).toBe("DRE");
   });
 });
