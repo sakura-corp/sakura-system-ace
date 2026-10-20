@@ -162,7 +162,7 @@ function useNovidades(ativo: boolean): [EstadoDasNovidades, () => void, () => Pr
   const recarregar = useCallback(async () => {
     if (carregando.current) return;
     const novo = await carregarNovidades();
-    if (novo.tipo === "pronto") setEstado(novo);
+    if (novo.tipo === "pronto" || novo.tipo === "fora") setEstado(novo);
   }, []);
   return [estado, () => setTentativa((n) => n + 1), recarregar];
 }
@@ -241,7 +241,7 @@ export default function App({
     sala: naSala,
   });
 
-  if (!exemplo && naSala && salaDeVerdade.tipo === "fora") {
+  if (!exemplo && naSala && (salaDeVerdade.tipo === "fora" || (pagina === "inicio" && novidadesBuscadas.tipo === "fora"))) {
     return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
   }
   // Modo TV (/sala?tv): só a sala, grande, sem barra lateral nem lista.

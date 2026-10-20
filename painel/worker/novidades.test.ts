@@ -20,6 +20,16 @@ describe("novidadeDoEvento (#549)", () => {
     expect(pr("closed")).toMatchObject({ acao: "fechou" });
   });
 
+  it("o formato de hoje da lista do GitHub: PR enxuto com action merged, e unassigned com assignee null", () => {
+    const enxuto = { base: {}, head: {}, id: 1, number: 664, url: "https://api.github.com/repos/sakura-corp/sakura-system-ace/pulls/664" };
+    expect(novidadeDoEvento({ id: "10", type: "PullRequestEvent", created_at: quando, actor: ator, payload: { action: "merged", number: 664, pull_request: enxuto } })).toEqual({
+      id: "e10", quando, tipo: "pr", acao: "mesclou", quem: "fulana", numero: 664, url: "https://github.com/sakura-corp/sakura-system-ace/pull/664",
+    });
+    expect(novidadeDoEvento({ id: "11", type: "IssuesEvent", created_at: quando, actor: ator, payload: { action: "unassigned", issue: issue(), assignee: null } })).toMatchObject({
+      tipo: "tarefa", acao: "largou", numero: 510,
+    });
+  });
+
   it("ignora o que não é issue, PR nem ação conhecida", () => {
     expect(novidadeDoEvento({ id: "4", type: "PushEvent", created_at: quando, actor: ator, payload: {} })).toBeNull();
     expect(novidadeDoEvento({ id: "5", type: "IssuesEvent", created_at: quando, actor: ator, payload: { action: "labeled", issue: issue() } })).toBeNull();
@@ -29,7 +39,8 @@ describe("novidadeDoEvento (#549)", () => {
 
   it("link de fora da sakura-corp não passa", () => {
     const n = novidadeDoEvento({ id: "8", type: "IssuesEvent", created_at: quando, actor: ator, payload: { action: "opened", issue: issue({ html_url: "https://mal.exemplo/sakura-corp/1" }) } });
-    expect(n).not.toHaveProperty("url");
+    // Vira o endereço montado do número, sempre da sakura-corp.
+    expect(n).toMatchObject({ url: "https://github.com/sakura-corp/sakura-system-ace/issues/510" });
   });
 });
 

@@ -46,8 +46,9 @@ describe("textoDaNovidade (#549)", () => {
     expect(textoDaNovidade(comTitulo)).toBe("fulana pegou a #510");
     expect(textoDaNovidade(pegou("a", q, { alvo: "Fulana" }))).toBe("fulana pegou a #510");
     expect(textoDaNovidade(pegou("a", q, { alvo: "beltrano" }))).toBe("fulana pôs beltrano na #510");
-    expect(textoDaNovidade(pegou("a", q, { acao: "largou" }))).toBe("fulana largou a #510");
+    expect(textoDaNovidade(pegou("a", q, { acao: "largou", alvo: "fulana" }))).toBe("fulana largou a #510");
     expect(textoDaNovidade(pegou("a", q, { acao: "largou", alvo: "beltrano" }))).toBe("fulana tirou beltrano da #510");
+    expect(textoDaNovidade({ id: "a", quando: q, tipo: "tarefa", acao: "largou", quem: "fulana", numero: 510 })).toBe("fulana tirou o responsável da #510");
     expect(textoDaNovidade(pegou("a", q, { acao: "fechou" }))).toBe("fulana fechou a #510");
     const pr = (acao: string): Novidade => ({ id: "p", quando: q, tipo: "pr", acao, quem: "bia", numero: 663 }) as Novidade;
     expect(textoDaNovidade(pr("abriu"))).toBe("bia entregou o PR #663");

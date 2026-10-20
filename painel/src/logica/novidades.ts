@@ -74,7 +74,10 @@ export function textoDaNovidade(n: Novidade): string {
   const t = `a #${n.numero}`;
   const outra = n.alvo !== undefined && n.alvo.toLowerCase() !== n.quem.toLowerCase();
   if (n.acao === "pegou") return outra ? `${n.quem} pôs ${n.alvo} na #${n.numero}` : `${n.quem} pegou ${t}`;
-  if (n.acao === "largou") return outra ? `${n.quem} tirou ${n.alvo} da #${n.numero}` : `${n.quem} largou ${t}`;
+  if (n.acao === "largou") {
+    if (n.alvo === undefined) return `${n.quem} tirou o responsável da #${n.numero}`;
+    return outra ? `${n.quem} tirou ${n.alvo} da #${n.numero}` : `${n.quem} largou ${t}`;
+  }
   if (n.acao === "abriu") return `${n.quem} abriu ${t}`;
   if (n.acao === "reabriu") return `${n.quem} reabriu ${t}`;
   return `${n.quem} fechou ${t}`;

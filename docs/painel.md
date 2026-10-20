@@ -255,8 +255,11 @@ Configurações continua no rodapé (não é andar).
   falharem, o resto sai igual com o aviso (`falhas: ["rodadas"]`); se os eventos falharem, 502. O worker manda só os
   dois últimos dias; **"hoje" é decidido na página, no fuso do computador**, no máximo 15, da mais nova pra mais velha.
   A frase é montada na página (`src/logica/novidades.ts`) só do tipo, do número e de quem fez; o título vai à parte e só
-  vira link se for `https://github.com/sakura-corp/`. PR fechado sem o campo `merged` na lista do GitHub (ela pode vir
-  enxuta) diz só "fechou", sem adivinhar se mesclou. Atualiza junto com a sala no tempo real.
+  vira link se for `https://github.com/sakura-corp/`. **O formato de hoje da lista do GitHub** (visto em 20/10): o PR
+  vem enxuto (sem título, sem link, sem `merged`), a mesclagem chega como `action: "merged"`, e o `unassigned` vem com
+  `assignee: null` (a frase fica "tirou o responsável da #N"). Sem `html_url`, o link é montado do número. **Limites**:
+  a lista de eventos do GitHub atrasa de 30 s a algumas horas (o tempo real pede de novo junto com a sala, mas o
+  evento pode ainda não estar lá); é uma página só de 100 eventos (num dia cheio, o começo do dia pode faltar).
 
 ## 1ª versão (leva 0)
 

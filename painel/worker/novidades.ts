@@ -12,6 +12,7 @@ import type { AcaoNaTarefa, AcaoNoPr, Novidade, RespostaDasNovidades } from "../
 import { buscarRest, ORGANIZACAO, REPOSITORIO } from "./github";
 import { DIA } from "../src/logica/tempo";
 
+const REPO = `https://github.com/${ORGANIZACAO}/${REPOSITORIO}`;
 export const CAMINHO_DOS_EVENTOS = `/repos/${ORGANIZACAO}/${REPOSITORIO}/events?per_page=100`;
 export const CAMINHO_DAS_RODADAS = `/repos/${ORGANIZACAO}/${REPOSITORIO}/actions/runs?per_page=50`;
 
@@ -45,11 +46,12 @@ export function novidadeDoEvento(evento: EventoDoGitHub): Novidade | null {
     const nossa = acao ? ACOES_DA_TAREFA[acao] : undefined;
     // Um PR também é "issue" pro GitHub, mas os eventos de PR vêm em PullRequestEvent.
     if (!issue || !n || !nossa || issue.pull_request !== undefined) return null;
+    // Em `unassigned` o GitHub manda `assignee: null` (visto em 20/10): sem saber quem saiu, a frase fica neutra.
     const alvo = nossa === "pegou" || nossa === "largou" ? texto(objeto(payload.assignee)?.login) : undefined;
-    if ((nossa === "pegou" || nossa === "largou") && !alvo) return null;
+    if (nossa === "pegou" && !alvo) return null;
     return {
       id: `e${id}`, quando, tipo: "tarefa", acao: nossa, quem, numero: n,
-      ...(alvo ? { alvo } : {}), ...extras(issue),
+      ...(alvo ? { alvo } : {}), ...extras(issue, `${REPO}/issues/${n}`),
     };
   }
 
@@ -58,20 +60,24 @@ export function novidadeDoEvento(evento: EventoDoGitHub): Novidade | null {
     const n = numero(payload.number) ?? numero(pr?.number);
     if (!n) return null;
     let nossa: AcaoNoPr;
+    // A lista de eventos manda o PR enxuto (só number, url, head, base; sem title, html_url nem merged) e a
+    // mesclagem como `action: "merged"` (visto em 20/10). O `closed` com `merged` fica pro formato antigo.
     if (acao === "opened") nossa = "abriu";
+    else if (acao === "merged") nossa = "mesclou";
     else if (acao === "reopened") nossa = "reabriu";
     else if (acao === "closed") {
       // O GitHub pode mandar o PR enxuto: sem `merged`, não dá pra saber se mesclou; fica só "fechou".
       const mesclado = pr?.merged === true || texto(pr?.merged_at) !== undefined;
       nossa = mesclado ? "mesclou" : pr?.merged === false ? "fechou-sem-mesclar" : "fechou";
     } else return null;
-    return { id: `e${id}`, quando, tipo: "pr", acao: nossa, quem, numero: n, ...extras(pr) };
+    return { id: `e${id}`, quando, tipo: "pr", acao: nossa, quem, numero: n, ...extras(pr, `${REPO}/pull/${n}`) };
   }
   return null;
 }
 
-function extras(item: Objeto | null): { url?: string; titulo?: string } {
-  const url = linkSeguro(texto(item?.html_url));
+/** O link vem do número (sempre da sakura-corp) quando o GitHub não manda `html_url`. */
+function extras(item: Objeto | null, padrao: string): { url?: string; titulo?: string } {
+  const url = linkSeguro(texto(item?.html_url)) ?? padrao;
   const titulo = texto(item?.title);
   return { ...(url ? { url } : {}), ...(titulo ? { titulo: cortar(titulo) } : {}) };
 }
