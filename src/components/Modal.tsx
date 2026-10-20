@@ -1,7 +1,19 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
+// Classes escritas por extenso: o Tailwind só gera a classe que acha inteira
+// no código, nunca uma montada por texto (`max-w-${largura}`).
+const CLASSE_DA_LARGURA = {
+  lg: "max-w-lg",
+  "4xl": "max-w-4xl",
+  "5xl": "max-w-5xl",
+} as const;
+
 interface ModalProps {
   titulo: string;
+  /** Linha de explicação embaixo do título (lida pelo leitor de tela junto). */
+  descricao?: string;
+  /** Sem dizer, "lg": o tamanho de sempre. As janelas com tabela usam as maiores. */
+  largura?: keyof typeof CLASSE_DA_LARGURA;
   onFechar: () => void;
   children: ReactNode;
 }
@@ -63,8 +75,9 @@ function inertizarFundo(elementoDoModal: HTMLElement): () => void {
   };
 }
 
-export function Modal({ titulo, onFechar, children }: ModalProps) {
+export function Modal({ titulo, descricao, largura = "lg", onFechar, children }: ModalProps) {
   const tituloId = useId();
+  const descricaoId = useId();
   const sobreposicaoRef = useRef<HTMLDivElement>(null);
   const dialogoRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +105,9 @@ export function Modal({ titulo, onFechar, children }: ModalProps) {
 
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
+        // Um campo de dentro já usou esse Esc (o Combobox fecha a própria
+        // lista): fechar a janela junto jogaria fora o que foi preenchido.
+        if (evento.defaultPrevented) return;
         evento.preventDefault();
         onFecharRef.current();
         return;
@@ -146,14 +162,22 @@ export function Modal({ titulo, onFechar, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={tituloId}
+        aria-describedby={descricao ? descricaoId : undefined}
         tabIndex={-1}
-        className="sakura-modal max-h-[85vh] w-full max-w-lg overflow-y-auto p-6"
+        className={`sakura-modal max-h-[85vh] w-full ${CLASSE_DA_LARGURA[largura]} overflow-y-auto p-6`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 id={tituloId} className="text-subtitulo font-semibold text-sakura-purple-dark">
-            {titulo}
-          </h2>
+          <div>
+            <h2 id={tituloId} className="text-subtitulo font-semibold text-sakura-purple-dark">
+              {titulo}
+            </h2>
+            {descricao && (
+              <p id={descricaoId} className="text-corpo text-sakura-muted">
+                {descricao}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={onFechar}
