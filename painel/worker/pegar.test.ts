@@ -32,6 +32,8 @@ function fingirGitHub(opcoes: {
   escrita?: "ok" | "erro" | "sem-acesso";
   saida?: "ok" | "erro";
   levas?: { nome: string; abertas: number }[];
+  /** Os `leva-N.md` na main (#644): essas levas estão aprovadas. */
+  naMain?: string[];
 }) {
   const escritas: { metodo: string; caminho: string; corpo: unknown }[] = [];
   const consultas: string[] = [];
@@ -39,7 +41,8 @@ function fingirGitHub(opcoes: {
     consultas.push(consulta);
     if (consulta === CONSULTA_DAS_LEVAS) {
       const levas = opcoes.levas ?? [{ nome: "leva-0", abertas: 0 }, { nome: "leva-1", abertas: 3 }];
-      return { tipo: "ok", dados: { repository: { labels: { nodes: levas.map((l) => ({ name: l.nome, issues: { totalCount: l.abertas } })) } } } as T };
+      const relatoriosNaMain = { entries: (opcoes.naMain ?? []).map((name) => ({ name })) };
+      return { tipo: "ok", dados: { repository: { labels: { nodes: levas.map((l) => ({ name: l.nome, issues: { totalCount: l.abertas } })) }, relatoriosNaMain } } as T };
     }
     if (consulta === CONSULTA_DA_LEVA_PRA_REGRAS) {
       const nodes = opcoes.leva().filter((i) => i.labels?.nodes.some((l) => l?.name === variaveis.etiqueta));
@@ -85,18 +88,27 @@ describe("pegarTarefa (#538)", () => {
     expect(g.escritas).toEqual([]);
   });
 
-  it("tarefa de uma leva anterior que ainda tem tarefa aberta: pega", async () => {
+  it("tarefa de uma leva anterior (já aprovada) que ainda tem tarefa aberta: pega", async () => {
     const levas = [{ nome: "leva-1", abertas: 1 }, { nome: "leva-2", abertas: 1 }];
-    const g = fingirGitHub({ levas, leva: () => [issue(10), issue(20, { leva: "leva-2" })] });
+    const g = fingirGitHub({ levas, naMain: ["leva-1.md"], leva: () => [issue(10), issue(20, { leva: "leva-2" })] });
     expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "ok" });
     expect(g.escritas).toEqual([{ metodo: "POST", caminho: CAMINHO(10), corpo: { assignees: ["fulana"] } }]);
   });
 
+  it("leva em Montando (#644): a 1 espera aprovação, então ninguém pega tarefa da 2, com o motivo", async () => {
+    const levas = [{ nome: "leva-1", abertas: 1 }, { nome: "leva-2", abertas: 4 }];
+    const g = fingirGitHub({ levas, leva: () => [issue(10), issue(20, { leva: "leva-2" })] });
+    expect(await pegarTarefa(20, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "a leva 2 ainda não começou: a leva 1 ainda não foi aprovada" });
+    expect(g.escritas).toEqual([]);
+    // A da leva atual continua pegável.
+    expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "ok" });
+  });
+
   it("uma por vez vale entre levas: com uma em andamento na leva atual, não pega a da anterior (e vice-versa)", async () => {
     const levas = [{ nome: "leva-1", abertas: 1 }, { nome: "leva-2", abertas: 1 }];
-    const naAtual = fingirGitHub({ levas, leva: () => [issue(10), issue(20, { leva: "leva-2", dono: "fulana" })] });
+    const naAtual = fingirGitHub({ levas, naMain: ["leva-1.md"], leva: () => [issue(10), issue(20, { leva: "leva-2", dono: "fulana" })] });
     expect(await pegarTarefa(10, "fulana", naAtual.perguntar, naAtual.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #20" });
-    const naAnterior = fingirGitHub({ levas, leva: () => [issue(10, { dono: "fulana" }), issue(20, { leva: "leva-2" })] });
+    const naAnterior = fingirGitHub({ levas, naMain: ["leva-1.md"], leva: () => [issue(10, { dono: "fulana" }), issue(20, { leva: "leva-2" })] });
     expect(await pegarTarefa(20, "fulana", naAnterior.perguntar, naAnterior.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #10" });
     expect([...naAtual.escritas, ...naAnterior.escritas]).toEqual([]);
   });

@@ -106,8 +106,15 @@ export type TarefaDoEscritorio = {
 export type Usuario = { login: string; avatar: string };
 
 // ---- As tarefas de verdade (#354) ----
-/** Uma leva, como /api/levas devolve: a etiqueta `leva-<numero>` e quantas tarefas abertas ela tem. */
-export type Leva = { numero: number; nome: string; abertas: number };
+/** A fase de uma leva (#644), lida do GitHub: `logica/fases.ts`. */
+export type FaseDaLeva = "montando" | "trabalhando" | "testando" | "relatorio" | "aprovada";
+
+/**
+ * Uma leva, como /api/levas devolve: a etiqueta `leva-<numero>` e quantas tarefas abertas ela tem.
+ * `fechadas` e `fase` (#644) sempre vêm do worker; são opcionais só pra quem monta uma leva à mão (os testes das telas).
+ * `antesDasFases`: a leva 0, Aprovada sem relatório.
+ */
+export type Leva = { numero: number; nome: string; abertas: number; fechadas?: number; fase?: FaseDaLeva; antesDasFases?: true };
 
 /**
  * Uma leva com o resumo das "Levas anteriores" (#548), como /api/levas/resumo devolve. `total`: todas as tarefas
@@ -123,8 +130,11 @@ export type RespostaDoResumoDasLevas = { levas: ResumoDeLeva[]; atual: number | 
 /** O que /api/levas devolve. `atual` é null quando ainda não existe etiqueta `leva-N`. */
 export type RespostaDasLevas = { levas: Leva[]; atual: number | null };
 
-/** O que /api/leva/<n> devolve. `cortada`: a leva tem mais de 100 tarefas, e só as 100 primeiras vieram. */
-export type RespostaDaLeva = { numero: number; tarefas: Tarefa[]; cortada: boolean };
+/**
+ * O que /api/leva/<n> devolve. `cortada`: a leva tem mais de 100 tarefas, e só as 100 primeiras vieram.
+ * `fase` (#644): falta só quando a consulta das levas falhou.
+ */
+export type RespostaDaLeva = { numero: number; tarefas: Tarefa[]; cortada: boolean; fase?: FaseDaLeva };
 
 // ---- A sala de verdade (#468) ----
 /**

@@ -284,7 +284,7 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(r.status).toBe(200);
     expect(r.headers.get("cache-control")).toBe("no-store");
     const texto = await r.text();
-    expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3 }], atual: 0 });
+    expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3, fechadas: 0, fase: "aprovada", antesDasFases: true }], atual: 0 });
     expect(texto).not.toContain("ghu_");
     expect(g.consultas[0]).toEqual({ autorizacao: "Bearer ghu_a", variaveis: { dono: "sakura-corp", nome: "sakura-system-ace" } });
   });
@@ -319,8 +319,8 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     const texto = await r.text();
     expect(JSON.parse(texto)).toEqual({
       levas: [
-        { numero: 0, nome: "Leva 0", abertas: 0, total: 1, feitas: 1, horas: 2.5, terminouEm: "2026-10-16T15:00:00Z" },
-        { numero: 1, nome: "Leva 1", abertas: 1, total: 2, feitas: 1, horas: 3, terminouEm: null },
+        { numero: 0, nome: "Leva 0", abertas: 0, fechadas: 1, fase: "aprovada", antesDasFases: true, total: 1, feitas: 1, horas: 2.5, terminouEm: "2026-10-16T15:00:00Z" },
+        { numero: 1, nome: "Leva 1", abertas: 1, fechadas: 1, fase: "trabalhando", total: 2, feitas: 1, horas: 3, terminouEm: null },
       ],
       atual: 1,
     });
@@ -360,6 +360,29 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
       }],
     });
     expect(g.consultas[0].variaveis).toMatchObject({ etiqueta: "leva-0" });
+  });
+
+  it("/api/leva/2 (#644): traz a fase da leva, lida com a consulta das levas, depois da leva", async () => {
+    const levas = {
+      labels: { nodes: [{ name: "leva-1", issues: { totalCount: 1 }, fechadas: { totalCount: 0 } }, { name: "leva-2", issues: { totalCount: 1 }, fechadas: { totalCount: 0 } }] },
+      relatoriosNaMain: { entries: [{ name: "leva-1.md" }] },
+      prsAbertos: { nodes: [] },
+    };
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { issues: { totalCount: 1, nodes: [issue] }, ...levas } } }));
+    const r = await pedir("/api/leva/2", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ numero: 2, fase: "trabalhando" });
+    expect(g.textos).toEqual([expect.stringContaining("query Leva("), CONSULTA_DAS_LEVAS]);
+  });
+
+  it("/api/leva/<n>: se a consulta das levas falhar, a leva vem igual, só sem a fase (aviso, nunca tranca)", async () => {
+    let vez = 0;
+    fingirGraphQL(() => (++vez === 1 ? Response.json({ data: { repository: { issues: { totalCount: 1, nodes: [issue] } } } }) : new Response("x", { status: 500 })));
+    const r = await pedir("/api/leva/0", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    const corpo = (await r.json()) as Record<string, unknown>;
+    expect(corpo).toMatchObject({ numero: 0, tarefas: [{ numero: 354 }] });
+    expect("fase" in corpo).toBe(false);
   });
 
   it("resposta parcial (`data` com `errors`, ex.: um PR que o app não lê): mostra o que veio", async () => {
@@ -445,8 +468,8 @@ describe("/api/leva/<n>: o cabeçalho e o Depende de (#536)", () => {
     expect(tarefas[0]).toEqual({ numero: 1, titulo: "Tarefa 1", url: issue(1, "").url, estado: "feita", chefe: "backend", ajudantes: "tester (conferir)", estimativaHoras: 4 });
     expect(tarefas[1]).toMatchObject({ numero: 2, chefe: "backend", ajudantes: "tester (conferir)", estimativaHoras: 4, dependeDeAbertas: [501] });
     expect(tarefas[2]).toMatchObject({ numero: 3, dependeDeAbertas: [2] });
-    // Duas consultas, as duas com o token da sessão; a segunda só com os números de fora da leva.
-    expect(consultas.map((c) => c.autorizacao)).toEqual(["Bearer ghu_a", "Bearer ghu_a"]);
+    // Três consultas, todas com o token da sessão; a segunda só com os números de fora da leva, a terceira a das levas (#644).
+    expect(consultas.map((c) => c.autorizacao)).toEqual(["Bearer ghu_a", "Bearer ghu_a", "Bearer ghu_a"]);
     expect(consultas[1].query.match(/issue\(number: \d+\)/g)).toEqual(["issue(number: 500)", "issue(number: 501)"]);
   });
 

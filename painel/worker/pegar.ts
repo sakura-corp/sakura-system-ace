@@ -1,10 +1,10 @@
 // "Pegar tarefa" e "Largar" (#538). Quem escreve no GitHub é o token da própria pessoa, e só o login dela
 // entra ou sai da tarefa: nunca outra pessoa. O worker confere tudo de novo no GitHub, na hora, e não
 // confia no que a página mandou (a página só desliga o botão). Os erros nunca levam token nem resposta do GitHub.
-import type { Tarefa } from "../src/tipos";
+import type { Leva, Tarefa } from "../src/tipos";
 import { mesmoLogin, motivoPraNaoLargar, motivoPraNaoPegar } from "../src/logica/pegar";
 import { numeroValido } from "../src/logica/comecarComClaude";
-import { levaAceitaPegar } from "../src/logica/estado";
+import { levaAceitaPegar, numeroDaLeva } from "../src/logica/estado";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
 import {
   CONSULTA_DA_LEVA,
@@ -77,7 +77,7 @@ function responsaveisDaResposta(dados: unknown): string[] {
 }
 
 /**
- * As tarefas de todas as levas abertas (a atual e as anteriores com tarefa aberta, `levaAceitaPegar`), juntas e
+ * As tarefas de todas as levas abertas (a atual e as anteriores com tarefa aberta, nunca uma em Montando: `levaAceitaPegar`), juntas e
  * vistas pelas regras: a tarefa pode estar em qualquer uma, e a "uma por vez" vale entre elas.
  */
 async function tarefasDasLevasAbertas(numeros: number[], login: string, perguntar: Perguntar, comDependencias: boolean): Promise<Tarefa[] | Resultado> {
@@ -113,6 +113,10 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   const tarefas = await tarefasDasLevasAbertas(abertas, login, perguntar, true);
   if (!Array.isArray(tarefas)) return tarefas;
   const tarefa = tarefas.find((t) => t.numero === numero);
+  if (!tarefa) {
+    const montando = await motivoDaLevaEmMontando(numero, levas, atual, perguntar);
+    if (montando) return { tipo: "recusado", motivo: montando };
+  }
   const motivo = motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo) return { tipo: "recusado", motivo };
 
@@ -150,6 +154,22 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
     }
   }
   return { tipo: "ok" };
+}
+
+/**
+ * A tarefa não está numa leva aberta: se for de uma leva em Montando (#644), o motivo diz qual leva espera
+ * aprovação. Só pergunta ao GitHub quando existe leva em Montando; se a pergunta falhar, null (fica o motivo comum).
+ */
+async function motivoDaLevaEmMontando(numero: number, levas: Leva[], atual: number, perguntar: Perguntar): Promise<string | null> {
+  const montando = new Set(levas.filter((l) => l.fase === "montando").map((l) => l.numero));
+  if (montando.size === 0) return null;
+  const r = await perguntar<{ repository: { issue: IssueDoGitHub | null } | null }>(CONSULTA_DA_TAREFA, { ...variaveisDoRepositorio, numero });
+  if (r.tipo !== "ok") return null;
+  const daLeva = (r.dados.repository?.issue?.labels?.nodes ?? [])
+    .map((l) => (l ? numeroDaLeva(l.name) : null))
+    .find((n) => n !== null && montando.has(n));
+  if (daLeva === undefined || daLeva === null) return null;
+  return `a leva ${daLeva} ainda não começou: a leva ${atual} ainda não foi aprovada`;
 }
 
 /** Tira `login` da issue. Devolve quem ficou, ou null se a saída falhou. Nunca lança erro. */

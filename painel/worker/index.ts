@@ -223,6 +223,14 @@ async function dados(request: Request, config: Configuracao, pedido: PedidoDeDad
     if (!resposta) return falhou();
     // #536: quais números do Depende de ainda estão abertos. Se essa consulta falhar, contam como abertos e a leva sai igual.
     await marcarDependenciasAbertas(resposta, r.dados, (consulta, variaveis) => consultar(sessao.token, consulta, variaveis));
+    // #644: a fase da leva sai da consulta das levas (a regra precisa das anteriores). Se ela falhar, a leva vem sem a fase.
+    try {
+      const rl = await consultar<DadosDasLevas>(sessao.token, CONSULTA_DAS_LEVAS, variaveisDoRepositorio);
+      const fase = rl.tipo === "ok" ? levasDosDados(rl.dados).levas.find((l) => l.numero === leva)?.fase : undefined;
+      if (fase) resposta.fase = fase;
+    } catch {
+      console.error("dados: falha ao ler a fase da leva");
+    }
     return json(resposta, 200, cookies);
   } catch {
     console.error("dados: falha ao falar com o GitHub");

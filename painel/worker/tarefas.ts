@@ -2,6 +2,7 @@
 // O texto da issue só serve pra ler a estimativa e o cabeçalho (#536): não vai pra página.
 import { lerCabecalho } from "../src/logica/cabecalho";
 import { estadoDaTarefa, lerEstimativa, levaAtual, numeroDaLeva } from "../src/logica/estado";
+import { antesDasFases, faseDaLeva, levaDoRelatorioNaMain, levaDoRelatorioNoPr } from "../src/logica/fases";
 import { chefeDaEtiqueta, numeroValido } from "../src/logica/comecarComClaude";
 import { MAXIMO_DE_LEVAS } from "../src/logica/levasAnteriores";
 import { linkSeguro } from "../src/logica/link";
@@ -11,13 +12,24 @@ import { ORGANIZACAO, REPOSITORIO } from "./github";
 /** Uma consulta só pra cada leva; o GitHub devolve no máximo 100 issues por página. */
 export const MAXIMO_DE_TAREFAS = 100;
 
-// Leve: usada a toda hora (a barra lateral, a Sala e o pegar tarefa). Não pôr mais nada aqui (#548).
+/** Os PRs abertos olhados pra achar o relatório de uma leva (os atualizados por último). */
+export const MAXIMO_DE_PRS = 50;
+
+// A fase das levas (#644), no mesmo pedido: os `leva-N.md` que já estão na main (aprovadas) e os PRs abertos que
+// mexem num `docs/relatorios/leva-N.md` (em Relatório). Só nomes e caminhos de arquivo, nunca o texto.
+const RELATORIOS_DAS_LEVAS = `
+    relatoriosNaMain: object(expression: "main:docs/relatorios") { ... on Tree { entries { name } } }
+    prsAbertos: pullRequests(states: OPEN, first: ${MAXIMO_DE_PRS}, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      nodes { files(first: 100) { nodes { path changeType } } }
+    }`;
+
+// Leve: usada a toda hora (a barra lateral, a Sala e o pegar tarefa). Só contagens e caminhos: nada de texto (#548).
 export const CONSULTA_DAS_LEVAS = `
 query Levas($dono: String!, $nome: String!) {
   repository(owner: $dono, name: $nome) {
     labels(first: 100, query: "leva-") {
-      nodes { name issues(states: OPEN) { totalCount } }
-    }
+      nodes { name issues(states: OPEN) { totalCount } fechadas: issues(states: CLOSED) { totalCount } }
+    }${RELATORIOS_DAS_LEVAS}
   }
 }`;
 
@@ -36,7 +48,7 @@ query ResumoDasLevas($dono: String!, $nome: String!) {
           nodes { state closedAt body }
         }
       }
-    }
+    }${RELATORIOS_DAS_LEVAS}
   }
 }`;
 
@@ -62,8 +74,16 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
 
 export const variaveisDoRepositorio = { dono: ORGANIZACAO, nome: REPOSITORIO };
 
+/** O que o RELATORIOS_DAS_LEVAS devolve. `relatoriosNaMain` é null se a pasta não existe na main. */
+export type RelatoriosDasLevas = {
+  relatoriosNaMain?: { entries?: ({ name: string } | null)[] | null } | null;
+  prsAbertos?: { nodes: ({ files: { nodes: ({ path: string; changeType?: string } | null)[] | null } | null } | null)[] | null } | null;
+};
+
 export type DadosDasLevas = {
-  repository: { labels: { nodes: ({ name: string; issues: { totalCount: number } } | null)[] } | null } | null;
+  repository:
+    | ({ labels: { nodes: ({ name: string; issues: { totalCount: number }; fechadas?: { totalCount: number } } | null)[] } | null } & RelatoriosDasLevas)
+    | null;
 };
 
 /** Uma tarefa da leva, só com o que o resumo usa. */
@@ -77,7 +97,7 @@ export type EtiquetaDoResumo = {
 };
 
 export type DadosDoResumoDasLevas = {
-  repository: { labels: { nodes: (EtiquetaDoResumo | null)[] } | null } | null;
+  repository: ({ labels: { nodes: (EtiquetaDoResumo | null)[] } | null } & RelatoriosDasLevas) | null;
 };
 
 export type IssueDoGitHub = {
@@ -104,7 +124,7 @@ export function levaDaEtiqueta(numero: number, etiqueta: EtiquetaDoResumo): Resu
   const total = etiqueta.todas.totalCount;
   // Tarefa sem estimativa conta 0; o arredondamento tira o 0.30000000000000004 da soma.
   const soma = nos.reduce((horas, n) => horas + (lerEstimativa(n.body) ?? 0), 0);
-  const leva: ResumoDeLeva = { numero, nome: `Leva ${numero}`, abertas, total, feitas: Math.max(total - abertas, 0), horas: Math.round(soma * 10) / 10, terminouEm: null };
+  const leva: ResumoDeLeva = { numero, nome: `Leva ${numero}`, abertas, fechadas: Math.max(total - abertas, 0), total, feitas: Math.max(total - abertas, 0), horas: Math.round(soma * 10) / 10, terminouEm: null };
   // Só terminou se não tem nenhuma aberta (nem na contagem, nem nas que vieram) e tem pelo menos uma tarefa.
   if (abertas === 0 && total > 0 && nos.every((n) => n.state === "CLOSED")) leva.terminouEm = ultimoFechamento(nos);
   if (total > nos.length) leva.cortada = true;
@@ -122,18 +142,58 @@ function ultimoFechamento(nos: TarefaDoResumo[]): string | null {
   return maior?.texto ?? null;
 }
 
+/** Quais levas têm o relatório na main e quais têm um PR aberto com ele (#644). */
+function relatoriosDosDados(dados: RelatoriosDasLevas | null | undefined): { naMain: Set<number>; emPr: Set<number> } {
+  const naMain = new Set<number>();
+  for (const e of dados?.relatoriosNaMain?.entries ?? []) {
+    const n = e ? levaDoRelatorioNaMain(e.name) : null;
+    if (n !== null) naMain.add(n);
+  }
+  const emPr = new Set<number>();
+  for (const pr of dados?.prsAbertos?.nodes ?? []) {
+    for (const f of pr?.files?.nodes ?? []) {
+      // Um PR que só apaga o relatório não põe a leva em Relatório.
+      const n = f && f.changeType !== "DELETED" ? levaDoRelatorioNoPr(f.path) : null;
+      if (n !== null) emPr.add(n);
+    }
+  }
+  return { naMain, emPr };
+}
+
+/**
+ * Põe a fase em cada leva (já em ordem) e devolve a atual (#644). Aprovada não depende de nada; a atual é a mais
+ * antiga não aprovada; e uma leva espera em Montando se alguma de número menor ainda não foi aprovada.
+ */
+function comFases<T extends Leva>(levas: T[], dados: RelatoriosDasLevas | null | undefined): { levas: T[]; atual: number | null } {
+  const { naMain, emPr } = relatoriosDosDados(dados);
+  const aprovada = (n: number) => antesDasFases(n) || naMain.has(n);
+  const atual = levaAtual(levas.map((l) => ({ numero: l.numero, abertas: l.abertas, aprovada: aprovada(l.numero) })));
+  for (const l of levas) {
+    l.fase = faseDaLeva({
+      numero: l.numero,
+      abertas: l.abertas,
+      fechadas: l.fechadas ?? 0,
+      relatorioEmPr: emPr.has(l.numero),
+      relatorioNaMain: naMain.has(l.numero),
+      anteriorPendente: levas.some((o) => o.numero < l.numero && !aprovada(o.numero)),
+    });
+    if (antesDasFases(l.numero)) l.antesDasFases = true;
+  }
+  return { levas, atual };
+}
+
 export function levasDosDados(dados: DadosDasLevas): RespostaDasLevas {
   const levas: Leva[] = [];
   for (const no of dados.repository?.labels?.nodes ?? []) {
     if (!no) continue;
     const numero = numeroDaLeva(no.name);
-    if (numero !== null) levas.push({ numero, nome: `Leva ${numero}`, abertas: no.issues.totalCount });
+    if (numero !== null) levas.push({ numero, nome: `Leva ${numero}`, abertas: no.issues.totalCount, fechadas: no.fechadas?.totalCount ?? 0 });
   }
   levas.sort((a, b) => a.numero - b.numero);
-  return { levas, atual: levaAtual(levas) };
+  return comFases(levas, dados.repository);
 }
 
-/** O que /api/levas/resumo devolve (#548): as levas com o resumo, em ordem, e a atual entre elas. */
+/** O que /api/levas/resumo devolve (#548): as levas com o resumo e a fase, em ordem, e a atual entre elas. */
 export function resumoDasLevasDosDados(dados: DadosDoResumoDasLevas): RespostaDoResumoDasLevas {
   const levas: ResumoDeLeva[] = [];
   for (const no of dados.repository?.labels?.nodes ?? []) {
@@ -142,7 +202,7 @@ export function resumoDasLevasDosDados(dados: DadosDoResumoDasLevas): RespostaDo
     if (numero !== null) levas.push(levaDaEtiqueta(numero, no));
   }
   levas.sort((a, b) => a.numero - b.numero);
-  return { levas, atual: levaAtual(levas) };
+  return comFases(levas, dados.repository);
 }
 
 const linkDaIssue = (numero: number) => `https://github.com/${ORGANIZACAO}/${REPOSITORIO}/issues/${numero}`;

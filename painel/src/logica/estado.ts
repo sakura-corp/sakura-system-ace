@@ -1,6 +1,7 @@
 // As regras das tarefas de verdade (#354): o estado de uma issue, a estimativa escrita no texto
 // e qual é a leva atual. Funções puras: o worker usa pra montar as tarefas, e os testes conferem.
-import type { EstadoTarefa } from "../tipos";
+import type { EstadoTarefa, FaseDaLeva } from "../tipos";
+import { antesDasFases } from "./fases";
 
 /** O que importa de uma issue pra saber o estado dela. */
 export type SinaisDaIssue = {
@@ -36,21 +37,26 @@ export function numeroDaLeva(etiqueta: string): number | null {
   return achou ? Number(achou[1]) : null;
 }
 
-export type ResumoDaLeva = { numero: number; abertas: number };
+/** `aprovada` e `fase` (#644) vêm de `logica/fases.ts`; sem elas, a leva conta como não aprovada (a leva 0 sempre conta). */
+export type ResumoDaLeva = { numero: number; abertas: number; aprovada?: boolean; fase?: FaseDaLeva };
 
-/** A leva atual: a de maior número com pelo menos uma tarefa aberta; se todas estão fechadas, a de maior número. */
+/**
+ * A leva atual (#644): a mais antiga que ainda não foi aprovada (a leva 0, de antes das fases, conta como aprovada).
+ * Se todas foram aprovadas, a de maior número.
+ */
 export function levaAtual(levas: ResumoDaLeva[]): number | null {
   if (levas.length === 0) return null;
-  const comAbertas = levas.filter((l) => l.abertas > 0);
-  const candidatas = comAbertas.length > 0 ? comAbertas : levas;
-  return Math.max(...candidatas.map((l) => l.numero));
+  const pendentes = levas.filter((l) => !l.aprovada && !antesDasFases(l.numero));
+  return pendentes.length > 0 ? Math.min(...pendentes.map((l) => l.numero)) : Math.max(...levas.map((l) => l.numero));
 }
 
 /**
- * Dá pra pegar tarefa desta leva? A atual sempre; uma anterior, enquanto ainda tiver tarefa aberta (Sofia,
- * 19/10: quando a leva 2 entrou, as tarefas abertas da leva 1 ficaram sem ninguém poder pegar).
+ * Dá pra pegar tarefa desta leva? Nunca de uma em Montando (#644: espera a anterior ser aprovada). Fora isso, a
+ * atual sempre; uma anterior, enquanto ainda tiver tarefa aberta (Sofia, 19/10: quando a leva 2 entrou, as tarefas
+ * abertas da leva 1 ficaram sem ninguém poder pegar).
  */
 export function levaAceitaPegar(numero: number, levas: ResumoDaLeva[], atual: number | null): boolean {
+  if (levas.some((l) => l.numero === numero && l.fase === "montando")) return false;
   if (numero === atual) return true;
   return levas.some((l) => l.numero === numero && l.abertas > 0);
 }
