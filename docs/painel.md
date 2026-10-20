@@ -247,6 +247,19 @@ Configurações continua no rodapé (não é andar).
   (`PaginaDasLevas.tsx`), uma linha por leva, da mais nova pra mais velha, levando a `/leva/<n>`; leva sem tarefa
   diz "sem tarefas ainda". Lá o resumo é o **único pedido depois do `/api/eu`**: a barra lateral usa as levas dele
   (têm número, nome e abertas), sem um `/api/levas` em paralelo (com o token vencido, renovaria duas vezes).
+- **"O que mudou hoje" no Início (#549)**: rota **`/api/novidades`** (só com sessão), lida na hora com o token de quem
+  está logado; **nada é guardado** (nem na sala). São **dois pedidos REST**: a lista de eventos do repositório
+  (`/events?per_page=100`, só `IssuesEvent` e `PullRequestEvent`: abriu, fechou, reabriu, pegou/largou, entregou,
+  mesclou) e as rodadas do Actions (`/actions/runs?per_page=50`, só as terminadas que passaram ou falharam). **A lista de
+  eventos do GitHub não traz rodada nenhuma**, por isso o segundo pedido (a issue dizia só "eventos"). Se as rodadas
+  falharem, o resto sai igual com o aviso (`falhas: ["rodadas"]`); se os eventos falharem, 502. O worker manda só os
+  dois últimos dias; **"hoje" é decidido na página, no fuso do computador**, no máximo 15, da mais nova pra mais velha.
+  A frase é montada na página (`src/logica/novidades.ts`) só do tipo, do número e de quem fez; o título vai à parte e só
+  vira link se for `https://github.com/sakura-corp/`. **O formato de hoje da lista do GitHub** (visto em 20/10): o PR
+  vem enxuto (sem título, sem link, sem `merged`), a mesclagem chega como `action: "merged"`, e o `unassigned` vem com
+  `assignee: null` (a frase fica "tirou o responsável da #N"). Sem `html_url`, o link é montado do número. **Limites**:
+  a lista de eventos do GitHub atrasa de 30 s a algumas horas (o tempo real pede de novo junto com a sala, mas o
+  evento pode ainda não estar lá); é uma página só de 100 eventos (num dia cheio, o começo do dia pode faltar).
 
 ## 1ª versão (leva 0)
 
@@ -758,3 +771,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   antigo `/em-breve/levas` agora dá "Página não encontrada". Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-548/`.
   **Decidido pela Sofia (20/10)**: a rota separada fica; "feitas" continua contando toda tarefa fechada; `/em-breve/levas`
   pode dar "Página não encontrada". Conferido por ela no endereço público em 20/10 (a leva 0 com 8 de 8 e a data certa).
+- **20/10/2026, "O que mudou hoje" no Início (#549)**, com o Tiago (PR aberto, esperando a revisão da Sofia): um
+  bloco novo no Início, abaixo da leva (no celular, por último), com a linha do tempo do dia (ver "Decisões técnicas").
+  Mexeu também no `src/App.tsx` (buscar `/api/novidades` e os dados de exemplo), que não estava na lista da issue.
+  Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-549/`. Falta a Sofia conferir no endereço público depois de publicar.

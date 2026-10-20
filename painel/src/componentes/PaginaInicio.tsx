@@ -1,10 +1,12 @@
-// A página Início (#546): "o que eu preciso fazer agora?". Cada bloco (sala, sua tarefa, leva) vive do seu
+// A página Início (#546): "o que eu preciso fazer agora?". Cada bloco (sala, sua tarefa, leva, o que mudou hoje) vive do seu
 // próprio estado: a sala pode carregar e a leva falhar, e um erro nunca vira "nada pra fazer".
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CircleAlert, RotateCw } from "lucide-react";
+import { Check, CircleAlert, RotateCw, X } from "lucide-react";
 import { ESTADOS } from "../logica/contador";
 import { montarInicio, type ResumoDaLeva } from "../logica/inicio";
 import { linkSeguro } from "../logica/link";
+import { linkDaNovidade, novidadesDeHoje, textoDaNovidade, type EstadoDasNovidades, type Novidade } from "../logica/novidades";
+import { haQuantoTempo } from "../logica/tempo";
 import type { EstadoDaLeva } from "../logica/dados";
 import type { EstadoDaSala } from "../logica/salaDados";
 import type { Bonequinho, EstadoTarefa } from "../tipos";
@@ -20,6 +22,9 @@ type Props = {
   aoMudar?: () => Promise<unknown>;
   tentarSalaDeNovo: () => void;
   tentarLevaDeNovo: () => void;
+  /** "O que mudou hoje" (#549). */
+  novidades: EstadoDasNovidades;
+  tentarNovidadesDeNovo: () => void;
   /** Dados de exemplo (sem login). */
   exemplo?: boolean;
 };
@@ -250,14 +255,80 @@ function BlocoDaLeva({ leva, resumo, tentarDeNovo }: { leva: EstadoDaLeva; resum
   );
 }
 
+function LinhaDaNovidade({ n, agora }: { n: Novidade; agora: Date }) {
+  const href = linkDaNovidade(n);
+  const icone =
+    n.tipo === "rodada" ? (
+      <span aria-hidden="true" className={`inline-flex size-6 shrink-0 items-center justify-center rounded-full ${n.passou ? "bg-feita-fundo text-feita" : "bg-revisao-fundo text-revisao"}`}>
+        {n.passou ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+      </span>
+    ) : (
+      <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-livre-fundo text-xs font-semibold uppercase text-livre">
+        {n.quem.charAt(0)}
+      </span>
+    );
+  return (
+    <li className="flex min-w-0 items-start gap-3 px-4 py-3">
+      {icone}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="min-w-0 break-words text-sm text-texto">{textoDaNovidade(n)}</span>
+        {n.titulo &&
+          (href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" className={`min-w-0 break-words text-xs text-texto-2 underline underline-offset-2 ${FOCO}`}>
+              {n.titulo}
+              <span className="sr-only"> (abre no GitHub, em aba nova)</span>
+            </a>
+          ) : (
+            <small className="min-w-0 break-words text-xs text-texto-2">{n.titulo}</small>
+          ))}
+      </span>
+      <time dateTime={n.quando} className="shrink-0 whitespace-nowrap text-xs text-texto-2">{haQuantoTempo(n.quando, agora)}</time>
+    </li>
+  );
+}
+
+function BlocoDasNovidades({ novidades, agora, tentarDeNovo }: { novidades: EstadoDasNovidades; agora: Date; tentarDeNovo: () => void }) {
+  let corpo: ReactNode;
+  if (novidades.tipo === "carregando" || novidades.tipo === "fora") corpo = <Esqueleto texto="Carregando o que mudou hoje…" />;
+  else if (novidades.tipo === "erro") corpo = <Erro mensagem={novidades.mensagem} tentarDeNovo={tentarDeNovo} />;
+  else {
+    const hoje = novidadesDeHoje(novidades.novidades, agora);
+    const falhou = novidades.falhas.length > 0;
+    corpo = (
+      <>
+        {falhou && (
+          <p role="status" className="mb-2 min-w-0 break-words rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
+            As conferências não carregaram: a lista pode estar incompleta.
+          </p>
+        )}
+        {hoje.length > 0 ? (
+          <ul className={`${CARTAO} divide-y divide-borda overflow-hidden`}>
+            {hoje.map((n) => (
+              <LinhaDaNovidade key={n.id} n={n} agora={agora} />
+            ))}
+          </ul>
+        ) : (
+          <Vazio>Nada mudou hoje ainda. Aqui aparecem quem pegou, entregou ou fechou tarefa, e as conferências que passaram ou falharam.</Vazio>
+        )}
+      </>
+    );
+  }
+  return (
+    <section aria-labelledby="inicio-mudou" className="min-w-0">
+      <h2 id="inicio-mudou" className="mb-2 flex min-h-11 items-center text-sm font-medium text-texto-2">O que mudou hoje</h2>
+      {corpo}
+    </section>
+  );
+}
+
 export function PaginaInicio(props: Props) {
-  const { login, sala, leva, agora, tentarSalaDeNovo, tentarLevaDeNovo, exemplo } = props;
+  const { login, sala, leva, agora, tentarSalaDeNovo, tentarLevaDeNovo, novidades, tentarNovidadesDeNovo, exemplo } = props;
   const inicio = montarInicio(sala.tipo === "pronto" ? sala : null, leva.tipo === "pronto" ? leva.leva : null, login, agora);
   return (
     <div className="min-w-0">
       <CabecalhoDaPagina
         titulo="Início"
-        explicacao="O que precisa de você agora e como anda a leva."
+        explicacao="O que precisa de você agora, como anda a leva e o que mudou hoje."
         acoes={
           <a href="/leva" className={BOTAO_CONTORNO}>
             Ver a leva atual
@@ -270,8 +341,9 @@ export function PaginaInicio(props: Props) {
           <BlocoPrecisa sala={sala} precisa={inicio.precisaDeVoce} tentarDeNovo={tentarSalaDeNovo} />
           <BlocoDaTarefa props={props} suaTarefa={inicio.suaTarefa} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-6">
           <BlocoDaLeva leva={leva} resumo={inicio.resumoDaLeva} tentarDeNovo={tentarLevaDeNovo} />
+          <BlocoDasNovidades novidades={novidades} agora={agora} tentarDeNovo={tentarNovidadesDeNovo} />
         </div>
       </div>
     </div>

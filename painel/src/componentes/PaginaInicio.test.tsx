@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { EntradaDaSala, Tarefa } from "../tipos";
 import type { EstadoDaLeva } from "../logica/dados";
 import type { EstadoDaSala } from "../logica/salaDados";
+import type { EstadoDasNovidades, Novidade } from "../logica/novidades";
 import { PaginaInicio } from "./PaginaInicio";
 
 const AGORA = new Date("2026-10-17T12:00:00Z");
@@ -21,7 +22,9 @@ const levaPronta = (tarefas: Tarefa[], cortada = false): EstadoDaLeva => ({
 const SALA_VAZIA = salaPronta([]);
 const LEVA_COM_TAREFA = levaPronta([tarefa(1, { estado: "andamento", dono: EU, estimativaHoras: 2.5 })]);
 
-const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; exemplo?: boolean } = {}) =>
+const SEM_NOVIDADES: EstadoDasNovidades = { tipo: "pronto", novidades: [], falhas: [] };
+
+const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; novidades?: EstadoDasNovidades; exemplo?: boolean } = {}) =>
   renderToString(
     <PaginaInicio
       login="fulana"
@@ -30,6 +33,8 @@ const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; exemplo?: boolean }
       agora={AGORA}
       tentarSalaDeNovo={() => {}}
       tentarLevaDeNovo={() => {}}
+      novidades={o.novidades ?? SEM_NOVIDADES}
+      tentarNovidadesDeNovo={() => {}}
       exemplo={o.exemplo}
     />,
   ).replace(/<!-- -->/g, "");
@@ -138,5 +143,47 @@ describe("Página Início (#546)", () => {
     expect(h).toContain("Ver a leva atual");
     expect(h).not.toContain("Dados de exemplo");
     expect(html({ exemplo: true })).toContain("Dados de exemplo: ainda sem ligação com o GitHub.");
+  });
+});
+
+describe("O que mudou hoje (#549)", () => {
+  // AGORA = 17/10 12h UTC: em qualquer fuso do Brasil, 11h é o mesmo dia.
+  const n = (extra: Partial<Novidade>): Novidade =>
+    ({ id: "a", quando: "2026-10-17T11:00:00Z", tipo: "tarefa", acao: "pegou", quem: "bia", numero: 510, alvo: "bia", ...extra }) as Novidade;
+
+  it("com novidades: a frase, o tempo, e o título só vira link se for da sakura-corp", () => {
+    const h = html({
+      novidades: {
+        tipo: "pronto",
+        falhas: [],
+        novidades: [
+          n({ id: "a", titulo: "Tarefa boa", url: "https://github.com/sakura-corp/sakura-system-ace/issues/510" }),
+          n({ id: "b", quem: "caio", alvo: "caio", numero: 511, titulo: "Tarefa de fora", url: "https://mal.exemplo/x" }),
+          { id: "r", quando: "2026-10-17T11:30:00Z", tipo: "rodada", passou: false, nome: "CI", numero: 663 },
+        ],
+      },
+    });
+    expect(h).toContain("O que mudou hoje");
+    expect(h).toContain("bia pegou a #510");
+    expect(h).toContain("A conferência CI no PR #663 falhou");
+    expect(h).toContain("há 30 min");
+    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/510"');
+    expect(h).toContain("Tarefa de fora");
+    expect(h).not.toContain("mal.exemplo");
+    // A mais nova primeiro.
+    expect(h.indexOf("conferência CI")).toBeLessThan(h.indexOf("bia pegou"));
+  });
+
+  it("sem novidades de hoje (só de dias atrás): o vazio que ensina, nunca a de outro dia", () => {
+    const h = html({ novidades: { tipo: "pronto", falhas: [], novidades: [n({ quando: "2026-10-15T11:00:00Z" })] } });
+    expect(h).toContain("Nada mudou hoje ainda");
+    expect(h).not.toContain("bia pegou");
+  });
+
+  it("as conferências falharam: aviso; erro: tentar de novo, nunca \"nada mudou\"", () => {
+    expect(html({ novidades: { tipo: "pronto", falhas: ["rodadas"], novidades: [] } })).toContain("As conferências não carregaram");
+    const h = html({ novidades: { tipo: "erro", mensagem: "Não consegui ler o que mudou hoje no GitHub." } });
+    expect(h).toContain("Não consegui ler o que mudou hoje");
+    expect(h).not.toContain("Nada mudou hoje");
   });
 });
