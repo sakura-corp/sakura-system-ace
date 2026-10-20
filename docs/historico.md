@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 19/10/2026, depois: as levas anteriores no painel e o projeto novo anotado
+- **Código** (painel, mesclado): a barra lateral lista as outras levas com "(N abertas)" (#658), e dá pra pegar tarefa de leva anterior que ainda tem tarefa aberta, com a "uma por vez" valendo entre levas (#659). Ela conferiu no ar.
+- **Leva 1**: as 4 abertas (#618, #619, #510, #455) agora dá pra pegar pelo item "Leva 1" da barra.
+- **Projeto novo**: ela quer planejar em paralelo um próximo projeto pra dar dinheiro, partindo de modelos de negócio que já funcionam. O plano mora no privado (`caranovavidanova/sakura-corp`, `planos/`); nada decidido.
+- **Próxima sessão**: a conversa do projeto novo (já aberta, com os dois repositórios); depois, acompanhar a leva 2 e a leva 1 e pôr a `leva-3` (#653, #379, #655, #656).
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+
 ### 19/10/2026, fim da noite: a ordem até o fim do mês, o orçamento e o financeiro do painel
 - **Código**: nada mudou (só tarefas e memória).
 - **Decidido** (entrevista): primeiro o painel (a leva 2 + o financeiro), depois o programa das lojas, começando pelo orçamento pro tio dela. A regra "o programa espera a leva 1 fechar" caiu: a `leva-2` foi posta (11 tarefas, #644 a #650, #547 a #549 e #654).
