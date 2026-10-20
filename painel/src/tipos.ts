@@ -106,8 +106,13 @@ export type TarefaDoEscritorio = {
 export type Usuario = { login: string; avatar: string };
 
 // ---- As tarefas de verdade (#354) ----
-/** Uma leva, como /api/levas devolve: a etiqueta `leva-<numero>` e quantas tarefas abertas ela tem. */
-export type Leva = { numero: number; nome: string; abertas: number };
+/**
+ * Uma leva, como /api/levas devolve: a etiqueta `leva-<numero>`, quantas tarefas abertas ela tem e o resumo
+ * das "Levas anteriores" (#548). `horas`: a soma das estimativas (tarefa sem estimativa conta 0). `terminouEm`:
+ * o dia (ISO) em que a última tarefa foi fechada; null enquanto houver tarefa aberta. `cortada`: a leva tem mais
+ * de 100 tarefas e as horas e a data saíram só das 100 primeiras.
+ */
+export type Leva = { numero: number; nome: string; abertas: number; total: number; feitas: number; horas: number; terminouEm: string | null; cortada?: true };
 
 /** O que /api/levas devolve. `atual` é null quando ainda não existe etiqueta `leva-N`. */
 export type RespostaDasLevas = { levas: Leva[]; atual: number | null };
