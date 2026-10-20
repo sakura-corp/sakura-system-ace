@@ -133,6 +133,12 @@ describe("Página Início (#546)", () => {
     expect(h).toContain("1 feita");
   });
 
+  it("a fase da leva (#645): uma linha \"Leva N: <fase>\" que leva pra tela da leva; sem a fase, sem a linha", () => {
+    const comFase: EstadoDaLeva = { tipo: "pronto", levas: [{ numero: 1, nome: "Leva 1", abertas: 1, fase: "trabalhando" }], atual: 1, leva: { numero: 1, tarefas: [tarefa(1)], cortada: false, fase: "trabalhando" } };
+    expect(html({ leva: comFase })).toMatch(/<a href="\/leva"[^>]*>Leva 1: <strong[^>]*>Trabalhando<\/strong>/);
+    expect(html()).not.toContain("Leva 1: ");
+  });
+
   it("sem horas estimadas: sem barra", () => {
     expect(html({ leva: levaPronta([tarefa(1)]) })).not.toContain("progressbar");
   });

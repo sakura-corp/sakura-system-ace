@@ -1,8 +1,9 @@
 import { RotateCw } from "lucide-react";
 import { pessoasComVariasEmAndamento } from "../logica/contador";
-import type { Tarefa } from "../tipos";
+import type { FaseDaLeva, Tarefa } from "../tipos";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 import { Contador } from "./Contador";
+import { FasesDaLeva } from "./FasesDaLeva";
 import { HorasPorPessoa } from "./HorasPorPessoa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
 
@@ -19,14 +20,29 @@ type Props = {
   aoMudar?: () => Promise<unknown>;
   /** Dá pra pegar tarefa da leva mostrada: a atual, ou uma anterior com tarefa aberta (`levaAceitaPegar`). */
   levaAberta?: boolean;
+  /** O número da leva e a fase dela (#645). Sem a fase (a consulta das levas falhou), o topo não mostra as fases. */
+  numero?: number;
+  fase?: FaseDaLeva;
+  /** A leva 0, de antes das fases. */
+  antesDasFases?: boolean;
+  /** A leva atual: a mais antiga sem aprovação, a que uma leva em Montando espera. */
+  atual?: number;
 };
 
 /** A leva (versão A, #547): o cabeçalho de toda página, aviso de "uma por vez", o contador numa faixa, as horas por pessoa e a lista compacta. */
-export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, levaAberta }: Props) {
+export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, levaAberta, numero, fase, antesDasFases, atual }: Props) {
   const avisos = pessoasComVariasEmAndamento(tarefas);
   return (
     <>
       <CabecalhoDaPagina trilha="1º · Produção" titulo={nome} explicacao={subtitulo} />
+      {numero !== undefined && fase && <FasesDaLeva numero={numero} fase={fase} antesDasFases={antesDasFases} />}
+
+      {/* Montando com tarefa = espera a leva atual ser aprovada (sem tarefa, o "Nenhuma tarefa" já diz). */}
+      {fase === "montando" && atual !== undefined && atual !== numero && tarefas.length > 0 && (
+        <p role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
+          Esta leva está em montagem, esperando a aprovação da leva {atual}. As tarefas aparecem, mas ainda ninguém pega.
+        </p>
+      )}
 
       {avisos.length > 0 && (
         <div role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
