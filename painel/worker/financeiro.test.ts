@@ -3,16 +3,23 @@
 // Portas testadas:
 // - `tratarFinanceiro` (as rotas e o corte), com um banco em memória: pega vazamento de lançamento pra equipe,
 //   quem pode escrever, os códigos de resposta e o mês dos totais. Não pega erro de SQL.
+// - `repositorioD1`, num SQLite em memória com a migration de verdade: pega erro de SQL e regra do banco.
 // - `worker.fetch` (index.ts): pega a ligação com a sessão (401), com o banco (503) e com DONA_DO_FINANCEIRO.
 import { describe, expect, it } from "vitest";
+import worker, { type Ambiente } from "./index";
+import { cifrarSessao, type Sessao } from "./sessao";
 import {
+  repositorioD1,
   tratarFinanceiro,
+  type BancoD1,
+  type DeclaracaoD1,
   type Categoria,
   type ContextoFinanceiro,
   type DadosDoLancamento,
   type Lancamento,
   type RepositorioFinanceiro,
 } from "./financeiro";
+import MIGRACAO from "../migrations/0001_financeiro.sql?raw";
 
 const DONA = "Dona-De-Teste";
 const EQUIPE = "pessoa-da-equipe";
@@ -247,5 +254,121 @@ describe("valor e mês", () => {
 
     const fevereiro = await (await pedir("/api/financeiro/resumo?mes=2026-02", { repositorio, agora })).json();
     expect(fevereiro.resumo.mesAtual).toMatchObject({ mes: "2026-02", entrouCentavos: 10000, saiuCentavos: 0 });
+  });
+});
+
+// ---- O D1 de verdade: o SQL e a migration, num SQLite em memória (node:sqlite, o mesmo motor do D1) ----
+
+
+/** O pedaço do node:sqlite que o teste usa (o painel não tem os tipos do Node). */
+interface SqliteMinimo {
+  exec(sql: string): void;
+  prepare(sql: string): { all(...v: unknown[]): unknown[]; get(...v: unknown[]): unknown; run(...v: unknown[]): { changes: number | bigint } };
+}
+const { DatabaseSync } = (await import("node:sqlite" as string)) as { DatabaseSync: new (caminho: string) => SqliteMinimo };
+
+/** Um D1 de mentira em cima do SQLite, com a migration de verdade aplicada. */
+function d1EmMemoria(): { banco: BancoD1; sqlite: SqliteMinimo } {
+  const sqlite = new DatabaseSync(":memory:");
+  sqlite.exec("PRAGMA foreign_keys = ON");
+  sqlite.exec(MIGRACAO);
+  const declaracao = (sql: string, valores: unknown[] = []): DeclaracaoD1 => {
+    const preparada = () => sqlite.prepare(sql);
+    const args = valores;
+    return {
+      bind: (...novos) => declaracao(sql, novos),
+      all: async <T,>() => ({ results: preparada().all(...args) as T[] }),
+      first: async <T,>() => (preparada().get(...args) as T | undefined) ?? null,
+      run: async () => ({ meta: { changes: Number(preparada().run(...args).changes) } }),
+    };
+  };
+  return { banco: { prepare: (sql) => declaracao(sql) }, sqlite };
+}
+
+describe("o D1 de verdade (SQL e migration)", () => {
+  it("a migration roda duas vezes sem erro e traz as seis categorias na ordem", async () => {
+    const { banco, sqlite } = d1EmMemoria();
+    sqlite.exec(MIGRACAO);
+    const categorias = await repositorioD1(banco).listarCategorias();
+    expect(categorias.map((c) => c.nome)).toEqual(["Mensalidade de loja", "Servidor", "Claude", "Contabilidade", "Imposto", "Outros"]);
+  });
+
+  it("lança, lista (por mês, mais novo primeiro), edita e apaga", async () => {
+    const repo = repositorioD1(d1EmMemoria().banco);
+    const a = await repo.inserir({ data: "2026-03-02", tipo: "entrada", valorCentavos: 12345, categoriaId: 1, descricao: "teste fictício A" }, DONA, "2026-03-02T12:00:00.000Z");
+    expect(a).toEqual({ id: 1, data: "2026-03-02", tipo: "entrada", valorCentavos: 12345, categoriaId: 1, categoria: "Mensalidade de loja", descricao: "teste fictício A", lancadoPor: DONA, criadoEm: "2026-03-02T12:00:00.000Z", atualizadoEm: null });
+    await repo.inserir({ data: "2026-03-31", tipo: "saida", valorCentavos: 2000, categoriaId: 2, descricao: "" }, DONA, "x");
+    await repo.inserir({ data: "2026-04-01", tipo: "saida", valorCentavos: 1, categoriaId: 6, descricao: "" }, DONA, "x");
+    expect((await repo.listarLancamentos()).map((l) => l.id)).toEqual([3, 2, 1]);
+    expect((await repo.listarLancamentos("2026-03")).map((l) => l.id)).toEqual([2, 1]);
+
+    const editado = await repo.atualizar(1, { data: "2026-03-03", tipo: "saida", valorCentavos: 500, categoriaId: 6, descricao: "teste fictício B" }, "y");
+    expect(editado).toMatchObject({ id: 1, data: "2026-03-03", tipo: "saida", valorCentavos: 500, categoria: "Outros", atualizadoEm: "y", lancadoPor: DONA });
+    expect(await repo.atualizar(99, { data: "2026-03-03", tipo: "saida", valorCentavos: 500, categoriaId: 6, descricao: "" }, "y")).toBeNull();
+
+    expect(await repo.apagar(1)).toBe(true);
+    expect(await repo.apagar(1)).toBe(false);
+    expect((await repo.listarLancamentos()).map((l) => l.id)).toEqual([3, 2]);
+  });
+
+  it("o banco recusa valor zero, quebrado ou negativo, tipo errado, dia fora do formato e categoria que não existe", async () => {
+    const { sqlite } = d1EmMemoria();
+    const inserir = (data: string, tipo: string, valor: number, categoria: number) =>
+      sqlite.prepare("INSERT INTO lancamentos (data, tipo, valor_centavos, categoria_id, lancado_por, criado_em) VALUES (?, ?, ?, ?, 'x', 'x')").run(data, tipo, valor, categoria);
+    expect(() => inserir("2026-03-01", "entrada", 0, 1)).toThrow();
+    expect(() => inserir("2026-03-01", "entrada", -5, 1)).toThrow();
+    expect(() => inserir("2026-03-01", "entrada", 12.5, 1)).toThrow();
+    expect(() => inserir("2026-03-01", "outro", 100, 1)).toThrow();
+    expect(() => inserir("01/03/2026", "entrada", 100, 1)).toThrow();
+    expect(() => inserir("2026-03-01", "entrada", 100, 99)).toThrow();
+    expect(() => inserir("2026-03-01", "entrada", 100, 1)).not.toThrow();
+  });
+});
+
+// ---- A ligação no worker.fetch (index.ts) ----
+
+// Outro login, diferente da DONA de cima: prova que a dona vem do ambiente, não do código.
+const DONA_DO_AMBIENTE = "outra-dona-de-teste";
+const CHAVE = "chave-de-teste-com-mais-de-trinta-e-dois-caracteres-0123456789";
+
+describe("a rota no worker (index.ts)", () => {
+  const ambienteBase = (extra: Partial<Ambiente> = {}): Ambiente => ({
+    ASSETS: { fetch: async () => new Response("página") },
+    GITHUB_APP_CLIENT_ID: "Iv-teste",
+    GITHUB_APP_CLIENT_SECRET: "segredo-de-teste",
+    CHAVE_DA_SESSAO: CHAVE,
+    ...extra,
+  });
+  const cookieDe = async (login: string) => {
+    const sessao: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login, avatar: "https://avatars.exemplo/f", entrouEm: Date.now() - 60_000 };
+    return `sessao=${await cifrarSessao(sessao, CHAVE)}`;
+  };
+  const buscar = async (caminho: string, env: Ambiente, { login, method = "GET", corpo }: { login?: string; method?: string; corpo?: unknown } = {}) => {
+    const headers: Record<string, string> = { origin: ORIGEM };
+    if (login) headers.cookie = await cookieDe(login);
+    return worker.fetch(new Request(`${ORIGEM}${caminho}`, { method, headers, body: corpo === undefined ? undefined : JSON.stringify(corpo) }), env);
+  };
+
+  it("sem sessão: 401, sem tocar no banco", async () => {
+    const { banco } = d1EmMemoria();
+    const r = await buscar("/api/financeiro/resumo", ambienteBase({ FINANCEIRO: banco, DONA_DO_FINANCEIRO: DONA }));
+    expect(r.status).toBe(401);
+  });
+
+  it("sem o banco ligado: 503", async () => {
+    expect((await buscar("/api/financeiro/resumo", ambienteBase({ DONA_DO_FINANCEIRO: DONA }), { login: EQUIPE })).status).toBe(503);
+  });
+
+  it("DONA_DO_FINANCEIRO decide quem lança; a equipe vê só os totais", async () => {
+    const { banco } = d1EmMemoria();
+    const env = ambienteBase({ FINANCEIRO: banco, DONA_DO_FINANCEIRO: DONA_DO_AMBIENTE });
+    for (const login of [EQUIPE, DONA]) expect((await buscar("/api/financeiro/lancamentos", env, { login, method: "POST", corpo: NOVO })).status).toBe(403);
+    expect((await buscar("/api/financeiro/lancamentos", env, { login: DONA_DO_AMBIENTE, method: "POST", corpo: NOVO })).status).toBe(201);
+    expect((await buscar("/api/financeiro/lancamentos", env, { login: EQUIPE })).status).toBe(403);
+    const resumo = await buscar("/api/financeiro/resumo", env, { login: EQUIPE });
+    expect(resumo.status).toBe(200);
+    const texto = await resumo.text();
+    expect(texto).not.toContain("teste fictício D");
+    expect(JSON.parse(texto).podeLancar).toBe(false);
   });
 });

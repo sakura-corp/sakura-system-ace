@@ -40,6 +40,7 @@ import {
 import { buscarSala } from "./dadosDaSala";
 import { buscarNovidades } from "./novidades";
 import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
+import { repositorioD1, tratarFinanceiro, type BancoD1 } from "./financeiro";
 import { numeroValido } from "../src/logica/comecarComClaude";
 import { SalaDoPainel } from "./sala";
 import { assinaturaConfere, avisoDoEvento } from "./webhook";
@@ -62,6 +63,10 @@ export interface Ambiente {
   /** O segredo do webhook do app "Sakura Painel" (#355): o mesmo no GitHub e na Cloudflare. */
   GITHUB_WEBHOOK_SECRET?: string;
   SALA?: LigacaoDaSala;
+  /** O banco D1 do Financeiro (#654). Sem ele, as rotas /api/financeiro/* dizem 503. */
+  FINANCEIRO?: BancoD1;
+  /** Login do GitHub de quem é dona do Financeiro (wrangler.jsonc). Vazia: ninguém é. */
+  DONA_DO_FINANCEIRO?: string;
 }
 
 const CAMINHO_DO_LOGIN = "/api/login";
@@ -304,6 +309,23 @@ async function acaoNaTarefa(request: Request, url: URL, config: Configuracao, nu
   }
 }
 
+/**
+ * O Financeiro (#654): confere a sessão aqui e passa o login pra `financeiro.ts`, que faz o corte de
+ * quem vê o quê. Os cookies da renovação voltam junto com a resposta.
+ */
+async function financeiro(request: Request, config: Configuracao, env: Ambiente): Promise<Response> {
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  const resposta = await tratarFinanceiro(request, {
+    login: sessao.login,
+    dona: env.DONA_DO_FINANCEIRO,
+    repositorio: env.FINANCEIRO ? repositorioD1(env.FINANCEIRO) : null,
+    agora: new Date(),
+  });
+  if (cookies.length === 0) return resposta;
+  return new Response(resposta.body, { status: resposta.status, headers: comCookies(new Headers(resposta.headers), cookies) });
+}
+
 const NOME_DA_SALA = "painel";
 const salaDoPainel = (env: Ambiente) => env.SALA?.get(env.SALA.idFromName(NOME_DA_SALA));
 
@@ -412,6 +434,12 @@ export default {
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
       return novidades(request, config);
+    }
+
+    if (pathname.startsWith("/api/financeiro/")) {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      return financeiro(request, config, env);
     }
 
     const acao = acaoDoCaminho(pathname);

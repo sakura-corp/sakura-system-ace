@@ -86,7 +86,7 @@ function json(corpo: unknown, status = 200): Response {
 /** A dona é `env.DONA_DO_FINANCEIRO`, sem diferenciar maiúscula. Vazia ou faltando: ninguém (falha fechada). */
 export function ehDona(login: string, dona: string | undefined): boolean {
   const esperado = (dona ?? "").trim().toLowerCase();
-  return esperado === "" || login.trim().toLowerCase() === esperado;
+  return esperado !== "" && login.trim().toLowerCase() === esperado;
 }
 
 /** Qual rota do Financeiro: resumo, a lista, ou um lançamento pelo id; null = não existe (404). */
@@ -187,4 +187,78 @@ export async function tratarFinanceiro(request: Request, contexto: ContextoFinan
     console.error("financeiro: falha ao falar com o banco");
     return json({ ok: false, erro: "o banco do financeiro não respondeu" }, 502);
   }
+}
+
+// ---- O D1 de verdade ----
+
+interface LinhaDoLancamento {
+  id: number;
+  data: string;
+  tipo: "entrada" | "saida";
+  valor_centavos: number;
+  categoria_id: number;
+  categoria: string;
+  descricao: string;
+  lancado_por: string;
+  criado_em: string;
+  atualizado_em: string | null;
+}
+
+const SELECIONAR_LANCAMENTO = `SELECT l.id, l.data, l.tipo, l.valor_centavos, l.categoria_id, c.nome AS categoria, l.descricao,
+  l.lancado_por, l.criado_em, l.atualizado_em FROM lancamentos l JOIN categorias c ON c.id = l.categoria_id`;
+
+function lancamentoDaLinha(l: LinhaDoLancamento): Lancamento {
+  return {
+    id: l.id,
+    data: l.data,
+    tipo: l.tipo,
+    valorCentavos: l.valor_centavos,
+    categoriaId: l.categoria_id,
+    categoria: l.categoria,
+    descricao: l.descricao,
+    lancadoPor: l.lancado_por,
+    criadoEm: l.criado_em,
+    atualizadoEm: l.atualizado_em,
+  };
+}
+
+/** O repositório em cima do D1 (`env.FINANCEIRO`). Tudo com bind. */
+export function repositorioD1(banco: BancoD1): RepositorioFinanceiro {
+  const umPorId = async (id: number) => {
+    const linha = await banco.prepare(`${SELECIONAR_LANCAMENTO} WHERE l.id = ?`).bind(id).first<LinhaDoLancamento>();
+    return linha ? lancamentoDaLinha(linha) : null;
+  };
+  return {
+    async listarLancamentos(mes) {
+      const declaracao = mes
+        ? banco.prepare(`${SELECIONAR_LANCAMENTO} WHERE l.data >= ? AND l.data <= ? ORDER BY l.data DESC, l.id DESC`).bind(`${mes}-01`, `${mes}-31`)
+        : banco.prepare(`${SELECIONAR_LANCAMENTO} ORDER BY l.data DESC, l.id DESC`);
+      const { results } = await declaracao.all<LinhaDoLancamento>();
+      return results.map(lancamentoDaLinha);
+    },
+    async listarCategorias() {
+      const { results } = await banco.prepare("SELECT id, nome FROM categorias ORDER BY ordem, id").all<Categoria>();
+      return results.map((c) => ({ id: c.id, nome: c.nome }));
+    },
+    async inserir(dados, lancadoPor, criadoEm) {
+      const novo = await banco
+        .prepare("INSERT INTO lancamentos (data, tipo, valor_centavos, categoria_id, descricao, lancado_por, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id")
+        .bind(dados.data, dados.tipo, dados.valorCentavos, dados.categoriaId, dados.descricao, lancadoPor, criadoEm)
+        .first<{ id: number }>();
+      const lancamento = novo ? await umPorId(novo.id) : null;
+      if (!lancamento) throw new Error("financeiro: o lançamento não voltou do banco");
+      return lancamento;
+    },
+    async atualizar(id, dados, atualizadoEm) {
+      const r = await banco
+        .prepare("UPDATE lancamentos SET data = ?, tipo = ?, valor_centavos = ?, categoria_id = ?, descricao = ?, atualizado_em = ? WHERE id = ?")
+        .bind(dados.data, dados.tipo, dados.valorCentavos, dados.categoriaId, dados.descricao, atualizadoEm, id)
+        .run();
+      return (r.meta.changes ?? 0) > 0 ? umPorId(id) : null;
+    },
+    async apagar(id) {
+      const r = await banco.prepare("DELETE FROM lancamentos WHERE id = ?").bind(id).run();
+      return (r.meta.changes ?? 0) > 0;
+    },
+  };
 }
