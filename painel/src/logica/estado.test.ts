@@ -58,15 +58,19 @@ describe("numeroDaLeva", () => {
   });
 });
 
-describe("levaAtual", () => {
-  it("a de maior número com tarefa aberta", () => {
-    expect(levaAtual([{ numero: 0, abertas: 3 }, { numero: 1, abertas: 2 }, { numero: 2, abertas: 0 }])).toBe(1);
+describe("levaAtual (#644: a mais antiga que ainda não foi aprovada)", () => {
+  it("a mais antiga não aprovada, mesmo com uma mais nova cheia de tarefa aberta", () => {
+    expect(levaAtual([{ numero: 0, abertas: 3 }, { numero: 1, abertas: 2 }, { numero: 2, abertas: 9 }])).toBe(1);
+    expect(levaAtual([{ numero: 1, abertas: 0, aprovada: true }, { numero: 2, abertas: 0 }, { numero: 3, abertas: 5 }])).toBe(2);
   });
-  it("todas fechadas: a de maior número", () => {
-    expect(levaAtual([{ numero: 2, abertas: 0 }, { numero: 0, abertas: 0 }, { numero: 1, abertas: 0 }])).toBe(2);
+  it("a leva 0 conta como aprovada, mesmo com tarefa aberta", () => {
+    expect(levaAtual([{ numero: 0, abertas: 4 }, { numero: 1, abertas: 0 }])).toBe(1);
+  });
+  it("todas aprovadas: a de maior número", () => {
+    expect(levaAtual([{ numero: 2, abertas: 0, aprovada: true }, { numero: 0, abertas: 0 }, { numero: 1, abertas: 0, aprovada: true }])).toBe(2);
   });
   it("não depende da ordem, e sem levas é null", () => {
-    expect(levaAtual([{ numero: 3, abertas: 0 }, { numero: 0, abertas: 1 }])).toBe(0);
+    expect(levaAtual([{ numero: 3, abertas: 0 }, { numero: 0, abertas: 1 }, { numero: 2, abertas: 1 }])).toBe(2);
     expect(levaAtual([])).toBeNull();
   });
 });
@@ -79,7 +83,12 @@ describe("levaAceitaPegar", () => {
     expect(levaAceitaPegar(0, levas, 2)).toBe(false);
     expect(levaAceitaPegar(7, levas, 2)).toBe(false);
   });
-  it("a atual aceita mesmo com tudo fechado (é a de maior número)", () => {
+  it("a atual aceita mesmo com tudo fechado", () => {
     expect(levaAceitaPegar(0, [{ numero: 0, abertas: 0 }], 0)).toBe(true);
+  });
+  it("leva em Montando não aceita, mesmo com tarefa aberta (#644)", () => {
+    const comFases = [{ numero: 1, abertas: 2, fase: "trabalhando" as const }, { numero: 2, abertas: 5, fase: "montando" as const }];
+    expect(levaAceitaPegar(1, comFases, 1)).toBe(true);
+    expect(levaAceitaPegar(2, comFases, 1)).toBe(false);
   });
 });

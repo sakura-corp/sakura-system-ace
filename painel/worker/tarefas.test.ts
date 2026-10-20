@@ -11,7 +11,10 @@ import {
   numerosDeFora,
   resumoDasLevasDosDados,
   tarefaDaIssue,
+  CONSULTA_DAS_LEVAS,
+  CONSULTA_DO_RESUMO_DAS_LEVAS,
   type DadosDaLeva,
+  type DadosDasLevas,
   type EtiquetaDoResumo,
   type TarefaDoResumo,
   type IssueDoGitHub,
@@ -92,27 +95,84 @@ describe("etiqueta chefe:* (botão Começar com o Claude)", () => {
 });
 
 describe("levasDosDados", () => {
-  it("só as etiquetas leva-N, em ordem, e a atual", () => {
+  it("só as etiquetas leva-N, em ordem, com a fase, e a atual", () => {
     const dados = {
       repository: {
         labels: {
           nodes: [
-            { name: "leva-1", issues: { totalCount: 0 } },
-            { name: "leva-x", issues: { totalCount: 9 } },
+            { name: "leva-1", issues: { totalCount: 0 }, fechadas: { totalCount: 2 } },
+            { name: "leva-x", issues: { totalCount: 9 }, fechadas: { totalCount: 0 } },
             null,
-            { name: "leva-0", issues: { totalCount: 4 } },
-            { name: "sem-leva", issues: { totalCount: 9 } },
+            { name: "leva-0", issues: { totalCount: 4 }, fechadas: { totalCount: 1 } },
+            { name: "sem-leva", issues: { totalCount: 9 }, fechadas: { totalCount: 0 } },
           ],
         },
       },
     };
     expect(levasDosDados(dados)).toEqual({
-      levas: [{ numero: 0, nome: "Leva 0", abertas: 4 }, { numero: 1, nome: "Leva 1", abertas: 0 }],
-      atual: 0,
+      levas: [
+        { numero: 0, nome: "Leva 0", abertas: 4, fechadas: 1, fase: "aprovada", antesDasFases: true },
+        { numero: 1, nome: "Leva 1", abertas: 0, fechadas: 2, fase: "testando" },
+      ],
+      atual: 1,
     });
   });
   it("sem repositório: nenhuma leva", () => {
     expect(levasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
+  });
+});
+
+describe("as fases das levas, lidas do GitHub (#644)", () => {
+  type Etiqueta = { name: string; abertas: number; fechadas: number };
+  const dados = (etiquetas: Etiqueta[], extra: { naMain?: string[]; prs?: string[][] } = {}): DadosDasLevas => ({
+    repository: {
+      labels: { nodes: etiquetas.map((e) => ({ name: e.name, issues: { totalCount: e.abertas }, fechadas: { totalCount: e.fechadas } })) },
+      relatoriosNaMain: extra.naMain ? { entries: extra.naMain.map((name) => ({ name })) } : null,
+      prsAbertos: { nodes: (extra.prs ?? []).map((caminhos) => ({ files: { nodes: caminhos.map((path) => ({ path })) } })) },
+    },
+  });
+  const fases = (d: DadosDasLevas) => {
+    const r = levasDosDados(d);
+    return { atual: r.atual, fases: Object.fromEntries(r.levas.map((l) => [l.numero, l.fase])) };
+  };
+
+  it("leva 2 com tarefas enquanto a 1 espera aprovação: a atual continua a 1 e a 2 sai em Montando", () => {
+    const d = dados(
+      [{ name: "leva-0", abertas: 0, fechadas: 8 }, { name: "leva-1", abertas: 0, fechadas: 6 }, { name: "leva-2", abertas: 11, fechadas: 2 }],
+      { naMain: ["README.md", "leva-1-testes.md"], prs: [["docs/relatorios/leva-1.md"]] },
+    );
+    expect(fases(d)).toEqual({ atual: 1, fases: { 0: "aprovada", 1: "relatorio", 2: "montando" } });
+  });
+  it("a 1 aprovada (o relatório na main): a 2 vira a atual, em Trabalhando", () => {
+    const d = dados([{ name: "leva-1", abertas: 0, fechadas: 6 }, { name: "leva-2", abertas: 11, fechadas: 2 }], { naMain: ["leva-1.md"] });
+    expect(fases(d)).toEqual({ atual: 2, fases: { 1: "aprovada", 2: "trabalhando" } });
+  });
+  it("o PR só com o leva-1-testes.md não põe a leva em Relatório; um PR de outra leva também não", () => {
+    const d = dados([{ name: "leva-1", abertas: 0, fechadas: 6 }], { prs: [["docs/relatorios/leva-1-testes.md", "src/x.ts"], ["docs/relatorios/leva-7.md"]] });
+    expect(fases(d).fases[1]).toBe("testando");
+  });
+  it("tarefa com `defeito` e sem `leva-N` não muda a fase: a etiqueta defeito não é leva", () => {
+    const sem = dados([{ name: "leva-1", abertas: 0, fechadas: 6 }]);
+    const com = dados([{ name: "leva-1", abertas: 0, fechadas: 6 }, { name: "defeito", abertas: 3, fechadas: 0 }]);
+    expect(fases(com)).toEqual(fases(sem));
+    expect(fases(com).fases).toEqual({ 1: "testando" });
+  });
+  it("um PR que só apaga o docs/relatorios/leva-N.md não põe a leva em Relatório", () => {
+    const d = dados([{ name: "leva-1", abertas: 0, fechadas: 6 }]);
+    d.repository!.prsAbertos = { nodes: [{ files: { nodes: [{ path: "docs/relatorios/leva-1.md", changeType: "DELETED" }] } }] };
+    expect(fases(d).fases[1]).toBe("testando");
+    d.repository!.prsAbertos = { nodes: [{ files: { nodes: [{ path: "docs/relatorios/leva-1.md", changeType: "ADDED" }] } }] };
+    expect(fases(d).fases[1]).toBe("relatorio");
+  });
+  it("sem a pasta na main (null) e sem PR: nada aprovado além da leva 0", () => {
+    const d = dados([{ name: "leva-0", abertas: 0, fechadas: 1 }, { name: "leva-1", abertas: 2, fechadas: 0 }]);
+    expect(fases(d)).toEqual({ atual: 1, fases: { 0: "aprovada", 1: "trabalhando" } });
+  });
+  it("a consulta das levas traz os relatórios numa consulta só, sem o texto das tarefas", () => {
+    expect(CONSULTA_DAS_LEVAS).toContain('object(expression: "main:docs/relatorios")');
+    expect(CONSULTA_DAS_LEVAS).toContain("pullRequests(states: OPEN");
+    expect(CONSULTA_DAS_LEVAS).not.toContain("body");
+    expect(CONSULTA_DO_RESUMO_DAS_LEVAS).toContain('object(expression: "main:docs/relatorios")');
   });
 });
 
@@ -141,15 +201,15 @@ describe("resumoDasLevasDosDados (#548)", () => {
         },
       },
     });
-    expect(r.levas.map((l) => [l.numero, l.nome, l.abertas])).toEqual([[0, "Leva 0", 4], [1, "Leva 1", 0]]);
-    expect(r.atual).toBe(0);
+    expect(r.levas.map((l) => [l.numero, l.nome, l.abertas, l.fase])).toEqual([[0, "Leva 0", 4, "aprovada"], [1, "Leva 1", 0, "testando"]]);
+    expect(r.atual).toBe(1);
   });
   it("sem repositório: nenhuma leva", () => {
     expect(resumoDasLevasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
   });
   it("total, feitas (fechada = feita) e a data = o maior closedAt, como veio", () => {
     const [leva] = levas(etiqueta("leva-2", [fechada("2026-10-05T12:00:00Z"), fechada("2026-10-09T08:30:00Z"), fechada("2026-10-07T23:59:00Z")]));
-    expect(leva).toEqual({ numero: 2, nome: "Leva 2", abertas: 0, total: 3, feitas: 3, horas: 0, terminouEm: "2026-10-09T08:30:00Z" });
+    expect(leva).toEqual({ numero: 2, nome: "Leva 2", abertas: 0, fechadas: 3, fase: "testando", total: 3, feitas: 3, horas: 0, terminouEm: "2026-10-09T08:30:00Z" });
   });
   it("leva com tarefa aberta não tem data, mesmo com fechadas", () => {
     const [leva] = levas(etiqueta("leva-3", [fechada("2026-10-05T12:00:00Z"), aberta()]));
@@ -165,7 +225,7 @@ describe("resumoDasLevasDosDados (#548)", () => {
     expect(Number.isNaN(leva.horas)).toBe(false);
   });
   it("leva vazia: sem data e tudo zero", () => {
-    expect(levas(etiqueta("leva-6", []))[0]).toEqual({ numero: 6, nome: "Leva 6", abertas: 0, total: 0, feitas: 0, horas: 0, terminouEm: null });
+    expect(levas(etiqueta("leva-6", []))[0]).toEqual({ numero: 6, nome: "Leva 6", abertas: 0, fechadas: 0, fase: "montando", total: 0, feitas: 0, horas: 0, terminouEm: null });
   });
   it("closedAt nulo ou inválido não conta; nenhum válido = sem data", () => {
     expect(levas(etiqueta("leva-7", [fechada("não é data"), fechada("2026-10-02T00:00:00Z"), fechada(null)]))[0].terminouEm).toBe("2026-10-02T00:00:00Z");

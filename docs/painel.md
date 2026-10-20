@@ -775,3 +775,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   bloco novo no Início, abaixo da leva (no celular, por último), com a linha do tempo do dia (ver "Decisões técnicas").
   Mexeu também no `src/App.tsx` (buscar `/api/novidades` e os dados de exemplo), que não estava na lista da issue.
   Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-549/`. Falta a Sofia conferir no endereço público depois de publicar.
+- **20/10/2026, A fase de cada leva (#644)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o worker diz a fase
+  de cada leva (Montando, Trabalhando, Testando, Relatório, Aprovada) lendo o GitHub, em `/api/levas`, `/api/levas/resumo`
+  e `/api/leva/<n>`; a leva atual passou a ser **a mais antiga não aprovada** (a leva 0 conta como aprovada), e o pegar
+  recusa tarefa de leva em Montando. Sem tela. **Efeito na hora**: enquanto a leva 1 não tiver o `leva-1.md` na `main`,
+  a atual volta a ser a 1 em todo lugar (o `/leva`, o Início e a Sala), a leva 2 fica em Montando e ninguém pega tarefa
+  dela. Limite: o Relatório olha só os 50 PRs abertos mexidos por último (100 arquivos cada).
