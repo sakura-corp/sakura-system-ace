@@ -143,9 +143,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 19/10/2026, depois: as levas anteriores no painel e o projeto novo anotado
-- **Código** (painel, mesclado): a barra lateral lista as outras levas com "(N abertas)" (#658), e dá pra pegar tarefa de leva anterior que ainda tem tarefa aberta, com a "uma por vez" valendo entre levas (#659). Ela conferiu no ar.
-- **Leva 1**: as 4 abertas (#618, #619, #510, #455) agora dá pra pegar pelo item "Leva 1" da barra.
-- **Projeto novo**: ela quer planejar em paralelo um próximo projeto pra dar dinheiro, partindo de modelos de negócio que já funcionam. O plano mora no privado (`caranovavidanova/sakura-corp`, `planos/`); nada decidido.
-- **Próxima sessão**: a conversa do projeto novo (já aberta, com os dois repositórios); depois, acompanhar a leva 2 e a leva 1 e pôr a `leva-3` (#653, #379, #655, #656).
-- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+### 20/10/2026: o projeto novo, da entrevista à escolha (tudo no privado)
+- **Projeto novo**: entrevista feita, mais de 20 modelos pesquisados e o nicho escolhido por ela. A lista, a escolha, o documento pra equipe e um conceito visual estão no privado (`caranovavidanova/sakura-corp`, `planos/2026-10-19-proximo-projeto.md`). Nada começa antes do SSACE e do painel ficarem prontos.
+- **Ficou pra depois**: discutir os nomes do conceito e como apresentá-los (os pontos estão no plano).
+- **Código**: nada mudou no SSACE nem no painel nesta sessão.
+- **Próxima sessão**: acompanhar a leva 2 e a leva 1 e pôr a `leva-3` (#653, #379, #655, #656); o projeto novo volta quando ela quiser discutir os nomes.
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`. No projeto novo: compartilhar o documento com a equipe quando quiser.
