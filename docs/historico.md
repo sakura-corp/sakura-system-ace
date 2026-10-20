@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 20/10/2026: o projeto novo, da entrevista à escolha (tudo no privado)
+- **Projeto novo**: entrevista feita, mais de 20 modelos pesquisados e o nicho escolhido por ela. A lista, a escolha, o documento pra equipe e um conceito visual estão no privado (`caranovavidanova/sakura-corp`, `planos/2026-10-19-proximo-projeto.md`). Nada começa antes do SSACE e do painel ficarem prontos.
+- **Ficou pra depois**: discutir os nomes do conceito e como apresentá-los (os pontos estão no plano).
+- **Código**: nada mudou no SSACE nem no painel nesta sessão.
+- **Próxima sessão**: acompanhar a leva 2 e a leva 1 (em 20/10, nenhuma tarefa com dono); a `leva-3` (#653, #379, #655, #656) **só entra quando a leva 2 fechar** (Sofia, 20/10); o projeto novo volta quando ela quiser discutir os nomes.
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`. No projeto novo: compartilhar o documento com a equipe quando quiser.
+
 ### 19/10/2026, depois: as levas anteriores no painel e o projeto novo anotado
 - **Código** (painel, mesclado): a barra lateral lista as outras levas com "(N abertas)" (#658), e dá pra pegar tarefa de leva anterior que ainda tem tarefa aberta, com a "uma por vez" valendo entre levas (#659). Ela conferiu no ar.
 - **Leva 1**: as 4 abertas (#618, #619, #510, #455) agora dá pra pegar pelo item "Leva 1" da barra.
