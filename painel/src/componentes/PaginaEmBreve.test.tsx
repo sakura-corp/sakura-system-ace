@@ -17,12 +17,8 @@ describe("PaginaEmBreve", () => {
   it("Lojas fala também de nome de cliente", () => {
     expect(html("lojas")).toContain("nome de cliente");
   });
-  it("com tarefa: link da issue em aba nova", () => {
-    const h = html("levas");
-    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/548"');
-    expect(h).toContain('rel="noopener noreferrer"');
-    expect(h).toContain("(abre em aba nova)");
-    expect(h).not.toContain('role="note"');
+  it("Levas anteriores já existe (#548): /em-breve/levas não é mais uma página \"em breve\"", () => {
+    expect(html("levas")).toContain("Página não encontrada");
   });
   it("id desconhecido: página não encontrada com volta pro Início", () => {
     const h = html("nao-existe");
@@ -37,15 +33,8 @@ describe("PaginaEmBreve", () => {
     expect(texto(html("bancos"))).toContain("Quem cuida: o andar da segurança.");
     expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
   });
-  it("com tarefa: a mesma linha leva o link da tarefa e o andar, sem uma segunda linha \"Quem cuida\" (#601)", () => {
-    const h = html("levas");
-    expect(texto(h).match(/Quem cuida/g)).toHaveLength(1);
-    expect(texto(h)).toMatch(/Quem cuida: a tarefa #548[^,]*, no andar das telas, dos dados e dos testes\./);
-    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/548"');
-    expect(h).not.toContain("deste andar");
-  });
   it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
-    for (const id of ["levas", "fases", "relatorio", "pessoas", "lojas", "posvenda", "financeiro", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
+    for (const id of ["fases", "relatorio", "pessoas", "lojas", "posvenda", "financeiro", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
       expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
     }
   });

@@ -274,12 +274,13 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
   });
 
   it("/api/levas: consulta com o token da sessão e devolve as levas e a atual, sem o token", async () => {
-    const g = fingirGraphQL(() => Response.json({ data: { repository: { labels: { nodes: [{ name: "leva-0", issues: { totalCount: 3 } }, { name: "bug", issues: { totalCount: 1 } }] } } } }));
+    const todas = { totalCount: 4, nodes: [{ state: "CLOSED", closedAt: "2026-10-01T10:00:00Z", body: "Estimativa: 2 h" }, ...Array(3).fill({ state: "OPEN", closedAt: null, body: null })] };
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { labels: { nodes: [{ name: "leva-0", issues: { totalCount: 3 }, todas }, { name: "bug", issues: { totalCount: 1 }, todas }] } } } }));
     const r = await pedir("/api/levas", { cookie: await comSessao() });
     expect(r.status).toBe(200);
     expect(r.headers.get("cache-control")).toBe("no-store");
     const texto = await r.text();
-    expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3 }], atual: 0 });
+    expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3, total: 4, feitas: 1, horas: 2, terminouEm: null }], atual: 0 });
     expect(texto).not.toContain("ghu_");
     expect(g.consultas[0]).toEqual({ autorizacao: "Bearer ghu_a", variaveis: { dono: "sakura-corp", nome: "sakura-system-ace" } });
   });

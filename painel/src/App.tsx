@@ -4,6 +4,7 @@ import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
+import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaInicio } from "./componentes/PaginaInicio";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
@@ -27,6 +28,7 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "") return "inicio";
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
+  if (limpo === "/levas") return "levas";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
   const idEmBreve = idDoEmBreve(limpo);
   const emBreve = textoEmBreve(idEmBreve ?? "");
@@ -123,7 +125,7 @@ export default function App({
   const [salaDeExemploAgora] = useState<EstadoDaSala>(() => ({ tipo: "pronto", entradas: salaDeExemplo(new Date()), falhas: [], leva: null }));
   const levaDeExemplo: EstadoDaLeva = {
     tipo: "pronto",
-    levas: [{ numero: 0, nome: nomeDaLevaDeExemplo, abertas: 0 }],
+    levas: [{ numero: 0, nome: nomeDaLevaDeExemplo, abertas: 0, total: 8, feitas: 1, horas: 0, terminouEm: null }],
     atual: 0,
     leva: { numero: 0, tarefas: tarefasDeExemplo, cortada: false },
   };
@@ -219,6 +221,25 @@ export default function App({
               recarregarTudo={tentarSalaDeNovo}
             />
           </div>
+        </main>
+      ) : pagina === "levas" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          {exemplo ? (
+            <PaginaDasLevas levas={levaDeExemplo.levas} atual={levaDeExemplo.atual} />
+          ) : estado.tipo === "pronto" ? (
+            <PaginaDasLevas levas={estado.levas} atual={estado.atual} />
+          ) : estado.tipo === "erro" ? (
+            <>
+              <CabecalhoDaPagina trilha="1º · Produção" titulo="Levas anteriores" />
+              <div className="mt-6">
+                <ErroDaLeva mensagem={estado.mensagem} tentarDeNovo={tentarDeNovo} />
+              </div>
+            </>
+          ) : estado.tipo === "sem-levas" ? (
+            <PaginaDasLevas levas={[]} atual={null} />
+          ) : (
+            <EsqueletoDaLeva />
+          )}
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">

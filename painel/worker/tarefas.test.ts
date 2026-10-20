@@ -11,6 +11,8 @@ import {
   numerosDeFora,
   tarefaDaIssue,
   type DadosDaLeva,
+  type EtiquetaDaLeva,
+  type TarefaDoResumo,
   type IssueDoGitHub,
   type PerguntarAoGitHub,
 } from "./tarefas";
@@ -89,27 +91,71 @@ describe("etiqueta chefe:* (botão Começar com o Claude)", () => {
 });
 
 describe("levasDosDados", () => {
+  // Uma etiqueta no formato da consulta: `issues` = as abertas, `todas` = abertas e fechadas.
+  const etiqueta = (name: string, nodes: (TarefaDoResumo | null)[], totalCount = nodes.length): EtiquetaDaLeva => ({
+    name,
+    issues: { totalCount: nodes.filter((n) => n?.state === "OPEN").length },
+    todas: { totalCount, nodes },
+  });
+  const fechada = (closedAt: string | null, body: string | null = null): TarefaDoResumo => ({ state: "CLOSED", closedAt, body });
+  const aberta = (body: string | null = null): TarefaDoResumo => ({ state: "OPEN", closedAt: null, body });
+  const levas = (...nodes: (EtiquetaDaLeva | null)[]) => levasDosDados({ repository: { labels: { nodes } } }).levas;
+
   it("só as etiquetas leva-N, em ordem, e a atual", () => {
-    const dados = {
+    const r = levasDosDados({
       repository: {
         labels: {
           nodes: [
-            { name: "leva-1", issues: { totalCount: 0 } },
-            { name: "leva-x", issues: { totalCount: 9 } },
+            etiqueta("leva-1", [fechada("2026-10-01T10:00:00Z")]),
+            etiqueta("leva-x", [aberta()]),
             null,
-            { name: "leva-0", issues: { totalCount: 4 } },
-            { name: "sem-leva", issues: { totalCount: 9 } },
+            etiqueta("leva-0", [aberta(), aberta(), aberta(), aberta()]),
+            etiqueta("sem-leva", [aberta()]),
           ],
         },
       },
-    };
-    expect(levasDosDados(dados)).toEqual({
-      levas: [{ numero: 0, nome: "Leva 0", abertas: 4 }, { numero: 1, nome: "Leva 1", abertas: 0 }],
-      atual: 0,
     });
+    expect(r.levas.map((l) => [l.numero, l.nome, l.abertas])).toEqual([[0, "Leva 0", 4], [1, "Leva 1", 0]]);
+    expect(r.atual).toBe(0);
   });
   it("sem repositório: nenhuma leva", () => {
     expect(levasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
+  });
+  it("total, feitas (fechada = feita) e a data = o maior closedAt, como veio", () => {
+    const [leva] = levas(etiqueta("leva-2", [fechada("2026-10-05T12:00:00Z"), fechada("2026-10-09T08:30:00Z"), fechada("2026-10-07T23:59:00Z")]));
+    expect(leva).toEqual({ numero: 2, nome: "Leva 2", abertas: 0, total: 3, feitas: 3, horas: 0, terminouEm: "2026-10-09T08:30:00Z" });
+  });
+  it("leva com tarefa aberta não tem data, mesmo com fechadas", () => {
+    const [leva] = levas(etiqueta("leva-3", [fechada("2026-10-05T12:00:00Z"), aberta()]));
+    expect(leva.terminouEm).toBeNull();
+    expect([leva.total, leva.feitas, leva.abertas]).toEqual([2, 1, 1]);
+    // A contagem diz que tem aberta, mesmo que os nós que vieram estejam todos fechados: sem data.
+    const contagem = { ...etiqueta("leva-4", [fechada("2026-10-05T12:00:00Z")]), issues: { totalCount: 1 } };
+    expect(levas(contagem)[0].terminouEm).toBeNull();
+  });
+  it("as horas somam as estimativas; tarefa sem estimativa conta 0, nunca NaN", () => {
+    const [leva] = levas(etiqueta("leva-5", [fechada("2026-10-05T12:00:00Z", "Estimativa: 0,1 h"), fechada("2026-10-06T12:00:00Z", "sem nada"), fechada("2026-10-07T12:00:00Z", null), fechada("2026-10-08T12:00:00Z", "Estimativa: 0.2 h")]));
+    expect(leva.horas).toBe(0.3);
+    expect(Number.isNaN(leva.horas)).toBe(false);
+  });
+  it("leva vazia: sem data e tudo zero", () => {
+    expect(levas(etiqueta("leva-6", []))[0]).toEqual({ numero: 6, nome: "Leva 6", abertas: 0, total: 0, feitas: 0, horas: 0, terminouEm: null });
+  });
+  it("closedAt nulo ou inválido não conta; nenhum válido = sem data", () => {
+    expect(levas(etiqueta("leva-7", [fechada("não é data"), fechada("2026-10-02T00:00:00Z"), fechada(null)]))[0].terminouEm).toBe("2026-10-02T00:00:00Z");
+    expect(levas(etiqueta("leva-8", [fechada(null), fechada("xx")]))[0].terminouEm).toBeNull();
+  });
+  it("cortada só quando o GitHub tem mais tarefas do que vieram; nós null são ignorados", () => {
+    const [cortada] = levas(etiqueta("leva-9", [fechada("2026-10-02T00:00:00Z")], 150));
+    expect(cortada.cortada).toBe(true);
+    expect(cortada.total).toBe(150);
+    const [inteira] = levas(etiqueta("leva-10", [fechada("2026-10-02T00:00:00Z"), null], 1));
+    expect("cortada" in inteira).toBe(false);
+    expect(inteira.terminouEm).toBe("2026-10-02T00:00:00Z");
+  });
+  it("sem a parte `todas` (resposta incompleta): conta só as abertas, sem data", () => {
+    expect(levas({ name: "leva-11", issues: { totalCount: 2 } })[0]).toEqual({ numero: 11, nome: "Leva 11", abertas: 2, total: 2, feitas: 0, horas: 0, terminouEm: null });
+    expect(levas({ name: "leva-12", issues: { totalCount: 0 } })[0].terminouEm).toBeNull();
   });
 });
 

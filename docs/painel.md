@@ -237,6 +237,11 @@ Configurações continua no rodapé (não é andar).
     **"desatualizado há N min"** (mais de 2 min sem busca com sucesso).
   - O link do "precisa de você" abre a própria rodada (onde se aprova) ou o PR; só `https://github.com/sakura-corp/` vira link.
   - Os dados de exemplo (`src/dados/exemplo-sala.ts`) só aparecem no `npm run dev` sem o worker; logado, nunca.
+- **Levas anteriores (#548)**: o `/api/levas` devolve, por leva, `total`, `feitas` (fechada = feita, como na lista),
+  `horas` (a soma das estimativas; tarefa sem estimativa conta 0) e `terminouEm` (o `closedAt` mais novo; **null enquanto
+  houver tarefa aberta**). É **uma consulta GraphQL só**, com as **20 etiquetas `leva-N` criadas por último** e até 100
+  tarefas por leva (passou disso, `cortada`: horas e data das 100 primeiras). Nada é guardado fora do GitHub. A página é
+  `/levas` (`PaginaDasLevas.tsx`), uma linha por leva, da mais nova pra mais velha, levando a `/leva/<n>`.
 
 ## 1ª versão (leva 0)
 
@@ -742,3 +747,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tarefa" fica na coluna Quem e em contorno: o rosa sobrou só no "Começar com o Claude" de quem olha. A dica do celular
   aparece uma vez na tela da leva (o Início continua com a dele). Os grupos por estado viraram uma lista só, na mesma
   ordem. Nenhuma regra mudou. Fotos: `docs/referencia/fotos-painel/leva-547-*`.
+- **20/10/2026, Levas anteriores (#548)**, com o Tiago (PR aberto, **esperando a revisão da Sofia**): o item "Levas anteriores"
+  deixou de ser "em breve" e abre `/levas`; o `/api/levas` ganhou o resumo de cada leva (ver "Decisões técnicas"). O endereço
+  antigo `/em-breve/levas` agora dá "Página não encontrada". Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-548/`.
+  **Falta a Sofia conferir no endereço público**: a leva 0 com 8 de 8 feitas e a data certa.

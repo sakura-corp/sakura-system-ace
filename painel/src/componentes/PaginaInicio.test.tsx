@@ -16,7 +16,7 @@ const pr = (id: string, nome: string, sinais: EntradaDaSala["sinais"]): EntradaD
 });
 const salaPronta = (entradas: EntradaDaSala[], falhas: ("pessoa" | "claude" | "casa")[] = []): EstadoDaSala => ({ tipo: "pronto", entradas, falhas, leva: 1 });
 const levaPronta = (tarefas: Tarefa[], cortada = false): EstadoDaLeva => ({
-  tipo: "pronto", levas: [{ numero: 1, nome: "Leva 1", abertas: tarefas.length }], atual: 1, leva: { numero: 1, tarefas, cortada },
+  tipo: "pronto", levas: [{ numero: 1, nome: "Leva 1", abertas: tarefas.length, total: tarefas.length, feitas: 0, horas: 0, terminouEm: null }], atual: 1, leva: { numero: 1, tarefas, cortada },
 });
 const SALA_VAZIA = salaPronta([]);
 const LEVA_COM_TAREFA = levaPronta([tarefa(1, { estado: "andamento", dono: EU, estimativaHoras: 2.5 })]);
