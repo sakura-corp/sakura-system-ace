@@ -433,6 +433,33 @@ sem elas o chefe não é achado; e o botão **ainda não foi testado com o login
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
 `npm run preview` já fazem isso sozinhos.
 
+## O Financeiro (#654)
+
+- **Onde mora o dinheiro**: no **Cloudflare D1** `FINANCEIRO` (decisão #652), **nunca no GitHub**. No repositório só ficam
+  a estrutura (`painel/migrations/0001_financeiro.sql`: as tabelas `categorias` e `lancamentos`, e as seis categorias
+  iniciais) e o código. Valor sempre em **centavos inteiros**; o banco recusa zero, negativo, quebrado, tipo errado, dia
+  fora do formato `AAAA-MM-DD` e categoria que não existe.
+- **Quem vê o quê (o corte é no worker, `painel/worker/financeiro.ts`)**:
+  - Todo mundo que entrou no painel: `GET /api/financeiro/resumo` devolve **só os totais** (o mês, mês a mês, saídas por
+    categoria do mês) e `podeLancar`. Nenhum lançamento, dia, descrição ou login sai daí, nem escondido na página.
+  - Só a dona: `GET/POST /api/financeiro/lancamentos` e `PUT/DELETE /api/financeiro/lancamentos/<id>`. Os outros levam 403
+    sem dado nenhum. Escrita só vindo da própria página (`Origin`).
+  - **Quem é a dona** vem da variável `DONA_DO_FINANCEIRO` do `wrangler.jsonc` (o login do GitHub, sem diferenciar
+    maiúscula). **Vazia ou faltando: ninguém é dona** (falha fechada). Sem o banco ligado, as rotas dizem 503.
+- **A conta** (totais, mês a mês, crescimento) é a função pura `resumoFinanceiro` em `painel/src/logica/financeiro.ts`; o
+  mês atual é o de São Paulo. A página fica em `/financeiro`; o DRE continua "em breve", dependendo do Financeiro.
+- **Testes**: `painel/worker/financeiro.test.ts` roda o SQL num SQLite em memória (o mesmo motor do D1) com a migration de
+  verdade, e a rota pelo `worker.fetch`. O painel **não tem CI**: rodar `npx tsc -b` e `npx vitest run` em `painel/` à mão.
+
+### Ligar o banco (é da Sofia, uma vez só)
+1. Na Cloudflare: **Storage & Databases → D1 SQL Database → Create**, nome `sakura-financeiro`, local automático.
+2. Copiar o **Database ID** da página do banco (não é segredo) e pôr no `painel/wrangler.jsonc`, em `d1_databases`
+   (`binding: "FINANCEIRO"`, `database_name`, `database_id`, `migrations_dir: "migrations"`), num PR.
+3. **Aplicar a migration** (antes de mesclar esse PR): no PC, dentro de `painel/`,
+   `npx wrangler d1 migrations apply sakura-financeiro --remote` (a primeira vez pede `npx wrangler login`). Sem o PC: na
+   página do banco, aba **Console**, colar o conteúdo de `0001_financeiro.sql` e rodar. Rodar de novo não estraga nada.
+4. Mesclar: a Cloudflare publica sozinha. Abrir `/financeiro`, lançar um valor de teste, ver o total, e apagar.
+
 ## Fim de uma leva
 
 Quando a última tarefa da leva é aprovada:
