@@ -54,6 +54,18 @@ describe("testesDosDados (#646)", () => {
     ]);
   });
 
+  it("um defeito que entrou na leva e fechou não move o 'desde': os outros defeitos abertos continuam", () => {
+    const r = testesDosDados(
+      2,
+      dados({
+        tarefas: { nodes: [{ closedAt: "2026-10-22T10:00:00Z", labels: { nodes: [{ name: "leva-2" }, { name: "defeito" }] } }, { closedAt: "2026-10-20T12:00:00Z", labels: { nodes: [{ name: "leva-2" }] } }] },
+        defeitos: { totalCount: 1, nodes: [defeito(702, "2026-10-21T09:00:00Z")] },
+      }),
+    );
+    expect(r.desde).toBe("2026-10-20T12:00:00Z");
+    expect(r.defeitos.map((d) => d.numero)).toEqual([702]);
+  });
+
   it("sem tarefa fechada (não entrou em Testando): nenhum defeito", () => {
     const r = testesDosDados(2, dados({ defeitos: { totalCount: 1, nodes: [defeito(700, "2026-10-21T09:00:00Z")] } }));
     expect(r.desde).toBeNull();
@@ -71,9 +83,12 @@ describe("testesDosDados (#646)", () => {
     expect(r.defeitos).toEqual([{ numero: 701, titulo: "Defeito 701", criadaEm: "2026-10-21T09:00:00Z" }]);
   });
 
-  it("mais defeitos abertos do que vieram: avisa que a lista pode estar cortada", () => {
-    const r = testesDosDados(2, dados({ tarefas: { nodes: [{ closedAt: "2026-10-20T12:00:00Z" }] }, defeitos: { totalCount: 80, nodes: [defeito(700, "2026-10-21T09:00:00Z")] } }));
-    expect(r.defeitosCortados).toBe(true);
+  it("mais defeitos abertos do que vieram: avisa só se o mais velho que veio ainda é da leva", () => {
+    const tarefas = { nodes: [{ closedAt: "2026-10-20T12:00:00Z" }] };
+    expect(testesDosDados(2, dados({ tarefas, defeitos: { totalCount: 80, nodes: [defeito(700, "2026-10-21T09:00:00Z")] } })).defeitosCortados).toBe(true);
+    // O mais velho que veio é de antes da leva congelar: os que ficaram de fora também são, nada da leva foi cortado.
+    const antigos = { totalCount: 80, nodes: [defeito(700, "2026-10-21T09:00:00Z"), defeito(600, "2026-10-01T09:00:00Z")] };
+    expect(testesDosDados(2, dados({ tarefas, defeitos: antigos })).defeitosCortados).toBeUndefined();
   });
 });
 
@@ -149,7 +164,9 @@ describe("/api/leva/<n>/testes (#646)", () => {
 
   it("a rota /api/leva/<n> continua igual (não confunde com /testes)", async () => {
     const consultas = fingirGraphQL(() => Response.json({ data: { repository: { issues: { totalCount: 0, nodes: [] } } } }));
-    await pedir("/api/leva/2");
+    const r = await pedir("/api/leva/2");
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ numero: 2, tarefas: [], cortada: false });
     expect(consultas[0].texto).not.toBe(CONSULTA_DOS_TESTES);
   });
 });

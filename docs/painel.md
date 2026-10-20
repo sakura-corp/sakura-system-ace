@@ -802,7 +802,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tela da leva mostra no topo, grande, o aviso **"Leva congelada: não pegue tarefa nova."**; embaixo, **"O que testar"**, o
   texto de `docs/relatorios/leva-N-testes.md` da `main` mostrado como texto puro (um `<script>` aparece escrito e não roda;
   sem o arquivo: "A lista de testes ainda não foi escrita."; passando de 20 mil caracteres, corta e avisa); e **"Defeitos
-  achados"**, as issues abertas com `defeito` criadas desde que a última tarefa da leva fechou (link só pra
+  achados"**, as issues abertas com `defeito` criadas desde que a última tarefa da leva fechou (um defeito que entrou na leva
+  e fechou não conta; se a leva ficou em Montando esperando a anterior, o "desde" é esse fechamento mesmo; link só pra
   `https://github.com/sakura-corp/`; olha os 50 defeitos abertos mais novos e avisa se pode haver mais). Rota nova no worker:
   `/api/leva/<n>/testes` (`painel/worker/testes.ts`), um pedido só ao GitHub. A lista é buscada ao abrir a tela da leva
   (não muda sozinha com o tempo real). Fotos: `docs/relatorios/fotos/tarefa-646/`.

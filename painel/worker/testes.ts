@@ -13,13 +13,14 @@ export const MAXIMO_DE_DEFEITOS = 50;
 /** A etiqueta de defeito: nasce sem `leva-N`, e a Sofia decide se entra na leva atual (docs/painel.md). */
 export const ETIQUETA_DE_DEFEITO = "defeito";
 
-// `tarefas`: as fechadas da leva, só pra saber quando a última fechou (a entrada em Testando).
+// `tarefas`: as fechadas da leva, só pra saber quando a última fechou (a entrada em Testando). As etiquetas servem pra
+// pular os defeitos que entraram na leva: fechar um deles não pode mover o "desde" e esconder os outros abertos.
 export const CONSULTA_DOS_TESTES = `
 query Testes($dono: String!, $nome: String!, $arquivo: String!, $etiqueta: String!) {
   repository(owner: $dono, name: $nome) {
     arquivo: object(expression: $arquivo) { ... on Blob { text isBinary } }
     tarefas: issues(first: 100, labels: [$etiqueta], states: CLOSED, orderBy: { field: UPDATED_AT, direction: DESC }) {
-      nodes { closedAt }
+      nodes { closedAt labels(first: 30) { nodes { name } } }
     }
     defeitos: issues(first: ${MAXIMO_DE_DEFEITOS}, labels: ["${ETIQUETA_DE_DEFEITO}"], states: OPEN, orderBy: { field: CREATED_AT, direction: DESC }) {
       totalCount
@@ -28,11 +29,13 @@ query Testes($dono: String!, $nome: String!, $arquivo: String!, $etiqueta: Strin
   }
 }`;
 
+type TarefaFechada = { closedAt: string | null; labels?: { nodes: ({ name: string } | null)[] | null } | null };
+
 export type DadosDosTestes = {
   repository: {
     /** null quando o arquivo não existe na main. */
     arquivo: { text?: string | null; isBinary?: boolean | null } | null;
-    tarefas: { nodes: ({ closedAt: string | null } | null)[] } | null;
+    tarefas: { nodes: (TarefaFechada | null)[] } | null;
     defeitos: { totalCount: number; nodes: ({ number: number; title: string; url: string; createdAt: string } | null)[] } | null;
   } | null;
 };
@@ -50,10 +53,11 @@ export const variaveisDosTestes = (numero: number) => ({
   etiqueta: `leva-${numero}`,
 });
 
-/** O maior `closedAt` válido, como veio do GitHub; null se nenhum serve. */
-function ultimoFechamento(nos: ({ closedAt: string | null } | null)[]): { texto: string; tempo: number } | null {
+/** O maior `closedAt` válido das tarefas que não são defeito, como veio do GitHub; null se nenhum serve. */
+function ultimoFechamento(nos: (TarefaFechada | null)[]): { texto: string; tempo: number } | null {
   let maior: { texto: string; tempo: number } | null = null;
   for (const n of nos) {
+    if (n?.labels?.nodes?.some((e) => e?.name === ETIQUETA_DE_DEFEITO)) continue;
     const tempo = n?.closedAt ? Date.parse(n.closedAt) : NaN;
     if (Number.isFinite(tempo) && (maior === null || tempo > maior.tempo)) maior = { texto: n!.closedAt!, tempo };
   }
@@ -81,7 +85,9 @@ export function testesDosDados(numero: number, dados: DadosDosTestes): RespostaD
     defeitos.push({ numero: d.number, titulo: d.title, ...(url ? { url } : {}), criadaEm: d.createdAt });
   }
   resposta.defeitos = defeitos;
-  const nos = repo?.defeitos?.nodes?.length ?? 0;
-  if ((repo?.defeitos?.totalCount ?? 0) > nos) resposta.defeitosCortados = true;
+  // Cortada só se o mais velho que veio ainda é da leva: senão, os que ficaram de fora são mais velhos ainda.
+  const vieram = (repo?.defeitos?.nodes ?? []).filter((d) => d !== null);
+  const maisVelho = vieram.at(-1);
+  if ((repo?.defeitos?.totalCount ?? 0) > vieram.length && maisVelho && Date.parse(maisVelho.createdAt) >= desde.tempo) resposta.defeitosCortados = true;
   return resposta;
 }
