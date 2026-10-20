@@ -42,3 +42,14 @@ export function levaDoRelatorioNaMain(nome: string): number | null {
   const achou = /^leva-(\d{1,4})\.md$/.exec(nome);
   return achou ? Number(achou[1]) : null;
 }
+
+/** As cinco fases, na ordem em que a leva passa por elas (#645: a tela mostra nesta ordem). */
+export const FASES: readonly FaseDaLeva[] = ["montando", "trabalhando", "testando", "relatorio", "aprovada"];
+
+export const ROTULO_DA_FASE: Record<FaseDaLeva, string> = {
+  montando: "Montando",
+  trabalhando: "Trabalhando",
+  testando: "Testando",
+  relatorio: "Relatório",
+  aprovada: "Aprovada",
+};

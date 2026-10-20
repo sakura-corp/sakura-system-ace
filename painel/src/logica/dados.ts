@@ -2,6 +2,7 @@
 // rota depois da outra, e diz o que mostrar. O token nunca passa por aqui (fica no cookie).
 import type { Leva, RespostaDaLeva, RespostaDasLevas, RespostaDoResumoDasLevas, ResumoDeLeva, Tarefa } from "../tipos";
 import { numeroValido } from "./comecarComClaude";
+import { FASES } from "./fases";
 
 export type EstadoDaLeva =
   | { tipo: "carregando" }
@@ -83,7 +84,9 @@ export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch
   if (r2.tipo !== "ok") return r2;
   const corpo2 = r2.corpo as Partial<RespostaDaLeva>;
   if (!Array.isArray(corpo2.tarefas) || !corpo2.tarefas.every(ehTarefa)) return { tipo: "erro", mensagem: ERRO_DO_GITHUB };
-  return { tipo: "pronto", levas, atual, leva: { numero, tarefas: corpo2.tarefas, cortada: corpo2.cortada === true } };
+  // A fase (#645) só passa se for uma das cinco; sem ela, a tela não mostra as fases.
+  const fase = FASES.find((f) => f === corpo2.fase);
+  return { tipo: "pronto", levas, atual, leva: { numero, tarefas: corpo2.tarefas, cortada: corpo2.cortada === true, ...(fase ? { fase } : {}) } };
 }
 
 // ---- Levas anteriores (#548) ----

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, CircleAlert, RotateCw, X } from "lucide-react";
 import { ESTADOS } from "../logica/contador";
+import { ROTULO_DA_FASE } from "../logica/fases";
 import { montarInicio, type ResumoDaLeva } from "../logica/inicio";
 import { linkSeguro } from "../logica/link";
 import { linkDaNovidade, novidadesDeHoje, textoDaNovidade, type EstadoDasNovidades, type Novidade } from "../logica/novidades";
@@ -204,6 +205,12 @@ function ResumoDaLevaEmUmaLinha({ r }: { r: ResumoDaLeva }) {
   const pct = r.horas.todas > 0 ? Math.min(100, Math.round((r.horas.feitas / r.horas.todas) * 100)) : 0;
   return (
     <div className={`${CARTAO} min-w-0 space-y-3 p-4`}>
+      {r.fase && (
+        // A fase da leva (#645), que leva pra tela da leva.
+        <a href="/leva" className={`inline-flex min-h-11 items-center text-sm text-texto underline underline-offset-2 ${FOCO}`}>
+          Leva {r.numero}: <strong className="ml-1 font-semibold">{ROTULO_DA_FASE[r.fase]}</strong>
+        </a>
+      )}
       <p className="text-2xl font-semibold tabular-nums text-texto">
         {r.feitas} <span className="text-sm font-normal text-texto-2">de {r.total} {r.total === 1 ? "tarefa feita" : "tarefas feitas"}</span>
       </p>

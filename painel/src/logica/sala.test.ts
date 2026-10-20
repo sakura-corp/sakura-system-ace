@@ -3,7 +3,7 @@ import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "../dados/exemplo-sala"
 import type { EntradaDaSala } from "../tipos";
 import {
   agruparPorEstado, ehModoTv, estadoDoBonequinho, haQuantoTempo, iniciais, linkSeguro, montarSala, nomeDoRoboDaCasa,
-  ordemDasMesas, quantosPrecisam, textoPrecisam,
+  LOGIN_DA_SOFIA, ordemDasMesas, quantosPrecisam, textoPrecisam,
 } from "./sala";
 
 const agora = new Date("2026-10-16T15:00:00-03:00");
@@ -97,5 +97,33 @@ describe("pequenas regras", () => {
     expect(ehModoTv("?tv=1")).toBe(true);
     expect(ehModoTv("")).toBe(false);
     expect(ehModoTv("?outra")).toBe(false);
+  });
+});
+
+describe("o relatório da leva chama a Sofia (#645)", () => {
+  const pessoa = (login: string): EntradaDaSala => ({ id: `pessoa:${login}`, tipo: "pessoa", nome: login, fazendo: "sem tarefa agora", sinais: {} });
+  const daSofia = (lista: ReturnType<typeof montarSala>) => lista.filter((b) => b.id === `pessoa:${LOGIN_DA_SOFIA}`);
+
+  it("leva atual em Relatório: a Sofia, olhando, fica em \"precisa de você\" com \"relatório da leva N\"", () => {
+    const [sofia, ...resto] = daSofia(montarSala([pessoa("tigasss1")], agora, LOGIN_DA_SOFIA, { numero: 1, fase: "relatorio" }));
+    expect(resto).toEqual([]);
+    expect(sofia).toMatchObject({ tipo: "pessoa", nome: LOGIN_DA_SOFIA, estado: "precisa", fazendo: "relatório da leva 1" });
+    expect(linkSeguro(sofia!.url)).toBe(sofia!.url);
+  });
+  it("a Sofia já está na sala (tem tarefa): o mesmo ponto passa a precisar, sem aparecer duas vezes", () => {
+    const sala = montarSala([pessoa(LOGIN_DA_SOFIA)], agora, LOGIN_DA_SOFIA, { numero: 3, fase: "relatorio" });
+    expect(daSofia(sala)).toHaveLength(1);
+    expect(daSofia(sala)[0]).toMatchObject({ estado: "precisa", fazendo: "relatório da leva 3" });
+  });
+  it("as outras fases não chamam ninguém", () => {
+    for (const fase of ["montando", "trabalhando", "testando", "aprovada"] as const) {
+      expect(daSofia(montarSala([], agora, LOGIN_DA_SOFIA, { numero: 1, fase }))).toEqual([]);
+    }
+    expect(daSofia(montarSala([], agora, LOGIN_DA_SOFIA))).toEqual([]);
+  });
+  it("quem olha não é a Sofia: o ponto dela diz o relatório, mas não é \"precisa de você\" pra essa pessoa", () => {
+    const [sofia] = daSofia(montarSala([], agora, "tigasss1", { numero: 1, fase: "relatorio" }));
+    expect(sofia).toMatchObject({ fazendo: "relatório da leva 1" });
+    expect(sofia!.estado).not.toBe("precisa");
   });
 });

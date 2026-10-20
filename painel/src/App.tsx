@@ -315,6 +315,7 @@ export default function App({
           <div className="mt-6">
             <Sala
               dados={exemplo ? salaDeExemploAgora : salaDeVerdade}
+              levaAtual={!exemplo && estado.tipo === "pronto" ? { numero: estado.atual, fase: estado.levas.find((l) => l.numero === estado.atual)?.fase } : undefined}
               quemEstaOlhando={usuario?.login ?? QUEM_ESTA_OLHANDO_NA_SALA}
               conexao={exemplo ? undefined : tempoReal}
               tentarDeNovo={tempoReal.atualizar}
@@ -361,6 +362,9 @@ export default function App({
               login={usuario?.login}
               aoMudar={usuario ? recarregar : undefined}
               levaAberta={levaAceitaPegar(estado.leva.numero, estado.levas, estado.atual)}
+              numero={estado.leva.numero}
+              fase={estado.leva.fase ?? estado.levas.find((l) => l.numero === estado.leva.numero)?.fase}
+              antesDasFases={estado.levas.find((l) => l.numero === estado.leva.numero)?.antesDasFases}
               subtitulo={
                 <>
                   As tarefas com a etiqueta <code>leva-{estado.leva.numero}</code>.{" "}

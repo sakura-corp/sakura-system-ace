@@ -1,4 +1,4 @@
-import type { Bonequinho, EntradaDaSala, EstadoBonequinho } from "../tipos";
+import type { Bonequinho, EntradaDaSala, EstadoBonequinho, FaseDaLeva } from "../tipos";
 import { decorrido, DORMINDO_A_PARTIR_MS, TRABALHANDO_ATE_MS } from "./tempo";
 
 export { haQuantoTempo } from "./tempo";
@@ -45,14 +45,43 @@ export const BALAO: Record<EstadoBonequinho, string> = {
   livre: "",
 };
 
-/** Os três casos do "precisa de você": revisão pedida, rodada esperando aprovação, conferência vermelha num PR seu. */
+/**
+ * Os casos do "precisa de você": revisão pedida, rodada esperando aprovação, conferência vermelha num PR seu e,
+ * pra Sofia, o relatório da leva atual esperando a aprovação dela (#645).
+ */
 export function precisaDe(e: EntradaDaSala, quemEstaOlhando: string): boolean {
   const s = e.sinais;
   return (
     (s.revisaoPedidaA?.includes(quemEstaOlhando) ?? false) ||
     (s.aprovacaoEsperadaDe?.includes(quemEstaOlhando) ?? false) ||
-    s.conferenciaVermelhaNoPrDe === quemEstaOlhando
+    s.conferenciaVermelhaNoPrDe === quemEstaOlhando ||
+    s.relatorioEsperaDe === quemEstaOlhando
   );
+}
+
+// ---- O relatório da leva (#645) ----
+
+/** Quem aprova o relatório de uma leva (mescla o PR do `docs/relatorios/leva-N.md`): a Sofia. */
+export const LOGIN_DA_SOFIA = "caranovavidanova";
+
+/** A leva atual, como a Sala precisa dela: o número e a fase (sem a fase, ninguém é chamado). */
+export type LevaDaSala = { numero: number; fase?: FaseDaLeva };
+
+/** Os PRs abertos que mexem no relatório da leva: onde a Sofia aprova. */
+const linkDoRelatorio = (numero: number) =>
+  `https://github.com/sakura-corp/sakura-system-ace/pulls?q=${encodeURIComponent(`is:pr is:open leva-${numero}.md`)}`;
+
+/**
+ * Leva atual em Relatório: o ponto da Sofia passa a dizer "relatório da leva N" e a precisar dela. Se ela já está
+ * na sala (tem tarefa na leva), é o mesmo ponto; se não, ele entra. Não muda a lista recebida.
+ */
+export function comORelatorioDaLeva(entradas: EntradaDaSala[], leva: LevaDaSala | undefined): EntradaDaSala[] {
+  if (leva?.fase !== "relatorio") return entradas;
+  const id = `pessoa:${LOGIN_DA_SOFIA}`;
+  const chamado = { fazendo: `relatório da leva ${leva.numero}`, url: linkDoRelatorio(leva.numero) };
+  const dela = entradas.find((e) => e.id.toLowerCase() === id);
+  if (!dela) return [...entradas, { id, tipo: "pessoa", nome: LOGIN_DA_SOFIA, ...chamado, sinais: { relatorioEsperaDe: LOGIN_DA_SOFIA } }];
+  return entradas.map((e) => (e === dela ? { ...e, ...chamado, sinais: { ...e.sinais, relatorioEsperaDe: LOGIN_DA_SOFIA } } : e));
 }
 
 /**
@@ -93,9 +122,10 @@ export function ordemDasMesas<T extends Pick<Bonequinho, "tipo" | "nome">>(lista
   });
 }
 
-export function montarSala(entradas: EntradaDaSala[], agora: Date, quemEstaOlhando: string): Bonequinho[] {
+/** `leva`: a leva atual com a fase (#645); em Relatório, o ponto da Sofia chama por ela. */
+export function montarSala(entradas: EntradaDaSala[], agora: Date, quemEstaOlhando: string, leva?: LevaDaSala): Bonequinho[] {
   return ordemDasMesas(
-    entradas.map((e) => {
+    comORelatorioDaLeva(entradas, leva).map((e) => {
       const { sinais: _sinais, ...bonequinho } = e;
       return { ...bonequinho, estado: estadoDoBonequinho(e, agora, quemEstaOlhando) };
     }),

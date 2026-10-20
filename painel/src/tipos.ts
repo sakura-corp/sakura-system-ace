@@ -52,6 +52,8 @@ export type SinaisDoBonequinho = {
   aprovacaoEsperadaDe?: string[];
   /** Login do dono do PR em que a conferência ficou vermelha. */
   conferenciaVermelhaNoPrDe?: string;
+  /** Login de quem aprova o relatório da leva atual, quando ela está em Relatório (#645). */
+  relatorioEsperaDe?: string;
 };
 
 export type EntradaDaSala = Omit<Bonequinho, "estado"> & { sinais: SinaisDoBonequinho };

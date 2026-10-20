@@ -3,7 +3,7 @@ import "./sala.css";
 import { useEffect, useId, useState } from "react";
 import {
   agruparPorEstado, BALAO, fotoSegura, haQuantoTempo, iniciais, linkSeguro, montarSala, quantosPrecisam, ROTULO, textoPrecisam,
-  TITULO_DO_GRUPO,
+  TITULO_DO_GRUPO, type LevaDaSala,
 } from "../../logica/sala";
 import type { EstadoDaSala } from "../../logica/salaDados";
 import { textoDaConexao, type SituacaoDoTempoReal } from "../../logica/tempoReal";
@@ -144,6 +144,8 @@ type Props = {
   dados: EstadoDaSala;
   /** Quem está olhando: o "precisa de você" depende disso. */
   quemEstaOlhando: string;
+  /** A leva atual e a fase dela (#645): em Relatório, o ponto da Sofia chama por ela. */
+  levaAtual?: LevaDaSala;
   /** O estado da conexão (tempo real). Sem ele, é a sala de exemplo. */
   conexao?: SituacaoDoTempoReal;
   /** Busca de novo (grupo que falhou). */
@@ -159,14 +161,14 @@ type Props = {
  * A Sala da Sakura (#467 e #468). Os dados vêm de fora (`dados`); os estados saem de `montarSala()`,
  * recalculados a cada minuto sem buscar (o "dormindo" muda sozinho).
  */
-export function Sala({ dados, quemEstaOlhando, conexao, tentarDeNovo, recarregarTudo, tv = false, agora: agoraFixo }: Props) {
+export function Sala({ dados, quemEstaOlhando, levaAtual, conexao, tentarDeNovo, recarregarTudo, tv = false, agora: agoraFixo }: Props) {
   const [aberto, setAberto] = useState<string | null>(null);
   const [tentando, setTentando] = useState(false);
   const agora = useRelogio(60_000, agoraFixo, dados);
   const exemplo = conexao === undefined;
 
   const pronto = dados.tipo === "pronto" ? dados : null;
-  const sala = pronto ? montarSala(pronto.entradas, agora, quemEstaOlhando) : [];
+  const sala = pronto ? montarSala(pronto.entradas, agora, quemEstaOlhando, levaAtual) : [];
   const falhas = pronto?.falhas ?? [];
   const precisam = quantosPrecisam(sala);
   const escolhido = sala.find((b) => b.id === aberto);

@@ -1,8 +1,9 @@
 import { RotateCw } from "lucide-react";
 import { pessoasComVariasEmAndamento } from "../logica/contador";
-import type { Tarefa } from "../tipos";
+import type { FaseDaLeva, Tarefa } from "../tipos";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 import { Contador } from "./Contador";
+import { FasesDaLeva } from "./FasesDaLeva";
 import { HorasPorPessoa } from "./HorasPorPessoa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
 
@@ -19,14 +20,27 @@ type Props = {
   aoMudar?: () => Promise<unknown>;
   /** Dá pra pegar tarefa da leva mostrada: a atual, ou uma anterior com tarefa aberta (`levaAceitaPegar`). */
   levaAberta?: boolean;
+  /** O número da leva e a fase dela (#645). Sem a fase (a consulta das levas falhou), o topo não mostra as fases. */
+  numero?: number;
+  fase?: FaseDaLeva;
+  /** A leva 0, de antes das fases. */
+  antesDasFases?: boolean;
 };
 
 /** A leva (versão A, #547): o cabeçalho de toda página, aviso de "uma por vez", o contador numa faixa, as horas por pessoa e a lista compacta. */
-export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, levaAberta }: Props) {
+export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, aoMudar, levaAberta, numero, fase, antesDasFases }: Props) {
   const avisos = pessoasComVariasEmAndamento(tarefas);
   return (
     <>
       <CabecalhoDaPagina trilha="1º · Produção" titulo={nome} explicacao={subtitulo} />
+      {numero !== undefined && fase && <FasesDaLeva numero={numero} fase={fase} antesDasFases={antesDasFases} />}
+
+      {/* Montando com tarefa = uma leva anterior ainda não foi aprovada (sem tarefa, o "Nenhuma tarefa" já diz). */}
+      {numero !== undefined && fase === "montando" && numero > 1 && tarefas.length > 0 && (
+        <p role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
+          Esta leva está em montagem, esperando a aprovação da leva {numero - 1}: as tarefas aparecem, mas ainda ninguém pega.
+        </p>
+      )}
 
       {avisos.length > 0 && (
         <div role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">
