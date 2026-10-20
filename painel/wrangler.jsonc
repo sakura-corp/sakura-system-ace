@@ -25,6 +25,16 @@
     "bindings": [{ "name": "SALA", "class_name": "SalaDoPainel" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SalaDoPainel"] }],
+  // Financeiro (#654): o banco D1 com os lançamentos (o dinheiro mora aqui, nunca no GitHub).
+  // O ID não é segredo. As tabelas vêm de ./migrations, aplicadas pela Sofia (docs/painel.md, "Ligar o banco").
+  "d1_databases": [
+    {
+      "binding": "FINANCEIRO",
+      "database_name": "sakura-financeiro",
+      "database_id": "5d316997-16a5-4e32-b5f9-99024c640c2b",
+      "migrations_dir": "migrations"
+    }
+  ],
   "assets": {
     "directory": "./dist",
     // Deixa o worker entregar a página (env.ASSETS) quando precisar.
