@@ -361,14 +361,14 @@ describe("App com as tarefas de verdade (#354)", () => {
     });
   });
 
-  it("na barra lateral, todas as levas: a atual leva pra /leva, as outras pra /leva/<n>", () => {
+  it("na barra lateral, só a Leva atual; numa leva antiga (/leva/0), o destaque vai pras Levas anteriores", () => {
     const h = de(pronto);
     expect(h).toMatch(/<a href="\/leva" aria-current="page"[^>]*>.*?Leva atual<\/span><\/a>/);
-    expect(h).toMatch(/<a href="\/leva\/0"(?![^>]*aria-current)/);
+    expect(h).not.toContain('href="/leva/0"');
     const outra = de({ ...pronto, leva: { ...pronto.leva, numero: 0 } }, "/leva/0");
     expect(outra).toMatch(/<a href="\/leva"[^>]*>(?:(?!<\/a>).)*Leva atual<\/span><\/a>/);
     expect(outra).not.toMatch(/<a href="\/leva" aria-current/);
-    expect(outra).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
+    expect(outra).toMatch(/<a href="\/levas" aria-current="page"[^>]*>.*?Levas anteriores<\/span><\/a>/);
   });
 
   it("carregando: o esqueleto, sem tarefas de exemplo", () => {
@@ -391,7 +391,7 @@ describe("App com as tarefas de verdade (#354)", () => {
     expect(h).toMatch(/<button[^>]*>.*Tentar de novo<\/button>/);
     expect(h).toMatch(/<a href="\/leva"[^>]*>.*?Leva atual<\/span><\/a>/);
     const na0 = de({ tipo: "carregando" }, "/leva/0");
-    expect(na0).toMatch(/<a href="\/leva\/0" aria-current="page"[^>]*>.*?Leva 0<\/span><\/a>/);
+    expect(na0).toMatch(/<a href="\/levas" aria-current="page"[^>]*>.*?Levas anteriores<\/span><\/a>/);
   });
 
   it("sessão acabou: a tela de entrada, voltando pra mesma página", () => {
@@ -529,8 +529,8 @@ describe("/levas (#548)", () => {
     expect(h).toContain("terminou em 16/10/2026");
     expect(h).toContain("30,5 h estimadas");
     expect(h).toContain('href="/leva"');
-    // A leva 0 aparece na página e também na barra e na navegação do celular, vinda do próprio resumo.
-    expect(h.match(/href="\/leva\/0"/g)).toHaveLength(3);
+    // A leva 0 aparece só na página: a barra e a navegação do celular não listam mais as levas antigas.
+    expect(h.match(/href="\/leva\/0"/g)).toHaveLength(1);
   });
   it("carregando, erro e sem levas", () => {
     expect(de({ tipo: "carregando" })).toContain("aria-busy");

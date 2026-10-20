@@ -1,11 +1,10 @@
 import { Ellipsis, LogOut, X, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ENDERECO_DA_LEVA_ATUAL } from "../logica/dados";
 import { NAVEGACAO, type ItemDaNavegacao } from "../logica/navegacao";
 import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
-import { etiquetaDasAbertas, ICONES, ItemEmBreve, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
+import { ICONES, ItemEmBreve, paginaDestacada, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
 
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
@@ -66,7 +65,7 @@ export function ligarFolha(folha: FolhaMinima, botao: { focus(): void }, aoFecha
 }
 
 /** Alvo da barra de baixo: ícone em cima, texto pequeno embaixo. */
-function AlvoDaBarra({ item, atual, comAriaCurrent }: { item: ItemDaNavegacao; atual: boolean; comAriaCurrent: boolean }) {
+function AlvoDaBarra({ item, atual }: { item: ItemDaNavegacao; atual: boolean }) {
   const Icone = ICONES[item.icone];
   const rotulo = ROTULO_CURTO[item.id] ?? item.rotulo;
   const base = "flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg text-[11.5px]";
@@ -86,7 +85,7 @@ function AlvoDaBarra({ item, atual, comAriaCurrent }: { item: ItemDaNavegacao; a
   );
   if (item.href) {
     return (
-      <a href={item.href} aria-current={comAriaCurrent ? "page" : undefined} className={`${base} ${cor}`}>
+      <a href={item.href} aria-current={atual ? "page" : undefined} className={`${base} ${cor}`}>
         {conteudoComAviso}
       </a>
     );
@@ -116,14 +115,13 @@ function LinhaDaFolha({ href, rotulo, etiqueta, Icone, atual, recuado }: { href:
 }
 
 /** A navegação do celular (#543): barra fixa embaixo + a folha do "Mais". Some a partir de 768 px. */
-export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal }: Props) {
+export function NavegacaoDoCelular({ levas, pagina: paginaDaTela = "leva", usuario, tempoReal }: Props) {
   const [aberto, setAberto] = useState(false);
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   const folhaRef = useRef<HTMLDialogElement>(null);
   const botaoRef = useRef<HTMLButtonElement>(null);
-  // As outras levas (ex.: /leva/1, /leva/0) vão na folha; com uma delas na tela, o "Leva" da barra perde o aria-current.
-  const outras = levas.filter((l) => l.href !== ENDERECO_DA_LEVA_ATUAL);
-  const extra = outras.some((l) => l.atual);
+  // Com uma leva antiga na tela (ex.: /leva/1), o destaque vai pras "Levas anteriores", na folha.
+  const pagina = paginaDestacada(levas, paginaDaTela);
   const naBarra = IDS_DA_BARRA.includes(pagina);
   // A página não encontrada (#560) não mora na barra nem na folha: o "Mais" não ganha destaque por causa dela.
   const naFolha = !naBarra && pagina !== "nao-encontrada";
@@ -150,10 +148,9 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
         aria-label="Menu do celular"
         className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-borda bg-cartao pl-[max(0.25rem,env(safe-area-inset-left))] pr-[max(0.25rem,env(safe-area-inset-right))] pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] md:hidden"
       >
-        {ITENS_DA_BARRA.map((item) => {
-          const atual = pagina === item.id;
-          return <AlvoDaBarra key={item.id} item={item} atual={atual} comAriaCurrent={atual && !(item.id === "leva" && extra)} />;
-        })}
+        {ITENS_DA_BARRA.map((item) => (
+          <AlvoDaBarra key={item.id} item={item} atual={pagina === item.id} />
+        ))}
         <button
           ref={botaoRef}
           type="button"
@@ -193,16 +190,6 @@ export function NavegacaoDoCelular({ levas, pagina = "leva", usuario, tempoReal 
               Fechar
             </button>
           </div>
-
-          {outras.length > 0 && (
-            <ul className="mt-1 flex flex-col gap-0.5">
-              {outras.map((l) => (
-                <li key={l.href} className="min-w-0">
-                  <LinhaDaFolha href={l.href} rotulo={l.nome} etiqueta={etiquetaDasAbertas(l.abertas)} atual={pagina === "leva" && l.atual} />
-                </li>
-              ))}
-            </ul>
-          )}
 
           {grupos.map((grupo) => (
             <div key={grupo.id} className={`min-w-0 ${grupo.id === "rodape" ? "mt-3 border-t border-borda pt-2" : ""}`}>
