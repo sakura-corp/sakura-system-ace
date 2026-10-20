@@ -771,7 +771,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   antigo `/em-breve/levas` agora dá "Página não encontrada". Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-548/`.
   **Decidido pela Sofia (20/10)**: a rota separada fica; "feitas" continua contando toda tarefa fechada; `/em-breve/levas`
   pode dar "Página não encontrada". Conferido por ela no endereço público em 20/10 (a leva 0 com 8 de 8 e a data certa).
-- **20/10/2026, "O que mudou hoje" no Início (#549)**, com o Tiago (PR aberto, esperando a revisão da Sofia): um
+- **20/10/2026, "O que mudou hoje" no Início (#549)**, com o Tiago (PR #666, mesclado pela Sofia em 20/10): um
   bloco novo no Início, abaixo da leva (no celular, por último), com a linha do tempo do dia (ver "Decisões técnicas").
   Mexeu também no `src/App.tsx` (buscar `/api/novidades` e os dados de exemplo), que não estava na lista da issue.
   Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-549/`. Falta a Sofia conferir no endereço público depois de publicar.
+  **Decidido pela Sofia (20/10)**: as conferências repetidas do mesmo PR viram uma linha só, a mais nova (tarefa #667,
+  leva 2); o nome da conferência continua na frase.
