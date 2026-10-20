@@ -375,7 +375,8 @@ function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, 
   const [planoB, setPlanoB] = useState(false);
   const texto = textoDaTarefa(t.numero, t.chefe);
   const minha = !!t.dono && mesmoLogin(t.dono.login, login);
-  const pegarNaColunaQuem = !t.dono && t.estado !== "feita" && (t.incompleta ?? []).length === 0;
+  // Só a livre: em andamento ou revisão sem dono, a coluna diz "sem responsável" e os botões vão embaixo.
+  const pegarNaColunaQuem = !t.dono && t.estado === "livre" && (t.incompleta ?? []).length === 0;
   const pequeno = "text-[13px] text-texto-2";
   return (
     <li className={`${GRADE} py-3 text-sm ${minha ? "bg-livre-fundo" : "hover:bg-fundo"}`}>

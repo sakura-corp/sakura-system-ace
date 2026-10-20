@@ -26,7 +26,7 @@ export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, a
   const avisos = pessoasComVariasEmAndamento(tarefas);
   return (
     <>
-      <CabecalhoDaPagina trilha="Trabalho" titulo={nome} explicacao={subtitulo} />
+      <CabecalhoDaPagina trilha="1º · Produção" titulo={nome} explicacao={subtitulo} />
 
       {avisos.length > 0 && (
         <div role="status" className="mt-4 rounded-xl border border-borda bg-revisao-fundo px-4 py-2 text-sm text-revisao">

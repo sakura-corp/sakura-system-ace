@@ -197,3 +197,9 @@ describe("Lista da leva: a dica do celular (#547)", () => {
     expect(html({})).not.toMatch(DICA);
   });
 });
+
+describe("Lista da leva: a coluna Quem (#547)", () => {
+  it("em andamento sem dono continua dizendo 'sem responsável'", () => {
+    expect(html({ estado: "andamento" })).toContain("sem responsável");
+  });
+});
