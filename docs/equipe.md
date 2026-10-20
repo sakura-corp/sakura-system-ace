@@ -385,8 +385,7 @@ um passo por vez. Se a sua sessão não tiver a ferramenta citada, diga isso e s
    o PR, sem você mandar "continua".
 
 **O que não ligar**: rotina agendada (que roda sozinha de hora em hora, por exemplo) e conferência
-automática dos PRs dos outros. Gastam a cota de quem criou e o trabalho é da Sofia, que já tem a
-dela (de hora em hora, das 8h às 22h). Nenhuma destas funções muda a regra: **nunca mesclar**.
+automática dos PRs dos outros. Gastam a cota de quem criou, e conferir PR é trabalho da Sofia. Nenhuma destas funções muda a regra: **nunca mesclar**.
 
 ## O que nunca fazer (e a quem perguntar)
 
