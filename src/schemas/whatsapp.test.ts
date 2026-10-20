@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  modeloPorChave,
   montarUrlWhatsapp,
   preencherModelo,
   telefoneParaWhatsapp,
@@ -80,5 +81,23 @@ describe("montarUrlWhatsapp", () => {
 
   it("sempre aponta pro wa.me — é o que a checagem do Electron exige", () => {
     expect(montarUrlWhatsapp("5511999999999", "x").startsWith("https://wa.me/")).toBe(true);
+  });
+});
+
+describe("modelo cliente_sumido (FN-11)", () => {
+  it("existe, com os três marcadores, e o texto aprovado pela Sofia em 17/10", () => {
+    const modelo = modeloPorChave("cliente_sumido");
+    expect(modelo.marcadores).toEqual(["{cliente}", "{loja}", "{veiculo}"]);
+    expect(
+      preencherModelo(modelo.padrao, {
+        cliente: "Cliente A",
+        loja: "Loja Centro",
+        veiculo: "Fiat Uno",
+      }),
+    ).toBe(
+      "Oi Cliente A, tudo bem? Aqui é da Loja Centro.\n" +
+        "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no Fiat Uno? " +
+        "É só responder que a gente marca um horário.",
+    );
   });
 });

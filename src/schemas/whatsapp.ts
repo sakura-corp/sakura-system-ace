@@ -12,7 +12,11 @@
  * pra outra, todo dia.
  */
 
-export type ChaveModeloWhatsapp = "cobranca" | "carro_pronto" | "pedido_compra";
+export type ChaveModeloWhatsapp =
+  | "cobranca"
+  | "carro_pronto"
+  | "pedido_compra"
+  | "cliente_sumido";
 
 export interface ModeloWhatsapp {
   chave: ChaveModeloWhatsapp;
@@ -69,6 +73,18 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
       "Segue nosso {pedido}:\n" +
       "{itens}\n" +
       "Consegue confirmar disponibilidade e prazo?",
+  },
+  {
+    chave: "cliente_sumido",
+    titulo: "Cliente que sumiu",
+    descricao:
+      "Aparece em Clientes, no filtro de quem não vem há meses. Chama de volta quem já comprou e parou de aparecer.",
+    marcadores: ["{cliente}", "{loja}", "{veiculo}"],
+    // Texto aprovado pela Sofia em 17/10/2026 (tarefa #455).
+    padrao:
+      "Oi {cliente}, tudo bem? Aqui é da {loja}.\n" +
+      "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no {veiculo}? " +
+      "É só responder que a gente marca um horário.",
   },
 ];
 

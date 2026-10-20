@@ -208,7 +208,15 @@ Quatro coisas que valem saber:
   carro sem placa virava caixinha vazia). No lugar, um botão "Ver veículos" nas ações da linha,
   igual ao "Ver DANFE", só em cliente com carro; abre uma janela com os carros
   (`VeiculosDoClienteModal.tsx`), cada um levando pra ficha. Carro sem placa aparece como "sem
-  placa", com marca e modelo.
+  placa", com marca e modelo. **"Clientes que sumiram" (20/10/2026, #455, FN-11)**: caixinha
+  acima da lista, "sem vir há mais de X meses" (padrão 6). Mostra quem já veio e parou de vir,
+  com a última visita, o último serviço e o total gasto, de quem mais gastou pra quem menos, e o
+  botão "Chamar" (modelo `cliente_sumido`, editável em Configurações; registra a
+  abertura em `whatsapp_mensagens` e mostra "chamado em"). Só contam OS e vendas de balcão
+  **faturadas**, de todas as lojas (o cliente é da empresa); a conta está em
+  `schemas/clientesSumidos.ts`, a busca em `lib/clientesSumidos.ts`. Quem nunca veio não aparece.
+  O total só aparece pra quem tem Caixa ou Relações (`MODULOS_QUE_LEEM_O_CAIXA`). Um clique por
+  cliente: nada em massa.
 - **Estoque**: 4 abas — Produtos (cadastro completo com campos fiscais NCM/CFOP/CST-CSOSN/ICMS,
   categoria, garantia em dias, margem calculada nos dois sentidos), Movimentações (com filtro por
   produto e campo/coluna de Depósito), Contagem (inventário físico, agora
