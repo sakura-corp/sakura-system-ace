@@ -8,19 +8,31 @@ const formatar = (h: number) => String(h).replace(".", ",");
 export function HorasPorPessoa({ tarefas }: { tarefas: Tarefa[] }) {
   const pessoas = horasPorPessoa(tarefas);
   if (pessoas.length === 0) return null;
+  // A barrinha é só desenho (o número ao lado diz tudo): o tamanho é em relação a quem tem mais horas.
+  const maior = Math.max(...pessoas.map((p) => p.entregues + p.segurando), 1);
   return (
-    <section aria-labelledby="horas-por-pessoa" className="mt-8">
-      <h2 id="horas-por-pessoa" className="mb-2 text-sm font-medium text-texto-2">
-        Horas por pessoa
-      </h2>
-      <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
+    <section aria-labelledby="horas-por-pessoa" className="overflow-hidden rounded-xl border border-borda bg-cartao">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pb-2 pt-4 sm:px-5">
+        <h2 id="horas-por-pessoa" className="text-[15px] font-semibold">
+          Horas por pessoa
+        </h2>
+        <p className="text-[13px] text-texto-2">entregues e em mãos, nesta leva; sem nota nem ranking</p>
+      </div>
+      <ul className="divide-y divide-borda">
         {pessoas.map((p) => (
-          <li key={p.login} className="flex flex-col gap-1 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <li
+            key={p.login}
+            className="grid grid-cols-[minmax(0,1fr)] gap-x-3 gap-y-1.5 px-4 py-2.5 text-sm sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] sm:items-center sm:px-5"
+          >
             <span className="flex min-w-0 items-center gap-1.5 font-medium">
               <Avatar login={p.login} avatar={p.avatar} />
               <span className="min-w-0 break-words">{p.login}</span>
             </span>
-            <span className="min-w-0 tabular-nums text-texto-2">
+            <span aria-hidden="true" className="order-last flex h-1.5 overflow-hidden rounded-full bg-livre-fundo sm:order-none">
+              <i className="block h-full bg-feita" style={{ width: `${(p.entregues / maior) * 100}%` }} />
+              <i className="block h-full bg-texto-2" style={{ width: `${(p.segurando / maior) * 100}%` }} />
+            </span>
+            <span className="min-w-0 tabular-nums text-texto-2 sm:text-right">
               {/* Cada pedaço quebra inteiro no celular (nunca "1" numa linha e "sem estimativa" na outra). */}
               <span className="whitespace-nowrap">{formatar(p.entregues)} h entregues</span>
               {" · "}

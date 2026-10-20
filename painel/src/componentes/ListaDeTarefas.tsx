@@ -7,7 +7,7 @@ import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
 import { acaoNaTarefa } from "../logica/dados";
 import { linkDoClaude } from "../logica/link";
 import { depoisDaAcao, mesmoLogin, motivoPraNaoPegar } from "../logica/pegar";
-import { PLURAL, Selo } from "./Selo";
+import { Selo } from "./Selo";
 
 type Props = {
   tarefas: Tarefa[];
@@ -20,37 +20,67 @@ type Props = {
 };
 
 export function ListaDeTarefas({ tarefas, login, aoMudar, levaAberta = true }: Props) {
-  // O aviso da última ação mora aqui, não no cartão: depois de recarregar, o cartão pode mudar de grupo
-  // (ou perder os botões, se outra pessoa pegou) e o aviso vai junto com ele.
+  // O aviso da última ação mora aqui, não na linha: depois de recarregar, a linha pode mudar de lugar
+  // (ou perder os botões, se outra pessoa pegou) e o aviso vai junto com ela.
   const [aviso, setAviso] = useState<{ numero: number; texto: string } | null>(null);
+  // Uma lista só, na ordem dos grupos (o estado está no selo de cada linha; o contador dá os totais).
+  const emOrdem = agruparPorEstado(tarefas).flatMap((g) => g.tarefas);
+  const dica = tarefas.some((t) => temBotoesDoClaude(t, login));
   return (
-    <div className="space-y-8">
-      {agruparPorEstado(tarefas)
-        .filter((g) => g.tarefas.length > 0)
-        .map((g) => (
-          <section key={g.estado} aria-labelledby={`grupo-${g.estado}`}>
-            <h2 id={`grupo-${g.estado}`} className="mb-2 text-sm font-medium text-texto-2">
-              {PLURAL[g.estado]} <span className="tabular-nums">({g.tarefas.length})</span>
-            </h2>
-            <ul className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-cartao">
-              {g.tarefas.map((t) => (
-                <ItemDaTarefa
-                  key={t.numero}
-                  tarefa={t}
-                  tarefas={tarefas}
-                  login={login}
-                  aoMudar={aoMudar}
-                  levaAberta={levaAberta}
-                  aviso={aviso?.numero === t.numero ? aviso.texto : ""}
-                  aoAvisar={(texto) => setAviso(texto ? { numero: t.numero, texto } : null)}
-                />
-              ))}
-            </ul>
-          </section>
+    <section aria-labelledby="titulo-das-tarefas" className="overflow-hidden rounded-xl border border-borda bg-cartao">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pb-2 pt-4 sm:px-5">
+        <h2 id="titulo-das-tarefas" className="text-[15px] font-semibold">
+          Tarefas <span className="tabular-nums">({tarefas.length})</span>
+        </h2>
+        <p className="text-[13px] text-texto-2">os botões aparecem só na tarefa de quem olha</p>
+        {/* Uma vez na tela, não em cada tarefa (#547). */}
+        {dica && (
+          <p className="basis-full text-sm text-texto-2 sm:hidden">
+            No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
+          </p>
+        )}
+      </div>
+      <div aria-hidden="true" className={`hidden ${GRADE} pb-2 pt-1 text-[11.5px] font-semibold uppercase tracking-[0.06em] text-texto-2 lg:grid`}>
+        <span>Nº</span>
+        <span>Tarefa</span>
+        <span>Estado</span>
+        <span>Chefe</span>
+        <span>Quem</span>
+        <span className="text-right">Horas</span>
+      </div>
+      <ul className="divide-y divide-borda border-t border-borda">
+        {emOrdem.map((t) => (
+          <LinhaDaTarefa
+            key={t.numero}
+            tarefa={t}
+            tarefas={tarefas}
+            login={login}
+            aoMudar={aoMudar}
+            levaAberta={levaAberta}
+            aviso={aviso?.numero === t.numero ? aviso.texto : ""}
+            aoAvisar={(texto) => setAviso(texto ? { numero: t.numero, texto } : null)}
+          />
         ))}
-    </div>
+      </ul>
+    </section>
   );
 }
+
+/** A tarefa tem os botões do Claude pra quem olha (a mesma conta do `BotoesDaTarefa`). */
+function temBotoesDoClaude(t: Tarefa, login: string | undefined): boolean {
+  if (t.estado === "feita" || (t.incompleta ?? []).length > 0) return false;
+  if (!t.dono || !mesmoLogin(t.dono.login, login)) return false;
+  return !!linkDoClaude(linkParaComecar(t.numero, t.chefe)) && textoDaTarefa(t.numero, t.chefe) !== undefined;
+}
+
+/**
+ * A grade da linha (versão A, #547). No computador (lg), uma linha com as colunas do cabeçalho e, embaixo,
+ * os botões e avisos ("x"). Abaixo disso: número à esquerda, título em cima, estado e horas, e o chefe e quem cada um
+ * na largura toda (lado a lado, a coluna "auto" espremia o chefe até quebrar letra por letra em 320 px).
+ */
+const GRADE =
+  "grid grid-cols-[40px_minmax(0,1fr)_auto] gap-x-3 px-4 sm:px-5 [grid-template-areas:'n_t_t'_'._s_h'_'._c_c'_'._d_d'_'._x_x'] " +
+  "lg:grid-cols-[52px_minmax(0,1fr)_112px_128px_168px_44px] lg:[grid-template-areas:'n_t_s_c_d_h'_'._x_x_x_x_x'] lg:items-center";
 
 const BOTAO =
   "inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium hover:opacity-90";
@@ -71,6 +101,10 @@ type PropsDosBotoes = {
   aoCopiar: (r: ResultadoDaCopia) => void;
   /** Põe (ou apaga, com "") o aviso da última ação, que fica à vista no cartão. */
   aoAvisar: (texto: string) => void;
+  /** Onde os botões ficam (a linha da leva põe numa área da grade). */
+  className?: string;
+  /** A dica do celular embaixo dos botões; a lista da leva mostra a dela uma vez só (#547). */
+  dica?: boolean;
 };
 
 /**
@@ -81,7 +115,7 @@ type PropsDosBotoes = {
  * - sem dono → "Pegar tarefa"; se não pode, desligado e o motivo à vista (no celular não existe dica de mouse).
  * Quem decide de verdade é o worker; a página só desliga o botão e diz o porquê.
  */
-function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, aoCopiar, aoAvisar }: PropsDosBotoes) {
+function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, aoCopiar, aoAvisar, className = "mx-4 mb-3", dica = true }: PropsDosBotoes) {
   const [copiado, setCopiado] = useState(false);
   const [ocupado, setOcupado] = useState<Acao | null>(null);
   const [confirmando, setConfirmando] = useState(false);
@@ -97,7 +131,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
   if (faltas.length > 0) {
     // O que falta fica à vista (no celular não existe dica de mouse; Sofia, 17/10).
     return (
-      <div className="mx-4 mb-3 min-w-0 text-sm text-texto-2">
+      <div className={`${className} min-w-0 text-sm text-texto-2`}>
         <p>
           tarefa incompleta<span className="sr-only"> (tarefa #{tarefa.numero})</span>
         </p>
@@ -138,7 +172,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
 
   if (souEu) {
     return (
-      <div className="mx-4 mb-3">
+      <div className={className}>
         <div className="flex flex-wrap gap-2">
           <a href={href} target="_blank" rel="noopener noreferrer" className={`${BOTAO} bg-destaque text-sobre-destaque`}>
             Começar com o Claude<span className="sr-only"> (tarefa #{numero}; abre o Claude em aba nova)</span>
@@ -175,9 +209,11 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
                 Largar<span className="sr-only"> (tarefa #{numero})</span>
               </button>
             ))}
-          <p className="basis-full text-sm text-texto-2 sm:hidden">
-            No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
-          </p>
+          {dica && (
+            <p className="basis-full text-sm text-texto-2 sm:hidden">
+              No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto.
+            </p>
+          )}
           <span className="sr-only" role="status" aria-live="polite">
             {copiado ? `Texto da tarefa #${numero} copiado` : planoB ? "Não deu pra copiar sozinho: o texto está no campo abaixo, já selecionado" : ""}
           </span>
@@ -190,14 +226,14 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
   const motivo = !levaAberta ? "esta tarefa não está numa leva aberta" : motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo === null) {
     return (
-      <div className="mx-4 mb-3">
+      <div className={className}>
         <div className="flex flex-wrap gap-2">
           {ocupado === "pegar" ? (
             <button type="button" disabled className={BOTAO_DESLIGADO}>
               Pegando…<span className="sr-only"> (tarefa #{numero})</span>
             </button>
           ) : (
-            <button type="button" onClick={() => agir("pegar")} className={`${BOTAO} bg-destaque text-sobre-destaque`}>
+            <button type="button" onClick={() => agir("pegar")} className={BOTAO_SECUNDARIO}>
               Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
             </button>
           )}
@@ -206,7 +242,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
     );
   }
   return (
-    <div className="mx-4 mb-3">
+    <div className={className}>
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled aria-describedby={`motivo-${numero}`} className={BOTAO_DESLIGADO}>
           Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
@@ -224,27 +260,27 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
  * Quando aparece, o foco vai pra ele: o botão clicado sumiu, e depois de recarregar o cartão pode ter mudado
  * de grupo; o foco leva a pessoa (e o leitor de tela) até o motivo.
  */
-function AvisoDaAcao({ texto }: { texto: string }) {
+function AvisoDaAcao({ texto, className = "mx-4 mb-3" }: { texto: string; className?: string }) {
   const p = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     if (texto) p.current?.focus();
   }, [texto]);
   return (
-    <p ref={p} tabIndex={-1} role="status" aria-live="polite" className="mx-4 mb-3 break-words text-sm text-texto empty:m-0">
+    <p ref={p} tabIndex={-1} role="status" aria-live="polite" className={`${className} break-words text-sm text-texto empty:m-0`}>
       {texto}
     </p>
   );
 }
 
 /** Plano B: o texto num campo já selecionado, pra copiar à mão (toque e segure, ou Ctrl+C). */
-function CampoDoTexto({ texto, numero }: { texto: string; numero: number }) {
+function CampoDoTexto({ texto, numero, className = "mx-4 mb-3" }: { texto: string; numero: number; className?: string }) {
   const campo = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     campo.current?.focus();
     campo.current?.select();
   }, []);
   return (
-    <div className="mx-4 mb-3 flex flex-col gap-1">
+    <div className={`${className} flex flex-col gap-1`}>
       <label htmlFor={`texto-${numero}`} className="text-sm text-texto-2">
         Não deu pra copiar sozinho. Copie este texto e cole no Claude:
       </label>
@@ -327,6 +363,97 @@ export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, a
         <AvisoDaAcao texto={aviso} />
       </div>
       {planoB && t.estado !== "feita" && texto !== undefined && <CampoDoTexto texto={texto} numero={t.numero} />}
+    </li>
+  );
+}
+
+/**
+ * Uma linha da lista da leva (versão A, #547): os mesmos botões e avisos do cartão, na grade compacta.
+ * "Pegar tarefa" fica na coluna "Quem" (a livre não tem dono); os botões de quem olha, embaixo, na linha toda.
+ */
+function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, aoAvisar }: PropsDoItem) {
+  const [planoB, setPlanoB] = useState(false);
+  const texto = textoDaTarefa(t.numero, t.chefe);
+  const minha = !!t.dono && mesmoLogin(t.dono.login, login);
+  // Só a livre: em andamento ou revisão sem dono, a coluna diz "sem responsável" e os botões vão embaixo.
+  const pegarNaColunaQuem = !t.dono && t.estado === "livre" && (t.incompleta ?? []).length === 0;
+  const pequeno = "text-[13px] text-texto-2";
+  return (
+    <li className={`${GRADE} py-3 text-sm ${minha ? "bg-livre-fundo" : "hover:bg-fundo"}`}>
+      <span className="pt-px tabular-nums text-texto-2 [grid-area:n] lg:pt-0">#{t.numero}</span>
+      <a
+        href={t.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="min-w-0 font-medium leading-snug [grid-area:t] [overflow-wrap:anywhere] hover:underline focus-visible:outline-offset-2"
+      >
+        {t.titulo}
+        <span className="sr-only"> (abre no GitHub, em aba nova)</span>
+      </a>
+      <span className="mt-2 [grid-area:s] lg:mt-0">
+        <Selo estado={t.estado} />
+      </span>
+      <span className="mt-2 text-right tabular-nums [grid-area:h] lg:mt-0">
+        {t.estimativaHoras !== undefined ? (
+          `${String(t.estimativaHoras).replace(".", ",")} h`
+        ) : (
+          <span className="text-texto-2">—<span className="sr-only"> sem estimativa</span></span>
+        )}
+      </span>
+      <span className="mt-2 flex min-w-0 flex-col leading-tight [grid-area:c] lg:mt-0">
+        {t.chefe ? (
+          <span className="min-w-0 max-w-full break-words">Chefe: {t.chefe}</span>
+        ) : (
+          <span className="text-texto-2">sem chefe</span>
+        )}
+        {t.ajudantes && <span className={`min-w-0 max-w-full break-words ${pequeno}`}>Ajudantes: {t.ajudantes}</span>}
+      </span>
+      {pegarNaColunaQuem ? (
+        <BotoesDaTarefa
+          tarefa={t}
+          tarefas={tarefas}
+          login={login}
+          aoMudar={aoMudar}
+          levaAberta={levaAberta}
+          planoB={planoB}
+          aoCopiar={(r) => setPlanoB(r === "plano-b")}
+          aoAvisar={aoAvisar}
+          className="mt-2 flex min-w-0 flex-col items-start [grid-area:d] lg:mt-0"
+          dica={false}
+        />
+      ) : (
+        <span className="mt-2 flex min-w-0 items-center gap-1.5 [grid-area:d] empty:hidden lg:mt-0 lg:empty:flex">
+          {t.dono ? (
+            <>
+              <Avatar login={t.dono.login} avatar={t.dono.avatar} />
+              <span className="min-w-0 break-words">
+                {t.dono.login}
+                {minha && <span className="text-texto-2"> (você)</span>}
+              </span>
+            </>
+          ) : (
+            t.estado !== "livre" && <span className="text-texto-2">sem responsável</span>
+          )}
+        </span>
+      )}
+      <div className="flex min-w-0 flex-col [grid-area:x]">
+        {!pegarNaColunaQuem && (
+          <BotoesDaTarefa
+            tarefa={t}
+            tarefas={tarefas}
+            login={login}
+            aoMudar={aoMudar}
+            levaAberta={levaAberta}
+            planoB={planoB}
+            aoCopiar={(r) => setPlanoB(r === "plano-b")}
+            aoAvisar={aoAvisar}
+            className="mt-2.5"
+            dica={false}
+          />
+        )}
+        <AvisoDaAcao texto={aviso} className="mt-2.5" />
+        {planoB && t.estado !== "feita" && texto !== undefined && <CampoDoTexto texto={texto} numero={t.numero} className="mt-2.5" />}
+      </div>
     </li>
   );
 }

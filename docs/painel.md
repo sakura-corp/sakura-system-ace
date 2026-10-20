@@ -736,3 +736,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   dono: a leva 1 com 4 abertas (#618, #619, #510, #455) e a leva 2 com as 11. Como o painel abre na maior leva com tarefa
   aberta (`levaAtual()`), pôr a `leva-3` agora tiraria a leva 2 da tela. As quatro tarefas (#653, #379, #655, #656) já estão
   no modelo único; **a etiqueta entra quando a leva 2 fechar.**
+- **20/10/2026: a tela da leva redesenhada na versão A (#547, PR aberto pelo Tiago, esperando a Sofia).** O contador
+  numa faixa só com a barra dentro, "Horas por pessoa" como cartão (com barrinha só de desenho), a lista compacta (uma
+  linha por tarefa; no computador, colunas Nº/Tarefa/Estado/Chefe/Quem/Horas) e o `CabecalhoDaPagina` (#545). "Pegar
+  tarefa" fica na coluna Quem e em contorno: o rosa sobrou só no "Começar com o Claude" de quem olha. A dica do celular
+  aparece uma vez na tela da leva (o Início continua com a dele). Os grupos por estado viraram uma lista só, na mesma
+  ordem. Nenhuma regra mudou. Fotos: `docs/referencia/fotos-painel/leva-547-*`.
