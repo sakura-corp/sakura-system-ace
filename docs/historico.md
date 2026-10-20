@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 20/10/2026, fim da noite: o Financeiro (#654) e a fase Testando (#646) no ar
+- **Financeiro (#654, PR #679)**: no ar e conferido por ela. O D1 `sakura-financeiro` foi criado e as tabelas aplicadas por ela no Console; a dona é `caranovavidanova` (`docs/painel.md`, "O Financeiro"). Falta alguém da equipe confirmar que vê só os totais.
+- **Leva 2**: **7 de 12** (entraram a #645, a #654 e a #646 do Tiago, PR #678; o conflito do #678 resolvido por esta sessão a pedido dela). A #647 e as outras abertas já podem ser pegas.
+- **Leva 1**: aprovada; as 4 abertas (#618, #619, #510, #455) esperam a #673. **Leva 3** (#653, #379, #655, #656): só quando a leva 2 fechar.
+- **PR da equipe**: sem conferência automática. Ela pede "confere o PR #N" na sessão em que estiver; a sessão acompanha (`subscribe_pr_activity`) e confere a `main` depois da mescla (`docs/jeito-de-trabalhar.md`, A5). Conflito no fim do "Andamento" se repete (lição 87).
+- **Esperando o sim dela**: a linha "Painel (D1)" na skill `chefe-backend` (proposta no relatório da #654).
+- **Depende dela**: as escolhas da #644 (#674) e a #673; o Send do Gustavo e do Lázaro (até 26/10); a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+- **Próxima sessão**: só quando ela tiver assunto. Projeto novo (os nomes), marketing e pagamento da Pneus Amigão voltam quando ela quiser.
+
 ### 20/10/2026, noite: a #549 e a #644 no ar, a leva 1 aprovada e os PRs conferidos sozinhos
 - **Leva 2**: 4 de 12 feitas (#547, #548, #549 e #644, todas do Tiago e conferidas por ela no endereço público). Nova: a #667 (juntar as conferências repetidas no "O que mudou hoje"). A #645, a #646 e a #647 já podem ser pegas.
 - **Leva 1**: **aprovada** pelo relatório (`docs/relatorios/leva-1.md`, PR #672). As 4 abertas (#618, #619, #510, #455) continuam pegáveis; ficam na leva 1 ou vão pra 2: #673.
