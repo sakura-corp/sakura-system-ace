@@ -732,3 +732,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   da leva 1 apareciam com o botão desligado ("não está na leva atual"). A regra agora é `levaAceitaPegar()`
   (`painel/src/logica/estado.ts`): a atual, ou uma anterior que ainda tem tarefa aberta. O worker lê todas as levas
   abertas pra decidir, e a "uma por vez" vale entre elas.
+- **20/10/2026: a `leva-3` espera a leva 2 fechar** (Sofia). Na conferência do dia, nenhuma tarefa das levas 1 e 2 tinha
+  dono: a leva 1 com 4 abertas (#618, #619, #510, #455) e a leva 2 com as 11. Como o painel abre na maior leva com tarefa
+  aberta (`levaAtual()`), pôr a `leva-3` agora tiraria a leva 2 da tela. As quatro tarefas (#653, #379, #655, #656) já estão
+  no modelo único; **a etiqueta entra quando a leva 2 fechar.**
