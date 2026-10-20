@@ -34,11 +34,18 @@ describe("NavegacaoDoCelular", () => {
     expect(folha).not.toContain("aria-current");
   });
 
-  it("página em breve da folha (Financeiro): o item da folha, com cadeado e o que falta, é a página atual", () => {
+  it("página em breve da folha (DRE): o item da folha, com cadeado e o que falta, é a página atual", () => {
+    const { barra, folha } = partes(html({ levas: LEVA, pagina: "dre" }));
+    expect(barra).not.toContain("aria-current");
+    expect(folha).toMatch(/<a href="\/em-breve\/dre" aria-current="page"/);
+    expect(folha).toContain("depende do Financeiro");
+  });
+
+  it("Financeiro (#654) é página de verdade na folha: link /financeiro, a página atual, sem 'em breve'", () => {
     const { barra, folha } = partes(html({ levas: LEVA, pagina: "financeiro" }));
     expect(barra).not.toContain("aria-current");
-    expect(folha).toMatch(/<a href="\/em-breve\/financeiro" aria-current="page"/);
-    expect(folha).toContain("depende do banco privado");
+    expect(folha).toMatch(/<a href="\/financeiro" aria-current="page"/);
+    expect(folha).not.toContain("/em-breve/financeiro");
   });
 
   it("com viewport-fit=cover (#561), a barra de baixo e a folha respeitam a área segura de baixo e dos lados", () => {

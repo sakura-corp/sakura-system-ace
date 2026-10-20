@@ -114,6 +114,14 @@ Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço
 | Em revisão | `#7A4F00` / `#FBEFD9` | `#F2C46B` / `#3F3322` |
 | Feita | `#2B6534` / `#E4F1E6` | `#8FD19C` / `#233A28` |
 
+| Gráfico do Financeiro (#654) | Claro | Escuro |
+|---|---|---|
+| Entrou | `#1F7A3D` | `#34A15A` |
+| Saiu | `#B8237F` | `#D9559F` |
+
+As duas séries têm cor própria porque o verde de "Feita" é escuro demais pra ficar ao lado do rosa num gráfico
+(conferido com o validador da skill `dataviz`, inclusive pra daltônico).
+
 ### Visual da Sala (B, o da Bibi; decidido em 15/10/2026)
 
 A Sala (tarefas 3 e 8) é uma **janela sempre escura dentro do painel**, com visual próprio. O resto do
@@ -432,6 +440,40 @@ sem elas o chefe não é achado; e o botão **ainda não foi testado com o login
 **Pra quem fizer a #352 (publicar)**: o endereço `/escritorio` só abre direto se o Worker devolver o `index.html` pra caminhos
 que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-page-application"`). Hoje o `npm run dev` e o
 `npm run preview` já fazem isso sozinhos.
+
+## O Financeiro (#654)
+
+- **Onde mora o dinheiro**: no **Cloudflare D1** `FINANCEIRO` (decisão #652), **nunca no GitHub**. No repositório só ficam
+  a estrutura (`painel/migrations/0001_financeiro.sql`: as tabelas `categorias` e `lancamentos`, e as seis categorias
+  iniciais) e o código. Valor sempre em **centavos inteiros**; o banco recusa zero, negativo, quebrado, tipo errado, dia
+  fora do formato `AAAA-MM-DD` e categoria que não existe.
+- **Quem vê o quê (o corte é no worker, `painel/worker/financeiro.ts`)**:
+  - Todo mundo que entrou no painel: `GET /api/financeiro/resumo` devolve **só os totais** (o mês, mês a mês, saídas por
+    categoria do mês) e `podeLancar`. Nenhum lançamento, dia, descrição ou login sai daí, nem escondido na página.
+  - Só a dona: `GET/POST /api/financeiro/lancamentos` e `PUT/DELETE /api/financeiro/lancamentos/<id>`. Os outros levam 403
+    sem dado nenhum. Escrita só vindo da própria página (`Origin`).
+  - **Quem é a dona** vem da variável `DONA_DO_FINANCEIRO` do `wrangler.jsonc` (o login do GitHub, sem diferenciar
+    maiúscula). **Vazia ou faltando: ninguém é dona** (falha fechada). Sem o banco ligado, as rotas dizem 503.
+- **A conta** (totais, mês a mês, crescimento) é a função pura `resumoFinanceiro` em `painel/src/logica/financeiro.ts`; o
+  mês atual é o de São Paulo. A página fica em `/financeiro`; o DRE continua "em breve", dependendo do Financeiro.
+- **Testes**: `painel/worker/financeiro.test.ts` roda o SQL num SQLite em memória (o mesmo motor do D1) com a migration de
+  verdade, e a rota pelo `worker.fetch`. O painel **não tem CI**: rodar `npx tsc -b` e `npx vitest run` em `painel/` à mão.
+
+### Ligar o banco (é da Sofia, uma vez só)
+1. Na Cloudflare: **Storage & Databases → D1 SQL Database → Create**, nome `sakura-financeiro`, local automático.
+2. Copiar o **Database ID** da página do banco (não é segredo) e pôr no `painel/wrangler.jsonc`, em `d1_databases`
+   (`binding: "FINANCEIRO"`, `database_name`, `database_id`, `migrations_dir: "migrations"`), num PR. A variável
+   `DONA_DO_FINANCEIRO` (em `vars`, o login do GitHub da dona) já está lá desde a #654; sem ela ninguém lança.
+3. **Aplicar a migration** (antes de mesclar esse PR): no PC, dentro de `painel/`,
+   `npx wrangler d1 migrations apply sakura-financeiro --remote` (a primeira vez pede `npx wrangler login`). Sem o PC: na
+   página do banco, aba **Console**, colar o SQL **sem os comentários** e rodar. O Console junta tudo numa linha só, e
+   um `--` apaga o resto dela ("No SQL statements detected"; aconteceu em 20/10). Rodar de novo não estraga nada.
+   Conferir com `SELECT id, nome FROM categorias ORDER BY ordem;` (6 linhas, sem valor nenhum).
+4. Mesclar: a Cloudflare publica sozinha. Abrir `/financeiro`, lançar um valor de teste, ver o total, e apagar.
+
+**Feito em 20/10/2026**: o banco `sakura-financeiro` foi criado pela Sofia e as tabelas, aplicadas pelo Console (passos 1 a
+3). Como foi pelo Console, o `wrangler` não sabe que a `0001` já rodou: se um dia alguém usar `d1 migrations apply`, ela
+roda de novo, sem estragar nada (é toda `IF NOT EXISTS`/`OR IGNORE`).
 
 ## Fim de uma leva
 
@@ -798,3 +840,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   Também consertou a página, que jogava fora a `fase` do `/api/leva/<n>`. Mexeu fora da lista da issue em `App.tsx`,
   `sala/Sala.tsx`, `logica/dados.ts`, `logica/fases.ts` e `tipos.ts` (o porquê está no relatório). Fotos:
   `docs/relatorios/fotos/tarefa-645/`. O link do relatório abre a lista de PRs abertos (o PR exato precisaria vir do worker).
+- **20/10/2026, o Financeiro (#654)**, chefe backend com ajudantes (PR desta tarefa): a página `/financeiro` com os totais e
+  o gráfico mês a mês pra todos, e a lista e o formulário só pra dona (`DONA_DO_FINANCEIRO`); o corte é no worker. O banco D1
+  `sakura-financeiro` foi criado e as tabelas aplicadas pela Sofia em 20/10. Mexeu fora da lista da issue, com o sim dela:
+  `painel/migrations/0001_financeiro.sql`, os testes ao lado de cada arquivo novo, `App.tsx` e os testes das páginas "em
+  breve"; e, sem pedir antes (no PR, o porquê), `emBreve.ts` (o texto "em breve" do Financeiro saiu) e `estilo.css` (as
+  duas cores do gráfico). O DRE continua
+  em breve. Relatório: `docs/relatorios/2026-10-20-tarefa-654-backend.md`. **A Sofia confere depois de publicar**: lançar um
+  mês de verdade e conferir os totais; pedir pra alguém da equipe abrir e confirmar que vê só os totais.

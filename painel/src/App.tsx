@@ -4,6 +4,7 @@ import { BarraLateral, type ItemDeLeva } from "./componentes/BarraLateral";
 import { NavegacaoDoCelular } from "./componentes/NavegacaoDoCelular";
 import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
+import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaInicio } from "./componentes/PaginaInicio";
 import { Sala } from "./componentes/sala/Sala";
@@ -13,10 +14,12 @@ import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLev
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, carregarResumoDasLevas, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva, type EstadoDoResumo } from "./logica/dados";
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
+import { mesDaBusca, type EstadoDoFinanceiro } from "./logica/financeiroDados";
 import { paginaPraVoltar } from "./logica/login";
 import { levaAceitaPegar } from "./logica/estado";
 import { carregarNovidades, type EstadoDasNovidades, type Novidade } from "./logica/novidades";
 import { ehModoTv } from "./logica/sala";
+import { useFinanceiro } from "./useFinanceiro";
 import { useSala } from "./useSala";
 import { useTempoReal } from "./useTempoReal";
 import type { EstadoDaSala } from "./logica/salaDados";
@@ -30,6 +33,7 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
   if (limpo === "/levas") return "levas";
+  if (limpo === "/financeiro") return "financeiro";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
   const idEmBreve = idDoEmBreve(limpo);
   const emBreve = textoEmBreve(idEmBreve ?? "");
@@ -167,6 +171,9 @@ function useNovidades(ativo: boolean): [EstadoDasNovidades, () => void, () => Pr
   return [estado, () => setTentativa((n) => n + 1), recarregar];
 }
 
+// O Financeiro sem login (só no `npm run dev`): não há worker nem banco, então não mostra número nenhum.
+const FINANCEIRO_SEM_LOGIN: EstadoDoFinanceiro = { tipo: "erro", mensagem: "Sem login, o Financeiro não abre. Entre pelo painel de verdade." };
+
 const minutosAtras = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
 const novidadesDeExemplo = (): Novidade[] => [
   { id: "x1", quando: minutosAtras(35), tipo: "rodada", passou: true, nome: "CI", numero: 545 },
@@ -183,6 +190,7 @@ export default function App({
   leva: levaFixa,
   sala: salaFixa,
   resumo: resumoFixo,
+  financeiro: financeiroFixo,
 }: {
   caminho?: string;
   busca?: string;
@@ -194,6 +202,8 @@ export default function App({
   sala?: EstadoDaSala;
   /** Só nos testes: o resumo das levas (#548, página /levas), em vez de buscar no worker. */
   resumo?: EstadoDoResumo;
+  /** Só nos testes: o estado do Financeiro (#654), em vez de buscar no worker. */
+  financeiro?: EstadoDoFinanceiro;
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
@@ -226,6 +236,10 @@ export default function App({
   };
   const [novidadesBuscadas, tentarNovidadesDeNovo, recarregarNovidades] = useNovidades(dadosReais && pagina === "inicio");
   const [novidadesDeExemploAgora] = useState<EstadoDasNovidades>(() => ({ tipo: "pronto", novidades: novidadesDeExemplo(), falhas: [] }));
+  // O Financeiro (#654): o mês vem de ?mes=; sem login (só no `npm run dev`) não busca nada.
+  const mesDoFinanceiro = mesDaBusca(busca, new Date());
+  const [financeiroBuscado, tentarFinanceiroDeNovo, recarregarFinanceiro] = useFinanceiro(dadosReais && pagina === "financeiro" && financeiroFixo === undefined, mesDoFinanceiro);
+  const financeiro: EstadoDoFinanceiro = financeiroFixo ?? (exemplo ? FINANCEIRO_SEM_LOGIN : financeiroBuscado);
   const buscarDaSala = useCallback(async () => {
     if (!tv) await recarregar();
     if (pagina === "inicio") await recarregarNovidades();
@@ -256,6 +270,9 @@ export default function App({
         recarregarTudo={tentarSalaDeNovo}
       />
     );
+  }
+  if (!exemplo && pagina === "financeiro" && financeiro.tipo === "fora") {
+    return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
   }
   if (!exemplo && estado.tipo === "fora") {
     return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
@@ -341,6 +358,10 @@ export default function App({
           ) : (
             <EsqueletoDaLeva />
           )}
+        </main>
+      ) : pagina === "financeiro" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <PaginaFinanceiro estado={financeiro} mes={mesDoFinanceiro} agora={new Date()} tentarDeNovo={tentarFinanceiroDeNovo} aoMudar={recarregarFinanceiro} />
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">

@@ -12,8 +12,11 @@
   "preview_urls": false,
   // Login (#353). O Client ID do app "Sakura Painel" não é segredo. O client secret e a
   // CHAVE_DA_SESSAO são segredos: só na Cloudflare (e no .dev.vars de quem programa).
+  // Financeiro (#654): o login do GitHub de quem vê cada lançamento e lança. Não é segredo.
+  // Vazia: ninguém é dona (o worker falha fechado).
   "vars": {
-    "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2"
+    "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2",
+    "DONA_DO_FINANCEIRO": "caranovavidanova"
   },
   // Tempo real (#355): a sala que repassa os avisos do GitHub a todos os painéis abertos.
   // `new_sqlite_classes` = Durable Object com SQLite, que está no plano grátis.
@@ -22,6 +25,16 @@
     "bindings": [{ "name": "SALA", "class_name": "SalaDoPainel" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SalaDoPainel"] }],
+  // Financeiro (#654): o banco D1 com os lançamentos (o dinheiro mora aqui, nunca no GitHub).
+  // O ID não é segredo. As tabelas vêm de ./migrations, aplicadas pela Sofia (docs/painel.md, "Ligar o banco").
+  "d1_databases": [
+    {
+      "binding": "FINANCEIRO",
+      "database_name": "sakura-financeiro",
+      "database_id": "5d316997-16a5-4e32-b5f9-99024c640c2b",
+      "migrations_dir": "migrations"
+    }
+  ],
   "assets": {
     "directory": "./dist",
     // Deixa o worker entregar a página (env.ASSETS) quando precisar.
