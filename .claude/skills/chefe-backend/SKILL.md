@@ -49,6 +49,11 @@ Tela e aparência são do chefe de frontend; revisão de segurança é do chefe 
 - **Ao escrever código, use a skill `teste-primeiro`** (o teste antes, visto reprovar); **ao investigar defeito, a skill `diagnostico`** (a causa antes do conserto).
 - **Migration só é ESCRITA no PR. Quem aplica é a Sofia** (botão "Atualizar o banco de todas as
   empresas", ensaiar e depois aplicar). Na nuvem o `*.supabase.co` nem é alcançável (item 6).
+- **Painel (D1)**: outro banco, outro jeito. A migration fica em `painel/migrations/`, sem
+  `schema_versao`, idempotente (`IF NOT EXISTS`), testada num SQLite em memória (`node:sqlite`), e
+  **quem aplica é a Sofia**, guiada pelo `docs/painel.md`. No Console da Cloudflare o SQL vai **sem
+  comentários** (o Console recusa). O painel não tem CI: validar à mão com `npx tsc -b` e
+  `npx vitest run` dentro de `painel/`.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
 **Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.
