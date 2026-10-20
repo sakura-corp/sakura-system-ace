@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Combobox } from "@/components/Combobox";
+import { Modal } from "@/components/Modal";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { criarFornecedor } from "@/lib/fornecedores";
@@ -220,233 +221,209 @@ export function ImportarNotaFiscalXmlModal({
     itens?.filter((item) => item.incluir && item.quantidadeEditavel > 0).length ?? 0;
 
   return (
-    <div
-      className="sakura-modal-fundo"
-      onClick={onFechar}
+    <Modal
+      titulo="Importar XML de nota fiscal do fornecedor"
+      descricao="O arquivo XML que o fornecedor te manda (ou que você baixa no site da Sefaz) — diferente da nota que você emite pro cliente. Cria um pedido de compra já recebido, com entrada no estoque e cotação registrados sozinhos."
+      largura="4xl"
+      onFechar={onFechar}
     >
-      <div
-        className="sakura-modal max-h-[90vh] w-full max-w-4xl overflow-y-auto p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
-              Importar XML de nota fiscal do fornecedor
-            </h2>
-            <p className="text-corpo text-sakura-muted">
-              O arquivo XML que o fornecedor te manda (ou que você baixa no site da Sefaz) —
-              diferente da nota que você emite pro cliente. Cria um pedido de compra já recebido,
-              com entrada no estoque e cotação registrados sozinhos.
-            </p>
+      {erro && (
+        <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+      )}
+
+      {itens === null && (
+        <div className="space-y-4">
+          <label className="flex flex-col gap-1 text-corpo">
+            <span className="text-sakura-purple-dark/80">Arquivo XML da nota</span>
+            <input
+              type="file"
+              accept=".xml,text/xml,application/xml"
+              onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
+              className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+            />
+          </label>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleLer}
+              disabled={!arquivo || lendo}
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {lendo ? "Lendo..." : "Ler arquivo"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onFechar}
-            aria-label="Fechar"
-            className="shrink-0 rounded-full p-1.5 text-sakura-purple-dark/85 hover:bg-sakura-gray/10 hover:text-sakura-purple-dark"
-          >
-            ✕
-          </button>
         </div>
+      )}
 
-        {erro && (
-          <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-        )}
-
-        {itens === null && (
-          <div className="space-y-4">
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Arquivo XML da nota</span>
-              <input
-                type="file"
-                accept=".xml,text/xml,application/xml"
-                onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
-              />
-            </label>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onFechar}
-                className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleLer}
-                disabled={!arquivo || lendo}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {lendo ? "Lendo..." : "Ler arquivo"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {itens !== null && nota && (
-          <form onSubmit={handleImportar} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg border border-sakura-gray/30 p-3 text-corpo">
-                <span className="text-sakura-purple-dark/70">Fornecedor</span>
-                <p className="font-medium text-sakura-purple-dark">
-                  {fornecedorEncontrado
-                    ? fornecedorEncontrado.nome
-                    : (nota.fornecedor_nome ?? "Sem nome no XML")}
+      {itens !== null && nota && (
+        <form onSubmit={handleImportar} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg border border-sakura-gray/30 p-3 text-corpo">
+              <span className="text-sakura-purple-dark/70">Fornecedor</span>
+              <p className="font-medium text-sakura-purple-dark">
+                {fornecedorEncontrado
+                  ? fornecedorEncontrado.nome
+                  : (nota.fornecedor_nome ?? "Sem nome no XML")}
+              </p>
+              {!fornecedorEncontrado && (
+                <p className="mt-1 text-rotulo text-amber-700">
+                  Não achei esse CNPJ cadastrado — um fornecedor novo será criado
+                  automaticamente ao importar.
                 </p>
-                {!fornecedorEncontrado && (
-                  <p className="mt-1 text-rotulo text-amber-700">
-                    Não achei esse CNPJ cadastrado — um fornecedor novo será criado
-                    automaticamente ao importar.
-                  </p>
-                )}
-              </div>
+              )}
+            </div>
 
+            <label className="flex flex-col gap-1 text-corpo">
+              <span className="text-sakura-purple-dark/80">
+                Depósito (onde a mercadoria entrou) <span className="text-red-500">*</span>
+              </span>
+              <select
+                value={depositoId}
+                onChange={(e) => setDepositoId(e.target.value)}
+                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+              >
+                {depositos.map((deposito) => (
+                  <option key={deposito.id} value={deposito.id}>
+                    {deposito.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Antes, o código de ICMS do fornecedor era copiado direto pro
+              cadastro da peça. Fornecedor do regime normal manda CST, que a
+              SEFAZ recusa numa nota do Simples Nacional — e o erro só
+              aparecia lá na frente, ao emitir, dizendo "[nItem:1]" sem
+              nome de peça nenhum. */}
+          {pecasNovasComCodigoDeOutroRegime.length > 0 && (
+            <div className="space-y-3">
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+                {pecasNovasComCodigoDeOutroRegime.length === 1
+                  ? "Uma peça nova desta nota vem"
+                  : `${pecasNovasComCodigoDeOutroRegime.length} peças novas desta nota vêm`}{" "}
+                com o código de ICMS <strong>do fornecedor</strong>, que não serve pra sua loja
+                {regimeUsaCsosn(regime) ? " (Simples Nacional)" : ""}. Escolha abaixo o código
+                que elas devem receber no seu cadastro — em branco, a peça fica sem código e
+                você preenche depois em Estoque → Produtos.
+              </p>
               <label className="flex flex-col gap-1 text-corpo">
                 <span className="text-sakura-purple-dark/80">
-                  Depósito (onde a mercadoria entrou) <span className="text-red-500">*</span>
+                  {regimeUsaCsosn(regime) ? "CSOSN" : "CST"} das peças novas
                 </span>
-                <select
-                  value={depositoId}
-                  onChange={(e) => setDepositoId(e.target.value)}
-                  className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-                >
-                  {depositos.map((deposito) => (
-                    <option key={deposito.id} value={deposito.id}>
-                      {deposito.nome}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  value={codigoIcmsNovas}
+                  onChange={(e) => setCodigoIcmsNovas(e.target.value)}
+                  placeholder={regimeUsaCsosn(regime) ? "Ex: 500" : "Ex: 00"}
+                  className="w-32 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+                />
               </label>
             </div>
+          )}
 
-            {/* Antes, o código de ICMS do fornecedor era copiado direto pro
-                cadastro da peça. Fornecedor do regime normal manda CST, que a
-                SEFAZ recusa numa nota do Simples Nacional — e o erro só
-                aparecia lá na frente, ao emitir, dizendo "[nItem:1]" sem
-                nome de peça nenhum. */}
-            {pecasNovasComCodigoDeOutroRegime.length > 0 && (
-              <div className="space-y-3">
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
-                  {pecasNovasComCodigoDeOutroRegime.length === 1
-                    ? "Uma peça nova desta nota vem"
-                    : `${pecasNovasComCodigoDeOutroRegime.length} peças novas desta nota vêm`}{" "}
-                  com o código de ICMS <strong>do fornecedor</strong>, que não serve pra sua loja
-                  {regimeUsaCsosn(regime) ? " (Simples Nacional)" : ""}. Escolha abaixo o código
-                  que elas devem receber no seu cadastro — em branco, a peça fica sem código e
-                  você preenche depois em Estoque → Produtos.
-                </p>
-                <label className="flex flex-col gap-1 text-corpo">
-                  <span className="text-sakura-purple-dark/80">
-                    {regimeUsaCsosn(regime) ? "CSOSN" : "CST"} das peças novas
-                  </span>
-                  <input
-                    value={codigoIcmsNovas}
-                    onChange={(e) => setCodigoIcmsNovas(e.target.value)}
-                    placeholder={regimeUsaCsosn(regime) ? "Ex: 500" : "Ex: 00"}
-                    className="w-32 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
-                  />
-                </label>
-              </div>
-            )}
-
-            {itens.length === 0 ? (
-              <p className="text-corpo text-sakura-muted">Não encontrei nenhum item nessa nota.</p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
-                <table className="w-full min-w-[820px] text-left text-tabela">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-                    <tr>
-                      <th className="px-2 py-2" />
-                      <th className="px-2 py-2 font-medium">Item da nota</th>
-                      <th className="px-2 py-2 font-medium">Peça no sistema</th>
-                      <th className="px-2 py-2 font-medium">Qtde.</th>
-                      <th className="px-2 py-2 font-medium">Preço unit.</th>
+          {itens.length === 0 ? (
+            <p className="text-corpo text-sakura-muted">Não encontrei nenhum item nessa nota.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+              <table className="w-full min-w-[820px] text-left text-tabela">
+                <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                  <tr>
+                    <th className="px-2 py-2" />
+                    <th className="px-2 py-2 font-medium">Item da nota</th>
+                    <th className="px-2 py-2 font-medium">Peça no sistema</th>
+                    <th className="px-2 py-2 font-medium">Qtde.</th>
+                    <th className="px-2 py-2 font-medium">Preço unit.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itens.map((item, indice) => (
+                    <tr key={indice} className="border-t border-sakura-gray/20">
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="checkbox"
+                          checked={item.incluir}
+                          onChange={(e) =>
+                            atualizarItem(indice, { incluir: e.target.checked })
+                          }
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <p className="text-sakura-purple-dark">{item.descricao}</p>
+                        <p className="text-sakura-muted">
+                          NCM {item.ncm ?? "—"} · CFOP {item.cfop_padrao ?? "—"}
+                        </p>
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Combobox
+                          className="w-52"
+                          opcoes={pecas.map((peca) => ({
+                            valor: peca.id,
+                            rotulo: peca.descricao,
+                          }))}
+                          valor={item.pecaId}
+                          onMudar={(v) => atualizarItem(indice, { pecaId: v })}
+                          opcaoVazia={`+ Cadastrar peça nova: ${item.descricao}`}
+                          placeholder="Selecione a peça"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.quantidadeEditavel}
+                          onChange={(e) =>
+                            atualizarItem(indice, {
+                              quantidadeEditavel: Number(e.target.value),
+                            })
+                          }
+                          className="w-20 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={item.precoEditavel}
+                          onChange={(e) =>
+                            atualizarItem(indice, { precoEditavel: Number(e.target.value) })
+                          }
+                          className="w-24 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                        />
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {itens.map((item, indice) => (
-                      <tr key={indice} className="border-t border-sakura-gray/20">
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="checkbox"
-                            checked={item.incluir}
-                            onChange={(e) =>
-                              atualizarItem(indice, { incluir: e.target.checked })
-                            }
-                          />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <p className="text-sakura-purple-dark">{item.descricao}</p>
-                          <p className="text-sakura-muted">
-                            NCM {item.ncm ?? "—"} · CFOP {item.cfop_padrao ?? "—"}
-                          </p>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <Combobox
-                            className="w-52"
-                            opcoes={pecas.map((peca) => ({
-                              valor: peca.id,
-                              rotulo: peca.descricao,
-                            }))}
-                            valor={item.pecaId}
-                            onMudar={(v) => atualizarItem(indice, { pecaId: v })}
-                            opcaoVazia={`+ Cadastrar peça nova: ${item.descricao}`}
-                            placeholder="Selecione a peça"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={item.quantidadeEditavel}
-                            onChange={(e) =>
-                              atualizarItem(indice, {
-                                quantidadeEditavel: Number(e.target.value),
-                              })
-                            }
-                            className="w-20 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
-                          />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={item.precoEditavel}
-                            onChange={(e) =>
-                              atualizarItem(indice, { precoEditavel: Number(e.target.value) })
-                            }
-                            className="w-24 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={onFechar}
-                className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={quantidadeSelecionada === 0 || !depositoId || salvando}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
-              </button>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </form>
-        )}
-      </div>
-    </div>
+          )}
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={quantidadeSelecionada === 0 || !depositoId || salvando}
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }
