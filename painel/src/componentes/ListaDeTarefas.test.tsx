@@ -183,3 +183,17 @@ describe("Cartão da tarefa: cabeçalho (#536)", () => {
     expect(sem).not.toContain("Ajudantes:");
   });
 });
+
+describe("Lista da leva: a dica do celular (#547)", () => {
+  const DICA = /No celular, se o texto não aparecer, abra pelo navegador ou use Copiar texto\./g;
+  it("aparece uma vez só, mesmo com duas tarefas de quem olha", () => {
+    const h = html({ estado: "andamento", dono: ELA }, { outras: [{ ...base, numero: 21, estado: "revisao", dono: ELA }] });
+    expect((h.match(/Começar com o Claude/g) ?? []).length).toBe(2);
+    expect((h.match(DICA) ?? []).length).toBe(1);
+  });
+
+  it("não aparece quando ninguém da lista é de quem olha", () => {
+    expect(html({ estado: "andamento", dono: OUTRO })).not.toMatch(DICA);
+    expect(html({})).not.toMatch(DICA);
+  });
+});
