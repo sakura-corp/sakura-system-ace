@@ -143,9 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 20/10/2026: o projeto novo, da entrevista à escolha (tudo no privado)
-- **Projeto novo**: entrevista feita, mais de 20 modelos pesquisados e o nicho escolhido por ela. A lista, a escolha, o documento pra equipe e um conceito visual estão no privado (`caranovavidanova/sakura-corp`, `planos/2026-10-19-proximo-projeto.md`). Nada começa antes do SSACE e do painel ficarem prontos.
-- **Ficou pra depois**: discutir os nomes do conceito e como apresentá-los (os pontos estão no plano).
-- **Código**: nada mudou no SSACE nem no painel nesta sessão.
-- **Próxima sessão**: acompanhar a leva 2 e a leva 1 (em 20/10, nenhuma tarefa com dono); a `leva-3` (#653, #379, #655, #656) **só entra quando a leva 2 fechar** (Sofia, 20/10); o projeto novo volta quando ela quiser discutir os nomes.
-- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`. No projeto novo: compartilhar o documento com a equipe quando quiser.
+### 20/10/2026, tarde: a #547 e a #548 na main; a leva 3 espera
+- **Leva 2**: 2 de 11 feitas, as duas do Tiago e conferidas por ela no endereço público: a tela da leva redesenhada (#547, PR #663) e as levas anteriores em `/levas` (#548, PR #664; as três decisões dela estão no `docs/painel.md`). As outras 9 estão sem dono.
+- **Leva 1**: 4 abertas, sem dono (#618, #619, #510, #455).
+- **Leva 3** (#653, #379, #655, #656): **só entra quando a leva 2 fechar** (Sofia, 20/10; PR #662).
+- **PR da equipe**: ela abre uma sessão quando sair um, sem conferência automática. As sessões antigas foram arquivadas (o que fizeram está gravado).
+- **Próxima sessão**: conferir os PRs novos da equipe. Projeto novo (os nomes), marketing e pagamento da Pneus Amigão voltam quando ela quiser (no privado e no caderno).
+- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.

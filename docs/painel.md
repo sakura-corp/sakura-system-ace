@@ -746,14 +746,15 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   dono: a leva 1 com 4 abertas (#618, #619, #510, #455) e a leva 2 com as 11. Como o painel abre na maior leva com tarefa
   aberta (`levaAtual()`), pôr a `leva-3` agora tiraria a leva 2 da tela. As quatro tarefas (#653, #379, #655, #656) já estão
   no modelo único; **a etiqueta entra quando a leva 2 fechar.**
-- **20/10/2026: a tela da leva redesenhada na versão A (#547, PR aberto pelo Tiago, esperando a Sofia).** O contador
+- **20/10/2026: a tela da leva redesenhada na versão A (#547, PR #663 do Tiago, mesclado; conferido pela Sofia no endereço público em 20/10).** O contador
   numa faixa só com a barra dentro, "Horas por pessoa" como cartão (com barrinha só de desenho), a lista compacta (uma
   linha por tarefa; no computador, colunas Nº/Tarefa/Estado/Chefe/Quem/Horas) e o `CabecalhoDaPagina` (#545). "Pegar
   tarefa" fica na coluna Quem e em contorno: o rosa sobrou só no "Começar com o Claude" de quem olha. A dica do celular
   aparece uma vez na tela da leva (o Início continua com a dele). Os grupos por estado viraram uma lista só, na mesma
   ordem. Nenhuma regra mudou. Fotos: `docs/referencia/fotos-painel/leva-547-*`.
-- **20/10/2026, Levas anteriores (#548)**, com o Tiago (PR aberto, **esperando a revisão da Sofia**): o item "Levas anteriores"
+- **20/10/2026, Levas anteriores (#548)**, com o Tiago (PR #664, mesclado): o item "Levas anteriores"
   deixou de ser "em breve" e abre `/levas`; o resumo de cada leva saiu numa rota separada, `/api/levas/resumo`, pra não
   pesar a barra, a Sala e o pegar (ver "Decisões técnicas"); "feitas" = fechada de qualquer jeito, como na tela da leva. O endereço
   antigo `/em-breve/levas` agora dá "Página não encontrada". Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-548/`.
-  **Falta a Sofia conferir no endereço público**: a leva 0 com 8 de 8 feitas e a data certa.
+  **Decidido pela Sofia (20/10)**: a rota separada fica; "feitas" continua contando toda tarefa fechada; `/em-breve/levas`
+  pode dar "Página não encontrada". Conferido por ela no endereço público em 20/10 (a leva 0 com 8 de 8 e a data certa).
