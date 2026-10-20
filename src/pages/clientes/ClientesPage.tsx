@@ -9,7 +9,7 @@ import {
   listarClientes,
 } from "@/lib/clientes";
 import { listarOrdensFaturadasDosClientes } from "@/lib/clientesSumidos";
-import { hojeLocal } from "@/lib/datas";
+import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   listarModelosWhatsapp,
@@ -34,12 +34,6 @@ import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
 const MESES_PADRAO = 6;
-
-/** "2026-04-30" → "30/04/2026", sem passar por `new Date()` (que leria em UTC). */
-function diaParaTela(dia: string): string {
-  const [ano, mes, d] = dia.split("-");
-  return `${d}/${mes}/${ano}`;
-}
 
 export function ClientesPage() {
   const { operador, lojaAtual } = useAuth();
@@ -78,23 +72,45 @@ export function ClientesPage() {
     setCarregandoSumidos(true);
     setErro(null);
     try {
-      const [listaOrdens, modelos, chamados] = await Promise.all([
-        listarOrdensFaturadasDosClientes(),
-        lojaAtual ? listarModelosWhatsapp(lojaAtual.id) : Promise.resolve({}),
-        lojaAtual
-          ? ultimasMensagensPorReferencia(lojaAtual.id, "cliente_sumido")
-          : Promise.resolve(new Map<string, string>()),
-      ]);
-      setOrdens(listaOrdens);
-      setModelosWhatsapp(modelos);
-      setUltimosChamados(chamados);
+      setOrdens(await listarOrdensFaturadasDosClientes());
     } catch (err) {
       console.error("Erro ao carregar os clientes que sumiram:", err);
       setErro(mensagemDeErro(err));
+      // Desmarca: com a caixinha marcada e a lista comum embaixo, pareceria
+      // que todo cliente sumiu. Marcar de novo tenta outra vez.
+      setSoSumidos(false);
     } finally {
       setCarregandoSumidos(false);
     }
   }
+
+  // O texto do modelo e os "chamado em" são de cada LOJA (as ordens, não: o
+  // cliente é da empresa). Trocar de loja na barra lateral com a tela aberta
+  // precisa trazer os da loja nova, senão o botão misturaria o texto de uma
+  // loja com o nome da outra.
+  const lojaId = lojaAtual?.id;
+  useEffect(() => {
+    if (!soSumidos || !lojaId) return;
+    let valendo = true;
+    setModelosWhatsapp({});
+    setUltimosChamados(new Map());
+    Promise.all([
+      listarModelosWhatsapp(lojaId),
+      ultimasMensagensPorReferencia(lojaId, "cliente_sumido"),
+    ])
+      .then(([modelos, chamados]) => {
+        if (!valendo) return;
+        setModelosWhatsapp(modelos);
+        setUltimosChamados(chamados);
+      })
+      .catch((err) => {
+        console.error("Erro ao carregar os modelos de WhatsApp:", err);
+        if (valendo) setErro(mensagemDeErro(err));
+      });
+    return () => {
+      valendo = false;
+    };
+  }, [soSumidos, lojaId]);
 
   function handleLigarSumidos(ligar: boolean) {
     setSoSumidos(ligar);
@@ -227,6 +243,11 @@ export function ClientesPage() {
             />
             meses
           </label>
+          {soSumidos && (
+            <p className="w-full text-rotulo text-sakura-muted">
+              Conta as OS e vendas de balcão faturadas das lojas que você acessa.
+            </p>
+          )}
         </div>
       )}
 
@@ -257,7 +278,7 @@ export function ClientesPage() {
                     <tr key={cliente.id} className="border-t border-sakura-gray/20">
                       <td className="px-4 py-3">{cliente.nome}</td>
                       <td className="whitespace-nowrap px-4 py-3">{cliente.telefone || "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{diaParaTela(resumo.ultimaVisita)}</td>
+                      <td className="whitespace-nowrap px-4 py-3">{diaBrasileiro(resumo.ultimaVisita)}</td>
                       <td className="px-4 py-3">{resumo.ultimoServico ?? "—"}</td>
                       {podeVerValores && (
                         <td className="whitespace-nowrap px-4 py-3 font-medium">

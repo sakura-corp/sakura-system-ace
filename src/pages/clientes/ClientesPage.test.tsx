@@ -42,9 +42,11 @@ vi.mock("@/lib/whatsapp", () => ({
 vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
 
 const LOJA_A = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
+const LOJA_B = { id: "loja-b", nome: "Loja Vila", cidade: null, uf: null, ativo: true, criado_em: "" };
 let operador: Partial<Operador> = { id: "op", admin: true, permissoes: [] };
+let lojaAtual = LOJA_A;
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador, lojaAtual: LOJA_A, lojasDisponiveis: [LOJA_A] }),
+  useAuth: () => ({ operador, lojaAtual, lojasDisponiveis: [LOJA_A, LOJA_B] }),
 }));
 
 const { ClientesPage } = await import("./ClientesPage");
@@ -98,6 +100,7 @@ function ordem(
 beforeEach(() => {
   vi.clearAllMocks();
   operador = { id: "op", admin: true, permissoes: [] };
+  lojaAtual = LOJA_A;
   listarClientes.mockResolvedValue([
     cliente("c1", "Cliente Pouco", "(16) 99000-0001"),
     cliente("c2", "Cliente Muito", "(16) 99000-0002"),
@@ -189,5 +192,28 @@ describe("ClientesPage — clientes que sumiram", () => {
     await user.type(meses, "9");
     // Só o c1 (300 dias) passou de 9 meses.
     expect(nomesDasLinhas()).toEqual(["Cliente Pouco"]);
+  });
+});
+
+describe("ClientesPage — trocar de loja com o filtro ligado", () => {
+  it("passa a usar o texto e os 'chamado em' da loja nova", async () => {
+    listarModelosWhatsapp.mockImplementation(async (lojaId: string) =>
+      lojaId === "loja-b" ? { cliente_sumido: "Da Vila: {cliente}" } : { cliente_sumido: "Do Centro: {cliente}" },
+    );
+    ultimasMensagensPorReferencia.mockImplementation(async (lojaId: string) =>
+      lojaId === "loja-a" ? new Map([["c2", "2026-10-01T15:00:00.000Z"]]) : new Map(),
+    );
+    const { user, rerender } = await ligarFiltro();
+    expect(await screen.findByText(/chamado em/)).toBeInTheDocument();
+
+    lojaAtual = LOJA_B;
+    rerender(<ClientesPage />);
+    // Os "chamado em" são de cada loja: os da Centro somem na Vila.
+    await vi.waitFor(() => expect(screen.queryByText(/chamado em/)).not.toBeInTheDocument());
+
+    const linha = screen.getByText("Cliente Muito").closest("tr")!;
+    await user.click(within(linha).getByRole("button", { name: /^chamar$/i }));
+    expect(abrirConversaWhatsapp).toHaveBeenCalledWith("(16) 99000-0002", "Da Vila: Cliente Muito");
+    expect(registrarMensagemAberta).toHaveBeenCalledWith("loja-b", "cliente_sumido", "c2", "(16) 99000-0002", "op");
   });
 });

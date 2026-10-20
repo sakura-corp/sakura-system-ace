@@ -213,7 +213,8 @@ Quatro coisas que valem saber:
   com a última visita, o último serviço e o total gasto, de quem mais gastou pra quem menos, e o
   botão "Chamar" (modelo `cliente_sumido`, editável em Configurações; registra a
   abertura em `whatsapp_mensagens` e mostra "chamado em"). Só contam OS e vendas de balcão
-  **faturadas**, de todas as lojas (o cliente é da empresa); a conta está em
+  **faturadas**, de todas as lojas que o operador acessa (o RLS corta as outras; quem só acessa uma
+  loja pode ver como sumido quem vai sempre na outra); a conta está em
   `schemas/clientesSumidos.ts`, a busca em `lib/clientesSumidos.ts`. Quem nunca veio não aparece.
   O total só aparece pra quem tem Caixa ou Relações (`MODULOS_QUE_LEEM_O_CAIXA`). Um clique por
   cliente: nada em massa.

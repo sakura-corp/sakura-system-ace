@@ -245,8 +245,13 @@ describe("clientesSumidos", () => {
   });
 
   it("meses inválido vira pelo menos 1, arredondado pra baixo", () => {
-    const resumos = mapa(resumo("cli-a", "2026-09-29", 10), resumo("cli-b", "2026-08-29", 10));
-    // 0, -3 e NaN viram 1 → limite 30/09: os dois entram (cli-a veio em 29/09).
+    const resumos = mapa(
+      resumo("cli-a", "2026-09-29", 10),
+      resumo("cli-b", "2026-08-29", 10),
+      // Veio há 15 dias: só entraria se o 0 fosse levado ao pé da letra.
+      resumo("cli-c", "2026-10-15", 10),
+    );
+    // 0, -3 e NaN viram 1 → limite 30/09: entram cli-a e cli-b, cli-c não.
     expect(ids(clientesSumidos(clientes, resumos, "2026-10-30", 0))).toEqual(["cli-b", "cli-a"]);
     expect(ids(clientesSumidos(clientes, resumos, "2026-10-30", -3))).toEqual(["cli-b", "cli-a"]);
     // 2,7 vira 2 → limite 30/08: só cli-b.
