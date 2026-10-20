@@ -133,3 +133,24 @@ describe("App com a Sala de verdade", () => {
     expect(app({ tipo: "fora" })).toContain("Sua sessão acabou");
   });
 });
+
+describe("o relatório da leva chama a Sofia na Sala (#645)", () => {
+  const SOFIA = { login: "caranovavidanova", avatar: "" };
+  const levaEm = (fase: "relatorio" | "testando"): EstadoDaLeva => ({
+    tipo: "pronto", levas: [{ numero: 1, nome: "Leva 1", abertas: 0, fase }], atual: 1, leva: { numero: 1, tarefas: [], cortada: false },
+  });
+  const app = (fase: "relatorio" | "testando", usuario = SOFIA) =>
+    renderToString(<App caminho="/sala" busca="" usuario={usuario} leva={levaEm(fase)} sala={pronto({ entradas: [] })} />).replace(/<!-- -->/g, "");
+
+  it("a página da Sala leva a fase da leva atual até a Sala: a Sofia fica em \"precisa de você\" com o relatório", () => {
+    const h = app("relatorio");
+    expect(h).toMatch(/aria-label="caranovavidanova, precisa de você, relatório da leva 1"/);
+    expect(h).toContain("1 coisa precisa de você");
+  });
+  it("em outra fase, ou com outra pessoa olhando, ninguém é chamado", () => {
+    expect(app("testando")).not.toContain("relatório da leva");
+    const outra = app("relatorio", { login: "fulana", avatar: "" });
+    expect(outra).toContain("relatório da leva 1");
+    expect(outra).not.toMatch(/caranovavidanova, precisa de você/);
+  });
+});

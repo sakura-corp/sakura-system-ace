@@ -85,6 +85,14 @@ describe("carregarLeva", () => {
     }
   });
 
+  it("a fase da leva (#645) chega na página; fase desconhecida fica de fora", async () => {
+    const pedir = (fase: unknown) =>
+      carregarLeva(null, fingirWorker({ "/api/levas": () => json(levas), "/api/leva/1": () => json({ numero: 1, tarefas: [tarefa], cortada: false, fase }) }).buscar);
+    const r = await pedir("trabalhando");
+    expect(r.tipo === "pronto" && r.leva.fase).toBe("trabalhando");
+    const estranha = await pedir("inventada");
+    expect(estranha.tipo === "pronto" && "fase" in estranha.leva).toBe(false);
+  });
   it("só as levas (Sala e Escritório): não pede as tarefas", async () => {
     const w = fingirWorker({ "/api/levas": () => json(levas) });
     expect(await carregarLeva(null, w.buscar, true)).toEqual({ tipo: "pronto", levas: levas.levas, atual: 1, leva: { numero: 1, tarefas: [], cortada: false } });

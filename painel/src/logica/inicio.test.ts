@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { EntradaDaSala, RespostaDaLeva, RespostaDaSala, Tarefa } from "../tipos";
 import { montarInicio } from "./inicio";
-import { montarSala } from "./sala";
+import { LOGIN_DA_SOFIA, montarSala } from "./sala";
 
 const agora = new Date("2026-10-17T15:00:00-03:00");
 const entrada = (extra: Partial<EntradaDaSala>): EntradaDaSala => ({ id: "x", tipo: "claude", nome: "X", sinais: {}, ...extra });
@@ -85,5 +85,17 @@ describe("sem dados", () => {
     const j = montarInicio(null, leva([]), "ana", agora);
     expect(j.precisaDeVoce).toEqual([]);
     expect(j.resumoDaLeva).toMatchObject({ total: 0, feitas: 0 });
+  });
+});
+
+describe("a fase da leva no Início (#645)", () => {
+  it("o resumo leva a fase que o worker mandou", () => {
+    expect(montarInicio(null, { ...leva([]), fase: "trabalhando" }, "ana", agora).resumoDaLeva?.fase).toBe("trabalhando");
+    expect(montarInicio(null, leva([]), "ana", agora).resumoDaLeva?.fase).toBeUndefined();
+  });
+  it("leva em Relatório: a Sofia vê \"relatório da leva N\" no \"precisa de você\" do Início, igual à Sala", () => {
+    const ids = montarInicio(sala([]), { ...leva([]), fase: "relatorio" }, LOGIN_DA_SOFIA, agora).precisaDeVoce.map((b) => b.fazendo);
+    expect(ids).toEqual(["relatório da leva 1"]);
+    expect(montarInicio(sala([]), { ...leva([]), fase: "relatorio" }, "ana", agora).precisaDeVoce).toEqual([]);
   });
 });

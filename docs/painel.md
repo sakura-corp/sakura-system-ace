@@ -788,3 +788,13 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **20/10/2026, a leva 1 aprovada** (relatório `docs/relatorios/leva-1.md`, PR #672, mesclado pela Sofia): 5 de 9 feitas,
   18 h de 31 h. É a primeira leva com fases, mas sem a rodada de testes com lista (a fase Testando nasceu com ela já
   andando). As 4 abertas (#618, #619, #510, #455) ficam na leva 1 até a Sofia decidir (#673).
+- **20/10/2026, As fases na tela (#645)**, com o Tiago (PR aberto, esperando a revisão da Sofia): no topo da tela da leva,
+  as cinco fases em linha (a atual acesa em rosa, as passadas em verde com ✓; no celular, só a atual e "fase N de 5"; se não
+  couberem, quebram a linha, nunca cortam o nome); a leva em Montando mostra as tarefas com o aviso "esperando a aprovação da
+  leva atual" (a mais antiga sem aprovação); a leva 0 só acende a Aprovada e diz "de antes das fases, sem relatório". No Início, a linha "Leva N: <fase>", que leva pra `/leva`. Na
+  Sala (e no "precisa de você" do Início), com a leva atual em Relatório, o ponto da Sofia diz "relatório da leva N" e, **pra
+  ela**, fica em "precisa de você" (pros outros, o ponto mostra o texto no estado normal; o "precisa" continua sendo de quem
+  olha). No modo TV (`/sala?tv`) não aparece: lá a leva não é buscada.
+  Também consertou a página, que jogava fora a `fase` do `/api/leva/<n>`. Mexeu fora da lista da issue em `App.tsx`,
+  `sala/Sala.tsx`, `logica/dados.ts`, `logica/fases.ts` e `tipos.ts` (o porquê está no relatório). Fotos:
+  `docs/relatorios/fotos/tarefa-645/`. O link do relatório abre a lista de PRs abertos (o PR exato precisaria vir do worker).
