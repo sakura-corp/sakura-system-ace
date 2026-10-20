@@ -21,6 +21,11 @@
   --c-revisao-fundo: #fbefd9;
   --c-feita: #2b6534;
   --c-feita-fundo: #e4f1e6;
+
+  /* As duas séries do gráfico do Financeiro (#654): passam no validador do dataviz (diferença pra daltônico
+     e contraste 3:1 com o cartão). As cores de estado acima não servem: o verde "feita" é escuro demais. */
+  --c-serie-entrada: #1f7a3d;
+  --c-serie-saida: #b8237f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +46,9 @@
     --c-revisao-fundo: #3f3322;
     --c-feita: #8fd19c;
     --c-feita-fundo: #233a28;
+
+    --c-serie-entrada: #34a15a;
+    --c-serie-saida: #d9559f;
   }
 }
 
@@ -60,6 +68,8 @@
   --color-revisao-fundo: var(--c-revisao-fundo);
   --color-feita: var(--c-feita);
   --color-feita-fundo: var(--c-feita-fundo);
+  --color-serie-entrada: var(--c-serie-entrada);
+  --color-serie-saida: var(--c-serie-saida);
   --font-sans: "Inter Variable", system-ui, sans-serif;
   --font-serif: "Source Serif 4 Variable", Georgia, serif;
 }
