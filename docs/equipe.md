@@ -227,7 +227,8 @@ tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
    digitar, o que deve aparecer, e espera ela confirmar antes do próximo passo. Nada de despejar
    dez passos de uma vez.
 6. No fim, faz as conferências (abaixo), confere o "Pronto quando" da tarefa com a pessoa, item
-   por item, e guia a abertura do PR e o pedido de revisão da Sofia. **Não mescla.**
+   por item, e guia a abertura do PR e o pedido de revisão da Sofia. **Não mescla.** Com o PR
+   aberto, passa a acompanhar o PR (veja "As funções da sessão que valem a pena", abaixo).
 7. Escreve a mensagem de WhatsApp pra Sofia (ex: *"Oi Sofia! Terminei a tarefa #455 (clientes
    que sumiram). O PR é o #490, tá esperando sua revisão."*), e a pessoa manda.
 
@@ -348,6 +349,44 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
   envia e pede a revisão de novo.
 - **O CI ficou vermelho** (o "X" no PR): o Claude lê o erro, conserta e envia. Nunca desligar ou
   pular um teste pra ficar verde.
+
+## As funções da sessão que valem a pena (Sofia, 20/10/2026)
+
+Pro Claude de cada um aproveitar o máximo da sessão, sem quebrar nenhuma regra da seção 0. **Pro
+Claude**: quando a pessoa ainda não usa uma destas, ofereça uma vez, explique em uma linha e guie
+um passo por vez. Se a sua sessão não tiver a ferramenta citada, diga isso e siga sem ela.
+
+1. **Abrir a sessão com o repositório escolhido.** Em `claude.ai/code`, antes da primeira mensagem,
+   escolha o `sakura-corp/sakura-system-ace` na lista de repositórios. Sem isso, a sessão não
+   consegue ler o PR, a tarefa nem o CI no GitHub, e o Claude tem que pedir acesso no meio da
+   conversa (às vezes é negado).
+2. **O modo Auto.** No seletor ao lado da caixa de texto, escolha **Auto**: o Claude para de pedir
+   licença a cada comando. O que é perigoso continua barrado sozinho (mesclar, por exemplo). Se
+   o Auto não aparecer, a organização ou o modelo não oferecem: siga no modo normal.
+3. **Acompanhar o próprio PR.** Logo depois de abrir o PR, o Claude chama `subscribe_pr_activity`
+   nele. A partir daí, a revisão da Sofia, os comentários e o resultado do CI chegam sozinhos na
+   sessão, sem ninguém ficar atualizando a página:
+   - **CI vermelho**: o Claude lê o erro, conserta na mesma branch e envia (nunca desligando teste);
+   - **a Sofia pediu mudança**: o Claude ajusta, roda as conferências e pede a revisão de novo;
+   - **comentário de outra pessoa**: o Claude conta pra você e só age se for da tarefa e você mandar;
+   - **PR mesclado ou fechado**: o Claude chama `unsubscribe_pr_activity` e para de acompanhar.
+4. **Aviso no celular.** Instale o app do Claude no celular, entre com a mesma conta e deixe as
+   notificações ligadas. O Claude manda um aviso curto (`PushNotification`) quando termina, quando
+   o CI do seu PR muda ou quando precisa de você. Assim você não fica olhando a tela esperando.
+5. **Esperar sem travar a conversa.** Teste demorado, CI rodando ou instalação: o Claude roda em
+   segundo plano e é avisado quando termina, e você pode continuar conversando enquanto isso.
+6. **Lembrete pra retomar.** "Me lembra amanhã às 9h de continuar a #455": o Claude marca o lembrete
+   (`send_later`) e, na hora, a mesma sessão volta sozinha de onde parou. Bom pra quando a cota
+   acaba no meio, junto com o "onde parou" no PR.
+7. **Uma revisão do zero antes de abrir o PR.** Digite `/code-review`: um revisor lê o diff sem
+   saber o que você quis fazer e acha o que o teste não pega. Em PR grande é obrigatório (seção 3
+   do `PROJETO_STATUS.md`); em PR pequeno, vale do mesmo jeito.
+8. **O `/goal` do chefe** (seção "Começar uma tarefa com o chefe", acima): a sessão vai sozinha até
+   o PR, sem você mandar "continua".
+
+**O que não ligar**: rotina agendada (que roda sozinha de hora em hora, por exemplo) e conferência
+automática dos PRs dos outros. Gastam a cota de quem criou e o trabalho é da Sofia, que já tem a
+dela (de hora em hora, das 8h às 22h). Nenhuma destas funções muda a regra: **nunca mesclar**.
 
 ## O que nunca fazer (e a quem perguntar)
 
