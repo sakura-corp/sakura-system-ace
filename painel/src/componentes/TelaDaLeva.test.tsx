@@ -13,8 +13,10 @@ describe("TelaDaLeva: as fases no topo (#645)", () => {
     expect(html({ numero: 2 })).not.toContain("Fases da leva");
   });
   it("em Montando: as tarefas aparecem, com o aviso de que a leva anterior ainda espera a aprovação", () => {
-    const h = html({ numero: 2, fase: "montando" });
+    const h = html({ numero: 2, fase: "montando", atual: 1 });
     expect(h).toContain("esperando a aprovação da leva 1");
+    // A leva espera a atual (a mais antiga sem aprovação), que nem sempre é a de número anterior.
+    expect(html({ numero: 3, fase: "montando", atual: 1 })).toContain("esperando a aprovação da leva 1.");
     expect(h).toContain("Uma tarefa");
     expect(html({ numero: 2, fase: "trabalhando" })).not.toContain("esperando a aprovação");
   });

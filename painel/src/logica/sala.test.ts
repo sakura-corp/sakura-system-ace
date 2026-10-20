@@ -115,6 +115,9 @@ describe("o relatório da leva chama a Sofia (#645)", () => {
     expect(daSofia(sala)).toHaveLength(1);
     expect(daSofia(sala)[0]).toMatchObject({ estado: "precisa", fazendo: "relatório da leva 3" });
   });
+  it("o login da Sofia com outras maiúsculas conta como o dela (mesmoLogin)", () => {
+    expect(daSofia(montarSala([], agora, "CaraNovaVidaNova", { numero: 1, fase: "relatorio" }))[0]!.estado).toBe("precisa");
+  });
   it("as outras fases não chamam ninguém", () => {
     for (const fase of ["montando", "trabalhando", "testando", "aprovada"] as const) {
       expect(daSofia(montarSala([], agora, LOGIN_DA_SOFIA, { numero: 1, fase }))).toEqual([]);

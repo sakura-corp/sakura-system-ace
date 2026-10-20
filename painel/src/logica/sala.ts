@@ -1,4 +1,5 @@
 import type { Bonequinho, EntradaDaSala, EstadoBonequinho, FaseDaLeva } from "../tipos";
+import { mesmoLogin } from "./pegar";
 import { decorrido, DORMINDO_A_PARTIR_MS, TRABALHANDO_ATE_MS } from "./tempo";
 
 export { haQuantoTempo } from "./tempo";
@@ -55,7 +56,7 @@ export function precisaDe(e: EntradaDaSala, quemEstaOlhando: string): boolean {
     (s.revisaoPedidaA?.includes(quemEstaOlhando) ?? false) ||
     (s.aprovacaoEsperadaDe?.includes(quemEstaOlhando) ?? false) ||
     s.conferenciaVermelhaNoPrDe === quemEstaOlhando ||
-    s.relatorioEsperaDe === quemEstaOlhando
+    mesmoLogin(s.relatorioEsperaDe, quemEstaOlhando)
   );
 }
 
@@ -67,9 +68,11 @@ export const LOGIN_DA_SOFIA = "caranovavidanova";
 /** A leva atual, como a Sala precisa dela: o número e a fase (sem a fase, ninguém é chamado). */
 export type LevaDaSala = { numero: number; fase?: FaseDaLeva };
 
-/** Os PRs abertos que mexem no relatório da leva: onde a Sofia aprova. */
-const linkDoRelatorio = (numero: number) =>
-  `https://github.com/sakura-corp/sakura-system-ace/pulls?q=${encodeURIComponent(`is:pr is:open leva-${numero}.md`)}`;
+/**
+ * Os PRs abertos: o do relatório está entre eles. A busca do GitHub não acha PR pelo nome do arquivo mudado, então
+ * uma busca por `leva-N.md` podia voltar vazia; o endereço do PR exato precisaria vir do worker.
+ */
+const LINK_DOS_PRS_ABERTOS = "https://github.com/sakura-corp/sakura-system-ace/pulls";
 
 /**
  * Leva atual em Relatório: o ponto da Sofia passa a dizer "relatório da leva N" e a precisar dela. Se ela já está
@@ -78,7 +81,7 @@ const linkDoRelatorio = (numero: number) =>
 export function comORelatorioDaLeva(entradas: EntradaDaSala[], leva: LevaDaSala | undefined): EntradaDaSala[] {
   if (leva?.fase !== "relatorio") return entradas;
   const id = `pessoa:${LOGIN_DA_SOFIA}`;
-  const chamado = { fazendo: `relatório da leva ${leva.numero}`, url: linkDoRelatorio(leva.numero) };
+  const chamado = { fazendo: `relatório da leva ${leva.numero}`, url: LINK_DOS_PRS_ABERTOS };
   const dela = entradas.find((e) => e.id.toLowerCase() === id);
   if (!dela) return [...entradas, { id, tipo: "pessoa", nome: LOGIN_DA_SOFIA, ...chamado, sinais: { relatorioEsperaDe: LOGIN_DA_SOFIA } }];
   return entradas.map((e) => (e === dela ? { ...e, ...chamado, sinais: { ...e.sinais, relatorioEsperaDe: LOGIN_DA_SOFIA } } : e));

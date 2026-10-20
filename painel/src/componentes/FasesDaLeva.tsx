@@ -19,8 +19,10 @@ const CORES = {
 
 export function FasesDaLeva({ numero, fase, antesDasFases = false }: Props) {
   const posicao = FASES.indexOf(fase);
+  // Fase que o painel não conhece: melhor nada do que "fase 0 de 5".
+  if (posicao < 0) return null;
   return (
-    <nav aria-label={`Fases da leva ${numero}`} className="mt-4 min-w-0">
+    <div role="group" aria-label={`Fases da leva ${numero}`} className="mt-4 min-w-0">
       {/* Celular: só a fase atual. */}
       <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:hidden">
         <span className={`inline-flex items-center rounded-full border px-3 py-1 font-medium ${CORES.atual}`}>{ROTULO_DA_FASE[fase]}</span>
@@ -29,7 +31,8 @@ export function FasesDaLeva({ numero, fase, antesDasFases = false }: Props) {
       {/* Da largura de tablet pra cima: as cinco em linha (se não couberem, quebram a linha, nunca cortam o nome). */}
       <ol className="hidden min-w-0 flex-wrap items-center gap-x-2 gap-y-2 sm:flex">
         {FASES.map((f, i) => {
-          const situacao = i < posicao ? "feita" : i === posicao ? "atual" : "proxima";
+          // A leva 0 nunca passou pelas fases: só a Aprovada acende, nenhuma aparece como feita.
+          const situacao = i === posicao ? "atual" : i < posicao && !antesDasFases ? "feita" : "proxima";
           return (
             <li key={f} data-fase={f} data-situacao={situacao} className="flex items-center gap-2">
               <span
@@ -46,6 +49,6 @@ export function FasesDaLeva({ numero, fase, antesDasFases = false }: Props) {
         })}
       </ol>
       {antesDasFases && <p className="mt-2 text-sm text-texto-2">Esta leva é de antes das fases, sem relatório.</p>}
-    </nav>
+    </div>
   );
 }

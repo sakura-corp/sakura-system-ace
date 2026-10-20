@@ -365,6 +365,7 @@ export default function App({
               numero={estado.leva.numero}
               fase={estado.leva.fase ?? estado.levas.find((l) => l.numero === estado.leva.numero)?.fase}
               antesDasFases={estado.levas.find((l) => l.numero === estado.leva.numero)?.antesDasFases}
+              atual={estado.atual}
               subtitulo={
                 <>
                   As tarefas com a etiqueta <code>leva-{estado.leva.numero}</code>.{" "}
