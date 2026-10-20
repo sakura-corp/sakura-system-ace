@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 20/10/2026, noite: a #549 e a #644 no ar, a leva 1 aprovada e os PRs conferidos sozinhos
+- **Leva 2**: 4 de 12 feitas (#547, #548, #549 e #644, todas do Tiago e conferidas por ela no endereço público). Nova: a #667 (juntar as conferências repetidas no "O que mudou hoje"). A #645, a #646 e a #647 já podem ser pegas.
+- **Leva 1**: **aprovada** pelo relatório (`docs/relatorios/leva-1.md`, PR #672). As 4 abertas (#618, #619, #510, #455) continuam pegáveis; ficam na leva 1 ou vão pra 2: #673.
+- **Leva 3** (#653, #379, #655, #656): **só entra quando a leva 2 fechar** (Sofia, 20/10; PR #662).
+- **PR da equipe**: **sem conferência automática** (ligada e desligada em 20/10). Ela pede "confere o PR #N" na sessão em que estiver; essa sessão acompanha o PR (`subscribe_pr_activity`) e fica sabendo na hora quando ela mescla (`docs/jeito-de-trabalhar.md`, A5). O manual da equipe ganhou "As funções da sessão que valem a pena" (#669). Leva 2: a #645 (PR #676) também entrou, conferida por ela no ar: **5 de 12**.
+- **Próxima sessão**: a da #654 (financeiro), que continua na nuvem pelo branch `claude/tarefa-654-financeiro`. Projeto novo (os nomes), marketing e pagamento da Pneus Amigão voltam quando ela quiser.
+- **Depende dela**: as escolhas da #644 (#674) e a #673; o Send do Gustavo e do Lázaro (até 26/10); o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+
 ### 20/10/2026, tarde: a #547 e a #548 na main; a leva 3 espera
 - **Leva 2**: 2 de 11 feitas, as duas do Tiago e conferidas por ela no endereço público: a tela da leva redesenhada (#547, PR #663) e as levas anteriores em `/levas` (#548, PR #664; as três decisões dela estão no `docs/painel.md`). As outras 9 estão sem dono.
 - **Leva 1**: 4 abertas, sem dono (#618, #619, #510, #455).

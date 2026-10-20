@@ -1732,3 +1732,14 @@
     Tiago trazer a `main`. **Regra**: com PR do painel aberto, o Claude da Sofia não mexe no fim do
     "Andamento". A anotação vai no PR da tarefa, ou espera ele entrar. Arquivo novo (como o
     relatório da leva) não conflita.
+    **Repetiu duas vezes no mesmo dia entre PRs de tarefa** (#679 × #676 e #678 × #679): todo PR do
+    painel acrescenta a sua linha no mesmo lugar, então o segundo a entrar sempre conflita. **Como
+    resolve**: trazer a `main` pro branch com um commit de junção (sem reescrever nada) e manter as
+    duas linhas, a da `main` primeiro. Num PR da equipe, só quando a Sofia pedir.
+
+88. **Quebrar de propósito sem limite de tempo deixa o arquivo quebrado (20/10/2026, #654).**
+    Pra ver um teste reprovar, a sessão trocava uma linha, rodava os testes e desfazia. Uma das
+    quebras (dezembro que não vira janeiro) fez a conta andar pra sempre; o processo foi morto no
+    meio e o arquivo ficou com a outra quebra, que só apareceu no `git diff`. **Regra**: toda
+    quebra de propósito roda com `timeout` (ex.: `timeout 60 npx vitest run ...`), uma por vez, e
+    termina conferindo `git diff` antes do próximo passo.
