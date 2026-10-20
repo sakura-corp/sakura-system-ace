@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 20/10/2026, tarde: a #547 e a #548 na main; a leva 3 espera
-- **Leva 2**: 2 de 11 feitas, as duas do Tiago e conferidas por ela no endereço público: a tela da leva redesenhada (#547, PR #663) e as levas anteriores em `/levas` (#548, PR #664; as três decisões dela estão no `docs/painel.md`). As outras 9 estão sem dono.
-- **Leva 1**: 4 abertas, sem dono (#618, #619, #510, #455).
+### 20/10/2026, noite: a #549 e a #644 no ar, a leva 1 aprovada e os PRs conferidos sozinhos
+- **Leva 2**: 4 de 12 feitas (#547, #548, #549 e #644, todas do Tiago e conferidas por ela no endereço público). Nova: a #667 (juntar as conferências repetidas no "O que mudou hoje"). A #645, a #646 e a #647 já podem ser pegas.
+- **Leva 1**: **aprovada** pelo relatório (`docs/relatorios/leva-1.md`, PR #672). As 4 abertas (#618, #619, #510, #455) continuam pegáveis; ficam na leva 1 ou vão pra 2: #673.
 - **Leva 3** (#653, #379, #655, #656): **só entra quando a leva 2 fechar** (Sofia, 20/10; PR #662).
-- **PR da equipe**: ela abre uma sessão quando sair um, sem conferência automática. As sessões antigas foram arquivadas (o que fizeram está gravado).
-- **Próxima sessão**: conferir os PRs novos da equipe. Projeto novo (os nomes), marketing e pagamento da Pneus Amigão voltam quando ela quiser (no privado e no caderno).
-- **Depende dela**: o Send do Gustavo e do Lázaro (até 26/10); criar o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+- **PR da equipe**: **conferência automática** de hora em hora, das 8h às 22h; **cada PR novo ganha uma sessão "Conferir PR #N"**, que confere, acompanha e avisa no celular, sem aprovar nem mesclar (`docs/jeito-de-trabalhar.md`, A5). **Não arquivar a sessão de 20/10 que procura os PRs.** O manual da equipe ganhou "As funções da sessão que valem a pena" (#669).
+- **Próxima sessão**: só quando ela tiver assunto; PR novo já abre sessão sozinho. Projeto novo (os nomes), marketing e pagamento da Pneus Amigão voltam quando ela quiser.
+- **Depende dela**: as escolhas da #644 (#674) e a #673; o Send do Gustavo e do Lázaro (até 26/10); o D1 na Cloudflare quando a #654 começar; a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
