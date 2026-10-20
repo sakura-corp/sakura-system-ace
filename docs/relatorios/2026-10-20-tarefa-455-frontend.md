@@ -3,7 +3,7 @@
 - **Tarefa**: #455, Clientes que sumiram, com a mensagem de volta pronta (FN-11)
 - **Chefe**: frontend
 - **Data**: 2026-10-20
-- **PR**: (preenchido no PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/683
 - **Jeito**: aberta pela /coordenar
 
 ## O que cada agente fez
