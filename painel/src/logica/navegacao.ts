@@ -66,7 +66,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     titulo: "3º · Financeiro",
     chefes: [],
     itens: [
-      { id: "financeiro", rotulo: "Financeiro", icone: "cartao", emBreve: true, href: "/em-breve/financeiro", dependeDe: "depende do banco privado" },
+      { id: "financeiro", rotulo: "Financeiro", icone: "cartao", href: "/financeiro" },
       { id: "dre", rotulo: "DRE", icone: "grafico", emBreve: true, href: "/em-breve/dre", dependeDe: "depende do Financeiro" },
     ],
   },

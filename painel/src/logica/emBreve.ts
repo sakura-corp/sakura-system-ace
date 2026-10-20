@@ -68,19 +68,6 @@ export const EM_BREVE: TextoEmBreve[] = [
     dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe. As horas por pessoa (#539) já estão na leva." }],
   },
   {
-    id: "financeiro",
-    grupo: "3º · Financeiro",
-    titulo: "Financeiro",
-    subtitulo: "As contas da Sakura Corp, num lugar só.",
-    resumo: "O Financeiro mostra as contas da Sakura Corp. Ele só abre quando houver um lugar seguro, e privado, pra guardar esses dados.",
-    vaiMostrar: ["Entradas e saídas do mês", "Contas a pagar e a receber da Sakura Corp", "O resumo do mês, que alimenta o DRE"],
-    dependeDe: [
-      { texto: "Escolher o banco privado", detalhe: "Decisão da Sofia." },
-      { texto: "Ligar o painel a esse banco", detalhe: "Só depois da escolha." },
-    ],
-    semDinheiro: true,
-  },
-  {
     id: "dre",
     grupo: "3º · Financeiro",
     titulo: "DRE",

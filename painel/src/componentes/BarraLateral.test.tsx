@@ -55,9 +55,9 @@ describe("BarraLateral", () => {
     expect(h).not.toContain("aria-disabled");
     expect(h).toMatch(/<a href="\/em-breve\/versoes"[^>]*>(?:(?!<\/a>).)*Versões<span class="sr-only"> \(em breve\)<\/span>/);
     expect(h).toContain("depende da leva 2");
-    // Os 5 que existem (Início, Leva atual, Levas anteriores, Sala e Escritório) e os 11 em breve (8 de antes + os 3 dos andares novos; as Levas anteriores já existem, #548).
+    // Os 6 que existem (Início, Leva atual, Levas anteriores, Sala, Escritório e Financeiro, #654) e os 10 em breve (8 de antes + os 3 dos andares novos; as Levas anteriores e o Financeiro já existem).
     expect(h.match(/<a /g)).toHaveLength(16);
-    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(11);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(10);
   });
 
   it("os 6 andares aparecem na ordem da tabela (#591), com os itens de cada um, e os nomes antigos dos grupos somem", () => {
@@ -87,9 +87,16 @@ describe("BarraLateral", () => {
   });
 
   it("na página em breve aberta, só ela tem aria-current", () => {
+    const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: false }], pagina: "dre" });
+    expect(h.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(h).toMatch(/<a href="\/em-breve\/dre" aria-current="page"/);
+  });
+
+  it("no Financeiro (#654), o item é um link de verdade (/financeiro), sem cadeado, e é a página atual", () => {
     const h = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: false }], pagina: "financeiro" });
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(h).toMatch(/<a href="\/em-breve\/financeiro" aria-current="page"/);
+    expect(h).toMatch(/<a href="\/financeiro" aria-current="page"/);
+    expect(h).not.toContain("Financeiro<span class=\"sr-only\"> (em breve)</span>");
   });
 
   it("no Início (#546), o Início é a página e a Leva atual não", () => {
