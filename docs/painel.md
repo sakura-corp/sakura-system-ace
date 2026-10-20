@@ -783,3 +783,13 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   recusa tarefa de leva em Montando. Sem tela. **Efeito na hora**: enquanto a leva 1 não tiver o `leva-1.md` na `main`,
   a atual volta a ser a 1 em todo lugar (o `/leva`, o Início e a Sala), a leva 2 fica em Montando e ninguém pega tarefa
   dela. Limite: o Relatório olha só os 50 PRs abertos mexidos por último (100 arquivos cada).
+- **20/10/2026, As fases na tela (#645)**, com o Tiago (PR aberto, esperando a revisão da Sofia): no topo da tela da leva,
+  as cinco fases em linha (a atual acesa em rosa, as passadas em verde com ✓; no celular, só a atual e "fase N de 5"; se não
+  couberem, quebram a linha, nunca cortam o nome); a leva em Montando mostra as tarefas com o aviso "esperando a aprovação da
+  leva N-1"; a leva 0 diz "de antes das fases, sem relatório". No Início, a linha "Leva N: <fase>", que leva pra `/leva`. Na
+  Sala (e no "precisa de você" do Início), com a leva atual em Relatório, o ponto da Sofia diz "relatório da leva N" e, **pra
+  ela**, fica em "precisa de você" (pros outros, o ponto mostra o texto no estado normal; o "precisa" continua sendo de quem
+  olha). O link abre os PRs abertos com `leva-N.md`. No modo TV (`/sala?tv`) não aparece: lá a leva não é buscada.
+  Também consertou a página, que jogava fora a `fase` do `/api/leva/<n>`. Mexeu fora da lista da issue em `App.tsx`,
+  `sala/Sala.tsx`, `logica/dados.ts`, `logica/fases.ts` e `tipos.ts` (o porquê está no relatório). Fotos:
+  `docs/relatorios/fotos/tarefa-645/`.
