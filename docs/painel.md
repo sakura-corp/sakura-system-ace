@@ -88,7 +88,8 @@ pelos comandos de "Como rodar no PC", abaixo.
 
 Inspiração de estilo, não cópia: **nada de logotipo, nome, fonte proprietária ou ícone da
 Anthropic ou do Claude**. O que se copia é o jeito: calmo, claro, muito espaço, tipografia boa.
-- **Layout**: barra lateral fixa à esquerda (no celular vira uma barra no topo), conteúdo no meio
+- **Layout**: barra lateral fixa à esquerda (abaixo de 768 px vira a barra de baixo com a folha "Mais"; o tablet,
+  mesmo em pé, ainda mostra a barra do lado, então a barra de baixo e o "Mais" só se conferem no celular), conteúdo no meio
   com largura máxima de ~960 px, cartões com borda fina e cantos de 12 px, sem sombra forte, sem
   vidro nem neon (o visual do programa das lojas não vale aqui).
 - **Fontes** (grátis, instaladas pelo npm, sem CDN): **Inter** na interface

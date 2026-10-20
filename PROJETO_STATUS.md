@@ -143,11 +143,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 20/10/2026, mais tarde: a leva 1 quase fechada (#510 e #455 na main)
-- **Painel**: o menu do lado não lista mais as levas antigas; ficaram "Leva atual" e "Levas anteriores" (PR #681).
-- **Leva 1**: a Sofia fez a #510 (janelas de importação no Modal, PR #682) e a #455 (clientes que sumiram, PR #683) pela sessão coordenadora. A #673 fechou: o que sobra fica na leva 1, que agora só tem os cadernos #618 e #619.
-- **Depois de publicar, a Sofia confere**: o Esc na importação de XML (#510) e os totais de um cliente conhecido no filtro novo (#455).
-- **Nova, sem leva**: a #684 (pôr a tela da #455 nas fotos automáticas). Entra quando ela montar a próxima leva.
-- **Leva 2**: 7 de 12; as abertas já podem ser pegas. **Leva 3** (#653, #379, #655, #656): só quando a leva 2 fechar.
-- **Depende dela**: o sim na linha "Painel (D1)" da skill `chefe-backend` (relatório da #654); as escolhas da #644 (#674); o Send do Gustavo e do Lázaro (até 26/10); a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+### 20/10/2026, noite (pelo tablet): as decisões da lista `sofia`
+- **Skill `chefe-backend`**: ganhou a linha "Painel (D1)" (sugestão do relatório da #654), PR #686 na main.
+- **#644**: a Sofia confirmou as duas escolhas do Tiago (leva vazia em Montando; leva anterior só deixa pegar se aprovada). A #674 fechou.
+- **#606**: os 4 itens do painel conferidos por ela (tablet e iPhone); fica aberta só pelo guia de instalação, na próxima loja nova.
+- **#505**: as três trocadas; falta a primeira NFC-e e a primeira NFS-e autorizadas depois da troca.
+- **Leva 1**: só os cadernos #618 e #619. **Leva 2**: 7 de 12, as abertas já podem ser pegas. **Leva 3**: quando a 2 fechar.
+- **Depende dela**: o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 entrar numa leva. Lista inteira em `label:sofia`.
 - **Próxima sessão**: só quando ela tiver assunto.
