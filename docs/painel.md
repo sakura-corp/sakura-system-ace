@@ -793,6 +793,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tela e ninguém via as 4 tarefas abertas dela). A barra do PC e a folha "Mais" do celular listam as outras levas logo
   abaixo de "Leva atual", da mais nova pra mais velha, com "(N abertas)" quando ainda têm tarefa. É um atalho até a
   página das levas (#548), que continua na leva 2 com o resumo (total, horas, quando terminou).
+- **20/10/2026: as outras levas saíram da barra lateral** (Sofia: "agora que tem a aba Levas anteriores, não precisa
+  mais"). A barra do PC e a folha "Mais" mostram só "Leva atual" e "Levas anteriores"; numa leva antiga (`/leva/1`), o
+  destaque vai pras "Levas anteriores" (`paginaDestacada()`, em `BarraLateral.tsx`).
 - **19/10/2026, mais tarde: dá pra pegar tarefa de leva anterior** (Sofia): com a leva 2 posta, as tarefas abertas
   da leva 1 apareciam com o botão desligado ("não está na leva atual"). A regra agora é `levaAceitaPegar()`
   (`painel/src/logica/estado.ts`): a atual, ou uma anterior que ainda tem tarefa aberta. O worker lê todas as levas

@@ -106,25 +106,23 @@ describe("BarraLateral", () => {
     expect(h).toMatch(/<a href="\/leva"(?![^>]*aria-current)/);
   });
 
-  it("leva na tela que não é a atual aparece abaixo de Leva atual; a atual deixa de ser a página", () => {
+  it("leva antiga na tela (/leva/0): o destaque vai pras Levas anteriores, e não pra Leva atual", () => {
     const h = html({ levas: [{ nome: "Leva 0", href: "/leva/0", atual: true }], pagina: "leva" });
+    expect(h).toMatch(/<a href="\/levas" aria-current="page"/);
     expect(h).toMatch(/<a href="\/leva"(?![^>]*aria-current)/);
-    expect(h).toMatch(/<a href="\/leva\/0" aria-current="page"/);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
   });
 
-  it("na leva atual, as outras levas aparecem abaixo de Leva atual, da mais nova pra mais velha, com as tarefas abertas", () => {
+  it("as outras levas não aparecem mais abaixo de Leva atual: elas moram nas Levas anteriores", () => {
     const levas = [
-      { nome: "Leva 2", href: "/leva", atual: true, abertas: 11 },
-      { nome: "Leva 1", href: "/leva/1", atual: false, abertas: 4 },
-      { nome: "Leva 0", href: "/leva/0", atual: false, abertas: 0 },
+      { nome: "Leva 2", href: "/leva", atual: true },
+      { nome: "Leva 1", href: "/leva/1", atual: false },
+      { nome: "Leva 0", href: "/leva/0", atual: false },
     ];
     const h = html({ levas, pagina: "leva" });
     expect(h).toMatch(/<a href="\/leva" aria-current="page"/);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(h).toMatch(/href="\/leva\/1"[^>]*>.*Leva 1.*\(4 abertas\)/);
-    expect(h).toMatch(/href="\/leva\/0"[^>]*>(?:(?!<\/a>).)*Leva 0(?:(?!<\/a>).)*<\/a>/);
-    expect(h).not.toContain("(0 abertas)");
-    expect(h.indexOf('href="/leva/1"')).toBeLessThan(h.indexOf('href="/leva/0"'));
+    expect(h).not.toContain('href="/leva/1"');
+    expect(h).not.toContain('href="/leva/0"');
   });
 });

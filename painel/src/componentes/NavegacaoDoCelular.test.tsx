@@ -83,25 +83,24 @@ describe("NavegacaoDoCelular", () => {
     expect(folha).toContain("(exemplo)");
   });
 
-  it("leva na tela que não é a atual: um só aria-current, no /leva/0", () => {
+  it("leva antiga na tela (/leva/0): o aria-current vai pras Levas anteriores, na folha, e o Mais fica destacado", () => {
     const h = html({ levas: [{ nome: "Leva 0", href: "/leva/0", atual: true }], pagina: "leva" });
     const { barra, folha } = partes(h);
     expect(h.match(/aria-current="page"/g)).toHaveLength(1);
     expect(barra).not.toContain("aria-current");
-    expect(folha).toMatch(/<a href="\/leva\/0" aria-current="page"/);
+    expect(barra).toMatch(/<button[^>]*text-destaque/);
+    expect(folha).toMatch(/<a href="\/levas" aria-current="page"/);
   });
 
-  it("as outras levas vão na folha, com as tarefas abertas; a da tela leva o aria-current", () => {
+  it("as outras levas não aparecem na folha: elas moram nas Levas anteriores", () => {
     const levas = [
-      { nome: "Leva 2", href: "/leva", atual: false, abertas: 11 },
-      { nome: "Leva 1", href: "/leva/1", atual: true, abertas: 1 },
-      { nome: "Leva 0", href: "/leva/0", atual: false, abertas: 0 },
+      { nome: "Leva 2", href: "/leva", atual: false },
+      { nome: "Leva 1", href: "/leva/1", atual: true },
+      { nome: "Leva 0", href: "/leva/0", atual: false },
     ];
-    const { barra, folha } = partes(html({ levas, pagina: "leva" }));
-    expect(barra).not.toContain("aria-current");
-    expect(folha).toMatch(/<a href="\/leva\/1" aria-current="page"/);
-    expect(folha).toContain("(1 aberta)");
-    expect(folha).toMatch(/<a href="\/leva\/0"(?![^>]*aria-current)/);
+    const { folha } = partes(html({ levas, pagina: "leva" }));
+    expect(folha).not.toContain('href="/leva/1"');
+    expect(folha).not.toContain('href="/leva/0"');
   });
 
   it("a folha tem Fechar, os grupos e não repete os itens da barra", () => {

@@ -26,11 +26,17 @@ import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
 import { Avatar } from "./Avatar";
 
-/** Uma leva na barra lateral: `atual` = é a que está na tela (quando a página é a da leva); `abertas` = tarefas abertas. */
-export type ItemDeLeva = { nome: string; href: string; atual: boolean; abertas?: number };
+/** Uma leva conhecida pela navegação: `atual` = é a que está na tela (quando a página é a da leva). */
+export type ItemDeLeva = { nome: string; href: string; atual: boolean };
 
-/** "4 abertas", ao lado do nome das outras levas; nada quando não tem tarefa aberta. */
-export const etiquetaDasAbertas = (abertas?: number) => (abertas ? `${abertas} ${abertas === 1 ? "aberta" : "abertas"}` : undefined);
+/**
+ * Qual item da navegação fica destacado. Uma leva que não é a atual (ex.: /leva/1) se chega pelas "Levas anteriores",
+ * então é ela que fica destacada, e não a "Leva atual".
+ */
+export function paginaDestacada(levas: ItemDeLeva[], pagina: Pagina): Pagina {
+  const outraNaTela = levas.some((l) => l.atual && l.href !== ENDERECO_DA_LEVA_ATUAL);
+  return pagina === "leva" && outraNaTela ? "levas" : pagina;
+}
 
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
@@ -57,12 +63,12 @@ export const ICONES: Record<NomeDoIcone, LucideIcon> = {
 const LINHA = "relative flex min-h-8 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm";
 
 /** Item que existe: link. O atual leva a barrinha de destaque à esquerda. */
-function ItemComLink({ href, rotulo, etiqueta, Icone, atual, recuado }: { href: string; rotulo: string; etiqueta?: string; Icone?: LucideIcon; atual: boolean; recuado?: boolean }) {
+function ItemComLink({ href, rotulo, etiqueta, Icone, atual }: { href: string; rotulo: string; etiqueta?: string; Icone?: LucideIcon; atual: boolean }) {
   return (
     <a
       href={href}
       aria-current={atual ? "page" : undefined}
-      className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo ${atual ? "bg-livre-fundo font-semibold" : ""} ${recuado ? "ml-6" : ""}`}
+      className={`${LINHA} min-w-0 text-texto hover:bg-livre-fundo ${atual ? "bg-livre-fundo font-semibold" : ""}`}
     >
       {atual && <span aria-hidden="true" className="absolute inset-y-[7px] left-0 w-[3px] rounded-full bg-destaque" />}
       {Icone && <Icone aria-hidden="true" className={`size-4 shrink-0 ${atual ? "text-destaque" : "text-texto-2"}`} />}
@@ -117,11 +123,9 @@ export async function sair(): Promise<boolean> {
   return true;
 }
 
-export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Props) {
+export function BarraLateral({ levas, pagina: paginaDaTela = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
-  // As outras levas (ex.: /leva/1, /leva/0) aparecem logo abaixo de "Leva atual", até existir a página das levas (#548).
-  const outras = levas.filter((l) => l.href !== ENDERECO_DA_LEVA_ATUAL);
-  const extra = outras.some((l) => l.atual);
+  const pagina = paginaDestacada(levas, paginaDaTela);
 
   function linhaDe(item: ItemDaNavegacao) {
     if (item.emBreve) {
@@ -132,22 +136,6 @@ export function BarraLateral({ levas, pagina = "leva", usuario, tempoReal }: Pro
       );
     }
     const Icone = ICONES[item.icone];
-    if (item.id === "leva") {
-      return (
-        <li key={item.id} className="min-w-0">
-          <ItemComLink href={item.href} rotulo={item.rotulo} Icone={Icone} atual={pagina === "leva" && !extra} />
-          {outras.length > 0 && (
-            <ul className="mt-0.5 flex flex-col gap-0.5">
-              {outras.map((l) => (
-                <li key={l.href} className="min-w-0">
-                  <ItemComLink href={l.href} rotulo={l.nome} etiqueta={etiquetaDasAbertas(l.abertas)} atual={pagina === "leva" && l.atual} recuado />
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      );
-    }
     return (
       <li key={item.id} className="min-w-0">
         <ItemComLink href={item.href} rotulo={item.rotulo} etiqueta={item.etiqueta} Icone={Icone} atual={pagina === item.id} />
