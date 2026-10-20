@@ -138,6 +138,23 @@ export type RespostaDasLevas = { levas: Leva[]; atual: number | null };
  */
 export type RespostaDaLeva = { numero: number; tarefas: Tarefa[]; cortada: boolean; fase?: FaseDaLeva };
 
+/** Um defeito achado na fase Testando (#646): issue aberta com `defeito`. `url` só se for da sakura-corp. */
+export type DefeitoDaLeva = { numero: number; titulo: string; url?: string; criadaEm: string };
+
+/**
+ * O que /api/leva/<n>/testes devolve (#646). `texto`: `docs/relatorios/leva-N-testes.md` da main, como veio (null se
+ * ainda não existe); `textoCortado`: passou do limite. `desde`: quando a última tarefa da leva fechou (null se nenhuma).
+ * `defeitosCortados`: há mais defeitos abertos do que os olhados.
+ */
+export type RespostaDosTestes = {
+  numero: number;
+  texto: string | null;
+  textoCortado?: true;
+  desde: string | null;
+  defeitos: DefeitoDaLeva[];
+  defeitosCortados?: true;
+};
+
 // ---- A sala de verdade (#468) ----
 /**
  * O que /api/sala devolve. `entradas` já vêm com os sinais; o estado (e o "dormindo") sai de
