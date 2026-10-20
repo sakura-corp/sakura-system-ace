@@ -848,3 +848,12 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   duas cores do gráfico). O DRE continua
   em breve. Relatório: `docs/relatorios/2026-10-20-tarefa-654-backend.md`. **A Sofia confere depois de publicar**: lançar um
   mês de verdade e conferir os totais; pedir pra alguém da equipe abrir e confirmar que vê só os totais.
+- **20/10/2026, A fase Testando (#646)**, com o Tiago (PR aberto, esperando a revisão da Sofia): com a leva em Testando, a
+  tela da leva mostra no topo, grande, o aviso **"Leva congelada: não pegue tarefa nova."**; embaixo, **"O que testar"**, o
+  texto de `docs/relatorios/leva-N-testes.md` da `main` mostrado como texto puro (um `<script>` aparece escrito e não roda;
+  sem o arquivo: "A lista de testes ainda não foi escrita."; passando de 20 mil caracteres, corta e avisa); e **"Defeitos
+  achados"**, as issues abertas com `defeito` criadas desde que a última tarefa da leva fechou (um defeito que entrou na leva
+  e fechou não conta; se a leva ficou em Montando esperando a anterior, o "desde" é esse fechamento mesmo; link só pra
+  `https://github.com/sakura-corp/`; olha os 50 defeitos abertos mais novos e avisa se pode haver mais). Rota nova no worker:
+  `/api/leva/<n>/testes` (`painel/worker/testes.ts`), um pedido só ao GitHub. A lista é buscada ao abrir a tela da leva
+  (não muda sozinha com o tempo real). Fotos: `docs/relatorios/fotos/tarefa-646/`.

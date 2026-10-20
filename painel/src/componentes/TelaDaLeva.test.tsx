@@ -21,3 +21,18 @@ describe("TelaDaLeva: as fases no topo (#645)", () => {
     expect(html({ numero: 2, fase: "trabalhando" })).not.toContain("esperando a aprovação");
   });
 });
+
+describe("TelaDaLeva: a fase Testando (#646)", () => {
+  it("em Testando: o aviso de leva congelada no topo e a busca da lista de testes; em outra fase, não", () => {
+    const h = html({ numero: 2, fase: "testando" });
+    expect(h).toContain("Leva congelada");
+    expect(h).toContain("Buscando a lista de testes");
+    // O aviso vem antes da lista de tarefas.
+    expect(h.indexOf("Leva congelada")).toBeLessThan(h.indexOf("Uma tarefa"));
+    for (const fase of ["montando", "trabalhando", "relatorio", "aprovada"] as const) {
+      expect(html({ numero: 2, fase })).not.toContain("Leva congelada");
+    }
+    // Sem a fase (a consulta das levas falhou), também não.
+    expect(html({ numero: 2 })).not.toContain("Leva congelada");
+  });
+});

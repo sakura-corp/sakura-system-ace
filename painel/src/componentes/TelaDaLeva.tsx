@@ -4,6 +4,7 @@ import type { FaseDaLeva, Tarefa } from "../tipos";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 import { Contador } from "./Contador";
 import { FasesDaLeva } from "./FasesDaLeva";
+import { FaseTestando } from "./FaseTestando";
 import { HorasPorPessoa } from "./HorasPorPessoa";
 import { ListaDeTarefas } from "./ListaDeTarefas";
 
@@ -36,6 +37,8 @@ export function TelaDaLeva({ nome, tarefas, subtitulo, cortada = false, login, a
     <>
       <CabecalhoDaPagina trilha="1º · Produção" titulo={nome} explicacao={subtitulo} />
       {numero !== undefined && fase && <FasesDaLeva numero={numero} fase={fase} antesDasFases={antesDasFases} />}
+      {/* Testando (#646): o aviso de leva congelada, o que testar e os defeitos, antes das tarefas. */}
+      {numero !== undefined && fase === "testando" && <FaseTestando numero={numero} />}
 
       {/* Montando com tarefa = espera a leva atual ser aprovada (sem tarefa, o "Nenhuma tarefa" já diz). */}
       {fase === "montando" && atual !== undefined && atual !== numero && tarefas.length > 0 && (
