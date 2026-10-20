@@ -466,8 +466,14 @@ que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-
    `DONA_DO_FINANCEIRO` (em `vars`, o login do GitHub da dona) já está lá desde a #654; sem ela ninguém lança.
 3. **Aplicar a migration** (antes de mesclar esse PR): no PC, dentro de `painel/`,
    `npx wrangler d1 migrations apply sakura-financeiro --remote` (a primeira vez pede `npx wrangler login`). Sem o PC: na
-   página do banco, aba **Console**, colar o conteúdo de `0001_financeiro.sql` e rodar. Rodar de novo não estraga nada.
+   página do banco, aba **Console**, colar o SQL **sem os comentários** e rodar. O Console junta tudo numa linha só, e
+   um `--` apaga o resto dela ("No SQL statements detected"; aconteceu em 20/10). Rodar de novo não estraga nada.
+   Conferir com `SELECT id, nome FROM categorias ORDER BY ordem;` (6 linhas, sem valor nenhum).
 4. Mesclar: a Cloudflare publica sozinha. Abrir `/financeiro`, lançar um valor de teste, ver o total, e apagar.
+
+**Feito em 20/10/2026**: o banco `sakura-financeiro` foi criado pela Sofia e as tabelas, aplicadas pelo Console (passos 1 a
+3). Como foi pelo Console, o `wrangler` não sabe que a `0001` já rodou: se um dia alguém usar `d1 migrations apply`, ela
+roda de novo, sem estragar nada (é toda `IF NOT EXISTS`/`OR IGNORE`).
 
 ## Fim de uma leva
 
@@ -824,3 +830,10 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **20/10/2026, a leva 1 aprovada** (relatório `docs/relatorios/leva-1.md`, PR #672, mesclado pela Sofia): 5 de 9 feitas,
   18 h de 31 h. É a primeira leva com fases, mas sem a rodada de testes com lista (a fase Testando nasceu com ela já
   andando). As 4 abertas (#618, #619, #510, #455) ficam na leva 1 até a Sofia decidir (#673).
+- **20/10/2026, o Financeiro (#654)**, chefe backend com ajudantes (PR desta tarefa): a página `/financeiro` com os totais e
+  o gráfico mês a mês pra todos, e a lista e o formulário só pra dona (`DONA_DO_FINANCEIRO`); o corte é no worker. O banco D1
+  `sakura-financeiro` foi criado e as tabelas aplicadas pela Sofia em 20/10. Mexeu fora da lista da issue, com o sim dela:
+  `painel/migrations/0001_financeiro.sql`, os testes ao lado de cada arquivo novo, `App.tsx`, `emBreve.ts` e os testes das
+  páginas "em breve" (o Financeiro saiu do "em breve"); e o `estilo.css` ganhou as duas cores do gráfico. O DRE continua
+  em breve. Relatório: `docs/relatorios/2026-10-20-tarefa-654-backend.md`. **A Sofia confere depois de publicar**: lançar um
+  mês de verdade e conferir os totais; pedir pra alguém da equipe abrir e confirmar que vê só os totais.
