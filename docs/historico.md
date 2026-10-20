@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 20/10/2026, mais tarde: a leva 1 quase fechada (#510 e #455 na main)
+- **Painel**: o menu do lado não lista mais as levas antigas; ficaram "Leva atual" e "Levas anteriores" (PR #681).
+- **Leva 1**: a Sofia fez a #510 (janelas de importação no Modal, PR #682) e a #455 (clientes que sumiram, PR #683) pela sessão coordenadora. A #673 fechou: o que sobra fica na leva 1, que agora só tem os cadernos #618 e #619.
+- **Depois de publicar, a Sofia confere**: o Esc na importação de XML (#510) e os totais de um cliente conhecido no filtro novo (#455).
+- **Nova, sem leva**: a #684 (pôr a tela da #455 nas fotos automáticas). Entra quando ela montar a próxima leva.
+- **Leva 2**: 7 de 12; as abertas já podem ser pegas. **Leva 3** (#653, #379, #655, #656): só quando a leva 2 fechar.
+- **Depende dela**: o sim na linha "Painel (D1)" da skill `chefe-backend` (relatório da #654); as escolhas da #644 (#674); o Send do Gustavo e do Lázaro (até 26/10); a #606, a #632, a #505, a #625. Lista inteira em `label:sofia`.
+- **Próxima sessão**: só quando ela tiver assunto.
+
 ### 20/10/2026, fim da noite: o Financeiro (#654) e a fase Testando (#646) no ar
 - **Financeiro (#654, PR #679)**: no ar e conferido por ela. O D1 `sakura-financeiro` foi criado e as tabelas aplicadas por ela no Console; a dona é `caranovavidanova` (`docs/painel.md`, "O Financeiro"). Falta alguém da equipe confirmar que vê só os totais.
 - **Leva 2**: **7 de 12** (entraram a #645, a #654 e a #646 do Tiago, PR #678; o conflito do #678 resolvido por esta sessão a pedido dela). A #647 e as outras abertas já podem ser pegas.
