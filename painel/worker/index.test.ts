@@ -549,6 +549,76 @@ describe("/api/sala (#468)", () => {
 });
 
 
+describe("/api/novidades (#549)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;
+  const agora = new Date().toISOString();
+
+  function fingir({ eventos = 200, rodadas = 200 }: { eventos?: number; rodadas?: number } = {}) {
+    const pedidos: { url: string; autorizacao: string | null }[] = [];
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entrada);
+      pedidos.push({ url, autorizacao: new Headers(init?.headers).get("authorization") });
+      if (url.includes("/events")) {
+        if (eventos !== 200) return new Response("x", { status: eventos });
+        return Response.json([
+          { id: "1", type: "IssuesEvent", created_at: agora, actor: { login: "bia" }, payload: { action: "assigned", issue: { number: 510 }, assignee: { login: "bia" } } },
+          { id: "2", type: "WatchEvent", created_at: agora, actor: { login: "x" }, payload: {} },
+          { id: "3", type: "IssuesEvent", created_at: "2026-01-01T00:00:00Z", actor: { login: "bia" }, payload: { action: "closed", issue: { number: 1 } } },
+        ]);
+      }
+      if (url.includes("/actions/runs")) {
+        if (rodadas !== 200) return new Response("x", { status: rodadas });
+        return Response.json({ workflow_runs: [{ id: 9, name: "CI", status: "completed", conclusion: "failure", updated_at: agora, pull_requests: [] }] });
+      }
+      return new Response("inesperado", { status: 500 });
+    });
+    return pedidos;
+  }
+
+  it("sem sessão: 401 e não pergunta nada ao GitHub; cookie adulterado: 401; sem segredos: 503; POST: 405", async () => {
+    const p = fingir();
+    expect((await pedir("/api/novidades")).status).toBe(401);
+    const adulterado = (await comSessao()).slice(0, -4) + "AAAA";
+    expect((await pedir("/api/novidades", { cookie: adulterado })).status).toBe(401);
+    expect(p).toEqual([]);
+    expect((await pedir("/api/novidades", { env: { ASSETS: ambiente.ASSETS } })).status).toBe(503);
+    expect((await pedir("/api/novidades", { method: "POST", cookie: await comSessao() })).status).toBe(405);
+  });
+
+  it("com sessão: lê eventos e rodadas com o token da pessoa; só issue, PR e rodada dos dois últimos dias; sem o token na resposta", async () => {
+    const p = fingir();
+    const r = await pedir("/api/novidades", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    const textoDaResposta = await r.text();
+    expect(textoDaResposta).not.toContain("ghu_");
+    const corpo = JSON.parse(textoDaResposta) as { novidades: { id: string }[]; falhas: string[] };
+    expect(corpo.novidades.map((n) => n.id).sort()).toEqual(["e1", "r9"]);
+    expect(corpo.falhas).toEqual([]);
+    expect(p.map((x) => x.url)).toEqual([
+      "https://api.github.com/repos/sakura-corp/sakura-system-ace/events?per_page=100",
+      "https://api.github.com/repos/sakura-corp/sakura-system-ace/actions/runs?per_page=50",
+    ]);
+    expect(new Set(p.map((x) => x.autorizacao))).toEqual(new Set(["Bearer ghu_a"]));
+  });
+
+  it("as rodadas falham: 200 com falhas; os eventos falham: 502; o GitHub recusa o token: 401 e apaga a sessão", async () => {
+    fingir({ rodadas: 500 });
+    const r = await pedir("/api/novidades", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(((await r.json()) as { falhas: string[] }).falhas).toEqual(["rodadas"]);
+    vi.unstubAllGlobals();
+    fingir({ eventos: 500 });
+    expect((await pedir("/api/novidades", { cookie: await comSessao() })).status).toBe(502);
+    vi.unstubAllGlobals();
+    fingir({ eventos: 401 });
+    const r2 = await pedir("/api/novidades", { cookie: await comSessao() });
+    expect(r2.status).toBe(401);
+    expect(cookies(r2).find((c) => c.startsWith("sessao="))).toContain("Max-Age=0");
+  });
+});
+
 describe("/api/tarefa/<n>/pegar e /largar (#538)", () => {
   const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
   const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;

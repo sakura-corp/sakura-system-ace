@@ -15,6 +15,7 @@ import { carregarLeva, carregarResumoDasLevas, ENDERECO_DA_LEVA_ATUAL, enderecoD
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { paginaPraVoltar } from "./logica/login";
 import { levaAceitaPegar } from "./logica/estado";
+import { carregarNovidades, type EstadoDasNovidades, type Novidade } from "./logica/novidades";
 import { ehModoTv } from "./logica/sala";
 import { useSala } from "./useSala";
 import { useTempoReal } from "./useTempoReal";
@@ -139,6 +140,40 @@ const RESUMO_DE_EXEMPLO: ResumoDeLeva[] = [
   },
 ];
 
+/** "O que mudou hoje" no Início (#549), buscado no worker. `ativo` = false não busca nada. */
+function useNovidades(ativo: boolean): [EstadoDasNovidades, () => void, () => Promise<void>] {
+  const [estado, setEstado] = useState<EstadoDasNovidades>({ tipo: "carregando" });
+  const [tentativa, setTentativa] = useState(0);
+  const carregando = useRef(true);
+  carregando.current = estado.tipo === "carregando";
+  useEffect(() => {
+    if (!ativo) return;
+    let vivo = true;
+    setEstado({ tipo: "carregando" });
+    void carregarNovidades().then((novo) => {
+      if (vivo) setEstado(novo);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [ativo, tentativa]);
+  // O tempo real: só troca se deu certo; erro não apaga o que já está na tela. Nunca junto da primeira carga
+  // (duas renovações do token ao mesmo tempo, ver useSala).
+  const recarregar = useCallback(async () => {
+    if (carregando.current) return;
+    const novo = await carregarNovidades();
+    if (novo.tipo === "pronto") setEstado(novo);
+  }, []);
+  return [estado, () => setTentativa((n) => n + 1), recarregar];
+}
+
+const minutosAtras = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+const novidadesDeExemplo = (): Novidade[] => [
+  { id: "x1", quando: minutosAtras(35), tipo: "rodada", passou: true, nome: "CI", numero: 545 },
+  { id: "x2", quando: minutosAtras(120), tipo: "tarefa", acao: "pegou", quem: "carla-exemplo", numero: 510, alvo: "carla-exemplo" },
+  { id: "x3", quando: minutosAtras(180), tipo: "pr", acao: "abriu", quem: "bruno-exemplo", numero: 455 },
+];
+
 // A leva vem do GitHub (#354). Sem login (só no `npm run dev`, sem o worker), mostra a de exemplo.
 // A Sala vem do GitHub (#468), com o mesmo login; o Escritório continua de exemplo (docs/painel.md).
 export default function App({
@@ -189,10 +224,13 @@ export default function App({
     atual: 0,
     leva: { numero: 0, tarefas: tarefasDeExemplo, cortada: false },
   };
+  const [novidadesBuscadas, tentarNovidadesDeNovo, recarregarNovidades] = useNovidades(dadosReais && pagina === "inicio");
+  const [novidadesDeExemploAgora] = useState<EstadoDasNovidades>(() => ({ tipo: "pronto", novidades: novidadesDeExemplo(), falhas: [] }));
   const buscarDaSala = useCallback(async () => {
     if (!tv) await recarregar();
+    if (pagina === "inicio") await recarregarNovidades();
     return recarregarSala();
-  }, [tv, recarregar, recarregarSala]);
+  }, [tv, pagina, recarregar, recarregarSala, recarregarNovidades]);
 
   // Tempo real (#355): só com login e com os dados vindo do GitHub; para quando a sessão acaba.
   // Na Sala (#468) escuta também os avisos de robô e de branch, e a busca é a da sala.
@@ -254,6 +292,8 @@ export default function App({
             aoMudar={usuario ? recarregar : undefined}
             tentarSalaDeNovo={tentarSalaDeNovo}
             tentarLevaDeNovo={tentarDeNovo}
+            novidades={exemplo ? novidadesDeExemploAgora : novidadesBuscadas}
+            tentarNovidadesDeNovo={tentarNovidadesDeNovo}
             exemplo={exemplo}
           />
         </main>

@@ -38,6 +38,7 @@ import {
   type DadosDoResumoDasLevas,
 } from "./tarefas";
 import { buscarSala } from "./dadosDaSala";
+import { buscarNovidades } from "./novidades";
 import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
 import { numeroValido } from "../src/logica/comecarComClaude";
 import { SalaDoPainel } from "./sala";
@@ -243,6 +244,24 @@ async function sala(request: Request, config: Configuracao): Promise<Response> {
   return json(r.sala, 200, cookies);
 }
 
+/**
+ * "O que mudou hoje" no Início (#549): os eventos do repositório e as rodadas, lidos na hora com o token de
+ * quem está logado. Nada é guardado. As rodadas que falham vão em `falhas`; os eventos que falham, 502.
+ */
+async function novidades(request: Request, config: Configuracao): Promise<Response> {
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  try {
+    const r = await buscarNovidades(sessao.token);
+    if (r.tipo === "sem-acesso") return json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(new URL(request.url)).apagar(COOKIE_SESSAO)]);
+    if (r.tipo === "erro") return json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+    return json(r.resposta, 200, cookies);
+  } catch {
+    console.error("novidades: falha ao falar com o GitHub");
+    return json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+  }
+}
+
 /** /api/tarefa/12/pegar → { numero: "12", acao: "pegar" }; outro caminho → null. O número é conferido depois (400). */
 export function acaoDoCaminho(caminho: string): { numero: string; acao: "pegar" | "largar" } | null {
   const achou = /^\/api\/tarefa\/([^/]{1,20})\/(pegar|largar)$/.exec(caminho);
@@ -378,6 +397,13 @@ export default {
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
       return sala(request, config);
+    }
+
+    if (pathname === "/api/novidades") {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      return novidades(request, config);
     }
 
     const acao = acaoDoCaminho(pathname);
