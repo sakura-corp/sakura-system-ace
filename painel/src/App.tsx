@@ -11,7 +11,7 @@ import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
 import { ErroDaLeva, EsqueletoDaLeva, TelaDaLeva } from "./componentes/TelaDaLeva";
 import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
-import { carregarLeva, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva } from "./logica/dados";
+import { carregarLeva, carregarResumoDasLevas, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva, type EstadoDoResumo } from "./logica/dados";
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { paginaPraVoltar } from "./logica/login";
 import { levaAceitaPegar } from "./logica/estado";
@@ -19,7 +19,7 @@ import { ehModoTv } from "./logica/sala";
 import { useSala } from "./useSala";
 import { useTempoReal } from "./useTempoReal";
 import type { EstadoDaSala } from "./logica/salaDados";
-import type { Pagina, Usuario } from "./tipos";
+import type { Pagina, ResumoDeLeva, Usuario } from "./tipos";
 
 /** Qual página mostrar, pelo endereço. Sem biblioteca de rotas: são poucas. */
 export function paginaDoCaminho(caminho: string): Pagina {
@@ -83,8 +83,61 @@ function useLeva(pedida: number | null, ativo: boolean, soAsLevas: boolean): [Es
   return [estado, () => setTentativa((n) => n + 1), recarregar];
 }
 
+/**
+ * O resumo das levas (#548), só na página /levas. Lá ele é o único pedido de dados: a barra lateral usa
+ * as mesmas levas (ver `levaDoResumo`), e o `useLeva` fica parado. Mesmo jeito do `useLeva`: a busca do
+ * tempo real só troca a tela se deu certo, e não roda junto da primeira carga.
+ */
+function useResumoDasLevas(ativo: boolean): [EstadoDoResumo, () => void, () => Promise<boolean>] {
+  const [estado, setEstado] = useState<EstadoDoResumo>({ tipo: "carregando" });
+  const [tentativa, setTentativa] = useState(0);
+  const carregando = useRef(true);
+  carregando.current = estado.tipo === "carregando";
+  useEffect(() => {
+    if (!ativo) return;
+    let vivo = true;
+    setEstado({ tipo: "carregando" });
+    void carregarResumoDasLevas(fetch).then((novo) => {
+      if (vivo) setEstado(novo);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [ativo, tentativa]);
+  const recarregar = useCallback(async () => {
+    if (carregando.current) return false;
+    const novo = await carregarResumoDasLevas(fetch);
+    if (novo.tipo === "pronto") {
+      setEstado(novo);
+      return true;
+    }
+    if (novo.tipo === "fora") setEstado(novo);
+    return false;
+  }, []);
+  return [estado, () => setTentativa((n) => n + 1), recarregar];
+}
+
+/** O resumo no formato da leva, pra barra lateral (as levas do resumo têm número, nome e abertas). */
+function levaDoResumo(resumo: EstadoDoResumo): EstadoDaLeva {
+  if (resumo.tipo !== "pronto") return resumo;
+  return { tipo: "pronto", levas: resumo.levas, atual: resumo.atual, leva: { numero: resumo.atual, tarefas: [], cortada: false } };
+}
+
 const LINK_DA_ETIQUETA = (numero: number) =>
   `https://github.com/sakura-corp/sakura-system-ace/issues?q=${encodeURIComponent(`label:leva-${numero}`)}`;
+
+// A página /levas sem login (só no `npm run dev`): o resumo da leva de exemplo.
+const RESUMO_DE_EXEMPLO: ResumoDeLeva[] = [
+  {
+    numero: 0,
+    nome: nomeDaLevaDeExemplo,
+    abertas: tarefasDeExemplo.filter((t) => t.estado !== "feita").length,
+    total: tarefasDeExemplo.length,
+    feitas: tarefasDeExemplo.filter((t) => t.estado === "feita").length,
+    horas: tarefasDeExemplo.reduce((h, t) => h + (t.estimativaHoras ?? 0), 0),
+    terminouEm: null,
+  },
+];
 
 // A leva vem do GitHub (#354). Sem login (só no `npm run dev`, sem o worker), mostra a de exemplo.
 // A Sala vem do GitHub (#468), com o mesmo login; o Escritório continua de exemplo (docs/painel.md).
@@ -94,6 +147,7 @@ export default function App({
   usuario,
   leva: levaFixa,
   sala: salaFixa,
+  resumo: resumoFixo,
 }: {
   caminho?: string;
   busca?: string;
@@ -103,29 +157,35 @@ export default function App({
   leva?: EstadoDaLeva;
   /** Só nos testes: o estado da Sala, em vez de buscar no worker. */
   sala?: EstadoDaSala;
+  /** Só nos testes: o resumo das levas (#548, página /levas), em vez de buscar no worker. */
+  resumo?: EstadoDoResumo;
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
   const emBreve = idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
-  const exemplo = !usuario && levaFixa === undefined;
+  const exemplo = !usuario && levaFixa === undefined && resumoFixo === undefined;
   const pedida = levaPedida(caminho);
-  const buscando = !exemplo && !tv && levaFixa === undefined;
+  const buscando = !exemplo && !tv && levaFixa === undefined && resumoFixo === undefined;
   // Só a Leva e o Início precisam das tarefas; nas outras páginas, só a lista da barra lateral.
   const soAsLevas = (pagina !== "leva" && pagina !== "inicio") || emBreve !== null;
-  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando, soAsLevas);
-  const estado = levaFixa ?? buscada;
+  // Na página /levas (#548), um pedido só: o resumo, que serve também pra barra lateral.
+  const naPaginaDasLevas = pagina === "levas";
+  const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando && !naPaginaDasLevas, soAsLevas);
+  const [resumoBuscado, tentarResumoDeNovo, recarregarResumo] = useResumoDasLevas(buscando && naPaginaDasLevas);
+  const resumo = resumoFixo ?? resumoBuscado;
+  const estado = levaFixa ?? (naPaginaDasLevas ? levaDoResumo(resumo) : buscada);
 
   // A Sala de verdade (#468), com o mesmo login. No modo TV não busca a leva, só a sala.
   // O Início (#546) usa a mesma sala (o "precisa de você") e a leva atual inteira.
-  const dadosReais = !exemplo && levaFixa === undefined;
+  const dadosReais = !exemplo && levaFixa === undefined && resumoFixo === undefined;
   const naSala = pagina === "sala" || pagina === "inicio";
   const [salaBuscada, tentarSalaDeNovo, recarregarSala] = useSala(dadosReais && naSala && salaFixa === undefined);
   const salaDeVerdade = salaFixa ?? salaBuscada;
   const [salaDeExemploAgora] = useState<EstadoDaSala>(() => ({ tipo: "pronto", entradas: salaDeExemplo(new Date()), falhas: [], leva: null }));
   const levaDeExemplo: EstadoDaLeva = {
     tipo: "pronto",
-    levas: [{ numero: 0, nome: nomeDaLevaDeExemplo, abertas: 0, total: 8, feitas: 1, horas: 0, terminouEm: null }],
+    levas: [{ numero: 0, nome: nomeDaLevaDeExemplo, abertas: 0 }],
     atual: 0,
     leva: { numero: 0, tarefas: tarefasDeExemplo, cortada: false },
   };
@@ -138,7 +198,7 @@ export default function App({
   // Na Sala (#468) escuta também os avisos de robô e de branch, e a busca é a da sala.
   const tempoReal = useTempoReal({
     ativo: dadosReais && estado.tipo !== "fora" && salaDeVerdade.tipo !== "fora",
-    buscar: naSala ? buscarDaSala : recarregar,
+    buscar: naSala ? buscarDaSala : naPaginaDasLevas ? recarregarResumo : recarregar,
     carregou: naSala ? salaDeVerdade.tipo === "pronto" : estado.tipo === "pronto",
     sala: naSala,
   });
@@ -225,17 +285,17 @@ export default function App({
       ) : pagina === "levas" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           {exemplo ? (
-            <PaginaDasLevas levas={levaDeExemplo.levas} atual={levaDeExemplo.atual} />
-          ) : estado.tipo === "pronto" ? (
-            <PaginaDasLevas levas={estado.levas} atual={estado.atual} />
-          ) : estado.tipo === "erro" ? (
+            <PaginaDasLevas levas={RESUMO_DE_EXEMPLO} atual={0} />
+          ) : resumo.tipo === "pronto" ? (
+            <PaginaDasLevas levas={resumo.levas} atual={resumo.atual} />
+          ) : resumo.tipo === "erro" ? (
             <>
               <CabecalhoDaPagina trilha="1º · Produção" titulo="Levas anteriores" />
               <div className="mt-6">
-                <ErroDaLeva mensagem={estado.mensagem} tentarDeNovo={tentarDeNovo} />
+                <ErroDaLeva mensagem={resumo.mensagem} tentarDeNovo={tentarResumoDeNovo} />
               </div>
             </>
-          ) : estado.tipo === "sem-levas" ? (
+          ) : resumo.tipo === "sem-levas" ? (
             <PaginaDasLevas levas={[]} atual={null} />
           ) : (
             <EsqueletoDaLeva />

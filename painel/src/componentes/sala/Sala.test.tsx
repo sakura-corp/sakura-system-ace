@@ -110,7 +110,7 @@ describe("Sala de verdade (#468)", () => {
 });
 
 describe("App com a Sala de verdade", () => {
-  const leva: EstadoDaLeva = { tipo: "pronto", levas: [{ numero: 0, nome: "Leva 0", abertas: 1, total: 8, feitas: 1, horas: 0, terminouEm: null }], atual: 0, leva: { numero: 0, tarefas: [], cortada: false } };
+  const leva: EstadoDaLeva = { tipo: "pronto", levas: [{ numero: 0, nome: "Leva 0", abertas: 1 }], atual: 0, leva: { numero: 0, tarefas: [], cortada: false } };
   const usuario = { login: "fulana", avatar: "" };
   const app = (sala: EstadoDaSala, busca = "") =>
     renderToString(<App caminho="/sala" busca={busca} usuario={usuario} leva={leva} sala={sala} />).replace(/<!-- -->/g, "");

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import App, { paginaDoCaminho } from "./App";
 import paginaHtml from "../index.html?raw";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
-import type { EstadoDaLeva } from "./logica/dados";
+import type { EstadoDaLeva, EstadoDoResumo } from "./logica/dados";
 import type { EstadoDaSala } from "./logica/salaDados";
 import type { Tarefa } from "./tipos";
 
@@ -225,7 +225,7 @@ describe("App com as tarefas de verdade (#354)", () => {
   const de = (leva: EstadoDaLeva, caminho = "/leva") => renderToString(<App caminho={caminho} busca="" usuario={usuario} leva={leva} />).replace(/<!-- -->/g, "");
   const pronto: EstadoDaLeva = {
     tipo: "pronto",
-    levas: [{ numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 1, horas: 0, terminouEm: null }, { numero: 1, nome: "Leva 1", abertas: 2, total: 8, feitas: 1, horas: 0, terminouEm: null }],
+    levas: [{ numero: 0, nome: "Leva 0", abertas: 0 }, { numero: 1, nome: "Leva 1", abertas: 2 }],
     atual: 1,
     leva: {
       numero: 1,
@@ -325,7 +325,7 @@ describe("App com as tarefas de verdade (#354)", () => {
     });
 
     it("a leva anterior que ainda tem tarefa aberta deixa pegar", () => {
-      const levas = [{ numero: 0, nome: "Leva 0", abertas: 1, total: 8, feitas: 1, horas: 0, terminouEm: null }, ...pronto.levas.slice(1)];
+      const levas = [{ numero: 0, nome: "Leva 0", abertas: 1 }, ...pronto.levas.slice(1)];
       const h = de({ ...pronto, levas, leva: { numero: 0, cortada: false, tarefas: [pronto.leva.tarefas[0]] } }, "/leva/0");
       expect(h).not.toContain("esta tarefa não está numa leva aberta");
       expect(h).toMatch(/<button type="button" class="[^"]*">Pegar tarefa/);
@@ -402,7 +402,7 @@ describe("Início (#546)", () => {
   };
   const leva: EstadoDaLeva = {
     tipo: "pronto",
-    levas: [{ numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 1, horas: 0, terminouEm: null }, { numero: 1, nome: "Leva 1", abertas: 2, total: 8, feitas: 1, horas: 0, terminouEm: null }],
+    levas: [{ numero: 0, nome: "Leva 0", abertas: 0 }, { numero: 1, nome: "Leva 1", abertas: 2 }],
     atual: 1,
     leva: {
       numero: 1,
@@ -482,25 +482,26 @@ describe("TelaDeEntrada", () => {
 });
 
 describe("/levas (#548)", () => {
-  const pronto: EstadoDaLeva = {
+  const pronto: EstadoDoResumo = {
     tipo: "pronto",
     levas: [
-      { numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 8, horas: 14, terminouEm: "2026-10-16T15:00:00Z" },
+      { numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 8, horas: 14, terminouEm: "2026-10-16T12:00:00Z" },
       { numero: 1, nome: "Leva 1", abertas: 2, total: 11, feitas: 9, horas: 30.5, terminouEm: null },
     ],
     atual: 1,
-    leva: { numero: 1, tarefas: [], cortada: false },
   };
   const usuario = { login: "sofia", avatar: "" };
-  const de = (leva: EstadoDaLeva) => renderToString(<App caminho="/levas" busca="" usuario={usuario} leva={leva} />).replace(/<!-- -->/g, "");
-  it("abre a página das levas, com a barra marcando o item", () => {
+  const de = (resumo: EstadoDoResumo) => renderToString(<App caminho="/levas" busca="" usuario={usuario} resumo={resumo} />).replace(/<!-- -->/g, "");
+  it("abre a página das levas, e a barra usa as levas do próprio resumo", () => {
     expect(paginaDoCaminho("/levas")).toBe("levas");
     expect(paginaDoCaminho("/levas/")).toBe("levas");
     const h = de(pronto);
     expect(h).toMatch(/<h1[^>]*>Levas anteriores<\/h1>/);
     expect(h).toContain("terminou em 16/10/2026");
-    expect(h).toContain("30,5 h");
+    expect(h).toContain("30,5 h estimadas");
     expect(h).toContain('href="/leva"');
+    // A leva 0 aparece na página e também na barra e na navegação do celular, vinda do próprio resumo.
+    expect(h.match(/href="\/leva\/0"/g)).toHaveLength(3);
   });
   it("carregando, erro e sem levas", () => {
     expect(de({ tipo: "carregando" })).toContain("aria-busy");

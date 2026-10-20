@@ -27,12 +27,15 @@ import {
 import {
   CONSULTA_DA_LEVA,
   CONSULTA_DAS_LEVAS,
+  CONSULTA_DO_RESUMO_DAS_LEVAS,
   levaDosDados,
   levasDosDados,
   marcarDependenciasAbertas,
+  resumoDasLevasDosDados,
   variaveisDoRepositorio,
   type DadosDaLeva,
   type DadosDasLevas,
+  type DadosDoResumoDasLevas,
 } from "./tarefas";
 import { buscarSala } from "./dadosDaSala";
 import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
@@ -183,11 +186,14 @@ export function levaDoCaminho(caminho: string): number | null {
   return achou ? Number(achou[1]) : null;
 }
 
+/** Qual rota de dados: /api/levas, /api/levas/resumo (#548) ou /api/leva/<n>. */
+type PedidoDeDados = { tipo: "levas" } | { tipo: "resumo" } | { tipo: "leva"; numero: number };
+
 /**
- * As rotas com dados (#354): /api/levas e /api/leva/<n>, sempre com o token de quem está logado.
+ * As rotas com dados (#354): /api/levas, /api/levas/resumo e /api/leva/<n>, sempre com o token de quem está logado.
  * A página pede /api/eu antes destas (ver ComLogin), pra o token ser renovado uma vez só.
  */
-async function dados(request: Request, config: Configuracao, leva: number | null): Promise<Response> {
+async function dados(request: Request, config: Configuracao, pedido: PedidoDeDados): Promise<Response> {
   const { sessao, cookies } = await sessaoAtual(request, config);
   if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
   const falhou = () => json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
@@ -195,12 +201,20 @@ async function dados(request: Request, config: Configuracao, leva: number | null
   const semAcesso = () => json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(new URL(request.url)).apagar(COOKIE_SESSAO)]);
 
   try {
-    if (leva === null) {
+    if (pedido.tipo === "levas") {
       const r = await consultar<DadosDasLevas>(sessao.token, CONSULTA_DAS_LEVAS, variaveisDoRepositorio);
       if (r.tipo === "sem-acesso") return semAcesso();
       if (r.tipo === "erro") return falhou();
       return json(levasDosDados(r.dados), 200, cookies);
     }
+    // A consulta pesada (#548): só a página /levas pede; a barra, a Sala e o pegar usam a leve.
+    if (pedido.tipo === "resumo") {
+      const r = await consultar<DadosDoResumoDasLevas>(sessao.token, CONSULTA_DO_RESUMO_DAS_LEVAS, variaveisDoRepositorio);
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      return json(resumoDasLevasDosDados(r.dados), 200, cookies);
+    }
+    const leva = pedido.numero;
     const r = await consultar<DadosDaLeva>(sessao.token, CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${leva}` });
     if (r.tipo === "sem-acesso") return semAcesso();
     if (r.tipo === "erro") return falhou();
@@ -375,11 +389,13 @@ export default {
     }
 
     const leva = levaDoCaminho(pathname);
-    if (pathname === "/api/levas" || leva !== null) {
+    const pedido: PedidoDeDados | null =
+      pathname === "/api/levas" ? { tipo: "levas" } : pathname === "/api/levas/resumo" ? { tipo: "resumo" } : leva !== null ? { tipo: "leva", numero: leva } : null;
+    if (pedido) {
       const config = configuracao(env);
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
-      return dados(request, config, leva);
+      return dados(request, config, pedido);
     }
 
     if (pathname === "/api" || pathname.startsWith("/api/")) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acaoNaTarefa, carregarLeva, enderecoDaLeva, levaPedida } from "./dados";
+import { acaoNaTarefa, carregarLeva, carregarResumoDasLevas, enderecoDaLeva, levaPedida } from "./dados";
 
 const json = (corpo: unknown, status = 200) => Response.json(corpo, { status });
 const tarefa = { numero: 350, titulo: "T", url: "https://github.com/sakura-corp/x", estado: "feita" };
@@ -21,6 +21,35 @@ function fingirWorker(respostas: Record<string, () => Response>) {
   };
   return { buscar, pedidos, juntos: () => juntos };
 }
+
+describe("carregarResumoDasLevas (#548)", () => {
+  const resumo = {
+    levas: [
+      { numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 8, horas: 14, terminouEm: "2026-10-16T15:00:00Z" },
+      { numero: 1, nome: "Leva 1", abertas: 2, total: 11, feitas: 9, horas: 30.5, terminouEm: null },
+    ],
+    atual: 1,
+  };
+  it("um pedido só, ao /api/levas/resumo (nem /api/levas, nem as tarefas)", async () => {
+    const w = fingirWorker({ "/api/levas/resumo": () => json(resumo) });
+    expect(await carregarResumoDasLevas(w.buscar)).toEqual({ tipo: "pronto", levas: resumo.levas, atual: 1 });
+    expect(w.pedidos).toEqual(["/api/levas/resumo"]);
+  });
+  it("401: fora; sem atual ou sem levas: sem-levas", async () => {
+    expect(await carregarResumoDasLevas(fingirWorker({ "/api/levas/resumo": () => json({}, 401) }).buscar)).toEqual({ tipo: "fora" });
+    expect(await carregarResumoDasLevas(fingirWorker({ "/api/levas/resumo": () => json({ levas: [], atual: null }) }).buscar)).toEqual({ tipo: "sem-levas" });
+    expect(await carregarResumoDasLevas(fingirWorker({ "/api/levas/resumo": () => json({ levas: resumo.levas }) }).buscar)).toEqual({ tipo: "sem-levas" });
+  });
+  it("502, não-JSON, formato estranho ou sem conexão: erro com mensagem", async () => {
+    for (const r of [() => json({ ok: false }, 502), () => new Response("<html>", { headers: { "content-type": "text/html" } }), () => json({ levas: "x", atual: 1 })]) {
+      expect(await carregarResumoDasLevas(fingirWorker({ "/api/levas/resumo": r }).buscar)).toMatchObject({ tipo: "erro", mensagem: expect.stringContaining("GitHub") });
+    }
+    const semRede = async () => {
+      throw new TypeError("fetch failed");
+    };
+    expect(await carregarResumoDasLevas(semRede)).toMatchObject({ tipo: "erro", mensagem: expect.stringContaining("internet") });
+  });
+});
 
 describe("carregarLeva", () => {
   it("pede as levas, depois a atual, um pedido de cada vez", async () => {

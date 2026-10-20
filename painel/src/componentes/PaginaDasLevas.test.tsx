@@ -1,20 +1,23 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { Leva } from "../tipos";
+import { MAXIMO_DE_LEVAS } from "../logica/levasAnteriores";
+import type { ResumoDeLeva } from "../tipos";
 import { PaginaDasLevas } from "./PaginaDasLevas";
 
-const base: Leva = { numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 8, horas: 14, terminouEm: "2026-10-16T15:00:00Z" };
-const levas: Leva[] = [
+const base: ResumoDeLeva = { numero: 0, nome: "Leva 0", abertas: 0, total: 8, feitas: 8, horas: 14, terminouEm: "2026-10-16T12:00:00Z" };
+const levas: ResumoDeLeva[] = [
   base,
   { ...base, numero: 1, nome: "Leva 1", total: 11, feitas: 9, abertas: 2, horas: 30.5, terminouEm: null },
   { ...base, numero: 2, nome: "Leva 2", feitas: 0, horas: 0, terminouEm: null },
+  { ...base, numero: 3, nome: "Leva 3", abertas: 0, total: 0, feitas: 0, horas: 0, terminouEm: null },
 ];
-const html = (l: Leva[], atual: number | null = 2) => renderToStaticMarkup(<PaginaDasLevas levas={l} atual={atual} />);
+const html = (l: ResumoDeLeva[], atual: number | null = 3) => renderToStaticMarkup(<PaginaDasLevas levas={l} atual={atual} />);
 const texto = (h: string) => h.replace(/<!-- -->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
 
 describe("PaginaDasLevas", () => {
   it("da mais nova pra mais velha, cada linha um link (a atual vai pra /leva)", () => {
     const h = html(levas);
+    expect(h.indexOf("Leva 3")).toBeLessThan(h.indexOf("Leva 2"));
     expect(h.indexOf("Leva 2")).toBeLessThan(h.indexOf("Leva 1"));
     expect(h.indexOf("Leva 1")).toBeLessThan(h.indexOf("Leva 0"));
     expect(h).toContain('href="/leva"');
@@ -24,11 +27,22 @@ describe("PaginaDasLevas", () => {
   it("mostra feitas, horas, data e andamento", () => {
     const t = texto(html(levas));
     expect(t).toContain("8 de 8 feitas");
-    expect(t).toContain("14 h");
+    expect(t).toContain("14 h estimadas");
     expect(t).toContain("terminou em 16/10/2026");
     expect(t).toContain("9 de 11 feitas");
-    expect(t).toContain("30,5 h");
+    expect(t).toContain("30,5 h estimadas");
     expect(t).toContain("em andamento");
+  });
+  it("leva sem nenhuma tarefa: \"sem tarefas ainda\", não \"em andamento\"", () => {
+    const t = texto(html([levas[3]], 3));
+    expect(t).toContain("sem tarefas ainda");
+    expect(t).not.toContain("em andamento");
+  });
+  it("com 20 levas avisa que são as mais novas; com menos, não", () => {
+    const vinte = Array.from({ length: MAXIMO_DE_LEVAS }, (_, i) => ({ ...base, numero: i, nome: `Leva ${i}` }));
+    expect(MAXIMO_DE_LEVAS).toBe(20);
+    expect(texto(html(vinte, 19))).toContain("Mostrando as 20 mais novas.");
+    expect(texto(html(vinte.slice(1), 19))).not.toContain("mais novas");
   });
   it("o selo atual só na leva atual", () => {
     expect(html(levas).match(/>atual</g)).toHaveLength(1);

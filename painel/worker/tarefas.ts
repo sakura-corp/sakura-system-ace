@@ -3,19 +3,29 @@
 import { lerCabecalho } from "../src/logica/cabecalho";
 import { estadoDaTarefa, lerEstimativa, levaAtual, numeroDaLeva } from "../src/logica/estado";
 import { chefeDaEtiqueta, numeroValido } from "../src/logica/comecarComClaude";
+import { MAXIMO_DE_LEVAS } from "../src/logica/levasAnteriores";
 import { linkSeguro } from "../src/logica/link";
-import type { Leva, RespostaDaLeva, RespostaDasLevas, Tarefa } from "../src/tipos";
+import type { Leva, RespostaDaLeva, RespostaDasLevas, RespostaDoResumoDasLevas, ResumoDeLeva, Tarefa } from "../src/tipos";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
 
 /** Uma consulta só pra cada leva; o GitHub devolve no máximo 100 issues por página. */
 export const MAXIMO_DE_TAREFAS = 100;
 
-/** As "Levas anteriores" (#548): só as 20 etiquetas `leva-` mais novas, numa consulta só. */
-export const MAXIMO_DE_LEVAS = 20;
-
-// `issues`: só as abertas (o número que já existia). `todas`: abertas e fechadas, pro total, as horas e a data.
+// Leve: usada a toda hora (a barra lateral, a Sala e o pegar tarefa). Não pôr mais nada aqui (#548).
 export const CONSULTA_DAS_LEVAS = `
 query Levas($dono: String!, $nome: String!) {
+  repository(owner: $dono, name: $nome) {
+    labels(first: 100, query: "leva-") {
+      nodes { name issues(states: OPEN) { totalCount } }
+    }
+  }
+}`;
+
+// O resumo das "Levas anteriores" (#548), só na página /levas (é pesada: o texto de até 100 tarefas por leva).
+// Só as MAXIMO_DE_LEVAS (20) etiquetas `leva-` criadas por último.
+// `issues`: só as abertas. `todas`: abertas e fechadas, pro total, as horas e a data.
+export const CONSULTA_DO_RESUMO_DAS_LEVAS = `
+query ResumoDasLevas($dono: String!, $nome: String!) {
   repository(owner: $dono, name: $nome) {
     labels(first: ${MAXIMO_DE_LEVAS}, query: "leva-", orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
@@ -52,18 +62,22 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
 
 export const variaveisDoRepositorio = { dono: ORGANIZACAO, nome: REPOSITORIO };
 
+export type DadosDasLevas = {
+  repository: { labels: { nodes: ({ name: string; issues: { totalCount: number } } | null)[] } | null } | null;
+};
+
 /** Uma tarefa da leva, só com o que o resumo usa. */
 export type TarefaDoResumo = { state: "OPEN" | "CLOSED"; closedAt: string | null; body: string | null };
 
-export type EtiquetaDaLeva = {
+/** Uma etiqueta como a CONSULTA_DO_RESUMO_DAS_LEVAS devolve. */
+export type EtiquetaDoResumo = {
   name: string;
   issues: { totalCount: number };
-  /** Se não vier (resposta incompleta), o resumo conta só as abertas e fica sem data. */
-  todas?: { totalCount: number; nodes: (TarefaDoResumo | null)[] } | null;
+  todas: { totalCount: number; nodes: (TarefaDoResumo | null)[] };
 };
 
-export type DadosDasLevas = {
-  repository: { labels: { nodes: (EtiquetaDaLeva | null)[] } | null } | null;
+export type DadosDoResumoDasLevas = {
+  repository: { labels: { nodes: (EtiquetaDoResumo | null)[] } | null } | null;
 };
 
 export type IssueDoGitHub = {
@@ -84,16 +98,16 @@ export type DadosDaLeva = {
 };
 
 /** O resumo de uma leva (#548): total, feitas (fechada = feita), a soma das horas e o dia em que terminou. */
-export function levaDaEtiqueta(numero: number, etiqueta: EtiquetaDaLeva): Leva {
+export function levaDaEtiqueta(numero: number, etiqueta: EtiquetaDoResumo): ResumoDeLeva {
   const abertas = etiqueta.issues.totalCount;
-  const nos = (etiqueta.todas?.nodes ?? []).filter((n) => n !== null);
-  const total = etiqueta.todas?.totalCount ?? abertas;
+  const nos = etiqueta.todas.nodes.filter((n) => n !== null);
+  const total = etiqueta.todas.totalCount;
   // Tarefa sem estimativa conta 0; o arredondamento tira o 0.30000000000000004 da soma.
   const soma = nos.reduce((horas, n) => horas + (lerEstimativa(n.body) ?? 0), 0);
-  const leva: Leva = { numero, nome: `Leva ${numero}`, abertas, total, feitas: Math.max(total - abertas, 0), horas: Math.round(soma * 10) / 10, terminouEm: null };
+  const leva: ResumoDeLeva = { numero, nome: `Leva ${numero}`, abertas, total, feitas: Math.max(total - abertas, 0), horas: Math.round(soma * 10) / 10, terminouEm: null };
   // Só terminou se não tem nenhuma aberta (nem na contagem, nem nas que vieram) e tem pelo menos uma tarefa.
   if (abertas === 0 && total > 0 && nos.every((n) => n.state === "CLOSED")) leva.terminouEm = ultimoFechamento(nos);
-  if (etiqueta.todas && etiqueta.todas.totalCount > nos.length) leva.cortada = true;
+  if (total > nos.length) leva.cortada = true;
   return leva;
 }
 
@@ -110,6 +124,18 @@ function ultimoFechamento(nos: TarefaDoResumo[]): string | null {
 
 export function levasDosDados(dados: DadosDasLevas): RespostaDasLevas {
   const levas: Leva[] = [];
+  for (const no of dados.repository?.labels?.nodes ?? []) {
+    if (!no) continue;
+    const numero = numeroDaLeva(no.name);
+    if (numero !== null) levas.push({ numero, nome: `Leva ${numero}`, abertas: no.issues.totalCount });
+  }
+  levas.sort((a, b) => a.numero - b.numero);
+  return { levas, atual: levaAtual(levas) };
+}
+
+/** O que /api/levas/resumo devolve (#548): as levas com o resumo, em ordem, e a atual entre elas. */
+export function resumoDasLevasDosDados(dados: DadosDoResumoDasLevas): RespostaDoResumoDasLevas {
+  const levas: ResumoDeLeva[] = [];
   for (const no of dados.repository?.labels?.nodes ?? []) {
     if (!no) continue;
     const numero = numeroDaLeva(no.name);

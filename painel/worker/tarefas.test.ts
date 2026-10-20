@@ -9,9 +9,10 @@ import {
   levasDosDados,
   marcarDependenciasAbertas,
   numerosDeFora,
+  resumoDasLevasDosDados,
   tarefaDaIssue,
   type DadosDaLeva,
-  type EtiquetaDaLeva,
+  type EtiquetaDoResumo,
   type TarefaDoResumo,
   type IssueDoGitHub,
   type PerguntarAoGitHub,
@@ -91,18 +92,43 @@ describe("etiqueta chefe:* (botão Começar com o Claude)", () => {
 });
 
 describe("levasDosDados", () => {
+  it("só as etiquetas leva-N, em ordem, e a atual", () => {
+    const dados = {
+      repository: {
+        labels: {
+          nodes: [
+            { name: "leva-1", issues: { totalCount: 0 } },
+            { name: "leva-x", issues: { totalCount: 9 } },
+            null,
+            { name: "leva-0", issues: { totalCount: 4 } },
+            { name: "sem-leva", issues: { totalCount: 9 } },
+          ],
+        },
+      },
+    };
+    expect(levasDosDados(dados)).toEqual({
+      levas: [{ numero: 0, nome: "Leva 0", abertas: 4 }, { numero: 1, nome: "Leva 1", abertas: 0 }],
+      atual: 0,
+    });
+  });
+  it("sem repositório: nenhuma leva", () => {
+    expect(levasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
+  });
+});
+
+describe("resumoDasLevasDosDados (#548)", () => {
   // Uma etiqueta no formato da consulta: `issues` = as abertas, `todas` = abertas e fechadas.
-  const etiqueta = (name: string, nodes: (TarefaDoResumo | null)[], totalCount = nodes.length): EtiquetaDaLeva => ({
+  const etiqueta = (name: string, nodes: (TarefaDoResumo | null)[], totalCount = nodes.length): EtiquetaDoResumo => ({
     name,
     issues: { totalCount: nodes.filter((n) => n?.state === "OPEN").length },
     todas: { totalCount, nodes },
   });
   const fechada = (closedAt: string | null, body: string | null = null): TarefaDoResumo => ({ state: "CLOSED", closedAt, body });
   const aberta = (body: string | null = null): TarefaDoResumo => ({ state: "OPEN", closedAt: null, body });
-  const levas = (...nodes: (EtiquetaDaLeva | null)[]) => levasDosDados({ repository: { labels: { nodes } } }).levas;
+  const levas = (...nodes: (EtiquetaDoResumo | null)[]) => resumoDasLevasDosDados({ repository: { labels: { nodes } } }).levas;
 
   it("só as etiquetas leva-N, em ordem, e a atual", () => {
-    const r = levasDosDados({
+    const r = resumoDasLevasDosDados({
       repository: {
         labels: {
           nodes: [
@@ -119,7 +145,7 @@ describe("levasDosDados", () => {
     expect(r.atual).toBe(0);
   });
   it("sem repositório: nenhuma leva", () => {
-    expect(levasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
+    expect(resumoDasLevasDosDados({ repository: null })).toEqual({ levas: [], atual: null });
   });
   it("total, feitas (fechada = feita) e a data = o maior closedAt, como veio", () => {
     const [leva] = levas(etiqueta("leva-2", [fechada("2026-10-05T12:00:00Z"), fechada("2026-10-09T08:30:00Z"), fechada("2026-10-07T23:59:00Z")]));
@@ -152,10 +178,6 @@ describe("levasDosDados", () => {
     const [inteira] = levas(etiqueta("leva-10", [fechada("2026-10-02T00:00:00Z"), null], 1));
     expect("cortada" in inteira).toBe(false);
     expect(inteira.terminouEm).toBe("2026-10-02T00:00:00Z");
-  });
-  it("sem a parte `todas` (resposta incompleta): conta só as abertas, sem data", () => {
-    expect(levas({ name: "leva-11", issues: { totalCount: 2 } })[0]).toEqual({ numero: 11, nome: "Leva 11", abertas: 2, total: 2, feitas: 0, horas: 0, terminouEm: null });
-    expect(levas({ name: "leva-12", issues: { totalCount: 0 } })[0].terminouEm).toBeNull();
   });
 });
 

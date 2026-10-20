@@ -1,11 +1,11 @@
 // "Levas anteriores" (#548): uma linha por leva, da mais nova pra mais velha, cada uma um link pra tela da leva.
 import { ChevronRight } from "lucide-react";
 import { enderecoDaLeva } from "../logica/dados";
-import { levasDaMaisNovaPraMaisVelha, textoDasHoras, textoDoFim } from "../logica/levasAnteriores";
-import type { Leva } from "../tipos";
+import { levasDaMaisNovaPraMaisVelha, MAXIMO_DE_LEVAS, textoDasHoras, textoDoFim } from "../logica/levasAnteriores";
+import type { ResumoDeLeva } from "../tipos";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
 
-export function PaginaDasLevas({ levas, atual }: { levas: Leva[]; atual: number | null }) {
+export function PaginaDasLevas({ levas, atual }: { levas: ResumoDeLeva[]; atual: number | null }) {
   const lista = levasDaMaisNovaPraMaisVelha(levas);
   return (
     <div className="mx-auto w-full max-w-4xl">
@@ -32,7 +32,7 @@ export function PaginaDasLevas({ levas, atual }: { levas: Leva[]; atual: number 
                       {l.feitas} de {l.total} feitas
                     </span>
                     <span>{textoDasHoras(l.horas)}</span>
-                    <span>{textoDoFim(l.terminouEm)}</span>
+                    <span>{textoDoFim(l)}</span>
                   </p>
                   {l.cortada ? <p className="mt-1 text-xs text-texto-2">mais de 100 tarefas: horas e data das 100 primeiras</p> : null}
                 </div>
@@ -42,6 +42,9 @@ export function PaginaDasLevas({ levas, atual }: { levas: Leva[]; atual: number 
           ))}
         </ul>
       )}
+      {lista.length >= MAXIMO_DE_LEVAS ? (
+        <p className="mt-4 text-center text-xs text-texto-2">Mostrando as {MAXIMO_DE_LEVAS} mais novas.</p>
+      ) : null}
     </div>
   );
 }
