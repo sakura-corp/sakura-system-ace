@@ -774,12 +774,17 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **20/10/2026, "O que mudou hoje" no Início (#549)**, com o Tiago (PR #666, mesclado pela Sofia em 20/10): um
   bloco novo no Início, abaixo da leva (no celular, por último), com a linha do tempo do dia (ver "Decisões técnicas").
   Mexeu também no `src/App.tsx` (buscar `/api/novidades` e os dados de exemplo), que não estava na lista da issue.
-  Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-549/`. Falta a Sofia conferir no endereço público depois de publicar.
+  Fotos: `docs/relatorios/fotos/2026-10-20-tarefa-549/`. Conferido pela Sofia no endereço público em 20/10.
   **Decidido pela Sofia (20/10)**: as conferências repetidas do mesmo PR viram uma linha só, a mais nova (tarefa #667,
   leva 2); o nome da conferência continua na frase.
-- **20/10/2026, A fase de cada leva (#644)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o worker diz a fase
+- **20/10/2026, A fase de cada leva (#644)**, com o Tiago (PR #671, mesclado pela Sofia em 20/10; conferido por ela no endereço público): o worker diz a fase
   de cada leva (Montando, Trabalhando, Testando, Relatório, Aprovada) lendo o GitHub, em `/api/levas`, `/api/levas/resumo`
   e `/api/leva/<n>`; a leva atual passou a ser **a mais antiga não aprovada** (a leva 0 conta como aprovada), e o pegar
-  recusa tarefa de leva em Montando. Sem tela. **Efeito na hora**: enquanto a leva 1 não tiver o `leva-1.md` na `main`,
-  a atual volta a ser a 1 em todo lugar (o `/leva`, o Início e a Sala), a leva 2 fica em Montando e ninguém pega tarefa
-  dela. Limite: o Relatório olha só os 50 PRs abertos mexidos por último (100 arquivos cada).
+  recusa tarefa de leva em Montando. Sem tela. **Efeito na hora**: nenhum, porque o relatório da leva 1
+  (`docs/relatorios/leva-1.md`, PR #672) entrou antes: a leva 1 ficou Aprovada, a atual continua a 2 (Trabalhando) e as 4
+  abertas da leva 1 continuam pegáveis. Sem o relatório, a atual voltaria a ser a 1 e a leva 2 ficaria em Montando. As duas
+  escolhas que o Tiago fez sozinho (leva vazia = Montando; "anterior com tarefa aberta aceita pegar" só pra leva aprovada)
+  esperam a Sofia na #674. Limite: o Relatório olha só os 50 PRs abertos mexidos por último (100 arquivos cada).
+- **20/10/2026, a leva 1 aprovada** (relatório `docs/relatorios/leva-1.md`, PR #672, mesclado pela Sofia): 5 de 9 feitas,
+  18 h de 31 h. É a primeira leva com fases, mas sem a rodada de testes com lista (a fase Testando nasceu com ela já
+  andando). As 4 abertas (#618, #619, #510, #455) ficam na leva 1 até a Sofia decidir (#673).
