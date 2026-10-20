@@ -1719,3 +1719,16 @@
     pessoa já tinha usado, então o Send foi apagado. **Regra**: antes de mandar print, cobrir link
     de Send, senha ou chave; quando aparecer um, o Claude avisa na hora, nunca repete o link, e
     pede pra apagar o Send no Bitwarden (Send → os três pontinhos → Excluir).
+
+86. **Commit novo num PR sem aviso na sessão que o acompanha (20/10/2026, PR #671).** A sessão
+    "Conferir PR #671" chamou o `subscribe_pr_activity`, mas, quando o Tiago enviou o commit que
+    resolvia o conflito, nenhum aviso chegou: ela continuou parada até a reconferência marcada por
+    ela mesma. **Regra**: quem acompanha um PR não confia só no aviso. Marca uma reconferência
+    (`send_later`) e, ao conferir, olha o último commit e o CI dele (`check-runs`), sem esperar o
+    aviso.
+87. **Anotação no "Andamento" com PR do painel aberto dá conflito (20/10/2026, PR #668 × #671).**
+    O Claude da Sofia mesclou uma linha no fim do "Andamento" do `docs/painel.md` enquanto o PR da
+    #644 também acrescentava a sua linha ali. O #671 ficou com conflito e o CI dele não rodou até o
+    Tiago trazer a `main`. **Regra**: com PR do painel aberto, o Claude da Sofia não mexe no fim do
+    "Andamento". A anotação vai no PR da tarefa, ou espera ele entrar. Arquivo novo (como o
+    relatório da leva) não conflita.
