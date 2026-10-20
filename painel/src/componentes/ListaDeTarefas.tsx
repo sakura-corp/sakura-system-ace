@@ -75,10 +75,11 @@ function temBotoesDoClaude(t: Tarefa, login: string | undefined): boolean {
 
 /**
  * A grade da linha (versão A, #547). No computador (lg), uma linha com as colunas do cabeçalho e, embaixo,
- * os botões e avisos ("x"). Abaixo disso: número à esquerda, título em cima, depois estado e horas, chefe e quem.
+ * os botões e avisos ("x"). Abaixo disso: número à esquerda, título em cima, estado e horas, e o chefe e quem cada um
+ * na largura toda (lado a lado, a coluna "auto" espremia o chefe até quebrar letra por letra em 320 px).
  */
 const GRADE =
-  "grid grid-cols-[40px_minmax(0,1fr)_auto] gap-x-3 px-4 sm:px-5 [grid-template-areas:'n_t_t'_'._s_h'_'._c_d'_'._x_x'] " +
+  "grid grid-cols-[40px_minmax(0,1fr)_auto] gap-x-3 px-4 sm:px-5 [grid-template-areas:'n_t_t'_'._s_h'_'._c_c'_'._d_d'_'._x_x'] " +
   "lg:grid-cols-[52px_minmax(0,1fr)_112px_128px_168px_44px] lg:[grid-template-areas:'n_t_s_c_d_h'_'._x_x_x_x_x'] lg:items-center";
 
 const BOTAO =
@@ -416,11 +417,11 @@ function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, 
           planoB={planoB}
           aoCopiar={(r) => setPlanoB(r === "plano-b")}
           aoAvisar={aoAvisar}
-          className="mt-2 flex min-w-0 max-w-[12rem] flex-col items-end text-right [grid-area:d] lg:mt-0 lg:max-w-none lg:items-start lg:text-left"
+          className="mt-2 flex min-w-0 flex-col items-start [grid-area:d] lg:mt-0"
           dica={false}
         />
       ) : (
-        <span className="mt-2 flex min-w-0 items-center justify-end gap-1.5 [grid-area:d] lg:mt-0 lg:justify-start">
+        <span className="mt-2 flex min-w-0 items-center gap-1.5 [grid-area:d] empty:hidden lg:mt-0 lg:empty:flex">
           {t.dono ? (
             <>
               <Avatar login={t.dono.login} avatar={t.dono.avatar} />
