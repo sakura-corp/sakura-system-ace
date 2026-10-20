@@ -462,7 +462,8 @@ que não são arquivo (no `wrangler.jsonc`, `assets.not_found_handling: "single-
 ### Ligar o banco (é da Sofia, uma vez só)
 1. Na Cloudflare: **Storage & Databases → D1 SQL Database → Create**, nome `sakura-financeiro`, local automático.
 2. Copiar o **Database ID** da página do banco (não é segredo) e pôr no `painel/wrangler.jsonc`, em `d1_databases`
-   (`binding: "FINANCEIRO"`, `database_name`, `database_id`, `migrations_dir: "migrations"`), num PR.
+   (`binding: "FINANCEIRO"`, `database_name`, `database_id`, `migrations_dir: "migrations"`), num PR. A variável
+   `DONA_DO_FINANCEIRO` (em `vars`, o login do GitHub da dona) já está lá desde a #654; sem ela ninguém lança.
 3. **Aplicar a migration** (antes de mesclar esse PR): no PC, dentro de `painel/`,
    `npx wrangler d1 migrations apply sakura-financeiro --remote` (a primeira vez pede `npx wrangler login`). Sem o PC: na
    página do banco, aba **Console**, colar o conteúdo de `0001_financeiro.sql` e rodar. Rodar de novo não estraga nada.

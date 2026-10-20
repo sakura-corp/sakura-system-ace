@@ -8,6 +8,7 @@ import {
   diaEmSaoPaulo,
   enderecoDoMes,
   lancamentoDoFormulario,
+  diaPadraoDoMes,
   mesDaBusca,
   mesSeguinteAte,
   salvarLancamento,
@@ -70,6 +71,11 @@ describe("carregarFinanceiro (#654)", () => {
   it("503 vira 'sem-banco' (o banco ainda não foi ligado), no resumo", async () => {
     const { buscar } = buscaFalsa({ "/api/financeiro/resumo": () => resposta({ ok: false, erro: "o banco do financeiro ainda não foi configurado" }, 503) });
     expect(await carregarFinanceiro("2026-10", buscar)).toEqual({ tipo: "sem-banco" });
+  });
+
+  it("503 de outra coisa (o login não configurado) não diz que é o banco: mostra a frase do worker", async () => {
+    const { buscar } = buscaFalsa({ "/api/financeiro/resumo": () => resposta({ ok: false, erro: "login não configurado" }, 503) });
+    expect(await carregarFinanceiro("2026-10", buscar)).toEqual({ tipo: "erro", mensagem: "Login não configurado" });
   });
 
   it("401 vira 'fora' (sessão acabou), no resumo e na lista", async () => {
@@ -258,5 +264,20 @@ describe("enviarLancamento: do formulário até o pedido (#654)", () => {
     const { buscar, pedidos } = buscaFalsa({});
     expect(await enviarLancamento({ ...campos, valor: "abc" }, null, buscar)).toEqual({ tipo: "erro", mensagem: expect.stringContaining("valor") });
     expect(pedidos).toEqual([]);
+  });
+});
+
+describe("diaPadraoDoMes", () => {
+  // 20/10/2026 às 10h em São Paulo.
+  const agora = new Date("2026-10-20T13:00:00Z");
+  it("no mês de hoje, o dia de hoje; em outro mês, o dia 1 daquele mês", () => {
+    expect(diaPadraoDoMes("2026-10", agora)).toBe("2026-10-20");
+    expect(diaPadraoDoMes("2026-08", agora)).toBe("2026-08-01");
+  });
+});
+
+describe("mesDaBusca recusa ano fora do razoável", () => {
+  it("?mes=9999-12 vira o mês de hoje", () => {
+    expect(mesDaBusca("?mes=9999-12", new Date("2026-10-20T13:00:00Z"))).toBe("2026-10");
   });
 });

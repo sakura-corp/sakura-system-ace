@@ -12,8 +12,11 @@
   "preview_urls": false,
   // Login (#353). O Client ID do app "Sakura Painel" não é segredo. O client secret e a
   // CHAVE_DA_SESSAO são segredos: só na Cloudflare (e no .dev.vars de quem programa).
+  // Financeiro (#654): o login do GitHub de quem vê cada lançamento e lança. Não é segredo.
+  // Vazia: ninguém é dona (o worker falha fechado).
   "vars": {
-    "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2"
+    "GITHUB_APP_CLIENT_ID": "Iv23liveky5fWf6C7oO2",
+    "DONA_DO_FINANCEIRO": "caranovavidanova"
   },
   // Tempo real (#355): a sala que repassa os avisos do GitHub a todos os painéis abertos.
   // `new_sqlite_classes` = Durable Object com SQLite, que está no plano grátis.

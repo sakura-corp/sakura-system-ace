@@ -71,8 +71,12 @@ async function pedirJson(buscar: Buscar, endereco: string): Promise<{ tipo: "ok"
     return { tipo: "erro", mensagem: ERRO_DE_CONEXAO };
   }
   if (resposta.status === 401) return { tipo: "fora" };
-  if (resposta.status === 503) return { tipo: "sem-banco" };
-  if (!resposta.ok) return { tipo: "erro", mensagem: await fraseDoErro(resposta, ERRO_GERAL) };
+  if (!resposta.ok) {
+    const mensagem = await fraseDoErro(resposta, ERRO_GERAL);
+    // 503 do banco não ligado; o outro 503 (login não configurado) mostra a própria frase.
+    if (resposta.status === 503 && /banco do financeiro/i.test(mensagem)) return { tipo: "sem-banco" };
+    return { tipo: "erro", mensagem };
+  }
   try {
     return { tipo: "ok", corpo: await resposta.json() };
   } catch {
@@ -174,7 +178,8 @@ export function lancamentoDoFormulario(f: FormularioDeLancamento): { ok: true; v
 
 // ---- O mês e o dia da página ----
 
-const MES_VALIDO = /^\d{4}-(0[1-9]|1[0-2])$/;
+// Só anos 20xx, a mesma regra do worker.
+const MES_VALIDO = /^20\d{2}-(0[1-9]|1[0-2])$/;
 
 /** O mês pedido em `?mes=AAAA-MM`; sem ele (ou torto), o mês de hoje em São Paulo. */
 export function mesDaBusca(busca: string, agora: Date): string {
@@ -191,6 +196,12 @@ export function diaEmSaoPaulo(agora: Date): string {
   const partes = formatoDia.formatToParts(agora);
   const pegar = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "";
   return `${pegar("year")}-${pegar("month")}-${pegar("day")}`;
+}
+
+/** A data que o formulário traz pronta: hoje, se a tela está no mês de hoje; senão, o dia 1 do mês da tela. */
+export function diaPadraoDoMes(mes: string, agora: Date): string {
+  const hoje = diaEmSaoPaulo(agora);
+  return hoje.startsWith(`${mes}-`) ? hoje : `${mes}-01`;
 }
 
 /** O mês seguinte, mas só até o mês de hoje (São Paulo): depois dele não há o que mostrar, e vira null. */

@@ -200,3 +200,11 @@ describe("validarNovoLancamento", () => {
     expect(erro({ ...bom, descricao: 42 })).toMatch(/descri/i);
   });
 });
+
+describe("resumoFinanceiro: mês estranho não trava", () => {
+  it("9999-12 termina (o mês seguinte de 9999-12 vem antes dele no texto) e a série tem no máximo 12 meses", () => {
+    const r = resumoFinanceiro([entrada("9990-01-01", 100)], "9999-12");
+    expect(r.meses).toHaveLength(12);
+    expect(r.meses[11].mes).toBe("9999-12");
+  });
+});

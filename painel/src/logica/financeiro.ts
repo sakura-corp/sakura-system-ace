@@ -130,12 +130,13 @@ export function resumoFinanceiro(lancamentos: readonly LancamentoParaConta[], me
   };
 
   // Série sem buraco: do primeiro mês com lançamento (ou 12 meses atrás, o que vier depois) até o atual.
-  let inicio = mesAtual;
-  for (let i = 1; i < MESES_NA_SERIE; i++) inicio = mesAnterior(inicio);
+  // Anda pra trás a partir do atual, no máximo 12 voltas: comparar mês por texto falha depois do ano 9999.
   const primeiro = [...porMes.keys()].sort()[0] ?? mesAtual;
-  if (primeiro > inicio) inicio = primeiro;
   const meses: TotalDoMes[] = [];
-  for (let mes = inicio; mes <= mesAtual; mes = mesSeguinte(mes)) meses.push(totalDo(mes));
+  for (let i = 0, mes = mesAtual; i < MESES_NA_SERIE; i++, mes = mesAnterior(mes)) {
+    meses.unshift(totalDo(mes));
+    if (mes <= primeiro) break;
+  }
 
   const saidasPorCategoria = [...saidasDoMes]
     .map(([categoria, saiuCentavos]) => ({ categoria, saiuCentavos }))

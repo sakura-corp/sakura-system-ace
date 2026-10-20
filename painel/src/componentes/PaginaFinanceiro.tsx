@@ -7,7 +7,7 @@ import {
   apagarLancamento,
   barrasDoGrafico,
   diaCurto,
-  diaEmSaoPaulo,
+  diaPadraoDoMes,
   enderecoDoMes,
   enviarLancamento,
   mesSeguinteAte,
@@ -252,7 +252,7 @@ function Lancamentos({ mes, lista, agora, aoMudar }: { mes: string; lista: Lista
         <FormularioDeLancamentos
           key={editando?.id ?? "novo"}
           categorias={lista.categorias}
-          dia={diaEmSaoPaulo(agora)}
+          dia={diaPadraoDoMes(mes, agora)}
           editando={editando}
           aoCancelar={() => setEditando(null)}
           aoSalvar={async (campos) => {

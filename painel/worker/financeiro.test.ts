@@ -199,6 +199,7 @@ describe("respostas de erro", () => {
       expect((await pedir("/api/financeiro/lancamentos/1", { method: "PUT", corpo, login, repositorio })).status).toBe(400);
     }
     expect((await pedir("/api/financeiro/resumo?mes=2026-13", { repositorio })).status).toBe(400);
+    expect((await pedir("/api/financeiro/resumo?mes=9999-12", { repositorio })).status).toBe(400);
     expect((await pedir("/api/financeiro/lancamentos?mes=03-2026", { login, repositorio })).status).toBe(400);
     expect(lancamentos.map((l) => [l.id, l.valorCentavos])).toEqual([[1, 12345], [2, 2000], [3, 10000]]);
   });

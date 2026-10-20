@@ -73,7 +73,8 @@ export interface ContextoFinanceiro {
 
 // ---- As rotas ----
 
-const MES = /^\d{4}-(0[1-9]|1[0-2])$/;
+// Só anos 20xx: mês absurdo (9999-12) nem chega na conta.
+const MES = /^20\d{2}-(0[1-9]|1[0-2])$/;
 const TAMANHO_MAXIMO_DO_CORPO = 10_000;
 
 function json(corpo: unknown, status = 200): Response {
