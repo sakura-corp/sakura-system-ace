@@ -26,19 +26,6 @@ export type TextoEmBreve = {
 
 export const EM_BREVE: TextoEmBreve[] = [
   {
-    id: "levas",
-    grupo: "1º · Produção",
-    titulo: "Levas anteriores",
-    subtitulo: "O que cada leva entregou.",
-    resumo: "Aqui ficam as levas que já terminaram, uma a uma. Ainda falta o painel descobrir quando cada leva acabou.",
-    vaiMostrar: ["As tarefas de cada leva", "As horas de cada leva", "Quando cada leva terminou"],
-    dependeDe: [
-      { texto: "A tarefa das levas anteriores", detalhe: "É a #548." },
-      { texto: "A data de fim de cada leva", detalhe: "Vem da última tarefa fechada da leva." },
-    ],
-    tarefa: 548,
-  },
-  {
     id: "versoes",
     grupo: "4º · Segurança e operação",
     titulo: "Versões",

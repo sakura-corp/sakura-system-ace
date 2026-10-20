@@ -1,6 +1,6 @@
 // O lado da página nas tarefas de verdade (#354): pede as levas e as tarefas ao worker, uma
 // rota depois da outra, e diz o que mostrar. O token nunca passa por aqui (fica no cookie).
-import type { Leva, RespostaDaLeva, RespostaDasLevas, Tarefa } from "../tipos";
+import type { Leva, RespostaDaLeva, RespostaDasLevas, RespostaDoResumoDasLevas, ResumoDeLeva, Tarefa } from "../tipos";
 import { numeroValido } from "./comecarComClaude";
 
 export type EstadoDaLeva =
@@ -84,6 +84,27 @@ export async function carregarLeva(pedida: number | null, buscar: Buscar = fetch
   const corpo2 = r2.corpo as Partial<RespostaDaLeva>;
   if (!Array.isArray(corpo2.tarefas) || !corpo2.tarefas.every(ehTarefa)) return { tipo: "erro", mensagem: ERRO_DO_GITHUB };
   return { tipo: "pronto", levas, atual, leva: { numero, tarefas: corpo2.tarefas, cortada: corpo2.cortada === true } };
+}
+
+// ---- Levas anteriores (#548) ----
+/** Como a página /levas está: os mesmos estados da leva, mas o "pronto" traz só as levas com o resumo. */
+export type EstadoDoResumo =
+  | Exclude<EstadoDaLeva, { tipo: "pronto" }>
+  | { tipo: "pronto"; levas: ResumoDeLeva[]; /** A leva atual (a que abre em /leva). */ atual: number };
+
+/**
+ * Busca o resumo das levas (/api/levas/resumo), um pedido só. Na página /levas é o único pedido depois do
+ * /api/eu: a barra lateral usa as mesmas levas (o resumo também tem número, nome e abertas), então não sai
+ * um /api/levas junto (dois pedidos ao mesmo tempo com o token vencido renovariam duas vezes).
+ */
+export async function carregarResumoDasLevas(buscar: Buscar = fetch): Promise<EstadoDoResumo> {
+  const r = await pedirJson(buscar, "/api/levas/resumo");
+  if (r.tipo !== "ok") return r;
+  const corpo = r.corpo as Partial<RespostaDoResumoDasLevas>;
+  if (!Array.isArray(corpo.levas)) return { tipo: "erro", mensagem: ERRO_DO_GITHUB };
+  const atual = typeof corpo.atual === "number" ? corpo.atual : null;
+  if (atual === null || corpo.levas.length === 0) return { tipo: "sem-levas" };
+  return { tipo: "pronto", levas: corpo.levas, atual };
 }
 
 // ---- Pegar e largar (#538) ----

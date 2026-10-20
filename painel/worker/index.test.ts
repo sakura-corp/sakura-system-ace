@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import worker, { type Ambiente } from "./index";
+import worker, { levaDoCaminho, type Ambiente } from "./index";
+import { CONSULTA_DAS_LEVAS, CONSULTA_DO_RESUMO_DAS_LEVAS } from "./tarefas";
 import { cifrarSessao, decifrarSessao, type Sessao } from "./sessao";
 
 const CHAVE = "chave-de-teste-com-mais-de-trinta-e-dois-caracteres-0123456789";
@@ -241,12 +242,14 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
   /** Finge o GitHub GraphQL (e a renovação do token). `resposta` decide o que o /graphql devolve. */
   function fingirGraphQL(resposta: () => Response) {
     const consultas: { autorizacao: string | null; variaveis: Record<string, unknown> }[] = [];
+    const textos: string[] = [];
     let renovacoes = 0;
     vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
       const url = String(entrada);
       if (url === "https://api.github.com/graphql") {
-        const corpo = JSON.parse(String(init?.body)) as { variables: Record<string, unknown> };
+        const corpo = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, unknown> };
         consultas.push({ autorizacao: new Headers(init?.headers).get("authorization"), variaveis: corpo.variables });
+        textos.push(corpo.query);
         return resposta();
       }
       if (url === "https://github.com/login/oauth/access_token") {
@@ -256,18 +259,20 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
       if (url === "https://api.github.com/orgs/sakura-corp/members/fulana") return new Response(null, { status: 204 });
       return new Response("inesperado", { status: 500 });
     });
-    return { consultas, renovacoes: () => renovacoes };
+    return { consultas, textos, renovacoes: () => renovacoes };
   }
 
   it("sem sessão: 401, e não pergunta nada ao GitHub", async () => {
     const g = fingirGraphQL(() => Response.json({}));
-    for (const caminho of ["/api/levas", "/api/leva/0"]) expect((await pedir(caminho)).status).toBe(401);
+    for (const caminho of ["/api/levas", "/api/levas/resumo", "/api/leva/0"]) expect((await pedir(caminho)).status).toBe(401);
     expect(g.consultas).toEqual([]);
   });
 
   it("sem os segredos: 503; outro método: 405; leva que não é número: 404", async () => {
     expect((await pedir("/api/levas", { env: { ASSETS: ambiente.ASSETS } })).status).toBe(503);
     expect((await pedir("/api/levas", { method: "POST", cookie: await comSessao() })).status).toBe(405);
+    expect((await pedir("/api/levas/resumo", { env: { ASSETS: ambiente.ASSETS } })).status).toBe(503);
+    expect((await pedir("/api/levas/resumo", { method: "POST", cookie: await comSessao() })).status).toBe(405);
     for (const caminho of ["/api/leva/x", "/api/leva/", "/api/leva/1/2", "/api/leva/12345"]) {
       expect((await pedir(caminho, { cookie: await comSessao() })).status).toBe(404);
     }
@@ -282,6 +287,63 @@ describe("/api/levas e /api/leva/<n> (#354)", () => {
     expect(JSON.parse(texto)).toEqual({ levas: [{ numero: 0, nome: "Leva 0", abertas: 3 }], atual: 0 });
     expect(texto).not.toContain("ghu_");
     expect(g.consultas[0]).toEqual({ autorizacao: "Bearer ghu_a", variaveis: { dono: "sakura-corp", nome: "sakura-system-ace" } });
+  });
+
+  it("/api/levas usa a consulta leve: sem o texto das tarefas (#548)", async () => {
+    const g = fingirGraphQL(() => Response.json({ data: { repository: { labels: { nodes: [] } } } }));
+    await pedir("/api/levas", { cookie: await comSessao() });
+    expect(g.textos[0]).toBe(CONSULTA_DAS_LEVAS);
+    expect(g.textos[0]).not.toContain("body");
+  });
+
+  it("/api/levas/resumo (#548): a consulta do resumo, e as levas com total, feitas, horas e data", async () => {
+    const todas = (nodes: unknown[]) => ({ totalCount: nodes.length, nodes });
+    const g = fingirGraphQL(() =>
+      Response.json({
+        data: {
+          repository: {
+            labels: {
+              nodes: [
+                { name: "leva-1", issues: { totalCount: 1 }, todas: todas([{ state: "OPEN", closedAt: null, body: "Estimativa: 3 h" }, { state: "CLOSED", closedAt: "2026-10-19T12:00:00Z", body: null }]) },
+                { name: "leva-0", issues: { totalCount: 0 }, todas: todas([{ state: "CLOSED", closedAt: "2026-10-16T15:00:00Z", body: "Estimativa: 2,5 h" }]) },
+                { name: "bug", issues: { totalCount: 1 }, todas: todas([]) },
+              ],
+            },
+          },
+        },
+      }),
+    );
+    const r = await pedir("/api/levas/resumo", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    const texto = await r.text();
+    expect(JSON.parse(texto)).toEqual({
+      levas: [
+        { numero: 0, nome: "Leva 0", abertas: 0, total: 1, feitas: 1, horas: 2.5, terminouEm: "2026-10-16T15:00:00Z" },
+        { numero: 1, nome: "Leva 1", abertas: 1, total: 2, feitas: 1, horas: 3, terminouEm: null },
+      ],
+      atual: 1,
+    });
+    expect(texto).not.toContain("ghu_");
+    expect(texto).not.toContain("Estimativa");
+    expect(g.textos[0]).toBe(CONSULTA_DO_RESUMO_DAS_LEVAS);
+    expect(g.consultas[0]).toEqual({ autorizacao: "Bearer ghu_a", variaveis: { dono: "sakura-corp", nome: "sakura-system-ace" } });
+  });
+
+  it("/api/levas/resumo: o GitHub fora do ar dá 502; token recusado dá 401 e apaga a sessão", async () => {
+    fingirGraphQL(() => new Response("ghu_a", { status: 500 }));
+    const r = await pedir("/api/levas/resumo", { cookie: await comSessao() });
+    expect(r.status).toBe(502);
+    expect(await r.text()).not.toContain("ghu_");
+    fingirGraphQL(() => new Response(null, { status: 401 }));
+    const r2 = await pedir("/api/levas/resumo", { cookie: await comSessao() });
+    expect(r2.status).toBe(401);
+    expect(valorDoCookie(r2, "sessao")).toBe("");
+  });
+
+  it("levaDoCaminho não confunde /api/levas/resumo com uma leva", () => {
+    expect(levaDoCaminho("/api/levas/resumo")).toBeNull();
+    expect(levaDoCaminho("/api/leva/resumo")).toBeNull();
   });
 
   it("/api/leva/0: pede a etiqueta leva-0 e devolve as tarefas no formato da página", async () => {
