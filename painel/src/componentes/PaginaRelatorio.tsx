@@ -37,6 +37,14 @@ export function levaDoRelatorio(levas: Leva[], atual: number | null): number | n
   return atual;
 }
 
+/**
+ * A `key` da página: o número e a fase da leva. Quando a Sofia mescla, o tempo real traz a lista com a fase nova, a chave
+ * muda e a página busca o relatório de novo (senão ficaria "esperando" ao lado da barra dizendo Aprovada).
+ */
+export function chaveDoRelatorio(numero: number, levas: Leva[]): string {
+  return `${numero}:${levas.find((l) => l.numero === numero)?.fase ?? ""}`;
+}
+
 /** Busca /api/leva/<n>/relatorio e confere o formato. O link do PR só passa se for da sakura-corp. */
 export async function carregarRelatorio(numero: number, buscar: Buscar = fetch): Promise<EstadoDoRelatorio> {
   let resposta: Response;
@@ -66,7 +74,9 @@ export async function carregarRelatorio(numero: number, buscar: Buscar = fetch):
       situacao: situacao as RespostaDoRelatorio["situacao"],
       texto,
       ...(corpo?.textoCortado === true ? { textoCortado: true as const } : {}),
-      ...(pr ? { pr: { numero: pr.numero, ...(url ? { url } : {}) } } : {}),
+      ...(pr
+        ? { pr: { numero: pr.numero, ...(url ? { url } : {}), ...(typeof pr.autor === "string" ? { autor: pr.autor } : {}), ...(pr.deFora === true ? { deFora: true as const } : {}) } }
+        : {}),
       ...(typeof outrosPrs === "number" && outrosPrs > 0 ? { outrosPrs } : {}),
     },
   };
@@ -75,7 +85,7 @@ export async function carregarRelatorio(numero: number, buscar: Buscar = fetch):
 const CAIXA = "mt-4 min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5";
 
 /** O link do PR, em aba nova (ou só o número, se o endereço não é da sakura-corp). */
-function LinkDoPr({ pr }: { pr: { numero: number; url?: string } }) {
+function LinkDoPr({ pr }: { pr: NonNullable<RespostaDoRelatorio["pr"]> }) {
   if (!pr.url) return <span>PR #{pr.numero}</span>;
   return (
     <a
@@ -161,14 +171,21 @@ export function ConteudoDoRelatorio({ numero, estado, tentarDeNovo }: PropsDoCon
         {esperando && r.pr && (
           <span className="text-sm">
             <LinkDoPr pr={r.pr} />
+            {r.pr.autor ? <span className="text-texto-2">, aberto por @{r.pr.autor}</span> : null}
           </span>
         )}
       </div>
-      {esperando && r.outrosPrs ? (
-        <p className="mt-3 text-sm text-texto-2">
-          Atenção: há mais {r.outrosPrs} {r.outrosPrs === 1 ? "PR" : "PRs"} abertos mexendo neste relatório. Aqui aparece o que mudou por último.
+      {esperando && r.pr?.deFora ? (
+        <p role="alert" className="mt-3 text-sm font-medium text-revisao">
+          Este PR foi aberto por alguém de fora da sakura-corp. Confira no GitHub antes de confiar no texto.
         </p>
       ) : null}
+      {esperando && r.outrosPrs ? (
+        <p className="mt-3 text-sm text-texto-2">
+          Atenção: há mais {r.outrosPrs} {r.outrosPrs === 1 ? "PR" : "PRs"} abertos mexendo neste relatório. Aqui aparece o da equipe atualizado por último.
+        </p>
+      ) : null}
+      {esperando && r.pr ? <p className="mt-3 text-[13px] font-medium text-texto-2">Texto do PR #{r.pr.numero}:</p> : null}
       <TextoDoRelatorio relatorio={r} />
       <p className="mt-3 text-[13px] text-texto-2">
         {esperando ? "Do PR aberto: " : "Vem de "}
@@ -180,8 +197,8 @@ export function ConteudoDoRelatorio({ numero, estado, tentarDeNovo }: PropsDoCon
 }
 
 type Props = {
-  /** A leva do relatório (ver `levaDoRelatorio`). */
-  numero: number;
+  /** A leva do relatório (ver `levaDoRelatorio`); null só sem login, quando não há leva nenhuma. */
+  numero: number | null;
   /** Sem login (só no `npm run dev`): não busca nada. */
   semLogin?: boolean;
   /** Só nos testes: em vez de buscar no worker. */
@@ -193,7 +210,7 @@ export function PaginaRelatorio({ numero, semLogin = false, buscar = fetch }: Pr
   const [estado, setEstado] = useState<EstadoDoRelatorio>({ tipo: "carregando" });
   const [vez, setVez] = useState(0);
   useEffect(() => {
-    if (semLogin) return;
+    if (semLogin || numero === null) return;
     let vale = true;
     setEstado({ tipo: "carregando" });
     void carregarRelatorio(numero, buscar).then((novo) => {
@@ -206,8 +223,8 @@ export function PaginaRelatorio({ numero, semLogin = false, buscar = fetch }: Pr
   const tentarDeNovo = useCallback(() => setVez((v) => v + 1), []);
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <CabecalhoDaPagina trilha="1º · Produção" titulo={`Relatório da leva ${numero}`} explicacao="O que foi feito na leva, e se a Sofia já aprovou." />
-      {semLogin ? (
+      <CabecalhoDaPagina trilha="1º · Produção" titulo={numero === null ? "Relatório da leva" : `Relatório da leva ${numero}`} explicacao="O que foi feito na leva, e se a Sofia já aprovou." />
+      {semLogin || numero === null ? (
         <p className={`${CAIXA} text-sm text-texto-2`}>Sem login, o relatório não abre. Entre pelo painel de verdade.</p>
       ) : (
         <ConteudoDoRelatorio numero={numero} estado={estado} tentarDeNovo={tentarDeNovo} />

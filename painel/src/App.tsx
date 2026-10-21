@@ -7,7 +7,7 @@ import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
 import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaInicio } from "./componentes/PaginaInicio";
-import { levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
+import { chaveDoRelatorio, levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
@@ -370,7 +370,11 @@ export default function App({
       ) : pagina === "relatorio" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           {numeroDoRelatorio !== null || exemplo ? (
-            <PaginaRelatorio numero={numeroDoRelatorio ?? 0} semLogin={exemplo} />
+            <PaginaRelatorio
+              key={estado.tipo === "pronto" && numeroDoRelatorio !== null ? chaveDoRelatorio(numeroDoRelatorio, estado.levas) : String(numeroDoRelatorio)}
+              numero={numeroDoRelatorio}
+              semLogin={exemplo}
+            />
           ) : (
             <>
               <CabecalhoDaPagina trilha="1º · Produção" titulo="Relatório da leva" />

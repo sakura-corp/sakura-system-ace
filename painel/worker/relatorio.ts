@@ -21,6 +21,8 @@ query Relatorio($dono: String!, $nome: String!, $arquivo: String!, $caminho: Str
       nodes {
         number
         url
+        author { login }
+        authorAssociation
         files(first: ${MAXIMO_DE_ARQUIVOS}) { nodes { path changeType } }
         commits(last: 1) { nodes { commit { file(path: $caminho) { object { ... on Blob { text isBinary } } } } } }
       }
@@ -33,6 +35,8 @@ type Arquivo = { text?: string | null; isBinary?: boolean | null } | null | unde
 export type PrAberto = {
   number: number;
   url?: string;
+  author?: { login?: string | null } | null;
+  authorAssociation?: string | null;
   files?: { nodes?: ({ path?: string; changeType?: string } | null)[] | null } | null;
   commits?: { nodes?: ({ commit?: { file?: { object?: Arquivo } | null } | null } | null)[] | null } | null;
 };
@@ -51,8 +55,11 @@ export type RespostaDoRelatorio = {
   /** O arquivo como veio (cortado em MAXIMO_DO_RELATORIO); null se não há texto. */
   texto: string | null;
   textoCortado?: true;
-  /** Só em "esperando". O link só vem se for da sakura-corp. */
-  pr?: { numero: number; url?: string };
+  /**
+   * Só em "esperando". O link só vem se for da sakura-corp. `autor`: quem abriu. `deFora`: quem abriu não é da equipe
+   * (o repositório é público: qualquer pessoa pode abrir um PR com o arquivo).
+   */
+  pr?: { numero: number; url?: string; autor?: string; deFora?: true };
   /** Quantos PRs abertos A MAIS mexem no mesmo arquivo. */
   outrosPrs?: number;
 };
@@ -69,6 +76,10 @@ export const variaveisDoRelatorio = (numero: number) => ({
   arquivo: `main:docs/relatorios/leva-${numero}.md`,
   caminho: `docs/relatorios/leva-${numero}.md`,
 });
+
+/** Quem é da equipe no GitHub: a dona, os membros da organização e quem tem acesso ao repositório. */
+const LIGACOES_DA_EQUIPE: readonly string[] = ["OWNER", "MEMBER", "COLLABORATOR"];
+const daEquipe = (pr: PrAberto): boolean => LIGACOES_DA_EQUIPE.includes(pr.authorAssociation ?? "");
 
 const textoDe = (arquivo: Arquivo): string | null => (arquivo && !arquivo.isBinary && typeof arquivo.text === "string" ? arquivo.text : null);
 
@@ -91,14 +102,17 @@ export function relatorioDosDados(numero: number, dados: DadosDoRelatorio): Resp
   const daMain = textoDe(repo?.naMain);
   if (daMain !== null) return comTexto("aprovado", daMain);
 
-  // A consulta já traz os PRs do atualizado por último: o primeiro que bate é o que a página mostra.
+  // A consulta já traz os PRs do atualizado por último: o primeiro da equipe que bate é o que a página mostra (um PR
+  // de fora atualizado depois não toma a página); sem nenhum da equipe, o primeiro de fora, marcado.
   const prs = (repo?.prsAbertos?.nodes ?? []).filter((p): p is PrAberto => p !== null && p !== undefined && mexeNoRelatorio(p, numero));
   if (prs.length === 0) return { numero, situacao: "sem-relatorio", texto: null };
-  const [primeiro, ...outros] = prs;
-  const url = linkSeguro(primeiro.url);
+  const escolhido = prs.find(daEquipe) ?? prs[0];
+  const outros = prs.length - 1;
+  const url = linkSeguro(escolhido.url);
+  const autor = typeof escolhido.author?.login === "string" ? escolhido.author.login : undefined;
   return {
-    ...comTexto("esperando", textoDe(primeiro.commits?.nodes?.[0]?.commit?.file?.object)),
-    pr: { numero: primeiro.number, ...(url ? { url } : {}) },
-    ...(outros.length > 0 ? { outrosPrs: outros.length } : {}),
+    ...comTexto("esperando", textoDe(escolhido.commits?.nodes?.[0]?.commit?.file?.object)),
+    pr: { numero: escolhido.number, ...(url ? { url } : {}), ...(autor ? { autor } : {}), ...(daEquipe(escolhido) ? {} : { deFora: true as const }) },
+    ...(outros > 0 ? { outrosPrs: outros } : {}),
   };
 }

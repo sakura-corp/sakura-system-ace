@@ -7,14 +7,17 @@ type Repo = NonNullable<DadosDoRelatorio["repository"]>;
 type No = PrAberto;
 
 const dados = (r: Partial<Repo> = {}): DadosDoRelatorio => ({ repository: { naMain: null, prsAbertos: { nodes: [] }, ...r } });
-/** Um PR aberto que mexe nos arquivos dados; `texto` é o arquivo do relatório no último commit. */
+/** Um PR aberto (da equipe, MEMBER) que mexe nos arquivos dados; `texto` é o arquivo do relatório no último commit. */
 const pr = (numero: number, arquivos: [string, string][], texto: string | null = "texto do PR", url = `https://github.com/sakura-corp/sakura-system-ace/pull/${numero}`): No => ({
   number: numero,
   url,
+  authorAssociation: "MEMBER",
   files: { nodes: arquivos.map(([path, changeType]) => ({ path, changeType })) },
   commits: { nodes: [{ commit: { file: texto === null ? null : { object: { text: texto, isBinary: false } } } }] },
 });
 const relatorio = (n: number, tipo = "ADDED"): [string, string] => [`docs/relatorios/leva-${n}.md`, tipo];
+/** O mesmo PR, aberto por alguém, com a ligação dessa pessoa com o repositório (OWNER, MEMBER, NONE…). */
+const de = (no: No, login: string, ligacao: string): No => ({ ...no, author: { login }, authorAssociation: ligacao });
 
 describe("relatorioDoCaminho (#647)", () => {
   it("/api/leva/3/relatorio → 3; outros caminhos → null", () => {
@@ -47,6 +50,28 @@ describe("relatorioDosDados (#647)", () => {
   it("a leva 0 é de antes das fases: sem texto, mesmo com arquivo ou PR", () => {
     expect(relatorioDosDados(0, dados())).toEqual({ numero: 0, situacao: "antes-das-fases", texto: null });
     expect(relatorioDosDados(0, dados({ naMain: { text: "x", isBinary: false }, prsAbertos: { nodes: [pr(1, [relatorio(0)])] } })).situacao).toBe("antes-das-fases");
+  });
+
+  it("diz quem abriu o PR; da equipe (OWNER, MEMBER, COLLABORATOR) não ganha o aviso de fora", () => {
+    for (const ligacao of ["OWNER", "MEMBER", "COLLABORATOR"]) {
+      const r = relatorioDosDados(2, dados({ prsAbertos: { nodes: [de(pr(700, [relatorio(2)]), "caranovavidanova", ligacao)] } }));
+      expect(r.pr, ligacao).toEqual({ numero: 700, url: "https://github.com/sakura-corp/sakura-system-ace/pull/700", autor: "caranovavidanova" });
+    }
+  });
+
+  it("PR de fora atualizado por último não toma a página: o da equipe ganha, e o de fora conta em outrosPrs", () => {
+    const nodes = [de(pr(701, [relatorio(2)], "falso"), "alguem-de-fora", "NONE"), de(pr(700, [relatorio(2)], "da equipe"), "tigasss1", "MEMBER")];
+    const r = relatorioDosDados(2, dados({ prsAbertos: { nodes } }));
+    expect(r.texto).toBe("da equipe");
+    expect(r.pr?.numero).toBe(700);
+    expect(r.pr?.deFora).toBeUndefined();
+    expect(r.outrosPrs).toBe(1);
+  });
+
+  it("só PR de fora: aparece (a fase da leva já conta com ele), mas marcado de fora", () => {
+    const r = relatorioDosDados(2, dados({ prsAbertos: { nodes: [de(pr(701, [relatorio(2)], "x"), "alguem-de-fora", "CONTRIBUTOR")] } }));
+    expect(r.situacao).toBe("esperando");
+    expect(r.pr).toEqual({ numero: 701, url: "https://github.com/sakura-corp/sakura-system-ace/pull/701", autor: "alguem-de-fora", deFora: true });
   });
 
   it("sem arquivo na main e sem PR: sem relatório", () => {
@@ -149,6 +174,14 @@ describe("/api/leva/<n>/relatorio (#647)", () => {
     expect(consultas[0].texto).toBe(CONSULTA_DO_RELATORIO);
     expect(consultas[0].autorizacao).toBe("Bearer ghu_a");
     expect(consultas[0].variaveis).toEqual({ dono: "sakura-corp", nome: "sakura-system-ace", arquivo: "main:docs/relatorios/leva-2.md", caminho: "docs/relatorios/leva-2.md" });
+  });
+
+  it("cada variável declarada na consulta é usada nela, e o worker manda exatamente essas", () => {
+    const declaradas = [...CONSULTA_DO_RELATORIO.matchAll(/\$(\w+): String!/g)].map((m) => m[1]).sort();
+    for (const v of declaradas) expect(CONSULTA_DO_RELATORIO.split(`$${v}`).length - 1, v).toBeGreaterThanOrEqual(2);
+    expect(declaradas).toEqual(["arquivo", "caminho", "dono", "nome"]);
+    expect(CONSULTA_DO_RELATORIO).toContain("author { login }");
+    expect(CONSULTA_DO_RELATORIO).toContain("authorAssociation");
   });
 
   it("a leva 0 responde sem perguntar ao GitHub", async () => {

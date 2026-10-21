@@ -2,7 +2,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RespostaDoRelatorio } from "../../worker/relatorio";
 import type { Leva } from "../tipos";
-import { carregarRelatorio, ConteudoDoRelatorio, levaDoRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
+import { carregarRelatorio, chaveDoRelatorio, ConteudoDoRelatorio, levaDoRelatorio, PaginaRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
 
 const pronto = (r: Partial<RespostaDoRelatorio>): EstadoDoRelatorio => ({ tipo: "pronto", relatorio: { numero: 3, situacao: "sem-relatorio", texto: null, ...r } });
 const html = (estado: EstadoDoRelatorio, numero = 3) => renderToString(<ConteudoDoRelatorio numero={numero} estado={estado} tentarDeNovo={() => {}} />).replace(/<!-- -->/g, "");
@@ -24,6 +24,19 @@ describe("ConteudoDoRelatorio: as quatro situações (#647)", () => {
     const h = html(pronto({ situacao: "esperando", texto: "x", pr: { numero: 700 } }));
     expect(h).toContain("PR #700");
     expect(h).not.toContain("href=");
+  });
+
+  it("esperando: diz quem abriu o PR e marca o texto como do PR", () => {
+    const h = html(pronto({ situacao: "esperando", texto: "x", pr: { numero: 700, url: PR, autor: "tigasss1" } }));
+    expect(h).toContain("aberto por @tigasss1");
+    expect(h).toContain("Texto do PR #700");
+    expect(h).not.toContain("fora da sakura-corp");
+  });
+
+  it("esperando com PR de fora: avisa que não é da equipe", () => {
+    const h = html(pronto({ situacao: "esperando", texto: "x", pr: { numero: 701, url: PR, autor: "alguem", deFora: true } }));
+    expect(h).toContain("aberto por @alguem");
+    expect(h).toContain("fora da sakura-corp");
   });
 
   it("esperando com outros PRs mexendo no arquivo: avisa", () => {
@@ -107,6 +120,13 @@ describe("carregarRelatorio (#647)", () => {
     expect((await carregarRelatorio(3, async () => new Response("não é json"))).tipo).toBe("erro");
   });
 
+  it("repassa quem abriu o PR e se é de fora; autor que não é texto é descartado", async () => {
+    const r = await carregarRelatorio(3, resposta({ numero: 3, situacao: "esperando", texto: "x", pr: { numero: 9, url: PR, autor: "alguem", deFora: true } }));
+    expect(r).toEqual({ tipo: "pronto", relatorio: { numero: 3, situacao: "esperando", texto: "x", pr: { numero: 9, url: PR, autor: "alguem", deFora: true } } });
+    const torto = await carregarRelatorio(3, resposta({ numero: 3, situacao: "esperando", texto: "x", pr: { numero: 9, url: PR, autor: 5, deFora: "sim" } }));
+    expect(torto).toEqual({ tipo: "pronto", relatorio: { numero: 3, situacao: "esperando", texto: "x", pr: { numero: 9, url: PR } } });
+  });
+
   it("link do PR que não é da sakura-corp é descartado, e o resto passa", async () => {
     const r = await carregarRelatorio(3, resposta({ numero: 3, situacao: "esperando", texto: null, pr: { numero: 9, url: "https://exemplo.com/9" }, textoCortado: true }));
     expect(r).toEqual({ tipo: "pronto", relatorio: { numero: 3, situacao: "esperando", texto: null, textoCortado: true, pr: { numero: 9 } } });
@@ -132,5 +152,24 @@ describe("levaDoRelatorio: qual leva a barra 'Relatório da leva' abre (#647)", 
   it("sem levas e sem atual: null", () => {
     expect(levaDoRelatorio([], null)).toBeNull();
     expect(levaDoRelatorio([], 2)).toBe(2);
+  });
+});
+
+describe("chaveDoRelatorio: a página busca de novo quando a fase da leva muda (#647)", () => {
+  const leva = (numero: number, fase: Leva["fase"]): Leva => ({ numero, nome: `Leva ${numero}`, abertas: 0, fase });
+  it("a Sofia mesclou (relatório → aprovada): a chave muda, mesmo com o número igual", () => {
+    expect(chaveDoRelatorio(2, [leva(2, "relatorio")])).not.toBe(chaveDoRelatorio(2, [leva(2, "aprovada")]));
+  });
+  it("outra leva mudou de fase: a chave desta não muda", () => {
+    expect(chaveDoRelatorio(2, [leva(2, "relatorio"), leva(3, "montando")])).toBe(chaveDoRelatorio(2, [leva(2, "relatorio"), leva(3, "trabalhando")]));
+  });
+});
+
+describe("PaginaRelatorio sem login (#647)", () => {
+  it("o título não inventa número de leva", () => {
+    const h = renderToString(<PaginaRelatorio numero={null} semLogin />).replace(/<!-- -->/g, "");
+    expect(h).toContain("Relatório da leva");
+    expect(h).not.toMatch(/Relatório da leva (\d|null|undefined)/);
+    expect(h).toContain("Sem login, o relatório não abre");
   });
 });

@@ -869,5 +869,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   atual). O relatório de uma leva fica em `/leva/<n>/relatorio`; o endereço antigo `/em-breve/relatorio` abre a mesma
   página. Com o PR aberto: "Esperando a aprovação da Sofia", o link do PR e o texto do PR; com o arquivo na `main`:
   "Aprovado" e o texto da `main`; a leva 0: "antes das fases", sem relatório. O texto aparece como texto puro (nada roda).
+  A página diz quem abriu o PR; com mais de um PR mexendo no arquivo, vale o da equipe atualizado por último, e um PR de
+  alguém de fora da sakura-corp (o repositório é público) só aparece se não houver outro, com o aviso "de fora". Quando a
+  fase da leva muda (a Sofia mesclou), a página busca o relatório de novo.
   Sem botão de aprovar: aprovar é mesclar. Rota nova no worker: `/api/leva/<n>/relatorio` (`painel/worker/relatorio.ts`),
   um pedido só ao GitHub. O modelo de cinco partes mora em `docs/relatorios/modelo-leva.md`.
