@@ -887,17 +887,18 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   escreve no GitHub (nem fechar nem responder). Rota nova no worker: `/api/decisoes` (`painel/worker/decisoes.ts`), um
   pedido só ao GitHub. A lista é buscada ao abrir a página (não muda sozinha com o tempo real). Fotos:
   `docs/relatorios/fotos/tarefa-648/`.
-- **21/10/2026, as Versões (#649)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Versões" (4º andar) saiu
+- **21/10/2026, as Versões (#649)**, com o Tiago (PR #693, revisado e mesclado pela Sofia em 21/10): o item "Versões" (4º andar) saiu
   do "em breve" e abre `/versoes`; o endereço antigo `/em-breve/versoes` abre a mesma página. A lista são as últimas 20
   releases do `sakura-corp/ssace-versoes`, a mais nova em cima (pelo número da versão), com a data e o link da release.
   **No canal de teste** = release marcada como pré-lançamento; **Liberada** = sem a marca; a que o GitHub dá como "a mais
   recente" (a que o Liberar marca) ganha o selo **"Nas lojas hoje"**; se ela for mais antiga que as 20 (muita versão de
   teste depois, ou voltou pra uma antiga), aparece à parte, acima da lista, e nunca some. Rascunho não aparece. Só lê: nenhum botão de
   publicar, liberar ou voltar. Rota nova no worker: `/api/versoes` (`painel/worker/versoes.ts`), um pedido só ao GitHub,
-  com o token de quem está logado. **Ainda não conferido com o login de verdade**: o app do painel está instalado só no
-  `sakura-system-ace`, e a sessão não tinha como testar se ele lê o `ssace-versoes` (público). Se não ler, a página diz
-  isso com todas as letras ("O login do painel não consegue ler as versões", com "Tentar de novo"), em vez de uma lista vazia; o conserto seria
-  dar ao app acesso de leitura a esse repositório (decisão da Sofia). Fotos: `docs/relatorios/fotos/tarefa-649/`.
+  com o token de quem está logado. **Conferido pela Sofia no iPhone em 21/10**: o login do painel lê o `ssace-versoes`
+  (público) mesmo com o app instalado só no `sakura-system-ace`, e a página mostrou a `v0.9.51` como "Nas lojas hoje",
+  que é a "mais recente" do GitHub (a única release lá até 21/10; as anteriores moram no endereço antigo, e a página não
+  olha lá). Se um dia o login não ler, a página diz isso ("O login do painel não consegue ler as versões", com "Tentar de
+  novo"), em vez de uma lista vazia. Fotos: `docs/relatorios/fotos/tarefa-649/`.
 - **21/10/2026, as Pessoas (#650)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Pessoas" (1º andar)
   saiu do "em breve" e abre `/pessoas`; o endereço antigo `/em-breve/pessoas` abre a mesma página. Cada pessoa com tarefa
   na leva atual (os mesmos dados da Sala, sem consulta nova): a foto e o login do GitHub e a tarefa que está segurando
