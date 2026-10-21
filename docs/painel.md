@@ -877,3 +877,12 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   A Sofia confirmou a ordem que a barra abre. No iPhone, o texto puro (com `#`, `**` e as tabelas cruas) ficou difícil
   de ler: a **#689** (sem leva ainda) passa a mostrar formatado com `react-markdown` + `remark-gfm`, sem `rehype-raw`
   (nada do texto roda), biblioteca aprovada por ela em 21/10.
+- **21/10/2026, as Decisões da Sofia (#648)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Decisões da
+  Sofia" (Cobertura) saiu do "em breve" e abre `/decisoes`; o endereço antigo `/em-breve/decisoes` abre a mesma página. A
+  lista são as issues abertas com a etiqueta `sofia` (no máximo 100), a mais antiga em cima: o título (link pro GitHub, em
+  aba nova), o número e há quantos dias está aberta (dia de calendário de quem olha). Um prazo no título ("Até 26/10") fica
+  destacado quando faltam 3 dias ou menos ("Vence em 3 dias (24/10)", "Vence amanhã", "Vence hoje", "Venceu ontem",
+  "Venceu há N dias"; antes disso, discreto: "vence em 25/10"). Todo mundo logado vê. Nenhum botão
+  escreve no GitHub (nem fechar nem responder). Rota nova no worker: `/api/decisoes` (`painel/worker/decisoes.ts`), um
+  pedido só ao GitHub. A lista é buscada ao abrir a página (não muda sozinha com o tempo real). Fotos:
+  `docs/relatorios/fotos/tarefa-648/`.

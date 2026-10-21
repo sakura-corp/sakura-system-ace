@@ -37,22 +37,20 @@ describe("PaginaEmBreve", () => {
     expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
   });
   it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
-    for (const id of ["fases", "pessoas", "lojas", "posvenda", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
+    for (const id of ["fases", "pessoas", "lojas", "posvenda", "dre", "versoes", "bancos", "configuracoes"]) {
       expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
     }
   });
   it("andar sem chefe não esconde a linha: diz que ainda não tem", () => {
-    expect(texto(html("decisoes"))).toContain("Quem cuida: o andar ainda não tem chefe.");
     expect(texto(html("dre"))).toContain("Quem cuida: o andar ainda não tem chefe.");
   });
   it("Configurações (no rodapé, sem andar) não mostra a linha dos chefes", () => {
     expect(texto(html("configuracoes"))).not.toContain("Quem cuida");
   });
-  it("as 3 páginas novas abrem, com a trilha do andar e o 'em breve'", () => {
+  it("as 2 páginas novas que ainda faltam abrem, com a trilha do andar e o 'em breve'", () => {
     for (const [id, titulo, trilha] of [
       ["posvenda", "Pós-venda", "2º · Comercial e pós-venda / "],
       ["bancos", "Bancos e backups", "4º · Segurança e operação / "],
-      ["decisoes", "Decisões da Sofia", "Cobertura · Diretoria / "],
     ]) {
       const h = html(id).replace(/<!-- -->/g, "");
       expect(h, id).toContain("Ainda não está pronto");

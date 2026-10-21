@@ -66,12 +66,26 @@ describe("App", () => {
     expect(barra).not.toContain("Relatório da leva<span class=\"sr-only\"> (em breve)</span>");
   });
 
+  it("as Decisões da Sofia (#648) são página de verdade: /decisoes, /decisoes/ e /em-breve/decisoes abrem a mesma", () => {
+    for (const caminho of ["/decisoes", "/decisoes/", "/em-breve/decisoes"]) {
+      const h = html(caminho);
+      expect(contarH1(h), caminho).toBe(1);
+      expect(h, caminho).toMatch(/<h1[^>]*>Decisões da Sofia<\/h1>/);
+      expect(h, caminho).toContain("Sem login, a lista não abre.");
+      expect(h, caminho).not.toContain("Ainda não está pronto");
+    }
+    // A barra lateral aponta pra /decisoes e já não diz "em breve".
+    const barra = html("/decisoes");
+    expect(barra).toContain('href="/decisoes"');
+    expect(barra).not.toContain('Decisões da Sofia<span class="sr-only"> (em breve)</span>');
+  });
+
   it("todos os endereços /em-breve/<id> de antes dos andares (#591) abrem a mesma página, e os 3 novos também", () => {
     // Escritos aqui, não importados da lista: mudar um endereço ou um título tem que reprovar.
     const paginas: [string, string][] = [
       ["versoes", "Versões"], ["fases", "Fases da leva"],
       ["pessoas", "Pessoas"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
-      ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"], ["decisoes", "Decisões da Sofia"],
+      ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"],
     ];
     for (const [id, titulo] of paginas) {
       const h = html(`/em-breve/${id}`);
@@ -248,6 +262,10 @@ describe("App", () => {
     expect(paginaDoCaminho("/relatorio/")).toBe("relatorio");
     expect(paginaDoCaminho("/leva/3/relatorio")).toBe("relatorio");
     expect(paginaDoCaminho("/em-breve/relatorio")).toBe("relatorio");
+    // As Decisões da Sofia (#648): /decisoes e o endereço antigo do "em breve".
+    expect(paginaDoCaminho("/decisoes")).toBe("decisoes");
+    expect(paginaDoCaminho("/decisoes/")).toBe("decisoes");
+    expect(paginaDoCaminho("/em-breve/decisoes")).toBe("decisoes");
     expect(paginaDoCaminho("/leva/3")).toBe("leva");
     expect(paginaDoCaminho("/leva/3/outra")).toBe("leva");
   });

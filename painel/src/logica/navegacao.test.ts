@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { andarDoItem, fraseDoAndar, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
 
 // Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
-const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas", financeiro: "/financeiro", relatorio: "/relatorio" };
+const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas", financeiro: "/financeiro", relatorio: "/relatorio", decisoes: "/decisoes" };
 
 // Todos os endereços que já existiam antes dos andares (#591): escritos aqui, a lista não pode mudar nenhum.
 const ENDERECOS_EM_BREVE_ANTIGOS = ["versoes", "fases", "pessoas", "dre", "lojas", "configuracoes"];
@@ -50,8 +50,8 @@ describe("NAVEGACAO", () => {
     for (const i of todosOsItens) expect(i.icone, i.id).toBeTruthy();
   });
 
-  it("os 3 itens novos são em breve, com endereço /em-breve/<id> e do que dependem", () => {
-    for (const id of ["posvenda", "bancos", "decisoes"]) {
+  it("os 2 itens novos que ainda faltam são em breve, com endereço /em-breve/<id> e do que dependem", () => {
+    for (const id of ["posvenda", "bancos"]) {
       const item = todosOsItens.find((i) => i.id === id);
       expect(item?.emBreve, id).toBe(true);
       expect(item?.href, id).toBe(`/em-breve/${id}`);

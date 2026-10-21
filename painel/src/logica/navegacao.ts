@@ -83,7 +83,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     id: "diretoria",
     titulo: "Cobertura · Diretoria",
     chefes: [],
-    itens: [{ id: "decisoes", rotulo: "Decisões da Sofia", icone: "coroa", emBreve: true, href: "/em-breve/decisoes", dependeDe: "ainda sem tarefa" }],
+    itens: [{ id: "decisoes", rotulo: "Decisões da Sofia", icone: "coroa", href: "/decisoes" }],
   },
   {
     id: "rodape",
