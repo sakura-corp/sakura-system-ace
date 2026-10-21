@@ -55,12 +55,21 @@ describe("prazoDoTitulo (#648)", () => {
     expect(prazoDoTitulo("Atéria 10/11", HOJE)).toBeNull();
     expect(prazoDoTitulo("batéé 10/11", HOJE)).toBeNull();
   });
-  it("virada de ano: em dezembro, 'até 05/01' é do ano que vem; em outubro, 'até 05/01' passou há meses e é o ano que vem também", () => {
+  it("virada de ano: sem ano, o prazo é do ano em que a issue foi aberta (ou do seguinte, se cair antes da abertura)", () => {
     const dez = local(2026, 12, 20);
-    expect(prazoDoTitulo("até 05/01", dez)).toEqual({ dia: 5, mes: 1, ano: 2027, faltam: 16 });
-    // Passou há pouco (menos de 180 dias): continua do mesmo ano, e aparece como passou do prazo.
-    expect(prazoDoTitulo("até 10/12", dez)).toMatchObject({ ano: 2026, faltam: -10 });
-    expect(prazoDoTitulo("até 05/01", local(2026, 1, 20))).toMatchObject({ ano: 2026, faltam: -15 });
+    // Aberta em dezembro com "até 05/01": é janeiro do ano que vem.
+    expect(prazoDoTitulo("até 05/01", dez, dez)).toEqual({ dia: 5, mes: 1, ano: 2027, faltam: 16 });
+    // Aberta antes do prazo e vista depois: continua do mesmo ano, e aparece como passou do prazo.
+    expect(prazoDoTitulo("até 10/12", dez, local(2026, 12, 1))).toMatchObject({ ano: 2026, faltam: -10 });
+    expect(prazoDoTitulo("até 05/01", local(2026, 1, 20), local(2026, 1, 2))).toMatchObject({ ano: 2026, faltam: -15 });
+  });
+  it("prazo do ano passado continua passado: 'até 28/12' aberta em dezembro e vista em janeiro passou do prazo", () => {
+    expect(prazoDoTitulo("até 28/12", local(2027, 1, 3), local(2026, 12, 10))).toMatchObject({ ano: 2026, faltam: -6 });
+    // Vencida há 9 meses não vira "daqui a quase um ano".
+    expect(prazoDoTitulo("até 05/01", local(2026, 10, 21), local(2026, 1, 2))).toMatchObject({ ano: 2026, faltam: -289 });
+  });
+  it("'até 29/02' sem ano vai pro próximo ano bissexto depois da abertura", () => {
+    expect(prazoDoTitulo("até 29/02", local(2027, 9, 10), local(2027, 9, 1))).toMatchObject({ ano: 2028 });
   });
   it("com ano explícito, o ano não muda nunca", () => {
     expect(prazoDoTitulo("até 05/01/2026", local(2026, 12, 20))).toMatchObject({ ano: 2026, faltam: -349 });
@@ -170,8 +179,11 @@ describe("ConteudoDasDecisoes (#648)", () => {
     expect(h).toContain(`href="${TODAS}"`);
     expect(h).toContain("Ver a lista no GitHub");
     expect(h).not.toContain("Mostrando as");
-    const mais = html(pronto({ decisoes: [decisao(1, "A")], total: 130, maisDoQueCabe: true }));
+    const cem = Array.from({ length: 100 }, (_, i) => decisao(i + 1, `D${i + 1}`));
+    const mais = html(pronto({ decisoes: cem, total: 130, maisDoQueCabe: true }));
     expect(mais).toContain("Mostrando as 100 mais antigas de 130.");
+    // O número é o que veio na lista, não uma cópia do 100 da consulta.
+    expect(html(pronto({ decisoes: cem.slice(0, 98), total: 130, maisDoQueCabe: true }))).toContain("Mostrando as 98 mais antigas de 130.");
   });
 
   it("carregando, sessão acabada e erro", () => {

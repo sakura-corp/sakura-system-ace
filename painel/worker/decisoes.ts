@@ -50,5 +50,7 @@ export function decisoesDosDados(dados: DadosDasDecisoes): RespostaDasDecisoes {
   }
   decisoes.sort((a, b) => Date.parse(a.abertaEm) - Date.parse(b.abertaEm) || a.numero - b.numero);
   const total = typeof issues?.totalCount === "number" ? issues.totalCount : decisoes.length;
-  return { decisoes, total, ...(total > decisoes.length ? { maisDoQueCabe: true as const } : {}) };
+  // Comparado com os nós que vieram (não com os válidos): um nó estragado descartado não quer dizer que faltou issue.
+  const vieram = issues?.nodes?.length ?? 0;
+  return { decisoes, total, ...(total > vieram ? { maisDoQueCabe: true as const } : {}) };
 }

@@ -19,13 +19,11 @@ type Buscar = (endereco: string, init?: RequestInit) => Promise<Response>;
 const ERRO_DO_GITHUB = "Não deu pra buscar as decisões no GitHub agora.";
 const ERRO_DE_CONEXAO = "Sem conexão com o painel. Confira a internet.";
 const TODAS_NO_GITHUB = "https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aissue+is%3Aopen+label%3Asofia";
-/** Quantas a lista mostra (o mesmo número da consulta do worker, MAXIMO_DE_DECISOES). */
-const MAXIMO_MOSTRADO = 100;
 const DIA_EM_MS = 86_400_000;
 /** O prazo aparece em destaque quando faltam tantos dias ou menos. */
 const DIAS_DO_DESTAQUE = 3;
-/** "até 05/01" visto com a data mais de tanto tempo atrás é do ano que vem. */
-const DIAS_PRA_TRAS = 180;
+/** Sem ano, o prazo pode cair até tantos dias antes da abertura e ainda ser do mesmo ano (issue aberta já atrasada). */
+const FOLGA_ANTES_DA_ABERTURA = 7;
 
 /** O dia de calendário LOCAL como número de dias (UTC dos componentes locais: o horário de verão não atrapalha). */
 const diaLocal = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DIA_EM_MS;
@@ -47,20 +45,31 @@ function dataValida(dia: number, mes: number, ano: number): boolean {
   return d.getUTCFullYear() === ano && d.getUTCMonth() === mes - 1 && d.getUTCDate() === dia;
 }
 
-/** O prazo escrito no título ("até 26/10" ou "até 26/10/2026"), e quantos dias faltam de hoje até ele; sem prazo ou data inválida, null. */
-export function prazoDoTitulo(titulo: string, agora: Date): Prazo | null {
+/**
+ * O prazo escrito no título ("até 26/10" ou "até 26/10/2026"), e quantos dias faltam de hoje até ele; sem prazo ou data
+ * inválida, null. Sem ano, o prazo é do ano em que a issue foi aberta, ou do primeiro seguinte em que ele não cai antes
+ * da abertura (assim "até 28/12" visto em janeiro continua passado, e "até 05/01" aberta em dezembro é do ano que vem).
+ */
+export function prazoDoTitulo(titulo: string, agora: Date, aberta: Date = agora): Prazo | null {
   const achou = /(?<![\p{L}\p{N}_])at[ée](?![\p{L}\p{N}_])\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?(?![\d/])/iu.exec(titulo.normalize("NFC"));
   if (!achou) return null;
   const dia = Number(achou[1]);
   const mes = Number(achou[2]);
   const hoje = diaLocal(agora);
-  let ano = achou[3] ? Number(achou[3]) : agora.getFullYear();
-  if (!dataValida(dia, mes, ano)) return null;
-  if (!achou[3] && hoje - Date.UTC(ano, mes - 1, dia) / DIA_EM_MS > DIAS_PRA_TRAS) {
-    ano += 1;
+  const diaDoPrazo = (ano: number) => Date.UTC(ano, mes - 1, dia) / DIA_EM_MS;
+  let ano: number;
+  if (achou[3]) {
+    ano = Number(achou[3]);
     if (!dataValida(dia, mes, ano)) return null;
+  } else {
+    // 29/02 só existe em ano bissexto: procura nos próximos 4 anos.
+    const candidato = [0, 1, 2, 3, 4]
+      .map((n) => aberta.getFullYear() + n)
+      .find((a) => dataValida(dia, mes, a) && diaDoPrazo(a) >= diaLocal(aberta) - FOLGA_ANTES_DA_ABERTURA);
+    if (candidato === undefined) return null;
+    ano = candidato;
   }
-  return { dia, mes, ano, faltam: Math.round(Date.UTC(ano, mes - 1, dia) / DIA_EM_MS - hoje) };
+  return { dia, mes, ano, faltam: Math.round(diaDoPrazo(ano) - hoje) };
 }
 
 /** Como o prazo aparece: em destaque (faltam 3 dias ou menos, vence hoje, passou) ou só discreto. */
@@ -113,8 +122,8 @@ export async function carregarDecisoes(buscar: Buscar = fetch): Promise<EstadoDa
 const CAIXA = "mt-4 min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5";
 
 /** O prazo da linha: em destaque (selo, com ícone e texto, sem depender só da cor) ou discreto. */
-function PrazoDaLinha({ titulo, agora }: { titulo: string; agora: Date }) {
-  const prazo = prazoDoTitulo(titulo, agora);
+function PrazoDaLinha({ titulo, abertaEm, agora }: { titulo: string; abertaEm: string; agora: Date }) {
+  const prazo = prazoDoTitulo(titulo, agora, new Date(abertaEm));
   if (!prazo) return null;
   const { destaque, texto } = textoDoPrazo(prazo.faltam);
   const data = `${dois(prazo.dia)}/${dois(prazo.mes)}`;
@@ -148,7 +157,7 @@ function LinhaDaDecisao({ decisao, agora }: { decisao: Decisao; agora: Date }) {
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-texto-2">
         <span>#{decisao.numero}</span>
         <span>{textoDosDias(diasAberta(decisao.abertaEm, agora))}</span>
-        <PrazoDaLinha titulo={decisao.titulo} agora={agora} />
+        <PrazoDaLinha titulo={decisao.titulo} abertaEm={decisao.abertaEm} agora={agora} />
       </div>
     </li>
   );
@@ -191,7 +200,7 @@ export function ConteudoDasDecisoes({ estado, agora, tentarDeNovo }: PropsDoCont
           ))}
         </ol>
       )}
-      {maisDoQueCabe ? <p className="mt-3 text-sm text-texto-2">Mostrando as {MAXIMO_MOSTRADO} mais antigas de {total}.</p> : null}
+      {maisDoQueCabe ? <p className="mt-3 text-sm text-texto-2">Mostrando as {decisoes.length} mais antigas de {total}.</p> : null}
       <p className="mt-3 text-sm">
         <a
           href={TODAS_NO_GITHUB}

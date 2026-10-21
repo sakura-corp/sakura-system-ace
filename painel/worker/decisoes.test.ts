@@ -63,6 +63,8 @@ describe("decisoesDosDados (#648)", () => {
   it("maisDoQueCabe só quando o total passa do que veio", () => {
     expect(decisoesDosDados(dados([issue(1, "2026-10-01T10:00:00Z")], 150))).toMatchObject({ total: 150, maisDoQueCabe: true });
     expect(decisoesDosDados(dados([issue(1, "2026-10-01T10:00:00Z")], 1)).maisDoQueCabe).toBeUndefined();
+    // Um nó estragado descartado não acende o aviso: nada ficou de fora da consulta.
+    expect(decisoesDosDados(dados([issue(1, "2026-10-01T10:00:00Z"), null, issue(2, "2026-10-02T10:00:00Z")], 3)).maisDoQueCabe).toBeUndefined();
   });
 
   it("tudo null do GitHub: lista vazia, sem quebrar", () => {
