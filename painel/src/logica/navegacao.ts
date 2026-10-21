@@ -46,7 +46,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
       { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/leva" },
       { id: "levas", rotulo: "Levas anteriores", icone: "relogio", href: "/levas" },
       { id: "fases", rotulo: "Fases da leva", icone: "fases", emBreve: true, href: "/em-breve/fases", dependeDe: "depende do desenho" },
-      { id: "relatorio", rotulo: "Relatório da leva", icone: "relatorio", emBreve: true, href: "/em-breve/relatorio", dependeDe: "depende do desenho" },
+      { id: "relatorio", rotulo: "Relatório da leva", icone: "relatorio", href: "/relatorio" },
       { id: "sala", rotulo: "Sala", icone: "pessoas", href: "/sala" },
       { id: "escritorio", rotulo: "Escritório", icone: "maleta", href: "/escritorio", etiqueta: "exemplo" },
       { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, href: "/em-breve/pessoas", dependeDe: "ainda sem tarefa" },
@@ -90,6 +90,12 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     itens: [{ id: "configuracoes", rotulo: "Configurações", icone: "ajustes", emBreve: true, href: "/em-breve/configuracoes", dependeDe: "ainda sem tarefa" }],
   },
 ];
+
+/** /leva/3/relatorio → 3 (o relatório da leva 3, #647); outro caminho → null. */
+export function relatorioPedido(caminho: string): number | null {
+  const achou = /^\/leva\/(\d{1,4})\/relatorio\/?$/.exec(caminho);
+  return achou ? Number(achou[1]) : null;
+}
 
 /** O andar onde um item mora (pra mostrar "quem cuida deste andar"); undefined se o id não está na lista. */
 export function andarDoItem(id: string): GrupoDaNavegacao | undefined {

@@ -37,7 +37,7 @@ describe("PaginaEmBreve", () => {
     expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
   });
   it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
-    for (const id of ["fases", "relatorio", "pessoas", "lojas", "posvenda", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
+    for (const id of ["fases", "pessoas", "lojas", "posvenda", "dre", "versoes", "bancos", "decisoes", "configuracoes"]) {
       expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
     }
   });

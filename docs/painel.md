@@ -485,6 +485,9 @@ Quando a última tarefa da leva é aprovada:
    O que parecer estranho vira uma issue nova (com print), e a Sofia decide o que fazer.
 4. O Claude da Sofia escreve o **relatório da leva**, a Sofia aprova, e os dois planejam a
    próxima. Até as tarefas dela aparecerem, não tem tarefa pra pegar.
+   O relatório segue o modelo de cinco partes de **`docs/relatorios/modelo-leva.md`**: é o arquivo
+   `docs/relatorios/leva-N.md`, num PR, e aprovar é a Sofia mesclar. O painel mostra ele em
+   `/leva/N/relatorio` (#647).
 
 ## Como rodar no PC
 
@@ -861,3 +864,13 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   `https://github.com/sakura-corp/`; olha os 50 defeitos abertos mais novos e avisa se pode haver mais). Rota nova no worker:
   `/api/leva/<n>/testes` (`painel/worker/testes.ts`), um pedido só ao GitHub. A lista é buscada ao abrir a tela da leva
   (não muda sozinha com o tempo real). Fotos: `docs/relatorios/fotos/tarefa-646/`.
+- **21/10/2026, o Relatório da leva (#647)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Relatório da
+  leva" saiu do "em breve" e abre `/relatorio` (a leva em Relatório; sem nenhuma, a última aprovada com relatório; senão a
+  atual). O relatório de uma leva fica em `/leva/<n>/relatorio`; o endereço antigo `/em-breve/relatorio` abre a mesma
+  página. Com o PR aberto: "Esperando a aprovação da Sofia", o link do PR e o texto do PR; com o arquivo na `main`:
+  "Aprovado" e o texto da `main`; a leva 0: "antes das fases", sem relatório. O texto aparece como texto puro (nada roda).
+  A página diz quem abriu o PR; com mais de um PR mexendo no arquivo, vale o da equipe atualizado por último, e um PR de
+  alguém de fora da sakura-corp (o repositório é público) só aparece se não houver outro, com o aviso "de fora". Quando a
+  fase da leva muda (a Sofia mesclou), a página busca o relatório de novo.
+  Sem botão de aprovar: aprovar é mesclar. Rota nova no worker: `/api/leva/<n>/relatorio` (`painel/worker/relatorio.ts`),
+  um pedido só ao GitHub. O modelo de cinco partes mora em `docs/relatorios/modelo-leva.md`.
