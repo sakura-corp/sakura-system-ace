@@ -905,5 +905,5 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   agora (link pra issue, em aba nova), ou "Sem tarefa". Em ordem alfabética do login. **Sem nota por pessoa**: nem horas,
   nem contagem, nem ranking (as horas continuam só no quadro da tela da leva). Muda sozinha com o tempo real, como a Sala.
   Fotos: `docs/relatorios/fotos/tarefa-650/`.
-  A Cloudflare não publicou a mescla da #695 (ela nem apareceu em "Build history"), e o "Retry build" refaria o commit
-  antigo: a publicação veio de um commit novo em `painel/` (o aviso no topo do `painel/wrangler.jsonc`).
+  A Cloudflare publicou a mescla da #695 com uns 15 min de atraso, sem deixar o aviso no GitHub (o normal é 1 a 2 min).
+  Se acontecer de novo: esperar; o "Retry build" refaz o commit antigo (o aviso no topo do `painel/wrangler.jsonc`).
