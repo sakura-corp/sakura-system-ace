@@ -14,7 +14,7 @@ const release = (tagName: string, publishedAt: string, { isPrerelease = true, is
   publishedAt,
   createdAt: publishedAt,
 });
-const dados = (nodes: (No | null)[] | null): DadosDasVersoes => ({ repository: { releases: { nodes } } });
+const dados = (nodes: (No | null)[] | null, latestRelease: No | null = null): DadosDasVersoes => ({ repository: { releases: { nodes }, latestRelease } });
 
 describe("a consulta das versões (#649)", () => {
   it("lê as releases do ssace-versoes da sakura-corp, a mais nova primeiro, com as marcas de teste e de liberada", () => {
@@ -22,6 +22,7 @@ describe("a consulta das versões (#649)", () => {
     expect(QUANTAS_VERSOES).toBe(20);
     expect(CONSULTA_DAS_VERSOES).toContain("releases(");
     expect(CONSULTA_DAS_VERSOES).toContain("direction: DESC");
+    expect(CONSULTA_DAS_VERSOES).toContain("latestRelease");
     for (const campo of ["tagName", "url", "isPrerelease", "isDraft", "isLatest", "publishedAt"]) expect(CONSULTA_DAS_VERSOES).toContain(campo);
   });
 
@@ -115,6 +116,33 @@ describe("versoesDosDados (#649)", () => {
     const r = versoesDosDados(dados([{ ...release("v0.9.60", "2026-10-20T10:00:00Z"), url: "https://exemplo.com/v0.9.60" }]));
     expect(r.versoes).toHaveLength(1);
     expect("url" in r.versoes[0]).toBe(false);
+  });
+
+  it("a que está nas lojas ficou fora das 20 (muita versão de teste depois, ou voltou pra uma antiga): vem à parte, nunca some", () => {
+    const nos = Array.from({ length: 25 }, (_, i) => release(`v0.9.${i + 31}`, `2026-09-${String(i + 1).padStart(2, "0")}T10:00:00Z`));
+    const antiga = release("v0.9.30", "2026-08-01T10:00:00Z", { isPrerelease: false, isLatest: true });
+    const r = versoesDosDados(dados(nos, antiga));
+    expect(r.versoes).toHaveLength(20);
+    expect(r.versoes.some((v) => v.nasLojas)).toBe(false);
+    expect(r.nasLojasForaDaLista).toEqual({
+      versao: "v0.9.30",
+      canal: "liberada",
+      nasLojas: true,
+      publicadaEm: "2026-08-01T10:00:00Z",
+      url: "https://github.com/sakura-corp/ssace-versoes/releases/tag/v0.9.30",
+    });
+  });
+
+  it("a das lojas dentro da lista não vem repetida à parte; latestRelease em teste ou estragada não vira 'nas lojas'", () => {
+    const liberada = release("v0.9.59", "2026-10-15T10:00:00Z", { isPrerelease: false, isLatest: true });
+    expect(versoesDosDados(dados([liberada], liberada)).nasLojasForaDaLista).toBeUndefined();
+    // O GitHub não marcou isLatest no nó, mas latestRelease aponta pra ela: vale o latestRelease, sem repetir.
+    const semMarca = release("v0.9.59", "2026-10-15T10:00:00Z", { isPrerelease: false });
+    const r = versoesDosDados(dados([semMarca], semMarca));
+    expect(r.versoes[0].nasLojas).toBe(true);
+    expect(r.nasLojasForaDaLista).toBeUndefined();
+    expect(versoesDosDados(dados([], release("v0.9.61", "2026-10-21T10:00:00Z"))).nasLojasForaDaLista).toBeUndefined();
+    expect(versoesDosDados(dados([], { tagName: "" } as No)).nasLojasForaDaLista).toBeUndefined();
   });
 
   it("sem releases: lista vazia, sem quebrar", () => {

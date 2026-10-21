@@ -10,13 +10,17 @@ export const QUANTAS_VERSOES = 20;
 
 export const REPOSITORIO_DAS_VERSOES = "ssace-versoes";
 
-/** Busca umas a mais: um rascunho (só quem escreve lá vê) não pode tirar uma versão de verdade da lista. */
+/**
+ * Busca umas a mais: um rascunho (só quem escreve lá vê) não pode tirar uma versão de verdade da lista. A `latestRelease` vem
+ * à parte: a das lojas pode ser mais velha que as 20 (muita versão de teste depois dela, ou voltou pra uma antiga).
+ */
 export const CONSULTA_DAS_VERSOES = `
 query Versoes($dono: String!, $nome: String!) {
   repository(owner: $dono, name: $nome) {
     releases(first: ${QUANTAS_VERSOES + 10}, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes { tagName url isPrerelease isDraft isLatest publishedAt createdAt }
     }
+    latestRelease { tagName url isPrerelease isDraft publishedAt createdAt }
   }
 }`;
 
@@ -25,21 +29,20 @@ export const variaveisDasVersoes = { dono: ORGANIZACAO, nome: REPOSITORIO_DAS_VE
 /** O motivo que a página reconhece: o login do painel não alcança o ssace-versoes. */
 export const ERRO_SEM_ACESSO_AS_VERSOES = "sem acesso às versões";
 
+type NoDaRelease = {
+  tagName?: string;
+  url?: string;
+  isPrerelease?: boolean;
+  isDraft?: boolean;
+  isLatest?: boolean;
+  publishedAt?: string | null;
+  createdAt?: string;
+};
+
 export type DadosDasVersoes = {
   repository: {
-    releases: {
-      nodes?:
-        | ({
-            tagName?: string;
-            url?: string;
-            isPrerelease?: boolean;
-            isDraft?: boolean;
-            isLatest?: boolean;
-            publishedAt?: string | null;
-            createdAt?: string;
-          } | null)[]
-        | null;
-    } | null;
+    releases: { nodes?: (NoDaRelease | null)[] | null } | null;
+    latestRelease?: NoDaRelease | null;
   } | null;
 };
 
@@ -53,7 +56,11 @@ export type Versao = {
   url?: string;
 };
 
-export type RespostaDasVersoes = { versoes: Versao[] };
+export type RespostaDasVersoes = {
+  versoes: Versao[];
+  /** Só quando a que as lojas recebem hoje não coube nas 20. */
+  nasLojasForaDaLista?: Versao;
+};
 
 /** "v0.9.60" → [0, 9, 60]; fora do formato → null. */
 export function numeroDaVersao(tag: string): [number, number, number] | null {
@@ -71,31 +78,43 @@ export function compararVersoes(a: Versao, b: Versao): number {
   return Date.parse(b.publicadaEm) - Date.parse(a.publicadaEm);
 }
 
+/** Um nó do GitHub vira versão; rascunho ou nó estragado → null. */
+function versaoDoNo(no: NoDaRelease | null | undefined): Versao | null {
+  if (!no || no.isDraft === true) return null;
+  if (typeof no.tagName !== "string" || no.tagName.trim() === "") return null;
+  if (typeof no.isPrerelease !== "boolean") return null;
+  const data = typeof no.publishedAt === "string" ? no.publishedAt : no.createdAt;
+  if (typeof data !== "string" || Number.isNaN(Date.parse(data))) return null;
+  const url = linkSeguro(typeof no.url === "string" ? no.url : undefined);
+  return { versao: no.tagName, canal: no.isPrerelease ? "teste" : "liberada", publicadaEm: data, ...(url ? { url } : {}) };
+}
+
 /**
  * O que /api/versoes devolve: as 20 mais novas, sem rascunho, ordenadas aqui de novo sem confiar no GitHub.
- * Só uma é "nas lojas" (a de número maior, se o GitHub disser duas), e nunca um pré-lançamento.
+ * Só uma é "nas lojas", e nunca um pré-lançamento: a `latestRelease` do GitHub; sem ela, a marcada com `isLatest` (a de
+ * número maior, se vierem duas). Se ela não coube nas 20, vem à parte em `nasLojasForaDaLista`.
  * O repositório que volta null (o login não alcança o ssace-versoes) é tratado antes, na rota.
  */
 export function versoesDosDados(dados: DadosDasVersoes): RespostaDasVersoes {
   const versoes: Versao[] = [];
   const marcadas = new Set<Versao>();
   for (const no of dados.repository?.releases?.nodes ?? []) {
-    if (!no || no.isDraft === true) continue;
-    if (typeof no.tagName !== "string" || no.tagName.trim() === "") continue;
-    if (typeof no.isPrerelease !== "boolean") continue;
-    const data = typeof no.publishedAt === "string" ? no.publishedAt : no.createdAt;
-    if (typeof data !== "string" || Number.isNaN(Date.parse(data))) continue;
-    const url = linkSeguro(typeof no.url === "string" ? no.url : undefined);
-    const versao: Versao = { versao: no.tagName, canal: no.isPrerelease ? "teste" : "liberada", publicadaEm: data, ...(url ? { url } : {}) };
-    if (no.isLatest === true && !no.isPrerelease) marcadas.add(versao);
+    const versao = versaoDoNo(no);
+    if (!versao) continue;
+    if (no?.isLatest === true && versao.canal === "liberada") marcadas.add(versao);
     versoes.push(versao);
   }
   versoes.sort(compararVersoes);
-  const nasLojas = versoes.find((v) => marcadas.has(v));
+  const lista = versoes.slice(0, QUANTAS_VERSOES);
+  const ultima = versaoDoNo(dados.repository?.latestRelease);
+  const daLoja = ultima && ultima.canal === "liberada" ? ultima : null;
+  const nasLojas = daLoja ? lista.find((v) => v.versao === daLoja.versao) : versoes.find((v) => marcadas.has(v));
+  const fora = daLoja && !nasLojas ? daLoja : null;
   return {
-    versoes: versoes.slice(0, QUANTAS_VERSOES).map((v) => {
+    versoes: lista.map((v) => {
       const { versao, canal, publicadaEm, url } = v;
       return { versao, canal, ...(v === nasLojas ? { nasLojas: true as const } : {}), publicadaEm, ...(url ? { url } : {}) };
     }),
+    ...(fora ? { nasLojasForaDaLista: { versao: fora.versao, canal: fora.canal, nasLojas: true as const, publicadaEm: fora.publicadaEm, ...(fora.url ? { url: fora.url } : {}) } } : {}),
   };
 }

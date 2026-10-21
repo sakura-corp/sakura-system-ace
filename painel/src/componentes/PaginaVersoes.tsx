@@ -58,13 +58,14 @@ export async function carregarVersoes(buscar: Buscar = fetch): Promise<EstadoDas
   }
   const lista = typeof corpo === "object" && corpo !== null ? (corpo as Partial<RespostaDasVersoes>).versoes : undefined;
   if (!Array.isArray(lista) || !lista.every(valida)) return { tipo: "erro", mensagem: ERRO_DO_GITHUB };
-  const versoes = lista
-    .map((v): Versao => {
-      const url = linkSeguro(v.url);
-      return { versao: v.versao, canal: v.canal, ...(v.nasLojas === true ? { nasLojas: true as const } : {}), publicadaEm: v.publicadaEm, ...(url ? { url } : {}) };
-    })
-    .sort(compararVersoes);
-  return { tipo: "pronto", resposta: { versoes } };
+  const limpa = (v: Versao): Versao => {
+    const url = linkSeguro(v.url);
+    return { versao: v.versao, canal: v.canal, ...(v.nasLojas === true ? { nasLojas: true as const } : {}), publicadaEm: v.publicadaEm, ...(url ? { url } : {}) };
+  };
+  const versoes = lista.map(limpa).sort(compararVersoes);
+  const fora = (corpo as Partial<RespostaDasVersoes>).nasLojasForaDaLista;
+  const nasLojasForaDaLista = valida(fora) && fora.canal === "liberada" ? { ...limpa(fora), nasLojas: true as const } : undefined;
+  return { tipo: "pronto", resposta: { versoes, ...(nasLojasForaDaLista ? { nasLojasForaDaLista } : {}) } };
 }
 
 const CAIXA = "mt-4 min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5";
@@ -136,10 +137,14 @@ export function ConteudoDasVersoes({ estado, tentarDeNovo }: PropsDoConteudo) {
     );
   }
   if (estado.tipo === "sem-acesso") {
+    // Também pode ser um erro passageiro do GitHub (ele apaga o repositório da resposta): por isso o "Tentar de novo".
     return (
-      <p role="alert" className={`${CAIXA} text-sm`}>
-        O login do painel não consegue ler as versões (o repositório ssace-versoes). Isso é com a Sofia: o app do painel no GitHub precisaria ter acesso de leitura a esse repositório.
-      </p>
+      <div className="mt-4">
+        <ErroDaLeva
+          mensagem="O login do painel não consegue ler as versões (o repositório ssace-versoes). Se tentar de novo não resolver, é com a Sofia: o app do painel no GitHub precisaria ter acesso de leitura a esse repositório."
+          tentarDeNovo={tentarDeNovo ?? (() => {})}
+        />
+      </div>
     );
   }
   if (estado.tipo === "erro") {
@@ -149,9 +154,17 @@ export function ConteudoDasVersoes({ estado, tentarDeNovo }: PropsDoConteudo) {
       </div>
     );
   }
-  const { versoes } = estado.resposta;
+  const { versoes, nasLojasForaDaLista } = estado.resposta;
   return (
     <section aria-label="Versões" className="mt-4 min-w-0">
+      {nasLojasForaDaLista ? (
+        <div className="mb-4 min-w-0">
+          <p className="mb-2 text-sm text-texto-2">A versão das lojas é mais antiga que as 20 da lista:</p>
+          <ol className="min-w-0 rounded-xl border border-borda bg-cartao">
+            <LinhaDaVersao versao={nasLojasForaDaLista} />
+          </ol>
+        </div>
+      ) : null}
       {versoes.length === 0 ? (
         <p className={`${CAIXA} mt-0 text-sm`}>Nenhuma versão publicada ainda.</p>
       ) : (

@@ -1,7 +1,18 @@
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ERRO_SEM_ACESSO_AS_VERSOES, type Versao } from "../../worker/versoes";
 import { carregarVersoes, ConteudoDasVersoes, PaginaVersoes, type EstadoDasVersoes } from "./PaginaVersoes";
+
+// O fuso de quem usa (Brasil, UTC-3): sem isso, num computador em UTC, o teste da data não pegaria um toISOString().slice.
+const ambiente = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env;
+const TZ_ANTES = ambiente.TZ;
+beforeAll(() => {
+  ambiente.TZ = "America/Sao_Paulo";
+});
+afterAll(() => {
+  if (TZ_ANTES === undefined) delete ambiente.TZ;
+  else ambiente.TZ = TZ_ANTES;
+});
 
 const local = (a: number, m: number, d: number, h = 12) => new Date(a, m - 1, d, h).toISOString();
 const URL = "https://github.com/sakura-corp/ssace-versoes/releases/tag/";
@@ -47,6 +58,10 @@ describe("ConteudoDasVersoes (#649)", () => {
   it("a data é dia/mês/ano no fuso de quem olha", () => {
     expect(html(pronto([versao("v1", "teste", { publicadaEm: local(2026, 3, 5, 23) })]))).toContain("05/03/2026");
     expect(html(pronto([versao("v1", "teste", { publicadaEm: local(2026, 3, 5, 0) })]))).toContain("05/03/2026");
+    // 22h30 em Araraquara já é o dia seguinte em UTC: tem que sair o dia de quem olha.
+    const h = html(pronto([versao("v1", "teste", { publicadaEm: "2026-03-06T01:30:00Z" })]));
+    expect(h).toContain("05/03/2026");
+    expect(h).not.toContain("06/03/2026");
   });
 
   it("a ordem na tela é a da lista", () => {
@@ -79,14 +94,33 @@ describe("ConteudoDasVersoes (#649)", () => {
     const sem = html({ tipo: "sem-acesso" });
     expect(sem).toContain("O login do painel não consegue ler as versões");
     expect(sem).toContain("ssace-versoes");
-    expect(sem).not.toContain("Tentar de novo");
+    // Pode ser um erro passageiro do GitHub que apagou o repositório da resposta: dá pra tentar de novo.
+    expect(sem).toContain("Tentar de novo");
     const erro = html({ tipo: "erro", mensagem: "deu ruim" });
     expect(erro).toContain("deu ruim");
     expect(erro).toContain("Tentar de novo");
   });
+
+  it("a que está nas lojas, quando ficou fora das 20, aparece acima da lista (nunca some)", () => {
+    const fora = versao("v0.9.30", "liberada", { nasLojas: true, publicadaEm: local(2026, 8, 1) });
+    const h = html({ tipo: "pronto", resposta: { versoes: [versao("v0.9.60", "teste")], nasLojasForaDaLista: fora } });
+    expect(h.match(/Nas lojas hoje/g)).toHaveLength(1);
+    expect(h).toContain("v0.9.30");
+    expect(h).toContain("01/08/2026");
+    expect(h.indexOf("v0.9.30")).toBeLessThan(h.indexOf("v0.9.60"));
+    expect(h).toContain(`href="${URL}v0.9.30"`);
+  });
 });
 
 describe("carregarVersoes (#649)", () => {
+  it("passa a que está nas lojas fora da lista, com o link conferido; fora do formato, ignora", async () => {
+    const v = { versao: "v0.9.30", canal: "liberada", nasLojas: true, publicadaEm: "2026-08-01T12:00:00Z", url: "https://exemplo.com/x" };
+    const r = await carregarVersoes(async () => new Response(JSON.stringify({ versoes: [], nasLojasForaDaLista: v }), { status: 200 }));
+    expect(r).toEqual({ tipo: "pronto", resposta: { versoes: [], nasLojasForaDaLista: { versao: "v0.9.30", canal: "liberada", nasLojas: true, publicadaEm: "2026-08-01T12:00:00Z" } } });
+    const ruim = await carregarVersoes(async () => new Response(JSON.stringify({ versoes: [], nasLojasForaDaLista: { versao: 3 } }), { status: 200 }));
+    expect(ruim).toEqual({ tipo: "pronto", resposta: { versoes: [] } });
+  });
+
   const resp = (corpo: unknown, status = 200) => async () => new Response(JSON.stringify(corpo), { status });
   const ok = (versoes: unknown[]) => resp({ versoes });
 
