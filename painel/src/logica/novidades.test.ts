@@ -39,6 +39,49 @@ describe("novidadesDeHoje (#549)", () => {
   });
 });
 
+describe("novidadesDeHoje: conferências repetidas (#667)", () => {
+  const AGORA = new Date("2026-10-20T15:00:00Z");
+  const rodada = (id: string, quando: string, extra: Partial<Novidade> = {}): Novidade =>
+    ({ id, quando, tipo: "rodada", passou: true, nome: "CI", numero: 663, ...extra }) as Novidade;
+
+  it("três rodadas do CI no mesmo PR viram uma linha só, a mais nova", () => {
+    const lista = [
+      rodada("r1", "2026-10-20T12:00:00Z", { passou: false }),
+      rodada("r3", "2026-10-20T14:00:00Z", { passou: false }),
+      rodada("r2", "2026-10-20T13:00:00Z"),
+    ];
+    const hoje = novidadesDeHoje(lista, AGORA);
+    expect(hoje.map((n) => n.id)).toEqual(["r3"]);
+    expect(textoDaNovidade(hoje[0])).toBe("A conferência CI no PR #663 falhou");
+  });
+
+  it("PRs diferentes e conferências diferentes continuam separadas", () => {
+    const lista = [
+      rodada("a", "2026-10-20T12:00:00Z"),
+      rodada("b", "2026-10-20T12:10:00Z", { numero: 664 }),
+      rodada("c", "2026-10-20T12:20:00Z", { nome: "Release" }),
+    ];
+    expect(novidadesDeHoje(lista, AGORA).map((n) => n.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("rodada sem PR (na main) continua uma por linha", () => {
+    const lista = [
+      rodada("m1", "2026-10-20T12:00:00Z", { numero: undefined }),
+      rodada("m2", "2026-10-20T12:10:00Z", { numero: undefined }),
+    ];
+    expect(novidadesDeHoje(lista, AGORA).map((n) => n.id)).toEqual(["m2", "m1"]);
+  });
+
+  it("junta antes de cortar em 15: as repetidas não tomam o lugar das outras", () => {
+    const repetidas = Array.from({ length: 10 }, (_, i) => rodada(`r${i}`, `2026-10-20T14:${String(i * 5).padStart(2, "0")}:00Z`));
+    const outras = Array.from({ length: 14 }, (_, i) => pegou(`p${i}`, `2026-10-20T13:${String(i * 4).padStart(2, "0")}:00Z`));
+    const hoje = novidadesDeHoje([...repetidas, ...outras], AGORA);
+    expect(hoje).toHaveLength(15);
+    expect(hoje.filter((n) => n.tipo === "rodada").map((n) => n.id)).toEqual(["r9"]);
+    expect(hoje.filter((n) => n.tipo === "tarefa")).toHaveLength(14);
+  });
+});
+
 describe("textoDaNovidade (#549)", () => {
   const q = "2026-10-20T12:00:00Z";
   it("monta a frase só do tipo, do número e de quem fez, nunca do título", () => {

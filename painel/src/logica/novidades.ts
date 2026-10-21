@@ -49,11 +49,22 @@ export function mesmoDia(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-/** As de hoje (no fuso do computador), da mais nova pra mais velha, no máximo 15. */
+/**
+ * As de hoje (no fuso do computador), da mais nova pra mais velha, no máximo 15. Das rodadas da mesma
+ * conferência no mesmo PR fica só a mais nova (#667), antes do corte; rodada sem PR fica uma por linha.
+ */
 export function novidadesDeHoje(novidades: Novidade[], agora: Date): Novidade[] {
+  const vistas = new Set<string>();
   return novidades
     .filter((n) => mesmoDia(new Date(n.quando), agora))
     .sort((a, b) => Date.parse(b.quando) - Date.parse(a.quando))
+    .filter((n) => {
+      if (n.tipo !== "rodada" || n.numero === undefined) return true;
+      const chave = JSON.stringify([n.nome, n.numero]);
+      if (vistas.has(chave)) return false;
+      vistas.add(chave);
+      return true;
+    })
     .slice(0, MAXIMO_DE_NOVIDADES);
 }
 
