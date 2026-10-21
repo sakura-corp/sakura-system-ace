@@ -143,11 +143,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 20/10/2026, noite (pelo tablet): as decisões da lista `sofia`
-- **Skill `chefe-backend`**: ganhou a linha "Painel (D1)" (sugestão do relatório da #654), PR #686 na main.
-- **#644**: a Sofia confirmou as duas escolhas do Tiago (leva vazia em Montando; leva anterior só deixa pegar se aprovada). A #674 fechou.
-- **#606**: os 4 itens do painel conferidos por ela (tablet e iPhone); fica aberta só pelo guia de instalação, na próxima loja nova.
-- **#505**: as três trocadas; falta a primeira NFC-e e a primeira NFS-e autorizadas depois da troca.
-- **Leva 1**: só os cadernos #618 e #619. **Leva 2**: 7 de 12, as abertas já podem ser pegas. **Leva 3**: quando a 2 fechar.
-- **Depende dela**: o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 entrar numa leva. Lista inteira em `label:sofia`.
+### 21/10/2026, manhã (pelo iPhone): o Relatório da leva no ar
+- **#647 (PR #688, do Tiago)**: aprovado e mesclado; a Sofia confirmou a ordem da barra (leva esperando aprovação → última aprovada → atual) e conferiu no iPhone: a leva 1 aparece "Aprovado pela Sofia".
+- **#689 (nova, `chefe:frontend`, sem leva)**: mostrar o relatório formatado (`react-markdown`, sem deixar rodar HTML), porque o texto cru fica ruim no celular.
+- **Leva 1**: só os cadernos #618 e #619. **Leva 2**: as abertas já podem ser pegas. **Leva 3**: quando a 2 fechar.
+- **Depende dela**: o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 e a #689 entrarem numa leva; a primeira NFC-e e NFS-e depois da troca (#505). Lista inteira em `label:sofia`.
 - **Próxima sessão**: só quando ela tiver assunto.
