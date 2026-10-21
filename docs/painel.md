@@ -899,9 +899,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   que é a "mais recente" do GitHub (a única release lá até 21/10; as anteriores moram no endereço antigo, e a página não
   olha lá). Se um dia o login não ler, a página diz isso ("O login do painel não consegue ler as versões", com "Tentar de
   novo"), em vez de uma lista vazia. Fotos: `docs/relatorios/fotos/tarefa-649/`.
-- **21/10/2026, as Pessoas (#650)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Pessoas" (1º andar)
+- **21/10/2026, as Pessoas (#650)**, com o Tiago (PR #695, mesclado pela Sofia): o item "Pessoas" (1º andar)
   saiu do "em breve" e abre `/pessoas`; o endereço antigo `/em-breve/pessoas` abre a mesma página. Cada pessoa com tarefa
   na leva atual (os mesmos dados da Sala, sem consulta nova): a foto e o login do GitHub e a tarefa que está segurando
   agora (link pra issue, em aba nova), ou "Sem tarefa". Em ordem alfabética do login. **Sem nota por pessoa**: nem horas,
   nem contagem, nem ranking (as horas continuam só no quadro da tela da leva). Muda sozinha com o tempo real, como a Sala.
   Fotos: `docs/relatorios/fotos/tarefa-650/`.
+  A Cloudflare não publicou a mescla da #695 (ela nem apareceu em "Build history"), e o "Retry build" refaria o commit
+  antigo: a publicação veio de um commit novo em `painel/` (o aviso no topo do `painel/wrangler.jsonc`).
