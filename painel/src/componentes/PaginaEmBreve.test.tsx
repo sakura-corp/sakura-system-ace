@@ -31,13 +31,13 @@ describe("PaginaEmBreve", () => {
   });
   const texto = (h: string) => h.replace(/<[^>]*>/g, "");
   it("sem tarefa: uma linha só, \"Quem cuida: o andar …\", com os chefes por área em português (#601)", () => {
-    expect(texto(html("pessoas"))).toContain("Quem cuida: o andar das telas, dos dados e dos testes.");
+    expect(texto(html("fases"))).toContain("Quem cuida: o andar das telas, dos dados e dos testes.");
     expect(texto(html("posvenda"))).toContain("Quem cuida: o andar do marketing.");
     expect(texto(html("bancos"))).toContain("Quem cuida: o andar da segurança.");
-    expect(texto(html("pessoas")).match(/Quem cuida/g)).toHaveLength(1);
+    expect(texto(html("fases")).match(/Quem cuida/g)).toHaveLength(1);
   });
   it("nenhum nome de chefe em inglês aparece em página nenhuma (#601)", () => {
-    for (const id of ["fases", "pessoas", "lojas", "posvenda", "dre", "bancos", "configuracoes"]) {
+    for (const id of ["fases", "lojas", "posvenda", "dre", "bancos", "configuracoes"]) {
       expect(texto(html(id)), id).not.toMatch(/\b(frontend|backend|tester)\b/);
     }
   });

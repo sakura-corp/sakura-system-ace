@@ -58,9 +58,12 @@ describe("BarraLateral", () => {
     // As Versões (#649) já existem: link pra /versoes e sem "em breve".
     expect(h).toContain('<a href="/versoes"');
     expect(h).not.toContain('Versões<span class="sr-only"> (em breve)</span>');
-    // Os 9 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654, Versões #649 e Decisões da Sofia #648) e os 7 em breve.
+    // As Pessoas (#650) também: link pra /pessoas e sem "em breve".
+    expect(h).toContain('<a href="/pessoas"');
+    expect(h).not.toContain('Pessoas<span class="sr-only"> (em breve)</span>');
+    // Os 10 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654, Versões #649, Pessoas #650 e Decisões da Sofia #648) e os 6 em breve.
     expect(h.match(/<a /g)).toHaveLength(16);
-    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(7);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(6);
   });
 
   it("os 6 andares aparecem na ordem da tabela (#591), com os itens de cada um, e os nomes antigos dos grupos somem", () => {

@@ -38,15 +38,6 @@ export const EM_BREVE: TextoEmBreve[] = [
     ],
   },
   {
-    id: "pessoas",
-    grupo: "1º · Produção",
-    titulo: "Pessoas",
-    subtitulo: "Cada pessoa e o que faz agora.",
-    resumo: "Pessoas mostra a tarefa de agora e as horas de cada pessoa na leva. Sem nota e sem ranking.",
-    vaiMostrar: ["A tarefa de agora de cada pessoa", "As horas de cada pessoa na leva"],
-    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe. As horas por pessoa (#539) já estão na leva." }],
-  },
-  {
     id: "dre",
     grupo: "3º · Financeiro",
     titulo: "DRE",

@@ -16,20 +16,22 @@ describe("NavegacaoDoCelular", () => {
     expect(barra.match(/aria-current="page"/g)).toHaveLength(1);
     expect(barra).toMatch(/<a href="\/sala" aria-current="page"/);
     expect(barra).not.toContain('Início</span><span class="sr-only"> (em breve)</span>');
-    expect(barra).toContain('Pessoas</span><span class="sr-only"> (em breve)</span>');
+    // As Pessoas (#650) já existem: sem "em breve".
+    expect(barra).toContain("Pessoas");
+    expect(barra).not.toContain('Pessoas</span><span class="sr-only"> (em breve)</span>');
     // Em breve (#544) também tem endereço: é link pra página que explica, apagado e com o aviso.
     // O Início existe desde a #546: link de verdade pra "/", e a Leva vai pra "/leva".
     expect(barra).toMatch(/<a href="\/"(?![^>]*aria-current)/);
     expect(barra).toMatch(/<a href="\/leva"(?![^>]*aria-current)/);
-    expect(barra).toMatch(/<a href="\/em-breve\/pessoas"(?![^>]*aria-current)[^>]*text-texto-2/);
+    expect(barra).toMatch(/<a href="\/pessoas"(?![^>]*aria-current)/);
     expect(barra.match(/<a /g)).toHaveLength(4);
     expect(barra).toContain('aria-haspopup="dialog"');
     expect(barra).toContain('aria-expanded="false"');
   });
 
-  it("na página em breve da barra (Pessoas): o aria-current fica nela, e não no Mais", () => {
+  it("na página Pessoas da barra (#650): o aria-current fica nela, e não no Mais", () => {
     const { barra, folha } = partes(html({ levas: LEVA, pagina: "pessoas" }));
-    expect(barra).toMatch(/<a href="\/em-breve\/pessoas" aria-current="page"/);
+    expect(barra).toMatch(/<a href="\/pessoas" aria-current="page"/);
     expect(barra.match(/aria-current="page"/g)).toHaveLength(1);
     expect(folha).not.toContain("aria-current");
   });

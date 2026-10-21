@@ -49,7 +49,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
       { id: "relatorio", rotulo: "Relatório da leva", icone: "relatorio", href: "/relatorio" },
       { id: "sala", rotulo: "Sala", icone: "pessoas", href: "/sala" },
       { id: "escritorio", rotulo: "Escritório", icone: "maleta", href: "/escritorio", etiqueta: "exemplo" },
-      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", emBreve: true, href: "/em-breve/pessoas", dependeDe: "ainda sem tarefa" },
+      { id: "pessoas", rotulo: "Pessoas", icone: "pessoa", href: "/pessoas" },
     ],
   },
   {

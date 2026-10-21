@@ -93,11 +93,25 @@ describe("App", () => {
     expect(barra).not.toContain('Versões<span class="sr-only"> (em breve)</span>');
   });
 
+  it("as Pessoas (#650) são página de verdade: /pessoas, /pessoas/ e /em-breve/pessoas abrem a mesma, com os dados de exemplo", () => {
+    for (const caminho of ["/pessoas", "/pessoas/", "/em-breve/pessoas"]) {
+      const h = html(caminho);
+      expect(contarH1(h), caminho).toBe(1);
+      expect(h, caminho).toMatch(/<h1[^>]*>Pessoas<\/h1>/);
+      expect(h, caminho).toContain("ana-exemplo");
+      expect(h, caminho).toContain("Sem tarefa");
+      expect(h, caminho).not.toContain("Ainda não está pronto");
+    }
+    const barra = html("/pessoas");
+    expect(barra).toContain('href="/pessoas"');
+    expect(barra).not.toContain('Pessoas<span class="sr-only"> (em breve)</span>');
+  });
+
   it("todos os endereços /em-breve/<id> de antes dos andares (#591) abrem a mesma página, e os 3 novos também", () => {
     // Escritos aqui, não importados da lista: mudar um endereço ou um título tem que reprovar.
     const paginas: [string, string][] = [
       ["fases", "Fases da leva"],
-      ["pessoas", "Pessoas"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
+      ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
       ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"],
     ];
     for (const [id, titulo] of paginas) {
@@ -283,6 +297,10 @@ describe("App", () => {
     expect(paginaDoCaminho("/versoes")).toBe("versoes");
     expect(paginaDoCaminho("/versoes/")).toBe("versoes");
     expect(paginaDoCaminho("/em-breve/versoes")).toBe("versoes");
+    // As Pessoas (#650).
+    expect(paginaDoCaminho("/pessoas")).toBe("pessoas");
+    expect(paginaDoCaminho("/pessoas/")).toBe("pessoas");
+    expect(paginaDoCaminho("/em-breve/pessoas")).toBe("pessoas");
     expect(paginaDoCaminho("/leva/3")).toBe("leva");
     expect(paginaDoCaminho("/leva/3/outra")).toBe("leva");
   });
@@ -564,6 +582,8 @@ describe("Início (#546)", () => {
     expect(de("/leva/0", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva%2F0"');
     expect(de("/leva", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva"');
     expect(de("/sala", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala"');
+    // As Pessoas (#650) usam a sala: a sessão vencida leva à entrada e volta pra /pessoas.
+    expect(de("/pessoas", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fpessoas"');
   });
 });
 
