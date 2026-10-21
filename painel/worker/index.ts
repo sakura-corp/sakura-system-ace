@@ -38,6 +38,8 @@ import {
   type DadosDoResumoDasLevas,
 } from "./tarefas";
 import { buscarSala } from "./dadosDaSala";
+import { antesDasFases } from "../src/logica/fases";
+import { CONSULTA_DO_RELATORIO, relatorioDoCaminho, relatorioDosDados, variaveisDoRelatorio, type DadosDoRelatorio } from "./relatorio";
 import { CONSULTA_DOS_TESTES, testesDoCaminho, testesDosDados, variaveisDosTestes, type DadosDosTestes } from "./testes";
 import { buscarNovidades } from "./novidades";
 import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
@@ -154,7 +156,7 @@ async function voltaDoLogin(request: Request, url: URL, config: Configuracao, ag
  * A sessão de quem fez o pedido, já com o token renovado se ele venceu (os do GitHub App
  * duram 8 h). Ao renovar, confere de novo se a pessoa ainda é da sakura-corp.
  * Os `cookies` voltam na resposta: o novo, ou o que apaga a sessão.
- * Toda rota que usa o GitHub (/api/eu, /api/levas, /api/leva/<n>, /api/leva/<n>/testes) passa por aqui.
+ * Toda rota que usa o GitHub (/api/eu, /api/levas, /api/leva/<n>, /api/leva/<n>/testes, /api/leva/<n>/relatorio) passa por aqui.
  *
  * Só apaga a sessão quando ela é ruim de verdade (adulterada, passou dos 30 dias, a pessoa
  * saiu da sakura-corp). Se a renovação falhar (o GitHub fora do ar, ou duas abas renovando
@@ -193,8 +195,13 @@ export function levaDoCaminho(caminho: string): number | null {
   return achou ? Number(achou[1]) : null;
 }
 
-/** Qual rota de dados: /api/levas, /api/levas/resumo (#548), /api/leva/<n> ou /api/leva/<n>/testes (#646). */
-type PedidoDeDados = { tipo: "levas" } | { tipo: "resumo" } | { tipo: "leva"; numero: number } | { tipo: "testes"; numero: number };
+/** Qual rota de dados: /api/levas, /api/levas/resumo (#548), /api/leva/<n>, /api/leva/<n>/testes (#646) ou /api/leva/<n>/relatorio (#647). */
+type PedidoDeDados =
+  | { tipo: "levas" }
+  | { tipo: "resumo" }
+  | { tipo: "leva"; numero: number }
+  | { tipo: "testes"; numero: number }
+  | { tipo: "relatorio"; numero: number };
 
 /**
  * As rotas com dados (#354): /api/levas, /api/levas/resumo e /api/leva/<n>, sempre com o token de quem está logado.
@@ -227,6 +234,14 @@ async function dados(request: Request, config: Configuracao, pedido: PedidoDeDad
       if (r.tipo === "sem-acesso") return semAcesso();
       if (r.tipo === "erro") return falhou();
       return json(testesDosDados(pedido.numero, r.dados), 200, cookies);
+    }
+    // O relatório da leva (#647): o arquivo na main e os PRs abertos, num pedido só. A leva 0 nem precisa do GitHub.
+    if (pedido.tipo === "relatorio") {
+      if (antesDasFases(pedido.numero)) return json(relatorioDosDados(pedido.numero, { repository: null }), 200, cookies);
+      const r = await consultar<DadosDoRelatorio>(sessao.token, CONSULTA_DO_RELATORIO, variaveisDoRelatorio(pedido.numero));
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      return json(relatorioDosDados(pedido.numero, r.dados), 200, cookies);
     }
     const leva = pedido.numero;
     const r = await consultar<DadosDaLeva>(sessao.token, CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${leva}` });
@@ -460,6 +475,7 @@ export default {
 
     const leva = levaDoCaminho(pathname);
     const testes = testesDoCaminho(pathname);
+    const relatorio = relatorioDoCaminho(pathname);
     const pedido: PedidoDeDados | null =
       pathname === "/api/levas"
         ? { tipo: "levas" }
@@ -469,7 +485,9 @@ export default {
             ? { tipo: "leva", numero: leva }
             : testes !== null
               ? { tipo: "testes", numero: testes }
-              : null;
+              : relatorio !== null
+                ? { tipo: "relatorio", numero: relatorio }
+                : null;
     if (pedido) {
       const config = configuracao(env);
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);

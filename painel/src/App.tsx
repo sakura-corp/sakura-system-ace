@@ -7,6 +7,7 @@ import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
 import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaInicio } from "./componentes/PaginaInicio";
+import { levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
 import { Sala } from "./componentes/sala/Sala";
 import { QUEM_ESTA_OLHANDO_NA_SALA, salaDeExemplo } from "./dados/exemplo-sala";
 import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
@@ -15,6 +16,7 @@ import { nomeDaLevaDeExemplo, tarefasDeExemplo } from "./dados/exemplo";
 import { carregarLeva, carregarResumoDasLevas, ENDERECO_DA_LEVA_ATUAL, enderecoDaLeva, levaPedida, type EstadoDaLeva, type EstadoDoResumo } from "./logica/dados";
 import { idDoEmBreve, textoEmBreve } from "./logica/emBreve";
 import { mesDaBusca, type EstadoDoFinanceiro } from "./logica/financeiroDados";
+import { relatorioPedido } from "./logica/navegacao";
 import { paginaPraVoltar } from "./logica/login";
 import { levaAceitaPegar } from "./logica/estado";
 import { carregarNovidades, type EstadoDasNovidades, type Novidade } from "./logica/novidades";
@@ -34,6 +36,8 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/sala") return "sala";
   if (limpo === "/levas") return "levas";
   if (limpo === "/financeiro") return "financeiro";
+  // O Relatório da leva (#647): /relatorio, o de uma leva, e o endereço antigo do "em breve" (nenhum endereço some).
+  if (limpo === "/relatorio" || limpo === "/em-breve/relatorio" || relatorioPedido(limpo) !== null) return "relatorio";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
   const idEmBreve = idDoEmBreve(limpo);
   const emBreve = textoEmBreve(idEmBreve ?? "");
@@ -207,7 +211,7 @@ export default function App({
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
-  const emBreve = idDoEmBreve(caminho.replace(/\/+$/, ""));
+  const emBreve = pagina === "relatorio" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined && resumoFixo === undefined;
   const pedida = levaPedida(caminho);
@@ -277,6 +281,9 @@ export default function App({
   if (!exemplo && estado.tipo === "fora") {
     return <TelaDeEntrada volta={paginaPraVoltar(caminho, busca)} erro="Sua sessão acabou. Entre de novo." />;
   }
+
+  // O relatório de /leva/<n>/relatorio, ou o que /relatorio escolhe entre as levas (ver levaDoRelatorio).
+  const numeroDoRelatorio = relatorioPedido(caminho.replace(/\/+$/, "")) ?? (estado.tipo === "pronto" ? levaDoRelatorio(estado.levas, estado.atual) : null);
 
   let levas: ItemDeLeva[];
   let mostrada: number | null = null;
@@ -359,6 +366,25 @@ export default function App({
       ) : pagina === "financeiro" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           <PaginaFinanceiro estado={financeiro} mes={mesDoFinanceiro} agora={new Date()} tentarDeNovo={tentarFinanceiroDeNovo} aoMudar={recarregarFinanceiro} />
+        </main>
+      ) : pagina === "relatorio" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          {numeroDoRelatorio !== null || exemplo ? (
+            <PaginaRelatorio numero={numeroDoRelatorio ?? 0} semLogin={exemplo} />
+          ) : (
+            <>
+              <CabecalhoDaPagina trilha="1º · Produção" titulo="Relatório da leva" />
+              <div className="mt-6">
+                {estado.tipo === "erro" ? (
+                  <ErroDaLeva mensagem={estado.mensagem} tentarDeNovo={tentarDeNovo} />
+                ) : estado.tipo === "sem-levas" ? (
+                  <p className="text-sm text-texto-2">Nenhuma leva ainda, então ainda não há relatório.</p>
+                ) : (
+                  <EsqueletoDaLeva />
+                )}
+              </div>
+            </>
+          )}
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">

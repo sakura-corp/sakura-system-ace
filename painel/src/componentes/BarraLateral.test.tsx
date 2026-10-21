@@ -55,9 +55,9 @@ describe("BarraLateral", () => {
     expect(h).not.toContain("aria-disabled");
     expect(h).toMatch(/<a href="\/em-breve\/versoes"[^>]*>(?:(?!<\/a>).)*Versões<span class="sr-only"> \(em breve\)<\/span>/);
     expect(h).toContain("depende da leva 2");
-    // Os 6 que existem (Início, Leva atual, Levas anteriores, Sala, Escritório e Financeiro, #654) e os 10 em breve (8 de antes + os 3 dos andares novos; as Levas anteriores e o Financeiro já existem).
+    // Os 7 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório e Financeiro #654) e os 9 em breve (as Levas anteriores, o Financeiro e o Relatório já existem).
     expect(h.match(/<a /g)).toHaveLength(16);
-    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(10);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(9);
   });
 
   it("os 6 andares aparecem na ordem da tabela (#591), com os itens de cada um, e os nomes antigos dos grupos somem", () => {

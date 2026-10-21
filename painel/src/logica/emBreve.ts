@@ -47,18 +47,6 @@ export const EM_BREVE: TextoEmBreve[] = [
     ],
   },
   {
-    id: "relatorio",
-    grupo: "1º · Produção",
-    titulo: "Relatório da leva",
-    subtitulo: "O fim da leva, por escrito.",
-    resumo: "O Relatório da leva traz o que foi feito e onde a Sofia aprova o fim da leva.",
-    vaiMostrar: ["O relatório do fim da leva", "A aprovação da Sofia"],
-    dependeDe: [
-      { texto: "A conversa de desenho da leva 2", detalhe: "Decisão da Sofia." },
-      { texto: "Um jeito de guardar a aprovação", detalhe: "Ainda a decidir." },
-    ],
-  },
-  {
     id: "pessoas",
     grupo: "1º · Produção",
     titulo: "Pessoas",

@@ -52,10 +52,24 @@ describe("App", () => {
     expect(h).toContain('target="_blank"');
   });
 
+  it("o Relatório da leva (#647) é página de verdade: /relatorio, /leva/3/relatorio e /em-breve/relatorio abrem a mesma", () => {
+    for (const caminho of ["/relatorio", "/leva/3/relatorio", "/em-breve/relatorio"]) {
+      const h = html(caminho);
+      expect(contarH1(h), caminho).toBe(1);
+      expect(h, caminho).toContain("Sem login, o relatório não abre.");
+      expect(h, caminho).not.toContain("Ainda não está pronto");
+    }
+    expect(html("/leva/3/relatorio")).toMatch(/<h1[^>]*>Relatório da leva 3<\/h1>/);
+    // A barra lateral aponta pra /relatorio e já não diz "em breve".
+    const barra = html("/relatorio");
+    expect(barra).toContain('href="/relatorio"');
+    expect(barra).not.toContain("Relatório da leva<span class=\"sr-only\"> (em breve)</span>");
+  });
+
   it("todos os endereços /em-breve/<id> de antes dos andares (#591) abrem a mesma página, e os 3 novos também", () => {
     // Escritos aqui, não importados da lista: mudar um endereço ou um título tem que reprovar.
     const paginas: [string, string][] = [
-      ["versoes", "Versões"], ["fases", "Fases da leva"], ["relatorio", "Relatório da leva"],
+      ["versoes", "Versões"], ["fases", "Fases da leva"],
       ["pessoas", "Pessoas"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
       ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"], ["decisoes", "Decisões da Sofia"],
     ];
@@ -229,6 +243,13 @@ describe("App", () => {
     expect(paginaDoCaminho("/leva")).toBe("leva");
     expect(paginaDoCaminho("/leva/")).toBe("leva");
     expect(paginaDoCaminho("/qualquer")).toBe("leva");
+    // O Relatório da leva (#647): /relatorio, o de uma leva e o endereço antigo do "em breve" abrem a mesma página.
+    expect(paginaDoCaminho("/relatorio")).toBe("relatorio");
+    expect(paginaDoCaminho("/relatorio/")).toBe("relatorio");
+    expect(paginaDoCaminho("/leva/3/relatorio")).toBe("relatorio");
+    expect(paginaDoCaminho("/em-breve/relatorio")).toBe("relatorio");
+    expect(paginaDoCaminho("/leva/3")).toBe("leva");
+    expect(paginaDoCaminho("/leva/3/outra")).toBe("leva");
   });
 
   it("logada: foto, nome e Sair no canto da barra lateral; sem login, nada disso", () => {
@@ -265,6 +286,24 @@ describe("App com as tarefas de verdade (#354)", () => {
       ],
     },
   };
+
+  it("/relatorio abre o relatório da leva que levaDoRelatorio escolhe; /leva/<n>/relatorio, o da leva pedida (#647)", () => {
+    const comFases: EstadoDaLeva = {
+      ...pronto,
+      levas: [
+        { numero: 0, nome: "Leva 0", abertas: 0, fase: "aprovada", antesDasFases: true },
+        { numero: 1, nome: "Leva 1", abertas: 0, fase: "aprovada" },
+        { numero: 2, nome: "Leva 2", abertas: 0, fase: "relatorio" },
+        { numero: 3, nome: "Leva 3", abertas: 1, fase: "trabalhando" },
+      ],
+      atual: 3,
+    };
+    expect(de(comFases, "/relatorio")).toMatch(/<h1[^>]*>Relatório da leva 2<\/h1>/);
+    expect(de(comFases, "/em-breve/relatorio")).toMatch(/<h1[^>]*>Relatório da leva 2<\/h1>/);
+    expect(de(comFases, "/leva/1/relatorio")).toMatch(/<h1[^>]*>Relatório da leva 1<\/h1>/);
+    expect(de(comFases, "/relatorio")).toContain("Buscando o relatório");
+    expect(de({ tipo: "sem-levas" }, "/relatorio")).toContain("Nenhuma leva ainda");
+  });
 
   it("pronto: a leva de verdade, o contador, o link da etiqueta e nada de exemplo", () => {
     const h = de(pronto);
