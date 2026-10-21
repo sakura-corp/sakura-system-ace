@@ -911,8 +911,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   topo virou "Quem tem tarefa nesta leva e o que está fazendo agora." (PR #697); a equipe inteira é a #699 (lista fixa, #698).
   A Cloudflare publicou a mescla da #695 com uns 15 min de atraso, sem deixar o aviso no GitHub (o normal é 1 a 2 min).
   Se acontecer de novo: esperar; o "Retry build" refaz o commit antigo (o aviso no topo do `painel/wrangler.jsonc`).
-- **21/10/2026, as conferências repetidas (#667)**, chefe backend com o Tiago (PR aberto, esperando a revisão da Sofia):
+- **21/10/2026, as conferências repetidas (#667)**, chefe backend com o Tiago (PR #702, aprovado pela Sofia e mesclado em 21/10):
   no "O que mudou hoje" do Início, as rodadas da mesma conferência no mesmo PR viram uma linha só, a mais nova; rodada
   sem PR continua uma por linha; junta antes do corte em 15. Só `painel/src/logica/novidades.ts` e o teste. Relatório:
   `docs/relatorios/2026-10-21-tarefa-667-backend.md`. **A Sofia confere depois de publicar**: no Início, cada PR com
   uma linha de conferência só.
+- **21/10/2026, noite: a `leva-3` posta** (Sofia): a etiqueta entrou nas quatro do programa das lojas (#653, #379, #655,
+  #656), com a leva 2 já sem tarefa aberta. Pela regra da #644, a leva 2 continua a atual até o relatório dela ser aprovado;
+  a 3 fica em Montando e ninguém pega tarefa dela antes disso. A Sofia controla o ritmo.
