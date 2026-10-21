@@ -103,6 +103,9 @@ describe("App", () => {
       expect(h, caminho).not.toContain("Ainda não está pronto");
     }
     const barra = html("/pessoas");
+    // Só aparece quem tem tarefa na leva: a frase não promete a equipe inteira (21/10).
+    expect(barra).toContain("Quem tem tarefa nesta leva e o que está fazendo agora.");
+    expect(barra).not.toContain("Quem está na equipe");
     expect(barra).toContain('href="/pessoas"');
     expect(barra).not.toContain('Pessoas<span class="sr-only"> (em breve)</span>');
   });

@@ -409,7 +409,7 @@ export default function App({
         </main>
       ) : pagina === "pessoas" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
-          <CabecalhoDaPagina trilha="1º · Produção" titulo="Pessoas" explicacao="Quem está na equipe e a tarefa que cada pessoa está fazendo agora." />
+          <CabecalhoDaPagina trilha="1º · Produção" titulo="Pessoas" explicacao="Quem tem tarefa nesta leva e o que está fazendo agora." />
           <PaginaPessoas dados={exemplo ? salaDeExemploAgora : salaDeVerdade} tentarDeNovo={tentarSalaDeNovo} />
         </main>
       ) : emBreve !== null ? (
