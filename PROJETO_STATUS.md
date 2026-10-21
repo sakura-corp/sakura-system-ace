@@ -143,10 +143,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 21/10/2026, fim da manhã (pelo iPhone): as Versões no ar
-- **#649 (PR #693, do Tiago)**: revisado e mesclado com o CI verde; o painel ganhou a página **Versões** (`/versoes`), só pra ver.
-- **Conferido por ela no iPhone**: o login do painel lê o `ssace-versoes` (o app do GitHub não precisou mudar) e a `v0.9.51` aparece como "Nas lojas hoje", a mesma que o GitHub entrega. O "Depois de publicar" da #649 está feito.
-- **Antes, na mesma manhã**: a #648 (PR #691) e a #647 (PR #688) mescladas e conferidas. As sessões terminadas foram arquivadas.
-- **Leva 1**: só os cadernos #618 e #619. **Leva 2**: as abertas já podem ser pegas. **Leva 3**: quando a 2 fechar.
-- **Depende dela**: o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 e a #689 entrarem numa leva; a primeira NFC-e e NFS-e depois da troca (#505). Lista inteira em `label:sofia`.
+### 21/10/2026, meio-dia (pelo iPhone): as Pessoas no ar
+- **#650 (PR #695, do Tiago)**: esta sessão resolveu o conflito no `docs/painel.md`, ela aprovou e a sessão mesclou com o CI verde; a página **Pessoas** (`/pessoas`) está no ar e conferida no iPhone.
+- **A frase do topo** agora diz quem aparece (só quem tem tarefa na leva, PR #697). Mostrar a equipe inteira: a **#699**, com a lista fixa na configuração do painel (decidido na #698, fechada).
+- **Cloudflare**: a mescla da #695 publicou com uns 15 min de atraso e sem aviso no GitHub; esperar antes de mexer (aviso no `painel/wrangler.jsonc`, PRs #696 e #700; `docs/licoes.md`, item 89).
+- **Leva 2**: só falta a #667 (sem responsável). **Leva 3**: quando a 2 fechar.
+- **Depende dela**: a #699 entrar numa leva; o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 e a #689 entrarem numa leva; a primeira NFC-e e NFS-e depois da troca (#505). Lista inteira em `label:sofia`.
 - **Próxima sessão**: só quando ela tiver assunto.

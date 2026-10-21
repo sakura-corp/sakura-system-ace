@@ -1743,3 +1743,9 @@
     meio e o arquivo ficou com a outra quebra, que só apareceu no `git diff`. **Regra**: toda
     quebra de propósito roda com `timeout` (ex.: `timeout 60 npx vitest run ...`), uma por vez, e
     termina conferindo `git diff` antes do próximo passo.
+89. **"A Cloudflare perdeu a mescla" era só atraso (21/10/2026, #695).** Nove minutos depois da
+    mescla, o "Build history" do painel não mostrava o commit e o GitHub não tinha o aviso da
+    Cloudflare (o normal é 1 a 2 min). A sessão concluiu que a mescla se perdeu e abriu um PR só pra
+    disparar outra publicação (#696); a da #695 apareceu sozinha uns 15 min depois, e o aviso no
+    GitHub nunca veio. **Regra**: antes de concluir que não publicou, esperar uns 15 min e olhar o
+    "Build history" (não o GitHub); o "Retry build" refaz o commit antigo, não serve.

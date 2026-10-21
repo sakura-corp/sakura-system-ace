@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 21/10/2026, fim da manhã (pelo iPhone): as Versões no ar
+- **#649 (PR #693, do Tiago)**: revisado e mesclado com o CI verde; o painel ganhou a página **Versões** (`/versoes`), só pra ver.
+- **Conferido por ela no iPhone**: o login do painel lê o `ssace-versoes` (o app do GitHub não precisou mudar) e a `v0.9.51` aparece como "Nas lojas hoje", a mesma que o GitHub entrega. O "Depois de publicar" da #649 está feito.
+- **Antes, na mesma manhã**: a #648 (PR #691) e a #647 (PR #688) mescladas e conferidas. As sessões terminadas foram arquivadas.
+- **Leva 1**: só os cadernos #618 e #619. **Leva 2**: as abertas já podem ser pegas. **Leva 3**: quando a 2 fechar.
+- **Depende dela**: o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684 e a #689 entrarem numa leva; a primeira NFC-e e NFS-e depois da troca (#505). Lista inteira em `label:sofia`.
+- **Próxima sessão**: só quando ela tiver assunto.
+
 ### 21/10/2026, manhã (pelo iPhone): as Decisões da Sofia no ar
 - **#648 (PR #691, do Tiago)**: mesclado com o CI verde. Antes, esta sessão resolveu o conflito no `docs/painel.md`, consertou o prazo de fim de dezembro em issue aberta em janeiro (ano anterior, com teste) e trocou o texto do selo ("Vence em 3 dias (24/10)", "Vence hoje", "Venceu há N dias"), a pedido dela.
 - **Antes, na mesma manhã**: a #647 (PR #688) mesclada e conferida no iPhone; a #689 criada (relatório formatado). As sessões terminadas foram arquivadas.
