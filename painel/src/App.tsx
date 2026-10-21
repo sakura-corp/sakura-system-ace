@@ -8,6 +8,7 @@ import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaDecisoes } from "./componentes/PaginaDecisoes";
 import { PaginaInicio } from "./componentes/PaginaInicio";
+import { PaginaPessoas } from "./componentes/PaginaPessoas";
 import { PaginaVersoes } from "./componentes/PaginaVersoes";
 import { chaveDoRelatorio, levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
 import { Sala } from "./componentes/sala/Sala";
@@ -44,6 +45,8 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/decisoes" || limpo === "/em-breve/decisoes") return "decisoes";
   // As Versões (#649): /versoes e o endereço antigo do "em breve" (nenhum endereço some).
   if (limpo === "/versoes" || limpo === "/em-breve/versoes") return "versoes";
+  // As Pessoas (#650): /pessoas e o endereço antigo do "em breve" (nenhum endereço some).
+  if (limpo === "/pessoas" || limpo === "/em-breve/pessoas") return "pessoas";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
   const idEmBreve = idDoEmBreve(limpo);
   const emBreve = textoEmBreve(idEmBreve ?? "");
@@ -217,7 +220,7 @@ export default function App({
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
-  const emBreve = pagina === "relatorio" || pagina === "decisoes" || pagina === "versoes" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
+  const emBreve = pagina === "relatorio" || pagina === "decisoes" || pagina === "versoes" || pagina === "pessoas" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined && resumoFixo === undefined;
   const pedida = levaPedida(caminho);
@@ -234,7 +237,7 @@ export default function App({
   // A Sala de verdade (#468), com o mesmo login. No modo TV não busca a leva, só a sala.
   // O Início (#546) usa a mesma sala (o "precisa de você") e a leva atual inteira.
   const dadosReais = !exemplo && levaFixa === undefined && resumoFixo === undefined;
-  const naSala = pagina === "sala" || pagina === "inicio";
+  const naSala = pagina === "sala" || pagina === "inicio" || pagina === "pessoas";
   const [salaBuscada, tentarSalaDeNovo, recarregarSala] = useSala(dadosReais && naSala && salaFixa === undefined);
   const salaDeVerdade = salaFixa ?? salaBuscada;
   const [salaDeExemploAgora] = useState<EstadoDaSala>(() => ({ tipo: "pronto", entradas: salaDeExemplo(new Date()), falhas: [], leva: null }));
@@ -403,6 +406,11 @@ export default function App({
       ) : pagina === "versoes" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           <PaginaVersoes semLogin={exemplo} />
+        </main>
+      ) : pagina === "pessoas" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <CabecalhoDaPagina trilha="1º · Produção" titulo="Pessoas" explicacao="Quem está na equipe e a tarefa que cada pessoa está fazendo agora." />
+          <PaginaPessoas dados={exemplo ? salaDeExemploAgora : salaDeVerdade} tentarDeNovo={tentarSalaDeNovo} />
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
