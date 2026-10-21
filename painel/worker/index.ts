@@ -42,6 +42,7 @@ import { antesDasFases } from "../src/logica/fases";
 import { CONSULTA_DO_RELATORIO, relatorioDoCaminho, relatorioDosDados, variaveisDoRelatorio, type DadosDoRelatorio } from "./relatorio";
 import { CONSULTA_DOS_TESTES, testesDoCaminho, testesDosDados, variaveisDosTestes, type DadosDosTestes } from "./testes";
 import { CONSULTA_DAS_DECISOES, decisoesDosDados, variaveisDasDecisoes, type DadosDasDecisoes } from "./decisoes";
+import { CONSULTA_DAS_VERSOES, ERRO_SEM_ACESSO_AS_VERSOES, variaveisDasVersoes, versoesDosDados, type DadosDasVersoes } from "./versoes";
 import { buscarNovidades } from "./novidades";
 import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
 import { repositorioD1, tratarFinanceiro, type BancoD1 } from "./financeiro";
@@ -157,7 +158,7 @@ async function voltaDoLogin(request: Request, url: URL, config: Configuracao, ag
  * A sessão de quem fez o pedido, já com o token renovado se ele venceu (os do GitHub App
  * duram 8 h). Ao renovar, confere de novo se a pessoa ainda é da sakura-corp.
  * Os `cookies` voltam na resposta: o novo, ou o que apaga a sessão.
- * Toda rota que usa o GitHub (/api/eu, /api/levas, /api/leva/<n>, /api/leva/<n>/testes, /api/leva/<n>/relatorio, /api/decisoes) passa por aqui.
+ * Toda rota que usa o GitHub (/api/eu, /api/levas, /api/leva/<n>, /api/leva/<n>/testes, /api/leva/<n>/relatorio, /api/decisoes, /api/versoes) passa por aqui.
  *
  * Só apaga a sessão quando ela é ruim de verdade (adulterada, passou dos 30 dias, a pessoa
  * saiu da sakura-corp). Se a renovação falhar (o GitHub fora do ar, ou duas abas renovando
@@ -196,14 +197,15 @@ export function levaDoCaminho(caminho: string): number | null {
   return achou ? Number(achou[1]) : null;
 }
 
-/** Qual rota de dados: /api/levas, /api/levas/resumo (#548), /api/leva/<n>, /api/leva/<n>/testes (#646) /api/leva/<n>/relatorio (#647) ou /api/decisoes (#648). */
+/** Qual rota de dados: /api/levas, /api/levas/resumo (#548), /api/leva/<n>, /api/leva/<n>/testes (#646) /api/leva/<n>/relatorio (#647) /api/decisoes (#648) ou /api/versoes (#649). */
 type PedidoDeDados =
   | { tipo: "levas" }
   | { tipo: "resumo" }
   | { tipo: "leva"; numero: number }
   | { tipo: "testes"; numero: number }
   | { tipo: "relatorio"; numero: number }
-  | { tipo: "decisoes" };
+  | { tipo: "decisoes" }
+  | { tipo: "versoes" };
 
 /**
  * As rotas com dados (#354): /api/levas, /api/levas/resumo e /api/leva/<n>, sempre com o token de quem está logado.
@@ -251,6 +253,15 @@ async function dados(request: Request, config: Configuracao, pedido: PedidoDeDad
       if (r.tipo === "sem-acesso") return semAcesso();
       if (r.tipo === "erro") return falhou();
       return json(decisoesDosDados(r.dados), 200, cookies);
+    }
+    // As versões (#649): as releases do ssace-versoes. Sem o repositório na resposta, o login não alcança ele: motivo próprio,
+    // pra página dizer o que a Sofia precisaria mudar no app.
+    if (pedido.tipo === "versoes") {
+      const r = await consultar<DadosDasVersoes>(sessao.token, CONSULTA_DAS_VERSOES, variaveisDasVersoes);
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      if (!r.dados.repository) return json({ ok: false, erro: ERRO_SEM_ACESSO_AS_VERSOES }, 502, cookies);
+      return json(versoesDosDados(r.dados), 200, cookies);
     }
     const leva = pedido.numero;
     const r = await consultar<DadosDaLeva>(sessao.token, CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${leva}` });
@@ -498,7 +509,9 @@ export default {
                 ? { tipo: "relatorio", numero: relatorio }
                 : pathname === "/api/decisoes"
                   ? { tipo: "decisoes" }
-                  : null;
+                  : pathname === "/api/versoes"
+                    ? { tipo: "versoes" }
+                    : null;
     if (pedido) {
       const config = configuracao(env);
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
