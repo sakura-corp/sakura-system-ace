@@ -26,15 +26,17 @@ function Foto({ login, avatar }: { login: string; avatar?: string }) {
 function Tarefa({ pessoa }: { pessoa: EntradaDaSala }) {
   if (!pessoa.sinais.tarefaEmAndamento || !pessoa.fazendo) return <p className="mt-0.5 text-sm text-texto-2">Sem tarefa</p>;
   const url = linkSeguro(pessoa.url);
+  // O worker junta "(+N)" quando a pessoa segura mais de uma tarefa (é o texto da Sala); aqui isso seria contagem por pessoa.
+  const tarefa = pessoa.fazendo.replace(/\s*\(\+\d+\)$/, "");
   return (
     <p className="mt-0.5 break-words text-sm">
       {url ? (
         <a href={url} target="_blank" rel="noopener noreferrer" className={LINK}>
-          {pessoa.fazendo}
+          {tarefa}
           <span className="sr-only"> (abre em aba nova)</span>
         </a>
       ) : (
-        pessoa.fazendo
+        tarefa
       )}
     </p>
   );
@@ -80,8 +82,18 @@ export function PaginaPessoas({ dados, tentarDeNovo }: Props) {
       </div>
     );
   }
+  // Só a busca das pessoas falhou (os robôs vieram): a lista vazia seria mentira.
+  if (dados.falhas.includes("pessoa")) {
+    return (
+      <div className="mt-6">
+        <ErroDaLeva mensagem="Não consegui ler as pessoas agora." tentarDeNovo={tentarDeNovo} />
+      </div>
+    );
+  }
   const pessoas = dados.entradas.filter((e) => e.tipo === "pessoa").sort(porLogin);
-  if (pessoas.length === 0) return <p className={`${CAIXA} mt-6 text-sm`}>Ninguém com tarefa nesta leva.</p>;
+  if (pessoas.length === 0) {
+    return <p className={`${CAIXA} mt-6 text-sm`}>{dados.leva === null ? "Nenhuma leva aberta agora." : "Ninguém com tarefa nesta leva."}</p>;
+  }
   return (
     <ul aria-label="Pessoas da equipe" className="mt-6 grid min-w-0 gap-3 sm:grid-cols-2">
       {pessoas.map((p) => (

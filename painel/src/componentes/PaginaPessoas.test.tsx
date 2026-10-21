@@ -84,4 +84,23 @@ describe("PaginaPessoas (#650)", () => {
     expect(t).not.toMatch(/\d/);
     expect(t).not.toMatch(/\bhoras?\b|\bh\b|ranking/i);
   });
+
+  it("quem segura mais de uma tarefa: o '(+N)' do worker não aparece (é contagem por pessoa)", () => {
+    const h = html(pronto([comTarefa("ana-exemplo", { fazendo: "#454 Central do dia (+2)" })]));
+    expect(h).toContain("#454 Central do dia");
+    expect(h).not.toContain("(+2)");
+  });
+
+  it("a busca das pessoas falhou (as outras deram certo): avisa o erro, nunca diz que não há ninguém", () => {
+    const h = html({ tipo: "pronto", entradas: [], falhas: ["pessoa"], leva: null });
+    expect(h).toContain("Não consegui ler as pessoas agora.");
+    expect(h).toContain("Tentar de novo");
+    expect(h).not.toContain("Ninguém");
+  });
+
+  it("sem leva nenhuma: não fala de 'nesta leva'", () => {
+    const h = html({ tipo: "pronto", entradas: [], falhas: [], leva: null });
+    expect(h).toContain("Nenhuma leva aberta agora.");
+    expect(h).not.toContain("nesta leva");
+  });
 });

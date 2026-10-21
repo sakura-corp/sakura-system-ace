@@ -582,6 +582,8 @@ describe("Início (#546)", () => {
     expect(de("/leva/0", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva%2F0"');
     expect(de("/leva", "", { tipo: "fora" })).toContain('href="/api/login?volta=%2Fleva"');
     expect(de("/sala", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fsala"');
+    // As Pessoas (#650) usam a sala: a sessão vencida leva à entrada e volta pra /pessoas.
+    expect(de("/pessoas", "", leva, { tipo: "fora" })).toContain('href="/api/login?volta=%2Fpessoas"');
   });
 });
 
