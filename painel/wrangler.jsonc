@@ -1,5 +1,7 @@
 // Publicação do painel na Cloudflare (tarefa #352; docs/painel.md, "Andamento", 01/10).
 // Quem publica é a Cloudflare, a partir da `main` ("Workers Builds"); não há script de publicar aqui.
+// Se uma mescla na `main` não aparecer em "Build history" (21/10: a #695 não chegou), o "Retry build"
+// não serve: ele refaz o commit antigo. Só um commit novo em `painel/` na `main` dispara de novo.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   // Tem que ser o mesmo nome do Worker criado na Cloudflare.
