@@ -80,10 +80,23 @@ describe("App", () => {
     expect(barra).not.toContain('Decisões da Sofia<span class="sr-only"> (em breve)</span>');
   });
 
+  it("as Versões (#649) são página de verdade: /versoes, /versoes/ e /em-breve/versoes abrem a mesma", () => {
+    for (const caminho of ["/versoes", "/versoes/", "/em-breve/versoes"]) {
+      const h = html(caminho);
+      expect(contarH1(h), caminho).toBe(1);
+      expect(h, caminho).toMatch(/<h1[^>]*>Versões<\/h1>/);
+      expect(h, caminho).toContain("Sem login, a lista não abre.");
+      expect(h, caminho).not.toContain("Ainda não está pronto");
+    }
+    const barra = html("/versoes");
+    expect(barra).toContain('href="/versoes"');
+    expect(barra).not.toContain('Versões<span class="sr-only"> (em breve)</span>');
+  });
+
   it("todos os endereços /em-breve/<id> de antes dos andares (#591) abrem a mesma página, e os 3 novos também", () => {
     // Escritos aqui, não importados da lista: mudar um endereço ou um título tem que reprovar.
     const paginas: [string, string][] = [
-      ["versoes", "Versões"], ["fases", "Fases da leva"],
+      ["fases", "Fases da leva"],
       ["pessoas", "Pessoas"], ["dre", "DRE"], ["lojas", "Lojas"], ["configuracoes", "Configurações"],
       ["posvenda", "Pós-venda"], ["bancos", "Bancos e backups"],
     ];
@@ -266,6 +279,10 @@ describe("App", () => {
     expect(paginaDoCaminho("/decisoes")).toBe("decisoes");
     expect(paginaDoCaminho("/decisoes/")).toBe("decisoes");
     expect(paginaDoCaminho("/em-breve/decisoes")).toBe("decisoes");
+    // As Versões (#649).
+    expect(paginaDoCaminho("/versoes")).toBe("versoes");
+    expect(paginaDoCaminho("/versoes/")).toBe("versoes");
+    expect(paginaDoCaminho("/em-breve/versoes")).toBe("versoes");
     expect(paginaDoCaminho("/leva/3")).toBe("leva");
     expect(paginaDoCaminho("/leva/3/outra")).toBe("leva");
   });

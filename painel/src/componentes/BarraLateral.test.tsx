@@ -53,11 +53,14 @@ describe("BarraLateral", () => {
   it("item em breve é link pra página que explica (#544), apagado, com o texto pro leitor de tela e a frase do que falta", () => {
     const h = html({ levas: [] });
     expect(h).not.toContain("aria-disabled");
-    expect(h).toMatch(/<a href="\/em-breve\/versoes"[^>]*>(?:(?!<\/a>).)*Versões<span class="sr-only"> \(em breve\)<\/span>/);
-    expect(h).toContain("depende da leva 2");
-    // Os 8 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654 e Decisões da Sofia #648) e os 8 em breve.
+    expect(h).toMatch(/<a href="\/em-breve\/fases"[^>]*>(?:(?!<\/a>).)*Fases da leva<span class="sr-only"> \(em breve\)<\/span>/);
+    expect(h).toContain("depende do desenho");
+    // As Versões (#649) já existem: link pra /versoes e sem "em breve".
+    expect(h).toContain('<a href="/versoes"');
+    expect(h).not.toContain('Versões<span class="sr-only"> (em breve)</span>');
+    // Os 9 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654, Versões #649 e Decisões da Sofia #648) e os 7 em breve.
     expect(h.match(/<a /g)).toHaveLength(16);
-    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(8);
+    expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(7);
   });
 
   it("os 6 andares aparecem na ordem da tabela (#591), com os itens de cada um, e os nomes antigos dos grupos somem", () => {

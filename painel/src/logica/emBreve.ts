@@ -26,15 +26,6 @@ export type TextoEmBreve = {
 
 export const EM_BREVE: TextoEmBreve[] = [
   {
-    id: "versoes",
-    grupo: "4º · Segurança e operação",
-    titulo: "Versões",
-    subtitulo: "O que saiu pras lojas.",
-    resumo: "Versões mostra o que saiu no canal de teste e o que já foi liberado pras lojas. Os dados já são públicos, falta só a tela.",
-    vaiMostrar: ["O que saiu no canal de teste", "O que foi liberado pras lojas", "O que mudou em cada versão"],
-    dependeDe: [{ texto: "Uma tarefa da leva 2", detalhe: "Ainda não existe issue." }],
-  },
-  {
     id: "fases",
     grupo: "1º · Produção",
     titulo: "Fases da leva",
