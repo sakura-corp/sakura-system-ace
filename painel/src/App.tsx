@@ -6,6 +6,7 @@ import { Escritorio } from "./componentes/escritorio/Escritorio";
 import { PaginaEmBreve } from "./componentes/PaginaEmBreve";
 import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
+import { PaginaDecisoes } from "./componentes/PaginaDecisoes";
 import { PaginaInicio } from "./componentes/PaginaInicio";
 import { chaveDoRelatorio, levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
 import { Sala } from "./componentes/sala/Sala";
@@ -38,6 +39,8 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/financeiro") return "financeiro";
   // O Relatório da leva (#647): /relatorio, o de uma leva, e o endereço antigo do "em breve" (nenhum endereço some).
   if (limpo === "/relatorio" || limpo === "/em-breve/relatorio" || relatorioPedido(limpo) !== null) return "relatorio";
+  // As Decisões da Sofia (#648): /decisoes e o endereço antigo do "em breve" (nenhum endereço some).
+  if (limpo === "/decisoes" || limpo === "/em-breve/decisoes") return "decisoes";
   // As páginas "em breve" (#544): a barra marca o item da página aberta.
   const idEmBreve = idDoEmBreve(limpo);
   const emBreve = textoEmBreve(idEmBreve ?? "");
@@ -211,7 +214,7 @@ export default function App({
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
-  const emBreve = pagina === "relatorio" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
+  const emBreve = pagina === "relatorio" || pagina === "decisoes" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined && resumoFixo === undefined;
   const pedida = levaPedida(caminho);
@@ -389,6 +392,10 @@ export default function App({
               </div>
             </>
           )}
+        </main>
+      ) : pagina === "decisoes" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <PaginaDecisoes semLogin={exemplo} />
         </main>
       ) : emBreve !== null ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">

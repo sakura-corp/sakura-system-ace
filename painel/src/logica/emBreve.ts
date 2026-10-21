@@ -106,15 +106,6 @@ export const EM_BREVE: TextoEmBreve[] = [
     ],
   },
   {
-    id: "decisoes",
-    grupo: "Cobertura · Diretoria",
-    titulo: "Decisões da Sofia",
-    subtitulo: "O que está esperando uma decisão sua.",
-    resumo: "Decisões da Sofia junta num lugar só as tarefas marcadas como dela, pra nada ficar esquecido esperando resposta.",
-    vaiMostrar: ["A lista das tarefas com a etiqueta sofia", "Há quanto tempo cada uma espera"],
-    dependeDe: [{ texto: "Uma tarefa pra esta página", detalhe: "Ainda não existe." }],
-  },
-  {
     id: "configuracoes",
     titulo: "Configurações",
     subtitulo: "Do seu jeito.",

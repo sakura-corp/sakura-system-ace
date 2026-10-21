@@ -83,7 +83,7 @@ describe("problemasDoEmBreve", () => {
     t[2].grupo = "1º · Produção";
     expect(problemasDoEmBreve(nav, t).join("|")).toContain('A trilha de "Financeiro"');
   });
-  it("as páginas de verdade: a trilha de cada uma é o título do andar, e as 3 novas têm texto", () => {
+  it("as páginas de verdade: a trilha de cada uma é o título do andar, e a das Decisões (#648) saiu do em breve", () => {
     const trilha = (id: string) => textoEmBreve(id)?.grupo;
     expect(trilha("versoes")).toBe("4º · Segurança e operação");
     expect(trilha("pessoas")).toBe("1º · Produção");
@@ -91,8 +91,7 @@ describe("problemasDoEmBreve", () => {
     expect(trilha("dre")).toBe("3º · Financeiro");
     expect(trilha("posvenda")).toBe("2º · Comercial e pós-venda");
     expect(trilha("bancos")).toBe("4º · Segurança e operação");
-    expect(trilha("decisoes")).toBe("Cobertura · Diretoria");
-    expect(textoEmBreve("decisoes")?.titulo).toBe("Decisões da Sofia");
+    expect(textoEmBreve("decisoes")).toBeUndefined();
     expect(textoEmBreve("configuracoes")?.grupo).toBeUndefined();
   });
   it("lojas e DRE continuam com semDinheiro nos textos de verdade", () => {
