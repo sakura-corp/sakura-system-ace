@@ -75,7 +75,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     titulo: "4º · Segurança e operação",
     chefes: ["segurança"],
     itens: [
-      { id: "versoes", rotulo: "Versões", icone: "etiqueta", emBreve: true, href: "/em-breve/versoes", dependeDe: "depende da leva 2" },
+      { id: "versoes", rotulo: "Versões", icone: "etiqueta", href: "/versoes" },
       { id: "bancos", rotulo: "Bancos e backups", icone: "backup", emBreve: true, href: "/em-breve/bancos", dependeDe: "ainda sem tarefa" },
     ],
   },

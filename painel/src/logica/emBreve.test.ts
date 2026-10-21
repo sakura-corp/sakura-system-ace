@@ -85,7 +85,7 @@ describe("problemasDoEmBreve", () => {
   });
   it("as páginas de verdade: a trilha de cada uma é o título do andar, e a das Decisões (#648) saiu do em breve", () => {
     const trilha = (id: string) => textoEmBreve(id)?.grupo;
-    expect(trilha("versoes")).toBe("4º · Segurança e operação");
+    expect(textoEmBreve("versoes")).toBeUndefined(); // as Versões (#649) saíram do em breve
     expect(trilha("pessoas")).toBe("1º · Produção");
     expect(trilha("lojas")).toBe("2º · Comercial e pós-venda");
     expect(trilha("dre")).toBe("3º · Financeiro");

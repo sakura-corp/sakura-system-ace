@@ -106,7 +106,7 @@ describe("NavegacaoDoCelular", () => {
   it("a folha tem Fechar, os grupos e não repete os itens da barra", () => {
     const { folha } = partes(html({ levas: LEVA, pagina: "leva" }));
     expect(folha).toContain('aria-labelledby="titulo-da-folha"');
-    for (const t of ["Fechar", "Mais", "Levas anteriores", "Escritório", "Configurações", "depende da leva 2"]) expect(folha).toContain(t);
+    for (const t of ["Fechar", "Mais", "Levas anteriores", "Escritório", "Configurações", "depende do desenho"]) expect(folha).toContain(t);
     for (const t of ["Início", "Leva atual", "Sala", "Pessoas"]) expect(folha).not.toContain(t);
   });
 
