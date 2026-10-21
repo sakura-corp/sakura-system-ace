@@ -837,7 +837,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **20/10/2026, a leva 1 aprovada** (relatório `docs/relatorios/leva-1.md`, PR #672, mesclado pela Sofia): 5 de 9 feitas,
   18 h de 31 h. É a primeira leva com fases, mas sem a rodada de testes com lista (a fase Testando nasceu com ela já
   andando). As 4 abertas (#618, #619, #510, #455) ficam na leva 1 até a Sofia decidir (#673).
-- **20/10/2026, As fases na tela (#645)**, com o Tiago (PR aberto, esperando a revisão da Sofia): no topo da tela da leva,
+- **20/10/2026, As fases na tela (#645)**, com o Tiago (PR #688, mesclado pela Sofia em 21/10 e conferido por ela no iPhone): no topo da tela da leva,
   as cinco fases em linha (a atual acesa em rosa, as passadas em verde com ✓; no celular, só a atual e "fase N de 5"; se não
   couberem, quebram a linha, nunca cortam o nome); a leva em Montando mostra as tarefas com o aviso "esperando a aprovação da
   leva atual" (a mais antiga sem aprovação); a leva 0 só acende a Aprovada e diz "de antes das fases, sem relatório". No Início, a linha "Leva N: <fase>", que leva pra `/leva`. Na
@@ -874,6 +874,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   fase da leva muda (a Sofia mesclou), a página busca o relatório de novo.
   Sem botão de aprovar: aprovar é mesclar. Rota nova no worker: `/api/leva/<n>/relatorio` (`painel/worker/relatorio.ts`),
   um pedido só ao GitHub. O modelo de cinco partes mora em `docs/relatorios/modelo-leva.md`.
+  A Sofia confirmou a ordem que a barra abre. No iPhone, o texto puro (com `#`, `**` e as tabelas cruas) ficou difícil
+  de ler: a **#689** (sem leva ainda) passa a mostrar formatado com `react-markdown` + `remark-gfm`, sem `rehype-raw`
+  (nada do texto roda), biblioteca aprovada por ela em 21/10.
 - **21/10/2026, as Decisões da Sofia (#648)**, com o Tiago (PR aberto, esperando a revisão da Sofia): o item "Decisões da
   Sofia" (Cobertura) saiu do "em breve" e abre `/decisoes`; o endereço antigo `/em-breve/decisoes` abre a mesma página. A
   lista são as issues abertas com a etiqueta `sofia` (no máximo 100), a mais antiga em cima: o título (link pro GitHub, em
