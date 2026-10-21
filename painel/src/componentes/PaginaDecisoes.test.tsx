@@ -68,6 +68,12 @@ describe("prazoDoTitulo (#648)", () => {
     // Vencida há 9 meses não vira "daqui a quase um ano".
     expect(prazoDoTitulo("até 05/01", local(2026, 10, 21), local(2026, 1, 2))).toMatchObject({ ano: 2026, faltam: -289 });
   });
+  it("aberta no começo de janeiro com prazo do fim de dezembro: o prazo é do ano anterior, e já passou", () => {
+    expect(prazoDoTitulo("até 30/12", local(2027, 1, 5), local(2027, 1, 3))).toMatchObject({ ano: 2026, faltam: -6 });
+    expect(prazoDoTitulo("até 28/12", local(2027, 1, 3), local(2027, 1, 2))).toMatchObject({ ano: 2026, faltam: -6 });
+    // Fora da folga de 7 dias continua indo pro ano seguinte.
+    expect(prazoDoTitulo("até 20/12", local(2027, 1, 3), local(2027, 1, 3))).toMatchObject({ ano: 2027 });
+  });
   it("'até 29/02' sem ano vai pro próximo ano bissexto depois da abertura", () => {
     expect(prazoDoTitulo("até 29/02", local(2027, 9, 10), local(2027, 9, 1))).toMatchObject({ ano: 2028 });
   });
@@ -86,11 +92,12 @@ describe("textoDoPrazo e o destaque (#648)", () => {
   it("o texto de cada caso", () => {
     expect(t(5)).toMatchObject({ destaque: false });
     expect(t(4)).toMatchObject({ destaque: false });
-    expect(t(3)).toEqual({ destaque: true, texto: "faltam 3 dias" });
-    expect(t(2)).toEqual({ destaque: true, texto: "faltam 2 dias" });
-    expect(t(1)).toEqual({ destaque: true, texto: "falta 1 dia" });
-    expect(t(0)).toEqual({ destaque: true, texto: "vence hoje" });
-    expect(t(-2)).toEqual({ destaque: true, texto: "passou do prazo" });
+    expect(t(3)).toEqual({ destaque: true, texto: "Vence em 3 dias" });
+    expect(t(2)).toEqual({ destaque: true, texto: "Vence em 2 dias" });
+    expect(t(1)).toEqual({ destaque: true, texto: "Vence amanhã" });
+    expect(t(0)).toEqual({ destaque: true, texto: "Vence hoje" });
+    expect(t(-1)).toEqual({ destaque: true, texto: "Venceu ontem" });
+    expect(t(-2)).toEqual({ destaque: true, texto: "Venceu há 2 dias" });
   });
 });
 
@@ -149,16 +156,16 @@ describe("ConteudoDasDecisoes (#648)", () => {
   it("prazo com 3 dias ou menos ganha o selo de revisão, com texto; com 4 dias fica discreto", () => {
     const com = html(pronto({ decisoes: [decisao(1, "Memorando até 24/10")], total: 1 }));
     expect(com).toContain("bg-revisao-fundo");
-    expect(com).toContain("faltam 3 dias");
+    expect(com).toContain("Vence em 3 dias (24/10)");
     const sem = html(pronto({ decisoes: [decisao(1, "Memorando até 25/10")], total: 1 }));
     expect(sem).not.toContain("bg-revisao-fundo");
-    expect(sem).toContain("prazo 25/10");
+    expect(sem).toContain("vence em 25/10");
   });
 
   it("vence hoje e passou do prazo aparecem destacados", () => {
-    expect(html(pronto({ decisoes: [decisao(1, "X até 21/10")], total: 1 }))).toContain("vence hoje");
+    expect(html(pronto({ decisoes: [decisao(1, "X até 21/10")], total: 1 }))).toContain("Vence hoje (21/10)");
     const passou = html(pronto({ decisoes: [decisao(1, "X até 19/10")], total: 1 }));
-    expect(passou).toContain("passou do prazo");
+    expect(passou).toContain("Venceu há 2 dias (19/10)");
     expect(passou).toContain("bg-revisao-fundo");
   });
 

@@ -47,8 +47,9 @@ function dataValida(dia: number, mes: number, ano: number): boolean {
 
 /**
  * O prazo escrito no título ("até 26/10" ou "até 26/10/2026"), e quantos dias faltam de hoje até ele; sem prazo ou data
- * inválida, null. Sem ano, o prazo é do ano em que a issue foi aberta, ou do primeiro seguinte em que ele não cai antes
- * da abertura (assim "até 28/12" visto em janeiro continua passado, e "até 05/01" aberta em dezembro é do ano que vem).
+ * inválida, null. Sem ano, o prazo é do primeiro ano, a partir do anterior ao da abertura, em que ele não cai mais de 7 dias
+ * antes da abertura (assim "até 28/12" visto em janeiro continua passado, "até 30/12" aberta em 03/01 é do ano anterior,
+ * e "até 05/01" aberta em dezembro é do ano que vem).
  */
 export function prazoDoTitulo(titulo: string, agora: Date, aberta: Date = agora): Prazo | null {
   const achou = /(?<![\p{L}\p{N}_])at[ée](?![\p{L}\p{N}_])\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?(?![\d/])/iu.exec(titulo.normalize("NFC"));
@@ -62,8 +63,9 @@ export function prazoDoTitulo(titulo: string, agora: Date, aberta: Date = agora)
     ano = Number(achou[3]);
     if (!dataValida(dia, mes, ano)) return null;
   } else {
-    // 29/02 só existe em ano bissexto: procura nos próximos 4 anos.
-    const candidato = [0, 1, 2, 3, 4]
+    // Começa no ano anterior (aberta em janeiro, já atrasada, com prazo de dezembro). 29/02 só existe em ano bissexto:
+    // procura até 4 anos depois.
+    const candidato = [-1, 0, 1, 2, 3, 4]
       .map((n) => aberta.getFullYear() + n)
       .find((a) => dataValida(dia, mes, a) && diaDoPrazo(a) >= diaLocal(aberta) - FOLGA_ANTES_DA_ABERTURA);
     if (candidato === undefined) return null;
@@ -72,12 +74,13 @@ export function prazoDoTitulo(titulo: string, agora: Date, aberta: Date = agora)
   return { dia, mes, ano, faltam: Math.round(diaDoPrazo(ano) - hoje) };
 }
 
-/** Como o prazo aparece: em destaque (faltam 3 dias ou menos, vence hoje, passou) ou só discreto. */
+/** Como o prazo aparece: em destaque (faltam 3 dias ou menos, vence hoje, venceu) ou só discreto. */
 export function textoDoPrazo(faltam: number): { destaque: boolean; texto: string } {
   if (faltam > DIAS_DO_DESTAQUE) return { destaque: false, texto: "" };
-  if (faltam < 0) return { destaque: true, texto: "passou do prazo" };
-  if (faltam === 0) return { destaque: true, texto: "vence hoje" };
-  return { destaque: true, texto: faltam === 1 ? "falta 1 dia" : `faltam ${faltam} dias` };
+  if (faltam < -1) return { destaque: true, texto: `Venceu há ${-faltam} dias` };
+  if (faltam === -1) return { destaque: true, texto: "Venceu ontem" };
+  if (faltam === 0) return { destaque: true, texto: "Vence hoje" };
+  return { destaque: true, texto: faltam === 1 ? "Vence amanhã" : `Vence em ${faltam} dias` };
 }
 
 /** A mais antiga em cima (empate: o número menor). Devolve uma lista nova. */
@@ -127,11 +130,11 @@ function PrazoDaLinha({ titulo, abertaEm, agora }: { titulo: string; abertaEm: s
   if (!prazo) return null;
   const { destaque, texto } = textoDoPrazo(prazo.faltam);
   const data = `${dois(prazo.dia)}/${dois(prazo.mes)}`;
-  if (!destaque) return <span className="text-[13px] text-texto-2">prazo {data}</span>;
+  if (!destaque) return <span className="text-[13px] text-texto-2">vence em {data}</span>;
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-revisao-fundo px-2.5 py-0.5 text-[13px] font-medium text-revisao">
       <CalendarClock aria-hidden="true" className="size-3.5" />
-      Prazo {data}: {texto}
+      {texto} ({data})
     </span>
   );
 }
