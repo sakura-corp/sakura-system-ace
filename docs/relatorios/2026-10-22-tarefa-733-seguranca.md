@@ -10,7 +10,7 @@
 - Sessão mãe: leu a issue, a #731 e a #732 (pra saber qual é "a aba nova"), escreveu os cinco arquivos.
 - Ajudante rápido: conferiu o tamanho do índice, os caminhos e seções citados, a frase "só nos projetos
   secundários", a ausência de dado sensível, e listou as regras fora da tarefa que podem parecer
-  contraditórias (abaixo). Achou que a skill `nova-proposta` não existe: o texto agora diz isso.
+  contraditórias (abaixo). Achou que a skill `nova-proposta` não existe aqui: o texto agora diz que ela mora no `sakura-corp/secundarios` (pedido da Sofia pela coordenadora).
 
 ## Modelos usados
 - Escrever: sessão mãe, forte, esforço médio.
@@ -38,7 +38,7 @@
   segurança**: elas são mais restritivas, então no pior caso barram o Gusta num secundário, nunca deixam
   passar algo no SSACE. Dentro de um repositório secundário, a memória vem do `modelo-projeto`, não daqui.
   Se a Sofia quiser, vira uma tarefa própria.
-- **A skill `nova-proposta`** ainda não existe neste repositório; o texto diz isso.
+- **A skill `nova-proposta`** mora só no `sakura-corp/secundarios` (secundarios#1), nunca neste repositório; o texto diz isso.
 - **O "Onde parou"** ainda diz "Leva 6 = projeto novo". Não mexi (o "Onde parou" é trocado no `fechar`);
   a correção está no `docs/painel.md`, "Andamento".
 

@@ -22,7 +22,7 @@ Cada um mora no **seu próprio repositório privado** da `sakura-corp`, criado a
 ## O fluxo, da ideia ao repositório
 
 1. **Ideia**: qualquer pessoa da equipe.
-2. **Entrevista**: a skill `nova-proposta` (ainda não existe neste repositório) entrevista a pessoa e fecha as pontas da ideia.
+2. **Entrevista**: a skill `nova-proposta`, que mora no `sakura-corp/secundarios`, entrevista a pessoa e fecha as pontas da ideia.
 3. **Relatório**: a entrevista vira uma proposta escrita, uma issue no `sakura-corp/secundarios`.
 4. **Análise da Sofia**: a Sofia e o Claude dela analisam a proposta **contra as políticas**,
    adaptam e **devolvem explicando cada mudança**.

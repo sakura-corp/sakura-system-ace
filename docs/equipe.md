@@ -340,7 +340,7 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
    pessoal ou senha não entra aqui: leve direto pra Sofia. Print não sobe, só a descrição em texto.
 2. **Planejar**: só a Sofia, com o Claude, pela skill `nova-tarefa`. **Exceção, só nos projetos
    secundários**: lá, com a proposta aprovada, o Gusta também escreve as tarefas
-   (`docs/projetos-secundarios.md`); a ideia de projeto novo entra pela skill `nova-proposta`.
+   (`docs/projetos-secundarios.md`); a ideia de projeto novo entra pela skill `nova-proposta`, que mora no `sakura-corp/secundarios`.
 3. **Fazer**: o botão "Começar com o Claude" do painel (o chefe da tarefa, depois o PR e o relatório).
 
 - **Uma branch e um PR por tarefa**, com `Closes #N` na descrição. Commits pequenos, com mensagem
