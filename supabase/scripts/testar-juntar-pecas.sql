@@ -14,7 +14,10 @@
 --   • uma terceira peça, que não tem nada com a junção, fica intocada;
 --   • os campos escolhidos vêm da peça que sai, o resto continua da que fica,
 --     e campo fora da lista é recusado;
---   • a trilha de auditoria guarda a peça que sumiu inteira e quem juntou;
+--   • a trilha de auditoria guarda a peça que sumiu inteira, quem juntou e
+--     uma linha da junção com os ids de tudo que era da peça que sumiu;
+--   • prévia velha não passa: se os números mudaram desde a prévia que a
+--     tela mostrou, a junção é recusada e nada muda;
 --   • TUDO OU NADA: uma falha no meio da junção não deixa nada mudado.
 --
 -- Como rodar: ver o cabeçalho de supabase/scripts/testar-auditoria.sql.
@@ -87,6 +90,8 @@ declare
   ids_pc     uuid[];
   ids_cot    uuid[];
   peca_final record;
+  esperado   jsonb;
+  extra_mov  uuid := '65606666-0000-0000-0000-000000000001';
 begin
   -- =====================================================================
   -- Preparo (como dono do banco: sem RLS)
@@ -163,11 +168,11 @@ begin
   -- =====================================================================
   -- 0. Quem não está logado não chama nem a prévia
   -- =====================================================================
-  if has_function_privilege('anon', 'juntar_pecas(uuid, uuid, text[])', 'execute')
+  if has_function_privilege('anon', 'juntar_pecas(uuid, uuid, text[], jsonb)', 'execute')
      or has_function_privilege('anon', 'resumo_peca_para_juntar(uuid)', 'execute') then
     raise exception 'FALHOU: o anon (sem login) consegue chamar as funções de juntar peças';
   end if;
-  if not has_function_privilege('authenticated', 'juntar_pecas(uuid, uuid, text[])', 'execute') then
+  if not has_function_privilege('authenticated', 'juntar_pecas(uuid, uuid, text[], jsonb)', 'execute') then
     raise exception 'FALHOU: quem está logado não consegue chamar juntar_pecas';
   end if;
 
@@ -315,12 +320,13 @@ begin
   end if;
 
   -- =====================================================================
-  -- 5. TUDO OU NADA: uma falha no último passo desfaz os anteriores
+  -- 5. TUDO OU NADA: uma falha no último passo desfaz todos os anteriores
   -- =====================================================================
-  -- contagens_estoque é a última tabela que a função repõe, e é das que
-  -- apagam em cascata — o pior lugar pra uma falha ficar pela metade.
+  -- A falha é no `delete` da peça que sai — o último passo da função, depois
+  -- de atualizar a peça que fica, repor as CINCO tabelas e gravar a linha da
+  -- junção na auditoria. Se tudo isso volta, a junção é mesmo tudo ou nada.
   create trigger teste_juntar_falha
-    before update on contagens_estoque
+    before delete on pecas
     for each row execute function teste_juntar_falha_no_meio();
 
   set local role authenticated;
@@ -336,7 +342,7 @@ begin
   end;
   reset role;
 
-  drop trigger teste_juntar_falha on contagens_estoque;
+  drop trigger teste_juntar_falha on pecas;
 
   if not exists (select 1 from pecas where id = peca_b) then
     raise exception 'FALHOU: depois da falha no meio, a peça B sumiu';
@@ -367,6 +373,71 @@ begin
   if exists (select 1 from auditoria where tabela = 'pecas' and registro_id = peca_b and acao = 'excluir') then
     raise exception 'FALHOU: a falha no meio deixou rastro de exclusão da B na auditoria';
   end if;
+  if exists (select 1 from auditoria where tabela = 'pecas' and dados_antes ? 'juntada') then
+    raise exception 'FALHOU: a falha no meio deixou a linha da junção na auditoria';
+  end if;
+  if exists (select 1 from auditoria where tabela = 'pecas' and registro_id = peca_a and acao = 'atualizar') then
+    raise exception 'FALHOU: a falha no meio deixou o "atualizar" da A na auditoria';
+  end if;
+
+  -- =====================================================================
+  -- 5b. PRÉVIA VELHA: os números mudaram depois da prévia → recusa, nada muda
+  -- =====================================================================
+  esperado := jsonb_build_object('fica', resumo_a, 'sai', resumo_b);
+
+  -- outro computador lança um movimento da B depois da prévia
+  insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, loja_id, deposito_id)
+    values (extra_mov, peca_b, 'entrada', 1, 'compra', loja1, dep1);
+  retrato_antes := pg_temp.retrato();
+
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_admin2::text, true);
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{descricao}', esperado);
+    raise exception 'FALHOU: juntou com a prévia velha (a B ganhou um movimento depois)';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os números das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa da prévia velha com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  reset role;
+  if pg_temp.retrato() <> retrato_antes then
+    raise exception 'FALHOU: a junção recusada por prévia velha mudou alguma coisa';
+  end if;
+
+  delete from estoque_movimentos where id = extra_mov;
+  retrato_antes := pg_temp.retrato();
+
+  -- mesma contagem de linhas, só o saldo de uma loja diferente na prévia: recusa
+  -- (prova que o saldo é conferido por si, não só as contagens)
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_admin2::text, true);
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{}',
+      jsonb_set(esperado, '{fica,estoque,0,saldo}', '99'::jsonb));
+    raise exception 'FALHOU: juntou com o saldo da prévia diferente do de agora';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os números das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa do saldo diferente com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  -- prévia ilegível (número torto): recusa também, com a mesma frase
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{}',
+      jsonb_set(esperado, '{sai,movimentos}', '"três"'::jsonb));
+    raise exception 'FALHOU: juntou com uma prévia ilegível';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os números das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa da prévia ilegível com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  reset role;
+  if pg_temp.retrato() <> retrato_antes then
+    raise exception 'FALHOU: uma junção recusada por prévia diferente mudou alguma coisa';
+  end if;
 
   -- =====================================================================
   -- 6. A junção de verdade, como admin das duas lojas
@@ -374,8 +445,12 @@ begin
   set local role authenticated;
   perform set_config('request.jwt.claim.sub', o_admin2::text, true);
 
+  -- com a prévia certa — e com números como o programa pode mandar
+  -- ("3.00" em texto, saldo "4.00"): conferência é por número, não por texto
+  esperado := jsonb_set(jsonb_set(esperado, '{sai,movimentos}', '"3.00"'::jsonb),
+                        '{sai,estoque,1,saldo}', '"4.00"'::jsonb);
   devolvido := juntar_pecas(peca_a, peca_b,
-    array['descricao', 'codigo_barras', 'preco_venda', 'dot', 'medida', 'descricao']);
+    array['descricao', 'codigo_barras', 'preco_venda', 'dot', 'medida', 'descricao'], esperado);
   depois := resumo_peca_para_juntar(peca_a);
 
   if devolvido <> depois then
@@ -528,6 +603,44 @@ begin
     raise exception 'FALHOU: a troca de peça nos itens de OS não ficou na auditoria (% de %)', quantas, cardinality(ids_os);
   end if;
 
+  -- a linha da junção, gravada pela função: dá pra saber o que cada peça
+  -- tinha e refazer à mão
+  select count(*) into quantas from auditoria
+   where tabela = 'pecas' and registro_id = peca_a and acao = 'atualizar' and dados_antes ? 'juntada';
+  if quantas <> 1 then
+    raise exception 'FALHOU: esperava 1 linha da junção na auditoria da A, achei %', quantas;
+  end if;
+  select * into linha from auditoria
+   where tabela = 'pecas' and registro_id = peca_a and acao = 'atualizar' and dados_antes ? 'juntada';
+  if linha.operador_id is distinct from o_admin2
+     or linha.operador_nome is distinct from 'Admin das duas (juntar)' then
+    raise exception 'FALHOU: a linha da junção não diz quem juntou: % / %', linha.operador_id, linha.operador_nome;
+  end if;
+  if linha.dados_antes -> 'juntada' <> 'true'::jsonb
+     or linha.dados_antes -> 'peca_que_saiu' ->> 'id' <> peca_b::text
+     or linha.dados_antes -> 'peca_que_saiu' ->> 'descricao' <> 'PNEU 175 70 13 (B)'
+     or linha.dados_antes -> 'peca_que_saiu' ->> 'marca' <> 'Marca B' then
+    raise exception 'FALHOU: a linha da junção não guardou a peça que saiu inteira: %', linha.dados_antes -> 'peca_que_saiu';
+  end if;
+  if linha.dados_antes -> 'resumo_fica' <> resumo_a or linha.dados_antes -> 'resumo_sai' <> resumo_b then
+    raise exception 'FALHOU: a linha da junção não guardou as prévias das duas: %', linha.dados_antes;
+  end if;
+  if linha.dados_antes -> 'campos_da_que_sai'
+     <> '["codigo_barras", "descricao", "dot", "medida", "preco_venda"]'::jsonb then
+    raise exception 'FALHOU: a linha da junção não guardou os campos trazidos: %', linha.dados_antes -> 'campos_da_que_sai';
+  end if;
+  if linha.dados_antes -> 'ids_movimentos'   <> (select jsonb_agg(x order by x) from unnest(ids_mov)  x)
+  or linha.dados_antes -> 'ids_itens_os'     <> (select jsonb_agg(x order by x) from unnest(ids_os)   x)
+  or linha.dados_antes -> 'ids_itens_compra' <> (select jsonb_agg(x order by x) from unnest(ids_pc)   x)
+  or linha.dados_antes -> 'ids_cotacoes'     <> (select jsonb_agg(x order by x) from unnest(ids_cot)  x)
+  or linha.dados_antes -> 'ids_contagens'    <> (select jsonb_agg(x order by x) from unnest(ids_cont) x)
+  then
+    raise exception 'FALHOU: os ids na linha da junção não são os que eram da B: %', linha.dados_antes;
+  end if;
+  if linha.dados_depois <> (select to_jsonb(p) from pecas p where id = peca_a) then
+    raise exception 'FALHOU: dados_depois da linha da junção não é a A como ficou: %', linha.dados_depois;
+  end if;
+
   -- =====================================================================
   -- 11. Sem nada escolhido, a A ainda é atualizada (pra auditoria) e nada
   --     além de ativo muda
@@ -541,9 +654,16 @@ begin
     raise exception 'FALHOU: juntar sem campo escolhido mudou a descrição da A';
   end if;
   select count(*) into quantas from auditoria
-   where tabela = 'pecas' and registro_id = peca_a and acao = 'atualizar';
+   where tabela = 'pecas' and registro_id = peca_a and acao = 'atualizar' and not (dados_antes ? 'juntada');
   if quantas <> 2 then
     raise exception 'FALHOU: juntar sem campo escolhido devia deixar um "atualizar" da A na auditoria (achei % no total)', quantas;
+  end if;
+  select count(*) into quantas from auditoria
+   where tabela = 'pecas' and registro_id = peca_a and dados_antes ? 'juntada'
+     and dados_antes -> 'peca_que_saiu' ->> 'id' = peca_c::text
+     and dados_antes -> 'campos_da_que_sai' = '[]'::jsonb;
+  if quantas <> 1 then
+    raise exception 'FALHOU: a segunda junção (C na A, sem campo) não deixou a linha da junção';
   end if;
 
   -- ---- limpeza ------------------------------------------------------------

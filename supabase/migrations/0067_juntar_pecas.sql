@@ -24,7 +24,7 @@
 --     o estoque é a soma dos movimentos (src/lib/estoque.ts) e os movimentos
 --     das duas agora são de uma peça só.
 --
--- QUATRO DECISÕES QUE VALEM SABER ANTES DE MEXER AQUI:
+-- CINCO DECISÕES QUE VALEM SABER ANTES DE MEXER AQUI:
 --
 -- 1. TUDO OU NADA. A função inteira é uma transação só: qualquer erro no meio
 --    (inclusive um dos `raise` daqui) desfaz tudo o que ela já tinha feito.
@@ -47,16 +47,31 @@
 --    da tabela — em vez de o CASCADE apagar o histórico dela sem ninguém ver,
 --    ou de a junção dar um erro de chave que ninguém entende.
 --
--- 4. A AUDITORIA NÃO É GRAVADA À MÃO. O trigger da trilha de auditoria (0053)
---    já registra, com quem e quando: a peça que sai INTEIRA (ação "excluir",
---    com todos os campos dela) e a peça que fica antes e depois (ação
---    "atualizar" — por isso a peça que fica é atualizada SEMPRE, mesmo quando
---    nenhum campo foi escolhido), e cada item de OS que trocou de peça.
+-- 4. A AUDITORIA DA JUNÇÃO. O trigger da trilha de auditoria (0053) já
+--    registra sozinho, com quem e quando: a peça que sai INTEIRA (ação
+--    "excluir"), a peça que fica antes e depois (ação "atualizar" — por isso
+--    ela é atualizada SEMPRE, mesmo sem campo escolhido) e cada item de OS que
+--    trocou de peça. Só que movimentos, contagens, itens de pedido e cotações
+--    não têm trigger de auditoria: depois da junção, nada diria quais linhas
+--    eram da peça que sumiu. Por isso a função grava À MÃO mais uma linha
+--    ("atualizar" na peça que fica) com tudo o que precisa pra entender — e,
+--    se preciso, desfazer à mão — a junção: a peça que saiu inteira, a prévia
+--    das duas, os campos trazidos e os ids de cada linha que era da que saiu
+--    (pegos ANTES de repor). Ela se reconhece por `"juntada": true` em
+--    dados_antes.
+--
+-- 5. PRÉVIA VELHA NÃO PASSA. A tela mostra a prévia, a pessoa pensa, e só
+--    então confirma; nesse meio-tempo outro computador pode ter lançado um
+--    movimento. Se o programa mandar a prévia que mostrou (`p_esperado`), a
+--    função confere, já com as duas peças travadas, se os números ainda são
+--    aqueles — e recusa se não forem, em vez de juntar uma coisa diferente da
+--    que a pessoa viu.
 --
 -- Só acrescenta (duas funções novas): o programa de antes continua igual.
 -- Idempotente: seguro rodar de novo.
 
 drop function if exists juntar_pecas(uuid, uuid, text[]);
+drop function if exists juntar_pecas(uuid, uuid, text[], jsonb);
 drop function if exists resumo_peca_para_juntar(uuid);
 
 -- ---------------------------------------------------------------------------
@@ -151,11 +166,19 @@ comment on function resumo_peca_para_juntar(uuid) is
 -- ---------------------------------------------------------------------------
 -- Devolve a prévia da peça que ficou (resumo_peca_para_juntar(p_fica)), pra
 -- tela mostrar o resultado.
+--
+-- `p_esperado` (opcional): a prévia que a tela mostrou, no formato
+--   {"fica": <resumo_peca_para_juntar(p_fica)>, "sai": <resumo_peca_para_juntar(p_sai)>}
+-- Se vier, são conferidos movimentos, itens_os, contagens, itens_compra,
+-- cotacoes e o saldo de cada loja (por loja_id, como número: 6 e "6.00" são
+-- iguais). Qualquer diferença recusa a junção. Nulo: não confere (o caminho
+-- de quem chama sem prévia, como o SQL Editor).
 
 create or replace function juntar_pecas(
   p_fica uuid,
   p_sai uuid,
-  p_campos_da_que_sai text[] default '{}'
+  p_campos_da_que_sai text[] default '{}',
+  p_esperado jsonb default null
 )
 returns jsonb
 language plpgsql
@@ -180,6 +203,13 @@ declare
   v_resumo_fica jsonb;
   v_ref record;
   v_resta boolean;
+  v_lado text;
+  v_atual jsonb;
+  v_previa jsonb;
+  v_mudou boolean;
+  v_campos jsonb;
+  v_ids jsonb;
+  v_peca_sai jsonb;
 begin
   if not operador_atual_e_admin() then
     raise exception 'Só um administrador pode juntar peças.';
@@ -204,6 +234,9 @@ begin
     end if;
     v_copias := v_copias || format('%I = s.%I, ', v_campo, v_campo);
   end loop;
+  v_campos := to_jsonb(array(
+    select distinct c from unnest(coalesce(p_campos_da_que_sai, '{}'::text[])) as c order by 1
+  ));
 
   -- Trava as duas peças até o fim (ninguém edita nem junta elas ao mesmo
   -- tempo). Em ordem de id, pra duas junções cruzadas não se travarem.
@@ -229,6 +262,49 @@ begin
     raise exception 'A peça que fica tem histórico em % loja(s) que você não administra. Só quem administra todas essas lojas pode juntar estas peças.',
       (v_resumo_fica ->> 'lojas_sem_acesso')::int;
   end if;
+
+  -- A prévia que a tela mostrou ainda vale? (decisão 5 do cabeçalho)
+  if p_esperado is not null then
+    foreach v_lado in array array['fica', 'sai'] loop
+      v_atual := case v_lado when 'fica' then v_resumo_fica else v_resumo_sai end;
+      v_previa := p_esperado -> v_lado;
+      begin
+        select exists (
+                 select 1
+                   from unnest(array['movimentos', 'itens_os', 'contagens', 'itens_compra', 'cotacoes']) as k
+                  where (v_previa ->> k)::numeric is distinct from (v_atual ->> k)::numeric
+               )
+            or exists (
+                 select 1
+                   from (select e ->> 'loja_id' as loja, (e ->> 'saldo')::numeric as saldo
+                           from jsonb_array_elements(coalesce(v_previa -> 'estoque', '[]'::jsonb)) e) p
+                   full join
+                        (select e ->> 'loja_id' as loja, (e ->> 'saldo')::numeric as saldo
+                           from jsonb_array_elements(v_atual -> 'estoque') e) a
+                     on a.loja = p.loja
+                  where p.saldo is distinct from a.saldo
+               )
+          into v_mudou;
+      exception when others then
+        -- prévia num formato que não dá pra ler (número torto, estoque que
+        -- não é lista): não dá pra garantir que é a mesma, então não junta.
+        v_mudou := true;
+      end;
+      if v_mudou then
+        raise exception 'Os números das peças mudaram desde a prévia (alguém mexeu nelas agora há pouco). Confira a prévia de novo antes de juntar.';
+      end if;
+    end loop;
+  end if;
+
+  -- O que era da peça que sai, guardado ANTES de repor (decisão 4).
+  select to_jsonb(p) into v_peca_sai from pecas p where p.id = p_sai;
+  v_ids := jsonb_build_object(
+    'ids_movimentos',   (select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from estoque_movimentos   where peca_id = p_sai),
+    'ids_itens_os',     (select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from ordens_servico_itens where peca_id = p_sai),
+    'ids_itens_compra', (select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from pedidos_compra_itens where peca_id = p_sai),
+    'ids_cotacoes',     (select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from cotacoes_pecas       where peca_id = p_sai),
+    'ids_contagens',    (select coalesce(jsonb_agg(id order by id), '[]'::jsonb) from contagens_estoque    where peca_id = p_sai)
+  );
 
   -- A peça que fica: os campos escolhidos vêm da que sai, e ativo é "ou".
   -- Atualizada sempre, mesmo sem campo escolhido, pra trilha de auditoria
@@ -263,23 +339,44 @@ begin
     end if;
   end loop;
 
+  -- A linha da junção na trilha de auditoria (decisão 4 do cabeçalho).
+  insert into auditoria
+    (tabela, registro_id, acao, operador_id, operador_nome, dados_antes, dados_depois)
+  values (
+    'pecas',
+    p_fica,
+    'atualizar',
+    auth.uid(),
+    (select nome from operadores where id = auth.uid()),
+    jsonb_build_object(
+      'juntada', true,
+      'peca_que_saiu', v_peca_sai,
+      'resumo_fica', v_resumo_fica,
+      'resumo_sai', v_resumo_sai,
+      'campos_da_que_sai', v_campos
+    ) || v_ids,
+    (select to_jsonb(p) from pecas p where p.id = p_fica)
+  );
+
   delete from pecas where id = p_sai;
 
   return resumo_peca_para_juntar(p_fica);
 end;
 $$;
 
-comment on function juntar_pecas(uuid, uuid, text[]) is
+comment on function juntar_pecas(uuid, uuid, text[], jsonb) is
   '#656. Junta a peça p_sai na p_fica: repõe peca_id em todo o histórico, copia '
-  'os campos escolhidos (lista fechada), ativo = fica ou sai, e apaga p_sai. '
-  'Tudo ou nada; só admin de todas as lojas onde p_sai aparece. Recusa se '
-  'sobrar qualquer tabela apontando pra p_sai. Devolve resumo_peca_para_juntar(p_fica).';
+  'os campos escolhidos (lista fechada), ativo = fica ou sai, grava a junção na '
+  'auditoria (com os ids do que era de p_sai) e apaga p_sai. Tudo ou nada; só '
+  'admin de todas as lojas onde as duas aparecem; recusa se p_esperado (a prévia '
+  'que a tela mostrou) não bate mais, ou se sobrar qualquer tabela apontando pra '
+  'p_sai. Devolve resumo_peca_para_juntar(p_fica).';
 
 -- `security definer` + o EXECUTE que o Postgres dá a PUBLIC (e o Supabase ao
 -- `anon`) deixaria quem não está logado ao menos chamar. Só quem está logado.
 revoke all on function resumo_peca_para_juntar(uuid) from public, anon;
-revoke all on function juntar_pecas(uuid, uuid, text[]) from public, anon;
+revoke all on function juntar_pecas(uuid, uuid, text[], jsonb) from public, anon;
 grant execute on function resumo_peca_para_juntar(uuid) to authenticated;
-grant execute on function juntar_pecas(uuid, uuid, text[]) to authenticated;
+grant execute on function juntar_pecas(uuid, uuid, text[], jsonb) to authenticated;
 
 insert into schema_versao (versao) values (67) on conflict do nothing;

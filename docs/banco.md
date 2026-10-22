@@ -429,7 +429,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   é a **junção**: a peça que fica herda da que sai os campos que a pessoa escolheu (lista fechada
   de 21; `id`, `criado_em` e `ativo` não entram, e `ativo` vira "ou"), as **5 tabelas que apontam
   pra peça** (`estoque_movimentos`, `ordens_servico_itens`, `pedidos_compra_itens`,
-  `cotacoes_pecas`, `contagens_estoque`) passam pra peça que fica, e a que sai é apagada. Quatro
+  `cotacoes_pecas`, `contagens_estoque`) passam pra peça que fica, e a que sai é apagada. Cinco
   decisões: (a) **tudo ou nada** (uma transação só; erro no meio desfaz tudo); (b) **só
   administrador de todas as lojas** onde qualquer das duas peças aparece; quem não é recebe na
   prévia só `{"lojas_sem_acesso": n}`, sem número de loja alheia, e a junção é recusada; (c) **a
@@ -437,12 +437,18 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   tabelas apontam pra `pecas` e falha inteira, dizendo o nome, se alguma ainda tem linha da peça
   que sai. Duas das cinco são `on delete cascade`: sem a rede, uma tabela nova esquecida aqui
   perderia o histórico calada. **Tabela nova com FK pra `pecas` precisa entrar em
-  `juntar_pecas`** (e no `limpar-dados-de-teste.sql`, acima); (d) **a auditoria não é gravada à
-  mão**: o gatilho da `0053` já registra a peça que sai inteira (`excluir`), a que fica antes e
-  depois (`atualizar`, por isso ela é atualizada sempre) e cada item de OS que trocou de peça.
-  Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`, conferido com 8 mutações, todas
-  vermelhas (uma tabela esquecida, a de cascade esquecida, sem a rede, erro engolido no meio, a
-  peça que fica sem conferência de loja...). **Ordem de subir: migration primeiro** (sem ela, a
+  `juntar_pecas`** (e no `limpar-dados-de-teste.sql`, acima); (d) **a auditoria da junção**: além
+  do que o gatilho da `0053` já grava (a peça que sai inteira em `excluir`, a que fica antes e
+  depois, cada item de OS que trocou de peça), a função grava **à mão uma linha** na peça que fica
+  com `dados_antes.juntada = true`: a peça que saiu inteira, os dois resumos, os campos trazidos e
+  os **ids** das linhas de cada uma das 5 tabelas que eram dela (só os itens de OS têm gatilho;
+  sem essa linha não daria pra refazer a junção à mão); (e) **prévia velha é recusada**: o
+  programa manda em `p_esperado` os dois resumos que a pessoa viu, e se o banco já estiver
+  diferente (alguém lançou movimento ou juntou outra peça nesse meio-tempo) a função recusa e
+  pede pra conferir de novo. Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`,
+  conferido com mais de 12 mutações, todas vermelhas (uma tabela esquecida, a de cascade
+  esquecida, sem a rede, erro engolido no último passo, a peça que fica sem conferência de loja,
+  sem a linha da junção, sem a comparação da prévia...). **Ordem de subir: migration primeiro** (sem ela, a
   tela de juntar dá erro ao abrir a prévia; o resto do programa não muda).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
