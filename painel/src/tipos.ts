@@ -146,6 +146,12 @@ export type DefeitoDaLeva = { numero: number; titulo: string; url?: string; cria
  * ainda não existe); `textoCortado`: passou do limite. `desde`: quando a última tarefa da leva fechou (null se nenhuma).
  * `defeitosCortados`: há mais defeitos abertos do que os olhados.
  */
+/** Uma caixinha da issue da rodada de testes: quem testa e se já terminou. `semAcesso`: ainda não entrou no banco de teste. */
+export type PessoaDaRodada = { nome: string; terminou: boolean; semAcesso?: true };
+
+/** A issue da rodada de testes da leva (a #728 da leva 3). `url` só se for da sakura-corp. */
+export type RodadaDeTestes = { numero: number; url?: string; pessoas: PessoaDaRodada[] };
+
 export type RespostaDosTestes = {
   numero: number;
   texto: string | null;
@@ -153,6 +159,8 @@ export type RespostaDosTestes = {
   desde: string | null;
   defeitos: DefeitoDaLeva[];
   defeitosCortados?: true;
+  /** Falta quando a issue da rodada ainda não existe. */
+  rodada?: RodadaDeTestes;
 };
 
 // ---- A sala de verdade (#468) ----

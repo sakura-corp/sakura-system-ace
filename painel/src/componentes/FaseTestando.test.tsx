@@ -37,6 +37,7 @@ describe("FaseTestando: a lista do que testar (#646)", () => {
     const h = html(pronto({ texto: "T1. abrir" }));
     expect(h).toContain("Leve esta lista pro seu Claude");
     expect(h).toContain("Copiar a lista inteira");
+    expect(h).toContain("Ainda não entrou no banco de teste?");
   });
 
   it("a lista começa fechada numa janelinha, com o botão de abrir inteira", () => {
@@ -51,6 +52,32 @@ describe("FaseTestando: a lista do que testar (#646)", () => {
     const erro = html({ tipo: "erro", mensagem: "Não deu pra buscar." });
     expect(erro).toContain("Não deu pra buscar.");
     expect(erro).toContain("Tentar de novo");
+  });
+});
+
+describe("FaseTestando: quem já terminou", () => {
+  const rodada = {
+    numero: 728,
+    url: "https://github.com/sakura-corp/sakura-system-ace/issues/728",
+    pessoas: [
+      { nome: "Gustavo", terminou: true },
+      { nome: "Tiago", terminou: false },
+      { nome: "Lázaro", terminou: false, semAcesso: true as const },
+    ],
+  };
+
+  it("mostra cada pessoa, quantos terminaram e o link da issue", () => {
+    const h = html(pronto({ rodada }));
+    expect(h).toContain("Quem já terminou");
+    expect(h).toContain("(1 de 3)");
+    expect(h).toMatch(/Lázaro<\/span><span[^>]*>ainda sem acesso ao banco de teste/);
+    expect(h).toMatch(/Gustavo<\/span><span[^>]*>terminou/);
+    expect(h).toMatch(/Tiago<\/span><span[^>]*>testando/);
+    expect(h).toContain('href="https://github.com/sakura-corp/sakura-system-ace/issues/728"');
+  });
+
+  it("sem a issue da rodada: a parte nem aparece", () => {
+    expect(html(pronto({}))).not.toContain("Quem já terminou");
   });
 });
 

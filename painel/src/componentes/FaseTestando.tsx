@@ -1,11 +1,11 @@
 // A fase Testando na tela da leva (#646): o aviso de leva congelada, o que testar e os defeitos achados.
 // A lista de testes vem de `docs/relatorios/leva-N-testes.md` (na main) e aparece como texto puro: nada é
 // interpretado como HTML. Decisões da Sofia na entrevista de 19/10/2026 (docs/painel.md).
-import { Bug, Check, ChevronDown, ChevronUp, Copy, ExternalLink, RotateCw, Snowflake } from "lucide-react";
+import { Bug, Check, ChevronDown, ChevronUp, CircleCheck, CircleDashed, Copy, ExternalLink, KeyRound, RotateCw, Snowflake } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
 import { linkSeguro } from "../logica/link";
-import type { DefeitoDaLeva, RespostaDosTestes } from "../tipos";
+import type { DefeitoDaLeva, PessoaDaRodada, RespostaDosTestes, RodadaDeTestes } from "../tipos";
 
 export type EstadoDosTestes =
   | { tipo: "carregando" }
@@ -24,6 +24,19 @@ const ehDefeito = (d: unknown): d is DefeitoDaLeva => {
   const { numero, titulo, url, criadaEm } = d as Record<string, unknown>;
   return typeof numero === "number" && typeof titulo === "string" && typeof criadaEm === "string" && (url === undefined || typeof url === "string");
 };
+
+/** A rodada só passa se vier no formato certo; senão a tela segue sem ela (não é motivo pra dar erro). */
+function rodadaSegura(r: unknown): RodadaDeTestes | undefined {
+  if (typeof r !== "object" || r === null) return undefined;
+  const { numero, url, pessoas } = r as Record<string, unknown>;
+  if (typeof numero !== "number" || !Array.isArray(pessoas)) return undefined;
+  const boas = pessoas.filter(
+    (p): p is { nome: string; terminou: boolean; semAcesso?: unknown } =>
+      typeof p === "object" && p !== null && typeof (p as Record<string, unknown>).nome === "string" && typeof (p as Record<string, unknown>).terminou === "boolean",
+  );
+  const seguro = linkSeguro(typeof url === "string" ? url : undefined);
+  return { numero, ...(seguro ? { url: seguro } : {}), pessoas: boas.map(({ nome, terminou, semAcesso }) => ({ nome, terminou, ...(semAcesso === true ? { semAcesso: true as const } : {}) })) };
+}
 
 /** Busca /api/leva/<n>/testes e confere o formato. O link de cada defeito só passa se for da sakura-corp. */
 export async function carregarTestes(numero: number, buscar: Buscar = fetch): Promise<EstadoDosTestes> {
@@ -49,6 +62,7 @@ export async function carregarTestes(numero: number, buscar: Buscar = fetch): Pr
     const seguro = linkSeguro(url);
     return { numero: n, titulo, ...(seguro ? { url: seguro } : {}), criadaEm };
   });
+  const rodada = rodadaSegura(corpo.rodada);
   return {
     tipo: "pronto",
     testes: {
@@ -58,6 +72,7 @@ export async function carregarTestes(numero: number, buscar: Buscar = fetch): Pr
       desde: typeof corpo.desde === "string" ? corpo.desde : null,
       defeitos,
       ...(corpo.defeitosCortados === true ? { defeitosCortados: true as const } : {}),
+      ...(rodada ? { rodada } : {}),
     },
   };
 }
@@ -106,7 +121,7 @@ export function ConteudoDaFaseTestando({ numero, estado, tentarDeNovo }: PropsDo
       </div>
     );
   }
-  const { texto, textoCortado, defeitos, defeitosCortados } = estado.testes;
+  const { texto, textoCortado, defeitos, defeitosCortados, rodada } = estado.testes;
   return (
     <div className="mt-4 grid min-w-0 gap-4">
       <section aria-labelledby="titulo-o-que-testar" className="min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5">
@@ -122,6 +137,8 @@ export function ConteudoDaFaseTestando({ numero, estado, tentarDeNovo }: PropsDo
           Vem de <code className="break-all font-mono">docs/relatorios/leva-{numero}-testes.md</code>, na main.
         </p>
       </section>
+
+      {rodada && <QuemJaTerminou rodada={rodada} />}
 
       <section aria-labelledby="titulo-defeitos" className="min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5">
         <h2 id="titulo-defeitos" className="text-[15px] font-semibold">
@@ -174,6 +191,10 @@ export function ListaParaCopiar({ texto, cortado }: { texto: string; cortado: bo
           <li>Abra o Claude Code na pasta do projeto e cole.</li>
           <li>Ele prepara o programa e te guia, um teste por vez.</li>
         </ol>
+        <p className="mt-2 text-sm text-texto-2">
+          Ainda não entrou no banco de teste? Sem a chave que chega pelo Send, o programa não abre a loja de teste: espere o Send
+          chegar e peça ao Claude pra colar a chave antes de começar.
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button type="button" onClick={copiar} className={`${BOTAO} bg-destaque text-sobre-destaque`}>
             {copia === "copiado" ? <Check aria-hidden="true" className="size-4" /> : <Copy aria-hidden="true" className="size-4" />}
@@ -208,6 +229,57 @@ export function ListaParaCopiar({ texto, cortado }: { texto: string; cortado: bo
         {aberta ? "Fechar a lista" : "Ver a lista inteira"}
       </button>
     </>
+  );
+}
+
+const situacao = (p: PessoaDaRodada) => (p.terminou ? "terminou" : p.semAcesso ? "ainda sem acesso ao banco de teste" : "testando");
+
+/** Quem já terminou: as caixinhas da issue da rodada, que o Claude de cada um marca no fim (#728 na leva 3). */
+export function QuemJaTerminou({ rodada }: { rodada: RodadaDeTestes }) {
+  const { numero, url, pessoas } = rodada;
+  const terminaram = pessoas.filter((p) => p.terminou).length;
+  const link = linkSeguro(url);
+  return (
+    <section aria-labelledby="titulo-quem-terminou" className="min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5">
+      <h2 id="titulo-quem-terminou" className="text-[15px] font-semibold">
+        Quem já terminou{" "}
+        {pessoas.length > 0 && (
+          <span className="tabular-nums">
+            ({terminaram} de {pessoas.length})
+          </span>
+        )}
+      </h2>
+      {pessoas.length === 0 ? (
+        <p className="mt-2 text-sm text-texto-2">A issue da rodada ainda não tem as caixinhas de quem testa.</p>
+      ) : (
+        <ul className="mt-2 grid gap-1">
+          {pessoas.map((p) => (
+            <li key={p.nome} className="flex min-w-0 items-center gap-2 text-sm">
+              {p.terminou ? (
+                <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-feita" />
+              ) : p.semAcesso ? (
+                <KeyRound aria-hidden="true" className="size-4 shrink-0 text-texto-2" />
+              ) : (
+                <CircleDashed aria-hidden="true" className="size-4 shrink-0 text-texto-2" />
+              )}
+              <span className="min-w-0 break-words">{p.nome}</span>
+              <span className={p.terminou ? "text-feita" : "text-texto-2"}>{situacao(p)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-[13px] text-texto-2">
+        Quem termina pede ao seu Claude pra marcar a caixinha na{" "}
+        {link ? (
+          <a href={link} target="_blank" rel="noreferrer noopener" className="underline hover:opacity-90">
+            issue #{numero}
+          </a>
+        ) : (
+          <>issue #{numero}</>
+        )}
+        .
+      </p>
+    </section>
   );
 }
 
