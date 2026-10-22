@@ -25,7 +25,7 @@ painel do Supabase (as telas podem ter mudado de nome) e o programa aberto contr
 
 **Situação (19/10/2026)**: os passos 1 a 7 foram feitos pela Sofia, e as telas já estão descritas
 como eram nesse dia (a #517). O banco existe, com o esquema na versão 64, a loja de exemplo e quatro
-logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). Os Sends
+logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. Os Sends
 ficaram prontos, mas ela só manda os links quando o caderno (`segundo-cerebro`) de cada um estiver
 pronto; eles vencem em 26/10, e depois disso é só criar um Send novo com o mesmo texto.
 
