@@ -1,5 +1,5 @@
 /** As páginas do painel. */
-export type Pagina = "inicio" | "leva" | "levas" | "secundarios" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes" | "nao-encontrada";
+export type Pagina = "inicio" | "leva" | "levas" | "secundarios" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes" | "meu-progresso" | "nao-encontrada";
 // "nao-encontrada" (#560): /em-breve/<id que não existe>. Não é item da barra: nada fica marcado.
 
 export type EstadoTarefa = "livre" | "andamento" | "revisao" | "feita";
@@ -199,3 +199,36 @@ export type Proposta = { numero: number; titulo: string; url: string; estado: Es
  * (a lista vem vazia e a página diz isso, sem quebrar). `cortada`: há mais propostas do que as olhadas.
  */
 export type RespostaDasPropostas = { propostas: Proposta[]; semAcesso?: true; cortada?: true };
+
+// ---- Meu progresso (#734): o relatório pessoal, sempre de uma pessoa só ----
+
+/** Uma tarefa feita (fechada como concluída, com etiqueta `leva-N`) em que a pessoa é a responsável. */
+export type TarefaEntregue = {
+  repositorio: string;
+  numero: number;
+  titulo: string;
+  url: string;
+  /** Quando foi fechada (ISO, do GitHub). */
+  feitaEm: string;
+  estimativaHoras?: number;
+  /** A função da etiqueta `chefe:<função>`, se for uma das conhecidas. */
+  chefe?: string;
+  /** Quando a pessoa foi posta como responsável (pegou a tarefa). */
+  pegouEm?: string;
+  /** Quando abriu o primeiro PR que fecha a tarefa. */
+  prAbertoEm?: string;
+};
+
+/** Um PR mesclado que a pessoa abriu. */
+export type PrMesclado = { repositorio: string; numero: number; mescladoEm: string };
+
+/** O que /api/meu-progresso devolve: os dados de UMA pessoa. */
+export type RespostaDoMeuProgresso = {
+  login: string;
+  tarefas: TarefaEntregue[];
+  prs: PrMesclado[];
+  /** Só pra dona (a Sofia): as pessoas que ela pode escolher. Pra qualquer outra pessoa, nunca vem. */
+  pessoas?: string[];
+  /** Mais entregas do que as olhadas: os números podem estar incompletos. */
+  cortada?: true;
+};

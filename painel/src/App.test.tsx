@@ -150,6 +150,20 @@ describe("App", () => {
     expect(h).not.toContain("1 de 8 tarefas feitas");
   });
 
+  it("/meu-progresso (#734) é o Meu progresso: sem login, com os dados de exemplo e um h1 só", () => {
+    expect(paginaDoCaminho("/meu-progresso")).toBe("meu-progresso");
+    expect(paginaDoCaminho("/meu-progresso/")).toBe("meu-progresso");
+    const h = html("/meu-progresso");
+    expect(contarH1(h)).toBe(1);
+    expect(h).toContain("Meu progresso");
+    expect(h).toContain("Dados de exemplo");
+    expect(h).toContain("Horas entregues por semana");
+  });
+
+  it("o Início sem login mostra o cartão do Meu progresso de exemplo (#734)", () => {
+    expect(html("/")).toContain('id="inicio-progresso"');
+  });
+
   it("/financeiro (#654) é a página do Financeiro; /em-breve/financeiro não existe mais", () => {
     expect(paginaDoCaminho("/financeiro")).toBe("financeiro");
     expect(paginaDoCaminho("/financeiro/")).toBe("financeiro");

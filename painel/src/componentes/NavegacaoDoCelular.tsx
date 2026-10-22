@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { NAVEGACAO, type ItemDaNavegacao } from "../logica/navegacao";
 import type { EstadoDoTempoReal } from "../logica/tempoReal";
 import type { Pagina, Usuario } from "../tipos";
-import { Avatar } from "./Avatar";
-import { ICONES, ItemEmBreve, paginaDestacada, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
+import { ICONES, ItemEmBreve, LinkDoMeuProgresso, paginaDestacada, PONTO_DO_TEMPO_REAL, sair, type ItemDeLeva } from "./BarraLateral";
 
 type Props = { levas: ItemDeLeva[]; pagina?: Pagina; usuario?: Usuario; tempoReal?: EstadoDoTempoReal };
 
@@ -218,8 +217,7 @@ export function NavegacaoDoCelular({ levas, pagina: paginaDaTela = "leva", usuar
             {usuario && (
               <div className="min-w-0">
                 <div className="flex items-center gap-2 px-2.5">
-                  <Avatar login={usuario.login} avatar={usuario.avatar} />
-                  <span className="min-w-0 truncate text-sm font-medium" title={usuario.login}>{usuario.login}</span>
+                  <LinkDoMeuProgresso usuario={usuario} atual={pagina === "meu-progresso"} grande />
                   <button
                     type="button"
                     onClick={() => {

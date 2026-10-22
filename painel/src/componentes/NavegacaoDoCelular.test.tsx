@@ -201,4 +201,13 @@ describe("ligarFolha", () => {
     desligar();
     expect(f.ouvintes.size).toBe(0);
   });
+
+  it("na folha, a própria foto leva ao Meu progresso (#734), com alvo de toque de 44 px", () => {
+    const { folha } = partes(html({ levas: LEVA, pagina: "meu-progresso", usuario: { login: "fulana", avatar: "" } }));
+    const link = folha.slice(folha.indexOf('<a href="/meu-progresso"'));
+    const abertura = link.slice(0, link.indexOf(">"));
+    expect(abertura).toContain('aria-current="page"');
+    expect(abertura).toContain("min-h-11");
+    expect(link.slice(0, link.indexOf("</a>"))).toContain("fulana");
+  });
 });
