@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker, { type Ambiente } from "./index";
 import { cifrarSessao, type Sessao } from "./sessao";
-import { CONSULTA_DOS_TESTES, MAXIMO_DO_TEXTO, testesDoCaminho, testesDosDados, type DadosDosTestes } from "./testes";
+import { CONSULTA_DOS_TESTES, MAXIMO_DO_TEXTO, pessoasDaRodada, testesDoCaminho, testesDosDados, variaveisDosTestes, type DadosDosTestes } from "./testes";
 
 const dados = (r: Partial<NonNullable<DadosDosTestes["repository"]>>): DadosDosTestes => ({
   repository: { arquivo: null, tarefas: { nodes: [] }, defeitos: { totalCount: 0, nodes: [] }, ...r },
@@ -11,6 +11,52 @@ const defeito = (numero: number, criadaEm: string, url = `https://github.com/sak
   title: `Defeito ${numero}`,
   url,
   createdAt: criadaEm,
+});
+
+describe("a rodada de testes (quem já terminou)", () => {
+  const corpo = [
+    "Texto antes, com - [x] Ninguém (fora da seção)",
+    "## Quem já terminou",
+    "- [x] Gustavo (@GustavoSakuras): T1 a T16, T21 e T22",
+    "- [ ] Tiago (@tigasss1): T1 a T16",
+    "- [ ] Lázaro (@1oraza): T1 a T16, quando tiver acesso ao `ssace-teste`",
+    "- [X] **Sofia**: T17 a T20",
+    "",
+    "## Quando você terminar",
+    "- [ ] Marca a sua caixinha",
+  ].join("\n");
+
+  it("lê só as caixinhas da seção \"Quem já terminou\", com o nome antes do parêntese ou dos dois-pontos", () => {
+    expect(pessoasDaRodada(corpo)).toEqual([
+      { nome: "Gustavo", terminou: true },
+      { nome: "Tiago", terminou: false },
+      { nome: "Lázaro", terminou: false, semAcesso: true },
+      { nome: "Sofia", terminou: true },
+    ]);
+  });
+
+  it("quem ainda não entrou no banco de teste (o Send) fica \"sem acesso\"; caixinha marcada passa na frente", () => {
+    const pessoas = pessoasDaRodada("## Quem já terminou\n- [ ] A: sem acesso ao banco\n- [ ] B (esperando acesso)\n- [x] C, quando tiver acesso");
+    expect(pessoas).toEqual([
+      { nome: "A", terminou: false, semAcesso: true },
+      { nome: "B", terminou: false, semAcesso: true },
+      { nome: "C, quando tiver acesso", terminou: true },
+    ]);
+  });
+
+  it("acha a issue pelo título exato da leva (a busca do GitHub é aproximada)", () => {
+    const issue = (n: number, title: string) => ({ number: n, title, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${n}`, body: corpo });
+    const r = testesDosDados(3, { ...dados({}), rodada: { nodes: [issue(1, "Leva 30: rodada de testes"), issue(728, "Leva 3: rodada de testes (quem já terminou)")] } });
+    expect(r.rodada?.numero).toBe(728);
+    expect(r.rodada?.url).toBe("https://github.com/sakura-corp/sakura-system-ace/issues/728");
+    expect(r.rodada?.pessoas).toHaveLength(4);
+    expect(testesDosDados(3, { ...dados({}), rodada: { nodes: [issue(1, "Leva 30: rodada de testes")] } }).rodada).toBeUndefined();
+    expect(testesDosDados(3, dados({})).rodada).toBeUndefined();
+  });
+
+  it("a busca vai só no repositório e pelo título da leva", () => {
+    expect(variaveisDosTestes(3).busca).toBe('repo:sakura-corp/sakura-system-ace is:issue in:title "Leva 3: rodada de testes"');
+  });
 });
 
 describe("testesDoCaminho (#646)", () => {
@@ -152,7 +198,7 @@ describe("/api/leva/<n>/testes (#646)", () => {
     expect(consultas).toHaveLength(1);
     expect(consultas[0].texto).toBe(CONSULTA_DOS_TESTES);
     expect(consultas[0].autorizacao).toBe("Bearer ghu_a");
-    expect(consultas[0].variaveis).toEqual({ dono: "sakura-corp", nome: "sakura-system-ace", arquivo: "main:docs/relatorios/leva-2-testes.md", etiqueta: "leva-2" });
+    expect(consultas[0].variaveis).toEqual({ dono: "sakura-corp", nome: "sakura-system-ace", arquivo: "main:docs/relatorios/leva-2-testes.md", etiqueta: "leva-2", busca: variaveisDosTestes(2).busca });
   });
 
   it("o GitHub fora do ar: 502; token recusado: 401", async () => {

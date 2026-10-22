@@ -940,3 +940,10 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   abrir; como o painel não deixa pegar tarefa em Montando, a pessoa começa pelo número, e a sessão **põe o nome dela na
   tarefa** (sem responsável, as horas não contam; a #689 e a #699 foram acertadas à mão). A #689 já entrou (PR #719); a
   #699 é do Tiago. A #722 (o `linkSeguro` com `..`) ficou fora de leva.
+- **22/10/2026, noite: a fase Testando mais fácil de usar** (Sofia, PR #730): "O que testar" virou algo pra pegar, com
+  "Leve esta lista pro seu Claude" em três passos, o botão **"Copiar a lista inteira"** e a lista numa janelinha fechada
+  ("Ver a lista inteira"); um aviso pra quem ainda não entrou no banco de teste (a chave vai pelo Send). O limite do texto
+  subiu de 20 mil pra 80 mil caracteres (a lista da leva 3 tem uns 25 mil e era cortada). Parte nova **"Quem já terminou"**:
+  o worker acha a issue `Leva N: rodada de testes` (a #728 na leva 3) e lê as caixinhas da seção "Quem já terminou";
+  caixinha vazia que diz "quando tiver acesso", "sem acesso" ou "esperando acesso" aparece como "ainda sem acesso ao banco
+  de teste". Sem a issue, a parte não aparece.
