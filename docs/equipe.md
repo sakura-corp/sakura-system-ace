@@ -119,7 +119,8 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    dá certo): o Claude tenta adicionar o repositório à sessão (`add_repo`, com escrita). **Vai
    aparecer um pedido de permissão na tela: aprovar.** (O Tiago recusou na primeira vez, sem
    querer, e teve que repetir.) Com a Sofia e com o Tiago, foi de primeira depois disso, sem clique
-   nenhum no GitHub. Se for recusado:
+   nenhum no GitHub. **Pode também não aparecer pedido nenhum, só a recusa** (aconteceu com o
+   Gustavo, conta nova, em 22/10, #711): aí é o caminho de baixo. Se for recusado:
    em https://github.com/apps/claude/installations/select_target escolha a **sua conta** (não a
    `sakura-corp`) → **Only select repositories** → `segundo-cerebro` → **Install** (ou **Save**,
    se já estava instalado). Se mesmo assim não der, confira em https://claude.ai/connect-github
@@ -145,17 +146,25 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 6. **Trazer o caderno pro computador**: abrir o terminal (**Windows**: menu Iniciar → `Git Bash`;
    **Mac**: Spotlight, `Cmd + Espaço` → `Terminal`). Ele já abre na pasta do seu usuário. Um
    comando por vez, cada um com Enter:
-   - **Baixar o caderno**: `git clone https://github.com/<seu-usuário>/segundo-cerebro.git`
-     (não use o `gh repo clone`: ele precisa do GitHub CLI, que pode não estar instalado, e aí dá
-     `gh: command not found`). Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou
+   - **Baixar o caderno**:
+     `git clone -c core.autocrlf=false https://<seu-usuário>@github.com/<seu-usuário>/segundo-cerebro.git`
+     (o `<seu-usuário>` aparece **duas vezes**). Fica em `C:\Users\<usuário do Windows>\segundo-cerebro` ou
      `/Users/<usuário do Mac>/segundo-cerebro`. Como o caderno é privado, pode abrir uma janela
      do GitHub pedindo pra entrar ou autorizar: entrar com a conta da Sakura e aceitar.
+     - **O `-c core.autocrlf=false`** desliga, já na hora de baixar, a troca do fim das linhas que o
+       Git do Windows faz. **No Windows isso é obrigatório**: o Obsidian salva do outro jeito, e sem
+       isso o Git acha que você mudou os arquivos e **para de puxar sem avisar** (aconteceu com a
+       Sofia em 18/10) ou manda os arquivos inteiros no primeiro envio (com o Gustavo em 22/10, #710:
+       desligar só depois do clone não adianta). No Mac não faz mal.
+     - **O usuário antes do `@`** faz o Git pedir o login **dessa** conta. Sem ele, num computador que
+       já tem outra conta do GitHub guardada, o clone dá `Repository not found` sem perguntar nada
+       (com o Gustavo, #711): pra outra conta, um repositório privado parece não existir.
+     - Não use o `gh repo clone`: ele precisa do GitHub CLI, que pode não estar instalado, e aí dá
+       `gh: command not found`.
+     - **Mande o print (ou a última linha) da resposta do clone** antes do próximo comando: um clone
+       que falhou parece "feito" se ninguém lê a resposta.
    - **Entrar na pasta do caderno**: `cd segundo-cerebro` (certo = nenhuma resposta). Os comandos
      de baixo valem **só pra essa pasta**, por isso vêm depois deste.
-   - **O fim das linhas**: `git config core.autocrlf false` (certo = nenhuma resposta). **No
-     Windows isso é obrigatório**: o Git do Windows troca o fim das linhas e o Obsidian salva do
-     outro jeito; sem esta linha, o Git acha que você mudou os arquivos e **para de puxar sem
-     avisar** (aconteceu com a Sofia em 18/10). No Mac não faz mal.
    - **O seu nome no caderno**: `git config user.name "<seu primeiro nome>"` (certo = nenhuma
      resposta). Sem ele e sem o e-mail de baixo, o primeiro envio do passo 10 dá `Author identity
      unknown` (aconteceu com o Tiago).
@@ -192,8 +201,8 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
     Apagar a nota → **Ctrl + P** (Mac: **Cmd + P**) → `Git: Commit-and-sync` → o Claude confere no
     GitHub que ela sumiu. **No primeiro envio, pode abrir uma janela do GitHub pedindo pra entrar ou
     autorizar**: aceitar; o envio fica parado até isso. **Se o `Git: Pull` der** `Your local changes
-    to the following files would be overwritten by merge`, faltou a linha do `core.autocrlf` do
-    passo 6: parar e pedir ao Claude, que confere com `git diff --stat origin/main` se a diferença é
+    to the following files would be overwritten by merge`, faltou o `-c core.autocrlf=false` no
+    clone do passo 6: parar e pedir ao Claude, que confere com `git diff --stat origin/main` se a diferença é
     só de fim de linha antes de mandar trazer tudo do GitHub. **Se o envio for recusado** com `push declined due to email privacy
     restrictions` ou der `Author identity unknown`: faltaram as linhas do nome e do e-mail de
     fachada do passo 6. Abrir o terminal, rodar `cd segundo-cerebro` e fazer essas linhas do passo
