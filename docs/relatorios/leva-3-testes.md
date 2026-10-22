@@ -572,3 +572,15 @@ Marque "Feito?" com "sim" quando o teste passar. Em "Defeito", ponha o número d
 | T20. Junção na Auditoria | Sofia | | |
 | T21. OS comum como antes | qualquer um | | |
 | T22. Venda de balcão como antes | qualquer um | | |
+
+## Quando você terminar
+
+A tabela acima é só pra você se organizar: ninguém vê o que você marca nela. Quem mostra que você
+terminou é a issue **#728** ("Leva 3: rodada de testes"). No fim, peça ao seu Claude:
+
+> Terminei os testes da leva 3. Marca a minha caixinha na issue #728 e comenta lá quais defeitos
+> eu abri (os números das issues `defeito`), ou que não achei nenhum. Se eu pulei algum teste,
+> diz qual e por quê.
+
+A rodada acaba quando todas as caixinhas da #728 estiverem marcadas e a Sofia tiver decidido o que
+fazer com cada defeito. Aí vem o relatório da leva 3.
