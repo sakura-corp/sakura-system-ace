@@ -6,7 +6,6 @@ import { listarJurosParcelas } from "@/lib/configuracoes";
 import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import {
-  custoDosItens,
   mapaCustoPecas,
   mapaCustoServicos,
 } from "@/schemas/metricasCaixa";
@@ -62,7 +61,7 @@ import {
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { agruparNotasPorOrdem, temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
-import { contaNosNumeros } from "@/schemas/orcamento";
+import { contaNosNumeros, lucroDaOrdem, TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
@@ -134,9 +133,15 @@ export function OrdensServicoPage() {
   // (schemas/metricasCaixa.ts) em vez de refazer a soma aqui: cada tela que
   // recalculava lucro por conta própria acabou divergindo das outras — ver
   // PROJETO_STATUS.md, seção 6, item 40.
-  function lucroOrdem(ordem: OrdemServico): number {
-    const itens = ordem.itens ?? [];
-    return totalOrdem(itens) - custoDosItens(itens, custoPorPeca, custoPorServico);
+  //
+  // Peça digitada sem cadastro e sem custo (#655) não tem lucro: devolve
+  // `null` e a coluna mostra o texto, em vez de um número inventado.
+  function textoLucro(ordem: OrdemServico) {
+    const { lucro } = lucroDaOrdem(ordem.itens ?? [], custoPorPeca, custoPorServico);
+    if (lucro === null) {
+      return <span className="text-rotulo text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
+    }
+    return formatarMoeda(lucro);
   }
 
   // Ordens em aberto (ainda não faturadas) sempre aparecem, não importa a
@@ -321,6 +326,14 @@ export function OrdensServicoPage() {
     await editarItemOrdem(item, patch, operador.id, lojaAtual.id);
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
+    if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
+  }
+
+  // Uma peça avulsa ganhou cadastro na janela da nota (#655): traz a OS aberta
+  // de novo, senão a aba Fechamento continuaria mostrando a peça como avulsa.
+  async function recarregarOrdemEmEdicao() {
+    const ordensAtualizadas = await carregar();
+    const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
     if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
   }
 
@@ -525,6 +538,7 @@ export function OrdensServicoPage() {
           ordemExistente={ordemEmEdicao}
           temNotaEmitida={temAlgumaNotaValida(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
           abaInicial={abaInicialEdicao}
+          onItensMudaram={recarregarOrdemEmEdicao}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
           onEditarItem={handleEditarItem}
@@ -754,7 +768,7 @@ export function OrdensServicoPage() {
                     </td>
                   )}
                   <td className="px-2.5 py-3">{formatarMoeda(totalOrdem(ordem.itens ?? []))}</td>
-                  <td className="px-2.5 py-3">{formatarMoeda(lucroOrdem(ordem))}</td>
+                  <td className="px-2.5 py-3">{textoLucro(ordem)}</td>
                   <td className="px-2.5 py-3 text-right">
                     <div
                       onClick={(e) => e.stopPropagation()}

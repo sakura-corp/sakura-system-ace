@@ -10,6 +10,7 @@ import {
   MOTIVOS_RECUSA,
   MOTIVO_RECUSA_LABEL,
   orcamentoVencido,
+  pecasAvulsas,
   podeAprovar,
   podeRecusar,
   validadePadrao,
@@ -42,6 +43,7 @@ import { DetalhesFields } from "./campos/DetalhesFields";
 import { ItensFields } from "./campos/ItensFields";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
+import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -89,10 +91,20 @@ interface OrdemServicoFormProps {
    * entra em conta nenhuma, então não há saldo a avisar.
    */
   modoOrcamento?: boolean;
-  onAprovar?: (orcamento: OrdemServico, aprovadoPor: string) => Promise<void>;
+  /**
+   * `vinculos` (#655): as peças avulsas que ganharam cadastro na janela da
+   * aprovação. Só vai quando o orçamento tinha peça avulsa.
+   */
+  onAprovar?: (
+    orcamento: OrdemServico,
+    aprovadoPor: string,
+    vinculos?: { itemId: string; pecaId: string }[],
+  ) => Promise<void>;
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
   /** Botões a mais no cabeçalho do orçamento aberto (WhatsApp). */
   acoesExtras?: ReactNode;
+  /** A aba Fechamento cadastrou uma peça avulsa (#655): recarregar a OS aberta. */
+  onItensMudaram?: () => void | Promise<void>;
 }
 
 function formatarMoeda(valor: number): string {
@@ -134,10 +146,12 @@ export function OrdemServicoForm({
   onAprovar,
   onRecusar,
   acoesExtras,
+  onItensMudaram,
 }: OrdemServicoFormProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   const [aprovando, setAprovando] = useState(false);
+  const [janelaAvulsas, setJanelaAvulsas] = useState(false);
   const [aprovadoPor, setAprovadoPor] = useState("");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
   const [enviando, setEnviando] = useState(false);
@@ -259,7 +273,24 @@ export function OrdemServicoForm({
     }
   }
 
-  async function handleAprovar() {
+  // Orçamento com peça sem cadastro (#655) passa antes pela janela, que diz o
+  // que fazer com cada uma; sem peça avulsa, aprova direto, como sempre.
+  const avulsasDoOrcamento = pecasAvulsas(itensExistentes);
+
+  function aoConfirmarAprovacao() {
+    if (avulsasDoOrcamento.length > 0) {
+      if (!aprovadoPor.trim()) {
+        setErro("Diga quem aprovou (ex.: pelo telefone) antes de confirmar.");
+        return;
+      }
+      setErro(null);
+      setJanelaAvulsas(true);
+      return;
+    }
+    handleAprovar();
+  }
+
+  async function handleAprovar(vinculos?: { itemId: string; pecaId: string }[]) {
     if (!ordemExistente || !onAprovar) return;
     if (!aprovadoPor.trim()) {
       setErro("Diga quem aprovou (ex.: pelo telefone) antes de confirmar.");
@@ -268,7 +299,8 @@ export function OrdemServicoForm({
     setErro(null);
     setEnviando(true);
     try {
-      await onAprovar(ordemExistente, aprovadoPor.trim());
+      if (vinculos) await onAprovar(ordemExistente, aprovadoPor.trim(), vinculos);
+      else await onAprovar(ordemExistente, aprovadoPor.trim());
       // Depois de aprovado a tela passa a usar o rascunho de OS: o do orçamento
       // não volta mais, então não pode ficar guardado.
       rascunho.limpar();
@@ -438,7 +470,7 @@ export function OrdemServicoForm({
                 </label>
                 <button
                   type="button"
-                  onClick={handleAprovar}
+                  onClick={aoConfirmarAprovacao}
                   disabled={enviando || isDirty}
                   className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
                 >
@@ -493,7 +525,7 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {aba === "fechamento" && ordemExistente && <FechamentoTab ordem={ordemExistente} />}
+      {aba === "fechamento" && ordemExistente && <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />}
 
       {aba === "detalhes" && (
         <div className="space-y-6">
@@ -538,6 +570,7 @@ export function OrdemServicoForm({
             funcionarios={funcionarios}
             saldoPorPeca={saldoPorPeca}
             saldoCarregado={saldoCarregado}
+            permitePecaAvulsa={modoOrcamento}
           />
         </div>
       )}
@@ -600,6 +633,17 @@ export function OrdemServicoForm({
         HTML inválido, e é isso que deixa cada modal ter o próprio botão de
         enviar — o que faz o Enter avançar de campo aqui dentro igual ao
         resto do app, sem tratamento especial. */}
+    {janelaAvulsas && ordemExistente && (
+      <PecasAvulsasAprovacaoModal
+        itens={avulsasDoOrcamento}
+        pecas={pecas}
+        lojaId={ordemExistente.loja_id}
+        enviando={enviando}
+        erro={erro}
+        onConfirmar={handleAprovar}
+        onFechar={() => setJanelaAvulsas(false)}
+      />
+    )}
     {cadastroRapido === "cliente" && (
       <NovoClienteRapidoModal
         onFechar={() => setCadastroRapido(null)}

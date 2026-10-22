@@ -13,7 +13,7 @@
  * 7. O aviso de KM usa só as passagens do veículo escolhido (`buscarOrdensDoVeiculo`).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
+import { renderizar, screen, within } from "@/testes/tela";
 import { validadePadrao } from "@/schemas/orcamento";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import type { Cliente } from "@/types/cliente";
@@ -232,5 +232,145 @@ describe("OrdemServicoForm — a OS de sempre não muda", () => {
     montar({ modoOrcamento: false, ordemExistente: undefined });
     expect(screen.queryByLabelText("Validade")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Aprovar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — peça sem cadastro no orçamento (#655)", () => {
+  const pecaCadastrada = { id: "peca-1", descricao: "Pneu 175/70 R13", preco_venda: 300 } as never;
+
+  it("no orçamento a peça pode ser digitada sem cadastro, com custo opcional, e vai sem peca_id", async () => {
+    const { user, onSalvarNova } = montar({ pecas: [pecaCadastrada] });
+
+    await user.click(screen.getByDisplayValue("Selecione o cliente"));
+    await user.click(screen.getByRole("button", { name: "Maria da Silva" }));
+
+    // A linha que o formulário novo já traz nasce como "peça sem cadastro": descrição e custo à vista.
+    expect(screen.getByDisplayValue("Peça sem cadastro (digitar abaixo)")).toBeInTheDocument();
+    await user.type(screen.getByPlaceholderText("Descrição da peça"), "Palheta 20 polegadas");
+    await user.type(screen.getByLabelText("Preço unitário"), "80");
+    await user.type(screen.getByLabelText("Custo (opcional)"), "35");
+    await user.click(screen.getByRole("button", { name: "Salvar orçamento" }));
+
+    const itens = onSalvarNova.mock.calls[0][1];
+    expect(itens).toHaveLength(1);
+    expect(itens[0]).toMatchObject({ tipo: "peca", peca_id: null, descricao: "Palheta 20 polegadas", custo_unitario: 35 });
+  });
+
+  it("escolhendo uma peça do cadastro, some a descrição e o custo", async () => {
+    const { user } = montar({ pecas: [pecaCadastrada] });
+
+    await user.click(screen.getByDisplayValue("Peça sem cadastro (digitar abaixo)"));
+    await user.click(screen.getByRole("button", { name: "Pneu 175/70 R13" }));
+
+    expect(screen.queryByPlaceholderText("Descrição da peça")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Custo (opcional)")).not.toBeInTheDocument();
+  });
+
+  it("fora do orçamento (OS comum) a peça continua só do cadastro", () => {
+    montar({ modoOrcamento: false, pecas: [pecaCadastrada] });
+
+    expect(screen.getByDisplayValue("Selecione a peça")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(/Peça sem cadastro/)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("Descrição da peça")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Custo (opcional)")).not.toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — corrigir peça já lançada (#655)", () => {
+  const avulsa = {
+    id: "item-1", tipo: "peca", peca_id: null, servico_id: null, descricao: "Palheta",
+    quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: 35,
+  };
+  const cadastrada = { ...avulsa, id: "item-2", peca_id: "peca-1", descricao: "Pneu", custo_unitario: null };
+
+  it("item avulso de uma OS (nascida de orçamento) continua editável como avulso, mostrando o custo", async () => {
+    const { user } = montar({
+      modoOrcamento: false,
+      ordemExistente: orcamento({ status: "em_andamento", numero: 51, itens: [avulsa] as never }),
+    });
+
+    expect(screen.getByText(/custo R\$\s*35,00/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Editar" }));
+
+    expect(screen.getByPlaceholderText("Descrição da peça")).toHaveValue("Palheta");
+    expect(screen.getByLabelText("Custo (opcional)")).toHaveValue(35);
+  });
+
+  it("item do cadastro numa OS comum não ganha a opção sem cadastro", async () => {
+    const { user } = montar({
+      modoOrcamento: false,
+      pecas: [{ id: "peca-1", descricao: "Pneu", preco_venda: 300 } as never],
+      ordemExistente: orcamento({ status: "em_andamento", numero: 51, itens: [cadastrada] as never }),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Editar" }));
+    // Abre a lista da peça: a opção "sem cadastro" não existe fora do orçamento.
+    await user.click(screen.getByDisplayValue("Pneu"));
+
+    expect(screen.getByRole("button", { name: "Selecione a peça" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Peça sem cadastro/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Custo (opcional)")).not.toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
+  const avulsa = {
+    id: "item-1", tipo: "peca", peca_id: null, servico_id: null, descricao: "Palheta",
+    quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: null,
+  };
+  const servico = { ...avulsa, id: "item-2", tipo: "servico", descricao: "Alinhamento" };
+
+  async function ateConfirmar(user: ReturnType<typeof montar>["user"]) {
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+  }
+
+  it("com peça avulsa abre a janela em vez de aprovar; só aprova depois de escolher o caminho", async () => {
+    const ordem = orcamento({ itens: [avulsa] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+
+    await ateConfirmar(user);
+
+    expect(screen.getByRole("dialog", { name: "Peças sem cadastro" })).toBeInTheDocument();
+    expect(onAprovar).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", []);
+  });
+
+  it("sem peça avulsa (só serviço) aprova direto, sem janela", async () => {
+    const ordem = orcamento({ itens: [servico] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+
+    await ateConfirmar(user);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone");
+  });
+
+  it("peça já do cadastro não conta como avulsa", async () => {
+    const ordem = orcamento({ itens: [{ ...avulsa, peca_id: "peca-1" }] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+
+    await ateConfirmar(user);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onAprovar).toHaveBeenCalledTimes(1);
+  });
+
+  it("se a aprovação falha, o erro aparece dentro da janela e ela continua aberta", async () => {
+    const ordem = orcamento({ itens: [avulsa] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    onAprovar.mockRejectedValueOnce(new Error("A OS 9 foi aprovada, mas a baixa não entrou"));
+
+    await ateConfirmar(user);
+    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+
+    const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
+    expect(await within(janela).findByText(/foi aprovada, mas a baixa não entrou/)).toBeInTheDocument();
   });
 });

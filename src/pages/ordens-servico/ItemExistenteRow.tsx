@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
+import { ehPecaAvulsa } from "@/schemas/orcamento";
 import {
   itemExistenteFormSchema,
   paraDisplayNumero,
@@ -22,6 +23,12 @@ interface ItemExistenteRowProps {
   pecas: Peca[];
   servicos: Servico[];
   funcionarios: FuncionarioPublico[];
+  /**
+   * Só o orçamento (#655): a peça pode ser trocada por uma sem cadastro. Um
+   * item que JÁ é avulso (OS que nasceu de orçamento com "seguir sem
+   * cadastro") continua editável como avulso mesmo fora do orçamento.
+   */
+  permitePecaAvulsa?: boolean;
   onSalvar: (item: ItemOS, patch: PatchItemOS) => Promise<void>;
 }
 
@@ -46,6 +53,7 @@ export function ItemExistenteRow({
   pecas,
   servicos,
   funcionarios,
+  permitePecaAvulsa = false,
   onSalvar,
 }: ItemExistenteRowProps) {
   const [editando, setEditando] = useState(false);
@@ -67,6 +75,9 @@ export function ItemExistenteRow({
   const pecaId = watch("peca_id");
   const servicoId = watch("servico_id");
   const servicoEhAvulso = tipo === "servico" && !servicoId;
+  const avulsaPermitida = permitePecaAvulsa || ehPecaAvulsa(item);
+  const pecaEhAvulsa = avulsaPermitida && tipo === "peca" && !pecaId;
+  const textoPecaVazia = avulsaPermitida ? "Peça sem cadastro (digitar abaixo)" : "Selecione a peça";
   const valoresAtuais = watch();
   const totalItem = valoresAtuais ? totalItensFormulario([valoresAtuais]) : 0;
 
@@ -84,11 +95,13 @@ export function ItemExistenteRow({
     setValue("servico_id", "");
     setValue("descricao", "");
     setValue("preco_unitario", "");
+    setValue("custo_unitario", "");
   }
 
   function aoMudarPeca(novaPecaId: string) {
     const peca = pecas.find((p) => p.id === novaPecaId);
     setValue("peca_id", novaPecaId);
+    setValue("custo_unitario", "");
     setValue("descricao", peca?.descricao ?? "");
     setValue("preco_unitario", paraDisplayNumero(peca?.preco_venda ?? 0));
   }
@@ -117,6 +130,9 @@ export function ItemExistenteRow({
         <span>
           {item.tipo === "peca" ? "Peça" : "Serviço"} — {item.descricao} ({item.quantidade}x)
           {item.tecnico?.nome ? ` · técnico: ${item.tecnico.nome}` : ""}
+          {ehPecaAvulsa(item) && item.custo_unitario != null
+            ? ` · custo ${formatarMoeda(item.custo_unitario)}`
+            : ""}
         </span>
         <span className="flex shrink-0 items-center gap-3">
           <span>{formatarMoeda(item.quantidade * item.preco_unitario - item.desconto)}</span>
@@ -152,8 +168,8 @@ export function ItemExistenteRow({
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
             onMudar={aoMudarPeca}
-            opcaoVazia="Selecione a peça"
-            placeholder="Selecione a peça"
+            opcaoVazia={textoPecaVazia}
+            placeholder={textoPecaVazia}
           />
         ) : (
           <Combobox
@@ -174,6 +190,21 @@ export function ItemExistenteRow({
           {...register("descricao")}
           className={`w-full ${inputClasse}`}
         />
+      )}
+
+      {pecaEhAvulsa && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Descrição da peça"
+            {...register("descricao")}
+            className={`min-w-0 flex-1 ${inputClasse}`}
+          />
+          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+            Custo (opcional)
+            <input type="number" min="0" step="0.01" {...register("custo_unitario")} className={inputClasse} />
+          </label>
+        </div>
       )}
 
       {/* A mesma grade do ItemOSRow: quatro colunas a partir de 1280 de
@@ -209,9 +240,12 @@ export function ItemExistenteRow({
         </label>
       </div>
 
-      {(errors.descricao || errors.quantidade || errors.desconto) && (
+      {(errors.descricao || errors.quantidade || errors.desconto || errors.custo_unitario) && (
         <p className="text-rotulo text-red-400">
-          {errors.descricao?.message ?? errors.quantidade?.message ?? errors.desconto?.message}
+          {errors.descricao?.message ??
+            errors.quantidade?.message ??
+            errors.desconto?.message ??
+            errors.custo_unitario?.message}
         </p>
       )}
       {erro && <p className="text-rotulo text-red-400">{erro}</p>}

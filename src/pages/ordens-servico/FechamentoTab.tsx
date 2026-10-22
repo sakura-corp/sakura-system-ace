@@ -13,6 +13,8 @@ import { GarantiaVisualModal } from "./GarantiaVisualModal";
 
 interface FechamentoTabProps {
   ordem: OrdemServico;
+  /** Uma peça avulsa ganhou cadastro na janela da nota (#655): recarrega a OS. */
+  onItensMudaram?: () => void | Promise<void>;
 }
 
 function formatarData(iso: string | null | undefined): string {
@@ -58,7 +60,7 @@ function BotaoEmitir({
   );
 }
 
-export function FechamentoTab({ ordem }: FechamentoTabProps) {
+export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
   const itens = ordem.itens ?? [];
   // Venda de balcão (migration 0064) usa esta mesma aba: muda só a palavra,
   // e no lugar do veículo (que ela não tem) aparece quem vendeu.
@@ -236,6 +238,7 @@ export function FechamentoTab({ ordem }: FechamentoTabProps) {
           onEmitido={() => {
             void recarregarNotas();
           }}
+          onItensMudaram={onItensMudaram}
         />
       )}
 

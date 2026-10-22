@@ -34,7 +34,9 @@ vi.mock("@/lib/clientes", () => ({
   criarCliente: vi.fn(),
   criarVeiculo: vi.fn(),
 }));
-vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));
+vi.mock("@/lib/pecas", () => ({
+  listarPecas: async () => [{ id: "p-1", descricao: "Palheta 20 pol", codigo_interno: null, codigo_barras: null, medida: null }],
+}));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/funcionarios", () => ({ listarFuncionariosPublico: async () => [] }));
 vi.mock("@/lib/estoque", () => ({
@@ -142,8 +144,39 @@ describe("OrcamentosPage", () => {
     await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
     await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
 
-    expect(aprovarOrcamento).toHaveBeenCalledWith(expect.objectContaining({ id: "o1" }), "pelo telefone", "op");
+    expect(aprovarOrcamento).toHaveBeenCalledWith(expect.objectContaining({ id: "o1" }), "pelo telefone", "op", []);
     expect(await screen.findByTestId("local")).toHaveTextContent('/ordens-servico{"abrirOrdemId":"o1"}');
+  });
+
+  it("orçamento com peça sem cadastro: a janela manda o vínculo da peça escolhida pro aprovarOrcamento (#655)", async () => {
+    const comAvulsa = ordem({
+      id: "o4",
+      numero_orcamento: 4,
+      validade: "2099-01-01",
+      cliente: { nome: "Cliente da Palheta" } as never,
+      itens: [
+        { id: "i9", tipo: "peca", peca_id: null, descricao: "Palheta 20 polegadas", quantidade: 1, preco_unitario: 80, desconto: 0 },
+      ] as never,
+    });
+    listarOrcamentos.mockResolvedValue([comAvulsa]);
+    aprovarOrcamento.mockResolvedValue({ ...comAvulsa, numero: 52, status: "em_andamento" });
+    const user = montar();
+
+    await user.click(await screen.findByText("Orçamento 4"));
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta 20 pol/ }));
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+
+    expect(aprovarOrcamento).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "o4" }),
+      "pelo telefone",
+      "op",
+      [{ itemId: "i9", pecaId: "p-1" }],
+    );
   });
 
   it("recusar com motivo chama recusarOrcamento e some dos abertos", async () => {

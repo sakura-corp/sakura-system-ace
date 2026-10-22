@@ -192,10 +192,14 @@ export function OrcamentosPage() {
   // Aprovou: vira OS e a gente leva pra ela, que passa a ser "OS N" na lista de
   // OS. Se só a baixa de estoque falhou, a OS JÁ nasceu: o erro diz o que fazer
   // à mão, e a tela fica no orçamento (agora aprovado) em vez de tentar de novo.
-  async function handleAprovar(orcamento: OrdemServico, aprovadoPor: string) {
+  async function handleAprovar(
+    orcamento: OrdemServico,
+    aprovadoPor: string,
+    vinculos: { itemId: string; pecaId: string }[] = [],
+  ) {
     if (!operador) return;
     try {
-      const aprovada = await aprovarOrcamento(orcamento, aprovadoPor, operador.id);
+      const aprovada = await aprovarOrcamento(orcamento, aprovadoPor, operador.id, vinculos);
       avisarOrcamentosMudaram();
       navigate("/ordens-servico", { state: { abrirOrdemId: aprovada.id } });
     } catch (err) {
