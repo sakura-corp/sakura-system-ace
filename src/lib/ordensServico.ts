@@ -285,12 +285,31 @@ export class AprovadoSemEstoqueError extends Error {
  * (`.eq("status", "orcamento")`): dois computadores aprovando juntos, só um
  * acha a linha; o outro recebe o aviso e não baixa nada. As peças baixadas
  * são as que estão no banco nessa hora, não as que a tela tinha.
+ *
+ * `vinculos` (#655): as peças avulsas que ganham cadastro na aprovação
+ * (caminhos "existente" e "cadastrar", ver `vinculosDaAprovacao`). O
+ * `peca_id` delas é gravado ANTES do status: se não gravar, nada foi
+ * aprovado e tentar de novo é seguro; se gravar, a baixa logo abaixo já as
+ * encontra com peça e as tira do estoque. As "sem cadastro" ficam de fora e
+ * não baixam nada.
  */
 export async function aprovarOrcamento(
   orcamento: Pick<OrdemServico, "id">,
   aprovadoPor: string,
   operadorId: string,
+  vinculos: { itemId: string; pecaId: string }[] = [],
 ): Promise<OrdemServico> {
+  if (vinculos.length > 0) {
+    // Já respondido em outro computador? Então não vincula nada: a OS de lá
+    // já baixou o estoque sem estas peças.
+    if ((await situacaoAtual(orcamento.id)).status !== "orcamento") {
+      throw new Error(MENSAGEM_JA_RESPONDIDO);
+    }
+    for (const { itemId, pecaId } of vinculos) {
+      await vincularPecaAoItem(itemId, orcamento.id, pecaId);
+    }
+  }
+
   const { data, error } = await supabase
     .from("ordens_servico")
     .update({
@@ -323,6 +342,55 @@ export async function aprovarOrcamento(
   }
 
   return aprovada;
+}
+
+// Grava a peça do cadastro num item avulso desta ordem. Só pega o item se ele
+// ainda for peça avulsa (tipo peça, `peca_id` nulo): nunca troca a peça de um
+// item do cadastro, não põe peça em serviço, nem mexe em item de outra ordem.
+async function vincularPecaAoItem(itemId: string, ordemId: string, pecaId: string): Promise<void> {
+  const { error } = await supabase
+    .from("ordens_servico_itens")
+    .update({ peca_id: pecaId })
+    .eq("id", itemId)
+    .eq("ordem_servico_id", ordemId)
+    .eq("tipo", "peca")
+    .is("peca_id", null);
+  if (error) throw error;
+}
+
+/**
+ * A peça avulsa ganhou cadastro depois da aprovação (#655) — o caminho da
+ * nota: a NFC-e precisa do NCM, e a tela cadastra a peça ali. O item passa a
+ * apontar pra peça e, se a ordem já é OS (`contaNosNumeros`), baixa o estoque
+ * dele, igual ao "cadastrar" da aprovação. Em orçamento só vincula: a
+ * aprovação é que baixa.
+ *
+ * Só pega o item se ele ainda for avulso: chamado duas vezes (clique duplo,
+ * outro computador), a segunda não troca a peça nem baixa de novo.
+ *
+ * @returns se o item foi vinculado agora (false: já tinha peça)
+ */
+export async function cadastrarPecaDoItem(
+  item: ItemOS,
+  pecaId: string,
+  lojaId: string,
+  ordem: OrdemServico,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("ordens_servico_itens")
+    .update({ peca_id: pecaId })
+    .eq("id", item.id)
+    .eq("ordem_servico_id", ordem.id)
+    .eq("tipo", "peca")
+    .is("peca_id", null)
+    .select();
+  if (error) throw error;
+  const vinculados = (data ?? []) as Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[];
+  if (vinculados.length === 0) return false;
+
+  // Baixa o item como está no banco agora (quantidade de lá), não o da tela.
+  if (contaNosNumeros(ordem)) await baixarEstoqueDasPecas(vinculados, nomeDocumento(ordem), lojaId);
+  return true;
 }
 
 /**

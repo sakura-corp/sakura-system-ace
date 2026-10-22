@@ -38,6 +38,12 @@ export interface ItemOS {
   quantidade: number;
   preco_unitario: number;
   desconto: number;
+  /**
+   * Custo da peça digitada sem cadastro no orçamento (#655, migration 0066).
+   * `null` = não informado. Opcional: banco anterior à 0066 não tem a coluna.
+   * Peça cadastrada e serviço usam o custo do cadastro, não este.
+   */
+  custo_unitario?: number | null;
   tecnico?: { nome: string } | null;
 }
 

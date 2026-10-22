@@ -417,6 +417,14 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
   const { configuracaoFiscal, ordem } = dados;
   const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
+  // Nenhuma nota sai sem NCM (#655): a tela já avisa antes, e esta é a
+  // última trava, antes de pedir qualquer coisa à Focus.
+  const semNcm = dados.itens.find((item) => !item.peca.ncm?.trim());
+  if (semNcm) {
+    throw new FocusNfeError(
+      `A peça "${semNcm.peca.descricao}" está sem NCM no cadastro: preencha pra sair na nota.`,
+    );
+  }
 
   const lojaId = configuracaoFiscal.loja_id;
   const ref = montarRefNota(numero, "nfce");

@@ -98,6 +98,11 @@ function construtor(tabela: string) {
       filtros.push([coluna, valor]);
       return q;
     },
+    // `.is("coluna", null)`: aqui só se usa com null, que casa com `===`.
+    is(coluna: string, valor: unknown) {
+      filtros.push([coluna, valor]);
+      return q;
+    },
     single() {
       modo = "single";
       return q;
@@ -126,6 +131,7 @@ vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }))
 const {
   adicionarItensOrdem,
   aprovarOrcamento,
+  cadastrarPecaDoItem,
   criarOrcamento,
   criarOrdem,
   editarItemOrdem,
@@ -342,5 +348,178 @@ describe("faturarOrdem", () => {
     ).rejects.toThrow(/orçamento/i);
     expect(caixa.lancamentos).toHaveLength(0);
     expect(ordem(criado.id).status).toBe("orcamento");
+  });
+});
+
+// Peça digitada sem cadastro (#655). Na aprovação, cada avulsa tem um caminho:
+// "existente" e "cadastrar" ganham peca_id e baixam estoque; "sem cadastro"
+// fica avulsa e não baixa nada.
+describe("aprovarOrcamento com peça avulsa", () => {
+  const valvulaAvulsa: NovoItemOS = {
+    ...pneu,
+    peca_id: null,
+    descricao: "Válvula de bico",
+    quantidade: 4,
+    preco_unitario: 15,
+    custo_unitario: 6,
+  };
+  const itemAvulso = (ordemId: string) =>
+    banco.ordens_servico_itens.find(
+      (l) => l.ordem_servico_id === ordemId && l.descricao === "Válvula de bico",
+    )!;
+
+  async function orcarComAvulsa() {
+    const criado = await criarOrcamento(dados, [pneu, valvulaAvulsa], "2026-10-29", "op-1", "loja-1");
+    return { criado, itemId: itemAvulso(criado.id).id as string };
+  }
+
+  it("existente: o item passa a ser aquela peça e baixa o estoque", async () => {
+    const { criado, itemId } = await orcarComAvulsa();
+    await aprovarOrcamento(criado, "Maria", "op-1", [{ itemId, pecaId: "valvula" }]);
+    expect(itemAvulso(criado.id).peca_id).toBe("valvula");
+    expect(estoque().map((m) => [m.peca_id, m.quantidade, m.referencia])).toEqual([
+      ["pneu", 4, "OS 18"],
+      ["valvula", 4, "OS 18"],
+    ]);
+  });
+
+  it("cadastrar: o item passa a ser a peça recém-cadastrada e baixa o estoque", async () => {
+    const { criado, itemId } = await orcarComAvulsa();
+    await aprovarOrcamento(criado, "Maria", "op-1", [{ itemId, pecaId: "peca-nova" }]);
+    expect(itemAvulso(criado.id).peca_id).toBe("peca-nova");
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu", "peca-nova"]);
+  });
+
+  it("sem cadastro: fica avulsa (peca_id nulo, custo guardado) e não baixa nada", async () => {
+    const { criado } = await orcarComAvulsa();
+    await aprovarOrcamento(criado, "Maria", "op-1", []);
+    expect(itemAvulso(criado.id)).toMatchObject({ peca_id: null, custo_unitario: 6 });
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
+  });
+
+  it("vínculo não troca a peça de um item que já é do cadastro, nem mexe em outra ordem", async () => {
+    const { criado } = await orcarComAvulsa();
+    const outro = await orcarComAvulsa();
+    const itemPneu = banco.ordens_servico_itens.find(
+      (l) => l.ordem_servico_id === criado.id && l.peca_id === "pneu",
+    )!;
+    await aprovarOrcamento(criado, "Maria", "op-1", [
+      { itemId: itemPneu.id as string, pecaId: "outra" },
+      { itemId: outro.itemId, pecaId: "valvula" },
+    ]);
+    expect(itemPneu.peca_id).toBe("pneu");
+    expect(itemAvulso(outro.criado.id).peca_id).toBeNull();
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
+  });
+
+  it("orçamento já respondido (outro computador): não grava vínculo nenhum", async () => {
+    const { criado, itemId } = await orcarComAvulsa();
+    await aprovarOrcamento(criado, "Maria", "op-1", []);
+    await expect(
+      aprovarOrcamento(criado, "Maria", "op-2", [{ itemId, pecaId: "valvula" }]),
+    ).rejects.toThrow(/já foi aprovado ou recusado/);
+    expect(itemAvulso(criado.id).peca_id).toBeNull();
+  });
+
+  it("se o vínculo não grava, o orçamento não é aprovado (tentar de novo é seguro)", async () => {
+    const { criado, itemId } = await orcarComAvulsa();
+    falharEm.add("ordens_servico_itens:update");
+    await expect(
+      aprovarOrcamento(criado, "Maria", "op-1", [{ itemId, pecaId: "valvula" }]),
+    ).rejects.toBeTruthy();
+    expect(ordem(criado.id).status).toBe("orcamento");
+    expect(estoque()).toHaveLength(0);
+  });
+});
+
+describe("corrigir peça avulsa numa OS (#655)", () => {
+  it("mudar quantidade e custo de uma avulsa 'sem cadastro' não mexe no estoque", async () => {
+    const avulsa: NovoItemOS = { ...pneu, peca_id: null, descricao: "Válvula", custo_unitario: 6 };
+    const criado = await criarOrcamento(dados, [pneu, avulsa], "2026-10-29", "op-1", "loja-1");
+    await aprovarOrcamento(criado, "Maria", "op-1", []);
+    const item = banco.ordens_servico_itens.find(
+      (l) => l.ordem_servico_id === criado.id && l.descricao === "Válvula",
+    ) as unknown as ItemOS;
+    await editarItemOrdem(item, { ...avulsa, quantidade: 6, custo_unitario: 7 }, "op-1", "loja-1");
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
+    expect(banco.ordens_servico_itens.find((l) => l.id === item.id)).toMatchObject({
+      quantidade: 6,
+      custo_unitario: 7,
+      peca_id: null,
+    });
+  });
+});
+
+// O caminho da nota (#655): a OS já aprovada com uma peça "sem cadastro" vai
+// emitir NFC-e, e a tela cadastra a peça ali. O item ganha a peça e, como já é
+// OS, baixa o estoque — igual ao "cadastrar" da aprovação.
+describe("cadastrarPecaDoItem", () => {
+  const valvulaAvulsa: NovoItemOS = {
+    ...pneu,
+    peca_id: null,
+    descricao: "Válvula de bico",
+    quantidade: 4,
+    preco_unitario: 15,
+  };
+  const itemAvulso = (ordemId: string) =>
+    banco.ordens_servico_itens.find(
+      (l) => l.ordem_servico_id === ordemId && l.descricao === "Válvula de bico",
+    ) as unknown as ItemOS;
+
+  async function osComAvulsa() {
+    const criado = await criarOrcamento(dados, [pneu, valvulaAvulsa], "2026-10-29", "op-1", "loja-1");
+    const aprovada = await aprovarOrcamento(criado, "Maria", "op-1", []);
+    return { aprovada, item: { ...itemAvulso(criado.id) } };
+  }
+
+  it("OS: o item ganha a peça e baixa o estoque, com o nome da OS", async () => {
+    const { aprovada, item } = await osComAvulsa();
+    expect(await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada)).toBe(true);
+    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
+    expect(estoque().map((m) => [m.peca_id, m.quantidade, m.tipo, m.referencia])).toEqual([
+      ["pneu", 4, "saida", "OS 18"],
+      ["peca-nova", 4, "saida", "OS 18"],
+    ]);
+  });
+
+  it("baixa a quantidade que está no banco, não a da tela", async () => {
+    const { aprovada, item } = await osComAvulsa();
+    await cadastrarPecaDoItem({ ...item, quantidade: 1 }, "peca-nova", "loja-1", aprovada);
+    expect(estoque().find((m) => m.peca_id === "peca-nova")?.quantidade).toBe(4);
+  });
+
+  it("duas vezes (clique duplo, outro computador): não troca a peça nem baixa de novo", async () => {
+    const { aprovada, item } = await osComAvulsa();
+    await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada);
+    expect(await cadastrarPecaDoItem(item, "outra", "loja-1", aprovada)).toBe(false);
+    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
+    expect(estoque().filter((m) => m.peca_id !== "pneu")).toHaveLength(1);
+  });
+
+  it("em orçamento: o item ganha a peça, mas não baixa (só a aprovação baixa)", async () => {
+    const criado = await criarOrcamento(dados, [valvulaAvulsa], "2026-10-29", "op-1", "loja-1");
+    const item = { ...itemAvulso(criado.id) };
+    await cadastrarPecaDoItem(item, "peca-nova", "loja-1", criado);
+    expect(itemAvulso(criado.id).peca_id).toBe("peca-nova");
+    expect(estoque()).toHaveLength(0);
+  });
+
+  it("item de serviço nunca ganha peça (nem pela aprovação, nem pela nota)", async () => {
+    const criado = await criarOrcamento(dados, [alinhamento], "2026-10-29", "op-1", "loja-1");
+    const servico = banco.ordens_servico_itens.find(
+      (l) => l.ordem_servico_id === criado.id,
+    ) as unknown as ItemOS;
+    await aprovarOrcamento(criado, "Maria", "op-1", [{ itemId: servico.id, pecaId: "pneu" }]);
+    const aprovada = ordem(criado.id) as unknown as OrdemServico;
+    expect(await cadastrarPecaDoItem(servico, "pneu", "loja-1", aprovada)).toBe(false);
+    expect(servico.peca_id).toBeNull();
+    expect(estoque()).toHaveLength(0);
+  });
+
+  it("se o item não grava, não baixa nada", async () => {
+    const { aprovada, item } = await osComAvulsa();
+    falharEm.add("ordens_servico_itens:update");
+    await expect(cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada)).rejects.toBeTruthy();
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
   });
 });
