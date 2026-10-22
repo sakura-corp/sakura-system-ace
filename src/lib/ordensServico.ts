@@ -418,8 +418,34 @@ export async function cadastrarPecaDoItem(
   if (vinculados.length === 0) return false;
 
   // Baixa o item como está no banco agora (quantidade de lá), não o da tela.
-  if (contaNosNumeros(ordem)) await baixarEstoqueDasPecas(vinculados, nomeDocumento(ordem), lojaId);
+  // Daqui pra frente o item JÁ está ligado: se a baixa falhar, o erro diz
+  // isso, pra ninguém cadastrar a peça de novo achando que não entrou.
+  if (contaNosNumeros(ordem)) {
+    try {
+      await baixarEstoqueDasPecas(vinculados, nomeDocumento(ordem), lojaId);
+    } catch (erroEstoque) {
+      throw new PecaLigadaSemEstoqueError(ordem, mensagemDeErro(erroEstoque));
+    }
+  }
   return true;
+}
+
+/**
+ * A peça foi ligada ao item da OS, mas a baixa no estoque não entrou. Como no
+ * `AprovadoSemEstoqueError`, a reação certa é NÃO tentar de novo (o item já
+ * tem a peça) e lançar a saída à mão em Movimentações.
+ */
+export class PecaLigadaSemEstoqueError extends Error {
+  constructor(
+    readonly ordem: OrdemServico,
+    motivo: string,
+  ) {
+    super(
+      `A peça foi ligada à ${nomeDocumento(ordem)}, mas a baixa no estoque não entrou: ` +
+        `${motivo}. Lance a saída à mão em Movimentações.`,
+    );
+    this.name = "PecaLigadaSemEstoqueError";
+  }
 }
 
 /**

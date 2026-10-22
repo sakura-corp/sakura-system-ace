@@ -26,6 +26,13 @@ vi.mock("@/lib/pecas", () => ({
 }));
 vi.mock("@/lib/ordensServico", () => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
+  // Como o de verdade, mas com a frase pronta no 2º argumento (o real monta
+  // a frase com o nome da OS).
+  PecaLigadaSemEstoqueError: class extends Error {
+    constructor(_ordem: unknown, frase: string) {
+      super(frase);
+    }
+  },
 }));
 vi.mock("@/lib/focusNfe", () => ({
   emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
@@ -58,6 +65,7 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { EmitirNotaFiscalModal } = await import("./EmitirNotaFiscalModal");
+const { PecaLigadaSemEstoqueError } = await import("@/lib/ordensServico");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
@@ -88,6 +96,16 @@ function montar(itens: unknown[]) {
     />,
   );
   return { ...resultado, onFechar, onEmitido, onItensMudaram };
+}
+
+async function preencherCadastro(user: Awaited<ReturnType<typeof montar>>["user"]) {
+  const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+  await waitFor(() => expect(campo("Descrição *")).toHaveValue("Palheta"));
+  await user.type(campo("NCM *"), "40169300");
+  await user.type(campo("C.E.S.T *"), "0100100");
+  await user.type(campo("CFOP padrão *"), "5102");
+  await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+  await user.type(campo("CST / CSOSN *"), "500");
 }
 
 const confirmar = () => screen.getByRole("button", { name: "Confirmar emissão" });
@@ -182,6 +200,51 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(await screen.findByText(/A peça foi cadastrada e ligada à OS/)).toBeInTheDocument();
     expect(screen.queryByText(/não entrou na OS/)).not.toBeInTheDocument();
     await waitFor(() => expect(confirmar()).toBeEnabled());
+  });
+
+  // Revisão da Sofia (PR #717), ponto 1: a peça ficava ligada, mas a tela
+  // dizia "não entrou na OS" e deixava cadastrar de novo (peça duplicada).
+  it("se a peça liga mas a baixa do estoque falha, a tela diz a verdade e libera a nota", async () => {
+    criarPeca.mockResolvedValue({ id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" });
+    cadastrarPecaDoItem.mockRejectedValue(
+      new PecaLigadaSemEstoqueError(
+        ordem([]),
+        "A peça foi ligada à OS 51, mas a baixa no estoque não entrou: sem rede. Lance a saída à mão em Movimentações.",
+      ),
+    );
+    const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+
+    expect(await screen.findByText(/ligada à OS 51, mas a baixa no estoque não entrou/)).toBeInTheDocument();
+    expect(screen.queryByText(/não entrou na OS/)).not.toBeInTheDocument();
+    // O item conta como ligado: sem o botão de cadastrar de novo, e a nota sai.
+    await waitFor(() => expect(confirmar()).toBeEnabled());
+    expect(screen.queryByRole("button", { name: "Cadastrar agora" })).not.toBeInTheDocument();
+    expect(onItensMudaram).toHaveBeenCalled();
+  });
+
+  // Revisão da Sofia (PR #717), ponto 2: o aviso de peça parecida (#653) não
+  // levava a lugar nenhum aqui, e o único jeito era cadastrar a duplicada.
+  it("peça parecida: escolher a que já existe liga o item a ela, sem cadastrar outra", async () => {
+    const palhetaDoCadastro = { id: "peca-3", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500", ativo: true } as unknown as Peca;
+    listarPecas.mockResolvedValue([pecaComNcm, palhetaDoCadastro]);
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: /Abrir a que já existe/ }));
+
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
+    expect(cadastrarPecaDoItem.mock.calls[0][1]).toBe("peca-3");
+    expect(criarPeca).not.toHaveBeenCalled();
+    expect(onItensMudaram).toHaveBeenCalled();
+    await waitFor(() => expect(confirmar()).toBeEnabled());
+    expect(screen.queryByText(/não pode sair ainda/)).not.toBeInTheDocument();
   });
 
   it("peça que sumiu do cadastro na hora de emitir não é descartada calada: a nota não sai", async () => {

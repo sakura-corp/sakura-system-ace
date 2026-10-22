@@ -139,6 +139,7 @@ vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }))
 const {
   adicionarItensOrdem,
   AprovadoSemEstoqueError,
+  PecaLigadaSemEstoqueError,
   aprovarOrcamento,
   cadastrarPecaDoItem,
   criarOrcamento,
@@ -547,6 +548,19 @@ describe("cadastrarPecaDoItem", () => {
     expect(await cadastrarPecaDoItem(servico, "pneu", "loja-1", aprovada)).toBe(false);
     expect(servico.peca_id).toBeNull();
     expect(estoque()).toHaveLength(0);
+  });
+
+  // Revisão da Sofia (PR #717): a peça ficava ligada, a baixa falhava, e a
+  // tela dizia "não entrou na OS". Um segundo "Cadastrar agora" criava outra
+  // peça, o vínculo devolvia false e o estoque nunca baixava.
+  it("se a peça liga mas a baixa falha, o erro diz que ligou e pra lançar a saída à mão", async () => {
+    const { aprovada, item } = await osComAvulsa();
+    falharEm.add("estoque_movimentos:insert");
+    const erro = await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada).catch((e) => e);
+    expect(erro).toBeInstanceOf(PecaLigadaSemEstoqueError);
+    expect(erro.message).toMatch(/ligada à OS 18/);
+    expect(erro.message).toMatch(/lance a saída à mão/i);
+    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
   });
 
   it("se o item não grava, não baixa nada", async () => {

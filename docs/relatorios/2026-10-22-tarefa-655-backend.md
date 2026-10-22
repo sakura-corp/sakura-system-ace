@@ -89,6 +89,16 @@
   - `metricasCaixa.ts`, `lucratividade.ts`, `comissoes.ts` e `LucratividadeSection.tsx`: sem eles, a comissão sairia sobre lucro inventado.
 - **Depois de publicar**: a Sofia confere um orçamento de verdade com peça avulsa na Pneus Amigão, aprovado pelos três caminhos.
 
+## Depois da revisão da Sofia (22/10)
+A Sofia pediu dois consertos no PR, os dois feitos pela sessão mãe, cada um com teste visto reprovar antes:
+1. **A peça liga, mas a baixa no estoque falha** (`cadastrarPecaDoItem`). Agora sai um erro próprio, `PecaLigadaSemEstoqueError`, que diz que a peça foi ligada e pede pra lançar a saída à mão. A janela da nota mostra essa frase, marca o item como ligado e não oferece mais "Cadastrar agora", pra não nascer uma peça duplicada.
+   - O teste da função reprovou porque a classe ainda não existia.
+   - O teste da tela reprovou porque a tela dizia "não entrou na OS".
+2. **"Abrir a que já existe" não fazia nada na janela da nota.** Agora a peça parecida que já existe é ligada ao item e baixa o estoque, como no caminho "É uma peça que já tenho".
+   - O teste reprovou porque a função de ligar nem era chamada.
+
+Os pontos menores da revisão ficaram na #720.
+
 ## Onde parou
 Terminei.
 

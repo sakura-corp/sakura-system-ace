@@ -19,7 +19,7 @@ import {
 } from "@/lib/focusNfe";
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { salvarArquivoEmitido } from "@/lib/notasFiscais";
-import { cadastrarPecaDoItem } from "@/lib/ordensServico";
+import { cadastrarPecaDoItem, PecaLigadaSemEstoqueError } from "@/lib/ordensServico";
 import { buscarPecasPorIds, listarPecas } from "@/lib/pecas";
 import {
   itensQueImpedemNFCe,
@@ -204,12 +204,14 @@ export function EmitirNotaFiscalModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ordem.id, ordem.loja_id, ordem.cliente_id]);
 
-  // A peça avulsa ganhou cadastro (#655): o item passa a apontar pra ela (e
-  // baixa o estoque, se a ordem já é OS), a janela confere a nota de novo e o
-  // pai recarrega a OS.
-  async function aoCadastrarPecaAvulsa(item: ItemOS, peca: Peca) {
+  // A peça avulsa ganhou uma peça do cadastro (#655) — uma recém-cadastrada
+  // ou, pelo aviso de peça parecida, uma que já existia: o item passa a
+  // apontar pra ela (e baixa o estoque, se a ordem já é OS), a janela confere
+  // a nota de novo e o pai recarrega a OS.
+  async function aoLigarPeca(item: ItemOS, peca: Peca, recemCadastrada: boolean) {
     setItemCadastrando(null);
     setErro("");
+    let avisoEstoque = "";
     try {
       const vinculado = await cadastrarPecaDoItem(item, peca.id, ordem.loja_id, ordem);
       if (!vinculado) {
@@ -219,22 +221,35 @@ export function EmitirNotaFiscalModal({
         );
         return;
       }
-      setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
-      setPecasDaNota((lista) => [...lista, peca]);
-      setCadastroDaLoja((lista) => [...lista, peca]);
     } catch (err) {
-      console.error("Erro ao ligar a peça cadastrada ao item da OS:", err);
-      setErro(`A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err)}`);
-      return;
+      // Ligou, mas o estoque não baixou: o item conta como ligado (senão um
+      // segundo "Cadastrar agora" criaria a peça duplicada) e a tela diz o
+      // que fazer à mão.
+      if (!(err instanceof PecaLigadaSemEstoqueError)) {
+        console.error("Erro ao ligar a peça ao item da OS:", err);
+        setErro(
+          recemCadastrada
+            ? `A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err)}`
+            : `A peça não entrou na OS: ${mensagemDeErro(err)}`,
+        );
+        return;
+      }
+      avisoEstoque = err.message;
     }
+    setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
+    setPecasDaNota((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
+    setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
+    if (avisoEstoque) setErro(avisoEstoque);
     // Recarregar a OS fica à parte: se falhar, a peça JÁ entrou na OS.
     try {
       await onItensMudaram?.();
     } catch (err) {
       console.error("Erro ao recarregar a OS depois de ligar a peça:", err);
       setErro(
-        `A peça foi cadastrada e ligada à OS, mas a OS não recarregou: ${mensagemDeErro(err)}. ` +
-          "Feche e abra a OS de novo pra ver.",
+        `${avisoEstoque ? `${avisoEstoque} ` : ""}` +
+          `${recemCadastrada ? "A peça foi cadastrada e ligada à OS" : "A peça foi ligada à OS"}, ` +
+          `mas a OS não recarregou: ` +
+          `${mensagemDeErro(err)}. Feche e abra a OS de novo pra ver.`,
       );
     }
   }
@@ -722,7 +737,8 @@ export function EmitirNotaFiscalModal({
           item={itemCadastrando}
           pecas={cadastroDaLoja}
           lojaId={ordem.loja_id}
-          onCadastrada={(peca) => aoCadastrarPecaAvulsa(itemCadastrando, peca)}
+          onCadastrada={(peca) => aoLigarPeca(itemCadastrando, peca, true)}
+          onAbrirExistente={(peca) => aoLigarPeca(itemCadastrando, peca, false)}
           onFechar={() => setItemCadastrando(null)}
         />
       )}
