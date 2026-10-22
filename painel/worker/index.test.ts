@@ -735,3 +735,140 @@ describe("/api/tarefa/<n>/pegar e /largar (#538)", () => {
     expect(escritas).toEqual([]);
   });
 });
+
+describe("projetos secundários: /api/projetos, /api/projetos/<repo>/leva, /api/propostas e o pegar (#731)", () => {
+  const base: Sessao = { token: "ghu_a", refresh: "ghr_a", expiraEm: Date.now() + 3_600_000, login: "fulana", avatar: "", entrouEm: Date.now() - 60_000 };
+  const comSessao = async () => `sessao=${await cifrarSessao(base, CHAVE)}`;
+  const corpoDaIssue = "Chefe: backend\nAjudantes: tester\nEstimativa: 2 h\nDepende de: nada\nSessões filhas: não\n\n## Pra que serve\nx";
+  const issue = (number: number, repo: string, dono?: string) => ({
+    number, title: `Tarefa ${number}`, url: `https://github.com/sakura-corp/${repo}/issues/${number}`, state: "OPEN", stateReason: null,
+    body: corpoDaIssue, labels: { nodes: [{ name: "leva-1" }, { name: "chefe:backend" }] },
+    assignees: { nodes: dono ? [{ login: dono, avatarUrl: "" }] : [] }, closedByPullRequestsReferences: { nodes: [] },
+  });
+  const repositorio = (name: string, topico = true) => ({
+    name, description: `Projeto ${name}`, url: `https://github.com/sakura-corp/${name}`, isArchived: false,
+    repositoryTopics: { nodes: topico ? [{ topic: { name: "projeto-secundario" } }] : [] },
+    labels: { nodes: [{ name: "leva-1", issues: { totalCount: 2 }, fechadas: { totalCount: 1 } }] },
+  });
+
+  /** Finge o GitHub. `propostas`: null = o repositório secundarios não existe (o GitHub responde data com repository null). */
+  function fingir(e: { donoNoSsace?: string; propostas?: null; orgFalha?: boolean } = {}) {
+    const escritas: string[] = [];
+    const variaveis: Record<string, unknown>[] = [];
+    vi.stubGlobal("fetch", async (entrada: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entrada);
+      if (url === "https://api.github.com/graphql") {
+        const { query, variables } = JSON.parse(String(init?.body)) as { query: string; variables: Record<string, unknown> };
+        variaveis.push(variables);
+        if (query.includes("query Projetos(")) {
+          if (e.orgFalha) return new Response("fora", { status: 502 });
+          return Response.json({ data: { organization: { repositories: { totalCount: 3, nodes: [repositorio("ar"), repositorio("financeiro", false), repositorio("sakura-system-ace")] } } } });
+        }
+        if (query.includes("query LevasDosProjetos(")) {
+          return Response.json({ data: { p0: { labels: { nodes: [{ name: "leva-1", issues: { totalCount: 2 }, fechadas: { totalCount: 1 } }] } } } });
+        }
+        if (query.includes("query Propostas(")) {
+          if (e.propostas === null) return Response.json({ data: { repository: null }, errors: [{ type: "NOT_FOUND" }] });
+          return Response.json({ data: { repository: { issues: { totalCount: 1, nodes: [{ number: 1, title: "Ar-condicionado", url: "https://github.com/sakura-corp/secundarios/issues/1", state: "OPEN", updatedAt: "2026-10-22T10:00:00Z", labels: { nodes: [{ name: "proposta" }, { name: "proposta:esperando-sofia" }] } }] } } } });
+        }
+        if (query.includes("query Levas(")) return Response.json({ data: { repository: { labels: { nodes: [{ name: "leva-1", issues: { totalCount: 1 } }] } } } });
+        if (query.includes("query Leva(")) {
+          const nome = String(variables.nome);
+          const nodes = nome === "sakura-system-ace" ? [issue(10, nome)] : [issue(3, nome), issue(4, nome)];
+          return Response.json({ data: { repository: { issues: { totalCount: nodes.length, nodes } } } });
+        }
+        if (query.includes("query TarefasDaPessoa(")) {
+          const r0 = { issues: { nodes: e.donoNoSsace ? [{ number: 10, labels: { nodes: [{ name: "leva-4" }] }, closedByPullRequestsReferences: { nodes: [] } }] : [] } };
+          return Response.json({ data: { r0, r1: { issues: { nodes: [] } } } });
+        }
+        return Response.json({ data: { repository: {} } });
+      }
+      if (url.includes("/assignees")) {
+        escritas.push(`${init?.method} ${url}`);
+        const corpo = JSON.parse(String(init?.body)) as { assignees: string[] };
+        return Response.json({ assignees: init?.method === "POST" ? corpo.assignees.map((login) => ({ login })) : [] }, { status: 201 });
+      }
+      return new Response("inesperado", { status: 500 });
+    });
+    return { escritas, variaveis };
+  }
+  const postar = async (caminho: string, cookie?: string) => {
+    const headers = new Headers({ origin: "https://painel.exemplo" });
+    if (cookie) headers.set("cookie", cookie);
+    return worker.fetch(new Request(`https://painel.exemplo${caminho}`, { method: "POST", headers }), ambiente);
+  };
+
+  it("/api/projetos: só os repositórios com o tópico, sem o SSACE", async () => {
+    fingir();
+    const r = await pedir("/api/projetos", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    const corpo = (await r.json()) as { projetos: { repositorio: string; atual: number | null }[] };
+    expect(corpo.projetos.map((p) => [p.repositorio, p.atual])).toEqual([["ar", 1]]);
+  });
+
+  it("/api/projetos/<repo>/leva: a leva atual do projeto, com o repositório em cada tarefa", async () => {
+    const g = fingir();
+    const r = await pedir("/api/projetos/ar/leva", { cookie: await comSessao() });
+    expect(r.status).toBe(200);
+    const corpo = (await r.json()) as { repositorio: string; atual: number; leva: { tarefas: { numero: number; repositorio?: string; url: string }[] } };
+    expect(corpo.atual).toBe(1);
+    expect(corpo.leva.tarefas.map((t) => [t.numero, t.repositorio, t.url])).toEqual([
+      [3, "ar", "https://github.com/sakura-corp/ar/issues/3"],
+      [4, "ar", "https://github.com/sakura-corp/ar/issues/4"],
+    ]);
+    expect(g.variaveis.some((v) => v.nome === "ar" && v.etiqueta === "leva-1")).toBe(true);
+  });
+
+  it("repositório sem o tópico, que não existe, ou de nome estranho: 404, sem quebrar", async () => {
+    fingir();
+    for (const caminho of ["/api/projetos/financeiro/leva", "/api/projetos/nao-existe/leva", "/api/projetos/sakura-system-ace/leva", "/api/projetos/a%22b/leva", "/api/projetos/ar/outra"]) {
+      expect((await pedir(caminho, { cookie: await comSessao() })).status).toBe(404);
+    }
+  });
+
+  it("/api/propostas: com o estado; sem o repositório secundarios, lista vazia e semAcesso (200)", async () => {
+    fingir();
+    const r = await pedir("/api/propostas", { cookie: await comSessao() });
+    expect(((await r.json()) as { propostas: { estado: string }[] }).propostas.map((p) => p.estado)).toEqual(["esperando-sofia"]);
+    fingir({ propostas: null });
+    const r2 = await pedir("/api/propostas", { cookie: await comSessao() });
+    expect(r2.status).toBe(200);
+    expect(await r2.json()).toEqual({ propostas: [], semAcesso: true });
+  });
+
+  it("sem sessão: 401; método errado: 405", async () => {
+    fingir();
+    for (const caminho of ["/api/projetos", "/api/propostas", "/api/projetos/ar/leva"]) {
+      expect((await pedir(caminho)).status).toBe(401);
+      expect((await pedir(caminho, { method: "POST", cookie: await comSessao() })).status).toBe(405);
+    }
+  });
+
+  it("pegar num projeto escreve no repositório dele; quem segura uma no SSACE recebe 409", async () => {
+    const g = fingir();
+    const r = await postar("/api/projetos/ar/tarefa/3/pegar", await comSessao());
+    expect(r.status).toBe(200);
+    expect(g.escritas).toEqual(["POST https://api.github.com/repos/sakura-corp/ar/issues/3/assignees"]);
+
+    const g2 = fingir({ donoNoSsace: "fulana" });
+    const r2 = await postar("/api/projetos/ar/tarefa/3/pegar", await comSessao());
+    expect(r2.status).toBe(409);
+    expect(await r2.json()).toEqual({ ok: false, motivo: "você já está com a #10 do SSACE" });
+    expect(g2.escritas).toEqual([]);
+  });
+
+  it("pegar num projeto: sem Origin da página 403; repositório que não é projeto 409; número inválido 400", async () => {
+    const g = fingir();
+    const semOrigem = await worker.fetch(new Request("https://painel.exemplo/api/projetos/ar/tarefa/3/pegar", { method: "POST", headers: { cookie: await comSessao() } }), ambiente);
+    expect(semOrigem.status).toBe(403);
+    expect((await postar("/api/projetos/financeiro/tarefa/3/pegar", await comSessao())).status).toBe(409);
+    expect((await postar("/api/projetos/ar/tarefa/abc/pegar", await comSessao())).status).toBe(400);
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("a lista de projetos falhou: o pegar no SSACE também não escreve (502)", async () => {
+    const g = fingir({ orgFalha: true });
+    expect((await postar("/api/tarefa/10/pegar", await comSessao())).status).toBe(502);
+    expect(g.escritas).toEqual([]);
+  });
+});

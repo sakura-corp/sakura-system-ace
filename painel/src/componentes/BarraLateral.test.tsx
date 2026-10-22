@@ -61,8 +61,8 @@ describe("BarraLateral", () => {
     // As Pessoas (#650) também: link pra /pessoas e sem "em breve".
     expect(h).toContain('<a href="/pessoas"');
     expect(h).not.toContain('Pessoas<span class="sr-only"> (em breve)</span>');
-    // Os 10 que existem (Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654, Versões #649, Pessoas #650 e Decisões da Sofia #648) e os 6 em breve.
-    expect(h.match(/<a /g)).toHaveLength(16);
+    // Os 11 que existem (Projetos secundários entre eles; Início, Leva atual, Levas anteriores, Relatório da leva #647, Sala, Escritório, Financeiro #654, Versões #649, Pessoas #650 e Decisões da Sofia #648) e os 6 em breve.
+    expect(h.match(/<a /g)).toHaveLength(17);
     expect(h.match(/<a href="\/em-breve\//g)).toHaveLength(6);
   });
 

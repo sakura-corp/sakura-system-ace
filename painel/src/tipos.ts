@@ -1,5 +1,5 @@
 /** As páginas do painel. */
-export type Pagina = "inicio" | "leva" | "levas" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes" | "nao-encontrada";
+export type Pagina = "inicio" | "leva" | "levas" | "secundarios" | "versoes" | "fases" | "relatorio" | "sala" | "pessoas" | "escritorio" | "financeiro" | "dre" | "lojas" | "posvenda" | "bancos" | "decisoes" | "configuracoes" | "nao-encontrada";
 // "nao-encontrada" (#560): /em-breve/<id que não existe>. Não é item da barra: nada fica marcado.
 
 export type EstadoTarefa = "livre" | "andamento" | "revisao" | "feita";
@@ -20,6 +20,8 @@ export type Tarefa = {
   dependeDeAbertas?: number[];
   /** O que falta no cabeçalho da issue; só vem preenchido quando a tarefa está incompleta. */
   incompleta?: string[];
+  /** O repositório da sakura-corp de onde a tarefa veio (#731). Só vem em tarefa de projeto secundário; sem ele, é do SSACE. */
+  repositorio?: string;
 };
 
 // ---- Sala (#467) e Escritório de agentes ----
@@ -170,3 +172,30 @@ export type RespostaDosTestes = {
  * (a página mostra o aviso, nunca "livre"). `leva`: a leva de onde saíram as pessoas (null se essa busca falhou).
  */
 export type RespostaDaSala = { entradas: EntradaDaSala[]; falhas: TipoBonequinho[]; leva: number | null };
+
+// ---- Projetos secundários (#731) ----
+/**
+ * Um projeto secundário: um repositório da sakura-corp com o tópico `projeto-secundario` que o login de quem olha
+ * alcança. `levas`: as etiquetas `leva-N` dele, em ordem. `atual`: a menor `leva-N` com tarefa aberta (sem as fases
+ * do SSACE); null se nenhuma tem. `descricao` é texto puro (a página nunca põe HTML).
+ */
+export type Projeto = { repositorio: string; nome: string; descricao?: string; url: string; levas: Leva[]; atual: number | null };
+
+/** O que /api/projetos devolve. `cortada`: a organização tem mais repositórios do que os olhados. */
+export type RespostaDosProjetos = { projetos: Projeto[]; cortada?: true };
+
+/** O que /api/projetos/<repo>/leva devolve: a leva atual do projeto (null se nenhuma leva tem tarefa aberta). */
+export type RespostaDaLevaDoProjeto = { repositorio: string; levas: Leva[]; atual: number | null; leva: RespostaDaLeva | null };
+
+/** Os estados de uma proposta: a etiqueta `proposta:<estado>` no repositório `secundarios`. */
+export const ESTADOS_DA_PROPOSTA = ["em-entrevista", "esperando-sofia", "com-sugestoes", "aprovada", "recusada"] as const;
+export type EstadoDaProposta = (typeof ESTADOS_DA_PROPOSTA)[number];
+
+/** Uma proposta (issue com a etiqueta `proposta`). `estado` null: falta a etiqueta de estado (ou tem mais de uma). */
+export type Proposta = { numero: number; titulo: string; url: string; estado: EstadoDaProposta | null; aberta: boolean; atualizadaEm: string };
+
+/**
+ * O que /api/propostas devolve. `semAcesso`: o repositório `secundarios` não existe ou o login não lê ele
+ * (a lista vem vazia e a página diz isso, sem quebrar). `cortada`: há mais propostas do que as olhadas.
+ */
+export type RespostaDasPropostas = { propostas: Proposta[]; semAcesso?: true; cortada?: true };

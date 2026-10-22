@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { andarDoItem, fraseDoAndar, NAVEGACAO, problemasDaNavegacao, type GrupoDaNavegacao, type ItemDaNavegacao } from "./navegacao";
 
 // Escritos aqui, e não importados da lista: trocar o endereço na lista tem que reprovar (decisão da #542).
-const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas", financeiro: "/financeiro", relatorio: "/relatorio", decisoes: "/decisoes", versoes: "/versoes", pessoas: "/pessoas" };
+const ENDERECOS_QUE_EXISTEM = { inicio: "/", leva: "/leva", sala: "/sala", escritorio: "/escritorio", levas: "/levas", financeiro: "/financeiro", relatorio: "/relatorio", decisoes: "/decisoes", versoes: "/versoes", pessoas: "/pessoas", secundarios: "/secundarios" };
 
 // Todos os endereços que já existiam antes dos andares (#591): escritos aqui, a lista não pode mudar nenhum.
 const ENDERECOS_EM_BREVE_ANTIGOS = ["fases", "dre", "lojas", "configuracoes"];
@@ -10,7 +10,7 @@ const ENDERECOS_EM_BREVE_ANTIGOS = ["fases", "dre", "lojas", "configuracoes"];
 // Os andares como a Sofia decidiu na #591, de cima da barra pra baixo (a ordem de uso, começando pelo Térreo).
 const ANDARES = [
   { id: "terreo", titulo: "Térreo · Recepção", itens: ["inicio"], chefes: [] },
-  { id: "producao", titulo: "1º · Produção", itens: ["leva", "levas", "fases", "relatorio", "sala", "escritorio", "pessoas"], chefes: ["frontend", "backend", "tester"] },
+  { id: "producao", titulo: "1º · Produção", itens: ["leva", "levas", "secundarios", "fases", "relatorio", "sala", "escritorio", "pessoas"], chefes: ["frontend", "backend", "tester"] },
   { id: "comercial", titulo: "2º · Comercial e pós-venda", itens: ["lojas", "posvenda"], chefes: ["marketing"] },
   { id: "financeiro", titulo: "3º · Financeiro", itens: ["financeiro", "dre"], chefes: [] },
   { id: "seguranca", titulo: "4º · Segurança e operação", itens: ["versoes", "bancos"], chefes: ["segurança"] },

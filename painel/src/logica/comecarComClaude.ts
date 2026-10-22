@@ -23,8 +23,16 @@ export function numeroValido(n: unknown): n is number {
   return typeof n === "number" && Number.isInteger(n) && n > 0 && n <= MAIOR_NUMERO;
 }
 
-export function textoParaOClaude(numero: number, chefe?: Chefe): string {
-  const issue = `https://github.com/${REPOSITORIO_DO_LINK}/issues/${numero}`;
+/** Nome de repositório da sakura-corp (projeto secundário, #731): só letras, números, ponto, hífen e sublinhado. */
+export function repositorioValido(r: unknown): r is string {
+  return typeof r === "string" && /^[A-Za-z0-9._-]{1,100}$/.test(r) && r !== "." && r !== "..";
+}
+
+/** "sakura-corp/<repo>" do projeto, ou o do SSACE quando não há repositório. Quem chama já validou o nome. */
+const repositorioCompleto = (repositorio?: string) => (repositorio === undefined ? REPOSITORIO_DO_LINK : `sakura-corp/${repositorio}`);
+
+export function textoParaOClaude(numero: number, chefe?: Chefe, repositorio?: string): string {
+  const issue = `https://github.com/${repositorioCompleto(repositorio)}/issues/${numero}`;
   const comum =
     "Leia a issue inteira, faça o trabalho (chame agentes dentro da sua sessão se precisar) e termine com PR aberto " +
     "e um relatório do que cada um fez, o que testou e o que ficou de fora. Nunca mescle, nunca publique.";
@@ -36,15 +44,17 @@ export function textoParaOClaude(numero: number, chefe?: Chefe): string {
 }
 
 /** O texto que o link leva (e que o botão "Copiar texto" copia): uma regra só pros dois. Número inválido → undefined. */
-export function textoDaTarefa(numero: unknown, etiquetaOuChefe?: string): string | undefined {
+export function textoDaTarefa(numero: unknown, etiquetaOuChefe?: string, repositorio?: string): string | undefined {
   if (!numeroValido(numero)) return undefined;
-  return textoParaOClaude(numero, CHEFES.find((c) => c === etiquetaOuChefe));
+  // Repositório que não parece nome de repositório não vira texto: cair no SSACE mandaria a pessoa pra issue errada.
+  if (repositorio !== undefined && !repositorioValido(repositorio)) return undefined;
+  return textoParaOClaude(numero, CHEFES.find((c) => c === etiquetaOuChefe), repositorio);
 }
 
 /** O link, ou undefined se o número não é válido. `chefe` desconhecido cai no texto geral. */
-export function linkParaComecar(numero: unknown, etiquetaOuChefe?: string): string | undefined {
-  const texto = textoDaTarefa(numero, etiquetaOuChefe);
+export function linkParaComecar(numero: unknown, etiquetaOuChefe?: string, repositorio?: string): string | undefined {
+  const texto = textoDaTarefa(numero, etiquetaOuChefe, repositorio);
   if (texto === undefined) return undefined;
   const prompt = encodeURIComponent(texto);
-  return `${BASE_DO_CLAUDE}?prompt=${prompt}&repositories=${REPOSITORIO_DO_LINK}`;
+  return `${BASE_DO_CLAUDE}?prompt=${prompt}&repositories=${repositorioCompleto(repositorio)}`;
 }

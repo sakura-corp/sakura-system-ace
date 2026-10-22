@@ -7,12 +7,25 @@ import { numeroValido } from "../src/logica/comecarComClaude";
 import { levaAceitaPegar, numeroDaLeva } from "../src/logica/estado";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
 import {
+  CONSULTA_DOS_PROJETOS,
+  MAXIMO_DE_REPOSITORIOS_NA_REGRA,
+  buscarProjetos,
+  consultaDasTarefasDaPessoa,
+  projetosDosDados,
+  tarefasSeguradasDosDados,
+  variaveisDosProjetos,
+  type DadosDasTarefasDaPessoa,
+  type DadosDosProjetos,
+  type TarefaSegurada,
+} from "./projetos";
+import {
   CONSULTA_DA_LEVA,
   CONSULTA_DAS_LEVAS,
   levaDosDados,
   levasDosDados,
   marcarDependenciasAbertas,
   tarefaDaIssue,
+  variaveisDe,
   variaveisDoRepositorio,
   type DadosDaLeva,
   type DadosDasLevas,
@@ -52,7 +65,7 @@ query Tarefa($dono: String!, $nome: String!, $numero: Int!) {
   }
 }`;
 
-const caminhoDosResponsaveis = (numero: number) => `/repos/${ORGANIZACAO}/${REPOSITORIO}/issues/${numero}/assignees`;
+const caminhoDosResponsaveis = (numero: number, repositorio = REPOSITORIO) => `/repos/${ORGANIZACAO}/${repositorio}/issues/${numero}/assignees`;
 
 /**
  * A tarefa como as regras devem ver: se `login` é um dos responsáveis (em qualquer posição), ele é o dono.
@@ -119,6 +132,9 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
   }
   const motivo = motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo) return { tipo: "recusado", motivo };
+  // #731: uma por vez no total, somando os projetos secundários.
+  const nosOutros = await motivoNosOutros(login, perguntar, true, () => false);
+  if (nosOutros) return nosOutros;
 
   const w = await escrever("POST", caminhoDosResponsaveis(numero), { assignees: [login] });
   if (w.tipo !== "ok") return w;
@@ -153,7 +169,7 @@ export async function pegarTarefa(numero: number, login: string, perguntar: Perg
       return { tipo: "recusado", motivo: `você já está com a #${menor}` };
     }
   }
-  return { tipo: "ok" };
+  return depoisDeEscreverNosOutros(numero, login, REPOSITORIO, perguntar, escrever);
 }
 
 /**
@@ -173,9 +189,9 @@ async function motivoDaLevaEmMontando(numero: number, levas: Leva[], atual: numb
 }
 
 /** Tira `login` da issue. Devolve quem ficou, ou null se a saída falhou. Nunca lança erro. */
-async function sair(numero: number, login: string, escrever: Escrever): Promise<string[] | null> {
+async function sair(numero: number, login: string, escrever: Escrever, repositorio = REPOSITORIO): Promise<string[] | null> {
   try {
-    const w = await escrever("DELETE", caminhoDosResponsaveis(numero), { assignees: [login] });
+    const w = await escrever("DELETE", caminhoDosResponsaveis(numero, repositorio), { assignees: [login] });
     if (w.tipo !== "ok") return null;
     const ficaram = responsaveisDaResposta(w.dados);
     return ficaram.some((l) => mesmoLogin(l, login)) ? null : ficaram;
@@ -185,18 +201,144 @@ async function sair(numero: number, login: string, escrever: Escrever): Promise<
 }
 
 /** Larga a tarefa `numero`: só o dono, e só em andamento (sem PR aberto). Tira só o próprio login. */
-export async function largarTarefa(numero: number, login: string, perguntar: Perguntar, escrever: Escrever): Promise<Resultado> {
+export async function largarTarefa(numero: number, login: string, perguntar: Perguntar, escrever: Escrever, repositorio = REPOSITORIO): Promise<Resultado> {
   if (!numeroValido(numero)) return { tipo: "recusado", motivo: "número de tarefa inválido" };
 
-  const r = await perguntar<{ repository: { issue: IssueDoGitHub | null } | null }>(CONSULTA_DA_TAREFA, { ...variaveisDoRepositorio, numero });
+  const r = await perguntar<{ repository: { issue: IssueDoGitHub | null } | null }>(CONSULTA_DA_TAREFA, { ...variaveisDe(repositorio), numero });
   if (r.tipo !== "ok") return r;
   const issue = r.dados.repository?.issue;
-  const motivo = motivoPraNaoLargar(issue ? paraAsRegras(tarefaDaIssue(issue), issue, login) : undefined, login);
+  const motivo = motivoPraNaoLargar(issue ? paraAsRegras(tarefaDaIssue(issue, repositorio), issue, login) : undefined, login);
   if (motivo) return { tipo: "recusado", motivo };
 
-  const w = await escrever("DELETE", caminhoDosResponsaveis(numero), { assignees: [login] });
+  const w = await escrever("DELETE", caminhoDosResponsaveis(numero, repositorio), { assignees: [login] });
   if (w.tipo !== "ok") return w;
   return { tipo: "ok" };
+}
+
+// ---- Os projetos secundários (#731) ----
+// Cada projeto tem as suas levas (a atual é a menor `leva-N` com tarefa aberta, sem fases). "Uma por vez" vale no
+// total: antes de escrever, o worker olha as tarefas da pessoa no SSACE e em todos os projetos; depois, olha de novo
+// (duas abas, uma em cada projeto) e, se ela ficou com duas, sai da que acabou de pegar.
+
+const MOTIVO_SEM_PROJETO = "este projeto não existe ou você não tem acesso a ele";
+const ondeEsta = (repositorio: string) => (repositorio === REPOSITORIO ? "do SSACE" : `do projeto ${repositorio}`);
+
+/** Os nomes dos projetos que o login de quem pede alcança (só a consulta barata, sem as levas), ou o resultado de erro. */
+async function nomesDosProjetos(perguntar: Perguntar): Promise<{ nomes: string[]; cortada: boolean } | Resultado> {
+  const r = await perguntar<DadosDosProjetos>(CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+  if (r.tipo !== "ok") return r;
+  const { projetos, cortada } = projetosDosDados(r.dados);
+  return { nomes: projetos.map((p) => p.repositorio), cortada: cortada === true };
+}
+
+/**
+ * As tarefas em andamento da pessoa no SSACE e nos projetos. `semOSsace`: no pegar do SSACE, que já tem a regra dele
+ * (as levas abertas). `ignorar`: o que não conta (antes de escrever, a própria tarefa; depois, o próprio projeto, que a
+ * releitura já olhou). Na dúvida (repositórios ou issues demais pra olhar), recusa.
+ */
+async function seguradas(login: string, perguntar: Perguntar, semOSsace: boolean, ignorar: (t: TarefaSegurada) => boolean): Promise<TarefaSegurada[] | Resultado> {
+  const projetos = await nomesDosProjetos(perguntar);
+  if (!("nomes" in projetos)) return projetos;
+  const repositorios = semOSsace ? projetos.nomes : [REPOSITORIO, ...projetos.nomes];
+  if (projetos.cortada || repositorios.length > MAXIMO_DE_REPOSITORIOS_NA_REGRA) {
+    return { tipo: "recusado", motivo: "há projetos demais pra conferir a regra de uma por vez; peça à Sofia" };
+  }
+  if (repositorios.length === 0) return [];
+  const r = await perguntar<DadosDasTarefasDaPessoa>(consultaDasTarefasDaPessoa(repositorios), { dono: ORGANIZACAO, login });
+  if (r.tipo !== "ok") return r;
+  const tarefas = tarefasSeguradasDosDados(repositorios, r.dados);
+  if (tarefas === null) return { tipo: "recusado", motivo: "você tem tarefas abertas demais no seu nome pra conferir a regra de uma por vez; peça à Sofia" };
+  return tarefas.filter((t) => !ignorar(t));
+}
+
+/** Antes de escrever: null se a pessoa não segura nenhuma outra; senão, a recusa (ou o erro). */
+async function motivoNosOutros(login: string, perguntar: Perguntar, semOSsace: boolean, ignorar: (t: TarefaSegurada) => boolean): Promise<Resultado | null> {
+  const outras = await seguradas(login, perguntar, semOSsace, ignorar);
+  if (!Array.isArray(outras)) return outras;
+  const [outra] = outras;
+  return outra ? { tipo: "recusado", motivo: `você já está com a #${outra.numero} ${ondeEsta(outra.repositorio)}` } : null;
+}
+
+/**
+ * Depois de escrever (e da releitura do próprio repositório): se a pessoa ficou com outra em andamento em outro
+ * repositório (a outra aba pegou ao mesmo tempo), sai desta. Se a releitura falhar, fica: o aviso do painel mostra.
+ */
+async function depoisDeEscreverNosOutros(numero: number, login: string, repositorio: string, perguntar: Perguntar, escrever: Escrever): Promise<Resultado> {
+  const outras = await seguradas(login, perguntar, repositorio === REPOSITORIO, (t) => t.repositorio === repositorio).catch(() => null);
+  if (!Array.isArray(outras) || outras.length === 0) return { tipo: "ok" };
+  const outra = outras[0];
+  const saida = await sair(numero, login, escrever, repositorio);
+  if (saida === null) return { tipo: "recusado", motivo: `você ficou com a #${outra.numero} ${ondeEsta(outra.repositorio)} e a #${numero} ao mesmo tempo; largue uma delas` };
+  return { tipo: "recusado", motivo: `você ficou com a #${outra.numero} ${ondeEsta(outra.repositorio)} ao mesmo tempo: saí desta; tente de novo se quiser trocar` };
+}
+
+/** As tarefas da leva atual do projeto, vistas pelas regras (com as dependências marcadas). */
+async function tarefasDaLevaDoProjeto(repositorio: string, leva: number, login: string, perguntar: Perguntar, comDependencias: boolean): Promise<Tarefa[] | Resultado> {
+  const r = await perguntar<DadosDaLeva>(CONSULTA_DA_LEVA_PRA_REGRAS, { ...variaveisDe(repositorio), etiqueta: `leva-${leva}` });
+  if (r.tipo !== "ok") return r;
+  const resposta = levaDosDados(leva, r.dados, repositorio);
+  if (!resposta) return { tipo: "erro" };
+  if (resposta.cortada) return { tipo: "recusado", motivo: "a leva tem tarefas demais pra conferir; peça à Sofia" };
+  if (comDependencias) await marcarDependenciasAbertas(resposta, r.dados, perguntar, repositorio);
+  return tarefasPraRegras(resposta.tarefas, r.dados, login);
+}
+
+/**
+ * Pega a tarefa `numero` do projeto secundário `repositorio` pra `login`. Confere: o repositório é um projeto (com o
+ * tópico, e o login alcança), a tarefa está na leva atual dele (aberta, livre, completa, sem dependência aberta), a
+ * pessoa não está com outra em andamento no projeto nem em nenhum outro repositório. Depois de escrever, confere de novo.
+ */
+export async function pegarNoProjeto(repositorio: string, numero: number, login: string, perguntar: Perguntar, escrever: Escrever): Promise<Resultado> {
+  if (!numeroValido(numero)) return { tipo: "recusado", motivo: "número de tarefa inválido" };
+  const projetos = await buscarProjetos(perguntar, repositorio);
+  if (projetos.tipo !== "ok") return projetos;
+  const projeto = projetos.dados.projetos.find((p) => p.repositorio === repositorio);
+  if (!projeto) return { tipo: "recusado", motivo: MOTIVO_SEM_PROJETO };
+  if (projeto.atual === null) return { tipo: "recusado", motivo: "este projeto não tem leva aberta" };
+
+  const tarefas = await tarefasDaLevaDoProjeto(repositorio, projeto.atual, login, perguntar, true);
+  if (!Array.isArray(tarefas)) return tarefas;
+  const motivo = motivoPraNaoPegar(tarefas.find((t) => t.numero === numero), tarefas, login);
+  if (motivo) return { tipo: "recusado", motivo };
+  // Conta também outra leva do mesmo projeto (a atual pode ter voltado pra uma anterior); só a própria tarefa não conta.
+  const nosOutros = await motivoNosOutros(login, perguntar, false, (t) => t.repositorio === repositorio && t.numero === numero);
+  if (nosOutros) return nosOutros;
+
+  const w = await escrever("POST", caminhoDosResponsaveis(numero, repositorio), { assignees: [login] });
+  if (w.tipo !== "ok") return w;
+  const ficaram = responsaveisDaResposta(w.dados);
+  if (!ficaram.some((l) => mesmoLogin(l, login))) {
+    return { tipo: "recusado", motivo: "o GitHub não deixou pôr você na tarefa; confira se você tem acesso de escrita ao repositório" };
+  }
+  const outro = ficaram.find((l) => !mesmoLogin(l, login));
+  if (outro) {
+    const saida = await sair(numero, login, escrever, repositorio);
+    if (saida === null) return { tipo: "recusado", motivo: `alguém pegou junto e não deu pra tirar você da #${numero}: largue a tarefa ou peça à Sofia` };
+    if (saida.length === 0) return { tipo: "recusado", motivo: `outra pessoa tentou pegar a #${numero} no mesmo instante; tente de novo` };
+    return { tipo: "recusado", motivo: `alguém pegou antes: a #${numero} é de ${outro}` };
+  }
+
+  // Duas abas no mesmo projeto: fica só a de número menor (a mesma regra do SSACE).
+  const releitura = await tarefasDaLevaDoProjeto(repositorio, projeto.atual, login, perguntar, false).catch(() => null);
+  if (Array.isArray(releitura)) {
+    const minhas = releitura.filter((t) => t.estado === "andamento" && mesmoLogin(t.dono?.login, login)).map((t) => t.numero);
+    const menor = Math.min(...minhas);
+    if (minhas.length > 1 && numero !== menor) {
+      const saida = await sair(numero, login, escrever, repositorio);
+      if (saida === null) return { tipo: "recusado", motivo: `você ficou com a #${menor} e a #${numero} ao mesmo tempo; largue uma delas` };
+      return { tipo: "recusado", motivo: `você já está com a #${menor}` };
+    }
+  }
+  return depoisDeEscreverNosOutros(numero, login, repositorio, perguntar, escrever);
+}
+
+/** Larga a tarefa `numero` do projeto secundário `repositorio` (só se o repositório é mesmo um projeto). */
+export async function largarNoProjeto(repositorio: string, numero: number, login: string, perguntar: Perguntar, escrever: Escrever): Promise<Resultado> {
+  if (!numeroValido(numero)) return { tipo: "recusado", motivo: "número de tarefa inválido" };
+  const projetos = await nomesDosProjetos(perguntar);
+  if (!("nomes" in projetos)) return projetos;
+  if (!projetos.nomes.includes(repositorio)) return { tipo: "recusado", motivo: MOTIVO_SEM_PROJETO };
+  return largarTarefa(numero, login, perguntar, escrever, repositorio);
 }
 
 /**

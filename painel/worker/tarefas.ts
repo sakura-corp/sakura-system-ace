@@ -74,6 +74,9 @@ query Leva($dono: String!, $nome: String!, $etiqueta: String!) {
 
 export const variaveisDoRepositorio = { dono: ORGANIZACAO, nome: REPOSITORIO };
 
+/** As variáveis das consultas pra outro repositório da sakura-corp (um projeto secundário, #731). */
+export const variaveisDe = (repositorio: string) => ({ dono: ORGANIZACAO, nome: repositorio });
+
 /** O que o RELATORIOS_DAS_LEVAS devolve. `relatoriosNaMain` é null se a pasta não existe na main. */
 export type RelatoriosDasLevas = {
   relatoriosNaMain?: { entries?: ({ name: string } | null)[] | null } | null;
@@ -205,9 +208,10 @@ export function resumoDasLevasDosDados(dados: DadosDoResumoDasLevas): RespostaDo
   return comFases(levas, dados.repository);
 }
 
-const linkDaIssue = (numero: number) => `https://github.com/${ORGANIZACAO}/${REPOSITORIO}/issues/${numero}`;
+const linkDaIssue = (numero: number, repositorio: string) => `https://github.com/${ORGANIZACAO}/${repositorio}/issues/${numero}`;
 
-export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
+/** `repositorio`: de onde a issue veio (#731); o padrão é o SSACE, e só tarefa de outro repositório leva o campo. */
+export function tarefaDaIssue(issue: IssueDoGitHub, repositorio = REPOSITORIO): Tarefa {
   const dono = issue.assignees.nodes.find((a) => a !== null) ?? undefined;
   const prs = (issue.closedByPullRequestsReferences?.nodes ?? []).filter((p) => p !== null);
   const prAberto = prs.find((p) => p.state === "OPEN");
@@ -216,9 +220,10 @@ export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
     numero: issue.number,
     titulo: issue.title,
     // Só link do GitHub da Sakura (a mesma regra da Sala); se vier outro, monta pelo número.
-    url: linkSeguro(issue.url) ?? linkDaIssue(issue.number),
+    url: linkSeguro(issue.url) ?? linkDaIssue(issue.number, repositorio),
     estado: estadoDaTarefa({ fechada: issue.state === "CLOSED", temResponsavel: dono !== undefined, temPrAberto: prAberto !== undefined }),
   };
+  if (repositorio !== REPOSITORIO) tarefa.repositorio = repositorio;
   if (dono) tarefa.dono = { login: dono.login, avatar: dono.avatarUrl.startsWith("https://") ? dono.avatarUrl : "" };
   const estimativa = lerEstimativa(issue.body);
   if (estimativa !== undefined) tarefa.estimativaHoras = estimativa;
@@ -234,10 +239,10 @@ export function tarefaDaIssue(issue: IssueDoGitHub): Tarefa {
   return tarefa;
 }
 
-export function levaDosDados(numero: number, dados: DadosDaLeva): RespostaDaLeva | null {
+export function levaDosDados(numero: number, dados: DadosDaLeva, repositorio = REPOSITORIO): RespostaDaLeva | null {
   const issues = dados.repository?.issues;
   if (!issues) return null;
-  const tarefas = issues.nodes.filter((i) => i !== null).map(tarefaDaIssue);
+  const tarefas = issues.nodes.filter((i) => i !== null).map((i) => tarefaDaIssue(i, repositorio));
   return { numero, tarefas, cortada: issues.totalCount > tarefas.length };
 }
 
@@ -340,7 +345,12 @@ export function aplicarDependencias(tarefas: Tarefa[], pendencias: Map<number, n
  * Os da própria leva usam o estado que já veio; os de fora, UMA consulta só (e nenhuma se não houver).
  * Nunca lança erro: se a consulta falhar (rede, GitHub, token), os de fora contam como abertos.
  */
-export async function marcarDependenciasAbertas(resposta: RespostaDaLeva, dados: DadosDaLeva, perguntar: PerguntarAoGitHub): Promise<RespostaDaLeva> {
+export async function marcarDependenciasAbertas(
+  resposta: RespostaDaLeva,
+  dados: DadosDaLeva,
+  perguntar: PerguntarAoGitHub,
+  repositorio = REPOSITORIO,
+): Promise<RespostaDaLeva> {
   const pendencias = dependenciasDaLeva(dados);
   if (pendencias.size === 0) return resposta;
   const naLeva = estadosDaLeva(dados);
@@ -348,7 +358,7 @@ export async function marcarDependenciasAbertas(resposta: RespostaDaLeva, dados:
   const fora = numerosDeFora(pendencias, naLeva);
   if (fora.length > 0) {
     try {
-      const r = await perguntar(consultaDasDependencias(fora), variaveisDoRepositorio);
+      const r = await perguntar(consultaDasDependencias(fora), variaveisDe(repositorio));
       if (r.tipo === "ok") for (const n of fechadasDaResposta(fora, r.dados)) fechadas.add(n);
       else console.error(`dependências: o GitHub não respondeu (${r.tipo}); as de fora contam como abertas`);
     } catch {

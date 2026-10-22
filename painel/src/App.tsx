@@ -9,6 +9,7 @@ import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaDecisoes } from "./componentes/PaginaDecisoes";
 import { PaginaInicio } from "./componentes/PaginaInicio";
 import { PaginaPessoas } from "./componentes/PaginaPessoas";
+import { PaginaSecundarios } from "./componentes/PaginaSecundarios";
 import { PaginaVersoes } from "./componentes/PaginaVersoes";
 import { chaveDoRelatorio, levaDoRelatorio, PaginaRelatorio } from "./componentes/PaginaRelatorio";
 import { Sala } from "./componentes/sala/Sala";
@@ -38,6 +39,8 @@ export function paginaDoCaminho(caminho: string): Pagina {
   if (limpo === "/escritorio") return "escritorio";
   if (limpo === "/sala") return "sala";
   if (limpo === "/levas") return "levas";
+  // Os Projetos secundários (#731).
+  if (limpo === "/secundarios") return "secundarios";
   if (limpo === "/financeiro") return "financeiro";
   // O Relatório da leva (#647): /relatorio, o de uma leva, e o endereço antigo do "em breve" (nenhum endereço some).
   if (limpo === "/relatorio" || limpo === "/em-breve/relatorio" || relatorioPedido(limpo) !== null) return "relatorio";
@@ -220,13 +223,13 @@ export default function App({
 }) {
   const pagina = paginaDoCaminho(caminho);
   // /em-breve/<id> (#544): id que não existe também cai aqui e mostra "Página não encontrada".
-  const emBreve = pagina === "relatorio" || pagina === "decisoes" || pagina === "versoes" || pagina === "pessoas" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
+  const emBreve = pagina === "relatorio" || pagina === "decisoes" || pagina === "versoes" || pagina === "pessoas" || pagina === "secundarios" ? null : idDoEmBreve(caminho.replace(/\/+$/, ""));
   const tv = pagina === "sala" && ehModoTv(busca);
   const exemplo = !usuario && levaFixa === undefined && resumoFixo === undefined;
   const pedida = levaPedida(caminho);
   const buscando = !exemplo && !tv && levaFixa === undefined && resumoFixo === undefined;
   // Só a Leva e o Início precisam das tarefas; nas outras páginas, só a lista da barra lateral.
-  const soAsLevas = (pagina !== "leva" && pagina !== "inicio") || emBreve !== null;
+  const soAsLevas = (pagina !== "leva" && pagina !== "inicio") || emBreve !== null; // inclui os Projetos secundários (#731)
   // Na página /levas (#548), um pedido só: o resumo, que serve também pra barra lateral.
   const naPaginaDasLevas = pagina === "levas";
   const [buscada, tentarDeNovo, recarregar] = useLeva(pedida, buscando && !naPaginaDasLevas, soAsLevas);
@@ -406,6 +409,10 @@ export default function App({
       ) : pagina === "versoes" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           <PaginaVersoes semLogin={exemplo} />
+        </main>
+      ) : pagina === "secundarios" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <PaginaSecundarios semLogin={exemplo} login={usuario?.login} busca={busca} />
         </main>
       ) : pagina === "pessoas" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
