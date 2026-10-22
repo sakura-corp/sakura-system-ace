@@ -32,6 +32,9 @@ export const ordemServicoFormSchema = z.object({
   km_entrada: z.string(),
   descricao_problema: z.string(),
   vendedor_id: z.string(),
+  // Só o orçamento usa (#379): dia "AAAA-MM-DD" até quando ele vale. Na OS
+  // fica "" e nunca vai pro banco (`paraCamposComuns` não leva).
+  validade: z.string(),
   itens: z.array(itemFormSchema),
 });
 
@@ -59,6 +62,7 @@ export function paraValoresFormulario(
     km_entrada: ordemExistente?.km_entrada != null ? String(ordemExistente.km_entrada) : "",
     descricao_problema: ordemExistente?.descricao_problema ?? "",
     vendedor_id: ordemExistente?.vendedor_id ?? funcionarioAtualId,
+    validade: ordemExistente?.validade ?? "",
     itens: ordemExistente ? [] : [itemFormVazio],
   };
 }

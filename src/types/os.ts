@@ -130,6 +130,7 @@ export type PatchOrdemServico = Partial<
     | "descricao_problema"
     | "vendedor_id"
     | "status"
+    | "validade"
   >
 >;
 

@@ -56,6 +56,21 @@ export async function listarOrdens(lojaId: string): Promise<OrdemServico[]> {
   return nomearFuncionarios(ordens, await buscarNomesDeFuncionarios(ordens));
 }
 
+/**
+ * Quantos orçamentos esperam resposta, pro número ao lado de "Orçamentos" no
+ * menu (#379). Só conta (`head: true`), não traz linha nenhuma: o menu pergunta
+ * isso a cada troca de tela, e `listarOrdens` traria a loja inteira.
+ */
+export async function contarOrcamentosAbertosDaLoja(lojaId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("ordens_servico")
+    .select("id", { count: "exact", head: true })
+    .eq("loja_id", lojaId)
+    .eq("status", "orcamento");
+  if (error) throw error;
+  return count ?? 0;
+}
+
 // Busca o nome de cada funcionário citado nestas ordens, e só deles. Devolve
 // um mapa vazio quando não há ninguém a procurar, pra não gastar uma consulta
 // numa loja que ainda não preenche técnico nem vendedor.

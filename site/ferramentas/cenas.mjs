@@ -83,6 +83,20 @@ export const CENAS = [
     rota: "/ordens-servico", passos: [{ aba: "Vendas de balcão (1)" }, { clicar: "Fechamento" }],
     descricao: "Aberta pela lista, a venda mostra o que sobra pra fazer depois de registrada: emitir (ou reemitir) a NFC-e, ver o DANFE e imprimir a garantia da peça. As peças de uma venda não mudam depois de registrada." },
 
+  // --------------------------------------------------------- orçamentos (#379)
+  { arquivo: "10f-orcamentos", modulo: "Ordens de Serviço", titulo: "Lista de orçamentos",
+    rota: "/orcamentos",
+    // Cabe em 1366 sem rolar de lado, como a lista de OS.
+    semRolarAPartirDe: 1366,
+    descricao: "Os orçamentos que esperam resposta do cliente, com número próprio, total e até quando valem. Passou da validade ganha a etiqueta 'vencido' (ainda dá pra aprovar). Os recusados ficam numa aba à parte. Um orçamento não é venda: não baixa estoque nem entra em número nenhum até ser aprovado." },
+  { arquivo: "10g-orcamento-form", modulo: "Ordens de Serviço", titulo: "Novo orçamento",
+    rota: "/orcamentos", passos: [{ clicar: "+ Novo orçamento" }],
+    descricao: "O mesmo formulário da ordem de serviço, com a validade (7 dias, se ninguém mudar) e sem baixa de estoque." },
+  { arquivo: "10h-orcamento-aprovar", modulo: "Ordens de Serviço", titulo: "Aprovar um orçamento vencido",
+    rota: "/orcamentos",
+    passos: [{ seletor: 'tr:has-text("Orçamento 2")' }, { clicar: "Aprovar" }],
+    descricao: "Aprovar pede só quem aprovou (por exemplo, 'pelo telefone'). Se o orçamento passou da validade, avisa que o preço pode ter mudado, mas deixa aprovar. Ao aprovar, vira OS em andamento e as peças saem do estoque." },
+
   // ----------------------------------------------------------------- estoque
   { arquivo: "11-estoque-produtos", modulo: "Estoque", titulo: "Produtos",
     rota: "/estoque",

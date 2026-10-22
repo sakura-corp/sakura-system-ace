@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrcamentosAbertos } from "@/hooks/useOrcamentosAbertos";
 import { MODULOS } from "@/types/operador";
 import { AreaRolavel } from "./AreaRolavel";
 import { Logo } from "./Logo";
@@ -58,11 +59,25 @@ function IconeDiagnostico({ className = "" }: { className?: string }) {
 }
 
 export function Sidebar() {
-  const { operador, logout } = useAuth();
+  const { operador, lojaAtual, logout } = useAuth();
 
-  const modulosLiberados = operador?.admin
+  const modulosLiberados: readonly { chave: string; label: string; rota: string }[] = operador?.admin
     ? MODULOS
     : MODULOS.filter((modulo) => operador?.permissoes.includes(modulo.chave));
+
+  // "Orçamentos" (#379) não é um módulo à parte: é do mesmo módulo das OS,
+  // então aparece pra quem tem "ordens_servico" e não ganha permissão nova.
+  const temOrdens = modulosLiberados.some((modulo) => modulo.chave === "ordens_servico");
+  const orcamentosAbertos = useOrcamentosAbertos(lojaAtual?.id, temOrdens);
+  const itensDoMenu: { chave: string; label: string; rota: string; numero?: number }[] =
+    modulosLiberados.flatMap((modulo) =>
+      modulo.chave === "ordens_servico"
+        ? [
+            modulo,
+            { chave: "orcamentos", label: "Orçamentos", rota: "/orcamentos", numero: orcamentosAbertos },
+          ]
+        : [modulo],
+    );
 
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col gap-4">
@@ -81,7 +96,7 @@ export function Sidebar() {
                 Nenhum módulo liberado. Fale com o administrador.
               </p>
             )}
-            {modulosLiberados.map((modulo) => (
+            {itensDoMenu.map((modulo) => (
               <NavLink
                 key={modulo.chave}
                 to={modulo.rota}
@@ -94,7 +109,17 @@ export function Sidebar() {
                   }`
                 }
               >
-                {modulo.label}
+                <span className="flex items-center justify-between gap-2">
+                  {modulo.label}
+                  {!!modulo.numero && (
+                    <span
+                      aria-label={`${modulo.numero} em aberto`}
+                      className="rounded-full bg-sakura-pink/20 px-2 py-0.5 text-meta font-semibold text-sakura-pink"
+                    >
+                      {modulo.numero}
+                    </span>
+                  )}
+                </span>
               </NavLink>
             ))}
           </nav>

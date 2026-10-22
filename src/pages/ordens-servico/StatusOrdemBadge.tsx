@@ -2,6 +2,7 @@ import {
   ordemEstaFinalizada,
   situacaoFiscalOrdem,
 } from "@/schemas/situacaoFiscal";
+import { orcamentoVencido } from "@/schemas/orcamento";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
 import { STATUS_COR, STATUS_LABEL } from "@/types/os";
@@ -37,6 +38,13 @@ export function StatusOrdem({
       >
         {finalizada ? "Finalizada" : STATUS_LABEL[ordem.status]}
       </span>
+      {/* Orçamento passado da validade (#379): etiqueta cinza, sem alarme —
+          ainda dá pra aprovar, só avisa que o preço pode ter mudado. */}
+      {ordem.status === "orcamento" && orcamentoVencido(ordem.validade) && (
+        <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-rotulo font-medium text-slate-700">
+          vencido
+        </span>
+      )}
       {ordem.status === "faturada" && situacao.pendentes.length > 0 && (
         <span className="whitespace-nowrap text-meta font-medium text-amber-400">
           falta {situacao.pendentes.join(" e ")}

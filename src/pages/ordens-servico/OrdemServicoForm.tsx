@@ -1,10 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
 import { mensagemDeErro } from "@/lib/errors";
+import {
+  MOTIVOS_RECUSA,
+  MOTIVO_RECUSA_LABEL,
+  orcamentoVencido,
+  podeAprovar,
+  podeRecusar,
+  validadePadrao,
+  type MotivoRecusa,
+} from "@/schemas/orcamento";
 import {
   ordemServicoFormSchema,
   paraCamposComuns,
@@ -30,6 +39,7 @@ import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
 import { DetalhesFields } from "./campos/DetalhesFields";
 import { ItensFields } from "./campos/ItensFields";
+import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 
 interface OrdemServicoFormProps {
@@ -47,7 +57,8 @@ interface OrdemServicoFormProps {
   /** Se a OS já tem nota fiscal válida (não cancelada) ligada a ela. */
   temNotaEmitida?: boolean;
   abaInicial?: "detalhes" | "fechamento";
-  onSalvarNova: (ordem: NovaOrdemServico, itens: NovoItemOS[]) => Promise<void>;
+  /** `validade` só vem em modo orçamento. */
+  onSalvarNova: (ordem: NovaOrdemServico, itens: NovoItemOS[], validade?: string) => Promise<void>;
   onSalvarEdicao: (
     id: string,
     patch: PatchOrdemServico,
@@ -66,6 +77,16 @@ interface OrdemServicoFormProps {
   ) => Promise<{ clienteId: string; veiculoId: string | null }>;
   onCadastrarVeiculo: (clienteId: string, veiculo: VeiculoFormulario) => Promise<string>;
   onCancelar: () => void;
+  /**
+   * Modo orçamento (#379): o mesmo formulário da OS, com Validade, sem
+   * "Encerrar OS" e com Aprovar/Recusar. Orçamento não baixa estoque nem
+   * entra em conta nenhuma, então não há saldo a avisar.
+   */
+  modoOrcamento?: boolean;
+  onAprovar?: (orcamento: OrdemServico, aprovadoPor: string) => Promise<void>;
+  onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
+  /** Botões a mais no cabeçalho do orçamento aberto (WhatsApp). */
+  acoesExtras?: ReactNode;
 }
 
 function formatarMoeda(valor: number): string {
@@ -102,9 +123,17 @@ export function OrdemServicoForm({
   onCadastrarCliente,
   onCadastrarVeiculo,
   onCancelar,
+  modoOrcamento = false,
+  onAprovar,
+  onRecusar,
+  acoesExtras,
 }: OrdemServicoFormProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
+  const [aprovando, setAprovando] = useState(false);
+  const [aprovadoPor, setAprovadoPor] = useState("");
+  const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
+  const [enviando, setEnviando] = useState(false);
   const [cadastroRapido, setCadastroRapido] = useState<"cliente" | "veiculo" | null>(null);
   const temFechamento =
     !!ordemExistente && STATUS_COM_FECHAMENTO.includes(ordemExistente.status);
@@ -122,11 +151,14 @@ export function OrdemServicoForm({
     formState: { errors, isSubmitting },
   } = useForm<OrdemServicoFormValues>({
     resolver: zodResolver(ordemServicoFormSchema),
-    defaultValues: paraValoresFormulario(ordemExistente, funcionarioAtualId),
+    defaultValues: {
+      ...paraValoresFormulario(ordemExistente, funcionarioAtualId),
+      ...(modoOrcamento && !ordemExistente?.validade ? { validade: validadePadrao() } : {}),
+    },
   });
 
   const rascunho = useRascunho(
-    `rascunho-os-${ordemExistente?.id ?? "nova"}`,
+    `rascunho-${modoOrcamento ? "orcamento" : "os"}-${ordemExistente?.id ?? "nova"}`,
     watch,
     reset,
   );
@@ -138,11 +170,15 @@ export function OrdemServicoForm({
   // PROJETO_STATUS.md, seção 6, item 31). Corrigir um item já lançado tem
   // ainda uma trava a mais: se a nota fiscal já saiu, o que está na nota
   // deixaria de bater com a OS, e isso não se conserta sozinho.
+  const ehRecusado = ordemExistente?.status === "recusado";
   const ehFaturada = ordemExistente?.status === "faturada";
-  const podeAdicionarItem = !ehFaturada;
-  const podeEditarItem = !!ordemExistente && !ehFaturada && !temNotaEmitida;
-  const avisoItens = ehFaturada
-    ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então, " +
+  const podeAdicionarItem = !ehFaturada && !ehRecusado;
+  const podeEditarItem = !!ordemExistente && !ehFaturada && !ehRecusado && !temNotaEmitida;
+  const vencido = modoOrcamento && orcamentoVencido(ordemExistente?.validade);
+  const avisoItens = ehRecusado
+    ? "Orçamento recusado: fica só como histórico, não dá pra mexer nos itens."
+    : ehFaturada
+      ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então, " +
       "então não dá pra acrescentar nem corrigir item. Pra qualquer mudança, abra uma OS nova."
     : temNotaEmitida
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
@@ -161,8 +197,18 @@ export function OrdemServicoForm({
       return;
     }
     try {
+      if (modoOrcamento && !valores.validade) {
+        setErro("Informe até quando o orçamento vale.");
+        return;
+      }
       if (ordemExistente) {
-        await onSalvarEdicao(ordemExistente.id, camposComuns, itensValidos);
+        await onSalvarEdicao(
+          ordemExistente.id,
+          modoOrcamento ? { ...camposComuns, validade: valores.validade } : camposComuns,
+          itensValidos,
+        );
+      } else if (modoOrcamento) {
+        await onSalvarNova(camposComuns, itensValidos, valores.validade);
       } else {
         await onSalvarNova(camposComuns, itensValidos);
       }
@@ -183,6 +229,36 @@ export function OrdemServicoForm({
       console.error("Erro ao encerrar ordem de serviço:", err);
       setErro(mensagemDeErro(err));
       setEncerrando(false);
+    }
+  }
+
+  async function handleAprovar() {
+    if (!ordemExistente || !onAprovar) return;
+    if (!aprovadoPor.trim()) {
+      setErro("Diga quem aprovou (ex.: pelo telefone) antes de confirmar.");
+      return;
+    }
+    setErro(null);
+    setEnviando(true);
+    try {
+      await onAprovar(ordemExistente, aprovadoPor.trim());
+    } catch (err) {
+      console.error("Erro ao aprovar orçamento:", err);
+      setErro(mensagemDeErro(err));
+      setEnviando(false);
+    }
+  }
+
+  async function handleRecusar() {
+    if (!ordemExistente || !onRecusar) return;
+    setErro(null);
+    setEnviando(true);
+    try {
+      await onRecusar(ordemExistente, motivoRecusa || null);
+    } catch (err) {
+      console.error("Erro ao recusar orçamento:", err);
+      setErro(mensagemDeErro(err));
+      setEnviando(false);
     }
   }
 
@@ -231,6 +307,12 @@ export function OrdemServicoForm({
             <span className="rounded-full bg-sakura-pink-soft px-3 py-1 text-rotulo font-medium text-sakura-purple-dark">
               {STATUS_LABEL[ordemExistente.status]}
             </span>
+            {vencido && (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-rotulo font-medium text-slate-700">
+                vencido
+              </span>
+            )}
+            {modoOrcamento && acoesExtras}
             {ordemExistente.status === "em_andamento" && (
               <button
                 type="button"
@@ -246,12 +328,100 @@ export function OrdemServicoForm({
       ) : (
         <div className="flex items-center gap-3">
           <BotaoVoltar onClick={onCancelar} />
-          <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">Nova ordem de serviço</h2>
+          <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+            {modoOrcamento ? "Novo orçamento" : "Nova ordem de serviço"}
+          </h2>
         </div>
       )}
 
       {erro && (
         <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+      )}
+
+      {ehRecusado && ordemExistente && (
+        <p className="rounded-lg bg-slate-100 px-4 py-2 text-corpo text-slate-700">
+          Orçamento recusado
+          {ordemExistente.motivo_recusa
+            ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
+            : " — sem motivo informado"}
+          .
+        </p>
+      )}
+
+      {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
+        <div className="space-y-3 rounded-xl border border-sakura-gray/25 px-4 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <button
+              type="button"
+              onClick={() => setAprovando((aberto) => !aberto)}
+              disabled={enviando}
+              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            >
+              Aprovar
+            </button>
+            {podeRecusar(ordemExistente) && (
+              <>
+                <label className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/80">
+                  Motivo da recusa (opcional)
+                  <select
+                    value={motivoRecusa}
+                    onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa | "")}
+                    className={inputClasse}
+                  >
+                    <option value="">Sem motivo</option>
+                    {MOTIVOS_RECUSA.map((motivo) => (
+                      <option key={motivo} value={motivo}>
+                        {MOTIVO_RECUSA_LABEL[motivo]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleRecusar}
+                  disabled={enviando}
+                  className="rounded-xl border border-sakura-purple px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40 disabled:opacity-50"
+                >
+                  Recusar
+                </button>
+              </>
+            )}
+          </div>
+          {aprovando && (
+            <div className="space-y-2">
+              {vencido && (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+                  Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
+                  antes de aprovar. Dá pra aprovar mesmo assim.
+                </p>
+              )}
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="flex flex-col gap-1 text-corpo">
+                  Quem aprovou?
+                  <input
+                    type="text"
+                    value={aprovadoPor}
+                    onChange={(e) => setAprovadoPor(e.target.value)}
+                    placeholder="Ex.: o cliente, pelo telefone"
+                    className={`${inputClasse} w-72`}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAprovar}
+                  disabled={enviando}
+                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  Confirmar aprovação
+                </button>
+              </div>
+              <p className="text-rotulo text-sakura-muted">
+                Ao aprovar, vira uma OS em andamento e as peças saem do estoque. Itens alterados
+                aqui e ainda não salvos não entram: salve antes.
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {rascunho.rascunho && (
@@ -305,6 +475,19 @@ export function OrdemServicoForm({
             onCadastrarCliente={() => setCadastroRapido("cliente")}
             onCadastrarVeiculo={() => setCadastroRapido("veiculo")}
           />
+
+          {modoOrcamento && (
+            <section className="grid grid-cols-2 gap-4">
+              <Campo label="Validade">
+                <input
+                  type="date"
+                  {...register("validade")}
+                  disabled={ehRecusado}
+                  className={inputClasse}
+                />
+              </Campo>
+            </section>
+          )}
 
           <ItensFields
             control={control}
@@ -360,7 +543,7 @@ export function OrdemServicoForm({
           >
             Cancelar
           </button>
-          {aba === "detalhes" && (
+          {aba === "detalhes" && !ehRecusado && (
             <button
               type="submit"
               disabled={isSubmitting}
@@ -370,7 +553,9 @@ export function OrdemServicoForm({
                 ? "Salvando..."
                 : ordemExistente
                   ? "Salvar alterações"
-                  : "Abrir ordem de serviço"}
+                  : modoOrcamento
+                    ? "Salvar orçamento"
+                    : "Abrir ordem de serviço"}
             </button>
           )}
         </div>
