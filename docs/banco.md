@@ -8,7 +8,8 @@
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+a única empresa até agora. A `0065` (orçamento, tarefa #379) foi escrita em 22/10/2026 e **ainda
+não está aplicada em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -385,6 +386,30 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   mutações, todas vermelhas. **Ordem de subir: qualquer uma é segura** (a versão nova sem a
   migration funciona em tudo, menos em registrar uma venda — e a faixa de banco desatualizado
   avisa), mas o certo continua sendo a migration primeiro.
+- `0065`: o **orçamento como etapa da OS** (tarefa #379). **Não é tabela nova**: o orçamento é
+  uma linha de `ordens_servico` com `status = 'orcamento'`; aprovado, a MESMA linha vira OS
+  (`em_andamento`), com os mesmos itens; recusado, vira `recusado` e fica guardado. O status
+  ganha esses dois valores (padrão continua `em_andamento`), e entram as colunas
+  `numero_orcamento`, `validade`, `aprovado_por` (texto livre), `aprovado_em`, `motivo_recusa`
+  (`preco`/`prazo`/`outro_lugar`/`desistiu`/`outro` ou vazio, trava
+  `ck_ordens_servico_motivo_recusa`) e `recusado_em`. Três decisões: (a) **o número da OS só
+  nasce na aprovação** — `numero` deixou de ser obrigatório, e a trava
+  `ck_ordens_servico_numero_orcamento` diz que ele fica vazio **se e só se** a linha é orçamento
+  ou recusado (daí sai que OS numerada nunca volta a orçamento e que nenhuma OS fica sem
+  número); o orçamento tem contador próprio por loja (`numero_orcamento`, índice único
+  `ordens_servico_loja_numero_orcamento_unique`, obrigatório pela
+  `ck_ordens_servico_numero_orcamento_obrigatorio`) e o mantém depois de aprovado. Ao contrário
+  da venda de balcão, **o número da OS não pula**: orçamento recusado nunca foi documento; (b) o
+  gatilho `definir_numero_ordem_servico` (o da `0037`) agora roda também no **update**: quando
+  um orçamento vira OS, ganha ali o próximo número; e pega uma **tranca por loja**
+  (`pg_advisory_xact_lock`) antes de procurar o maior número, na aprovação e na OS comum, pra
+  dois aprovando juntos não pegarem o mesmo; (c) **estoque não é assunto do banco**: quem deixa
+  de baixar peça no orçamento e baixa só na aprovação é o programa. Declara
+  `-- versao-minima-do-programa: 0.9.52` (a versão anterior mostraria "OS null" e baixaria
+  estoque ao lançar peça num orçamento). Teste repetível em
+  `supabase/scripts/testar-orcamento.sql` (as duas metades, mais rodar a migration de novo com
+  orçamentos gravados), conferido com 11 mutações, todas vermelhas. **Ordem de subir: a versão
+  primeiro** (a linha da versão mínima faz o botão esperar).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -528,12 +553,19 @@ outro projeto Supabase do zero (ver seção 9).
   tela. Decisão de escopo pra manter o v1 do Depósito enxuto — se um dia fizer falta escolher
   depósito também nesses fluxos automáticos, é extensão aditiva.
 - **`ordens_servico`**: id, **numero** (int, sequencial **por loja** — 1, 2, 3..., atribuído
-  sozinho por trigger no insert; é como a OS aparece pra usuária em todo o app, nunca o `id`),
+  sozinho por trigger no insert; é como a OS aparece pra usuária em todo o app, nunca o `id`.
+  Desde a `0065` fica **vazio no orçamento e no recusado**, e nasce na aprovação, pelo mesmo
+  gatilho, com o próximo número, sem buraco),
+  **numero_orcamento** (int, contador próprio por loja, só do orçamento — "Orçamento 45"; fica
+  na linha depois de aprovada), **validade** (date, quem preenche é o programa, padrão hoje + 7),
+  **aprovado_por** (texto livre)/**aprovado_em**, **motivo_recusa** (`preco`/`prazo`/
+  `outro_lugar`/`desistiu`/`outro` ou vazio)/**recusado_em** — todos da `0065`,
   **tipo** (`os`/`venda_balcao`, migration `0064` — a venda de balcão usa o MESMO contador de
   número; na tela vira "Venda 17" em vez de "OS 17", pelo `nomeOrdem(numero, tipo)`), loja_id
   (FK lojas), cliente_id (FK), veiculo_id (FK, opcional), status
-  (`em_andamento`/`concluida`/`faturada` — sem "aberta" desde a migration 0037; toda OS nova já
-  nasce "em_andamento"), km_entrada, descricao_problema (rótulo "Observação"), forma_pagamento
+  (`orcamento`/`em_andamento`/`concluida`/`faturada`/`recusado` — sem "aberta" desde a migration
+  0037; `orcamento` e `recusado` desde a `0065`; o padrão continua "em_andamento", então OS criada
+  sem dizer o status nasce OS), km_entrada, descricao_problema (rótulo "Observação"), forma_pagamento
   (texto livre — quando o faturamento é dividido em mais de uma forma, vira um resumo tipo "Pix +
   Cartão de crédito"), parcelas (int, default 1, preenchido no faturamento), data_abertura,
   data_fechamento, vendedor_id (FK **funcionarios**)/criado_por_id/atualizado_por_id (FK operadores
