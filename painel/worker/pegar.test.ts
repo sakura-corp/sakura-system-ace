@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CONSULTA_DA_LEVA_PRA_REGRAS, CONSULTA_DA_TAREFA, largarTarefa, pegarTarefa, type Escrever, type Perguntar } from "./pegar";
+import { CONSULTA_DA_LEVA_PRA_REGRAS, CONSULTA_DA_TAREFA, largarNoProjeto, largarTarefa, pegarNoProjeto, pegarTarefa, type Escrever, type Perguntar } from "./pegar";
+import { CONSULTA_DOS_PROJETOS } from "./projetos";
 import { CONSULTA_DA_LEVA, CONSULTA_DAS_LEVAS, type IssueDoGitHub } from "./tarefas";
 
 const corpo = (depende = "nada", chefe = "backend") =>
@@ -276,5 +277,143 @@ describe("largarTarefa (#538)", () => {
     await largarTarefa(10, "fulana", g.perguntar, g.escrever);
     expect(g.consultas).toEqual([CONSULTA_DA_TAREFA]);
     expect(CONSULTA_DA_TAREFA).toContain("issue(number: $numero)");
+  });
+});
+
+// ---- "Uma tarefa por vez no total" entre o SSACE e os projetos secundários (#731) ----
+describe("uma por vez no total, somando o SSACE e os projetos secundários (#731)", () => {
+  type Repos = Record<string, IssueDoGitHub[]>;
+  /**
+   * Finge o GitHub com vários repositórios. O estado muda com as escritas (POST põe, DELETE tira), então a
+   * releitura depois de pegar vê o que aconteceu. `semTopico`: repositórios da organização que não são projeto.
+   * `aoEscrever`: roda depois de cada escrita (pra fingir outra aba pegando ao mesmo tempo).
+   */
+  function fingirVarios(repos: Repos, e: { semTopico?: string[]; falhaNaRegra?: boolean; aoEscrever?: (r: Repos) => void } = {}) {
+    const escritas: { metodo: string; caminho: string; corpo: unknown }[] = [];
+    const doRepo = (nome: unknown) => repos[String(nome)] ?? [];
+    const levasDe = (issues: IssueDoGitHub[]) => {
+      const nomes = [...new Set(issues.flatMap((i) => (i.labels?.nodes ?? []).map((l) => l?.name ?? "")).filter((n) => n.startsWith("leva-")))];
+      return nomes.map((name) => ({
+        name,
+        issues: { totalCount: issues.filter((i) => i.state === "OPEN" && i.labels?.nodes.some((l) => l?.name === name)).length },
+        fechadas: { totalCount: issues.filter((i) => i.state === "CLOSED" && i.labels?.nodes.some((l) => l?.name === name)).length },
+      }));
+    };
+    const perguntar: Perguntar = async <T,>(consulta: string, variaveis: Record<string, unknown>) => {
+      if (consulta === CONSULTA_DAS_LEVAS) return { tipo: "ok", dados: { repository: { labels: { nodes: levasDe(doRepo("sakura-system-ace")) } } } as T };
+      if (consulta === CONSULTA_DOS_PROJETOS) {
+        const nodes = [...Object.keys(repos), ...(e.semTopico ?? [])].map((name) => ({
+          name,
+          description: null,
+          url: `https://github.com/sakura-corp/${name}`,
+          isArchived: false,
+          repositoryTopics: { nodes: e.semTopico?.includes(name) ? [] : [{ topic: { name: "projeto-secundario" } }] },
+          labels: { nodes: levasDe(doRepo(name)) },
+        }));
+        return { tipo: "ok", dados: { organization: { repositories: { totalCount: nodes.length, nodes } } } as T };
+      }
+      if (consulta === CONSULTA_DA_LEVA_PRA_REGRAS) {
+        const nodes = doRepo(variaveis.nome).filter((i) => i.labels?.nodes.some((l) => l?.name === variaveis.etiqueta));
+        return { tipo: "ok", dados: { repository: { issues: { totalCount: nodes.length, nodes } } } as T };
+      }
+      if (consulta === CONSULTA_DA_TAREFA) {
+        return { tipo: "ok", dados: { repository: { issue: doRepo(variaveis.nome).find((i) => i.number === variaveis.numero) ?? null } } as T };
+      }
+      if (consulta.includes("query TarefasDaPessoa")) {
+        if (e.falhaNaRegra) return { tipo: "erro" };
+        const dados: Record<string, unknown> = {};
+        for (const [, i, nome] of consulta.matchAll(/r(\d+): repository\(owner: \$dono, name: "([^"]+)"\)/g)) {
+          const nodes = doRepo(nome)
+            .filter((x) => x.state === "OPEN" && x.assignees.nodes.some((a) => a?.login.toLowerCase() === String(variaveis.login).toLowerCase()))
+            .map((x) => ({ number: x.number, labels: x.labels, closedByPullRequestsReferences: x.closedByPullRequestsReferences }));
+          dados[`r${i}`] = repos[nome] ? { issues: { nodes } } : null;
+        }
+        return { tipo: "ok", dados: dados as T };
+      }
+      return { tipo: "ok", dados: { repository: {} } as T };
+    };
+    const escrever: Escrever = async (metodo, caminho, corpo) => {
+      escritas.push({ metodo, caminho, corpo });
+      const [, nome, numero] = /^\/repos\/sakura-corp\/([^/]+)\/issues\/(\d+)\/assignees$/.exec(caminho) ?? [];
+      const alvo = doRepo(nome).find((i) => i.number === Number(numero));
+      const login = (corpo as { assignees: string[] }).assignees[0];
+      if (alvo) {
+        const outros = alvo.assignees.nodes.filter((a) => a?.login !== login);
+        alvo.assignees = { nodes: metodo === "POST" ? [...outros, { login, avatarUrl: "" }] : outros };
+      }
+      e.aoEscrever?.(repos);
+      return { tipo: "ok", dados: { assignees: (alvo?.assignees.nodes ?? []).map((a) => ({ login: a?.login })) } };
+    };
+    return { perguntar, escrever, escritas };
+  }
+  const CAMINHO_EM = (repo: string, n: number) => `/repos/sakura-corp/${repo}/issues/${n}/assignees`;
+
+  it("quem segura uma tarefa num projeto secundário não pega no SSACE", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [issue(10)], ar: [issue(3, { dono: "fulana" })] });
+    expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #3 do projeto ar" });
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("quem segura uma tarefa no SSACE não pega num projeto secundário", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [issue(10, { dono: "fulana" })], ar: [issue(3)] });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #10 do SSACE" });
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("nem em outro projeto secundário", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [], ar: [issue(3)], site: [issue(5, { dono: "Fulana" })] });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #5 do projeto site" });
+  });
+
+  it("com a outra em revisão (PR aberto), pega: escreve no repositório do projeto, só o próprio login", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [issue(10, { dono: "fulana", prAberto: true })], ar: [issue(3), issue(4)] });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "ok" });
+    expect(g.escritas).toEqual([{ metodo: "POST", caminho: CAMINHO_EM("ar", 3), corpo: { assignees: ["fulana"] } }]);
+  });
+
+  it("dentro do mesmo projeto também vale uma por vez", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [], ar: [issue(3), issue(4, { dono: "fulana" })] });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #4" });
+  });
+
+  it("repositório que não é projeto (sem o tópico, ou que o login não vê) não deixa pegar", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [] }, { semTopico: ["financeiro"] });
+    for (const repo of ["financeiro", "nao-existe", "sakura-system-ace"]) {
+      expect(await pegarNoProjeto(repo, 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "este projeto não existe ou você não tem acesso a ele" });
+    }
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("só a leva atual do projeto (a menor com tarefa aberta) aceita pegar", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [], ar: [issue(3, { leva: "leva-1" }), issue(7, { leva: "leva-2" })] });
+    expect(await pegarNoProjeto("ar", 7, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "esta tarefa não está numa leva aberta" });
+  });
+
+  it("se a conferência dos outros repositórios falhar, não pega (na dúvida, não escreve)", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [issue(10)], ar: [issue(3)] }, { falhaNaRegra: true });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "erro" });
+    expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "erro" });
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("duas abas ao mesmo tempo (uma no SSACE, outra no projeto): quem vê a outra depois de escrever sai", async () => {
+    // Enquanto esta aba escreve no projeto, a outra pega a #10 do SSACE.
+    const g = fingirVarios(
+      { "sakura-system-ace": [issue(10)], ar: [issue(3)] },
+      { aoEscrever: (r) => (r["sakura-system-ace"][0].assignees = { nodes: [{ login: "fulana", avatarUrl: "" }] }) },
+    );
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você ficou com a #10 do SSACE ao mesmo tempo: saí desta; tente de novo se quiser trocar" });
+    expect(g.escritas.map((w) => [w.metodo, w.caminho])).toEqual([
+      ["POST", CAMINHO_EM("ar", 3)],
+      ["DELETE", CAMINHO_EM("ar", 3)],
+    ]);
+  });
+
+  it("largar no projeto: só o dono, tirando só o próprio login do repositório do projeto", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [], ar: [issue(3, { dono: "fulana" }), issue(4, { dono: "beltrano" })] });
+    expect(await largarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "ok" });
+    expect(await largarNoProjeto("ar", 4, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "só quem pegou a #4 pode largar" });
+    expect(await largarNoProjeto("financeiro", 4, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "este projeto não existe ou você não tem acesso a ele" });
+    expect(g.escritas).toEqual([{ metodo: "DELETE", caminho: CAMINHO_EM("ar", 3), corpo: { assignees: ["fulana"] } }]);
   });
 });
