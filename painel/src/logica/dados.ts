@@ -1,7 +1,7 @@
 // O lado da página nas tarefas de verdade (#354): pede as levas e as tarefas ao worker, uma
 // rota depois da outra, e diz o que mostrar. O token nunca passa por aqui (fica no cookie).
 import type { Leva, RespostaDaLeva, RespostaDasLevas, RespostaDoResumoDasLevas, ResumoDeLeva, Tarefa } from "../tipos";
-import { numeroValido } from "./comecarComClaude";
+import { numeroValido, repositorioValido } from "./comecarComClaude";
 import { FASES } from "./fases";
 
 export type EstadoDaLeva =
@@ -32,7 +32,7 @@ export const enderecoDaLeva = (numero: number, atual: number | null) => (numero 
 
 const ESTADOS_VALIDOS: readonly string[] = ["livre", "andamento", "revisao", "feita"];
 
-const ehTarefa = (t: unknown): t is Tarefa => {
+export const ehTarefa = (t: unknown): t is Tarefa => {
   if (typeof t !== "object" || t === null) return false;
   const { numero, titulo, url, estado, dono } = t as Record<string, unknown>;
   return (
@@ -119,11 +119,14 @@ const ERRO_DA_ACAO = "Não deu pra falar com o GitHub agora. Tente de novo.";
  * POST /api/tarefa/<n>/pegar ou /largar. Quem decide é o worker: recusa (409, 403, 400) vem como
  * `{ ok: false, motivo }` e é lida pelo corpo, não pelo status (só o 401 é à parte).
  */
-export async function acaoNaTarefa(numero: number, acao: "pegar" | "largar", buscar: Buscar = fetch): Promise<ResultadoDaAcao> {
+export async function acaoNaTarefa(numero: number, acao: "pegar" | "largar", buscar: Buscar = fetch, repositorio?: string): Promise<ResultadoDaAcao> {
   if (!numeroValido(numero)) return { tipo: "erro", mensagem: "Tarefa inválida." };
+  // Tarefa de projeto secundário (#731): a rota leva o repositório; nome estranho nem sai da página.
+  if (repositorio !== undefined && !repositorioValido(repositorio)) return { tipo: "erro", mensagem: "Tarefa inválida." };
+  const caminho = repositorio === undefined ? `/api/tarefa/${numero}/${acao}` : `/api/projetos/${repositorio}/tarefa/${numero}/${acao}`;
   let resposta: Response;
   try {
-    resposta = await buscar(`/api/tarefa/${numero}/${acao}`, { method: "POST", headers: { accept: "application/json" } });
+    resposta = await buscar(caminho, { method: "POST", headers: { accept: "application/json" } });
   } catch {
     return { tipo: "erro", mensagem: ERRO_DE_CONEXAO };
   }

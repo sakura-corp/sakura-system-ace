@@ -45,6 +45,7 @@ export const NAVEGACAO: GrupoDaNavegacao[] = [
     itens: [
       { id: "leva", rotulo: "Leva atual", icone: "lista", href: "/leva" },
       { id: "levas", rotulo: "Levas anteriores", icone: "relogio", href: "/levas" },
+      { id: "secundarios", rotulo: "Projetos secundários", icone: "maleta", href: "/secundarios" },
       { id: "fases", rotulo: "Fases da leva", icone: "fases", emBreve: true, href: "/em-breve/fases", dependeDe: "depende do desenho" },
       { id: "relatorio", rotulo: "Relatório da leva", icone: "relatorio", href: "/relatorio" },
       { id: "sala", rotulo: "Sala", icone: "pessoas", href: "/sala" },

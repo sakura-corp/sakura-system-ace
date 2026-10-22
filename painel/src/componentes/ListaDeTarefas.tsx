@@ -70,7 +70,7 @@ export function ListaDeTarefas({ tarefas, login, aoMudar, levaAberta = true }: P
 function temBotoesDoClaude(t: Tarefa, login: string | undefined): boolean {
   if (t.estado === "feita" || (t.incompleta ?? []).length > 0) return false;
   if (!t.dono || !mesmoLogin(t.dono.login, login)) return false;
-  return !!linkDoClaude(linkParaComecar(t.numero, t.chefe)) && textoDaTarefa(t.numero, t.chefe) !== undefined;
+  return !!linkDoClaude(linkParaComecar(t.numero, t.chefe, t.repositorio)) && textoDaTarefa(t.numero, t.chefe, t.repositorio) !== undefined;
 }
 
 /**
@@ -123,8 +123,8 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
   const botaoLargar = useRef<HTMLButtonElement>(null);
   useEffect(() => () => window.clearTimeout(aviso.current), []);
 
-  const texto = textoDaTarefa(tarefa.numero, tarefa.chefe);
-  const href = linkDoClaude(linkParaComecar(tarefa.numero, tarefa.chefe));
+  const texto = textoDaTarefa(tarefa.numero, tarefa.chefe, tarefa.repositorio);
+  const href = linkDoClaude(linkParaComecar(tarefa.numero, tarefa.chefe, tarefa.repositorio));
   if (tarefa.estado === "feita" || !href || texto === undefined) return null;
 
   const faltas = tarefa.incompleta ?? [];
@@ -158,7 +158,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
     setConfirmando(false);
     aoAvisar("");
     try {
-      const { aviso, recarregar } = depoisDaAcao(tarefa.numero, await acaoNaTarefa(tarefa.numero, acao));
+      const { aviso, recarregar } = depoisDaAcao(tarefa.numero, await acaoNaTarefa(tarefa.numero, acao, undefined, tarefa.repositorio));
       aoAvisar(aviso);
       if (recarregar) await aoMudar?.();
     } catch {
@@ -310,7 +310,7 @@ export type PropsDoItem = {
 /** Um cartão de tarefa com os botões da #538; o Início (#546) usa pra "A sua tarefa". */
 export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, aoAvisar }: PropsDoItem) {
   const [planoB, setPlanoB] = useState(false);
-  const texto = textoDaTarefa(t.numero, t.chefe);
+  const texto = textoDaTarefa(t.numero, t.chefe, t.repositorio);
   return (
     <li className="flex flex-col hover:bg-fundo">
       <div className="flex flex-col">
@@ -373,7 +373,7 @@ export function ItemDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, a
  */
 function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, aoAvisar }: PropsDoItem) {
   const [planoB, setPlanoB] = useState(false);
-  const texto = textoDaTarefa(t.numero, t.chefe);
+  const texto = textoDaTarefa(t.numero, t.chefe, t.repositorio);
   const minha = !!t.dono && mesmoLogin(t.dono.login, login);
   // Só a livre: em andamento ou revisão sem dono, a coluna diz "sem responsável" e os botões vão embaixo.
   const pegarNaColunaQuem = !t.dono && t.estado === "livre" && (t.incompleta ?? []).length === 0;

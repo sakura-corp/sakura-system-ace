@@ -4,8 +4,18 @@
 // Só nomes, contagens, títulos e links: o texto das issues não sai daqui.
 import { numeroDaLeva } from "../src/logica/estado";
 import { linkSeguro } from "../src/logica/link";
-import { ESTADOS_DA_PROPOSTA, type EstadoDaProposta, type Leva, type Projeto, type Proposta, type RespostaDasPropostas, type RespostaDosProjetos } from "../src/tipos";
+import {
+  ESTADOS_DA_PROPOSTA,
+  type EstadoDaProposta,
+  type Leva,
+  type Projeto,
+  type Proposta,
+  type RespostaDaLevaDoProjeto,
+  type RespostaDasPropostas,
+  type RespostaDosProjetos,
+} from "../src/tipos";
 import { ORGANIZACAO, REPOSITORIO } from "./github";
+import { CONSULTA_DA_LEVA, levaDosDados, marcarDependenciasAbertas, variaveisDe, type DadosDaLeva, type PerguntarAoGitHub } from "./tarefas";
 
 export const TOPICO_DOS_PROJETOS = "projeto-secundario";
 /** O repositório das propostas: tem o tópico só se alguém puser, mas nunca é um projeto. */
@@ -102,6 +112,31 @@ export function projetosDosDados(dados: DadosDosProjetos): RespostaDosProjetos {
   const resposta: RespostaDosProjetos = { projetos };
   if (repositorios.totalCount > vieram.length) resposta.cortada = true;
   return resposta;
+}
+
+type Consultar = <T>(consulta: string, variaveis: Record<string, unknown>) => Promise<{ tipo: "ok"; dados: T } | { tipo: "sem-acesso" } | { tipo: "erro" }>;
+
+/**
+ * A leva atual de um projeto (/api/projetos/<repo>/leva). Confere antes que o repositório é mesmo um projeto (pela
+ * lista do tópico): `nao-existe` se não for (ou se o login não alcança). Sem leva com tarefa aberta, `leva` vem null.
+ */
+export async function buscarLevaDoProjeto(
+  repositorio: string,
+  consultar: Consultar,
+): Promise<{ tipo: "ok"; dados: RespostaDaLevaDoProjeto } | { tipo: "nao-existe" } | { tipo: "sem-acesso" } | { tipo: "erro" }> {
+  const r = await consultar<DadosDosProjetos>(CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+  if (r.tipo !== "ok") return r;
+  const projeto = projetosDosDados(r.dados).projetos.find((p) => p.repositorio === repositorio);
+  if (!projeto) return { tipo: "nao-existe" };
+  const base = { repositorio, levas: projeto.levas, atual: projeto.atual };
+  if (projeto.atual === null) return { tipo: "ok", dados: { ...base, leva: null } };
+  const r2 = await consultar<DadosDaLeva>(CONSULTA_DA_LEVA, { ...variaveisDe(repositorio), etiqueta: `leva-${projeto.atual}` });
+  if (r2.tipo !== "ok") return r2;
+  const leva = levaDosDados(projeto.atual, r2.dados, repositorio);
+  if (!leva) return { tipo: "erro" };
+  // As dependências de fora da leva: se essa consulta falhar, contam como abertas e a leva sai igual.
+  await marcarDependenciasAbertas(leva, r2.dados, consultar as PerguntarAoGitHub, repositorio);
+  return { tipo: "ok", dados: { ...base, leva } };
 }
 
 // ---- As propostas (issues do `secundarios` com a etiqueta `proposta`) ----

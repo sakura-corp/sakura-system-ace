@@ -203,3 +203,19 @@ describe("Lista da leva: a coluna Quem (#547)", () => {
     expect(html({ estado: "andamento" })).toContain("sem responsável");
   });
 });
+
+describe("Tarefa de projeto secundário (#731)", () => {
+  const minha = { dono: ELA, estado: "andamento" as const };
+  const linkDoBotao = (h: string) => decodeURIComponent(/href="(https:\/\/claude\.ai\/code[^"]*)"/.exec(h)![1].replace(/&amp;/g, "&"));
+
+  it("o botão do Claude aponta pro repositório do projeto, e o da SSACE continua igual", () => {
+    const h = html({ ...minha, repositorio: "ar-condicionado", url: "https://github.com/sakura-corp/ar-condicionado/issues/20" });
+    expect(linkDoBotao(h)).toContain("repositories=sakura-corp/ar-condicionado");
+    expect(linkDoBotao(h)).toContain("https://github.com/sakura-corp/ar-condicionado/issues/20");
+    expect(linkDoBotao(html(minha))).toContain("repositories=sakura-corp/sakura-system-ace");
+  });
+
+  it("nome de repositório estranho: sem botão do Claude", () => {
+    expect(temLinkDoClaude(html({ ...minha, repositorio: "../x" }))).toBe(false);
+  });
+});

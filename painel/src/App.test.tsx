@@ -93,6 +93,19 @@ describe("App", () => {
     expect(barra).not.toContain('Versões<span class="sr-only"> (em breve)</span>');
   });
 
+  it("os Projetos secundários (#731) são página de verdade, com os dados de exemplo e o item marcado na barra", () => {
+    for (const caminho of ["/secundarios", "/secundarios/"]) {
+      const h = html(caminho);
+      expect(contarH1(h), caminho).toBe(1);
+      expect(h, caminho).toMatch(/<h1[^>]*>Projetos secundários<\/h1>/);
+      expect(h, caminho).toContain("ar-condicionado");
+      expect(h, caminho).not.toContain("Ainda não está pronto");
+    }
+    const barra = html("/secundarios");
+    expect(barra).toContain('href="/secundarios"');
+    expect(barra).not.toContain('Projetos secundários<span class="sr-only"> (em breve)</span>');
+  });
+
   it("as Pessoas (#650) são página de verdade: /pessoas, /pessoas/ e /em-breve/pessoas abrem a mesma, com os dados de exemplo", () => {
     for (const caminho of ["/pessoas", "/pessoas/", "/em-breve/pessoas"]) {
       const h = html(caminho);
@@ -300,6 +313,9 @@ describe("App", () => {
     expect(paginaDoCaminho("/versoes")).toBe("versoes");
     expect(paginaDoCaminho("/versoes/")).toBe("versoes");
     expect(paginaDoCaminho("/em-breve/versoes")).toBe("versoes");
+    // Os Projetos secundários (#731).
+    expect(paginaDoCaminho("/secundarios")).toBe("secundarios");
+    expect(paginaDoCaminho("/secundarios/")).toBe("secundarios");
     // As Pessoas (#650).
     expect(paginaDoCaminho("/pessoas")).toBe("pessoas");
     expect(paginaDoCaminho("/pessoas/")).toBe("pessoas");

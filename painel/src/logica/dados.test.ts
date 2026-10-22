@@ -198,3 +198,32 @@ describe("acaoNaTarefa", () => {
     }
   });
 });
+
+describe("acaoNaTarefa em projeto secundário (#731)", () => {
+  it("com repositório, o endereço é o do projeto", async () => {
+    const chamadas: string[] = [];
+    const buscar = async (e: string) => {
+      chamadas.push(e);
+      return json({ ok: true });
+    };
+    expect(await acaoNaTarefa(12, "pegar", buscar, "ar-condicionado")).toEqual({ tipo: "ok" });
+    expect(await acaoNaTarefa(12, "largar", buscar, "ar-condicionado")).toEqual({ tipo: "ok" });
+    expect(chamadas).toEqual(["/api/projetos/ar-condicionado/tarefa/12/pegar", "/api/projetos/ar-condicionado/tarefa/12/largar"]);
+  });
+
+  it("repositório inválido: erro e nem pede", async () => {
+    let pediu = false;
+    const buscar = async () => {
+      pediu = true;
+      return json({ ok: true });
+    };
+    expect(await acaoNaTarefa(12, "pegar", buscar, "../x")).toEqual({ tipo: "erro", mensagem: "Tarefa inválida." });
+    expect(pediu).toBe(false);
+  });
+
+  it("sem repositório, igual a antes", async () => {
+    const chamadas: string[] = [];
+    await acaoNaTarefa(12, "pegar", async (e) => (chamadas.push(e), json({ ok: true })), undefined);
+    expect(chamadas).toEqual(["/api/tarefa/12/pegar"]);
+  });
+});

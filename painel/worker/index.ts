@@ -44,7 +44,19 @@ import { CONSULTA_DOS_TESTES, testesDoCaminho, testesDosDados, variaveisDosTeste
 import { CONSULTA_DAS_DECISOES, decisoesDosDados, variaveisDasDecisoes, type DadosDasDecisoes } from "./decisoes";
 import { CONSULTA_DAS_VERSOES, ERRO_SEM_ACESSO_AS_VERSOES, variaveisDasVersoes, versoesDosDados, type DadosDasVersoes } from "./versoes";
 import { buscarNovidades } from "./novidades";
-import { escreverNoGitHub, largarTarefa, pegarTarefa } from "./pegar";
+import { escreverNoGitHub, largarNoProjeto, largarTarefa, pegarNoProjeto, pegarTarefa } from "./pegar";
+import {
+  CONSULTA_DAS_PROPOSTAS,
+  CONSULTA_DOS_PROJETOS,
+  buscarLevaDoProjeto,
+  projetoDoCaminho,
+  projetosDosDados,
+  propostasDosDados,
+  variaveisDasPropostas,
+  variaveisDosProjetos,
+  type DadosDasPropostas,
+  type DadosDosProjetos,
+} from "./projetos";
 import { repositorioD1, tratarFinanceiro, type BancoD1 } from "./financeiro";
 import { numeroValido } from "../src/logica/comecarComClaude";
 import { SalaDoPainel } from "./sala";
@@ -205,7 +217,10 @@ type PedidoDeDados =
   | { tipo: "testes"; numero: number }
   | { tipo: "relatorio"; numero: number }
   | { tipo: "decisoes" }
-  | { tipo: "versoes" };
+  | { tipo: "versoes" }
+  | { tipo: "projetos" }
+  | { tipo: "propostas" }
+  | { tipo: "levaDoProjeto"; repositorio: string };
 
 /**
  * As rotas com dados (#354): /api/levas, /api/levas/resumo e /api/leva/<n>, sempre com o token de quem está logado.
@@ -262,6 +277,27 @@ async function dados(request: Request, config: Configuracao, pedido: PedidoDeDad
       if (r.tipo === "erro") return falhou();
       if (!r.dados.repository) return json({ ok: false, erro: ERRO_SEM_ACESSO_AS_VERSOES }, 502, cookies);
       return json(versoesDosDados(r.dados), 200, cookies);
+    }
+    // Os projetos secundários (#731): os repositórios com o tópico, as propostas e a leva atual de um projeto.
+    if (pedido.tipo === "projetos") {
+      const r = await consultar<DadosDosProjetos>(sessao.token, CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      return json(projetosDosDados(r.dados), 200, cookies);
+    }
+    // Sem o repositório `secundarios` (não existe, ou o login não lê), a lista vem vazia com `semAcesso`: a página não quebra.
+    if (pedido.tipo === "propostas") {
+      const r = await consultar<DadosDasPropostas>(sessao.token, CONSULTA_DAS_PROPOSTAS, variaveisDasPropostas);
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "erro") return falhou();
+      return json(propostasDosDados(r.dados), 200, cookies);
+    }
+    if (pedido.tipo === "levaDoProjeto") {
+      const r = await buscarLevaDoProjeto(pedido.repositorio, (consulta, variaveis) => consultar(sessao.token, consulta, variaveis));
+      if (r.tipo === "sem-acesso") return semAcesso();
+      if (r.tipo === "nao-existe") return json({ ok: false, erro: "projeto não encontrado" }, 404, cookies);
+      if (r.tipo === "erro") return falhou();
+      return json(r.dados, 200, cookies);
     }
     const leva = pedido.numero;
     const r = await consultar<DadosDaLeva>(sessao.token, CONSULTA_DA_LEVA, { ...variaveisDoRepositorio, etiqueta: `leva-${leva}` });
@@ -330,7 +366,15 @@ export function acaoDoCaminho(caminho: string): { numero: string; acao: "pegar" 
  * conferido aqui e o resto (leva, dono, dependências, "uma por vez") de novo no GitHub, em `pegar.ts`.
  * Recusa → 409 com o motivo em português.
  */
-async function acaoNaTarefa(request: Request, url: URL, config: Configuracao, numeroTexto: string, acao: "pegar" | "largar"): Promise<Response> {
+async function acaoNaTarefa(
+  request: Request,
+  url: URL,
+  config: Configuracao,
+  numeroTexto: string,
+  acao: "pegar" | "largar",
+  /** Um projeto secundário (#731); sem ele, a tarefa é do SSACE. */
+  repositorio?: string,
+): Promise<Response> {
   if (request.headers.get("origin") !== url.origin) return json({ ok: false, motivo: "origem não permitida" }, 403);
   const numero = /^\d{1,7}$/.test(numeroTexto) ? Number(numeroTexto) : NaN;
   if (!numeroValido(numero)) return json({ ok: false, motivo: "número de tarefa inválido" }, 400);
@@ -341,7 +385,14 @@ async function acaoNaTarefa(request: Request, url: URL, config: Configuracao, nu
   try {
     const perguntar = <T,>(consulta: string, variaveis: Record<string, unknown>) => consultar<T>(sessao.token, consulta, variaveis);
     const escrever = (metodo: "POST" | "DELETE", caminho: string, corpo: unknown) => escreverNoGitHub(sessao.token, metodo, caminho, corpo);
-    const r = acao === "pegar" ? await pegarTarefa(numero, sessao.login, perguntar, escrever) : await largarTarefa(numero, sessao.login, perguntar, escrever);
+    const r =
+      repositorio !== undefined
+        ? acao === "pegar"
+          ? await pegarNoProjeto(repositorio, numero, sessao.login, perguntar, escrever)
+          : await largarNoProjeto(repositorio, numero, sessao.login, perguntar, escrever)
+        : acao === "pegar"
+          ? await pegarTarefa(numero, sessao.login, perguntar, escrever)
+          : await largarTarefa(numero, sessao.login, perguntar, escrever);
     if (r.tipo === "ok") return json({ ok: true }, 200, cookies);
     if (r.tipo === "recusado") return json({ ok: false, motivo: r.motivo }, 409, cookies);
     if (r.tipo === "sem-acesso") return json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(url).apagar(COOKIE_SESSAO)]);
@@ -493,6 +544,16 @@ export default {
       return acaoNaTarefa(request, url, config, acao.numero, acao.acao);
     }
 
+    // Os projetos secundários (#731): /api/projetos/<repo>/leva e /api/projetos/<repo>/tarefa/<n>/pegar|largar.
+    const doProjeto = projetoDoCaminho(pathname);
+    const acaoDoProjeto = doProjeto ? acaoDoCaminho(`/api/${doProjeto.resto}`) : null;
+    if (doProjeto && acaoDoProjeto) {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "POST") return json({ ok: false, erro: "método não permitido" }, 405);
+      return acaoNaTarefa(request, url, config, acaoDoProjeto.numero, acaoDoProjeto.acao, doProjeto.repositorio);
+    }
+
     const leva = levaDoCaminho(pathname);
     const testes = testesDoCaminho(pathname);
     const relatorio = relatorioDoCaminho(pathname);
@@ -511,7 +572,13 @@ export default {
                   ? { tipo: "decisoes" }
                   : pathname === "/api/versoes"
                     ? { tipo: "versoes" }
-                    : null;
+                    : pathname === "/api/projetos"
+                      ? { tipo: "projetos" }
+                      : pathname === "/api/propostas"
+                        ? { tipo: "propostas" }
+                        : doProjeto?.resto === "leva"
+                          ? { tipo: "levaDoProjeto", repositorio: doProjeto.repositorio }
+                          : null;
     if (pedido) {
       const config = configuracao(env);
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
