@@ -459,7 +459,7 @@ export function progressoDeExemplo(agora: Date): RespostaDoMeuProgresso {
       t(60, 512),
       t(45, 530, { chefe: "backend", estimativaHoras: 6 }),
       t(30, 548, { estimativaHoras: undefined }),
-      t(22, 570, { repositorio: "ar-condicionado", url: "https://github.com/sakura-corp/ar-condicionado/issues/3", numero: 3, estimativaHoras: 5 }),
+      t(22, 3, { repositorio: "ar-condicionado", url: "https://github.com/sakura-corp/ar-condicionado/issues/3", estimativaHoras: 5 }),
       t(15, 601, { estimativaHoras: 8 }),
       t(8, 650, { chefe: "backend", estimativaHoras: 3 }),
       t(7, 4, { repositorio: "ar-condicionado", url: "https://github.com/sakura-corp/ar-condicionado/issues/4", estimativaHoras: 2 }),
