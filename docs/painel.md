@@ -922,3 +922,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **22/10/2026: o Gustavo trocou de conta do GitHub** (Sofia): entrou na `sakura-corp` a conta nova, `GustavoSakuras`
   (com 2FA), e a antiga, `kalendoscope`, já não tem acesso (fora dos membros e dos colaboradores de fora). Não havia tarefa
   nem PR aberto na conta antiga; o caderno dele (#618) nasce na conta nova. Na lista da equipe da #699, vale o login novo.
+- **21/10/2026, noite: a leva 2 aprovada** (Sofia mesclou o relatório `docs/relatorios/leva-2.md`, PR #704): 12 de 12
+  tarefas, 55 h. Ela decidiu pular a rodada de testes com lista (já tinha conferido cada página no ar); a fase Testando
+  estreia na leva 3, que passou a ser a atual.
