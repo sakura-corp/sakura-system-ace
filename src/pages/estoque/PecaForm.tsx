@@ -199,7 +199,14 @@ export function PecaForm({
           preso no meio do card em vez de cobrir a janela. Os botões do aviso
           são type="button" e não precisam do formulário. */}
       {pendente && (
-        <Modal titulo="Peça parecida" onFechar={() => setPendente(null)}>
+        <Modal
+          titulo="Peça parecida"
+          // Enquanto grava, fechar não desfaz a gravação: o aviso fica aberto
+          // mostrando o "Salvando..." até terminar.
+          onFechar={() => {
+            if (!gravandoPendente) setPendente(null);
+          }}
+        >
           <div className="space-y-4">
             <p className="text-corpo text-sakura-purple-dark">
               Parece com <em className="font-semibold">{pendente.parecidas[0].peca.descricao}</em>. É a
@@ -228,7 +235,8 @@ export function PecaForm({
                   <button
                     type="button"
                     onClick={() => abrirExistente(peca)}
-                    className="shrink-0 rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90"
+                    disabled={gravandoPendente}
+                    className="shrink-0 rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
                   >
                     Abrir a que já existe
                   </button>

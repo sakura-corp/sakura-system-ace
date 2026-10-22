@@ -90,9 +90,13 @@ function dice(a: string, b: string): number {
   return total === 0 ? 0 : (2 * comuns) / total;
 }
 
+/** "SEM GTIN" é o que a nota do fornecedor traz quando a peça não tem código
+ *  de barras; digitado à mão, não pode virar "o mesmo código" de todas. */
+const NAO_E_CODIGO = new Set(["", "sem gtin"]);
+
 function mesmoCodigo(a: string | null, b: string | null): boolean {
   const x = normalizar(a);
-  return x !== "" && x === normalizar(b);
+  return !NAO_E_CODIGO.has(x) && x === normalizar(b);
 }
 
 function semelhancaDoNome(a: PecaComparavel, b: PecaComparavel): number {

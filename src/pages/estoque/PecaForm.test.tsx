@@ -249,6 +249,44 @@ describe("PecaForm — aviso de peça parecida", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("'Cadastrar mesmo assim' leva junto a quantidade inicial digitada", async () => {
+    // O aviso guarda o que foi digitado e grava depois: perder a quantidade
+    // aqui criaria a peça com estoque zero sem ninguém perceber.
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.type(campo("Qtde. estoque inicial"), "4");
+    await user.click(salvar());
+    await user.click(await screen.findByRole("button", { name: "Cadastrar mesmo assim" }));
+
+    expect(onSalvar.mock.calls[0][1]).toBe(4);
+  });
+
+  it("o aviso fica fora do <form>, senão o card do formulário prende a janela", async () => {
+    // Renderizado, o fundo do aviso cobria só o card do formulário (que é a
+    // "moldura" de position:fixed dentro dele) e não a janela inteira.
+    const { user } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+
+    expect((await screen.findByRole("dialog")).closest("form")).toBeNull();
+  });
+
+  it("enquanto grava pelo 'Cadastrar mesmo assim', não dá pra abrir outra peça", async () => {
+    // Abrir a outra no meio da gravação trocaria o formulário, e o fim da
+    // gravação fecharia em seguida a peça que acabou de ser aberta.
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+    onSalvar.mockReturnValue(new Promise(() => {}));
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+    await user.click(await screen.findByRole("button", { name: "Cadastrar mesmo assim" }));
+
+    expect(screen.getByRole("button", { name: "Salvando..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Abrir a que já existe" })).toBeDisabled();
+  });
+
   it("'Abrir a que já existe' chama a abertura da peça do cadastro, sem gravar", async () => {
     const { user, onSalvar, onAbrirExistente } = montar({ pecasDoCadastro: [cadastrada] });
 

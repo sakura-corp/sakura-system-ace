@@ -39,6 +39,14 @@ describe("acharPecasParecidas", () => {
     expect(r).toEqual([]);
   });
 
+  it("'SEM GTIN' no código de barras não é código (é o que a nota traz quando não há)", () => {
+    const nova = peca({ descricao: "Vela", codigo_barras: "SEM GTIN" });
+    const r = acharPecasParecidas(nova, [
+      peca({ id: "a", descricao: "Pastilha de freio", codigo_barras: "sem gtin" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
   it("nome com acento, maiúscula e espaçamento diferentes é parecido", () => {
     const r = acharPecasParecidas(peca({ descricao: "PNEU 175/70R13 PIRÉLLI" }), [pneu]);
     expect(r).toHaveLength(1);
