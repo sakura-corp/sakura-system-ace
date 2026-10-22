@@ -16,9 +16,11 @@ vi.mock("@/lib/pecas", () => ({
   listarPecas: vi.fn(),
   resumoPecaParaJuntar: vi.fn(),
   juntarPecas: vi.fn(),
+  buscarPecasPorIds: vi.fn(),
 }));
 
-import { juntarPecas, listarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
+import { buscarPecasPorIds, juntarPecas, listarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
+import { pecaVista } from "@/schemas/juntarPecas";
 import { JuntarPecasModal } from "./JuntarPecasModal";
 
 function peca(extra: Partial<Peca>): Peca {
@@ -70,6 +72,7 @@ beforeEach(() => {
     id === "a" ? resumo({}) : resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 2 }] }),
   );
   vi.mocked(juntarPecas).mockResolvedValue(resumo({}));
+  vi.mocked(buscarPecasPorIds).mockResolvedValue([velha, nova]);
 });
 
 function montar() {
@@ -125,12 +128,74 @@ describe("JuntarPecasModal", () => {
     // ele recusa em vez de juntar com números diferentes dos mostrados.
     await waitFor(() =>
       expect(juntarPecas).toHaveBeenCalledWith("a", "b", ["preco_venda"], {
-        fica: resumo({}),
-        sai: resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 2 }] }),
+        fica: { ...resumo({}), peca: pecaVista(velha) },
+        sai: {
+          ...resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 2 }] }),
+          // e os campos como a pessoa viu: o banco recusa se o preço mudou desde então
+          peca: expect.objectContaining({ preco_venda: 120, descricao: "Pneu 175/70 R13 Pirelli" }),
+        },
       }),
     );
     expect(await screen.findByRole("status")).toHaveTextContent(/Pronto/);
     await waitFor(() => expect(onJuntado).toHaveBeenCalled());
+  });
+
+  it("prévia velha recusada: busca a prévia de novo, mostra os números novos e junta com eles", async () => {
+    vi.mocked(juntarPecas).mockRejectedValueOnce(
+      new Error("Os números das peças mudaram desde a prévia (alguém mexeu nelas agora há pouco). Confira a prévia de novo antes de juntar."),
+    );
+    const { user } = montar();
+    await abrirPar(user);
+
+    // enquanto a tela estava aberta, outro computador lançou estoque da "b" e mudou o preço dela
+    const novaDepois = { ...nova, preco_venda: 130 };
+    vi.mocked(buscarPecasPorIds).mockResolvedValue([velha, novaDepois]);
+    vi.mocked(resumoPecaParaJuntar).mockImplementation(async (id) =>
+      id === "a" ? resumo({}) : resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 5 }] }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
+    await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/mudaram desde a prévia/);
+    expect(screen.getByRole("alert")).toHaveTextContent(/números de agora/);
+    // a prévia mostrada é a nova, e o preço também
+    expect(await screen.findByText(/Estoque 4 \+ 5 = 9/)).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Preço venda" })).toHaveTextContent(/R\$\s?130,00/);
+
+    vi.mocked(juntarPecas).mockClear();
+    await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
+    await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
+    await waitFor(() =>
+      expect(juntarPecas).toHaveBeenCalledWith("a", "b", expect.any(Array), {
+        fica: expect.objectContaining({ os: 0 }),
+        sai: expect.objectContaining({ estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 5 }], peca: expect.objectContaining({ preco_venda: 130 }) }),
+      }),
+    );
+  });
+
+  it("prévia velha e a peça sumiu (outro computador já juntou): volta pra lista e procura de novo", async () => {
+    vi.mocked(juntarPecas).mockRejectedValueOnce(new Error("Os dados das peças mudaram desde a prévia (alguém mexeu nelas agora há pouco)."));
+    const { user } = montar();
+    await abrirPar(user);
+    vi.mocked(buscarPecasPorIds).mockResolvedValue([velha]);
+    vi.mocked(listarPecas).mockResolvedValue([velha]);
+    await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
+    await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
+    expect(await screen.findByText(/Não achei peças repetidas/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/não existe mais/);
+  });
+
+  it("outro erro ao juntar: não busca a prévia de novo", async () => {
+    vi.mocked(juntarPecas).mockRejectedValueOnce(new Error("sem internet"));
+    const { user } = montar();
+    await abrirPar(user);
+    vi.mocked(resumoPecaParaJuntar).mockClear();
+    await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
+    await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/sem internet/);
+    expect(resumoPecaParaJuntar).not.toHaveBeenCalled();
+    expect(buscarPecasPorIds).not.toHaveBeenCalled();
   });
 
   it("não junta sem a confirmação final", async () => {

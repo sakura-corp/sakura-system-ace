@@ -72,6 +72,20 @@ export type CampoJuntavel = (typeof CAMPOS_JUNTAVEIS)[number]["campo"];
 /** O que a tela precisa de uma peça pra comparar e juntar. */
 export type PecaParaJuntar = Pick<Peca, CampoJuntavel | "id" | "ativo">;
 
+/** Os campos de uma peça como a tela mostrou pra escolher. */
+export type PecaVista = Pick<Peca, CampoJuntavel>;
+
+/**
+ * Os campos que a pessoa comparou, pra ir junto na prévia (`p_esperado`): o
+ * banco recusa a junção se algum deles mudou desde que a tela abriu (senão a
+ * pessoa escolheria "R$ 250,00" e ficaria gravado o preço de agora).
+ */
+export function pecaVista(peca: PecaParaJuntar): PecaVista {
+  const vista: Partial<Record<CampoJuntavel, unknown>> = {};
+  for (const { campo } of CAMPOS_JUNTAVEIS) vista[campo] = peca[campo] ?? null;
+  return vista as PecaVista;
+}
+
 export interface CampoDiferente {
   campo: CampoJuntavel;
   rotulo: string;

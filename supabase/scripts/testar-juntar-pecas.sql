@@ -91,6 +91,7 @@ declare
   ids_cot    uuid[];
   peca_final record;
   esperado   jsonb;
+  audit_antes uuid[];
   extra_mov  uuid := '65606666-0000-0000-0000-000000000001';
 begin
   -- =====================================================================
@@ -383,7 +384,67 @@ begin
   -- =====================================================================
   -- 5b. PRÉVIA VELHA: os números mudaram depois da prévia → recusa, nada muda
   -- =====================================================================
-  esperado := jsonb_build_object('fica', resumo_a, 'sai', resumo_b);
+  -- a prévia leva também os campos que a tela mostrou de cada peça (o
+  -- listarPecas() de quando abriu): a linha inteira, como o programa manda
+  esperado := jsonb_build_object(
+    'fica', resumo_a || jsonb_build_object('peca', (select to_jsonb(p) from pecas p where p.id = peca_a)),
+    'sai',  resumo_b || jsonb_build_object('peca', (select to_jsonb(p) from pecas p where p.id = peca_b)));
+
+  -- os updates de "outro computador" abaixo deixam linha na auditoria; elas
+  -- são apagadas no fim deste bloco, pra não contar nas checagens da seção 6
+  audit_antes := array(select id from auditoria);
+
+  -- outro computador muda o preço da B (de 320 pra 350) depois da prévia: a
+  -- pessoa escolheu "R$ 320,00", então juntar gravaria um preço que ela não viu
+  update pecas set preco_venda = 350 where id = peca_b;
+  retrato_antes := pg_temp.retrato();
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_admin2::text, true);
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{preco_venda}', esperado);
+    raise exception 'FALHOU: juntou com o preço da B mudado depois da prévia';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os dados das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa do preço mudado com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  reset role;
+  if pg_temp.retrato() <> retrato_antes then
+    raise exception 'FALHOU: a junção recusada por preço mudado mudou alguma coisa';
+  end if;
+  update pecas set preco_venda = 320 where id = peca_b;
+
+  -- a que fica também: a descrição da A mudou depois da prévia → recusa
+  update pecas set descricao = 'Pneu A renomeado' where id = peca_a;
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_admin2::text, true);
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{}', esperado);
+    raise exception 'FALHOU: juntou com a descrição da A mudada depois da prévia';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os dados das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa da descrição mudada com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  reset role;
+  update pecas set descricao = 'Pneu 175/70 R13 (A)' where id = peca_a;
+
+  -- prévia sem os campos da peça: não dá pra garantir o que a pessoa viu → recusa
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_admin2::text, true);
+  begin
+    perform juntar_pecas(peca_a, peca_b, '{}', esperado #- '{sai,peca}');
+    raise exception 'FALHOU: juntou com uma prévia sem os campos da peça';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+    if sqlerrm not like 'Os dados das peças mudaram desde a prévia%' then
+      raise exception 'FALHOU: recusa da prévia sem campos com a mensagem errada: %', sqlerrm;
+    end if;
+  end;
+  reset role;
+  delete from auditoria where not (id = any (audit_antes));
 
   -- outro computador lança um movimento da B depois da prévia
   insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, loja_id, deposito_id)
@@ -447,8 +508,12 @@ begin
 
   -- com a prévia certa — e com números como o programa pode mandar
   -- ("3.00" em texto, saldo "4.00"): conferência é por número, não por texto
+  -- e o preço como o PostgREST às vezes manda (texto "320.00", ou 320 sem
+  -- casas): campo de número é conferido como número
   esperado := jsonb_set(jsonb_set(esperado, '{sai,movimentos}', '"3.00"'::jsonb),
                         '{sai,estoque,1,saldo}', '"4.00"'::jsonb);
+  esperado := jsonb_set(jsonb_set(esperado, '{sai,peca,preco_venda}', '"320.00"'::jsonb),
+                        '{fica,peca,preco_venda}', '300'::jsonb);
   devolvido := juntar_pecas(peca_a, peca_b,
     array['descricao', 'codigo_barras', 'preco_venda', 'dot', 'medida', 'descricao'], esperado);
   depois := resumo_peca_para_juntar(peca_a);

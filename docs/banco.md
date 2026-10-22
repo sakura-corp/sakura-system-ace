@@ -443,9 +443,10 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   com `dados_antes.juntada = true`: a peça que saiu inteira, os dois resumos, os campos trazidos e
   os **ids** das linhas de cada uma das 5 tabelas que eram dela (só os itens de OS têm gatilho;
   sem essa linha não daria pra refazer a junção à mão); (e) **prévia velha é recusada**: o
-  programa manda em `p_esperado` os dois resumos que a pessoa viu, e se o banco já estiver
-  diferente (alguém lançou movimento ou juntou outra peça nesse meio-tempo) a função recusa e
-  pede pra conferir de novo. Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`,
+  programa manda em `p_esperado` os dois resumos que a pessoa viu e os campos das duas peças
+  como a tela mostrou (`peca`), e se o banco já estiver diferente (alguém lançou movimento,
+  mudou o preço ou juntou outra peça nesse meio-tempo) a função recusa e pede pra conferir de
+  novo; a tela então busca a prévia de agora sozinha (revisão da Sofia, 22/10). Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`,
   conferido com mais de 12 mutações, todas vermelhas (uma tabela esquecida, a de cascade
   esquecida, sem a rede, erro engolido no último passo, a peça que fica sem conferência de loja,
   sem a linha da junção, sem a comparação da prévia...). **Ordem de subir: migration primeiro** (sem ela, a

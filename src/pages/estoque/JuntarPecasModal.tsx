@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
-import { juntarPecas, listarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
+import { buscarPecasPorIds, juntarPecas, listarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
 import {
   camposDaQueSai,
   camposDiferentes,
   escolhasPadrao,
   paresSuspeitos,
+  pecaVista,
   previaDaJuntada,
   quemFicaPorPadrao,
   type EscolhasDaJuntada,
@@ -43,6 +44,11 @@ function codigosDaPeca(peca: Peca): string {
     peca.codigo_interno ? `referência ${peca.codigo_interno}` : null,
   ].filter(Boolean);
   return partes.length > 0 ? partes.join(" · ") : "sem código";
+}
+
+/** A recusa do banco quando alguém mexeu nas peças depois da prévia (0067). */
+function ePreviaVelha(mensagem: string): boolean {
+  return mensagem.includes("mudaram desde a prévia");
 }
 
 function qtd(valor: number): string {
@@ -151,8 +157,8 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
     setErro(null);
     try {
       await juntarPecas(analise.fica.id, analise.sai.id, camposDaQueSai(escolhas), {
-        fica: analise.resumoFica,
-        sai: analise.resumoSai,
+        fica: { ...analise.resumoFica, peca: pecaVista(analise.fica) },
+        sai: { ...analise.resumoSai, peca: pecaVista(analise.sai) },
       });
       setSucesso(
         `Pronto: "${analise.sai.descricao}" foi juntada em "${previa.descricaoFinal}". ` +
@@ -164,10 +170,38 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
       await procurar();
     } catch (err) {
       console.error("Erro ao juntar peças:", err);
-      setErro(mensagemDeErro(err));
+      const mensagem = mensagemDeErro(err);
       setConfirmando(false);
+      // Prévia velha: mandar de novo a mesma seria recusado toda vez. Busca
+      // as peças e a prévia de agora, pra pessoa conferir e juntar com elas.
+      if (ePreviaVelha(mensagem)) await atualizarPrevia(analise, mensagem);
+      else setErro(mensagem);
     } finally {
       setJuntando(false);
+    }
+  }
+
+  async function atualizarPrevia(atual: ParEmAnalise, mensagem: string) {
+    try {
+      const [pecas, resumoFica, resumoSai] = await Promise.all([
+        buscarPecasPorIds([atual.fica.id, atual.sai.id]),
+        resumoPecaParaJuntar(atual.fica.id),
+        resumoPecaParaJuntar(atual.sai.id),
+      ]);
+      const fica = pecas.find((p) => p.id === atual.fica.id);
+      const sai = pecas.find((p) => p.id === atual.sai.id);
+      if (!fica || !sai) {
+        // outro computador já juntou ou apagou uma delas: o par não existe mais
+        setAnalise(null);
+        setErro("Uma das peças não existe mais (outro computador pode ter juntado ou apagado). Procurei os pares de novo.");
+        await procurar();
+        return;
+      }
+      setAnalise({ fica, sai, resumoFica, resumoSai });
+      setErro(`${mensagem} Atualizei a prévia abaixo com os números de agora: confira e junte de novo.`);
+    } catch (err) {
+      console.error("Erro ao buscar a prévia de novo:", err);
+      setErro(`${mensagem} Não consegui buscar a prévia de novo: volte para a lista e abra o par outra vez.`);
     }
   }
 

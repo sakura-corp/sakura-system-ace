@@ -64,8 +64,9 @@
 --    então confirma; nesse meio-tempo outro computador pode ter lançado um
 --    movimento. Se o programa mandar a prévia que mostrou (`p_esperado`), a
 --    função confere, já com as duas peças travadas, se os números ainda são
---    aqueles — e recusa se não forem, em vez de juntar uma coisa diferente da
---    que a pessoa viu.
+--    aqueles e se os campos das duas peças (preço, descrição...) ainda são os
+--    que a pessoa comparou — e recusa se não forem, em vez de juntar uma coisa
+--    diferente da que a pessoa viu.
 --
 -- Só acrescenta (duas funções novas): o programa de antes continua igual.
 -- Idempotente: seguro rodar de novo.
@@ -168,11 +169,13 @@ comment on function resumo_peca_para_juntar(uuid) is
 -- tela mostrar o resultado.
 --
 -- `p_esperado` (opcional): a prévia que a tela mostrou, no formato
---   {"fica": <resumo_peca_para_juntar(p_fica)>, "sai": <resumo_peca_para_juntar(p_sai)>}
+--   {"fica": <resumo_peca_para_juntar(p_fica)> + {"peca": <a peça como a tela viu>},
+--    "sai":  <resumo_peca_para_juntar(p_sai)>  + {"peca": <a peça como a tela viu>}}
 -- Se vier, são conferidos movimentos, itens_os, contagens, itens_compra,
 -- cotacoes e o saldo de cada loja (por loja_id, como número: 6 e "6.00" são
--- iguais). Qualquer diferença recusa a junção. Nulo: não confere (o caminho
--- de quem chama sem prévia, como o SQL Editor).
+-- iguais), e cada campo que pode ser trazido (v_permitidos) das duas peças.
+-- Qualquer diferença, ou `peca` faltando, recusa a junção. Nulo: não confere
+-- (o caminho de quem chama sem prévia, como o SQL Editor).
 
 create or replace function juntar_pecas(
   p_fica uuid,
@@ -207,6 +210,8 @@ declare
   v_atual jsonb;
   v_previa jsonb;
   v_mudou boolean;
+  v_peca_vista jsonb;
+  v_peca_agora jsonb;
   v_campos jsonb;
   v_ids jsonb;
   v_peca_sai jsonb;
@@ -292,6 +297,33 @@ begin
       end;
       if v_mudou then
         raise exception 'Os números das peças mudaram desde a prévia (alguém mexeu nelas agora há pouco). Confira a prévia de novo antes de juntar.';
+      end if;
+
+      -- E os campos que a tela mostrou pra escolher (`peca`): o update logo
+      -- abaixo copia o valor de AGORA da peça que sai, então, se alguém mudou
+      -- o preço de 250 pra 280 com a tela aberta, a pessoa escolheria
+      -- "R$ 250,00" e ficaria gravado 280. Campo que hoje é número compara
+      -- como número (250 e "250.00" são iguais); o resto, como texto ("0012"
+      -- não é "12"). Sem `peca` na prévia, não dá pra garantir: recusa.
+      v_peca_vista := v_previa -> 'peca';
+      select to_jsonb(p) into v_peca_agora from pecas p
+       where p.id = case v_lado when 'fica' then p_fica else p_sai end;
+      begin
+        v_mudou := v_peca_vista is null
+          or jsonb_typeof(v_peca_vista) <> 'object'
+          or exists (
+               select 1
+                 from unnest(v_permitidos) as k
+                where case jsonb_typeof(v_peca_agora -> k)
+                        when 'number' then (v_peca_vista ->> k)::numeric is distinct from (v_peca_agora ->> k)::numeric
+                        else (v_peca_vista ->> k) is distinct from (v_peca_agora ->> k)
+                      end
+             );
+      exception when others then
+        v_mudou := true;
+      end;
+      if v_mudou then
+        raise exception 'Os dados das peças mudaram desde a prévia (alguém mexeu nelas agora há pouco). Confira a prévia de novo antes de juntar.';
       end if;
     end loop;
   end if;

@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
 import type { NovaPeca, Peca } from "@/types/peca";
-import { lerResumo, type CampoJuntavel, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
+import { lerResumo, type CampoJuntavel, type PecaVista, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
 
 export async function listarPecas(): Promise<Peca[]> {
   // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
@@ -71,15 +71,18 @@ export async function resumoPecaParaJuntar(id: string): Promise<ResumoPecaJuntar
 
 // Junta a peça `saiId` na `ficaId`: tudo da que sai passa pra que fica, os
 // campos listados em `campos` são copiados da que sai, e a que sai deixa de
-// existir. `esperado` são os resumos que a prévia mostrou: se o banco já
-// estiver diferente (alguém mexeu nas peças nesse meio-tempo), ele recusa em
-// vez de juntar com números que a pessoa não viu. Devolve o resumo da peça
-// que ficou.
+// existir. `esperado` são os resumos que a prévia mostrou e os campos das duas
+// peças como a tela mostrou (`peca`): se o banco já estiver diferente (alguém
+// mexeu nas peças nesse meio-tempo), ele recusa em vez de juntar com números
+// ou valores que a pessoa não viu. Devolve o resumo da peça que ficou.
 export async function juntarPecas(
   ficaId: string,
   saiId: string,
   campos: CampoJuntavel[],
-  esperado: { fica: ResumoPecaJuntar; sai: ResumoPecaJuntar },
+  esperado: {
+    fica: ResumoPecaJuntar & { peca: PecaVista };
+    sai: ResumoPecaJuntar & { peca: PecaVista };
+  },
 ): Promise<ResumoPecaJuntar> {
   const { data, error } = await supabase.rpc("juntar_pecas", {
     p_fica: ficaId,
