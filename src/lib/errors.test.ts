@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  COLUNAS_DA_0065,
   MENSAGEM_BANCO_DESATUALIZADO,
   MENSAGEM_DA_TRAVA,
   MENSAGEM_SEM_PERMISSAO, mensagemDeErro, traduzirTrava } from "./errors";
@@ -61,6 +62,23 @@ describe("mensagemDeErro", () => {
     const doPostgres = { code: "42703", message: 'column ordens_servico.numero_orcamento does not exist' };
     expect(mensagemDeErro(doPostgrest)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
     expect(mensagemDeErro(doPostgres)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
+    // O Postgres também escreve o nome entre aspas.
+    expect(mensagemDeErro({ message: 'column "orcado_em" of relation "ordens_servico" does not exist' }))
+      .toBe(MENSAGEM_BANCO_DESATUALIZADO);
+  });
+
+  it("toda coluna da 0065 vira o aviso", () => {
+    for (const coluna of COLUNAS_DA_0065) {
+      const erro = { message: `Could not find the '${coluna}' column of 'ordens_servico' in the schema cache` };
+      expect(mensagemDeErro(erro), coluna).toBe(MENSAGEM_BANCO_DESATUALIZADO);
+    }
+  });
+
+  it("coluna que não é da 0065 passa como veio (é erro de programação, não banco atrasado)", () => {
+    const doPostgrest = { message: "Could not find the 'xyz' column of 'ordens_servico' in the schema cache" };
+    const doPostgres = { message: "column ordens_servico.xyz does not exist" };
+    expect(mensagemDeErro(doPostgrest)).toBe(doPostgrest.message);
+    expect(mensagemDeErro(doPostgres)).toBe(doPostgres.message);
   });
 
   it("trava desconhecida e erro comum passam como vieram", () => {

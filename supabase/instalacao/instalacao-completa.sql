@@ -4803,6 +4803,7 @@ alter table ordens_servico add column if not exists aprovado_por text;
 alter table ordens_servico add column if not exists aprovado_em timestamptz;
 alter table ordens_servico add column if not exists motivo_recusa text;
 alter table ordens_servico add column if not exists recusado_em timestamptz;
+alter table ordens_servico add column if not exists orcado_em timestamptz;
 
 comment on column ordens_servico.numero is
   'Número da OS, sequencial por loja. Vazio só enquanto a linha é orçamento '
@@ -4815,6 +4816,9 @@ comment on column ordens_servico.validade is
   'hoje + 7 dias). Vencido não tranca nada: só avisa na aprovação.';
 comment on column ordens_servico.aprovado_por is
   'Quem aprovou o orçamento, em texto livre (ex.: "o próprio cliente, pelo telefone").';
+comment on column ordens_servico.orcado_em is
+  'Quando o orçamento foi feito. Só na OS que nasceu de orçamento: na aprovação, '
+  'o gatilho guarda aqui a data_abertura antiga e põe a da aprovação em data_abertura.';
 comment on column ordens_servico.motivo_recusa is
   'Por que o orçamento foi recusado (opcional): preco, prazo, outro_lugar, desistiu ou outro.';
 
@@ -4854,8 +4858,13 @@ create unique index if not exists ordens_servico_loja_numero_orcamento_unique
 --      passo 4 recusa, em vez de o gatilho apagar calado.
 --   b) nasce OS ou venda de balcão: como sempre, o próximo `numero`.
 --   c) um orçamento passa a ser OS: ganha o próximo `numero` ali, na
---      aprovação. Só nesse caso o gatilho mexe num update — apagar o número
---      de uma OS que já tem continua sendo recusado pela trava.
+--      aprovação, e a data da aprovação vira a `data_abertura` (a do
+--      orçamento vai pra `orcado_em`). Só nesse caso o gatilho mexe num
+--      update — apagar o número de uma OS que já tem continua sendo recusado
+--      pela trava (um CHECK, que vale em todo update).
+--
+-- No update, o gatilho só roda quando o comando mexe no `status` (`update of
+-- status`): é o único caso em que ele tem o que fazer.
 --
 -- E uma trava de caminho, `ck_ordens_servico_transicao_orcamento`: saindo
 -- de orçamento, só pra em_andamento (aprovado) ou recusado; recusado não
@@ -4894,11 +4903,19 @@ begin
                           old.status, new.status),
       table      = 'ordens_servico',
       constraint = 'ck_ordens_servico_transicao_orcamento';
-  elsif old.status = 'orcamento' and not eh_orcamento and new.numero is null then
-    perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
-    select coalesce(max(numero), 0) + 1 into new.numero
-    from ordens_servico
-    where loja_id = new.loja_id;
+  elsif old.status = 'orcamento' and new.status = 'em_andamento' then
+    -- Aprovado: a OS começa hoje. A Lucratividade, o Início ("aberta há 20
+    -- dias"), a lista de OS e a ficha do veículo contam pela data_abertura;
+    -- com a data do orçamento, uma OS aprovada hoje caía no mês passado. A
+    -- data do orçamento não se perde: fica em orcado_em.
+    new.orcado_em := old.data_abertura;
+    new.data_abertura := now();
+    if new.numero is null then
+      perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
+      select coalesce(max(numero), 0) + 1 into new.numero
+      from ordens_servico
+      where loja_id = new.loja_id;
+    end if;
   end if;
   return new;
 end;
@@ -4906,7 +4923,7 @@ $$;
 
 drop trigger if exists trigger_definir_numero_ordem_servico on ordens_servico;
 create trigger trigger_definir_numero_ordem_servico
-  before insert or update on ordens_servico
+  before insert or update of status on ordens_servico
   for each row
   execute function definir_numero_ordem_servico();
 

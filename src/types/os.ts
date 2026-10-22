@@ -95,6 +95,10 @@ export interface OrdemServico {
   aprovado_em?: string | null;
   motivo_recusa?: MotivoRecusa | null;
   recusado_em?: string | null;
+  /** Quando o orçamento foi feito. Só na OS que nasceu de orçamento: na
+   * aprovação, o banco guarda aqui a data antiga e põe a da aprovação em
+   * `data_abertura`. */
+  orcado_em?: string | null;
 }
 
 /** Ordem que já tem número de OS — toda ordem que não é orçamento. */

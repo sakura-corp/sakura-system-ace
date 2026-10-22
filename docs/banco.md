@@ -395,7 +395,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   ganha esses dois valores (padrão continua `em_andamento`), e entram as colunas
   `numero_orcamento`, `validade`, `aprovado_por` (texto livre), `aprovado_em`, `motivo_recusa`
   (`preco`/`prazo`/`outro_lugar`/`desistiu`/`outro` ou vazio, trava
-  `ck_ordens_servico_motivo_recusa`) e `recusado_em`. Três decisões: (a) **o número da OS só
+  `ck_ordens_servico_motivo_recusa`), `recusado_em` e `orcado_em`. Três decisões: (a) **o número da OS só
   nasce na aprovação** — `numero` deixou de ser obrigatório, e a trava
   `ck_ordens_servico_numero_orcamento` diz que ele fica vazio **se e só se** a linha é orçamento
   ou recusado (daí sai que OS numerada nunca volta a orçamento e que nenhuma OS fica sem
@@ -403,8 +403,12 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `ordens_servico_loja_numero_orcamento_unique`, obrigatório pela
   `ck_ordens_servico_numero_orcamento_obrigatorio`) e o mantém depois de aprovado. Ao contrário
   da venda de balcão, **o número da OS não pula**: orçamento recusado nunca foi documento; (b) o
-  gatilho `definir_numero_ordem_servico` (o da `0037`) agora roda também no **update**: quando
-  um orçamento vira OS, ganha ali o próximo número; e pega uma **tranca por loja**
+  gatilho `definir_numero_ordem_servico` (o da `0037`) agora roda também no **update do
+  status** (`before insert or update of status`, só quando o comando mexe no status): quando
+  um orçamento vira OS, ganha ali o próximo número **e a data da aprovação vira a
+  `data_abertura`** (a do orçamento fica guardada em `orcado_em`; decisão da Sofia na revisão do
+  PR #705 — a Lucratividade, o Início, a lista de OS e a ficha do veículo contam pela
+  `data_abertura`, e um orçamento de 20 dias aprovado hoje é OS de hoje); e pega uma **tranca por loja**
   (`pg_advisory_xact_lock`) antes de procurar o maior número, na aprovação e na OS comum, pra
   dois aprovando juntos não pegarem o mesmo; e confere o **caminho** (trava
   `ck_ordens_servico_transicao_orcamento`, que vem do gatilho com a frase de um CHECK, porque um
@@ -566,7 +570,9 @@ outro projeto Supabase do zero (ver seção 9).
   **numero_orcamento** (int, contador próprio por loja, só do orçamento — "Orçamento 45"; fica
   na linha depois de aprovada), **validade** (date, quem preenche é o programa, padrão hoje + 7),
   **aprovado_por** (texto livre)/**aprovado_em**, **motivo_recusa** (`preco`/`prazo`/
-  `outro_lugar`/`desistiu`/`outro` ou vazio)/**recusado_em** — todos da `0065`,
+  `outro_lugar`/`desistiu`/`outro` ou vazio)/**recusado_em**, **orcado_em** (timestamptz, só na
+  OS que nasceu de orçamento: a data do orçamento, porque na aprovação o gatilho põe a data da
+  aprovação em `data_abertura`) — todos da `0065`,
   **tipo** (`os`/`venda_balcao`, migration `0064` — a venda de balcão usa o MESMO contador de
   número; na tela vira "Venda 17" em vez de "OS 17", pelo `nomeOrdem(numero, tipo)`), loja_id
   (FK lojas), cliente_id (FK), veiculo_id (FK, opcional), status

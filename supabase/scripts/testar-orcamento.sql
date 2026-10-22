@@ -8,6 +8,8 @@
 --     o orçamento nasce sem número de OS e com o seu próprio contador por
 --     loja (1, 2, 3...); aprovar dá o PRÓXIMO número de OS, sem buraco,
 --     mesmo com orçamentos e OS intercalados; recusado continua sem número;
+--     aprovar põe a data da aprovação em data_abertura e guarda a do
+--     orçamento em orcado_em (OS comum e recusado não mexem nisso);
 --     orçamento e recusado podem ser editados sem mudar de status; e rodar a
 --     INSTALAÇÃO INTEIRA de novo, com tudo isso gravado, não quebra nada (a
 --     equipe recola o arquivo no banco de teste a cada migration) e aprovar
@@ -37,6 +39,7 @@ declare
   orc1       uuid := '0c0a3333-0000-0000-0000-000000000001';
   orc2       uuid := '0c0a3333-0000-0000-0000-000000000002';
   orc3       uuid := '0c0a3333-0000-0000-0000-000000000003';
+  orc_antigo uuid := '0c0a3333-0000-0000-0000-000000000004';
   os_id      uuid;
   n          int;
   quantas    int;
@@ -347,6 +350,49 @@ begin
      or (select status from ordens_servico where id = os_id) <> 'orcamento' then
     raise exception 'FALHOU: as tentativas recusadas mudaram o recusado ou o orçamento';
   end if;
+
+  -- ===================================================================
+  -- R. Aprovar põe a data da aprovação na abertura; a do orçamento vai
+  --    pra orcado_em
+  -- ===================================================================
+  -- A Lucratividade, o Início ("aberta há 20 dias"), a lista e a ficha do
+  -- veículo contam a OS pela data_abertura: um orçamento de 20 dias atrás
+  -- aprovado hoje é uma OS de hoje. (Na loja B, pra não mexer nos números
+  -- conferidos acima e na parte 2.)
+  insert into ordens_servico (id, loja_id, cliente_id, status, data_abertura)
+    values (orc_antigo, loja_b, cliente, 'orcamento', now() - interval '20 days');
+  update ordens_servico set status = 'em_andamento', aprovado_em = now()
+    where id = orc_antigo and status = 'orcamento';
+  select * into linha from ordens_servico where id = orc_antigo;
+  if abs(extract(epoch from linha.data_abertura - now())) > 60 then
+    raise exception 'FALHOU: a OS aprovada devia abrir na data da aprovação, ficou %', linha.data_abertura;
+  end if;
+  if linha.orcado_em is distinct from now() - interval '20 days' then
+    raise exception 'FALHOU: orcado_em devia guardar a data do orçamento (há 20 dias), ficou %', linha.orcado_em;
+  end if;
+
+  -- OS comum não ganha orcado_em, nem ao nascer nem ao mudar de status, e a
+  -- abertura dela não mexe.
+  insert into ordens_servico (loja_id, cliente_id, data_abertura)
+    values (loja_b, cliente, now() - interval '20 days')
+    returning id into os_id;
+  update ordens_servico set status = 'concluida' where id = os_id;
+  select * into linha from ordens_servico where id = os_id;
+  if linha.orcado_em is not null or linha.data_abertura is distinct from now() - interval '20 days' then
+    raise exception 'FALHOU: OS comum ganhou orcado_em (%) ou mudou a abertura (%)',
+      linha.orcado_em, linha.data_abertura;
+  end if;
+
+  -- Recusar não mexe na abertura (nem ganha orcado_em).
+  insert into ordens_servico (loja_id, cliente_id, status, data_abertura)
+    values (loja_b, cliente, 'orcamento', now() - interval '20 days')
+    returning id into os_id;
+  update ordens_servico set status = 'recusado', recusado_em = now() where id = os_id;
+  select * into linha from ordens_servico where id = os_id;
+  if linha.orcado_em is not null or linha.data_abertura is distinct from now() - interval '20 days' then
+    raise exception 'FALHOU: recusar mudou a abertura (%) ou deu orcado_em (%)',
+      linha.data_abertura, linha.orcado_em;
+  end if;
 end $$;
 
 -- ===================================================================
@@ -409,6 +455,12 @@ begin
       raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
     end if;
   end;
+
+  -- O gatilho só roda em update quando o comando mexe no status.
+  if (select pg_get_triggerdef(oid) from pg_trigger
+       where tgname = 'trigger_definir_numero_ordem_servico') not like '%UPDATE OF status%' then
+    raise exception 'FALHOU: o gatilho devia ser "before insert or update of status"';
+  end if;
 
   if (select max(versao) from schema_versao) < 65 then
     raise exception 'FALHOU: a migration não registrou a versão 65';
