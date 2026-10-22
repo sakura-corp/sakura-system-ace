@@ -12,6 +12,7 @@ import type { EstadoDaLeva } from "../logica/dados";
 import type { EstadoDaSala } from "../logica/salaDados";
 import type { Bonequinho, EstadoTarefa } from "../tipos";
 import { CabecalhoDaPagina } from "./CabecalhoDaPagina";
+import { CartaoDoMeuProgresso, type EstadoDoMeuProgresso } from "./PaginaMeuProgresso";
 import { ItemDaTarefa } from "./ListaDeTarefas";
 
 type Props = {
@@ -26,6 +27,8 @@ type Props = {
   /** "O que mudou hoje" (#549). */
   novidades: EstadoDasNovidades;
   tentarNovidadesDeNovo: () => void;
+  /** O cartão do Meu progresso (#734), sempre de quem está logado; sem ele, o cartão não aparece. */
+  meuProgresso?: EstadoDoMeuProgresso;
   /** Dados de exemplo (sem login). */
   exemplo?: boolean;
 };
@@ -329,7 +332,7 @@ function BlocoDasNovidades({ novidades, agora, tentarDeNovo }: { novidades: Esta
 }
 
 export function PaginaInicio(props: Props) {
-  const { login, sala, leva, agora, tentarSalaDeNovo, tentarLevaDeNovo, novidades, tentarNovidadesDeNovo, exemplo } = props;
+  const { login, sala, leva, agora, tentarSalaDeNovo, tentarLevaDeNovo, novidades, tentarNovidadesDeNovo, meuProgresso, exemplo } = props;
   const inicio = montarInicio(sala.tipo === "pronto" ? sala : null, leva.tipo === "pronto" ? leva.leva : null, login, agora);
   return (
     <div className="min-w-0">
@@ -349,6 +352,7 @@ export function PaginaInicio(props: Props) {
           <BlocoDaTarefa props={props} suaTarefa={inicio.suaTarefa} />
         </div>
         <div className="min-w-0 space-y-6">
+          {meuProgresso && <CartaoDoMeuProgresso estado={meuProgresso} agora={agora} />}
           <BlocoDaLeva leva={leva} resumo={inicio.resumoDaLeva} tentarDeNovo={tentarLevaDeNovo} />
           <BlocoDasNovidades novidades={novidades} agora={agora} tentarDeNovo={tentarNovidadesDeNovo} />
         </div>

@@ -155,7 +155,7 @@ async function buscarPaginas<T>(consultar: Consultar, consulta: string, busca: s
   for (let pagina = 0; pagina < LIMITE_DE_PAGINAS; pagina++) {
     const r: Resultado<Pagina<T>> = await consultar<Pagina<T>>(consulta, { busca, depois });
     if (r.tipo !== "ok") return r;
-    const s = r.dados.search;
+    const s: Pagina<T>["search"] = r.dados.search;
     if (!s) return { tipo: "erro" };
     nodes.push(...(s.nodes ?? []));
     if (!s.pageInfo.hasNextPage || !s.pageInfo.endCursor) return { tipo: "ok", dados: { nodes, cortada: false } };

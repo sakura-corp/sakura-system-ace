@@ -123,6 +123,25 @@ export async function sair(): Promise<boolean> {
   return true;
 }
 
+/**
+ * A própria foto e o login, levando ao "Meu progresso" (#734). Na barra lateral e na folha do celular.
+ * `grande`: alvo de toque de 44 px (no celular).
+ */
+export function LinkDoMeuProgresso({ usuario, atual, grande = false }: { usuario: Usuario; atual: boolean; grande?: boolean }) {
+  return (
+    <a
+      href="/meu-progresso"
+      aria-current={atual ? "page" : undefined}
+      title="Meu progresso"
+      className={`-ml-1.5 flex min-w-0 items-center gap-2 rounded-lg px-1.5 ${grande ? "min-h-11" : "min-h-8"} text-sm font-medium text-texto hover:bg-livre-fundo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque ${atual ? "bg-livre-fundo" : ""}`}
+    >
+      <Avatar login={usuario.login} avatar={usuario.avatar} />
+      <span className="min-w-0 truncate">{usuario.login}</span>
+      <span className="sr-only"> (Meu progresso)</span>
+    </a>
+  );
+}
+
 export function BarraLateral({ levas, pagina: paginaDaTela = "leva", usuario, tempoReal }: Props) {
   const [saidaFalhou, setSaidaFalhou] = useState(false);
   const pagina = paginaDestacada(levas, paginaDaTela);
@@ -176,8 +195,7 @@ export function BarraLateral({ levas, pagina: paginaDaTela = "leva", usuario, te
         {usuario && (
           <div className="min-w-0">
             <div className="flex items-center gap-2 px-2.5">
-              <Avatar login={usuario.login} avatar={usuario.avatar} />
-              <span className="min-w-0 truncate text-sm font-medium" title={usuario.login}>{usuario.login}</span>
+              <LinkDoMeuProgresso usuario={usuario} atual={pagina === "meu-progresso"} />
               <button
                 type="button"
                 onClick={() => {

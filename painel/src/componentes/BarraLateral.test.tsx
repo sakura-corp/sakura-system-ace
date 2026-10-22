@@ -131,4 +131,15 @@ describe("BarraLateral", () => {
     expect(h).not.toContain('href="/leva/1"');
     expect(h).not.toContain('href="/leva/0"');
   });
+
+  it("a própria foto leva ao Meu progresso (#734), marcada quando é a página aberta", () => {
+    const usuario = { login: "fulana", avatar: "" };
+    const fora = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: true }], pagina: "leva", usuario });
+    const link = fora.slice(fora.indexOf('<a href="/meu-progresso"'));
+    expect(link.slice(0, link.indexOf("</a>"))).toContain("fulana");
+    expect(link.slice(0, link.indexOf(">"))).not.toContain("aria-current");
+    const dentro = html({ levas: [{ nome: "Leva atual", href: "/leva", atual: false }], pagina: "meu-progresso", usuario });
+    const aberto = dentro.slice(dentro.indexOf('<a href="/meu-progresso"'));
+    expect(aberto.slice(0, aberto.indexOf(">"))).toContain('aria-current="page"');
+  });
 });

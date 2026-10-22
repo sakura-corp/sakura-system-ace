@@ -5,6 +5,7 @@ import type { EstadoDaLeva } from "../logica/dados";
 import type { EstadoDaSala } from "../logica/salaDados";
 import type { EstadoDasNovidades, Novidade } from "../logica/novidades";
 import { PaginaInicio } from "./PaginaInicio";
+import type { EstadoDoMeuProgresso } from "./PaginaMeuProgresso";
 
 const AGORA = new Date("2026-10-17T12:00:00Z");
 const tarefa = (n: number, extra: Partial<Tarefa> = {}): Tarefa => ({
@@ -24,7 +25,7 @@ const LEVA_COM_TAREFA = levaPronta([tarefa(1, { estado: "andamento", dono: EU, e
 
 const SEM_NOVIDADES: EstadoDasNovidades = { tipo: "pronto", novidades: [], falhas: [] };
 
-const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; novidades?: EstadoDasNovidades; exemplo?: boolean } = {}) =>
+const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; novidades?: EstadoDasNovidades; exemplo?: boolean; meuProgresso?: EstadoDoMeuProgresso } = {}) =>
   renderToString(
     <PaginaInicio
       login="fulana"
@@ -35,6 +36,7 @@ const html = (o: { sala?: EstadoDaSala; leva?: EstadoDaLeva; novidades?: EstadoD
       tentarLevaDeNovo={() => {}}
       novidades={o.novidades ?? SEM_NOVIDADES}
       tentarNovidadesDeNovo={() => {}}
+      meuProgresso={o.meuProgresso}
       exemplo={o.exemplo}
     />,
   ).replace(/<!-- -->/g, "");
@@ -191,5 +193,23 @@ describe("O que mudou hoje (#549)", () => {
     const h = html({ novidades: { tipo: "erro", mensagem: "Não consegui ler o que mudou hoje no GitHub." } });
     expect(h).toContain("Não consegui ler o que mudou hoje");
     expect(h).not.toContain("Nada mudou hoje");
+  });
+});
+
+describe("o cartão do Meu progresso no Início (#734)", () => {
+  it("com o progresso: o cartão, levando à página", () => {
+    const meuProgresso: EstadoDoMeuProgresso = {
+      tipo: "pronto",
+      resposta: { login: "fulana", tarefas: [{ repositorio: "sakura-system-ace", numero: 1, titulo: "T", url: "https://github.com/sakura-corp/sakura-system-ace/issues/1", feitaEm: "2026-10-16T15:00:00Z", estimativaHoras: 2 }], prs: [] },
+    };
+    const h = html({ meuProgresso });
+    expect(h).toContain('id="inicio-progresso"');
+    expect(h).toContain('href="/meu-progresso"');
+    expect(h).toContain("2 h");
+    expect(h).toContain("Última conquista: Primeira tarefa feita");
+  });
+
+  it("sem o progresso: sem cartão", () => {
+    expect(html()).not.toContain('id="inicio-progresso"');
   });
 });

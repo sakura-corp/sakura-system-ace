@@ -8,6 +8,7 @@ import { PaginaFinanceiro } from "./componentes/PaginaFinanceiro";
 import { PaginaDasLevas } from "./componentes/PaginaDasLevas";
 import { PaginaDecisoes } from "./componentes/PaginaDecisoes";
 import { PaginaInicio } from "./componentes/PaginaInicio";
+import { PaginaMeuProgresso, progressoDeExemplo, useMeuProgresso, type EstadoDoMeuProgresso } from "./componentes/PaginaMeuProgresso";
 import { PaginaPessoas } from "./componentes/PaginaPessoas";
 import { PaginaSecundarios } from "./componentes/PaginaSecundarios";
 import { PaginaVersoes } from "./componentes/PaginaVersoes";
@@ -42,6 +43,8 @@ export function paginaDoCaminho(caminho: string): Pagina {
   // Os Projetos secundários (#731).
   if (limpo === "/secundarios") return "secundarios";
   if (limpo === "/financeiro") return "financeiro";
+  // O Meu progresso (#734): pelo clique na própria foto, e pelo cartão do Início.
+  if (limpo === "/meu-progresso") return "meu-progresso";
   // O Relatório da leva (#647): /relatorio, o de uma leva, e o endereço antigo do "em breve" (nenhum endereço some).
   if (limpo === "/relatorio" || limpo === "/em-breve/relatorio" || relatorioPedido(limpo) !== null) return "relatorio";
   // As Decisões da Sofia (#648): /decisoes e o endereço antigo do "em breve" (nenhum endereço some).
@@ -256,6 +259,9 @@ export default function App({
   const mesDoFinanceiro = mesDaBusca(busca, new Date());
   const [financeiroBuscado, tentarFinanceiroDeNovo, recarregarFinanceiro] = useFinanceiro(dadosReais && pagina === "financeiro" && financeiroFixo === undefined, mesDoFinanceiro);
   const financeiro: EstadoDoFinanceiro = financeiroFixo ?? (exemplo ? FINANCEIRO_SEM_LOGIN : financeiroBuscado);
+  // O cartão do Meu progresso no Início (#734): sempre o de quem está logado (sem ?pessoa=).
+  const [progressoBuscado] = useMeuProgresso(dadosReais && pagina === "inicio", null);
+  const [progressoDeExemploAgora] = useState<EstadoDoMeuProgresso>(() => ({ tipo: "pronto", resposta: progressoDeExemplo(new Date()) }));
   const buscarDaSala = useCallback(async () => {
     if (!tv) await recarregar();
     if (pagina === "inicio") await recarregarNovidades();
@@ -327,6 +333,7 @@ export default function App({
             tentarLevaDeNovo={tentarDeNovo}
             novidades={exemplo ? novidadesDeExemploAgora : novidadesBuscadas}
             tentarNovidadesDeNovo={tentarNovidadesDeNovo}
+            meuProgresso={exemplo ? progressoDeExemploAgora : progressoBuscado}
             exemplo={exemplo}
           />
         </main>
@@ -413,6 +420,10 @@ export default function App({
       ) : pagina === "secundarios" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
           <PaginaSecundarios semLogin={exemplo} login={usuario?.login} busca={busca} />
+        </main>
+      ) : pagina === "meu-progresso" ? (
+        <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
+          <PaginaMeuProgresso semLogin={exemplo} login={usuario?.login} busca={busca} />
         </main>
       ) : pagina === "pessoas" ? (
         <main className="mx-auto w-full min-w-0 max-w-[960px] flex-1 px-4 pb-28 pt-8 md:px-8 md:pb-8">
