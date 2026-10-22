@@ -31,7 +31,7 @@ const issue = (numero: number, extra: Partial<IssueFeita> = {}): IssueFeita => (
   labels: { nodes: [{ name: "leva-3" }, { name: "chefe:frontend" }] },
   assignees: { nodes: [{ login: "fulana" }] },
   timelineItems: { nodes: [{ createdAt: "2026-10-18T12:00:00Z", assignee: { login: "fulana" } }] },
-  closedByPullRequestsReferences: { nodes: [{ createdAt: "2026-10-19T12:00:00Z" }] },
+  closedByPullRequestsReferences: { nodes: [{ createdAt: "2026-10-19T12:00:00Z", author: { login: "fulana" } }] },
   ...extra,
 });
 
@@ -202,7 +202,7 @@ describe("tarefasDosDados", () => {
               {},
             ],
           },
-          closedByPullRequestsReferences: { nodes: [{ createdAt: "2026-10-19T12:00:00Z" }, { createdAt: "2026-10-17T12:00:00Z" }, null] },
+          closedByPullRequestsReferences: { nodes: [{ createdAt: "2026-10-19T12:00:00Z", author: { login: "fulana" } }, { createdAt: "2026-10-17T12:00:00Z", author: { login: "Fulana" } }, null] },
         }),
       ],
       "fulana",
@@ -210,6 +210,25 @@ describe("tarefasDosDados", () => {
     );
     expect(t.pegouEm).toBe("2026-10-15T12:00:00Z");
     expect(t.prAbertoEm).toBe("2026-10-17T12:00:00Z");
+  });
+
+  it("o PR de outra pessoa (ex.: aberto e largado antes) não conta no estimado × real", () => {
+    const [t] = tarefasDosDados(
+      [
+        issue(1, {
+          timelineItems: { nodes: [{ createdAt: "2026-10-05T12:00:00Z", assignee: { login: "tiago" } }, { createdAt: "2026-10-15T12:00:00Z", assignee: { login: "fulana" } }] },
+          closedByPullRequestsReferences: { nodes: [{ createdAt: "2026-10-06T12:00:00Z", author: { login: "tiago" } }, { createdAt: "2026-10-17T12:00:00Z", author: { login: "fulana" } }] },
+        }),
+      ],
+      "fulana",
+      projetos,
+    );
+    expect(t.pegouEm).toBe("2026-10-15T12:00:00Z");
+    expect(t.prAbertoEm).toBe("2026-10-17T12:00:00Z");
+  });
+
+  it("a mesma tarefa vinda duas vezes da busca conta uma vez só", () => {
+    expect(tarefasDosDados([issue(1), issue(1)], "fulana", projetos)).toHaveLength(1);
   });
 
   it("sem PR, o pegou é a última atribuição a ela", () => {

@@ -52,7 +52,7 @@ query TarefasFeitas($busca: String!, $depois: String) {
         labels(first: 30) { nodes { name } }
         assignees(first: 10) { nodes { login } }
         timelineItems(itemTypes: [ASSIGNED_EVENT], last: 20) { nodes { ... on AssignedEvent { createdAt assignee { ... on User { login } } } } }
-        closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { createdAt } }
+        closedByPullRequestsReferences(first: 10, includeClosedPrs: true) { nodes { createdAt author { login } } }
       }
     }
   }
@@ -86,7 +86,7 @@ export type IssueFeita = {
   labels: { nodes: ({ name: string } | null)[] | null } | null;
   assignees: { nodes: ({ login: string } | null)[] | null } | null;
   timelineItems: { nodes: ({ createdAt?: string; assignee?: { login?: string } | null } | null)[] | null } | null;
-  closedByPullRequestsReferences: { nodes: ({ createdAt: string } | null)[] | null } | null;
+  closedByPullRequestsReferences: { nodes: ({ createdAt: string; author?: { login: string } | null } | null)[] | null } | null;
 };
 export type PrDaBusca = { number: number; mergedAt: string | null; repository: { name: string } | null };
 type Pagina<T> = { search: { pageInfo: { hasNextPage: boolean; endCursor: string | null }; nodes: (T | null)[] | null } | null };
@@ -95,17 +95,22 @@ const tempo = (iso: string | undefined | null) => (iso ? Date.parse(iso) : NaN);
 
 /**
  * As tarefas feitas: fechadas como concluídas, com etiqueta `leva-N`, com a pessoa entre os responsáveis e de um dos
- * `projetos`. O "pegou" é a última vez que a pessoa foi posta como responsável antes do primeiro PR (sem PR, a última).
+ * `projetos`, sem repetir. O PR é o primeiro que a PRÓPRIA pessoa abriu (o PR largado de outra não conta); o "pegou" é
+ * a última vez que ela foi posta como responsável antes dele (sem PR, a última).
  */
 export function tarefasDosDados(nodes: (IssueFeita | null)[], login: string, projetos: Set<string>): TarefaEntregue[] {
   const eu = login.toLowerCase();
   const tarefas: TarefaEntregue[] = [];
+  const vistas = new Set<string>();
   for (const i of nodes) {
     if (!i || !i.repository || !projetos.has(i.repository.name)) continue;
+    const chave = `${i.repository.name}#${i.number}`;
+    if (vistas.has(chave)) continue;
     if (i.stateReason !== "COMPLETED" || !i.closedAt || Number.isNaN(tempo(i.closedAt))) continue;
     const etiquetas = (i.labels?.nodes ?? []).filter((l) => l !== null).map((l) => l.name);
     if (!etiquetas.some((e) => numeroDaLeva(e) !== null)) continue;
     if (!(i.assignees?.nodes ?? []).some((a) => a?.login.toLowerCase() === eu)) continue;
+    vistas.add(chave);
     const repositorio = i.repository.name;
     const tarefa: TarefaEntregue = {
       repositorio,
@@ -118,7 +123,7 @@ export function tarefasDosDados(nodes: (IssueFeita | null)[], login: string, pro
     if (estimativa !== undefined) tarefa.estimativaHoras = estimativa;
     const chefe = etiquetas.map(chefeDaEtiqueta).find((c) => c !== undefined);
     if (chefe) tarefa.chefe = chefe;
-    const prs = (i.closedByPullRequestsReferences?.nodes ?? []).filter((p) => p !== null && !Number.isNaN(tempo(p.createdAt)));
+    const prs = (i.closedByPullRequestsReferences?.nodes ?? []).filter((p) => p !== null && p.author?.login.toLowerCase() === eu && !Number.isNaN(tempo(p.createdAt)));
     const primeiroPr = prs.sort((a, b) => tempo(a!.createdAt) - tempo(b!.createdAt))[0];
     const limite = primeiroPr ? tempo(primeiroPr.createdAt) : Infinity;
     const atribuicoes = (i.timelineItems?.nodes ?? [])

@@ -8,7 +8,7 @@
 
 ## O que cada agente fez
 - Sessão mãe: leu a issue e a #731, planejou, e escreveu a rota, as contas, a página, o cartão, o clique na foto e os testes (as etapas "rota e contas" e "página, cartão e gráfico" ficaram na mãe, sem ajudante médio: ver "Como eu agi").
-- Ajudante forte (revisor final, esforço alto): leu o diff do zero procurando por onde uma pessoa veria os números de outra, contas erradas e consultas inválidas. RESULTADO_DA_REVISAO
+- Ajudante forte (revisor final, esforço alto): leu o diff do zero procurando por onde uma pessoa veria os números de outra, contas erradas e consultas inválidas. Não achou caminho nenhum pra uma pessoa ver os números de outra, e as consultas estão válidas. Achou 5 pontos baixos, todos conferidos e consertados com teste visto reprovar antes: (a) o estimado × real usava o PR mais antigo da tarefa, mesmo de outra pessoa (agora só o PR que a própria pessoa abriu); (b) a mesma tarefa vinda duas vezes da busca contava em dobro; (c) o título mostrava o nome pedido no endereço enquanto carregava ou depois da recusa; (d) o seletor da Sofia não achava "Tiago" na lista com "tiago"; (e) o topo do eixo do gráfico ficava abaixo de 1 h.
 
 ## Modelos usados
 - Ler a issue e planejar: sessão mãe, forte, esforço médio.
@@ -20,19 +20,20 @@
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (sem acesso ao arquivo de uso nesta sessão).
-- **Ajudantes**: 1, forte, esforço alto; tokens não medidos.
+- **Ajudantes**: 1, forte, esforço alto. Aviso: ~120 mil tokens.
 - **Sessões filhas**: nenhuma
 - **`/goal`**: não sei se foi ligado (a coordenadora confere); o texto foi mandado a ela na mensagem de começo.
 
 ## O que testei e VI reprovar
 - **Uma pessoa pedindo os números de outra é recusada** (`worker/meuProgresso.test.ts`): tirei a linha da recusa em `quemVer` e 3 testes reprovaram (o 403, a falha fechada sem a dona configurada, as regras). Também desliguei o reconhecimento da dona: 4 testes reprovaram (a Sofia vê o do Tiago, a lista de pessoas, o login inválido, as regras).
 - **A virada da semana e da sequência no fuso de São Paulo** (`src/logica/meuProgresso.test.ts`): troquei o dia de São Paulo por `toISOString().slice(0, 10)` (o dia do UTC) e 3 testes reprovaram (o dia, a semana do domingo 23h30, a sequência na segunda 00h30).
+- **Os 5 pontos da revisão final**: escrevi um teste pra cada um (o PR de outra pessoa, a tarefa repetida, o título sem o nome pedido, o seletor com maiúscula, o topo do eixo) e vi os 5 reprovarem antes do conserto.
 - **Só a Sofia ganha a escolha da pessoa** (`PaginaMeuProgresso.test.tsx`): fiz a página mostrar a escolha sempre, e o teste "quem não é a Sofia não vê escolha nenhuma" reprovou.
 - **As medições de contraste e de largura** (scripts `medir-contraste.mjs` e a largura da página): plantei um título com cor clara e um bloco de 600 px numa tela de 375 px; acusaram 1 contraste reprovado e 241 px de rolagem lateral.
 
 ## O que passou sem eu ter visto reprovar
 - As horas somam todos os projetos e tarefa sem estimativa vira "N sem estimativa"; as conquistas; estimado × real; onde já trabalhou; o gráfico (12 colunas, legenda, "Outros" do 6º projeto em diante); o cartão do Início; a foto clicável na barra e na folha do celular; a rota no `App.tsx`.
-- `npx tsc -b` e os 1060 testes do painel, nos fusos de São Paulo, UTC e Tóquio. ESLint nos arquivos mexidos: 0 erros (só os avisos de "fast refresh" que as outras páginas do painel também têm; o `npm run lint` da raiz não olha o painel).
+- `npx tsc -b` e os 1064 testes do painel, nos fusos de São Paulo, UTC e Tóquio. ESLint nos arquivos mexidos: 0 erros (só os avisos de "fast refresh" que as outras páginas do painel também têm; o `npm run lint` da raiz não olha o painel).
 - Fotos claro e escuro, 375 px e tela grande (`docs/relatorios/fotos/tarefa-734/`): 0 contraste reprovado e 0 px de rolagem lateral nas 8 combinações (página e Início).
 
 ## O que ficou de fora

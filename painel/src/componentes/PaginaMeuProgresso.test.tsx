@@ -96,6 +96,20 @@ describe("uma pessoa por vez, sem lado a lado (#734)", () => {
     expect(h).not.toContain('name="pessoa"');
   });
 
+  it("o seletor acha a pessoa sem ligar pra maiúscula", () => {
+    const h = pagina({ login: "sofia", busca: "?pessoa=Tiago", estado: pronto(resposta({ login: "Tiago", pessoas: ["fulana", "tiago"] })) });
+    expect(h).toContain('<option value="tiago" selected="">');
+    expect(contar(h, "<option")).toBe(2);
+  });
+
+  it("enquanto carrega ou depois da recusa, o título não diz o nome pedido", () => {
+    for (const estado of [{ tipo: "carregando" }, { tipo: "recusado" }] as EstadoDoMeuProgresso[]) {
+      const h = pagina({ login: "fulana", busca: "?pessoa=tiago", estado });
+      expect(h).not.toContain("tiago");
+      expect(h).toContain("Meu progresso");
+    }
+  });
+
   it("a Sofia sem a lista (falhou) ganha um campo de texto", () => {
     const h = pagina({ login: "sofia", estado: pronto(resposta({ login: "sofia", pessoas: [] })) });
     expect(h).toMatch(/<input[^>]*name="pessoa"/);
@@ -153,6 +167,7 @@ describe("o gráfico", () => {
 
   it("o topo do eixo arredonda pra 1, 2 ou 5", () => {
     expect(topoDoEixo(0)).toBe(1);
+    expect(topoDoEixo(0.5)).toBe(1);
     expect(topoDoEixo(4.5)).toBe(5);
     expect(topoDoEixo(12)).toBe(20);
     expect(topoDoEixo(20)).toBe(20);

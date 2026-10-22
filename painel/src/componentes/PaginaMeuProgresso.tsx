@@ -137,7 +137,7 @@ export function seriesDoGrafico(projetos: string[]): { chave: string; nome: stri
 
 /** O topo do eixo: 1, 2 ou 5 vezes uma potência de 10, no mínimo 1 h. */
 export function topoDoEixo(maximo: number): number {
-  if (!(maximo > 0)) return 1;
+  if (!(maximo > 1)) return 1;
   const base = 10 ** Math.floor(Math.log10(maximo));
   return ([1, 2, 5, 10].map((m) => m * base).find((v) => v >= maximo) ?? 10 * base);
 }
@@ -414,13 +414,16 @@ export function ConteudoDoMeuProgresso({ estado, agora, tentarDeNovo }: { estado
 
 /** Só pra Sofia (o worker manda `pessoas` só pra ela): de quem ver. Um formulário comum: muda o ?pessoa= do endereço. */
 function EscolherPessoa({ pessoas, atual }: { pessoas: string[]; atual: string }) {
+  // O GitHub não liga pra maiúscula no login: "Tiago" no endereço é o "tiago" da lista.
+  const achada = pessoas.find((p) => p.toLowerCase() === atual.toLowerCase());
+  const escolhida = achada ?? atual;
   return (
     <form method="get" action="/meu-progresso" className="flex min-w-0 flex-wrap items-end gap-2">
       <label className="flex min-w-0 flex-col gap-1 text-sm text-texto-2">
         Ver o progresso de
         {pessoas.length > 0 ? (
-          <select name="pessoa" defaultValue={atual} className={`min-h-11 min-w-0 rounded-lg border border-borda bg-cartao px-3 text-sm text-texto ${FOCO}`}>
-            {(pessoas.some((p) => p.toLowerCase() === atual.toLowerCase()) ? pessoas : [atual, ...pessoas]).map((p) => (
+          <select name="pessoa" defaultValue={escolhida} className={`min-h-11 min-w-0 rounded-lg border border-borda bg-cartao px-3 text-sm text-texto ${FOCO}`}>
+            {(achada ? pessoas : [atual, ...pessoas]).map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>
@@ -488,7 +491,8 @@ export function PaginaMeuProgresso({ semLogin = false, login, busca = "", agora 
   const [buscado, tentarDeNovo] = useMeuProgresso(!semLogin && estadoFixo === undefined, pessoa, buscar);
   const [exemplo] = useState<EstadoDoMeuProgresso>(() => ({ tipo: "pronto", resposta: progressoDeExemplo(agora) }));
   const estado = estadoFixo ?? (semLogin ? exemplo : buscado);
-  const deQuem = estado.tipo === "pronto" ? estado.resposta.login : (pessoa ?? login ?? "");
+  // De quem são os números: só o que o worker devolveu (carregando ou recusado, nunca o nome pedido no endereço).
+  const deQuem = estado.tipo === "pronto" ? estado.resposta.login : (login ?? "");
   const outraPessoa = deQuem !== "" && login !== undefined && deQuem.toLowerCase() !== login.toLowerCase();
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl">
