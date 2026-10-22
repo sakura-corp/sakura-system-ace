@@ -2,7 +2,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RespostaDoRelatorio } from "../../worker/relatorio";
 import type { Leva } from "../tipos";
-import { carregarRelatorio, chaveDoRelatorio, ConteudoDoRelatorio, levaDoRelatorio, PaginaRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
+import { carregarRelatorio, chaveDoRelatorio, ConteudoDoRelatorio, levaDoRelatorio, linkDoRelatorio, PaginaRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
 
 const pronto = (r: Partial<RespostaDoRelatorio>): EstadoDoRelatorio => ({ tipo: "pronto", relatorio: { numero: 3, situacao: "sem-relatorio", texto: null, ...r } });
 const html = (estado: EstadoDoRelatorio, numero = 3) => renderToString(<ConteudoDoRelatorio numero={numero} estado={estado} tentarDeNovo={() => {}} />).replace(/<!-- -->/g, "");
@@ -164,6 +164,19 @@ describe("ConteudoDoRelatorio: links e imagens do relatório (#689)", () => {
     expect(h).not.toContain("href=");
     expect(h).toContain("fora");
     expect(h).toContain("por referência");
+  });
+
+  it("link que sai da sakura-corp com .. ou %2e%2e não vira link", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: "[a](https://github.com/sakura-corp/../../outra/x) e [b](https://github.com/sakura-corp/%2e%2e/outra/x)" }));
+    expect(h).not.toContain("<a");
+    expect(linkDoRelatorio("https://github.com/sakura-corp/../outra/x")).toBeUndefined();
+    expect(linkDoRelatorio(PR)).toBe(PR);
+  });
+
+  it("nota de rodapé tem título em português", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: "Texto[^1]\n\n[^1]: nota" }));
+    expect(h).toContain("Notas");
+    expect(h).not.toContain("Footnotes");
   });
 
   it("imagem não aparece, nem de dentro da sakura-corp", () => {

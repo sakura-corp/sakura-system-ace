@@ -102,6 +102,21 @@ function LinkDoPr({ pr }: { pr: NonNullable<RespostaDoRelatorio["pr"]> }) {
   );
 }
 
+/**
+ * O `linkSeguro` e mais uma conferência: o endereço, depois de o navegador resolver `..` e `%2e%2e`, continua dentro da
+ * sakura-corp (`https://github.com/sakura-corp/../outra/x` abriria `github.com/outra/x`).
+ */
+export function linkDoRelatorio(href: string | undefined): string | undefined {
+  const url = linkSeguro(href);
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    return u.hostname === "github.com" && u.pathname.startsWith("/sakura-corp/") ? u.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Cada pedaço do markdown com o estilo do painel (claro e escuro vêm das cores do tema). */
 const PEDACOS: Components = {
   h1: ({ children }) => <h2 className="mt-5 text-lg font-semibold first:mt-0">{children}</h2>,
@@ -127,7 +142,7 @@ const PEDACOS: Components = {
   td: ({ children, style }) => <td style={style} className="border-b border-borda px-2 py-1.5 align-top">{children}</td>,
   // Link só se for do GitHub da sakura-corp, em aba nova; qualquer outro vira texto.
   a: ({ href, children }) => {
-    const url = linkSeguro(href);
+    const url = linkDoRelatorio(href);
     if (!url) return <span>{children}</span>;
     return (
       <a href={url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque">
@@ -145,7 +160,7 @@ function TextoDoRelatorio({ relatorio }: { relatorio: RespostaDoRelatorio }) {
   return (
     <>
       <div className="mt-3 min-w-0 break-words text-sm leading-relaxed">
-        <Markdown remarkPlugins={[remarkGfm]} components={PEDACOS}>
+        <Markdown remarkPlugins={[remarkGfm]} remarkRehypeOptions={{ footnoteLabel: "Notas", footnoteBackLabel: "Voltar ao texto" }} components={PEDACOS}>
           {relatorio.texto}
         </Markdown>
       </div>
