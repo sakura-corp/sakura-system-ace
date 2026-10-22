@@ -89,6 +89,7 @@ export function decisoesDosDados(dados: DadosDasDecisoes): RespostaDasDecisoes {
     decisoes: lista,
     total: decisoes.total + propostas.total,
     ...(faltou ? { maisDoQueCabe: true as const } : {}),
-    ...(dados.propostas ? {} : { propostasFora: true as const }),
+    // Pelo esquema do GitHub, um erro em `issues` sobe até `propostas`; mesmo assim, `issues` nulo também é aviso.
+    ...(dados.propostas?.issues ? {} : { propostasFora: true as const }),
   };
 }

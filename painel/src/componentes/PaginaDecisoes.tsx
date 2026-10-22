@@ -20,6 +20,9 @@ type Buscar = (endereco: string, init?: RequestInit) => Promise<Response>;
 const ERRO_DO_GITHUB = "Não deu pra buscar as decisões no GitHub agora.";
 const ERRO_DE_CONEXAO = "Sem conexão com o painel. Confira a internet.";
 const TODAS_NO_GITHUB = "https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aissue+is%3Aopen+label%3Asofia";
+const PROPOSTAS_NO_GITHUB = "https://github.com/sakura-corp/secundarios/issues?q=is%3Aissue+is%3Aopen+label%3Aproposta%3Aesperando-sofia";
+const CLASSE_DO_LINK =
+  "underline underline-offset-2 hover:text-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque";
 const DIA_EM_MS = 86_400_000;
 /** O prazo aparece em destaque quando faltam tantos dias ou menos. */
 const DIAS_DO_DESTAQUE = 3;
@@ -92,6 +95,9 @@ export function ordenarDecisoes(decisoes: Decisao[]): Decisao[] {
 }
 
 const dois = (n: number) => String(n).padStart(2, "0");
+
+/** A chave da linha: o número sozinho repete entre uma decisão e uma proposta (são de repositórios diferentes). */
+export const chaveDaDecisao = (d: Decisao) => `${d.proposta ? "proposta" : "decisao"}-${d.numero}`;
 
 function valida(d: unknown): d is Decisao {
   if (typeof d !== "object" || d === null) return false;
@@ -213,25 +219,25 @@ export function ConteudoDasDecisoes({ estado, agora, tentarDeNovo }: PropsDoCont
       ) : (
         <ol className="min-w-0 divide-y divide-borda rounded-xl border border-borda bg-cartao">
           {decisoes.map((d) => (
-            <LinhaDaDecisao key={`${d.proposta ? "proposta" : "decisao"}-${d.numero}`} decisao={d} agora={agora} />
+            <LinhaDaDecisao key={chaveDaDecisao(d)} decisao={d} agora={agora} />
           ))}
         </ol>
       )}
       {propostasFora ? (
         <p className="mt-3 text-sm text-texto-2">
-          As propostas dos projetos secundários não abriram agora: o repositório delas não existe ou o seu login não alcança.
+          Não deu pra ler as propostas dos projetos secundários agora (o repositório delas pode não existir, ou o seu login não alcança).
         </p>
       ) : null}
-      {maisDoQueCabe ? <p className="mt-3 text-sm text-texto-2">Mostrando as {decisoes.length} mais antigas de {total}.</p> : null}
-      <p className="mt-3 text-sm">
-        <a
-          href={TODAS_NO_GITHUB}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline underline-offset-2 hover:text-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque"
-        >
+      {maisDoQueCabe ? <p className="mt-3 text-sm text-texto-2">Mostrando {decisoes.length} de {total}; o resto está no GitHub.</p> : null}
+      <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
+        <a href={TODAS_NO_GITHUB} target="_blank" rel="noopener noreferrer" className={CLASSE_DO_LINK}>
           Ver a lista no GitHub<span className="sr-only"> (abre em aba nova)</span>
         </a>
+        {propostasFora ? null : (
+          <a href={PROPOSTAS_NO_GITHUB} target="_blank" rel="noopener noreferrer" className={CLASSE_DO_LINK}>
+            Ver as propostas no GitHub<span className="sr-only"> (abre em aba nova)</span>
+          </a>
+        )}
       </p>
     </section>
   );

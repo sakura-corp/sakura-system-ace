@@ -1,7 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RespostaDasDecisoes } from "../../worker/decisoes";
-import { carregarDecisoes, ConteudoDasDecisoes, diasAberta, ordenarDecisoes, PaginaDecisoes, prazoDoTitulo, textoDosDias, textoDoPrazo, type EstadoDasDecisoes } from "./PaginaDecisoes";
+import { carregarDecisoes, chaveDaDecisao, ConteudoDasDecisoes, diasAberta, ordenarDecisoes, PaginaDecisoes, prazoDoTitulo, textoDosDias, textoDoPrazo, type EstadoDasDecisoes } from "./PaginaDecisoes";
 
 // Datas locais (o dia que a pessoa vê), em qualquer fuso do computador.
 const local = (a: number, m: number, d: number, h = 12, min = 0) => new Date(a, m - 1, d, h, min);
@@ -188,9 +188,9 @@ describe("ConteudoDasDecisoes (#648)", () => {
     expect(h).not.toContain("Mostrando as");
     const cem = Array.from({ length: 100 }, (_, i) => decisao(i + 1, `D${i + 1}`));
     const mais = html(pronto({ decisoes: cem, total: 130, maisDoQueCabe: true }));
-    expect(mais).toContain("Mostrando as 100 mais antigas de 130.");
+    expect(mais).toContain("Mostrando 100 de 130; o resto está no GitHub.");
     // O número é o que veio na lista, não uma cópia do 100 da consulta.
-    expect(html(pronto({ decisoes: cem.slice(0, 98), total: 130, maisDoQueCabe: true }))).toContain("Mostrando as 98 mais antigas de 130.");
+    expect(html(pronto({ decisoes: cem.slice(0, 98), total: 130, maisDoQueCabe: true }))).toContain("Mostrando 98 de 130; o resto está no GitHub.");
   });
 
   it("carregando, sessão acabada e erro", () => {
@@ -255,7 +255,7 @@ const PROPOSTAS = "https://github.com/sakura-corp/secundarios/issues/";
 const propostaNaLista = (numero: number, titulo: string, abertaEm = iso(2026, 10, 11)) => ({ numero, titulo, abertaEm, url: `${PROPOSTAS}${numero}`, proposta: true as const });
 
 describe("as propostas na página (#732)", () => {
-  it("a proposta aparece com o selo 'Proposta' e o link, na ordem por data junto das decisões", () => {
+  it("a proposta aparece com o selo 'Proposta' e o link, no lugar em que chegou na lista (a ordem é do carregarDecisoes)", () => {
     const h = html(pronto({ decisoes: [decisao(10, "Decisão velha", iso(2026, 10, 1)), propostaNaLista(3, "Proposta do meio", iso(2026, 10, 5)), decisao(20, "Decisão nova", iso(2026, 10, 9))], total: 3 }));
     expect(h.indexOf("Decisão velha")).toBeLessThan(h.indexOf("Proposta do meio"));
     expect(h.indexOf("Proposta do meio")).toBeLessThan(h.indexOf("Decisão nova"));
@@ -266,22 +266,29 @@ describe("as propostas na página (#732)", () => {
     expect(linha).toContain(">Proposta<");
   });
 
-  it("decisão e proposta com o mesmo número aparecem as duas", () => {
+  it("decisão e proposta com o mesmo número aparecem as duas, cada uma com a sua chave", () => {
     const h = html(pronto({ decisoes: [decisao(5, "A decisão 5"), propostaNaLista(5, "A proposta 5")], total: 2 }));
     expect(h).toContain("A decisão 5");
     expect(h).toContain("A proposta 5");
+    expect(chaveDaDecisao(decisao(5, "A"))).not.toBe(chaveDaDecisao(propostaNaLista(5, "B")));
+  });
+
+  it("o link pras propostas no GitHub só quando elas abriram", () => {
+    const LINK = "https://github.com/sakura-corp/secundarios/issues?q=is%3Aissue+is%3Aopen+label%3Aproposta%3Aesperando-sofia";
+    expect(html(pronto({ decisoes: [decisao(1, "A")], total: 1 }))).toContain(`href="${LINK}"`);
+    expect(html(pronto({ decisoes: [decisao(1, "A")], total: 1, propostasFora: true }))).not.toContain(LINK);
   });
 
   it("sem o repositório das propostas: as decisões de hoje e um aviso discreto", () => {
     const h = html(pronto({ decisoes: [decisao(10, "Escolher o banco")], total: 1, propostasFora: true }));
     expect(h).toContain("Escolher o banco");
-    expect(h).toContain("As propostas dos projetos secundários não abriram agora");
+    expect(h).toContain("Não deu pra ler as propostas dos projetos secundários agora");
     expect(h).not.toContain('role="alert"');
-    expect(html(pronto({ decisoes: [decisao(10, "Escolher o banco")], total: 1 }))).not.toContain("As propostas dos projetos secundários");
+    expect(html(pronto({ decisoes: [decisao(10, "Escolher o banco")], total: 1 }))).not.toContain("Não deu pra ler as propostas");
     // Lista vazia de decisões continua dizendo que não tem nada, e o aviso aparece também.
     const vazia = html(pronto({ propostasFora: true }));
     expect(vazia).toContain("Nada esperando a Sofia agora.");
-    expect(vazia).toContain("As propostas dos projetos secundários não abriram agora");
+    expect(vazia).toContain("Não deu pra ler as propostas dos projetos secundários agora");
   });
 
   it("carregarDecisoes guarda a marca de proposta e o aviso; ordena por data, empate a decisão antes", async () => {

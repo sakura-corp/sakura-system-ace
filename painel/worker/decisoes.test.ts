@@ -130,7 +130,9 @@ describe("decisoesDosDados (#648)", () => {
     const vazias = { issues: { totalCount: 0, nodes: [] } };
     expect(decisoesDosDados({ repository: null, propostas: vazias })).toEqual({ decisoes: [], total: 0 });
     expect(decisoesDosDados({ repository: { issues: null }, propostas: vazias })).toEqual({ decisoes: [], total: 0 });
-    expect(decisoesDosDados({ repository: { issues: { totalCount: 0, nodes: null } }, propostas: { issues: null } })).toEqual({ decisoes: [], total: 0 });
+    expect(decisoesDosDados({ repository: { issues: { totalCount: 0, nodes: null } }, propostas: { issues: { totalCount: 0, nodes: null } } })).toEqual({ decisoes: [], total: 0 });
+    // As propostas sem a lista de issues: não dá pra dizer que não tem proposta, então é aviso.
+    expect(decisoesDosDados({ repository: null, propostas: { issues: null } })).toEqual({ decisoes: [], total: 0, propostasFora: true });
   });
 });
 
