@@ -262,7 +262,12 @@ export function ProdutosSection({
       )}
 
       {mostrarFormulario && (
+        // key: sem ela o formulário não troca os valores ao abrir outra peça
+        // (defaultValues só valem na montagem), p.ex. pelo "Abrir a que já existe".
         <PecaForm
+          key={pecaEmEdicao?.id ?? "nova"}
+          pecasDoCadastro={pecas}
+          onAbrirExistente={handleEditar}
           pecaExistente={pecaEmEdicao ?? undefined}
           categorias={categorias}
           regime={regime}
