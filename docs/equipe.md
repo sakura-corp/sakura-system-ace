@@ -227,7 +227,10 @@ tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
    - o que é a tarefa e pra que ela serve na loja (ou no painel);
    - o que o Claude vai fazer sozinho (o código);
    - o que a pessoa vai precisar fazer (testar, abrir o PR), e quanto tempo deve levar.
-3. **Guia a pessoa a pôr o nome dela na tarefa** no GitHub, se ainda não pôs, passo a passo.
+3. **Põe o nome da pessoa na tarefa** no GitHub (responsável), se ainda não está lá; se a sessão
+   não conseguir, guia a pessoa a pôr, passo a passo. **Sem isso, as horas da tarefa não contam pra
+   ela no painel**: quem pega pelo botão do painel já ganha o nome sozinho, mas quem começa pelo
+   número não (Sofia, 22/10, com a #689 e a #699).
 4. Busca a versão mais nova da `main` (`git pull`) e cria a **branch da tarefa**.
 5. Programa, seguindo as regras de código da seção 3 do `PROJETO_STATUS.md` e o
    `docs/estrutura.md`. Antes de mexer num módulo, lê o que o `docs/modulos.md` diz dele. Sempre

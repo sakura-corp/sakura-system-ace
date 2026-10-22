@@ -934,3 +934,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **22/10/2026: o relatório da leva aparece formatado** (#689, Gustavo, PR aberto esperando a Sofia): títulos, negrito,
   citações, listas e tabelas, com `react-markdown` + `remark-gfm` e **sem** `rehype-raw`. HTML do arquivo continua escrito
   (nunca roda), link só da sakura-corp, imagem não aparece, tabela larga rola dentro da caixa (375 px sem rolagem lateral).
+- **22/10/2026, noite: as levas 4 e 5 reescritas no modelo, e a leva 3 inteira na `main`** (Sofia aprovou cada rascunho):
+  a #365, a #368, a #385 (agora só o salto do Electron 36 → 40; o 44 vira tarefa nova depois do teste dela) e as quatro da
+  leva 5 saíram da `guia` e ganharam `chefe:`. **Exceção**: a #699, a #689 e a #684 podem ser adiantadas antes de a leva 4
+  abrir; como o painel não deixa pegar tarefa em Montando, a pessoa começa pelo número, e a sessão **põe o nome dela na
+  tarefa** (sem responsável, as horas não contam; a #689 e a #699 foram acertadas à mão). A #689 já entrou (PR #719); a
+  #699 é do Tiago. A #722 (o `linkSeguro` com `..`) ficou fora de leva.
