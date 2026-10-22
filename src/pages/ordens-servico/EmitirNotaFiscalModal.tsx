@@ -222,10 +222,20 @@ export function EmitirNotaFiscalModal({
       setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
       setPecasDaNota((lista) => [...lista, peca]);
       setCadastroDaLoja((lista) => [...lista, peca]);
-      await onItensMudaram?.();
     } catch (err) {
       console.error("Erro ao ligar a peça cadastrada ao item da OS:", err);
       setErro(`A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err)}`);
+      return;
+    }
+    // Recarregar a OS fica à parte: se falhar, a peça JÁ entrou na OS.
+    try {
+      await onItensMudaram?.();
+    } catch (err) {
+      console.error("Erro ao recarregar a OS depois de ligar a peça:", err);
+      setErro(
+        `A peça foi cadastrada e ligada à OS, mas a OS não recarregou: ${mensagemDeErro(err)}. ` +
+          "Feche e abra a OS de novo pra ver.",
+      );
     }
   }
 
@@ -269,7 +279,7 @@ export function EmitirNotaFiscalModal({
               precoUnitario: item.preco_unitario,
               desconto: item.desconto,
             };
-          })
+          });
 
         if (itens.length === 0) {
           throw new Error("Esta OS não tem nenhum item de peça pra emitir NFC-e.");

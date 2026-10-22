@@ -161,6 +161,29 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(screen.queryByText(/não pode sair ainda/)).not.toBeInTheDocument();
   });
 
+  // Revisão: recarregar a OS ficava no mesmo try do vínculo, e uma falha
+  // dele dizia "não entrou na OS" com a peça já ligada.
+  it("se só o recarregar da OS falha, não diz que a peça não entrou", async () => {
+    criarPeca.mockResolvedValue({ id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" });
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
+    onItensMudaram.mockRejectedValue(new Error("sem internet"));
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+    await waitFor(() => expect(campo("Descrição *")).toHaveValue("Palheta"));
+    await user.type(campo("NCM *"), "40169300");
+    await user.type(campo("C.E.S.T *"), "0100100");
+    await user.type(campo("CFOP padrão *"), "5102");
+    await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+    await user.type(campo("CST / CSOSN *"), "500");
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+
+    expect(await screen.findByText(/A peça foi cadastrada e ligada à OS/)).toBeInTheDocument();
+    expect(screen.queryByText(/não entrou na OS/)).not.toBeInTheDocument();
+    await waitFor(() => expect(confirmar()).toBeEnabled());
+  });
+
   it("peça que sumiu do cadastro na hora de emitir não é descartada calada: a nota não sai", async () => {
     // A tela carregou com a peça, mas na emissão ela já não vem (apagada em
     // outro computador). Antes, ela era largada e a nota saía com valor a menos.

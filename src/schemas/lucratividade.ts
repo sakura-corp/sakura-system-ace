@@ -1,5 +1,5 @@
 import { diaLocal } from "@/lib/datas";
-import { contaNosNumeros } from "./orcamento";
+import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
 import type { MapaCusto } from "./metricasCaixa";
 import type { OrdemServico } from "@/types/os";
 
@@ -19,6 +19,12 @@ export interface LinhaLucro {
   receita: number;
   custo: number;
   margem: number;
+  /**
+   * Algum item desta linha é peça avulsa sem custo informado (#655): o custo
+   * dele entrou como zero, então `custo` e `margem` não valem — a tela mostra
+   * `TEXTO_CUSTO_NAO_INFORMADO` no lugar.
+   */
+  custoNaoInformado: boolean;
 }
 
 export interface Lucratividade {
@@ -27,6 +33,8 @@ export interface Lucratividade {
   totalReceita: number;
   totalCusto: number;
   totalMargem: number;
+  /** Alguma linha tem `custoNaoInformado`: o custo e a margem do total ficam por baixo. */
+  algumCustoNaoInformado: boolean;
 }
 
 export function lucratividadePorItem({
@@ -52,11 +60,8 @@ export function lucratividadePorItem({
 
     for (const item of ordem.itens ?? []) {
       const receita = item.quantidade * item.preco_unitario - item.desconto;
-      const custoUnitario =
-        item.tipo === "peca"
-          ? custoPeca.get(item.peca_id ?? "") ?? 0
-          : custoServico.get(item.servico_id ?? "") ?? 0;
-      const custo = item.quantidade * custoUnitario;
+      const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
+      const custo = item.quantidade * (custoUnitario ?? 0);
 
       const existente = mapa.get(item.descricao) ?? {
         descricao: item.descricao,
@@ -64,20 +69,27 @@ export function lucratividadePorItem({
         receita: 0,
         custo: 0,
         margem: 0,
+        custoNaoInformado: false,
       };
       existente.quantidade += item.quantidade;
       existente.receita += receita;
       existente.custo += custo;
       existente.margem += receita - custo;
+      if (custoUnitario === null) existente.custoNaoInformado = true;
       mapa.set(item.descricao, existente);
     }
   }
 
-  const linhas = [...mapa.values()].sort((a, b) => b.margem - a.margem);
+  // Linha sem custo informado vai pro fim: a margem dela é inventada e não
+  // pode aparecer como "a que mais rende".
+  const linhas = [...mapa.values()].sort(
+    (a, b) => Number(a.custoNaoInformado) - Number(b.custoNaoInformado) || b.margem - a.margem,
+  );
   return {
     linhas,
     totalReceita: linhas.reduce((total, l) => total + l.receita, 0),
     totalCusto: linhas.reduce((total, l) => total + l.custo, 0),
     totalMargem: linhas.reduce((total, l) => total + l.margem, 0),
+    algumCustoNaoInformado: linhas.some((l) => l.custoNaoInformado),
   };
 }

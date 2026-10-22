@@ -12,6 +12,9 @@ type Linha = Record<string, unknown>;
 const banco: Record<string, Linha[]> = {};
 const falharEm = new Set<string>();
 let proximoId = 1;
+// Simula outro computador agindo no meio: roda uma vez, logo antes da
+// próxima gravação (insert/update/delete) em qualquer tabela.
+let antesDaProximaGravacao: (() => void) | null = null;
 
 function proximoNumero(tabela: Linha[], loja: unknown, campo: string): number {
   const usados = tabela.filter((l) => l.loja_id === loja).map((l) => Number(l[campo] ?? 0));
@@ -38,6 +41,11 @@ function construtor(tabela: string) {
   let modo: "lista" | "single" | "maybe" = "lista";
 
   function executar() {
+    if (operacao !== "select" && antesDaProximaGravacao) {
+      const outroComputador = antesDaProximaGravacao;
+      antesDaProximaGravacao = null;
+      outroComputador();
+    }
     if (falharEm.has(`${tabela}:${operacao}`)) {
       return { data: null, error: { message: `falhou ${tabela}:${operacao}` } };
     }
@@ -130,6 +138,7 @@ vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }))
 
 const {
   adicionarItensOrdem,
+  AprovadoSemEstoqueError,
   aprovarOrcamento,
   cadastrarPecaDoItem,
   criarOrcamento,
@@ -179,6 +188,7 @@ beforeEach(() => {
   // Uma OS 17 já existe na loja: o orçamento aprovado tem que virar a 18.
   banco.ordens_servico = [{ id: "os-17", loja_id: "loja-1", numero: 17, status: "faturada" }];
   falharEm.clear();
+  antesDaProximaGravacao = null;
   caixa.lancamentos.length = 0;
   proximoId = 1;
 });
@@ -421,14 +431,37 @@ describe("aprovarOrcamento com peça avulsa", () => {
     expect(itemAvulso(criado.id).peca_id).toBeNull();
   });
 
-  it("se o vínculo não grava, o orçamento não é aprovado (tentar de novo é seguro)", async () => {
+  // A corrida: entre a tela abrir e a gravação, outro computador aprova. O
+  // vínculo só pode ser gravado DEPOIS que esta aprovação pegou a linha —
+  // senão o item ganha peca_id numa OS cuja baixa (a do outro) já passou, e
+  // a peça nunca sai do estoque.
+  it("outro computador aprova logo antes da gravação: nenhum vínculo é gravado", async () => {
+    const { criado, itemId } = await orcarComAvulsa();
+    antesDaProximaGravacao = () => {
+      Object.assign(ordem(criado.id), { status: "em_andamento", aprovado_por: "João" });
+    };
+    await expect(
+      aprovarOrcamento(criado, "Maria", "op-2", [{ itemId, pecaId: "valvula" }]),
+    ).rejects.toThrow(/já foi aprovado ou recusado/);
+    expect(itemAvulso(criado.id).peca_id).toBeNull();
+    expect(ordem(criado.id).aprovado_por).toBe("João");
+    expect(estoque()).toHaveLength(0);
+  });
+
+  // O vínculo vem depois da aprovação: se ele falha, a OS já existe. O item
+  // fica avulso (sem baixa, coerente), as outras peças baixam, e o erro diz
+  // qual peça não foi ligada.
+  it("se o vínculo não grava, a OS fica aprovada, o item avulso, e o erro diz qual peça", async () => {
     const { criado, itemId } = await orcarComAvulsa();
     falharEm.add("ordens_servico_itens:update");
-    await expect(
-      aprovarOrcamento(criado, "Maria", "op-1", [{ itemId, pecaId: "valvula" }]),
-    ).rejects.toBeTruthy();
-    expect(ordem(criado.id).status).toBe("orcamento");
-    expect(estoque()).toHaveLength(0);
+    const erro = await aprovarOrcamento(criado, "Maria", "op-1", [{ itemId, pecaId: "valvula" }]).catch(
+      (e: unknown) => e,
+    );
+    expect(erro).toBeInstanceOf(AprovadoSemEstoqueError);
+    expect((erro as Error).message).toMatch(/OS 18 foi aprovada.*"Válvula de bico".*não foi ligada/s);
+    expect(ordem(criado.id).status).toBe("em_andamento");
+    expect(itemAvulso(criado.id).peca_id).toBeNull();
+    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
   });
 });
 

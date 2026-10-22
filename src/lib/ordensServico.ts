@@ -277,6 +277,28 @@ export class AprovadoSemEstoqueError extends Error {
 }
 
 /**
+ * A aprovação entrou e o estoque das peças ligadas baixou, mas alguma peça
+ * avulsa não foi ligada ao cadastro (#655): ela ficou como peça digitada,
+ * sem baixa. É um `AprovadoSemEstoqueError` pra tela tratar igual (a OS já
+ * nasceu, não tentar de novo); só a mensagem muda.
+ */
+export class PecaNaoLigadaNaAprovacaoError extends AprovadoSemEstoqueError {
+  constructor(ordem: OrdemServico, descricoes: string[]) {
+    super(ordem, "");
+    const lista = descricoes.map((d) => `"${d}"`).join(", ");
+    this.message =
+      descricoes.length === 1
+        ? `A ${nomeDocumento(ordem)} foi aprovada, mas a peça ${lista} não foi ligada ao cadastro: ` +
+          "ficou como peça digitada, sem baixa no estoque. As outras peças foram baixadas. " +
+          "Se ela saiu do estoque, lance a saída à mão em Movimentações."
+        : `A ${nomeDocumento(ordem)} foi aprovada, mas as peças ${lista} não foram ligadas ao cadastro: ` +
+          "ficaram como peças digitadas, sem baixa no estoque. As outras peças foram baixadas. " +
+          "Se elas saíram do estoque, lance a saída à mão em Movimentações.";
+    this.name = "PecaNaoLigadaNaAprovacaoError";
+  }
+}
+
+/**
  * O cliente aprovou o orçamento (#379): vira OS "em andamento", ganha o
  * próximo número de OS (o gatilho da migration 0065 dá) e as peças saem do
  * estoque — o ÚNICO lugar em que um orçamento baixa estoque.
@@ -288,10 +310,12 @@ export class AprovadoSemEstoqueError extends Error {
  *
  * `vinculos` (#655): as peças avulsas que ganham cadastro na aprovação
  * (caminhos "existente" e "cadastrar", ver `vinculosDaAprovacao`). O
- * `peca_id` delas é gravado ANTES do status: se não gravar, nada foi
- * aprovado e tentar de novo é seguro; se gravar, a baixa logo abaixo já as
- * encontra com peça e as tira do estoque. As "sem cadastro" ficam de fora e
- * não baixam nada.
+ * `peca_id` delas é gravado DEPOIS que o update do status pegou a linha:
+ * gravar antes deixava uma corrida (outro computador aprova entre conferir
+ * e gravar, e o item ganha peça numa OS cuja baixa já passou — a peça nunca
+ * sai do estoque). Se um vínculo falha, a OS já existe: o item fica avulso
+ * (sem baixa, coerente), a baixa das outras continua e, no fim, o erro diz
+ * qual peça não foi ligada. As "sem cadastro" ficam de fora e não baixam.
  */
 export async function aprovarOrcamento(
   orcamento: Pick<OrdemServico, "id">,
@@ -299,17 +323,6 @@ export async function aprovarOrcamento(
   operadorId: string,
   vinculos: { itemId: string; pecaId: string }[] = [],
 ): Promise<OrdemServico> {
-  if (vinculos.length > 0) {
-    // Já respondido em outro computador? Então não vincula nada: a OS de lá
-    // já baixou o estoque sem estas peças.
-    if ((await situacaoAtual(orcamento.id)).status !== "orcamento") {
-      throw new Error(MENSAGEM_JA_RESPONDIDO);
-    }
-    for (const { itemId, pecaId } of vinculos) {
-      await vincularPecaAoItem(itemId, orcamento.id, pecaId);
-    }
-  }
-
   const { data, error } = await supabase
     .from("ordens_servico")
     .update({
@@ -323,23 +336,39 @@ export async function aprovarOrcamento(
     .select()
     .maybeSingle();
   if (error) throw error;
+  // Não pegou a linha: outro computador respondeu antes. Nada foi vinculado.
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
   const aprovada = data as OrdemServico;
 
+  // Só agora, com a aprovação nossa, os vínculos. Um que falhe não para os
+  // outros nem a baixa: o item dele fica avulso.
+  const naoLigados = new Set<string>();
+  for (const { itemId, pecaId } of vinculos) {
+    try {
+      await vincularPecaAoItem(itemId, aprovada.id, pecaId);
+    } catch (erroVinculo) {
+      console.error("Erro ao ligar a peça avulsa ao cadastro na aprovação:", erroVinculo);
+      naoLigados.add(itemId);
+    }
+  }
+
+  let itens: Pick<ItemOS, "id" | "descricao" | "tipo" | "peca_id" | "quantidade">[];
   try {
-    const { data: itens, error: erroItens } = await supabase
+    const { data: lidos, error: erroItens } = await supabase
       .from("ordens_servico_itens")
-      .select("tipo, peca_id, quantidade")
+      .select("id, descricao, tipo, peca_id, quantidade")
       .eq("ordem_servico_id", aprovada.id);
     if (erroItens) throw erroItens;
-    await baixarEstoqueDasPecas(
-      itens as Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[],
-      nomeDocumento(aprovada),
-      aprovada.loja_id,
-    );
+    itens = lidos as typeof itens;
+    await baixarEstoqueDasPecas(itens, nomeDocumento(aprovada), aprovada.loja_id);
   } catch (erroEstoque) {
     throw new AprovadoSemEstoqueError(aprovada, mensagemDeErro(erroEstoque));
   }
+
+  // Item que não está mais no banco (apagado em outro computador) não tem
+  // peça pra avisar.
+  const descricoes = itens.filter((item) => naoLigados.has(item.id)).map((item) => item.descricao);
+  if (descricoes.length > 0) throw new PecaNaoLigadaNaAprovacaoError(aprovada, descricoes);
 
   return aprovada;
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { lucratividadePorItem } from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
+import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
@@ -22,7 +23,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
   const [dataInicio, setDataInicio] = useState(primeiroDiaDoMesLocal());
   const [dataFim, setDataFim] = useState(hojeLocal());
 
-  const { linhas, totalReceita, totalCusto, totalMargem } = useMemo(
+  const { linhas, totalReceita, totalCusto, totalMargem, algumCustoNaoInformado } = useMemo(
     () =>
       lucratividadePorItem({
         ordens,
@@ -69,12 +70,18 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalCusto)}
           </p>
+          {algumCustoNaoInformado && (
+            <p className="text-rotulo text-sakura-muted">Inclui item com {TEXTO_CUSTO_NAO_INFORMADO}</p>
+          )}
         </div>
         <div className="sakura-card p-4">
           <p className="text-rotulo text-sakura-muted">Margem do período</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalMargem)}
           </p>
+          {algumCustoNaoInformado && (
+            <p className="text-rotulo text-sakura-muted">Inclui item com {TEXTO_CUSTO_NAO_INFORMADO}</p>
+          )}
         </div>
       </div>
 
@@ -102,8 +109,17 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                     <td className="px-4 py-3">{linha.descricao}</td>
                     <td className="px-4 py-3">{linha.quantidade}</td>
                     <td className="px-4 py-3">{formatarMoeda(linha.receita)}</td>
-                    <td className="px-4 py-3">{formatarMoeda(linha.custo)}</td>
-                    <td className="px-4 py-3 font-medium">{formatarMoeda(linha.margem)}</td>
+                    {linha.custoNaoInformado ? (
+                      <>
+                        <td className="px-4 py-3 text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</td>
+                        <td className="px-4 py-3 text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3">{formatarMoeda(linha.custo)}</td>
+                        <td className="px-4 py-3 font-medium">{formatarMoeda(linha.margem)}</td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

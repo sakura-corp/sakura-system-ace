@@ -163,6 +163,42 @@ describe("PecasAvulsasAprovacaoModal — cadastrar agora", () => {
     await user.click(aprovar());
     expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
   });
+
+  // Revisão: duas linhas avulsas da mesma peça. Cadastrada na primeira, ela
+  // tem que aparecer (como parecida) no "já tenho" da segunda — senão a
+  // pessoa cadastra a mesma peça duas vezes.
+  it("a peça cadastrada aqui entra na lista do 'já tenho' das outras linhas", async () => {
+    criarPeca.mockResolvedValue({
+      id: "p-nova", descricao: "Palheta 20 polegadas", codigo_interno: null, codigo_barras: null, medida: null,
+    });
+    const primeira = avulsa("i1", "Palheta 20 polegadas");
+    const segunda = avulsa("i3", "Palheta 20 polegadas ", { quantidade: 1 });
+    const { user, onConfirmar } = montar([primeira, segunda], { pecas: [] });
+
+    const [secaoPrimeira, secaoSegunda] = screen.getAllByRole("group").map((g) => within(g));
+    await user.click(secaoPrimeira.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+    await waitFor(() => expect(campo("Descrição *")).toHaveValue("Palheta 20 polegadas"));
+    await user.type(campo("NCM *"), "40169300");
+    await user.type(campo("C.E.S.T *"), "0100100");
+    await user.type(campo("CFOP padrão *"), "5102");
+    await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+    await user.type(campo("CST / CSOSN *"), "500");
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await screen.findByText("Peça cadastrada: Palheta 20 polegadas");
+
+    await user.click(secaoSegunda.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: "Palheta 20 polegadas (parecida)" }));
+    await user.click(aprovar());
+
+    expect(criarPeca).toHaveBeenCalledTimes(1);
+    expect(onConfirmar).toHaveBeenCalledWith([
+      { itemId: "i1", pecaId: "p-nova" },
+      { itemId: "i3", pecaId: "p-nova" },
+    ]);
+  });
 });
 
 describe("PecasAvulsasAprovacaoModal — erro da aprovação", () => {

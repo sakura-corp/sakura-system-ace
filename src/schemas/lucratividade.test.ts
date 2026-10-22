@@ -68,8 +68,8 @@ describe("lucratividadePorItem", () => {
     // Pneu: 3 un., receita 600-20+300 = 880, custo 3x200 = 600, margem 280.
     // Alinhamento: receita 80, custo 30, margem 50.
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", quantidade: 3, receita: 880, custo: 600, margem: 280 },
-      { descricao: "Alinhamento", quantidade: 1, receita: 80, custo: 30, margem: 50 },
+      { descricao: "Pneu", quantidade: 3, receita: 880, custo: 600, margem: 280, custoNaoInformado: false },
+      { descricao: "Alinhamento", quantidade: 1, receita: 80, custo: 30, margem: 50, custoNaoInformado: false },
     ]);
     expect(resultado.totalReceita).toBe(960);
     expect(resultado.totalCusto).toBe(630);
@@ -102,7 +102,45 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100 },
+      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
     ]);
+  });
+
+  // #655: peça avulsa (sem peca_id) usa o custo digitado no orçamento. Sem
+  // custo digitado, a linha não tem margem de verdade: fica marcada (e vai
+  // pro fim, pra margem inventada não aparecer como "a que mais rende").
+  it("peça avulsa usa o custo digitado; sem custo marca a linha e o total", () => {
+    const resultado = lucratividadePorItem({
+      ordens: [
+        ordem({
+          itens: [
+            item({ peca_id: null, custo_unitario: 40, descricao: "Palheta", quantidade: 2, preco_unitario: 50 }),
+            item({ peca_id: null, custo_unitario: null, descricao: "Farol", preco_unitario: 500 }),
+            item({ quantidade: 1 }),
+          ],
+        }),
+      ],
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    // Pneu: 300 − 200 = 100. Palheta: 100 − 2x40 = 20. Farol: sem custo.
+    expect(resultado.linhas).toEqual([
+      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
+      { descricao: "Palheta", quantidade: 2, receita: 100, custo: 80, margem: 20, custoNaoInformado: false },
+      { descricao: "Farol", quantidade: 1, receita: 500, custo: 0, margem: 500, custoNaoInformado: true },
+    ]);
+    expect(resultado.algumCustoNaoInformado).toBe(true);
+  });
+
+  it("sem peça avulsa sem custo, o total não fica marcado", () => {
+    const resultado = lucratividadePorItem({
+      ordens: [ordem({ itens: [item({ peca_id: null, custo_unitario: 0 })] })],
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    expect(resultado.linhas[0]).toMatchObject({ custo: 0, margem: 300, custoNaoInformado: false });
+    expect(resultado.algumCustoNaoInformado).toBe(false);
   });
 });

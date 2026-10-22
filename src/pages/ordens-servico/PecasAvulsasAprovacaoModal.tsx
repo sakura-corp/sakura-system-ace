@@ -74,6 +74,15 @@ export function PecasAvulsasAprovacaoModal({
 
   const faltam = pendenciasDaAprovacao(itens, escolhas).length;
 
+  // O cadastro da loja mais as peças cadastradas nesta janela: duas linhas
+  // avulsas da mesma peça não podem virar dois cadastros — a segunda acha a
+  // primeira no "já tenho" e no aviso de parecida.
+  const pecasDaJanela = useMemo(() => {
+    const ids = new Set(pecas.map((peca) => peca.id));
+    const novas = Object.values(cadastradas).filter((peca) => !ids.has(peca.id));
+    return [...pecas, ...new Map(novas.map((peca) => [peca.id, peca])).values()];
+  }, [pecas, cadastradas]);
+
   function escolherPeca(itemId: string, pecaId: string) {
     setModos((m) => ({ ...m, [itemId]: "existente" }));
     setEscolhidas((e) => ({ ...e, [itemId]: pecaId }));
@@ -95,7 +104,7 @@ export function PecasAvulsasAprovacaoModal({
             // As parecidas com o que foi digitado vão no topo da lista.
             const parecidas = acharPecasParecidas(
               { descricao: item.descricao, codigo_interno: null, codigo_barras: null, medida: null },
-              pecas,
+              pecasDaJanela,
             ).map(({ peca }) => peca);
             const idsParecidas = new Set(parecidas.map((peca) => peca.id));
             const opcoes = [
@@ -103,7 +112,7 @@ export function PecasAvulsasAprovacaoModal({
                 valor: peca.id,
                 rotulo: `${peca.descricao} (parecida)`,
               })),
-              ...pecas
+              ...pecasDaJanela
                 .filter((peca) => !idsParecidas.has(peca.id))
                 .map((peca) => ({ valor: peca.id, rotulo: peca.descricao })),
             ];
@@ -222,7 +231,7 @@ export function PecasAvulsasAprovacaoModal({
       {cadastrando && (
         <CadastroPecaAvulsaModal
           item={cadastrando}
-          pecas={pecas}
+          pecas={pecasDaJanela}
           lojaId={lojaId}
           onCadastrada={(peca) => {
             setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
