@@ -919,3 +919,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **21/10/2026, noite: a `leva-3` posta** (Sofia): a etiqueta entrou nas quatro do programa das lojas (#653, #379, #655,
   #656), com a leva 2 já sem tarefa aberta. Pela regra da #644, a leva 2 continua a atual até o relatório dela ser aprovado;
   a 3 fica em Montando e ninguém pega tarefa dela antes disso. A Sofia controla o ritmo.
+- **22/10/2026: o Gustavo trocou de conta do GitHub** (Sofia): entrou na `sakura-corp` a conta nova, `GustavoSakuras`
+  (com 2FA), e a antiga, `kalendoscope`, já não tem acesso (fora dos membros e dos colaboradores de fora). Não havia tarefa
+  nem PR aberto na conta antiga; o caderno dele (#618) nasce na conta nova. Na lista da equipe da #699, vale o login novo.
