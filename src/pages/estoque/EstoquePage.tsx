@@ -17,6 +17,7 @@ import type { RegimeTributario } from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
 import type { MovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
+import { JuntarPecasModal } from "./JuntarPecasModal";
 import { ContagemSection } from "./ContagemSection";
 import { MovimentacoesSection } from "./MovimentacoesSection";
 import { ProdutosSection } from "./ProdutosSection";
@@ -25,7 +26,8 @@ import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
 type Aba = "produtos" | "movimentacoes" | "contagem" | "relatorios";
 
 export function EstoquePage() {
-  const { lojaAtual } = useAuth();
+  const { lojaAtual, operador } = useAuth();
+  const [juntando, setJuntando] = useState(false);
   const [aba, setAba] = useState<Aba>("produtos");
   const [pecas, setPecas] = useState<Peca[]>([]);
   const [movimentos, setMovimentos] = useState<MovimentoEstoque[]>([]);
@@ -81,9 +83,9 @@ export function EstoquePage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center gap-3">
         <BotaoVoltar />
-        <div>
+        <div className="mr-auto">
           <h1 className="text-titulo font-semibold text-sakura-purple-dark">
             Estoque
           </h1>
@@ -91,7 +93,23 @@ export function EstoquePage() {
             Produtos, peças e movimentações de estoque
           </p>
         </div>
+        {operador?.admin === true && isSupabaseConfigured && (
+          <button
+            onClick={() => setJuntando(true)}
+            className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+          >
+            Juntar peças repetidas
+          </button>
+        )}
       </header>
+
+      {juntando && (
+        <JuntarPecasModal
+          categorias={categorias}
+          onFechar={() => setJuntando(false)}
+          onJuntado={carregar}
+        />
+      )}
 
       {!isSupabaseConfigured && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
