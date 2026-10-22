@@ -1,20 +1,25 @@
 -- Sakura System — AutoCenter Edition
 -- TESTE da migration 0065 (o orçamento como etapa da OS, tarefa #379). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade — grava e apaga
--- dado de teste, e roda a própria migration de novo (\ir).
+-- dado de teste, e roda a instalação inteira de novo (\ir).
 --
 -- A promessa, em duas metades:
 --   • o que passa: OS nova e venda de balcão continuam numeradas como antes;
 --     o orçamento nasce sem número de OS e com o seu próprio contador por
 --     loja (1, 2, 3...); aprovar dá o PRÓXIMO número de OS, sem buraco,
 --     mesmo com orçamentos e OS intercalados; recusado continua sem número;
---     e rodar a migration de novo, com tudo isso gravado, não quebra nada;
+--     orçamento e recusado podem ser editados sem mudar de status; e rodar a
+--     INSTALAÇÃO INTEIRA de novo, com tudo isso gravado, não quebra nada (a
+--     equipe recola o arquivo no banco de teste a cada migration) e aprovar
+--     depois disso continua dando o próximo número;
 --   • o que é recusado: orçamento com número de OS; OS sem número; OS
 --     numerada voltando a ser orçamento; orçamento sem número de orçamento;
---     motivo de recusa fora da lista; número de orçamento repetido na loja.
+--     motivo de recusa fora da lista; número de orçamento repetido na loja;
+--     recusado voltando a orçamento ou virando OS; orçamento pulando direto
+--     pra concluída ou faturada.
 --
 -- Como rodar: ver o cabeçalho de supabase/scripts/testar-auditoria.sql. O
--- \ir lá embaixo acha a migration pelo caminho relativo a este arquivo, então
+-- \ir lá embaixo acha a instalação pelo caminho relativo a este arquivo, então
 -- rodar pelo `psql -f` (ou `npm run test:sql -- testar-orcamento`), não colando
 -- no SQL Editor. Terminou imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
@@ -286,15 +291,73 @@ begin
       raise exception 'FALHOU: esperava a trava ordens_servico_status_check, veio: %', sqlerrm;
     end if;
   end;
+
+  -- ===================================================================
+  -- P. O caminho do orçamento: o que passa
+  -- ===================================================================
+  -- Mexer num orçamento sem mudar o status (a validade) e num recusado (o
+  -- motivo) continua valendo.
+  select id into os_id from ordens_servico where loja_id = loja_b and status = 'orcamento';
+  update ordens_servico set validade = current_date + 15 where id = os_id;
+  update ordens_servico set motivo_recusa = 'prazo' where id = orc3;
+  if (select motivo_recusa from ordens_servico where id = orc3) is distinct from 'prazo' then
+    raise exception 'FALHOU: não deu pra mudar o motivo de um recusado';
+  end if;
+
+  -- ===================================================================
+  -- Q. O caminho do orçamento: o que é recusado
+  -- ===================================================================
+  -- Recusado não sai mais: nem vira OS (ganharia número sem baixar estoque),
+  -- nem volta a ser orçamento.
+  begin
+    update ordens_servico set status = 'em_andamento' where id = orc3;
+    raise exception 'FALHOU: um recusado virou OS';
+  exception when check_violation then
+    if sqlerrm not like '%ck_ordens_servico_transicao_orcamento%' then
+      raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
+    end if;
+  end;
+  begin
+    update ordens_servico set status = 'orcamento' where id = orc3;
+    raise exception 'FALHOU: um recusado voltou a ser orçamento';
+  exception when check_violation then
+    if sqlerrm not like '%ck_ordens_servico_transicao_orcamento%' then
+      raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
+    end if;
+  end;
+  -- Orçamento não pula a OS: direto pra concluída ou faturada, não.
+  begin
+    update ordens_servico set status = 'concluida' where id = os_id;
+    raise exception 'FALHOU: um orçamento foi direto pra concluída';
+  exception when check_violation then
+    if sqlerrm not like '%ck_ordens_servico_transicao_orcamento%' then
+      raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
+    end if;
+  end;
+  begin
+    update ordens_servico set status = 'faturada' where id = os_id;
+    raise exception 'FALHOU: um orçamento foi direto pra faturada';
+  exception when check_violation then
+    if sqlerrm not like '%ck_ordens_servico_transicao_orcamento%' then
+      raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
+    end if;
+  end;
+  if (select status from ordens_servico where id = orc3) <> 'recusado'
+     or (select numero from ordens_servico where id = orc3) is not null
+     or (select status from ordens_servico where id = os_id) <> 'orcamento' then
+    raise exception 'FALHOU: as tentativas recusadas mudaram o recusado ou o orçamento';
+  end if;
 end $$;
 
 -- ===================================================================
--- Parte 2: rodar a migration de novo, com tudo isso gravado
+-- Parte 2: rodar a INSTALAÇÃO INTEIRA de novo, com tudo isso gravado
 -- ===================================================================
 -- Os orçamentos, os recusados e as OS aprovadas acima têm que passar pelas
--- travas recriadas, e nenhum número pode mudar.
+-- travas recriadas, e nenhum número pode mudar. A instalação inteira, e não
+-- só a 0065: a 0037 (bem antes) refazia a trava de status e numerava toda OS
+-- sem número — inclusive orçamento — e quebrava aqui (docs/licoes.md, item 36).
 
-\ir ../migrations/0065_orcamento.sql
+\ir ../instalacao/instalacao-completa.sql
 
 do $$
 declare
@@ -328,6 +391,25 @@ begin
     raise exception 'FALHOU: depois de rodar de novo, o orçamento novo devia ser o 5, veio %', n;
   end if;
 
+  -- Aprovar depois de reinstalar continua dando o próximo número de OS (9):
+  -- o gatilho que ficou é o da 0065, não o antigo da 0037.
+  update ordens_servico set status = 'em_andamento', aprovado_em = now()
+    where loja_id = loja and numero_orcamento = 5 and status = 'orcamento'
+    returning numero into n;
+  if n is distinct from 9 then
+    raise exception 'FALHOU: depois de rodar de novo, aprovar devia dar a OS 9, veio %', n;
+  end if;
+
+  -- E a trava de caminho continua lá.
+  begin
+    update ordens_servico set status = 'em_andamento' where id = orc3;
+    raise exception 'FALHOU: depois de rodar de novo, um recusado virou OS';
+  exception when check_violation then
+    if sqlerrm not like '%ck_ordens_servico_transicao_orcamento%' then
+      raise exception 'FALHOU: esperava a trava ck_ordens_servico_transicao_orcamento, veio: %', sqlerrm;
+    end if;
+  end;
+
   if (select max(versao) from schema_versao) < 65 then
     raise exception 'FALHOU: a migration não registrou a versão 65';
   end if;
@@ -337,6 +419,8 @@ begin
   delete from operador_lojas where operador_id = o_balcao;
   delete from operadores where id = o_balcao;
   delete from clientes where id = cliente;
+  -- A instalação rodada de novo cria o depósito de cada loja (0041).
+  delete from depositos where loja_id in (loja, loja_b);
   delete from lojas where id in (loja, loja_b);
 
   raise notice 'TODAS AS CHECAGENS PASSARAM';

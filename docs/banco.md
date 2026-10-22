@@ -41,6 +41,9 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   RLS pra `DELETE` em `lojas` (só select/insert/update) — sem policy nenhuma cobrindo o comando, o
   delete "funcionava" sem erro nenhum, mas apagava 0 linhas (bug silencioso, sem mensagem de erro
   nenhuma). Ver item 15 da seção 6.
+  Desde a `0065`, a numeração, o `set not null` e a trava de 3 status ficam numa guarda (só rodam
+  se `numero_orcamento` ainda não existe), senão reaplicar a instalação num banco com orçamento
+  quebrava (`docs/licoes.md`, item 36).
 - `0038`: adiciona `operadores.deve_trocar_senha` (bool, default `false`) — suporte pra
   redefinição de senha esquecida (ver "Login e permissões" na seção 7).
 - `0039`: cria o módulo de Fornecedores — `fornecedores` (compartilhado), `pedidos_compra` (por
@@ -403,12 +406,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   gatilho `definir_numero_ordem_servico` (o da `0037`) agora roda também no **update**: quando
   um orçamento vira OS, ganha ali o próximo número; e pega uma **tranca por loja**
   (`pg_advisory_xact_lock`) antes de procurar o maior número, na aprovação e na OS comum, pra
-  dois aprovando juntos não pegarem o mesmo; (c) **estoque não é assunto do banco**: quem deixa
-  de baixar peça no orçamento e baixa só na aprovação é o programa. Declara
+  dois aprovando juntos não pegarem o mesmo; e confere o **caminho** (trava
+  `ck_ordens_servico_transicao_orcamento`, que vem do gatilho com a frase de um CHECK, porque um
+  CHECK não vê o status de antes): orçamento só vai pra `em_andamento` ou `recusado`, e recusado
+  não muda mais (sem ela, um recusado virava OS sem baixar estoque); (c) **estoque não é
+  assunto do banco**: quem deixa de baixar peça no orçamento e baixa só na aprovação é o programa. Declara
   `-- versao-minima-do-programa: 0.9.52` (a versão anterior mostraria "OS null" e baixaria
   estoque ao lançar peça num orçamento). Teste repetível em
-  `supabase/scripts/testar-orcamento.sql` (as duas metades, mais rodar a migration de novo com
-  orçamentos gravados), conferido com 11 mutações, todas vermelhas. **Ordem de subir: a versão
+  `supabase/scripts/testar-orcamento.sql` (as duas metades, mais rodar a **instalação inteira** de
+  novo com orçamentos gravados e aprovar depois), conferido com 11 mutações, todas vermelhas, e
+  mais 4 na revisão (a guarda da `0037` e as metades da trava de caminho). **Ordem de subir: a versão
   primeiro** (a linha da versão mínima faz o botão esperar).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito

@@ -14,6 +14,9 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O orçamento ficou sem número de orçamento. Atualize a tela e tente de novo.",
   ck_ordens_servico_motivo_recusa:
     "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
+  // Esta vem do gatilho (um CHECK não vê o status de antes), com a mesma frase de um CHECK.
+  ck_ordens_servico_transicao_orcamento:
+    "Orçamento só pode ser aprovado ou recusado, e recusado não muda mais. Atualize a tela e confira.",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",
@@ -63,8 +66,21 @@ export function traduzirTrava(mensagem: string): string | null {
 export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
 
+/**
+ * O programa pediu uma coluna que o banco desta empresa ainda não tem: a
+ * versão nova chegou antes da migration (a ordem certa é o banco primeiro,
+ * mas migration com `versao-minima-do-programa` faz o contrário de
+ * propósito — ex.: criar orçamento antes da 0065). Sem isto, a tela mostrava
+ * o inglês técnico do PostgREST.
+ */
+export const MENSAGEM_BANCO_DESATUALIZADO =
+  "O banco desta empresa ainda não foi atualizado pra esta versão do programa, então isto ainda não funciona. Avise quem cuida do sistema.";
+
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
+  if (/Could not find the '[^']+' column|column [^ ]+ does not exist/.test(mensagem)) {
+    return MENSAGEM_BANCO_DESATUALIZADO;
+  }
   return traduzirTrava(mensagem) ?? mensagem;
 }
 

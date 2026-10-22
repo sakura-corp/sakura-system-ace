@@ -128,9 +128,16 @@ create unique index if not exists ordens_servico_loja_numero_orcamento_unique
 --      da loja; o `numero` fica vazio — e se vier preenchido, a trava do
 --      passo 4 recusa, em vez de o gatilho apagar calado.
 --   b) nasce OS ou venda de balcão: como sempre, o próximo `numero`.
---   c) um orçamento (ou recusado) passa a ser OS: ganha o próximo `numero`
---      ali, na aprovação. Só nesse caso o gatilho mexe num update — apagar
---      o número de uma OS que já tem continua sendo recusado pela trava.
+--   c) um orçamento passa a ser OS: ganha o próximo `numero` ali, na
+--      aprovação. Só nesse caso o gatilho mexe num update — apagar o número
+--      de uma OS que já tem continua sendo recusado pela trava.
+--
+-- E uma trava de caminho, `ck_ordens_servico_transicao_orcamento`: saindo
+-- de orçamento, só pra em_andamento (aprovado) ou recusado; recusado não
+-- sai mais. Sem ela, um recusado virava OS numerada sem baixar estoque, e
+-- um orçamento ia direto pra concluída/faturada. Um CHECK não enxerga o
+-- status de antes, então quem confere é o gatilho — com a mesma mensagem
+-- de um CHECK de verdade, pra tela traduzir pelo nome (src/lib/errors.ts).
 
 create or replace function definir_numero_ordem_servico()
 returns trigger
@@ -153,7 +160,16 @@ begin
       from ordens_servico
       where loja_id = new.loja_id;
     end if;
-  elsif old.status in ('orcamento', 'recusado') and not eh_orcamento and new.numero is null then
+  elsif (old.status = 'orcamento' and new.status not in ('orcamento', 'em_andamento', 'recusado'))
+     or (old.status = 'recusado' and new.status <> 'recusado') then
+    raise exception using
+      errcode    = 'check_violation',
+      message    = 'new row for relation "ordens_servico" violates check constraint "ck_ordens_servico_transicao_orcamento"',
+      detail     = format('Orçamento só vira OS (em_andamento) ou recusado, e recusado não muda mais. Pedido: de %s pra %s.',
+                          old.status, new.status),
+      table      = 'ordens_servico',
+      constraint = 'ck_ordens_servico_transicao_orcamento';
+  elsif old.status = 'orcamento' and not eh_orcamento and new.numero is null then
     perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
     select coalesce(max(numero), 0) + 1 into new.numero
     from ordens_servico

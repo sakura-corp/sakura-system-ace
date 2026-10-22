@@ -4,7 +4,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { MENSAGEM_DA_TRAVA, MENSAGEM_SEM_PERMISSAO, mensagemDeErro, traduzirTrava } from "./errors";
+import {
+  MENSAGEM_BANCO_DESATUALIZADO,
+  MENSAGEM_DA_TRAVA,
+  MENSAGEM_SEM_PERMISSAO, mensagemDeErro, traduzirTrava } from "./errors";
 
 const PASTA = "supabase/migrations";
 
@@ -37,6 +40,27 @@ describe("mensagemDeErro", () => {
       message: 'new row for relation "pecas" violates check constraint "ck_pecas_preco_venda"',
     };
     expect(mensagemDeErro(erro)).toBe("O preço de venda não pode ser negativo.");
+  });
+
+  it("a trava que vem do gatilho do orçamento (0065) também vira frase", () => {
+    const erro = {
+      code: "23514",
+      message:
+        'new row for relation "ordens_servico" violates check constraint "ck_ordens_servico_transicao_orcamento"',
+    };
+    expect(mensagemDeErro(erro)).toMatch(/recusado não muda mais/);
+  });
+
+  it("coluna que o banco ainda não tem vira o aviso de banco desatualizado", () => {
+    // Programa novo num banco que ainda não recebeu a migration (ex.: criar
+    // orçamento antes da 0065): o PostgREST responde em inglês técnico.
+    const doPostgrest = {
+      code: "PGRST204",
+      message: "Could not find the 'validade' column of 'ordens_servico' in the schema cache",
+    };
+    const doPostgres = { code: "42703", message: 'column ordens_servico.numero_orcamento does not exist' };
+    expect(mensagemDeErro(doPostgrest)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
+    expect(mensagemDeErro(doPostgres)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
   });
 
   it("trava desconhecida e erro comum passam como vieram", () => {
