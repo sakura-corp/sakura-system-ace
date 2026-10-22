@@ -7,6 +7,13 @@
  * `ck_<tabela>_<regra>`, e ganha uma linha aqui.
  */
 export const MENSAGEM_DA_TRAVA: Record<string, string> = {
+  // Orçamento (#379, migration 0065).
+  ck_ordens_servico_numero_orcamento:
+    "Orçamento não tem número de OS, e OS não volta a ser orçamento. Atualize a tela e confira.",
+  ck_ordens_servico_numero_orcamento_obrigatorio:
+    "O orçamento ficou sem número de orçamento. Atualize a tela e tente de novo.",
+  ck_ordens_servico_motivo_recusa:
+    "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",

@@ -197,7 +197,7 @@ describe("mensagem de WhatsApp do orçamento", () => {
       ),
     );
     expect(texto).toBe(
-      "Olá, Ricardo! Segue o orçamento 45 da Pneus Amigão para o Volkswagen Gol: R$ 1.260,00. " +
+      "Olá, Ricardo! Segue o orçamento 45 da Pneus Amigão para o Volkswagen Gol: R$\u00a01.260,00. " +
         "Vale até 29/10/2026.\nQualquer dúvida, é só responder aqui.",
     );
   });
@@ -217,6 +217,6 @@ describe("mensagem de WhatsApp do orçamento", () => {
     );
     expect(valores.veiculo).toBe("ABC1D23");
     expect(valores.validade).toBe("");
-    expect(valores.valor).toBe("R$ 0,00");
+    expect(valores.valor).toBe("R$\u00a00,00");
   });
 });

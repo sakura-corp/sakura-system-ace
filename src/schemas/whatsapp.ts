@@ -93,7 +93,11 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
     descricao:
       "Aparece no orçamento aberto. Manda o orçamento pro cliente aprovar, com o total e até quando vale.",
     marcadores: ["{cliente}", "{numero}", "{loja}", "{veiculo}", "{valor}", "{validade}"],
-    padrao: "",
+    // Texto aprovado na tarefa #379.
+    padrao:
+      "Olá, {cliente}! Segue o orçamento {numero} da {loja} para o {veiculo}: {valor}. " +
+      "Vale até {validade}.\n" +
+      "Qualquer dúvida, é só responder aqui.",
   },
 ];
 

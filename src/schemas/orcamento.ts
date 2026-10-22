@@ -1,5 +1,7 @@
-import { diaLocal, hojeLocal } from "@/lib/datas";
-import type { StatusOS } from "@/types/os";
+import { diaBrasileiro, diaLocal, hojeLocal } from "@/lib/datas";
+import { formatarMoeda } from "./dinheiro";
+import { totalOrdem } from "@/types/os";
+import type { ItemOS, OrdemServico, StatusOS } from "@/types/os";
 
 /**
  * Os dois status da etapa de orçamento da OS (#379). Um orçamento aberto
@@ -109,6 +111,24 @@ export function contarOrcamentosAbertos(ordens: readonly { status: StatusOS }[])
   return ordens.filter((ordem) => ordem.status === "orcamento").length;
 }
 
-export function valoresMensagemOrcamento(_o: unknown, _loja: string): Record<string, string> {
-  return {};
+/**
+ * Os valores dos marcadores do modelo de WhatsApp "orcamento" (texto da
+ * tarefa #379, em `schemas/whatsapp.ts`). O total é o mesmo `totalOrdem` da
+ * lista de OS; a validade sai como "29/10/2026", sem passar por `Date`.
+ */
+export function valoresMensagemOrcamento(
+  ordem: Pick<OrdemServico, "numero" | "numero_orcamento" | "status" | "validade" | "cliente" | "veiculo"> & {
+    itens?: readonly Pick<ItemOS, "quantidade" | "preco_unitario" | "desconto">[];
+  },
+  nomeLoja: string,
+): Record<string, string> {
+  const veiculo = [ordem.veiculo?.marca, ordem.veiculo?.modelo].filter(Boolean).join(" ");
+  return {
+    cliente: ordem.cliente?.nome ?? "",
+    numero: String(ordem.numero_orcamento ?? ""),
+    loja: nomeLoja,
+    veiculo: veiculo || ordem.veiculo?.placa || "",
+    valor: formatarMoeda(totalOrdem(ordem.itens ?? [])),
+    validade: ordem.validade ? diaBrasileiro(ordem.validade) : "",
+  };
 }
