@@ -931,3 +931,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   com a `nova-tarefa` antes de a leva delas virar a atual**. As tarefas de banco são da equipe; a Sofia decide antes e aplica a
   migration. **A leva 6 fica reservada pra um projeto novo da Sakura**, com as três pessoas nele; o plano mora fora deste
   repositório. Fora das levas por enquanto: #366, #367, #457, #520 e o resto da primeira onda (#397, #381, #382, #383).
+- **22/10/2026: o relatório da leva aparece formatado** (#689, Gustavo, PR aberto esperando a Sofia): títulos, negrito,
+  citações, listas e tabelas, com `react-markdown` + `remark-gfm` e **sem** `rehype-raw`. HTML do arquivo continua escrito
+  (nunca roda), link só da sakura-corp, imagem não aparece, tabela larga rola dentro da caixa (375 px sem rolagem lateral).
