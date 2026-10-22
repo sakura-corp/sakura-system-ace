@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
 import type { NovaPeca, Peca } from "@/types/peca";
+import { lerResumo, type CampoJuntavel, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
 
 export async function listarPecas(): Promise<Peca[]> {
   // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
@@ -53,4 +54,34 @@ export async function excluirPeca(id: string): Promise<void> {
 export async function atualizarStatusPeca(id: string, ativo: boolean): Promise<void> {
   const { error } = await supabase.from("pecas").update({ ativo }).eq("id", id);
   if (error) throw error;
+}
+
+// "Juntar peças repetidas" (#656). Quem conta e quem junta é o banco, numa
+// transação só; a prévia e as escolhas campo a campo estão em
+// `schemas/juntarPecas.ts`. Só admin das lojas onde a peça aparece: quem
+// confere é o banco (`lojas_sem_acesso` > 0 no resumo, ou erro ao juntar).
+
+// O que a peça tem em cada loja e em quantas OS, compras, contagens e
+// cotações ela aparece. Base da prévia antes de juntar.
+export async function resumoPecaParaJuntar(id: string): Promise<ResumoPecaJuntar> {
+  const { data, error } = await supabase.rpc("resumo_peca_para_juntar", { p_peca: id });
+  if (error) throw error;
+  return lerResumo(data);
+}
+
+// Junta a peça `saiId` na `ficaId`: tudo da que sai passa pra que fica, os
+// campos listados em `campos` são copiados da que sai, e a que sai deixa de
+// existir. Devolve o resumo da peça que ficou, pra conferir com a prévia.
+export async function juntarPecas(
+  ficaId: string,
+  saiId: string,
+  campos: CampoJuntavel[],
+): Promise<ResumoPecaJuntar> {
+  const { data, error } = await supabase.rpc("juntar_pecas", {
+    p_fica: ficaId,
+    p_sai: saiId,
+    p_campos_da_que_sai: campos,
+  });
+  if (error) throw error;
+  return lerResumo(data);
 }
