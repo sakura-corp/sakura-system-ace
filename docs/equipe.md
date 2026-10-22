@@ -14,6 +14,11 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   organiza em levas: `docs/painel.md`, "Como a equipe trabalha".
 - **A primeira tarefa de todo mundo** é montar o seu caderno, o `segundo-cerebro` (roteiro
   abaixo), antes das tarefas da leva.
+- **Projetos secundários** (Sofia, 22/10/2026, #733): o Gusta guia os projetos secundários, cada um
+  no seu repositório privado da `sakura-corp`; todo mundo trabalha em tudo e decide junto. **Só nos
+  projetos secundários**, com a proposta aprovada, **o Gusta escreve as tarefas e mescla os PRs**
+  (CI verde e uma revisão do Claude antes). **No SSACE nada muda**: tudo deste manual vale inteiro.
+  Fluxo, etiquetas e o que nunca é sem a Sofia: `docs/projetos-secundarios.md`.
 
 ## Primeiro dia (computador pronto, sem programar)
 
@@ -333,7 +338,9 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
 1. **Ideia solta** (um vídeo, um print, um "e se…"): digite `/ideia`. Vira uma issue curta com a
    etiqueta `ideia`, lida na revisão do mês. Ideia sobre empresa, dinheiro, preço, sócios, dado
    pessoal ou senha não entra aqui: leve direto pra Sofia. Print não sobe, só a descrição em texto.
-2. **Planejar**: só a Sofia, com o Claude, pela skill `nova-tarefa`.
+2. **Planejar**: só a Sofia, com o Claude, pela skill `nova-tarefa`. **Exceção, só nos projetos
+   secundários**: lá, com a proposta aprovada, o Gusta também escreve as tarefas
+   (`docs/projetos-secundarios.md`); a ideia de projeto novo entra pela skill `nova-proposta`, que mora no `sakura-corp/secundarios`.
 3. **Fazer**: o botão "Começar com o Claude" do painel (o chefe da tarefa, depois o PR e o relatório).
 
 - **Uma branch e um PR por tarefa**, com `Closes #N` na descrição. Commits pequenos, com mensagem
@@ -402,7 +409,9 @@ automática dos PRs dos outros. Gastam a cota de quem criou, e conferir PR é tr
 ## O que nunca fazer (e a quem perguntar)
 
 As regras completas são as da seção 0 do `PROJETO_STATUS.md`. Em resumo, **nunca**:
-- **mesclar** um PR (nem o próprio), nem mexer direto na `main`;
+- **mesclar** um PR (nem o próprio), nem mexer direto na `main`. **Única exceção**: o Gusta, **só
+  nos projetos secundários**, mescla os PRs de lá, com CI verde e uma revisão do Claude antes
+  (`docs/projetos-secundarios.md`). No SSACE, ninguém da equipe mescla;
 - **publicar ou liberar** versão, nem disparar o "Atualizar o banco";
 - **rodar SQL ou migration** em Supabase nenhum, **nem no de teste**. Se a tarefa precisar de
   migration, ela vem escrita no PR, e quem aplica é a Sofia;

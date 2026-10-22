@@ -44,6 +44,10 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   **Uma leva de cada vez, pra todo mundo**: as tarefas do programa das lojas entram na mesma
   leva que as do painel (decidido pela Sofia em 14/10/2026). Por isso a `leva-0` vai ter também
   as primeiras tarefas do programa, e o painel continua mostrando uma leva só.
+  **Levas por projeto** (Sofia, 22/10/2026, #733): a regra acima é a do SSACE (o painel e o programa
+  das lojas). Cada **projeto secundário** (`docs/projetos-secundarios.md`) tem as suas, no repositório
+  dele, contadas a partir de 1; a leva atual de um secundário é a menor `leva-N` com tarefa aberta,
+  sem as fases do SSACE. As levas do SSACE seguem a numeração delas: depois da 5, vem a 6.
 - **Tarefa** é uma issue com a etiqueta da leva. **Um dono** (o "responsável", *assignee*) e
   **um PR**, que fecha a issue quando entra (`Closes #N` na descrição do PR).
 - **Estado de uma tarefa**:
@@ -52,7 +56,8 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   - **em revisão** = aberta, com um PR aberto que a fecha (`Closes #N`), esperando a Sofia;
   - **feita** = fechada.
 - **Pegar tarefa**: a pessoa pega **uma livre** (ninguém distribui), **põe o nome dela antes de
-  começar**, e segura **uma por vez**. Só pega outra depois que o PR da atual foi aberto.
+  começar**, e segura **uma por vez no total**, somando o SSACE e todos os projetos secundários
+  (#733). Só pega outra depois que o PR da atual foi aberto.
   **Pelo painel** (#538): o botão **"Pegar tarefa"** no cartão da tarefa livre põe o nome da pessoa
   no GitHub, com o login dela. O worker confere tudo de novo na hora, e o botão vem desligado, dizendo
   o porquê, quando a tarefa:
@@ -73,10 +78,13 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
   **e pelo WhatsApp**: o Claude escreve uma mensagem curta e informal, e a pessoa só copia e manda.
   Também quando não der pra começar uma tarefa por falta da parte dela.
 - **Estimativa**: cada tarefa diz no texto quantas horas deve levar, numa linha
-  `Estimativa: N h`. O trabalho da equipe é medido em horas por semana, não em dinheiro.
+  `Estimativa: N h`. O trabalho da equipe é medido em horas por semana, não em dinheiro, e as horas
+  são contadas **por projeto** (um quadro de horas por pessoa em cada um).
 - **Fim da leva**: ela **congela**, todo mundo testa, o Claude da Sofia escreve o relatório, a
   Sofia aprova, e só então vem banco e "Liberar versão". **Bug de loja não espera a leva.**
-- **As tarefas nascem nas conversas da Sofia com o Claude dela**, que cria as issues.
+- **As tarefas nascem nas conversas da Sofia com o Claude dela**, que cria as issues. **Exceção, só
+  nos projetos secundários**: lá, com a proposta aprovada, o Gusta cria as tarefas, abre e fecha as
+  levas e mescla os PRs (`docs/projetos-secundarios.md`). No SSACE nada muda.
 
 ## Primeiro dia e como começar uma tarefa
 
@@ -157,7 +165,10 @@ dizem o estado sozinhos).
 - **Modo TV**: `/sala?tv` mostra só a sala, grande, pra um segundo monitor.
 - **Link**: o cartão e a lista só abrem endereço que começa com `https://github.com/sakura-corp/`.
 - **Sem nota por pessoa**: nem ranking nem número de produtividade individual (a Sala mostra o que
-  espera cada um, não quanto cada um rendeu).
+  espera cada um, não quanto cada um rendeu). **Muda só num lugar** (Sofia, 22/10/2026, #733): a
+  página **"Meu progresso"** (tarefa depois da #731), onde cada pessoa vê **os próprios** números; a
+  Sofia vê os de qualquer um, um de cada vez, **nunca lado a lado**. Na Sala, na Pessoas e no quadro
+  da leva continua como era: sem nota nem ranking.
 
 ## Os andares (#591, 18/10/2026)
 
@@ -168,13 +179,19 @@ antigos grupos da barra (Trabalho, Equipe, Empresa) viraram andares. **Só a est
 | Andar | Itens | Chefes |
 |---|---|---|
 | Térreo · Recepção | Início | — |
-| 1º · Produção | Leva atual, Levas anteriores, Fases da leva, Relatório da leva, Sala, Escritório, Pessoas | frontend, backend, tester |
+| 1º · Produção | Leva atual, Levas anteriores, Fases da leva, Relatório da leva, Sala, Escritório, Pessoas, Projetos secundários | frontend, backend, tester |
 | 2º · Comercial e pós-venda | Lojas, Pós-venda (em breve) | marketing |
 | 3º · Financeiro | Financeiro, DRE | — |
 | 4º · Segurança e operação | Versões, Bancos e backups (em breve) | segurança |
 | Cobertura · Diretoria | Decisões da Sofia (em breve; vai ser a lista `sofia`) | — |
 
 Configurações continua no rodapé (não é andar).
+
+- **A aba "Projetos secundários"** (#731; decidido em 22/10/2026): no 1º andar, com três partes:
+  **Propostas** (cada ideia com o estado, das issues `proposta` do `sakura-corp/secundarios`),
+  **Projetos** (um cartão por repositório da `sakura-corp` com o tópico `projeto-secundario`) e **a
+  leva de cada projeto**, com o mesmo "Pegar" da tela da leva. Todo mundo da equipe vê; sem botão de
+  administrador na 1ª versão. As levas do SSACE não mudam. Fluxo e regras: `docs/projetos-secundarios.md`.
 
 - **Ordem na barra**: de cima pra baixo começando pelo Térreo (a ordem de uso), não do topo do prédio.
 - **Onde mora**: tudo em `painel/src/logica/navegacao.ts` (id, título e `chefes` de cada andar; `andarDoItem()` acha o andar
@@ -929,8 +946,9 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   painel (#699, #689, #684); **leva 5** = #454, #456, #372, #459. As duas ficam em Montando e entram sozinhas, uma depois da
   outra, quando ela aprovar a anterior (#644). A #365, a #368, a #385 e as quatro da leva 5 estão no modelo antigo: **reescrever
   com a `nova-tarefa` antes de a leva delas virar a atual**. As tarefas de banco são da equipe; a Sofia decide antes e aplica a
-  migration. **A leva 6 fica reservada pra um projeto novo da Sakura**, com as três pessoas nele; o plano mora fora deste
-  repositório. Fora das levas por enquanto: #366, #367, #457, #520 e o resto da primeira onda (#397, #381, #382, #383).
+  migration. ~~A leva 6 fica reservada pra um projeto novo da Sakura~~ **(corrigido em 22/10, #733: as levas agora são
+  por projeto; o projeto novo terá o repositório e as levas dele, a partir da 1, e a próxima leva do SSACE depois da 5 é
+  a 6.)** Fora das levas por enquanto: #366, #367, #457, #520 e o resto da primeira onda (#397, #381, #382, #383).
 - **22/10/2026: o relatório da leva aparece formatado** (#689, Gustavo, PR aberto esperando a Sofia): títulos, negrito,
   citações, listas e tabelas, com `react-markdown` + `remark-gfm` e **sem** `rehype-raw`. HTML do arquivo continua escrito
   (nunca roda), link só da sakura-corp, imagem não aparece, tabela larga rola dentro da caixa (375 px sem rolagem lateral).
@@ -947,3 +965,8 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   o worker acha a issue `Leva N: rodada de testes` (a #728 na leva 3) e lê as caixinhas da seção "Quem já terminou";
   caixinha vazia que diz "quando tiver acesso", "sem acesso" ou "esperando acesso" aparece como "ainda sem acesso ao banco
   de teste". Sem a issue, a parte não aparece.
+- **22/10/2026, noite: os projetos secundários nas regras** (Sofia, #733): o Gusta guia os projetos secundários (cada
+  um no seu repositório privado da `sakura-corp`, com as suas levas a partir da 1). **Só nos secundários** ele cria
+  tarefa, abre e fecha leva e mescla (CI verde e uma revisão do Claude antes); no SSACE nada muda. "Uma tarefa por vez"
+  passou a valer **no total**, somando todos os projetos, e as horas são por projeto. A aba é a #731; as propostas em
+  "Decisões da Sofia", a #732. Fluxo e quem faz o quê: `docs/projetos-secundarios.md`.
