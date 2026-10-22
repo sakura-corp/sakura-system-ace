@@ -244,6 +244,22 @@ Quatro coisas que valem saber:
   `site/ferramentas/cenas.mjs` (a varredura de contraste do CI clica nesse botão — com o botão
   escondido e a cena ativa, o job de contraste nas telas fica vermelho). Não retomar sozinho.
 
+  **Juntar peças repetidas (tarefa #656, 22/10/2026)** — botão no topo do Estoque, **só pra
+  administrador**. A mesma peça cadastrada duas vezes divide o estoque em dois; a ferramenta volta
+  a fazer dela uma só. Lista os **pares suspeitos** (a regra de peça parecida da #653,
+  `schemas/pecaParecida.ts`: mesmo código de barras, mesma referência ou nome muito parecido com a
+  mesma medida) e a pessoa **confere um par por vez** — nada é juntado sozinho nem em massa. Ao
+  abrir um par: qual fica (a cadastrada primeiro, com botão pra trocar), a **prévia** numa frase
+  ("Estoque 4 + 2 = 6. 12 OS, 3 compras e 1 contagem passam pra *Pneu 175/70 R13 Pirelli*."), o
+  estoque por loja antes e depois, e **campo por campo** os dados que diferem (preço, códigos,
+  fiscais...) pra escolher qual vale. Confirmar chama `juntar_pecas` (migration `0067`): tudo ou
+  nada, a peça que sai é **apagada** e todo o histórico dela (movimentos, itens de OS, contagens,
+  pedidos de compra, cotações) passa pra que fica; a Auditoria guarda a peça apagada inteira.
+  Quem não administra todas as lojas onde as peças aparecem vê só "aparece em loja que você não
+  administra" e não junta. As contas ficam em `schemas/juntarPecas.ts` (testado, inclusive a
+  busca de pares contra a versão força-bruta); a tela em `pages/estoque/JuntarPecasModal.tsx`.
+  **Primeira vez numa empresa: cópia de segurança antes** (`docs/operacao.md`, "Cópia na hora").
+
   **A lista de Produtos respondendo "o que preciso comprar?" (12/09/2026, item `TL-11` do
   guia)** — até aqui "Estoque atual" era um número neutro: dava pra ver que sobrou 1, mas não
   dava pra saber se 1 é pouco. Quatro coisas mudaram:

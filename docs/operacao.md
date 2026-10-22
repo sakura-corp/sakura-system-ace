@@ -168,6 +168,26 @@ seção 6):
 mais recente e **abrir** (parte 1 do `RESTAURAR-BACKUP.md`). Se uma rodada falhar, o GitHub manda
 e-mail: **não é spam**, é o único aviso.
 
+#### Cópia na hora, antes de juntar peças repetidas pela primeira vez (tarefa #656)
+
+Juntar peças (Estoque → "Juntar peças repetidas") **apaga a peça que sai** depois de passar o
+histórico dela pra que fica. A função é tudo ou nada e a Auditoria guarda a peça apagada inteira,
+mas não existe botão de "desjuntar". Por isso, **na primeira vez em cada empresa** (decisão da
+Sofia, 19/10/2026), a cópia de segurança vem **antes**, e não a da madrugada:
+
+1. **Ensaiar no Supabase de teste** (`docs/supabase-de-teste.md`): cadastrar duas peças repetidas
+   de propósito, com movimento, contagem e OS nas duas, e juntar pela tela. Conferir que o estoque
+   ficou somado e a peça repetida sumiu.
+2. Actions → **"Backup do banco"** → **"Run workflow"** (na `main`) → **"Run workflow"**. Esperar
+   ficar **verde** (uns minutos; roda todas as empresas).
+3. Conferir que a cópia **abre** (parte 1 do `RESTAURAR-BACKUP.md`): é a de agora, com a data de
+   hoje.
+4. Só então juntar as peças repetidas de verdade, **um par por vez**, conferindo a frase da prévia
+   antes de confirmar.
+
+Deu errado depois? Primeiro a **Auditoria** (a peça que sumiu está lá inteira, em "excluir", e cada
+item de OS que trocou de peça); a cópia é o último recurso (`RESTAURAR-BACKUP.md`).
+
 ### Atualizar o banco de todas as empresas
 
 O botão que roda, no banco de **cada empresa**, as migrations que faltam (como funciona por dentro:

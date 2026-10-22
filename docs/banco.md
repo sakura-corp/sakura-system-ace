@@ -8,8 +8,8 @@
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. A `0065` (orçamento, tarefa #379) e a `0066` (peça avulsa, tarefa
-#655) foram escritas em 22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
+#655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -433,6 +433,36 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `supabase/scripts/testar-peca-avulsa.sql` (as duas metades, mais rodar a `0066` e a instalação
   inteira de novo), conferido com 4 mutações, todas vermelhas. **Ordem de subir: a de sempre**
   (migration primeiro; sem ela, só lançar peça avulsa dá erro).
+- `0067`: **juntar peças repetidas** (tarefa #656). A `0066` é a da peça avulsa (#655), escrita
+  em paralelo; as duas sobem **em ordem** (a `0066` primeiro). **Não é tabela nova**: duas funções
+  `security definer` que o programa chama. `resumo_peca_para_juntar(peça)` é a **prévia** (quantos
+  movimentos, itens de OS, OS, contagens, itens de pedido, pedidos e cotações a peça carrega, e o
+  saldo por loja, com a mesma conta de `calcularSaldoPorPeca`); `juntar_pecas(fica, sai, campos)`
+  é a **junção**: a peça que fica herda da que sai os campos que a pessoa escolheu (lista fechada
+  de 21; `id`, `criado_em` e `ativo` não entram, e `ativo` vira "ou"), as **5 tabelas que apontam
+  pra peça** (`estoque_movimentos`, `ordens_servico_itens`, `pedidos_compra_itens`,
+  `cotacoes_pecas`, `contagens_estoque`) passam pra peça que fica, e a que sai é apagada. Cinco
+  decisões: (a) **tudo ou nada** (uma transação só; erro no meio desfaz tudo); (b) **só
+  administrador de todas as lojas** onde qualquer das duas peças aparece; quem não é recebe na
+  prévia só `{"lojas_sem_acesso": n}`, sem número de loja alheia, e a junção é recusada; (c) **a
+  rede de segurança**: antes de apagar, a função pergunta ao catálogo (`pg_constraint`) quais
+  tabelas apontam pra `pecas` e falha inteira, dizendo o nome, se alguma ainda tem linha da peça
+  que sai. Duas das cinco são `on delete cascade`: sem a rede, uma tabela nova esquecida aqui
+  perderia o histórico calada. **Tabela nova com FK pra `pecas` precisa entrar em
+  `juntar_pecas`** (e no `limpar-dados-de-teste.sql`, acima); (d) **a auditoria da junção**: além
+  do que o gatilho da `0053` já grava (a peça que sai inteira em `excluir`, a que fica antes e
+  depois, cada item de OS que trocou de peça), a função grava **à mão uma linha** na peça que fica
+  com `dados_antes.juntada = true`: a peça que saiu inteira, os dois resumos, os campos trazidos e
+  os **ids** das linhas de cada uma das 5 tabelas que eram dela (só os itens de OS têm gatilho;
+  sem essa linha não daria pra refazer a junção à mão); (e) **prévia velha é recusada**: o
+  programa manda em `p_esperado` os dois resumos que a pessoa viu e os campos das duas peças
+  como a tela mostrou (`peca`), e se o banco já estiver diferente (alguém lançou movimento,
+  mudou o preço ou juntou outra peça nesse meio-tempo) a função recusa e pede pra conferir de
+  novo; a tela então busca a prévia de agora sozinha (revisão da Sofia, 22/10). Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`,
+  conferido com mais de 12 mutações, todas vermelhas (uma tabela esquecida, a de cascade
+  esquecida, sem a rede, erro engolido no último passo, a peça que fica sem conferência de loja,
+  sem a linha da junção, sem a comparação da prévia...). **Ordem de subir: migration primeiro** (sem ela, a
+  tela de juntar dá erro ao abrir a prévia; o resto do programa não muda).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
