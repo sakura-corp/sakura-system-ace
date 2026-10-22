@@ -7,14 +7,21 @@ fazer e o que deve aparecer.
 
 ## Antes de começar
 
-1. Abra o terminal na pasta do projeto.
-2. Vá pra `main` e traga a versão mais nova: `git switch main` e depois `git pull`.
-3. Rode `npm install` (pode demorar uns minutos).
-4. Rode `npm run dev`. A janela do programa abre.
-5. Entre com o seu login de teste: `sofia`, `gustavo`, `lazaro` ou `tiago`.
-6. Confira que você está na loja "Autocenter Exemplo (TESTE)". Se o programa perguntar a loja, escolha
-   essa. Sofia: confira também que o seu `.env` aponta pro `ssace-teste`, e não pro banco de uma loja.
-7. A Sofia já atualizou o banco de teste com as migrations 0065, 0066 e 0067. Se aparecer uma faixa
+Quem prepara o programa é o seu Claude, não você. Abra uma sessão do Claude Code na pasta do
+projeto e cole esta frase:
+
+> Vou testar a leva 3. Prepara o programa pra mim: vai pra `main`, traz a versão mais nova
+> (`git switch main` e `git pull`), roda `npm install` e abre o programa com `npm run dev`,
+> apontando pro `ssace-teste`. Depois me guia na lista `docs/relatorios/leva-3-testes.md`,
+> um teste por vez, e me ajuda a abrir a issue de `defeito` se algo der errado.
+
+O Claude roda os comandos e avisa quando a janela do programa abrir. Aí:
+
+1. Entre com o seu login de teste: `sofia`, `gustavo`, `lazaro` ou `tiago`.
+2. Confira que você está na loja "Autocenter Exemplo (TESTE)". Se o programa perguntar a loja,
+   escolha essa. Sofia: peça ao Claude pra conferir que o seu `.env` aponta pro `ssace-teste`, e
+   não pro banco de uma loja.
+3. A Sofia já atualizou o banco de teste com as migrations 0065, 0066 e 0067. Se aparecer uma faixa
    amarela dizendo que o banco está atrasado (ou a frase "O banco desta empresa ainda não foi
    atualizado pra esta versão do programa"), pare aqui e avise a Sofia.
 
