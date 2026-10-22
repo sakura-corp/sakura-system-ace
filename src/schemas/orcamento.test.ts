@@ -2,10 +2,17 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   baixaEstoqueAoLancarItem,
   contarOrcamentosAbertos,
+  custoUnitarioDoItem,
+  lucroDaOrdem,
+  TEXTO_CUSTO_NAO_INFORMADO,
   MOTIVO_RECUSA_LABEL,
   MOTIVOS_RECUSA,
   contaNosNumeros,
   ehOrcamento,
+  ehPecaAvulsa,
+  pecasAvulsas,
+  pendenciasDaAprovacao,
+  vinculosDaAprovacao,
   orcamentoVencido,
   podeAprovar,
   podeRecusar,
@@ -14,6 +21,7 @@ import {
   VALIDADE_PADRAO_DIAS,
   valoresMensagemOrcamento,
 } from "./orcamento";
+import type { CaminhoAvulsa } from "./orcamento";
 import { modeloPorChave, preencherModelo } from "./whatsapp";
 
 // Orçamento é uma etapa da OS (#379): mora na mesma tabela, mas não é venda.
@@ -218,5 +226,160 @@ describe("mensagem de WhatsApp do orçamento", () => {
     expect(valores.veiculo).toBe("ABC1D23");
     expect(valores.validade).toBe("");
     expect(valores.valor).toBe("R$\u00a00,00");
+  });
+});
+
+// Peça digitada sem cadastro no orçamento (#655): é peça e não tem peca_id.
+describe("ehPecaAvulsa", () => {
+  it("peça sem peca_id é avulsa; peça do cadastro e serviço não", () => {
+    expect(ehPecaAvulsa({ tipo: "peca", peca_id: null })).toBe(true);
+    expect(ehPecaAvulsa({ tipo: "peca", peca_id: "pneu" })).toBe(false);
+    expect(ehPecaAvulsa({ tipo: "servico", peca_id: null })).toBe(false);
+  });
+
+  it("pecasAvulsas separa só as avulsas, na ordem", () => {
+    const itens = [
+      { id: "a", tipo: "peca" as const, peca_id: null },
+      { id: "b", tipo: "peca" as const, peca_id: "pneu" },
+      { id: "c", tipo: "servico" as const, peca_id: null },
+      { id: "d", tipo: "peca" as const, peca_id: null },
+    ];
+    expect(pecasAvulsas(itens).map((i) => i.id)).toEqual(["a", "d"]);
+  });
+});
+
+// Na aprovação, toda peça avulsa precisa de um caminho: existente, cadastrar
+// ou sem cadastro. Nenhuma ponta solta.
+const itensDoOrcamento = [
+  { id: "avulsa-1", tipo: "peca" as const, peca_id: null },
+  { id: "pneu", tipo: "peca" as const, peca_id: "pneu-cadastrado" },
+  { id: "servico", tipo: "servico" as const, peca_id: null },
+  { id: "avulsa-2", tipo: "peca" as const, peca_id: null },
+];
+
+describe("pendenciasDaAprovacao", () => {
+  it("sem escolha nenhuma, as duas avulsas pendem (o serviço e a peça do cadastro não)", () => {
+    expect(pendenciasDaAprovacao(itensDoOrcamento, new Map()).map((i) => i.id)).toEqual([
+      "avulsa-1",
+      "avulsa-2",
+    ]);
+  });
+
+  it("com um caminho pra cada avulsa, a lista fica vazia e a aprovação segue", () => {
+    const escolhas = new Map<string, CaminhoAvulsa>([
+      ["avulsa-1", { caminho: "existente", pecaId: "pneu-cadastrado" }],
+      ["avulsa-2", { caminho: "sem_cadastro" }],
+    ]);
+    expect(pendenciasDaAprovacao(itensDoOrcamento, escolhas)).toEqual([]);
+  });
+
+  it("existente ou cadastrar sem a peça escolhida (pecaId vazio) ainda pende", () => {
+    const escolhas = new Map<string, CaminhoAvulsa>([
+      ["avulsa-1", { caminho: "existente", pecaId: "" }],
+      ["avulsa-2", { caminho: "cadastrar", pecaId: "  " }],
+    ]);
+    expect(pendenciasDaAprovacao(itensDoOrcamento, escolhas).map((i) => i.id)).toEqual([
+      "avulsa-1",
+      "avulsa-2",
+    ]);
+  });
+});
+
+describe("vinculosDaAprovacao", () => {
+  it("existente e cadastrar viram vínculo item → peça; sem cadastro não", () => {
+    const itens = [...itensDoOrcamento, { id: "avulsa-3", tipo: "peca" as const, peca_id: null }];
+    const escolhas = new Map<string, CaminhoAvulsa>([
+      ["avulsa-1", { caminho: "existente", pecaId: "pneu-cadastrado" }],
+      ["avulsa-2", { caminho: "cadastrar", pecaId: "peca-nova" }],
+      ["avulsa-3", { caminho: "sem_cadastro" }],
+    ]);
+    expect(vinculosDaAprovacao(itens, escolhas)).toEqual([
+      { itemId: "avulsa-1", pecaId: "pneu-cadastrado" },
+      { itemId: "avulsa-2", pecaId: "peca-nova" },
+    ]);
+  });
+
+  it("escolha pra um item que não é avulso (peça do cadastro, serviço) é ignorada", () => {
+    const escolhas = new Map<string, CaminhoAvulsa>([
+      ["pneu", { caminho: "existente", pecaId: "outra-peca" }],
+      ["servico", { caminho: "cadastrar", pecaId: "peca-nova" }],
+    ]);
+    expect(vinculosDaAprovacao(itensDoOrcamento, escolhas)).toEqual([]);
+  });
+});
+
+// O lucro da peça avulsa usa o custo digitado no orçamento; sem ele, o custo
+// é "não informado" (null), nunca zero — zero daria um lucro inventado.
+const custoPeca = new Map([["pneu", 180]]);
+const custoServico = new Map([["alinhamento", 20]]);
+
+describe("custoUnitarioDoItem", () => {
+  it("peça do cadastro usa o custo do cadastro (0 se o cadastro não tem)", () => {
+    const item = { tipo: "peca" as const, peca_id: "pneu", servico_id: null, custo_unitario: 999 };
+    expect(custoUnitarioDoItem(item, custoPeca, custoServico)).toBe(180);
+    expect(custoUnitarioDoItem({ ...item, peca_id: "sem-custo" }, custoPeca, custoServico)).toBe(0);
+  });
+
+  it("peça avulsa usa o custo digitado; sem custo é null (não informado)", () => {
+    const avulsa = { tipo: "peca" as const, peca_id: null, servico_id: null };
+    expect(custoUnitarioDoItem({ ...avulsa, custo_unitario: 55.5 }, custoPeca, custoServico)).toBe(55.5);
+    expect(custoUnitarioDoItem({ ...avulsa, custo_unitario: 0 }, custoPeca, custoServico)).toBe(0);
+    expect(custoUnitarioDoItem({ ...avulsa, custo_unitario: null }, custoPeca, custoServico)).toBeNull();
+    // Banco anterior à 0066: a chave nem vem.
+    expect(custoUnitarioDoItem(avulsa, custoPeca, custoServico)).toBeNull();
+  });
+
+  it("serviço usa o custo do cadastro, e serviço sem cadastro continua 0 (como sempre)", () => {
+    const servico = { tipo: "servico" as const, peca_id: null, servico_id: "alinhamento" };
+    expect(custoUnitarioDoItem(servico, custoPeca, custoServico)).toBe(20);
+    expect(custoUnitarioDoItem({ ...servico, servico_id: null }, custoPeca, custoServico)).toBe(0);
+  });
+});
+
+describe("lucroDaOrdem", () => {
+  const pneu = {
+    tipo: "peca" as const,
+    peca_id: "pneu",
+    servico_id: null,
+    quantidade: 4,
+    preco_unitario: 300,
+    desconto: 0,
+  };
+  const alinhamento = {
+    tipo: "servico" as const,
+    peca_id: null,
+    servico_id: "alinhamento",
+    quantidade: 1,
+    preco_unitario: 80,
+    desconto: 10,
+  };
+  const valvula = {
+    tipo: "peca" as const,
+    peca_id: null,
+    servico_id: null,
+    quantidade: 4,
+    preco_unitario: 15,
+    desconto: 0,
+  };
+
+  it("com todos os custos: venda menos custo (conta feita à mão)", () => {
+    // Venda: 4×300 + (80−10) + 4×15 = 1.330. Custo: 4×180 + 20 + 4×6 = 764.
+    expect(
+      lucroDaOrdem([pneu, alinhamento, { ...valvula, custo_unitario: 6 }], custoPeca, custoServico),
+    ).toEqual({ lucro: 566, custoNaoInformado: false });
+  });
+
+  it("uma peça avulsa sem custo: não mostra número nenhum, mostra 'custo não informado'", () => {
+    expect(
+      lucroDaOrdem([pneu, alinhamento, { ...valvula, custo_unitario: null }], custoPeca, custoServico),
+    ).toEqual({ lucro: null, custoNaoInformado: true });
+    expect(TEXTO_CUSTO_NAO_INFORMADO).toBe("custo não informado");
+  });
+
+  it("custo zero informado é custo de verdade (brinde), não 'não informado'", () => {
+    expect(lucroDaOrdem([{ ...valvula, custo_unitario: 0 }], custoPeca, custoServico)).toEqual({
+      lucro: 60,
+      custoNaoInformado: false,
+    });
   });
 });

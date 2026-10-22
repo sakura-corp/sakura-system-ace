@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
-import { montarCorpoNFCe, montarCorpoNFSe } from "./focusNfe";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { emitirNFCe, FocusNfeError, montarCorpoNFCe, montarCorpoNFSe } from "./focusNfe";
+import type { OrdemServico } from "@/types/os";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { Peca } from "@/types/peca";
+
+// Só a checagem antes da emissão usa o porteiro; aqui ele é de mentira, pra
+// provar que a nota sem NCM nem chega a ser pedida.
+const invoke = vi.hoisted(() => vi.fn());
+vi.mock("./supabase", () => ({ supabase: { functions: { invoke } } }));
 
 function configuracaoFiscal(sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFiscalLoja {
   return {
@@ -326,5 +332,34 @@ describe("montarCorpoNFSe", () => {
 
     expect(corpo.tomador.cnpj).toBe("66217744000170");
     expect(corpo.tomador.cpf).toBeUndefined();
+  });
+});
+
+// Nenhuma nota sai sem NCM (#655). A tela já avisa antes (itensQueImpedemNFCe),
+// mas esta é a última trava: nem pede a nota à Focus.
+describe("emitirNFCe — peça sem NCM", () => {
+  beforeEach(() => invoke.mockReset());
+
+  const dados = (ncm: string | null) => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [
+      { peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 },
+      {
+        peca: peca({ id: "peca-2", descricao: "Válvula de bico", ncm }),
+        quantidade: 4,
+        precoUnitario: 15,
+        desconto: 0,
+      },
+    ],
+    cliente: null,
+    pagamentos: [{ formaPagamento: "pix", valor: 310 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  it.each([null, "", "   "])("NCM %j: recusa com o nome da peça e não chama a Focus", async (ncm) => {
+    const promessa = emitirNFCe(dados(ncm));
+    await expect(promessa).rejects.toBeInstanceOf(FocusNfeError);
+    await expect(promessa).rejects.toThrow(/Válvula de bico.*NCM/);
+    expect(invoke).not.toHaveBeenCalled();
   });
 });

@@ -26,6 +26,9 @@ import { TributosFields } from "./campos/TributosFields";
 
 interface PecaFormProps {
   pecaExistente?: Peca;
+  /** Campos já preenchidos numa peça NOVA (ex.: nome e preço da peça avulsa
+   *  do orçamento, #655). Ignorado ao editar. */
+  valoresIniciais?: Partial<PecaFormValues>;
   categorias: Categoria[];
   /** Regime da loja (Configurações → Dados fiscais) — decide se o código de
    *  ICMS desta peça é CSOSN ou CST, e alimenta o aviso de incompatível. */
@@ -45,6 +48,7 @@ interface PecaFormProps {
 
 export function PecaForm({
   pecaExistente,
+  valoresIniciais,
   categorias,
   regime,
   csosnSugerido,
@@ -71,11 +75,15 @@ export function PecaForm({
     formState: { errors, isSubmitting },
   } = useForm<PecaFormValues>({
     resolver: zodResolver(pecaFormSchema),
-    defaultValues: paraValoresFormulario(pecaExistente),
+    defaultValues: pecaExistente
+      ? paraValoresFormulario(pecaExistente)
+      : { ...paraValoresFormulario(undefined), ...valoresIniciais },
   });
 
   const rascunho = useRascunho(
-    `rascunho-peca-${pecaExistente?.id ?? "nova"}`,
+    // Peça nova vinda de um item avulso tem rascunho próprio: não mistura com
+    // o do cadastro de Estoque (e o aviso "restaurar" não sobrepõe o nome).
+    `rascunho-peca-${pecaExistente?.id ?? (valoresIniciais ? `avulsa-${valoresIniciais.descricao ?? ""}` : "nova")}`,
     watch,
     reset,
   );

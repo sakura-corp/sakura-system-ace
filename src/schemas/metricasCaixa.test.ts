@@ -79,6 +79,13 @@ describe("custoDosItens", () => {
   it("peça sem custo cadastrado conta como zero, não quebra", () => {
     expect(custoDosItens([item("peca", "sem-custo", 1, 100)], custoPeca, custoServico)).toBe(0);
   });
+
+  // #655: peça avulsa (sem peca_id) usa o custo digitado no orçamento.
+  it("peça avulsa usa o custo digitado; sem custo conta como zero", () => {
+    const avulsa = { ...item("peca", "x", 2, 150), peca_id: null, custo_unitario: 80 };
+    const semCusto = { ...item("peca", "x", 1, 90), peca_id: null, custo_unitario: null };
+    expect(custoDosItens([avulsa, semCusto], custoPeca, custoServico)).toBe(160); // 2x80 + 0
+  });
 });
 
 describe("resumirMovimentos", () => {

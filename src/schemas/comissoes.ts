@@ -1,6 +1,6 @@
 import { custoDosItens, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo as arredondar } from "./dinheiro";
-import { contaNosNumeros } from "./orcamento";
+import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
 import { temNumeroDeOS } from "@/types/os";
 import type { ItemOS, OrdemNumerada, OrdemServico, TipoOrdem } from "@/types/os";
 
@@ -52,8 +52,8 @@ export interface ResumoPapel {
   /** Parte da comissão que veio de OS ainda não recebida. */
   comissaoAReceber: number;
   /**
-   * Itens que entraram com custo zero (peça/serviço sem custo cadastrado, ou
-   * serviço avulso). O lucro deles é o preço cheio, então a comissão sai
+   * Itens que entraram com custo zero (peça/serviço sem custo cadastrado,
+   * serviço avulso, ou peça avulsa sem custo digitado — #655). O lucro deles é o preço cheio, então a comissão sai
    * maior que a real — a tela avisa quando isso acontece.
    */
   itensSemCusto: number;
@@ -110,12 +110,11 @@ function contarItensSemCusto(
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
 ): number {
+  // Peça avulsa (#655) usa o custo digitado; sem ele (`null`), conta aqui
+  // como sem custo, igual peça cadastrada sem custo.
   return itens.filter((item) => {
-    const unitario =
-      item.tipo === "peca"
-        ? custoPeca.get(item.peca_id ?? "") ?? 0
-        : custoServico.get(item.servico_id ?? "") ?? 0;
-    return unitario === 0;
+    const unitario = custoUnitarioDoItem(item, custoPeca, custoServico);
+    return unitario === null || unitario === 0;
   }).length;
 }
 

@@ -1,5 +1,6 @@
 import { diaBrasileiro, diaLocal, hojeLocal } from "@/lib/datas";
-import { formatarMoeda } from "./dinheiro";
+import { arredondarCentavo, formatarMoeda } from "./dinheiro";
+import type { MapaCusto } from "./metricasCaixa";
 import { totalOrdem } from "@/types/os";
 import type { ItemOS, OrdemServico, StatusOS } from "@/types/os";
 
@@ -131,4 +132,114 @@ export function valoresMensagemOrcamento(
     valor: formatarMoeda(totalOrdem(ordem.itens ?? [])),
     validade: ordem.validade ? diaBrasileiro(ordem.validade) : "",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Peça digitada sem cadastro no orçamento (#655)
+// ---------------------------------------------------------------------------
+
+/**
+ * Peça avulsa: digitada no orçamento sem escolher do cadastro (`peca_id`
+ * nulo). Não mexe no estoque e não sai em NFC-e (não tem NCM) até ganhar um
+ * cadastro. Só o orçamento cria; uma OS aprovada com "sem cadastro" mantém.
+ */
+export function ehPecaAvulsa(item: Pick<ItemOS, "tipo" | "peca_id">): boolean {
+  return item.tipo === "peca" && !item.peca_id;
+}
+
+export function pecasAvulsas<T extends Pick<ItemOS, "tipo" | "peca_id">>(itens: readonly T[]): T[] {
+  return itens.filter(ehPecaAvulsa);
+}
+
+/**
+ * O que fazer com cada peça avulsa ao aprovar o orçamento:
+ *   • "existente": é uma peça que já está no cadastro → o item passa a
+ *     apontar pra ela e baixa estoque;
+ *   • "cadastrar": a tela cadastrou a peça na hora (`pecaId` é o da nova) →
+ *     idem;
+ *   • "sem_cadastro": fica avulsa, sem estoque (e sem NFC-e até cadastrar).
+ */
+export type CaminhoAvulsa =
+  | { caminho: "existente"; pecaId: string }
+  | { caminho: "cadastrar"; pecaId: string }
+  | { caminho: "sem_cadastro" };
+
+/** O caminho está completo? "existente"/"cadastrar" só valem com a peça escolhida. */
+function caminhoCompleto(escolha: CaminhoAvulsa | undefined): boolean {
+  if (!escolha) return false;
+  if (escolha.caminho === "sem_cadastro") return true;
+  return escolha.pecaId.trim() !== "";
+}
+
+/**
+ * As peças avulsas que ainda não têm caminho escolhido (`escolhas` é por
+ * `item.id`). A aprovação só segue com a lista vazia.
+ */
+export function pendenciasDaAprovacao<T extends Pick<ItemOS, "id" | "tipo" | "peca_id">>(
+  itens: readonly T[],
+  escolhas: ReadonlyMap<string, CaminhoAvulsa>,
+): T[] {
+  return pecasAvulsas(itens).filter((item) => !caminhoCompleto(escolhas.get(item.id)));
+}
+
+/**
+ * Os itens que ganham `peca_id` na aprovação ("existente" e "cadastrar"),
+ * pra `aprovarOrcamento` gravar antes de baixar o estoque. "Sem cadastro"
+ * não vincula, e escolha pra item que não é avulso é ignorada.
+ */
+export function vinculosDaAprovacao(
+  itens: readonly Pick<ItemOS, "id" | "tipo" | "peca_id">[],
+  escolhas: ReadonlyMap<string, CaminhoAvulsa>,
+): { itemId: string; pecaId: string }[] {
+  return pecasAvulsas(itens).flatMap((item) => {
+    const escolha = escolhas.get(item.id);
+    if (!escolha || escolha.caminho === "sem_cadastro" || !caminhoCompleto(escolha)) return [];
+    return [{ itemId: item.id, pecaId: escolha.pecaId }];
+  });
+}
+
+/**
+ * Quanto custou pra loja uma unidade do item, ou `null` se ninguém informou:
+ *   • peça do cadastro → custo do cadastro (0 se ele não tem, como sempre);
+ *   • peça avulsa → o custo digitado no orçamento; sem ele, `null`;
+ *   • serviço → custo do cadastro (0 se não tem), sem mudança.
+ */
+export function custoUnitarioDoItem(
+  item: Pick<ItemOS, "tipo" | "peca_id" | "servico_id" | "custo_unitario">,
+  custoPeca: MapaCusto,
+  custoServico: MapaCusto,
+): number | null {
+  if (item.tipo === "servico") return custoServico.get(item.servico_id ?? "") ?? 0;
+  if (ehPecaAvulsa(item)) return item.custo_unitario ?? null;
+  return custoPeca.get(item.peca_id ?? "") ?? 0;
+}
+
+/** O que a tela mostra no lugar do lucro quando falta custo de peça avulsa. */
+export const TEXTO_CUSTO_NAO_INFORMADO = "custo não informado";
+
+/**
+ * Lucro da ordem (venda − custo). Se algum item tem custo não informado
+ * (peça avulsa sem custo), não há número: `custoNaoInformado` e a tela
+ * mostra `TEXTO_CUSTO_NAO_INFORMADO`.
+ */
+export type LucroDaOrdem =
+  | { lucro: number; custoNaoInformado: false }
+  | { lucro: null; custoNaoInformado: true };
+
+export function lucroDaOrdem(
+  itens: readonly Pick<
+    ItemOS,
+    "tipo" | "peca_id" | "servico_id" | "custo_unitario" | "quantidade" | "preco_unitario" | "desconto"
+  >[],
+  custoPeca: MapaCusto,
+  custoServico: MapaCusto,
+): LucroDaOrdem {
+  let custo = 0;
+  for (const item of itens) {
+    const unitario = custoUnitarioDoItem(item, custoPeca, custoServico);
+    // Um custo faltando já basta: qualquer número aqui seria lucro inventado.
+    if (unitario === null) return { lucro: null, custoNaoInformado: true };
+    custo += item.quantidade * unitario;
+  }
+  return { lucro: arredondarCentavo(totalOrdem(itens) - custo), custoNaoInformado: false };
 }

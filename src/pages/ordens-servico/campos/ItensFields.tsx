@@ -23,6 +23,7 @@ export function ItensFields({
   funcionarios,
   saldoPorPeca,
   saldoCarregado,
+  permitePecaAvulsa = false,
 }: {
   control: Control<OrdemServicoFormValues>;
   register: UseFormRegister<OrdemServicoFormValues>;
@@ -38,6 +39,8 @@ export function ItensFields({
   funcionarios: FuncionarioPublico[];
   saldoPorPeca: Map<string, number>;
   saldoCarregado: boolean;
+  /** Só o orçamento (#655): peça digitada sem cadastro. */
+  permitePecaAvulsa?: boolean;
 }) {
   const { fields, append, remove } = useFieldArray({ control, name: "itens" });
 
@@ -58,6 +61,7 @@ export function ItensFields({
               pecas={pecas}
               servicos={servicos}
               funcionarios={funcionarios}
+              permitePecaAvulsa={permitePecaAvulsa}
               onSalvar={onEditarItem}
             />
           ))}
@@ -77,6 +81,7 @@ export function ItensFields({
             funcionarios={funcionarios}
             saldoPorPeca={saldoPorPeca}
             saldoCarregado={saldoCarregado}
+            permitePecaAvulsa={permitePecaAvulsa}
             onRemover={() => remove(index)}
           />
         ))}
