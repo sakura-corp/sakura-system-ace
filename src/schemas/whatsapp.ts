@@ -16,7 +16,8 @@ export type ChaveModeloWhatsapp =
   | "cobranca"
   | "carro_pronto"
   | "pedido_compra"
-  | "cliente_sumido";
+  | "cliente_sumido"
+  | "orcamento";
 
 export interface ModeloWhatsapp {
   chave: ChaveModeloWhatsapp;
@@ -85,6 +86,14 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
       "Oi {cliente}, tudo bem? Aqui é da {loja}.\n" +
       "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no {veiculo}? " +
       "É só responder que a gente marca um horário.",
+  },
+  {
+    chave: "orcamento",
+    titulo: "Orçamento",
+    descricao:
+      "Aparece no orçamento aberto. Manda o orçamento pro cliente aprovar, com o total e até quando vale.",
+    marcadores: ["{cliente}", "{numero}", "{loja}", "{veiculo}", "{valor}", "{validade}"],
+    padrao: "",
   },
 ];
 

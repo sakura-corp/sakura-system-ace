@@ -56,12 +56,13 @@ import type {
 import {
   STATUS_COM_FECHAMENTO,
   ehVendaBalcao,
-  nomeOrdem,
+  nomeDocumento,
   totalOrdem,
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { agruparNotasPorOrdem, temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
+import { contaNosNumeros } from "@/schemas/orcamento";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
@@ -143,9 +144,14 @@ export function OrdensServicoPage() {
   // ninguém perceber. O filtro de período só afasta o histórico já faturado,
   // que é o que realmente cresce sem parar. Buscando por cliente/placa, o
   // período é ignorado (a busca vale pra qualquer época).
+  //
+  // Orçamento (#379) não aparece aqui: a lista de OS mostra só OS e venda;
+  // orçamento tem a lista dele. A regra é a mesma de todo número da loja
+  // (`contaNosNumeros`).
   const ordensFiltradas = useMemo(() => {
     const buscaNormalizada = busca.trim().toLowerCase();
     return ordens.filter((ordem) => {
+      if (!contaNosNumeros(ordem)) return false;
       if (buscaNormalizada) {
         const nomeCliente = ordem.cliente?.nome?.toLowerCase() ?? "";
         const placa = ordem.veiculo?.placa?.toLowerCase() ?? "";
@@ -290,7 +296,7 @@ export function OrdensServicoPage() {
     }
     await atualizarOrdem(id, patch, operador.id);
     if (novosItens.length > 0 && ordemEmEdicao) {
-      await adicionarItensOrdem(id, ordemEmEdicao.numero, novosItens, operador.id, lojaAtual.id);
+      await adicionarItensOrdem(id, novosItens, operador.id, lojaAtual.id);
     }
     setOrdemEmEdicao(null);
     await carregar();
@@ -308,7 +314,7 @@ export function OrdensServicoPage() {
         "Esta OS já foi faturada — não dá mais pra corrigir peça ou serviço nela.",
       );
     }
-    await editarItemOrdem(item, patch, ordemEmEdicao.numero, operador.id, lojaAtual.id);
+    await editarItemOrdem(item, patch, operador.id, lojaAtual.id);
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
     if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
@@ -325,7 +331,7 @@ export function OrdensServicoPage() {
       veiculo: veiculo || "veículo",
       placa: ordem.veiculo?.placa,
       valor: formatarMoeda(totalOrdem(ordem.itens ?? [])),
-      os: nomeOrdem(ordem.numero),
+      os: nomeDocumento(ordem),
       loja: lojaAtual?.nome,
     });
   }
@@ -366,7 +372,7 @@ export function OrdensServicoPage() {
       setMostrarVenda(false);
       setLista("vendas");
       const recarregadas = await carregar();
-      setAviso(`${nomeOrdem(criada.numero, criada.tipo)} registrada.`);
+      setAviso(`${nomeDocumento(criada)} registrada.`);
       const completa = recarregadas?.find((o) => o.id === criada.id);
       if (completa) setVendaParaNota(completa);
     } catch (err) {
@@ -715,7 +721,7 @@ export function OrdensServicoPage() {
                   className="cursor-pointer border-t border-sakura-gray/20 hover:bg-sakura-pink-soft/30"
                 >
                   <td className="whitespace-nowrap px-2.5 py-3 text-sakura-muted">
-                    {nomeOrdem(ordem.numero, ordem.tipo)}
+                    {nomeDocumento(ordem)}
                   </td>
                   <td className="px-2.5 py-3 [overflow-wrap:anywhere]">
                     {ordem.cliente?.nome ?? "—"}

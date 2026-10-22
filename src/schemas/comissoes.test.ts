@@ -110,6 +110,38 @@ describe("ordensDoPeriodo", () => {
   });
 });
 
+// Orçamento (#379) não é venda: não paga comissão, nem aberto nem recusado.
+describe("orçamento no meio dos dados", () => {
+  it("não entra na comissão de ninguém", () => {
+    const os = ordem({ id: "os-1", vendedor_id: "vend" });
+    const orcamentos = [
+      ordem({
+        id: "orc-1",
+        numero: null,
+        numero_orcamento: 45,
+        status: "orcamento",
+        vendedor_id: "vend",
+        itens: [item({ preco_unitario: 1000, tecnico_id: "tec" })],
+      }),
+      ordem({
+        id: "orc-2",
+        numero: null,
+        numero_orcamento: 46,
+        status: "recusado",
+        vendedor_id: "vend",
+        itens: [item({ preco_unitario: 1000, tecnico_id: "tec" })],
+      }),
+    ];
+    const linhas = resumir([os, ...orcamentos]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    // Só a OS: vendeu 150, custo 100, lucro 50, 10% = 5.
+    expect(pedro.comoVendedor.vendido).toBe(150);
+    expect(pedro.comissaoTotal).toBe(5);
+    expect(pedro.comoVendedor.ordens.map((o) => o.ordemId)).toEqual(["os-1"]);
+    expect(linhas.find((l) => l.funcionarioId === "tec")).toBeUndefined();
+  });
+});
+
 describe("resumirComissoes", () => {
   it("dá ao vendedor a comissão sobre o lucro da OS inteira", () => {
     // Pneu vendido a 150 com custo 100 => lucro 50; 10% => 5.

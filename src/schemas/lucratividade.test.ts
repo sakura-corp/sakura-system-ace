@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import { lucratividadePorItem } from "./lucratividade";
+import type { ItemOS, OrdemServico } from "@/types/os";
+
+// Relações → Lucratividade: receita, custo e margem por peça/serviço no
+// período. A conta morava dentro da tela (docs/licoes.md, item 38) e veio
+// pra cá com a tarefa #379, que pediu que orçamento não entrasse nela.
+
+function item(parcial: Partial<ItemOS>): ItemOS {
+  return {
+    id: "i",
+    ordem_servico_id: "os",
+    tipo: "peca",
+    peca_id: "pneu",
+    servico_id: null,
+    tecnico_id: null,
+    descricao: "Pneu",
+    quantidade: 1,
+    preco_unitario: 300,
+    desconto: 0,
+    ...parcial,
+  };
+}
+
+function ordem(parcial: Partial<OrdemServico>): OrdemServico {
+  return {
+    id: "os-1",
+    numero: 1,
+    loja_id: "loja",
+    cliente_id: "cli",
+    veiculo_id: null,
+    status: "faturada",
+    km_entrada: null,
+    descricao_problema: null,
+    forma_pagamento: null,
+    parcelas: 1,
+    data_abertura: "2026-10-10T12:00:00.000Z",
+    data_fechamento: null,
+    vendedor_id: null,
+    criado_por_id: null,
+    atualizado_por_id: null,
+    itens: [],
+    ...parcial,
+  };
+}
+
+const custoPeca = new Map([["pneu", 200]]);
+const custoServico = new Map([["alinhamento", 30]]);
+const periodo = { de: "2026-10-01", ate: "2026-10-31" };
+
+describe("lucratividadePorItem", () => {
+  it("soma receita, custo e margem por descrição, maior margem primeiro", () => {
+    const resultado = lucratividadePorItem({
+      ordens: [
+        ordem({
+          id: "os-1",
+          itens: [
+            item({ quantidade: 2, preco_unitario: 300, desconto: 20 }),
+            item({ tipo: "servico", peca_id: null, servico_id: "alinhamento", descricao: "Alinhamento", preco_unitario: 80 }),
+          ],
+        }),
+        ordem({ id: "os-2", status: "em_andamento", itens: [item({ quantidade: 1 })] }),
+      ],
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    // Pneu: 3 un., receita 600-20+300 = 880, custo 3x200 = 600, margem 280.
+    // Alinhamento: receita 80, custo 30, margem 50.
+    expect(resultado.linhas).toEqual([
+      { descricao: "Pneu", quantidade: 3, receita: 880, custo: 600, margem: 280 },
+      { descricao: "Alinhamento", quantidade: 1, receita: 80, custo: 30, margem: 50 },
+    ]);
+    expect(resultado.totalReceita).toBe(960);
+    expect(resultado.totalCusto).toBe(630);
+    expect(resultado.totalMargem).toBe(330);
+  });
+
+  it("fica só no período, pelo dia de abertura no fuso local", () => {
+    const fusoOriginal = process.env.TZ;
+    process.env.TZ = "America/Sao_Paulo";
+    try {
+      // 22h de 31/10 em São Paulo = 01h de 01/11 em UTC: é de outubro.
+      const aNoite = ordem({ data_abertura: "2026-11-01T01:00:00.000Z", itens: [item({})] });
+      const novembro = ordem({ id: "os-2", data_abertura: "2026-11-01T12:00:00.000Z", itens: [item({})] });
+      const resultado = lucratividadePorItem({ ordens: [aNoite, novembro], custoPeca, custoServico, ...periodo });
+      expect(resultado.totalReceita).toBe(300);
+    } finally {
+      process.env.TZ = fusoOriginal;
+    }
+  });
+
+  it("orçamento (aberto ou recusado) não entra", () => {
+    const resultado = lucratividadePorItem({
+      ordens: [
+        ordem({ id: "os-1", itens: [item({})] }),
+        ordem({ id: "orc-1", numero: null, numero_orcamento: 1, status: "orcamento", itens: [item({ quantidade: 4 })] }),
+        ordem({ id: "orc-2", numero: null, numero_orcamento: 2, status: "recusado", itens: [item({ quantidade: 4 })] }),
+      ],
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    expect(resultado.linhas).toEqual([
+      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100 },
+    ]);
+  });
+});

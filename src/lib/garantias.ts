@@ -1,5 +1,7 @@
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
+import { contaNosNumeros } from "@/schemas/orcamento";
+import type { StatusOS } from "@/types/os";
 
 export interface ItemGarantia {
   id: string;
@@ -7,6 +9,7 @@ export interface ItemGarantia {
   peca: { descricao: string; prazo_garantia_dias: number | null } | null;
   ordem: {
     id: string;
+    status: StatusOS;
     data_fechamento: string | null;
     cliente: { nome: string } | null;
     veiculo: { id: string; placa: string } | null;
@@ -23,7 +26,7 @@ export async function listarItensComGarantia(): Promise<ItemGarantia[]> {
       .from("ordens_servico_itens")
       .select(
         "id, quantidade, peca:pecas(descricao, prazo_garantia_dias), " +
-          "ordem:ordens_servico(id, data_fechamento, cliente:clientes(nome), veiculo:veiculos(id, placa))",
+          "ordem:ordens_servico(id, status, data_fechamento, cliente:clientes(nome), veiculo:veiculos(id, placa))",
       )
       .eq("tipo", "peca")
       .order("id", { ascending: true })
@@ -31,7 +34,12 @@ export async function listarItensComGarantia(): Promise<ItemGarantia[]> {
   );
 
   const itens = data as unknown as ItemGarantia[];
+  // Orçamento (#379) não vendeu nada: aberto ou recusado, fica de fora
+  // mesmo que um dia ganhe data de fechamento.
   return itens.filter(
-    (item) => item.peca?.prazo_garantia_dias != null && item.ordem?.data_fechamento != null,
+    (item) =>
+      item.peca?.prazo_garantia_dias != null &&
+      item.ordem?.data_fechamento != null &&
+      contaNosNumeros(item.ordem),
   );
 }

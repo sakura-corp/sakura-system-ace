@@ -10,6 +10,7 @@ import {
   listarArquivos,
 } from "@/lib/notasFiscais";
 import { listarOrdens } from "@/lib/ordensServico";
+import { contaNosNumeros } from "@/schemas/orcamento";
 import { situacaoDaNota, type TomSituacaoNota } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
@@ -231,7 +232,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                 Ordem de Serviço relacionada (opcional)
               </span>
               <Combobox
-                opcoes={ordens.map((ordem) => ({
+                opcoes={ordens.filter(contaNosNumeros).map((ordem) => ({
                   valor: ordem.id,
                   rotulo: `${ordem.cliente?.nome ?? "Cliente"} — ${new Date(
                     ordem.data_abertura,

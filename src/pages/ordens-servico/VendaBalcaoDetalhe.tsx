@@ -1,7 +1,7 @@
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
-import { nomeOrdem } from "@/types/os";
+import { nomeDocumento } from "@/types/os";
 import { FechamentoTab } from "./FechamentoTab";
 import { StatusOrdem } from "./StatusOrdemBadge";
 
@@ -32,7 +32,7 @@ export function VendaBalcaoDetalhe({
           <BotaoVoltar onClick={onVoltar} />
           <div>
             <p className="text-rotulo text-sakura-muted">
-              {nomeOrdem(ordem.numero, ordem.tipo)} · venda de balcão · registrada em{" "}
+              {nomeDocumento(ordem)} · venda de balcão · registrada em{" "}
               {new Date(ordem.data_abertura).toLocaleString("pt-BR", {
                 day: "2-digit",
                 month: "2-digit",

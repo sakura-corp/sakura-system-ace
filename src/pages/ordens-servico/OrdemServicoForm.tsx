@@ -24,7 +24,7 @@ import type {
   PatchItemOS,
   PatchOrdemServico,
 } from "@/types/os";
-import { STATUS_COM_FECHAMENTO, STATUS_LABEL, nomeOrdem } from "@/types/os";
+import { STATUS_COM_FECHAMENTO, STATUS_LABEL, nomeDocumento } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
@@ -217,7 +217,7 @@ export function OrdemServicoForm({
             <BotaoVoltar onClick={onCancelar} />
             <div>
               <p className="text-rotulo text-sakura-muted">
-                {nomeOrdem(ordemExistente.numero)} · aberta em{" "}
+                {nomeDocumento(ordemExistente)} · aberta em{" "}
                 {formatarData(ordemExistente.data_abertura)} · criado por{" "}
                 {ordemExistente.criado_por?.nome ?? "—"}
               </p>

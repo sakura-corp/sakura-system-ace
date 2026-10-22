@@ -6,7 +6,13 @@ import { buscarDepositoPadraoId } from "./depositos";
 import { mensagemDeErro } from "./errors";
 import { arredondarCentavo, somar } from "@/schemas/dinheiro";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
-import { FORMA_PAGAMENTO_LABEL, nomeOrdem } from "@/types/os";
+import {
+  baixaEstoqueAoLancarItem,
+  contaNosNumeros,
+  STATUS_AO_APROVAR,
+} from "@/schemas/orcamento";
+import type { MotivoRecusa } from "@/schemas/orcamento";
+import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
 import type {
   ItemOS,
   NovaOrdemServico,
@@ -14,6 +20,8 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
+  StatusOS,
+  TipoOrdem,
 } from "@/types/os";
 
 export interface PagamentoOrdem {
@@ -66,11 +74,15 @@ async function buscarNomesDeFuncionarios(
   return new Map((data as { id: string; nome: string }[]).map((f) => [f.id, f.nome]));
 }
 
+// Grava os itens e, se `baixarEstoque`, lança a saída das peças. Orçamento
+// não baixa (#379): a peça só sai da prateleira na aprovação, por
+// `baixarEstoqueDasPecas` em `aprovarOrcamento`.
 async function inserirItens(
   ordemId: string,
   referencia: string,
   itens: NovoItemOS[],
   lojaId: string,
+  baixarEstoque: boolean,
 ): Promise<void> {
   if (itens.length === 0) return;
 
@@ -79,6 +91,16 @@ async function inserirItens(
   );
   if (erroItens) throw erroItens;
 
+  if (baixarEstoque) await baixarEstoqueDasPecas(itens, referencia, lojaId);
+}
+
+// A saída de estoque das peças de uma ordem. Item de serviço e peça digitada
+// à mão (sem cadastro) não mexem no estoque.
+async function baixarEstoqueDasPecas(
+  itens: Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[],
+  referencia: string,
+  lojaId: string,
+): Promise<void> {
   const itensPeca = itens.filter((item) => item.tipo === "peca" && item.peca_id);
   if (itensPeca.length > 0) {
     const depositoId = await buscarDepositoPadraoId(lojaId);
@@ -116,14 +138,175 @@ export async function criarOrdem(
 
   if (erroOrdem) throw erroOrdem;
 
+  const criada = ordemCriada as OrdemServico;
   await inserirItens(
-    ordemCriada.id,
-    nomeOrdem(ordemCriada.numero, ordemCriada.tipo),
+    criada.id,
+    nomeDocumento(criada),
     itens,
     lojaId,
+    baixaEstoqueAoLancarItem(criada.status),
   );
 
-  return ordemCriada as OrdemServico;
+  return criada;
+}
+
+/**
+ * Cria um orçamento (#379): uma ordem com status "orcamento", sem número de
+ * OS (o banco dá o número do orçamento) e SEM baixar estoque. Se os itens
+ * não gravam, o orçamento é apagado — não há estoque a desfazer, então
+ * tentar de novo é seguro.
+ *
+ * `dados` é o mesmo da OS, sem `tipo` (orçamento no balcão está fora da
+ * tarefa) nem `status`. `validade` é dia de calendário ("AAAA-MM-DD"); o
+ * padrão é `validadePadrao()` de `src/schemas/orcamento.ts`.
+ */
+export async function criarOrcamento(
+  dados: Omit<NovaOrdemServico, "tipo" | "status">,
+  itens: NovoItemOS[],
+  validade: string,
+  operadorId: string,
+  lojaId: string,
+): Promise<OrdemServico> {
+  const { data, error } = await supabase
+    .from("ordens_servico")
+    .insert({
+      ...dados,
+      status: "orcamento",
+      validade,
+      criado_por_id: operadorId,
+      atualizado_por_id: operadorId,
+      loja_id: lojaId,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  const orcamento = data as OrdemServico;
+
+  try {
+    await inserirItens(orcamento.id, nomeDocumento(orcamento), itens, lojaId, false);
+  } catch (erroItens) {
+    const { error: erroDesfazer } = await supabase
+      .from("ordens_servico")
+      .delete()
+      .eq("id", orcamento.id);
+    if (erroDesfazer) console.error("Não deu pra desfazer o orçamento pela metade:", erroDesfazer);
+    throw erroItens;
+  }
+
+  return orcamento;
+}
+
+const MENSAGEM_JA_RESPONDIDO =
+  "Este orçamento já foi aprovado ou recusado (talvez em outro computador). Atualize a lista.";
+
+/**
+ * A OS foi aprovada (e já tem número), mas a baixa das peças não entrou. É um
+ * erro à parte porque a reação certa é diferente: NÃO aprovar de novo (nem dá:
+ * já não é orçamento), e sim conferir o estoque em Movimentações.
+ */
+export class AprovadoSemEstoqueError extends Error {
+  constructor(
+    readonly ordem: OrdemServico,
+    motivo: string,
+  ) {
+    super(
+      `A ${nomeDocumento(ordem)} foi aprovada, mas a baixa das peças no estoque não entrou: ` +
+        `${motivo}. Confira o estoque em Movimentações e lance a saída à mão.`,
+    );
+    this.name = "AprovadoSemEstoqueError";
+  }
+}
+
+/**
+ * O cliente aprovou o orçamento (#379): vira OS "em andamento", ganha o
+ * próximo número de OS (o gatilho da migration 0065 dá) e as peças saem do
+ * estoque — o ÚNICO lugar em que um orçamento baixa estoque.
+ *
+ * O update só pega a linha se ela ainda for orçamento
+ * (`.eq("status", "orcamento")`): dois computadores aprovando juntos, só um
+ * acha a linha; o outro recebe o aviso e não baixa nada. As peças baixadas
+ * são as que estão no banco nessa hora, não as que a tela tinha.
+ */
+export async function aprovarOrcamento(
+  orcamento: Pick<OrdemServico, "id">,
+  aprovadoPor: string,
+  operadorId: string,
+): Promise<OrdemServico> {
+  const { data, error } = await supabase
+    .from("ordens_servico")
+    .update({
+      status: STATUS_AO_APROVAR,
+      aprovado_por: aprovadoPor.trim() || null,
+      aprovado_em: new Date().toISOString(),
+      atualizado_por_id: operadorId,
+    })
+    .eq("id", orcamento.id)
+    .eq("status", "orcamento")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
+  const aprovada = data as OrdemServico;
+
+  try {
+    const { data: itens, error: erroItens } = await supabase
+      .from("ordens_servico_itens")
+      .select("tipo, peca_id, quantidade")
+      .eq("ordem_servico_id", aprovada.id);
+    if (erroItens) throw erroItens;
+    await baixarEstoqueDasPecas(
+      itens as Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[],
+      nomeDocumento(aprovada),
+      aprovada.loja_id,
+    );
+  } catch (erroEstoque) {
+    throw new AprovadoSemEstoqueError(aprovada, mensagemDeErro(erroEstoque));
+  }
+
+  return aprovada;
+}
+
+/**
+ * O cliente não quis (#379). Motivo é opcional (um clique). Como na
+ * aprovação, só pega a linha se ela ainda for orçamento.
+ */
+export async function recusarOrcamento(
+  id: string,
+  motivo: MotivoRecusa | null,
+  operadorId: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("ordens_servico")
+    .update({
+      status: "recusado",
+      motivo_recusa: motivo,
+      recusado_em: new Date().toISOString(),
+      atualizado_por_id: operadorId,
+    })
+    .eq("id", id)
+    .eq("status", "orcamento")
+    .select()
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
+}
+
+// A situação da ordem AGORA, no banco — e não a da tela, que pode estar
+// velha: se outro computador aprovou o orçamento enquanto esta tela estava
+// aberta, a peça acrescentada aqui tem que baixar estoque.
+async function situacaoAtual(ordemId: string): Promise<{
+  status: StatusOS;
+  numero: number | null;
+  numero_orcamento?: number | null;
+  tipo?: TipoOrdem;
+}> {
+  const { data, error } = await supabase
+    .from("ordens_servico")
+    .select("*")
+    .eq("id", ordemId)
+    .single();
+  if (error) throw error;
+  return data as OrdemServico;
 }
 
 export async function atualizarOrdem(
@@ -139,16 +322,27 @@ export async function atualizarOrdem(
   if (error) throw error;
 }
 
-// Só acrescenta itens novos numa OS já existente — corrigir um item já
-// salvo é outro caminho, `editarItemOrdem()` logo abaixo.
+// Só acrescenta itens novos numa OS (ou orçamento) já existente — corrigir
+// um item já salvo é outro caminho, `editarItemOrdem()` logo abaixo. Em
+// orçamento não baixa estoque; quem decide é o status no banco agora.
 export async function adicionarItensOrdem(
   ordemId: string,
-  numeroOrdem: number,
   itens: NovoItemOS[],
   operadorId: string,
   lojaId: string,
 ): Promise<void> {
-  await inserirItens(ordemId, nomeOrdem(numeroOrdem), itens, lojaId);
+  if (itens.length === 0) {
+    await atualizarOrdem(ordemId, {}, operadorId);
+    return;
+  }
+  const situacao = await situacaoAtual(ordemId);
+  await inserirItens(
+    ordemId,
+    nomeDocumento(situacao),
+    itens,
+    lojaId,
+    baixaEstoqueAoLancarItem(situacao.status),
+  );
   await atualizarOrdem(ordemId, {}, operadorId);
 }
 
@@ -188,7 +382,7 @@ export function diferencasDeEstoque(
 
 async function lancarDiferencasDeEstoque(
   diferencas: Map<string, number>,
-  numeroOrdem: number,
+  nome: string,
   lojaId: string,
 ): Promise<void> {
   if (diferencas.size === 0) return;
@@ -205,7 +399,7 @@ async function lancarDiferencasDeEstoque(
       // "des-uso em OS", e "ajuste" é o que descreve a verdade do que
       // aconteceu (alguém corrigiu um lançamento).
       motivo: diferenca > 0 ? ("uso_em_os" as const) : ("ajuste" as const),
-      referencia: `${nomeOrdem(numeroOrdem)} (correção de item)`,
+      referencia: `${nome} (correção de item)`,
       loja_id: lojaId,
     })),
   );
@@ -217,14 +411,20 @@ async function lancarDiferencasDeEstoque(
 // faturada: depois do faturamento o pagamento já entrou no Caixa com o total
 // antigo, e mexer no item deixaria os dois discordando — quem chama precisa
 // garantir isso antes (a tela já esconde o botão).
+//
+// Em orçamento (#379) nada de estoque: o item ainda não baixou nada, e a
+// aprovação baixa o que estiver gravado nessa hora. Quem decide é o status
+// no banco agora, não o da tela.
 export async function editarItemOrdem(
   itemOriginal: ItemOS,
   patch: PatchItemOS,
-  numeroOrdem: number,
   operadorId: string,
   lojaId: string,
 ): Promise<void> {
-  const diferencas = diferencasDeEstoque(itemOriginal, patch);
+  const situacao = await situacaoAtual(itemOriginal.ordem_servico_id);
+  const diferencas = baixaEstoqueAoLancarItem(situacao.status)
+    ? diferencasDeEstoque(itemOriginal, patch)
+    : new Map<string, number>();
 
   const { error } = await supabase
     .from("ordens_servico_itens")
@@ -236,7 +436,7 @@ export async function editarItemOrdem(
   // pior caso é a correção do item salvar e a movimentação falhar — que dá
   // erro na tela e é conferível em Movimentações. O contrário (movimentar
   // estoque de uma correção que não gravou) seria uma sobra invisível.
-  await lancarDiferencasDeEstoque(diferencas, numeroOrdem, lojaId);
+  await lancarDiferencasDeEstoque(diferencas, nomeDocumento(situacao), lojaId);
 
   await atualizarOrdem(itemOriginal.ordem_servico_id, {}, operadorId);
 }
@@ -253,7 +453,7 @@ export class VendaSemFaturamentoError extends Error {
     motivo: string,
   ) {
     super(
-      `A ${nomeOrdem(ordem.numero, ordem.tipo)} foi registrada e já baixou o estoque, mas o ` +
+      `A ${nomeDocumento(ordem)} foi registrada e já baixou o estoque, mas o ` +
         `pagamento não foi lançado: ${motivo}. Ela está em "Vendas de balcão" com o botão ` +
         `Faturar — fature por lá, não registre a venda de novo.`,
     );
@@ -317,7 +517,7 @@ export async function registrarVendaBalcao(
   const ordem = data as OrdemServico;
 
   try {
-    await inserirItens(ordem.id, nomeOrdem(ordem.numero, ordem.tipo), itens, lojaId);
+    await inserirItens(ordem.id, nomeDocumento(ordem), itens, lojaId, true);
   } catch (erroItens) {
     // Os itens entram antes da baixa de estoque (ver `inserirItens`), então
     // apagar a venda aqui leva os itens junto (cascata) e não deixa estoque
@@ -356,6 +556,12 @@ export async function faturarOrdem(
   parcelas: number,
   previsaoRecebimento: string | null,
 ): Promise<void> {
+  // Orçamento não é venda (#379): não entra no caixa nem em contas a
+  // receber. Aprovar antes faz dele uma OS.
+  if (!contaNosNumeros(ordem)) {
+    throw new Error("Orçamento não é faturado: aprove o orçamento antes (ele vira OS).");
+  }
+
   // Fecha no centavo: cada pagamento já vem arredondado, mas somar em ponto
   // flutuante ainda deixa cauda (0.1 + 0.2 dá 0.30000000000000004) — e esse
   // valor vai pro banco, em Contas a Receber.
@@ -394,7 +600,7 @@ export async function faturarOrdem(
           tipo: "entrada",
           forma_pagamento: pagamento.formaPagamento,
           valor: pagamento.valor,
-          descricao: `Faturamento da ${nomeOrdem(ordem.numero, ordem.tipo)}`,
+          descricao: `Faturamento da ${nomeDocumento(ordem)}`,
           categoria_id: null,
         },
         ordem.loja_id,
@@ -405,7 +611,7 @@ export async function faturarOrdem(
       {
         cliente_id: ordem.cliente_id,
         ordem_servico_id: ordem.id,
-        descricao: `Faturamento da ${nomeOrdem(ordem.numero, ordem.tipo)}`,
+        descricao: `Faturamento da ${nomeDocumento(ordem)}`,
         valor: valorTotal,
         vencimento: previsaoRecebimento,
       },
