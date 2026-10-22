@@ -55,6 +55,7 @@ import {
   type DadosDasPropostas,
 } from "./projetos";
 import { repositorioD1, tratarFinanceiro, type BancoD1 } from "./financeiro";
+import { buscarMeuProgresso, quemVer } from "./meuProgresso";
 import { numeroValido } from "../src/logica/comecarComClaude";
 import { SalaDoPainel } from "./sala";
 import { assinaturaConfere, avisoDoEvento } from "./webhook";
@@ -417,6 +418,27 @@ async function financeiro(request: Request, config: Configuracao, env: Ambiente)
   return new Response(resposta.body, { status: resposta.status, headers: comCookies(new Headers(resposta.headers), cookies) });
 }
 
+/**
+ * O "Meu progresso" (#734): os números de uma pessoa só. Quem pede vem da sessão; `?pessoa=` só vale pra dona
+ * (DONA_DO_FINANCEIRO, a Sofia). Pra qualquer outra pessoa, 403 antes de falar com o GitHub.
+ */
+async function meuProgresso(request: Request, url: URL, config: Configuracao, env: Ambiente): Promise<Response> {
+  const { sessao, cookies } = await sessaoAtual(request, config);
+  if (!sessao) return json({ ok: false, erro: "sem sessão" }, 401, cookies);
+  const quem = quemVer(sessao.login, url.searchParams.get("pessoa"), env.DONA_DO_FINANCEIRO);
+  if (quem.tipo === "recusado") return json({ ok: false, erro: "cada pessoa vê só o próprio progresso" }, 403, cookies);
+  if (quem.tipo === "invalido") return json({ ok: false, erro: "pessoa inválida" }, 400, cookies);
+  try {
+    const r = await buscarMeuProgresso((consulta, variaveis) => consultar(sessao.token, consulta, variaveis), quem.login, quem.dona);
+    if (r.tipo === "sem-acesso") return json({ ok: false, erro: "sem sessão" }, 401, [cookiesDe(url).apagar(COOKIE_SESSAO)]);
+    if (r.tipo === "erro") return json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+    return json(r.dados, 200, cookies);
+  } catch {
+    console.error("meu progresso: falha ao falar com o GitHub");
+    return json({ ok: false, erro: "o GitHub não respondeu" }, 502, cookies);
+  }
+}
+
 const NOME_DA_SALA = "painel";
 const salaDoPainel = (env: Ambiente) => env.SALA?.get(env.SALA.idFromName(NOME_DA_SALA));
 
@@ -525,6 +547,13 @@ export default {
       if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
       if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
       return novidades(request, config);
+    }
+
+    if (pathname === "/api/meu-progresso") {
+      const config = configuracao(env);
+      if (!config) return json({ ok: false, erro: "login não configurado" }, 503);
+      if (metodo !== "GET") return json({ ok: false, erro: "método não permitido" }, 405);
+      return meuProgresso(request, url, config, env);
     }
 
     if (pathname.startsWith("/api/financeiro/")) {
