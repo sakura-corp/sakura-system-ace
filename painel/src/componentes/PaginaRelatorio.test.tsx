@@ -2,7 +2,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { RespostaDoRelatorio } from "../../worker/relatorio";
 import type { Leva } from "../tipos";
-import { carregarRelatorio, chaveDoRelatorio, ConteudoDoRelatorio, levaDoRelatorio, PaginaRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
+import { carregarRelatorio, chaveDoRelatorio, ConteudoDoRelatorio, levaDoRelatorio, linkDoRelatorio, PaginaRelatorio, type EstadoDoRelatorio } from "./PaginaRelatorio";
 
 const pronto = (r: Partial<RespostaDoRelatorio>): EstadoDoRelatorio => ({ tipo: "pronto", relatorio: { numero: 3, situacao: "sem-relatorio", texto: null, ...r } });
 const html = (estado: EstadoDoRelatorio, numero = 3) => renderToString(<ConteudoDoRelatorio numero={numero} estado={estado} tentarDeNovo={() => {}} />).replace(/<!-- -->/g, "");
@@ -17,7 +17,7 @@ describe("ConteudoDoRelatorio: as quatro situações (#647)", () => {
     expect(h).toContain('rel="noopener noreferrer"');
     expect(h).toContain("Ver o PR #700 no GitHub");
     expect(h).toContain("(abre em aba nova)");
-    expect(h).toContain("# Relatório da 3");
+    expect(h).toContain("Relatório da 3</h2>");
   });
 
   it("esperando sem link seguro: o PR aparece como texto, sem link", () => {
@@ -48,7 +48,7 @@ describe("ConteudoDoRelatorio: as quatro situações (#647)", () => {
   it("aprovado: diz que a Sofia aprovou e de onde vem o texto", () => {
     const h = html(pronto({ situacao: "aprovado", texto: "# Feito" }));
     expect(h).toContain("Aprovado pela Sofia");
-    expect(h).toContain("# Feito");
+    expect(h).toContain("Feito</h2>");
     expect(h).toContain("docs/relatorios/leva-3.md");
     expect(h).not.toContain("Esperando a aprovação");
   });
@@ -85,16 +85,104 @@ describe("ConteudoDoRelatorio: as quatro situações (#647)", () => {
   });
 });
 
-describe("ConteudoDoRelatorio: o texto é texto puro (#647)", () => {
+describe("ConteudoDoRelatorio: o HTML do arquivo nunca roda (#647, #689)", () => {
   it("<script> e <img onerror> saem escapados, nunca como elemento", () => {
     const h = html(pronto({ situacao: "aprovado", texto: "# Título\n<script>alert(1)</script>\n<img src=x onerror=alert(2)>" }));
     expect(h).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(h).toContain("&lt;img src=x onerror=alert(2)&gt;");
     expect(h).not.toContain("<script");
     expect(h).not.toContain("<img");
-    // markdown não é interpretado
-    expect(h).toContain("# Título");
+    expect(h).not.toContain("onerror=alert(2)>");
+  });
+
+  it("HTML no meio de um parágrafo e em bloco também fica escrito", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: 'Olá <b onmouseover="alert(3)">oi</b>\n\n<div><iframe src="https://exemplo.com"></iframe></div>' }));
+    expect(h).not.toContain("<b ");
+    expect(h).not.toContain("<div><iframe");
+    expect(h).not.toContain("<iframe");
+    expect(h).toContain("&lt;iframe");
+  });
+});
+
+describe("ConteudoDoRelatorio: o texto aparece formatado (#689)", () => {
+  const h = html(
+    pronto({
+      situacao: "aprovado",
+      texto: [
+        "# Relatório da leva 1",
+        "",
+        "> Escrito pelo Claude. **Aprovar é mesclar**.",
+        "",
+        "## 1. O que entrou",
+        "",
+        "- uma",
+        "- duas",
+        "",
+        "| Tarefa | O que é | PR |",
+        "|---|---|---|",
+        "| #536 | Painel: o cartão | #553 |",
+      ].join("\n"),
+    }),
+  );
+
+  it("título vira título (um nível abaixo do título da página)", () => {
+    expect(h).toMatch(/<h2[^>]*>Relatório da leva 1<\/h2>/);
+    expect(h).toMatch(/<h3[^>]*>1\. O que entrou<\/h3>/);
     expect(h).not.toContain("<h1");
+    expect(h).not.toContain("# Relatório");
+  });
+
+  it("negrito, citação e lista", () => {
+    expect(h).toContain("<strong>Aprovar é mesclar</strong>");
+    expect(h).toMatch(/<blockquote[^>]*>[\s\S]*Escrito pelo Claude/);
+    expect(h).toMatch(/<ul[^>]*>\s*<li>uma<\/li>\s*<li>duas<\/li>\s*<\/ul>/);
+    expect(h).not.toContain("**");
+  });
+
+  it("tabela vira tabela, dentro de uma caixa que rola de lado", () => {
+    expect(h).toMatch(/<div class="[^"]*overflow-x-auto[^"]*"><table/);
+    expect(h).toMatch(/<th[^>]*>Tarefa<\/th>/);
+    expect(h).toMatch(/<td[^>]*>#536<\/td>/);
+    expect(h).not.toContain("|---|");
+  });
+});
+
+describe("ConteudoDoRelatorio: links e imagens do relatório (#689)", () => {
+  it("link da sakura-corp vira link em aba nova", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: `Veja [o PR](${PR}).` }));
+    expect(h).toMatch(new RegExp(`<a href="${PR}" target="_blank" rel="noopener noreferrer"[^>]*>o PR</a>`));
+  });
+
+  it("link que não é da sakura-corp não vira link (nem escrito, nem automático, nem javascript:)", () => {
+    const h = html(
+      pronto({
+        situacao: "aprovado",
+        texto: "[fora](https://exemplo.com) e https://exemplo.com/solto e [js](javascript:alert(1)) e [outra org](https://github.com/outra/repo)\n\n[ref]: https://exemplo.com\n\n[por referência][ref]",
+      }),
+    );
+    expect(h).not.toContain("<a");
+    expect(h).not.toContain("href=");
+    expect(h).toContain("fora");
+    expect(h).toContain("por referência");
+  });
+
+  it("link que sai da sakura-corp com .. ou %2e%2e não vira link", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: "[a](https://github.com/sakura-corp/../../outra/x) e [b](https://github.com/sakura-corp/%2e%2e/outra/x)" }));
+    expect(h).not.toContain("<a");
+    expect(linkDoRelatorio("https://github.com/sakura-corp/../outra/x")).toBeUndefined();
+    expect(linkDoRelatorio(PR)).toBe(PR);
+  });
+
+  it("nota de rodapé tem título em português", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: "Texto[^1]\n\n[^1]: nota" }));
+    expect(h).toContain("Notas");
+    expect(h).not.toContain("Footnotes");
+  });
+
+  it("imagem não aparece, nem de dentro da sakura-corp", () => {
+    const h = html(pronto({ situacao: "aprovado", texto: `![foto](https://exemplo.com/x.png)\n\n![outra](${PR}.png)` }));
+    expect(h).not.toContain("<img");
+    expect(h).not.toContain("x.png");
   });
 });
 
