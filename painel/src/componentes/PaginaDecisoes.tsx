@@ -1,5 +1,6 @@
 // As decisões da Sofia (#648): a lista das issues abertas com a etiqueta `sofia`, a mais antiga em cima. O painel só lê:
 // não tem botão de fechar nem de responder (isso é no GitHub). O título vem do GitHub e aparece como texto puro.
+// As propostas de projeto secundário esperando a Sofia (#732) entram na mesma lista, com o selo "Proposta".
 import { CalendarClock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { Decisao, RespostaDasDecisoes } from "../../worker/decisoes";
@@ -83,9 +84,11 @@ export function textoDoPrazo(faltam: number): { destaque: boolean; texto: string
   return { destaque: true, texto: faltam === 1 ? "Vence amanhã" : `Vence em ${faltam} dias` };
 }
 
-/** A mais antiga em cima (empate: o número menor). Devolve uma lista nova. */
+/** A mais antiga em cima (empate: a decisão antes da proposta, depois o número menor). Devolve uma lista nova. */
 export function ordenarDecisoes(decisoes: Decisao[]): Decisao[] {
-  return [...decisoes].sort((a, b) => Date.parse(a.abertaEm) - Date.parse(b.abertaEm) || a.numero - b.numero);
+  return [...decisoes].sort(
+    (a, b) => Date.parse(a.abertaEm) - Date.parse(b.abertaEm) || Number(a.proposta === true) - Number(b.proposta === true) || a.numero - b.numero,
+  );
 }
 
 const dois = (n: number) => String(n).padStart(2, "0");
@@ -117,9 +120,17 @@ export async function carregarDecisoes(buscar: Buscar = fetch): Promise<EstadoDa
   }
   const decisoes = ordenarDecisoes(corpo.decisoes.map((d) => {
     const url = linkSeguro(d.url);
-    return { numero: d.numero, titulo: d.titulo, abertaEm: d.abertaEm, ...(url ? { url } : {}) };
+    return { numero: d.numero, titulo: d.titulo, abertaEm: d.abertaEm, ...(url ? { url } : {}), ...(d.proposta === true ? { proposta: true as const } : {}) };
   }));
-  return { tipo: "pronto", resposta: { decisoes, total: corpo.total, ...(corpo.maisDoQueCabe === true ? { maisDoQueCabe: true as const } : {}) } };
+  return {
+    tipo: "pronto",
+    resposta: {
+      decisoes,
+      total: corpo.total,
+      ...(corpo.maisDoQueCabe === true ? { maisDoQueCabe: true as const } : {}),
+      ...(corpo.propostasFora === true ? { propostasFora: true as const } : {}),
+    },
+  };
 }
 
 const CAIXA = "mt-4 min-w-0 rounded-xl border border-borda bg-cartao px-4 py-4 sm:px-5";
@@ -158,6 +169,9 @@ function LinhaDaDecisao({ decisao, agora }: { decisao: Decisao; agora: Date }) {
         )}
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] text-texto-2">
+        {decisao.proposta ? (
+          <span className="inline-flex shrink-0 items-center rounded-full border border-borda px-2 py-0.5 text-xs font-medium text-texto">Proposta</span>
+        ) : null}
         <span>#{decisao.numero}</span>
         <span>{textoDosDias(diasAberta(decisao.abertaEm, agora))}</span>
         <PrazoDaLinha titulo={decisao.titulo} abertaEm={decisao.abertaEm} agora={agora} />
@@ -191,7 +205,7 @@ export function ConteudoDasDecisoes({ estado, agora, tentarDeNovo }: PropsDoCont
       </div>
     );
   }
-  const { decisoes, total, maisDoQueCabe } = estado.resposta;
+  const { decisoes, total, maisDoQueCabe, propostasFora } = estado.resposta;
   return (
     <section aria-label="Decisões da Sofia" className="mt-4 min-w-0">
       {decisoes.length === 0 ? (
@@ -199,10 +213,15 @@ export function ConteudoDasDecisoes({ estado, agora, tentarDeNovo }: PropsDoCont
       ) : (
         <ol className="min-w-0 divide-y divide-borda rounded-xl border border-borda bg-cartao">
           {decisoes.map((d) => (
-            <LinhaDaDecisao key={d.numero} decisao={d} agora={agora} />
+            <LinhaDaDecisao key={`${d.proposta ? "proposta" : "decisao"}-${d.numero}`} decisao={d} agora={agora} />
           ))}
         </ol>
       )}
+      {propostasFora ? (
+        <p className="mt-3 text-sm text-texto-2">
+          As propostas dos projetos secundários não abriram agora: o repositório delas não existe ou o seu login não alcança.
+        </p>
+      ) : null}
       {maisDoQueCabe ? <p className="mt-3 text-sm text-texto-2">Mostrando as {decisoes.length} mais antigas de {total}.</p> : null}
       <p className="mt-3 text-sm">
         <a
