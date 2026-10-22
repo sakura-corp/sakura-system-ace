@@ -4,7 +4,7 @@ import { avisoKmMenor, ultimoKmConhecido } from "@/schemas/avisosOrdemServico";
 import type { OrdemServicoFormValues } from "@/schemas/ordemServico";
 import type { Cliente } from "@/types/cliente";
 import type { FuncionarioPublico } from "@/types/funcionario";
-import type { OrdemServico } from "@/types/os";
+import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { Campo, inputClasse } from "./FormCompartilhado";
 
 export function DetalhesFields({
@@ -26,7 +26,7 @@ export function DetalhesFields({
   clientes: Cliente[];
   funcionarios: FuncionarioPublico[];
   /** Ordens já existentes da loja — só pra saber o KM da última passagem. */
-  ordens: OrdemServico[];
+  ordens: OrdemParaKmDoVeiculo[];
   /** A OS aberta na tela, quando é edição: não serve de referência pra ela mesma. */
   ordemAtualId?: string;
   onCadastrarCliente: () => void;

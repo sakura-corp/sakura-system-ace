@@ -21,7 +21,7 @@ import {
 } from "@/schemas/faturamento";
 import { ehConsumidor } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
-import { FORMA_PAGAMENTO_LABEL, ehVendaBalcao, nomeOrdem, totalOrdem } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, ehVendaBalcao, nomeDocumento, totalOrdem } from "@/types/os";
 import type { OrdemServico } from "@/types/os";
 
 // Só o que o pagamento precisa saber da ordem — é o que deixa a venda de
@@ -163,7 +163,7 @@ export function FaturamentoCard({
         <div>
           <h3 className="text-corpo font-semibold text-sakura-purple-dark">
             {titulo ??
-              `Faturar ${nomeOrdem(ordem.numero, ordem.tipo)} de ${ordem.cliente?.nome ?? "cliente"}`}
+              `Faturar ${nomeDocumento(ordem)} de ${ordem.cliente?.nome ?? "cliente"}`}
           </h3>
           <p className="text-rotulo text-sakura-muted">Total dos itens: {formatarMoeda(total)}</p>
         </div>

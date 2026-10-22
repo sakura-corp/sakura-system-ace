@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ehVendaBalcao, nomeOrdem, totalOrdem, totalPorTipo } from "./os";
+import {
+  ehVendaBalcao,
+  nomeDocumento,
+  nomeOrdem,
+  STATUS_COR,
+  STATUS_LABEL,
+  totalOrdem,
+  totalPorTipo,
+} from "./os";
 import type { ItemOS } from "./os";
 
 function item(sobrescreve: Partial<ItemOS>): ItemOS {
@@ -65,5 +73,36 @@ describe("ehVendaBalcao", () => {
     expect(ehVendaBalcao({ tipo: "os" })).toBe(false);
     expect(ehVendaBalcao({})).toBe(false);
     expect(ehVendaBalcao(null)).toBe(false);
+  });
+});
+
+// Orçamento (#379): não tem número de OS até ser aprovado — tem o seu
+// próprio contador (`numero_orcamento`). O nome mostrado acompanha a etapa.
+describe("nomeDocumento", () => {
+  it("orçamento aberto ou recusado mostra o número do orçamento", () => {
+    expect(nomeDocumento({ status: "orcamento", numero: null, numero_orcamento: 45 })).toBe(
+      "Orçamento 45",
+    );
+    expect(nomeDocumento({ status: "recusado", numero: null, numero_orcamento: 46 })).toBe(
+      "Orçamento 46",
+    );
+  });
+
+  it("orçamento aprovado já é OS, com o número de OS", () => {
+    expect(nomeDocumento({ status: "em_andamento", numero: 17, numero_orcamento: 45 })).toBe("OS 17");
+  });
+
+  it("OS e venda de balcão continuam como sempre", () => {
+    expect(nomeDocumento({ status: "faturada", numero: 17 })).toBe("OS 17");
+    expect(nomeDocumento({ status: "concluida", numero: 17, tipo: "venda_balcao" })).toBe("Venda 17");
+  });
+});
+
+describe("STATUS_LABEL e STATUS_COR", () => {
+  it("orçamento e recusado têm nome e cor neutra (cinza), como na tarefa", () => {
+    expect(STATUS_LABEL.orcamento).toBe("Orçamento");
+    expect(STATUS_LABEL.recusado).toBe("Recusado");
+    expect(STATUS_COR.orcamento).toMatch(/slate|gray|zinc|neutral|stone/);
+    expect(STATUS_COR.recusado).toMatch(/slate|gray|zinc|neutral|stone/);
   });
 });

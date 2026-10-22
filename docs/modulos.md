@@ -465,6 +465,29 @@ Quatro coisas que valem saber:
     comissão do vendedor, mas **fica fora do ticket médio** (que responde "quanto rende cada carro
     atendido") — o "?" do cartão diz isso. O rótulo é "Venda 17" no caixa, na movimentação de
     estoque, nas comissões, no recibo de comissão e na garantia.
+- **Orçamento** (22/10/2026, tarefa `#379`, item `FN-01`, migration `0065` — **ainda não
+  publicado nem aplicado**): o orçamento é uma **etapa da própria OS** (situação `orcamento`,
+  antes de "em andamento"), não um módulo à parte. Menu **"Orçamentos"** (rota `/orcamentos`,
+  mesma permissão das OS), logo depois de "Ordens de Serviço", com um número pequeno dos abertos.
+  Nada no Início.
+  - **Numeração própria**: "Orçamento 45". O número de OS só vem **na aprovação** (o gatilho da
+    `0065` dá o próximo), então as OS continuam sem buraco.
+  - **Estoque só baixa na aprovação** (`aprovarOrcamento` em `lib/ordensServico.ts`, guardado
+    por `status = 'orcamento'`: aprovar duas vezes não baixa duas vezes). Acrescentar ou corrigir
+    item num orçamento não mexe no estoque.
+  - **Regra única de "conta nos números"**: `contaNosNumeros` (`schemas/orcamento.ts`). Orçamento
+    aberto ou recusado fica fora de comissão, lucratividade, ficha do veículo, garantias, clientes
+    sumidos, lista de OS e escolha de OS da nota; caixa e ticket médio já não o veem porque
+    `faturarOrdem` e a emissão de nota **recusam orçamento**.
+  - **Validade**: 7 dias, editável. Passou: etiqueta cinza **"vencido"**; ainda dá pra aprovar,
+    com aviso de que o preço pode ter mudado.
+  - **Aprovar** pede "quem aprovou" (texto livre, ex. "pelo telefone") e leva pra OS que nasceu.
+    **Recusar** é um clique, com motivo opcional (preço, prazo, foi em outro lugar, desistiu,
+    outro); o recusado vira histórico, na aba "Recusados".
+  - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).
+    **Impressão**: a OS não tem impressão própria hoje, então o orçamento também não.
+  - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`), peça avulsa, link de aprovação
+    pelo celular.
 - **Ficha do veículo** (27/09/2026, item `FN-04`, sem migration, `v0.9.46` — **ainda não
   testada por ela na loja**): tudo que já foi feito num carro,
   por placa. Rota `/veiculos/:id`, sem entrada no menu — abre pelo **"Ver veículos"** em

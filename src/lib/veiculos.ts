@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import type { OrdemDaFicha } from "@/schemas/fichaVeiculo";
+import { contaNosNumeros } from "@/schemas/orcamento";
 import type { Veiculo } from "@/types/cliente";
 
 export type VeiculoDaFicha = Veiculo & {
@@ -49,6 +50,8 @@ export async function buscarFichaDoVeiculo(veiculoId: string): Promise<FichaDoVe
 
   return {
     veiculo: veiculo as unknown as VeiculoDaFicha,
-    ordens: (ordens ?? []) as unknown as OrdemDaFicha[],
+    // Orçamento (#379) não é visita: aberto ou recusado, fica fora da
+    // história do carro (linha do tempo, KM, total gasto, garantia).
+    ordens: ((ordens ?? []) as unknown as OrdemDaFicha[]).filter(contaNosNumeros),
   };
 }

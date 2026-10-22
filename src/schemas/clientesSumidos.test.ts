@@ -90,6 +90,29 @@ describe("resumirPorCliente", () => {
     expect(resumos.has("cli-b")).toBe(false);
   });
 
+  // Orçamento (#379): o cliente que pediu orçamento e não fechou não "veio"
+  // — nem soma no gasto, nem conta como visita.
+  it("orçamento (aberto ou recusado) não entra no gasto nem na última visita", () => {
+    const resumos = resumirPorCliente([
+      ordem({ data_fechamento: "2026-03-10T15:00:00.000Z", itens: [item({ preco_unitario: 80 })] }),
+      ordem({
+        status: "orcamento",
+        data_abertura: "2026-09-01T13:00:00.000Z",
+        data_fechamento: null,
+        itens: [item({ preco_unitario: 1000 })],
+      }),
+      ordem({
+        status: "recusado",
+        data_abertura: "2026-09-05T13:00:00.000Z",
+        data_fechamento: null,
+        itens: [item({ preco_unitario: 1000 })],
+      }),
+      ordem({ cliente_id: "cli-so-orcamento", status: "orcamento", data_fechamento: null }),
+    ]);
+    expect(resumos.get("cli-a")).toMatchObject({ totalGasto: 80, ultimaVisita: "2026-03-10" });
+    expect(resumos.has("cli-so-orcamento")).toBe(false);
+  });
+
   it("separa os clientes", () => {
     const resumos = resumirPorCliente([
       ordem({ cliente_id: "cli-a", itens: [item({ preco_unitario: 10 })] }),

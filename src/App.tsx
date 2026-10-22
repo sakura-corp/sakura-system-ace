@@ -29,6 +29,7 @@ import { GarantiasPage } from "./pages/garantias/GarantiasPage";
 import { LoginPage } from "./pages/login/LoginPage";
 import { TrocarSenhaPage } from "./pages/login/TrocarSenhaPage";
 import { NotasFiscaisPage } from "./pages/notas-fiscais/NotasFiscaisPage";
+import { OrcamentosPage } from "./pages/ordens-servico/OrcamentosPage";
 import { OrdensServicoPage } from "./pages/ordens-servico/OrdensServicoPage";
 import { PainelPage } from "./pages/painel/PainelPage";
 import { RelatoriosPage } from "./pages/relatorios/RelatoriosPage";
@@ -199,6 +200,14 @@ export default function App() {
                 element={
                   <PermissaoRoute modulo="ordens_servico">
                     <OrdensServicoPage />
+                  </PermissaoRoute>
+                }
+              />
+              <Route
+                path="/orcamentos"
+                element={
+                  <PermissaoRoute modulo="ordens_servico">
+                    <OrcamentosPage />
                   </PermissaoRoute>
                 }
               />

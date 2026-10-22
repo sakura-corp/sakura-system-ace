@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
+import { lucratividadePorItem } from "@/schemas/lucratividade";
+import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
@@ -7,89 +10,29 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function primeiroDiaDoMes(): string {
-  const hoje = new Date();
-  return new Date(hoje.getFullYear(), hoje.getMonth(), 1).toLocaleDateString("sv-SE");
-}
-
-function hojeStr(): string {
-  return new Date().toLocaleDateString("sv-SE");
-}
-
-// `data_abertura` vem do banco em UTC — pegar o "dia" com `.slice(0, 10)`
-// pegaria o dia em UTC, não no fuso local. No Brasil (UTC-3), uma OS aberta
-// depois das ~21h vira "amanhã" em UTC e sumiria do filtro de período (que é
-// calculado em hora local). Ver mesmo bug/correção em OrdensServicoPage.tsx.
-function paraDataLocal(dataIso: string): string {
-  return new Date(dataIso).toLocaleDateString("sv-SE");
-}
-
-interface LinhaLucro {
-  descricao: string;
-  quantidade: number;
-  receita: number;
-  custo: number;
-  margem: number;
-}
-
 interface LucratividadeSectionProps {
   ordens: OrdemServico[];
   pecas: Peca[];
   servicos: Servico[];
 }
 
+// A conta (e a regra de deixar orçamento de fora, #379) mora em
+// `schemas/lucratividade.ts`; aqui é só ligar os fios.
 export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeSectionProps) {
-  const [dataInicio, setDataInicio] = useState(primeiroDiaDoMes());
-  const [dataFim, setDataFim] = useState(hojeStr());
+  const [dataInicio, setDataInicio] = useState(primeiroDiaDoMesLocal());
+  const [dataFim, setDataFim] = useState(hojeLocal());
 
-  const custoPorPeca = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const peca of pecas) mapa.set(peca.id, peca.preco_custo ?? 0);
-    return mapa;
-  }, [pecas]);
-
-  const custoPorServico = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const servico of servicos) mapa.set(servico.id, servico.custo ?? 0);
-    return mapa;
-  }, [servicos]);
-
-  const linhas = useMemo(() => {
-    const mapa = new Map<string, LinhaLucro>();
-
-    for (const ordem of ordens) {
-      const dia = paraDataLocal(ordem.data_abertura);
-      if (dia < dataInicio || dia > dataFim) continue;
-
-      for (const item of ordem.itens ?? []) {
-        const receita = item.quantidade * item.preco_unitario - item.desconto;
-        const custoUnitario =
-          item.tipo === "peca"
-            ? custoPorPeca.get(item.peca_id ?? "") ?? 0
-            : custoPorServico.get(item.servico_id ?? "") ?? 0;
-        const custo = item.quantidade * custoUnitario;
-
-        const existente = mapa.get(item.descricao) ?? {
-          descricao: item.descricao,
-          quantidade: 0,
-          receita: 0,
-          custo: 0,
-          margem: 0,
-        };
-        existente.quantidade += item.quantidade;
-        existente.receita += receita;
-        existente.custo += custo;
-        existente.margem += receita - custo;
-        mapa.set(item.descricao, existente);
-      }
-    }
-
-    return [...mapa.values()].sort((a, b) => b.margem - a.margem);
-  }, [ordens, custoPorPeca, custoPorServico, dataInicio, dataFim]);
-
-  const totalReceita = linhas.reduce((total, l) => total + l.receita, 0);
-  const totalCusto = linhas.reduce((total, l) => total + l.custo, 0);
-  const totalMargem = linhas.reduce((total, l) => total + l.margem, 0);
+  const { linhas, totalReceita, totalCusto, totalMargem } = useMemo(
+    () =>
+      lucratividadePorItem({
+        ordens,
+        custoPeca: mapaCustoPecas(pecas),
+        custoServico: mapaCustoServicos(servicos),
+        de: dataInicio,
+        ate: dataFim,
+      }),
+    [ordens, pecas, servicos, dataInicio, dataFim],
+  );
 
   return (
     <>

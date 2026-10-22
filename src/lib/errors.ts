@@ -7,6 +7,16 @@
  * `ck_<tabela>_<regra>`, e ganha uma linha aqui.
  */
 export const MENSAGEM_DA_TRAVA: Record<string, string> = {
+  // Orçamento (#379, migration 0065).
+  ck_ordens_servico_numero_orcamento:
+    "Orçamento não tem número de OS, e OS não volta a ser orçamento. Atualize a tela e confira.",
+  ck_ordens_servico_numero_orcamento_obrigatorio:
+    "O orçamento ficou sem número de orçamento. Atualize a tela e tente de novo.",
+  ck_ordens_servico_motivo_recusa:
+    "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
+  // Esta vem do gatilho (um CHECK não vê o status de antes), com a mesma frase de um CHECK.
+  ck_ordens_servico_transicao_orcamento:
+    "Orçamento só pode ser aprovado ou recusado, e recusado não muda mais. Atualize a tela e confira.",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",
@@ -56,8 +66,47 @@ export function traduzirTrava(mensagem: string): string | null {
 export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
 
+/**
+ * O programa pediu uma coluna que o banco desta empresa ainda não tem: a
+ * versão nova chegou antes da migration (a ordem certa é o banco primeiro,
+ * mas migration com `versao-minima-do-programa` faz o contrário de
+ * propósito — ex.: criar orçamento antes da 0065). Sem isto, a tela mostrava
+ * o inglês técnico do PostgREST.
+ */
+export const MENSAGEM_BANCO_DESATUALIZADO =
+  "O banco desta empresa ainda não foi atualizado pra esta versão do programa, então isto ainda não funciona. Avise quem cuida do sistema.";
+
+/**
+ * Colunas que chegam com a 0065. Só elas viram o aviso de banco desatualizado:
+ * uma coluna qualquer que falta é erro de programação (nome errado), e mandar
+ * "atualizar o banco" ali só esconderia o defeito.
+ */
+export const COLUNAS_DA_0065 = [
+  "numero_orcamento",
+  "validade",
+  "aprovado_por",
+  "aprovado_em",
+  "motivo_recusa",
+  "recusado_em",
+  "orcado_em",
+] as const;
+
+/** O nome da coluna que falta, do jeito do PostgREST ou do Postgres; null se não é esse erro. */
+function colunaQueFalta(mensagem: string): string | null {
+  const doPostgrest = /Could not find the '([^']+)' column/.exec(mensagem);
+  if (doPostgrest) return doPostgrest[1];
+  // "column ordens_servico.validade does not exist" ou
+  // 'column "validade" of relation "ordens_servico" does not exist'
+  const doPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
+  return doPostgres ? doPostgres[1] : null;
+}
+
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
+  const coluna = colunaQueFalta(mensagem);
+  if (coluna && (COLUNAS_DA_0065 as readonly string[]).includes(coluna)) {
+    return MENSAGEM_BANCO_DESATUALIZADO;
+  }
   return traduzirTrava(mensagem) ?? mensagem;
 }
 

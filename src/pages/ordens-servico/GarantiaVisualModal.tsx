@@ -6,7 +6,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlGarantiaOS } from "@/lib/garantiaDocumento";
 import { buscarClientePorId, buscarVeiculoPorId } from "@/lib/clientes";
 import type { OrdemServico } from "@/types/os";
-import { nomeOrdem } from "@/types/os";
+import { nomeDocumento } from "@/types/os";
 
 interface GarantiaVisualModalProps {
   ordem: OrdemServico;
@@ -67,7 +67,7 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `garantia-${nomeOrdem(ordem.numero, ordem.tipo).replace(" ", "-")}.html`;
+    link.download = `garantia-${nomeDocumento(ordem).replace(" ", "-")}.html`;
     link.click();
     URL.revokeObjectURL(url);
   }

@@ -48,7 +48,7 @@ import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import type { ContaPagar } from "@/types/contaPagar";
 import type { MovimentoCaixa } from "@/types/caixa";
-import { nomeOrdem } from "@/types/os";
+import { nomeDocumento } from "@/types/os";
 import { MODULOS, temPermissao, type ModuloChave } from "@/types/operador";
 import type { OrdemServico } from "@/types/os";
 
@@ -345,7 +345,7 @@ export function PainelPage() {
                           className="cursor-pointer border-t border-white/10 hover:bg-white/5"
                         >
                           <td className="px-4 py-3 text-sakura-purple-dark/85">
-                            {nomeOrdem(ordem.numero)}
+                            {nomeDocumento(ordem)}
                           </td>
                           <td className="px-4 py-3">{ordem.cliente?.nome ?? "—"}</td>
                           <td className="px-4 py-3">{ordem.veiculo?.placa ?? "—"}</td>

@@ -1,6 +1,13 @@
 import type { TipoVeiculo } from "@/types/cliente";
+import type { MotivoRecusa } from "@/schemas/orcamento";
 
-export type StatusOS = "em_andamento" | "concluida" | "faturada";
+/**
+ * "orcamento" e "recusado" são a etapa de orçamento da OS (#379, migration
+ * 0065): moram na mesma tabela, mas não são venda — não baixam estoque, não
+ * têm número de OS e não entram em conta nenhuma (ver `contaNosNumeros` em
+ * `src/schemas/orcamento.ts`).
+ */
+export type StatusOS = "orcamento" | "recusado" | "em_andamento" | "concluida" | "faturada";
 
 /**
  * "os" é a ordem de serviço de sempre; "venda_balcao" é a venda de peça no
@@ -44,7 +51,12 @@ export type PatchItemOS = NovoItemOS;
 
 export interface OrdemServico {
   id: string;
-  numero: number;
+  /**
+   * Número de OS. Nulo enquanto é orçamento (aberto ou recusado): o número
+   * de OS só nasce na aprovação (migration 0065), e a OS segue a sequência
+   * sem buraco. Pra mostrar, use `nomeDocumento`.
+   */
+  numero: number | null;
   loja_id: string;
   /** Ausente em banco anterior à migration 0064 — ver `ehVendaBalcao`. */
   tipo?: TipoOrdem;
@@ -72,6 +84,29 @@ export interface OrdemServico {
   criado_por?: { nome: string } | null;
   atualizado_por?: { nome: string } | null;
   itens?: ItemOS[];
+  // Orçamento (#379, migration 0065). Opcionais: banco anterior não tem as
+  // colunas.
+  /** Contador próprio dos orçamentos, por loja. Continua lá depois de aprovado. */
+  numero_orcamento?: number | null;
+  /** Dia de calendário ("AAAA-MM-DD") até quando o orçamento vale. */
+  validade?: string | null;
+  /** Quem aprovou, em texto livre ("o próprio, pelo telefone"). */
+  aprovado_por?: string | null;
+  aprovado_em?: string | null;
+  motivo_recusa?: MotivoRecusa | null;
+  recusado_em?: string | null;
+  /** Quando o orçamento foi feito. Só na OS que nasceu de orçamento: na
+   * aprovação, o banco guarda aqui a data antiga e põe a da aprovação em
+   * `data_abertura`. */
+  orcado_em?: string | null;
+}
+
+/** Ordem que já tem número de OS — toda ordem que não é orçamento. */
+export type OrdemNumerada = OrdemServico & { numero: number };
+
+/** Guarda de tipo: a ordem já tem número de OS (não é orçamento). */
+export function temNumeroDeOS(ordem: OrdemServico): ordem is OrdemNumerada {
+  return ordem.numero !== null;
 }
 
 export interface NovaOrdemServico {
@@ -99,6 +134,7 @@ export type PatchOrdemServico = Partial<
     | "descricao_problema"
     | "vendedor_id"
     | "status"
+    | "validade"
   >
 >;
 
@@ -108,6 +144,8 @@ export type PatchOrdemServico = Partial<
 export const STATUS_COM_FECHAMENTO: StatusOS[] = ["concluida", "faturada"];
 
 export const STATUS_LABEL: Record<StatusOS, string> = {
+  orcamento: "Orçamento",
+  recusado: "Recusado",
   em_andamento: "Em andamento",
   concluida: "Concluída",
   faturada: "Faturada",
@@ -117,6 +155,10 @@ export const STATUS_LABEL: Record<StatusOS, string> = {
 // (esperando faturar) usa laranja de propósito, pra chamar mais atenção que
 // as outras: é o estado que ainda exige uma ação (faturar).
 export const STATUS_COR: Record<StatusOS, string> = {
+  // Orçamento ainda não é trabalho na oficina: cinza, neutro (pedido da
+  // tarefa #379). Recusado também — é só histórico.
+  orcamento: "bg-slate-100 text-slate-700",
+  recusado: "bg-slate-100 text-slate-700",
   em_andamento: "bg-amber-50 text-amber-800",
   concluida: "bg-orange-100 text-orange-800",
   faturada: "bg-emerald-50 text-emerald-700",
@@ -128,6 +170,23 @@ export const STATUS_COR: Record<StatusOS, string> = {
 // número sozinho já é único na loja; o tipo só troca a palavra.
 export function nomeOrdem(numero: number, tipo?: TipoOrdem | null): string {
   return `${tipo === "venda_balcao" ? "Venda" : "OS"} ${numero}`;
+}
+
+/**
+ * O nome que acompanha a etapa (#379): "Orçamento 45" enquanto é orçamento
+ * (aberto ou recusado, sem número de OS); "OS 17" / "Venda 17" depois.
+ * Prefira esta a `nomeOrdem` sempre que a ordem puder ser um orçamento.
+ */
+export function nomeDocumento(ordem: {
+  status?: StatusOS;
+  numero: number | null;
+  numero_orcamento?: number | null;
+  tipo?: TipoOrdem | null;
+}): string {
+  if (ordem.numero === null || ordem.status === "orcamento" || ordem.status === "recusado") {
+    return `Orçamento ${ordem.numero_orcamento ?? ""}`.trim();
+  }
+  return nomeOrdem(ordem.numero, ordem.tipo);
 }
 
 export const FORMA_PAGAMENTO_LABEL: Record<string, string> = {

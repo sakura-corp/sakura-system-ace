@@ -1,6 +1,6 @@
 import type { Cliente, Veiculo } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
-import { FORMA_PAGAMENTO_LABEL, nomeOrdem } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
 // Sakura System — AutoCenter Edition
@@ -107,7 +107,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<title>Garantia — ${nomeOrdem(ordem.numero, ordem.tipo)}</title>
+<title>Garantia — ${nomeDocumento(ordem)}</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -156,7 +156,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
     ${enderecoLoja(loja) ? `<p class="subtitulo">${enderecoLoja(loja)}</p>` : ""}
     ${contatoLoja ? `<p class="subtitulo">${contatoLoja}</p>` : ""}
     <p class="subtitulo" style="margin-top:8px;font-weight:600;">
-      Garantia — ${nomeOrdem(ordem.numero, ordem.tipo)} · ${formatarData(ordem.data_fechamento)}
+      Garantia — ${nomeDocumento(ordem)} · ${formatarData(ordem.data_fechamento)}
     </p>
   </div>
 

@@ -4,6 +4,7 @@ import {
   idsDeFuncionarios,
   itemFormVazio,
   nomearFuncionarios,
+  ordemServicoFormSchema,
   totaisDaOrdem,
   type ItemFormValues,
 } from "./ordemServico";
@@ -183,5 +184,24 @@ describe("problemaDoItem", () => {
     expect(problemaDoItem({ quantidade: 1, preco_unitario: -1, desconto: 0 })).toMatch(/preço/);
     expect(problemaDoItem({ quantidade: 1, preco_unitario: 10, desconto: -1 })).toMatch(/negativo/);
     expect(problemaDoItem({ quantidade: 1, preco_unitario: 10, desconto: 10.01 })).toMatch(/maior que o valor do item/);
+  });
+});
+
+describe("ordemServicoFormSchema", () => {
+  // Rascunho gravado pela versão anterior ao orçamento (#379) não tem
+  // `validade`. Restaurado, ele não pode travar o "Salvar" da OS em silêncio
+  // (o campo nem aparece na OS, então o erro não teria onde aparecer).
+  it("aceita um rascunho antigo, sem validade, e completa com vazio", () => {
+    const rascunhoAntigo = {
+      cliente_id: "c1",
+      veiculo_id: "",
+      km_entrada: "",
+      descricao_problema: "",
+      vendedor_id: "",
+      itens: [],
+    };
+    const resultado = ordemServicoFormSchema.safeParse(rascunhoAntigo);
+    expect(resultado.success).toBe(true);
+    expect(resultado.data?.validade).toBe("");
   });
 });

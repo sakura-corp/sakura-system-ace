@@ -239,3 +239,33 @@ describe("quando a SEFAZ/prefeitura demora", () => {
     expect(refPertenceAOrdem("os15-nfse-1790866567242 NFSe", 15, "nfse")).toBe(false);
   });
 });
+
+// Orçamento (#379) não é venda: não tem número de OS e nunca emite nota. A
+// tela não oferece o botão, mas quem emite não pode depender disso — uma nota
+// "osnull" na SEFAZ não tem volta.
+describe("orçamento nunca emite nota", () => {
+  const orcamento = { id: "orc-1", numero: null, numero_orcamento: 45, status: "orcamento" } as OrdemServico;
+
+  it("NFC-e: recusa antes de chamar o porteiro", async () => {
+    await expect(emitirNFCe({ ...dadosNFCe, ordem: orcamento })).rejects.toThrow(/orçamento/i);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("NFS-e: recusa antes de chamar o porteiro", async () => {
+    const dadosNFSe = {
+      ordem: orcamento,
+      discriminacao: "Alinhamento",
+      valorServicos: 100,
+      cliente: { nome: "Cliente", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09" },
+      codigoMunicipioCliente: "3503208",
+      configuracaoFiscal: {
+        ...configuracaoFiscal,
+        codigo_municipio: "3503208",
+        codigo_cnae: "4520-0/04",
+        aliquota_iss: 2,
+      } as ConfiguracaoFiscalLoja,
+    } as Parameters<typeof emitirNFSe>[0];
+    await expect(emitirNFSe(dadosNFSe)).rejects.toThrow(/orçamento/i);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});

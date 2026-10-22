@@ -122,6 +122,39 @@ ordens.unshift({
   itens: [{ ...item("peca", "p5", "Bateria 60Ah", 1, 549), tecnico_id: null, tecnico: null }],
 });
 
+// Orçamentos (#379): ficam FORA de `ordens` de propósito. Orçamento não é
+// venda: o resto da demo (caixa, ticket, comissão) é calculado em cima de
+// `ordens` e não pode contá-los. Só entram na tabela `ordens_servico`, de onde
+// a lista de orçamentos e o número do menu os leem. A validade é relativa a
+// hoje pra a cena nunca "vencer" sozinha com o tempo (nem deixar de vencer).
+const orcamentoDemo = (n, cliente, veiculo, status, validadeEmDias, itens, extra = {}) => {
+  const cli = clientes.find((c) => c.id === cliente);
+  const v = vlk(veiculo);
+  return {
+    id: "orc" + n, numero: null, numero_orcamento: n, loja_id: LOJA,
+    cliente_id: cliente, veiculo_id: veiculo, status,
+    validade: diaCurto(validadeEmDias), km_entrada: v.km_atual,
+    descricao_problema: "", forma_pagamento: null, parcelas: 1,
+    data_abertura: dia(-3 - n), data_fechamento: null,
+    vendedor_id: "f2", criado_por_id: OP, atualizado_por_id: OP,
+    cliente: { nome: cli.nome },
+    veiculo: { placa: v.placa, marca: v.marca, modelo: v.modelo, cor: v.cor, tipo: v.tipo },
+    vendedor: { nome: "Bruna Tavares" },
+    criado_por: { nome: "Marcos Andrade" }, atualizado_por: { nome: "Marcos Andrade" },
+    itens: itens,
+    ...extra,
+  };
+};
+export const orcamentos = [
+  orcamentoDemo(3, "c2", "v2", "orcamento", 5,
+    [item("peca", "p2", "Pneu 205/60 R16", 4, 612), item("servico", "s1", "Alinhamento e balanceamento", 1, 140)]),
+  orcamentoDemo(2, "c3", "v3", "orcamento", -2,
+    [item("peca", "p3", "Amortecedor dianteiro", 2, 445), item("servico", "s3", "Troca de amortecedor", 1, 260)]),
+  orcamentoDemo(1, "c5", "v5", "recusado", 3,
+    [item("servico", "s2", "Troca de óleo e filtro", 1, 165)],
+    { motivo_recusa: "preco", recusado_em: dia(-1) }),
+];
+
 const totalOrdem = (o) =>
   o.itens.reduce((s, i) => s + i.quantidade * i.preco_unitario - i.desconto, 0);
 
@@ -513,7 +546,7 @@ export const TABELAS = {
     const c = clientes.find((cl) => cl.id === v.cliente_id);
     return { ...v, cliente: c ? { id: c.id, nome: c.nome, telefone: c.telefone } : null };
   }),
-  ordens_servico: ordens,
+  ordens_servico: [...ordens, ...orcamentos],
   ordens_servico_itens: ordensItens,
   caixa_movimentos: caixa,
   fechamentos_caixa: fechamentosCaixa,

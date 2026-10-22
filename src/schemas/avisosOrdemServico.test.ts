@@ -41,6 +41,15 @@ describe("ultimoKmConhecido", () => {
     expect(ultimoKmConhecido("v1", veiculos, ordens)).toBe(61_000);
   });
 
+  it("ignora orçamento aberto ou recusado (#379): só OS conta como passagem", () => {
+    const ordens = [
+      { ...ordem("orc1", "v1", 999_999, "2026-03-12T12:00:00Z"), status: "recusado" as const },
+      { ...ordem("orc2", "v1", 888_888, "2026-03-11T12:00:00Z"), status: "orcamento" as const },
+      { ...ordem("os1", "v1", 61_000, "2026-03-10T12:00:00Z"), status: "faturada" as const },
+    ];
+    expect(ultimoKmConhecido("v1", veiculos, ordens)).toBe(61_000);
+  });
+
   it("não se deixa contaminar por um km absurdo antigo — vale o mais recente, não o maior", () => {
     // Um "999999" digitado por engano no passado não pode virar a referência
     // eterna: senão o aviso de KM menor dispararia em toda OS seguinte.

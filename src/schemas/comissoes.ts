@@ -1,6 +1,8 @@
 import { custoDosItens, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo as arredondar } from "./dinheiro";
-import type { ItemOS, OrdemServico, TipoOrdem } from "@/types/os";
+import { contaNosNumeros } from "./orcamento";
+import { temNumeroDeOS } from "@/types/os";
+import type { ItemOS, OrdemNumerada, OrdemServico, TipoOrdem } from "@/types/os";
 
 /**
  * Comissão por funcionário, pra tela Relações → Comissões.
@@ -129,13 +131,19 @@ function papelVazio(): ResumoPapel {
   };
 }
 
-/** Só OS faturada, com a data do faturamento dentro do período. */
+/**
+ * Só OS faturada, com a data do faturamento dentro do período. Orçamento
+ * (#379) nunca entra: nem é faturado, nem tem número de OS — as duas
+ * checagens de cima repetem isso de propósito, pela regra única
+ * `contaNosNumeros`.
+ */
 export function ordensDoPeriodo(
   ordens: OrdemServico[],
   de: string,
   ate: string,
-): OrdemServico[] {
-  return ordens.filter((ordem) => {
+): OrdemNumerada[] {
+  return ordens.filter((ordem): ordem is OrdemNumerada => {
+    if (!contaNosNumeros(ordem) || !temNumeroDeOS(ordem)) return false;
     if (ordem.status !== "faturada") return false;
     // `data_fechamento` é gravada no faturamento (ver lib/ordensServico.ts).
     // O fallback pra `data_abertura` cobre OS antiga que ficou sem ela.
@@ -185,7 +193,7 @@ export function resumirComissoes({
   function somar(
     linha: ComissaoFuncionario,
     papel: ResumoPapel,
-    ordem: OrdemServico,
+    ordem: OrdemNumerada,
     itens: ItemOS[],
   ): void {
     const percentual = linha.percentual;

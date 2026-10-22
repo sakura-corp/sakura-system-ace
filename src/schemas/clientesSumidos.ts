@@ -1,5 +1,6 @@
 import { diaLocal } from "@/lib/datas";
 import { somar } from "./dinheiro";
+import { contaNosNumeros } from "./orcamento";
 import { totalOrdem } from "@/types/os";
 import type { StatusOS, TipoItemOS, TipoOrdem } from "@/types/os";
 
@@ -131,7 +132,9 @@ function descreverVeiculo(veiculo: NonNullable<OrdemDoCliente["veiculo"]>): stri
 export function resumirPorCliente(ordens: readonly OrdemDoCliente[]): Map<string, ResumoDoCliente> {
   const porCliente = new Map<string, OrdemDoCliente[]>();
   for (const ordem of ordens) {
-    if (ordem.status !== "faturada") continue;
+    // Orçamento (#379) nunca é faturado; a regra única fica escrita mesmo
+    // assim, pra ninguém afrouxar o "faturada" sem lembrar dele.
+    if (!contaNosNumeros(ordem) || ordem.status !== "faturada") continue;
     const lista = porCliente.get(ordem.cliente_id);
     if (lista) lista.push(ordem);
     else porCliente.set(ordem.cliente_id, [ordem]);

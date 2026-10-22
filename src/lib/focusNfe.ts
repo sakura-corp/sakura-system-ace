@@ -357,6 +357,18 @@ function montarRefNota(numeroOrdem: number, sufixo: string): string {
   return `os${numeroOrdem}-${sufixo}-${Date.now()}`;
 }
 
+// Orçamento (#379) não tem número de OS e nunca emite nota: a nota é da
+// venda, e orçamento ainda não é venda. A tela não oferece o botão, mas quem
+// emite não pode depender disso — uma nota "osnull" na SEFAZ não tem volta.
+function numeroParaNota(ordem: { numero: number | null; status?: string }): number {
+  if (ordem.numero === null || ordem.status === "orcamento" || ordem.status === "recusado") {
+    throw new FocusNfeError(
+      "Orçamento não emite nota fiscal: aprove o orçamento (ele vira OS) e fature antes.",
+    );
+  }
+  return ordem.numero;
+}
+
 export function montarCorpoNFCe({
   itens,
   cliente,
@@ -403,10 +415,11 @@ const MENSAGEM_SEM_TOKEN =
 
 export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
+  const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
 
   const lojaId = configuracaoFiscal.loja_id;
-  const ref = montarRefNota(ordem.numero, "nfce");
+  const ref = montarRefNota(numero, "nfce");
   const corpo = montarCorpoNFCe(dados);
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfce", ref, corpo });
@@ -503,6 +516,7 @@ export function montarCorpoNFSe({
 
 export async function emitirNFSe(dados: DadosEmissaoNFSe): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
+  const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
   if (!configuracaoFiscal.codigo_municipio) {
     throw new FocusNfeError(
@@ -527,7 +541,7 @@ export async function emitirNFSe(dados: DadosEmissaoNFSe): Promise<RespostaFocus
   }
 
   const lojaId = configuracaoFiscal.loja_id;
-  const ref = montarRefNota(ordem.numero, "nfse");
+  const ref = montarRefNota(numero, "nfse");
   const corpo = montarCorpoNFSe(dados);
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfse", ref, corpo });

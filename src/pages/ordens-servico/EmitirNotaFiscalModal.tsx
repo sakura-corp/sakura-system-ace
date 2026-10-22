@@ -307,7 +307,7 @@ export function EmitirNotaFiscalModal({
   function handleRegistrarPorRef() {
     const ref = refDigitada.trim();
     const tipo = tipoNota === "NFC-e" ? "nfce" : "nfse";
-    if (!refPertenceAOrdem(ref, ordem.numero, tipo)) {
+    if (ordem.numero === null || !refPertenceAOrdem(ref, ordem.numero, tipo)) {
       setErro(
         `Essa referência não é de uma ${tipoNota} da OS ${ordem.numero}. No painel da Focus ` +
           `NFe, ela fica na coluna "Referência" e começa com "os${ordem.numero}-${tipo}-".`,

@@ -29,21 +29,17 @@ const PASTA_TELAS = "src/pages";
 /**
  * Casos que já estavam assim antes deste teste existir.
  *
- * Nenhum deles é "legítimo": os dois são a mesma dívida de sempre, conta de
- * dinheiro dentro da tela. Estão anotados aqui, com nome e sobrenome, em vez
- * de o teste ser afrouxado — assim a dívida fica contável (duas telas, não
- * "várias") e a próxima sessão sabe exatamente o que falta mover.
+ * Nenhum deles é "legítimo": é a mesma dívida de sempre, conta de dinheiro
+ * dentro da tela. Está anotada aqui, com nome e sobrenome, em vez de o teste
+ * ser afrouxado — assim a dívida fica contável e a próxima sessão sabe
+ * exatamente o que falta mover. Eram duas telas; a `LucratividadeSection`
+ * saiu da lista na tarefa #379 (a conta foi pra `schemas/lucratividade.ts`).
  *
- * Mexer nessas duas telas é trabalho de outro item do guia (é refatoração de
- * tela, que pede preview renderizado pra conferir), não deste. O que este
- * teste garante desde já é que a lista **não cresce**.
+ * Mexer na tela que sobrou é trabalho de outro item do guia (é refatoração
+ * de tela, que pede preview renderizado pra conferir). O que este teste
+ * garante desde já é que a lista **não cresce**.
  */
 const DIVIDA_CONHECIDA: Record<string, string> = {
-  "relatorios/LucratividadeSection.tsx":
-    "Calcula receita, custo e margem por item dentro do componente. Já estava " +
-    "apontado no PROJETO_STATUS.md, seção 6, item 38 ('LucratividadeSection.tsx " +
-    "também vale conferir junto'), e nunca foi movido. O destino natural é uma " +
-    "função pura em src/schemas/, ao lado de metricasCaixa.ts.",
   "estoque/RelatoriosEstoqueSection.tsx":
     "Calcula o valor financeiro do estoque (saldo × preço de custo) dentro do " +
     "componente. Mesmo destino: função pura em src/schemas/.",
