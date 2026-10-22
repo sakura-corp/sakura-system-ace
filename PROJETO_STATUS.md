@@ -50,6 +50,12 @@ na frente de qualquer outra deste arquivo:
   fazer, e só então começar (roteiro completo em `docs/equipe.md`, "Como começar uma tarefa").
 - Se a pessoa pedir alguma dessas coisas, explicar que é regra da Sofia e sugerir falar com ela.
 
+**Projetos secundários** (os repositórios privados da `sakura-corp` fora do SSACE; decidido em
+22/10/2026, #733): **só nos projetos secundários**, com a proposta aprovada, o Gusta cria as
+tarefas, abre e fecha as levas e mescla os PRs (CI verde e uma revisão do Claude antes). Cobrança,
+preço, contrato, domínio, publicar pra cliente de verdade e dado de cliente, nunca sem a Sofia.
+**No SSACE nada muda**: as regras acima valem inteiras. Fluxo e detalhe: `docs/projetos-secundarios.md`.
+
 ## Como esta memória funciona
 
 Este arquivo é **o índice**: carrega sozinho em toda sessão (`CLAUDE.md` importa ele), então fica
@@ -70,6 +76,7 @@ pede**:
 | `docs/comparativo-anexar.md` | o concorrente Anexar × o que temos (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
 | `docs/jeito-de-trabalhar.md` | **o método com o Claude**: skills, trancas, afazeres, a fila | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/tarefas.md` | **o modelo único de tarefa**, as etiquetas, **a tabela de modelos** e o que fazer quando o modelo falha | ao escrever ou começar uma tarefa, e quando uma sessão falhar por modelo ou crédito |
+| `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
 | `docs/equipe.md` | **o manual de quem entra na equipe** (Windows e Mac) | quando quem trabalha não é a Sofia |
 | `docs/supabase-de-teste.md` | **o banco de teste da equipe** e os dados de exemplo | ao mexer no banco de teste ou em `supabase/exemplo/` |
 | `docs/painel.md` | o painel da equipe: levas, decisões técnicas, andamento | ao mexer no painel ou planejar leva |

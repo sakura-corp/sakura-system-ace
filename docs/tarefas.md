@@ -33,6 +33,10 @@ formatos de issue convivendo, e nenhuma das 80 abertas tinha chefe ou leva.
 | `guia` | ideia do guia de melhorias, ainda **fora do modelo** (vira tarefa no modelo quando entrar numa leva) |
 | `ideia` | ideia solta guardada pela skill `/ideia`; **não é tarefa**, é lida na revisão do mês (R1) |
 
+Nos **projetos secundários**, as tarefas usam as mesmas etiquetas, no repositório de cada projeto
+(com `leva-N` contada a partir de 1 em cada um); as **propostas** de projeto têm etiquetas próprias,
+no `sakura-corp/secundarios` (`docs/projetos-secundarios.md`).
+
 Decisão que trava uma tarefa **vira uma issue `sofia` própria** e entra no `Depende de` da tarefa.
 Nada de "Precisa da Sofia?" escondido no meio do texto: o painel não enxerga.
 
@@ -133,6 +137,15 @@ falhar logo no começo, com aviso de **crédito, limite ou modelo indisponível*
 
 O modelo **nunca** se resolve editando a issue, e a tarefa não muda por causa disso.
 Dentro da sessão, a mãe faz o mesmo sozinha com ajudantes e filhas (skill `ritual-de-tarefa`).
+
+## Quem escreve a tarefa
+
+- **No SSACE**: só a Sofia, com o Claude dela (skill `nova-tarefa`). A equipe não escreve tarefa.
+- **Exceção, só nos projetos secundários** (Sofia, 22/10/2026, #733): com a proposta aprovada, o
+  **Gusta** cria as tarefas do projeto, **neste mesmo modelo**, abre e fecha as levas de lá e mescla
+  os PRs (CI verde e uma revisão do Claude antes). Tarefa que toca cobrança, preço, contrato,
+  domínio, publicar pra cliente de verdade ou dado de cliente vira issue `sofia` antes, como aqui.
+  Fluxo inteiro em `docs/projetos-secundarios.md`.
 
 ## Quando reescrever
 
