@@ -117,6 +117,9 @@ em `MELHORIAS.md`, "Mercado", e em `docs/comparativo-anexar.md`).
 **Continua na frente de tudo**, porque já foi combinado como base para vender: permissões no
 banco (#365, #366, #367), o token antigo da Focus (#368), o Electron (#385), e o contrato e a
 LGPD (item 10 da seção 8).
+**Mudou em 22/10** (ela): a #365, a #368 e a #385 entram na leva 4; **a #366 e a #367 esperam** até
+outra empresa ir usar o sistema (na Pneus Amigão o risco é teórico, `docs/licoes.md`, item 1). A
+leva 5 é a #454, a #456, a #372 e a #459 (`docs/painel.md`, "Andamento").
 
 ### Onda 1: sem custo, rápidas, tiram trabalho já
 

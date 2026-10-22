@@ -1,4 +1,5 @@
 import { arredondarCentavo } from "./dinheiro";
+import { custoUnitarioDoItem } from "./orcamento";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { ItemOS } from "@/types/os";
 import { ehVendaBalcao, totalOrdem } from "@/types/os";
@@ -34,17 +35,19 @@ export function mapaCustoServicos(servicos: { id: string; custo: number | null }
   return new Map(servicos.map((servico) => [servico.id, servico.custo ?? 0]));
 }
 
-/** Quanto custou pra loja o que foi vendido nesses itens (peça + serviço). */
+/**
+ * Quanto custou pra loja o que foi vendido nesses itens (peça + serviço).
+ * Peça avulsa (#655) usa o custo digitado no orçamento; sem ele, conta zero
+ * aqui (o mesmo que peça cadastrada sem custo) — quem precisa saber que
+ * falta custo usa `custoUnitarioDoItem` direto.
+ */
 export function custoDosItens(
   itens: ItemOS[],
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
 ): number {
   return itens.reduce((total, item) => {
-    const unitario =
-      item.tipo === "peca"
-        ? custoPeca.get(item.peca_id ?? "") ?? 0
-        : custoServico.get(item.servico_id ?? "") ?? 0;
+    const unitario = custoUnitarioDoItem(item, custoPeca, custoServico) ?? 0;
     return total + item.quantidade * unitario;
   }, 0);
 }

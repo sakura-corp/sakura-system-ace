@@ -1,8 +1,11 @@
 // O relatório da leva (#647): o arquivo `docs/relatorios/leva-N.md`, lido do GitHub. PR aberto com ele = esperando a
 // aprovação da Sofia; na main = aprovado. Aprovar é a Sofia mesclar o PR no GitHub: o painel nunca tem botão de aprovar.
-// O texto aparece como texto puro: nada é interpretado como HTML nem como markdown.
+// O texto aparece formatado (#689): títulos, negrito, citações, listas e tabelas. HTML escrito no arquivo nunca roda
+// (sem `rehype-raw`, o react-markdown mostra ele como texto), link só se for da sakura-corp e imagem não aparece.
 import { CircleCheck, Hourglass } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import Markdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { RespostaDoRelatorio } from "../../worker/relatorio";
 import { linkSeguro } from "../logica/link";
 import type { Leva } from "../tipos";
@@ -99,12 +102,68 @@ function LinkDoPr({ pr }: { pr: NonNullable<RespostaDoRelatorio["pr"]> }) {
   );
 }
 
-/** O texto do relatório como texto puro: o React escapa tudo, então um <script> no arquivo aparece escrito e não roda. */
+/**
+ * O `linkSeguro` e mais uma conferência: o endereço, depois de o navegador resolver `..` e `%2e%2e`, continua dentro da
+ * sakura-corp (`https://github.com/sakura-corp/../outra/x` abriria `github.com/outra/x`).
+ */
+export function linkDoRelatorio(href: string | undefined): string | undefined {
+  const url = linkSeguro(href);
+  if (!url) return undefined;
+  try {
+    const u = new URL(url);
+    return u.hostname === "github.com" && u.pathname.startsWith("/sakura-corp/") ? u.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Cada pedaço do markdown com o estilo do painel (claro e escuro vêm das cores do tema). */
+const PEDACOS: Components = {
+  h1: ({ children }) => <h2 className="mt-5 text-lg font-semibold first:mt-0">{children}</h2>,
+  h2: ({ children }) => <h3 className="mt-5 text-base font-semibold first:mt-0">{children}</h3>,
+  h3: ({ children }) => <h4 className="mt-4 text-sm font-semibold first:mt-0">{children}</h4>,
+  h4: ({ children }) => <h5 className="mt-4 text-sm font-semibold first:mt-0">{children}</h5>,
+  h5: ({ children }) => <h6 className="mt-4 text-sm font-semibold first:mt-0">{children}</h6>,
+  h6: ({ children }) => <h6 className="mt-4 text-sm font-semibold first:mt-0">{children}</h6>,
+  p: ({ children }) => <p className="mt-3 first:mt-0">{children}</p>,
+  ul: ({ children }) => <ul className="mt-3 list-disc space-y-1 pl-5 first:mt-0">{children}</ul>,
+  ol: ({ children }) => <ol className="mt-3 list-decimal space-y-1 pl-5 first:mt-0">{children}</ol>,
+  blockquote: ({ children }) => <blockquote className="mt-3 border-l-4 border-borda pl-3 text-texto-2 first:mt-0">{children}</blockquote>,
+  code: ({ children }) => <code className="break-words rounded bg-fundo px-1 font-mono text-[13px]">{children}</code>,
+  pre: ({ children }) => <pre className="mt-3 overflow-x-auto rounded-lg bg-fundo p-3 first:mt-0 [&_code]:bg-transparent [&_code]:p-0">{children}</pre>,
+  hr: () => <hr className="mt-4 border-borda" />,
+  // A tabela larga rola de lado dentro da caixa, nunca a página inteira (celular de 375 px).
+  table: ({ children }) => (
+    <div className="mt-3 max-w-full overflow-x-auto first:mt-0">
+      <table className="w-full border-collapse text-left">{children}</table>
+    </div>
+  ),
+  th: ({ children, style }) => <th style={style} className="border-b border-borda px-2 py-1.5 align-top font-semibold">{children}</th>,
+  td: ({ children, style }) => <td style={style} className="border-b border-borda px-2 py-1.5 align-top">{children}</td>,
+  // Link só se for do GitHub da sakura-corp, em aba nova; qualquer outro vira texto.
+  a: ({ href, children }) => {
+    const url = linkDoRelatorio(href);
+    if (!url) return <span>{children}</span>;
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque">
+        {children}
+      </a>
+    );
+  },
+  // Imagem não aparece (nem carrega).
+  img: () => null,
+};
+
+/** O texto do relatório formatado. HTML no arquivo (um <script>, um <img onerror>) aparece escrito e não roda. */
 function TextoDoRelatorio({ relatorio }: { relatorio: RespostaDoRelatorio }) {
   if (relatorio.texto === null) return <p className="mt-3 text-sm text-texto-2">O texto do relatório não pôde ser lido aqui. Abra o PR no GitHub.</p>;
   return (
     <>
-      <pre className="mt-3 min-w-0 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{relatorio.texto}</pre>
+      <div className="mt-3 min-w-0 break-words text-sm leading-relaxed">
+        <Markdown remarkPlugins={[remarkGfm]} remarkRehypeOptions={{ footnoteLabel: "Notas", footnoteBackLabel: "Voltar ao texto" }} components={PEDACOS}>
+          {relatorio.texto}
+        </Markdown>
+      </div>
       {relatorio.textoCortado && (
         <p className="mt-2 text-sm text-texto-2">
           O relatório é grande: só o começo aparece aqui. O resto está no arquivo, no GitHub{relatorio.pr ? <> (<LinkDoPr pr={relatorio.pr} />)</> : null}.

@@ -263,6 +263,29 @@ describe("resumirComissoes", () => {
     expect(silvio.comoVendedor.lucro).toBe(190);
   });
 
+  // #655: peça avulsa (sem peca_id) usa o custo digitado no orçamento.
+  it("peça avulsa com custo digitado entra com esse custo e não conta como sem custo", () => {
+    const comCusto = ordem({
+      vendedor_id: "vend",
+      itens: [item({ peca_id: null, descricao: "Farol", preco_unitario: 150, custo_unitario: 60 })],
+    });
+    const silvio = resumir([comCusto]).find((l) => l.funcionarioId === "vend")!;
+    // 150 − 60 = 90 de lucro; 10% => 9.
+    expect(silvio.comoVendedor.custo).toBe(60);
+    expect(silvio.comoVendedor.lucro).toBe(90);
+    expect(silvio.comoVendedor.comissao).toBe(9);
+    expect(silvio.comoVendedor.itensSemCusto).toBe(0);
+  });
+
+  it("peça avulsa sem custo digitado conta como sem custo", () => {
+    const semCusto = ordem({
+      vendedor_id: "vend",
+      itens: [item({ peca_id: null, descricao: "Farol", custo_unitario: null }), item({})],
+    });
+    const silvio = resumir([semCusto]).find((l) => l.funcionarioId === "vend")!;
+    expect(silvio.comoVendedor.itensSemCusto).toBe(1);
+  });
+
   it("lista as OS que formaram o número, pra poder conferir", () => {
     const duas = [
       ordem({ id: "a", numero: 7, vendedor_id: "vend" }),

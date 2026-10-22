@@ -135,7 +135,8 @@ export function buscarPecasDaVenda<T extends PecaBuscavel>(
 }
 
 function comoItemDoFormulario(item: ItemVendaValues): ItemFormValues {
-  return { ...item, tipo: "peca", servico_id: "", tecnico_id: "" };
+  // Venda de balcão não tem peça avulsa (#655): o custo fica sempre vazio.
+  return { ...item, tipo: "peca", servico_id: "", tecnico_id: "", custo_unitario: "" };
 }
 
 /**

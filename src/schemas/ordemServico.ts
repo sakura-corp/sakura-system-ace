@@ -8,6 +8,7 @@ import type {
   PatchOrdemServico,
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
+import { ehPecaAvulsa } from "./orcamento";
 
 // Mesma ideia dos outros schemas: formulário trabalha só com strings (mesmo
 // pros campos number | null no banco) — a conversão pra NovaOrdemServico/
@@ -24,6 +25,9 @@ const itemFormSchema = z.object({
   quantidade: z.string(),
   preco_unitario: z.string(),
   desconto: z.string(),
+  // Custo da peça digitada sem cadastro no orçamento (#655); "" = não
+  // informado. O `catch` completa o rascunho de antes, que não tem o campo.
+  custo_unitario: z.string().catch(""),
 });
 
 export const ordemServicoFormSchema = z.object({
@@ -52,6 +56,7 @@ export const itemFormVazio: ItemFormValues = {
   quantidade: "1",
   preco_unitario: "",
   desconto: "",
+  custo_unitario: "",
 };
 
 export function paraValoresFormulario(
@@ -86,20 +91,45 @@ const paraNumero = (valor: string): number => {
   return Number.isNaN(numero) ? 0 : numero;
 };
 
+// Custo digitado: vazio (ou ilegível) é "não informado", nunca zero — zero
+// é um custo de verdade e daria um lucro inventado.
+const paraCusto = (valor: string): number | null => {
+  if (valor.trim() === "") return null;
+  const numero = Number(valor);
+  return Number.isNaN(numero) ? null : numero;
+};
+
+// A chave `custo_unitario` só vai no item de peça avulsa (#655). Nos outros
+// ela nem é mandada: a OS comum continua gravando num banco ainda sem a
+// coluna (anterior à migration 0066).
+function comCustoSeAvulsa<T extends Pick<NovoItemOS, "tipo" | "peca_id">>(
+  item: T,
+  custo: string,
+): T & { custo_unitario?: number | null } {
+  return ehPecaAvulsa(item) ? { ...item, custo_unitario: paraCusto(custo) } : item;
+}
+
 export function paraItensValidos(itens: ItemFormValues[]): NovoItemOS[] {
   return itens
     .filter((item) => item.descricao.trim() && paraNumero(item.quantidade) > 0)
-    .map((item) => ({
-      tipo: item.tipo,
-      peca_id: item.peca_id || null,
-      servico_id: item.servico_id || null,
-      tecnico_id: item.tecnico_id || null,
-      descricao: item.descricao,
-      quantidade: paraNumero(item.quantidade),
-      preco_unitario: paraNumero(item.preco_unitario),
-      desconto: paraNumero(item.desconto),
-    }));
+    .map((item) =>
+      comCustoSeAvulsa(
+        {
+          tipo: item.tipo,
+          peca_id: item.peca_id || null,
+          servico_id: item.servico_id || null,
+          tecnico_id: item.tecnico_id || null,
+          descricao: item.descricao,
+          quantidade: paraNumero(item.quantidade),
+          preco_unitario: paraNumero(item.preco_unitario),
+          desconto: paraNumero(item.desconto),
+        },
+        item.custo_unitario,
+      ),
+    );
 }
+
+const MENSAGEM_CUSTO_NEGATIVO = "O custo não pode ser negativo.";
 
 /**
  * O que torna um item de OS impossível: preço ou desconto negativo, ou
@@ -111,9 +141,10 @@ export function paraItensValidos(itens: ItemFormValues[]): NovoItemOS[] {
  * @returns a frase do problema, ou `null` se o item está bom
  */
 export function problemaDoItem(
-  item: Pick<NovoItemOS, "quantidade" | "preco_unitario" | "desconto">,
+  item: Pick<NovoItemOS, "quantidade" | "preco_unitario" | "desconto" | "custo_unitario">,
 ): string | null {
   if (item.preco_unitario < 0) return "O preço não pode ser negativo.";
+  if (item.custo_unitario != null && item.custo_unitario < 0) return MENSAGEM_CUSTO_NEGATIVO;
   if (item.desconto < 0) return "O desconto não pode ser negativo.";
   const linha = item.quantidade * item.preco_unitario;
   if (item.desconto > Math.max(linha, 0) + 1e-9) {
@@ -141,8 +172,10 @@ export const itemExistenteFormSchema = itemFormSchema
       quantidade: paraNumero(item.quantidade),
       preco_unitario: paraNumero(item.preco_unitario),
       desconto: paraNumero(item.desconto),
+      custo_unitario: paraCusto(item.custo_unitario),
     });
-    if (problema) ctx.addIssue({ code: "custom", message: problema, path: ["desconto"] });
+    const campo = problema === MENSAGEM_CUSTO_NEGATIVO ? "custo_unitario" : "desconto";
+    if (problema) ctx.addIssue({ code: "custom", message: problema, path: [campo] });
   });
 
 export function paraValoresItemExistente(item: ItemOS): ItemFormValues {
@@ -155,20 +188,25 @@ export function paraValoresItemExistente(item: ItemOS): ItemFormValues {
     quantidade: String(item.quantidade),
     preco_unitario: paraDisplayNumero(item.preco_unitario),
     desconto: paraDisplayNumero(item.desconto),
+    // Aqui 0 aparece "0": custo zero informado não é o mesmo que vazio.
+    custo_unitario: item.custo_unitario != null ? String(item.custo_unitario) : "",
   };
 }
 
 export function paraPatchItem(valores: ItemFormValues): PatchItemOS {
-  return {
-    tipo: valores.tipo,
-    peca_id: valores.peca_id || null,
-    servico_id: valores.servico_id || null,
-    tecnico_id: valores.tecnico_id || null,
-    descricao: valores.descricao.trim(),
-    quantidade: paraNumero(valores.quantidade),
-    preco_unitario: paraNumero(valores.preco_unitario),
-    desconto: paraNumero(valores.desconto),
-  };
+  return comCustoSeAvulsa(
+    {
+      tipo: valores.tipo,
+      peca_id: valores.peca_id || null,
+      servico_id: valores.servico_id || null,
+      tecnico_id: valores.tecnico_id || null,
+      descricao: valores.descricao.trim(),
+      quantidade: paraNumero(valores.quantidade),
+      preco_unitario: paraNumero(valores.preco_unitario),
+      desconto: paraNumero(valores.desconto),
+    },
+    valores.custo_unitario,
+  );
 }
 
 export function totalItensFormulario(itens: ItemFormValues[]): number {

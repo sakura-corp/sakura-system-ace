@@ -2,6 +2,8 @@ import { arredondarCentavo, repartirEmCentavos } from "./dinheiro";
 import { z } from "zod";
 import type { PagamentoOrdem } from "@/lib/ordensServico";
 import type { JurosParcela } from "@/types/configuracao";
+import type { ItemOS } from "@/types/os";
+import type { Peca } from "@/types/peca";
 
 const linhaPagamentoSchema = z.object({
   formaPagamento: z.string(),
@@ -219,4 +221,34 @@ export function ratearPagamentos<T extends { valor: number }>(
     pagamentos.map((p) => p.valor),
   );
   return pagamentos.map((p, i) => ({ ...p, valor: valores[i] }));
+}
+
+// --- Peça que não pode sair na NFC-e (#655) ---
+// A NFC-e precisa do NCM de cada peça, e o NCM só existe no cadastro. Nenhuma
+// nota sai sem ele: peça digitada sem cadastro (avulsa) ou cadastrada sem NCM
+// trava a emissão até alguém cadastrar ou completar a peça.
+
+export const MENSAGEM_PECA_PRECISA_CADASTRO = "Essa peça precisa ser cadastrada pra sair na nota.";
+export const MENSAGEM_PECA_SEM_NCM =
+  "Essa peça está sem NCM no cadastro: preencha pra sair na nota.";
+
+export type MotivoImpedeNFCe = "avulsa" | "sem_ncm";
+
+/**
+ * As peças desta ordem que impedem a NFC-e, com o motivo. Avulsa é a que não
+ * tem `peca_id` ou cujo cadastro não veio em `pecasCadastradas`; sem NCM é a
+ * cadastrada com NCM vazio (ou só espaços). Serviço não entra (vai na NFS-e).
+ */
+export function itensQueImpedemNFCe(
+  itens: ItemOS[],
+  pecasCadastradas: Pick<Peca, "id" | "ncm" | "descricao">[],
+): { item: ItemOS; motivo: MotivoImpedeNFCe }[] {
+  const porId = new Map(pecasCadastradas.map((peca) => [peca.id, peca]));
+  return itens.flatMap((item): { item: ItemOS; motivo: MotivoImpedeNFCe }[] => {
+    if (item.tipo !== "peca") return [];
+    const peca = item.peca_id ? porId.get(item.peca_id) : undefined;
+    if (!peca) return [{ item, motivo: "avulsa" }];
+    if (!peca.ncm?.trim()) return [{ item, motivo: "sem_ncm" }];
+    return [];
+  });
 }

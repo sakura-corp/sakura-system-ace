@@ -5,7 +5,10 @@ import {
   calcularListaParcelas,
   calcularValorCobrado,
   faturamentoFormVazio,
+  itensQueImpedemNFCe,
   jurosDasLinhas,
+  MENSAGEM_PECA_PRECISA_CADASTRO,
+  MENSAGEM_PECA_SEM_NCM,
   paraPagamentos,
   parcelasDaOrdem,
   somarLinhasCobradas,
@@ -14,6 +17,7 @@ import {
   type FaturamentoFormValues,
 } from "./faturamento";
 import type { JurosParcela } from "@/types/configuracao";
+import type { ItemOS } from "@/types/os";
 
 const jurosParcelas: JurosParcela[] = [
   { loja_id: "loja-1", numero_parcelas: 2, juros_percentual: 3 },
@@ -324,5 +328,54 @@ describe("jurosDasLinhas", () => {
     // 3% de 33,33 é 0,9999 — precisa sair fechado no centavo, não com cauda.
     const juros = jurosDasLinhas(linhas, jurosParcelas);
     expect(juros).toBe(Number(juros.toFixed(2)));
+  });
+});
+
+// NFC-e precisa do NCM, que só o cadastro tem (#655): peça avulsa ou peça
+// cadastrada sem NCM trava a nota até ser cadastrada/corrigida.
+describe("itensQueImpedemNFCe", () => {
+  const item = (id: string, sobrescrever: Partial<ItemOS>): ItemOS => ({
+    id,
+    ordem_servico_id: "os-1",
+    tipo: "peca",
+    peca_id: null,
+    servico_id: null,
+    tecnico_id: null,
+    descricao: id,
+    quantidade: 1,
+    preco_unitario: 10,
+    desconto: 0,
+    ...sobrescrever,
+  });
+  const cadastro = [
+    { id: "pneu", ncm: "40111000", descricao: "Pneu" },
+    { id: "valvula", ncm: null, descricao: "Válvula" },
+    { id: "bico", ncm: "   ", descricao: "Bico" },
+  ];
+
+  it("aponta a avulsa, a sem NCM e a com NCM só de espaços; deixa passar o resto", () => {
+    const itens = [
+      item("pneu-ok", { peca_id: "pneu" }),
+      item("avulsa", {}),
+      item("valvula", { peca_id: "valvula" }),
+      item("bico", { peca_id: "bico" }),
+      item("sumida", { peca_id: "peca-que-nao-veio" }),
+      item("servico", { tipo: "servico", servico_id: "alinhamento" }),
+    ];
+    expect(itensQueImpedemNFCe(itens, cadastro).map((p) => [p.item.id, p.motivo])).toEqual([
+      ["avulsa", "avulsa"],
+      ["valvula", "sem_ncm"],
+      ["bico", "sem_ncm"],
+      ["sumida", "avulsa"],
+    ]);
+  });
+
+  it("tudo cadastrado com NCM: lista vazia, a nota pode sair", () => {
+    expect(itensQueImpedemNFCe([item("pneu-ok", { peca_id: "pneu" })], cadastro)).toEqual([]);
+  });
+
+  it("as frases que a tela mostra", () => {
+    expect(MENSAGEM_PECA_PRECISA_CADASTRO).toBe("Essa peça precisa ser cadastrada pra sair na nota.");
+    expect(MENSAGEM_PECA_SEM_NCM).toMatch(/sem NCM.*sair na nota/);
   });
 });

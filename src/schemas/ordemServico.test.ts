@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   problemaDoItem,
   idsDeFuncionarios,
+  itemExistenteFormSchema,
   itemFormVazio,
   nomearFuncionarios,
   ordemServicoFormSchema,
+  paraItensValidos,
+  paraPatchItem,
+  paraValoresItemExistente,
   totaisDaOrdem,
   type ItemFormValues,
 } from "./ordemServico";
@@ -203,5 +207,86 @@ describe("ordemServicoFormSchema", () => {
     const resultado = ordemServicoFormSchema.safeParse(rascunhoAntigo);
     expect(resultado.success).toBe(true);
     expect(resultado.data?.validade).toBe("");
+  });
+});
+
+// Peça digitada sem cadastro no orçamento (#655) tem um custo opcional. Ele só
+// vai pro banco nesse item: nos outros a chave nem é mandada, pra OS comum
+// continuar gravando num banco ainda sem a coluna (anterior à 0066).
+describe("custo da peça avulsa", () => {
+  const linha = (sobrescrever: Partial<ItemFormValues>): ItemFormValues => ({
+    ...itemFormVazio,
+    descricao: "Válvula",
+    quantidade: "4",
+    preco_unitario: "15",
+    ...sobrescrever,
+  });
+
+  it("item novo começa com o custo vazio", () => {
+    expect(itemFormVazio.custo_unitario).toBe("");
+  });
+
+  it("rascunho antigo, com item sem o campo, abre com custo vazio", () => {
+    const itemAntigo: Partial<ItemFormValues> = linha({});
+    delete itemAntigo.custo_unitario;
+    const resultado = ordemServicoFormSchema.safeParse({
+      cliente_id: "c1",
+      veiculo_id: "",
+      km_entrada: "",
+      descricao_problema: "",
+      vendedor_id: "",
+      validade: "",
+      itens: [itemAntigo],
+    });
+    expect(resultado.success).toBe(true);
+    expect(resultado.data?.itens[0].custo_unitario).toBe("");
+  });
+
+  it("peça avulsa leva o custo (número, ou null se vazio)", () => {
+    const [comCusto, semCusto] = paraItensValidos([
+      linha({ custo_unitario: "6.5" }),
+      linha({ custo_unitario: "" }),
+    ]);
+    expect(comCusto).toMatchObject({ peca_id: null, custo_unitario: 6.5 });
+    expect(semCusto).toHaveProperty("custo_unitario", null);
+  });
+
+  it("peça do cadastro e serviço não mandam a chave, nem com algo digitado", () => {
+    const [cadastrada, servico] = paraItensValidos([
+      linha({ peca_id: "pneu", custo_unitario: "6.5" }),
+      linha({ tipo: "servico", servico_id: "alinhamento", custo_unitario: "6.5" }),
+    ]);
+    expect(cadastrada).not.toHaveProperty("custo_unitario");
+    expect(servico).not.toHaveProperty("custo_unitario");
+  });
+
+  it("corrigir um item: mesma regra", () => {
+    expect(paraPatchItem(linha({ custo_unitario: "7" }))).toHaveProperty("custo_unitario", 7);
+    expect(paraPatchItem(linha({ custo_unitario: " " }))).toHaveProperty("custo_unitario", null);
+    expect(paraPatchItem(linha({ peca_id: "pneu", custo_unitario: "7" }))).not.toHaveProperty(
+      "custo_unitario",
+    );
+  });
+
+  it("abrir um item já lançado preenche o custo (vazio se não informado)", () => {
+    const avulsa: ItemOS = { ...itemLancado("peca", 4, 15), peca_id: null, custo_unitario: 6.5 };
+    expect(paraValoresItemExistente(avulsa).custo_unitario).toBe("6.5");
+    expect(paraValoresItemExistente({ ...avulsa, custo_unitario: null }).custo_unitario).toBe("");
+    expect(paraValoresItemExistente(itemLancado("peca", 1, 10)).custo_unitario).toBe("");
+  });
+
+  it("custo negativo é recusado, e o aviso aparece no campo do custo", () => {
+    expect(
+      problemaDoItem({ quantidade: 1, preco_unitario: 10, desconto: 0, custo_unitario: -1 }),
+    ).toBe("O custo não pode ser negativo.");
+    expect(
+      problemaDoItem({ quantidade: 1, preco_unitario: 10, desconto: 0, custo_unitario: null }),
+    ).toBeNull();
+    const resultado = itemExistenteFormSchema.safeParse(linha({ custo_unitario: "-1" }));
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues[0]).toMatchObject({
+      message: "O custo não pode ser negativo.",
+      path: ["custo_unitario"],
+    });
   });
 });

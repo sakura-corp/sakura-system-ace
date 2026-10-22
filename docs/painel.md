@@ -922,3 +922,15 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **22/10/2026: o Gustavo trocou de conta do GitHub** (Sofia): entrou na `sakura-corp` a conta nova, `GustavoSakuras`
   (com 2FA), e a antiga, `kalendoscope`, já não tem acesso (fora dos membros e dos colaboradores de fora). Não havia tarefa
   nem PR aberto na conta antiga; o caderno dele (#618) nasce na conta nova. Na lista da equipe da #699, vale o login novo.
+- **21/10/2026, noite: a leva 2 aprovada** (Sofia mesclou o relatório `docs/relatorios/leva-2.md`, PR #704): 12 de 12
+  tarefas, 55 h. Ela decidiu pular a rodada de testes com lista (já tinha conferido cada página no ar); a fase Testando
+  estreia na leva 3, que passou a ser a atual.
+- **22/10/2026: as levas 4 e 5 postas** (Sofia, entrevista): **leva 4** = #706, #708, #365, #368, #385, mais as pequenas do
+  painel (#699, #689, #684); **leva 5** = #454, #456, #372, #459. As duas ficam em Montando e entram sozinhas, uma depois da
+  outra, quando ela aprovar a anterior (#644). A #365, a #368, a #385 e as quatro da leva 5 estão no modelo antigo: **reescrever
+  com a `nova-tarefa` antes de a leva delas virar a atual**. As tarefas de banco são da equipe; a Sofia decide antes e aplica a
+  migration. **A leva 6 fica reservada pra um projeto novo da Sakura**, com as três pessoas nele; o plano mora fora deste
+  repositório. Fora das levas por enquanto: #366, #367, #457, #520 e o resto da primeira onda (#397, #381, #382, #383).
+- **22/10/2026: o relatório da leva aparece formatado** (#689, Gustavo, PR aberto esperando a Sofia): títulos, negrito,
+  citações, listas e tabelas, com `react-markdown` + `remark-gfm` e **sem** `rehype-raw`. HTML do arquivo continua escrito
+  (nunca roda), link só da sakura-corp, imagem não aparece, tabela larga rola dentro da caixa (375 px sem rolagem lateral).

@@ -8,8 +8,8 @@
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. A `0065` (orçamento, tarefa #379) e a `0067` (juntar peças, tarefa #656) foram escritas em
-22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
+#655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -421,6 +421,18 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   novo com orçamentos gravados e aprovar depois), conferido com 11 mutações, todas vermelhas, e
   mais 4 na revisão (a guarda da `0037` e as metades da trava de caminho). **Ordem de subir: a versão
   primeiro** (a linha da versão mínima faz o botão esperar).
+- `0066`: a **peça avulsa no orçamento** (tarefa #655). Peça digitada sem cadastro é um item
+  `tipo = 'peca'` com `peca_id` vazio, o que o banco já aceitava desde a `0005`. A migration só
+  traz o **custo da linha**: `ordens_servico_itens.custo_unitario` (`numeric(12,2)`, **sem padrão**:
+  vazio = "custo não informado", nunca zero de mentira), com a trava `ck_ordens_servico_itens_custo`
+  (vazio ou `>= 0`). O custo da peça cadastrada continua vindo de `pecas.preco_custo`. **Ficou de
+  fora, de propósito**, a trava "serviço não tem `peca_id`": o formulário manda o `peca_id` sem
+  olhar o tipo, então pode haver linha assim num banco de loja, e daqui não dá pra conferir
+  (item 33 da seção 6). Nada de policy nova (a tabela já tem RLS, herdada da OS). **Sem versão
+  mínima**: a versão anterior ignora a coluna. Teste repetível em
+  `supabase/scripts/testar-peca-avulsa.sql` (as duas metades, mais rodar a `0066` e a instalação
+  inteira de novo), conferido com 4 mutações, todas vermelhas. **Ordem de subir: a de sempre**
+  (migration primeiro; sem ela, só lançar peça avulsa dá erro).
 - `0067`: **juntar peças repetidas** (tarefa #656). A `0066` é a da peça avulsa (#655), escrita
   em paralelo; as duas sobem **em ordem** (a `0066` primeiro). **Não é tabela nova**: duas funções
   `security definer` que o programa chama. `resumo_peca_para_juntar(peça)` é a **prévia** (quantos
@@ -617,7 +629,8 @@ outro projeto Supabase do zero (ver seção 9).
   opcional, só tipo peça), servico_id (FK opcional, só tipo serviço — item de serviço pode ficar
   sem servico_id quando for "avulso"), tecnico_id (FK **funcionarios**, opcional — técnico
   responsável por aquele item, diferente do vendedor/atendente que é da OS toda), descricao,
-  quantidade, preco_unitario, desconto
+  quantidade, preco_unitario, desconto, custo_unitario (desde a `0066`: custo da peça avulsa, sem
+  cadastro; vazio = não informado)
 - **`configuracoes_juros_parcelas`**: loja_id (FK lojas) + numero_parcelas (PK composta, 2 a 12),
   juros_percentual. Editável só pelo admin — define o juro (% sobre o total) cobrado quando o
   cliente parcela no cartão ao faturar uma OS. 1x é sempre à vista, sem juros.

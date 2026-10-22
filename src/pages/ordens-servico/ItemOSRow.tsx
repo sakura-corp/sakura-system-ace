@@ -27,6 +27,12 @@ interface ItemOSRowProps {
    */
   saldoPorPeca: Map<string, number>;
   saldoCarregado: boolean;
+  /**
+   * Só o orçamento (#655): a peça pode ser digitada sem estar no cadastro
+   * ("peça avulsa"), com custo opcional. OS comum e balcão continuam só com
+   * peça do cadastro.
+   */
+  permitePecaAvulsa?: boolean;
   onRemover: () => void;
 }
 
@@ -40,6 +46,7 @@ export function ItemOSRow({
   funcionarios,
   saldoPorPeca,
   saldoCarregado,
+  permitePecaAvulsa = false,
   onRemover,
 }: ItemOSRowProps) {
   const tipo = watch(`itens.${index}.tipo`);
@@ -52,11 +59,13 @@ export function ItemOSRow({
     setValue(`itens.${index}.servico_id`, "");
     setValue(`itens.${index}.descricao`, "");
     setValue(`itens.${index}.preco_unitario`, "");
+    setValue(`itens.${index}.custo_unitario`, "");
   }
 
   function aoMudarPeca(pecaId: string) {
     const peca = pecas.find((p) => p.id === pecaId);
     setValue(`itens.${index}.peca_id`, pecaId);
+    setValue(`itens.${index}.custo_unitario`, "");
     setValue(`itens.${index}.descricao`, peca?.descricao ?? "");
     setValue(`itens.${index}.preco_unitario`, paraDisplayNumero(peca?.preco_venda ?? 0));
   }
@@ -69,6 +78,8 @@ export function ItemOSRow({
   }
 
   const servicoEhAvulso = tipo === "servico" && !servicoId;
+  const pecaEhAvulsa = permitePecaAvulsa && tipo === "peca" && !pecaId;
+  const textoPecaVazia = permitePecaAvulsa ? "Peça sem cadastro (digitar abaixo)" : "Selecione a peça";
 
   // Total da linha (quantidade x preço − desconto) — reaproveita a mesma
   // conta do total geral, com um item só, pra não haver duas fórmulas
@@ -107,8 +118,8 @@ export function ItemOSRow({
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
             onMudar={aoMudarPeca}
-            opcaoVazia="Selecione a peça"
-            placeholder="Selecione a peça"
+            opcaoVazia={textoPecaVazia}
+            placeholder={textoPecaVazia}
           />
         ) : (
           <Combobox
@@ -137,6 +148,27 @@ export function ItemOSRow({
           {...register(`itens.${index}.descricao`)}
           className="w-full rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo"
         />
+      )}
+
+      {pecaEhAvulsa && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Descrição da peça"
+            {...register(`itens.${index}.descricao`)}
+            className="min-w-0 flex-1 rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo"
+          />
+          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+            Custo (opcional)
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              {...register(`itens.${index}.custo_unitario`)}
+              className="rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+            />
+          </label>
+        </div>
       )}
 
       {/* Quatro colunas a partir de 1280 de janela; duas abaixo disso
