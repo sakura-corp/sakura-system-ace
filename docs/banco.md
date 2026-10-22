@@ -8,8 +8,8 @@
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. A `0065` (orçamento, tarefa #379) foi escrita em 22/10/2026 e **ainda
-não está aplicada em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+a única empresa até agora. A `0065` (orçamento, tarefa #379) e a `0067` (juntar peças, tarefa #656) foram escritas em
+22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -421,6 +421,29 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   novo com orçamentos gravados e aprovar depois), conferido com 11 mutações, todas vermelhas, e
   mais 4 na revisão (a guarda da `0037` e as metades da trava de caminho). **Ordem de subir: a versão
   primeiro** (a linha da versão mínima faz o botão esperar).
+- `0067`: **juntar peças repetidas** (tarefa #656). A `0066` é a da peça avulsa (#655), escrita
+  em paralelo; as duas sobem **em ordem** (a `0066` primeiro). **Não é tabela nova**: duas funções
+  `security definer` que o programa chama. `resumo_peca_para_juntar(peça)` é a **prévia** (quantos
+  movimentos, itens de OS, OS, contagens, itens de pedido, pedidos e cotações a peça carrega, e o
+  saldo por loja, com a mesma conta de `calcularSaldoPorPeca`); `juntar_pecas(fica, sai, campos)`
+  é a **junção**: a peça que fica herda da que sai os campos que a pessoa escolheu (lista fechada
+  de 21; `id`, `criado_em` e `ativo` não entram, e `ativo` vira "ou"), as **5 tabelas que apontam
+  pra peça** (`estoque_movimentos`, `ordens_servico_itens`, `pedidos_compra_itens`,
+  `cotacoes_pecas`, `contagens_estoque`) passam pra peça que fica, e a que sai é apagada. Quatro
+  decisões: (a) **tudo ou nada** (uma transação só; erro no meio desfaz tudo); (b) **só
+  administrador de todas as lojas** onde qualquer das duas peças aparece; quem não é recebe na
+  prévia só `{"lojas_sem_acesso": n}`, sem número de loja alheia, e a junção é recusada; (c) **a
+  rede de segurança**: antes de apagar, a função pergunta ao catálogo (`pg_constraint`) quais
+  tabelas apontam pra `pecas` e falha inteira, dizendo o nome, se alguma ainda tem linha da peça
+  que sai. Duas das cinco são `on delete cascade`: sem a rede, uma tabela nova esquecida aqui
+  perderia o histórico calada. **Tabela nova com FK pra `pecas` precisa entrar em
+  `juntar_pecas`** (e no `limpar-dados-de-teste.sql`, acima); (d) **a auditoria não é gravada à
+  mão**: o gatilho da `0053` já registra a peça que sai inteira (`excluir`), a que fica antes e
+  depois (`atualizar`, por isso ela é atualizada sempre) e cada item de OS que trocou de peça.
+  Teste repetível em `supabase/scripts/testar-juntar-pecas.sql`, conferido com 8 mutações, todas
+  vermelhas (uma tabela esquecida, a de cascade esquecida, sem a rede, erro engolido no meio, a
+  peça que fica sem conferência de loja...). **Ordem de subir: migration primeiro** (sem ela, a
+  tela de juntar dá erro ao abrir a prévia; o resto do programa não muda).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
