@@ -33,8 +33,10 @@ export const ordemServicoFormSchema = z.object({
   descricao_problema: z.string(),
   vendedor_id: z.string(),
   // Só o orçamento usa (#379): dia "AAAA-MM-DD" até quando ele vale. Na OS
-  // fica "" e nunca vai pro banco (`paraCamposComuns` não leva).
-  validade: z.string(),
+  // fica "" e nunca vai pro banco (`paraCamposComuns` não leva). O `catch`
+  // completa com "" o rascunho gravado pela versão anterior, que não tem o
+  // campo: sem ele, o "Salvar" da OS travava sem mensagem nenhuma.
+  validade: z.string().catch(""),
   itens: z.array(itemFormSchema),
 });
 

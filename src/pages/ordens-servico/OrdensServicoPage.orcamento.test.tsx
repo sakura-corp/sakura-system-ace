@@ -82,4 +82,16 @@ describe("OrdensServicoPage — sem orçamento", () => {
     expect(screen.queryByText("Cliente Recusado")).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Ordens de serviço (1)" })).toBeInTheDocument();
   });
+
+  it("loja que só tem orçamento diz que ainda não tem OS, sem abas vazias", async () => {
+    listarOrdens.mockResolvedValue(ordens.filter((o) => o.status !== "em_andamento"));
+    render(
+      <MemoryRouter>
+        <OrdensServicoPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Nenhuma ordem de serviço aberta ainda.")).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /Ordens de serviço/ })).not.toBeInTheDocument();
+  });
 });

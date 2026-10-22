@@ -1,4 +1,6 @@
 import type { Peca } from "@/types/peca";
+import type { StatusOS } from "@/types/os";
+import { contaNosNumeros } from "./orcamento";
 
 /**
  * Os avisos da abertura de OS (item TL-08 do guia de melhorias).
@@ -34,6 +36,8 @@ interface OrdemParaKm {
   veiculo_id: string | null;
   km_entrada: number | null;
   data_abertura: string;
+  /** Orçamento (aberto ou recusado) não é passagem do carro (#379). */
+  status?: StatusOS;
 }
 
 interface VeiculoParaKm {
@@ -67,6 +71,7 @@ export function ultimoKmConhecido(
       (ordem) =>
         ordem.veiculo_id === veiculoId &&
         ordem.km_entrada != null &&
+        (ordem.status == null || contaNosNumeros({ status: ordem.status })) &&
         ordem.id !== ignorarOrdemId,
     )
     .sort((a, b) => b.data_abertura.localeCompare(a.data_abertura));

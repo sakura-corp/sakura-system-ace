@@ -166,6 +166,10 @@ export function OrdensServicoPage() {
     });
   }, [ordens, busca, dataInicio, dataFim]);
 
+  // Loja que só tem orçamento ainda não tem OS nenhuma: abas, filtro e o
+  // "nenhuma OS" olham isto, não o total que veio do banco.
+  const temOrdens = useMemo(() => ordens.some(contaNosNumeros), [ordens]);
+
   // As duas abas da lista (item FN-09): a venda de balcão fica separada das
   // OS, senão a lista de "carros atendidos" se enche de venda de palheta.
   const quantasVendas = ordensFiltradas.filter(ehVendaBalcao).length;
@@ -592,7 +596,7 @@ export function OrdensServicoPage() {
         </p>
       )}
 
-      {!carregando && ordens.length > 0 && (
+      {!carregando && temOrdens && (
         <div
           role="tablist"
           aria-label="O que mostrar na lista"
@@ -622,7 +626,7 @@ export function OrdensServicoPage() {
         </div>
       )}
 
-      {!carregando && ordens.length > 0 && (
+      {!carregando && temOrdens && (
         <div className="flex flex-wrap items-end gap-4">
           <label className="flex flex-col gap-1 text-corpo">
             <span className="text-sakura-purple-dark/80">Buscar por cliente ou placa</span>
@@ -666,7 +670,7 @@ export function OrdensServicoPage() {
 
       {carregando ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : ordens.length === 0 ? (
+      ) : !temOrdens ? (
         <p className="text-corpo text-sakura-muted">
           Nenhuma ordem de serviço aberta ainda.
         </p>
