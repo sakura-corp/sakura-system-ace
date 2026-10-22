@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 22/10/2026, tarde (pelo PC): leva 2 aprovada, leva 3 andando, orçamento na main
+- **Leva 2 aprovada** (relatório `docs/relatorios/leva-2.md`, PR #704; 12 de 12, sem a rodada de testes, decisão dela). **Leva 3** é a atual: a #379 (orçamento, PR #705) e a #653 (peça parecida, PR #707) mescladas; faltam a #655 e a #656.
+- **Próximo passo, dela**: publicar e liberar a **v0.9.52** e **só depois** atualizar o banco com a `0065` (ela declara `versao-minima-do-programa: 0.9.52`). Até lá, o orçamento e o aviso de peça parecida não chegam às lojas.
+- **Ela confere no ar**: a #667 (no Início, uma linha por PR); depois da versão, a #653 (cadastrar uma repetida) e a #379 (o tio monta um orçamento de verdade).
+- **Equipe**: o Gustavo agora é `GustavoSakuras` (a conta antiga sem acesso); caderno dele feito (#618, PR #712); roteiro do caderno consertado (#710, #711, PR #713). Ficar de olho: a sessão dele não abriu o caderno sozinha.
+- **Fora de leva**: #706 (dois computadores aprovando juntos), #708 (ajustes da peça parecida), #699 (Pessoas com a equipe inteira).
+- **Depende dela**: a v0.9.52 e o banco; o memorando (#632, até 26/10, sessão com o privado); o Resumo de segunda (#625, em 26/10); o Send do Gustavo e do Lázaro (até 26/10); a #684, a #689, a #699, a #706 e a #708 entrarem numa leva; a primeira NFC-e e NFS-e depois da troca (#505).
+- **Próxima sessão**: publicar a v0.9.52 e atualizar o banco.
+
 ### 21/10/2026, meio-dia (pelo iPhone): as Pessoas no ar
 - **#650 (PR #695, do Tiago)**: esta sessão resolveu o conflito no `docs/painel.md`, ela aprovou e a sessão mesclou com o CI verde; a página **Pessoas** (`/pessoas`) está no ar e conferida no iPhone.
 - **A frase do topo** agora diz quem aparece (só quem tem tarefa na leva, PR #697). Mostrar a equipe inteira: a **#699**, com a lista fixa na configuração do painel (decidido na #698, fechada).
