@@ -20,6 +20,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",
+  ck_ordens_servico_itens_custo: "O custo do item não pode ser negativo.",
   ck_pecas_preco_custo: "O preço de custo não pode ser negativo.",
   ck_pecas_preco_venda: "O preço de venda não pode ser negativo.",
   ck_pecas_prazo_garantia: "O prazo de garantia não pode ser negativo.",
@@ -77,7 +78,7 @@ export const MENSAGEM_BANCO_DESATUALIZADO =
   "O banco desta empresa ainda não foi atualizado pra esta versão do programa, então isto ainda não funciona. Avise quem cuida do sistema.";
 
 /**
- * Colunas que chegam com a 0065. Só elas viram o aviso de banco desatualizado:
+ * Colunas que chegam com a 0065 (e o custo da peça avulsa, da 0066). Só elas viram o aviso de banco desatualizado:
  * uma coluna qualquer que falta é erro de programação (nome errado), e mandar
  * "atualizar o banco" ali só esconderia o defeito.
  */
@@ -89,6 +90,7 @@ export const COLUNAS_DA_0065 = [
   "motivo_recusa",
   "recusado_em",
   "orcado_em",
+  "custo_unitario",
 ] as const;
 
 /** O nome da coluna que falta, do jeito do PostgREST ou do Postgres; null se não é esse erro. */

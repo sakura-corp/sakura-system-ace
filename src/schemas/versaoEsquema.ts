@@ -17,7 +17,7 @@
  * Sobe junto com toda migration nova — `versaoEsquema.test.ts` reprova se
  * este número ficar pra trás da pasta `supabase/migrations/`.
  */
-export const VERSAO_ESQUEMA_ESPERADA = 65;
+export const VERSAO_ESQUEMA_ESPERADA = 66;
 
 /**
  * A primeira migration que registra a própria versão (a que criou a tabela).
