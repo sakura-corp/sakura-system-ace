@@ -764,6 +764,9 @@ describe("projetos secundários: /api/projetos, /api/projetos/<repo>/leva, /api/
           if (e.orgFalha) return new Response("fora", { status: 502 });
           return Response.json({ data: { organization: { repositories: { totalCount: 3, nodes: [repositorio("ar"), repositorio("financeiro", false), repositorio("sakura-system-ace")] } } } });
         }
+        if (query.includes("query LevasDosProjetos(")) {
+          return Response.json({ data: { p0: { labels: { nodes: [{ name: "leva-1", issues: { totalCount: 2 }, fechadas: { totalCount: 1 } }] } } } });
+        }
         if (query.includes("query Propostas(")) {
           if (e.propostas === null) return Response.json({ data: { repository: null }, errors: [{ type: "NOT_FOUND" }] });
           return Response.json({ data: { repository: { issues: { totalCount: 1, nodes: [{ number: 1, title: "Ar-condicionado", url: "https://github.com/sakura-corp/secundarios/issues/1", state: "OPEN", updatedAt: "2026-10-22T10:00:00Z", labels: { nodes: [{ name: "proposta" }, { name: "proposta:esperando-sofia" }] } }] } } } });

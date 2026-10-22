@@ -47,15 +47,12 @@ import { buscarNovidades } from "./novidades";
 import { escreverNoGitHub, largarNoProjeto, largarTarefa, pegarNoProjeto, pegarTarefa } from "./pegar";
 import {
   CONSULTA_DAS_PROPOSTAS,
-  CONSULTA_DOS_PROJETOS,
   buscarLevaDoProjeto,
+  buscarProjetos,
   projetoDoCaminho,
-  projetosDosDados,
   propostasDosDados,
   variaveisDasPropostas,
-  variaveisDosProjetos,
   type DadosDasPropostas,
-  type DadosDosProjetos,
 } from "./projetos";
 import { repositorioD1, tratarFinanceiro, type BancoD1 } from "./financeiro";
 import { numeroValido } from "../src/logica/comecarComClaude";
@@ -280,10 +277,10 @@ async function dados(request: Request, config: Configuracao, pedido: PedidoDeDad
     }
     // Os projetos secundários (#731): os repositórios com o tópico, as propostas e a leva atual de um projeto.
     if (pedido.tipo === "projetos") {
-      const r = await consultar<DadosDosProjetos>(sessao.token, CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+      const r = await buscarProjetos((consulta, variaveis) => consultar(sessao.token, consulta, variaveis));
       if (r.tipo === "sem-acesso") return semAcesso();
       if (r.tipo === "erro") return falhou();
-      return json(projetosDosDados(r.dados), 200, cookies);
+      return json(r.dados, 200, cookies);
     }
     // Sem o repositório `secundarios` (não existe, ou o login não lê), a lista vem vazia com `semAcesso`: a página não quebra.
     if (pedido.tipo === "propostas") {

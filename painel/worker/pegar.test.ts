@@ -288,7 +288,7 @@ describe("uma por vez no total, somando o SSACE e os projetos secundários (#731
    * releitura depois de pegar vê o que aconteceu. `semTopico`: repositórios da organização que não são projeto.
    * `aoEscrever`: roda depois de cada escrita (pra fingir outra aba pegando ao mesmo tempo).
    */
-  function fingirVarios(repos: Repos, e: { semTopico?: string[]; falhaNaRegra?: boolean; aoEscrever?: (r: Repos) => void } = {}) {
+  function fingirVarios(repos: Repos, e: { semTopico?: string[]; falhaNaRegra?: boolean; muitas?: boolean; aoEscrever?: (r: Repos) => void } = {}) {
     const escritas: { metodo: string; caminho: string; corpo: unknown }[] = [];
     const doRepo = (nome: unknown) => repos[String(nome)] ?? [];
     const levasDe = (issues: IssueDoGitHub[]) => {
@@ -308,9 +308,13 @@ describe("uma por vez no total, somando o SSACE e os projetos secundários (#731
           url: `https://github.com/sakura-corp/${name}`,
           isArchived: false,
           repositoryTopics: { nodes: e.semTopico?.includes(name) ? [] : [{ topic: { name: "projeto-secundario" } }] },
-          labels: { nodes: levasDe(doRepo(name)) },
         }));
         return { tipo: "ok", dados: { organization: { repositories: { totalCount: nodes.length, nodes } } } as T };
+      }
+      if (consulta.includes("query LevasDosProjetos")) {
+        const dados: Record<string, unknown> = {};
+        for (const [, i, nome] of consulta.matchAll(/p(\d+): repository\(owner: \$dono, name: "([^"]+)"\)/g)) dados[`p${i}`] = { labels: { nodes: levasDe(doRepo(nome)) } };
+        return { tipo: "ok", dados: dados as T };
       }
       if (consulta === CONSULTA_DA_LEVA_PRA_REGRAS) {
         const nodes = doRepo(variaveis.nome).filter((i) => i.labels?.nodes.some((l) => l?.name === variaveis.etiqueta));
@@ -326,7 +330,7 @@ describe("uma por vez no total, somando o SSACE e os projetos secundários (#731
           const nodes = doRepo(nome)
             .filter((x) => x.state === "OPEN" && x.assignees.nodes.some((a) => a?.login.toLowerCase() === String(variaveis.login).toLowerCase()))
             .map((x) => ({ number: x.number, labels: x.labels, closedByPullRequestsReferences: x.closedByPullRequestsReferences }));
-          dados[`r${i}`] = repos[nome] ? { issues: { nodes } } : null;
+          dados[`r${i}`] = repos[nome] ? { issues: { totalCount: e.muitas ? 80 : nodes.length, nodes } } : null;
         }
         return { tipo: "ok", dados: dados as T };
       }
@@ -407,6 +411,20 @@ describe("uma por vez no total, somando o SSACE e os projetos secundários (#731
       ["POST", CAMINHO_EM("ar", 3)],
       ["DELETE", CAMINHO_EM("ar", 3)],
     ]);
+  });
+
+  it("uma tarefa em outra leva do mesmo projeto também conta (a leva atual voltou pra uma anterior)", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [], ar: [issue(3, { leva: "leva-1" }), issue(5, { leva: "leva-2", dono: "fulana" })] });
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo: "você já está com a #5 do projeto ar" });
+    expect(g.escritas).toEqual([]);
+  });
+
+  it("com tarefas demais no nome da pessoa pra conferir, não pega (na dúvida, não escreve)", async () => {
+    const g = fingirVarios({ "sakura-system-ace": [issue(10)], ar: [issue(3)] }, { muitas: true });
+    const motivo = "você tem tarefas abertas demais no seu nome pra conferir a regra de uma por vez; peça à Sofia";
+    expect(await pegarNoProjeto("ar", 3, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo });
+    expect(await pegarTarefa(10, "fulana", g.perguntar, g.escrever)).toEqual({ tipo: "recusado", motivo });
+    expect(g.escritas).toEqual([]);
   });
 
   it("largar no projeto: só o dono, tirando só o próprio login do repositório do projeto", async () => {

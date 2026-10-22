@@ -9,7 +9,7 @@
 ## O que cada agente fez
 - Sessão mãe: planejou, escreveu o contrato (`tipos.ts`) e o worker inteiro (`projetos.ts`, as rotas no `index.ts`, o repositório como parâmetro em `tarefas.ts` e `pegar.ts`, e a regra "uma por vez no total"), tirou as fotos e juntou tudo.
 - Ajudante médio (página): `PaginaSecundarios.tsx`, `dados/exemplo-secundarios.ts`, o item na navegação, a rota no `App.tsx`, o repositório opcional em `comecarComClaude.ts`, `ListaDeTarefas.tsx` e `logica/dados.ts`, e os testes desses.
-- Ajudante forte (revisão final do diff): ver "Revisão final" abaixo.
+- Ajudante forte (revisão final do diff): nada bloqueante; 3 "deveria consertar" e 3 opcionais (ver "Revisão final").
 
 ## Modelos usados
 - Planejar e worker: sessão mãe, forte (Opus), esforço médio. O worker era etapa de ajudante médio na issue; a mãe fez porque a regra "uma por vez" entre repositórios era a parte delicada e o contrato ficava na mesma mão.
@@ -22,7 +22,7 @@
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (sem acesso ao arquivo de uso nesta sessão).
-- **Ajudantes**: 2 (médio: cerca de 143 mil tokens na segunda parte, pelo aviso; forte: ver o aviso da revisão).
+- **Ajudantes**: 2 (médio: cerca de 143 mil tokens na segunda parte; forte: cerca de 138 mil tokens; os dois pelo aviso de fim).
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: ligado na tela desta sessão (a condição apareceu na conversa); como parou fica no registro da coordenadora.
 
@@ -31,6 +31,16 @@
 - `worker/pegar.test.ts`, 10 testes novos da "uma por vez no total" (SSACE ↔ projeto, projeto ↔ projeto, falha na conferência, duas abas, largar): reprovaram antes do código. Depois, **desliguei de propósito** a conferência dos outros repositórios: 6 testes reprovaram (incluindo os do `index.test.ts`); com ela de volta, os 329 do worker passam.
 - `worker/index.test.ts`, 8 testes novos das rotas: 7 reprovaram antes das rotas existirem.
 - Página (ajudante): os testes de `comecarComClaude`, `acaoNaTarefa`, navegação e `App` reprovaram antes; tirar o `repositorio` da `ListaDeTarefas` fez os 2 testes novos reprovarem.
+
+- Depois da revisão final: 3 testes novos reprovaram antes do conserto (tarefa em outra leva do mesmo projeto; lista de issues da pessoa cortada, no pegar do projeto e no do SSACE; `tarefasSeguradasDosDados` devolvendo null quando corta), e 1 da página (`.` e `..` aceitos como repositório).
+
+## Revisão final (ajudante forte, esforço alto)
+- **Consertado** — a "uma por vez" dentro do mesmo projeto só olhava a leva atual: agora a conferência inclui o próprio projeto (só a tarefa sendo pega não conta).
+- **Consertado** — a lista de issues da pessoa podia vir cortada (mais de 50) sem a regra perceber: agora pede `totalCount` e recusa na dúvida.
+- **Consertado** — a consulta dos projetos pedia as etiquetas de 100 repositórios (caro no limite do GitHub, cerca de 200 pontos por chamada, e roda a cada "Pegar"): agora são duas consultas, a primeira só com nomes e tópicos, e a segunda com as levas só dos projetos (ou só do projeto aberto). No "Pegar" do SSACE só a primeira roda.
+- **Consertado (era opcional)** — a página aceitava `.` e `..` como repositório; agora o worker e a página usam a mesma validação.
+- **Ficou como está (opcional)**: com mais de 100 repositórios na organização, o "Pegar" recusa na dúvida (trava de segurança; a organização tem poucos). O POST do "Pegar" não entra na fila de pedidos da página (igual ao SSACE de hoje; o `/api/eu` já renovou o token antes).
+- **Contexto, não é defeito deste PR**: tarefa de leva futura com responsável (como a #699) conta na regra entre repositórios, e não na do próprio SSACE.
 
 ## O que passou sem eu ter visto reprovar
 - "Repositório sem o tópico, ou de nome estranho: 404" no `index.test.ts` passou de primeira (o caminho já caía no 404 genérico antes da rota existir); ele continua valendo como guarda.

@@ -2,6 +2,7 @@
 // suas levas, e as propostas (issues do `secundarios`). Nada de lista no código: o painel descobre os projetos pelo
 // tópico, com o token de quem olha (repositório que o login não alcança não aparece).
 // Só nomes, contagens, títulos e links: o texto das issues não sai daqui.
+import { repositorioValido } from "../src/logica/comecarComClaude";
 import { numeroDaLeva } from "../src/logica/estado";
 import { linkSeguro } from "../src/logica/link";
 import {
@@ -26,11 +27,11 @@ export const MAXIMO_DE_REPOSITORIOS = 100;
 export const MAXIMO_DE_PROPOSTAS = 50;
 /** No máximo isto de repositórios na conferência da "uma por vez" (os projetos e o SSACE). */
 export const MAXIMO_DE_REPOSITORIOS_NA_REGRA = 30;
+/** As issues abertas no nome da pessoa olhadas em cada repositório; com mais, a regra recusa. */
+export const MAXIMO_DE_TAREFAS_DA_PESSOA = 50;
 
-/** Nome de repositório do GitHub: letras, números, ponto, hífen e sublinhado; nunca "." nem "..". */
-export function repositorioValido(nome: unknown): nome is string {
-  return typeof nome === "string" && /^[A-Za-z0-9._-]{1,100}$/.test(nome) && nome !== "." && nome !== "..";
-}
+/** Nome de repositório do GitHub (letras, números, ponto, hífen e sublinhado; nunca "." nem ".."): a mesma regra da página. */
+export { repositorioValido };
 
 /** /api/projetos/<repo>/<resto> → o repositório (já validado) e o resto; outro caminho → null. */
 export function projetoDoCaminho(caminho: string): { repositorio: string; resto: string } | null {
@@ -41,7 +42,8 @@ export function projetoDoCaminho(caminho: string): { repositorio: string; resto:
 
 export const variaveisDosProjetos = { dono: ORGANIZACAO };
 
-// Os repositórios da organização, com os tópicos e as etiquetas `leva-` (as contagens, como a CONSULTA_DAS_LEVAS).
+// Os repositórios da organização, só com o nome e os tópicos: é barata (o GitHub cobra pelo que a consulta pode
+// devolver) e é usada a cada "Pegar". As levas vêm depois, só dos projetos (`consultaDasLevasDosProjetos`).
 export const CONSULTA_DOS_PROJETOS = `
 query Projetos($dono: String!) {
   organization(login: $dono) {
@@ -53,9 +55,6 @@ query Projetos($dono: String!) {
         url
         isArchived
         repositoryTopics(first: 20) { nodes { topic { name } } }
-        labels(first: 100, query: "leva-") {
-          nodes { name issues(states: OPEN) { totalCount } fechadas: issues(states: CLOSED) { totalCount } }
-        }
       }
     }
   }
@@ -67,8 +66,38 @@ export type RepositorioDoGitHub = {
   url: string;
   isArchived: boolean;
   repositoryTopics: { nodes: ({ topic: { name: string } | null } | null)[] | null } | null;
-  labels: { nodes: ({ name: string; issues: { totalCount: number }; fechadas?: { totalCount: number } } | null)[] | null } | null;
 };
+
+/** As etiquetas `leva-` de um repositório, com as contagens (como a CONSULTA_DAS_LEVAS). */
+export type EtiquetasDasLevas = { nodes: ({ name: string; issues: { totalCount: number }; fechadas?: { totalCount: number } } | null)[] | null } | null;
+export type DadosDasLevasDosProjetos = Record<string, { labels: EtiquetasDasLevas } | null>;
+
+/** As levas dos projetos `nomes`, numa consulta só, um apelido `p<i>` por projeto (só nome válido entra no texto). */
+export function consultaDasLevasDosProjetos(nomes: string[]): string {
+  const validos = nomes.filter(repositorioValido).slice(0, MAXIMO_DE_REPOSITORIOS_NA_REGRA);
+  const linhas = validos.map(
+    (nome, i) =>
+      `  p${i}: repository(owner: $dono, name: ${JSON.stringify(nome)}) {\n` +
+      `    labels(first: 100, query: "leva-") { nodes { name issues(states: OPEN) { totalCount } fechadas: issues(states: CLOSED) { totalCount } } }\n  }`,
+  );
+  return `
+query LevasDosProjetos($dono: String!) {
+${linhas.join("\n")}
+}`;
+}
+
+/** As etiquetas de cada projeto, pelo nome, a partir da resposta da `consultaDasLevasDosProjetos`. */
+export function levasDosProjetosDosDados(nomes: string[], dados: DadosDasLevasDosProjetos | null | undefined): Map<string, EtiquetasDasLevas> {
+  const mapa = new Map<string, EtiquetasDasLevas>();
+  nomes
+    .filter(repositorioValido)
+    .slice(0, MAXIMO_DE_REPOSITORIOS_NA_REGRA)
+    .forEach((nome, i) => {
+      const r = dados?.[`p${i}`];
+      if (r) mapa.set(nome, r.labels);
+    });
+  return mapa;
+}
 
 export type DadosDosProjetos = {
   organization?: { repositories: { totalCount: number; nodes: (RepositorioDoGitHub | null)[] | null } | null } | null;
@@ -80,9 +109,9 @@ export function levaAtualDoProjeto(levas: Leva[]): number | null {
   return abertas.length > 0 ? Math.min(...abertas) : null;
 }
 
-function projetoDoRepositorio(r: RepositorioDoGitHub): Projeto {
+function projetoDoRepositorio(r: RepositorioDoGitHub, etiquetas: EtiquetasDasLevas | undefined): Projeto {
   const levas: Leva[] = [];
-  for (const no of r.labels?.nodes ?? []) {
+  for (const no of etiquetas?.nodes ?? []) {
     const numero = no ? numeroDaLeva(no.name) : null;
     if (no && numero !== null) levas.push({ numero, nome: `Leva ${numero}`, abertas: no.issues.totalCount, fechadas: no.fechadas?.totalCount ?? 0 });
   }
@@ -99,8 +128,11 @@ function projetoDoRepositorio(r: RepositorioDoGitHub): Projeto {
   return projeto;
 }
 
-/** Os projetos: só com o tópico, não arquivados, de nome válido, e nunca o SSACE nem o `secundarios`. */
-export function projetosDosDados(dados: DadosDosProjetos): RespostaDosProjetos {
+/**
+ * Os projetos: só com o tópico, não arquivados, de nome válido, e nunca o SSACE nem o `secundarios`. As levas vêm de
+ * `levas` (pelo nome); projeto sem entrada lá fica sem levas e sem leva atual.
+ */
+export function projetosDosDados(dados: DadosDosProjetos, levas: Map<string, EtiquetasDasLevas> = new Map()): RespostaDosProjetos {
   const repositorios = dados?.organization?.repositories;
   if (!repositorios) return { projetos: [] };
   const vieram = repositorios.nodes ?? [];
@@ -108,13 +140,32 @@ export function projetosDosDados(dados: DadosDosProjetos): RespostaDosProjetos {
     .filter((r) => r !== null)
     .filter((r) => !r.isArchived && repositorioValido(r.name) && r.name !== REPOSITORIO && r.name !== REPOSITORIO_DAS_PROPOSTAS)
     .filter((r) => (r.repositoryTopics?.nodes ?? []).some((t) => t?.topic?.name === TOPICO_DOS_PROJETOS))
-    .map(projetoDoRepositorio);
+    .map((r) => projetoDoRepositorio(r, levas.get(r.name)));
   const resposta: RespostaDosProjetos = { projetos };
   if (repositorios.totalCount > vieram.length) resposta.cortada = true;
   return resposta;
 }
 
-type Consultar = <T>(consulta: string, variaveis: Record<string, unknown>) => Promise<{ tipo: "ok"; dados: T } | { tipo: "sem-acesso" } | { tipo: "erro" }>;
+export type Consultar = <T>(consulta: string, variaveis: Record<string, unknown>) => Promise<{ tipo: "ok"; dados: T } | { tipo: "sem-acesso" } | { tipo: "erro" }>;
+
+/**
+ * Os projetos, em duas consultas baratas: os repositórios com o tópico e, depois, as levas só dos projetos (de todos,
+ * ou só de `so`). Sem nenhum projeto, a segunda nem roda.
+ */
+export async function buscarProjetos(
+  consultar: Consultar,
+  so?: string,
+): Promise<{ tipo: "ok"; dados: RespostaDosProjetos } | { tipo: "sem-acesso" } | { tipo: "erro" }> {
+  const r = await consultar<DadosDosProjetos>(CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+  if (r.tipo !== "ok") return r;
+  const nomes = projetosDosDados(r.dados)
+    .projetos.map((p) => p.repositorio)
+    .filter((n) => so === undefined || n === so);
+  if (nomes.length === 0) return { tipo: "ok", dados: projetosDosDados(r.dados) };
+  const r2 = await consultar<DadosDasLevasDosProjetos>(consultaDasLevasDosProjetos(nomes), variaveisDosProjetos);
+  if (r2.tipo !== "ok") return r2;
+  return { tipo: "ok", dados: projetosDosDados(r.dados, levasDosProjetosDosDados(nomes, r2.dados)) };
+}
 
 /**
  * A leva atual de um projeto (/api/projetos/<repo>/leva). Confere antes que o repositório é mesmo um projeto (pela
@@ -124,9 +175,9 @@ export async function buscarLevaDoProjeto(
   repositorio: string,
   consultar: Consultar,
 ): Promise<{ tipo: "ok"; dados: RespostaDaLevaDoProjeto } | { tipo: "nao-existe" } | { tipo: "sem-acesso" } | { tipo: "erro" }> {
-  const r = await consultar<DadosDosProjetos>(CONSULTA_DOS_PROJETOS, variaveisDosProjetos);
+  const r = await buscarProjetos(consultar, repositorio);
   if (r.tipo !== "ok") return r;
-  const projeto = projetosDosDados(r.dados).projetos.find((p) => p.repositorio === repositorio);
+  const projeto = r.dados.projetos.find((p) => p.repositorio === repositorio);
   if (!projeto) return { tipo: "nao-existe" };
   const base = { repositorio, levas: projeto.levas, atual: projeto.atual };
   if (projeto.atual === null) return { tipo: "ok", dados: { ...base, leva: null } };
@@ -196,7 +247,8 @@ export function consultaDasTarefasDaPessoa(repositorios: string[]): string {
   const linhas = validos.map(
     (nome, i) =>
       `  r${i}: repository(owner: $dono, name: ${JSON.stringify(nome)}) {\n` +
-      `    issues(first: 50, states: OPEN, filterBy: { assignee: $login }) {\n` +
+      `    issues(first: ${MAXIMO_DE_TAREFAS_DA_PESSOA}, states: OPEN, filterBy: { assignee: $login }) {\n` +
+      `      totalCount\n` +
       `      nodes { number labels(first: 30) { nodes { name } } closedByPullRequestsReferences(first: 10) { nodes { state } } }\n` +
       `    }\n  }`,
   );
@@ -211,19 +263,25 @@ type IssueDaPessoa = {
   labels: { nodes: ({ name: string } | null)[] | null } | null;
   closedByPullRequestsReferences: { nodes: ({ state: string } | null)[] | null } | null;
 };
-export type DadosDasTarefasDaPessoa = Record<string, { issues: { nodes: (IssueDaPessoa | null)[] | null } | null } | null>;
+export type DadosDasTarefasDaPessoa = Record<string, { issues: { totalCount?: number; nodes: (IssueDaPessoa | null)[] | null } | null } | null>;
 
-/** As tarefas em andamento, na ordem dos repositórios. Repositório que não veio (sem acesso) fica de fora. */
-export function tarefasSeguradasDosDados(repositorios: string[], dados: DadosDasTarefasDaPessoa | null | undefined): TarefaSegurada[] {
+/**
+ * As tarefas em andamento, na ordem dos repositórios. Repositório que não veio (sem acesso) fica de fora.
+ * null: em algum repositório a pessoa tem mais issues abertas do que as olhadas (a regra não sabe; quem chama recusa).
+ */
+export function tarefasSeguradasDosDados(repositorios: string[], dados: DadosDasTarefasDaPessoa | null | undefined): TarefaSegurada[] | null {
   const validos = repositorios.filter(repositorioValido).slice(0, MAXIMO_DE_REPOSITORIOS_NA_REGRA);
   const seguradas: TarefaSegurada[] = [];
+  let cortada = false;
   validos.forEach((repositorio, i) => {
-    for (const issue of dados?.[`r${i}`]?.issues?.nodes ?? []) {
+    const issues = dados?.[`r${i}`]?.issues;
+    if (issues && (issues.totalCount ?? 0) > (issues.nodes ?? []).length) cortada = true;
+    for (const issue of issues?.nodes ?? []) {
       if (!issue) continue;
       const deLeva = (issue.labels?.nodes ?? []).some((l) => l !== null && numeroDaLeva(l.name) !== null);
       const comPrAberto = (issue.closedByPullRequestsReferences?.nodes ?? []).some((p) => p?.state === "OPEN");
       if (deLeva && !comPrAberto) seguradas.push({ repositorio, numero: issue.number });
     }
   });
-  return seguradas;
+  return cortada ? null : seguradas;
 }

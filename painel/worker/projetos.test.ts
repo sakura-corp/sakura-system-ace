@@ -9,10 +9,11 @@ import {
   tarefasSeguradasDosDados,
   type DadosDasPropostas,
   type DadosDosProjetos,
+  type EtiquetasDasLevas,
   type RepositorioDoGitHub,
 } from "./projetos";
 
-function repo(name: string, e: { topicos?: string[]; arquivado?: boolean; levas?: [string, number, number?][]; descricao?: string | null } = {}): RepositorioDoGitHub {
+function repo(name: string, e: { topicos?: string[]; arquivado?: boolean; levas?: [string, number, number?][]; descricao?: string | null } = {}): RepositorioDoGitHub & { labels: EtiquetasDasLevas } {
   return {
     name,
     description: e.descricao === undefined ? `O ${name}` : e.descricao,
@@ -23,6 +24,12 @@ function repo(name: string, e: { topicos?: string[]; arquivado?: boolean; levas?
   };
 }
 const dados = (nodes: (RepositorioDoGitHub | null)[], totalCount = nodes.length): DadosDosProjetos => ({ organization: { repositories: { totalCount, nodes } } });
+/** Os projetos com as levas que cada repositório fingido traz (a segunda consulta, já respondida). */
+const pd = (d: DadosDosProjetos) => {
+  const mapa = new Map<string, EtiquetasDasLevas>();
+  for (const r of d.organization?.repositories?.nodes ?? []) if (r && "labels" in r) mapa.set(r.name, (r as { labels: EtiquetasDasLevas }).labels);
+  return projetosDosDados(d, mapa);
+};
 
 describe("repositorioValido (#731)", () => {
   it.each(["ar-condicionado", "site.da_loja", "A1"])("aceita %s", (n) => expect(repositorioValido(n)).toBe(true));
@@ -31,7 +38,7 @@ describe("repositorioValido (#731)", () => {
 
 describe("projetosDosDados (#731)", () => {
   it("só os repositórios com o tópico, sem o SSACE, o secundarios, os arquivados e os de nome estranho", () => {
-    const r = projetosDosDados(
+    const r = pd(
       dados([
         repo("ar-condicionado", { levas: [["leva-1", 2], ["leva-2", 1]] }),
         repo("sem-topico", { topicos: ["outro"] }),
@@ -47,7 +54,7 @@ describe("projetosDosDados (#731)", () => {
   });
 
   it("leva atual = a menor leva-N com tarefa aberta; nenhuma aberta = null", () => {
-    const r = projetosDosDados(
+    const r = pd(
       dados([
         repo("a", { levas: [["leva-3", 4], ["leva-1", 0, 5], ["leva-2", 1], ["leva-x", 9]] }),
         repo("b", { levas: [["leva-1", 0, 3]] }),
@@ -59,14 +66,14 @@ describe("projetosDosDados (#731)", () => {
   });
 
   it("organização que não veio (sem acesso) = nenhum projeto; mais repositórios do que os olhados = cortada", () => {
-    expect(projetosDosDados({ organization: null })).toEqual({ projetos: [] });
-    expect(projetosDosDados({} as DadosDosProjetos)).toEqual({ projetos: [] });
-    expect(projetosDosDados(dados([repo("a")], 150)).cortada).toBe(true);
+    expect(pd({ organization: null })).toEqual({ projetos: [] });
+    expect(pd({} as DadosDosProjetos)).toEqual({ projetos: [] });
+    expect(pd(dados([repo("a")], 150)).cortada).toBe(true);
   });
 
   it("link só da sakura-corp; descrição vazia some", () => {
     const outro = { ...repo("a", { descricao: "" }), url: "https://malicioso.exemplo/a" };
-    const [p] = projetosDosDados(dados([outro])).projetos;
+    const [p] = pd(dados([outro])).projetos;
     expect(p.url).toBe("https://github.com/sakura-corp/a");
     expect(p.descricao).toBeUndefined();
     expect(p.nome).toBe("a");
@@ -152,13 +159,17 @@ describe("as tarefas que a pessoa segura em vários repositórios (#731)", () =>
       closedByPullRequestsReferences: { nodes: pr ? [{ state: pr }] : [] },
     });
     const r = tarefasSeguradasDosDados(["sakura-system-ace", "ar", "sem-acesso"], {
-      r0: { issues: { nodes: [no(10, ["leva-4"]), no(11, ["leva-4"], "OPEN"), no(12, ["bug"])] } },
-      r1: { issues: { nodes: [no(3, ["leva-1"], "MERGED"), null] } },
+      r0: { issues: { totalCount: 3, nodes: [no(10, ["leva-4"]), no(11, ["leva-4"], "OPEN"), no(12, ["bug"])] } },
+      r1: { issues: { totalCount: 2, nodes: [no(3, ["leva-1"], "MERGED"), null] } },
       r2: null,
     });
     expect(r).toEqual([
       { repositorio: "sakura-system-ace", numero: 10 },
       { repositorio: "ar", numero: 3 },
     ]);
+  });
+
+  it("mais issues no nome da pessoa do que as olhadas: null (a regra não sabe, e quem chama recusa)", () => {
+    expect(tarefasSeguradasDosDados(["ar"], { r0: { issues: { totalCount: 51, nodes: [] } } })).toBeNull();
   });
 });

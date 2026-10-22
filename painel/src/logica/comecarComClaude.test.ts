@@ -93,3 +93,11 @@ describe("projeto secundário (#731)", () => {
     expect(textoDaTarefa(999_999, undefined, "a".repeat(100))!.length).toBeLessThanOrEqual(LIMITE_DO_TEXTO);
   });
 });
+
+describe("repositorioValido igual ao do worker (#731)", () => {
+  it("recusa . e .. (o navegador transformaria /api/projetos/../ em outra rota)", () => {
+    expect(repositorioValido(".")).toBe(false);
+    expect(repositorioValido("..")).toBe(false);
+    expect(repositorioValido("ar.condicionado")).toBe(true);
+  });
+});

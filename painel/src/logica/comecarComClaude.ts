@@ -25,7 +25,7 @@ export function numeroValido(n: unknown): n is number {
 
 /** Nome de repositório da sakura-corp (projeto secundário, #731): só letras, números, ponto, hífen e sublinhado. */
 export function repositorioValido(r: unknown): r is string {
-  return typeof r === "string" && /^[A-Za-z0-9._-]{1,100}$/.test(r);
+  return typeof r === "string" && /^[A-Za-z0-9._-]{1,100}$/.test(r) && r !== "." && r !== "..";
 }
 
 /** "sakura-corp/<repo>" do projeto, ou o do SSACE quando não há repositório. Quem chama já validou o nome. */
