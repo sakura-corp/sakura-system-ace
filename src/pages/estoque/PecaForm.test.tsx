@@ -16,9 +16,10 @@
  * o código errado só aparece semanas depois, numa nota recusada).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
+import { renderizar, screen, waitFor } from "@/testes/tela";
 import { PecaForm } from "./PecaForm";
 import type { Categoria } from "@/types/categoria";
+import type { Peca } from "@/types/peca";
 
 beforeEach(() => localStorage.clear());
 
@@ -27,10 +28,20 @@ const categorias: Categoria[] = [
   { id: "cat-2", nome: "Freios", criado_em: "2026-01-01T00:00:00.000Z" },
 ];
 
-function montar(opcoes: { csosnSugerido?: string | null } = {}) {
+function montar(
+  opcoes: {
+    csosnSugerido?: string | null;
+    pecasDoCadastro?: Peca[];
+    pecaExistente?: Peca;
+  } = {},
+) {
   const onSalvar = vi.fn().mockResolvedValue(undefined);
+  const onAbrirExistente = vi.fn();
   const resultado = renderizar(
     <PecaForm
+      pecaExistente={opcoes.pecaExistente}
+      pecasDoCadastro={opcoes.pecasDoCadastro}
+      onAbrirExistente={onAbrirExistente}
       categorias={categorias}
       regime="simples_nacional"
       csosnSugerido={opcoes.csosnSugerido ?? null}
@@ -38,7 +49,7 @@ function montar(opcoes: { csosnSugerido?: string | null } = {}) {
       onCancelar={vi.fn()}
     />,
   );
-  return { ...resultado, onSalvar };
+  return { ...resultado, onSalvar, onAbrirExistente };
 }
 
 /**
@@ -172,5 +183,130 @@ describe("PecaForm — validação", () => {
     expect(onSalvar).toHaveBeenCalledTimes(1);
     const [, quantidadeInicial] = onSalvar.mock.calls[0];
     expect(quantidadeInicial).toBeNull();
+  });
+});
+
+/**
+ * O aviso de peça parecida: só ao cadastrar peça NOVA, e nunca tranca (item 33
+ * do docs/licoes.md). A regra de "o que é parecido" é testada à parte, em
+ * `schemas/pecaParecida.test.ts`; aqui se confere a tela.
+ */
+function umaPeca(extra: Partial<Peca>): Peca {
+  return {
+    id: "p-1",
+    codigo_interno: null,
+    codigo_barras: null,
+    descricao: "PNEU 175/70 R13 PIRELLI",
+    marca: null,
+    modelo: null,
+    aplicacao: null,
+    unidade: "UN",
+    preco_custo: null,
+    preco_venda: null,
+    ncm: "40111000",
+    cest: "0100100",
+    cfop_padrao: "5102",
+    origem: "0",
+    cst_ou_csosn: "500",
+    aliquota_icms: null,
+    categoria_id: null,
+    prazo_garantia_dias: null,
+    estoque_minimo: null,
+    medida: null,
+    indice_carga_velocidade: null,
+    dot: null,
+    ativo: true,
+    criado_em: "2026-01-01T00:00:00.000Z",
+    ...extra,
+  };
+}
+
+const salvar = () => screen.getByRole("button", { name: /^Salvar/ });
+
+describe("PecaForm — aviso de peça parecida", () => {
+  const cadastrada = umaPeca({});
+
+  it("peça nova repetida mostra o aviso e ainda não grava", async () => {
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/É a mesma\?/)).toBeInTheDocument();
+    expect(onSalvar).not.toHaveBeenCalled();
+  });
+
+  it("'Cadastrar mesmo assim' grava a peça digitada", async () => {
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+    await user.click(await screen.findByRole("button", { name: "Cadastrar mesmo assim" }));
+
+    expect(onSalvar).toHaveBeenCalledTimes(1);
+    expect(onSalvar.mock.calls[0][0].descricao).toBe("Pneu 175/70 R13 Pirelli");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("'Abrir a que já existe' chama a abertura da peça do cadastro, sem gravar", async () => {
+    const { user, onSalvar, onAbrirExistente } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+    await user.click(await screen.findByRole("button", { name: "Abrir a que já existe" }));
+
+    expect(onAbrirExistente).toHaveBeenCalledWith(cadastrada);
+    expect(onSalvar).not.toHaveBeenCalled();
+  });
+
+  it("fechar o aviso volta pro formulário sem gravar e sem perder o que foi digitado", async () => {
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+    await user.click(await screen.findByRole("button", { name: "Fechar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(campo("Descrição *")).toHaveValue("Pneu 175/70 R13 Pirelli");
+    expect(onSalvar).not.toHaveBeenCalled();
+  });
+
+  it("editar peça que já existe nunca mostra o aviso", async () => {
+    // A própria peça está no cadastro e é igual ao que está na tela: se o
+    // aviso valesse na edição, ninguém conseguiria salvar uma alteração.
+    const { user, onSalvar } = montar({
+      pecasDoCadastro: [cadastrada],
+      pecaExistente: cadastrada,
+    });
+
+    await user.click(salvar());
+
+    await waitFor(() => expect(onSalvar).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("R14 não é parecido com R13: salva direto", async () => {
+    const { user, onSalvar } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "PNEU 175/70 R14 PIRELLI");
+    await user.click(salvar());
+
+    expect(onSalvar).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("mesmo código de barras com nome diferente também avisa", async () => {
+    const { user, onSalvar } = montar({
+      pecasDoCadastro: [umaPeca({ descricao: "AMORTECEDOR DIANTEIRO", codigo_barras: "7891234567895" })],
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.type(campo("Código de barras"), "7891234567895");
+    await user.click(salvar());
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/mesmo código de barras/)).toBeInTheDocument();
+    expect(onSalvar).not.toHaveBeenCalled();
   });
 });
