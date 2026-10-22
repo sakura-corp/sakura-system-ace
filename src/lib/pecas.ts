@@ -71,16 +71,21 @@ export async function resumoPecaParaJuntar(id: string): Promise<ResumoPecaJuntar
 
 // Junta a peça `saiId` na `ficaId`: tudo da que sai passa pra que fica, os
 // campos listados em `campos` são copiados da que sai, e a que sai deixa de
-// existir. Devolve o resumo da peça que ficou, pra conferir com a prévia.
+// existir. `esperado` são os resumos que a prévia mostrou: se o banco já
+// estiver diferente (alguém mexeu nas peças nesse meio-tempo), ele recusa em
+// vez de juntar com números que a pessoa não viu. Devolve o resumo da peça
+// que ficou.
 export async function juntarPecas(
   ficaId: string,
   saiId: string,
   campos: CampoJuntavel[],
+  esperado: { fica: ResumoPecaJuntar; sai: ResumoPecaJuntar },
 ): Promise<ResumoPecaJuntar> {
   const { data, error } = await supabase.rpc("juntar_pecas", {
     p_fica: ficaId,
     p_sai: saiId,
     p_campos_da_que_sai: campos,
+    p_esperado: esperado,
   });
   if (error) throw error;
   return lerResumo(data);

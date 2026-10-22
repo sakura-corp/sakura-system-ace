@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 import type { Peca } from "@/types/peca";
@@ -51,6 +52,17 @@ function nomes(fica: Peca, sai: Peca): string[] {
 }
 
 describe("CAMPOS_JUNTAVEIS", () => {
+  // A tela oferece os campos; quem aceita ou recusa é a lista `v_permitidos`
+  // da função do banco. Se uma mudar sem a outra, a tela oferece um campo que
+  // o banco recusa (ou esconde um que ele aceita). Lido do .sql de verdade.
+  it("é a mesma lista que a função juntar_pecas aceita (0067)", () => {
+    const sql = readFileSync("supabase/migrations/0067_juntar_pecas.sql", "utf8");
+    const bloco = sql.match(/v_permitidos constant text\[\] := array\[([^\]]*)\]/);
+    expect(bloco).not.toBeNull();
+    const doBanco = [...bloco![1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+    expect(CAMPOS_JUNTAVEIS.map((c) => c.campo).sort()).toEqual(doBanco);
+  });
+
   it("é a lista fechada da RPC, com o rótulo da tela de Produtos", () => {
     expect(CAMPOS_JUNTAVEIS.map((c) => c.campo)).toEqual([
       "descricao",

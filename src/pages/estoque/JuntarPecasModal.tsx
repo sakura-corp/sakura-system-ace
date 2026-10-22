@@ -58,15 +58,18 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
   const [juntando, setJuntando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
+  const [buscaFalhou, setBuscaFalhou] = useState(false);
 
   const procurar = useCallback(async () => {
     setPares(null);
+    setBuscaFalhou(false);
     try {
       const pecas = await listarPecas();
       setPares(paresSuspeitos(pecas));
     } catch (err) {
       console.error("Erro ao procurar peças repetidas:", err);
       setErro(mensagemDeErro(err));
+      setBuscaFalhou(true);
       setPares([]);
     }
   }, []);
@@ -147,7 +150,10 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
     setJuntando(true);
     setErro(null);
     try {
-      await juntarPecas(analise.fica.id, analise.sai.id, camposDaQueSai(escolhas));
+      await juntarPecas(analise.fica.id, analise.sai.id, camposDaQueSai(escolhas), {
+        fica: analise.resumoFica,
+        sai: analise.resumoSai,
+      });
       setSucesso(
         `Pronto: "${analise.sai.descricao}" foi juntada em "${previa.descricaoFinal}". ` +
           "A peça repetida foi apagada.",
@@ -170,7 +176,7 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
       titulo="Juntar peças repetidas"
       descricao="O sistema procura peças que parecem ser a mesma. Nada é juntado sozinho: você confere e confirma uma de cada vez."
       largura="4xl"
-      onFechar={onFechar}
+      onFechar={juntando ? () => {} : onFechar}
     >
       <div className="space-y-4">
         {erro && (
@@ -189,6 +195,7 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
             <button
               type="button"
               onClick={voltarParaLista}
+              disabled={juntando}
               className="text-corpo font-medium text-sakura-purple-dark underline"
             >
               Voltar para a lista
@@ -329,6 +336,17 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
           </div>
         ) : pares === null ? (
           <p role="status" className="text-corpo text-sakura-muted">Procurando peças repetidas…</p>
+        ) : buscaFalhou ? (
+          <button
+            type="button"
+            onClick={() => {
+              setErro(null);
+              procurar();
+            }}
+            className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+          >
+            Tentar de novo
+          </button>
         ) : pares.length === 0 ? (
           <p className="text-corpo text-sakura-muted">
             Não achei peças repetidas. Está tudo certo por aqui.
@@ -374,7 +392,8 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+            disabled={juntando}
+            className="disabled:opacity-60 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
           >
             Fechar
           </button>

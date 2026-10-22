@@ -91,6 +91,15 @@ describe("JuntarPecasModal", () => {
     expect(screen.getByText("Pneu 175/70 R13 Pirelli (inativa)")).toBeInTheDocument();
   });
 
+  it("se a busca falha, não diz que está tudo certo e deixa tentar de novo", async () => {
+    vi.mocked(listarPecas).mockRejectedValueOnce(new Error("sem internet"));
+    const { user } = montar();
+    expect(await screen.findByRole("alert")).toHaveTextContent(/sem internet/);
+    expect(screen.queryByText(/Está tudo certo/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByText("Motivo: mesmo código de barras")).toBeInTheDocument();
+  });
+
   it("sem pares, diz que não achou", async () => {
     vi.mocked(listarPecas).mockResolvedValue([velha]);
     montar();
@@ -112,7 +121,14 @@ describe("JuntarPecasModal", () => {
     await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
     await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
 
-    await waitFor(() => expect(juntarPecas).toHaveBeenCalledWith("a", "b", ["preco_venda"]));
+    // Junto vai o que a pessoa VIU na prévia: se o banco mudou desde então,
+    // ele recusa em vez de juntar com números diferentes dos mostrados.
+    await waitFor(() =>
+      expect(juntarPecas).toHaveBeenCalledWith("a", "b", ["preco_venda"], {
+        fica: resumo({}),
+        sai: resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 2 }] }),
+      }),
+    );
     expect(await screen.findByRole("status")).toHaveTextContent(/Pronto/);
     await waitFor(() => expect(onJuntado).toHaveBeenCalled());
   });
@@ -132,7 +148,13 @@ describe("JuntarPecasModal", () => {
     await screen.findByRole("button", { name: "Juntar estas duas" });
     await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
     await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
-    await waitFor(() => expect(juntarPecas).toHaveBeenCalledWith("b", "a", expect.any(Array)));
+    await waitFor(() =>
+      expect(juntarPecas).toHaveBeenCalledWith("b", "a", expect.any(Array), {
+        // trocou quem fica: os resumos trocam junto
+        fica: expect.objectContaining({ os: 12 }),
+        sai: expect.objectContaining({ os: 0 }),
+      }),
+    );
   });
 
   it("sem acesso a todas as lojas, mostra a frase e não oferece juntar", async () => {
