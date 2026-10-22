@@ -4,8 +4,8 @@ import { linkSeguro } from "../src/logica/link";
 import type { DefeitoDaLeva, RespostaDosTestes } from "../src/tipos";
 import { variaveisDoRepositorio } from "./tarefas";
 
-/** O texto da lista de testes passa disso (em caracteres): corta e avisa. */
-export const MAXIMO_DO_TEXTO = 20_000;
+/** O texto da lista de testes passa disso (em caracteres): corta e avisa. A da leva 3 já tem uns 25 mil (22/10). */
+export const MAXIMO_DO_TEXTO = 80_000;
 
 /** Os defeitos abertos olhados (os criados por último). */
 export const MAXIMO_DE_DEFEITOS = 50;

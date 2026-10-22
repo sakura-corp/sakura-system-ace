@@ -1,8 +1,9 @@
 // A fase Testando na tela da leva (#646): o aviso de leva congelada, o que testar e os defeitos achados.
 // A lista de testes vem de `docs/relatorios/leva-N-testes.md` (na main) e aparece como texto puro: nada é
 // interpretado como HTML. Decisões da Sofia na entrevista de 19/10/2026 (docs/painel.md).
-import { Bug, ExternalLink, RotateCw, Snowflake } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Bug, Check, ChevronDown, ChevronUp, Copy, ExternalLink, RotateCw, Snowflake } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { copiarTexto, type ResultadoDaCopia } from "../logica/copiarTexto";
 import { linkSeguro } from "../logica/link";
 import type { DefeitoDaLeva, RespostaDosTestes } from "../tipos";
 
@@ -115,11 +116,7 @@ export function ConteudoDaFaseTestando({ numero, estado, tentarDeNovo }: PropsDo
         {texto === null ? (
           <p className="mt-2 text-sm text-texto-2">A lista de testes ainda não foi escrita.</p>
         ) : (
-          <>
-            {/* Texto puro: o React escapa tudo, então um <script> no arquivo aparece escrito e não roda. */}
-            <pre className="mt-2 min-w-0 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{texto}</pre>
-            {textoCortado && <p className="mt-2 text-sm text-texto-2">A lista é grande: só o começo aparece aqui. O resto está no arquivo, no GitHub.</p>}
-          </>
+          <ListaParaCopiar texto={texto} cortado={!!textoCortado} />
         )}
         <p className="mt-3 text-[13px] text-texto-2">
           Vem de <code className="break-all font-mono">docs/relatorios/leva-{numero}-testes.md</code>, na main.
@@ -143,6 +140,74 @@ export function ConteudoDaFaseTestando({ numero, estado, tentarDeNovo }: PropsDo
         <p className="mt-3 text-[13px] text-texto-2">A Sofia decide se cada um entra nesta leva ou fica para a próxima.</p>
       </section>
     </div>
+  );
+}
+
+const BOTAO =
+  "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque";
+
+/**
+ * A lista é pra levar pro Claude, não pra ler aqui (Sofia, 22/10: "muito grande, difícil copiar tudo", "deixar claro
+ * que é algo pra pegar"). Em cima, o que fazer e o botão de copiar; embaixo, a lista numa janelinha que abre inteira.
+ */
+export function ListaParaCopiar({ texto, cortado }: { texto: string; cortado: boolean }) {
+  const [aberta, setAberta] = useState(false);
+  const [copia, setCopia] = useState<ResultadoDaCopia | null>(null);
+  const aviso = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(aviso.current), []);
+
+  async function copiar() {
+    const r = await copiarTexto(texto, navigator.clipboard);
+    window.clearTimeout(aviso.current);
+    setCopia(r);
+    // Não deu pra copiar sozinho: abre a lista pra pessoa selecionar e copiar à mão.
+    if (r === "plano-b") setAberta(true);
+    else aviso.current = window.setTimeout(() => setCopia(null), 6000);
+  }
+
+  return (
+    <>
+      <div className="mt-3 rounded-lg border border-borda bg-fundo px-4 py-3">
+        <p className="text-sm font-semibold">Leve esta lista pro seu Claude</p>
+        <ol className="mt-1 list-decimal pl-5 text-sm leading-relaxed">
+          <li>Clique em "Copiar a lista inteira".</li>
+          <li>Abra o Claude Code na pasta do projeto e cole.</li>
+          <li>Ele prepara o programa e te guia, um teste por vez.</li>
+        </ol>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={copiar} className={`${BOTAO} bg-destaque text-sobre-destaque`}>
+            {copia === "copiado" ? <Check aria-hidden="true" className="size-4" /> : <Copy aria-hidden="true" className="size-4" />}
+            {copia === "copiado" ? "Copiado" : "Copiar a lista inteira"}
+          </button>
+          <p role="status" className="text-sm text-texto-2">
+            {copia === "copiado" && "Pronto: agora é só colar no Claude."}
+            {copia === "plano-b" && "Não deu pra copiar sozinho. A lista abriu: selecione o texto e copie."}
+          </p>
+        </div>
+        {cortado && <p className="mt-2 text-sm text-texto-2">A lista é grande demais: o botão copia só o começo. A lista inteira está no arquivo, no GitHub.</p>}
+      </div>
+
+      <div className="relative mt-3">
+        {/* Texto puro: o React escapa tudo, então um <script> no arquivo aparece escrito e não roda. */}
+        <pre
+          id="lista-de-testes"
+          className={`min-w-0 whitespace-pre-wrap break-words rounded-lg border border-borda px-3 py-3 font-sans text-sm leading-relaxed ${aberta ? "" : "max-h-56 overflow-hidden"}`}
+        >
+          {texto}
+        </pre>
+        {!aberta && <div aria-hidden="true" className="pointer-events-none absolute inset-x-px bottom-px h-16 rounded-b-lg bg-linear-to-t from-cartao to-transparent" />}
+      </div>
+      <button
+        type="button"
+        onClick={() => setAberta((a) => !a)}
+        aria-expanded={aberta}
+        aria-controls="lista-de-testes"
+        className={`${BOTAO} mt-2 border border-borda bg-cartao text-texto`}
+      >
+        {aberta ? <ChevronUp aria-hidden="true" className="size-4" /> : <ChevronDown aria-hidden="true" className="size-4" />}
+        {aberta ? "Fechar a lista" : "Ver a lista inteira"}
+      </button>
+    </>
   );
 }
 

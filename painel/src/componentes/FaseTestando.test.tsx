@@ -28,8 +28,22 @@ describe("FaseTestando: a lista do que testar (#646)", () => {
     expect(html(pronto({ texto: null }))).toContain("A lista de testes ainda não foi escrita.");
   });
 
-  it("texto cortado: avisa que só o começo aparece", () => {
-    expect(html(pronto({ texto: "abc", textoCortado: true }))).toContain("só o começo aparece");
+  it("texto cortado: avisa que o botão copia só o começo", () => {
+    expect(html(pronto({ texto: "abc", textoCortado: true }))).toContain("copia só o começo");
+    expect(html(pronto({ texto: "abc" }))).not.toContain("copia só o começo");
+  });
+
+  it("é pra levar pro Claude: diz o que fazer e tem o botão de copiar a lista inteira", () => {
+    const h = html(pronto({ texto: "T1. abrir" }));
+    expect(h).toContain("Leve esta lista pro seu Claude");
+    expect(h).toContain("Copiar a lista inteira");
+  });
+
+  it("a lista começa fechada numa janelinha, com o botão de abrir inteira", () => {
+    const h = html(pronto({ texto: "T1. abrir" }));
+    expect(h).toContain("max-h-56 overflow-hidden");
+    expect(h).toContain('aria-expanded="false"');
+    expect(h).toContain("Ver a lista inteira");
   });
 
   it("carregando e erro: dizem o que está acontecendo, sem a lista", () => {
