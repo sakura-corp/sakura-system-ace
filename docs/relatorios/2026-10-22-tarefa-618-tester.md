@@ -17,7 +17,7 @@
 - nenhuma (a sessão nova do passo 11 é a prova, não uma filha).
 
 ## Gasto
-- **Uso da sessão mãe**: GASTO_MAE
+- **Uso da sessão mãe**: 43 respostas; entrada 88, cache criado 76.700, cache lido 4.709.598, saída 20.102 tokens (via arquivo), medido antes de abrir o PR (o PR e o fim do relatório ficam de fora).
 - **Ajudantes / sessões filhas**: nenhum.
 - **`/goal`**: não usei (roteiro guiado, com o Gustavo confirmando cada passo).
 
@@ -36,7 +36,14 @@
   subiu. Mas o mesmo envio levou junto o `CLAUDE.md` e o `.gitignore` com fim de linha CRLF (ver
   passo 6 abaixo, #710); a sessão converteu de volta pra LF e o `Git: Pull` seguinte trouxe
   "Pulled 2 files from remote", sem erro.
-- PASSO11
+- ✅ (com ressalva) **Uma sessão nova disse que abriu o caderno**: perguntada "você abriu o meu
+  caderno?", respondeu **"Ainda não tinha aberto ... Agora está aberto e lido"** e listou o jeito
+  dele certo (português simples e curto, um passo por vez, menos pergunta, Windows e celular). O
+  acesso funciona, mas **ela não abriu sozinha no começo**, como a seção 0 do `PROJETO_STATUS.md`
+  manda: só abriu quando ele perguntou (e uma leitura das instruções deu "Falhou" antes de dar
+  certo). Com o Tiago (#620), a sessão disse que já tinha aberto. Não abri issue: a pergunta foi
+  a primeira mensagem da sessão, então não dá pra saber se ela teria aberto antes de começar uma
+  tarefa de verdade. Fica o aviso pra Sofia.
 - ✅ **O relatório no PR**, sem nada do conteúdo do caderno, com os passos diferentes abaixo.
 
 ## Os passos que estavam diferentes na tela (pra Sofia ajustar o roteiro em `docs/equipe.md`)
@@ -71,14 +78,17 @@
 - O `add_repo` reprovou e passou depois de instalar o app.
 
 ## O que passou sem eu ter visto reprovar
-- A sessão nova abrir o caderno: só vi passar.
+- A sessão nova ler o caderno certo: só vi passar (e com a ressalva de não ter aberto sozinha).
 
 ## O que ficou de fora
 - Nada da tarefa. O `docs/equipe.md` não foi mexido (o conserto do roteiro é da Sofia: #710, #711).
 - Não rodei `typecheck`/`lint`/`test:fusos`/`contraste`: o PR só traz este relatório, nenhum código.
 
 ## O que depende de alguém
-- **Sofia**: revisar este PR e decidir os ajustes do roteiro (#710, #711, e os itens 4 e 5 acima).
+- **Sofia**: revisar este PR e decidir os ajustes do roteiro (#710, #711, e os itens 4 e 5 acima);
+  e ver se a sessão nova não abrir o caderno sozinha (checklist acima) pede ajuste na seção 0.
+- **Gustavo**: na próxima tarefa, conferir que a sessão abre o caderno no começo; se não abrir,
+  pedir "abre o meu caderno".
 
 ## Defeitos abertos
 - https://github.com/sakura-corp/sakura-system-ace/issues/710
