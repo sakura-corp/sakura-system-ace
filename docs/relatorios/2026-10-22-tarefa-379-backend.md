@@ -114,6 +114,17 @@
 - **Sofia decide: a data de abertura da OS aprovada.** Hoje fica a do orçamento, então o Início pode mostrar "aberta há 15 dias" e a Lucratividade conta no mês do orçamento. A alternativa é gravar `data_abertura = agora` na aprovação, guardando antes a data do orçamento numa coluna nova.
 - **Depois de publicar**: o tio monta um orçamento de verdade, manda pelo WhatsApp e aprova.
 
+## Depois da revisão da Sofia (PR #705, mudanças pedidas)
+- **Respostas dela**: aceitou o que mexi fora da lista. A OS aprovada passa a abrir na data da aprovação.
+- **Feito, com teste visto reprovar em cada um**:
+  - **Data**: o gatilho da 0065 grava `data_abertura = now()` na aprovação e guarda a data do orçamento em `orcado_em` (coluna nova). O gatilho passou a ser `before insert or update of status`.
+  - **Busca**: a lista de orçamentos busca só os orçamentos (`listarOrcamentos`, com `.in("status", …)`). O aviso de KM busca só as passagens do veículo escolhido (`listarOrdensDoVeiculo`).
+  - **Aprovar**: fica bloqueado enquanto há mudança sem salvar ("Salve as alterações antes de aprovar"). Aprovar apaga o rascunho do orçamento.
+  - **Aviso de banco desatualizado**: vale só pras colunas da 0065 (`COLUNAS_DA_0065`). Coluna qualquer volta com a mensagem original.
+  - **`formatarMoeda`**: a lista usa o de `schemas/dinheiro`.
+- **Ajudantes desta rodada**: um forte, esforço alto (banco, tipos e `errors.ts`), e um médio, esforço médio (lib e telas), em arquivos separados.
+- **Ficou pra depois, como ela disse**: a corrida de dois computadores (vai virar tarefa) e os opcionais que não foram feitos (o contador do menu, `transicaoPermitida`/`FILTRO_SEM_ORCAMENTO` só nos testes, a condição repetida em `ordensDoPeriodo`).
+
 ## Onde parou
 Terminei.
 

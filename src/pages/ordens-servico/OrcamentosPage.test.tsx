@@ -11,9 +11,13 @@ import type { OrdemServico } from "@/types/os";
 
 const aprovarOrcamento = vi.fn();
 const recusarOrcamento = vi.fn();
+const listarOrcamentos = vi.fn();
 const listarOrdens = vi.fn();
+const listarOrdensDoVeiculo = vi.fn();
 vi.mock("@/lib/ordensServico", () => ({
+  listarOrcamentos: (...a: unknown[]) => listarOrcamentos(...a),
   listarOrdens: (...a: unknown[]) => listarOrdens(...a),
+  listarOrdensDoVeiculo: (...a: unknown[]) => listarOrdensDoVeiculo(...a),
   aprovarOrcamento: (...a: unknown[]) => aprovarOrcamento(...a),
   recusarOrcamento: (...a: unknown[]) => recusarOrcamento(...a),
   criarOrcamento: vi.fn(),
@@ -72,7 +76,6 @@ function ordem(extra: Partial<OrdemServico>): OrdemServico {
 const noPrazo = ordem({ id: "o1", numero_orcamento: 1, validade: "2099-01-01" });
 const vencido = ordem({ id: "o2", numero_orcamento: 2, validade: "2020-01-01", cliente: { nome: "João Vencido" } as never });
 const recusado = ordem({ id: "o3", numero_orcamento: 3, status: "recusado", validade: "2099-01-01", cliente: { nome: "Ana Recusada" } as never });
-const os = ordem({ id: "o4", numero: 50, numero_orcamento: null, status: "em_andamento", cliente: { nome: "Cliente de OS" } as never });
 
 function LocalAtual() {
   const l = useLocation();
@@ -95,10 +98,19 @@ function montar() {
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
-  listarOrdens.mockResolvedValue([noPrazo, vencido, recusado, os]);
+  listarOrcamentos.mockResolvedValue([noPrazo, vencido, recusado]);
+  listarOrdensDoVeiculo.mockResolvedValue([]);
 });
 
 describe("OrcamentosPage", () => {
+  it("busca só os orçamentos da loja, nunca a lista inteira de OS", async () => {
+    montar();
+    await screen.findByText("Orçamento 1");
+
+    expect(listarOrcamentos).toHaveBeenCalledWith("loja-a");
+    expect(listarOrdens).not.toHaveBeenCalled();
+  });
+
   it("lista só orçamentos abertos, com número, cliente e validade; vencido leva etiqueta", async () => {
     montar();
 
@@ -107,7 +119,6 @@ describe("OrcamentosPage", () => {
     expect(screen.getByText("01/01/2099")).toBeInTheDocument();
     expect(screen.getAllByText("vencido")).toHaveLength(1);
     // Nem OS, nem recusado, na aba de abertos.
-    expect(screen.queryByText("Cliente de OS")).not.toBeInTheDocument();
     expect(screen.queryByText("Ana Recusada")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "+ Novo orçamento" })).toBeInTheDocument();
   });

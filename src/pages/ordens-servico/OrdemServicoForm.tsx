@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -49,7 +50,12 @@ interface OrdemServicoFormProps {
   funcionarios: FuncionarioPublico[];
   funcionarioAtualId: string;
   /** OS já existentes da loja — usadas só pra saber o KM da última passagem do carro. */
-  ordens: OrdemServico[];
+  ordens: OrdemParaKmDoVeiculo[];
+  /**
+   * Alternativa a `ordens` pra quem não tem a loja inteira na mão (Orçamentos):
+   * busca só as passagens do veículo quando ele é escolhido.
+   */
+  buscarOrdensDoVeiculo?: (veiculoId: string) => Promise<OrdemParaKmDoVeiculo[]>;
   /** Saldo em estoque por peça, pro aviso de estoque ao lançar um item. */
   saldoPorPeca: Map<string, number>;
   saldoCarregado: boolean;
@@ -111,6 +117,7 @@ export function OrdemServicoForm({
   funcionarios,
   funcionarioAtualId,
   ordens,
+  buscarOrdensDoVeiculo,
   saldoPorPeca,
   saldoCarregado,
   ordemExistente,
@@ -148,7 +155,7 @@ export function OrdemServicoForm({
     setValue,
     reset,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<OrdemServicoFormValues>({
     resolver: zodResolver(ordemServicoFormSchema),
     defaultValues: {
@@ -164,6 +171,26 @@ export function OrdemServicoForm({
   );
 
   const itensExistentes = ordemExistente?.itens ?? [];
+
+  // Passagens do veículo escolhido, só quando o pai não passou a lista pronta.
+  const veiculoEscolhido = watch("veiculo_id");
+  const [ordensDoVeiculo, setOrdensDoVeiculo] = useState<OrdemParaKmDoVeiculo[]>([]);
+  useEffect(() => {
+    if (!buscarOrdensDoVeiculo || !veiculoEscolhido) {
+      setOrdensDoVeiculo([]);
+      return;
+    }
+    let cancelado = false;
+    buscarOrdensDoVeiculo(veiculoEscolhido)
+      .then((lista) => {
+        if (!cancelado) setOrdensDoVeiculo(lista);
+      })
+      // Aviso de KM é só conveniência: se não carregar, o formulário segue sem ele.
+      .catch((err) => console.error("Erro ao buscar as passagens do veículo:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [buscarOrdensDoVeiculo, veiculoEscolhido]);
 
   // Depois de faturada, o pagamento já entrou no Caixa com o total daquele
   // momento — mexer nos itens deixaria os dois discordando (ver
@@ -242,6 +269,9 @@ export function OrdemServicoForm({
     setEnviando(true);
     try {
       await onAprovar(ordemExistente, aprovadoPor.trim());
+      // Depois de aprovado a tela passa a usar o rascunho de OS: o do orçamento
+      // não volta mais, então não pode ficar guardado.
+      rascunho.limpar();
     } catch (err) {
       console.error("Erro ao aprovar orçamento:", err);
       setErro(mensagemDeErro(err));
@@ -409,16 +439,20 @@ export function OrdemServicoForm({
                 <button
                   type="button"
                   onClick={handleAprovar}
-                  disabled={enviando}
+                  disabled={enviando || isDirty}
                   className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
                 >
                   Confirmar aprovação
                 </button>
               </div>
               <p className="text-rotulo text-sakura-muted">
-                Ao aprovar, vira uma OS em andamento e as peças saem do estoque. Itens alterados
-                aqui e ainda não salvos não entram: salve antes.
+                Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
               </p>
+              {isDirty && (
+                <p className="text-rotulo text-amber-300">
+                  Salve as alterações antes de aprovar
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -470,7 +504,7 @@ export function OrdemServicoForm({
             errors={errors}
             clientes={clientes}
             funcionarios={funcionarios}
-            ordens={ordens}
+            ordens={buscarOrdensDoVeiculo ? ordensDoVeiculo : ordens}
             ordemAtualId={ordemExistente?.id}
             onCadastrarCliente={() => setCadastroRapido("cliente")}
             onCadastrarVeiculo={() => setCadastroRapido("veiculo")}

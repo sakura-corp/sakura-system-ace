@@ -8,6 +8,9 @@
  * 3. Orçamento vencido avisa que o preço pode ter mudado, mas DEIXA aprovar.
  * 4. "Recusar" é um clique, com motivo opcional.
  * 5. Orçamento recusado é histórico: sem Aprovar, sem Recusar, sem Salvar.
+ * 6. Não aprova com mudança sem salvar (senão ela se perderia), e aprovar
+ *    apaga o rascunho do orçamento.
+ * 7. O aviso de KM usa só as passagens do veículo escolhido (`buscarOrdensDoVeiculo`).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
@@ -146,6 +149,49 @@ describe("OrdemServicoForm — aprovar", () => {
     await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
 
     expect(await screen.findByText(/foi aprovada, mas a baixa não entrou/)).toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — aprovar com mudança sem salvar", () => {
+  it("bloqueia a aprovação enquanto houver mudança sem salvar", async () => {
+    const { user, onAprovar } = montar({ ordemExistente: orcamento({ descricao_problema: "antes" }) });
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    expect(screen.getByRole("button", { name: "Confirmar aprovação" })).toBeEnabled();
+
+    await user.type(screen.getByLabelText("Observação"), " mudei");
+
+    expect(screen.getByRole("button", { name: "Confirmar aprovação" })).toBeDisabled();
+    expect(screen.getByText("Salve as alterações antes de aprovar")).toBeInTheDocument();
+    expect(onAprovar).not.toHaveBeenCalled();
+  });
+
+  it("sem mudança, aprova e apaga o rascunho do orçamento", async () => {
+    localStorage.setItem("rascunho-orcamento-orc-1", JSON.stringify({ descricao_problema: "velho" }));
+    const { user, onAprovar } = montar({ ordemExistente: orcamento() });
+
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+
+    expect(onAprovar).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem("rascunho-orcamento-orc-1")).toBeNull();
+  });
+});
+
+describe("OrdemServicoForm — aviso de KM só com o veículo escolhido", () => {
+  it("busca as passagens do veículo escolhido e avisa se o KM for menor", async () => {
+    const buscarOrdensDoVeiculo = vi.fn().mockResolvedValue([
+      { id: "os-9", veiculo_id: "veiculo-1", km_entrada: 90000, data_abertura: "2026-09-01T12:00:00.000Z", status: "faturada" },
+    ]);
+    const { user } = montar({ buscarOrdensDoVeiculo });
+
+    await user.click(screen.getByDisplayValue("Selecione o cliente"));
+    await user.click(screen.getByRole("button", { name: "Maria da Silva" }));
+    await user.type(screen.getByLabelText("KM de entrada"), "80000");
+
+    expect(await screen.findByText(/o KM era 90\.000/)).toBeInTheDocument();
+    expect(buscarOrdensDoVeiculo).toHaveBeenCalledWith("veiculo-1");
   });
 });
 

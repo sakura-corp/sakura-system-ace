@@ -21,7 +21,8 @@ import {
   AprovadoSemEstoqueError,
   criarOrcamento,
   editarItemOrdem,
-  listarOrdens,
+  listarOrcamentos,
+  listarOrdensDoVeiculo,
   recusarOrcamento,
 } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
@@ -34,6 +35,7 @@ import {
   valoresMensagemOrcamento,
   type MotivoRecusa,
 } from "@/schemas/orcamento";
+import { formatarMoeda } from "@/schemas/dinheiro";
 import { preencherModelo } from "@/schemas/whatsapp";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { FuncionarioPublico } from "@/types/funcionario";
@@ -51,10 +53,6 @@ import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { StatusOrdem } from "./StatusOrdemBadge";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 /**
  * Lista de orçamentos (#379). Mesmo módulo e mesma permissão das OS
@@ -109,7 +107,7 @@ export function OrcamentosPage() {
     try {
       const [ordensCarregadas, clientesC, pecasC, servicosC, funcionariosC, modelosC] =
         await Promise.all([
-          listarOrdens(lojaAtual.id),
+          listarOrcamentos(lojaAtual.id),
           listarClientes(),
           listarPecas(),
           listarServicos(),
@@ -270,7 +268,8 @@ export function OrcamentosPage() {
     servicos,
     funcionarios,
     funcionarioAtualId,
-    ordens,
+    ordens: [],
+    buscarOrdensDoVeiculo: listarOrdensDoVeiculo,
     saldoPorPeca,
     saldoCarregado: movimentos !== null,
     modoOrcamento: true,

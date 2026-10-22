@@ -10,6 +10,7 @@ import {
   baixaEstoqueAoLancarItem,
   contaNosNumeros,
   STATUS_AO_APROVAR,
+  STATUS_DE_ORCAMENTO,
 } from "@/schemas/orcamento";
 import type { MotivoRecusa } from "@/schemas/orcamento";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
@@ -54,6 +55,49 @@ export async function listarOrdens(lojaId: string): Promise<OrdemServico[]> {
   );
   const ordens = dados as unknown as OrdemServico[];
   return nomearFuncionarios(ordens, await buscarNomesDeFuncionarios(ordens));
+}
+
+/**
+ * Só os orçamentos (abertos e recusados) da loja, filtrados no banco. A tela de
+ * Orçamentos não precisa da loja inteira: `listarOrdens` trazia todas as OS com
+ * itens a cada abertura e a cada aprovação.
+ */
+export async function listarOrcamentos(lojaId: string): Promise<OrdemServico[]> {
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico")
+      .select(SELECT_ORDEM)
+      .eq("loja_id", lojaId)
+      .in("status", [...STATUS_DE_ORCAMENTO])
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
+  const ordens = dados as unknown as OrdemServico[];
+  return nomearFuncionarios(ordens, await buscarNomesDeFuncionarios(ordens));
+}
+
+export type OrdemParaKmDoVeiculo = Pick<
+  OrdemServico,
+  "id" | "veiculo_id" | "km_entrada" | "data_abertura" | "status"
+>;
+
+/**
+ * As passagens de um veículo, só com o que o aviso de KM precisa (sem itens,
+ * sem join). O formulário busca isto quando o veículo é escolhido, em vez de
+ * receber a loja inteira.
+ */
+export async function listarOrdensDoVeiculo(veiculoId: string): Promise<OrdemParaKmDoVeiculo[]> {
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico")
+      .select("id, veiculo_id, km_entrada, data_abertura, status")
+      .eq("veiculo_id", veiculoId)
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
+  return dados as unknown as OrdemParaKmDoVeiculo[];
 }
 
 /**
