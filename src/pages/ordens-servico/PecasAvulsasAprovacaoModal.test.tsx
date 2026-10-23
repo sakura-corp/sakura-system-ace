@@ -131,6 +131,18 @@ describe("PecasAvulsasAprovacaoModal — os caminhos mandam o vínculo certo", (
     expect(iPalheta).toBeGreaterThan(-1);
     expect(iPalheta).toBeLessThan(iAmortecedor);
   });
+
+  it("o bico de válvula do T12 é parecida, mesmo com o nome um pouco diferente (#741)", async () => {
+    const bico = { id: "p-9", descricao: "Bico de válvula (exemplo)", codigo_interno: null, codigo_barras: null, medida: null } as unknown as Peca;
+    const { user } = montar([avulsa("i9", "Bico de valvula cromado")], { pecas: [...cadastro, bico] });
+
+    await user.click(secao("Bico de valvula cromado").getByRole("radio", { name: "É uma peça que já tenho" }));
+    expect(screen.getByText(/As que parecem com “Bico de valvula cromado” estão no topo da lista\./)).toBeInTheDocument();
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    const opcoes = screen.getAllByRole("button").map((b) => b.textContent);
+    expect(opcoes.indexOf("Bico de válvula (exemplo) (parecida)")).toBeGreaterThan(-1);
+    expect(opcoes.indexOf("Bico de válvula (exemplo) (parecida)")).toBeLessThan(opcoes.indexOf("Amortecedor dianteiro"));
+  });
 });
 
 describe("PecasAvulsasAprovacaoModal — cadastrar agora", () => {
