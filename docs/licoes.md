@@ -1749,3 +1749,7 @@
     disparar outra publicação (#696); a da #695 apareceu sozinha uns 15 min depois, e o aviso no
     GitHub nunca veio. **Regra**: antes de concluir que não publicou, esperar uns 15 min e olhar o
     "Build history" (não o GitHub); o "Retry build" refaz o commit antigo, não serve.
+90. **Contraste cancelado no fim, com todas as telas passando (23/10/2026, PR #743).** A conferência
+    "Contraste nas telas" percorreu as 64 telas, disse "Nenhuma reprovação NOVA" e foi cancelada pelo
+    limite de 15 minutos logo depois. Não era o PR: era a máquina do GitHub lenta. **Regra**: antes de
+    mexer em código, abrir o log; se as telas passaram e só o tempo estourou, rodar de novo uma vez.

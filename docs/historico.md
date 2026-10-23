@@ -35,6 +35,12 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 23/10/2026, madrugada (pelo PC): projetos secundários, da entrevista à main
+- **O Gusta guia os projetos secundários** (entrevista com ela; regra na seção 0 e em `docs/projetos-secundarios.md`): cada um no seu repositório privado, com levas próprias a partir da 1. **A leva 6 volta a ser do SSACE**; o ar-condicionado será projeto principal dela, com repositório e levas próprios.
+- **Seis tarefas na `main`, por uma coordenadora com 5 sessões**: #733 (regras), #732 (propostas em "Decisões"), #731 (aba "Projetos secundários" e "uma por vez no total"), #734 ("Meu progresso", cada um vê o seu); e os repositórios novos `sakura-corp/secundarios` (políticas, skills `nova-proposta` e `analisar-proposta`) e `sakura-corp/modelo-projeto` (o modelo de todo projeto novo).
+- **Depende dela**: conferir no ar a aba e o "Meu progresso" (#739); quando aprovar a 1ª proposta, criar o repositório pelo modelo, com o tópico `projeto-secundario` e a regra da `main` (README do modelo, passo 7). Continuam: o relatório da leva 3 e o memorando (#632, até 26/10). **A v0.9.52 está liberada (22/10, 16h26) e o banco da loja já está na 67** (conferido por ela em 23/10; não foi pelo botão, que não roda desde 30/09).
+- **Próxima sessão**: o memorando com o privado (#632, até 26/10).
+
 ### 22/10/2026, noite (pelo PC): levas 4 e 5 postas, leva 3 inteira na main
 - **Leva 3 inteira na `main`**: #717 (peça avulsa, 0066) e #716 (juntar peças, 0067) mesclados depois da revisão de código do zero e de dois consertos em cada; os pontos menores viraram a #720 e a #721.
 - **Levas 4 e 5 postas e reescritas no modelo** (`docs/painel.md`, "Andamento"); abrem sozinhas a cada aprovação. **Exceção**: a #699 (Tiago), a #689 (feita, PR #719) e a #684 podem ser adiantadas. Tarefa começada pelo número precisa do nome da pessoa nela, senão as horas não contam (`docs/equipe.md`).
