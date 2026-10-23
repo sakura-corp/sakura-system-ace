@@ -151,9 +151,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, noite (4): PR #767 mesclado, #706 e #708 no modelo, #762 fechada
-- **#767 do Gusta** (fotos, cena "Clientes que sumiram") revisado pela regra nova e mesclado; o #771 também.
-- **#706 e #708 reescritas no modelo** com as decisões dela (0071 pelo banco; LE×LD diferentes, "82T" é a mesma peça, "(inativa)" no aviso). A leva 4 vai a 48 h e as duas podem ser pegas.
-- **#762 fechada**: NFS-e 30 emitida depois da `0070`; o "Ver PDF" consulta a Focus e ela não devolve PDF (Araraquara guarda só no portal), o que é o normal.
-- **Depende dela**: o memorando (#632, até 26/10) na sessão "Questão do memorando" (falta a testemunha nova); no dia de teste, publicar a 0.9.55, testar a impressão (Balcão no teste só nesse dia) e liberar; aplicar a 0071 no banco de teste quando o PR da #706 chegar.
-- **Próxima sessão**: o memorando. Seguem a #770, a #765, a #746 e a #750.
+### 23/10/2026, noite (5): o memorando em assinatura e o link da NFS-e no PC
+- **Memorando (#632)**: PDF refeito com a data de 23/10 e uma testemunha trocada (sem conta prata/ouro); está com o Tiago, o primeiro. Andamento no privado (`contratos/README.md`).
+- **Link "Ver documento oficial completo" da NFS-e** abre no navegador do computador (#774, mesclado; só o portal do Giap). Chega no Balcão na próxima versão. No celular do cliente ainda não abre (#773); por ora, mandar o PDF oficial baixado no PC.
+- **Depende dela**: colher as assinaturas do memorando até 26/10 (Tiago → Lázaro → Gustavo → testemunhas → ela → Sakura); no dia de teste, publicar a 0.9.55 (já com o #774), testar a impressão e liberar; aplicar a 0071 no banco de teste quando o PR da #706 chegar.
+- **Próxima sessão**: conferir a assinatura do Tiago no memorando (ela manda o `_assinado.pdf` e o "(final).pdf" original). Seguem a #773, a #770, a #765, a #746 e a #750.
