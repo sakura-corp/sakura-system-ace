@@ -365,7 +365,11 @@ export function OrdemServicoForm({
   const barraRef = useRef<HTMLDivElement>(null);
   function manterAcimaDaBarra(alvo: Element | null) {
     const barra = barraRef.current;
-    if (aba !== "detalhes" || !barra || !(alvo instanceof HTMLElement) || barra.contains(alvo)) return;
+    // Só campo de digitar: botão (e o <select>) recebe o foco já no "apertar"
+    // do mouse, e rolar ali fazia o "soltar" cair em outro lugar, perdendo o
+    // clique. O Combobox é um <input>, então entra.
+    const ehCampoDeDigitar = alvo instanceof HTMLInputElement || alvo instanceof HTMLTextAreaElement;
+    if (aba !== "detalhes" || !barra || !ehCampoDeDigitar || barra.contains(alvo)) return;
     const falta = alvo.getBoundingClientRect().bottom - barra.getBoundingClientRect().top + 12;
     if (falta <= 12) return;
     areaRolavelEmVolta(alvo).scrollBy?.({ top: falta });

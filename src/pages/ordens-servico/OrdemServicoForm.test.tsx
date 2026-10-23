@@ -387,6 +387,19 @@ describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
     expect(rolar).not.toHaveBeenCalled();
   });
 
+  // Botão recebe o foco já no "apertar" do mouse: se a tela rolasse ali, o
+  // "soltar" cairia em outro lugar e o clique se perdia (o "Remover" de um
+  // item meio coberto não removia). Só campo de digitar rola.
+  it("botão meio coberto pela barra não rola ao receber o foco", async () => {
+    const { user } = montar();
+    posicionar(barra(), 680, 740);
+    const remover = screen.getByRole("button", { name: "Remover" });
+    posicionar(remover, 670, 700);
+    const rolar = espiarRolagem();
+    await user.click(remover);
+    expect(rolar).not.toHaveBeenCalled();
+  });
+
   it("o item recém-adicionado recebe o cursor e, se nasceu atrás da barra, sobe", async () => {
     const { user } = montar();
     const botao = screen.getByRole("button", { name: /adicionar item/ });
