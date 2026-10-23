@@ -1,6 +1,6 @@
 ---
 name: nova-tarefa
-description: RASCUNHO (a Sofia ainda vai revisar). Escreve ou reescreve uma tarefa (issue) do Sakura System no modelo único de docs/tarefas.md — cabeçalho fixo (Chefe, Ajudantes, Estimativa, Depende de, Sessões filhas, e Second brain quando não precisa), etapas com a categoria de modelo, Pronto quando em duas partes — e mostra o rascunho pra Sofia aprovar antes de criar ou editar. Use quando ela pedir "nova tarefa", "cria a issue", "reescreve a tarefa #N no modelo", "monta a leva N" ou /nova-tarefa.
+description: RASCUNHO (a Sofia ainda vai revisar). Escreve ou reescreve uma tarefa (issue) do Sakura System no modelo único de docs/tarefas.md — cabeçalho fixo (Chefe, Ajudantes, Estimativa, Depende de, Sessões filhas, e Second brain quando não precisa, e Prioridade quando a Sofia der a ordem), etapas com a categoria de modelo, Pronto quando em duas partes — e mostra o rascunho pra Sofia aprovar antes de criar ou editar. Use quando ela pedir "nova tarefa", "cria a issue", "reescreve a tarefa #N no modelo", "monta a leva N" ou /nova-tarefa.
 model: opus
 effort: medium
 ---
@@ -26,6 +26,9 @@ Fale **sempre em português simples**. O formato, as etiquetas e a tabela de mod
 ## 2. Escrever no modelo
 - O cabeçalho com as **cinco linhas fixas**, nesta ordem, uma por linha. Se a Sofia disse que não
   precisa do second brain, uma sexta logo abaixo: `Second brain: não precisa` (com estas palavras).
+- **`Prioridade: N`** (opcional, #776): só quando a Sofia disser a ordem das tarefas da leva. Vem
+  por último no cabeçalho, no mesmo bloco; N inteiro, 1 é a mais importante. Nunca inventar a
+  ordem: sem a ordem dela, sem a linha. Escrita errada não tranca nada (o painel ignora), mas confira.
 - **Um chefe só** (o da maior parte do trabalho); os outros em `Ajudantes`, cada um com o porquê.
 - **Etapas e modelos**: cada etapa com quem faz e a **categoria** (forte, médio, rápido), nunca o
   nome do modelo. Migration, RLS, dinheiro, nota fiscal, segurança e revisão final: **forte**.
@@ -46,6 +49,6 @@ a issue, pôr as etiquetas e, ao reescrever, **tirar a `guia`** e escrever um co
 
 ## 4. Conferir
 - O cabeçalho lê certo (as cinco linhas, com os nomes exatos; a sexta, se houver, é exatamente
-  `Second brain: não precisa`).
+  `Second brain: não precisa`; a `Prioridade`, se houver, é um número inteiro de 1 em diante).
 - Cada número de `Depende de` existe.
 - A etiqueta `chefe:` bate com a linha `Chefe:`.

@@ -219,3 +219,75 @@ describe("Tarefa de projeto secundário (#731)", () => {
     expect(temLinkDoClaude(html({ ...minha, repositorio: "../x" }))).toBe(false);
   });
 });
+
+describe("Lista da leva: ordem de prioridade (#776)", () => {
+  const t = (numero: number, extra: Partial<Tarefa> = {}): Tarefa => ({ ...base, numero, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`, ...extra });
+  const lista = (tarefas: Tarefa[], login: string | undefined = "fulana") =>
+    renderToString(<ListaDeTarefas tarefas={tarefas} login={login} levaAberta />).replace(/<!-- -->/g, "");
+  /** Os números na ordem em que aparecem na lista. */
+  const ordem = (h: string) => [...h.matchAll(/tabular-nums text-texto-2 \[grid-area:n\][^"]*">#(\d+)</g)].map((m) => Number(m[1]));
+  const titulo = (h: string) => /<h2 id="titulo-das-tarefas"[^>]*>(.*?)<\/h2>/.exec(h)![1].replace(/<[^>]+>/g, "");
+
+  it("com prioridade: dentro do grupo, 1º, 2º, 3º (e não a ordem do número)", () => {
+    const h = lista([t(30, { prioridade: 3 }), t(31, { prioridade: 1 }), t(32, { prioridade: 2 })]);
+    expect(ordem(h)).toEqual([31, 32, 30]);
+  });
+
+  it("sem prioridade vai pro fim do grupo, pela ordem do número da issue", () => {
+    const h = lista([t(45), t(40, { prioridade: 2 }), t(41), t(44, { prioridade: 1 })]);
+    expect(ordem(h)).toEqual([44, 40, 41, 45]);
+  });
+
+  it("empate na prioridade: pela ordem do número", () => {
+    expect(ordem(lista([t(52, { prioridade: 1 }), t(50, { prioridade: 1 }), t(51, { prioridade: 1 })]))).toEqual([50, 51, 52]);
+  });
+
+  it("continua agrupada por estado: a prioridade só ordena dentro de cada grupo", () => {
+    const h = lista([
+      t(60, { prioridade: 1, estado: "feita" }),
+      t(61, { prioridade: 2 }),
+      t(62, { prioridade: 3, estado: "andamento", dono: OUTRO }),
+      t(63, { prioridade: 1 }),
+    ]);
+    expect(ordem(h)).toEqual([62, 63, 61, 60]);
+  });
+
+  it("selinho 1º, 2º só na tarefa com prioridade", () => {
+    const h = lista([t(70, { prioridade: 1 }), t(71, { prioridade: 2 }), t(72)]);
+    expect(h).toMatch(/>1º<span class="sr-only"> de prioridade<\/span>/);
+    expect(h).toMatch(/>2º<span class="sr-only"> de prioridade<\/span>/);
+    expect((h.match(/de prioridade<\/span>/g) ?? []).length).toBe(2);
+  });
+
+  it("título: 'Tarefas (N), em ordem de prioridade' quando alguma tem prioridade; sem nenhuma, o de antes", () => {
+    expect(titulo(lista([t(80, { prioridade: 1 }), t(81)]))).toBe("Tarefas (2), em ordem de prioridade");
+    expect(titulo(lista([t(80), t(81)]))).toBe("Tarefas (2)");
+  });
+
+  it("a 1ª continua podendo ser pega como antes, sem aviso", () => {
+    const h = lista([t(90, { prioridade: 1 }), t(91, { prioridade: 3 })]);
+    expect(h).toMatch(/<button type="button" class="[^"]*">Pegar tarefa<span class="sr-only"> \(tarefa #90\)/);
+    expect(h).not.toMatch(/id="prioridade-90"/);
+  });
+
+  it("a 3ª também pode ser pega (botão ligado), com o aviso curto de que a #90 (1º) está livre", () => {
+    const h = lista([t(90, { prioridade: 1 }), t(91, { prioridade: 3 }), t(92)]);
+    // Ligado (sem disabled) e apontando pro aviso, pro leitor de tela ler os dois juntos.
+    expect(h).toMatch(/<button type="button" aria-describedby="prioridade-91" class="[^"]*">Pegar tarefa<span class="sr-only"> \(tarefa #91\)/);
+    expect(h).toMatch(/<p id="prioridade-91" class="[^"]*">a #90 \(1º\) tem prioridade maior e está livre<\/p>/);
+    // Sem prioridade: o aviso aponta a de prioridade mais alta livre.
+    expect(h).toMatch(/<p id="prioridade-92" class="[^"]*">a #90 \(1º\) tem prioridade maior e está livre<\/p>/);
+  });
+
+  it("sem aviso quando a de prioridade maior não está livre pra quem olha (já pega, incompleta ou esperando)", () => {
+    for (const extra of [{ estado: "andamento" as const, dono: OUTRO }, { incompleta: ["Chefe"] }, { dependeDeAbertas: [7] }]) {
+      const h = lista([t(90, { prioridade: 1, ...extra }), t(91, { prioridade: 3 })]);
+      expect(h).toMatch(/<button type="button" class="[^"]*">Pegar tarefa<span class="sr-only"> \(tarefa #91\)/);
+      expect(h).not.toContain("tem prioridade maior");
+    }
+  });
+
+  it("empate não avisa: as duas com 1º", () => {
+    expect(lista([t(90, { prioridade: 1 }), t(91, { prioridade: 1 })])).not.toContain("tem prioridade maior");
+  });
+});
