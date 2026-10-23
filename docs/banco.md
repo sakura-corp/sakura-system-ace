@@ -488,7 +488,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   acesso à loja dela. O Início só pede o cadastro (pros aniversários do calendário) a quem tem o
   módulo. **Risco que sobra, pra ela decidir**: quem tem OS pode pedir a função OS por OS (ou
   abrir uma OS com qualquer cliente) e juntar CPF e endereço; a leitura não fica na auditoria.
-  Teste em `supabase/scripts/testar-clientes-permissao.sql` (as duas metades), conferido com 18
+  Teste em `supabase/scripts/testar-clientes-permissao.sql` (as duas metades), conferido com 16
   mutações, todas vermelhas.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
