@@ -277,7 +277,10 @@ const ordemNoCaixa = (o) => ({
   id: o.id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   cliente: o.cliente, itens: o.itens,
 });
-// O caixa grava a chave da forma; a OS, o nome (src/lib/ordensServico.ts).
+// O programa grava no caixa a CHAVE da forma ("cartao_debito") e o Diário a
+// mostra assim, crua (defeito do programa, anotado no relatório da #780).
+// Aqui fica o nome, como sempre ficou nos dados de mentira, pra a foto não
+// levar o defeito junto; o fechamento do caixa entende os dois.
 const FORMAS = ["pix", "cartao_credito", "dinheiro", "cartao_debito"];
 const NOME_DA_FORMA = { pix: "Pix", cartao_credito: "Cartão de crédito", dinheiro: "Dinheiro", cartao_debito: "Cartão de débito" };
 const vendasNoCaixa = [...historico, ...ordens]
@@ -287,7 +290,7 @@ const vendasNoCaixa = [...historico, ...ordens]
     o.forma_pagamento = NOME_DA_FORMA[forma];
     return {
       id: "cx-" + o.id, loja_id: LOJA, data: o.data_fechamento,
-      ordem_servico_id: o.id, tipo: "entrada", forma_pagamento: forma,
+      ordem_servico_id: o.id, tipo: "entrada", forma_pagamento: NOME_DA_FORMA[forma],
       valor: totalItens(o),
       descricao: `Faturamento da ${o.tipo === "venda_balcao" ? "Venda" : "OS"} ${o.numero}`,
       categoria_id: null, ordem_servico: ordemNoCaixa(o), categoria: null,
@@ -296,9 +299,11 @@ const vendasNoCaixa = [...historico, ...ordens]
 
 export const caixa = [
   ...vendasNoCaixa,
-  // A parcela que a conta a receber `cr3` recebeu (entrada sem OS, com categoria).
-  { id: "cx-cr3", loja_id: LOJA, data: diaAs(-11, 10, 40), ordem_servico_id: null, tipo: "entrada",
-    forma_pagamento: "pix", valor: 720, descricao: "Recebimento: Parcela 2/2 do jogo de amortecedores",
+  // A parcela que a conta a receber `cr3` recebeu (entrada sem OS, com
+  // categoria). 40 dias atrás cai sempre no mês passado: no mês corrente, ela
+  // entraria nas vendas do Início e não na Lucratividade, que só conta OS.
+  { id: "cx-cr3", loja_id: LOJA, data: diaAs(-40, 10, 40), ordem_servico_id: null, tipo: "entrada",
+    forma_pagamento: "Pix", valor: 720, descricao: "Recebimento: Parcela 2/2 do jogo de amortecedores",
     categoria_id: "cc9", ordem_servico: null, categoria: { nome: "Recebimento de cliente" } },
   ...DESPESAS.map(([descricao, valor, categoria, diasAtras], i) => ({
     id: "cx-s" + i, loja_id: LOJA, data: diaAs(-diasAtras, 17, 10 + i),
@@ -479,7 +484,7 @@ export const whatsappMensagens = [
 export const contasReceber = [
   { id: "cr1", loja_id: LOJA, cliente_id: "c2", ordem_servico_id: "os145", descricao: "Faturamento da OS 145", valor: 2588, vencimento: diaCurto(6), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-0.3), cliente: { nome: "Transportes Boa Vista Ltda" } },
   { id: "cr2", loja_id: LOJA, cliente_id: "c4", ordem_servico_id: null, descricao: "Serviço faturado no fim do mês (frota)", valor: 1340, vencimento: diaCurto(-3), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-18), cliente: { nome: "Eduardo Salles" } },
-  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-12), status: "recebido", data_recebimento: diaCurto(-11), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-40), cliente: { nome: "Ricardo Menezes" } },
+  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-41), status: "recebido", data_recebimento: diaCurto(-40), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-70), cliente: { nome: "Ricardo Menezes" } },
 ];
 
 const competenciaDe = (iso) => diaLocal(iso).slice(0, 8) + "01";

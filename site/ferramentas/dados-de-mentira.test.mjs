@@ -109,8 +109,9 @@ describe("dados de mentira: as telas não se contradizem", async () => {
     inicioDoMes.setDate(1);
     const mes = inicioDoMes.toLocaleDateString("sv-SE").slice(0, 7);
     const doMes = (iso) => new Date(iso).toLocaleDateString("sv-SE").slice(0, 7) === mes;
+    // Todas as entradas, como o Início e os Gráficos somam (não só as de OS).
     const vendasDoCaixa = TABELAS.caixa_movimentos
-      .filter((m) => m.tipo === "entrada" && m.ordem_servico_id && doMes(m.data))
+      .filter((m) => m.tipo === "entrada" && doMes(m.data))
       .reduce((t, m) => t + m.valor, 0);
     const pagas = new Set(entradasDeOs.map((m) => m.ordem_servico_id));
     const ordensDoMes = ordens.filter((o) => doMes(o.data_abertura));
