@@ -503,6 +503,8 @@ Quando a última tarefa da leva é aprovada:
 1. O Claude de quem fez a última escreve o aviso de WhatsApp pra Sofia: a leva terminou.
 2. A leva **congela**: ninguém começa tarefa nova.
 3. **Todo mundo testa** o que a leva entregou, com a lista de testes que o Claude da Sofia manda.
+   O teste da Sofia no programa de verdade vai pro **dia de teste do fim de semana** (23/10/2026,
+   `docs/jeito-de-trabalhar.md`, "Testar de uma vez").
    O que parecer estranho vira uma issue nova (com print), e a Sofia decide o que fazer.
 4. O Claude da Sofia escreve o **relatório da leva**, a Sofia aprova, e os dois planejam a
    próxima. Até as tarefas dela aparecerem, não tem tarefa pra pegar.

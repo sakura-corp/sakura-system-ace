@@ -127,7 +127,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
   empresas" (ensaiar, depois aplicar). Exceção: migration que declara
   `-- versao-minima-do-programa: X`. Passo a passo em `docs/operacao.md`.
 - **Publicar ≠ liberar**: versão nasce no canal de teste; só chega nas lojas pelo workflow
-  "Liberar versão para todas as lojas". Não publicar nem liberar sem ela pedir. Desde 30/09 o
+  "Liberar versão para todas as lojas". **Ela testa tudo de uma vez, no fim de semana** (23/10;
+  `docs/jeito-de-trabalhar.md`): no meio da semana, PR entra com CI verde e revisão do Claude. Não publicar nem liberar sem ela pedir. Desde 30/09 o
   Release, o Liberar e o Atualizar bancos **esperam a aprovação dela no GitHub** (cofre `lojas`):
   depois de disparar, avisar que ela precisa aprovar, **já com o link direto da rodada** (08/10:
   "cadê o link").
