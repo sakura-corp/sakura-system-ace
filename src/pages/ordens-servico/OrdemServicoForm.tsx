@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
@@ -120,6 +120,18 @@ function formatarData(iso: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** A primeira caixa em volta do elemento que rola de verdade (no app é a área
+ *  do conteúdo, não a janela); sem nenhuma, a própria página. */
+function areaRolavelEmVolta(elemento: HTMLElement): Element {
+  for (let pai = elemento.parentElement; pai; pai = pai.parentElement) {
+    const { overflowY } = getComputedStyle(pai);
+    if ((overflowY === "auto" || overflowY === "scroll") && pai.scrollHeight > pai.clientHeight) {
+      return pai;
+    }
+  }
+  return document.scrollingElement ?? document.documentElement;
 }
 
 export function OrdemServicoForm({
@@ -342,13 +354,34 @@ export function OrdemServicoForm({
     setCadastroRapido(null);
   }
 
+  // A barra fixa do rodapé gruda no pé da janela, e o que estiver ali fica
+  // atrás dela (#781). Não dá pra evitar na primeira tela sem soltar a barra
+  // (e aí o total some com a OS cheia), mas o campo em que se está digitando
+  // nunca pode ficar escondido: se ele está atrás da barra, a área rolável em
+  // volta sobe o que falta pra ele ficar acima dela. O item novo entra por
+  // aqui também: o `append` do react-hook-form põe o cursor no primeiro campo
+  // dele. (O `scrollIntoView` não serve: ele mede até o fim da área rolável,
+  // que acaba uns pixels abaixo da barra, e o campo ficava meio coberto.)
+  const barraRef = useRef<HTMLDivElement>(null);
+  function manterAcimaDaBarra(alvo: Element | null) {
+    const barra = barraRef.current;
+    if (aba !== "detalhes" || !barra || !(alvo instanceof HTMLElement) || barra.contains(alvo)) return;
+    const falta = alvo.getBoundingClientRect().bottom - barra.getBoundingClientRect().top + 12;
+    if (falta <= 12) return;
+    areaRolavelEmVolta(alvo).scrollBy?.({ top: falta });
+  }
+
   const totais = totaisDaOrdem(itensExistentes, watch("itens"));
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
   return (
     <>
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit(aoSubmeter)}
+      onFocus={(e: FocusEvent<HTMLFormElement>) => manterAcimaDaBarra(e.target)}
+      className="space-y-6 sakura-card p-6 shadow-sm"
+    >
       {ordemExistente ? (
         <div className="flex items-center justify-between border-b border-sakura-gray/20 pb-4">
           <div className="flex items-center gap-3">
@@ -584,8 +617,18 @@ export function OrdemServicoForm({
           `sakura-card` se prende ao card por causa do `backdrop-filter`
           (PROJETO_STATUS.md, seção 6, item 51), e o resultado seria uma
           barra flutuando no lugar errado. O fundo precisa ser opaco porque a
-          lista de itens passa POR TRÁS dela ao rolar. */}
-      <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3">
+          lista de itens passa POR TRÁS dela ao rolar; a sombra em cima mostra
+          que tem mais coisa embaixo.
+
+          No Fechamento ela NÃO gruda (#781): lá não há total nem salvar, só o
+          "Voltar", e grudada ela cobria os botões de DANFE. */}
+      <div
+        ref={barraRef}
+        data-rodape-da-os
+        className={`${
+          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_rgba(0,0,0,0.65)]" : ""
+        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3`}
+      >
         {aba === "detalhes" ? (
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
             <span className="text-rotulo text-sakura-muted">

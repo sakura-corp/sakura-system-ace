@@ -19,7 +19,7 @@
  *    do saldo e peça sem preço de custo aparecem na tela, e o salvar continua
  *    funcionando.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import type { Cliente } from "@/types/cliente";
@@ -323,5 +323,92 @@ describe("OrdemServicoForm — o rodapé no Fechamento (#781)", () => {
     await user.click(screen.getByRole("button", { name: "Detalhes" }));
     expect(screen.getByText("Cancelar", { selector: "button" })).toBeTruthy();
     expect(screen.queryByText("Voltar", { selector: "button" })).toBeNull();
+  });
+});
+
+/**
+ * A barra fixa do rodapé (#781). Ela gruda no pé da janela pra o total ficar à
+ * vista, e por isso o que estiver no pé da primeira tela fica atrás dela. A
+ * promessa: o campo em que se está digitando nunca fica atrás, e no Fechamento
+ * (que só mostra dados) ela nem gruda.
+ *
+ * O jsdom não desenha nada (toda medida dá zero), então a posição de cada
+ * elemento é inventada aqui: a barra de 680 a 740, e o campo onde o teste mandar.
+ */
+describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
+  const barra = () => document.querySelector("[data-rodape-da-os]") as HTMLElement;
+
+  const scrollByOriginal = Element.prototype.scrollBy;
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Element.prototype.scrollBy = scrollByOriginal;
+  });
+
+  function posicionar(elemento: Element, top: number, bottom: number) {
+    vi.spyOn(elemento, "getBoundingClientRect").mockReturnValue({
+      top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top,
+      toJSON: () => ({}),
+    } as DOMRect);
+  }
+
+  // O jsdom não tem área rolável (nada tem altura), então quem rola é a
+  // página: é ali que se espia quanto ela subiu.
+  function espiarRolagem() {
+    const rolar = vi.fn();
+    Element.prototype.scrollBy = rolar as unknown as Element["scrollBy"];
+    return rolar;
+  }
+
+  it("no Fechamento a barra não gruda; nos Detalhes, gruda", async () => {
+    const { user } = montar({ ordemExistente: ordemFaturada(), abaInicial: "fechamento" });
+    expect(barra().className).not.toMatch(/\bsticky\b/);
+    await user.click(screen.getByRole("button", { name: "Detalhes" }));
+    expect(barra().className).toMatch(/\bsticky\b/);
+  });
+
+  it("campo que recebe o cursor atrás da barra rola pra cima dela", async () => {
+    const { user } = montar();
+    posicionar(barra(), 680, 740);
+    const km = document.querySelector('input[name="km_entrada"]') as HTMLInputElement;
+    posicionar(km, 690, 730);
+    const rolar = espiarRolagem();
+    await user.click(km);
+    // Sobe o que o campo invade a barra (730 - 680 = 50) mais um respiro.
+    expect(rolar).toHaveBeenCalledWith({ top: 62 });
+  });
+
+  it("campo acima da barra não mexe na rolagem", async () => {
+    const { user } = montar();
+    posicionar(barra(), 680, 740);
+    const km = document.querySelector('input[name="km_entrada"]') as HTMLInputElement;
+    posicionar(km, 300, 340);
+    const rolar = espiarRolagem();
+    await user.click(km);
+    expect(rolar).not.toHaveBeenCalled();
+  });
+
+  it("o item recém-adicionado recebe o cursor e, se nasceu atrás da barra, sobe", async () => {
+    const { user } = montar();
+    const botao = screen.getByRole("button", { name: /adicionar item/ });
+    // A barra de 680 a 740, o botão à vista (600 a 630), e o resto (o item
+    // que vai nascer) atrás da barra, de 700 a 730.
+    const rolar = espiarRolagem();
+    const caixa = (top: number, bottom: number) =>
+      ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top,
+         toJSON: () => ({}) }) as DOMRect;
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.hasAttribute("data-rodape-da-os")) return caixa(680, 740);
+      if (this === botao) return caixa(600, 630);
+      return caixa(700, 730);
+    });
+    const antes = document.activeElement;
+    await user.click(botao);
+    const focado = document.activeElement as HTMLElement;
+    expect(focado).not.toBe(antes);
+    expect(focado).not.toBe(botao);
+    // O campo novo nasceu de 700 a 730, contra a barra em 680: sobe 62.
+    expect(rolar).toHaveBeenCalledWith({ top: 62 });
   });
 });
