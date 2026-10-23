@@ -28,6 +28,10 @@ import type { ItemOS, OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 
+// A aba Fechamento busca notas e caixa no banco; aqui só interessa o rodapé
+// do formulário em volta dela (#781), então ela entra vazia.
+vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => <div>aba fechamento</div> }));
+
 beforeEach(() => localStorage.clear());
 
 const pecas = [
@@ -302,5 +306,22 @@ describe("OrdemServicoForm — cliente e veículo", () => {
     // de continuar no "Sem veículo vinculado".
     expect(screen.queryByDisplayValue("Sem veículo vinculado")).not.toBeInTheDocument();
     expect(screen.getByDisplayValue(/ABC1D23/)).toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — o rodapé no Fechamento (#781)", () => {
+  // O Fechamento só mostra dados: "Cancelar" ali dava a impressão de desfazer
+  // alguma coisa. O botão é o mesmo (fecha a OS aberta), só o nome muda.
+  it("no Fechamento o botão do rodapé é Voltar; nos Detalhes continua Cancelar", async () => {
+    const onCancelar = vi.fn();
+    const { user } = montar({ ordemExistente: ordemFaturada(), abaInicial: "fechamento", onCancelar });
+    expect(screen.getByText("aba fechamento")).toBeTruthy();
+    expect(screen.queryByText("Cancelar", { selector: "button" })).toBeNull();
+    await user.click(screen.getByText("Voltar", { selector: "button" }));
+    expect(onCancelar).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Detalhes" }));
+    expect(screen.getByText("Cancelar", { selector: "button" })).toBeTruthy();
+    expect(screen.queryByText("Voltar", { selector: "button" })).toBeNull();
   });
 });

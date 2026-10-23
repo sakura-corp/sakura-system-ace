@@ -608,7 +608,9 @@ export function OrdemServicoForm({
             onClick={onCancelar}
             className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
           >
-            Cancelar
+            {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
+                alguma coisa (#781). */}
+            {aba === "detalhes" ? "Cancelar" : "Voltar"}
           </button>
           {aba === "detalhes" && !ehRecusado && (
             <button
