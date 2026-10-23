@@ -52,11 +52,11 @@ export async function salvarTextoGarantia(lojaId: string, texto: string): Promis
   if (error) throw error;
 }
 
-// As colunas que a tela lê, uma por uma — e NUNCA `select("*")`: até a
-// parte 2 do TR-04.2, a tabela ainda carrega uma cópia antiga do token da
-// Focus NFe (`focus_nfe_token`), guardada só pra uma volta de versão
-// funcionar. Um `*` traria o token de volta pra memória do computador, que é
-// exatamente o que o item existe pra acabar.
+// As colunas que a tela lê, uma por uma — e NUNCA `select("*")`: a tabela
+// ainda tem a coluna antiga do token da Focus NFe (`focus_nfe_token`). A
+// migration 0070 (parte 2 do TR-04.2) a deixa vazia, mas num banco que ainda
+// não a recebeu ela carrega o token, e um `*` o traria de volta pra memória
+// do computador, que é exatamente o que o item existe pra acabar.
 const COLUNAS_FISCAIS = [
   "loja_id",
   "cnpj",

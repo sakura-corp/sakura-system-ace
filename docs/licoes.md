@@ -461,7 +461,8 @@
     Electron (`electron/main.ts`, roda em Node.js — sem CORS, essa restrição é só de navegador),
     exposta pra tela via IPC: `ipcMain.handle("http:fetchComAuth", ...)` no principal,
     `window.sakuraApp.fetchComAuth(...)` repassado pelo preload (`contextBridge`/`ipcRenderer`), e
-    `lib/focusNfe.ts` chama essa ponte em vez de `fetch()` direto. **Lição pra qualquer integração
+    `lib/focusNfe.ts` chama essa ponte em vez de `fetch()` direto (a ponte saiu na tarefa #368:
+    desde o `TR-04.2` quem fala com a Focus NFe é o porteiro, item 71). **Lição pra qualquer integração
     externa futura** (não só Focus NFe): se for chamar a API de terceiro **direto da tela** (não
     via Edge Function do Supabase, que já roda fora do navegador), primeiro confirmar se aquela
     API libera CORS pra navegador — a maioria das APIs fiscais/financeiras B2B não libera, porque
@@ -1476,11 +1477,13 @@
       batido — só uma das nove mutações sobreviveu, e foi justo a do segredo. Ampliado pra passar
       por **todo** caminho de recusa: mensagem de erro montada com o valor errado é exatamente
       como segredo costuma vazar. É a lição do item 53 outra vez, no lugar onde ela mais custaria.
-    **O que ficou pra parte 2, e por quê**: limpar a coluna antiga (numa migration nova — a `0058` acabou sendo o fechamento de caixa) e tirar a
-    ponte `http:fetchComAuth` do Electron, que ficou sem uso (ela não tem mais token nenhum pra
-    carregar, mas ponte sem uso é superfície à toa). As duas só depois de ela emitir **e**
-    cancelar uma nota de verdade pelo porteiro — até lá, voltar pra `v0.9.40` precisa continuar
-    emitindo nota.
+    **A parte 2 (tarefa #368, migration `0070`)**: limpar a coluna antiga e tirar a ponte
+    `http:fetchComAuth` do Electron, que ficou sem uso (ela não tinha mais token nenhum pra
+    carregar, mas ponte sem uso é superfície à toa). Esperou ela emitir **e** cancelar uma nota de
+    verdade pelo porteiro (28/09, NFS-e 22), porque até lá voltar pra `v0.9.40` precisava continuar
+    emitindo nota. A `0070` copia pro cofre, antes de limpar, o token que só estivesse na coluna
+    (um computador antigo podia ter gravado lá) e declara a versão mínima `0.9.41`. A coluna vazia
+    só sai do banco numa versão seguinte, pela regra de "Voltar uma versão".
 
 72. **Uma trava de banco que não pode consultar o banco de verdade tem que se conferir sozinha
     (25/09/2026, item `TR-05.1`).** O guia pede, antes de cada `check`, uma consulta no banco

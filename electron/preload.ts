@@ -7,11 +7,6 @@ import { contextBridge, ipcRenderer } from "electron";
 // a partir de `app.getVersion()`, que funciona nos dois casos.
 contextBridge.exposeInMainWorld("sakuraApp", {
   version: process.env.SAKURA_APP_VERSION,
-  // Repassa fetch() com autenticação Basic Auth pro processo principal —
-  // usado pela integração com o Focus NFe, que bloqueia chamada direta feita
-  // da tela (CORS), ver o handler "http:fetchComAuth" em main.ts.
-  fetchComAuth: (opcoes: { url: string; metodo: string; token: string; corpo?: unknown }) =>
-    ipcRenderer.invoke("http:fetchComAuth", opcoes),
   // Conexão com o Supabase escolhida neste computador (ver o bloco sobre
   // "conexao.json" em main.ts). Vem como valor pronto, não como função, porque
   // o cliente do Supabase precisa dela de imediato — IPC seria assíncrono

@@ -103,10 +103,16 @@ recriada**. Na dúvida, conferir o endereço nos exemplos de `curl` da tela.
   dela (`IMPORTAR_POR_FOTO_LIGADO` em `ProdutosSection.tsx`; seção 7, Estoque). Religar é decisão
   dela, e exige o secret `ANTHROPIC_API_KEY` na função (chave criada em `console.anthropic.com`).
 
-**A parte 2 do `TR-04.2`**: uma migration que apaga a cópia antiga do token, que ainda fica na
-tabela de configurações (é o que permitiria voltar pra antes da `v0.9.41` sem parar a emissão). A
-condição, uma nota emitida e outra cancelada pelo porteiro, foi cumprida em 28/09 (NFS-e 22).
-**Fazer quando ela pedir.**
+**A parte 2 do `TR-04.2`** (tarefa #368): a migration `0070` apaga a cópia antiga do token, que
+ficava na tabela de configurações (era o que permitiria voltar pra antes da `v0.9.41` sem parar a
+emissão). A condição, uma nota emitida e outra cancelada pelo porteiro, foi cumprida em 28/09
+(NFS-e 22). A `0070` declara `-- versao-minima-do-programa: 0.9.41`: depois dela, **voltar pra
+`v0.9.40` ou antes para a emissão de nota** (aquelas versões leem o token da coluna, que fica
+vazia). Antes de rodar, ela copia pro cofre o token que porventura só exista na coluna, então
+nenhuma loja perde a emissão. A coluna em si só sai numa versão seguinte ("Voltar uma versão").
+**Atenção**: o botão só espera computador que se registra (tabela `computadores`, `0063`), e um
+programa parado na `v0.9.40` é velho demais pra se registrar. Antes de aplicar a `0070` numa
+empresa, conferir à mão que nenhum computador dela ficou abaixo da `v0.9.41`.
 
 ### Backup do banco (`TR-12.1`)
 

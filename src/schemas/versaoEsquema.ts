@@ -19,12 +19,12 @@ import { compararVersoes } from "./computadores";
  * Sobe junto com toda migration nova — `versaoEsquema.test.ts` reprova se
  * este número ficar pra trás da pasta `supabase/migrations/`.
  */
-export const VERSAO_ESQUEMA_ESPERADA = 69;
+export const VERSAO_ESQUEMA_ESPERADA = 70;
 
 /**
  * As migrations que declaram `-- versao-minima-do-programa: X`, com o X de
  * cada uma. Essas sobem DEPOIS da versão do programa, de propósito: o botão
- * "Atualizar o banco" espera todos os computadores chegarem em X (0062, 0069).
+ * "Atualizar o banco" espera todos os computadores chegarem em X (0062, 0065, 0069, 0070).
  * Então o programa novo passa dias num banco sem elas, e isso não é atraso:
  * a faixa amarela nessa espera viraria telefonema em toda loja (#757).
  *
@@ -35,6 +35,7 @@ export const MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES: Readonly<Record<number, str
   62: "0.9.43",
   65: "0.9.52",
   69: "0.9.54",
+  70: "0.9.41",
 };
 
 /**

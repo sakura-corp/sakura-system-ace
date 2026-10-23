@@ -927,11 +927,11 @@ Quatro coisas que valem saber:
     endereços (o Supabase, o ViaCEP e o GitHub). Sem isso, um texto envenenado vindo do banco
     podia mandar dado da loja pra qualquer lugar. Só no app empacotado: em `npm run dev` ela
     atrapalharia a ferramenta de trabalho sem proteger o que vai pra loja.
-  - **A ponte da Focus NFe deixou de aceitar qualquer endereço.** Ela carrega o token que
-    **emite e cancela nota no CNPJ da loja**; agora só fala com os dois endereços da Focus NFe,
-    conferidos por host exato. **Desde o `TR-04.2` (25/09/2026) a tela não usa mais essa ponte**
-    — quem fala com a Focus NFe é o porteiro, no Supabase (ver "Token da Focus NFe" logo
-    abaixo). Ela continua existindo até a parte 2 do item, e sai junto com a coluna antiga.
+  - **A ponte antiga da Focus NFe (`fetchComAuth`) não existe mais** (tarefa #368, parte 2 do
+    `TR-04.2`). Ela carregava o token que **emite e cancela nota no CNPJ da loja**; desde o
+    `TR-04.2` (25/09/2026) quem fala com a Focus NFe é o porteiro, no Supabase (ver "Token da
+    Focus NFe" logo abaixo), e a ponte ficou sem uso até sair junto com a cópia antiga do token.
+    O teste do Electron confere que ela não volta.
   - **Todo pedido da tela pro processo principal é conferido** (é a tela do app mesmo que está
     pedindo?). Vale pra salvar conexão, abrir WhatsApp, ler registro e diagnóstico.
   - **Nada navega pra fora do app nem abre janela nova** — sem barra de endereço, uma janela
@@ -940,7 +940,7 @@ Quatro coisas que valem saber:
     consegue mais rodá-lo como um Node.js comum nem acoplar depurador — que era o atalho pra ler
     tudo que o processo principal enxerga, a conexão do banco inclusive. Gravadas no build
     (`scripts/ligar-fuses.mjs`), e conferidas no binário empacotado.
-  - **Um teste que abre o app de verdade** (`npm run test:electron`, 22 checagens) — ver item 65
+  - **Um teste que abre o app de verdade** (`npm run test:electron`, 27 checagens) — ver item 65
     da seção 6 pro que só apareceu medindo.
   É o tipo de mudança que só se percebe se algo quebrar: depois de mexer aqui, conferir o de
   sempre funcionando (abrir uma OS, buscar CEP, ver a garantia, emitir nota, abrir o WhatsApp).
@@ -961,8 +961,11 @@ Quatro coisas que valem saber:
   - **Mensagens novas que podem aparecer**: "falta publicar o porteiro" (a Edge Function não foi
     publicada naquele Supabase), "você não tem permissão..." e "essa nota não é desta loja".
   **A função tem que estar publicada antes de a loja emitir** (seção 9, "Publicar uma Edge
-  Function"). E a proteção só fica completa com a **parte 2**, que limpa a cópia antiga do token
-  na tabela de configurações (item 71 da seção 6): liberada desde 28/09, **quando ela pedir**.
+  Function"). A **parte 2** (tarefa #368, migration `0070`) apaga a cópia antiga do token da
+  tabela de configurações e tira a ponte `fetchComAuth` do Electron (item 71 da seção 6): **só
+  vale depois de a Sofia aplicar a `0070`**, e computador abaixo da `v0.9.41` para de emitir
+  (a migration declara essa versão mínima, mas um programa tão velho não se registra pro botão
+  enxergar: conferir à mão, `docs/operacao.md`).
 - **Auditoria**: admin-only, acesso via ícone no rodapé da Sidebar (ao lado da engrenagem de
   Configurações), não é permissão de operador comum nem entra em `MODULOS`. Lista quem **criou**,
   editou ou excluiu o quê e quando, com filtro por tabela, por **ação** e por operador, e um "Ver
