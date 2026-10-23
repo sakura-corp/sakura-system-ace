@@ -168,7 +168,11 @@ function LinkDeFora({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
+/** Fechada sem "aprovada" nem "recusada" (um teste, uma desistência) some da lista, em vez de mostrar a etiqueta parada. */
+const propostaAparece = (p: Proposta) => p.aberta || p.estado === "aprovada" || p.estado === "recusada";
+
 function Propostas({ parte, tentarDeNovo }: { parte: ParteDosSecundarios<RespostaDasPropostas>; tentarDeNovo: () => void }) {
+  const visiveis = parte.tipo === "pronto" ? parte.dados.propostas.filter(propostaAparece) : [];
   return (
     <section aria-labelledby="secundarios-propostas" className="mt-8 min-w-0">
       <h2 id="secundarios-propostas" className="text-[15px] font-semibold">
@@ -183,12 +187,12 @@ function Propostas({ parte, tentarDeNovo }: { parte: ParteDosSecundarios<Respost
           <p role="status" className="min-w-0 break-words rounded-xl border border-borda bg-livre-fundo px-4 py-3 text-sm text-texto-2">
             {AVISO_SEM_ACESSO}
           </p>
-        ) : parte.dados.propostas.length === 0 ? (
+        ) : visiveis.length === 0 ? (
           <p className="text-sm text-texto-2">Nenhuma proposta ainda.</p>
         ) : (
           <>
             <ul className={`${CAIXA} divide-y divide-borda`}>
-              {parte.dados.propostas.map((p) => (
+              {visiveis.map((p) => (
                 <li key={p.numero} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5 text-sm sm:px-5">
                   <span className="min-w-0 break-words font-medium">{p.url ? <LinkDeFora href={p.url}>{p.titulo}</LinkDeFora> : p.titulo}</span>
                   <SeloDaProposta estado={p.estado} />

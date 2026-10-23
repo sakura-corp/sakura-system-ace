@@ -153,6 +153,20 @@ describe("ConteudoDosSecundarios (#731)", () => {
     expect(h).not.toContain("esperando-sofia");
   });
 
+  it("proposta fechada sem 'aprovada' nem 'recusada' (um teste, uma desistência) some da lista", () => {
+    const fechada: Proposta = { numero: 7, titulo: "Proposta (teste)", url: "", estado: "esperando-sofia", aberta: false, atualizadaEm: "2026-10-22T23:04:24.000Z" };
+    const h = html({ propostas: pronto({ propostas: [fechada, propostasDeExemplo[2]] }) });
+    expect(h).not.toContain("Proposta (teste)");
+    expect(h).toContain("Aplicativo de pontos para clientes");
+    expect(html({ propostas: pronto({ propostas: [fechada] }) })).toContain("Nenhuma proposta ainda.");
+  });
+
+  it("proposta fechada como aprovada ou recusada continua na lista, com o estado dela", () => {
+    const h = html({ propostas: pronto({ propostas: propostasDeExemplo.filter((p) => !p.aberta) }) });
+    expect(h).toContain("Aprovada");
+    expect(h).toContain("Recusada");
+  });
+
   it("o título da proposta é texto puro; o link só se for da sakura-corp", () => {
     const perigosa: Proposta = { numero: 9, titulo: "<img src=x onerror=alert(1)>", url: "", estado: null, aberta: true, atualizadaEm: "2026-10-22T12:00:00.000Z" };
     const h = html({ propostas: pronto({ propostas: [perigosa, propostasDeExemplo[0]] }) });
