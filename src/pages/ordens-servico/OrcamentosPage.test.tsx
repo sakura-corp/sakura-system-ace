@@ -28,11 +28,11 @@ vi.mock("@/lib/ordensServico", () => ({
 }));
 vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
 vi.mock("@/lib/clientes", () => ({
-  listarClientes: async () => [
+  listarClientesParaEscolha: async () => [
     { id: "c1", nome: "Maria da Silva", telefone: "(16) 99123-4567", veiculos: [] },
   ],
-  criarCliente: vi.fn(),
-  criarVeiculo: vi.fn(),
+  cadastrarClienteRapido: vi.fn(),
+  cadastrarVeiculoRapido: vi.fn(),
 }));
 vi.mock("@/lib/pecas", () => ({
   listarPecas: async () => [{ id: "p-1", descricao: "Palheta 20 pol", codigo_interno: null, codigo_barras: null, medida: null }],

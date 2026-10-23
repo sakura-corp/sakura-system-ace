@@ -37,7 +37,7 @@ describe("buscarFichaDoVeiculo", () => {
       { ...base, id: "os-17", numero: 17, status: "faturada", data_abertura: "2026-10-10T12:00:00Z" },
       { ...base, id: "orc-2", numero: null, numero_orcamento: 2, status: "recusado", data_abertura: "2026-10-05T12:00:00Z" },
     ];
-    const ficha = await buscarFichaDoVeiculo("v1");
+    const ficha = await buscarFichaDoVeiculo("v1", true);
     expect(ficha?.ordens.map((o) => o.id)).toEqual(["os-17"]);
   });
 });

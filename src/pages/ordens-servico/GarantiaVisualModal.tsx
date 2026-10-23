@@ -4,7 +4,7 @@ import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlGarantiaOS } from "@/lib/garantiaDocumento";
-import { buscarClientePorId, buscarVeiculoPorId } from "@/lib/clientes";
+import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
 
@@ -25,9 +25,8 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
       setCarregando(true);
       setErro(null);
       try {
-        const [cliente, veiculo, loja, movimentos] = await Promise.all([
-          buscarClientePorId(ordem.cliente_id).catch(() => null),
-          ordem.veiculo_id ? buscarVeiculoPorId(ordem.veiculo_id).catch(() => null) : null,
+        const [{ cliente, veiculo }, loja, movimentos] = await Promise.all([
+          buscarClienteEVeiculoDaOrdem(ordem.id).catch(() => ({ cliente: null, veiculo: null })),
           buscarConfiguracaoFiscal(ordem.loja_id).catch(() => null),
           ordem.status === "faturada"
             ? listarMovimentosCaixaPorOrdem(ordem.id).catch(() => [])

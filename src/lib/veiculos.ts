@@ -77,6 +77,6 @@ function completarVeiculoDaJanela(veiculo: Partial<VeiculoDaFicha>): VeiculoDaFi
     km_atual: null,
     criado_em: "",
     ...veiculo,
-    cliente: veiculo.cliente ? { telefone: null, ...veiculo.cliente } : null,
+    cliente: veiculo.cliente ? { ...veiculo.cliente, telefone: veiculo.cliente.telefone ?? null } : null,
   } as VeiculoDaFicha;
 }

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { useAuth } from "@/contexts/AuthContext";
-import { listarClientes } from "@/lib/clientes";
+import { listarClientesParaEscolha } from "@/lib/clientes";
+import { temPermissao } from "@/types/operador";
 import { criarContaReceber, listarContasReceber, receberConta } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -31,6 +32,8 @@ function hojeIso(): string {
 
 export function ContasReceberPage() {
   const { operador, lojaAtual } = useAuth();
+  // Sem o módulo Clientes a lista vem pela janela estreita (migration 0068).
+  const podeVerCadastro = temPermissao(operador, "clientes");
   const navigate = useNavigate();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -54,7 +57,7 @@ export function ContasReceberPage() {
     try {
       const [listaContas, listaClientes, modelos, cobrancas] = await Promise.all([
         listarContasReceber(lojaAtual.id),
-        listarClientes(),
+        listarClientesParaEscolha(podeVerCadastro),
         listarModelosWhatsapp(lojaAtual.id),
         ultimasMensagensPorReferencia(lojaAtual.id, "cobranca"),
       ]);
