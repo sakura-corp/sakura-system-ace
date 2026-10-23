@@ -18,7 +18,8 @@
 //   - a ponte antiga da Focus NFe (`fetchComAuth`) não volta a existir;
 //   - o canal de atualização escolhido na tela chega no disco, e o
 //     atualizador procura no canal que estava gravado (item TR-09.1);
-//   - nada navega pra fora do app nem abre janela nova.
+//   - nada navega pra fora do app nem abre janela nova; só o link do portal
+//     da prefeitura (documento oficial da NFS-e) abre no navegador (#773).
 //
 // Como rodar:  npm run test:electron
 // Precisa de:  npm run build feito antes, e (em Linux) um servidor gráfico
@@ -414,6 +415,40 @@ try {
   await pagina.waitForTimeout(800);
   const janelasDepois = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length);
   conferir("janela nova é bloqueada", janelasDepois === janelasAntes);
+
+  // O link do documento oficial da NFS-e (portal do Giap, #773) abre no
+  // navegador do computador; qualquer outro, não. O `openExternal` é trocado
+  // por um que só anota, pra o teste não abrir navegador nenhum.
+  await app.evaluate(({ shell }) => {
+    globalThis.__abertosNoNavegador = [];
+    shell.openExternal = async (url) => {
+      globalThis.__abertosNoNavegador.push(url);
+    };
+  });
+  // Do jeito que acontece de verdade: um link `target="_blank"` dentro do
+  // `iframe` do recibo ("Versão para o cliente"), clicado com o mouse.
+  await pagina.evaluate(() => {
+    const quadro = document.createElement("iframe");
+    quadro.id = "recibo-teste";
+    quadro.srcdoc =
+      '<a id="outro" href="https://exemplo.test/" target="_blank">outro</a> ' +
+      '<a id="portal" href="https://araraquara.giap.com.br/ords/pma/f?p=616:116" target="_blank">portal</a>';
+    document.body.appendChild(quadro);
+  });
+  const recibo = pagina.frameLocator("#recibo-teste");
+  await recibo.locator("#outro").click();
+  await recibo.locator("#portal").click();
+  await pagina.waitForTimeout(800);
+  await pagina.evaluate(() => document.getElementById("recibo-teste")?.remove());
+  const abertos = await app.evaluate(() => globalThis.__abertosNoNavegador);
+  const janelasComPortal = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length);
+  conferir(
+    "link do portal da prefeitura abre no navegador, e só ele",
+    abertos.length === 1 &&
+      abertos[0] === "https://araraquara.giap.com.br/ords/pma/f?p=616:116" &&
+      janelasComPortal === janelasAntes,
+    JSON.stringify(abertos),
+  );
 
   const enderecoAntes = pagina.url();
   await pagina.evaluate(() => {

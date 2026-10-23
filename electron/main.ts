@@ -18,6 +18,7 @@ import {
   lerIdentidadeComputador,
   type IdentidadeComputador,
 } from "../src/schemas/identidadeComputador";
+import { podeAbrirNoNavegador } from "../src/schemas/linkExterno";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -406,9 +407,15 @@ function createWindow() {
 
   // E nada abre janela nova: `window.open` e `target="_blank"` viram uma
   // janela do Electron sem barra de endereço nenhuma, que é a forma mais
-  // fácil de passar um site qualquer por "tela do sistema".
+  // fácil de passar um site qualquer por "tela do sistema". A única exceção
+  // é o portal da prefeitura (o documento oficial da NFS-e, #773), e mesmo
+  // ele abre no navegador do computador, nunca numa janela do app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    logErroDaTela(`Janela nova bloqueada para ${url.slice(0, 200)}`);
+    if (podeAbrirNoNavegador(url)) {
+      void shell.openExternal(url);
+    } else {
+      logErroDaTela(`Janela nova bloqueada para ${url.slice(0, 200)}`);
+    }
     return { action: "deny" };
   });
 
