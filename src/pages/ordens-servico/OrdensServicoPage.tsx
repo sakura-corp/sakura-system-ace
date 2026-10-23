@@ -566,6 +566,7 @@ export function OrdensServicoPage() {
           jurosParcelas={jurosParcelas}
           onRegistrar={handleRegistrarVenda}
           onCadastrarCliente={handleCadastrarClienteDaVenda}
+          podeVerCadastro={podeVerCadastro}
           onCancelar={() => setMostrarVenda(false)}
         />
       )}
@@ -782,8 +783,10 @@ export function OrdensServicoPage() {
                     >
                       {/* O carro só fica pronto pra retirar quando a OS é
                           concluída ou faturada — antes disso o aviso seria
-                          mentira. */}
-                      {STATUS_COM_FECHAMENTO.includes(ordem.status) && !ehVendaBalcao(ordem) && (
+                          mentira. Sem o módulo Clientes o telefone não chega
+                          (a janela da migration 0068 só tem o nome), e o
+                          botão diria "cadastro sem telefone" — então some. */}
+                      {podeVerCadastro && STATUS_COM_FECHAMENTO.includes(ordem.status) && !ehVendaBalcao(ordem) && (
                         <BotaoWhatsapp
                           telefone={
                             clientes.find((c) => c.id === ordem.cliente_id)?.telefone

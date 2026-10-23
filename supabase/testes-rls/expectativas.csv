@@ -48,7 +48,7 @@ categorias_caixa,insert,1,1,1,1,0,
 categorias_caixa,update,2,2,2,2,0,
 categorias_caixa,delete,2,2,2,2,0,
 #
-# TR-04.1 lote 4 (migration 0068): o cadastro de clientes e veículos exige o
+# TR-04.1 lote 4 (migration 0069): o cadastro de clientes e veículos exige o
 # módulo Clientes. O balconista (só Caixa) e o órfão zeraram nas oito linhas
 # abaixo. A janela que sobrou pra eles são as duas views logo adiante — é por
 # elas que o nome do cliente e a placa continuam nas listas de OS, Caixa,

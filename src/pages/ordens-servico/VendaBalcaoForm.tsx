@@ -44,6 +44,12 @@ import { Campo, inputClasse } from "./campos/FormCompartilhado";
 
 interface VendaBalcaoFormProps {
   clientes: Cliente[];
+  /**
+   * Se quem usa tem o módulo Clientes. Sem ele, a lista vem pela janela
+   * estreita (migration 0068), só com o nome — o CPF não chega aqui, mas a
+   * nota o busca na hora de emitir. Padrão `true` (o comportamento de antes).
+   */
+  podeVerCadastro?: boolean;
   pecas: Peca[];
   funcionarios: FuncionarioPublico[];
   funcionarioAtualId: string;
@@ -68,6 +74,7 @@ const ROTULO_CONSUMIDOR = "Consumidor (não se identificou)";
 
 export function VendaBalcaoForm({
   clientes,
+  podeVerCadastro = true,
   pecas,
   funcionarios,
   funcionarioAtualId,
@@ -207,9 +214,11 @@ export function VendaBalcaoForm({
               <p className="text-rotulo text-sakura-muted">
                 {ehConsumidor(clienteId)
                   ? "A nota sai sem identificação. Se pedir CPF na nota, escolha ou cadastre o cliente."
-                  : clienteEscolhido?.cpf_cnpj
-                    ? `A nota sai no ${clienteEscolhido.tipo_pessoa === "juridica" ? "CNPJ" : "CPF"} dele.`
-                    : "Este cliente está sem CPF/CNPJ no cadastro — a nota sai sem identificação."}
+                  : !podeVerCadastro
+                    ? "A nota sai no CPF/CNPJ do cadastro dele, se tiver."
+                    : clienteEscolhido?.cpf_cnpj
+                      ? `A nota sai no ${clienteEscolhido.tipo_pessoa === "juridica" ? "CNPJ" : "CPF"} dele.`
+                      : "Este cliente está sem CPF/CNPJ no cadastro — a nota sai sem identificação."}
               </p>
             </div>
 

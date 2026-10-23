@@ -127,7 +127,7 @@ const COLUNAS_DA_JANELA_DO_VEICULO = "id, cliente_id, placa, marca, modelo, cor,
  * Os clientes (com os veículos) pras caixinhas de "escolha o cliente" da OS,
  * do Orçamento e de Contas a Receber.
  *
- * Desde a migration 0068, o cadastro completo só responde a quem tem o
+ * Desde a migration 0069, o cadastro completo só responde a quem tem o
  * módulo Clientes. Quem não tem escolhe pela janela estreita: só o nome do
  * cliente e placa, marca, modelo, cor e tipo do veículo. O resto dos campos
  * volta `null` — a tela já trata cada um como "não preenchido". Quem tem o

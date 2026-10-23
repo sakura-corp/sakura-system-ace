@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE do lote 4 do TR-04.1 (migration 0068, tarefa #365). NÃO é migration,
+-- TESTE do lote 4 do TR-04.1 (migrations 0068 e 0069, tarefa #365). NÃO é migration,
 -- e NUNCA deve ser rodado no Supabase de verdade — grava e apaga dado de teste.
 --
 -- Prova as duas metades da promessa, que são opostas e por isso precisam ser

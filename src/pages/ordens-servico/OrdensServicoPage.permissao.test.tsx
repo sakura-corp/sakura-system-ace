@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Migration 0068: quem tem OS mas não tem o módulo Clientes escolhe o cliente
+ * Migrations 0068 e 0069: quem tem OS mas não tem o módulo Clientes escolhe o cliente
  * pela janela estreita. A tela tem que dizer isso à camada de dados.
  */
 import { render, waitFor } from "@testing-library/react";

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Migration 0068: o cadastro de clientes só responde a quem tem o módulo
+ * Migration 0069: o cadastro de clientes só responde a quem tem o módulo
  * Clientes. O Início usa o cadastro só pros aniversários do calendário, então
  * quem não tem o módulo nem pergunta (e o calendário fica sem aniversários).
  */

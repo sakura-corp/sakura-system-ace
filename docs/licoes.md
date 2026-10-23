@@ -22,17 +22,22 @@
    `funcionarios` e `funcionario_filhos` são as primeiras a exigir a permissão no banco.
    **O lote 2 saiu em 26/09/2026** (migration `0061`): `contas_pagar` e `contas_receber`.
    **E o lote 3, no mesmo dia** (migration `0062`): `caixa_movimentos`, com portas estreitas
-   pra Relações, OS e as duas contas. **O lote 4 foi escrito em 23/10/2026** (migration `0068`,
-   tarefa #365, ainda não aplicada): `clientes` e `veiculos`, com a janela estreita (só nome e
+   pra Relações, OS e as duas contas. **O lote 4 foi escrito em 23/10/2026** (migrations `0068` e
+   `0069`, tarefa #365, ainda não aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
    placa/marca/modelo/cor/tipo, nas views `clientes_janela` e `veiculos_janela`), o cadastro
    rápido da OS e os dados da nota por funções. As outras **continuam como sempre foram** — o
-   parágrafo acima segue valendo pra peças e ordens de serviço. **A lição nova do lote 4**: o
+   parágrafo acima segue valendo pra peças e ordens de serviço (o exemplo do balconista lendo
+   Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
+   lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
+   e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou
+   a versão velha fica depois da porta fechada (achado da revisão final, que eu não tinha visto);
+   (2) o
    `join` embutido repontado pra view (`cliente:clientes_janela(nome)`) **funciona** — medido num
    PostgREST 12 local, que dá pra baixar na sessão da nuvem; o "não dá pra testar daqui" do
    item 69 deixou de valer.
    **O que falta, e por que é mais difícil** (mapeado em 26/09/2026, tela por tela; `clientes`/
-   `veiculos` saíram no lote 4): as três
-   tabelas que sobravam — `clientes`/`veiculos`, `pecas`/`estoque_movimentos` e `ordens_servico` —
+   `veiculos` saíram no lote 4, e sobraram `pecas`/`estoque_movimentos` e `ordens_servico`): as três
+   tabelas que sobravam naquela data — `clientes`/`veiculos`, `pecas`/`estoque_movimentos` e `ordens_servico` —
    são lidas por MUITAS telas, e a principal é o **Início**, que quase todo operador tem (ele lê
    OS, clientes, peças e serviços pra montar calendário e pátio). Além disso o Caixa, as
    Garantias e as Notas Fiscais puxam o nome do cliente e os itens da OS por `join` embutido — e

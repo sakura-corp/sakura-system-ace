@@ -107,7 +107,7 @@ export function PainelPage() {
   const podeVerCaixa = MODULOS_QUE_LEEM_O_CAIXA.some((m) => temPermissao(operador, m));
 
   // Os aniversários do calendário vêm do cadastro de clientes, que desde a
-  // migration 0068 só responde a quem tem o módulo Clientes. Sem ele, o
+  // migration 0069 só responde a quem tem o módulo Clientes. Sem ele, o
   // calendário simplesmente não mostra aniversários.
   const podeVerClientes = temPermissao(operador, "clientes");
 

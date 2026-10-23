@@ -53,6 +53,8 @@ const clientes = [
   { id: "cliente-1", nome: "Ana Souza", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09", veiculos: [] },
 ] as unknown as Cliente[];
 
+const CLIENTES_JANELA_ANA = { id: "cliente-1", nome: "Ana Souza", tipo_pessoa: "fisica", cpf_cnpj: null, veiculos: [] };
+
 function montar(sobrescrever: Partial<Parameters<typeof VendaBalcaoForm>[0]> = {}) {
   const onRegistrar = vi.fn().mockResolvedValue(undefined);
   const tela = renderizar(
@@ -190,6 +192,19 @@ describe("VendaBalcaoForm", () => {
       parcelas: 1,
       previsaoRecebimento: null,
     });
+  });
+
+  it("sem o módulo Clientes não afirma que o cliente está sem CPF (o CPF só não chega pela janela)", async () => {
+    // Migration 0068: pela janela vem só o nome, então `cpf_cnpj` chega null
+    // mesmo quando o cadastro tem CPF — e a nota o busca na hora de emitir.
+    const { user } = montar({
+      podeVerCadastro: false,
+      clientes: [{ ...CLIENTES_JANELA_ANA }] as never,
+    });
+    await user.click(screen.getByDisplayValue(/Consumidor/));
+    await user.click(screen.getByRole("button", { name: "Ana Souza" }));
+    expect(screen.getByText("A nota sai no CPF/CNPJ do cadastro dele, se tiver.")).toBeInTheDocument();
+    expect(screen.queryByText(/está sem CPF\/CNPJ no cadastro/)).not.toBeInTheDocument();
   });
 
   it("com cliente de verdade, 'a receber depois' volta a existir", async () => {

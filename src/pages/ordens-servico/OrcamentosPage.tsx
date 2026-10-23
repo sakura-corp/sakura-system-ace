@@ -251,6 +251,9 @@ export function OrcamentosPage() {
 
   function botaoWhatsapp(ordem: OrdemServico) {
     if (ordem.status !== "orcamento") return null;
+    // Sem o módulo Clientes o telefone não chega (a janela da migration 0068
+    // só tem o nome): o botão diria "cadastro sem telefone", que é mentira.
+    if (!podeVerCadastro) return null;
     const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone;
     return (
       <BotaoWhatsapp

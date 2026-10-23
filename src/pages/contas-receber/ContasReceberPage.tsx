@@ -231,22 +231,27 @@ export function ContasReceberPage() {
                                   cobrado em {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
                                 </span>
                               )}
-                              <BotaoWhatsapp
-                                telefone={cliente?.telefone}
-                                texto={textoDaCobranca(conta)}
-                                rotulo="Cobrar"
-                                titulo="Abrir a conversa no WhatsApp com a cobrança pronta"
-                                aoAbrir={() => {
-                                  if (!lojaAtual) return;
-                                  registrarMensagemAberta(
-                                    lojaAtual.id,
-                                    "cobranca",
-                                    conta.id,
-                                    cliente?.telefone ?? null,
-                                    operador?.id ?? null,
-                                  ).then(carregar);
-                                }}
-                              />
+                              {/* Sem o módulo Clientes o telefone não chega (a janela da
+                                  migration 0068 só tem o nome): o botão diria "cadastro sem
+                                  telefone", que é mentira — então some. */}
+                              {podeVerCadastro && (
+                                <BotaoWhatsapp
+                                  telefone={cliente?.telefone}
+                                  texto={textoDaCobranca(conta)}
+                                  rotulo="Cobrar"
+                                  titulo="Abrir a conversa no WhatsApp com a cobrança pronta"
+                                  aoAbrir={() => {
+                                    if (!lojaAtual) return;
+                                    registrarMensagemAberta(
+                                      lojaAtual.id,
+                                      "cobranca",
+                                      conta.id,
+                                      cliente?.telefone ?? null,
+                                      operador?.id ?? null,
+                                    ).then(carregar);
+                                  }}
+                                />
+                              )}
                               <button
                                 onClick={() => setContaRecebendo(conta)}
                                 className="h-8 rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"

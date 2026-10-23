@@ -6,7 +6,7 @@
 -- ARQUIVO GERADO AUTOMATICAMENTE — não editar à mão.
 -- Para regerar: npm run gerar-instalacao
 --
--- Contém as 68 migrations de supabase/migrations/, na ordem.
+-- Contém as 69 migrations de supabase/migrations/, na ordem.
 --
 -- Como usar: painel do Supabase → SQL Editor → New query → colar TUDO
 -- deste arquivo → Run. Leva alguns segundos.
@@ -5429,13 +5429,20 @@ insert into schema_versao (versao) values (67) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0068_clientes_so_com_permissao.sql
+-- 0068_clientes_janela.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0068: Clientes e Veículos só pra quem tem o módulo Clientes — o
--- lote 4 da etapa 2 do TR-04.1 (tarefa #365). Os anteriores: RH (0056),
--- contas (0061) e Caixa (0062).
+-- Migration 0068: a JANELA de Clientes e Veículos — primeira metade do lote 4
+-- da etapa 2 do TR-04.1 (tarefa #365). Os lotes anteriores: RH (0056), contas
+-- (0061) e Caixa (0062). A segunda metade, que FECHA as tabelas, é a 0069.
+--
+-- POR QUE EM DUAS. Esta só ACRESCENTA (duas views e quatro funções) e não
+-- muda nada pra versão atual do programa. A versão nova passa a ler por elas
+-- — pra todo mundo, inclusive quem tem o módulo —, então ela precisa desta
+-- migration já aplicada; e a 0069, que fecha a porta, precisa da versão nova
+-- já nos computadores. Numa só, uma das duas ordens quebrava as lojas
+-- (achado da revisão final). Ordem: 0068 → publicar e liberar a versão → 0069.
 --
 -- O PROBLEMA. Quem não tem o módulo Clientes não vê a tela, mas a RLS só
 -- exigia login (0015). Com a chave que está no computador, dava pra pedir
@@ -5481,79 +5488,10 @@ insert into schema_versao (versao) values (67) on conflict do nothing;
 -- têm loja (são da empresa inteira), o filtro é "operador ativo e com alguma
 -- loja" — o mesmo alcance que a tabela tinha antes, menos o órfão (§6 item 23).
 --
--- ORDEM DE SUBIR. Com esta migration rodada, a versão anterior do programa
--- perde o nome do cliente nas listas, a emissão de nota e o cadastro rápido
--- pra quem não tem Clientes. Por isso a linha abaixo: o botão "Atualizar o
--- banco de todas as empresas" espera os computadores chegarem nela.
--- versao-minima-do-programa: 0.9.54
---
--- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
--- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem
--- policy filtra a zero linhas sem erro nenhum (§6 item 15).
---
 -- Idempotente: seguro rodar de novo.
 
 -- ===================================================================
--- 1. clientes: só o módulo (e o Consumidor, pra qualquer um logado)
--- ===================================================================
-
-drop policy if exists "clientes_acesso_temporario" on clientes;
-drop policy if exists "clientes_acesso_autenticados" on clientes;
-drop policy if exists "clientes_leitura" on clientes;
-drop policy if exists "clientes_insercao" on clientes;
-drop policy if exists "clientes_alteracao" on clientes;
-drop policy if exists "clientes_exclusao" on clientes;
-
-create policy "clientes_leitura" on clientes
-  for select to authenticated
-  using (
-    (select operador_tem_permissao('clientes'))
-    or id = '00000000-0000-0000-0000-00000000c000'::uuid
-  );
-
-create policy "clientes_insercao" on clientes
-  for insert to authenticated
-  with check ((select operador_tem_permissao('clientes')));
-
-create policy "clientes_alteracao" on clientes
-  for update to authenticated
-  using ((select operador_tem_permissao('clientes')))
-  with check ((select operador_tem_permissao('clientes')));
-
-create policy "clientes_exclusao" on clientes
-  for delete to authenticated
-  using ((select operador_tem_permissao('clientes')));
-
--- ===================================================================
--- 2. veiculos: só o módulo
--- ===================================================================
-
-drop policy if exists "veiculos_acesso_temporario" on veiculos;
-drop policy if exists "veiculos_acesso_autenticados" on veiculos;
-drop policy if exists "veiculos_leitura" on veiculos;
-drop policy if exists "veiculos_insercao" on veiculos;
-drop policy if exists "veiculos_alteracao" on veiculos;
-drop policy if exists "veiculos_exclusao" on veiculos;
-
-create policy "veiculos_leitura" on veiculos
-  for select to authenticated
-  using ((select operador_tem_permissao('clientes')));
-
-create policy "veiculos_insercao" on veiculos
-  for insert to authenticated
-  with check ((select operador_tem_permissao('clientes')));
-
-create policy "veiculos_alteracao" on veiculos
-  for update to authenticated
-  using ((select operador_tem_permissao('clientes')))
-  with check ((select operador_tem_permissao('clientes')));
-
-create policy "veiculos_exclusao" on veiculos
-  for delete to authenticated
-  using ((select operador_tem_permissao('clientes')));
-
--- ===================================================================
--- 3. A janela estreita: duas views, só leitura
+-- 1. A janela estreita: duas views, só leitura
 -- ===================================================================
 
 -- Quem pode olhar pela janela: operador ativo, com acesso a alguma loja. O
@@ -5627,7 +5565,7 @@ revoke all on veiculos_janela from anon, authenticated;
 grant select on veiculos_janela to authenticated;
 
 -- ===================================================================
--- 4. O cadastro rápido da OS, do Orçamento e da venda de balcão
+-- 2. O cadastro rápido da OS, do Orçamento e da venda de balcão
 -- ===================================================================
 
 -- Os campos aceitos são os das três janelinhas de cadastro rápido
@@ -5719,7 +5657,7 @@ comment on function cadastrar_veiculo_rapido(uuid, jsonb) is
   'rápido da OS. Devolve só o id.';
 
 -- ===================================================================
--- 5. Os dados do cliente e do veículo de UMA OS (nota fiscal e garantia)
+-- 3. Os dados do cliente e do veículo de UMA OS (nota fiscal e garantia)
 -- ===================================================================
 
 -- Pede a OS com os direitos de quem chama? Não: a função é security definer,
@@ -5775,3 +5713,98 @@ grant execute on function cadastrar_veiculo_rapido(uuid, jsonb) to authenticated
 grant execute on function cliente_e_veiculo_da_ordem(uuid) to authenticated;
 
 insert into schema_versao (versao) values (68) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0069_clientes_so_com_permissao.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0069: Clientes e Veículos só pra quem tem o módulo Clientes — a
+-- segunda metade do lote 4 do TR-04.1 (tarefa #365). A primeira, a 0068, abriu
+-- a janela estreita e as funções do balcão; esta FECHA as duas tabelas.
+--
+-- O PROBLEMA. Quem não tem o módulo Clientes não vê a tela, mas a RLS só
+-- exigia login (0015): com a chave que está no computador dava pra pedir pela
+-- API o cadastro inteiro (telefone, CPF, endereço, aniversário), e o de TODAS
+-- as lojas da empresa, porque `clientes` e `veiculos` são compartilhados.
+--
+-- O que o balcão continua tendo sem o módulo está na 0068 (a janela, o
+-- cadastro rápido e os dados da nota). O cliente "Consumidor" (0064) continua
+-- visível pra qualquer logado: é nele que a venda de balcão nasce.
+--
+-- ORDEM DE SUBIR. Com esta rodada, a versão anterior do programa perde, pra
+-- quem não tem Clientes, o nome do cliente nas listas (o `join` em tabela
+-- fechada devolve `null` calado, §6 item 69 — medido num PostgREST 12), a
+-- emissão de nota e o cadastro rápido. Por isso a linha abaixo: o botão
+-- "Atualizar o banco de todas as empresas" espera os computadores chegarem
+-- na versão que lê pela janela. Se a versão nova sair com outro número,
+-- ajustar aqui.
+-- versao-minima-do-programa: 0.9.54
+--
+-- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
+-- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem
+-- policy filtra a zero linhas sem erro nenhum (§6 item 15).
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ===================================================================
+-- 1. clientes: só o módulo (e o Consumidor, pra qualquer um logado)
+-- ===================================================================
+
+drop policy if exists "clientes_acesso_temporario" on clientes;
+drop policy if exists "clientes_acesso_autenticados" on clientes;
+drop policy if exists "clientes_leitura" on clientes;
+drop policy if exists "clientes_insercao" on clientes;
+drop policy if exists "clientes_alteracao" on clientes;
+drop policy if exists "clientes_exclusao" on clientes;
+
+create policy "clientes_leitura" on clientes
+  for select to authenticated
+  using (
+    (select operador_tem_permissao('clientes'))
+    or id = '00000000-0000-0000-0000-00000000c000'::uuid
+  );
+
+create policy "clientes_insercao" on clientes
+  for insert to authenticated
+  with check ((select operador_tem_permissao('clientes')));
+
+create policy "clientes_alteracao" on clientes
+  for update to authenticated
+  using ((select operador_tem_permissao('clientes')))
+  with check ((select operador_tem_permissao('clientes')));
+
+create policy "clientes_exclusao" on clientes
+  for delete to authenticated
+  using ((select operador_tem_permissao('clientes')));
+
+-- ===================================================================
+-- 2. veiculos: só o módulo
+-- ===================================================================
+
+drop policy if exists "veiculos_acesso_temporario" on veiculos;
+drop policy if exists "veiculos_acesso_autenticados" on veiculos;
+drop policy if exists "veiculos_leitura" on veiculos;
+drop policy if exists "veiculos_insercao" on veiculos;
+drop policy if exists "veiculos_alteracao" on veiculos;
+drop policy if exists "veiculos_exclusao" on veiculos;
+
+create policy "veiculos_leitura" on veiculos
+  for select to authenticated
+  using ((select operador_tem_permissao('clientes')));
+
+create policy "veiculos_insercao" on veiculos
+  for insert to authenticated
+  with check ((select operador_tem_permissao('clientes')));
+
+create policy "veiculos_alteracao" on veiculos
+  for update to authenticated
+  using ((select operador_tem_permissao('clientes')))
+  with check ((select operador_tem_permissao('clientes')));
+
+create policy "veiculos_exclusao" on veiculos
+  for delete to authenticated
+  using ((select operador_tem_permissao('clientes')));
+
+insert into schema_versao (versao) values (69) on conflict do nothing;
