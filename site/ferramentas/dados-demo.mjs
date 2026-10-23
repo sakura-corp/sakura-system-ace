@@ -86,7 +86,9 @@ export const ordens = [
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90), item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
   { numero: 97, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -262, km: 74320,
     itens: [item("peca", "p1", "Pneu 175/70 R14", 4, 369.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 110)] },
-].map((o) => {
+].map(montarOrdem);
+
+function montarOrdem(o) {
   const cli = clientes.find((c) => c.id === o.cliente);
   const v = vlk(o.veiculo);
   return {
@@ -105,7 +107,20 @@ export const ordens = [
     atualizado_por: { nome: "Marcos Andrade" },
     itens: o.itens,
   };
-});
+}
+
+// Clientes que "sumiram" (#684): a última OS faturada da Juliana e do Eduardo
+// é de mais de 6 meses atrás, pra a cena "Clientes que sumiram" ter gente. A
+// OS de agora dos dois (146 e 147) ainda não foi faturada, e só faturada
+// conta (`schemas/clientesSumidos.ts`). Ficam FORA de `ordens`, como os
+// orçamentos: lá dentro elas virariam lançamento de caixa e garantia, e
+// mudariam outras cenas. Só entram na tabela `ordens_servico`.
+const ordensDeQuemSumiu = [
+  { numero: 101, cliente: "c3", veiculo: "v3", status: "faturada", abertura: -220, km: 21400,
+    itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)] },
+  { numero: 91, cliente: "c4", veiculo: "v4", status: "faturada", abertura: -300, km: 52800,
+    itens: [item("peca", "p2", "Pneu 205/60 R16", 4, 598), item("servico", "s1", "Alinhamento e balanceamento", 1, 130)] },
+].map(montarOrdem);
 
 // Uma venda de balcão (item FN-09): mesmo contador de número das OS, sem
 // veículo, no nome do Consumidor. Aparece na aba "Vendas de balcão".
@@ -546,7 +561,7 @@ export const TABELAS = {
     const c = clientes.find((cl) => cl.id === v.cliente_id);
     return { ...v, cliente: c ? { id: c.id, nome: c.nome, telefone: c.telefone } : null };
   }),
-  ordens_servico: [...ordens, ...orcamentos],
+  ordens_servico: [...ordens, ...ordensDeQuemSumiu, ...orcamentos],
   ordens_servico_itens: ordensItens,
   caixa_movimentos: caixa,
   fechamentos_caixa: fechamentosCaixa,
