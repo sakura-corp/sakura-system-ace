@@ -150,7 +150,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, tarde (pelo PC): a proposta de teste saiu do painel
-- A proposta "agendamento online para barbearias" era o teste da `nova-proposta` (sakura-corp/secundarios#2): saiu da aba, e o painel passou a esconder proposta fechada sem decisão (#749, na `main`). A `analisar-proposta` foi ensaiada sem publicar.
-- **Depende dela**: mandar ao Gusta o passo a passo de como propor e conferir o acesso dele ao `secundarios` (#750, texto pronto lá); continua o #746.
+### 23/10/2026, fim da tarde (pelo PC): v0.9.53 publicada e o banco da loja na 67
+- **v0.9.53 publicada** no canal de teste (#748); o PC dela e o Balcão já estão nela. Liberar pro canal normal fica pra depois de uns dias.
+- **O banco da Pneus Amigão estava na 64**, não na 67 (a anotação de 23/10 estava errada; `docs/licoes.md`, item 91). Cópia de segurança tirada e aberta no PC dela; ensaio e aplicar pelo botão: **agora está na 67**.
+- **Juntar peças feito na loja**: 2 de 9 sugestões eram repetidas (PAST FREIO GM DT e PIVO FT); o aviso de peça parecida (#653) conferido no ar. Tarefas novas: #752 (falta o "Sair" quando o perfil não carrega) e #754 ("Não são a mesma peça").
+- **Depende dela**: na #746, o orçamento do tio (#379), a peça avulsa (#655) e liberar a v0.9.53; mandar o passo a passo ao Gusta (#750).
 - **Próxima sessão**: o memorando com o privado (#632, até 26/10).

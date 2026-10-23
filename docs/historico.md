@@ -35,6 +35,11 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 23/10/2026, tarde (pelo PC): a proposta de teste saiu do painel
+- A proposta "agendamento online para barbearias" era o teste da `nova-proposta` (sakura-corp/secundarios#2): saiu da aba, e o painel passou a esconder proposta fechada sem decisão (#749, na `main`). A `analisar-proposta` foi ensaiada sem publicar.
+- **Depende dela**: mandar ao Gusta o passo a passo de como propor e conferir o acesso dele ao `secundarios` (#750, texto pronto lá); continua o #746.
+- **Próxima sessão**: o memorando com o privado (#632, até 26/10).
+
 ### 23/10/2026, meio-dia (pelo PC): leva 3 aprovada, leva 4 aberta
 - **Leva 3 aprovada** (relatório #745): 4 de 4 tarefas, testada pelo Tiago e pela Sofia (#728). Defeitos #741 e #742 consertados na `main` (#743); #744 fica fora de leva. **A leva 4 está aberta.**
 - Painel: "O que testar" com o botão de copiar e "Quem já terminou" (#730).
@@ -44,7 +49,7 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 ### 23/10/2026, madrugada (pelo PC): projetos secundários, da entrevista à main
 - **O Gusta guia os projetos secundários** (entrevista com ela; regra na seção 0 e em `docs/projetos-secundarios.md`): cada um no seu repositório privado, com levas próprias a partir da 1. **A leva 6 volta a ser do SSACE**; o ar-condicionado será projeto principal dela, com repositório e levas próprios.
 - **Seis tarefas na `main`, por uma coordenadora com 5 sessões**: #733 (regras), #732 (propostas em "Decisões"), #731 (aba "Projetos secundários" e "uma por vez no total"), #734 ("Meu progresso", cada um vê o seu); e os repositórios novos `sakura-corp/secundarios` (políticas, skills `nova-proposta` e `analisar-proposta`) e `sakura-corp/modelo-projeto` (o modelo de todo projeto novo).
-- **Depende dela**: conferir no ar a aba e o "Meu progresso" (#739); quando aprovar a 1ª proposta, criar o repositório pelo modelo, com o tópico `projeto-secundario` e a regra da `main` (README do modelo, passo 7). Continuam: o relatório da leva 3 e o memorando (#632, até 26/10). **A v0.9.52 está liberada (22/10, 16h26) e o banco da loja já está na 67** (conferido por ela em 23/10; não foi pelo botão, que não roda desde 30/09).
+- **Depende dela**: conferir no ar a aba e o "Meu progresso" (#739); quando aprovar a 1ª proposta, criar o repositório pelo modelo, com o tópico `projeto-secundario` e a regra da `main` (README do modelo, passo 7). Continuam: o relatório da leva 3 e o memorando (#632, até 26/10). **A v0.9.52 está liberada (22/10, 16h26) e o banco da loja já está na 67** (conferido por ela em 23/10; não foi pelo botão, que não roda desde 30/09). **Errado (corrigido em 23/10, à tarde)**: o banco da loja estava na **64**; a 67 era o banco de teste. Subiu pra 67 pelo botão em 23/10 (`docs/licoes.md`, item 91).
 - **Próxima sessão**: o memorando com o privado (#632, até 26/10).
 
 ### 22/10/2026, noite (pelo PC): levas 4 e 5 postas, leva 3 inteira na main
