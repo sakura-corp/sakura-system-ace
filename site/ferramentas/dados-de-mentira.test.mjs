@@ -181,4 +181,42 @@ describe("dados de mentira: as telas não se contradizem", async () => {
       expect(abertas.map((o) => o.numero), cliente).toEqual([]);
     }
   });
+
+  // Achados do tester da #780 nas fotos (não estavam no levantamento).
+  it("o Início compara com um mês passado de verdade, não com quase nada (o '+999%')", () => {
+    const agora = new Date();
+    const diaDoMes = agora.getDate();
+    const naJanela = (iso, mesesAtras) => {
+      const d = new Date(iso);
+      const ref = new Date(agora.getFullYear(), agora.getMonth() - mesesAtras, 1);
+      return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() <= diaDoMes;
+    };
+    const entradas = TABELAS.caixa_movimentos.filter((m) => m.tipo === "entrada");
+    const soma = (meses) => entradas.filter((m) => naJanela(m.data, meses)).reduce((t, m) => t + m.valor, 0);
+    const variacao = (soma(0) - soma(1)) / soma(1);
+    // Nos primeiros dias do mês, um dia contra um dia pode variar à vontade
+    // (como numa loja de verdade); a partir do dia 5 a soma já se compara.
+    if (diaDoMes >= 5) expect(Math.abs(variacao)).toBeLessThan(0.5);
+    else expect(soma(1)).toBeGreaterThan(0);
+  });
+
+  it("ninguém é atendido de madrugada nem no domingo", () => {
+    const passadas = ordens.filter((o) => o.status === "faturada");
+    const hoje = new Date().toLocaleDateString("sv-SE");
+    for (const o of passadas) {
+      const d = new Date(o.data_abertura);
+      // As de hoje são de hoje, seja que dia for; só não podem ser antes das 8h.
+      if (d.toLocaleDateString("sv-SE") !== hoje) expect(d.getDay(), `OS ${o.numero}`).not.toBe(0);
+      if (d.toLocaleDateString("sv-SE") !== hoje || new Date().getHours() >= 8) {
+        expect(d.getHours(), `OS ${o.numero}`).toBeGreaterThanOrEqual(8);
+      }
+    }
+  });
+
+  it("o dia do recebimento na conta é o mesmo do lançamento no caixa", () => {
+    for (const c of TABELAS.contas_receber.filter((x) => x.caixa_movimento_id)) {
+      const m = TABELAS.caixa_movimentos.find((x) => x.id === c.caixa_movimento_id);
+      expect(new Date(m.data).toLocaleDateString("sv-SE"), c.id).toBe(c.data_recebimento);
+    }
+  });
 });

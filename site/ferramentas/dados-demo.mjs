@@ -14,13 +14,15 @@ const hoje = new Date();
 // maior a fração. Antes ia pro `setDate`, que joga a fração fora e caía em
 // ONTEM: no dia 1º do mês a venda de balcão de "hoje" ia pro mês passado,
 // sumia da lista (que mostra o mês corrente) e a varredura de telas quebrava.
+// A fração conta a partir das 8h (a loja abrindo), pra a OS de hoje não sair
+// aberta de madrugada; antes das 8h, a partir da meia-noite.
 const dia = (n) => {
   const inteiro = Math.trunc(n);
   const fracao = n - inteiro; // de -1 a 0: as frações usadas aqui são todas pra trás
   const d = new Date(hoje);
-  const meiaNoite = new Date(hoje);
-  meiaNoite.setHours(0, 0, 0, 0);
-  d.setTime(d.getTime() + (hoje.getTime() - meiaNoite.getTime()) * fracao);
+  const abertura = new Date(hoje);
+  abertura.setHours(hoje.getHours() >= 8 ? 8 : 0, 0, 0, 0);
+  d.setTime(d.getTime() + (hoje.getTime() - abertura.getTime()) * fracao);
   d.setDate(d.getDate() + inteiro);
   return d.toISOString();
 };
@@ -34,6 +36,12 @@ const diaAs = (n, hora, minuto = 0) => {
   d.setDate(d.getDate() + n);
   d.setHours(hora, minuto, 0, 0);
   return d.toISOString();
+};
+// Como `diaAs`, mas domingo (loja fechada) vira o sábado antes.
+const diaDeLojaAs = (n, hora, minuto = 0) => {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() + n);
+  return diaAs(d.getDay() === 0 ? n - 1 : n, hora, minuto);
 };
 // "AAAA-MM-DD" no fuso local (o mesmo do `diaLocal()` do programa).
 const diaLocal = (iso) => new Date(iso).toLocaleDateString("sv-SE");
@@ -99,9 +107,9 @@ export const ordens = [
   // ter uma linha do tempo de verdade: KM subindo, uma peça ainda na
   // garantia e outra já vencida. São antigas o bastante pra ficar fora do
   // filtro "este mês" da lista de OS e das comissões.
-  { numero: 58, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -75, km: 81300,
+  { numero: 10, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -75, dataAbertura: diaDeLojaAs(-75, 9, 20), dataFechamento: diaDeLojaAs(-75, 11, 5), km: 81300,
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90), item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
-  { numero: 33, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -262, km: 74320,
+  { numero: 5, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -262, dataAbertura: diaDeLojaAs(-262, 9, 20), dataFechamento: diaDeLojaAs(-262, 11, 5), km: 74320,
     itens: [item("peca", "p1", "Pneu 175/70 R14", 4, 369.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 110)] },
 ].map(montarOrdem);
 
@@ -133,14 +141,17 @@ function montarOrdem(o) {
 // com o carro na loja (#777, item 11). Ficam FORA de `ordens`, como os
 // orçamentos: são antigas demais pro caixa e pras garantias.
 const ordensDeQuemSumiu = [
-  { numero: 40, cliente: "c6", veiculo: "v7", status: "faturada", abertura: -220, km: 86400,
+  { numero: 7, cliente: "c6", veiculo: "v7", status: "faturada", abertura: -220, dataAbertura: diaDeLojaAs(-220, 9, 20), dataFechamento: diaDeLojaAs(-220, 11, 5), km: 86400,
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)] },
-  { numero: 27, cliente: "c7", veiculo: "v8", status: "faturada", abertura: -300, km: 109800,
+  { numero: 3, cliente: "c7", veiculo: "v8", status: "faturada", abertura: -300, dataAbertura: diaDeLojaAs(-300, 9, 20), dataFechamento: diaDeLojaAs(-300, 11, 5), km: 109800,
     itens: [item("peca", "p2", "Pneu 205/60 R16", 4, 598), item("servico", "s1", "Alinhamento e balanceamento", 1, 130)] },
 ].map(montarOrdem);
 
-// O movimento dos últimos 26 dias: as OS 73 a 142, já faturadas, no tamanho
-// de um autocenter de verdade (perto de 3 atendimentos por dia). Antes o
+// O movimento das últimas 8 semanas: as OS 11 a 142, já faturadas, no
+// tamanho de um autocenter de verdade (perto de 3 atendimentos por dia, de
+// segunda a sábado, das 8h às 17h). Oito semanas e não quatro: o Início
+// compara o mês com o MESMO pedaço do mês passado, e com só 26 dias de
+// histórico o mês passado quase não tinha venda e o cartão dizia "+999%". Antes o
 // caixa tinha só os VALORES dessas vendas, sem OS nenhuma por trás: o Diário
 // mostrava cliente "—" e lucro "—", o lucro do mês saía igual à venda e
 // Relações → Lucratividade não achava as vendas que o Início somava (#777,
@@ -163,22 +174,36 @@ const BASE = [
   "alinhamento", "doisPneus14", "oleo", "quatroPneus16", "freio", "oleo", "doisPneus14", "alinhamento",
   "amortecedor", "oleoEFreio", "doisPneus16", "oleo", "freio", "quatroPneus14", "alinhamento", "oleo",
 ];
-// 70 atendimentos em 26 dias (perto de 3 por dia), a mesma mistura repetida.
-const SEQUENCIA = Array.from({ length: 70 }, (_, i) => BASE[(i * 7) % BASE.length]);
+// 132 atendimentos, a mesma mistura repetida.
+const SEQUENCIA = Array.from({ length: 132 }, (_, i) => BASE[(i * 7) % BASE.length]);
+// Os dias de loja aberta das últimas 8 semanas (domingo fechado), do mais
+// antigo pro mais novo.
+const DIAS_DE_LOJA = [];
+for (let n = -56; n <= -1; n++) {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() + n);
+  if (d.getDay() !== 0) DIAS_DE_LOJA.push(n);
+}
+// Quantas OS caem em cada dia, pra espalhar as horas dentro dele.
+const diaDaOs = (i) => DIAS_DE_LOJA[Math.floor((i * DIAS_DE_LOJA.length) / SEQUENCIA.length)];
+const porDia = new Map();
+SEQUENCIA.forEach((_, i) => porDia.set(diaDaOs(i), (porDia.get(diaDaOs(i)) ?? 0) + 1));
 // Quem traz cada carro, em rodízio (o Paulo e a Sandra de fora: são os que sumiram).
 const DONOS = [["c1", "v1"], ["c2", "v2"], ["c3", "v3"], ["c4", "v4"], ["c5", "v5"]];
 const historico = SEQUENCIA.map((pacote, i) => {
-  const numero = 73 + i;
-  // Do mais antigo (26 dias atrás) pro mais novo (ontem), com o número subindo junto.
-  const diaDaOs = -26 + Math.floor((i * 26) / SEQUENCIA.length);
-  const hora = 8 + ((i * 5) % 9); // das 8h às 16h
-  const minuto = (i * 17) % 60;
+  const numero = 11 + i;
+  // Do mais antigo pro mais novo (ontem), com o número e a hora subindo juntos.
+  const n = diaDaOs(i);
+  const posicao = SEQUENCIA.slice(0, i).filter((_, j) => diaDaOs(j) === n).length;
+  const minutos = 8 * 60 + Math.floor(((posicao + 0.5) * 8 * 60) / porDia.get(n)); // das 8h às 16h
+  const hora = Math.floor(minutos / 60);
+  const minuto = minutos % 60;
   const [cliente, veiculo] = DONOS[(i * 3) % DONOS.length];
   return montarOrdem({
     numero, cliente, veiculo, status: "faturada",
-    dataAbertura: diaAs(diaDaOs, hora, minuto),
-    dataFechamento: diaAs(diaDaOs, hora + 1, minuto),
-    km: vlk(veiculo).km_atual - 3000 + i * 60,
+    dataAbertura: diaAs(n, hora, minuto),
+    dataFechamento: diaAs(n, hora + 1, minuto),
+    km: vlk(veiculo).km_atual - 3000 + i * 20,
     itens: PACOTES[pacote](),
   });
 });
@@ -284,7 +309,7 @@ const ordemNoCaixa = (o) => ({
 const FORMAS = ["pix", "cartao_credito", "dinheiro", "cartao_debito"];
 const NOME_DA_FORMA = { pix: "Pix", cartao_credito: "Cartão de crédito", dinheiro: "Dinheiro", cartao_debito: "Cartão de débito" };
 const vendasNoCaixa = [...historico, ...ordens]
-  .filter((o) => o.status === "faturada" && o.id !== OS_A_RECEBER && o.data_fechamento > dia(-30))
+  .filter((o) => o.status === "faturada" && o.id !== OS_A_RECEBER && o.data_fechamento > dia(-60))
   .map((o, i) => {
     const forma = o.tipo === "venda_balcao" ? "dinheiro" : FORMAS[i % FORMAS.length];
     o.forma_pagamento = NOME_DA_FORMA[forma];
@@ -484,7 +509,7 @@ export const whatsappMensagens = [
 export const contasReceber = [
   { id: "cr1", loja_id: LOJA, cliente_id: "c2", ordem_servico_id: "os145", descricao: "Faturamento da OS 145", valor: 2588, vencimento: diaCurto(6), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-0.3), cliente: { nome: "Transportes Boa Vista Ltda" } },
   { id: "cr2", loja_id: LOJA, cliente_id: "c4", ordem_servico_id: null, descricao: "Serviço faturado no fim do mês (frota)", valor: 1340, vencimento: diaCurto(-3), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-18), cliente: { nome: "Eduardo Salles" } },
-  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-41), status: "recebido", data_recebimento: diaCurto(-40), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-70), cliente: { nome: "Ricardo Menezes" } },
+  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-41), status: "recebido", data_recebimento: diaLocal(diaAs(-40, 10, 40)), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-70), cliente: { nome: "Ricardo Menezes" } },
 ];
 
 const competenciaDe = (iso) => diaLocal(iso).slice(0, 8) + "01";
@@ -518,8 +543,9 @@ const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }
 // Notas ter uma cancelada sem a OS ficar devendo nota.
 const notasDasOrdens = [];
 {
-  let nfce = 180;
-  let nfse = 70;
+  // Numeração das notas longe da das OS, pra "NFS-e 141" não parecer a OS 141.
+  let nfce = 2100;
+  let nfse = 600;
   const faturadas = [...historico, ...ordens]
     .filter((o) => o.status === "faturada")
     .sort((a, b) => (a.data_fechamento < b.data_fechamento ? -1 : 1));
@@ -542,15 +568,15 @@ const notasDasOrdens = [];
 export const notasFiscais = [
   ...notasDasOrdens,
   // XML que o contador mandou à mão, sem OS: é o "Enviada à mão" da lista.
-  nota({ id: "nf-manual-1", tipo: "nfe", competencia: mesCompetencia(-1), numero: 178, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
-  nota({ id: "nf-manual-2", tipo: "nfse", competencia: mesCompetencia(-1), numero: 69, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
+  nota({ id: "nf-manual-1", tipo: "nfe", competencia: mesCompetencia(-1), numero: 2051, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
+  nota({ id: "nf-manual-2", tipo: "nfse", competencia: mesCompetencia(-1), numero: 571, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
 ];
 
 export const auditoria = [
   { id: "au1", tabela: "pecas", registro_id: "p1", acao: "atualizar", operador_id: OP, criado_em: dia(-0.1), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Pneu 175/70 R14", preco_venda: 369.9 }, dados_depois: { descricao: "Pneu 175/70 R14", preco_venda: 389.9 } },
   { id: "au2", tabela: "ordens_servico", registro_id: "os146", acao: "atualizar", operador_id: OP, criado_em: dia(-0.4), operador_nome: "Marcos Andrade", dados_antes: { numero: 146, status: "em_andamento" }, dados_depois: { numero: 146, status: "concluida" } },
-  { id: "au3", tabela: "contas_pagar", registro_id: "cp9", acao: "excluir", operador_id: OP, criado_em: dia(-1.2), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Assinatura de software (duplicada)", valor: 149 }, dados_depois: null },
-  { id: "au4", tabela: "clientes", registro_id: "c3", acao: "atualizar", operador_id: OP, criado_em: dia(-2.1), operador_nome: "Marcos Andrade", dados_antes: { nome: "Juliana Prado", telefone: "(16) 98111-0000" }, dados_depois: { nome: "Juliana Prado", telefone: "(16) 98111-2233" } },
+  { id: "au3", tabela: "contas_pagar", registro_id: "cp9", acao: "excluir", operador_id: OP2, criado_em: diaAs(-1, 15, 12), operador_nome: "Bruna Tavares", dados_antes: { descricao: "Assinatura de software (duplicada)", valor: 149 }, dados_depois: null },
+  { id: "au4", tabela: "clientes", registro_id: "c3", acao: "atualizar", operador_id: OP2, criado_em: diaAs(-2, 10, 47), operador_nome: "Bruna Tavares", dados_antes: { nome: "Juliana Prado", telefone: "(16) 98111-0000" }, dados_depois: { nome: "Juliana Prado", telefone: "(16) 98111-2233" } },
   { id: "au5", tabela: "operadores", registro_id: OP2, acao: "atualizar", operador_id: OP, criado_em: dia(-5), operador_nome: "Marcos Andrade", dados_antes: { usuario: "bruna", admin: false }, dados_depois: { usuario: "bruna", admin: true } },
 ];
 
