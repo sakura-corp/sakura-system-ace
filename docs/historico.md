@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 23/10/2026, noite (4): PR #767 mesclado, #706 e #708 no modelo, #762 fechada
+- **#767 do Gusta** (fotos, cena "Clientes que sumiram") revisado pela regra nova e mesclado; o #771 também.
+- **#706 e #708 reescritas no modelo** com as decisões dela (0071 pelo banco; LE×LD diferentes, "82T" é a mesma peça, "(inativa)" no aviso). A leva 4 vai a 48 h e as duas podem ser pegas.
+- **#762 fechada**: NFS-e 30 emitida depois da `0070`; o "Ver PDF" consulta a Focus e ela não devolve PDF (Araraquara guarda só no portal), o que é o normal.
+- **Depende dela**: o memorando (#632, até 26/10) na sessão "Questão do memorando" (falta a testemunha nova); no dia de teste, publicar a 0.9.55, testar a impressão (Balcão no teste só nesse dia) e liberar; aplicar a 0071 no banco de teste quando o PR da #706 chegar.
+- **Próxima sessão**: o memorando. Seguem a #770, a #765, a #746 e a #750.
+
 ### 23/10/2026, noite (3): loja na 70, Electron 40 na main e "testar de uma vez"
 - **Banco da Pneus Amigão na 70** (#762, passo 5): o Balcão foi reiniciado por acesso remoto → 0.9.54; ensaio ✅ e aplicação. OS e cliente novo conferidos na loja.
 - **Electron 40** (#763 do Gusta) e o número **0.9.55** (#768) na `main`. **Ainda não publicada.**

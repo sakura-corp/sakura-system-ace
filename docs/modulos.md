@@ -703,7 +703,11 @@ Quatro coisas que valem saber:
   Cuidados cobertos por teste: nome repetido no mesmo mês vira `nota (2).xml` (senão o
   descompactador perde um dos dois), nome com acento sai certo no Windows, e o download é feito
   em lotes de 5 pra um mês cheio não disparar dezenas de requisições juntas. Botão "Versão para o cliente" interpreta o XML
-  e monta um recibo HTML (não é o DANFE oficial, sem código de barras/QR code). **Botão "Cancelar
+  e monta um recibo HTML (não é o DANFE oficial, sem código de barras/QR code). Na NFS-e do Giap
+  (Araraquara), o recibo traz o link "Ver documento oficial completo", que desde 23/10 (#774)
+  abre no navegador do computador (`src/schemas/linkExterno.ts`: só `https` e `*.giap.com.br`;
+  o resto continua negado). No PC o link baixa o PDF oficial; **no celular do cliente não abre**
+  (#773: a ideia é o programa guardar esse PDF junto com a nota). **Botão "Cancelar
   nota"**: até aqui, cancelar uma nota emitida automaticamente (NFC-e/NFS-e via
   Focus NFe) só dava pra fazer direto no painel deles — as funções `cancelarNFCe`/`cancelarNFSe`
   já existiam em `lib/focusNfe.ts`, mas nenhuma tela chamava. Agora aparece um botão "Cancelar
