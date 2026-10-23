@@ -69,7 +69,8 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
     confere todas).
 
   **A ordem da lista** (#776): agrupada por estado e, dentro de cada grupo, pela linha opcional
-  `Prioridade: N` do cabeçalho (1º, 2º…; sem ela, no fim, pela ordem do número). Aviso, nunca tranca:
+  `Prioridade: N` do cabeçalho (1º, 2º…; sem ela, no fim, pela ordem do número; o título diz "em
+  ordem de prioridade" quando alguma tem a linha). Aviso, nunca tranca:
   pegar a 3ª antes da 1ª é permitido, e o cartão só avisa que há uma de prioridade maior livre
   (regras em `docs/tarefas.md`).
 

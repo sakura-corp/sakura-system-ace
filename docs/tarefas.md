@@ -111,11 +111,12 @@ Regras do modelo:
   só entra, sempre com estas palavras, quando a tarefa é **pequena demais** pra valer abrir o
   caderno (trocar um texto, conferir um número, ajuste de uma linha). Nunca `Second brain: precisa`.
   O painel não lê esta linha; quem lê é a sessão.
-- **`Prioridade: N`** (Sofia, 23/10, #776), **opcional**: N é um número inteiro (1, 2, 3…), e **1 é
+- **`Prioridade: N`** (Sofia, 23/10, #776), **opcional**: N é um número inteiro de 1 a 999, e **1 é
   a mais importante**. Vem logo abaixo das cinco linhas (e da `Second brain`, se houver), no mesmo
   bloco. Quem põe é a Sofia, ao montar a leva. O painel mostra a lista **agrupada por estado** e,
   dentro de cada grupo, nessa ordem, com o selinho "1º", "2º"…; tarefa sem prioridade vai pro fim
-  do grupo, pela ordem do número da issue; empate também vai pelo número. **Aviso, nunca tranca**:
+  do grupo, pela ordem do número da issue; empate também vai pelo número. O título vira "Tarefas
+  (N), em ordem de prioridade" quando pelo menos uma tarefa da leva tem a linha. **Aviso, nunca tranca**:
   a linha faltando, ou escrita errada (`Prioridade: alta`), é ignorada, **não** deixa a tarefa
   "incompleta" e não impede pegar. Pegar a 3ª antes da 1ª é permitido: o painel só avisa, embaixo
   do "Pegar tarefa", que há uma de prioridade maior livre.

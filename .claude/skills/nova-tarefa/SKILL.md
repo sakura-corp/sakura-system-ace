@@ -27,7 +27,7 @@ Fale **sempre em português simples**. O formato, as etiquetas e a tabela de mod
 - O cabeçalho com as **cinco linhas fixas**, nesta ordem, uma por linha. Se a Sofia disse que não
   precisa do second brain, uma sexta logo abaixo: `Second brain: não precisa` (com estas palavras).
 - **`Prioridade: N`** (opcional, #776): só quando a Sofia disser a ordem das tarefas da leva. Vem
-  por último no cabeçalho, no mesmo bloco; N inteiro, 1 é a mais importante. Nunca inventar a
+  por último no cabeçalho, no mesmo bloco; N inteiro de 1 a 999, 1 é a mais importante. Nunca inventar a
   ordem: sem a ordem dela, sem a linha. Escrita errada não tranca nada (o painel ignora), mas confira.
 - **Um chefe só** (o da maior parte do trabalho); os outros em `Ajudantes`, cada um com o porquê.
 - **Etapas e modelos**: cada etapa com quem faz e a **categoria** (forte, médio, rápido), nunca o
@@ -49,6 +49,6 @@ a issue, pôr as etiquetas e, ao reescrever, **tirar a `guia`** e escrever um co
 
 ## 4. Conferir
 - O cabeçalho lê certo (as cinco linhas, com os nomes exatos; a sexta, se houver, é exatamente
-  `Second brain: não precisa`; a `Prioridade`, se houver, é um número inteiro de 1 em diante).
+  `Second brain: não precisa`; a `Prioridade`, se houver, é um número inteiro de 1 a 999).
 - Cada número de `Depende de` existe.
 - A etiqueta `chefe:` bate com a linha `Chefe:`.
