@@ -10,7 +10,8 @@
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
 a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
-(clientes só com o módulo, tarefa #365) em 23/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+(clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
+tarefa #368) em 23/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -220,8 +221,9 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   (a) **a coluna antiga NÃO sai aqui**, pela regra de "Voltar uma versão" (seção 9): se a versão
   do porteiro sair ruim e for preciso voltar pra `v0.9.40`, aquela versão lê o token da coluna
   antiga, e emitir nota não pode parar por causa de um rollback. **A proteção de verdade chega
-  com a parte 2**, que limpa a coluna — só depois de uma nota emitida e uma cancelada pelo
-  porteiro. Até lá o token continua legível pela API, como sempre foi;
+  com a parte 2** (a `0070`, abaixo), que limpa a coluna — só depois de uma nota emitida e uma
+  cancelada pelo porteiro (cumprido em 28/09). Até ela ser aplicada, o token continua legível
+  pela API, como sempre foi;
   (b) **a cópia é `on conflict do nothing`**: rodar de novo depois de o admin trocar o token pelo
   cofre não passa o antigo por cima do novo (testado);
   (c) **o `revoke ... from public, anon` das três funções é a tranca** — sem ele, `security
@@ -490,6 +492,14 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   abrir uma OS com qualquer cliente) e juntar CPF e endereço; a leitura não fica na auditoria.
   Teste em `supabase/scripts/testar-clientes-permissao.sql` (as duas metades), conferido com 16
   mutações, todas vermelhas.
+- `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
+  `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
+  (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
+  coluna (`on conflict do nothing`: o do cofre nunca é sobrescrito), então nenhuma loja para de
+  emitir. Declara `-- versao-minima-do-programa: 0.9.41` (abaixo disso o programa lê o token da
+  coluna). **A coluna não sai aqui**: só numa versão seguinte, pela regra de "Voltar uma versão".
+  A limpeza passa pela auditoria com o token mascarado (`***`, máscara da `0053`). Teste em
+  `supabase/scripts/testar-porteiro-focus-nfe.sql`, que roda a `0070` de verdade (`\ir`), duas vezes.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -713,8 +723,9 @@ outro projeto Supabase do zero (ver seção 9).
 - **`configuracoes_fiscais_loja`**: 1 linha **por loja** (`loja_id` é a PK) com cnpj, razao_social,
   nome_fantasia, inscricao_estadual, inscricao_municipal, regime_tributario, endereço da loja,
   telefone, email, focus_nfe_ambiente (`homologacao`/`producao`) e `focus_nfe_token` — **que o
-  app não lê mais desde o TR-04.2** (o token vive em `segredos_fiscais_loja`; esta coluna é só a
-  cópia antiga guardada pra uma volta de versão, e a parte 2 do item a limpa). Por isso
+  app não lê mais desde o TR-04.2** (o token vive em `segredos_fiscais_loja`; a coluna era a
+  cópia antiga guardada pra uma volta de versão, **vazia desde a `0070`**, e sai numa versão
+  seguinte). Por isso
   `buscarConfiguracaoFiscal()` lista as colunas uma a uma, **nunca `select("*")`**. Reaproveitada
   pelo cabeçalho do documento de garantia. Desde a migration `0049` guarda também
   `competencia_aliquota_confirmada` e `aliquota_passo_a_passo`, do lembrete mensal da alíquota

@@ -15,7 +15,7 @@
 //   - e, do outro lado, que ela NÃO quebrou o que o app precisa: o estilo
 //     que o React escreve no elemento, e os documentos de garantia/recibo/
 //     DANFE, que aparecem dentro de `iframe`;
-//   - a ponte da Focus NFe recusa endereço que não seja a API dela;
+//   - a ponte antiga da Focus NFe (`fetchComAuth`) não volta a existir;
 //   - o canal de atualização escolhido na tela chega no disco, e o
 //     atualizador procura no canal que estava gravado (item TR-09.1);
 //   - nada navega pra fora do app nem abre janela nova.
@@ -109,7 +109,6 @@ try {
     "canalAtualizacao",
     "conexao",
     "diagnostico",
-    "fetchComAuth",
     "identidadeComputador",
     "lerLogs",
     "registrarErro",
@@ -121,6 +120,15 @@ try {
   conferir(
     "a ponte tem todas as funções esperadas",
     CHAVES_ESPERADAS.every((chave) => ponte.chaves.includes(chave)),
+    `veio: ${ponte.chaves.join(", ")}`,
+  );
+  // A ponte antiga da Focus NFe (`fetchComAuth`) saiu na tarefa #368: o
+  // token mora no cofre e quem fala com a Focus é o porteiro (Edge Function
+  // focus-nfe). Uma requisição autenticada aberta pra tela é exatamente o que
+  // não pode voltar sem ninguém perceber.
+  conferir(
+    "a ponte antiga da Focus NFe (fetchComAuth) não existe mais",
+    !ponte.chaves.includes("fetchComAuth"),
     `veio: ${ponte.chaves.join(", ")}`,
   );
   conferir(
@@ -247,44 +255,10 @@ try {
     JSON.stringify(aparencia.blob),
   );
 
-  // --- 7. A ponte da Focus NFe recusa endereço estranho? -----------------
-  const RECUSAR = [
-    "https://api.focusnfe.com.br.dominio-de-alguem.test/v2/nfce",
-    "http://api.focusnfe.com.br/v2/nfce",
-    "https://exemplo.test/roubar",
-    "file:///etc/passwd",
-    "",
-  ];
-  const respostas = await pagina.evaluate(async (enderecos) => {
-    const saida = [];
-    for (const url of enderecos) {
-      try {
-        await window.sakuraApp.fetchComAuth({ url, metodo: "GET", token: "naopodevazar-token" });
-        saida.push({ url, motivo: "passou" });
-      } catch (erro) {
-        saida.push({ url, motivo: String(erro?.message ?? erro) });
-      }
-    }
-    return saida;
-  }, RECUSAR);
-  for (const { url, motivo } of respostas) {
-    // Procurar a mensagem EXATA da ponte, e não um "recusado" qualquer: a
-    // validação de remetente recusa com uma mensagem que também tem a
-    // palavra "recusado", então um teste frouxo aqui ficaria verde no caso
-    // em que o IPC parou de funcionar por inteiro — que é justamente o
-    // desastre que este teste deveria denunciar.
-    conferir(
-      `a ponte recusa ${url || "(endereço vazio)"}`,
-      /só fala com a API da Focus NFe/.test(motivo),
-      motivo,
-    );
-  }
-
-  // --- 7b. ...e o IPC legítimo continua funcionando ----------------------
+  // --- 7. O IPC legítimo continua funcionando ----------------------------
   //
   // O outro lado da moeda da checagem de remetente: se ela passasse a
-  // recusar a própria tela, nada acima ficaria vermelho (as recusas
-  // continuariam recusando) e o app chegaria na loja sem diagnóstico, sem
+  // recusar a própria tela, o app chegaria na loja sem diagnóstico, sem
   // registro de erro e sem conseguir salvar a conexão do banco.
   const diagnostico = await pagina.evaluate(async () => {
     try {
