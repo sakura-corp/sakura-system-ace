@@ -146,4 +146,45 @@ describe("lerCabecalho", () => {
     const r = lerCabecalho(completo().replace(/^Ajudantes: (.*)$/m, "**Ajudantes: $1**"));
     expect(r.ajudantes).toBe("tester (conferir o Pronto quando)");
   });
+
+  describe("Prioridade (#776): linha opcional, aviso e nunca tranca", () => {
+    const comPrioridade = (linha: string) => completo().replace("Sessões filhas: não\n", `Sessões filhas: não\n${linha}\n`);
+
+    it("Prioridade: N (inteiro ≥ 1) é lida, e o cabeçalho continua completo", () => {
+      const r = lerCabecalho(comPrioridade("Prioridade: 1"), { etiquetaChefe: "frontend" });
+      expect(r.prioridade).toBe(1);
+      expect(r.falta).toEqual([]);
+      expect(lerCabecalho(comPrioridade("**Prioridade:** 12")).prioridade).toBe(12);
+      expect(lerCabecalho(comPrioridade("- prioridade: 3")).prioridade).toBe(3);
+    });
+
+    it("sem a linha: sem prioridade, e nada vai pra falta", () => {
+      const r = lerCabecalho(completo(), { etiquetaChefe: "frontend" });
+      expect(r.prioridade).toBeUndefined();
+      expect("prioridade" in r).toBe(false);
+      expect(r.falta).toEqual([]);
+    });
+
+    it.each(["alta", "0", "-1", "1,5", "1.5", "2 ou 3", "", "1º", "9999999"])(
+      "escrita errada (Prioridade: %s) é ignorada e a tarefa NÃO fica incompleta",
+      (valor) => {
+        const r = lerCabecalho(comPrioridade(`Prioridade: ${valor}`), { etiquetaChefe: "frontend" });
+        expect(r.prioridade).toBeUndefined();
+        expect(r.falta).toEqual([]);
+      },
+    );
+
+    it("depois da linha Second brain também vale; e a ordem das cinco linhas não muda por causa dela", () => {
+      const r = lerCabecalho(comPrioridade("Second brain: não precisa\nPrioridade: 2"), { etiquetaChefe: "frontend" });
+      expect(r.prioridade).toBe(2);
+      expect(r.falta).toEqual([]);
+      // Prioridade no meio das cinco não mexe na conferência de ordem.
+      const meio = completo().replace("Estimativa:", "Prioridade: 4\nEstimativa:");
+      expect(lerCabecalho(meio).falta).toEqual([]);
+    });
+
+    it("Prioridade fora do cabeçalho (depois da linha em branco) não vale", () => {
+      expect(lerCabecalho(completo() + "\nPrioridade: 1").prioridade).toBeUndefined();
+    });
+  });
 });

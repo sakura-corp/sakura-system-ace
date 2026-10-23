@@ -10,6 +10,7 @@ Ajudantes: <outro chefe (para quê), ou "nenhum">
 Estimativa: <N> h
 Depende de: <#número, #número, ou "nada">
 Sessões filhas: não
+Prioridade: <opcional: 1, 2, 3… (1 é a mais importante); apague a linha se não tiver ordem>
 
 ## Pra que serve
 <uma ou duas frases>

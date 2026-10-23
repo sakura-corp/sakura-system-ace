@@ -24,13 +24,16 @@ export function ListaDeTarefas({ tarefas, login, aoMudar, levaAberta = true }: P
   // (ou perder os botões, se outra pessoa pegou) e o aviso vai junto com ela.
   const [aviso, setAviso] = useState<{ numero: number; texto: string } | null>(null);
   // Uma lista só, na ordem dos grupos (o estado está no selo de cada linha; o contador dá os totais).
-  const emOrdem = agruparPorEstado(tarefas).flatMap((g) => g.tarefas);
+  // Dentro de cada grupo, pela prioridade (#776).
+  const emOrdem = agruparPorEstado(tarefas).flatMap((g) => [...g.tarefas].sort(porPrioridade));
+  const comPrioridade = tarefas.some((t) => t.prioridade !== undefined);
   const dica = tarefas.some((t) => temBotoesDoClaude(t, login));
   return (
     <section aria-labelledby="titulo-das-tarefas" className="overflow-hidden rounded-xl border border-borda bg-cartao">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pb-2 pt-4 sm:px-5">
         <h2 id="titulo-das-tarefas" className="text-[15px] font-semibold">
           Tarefas <span className="tabular-nums">({tarefas.length})</span>
+          {comPrioridade && ", em ordem de prioridade"}
         </h2>
         <p className="text-[13px] text-texto-2">os botões aparecem só na tarefa de quem olha</p>
         {/* Uma vez na tela, não em cada tarefa (#547). */}
@@ -64,6 +67,29 @@ export function ListaDeTarefas({ tarefas, login, aoMudar, levaAberta = true }: P
       </ul>
     </section>
   );
+}
+
+/**
+ * A ordem dentro de um grupo (#776): a prioridade (1 é a mais importante); sem prioridade vai pro fim.
+ * Empate, e entre as sem prioridade, pela ordem do número da issue.
+ */
+export function porPrioridade(a: Tarefa, b: Tarefa): number {
+  const pa = a.prioridade ?? Infinity;
+  const pb = b.prioridade ?? Infinity;
+  if (pa !== pb) return pa < pb ? -1 : 1;
+  return a.numero - b.numero;
+}
+
+/**
+ * Aviso, nunca tranca (#776): a tarefa de prioridade maior (a mais alta) que quem olha também poderia pegar agora.
+ * Undefined = nenhuma. Só serve pra um aviso curto embaixo do "Pegar tarefa": pegar a 3ª antes da 1ª é permitido.
+ */
+function prioridadeMaiorLivre(tarefa: Tarefa, tarefas: Tarefa[], login: string | undefined): Tarefa | undefined {
+  const minha = tarefa.prioridade ?? Infinity;
+  return tarefas
+    .filter((t) => t.numero !== tarefa.numero && t.prioridade !== undefined && t.prioridade < minha)
+    .filter((t) => motivoPraNaoPegar(t, tarefas, login) === null)
+    .sort(porPrioridade)[0];
 }
 
 /** A tarefa tem os botões do Claude pra quem olha (a mesma conta do `BotoesDaTarefa`). */
@@ -225,6 +251,7 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
   // Sem dono: Pegar tarefa.
   const motivo = !levaAberta ? "esta tarefa não está numa leva aberta" : motivoPraNaoPegar(tarefa, tarefas, login);
   if (motivo === null) {
+    const maior = prioridadeMaiorLivre(tarefa, tarefas, login);
     return (
       <div className={className}>
         <div className="flex flex-wrap gap-2">
@@ -233,9 +260,14 @@ function BotoesDaTarefa({ tarefa, tarefas, login, aoMudar, levaAberta, planoB, a
               Pegando…<span className="sr-only"> (tarefa #{numero})</span>
             </button>
           ) : (
-            <button type="button" onClick={() => agir("pegar")} className={BOTAO_SECUNDARIO}>
+            <button type="button" onClick={() => agir("pegar")} aria-describedby={maior ? `prioridade-${numero}` : undefined} className={BOTAO_SECUNDARIO}>
               Pegar tarefa<span className="sr-only"> (tarefa #{numero})</span>
             </button>
+          )}
+          {maior && (
+            <p id={`prioridade-${numero}`} className="basis-full break-words text-xs text-texto-2">
+              a #{maior.numero} ({maior.prioridade}º) tem prioridade maior e está livre
+            </p>
           )}
         </div>
       </div>
@@ -387,6 +419,11 @@ function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, 
         rel="noopener noreferrer"
         className="min-w-0 font-medium leading-snug [grid-area:t] [overflow-wrap:anywhere] hover:underline focus-visible:outline-offset-2"
       >
+        {t.prioridade !== undefined && (
+          <span className="mr-2 inline-block rounded-md border border-borda px-1.5 align-[1px] text-xs font-semibold tabular-nums text-texto">
+            {t.prioridade}º<span className="sr-only"> de prioridade</span>
+          </span>
+        )}
         {t.titulo}
         <span className="sr-only"> (abre no GitHub, em aba nova)</span>
       </a>

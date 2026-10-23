@@ -299,6 +299,31 @@ describe("cabeçalho no cartão (#536)", () => {
   });
 });
 
+describe("prioridade no cartão (#776)", () => {
+  const comPrioridade = (n: number, linha: string) => {
+    const i = daLeva(n);
+    return { ...i, body: i.body!.replace("\n\n## Pra que serve", `\n${linha}\n\n## Pra que serve`) };
+  };
+
+  it("Prioridade: 2 chega na tarefa, e ela continua completa", () => {
+    const t = tarefaDaIssue(comPrioridade(10, "Prioridade: 2"));
+    expect(t.prioridade).toBe(2);
+    expect("incompleta" in t).toBe(false);
+  });
+
+  it("sem a linha, ou escrita errada: sem prioridade e NÃO incompleta", () => {
+    for (const t of [tarefaDaIssue(daLeva(10)), tarefaDaIssue(comPrioridade(10, "Prioridade: alta"))]) {
+      expect("prioridade" in t).toBe(false);
+      expect("incompleta" in t).toBe(false);
+    }
+  });
+
+  it("projeto secundário também leva a prioridade", () => {
+    const t = tarefaDaIssue(comPrioridade(10, "Prioridade: 1"), "ar-condicionado");
+    expect(t).toMatchObject({ prioridade: 1, repositorio: "ar-condicionado" });
+  });
+});
+
 describe("consultaDasDependencias (#536): só inteiros validados entram no texto", () => {
   it("monta um apelido d<N> por número, dentro de repository(owner:$dono, name:$nome)", () => {
     const q = consultaDasDependencias([7, 12]);

@@ -8,6 +8,8 @@ export type Cabecalho = {
   estimativaHoras?: number;
   dependeDe: number[];
   sessoesFilhas?: boolean;
+  /** A linha opcional `Prioridade: N` (#776): inteiro de 1 a 999, 1 é a mais importante. Escrita errada = sem prioridade. */
+  prioridade?: number;
   /** O que não está certo no cabeçalho, em frases curtas. Vazio = cabeçalho completo. */
   falta: string[];
 };
@@ -24,6 +26,9 @@ const LINHAS = [
 ] as const;
 
 type Chave = (typeof LINHAS)[number]["chave"];
+
+// A linha opcional Prioridade (#776): fica fora das 5, então nunca entra em `falta` nem na conferência de ordem.
+const REGEX_DA_PRIORIDADE = /^[ \t>*_-]*prioridade[*_]*[ \t]*:[*_]*[ \t]*(.*)$/i;
 
 // Aceita negrito/marcador no começo (`**Chefe**: x`, `- Chefe: x`) e o `:` dentro do negrito (`**Chefe:** x`).
 const REGEX_DAS_LINHAS = LINHAS.map((l) => ({
@@ -82,6 +87,13 @@ export function lerCabecalho(texto: string | null | undefined, etiqueta?: Confer
     const linhas = linhasDoCabecalho(typeof texto === "string" ? texto : "");
     const achadas = new Map<Chave, { posicao: number; valor: string; linha: string }>();
     linhas.forEach((linha, posicao) => {
+      const prioridade = REGEX_DA_PRIORIDADE.exec(linha);
+      if (prioridade) {
+        // Aviso, nunca tranca: só um inteiro de 1 a 999 vale; o resto é ignorado em silêncio.
+        const valor = prioridade[1].replace(/[*_]/g, "").trim();
+        if (resultado.prioridade === undefined && /^\d{1,3}$/.test(valor) && Number(valor) >= 1) resultado.prioridade = Number(valor);
+        return;
+      }
       for (const { chave, regex } of REGEX_DAS_LINHAS) {
         const m = regex.exec(linha);
         if (m) {

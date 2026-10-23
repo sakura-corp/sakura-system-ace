@@ -43,7 +43,8 @@ Nada de "Precisa da Sofia?" escondido no meio do texto: o painel não enxerga.
 ## O modelo único de issue
 
 O cabeçalho são **linhas fixas**, uma por linha, exatamente com estes nomes (o painel vai ler). A
-sexta, `Second brain`, é **opcional**: só aparece quando é `não precisa` (regras abaixo).
+sexta, `Second brain`, é **opcional**: só aparece quando é `não precisa` (regras abaixo). A
+`Prioridade` também é **opcional** e vem por último, no mesmo bloco (regras abaixo).
 
 ```markdown
 Chefe: backend
@@ -52,6 +53,7 @@ Estimativa: 4 h
 Depende de: #386, #507
 Sessões filhas: não
 Second brain: não precisa
+Prioridade: 1
 
 ## Pra que serve
 <uma ou duas frases: o que muda pra loja (ou pro painel) e por quê>
@@ -109,6 +111,15 @@ Regras do modelo:
   só entra, sempre com estas palavras, quando a tarefa é **pequena demais** pra valer abrir o
   caderno (trocar um texto, conferir um número, ajuste de uma linha). Nunca `Second brain: precisa`.
   O painel não lê esta linha; quem lê é a sessão.
+- **`Prioridade: N`** (Sofia, 23/10, #776), **opcional**: N é um número inteiro de 1 a 999, e **1 é
+  a mais importante**. Vem logo abaixo das cinco linhas (e da `Second brain`, se houver), no mesmo
+  bloco. Quem põe é a Sofia, ao montar a leva. O painel mostra a lista **agrupada por estado** e,
+  dentro de cada grupo, nessa ordem, com o selinho "1º", "2º"…; tarefa sem prioridade vai pro fim
+  do grupo, pela ordem do número da issue; empate também vai pelo número. O título vira "Tarefas
+  (N), em ordem de prioridade" quando pelo menos uma tarefa da leva tem a linha. **Aviso, nunca tranca**:
+  a linha faltando, ou escrita errada (`Prioridade: alta`), é ignorada, **não** deixa a tarefa
+  "incompleta" e não impede pegar. Pegar a 3ª antes da 1ª é permitido: o painel só avisa, embaixo
+  do "Pegar tarefa", que há uma de prioridade maior livre.
 - **Nada privado**: preço, sócio, dado pessoal ou credencial nunca entram (o repositório é público).
 - Defeito achado de passagem continua no formato da #425 enquanto não entra numa leva; ao entrar,
   vira este modelo (o "o que acontece / por quê" vai em "Pra que serve").
