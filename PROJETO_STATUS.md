@@ -150,8 +150,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, noite: dois PRs do Gusta, a faixa amarela e o botão em partes
-- **Mesclados**: #753 (clientes e veículos só com o módulo, `0068`/`0069`; as 4 respostas estão na revisão), #759 (token antigo da Focus, `0070`), #758 (a faixa amarela não aparece quando a migration espera os computadores, #757) e #761 (o botão aplica em partes, #760).
-- **Nada aplicado nem publicado**: a loja segue na 67, na v0.9.53.
-- **Depende dela**: a **#762** (ensaiar e aplicar a `0068` → publicar e liberar a 0.9.54 → aplicar `0069` e `0070`; antes, conferir se o login do balcão tem o módulo Clientes). Até lá, nunca marcar "aplicar mesmo com computadores atrasados". Seguem: a #746, o passo a passo do Gusta (#750).
-- **Próxima sessão**: o ensaio da #762; o memorando com o privado (#632, até 26/10).
+### 23/10/2026, noite (2): a 0068 na loja e a v0.9.54 liberada (#762, passos 1 a 4)
+- **Banco da Pneus Amigão na 68** (ensaio e aplicação pelo botão; a `0069` e a `0070` esperam os 2 computadores).
+- **v0.9.54 publicada e liberada** (#764, só o número); testada no PC dela com o login da loja. Os dois logins são administradores: a `0069` não tira nada do balcão.
+- **Depende dela**: a **#762, passos 5 e 6** (com o Balcão e o DESKTOP-PKJ2A3B na 0.9.54, ensaiar e aplicar `0069` e `0070` → loja na 70; conferir OS, cliente e nota de teste). Até lá, nunca marcar "aplicar mesmo com computadores atrasados".
+- **PR #763 do Gusta (Electron 40)**: revisado e bom; espera a #762 e sai sozinho como 0.9.55 (aviso no PR). Olhar o check "Largura nas telas". Tarefa nova: #765 (Node 22.12).
+- **Próxima sessão**: o passo 5 da #762; o memorando com o privado (#632, até 26/10). Seguem a #746 e a #750.
