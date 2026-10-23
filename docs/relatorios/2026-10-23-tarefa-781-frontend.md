@@ -3,7 +3,7 @@
 - **Tarefa**: #781, margem com vírgula e a barra da OS cobrindo campos
 - **Chefe**: frontend
 - **Data**: 2026-10-23
-- **PR**: PR_AQUI
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/788
 - **Jeito**: aberta pela /coordenar
 
 ## O que cada agente fez
