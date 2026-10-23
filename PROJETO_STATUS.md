@@ -150,9 +150,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, fim da tarde (pelo PC): v0.9.53 publicada e o banco da loja na 67
-- **v0.9.53 publicada** no canal de teste (#748); o PC dela e o Balcão já estão nela. Liberar pro canal normal fica pra depois de uns dias.
-- **O banco da Pneus Amigão estava na 64**, não na 67 (a anotação de 23/10 estava errada; `docs/licoes.md`, item 91). Cópia de segurança tirada e aberta no PC dela; ensaio e aplicar pelo botão: **agora está na 67**.
-- **Juntar peças feito na loja**: 2 de 9 sugestões eram repetidas (PAST FREIO GM DT e PIVO FT); o aviso de peça parecida (#653) conferido no ar. Tarefas novas: #752 (falta o "Sair" quando o perfil não carrega) e #754 ("Não são a mesma peça").
-- **Depende dela**: na #746, o orçamento do tio (#379), a peça avulsa (#655) e liberar a v0.9.53; mandar o passo a passo ao Gusta (#750).
-- **Próxima sessão**: o memorando com o privado (#632, até 26/10).
+### 23/10/2026, noite: dois PRs do Gusta, a faixa amarela e o botão em partes
+- **Mesclados**: #753 (clientes e veículos só com o módulo, `0068`/`0069`; as 4 respostas estão na revisão), #759 (token antigo da Focus, `0070`), #758 (a faixa amarela não aparece quando a migration espera os computadores, #757) e #761 (o botão aplica em partes, #760).
+- **Nada aplicado nem publicado**: a loja segue na 67, na v0.9.53.
+- **Depende dela**: a **#762** (ensaiar e aplicar a `0068` → publicar e liberar a 0.9.54 → aplicar `0069` e `0070`; antes, conferir se o login do balcão tem o módulo Clientes). Até lá, nunca marcar "aplicar mesmo com computadores atrasados". Seguem: a #746, o passo a passo do Gusta (#750).
+- **Próxima sessão**: o ensaio da #762; o memorando com o privado (#632, até 26/10).
