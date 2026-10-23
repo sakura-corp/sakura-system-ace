@@ -259,6 +259,10 @@ Quatro coisas que valem saber:
   administra" e não junta. As contas ficam em `schemas/juntarPecas.ts` (testado, inclusive a
   busca de pares contra a versão força-bruta); a tela em `pages/estoque/JuntarPecasModal.tsx`.
   **Primeira vez numa empresa: cópia de segurança antes** (`docs/operacao.md`, "Cópia na hora").
+  **Primeira vez de verdade (Pneus Amigão, 23/10/2026)**: das 9 sugestões, só 2 eram repetidas, as
+  duas com a **mesma referência**. As outras 7 tinham referência diferente: lado direito e esquerdo
+  (LD/LE), montadora (FT/GM) ou marca. Como não dá pra descartar um par, ele volta toda vez que a
+  lista abre: o botão "Não são a mesma peça" é a #754.
 
   **A lista de Produtos respondendo "o que preciso comprar?" (12/09/2026, item `TL-11` do
   guia)** — até aqui "Estoque atual" era um número neutro: dava pra ver que sobrou 1, mas não

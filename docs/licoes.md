@@ -1753,3 +1753,14 @@
     "Contraste nas telas" percorreu as 64 telas, disse "Nenhuma reprovação NOVA" e foi cancelada pelo
     limite de 15 minutos logo depois. Não era o PR: era a máquina do GitHub lenta. **Regra**: antes de
     mexer em código, abrir o log; se as telas passaram e só o tempo estourou, rodar de novo uma vez.
+
+91. **"O banco da loja já está na 67" era o banco de teste (23/10/2026, #746).** A anotação do "Onde
+    parou" dizia que o banco da Pneus Amigão estava na 67; estava na 64, e a v0.9.52 (que pede a
+    `0065` a `0067`) ficou um dia liberada sem elas: o orçamento, a peça avulsa e o juntar peças não
+    funcionavam na loja. Quem avisou foi o próprio programa ("o banco desta empresa ainda não foi
+    atualizado") ao abrir a junção de peças. **Regra**: a versão do banco de uma loja se confere no
+    **Diagnóstico do programa ligado a ela** (ver o endereço do banco na mesma tela) ou num ensaio do
+    botão, nunca de memória; e depois de liberar versão que pede migration, conferir que o botão
+    rodou o `aplicar`. Junto veio um susto à parte: um computador parado há dias (o Balcão, na 0.9.51)
+    segura o botão. Se ninguém usa aquele computador sem ela, tanto faz esperar ou marcar a caixinha;
+    fechar e abrir o programa lá resolve.

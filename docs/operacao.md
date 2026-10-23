@@ -23,7 +23,7 @@ usa banco.
 
 ### Em que versão está o banco de cada empresa
 
-**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0064` aplicadas** (26/09/2026). Daqui
+**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0067` aplicadas** (a `0065` a `0067` pelo botão em 23/10/2026). Daqui
 pra frente, migration entra **pelo botão "Atualizar o banco de todas as empresas"** (abaixo), nunca
 colada à mão no SQL Editor. Pra saber a versão de um banco: a tabela `schema_versao`, a tela de
 Diagnóstico ou um ensaio do botão.
