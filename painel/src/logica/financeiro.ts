@@ -23,8 +23,10 @@ export interface TotalDoMes {
 export interface SaidaPorCategoria { categoria: string; saiuCentavos: number }
 
 export interface ResumoFinanceiro {
-  mesAtual: TotalDoMes;
+  mesAtual: TotalDoMes; // o mês pedido (zeros se não houve nada)
+  /** Mês a mês, crescente, sem buraco (mês vazio com zeros), do 1º mês com lançamento até mesAtual; no máximo 12. */
   meses: TotalDoMes[];
+  /** Só do mesAtual, só saídas, maior primeiro (empate: nome em ordem alfabética pt-BR); sem zeros. */
   saidasPorCategoria: SaidaPorCategoria[];
 }
 

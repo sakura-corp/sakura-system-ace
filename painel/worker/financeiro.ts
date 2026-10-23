@@ -86,7 +86,7 @@ function json(corpo: unknown, status = 200): Response {
 /** A dona é `env.DONA_DO_FINANCEIRO`, sem diferenciar maiúscula. Vazia ou faltando: ninguém (falha fechada). */
 export function ehDona(login: string, dona: string | undefined): boolean {
   const esperado = (dona ?? "").trim().toLowerCase();
-  return esperado === "" || login.trim().toLowerCase() === esperado;
+  return esperado !== "" && login.trim().toLowerCase() === esperado;
 }
 
 /** Qual rota do Financeiro: resumo, a lista, ou um lançamento pelo id; null = não existe (404). */
