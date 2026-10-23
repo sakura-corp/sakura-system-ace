@@ -123,11 +123,19 @@ begin
       raise exception 'FALHOU: % sem Clientes leu % veículo(s) da tabela', novo_id, quantas;
     end if;
 
-    -- 3. nem altera nem apaga
-    with s as (update clientes set nome = nome where id = any (testados) returning 1)
-    select count(*) into quantas from s;
+    -- 3. nem altera nem apaga. O update vai SEM filtro e sem ler coluna
+    --    (§6 item 74): com `where id = ...` a regra de leitura esconderia as
+    --    linhas antes da de alteração entrar, e uma policy de update aberta
+    --    passaria calada (achado da revisão de segurança).
+    update clientes set telefone = '0';
+    get diagnostics quantas = row_count;
     if quantas <> 0 then
       raise exception 'FALHOU: % sem Clientes alterou % cliente(s)', novo_id, quantas;
+    end if;
+    update veiculos set cor = 'x';
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then
+      raise exception 'FALHOU: % sem Clientes alterou % veículo(s)', novo_id, quantas;
     end if;
     with s as (delete from veiculos where cliente_id = any (testados) returning 1)
     select count(*) into quantas from s;
@@ -263,6 +271,48 @@ begin
     raise exception 'FALHOU: o operador sem loja leu o cliente de uma OS';
   exception when insufficient_privilege then null;
   end;
+  begin
+    resposta := cadastrar_cliente_rapido('{"nome":"Pelo órfão"}'::jsonb, null);
+    raise exception 'FALHOU: o operador sem loja usou o cadastro rápido';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- 16b. o cadastro rápido recusa nome em branco e carro no Consumidor
+  perform set_config('request.jwt.claim.sub', o_os::text, true);
+  begin
+    resposta := cadastrar_cliente_rapido('{"nome":"   "}'::jsonb, null);
+    raise exception 'FALHOU: o cadastro rápido aceitou nome em branco';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+  end;
+  begin
+    novo_id := cadastrar_veiculo_rapido(consumidor, '{"placa":"CON1S00"}'::jsonb);
+    raise exception 'FALHOU: o cadastro rápido pôs carro no Consumidor';
+  exception when raise_exception then
+    if sqlerrm like 'FALHOU%' then raise; end if;
+  end;
+
+  -- ===================================================================
+  -- E2. Operador desligado (ativo = false) com a sessão ainda válida
+  -- ===================================================================
+  reset role;
+  update operadores set ativo = false where id = o_os;
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_os::text, true);
+  select count(*) into quantas from clientes_janela where id = any (testados);
+  if quantas <> 0 then
+    raise exception 'FALHOU: o operador desligado viu % cliente(s) na janela', quantas;
+  end if;
+  begin
+    resposta := cadastrar_cliente_rapido('{"nome":"Pelo desligado"}'::jsonb, null);
+    raise exception 'FALHOU: o operador desligado usou o cadastro rápido';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    resposta := cliente_e_veiculo_da_ordem(os_a);
+    raise exception 'FALHOU: o operador desligado leu o cliente da OS';
+  exception when insufficient_privilege then null;
+  end;
 
   -- ===================================================================
   -- F. Quem TEM o módulo continua com o cadastro inteiro
@@ -280,9 +330,10 @@ begin
   if quantas <> 0 then
     raise exception 'FALHOU: o cadastro rápido gravou um campo fora da lista (rua)';
   end if;
-  -- 19. edita e apaga
-  with s as (update clientes set telefone = telefone where id = any (testados) returning 1)
-  select count(*) into quantas from s;
+  -- 19. edita e apaga (sem filtro, como na parte A: todos os clientes
+  --     menos o Consumidor, que ele também vê; o número exato vem da tabela)
+  update clientes set telefone = telefone where id = any (testados);
+  get diagnostics quantas = row_count;
   if quantas <> 3 then
     raise exception 'FALHOU: quem tem Clientes devia alterar 3 clientes e alterou %', quantas;
   end if;

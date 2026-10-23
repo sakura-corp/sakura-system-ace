@@ -5643,9 +5643,14 @@ as $$
 declare
   v_id uuid;
 begin
-  if not (operador_tem_permissao('ordens_servico') or operador_tem_permissao('clientes')) then
+  if not (operador_tem_permissao('ordens_servico') or operador_tem_permissao('clientes'))
+     or not operador_ativo_com_loja() then
     raise exception 'Cadastrar veículo pela OS é só de quem tem o módulo Ordens de Serviço.'
       using errcode = '42501';
+  end if;
+  -- O Consumidor é "ninguém em particular" (0064): carro nele seria de todo mundo.
+  if p_cliente_id = '00000000-0000-0000-0000-00000000c000'::uuid then
+    raise exception 'O cliente Consumidor não tem veículo. Cadastre o cliente de verdade.';
   end if;
   if nullif(btrim(p_veiculo ->> 'placa'), '') is null then
     raise exception 'Preencha pelo menos a placa do veículo.';
@@ -5678,9 +5683,13 @@ declare
   v_cliente_id uuid;
   v_veiculo_id uuid;
 begin
-  if not (operador_tem_permissao('ordens_servico') or operador_tem_permissao('clientes')) then
+  if not (operador_tem_permissao('ordens_servico') or operador_tem_permissao('clientes'))
+     or not operador_ativo_com_loja() then
     raise exception 'Cadastrar cliente pela OS é só de quem tem o módulo Ordens de Serviço.'
       using errcode = '42501';
+  end if;
+  if nullif(btrim(p_cliente ->> 'nome'), '') is null then
+    raise exception 'Preencha o nome do cliente.';
   end if;
 
   insert into clientes (nome, telefone, tipo_pessoa, cpf_cnpj)
