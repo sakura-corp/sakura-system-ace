@@ -35,6 +35,12 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 23/10/2026, meio-dia (pelo PC): leva 3 aprovada, leva 4 aberta
+- **Leva 3 aprovada** (relatório #745): 4 de 4 tarefas, testada pelo Tiago e pela Sofia (#728). Defeitos #741 e #742 consertados na `main` (#743); #744 fica fora de leva. **A leva 4 está aberta.**
+- Painel: "O que testar" com o botão de copiar e "Quem já terminou" (#730).
+- **Depende dela** (#746): publicar a v0.9.53 com os consertos (#743); cópia de segurança antes da 1ª junção de peças na loja; conferir no ar a #653, a #379 e a #655; conferir a aba e o "Meu progresso" (#739). O Tiago confere o T12, o T14 e o T15 na tela e fecha a #741 e a #742.
+- **Próxima sessão**: o memorando com o privado (#632, até 26/10).
+
 ### 23/10/2026, madrugada (pelo PC): projetos secundários, da entrevista à main
 - **O Gusta guia os projetos secundários** (entrevista com ela; regra na seção 0 e em `docs/projetos-secundarios.md`): cada um no seu repositório privado, com levas próprias a partir da 1. **A leva 6 volta a ser do SSACE**; o ar-condicionado será projeto principal dela, com repositório e levas próprios.
 - **Seis tarefas na `main`, por uma coordenadora com 5 sessões**: #733 (regras), #732 (propostas em "Decisões"), #731 (aba "Projetos secundários" e "uma por vez no total"), #734 ("Meu progresso", cada um vê o seu); e os repositórios novos `sakura-corp/secundarios` (políticas, skills `nova-proposta` e `analisar-proposta`) e `sakura-corp/modelo-projeto` (o modelo de todo projeto novo).
