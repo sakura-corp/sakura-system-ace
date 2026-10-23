@@ -323,8 +323,9 @@ Liberar não refaz nada: é a mesma versão, só muda quem recebe. **Nunca liber
 decidir que uma versão rodou o bastante é justamente a decisão que o canal devolve a ela.
 
 **Quem fica em qual canal** (Configurações → "Atualizações deste computador", só admin): **teste**
-é o computador dela e o da Pneus Amigão ("Balcão"); **normal** é todo o resto (computador novo já
-nasce normal). Cuidado barato sugerido: passar o Balcão pro normal (item 12 da seção 8).
+é só o computador dela; **normal** é todo o resto, o Balcão da Pneus Amigão incluído (passou pro
+normal em 23/10/2026, pra versão publicada não chegar na loja antes do dia de teste: ver
+`docs/jeito-de-trabalhar.md`, "Testar de uma vez"). Computador novo já nasce normal.
 
 **Pra liberar** (2 minutos): Actions → **"Liberar versão para todas as lojas"** → "Run workflow",
 escrever a versão (ex: `v0.9.47`) → aprovar em "Review deployments" → `lojas` → "Approve and

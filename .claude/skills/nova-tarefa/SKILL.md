@@ -30,8 +30,10 @@ Fale **sempre em português simples**. O formato, as etiquetas e a tabela de mod
 - **Etapas e modelos**: cada etapa com quem faz e a **categoria** (forte, médio, rápido), nunca o
   nome do modelo. Migration, RLS, dinheiro, nota fiscal, segurança e revisão final: **forte**.
 - `Sessões filhas: sim` só com partes independentes, e cada filha com **arquivos que não se cruzam**.
-- **Pronto quando** em duas partes: o que a sessão prova no PR, e o que só a Sofia confere depois
-  de publicar.
+- **Pronto quando** em três partes: o que a sessão prova no PR; o que **quem fez testa no próprio
+  PC** antes do PR (passo a passo, no Supabase de teste); e o mínimo que só a Sofia confere depois
+  de publicar, no dia de teste do fim de semana (impressora, nota de verdade, `.exe`), em passos
+  exatos. Tudo que dá pra testar no PC de quem fez sai da parte dela.
 - **Estimativa** em horas.
 - Nada de rodapé com o ritual colado: só a última linha do modelo, que aponta a skill.
 - **Nada privado** (repositório público).

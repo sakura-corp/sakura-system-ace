@@ -433,6 +433,13 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 Todo PR da equipe espera a **Sofia revisar**, e ela revisa os três. Por isso:
 - a leva tem **só as tarefas que cabem no tempo dela de revisar**; quando a leva acaba, ela
   congela, todo mundo testa e só então vem a próxima (`docs/painel.md`, "Fim de uma leva");
+- **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
+  Claude dela, e o teste no programa de verdade fica pro dia de teste do fim de semana
+  (`docs/jeito-de-trabalhar.md`, "Testar de uma vez"). Por isso o "Pronto quando (depois de
+  publicar)" do PR precisa dizer exatamente o que testar: é dele que sai a lista do dia. **Antes
+  de abrir o PR, você testa no seu PC** o que a tarefa pede em "No PC de quem fez" (no Supabase
+  de teste, com o Claude guiando; "Testar no seu computador o que a sessão da nuvem fez", acima),
+  e anota no PR o que viu. Tudo que você testar sai da lista dela;
 - **um PR pequeno por tarefa**: uma tarefa que cresceu demais vira duas (o Claude avisa a pessoa,
   e a pessoa avisa a Sofia), em vez de um PR enorme;
 - PR esperando revisão **não é atraso de ninguém**: é o ritmo combinado.

@@ -81,8 +81,12 @@ Second brain: não precisa
 - [ ] <coisa verificável, com o teste visto reprovar>
 - [ ] `typecheck`, `lint` e o CI verdes
 
-**Depois de publicar** (a Sofia confere):
-- [ ] <o que só dá pra ver no ar ou na loja; "nada" se não houver>
+**No PC de quem fez** (a pessoa testa antes de abrir o PR, guiada pelo Claude, no Supabase de teste):
+- [ ] <passo a passo: onde clicar e o que deve aparecer; "nada" só se não tiver tela>
+
+**Depois de publicar** (a Sofia confere no dia de teste do fim de semana):
+- [ ] <só o que não dá pra ver no PC de quem fez (impressora da loja, nota de verdade, o `.exe`
+  do Windows), em passos exatos; "nada" se não houver>
 
 ## Não fazer
 - <o que fica de fora, e qual tarefa cuida disso>

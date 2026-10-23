@@ -58,6 +58,27 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
   - tudo em **branch de rascunho, sem mesclar**; o resultado vai **na conversa** (relatório mandado como
     arquivo pra ela), nunca só numa pasta da sessão, que ela não vê.
 
+## Testar de uma vez, no fim de semana (23/10/2026)
+
+**Por quê**: testar cada versão antes do próximo PR gastava o limite dela todo dia (o limite
+renova a cada 7 dias; em 23/10, primeiro dia da semana, já estava em 13 a 14%).
+
+- **Durante a semana**: PR da equipe entra na `main` com o CI verde e uma revisão do Claude dela
+  (código, "Pronto quando", relatório). **Ela não testa** pra aprovar o próximo.
+- **Quem fez testa antes do PR**: no próprio PC, no Supabase de teste, guiado pelo Claude, o que
+  a tarefa pede em "No PC de quem fez" (`docs/tarefas.md`). Pra ela sobra **o mínimo**: só o que
+  não dá pra ver fora da loja (impressora, nota de verdade, o `.exe`), já em passos exatos.
+- **Publicar** pro canal de teste pode ser a qualquer hora: só o **PC dela** recebe. O **Balcão** da
+  Pneus Amigão fica no canal **normal** (decidido em 23/10), então nada chega na loja sem ela liberar. Quando
+  o teste precisa da loja (a impressora é a do Balcão), o Balcão volta pro canal de teste **só
+  no dia de teste** e depois volta pro normal.
+- **No fim de semana**: um dia de teste com tudo o que juntou (a lista sai dos "Pronto quando
+  (depois de publicar)" dos PRs da semana) e **um Liberar só** no fim.
+- **Exceção**: migration com `versao-minima-do-programa` (como a `0069`) ainda exige a ordem
+  banco → versão → computadores → banco. Essa fica marcada pro dia de teste.
+- Uma versão que precisa sair **sozinha** (como o Electron 40, #385) continua num número só dela;
+  o teste dela vai pro mesmo dia.
+
 ## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
 
 **O `/fechar`** (`.claude/skills/fechar/SKILL.md`): digitar `/` mostra ele na lista; ou dizer "vamos
