@@ -1779,3 +1779,11 @@
     rodou o `aplicar`. Junto veio um susto à parte: um computador parado há dias (o Balcão, na 0.9.51)
     segura o botão. Se ninguém usa aquele computador sem ela, tanto faz esperar ou marcar a caixinha;
     fechar e abrir o programa lá resolve.
+92. **Migration em duas metades ficava presa no botão (23/10/2026, #753 e #760).** A #365 saiu em duas
+    migrations: a `0068` abre a janela (precisa entrar ANTES da versão nova) e a `0069` fecha a porta
+    (precisa da versão nova já nos computadores). O PR provou as duas ordens num PostgREST, mas
+    ninguém conferiu o botão: ele aplicava todas as que faltam de uma vez, e a `0069` esperando os
+    computadores segurava a `0068` junto. Só apareceu na hora de ensaiar, e a única saída na hora era
+    a caixinha "aplicar mesmo com computadores atrasados", que quebraria a loja. **Regra**: o botão
+    aplica em partes desde a #760 (para na primeira que espera); e o "Ordem de subir" de um PR com
+    migration se confere **contra o botão**, não só contra o banco.

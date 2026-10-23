@@ -249,13 +249,23 @@ try {
   const pastaVersao = mkdtempSync(join(tmpdir(), "migrations-versao-"));
   try {
     cpSync(PASTA_REAL, pastaVersao, { recursive: true });
+    // Uma que não exige nada e, atrás dela, uma que exige (#760): a primeira
+    // tem que entrar mesmo com a segunda esperando os computadores.
     writeFileSync(
-      join(pastaVersao, `${NOVA}_exige_versao.sql`),
+      join(pastaVersao, `${NOVA}_sem_exigencia.sql`),
+      [
+        "create table if not exists teste_antes_da_exigencia (id int);",
+        `insert into schema_versao (versao) values (${NOVA}) on conflict do nothing;`,
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(pastaVersao, `${NOVA + 1}_exige_versao.sql`),
       [
         "-- Migration de teste: aperta uma regra que a versão anterior usava.",
         "-- versao-minima-do-programa: 0.9.50",
         "create table if not exists teste_versao_minima (id int);",
-        `insert into schema_versao (versao) values (${NOVA}) on conflict do nothing;`,
+        `insert into schema_versao (versao) values (${NOVA + 1}) on conflict do nothing;`,
         "",
       ].join("\n"),
     );
@@ -271,23 +281,26 @@ try {
     ]);
 
     r = rodarBotao("ensaiar", [d], pastaVersao);
-    conferir(r.codigo === 1 && /⏸ passaria, mas espera 1 computador abaixo da 0\.9\.50/.test(r.texto), "o ensaio avisa que vai esperar 1 computador");
+    conferir(
+      r.codigo === 0 && new RegExp(`✅ ${String(NOVA).padStart(4, "0")} passaria; ⏸ ${String(NOVA + 1).padStart(4, "0")} espera 1 computador abaixo da 0\\.9\\.50`).test(r.texto),
+      "o ensaio diz o que passaria e o que espera 1 computador",
+    );
     conferir(/DESKTOP-FUNDOS \(0\.9\.49, visto há 2 dias\)/.test(r.texto), "e diz qual é, com a versão e quando foi visto");
     conferir(!/NOTEBOOK-VELHO/.test(r.texto), "o computador sumido há 40 dias não entra na conta");
 
     r = rodarBotao("aplicar", [d], pastaVersao);
-    conferir(r.codigo === 1 && /Nada foi aplicado em banco nenhum/.test(r.texto), "aplicar recusa");
-    conferir(versao(d.banco) === ULTIMA_REAL, "o banco ficou como estava");
+    conferir(r.codigo === 0 && /parte ficou esperando os computadores/.test(r.texto), "aplicar aplica a parte que pode e diz que o resto espera");
+    conferir(versao(d.banco) === NOVA, `o banco parou na ${NOVA}, antes da que espera`);
 
     r = rodarBotao("aplicar", [d], pastaVersao, "true");
     conferir(r.codigo === 0 && /seguindo mesmo assim, como pedido/.test(r.texto), "com a caixinha marcada, aplica e diz que seguiu mesmo assim");
-    conferir(versao(d.banco) === NOVA, `o banco chegou na ${NOVA}`);
+    conferir(versao(d.banco) === NOVA + 1, `o banco chegou na ${NOVA + 1}`);
 
     const e = { ...criarBanco("e", ULTIMA_REAL), rotulo: "empresa-e" };
     criados.push(e);
     psql(e.banco, ["-c", "insert into computadores (id, versao_app) values (gen_random_uuid(), '0.9.51')"]);
     r = rodarBotao("aplicar", [e], pastaVersao);
-    conferir(r.codigo === 0 && versao(e.banco) === NOVA, "com todos os computadores em dia, aplica sem precisar de nada");
+    conferir(r.codigo === 0 && versao(e.banco) === NOVA + 1, "com todos os computadores em dia, aplica tudo sem precisar de nada");
   } finally {
     rmSync(pastaVersao, { recursive: true, force: true });
   }
