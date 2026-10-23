@@ -1,6 +1,7 @@
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES,
   PRIMEIRA_VERSAO_REGISTRADA,
   VERSAO_ESQUEMA_ESPERADA,
   numeroDaMigration,
@@ -23,6 +24,26 @@ describe("VERSAO_ESQUEMA_ESPERADA", () => {
       VERSAO_ESQUEMA_ESPERADA,
       "Criou migration nova? Suba VERSAO_ESQUEMA_ESPERADA em src/schemas/versaoEsquema.ts",
     ).toBe(maior);
+  });
+});
+
+describe("MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES", () => {
+  // Se uma migration nova declarar a espera e ficar fora da lista, a faixa
+  // amarela volta a aparecer nas lojas por dias (#757). Se a lista tiver uma
+  // que não declara, a faixa some justo quando falta migration de verdade.
+  it("é exatamente as migrations que declaram versao-minima-do-programa", () => {
+    const declaradas: Record<number, string> = {};
+    for (const nome of readdirSync("supabase/migrations").filter((n) => n.endsWith(".sql"))) {
+      const casou = /^--\s*versao-minima-do-programa:\s*(\S+)\s*$/m.exec(
+        readFileSync(`supabase/migrations/${nome}`, "utf8"),
+      );
+      if (casou) declaradas[Number(nome.slice(0, 4))] = casou[1];
+    }
+
+    expect(
+      MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES,
+      "Migration nova com versao-minima-do-programa? Acrescente em src/schemas/versaoEsquema.ts",
+    ).toEqual(declaradas);
   });
 });
 
@@ -61,5 +82,31 @@ describe("situacaoDoEsquema", () => {
 
     expect(situacao.estado).toBe("app_atrasado");
     expect(situacao.faltando).toEqual([]);
+  });
+
+  describe("migration que espera os computadores de propósito (#757)", () => {
+    const esperam = { 62: "0.9.43", 69: "0.9.54" };
+
+    it("não é banco atrasado quando só falta ela", () => {
+      const situacao = situacaoDoEsquema(68, 69, esperam);
+
+      expect(situacao.estado).toBe("esperando_computadores");
+      expect(situacao.faltando).toEqual(["0069"]);
+      expect(situacao.versaoMinimaDosComputadores).toBe("0.9.54");
+    });
+
+    it("continua banco atrasado, listando todas, quando falta outra junto", () => {
+      const situacao = situacaoDoEsquema(67, 69, esperam);
+
+      expect(situacao.estado).toBe("banco_atrasado");
+      expect(situacao.faltando).toEqual(["0068", "0069"]);
+    });
+
+    it("guarda a maior versão quando faltam duas que esperam", () => {
+      const situacao = situacaoDoEsquema(61, 62, { 61: "0.9.40", 62: "0.9.43" });
+
+      expect(situacao.estado).toBe("esperando_computadores");
+      expect(situacao.versaoMinimaDosComputadores).toBe("0.9.43");
+    });
   });
 });

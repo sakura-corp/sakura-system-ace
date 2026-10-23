@@ -18,7 +18,15 @@ interface AvisoVersaoBancoProps {
 // Só texto dentro da faixa, nada de campo de formulário: `globals.css` força
 // letra branca em todo input, e aqui o fundo é claro (item 47 da seção 6).
 export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
-  if (situacao.estado === "em_dia" || situacao.estado === "desconhecido") return null;
+  // "esperando_computadores" (#757): a migration que falta sobe depois da
+  // versão, de propósito. Avisar seria assustar a loja por dias sem motivo.
+  if (
+    situacao.estado === "em_dia" ||
+    situacao.estado === "desconhecido" ||
+    situacao.estado === "esperando_computadores"
+  ) {
+    return null;
+  }
 
   if (situacao.estado === "app_atrasado") {
     return (

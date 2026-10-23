@@ -155,6 +155,10 @@ export function descreverEsquema(esquema: SituacaoEsquema): string {
       return `${esquema.versaoBanco} (em dia)`;
     case "banco_atrasado":
       return `${esquema.versaoBanco} — o programa espera ${esquema.versaoApp}; faltam rodar ${esquema.faltando.join(", ")}`;
+    case "esperando_computadores": {
+      const varias = esquema.faltando.length > 1;
+      return `${esquema.versaoBanco} — ${varias ? "faltam as" : "falta a"} ${esquema.faltando.join(", ")}, que ${varias ? "esperam" : "espera"} os computadores chegarem na ${esquema.versaoMinimaDosComputadores}`;
+    }
     case "app_atrasado":
       return `${esquema.versaoBanco} — à frente deste programa, que espera ${esquema.versaoApp}`;
     default:
