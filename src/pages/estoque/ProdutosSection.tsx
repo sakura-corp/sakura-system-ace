@@ -345,7 +345,9 @@ export function ProdutosSection({
                     <td className="px-4 py-3">{peca.unidade || "—"}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_custo)}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_venda)}</td>
-                    <td className="px-4 py-3">{margem === "" ? "—" : `${margem}%`}</td>
+                    <td className="px-4 py-3">
+                      {margem === "" ? "—" : `${formatarQuantidade(Number(margem))}%`}
+                    </td>
                     <td className={`px-4 py-3 font-medium ${COR_DO_SALDO[leitura.situacao]}`}>
                       <span title={SITUACAO_SALDO_ROTULO[leitura.situacao] || undefined}>
                         {formatarQuantidade(saldo)}
