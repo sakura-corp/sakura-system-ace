@@ -5846,8 +5846,11 @@ insert into schema_versao (versao) values (69) on conflict do nothing;
 -- ORDEM DE SUBIR. Abaixo da v0.9.41 o programa lê o token desta coluna e
 -- chama a Focus NFe direto: com a coluna vazia, esse computador para de
 -- emitir nota. Por isso a linha abaixo — o botão "Atualizar o banco de todas
--- as empresas" espera todos os computadores em uso estarem na v0.9.41 ou
--- mais nova (a que passou a emitir pelo porteiro).
+-- as empresas" espera os computadores em uso estarem na v0.9.41 ou mais nova
+-- (a que passou a emitir pelo porteiro). O botão só enxerga computador que
+-- se registra na tabela `computadores` (0063), e um programa parado na
+-- v0.9.40 é velho demais pra se registrar: ele não aparece lá. Antes de
+-- aplicar, conferir à mão que nenhum computador da empresa ficou nessa versão.
 -- versao-minima-do-programa: 0.9.41
 --
 -- A trilha de auditoria (0053) registra o `update` abaixo com a coluna

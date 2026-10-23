@@ -497,7 +497,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
   coluna (`on conflict do nothing`: o do cofre nunca é sobrescrito), então nenhuma loja para de
   emitir. Declara `-- versao-minima-do-programa: 0.9.41` (abaixo disso o programa lê o token da
-  coluna). **A coluna não sai aqui**: só numa versão seguinte, pela regra de "Voltar uma versão".
+  coluna; um programa tão velho não se registra em `computadores`, então o botão não o enxerga e
+  isso se confere à mão). **A coluna não sai aqui**: só numa versão seguinte, pela regra de "Voltar uma versão".
   A limpeza passa pela auditoria com o token mascarado (`***`, máscara da `0053`). Teste em
   `supabase/scripts/testar-porteiro-focus-nfe.sql`, que roda a `0070` de verdade (`\ir`), duas vezes.
 

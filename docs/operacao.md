@@ -110,6 +110,9 @@ emissão). A condição, uma nota emitida e outra cancelada pelo porteiro, foi c
 `v0.9.40` ou antes para a emissão de nota** (aquelas versões leem o token da coluna, que fica
 vazia). Antes de rodar, ela copia pro cofre o token que porventura só exista na coluna, então
 nenhuma loja perde a emissão. A coluna em si só sai numa versão seguinte ("Voltar uma versão").
+**Atenção**: o botão só espera computador que se registra (tabela `computadores`, `0063`), e um
+programa parado na `v0.9.40` é velho demais pra se registrar. Antes de aplicar a `0070` numa
+empresa, conferir à mão que nenhum computador dela ficou abaixo da `v0.9.41`.
 
 ### Backup do banco (`TR-12.1`)
 

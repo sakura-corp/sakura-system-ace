@@ -343,6 +343,13 @@ begin;
 select pg_temp.responder_porteiro('porteiro_antes') \g /dev/null
 commit;
 
+-- O banco do teste foi montado com a instalação completa, que JÁ traz a 0070:
+-- o comentário da coluna e a linha 70 de schema_versao existiriam mesmo que o
+-- arquivo da migration não os criasse. Apagados aqui, a checagem 27 só passa
+-- se a rodada abaixo os gravar de novo.
+comment on column configuracoes_fiscais_loja.focus_nfe_token is null;
+delete from schema_versao where versao = 70;
+
 -- 1ª rodada da migration, o arquivo de verdade
 \ir ../migrations/0070_limpar_token_antigo_focus.sql
 

@@ -964,7 +964,8 @@ Quatro coisas que valem saber:
   Function"). A **parte 2** (tarefa #368, migration `0070`) apaga a cópia antiga do token da
   tabela de configurações e tira a ponte `fetchComAuth` do Electron (item 71 da seção 6): **só
   vale depois de a Sofia aplicar a `0070`**, e computador abaixo da `v0.9.41` para de emitir
-  (a migration declara essa versão mínima).
+  (a migration declara essa versão mínima, mas um programa tão velho não se registra pro botão
+  enxergar: conferir à mão, `docs/operacao.md`).
 - **Auditoria**: admin-only, acesso via ícone no rodapé da Sidebar (ao lado da engrenagem de
   Configurações), não é permissão de operador comum nem entra em `MODULOS`. Lista quem **criou**,
   editou ou excluiu o quê e quando, com filtro por tabela, por **ação** e por operador, e um "Ver
