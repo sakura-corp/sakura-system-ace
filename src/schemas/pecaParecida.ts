@@ -46,6 +46,13 @@ export const MOTIVO_PARECIDA_ROTULO: Record<MotivoParecida, string> = {
 /** A partir daqui o nome conta como "muito parecido". */
 const LIMITE_NOME = 0.8;
 
+/**
+ * Pra lista que só ORDENA (o "É uma peça que já tenho" do orçamento, #741): lá a pessoa já disse que a peça existe,
+ * e pôr uma peça a mais no topo não avisa nem tranca nada. "Bico de valvula cromado" × "Bico de válvula (exemplo)"
+ * dá 0,68. A medida continua mandando (R13 × R14 dá 0).
+ */
+export const LIMITE_NOME_PARA_ORDENAR = 0.6;
+
 /** Do mais forte pro mais fraco, pra ordenar o resultado. */
 const FORCA: Record<MotivoParecida, number> = { codigo_barras: 3, codigo_interno: 2, nome: 1 };
 
@@ -107,6 +114,7 @@ function semelhancaDoNome(a: PecaComparavel, b: PecaComparavel): number {
 export function acharPecasParecidas<T extends PecaComparavel>(
   nova: PecaComparavel,
   cadastro: T[],
+  { limiteNome = LIMITE_NOME }: { limiteNome?: number } = {},
 ): PecaParecida<T>[] {
   const achadas: PecaParecida<T>[] = [];
   for (const peca of cadastro) {
@@ -117,7 +125,7 @@ export function acharPecasParecidas<T extends PecaComparavel>(
       achadas.push({ peca, motivo: "codigo_interno", semelhanca: 1 });
     } else {
       const semelhanca = semelhancaDoNome(nova, peca);
-      if (semelhanca >= LIMITE_NOME) achadas.push({ peca, motivo: "nome", semelhanca });
+      if (semelhanca >= limiteNome) achadas.push({ peca, motivo: "nome", semelhanca });
     }
   }
   return achadas.sort(

@@ -8,6 +8,7 @@
  * 2. O botão "Cadastrar agora" cadastra a peça ali mesmo (nome e preço já
  *    preenchidos), liga ao item da OS e libera a emissão.
  * 3. Peça do cadastro com NCM: nada muda, emite como sempre.
+ * 4. Sem o token do Focus NFe, o aviso das peças aparece junto com o do token (#742).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
@@ -51,13 +52,9 @@ vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
 vi.mock("@/lib/clientes", () => ({
   buscarClientePorId: async () => ({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null }),
 }));
+const buscarConfiguracaoFiscal = vi.fn();
 vi.mock("@/lib/configuracoes", () => ({
-  buscarConfiguracaoFiscal: async () => ({
-    loja_id: "loja-1",
-    regime_tributario: "simples_nacional",
-    focus_nfe_configurado: true,
-    focus_nfe_ambiente: "homologacao",
-  }),
+  buscarConfiguracaoFiscal: (...a: unknown[]) => buscarConfiguracaoFiscal(...a),
   confirmarAliquotaCompetencia: vi.fn(),
 }));
 vi.mock("@/contexts/AuthContext", () => ({
@@ -110,9 +107,17 @@ async function preencherCadastro(user: Awaited<ReturnType<typeof montar>>["user"
 
 const confirmar = () => screen.getByRole("button", { name: "Confirmar emissão" });
 
+const configuracao = (focus_nfe_configurado: boolean) => ({
+  loja_id: "loja-1",
+  regime_tributario: "simples_nacional",
+  focus_nfe_configurado,
+  focus_nfe_ambiente: "homologacao",
+});
+
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  buscarConfiguracaoFiscal.mockResolvedValue(configuracao(true));
   listarPecas.mockResolvedValue([pecaComNcm]);
   buscarPecasPorIds.mockImplementation(async (ids: string[]) =>
     [pecaComNcm, pecaSemNcm].filter((p) => ids.includes(p.id)),
@@ -127,6 +132,26 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(screen.getByText(/Essa peça precisa ser cadastrada pra sair na nota\./)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cadastrar agora" })).toBeInTheDocument();
     expect(confirmar()).toBeDisabled();
+  });
+
+  it("sem o token do Focus NFe, a peça sem cadastro aparece junto com o aviso do token (#742)", async () => {
+    buscarConfiguracaoFiscal.mockResolvedValue(configuracao(false));
+    montar([item("i1", "Pneu 175/70 R13", "peca-1"), item("i2", "Palheta", null)]);
+
+    expect(await screen.findByText(/Falta cadastrar o token do Focus NFe/)).toBeInTheDocument();
+    expect(await screen.findByText("Esta nota não pode sair ainda.")).toBeInTheDocument();
+    expect(screen.getByText("Palheta")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cadastrar agora" })).toBeInTheDocument();
+    // Sem o token, continua sem botão de emitir.
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+  });
+
+  it("sem o token e sem peça faltando: só o aviso do token, como antes", async () => {
+    buscarConfiguracaoFiscal.mockResolvedValue(configuracao(false));
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+
+    expect(await screen.findByText(/Falta cadastrar o token do Focus NFe/)).toBeInTheDocument();
+    expect(screen.queryByText("Esta nota não pode sair ainda.")).not.toBeInTheDocument();
   });
 
   it("peça cadastrada sem NCM manda preencher o NCM e também trava", async () => {

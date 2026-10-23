@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   acharPecasParecidas,
+  LIMITE_NOME_PARA_ORDENAR,
   MOTIVO_PARECIDA_ROTULO,
   type PecaComparavel,
 } from "./pecaParecida";
@@ -123,6 +124,20 @@ describe("acharPecasParecidas", () => {
     ]);
     expect(r.map((x) => x.peca.id)).toEqual(["barras", "interno", "nome-igual", "nome-menos"]);
     expect(r[2].semelhanca).toBeGreaterThan(r[3].semelhanca);
+  });
+
+  it("na lista que só ordena (#741), um limite mais baixo acha o bico de válvula; o aviso continua exigente", () => {
+    const digitada = peca({ descricao: "Bico de valvula cromado" });
+    const cadastro = [peca({ id: "bico", descricao: "Bico de válvula (exemplo)" }), peca({ id: "oleo", descricao: "Óleo 5W30 (exemplo)" })];
+    // O aviso do cadastro (0,8) não acha: "parece" demais seria ensinar a ignorar o aviso.
+    expect(acharPecasParecidas(digitada, cadastro)).toEqual([]);
+    const r = acharPecasParecidas(digitada, cadastro, { limiteNome: LIMITE_NOME_PARA_ORDENAR });
+    expect(r.map((x) => x.peca.id)).toEqual(["bico"]);
+  });
+
+  it("com o limite mais baixo, a medida continua mandando (R13 x R14 nunca é parecida)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70 R14" }), [pneu], { limiteNome: LIMITE_NOME_PARA_ORDENAR });
+    expect(r).toEqual([]);
   });
 
   it("tem frase curta pra cada motivo", () => {

@@ -7,7 +7,7 @@ import {
   type CaminhoAvulsa,
 } from "@/schemas/orcamento";
 import { formatarMoeda } from "@/schemas/dinheiro";
-import { acharPecasParecidas } from "@/schemas/pecaParecida";
+import { acharPecasParecidas, LIMITE_NOME_PARA_ORDENAR } from "@/schemas/pecaParecida";
 import type { ItemOS } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
@@ -101,10 +101,11 @@ export function PecasAvulsasAprovacaoModal({
         <div className="space-y-4">
           {itens.map((item) => {
             const modo = modos[item.id];
-            // As parecidas com o que foi digitado vão no topo da lista.
+            // As parecidas com o que foi digitado vão no topo da lista. Aqui só ordena, então o limite é mais baixo (#741).
             const parecidas = acharPecasParecidas(
               { descricao: item.descricao, codigo_interno: null, codigo_barras: null, medida: null },
               pecasDaJanela,
+              { limiteNome: LIMITE_NOME_PARA_ORDENAR },
             ).map(({ peca }) => peca);
             const idsParecidas = new Set(parecidas.map((peca) => peca.id));
             const opcoes = [

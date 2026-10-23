@@ -443,6 +443,48 @@ export function EmitirNotaFiscalModal({
   }
 
   const focusNfeConfigurado = Boolean(configuracaoFiscal?.focus_nfe_configurado);
+
+  // Esta SIM tranca (#655): peça sem cadastro ou sem NCM não sai na NFC-e, e a SEFAZ não aceita nota sem NCM.
+  // Aparece mesmo sem o token do Focus NFe (#742): a loja vê as duas pendências de uma vez.
+  const quadroDasPecasQueImpedem = itensQueImpedem.length > 0 && (
+    <div className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+      <p>
+        <strong>Esta nota não pode sair ainda.</strong>
+      </p>
+      <ul className="mt-1 space-y-2">
+        {itensQueImpedem.map(({ item, motivo }) => (
+          <li key={item.id} className="space-y-1">
+            <p>
+              <strong>{item.descricao}</strong> —{" "}
+              {motivo === "avulsa" ? MENSAGEM_PECA_PRECISA_CADASTRO : MENSAGEM_PECA_SEM_NCM}
+            </p>
+            {motivo === "avulsa" ? (
+              <button
+                type="button"
+                onClick={() => setItemCadastrando(item)}
+                className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
+              >
+                Cadastrar agora
+              </button>
+            ) : (
+              <>
+                <p>
+                  Abra Estoque → Produtos, edite a peça e preencha o NCM. Depois volte aqui.
+                </p>
+                <button
+                  type="button"
+                  onClick={conferirPecasDeNovo}
+                  className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
+                >
+                  Já preenchi, conferir de novo
+                </button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
   const avisoAliquota = avisoAliquotaCompetencia(configuracaoFiscal);
 
   return (
@@ -455,10 +497,13 @@ export function EmitirNotaFiscalModal({
       )}
 
       {!carregando && !resultado && !focusNfeConfigurado && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
-          Falta cadastrar o token do Focus NFe (e os dados fiscais da loja) em Configurações →
-          "Dados fiscais da loja" antes de emitir.
-        </p>
+        <div className="space-y-3">
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+            Falta cadastrar o token do Focus NFe (e os dados fiscais da loja) em Configurações →
+            "Dados fiscais da loja" antes de emitir.
+          </p>
+          {quadroDasPecasQueImpedem}
+        </div>
       )}
 
       {!carregando && !resultado && focusNfeConfigurado && (
@@ -508,47 +553,7 @@ export function EmitirNotaFiscalModal({
             </p>
           )}
 
-          {/* Esta SIM tranca (#655): peça sem cadastro ou sem NCM não sai na
-              NFC-e, e a SEFAZ não aceita nota sem NCM. */}
-          {itensQueImpedem.length > 0 && (
-            <div className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
-              <p>
-                <strong>Esta nota não pode sair ainda.</strong>
-              </p>
-              <ul className="mt-1 space-y-2">
-                {itensQueImpedem.map(({ item, motivo }) => (
-                  <li key={item.id} className="space-y-1">
-                    <p>
-                      <strong>{item.descricao}</strong> —{" "}
-                      {motivo === "avulsa" ? MENSAGEM_PECA_PRECISA_CADASTRO : MENSAGEM_PECA_SEM_NCM}
-                    </p>
-                    {motivo === "avulsa" ? (
-                      <button
-                        type="button"
-                        onClick={() => setItemCadastrando(item)}
-                        className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
-                      >
-                        Cadastrar agora
-                      </button>
-                    ) : (
-                      <>
-                        <p>
-                          Abra Estoque → Produtos, edite a peça e preencha o NCM. Depois volte aqui.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={conferirPecasDeNovo}
-                          className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
-                        >
-                          Já preenchi, conferir de novo
-                        </button>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {quadroDasPecasQueImpedem}
 
           {/* Aviso, nunca tranca: a lista de códigos válidos envelhece com
               mudança de legislação, e barrar a emissão por causa de um
