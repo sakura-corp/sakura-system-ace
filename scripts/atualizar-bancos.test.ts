@@ -465,17 +465,17 @@ describe("versão mínima do programa (migration 0063)", () => {
       psql: psqlFalso(bancos),
       log: silencio,
     });
-    expect(r.sucesso).toBe(false);
+    expect(r.sucesso).toBe(true);
     expect(r.esperando).toBe(true);
-    expect(r.conclusao).toMatch(/vai ESPERAR/);
+    expect(r.conclusao).toMatch(/⏸ esperam os computadores/);
     const texto = montarResumo(r);
-    expect(texto).toMatch(/\| pneus-amigao \| 0063 \| 0064 \| ⏸ passaria, mas espera 1 computador abaixo da 0\.9\.45 \|/);
+    expect(texto).toMatch(/\| pneus-amigao \| 0063 \| 0064 \| ⏸ 0064 espera 1 computador abaixo da 0\.9\.45 \|/);
     expect(texto).toMatch(/DESKTOP-A1C3F9 \(0\.9\.44, visto há 2 dias\)/);
     expect(texto).not.toMatch(/Balcão \(/);
     expect(bancos["pneus-amigao"].aplicadas).toEqual([]);
   });
 
-  it("aplicar com computador atrasado: NÃO aplica em banco nenhum — nem no que estava em dia com os computadores", async () => {
+  it("aplicar com computador atrasado: cada banco espera sozinho — o que está em dia com os computadores recebe (#760)", async () => {
     const bancos = {
       a: banco(63, { computadores: [{ nome: "Balcão", versao: "0.9.45", dias: 0 }] }),
       b: banco(63, { computadores: [{ nome: "Notebook", versao: "0.9.44", dias: 5 }] }),
@@ -487,10 +487,72 @@ describe("versão mínima do programa (migration 0063)", () => {
       psql: psqlFalso(bancos),
       log: silencio,
     });
-    expect(r.sucesso).toBe(false);
-    expect(Object.values(bancos).flatMap((x) => x.aplicadas)).toEqual([]);
-    expect(r.situacoes.every((s: { aplicacao: string }) => s.aplicacao === "nao-tocado")).toBe(true);
-    expect(r.conclusao).toMatch(/Nada foi aplicado.*computadores.*Esquecer.*aplicar mesmo com computadores atrasados/s);
+    expect(r.sucesso).toBe(true);
+    expect(bancos.a.aplicadas).toEqual([64]);
+    expect(bancos.b.aplicadas).toEqual([]);
+    expect(r.situacoes[1].aplicacao).toBe("esperando");
+    expect(r.conclusao).toMatch(/O que podia ser aplicado agora foi aplicado.*Esquecer.*aplicar mesmo com computadores atrasados/s);
+    expect(montarResumo(r)).toMatch(/\| b \| 0063 \| ⏸ nada a aplicar agora: 0064 espera 1 computador abaixo da 0\.9\.45 \| 0063 \|/);
+  });
+
+  describe("aplicar em partes (#760): a fila para na primeira que espera", () => {
+    // O caso de 23/10/2026: a 0068 precisa entrar ANTES da 0.9.54 sair; a
+    // 0069 precisa da 0.9.54 já nos computadores; a 0070 vem atrás.
+    const fila = () =>
+      comVersaoMinima(comVersaoMinima(migracoes(67, 68, 69, 70), 69, "0.9.54"), 70, "0.9.41");
+    const loja = () => ({
+      "pneus-amigao": banco(67, {
+        computadores: [
+          { nome: "Balcão", versao: "0.9.53", dias: 0 },
+          { nome: "PC da Sofia", versao: "0.9.53", dias: 1 },
+        ],
+      }),
+    });
+
+    it("o ensaio testa só o que vai ser aplicado, e diz o que espera", async () => {
+      const bancos = loja();
+      const r = await atualizarBancos({ modo: "ensaiar", empresas: empresas("pneus-amigao"), migrations: fila(), psql: psqlFalso(bancos), log: silencio });
+      expect(r.sucesso).toBe(true);
+      expect(r.situacoes[0].pendentes).toEqual([68]);
+      expect(r.situacoes[0].esperam).toEqual([69, 70]);
+      expect(montarResumo(r)).toMatch(
+        /\| pneus-amigao \| 0067 \| 0068, 0069, 0070 \| ✅ 0068 passaria; ⏸ 0069, 0070 esperam 2 computadores abaixo da 0\.9\.54 \|/,
+      );
+      expect(bancos["pneus-amigao"].aplicadas).toEqual([]);
+    });
+
+    it("aplicar leva o banco até a 0068 e para — a 0070, que não exige a 0.9.54, não fura a fila", async () => {
+      const bancos = loja();
+      const r = await atualizarBancos({ modo: "aplicar", empresas: empresas("pneus-amigao"), migrations: fila(), psql: psqlFalso(bancos), log: silencio });
+      expect(r.sucesso).toBe(true);
+      expect(bancos["pneus-amigao"].aplicadas).toEqual([68]);
+      expect(r.situacoes[0].versaoFinal).toBe(68);
+      const texto = montarResumo(r);
+      expect(texto).toMatch(/### ⏸ Aplicação — parte ficou esperando os computadores/);
+      expect(texto).toMatch(/\| pneus-amigao \| 0067 \| ✅ atualizado; ⏸ 0069, 0070 esperam 2 computadores abaixo da 0\.9\.54 \| 0068 \|/);
+    });
+
+    it("com os computadores na 0.9.54, a rodada seguinte aplica o resto", async () => {
+      const bancos = { "pneus-amigao": banco(68, { computadores: [{ nome: "Balcão", versao: "0.9.54", dias: 0 }] }) };
+      const r = await atualizarBancos({ modo: "aplicar", empresas: empresas("pneus-amigao"), migrations: fila(), psql: psqlFalso(bancos), log: silencio });
+      expect(r.sucesso).toBe(true);
+      expect(r.esperando).toBe(false);
+      expect(bancos["pneus-amigao"].aplicadas).toEqual([69, 70]);
+    });
+
+    it("a caixinha continua passando por cima de tudo", async () => {
+      const bancos = loja();
+      const r = await atualizarBancos({
+        modo: "aplicar",
+        empresas: empresas("pneus-amigao"),
+        migrations: fila(),
+        psql: psqlFalso(bancos),
+        log: silencio,
+        aplicarComAtrasados: true,
+      });
+      expect(r.sucesso).toBe(true);
+      expect(bancos["pneus-amigao"].aplicadas).toEqual([68, 69, 70]);
+    });
   });
 
   it("a caixinha 'aplicar mesmo com computadores atrasados' passa por cima, e o resumo diz isso", async () => {

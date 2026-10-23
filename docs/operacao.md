@@ -219,9 +219,11 @@ item 11 da seção 8). Usa o `BACKUP_EMPRESAS` do cofre `lojas`: empresa que est
   "Use workflow from".
 - **Empresa que não aparece** → falta o bloco dela no `BACKUP_EMPRESAS` do cofre `lojas`.
 
-**Se aparecer ⏸ "passaria, mas espera N computador(es)"**: uma migration que falta exige uma versão
-mínima do programa, e um computador usado nos últimos 30 dias está abaixo. A tabela diz qual. Três
-saídas:
+**Se aparecer ⏸ "00NN espera N computador(es)"**: uma migration que falta exige uma versão
+mínima do programa, e um computador usado nos últimos 30 dias está abaixo. Desde 23/10/2026 (#760)
+o botão **aplica em partes**: as que vêm antes dela entram (✅), e dela em diante, todas esperam, na
+ordem, até uma próxima rodada (foi assim que a `0068` entrou antes da 0.9.54 e a `0069` ficou pra
+depois). Uma rodada com ⏸ não é erro. A tabela diz qual computador segura. Três saídas:
 - **esperar**: o computador se atualiza ao fechar e abrir o programa (e só recebe versão liberada,
   se não for do canal de teste);
 - **o computador não existe mais**: Configurações → "Computadores desta empresa" → ⋯ → "Esquecer
