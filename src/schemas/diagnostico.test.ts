@@ -174,6 +174,18 @@ describe("descreverEsquema", () => {
     expect(texto).toContain("0053, 0054, 0055");
   });
 
+  it("diz que a migration que falta espera os computadores (#757)", () => {
+    const texto = descreverEsquema({
+      estado: "esperando_computadores",
+      versaoBanco: 68,
+      versaoApp: 69,
+      faltando: ["0069"],
+      versaoMinimaDosComputadores: "0.9.54",
+    });
+
+    expect(texto).toBe("68 — falta a 0069, que espera os computadores chegarem na 0.9.54");
+  });
+
   it("não inventa número quando não deu pra perguntar", () => {
     // A tela de diagnóstico é justamente onde um número inventado faria o
     // maior estrago: quem lê está tentando descobrir o que está errado.
