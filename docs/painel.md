@@ -80,6 +80,9 @@ Tarefa, comentário e código nunca levam preço, dado de loja, nome de cliente 
 - **Estimativa**: cada tarefa diz no texto quantas horas deve levar, numa linha
   `Estimativa: N h`. O trabalho da equipe é medido em horas por semana, não em dinheiro, e as horas
   são contadas **por projeto** (um quadro de horas por pessoa em cada um).
+  O "X h de Y h" da tela da leva é a **soma das estimativas**, não um limite: tarefa sem a linha
+  `Estimativa:` fica fora da conta, e tarefa incompleta não pode ser pega (em 23/10 o Gusta ficou
+  sem tarefa porque as duas livres, #706 e #708, estavam fora do modelo).
 - **Fim da leva**: ela **congela**, todo mundo testa, o Claude da Sofia escreve o relatório, a
   Sofia aprova, e só então vem banco e "Liberar versão". **Bug de loja não espera a leva.**
 - **As tarefas nascem nas conversas da Sofia com o Claude dela**, que cria as issues. **Exceção, só

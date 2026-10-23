@@ -723,6 +723,9 @@ Quatro coisas que valem saber:
   **texto explicando o que fazer**, não erro cru — a regra é função pura testada
   (`schemas/danfe.ts`). Na lista, o rótulo é "Ver DANFE" na aba NFe e "Ver PDF" na de NFS-e
   (DANFE é nome de documento da NFe).
+  **NFS-e de Araraquara não tem PDF na Focus** (conferido em 23/10 com a NFS-e 30): o "Ver PDF"
+  consulta a nota e mostra o aviso de que a prefeitura guarda o documento só no portal dela. É o
+  normal, não defeito; pro cliente, o caminho é "Versão para o cliente" no menu "…" da nota.
 - **Relações** (ex-"Relatórios", label mudou antes; agora também absorveu o módulo antigo
   "Lucratividade" — um módulo só, com abas): aba "Gráficos" — gráfico de barras (Vendas x Custos x
   Lucro, **Diário/Semanal/Mensal/Anual**) + radar comparando o período atual com o anterior, sem

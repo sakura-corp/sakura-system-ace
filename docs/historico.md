@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 23/10/2026, noite (3): loja na 70, Electron 40 na main e "testar de uma vez"
+- **Banco da Pneus Amigão na 70** (#762, passo 5): o Balcão foi reiniciado por acesso remoto → 0.9.54; ensaio ✅ e aplicação. OS e cliente novo conferidos na loja.
+- **Electron 40** (#763 do Gusta) e o número **0.9.55** (#768) na `main`. **Ainda não publicada.**
+- **Regra nova** (#769): a Sofia testa tudo de uma vez, no fim de semana; quem fez testa no próprio PC antes do PR. O **Balcão está no canal normal**.
+- **Depende dela, no dia de teste**: publicar a 0.9.55, testar a impressão (o Balcão volta pro teste só nesse dia), liberar; e a #762, passo 6 (a próxima nota de verdade sair e reabrir o PDF).
+- **Próxima sessão**: revisar o PR #767 do Gusta (fotos, sem teste dela); o memorando com o privado (#632, até 26/10). Tarefas novas: #770 (CI), #765. Seguem a #746 e a #750.
+
 ### 23/10/2026, noite (2): a 0068 na loja e a v0.9.54 liberada (#762, passos 1 a 4)
 - **Banco da Pneus Amigão na 68** (ensaio e aplicação pelo botão; a `0069` e a `0070` esperam os 2 computadores).
 - **v0.9.54 publicada e liberada** (#764, só o número); testada no PC dela com o login da loja. Os dois logins são administradores: a `0069` não tira nada do balcão.
