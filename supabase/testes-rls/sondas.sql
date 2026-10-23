@@ -51,6 +51,8 @@ insert into teste_rls.sondas (tabela, insercao) values
 -- o que impede de escrever na tabela base por dentro dela é só o `revoke` da
 -- migration 0056 — esta sonda é o que prova que o revoke está lá.
 ('funcionarios_publico',  $$insert into funcionarios_publico (loja_id, nome) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda pela view')$$),
+('clientes_janela',      $$insert into clientes_janela (nome) values ('Sonda pela janela')$$),
+('veiculos_janela',      $$insert into veiculos_janela (cliente_id, placa) values ('cccccccc-0000-0000-0000-0000000000aa', 'JAN1E01')$$),
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),

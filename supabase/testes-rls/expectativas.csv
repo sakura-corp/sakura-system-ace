@@ -47,14 +47,33 @@ categorias_caixa,select,2,2,2,2,0,
 categorias_caixa,insert,1,1,1,1,0,
 categorias_caixa,update,2,2,2,2,0,
 categorias_caixa,delete,2,2,2,2,0,
-clientes,select,2,2,2,2,0,o cadastro de cliente é da empresa inteira — inclusive pro órfão
-clientes,insert,1,1,1,1,0,
-clientes,update,2,2,2,2,0,
-clientes,delete,2,2,2,2,0,
-veiculos,select,2,2,2,2,0,
-veiculos,insert,1,1,1,1,0,
-veiculos,update,2,2,2,2,0,
-veiculos,delete,2,2,2,2,0,
+#
+# TR-04.1 lote 4 (migration 0068): o cadastro de clientes e veículos exige o
+# módulo Clientes. O balconista (só Caixa) e o órfão zeraram nas oito linhas
+# abaixo. A janela que sobrou pra eles são as duas views logo adiante — é por
+# elas que o nome do cliente e a placa continuam nas listas de OS, Caixa,
+# Contas a Receber, Garantias e Notas. O cadastro rápido e os dados da nota
+# vão por funções, testadas em testar-clientes-permissao.sql.
+clientes,select,2,2,0,0,0,só com o módulo Clientes (o Consumidor da 0064 fica visível pra todos)
+clientes,insert,1,1,0,0,0,quem tem OS cadastra pela função cadastrar_cliente_rapido
+clientes,update,2,2,0,0,0,
+clientes,delete,2,2,0,0,0,
+veiculos,select,2,2,0,0,0,só com o módulo Clientes
+veiculos,insert,1,1,0,0,0,
+veiculos,update,2,2,0,0,0,
+veiculos,delete,2,2,0,0,0,
+#
+# As views da 0068. Como a funcionarios_publico, rodam com os direitos do dono:
+# o 2,2,2,0,0 da leitura é o where (operador ativo com alguma loja) escrito
+# dentro delas — o órfão fica de fora. As escritas zeradas são o revoke.
+clientes_janela,select,2,2,2,0,0,só o nome — nada de telefone, CPF ou endereço
+clientes_janela,insert,0,0,0,0,0,só leitura: o revoke da 0068
+clientes_janela,update,0,0,0,0,0,
+clientes_janela,delete,0,0,0,0,0,
+veiculos_janela,select,2,2,2,0,0,só placa, marca, modelo, cor e tipo
+veiculos_janela,insert,0,0,0,0,0,só leitura: o revoke da 0068
+veiculos_janela,update,0,0,0,0,0,
+veiculos_janela,delete,0,0,0,0,0,
 pecas,select,2,2,2,2,0,
 pecas,insert,1,1,1,1,0,
 pecas,update,2,2,2,2,0,

@@ -7,7 +7,7 @@ const SELECT_MOVIMENTO =
   // venda de balcão, migration 0064) SEM quebrar num banco que ainda não
   // rodou a 0064 — nomear a coluna ali faria o Caixa, o Início e Relações
   // estourarem "column does not exist" até a migration rodar.
-  "*, ordem_servico:ordens_servico(*, cliente:clientes(nome), itens:ordens_servico_itens(*)), " +
+  "*, ordem_servico:ordens_servico(*, cliente:clientes_janela(nome), itens:ordens_servico_itens(*)), " +
   "categoria:categorias_caixa(nome)";
 
 export async function listarMovimentosCaixa(lojaId: string): Promise<MovimentoCaixa[]> {
