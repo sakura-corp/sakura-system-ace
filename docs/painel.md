@@ -970,3 +970,11 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   tarefa, abre e fecha leva e mescla (CI verde e uma revisão do Claude antes); no SSACE nada muda. "Uma tarefa por vez"
   passou a valer **no total**, somando todos os projetos, e as horas são por projeto. A aba é a #731; as propostas em
   "Decisões da Sofia", a #732. Fluxo e quem faz o quê: `docs/projetos-secundarios.md`.
+- **23/10/2026, madrugada: a aba "Projetos secundários", as propostas em "Decisões" e o "Meu progresso" na `main`**
+  (coordenadora da Sofia, PRs #737, #736 e #738): a aba no 1º andar (`/secundarios`) acha sozinha os repositórios da
+  `sakura-corp` com o tópico `projeto-secundario`, mostra as propostas do `secundarios` e a leva atual de cada projeto com
+  "Pegar"; o "Pegar" de qualquer projeto confere "uma por vez no total" (antes e depois de escrever; na dúvida, recusa).
+  As propostas `proposta:esperando-sofia` entram em "Decisões da Sofia" com o selo "Proposta". O "Meu progresso"
+  (`/meu-progresso`, clique na própria foto; cartão no Início) conta por tarefa e PR, nunca por commit; cada um vê o seu,
+  a Sofia escolhe a pessoa (`?pessoa=`, recusado pros outros no worker). O app "Sakura Painel" foi instalado em todos os
+  repositórios da organização (Sofia, 22/10). **A Sofia confere no ar: #739.** Relatórios em `docs/relatorios/2026-10-22-tarefa-73*`.

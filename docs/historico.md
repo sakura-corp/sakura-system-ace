@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 22/10/2026, noite (pelo PC): levas 4 e 5 postas, leva 3 inteira na main
+- **Leva 3 inteira na `main`**: #717 (peça avulsa, 0066) e #716 (juntar peças, 0067) mesclados depois da revisão de código do zero e de dois consertos em cada; os pontos menores viraram a #720 e a #721.
+- **Levas 4 e 5 postas e reescritas no modelo** (`docs/painel.md`, "Andamento"); abrem sozinhas a cada aprovação. **Exceção**: a #699 (Tiago), a #689 (feita, PR #719) e a #684 podem ser adiantadas. Tarefa começada pelo número precisa do nome da pessoa nela, senão as horas não contam (`docs/equipe.md`).
+- **Leva 6 = projeto novo** (plano no privado). Foco no primeiro dinheiro; a fase 2 (lojas novas), a #366, a #367, a #457 e a #520 ficam pra depois.
+- **Depende dela**: publicar a **v0.9.52** e só depois atualizar o banco com a 0065, a 0066 e a 0067 (antes, ensaiar no `ssace-teste`); a rodada de testes e o relatório da leva 3; o memorando (#632, até 26/10); o Send do Lázaro (de mudança, volta até domingo).
+- **Próxima sessão**: publicar a v0.9.52 e atualizar o banco; depois, o memorando com o privado.
+
 ### 22/10/2026, tarde (pelo PC): leva 2 aprovada, leva 3 andando, orçamento na main
 - **Leva 2 aprovada** (relatório `docs/relatorios/leva-2.md`, PR #704; 12 de 12, sem a rodada de testes, decisão dela). **Leva 3** é a atual: a #379 (orçamento, PR #705) e a #653 (peça parecida, PR #707) mescladas; faltam a #655 e a #656.
 - **Próximo passo, dela**: publicar e liberar a **v0.9.52** e **só depois** atualizar o banco com a `0065` (ela declara `versao-minima-do-programa: 0.9.52`). Até lá, o orçamento e o aviso de peça parecida não chegam às lojas.
