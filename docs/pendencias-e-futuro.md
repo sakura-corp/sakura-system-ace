@@ -408,8 +408,11 @@ O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de 
   últimas, então a 42 perde o suporte quando a 45 sair (~20/10/2026). A 44 vai até ~fev/2027.
 - **Andamento**: salto 1 (**36**) publicado no teste em 04/10 como `v0.9.50`, e no Balcão desde
   05/10; no laboratório, nenhuma das 61 telas mudou a olho e os campos se comportaram igual.
-  Falta o teste dela. **Salto 2 (40) já passou no laboratório** (05/10): 36 × 40 deu as 61 telas
-  idênticas ponto por ponto.
+  Falta o teste dela. **Salto 2 (40)**: PR da #385 (23/10), com o `electron` em `^40.10.6`
+  (Chromium 144, Node 24); no laboratório, 36.9.5 × 40.10.6 deu 0 de 64 telas mudadas a olho
+  (só o contorno de um "0" no calendário do Início) e os campos iguais; `test:electron` e o
+  build com as quatro chavinhas ok. Falta publicar no teste e o teste dela na loja; o aviso
+  mensal continua vermelho até a 44 (o suporte hoje é da 43 à 45).
 - **O Balcão é Windows 10 Home 22H2**: nenhuma linha até a 46 deixa de rodar nele (o Electron
   exige Windows 10 ou mais novo desde a 23). Ficar de olho quando o Chromium anunciar o fim do
   Windows 10.
