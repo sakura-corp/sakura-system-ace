@@ -150,8 +150,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, madrugada (pelo PC): projetos secundários, da entrevista à main
-- **O Gusta guia os projetos secundários** (entrevista com ela; regra na seção 0 e em `docs/projetos-secundarios.md`): cada um no seu repositório privado, com levas próprias a partir da 1. **A leva 6 volta a ser do SSACE**; o ar-condicionado será projeto principal dela, com repositório e levas próprios.
-- **Seis tarefas na `main`, por uma coordenadora com 5 sessões**: #733 (regras), #732 (propostas em "Decisões"), #731 (aba "Projetos secundários" e "uma por vez no total"), #734 ("Meu progresso", cada um vê o seu); e os repositórios novos `sakura-corp/secundarios` (políticas, skills `nova-proposta` e `analisar-proposta`) e `sakura-corp/modelo-projeto` (o modelo de todo projeto novo).
-- **Depende dela**: conferir no ar a aba e o "Meu progresso" (#739); quando aprovar a 1ª proposta, criar o repositório pelo modelo, com o tópico `projeto-secundario` e a regra da `main` (README do modelo, passo 7). Continuam: o relatório da leva 3 e o memorando (#632, até 26/10). **A v0.9.52 está liberada (22/10, 16h26) e o banco da loja já está na 67** (conferido por ela em 23/10; não foi pelo botão, que não roda desde 30/09).
+### 23/10/2026, meio-dia (pelo PC): leva 3 aprovada, leva 4 aberta
+- **Leva 3 aprovada** (relatório #745): 4 de 4 tarefas, testada pelo Tiago e pela Sofia (#728). Defeitos #741 e #742 consertados na `main` (#743); #744 fica fora de leva. **A leva 4 está aberta.**
+- Painel: "O que testar" com o botão de copiar e "Quem já terminou" (#730).
+- **Depende dela** (#746): publicar a v0.9.53 com os consertos (#743); cópia de segurança antes da 1ª junção de peças na loja; conferir no ar a #653, a #379 e a #655; conferir a aba e o "Meu progresso" (#739). O Tiago confere o T12, o T14 e o T15 na tela e fecha a #741 e a #742.
 - **Próxima sessão**: o memorando com o privado (#632, até 26/10).
