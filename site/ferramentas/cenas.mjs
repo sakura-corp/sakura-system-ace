@@ -34,6 +34,11 @@ export const CENAS = [
   { arquivo: "05b-cliente-veiculos", modulo: "Clientes", titulo: "Veículos de um cliente",
     rota: "/clientes", passos: [{ clicar: "Ver veículos" }],
     descricao: "Os carros de um cliente, abertos pelo 'Ver veículos' da lista. Cada carro leva pra ficha dele; carro cadastrado sem placa aparece pela marca e pelo modelo." },
+  // A caixinha não é botão nem link, então vai por seletor (#684).
+  { arquivo: "05c-clientes-sumidos", modulo: "Clientes", titulo: "Clientes que sumiram",
+    rota: "/clientes",
+    passos: [{ seletor: 'label:has-text("Só os clientes que sumiram") input[type="checkbox"]' }],
+    descricao: "Quem não volta há mais de 6 meses (o número de meses dá pra mudar), começando por quem mais gastou: a última visita, o que fez naquela vez e quanto já gastou na loja. O botão do WhatsApp abre a conversa com a mensagem pronta pra chamar o cliente de volta. Conta só OS e vendas de balcão faturadas, de todas as lojas que a pessoa acessa." },
   { arquivo: "06-cliente-form", modulo: "Clientes", titulo: "Cadastro de cliente e veículos",
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
     descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
