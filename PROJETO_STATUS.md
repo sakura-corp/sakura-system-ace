@@ -150,9 +150,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 22/10/2026, noite (pelo PC): levas 4 e 5 postas, leva 3 inteira na main
-- **Leva 3 inteira na `main`**: #717 (peça avulsa, 0066) e #716 (juntar peças, 0067) mesclados depois da revisão de código do zero e de dois consertos em cada; os pontos menores viraram a #720 e a #721.
-- **Levas 4 e 5 postas e reescritas no modelo** (`docs/painel.md`, "Andamento"); abrem sozinhas a cada aprovação. **Exceção**: a #699 (Tiago), a #689 (feita, PR #719) e a #684 podem ser adiantadas. Tarefa começada pelo número precisa do nome da pessoa nela, senão as horas não contam (`docs/equipe.md`).
-- **Leva 6 = projeto novo** (plano no privado). Foco no primeiro dinheiro; a fase 2 (lojas novas), a #366, a #367, a #457 e a #520 ficam pra depois.
-- **Depende dela**: publicar a **v0.9.52** e só depois atualizar o banco com a 0065, a 0066 e a 0067 (antes, ensaiar no `ssace-teste`); a rodada de testes e o relatório da leva 3; o memorando (#632, até 26/10); o Send do Lázaro (de mudança, volta até domingo).
-- **Próxima sessão**: publicar a v0.9.52 e atualizar o banco; depois, o memorando com o privado.
+### 23/10/2026, madrugada (pelo PC): projetos secundários, da entrevista à main
+- **O Gusta guia os projetos secundários** (entrevista com ela; regra na seção 0 e em `docs/projetos-secundarios.md`): cada um no seu repositório privado, com levas próprias a partir da 1. **A leva 6 volta a ser do SSACE**; o ar-condicionado será projeto principal dela, com repositório e levas próprios.
+- **Seis tarefas na `main`, por uma coordenadora com 5 sessões**: #733 (regras), #732 (propostas em "Decisões"), #731 (aba "Projetos secundários" e "uma por vez no total"), #734 ("Meu progresso", cada um vê o seu); e os repositórios novos `sakura-corp/secundarios` (políticas, skills `nova-proposta` e `analisar-proposta`) e `sakura-corp/modelo-projeto` (o modelo de todo projeto novo).
+- **Depende dela**: conferir no ar a aba e o "Meu progresso" (#739); quando aprovar a 1ª proposta, criar o repositório pelo modelo, com o tópico `projeto-secundario` e a regra da `main` (README do modelo, passo 7). Continuam: o relatório da leva 3 e o memorando (#632, até 26/10). **A v0.9.52 está liberada (22/10, 16h26) e o banco da loja já está na 67** (conferido por ela em 23/10; não foi pelo botão, que não roda desde 30/09).
+- **Próxima sessão**: o memorando com o privado (#632, até 26/10).
