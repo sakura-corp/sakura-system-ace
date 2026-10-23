@@ -192,6 +192,7 @@ Configurações continua no rodapé (não é andar).
   **Projetos** (um cartão por repositório da `sakura-corp` com o tópico `projeto-secundario`) e **a
   leva de cada projeto**, com o mesmo "Pegar" da tela da leva. Todo mundo da equipe vê; sem botão de
   administrador na 1ª versão. As levas do SSACE não mudam. Fluxo e regras: `docs/projetos-secundarios.md`.
+  Proposta **fechada sem `aprovada` nem `recusada`** (um teste, uma desistência) não aparece na lista (#749, 23/10).
 
 - **Ordem na barra**: de cima pra baixo começando pelo Térreo (a ordem de uso), não do topo do prédio.
 - **Onde mora**: tudo em `painel/src/logica/navegacao.ts` (id, título e `chefes` de cada andar; `andarDoItem()` acha o andar
@@ -978,3 +979,6 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
   (`/meu-progresso`, clique na própria foto; cartão no Início) conta por tarefa e PR, nunca por commit; cada um vê o seu,
   a Sofia escolhe a pessoa (`?pessoa=`, recusado pros outros no worker). O app "Sakura Painel" foi instalado em todos os
   repositórios da organização (Sofia, 22/10). **A Sofia confere no ar: #739.** Relatórios em `docs/relatorios/2026-10-22-tarefa-73*`.
+- **23/10/2026, tarde: a proposta de teste saiu da aba** (Sofia, #749): a sakura-corp/secundarios#2, fechada como
+  "não planejada", ainda aparecia como "Esperando a Sofia". A etiqueta `proposta` saiu dela, e a aba passou a esconder
+  proposta fechada sem `aprovada` nem `recusada`.

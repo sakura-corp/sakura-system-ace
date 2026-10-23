@@ -150,8 +150,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, meio-dia (pelo PC): leva 3 aprovada, leva 4 aberta
-- **Leva 3 aprovada** (relatório #745): 4 de 4 tarefas, testada pelo Tiago e pela Sofia (#728). Defeitos #741 e #742 consertados na `main` (#743); #744 fica fora de leva. **A leva 4 está aberta.**
-- Painel: "O que testar" com o botão de copiar e "Quem já terminou" (#730).
-- **Depende dela** (#746): publicar a v0.9.53 com os consertos (#743); cópia de segurança antes da 1ª junção de peças na loja; conferir no ar a #653, a #379 e a #655; conferir a aba e o "Meu progresso" (#739). O Tiago confere o T12, o T14 e o T15 na tela e fecha a #741 e a #742.
+### 23/10/2026, tarde (pelo PC): a proposta de teste saiu do painel
+- A proposta "agendamento online para barbearias" era o teste da `nova-proposta` (sakura-corp/secundarios#2): saiu da aba, e o painel passou a esconder proposta fechada sem decisão (#749, na `main`). A `analisar-proposta` foi ensaiada sem publicar.
+- **Depende dela**: mandar ao Gusta o passo a passo de como propor e conferir o acesso dele ao `secundarios` (#750, texto pronto lá); continua o #746.
 - **Próxima sessão**: o memorando com o privado (#632, até 26/10).
