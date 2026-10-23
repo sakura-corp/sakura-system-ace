@@ -11,7 +11,12 @@ import {
 } from "@/schemas/metricasCaixa";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { LinkPlaca } from "@/components/LinkPlaca";
-import { criarCliente, criarVeiculo, listarClientes } from "@/lib/clientes";
+import {
+  cadastrarClienteRapido,
+  cadastrarVeiculoRapido,
+  listarClientesParaEscolha,
+} from "@/lib/clientes";
+import { temPermissao } from "@/types/operador";
 import {
   listarModelosWhatsapp,
   registrarMensagemAberta,
@@ -84,6 +89,8 @@ function formatarMoeda(valor: number): string {
 
 export function OrdensServicoPage() {
   const { operador, lojaAtual } = useAuth();
+  // Sem o módulo Clientes a lista vem pela janela estreita (migration 0068).
+  const podeVerCadastro = temPermissao(operador, "clientes");
   const location = useLocation();
   const navigate = useNavigate();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
@@ -206,7 +213,7 @@ export function OrdensServicoPage() {
         modelosWhatsappCarregados,
       ] = await Promise.all([
         listarOrdens(lojaAtual.id),
-        listarClientes(),
+        listarClientesParaEscolha(podeVerCadastro),
         listarPecas(),
         listarServicos(),
         listarFuncionariosPublico(lojaAtual.id),
@@ -357,17 +364,16 @@ export function OrdensServicoPage() {
   // de clientes antes de devolver o id: é o que faz o registro novo já
   // aparecer escolhido no campo, em vez de o operador ter que procurá-lo.
   async function handleCadastrarCliente(cliente: NovoCliente, veiculos: VeiculoFormulario[]) {
-    const criado = await criarCliente(cliente, veiculos);
-    const lista = await listarClientes();
-    setClientes(lista);
-    const veiculoId = lista.find((c) => c.id === criado.id)?.veiculos?.[0]?.id ?? null;
-    return { clienteId: criado.id, veiculoId };
+    // Vai por função do banco (migration 0068): quem tem OS pode não ter Clientes.
+    const { clienteId, veiculoId } = await cadastrarClienteRapido(cliente, veiculos[0] ?? null);
+    setClientes(await listarClientesParaEscolha(podeVerCadastro));
+    return { clienteId, veiculoId };
   }
 
   async function handleCadastrarVeiculo(clienteId: string, veiculo: VeiculoFormulario) {
-    const criado = await criarVeiculo(clienteId, veiculo);
-    setClientes(await listarClientes());
-    return criado.id;
+    const veiculoId = await cadastrarVeiculoRapido(clienteId, veiculo);
+    setClientes(await listarClientesParaEscolha(podeVerCadastro));
+    return veiculoId;
   }
 
   // A venda de balcão grava e fatura num passo só. Duas saídas de erro, e
@@ -402,9 +408,9 @@ export function OrdensServicoPage() {
   }
 
   async function handleCadastrarClienteDaVenda(cliente: NovoCliente) {
-    const criado = await criarCliente(cliente, []);
-    setClientes(await listarClientes());
-    return criado.id;
+    const { clienteId } = await cadastrarClienteRapido(cliente, null);
+    setClientes(await listarClientesParaEscolha(podeVerCadastro));
+    return clienteId;
   }
 
   // Fecha tudo que estiver aberto antes de abrir outra coisa: a página só
@@ -560,6 +566,7 @@ export function OrdensServicoPage() {
           jurosParcelas={jurosParcelas}
           onRegistrar={handleRegistrarVenda}
           onCadastrarCliente={handleCadastrarClienteDaVenda}
+          podeVerCadastro={podeVerCadastro}
           onCancelar={() => setMostrarVenda(false)}
         />
       )}
@@ -776,8 +783,10 @@ export function OrdensServicoPage() {
                     >
                       {/* O carro só fica pronto pra retirar quando a OS é
                           concluída ou faturada — antes disso o aviso seria
-                          mentira. */}
-                      {STATUS_COM_FECHAMENTO.includes(ordem.status) && !ehVendaBalcao(ordem) && (
+                          mentira. Sem o módulo Clientes o telefone não chega
+                          (a janela da migration 0068 só tem o nome), e o
+                          botão diria "cadastro sem telefone" — então some. */}
+                      {podeVerCadastro && STATUS_COM_FECHAMENTO.includes(ordem.status) && !ehVendaBalcao(ordem) && (
                         <BotaoWhatsapp
                           telefone={
                             clientes.find((c) => c.id === ordem.cliente_id)?.telefone

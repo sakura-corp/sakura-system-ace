@@ -4,7 +4,12 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { LinkPlaca } from "@/components/LinkPlaca";
 import { useAuth } from "@/contexts/AuthContext";
-import { criarCliente, criarVeiculo, listarClientes } from "@/lib/clientes";
+import {
+  cadastrarClienteRapido,
+  cadastrarVeiculoRapido,
+  listarClientesParaEscolha,
+} from "@/lib/clientes";
+import { temPermissao } from "@/types/operador";
 import { diaBrasileiro, dataCurta } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { calcularSaldoPorPeca, listarMovimentos } from "@/lib/estoque";
@@ -61,6 +66,8 @@ import { StatusOrdem } from "./StatusOrdemBadge";
  */
 export function OrcamentosPage() {
   const { operador, lojaAtual } = useAuth();
+  // Sem o módulo Clientes a lista vem pela janela estreita (migration 0068).
+  const podeVerCadastro = temPermissao(operador, "clientes");
   const navigate = useNavigate();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -108,7 +115,7 @@ export function OrcamentosPage() {
       const [ordensCarregadas, clientesC, pecasC, servicosC, funcionariosC, modelosC] =
         await Promise.all([
           listarOrcamentos(lojaAtual.id),
-          listarClientes(),
+          listarClientesParaEscolha(podeVerCadastro),
           listarPecas(),
           listarServicos(),
           listarFuncionariosPublico(lojaAtual.id),
@@ -223,17 +230,16 @@ export function OrcamentosPage() {
   }
 
   async function handleCadastrarCliente(cliente: NovoCliente, veiculos: VeiculoFormulario[]) {
-    const criado = await criarCliente(cliente, veiculos);
-    const lista = await listarClientes();
-    setClientes(lista);
-    const veiculoId = lista.find((c) => c.id === criado.id)?.veiculos?.[0]?.id ?? null;
-    return { clienteId: criado.id, veiculoId };
+    // Vai por função do banco (migration 0068): quem tem OS pode não ter Clientes.
+    const { clienteId, veiculoId } = await cadastrarClienteRapido(cliente, veiculos[0] ?? null);
+    setClientes(await listarClientesParaEscolha(podeVerCadastro));
+    return { clienteId, veiculoId };
   }
 
   async function handleCadastrarVeiculo(clienteId: string, veiculo: VeiculoFormulario) {
-    const criado = await criarVeiculo(clienteId, veiculo);
-    setClientes(await listarClientes());
-    return criado.id;
+    const veiculoId = await cadastrarVeiculoRapido(clienteId, veiculo);
+    setClientes(await listarClientesParaEscolha(podeVerCadastro));
+    return veiculoId;
   }
 
   function textoOrcamento(ordem: OrdemServico): string {
@@ -245,6 +251,9 @@ export function OrcamentosPage() {
 
   function botaoWhatsapp(ordem: OrdemServico) {
     if (ordem.status !== "orcamento") return null;
+    // Sem o módulo Clientes o telefone não chega (a janela da migration 0068
+    // só tem o nome): o botão diria "cadastro sem telefone", que é mentira.
+    if (!podeVerCadastro) return null;
     const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone;
     return (
       <BotaoWhatsapp

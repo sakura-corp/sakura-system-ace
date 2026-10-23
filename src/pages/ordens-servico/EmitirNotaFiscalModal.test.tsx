@@ -50,7 +50,10 @@ vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
 vi.mock("@/lib/clientes", () => ({
-  buscarClientePorId: async () => ({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null }),
+  buscarClienteEVeiculoDaOrdem: async () => ({
+    cliente: { id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null },
+    veiculo: null,
+  }),
 }));
 const buscarConfiguracaoFiscal = vi.fn();
 vi.mock("@/lib/configuracoes", () => ({

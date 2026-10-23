@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
-import { buscarClientePorId } from "@/lib/clientes";
+import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import { buscarConfiguracaoFiscal, confirmarAliquotaCompetencia } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
@@ -175,9 +175,9 @@ export function EmitirNotaFiscalModal({
           .map((item) => item.peca_id)
           .filter((id): id is string => Boolean(id));
 
-        const [config, clienteCompleto, pecas, cadastro] = await Promise.all([
+        const [config, { cliente: clienteCompleto }, pecas, cadastro] = await Promise.all([
           buscarConfiguracaoFiscal(ordem.loja_id),
-          buscarClientePorId(ordem.cliente_id),
+          buscarClienteEVeiculoDaOrdem(ordem.id),
           idsDasPecas.length > 0 ? buscarPecasPorIds(idsDasPecas) : Promise.resolve([]),
           // Só serve ao aviso de peça parecida: se não vier, o cadastro abre igual.
           tipoNota === "NFC-e"
@@ -191,7 +191,7 @@ export function EmitirNotaFiscalModal({
         setConfiguracaoFiscal(config);
         setCliente(clienteCompleto);
         setPecasDaNota(pecas);
-        if (clienteCompleto.codigo_municipio) {
+        if (clienteCompleto?.codigo_municipio) {
           setCodigoMunicipioCliente(clienteCompleto.codigo_municipio);
         }
       } catch (err) {

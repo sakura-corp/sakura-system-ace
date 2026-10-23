@@ -44,6 +44,8 @@ export function FichaVeiculoPage() {
   const [ficha, setFicha] = useState<FichaDoVeiculo | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Sem o módulo Clientes a ficha vem pela janela estreita (migration 0068).
+  const podeVerCadastro = temPermissao(operador, "clientes");
 
   useEffect(() => {
     async function carregar() {
@@ -54,7 +56,7 @@ export function FichaVeiculoPage() {
       setCarregando(true);
       setErro(null);
       try {
-        setFicha(await buscarFichaDoVeiculo(id));
+        setFicha(await buscarFichaDoVeiculo(id, podeVerCadastro));
       } catch (err) {
         console.error("Erro ao carregar a ficha do veículo:", err);
         setErro(mensagemDeErro(err));
@@ -63,7 +65,7 @@ export function FichaVeiculoPage() {
       }
     }
     carregar();
-  }, [id]);
+  }, [id, podeVerCadastro]);
 
   const hoje = hojeLocal();
 
@@ -160,9 +162,13 @@ export function FichaVeiculoPage() {
           <p className="truncate text-destaque font-semibold text-sakura-purple-dark">
             {veiculo.cliente?.nome ?? "—"}
           </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {veiculo.cliente?.telefone || "Sem telefone cadastrado"}
-          </p>
+          {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
+              "sem telefone cadastrado" seria mentira, então a linha some. */}
+          {podeVerCadastro && (
+            <p className="mt-1 text-rotulo text-sakura-muted">
+              {veiculo.cliente?.telefone || "Sem telefone cadastrado"}
+            </p>
+          )}
         </Cartao>
 
         <Cartao

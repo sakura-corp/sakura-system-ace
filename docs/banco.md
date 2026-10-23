@@ -9,7 +9,8 @@
 
 **Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
 a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
-#655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026 e **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+#655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
+(clientes só com o módulo, tarefa #365) em 23/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -463,6 +464,32 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   esquecida, sem a rede, erro engolido no último passo, a peça que fica sem conferência de loja,
   sem a linha da junção, sem a comparação da prévia...). **Ordem de subir: migration primeiro** (sem ela, a
   tela de juntar dá erro ao abrir a prévia; o resto do programa não muda).
+- `0068` e `0069`: **Clientes e Veículos só pra quem tem o módulo Clientes** (tarefa #365, lote 4
+  do TR-04.1). **Em duas, de propósito, e em ordem**: a `0068` só ACRESCENTA a janela e as funções
+  (a versão atual do programa não percebe), a versão nova do programa passa a ler por elas, e a
+  `0069` FECHA as tabelas, com `-- versao-minima-do-programa: 0.9.54` (a versão anterior, rodando
+  com ela, perde pra quem não tem Clientes o nome do cliente nas listas, a nota e o cadastro
+  rápido). Numa migration só, uma das duas ordens quebrava as lojas. **Ordem: `0068` → publicar
+  e liberar a versão → `0069`.** A `0069` dá às duas tabelas as quatro policies separadas com
+  `operador_tem_permissao('clientes')` (o cliente **Consumidor** da `0064` continua visível pra
+  qualquer logado). O que o balcão continua tendo sem o módulo, por decisão da Sofia (22/10), é
+  tudo da `0068`: (a) a **janela estreita**, duas views com os direitos do dono
+  (`clientes_janela`: id e nome; `veiculos_janela`: id, cliente_id, placa, marca, modelo, cor e
+  tipo), filtradas por dentro pela função nova `operador_ativo_com_loja()` (o órfão e o operador
+  desligado ficam de fora) e só com `select` concedido. **Os `join` embutidos do programa apontam
+  pra elas** (`cliente:clientes_janela(nome)`), em OS, Caixa, Contas a Receber, Garantias, Notas e
+  na ficha do veículo, pra todo mundo — conferido num PostgREST 12 de verdade que a relação
+  atravessa a view; (b) o **cadastro rápido** da OS, do Orçamento e da venda de balcão, pelas
+  funções `cadastrar_cliente_rapido(cliente, veículo)` e `cadastrar_veiculo_rapido(cliente,
+  veículo)`, que exigem o módulo OS (ou Clientes) e alguma loja, recusam nome em branco e carro
+  no Consumidor, gravam só nome, telefone, tipo, CPF/CNPJ e o veículo, e devolvem só os ids;
+  (c) a **nota fiscal e a garantia**: `cliente_e_veiculo_da_ordem(os)` entrega o cadastro do
+  cliente (sem aniversário) e do veículo de UMA OS, pra quem tem o módulo OS (ou Clientes) e
+  acesso à loja dela. O Início só pede o cadastro (pros aniversários do calendário) a quem tem o
+  módulo. **Risco que sobra, pra ela decidir**: quem tem OS pode pedir a função OS por OS (ou
+  abrir uma OS com qualquer cliente) e juntar CPF e endereço; a leitura não fica na auditoria.
+  Teste em `supabase/scripts/testar-clientes-permissao.sql` (as duas metades), conferido com 16
+  mutações, todas vermelhas.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -546,13 +573,15 @@ outro projeto Supabase do zero (ver seção 9).
   uma saída numa loja e uma entrada na outra). Das três, a visão somada é a que um dono de 2 lojas
   deve pedir primeiro. Nenhuma impede uma empresa assim de começar a usar.
 
-- **`clientes`** (tem um cliente fixo, **"Consumidor"**, UUID `…c000`, migration `0064` — é
+- **`clientes`** (desde a `0069`, **só com o módulo Clientes**; sem ele, só o nome, pela view
+  `clientes_janela`) (tem um cliente fixo, **"Consumidor"**, UUID `…c000`, migration `0064` — é
   nele que a venda de balcão nasce quando ninguém se identifica; `listarClientes()` o deixa FORA
   do cadastro e das listas de escolha, e a NFC-e nunca leva documento dele): id, nome (vira "Razão social" na tela quando `tipo_pessoa` é jurídica, mesmo
   campo), tipo_pessoa (`fisica`/`juridica`, default `fisica`), cpf_cnpj (rótulo muda pra "CPF" ou
   "CNPJ" conforme o tipo), telefone, email, cep, rua, numero, bairro, cidade, uf,
   data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em
-- **`veiculos`**: id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
+- **`veiculos`** (desde a `0069`, só com o módulo Clientes; sem ele, pela view
+  `veiculos_janela`): id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
   (`hatch`/`sedan`/`suv`/`picape`/`moto`, opcional — usado só pra escolher o ícone certo na seção
   "Veículos no pátio" do Início), km_atual, criado_em
 - **`pecas`**: id, codigo_interno (exibido como "Referência"), codigo_barras, descricao, marca,

@@ -37,7 +37,7 @@ export interface PagamentoOrdem {
 // nomes passam a vir da view `funcionarios_publico`, numa consulta à parte
 // que é costurada em `nomearFuncionarios()` logo abaixo.
 const SELECT_ORDEM =
-  "*, cliente:clientes(nome), veiculo:veiculos(placa, marca, modelo, cor, tipo), " +
+  "*, cliente:clientes_janela(nome), veiculo:veiculos_janela(placa, marca, modelo, cor, tipo), " +
   "criado_por:operadores!ordens_servico_criado_por_id_fkey(nome), " +
   "atualizado_por:operadores!ordens_servico_atualizado_por_id_fkey(nome), " +
   "itens:ordens_servico_itens(*)";

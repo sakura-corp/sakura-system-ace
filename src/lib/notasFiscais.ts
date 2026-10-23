@@ -16,7 +16,7 @@ import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
 
 const SELECT_ARQUIVO =
-  "*, ordem_servico:ordens_servico(cliente:clientes(nome)), operador:operadores(nome)";
+  "*, ordem_servico:ordens_servico(cliente:clientes_janela(nome)), operador:operadores(nome)";
 
 export async function listarArquivos(
   tipo: TipoNotaFiscal,

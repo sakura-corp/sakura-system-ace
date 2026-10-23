@@ -28,11 +28,11 @@ vi.mock("@/lib/ordensServico", () => ({
 }));
 vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
 vi.mock("@/lib/clientes", () => ({
-  listarClientes: async () => [
+  listarClientesParaEscolha: async () => [
     { id: "c1", nome: "Maria da Silva", telefone: "(16) 99123-4567", veiculos: [] },
   ],
-  criarCliente: vi.fn(),
-  criarVeiculo: vi.fn(),
+  cadastrarClienteRapido: vi.fn(),
+  cadastrarVeiculoRapido: vi.fn(),
 }));
 vi.mock("@/lib/pecas", () => ({
   listarPecas: async () => [{ id: "p-1", descricao: "Palheta 20 pol", codigo_interno: null, codigo_barras: null, medida: null }],
@@ -48,9 +48,14 @@ vi.mock("@/lib/modelosWhatsapp", () => ({
   textoDoModelo: () => "Olá, {cliente}! Orçamento {numero}",
   registrarMensagemAberta: vi.fn(),
 }));
+let operadorAtual: { id: string; admin: boolean; permissoes: string[] } = {
+  id: "op",
+  admin: true,
+  permissoes: [],
+};
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({
-    operador: { id: "op", admin: true, permissoes: [] },
+    operador: operadorAtual,
     lojaAtual: { id: "loja-a", nome: "Loja Centro" },
   }),
 }));
@@ -98,6 +103,7 @@ function montar() {
 }
 
 beforeEach(() => {
+  operadorAtual = { id: "op", admin: true, permissoes: [] };
   localStorage.clear();
   vi.clearAllMocks();
   listarOrcamentos.mockResolvedValue([noPrazo, vencido, recusado]);
@@ -105,6 +111,19 @@ beforeEach(() => {
 });
 
 describe("OrcamentosPage", () => {
+  it("sem o módulo Clientes, o botão de mandar pelo WhatsApp some (o telefone não chega pela janela)", async () => {
+    operadorAtual = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+    montar();
+    await screen.findByText("Orçamento 1");
+    expect(screen.queryAllByTitle("Mandar o orçamento pelo WhatsApp")).toHaveLength(0);
+  });
+
+  it("com o módulo Clientes, o botão de mandar pelo WhatsApp continua", async () => {
+    montar();
+    await screen.findByText("Orçamento 1");
+    expect(screen.queryAllByTitle("Mandar o orçamento pelo WhatsApp").length).toBeGreaterThan(0);
+  });
+
   it("busca só os orçamentos da loja, nunca a lista inteira de OS", async () => {
     montar();
     await screen.findByText("Orçamento 1");

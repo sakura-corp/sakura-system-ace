@@ -27,20 +27,33 @@ export interface FichaDoVeiculo {
  * existe a partir da migration 0064, e pedir uma coluna que um banco mais
  * antigo não tem derrubaria a tela inteira (é o mesmo motivo do SELECT_ORDEM
  * em ordensServico.ts).
+ *
+ * Quem não tem o módulo Clientes (só OS, migration 0068) lê o carro e o dono
+ * pela janela estreita: placa, marca, modelo, cor e tipo, e o nome do dono.
+ * Ano, KM do cadastro e telefone voltam `null`, e a tela mostra "—".
  */
-export async function buscarFichaDoVeiculo(veiculoId: string): Promise<FichaDoVeiculo | null> {
-  const { data: veiculo, error: erroVeiculo } = await supabase
-    .from("veiculos")
-    .select("*, cliente:clientes(id, nome, telefone)")
-    .eq("id", veiculoId)
-    .maybeSingle();
+export async function buscarFichaDoVeiculo(
+  veiculoId: string,
+  podeVerCadastro: boolean,
+): Promise<FichaDoVeiculo | null> {
+  const { data: veiculo, error: erroVeiculo } = podeVerCadastro
+    ? await supabase
+        .from("veiculos")
+        .select("*, cliente:clientes(id, nome, telefone)")
+        .eq("id", veiculoId)
+        .maybeSingle()
+    : await supabase
+        .from("veiculos_janela")
+        .select("id, cliente_id, placa, marca, modelo, cor, tipo, cliente:clientes_janela(id, nome)")
+        .eq("id", veiculoId)
+        .maybeSingle();
   if (erroVeiculo) throw erroVeiculo;
   if (!veiculo) return null;
 
   const { data: ordens, error: erroOrdens } = await supabase
     .from("ordens_servico")
     .select(
-      "*, cliente:clientes(nome), " +
+      "*, cliente:clientes_janela(nome), " +
         "itens:ordens_servico_itens(id, tipo, peca_id, descricao, quantidade, preco_unitario, desconto, " +
         "peca:pecas(prazo_garantia_dias))",
     )
@@ -49,9 +62,21 @@ export async function buscarFichaDoVeiculo(veiculoId: string): Promise<FichaDoVe
   if (erroOrdens) throw erroOrdens;
 
   return {
-    veiculo: veiculo as unknown as VeiculoDaFicha,
+    veiculo: completarVeiculoDaJanela(veiculo as unknown as Partial<VeiculoDaFicha>),
     // Orçamento (#379) não é visita: aberto ou recusado, fica fora da
     // história do carro (linha do tempo, KM, total gasto, garantia).
     ordens: ((ordens ?? []) as unknown as OrdemDaFicha[]).filter(contaNosNumeros),
   };
+}
+
+// A janela não traz ano, KM nem telefone: completa com `null` pra a ficha
+// tratar como "não preenchido", em vez de `undefined` escapar pra tela.
+function completarVeiculoDaJanela(veiculo: Partial<VeiculoDaFicha>): VeiculoDaFicha {
+  return {
+    ano: null,
+    km_atual: null,
+    criado_em: "",
+    ...veiculo,
+    cliente: veiculo.cliente ? { ...veiculo.cliente, telefone: veiculo.cliente.telefone ?? null } : null,
+  } as VeiculoDaFicha;
 }

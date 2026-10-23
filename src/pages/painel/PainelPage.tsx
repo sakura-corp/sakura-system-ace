@@ -106,6 +106,11 @@ export function PainelPage() {
   // Pedir e somar esse pedaço daria "Vendas mês" errada com cara de certa.
   const podeVerCaixa = MODULOS_QUE_LEEM_O_CAIXA.some((m) => temPermissao(operador, m));
 
+  // Os aniversários do calendário vêm do cadastro de clientes, que desde a
+  // migration 0069 só responde a quem tem o módulo Clientes. Sem ele, o
+  // calendário simplesmente não mostra aniversários.
+  const podeVerClientes = temPermissao(operador, "clientes");
+
   const [mesVisivel, setMesVisivel] = useState(() => ({
     ano: hoje.getFullYear(),
     mes: hoje.getMonth(),
@@ -130,7 +135,7 @@ export function PainelPage() {
         ] = await Promise.all([
           podeVerCaixa ? listarMovimentosCaixa(lojaAtual.id) : Promise.resolve([]),
           listarOrdens(lojaAtual.id),
-          listarClientes(),
+          podeVerClientes ? listarClientes() : Promise.resolve([]),
           podeVerContas ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
           buscarConfiguracaoPainelInicio(lojaAtual.id),
           listarPecas(),
@@ -153,7 +158,7 @@ export function PainelPage() {
       }
     }
     carregar();
-  }, [lojaAtual, podeVerContas, podeVerCaixa]);
+  }, [lojaAtual, podeVerContas, podeVerCaixa, podeVerClientes]);
 
   const avisoAliquota = avisoAliquotaCompetencia(configFiscal, hoje);
 

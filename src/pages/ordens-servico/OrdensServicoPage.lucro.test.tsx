@@ -26,9 +26,9 @@ vi.mock("@/lib/ordensServico", () => ({
 }));
 vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
 vi.mock("@/lib/clientes", () => ({
-  listarClientes: async () => [{ id: "c1", nome: "Maria", telefone: null, veiculos: [] }],
-  criarCliente: vi.fn(),
-  criarVeiculo: vi.fn(),
+  listarClientesParaEscolha: async () => [{ id: "c1", nome: "Maria", telefone: null, veiculos: [] }],
+  cadastrarClienteRapido: vi.fn(),
+  cadastrarVeiculoRapido: vi.fn(),
 }));
 vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));

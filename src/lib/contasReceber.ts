@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
 import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 
-const SELECT_CONTA = "*, cliente:clientes(nome)";
+const SELECT_CONTA = "*, cliente:clientes_janela(nome)";
 
 export async function listarContasReceber(lojaId: string): Promise<ContaReceber[]> {
   // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.

@@ -131,7 +131,7 @@ describe("FichaVeiculoPage", () => {
     montar();
 
     expect(await screen.findByRole("heading", { name: "RTA-4B71" })).toBeInTheDocument();
-    expect(buscarFichaDoVeiculo).toHaveBeenCalledWith("v1");
+    expect(buscarFichaDoVeiculo).toHaveBeenCalledWith("v1", true);
     expect(screen.getByText("Ricardo Menezes")).toBeInTheDocument();
     // 4 × 300 + (549 − 49)
     expect(screen.getByText("R$ 1.700,00")).toBeInTheDocument();
@@ -193,6 +193,26 @@ describe("FichaVeiculoPage", () => {
     expect(await screen.findByText(/KM menor que o da visita anterior/)).toBeInTheDocument();
     // e por isso não arrisca uma rodagem média
     expect(screen.getByText(/confira antes de tirar uma média/)).toBeInTheDocument();
+  });
+
+  it("quem não tem o módulo Clientes pede a ficha pela janela estreita e a tela não quebra com ano, KM e telefone vazios", async () => {
+    operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+    const f = ficha([]);
+    f.veiculo = {
+      ...f.veiculo,
+      ano: null,
+      km_atual: null,
+      cliente: { id: "c1", nome: "Ricardo Menezes", telefone: null },
+    };
+    buscarFichaDoVeiculo.mockResolvedValue(f);
+    montar();
+
+    expect(await screen.findByRole("heading", { name: "RTA-4B71" })).toBeInTheDocument();
+    expect(buscarFichaDoVeiculo).toHaveBeenCalledWith("v1", false);
+    expect(screen.getByText("Ricardo Menezes")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum KM anotado ainda")).toBeInTheDocument();
+    // O telefone nem chega pela janela: dizer "sem telefone" seria mentira.
+    expect(screen.queryByText("Sem telefone cadastrado")).not.toBeInTheDocument();
   });
 
   it("diz em português quando o veículo não existe mais", async () => {
