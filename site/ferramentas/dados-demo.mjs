@@ -25,6 +25,18 @@ const dia = (n) => {
   return d.toISOString();
 };
 const diaCurto = (n) => dia(n).slice(0, 10);
+// `diaAs(-3, 14, 20)` é três dias atrás, às 14h20 (no fuso de quem gera as
+// telas). Pros dias passados, em vez de `dia()`: com ele, tudo que é de outro
+// dia saía com a mesma hora (a hora em que a tela abriu), e a lista de
+// Movimentações do Estoque parecia lançada toda de uma vez (#777, item 6).
+const diaAs = (n, hora, minuto = 0) => {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() + n);
+  d.setHours(hora, minuto, 0, 0);
+  return d.toISOString();
+};
+// "AAAA-MM-DD" no fuso local (o mesmo do `diaLocal()` do programa).
+const diaLocal = (iso) => new Date(iso).toLocaleDateString("sv-SE");
 
 export const lojas = [
   { id: LOJA, nome: "Auto Center Modelo", cidade: "Araraquara", uf: "SP", ativo: true, criado_em: dia(-400) },
@@ -44,6 +56,9 @@ const veiculos = [
   // Carro cadastrado sem placa (o cadastro aceita): é o caso que a lista de
   // Clientes mostrava como uma caixinha vazia antes do "Ver veículos" (#417).
   { id: "v6", cliente_id: "c1", placa: "", marca: "Fiat", modelo: "Uno Mille", ano: 2009, cor: "branco", tipo: "hatch", km_atual: 182400 },
+  // Os carros de quem "sumiu" (#684): ver `ordensDeQuemSumiu`.
+  { id: "v7", cliente_id: "c6", placa: "FKR-2E63", marca: "Hyundai", modelo: "HB20 1.0", ano: 2018, cor: "cinza", tipo: "hatch", km_atual: 98100 },
+  { id: "v8", cliente_id: "c7", placa: "GZL-7A30", marca: "Renault", modelo: "Duster", ano: 2017, cor: "marrom", tipo: "suv", km_atual: 121500 },
 ];
 
 export const clientes = [
@@ -51,6 +66,8 @@ export const clientes = [
   { id: "c2", nome: "Transportes Boa Vista Ltda", tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-90", telefone: "(16) 3333-4455", email: "contato@exemplo.com.br", cep: "14802-100", rua: "Av. Industrial", numero: "1400", bairro: "Distrito Industrial", cidade: "Araraquara", uf: "SP", data_nascimento: null, criado_em: dia(-250) },
   { id: "c3", nome: "Juliana Prado", tipo_pessoa: "fisica", cpf_cnpj: "987.654.321-00", telefone: "(16) 98111-2233", email: "juliana@exemplo.com.br", cep: "14801-300", rua: "Rua Sete de Setembro", numero: "88", bairro: "Vila Xavier", cidade: "Araraquara", uf: "SP", data_nascimento: "1992-09-03", criado_em: dia(-180) },
   { id: "c4", nome: "Eduardo Salles", tipo_pessoa: "fisica", cpf_cnpj: "456.789.123-00", telefone: "(16) 99777-8899", email: "eduardo@exemplo.com.br", cep: "14803-200", rua: "Rua Padre Duarte", numero: "742", bairro: "Jardim Nova", cidade: "Araraquara", uf: "SP", data_nascimento: "1978-12-21", criado_em: dia(-120) },
+  { id: "c6", nome: "Paulo Vieira", tipo_pessoa: "fisica", cpf_cnpj: "654.987.321-00", telefone: "(16) 99333-4455", email: "paulo@exemplo.com.br", cep: "14806-000", rua: "Rua Rui Barbosa", numero: "310", bairro: "Vila Harmonia", cidade: "Araraquara", uf: "SP", data_nascimento: "1981-02-17", criado_em: dia(-420) },
+  { id: "c7", nome: "Sandra Moreira", tipo_pessoa: "fisica", cpf_cnpj: "789.123.456-00", telefone: "(16) 98444-5566", email: "sandra@exemplo.com.br", cep: "14804-000", rua: "Av. Portugal", numero: "1020", bairro: "Jardim Primavera", cidade: "Araraquara", uf: "SP", data_nascimento: "1974-08-08", criado_em: dia(-380) },
   { id: "c5", nome: "Camila Rocha", tipo_pessoa: "fisica", cpf_cnpj: "321.654.987-00", telefone: "(16) 98222-3344", email: "camila@exemplo.com.br", cep: "14805-000", rua: "Rua Gonçalves Dias", numero: "56", bairro: "Santa Angelina", cidade: "Araraquara", uf: "SP", data_nascimento: "1996-06-30", criado_em: dia(-60) },
   // O cliente fixo da venda de balcão (migration 0064). O app o deixa de
   // fora das listas com um filtro `neq` — que o banco-falso sabe aplicar.
@@ -82,9 +99,9 @@ export const ordens = [
   // ter uma linha do tempo de verdade: KM subindo, uma peça ainda na
   // garantia e outra já vencida. São antigas o bastante pra ficar fora do
   // filtro "este mês" da lista de OS e das comissões.
-  { numero: 109, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -75, km: 81300,
+  { numero: 58, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -75, km: 81300,
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90), item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
-  { numero: 97, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -262, km: 74320,
+  { numero: 33, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -262, km: 74320,
     itens: [item("peca", "p1", "Pneu 175/70 R14", 4, 369.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 110)] },
 ].map(montarOrdem);
 
@@ -96,8 +113,8 @@ function montarOrdem(o) {
     cliente_id: o.cliente, veiculo_id: o.veiculo,
     status: o.status, km_entrada: o.km ?? v.km_atual,
     descricao_problema: "", forma_pagamento: o.status === "faturada" ? "Pix" : null,
-    parcelas: 1, data_abertura: dia(o.abertura),
-    data_fechamento: o.status === "faturada" ? dia(o.abertura + 0.3) : null,
+    parcelas: 1, data_abertura: o.dataAbertura ?? dia(o.abertura),
+    data_fechamento: o.status !== "faturada" ? null : o.dataFechamento ?? dia(o.abertura + 0.3),
     vendedor_id: o.numero % 2 === 0 ? "f2" : "f3",
     criado_por_id: OP, atualizado_por_id: OP,
     cliente: { nome: cli.nome },
@@ -109,18 +126,62 @@ function montarOrdem(o) {
   };
 }
 
-// Clientes que "sumiram" (#684): a última OS faturada da Juliana e do Eduardo
-// é de mais de 6 meses atrás, pra a cena "Clientes que sumiram" ter gente. A
-// OS de agora dos dois (146 e 147) ainda não foi faturada, e só faturada
-// conta (`schemas/clientesSumidos.ts`). Ficam FORA de `ordens`, como os
-// orçamentos: lá dentro elas virariam lançamento de caixa e garantia, e
-// mudariam outras cenas. Só entram na tabela `ordens_servico`.
+// Clientes que "sumiram" (#684): a última OS faturada do Paulo e da Sandra é
+// de mais de 6 meses atrás, pra a cena "Clientes que sumiram" ter gente. Antes
+// eram a Juliana e o Eduardo, que estão com OS aberta hoje (146 e 147): a
+// regra estava certa (só faturada conta), mas a tela dizia que sumiu quem está
+// com o carro na loja (#777, item 11). Ficam FORA de `ordens`, como os
+// orçamentos: são antigas demais pro caixa e pras garantias.
 const ordensDeQuemSumiu = [
-  { numero: 101, cliente: "c3", veiculo: "v3", status: "faturada", abertura: -220, km: 21400,
+  { numero: 40, cliente: "c6", veiculo: "v7", status: "faturada", abertura: -220, km: 86400,
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)] },
-  { numero: 91, cliente: "c4", veiculo: "v4", status: "faturada", abertura: -300, km: 52800,
+  { numero: 27, cliente: "c7", veiculo: "v8", status: "faturada", abertura: -300, km: 109800,
     itens: [item("peca", "p2", "Pneu 205/60 R16", 4, 598), item("servico", "s1", "Alinhamento e balanceamento", 1, 130)] },
 ].map(montarOrdem);
+
+// O movimento dos últimos 26 dias: as OS 73 a 142, já faturadas, no tamanho
+// de um autocenter de verdade (perto de 3 atendimentos por dia). Antes o
+// caixa tinha só os VALORES dessas vendas, sem OS nenhuma por trás: o Diário
+// mostrava cliente "—" e lucro "—", o lucro do mês saía igual à venda e
+// Relações → Lucratividade não achava as vendas que o Início somava (#777,
+// itens 2 e 3). Agora cada venda é uma OS com itens do catálogo, e o caixa,
+// o estoque e as notas saem delas.
+const PACOTES = {
+  oleo: () => [item("servico", "s2", "Troca de óleo e filtro", 1, 165)],
+  alinhamento: () => [item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
+  freio: () => [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)],
+  oleoEFreio: () => [item("servico", "s2", "Troca de óleo e filtro", 1, 165), item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)],
+  bateria: () => [item("peca", "p5", "Bateria 60Ah", 1, 549), item("servico", "s5", "Instalação de bateria", 1, 40)],
+  doisPneus14: () => [item("peca", "p1", "Pneu 175/70 R14", 2, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
+  quatroPneus14: () => [item("peca", "p1", "Pneu 175/70 R14", 4, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
+  amortecedor: () => [item("peca", "p3", "Amortecedor dianteiro", 2, 445), item("servico", "s3", "Troca de amortecedor", 1, 260)],
+  doisPneus16: () => [item("peca", "p2", "Pneu 205/60 R16", 2, 612), item("servico", "s1", "Alinhamento e balanceamento", 1, 140)],
+  quatroPneus16: () => [item("peca", "p2", "Pneu 205/60 R16", 4, 612), item("servico", "s1", "Alinhamento e balanceamento", 1, 140)],
+};
+const BASE = [
+  "oleo", "doisPneus14", "alinhamento", "freio", "bateria", "oleo", "amortecedor", "quatroPneus14", "oleoEFreio",
+  "alinhamento", "doisPneus14", "oleo", "quatroPneus16", "freio", "oleo", "doisPneus14", "alinhamento",
+  "amortecedor", "oleoEFreio", "doisPneus16", "oleo", "freio", "quatroPneus14", "alinhamento", "oleo",
+];
+// 70 atendimentos em 26 dias (perto de 3 por dia), a mesma mistura repetida.
+const SEQUENCIA = Array.from({ length: 70 }, (_, i) => BASE[(i * 7) % BASE.length]);
+// Quem traz cada carro, em rodízio (o Paulo e a Sandra de fora: são os que sumiram).
+const DONOS = [["c1", "v1"], ["c2", "v2"], ["c3", "v3"], ["c4", "v4"], ["c5", "v5"]];
+const historico = SEQUENCIA.map((pacote, i) => {
+  const numero = 73 + i;
+  // Do mais antigo (26 dias atrás) pro mais novo (ontem), com o número subindo junto.
+  const diaDaOs = -26 + Math.floor((i * 26) / SEQUENCIA.length);
+  const hora = 8 + ((i * 5) % 9); // das 8h às 16h
+  const minuto = (i * 17) % 60;
+  const [cliente, veiculo] = DONOS[(i * 3) % DONOS.length];
+  return montarOrdem({
+    numero, cliente, veiculo, status: "faturada",
+    dataAbertura: diaAs(diaDaOs, hora, minuto),
+    dataFechamento: diaAs(diaDaOs, hora + 1, minuto),
+    km: vlk(veiculo).km_atual - 3000 + i * 60,
+    itens: PACOTES[pacote](),
+  });
+});
 
 // Uma venda de balcão (item FN-09): mesmo contador de número das OS, sem
 // veículo, no nome do Consumidor. Aparece na aba "Vendas de balcão".
@@ -170,58 +231,87 @@ export const orcamentos = [
     { motivo_recusa: "preco", recusado_em: dia(-1) }),
 ];
 
-const totalOrdem = (o) =>
-  o.itens.reduce((s, i) => s + i.quantidade * i.preco_unitario - i.desconto, 0);
-
-// Movimento do mês inteiro, no tamanho de um autocenter de verdade:
-// ~30 atendimentos no mês, ticket entre R$180 e R$2.400, mais as despesas
-// operacionais que a loja realmente tem. Tudo inventado.
-const TICKETS = [
-  255, 550, 455, 480, 440, 225, 570, 460, 1080, 295,
-  1095, 2580, 550, 1495, 635, 255, 1085, 270, 470, 880,
-  210, 1135, 450, 820, 965, 755, 1900, 335, 850, 1990,
-  575, 395, 355, 430, 1185, 465, 820, 360, 1095, 1540,
-  1950, 1180, 340, 1195, 1980,
+export const categoriasCaixa = [
+  { id: "cc1", nome: "Aluguel", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc3", nome: "Energia elétrica", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc4", nome: "Compra de peças", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", criado_em: dia(-400) },
+  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", criado_em: dia(-400) },
+  { id: "cc7", nome: "Internet e telefone", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", criado_em: dia(-400) },
+  { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", criado_em: dia(-400) },
 ];
-const DESPESAS = [
-  ["Fornecedor de pneus", 9840],
-  ["Folha de pagamento", 11200],
-  ["Aluguel do galpão", 3200],
-  ["Fornecedor de peças", 4630],
-  ["Energia elétrica", 890],
-  ["Internet e telefone", 240],
-  ["Material de limpeza", 320],
-  ["Manutenção de equipamento", 680],
-];
+function nomeDaCategoriaCaixa(id) {
+  return categoriasCaixa.find((c) => c.id === id).nome;
+}
 
 const totalItens = (o) =>
   o.itens.reduce((s, i) => s + i.quantidade * i.preco_unitario - i.desconto, 0);
 
+// A OS 145 (a frota da Transportes Boa Vista) foi faturada "a receber
+// depois": no programa, isso cria a conta a receber e NÃO lança no caixa até
+// ela ser recebida. Antes ela estava nos dois ao mesmo tempo (#777, item 4).
+const OS_A_RECEBER = "os145";
+
+// As despesas do mês, já com a categoria (#777, item 7): sem ela, a aba
+// Saídas mostrava a faixa "8 lançamentos antigos estão sem categoria" e o
+// "Por categoria" só tinha "Sem categoria". Sem pagamento de fornecedor de
+// peça: o programa já tira do lucro o custo de cada peça vendida, e pagar a
+// nota aqui também contava a mesma compra duas vezes (o mês saía com
+// prejuízo de R$ 10 mil). O fornecedor a pagar fica em Contas a Pagar.
+// [descrição, valor, categoria, dias atrás]
+const DESPESAS = [
+  ["Folha de pagamento", 9700, "cc2", 18],
+  ["Aluguel do galpão", 3200, "cc1", 21],
+  ["Energia elétrica", 890, "cc3", 15],
+  ["Internet e telefone", 240, "cc7", 10],
+  ["Material de limpeza", 320, "cc8", 7],
+  ["Manutenção do elevador", 680, "cc8", 4],
+];
+
+// O lançamento no caixa traz a OS junto (`ordem_servico:ordens_servico(*,
+// cliente, itens)` em src/lib/caixa.ts): é dela que o Diário tira o cliente,
+// o número ("OS 145") e o lucro da linha (#777, item 2).
+const ordemNoCaixa = (o) => ({
+  id: o.id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+  cliente: o.cliente, itens: o.itens,
+});
+// O caixa grava a chave da forma; a OS, o nome (src/lib/ordensServico.ts).
+const FORMAS = ["pix", "cartao_credito", "dinheiro", "cartao_debito"];
+const NOME_DA_FORMA = { pix: "Pix", cartao_credito: "Cartão de crédito", dinheiro: "Dinheiro", cartao_debito: "Cartão de débito" };
+const vendasNoCaixa = [...historico, ...ordens]
+  .filter((o) => o.status === "faturada" && o.id !== OS_A_RECEBER && o.data_fechamento > dia(-30))
+  .map((o, i) => {
+    const forma = o.tipo === "venda_balcao" ? "dinheiro" : FORMAS[i % FORMAS.length];
+    o.forma_pagamento = NOME_DA_FORMA[forma];
+    return {
+      id: "cx-" + o.id, loja_id: LOJA, data: o.data_fechamento,
+      ordem_servico_id: o.id, tipo: "entrada", forma_pagamento: forma,
+      valor: totalItens(o),
+      descricao: `Faturamento da ${o.tipo === "venda_balcao" ? "Venda" : "OS"} ${o.numero}`,
+      categoria_id: null, ordem_servico: ordemNoCaixa(o), categoria: null,
+    };
+  });
+
 export const caixa = [
-  // lançamentos de hoje, vindos das OS faturadas (mostram cliente e lucro)
-  ...ordens.filter((o) => o.status === "faturada").map((o, i) => ({
-    id: "cx-os" + o.numero, loja_id: LOJA, data: o.data_fechamento,
-    ordem_servico_id: o.id, tipo: "entrada",
-    forma_pagamento: ["Pix", "Cartão de crédito", "Dinheiro"][i % 3],
-    valor: totalItens(o), descricao: (o.tipo === "venda_balcao" ? "Venda " : "OS ") + o.numero, categoria_id: null,
-  })),
-  ...TICKETS.map((valor, i) => ({
-    id: "cx-e" + i, loja_id: LOJA, data: dia(-(1 + (i % 26))),
-    ordem_servico_id: "os-hist-" + i, tipo: "entrada",
-    forma_pagamento: ["Pix", "Cartão de crédito", "Dinheiro", "Cartão de débito"][i % 4],
-    valor, descricao: "OS " + (118 + i), categoria_id: null,
-  })),
-  ...DESPESAS.map(([descricao, valor], i) => ({
-    id: "cx-s" + i, loja_id: LOJA, data: dia(-(i * 3 + 1)),
+  ...vendasNoCaixa,
+  // A parcela que a conta a receber `cr3` recebeu (entrada sem OS, com categoria).
+  { id: "cx-cr3", loja_id: LOJA, data: diaAs(-11, 10, 40), ordem_servico_id: null, tipo: "entrada",
+    forma_pagamento: "pix", valor: 720, descricao: "Recebimento: Parcela 2/2 do jogo de amortecedores",
+    categoria_id: "cc9", ordem_servico: null, categoria: { nome: "Recebimento de cliente" } },
+  ...DESPESAS.map(([descricao, valor, categoria, diasAtras], i) => ({
+    id: "cx-s" + i, loja_id: LOJA, data: diaAs(-diasAtras, 17, 10 + i),
     ordem_servico_id: null, tipo: "saida", forma_pagamento: "Transferência",
-    valor, descricao, categoria_id: null,
+    valor, descricao, categoria_id: categoria, ordem_servico: null,
+    categoria: { nome: nomeDaCategoriaCaixa(categoria) },
   })),
 ];
 
 export const contasPagar = [
-  { id: "cp1", loja_id: LOJA, descricao: "Aluguel do galpão", valor: 3200, vencimento: diaCurto(4), categoria_id: null, recorrente: true, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-30) },
-  { id: "cp2", loja_id: LOJA, descricao: "Energia elétrica", valor: 890.4, vencimento: diaCurto(9), categoria_id: null, recorrente: true, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-30) },
-  { id: "cp3", loja_id: LOJA, descricao: "Fornecedor de pneus", valor: 4750, vencimento: diaCurto(-2), categoria_id: null, recorrente: false, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-20) },
+  { id: "cp1", loja_id: LOJA, descricao: "Aluguel do galpão", valor: 3200, vencimento: diaCurto(4), categoria_id: "cc1", categoria: { nome: "Aluguel" }, recorrente: true, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-30) },
+  { id: "cp2", loja_id: LOJA, descricao: "Energia elétrica", valor: 890.4, vencimento: diaCurto(9), categoria_id: "cc3", categoria: { nome: "Energia elétrica" }, recorrente: true, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-30) },
+  { id: "cp3", loja_id: LOJA, descricao: "Fornecedor de pneus", valor: 4750, vencimento: diaCurto(-2), categoria_id: "cc4", categoria: { nome: "Compra de peças" }, recorrente: false, recorrente_ate: null, status: "pendente", data_pagamento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-20) },
 ];
 
 export const pecas = [
@@ -233,11 +323,11 @@ export const pecas = [
 ];
 
 export const servicos = [
-  { id: "s1", codigo_interno: "SV-ALIN", descricao: "Alinhamento e balanceamento", preco_padrao: 120, custo: 35, categoria_id: null, ativo: true, criado_em: dia(-300) },
-  { id: "s2", codigo_interno: "SV-TROCA-OLEO", descricao: "Troca de óleo e filtro", preco_padrao: 165, custo: 60, categoria_id: null, ativo: true, criado_em: dia(-300) },
-  { id: "s3", codigo_interno: "SV-AMORT", descricao: "Troca de amortecedor", preco_padrao: 260, custo: 90, categoria_id: null, ativo: true, criado_em: dia(-300) },
-  { id: "s4", codigo_interno: "SV-FREIO", descricao: "Troca de pastilha de freio", preco_padrao: 90, custo: 30, categoria_id: null, ativo: true, criado_em: dia(-300) },
-  { id: "s5", codigo_interno: "SV-BAT", descricao: "Instalação de bateria", preco_padrao: 40, custo: 12, categoria_id: null, ativo: true, criado_em: dia(-300) },
+  { id: "s1", codigo_interno: "SV-ALIN", descricao: "Alinhamento e balanceamento", preco_padrao: 120, custo: 35, categoria_id: "cs4", ativo: true, criado_em: dia(-300) },
+  { id: "s2", codigo_interno: "SV-TROCA-OLEO", descricao: "Troca de óleo e filtro", preco_padrao: 165, custo: 60, categoria_id: "cs5", ativo: true, criado_em: dia(-300) },
+  { id: "s3", codigo_interno: "SV-AMORT", descricao: "Troca de amortecedor", preco_padrao: 260, custo: 90, categoria_id: "cs2", ativo: true, criado_em: dia(-300) },
+  { id: "s4", codigo_interno: "SV-FREIO", descricao: "Troca de pastilha de freio", preco_padrao: 90, custo: 30, categoria_id: "cs3", ativo: true, criado_em: dia(-300) },
+  { id: "s5", codigo_interno: "SV-BAT", descricao: "Instalação de bateria", preco_padrao: 40, custo: 12, categoria_id: "cs5", ativo: true, criado_em: dia(-300) },
 ];
 
 export const categorias = [
@@ -249,17 +339,67 @@ export const categorias = [
 
 export const depositos = [{ id: "d1", loja_id: LOJA, nome: "Depósito Principal", ativo: true, criado_em: dia(-400) }];
 
-export const estoque = [
-  { id: "e1", loja_id: LOJA, deposito_id: "d1", peca_id: "p1", tipo: "entrada", quantidade: 24, motivo: "compra", referencia: "NF 88213", criado_em: dia(-20) },
-  { id: "e2", loja_id: LOJA, deposito_id: "d1", peca_id: "p2", tipo: "entrada", quantidade: 16, motivo: "compra", referencia: "NF 88213", criado_em: dia(-20) },
-  { id: "e3", loja_id: LOJA, deposito_id: "d1", peca_id: "p1", tipo: "saida", quantidade: 2, motivo: "uso_em_os", referencia: "OS 148", criado_em: dia(-0.2) },
-  { id: "e4", loja_id: LOJA, deposito_id: "d1", peca_id: "p5", tipo: "entrada", quantidade: 12, motivo: "compra", referencia: "NF 88410", criado_em: dia(-12) },
-  { id: "e5", loja_id: LOJA, deposito_id: "d1", peca_id: "p3", tipo: "entrada", quantidade: 10, motivo: "compra", referencia: "NF 88410", criado_em: dia(-12) },
-  { id: "e6", loja_id: LOJA, deposito_id: "d1", peca_id: "p4", tipo: "entrada", quantidade: 14, motivo: "compra", referencia: "NF 88555", criado_em: dia(-8) },
-  { id: "e7", loja_id: LOJA, deposito_id: "d1", peca_id: "p3", tipo: "saida", quantidade: 2, motivo: "uso_em_os", referencia: "OS 147", criado_em: dia(-0.6) },
-  { id: "e8", loja_id: LOJA, deposito_id: "d1", peca_id: "p4", tipo: "saida", quantidade: 1, motivo: "uso_em_os", referencia: "OS 146", criado_em: dia(-1) },
-  { id: "e9", loja_id: LOJA, deposito_id: "d1", peca_id: "p2", tipo: "saida", quantidade: 4, motivo: "uso_em_os", referencia: "OS 145", criado_em: dia(-0.3) },
+// O estoque sai das próprias OS: cada peça lançada numa OS (ou vendida no
+// balcão) é uma saída, na hora em que foi lançada. Antes eram 9 movimentos
+// soltos, e a Bateria vendida hoje duas vezes (OS 143 e Venda 149) nem saía
+// do saldo (#777, item 6). O saldo de partida (a contagem geral de 28 dias
+// atrás) é calculado pra cada peça terminar no `SALDO_FINAL`.
+const SALDO_FINAL = { p1: 18, p2: 10, p3: 6, p4: 8, p5: 7 };
+const ENTRADAS = [
+  // [peça, quantidade, referência, dias atrás, hora]
+  ["p1", 24, "NF 88213", -20, 9],
+  ["p2", 16, "NF 88213", -20, 9],
+  ["p3", 10, "NF 88410", -12, 10],
+  ["p4", 14, "Pedido 32", -13, 15],
+  ["p5", 6, "Pedido 32", -13, 15],
+  ["p3", 6, "Pedido 33", -6, 11],
 ];
+const movimentosDeEstoque = [];
+for (const [peca_id, quantidade, referencia, diasAtras, hora] of ENTRADAS) {
+  movimentosDeEstoque.push({ peca_id, tipo: "entrada", quantidade, motivo: "compra", referencia, criado_em: diaAs(diasAtras, hora, 5) });
+}
+for (const o of [...historico, ...ordens]) {
+  if (o.data_abertura < dia(-28)) continue;
+  const lancadoEm = new Date(new Date(o.data_abertura).getTime() + 10 * 60 * 1000).toISOString();
+  for (const i of o.itens.filter((x) => x.tipo === "peca")) {
+    movimentosDeEstoque.push({
+      peca_id: i.peca_id, tipo: "saida", quantidade: i.quantidade, motivo: "uso_em_os",
+      referencia: `${o.tipo === "venda_balcao" ? "Venda" : "OS"} ${o.numero}`,
+      criado_em: lancadoEm < dia(0) ? lancadoEm : o.data_abertura,
+    });
+  }
+}
+// A contagem que achou um pneu a menos lança o ajuste, como o programa faz
+// (src/lib/contagens.ts) — antes a contagem dizia -1 e o saldo nem mexia.
+const CONTAGEM_COM_DIFERENCA = { peca_id: "p1", em: diaAs(-3, 18, 30), diferenca: -1 };
+movimentosDeEstoque.push({
+  peca_id: "p1", tipo: "saida", quantidade: 1, motivo: "ajuste",
+  referencia: "Ajuste por contagem de estoque", criado_em: diaAs(-3, 18, 31),
+});
+const delta = (m) => (m.tipo === "entrada" ? m.quantidade : -m.quantidade);
+movimentosDeEstoque.sort((a, b) => (a.criado_em < b.criado_em ? -1 : 1));
+for (const peca_id of Object.keys(SALDO_FINAL)) {
+  // Sem a partida, o saldo andaria assim; a partida cobre o ponto mais baixo
+  // (nunca fica negativo, e sobram ao menos 2) e, se der, termina no alvo.
+  let semPartida = 0;
+  let maisBaixo = 0;
+  for (const m of movimentosDeEstoque.filter((x) => x.peca_id === peca_id)) {
+    semPartida += delta(m);
+    maisBaixo = Math.min(maisBaixo, semPartida);
+  }
+  movimentosDeEstoque.push({
+    peca_id, tipo: "entrada", quantidade: Math.max(SALDO_FINAL[peca_id] - semPartida, 2 - maisBaixo), motivo: "ajuste",
+    referencia: "Contagem geral do estoque", criado_em: diaAs(-28, 8, 0),
+  });
+}
+movimentosDeEstoque.sort((a, b) => (a.criado_em < b.criado_em ? -1 : 1));
+
+export const estoque = movimentosDeEstoque.map((m, i) => ({
+  id: "e" + String(i + 1).padStart(3, "0"), loja_id: LOJA, deposito_id: "d1", ...m,
+}));
+
+const saldoAntesDe = (peca_id, momento) =>
+  estoque.filter((m) => m.peca_id === peca_id && m.criado_em < momento).reduce((t, m) => t + delta(m), 0);
 
 // ---------------------------------------------------------------------------
 // A partir daqui: dados das tabelas que faltavam pra conseguir tirar uma
@@ -273,15 +413,6 @@ export const categoriasServicos = [
   { id: "cs3", nome: "Freios", criado_em: dia(-400) },
   { id: "cs4", nome: "Alinhamento", criado_em: dia(-400) },
   { id: "cs5", nome: "Outros Serviços", criado_em: dia(-400) },
-];
-
-export const categoriasCaixa = [
-  { id: "cc1", nome: "Aluguel", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc3", nome: "Energia elétrica", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc4", nome: "Compra de peças", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", criado_em: dia(-400) },
-  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", criado_em: dia(-400) },
 ];
 
 export const fornecedores = [
@@ -346,49 +477,91 @@ export const whatsappMensagens = [
 ];
 
 export const contasReceber = [
-  { id: "cr1", loja_id: LOJA, cliente_id: "c2", ordem_servico_id: "os145", descricao: "OS 145 — 4 pneus + alinhamento", valor: 2588, vencimento: diaCurto(6), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-0.3), cliente: { nome: "Transportes Boa Vista Ltda" } },
+  { id: "cr1", loja_id: LOJA, cliente_id: "c2", ordem_servico_id: "os145", descricao: "Faturamento da OS 145", valor: 2588, vencimento: diaCurto(6), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-0.3), cliente: { nome: "Transportes Boa Vista Ltda" } },
   { id: "cr2", loja_id: LOJA, cliente_id: "c4", ordem_servico_id: null, descricao: "Serviço faturado no fim do mês (frota)", valor: 1340, vencimento: diaCurto(-3), status: "pendente", data_recebimento: null, caixa_movimento_id: null, operador_id: OP, criado_em: dia(-18), cliente: { nome: "Eduardo Salles" } },
-  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-12), status: "recebido", data_recebimento: diaCurto(-11), caixa_movimento_id: "cx-e3", operador_id: OP, criado_em: dia(-40), cliente: { nome: "Ricardo Menezes" } },
+  { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-12), status: "recebido", data_recebimento: diaCurto(-11), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-40), cliente: { nome: "Ricardo Menezes" } },
 ];
 
+const competenciaDe = (iso) => diaLocal(iso).slice(0, 8) + "01";
 const mesCompetencia = (n) => {
   const d = new Date(hoje);
   d.setMonth(d.getMonth() + n, 1);
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString("sv-SE");
 };
 
-const nota = (id, tipo, comp, nome, numero, origem, status, cliente, ref) => ({
-  id, loja_id: LOJA, tipo, competencia: comp, nome_arquivo: nome,
-  storage_path: `${tipo}/${comp.slice(0, 7)}/${id}-${nome}`,
-  ordem_servico_id: null, operador_id: OP, criado_em: dia(-2),
-  origem, numero, chave_acesso: numero ? "3526" + String(numero).padStart(40, "0") : null,
-  status, focus_nfe_ref: ref,
-  ordem_servico: cliente ? { cliente: { nome: cliente } } : null,
-  operador: { nome: "Marcos Andrade" },
-});
+const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }) => {
+  const nome = tipo === "nfe"
+    ? `NFCe-${String(numero).padStart(9, "0")}.xml`
+    : `NFSe-${String(numero).padStart(8, "0")}.xml`;
+  return {
+    id, loja_id: LOJA, tipo, competencia, nome_arquivo: nome,
+    storage_path: `${tipo}/${competencia.slice(0, 7)}/${id}-${nome}`,
+    ordem_servico_id: ordem?.id ?? null, operador_id: OP, criado_em: criadoEm,
+    origem, numero, chave_acesso: numero ? "3526" + String(numero).padStart(40, "0") : null,
+    status, focus_nfe_ref: origem === "automatica" ? `${ordem.id}-${tipo === "nfe" ? "nfce" : "nfse"}-${numero}` : null,
+    ordem_servico: ordem ? { cliente: { nome: ordem.cliente.nome } } : null,
+    operador: { nome: "Marcos Andrade" },
+  };
+};
+
+// Cada OS faturada tem as notas dela, LIGADAS a ela (`ordem_servico_id`):
+// NFC-e se tem peça, NFS-e se tem serviço, na ordem em que foram fechadas.
+// Antes as notas não eram de OS nenhuma e o banco falso devolvia todas pra
+// qualquer OS: a venda 149 dizia "falta NFC-e" e "Todas as notas já foram
+// emitidas" na mesma tela, com "Ver PDF da NFS-e" duas vezes (#777, item 1).
+// A OS 143 teve a primeira NFC-e cancelada e emitida de novo, pra a tela de
+// Notas ter uma cancelada sem a OS ficar devendo nota.
+const notasDasOrdens = [];
+{
+  let nfce = 180;
+  let nfse = 70;
+  const faturadas = [...historico, ...ordens]
+    .filter((o) => o.status === "faturada")
+    .sort((a, b) => (a.data_fechamento < b.data_fechamento ? -1 : 1));
+  for (const o of faturadas) {
+    const emitir = (tipo, status = "autorizado") => {
+      const numero = tipo === "nfe" ? ++nfce : ++nfse;
+      notasDasOrdens.push(nota({
+        id: `nf-${tipo}-${numero}`, tipo, competencia: competenciaDe(o.data_fechamento), numero,
+        origem: "automatica", status, ordem: o, criadoEm: o.data_fechamento,
+      }));
+    };
+    if (o.itens.some((i) => i.tipo === "peca")) {
+      if (o.numero === 143) emitir("nfe", "cancelado");
+      emitir("nfe");
+    }
+    if (o.itens.some((i) => i.tipo === "servico")) emitir("nfse");
+  }
+}
 
 export const notasFiscais = [
-  nota("nf1", "nfe", mesCompetencia(0), "NFCe-000000241.xml", 241, "automatica", "autorizado", "Ricardo Menezes", "os148-nfce-1739"),
-  nota("nf2", "nfe", mesCompetencia(0), "NFCe-000000240.xml", 240, "automatica", "autorizado", "Camila Rocha", "os144-nfce-1738"),
-  nota("nf3", "nfe", mesCompetencia(0), "NFCe-000000239.xml", 239, "automatica", "cancelado", "Eduardo Salles", "os142-nfce-1737"),
-  nota("nf4", "nfe", mesCompetencia(-1), "NFCe-000000238.xml", 238, "manual", null, null, null),
-  nota("nf5", "nfse", mesCompetencia(0), "NFSe-00000015.xml", 15, "automatica", "autorizado", "Juliana Prado", "os146-nfse-1741"),
-  nota("nf6", "nfse", mesCompetencia(0), "NFSe-00000014.xml", 14, "automatica", "autorizado", "Ricardo Menezes", "os143-nfse-1740"),
-  nota("nf7", "nfse", mesCompetencia(-1), "NFSe-00000013.xml", 13, "manual", null, null, null),
+  ...notasDasOrdens,
+  // XML que o contador mandou à mão, sem OS: é o "Enviada à mão" da lista.
+  nota({ id: "nf-manual-1", tipo: "nfe", competencia: mesCompetencia(-1), numero: 178, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
+  nota({ id: "nf-manual-2", tipo: "nfse", competencia: mesCompetencia(-1), numero: 69, origem: "manual", status: null, ordem: null, criadoEm: dia(-35) }),
 ];
 
 export const auditoria = [
-  { id: "au1", tabela: "pecas", registro_id: "p1", acao: "atualizar", operador_id: OP, criado_em: dia(-0.1), operador: { nome: "Marcos Andrade" }, dados_antes: { descricao: "Pneu 175/70 R14", preco_venda: 369.9 }, dados_depois: { descricao: "Pneu 175/70 R14", preco_venda: 389.9 } },
-  { id: "au2", tabela: "ordens_servico", registro_id: "os146", acao: "atualizar", operador_id: OP, criado_em: dia(-0.4), operador: { nome: "Marcos Andrade" }, dados_antes: { numero: 146, status: "em_andamento" }, dados_depois: { numero: 146, status: "concluida" } },
-  { id: "au3", tabela: "contas_pagar", registro_id: "cp9", acao: "excluir", operador_id: OP, criado_em: dia(-1.2), operador: { nome: "Marcos Andrade" }, dados_antes: { descricao: "Assinatura de software (duplicada)", valor: 149 }, dados_depois: null },
-  { id: "au4", tabela: "clientes", registro_id: "c3", acao: "atualizar", operador_id: OP, criado_em: dia(-2.1), operador: { nome: "Marcos Andrade" }, dados_antes: { nome: "Juliana Prado", telefone: "(16) 98111-0000" }, dados_depois: { nome: "Juliana Prado", telefone: "(16) 98111-2233" } },
-  { id: "au5", tabela: "operadores", registro_id: OP2, acao: "atualizar", operador_id: OP, criado_em: dia(-5), operador: { nome: "Marcos Andrade" }, dados_antes: { usuario: "bruna", admin: false }, dados_depois: { usuario: "bruna", admin: true } },
+  { id: "au1", tabela: "pecas", registro_id: "p1", acao: "atualizar", operador_id: OP, criado_em: dia(-0.1), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Pneu 175/70 R14", preco_venda: 369.9 }, dados_depois: { descricao: "Pneu 175/70 R14", preco_venda: 389.9 } },
+  { id: "au2", tabela: "ordens_servico", registro_id: "os146", acao: "atualizar", operador_id: OP, criado_em: dia(-0.4), operador_nome: "Marcos Andrade", dados_antes: { numero: 146, status: "em_andamento" }, dados_depois: { numero: 146, status: "concluida" } },
+  { id: "au3", tabela: "contas_pagar", registro_id: "cp9", acao: "excluir", operador_id: OP, criado_em: dia(-1.2), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Assinatura de software (duplicada)", valor: 149 }, dados_depois: null },
+  { id: "au4", tabela: "clientes", registro_id: "c3", acao: "atualizar", operador_id: OP, criado_em: dia(-2.1), operador_nome: "Marcos Andrade", dados_antes: { nome: "Juliana Prado", telefone: "(16) 98111-0000" }, dados_depois: { nome: "Juliana Prado", telefone: "(16) 98111-2233" } },
+  { id: "au5", tabela: "operadores", registro_id: OP2, acao: "atualizar", operador_id: OP, criado_em: dia(-5), operador_nome: "Marcos Andrade", dados_antes: { usuario: "bruna", admin: false }, dados_depois: { usuario: "bruna", admin: true } },
 ];
 
+// O saldo do sistema de cada contagem é o saldo de verdade naquela hora,
+// tirado dos movimentos acima.
+const contagem = (id, peca_id, em, diferenca, observacao) => {
+  const saldo = saldoAntesDe(peca_id, em);
+  return {
+    id, loja_id: LOJA, deposito_id: "d1", peca_id, quantidade_contada: saldo + diferenca,
+    saldo_sistema: saldo, diferenca, observacao, operador_id: OP, criado_em: em,
+  };
+};
 export const contagens = [
-  { id: "cg1", loja_id: LOJA, deposito_id: "d1", peca_id: "p1", quantidade_contada: 21, saldo_sistema: 22, diferenca: -1, observacao: "Um pneu estava no setor de montagem.", operador_id: OP, criado_em: dia(-3) },
-  { id: "cg2", loja_id: LOJA, deposito_id: "d1", peca_id: "p4", quantidade_contada: 13, saldo_sistema: 13, diferenca: 0, observacao: "", operador_id: OP, criado_em: dia(-3) },
-  { id: "cg3", loja_id: LOJA, deposito_id: "d1", peca_id: "p5", quantidade_contada: 12, saldo_sistema: 12, diferenca: 0, observacao: "", operador_id: OP, criado_em: dia(-10) },
+  contagem("cg1", "p1", CONTAGEM_COM_DIFERENCA.em, CONTAGEM_COM_DIFERENCA.diferenca, "Um pneu estava no setor de montagem."),
+  contagem("cg2", "p4", diaAs(-3, 18, 40), 0, ""),
+  contagem("cg3", "p5", diaAs(-10, 18, 0), 0, ""),
 ];
 
 export const funcionarios = [
@@ -423,7 +596,7 @@ export const funcionarios = [
 
 // A ficha do veículo lê o prazo de garantia pelo item da OS
 // (`itens:ordens_servico_itens(..., peca:pecas(prazo_garantia_dias))`).
-for (const o of ordens) {
+for (const o of [...historico, ...ordens]) {
   for (const i of o.itens) {
     if (i.peca_id) {
       i.peca = { prazo_garantia_dias: pecas.find((p) => p.id === i.peca_id)?.prazo_garantia_dias ?? 90 };
@@ -434,7 +607,7 @@ for (const o of ordens) {
 // Tabela "achatada" dos itens das OS — é o que a tela de Garantias consulta
 // direto (a garantia não tem tabela própria: sai do item de peça + o prazo
 // cadastrado na peça + a data em que a OS foi fechada).
-export const ordensItens = ordens.flatMap((o) =>
+export const ordensItens = [...historico, ...ordens].flatMap((o) =>
   o.itens.map((i) => ({
     ...i,
     ordem_servico_id: o.id,
@@ -521,8 +694,8 @@ const comissoesPagas = [{
   percentual: 10, valor_calculado: 486.3, valor_pago: 486.3,
   data_pagamento: diaCurto(-20), observacao: null,
   snapshot: [
-    { ordemId: "os-hist-3", numero: 121, papel: "tecnico", comissao: 212.1 },
-    { ordemId: "os-hist-7", numero: 125, papel: "tecnico", comissao: 274.2 },
+    { ordemId: "os60", numero: 60, papel: "tecnico", comissao: 212.1 },
+    { ordemId: "os64", numero: 64, papel: "tecnico", comissao: 274.2 },
   ],
   operador_id: OP, criado_em: dia(-20),
 }];
@@ -561,7 +734,7 @@ export const TABELAS = {
     const c = clientes.find((cl) => cl.id === v.cliente_id);
     return { ...v, cliente: c ? { id: c.id, nome: c.nome, telefone: c.telefone } : null };
   }),
-  ordens_servico: [...ordens, ...ordensDeQuemSumiu, ...orcamentos],
+  ordens_servico: [...ordens, ...historico, ...ordensDeQuemSumiu, ...orcamentos],
   ordens_servico_itens: ordensItens,
   caixa_movimentos: caixa,
   fechamentos_caixa: fechamentosCaixa,
