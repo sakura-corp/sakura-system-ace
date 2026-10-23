@@ -151,9 +151,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, noite (2): a 0068 na loja e a v0.9.54 liberada (#762, passos 1 a 4)
-- **Banco da Pneus Amigão na 68** (ensaio e aplicação pelo botão; a `0069` e a `0070` esperam os 2 computadores).
-- **v0.9.54 publicada e liberada** (#764, só o número); testada no PC dela com o login da loja. Os dois logins são administradores: a `0069` não tira nada do balcão.
-- **Depende dela**: a **#762, passos 5 e 6** (com o Balcão e o DESKTOP-PKJ2A3B na 0.9.54, ensaiar e aplicar `0069` e `0070` → loja na 70; conferir OS, cliente e nota de teste). Até lá, nunca marcar "aplicar mesmo com computadores atrasados".
-- **PR #763 do Gusta (Electron 40)**: revisado e bom; espera a #762 e sai sozinho como 0.9.55 (aviso no PR). Olhar o check "Largura nas telas". Tarefa nova: #765 (Node 22.12).
-- **Próxima sessão**: o passo 5 da #762; o memorando com o privado (#632, até 26/10). Seguem a #746 e a #750.
+### 23/10/2026, noite (3): loja na 70, Electron 40 na main e "testar de uma vez"
+- **Banco da Pneus Amigão na 70** (#762, passo 5): o Balcão foi reiniciado por acesso remoto → 0.9.54; ensaio ✅ e aplicação. OS e cliente novo conferidos na loja.
+- **Electron 40** (#763 do Gusta) e o número **0.9.55** (#768) na `main`. **Ainda não publicada.**
+- **Regra nova** (#769): a Sofia testa tudo de uma vez, no fim de semana; quem fez testa no próprio PC antes do PR. O **Balcão está no canal normal**.
+- **Depende dela, no dia de teste**: publicar a 0.9.55, testar a impressão (o Balcão volta pro teste só nesse dia), liberar; e a #762, passo 6 (a próxima nota de verdade sair e reabrir o PDF).
+- **Próxima sessão**: revisar o PR #767 do Gusta (fotos, sem teste dela); o memorando com o privado (#632, até 26/10). Tarefas novas: #770 (CI), #765. Seguem a #746 e a #750.
