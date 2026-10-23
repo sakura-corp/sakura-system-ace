@@ -3,7 +3,7 @@
 - **Tarefa**: #684, pôr a tela "clientes que sumiram" nas fotos automáticas das telas
 - **Chefe**: tester
 - **Data**: 2026-10-23
-- **PR**: o PR da branch `claude/exciting-babbage-ewt19s` (link na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/767
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
