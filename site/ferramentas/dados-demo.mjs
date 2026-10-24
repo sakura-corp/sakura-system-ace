@@ -166,6 +166,7 @@ const PACOTES = {
   alinhamento: () => [item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
   freio: () => [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)],
   oleoEFreio: () => [item("servico", "s2", "Troca de óleo e filtro", 1, 165), item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)],
+  revisao: () => [item("servico", "s2", "Troca de óleo e filtro", 1, 165), item("servico", "s1", "Alinhamento e balanceamento", 1, 120), item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)],
   bateria: () => [item("peca", "p5", "Bateria 60Ah", 1, 549), item("servico", "s5", "Instalação de bateria", 1, 40)],
   doisPneus14: () => [item("peca", "p1", "Pneu 175/70 R14", 2, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
   quatroPneus14: () => [item("peca", "p1", "Pneu 175/70 R14", 4, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)],
@@ -174,9 +175,9 @@ const PACOTES = {
   quatroPneus16: () => [item("peca", "p2", "Pneu 205/60 R16", 4, 612), item("servico", "s1", "Alinhamento e balanceamento", 1, 140)],
 };
 const BASE = [
-  "oleo", "doisPneus14", "alinhamento", "freio", "bateria", "oleo", "amortecedor", "quatroPneus14", "oleoEFreio",
-  "alinhamento", "doisPneus14", "oleo", "quatroPneus16", "freio", "oleo", "doisPneus14", "alinhamento",
-  "amortecedor", "oleoEFreio", "doisPneus16", "oleo", "freio", "quatroPneus14", "alinhamento", "oleo",
+  "oleo", "doisPneus14", "alinhamento", "freio", "bateria", "revisao", "amortecedor", "quatroPneus14", "oleoEFreio",
+  "alinhamento", "doisPneus14", "oleo", "quatroPneus16", "freio", "revisao", "doisPneus14", "alinhamento",
+  "amortecedor", "oleoEFreio", "doisPneus16", "revisao", "freio", "quatroPneus14", "alinhamento", "oleo",
 ];
 // 132 atendimentos, a mesma mistura repetida.
 const SEQUENCIA = Array.from({ length: 132 }, (_, i) => BASE[(i * 7) % BASE.length]);
