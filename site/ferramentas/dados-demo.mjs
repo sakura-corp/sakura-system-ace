@@ -289,15 +289,29 @@ const OS_A_RECEBER = "os145";
 // peça: o programa já tira do lucro o custo de cada peça vendida, e pagar a
 // nota aqui também contava a mesma compra duas vezes (o mês saía com
 // prejuízo de R$ 10 mil). O fornecedor a pagar fica em Contas a Pagar.
-// [descrição, valor, categoria, dias atrás]
+// Contas do mês, pagas todo mês no mesmo dia (antes só existiam no mês
+// corrente: o mês passado ficava sem aluguel nem folha, e o Início dizia
+// "lucro −98%" comparando os dois). [descrição, valor, categoria, dia do mês]
 const DESPESAS = [
-  ["Folha de pagamento", 9700, "cc2", 18],
-  ["Aluguel do galpão", 3200, "cc1", 21],
-  ["Energia elétrica", 890, "cc3", 15],
-  ["Internet e telefone", 240, "cc7", 10],
-  ["Material de limpeza", 320, "cc8", 7],
-  ["Manutenção do elevador", 680, "cc8", 4],
+  ["Folha de pagamento", 9700, "cc2", 5],
+  ["Aluguel do galpão", 3200, "cc1", 5],
+  ["Energia elétrica", 890, "cc3", 10],
+  ["Internet e telefone", 240, "cc7", 12],
+  ["Material de limpeza", 320, "cc8", 15],
+  ["Manutenção do elevador", 680, "cc8", 20],
 ];
+// O dia `diaDoMes` de `mesesAtras` meses atrás, em dias a partir de hoje (só
+// os que já passaram), pulando o domingo.
+const despesasPagas = [];
+for (const mesesAtras of [1, 0]) {
+  for (const [descricao, valor, categoria, diaDoMes] of DESPESAS) {
+    const quando = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtras, diaDoMes);
+    const meiaNoiteDeHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    if (quando >= meiaNoiteDeHoje) continue;
+    const n = Math.round((quando - meiaNoiteDeHoje) / 864e5);
+    despesasPagas.push([descricao, valor, categoria, n]);
+  }
+}
 
 // O lançamento no caixa traz a OS junto (`ordem_servico:ordens_servico(*,
 // cliente, itens)` em src/lib/caixa.ts): é dela que o Diário tira o cliente,
@@ -334,8 +348,8 @@ export const caixa = [
   { id: "cx-cr3", loja_id: LOJA, data: diaAs(-40, 10, 40), ordem_servico_id: null, tipo: "entrada",
     forma_pagamento: "Pix", valor: 720, descricao: "Recebimento: Parcela 2/2 do jogo de amortecedores",
     categoria_id: "cc9", ordem_servico: null, categoria: { nome: "Recebimento de cliente" } },
-  ...DESPESAS.map(([descricao, valor, categoria, diasAtras], i) => ({
-    id: "cx-s" + i, loja_id: LOJA, data: diaAs(-diasAtras, 17, 10 + i),
+  ...despesasPagas.map(([descricao, valor, categoria, n], i) => ({
+    id: "cx-s" + i, loja_id: LOJA, data: diaDeLojaAs(n, 17, 10 + i),
     ordem_servico_id: null, tipo: "saida", forma_pagamento: "Transferência",
     valor, descricao, categoria_id: categoria, ordem_servico: null,
     categoria: { nome: nomeDaCategoriaCaixa(categoria) },

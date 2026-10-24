@@ -272,4 +272,22 @@ describe("dados de mentira: as telas não se contradizem", async () => {
       }
     }
   });
+
+  it("o mês passado também pagou as contas da loja, e o mês dá lucro", () => {
+    const agora = new Date();
+    const mesDe = (iso) => new Date(iso).toLocaleDateString("sv-SE").slice(0, 7);
+    const esteMes = agora.toLocaleDateString("sv-SE").slice(0, 7);
+    const passado = new Date(agora.getFullYear(), agora.getMonth() - 1, 15).toLocaleDateString("sv-SE").slice(0, 7);
+    const saidas = (mes) => TABELAS.caixa_movimentos.filter((m) => m.tipo === "saida" && mesDe(m.data) === mes);
+    const pagasNoPassado = new Set(saidas(passado).map((m) => m.categoria.nome));
+    expect(pagasNoPassado.size).toBeGreaterThanOrEqual(5);
+    for (const m of saidas(esteMes)) expect(pagasNoPassado.has(m.categoria.nome), m.descricao).toBe(true);
+    // Lucro do mês inteiro passado, como o Início conta: entradas − saídas − custo.
+    const doPassado = TABELAS.caixa_movimentos.filter((m) => mesDe(m.data) === passado);
+    const lucro = doPassado.reduce(
+      (t, m) => t + (m.tipo === "saida" ? -m.valor : m.valor - (m.ordem_servico ? custo(m.ordem_servico) : 0)),
+      0,
+    );
+    expect(lucro).toBeGreaterThan(2000);
+  });
 });
