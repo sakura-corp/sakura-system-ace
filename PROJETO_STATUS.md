@@ -151,8 +151,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 23/10/2026, noite (5): o memorando em assinatura e o link da NFS-e no PC
-- **Memorando (#632)**: PDF refeito com a data de 23/10 e uma testemunha trocada (sem conta prata/ouro); está com o Tiago, o primeiro. Andamento no privado (`contratos/README.md`).
-- **Link "Ver documento oficial completo" da NFS-e** abre no navegador do computador (#774, mesclado; só o portal do Giap). Chega no Balcão na próxima versão. No celular do cliente ainda não abre (#773); por ora, mandar o PDF oficial baixado no PC.
-- **Depende dela**: colher as assinaturas do memorando até 26/10 (Tiago → Lázaro → Gustavo → testemunhas → ela → Sakura); no dia de teste, publicar a 0.9.55 (já com o #774), testar a impressão e liberar; aplicar a 0071 no banco de teste quando o PR da #706 chegar.
-- **Próxima sessão**: conferir a assinatura do Tiago no memorando (ela manda o `_assinado.pdf` e o "(final).pdf" original). Seguem a #773, a #770, a #765, a #746 e a #750.
+### 24/10/2026, madrugada: a leva 5 montada e a apresentação preparada (coordenadora)
+- **Na `main`**: painel em ordem de prioridade (#776); levantamento do que falta pra apresentar (#777, `apresentacao/o-que-falta-pra-apresentar.md`); dados de mentira sem contradição (#780) e margem com vírgula e barra da OS (#781), pras fotos.
+- **Leva 5 = a primeira empresa cliente**, em ordem: #784 textos, #785 PDF, #786 serviços típicos, #706, #787, #366, #367. Leva 6: #454, #456, #372, #459, #708, #699. Contrato e pagamento: no privado (aprovados pelo advogado).
+- **Depende dela**: revisar e mesclar os PRs da leva 5 (dom. à noite e seg.); responder a #782 até quarta (Lázaro); mandar a apresentação ao cliente na terça 27/10; assinaturas do memorando até 26/10 (#632); publicar a 0.9.55 no próximo dia de teste.
+- **Próxima sessão**: revisar os PRs da leva 5 que chegarem (o #785 só depois das fotos de segunda). Abertos de passagem: #790 (pagamento cru no Caixa) e #791 (Lucratividade e margem, `sofia`).
