@@ -3,7 +3,7 @@
 - **Tarefa**: #780, dados de mentira: arrumar os 7 itens do levantamento antes das fotos
 - **Chefe**: frontend
 - **Data**: 2026-10-23
-- **PR**: (preenchido no PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/789
 - **Jeito**: aberta pela /coordenar
 
 ## O que cada agente fez
@@ -20,8 +20,12 @@
 - nenhuma
 
 ## Gasto
-- **Uso da sessão mãe**: ver o fim do relatório (medido pelo arquivo da conversa, no fim).
-- **Ajudantes**: tester: 115.815 tokens, 32 ferramentas (via aviso). Revisor: ver o fim.
+- **Uso da sessão mãe** (arquivo, medido antes da descrição final do PR): 133 respostas; entrada 277, cache criado 514.012, cache lido 31.077.295, saída 96.723.
+- **Ajudantes** (arquivo; o aviso dá outra conta):
+  - tester (`ajudante-medio`): 7 respostas; cache criado 106.452, lido 384.208, saída 14.103 (aviso: 115.815 tokens, 32 ferramentas).
+  - revisor, 1ª rodada (`ajudante-forte`, alto): 59 respostas; cache criado 294.229, lido 6.735.538, saída 34.423. Parou no limite antes de entregar: gasto perdido.
+  - revisor, 2ª rodada (agente comum, `opus`, alto): 4 respostas; cache criado 64.617, lido 179.239, saída 1.103. Parada por mim (presa no limite).
+  - revisor, 3ª rodada (`ajudante-forte`, alto): 49 respostas; cache criado 131.584, lido 6.260.248, saída 38.575 (aviso: 170.468 tokens, 52 ferramentas).
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: ligado na tela (chegou a esta sessão como comando `/goal`); não sei como ele parou: a coordenadora confere.
 
