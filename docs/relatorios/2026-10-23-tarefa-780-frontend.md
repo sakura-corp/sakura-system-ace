@@ -9,7 +9,7 @@
 ## O que cada agente fez
 - Sessão mãe: planejou, escreveu o banco falso e os dados (as etapas "arrumar o banco falso" e "arrumar os dados" ficaram com ela, não com um ajudante médio: os dados se cruzam entre telas e cada ajuste mexia em outro), rodou as varreduras e fotografou as telas.
 - Ajudante tester (`ajudante-medio`): olhou as 28 fotos em 1366 × 768, conferiu os itens 1 a 7 e o 11 com os números da tela e achou mais 5 estranhezas dos dados (o "+999%" do Início, OS de madrugada e de domingo, NFS-e com número de OS, um dia de diferença numa data), todas consertadas.
-- Ajudante revisor (`ajudante-forte`, esforço alto): revisão final do diff. A primeira tentativa parou no limite de uso; ver "Modelos usados".
+- Ajudante revisor (`ajudante-forte`, esforço alto): revisão final do diff, com o relógio fingido em 132 combinações de dia e hora. Nenhum erro no banco falso; achou 1 teste que reprovava em alguns dias (o do "+999%"), Garantias mostrando peça de OS aberta, o fechamento do caixa com o "esperado" inventado, a comissão paga citando OS de fora do período, a OS 146 e os orçamentos abrindo à noite ou no domingo, o corte de dia em UTC (`toISOString().slice`) e 2 testes que passavam vazios. Tudo consertado, com teste visto reprovar antes (exceto a comissão, que hoje passava por sorte de data: o revisor mostrou 108 dias ruins em 730).
 
 ## Modelos usados
 - Planejar e escrever: forte (claude-opus-5-5), esforço médio.
@@ -30,7 +30,9 @@
 - **Dados** (12 testes, um por item do levantamento): rodados contra os dados da `main` (cópia do arquivo antigo): os 12 reprovaram. Nos dados novos, passam.
 - **"Lucratividade = vendas do caixa + o que não foi recebido"**: a primeira versão do teste só somava entradas de OS e passou com R$ 720 de diferença na tela (a parcela da conta a receber `cr3`, sem OS, caía no mês). Corrigi o teste, vi reprovar (39.438,50 × 40.158,50) e só então mudei o dado.
 - **Achados do tester** (3 testes novos): o "+999%" reprovou (variação de 5.377%), a OS de madrugada reprovou (OS 143 às 3h). Depois do conserto, passam.
-- **Relógio fingido**: os 15 testes de dados rodaram com "hoje" em 12 datas (dia 1º, domingo, 31/12, 01/01, 28/02, 01/03, antes das 8h, 23h30) nos fusos de São Paulo e UTC. Só o 1º de março reprovou no "+999%" (um dia contra um dia); o teste passou a valer do dia 5 em diante.
+- **Achados da revisão** (4 testes novos e 3 reforçados): reprovaram a ordem das OS de hoje, Garantias, o fechamento do caixa e o "de madrugada" (agora olhando todas as OS, não só as faturadas). Depois do conserto, passam.
+- **Relógio fingido, rodada final**: os 19 testes de dados, com "hoje" num dia a cada 3 durante um ano inteiro, às 7h30, 10h e 21h30: 381 de 381 passaram.
+- **Relógio fingido, primeira rodada**: os 15 testes de dados rodaram com "hoje" em 12 datas (dia 1º, domingo, 31/12, 01/01, 28/02, 01/03, antes das 8h, 23h30) nos fusos de São Paulo e UTC. Só o 1º de março reprovou no "+999%" (um dia contra um dia); o teste passou a valer do dia 5 em diante.
 
 ## O que passou sem eu ter visto reprovar
 - `npm run typecheck`, `lint`, `contraste`, `test:fusos` (a suíte inteira, com os testes novos, nos dois fusos).
@@ -40,6 +42,7 @@
 - **Lucratividade × Início (decisão da Sofia, pela coordenadora)**: Início e Gráficos batem ao centavo; a Lucratividade fica maior **só** pelo total das OS ainda não recebidas (as em andamento, a concluída e a OS 145 a receber). A diferença vem do programa: a Lucratividade conta a OS pela data em que foi aberta, mesmo antes de ser recebida. Não inventei entrada no caixa pra empatar. A Sofia decide se vira tarefa.
 - **Forma de pagamento crua no Caixa Diário (achado novo, do programa)**: o programa grava no caixa a chave da forma ("cartao_debito", "pix") e o Diário mostra assim mesmo, numa loja de verdade também. Os dados de mentira gravam o nome ("Cartão de débito"), como sempre gravaram, pra a foto não levar o defeito. Vale uma tarefa.
 - **Estoque com saldo final maior que o pedido em duas peças**: a partida (a "Contagem geral" de 28 dias atrás) cobre o ponto mais baixo de cada peça, então amortecedor e pastilha terminam com mais do que o alvo. Não atrapalha nenhuma tela.
+- **Fuso do Node × do navegador (achado do revisor, opcional)**: os dados são montados no fuso de quem roda o Node, e o navegador das telas está fixo em São Paulo. Gerando com `TZ=UTC`, as OS aparecem na tela entre 6h e 12h em vez de 8h às 17h. As fotos da apresentação saem de um computador em São Paulo, então não muda nada pra elas; só as varreduras do CI (que só medem contraste e largura) veem os horários deslocados.
 - O comentário do topo de `apresentacao/fotografar-telas-dos-slides.mjs` ainda fala das duas "pegadinhas" que esta tarefa consertou (as notas sem filtro por OS e o lucro do dia igual à venda). Está fora da lista de arquivos; fica pra tarefa do PDF.
 - Novo arquivo de teste: `site/ferramentas/dados-de-mentira.test.mjs` não estava na lista da issue; entrou porque a etapa pedia "teste primeiro".
 
@@ -52,6 +55,6 @@ Terminei.
 
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: o ritual deixou claro mandar as perguntas pela coordenadora e não decidir a conta da Lucratividade sozinho; o "teste primeiro" pegou um erro meu (o teste fraco da Lucratividade) que a tela mostrou.
-- **Onde eu errei ou tive que adivinhar**: escrevi o primeiro teste da Lucratividade só com as entradas de OS e ele passou com a tela errada; só vi pela foto. A varredura em segundo plano ficou travada durante o limite de uso e precisei refazer.
+- **Onde eu errei ou tive que adivinhar**: escrevi o primeiro teste da Lucratividade só com as entradas de OS e ele passou com a tela errada; só vi pela foto. Também usei `toISOString().slice` (o corte de dia em UTC, proibido pelas regras do projeto) num ajudante que já existia, e só a revisão pegou. A varredura em segundo plano ficou travada durante o limite de uso e precisei refazer.
 - **O que faltou na skill**: o que fazer quando o limite é da conta inteira (o modelo de reserva não ajuda, e a ferramenta de agente não aceita o ID da reserva `claude-opus-5`, só o apelido `opus`).
 - **Sugestão de ajuste (opcional)**: no ritual, seção 5, dizer que "session limit" é da conta: esperar a hora que o aviso dá, e não trocar de modelo.
