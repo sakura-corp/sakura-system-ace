@@ -425,6 +425,11 @@ function LinhaDaTarefa({ tarefa: t, tarefas, login, aoMudar, levaAberta, aviso, 
           </span>
         )}
         {t.titulo}
+        {t.reservadaPra && (
+          <span className="ml-2 inline-block rounded-md border border-borda bg-fundo px-1.5 align-[1px] text-xs font-semibold text-texto">
+            <span className="sr-only">, reservada </span>pra {t.reservadaPra}
+          </span>
+        )}
         <span className="sr-only"> (abre no GitHub, em aba nova)</span>
       </a>
       <span className="mt-2 [grid-area:s] lg:mt-0">

@@ -18,6 +18,8 @@ export type Tarefa = {
   ajudantes?: string;
   /** A linha opcional `Prioridade: N` do cabeçalho (#776); 1 é a mais importante. Sem ela (ou escrita errada), não vem. */
   prioridade?: number;
+  /** A linha opcional `Reservada pra: <quem>` do cabeçalho (Sofia, 24/10). Só um selinho: nunca tranca o "Pegar tarefa". */
+  reservadaPra?: string;
   /** Os números do Depende de que ainda estão abertos. */
   dependeDeAbertas?: number[];
   /** O que falta no cabeçalho da issue; só vem preenchido quando a tarefa está incompleta. */

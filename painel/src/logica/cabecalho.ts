@@ -10,6 +10,8 @@ export type Cabecalho = {
   sessoesFilhas?: boolean;
   /** A linha opcional `Prioridade: N` (#776): inteiro de 1 a 999, 1 é a mais importante. Escrita errada = sem prioridade. */
   prioridade?: number;
+  /** A linha opcional `Reservada pra: <quem>` (Sofia, 24/10): pra quem a tarefa está guardada. Texto curto, até 40 caracteres. */
+  reservadaPra?: string;
   /** O que não está certo no cabeçalho, em frases curtas. Vazio = cabeçalho completo. */
   falta: string[];
 };
@@ -29,6 +31,9 @@ type Chave = (typeof LINHAS)[number]["chave"];
 
 // A linha opcional Prioridade (#776): fica fora das 5, então nunca entra em `falta` nem na conferência de ordem.
 const REGEX_DA_PRIORIDADE = /^[ \t>*_-]*prioridade[*_]*[ \t]*:[*_]*[ \t]*(.*)$/i;
+// A linha opcional Reservada pra (Sofia, 24/10): também fica fora das 5. Vazia ou só símbolos = ignorada.
+const REGEX_DA_RESERVA = /^[ \t>*_-]*reservada[ \t]+pra[*_]*[ \t]*:[*_]*[ \t]*(.*)$/i;
+const LIMITE_RESERVA = 40;
 
 // Aceita negrito/marcador no começo (`**Chefe**: x`, `- Chefe: x`) e o `:` dentro do negrito (`**Chefe:** x`).
 const REGEX_DAS_LINHAS = LINHAS.map((l) => ({
@@ -92,6 +97,12 @@ export function lerCabecalho(texto: string | null | undefined, etiqueta?: Confer
         // Aviso, nunca tranca: só um inteiro de 1 a 999 vale; o resto é ignorado em silêncio.
         const valor = prioridade[1].replace(/[*_]/g, "").trim();
         if (resultado.prioridade === undefined && /^\d{1,3}$/.test(valor) && Number(valor) >= 1) resultado.prioridade = Number(valor);
+        return;
+      }
+      const reserva = REGEX_DA_RESERVA.exec(linha);
+      if (reserva) {
+        const valor = reserva[1].replace(/[*_`<>]/g, "").trim().slice(0, LIMITE_RESERVA).trim();
+        if (resultado.reservadaPra === undefined && /\p{L}/u.test(valor)) resultado.reservadaPra = valor;
         return;
       }
       for (const { chave, regex } of REGEX_DAS_LINHAS) {

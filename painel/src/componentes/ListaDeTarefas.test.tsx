@@ -220,6 +220,21 @@ describe("Tarefa de projeto secundário (#731)", () => {
   });
 });
 
+describe("Lista da leva: o selinho Reservada pra (Sofia, 24/10)", () => {
+  const t = (numero: number, extra: Partial<Tarefa> = {}): Tarefa => ({ ...base, numero, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`, ...extra });
+  const lista = (tarefas: Tarefa[]) => renderToString(<ListaDeTarefas tarefas={tarefas} login="fulana" levaAberta />).replace(/<!-- -->/g, "");
+
+  it("mostra pra quem a tarefa está reservada, e o Pegar tarefa continua lá", () => {
+    const h = lista([t(70, { reservadaPra: "Tiago, pelo celular" })]);
+    expect(h).toContain("pra Tiago, pelo celular");
+    expect(h).toContain("Pegar tarefa");
+  });
+
+  it("sem a reserva, nenhum selinho", () => {
+    expect(lista([t(71)])).not.toContain("reservada");
+  });
+});
+
 describe("Lista da leva: ordem de prioridade (#776)", () => {
   const t = (numero: number, extra: Partial<Tarefa> = {}): Tarefa => ({ ...base, numero, url: `https://github.com/sakura-corp/sakura-system-ace/issues/${numero}`, ...extra });
   const lista = (tarefas: Tarefa[], login: string | undefined = "fulana") =>
