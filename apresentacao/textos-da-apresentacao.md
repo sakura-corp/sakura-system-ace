@@ -1,10 +1,11 @@
 # Textos da apresentação do SSACE (14 slides)
 
-> Textos dos slides da apresentação em PDF que a Sofia manda à primeira empresa cliente (terça,
+> Textos dos slides da apresentação em PDF que a Sakura Corp manda à primeira empresa cliente (terça,
 > 27/10). Leitor: o dono da loja. Português simples, sem termo técnico, foco no que muda no dia a dia.
 >
-> **Regras**: sem preço, mensalidade, custo ou desconto (onde precisar de contato: `[CONTATO: a Sofia preenche]`);
-> sem o nome da loja que usa hoje, da cidade dela ou de qualquer pessoa; sem as funções desligadas
+> **Regras**: sem preço, mensalidade, custo ou desconto (o contato é o da empresa, no slide 14);
+> sem o nome da loja que usa hoje, da cidade dela ou de qualquer pessoa (nem de ninguém da Sakura
+> Corp: o cliente fala com a equipe da Sakura Corp); sem as funções desligadas
 > (as regras de `apresentacao/levantamento-do-sistema.md`); no "O que vem por aí", nenhuma data, mês,
 > ano ou prazo. Cada função citada foi conferida no levantamento ou na lista "Existe e não está lá"
 > de `apresentacao/o-que-falta-pra-apresentar.md`.
@@ -99,10 +100,10 @@ Feito pra autocenter e borracharia.
 **Título:** Como começa
 - A gente instala e configura tudo. Você não cria conta em serviço nenhum.
 - Desde o primeiro dia a loja já usa ordem de serviço, estoque e caixa. As peças e os clientes são cadastrados na própria loja (trazer do sistema antigo por planilha está no "O que vem por aí").
-- A nota fiscal é uma etapa à parte: depende do certificado digital da loja, da SEFAZ, da prefeitura e da contabilidade. Fazemos junto com a contabilidade, e a meta é a loja estar emitindo nota nos primeiros 15 dias.
+- A nota fiscal é uma etapa à parte: depende do certificado digital da loja, da SEFAZ, da prefeitura e da contabilidade. Fazemos junto com a contabilidade, e a meta é emitir nota em até 7 dias depois que o certificado e as autorizações ficam prontos.
 - A nota de serviço muda de prefeitura pra prefeitura: antes de começar, conferimos com a sua contabilidade como é a da sua cidade.
 - O que precisa: computador com Windows e internet.
-**Foto:** sem foto (sugestão: linha do tempo simples — dia 1: instalação → primeiros dias: vendendo → até 15 dias: emitindo nota)
+**Foto:** sem foto (sugestão: linha do tempo simples — dia 1: instalação → primeiros dias: vendendo → certificado e autorizações prontos → até 7 dias depois: emitindo nota)
 
 ## Slide 12 — O que vem junto
 **Título:** O que vem junto
@@ -127,8 +128,9 @@ A ordem é decidida pelo que as lojas mais pedem.
 
 ## Slide 14 — Próximo passo
 **Título:** Vamos conversar?
-Que tal uma conversa com uma demonstração? Você vê o sistema funcionando e tira todas as dúvidas.
-`[CONTATO: a Sofia preenche]`
+Que tal uma conversa com uma demonstração? Você vê o sistema funcionando e tira todas as dúvidas com a equipe da Sakura Corp.
+- E-mail: contato@sakuracorp.com.br
+- WhatsApp: `[WHATSAPP]` (o número vai direto no PDF, não neste repositório, que é público)
 **Foto:** sem foto (sugestão: o logo)
 
 ## Fotos usadas
@@ -140,3 +142,4 @@ Notas:
 - O `04-inicio` sai sem o aviso da alíquota; o script `apresentacao/fotografar-telas-dos-slides.mjs` já faz isso.
 - As fotos que ainda não estão no script (as alternativas e a `06b-ficha-veiculo`) a tarefa do PDF acrescenta, se quiser.
 - Antes de usar a `37-lucratividade` e a `46-comissoes`, conferir os números na foto: os itens 3 e 15 de `apresentacao/o-que-falta-pra-apresentar.md` (receita que não bate com o Início; lucro de Comissões que não soma). Se ainda aparecer, no slide 9 usar a alternativa.
+- No slide 14, o WhatsApp entra direto no PDF (`[WHATSAPP]`): o número não fica no repositório, que é público. Nenhum nome de pessoa aparece nos slides; quem fala com o cliente é a equipe da Sakura Corp.
