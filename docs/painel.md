@@ -993,3 +993,7 @@ login criados", "webhook ligado"), com a data. É onde quem programa confere se 
 - **23/10/2026, tarde: a proposta de teste saiu da aba** (Sofia, #749): a sakura-corp/secundarios#2, fechada como
   "não planejada", ainda aparecia como "Esperando a Sofia". A etiqueta `proposta` saiu dela, e a aba passou a esconder
   proposta fechada sem `aprovada` nem `recusada`.
+- **24/10/2026: o selinho "Reservada pra"** (Sofia): linha opcional `Reservada pra: <quem>` no cabeçalho da tarefa
+  (`docs/tarefas.md`), lida em `painel/src/logica/cabecalho.ts` e mostrada ao lado do título na lista da leva. Aviso,
+  nunca tranca. Estreia na leva 5: a #784 e a #786 ficaram "pra Tiago, pelo celular" (ele está sem PC até segunda;
+  plano no privado, `planos/2026-10-23-primeira-empresa-cliente.md`).

@@ -44,7 +44,7 @@ Nada de "Precisa da Sofia?" escondido no meio do texto: o painel não enxerga.
 
 O cabeçalho são **linhas fixas**, uma por linha, exatamente com estes nomes (o painel vai ler). A
 sexta, `Second brain`, é **opcional**: só aparece quando é `não precisa` (regras abaixo). A
-`Prioridade` também é **opcional** e vem por último, no mesmo bloco (regras abaixo).
+`Prioridade` e a `Reservada pra` também são **opcionais** e vêm por último, no mesmo bloco (regras abaixo).
 
 ```markdown
 Chefe: backend
@@ -54,6 +54,7 @@ Depende de: #386, #507
 Sessões filhas: não
 Second brain: não precisa
 Prioridade: 1
+Reservada pra: Tiago, pelo celular
 
 ## Pra que serve
 <uma ou duas frases: o que muda pra loja (ou pro painel) e por quê>
@@ -120,6 +121,11 @@ Regras do modelo:
   a linha faltando, ou escrita errada (`Prioridade: alta`), é ignorada, **não** deixa a tarefa
   "incompleta" e não impede pegar. Pegar a 3ª antes da 1ª é permitido: o painel só avisa, embaixo
   do "Pegar tarefa", que há uma de prioridade maior livre.
+- **`Reservada pra: <quem>`** (Sofia, 24/10), **opcional**: pra quem a Sofia guardou a tarefa, e por
+  quê, em poucas palavras (ex.: `Tiago, pelo celular`, quando a pessoa está sem PC). Quem põe é a
+  Sofia. O painel mostra um selinho "pra Tiago, pelo celular" ao lado do título (até 40 caracteres).
+  **Aviso, nunca tranca**: qualquer um continua podendo pegar; a linha vazia é ignorada e nunca deixa
+  a tarefa "incompleta". Quando a reserva acabar, a linha sai da tarefa.
 - **Nada privado**: preço, sócio, dado pessoal ou credencial nunca entram (o repositório é público).
 - Defeito achado de passagem continua no formato da #425 enquanto não entra numa leva; ao entrar,
   vira este modelo (o "o que acontece / por quê" vai em "Pra que serve").

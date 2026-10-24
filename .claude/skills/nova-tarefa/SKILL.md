@@ -29,6 +29,8 @@ Fale **sempre em português simples**. O formato, as etiquetas e a tabela de mod
 - **`Prioridade: N`** (opcional, #776): só quando a Sofia disser a ordem das tarefas da leva. Vem
   por último no cabeçalho, no mesmo bloco; N inteiro de 1 a 999, 1 é a mais importante. Nunca inventar a
   ordem: sem a ordem dela, sem a linha. Escrita errada não tranca nada (o painel ignora), mas confira.
+- **`Reservada pra: <quem>`** (opcional, 24/10): só quando a Sofia disser que a tarefa é de alguém
+  (ex.: `Reservada pra: Tiago, pelo celular`). Vem depois da `Prioridade`. Nunca inventar a reserva.
 - **Um chefe só** (o da maior parte do trabalho); os outros em `Ajudantes`, cada um com o porquê.
 - **Etapas e modelos**: cada etapa com quem faz e a **categoria** (forte, médio, rápido), nunca o
   nome do modelo. Migration, RLS, dinheiro, nota fiscal, segurança e revisão final: **forte**.

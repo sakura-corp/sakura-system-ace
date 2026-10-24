@@ -235,6 +235,7 @@ export function tarefaDaIssue(issue: IssueDoGitHub, repositorio = REPOSITORIO): 
   const cabecalho = lerCabecalho(issue.body, { etiquetaChefe: chefe });
   if (cabecalho.ajudantes) tarefa.ajudantes = cabecalho.ajudantes;
   if (cabecalho.prioridade !== undefined) tarefa.prioridade = cabecalho.prioridade;
+  if (cabecalho.reservadaPra) tarefa.reservadaPra = cabecalho.reservadaPra;
   // Tarefa feita nunca aparece como "incompleta": o cabeçalho dela não importa mais.
   if (cabecalho.falta.length > 0 && tarefa.estado !== "feita") tarefa.incompleta = cabecalho.falta;
   return tarefa;

@@ -147,6 +147,30 @@ describe("lerCabecalho", () => {
     expect(r.ajudantes).toBe("tester (conferir o Pronto quando)");
   });
 
+  describe("Reservada pra (Sofia, 24/10): linha opcional, só um selinho", () => {
+    const comLinha = (linha: string) => completo().replace("Sessões filhas: não\n", `Sessões filhas: não\nPrioridade: 1\n${linha}\n`);
+
+    it("é lida, junto com a Prioridade, e o cabeçalho continua completo", () => {
+      const r = lerCabecalho(comLinha("Reservada pra: Tiago, pelo celular"), { etiquetaChefe: "frontend" });
+      expect(r.reservadaPra).toBe("Tiago, pelo celular");
+      expect(r.prioridade).toBe(1);
+      expect(r.falta).toEqual([]);
+      expect(lerCabecalho(comLinha("**Reservada pra:** Tiago")).reservadaPra).toBe("Tiago");
+    });
+
+    it("sem a linha, vazia ou só símbolos: sem reserva, e nada vai pra falta", () => {
+      for (const texto of [completo(), comLinha("Reservada pra:"), comLinha("Reservada pra: ***"), comLinha("Reservada pra: 12")]) {
+        const r = lerCabecalho(texto, { etiquetaChefe: "frontend" });
+        expect(r.reservadaPra).toBeUndefined();
+        expect(r.falta).toEqual([]);
+      }
+    });
+
+    it("corta em 40 caracteres e tira os símbolos de formatação", () => {
+      expect(lerCabecalho(comLinha(`Reservada pra: <b>${"a".repeat(60)}</b>`)).reservadaPra).toBe(`b${"a".repeat(39)}`);
+    });
+  });
+
   describe("Prioridade (#776): linha opcional, aviso e nunca tranca", () => {
     const comPrioridade = (linha: string) => completo().replace("Sessões filhas: não\n", `Sessões filhas: não\n${linha}\n`);
 
