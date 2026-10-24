@@ -26,7 +26,9 @@ const dia = (n) => {
   d.setDate(d.getDate() + inteiro);
   return d.toISOString();
 };
-const diaCurto = (n) => dia(n).slice(0, 10);
+// O dia de calendário no fuso local (como o `diaLocal()` do programa), não o
+// corte do texto em UTC: depois das 21h em São Paulo, o corte já dava amanhã.
+const diaCurto = (n) => new Date(dia(n)).toLocaleDateString("sv-SE");
 // `diaAs(-3, 14, 20)` é três dias atrás, às 14h20 (no fuso de quem gera as
 // telas). Pros dias passados, em vez de `dia()`: com ele, tudo que é de outro
 // dia saía com a mesma hora (a hora em que a tela abriu), e a lista de
@@ -90,18 +92,20 @@ const item = (tipo, id, descricao, qtd, preco) => ({
   tecnico_id: "f1", tecnico: { nome: "Anderson Lima" },
 });
 
+// As OS de hoje, com o número subindo junto com a hora (a 146 foi concluída
+// hoje, depois da 145).
 export const ordens = [
-  { numero: 148, cliente: "c1", veiculo: "v1", status: "em_andamento", abertura: -0.2,
+  { numero: 148, cliente: "c1", veiculo: "v1", status: "em_andamento", abertura: -0.25,
     itens: [item("peca", "p1", "Pneu 175/70 R14", 2, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)] },
-  { numero: 147, cliente: "c4", veiculo: "v4", status: "em_andamento", abertura: -0.6,
+  { numero: 147, cliente: "c4", veiculo: "v4", status: "em_andamento", abertura: -0.4,
     itens: [item("peca", "p3", "Amortecedor dianteiro", 2, 445), item("servico", "s3", "Troca de amortecedor", 1, 260)] },
-  { numero: 146, cliente: "c3", veiculo: "v3", status: "concluida", abertura: -1,
+  { numero: 146, cliente: "c3", veiculo: "v3", status: "concluida", abertura: -0.5,
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)] },
-  { numero: 145, cliente: "c2", veiculo: "v2", status: "faturada", abertura: -0.30,
+  { numero: 145, cliente: "c2", veiculo: "v2", status: "faturada", abertura: -0.6,
     itens: [item("peca", "p2", "Pneu 205/60 R16", 4, 612), item("servico", "s1", "Alinhamento e balanceamento", 1, 140)] },
-  { numero: 144, cliente: "c5", veiculo: "v5", status: "faturada", abertura: -0.55,
+  { numero: 144, cliente: "c5", veiculo: "v5", status: "faturada", abertura: -0.75,
     itens: [item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
-  { numero: 143, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -0.80,
+  { numero: 143, cliente: "c1", veiculo: "v1", status: "faturada", abertura: -0.9,
     itens: [item("peca", "p5", "Bateria 60Ah", 1, 549), item("servico", "s5", "Instalação de bateria", 1, 40)] },
   // Duas passagens antigas do mesmo Gol (v1), pra ficha do veículo (FN-04)
   // ter uma linha do tempo de verdade: KM subindo, uma peça ainda na
@@ -236,7 +240,7 @@ const orcamentoDemo = (n, cliente, veiculo, status, validadeEmDias, itens, extra
     cliente_id: cliente, veiculo_id: veiculo, status,
     validade: diaCurto(validadeEmDias), km_entrada: v.km_atual,
     descricao_problema: "", forma_pagamento: null, parcelas: 1,
-    data_abertura: dia(-3 - n), data_fechamento: null,
+    data_abertura: diaDeLojaAs(-3 - n, 10, 15), data_fechamento: null,
     vendedor_id: "f2", criado_por_id: OP, atualizado_por_id: OP,
     cliente: { nome: cli.nome },
     veiculo: { placa: v.placa, marca: v.marca, modelo: v.modelo, cor: v.cor, tipo: v.tipo },
@@ -325,7 +329,7 @@ const vendasNoCaixa = [...historico, ...ordens]
 export const caixa = [
   ...vendasNoCaixa,
   // A parcela que a conta a receber `cr3` recebeu (entrada sem OS, com
-  // categoria). 40 dias atrás cai sempre no mês passado: no mês corrente, ela
+  // categoria). 40 dias atrás fica sempre fora do mês corrente: dentro dele, ela
   // entraria nas vendas do Início e não na Lucratividade, que só conta OS.
   { id: "cx-cr3", loja_id: LOJA, data: diaAs(-40, 10, 40), ordem_servico_id: null, tipo: "entrada",
     forma_pagamento: "Pix", valor: 720, descricao: "Recebimento: Parcela 2/2 do jogo de amortecedores",
@@ -573,7 +577,7 @@ export const notasFiscais = [
 ];
 
 export const auditoria = [
-  { id: "au1", tabela: "pecas", registro_id: "p1", acao: "atualizar", operador_id: OP, criado_em: dia(-0.1), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Pneu 175/70 R14", preco_venda: 369.9 }, dados_depois: { descricao: "Pneu 175/70 R14", preco_venda: 389.9 } },
+  { id: "au1", tabela: "pecas", registro_id: "p1", acao: "atualizar", operador_id: OP, criado_em: dia(-0.1), operador_nome: "Marcos Andrade", dados_antes: { descricao: "Pneu 175/70 R14", estoque_minimo: 6 }, dados_depois: { descricao: "Pneu 175/70 R14", estoque_minimo: 8 } },
   { id: "au2", tabela: "ordens_servico", registro_id: "os146", acao: "atualizar", operador_id: OP, criado_em: dia(-0.4), operador_nome: "Marcos Andrade", dados_antes: { numero: 146, status: "em_andamento" }, dados_depois: { numero: 146, status: "concluida" } },
   { id: "au3", tabela: "contas_pagar", registro_id: "cp9", acao: "excluir", operador_id: OP2, criado_em: diaAs(-1, 15, 12), operador_nome: "Bruna Tavares", dados_antes: { descricao: "Assinatura de software (duplicada)", valor: 149 }, dados_depois: null },
   { id: "au4", tabela: "clientes", registro_id: "c3", acao: "atualizar", operador_id: OP2, criado_em: diaAs(-2, 10, 47), operador_nome: "Bruna Tavares", dados_antes: { nome: "Juliana Prado", telefone: "(16) 98111-0000" }, dados_depois: { nome: "Juliana Prado", telefone: "(16) 98111-2233" } },
@@ -644,7 +648,10 @@ export const ordensItens = [...historico, ...ordens].flatMap((o) =>
     ordem_servico_id: o.id,
     ordem: {
       id: o.id,
-      data_fechamento: o.data_fechamento ?? dia(-1),
+      // OS aberta fica sem data de fechamento: o programa tira da tela de
+      // Garantias (src/lib/garantias.ts) o que ainda não foi fechado.
+      status: o.status,
+      data_fechamento: o.data_fechamento,
       cliente: { nome: o.cliente.nome },
       veiculo: o.veiculo ? { placa: o.veiculo.placa } : null,
     },
@@ -699,36 +706,61 @@ const versaoDoEsquema = Number(
 
 const schemaVersao = [{ versao: versaoDoEsquema, aplicada_em: dia(-30) }];
 
-// Fechamentos de caixa (TR-06.4, migration 0058): três dias pra trás, um que
-// bateu, um com falta e um com sobra — a aba Fechamento mostra o histórico e
-// a soma das diferenças, e sem dado ela apareceria vazia no catálogo.
+// Fechamentos de caixa (TR-06.4, migration 0058): os três últimos dias de
+// loja aberta, um que bateu, um com falta e um com sobra — a aba Fechamento
+// mostra o histórico e a soma das diferenças. O esperado é o que o programa
+// calcula (`resumirDiaParaFechamento`): o fundo de troco + o dinheiro do dia.
+const FUNDO_DE_TROCO = 100;
+const dinheiroDoDia = (data) =>
+  caixa
+    .filter((m) => diaLocal(m.data) === data && /dinheiro/i.test(m.forma_pagamento ?? ""))
+    .reduce((t, m) => t + (m.tipo === "entrada" ? m.valor : -m.valor), 0);
 const fechamentosCaixa = [
-  { d: -1, esperado: 612.4, contado: 612.4, obs: null },
-  { d: -2, esperado: 845.0, contado: 832.5, obs: "Troco de R$ 12,50 dado a mais pro cliente da tarde" },
-  { d: -3, esperado: 498.9, contado: 503.9, obs: null },
-].map((f, i) => ({
-  id: `fc-${i}`, loja_id: LOJA, data: diaCurto(f.d), fundo_troco: 100,
-  saldo_sistema: f.esperado, valor_contado: f.contado,
-  diferenca: Math.round((f.contado - f.esperado) * 100) / 100,
-  totais_por_forma: {}, observacao: f.obs, caixa_movimento_id: null,
-  operador_id: OP, criado_em: dia(f.d), operador: { nome: "Marcos Andrade" },
-}));
+  { diferenca: 0, obs: null },
+  { diferenca: -12.5, obs: "Troco de R$ 12,50 dado a mais pro cliente da tarde" },
+  { diferenca: 5, obs: null },
+].map((f, i) => {
+  const n = DIAS_DE_LOJA[DIAS_DE_LOJA.length - 1 - i];
+  const data = diaLocal(diaAs(n, 18, 0));
+  const esperado = Math.round((FUNDO_DE_TROCO + dinheiroDoDia(data)) * 100) / 100;
+  return {
+    id: `fc-${i}`, loja_id: LOJA, data, fundo_troco: FUNDO_DE_TROCO,
+    saldo_sistema: esperado, valor_contado: Math.round((esperado + f.diferenca) * 100) / 100,
+    diferenca: f.diferenca,
+    totais_por_forma: {}, observacao: f.obs, caixa_movimento_id: null,
+    operador_id: OP, criado_em: diaAs(n, 18, 5), operador: { nome: "Marcos Andrade" },
+  };
+});
 
-// Um pagamento de comissão registrado no mês passado (TL-46.1, migration
-// 0059) — a aba Comissões mostra o histórico e o recibo a partir dele.
+// Um pagamento de comissão do mês passado (TL-46.1, migration 0059) — a aba
+// Comissões mostra o histórico e o recibo a partir dele. Cita duas OS de
+// verdade, fechadas dentro do período pago (antes eram números fixos, que o
+// relógio levava pra fora do período), com 10% do lucro de cada uma.
 const primeiroDoMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
 const ultimoDoMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+const inicioPago = primeiroDoMesPassado.toLocaleDateString("sv-SE");
+const fimPago = ultimoDoMesPassado.toLocaleDateString("sv-SE");
+const custoDoItem = (i) =>
+  i.peca_id ? pecas.find((p) => p.id === i.peca_id).preco_custo : servicos.find((x) => x.id === i.servico_id).custo;
+const snapshotPago = historico
+  .filter((o) => diaLocal(o.data_fechamento) >= inicioPago && diaLocal(o.data_fechamento) <= fimPago)
+  .slice(0, 2)
+  .map((o) => ({
+    ordemId: o.id, numero: o.numero, papel: "tecnico",
+    comissao: Math.round(0.1 * o.itens.reduce((t, i) => t + i.quantidade * (i.preco_unitario - custoDoItem(i)), 0) * 100) / 100,
+  }));
+const totalPago = Math.round(snapshotPago.reduce((t, l) => t + l.comissao, 0) * 100) / 100;
+// Pago no dia 5 deste mês (ou hoje, se ainda não chegou o dia 5).
+const diaDoPagamento = Math.min(hoje.getDate(), 5);
 const comissoesPagas = [{
   id: "cp-1", loja_id: LOJA, funcionario_id: "f1", funcionario_nome: "Anderson Lima",
-  periodo_inicio: primeiroDoMesPassado.toLocaleDateString("sv-SE"),
-  periodo_fim: ultimoDoMesPassado.toLocaleDateString("sv-SE"),
-  percentual: 10, valor_calculado: 486.3, valor_pago: 486.3,
-  data_pagamento: diaCurto(-20), observacao: null,
-  snapshot: [
-    { ordemId: "os60", numero: 60, papel: "tecnico", comissao: 212.1 },
-    { ordemId: "os64", numero: 64, papel: "tecnico", comissao: 274.2 },
-  ],
-  operador_id: OP, criado_em: dia(-20),
+  periodo_inicio: inicioPago,
+  periodo_fim: fimPago,
+  percentual: 10, valor_calculado: totalPago, valor_pago: totalPago,
+  data_pagamento: new Date(hoje.getFullYear(), hoje.getMonth(), diaDoPagamento).toLocaleDateString("sv-SE"),
+  observacao: null,
+  snapshot: snapshotPago,
+  operador_id: OP, criado_em: diaAs(diaDoPagamento - hoje.getDate(), 9, 30),
 }];
 
 // Os computadores da empresa (migration 0063): quatro, pra seção de

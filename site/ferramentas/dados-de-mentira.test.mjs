@@ -173,13 +173,16 @@ describe("dados de mentira: as telas não se contradizem", async () => {
   it("item 11: quem 'sumiu' não está com OS aberta", () => {
     const seisMeses = new Date(Date.now() - 182 * 864e5).toISOString();
     const clientes = new Set(ordens.map((o) => o.cliente_id));
+    let sumidos = 0;
     for (const cliente of clientes) {
       const faturadas = ordens.filter((o) => o.cliente_id === cliente && o.status === "faturada");
       const ultima = faturadas.map((o) => o.data_fechamento).sort().at(-1);
       if (!ultima || ultima > seisMeses) continue;
       const abertas = ordens.filter((o) => o.cliente_id === cliente && o.status !== "faturada");
       expect(abertas.map((o) => o.numero), cliente).toEqual([]);
+      sumidos += 1;
     }
+    expect(sumidos).toBeGreaterThan(0);
   });
 
   // Achados do tester da #780 nas fotos (não estavam no levantamento).
@@ -193,15 +196,20 @@ describe("dados de mentira: as telas não se contradizem", async () => {
     };
     const entradas = TABELAS.caixa_movimentos.filter((m) => m.tipo === "entrada");
     const soma = (meses) => entradas.filter((m) => naJanela(m.data, meses)).reduce((t, m) => t + m.valor, 0);
+    // Mês passado sem venda (o dia 1º dele caiu num domingo, no começo do
+    // mês): a tela não mostra variação nenhuma, e está certo.
+    if (soma(1) === 0) return;
     const variacao = (soma(0) - soma(1)) / soma(1);
-    // Nos primeiros dias do mês, um dia contra um dia pode variar à vontade
-    // (como numa loja de verdade); a partir do dia 5 a soma já se compara.
-    if (diaDoMes >= 5) expect(Math.abs(variacao)).toBeLessThan(0.5);
-    else expect(soma(1)).toBeGreaterThan(0);
+    // Nos primeiros dias do mês, poucos dias contra poucos dias variam à
+    // vontade (a quantidade de dias de loja aberta muda de um mês pro outro);
+    // o que nunca pode é o "+999%". Do dia 10 em diante, já se compara.
+    expect(variacao).toBeLessThan(9.99);
+    if (diaDoMes >= 10) expect(Math.abs(variacao)).toBeLessThan(0.6);
   });
 
   it("ninguém é atendido de madrugada nem no domingo", () => {
-    const passadas = ordens.filter((o) => o.status === "faturada");
+    // Todas as OS e os orçamentos, não só as faturadas.
+    const passadas = TABELAS.ordens_servico;
     const hoje = new Date().toLocaleDateString("sv-SE");
     for (const o of passadas) {
       const d = new Date(o.data_abertura);
@@ -214,9 +222,54 @@ describe("dados de mentira: as telas não se contradizem", async () => {
   });
 
   it("o dia do recebimento na conta é o mesmo do lançamento no caixa", () => {
-    for (const c of TABELAS.contas_receber.filter((x) => x.caixa_movimento_id)) {
+    const recebidas = TABELAS.contas_receber.filter((x) => x.caixa_movimento_id);
+    expect(recebidas.length).toBeGreaterThan(0);
+    for (const c of recebidas) {
       const m = TABELAS.caixa_movimentos.find((x) => x.id === c.caixa_movimento_id);
       expect(new Date(m.data).toLocaleDateString("sv-SE"), c.id).toBe(c.data_recebimento);
+    }
+  });
+
+  // Achados da revisão final da #780.
+  it("o número da OS de hoje sobe junto com a hora em que ela abriu", () => {
+    const deHoje = ordens
+      .filter((o) => new Date(o.data_abertura).toLocaleDateString("sv-SE") === new Date().toLocaleDateString("sv-SE"))
+      .sort((a, b) => a.numero - b.numero);
+    expect(deHoje.length).toBeGreaterThan(3);
+    for (let i = 1; i < deHoje.length; i++) {
+      expect(deHoje[i].data_abertura > deHoje[i - 1].data_abertura, `OS ${deHoje[i].numero}`).toBe(true);
+    }
+  });
+
+  it("Garantias só mostra peça de OS fechada", () => {
+    for (const i of TABELAS.ordens_servico_itens) {
+      const o = ordemPorId.get(i.ordem_servico_id);
+      expect(i.ordem.data_fechamento ?? null, `item da ${o.numero}`).toBe(o.data_fechamento ?? null);
+      expect(i.ordem.status, `item da ${o.numero}`).toBe(o.status);
+    }
+  });
+
+  it("o fechamento do caixa espera o fundo + o dinheiro que entrou naquele dia", () => {
+    expect(TABELAS.fechamentos_caixa.length).toBeGreaterThan(0);
+    for (const f of TABELAS.fechamentos_caixa) {
+      const doDia = TABELAS.caixa_movimentos.filter((m) => new Date(m.data).toLocaleDateString("sv-SE") === f.data);
+      const dinheiro = doDia
+        .filter((m) => /dinheiro/i.test(m.forma_pagamento ?? ""))
+        .reduce((t, m) => t + (m.tipo === "entrada" ? m.valor : -m.valor), 0);
+      expect(centavos(f.saldo_sistema), f.data).toBe(centavos(f.fundo_troco + dinheiro));
+      expect(centavos(f.diferenca), f.data).toBe(centavos(f.valor_contado - f.saldo_sistema));
+    }
+  });
+
+  it("a comissão paga só cita OS fechadas dentro do período pago", () => {
+    for (const pago of TABELAS.comissoes_fechamentos) {
+      expect(pago.snapshot.length).toBeGreaterThan(0);
+      for (const linha of pago.snapshot) {
+        const o = ordemPorId.get(linha.ordemId);
+        expect(o?.numero, linha.ordemId).toBe(linha.numero);
+        const dia = new Date(o.data_fechamento).toLocaleDateString("sv-SE");
+        expect(dia >= pago.periodo_inicio && dia <= pago.periodo_fim, `OS ${o.numero} em ${dia}`).toBe(true);
+      }
     }
   });
 });
