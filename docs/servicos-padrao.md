@@ -4,10 +4,11 @@ Esta lista é a base de um pré-cadastro melhor de serviços para a empresa nova
 curta da migration `0030_categorias_e_servicos_padrao.sql` (que não tem preço). **O preço aqui é só
 sugestão**: a loja muda tudo na instalação. É a tarefa #786. A migration é outra tarefa.
 
-Levantado em **25/10/2026**, em páginas públicas da internet (matérias, tabelas de licitação, guias
-de preço, site de rede de oficinas). Só entrou preço de página que foi aberta de verdade. Onde não
-achamos preço confiável, a faixa diz **sem fonte**. Achamos pouca coisa do interior de SP: ver as
-observações. Preço de loja que usa o sistema **não** foi usado.
+Levantado em **25/10/2026**, em páginas públicas da internet (tabelas de licitação, matérias, guias
+de preço, site de rede de oficinas). As melhores são duas licitações de prefeituras do interior de SP
+(Saltinho e Paranapanema), marcadas com **SP**. Só entrou preço de página que foi aberta de verdade. Onde não
+achamos preço confiável, a faixa diz **sem fonte**. Do interior de SP só achamos pneu e alinhamento:
+ver as observações. Preço de loja que usa o sistema **não** foi usado.
 
 Valem para todas as tabelas:
 - Preço de **mão de obra**, carro de passeio comum. Quando a fonte inclui a peça, está escrito.
@@ -19,12 +20,13 @@ Valem para todas as tabelas:
 
 | Serviço (como a loja escreve) | Faixa típica | Fonte | Observação |
 |---|---|---|---|
-| Conserto de pneu furado (macarrão ou remendo) | R$ 27 a R$ 36 | [TJCE, mapa de preços](https://portal.tjce.jus.br/uploads/2024/08/4MapadePrecosGerenciamentodaFrota_34_2024.pdf) (2024) | Por pneu, carro leve. Preço de cotação de licitação do Ceará, fonte nacional. Utilitário: R$ 76 a R$ 110 na mesma tabela. Em loja pode ser mais caro |
-| Conserto de pneu com manchão (vulcanização) | sem fonte | | |
-| Montagem de Pneu | sem fonte | | Já existe (0030) |
-| Desmontagem de pneu | sem fonte | | |
-| Rodízio de Pneus | sem fonte | | Já existe (0030) |
-| Troca de válvula do pneu | R$ 4 a R$ 10 | [TCE-SE, pesquisa de preço](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025) | É o preço da válvula (sem câmara, passeio), não da mão de obra. Fonte nacional (Sergipe). Em geral a montagem vai junto |
+| Conserto de pneu furado (macarrão ou remendo) | R$ 27 a R$ 52 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024), [TJCE, mapa de preços](https://portal.tjce.jus.br/uploads/2024/08/4MapadePrecosGerenciamentodaFrota_34_2024.pdf) (2024), [Prefeitura de Paranapanema, edital do pregão 16/2024](https://www.paranapanema.sp.gov.br/portal/editais/0/1/3689/vencedores) (2024) | Por pneu, carro leve, sem câmara. **SP:** Saltinho (preço registrado de uma borracharia local) R$ 29,99. TJCE (Ceará, cotação): R$ 27 a R$ 36. Paranapanema (SP, valor de referência do edital, não é preço fechado): R$ 51,66 para carro. Utilitário no TJCE: R$ 76 a R$ 110 |
+| Conserto de pneu com manchão (com câmara) | R$ 35 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP.** Por pneu, veículo leve. Um só preço registrado, de uma borracharia local |
+| Vulcanização simples | R$ 70 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP.** Por pneu, veículo leve. Um só preço registrado. Serviço extra, não estava no plano |
+| Montagem de Pneu | R$ 25 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP.** O preço é de "montagem e desmontagem" juntas, por pneu, veículo leve (R$ 24,99, um auto center local). Já existe (0030) |
+| Desmontagem de pneu | R$ 25 (junto com a montagem) | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP.** Mesma linha da montagem: a fonte não separa os dois |
+| Rodízio de Pneus | sem fonte | | Já existe (0030). Em Saltinho (SP, 2024) o rodízio só aparece dentro de um pacote com alinhamento e balanceamento das 4 rodas (R$ 94,99), sem preço próprio |
+| Troca de válvula do pneu | R$ 15 (serviço) | [TCE-SE, pesquisa de preço](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP:** "troca de bicos" em veículo leve, R$ 15 de mão de obra (Saltinho). TCE-SE (Sergipe, nacional): a válvula em si (peça) custa R$ 4 a R$ 10 |
 | Calibragem com nitrogênio | R$ 10 a R$ 20 | [Canaltech](https://canaltech.com.br/carros/vale-a-pena-calibrar-o-pneu-com-nitrogenio-veja-pros-e-contras/) (sem data) | Por pneu. Fonte nacional. Outra matéria, mais antiga (cerca de 2019), diz o mesmo valor |
 | Troca de estepe ou de roda | sem fonte | | |
 
@@ -32,10 +34,10 @@ Valem para todas as tabelas:
 
 | Serviço (como a loja escreve) | Faixa típica | Fonte | Observação |
 |---|---|---|---|
-| Alinhamento Dianteiro | R$ 60 a R$ 150 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [oficina.app](https://oficina.app/tabela-de-precos-para-oficina-mecanica/) (2026) | Por veículo. TCE-SE (Sergipe) achou R$ 60 a R$ 70 em 3 cotações. oficina.app: R$ 80 a R$ 150. [Webmotors](https://www.webmotors.com.br/servicos-automotivos/alinhamento-e-balanceamento) (sem data) fala em R$ 80 a R$ 200. Fonte nacional. Já existe (0030) |
+| Alinhamento Dianteiro | R$ 60 a R$ 150 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [oficina.app](https://oficina.app/tabela-de-precos-para-oficina-mecanica/) (2026) | Por veículo. TCE-SE (Sergipe) achou R$ 60 a R$ 70 em 3 cotações. oficina.app: R$ 80 a R$ 150. [Webmotors](https://www.webmotors.com.br/servicos-automotivos/alinhamento-e-balanceamento) (sem data) fala em R$ 80 a R$ 200. Fonte nacional. **SP:** em Saltinho (2024) o pacote de alinhamento, balanceamento e rodízio das 4 rodas, automóvel, ficou em R$ 94,99; caminhonete e van, R$ 124,99. Já existe (0030) |
 | Alinhamento Traseiro (alinhamento das 4 rodas ou 3D) | R$ 120 a R$ 250 | [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Alinhamento total, 4 rodas. O 3D costuma ser um pouco mais caro. Fonte nacional, blog. Já existe (0030) |
 | Balanceamento (por roda) | R$ 12 a R$ 40 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Por roda. TCE-SE: R$ 12 a R$ 20 (licitação, Sergipe). Doutor Multas: R$ 15 a R$ 40. Fonte nacional. Já existe (0030) |
-| Cambagem e caster (correção, por lado) | R$ 50 a R$ 82 | [Procon Goiás](https://goias.gov.br/procon/procon-goias-divulga-pesquisa-de-precos-de-itens-para-manutencao-preventiva-do-veiculo/) (2018) | Só cambagem, carro de passeio. **Fonte muito antiga (2018), nacional**: só pra ter ideia. Junta os 4 já existentes (0030): Cambagem Dianteira Direita e Esquerda, Caster Dianteiro Direito e Esquerdo |
+| Cambagem e caster (correção, por lado) | R$ 50 a R$ 95 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024), [Procon Goiás](https://goias.gov.br/procon/procon-goias-divulga-pesquisa-de-precos-de-itens-para-manutencao-preventiva-do-veiculo/) (2018) | **SP:** "cambagem completa" em automóvel, R$ 94,99 por veículo (Saltinho); caminhonete e van, R$ 131,88 (outra empresa). Procon Goiás: R$ 50 a R$ 82 só de cambagem, **fonte muito antiga (2018), nacional**. A fonte não fala em "por lado". Junta os 4 já existentes (0030): Cambagem Dianteira Direita e Esquerda, Caster Dianteiro Direito e Esquerdo |
 | Desempeno de roda de ferro | sem fonte | | |
 | Desempeno de roda de liga leve | sem fonte | | |
 
@@ -72,7 +74,7 @@ Valem para todas as tabelas:
 | Troca de filtro de ar | R$ 65 a R$ 180 | [Autocidade](https://autocidade.com/guia/quanto-custa-revisao) (2026) | **Inclui a peça.** Oficina independente. Fonte nacional |
 | Troca de filtro de combustível | R$ 100 a R$ 250 | [Autocidade](https://autocidade.com/guia/quanto-custa-revisao) (2026) | **Inclui a peça.** Oficina independente. Fonte nacional |
 | Troca de filtro de cabine (ar-condicionado) | R$ 80 a R$ 220 | [Autocidade](https://autocidade.com/guia/quanto-custa-revisao) (2026) | **Inclui a peça.** Oficina independente. Fonte nacional |
-| Troca de óleo de câmbio | sem fonte | | |
+| Troca de óleo de câmbio | R$ 800 a R$ 2.500 | [Vrum](https://www.vrum.com.br/aceleradas/2026/07/7463165-por-que-a-troca-do-oleo-do-cambio-automatico-e-um-servico-tao-caro.html) (2026) | Só câmbio **automático**, com máquina e **com o fluido** (inclui material). Para câmbio manual não achamos preço (a matéria diz que em geral nem precisa trocar). Fonte nacional |
 
 ## 6. Elétrica e bateria
 
@@ -113,11 +115,14 @@ Também continua o **Eixo Traseiro Completo** (já existe na 0030), que não ent
 Todas abertas em 25/10/2026.
 
 **Públicas (licitação e órgão do governo)**
+- **SP** [Prefeitura de Saltinho, extrato das atas de registro de preços, pregão eletrônico 07/2024 (Diário Oficial de 18/03/2024)](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0): preços registrados por empresas locais, só mão de obra, sem peça. Pneu (conserto, manchão, vulcanização, montagem, bico), alinhamento e cambagem.
+- **SP** [Prefeitura de Paranapanema, pregão presencial 16/2024](https://www.paranapanema.sp.gov.br/portal/editais/0/1/3689/vencedores): só valor de referência do edital (estimativa, não é preço fechado). Conserto de pneu de carro.
 - [TJCE, mapa de preços de gerenciamento da frota (2024)](https://portal.tjce.jus.br/uploads/2024/08/4MapadePrecosGerenciamentodaFrota_34_2024.pdf): conserto de pneu. Ceará.
 - [TCE-SE, relatório de pesquisa de preço (27/03/2025)](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf): alinhamento, balanceamento, válvula. Sergipe. Pneu de utilitário (265/70 R16).
 - [Procon Goiás, pesquisa de manutenção preventiva (2018)](https://goias.gov.br/procon/procon-goias-divulga-pesquisa-de-precos-de-itens-para-manutencao-preventiva-do-veiculo/): cambagem. Muito antiga.
 
 **Sites e matérias (todas nacionais, salvo a observação)**
+- [Vrum, troca do óleo do câmbio automático (07/2026)](https://www.vrum.com.br/aceleradas/2026/07/7463165-por-que-a-troca-do-oleo-do-cambio-automatico-e-um-servico-tao-caro.html)
 - [Guia do Auto, valor da troca de óleo (23/10/2026)](https://guiadoauto.com.br/valor-troca-de-oleo-mao-de-obra): cita oficina de Louveira (SP).
 - [Guia do Auto, barulho metálico na suspensão (09/10/2026)](https://guiadoauto.com.br/barulho-metalico-na-suspensao-como-resolver)
 - [Acheio Profissional, tabela de mão de obra mecânica (2026)](https://acheioprofissional.com.br/blog/tabela-mao-de-obra-mecanica-2026): só mão de obra, mínimo, médio e máximo.
