@@ -14,7 +14,8 @@ Valem para todas as tabelas:
 - Preço de **mão de obra**, carro de passeio comum. Quando a fonte inclui a peça, está escrito.
 - "Fonte nacional" quer dizer que a página não é de SP. Quando é de SP, está escrito.
 - Ano da fonte entre parênteses. "Sem data" quer dizer que a página não mostra a data.
-- "Já existe (0030)": o nome já está cadastrado na migration 0030. Não cadastrar duas vezes.
+- "Já existe (0030)": o nome já está cadastrado na migration 0030, escrito igualzinho. Não cadastrar
+  duas vezes. O que muda no serviço (por roda, 4 rodas, troca de fluido) fica na observação, nunca no nome.
 
 ## 1. Borracharia (pneus)
 
@@ -27,7 +28,7 @@ Valem para todas as tabelas:
 | Desmontagem de pneu | R$ 25 (junto com a montagem) | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP.** Mesma linha da montagem: a fonte não separa os dois |
 | Rodízio de Pneus | sem fonte | | Já existe (0030). Em Saltinho (SP, 2024) o rodízio só aparece dentro de um pacote com alinhamento e balanceamento das 4 rodas (R$ 94,99), sem preço próprio |
 | Troca de válvula do pneu | R$ 15 (serviço) | [TCE-SE, pesquisa de preço](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024) | **SP:** "troca de bicos" em veículo leve, R$ 15 de mão de obra (Saltinho). TCE-SE (Sergipe, nacional): a válvula em si (peça) custa R$ 4 a R$ 10 |
-| Calibragem com nitrogênio | R$ 10 a R$ 20 | [Canaltech](https://canaltech.com.br/carros/vale-a-pena-calibrar-o-pneu-com-nitrogenio-veja-pros-e-contras/) (sem data) | Por pneu. Fonte nacional. Outra matéria, mais antiga (cerca de 2019), diz o mesmo valor |
+| Calibragem com nitrogênio | R$ 10 a R$ 20 | [Canaltech](https://canaltech.com.br/carros/vale-a-pena-calibrar-o-pneu-com-nitrogenio-veja-pros-e-contras/) (2025) | Por pneu. Fonte nacional. Outra matéria, mais antiga (cerca de 2019), diz o mesmo valor |
 | Troca de estepe ou de roda | sem fonte | | |
 
 ## 2. Alinhamento e balanceamento
@@ -35,9 +36,9 @@ Valem para todas as tabelas:
 | Serviço (como a loja escreve) | Faixa típica | Fonte | Observação |
 |---|---|---|---|
 | Alinhamento Dianteiro | R$ 60 a R$ 150 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [oficina.app](https://oficina.app/tabela-de-precos-para-oficina-mecanica/) (2026) | Por veículo. TCE-SE (Sergipe) achou R$ 60 a R$ 70 em 3 cotações. oficina.app: R$ 80 a R$ 150. [Webmotors](https://www.webmotors.com.br/servicos-automotivos/alinhamento-e-balanceamento) (sem data) fala em R$ 80 a R$ 200. Fonte nacional. **SP:** em Saltinho (2024) o pacote de alinhamento, balanceamento e rodízio das 4 rodas, automóvel, ficou em R$ 94,99; caminhonete e van, R$ 124,99. Já existe (0030) |
-| Alinhamento Traseiro (alinhamento das 4 rodas ou 3D) | R$ 120 a R$ 250 | [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Alinhamento total, 4 rodas. O 3D costuma ser um pouco mais caro. Fonte nacional, blog. Já existe (0030) |
-| Balanceamento (por roda) | R$ 12 a R$ 40 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Por roda. TCE-SE: R$ 12 a R$ 20 (licitação, Sergipe). Doutor Multas: R$ 15 a R$ 40. Fonte nacional. Já existe (0030) |
-| Cambagem e caster (correção, por lado) | R$ 50 a R$ 95 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024), [Procon Goiás](https://goias.gov.br/procon/procon-goias-divulga-pesquisa-de-precos-de-itens-para-manutencao-preventiva-do-veiculo/) (2018) | **SP:** "cambagem completa" em automóvel, R$ 94,99 por veículo (Saltinho); caminhonete e van, R$ 131,88 (outra empresa). Procon Goiás: R$ 50 a R$ 82 só de cambagem, **fonte muito antiga (2018), nacional**. A fonte não fala em "por lado". Junta os 4 já existentes (0030): Cambagem Dianteira Direita e Esquerda, Caster Dianteiro Direito e Esquerdo |
+| Alinhamento Traseiro | R$ 120 a R$ 250 | [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Alinhamento total, 4 rodas. O 3D costuma ser um pouco mais caro. Fonte nacional, blog. Já existe (0030) |
+| Balanceamento | R$ 12 a R$ 40 | [TCE-SE](https://tce.se.gov.br/transparencia/Lists/Licitacoes/Attachments/1042/4.%20RELAT%C3%93RIO%20DE%20PESQUISA%20DE%20PRE%C3%87O%20-%2027.03.2025.pdf) (2025), [Doutor Multas](https://doutormultas.com.br/quanto-custa-um-alinhamento-e-balanceamento/) (2026) | Por roda. TCE-SE: R$ 12 a R$ 20 (licitação, Sergipe). Doutor Multas: R$ 15 a R$ 40. Fonte nacional. Já existe (0030) |
+| Cambagem e caster (correção, por veículo) | R$ 50 a R$ 95 | [Prefeitura de Saltinho, atas de registro de preços](https://www.dioe.com.br/exibe_do.php?i=NDcyMzQ0) (2024), [Procon Goiás](https://goias.gov.br/procon/procon-goias-divulga-pesquisa-de-precos-de-itens-para-manutencao-preventiva-do-veiculo/) (2018) | **SP:** "cambagem completa" em automóvel, R$ 94,99 por veículo (Saltinho); caminhonete e van, R$ 131,88 (outra empresa). Procon Goiás: R$ 50 a R$ 82 só de cambagem, **fonte muito antiga (2018), nacional**. As fontes dão preço por veículo; na 0030 os 4 nomes são por lado, então o preço de cada lado é menor. Junta os 4 já existentes (0030): Cambagem Dianteira Direita e Esquerda, Caster Dianteiro Direito e Esquerdo |
 | Desempeno de roda de ferro | sem fonte | | |
 | Desempeno de roda de liga leve | sem fonte | | |
 
@@ -62,7 +63,7 @@ Valem para todas as tabelas:
 | Troca de disco e pastilha | R$ 200 a R$ 800 | [Acheio Profissional](https://acheioprofissional.com.br/blog/tabela-mao-de-obra-mecanica-2026) (2026) | Nas 4 rodas, só mão de obra (média R$ 400). [Webmotors](https://www.webmotors.com.br/servicos-automotivos/troca-de-disco-de-freio) (sem data): R$ 200 a R$ 600 de mão de obra só do disco. Fonte nacional |
 | Retífica de Disco de Freio | sem fonte | | Já existe (0030) |
 | Troca de lona ou sapata e tambor | sem fonte | | |
-| Sangria de Freio (troca de fluido) | R$ 120 a R$ 250 | [oficina.app](https://oficina.app/tabela-de-precos-para-oficina-mecanica/) (2026) | Fluido à parte. [Autocidade](https://autocidade.com/guia/quanto-custa-revisao) (2026) fala em R$ 90 a R$ 170, mas com o fluido. Fonte nacional. Já existe (0030) |
+| Sangria de Freio | R$ 120 a R$ 250 | [oficina.app](https://oficina.app/tabela-de-precos-para-oficina-mecanica/) (2026) | Fluido à parte. [Autocidade](https://autocidade.com/guia/quanto-custa-revisao) (2026) fala em R$ 90 a R$ 170, mas com o fluido. Fonte nacional. Já existe (0030) |
 | Higienização de Freio | sem fonte | | Já existe (0030) |
 
 ## 5. Troca de óleo e filtros
@@ -132,7 +133,7 @@ Todas abertas em 25/10/2026.
 - [Webmotors, serviços automotivos (sem data)](https://www.webmotors.com.br/servicos-automotivos/alinhamento-e-balanceamento): páginas de alinhamento, pastilha, disco, bicos e check-up.
 - [Porto Seguro, centro automotivo (visto em 2026)](https://www.portoseguro.com.br/centro-automotivo/pastilha-de-freio): preço "a partir de", rede de oficinas.
 - [Vrum, ar-condicionado em carro usado (02/11/2019)](https://www.vrum.com.br/noticias/vale-a-pena-instalar-ar-condicionado-em-carro-usado/): antiga.
-- [Canaltech, calibragem com nitrogênio (sem data)](https://canaltech.com.br/carros/vale-a-pena-calibrar-o-pneu-com-nitrogenio-veja-pros-e-contras/)
+- [Canaltech, calibragem com nitrogênio (28/07/2025)](https://canaltech.com.br/carros/vale-a-pena-calibrar-o-pneu-com-nitrogenio-veja-pros-e-contras/)
 
 Duas fontes foram abertas mas ficaram só de conferência: a matéria de março de 2026 do
 [Vrum](https://www.vrum.com.br/aceleradas/2026/03/7380623-seu-carro-esta-fazendo-barulho-veja-quanto-custa-ignorar-o-problema.html)
