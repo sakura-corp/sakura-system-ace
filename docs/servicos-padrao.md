@@ -140,12 +140,14 @@ Duas fontes foram abertas mas ficaram só de conferência: a matéria de março 
 
 ## Pra quem escrever a migration
 
+- **Decidido pela Sofia (25/10/2026): os serviços entram sem preço**, igual à 0030 hoje
+  (`preco_padrao` vazio). A faixa deste arquivo é só referência pra loja consultar ao preencher.
 - **Não renomear** os nomes que já existem na 0030 (a tabela marca cada um). Cadastrar só os que
   faltam, e não duplicar.
-- **Preço na instalação**: usar o meio da faixa, ou deixar sem preço e só mostrar a faixa como
-  dica? Isso é decisão da Sofia. Com a faixa larga (ex.: correia dentada), o meio engana.
-- **Os "sem fonte"** podem entrar sem preço (a loja preenche) ou ficar de fora. Não chutar valor.
-- **Os que dizem "inclui a peça"** (filtros, bicos) não são preço de mão de obra: ou entram sem
-  preço, ou com a faixa marcada como "com peça".
-- Hoje não há nenhuma fonte do interior de SP com preço de serviço além do caso de Louveira. Vale
-  a Sofia conferir os preços com uma ou duas lojas parceiras antes de liberar para cliente.
+- **Os "sem fonte"** entram do mesmo jeito: sem preço também, então não muda nada pra eles.
+- **Categorias**: as tabelas daqui (borracharia, óleo e filtros, elétrica, ar-condicionado…) não
+  batem com as categorias de serviço da 0030 (Pneus, Suspensão, Amortecedores, Freios, Alinhamento,
+  Outros Serviços). Criar categoria nova ou encaixar nas que existem é decisão da tarefa da migration.
+- Do interior de SP só há preço de pneu e alinhamento (Saltinho e Paranapanema, 2024) e a troca de
+  óleo de Louveira. Antes de usar estas faixas pra conversar com cliente, vale conferir com uma ou
+  duas lojas parceiras.
