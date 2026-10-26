@@ -4,12 +4,11 @@ import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
 import { mensagemDeErro } from "./errors";
-import { arredondarCentavo, somar } from "@/schemas/dinheiro";
+import { somar } from "@/schemas/dinheiro";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
   contaNosNumeros,
-  STATUS_AO_APROVAR,
   STATUS_DE_ORCAMENTO,
 } from "@/schemas/orcamento";
 import type { MotivoRecusa } from "@/schemas/orcamento";
@@ -21,8 +20,6 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
-  StatusOS,
-  TipoOrdem,
 } from "@/types/os";
 
 export interface PagamentoOrdem {
@@ -259,9 +256,12 @@ const MENSAGEM_JA_RESPONDIDO =
   "Este orçamento já foi aprovado ou recusado (talvez em outro computador). Atualize a lista.";
 
 /**
- * A OS foi aprovada (e já tem número), mas a baixa das peças não entrou. É um
- * erro à parte porque a reação certa é diferente: NÃO aprovar de novo (nem dá:
- * já não é orçamento), e sim conferir o estoque em Movimentações.
+ * A OS foi aprovada (e já tem número), mas a baixa das peças não entrou. Desde
+ * a #706 a aprovação e a baixa são uma transação só no banco, então
+ * `aprovarOrcamento` não lança mais este erro quando a baixa falha (a
+ * aprovação também não entra). A classe continua porque a tela a testa com
+ * `instanceof` e o `PecaNaoLigadaNaAprovacaoError` herda dela: a reação certa
+ * é NÃO aprovar de novo (nem dá: já não é orçamento).
  */
 export class AprovadoSemEstoqueError extends Error {
   constructor(
@@ -303,19 +303,26 @@ export class PecaNaoLigadaNaAprovacaoError extends AprovadoSemEstoqueError {
  * próximo número de OS (o gatilho da migration 0065 dá) e as peças saem do
  * estoque — o ÚNICO lugar em que um orçamento baixa estoque.
  *
- * O update só pega a linha se ela ainda for orçamento
- * (`.eq("status", "orcamento")`): dois computadores aprovando juntos, só um
- * acha a linha; o outro recebe o aviso e não baixa nada. As peças baixadas
- * são as que estão no banco nessa hora, não as que a tela tinha.
+ * É UMA chamada ao banco (`aprovar_orcamento`, migration 0071, #706): ela
+ * trava a linha da OS, confere que ainda é orçamento, aprova, grava os
+ * vínculos e baixa as peças, tudo na mesma transação. Dois computadores
+ * aprovando juntos: o segundo espera a trava, vê que já não é orçamento e
+ * recebe o aviso, sem baixar nada. Item que outro computador acrescenta no
+ * instante da aprovação entra na baixa ou espera a trava e baixa por conta
+ * própria (já como OS): não escapa do estoque. As peças baixadas são as que
+ * estão no banco nessa hora, não as que a tela tinha.
+ *
+ * Se a baixa falha (ex.: sem depósito ativo), a aprovação também não entra:
+ * a OS continua orçamento e é só tentar de novo. Por isso o
+ * `AprovadoSemEstoqueError` não é mais lançado daqui.
  *
  * `vinculos` (#655): as peças avulsas que ganham cadastro na aprovação
- * (caminhos "existente" e "cadastrar", ver `vinculosDaAprovacao`). O
- * `peca_id` delas é gravado DEPOIS que o update do status pegou a linha:
- * gravar antes deixava uma corrida (outro computador aprova entre conferir
- * e gravar, e o item ganha peça numa OS cuja baixa já passou — a peça nunca
- * sai do estoque). Se um vínculo falha, a OS já existe: o item fica avulso
- * (sem baixa, coerente), a baixa das outras continua e, no fim, o erro diz
- * qual peça não foi ligada. As "sem cadastro" ficam de fora e não baixam.
+ * (caminhos "existente" e "cadastrar", ver `vinculosDaAprovacao`). O banco
+ * grava o `peca_id` delas DEPOIS de a aprovação pegar a linha e ANTES da
+ * baixa. Se um vínculo falha, a OS já existe: o item fica avulso (sem baixa,
+ * coerente), a baixa das outras continua e o banco devolve a lista dos "não
+ * ligados", que vira o `PecaNaoLigadaNaAprovacaoError` abaixo. As "sem
+ * cadastro" ficam de fora e não baixam.
  */
 export async function aprovarOrcamento(
   orcamento: Pick<OrdemServico, "id">,
@@ -323,68 +330,29 @@ export async function aprovarOrcamento(
   operadorId: string,
   vinculos: { itemId: string; pecaId: string }[] = [],
 ): Promise<OrdemServico> {
-  const { data, error } = await supabase
-    .from("ordens_servico")
-    .update({
-      status: STATUS_AO_APROVAR,
-      aprovado_por: aprovadoPor.trim() || null,
-      aprovado_em: new Date().toISOString(),
-      atualizado_por_id: operadorId,
-    })
-    .eq("id", orcamento.id)
-    .eq("status", "orcamento")
-    .select()
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("aprovar_orcamento", {
+    p_ordem: orcamento.id,
+    p_aprovado_por: aprovadoPor,
+    p_operador: operadorId,
+    p_vinculos: vinculos.map((v) => ({ item_id: v.itemId, peca_id: v.pecaId })),
+  });
   if (error) throw error;
-  // Não pegou a linha: outro computador respondeu antes. Nada foi vinculado.
+  // Null: já não era orçamento (outro computador respondeu antes). Nada mudou.
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
-  const aprovada = data as OrdemServico;
+  const resposta = data as {
+    ordem: OrdemServico;
+    nao_ligados?: { id: string; descricao: string }[];
+  };
 
-  // Só agora, com a aprovação nossa, os vínculos. Um que falhe não para os
-  // outros nem a baixa: o item dele fica avulso.
-  const naoLigados = new Set<string>();
-  for (const { itemId, pecaId } of vinculos) {
-    try {
-      await vincularPecaAoItem(itemId, aprovada.id, pecaId);
-    } catch (erroVinculo) {
-      console.error("Erro ao ligar a peça avulsa ao cadastro na aprovação:", erroVinculo);
-      naoLigados.add(itemId);
-    }
+  const naoLigados = resposta.nao_ligados ?? [];
+  if (naoLigados.length > 0) {
+    throw new PecaNaoLigadaNaAprovacaoError(
+      resposta.ordem,
+      naoLigados.map((item) => item.descricao),
+    );
   }
 
-  let itens: Pick<ItemOS, "id" | "descricao" | "tipo" | "peca_id" | "quantidade">[];
-  try {
-    const { data: lidos, error: erroItens } = await supabase
-      .from("ordens_servico_itens")
-      .select("id, descricao, tipo, peca_id, quantidade")
-      .eq("ordem_servico_id", aprovada.id);
-    if (erroItens) throw erroItens;
-    itens = lidos as typeof itens;
-    await baixarEstoqueDasPecas(itens, nomeDocumento(aprovada), aprovada.loja_id);
-  } catch (erroEstoque) {
-    throw new AprovadoSemEstoqueError(aprovada, mensagemDeErro(erroEstoque));
-  }
-
-  // Item que não está mais no banco (apagado em outro computador) não tem
-  // peça pra avisar.
-  const descricoes = itens.filter((item) => naoLigados.has(item.id)).map((item) => item.descricao);
-  if (descricoes.length > 0) throw new PecaNaoLigadaNaAprovacaoError(aprovada, descricoes);
-
-  return aprovada;
-}
-
-// Grava a peça do cadastro num item avulso desta ordem. Só pega o item se ele
-// ainda for peça avulsa (tipo peça, `peca_id` nulo): nunca troca a peça de um
-// item do cadastro, não põe peça em serviço, nem mexe em item de outra ordem.
-async function vincularPecaAoItem(itemId: string, ordemId: string, pecaId: string): Promise<void> {
-  const { error } = await supabase
-    .from("ordens_servico_itens")
-    .update({ peca_id: pecaId })
-    .eq("id", itemId)
-    .eq("ordem_servico_id", ordemId)
-    .eq("tipo", "peca")
-    .is("peca_id", null);
-  if (error) throw error;
+  return resposta.ordem;
 }
 
 /**
@@ -473,24 +441,6 @@ export async function recusarOrcamento(
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
 }
 
-// A situação da ordem AGORA, no banco — e não a da tela, que pode estar
-// velha: se outro computador aprovou o orçamento enquanto esta tela estava
-// aberta, a peça acrescentada aqui tem que baixar estoque.
-async function situacaoAtual(ordemId: string): Promise<{
-  status: StatusOS;
-  numero: number | null;
-  numero_orcamento?: number | null;
-  tipo?: TipoOrdem;
-}> {
-  const { data, error } = await supabase
-    .from("ordens_servico")
-    .select("*")
-    .eq("id", ordemId)
-    .single();
-  if (error) throw error;
-  return data as OrdemServico;
-}
-
 export async function atualizarOrdem(
   id: string,
   patch: PatchOrdemServico,
@@ -506,85 +456,28 @@ export async function atualizarOrdem(
 
 // Só acrescenta itens novos numa OS (ou orçamento) já existente — corrigir
 // um item já salvo é outro caminho, `editarItemOrdem()` logo abaixo. Em
-// orçamento não baixa estoque; quem decide é o status no banco agora.
+// orçamento não baixa estoque; quem decide é o status no banco, dentro da
+// função `adicionar_itens_ordem` (migration 0071, #706): ela trava a linha da
+// OS, grava os itens, baixa as peças se já for OS e marca quem mexeu, tudo
+// numa transação. Assim, aprovar em outro computador no mesmo instante não
+// deixa item sem baixa. `lojaId` ficou na assinatura das telas, mas já não é
+// usado: a loja vem da própria ordem, no banco.
 export async function adicionarItensOrdem(
   ordemId: string,
   itens: NovoItemOS[],
   operadorId: string,
   lojaId: string,
 ): Promise<void> {
+  void lojaId; // o lint não aceita parâmetro sem uso; a loja vem da ordem, no banco
   if (itens.length === 0) {
     await atualizarOrdem(ordemId, {}, operadorId);
     return;
   }
-  const situacao = await situacaoAtual(ordemId);
-  await inserirItens(
-    ordemId,
-    nomeDocumento(situacao),
-    itens,
-    lojaId,
-    baixaEstoqueAoLancarItem(situacao.status),
-  );
-  await atualizarOrdem(ordemId, {}, operadorId);
-}
-
-// Quantidade sai do banco como numeric(12,2) — arredondar antes de comparar
-// evita uma diferença de centésimo de milésimo virar uma movimentação de
-// estoque fantasma (2.3 - 2.0 dá 0.2999999999999998 em ponto flutuante).
-function arredondarQuantidade(valor: number): number {
-  return arredondarCentavo(valor);
-}
-
-// Editar um item já lançado pode mexer no estoque: a saída que o item
-// original gerou continua valendo, então o que precisa ser lançado é só a
-// diferença. Um mapa peça → diferença cobre todos os casos de uma vez
-// (mudou a quantidade, trocou a peça, virou serviço, ou o contrário) sem uma
-// cascata de ifs — e some sozinho quando só o preço muda, que é o caso mais
-// comum de correção.
-export function diferencasDeEstoque(
-  original: ItemOS,
-  novo: PatchItemOS,
-): Map<string, number> {
-  const diferencas = new Map<string, number>();
-
-  function somar(pecaId: string | null, quantidade: number) {
-    if (!pecaId) return;
-    diferencas.set(pecaId, (diferencas.get(pecaId) ?? 0) + quantidade);
-  }
-
-  if (original.tipo === "peca") somar(original.peca_id, -original.quantidade);
-  if (novo.tipo === "peca") somar(novo.peca_id, novo.quantidade);
-
-  return new Map(
-    [...diferencas]
-      .map(([pecaId, diferenca]) => [pecaId, arredondarQuantidade(diferenca)] as const)
-      .filter(([, diferenca]) => diferenca !== 0),
-  );
-}
-
-async function lancarDiferencasDeEstoque(
-  diferencas: Map<string, number>,
-  nome: string,
-  lojaId: string,
-): Promise<void> {
-  if (diferencas.size === 0) return;
-
-  const depositoId = await buscarDepositoPadraoId(lojaId);
-  const { error } = await supabase.from("estoque_movimentos").insert(
-    [...diferencas].map(([pecaId, diferenca]) => ({
-      peca_id: pecaId,
-      deposito_id: depositoId,
-      tipo: diferenca > 0 ? ("saida" as const) : ("entrada" as const),
-      quantidade: Math.abs(diferenca),
-      // Saiu mais peça pra essa OS: é uso em OS, igual ao lançamento
-      // original. Voltou peça pra prateleira: é ajuste — não existe
-      // "des-uso em OS", e "ajuste" é o que descreve a verdade do que
-      // aconteceu (alguém corrigiu um lançamento).
-      motivo: diferenca > 0 ? ("uso_em_os" as const) : ("ajuste" as const),
-      referencia: `${nome} (correção de item)`,
-      loja_id: lojaId,
-    })),
-  );
+  const { error } = await supabase.rpc("adicionar_itens_ordem", {
+    p_ordem: ordemId,
+    p_itens: itens,
+    p_operador: operadorId,
+  });
   if (error) throw error;
 }
 
@@ -594,33 +487,26 @@ async function lancarDiferencasDeEstoque(
 // antigo, e mexer no item deixaria os dois discordando — quem chama precisa
 // garantir isso antes (a tela já esconde o botão).
 //
-// Em orçamento (#379) nada de estoque: o item ainda não baixou nada, e a
-// aprovação baixa o que estiver gravado nessa hora. Quem decide é o status
-// no banco agora, não o da tela.
+// Uma chamada só (`editar_item_ordem`, migration 0071, #706): o banco trava a
+// OS, relê o item (o original é o do banco, não o da tela), grava e lança só a
+// DIFERENÇA de estoque (mudou a quantidade, trocou a peça, virou serviço, ou o
+// contrário; some sozinha quando só o preço muda). Em orçamento (#379) nada de
+// estoque: a aprovação baixa o que estiver gravado nessa hora. Se o estoque
+// falha, a correção do item também não grava. `itemOriginal.id` é o que vale;
+// `lojaId` ficou na assinatura das telas, mas a loja vem da ordem, no banco.
 export async function editarItemOrdem(
   itemOriginal: ItemOS,
   patch: PatchItemOS,
   operadorId: string,
   lojaId: string,
 ): Promise<void> {
-  const situacao = await situacaoAtual(itemOriginal.ordem_servico_id);
-  const diferencas = baixaEstoqueAoLancarItem(situacao.status)
-    ? diferencasDeEstoque(itemOriginal, patch)
-    : new Map<string, number>();
-
-  const { error } = await supabase
-    .from("ordens_servico_itens")
-    .update(patch)
-    .eq("id", itemOriginal.id);
+  void lojaId; // idem: a loja vem da ordem, no banco
+  const { error } = await supabase.rpc("editar_item_ordem", {
+    p_item: itemOriginal.id,
+    p_patch: patch,
+    p_operador: operadorId,
+  });
   if (error) throw error;
-
-  // O estoque vem depois de propósito: sem transação de verdade aqui, o
-  // pior caso é a correção do item salvar e a movimentação falhar — que dá
-  // erro na tela e é conferível em Movimentações. O contrário (movimentar
-  // estoque de uma correção que não gravou) seria uma sobra invisível.
-  await lancarDiferencasDeEstoque(diferencas, nomeDocumento(situacao), lojaId);
-
-  await atualizarOrdem(itemOriginal.ordem_servico_id, {}, operadorId);
 }
 
 /**
