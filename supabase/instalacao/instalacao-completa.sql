@@ -5948,7 +5948,8 @@ insert into schema_versao (versao) values (70) on conflict do nothing;
 --
 -- 4. VÍNCULO QUE FALHA NÃO DERRUBA A APROVAÇÃO. Igual ao programa de antes
 --    (#655): cada vínculo roda num bloco próprio (`begin ... exception`); se
---    um falha (a peça foi apagada, por exemplo), o item fica avulso — sem
+--    um falha por peça apagada ou id inválido (só esses erros; qualquer outro
+--    derruba a aprovação inteira), o item fica avulso — sem
 --    baixa, o que é coerente —, os outros seguem, a aprovação vale, e a
 --    função devolve quais itens não foram ligados, pra tela avisar.
 --
@@ -6251,7 +6252,13 @@ begin
          aprovado_em       = now(),
          atualizado_por_id = p_operador
    where id = p_ordem
+     and status = 'orcamento'
   returning * into v_ordem;
+  -- Segunda proteção: com a trava acima isto nunca acontece, mas se um dia a
+  -- trava sair, a segunda aprovação cai aqui em vez de aprovar de novo.
+  if not found then
+    return null;
+  end if;
 
   -- Os vínculos, cada um no seu bloco (decisão 4 do cabeçalho). Só pega item
   -- desta ordem que ainda é peça avulsa: nunca troca a peça de um item do
@@ -6266,7 +6273,9 @@ begin
          and ordem_servico_id = p_ordem
          and tipo = 'peca'
          and peca_id is null;
-    exception when others then
+    -- Só os erros esperados de um vínculo (peça apagada, id que não é uuid).
+    -- Qualquer outro derruba a aprovação inteira, em vez de virar "não ligado".
+    exception when foreign_key_violation or invalid_text_representation then
       v_nao_ligados := v_nao_ligados || (v_vinculo ->> 'item_id');
     end;
   end loop;

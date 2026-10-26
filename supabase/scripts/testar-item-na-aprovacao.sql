@@ -279,8 +279,10 @@ begin
     end if;
   end loop;
 
-  -- Aprovar de novo (dois cliques): null, e nada a mais.
-  res := aprovar_orcamento(orc, 'outro', o_a, '[]'::jsonb);
+  -- Aprovar de novo (dois cliques): null, e nada a mais — nem o vínculo que
+  -- vier junto (o bico continua avulso).
+  res := aprovar_orcamento(orc, 'outro', o_a,
+    jsonb_build_array(jsonb_build_object('item_id', avulso_falha, 'peca_id', p2)));
   if res is not null then
     raise exception 'FALHOU (B8): aprovar de novo devia devolver null, veio %', res;
   end if;
@@ -288,6 +290,29 @@ begin
   if n - movs_antes <> 3 or (select aprovado_por from ordens_servico where id = orc) <> 'o próprio cliente' then
     raise exception 'FALHOU (B9): aprovar de novo mexeu na ordem ou no estoque';
   end if;
+  if (select peca_id from ordens_servico_itens where id = avulso_falha) is not null then
+    raise exception 'FALHOU (B9b): aprovar de novo gravou o vínculo mandado junto';
+  end if;
+
+  -- Orçamento RECUSADO com peça não aprova: null, continua recusado, nada baixa.
+  declare
+    recusado uuid;
+  begin
+    insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'orcamento')
+      returning id into recusado;
+    perform adicionar_itens_ordem(recusado, jsonb_build_array(
+      jsonb_build_object('tipo', 'peca', 'peca_id', p1, 'servico_id', null, 'tecnico_id', null,
+                         'descricao', 'Pneu recusado', 'quantidade', 2, 'preco_unitario', 250, 'desconto', 0)
+    ), o_a);
+    update ordens_servico set status = 'recusado', recusado_em = now() where id = recusado;
+    res := aprovar_orcamento(recusado, 'cliente', o_a, '[]'::jsonb);
+    select count(*) into n from estoque_movimentos;
+    if res is not null or n - movs_antes <> 3
+       or (select status from ordens_servico where id = recusado) <> 'recusado' then
+      raise exception 'FALHOU (B10): orçamento recusado foi aprovado ou baixou estoque (res %, movimentos a mais %)',
+        res, n - movs_antes - 3;
+    end if;
+  end;
 
   -- ===================================================================
   -- C. Depois de aprovada: item novo baixa sozinho; correção lança só a
