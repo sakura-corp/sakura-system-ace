@@ -60,10 +60,11 @@ mais do que fazer.
   "Lucro gerado" ainda não soma igual (item 15). O aviso creme claro continua na foto (o texto do
   slide fala dele).
 - **Caixa (29b), Orçamentos (10f) e Pedidos de compra (20)**: alternativas, não usadas.
-- Nenhuma mudança de texto. Sugestões (não aplicadas):
-  - a capa repete "Sakura System" (o logo e o título); dá pra tirar o logo dela;
-  - o cartão "Lucros mês" da capa mostra "↓ -24%" em vermelho, o que pode não ser a primeira
-    impressão desejada.
+- Nenhuma mudança de texto. As duas sugestões que deixei no PR (a capa repetia "Sakura System"
+  no logo e no título; o "Lucros mês ↓ -24%" em vermelho na capa) foram aplicadas depois, por
+  outra sessão, no commit `e93fc79`. Esse commit também mexe em `site/ferramentas/dados-demo.mjs`
+  (o movimento da loja inventada cresce aos poucos), fora da lista de arquivos desta tarefa: fica
+  pra Sofia confirmar. Olhei a capa e os slides 3, 9 e 10 depois dele, e o CI passou.
 
 ## O que depende de alguém
 - **Sofia**: gerar o PDF do cliente com o número do WhatsApp (o comando está no começo de
