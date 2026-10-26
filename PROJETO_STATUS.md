@@ -151,9 +151,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 24/10/2026, madrugada: a leva 5 montada e a apresentação preparada (coordenadora)
-- **Na `main`**: painel em ordem de prioridade (#776); levantamento do que falta pra apresentar (#777, `apresentacao/o-que-falta-pra-apresentar.md`); dados de mentira sem contradição (#780) e margem com vírgula e barra da OS (#781), pras fotos.
-- **Leva 5 = a primeira empresa cliente**, em ordem: #784 textos, #785 PDF, #786 serviços típicos, #706, #787, #366, #367. Leva 6: #454, #456, #372, #459, #708, #699. Contrato e pagamento: no privado (aprovados pelo advogado).
-- **Leva 4 aprovada sem testes** (24/10, `docs/relatorios/leva-4.md`): os testes dela ficam pros 10 a 15 dias antes do próximo cliente; a leva 5 é a atual. O Tiago (sem PC até segunda) tem a #784 e a #786, com o selinho novo "pra Tiago, pelo celular" no painel (#794, linha `Reservada pra:`).
-- **Depende dela**: revisar e mesclar os PRs da leva 5 (dom. à noite e seg.); responder a #782 até quarta (Lázaro); mandar a apresentação ao cliente na terça 27/10; publicar a 0.9.55 no próximo dia de teste.
-- **Próxima sessão**: revisar os PRs da leva 5 que chegarem (o #785 só depois das fotos de segunda). Abertos de passagem: #790 (pagamento cru no Caixa) e #791 (Lucratividade e margem, `sofia`). Memorando assinado por todos em 25/10 (#632 fechada; a alteração do contrato social é a #796).
+### 26/10/2026, manhã: a apresentação pronta e as três tarefas dela mescladas
+- **Na `main`**: textos (#795, #784), lista de serviços com faixa de preço de mercado e fonte (#798, #786, feita pela Sofia; no instalador entram **sem preço**), PDF (#799, #785) e a versão "só o sistema, nada da venda", 15 slides (#800). Loja inventada crescendo 12% (lucro em verde) e sem sombra com desfoque, que o iPhone pinta como retângulo (`docs/licoes.md`, item 93).
+- **Regras da apresentação** (no topo de `apresentacao/textos-da-apresentacao.md`): nenhum nome de pessoa (o cliente fala com a equipe da Sakura Corp); contato pelo e-mail da empresa; o WhatsApp só entra no PDF, nunca no repositório.
+- **Depende dela**: mandar o PDF ao cliente na terça 27/10 (condições da venda: no privado); responder a #782 até quarta; publicar a 0.9.55 no próximo dia de teste; decidir se a diferença de R$ 0,09 da comissão (foto de Comissões) vira tarefa; voltar a internet do ambiente da nuvem pra Limitado, se quiser.
+- **Próxima sessão**: leva 5 que falta: #706, #787 (usar `docs/servicos-padrao.md`) e, depois da #782, #366 e #367. Abertos de passagem: #790 e #791.

@@ -1787,3 +1787,11 @@
     a caixinha "aplicar mesmo com computadores atrasados", que quebraria a loja. **Regra**: o botão
     aplica em partes desde a #760 (para na primeira que espera); e o "Ordem de subir" de um PR com
     migration se confere **contra o botão**, não só contra o banco.
+93. **Retângulo roxo atrás das fotos do PDF, só no iPhone (26/10/2026, #800).** A apresentação
+    (`apresentacao/apresentacao.html`, impressa em PDF pelo Chromium) tinha `box-shadow` com
+    desfoque nas fotos e nas bolinhas das listas. No computador o PDF saía certo; no leitor de PDF do
+    iPhone, cada sombra virou um **retângulo cheio** (roxo atrás da foto, quadrado rosa atrás da
+    bolinha). O Chromium grava a sombra desfocada como imagem à parte, e o iPhone não a desenha
+    direito. **Regra**: em HTML que vira PDF, nada de sombra com desfoque (nem `filter: blur`);
+    borda e degradê de fundo funcionam. E PDF que vai pra cliente se confere **no celular**, não só
+    no computador (o `pdftoppm` também mostrava certo).
