@@ -189,8 +189,19 @@ for (let n = -56; n <= -1; n++) {
   d.setDate(d.getDate() + n);
   if (d.getDay() !== 0) DIAS_DE_LOJA.push(n);
 }
-// Quantas OS caem em cada dia, pra espalhar as horas dentro dele.
-const diaDaOs = (i) => DIAS_DE_LOJA[Math.floor((i * DIAS_DE_LOJA.length) / SEQUENCIA.length)];
+// A loja está crescendo: o movimento sobe aos poucos ao longo das 8 semanas
+// (cerca de 0,88 do normal no começo e 1,12 no fim). Com o movimento igual todo
+// dia, o lucro do mês saía menor que o do mesmo pedaço do mês passado em boa
+// parte dos dias, e o Início mostrava "Lucro do mês ↓ -24%" em vermelho na
+// capa da apresentação (#785). A conta: a posição `f` (de 0 a 1) da OS na
+// sequência vira o ponto `x` do período em que a curva a·x² + (1−a)·x chega em `f`.
+const CRESCIMENTO = 0.12;
+const diaDaOs = (i) => {
+  const f = i / SEQUENCIA.length;
+  const a = CRESCIMENTO;
+  const x = (-(1 - a) + Math.sqrt((1 - a) ** 2 + 4 * a * f)) / (2 * a);
+  return DIAS_DE_LOJA[Math.min(DIAS_DE_LOJA.length - 1, Math.floor(x * DIAS_DE_LOJA.length))];
+};
 const porDia = new Map();
 SEQUENCIA.forEach((_, i) => porDia.set(diaDaOs(i), (porDia.get(diaDaOs(i)) ?? 0) + 1));
 // Quem traz cada carro, em rodízio (o Paulo e a Sandra de fora: são os que sumiram).
