@@ -76,7 +76,7 @@
   li::before {
     content: ""; position: absolute; left: 0; top: 0.5em;
     width: 10px; height: 10px; border-radius: 50%;
-    background: var(--pink); box-shadow: 0 0 10px rgba(255, 77, 206, 0.7);
+    background: var(--pink);
   }
   .denso li { font-size: 19px; margin-bottom: 11px; }
   li strong, p strong { color: var(--texto); font-weight: 600; }
@@ -91,11 +91,12 @@
   .embaixo .foto { margin-top: 10px; }
   .embaixo .foto img { width: auto; max-width: 100%; max-height: 330px; }
 
+  /* Sem sombra com desfoque (box-shadow): o leitor de PDF do iPhone pinta ela
+     como um retângulo roxo cheio atrás da foto e um quadrado atrás da bolinha. */
   .foto img {
     display: block; width: 100%; height: auto;
     border-radius: 18px;
     border: 1px solid rgba(255, 77, 206, 0.28);
-    box-shadow: 0 0 0 6px rgba(182, 36, 255, 0.07), 0 18px 60px rgba(182, 36, 255, 0.28);
   }
 
   /* capa */
@@ -112,26 +113,7 @@
   .intro { font-size: 22px; color: var(--texto-suave); margin: 0 0 20px; }
   .fecho { font-size: 20px; color: var(--texto-fraco); margin: 22px 0 0; }
 
-  /* linha do tempo do slide 11 */
-  .linha-do-tempo {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
-    margin-top: auto; margin-bottom: 30px;
-  }
-  .linha-do-tempo div {
-    position: relative; padding: 16px 18px; border-radius: 16px;
-    background: rgba(21, 14, 20, 0.85); border: 1px solid rgba(255, 77, 206, 0.22);
-    font-size: 17px; line-height: 1.35; color: var(--texto-suave);
-  }
-  .linha-do-tempo div b {
-    display: block; margin-bottom: 4px; font-size: 14px; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--pink);
-  }
-  .linha-do-tempo div:not(:last-child)::after {
-    content: "›"; position: absolute; right: -14px; top: 50%; transform: translateY(-50%);
-    color: var(--purple); font-size: 26px; font-weight: 700;
-  }
-
-  /* contato do slide 14 */
+  /* contato do último slide */
   .contato { display: flex; gap: 20px; margin-top: 30px; }
   .contato div {
     padding: 20px 26px; border-radius: 18px; min-width: 330px;
@@ -151,28 +133,39 @@
   <div class="lado">
     <div class="texto">
       <h1>Sakura System <span>AutoCenter Edition</span></h1>
-      <p>Um programa só pra loja inteira.</p>
-      <p>Feito pra autocenter e borracharia.</p>
+      <p>O fim do retrabalho e da bagunça no caixa.</p>
+      <p>Um sistema só pra controlar o pátio, a loja e a nota fiscal.</p>
     </div>
     <div class="foto"><img src="fotos/04-inicio.png" alt="A tela de início do sistema"></div>
   </div>
   <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>1</span></div>
 </section>
 
-<!-- Slide 2 — Por que ele existe -->
+<!-- Slide 2 — O problema de hoje -->
+<section class="slide centro">
+  <h2>A gente sabe como é corrido…</h2>
+  <ul style="max-width: 760px">
+    <li>Fazer orçamento no papel e perder na gaveta.</li>
+    <li>Digitar tudo de novo na hora de emitir a nota.</li>
+    <li>Chegar no fim do dia e o dinheiro do caixa não bater.</li>
+    <li>Não saber direito qual é a margem de lucro de cada peça.</li>
+  </ul>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>2</span></div>
+</section>
+
+<!-- Slide 3 — Tudo num lugar só -->
 <section class="slide centro">
   <h2>Tudo num lugar só</h2>
   <ul style="max-width: 760px">
     <li>Ordem de serviço, estoque, caixa, contas e nota fiscal no mesmo programa.</li>
+    <li>O que entra na ordem de serviço já vale pro caixa, pro estoque e pra nota.</li>
     <li>Feito pra quem não entende de computador.</li>
-    <li>Nasceu no balcão de uma borracharia de verdade: cada função veio de um problema real do dia a dia.</li>
-    <li>Em uso todo dia desde agosto de 2026, com nota de peça e de serviço emitidas de verdade.</li>
   </ul>
   <img class="marca-dagua" src="../site/sakura-logo.svg" alt="">
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>2</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>3</span></div>
 </section>
 
-<!-- Slide 3 — Do orçamento à ordem de serviço -->
+<!-- Slide 4 — Do orçamento à ordem de serviço -->
 <section class="slide">
   <h2>Do orçamento à ordem de serviço, sem retrabalho</h2>
   <div class="lado">
@@ -180,17 +173,17 @@
       <ul>
         <li>Orçamento com validade: o cliente aprova ou recusa, e dá pra mandar pelo WhatsApp. O estoque só baixa quando ele aprova.</li>
         <li>Aprovado, vira ordem de serviço (OS) com o cliente e o carro. Cliente ou carro novo se cadastra sem sair da OS.</li>
-        <li>Peça e serviço na mesma OS, com o técnico de cada item. A peça sai do estoque sozinha, e o lucro de cada OS aparece na hora.</li>
+        <li>Peça e serviço lançados uma vez só, com o técnico de cada item: da OS vão pro caixa, pro estoque e pra nota, sem digitar de novo. O lucro de cada OS aparece na hora.</li>
         <li>O botão "Avisar" abre o WhatsApp com "seu carro está pronto" já escrito.</li>
         <li>Quem só compra a peça? Venda de balcão, sem abrir OS.</li>
       </ul>
     </div>
     <div class="foto"><img src="fotos/07-ordens.png" alt="A lista de ordens de serviço"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>3</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>4</span></div>
 </section>
 
-<!-- Slide 4 — Cobrar e receber -->
+<!-- Slide 5 — Cobrar e receber -->
 <section class="slide">
   <h2>Cobrar e receber do jeito que o cliente paga</h2>
   <div class="lado">
@@ -204,10 +197,10 @@
     </div>
     <div class="foto"><img src="fotos/09-os-faturamento.png" alt="Pagamento dividido entre Pix e cartão em 3x"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>4</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>5</span></div>
 </section>
 
-<!-- Slide 5 — Nota fiscal sem sair da OS -->
+<!-- Slide 6 — Nota fiscal sem sair da OS -->
 <section class="slide">
   <h2>Nota fiscal sem sair da ordem de serviço</h2>
   <div class="lado">
@@ -222,10 +215,10 @@
     </div>
     <div class="foto"><img src="fotos/10-os-fechamento.png" alt="A OS pronta pra emitir a nota"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>5</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>6</span></div>
 </section>
 
-<!-- Slide 6 — Caixa e contas -->
+<!-- Slide 7 — Caixa e contas -->
 <section class="slide">
   <h2>O caixa e as contas, sem caderno</h2>
   <div class="lado">
@@ -240,10 +233,10 @@
     </div>
     <div class="foto"><img src="fotos/33-contas-receber.png" alt="Quem está devendo, quanto e até quando"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>6</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>7</span></div>
 </section>
 
-<!-- Slide 7 — Estoque e compras -->
+<!-- Slide 8 — Estoque e compras -->
 <section class="slide">
   <h2>Estoque e compras sob controle</h2>
   <div class="lado">
@@ -258,10 +251,10 @@
     </div>
     <div class="foto"><img src="fotos/11-estoque-produtos.png" alt="A lista de peças do estoque"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>7</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>8</span></div>
 </section>
 
-<!-- Slide 8 — O cliente e o carro -->
+<!-- Slide 9 — O cliente e o carro -->
 <section class="slide embaixo">
   <h2>Cada carro tem a sua história</h2>
   <ul>
@@ -271,10 +264,10 @@
     <li>"Clientes que sumiram": quem não volta há muito tempo, pra você chamar de volta.</li>
   </ul>
   <div class="foto"><img src="fotos/06b-ficha-veiculo.png" alt="A ficha de um carro"></div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>8</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>9</span></div>
 </section>
 
-<!-- Slide 9 — Pro dono enxergar o negócio -->
+<!-- Slide 10 — Pro dono enxergar o negócio -->
 <section class="slide">
   <h2>Pro dono enxergar o negócio</h2>
   <div class="lado">
@@ -289,10 +282,10 @@
     </div>
     <div class="foto"><img src="fotos/04-inicio.png" alt="A tela de início, com vendas, lucro e carros no pátio"></div>
   </div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>9</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>10</span></div>
 </section>
 
-<!-- Slide 10 — A equipe -->
+<!-- Slide 11 — A equipe -->
 <section class="slide embaixo">
   <h2>Cada um vê só o que deve</h2>
   <ul>
@@ -302,42 +295,34 @@
     <li>Comissões que separam quem vendeu de quem executou, com aviso quando o número merece desconfiança.</li>
   </ul>
   <div class="foto"><img src="fotos/46-comissoes.png" alt="A tela de comissões da equipe"></div>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>10</span></div>
-</section>
-
-<!-- Slide 11 — Como começa -->
-<section class="slide">
-  <h2>Como começa</h2>
-  <ul class="denso">
-    <li>A gente instala e configura tudo. Você não cria conta em serviço nenhum.</li>
-    <li>Desde o primeiro dia a loja já usa ordem de serviço, estoque e caixa. As peças e os clientes são cadastrados na própria loja (trazer do sistema antigo por planilha está no "O que vem por aí").</li>
-    <li>A nota fiscal é uma etapa à parte: depende do certificado digital da loja, da SEFAZ, da prefeitura e da contabilidade. Fazemos junto com a contabilidade, e a meta é emitir nota em até 7 dias depois que o certificado e as autorizações ficam prontos.</li>
-    <li>A nota de serviço muda de prefeitura pra prefeitura: antes de começar, conferimos com a sua contabilidade como é a da sua cidade.</li>
-    <li>O que precisa: computador com Windows e internet.</li>
-  </ul>
-  <div class="linha-do-tempo">
-    <div><b>Dia 1</b>Instalação</div>
-    <div><b>Primeiros dias</b>Vendendo</div>
-    <div><b>Certificado e autorizações</b>Prontos</div>
-    <div><b>Até 7 dias depois</b>Emitindo nota</div>
-  </div>
   <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>11</span></div>
 </section>
 
-<!-- Slide 12 — O que vem junto -->
+<!-- Slide 12 — Feito no pátio -->
 <section class="slide centro">
-  <h2>O que vem junto</h2>
-  <ul style="max-width: 900px">
-    <li>Atualizações incluídas e automáticas: fechou e abriu, já está na versão nova.</li>
-    <li>Toda versão nova roda primeiro numa loja de verdade, antes de chegar nas outras.</li>
-    <li>Os dados da sua empresa ficam num banco só seu, sem se misturar com outras lojas, com cópia de segurança todo dia, guardada em dois lugares.</li>
-    <li>Quantos computadores a loja quiser.</li>
-    <li>Suporte direto com a gente pelo WhatsApp, sem central de atendimento. Se algo der errado, a tela de diagnóstico manda um resumo do problema.</li>
+  <h2>Feito no pátio, não no laboratório</h2>
+  <ul style="max-width: 820px">
+    <li>Nasceu no balcão de uma borracharia de verdade: cada função veio de um problema real do dia a dia.</li>
+    <li>Em uso todo dia desde agosto de 2026, com nota de peça e de serviço emitidas de verdade.</li>
+    <li>Toda versão nova roda primeiro nessa loja, antes de chegar nas outras.</li>
   </ul>
+  <img class="marca-dagua" src="../site/sakura-logo.svg" alt="">
   <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>12</span></div>
 </section>
 
-<!-- Slide 13 — O que vem por aí -->
+<!-- Slide 13 — Seguro e sempre atualizado -->
+<section class="slide centro">
+  <h2>Seguro e sempre atualizado</h2>
+  <ul style="max-width: 900px">
+    <li>Atualização automática: fechou e abriu, já está na versão nova.</li>
+    <li>Os dados da sua empresa ficam num banco só seu, sem se misturar com outras lojas.</li>
+    <li>Cópia de segurança todo dia, guardada em dois lugares.</li>
+    <li>Se algo der errado, a tela de diagnóstico junta um resumo do problema.</li>
+  </ul>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>13</span></div>
+</section>
+
+<!-- Slide 14 — O que vem por aí -->
 <section class="slide centro">
   <h2>O que vem por aí</h2>
   <p class="intro">Estamos construindo, entre outras coisas:</p>
@@ -349,19 +334,19 @@
     <li>Trazer os dados do sistema antigo por planilha.</li>
   </ul>
   <p class="fecho">A ordem é decidida pelo que as lojas mais pedem.</p>
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>13</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>14</span></div>
 </section>
 
-<!-- Slide 14 — Próximo passo -->
+<!-- Slide 15 — Próximo passo -->
 <section class="slide centro">
   <h2>Vamos conversar?</h2>
-  <p class="intro" style="max-width: 820px">Que tal uma conversa com uma demonstração? Você vê o sistema funcionando e tira todas as dúvidas com a equipe da Sakura Corp.</p>
+  <p class="intro" style="max-width: 820px">Ficou alguma dúvida, ou quer ver o sistema funcionando? Fale com a equipe da Sakura Corp.</p>
   <div class="contato">
     <div><span>E-mail</span><strong>contato@sakuracorp.com.br</strong></div>
     <div><span>WhatsApp</span><strong data-whatsapp>[WHATSAPP]</strong></div>
   </div>
   <img class="marca-dagua" src="../site/sakura-logo.svg" alt="">
-  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>14</span></div>
+  <div class="rodape"><span><b>Sakura System</b> · AutoCenter Edition</span><span>15</span></div>
 </section>
 
 </body>

@@ -12,7 +12,7 @@
 // Só refazer o PDF, sem fotografar de novo (não precisa do vite):
 //   node apresentacao/fotografar-telas-dos-slides.mjs --so-pdf
 //
-// O WhatsApp do slide 14 não fica neste repositório, que é público. Pra gerar
+// O WhatsApp do último slide não fica neste repositório, que é público. Pra gerar
 // o PDF que vai pro cliente, com o número:
 //   WHATSAPP="(00) 00000-0000" node apresentacao/fotografar-telas-dos-slides.mjs --so-pdf
 // Esse PDF sai FORA do repositório (na pasta do usuário), pra não ser
@@ -37,7 +37,7 @@
 // Fechamento para antes da linha de "Ver DANFE" repetida; e o Caixa Diário de
 // hoje sai com lucro igual à venda, por isso ele não está na lista. A
 // Lucratividade também ficou de fora: a receita dela não bate com as vendas do
-// Início (item 3 do mesmo arquivo), e o slide 9 usa a foto do Início.
+// Início (item 3 do mesmo arquivo), e o slide 10 usa a foto do Início.
 import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
