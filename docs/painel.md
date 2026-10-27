@@ -376,6 +376,12 @@ o financeiro.
 
 ## Escritório de agentes (só de exemplo, 16/10/2026)
 
+> **27/10/2026: vai virar de verdade.** A Sofia criou o repositório privado `sakura-corp/escritorio`, e **o painel vai
+> mudar pra lá** (passo 2 do plano de lá, seção 2 do índice dele). Lá, esta página passa a ler os agentes e as tarefas de
+> verdade, e os rascunhos esperando a Sofia entram no "Esperando você". **Quebra-galho até isso**: o `escritorio` tem o
+> tópico `projeto-secundario`, só pra as tarefas dele aparecerem na aba "Projetos secundários"; tirar o tópico quando o
+> painel ler o escritório direto.
+
 A ideia da Sofia (a "fábrica virtual", descrita em `docs/referencia/escritorio-de-agentes.md`) ganhou **uma tela de exemplo**
 em `/escritorio`, com o item "Escritório (exemplo)" na barra lateral. **É só a tela**: nenhum agente de verdade roda, nenhuma
 sessão é aberta, nenhum token é gasto, nenhuma chave ou login existe. A página diz isso no topo.
