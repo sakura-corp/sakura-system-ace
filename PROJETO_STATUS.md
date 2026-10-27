@@ -158,8 +158,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 27/10/2026, noite: o que depende de cada um
-- **Feito**: a mensagem pro Tiago e a conta dele (`tigasss1`) estão certas.
-- **Esperando a equipe**: o Tiago com os ajustes do #802 (uma sessão acompanha o PR) e o rascunho da tarefa da reunião, no escritório; o Lázaro ajeitando o PC; o Gusta pegando tarefas.
-- **Depende dela**: decidir a #782 (ela segura a #366 e a #367), publicar a 0.9.55 (a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
-- **Próxima sessão (da Sofia)**: a decisão da #782 e depois a leva 5 que falta (#706, #787, #366, #367).
+### 27/10/2026, fim da noite: a #782 decidida
+- **Feito**: a #782 está decidida e fechada. Ninguém vê o custo da peça sem Estoque ou Relações, o Caixa e o Início recebem o custo total pronto, e cada módulo vê da OS só o que já mostra hoje. A #366 e a #367 foram reescritas no modelo e estão prontas pra pegar.
+- **Ordem da leva 5**: a #706 (o Tiago, PR #802) e a #787, depois a #366 (que depende das duas), depois a #367.
+- **Depende dela**: publicar a 0.9.55 (a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
+- **Próxima sessão (da Sofia)**: a #787 e acompanhar a #706, pra liberar a #366.
