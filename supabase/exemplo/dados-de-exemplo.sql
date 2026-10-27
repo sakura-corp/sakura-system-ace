@@ -252,7 +252,7 @@ from (values
   ('Caster Dianteiro Direito', 35.00, 0.00),
   ('Caster Dianteiro Esquerdo', 35.00, 0.00),
   ('Eixo Traseiro Completo', 90.00, 10.00),
-  -- os da 0072 (tarefa #787): preço de mentira, dentro da faixa de docs/servicos-padrao.md
+  -- os da 0072 (tarefa #787): preço de mentira, só mão de obra (perto da faixa de docs/servicos-padrao.md)
   ('Conserto de pneu furado', 35.00, 3.00),
   ('Conserto de pneu com manchão', 35.00, 5.00),
   ('Vulcanização', 70.00, 10.00),

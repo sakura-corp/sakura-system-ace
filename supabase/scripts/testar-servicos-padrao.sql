@@ -84,6 +84,54 @@ begin
   if exists (select 1 from servicos where descricao ilike 'Cambagem e caster%') then
     raise exception 'FALHOU 6: entrou "Cambagem e caster", que já são 4 nomes da 0030';
   end if;
+
+  -- 6b. cada um dos 39 nomes novos, escrito exatamente igual, uma vez só
+  select count(*) into n
+  from (values
+    ('Conserto de pneu furado'),
+    ('Conserto de pneu com manchão'),
+    ('Vulcanização'),
+    ('Desmontagem de pneu'),
+    ('Troca de válvula do pneu'),
+    ('Calibragem com nitrogênio'),
+    ('Troca de estepe ou de roda'),
+    ('Desempeno de roda de ferro'),
+    ('Desempeno de roda de liga leve'),
+    ('Troca de amortecedores (par)'),
+    ('Troca de bandeja'),
+    ('Troca de pivô'),
+    ('Troca de terminal de direção'),
+    ('Troca de bieleta'),
+    ('Troca de coxim ou kit batente'),
+    ('Troca da suspensão dianteira completa'),
+    ('Revisão de suspensão'),
+    ('Troca de pastilha de freio'),
+    ('Troca de disco e pastilha'),
+    ('Troca de lona ou sapata e tambor'),
+    ('Troca de óleo do motor'),
+    ('Troca de filtro de óleo'),
+    ('Troca de filtro de ar'),
+    ('Troca de filtro de combustível'),
+    ('Troca de filtro de cabine'),
+    ('Troca de óleo de câmbio'),
+    ('Teste de bateria e alternador'),
+    ('Troca de bateria'),
+    ('Troca de lâmpada'),
+    ('Troca de velas'),
+    ('Diagnóstico com scanner'),
+    ('Higienização do ar-condicionado'),
+    ('Recarga de gás do ar-condicionado'),
+    ('Troca de correia dentada'),
+    ('Troca do líquido de arrefecimento'),
+    ('Limpeza de bicos injetores'),
+    ('Troca de palhetas'),
+    ('Troca de escapamento'),
+    ('Revisão preventiva básica')
+  ) as v(descricao)
+  join servicos s on s.descricao = v.descricao;
+  if n <> 39 then
+    raise exception 'FALHOU 6b: só % dos 39 nomes novos estão cadastrados exatamente assim', n;
+  end if;
 end $$;
 
 -- PARTE B: banco EM USO. Tira os serviços e as categorias novas, preenche um
