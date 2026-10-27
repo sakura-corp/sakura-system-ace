@@ -11,8 +11,8 @@
 a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
 (clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
-tarefa #368) em 23/10/2026, e a `0071` (item e aprovação com a OS travada, tarefa #706) em
-26/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+tarefa #368) em 23/10/2026, a `0071` (item e aprovação com a OS travada, tarefa #706) em
+26/10/2026, e a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -512,6 +512,13 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   também não entra. OS **faturada** recusa item novo e correção. Sem `versao-minima-do-programa`: o
   programa antigo continua gravando direto nas tabelas, com o mesmo risco raro de antes. Teste em
   `supabase/scripts/testar-item-na-aprovacao.sql`, com corridas de verdade entre duas ligações (`dblink`).
+- `0072`: **mais 39 serviços padrão e 3 categorias de serviço (Óleo e Filtros, Elétrica,
+  Ar-condicionado), só em empresa nova** (tarefa #787; a lista é a de `docs/servicos-padrao.md`, com
+  nome curto). Tudo sem preço, igual à `0030`. **Só entra num banco sem nenhuma ordem de serviço**:
+  num banco em uso não faz nada, então o "Atualizar o banco de todas as empresas" não mexe no cadastro
+  de loja nenhuma. Nome que já existe (comparado sem maiúscula nem espaço nas pontas) não entra de
+  novo. Teste em `supabase/scripts/testar-servicos-padrao.sql`; os dados de exemplo dão preço de
+  mentira aos 39.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -620,10 +627,12 @@ outro projeto Supabase do zero (ver seção 9).
 - **`categorias_servicos`**: id, nome (único), criado_em. Mesmo conceito de `categorias`, mas pra
   serviços — tabela própria (não reaproveita `categorias`), mesmo padrão de "conceito parecido,
   tabela separada" já usado com `categorias_caixa`. Vem semeada com 6 categorias padrão (Pneus,
-  Suspensão, Amortecedores, Freios, Alinhamento, Outros Serviços — migration `0030`).
+  Suspensão, Amortecedores, Freios, Alinhamento, Outros Serviços — migration `0030`; em empresa
+  nova, mais Óleo e Filtros, Elétrica e Ar-condicionado — migration `0072`).
 - **`servicos`** (catálogo de serviços, análogo a `pecas` mas sem estoque/fiscal): id,
   codigo_interno (opcional), descricao, preco_padrao, categoria_id (FK categorias_servicos,
-  opcional), ativo, criado_em. Vem semeado com ~17 serviços padrão sem preço (migration `0030`).
+  opcional), ativo, criado_em. Vem semeado com ~17 serviços padrão sem preço (migration `0030`);
+  empresa nova recebe mais 39, também sem preço (migration `0072`).
 - **`fornecedores`** (compartilhado entre lojas, migration `0039`): id, nome, cnpj, telefone,
   email, cep/rua/numero/bairro/cidade/uf, ativo, criado_em. Mesmo padrão de `clientes`
   (endereço completo) mas sem veículos nem tipo pessoa física/jurídica — fornecedor é sempre
