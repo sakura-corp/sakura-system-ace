@@ -136,10 +136,20 @@ describe("aprovarOrcamento", () => {
   });
 
   it("erro do banco diz que o orçamento NÃO foi aprovado (aprovação e baixa são uma transação)", async () => {
-    sb.rpc.mockResolvedValue({ data: null, error: { message: "Nenhum depósito ativo" } });
+    sb.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Nenhum depósito ativo", code: "P0001" },
+    });
     await expect(aprovarOrcamento({ id: "ordem-1" }, "Maria", "op-2")).rejects.toThrow(
       /^O orçamento não foi aprovado e continua orçamento: Nenhum depósito ativo/,
     );
+  });
+
+  it("erro sem código do Postgres (rede, tempo esgotado) sobe como veio: a aprovação pode ter entrado", async () => {
+    sb.rpc.mockResolvedValue({ data: null, error: { message: "TypeError: fetch failed", code: "" } });
+    const erro = await aprovarOrcamento({ id: "ordem-1" }, "Maria", "op-2").catch((e: unknown) => e);
+    expect(erro).toMatchObject({ message: "TypeError: fetch failed" });
+    expect((erro as Error).message).not.toMatch(/continua orçamento/);
   });
 
   it("limpa o \"aprovado por\" antes de mandar (o trim do banco não tira tab nem quebra de linha)", async () => {

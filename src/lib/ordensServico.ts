@@ -340,6 +340,10 @@ export async function aprovarOrcamento(
     p_vinculos: vinculos.map((v) => ({ item_id: v.itemId, peca_id: v.pecaId })),
   });
   if (error) {
+    // Só erro que veio do Postgres (tem `code`) garante que a transação
+    // desfez tudo. Sem código (rede caiu, tempo esgotado) a aprovação pode ter
+    // entrado antes da resposta se perder: aí o erro sobe como veio.
+    if (!error.code) throw error;
     throw new Error(`O orçamento não foi aprovado e continua orçamento: ${mensagemDeErro(error)}`);
   }
   // Null: já não era orçamento (outro computador respondeu antes). Nada mudou.

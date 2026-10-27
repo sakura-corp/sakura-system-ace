@@ -142,3 +142,43 @@ Terminei a parte da sessão. Falta o teste no PC, depois da migration no banco d
 - **Sugestão de ajuste (opcional)**: na seção 4 da `chefe-backend`, uma linha: "Corrida entre dois
   computadores: provar com duas ligações `dblink` e conferir o resultado final (estoque), não só
   que a linha está presa."
+
+## Rodada 2 (27/10): os ajustes da revisão da Sofia
+
+Feito pela sessão mãe, sem ajudante: os ajustes eram pequenos e o plano já estava pronto. O
+`/code-review` (esforço alto) rodou na própria sessão antes de pedir a revisão, como manda a regra
+de 27/10.
+- **1. OS faturada**:
+  - `adicionar_itens_ordem` e `editar_item_ordem` recusam a OS faturada, conferida depois da trava.
+  - Teste novo F1 a F5. **Vi reprovar** no código antigo ("acrescentou item numa OS faturada").
+  - Também vi reprovar tirando a recusa de cada função, uma por vez (F2 e F4).
+- **2. Aprovação que falha**:
+  - O erro passa a dizer "O orçamento não foi aprovado e continua orçamento: …".
+  - Isso só vale pra erro que vem do Postgres (tem `code`). Erro de rede sobe como veio, porque a
+    aprovação pode ter entrado antes de a resposta se perder (achado do `/code-review`).
+  - Testes da lib vistos reprovar antes do código.
+  - O comentário acima de `handleAprovar` foi atualizado.
+- **3. "Aprovado por"**: o programa faz o `.trim()` antes de chamar o banco. Teste visto reprovar.
+- **4. `lojaId`**: saiu das duas funções e dos 4 lugares que chamam. O `typecheck` confere.
+- **5. Comentários e documentos**: `ordensServico.ts`, `OrcamentosPage.tsx`, `docs/modulos.md` e
+  a 0071 em `docs/banco.md`.
+- **6. `p_itens` lido uma vez só**:
+  - O insert devolve as peças gravadas (`returning`), e o estoque sai delas.
+  - Ao quebrar de propósito (baixar também serviço e peça avulsa), o teste passou verde: nenhum
+    teste acrescentava serviço ou avulsa numa OS já aprovada.
+  - O teste C ganhou isso e, com a mesma quebra, **reprovou**.
+- **Conferências**: `typecheck`, `lint` (0 erros), `test:fusos`, `npm test` (1197 testes),
+  `test:sql` (17 scripts) e `test:rls` (800 células) verdes aqui.
+- **Do `/code-review`, ficou de fora** (cada um com o motivo):
+  - **`faturarOrdem` não trava a OS.** Se a peça entra um instante ANTES do faturamento, ela fica
+    fora do total cobrado. A recusa nova só pega quando o faturamento chegou primeiro. Faturar é
+    outro caminho, fora desta tarefa: vale juntar à #803.
+  - **Salvar a OS é dois pedidos**: o cabeçalho (`atualizarOrdem`) e depois os itens. Se os itens
+    são recusados (OS faturada, sem depósito), o cabeçalho já salvou. Isso vem de antes e está nas
+    telas, fora da lista.
+  - **`AprovadoSemEstoqueError`** ficou só como classe-mãe do `PecaNaoLigadaNaAprovacaoError`, com
+    uma mensagem que não acontece mais. Fica como está: arrumar mexe em tela.
+  - **Outros três pontos**:
+    - a aprovação procura as peças duas vezes (opcional);
+    - as telas ainda conferem `lojaAtual` antes de chamar (opcional);
+    - a falta de `versao-minima-do-programa` foi decisão da Sofia.
