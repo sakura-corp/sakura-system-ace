@@ -36,9 +36,11 @@ declare
   o_est    uuid := '36601111-0000-0000-0000-000000000007';  -- Estoque, não é admin
   o_orfao  uuid := '36601111-0000-0000-0000-000000000008';  -- OS, mas sem loja
   o_notas  uuid := '36601111-0000-0000-0000-000000000009';  -- só Notas Fiscais
+  o_inativo uuid := '36601111-0000-0000-0000-00000000000a';  -- tinha OS, foi desligado
   cliente  uuid := '36602222-0000-0000-0000-000000000001';
   p1       uuid := '36605555-0000-0000-0000-000000000001';  -- custo 30,00, venda 50,00
   p2       uuid := '36605555-0000-0000-0000-000000000002';  -- custo 12,50, venda 20,00
+  os_oleo  uuid := '36606666-0000-0000-0000-0000000001e0';  -- 4,5 L × 32,33 (o meio centavo)
   p3       uuid := '36605555-0000-0000-0000-000000000003';  -- custo 0 (sem custo), fora de `todos`
   p4       uuid := '36605555-0000-0000-0000-000000000004';  -- custo em branco, fora de `todos`
   s1       uuid := '36606666-0000-0000-0000-000000000001';  -- serviço com custo 40,00
@@ -67,7 +69,7 @@ begin
     on conflict (id) do nothing;
 
   insert into auth.users (id) values
-    (o_os), (o_caixa), (o_painel), (o_forn), (o_rel), (o_func), (o_est), (o_orfao), (o_notas)
+    (o_os), (o_caixa), (o_painel), (o_forn), (o_rel), (o_func), (o_est), (o_orfao), (o_notas), (o_inativo)
     on conflict do nothing;
   insert into operadores (id, usuario, nome, admin, permissoes, ativo) values
     (o_os,     't366_os',     'Balcão de OS e Caixa', false, array['painel','ordens_servico','caixa'], true),
@@ -78,11 +80,12 @@ begin
     (o_func,   't366_func',   'Só Funcionários',      false, array['painel','funcionarios'],           true),
     (o_est,    't366_est',    'Quem tem Estoque',     false, array['painel','estoque'],                true),
     (o_orfao,  't366_orfao',  'OS sem loja',          false, array['painel','ordens_servico'],         true),
-    (o_notas,  't366_notas',  'Só Notas',             false, array['painel','notas_fiscais'],          true)
+    (o_notas,  't366_notas',  'Só Notas',             false, array['painel','notas_fiscais'],          true),
+    (o_inativo,'t366_inativo','OS, desligado',        false, array['painel','ordens_servico'],         false)
     on conflict (id) do nothing;
   insert into operador_lojas (operador_id, loja_id) values
     (o_os, loja_a), (o_caixa, loja_a), (o_painel, loja_a), (o_forn, loja_a),
-    (o_rel, loja_a), (o_func, loja_a), (o_est, loja_a), (o_notas, loja_a)
+    (o_rel, loja_a), (o_func, loja_a), (o_est, loja_a), (o_notas, loja_a), (o_inativo, loja_a)
     on conflict do nothing;
 
   insert into clientes (id, nome) values (cliente, 'Cliente de Teste (#366)') on conflict (id) do nothing;
@@ -324,6 +327,33 @@ begin
     raise exception 'FALHOU: quem tem OS (sem Fornecedores) lançou entrada de compra';
   exception when insufficient_privilege then null;
   end;
+  -- a porta uso_em_os é a BAIXA: entrada com esse motivo não passa (a
+  -- devolução da editar_item_ordem é 'ajuste' de entrada, 0071)
+  begin
+    insert into estoque_movimentos (peca_id, deposito_id, loja_id, tipo, quantidade, motivo)
+      values (p1, dep_a, loja_a, 'entrada', 9999, 'uso_em_os');
+    raise exception 'FALHOU: quem tem OS lançou ENTRADA com motivo uso_em_os';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- 7b. o operador desligado (ativo = false), mesmo com OS e loja: nem janela,
+  --     nem saldo, nem baixa
+  perform set_config('request.jwt.claim.sub', o_inativo::text, true);
+  select count(*) into quantas from pecas_janela;
+  if quantas <> 0 then
+    raise exception 'FALHOU: o operador desligado viu % peça(s) na janela', quantas;
+  end if;
+  select count(*) into quantas from estoque_saldos;
+  if quantas <> 0 then
+    raise exception 'FALHOU: o operador desligado viu % saldo(s)', quantas;
+  end if;
+  begin
+    insert into estoque_movimentos (peca_id, deposito_id, loja_id, tipo, quantidade, motivo)
+      values (p1, dep_a, loja_a, 'saida', 1, 'uso_em_os');
+    raise exception 'FALHOU: o operador desligado deu baixa no estoque';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('request.jwt.claim.sub', o_os::text, true);
   -- 8. ...nem baixa na loja que não é dele
   begin
     insert into estoque_movimentos (peca_id, deposito_id, loja_id, tipo, quantidade, motivo)
@@ -619,6 +649,23 @@ begin
         linha.ordem_servico_id, linha.custo, linha.custo_completo;
     end if;
   end loop;
+  -- 26b. o meio centavo: 4,5 L de óleo a 32,33 dão 145,485 exatos, mas o
+  --      programa sempre fez essa conta em número de vírgula (JavaScript), que
+  --      dá 145,48499999999998, e o lucro de 200 − custo arredondava pra 54,52.
+  --      O banco tem que devolver o MESMO número de antes, não o exato, senão
+  --      o lucro do Caixa e da OS muda 1 centavo (e diverge de Relações).
+  reset role;
+  insert into ordens_servico (id, loja_id, cliente_id, status) values (os_oleo, loja_a, cliente, 'em_andamento')
+    on conflict (id) do nothing;
+  insert into ordens_servico_itens (ordem_servico_id, tipo, peca_id, descricao, quantidade, preco_unitario, custo_unitario) values
+    (os_oleo, 'peca', null, 'Óleo (avulsa)', 4.5, 44.44, 32.33);
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', o_os::text, true);
+  select custo, custo_completo into linha from custo_das_ordens(array[os_oleo]);
+  if linha.custo::float8 is distinct from 145.48499999999998::float8 then
+    raise exception 'FALHOU: o custo de 4,5 × 32,33 devia ser o do programa (145,48499999999998) e veio %', linha.custo;
+  end if;
+
   select count(*) into quantas from custo_das_ordens(array[os_1, os_2, os_3, os_b, os_1]);
   if quantas <> 3 then
     raise exception 'FALHOU: custo_das_ordens devia devolver 3 ordens (uma linha cada, sem a da loja B) e devolveu %', quantas;

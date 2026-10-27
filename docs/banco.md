@@ -499,7 +499,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   publicar e liberar a versão → `0074`.** Quem lê `pecas` inteira (com o custo): **Estoque, Relações,
   Funcionários** (as comissões usam o custo de cada peça) ou admin; quem escreve nela direto: só
   Estoque. `estoque_movimentos` e `contagens_estoque`: só Estoque, com acesso à loja; a exceção é o
-  INSERT de movimento, com portas estreitas: OS grava `uso_em_os` (a baixa) e `ajuste` de entrada
+  INSERT de movimento, com portas estreitas: OS grava `uso_em_os` de saída (a baixa) e `ajuste` de entrada
   (o estoque inicial da peça avulsa e a devolução da `editar_item_ordem` quando o item diminui);
   Fornecedores grava só entrada de `compra`. Programa que grava sem Estoque **não pode pedir a linha
   de volta** (`returning` exige leitura): por isso o `registrarMovimento` (sem `.select()`). O que a
@@ -511,13 +511,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   lojas de quem pergunta: a OS e o balcão leem o saldo pronto em vez de todos os movimentos (cerca
   de 6 vezes mais rápido); (c) **`custo_das_ordens(ids)`**: o custo total de cada OS, calculado no
   banco com a mesma regra de `custoUnitarioDoItem` (serviço, peça avulsa, peça cadastrada), mais
-  `custo_completo` (falso se há peça avulsa sem custo), pra quem tem Caixa, Relações, OS, Estoque ou
+  `custo_completo` (falso se há peça avulsa sem custo), **em double precision de propósito** (é a
+  conta que o programa sempre fez; em numeric, 4,5 × 32,33 mudava o lucro em 1 centavo), pra quem tem Caixa, Relações, OS, Estoque ou
   Funcionários, e só das OS das lojas dele; o Caixa, o Início e a coluna Lucro da lista de OS usam
   ela; (d) **`dados_fiscais_das_pecas(ids)`**: NCM, CEST, CFOP, origem, CST/CSOSN e alíquota (sem
   custo), pra nota fiscal e importação de XML; (e) **`cadastrar_peca_rapida(peça)`**: cadastro de
-  peça fora do Estoque (peça avulsa na OS, XML em Fornecedores), devolve só o id. **Risco que
-  sobra, pra ela decidir**: quem tem OS consegue descobrir o custo de uma peça (orçamento com 1
-  unidade e a `custo_das_ordens`), o mesmo número que a coluna Lucro da lista de OS já deixa deduzir.
+  peça fora do Estoque (peça avulsa na OS, XML em Fornecedores), devolve só o id. **Dois riscos que
+  sobram, pra ela decidir**: (1) quem tem OS **ou Caixa** consegue descobrir o custo de uma peça
+  (orçamento com 1 unidade e a `custo_das_ordens`; fica na auditoria), o mesmo número que a coluna
+  Lucro da lista de OS já deixa deduzir; só fecha de verdade quando o lote de OS (#367) fechar a
+  escrita em `ordens_servico`; (2) **o preço de compra continua aberto em `cotacoes_pecas`
+  (qualquer logado) e `pedidos_compra_itens` (quem tem a loja)**, e ele costuma ser o próprio
+  custo (a peça que nasce do XML do fornecedor grava o mesmo valor nos três lugares). Fechar as
+  duas é um lote seguinte (Fornecedores), fora desta tarefa.
   Teste em `supabase/scripts/testar-pecas-permissao.sql` (as duas metades), conferido com 13
   mutações, todas vermelhas.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).

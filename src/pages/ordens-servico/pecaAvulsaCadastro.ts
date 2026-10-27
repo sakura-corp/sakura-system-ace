@@ -47,18 +47,20 @@ export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[], 
   useEffect(() => {
     if (!ativo) return;
     let cancelado = false;
-    Promise.all([
-      listarCategorias(),
-      buscarConfiguracaoFiscal(lojaId),
-      buscarDadosFiscaisDasPecas(idsDasPecas),
-    ])
-      .then(([categoriasC, configFiscal, fiscais]) => {
+    Promise.all([listarCategorias(), buscarConfiguracaoFiscal(lojaId)])
+      .then(([categoriasC, configFiscal]) => {
         if (cancelado) return;
         setCategorias(categoriasC);
         setRegime(configFiscal?.regime_tributario ?? null);
-        setCsosns(fiscais.map((f) => f.cst_ou_csosn));
       })
       .catch((err) => console.error("Erro ao carregar os dados do cadastro de peça:", err));
+    // À parte: se os dados fiscais falham, as categorias e o regime chegam
+    // mesmo assim (só some a sugestão de CSOSN).
+    buscarDadosFiscaisDasPecas(idsDasPecas)
+      .then((fiscais) => {
+        if (!cancelado) setCsosns(fiscais.map((f) => f.cst_ou_csosn));
+      })
+      .catch((err) => console.error("Erro ao carregar o CSOSN mais usado:", err));
     return () => {
       cancelado = true;
     };

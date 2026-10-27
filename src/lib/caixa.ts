@@ -127,10 +127,16 @@ const IDS_POR_CHAMADA = 500;
 export async function buscarCustoDasOrdens(ids: string[]): Promise<CustoDoBanco> {
   const unicos = [...new Set(ids)];
   const custos: CustoDoBanco = new Map();
+  // As levas vão ao mesmo tempo: uma loja com 10 mil OS seriam 20 idas e
+  // voltas uma atrás da outra antes de a tela aparecer.
+  const levas: string[][] = [];
   for (let i = 0; i < unicos.length; i += IDS_POR_CHAMADA) {
-    const { data, error } = await supabase.rpc("custo_das_ordens", {
-      p_ordens: unicos.slice(i, i + IDS_POR_CHAMADA),
-    });
+    levas.push(unicos.slice(i, i + IDS_POR_CHAMADA));
+  }
+  const respostas = await Promise.all(
+    levas.map((leva) => supabase.rpc("custo_das_ordens", { p_ordens: leva })),
+  );
+  for (const { data, error } of respostas) {
     if (error) throw error;
     for (const linha of (data ?? []) as {
       ordem_servico_id: string;

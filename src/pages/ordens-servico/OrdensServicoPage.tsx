@@ -231,6 +231,9 @@ export function OrdensServicoPage() {
         setCustoDasOrdens(await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id)));
       } catch (err) {
         console.error("Erro ao carregar o custo das ordens:", err);
+        // O custo guardado é da carga anterior: com ele a coluna mostraria
+        // lucro de itens novos com custo velho. Melhor "custo não informado".
+        setCustoDasOrdens(new Map());
       }
 
       // Notas de todas as OS de uma vez só (uma consulta, não uma por linha)

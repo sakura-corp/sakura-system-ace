@@ -32,7 +32,9 @@
    o Início e a lista de OS. **Lição nova do lote 5**: a issue supunha que a baixa e a entrada de
    estoque eram feitas por funções do banco; boa parte era o programa gravando direto, e gravar
    com `.select()` pede a policy de leitura junto. Antes de fechar uma tabela, mapear **quem
-   grava**, não só quem lê. As outras **continuam como sempre foram** — o
+   grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
+   `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
+   Fornecedores é que fecha de vez. As outras **continuam como sempre foram** — o
    parágrafo acima segue valendo pra ordens de serviço (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela

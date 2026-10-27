@@ -6604,7 +6604,7 @@ grant select on estoque_saldos to authenticated;
 drop function if exists custo_das_ordens(uuid[]);
 
 create function custo_das_ordens(p_ordens uuid[])
-returns table (ordem_servico_id uuid, custo numeric, custo_completo boolean)
+returns table (ordem_servico_id uuid, custo double precision, custo_completo boolean)
 language plpgsql
 security definer
 set search_path = public
@@ -6624,14 +6624,20 @@ begin
 
   return query
     select o.id,
+           -- Em double precision DE PROPÓSITO, não em numeric: é a conta que o
+           -- programa sempre fez (JavaScript), e o lucro tem que dar o mesmo
+           -- de antes, centavo por centavo. Em numeric, 4,5 × 32,33 dá
+           -- 145,485 exatos; no programa dava 145,48499999999998, e o lucro
+           -- arredondado mudava 1 centavo em cerca de 6% das OS com quantidade
+           -- quebrada (achado da revisão final; testar-pecas-permissao.sql, 26b).
            coalesce(sum(
-             i.quantidade *
-             case
+             i.quantidade::double precision *
+             (case
                when i.tipo = 'servico' then coalesce(s.custo, 0)
                when i.peca_id is null  then coalesce(i.custo_unitario, 0)
                else coalesce(p.preco_custo, 0)
-             end
-           ), 0)::numeric,
+             end)::double precision
+           ), 0),
            coalesce(bool_and(not (i.tipo = 'peca' and i.peca_id is null and i.custo_unitario is null)), true)
       from ordens_servico o
       left join ordens_servico_itens i on i.ordem_servico_id = o.id
@@ -6799,7 +6805,7 @@ insert into schema_versao (versao) values (73) on conflict do nothing;
 --   • `estoque_movimentos` e `contagens_estoque`: só Estoque, na loja dele.
 --     A exceção é o INSERT de movimento, com três portas estreitas, todas na
 --     loja de quem grava:
---       – OS: a baixa da peça usada (motivo 'uso_em_os'). É o que
+--       – OS: a baixa da peça usada (motivo 'uso_em_os', só saída). É o que
 --         `adicionar_itens_ordem`, `editar_item_ordem` e `aprovar_orcamento`
 --         (0071, que rodam como quem chama) e a venda de balcão gravam;
 --       – OS: a devolução ao estoque (entrada com motivo 'ajuste'). É o que a
@@ -6881,7 +6887,7 @@ create policy "estoque_movimentos_insercao" on estoque_movimentos
     operador_tem_acesso_loja(loja_id)
     and (
       (select operador_tem_permissao('estoque'))
-      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'uso_em_os')
+      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'uso_em_os' and tipo = 'saida')
       or ((select operador_tem_permissao('ordens_servico')) and motivo = 'ajuste' and tipo = 'entrada')
       or ((select operador_tem_permissao('fornecedores')) and motivo = 'compra' and tipo = 'entrada')
     )

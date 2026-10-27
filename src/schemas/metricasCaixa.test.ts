@@ -194,7 +194,11 @@ describe("custo pelo mapa do banco = custo pelos mapas", () => {
     saida("s1", 77.77),
   ];
 
-  // O que o banco faria: a conta item a item, uma vez por OS.
+  // O "banco" aqui é a conta antiga feita uma vez por OS: este teste prova
+  // que o caminho pelo mapa do banco soma, rateia e conta cada OS igual ao
+  // caminho pelos mapas. Que a função do banco dá o MESMO número da conta
+  // antiga (inclusive no meio centavo, 4,5 × 32,33) é provado no SQL:
+  // supabase/scripts/testar-pecas-permissao.sql, itens 25 a 26b.
   const doBanco = new Map(
     [
       ["os-2", itensOs2],

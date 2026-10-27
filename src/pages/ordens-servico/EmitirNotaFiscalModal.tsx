@@ -243,7 +243,8 @@ export function EmitirNotaFiscalModal({
       const fiscais = await buscarDadosFiscaisDasPecas([peca.id]);
       setPecasDaNota((lista) => [...lista.filter((p) => p.id !== peca.id), ...fiscais]);
     } catch (err) {
-      console.error("Erro ao conferir os dados fiscais da peça ligada:", err);
+      // Sem os dados fiscais o item fica travado como "sem NCM": diz o porquê.
+      setErro(`A peça foi ligada, mas não deu pra buscar o NCM dela: ${mensagemDeErro(err)}`);
     }
     setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
     if (avisoEstoque) setErro(avisoEstoque);

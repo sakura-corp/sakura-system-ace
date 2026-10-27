@@ -17,7 +17,7 @@
 --   • `estoque_movimentos` e `contagens_estoque`: só Estoque, na loja dele.
 --     A exceção é o INSERT de movimento, com três portas estreitas, todas na
 --     loja de quem grava:
---       – OS: a baixa da peça usada (motivo 'uso_em_os'). É o que
+--       – OS: a baixa da peça usada (motivo 'uso_em_os', só saída). É o que
 --         `adicionar_itens_ordem`, `editar_item_ordem` e `aprovar_orcamento`
 --         (0071, que rodam como quem chama) e a venda de balcão gravam;
 --       – OS: a devolução ao estoque (entrada com motivo 'ajuste'). É o que a
@@ -99,7 +99,7 @@ create policy "estoque_movimentos_insercao" on estoque_movimentos
     operador_tem_acesso_loja(loja_id)
     and (
       (select operador_tem_permissao('estoque'))
-      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'uso_em_os')
+      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'uso_em_os' and tipo = 'saida')
       or ((select operador_tem_permissao('ordens_servico')) and motivo = 'ajuste' and tipo = 'entrada')
       or ((select operador_tem_permissao('fornecedores')) and motivo = 'compra' and tipo = 'entrada')
     )
