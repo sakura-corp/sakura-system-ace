@@ -3,7 +3,7 @@
 - **Tarefa**: #366, peças e estoque só pra quem tem o módulo (TR-04.1, lote 5)
 - **Chefe**: backend
 - **Data**: 2026-10-27
-- **PR**: o PR da branch `claude/tarefa-366-pecas-permissao`
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/816
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
