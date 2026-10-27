@@ -371,7 +371,9 @@ Quatro coisas que valem saber:
   **sem** passar pelo "Salvar alterações" da OS (que continua cuidando só dos campos de cima e dos
   itens novos). Três coisas que valem saber:
   - **O estoque se acerta sozinho.** A saída que o item original gerou continua valendo, então só
-    a **diferença** é lançada (`diferencasDeEstoque()` em `lib/ordensServico.ts`, testada): mudou
+    a **diferença** é lançada (desde a #706, pela função `editar_item_ordem` do banco, migration
+    `0071`, que trava a OS e parte do item gravado no banco; testada em
+    `supabase/scripts/testar-item-na-aprovacao.sql`): mudou
     só o preço → nenhuma movimentação; quantidade subiu → saída da diferença (motivo "uso em OS");
     quantidade caiu, peça trocada ou peça virou serviço → entrada de volta (motivo "ajuste"). A
     referência sai como "OS 12 (correção de item)", pra dar pra achar em Movimentações.

@@ -19,7 +19,7 @@ import { compararVersoes } from "./computadores";
  * Sobe junto com toda migration nova — `versaoEsquema.test.ts` reprova se
  * este número ficar pra trás da pasta `supabase/migrations/`.
  */
-export const VERSAO_ESQUEMA_ESPERADA = 70;
+export const VERSAO_ESQUEMA_ESPERADA = 71;
 
 /**
  * As migrations que declaram `-- versao-minima-do-programa: X`, com o X de
