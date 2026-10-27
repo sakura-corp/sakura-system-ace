@@ -15,6 +15,7 @@ import { margemAPartirDoPreco } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { NovaPeca, Peca } from "@/types/peca";
+import { pecaSemCusto } from "@/schemas/avisosOrdemServico";
 import { ImportarNotasFiscaisModal } from "./ImportarNotasFiscaisModal";
 import { PecaForm } from "./PecaForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
@@ -266,8 +267,11 @@ export function ProdutosSection({
         // (defaultValues só valem na montagem), p.ex. pelo "Abrir a que já existe".
         <PecaForm
           key={pecaEmEdicao?.id ?? "nova"}
-          pecasDoCadastro={pecas}
-          onAbrirExistente={handleEditar}
+          pecasDoCadastro={pecas.map((p) => ({ ...p, sem_custo: pecaSemCusto(p.preco_custo) }))}
+          onAbrirExistente={(achada) => {
+            const completa = pecas.find((p) => p.id === achada.id);
+            if (completa) handleEditar(completa);
+          }}
           pecaExistente={pecaEmEdicao ?? undefined}
           categorias={categorias}
           regime={regime}

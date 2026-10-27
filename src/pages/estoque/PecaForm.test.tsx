@@ -19,7 +19,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import { PecaForm } from "./PecaForm";
 import type { Categoria } from "@/types/categoria";
-import type { Peca } from "@/types/peca";
+import type { Peca, PecaJanela } from "@/types/peca";
 
 beforeEach(() => localStorage.clear());
 
@@ -31,7 +31,7 @@ const categorias: Categoria[] = [
 function montar(
   opcoes: {
     csosnSugerido?: string | null;
-    pecasDoCadastro?: Peca[];
+    pecasDoCadastro?: PecaJanela[];
     pecaExistente?: Peca;
   } = {},
 ) {
@@ -191,7 +191,7 @@ describe("PecaForm — validação", () => {
  * do docs/licoes.md). A regra de "o que é parecido" é testada à parte, em
  * `schemas/pecaParecida.test.ts`; aqui se confere a tela.
  */
-function umaPeca(extra: Partial<Peca>): Peca {
+function umaPeca(extra: Partial<Peca & PecaJanela>): Peca & PecaJanela {
   return {
     id: "p-1",
     codigo_interno: null,
@@ -217,6 +217,7 @@ function umaPeca(extra: Partial<Peca>): Peca {
     dot: null,
     ativo: true,
     criado_em: "2026-01-01T00:00:00.000Z",
+    sem_custo: true,
     ...extra,
   };
 }

@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import {
+  custoDaOrdemPeloBanco,
   lucroPorMovimento,
-  mapaCustoPecas,
-  mapaCustoServicos,
   resumirMovimentos,
+  type CustoDoBanco,
 } from "@/schemas/metricasCaixa";
 import { Valor } from "@/components/Valor";
 import { lancamentosDepoisDoFechamento } from "@/schemas/fechamentoCaixa";
@@ -11,14 +11,11 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import { nomeOrdem } from "@/types/os";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
-import type { Peca } from "@/types/peca";
-import type { Servico } from "@/types/servico";
 import { CaixaForm } from "./CaixaForm";
 
 interface DiarioSectionProps {
   movimentos: MovimentoCaixa[];
-  pecas: Peca[];
-  servicos: Servico[];
+  custoDasOrdens: CustoDoBanco;
   categorias: CategoriaCaixa[];
   fechamentos?: FechamentoCaixa[];
   onSalvar: (movimento: NovoMovimentoCaixa) => Promise<void>;
@@ -34,8 +31,7 @@ function paraDataLocal(dataIso: string): string {
 
 export function DiarioSection({
   movimentos,
-  pecas,
-  servicos,
+  custoDasOrdens,
   categorias,
   fechamentos = [],
   onSalvar,
@@ -48,8 +44,7 @@ export function DiarioSection({
     setMostrarFormulario(false);
   }
 
-  const custoPorPeca = useMemo(() => mapaCustoPecas(pecas), [pecas]);
-  const custoPorServico = useMemo(() => mapaCustoServicos(servicos), [servicos]);
+  const custoDaOrdem = useMemo(() => custoDaOrdemPeloBanco(custoDasOrdens), [custoDasOrdens]);
 
   const movimentosDoDia = useMemo(
     () => movimentos.filter((m) => paraDataLocal(m.data) === dataFiltro),
@@ -57,8 +52,8 @@ export function DiarioSection({
   );
 
   const resumo = useMemo(
-    () => resumirMovimentos(movimentosDoDia, custoPorPeca, custoPorServico),
-    [movimentosDoDia, custoPorPeca, custoPorServico],
+    () => resumirMovimentos(movimentosDoDia, custoDaOrdem),
+    [movimentosDoDia, custoDaOrdem],
   );
   const entradas = resumo.entradas;
   const saidas = resumo.saidas;
@@ -77,8 +72,8 @@ export function DiarioSection({
   // repartido entre os lançamentos — antes cada linha mostrava o lucro
   // cheio da OS e o total do dia contava esse lucro duas vezes.
   const lucrosPorMovimento = useMemo(
-    () => lucroPorMovimento(movimentosDoDia, custoPorPeca, custoPorServico),
-    [movimentosDoDia, custoPorPeca, custoPorServico],
+    () => lucroPorMovimento(movimentosDoDia, custoDaOrdem),
+    [movimentosDoDia, custoDaOrdem],
   );
 
   const totalLucro = resumo.lucro;

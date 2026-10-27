@@ -4,13 +4,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { listarDepositos } from "@/lib/depositos";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarFornecedores } from "@/lib/fornecedores";
-import { listarPecas } from "@/lib/pecas";
+import { listarPecasJanela } from "@/lib/pecas";
 import { listarPedidos } from "@/lib/pedidosCompra";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { PedidoCompra } from "@/types/pedidoCompra";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { FornecedoresSection } from "./FornecedoresSection";
 import { PedidosCompraSection } from "./PedidosCompraSection";
 
@@ -20,7 +20,7 @@ export function FornecedoresPage() {
   const { lojaAtual, operador } = useAuth();
   const [aba, setAba] = useState<Aba>("cadastro");
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
+  const [pecas, setPecas] = useState<PecaJanela[]>([]);
   const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
   const [depositos, setDepositos] = useState<Deposito[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -37,7 +37,7 @@ export function FornecedoresPage() {
       const [fornecedoresCarregados, pecasCarregadas, pedidosCarregados, depositosCarregados] =
         await Promise.all([
           listarFornecedores(),
-          listarPecas(),
+          listarPecasJanela(),
           listarPedidos(lojaAtual.id),
           listarDepositos(lojaAtual.id),
         ]);

@@ -22,7 +22,7 @@ import type { Cliente, NovoCliente } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type { NovoItemOS } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { NovoClienteVendaModal } from "./CadastroRapidoModais";
 import { FaturamentoCard } from "./FaturamentoCard";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
@@ -50,7 +50,7 @@ interface VendaBalcaoFormProps {
    * nota o busca na hora de emitir. Padrão `true` (o comportamento de antes).
    */
   podeVerCadastro?: boolean;
-  pecas: Peca[];
+  pecas: PecaJanela[];
   funcionarios: FuncionarioPublico[];
   funcionarioAtualId: string;
   saldoPorPeca: Map<string, number>;
@@ -125,7 +125,7 @@ export function VendaBalcaoForm({
     if (noPagamento) pagamentoRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }, [noPagamento]);
 
-  function adicionar(peca: Peca) {
+  function adicionar(peca: PecaJanela) {
     replace(incluirPeca(watch("itens"), peca));
     setBusca("");
     setAvisoBusca(null);

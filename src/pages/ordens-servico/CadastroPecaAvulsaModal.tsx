@@ -1,6 +1,6 @@
 import { Modal } from "@/components/Modal";
 import type { ItemOS } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { PecaForm } from "../estoque/PecaForm";
 import {
   cadastrarPecaNova,
@@ -12,12 +12,12 @@ interface CadastroPecaAvulsaModalProps {
   /** A peça avulsa que está ganhando cadastro: dela vêm o nome, o preço e o custo. */
   item: Pick<ItemOS, "descricao" | "preco_unitario" | "custo_unitario">;
   /** O cadastro da loja, pro aviso de "peça parecida" ao salvar. */
-  pecas: Peca[];
+  pecas: PecaJanela[];
   lojaId: string;
   /** A peça foi criada: quem abriu decide o que fazer com ela. */
-  onCadastrada: (peca: Peca) => Promise<void> | void;
+  onCadastrada: (peca: PecaJanela) => Promise<void> | void;
   /** O aviso de peça parecida levou pra uma que já existe. */
-  onAbrirExistente?: (peca: Peca) => void;
+  onAbrirExistente?: (peca: PecaJanela) => void;
   onFechar: () => void;
 }
 

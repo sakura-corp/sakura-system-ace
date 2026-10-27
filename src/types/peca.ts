@@ -32,3 +32,40 @@ export interface Peca {
 }
 
 export type NovaPeca = Omit<Peca, "id" | "criado_em">;
+
+// O que a "janela" de peças (view `pecas_janela`, migration 0073) devolve a
+// quem não tem o módulo Estoque: nunca o custo nem os dados de cadastro de
+// estoque. Telas que só vendem/orçam trabalham com este tipo.
+export type PecaJanela = Pick<
+  Peca,
+  | "id"
+  | "codigo_interno"
+  | "codigo_barras"
+  | "descricao"
+  | "unidade"
+  | "preco_venda"
+  | "prazo_garantia_dias"
+  | "ativo"
+  | "marca"
+  | "modelo"
+  | "medida"
+> & {
+  /** Falta o custo (em branco ou zero)? Só sim/não: o valor nunca sai da janela. */
+  sem_custo: boolean;
+};
+
+// O que a função `dados_fiscais_das_pecas` devolve (nunca o custo).
+export type PecaDadosFiscais = Pick<
+  Peca,
+  | "id"
+  | "codigo_interno"
+  | "codigo_barras"
+  | "descricao"
+  | "unidade"
+  | "ncm"
+  | "cest"
+  | "cfop_padrao"
+  | "origem"
+  | "cst_ou_csosn"
+  | "aliquota_icms"
+>;

@@ -15,15 +15,15 @@ import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 
-const buscarPecasPorIds = vi.fn();
-const listarPecas = vi.fn();
-const criarPeca = vi.fn();
+const buscarDadosFiscaisDasPecas = vi.fn();
+const listarPecasJanela = vi.fn();
+const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const emitirNFCe = vi.fn();
 vi.mock("@/lib/pecas", () => ({
-  buscarPecasPorIds: (...a: unknown[]) => buscarPecasPorIds(...a),
-  listarPecas: (...a: unknown[]) => listarPecas(...a),
-  criarPeca: (...a: unknown[]) => criarPeca(...a),
+  buscarDadosFiscaisDasPecas: (...a: unknown[]) => buscarDadosFiscaisDasPecas(...a),
+  listarPecasJanela: (...a: unknown[]) => listarPecasJanela(...a),
+  cadastrarPecaRapida: (...a: unknown[]) => cadastrarPecaRapida(...a),
 }));
 vi.mock("@/lib/ordensServico", () => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
@@ -45,7 +45,7 @@ vi.mock("@/lib/focusNfe", () => ({
   FocusNfeError: class extends Error {},
   EsperaVencidaError: class extends Error {},
 }));
-vi.mock("@/lib/estoque", () => ({ criarMovimento: vi.fn() }));
+vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
@@ -69,6 +69,9 @@ const { PecaLigadaSemEstoqueError } = await import("@/lib/ordensServico");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
+
+const pecaNova = { id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" } as unknown as Peca;
+const palhetaDoCadastro = { id: "peca-3", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500", ativo: true } as unknown as Peca;
 
 const item = (id: string, descricao: string, peca_id: string | null) => ({
   id, ordem_servico_id: "os-1", tipo: "peca", peca_id, servico_id: null, tecnico_id: null,
@@ -121,9 +124,9 @@ beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
   buscarConfiguracaoFiscal.mockResolvedValue(configuracao(true));
-  listarPecas.mockResolvedValue([pecaComNcm]);
-  buscarPecasPorIds.mockImplementation(async (ids: string[]) =>
-    [pecaComNcm, pecaSemNcm].filter((p) => ids.includes(p.id)),
+  listarPecasJanela.mockResolvedValue([pecaComNcm]);
+  buscarDadosFiscaisDasPecas.mockImplementation(async (ids: string[]) =>
+    [pecaComNcm, pecaSemNcm, pecaNova, palhetaDoCadastro].filter((p) => ids.includes(p.id)),
   );
 });
 
@@ -179,7 +182,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
   });
 
   it("Cadastrar agora abre o cadastro com nome e preço, liga a peça ao item e libera a emissão", async () => {
-    criarPeca.mockResolvedValue({ id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" });
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
     cadastrarPecaDoItem.mockResolvedValue(true);
     const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
 
@@ -210,7 +213,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
   // Revisão: recarregar a OS ficava no mesmo try do vínculo, e uma falha
   // dele dizia "não entrou na OS" com a peça já ligada.
   it("se só o recarregar da OS falha, não diz que a peça não entrou", async () => {
-    criarPeca.mockResolvedValue({ id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" });
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
     cadastrarPecaDoItem.mockResolvedValue(true);
     const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
     onItensMudaram.mockRejectedValue(new Error("sem internet"));
@@ -233,7 +236,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
   // Revisão da Sofia (PR #717), ponto 1: a peça ficava ligada, mas a tela
   // dizia "não entrou na OS" e deixava cadastrar de novo (peça duplicada).
   it("se a peça liga mas a baixa do estoque falha, a tela diz a verdade e libera a nota", async () => {
-    criarPeca.mockResolvedValue({ id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" });
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
     cadastrarPecaDoItem.mockRejectedValue(
       new PecaLigadaSemEstoqueError(
         ordem([]),
@@ -257,8 +260,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
   // Revisão da Sofia (PR #717), ponto 2: o aviso de peça parecida (#653) não
   // levava a lugar nenhum aqui, e o único jeito era cadastrar a duplicada.
   it("peça parecida: escolher a que já existe liga o item a ela, sem cadastrar outra", async () => {
-    const palhetaDoCadastro = { id: "peca-3", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500", ativo: true } as unknown as Peca;
-    listarPecas.mockResolvedValue([pecaComNcm, palhetaDoCadastro]);
+    listarPecasJanela.mockResolvedValue([pecaComNcm, palhetaDoCadastro]);
     cadastrarPecaDoItem.mockResolvedValue(true);
     const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
 
@@ -269,7 +271,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
 
     await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
     expect(cadastrarPecaDoItem.mock.calls[0][1]).toBe("peca-3");
-    expect(criarPeca).not.toHaveBeenCalled();
+    expect(cadastrarPecaRapida).not.toHaveBeenCalled();
     expect(onItensMudaram).toHaveBeenCalled();
     await waitFor(() => expect(confirmar()).toBeEnabled());
     expect(screen.queryByText(/não pode sair ainda/)).not.toBeInTheDocument();
@@ -278,7 +280,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
   it("peça que sumiu do cadastro na hora de emitir não é descartada calada: a nota não sai", async () => {
     // A tela carregou com a peça, mas na emissão ela já não vem (apagada em
     // outro computador). Antes, ela era largada e a nota saía com valor a menos.
-    buscarPecasPorIds.mockResolvedValueOnce([pecaComNcm]).mockResolvedValue([]);
+    buscarDadosFiscaisDasPecas.mockResolvedValueOnce([pecaComNcm]).mockResolvedValue([]);
     const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1"), item("i3", "Amortecedor", "peca-1")]);
 
     await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));

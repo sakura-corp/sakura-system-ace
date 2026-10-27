@@ -2,18 +2,15 @@ import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
-import { criarMovimentoCaixa, listarMovimentosCaixa } from "@/lib/caixa";
+import { buscarCustoDasOrdens, criarMovimentoCaixa, listarMovimentosCaixa } from "@/lib/caixa";
 import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import { hojeLocal } from "@/lib/datas";
 import { listarFechamentosCaixa } from "@/lib/fechamentoCaixa";
-import { listarPecas } from "@/lib/pecas";
-import { listarServicos } from "@/lib/servicos";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
-import type { Peca } from "@/types/peca";
-import type { Servico } from "@/types/servico";
+import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
 import { FechamentoSection } from "./FechamentoSection";
@@ -24,8 +21,9 @@ export function CaixaPage() {
   const { lojaAtual, operador } = useAuth();
   const [aba, setAba] = useState<Aba>("diario");
   const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // Custo de cada OS que aparece nos lançamentos, calculado pelo banco
+  // (`custo_das_ordens`): o Caixa não lê o cadastro de peças (#366).
+  const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
   const [categorias, setCategorias] = useState<CategoriaCaixa[]>([]);
   const [fechamentos, setFechamentos] = useState<FechamentoCaixa[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -39,16 +37,16 @@ export function CaixaPage() {
     setCarregando(true);
     setErro(null);
     try {
-      const [movimentosCarregados, pecasCarregadas, servicosCarregados, categoriasCarregadas] =
-        await Promise.all([
+      const [movimentosCarregados, categoriasCarregadas] = await Promise.all([
         listarMovimentosCaixa(lojaAtual.id),
-        listarPecas(),
-        listarServicos(),
         listarCategoriasCaixa(),
       ]);
+      // Sem o custo o lucro sairia inflado: se falhar, a tela mostra o erro.
+      const custos = await buscarCustoDasOrdens(
+        movimentosCarregados.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
+      );
       setMovimentos(movimentosCarregados);
-      setPecas(pecasCarregadas);
-      setServicos(servicosCarregados);
+      setCustoDasOrdens(custos);
       setCategorias(categoriasCarregadas);
       // O fechamento vem à parte e não derruba a tela: num banco que ainda
       // não recebeu a migration 0058, a tabela não existe — o Caixa continua
@@ -131,8 +129,7 @@ export function CaixaPage() {
       ) : aba === "diario" ? (
         <DiarioSection
           movimentos={movimentos}
-          pecas={pecas}
-          servicos={servicos}
+          custoDasOrdens={custoDasOrdens}
           categorias={categorias}
           fechamentos={fechamentos}
           onSalvar={handleSalvar}

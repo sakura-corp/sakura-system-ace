@@ -7,12 +7,10 @@ import { Explicacao } from "@/components/Explicacao";
 import { useAuth } from "@/contexts/AuthContext";
 import { feriadosNacionais } from "@/lib/feriados";
 import { mensagemDeErro } from "@/lib/errors";
-import { listarMovimentosCaixa } from "@/lib/caixa";
+import { buscarCustoDasOrdens, listarMovimentosCaixa } from "@/lib/caixa";
 import { listarClientes } from "@/lib/clientes";
-import { listarPecas } from "@/lib/pecas";
-import { listarServicos } from "@/lib/servicos";
 import { formatarMoeda } from "@/schemas/dinheiro";
-import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
+import { custoDaOrdemPeloBanco, type CustoDoBanco } from "@/schemas/metricasCaixa";
 import {
   DIAS_PARA_ALERTAR_OS,
   contasVencendoAte,
@@ -44,8 +42,6 @@ import {
 } from "@/types/configuracao";
 import type { CartaoMetrica, ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
-import type { Peca } from "@/types/peca";
-import type { Servico } from "@/types/servico";
 import type { ContaPagar } from "@/types/contaPagar";
 import type { MovimentoCaixa } from "@/types/caixa";
 import { nomeDocumento } from "@/types/os";
@@ -80,8 +76,9 @@ export function PainelPage() {
   const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // Custo de cada OS dos lançamentos, calculado pelo banco (`custo_das_ordens`):
+  // o Início não lê o cadastro de peças (#366).
+  const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
   const [contas, setContas] = useState<ContaPagar[]>([]);
   const [cartoesConfig, setCartoesConfig] = useState<CartaoMetrica[]>(CARTOES_INICIO_PADRAO);
   const [configFiscal, setConfigFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
@@ -129,8 +126,6 @@ export function PainelPage() {
           clientesCarregados,
           contasCarregadas,
           cartoesCarregados,
-          pecasCarregadas,
-          servicosCarregados,
           fiscalCarregada,
         ] = await Promise.all([
           podeVerCaixa ? listarMovimentosCaixa(lojaAtual.id) : Promise.resolve([]),
@@ -138,17 +133,20 @@ export function PainelPage() {
           podeVerClientes ? listarClientes() : Promise.resolve([]),
           podeVerContas ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
           buscarConfiguracaoPainelInicio(lojaAtual.id),
-          listarPecas(),
-          listarServicos(),
           buscarConfiguracaoFiscal(lojaAtual.id),
         ]);
+        // Sem o custo o lucro sairia inflado: se falhar, a tela mostra o erro.
+        const custos = podeVerCaixa
+          ? await buscarCustoDasOrdens(
+              movimentosCarregados.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
+            )
+          : new Map();
         setMovimentos(movimentosCarregados);
+        setCustoDasOrdens(custos);
         setOrdens(ordensCarregadas);
         setClientes(clientesCarregados);
         setContas(contasCarregadas);
         setCartoesConfig(cartoesCarregados);
-        setPecas(pecasCarregadas);
-        setServicos(servicosCarregados);
         setConfigFiscal(fiscalCarregada);
       } catch (err) {
         console.error("Erro ao carregar painel:", err);
@@ -182,27 +180,24 @@ export function PainelPage() {
   // (PROJETO_STATUS.md, seção 6, item 40).
   const { valores, variacoes } = useMemo(() => {
     const referencia = dataDaChave(chaveDeHoje);
-    const custoPeca = mapaCustoPecas(pecas);
-    const custoServico = mapaCustoServicos(servicos);
+    const custoDaOrdem = custoDaOrdemPeloBanco(custoDasOrdens);
 
     const atual = metricasDoPeriodo(
       movimentos,
       janelaDoMesAteODia(referencia),
-      custoPeca,
-      custoServico,
+      custoDaOrdem,
     );
     const anterior = metricasDoPeriodo(
       movimentos,
       mesmaJanelaNoMesAnterior(referencia),
-      custoPeca,
-      custoServico,
+      custoDaOrdem,
     );
 
     return {
       valores: valoresPorCartao(atual, contasVencendoAte(contas, referencia)),
       variacoes: variacoesPorCartao(atual, anterior),
     };
-  }, [movimentos, pecas, servicos, contas, chaveDeHoje]);
+  }, [movimentos, custoDasOrdens, contas, chaveDeHoje]);
 
   const filaDeAtendimento = ordens
     .filter((o) => o.status === "em_andamento")

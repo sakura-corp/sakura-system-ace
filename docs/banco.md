@@ -503,8 +503,9 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   (o estoque inicial da peça avulsa e a devolução da `editar_item_ordem` quando o item diminui);
   Fornecedores grava só entrada de `compra`. Programa que grava sem Estoque **não pode pedir a linha
   de volta** (`returning` exige leitura): por isso o `registrarMovimento` (sem `.select()`). O que a
-  `0073` traz: (a) a view **`pecas_janela`** (id, codigo_interno, codigo_barras, descricao, unidade,
-  preco_venda, prazo_garantia_dias, ativo; **nunca o custo**), filtrada por
+  `0073` traz: (a) a view **`pecas_janela`** (id, codigo_interno, codigo_barras, descricao, marca, modelo,
+  medida, unidade, preco_venda, prazo_garantia_dias, ativo e `sem_custo`: **sim/não**, se o custo
+  está em branco ou zero, pro aviso "peça sem preço de custo" da OS; **nunca o valor do custo**), filtrada por
   `operador_ativo_com_loja()`, só `select`; os `join` embutidos de Garantias, ficha do veículo e
   pedido de compra apontam pra ela; (b) a view **`estoque_saldos`** (peca_id, loja_id, saldo), só das
   lojas de quem pergunta: a OS e o balcão leem o saldo pronto em vez de todos os movimentos (cerca

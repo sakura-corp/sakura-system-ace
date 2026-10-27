@@ -117,8 +117,7 @@ describe("movimentosDaJanela e metricasDoPeriodo", () => {
         entrada(new Date(2026, 8, 5, 10, 1), 400, "os-1"),
       ],
       janela,
-      new Map(),
-      new Map(),
+      () => 0,
     );
     expect(metricas.vendas).toBe(1000);
     expect(metricas.ticketMedio).toBe(1000);

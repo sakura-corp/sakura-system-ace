@@ -20,7 +20,7 @@ import {
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { salvarArquivoEmitido } from "@/lib/notasFiscais";
 import { cadastrarPecaDoItem, PecaLigadaSemEstoqueError } from "@/lib/ordensServico";
-import { buscarPecasPorIds, listarPecas } from "@/lib/pecas";
+import { buscarDadosFiscaisDasPecas, listarPecasJanela } from "@/lib/pecas";
 import {
   itensQueImpedemNFCe,
   MENSAGEM_PECA_PRECISA_CADASTRO,
@@ -33,7 +33,7 @@ import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { ItemOS, OrdemServico } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaDadosFiscais, PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
 
 interface EmitirNotaFiscalModalProps {
@@ -103,10 +103,10 @@ export function EmitirNotaFiscalModal({
   const [erro, setErro] = useState("");
   const [configuracaoFiscal, setConfiguracaoFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
   const [cliente, setCliente] = useState<Cliente | null>(null);
-  const [pecasDaNota, setPecasDaNota] = useState<Peca[]>([]);
+  const [pecasDaNota, setPecasDaNota] = useState<PecaDadosFiscais[]>([]);
   // O cadastro inteiro da loja, só pro aviso de "peça parecida" no cadastro
   // de uma peça avulsa (#655).
-  const [cadastroDaLoja, setCadastroDaLoja] = useState<Peca[]>([]);
+  const [cadastroDaLoja, setCadastroDaLoja] = useState<PecaJanela[]>([]);
   // Peças avulsas que ganharam cadastro nesta janela (id do item → id da
   // peça): a `ordem` que chega por prop só se atualiza quando o pai recarrega.
   const [vinculadas, setVinculadas] = useState<Record<string, string>>({});
@@ -178,14 +178,14 @@ export function EmitirNotaFiscalModal({
         const [config, { cliente: clienteCompleto }, pecas, cadastro] = await Promise.all([
           buscarConfiguracaoFiscal(ordem.loja_id),
           buscarClienteEVeiculoDaOrdem(ordem.id),
-          idsDasPecas.length > 0 ? buscarPecasPorIds(idsDasPecas) : Promise.resolve([]),
+          buscarDadosFiscaisDasPecas(idsDasPecas),
           // Só serve ao aviso de peça parecida: se não vier, o cadastro abre igual.
           tipoNota === "NFC-e"
-            ? listarPecas().catch((err) => {
+            ? listarPecasJanela().catch((err) => {
                 console.error("Erro ao carregar o cadastro de peças:", err);
-                return [] as Peca[];
+                return [] as PecaJanela[];
               })
-            : Promise.resolve([] as Peca[]),
+            : Promise.resolve([] as PecaJanela[]),
         ]);
         setCadastroDaLoja(cadastro);
         setConfiguracaoFiscal(config);
@@ -208,7 +208,7 @@ export function EmitirNotaFiscalModal({
   // ou, pelo aviso de peça parecida, uma que já existia: o item passa a
   // apontar pra ela (e baixa o estoque, se a ordem já é OS), a janela confere
   // a nota de novo e o pai recarrega a OS.
-  async function aoLigarPeca(item: ItemOS, peca: Peca, recemCadastrada: boolean) {
+  async function aoLigarPeca(item: ItemOS, peca: PecaJanela, recemCadastrada: boolean) {
     setItemCadastrando(null);
     setErro("");
     let avisoEstoque = "";
@@ -237,7 +237,14 @@ export function EmitirNotaFiscalModal({
       avisoEstoque = err.message;
     }
     setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
-    setPecasDaNota((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
+    // A janela de peças não traz o NCM: os dados fiscais da peça ligada vêm
+    // do banco (a nota confere o NCM e o código de ICMS deles).
+    try {
+      const fiscais = await buscarDadosFiscaisDasPecas([peca.id]);
+      setPecasDaNota((lista) => [...lista.filter((p) => p.id !== peca.id), ...fiscais]);
+    } catch (err) {
+      console.error("Erro ao conferir os dados fiscais da peça ligada:", err);
+    }
     setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
     if (avisoEstoque) setErro(avisoEstoque);
     // Recarregar a OS fica à parte: se falhar, a peça JÁ entrou na OS.
@@ -260,7 +267,7 @@ export function EmitirNotaFiscalModal({
     setCarregando(true);
     try {
       const ids = itensPeca.map((item) => item.peca_id).filter((id): id is string => Boolean(id));
-      setPecasDaNota(ids.length > 0 ? await buscarPecasPorIds(ids) : []);
+      setPecasDaNota(ids.length > 0 ? await buscarDadosFiscaisDasPecas(ids) : []);
     } catch (err) {
       setErro(mensagemDeErro(err));
     } finally {
@@ -279,7 +286,7 @@ export function EmitirNotaFiscalModal({
     try {
       let resposta: RespostaFocusNfe;
       if (tipoNota === "NFC-e") {
-        const pecas = await buscarPecasPorIds(
+        const pecas = await buscarDadosFiscaisDasPecas(
           itensPeca.map((item) => item.peca_id).filter((id): id is string => Boolean(id)),
         );
         const itens = itensPeca

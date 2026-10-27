@@ -17,7 +17,7 @@ import { renderizar, screen, within } from "@/testes/tela";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { Cliente } from "@/types/cliente";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 
 const pecas = [
   {
@@ -47,7 +47,7 @@ const pecas = [
     preco_venda: 520,
     preco_custo: 390,
   },
-].map((p) => ({ modelo: null, medida: null, ativo: true, ...p }) as unknown as Peca);
+].map((p) => ({ modelo: null, medida: null, ativo: true, ...p }) as unknown as PecaJanela);
 
 const clientes = [
   { id: "cliente-1", nome: "Ana Souza", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09", veiculos: [] },

@@ -25,7 +25,7 @@ import { OrdemServicoForm } from "./OrdemServicoForm";
 import type { Cliente } from "@/types/cliente";
 import type { Funcionario } from "@/types/funcionario";
 import type { ItemOS, OrdemServico } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 
 // A aba Fechamento busca notas e caixa no banco; aqui só interessa o rodapé
@@ -35,11 +35,11 @@ vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => <div>aba fechamento</di
 beforeEach(() => localStorage.clear());
 
 const pecas = [
-  { id: "peca-1", descricao: "PNEU 175/70 R14", preco_venda: 400, preco_custo: 260 },
+  { id: "peca-1", descricao: "PNEU 175/70 R14", preco_venda: 400, sem_custo: false },
   // Sem preço de custo: infla o lucro da OS e a comissão do vendedor, e é
   // exatamente o caso que o aviso existe pra pegar na hora do lançamento.
-  { id: "peca-2", descricao: "PASTILHA DE FREIO", preco_venda: 180, preco_custo: null },
-].map((p) => ({ ...p, ativo: true, criado_em: "2026-01-01T00:00:00.000Z" }) as unknown as Peca);
+  { id: "peca-2", descricao: "PASTILHA DE FREIO", preco_venda: 180, sem_custo: true },
+].map((p) => ({ ...p, ativo: true }) as unknown as PecaJanela);
 
 const servicos = [
   { id: "servico-1", descricao: "Alinhamento", preco_padrao: 60, custo: 20 },
@@ -260,7 +260,8 @@ describe("OrdemServicoForm — os avisos avisam, e não trancam", () => {
 
   it("peça sem preço de custo avisa na hora do lançamento", async () => {
     // Antes isso só aparecia depois, na tela de Comissões — quando o número
-    // já estava errado e a OS já tinha sido paga.
+    // já estava errado e a OS já tinha sido paga. Desde a #366 o aviso vem do
+    // `sem_custo` da janela (sim/não), sem a tela ler o custo.
     const { user } = montar();
 
     await escolherNoCombobox(user, "Selecione a peça", "PASTILHA DE FREIO");
@@ -268,6 +269,7 @@ describe("OrdemServicoForm — os avisos avisam, e não trancam", () => {
     expect(screen.getByText(/sem preço de custo cadastrado/)).toBeInTheDocument();
     expect(screen.getByText(/comissão/)).toBeInTheDocument();
   });
+
 });
 
 describe("OrdemServicoForm — item impossível (as travas da migration 0060)", () => {

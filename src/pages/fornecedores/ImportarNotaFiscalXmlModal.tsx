@@ -5,7 +5,7 @@ import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { criarFornecedor } from "@/lib/fornecedores";
 import { extrairNotaFiscalXml, lerTextoXml, normalizarCnpj } from "@/lib/notaFiscalXmlFornecedor";
-import { criarPeca } from "@/lib/pecas";
+import { buscarDadosFiscaisDasPecas, cadastrarPecaRapida } from "@/lib/pecas";
 import { importarNotaFiscalCompra } from "@/lib/pedidosCompra";
 import {
   codigoParaPecaImportada,
@@ -17,7 +17,7 @@ import type { RegimeTributario } from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { ItemNotaFiscalXml, NotaFiscalXmlExtraida } from "@/types/notaFiscalXmlFornecedor";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 
 interface ItemRevisao extends ItemNotaFiscalXml {
   incluir: boolean;
@@ -29,7 +29,7 @@ interface ItemRevisao extends ItemNotaFiscalXml {
 
 interface ImportarNotaFiscalXmlModalProps {
   fornecedores: Fornecedor[];
-  pecas: Peca[];
+  pecas: PecaJanela[];
   depositos: Deposito[];
   lojaId: string;
   operadorId: string | null;
@@ -37,7 +37,7 @@ interface ImportarNotaFiscalXmlModalProps {
   onImportado: () => Promise<void>;
 }
 
-function encontrarPecaCorrespondente(item: ItemNotaFiscalXml, pecas: Peca[]): Peca | null {
+function encontrarPecaCorrespondente(item: ItemNotaFiscalXml, pecas: PecaJanela[]): PecaJanela | null {
   if (item.codigo_barras) {
     const porCodigoBarras = pecas.find((p) => p.codigo_barras === item.codigo_barras);
     if (porCodigoBarras) return porCodigoBarras;
@@ -70,9 +70,23 @@ export function ImportarNotaFiscalXmlModal({
   // O código de ICMS que as peças novas vão receber. Nasce com o que a loja
   // mais usa no próprio cadastro — não com o do fornecedor, que pode ser de
   // outro regime (ver `codigoParaPecaImportada`).
-  const [codigoIcmsNovas, setCodigoIcmsNovas] = useState(
-    () => csosnMaisUsado(pecas.map((peca) => peca.cst_ou_csosn)) ?? "",
-  );
+  // A janela de peças não traz o código fiscal: ele vem de
+  // `buscarDadosFiscaisDasPecas` (#366) e só preenche se a pessoa ainda não
+  // escolheu outro.
+  const [codigoIcmsNovas, setCodigoIcmsNovas] = useState("");
+  useEffect(() => {
+    let cancelado = false;
+    buscarDadosFiscaisDasPecas(pecas.map((peca) => peca.id))
+      .then((fiscais) => {
+        if (cancelado) return;
+        const maisUsado = csosnMaisUsado(fiscais.map((f) => f.cst_ou_csosn)) ?? "";
+        setCodigoIcmsNovas((atual) => atual || maisUsado);
+      })
+      .catch((err) => console.error("Erro ao carregar o código fiscal mais usado:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [pecas]);
 
   // O regime da loja decide se o código do fornecedor serve ou não. Falhar
   // aqui não pode derrubar a importação: sem regime, `codigoParaPecaImportada`
@@ -156,7 +170,7 @@ export function ImportarNotaFiscalXmlModal({
       for (const item of selecionados) {
         let pecaId = item.pecaId;
         if (!pecaId) {
-          const pecaCriada = await criarPeca({
+          const pecaCriadaId = await cadastrarPecaRapida({
             codigo_interno: null,
             codigo_barras: item.codigo_barras,
             descricao: item.descricao,
@@ -180,7 +194,7 @@ export function ImportarNotaFiscalXmlModal({
             prazo_garantia_dias: null,
             ativo: true,
           });
-          pecaId = pecaCriada.id;
+          pecaId = pecaCriadaId;
         }
         itensParaImportar.push({
           pecaId,

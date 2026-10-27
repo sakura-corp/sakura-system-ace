@@ -9,7 +9,7 @@ import {
 import { formatarMoeda } from "@/schemas/dinheiro";
 import { acharPecasParecidas, LIMITE_NOME_PARA_ORDENAR } from "@/schemas/pecaParecida";
 import type { ItemOS } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
 
 type Modo = "existente" | "cadastrar" | "sem_cadastro";
@@ -24,7 +24,7 @@ interface PecasAvulsasAprovacaoModalProps {
   /** As peças avulsas do orçamento (as que vieram sem `peca_id`). */
   itens: ItemOS[];
   /** O cadastro da loja: de onde se escolhe a peça que "já tenho". */
-  pecas: Peca[];
+  pecas: PecaJanela[];
   lojaId: string;
   /** Aprovando agora: trava os botões até a resposta voltar. */
   enviando: boolean;
@@ -51,7 +51,7 @@ export function PecasAvulsasAprovacaoModal({
 }: PecasAvulsasAprovacaoModalProps) {
   const [modos, setModos] = useState<Record<string, Modo>>({});
   const [escolhidas, setEscolhidas] = useState<Record<string, string>>({});
-  const [cadastradas, setCadastradas] = useState<Record<string, Peca>>({});
+  const [cadastradas, setCadastradas] = useState<Record<string, PecaJanela>>({});
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"

@@ -26,14 +26,13 @@ vi.mock("@/lib/ordensServico", () => ({
   VendaSemFaturamentoError: class extends Error {},
 }));
 vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
-vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));
+vi.mock("@/lib/pecas", () => ({ listarPecasJanela: async () => [] }));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/funcionarios", () => ({ listarFuncionariosPublico: async () => [] }));
 vi.mock("@/lib/configuracoes", () => ({ listarJurosParcelas: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens: async () => [] }));
 vi.mock("@/lib/estoque", () => ({
-  listarMovimentos: async () => [],
-  calcularSaldoPorPeca: () => new Map(),
+  listarSaldos: async () => new Map(),
 }));
 vi.mock("@/lib/modelosWhatsapp", () => ({
   listarModelosWhatsapp: async () => ({}),

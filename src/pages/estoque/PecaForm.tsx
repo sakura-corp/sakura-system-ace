@@ -18,7 +18,7 @@ import { acharPecasParecidas, MOTIVO_PARECIDA_ROTULO } from "@/schemas/pecaParec
 import type { PecaParecida } from "@/schemas/pecaParecida";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
-import type { NovaPeca, Peca } from "@/types/peca";
+import type { NovaPeca, Peca, PecaJanela } from "@/types/peca";
 import { DadosCadastraisFields } from "./campos/DadosCadastraisFields";
 import { PneuFields } from "./campos/PneuFields";
 import { PrecosFields } from "./campos/PrecosFields";
@@ -38,10 +38,12 @@ interface PecaFormProps {
   csosnSugerido: string | null;
   /** O cadastro de peças da loja, pra avisar quando a peça NOVA parece com uma
    *  que já existe. Sem isso (ou editando), não há aviso. */
-  pecasDoCadastro?: Peca[];
+  // Só precisa do que a janela de peças traz (#366): serve pro Estoque e pra
+  // quem cadastra peça rápida sem ter o módulo Estoque.
+  pecasDoCadastro?: PecaJanela[];
   /** O caminho do aviso "Abrir a que já existe": quem usa o formulário abre a
    *  peça escolhida em vez de cadastrar uma repetida. */
-  onAbrirExistente?: (peca: Peca) => void;
+  onAbrirExistente?: (peca: PecaJanela) => void;
   onSalvar: (peca: NovaPeca, quantidadeInicial: number | null) => Promise<void>;
   onCancelar: () => void;
 }
@@ -62,7 +64,7 @@ export function PecaForm({
   // e as parecidas; o modal fechado volta pro formulário sem perder nada.
   const [pendente, setPendente] = useState<{
     valores: PecaFormValues;
-    parecidas: PecaParecida<Peca>[];
+    parecidas: PecaParecida<PecaJanela>[];
   } | null>(null);
   const [gravandoPendente, setGravandoPendente] = useState(false);
 
@@ -123,7 +125,7 @@ export function PecaForm({
     }
   }
 
-  function abrirExistente(peca: Peca) {
+  function abrirExistente(peca: PecaJanela) {
     rascunho.limpar();
     setPendente(null);
     onAbrirExistente?.(peca);

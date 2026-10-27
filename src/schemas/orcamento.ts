@@ -243,3 +243,17 @@ export function lucroDaOrdem(
   }
   return { lucro: arredondarCentavo(totalOrdem(itens) - custo), custoNaoInformado: false };
 }
+
+/**
+ * Lucro da ordem a partir do custo que o banco calculou (`custo_das_ordens`):
+ * mesma regra de `lucroDaOrdem`, pra quem não lê o cadastro de peças (#366).
+ * Sem custo do banco ou com `completo = false` (peça avulsa sem custo),
+ * não há número.
+ */
+export function lucroDaOrdemPeloBanco(
+  itens: readonly Pick<ItemOS, "quantidade" | "preco_unitario" | "desconto">[],
+  doBanco: { custo: number; completo: boolean } | undefined,
+): LucroDaOrdem {
+  if (!doBanco || !doBanco.completo) return { lucro: null, custoNaoInformado: true };
+  return { lucro: arredondarCentavo(totalOrdem(itens) - doBanco.custo), custoNaoInformado: false };
+}

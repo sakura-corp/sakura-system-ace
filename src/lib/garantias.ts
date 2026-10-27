@@ -25,7 +25,7 @@ export async function listarItensComGarantia(): Promise<ItemGarantia[]> {
     supabase
       .from("ordens_servico_itens")
       .select(
-        "id, quantidade, peca:pecas(descricao, prazo_garantia_dias), " +
+        "id, quantidade, peca:pecas_janela(descricao, prazo_garantia_dias), " +
           "ordem:ordens_servico(id, status, data_fechamento, cliente:clientes_janela(nome), veiculo:veiculos_janela(id, placa))",
       )
       .eq("tipo", "peca")

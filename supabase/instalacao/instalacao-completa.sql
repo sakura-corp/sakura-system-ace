@@ -6530,14 +6530,21 @@ as
          p.unidade,
          p.preco_venda,
          p.prazo_garantia_dias,
-         p.ativo
+         p.ativo,
+         p.marca,
+         p.modelo,
+         p.medida,
+         -- SE falta o custo (em branco ou zero, a regra do avisoPecaSemCusto),
+         -- nunca QUANTO é: é o que mantém o aviso "peça sem preço de custo"
+         -- na OS e no balcão sem entregar o número.
+         coalesce(p.preco_custo, 0) = 0 as sem_custo
     from pecas p
    where (select operador_ativo_com_loja());
 
 comment on view pecas_janela is
   'TR-04.1 lote 5 (0073). A parte de `pecas` que quem não tem o módulo '
-  'Estoque pode ver: código, descrição, unidade, preço de venda, garantia e '
-  'se está ativa. Roda com os direitos do dono, então NÃO reage à RLS da '
+  'Estoque pode ver: código, descrição, marca, modelo, medida, unidade, preço '
+  'de venda, garantia, se está ativa e se está sem custo (sim/não, nunca o valor). Roda com os direitos do dono, então NÃO reage à RLS da '
   'tabela — é o where daqui que barra quem não é operador ativo com loja. '
   'Só SELECT é concedido: sem o revoke abaixo daria pra escrever na tabela '
   'por dentro dela. NUNCA acrescentar preco_custo.';

@@ -30,7 +30,7 @@ import {
   somarLinhasPagamento,
   type LinhaPagamentoValues,
 } from "./faturamento";
-import { resumirMovimentos, type MapaCusto } from "./metricasCaixa";
+import { custoDaOrdemPelosMapas, resumirMovimentos, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo } from "./dinheiro";
 import { valorLiquidoItem, type ItemParaNFCe } from "@/lib/focusNfe";
 import type { JurosParcela } from "@/types/configuracao";
@@ -300,7 +300,7 @@ describe("resumirMovimentos — propriedades", () => {
         fc.array(fc.integer({ min: 1, max: 100_000 }), { minLength: 1, maxLength: 6 }),
         (valoresEmCentavos) => {
           const movimentos = valoresEmCentavos.map((c) => movimentoDaOrdem(c / 100));
-          const resumo = resumirMovimentos(movimentos, custoPeca, custoServico);
+          const resumo = resumirMovimentos(movimentos, custoDaOrdemPelosMapas(custoPeca, custoServico));
           // 1 peça a R$40 + 1 serviço a R$10 = R$50, uma vez só.
           expect(centavos(resumo.custoDeAquisicao)).toBe(centavos(50));
           expect(resumo.ordensDistintas).toBe(1);
@@ -316,7 +316,7 @@ describe("resumirMovimentos — propriedades", () => {
         fc.array(fc.integer({ min: 1, max: 100_000 }), { minLength: 1, maxLength: 6 }),
         (valoresEmCentavos) => {
           const movimentos = valoresEmCentavos.map((c) => movimentoDaOrdem(c / 100));
-          const resumo = resumirMovimentos(movimentos, custoPeca, custoServico);
+          const resumo = resumirMovimentos(movimentos, custoDaOrdemPelosMapas(custoPeca, custoServico));
           const totalPago = valoresEmCentavos.reduce((a, b) => a + b, 0) / 100;
           expect(centavos(resumo.ticketMedio)).toBe(centavos(totalPago));
         },
@@ -331,7 +331,7 @@ describe("resumirMovimentos — propriedades", () => {
         fc.array(fc.integer({ min: 1, max: 100_000 }), { minLength: 1, maxLength: 6 }),
         (valoresEmCentavos) => {
           const movimentos = valoresEmCentavos.map((c) => movimentoDaOrdem(c / 100));
-          const r = resumirMovimentos(movimentos, custoPeca, custoServico);
+          const r = resumirMovimentos(movimentos, custoDaOrdemPelosMapas(custoPeca, custoServico));
           expect(centavos(r.lucro)).toBe(
             centavos(r.entradas) - centavos(r.saidas) - centavos(r.custoDeAquisicao),
           );

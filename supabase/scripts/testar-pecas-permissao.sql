@@ -39,6 +39,8 @@ declare
   cliente  uuid := '36602222-0000-0000-0000-000000000001';
   p1       uuid := '36605555-0000-0000-0000-000000000001';  -- custo 30,00, venda 50,00
   p2       uuid := '36605555-0000-0000-0000-000000000002';  -- custo 12,50, venda 20,00
+  p3       uuid := '36605555-0000-0000-0000-000000000003';  -- custo 0 (sem custo), fora de `todos`
+  p4       uuid := '36605555-0000-0000-0000-000000000004';  -- custo em branco, fora de `todos`
   s1       uuid := '36606666-0000-0000-0000-000000000001';  -- serviço com custo 40,00
   os_1     uuid := '36604444-0000-0000-0000-000000000001';  -- loja A, a "completa"
   os_2     uuid := '36604444-0000-0000-0000-000000000002';  -- loja A, avulsa sem custo
@@ -87,6 +89,11 @@ begin
   insert into pecas (id, descricao, codigo_interno, unidade, preco_custo, preco_venda, ncm, cfop_padrao, origem, cst_ou_csosn, aliquota_icms) values
     (p1, 'Pneu de teste (#366)',    'T366-1', 'UN', 30.00, 50.00, '40111000', '5102', '0', '102', 18.00),
     (p2, 'Válvula de teste (#366)', 'T366-2', 'UN', 12.50, 20.00, '84818099', '5102', '0', '102', 18.00)
+    on conflict (id) do nothing;
+  -- As duas sem custo ficam fora de `todos`: só servem pro `sem_custo` da janela.
+  insert into pecas (id, descricao, preco_custo, preco_venda, marca, modelo, medida) values
+    (p3, 'Pneu sem custo (#366)',     0,    90.00, 'Marca X', 'Modelo Y', '175/70 R14'),
+    (p4, 'Válvula sem custo (#366)',  null, 10.00, null, null, null)
     on conflict (id) do nothing;
   insert into servicos (id, descricao, custo, ativo) values
     (s1, 'Montagem de teste (#366)', 40.00, true)
@@ -189,7 +196,8 @@ begin
    where table_schema = 'public'
      and ((table_name = 'pecas_janela'
            and column_name not in ('id','codigo_interno','codigo_barras','descricao','unidade',
-                                   'preco_venda','prazo_garantia_dias','ativo'))
+                                   'preco_venda','prazo_garantia_dias','ativo',
+                                   'marca','modelo','medida','sem_custo'))
        or (table_name = 'estoque_saldos' and column_name not in ('peca_id','loja_id','saldo')));
   if problema is not null then
     raise exception 'FALHOU: a janela ganhou coluna fora do combinado: %', problema;
@@ -197,8 +205,8 @@ begin
   select count(*) into quantas
     from information_schema.columns
    where table_schema = 'public' and table_name in ('pecas_janela', 'estoque_saldos');
-  if quantas <> 11 then
-    raise exception 'FALHOU: as duas janelas deviam ter 8 + 3 colunas e têm %', quantas;
+  if quantas <> 15 then
+    raise exception 'FALHOU: as duas janelas deviam ter 12 + 3 colunas e têm %', quantas;
   end if;
   -- e a função fiscal também não devolve custo
   select count(*) into quantas
@@ -420,6 +428,19 @@ begin
   select preco_venda into numero from pecas_janela where id = p1;
   if numero is distinct from 50.00 then
     raise exception 'FALHOU: a janela devia dar o preço de venda 50,00 do pneu e deu %', numero;
+  end if;
+  -- o aviso "peça sem preço de custo" da OS: a janela diz SE falta custo
+  -- (em branco ou zero, a regra do avisoPecaSemCusto), nunca quanto é
+  select count(*) into quantas from pecas_janela
+   where (id = p1 and not sem_custo) or (id = p3 and sem_custo) or (id = p4 and sem_custo);
+  if quantas <> 3 then
+    raise exception 'FALHOU: o sem_custo da janela devia ser falso no pneu (custo 30) e verdadeiro nas peças de custo 0 e em branco; acertou % de 3', quantas;
+  end if;
+  -- a busca por medida do pneu no balcão (marca, modelo e medida vêm na janela)
+  select count(*) into quantas from pecas_janela
+   where id = p3 and medida = '175/70 R14' and marca = 'Marca X' and modelo = 'Modelo Y';
+  if quantas <> 1 then
+    raise exception 'FALHOU: a janela devia trazer marca, modelo e medida do pneu sem custo';
   end if;
 
   -- 16. o saldo da loja dele, e só dela
