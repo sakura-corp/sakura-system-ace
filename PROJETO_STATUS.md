@@ -158,9 +158,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 27/10/2026, tarde: a #787 mesclada (serviços padrão da empresa nova)
-- **Feito**: o PR #811 (migration **0072**) mesclado; a #787 fechou. Empresa nova (banco sem OS) ganha 39 serviços sem preço e 3 categorias (Óleo e Filtros, Elétrica, Ar-condicionado); loja em uso não recebe nada. Detalhe em `docs/banco.md`.
-- **A #366 está liberada** (a #706 e a #787 mescladas).
-- **Ordem da leva 5**: a #366, depois a #367. A #803 continua sem leva.
+### 27/10/2026, noite: a #366 com o Tiago; o painel congelado
+- **A #366 começou na sessão do Tiago.** Sofia respondeu as 3 perguntas ("1 sim, 2a, 3 sim"): a janela da peça ganha garantia, unidade e ativo; quem tem Funcionários também vê o custo. No fim, **2 migrations pra ela rodar**, na ordem.
+- **O ritual de tarefa acompanha o PR** até ela mesclar (#813; o mesmo no escritório).
+- **O painel vai pro escritório** (escritorio#7, leva 1 de lá). **O `painel/` daqui está congelado** até a #814 (aprovada, sem leva até a escritorio#8, que é dela).
 - **Depende dela**: a 0071 **e** a 0072 nas empresas **antes** de publicar a 0.9.55 (#809; a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
-- **Próxima sessão (da Sofia)**: a #366.
+- **Próximo**: revisar o PR da #366 quando o Tiago abrir; depois a #367.
