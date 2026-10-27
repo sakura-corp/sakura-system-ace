@@ -138,6 +138,14 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
    pelo limite com item aberto, o que falta vai em "Onde parou".
 4. Se a cota acabar no meio: "onde parou" na descrição do PR ou da issue, com a lista das filhas e
    das branches, pra outra sessão retomar.
+5. **Acompanhar o PR até ele ser mesclado ou fechado** (Sofia, 27/10/2026: na #3 do escritório a
+   sessão parou no "agora é com você", e a pessoa não achou a revisão dela). Logo depois de abrir o
+   PR, chamar `subscribe_pr_activity` nele. **Nunca** terminar com "agora é com você" sem estar
+   acompanhando. Quando a revisão da Sofia chegar, contar à pessoa em português simples o que ela
+   pediu, com o link direto da revisão, e já corrigir o que for da tarefa (conferências de novo,
+   push e pedir a revisão dela outra vez). PR mesclado ou fechado: `unsubscribe_pr_activity`.
+   **Sem `subscribe_pr_activity`** (o Claude do PC não tem): dizer à pessoa onde olhar, com o link
+   do PR e "aba Conversation, lá embaixo", e pra colar esse link numa sessão quando a Sofia responder.
 
 ## 7. Limites (valem sempre)
 Os da skill do chefe e da seção 0 do `PROJETO_STATUS.md`: nunca mesclar, publicar, liberar, rodar
