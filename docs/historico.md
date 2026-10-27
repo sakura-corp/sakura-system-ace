@@ -35,6 +35,12 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 26/10/2026, manhã: a apresentação pronta e as três tarefas dela mescladas
+- **Na `main`**: textos (#795, #784), lista de serviços com faixa de preço de mercado e fonte (#798, #786, feita pela Sofia; no instalador entram **sem preço**), PDF (#799, #785) e a versão "só o sistema, nada da venda", 15 slides (#800). Loja inventada crescendo 12% (lucro em verde) e sem sombra com desfoque, que o iPhone pinta como retângulo (`docs/licoes.md`, item 93).
+- **Regras da apresentação** (no topo de `apresentacao/textos-da-apresentacao.md`): nenhum nome de pessoa (o cliente fala com a equipe da Sakura Corp); contato pelo e-mail da empresa; o WhatsApp só entra no PDF, nunca no repositório.
+- **Depende dela**: mandar o PDF ao cliente na terça 27/10 (condições da venda: no privado); responder a #782 até quarta; publicar a 0.9.55 no próximo dia de teste; decidir se a diferença de R$ 0,09 da comissão (foto de Comissões) vira tarefa; voltar a internet do ambiente da nuvem pra Limitado, se quiser.
+- **Próxima sessão**: leva 5 que falta: #706, #787 (usar `docs/servicos-padrao.md`) e, depois da #782, #366 e #367. Abertos de passagem: #790 e #791.
+
 ### 24/10/2026, madrugada: a leva 5 montada e a apresentação preparada (coordenadora)
 - **Na `main`**: painel em ordem de prioridade (#776); levantamento do que falta pra apresentar (#777, `apresentacao/o-que-falta-pra-apresentar.md`); dados de mentira sem contradição (#780) e margem com vírgula e barra da OS (#781), pras fotos.
 - **Leva 5 = a primeira empresa cliente**, em ordem: #784 textos, #785 PDF, #786 serviços típicos, #706, #787, #366, #367. Leva 6: #454, #456, #372, #459, #708, #699. Contrato e pagamento: no privado (aprovados pelo advogado).
