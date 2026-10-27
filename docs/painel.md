@@ -1,5 +1,9 @@
 # Painel da equipe: manual
 
+> **⛔ Congelado desde 27/10/2026 (Sofia)**: o painel está se mudando pro `sakura-corp/escritorio`
+> (escritorio#7). **Nenhum PR novo no `painel/` daqui** até a #814, que tira a pasta. Mudança no
+> painel, só lá, depois da escritorio#7 mesclada.
+
 > Pra quem está construindo o painel, e pro Claude dessa pessoa. **Antes de tudo, a seção 0 do
 > `PROJETO_STATUS.md`** ("Quem está trabalhando?"): ela manda mais que este arquivo. As decisões
 > abaixo são da Sofia (29 e 30/09/2026). Mudar alguma delas é conversa com ela, não escolha de

@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 27/10/2026, tarde: a #787 mesclada (serviços padrão da empresa nova)
+- **Feito**: o PR #811 (migration **0072**) mesclado; a #787 fechou. Empresa nova (banco sem OS) ganha 39 serviços sem preço e 3 categorias (Óleo e Filtros, Elétrica, Ar-condicionado); loja em uso não recebe nada. Detalhe em `docs/banco.md`.
+- **A #366 está liberada** (a #706 e a #787 mescladas).
+- **Ordem da leva 5**: a #366, depois a #367. A #803 continua sem leva.
+- **Depende dela**: a 0071 **e** a 0072 nas empresas **antes** de publicar a 0.9.55 (#809; a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
+- **Próxima sessão (da Sofia)**: a #366.
+
 ### 27/10/2026, manhã: o PR #802 do Tiago mesclado (#706)
 - **Feito**: o #802 (acrescentar, corrigir e aprovar orçamento com a OS travada, migration 0071) foi revisado, ajustado pelo Tiago em 6 pontos, testado no PC dele e mesclado; a #706 fechou. O banco de teste já está na 71.
 - **Aberta**: a #803 (cadastrar peça do item e faturar, ainda sem trava; faturar mexe com dinheiro, então opções antes de programar). Sem leva ainda.
