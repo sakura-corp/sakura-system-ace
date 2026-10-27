@@ -19,6 +19,8 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   projetos secundários**, com a proposta aprovada, **o Gusta escreve as tarefas e mescla os PRs**
   (CI verde e uma revisão do Claude antes). **No SSACE nada muda**: tudo deste manual vale inteiro.
   Fluxo, etiquetas e o que nunca é sem a Sofia: `docs/projetos-secundarios.md`.
+- **O Tiago** (Sofia, 27/10/2026): rascunho de tarefas, o escritório e o plantão. Ver "As funções
+  do Tiago", mais abaixo.
 
 ## Primeiro dia (computador pronto, sem programar)
 
@@ -398,20 +400,44 @@ um passo por vez. Se a sua sessão não tiver a ferramenta citada, diga isso e s
    (`send_later`) e, na hora, a mesma sessão volta sozinha de onde parou. Bom pra quando a cota
    acaba no meio, junto com o "onde parou" no PR.
 7. **Uma revisão do zero antes de abrir o PR.** Digite `/code-review`: um revisor lê o diff sem
-   saber o que você quis fazer e acha o que o teste não pega. Em PR grande é obrigatório (seção 3
-   do `PROJETO_STATUS.md`); em PR pequeno, vale do mesmo jeito.
+   saber o que você quis fazer e acha o que o teste não pega. **Obrigatória em todo PR desde
+   27/10/2026**, grande ou pequeno: conserte o que for de verdade e **cole o resumo no PR** (seção
+   "Revisão de código": o que achou, o que consertou, o que descartou e por quê). Assim a revisão
+   gasta a sua cota, e a Sofia só lê o resumo.
 8. **O `/goal` do chefe** (seção "Começar uma tarefa com o chefe", acima): a sessão vai sozinha até
    o PR, sem você mandar "continua".
 
 **O que não ligar**: rotina agendada (que roda sozinha de hora em hora, por exemplo) e conferência
-automática dos PRs dos outros. Gastam a cota de quem criou, e conferir PR é trabalho da Sofia. Nenhuma destas funções muda a regra: **nunca mesclar**.
+automática dos PRs dos outros. Gastam a cota de quem criou, e conferir PR é trabalho da Sofia.
+**Exceção**: as rotinas do escritório que a tarefa mandar ligar (a "caixa da Sofia", no Tiago). Nenhuma destas funções muda a regra: **nunca mesclar** (fora o plantão do Tiago, abaixo).
+
+## As funções do Tiago (Sofia, 27/10/2026)
+
+O motivo: a cota do Claude da Sofia é o que mais falta na empresa. Se ela acaba, tudo para. Então o
+trabalho que não precisa ser dela passa a rodar na cota do Tiago. **As decisões continuam dela.**
+
+1. **Rascunho de tarefas.** Quando a Sofia (ou uma reunião do escritório) disser o que precisa ser
+   feito, o Tiago pede ao Claude: *"escreve o rascunho da tarefa de X"*. O Claude usa a skill
+   `nova-tarefa`, cria a issue com a etiqueta **`rascunho`** e põe no corpo o que é decisão dela
+   ("Pra Sofia decidir", com a recomendação). Ninguém começa um rascunho. Com o "aprovada" dela, sai
+   o `rascunho` e entra a `leva-N` (`docs/tarefas.md`, "Quem escreve a tarefa").
+2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado, nasce depois que a Sofia
+   criar): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
+   regras de lá ficam no próprio repositório.
+3. **O plantão.** Só quando a Sofia avisar que a cota dela acabou (ela manda "plantão ligado" e
+   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`) ou do
+   `painel/`**, com: o CI verde, a revisão de código colada no PR, e a **aprovação de outro da
+   equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
+   publicar e liberar **nunca**: esses esperam a Sofia. Depois de mesclar, um comentário no PR:
+   "mesclado no plantão", pra ela ver na volta.
 
 ## O que nunca fazer (e a quem perguntar)
 
 As regras completas são as da seção 0 do `PROJETO_STATUS.md`. Em resumo, **nunca**:
 - **mesclar** um PR (nem o próprio), nem mexer direto na `main`. **Única exceção**: o Gusta, **só
   nos projetos secundários**, mescla os PRs de lá, com CI verde e uma revisão do Claude antes
-  (`docs/projetos-secundarios.md`). No SSACE, ninguém da equipe mescla;
+  (`docs/projetos-secundarios.md`). No SSACE, ninguém da equipe mescla, fora o **plantão do Tiago**
+  ("As funções do Tiago", acima);
 - **publicar ou liberar** versão, nem disparar o "Atualizar o banco";
 - **rodar SQL ou migration** em Supabase nenhum, **nem no de teste**. Se a tarefa precisar de
   migration, ela vem escrita no PR, e quem aplica é a Sofia;

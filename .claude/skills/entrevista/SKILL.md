@@ -76,8 +76,8 @@ Uma lista curta, em português simples:
 - **Pro caderno**: o que a entrevista mostrou do jeito da pessoa (como ela gosta de decidir, de
   receber pergunta), se mudou algo. Só anotado aqui; quem grava é a `fechar`, depois do "confere".
 
-Sugira seguir com a `nova-tarefa`. **Só a Sofia escreve tarefa**: se quem entrevistou é outra
-pessoa, diga que a lista vai pra ela.
+Sugira seguir com a `nova-tarefa`. **Só a Sofia escreve tarefa, ou o Tiago em rascunho** (seção 0):
+se quem entrevistou é outra pessoa, diga que a lista vai pra ela (ou pro Tiago escrever o rascunho).
 
 ## 8. O que NÃO fazer
 - Não crie `GLOSSARY.md` nem `docs/adr/`: não são do nosso jeito.
