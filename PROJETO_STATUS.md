@@ -158,9 +158,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 27/10/2026: o escritório da Sakura (Alfred, agentes, reuniões e a cota da equipe)
-- **Visto**: o "Alfred" (kit de assistente de um vídeo). **Não instalar** (duplica a Bibi); as ideias ficaram numa lista no privado.
-- **Decidido**: o SSACE continua público (fechar: na gaveta, com a conta no privado); nasceu o **`sakura-corp/escritorio`** (privado: o painel vai pra lá, os agentes, as reuniões), marcado por enquanto como projeto secundário pra aparecer no painel. **Regras novas** (#804): o **Tiago** escreve rascunhos de tarefa (`rascunho`), lidera o escritório e faz o plantão; todo PR da equipe chega com a revisão colada. Motivo: a cota da Sofia é a mais escassa.
-- **O plano** (a reunião `/reuniao` com 4 agentes e um secretário, o painel indo pro escritório, a sala de reunião e a esteira na Sala, a Recepção e a caixa da Sofia): no privado (`planos/2026-10-27-escritorio.md`) e, sem nada privado, no índice do escritório.
-- **Depende dela**: mandar a mensagem pro Tiago e confirmar a conta dele; o que já estava de 26/10 (#782, publicar a 0.9.55, a comissão).
-- **Próxima sessão (do Tiago, no escritório)**: o rascunho da tarefa da reunião. Da Sofia: a leva 5 que falta (#706, #787, #366, #367).
+### 27/10/2026, noite: o que depende de cada um
+- **Feito**: a mensagem pro Tiago e a conta dele (`tigasss1`) estão certas.
+- **Esperando a equipe**: o Tiago com os ajustes do #802 (uma sessão acompanha o PR) e o rascunho da tarefa da reunião, no escritório; o Lázaro ajeitando o PC; o Gusta pegando tarefas.
+- **Depende dela**: decidir a #782 (ela segura a #366 e a #367), publicar a 0.9.55 (a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
+- **Próxima sessão (da Sofia)**: a decisão da #782 e depois a leva 5 que falta (#706, #787, #366, #367).

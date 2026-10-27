@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 27/10/2026, madrugada: o escritório da Sakura (Alfred, agentes, reuniões e a cota da equipe)
+- **Visto**: o "Alfred" (kit de assistente de um vídeo). **Não instalar** (duplica a Bibi); as ideias ficaram numa lista no privado.
+- **Decidido**: o SSACE continua público (fechar: na gaveta, com a conta no privado); nasceu o **`sakura-corp/escritorio`** (privado: o painel vai pra lá, os agentes, as reuniões), marcado por enquanto como projeto secundário pra aparecer no painel. **Regras novas** (#804): o **Tiago** escreve rascunhos de tarefa (`rascunho`), lidera o escritório e faz o plantão; todo PR da equipe chega com a revisão colada. Motivo: a cota da Sofia é a mais escassa.
+- **O plano** (a reunião `/reuniao` com 4 agentes e um secretário, o painel indo pro escritório, a sala de reunião e a esteira na Sala, a Recepção e a caixa da Sofia): no privado (`planos/2026-10-27-escritorio.md`) e, sem nada privado, no índice do escritório.
+- **Depende dela**: mandar a mensagem pro Tiago e confirmar a conta dele; o que já estava de 26/10 (#782, publicar a 0.9.55, a comissão).
+- **Próxima sessão (do Tiago, no escritório)**: o rascunho da tarefa da reunião. Da Sofia: a leva 5 que falta (#706, #787, #366, #367).
+
 ### 26/10/2026, manhã: a apresentação pronta e as três tarefas dela mescladas
 - **Na `main`**: textos (#795, #784), lista de serviços com faixa de preço de mercado e fonte (#798, #786, feita pela Sofia; no instalador entram **sem preço**), PDF (#799, #785) e a versão "só o sistema, nada da venda", 15 slides (#800). Loja inventada crescendo 12% (lucro em verde) e sem sombra com desfoque, que o iPhone pinta como retângulo (`docs/licoes.md`, item 93).
 - **Regras da apresentação** (no topo de `apresentacao/textos-da-apresentacao.md`): nenhum nome de pessoa (o cliente fala com a equipe da Sakura Corp); contato pelo e-mail da empresa; o WhatsApp só entra no PDF, nunca no repositório.
