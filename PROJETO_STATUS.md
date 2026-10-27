@@ -158,8 +158,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 27/10/2026, fim da noite: a #782 decidida
-- **Feito**: a #782 está decidida e fechada. Ninguém vê o custo da peça sem Estoque ou Relações, o Caixa e o Início recebem o custo total pronto, e cada módulo vê da OS só o que já mostra hoje. A #366 e a #367 foram reescritas no modelo e estão prontas pra pegar.
-- **Ordem da leva 5**: a #706 (o Tiago, PR #802) e a #787, depois a #366 (que depende das duas), depois a #367.
-- **Depende dela**: publicar a 0.9.55 (a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
-- **Próxima sessão (da Sofia)**: a #787 e acompanhar a #706, pra liberar a #366.
+### 27/10/2026: o PR #802 do Tiago mesclado (#706)
+- **Feito**: o #802 (acrescentar, corrigir e aprovar orçamento com a OS travada, migration 0071) foi revisado, ajustado pelo Tiago em 6 pontos, testado no PC dele e mesclado; a #706 fechou. O banco de teste já está na 71.
+- **Aberta**: a #803 (cadastrar peça do item e faturar, ainda sem trava; faturar mexe com dinheiro, então opções antes de programar). Sem leva ainda.
+- **Ordem da leva 5**: a #787, depois a #366 (já liberada pela #706), depois a #367.
+- **Depende dela**: a 0071 nas empresas **antes** de publicar a 0.9.55 (#809; a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
+- **Próxima sessão (da Sofia)**: a #787, pra liberar a #366.

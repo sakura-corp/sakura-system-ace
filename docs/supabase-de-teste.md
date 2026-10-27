@@ -246,6 +246,13 @@ com o de uma do exemplo), o script pode parar com erro: aí use o "zerar e recom
 migration. (O teste fica **fora** do botão "Atualizar o banco de todas as empresas": decidido pela Sofia em
 19/10/2026, #517.)
 
+**Migration que ainda está num PR** (não chegou na `main`): o link do Passo 3 traz a instalação
+**da `main`**, sem ela. Use o mesmo endereço trocando `main` pelo nome da branch do PR, por exemplo
+`https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/<branch-do-pr>/supabase/instalacao/instalacao-completa.sql`.
+Antes, confira que a branch está em dia com a `main` (senão falta migration de outro PR) e que a
+última linha traz o número **novo** (`values (71)`, por exemplo). Feito assim pela primeira vez em
+27/10/2026, na 0071 do PR #802.
+
 **Começar do zero de verdade** (raro): Project Settings → General → **Delete project**, e refazer
 do Passo 2. Os logins somem junto; refaça o Passo 6 e mande Sends novos.
 
