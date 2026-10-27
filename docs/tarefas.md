@@ -32,6 +32,7 @@ formatos de issue convivendo, e nenhuma das 80 abertas tinha chefe ou leva.
 | `sofia` | **só a Sofia faz ou decide** (decisão, conta, órgão, loja). **Nunca** em tarefa de programar. |
 | `guia` | ideia do guia de melhorias, ainda **fora do modelo** (vira tarefa no modelo quando entrar numa leva) |
 | `ideia` | ideia solta guardada pela skill `/ideia`; **não é tarefa**, é lida na revisão do mês (R1) |
+| `rascunho` | tarefa escrita pelo Tiago, **esperando a aprovação da Sofia**; ninguém começa. Sai quando ela aprova (e entra a `leva-N`) |
 
 Nos **projetos secundários**, as tarefas usam as mesmas etiquetas, no repositório de cada projeto
 (com `leva-N` contada a partir de 1 em cada um); as **propostas** de projeto têm etiquetas próprias,
@@ -161,7 +162,12 @@ Dentro da sessão, a mãe faz o mesmo sozinha com ajudantes e filhas (skill `rit
 
 ## Quem escreve a tarefa
 
-- **No SSACE**: só a Sofia, com o Claude dela (skill `nova-tarefa`). A equipe não escreve tarefa.
+- **No SSACE**: a Sofia, com o Claude dela (skill `nova-tarefa`), **ou o Tiago, em rascunho**
+  (Sofia, 27/10/2026: o trabalho de escrever sai da cota dela). O Claude do Tiago usa a mesma skill,
+  cria a issue **com a etiqueta `rascunho`** e sem `leva-N` (então ela não entra no painel nem é
+  pega por ninguém). A Sofia lê e responde "aprovada" ou "muda X"; com o "aprovada", a sessão dela
+  (ou a do Tiago, se ela mandar) tira o `rascunho` e põe a `leva-N`. Quem decide **o que** entra
+  continua sendo ela. O resto da equipe não escreve tarefa.
 - **Exceção, só nos projetos secundários** (Sofia, 22/10/2026, #733): com a proposta aprovada, o
   **Gusta** cria as tarefas do projeto, **neste mesmo modelo**, abre e fecha as levas de lá e mescla
   os PRs (CI verde e uma revisão do Claude antes). Tarefa que toca cobrança, preço, contrato,

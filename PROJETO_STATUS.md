@@ -31,7 +31,14 @@ na frente de qualquer outra deste arquivo:
   sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
   Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
 - **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão da Sofia no PR e para ali. A
-  `main` nem aceita sem a aprovação dela (ruleset `main protegida`).
+  `main` nem aceita sem a aprovação dela (ruleset `main protegida`). **Antes de pedir**, roda o
+  `/code-review` na própria sessão e cola o resumo no PR (27/10: a revisão gasta a cota de quem fez,
+  não a dela).
+- **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
+  do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
+  escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
+  avisar que a cota dela acabou, mescla PR **só de documentação ou do `painel/`**, com o CI verde, a
+  revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
   nova pode ser escrita num PR, mas quem aplica é ela.
@@ -151,9 +158,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 24/10/2026, madrugada: a leva 5 montada e a apresentação preparada (coordenadora)
-- **Na `main`**: painel em ordem de prioridade (#776); levantamento do que falta pra apresentar (#777, `apresentacao/o-que-falta-pra-apresentar.md`); dados de mentira sem contradição (#780) e margem com vírgula e barra da OS (#781), pras fotos.
-- **Leva 5 = a primeira empresa cliente**, em ordem: #784 textos, #785 PDF, #786 serviços típicos, #706, #787, #366, #367. Leva 6: #454, #456, #372, #459, #708, #699. Contrato e pagamento: no privado (aprovados pelo advogado).
-- **Leva 4 aprovada sem testes** (24/10, `docs/relatorios/leva-4.md`): os testes dela ficam pros 10 a 15 dias antes do próximo cliente; a leva 5 é a atual. O Tiago (sem PC até segunda) tem a #784 e a #786, com o selinho novo "pra Tiago, pelo celular" no painel (#794, linha `Reservada pra:`).
-- **Depende dela**: revisar e mesclar os PRs da leva 5 (dom. à noite e seg.); responder a #782 até quarta (Lázaro); mandar a apresentação ao cliente na terça 27/10; publicar a 0.9.55 no próximo dia de teste.
-- **Próxima sessão**: revisar os PRs da leva 5 que chegarem (o #785 só depois das fotos de segunda). Abertos de passagem: #790 (pagamento cru no Caixa) e #791 (Lucratividade e margem, `sofia`). Memorando assinado por todos em 25/10 (#632 fechada; a alteração do contrato social é a #796).
+### 27/10/2026, noite: o que depende de cada um
+- **Feito**: a mensagem pro Tiago e a conta dele (`tigasss1`) estão certas.
+- **Esperando a equipe**: o Tiago com os ajustes do #802 (uma sessão acompanha o PR) e o rascunho da tarefa da reunião, no escritório; o Lázaro ajeitando o PC; o Gusta pegando tarefas.
+- **Depende dela**: decidir a #782 (ela segura a #366 e a #367), publicar a 0.9.55 (a última no ar é a 0.9.54), a comissão (#502), o manual da NFS-e **até 01/11** (#503), conferir o "Resumo de segunda" (#625).
+- **Próxima sessão (da Sofia)**: a decisão da #782 e depois a leva 5 que falta (#706, #787, #366, #367).

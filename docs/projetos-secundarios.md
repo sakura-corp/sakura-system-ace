@@ -17,7 +17,8 @@ Cada um mora no **seu próprio repositório privado** da `sakura-corp`, criado a
 - **O Gusta (Gustavo, `GustavoSakuras`) guia os projetos secundários.** Ele organiza; **não é dono
   sozinho**: todo mundo trabalha em tudo, decide junto e cuida do pós-venda junto.
 - **O SSACE não muda em nada**: lá continuam valendo inteiras as regras da seção 0 do
-  `PROJETO_STATUS.md` (a equipe não escreve tarefa e nunca mescla).
+  `PROJETO_STATUS.md` (a equipe não escreve tarefa e nunca mescla; as únicas exceções são as
+  funções do Tiago, de 27/10, ditas lá).
 
 ## O fluxo, da ideia ao repositório
 

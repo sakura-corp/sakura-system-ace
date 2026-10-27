@@ -8,8 +8,12 @@ effort: medium
 # Nova tarefa (ou reescrever uma) — Sakura System
 
 Fale **sempre em português simples**. O formato, as etiquetas e a tabela de modelos estão em
-`docs/tarefas.md`: leia antes. **Só a Sofia** cria ou edita tarefa por aqui (seção 0 do
-`PROJETO_STATUS.md`); a equipe pode pedir um rascunho, mas quem aprova e cria é ela.
+`docs/tarefas.md`: leia antes. **Quem usa**: a Sofia, ou o **Tiago, em rascunho** (seção 0 do
+`PROJETO_STATUS.md`, 27/10/2026). Com o Tiago, o passo 3 muda: em vez de mostrar e esperar o
+"pode criar", a issue é criada **com a etiqueta `rascunho` e sem `leva-N`, `chefe:` nem
+`Prioridade`**, e o Tiago pede a aprovação da Sofia (a caixa da Sofia mostra a ela). As perguntas
+que são decisão dela (o "Depende de" com `sofia`, o second brain, a prioridade) entram no corpo da
+issue como "**Pra Sofia decidir**", com a recomendação. O resto da equipe não usa esta skill.
 
 ## 1. Juntar o que a tarefa precisa
 1. Se for reescrever: ler a issue inteira e os comentários, e o que ela cita (`MELHORIAS.md`,
