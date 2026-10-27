@@ -68,9 +68,11 @@
   levas do custo ao mesmo tempo, CSOSN à parte no cadastro rápido, erro do NCM na nota): sem teste
   novo; passaram typecheck, lint e a suíte.
 - `npm run contraste:telas` (rodado pelo ajudante de telas): sem reprovação nova.
+- `npm run largura:telas`: no CI reprovou o pedido de compra (o banco falso das telas geradas não
+  tinha a `pecas_janela`, e o botão "Novo pedido" ficava travado). Ensinei o banco falso
+  (`site/ferramentas/`) e rodei de novo na sessão: 65 telas em 5 larguras, nenhuma falha.
 
 ## O que ficou de fora
-- **`npm run largura:telas`**: travou mais de 10 minutos na nuvem; precisa rodar no PC.
 - **Fechar `cotacoes_pecas` e `pedidos_compra_itens`**: guardam o preço de compra, que costuma ser
   o custo. Fora da lista de arquivos; declarado em `docs/banco.md` e `docs/licoes.md`. Sugiro um lote
   de Fornecedores.
