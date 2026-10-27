@@ -182,3 +182,12 @@ de 27/10.
     - a aprovação procura as peças duas vezes (opcional);
     - as telas ainda conferem `lojaAtual` antes de chamar (opcional);
     - a falta de `versao-minima-do-programa` foi decisão da Sofia.
+
+## Teste no PC (27/10, Tiago, no Supabase de teste com a 0071 aplicada)
+- **Em orçamento, acrescentar peça não mexe no estoque**: o Orçamento 6 foi criado com um bico de
+  válvula e ganhou depois um pneu. Nenhuma movimentação com "Orçamento 6" apareceu. **Passou.**
+- **Orçamento com duas peças, aprovado**: virou a OS 20 sem erro. Saíram as duas peças, cada uma
+  com quantidade 1, "Uso em OS" e referência "OS 20", inclusive o pneu acrescentado depois.
+  **Passou.**
+- **Aumentar a quantidade numa OS aberta**: o pneu da OS 20 foi de 1 pra 3. Saiu uma movimentação
+  de 2, "Uso em OS", referência "OS 20 (correção de item)". **Passou.**
