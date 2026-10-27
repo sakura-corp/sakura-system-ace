@@ -55,6 +55,10 @@
 --    baixa, o que é coerente —, os outros seguem, a aprovação vale, e a
 --    função devolve quais itens não foram ligados, pra tela avisar.
 --
+-- 5. OS FATURADA NÃO ACEITA ITEM. Acrescentar e corrigir recusam a OS já
+--    faturada, conferida depois da trava: o pagamento já entrou no Caixa pelo
+--    total de antes, e outro computador pode ter faturado com a tela aberta.
+--
 -- As regras de "nome do documento" (a referência do movimento: "Orçamento
 -- 45", "OS 17", "Venda 17") e de "depósito padrão" (o depósito ativo mais
 -- antigo da loja) são as mesmas do programa (nomeDocumento em
@@ -155,6 +159,7 @@ set search_path = public
 as $$
 declare
   v_ordem ordens_servico%rowtype;
+  v_pecas ordens_servico_itens[];
   v_deposito uuid;
 begin
   -- A trava (decisão 1 do cabeçalho).
@@ -163,31 +168,40 @@ begin
     raise exception 'Esta ordem não foi encontrada (talvez tenha sido apagada em outro computador). Atualize a lista.';
   end if;
 
-  -- preco_unitario e desconto têm padrão 0 na tabela; item que não disser
-  -- fica com o padrão, como num insert comum.
-  insert into ordens_servico_itens
-    (ordem_servico_id, tipo, peca_id, servico_id, tecnico_id, descricao,
-     quantidade, preco_unitario, desconto, custo_unitario)
-  select p_ordem, i.tipo, i.peca_id, i.servico_id, i.tecnico_id, i.descricao,
-         i.quantidade, coalesce(i.preco_unitario, 0), coalesce(i.desconto, 0), i.custo_unitario
-    from jsonb_populate_recordset(null::ordens_servico_itens, coalesce(p_itens, '[]'::jsonb)) i;
+  -- OS faturada não aceita item: o pagamento já entrou no Caixa pelo total
+  -- de antes. A tela esconde o botão, mas outro computador pode ter faturado
+  -- com ela aberta; com a trava, a situação lida aqui é a de verdade.
+  if v_ordem.status = 'faturada' then
+    raise exception 'Esta OS já foi faturada (talvez em outro computador): não dá mais pra acrescentar ou corrigir peça ou serviço nela. Atualize a OS.';
+  end if;
+
+  -- p_itens é lido uma vez só: o insert devolve as peças do cadastro que
+  -- gravou (já com a quantidade como ficou na tabela), e é delas que sai o
+  -- estoque. preco_unitario e desconto têm padrão 0 na tabela; item que não
+  -- disser fica com o padrão, como num insert comum.
+  with gravados as (
+    insert into ordens_servico_itens
+      (ordem_servico_id, tipo, peca_id, servico_id, tecnico_id, descricao,
+       quantidade, preco_unitario, desconto, custo_unitario)
+    select p_ordem, i.tipo, i.peca_id, i.servico_id, i.tecnico_id, i.descricao,
+           i.quantidade, coalesce(i.preco_unitario, 0), coalesce(i.desconto, 0), i.custo_unitario
+      from jsonb_populate_recordset(null::ordens_servico_itens, coalesce(p_itens, '[]'::jsonb)) i
+    returning *
+  )
+  select array_agg(g order by g.id) into v_pecas
+    from gravados g
+   where g.tipo = 'peca' and g.peca_id is not null;
 
   -- Já é OS: as peças do cadastro saem do estoque agora, um movimento por
   -- item (como o programa sempre fez). Peça avulsa e serviço não mexem.
-  if v_ordem.status not in ('orcamento', 'recusado')
-     and exists (
-       select 1
-         from jsonb_populate_recordset(null::ordens_servico_itens, coalesce(p_itens, '[]'::jsonb)) i
-        where i.tipo = 'peca' and i.peca_id is not null
-     ) then
+  if v_ordem.status not in ('orcamento', 'recusado') and v_pecas is not null then
     v_deposito := deposito_padrao_da_loja(v_ordem.loja_id);
     insert into estoque_movimentos
       (peca_id, deposito_id, tipo, quantidade, motivo, referencia, loja_id)
     select i.peca_id, v_deposito, 'saida', i.quantidade, 'uso_em_os',
            nome_documento_ordem(v_ordem.status, v_ordem.numero, v_ordem.numero_orcamento, v_ordem.tipo),
            v_ordem.loja_id
-      from jsonb_populate_recordset(null::ordens_servico_itens, coalesce(p_itens, '[]'::jsonb)) i
-     where i.tipo = 'peca' and i.peca_id is not null;
+      from unnest(v_pecas) i;
   end if;
 
   update ordens_servico set atualizado_por_id = p_operador where id = p_ordem;
@@ -234,6 +248,13 @@ begin
   end if;
   if v_ordem_id is null or v_ordem.id is null then
     raise exception 'Este item não foi encontrado (talvez tenha sido apagado em outro computador). Atualize a OS.';
+  end if;
+
+  -- OS faturada não aceita item: o pagamento já entrou no Caixa pelo total
+  -- de antes. A tela esconde o botão, mas outro computador pode ter faturado
+  -- com ela aberta; com a trava, a situação lida aqui é a de verdade.
+  if v_ordem.status = 'faturada' then
+    raise exception 'Esta OS já foi faturada (talvez em outro computador): não dá mais pra acrescentar ou corrigir peça ou serviço nela. Atualize a OS.';
   end if;
 
   -- Só agora, com a ordem presa, o item como está. O `for update` do item

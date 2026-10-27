@@ -312,7 +312,7 @@ export function OrdensServicoPage() {
     }
     await atualizarOrdem(id, patch, operador.id);
     if (novosItens.length > 0 && ordemEmEdicao) {
-      await adicionarItensOrdem(id, novosItens, operador.id, lojaAtual.id);
+      await adicionarItensOrdem(id, novosItens, operador.id);
     }
     setOrdemEmEdicao(null);
     await carregar();
@@ -330,7 +330,7 @@ export function OrdensServicoPage() {
         "Esta OS já foi faturada — não dá mais pra corrigir peça ou serviço nela.",
       );
     }
-    await editarItemOrdem(item, patch, operador.id, lojaAtual.id);
+    await editarItemOrdem(item, patch, operador.id);
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
     if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);

@@ -320,8 +320,17 @@ begin
   -- ===================================================================
   perform adicionar_itens_ordem(orc, jsonb_build_array(
     jsonb_build_object('tipo', 'peca', 'peca_id', p1, 'servico_id', null, 'tecnico_id', null,
-                       'descricao', 'Pneu do estepe', 'quantidade', 1, 'preco_unitario', 250, 'desconto', 0)
+                       'descricao', 'Pneu do estepe', 'quantidade', 1, 'preco_unitario', 250, 'desconto', 0),
+    -- Na mesma leva, um serviço e uma peça avulsa: entram, mas não mexem no estoque.
+    jsonb_build_object('tipo', 'servico', 'peca_id', null, 'servico_id', null, 'tecnico_id', null,
+                       'descricao', 'Montagem do estepe', 'quantidade', 1, 'preco_unitario', 30, 'desconto', 0),
+    jsonb_build_object('tipo', 'peca', 'peca_id', null, 'servico_id', null, 'tecnico_id', null,
+                       'descricao', 'Bico avulso do estepe', 'quantidade', 1, 'preco_unitario', 5, 'desconto', 0)
   ), o_a);
+  if (select count(*) from ordens_servico_itens
+       where ordem_servico_id = orc and descricao in ('Montagem do estepe', 'Bico avulso do estepe')) <> 2 then
+    raise exception 'FALHOU (C0): o serviço e a peça avulsa acrescentados depois da aprovação não entraram';
+  end if;
   select id into item_depois from ordens_servico_itens where ordem_servico_id = orc and descricao = 'Pneu do estepe';
   if (select count(*) from estoque_movimentos
        where peca_id = p1 and tipo = 'saida' and motivo = 'uso_em_os' and quantidade = 1
@@ -510,6 +519,55 @@ begin
   if exists (select 1 from estoque_movimentos where referencia like 'Orçamento%' or peca_id = p1 and loja_id <> loja_a) then
     raise exception 'FALHOU (E8): sobrou movimento de estoque que não devia existir';
   end if;
+
+  -- ===================================================================
+  -- F. OS FATURADA não aceita item novo nem correção: outro computador pode
+  --    ter faturado com a tela aberta, e a peça sairia do estoque depois do
+  --    faturamento, com o pagamento já no Caixa pelo total antigo.
+  -- ===================================================================
+  declare
+    faturada uuid;
+    item_fat uuid;
+    movs int;
+  begin
+    insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'em_andamento')
+      returning id into faturada;
+    insert into ordens_servico_itens (ordem_servico_id, tipo, peca_id, descricao, quantidade, preco_unitario)
+      values (faturada, 'peca', p1, 'Pneu faturado', 2, 250)
+      returning id into item_fat;
+    update ordens_servico set status = 'faturada' where id = faturada;
+    select count(*) into movs from estoque_movimentos;
+
+    set local role authenticated;
+    perform set_config('request.jwt.claim.sub', o_a::text, true);
+    begin
+      perform adicionar_itens_ordem(faturada, jsonb_build_array(
+        jsonb_build_object('tipo', 'peca', 'peca_id', p1, 'servico_id', null, 'tecnico_id', null,
+                           'descricao', 'Pneu depois do faturamento', 'quantidade', 1, 'preco_unitario', 250, 'desconto', 0)
+      ), o_a);
+      raise exception 'FALHOU (F1): acrescentou item numa OS faturada';
+    exception when others then
+      if sqlerrm not like 'Esta OS já foi faturada%' then
+        raise exception 'FALHOU (F2): esperava "Esta OS já foi faturada", veio: %', sqlerrm;
+      end if;
+    end;
+    begin
+      perform editar_item_ordem(item_fat, '{"quantidade": 5}'::jsonb, o_a);
+      raise exception 'FALHOU (F3): corrigiu item numa OS faturada';
+    exception when others then
+      if sqlerrm not like 'Esta OS já foi faturada%' then
+        raise exception 'FALHOU (F4): esperava "Esta OS já foi faturada", veio: %', sqlerrm;
+      end if;
+    end;
+    reset role;
+    perform set_config('request.jwt.claim.sub', '', true);
+
+    if (select count(*) from ordens_servico_itens where ordem_servico_id = faturada) <> 1
+       or (select quantidade from ordens_servico_itens where id = item_fat) <> 2
+       or (select count(*) from estoque_movimentos) <> movs then
+      raise exception 'FALHOU (F5): a tentativa na OS faturada gravou item ou mexeu no estoque';
+    end if;
+  end;
 end $$;
 
 -- ===================================================================

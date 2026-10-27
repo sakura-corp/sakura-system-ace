@@ -182,7 +182,7 @@ export function OrcamentosPage() {
     if (!operador || !lojaAtual) return;
     await atualizarOrdem(id, patch, operador.id);
     if (novosItens.length > 0) {
-      await adicionarItensOrdem(id, novosItens, operador.id, lojaAtual.id);
+      await adicionarItensOrdem(id, novosItens, operador.id);
     }
     setAberto(null);
     await carregar();
@@ -190,15 +190,18 @@ export function OrcamentosPage() {
 
   async function handleEditarItem(item: ItemOS, patch: PatchItemOS) {
     if (!operador || !lojaAtual || !aberto) return;
-    await editarItemOrdem(item, patch, operador.id, lojaAtual.id);
+    await editarItemOrdem(item, patch, operador.id);
     const atualizadas = await carregar();
     const atualizada = atualizadas?.find((o) => o.id === aberto.id);
     if (atualizada) setAberto(atualizada);
   }
 
   // Aprovou: vira OS e a gente leva pra ela, que passa a ser "OS N" na lista de
-  // OS. Se só a baixa de estoque falhou, a OS JÁ nasceu: o erro diz o que fazer
-  // à mão, e a tela fica no orçamento (agora aprovado) em vez de tentar de novo.
+  // OS. Se a baixa falha, a aprovação também não entra (uma transação só no
+  // banco, #706): o erro diz que o orçamento continua orçamento e o formulário
+  // mostra, pra tentar de novo. O ramo abaixo é só da peça avulsa que não ligou
+  // ao cadastro: aí a OS JÁ nasceu, e a tela fecha o orçamento em vez de
+  // tentar de novo.
   async function handleAprovar(
     orcamento: OrdemServico,
     aprovadoPor: string,

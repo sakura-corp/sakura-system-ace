@@ -50,7 +50,7 @@ beforeEach(() => {
 describe("adicionarItensOrdem", () => {
   it("manda os itens numa chamada só ao banco, sem ler a situação nem gravar direto", async () => {
     sb.rpc.mockResolvedValue({ data: null, error: null });
-    await adicionarItensOrdem("ordem-1", [pneu], "op-1", "loja-1");
+    await adicionarItensOrdem("ordem-1", [pneu], "op-1");
     expect(sb.rpc).toHaveBeenCalledTimes(1);
     expect(sb.rpc).toHaveBeenCalledWith("adicionar_itens_ordem", {
       p_ordem: "ordem-1",
@@ -62,7 +62,7 @@ describe("adicionarItensOrdem", () => {
 
   it("erro do banco sobe pra tela", async () => {
     sb.rpc.mockResolvedValue({ data: null, error: { message: "Esta ordem não foi encontrada" } });
-    await expect(adicionarItensOrdem("ordem-1", [pneu], "op-1", "loja-1")).rejects.toMatchObject({
+    await expect(adicionarItensOrdem("ordem-1", [pneu], "op-1")).rejects.toMatchObject({
       message: "Esta ordem não foi encontrada",
     });
   });
@@ -71,7 +71,7 @@ describe("adicionarItensOrdem", () => {
     const eq = vi.fn().mockResolvedValue({ error: null });
     const update = vi.fn(() => ({ eq }));
     sb.from.mockImplementation(() => ({ update }));
-    await adicionarItensOrdem("ordem-1", [], "op-1", "loja-1");
+    await adicionarItensOrdem("ordem-1", [], "op-1");
     expect(sb.rpc).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({ atualizado_por_id: "op-1" });
     expect(eq).toHaveBeenCalledWith("id", "ordem-1");
@@ -84,7 +84,7 @@ describe("editarItemOrdem", () => {
   it("manda o item e o patch numa chamada só, sem ler a ordem nem gravar direto", async () => {
     sb.rpc.mockResolvedValue({ data: null, error: null });
     const patch = { ...pneu, quantidade: 5 };
-    await editarItemOrdem(item, patch, "op-1", "loja-1");
+    await editarItemOrdem(item, patch, "op-1");
     expect(sb.rpc).toHaveBeenCalledTimes(1);
     expect(sb.rpc).toHaveBeenCalledWith("editar_item_ordem", {
       p_item: "item-1",
@@ -96,7 +96,7 @@ describe("editarItemOrdem", () => {
 
   it("erro do banco sobe pra tela", async () => {
     sb.rpc.mockResolvedValue({ data: null, error: { message: "Este item não foi encontrado" } });
-    await expect(editarItemOrdem(item, pneu, "op-1", "loja-1")).rejects.toMatchObject({
+    await expect(editarItemOrdem(item, pneu, "op-1")).rejects.toMatchObject({
       message: "Este item não foi encontrado",
     });
   });
@@ -135,11 +135,20 @@ describe("aprovarOrcamento", () => {
     );
   });
 
-  it("erro do banco sobe como veio (aprovação e baixa são uma transação: nada ficou pela metade)", async () => {
+  it("erro do banco diz que o orçamento NÃO foi aprovado (aprovação e baixa são uma transação)", async () => {
     sb.rpc.mockResolvedValue({ data: null, error: { message: "Nenhum depósito ativo" } });
-    await expect(aprovarOrcamento({ id: "ordem-1" }, "Maria", "op-2")).rejects.toMatchObject({
-      message: "Nenhum depósito ativo",
-    });
+    await expect(aprovarOrcamento({ id: "ordem-1" }, "Maria", "op-2")).rejects.toThrow(
+      /^O orçamento não foi aprovado e continua orçamento: Nenhum depósito ativo/,
+    );
+  });
+
+  it("limpa o \"aprovado por\" antes de mandar (o trim do banco não tira tab nem quebra de linha)", async () => {
+    sb.rpc.mockResolvedValue({ data: { ordem: ordemAprovada, nao_ligados: [] }, error: null });
+    await aprovarOrcamento({ id: "ordem-1" }, " \tMaria\n", "op-2");
+    expect(sb.rpc).toHaveBeenCalledWith(
+      "aprovar_orcamento",
+      expect.objectContaining({ p_aprovado_por: "Maria" }),
+    );
   });
 
   it("peça que não ligou ao cadastro: erro com a descrição e a OS aprovada", async () => {

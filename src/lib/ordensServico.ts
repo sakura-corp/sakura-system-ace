@@ -131,8 +131,8 @@ async function buscarNomesDeFuncionarios(
 }
 
 // Grava os itens e, se `baixarEstoque`, lança a saída das peças. Orçamento
-// não baixa (#379): a peça só sai da prateleira na aprovação, por
-// `baixarEstoqueDasPecas` em `aprovarOrcamento`.
+// não baixa (#379): a peça só sai da prateleira na aprovação, que é a função
+// `aprovar_orcamento` do banco (migration 0071, ver `aprovarOrcamento`).
 async function inserirItens(
   ordemId: string,
   referencia: string,
@@ -313,7 +313,8 @@ export class PecaNaoLigadaNaAprovacaoError extends AprovadoSemEstoqueError {
  * estão no banco nessa hora, não as que a tela tinha.
  *
  * Se a baixa falha (ex.: sem depósito ativo), a aprovação também não entra:
- * a OS continua orçamento e é só tentar de novo. Por isso o
+ * a OS continua orçamento e é só tentar de novo. O erro diz isso com todas as
+ * letras, pra ninguém achar que a OS nasceu. Por isso o
  * `AprovadoSemEstoqueError` não é mais lançado daqui.
  *
  * `vinculos` (#655): as peças avulsas que ganham cadastro na aprovação
@@ -332,11 +333,15 @@ export async function aprovarOrcamento(
 ): Promise<OrdemServico> {
   const { data, error } = await supabase.rpc("aprovar_orcamento", {
     p_ordem: orcamento.id,
-    p_aprovado_por: aprovadoPor,
+    // O trim daqui, e não o do banco: o `trim()` do Postgres só tira espaço,
+    // não tab nem quebra de linha.
+    p_aprovado_por: aprovadoPor.trim(),
     p_operador: operadorId,
     p_vinculos: vinculos.map((v) => ({ item_id: v.itemId, peca_id: v.pecaId })),
   });
-  if (error) throw error;
+  if (error) {
+    throw new Error(`O orçamento não foi aprovado e continua orçamento: ${mensagemDeErro(error)}`);
+  }
   // Null: já não era orçamento (outro computador respondeu antes). Nada mudou.
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
   const resposta = data as {
@@ -460,15 +465,14 @@ export async function atualizarOrdem(
 // função `adicionar_itens_ordem` (migration 0071, #706): ela trava a linha da
 // OS, grava os itens, baixa as peças se já for OS e marca quem mexeu, tudo
 // numa transação. Assim, aprovar em outro computador no mesmo instante não
-// deixa item sem baixa. `lojaId` ficou na assinatura das telas, mas já não é
-// usado: a loja vem da própria ordem, no banco.
+// deixa item sem baixa. A loja do estoque é a da própria ordem, no banco.
+// OS já faturada o banco recusa (outro computador pode ter faturado com a
+// tela aberta aqui).
 export async function adicionarItensOrdem(
   ordemId: string,
   itens: NovoItemOS[],
   operadorId: string,
-  lojaId: string,
 ): Promise<void> {
-  void lojaId; // o lint não aceita parâmetro sem uso; a loja vem da ordem, no banco
   if (itens.length === 0) {
     await atualizarOrdem(ordemId, {}, operadorId);
     return;
@@ -485,7 +489,8 @@ export async function adicionarItensOrdem(
 // trocada, peça errada). Só faz sentido enquanto a OS ainda não foi
 // faturada: depois do faturamento o pagamento já entrou no Caixa com o total
 // antigo, e mexer no item deixaria os dois discordando — quem chama precisa
-// garantir isso antes (a tela já esconde o botão).
+// garantir isso antes (a tela já esconde o botão), e o banco recusa se outro
+// computador faturou com a tela aberta aqui.
 //
 // Uma chamada só (`editar_item_ordem`, migration 0071, #706): o banco trava a
 // OS, relê o item (o original é o do banco, não o da tela), grava e lança só a
@@ -493,14 +498,12 @@ export async function adicionarItensOrdem(
 // contrário; some sozinha quando só o preço muda). Em orçamento (#379) nada de
 // estoque: a aprovação baixa o que estiver gravado nessa hora. Se o estoque
 // falha, a correção do item também não grava. `itemOriginal.id` é o que vale;
-// `lojaId` ficou na assinatura das telas, mas a loja vem da ordem, no banco.
+// a loja do estoque é a da própria ordem, no banco.
 export async function editarItemOrdem(
   itemOriginal: ItemOS,
   patch: PatchItemOS,
   operadorId: string,
-  lojaId: string,
 ): Promise<void> {
-  void lojaId; // idem: a loja vem da ordem, no banco
   const { error } = await supabase.rpc("editar_item_ordem", {
     p_item: itemOriginal.id,
     p_patch: patch,

@@ -11,7 +11,8 @@
 a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
 (clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
-tarefa #368) em 23/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+tarefa #368) em 23/10/2026, e a `0071` (item e aprovação com a OS travada, tarefa #706) em
+26/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -501,6 +502,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   isso se confere à mão). **A coluna não sai aqui**: só numa versão seguinte, pela regra de "Voltar uma versão".
   A limpeza passa pela auditoria com o token mascarado (`***`, máscara da `0053`). Teste em
   `supabase/scripts/testar-porteiro-focus-nfe.sql`, que roda a `0070` de verdade (`\ir`), duas vezes.
+- `0071`: **acrescentar item, corrigir item e aprovar orçamento com a linha da OS travada** (tarefa
+  #706). Três funções (`adicionar_itens_ordem`, `editar_item_ordem`, `aprovar_orcamento`), mais duas
+  pequenas (`nome_documento_ordem`, `deposito_padrao_da_loja`), todas `security invoker` (a RLS de
+  sempre vale) e só pra `authenticated`. Cada uma começa com `select ... for update` na OS e faz tudo
+  numa transação: grava o item e, se já é OS, baixa o estoque; a aprovação baixa os itens que estão
+  no banco naquela hora. Assim, item acrescentado no instante da aprovação, em outro computador, não
+  escapa do estoque nem baixa duas vezes. Se a baixa falha (loja sem depósito ativo), a aprovação
+  também não entra. OS **faturada** recusa item novo e correção. Sem `versao-minima-do-programa`: o
+  programa antigo continua gravando direto nas tabelas, com o mesmo risco raro de antes. Teste em
+  `supabase/scripts/testar-item-na-aprovacao.sql`, com corridas de verdade entre duas ligações (`dblink`).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
