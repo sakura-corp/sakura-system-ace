@@ -815,6 +815,24 @@ export const TABELAS = {
   computadores,
   schema_versao: schemaVersao,
   lojas, clientes, pecas, servicos, depositos,
+  // A janela de peças e o saldo pronto (migration 0073, #366): é por eles que
+  // a OS, o balcão, o pedido de compra e a nota leem. Sem eles as telas
+  // geradas abririam sem peça nenhuma pra escolher.
+  pecas_janela: pecas.map((p) => ({
+    id: p.id,
+    codigo_interno: p.codigo_interno ?? null,
+    codigo_barras: p.codigo_barras ?? null,
+    descricao: p.descricao,
+    marca: p.marca ?? null,
+    modelo: p.modelo ?? null,
+    medida: p.medida ?? null,
+    unidade: p.unidade ?? null,
+    preco_venda: p.preco_venda ?? null,
+    prazo_garantia_dias: p.prazo_garantia_dias ?? null,
+    ativo: p.ativo ?? true,
+    sem_custo: p.preco_custo == null || p.preco_custo === 0,
+  })),
+  estoque_saldos: saldosDeEstoque(),
   // Cópia com o dono embutido (a ficha do veículo pede
   // `cliente:clientes(...)`). Cópia, e não o próprio objeto: o cliente já
   // carrega a lista de veículos dele, e os dois apontando um pro outro não
@@ -869,6 +887,16 @@ export const TABELAS = {
 // vazia — e as telas geradas mostrariam a emissão de nota como "token não
 // configurado", e o aviso da alíquota sumiria do Início, sem nada explicando.
 export const FUNCOES = {
+  // As da #366 (migration 0073) respondem conforme o pedido: função aqui
+  // recebe o corpo da chamada.
+  custo_das_ordens: ({ p_ordens }) => custoDasOrdens(p_ordens ?? []),
+  dados_fiscais_das_pecas: ({ p_pecas }) =>
+    pecas
+      .filter((p) => (p_pecas ?? []).includes(p.id))
+      .map(({ id, codigo_interno, codigo_barras, descricao, unidade, ncm, cest, cfop_padrao, origem, cst_ou_csosn, aliquota_icms }) => ({
+        id, codigo_interno, codigo_barras, descricao, unidade, ncm, cest, cfop_padrao, origem, cst_ou_csosn, aliquota_icms,
+      })),
+  cadastrar_peca_rapida: "00000000-0000-0000-0000-0000000d3366",
   loja_tem_token_focus_nfe: true,
   definir_token_focus_nfe: null,
   registrar_computador: null,
@@ -885,3 +913,36 @@ export const SESSAO = {
     user_metadata: {}, identities: [], created_at: dia(-400), updated_at: dia(0),
   },
 };
+
+// O saldo por peça e loja, a mesma conta da view `estoque_saldos` (0073).
+function saldosDeEstoque() {
+  const saldos = new Map();
+  for (const m of estoque) {
+    const chave = `${m.peca_id}|${m.loja_id}`;
+    const sinal = m.tipo === "entrada" ? 1 : -1;
+    saldos.set(chave, (saldos.get(chave) ?? 0) + sinal * Number(m.quantidade));
+  }
+  return [...saldos].map(([chave, saldo]) => {
+    const [peca_id, loja_id] = chave.split("|");
+    return { peca_id, loja_id, saldo };
+  });
+}
+
+// O custo de cada OS, a mesma regra da função `custo_das_ordens` (0073) e do
+// custoUnitarioDoItem do programa.
+function custoDasOrdens(ids) {
+  return ids.map((id) => {
+    let custo = 0;
+    let completo = true;
+    for (const i of ordensItens.filter((item) => item.ordem_servico_id === id)) {
+      let unitario;
+      if (i.tipo === "servico") unitario = servicos.find((s) => s.id === i.servico_id)?.custo ?? 0;
+      else if (!i.peca_id) {
+        if (i.custo_unitario == null) completo = false;
+        unitario = i.custo_unitario ?? 0;
+      } else unitario = pecas.find((p) => p.id === i.peca_id)?.preco_custo ?? 0;
+      custo += Number(i.quantidade) * unitario;
+    }
+    return { ordem_servico_id: id, custo, custo_completo: completo };
+  });
+}

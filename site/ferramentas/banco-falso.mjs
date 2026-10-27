@@ -32,10 +32,12 @@ export async function instalarBancoFalso(contexto) {
     if (caminho.startsWith("/rest/v1/rpc/")) {
       const funcao = caminho.replace("/rest/v1/rpc/", "");
       if (!(funcao in FUNCOES)) faltando.add(`rpc/${funcao}`);
+      const resposta =
+        typeof FUNCOES[funcao] === "function" ? FUNCOES[funcao](req.postDataJSON() ?? {}) : FUNCOES[funcao];
       return rota.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify(FUNCOES[funcao] ?? null),
+        body: JSON.stringify(resposta ?? null),
       });
     }
 
