@@ -301,7 +301,10 @@ Quatro coisas que valem saber:
   obra, usado pela aba Lucratividade —, categoria de serviço opcional), sem estoque/fiscal. Vem
   semeado com ~17 serviços padrão sem preço (organizados por categoria: Pneus, Suspensão,
   Amortecedores, Freios, Alinhamento, Outros Serviços), baseados numa ficha de orçamento de
-  referência do ramo — ponto de partida, não os preços/serviços reais dela.
+  referência do ramo — ponto de partida, não os preços/serviços reais dela. **Empresa nova**
+  (banco sem nenhuma OS) recebe mais 39, também sem preço, e as categorias Óleo e Filtros, Elétrica
+  e Ar-condicionado (migration `0072`, tarefa #787; a faixa de preço de cada um, só de referência,
+  está em `docs/servicos-padrao.md`).
 - **Fornecedores** (duas abas): "Cadastro" — nome/razão social, CNPJ, telefone, e-mail, endereço
   completo, ativo/inativo; compartilhado entre lojas (mesmo padrão de Clientes). "Pedidos de
   compra" — por loja, número sequencial (`numero`, mesmo padrão de OS), itens de peça com

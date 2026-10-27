@@ -55,8 +55,7 @@
   duplica).
 
 ## O que ficou de fora
-- `docs/modulos.md` (linha ~302) ainda fala em "~17 serviços padrão": fora da lista da issue, não
-  mexi.
+- Nada. O `docs/modulos.md` (fora da lista da issue) também foi atualizado, a pedido da Sofia.
 
 ## O que depende de alguém
 - **Sofia**: aplicar a 0072 nas empresas pelo "Atualizar o banco" (não muda nada nelas, porque
