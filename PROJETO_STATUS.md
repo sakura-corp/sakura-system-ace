@@ -31,7 +31,14 @@ na frente de qualquer outra deste arquivo:
   sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
   Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
 - **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão da Sofia no PR e para ali. A
-  `main` nem aceita sem a aprovação dela (ruleset `main protegida`).
+  `main` nem aceita sem a aprovação dela (ruleset `main protegida`). **Antes de pedir**, roda o
+  `/code-review` na própria sessão e cola o resumo no PR (27/10: a revisão gasta a cota de quem fez,
+  não a dela).
+- **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
+  do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
+  escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
+  avisar que a cota dela acabou, mescla PR **só de documentação ou do `painel/`**, com o CI verde, a
+  revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
   nova pode ser escrita num PR, mas quem aplica é ela.
