@@ -53,6 +53,10 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('funcionarios_publico',  $$insert into funcionarios_publico (loja_id, nome) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda pela view')$$),
 ('clientes_janela',      $$insert into clientes_janela (nome) values ('Sonda pela janela')$$),
 ('veiculos_janela',      $$insert into veiculos_janela (cliente_id, placa) values ('cccccccc-0000-0000-0000-0000000000aa', 'JAN1E01')$$),
+('pecas_janela',          $$insert into pecas_janela (descricao) values ('Sonda pela janela')$$),
+-- O saldo (0073) tem GROUP BY: nem o dono escreve por ele. A sonda existe pra
+-- a matriz medir isso a cada rodada, como nas outras views.
+('estoque_saldos',        $$insert into estoque_saldos (peca_id, loja_id) values ('eeeeeeee-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa')$$),
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),

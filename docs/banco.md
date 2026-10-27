@@ -12,7 +12,7 @@ a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
 (clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
 tarefa #368) em 23/10/2026, a `0071` (item e aprovação com a OS travada, tarefa #706) em
-26/10/2026, e a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, e a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -493,6 +493,32 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   abrir uma OS com qualquer cliente) e juntar CPF e endereço; a leitura não fica na auditoria.
   Teste em `supabase/scripts/testar-clientes-permissao.sql` (as duas metades), conferido com 16
   mutações, todas vermelhas.
+- `0073` e `0074`: **Peças e estoque só pra quem tem o módulo** (tarefa #366, lote 5 do TR-04.1).
+  Em duas, igual ao lote 4: a `0073` só ACRESCENTA, a versão nova do programa passa a ler por ela
+  (pra todo mundo), e a `0074` FECHA, com `-- versao-minima-do-programa: 0.9.56`. **Ordem: `0073` →
+  publicar e liberar a versão → `0074`.** Quem lê `pecas` inteira (com o custo): **Estoque, Relações,
+  Funcionários** (as comissões usam o custo de cada peça) ou admin; quem escreve nela direto: só
+  Estoque. `estoque_movimentos` e `contagens_estoque`: só Estoque, com acesso à loja; a exceção é o
+  INSERT de movimento, com portas estreitas: OS grava `uso_em_os` (a baixa) e `ajuste` de entrada
+  (o estoque inicial da peça avulsa e a devolução da `editar_item_ordem` quando o item diminui);
+  Fornecedores grava só entrada de `compra`. Programa que grava sem Estoque **não pode pedir a linha
+  de volta** (`returning` exige leitura): por isso o `registrarMovimento` (sem `.select()`). O que a
+  `0073` traz: (a) a view **`pecas_janela`** (id, codigo_interno, codigo_barras, descricao, unidade,
+  preco_venda, prazo_garantia_dias, ativo; **nunca o custo**), filtrada por
+  `operador_ativo_com_loja()`, só `select`; os `join` embutidos de Garantias, ficha do veículo e
+  pedido de compra apontam pra ela; (b) a view **`estoque_saldos`** (peca_id, loja_id, saldo), só das
+  lojas de quem pergunta: a OS e o balcão leem o saldo pronto em vez de todos os movimentos (cerca
+  de 6 vezes mais rápido); (c) **`custo_das_ordens(ids)`**: o custo total de cada OS, calculado no
+  banco com a mesma regra de `custoUnitarioDoItem` (serviço, peça avulsa, peça cadastrada), mais
+  `custo_completo` (falso se há peça avulsa sem custo), pra quem tem Caixa, Relações, OS, Estoque ou
+  Funcionários, e só das OS das lojas dele; o Caixa, o Início e a coluna Lucro da lista de OS usam
+  ela; (d) **`dados_fiscais_das_pecas(ids)`**: NCM, CEST, CFOP, origem, CST/CSOSN e alíquota (sem
+  custo), pra nota fiscal e importação de XML; (e) **`cadastrar_peca_rapida(peça)`**: cadastro de
+  peça fora do Estoque (peça avulsa na OS, XML em Fornecedores), devolve só o id. **Risco que
+  sobra, pra ela decidir**: quem tem OS consegue descobrir o custo de uma peça (orçamento com 1
+  unidade e a `custo_das_ordens`), o mesmo número que a coluna Lucro da lista de OS já deixa deduzir.
+  Teste em `supabase/scripts/testar-pecas-permissao.sql` (as duas metades), conferido com 13
+  mutações, todas vermelhas.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
   `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
@@ -613,7 +639,8 @@ outro projeto Supabase do zero (ver seção 9).
   `veiculos_janela`): id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
   (`hatch`/`sedan`/`suv`/`picape`/`moto`, opcional — usado só pra escolher o ícone certo na seção
   "Veículos no pátio" do Início), km_atual, criado_em
-- **`pecas`**: id, codigo_interno (exibido como "Referência"), codigo_barras, descricao, marca,
+- **`pecas`** (desde a `0074`, lida só com Estoque, Relações ou Funcionários; sem eles, pela view
+  `pecas_janela`, sem o custo): id, codigo_interno (exibido como "Referência"), codigo_barras, descricao, marca,
   modelo, aplicacao, unidade, preco_custo, preco_venda, ncm, cest, cfop_padrao, origem,
   cst_ou_csosn, aliquota_icms, categoria_id (FK categorias, opcional), prazo_garantia_dias (int,
   opcional, usado pelo módulo Garantias), **estoque_minimo** (numeric, opcional — NULL quer dizer
@@ -656,7 +683,8 @@ outro projeto Supabase do zero (ver seção 9).
   só inativar). Toda loja já nasce com um "Depósito Principal" sozinho (backfill na migration pras
   já existentes, `criarLoja()` pras novas), então quem usa um só lugar físico nunca precisa criar
   nada — só quem tiver mais de um depósito passa a escolher entre eles.
-- **`estoque_movimentos`**: id, loja_id (FK lojas), deposito_id (FK depositos — em qual depósito
+- **`estoque_movimentos`** (desde a `0074`, só com o módulo Estoque; o saldo, pela view
+  `estoque_saldos`): id, loja_id (FK lojas), deposito_id (FK depositos — em qual depósito
   aconteceu), peca_id (FK), tipo (`entrada`/`saida`),
   quantidade, motivo (`compra`/`venda`/`ajuste`/`uso_em_os`), referencia, criado_em. Fluxos que
   lançam movimentação sozinhos (baixa automática ao usar peça numa OS, entrada ao receber Pedido de

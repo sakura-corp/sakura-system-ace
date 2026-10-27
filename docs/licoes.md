@@ -7,7 +7,7 @@
 
 ## 6. Dívidas técnicas / pontos de atenção — IMPORTANTE
 
-1. **Permissão por módulo: no banco em RH, contas, Caixa e Clientes; nas outras tabelas, só na tela** — um operador
+1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes e Peças/Estoque; nas outras tabelas, só na tela** — um operador
    logado com permissão só de "Caixa", por exemplo, ainda consegue chamar a API do Supabase
    direto pra mexer em "Clientes" se tentar de propósito. RLS exige **login** pra tudo (fecha o
    acesso sem estar logado), mas não reforça por módulo. **Enquanto quem opera é o pai dela e os
@@ -25,8 +25,15 @@
    pra Relações, OS e as duas contas. **O lote 4 foi escrito em 23/10/2026** (migrations `0068` e
    `0069`, tarefa #365, ainda não aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
    placa/marca/modelo/cor/tipo, nas views `clientes_janela` e `veiculos_janela`), o cadastro
-   rápido da OS e os dados da nota por funções. As outras **continuam como sempre foram** — o
-   parágrafo acima segue valendo pra peças e ordens de serviço (o exemplo do balconista lendo
+   rápido da OS e os dados da nota por funções. **O lote 5 foi escrito em 27/10/2026** (migrations
+   `0073` e `0074`, tarefa #366, ainda não aplicadas): `pecas`, `estoque_movimentos` e
+   `contagens_estoque`, com a janela `pecas_janela` (sem o custo), o saldo pronto em
+   `estoque_saldos`, e o custo total de cada OS calculado no banco (`custo_das_ordens`) pro Caixa,
+   o Início e a lista de OS. **Lição nova do lote 5**: a issue supunha que a baixa e a entrada de
+   estoque eram feitas por funções do banco; boa parte era o programa gravando direto, e gravar
+   com `.select()` pede a policy de leitura junto. Antes de fechar uma tabela, mapear **quem
+   grava**, não só quem lê. As outras **continuam como sempre foram** — o
+   parágrafo acima segue valendo pra ordens de serviço (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
    e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou

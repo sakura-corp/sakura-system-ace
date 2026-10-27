@@ -6,7 +6,7 @@
 -- ARQUIVO GERADO AUTOMATICAMENTE — não editar à mão.
 -- Para regerar: npm run gerar-instalacao
 --
--- Contém as 72 migrations de supabase/migrations/, na ordem.
+-- Contém as 74 migrations de supabase/migrations/, na ordem.
 --
 -- Como usar: painel do Supabase → SQL Editor → New query → colar TUDO
 -- deste arquivo → Run. Leva alguns segundos.
@@ -6454,3 +6454,491 @@ where not exists (select 1 from ordens_servico)
   );
 
 insert into schema_versao (versao) values (72) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0073_pecas_janela.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0073: a JANELA de Peças e Estoque — primeira metade do lote 5 da
+-- etapa 2 do TR-04.1 (tarefa #366). Os lotes anteriores: RH (0056), contas
+-- (0061), Caixa (0062) e Clientes (0068/0069). A segunda metade, que FECHA as
+-- tabelas, é a 0074.
+--
+-- POR QUE EM DUAS (o mesmo motivo da 0068). Esta só ACRESCENTA (duas views e
+-- três funções) e não muda nada pra versão atual do programa. A versão nova
+-- passa a ler por elas — pra todo mundo, inclusive quem tem o módulo —, então
+-- ela precisa desta migration já aplicada; e a 0074, que fecha a porta,
+-- precisa da versão nova já nos computadores. Ordem: 0073 → publicar e
+-- liberar a versão → 0074.
+--
+-- O PROBLEMA. Quem não tem o módulo Estoque não vê a tela, mas a RLS de
+-- `pecas` só exigia login (0015), e a de `estoque_movimentos` e
+-- `contagens_estoque` só o acesso à loja (0032). Com a chave que está no
+-- computador, qualquer balconista pedia pela API o CUSTO de todas as peças
+-- (a margem da loja inteira), alterava preço, apagava peça e lançava
+-- movimento de estoque à vontade.
+--
+-- O QUE NÃO PODE QUEBRAR JUNTO (decisões da Sofia na issue #366):
+--
+--   • VENDER, ORÇAR E EMITIR NOTA SEM O MÓDULO. Quem tem OS (ou Fornecedores,
+--     ou Notas) escolhe a peça pela janela `pecas_janela`: código, descrição,
+--     unidade, PREÇO DE VENDA, garantia e se está ativa. NUNCA o custo.
+--
+--   • O SALDO. A OS e a venda de balcão mostram quanto tem na prateleira. Em
+--     vez de ler os movimentos (que passam a ser do módulo), o programa lê a
+--     view `estoque_saldos`: um número por peça por loja, só das lojas de
+--     quem pergunta. É a mesma conta de `calcularSaldoPorPeca`
+--     (src/lib/estoque.ts): entrada soma, saída subtrai.
+--
+--   • O LUCRO DO CAIXA E DO INÍCIO. Quem tem Caixa (ou OS, ou o Início) vê o
+--     lucro do dia, que precisa do custo de cada OS. `custo_das_ordens()`
+--     devolve UM número por OS (nunca o custo de cada peça), com a mesma
+--     regra de `custoUnitarioDoItem` (src/schemas/orcamento.ts).
+--
+--   • A NOTA FISCAL. NCM, CEST, CFOP, origem, CST e ICMS das peças da nota:
+--     `dados_fiscais_das_pecas()`, pra uma lista de peças. Sem custo.
+--
+--   • CADASTRAR PEÇA DE DENTRO DA OS E DE FORNECEDORES. A peça avulsa que
+--     ganha cadastro (#655) e a peça nova da nota de entrada (XML) passam por
+--     `cadastrar_peca_rapida()`. Função, e não porta de INSERT na tabela,
+--     porque o programa precisa do id de volta, e um insert com `returning`
+--     exige também a policy de LEITURA (lição da 0058). Devolve só o id.
+--
+-- POR QUE AS VIEWS RODAM COM OS DIREITOS DO DONO (security_invoker = false):
+-- medido na 0056 — com a base fechada, a view `security_invoker = true`
+-- devolve ZERO linhas. A consequência é a regra de sempre (§6 item 69): o
+-- filtro de quem pode ler tem que estar escrito DENTRO dela, e o `revoke` lá
+-- embaixo tira a escrita (a `pecas_janela` é view simples, auto-atualizável).
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ===================================================================
+-- 1. A janela das peças: só o que o balcão precisa, nunca o custo
+-- ===================================================================
+
+drop view if exists pecas_janela;
+
+create view pecas_janela
+with (security_invoker = false, security_barrier = true)
+as
+  select p.id,
+         p.codigo_interno,
+         p.codigo_barras,
+         p.descricao,
+         p.unidade,
+         p.preco_venda,
+         p.prazo_garantia_dias,
+         p.ativo
+    from pecas p
+   where (select operador_ativo_com_loja());
+
+comment on view pecas_janela is
+  'TR-04.1 lote 5 (0073). A parte de `pecas` que quem não tem o módulo '
+  'Estoque pode ver: código, descrição, unidade, preço de venda, garantia e '
+  'se está ativa. Roda com os direitos do dono, então NÃO reage à RLS da '
+  'tabela — é o where daqui que barra quem não é operador ativo com loja. '
+  'Só SELECT é concedido: sem o revoke abaixo daria pra escrever na tabela '
+  'por dentro dela. NUNCA acrescentar preco_custo.';
+
+revoke all on pecas_janela from anon, authenticated;
+grant select on pecas_janela to authenticated;
+
+-- ===================================================================
+-- 2. O saldo de cada peça, por loja (só as lojas de quem pergunta)
+-- ===================================================================
+
+-- O filtro de loja é escrito à mão (a view não reage à RLS de
+-- estoque_movimentos): as lojas ligadas a quem está logado, e só se ele está
+-- ativo. A subconsulta não depende da linha, então o Postgres a resolve uma
+-- vez por consulta.
+drop view if exists estoque_saldos;
+
+create view estoque_saldos
+with (security_invoker = false, security_barrier = true)
+as
+  select m.peca_id,
+         m.loja_id,
+         sum(case m.tipo when 'entrada' then m.quantidade else -m.quantidade end) as saldo
+    from estoque_movimentos m
+   where m.loja_id in (
+           select ol.loja_id
+             from operador_lojas ol
+             join operadores o on o.id = ol.operador_id
+            where ol.operador_id = auth.uid()
+              and o.ativo
+         )
+   group by m.peca_id, m.loja_id;
+
+comment on view estoque_saldos is
+  'TR-04.1 lote 5 (0073). O saldo de cada peça em cada loja (entrada soma, '
+  'saída subtrai — a conta de calcularSaldoPorPeca), só das lojas de quem '
+  'está logado e ativo. Roda com os direitos do dono: o filtro de loja é o '
+  'where daqui. Só SELECT. Nunca acrescentar custo nem o movimento em si.';
+
+revoke all on estoque_saldos from anon, authenticated;
+grant select on estoque_saldos to authenticated;
+
+-- ===================================================================
+-- 3. O custo de cada OS (o lucro do Caixa e do Início)
+-- ===================================================================
+
+-- Um número por OS, nunca o custo de cada peça. A conta é a de
+-- `custoUnitarioDoItem` (src/schemas/orcamento.ts), item a item:
+--   • serviço → custo do cadastro do serviço (0 se não tem, ou se o item
+--     não aponta pra serviço nenhum);
+--   • peça avulsa (peca_id nulo, #655) → o custo digitado no item; sem ele,
+--     conta 0 e a OS sai com custo_completo = false;
+--   • peça do cadastro → preco_custo da peça (0 se não tem, ou se a peça foi
+--     apagada).
+-- custo = soma de quantidade × unitário. Toda OS da lista que quem chama
+-- alcança volta numa linha, mesmo sem item (custo 0, completo).
+drop function if exists custo_das_ordens(uuid[]);
+
+create function custo_das_ordens(p_ordens uuid[])
+returns table (ordem_servico_id uuid, custo numeric, custo_completo boolean)
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+begin
+  if not (
+       (select operador_tem_permissao('caixa'))
+    or (select operador_tem_permissao('relatorios'))
+    or (select operador_tem_permissao('ordens_servico'))
+    or (select operador_tem_permissao('estoque'))
+    or (select operador_tem_permissao('funcionarios'))
+  ) then
+    raise exception 'O custo das ordens é só de quem tem Caixa, Ordens de Serviço, Estoque, Relações ou Funcionários.'
+      using errcode = '42501';
+  end if;
+
+  return query
+    select o.id,
+           coalesce(sum(
+             i.quantidade *
+             case
+               when i.tipo = 'servico' then coalesce(s.custo, 0)
+               when i.peca_id is null  then coalesce(i.custo_unitario, 0)
+               else coalesce(p.preco_custo, 0)
+             end
+           ), 0)::numeric,
+           coalesce(bool_and(not (i.tipo = 'peca' and i.peca_id is null and i.custo_unitario is null)), true)
+      from ordens_servico o
+      left join ordens_servico_itens i on i.ordem_servico_id = o.id
+      left join servicos s on i.tipo = 'servico' and s.id = i.servico_id
+      left join pecas p    on i.tipo <> 'servico' and p.id = i.peca_id
+     where o.id = any (p_ordens)
+       and operador_tem_acesso_loja(o.loja_id)
+     group by o.id;
+end;
+$$;
+
+comment on function custo_das_ordens(uuid[]) is
+  'TR-04.1 lote 5 (0073). O custo de cada OS da lista (soma de quantidade × '
+  'custo unitário, a regra de custoUnitarioDoItem), só das OS das lojas que '
+  'quem chama acessa. custo_completo = false quando alguma peça avulsa está '
+  'sem custo. Exige Caixa, OS, Estoque, Relações ou Funcionários. Nunca '
+  'devolve o custo de uma peça, só o total da ordem.';
+
+-- ===================================================================
+-- 4. Os dados fiscais das peças da nota (sem custo)
+-- ===================================================================
+
+drop function if exists dados_fiscais_das_pecas(uuid[]);
+
+create function dados_fiscais_das_pecas(p_pecas uuid[])
+returns table (
+  id uuid,
+  codigo_interno text,
+  codigo_barras text,
+  descricao text,
+  unidade text,
+  ncm text,
+  cest text,
+  cfop_padrao text,
+  origem text,
+  cst_ou_csosn text,
+  aliquota_icms numeric
+)
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+begin
+  if not (
+       (select operador_tem_permissao('ordens_servico'))
+    or (select operador_tem_permissao('notas_fiscais'))
+    or (select operador_tem_permissao('fornecedores'))
+    or (select operador_tem_permissao('estoque'))
+    or (select operador_tem_permissao('relatorios'))
+    or (select operador_tem_permissao('funcionarios'))
+  ) or not (select operador_ativo_com_loja()) then
+    raise exception 'Os dados fiscais das peças são só de quem tem Ordens de Serviço, Notas Fiscais, Fornecedores ou Estoque.'
+      using errcode = '42501';
+  end if;
+
+  return query
+    select p.id, p.codigo_interno, p.codigo_barras, p.descricao, p.unidade,
+           p.ncm, p.cest, p.cfop_padrao, p.origem, p.cst_ou_csosn,
+           p.aliquota_icms::numeric
+      from pecas p
+     where p.id = any (p_pecas);
+end;
+$$;
+
+comment on function dados_fiscais_das_pecas(uuid[]) is
+  'TR-04.1 lote 5 (0073). NCM, CEST, CFOP, origem, CST/CSOSN e alíquota de '
+  'ICMS das peças pedidas, pra emitir a nota. Exige OS, Notas Fiscais, '
+  'Fornecedores, Estoque, Relações ou Funcionários, e operador ativo com '
+  'loja. NUNCA acrescentar preco_custo.';
+
+-- ===================================================================
+-- 5. O cadastro rápido de peça (OS e Fornecedores)
+-- ===================================================================
+
+-- Aceita as colunas do cadastro (`NovaPeca` em src/types/peca.ts: tudo menos
+-- id e criado_em); qualquer outra chave é ignorada. Devolve só o id: o
+-- programa já tem o resto, e quem não tem Estoque não pode ler a peça de
+-- volta (é isso que o `returning` de um insert direto exigiria).
+drop function if exists cadastrar_peca_rapida(jsonb);
+
+create function cadastrar_peca_rapida(p_peca jsonb)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+volatile
+as $$
+declare
+  v_peca pecas%rowtype;
+  v_id uuid;
+begin
+  if not (
+       (select operador_tem_permissao('estoque'))
+    or (select operador_tem_permissao('ordens_servico'))
+    or (select operador_tem_permissao('fornecedores'))
+  ) or not (select operador_ativo_com_loja()) then
+    raise exception 'Cadastrar peça fora do Estoque é só de quem tem Ordens de Serviço ou Fornecedores.'
+      using errcode = '42501';
+  end if;
+  if p_peca is null or jsonb_typeof(p_peca) <> 'object'
+     or nullif(btrim(p_peca ->> 'descricao'), '') is null then
+    raise exception 'Preencha a descrição da peça.';
+  end if;
+
+  v_peca := jsonb_populate_record(null::pecas, p_peca);
+
+  insert into pecas (
+    codigo_interno, codigo_barras, descricao, marca, modelo, aplicacao,
+    unidade, preco_custo, preco_venda, ncm, cest, cfop_padrao, origem,
+    cst_ou_csosn, aliquota_icms, categoria_id, prazo_garantia_dias,
+    estoque_minimo, medida, indice_carga_velocidade, dot, ativo
+  )
+  values (
+    v_peca.codigo_interno, v_peca.codigo_barras, v_peca.descricao, v_peca.marca,
+    v_peca.modelo, v_peca.aplicacao, v_peca.unidade, v_peca.preco_custo,
+    v_peca.preco_venda, v_peca.ncm, v_peca.cest, v_peca.cfop_padrao, v_peca.origem,
+    v_peca.cst_ou_csosn, v_peca.aliquota_icms, v_peca.categoria_id,
+    v_peca.prazo_garantia_dias, v_peca.estoque_minimo, v_peca.medida,
+    v_peca.indice_carga_velocidade, v_peca.dot, coalesce(v_peca.ativo, true)
+  )
+  returning pecas.id into v_id;
+
+  return v_id;
+end;
+$$;
+
+comment on function cadastrar_peca_rapida(jsonb) is
+  'TR-04.1 lote 5 (0073). Cadastra UMA peça (as colunas de NovaPeca) pra quem '
+  'tem Estoque, OS ou Fornecedores — a peça avulsa que ganha cadastro e a '
+  'peça nova da nota de entrada. Devolve só o id, nunca a peça.';
+
+-- `security definer` + o EXECUTE que o Postgres dá a PUBLIC: sem o revoke,
+-- o anônimo chamaria as funções.
+revoke all on function custo_das_ordens(uuid[]) from public, anon;
+revoke all on function dados_fiscais_das_pecas(uuid[]) from public, anon;
+revoke all on function cadastrar_peca_rapida(jsonb) from public, anon;
+grant execute on function custo_das_ordens(uuid[]) to authenticated;
+grant execute on function dados_fiscais_das_pecas(uuid[]) to authenticated;
+grant execute on function cadastrar_peca_rapida(jsonb) to authenticated;
+
+insert into schema_versao (versao) values (73) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0074_pecas_so_com_permissao.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0074: Peças e Estoque só pra quem tem o módulo — a segunda metade
+-- do lote 5 do TR-04.1 (tarefa #366). A primeira, a 0073, abriu a janela
+-- (`pecas_janela`, `estoque_saldos`) e as funções do balcão; esta FECHA as
+-- três tabelas.
+--
+-- O PROBLEMA. Quem não tem o módulo Estoque não vê a tela, mas a RLS de
+-- `pecas` só exigia login (0015) e a de `estoque_movimentos` e
+-- `contagens_estoque` só o acesso à loja (0032): com a chave que está no
+-- computador dava pra ler o custo de todas as peças, mudar preço, apagar peça
+-- e lançar movimento de estoque à vontade.
+--
+-- QUEM FICA COM O QUÊ (decisões da Sofia, issue #366):
+--   • `pecas` inteira, com custo: Estoque, Relações (lucratividade) e
+--     Funcionários (comissão sobre o lucro). Escrever direto: só Estoque. Fora
+--     dele, cadastro de peça só pela `cadastrar_peca_rapida()` (0073).
+--   • `estoque_movimentos` e `contagens_estoque`: só Estoque, na loja dele.
+--     A exceção é o INSERT de movimento, com três portas estreitas, todas na
+--     loja de quem grava:
+--       – OS: a baixa da peça usada (motivo 'uso_em_os'). É o que
+--         `adicionar_itens_ordem`, `editar_item_ordem` e `aprovar_orcamento`
+--         (0071, que rodam como quem chama) e a venda de balcão gravam;
+--       – OS: a devolução ao estoque (entrada com motivo 'ajuste'). É o que a
+--         `editar_item_ordem` grava quando a quantidade de um item DIMINUI, e
+--         o estoque inicial da peça avulsa que ganha cadastro;
+--       – Fornecedores: a entrada da compra (entrada com motivo 'compra').
+--     Venda, ajuste de saída e qualquer outro movimento, só com Estoque.
+--     Quem não tem Estoque grava SEM `returning` (que exigiria a leitura).
+--
+-- ORDEM DE SUBIR. Com esta rodada, a versão anterior do programa perde, pra
+-- quem não tem Estoque, a lista de peças da OS (lê `pecas` direto), o saldo e
+-- a baixa com `returning`. Por isso a linha abaixo: o botão "Atualizar o banco
+-- de todas as empresas" espera os computadores chegarem na versão que lê pela
+-- janela. Se a versão nova sair com outro número, ajustar aqui.
+-- versao-minima-do-programa: 0.9.56
+--
+-- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
+-- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem
+-- policy filtra a zero linhas sem erro nenhum (§6 item 15). A função de
+-- permissão vai sempre dentro de `(select ...)`: assim o Postgres a calcula
+-- uma vez por consulta, não uma vez por linha.
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ===================================================================
+-- 1. pecas: lê quem tem Estoque, Relações ou Funcionários; escreve só Estoque
+-- ===================================================================
+
+drop policy if exists "pecas_acesso_temporario" on pecas;
+drop policy if exists "pecas_acesso_autenticados" on pecas;
+drop policy if exists "pecas_leitura" on pecas;
+drop policy if exists "pecas_insercao" on pecas;
+drop policy if exists "pecas_alteracao" on pecas;
+drop policy if exists "pecas_exclusao" on pecas;
+
+create policy "pecas_leitura" on pecas
+  for select to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    or (select operador_tem_permissao('relatorios'))
+    or (select operador_tem_permissao('funcionarios'))
+  );
+
+create policy "pecas_insercao" on pecas
+  for insert to authenticated
+  with check ((select operador_tem_permissao('estoque')));
+
+create policy "pecas_alteracao" on pecas
+  for update to authenticated
+  using ((select operador_tem_permissao('estoque')))
+  with check ((select operador_tem_permissao('estoque')));
+
+create policy "pecas_exclusao" on pecas
+  for delete to authenticated
+  using ((select operador_tem_permissao('estoque')));
+
+-- ===================================================================
+-- 2. estoque_movimentos: só Estoque, menos as três portas de INSERT
+-- ===================================================================
+
+drop policy if exists "estoque_movimentos_acesso_temporario" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_acesso_autenticados" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_acesso_por_loja" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_leitura" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_insercao" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_alteracao" on estoque_movimentos;
+drop policy if exists "estoque_movimentos_exclusao" on estoque_movimentos;
+
+create policy "estoque_movimentos_leitura" on estoque_movimentos
+  for select to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+create policy "estoque_movimentos_insercao" on estoque_movimentos
+  for insert to authenticated
+  with check (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('estoque'))
+      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'uso_em_os')
+      or ((select operador_tem_permissao('ordens_servico')) and motivo = 'ajuste' and tipo = 'entrada')
+      or ((select operador_tem_permissao('fornecedores')) and motivo = 'compra' and tipo = 'entrada')
+    )
+  );
+
+create policy "estoque_movimentos_alteracao" on estoque_movimentos
+  for update to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  )
+  with check (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+create policy "estoque_movimentos_exclusao" on estoque_movimentos
+  for delete to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+-- ===================================================================
+-- 3. contagens_estoque: só Estoque, na loja dele
+-- ===================================================================
+
+drop policy if exists "contagens_estoque_acesso_autenticados" on contagens_estoque;
+drop policy if exists "contagens_estoque_acesso_por_loja" on contagens_estoque;
+drop policy if exists "contagens_estoque_leitura" on contagens_estoque;
+drop policy if exists "contagens_estoque_insercao" on contagens_estoque;
+drop policy if exists "contagens_estoque_alteracao" on contagens_estoque;
+drop policy if exists "contagens_estoque_exclusao" on contagens_estoque;
+
+create policy "contagens_estoque_leitura" on contagens_estoque
+  for select to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+create policy "contagens_estoque_insercao" on contagens_estoque
+  for insert to authenticated
+  with check (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+create policy "contagens_estoque_alteracao" on contagens_estoque
+  for update to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  )
+  with check (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+create policy "contagens_estoque_exclusao" on contagens_estoque
+  for delete to authenticated
+  using (
+    (select operador_tem_permissao('estoque'))
+    and operador_tem_acesso_loja(loja_id)
+  );
+
+insert into schema_versao (versao) values (74) on conflict do nothing;

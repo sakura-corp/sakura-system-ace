@@ -153,8 +153,16 @@ begin
               contagem := null;
             end if;
           when others then
-            problema := sqlstate || ': ' || sqlerrm;
-            contagem := null;
+            -- Numa view que o Postgres não sabe atualizar (GROUP BY, como a
+            -- `estoque_saldos` da 0073), a escrita é recusada antes até do
+            -- GRANT ("cannot insert into view", 55000). Também é tranca, e
+            -- vira zero; em tabela, ou com outro erro, continua vermelho.
+            if r_tabela.e_view and sqlstate = '55000' and sqlerrm like 'cannot % view %' then
+              contagem := 0;
+            else
+              problema := sqlstate || ': ' || sqlerrm;
+              contagem := null;
+            end if;
         end;
 
         insert into teste_rls.resultado (tabela, comando, papel, linhas, erro)
