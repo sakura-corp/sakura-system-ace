@@ -146,13 +146,17 @@ insert into funcionario_filhos (id, funcionario_id, nome) values
   ('33333333-1111-0000-0000-0000000000aa', '33333333-0000-0000-0000-0000000000aa', 'Filho A'),
   ('33333333-1111-0000-0000-0000000000bb', '33333333-0000-0000-0000-0000000000bb', 'Filho B');
 
-insert into ordens_servico (id, numero, loja_id, cliente_id, status) values
-  ('44444444-0000-0000-0000-0000000000aa', 1, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa', 'em_andamento'),
-  ('44444444-0000-0000-0000-0000000000bb', 1, '11111111-1111-1111-1111-1111111111bb', 'cccccccc-0000-0000-0000-0000000000bb', 'em_andamento');
+-- FATURADAS, e o item é uma PEÇA, desde a 0075 (#367): as janelas das
+-- Comissões (só faturada) e das Garantias (uma linha por peça) dariam zero
+-- pra todo mundo com uma OS aberta de serviço, e a matriz não distinguiria o
+-- dono de quem não é da loja nelas.
+insert into ordens_servico (id, numero, loja_id, cliente_id, status, data_fechamento) values
+  ('44444444-0000-0000-0000-0000000000aa', 1, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa', 'faturada', now()),
+  ('44444444-0000-0000-0000-0000000000bb', 1, '11111111-1111-1111-1111-1111111111bb', 'cccccccc-0000-0000-0000-0000000000bb', 'faturada', now());
 
 insert into ordens_servico_itens (id, ordem_servico_id, tipo, descricao, quantidade, preco_unitario) values
-  ('44444444-1111-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', 'servico', 'Item da OS da loja A', 1, 100.00),
-  ('44444444-1111-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', 'servico', 'Item da OS da loja B', 1, 100.00);
+  ('44444444-1111-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', 'peca', 'Item da OS da loja A', 1, 100.00),
+  ('44444444-1111-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', 'peca', 'Item da OS da loja B', 1, 100.00);
 
 insert into caixa_movimentos (id, loja_id, tipo, valor, descricao) values
   ('55555555-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'entrada', 100.00, 'Movimento da loja A'),
