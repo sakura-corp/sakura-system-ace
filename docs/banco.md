@@ -529,9 +529,11 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0075` e `0076`: **Ordens de serviço só pra quem tem o módulo** (tarefa #367, lote 6 do TR-04.1).
   Em duas, igual aos lotes 4 e 5: a `0075` só ACRESCENTA, a versão nova do programa passa a ler por
   ela (pra todo mundo, inclusive quem tem o módulo OS), e a `0076` FECHA, com
-  `-- versao-minima-do-programa: 0.9.56` (palpite seguro: a 0.9.55 ainda não saiu; se este código
-  sair nela, a Sofia troca pra 0.9.55, aqui e em `versaoEsquema.ts`). **Ordem: `0075` → publicar e
-  liberar a versão → `0076`.** Quem lê `ordens_servico` e `ordens_servico_itens` inteiras: **OS e
+  `-- versao-minima-do-programa: 0.9.56`. **Este código NÃO pode sair na 0.9.55**: a `0074` espera a
+  0.9.55 nos computadores, e o botão de atualizar os bancos segura também as migrations seguintes; a
+  0.9.55 com este código precisaria da `0075`, que só entra depois dela (achado da revisão final).
+  **Ordem: publicar e liberar a 0.9.55 sem este código → `0074` + `0075` → publicar e liberar a
+  0.9.56 (com este código) → `0076`.** Quem lê `ordens_servico` e `ordens_servico_itens` inteiras: **OS e
   Relações** (a Lucratividade mostra item a item) ou admin; quem escreve: só OS. Cada outra tela lê
   pela **janela** dela (views `security_invoker = false`, filtro de loja e de módulo dentro, só
   `select`; o nome do cliente e os itens vêm como colunas, os itens num `jsonb` com só os campos
