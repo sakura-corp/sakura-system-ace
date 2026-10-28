@@ -1,7 +1,7 @@
 import { arredondarCentavo } from "./dinheiro";
 import { custoUnitarioDoItem } from "./orcamento";
 import type { MovimentoCaixa } from "@/types/caixa";
-import type { ItemOS } from "@/types/os";
+import type { ItemOS, ItemParaVenda } from "@/types/os";
 import { ehVendaBalcao, totalOrdem } from "@/types/os";
 
 /**
@@ -27,6 +27,12 @@ import { ehVendaBalcao, totalOrdem } from "@/types/os";
 
 export type MapaCusto = Map<string, number>;
 
+/** O que `custoDosItens` lê do item (a janela das comissões entrega só isso, #367). */
+export type ItemParaCusto = Pick<
+  ItemOS,
+  "quantidade" | "tipo" | "peca_id" | "servico_id" | "custo_unitario"
+>;
+
 export function mapaCustoPecas(pecas: { id: string; preco_custo: number | null }[]): MapaCusto {
   return new Map(pecas.map((peca) => [peca.id, peca.preco_custo ?? 0]));
 }
@@ -42,7 +48,7 @@ export function mapaCustoServicos(servicos: { id: string; custo: number | null }
  * falta custo usa `custoUnitarioDoItem` direto.
  */
 export function custoDosItens(
-  itens: ItemOS[],
+  itens: readonly ItemParaCusto[],
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
 ): number {
@@ -58,14 +64,17 @@ export function custoDosItens(
  * custo: quem pode ver o cadastro de peças calcula pelos mapas; quem não pode
  * (Caixa e Início sem o módulo Estoque, #366) recebe o custo pronto do banco.
  */
-export type CustoDaOrdem = (ordemId: string, itens: ItemOS[]) => number;
+export type CustoDaOrdem = (ordemId: string, itens: ItemParaVenda[]) => number;
 
 /** Custo da ordem calculado item a item pelos mapas de custo (Relações etc.). */
 export function custoDaOrdemPelosMapas(
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
 ): CustoDaOrdem {
-  return (_ordemId, itens) => custoDosItens(itens, custoPeca, custoServico);
+  // O Caixa de hoje só recebe quantidade/preço/desconto (janela da #367), que
+  // não bastam pra este cálculo: ele serve a quem tem os itens inteiros.
+  return (_ordemId, itens) =>
+    custoDosItens(itens as unknown as readonly ItemParaCusto[], custoPeca, custoServico);
 }
 
 /** O que a função `custo_das_ordens` do banco devolve por OS. */

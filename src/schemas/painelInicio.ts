@@ -181,6 +181,18 @@ export function variacoesPorCartao(
  * lançamentos de OS —, e um pedaço somado vira um número errado com cara de
  * certo. Por isso o Início só pede os lançamentos pra quem tem um destes.
  */
+/**
+ * Quem pode ver os blocos "OS abertas" e "Veículos no pátio" do Início (#367).
+ * A OS só responde a quem tem o módulo Ordens de Serviço (migration 0076); sem
+ * ele, os dois blocos SOMEM da tela (não ficam com "—") e o Início nem pede as
+ * OS ao banco. Decisão da Sofia.
+ */
+export const MODULOS_DOS_BLOCOS_DE_OS: readonly ModuloChave[] = ["ordens_servico"];
+
+export function mostraBlocosDeOS(temModulo: (modulo: ModuloChave) => boolean): boolean {
+  return MODULOS_DOS_BLOCOS_DE_OS.some(temModulo);
+}
+
 export const MODULOS_QUE_LEEM_O_CAIXA: readonly ModuloChave[] = ["caixa", "relatorios"];
 
 /**

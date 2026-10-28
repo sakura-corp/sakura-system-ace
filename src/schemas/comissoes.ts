@@ -2,7 +2,7 @@ import { custoDosItens, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo as arredondar } from "./dinheiro";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
 import { temNumeroDeOS } from "@/types/os";
-import type { ItemOS, OrdemNumerada, OrdemServico, TipoOrdem } from "@/types/os";
+import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os";
 
 /**
  * Comissão por funcionário, pra tela Relações → Comissões.
@@ -25,6 +25,9 @@ import type { ItemOS, OrdemNumerada, OrdemServico, TipoOrdem } from "@/types/os"
  */
 
 /** Chave usada pra quem vendeu/executou sem estar identificado na OS. */
+/** Ordem que já tem número de OS (não é orçamento). */
+export type OrdemNumeradaParaComissao = OrdemParaComissao & { numero: number };
+
 export const SEM_FUNCIONARIO = "sem-funcionario";
 
 export interface OrdemDaComissao {
@@ -81,7 +84,7 @@ export interface ComissaoFuncionario {
 }
 
 export interface EntradaComissoes {
-  ordens: OrdemServico[];
+  ordens: OrdemParaComissao[];
   funcionarios: { id: string; nome: string; comissao: number | null }[];
   custoPeca: MapaCusto;
   custoServico: MapaCusto;
@@ -98,7 +101,7 @@ export function diaLocal(dataIso: string): string {
   return new Date(dataIso).toLocaleDateString("sv-SE");
 }
 
-function valorDosItens(itens: ItemOS[]): number {
+function valorDosItens(itens: readonly ItemParaComissao[]): number {
   return itens.reduce(
     (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
     0,
@@ -106,7 +109,7 @@ function valorDosItens(itens: ItemOS[]): number {
 }
 
 function contarItensSemCusto(
-  itens: ItemOS[],
+  itens: readonly ItemParaComissao[],
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
 ): number {
@@ -137,11 +140,11 @@ function papelVazio(): ResumoPapel {
  * `contaNosNumeros`.
  */
 export function ordensDoPeriodo(
-  ordens: OrdemServico[],
+  ordens: OrdemParaComissao[],
   de: string,
   ate: string,
-): OrdemNumerada[] {
-  return ordens.filter((ordem): ordem is OrdemNumerada => {
+): OrdemNumeradaParaComissao[] {
+  return ordens.filter((ordem): ordem is OrdemNumeradaParaComissao => {
     if (!contaNosNumeros(ordem) || !temNumeroDeOS(ordem)) return false;
     if (ordem.status !== "faturada") return false;
     // `data_fechamento` é gravada no faturamento (ver lib/ordensServico.ts).
@@ -192,8 +195,8 @@ export function resumirComissoes({
   function somar(
     linha: ComissaoFuncionario,
     papel: ResumoPapel,
-    ordem: OrdemNumerada,
-    itens: ItemOS[],
+    ordem: OrdemNumeradaParaComissao,
+    itens: ItemParaComissao[],
   ): void {
     const percentual = linha.percentual;
     const vendido = valorDosItens(itens);
@@ -243,7 +246,7 @@ export function resumirComissoes({
 
     // Técnico: leva só pelos itens que executou, então a OS é dividida por
     // técnico antes de somar (uma OS pode ter itens de gente diferente).
-    const itensPorTecnico = new Map<string, ItemOS[]>();
+    const itensPorTecnico = new Map<string, ItemParaComissao[]>();
     for (const item of itens) {
       const idTecnico = item.tecnico_id ?? SEM_FUNCIONARIO;
       const grupo = itensPorTecnico.get(idTecnico) ?? [];

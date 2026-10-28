@@ -5,6 +5,7 @@ import {
   janelaDoMesAteODia,
   mesmaJanelaNoMesAnterior,
   metricasDoPeriodo,
+  mostraBlocosDeOS,
   moduloQueFaltaAoCartao,
   movimentosDaJanela,
   rotuloDeIdade,
@@ -220,5 +221,19 @@ describe("moduloQueFaltaAoCartao", () => {
     for (const cartao of [...DE_DINHEIRO, "contas_pagar_vencendo"] as const) {
       expect(moduloQueFaltaAoCartao(cartao, tudo)).toBeNull();
     }
+  });
+});
+
+// #367: a OS só responde a quem tem o módulo Ordens de Serviço, então o Início
+// nem pede as OS e os blocos "OS abertas" e "Veículos no pátio" somem.
+describe("mostraBlocosDeOS", () => {
+  it("só com o módulo ordens_servico", () => {
+    expect(mostraBlocosDeOS((m) => m === "ordens_servico")).toBe(true);
+  });
+
+  it("quem tem outros módulos mas não o de OS não vê os blocos", () => {
+    const todosMenosOS = (m: string) => m !== "ordens_servico";
+    expect(mostraBlocosDeOS(todosMenosOS)).toBe(false);
+    expect(mostraBlocosDeOS(() => false)).toBe(false);
   });
 });

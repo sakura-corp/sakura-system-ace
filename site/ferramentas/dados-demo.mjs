@@ -325,11 +325,15 @@ for (const mesesAtras of [1, 0]) {
   }
 }
 
-// O lançamento no caixa traz a OS junto (`ordem_servico:ordens_servico(*,
-// cliente, itens)` em src/lib/caixa.ts): é dela que o Diário tira o cliente,
-// o número ("OS 145") e o lucro da linha (#777, item 2).
+// O lançamento no caixa traz a OS junto (`ordem_servico:ordens_servico_caixa(
+// id, numero, tipo, status, cliente_nome, itens)` em src/lib/caixa.ts, #367):
+// é dela que o Diário tira o cliente, o número ("OS 145") e o lucro da linha
+// (#777, item 2). `cliente_nome` é o que o programa lê; `cliente` e os itens
+// inteiros ficam só porque os testes de dados-de-mentira conferem o custo e o
+// total em cima deles (o banco falso devolve o que está aqui, sem filtrar colunas).
 const ordemNoCaixa = (o) => ({
   id: o.id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+  cliente_nome: o.cliente.nome,
   cliente: o.cliente, itens: o.itens,
 });
 // O programa grava no caixa a CHAVE da forma ("cartao_debito") e o Diário a
@@ -559,7 +563,7 @@ const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }
     ordem_servico_id: ordem?.id ?? null, operador_id: OP, criado_em: criadoEm,
     origem, numero, chave_acesso: numero ? "3526" + String(numero).padStart(40, "0") : null,
     status, focus_nfe_ref: origem === "automatica" ? `${ordem.id}-${tipo === "nfe" ? "nfce" : "nfse"}-${numero}` : null,
-    ordem_servico: ordem ? { cliente: { nome: ordem.cliente.nome } } : null,
+    ordem_servico: ordem ? { cliente_nome: ordem.cliente.nome } : null,
     operador: { nome: "Marcos Andrade" },
   };
 };
@@ -811,6 +815,59 @@ const computadores = [
     primeiro_acesso: dia(-300), visto_em: dia(-41), loja: { nome: lojas[0].nome }, operador: { nome: "Marcos Andrade" } },
 ];
 
+// As janelas das OS (migration 0075, #367): cada tela que não é a de OS lê a
+// sua, com só as colunas dela. O banco falso devolve a tabela inteira sem
+// olhar o `select`, então aqui ficam as linhas no formato de cada view.
+const todasAsOrdens = [...ordens, ...historico, ...ordensDeQuemSumiu, ...orcamentos];
+const sub = (item, campos) => Object.fromEntries(campos.map((c) => [c, item[c] ?? null]));
+const janelaOrdensCaixa = todasAsOrdens.map((o) => ({
+  id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+  cliente_nome: o.cliente.nome,
+  itens: o.itens.map((i) => sub(i, ["quantidade", "preco_unitario", "desconto"])),
+}));
+const janelaOrdensComissoes = todasAsOrdens
+  .filter((o) => o.status === "faturada")
+  .map((o) => ({
+    id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+    data_abertura: o.data_abertura, data_fechamento: o.data_fechamento,
+    vendedor_id: o.vendedor_id, cliente_nome: o.cliente.nome,
+    itens: o.itens.map((i) =>
+      sub(i, ["id", "tipo", "peca_id", "servico_id", "quantidade", "preco_unitario", "desconto", "custo_unitario", "tecnico_id"]),
+    ),
+  }));
+const janelaOrdensGarantias = todasAsOrdens.flatMap((o) =>
+  o.itens
+    .filter((i) => i.tipo === "peca")
+    .map((i) => {
+      const peca = pecas.find((p) => p.id === i.peca_id);
+      return {
+        id: i.id, quantidade: i.quantidade, peca_id: i.peca_id,
+        peca_descricao: peca ? peca.descricao : null,
+        prazo_garantia_dias: peca ? (peca.prazo_garantia_dias ?? null) : null,
+        ordem_servico_id: o.id, ordem_status: o.status, ordem_data_fechamento: o.data_fechamento,
+        loja_id: o.loja_id, cliente_nome: o.cliente.nome,
+        veiculo_id: o.veiculo_id, veiculo_placa: o.veiculo ? o.veiculo.placa : null,
+      };
+    }),
+);
+const janelaOrdensNotas = todasAsOrdens.map((o) => ({
+  id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+  data_abertura: o.data_abertura, cliente_nome: o.cliente.nome,
+}));
+const janelaOrdensClientes = todasAsOrdens.map((o) => ({
+  id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
+  data_abertura: o.data_abertura, data_fechamento: o.data_fechamento,
+  cliente_id: o.cliente_id, cliente_nome: o.cliente.nome,
+  veiculo_id: o.veiculo_id, km_entrada: o.km_entrada,
+  veiculo_placa: o.veiculo ? o.veiculo.placa : null,
+  veiculo_marca: o.veiculo ? o.veiculo.marca : null,
+  veiculo_modelo: o.veiculo ? o.veiculo.modelo : null,
+  itens: o.itens.map((i) => ({
+    ...sub(i, ["id", "tipo", "peca_id", "descricao", "quantidade", "preco_unitario", "desconto"]),
+    prazo_garantia_dias: i.peca ? (i.peca.prazo_garantia_dias ?? null) : null,
+  })),
+}));
+
 export const TABELAS = {
   computadores,
   schema_versao: schemaVersao,
@@ -841,8 +898,13 @@ export const TABELAS = {
     const c = clientes.find((cl) => cl.id === v.cliente_id);
     return { ...v, cliente: c ? { id: c.id, nome: c.nome, telefone: c.telefone } : null };
   }),
-  ordens_servico: [...ordens, ...historico, ...ordensDeQuemSumiu, ...orcamentos],
+  ordens_servico: todasAsOrdens,
   ordens_servico_itens: ordensItens,
+  ordens_servico_caixa: janelaOrdensCaixa,
+  ordens_servico_comissoes: janelaOrdensComissoes,
+  ordens_servico_garantias: janelaOrdensGarantias,
+  ordens_servico_notas: janelaOrdensNotas,
+  ordens_servico_clientes: janelaOrdensClientes,
   caixa_movimentos: caixa,
   fechamentos_caixa: fechamentosCaixa,
   comissoes_fechamentos: comissoesPagas,

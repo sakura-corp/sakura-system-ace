@@ -5,14 +5,14 @@ import { listarComissoesPagas } from "@/lib/comissoesFechamentos";
 import { listarContasReceber } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarFuncionarios } from "@/lib/funcionarios";
-import { listarOrdens } from "@/lib/ordensServico";
+import { listarOrdensParaComissoes } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
 import type { ContaReceber } from "@/types/contaReceber";
 import type { Funcionario } from "@/types/funcionario";
-import type { OrdemServico } from "@/types/os";
+import type { OrdemParaComissao } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { ComissoesSection } from "./ComissoesSection";
@@ -32,7 +32,7 @@ export function FuncionariosPage() {
   // nenhuma pra quem só veio cadastrar funcionário, então só são buscadas
   // quando essa aba é aberta pela primeira vez.
   const [dadosComissoes, setDadosComissoes] = useState<{
-    ordens: OrdemServico[];
+    ordens: OrdemParaComissao[];
     pecas: Peca[];
     servicos: Servico[];
     contasReceber: ContaReceber[];
@@ -83,7 +83,7 @@ export function FuncionariosPage() {
       setErro(null);
       try {
         const [ordens, pecas, servicos, contasReceber] = await Promise.all([
-          listarOrdens(lojaAtual.id),
+          listarOrdensParaComissoes(lojaAtual.id),
           listarPecas(),
           listarServicos(),
           listarContasReceber(lojaAtual.id),

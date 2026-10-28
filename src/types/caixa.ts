@@ -1,4 +1,4 @@
-import type { ItemOS, TipoOrdem } from "@/types/os";
+import type { ItemParaVenda, StatusOS, TipoOrdem } from "@/types/os";
 
 export type TipoCaixa = "entrada" | "saida";
 
@@ -17,8 +17,10 @@ export interface MovimentoCaixa {
     numero: number;
     /** Ausente em banco anterior à migration 0064 (aí é sempre OS). */
     tipo?: TipoOrdem;
+    status?: StatusOS;
     cliente: { nome: string } | null;
-    itens: ItemOS[];
+    /** Só quantidade, preço e desconto: é o que a janela do Caixa entrega (#367). */
+    itens: ItemParaVenda[];
   } | null;
   categoria?: { nome: string } | null;
 }

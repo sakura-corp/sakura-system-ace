@@ -19,6 +19,7 @@ import {
   mesmaJanelaNoMesAnterior,
   metricasDoPeriodo,
   MODULOS_QUE_LEEM_O_CAIXA,
+  mostraBlocosDeOS,
   moduloQueFaltaAoCartao,
   rotuloDeIdade,
   valoresPorCartao,
@@ -108,6 +109,10 @@ export function PainelPage() {
   // calendário simplesmente não mostra aniversários.
   const podeVerClientes = temPermissao(operador, "clientes");
 
+  // "OS abertas" e "Veículos no pátio" só existem pra quem tem o módulo OS
+  // (#367): sem ele, o banco não devolve OS, e os dois blocos somem.
+  const podeVerOS = mostraBlocosDeOS((m) => temPermissao(operador, m));
+
   const [mesVisivel, setMesVisivel] = useState(() => ({
     ano: hoje.getFullYear(),
     mes: hoje.getMonth(),
@@ -129,7 +134,7 @@ export function PainelPage() {
           fiscalCarregada,
         ] = await Promise.all([
           podeVerCaixa ? listarMovimentosCaixa(lojaAtual.id) : Promise.resolve([]),
-          listarOrdens(lojaAtual.id),
+          podeVerOS ? listarOrdens(lojaAtual.id) : Promise.resolve([]),
           podeVerClientes ? listarClientes() : Promise.resolve([]),
           podeVerContas ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
           buscarConfiguracaoPainelInicio(lojaAtual.id),
@@ -156,7 +161,7 @@ export function PainelPage() {
       }
     }
     carregar();
-  }, [lojaAtual, podeVerContas, podeVerCaixa, podeVerClientes]);
+  }, [lojaAtual, podeVerContas, podeVerCaixa, podeVerClientes, podeVerOS]);
 
   const avisoAliquota = avisoAliquotaCompetencia(configFiscal, hoje);
 
@@ -315,50 +320,52 @@ export function PainelPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-[2fr_1fr] gap-4">
-            <section className="sakura-card p-4">
-              <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-                OS abertas
-              </h2>
-              {filaDeAtendimento.length === 0 ? (
-                <p className="text-corpo text-sakura-purple-dark/85">
-                  Nenhuma ordem de serviço em aberto no momento.
-                </p>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/50">
-                  <table className="w-full text-left text-corpo">
-                    <thead className="bg-white/10 text-sakura-pink">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Nº</th>
-                        <th className="px-4 py-3 font-medium">Cliente</th>
-                        <th className="px-4 py-3 font-medium">Veículo</th>
-                        <th className="px-4 py-3 font-medium">Aberta</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filaDeAtendimento.map((ordem) => (
-                        <tr
-                          key={ordem.id}
-                          onClick={() =>
-                            navigate("/ordens-servico", { state: { abrirOrdemId: ordem.id } })
-                          }
-                          className="cursor-pointer border-t border-white/10 hover:bg-white/5"
-                        >
-                          <td className="px-4 py-3 text-sakura-purple-dark/85">
-                            {nomeDocumento(ordem)}
-                          </td>
-                          <td className="px-4 py-3">{ordem.cliente?.nome ?? "—"}</td>
-                          <td className="px-4 py-3">{ordem.veiculo?.placa ?? "—"}</td>
-                          <td className="px-4 py-3">
-                            <Idade desde={ordem.data_abertura} hoje={hoje} />
-                          </td>
+          <div className={podeVerOS ? "grid grid-cols-[2fr_1fr] gap-4" : "grid grid-cols-1 gap-4"}>
+            {podeVerOS && (
+              <section className="sakura-card p-4">
+                <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+                  OS abertas
+                </h2>
+                {filaDeAtendimento.length === 0 ? (
+                  <p className="text-corpo text-sakura-purple-dark/85">
+                    Nenhuma ordem de serviço em aberto no momento.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-white/50">
+                    <table className="w-full text-left text-corpo">
+                      <thead className="bg-white/10 text-sakura-pink">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Nº</th>
+                          <th className="px-4 py-3 font-medium">Cliente</th>
+                          <th className="px-4 py-3 font-medium">Veículo</th>
+                          <th className="px-4 py-3 font-medium">Aberta</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+                      </thead>
+                      <tbody>
+                        {filaDeAtendimento.map((ordem) => (
+                          <tr
+                            key={ordem.id}
+                            onClick={() =>
+                              navigate("/ordens-servico", { state: { abrirOrdemId: ordem.id } })
+                            }
+                            className="cursor-pointer border-t border-white/10 hover:bg-white/5"
+                          >
+                            <td className="px-4 py-3 text-sakura-purple-dark/85">
+                              {nomeDocumento(ordem)}
+                            </td>
+                            <td className="px-4 py-3">{ordem.cliente?.nome ?? "—"}</td>
+                            <td className="px-4 py-3">{ordem.veiculo?.placa ?? "—"}</td>
+                            <td className="px-4 py-3">
+                              <Idade desde={ordem.data_abertura} hoje={hoje} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            )}
 
             <MiniCalendario
               ano={mesVisivel.ano}
@@ -368,46 +375,48 @@ export function PainelPage() {
             />
           </div>
 
-          <section className="sakura-card p-4">
-            <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-              Veículos no pátio
-            </h2>
-            {veiculosNoPatio.length === 0 ? (
-              <p className="text-corpo text-sakura-purple-dark/85">
-                Nenhum veículo no pátio no momento.
-              </p>
-            ) : (
-              <div className="grid grid-cols-3 gap-4">
-                {veiculosNoPatio.map((ordem) => (
-                  <div
-                    key={ordem.id}
-                    className="sakura-card flex items-center gap-3 p-3"
-                  >
-                    <VeiculoIcone
-                      tipo={ordem.veiculo?.tipo ?? null}
-                      cor={ordem.veiculo?.cor}
-                      className="h-14 w-24 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate text-corpo font-medium text-sakura-purple-dark">
-                        {ordem.cliente?.nome ?? "—"}
-                      </p>
-                      <p className="truncate text-rotulo text-sakura-muted">
-                        {ordem.veiculo?.placa ?? "—"}
-                        {(ordem.veiculo?.marca || ordem.veiculo?.modelo) &&
-                          ` · ${[ordem.veiculo?.marca, ordem.veiculo?.modelo]
-                            .filter(Boolean)
-                            .join(" ")}`}
-                      </p>
-                      <p className="mt-0.5 text-rotulo">
-                        <Idade desde={ordem.data_abertura} hoje={hoje} prefixo="No pátio" />
-                      </p>
+          {podeVerOS && (
+            <section className="sakura-card p-4">
+              <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+                Veículos no pátio
+              </h2>
+              {veiculosNoPatio.length === 0 ? (
+                <p className="text-corpo text-sakura-purple-dark/85">
+                  Nenhum veículo no pátio no momento.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  {veiculosNoPatio.map((ordem) => (
+                    <div
+                      key={ordem.id}
+                      className="sakura-card flex items-center gap-3 p-3"
+                    >
+                      <VeiculoIcone
+                        tipo={ordem.veiculo?.tipo ?? null}
+                        cor={ordem.veiculo?.cor}
+                        className="h-14 w-24 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-corpo font-medium text-sakura-purple-dark">
+                          {ordem.cliente?.nome ?? "—"}
+                        </p>
+                        <p className="truncate text-rotulo text-sakura-muted">
+                          {ordem.veiculo?.placa ?? "—"}
+                          {(ordem.veiculo?.marca || ordem.veiculo?.modelo) &&
+                            ` · ${[ordem.veiculo?.marca, ordem.veiculo?.modelo]
+                              .filter(Boolean)
+                              .join(" ")}`}
+                        </p>
+                        <p className="mt-0.5 text-rotulo">
+                          <Idade desde={ordem.data_abertura} hoje={hoje} prefixo="No pátio" />
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
         </>
       )}
     </div>
