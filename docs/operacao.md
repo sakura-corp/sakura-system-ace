@@ -32,6 +32,12 @@ Diagnóstico ou um ensaio do botão.
 que só existe depois da migration). A exceção é a migration que declara
 `-- versao-minima-do-programa: X` (seção 4): essa espera o programa chegar em X.
 
+**Versão que depende de uma migration que está esperando** (28/10/2026, a 0.9.56 da #367): quando o
+botão segura uma migration (⏸, abaixo), **todas as que vêm depois dela esperam junto**. Se a versão
+nova do programa lê o que uma dessas cria (a 0.9.56 lê as janelas da `0075`, que espera junto com a
+`0074`), **só liberar a versão depois que a migration rodou em todas as empresas**. O "Liberar
+versão" não confere isso sozinho; sem ela, as telas quebram naquela empresa.
+
 **Se um dia precisar colar algo à mão** (migration antiga num banco anterior à `0055`, ou uma Edge
 Function): mandar o link `raw.githubusercontent.com/...` e pedir pra ela conferir a **última
 linha** antes do Run. Copiar da pré-visualização da conversa cortou a `0057` na linha 100, e o

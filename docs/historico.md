@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 28/10/2026, madrugada: a #366 mesclada; a #367 com o Gusta
+- **A #366 mesclada** (PR #816): peças e estoque só pra quem tem o módulo. A 0074 espera a **0.9.55** (decisão dela na revisão). O banco de teste está na **74**.
+- **A #367 com o Gusta**: opção (a) (ficha do veículo e "Clientes que sumiram" como hoje, sem custo). Sai na **0.9.56**: o PR dela **só entra depois do Release da 0.9.55**, senão as lojas travam. A 0075 e a 0076 vão pro banco de teste quando o PR estiver revisado.
+- **O escritório**: o Tiago na escritorio#7; depois a escritorio#8 (dela) e só então a #814.
+- **Depende dela**: a #809 no fim de semana (0071, 0072 e 0073 → publicar e liberar a 0.9.55 → 0074; a última no ar é a 0.9.54), o manual da NFS-e **até 01/11** (#503), o "Resumo de segunda" (#625), a comissão (#502).
+- **Próximo**: revisar o PR da #367 quando o Gusta abrir.
+
 ### 27/10/2026, noite: a #366 com o Tiago; o painel congelado
 - **A #366 começou na sessão do Tiago.** Sofia respondeu as 3 perguntas ("1 sim, 2a, 3 sim"): a janela da peça ganha garantia, unidade e ativo; quem tem Funcionários também vê o custo. No fim, **2 migrations pra ela rodar**, na ordem.
 - **O ritual de tarefa acompanha o PR** até ela mesclar (#813; o mesmo no escritório).
