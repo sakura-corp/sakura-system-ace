@@ -102,6 +102,14 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
   Code, não foi visto de dentro do app. Conferir na primeira sessão comprida de verdade e, se não
   aparecer, avisar (a lição vira item de `docs/licoes.md`).
 
+## O aviso das pendências no começo da sessão (28/10/2026)
+
+Pedido da Sofia, depois de o painel travar o Tiago numa tarefa de 22/10 que ele tinha esquecido no
+nome dele (#699): logo depois de conferir quem é (seção 0 do `PROJETO_STATUS.md`, aqui e no
+escritório), o Claude avisa em poucas linhas o que está pendente no nome da pessoa. Sem gancho nem
+rotina: o gancho da sessão na nuvem não alcança o GitHub, e uma rotina diária gastaria cota mesmo
+sem sessão. É aviso, nunca tranca.
+
 ## A lista (todas aprovadas em 14/10)
 
 **A fila** (uma sessão por item, cada uma com a sua tarefa no GitHub):
