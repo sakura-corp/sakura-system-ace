@@ -336,6 +336,12 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
 
 ## O dia a dia
 
+**O aviso das pendências** (Sofia, 28/10/2026): no começo de toda sessão, o Claude procura sozinho
+o que está no seu nome (tarefa sem PR, PR com pedido de mudança ou CI vermelho, menção sem
+resposta) e avisa em poucas linhas, antes de fazer o que você pediu. Tarefa de leva sem PR no seu
+nome trava o "Pegar tarefa" do painel: termine ou largue antes de pegar outra. É só aviso: se você
+está no meio de outra coisa, siga.
+
 **As três portas** (aprovadas pela Sofia em 18/10): tudo entra por uma delas, e por nenhuma outra.
 1. **Ideia solta** (um vídeo, um print, um "e se…"): digite `/ideia`. Vira uma issue curta com a
    etiqueta `ideia`, lida na revisão do mês. Ideia sobre empresa, dinheiro, preço, sócios, dado
