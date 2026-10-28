@@ -3,7 +3,7 @@
 - **Tarefa**: #367, ordens de serviço só pra quem tem o módulo (TR-04.1, lote 6)
 - **Chefe**: backend
 - **Data**: 2026-10-28
-- **PR**: na descrição do PR da branch `claude/gracious-einstein-gmm9k0`
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/818
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
