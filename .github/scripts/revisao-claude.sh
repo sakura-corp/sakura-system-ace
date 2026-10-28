@@ -15,9 +15,14 @@
 set -euo pipefail
 
 MODELO="claude-sonnet-5-5"
-# O tamanho máximo da resposta. Uma revisão cabe folgada em 8 mil tokens
-# (uns 32 mil caracteres), abaixo do limite de um comentário do GitHub.
-MAXIMO_DA_RESPOSTA=8000
+# O tamanho máximo da resposta, contando o que o Claude pensa antes de
+# escrever (o pensamento entra nesse limite). Com 8 mil, um PR grande
+# (sakura-system-ace#818, 28/10/2026) gastou tudo pensando e voltou sem
+# texto. O texto em si é cortado no limite do comentário, logo abaixo.
+MAXIMO_DA_RESPOSTA=16000
+# Quanto o Claude pensa antes de responder: "medium" basta pra revisar e
+# deixa espaço pro texto (o padrão do Sonnet 5.5 é "high").
+ESFORCO="medium"
 # O limite de um comentário do GitHub é 65.536 caracteres; o texto do Claude
 # é cortado antes disso (com aviso), pra caber o cabeçalho e o rodapé.
 LIMITE_DO_COMENTARIO=60000
@@ -129,9 +134,10 @@ EOF
 jq -n \
   --arg modelo "$MODELO" \
   --argjson maximo "$MAXIMO_DA_RESPOSTA" \
+  --arg esforco "$ESFORCO" \
   --rawfile sistema "$PASTA/sistema.txt" \
   --rawfile conteudo "$PASTA/conteudo.txt" \
-  '{model: $modelo, max_tokens: $maximo, fallbacks: "default", system: $sistema,
+  '{model: $modelo, max_tokens: $maximo, output_config: {effort: $esforco}, fallbacks: "default", system: $sistema,
     messages: [{role: "user", content: $conteudo}]}' > "$PASTA/pedido.json"
 
 # A chave vai num arquivo só desta rodada (lido pelo curl com -H @arquivo),
@@ -177,6 +183,9 @@ if [ "$motivo" = "refusal" ]; then
   parar_com_aviso "O Claude recusou revisar este PR (a API marcou como recusa de segurança). Vale revisar numa sessão."
 fi
 if ! grep -q '[^[:space:]]' "$PASTA/texto.md"; then
+  if [ "$motivo" = "max_tokens" ]; then
+    parar_com_aviso "O Claude usou todo o limite pensando e não chegou a escrever a revisão ($saida tokens de saída). PR grande assim é melhor revisar numa sessão."
+  fi
   parar_com_aviso "A API respondeu, mas sem texto (motivo do fim: \`$motivo\`). Vale pedir de novo."
 fi
 
