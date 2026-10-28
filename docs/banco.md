@@ -495,7 +495,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   mutações, todas vermelhas.
 - `0073` e `0074`: **Peças e estoque só pra quem tem o módulo** (tarefa #366, lote 5 do TR-04.1).
   Em duas, igual ao lote 4: a `0073` só ACRESCENTA, a versão nova do programa passa a ler por ela
-  (pra todo mundo), e a `0074` FECHA, com `-- versao-minima-do-programa: 0.9.56`. **Ordem: `0073` →
+  (pra todo mundo), e a `0074` FECHA, com `-- versao-minima-do-programa: 0.9.55` (a versão que sai com este código; Sofia, 28/10). **Ordem: `0073` →
   publicar e liberar a versão → `0074`.** Quem lê `pecas` inteira (com o custo): **Estoque, Relações,
   Funcionários** (as comissões usam o custo de cada peça) ou admin; quem escreve nela direto: só
   Estoque. `estoque_movimentos` e `contagens_estoque`: só Estoque, com acesso à loja; a exceção é o

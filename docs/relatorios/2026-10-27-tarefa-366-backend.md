@@ -90,8 +90,8 @@
 - **Sofia aplica as migrations**: a **`0073`** (só acrescenta, sem versão mínima) **antes** de
   publicar a versão que traz este código. Atenção: o `package.json` já está em 0.9.55, que ainda não
   saiu (#809). Se este PR entrar antes de publicar a 0.9.55, ela precisa da 0073 também, além da
-  0071 e da 0072. A **`0074`** fecha a porta e declara `-- versao-minima-do-programa: 0.9.56`
-  (ajustar se a versão sair com outro número; 0.9.56 é o lado seguro). Ordem: **0073 → publicar e
+  0071 e da 0072. A **`0074`** fecha a porta e declara `-- versao-minima-do-programa: 0.9.55`
+  (era 0.9.56; a Sofia decidiu em 28/10 que este código sai na 0.9.55, então a 0073 sobe junto da 0071 e da 0072, antes de publicar). Ordem: **0073 → publicar e
   liberar → 0074**.
 - **Tiago, no PC** (com as migrations aplicadas no Supabase de teste): o "Pronto quando no PC".
 

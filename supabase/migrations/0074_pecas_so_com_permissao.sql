@@ -31,8 +31,8 @@
 -- quem não tem Estoque, a lista de peças da OS (lê `pecas` direto), o saldo e
 -- a baixa com `returning`. Por isso a linha abaixo: o botão "Atualizar o banco
 -- de todas as empresas" espera os computadores chegarem na versão que lê pela
--- janela. Se a versão nova sair com outro número, ajustar aqui.
--- versao-minima-do-programa: 0.9.56
+-- janela: a 0.9.55, que já sai com este código (Sofia, 28/10, PR #816).
+-- versao-minima-do-programa: 0.9.55
 --
 -- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
 -- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem

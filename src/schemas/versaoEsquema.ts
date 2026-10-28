@@ -36,7 +36,7 @@ export const MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES: Readonly<Record<number, str
   65: "0.9.52",
   69: "0.9.54",
   70: "0.9.41",
-  74: "0.9.56",
+  74: "0.9.55",
 };
 
 /**
