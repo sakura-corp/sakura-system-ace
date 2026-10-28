@@ -7,7 +7,7 @@
 
 ## 6. Dívidas técnicas / pontos de atenção — IMPORTANTE
 
-1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes e Peças/Estoque; nas outras tabelas, só na tela** — um operador
+1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes, Peças/Estoque e Ordens de Serviço; nas outras tabelas, só na tela** — um operador
    logado com permissão só de "Caixa", por exemplo, ainda consegue chamar a API do Supabase
    direto pra mexer em "Clientes" se tentar de propósito. RLS exige **login** pra tudo (fecha o
    acesso sem estar logado), mas não reforça por módulo. **Enquanto quem opera é o pai dela e os
@@ -34,8 +34,19 @@
    com `.select()` pede a policy de leitura junto. Antes de fechar uma tabela, mapear **quem
    grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
    `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
-   Fornecedores é que fecha de vez. As outras **continuam como sempre foram** — o
-   parágrafo acima segue valendo pra ordens de serviço (o exemplo do balconista lendo
+   Fornecedores é que fecha de vez. **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
+   `0076`, tarefa #367, ainda não aplicadas): `ordens_servico` e `ordens_servico_itens`, lidas
+   inteiras só por OS e Relações; Caixa, Garantias, Comissões, Notas, a ficha do veículo e "clientes
+   que sumiram" leem por cinco janelas (`ordens_servico_caixa`, `_comissoes`, `_garantias`,
+   `_notas`, `_clientes`), e o Início esconde "OS abertas" e "Veículos no pátio" de quem não tem o
+   módulo. **Lição nova do lote 6**: um `exists` dentro de uma policy consulta a outra tabela com a
+   RLS de quem grava. Quando essa outra tabela fecha, o `exists` passa a dizer "não existe" pra quem
+   não tem o módulo dela, sem erro: o ramo de Contas a Receber do Caixa (0062) teria parado em
+   silêncio. A pergunta foi pra uma função `security definer` (`ordem_servico_da_loja`). E o
+   contrário também vale: nos itens, o `exists` na OS **herdava** a regra de módulo da OS, e um teste
+   que tirava o módulo da policy dos itens passou verde; com a função, a regra ficou escrita num
+   lugar só e o teste reprova. As outras **continuam como sempre foram** — o
+   parágrafo acima segue valendo pra fornecedores e o resto (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
    e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou
@@ -62,7 +73,7 @@
    vazia" — e RLS falha em silêncio (item 15 desta seção). É por isso que a etapa 3 do item é um
    teste que prova o bloqueio perfil por perfil, e não um "confia que funcionou".
    **E esse teste já existe, desde 13/09/2026**: é a matriz de RLS (`npm run test:rls`, item
-   `TR-07.3`, item 63 desta seção), hoje em 760 células. O diff do `expectativas.csv` **é** a
+   `TR-07.3`, item 63 desta seção), hoje em 940 células. O diff do `expectativas.csv` **é** a
    revisão: na `0056` ele mostra, em números, o balconista saindo de 1 pra 0 nas oito linhas de
    RH e entrando com 1 na view pública — ou seja, o que ele perdeu e o que ele manteve, lado a
    lado.
