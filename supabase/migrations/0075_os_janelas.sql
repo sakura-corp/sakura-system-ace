@@ -9,7 +9,10 @@
 -- versão nova passa a ler por elas — pra todo mundo, inclusive quem tem o
 -- módulo OS —, então ela precisa desta migration já aplicada; e a 0076, que
 -- fecha a porta, precisa da versão nova já nos computadores. Ordem: 0075 →
--- publicar e liberar a versão → 0076.
+-- publicar e liberar a 0.9.56 → 0076. (Esta não declara versão mínima, mas
+-- o botão de atualizar os bancos só a solta depois da 0074, que espera a
+-- 0.9.55 nos computadores; o porquê de este código não poder sair na 0.9.55
+-- está no cabeçalho da 0076.)
 --
 -- O PROBLEMA. Quem não tem o módulo Ordens de Serviço não vê a tela, mas a
 -- RLS de `ordens_servico` e `ordens_servico_itens` só exigia o acesso à loja
@@ -39,6 +42,18 @@
 --     tela mostra hoje: número, datas, km, veículo e os itens (descrição,
 --     quantidade, preço, desconto e o prazo de garantia da peça). →
 --     `ordens_servico_clientes`.
+--
+-- ORÇAMENTO E RECUSADO NÃO SAEM POR JANELA NENHUMA (#379). Toda tela fora
+-- da de OS já os tira com `contaNosNumeros` (src/schemas/orcamento.ts); a
+-- janela não entrega o que a tela não mostra. O filtro é o mesmo do programa
+-- (`STATUS_DE_ORCAMENTO`: 'orcamento' e 'recusado'). Nenhuma conta muda: o
+-- Caixa nunca tem lançamento de orçamento (o programa não fatura orçamento,
+-- `faturarOrdem`), e a OS faturada não volta a orçamento (a trava
+-- `ck_ordens_servico_transicao_orcamento`, 0065).
+--
+-- A ORDEM DOS ITENS é a mesma de antes: sem `order by`, como o `join`
+-- embutido da tela de OS (na prática, a ordem em que foram gravados). Ordenar
+-- pelo `id` embaralharia a lista: o `id` é um UUID aleatório.
 --
 -- NENHUMA CONTA DE DINHEIRO MUDA. As janelas entregam os campos crus de cada
 -- item (num array `itens`, em jsonb) e a conta continua onde sempre esteve,
@@ -90,7 +105,8 @@ as
            '[]'::jsonb
          ) as itens
     from ordens_servico o
-   where operador_tem_acesso_loja(o.loja_id)
+   where o.status not in ('orcamento', 'recusado')
+     and operador_tem_acesso_loja(o.loja_id)
      and (
        (select operador_tem_permissao('caixa'))
        or (select operador_tem_permissao('relatorios'))
@@ -99,7 +115,8 @@ as
 comment on view ordens_servico_caixa is
   'TR-04.1 lote 6 (0075). As OS do jeito que o Caixa, o Início e Relações '
   'precisam: número, tipo, status, nome do cliente e os itens só com '
-  'quantidade, preço e desconto (o total). Exige Caixa ou Relações, e só as '
+  'quantidade, preço e desconto (o total). Sem orçamento nem recusado. '
+  'Exige Caixa ou Relações, e só as '
   'lojas de quem pergunta. Roda com os direitos do dono, então NÃO reage à '
   'RLS das tabelas — os dois filtros são o where daqui. Só SELECT. NUNCA '
   'acrescentar custo, descrição, observação nem veículo.';
@@ -163,7 +180,9 @@ grant select on ordens_servico_comissoes to authenticated;
 -- A descrição e o prazo vêm do CADASTRO da peça (o que a tela usa hoje, pela
 -- pecas_janela); a peça avulsa (peca_id nulo) e a peça apagada saem com os
 -- dois nulos. O `left join` não multiplica linhas: as duas chaves são
--- primárias.
+-- primárias. Só a peça de OS FECHADA (`data_fechamento`) e que não é
+-- orçamento nem recusado: o mesmo corte de `listarItensComGarantia`
+-- (src/lib/garantias.ts), que ainda tira, no programa, a peça sem prazo.
 drop view if exists ordens_servico_garantias;
 
 create view ordens_servico_garantias
@@ -186,11 +205,14 @@ as
     left join pecas p     on p.id = i.peca_id
     left join veiculos v  on v.id = o.veiculo_id
    where i.tipo = 'peca'
+     and o.data_fechamento is not null
+     and o.status not in ('orcamento', 'recusado')
      and operador_tem_acesso_loja(o.loja_id)
      and (select operador_tem_permissao('garantias'));
 
 comment on view ordens_servico_garantias is
-  'TR-04.1 lote 6 (0075). Uma linha por peça vendida numa OS: quantidade, a '
+  'TR-04.1 lote 6 (0075). Uma linha por peça vendida numa OS fechada (sem '
+  'orçamento nem recusado): quantidade, a '
   'descrição e o prazo de garantia do cadastro, o status e a data de '
   'fechamento da OS, o cliente e a placa. Exige Garantias, e só as lojas de '
   'quem pergunta (o where daqui). Só SELECT. NUNCA acrescentar custo nem preço.';
@@ -215,13 +237,15 @@ as
          o.data_abertura,
          (select c.nome from clientes c where c.id = o.cliente_id) as cliente_nome
     from ordens_servico o
-   where operador_tem_acesso_loja(o.loja_id)
+   where o.status not in ('orcamento', 'recusado')
+     and operador_tem_acesso_loja(o.loja_id)
      and (select operador_tem_permissao('notas_fiscais'));
 
 comment on view ordens_servico_notas is
   'TR-04.1 lote 6 (0075). As OS pro seletor "OS relacionada" das Notas '
   'Fiscais e o nome do cliente da nota arquivada: número, tipo, status, data '
-  'de abertura e cliente. Exige Notas Fiscais, e só as lojas de quem pergunta '
+  'de abertura e cliente. Sem orçamento nem recusado. Exige Notas Fiscais, e '
+  'só as lojas de quem pergunta '
   '(o where daqui). Só SELECT. Sem itens nem valores.';
 
 revoke all on ordens_servico_notas from anon, authenticated;
@@ -271,7 +295,8 @@ as
          ) as itens
     from ordens_servico o
     left join veiculos v on v.id = o.veiculo_id
-   where operador_tem_acesso_loja(o.loja_id)
+   where o.status not in ('orcamento', 'recusado')
+     and operador_tem_acesso_loja(o.loja_id)
      and (
        (select operador_tem_permissao('clientes'))
        or (select operador_tem_permissao('ordens_servico'))
@@ -281,7 +306,8 @@ comment on view ordens_servico_clientes is
   'TR-04.1 lote 6 (0075). As OS do jeito que a ficha do veículo e a lista '
   '"clientes que sumiram" mostram: número, datas, km, cliente, veículo e os '
   'itens com descrição, quantidade, preço, desconto e o prazo de garantia da '
-  'peça. Exige Clientes ou OS, e só as lojas de quem pergunta (o where '
+  'peça. Sem orçamento nem recusado. Exige Clientes ou OS, e só as lojas '
+  'de quem pergunta (o where '
   'daqui). Só SELECT. NUNCA acrescentar custo nem observação.';
 
 revoke all on ordens_servico_clientes from anon, authenticated;

@@ -28,9 +28,19 @@
 -- as garantias, o cliente da nota, a ficha do veículo e o Início (que lia
 -- `ordens_servico` direto). Por isso a linha abaixo: o botão "Atualizar o
 -- banco de todas as empresas" espera os computadores chegarem na versão que
--- lê pelas janelas. 0.9.56 é o lado seguro (a 0.9.55 ainda não saiu, e a
--- Sofia decide em qual versão este código sai; se for a 0.9.55, troca aqui e
--- em src/schemas/versaoEsquema.ts).
+-- lê pelas janelas, a 0.9.56.
+--
+-- POR QUE NÃO PODE SER A 0.9.55. A 0074 (já na main) espera a 0.9.55 nos
+-- computadores, e o robô de atualizar os bancos (`acharCorte`, em
+-- scripts/atualizar-bancos.mjs) segura junto todas as migrations que vêm
+-- depois dela — a 0075 inclusive. Uma 0.9.55 que lesse pelas janelas
+-- precisaria da 0075 no banco antes de chegar nas lojas, e a 0075 só entra
+-- depois da 0.9.55 nos computadores: as telas fora da OS quebrariam no meio.
+-- Então a ordem é:
+--   1. publicar e liberar a 0.9.55 SEM este código (o da #367);
+--   2. rodar a 0074 e a 0075 (o botão as solta quando todos estão na 0.9.55);
+--   3. publicar e liberar a 0.9.56, que lê pelas janelas;
+--   4. rodar esta, a 0076 (o botão a solta quando todos estão na 0.9.56).
 -- versao-minima-do-programa: 0.9.56
 --
 -- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):

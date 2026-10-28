@@ -252,13 +252,24 @@ describe("dados de mentira: as telas não se contradizem", async () => {
   // #367: as janelas das OS (migration 0075) têm que contar a mesma história da OS.
   it("as janelas das OS batem com as OS: garantias só de peça, comissões só de faturada", () => {
     const porId = new Map(TABELAS.ordens_servico.map((o) => [o.id, o]));
-    expect(TABELAS.ordens_servico_clientes.length).toBe(TABELAS.ordens_servico.length);
-    expect(TABELAS.ordens_servico_caixa.length).toBe(TABELAS.ordens_servico.length);
+    // Como a view: orçamento e recusado não saem por janela nenhuma.
+    const orcamento = (status) => ["orcamento", "recusado"].includes(status);
+    const queContam = TABELAS.ordens_servico.filter((o) => !orcamento(o.status));
+    expect(queContam.length).toBeLessThan(TABELAS.ordens_servico.length);
+    expect(TABELAS.ordens_servico_clientes.length).toBe(queContam.length);
+    expect(TABELAS.ordens_servico_caixa.length).toBe(queContam.length);
+    expect(TABELAS.ordens_servico_notas.length).toBe(queContam.length);
+    for (const nome of ["ordens_servico_clientes", "ordens_servico_caixa", "ordens_servico_notas"]) {
+      for (const o of TABELAS[nome]) expect(orcamento(o.status), `${nome} ${o.id}`).toBe(false);
+    }
     expect(TABELAS.ordens_servico_comissoes.length).toBeGreaterThan(10);
     for (const o of TABELAS.ordens_servico_comissoes) expect(o.status).toBe("faturada");
     expect(TABELAS.ordens_servico_garantias.length).toBeGreaterThan(10);
     for (const g of TABELAS.ordens_servico_garantias) {
       const o = porId.get(g.ordem_servico_id);
+      // Como a view: só peça de OS fechada, e nunca de orçamento.
+      expect(orcamento(g.ordem_status), g.id).toBe(false);
+      expect(g.ordem_data_fechamento, g.id).not.toBeNull();
       expect(g.ordem_data_fechamento, g.id).toBe(o.data_fechamento ?? null);
       expect(g.cliente_nome, g.id).toBe(o.cliente.nome);
       expect(g.prazo_garantia_dias, g.id).toBeGreaterThan(0);

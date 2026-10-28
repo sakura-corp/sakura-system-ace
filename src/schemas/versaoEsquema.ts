@@ -37,6 +37,9 @@ export const MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES: Readonly<Record<number, str
   69: "0.9.54",
   70: "0.9.41",
   74: "0.9.55",
+  // Nunca 0.9.55: a 0074 já espera a 0.9.55 e o botão segura a 0075 junto,
+  // então o código que lê pelas janelas da 0075 só pode sair na 0.9.56
+  // (cabeçalho da 0076).
   76: "0.9.56",
 };
 

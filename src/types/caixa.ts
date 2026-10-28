@@ -2,7 +2,12 @@ import type { ItemParaVenda, StatusOS, TipoOrdem } from "@/types/os";
 
 export type TipoCaixa = "entrada" | "saida";
 
-export interface MovimentoCaixa {
+/**
+ * Lançamento de Caixa. `I` é o formato dos itens da OS ligada: no programa é
+ * sempre `ItemParaVenda` (o que a janela do Caixa entrega, #367); os testes
+ * que calculam custo pelos mapas usam o item inteiro.
+ */
+export interface MovimentoCaixa<I extends ItemParaVenda = ItemParaVenda> {
   id: string;
   loja_id: string;
   data: string;
@@ -20,7 +25,7 @@ export interface MovimentoCaixa {
     status?: StatusOS;
     cliente: { nome: string } | null;
     /** Só quantidade, preço e desconto: é o que a janela do Caixa entrega (#367). */
-    itens: ItemParaVenda[];
+    itens: I[];
   } | null;
   categoria?: { nome: string } | null;
 }

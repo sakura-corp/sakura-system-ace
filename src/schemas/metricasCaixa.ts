@@ -63,18 +63,29 @@ export function custoDosItens(
  * `resumirMovimentos` e `lucroPorMovimento` não dependerem de quem calcula o
  * custo: quem pode ver o cadastro de peças calcula pelos mapas; quem não pode
  * (Caixa e Início sem o módulo Estoque, #366) recebe o custo pronto do banco.
+ *
+ * `I` é o formato do item que a conta precisa. O padrão é o do Caixa
+ * (`ItemParaVenda`: só quantidade, preço e desconto).
  */
-export type CustoDaOrdem = (ordemId: string, itens: ItemParaVenda[]) => number;
+export type CustoDaOrdem<I extends ItemParaVenda = ItemParaVenda> = (
+  ordemId: string,
+  itens: readonly I[],
+) => number;
 
-/** Custo da ordem calculado item a item pelos mapas de custo (Relações etc.). */
+/** O item que a conta pelos mapas precisa: o da venda mais tipo, peça, serviço e custo. */
+export type ItemParaCustoPelosMapas = ItemParaVenda & ItemParaCusto;
+
+/**
+ * Custo da ordem calculado item a item pelos mapas de custo. Precisa do item
+ * inteiro (tipo, peça, serviço, custo da avulsa): os itens do Caixa, que só
+ * têm quantidade, preço e desconto (janela da #367), NÃO servem — e o
+ * TypeScript reclama se alguém passar esta conta com eles.
+ */
 export function custoDaOrdemPelosMapas(
   custoPeca: MapaCusto,
   custoServico: MapaCusto,
-): CustoDaOrdem {
-  // O Caixa de hoje só recebe quantidade/preço/desconto (janela da #367), que
-  // não bastam pra este cálculo: ele serve a quem tem os itens inteiros.
-  return (_ordemId, itens) =>
-    custoDosItens(itens as unknown as readonly ItemParaCusto[], custoPeca, custoServico);
+): CustoDaOrdem<ItemParaCustoPelosMapas> {
+  return (_ordemId, itens) => custoDosItens(itens, custoPeca, custoServico);
 }
 
 /** O que a função `custo_das_ordens` do banco devolve por OS. */
@@ -103,9 +114,9 @@ export interface ResumoCaixa {
   ticketMedio: number;
 }
 
-export function resumirMovimentos(
-  movimentos: MovimentoCaixa[],
-  custoDaOrdem: CustoDaOrdem,
+export function resumirMovimentos<I extends ItemParaVenda = ItemParaVenda>(
+  movimentos: readonly MovimentoCaixa<I>[],
+  custoDaOrdem: CustoDaOrdem<I>,
 ): ResumoCaixa {
   let entradas = 0;
   let saidas = 0;
@@ -156,9 +167,9 @@ export function resumirMovimentos(
  * repartido entre os lançamentos na proporção do que foi pago em cada um —
  * repetir o valor cheio em cada linha faria a coluna não fechar com o total.
  */
-export function lucroPorMovimento(
-  movimentos: MovimentoCaixa[],
-  custoDaOrdem: CustoDaOrdem,
+export function lucroPorMovimento<I extends ItemParaVenda = ItemParaVenda>(
+  movimentos: readonly MovimentoCaixa<I>[],
+  custoDaOrdem: CustoDaOrdem<I>,
 ): Map<string, number> {
   const pagoPorOrdem = new Map<string, number>();
   for (const movimento of movimentos) {

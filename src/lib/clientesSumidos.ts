@@ -4,19 +4,6 @@ import type { OrdemDoCliente } from "@/schemas/clientesSumidos";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { StatusOS, TipoOrdem } from "@/types/os";
 
-/**
- * As ordens FATURADAS (OS e vendas de balcão) de todas as lojas que a pessoa
- * acessa (o RLS de `ordens_servico` corta as outras, migration 0032), só com o que a conta de "clientes que sumiram" usa (FN-11).
- *
- * Por que não reaproveitar `listarOrdens()`: ela traz uma loja só, com
- * operador, funcionário e tudo mais — e o cliente é da empresa inteira. Quem
- * vem sempre na loja do centro não "sumiu" só porque não passou na da vila.
- *
- * O filtro de "faturada" já vai pro banco pra trazer menos linhas; a conta em
- * `schemas/clientesSumidos.ts` confere de novo, porque é ela que tem teste.
- * O Consumidor (venda de balcão sem cliente) fica de fora: ele nem aparece na
- * lista de clientes, e é quem mais tem venda.
- */
 /** A linha da janela `ordens_servico_clientes` (migration 0075, #367). */
 export interface LinhaOrdemDoCliente {
   id: string;
@@ -58,6 +45,22 @@ export function ordemDoClienteDaJanela(linha: LinhaOrdemDoCliente): OrdemDoClien
   };
 }
 
+/**
+ * As ordens FATURADAS (OS e vendas de balcão) de todas as lojas que a pessoa
+ * acessa, só com o que a conta de "clientes que sumiram" usa (FN-11). Vêm
+ * pela janela `ordens_servico_clientes` (migration 0075, #367), que já corta
+ * as lojas de fora, os orçamentos e quem não tem Clientes nem OS — o filtro
+ * de loja e de módulo é o `where` da própria view.
+ *
+ * Por que não reaproveitar `listarOrdens()`: ela traz uma loja só, com
+ * operador, funcionário e tudo mais — e o cliente é da empresa inteira. Quem
+ * vem sempre na loja do centro não "sumiu" só porque não passou na da vila.
+ *
+ * O filtro de "faturada" já vai pro banco pra trazer menos linhas; a conta em
+ * `schemas/clientesSumidos.ts` confere de novo, porque é ela que tem teste.
+ * O Consumidor (venda de balcão sem cliente) fica de fora: ele nem aparece na
+ * lista de clientes, e é quem mais tem venda.
+ */
 export async function listarOrdensFaturadasDosClientes(): Promise<OrdemDoCliente[]> {
   const dados = await buscarTudoEmPaginas((de, ate) =>
     supabase

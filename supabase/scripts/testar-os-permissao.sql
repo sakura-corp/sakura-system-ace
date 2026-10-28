@@ -50,9 +50,15 @@ declare
   os_aberta  uuid := '36707777-0000-0000-0000-000000000002';  -- loja A, em andamento, 1 item
   os_vazia   uuid := '36707777-0000-0000-0000-000000000003';  -- loja A, sem item
   os_b       uuid := '36707777-0000-0000-0000-00000000000b';  -- loja B, faturada
+  os_orc     uuid := '36707777-0000-0000-0000-000000000004';  -- loja A, orçamento aberto, 1 peça
+  os_rec     uuid := '36707777-0000-0000-0000-000000000005';  -- loja A, recusado, 1 peça
   item_p1    uuid := '36708888-0000-0000-0000-000000000001';
   item_s1    uuid := '36708888-0000-0000-0000-000000000002';
   item_av    uuid := '36708888-0000-0000-0000-000000000003';
+  item_orc   uuid := '36708888-0000-0000-0000-000000000004';  -- peça do orçamento
+  item_rec   uuid := '36708888-0000-0000-0000-000000000005';  -- peça do recusado
+  item_ab_p  uuid := '36708888-0000-0000-0000-000000000006';  -- peça da OS aberta (sem fechamento)
+  item_alin  uuid := '36708888-0000-0000-0000-0000000000ff';  -- serviço da OS aberta, gravado ANTES da peça
   quantas    int;
   numero_1   int;
   numero_2   int;
@@ -128,6 +134,15 @@ begin
     (os_vazia,  loja_a, cliente,   null,    null,   null,  null,                        'em_andamento', null),
     (os_b,      loja_b, cliente_b, null,    null,   null,  null,                        'faturada', now())
     on conflict (id) do nothing;
+  -- Orçamento aberto e recusado (#379): nenhuma tela fora da de OS mostra
+  -- (todas filtram com `contaNosNumeros`), então nenhuma janela pode levar.
+  -- Os dois com data de fechamento de propósito: assim, na de Garantias, quem
+  -- segura é o filtro de status, e não o de data. Não ganham número de OS
+  -- (0065), então a numeração da loja A continua 1, 2 e 3.
+  insert into ordens_servico (id, loja_id, cliente_id, veiculo_id, status, data_fechamento) values
+    (os_orc, loja_a, cliente, veiculo, 'orcamento', now()),
+    (os_rec, loja_a, cliente, veiculo, 'recusado',  now())
+    on conflict (id) do nothing;
   -- os_fat: pneu 2 × 50,00 − 5,00 = 95,00; montagem 1 × 80,00 = 80,00;
   --         peça avulsa 1,5 × 20,00 (custo 15,00) = 30,00. Total: 205,00.
   insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, servico_id, tecnico_id,
@@ -135,9 +150,18 @@ begin
     (item_p1, os_fat, 'peca',    p1,   null, null,   'Pneu',             2,   50.00, 5.00, null),
     (item_s1, os_fat, 'servico', null, s1,   func_1, 'Montagem',         1,   80.00, 0,    null),
     (item_av, os_fat, 'peca',    null, null, null,   'Avulsa com custo', 1.5, 20.00, 0,    15.00);
+  -- O alinhamento entra antes da peça da mesma OS (lá embaixo), mas com id
+  -- MAIOR: a janela tem de devolver os itens pelo id, não pela ordem de gravação.
+  insert into ordens_servico_itens (id, ordem_servico_id, tipo, servico_id, descricao, quantidade, preco_unitario) values
+    (item_alin, os_aberta, 'servico', s1, 'Alinhamento', 1, 40.00);
   insert into ordens_servico_itens (ordem_servico_id, tipo, servico_id, descricao, quantidade, preco_unitario) values
-    (os_aberta, 'servico', s1, 'Alinhamento', 1, 40.00),
     (os_b,      'peca',    null, 'Peça da loja B', 1, 50.00);
+  -- Peças com prazo de garantia que NÃO podem virar garantia: a do orçamento,
+  -- a do recusado e a da OS ainda aberta (sem data de fechamento).
+  insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, descricao, quantidade, preco_unitario) values
+    (item_orc,  os_orc,    'peca', p1, 'Pneu orçado',   1, 50.00),
+    (item_rec,  os_rec,    'peca', p1, 'Pneu recusado', 1, 50.00),
+    (item_ab_p, os_aberta, 'peca', p1, 'Pneu da aberta', 1, 50.00);
   insert into caixa_movimentos (loja_id, ordem_servico_id, tipo, forma_pagamento, valor, descricao) values
     (loja_a, os_fat, 'entrada', 'pix', 205.00, 'Faturamento de teste (#367)');
 
@@ -309,23 +333,24 @@ begin
   -- ===================================================================
   -- C. Cada janela, só pra quem tem o módulo dela, só da loja dele
   -- ===================================================================
-  -- Loja A tem 3 OS (1 faturada) e 2 peças vendidas na faturada; a B tem 1
-  -- OS faturada com 1 peça. Colunas: caixa, comissões, garantias, notas,
-  -- clientes, e as duas tabelas (OS, itens).
+  -- Loja A tem 5 ordens na tabela: 3 OS (1 faturada) mais 1 orçamento e 1
+  -- recusado, que nenhuma janela leva; 7 itens, dos quais só as 2 peças da
+  -- faturada são garantia. A B tem 1 OS faturada com 1 peça. Colunas: caixa,
+  -- comissões, garantias, notas, clientes, e as duas tabelas (OS, itens).
   for linha in
     select * from (values
       (o_caixa,    3, 0, 0, 0, 0, 0, 0),
-      (o_rel,      3, 0, 0, 0, 0, 3, 4),
+      (o_rel,      3, 0, 0, 0, 0, 5, 7),
       (o_func,     0, 1, 0, 0, 0, 0, 0),
       (o_gar,      0, 0, 2, 0, 0, 0, 0),
       (o_notas,    0, 0, 0, 3, 0, 0, 0),
       (o_cli,      0, 0, 0, 0, 3, 0, 0),
-      (o_os,       0, 0, 0, 0, 3, 3, 4),
+      (o_os,       0, 0, 0, 0, 3, 5, 7),
       (o_receber,  0, 0, 0, 0, 0, 0, 0),
       (o_painel,   0, 0, 0, 0, 0, 0, 0),
-      (o_admin,    3, 1, 2, 3, 3, 3, 4),
-      (o_admin_ab, 4, 2, 3, 4, 4, 4, 5),
-      (o_os_ab,    0, 0, 0, 0, 4, 4, 5),
+      (o_admin,    3, 1, 2, 3, 3, 5, 7),
+      (o_admin_ab, 4, 2, 3, 4, 4, 6, 8),
+      (o_os_ab,    0, 0, 0, 0, 4, 6, 8),
       (o_inativo,  0, 0, 0, 0, 0, 0, 0),
       (o_orfao,    0, 0, 0, 0, 0, 0, 0)
     ) v(quem, caixa, comissoes, garantias, notas, clientes, tabela_os, tabela_itens)
@@ -376,7 +401,8 @@ begin
            E'\n' order by o.id)
     into esperado
     from ordens_servico o
-   where o.loja_id = loja_a;
+   where o.loja_id = loja_a
+     and o.status not in ('orcamento', 'recusado');  -- o mesmo `contaNosNumeros` do programa
   set local role authenticated;
   perform set_config('request.jwt.claim.sub', o_caixa::text, true);
   select string_agg(
@@ -410,6 +436,30 @@ begin
   select itens::text into obtido from ordens_servico_caixa where id = os_vazia;
   if obtido is distinct from '[]' then
     raise exception 'FALHOU (D4): a OS sem item chega com itens = %, esperado []', obtido;
+  end if;
+
+  -- 1b. Orçamento e recusado não saem por janela nenhuma (as telas filtram
+  --     com `contaNosNumeros`; a janela não entrega o que a tela não mostra).
+  --     E a peça de OS ainda sem data de fechamento não é garantia. Lido por
+  --     quem tem tudo nas duas lojas, pra só o filtro da janela segurar.
+  perform set_config('request.jwt.claim.sub', o_admin_ab::text, true);
+  foreach visao in array array['ordens_servico_caixa','ordens_servico_comissoes',
+                               'ordens_servico_notas','ordens_servico_clientes'] loop
+    execute format('select count(*) from %I where id in ($1, $2)', visao)
+      into quantas using os_orc, os_rec;
+    if quantas <> 0 then
+      raise exception 'FALHOU (D1b): a % entregou % orçamento(s)/recusado(s)', visao, quantas;
+    end if;
+  end loop;
+  select count(*) into quantas from ordens_servico_garantias
+   where id in (item_orc, item_rec) or ordem_servico_id in (os_orc, os_rec);
+  if quantas <> 0 then
+    raise exception 'FALHOU (D1c): a janela das garantias entregou % peça(s) de orçamento/recusado', quantas;
+  end if;
+  select count(*) into quantas from ordens_servico_garantias
+   where id = item_ab_p or ordem_data_fechamento is null;
+  if quantas <> 0 then
+    raise exception 'FALHOU (D1d): a janela das garantias entregou % peça(s) de OS sem data de fechamento', quantas;
   end if;
 
   -- 2. As chaves de cada item: exatamente as combinadas (custo, descrição e

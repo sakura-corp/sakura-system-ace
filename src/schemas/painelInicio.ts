@@ -176,12 +176,6 @@ export function variacoesPorCartao(
 }
 
 /**
- * Quem enxerga os lançamentos do Caixa INTEIROS (migration 0062): o próprio
- * Caixa e Relações. Outros módulos veem só um pedaço — quem tem OS vê só os
- * lançamentos de OS —, e um pedaço somado vira um número errado com cara de
- * certo. Por isso o Início só pede os lançamentos pra quem tem um destes.
- */
-/**
  * Quem pode ver os blocos "OS abertas" e "Veículos no pátio" do Início (#367).
  * A OS só responde a quem tem o módulo Ordens de Serviço (migration 0076); sem
  * ele, os dois blocos SOMEM da tela (não ficam com "—") e o Início nem pede as
@@ -193,6 +187,12 @@ export function mostraBlocosDeOS(temModulo: (modulo: ModuloChave) => boolean): b
   return MODULOS_DOS_BLOCOS_DE_OS.some(temModulo);
 }
 
+/**
+ * Quem enxerga os lançamentos do Caixa INTEIROS (migration 0062): o próprio
+ * Caixa e Relações. Outros módulos veem só um pedaço — quem tem OS vê só os
+ * lançamentos de OS —, e um pedaço somado vira um número errado com cara de
+ * certo. Por isso o Início só pede os lançamentos pra quem tem um destes.
+ */
 export const MODULOS_QUE_LEEM_O_CAIXA: readonly ModuloChave[] = ["caixa", "relatorios"];
 
 /**

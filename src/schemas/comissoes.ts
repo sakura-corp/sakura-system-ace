@@ -24,10 +24,10 @@ import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os"
  * sempre diverge — ver PROJETO_STATUS.md, seção 6, item 40.
  */
 
-/** Chave usada pra quem vendeu/executou sem estar identificado na OS. */
 /** Ordem que já tem número de OS (não é orçamento). */
 export type OrdemNumeradaParaComissao = OrdemParaComissao & { numero: number };
 
+/** Chave usada pra quem vendeu/executou sem estar identificado na OS. */
 export const SEM_FUNCIONARIO = "sem-funcionario";
 
 export interface OrdemDaComissao {

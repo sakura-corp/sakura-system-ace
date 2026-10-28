@@ -43,7 +43,7 @@ function entrada(
   valor: number,
   ordemId: string | null,
   itens: ItemOS[] = [],
-): MovimentoCaixa {
+): MovimentoCaixa<ItemOS> {
   return {
     id,
     loja_id: "l1",
@@ -58,7 +58,7 @@ function entrada(
   };
 }
 
-function saida(id: string, valor: number): MovimentoCaixa {
+function saida(id: string, valor: number): MovimentoCaixa<ItemOS> {
   return {
     id,
     loja_id: "l1",

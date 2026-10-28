@@ -818,9 +818,12 @@ const computadores = [
 // As janelas das OS (migration 0075, #367): cada tela que não é a de OS lê a
 // sua, com só as colunas dela. O banco falso devolve a tabela inteira sem
 // olhar o `select`, então aqui ficam as linhas no formato de cada view.
+// Como nas views: orçamento e recusado não saem por janela nenhuma; os itens
+// saem na ordem em que foram gravados, como na tela de OS.
 const todasAsOrdens = [...ordens, ...historico, ...ordensDeQuemSumiu, ...orcamentos];
+const ordensQueContam = todasAsOrdens.filter((o) => !["orcamento", "recusado"].includes(o.status));
 const sub = (item, campos) => Object.fromEntries(campos.map((c) => [c, item[c] ?? null]));
-const janelaOrdensCaixa = todasAsOrdens.map((o) => ({
+const janelaOrdensCaixa = ordensQueContam.map((o) => ({
   id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   cliente_nome: o.cliente.nome,
   itens: o.itens.map((i) => sub(i, ["quantidade", "preco_unitario", "desconto"])),
@@ -835,7 +838,7 @@ const janelaOrdensComissoes = todasAsOrdens
       sub(i, ["id", "tipo", "peca_id", "servico_id", "quantidade", "preco_unitario", "desconto", "custo_unitario", "tecnico_id"]),
     ),
   }));
-const janelaOrdensGarantias = todasAsOrdens.flatMap((o) =>
+const janelaOrdensGarantias = ordensQueContam.filter((o) => o.data_fechamento != null).flatMap((o) =>
   o.itens
     .filter((i) => i.tipo === "peca")
     .map((i) => {
@@ -850,11 +853,11 @@ const janelaOrdensGarantias = todasAsOrdens.flatMap((o) =>
       };
     }),
 );
-const janelaOrdensNotas = todasAsOrdens.map((o) => ({
+const janelaOrdensNotas = ordensQueContam.map((o) => ({
   id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   data_abertura: o.data_abertura, cliente_nome: o.cliente.nome,
 }));
-const janelaOrdensClientes = todasAsOrdens.map((o) => ({
+const janelaOrdensClientes = ordensQueContam.map((o) => ({
   id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   data_abertura: o.data_abertura, data_fechamento: o.data_fechamento,
   cliente_id: o.cliente_id, cliente_nome: o.cliente.nome,

@@ -537,7 +537,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   Relações** (a Lucratividade mostra item a item) ou admin; quem escreve: só OS. Cada outra tela lê
   pela **janela** dela (views `security_invoker = false`, filtro de loja e de módulo dentro, só
   `select`; o nome do cliente e os itens vêm como colunas, os itens num `jsonb` com só os campos
-  combinados): **`ordens_servico_caixa`** (Caixa ou Relações: número, tipo, status, cliente e os
+  combinados; orçamento e recusado não saem por janela nenhuma, como as telas já filtravam): **`ordens_servico_caixa`** (Caixa ou Relações: número, tipo, status, cliente e os
   itens só com quantidade, preço e desconto; o custo continua na `custo_das_ordens`);
   **`ordens_servico_comissoes`** (Funcionários: só OS faturadas, com vendedor, técnico e os campos
   que a conta da comissão usa); **`ordens_servico_garantias`** (Garantias: uma linha por peça
