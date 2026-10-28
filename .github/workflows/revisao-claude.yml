@@ -1,0 +1,141 @@
+name: Revisão do Claude
+
+# Quando alguém da equipe escreve `@claude revisa` num comentário de PR, o
+# Claude lê o PR e deixa UMA revisão, como comentário, no próprio PR. Ele só
+# recebe texto e devolve texto: não roda comando, não abre arquivo, não
+# escreve código, não aprova e não mescla.
+#
+# Quem paga são os créditos da API da empresa (o secret ANTHROPIC_API_KEY).
+# Por isso há várias travas abaixo: cada rodada custa dinheiro.
+#
+# Este repositório é PÚBLICO: qualquer pessoa do mundo pode comentar num PR,
+# e qualquer pessoa lê o comentário da revisão e o registro (log) da rodada.
+# Por isso a trava 1 (quem pode disparar) e a trava 3 (permissão de escrita
+# e PR de fork) importam muito aqui; e o script nunca escreve no registro o
+# conteúdo do PR nem a resposta da API.
+#
+# O mesmo workflow e o mesmo script moram no `sakura-corp/escritorio`
+# (tarefa escritorio#16); mudança num, levar pro outro.
+#
+# Por que chamar a API direto, e não a ação oficial do Claude Code: a ação
+# roda o Claude Code, e o crédito promocional da organização não vale pra ele
+# (a primeira rodada, em 28/10/2026, voltou "Credit balance is too low"). A
+# API direta está coberta pelo crédito. O trabalho fica no script
+# `.github/scripts/revisao-claude.sh`.
+#
+# Atenção: comentário só dispara o workflow que está na `main`. Enquanto este
+# arquivo estiver só num PR, escrever `@claude revisa` não faz nada.
+on:
+  issue_comment:
+    types: [created]
+  # Só comentário NOVO na conversa do PR. Comentário editado não conta (senão
+  # editar um "@claude revisa" antigo gastaria crédito de novo), e comentário
+  # numa linha do código (pull_request_review_comment) fica de fora: é outro
+  # evento, com outras regras, e a conversa do PR já resolve.
+
+# Nenhuma permissão no workflow inteiro; cada job diz a sua, e só a que usa.
+permissions: {}
+
+jobs:
+  revisar:
+    name: Revisão do Claude
+    # TRAVA 1: quem pode disparar, e onde. Tudo aqui, no `if:` do job: quando
+    # uma parte não vale, o job aparece como "skipped" (pulado) e não gasta
+    # nada. Cada linha:
+    #   - o comentário é num PR (comentário de issue comum não tem
+    #     `pull_request`);
+    #   - o PR está aberto (revisar PR fechado é crédito jogado fora);
+    #   - o comentário tem a frase `@claude revisa` (maiúscula ou minúscula,
+    #     tanto faz);
+    #   - quem escreveu é da casa: OWNER (dona da conta), MEMBER (da
+    #     organização sakura-corp) ou COLLABORATOR (convidado no repositório).
+    #     Qualquer outra pessoa (CONTRIBUTOR, FIRST_TIME_CONTRIBUTOR, NONE) é
+    #     pulada, mesmo escrevendo a frase;
+    #   - quem escreveu é uma pessoa, não um robô (um robô chamando outro
+    #     robô vira laço e gasta crédito sozinho).
+    # O primeiro passo ainda confere, de novo, se a pessoa tem permissão de
+    # escrita no repositório.
+    if: >-
+      github.event.issue.pull_request &&
+      github.event.issue.state == 'open' &&
+      contains(github.event.comment.body, '@claude revisa') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      github.event.comment.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    # Revisão que passa de 10 minutos travou: para e não gasta mais.
+    timeout-minutes: 10
+    # Uma revisão por PR de cada vez. Se pedirem de novo enquanto uma está
+    # rodando, a nova ESPERA a atual acabar (não cancela): a que está rodando
+    # já gastou crédito. Se pedirem várias vezes seguidas, fica só o último
+    # pedido na fila. A trava fica aqui no job (e não no workflow inteiro) pra
+    # um comentário qualquer no PR, que é pulado, não mexer na fila.
+    concurrency:
+      group: revisao-claude-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    # TRAVA 2: o mínimo de permissão. A chave que o GitHub dá a este job
+    # (GITHUB_TOKEN) só consegue:
+    #   - contents: read       ler o código (não consegue fazer push, nem
+    #                          mesclar: isso pediria `contents: write`);
+    #   - pull-requests: write escrever o comentário da revisão no PR.
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # TRAVA 3: quem pediu tem permissão de escrita, e o PR não vem de um
+      # fork (cópia do repositório na conta de outra pessoa). O aviso de
+      # comentário não diz de onde veio o PR, então este passo pergunta ao
+      # GitHub. Se a pergunta falhar, o passo falha e nada roda depois (na
+      # dúvida, não revisa).
+      - name: Conferir quem pediu e que o PR não vem de um fork
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORIO: ${{ github.repository }}
+          NUMERO_PR: ${{ github.event.issue.number }}
+          QUEM_PEDIU: ${{ github.event.comment.user.login }}
+        run: |
+          permissao=$(gh api "repos/$REPOSITORIO/collaborators/$QUEM_PEDIU/permission" --jq '.permission')
+          if [ "$permissao" != "admin" ] && [ "$permissao" != "write" ]; then
+            echo "::error::$QUEM_PEDIU tem permissão '$permissao' aqui; a revisão só roda a pedido de quem escreve no repositório."
+            exit 1
+          fi
+          origem=$(gh api "repos/$REPOSITORIO/pulls/$NUMERO_PR" --jq '.head.repo.full_name')
+          if [ "$origem" != "$REPOSITORIO" ]; then
+            echo "::error::O PR #$NUMERO_PR vem de '$origem', não de '$REPOSITORIO'. A revisão do Claude não roda em PR de fork."
+            exit 1
+          fi
+          echo "Pedido de $QUEM_PEDIU ($permissao); o PR #$NUMERO_PR é deste repositório. Pode seguir."
+
+      # Baixa a `main` (sem `ref:`, o padrão de um comentário é a branch
+      # principal): as regras do projeto e o script vêm DAQUI, nunca do PR,
+      # pra quem fez o PR não afrouxar a própria revisão. A branch do PR não é
+      # baixada: o Claude só vê o diff, como texto. Sem guardar a chave do
+      # GitHub na pasta (persist-credentials: false), que ninguém usa depois.
+      # Versão presa por commit (v4.2.2): uma tag pode ser movida, um commit
+      # não.
+      - name: Baixar as regras e o script (da main)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      # TRAVA 4: o Claude só recebe texto (as regras da main, o título, a
+      # descrição e o diff do PR) e devolve texto, que vira o comentário.
+      # Ele não tem ferramenta nenhuma: não roda comando, não abre arquivo,
+      # não abre site. A chave da API fica só neste passo.
+      - name: Revisão do Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORIO: ${{ github.repository }}
+          NUMERO_PR: ${{ github.event.issue.number }}
+          QUEM_PEDIU: ${{ github.event.comment.user.login }}
+          PASTA: ${{ runner.temp }}/revisao-pr
+          DESCRICAO_DO_PROJETO: o Sakura System AutoCenter Edition, o programa das lojas
+          # As regras que vão sempre junto (caminhos a partir da raiz).
+          REGRAS: PROJETO_STATUS.md AGENTS.md docs/decisoes.md docs/estrutura.md
+          # As que só vão quando o PR mexe naquela pasta ("pasta/:arquivo"):
+          # os padrões de bug já vividos pro código do programa, e as
+          # migrations e tabelas pro banco. São grandes (uns 40 e 20 mil
+          # tokens), por isso só quando o assunto pede.
+          REGRAS_POR_PASTA: src/:docs/licoes.md supabase/:docs/banco.md
+        run: bash .github/scripts/revisao-claude.sh

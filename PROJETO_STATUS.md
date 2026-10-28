@@ -18,6 +18,13 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 (`mcp__github__get_me`, ou `gh api user --jq .login`) ou o e-mail do Git (`git config user.email`).
 Se não der pra saber, perguntar.
 
+**Logo depois, avisar as pendências da pessoa** (Sofia, 28/10/2026), em até 5 linhas e antes do
+pedido: as issues abertas com ela de responsável nos repositórios da `sakura-corp` que a sessão
+alcança, marcando as de leva **sem PR** (elas travam o "Pegar tarefa" do painel); os PRs dela com
+pedido de mudança ou CI vermelho; onde mencionaram ela sem resposta; e, pra Sofia, as issues com a
+etiqueta `sofia`. Nada pendente: uma linha só. Não deu pra consultar: dizer e seguir. É aviso, nunca
+tranca.
+
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
 de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
@@ -158,11 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 28/10/2026, fim da manhã: a 0.9.55 liberada; a Pneus Amigão na 73
-- **Adiantado da #809** (pedido dela): 0071–0073 na Pneus Amigão (70 → **73**); **0.9.55 publicada, testada no PC dela e liberada** pra todas as lojas (orçamento aprovado baixa a peça; o link da NFS-e abre no navegador).
-- **Limpeza do teste**: a peça voltou por ajuste manual; as OS 21 e 22 de teste apagadas por SQL (o programa não apaga OS: ideia #820).
-- **Dossiê da venda** (escritorio#10) aprovado por ela; agora é com o Tiago (ata e mesclar). A 1ª mensagem pro cliente novo só apresenta e manda o PDF, sem perguntar nada.
-- **Esperando os computadores**: Balcão e DESKTOP-PKJ2A3B reabrirem na 0.9.55 → **ensaiar e aplicar a 0074** → teste do lucro do dia no Caixa (fecha o passo 4 da #809).
-- **Depois**: mesclar o #818 do Gusta (ele faz os 4 testes; o Release da 0.9.55 já saiu) → 0075 → 0.9.56 (só depois da 0075 em todas) → 0076.
-- **Depende dela**: mandar a mensagem e o PDF pro cliente novo (hoje, sessão nova); o manual da NFS-e **até 01/11** (#503); o "Resumo de segunda" (#625); a comissão (#502).
+### 28/10/2026, noite: a revisão por `@claude revisa` no ar; a 0.9.55 liberada; a Pneus Amigão na 73
+- **Revisão por `@claude revisa`** (escritorio#16; aqui #825 e #826): quem é da equipe escreve isso no PR e o Claude comenta a revisão, pela **API direta** (`.github/scripts/revisao-claude.sh`, igual ao do escritório). No #818 custou uns US$ 0,46; em PR grande, ela é lista do que conferir, não veredito (A5 de `docs/jeito-de-trabalhar.md`).
+- **#818 conferido**: os 6 pontos da revisão automática vistos no código e nas issues, nenhum muda o código (comentário no PR). Falta o Gusta: os 4 testes no PC dele e tirar o "(a Sofia confirma na issue)" da descrição.
+- **0.9.55 liberada** (Release das 10h39); a Pneus Amigão na **73**. As OS 21 e 22 de teste apagadas por SQL (ideia #820).
+- **Esperando os computadores**: Balcão e DESKTOP-PKJ2A3B reabrirem na 0.9.55 → **ensaiar e aplicar a 0074** → teste do lucro do dia no Caixa (passo 4 da #809).
+- **Depois**: mesclar o #818 → 0075 → 0.9.56 (só depois da 0075 em todas) → 0076.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); o "Resumo de segunda" (#625); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
 - **Próximo**: "ensaia a 0074" quando os computadores da loja reabrirem.
