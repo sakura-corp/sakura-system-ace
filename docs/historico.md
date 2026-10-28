@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 28/10/2026, manhã: o PR da #367 revisado; o banco de teste na 76
+- **O PR #818 do Gusta (a #367) revisado**: CI verde, bom. Ele faz os 4 testes no PC e corrige a ordem no topo da descrição. **Só entra depois do Release da 0.9.55.**
+- **Regra nova** (`docs/operacao.md`): a 0.9.56 lê pelas janelas da 0075, sem plano B; **só liberar a 0.9.56 depois que a 0075 rodou em todas as empresas**. O furo pequeno do `/rpc` e as arrumações ficam como estão.
+- **O banco de teste está na 76** (0075 e 0076 da branch do PR, colado por ela).
+- **O escritório**: o Tiago na escritorio#7; depois a escritorio#8 (dela) e só então a #814.
+- **Depende dela**: a #809 no fim de semana (0071–0073 → 0.9.55 → mesclar o #818 → 0074 e 0075 → 0.9.56 → 0076; a última no ar é a 0.9.54), o manual da NFS-e **até 01/11** (#503), o "Resumo de segunda" (#625), a comissão (#502).
+- **Próximo**: o fim de semana da #809.
+
 ### 28/10/2026, madrugada: a #366 mesclada; a #367 com o Gusta
 - **A #366 mesclada** (PR #816): peças e estoque só pra quem tem o módulo. A 0074 espera a **0.9.55** (decisão dela na revisão). O banco de teste está na **74**.
 - **A #367 com o Gusta**: opção (a) (ficha do veículo e "Clientes que sumiram" como hoje, sem custo). Sai na **0.9.56**: o PR dela **só entra depois do Release da 0.9.55**, senão as lojas travam. A 0075 e a 0076 vão pro banco de teste quando o PR estiver revisado.

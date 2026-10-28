@@ -158,10 +158,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 28/10/2026, manhã: o PR da #367 revisado; o banco de teste na 76
-- **O PR #818 do Gusta (a #367) revisado**: CI verde, bom. Ele faz os 4 testes no PC e corrige a ordem no topo da descrição. **Só entra depois do Release da 0.9.55.**
-- **Regra nova** (`docs/operacao.md`): a 0.9.56 lê pelas janelas da 0075, sem plano B; **só liberar a 0.9.56 depois que a 0075 rodou em todas as empresas**. O furo pequeno do `/rpc` e as arrumações ficam como estão.
-- **O banco de teste está na 76** (0075 e 0076 da branch do PR, colado por ela).
-- **O escritório**: o Tiago na escritorio#7; depois a escritorio#8 (dela) e só então a #814.
-- **Depende dela**: a #809 no fim de semana (0071–0073 → 0.9.55 → mesclar o #818 → 0074 e 0075 → 0.9.56 → 0076; a última no ar é a 0.9.54), o manual da NFS-e **até 01/11** (#503), o "Resumo de segunda" (#625), a comissão (#502).
-- **Próximo**: o fim de semana da #809.
+### 28/10/2026, fim da manhã: a 0.9.55 liberada; a Pneus Amigão na 73
+- **Adiantado da #809** (pedido dela): 0071–0073 na Pneus Amigão (70 → **73**); **0.9.55 publicada, testada no PC dela e liberada** pra todas as lojas (orçamento aprovado baixa a peça; o link da NFS-e abre no navegador).
+- **Limpeza do teste**: a peça voltou por ajuste manual; as OS 21 e 22 de teste apagadas por SQL (o programa não apaga OS: ideia #820).
+- **Dossiê da venda** (escritorio#10) aprovado por ela; agora é com o Tiago (ata e mesclar). A 1ª mensagem pro cliente novo só apresenta e manda o PDF, sem perguntar nada.
+- **Esperando os computadores**: Balcão e DESKTOP-PKJ2A3B reabrirem na 0.9.55 → **ensaiar e aplicar a 0074** → teste do lucro do dia no Caixa (fecha o passo 4 da #809).
+- **Depois**: mesclar o #818 do Gusta (ele faz os 4 testes; o Release da 0.9.55 já saiu) → 0075 → 0.9.56 (só depois da 0075 em todas) → 0076.
+- **Depende dela**: mandar a mensagem e o PDF pro cliente novo (hoje, sessão nova); o manual da NFS-e **até 01/11** (#503); o "Resumo de segunda" (#625); a comissão (#502).
+- **Próximo**: "ensaia a 0074" quando os computadores da loja reabrirem.
