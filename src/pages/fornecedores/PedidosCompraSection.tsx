@@ -14,7 +14,7 @@ import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra, PedidoCompra } from "@/types/pedidoCompra";
 import { nomePedido, STATUS_PEDIDO_COR, STATUS_PEDIDO_LABEL, totalPedido } from "@/types/pedidoCompra";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { ImportarNotaFiscalXmlModal } from "./ImportarNotaFiscalXmlModal";
 import { PedidoCompraForm } from "./PedidoCompraForm";
 import { ReceberPedidoModal } from "./ReceberPedidoModal";
@@ -23,7 +23,7 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 interface PedidosCompraSectionProps {
   pedidos: PedidoCompra[];
   fornecedores: Fornecedor[];
-  pecas: Peca[];
+  pecas: PecaJanela[];
   depositos: Deposito[];
   lojaId: string;
   operadorId: string | null;

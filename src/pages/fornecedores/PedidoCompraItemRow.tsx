@@ -5,14 +5,14 @@ import { listarCotacoesPorPeca, melhorCotacaoPorFornecedor } from "@/lib/cotacoe
 import { mensagemDeErro } from "@/lib/errors";
 import type { PedidoCompraFormValues } from "@/schemas/pedidoCompra";
 import type { CotacaoPeca } from "@/types/cotacaoPeca";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 
 interface PedidoCompraItemRowProps {
   index: number;
   register: UseFormRegister<PedidoCompraFormValues>;
   watch: UseFormWatch<PedidoCompraFormValues>;
   setValue: UseFormSetValue<PedidoCompraFormValues>;
-  pecas: Peca[];
+  pecas: PecaJanela[];
   podeRemover: boolean;
   onRemover: () => void;
   erroPecaId?: string;

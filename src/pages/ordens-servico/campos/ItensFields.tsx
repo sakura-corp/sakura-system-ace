@@ -3,7 +3,7 @@ import { useFieldArray } from "react-hook-form";
 import { itemFormVazio, type OrdemServicoFormValues } from "@/schemas/ordemServico";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type { ItemOS, PatchItemOS } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { ItemExistenteRow } from "../ItemExistenteRow";
 import { ItemOSRow } from "../ItemOSRow";
@@ -34,7 +34,7 @@ export function ItensFields({
   podeEditarItem: boolean;
   avisoItens: string | null;
   onEditarItem: (item: ItemOS, patch: PatchItemOS) => Promise<void>;
-  pecas: Peca[];
+  pecas: PecaJanela[];
   servicos: Servico[];
   funcionarios: FuncionarioPublico[];
   saldoPorPeca: Map<string, number>;

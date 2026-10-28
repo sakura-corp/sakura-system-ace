@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
-import type { NovaPeca, Peca } from "@/types/peca";
+import type { NovaPeca, Peca, PecaDadosFiscais, PecaJanela } from "@/types/peca";
 import { lerResumo, type CampoJuntavel, type PecaVista, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
 
 export async function listarPecas(): Promise<Peca[]> {
@@ -14,6 +14,45 @@ export async function listarPecas(): Promise<Peca[]> {
       .range(de, ate),
   );
   return data as Peca[];
+}
+
+// Lista de peças pra quem vende, orça e emite nota: lê a janela
+// (`pecas_janela`, migration 0073), que não traz custo e funciona sem o
+// módulo Estoque. Vale pra todo mundo, inclusive admin (#366).
+export async function listarPecasJanela(): Promise<PecaJanela[]> {
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("pecas_janela")
+      .select("*")
+      .order("descricao", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  );
+  return data as PecaJanela[];
+}
+
+// Dados fiscais (NCM, CFOP, CSOSN...) de algumas peças, sem o custo.
+export async function buscarDadosFiscaisDasPecas(ids: string[]): Promise<PecaDadosFiscais[]> {
+  const resultado: PecaDadosFiscais[] = [];
+  // Em levas de 500 ids: a lista de uma loja grande não cabe numa chamada só.
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data, error } = await supabase.rpc("dados_fiscais_das_pecas", {
+      p_pecas: ids.slice(i, i + 500),
+    });
+    if (error) throw error;
+    resultado.push(...((data ?? []) as PecaDadosFiscais[]));
+  }
+  return resultado;
+}
+
+// Cadastro rápido de peça (peça avulsa que vira cadastro, importação de XML):
+// quem não tem o módulo Estoque não pode gravar em `pecas` direto, então o
+// banco faz por esta função e devolve só o id. Quem chama monta a peça de
+// volta com o id (`{ ...peca, id, criado_em: "" }`).
+export async function cadastrarPecaRapida(peca: NovaPeca): Promise<string> {
+  const { data, error } = await supabase.rpc("cadastrar_peca_rapida", { p_peca: peca });
+  if (error) throw error;
+  return data as string;
 }
 
 export async function buscarPecasPorIds(ids: string[]): Promise<Peca[]> {

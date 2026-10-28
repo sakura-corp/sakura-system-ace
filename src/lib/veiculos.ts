@@ -55,7 +55,7 @@ export async function buscarFichaDoVeiculo(
     .select(
       "*, cliente:clientes_janela(nome), " +
         "itens:ordens_servico_itens(id, tipo, peca_id, descricao, quantidade, preco_unitario, desconto, " +
-        "peca:pecas(prazo_garantia_dias))",
+        "peca:pecas_janela(prazo_garantia_dias))",
     )
     .eq("veiculo_id", veiculoId)
     .order("data_abertura", { ascending: false });

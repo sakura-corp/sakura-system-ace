@@ -35,13 +35,12 @@ vi.mock("@/lib/clientes", () => ({
   cadastrarVeiculoRapido: vi.fn(),
 }));
 vi.mock("@/lib/pecas", () => ({
-  listarPecas: async () => [{ id: "p-1", descricao: "Palheta 20 pol", codigo_interno: null, codigo_barras: null, medida: null }],
+  listarPecasJanela: async () => [{ id: "p-1", descricao: "Palheta 20 pol", codigo_interno: null, codigo_barras: null, medida: null }],
 }));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/funcionarios", () => ({ listarFuncionariosPublico: async () => [] }));
 vi.mock("@/lib/estoque", () => ({
-  listarMovimentos: async () => [],
-  calcularSaldoPorPeca: () => new Map(),
+  listarSaldos: async () => new Map(),
 }));
 vi.mock("@/lib/modelosWhatsapp", () => ({
   listarModelosWhatsapp: async () => ({}),

@@ -74,10 +74,25 @@ veiculos_janela,select,2,2,2,0,0,só placa, marca, modelo, cor e tipo
 veiculos_janela,insert,0,0,0,0,0,só leitura: o revoke da 0068
 veiculos_janela,update,0,0,0,0,0,
 veiculos_janela,delete,0,0,0,0,0,
-pecas,select,2,2,2,2,0,
-pecas,insert,1,1,1,1,0,
-pecas,update,2,2,2,2,0,
-pecas,delete,2,2,2,2,0,
+#
+# TR-04.1 lote 5 (migration 0074): o cadastro de peças, com o CUSTO, exige o
+# módulo Estoque pra escrever, e Estoque, Relações ou Funcionários pra ler. O
+# balconista (só Caixa) e o órfão zeraram nas quatro linhas. Quem tem OS lê
+# pela janela logo abaixo e cadastra peça pela função cadastrar_peca_rapida
+# (0073); o lucro do Caixa vem pronto da custo_das_ordens — as três testadas
+# em testar-pecas-permissao.sql.
+pecas,select,2,2,0,0,0,só Estoque, Relações ou Funcionários (é onde está o custo)
+pecas,insert,1,1,0,0,0,só Estoque; quem tem OS ou Fornecedores cadastra pela função cadastrar_peca_rapida
+pecas,update,2,2,0,0,0,
+pecas,delete,2,2,0,0,0,
+#
+# A janela da 0073. Como a clientes_janela, roda com os direitos do dono: o
+# 2,2,2,0,0 da leitura é o where (operador ativo com alguma loja) escrito
+# dentro dela — o órfão fica de fora. As escritas zeradas são o revoke.
+pecas_janela,select,2,2,2,0,0,código, descrição, unidade, preço de venda, garantia e ativo — nunca o custo
+pecas_janela,insert,0,0,0,0,0,só leitura: o revoke da 0073
+pecas_janela,update,0,0,0,0,0,
+pecas_janela,delete,0,0,0,0,0,
 servicos,select,2,2,2,2,0,
 servicos,insert,1,1,1,1,0,
 servicos,update,2,2,2,2,0,
@@ -110,14 +125,29 @@ fechamentos_caixa,select,2,1,1,0,0,fechamento de caixa (TR-06.4): exige a loja E
 fechamentos_caixa,insert,1,1,1,0,0,o balconista do caixa fecha o dia
 fechamentos_caixa,update,0,0,0,0,0,ninguém altera um fechamento: contou errado desfaz e fecha de novo
 fechamentos_caixa,delete,2,1,0,0,0,desfazer é só de admin da loja — senão bastaria fechar com falta e desfazer
-estoque_movimentos,select,2,1,1,0,0,
-estoque_movimentos,insert,1,1,1,0,0,
-estoque_movimentos,update,2,1,1,0,0,
-estoque_movimentos,delete,2,1,1,0,0,
-contagens_estoque,select,2,1,1,0,0,
-contagens_estoque,insert,1,1,1,0,0,
-contagens_estoque,update,2,1,1,0,0,
-contagens_estoque,delete,2,1,1,0,0,
+#
+# TR-04.1 lote 5 (migration 0074): os movimentos e as contagens exigem a loja
+# E o módulo Estoque. O balconista só-Caixa zerou nas oito linhas. As portas
+# estreitas de INSERT (OS baixa a peça usada e devolve ao estoque;
+# Fornecedores dá entrada da compra) não aparecem aqui porque nenhum dos cinco
+# papéis as usa — quem prova as três é testar-pecas-permissao.sql.
+estoque_movimentos,select,2,1,0,0,0,só com o módulo Estoque
+estoque_movimentos,insert,1,1,0,0,0,o módulo, ou as portas estreitas de OS (uso_em_os, ajuste de entrada) e de Fornecedores (compra)
+estoque_movimentos,update,2,1,0,0,0,
+estoque_movimentos,delete,2,1,0,0,0,
+contagens_estoque,select,2,1,0,0,0,só com o módulo Estoque
+contagens_estoque,insert,1,1,0,0,0,
+contagens_estoque,update,2,1,0,0,0,
+contagens_estoque,delete,2,1,0,0,0,
+#
+# O saldo da 0073: uma linha por peça por loja, das lojas de quem pergunta
+# (o where dentro da view, que roda com os direitos do dono). O balconista da
+# loja A vê o saldo da loja A sem ver um movimento sequer. Escrever: a view
+# tem GROUP BY e não é atualizável, e ainda tem o revoke.
+estoque_saldos,select,2,1,1,0,0,só o número de cada peça, das lojas de quem pergunta
+estoque_saldos,insert,0,0,0,0,0,só leitura: view com GROUP BY e o revoke da 0073
+estoque_saldos,update,0,0,0,0,0,
+estoque_saldos,delete,0,0,0,0,0,
 #
 # TR-04.1 etapa 2, lote 2 (migration 0061): as contas exigem o módulo, e não
 # só acesso à loja. O balconista só-Caixa zerou nas oito linhas. As duas

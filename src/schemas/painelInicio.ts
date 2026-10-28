@@ -1,5 +1,5 @@
 import { diaLocal } from "@/lib/datas";
-import { resumirMovimentos, type MapaCusto } from "./metricasCaixa";
+import { resumirMovimentos, type CustoDaOrdem } from "./metricasCaixa";
 import { DIAS_DE_CONTAS_VENCENDO } from "@/types/configuracao";
 import type { CartaoMetrica } from "@/types/configuracao";
 import type { ContaPagar } from "@/types/contaPagar";
@@ -98,14 +98,9 @@ export function movimentosDaJanela(
 export function metricasDoPeriodo(
   movimentos: MovimentoCaixa[],
   janela: JanelaDeDias,
-  custoPeca: MapaCusto,
-  custoServico: MapaCusto,
+  custoDaOrdem: CustoDaOrdem,
 ): MetricasDoPeriodo {
-  const resumo = resumirMovimentos(
-    movimentosDaJanela(movimentos, janela),
-    custoPeca,
-    custoServico,
-  );
+  const resumo = resumirMovimentos(movimentosDaJanela(movimentos, janela), custoDaOrdem);
   return {
     vendas: resumo.entradas,
     // Custo aqui é o custo de verdade: o que a loja pagou pelas peças e pelo

@@ -13,7 +13,7 @@ import type {
   RespostaFocusNfe,
 } from "@/types/focusNfe";
 import type { OrdemServico } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaDadosFiscais } from "@/types/peca";
 
 // Sakura System — AutoCenter Edition
 // Cliente HTTP para a API do Focus NFe (https://focusnfe.com.br). Formato de
@@ -216,7 +216,8 @@ function formatarValor(valor: number): string {
 }
 
 export interface ItemParaNFCe {
-  peca: Peca;
+  // Só os dados fiscais: quem emite a nota pode não ter o módulo Estoque (#366).
+  peca: PecaDadosFiscais;
   quantidade: number;
   precoUnitario: number;
   /** Desconto em reais dado naquela linha da OS (0 quando não houve). */

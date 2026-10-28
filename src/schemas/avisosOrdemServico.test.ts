@@ -129,19 +129,17 @@ describe("avisoSaldoInsuficiente", () => {
 });
 
 describe("avisoPecaSemCusto", () => {
+  // Desde a #366 a OS e o balcão leem a peça pela janela, que diz SE falta o
+  // custo (`sem_custo`: em branco ou zero, conta feita no banco), nunca quanto é.
   it("cala quando nenhuma peça foi escolhida ainda", () => {
     expect(avisoPecaSemCusto(undefined)).toBeNull();
   });
 
   it("cala quando a peça tem custo cadastrado", () => {
-    expect(avisoPecaSemCusto({ preco_custo: 12.5 })).toBeNull();
+    expect(avisoPecaSemCusto({ sem_custo: false })).toBeNull();
   });
 
-  it("avisa quando o custo está em branco", () => {
-    expect(avisoPecaSemCusto({ preco_custo: null })).toContain("preço de custo");
-  });
-
-  it("trata custo zero como custo faltando — mesma regra da tela de Comissões", () => {
-    expect(avisoPecaSemCusto({ preco_custo: 0 })).toContain("preço de custo");
+  it("avisa quando a janela diz que falta o custo (em branco ou zero)", () => {
+    expect(avisoPecaSemCusto({ sem_custo: true })).toContain("preço de custo");
   });
 });

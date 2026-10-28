@@ -1,4 +1,4 @@
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { StatusOS } from "@/types/os";
 import { contaNosNumeros } from "./orcamento";
 
@@ -136,9 +136,15 @@ export function avisoSaldoInsuficiente(
  * usa (`contarItensSemCusto` em `schemas/comissoes.ts`) — peça comprada de
  * graça não existe, então zero aqui é sempre cadastro faltando.
  */
-export function avisoPecaSemCusto(peca: Pick<Peca, "preco_custo"> | undefined): string | null {
-  if (!peca) return null;
-  if (peca.preco_custo != null && peca.preco_custo !== 0) return null;
+/** A mesma regra do `sem_custo` da `pecas_janela` (0073): custo em branco ou zero. */
+export function pecaSemCusto(precoCusto: number | null): boolean {
+  return precoCusto == null || precoCusto === 0;
+}
+
+// `sem_custo` vem da janela de peças (`pecas_janela`, migration 0073): o banco
+// diz SE falta o custo (em branco ou zero), nunca quanto é (#366).
+export function avisoPecaSemCusto(peca: Pick<PecaJanela, "sem_custo"> | undefined): string | null {
+  if (!peca || !peca.sem_custo) return null;
 
   return (
     "Esta peça está sem preço de custo cadastrado — o lucro desta OS e a comissão " +

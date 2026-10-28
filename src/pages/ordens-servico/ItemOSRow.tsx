@@ -8,7 +8,7 @@ import {
 } from "@/schemas/ordemServico";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type { TipoItemOS } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 
 interface ItemOSRowProps {
@@ -16,7 +16,7 @@ interface ItemOSRowProps {
   register: UseFormRegister<OrdemServicoFormValues>;
   watch: UseFormWatch<OrdemServicoFormValues>;
   setValue: UseFormSetValue<OrdemServicoFormValues>;
-  pecas: Peca[];
+  pecas: PecaJanela[];
   servicos: Servico[];
   funcionarios: FuncionarioPublico[];
   /**

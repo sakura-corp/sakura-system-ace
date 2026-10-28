@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
+import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 
 const SELECT_MOVIMENTO =
@@ -115,4 +116,38 @@ export async function definirCategoriaDosMovimentos(
         "Recarregue a tela e tente de novo.",
     );
   }
+}
+
+// Custo de cada OS pronto do banco (função `custo_das_ordens`, migration
+// 0073): peça, serviço e peça avulsa já somados. Substitui baixar o cadastro
+// de peças só pra calcular lucro, o que quem não tem o módulo Estoque não pode
+// (#366). `completo = false` quer dizer "tem peça avulsa sem custo informado".
+const IDS_POR_CHAMADA = 500;
+
+export async function buscarCustoDasOrdens(ids: string[]): Promise<CustoDoBanco> {
+  const unicos = [...new Set(ids)];
+  const custos: CustoDoBanco = new Map();
+  // As levas vão ao mesmo tempo: uma loja com 10 mil OS seriam 20 idas e
+  // voltas uma atrás da outra antes de a tela aparecer.
+  const levas: string[][] = [];
+  for (let i = 0; i < unicos.length; i += IDS_POR_CHAMADA) {
+    levas.push(unicos.slice(i, i + IDS_POR_CHAMADA));
+  }
+  const respostas = await Promise.all(
+    levas.map((leva) => supabase.rpc("custo_das_ordens", { p_ordens: leva })),
+  );
+  for (const { data, error } of respostas) {
+    if (error) throw error;
+    for (const linha of (data ?? []) as {
+      ordem_servico_id: string;
+      custo: number | string;
+      custo_completo: boolean;
+    }[]) {
+      custos.set(linha.ordem_servico_id, {
+        custo: Number(linha.custo),
+        completo: linha.custo_completo,
+      });
+    }
+  }
+  return custos;
 }

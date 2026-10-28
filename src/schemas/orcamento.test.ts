@@ -4,6 +4,7 @@ import {
   contarOrcamentosAbertos,
   custoUnitarioDoItem,
   lucroDaOrdem,
+  lucroDaOrdemPeloBanco,
   TEXTO_CUSTO_NAO_INFORMADO,
   MOTIVO_RECUSA_LABEL,
   MOTIVOS_RECUSA,
@@ -381,5 +382,18 @@ describe("lucroDaOrdem", () => {
       lucro: 60,
       custoNaoInformado: false,
     });
+  });
+
+  it("pelo custo do banco: mesmo lucro que pelos mapas, e sem número se o custo é incompleto", () => {
+    const itens = [pneu, alinhamento, { ...valvula, custo_unitario: 6 }];
+    // O banco devolve 764 (4×180 + 20 + 4×6) e completo.
+    expect(lucroDaOrdemPeloBanco(itens, { custo: 764, completo: true })).toEqual(
+      lucroDaOrdem(itens, custoPeca, custoServico),
+    );
+    expect(lucroDaOrdemPeloBanco(itens, { custo: 740, completo: false })).toEqual({
+      lucro: null,
+      custoNaoInformado: true,
+    });
+    expect(lucroDaOrdemPeloBanco(itens, undefined)).toEqual({ lucro: null, custoNaoInformado: true });
   });
 });

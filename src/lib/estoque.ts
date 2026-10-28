@@ -38,6 +38,39 @@ export async function criarMovimento(
   return data as MovimentoEstoque;
 }
 
+// Saldo por peça pela view `estoque_saldos` (migration 0073): funciona pra
+// quem não tem o módulo Estoque e não baixa a lista inteira de movimentos.
+// Mesma conta de `calcularSaldoPorPeca`, feita pelo banco.
+export async function listarSaldos(lojaId: string): Promise<Map<string, number>> {
+  const data = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("estoque_saldos")
+      .select("peca_id, saldo")
+      .eq("loja_id", lojaId)
+      .order("peca_id", { ascending: true })
+      .range(de, ate),
+  );
+  const saldos = new Map<string, number>();
+  for (const linha of data as { peca_id: string; saldo: number }[]) {
+    saldos.set(linha.peca_id, Number(linha.saldo));
+  }
+  return saldos;
+}
+
+// Igual a `criarMovimento`, mas SEM `.select()`: quem dá baixa em OS ou recebe
+// compra sem ter o módulo Estoque pode gravar o movimento, mas não lê-lo de
+// volta (o `returning` exige permissão de leitura). #366.
+export async function registrarMovimento(
+  movimento: Omit<NovoMovimentoEstoque, "deposito_id"> & { deposito_id?: string },
+  lojaId: string,
+): Promise<void> {
+  const depositoId = movimento.deposito_id ?? (await buscarDepositoPadraoId(lojaId));
+  const { error } = await supabase
+    .from("estoque_movimentos")
+    .insert({ ...movimento, deposito_id: depositoId, loja_id: lojaId });
+  if (error) throw error;
+}
+
 export function calcularSaldoPorPeca(
   movimentos: MovimentoEstoque[],
 ): Map<string, number> {

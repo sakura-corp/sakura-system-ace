@@ -52,6 +52,30 @@ export function custoDosItens(
   }, 0);
 }
 
+/**
+ * "Quanto custou essa ordem": recebe o id da OS e os itens dela. Existe pra
+ * `resumirMovimentos` e `lucroPorMovimento` não dependerem de quem calcula o
+ * custo: quem pode ver o cadastro de peças calcula pelos mapas; quem não pode
+ * (Caixa e Início sem o módulo Estoque, #366) recebe o custo pronto do banco.
+ */
+export type CustoDaOrdem = (ordemId: string, itens: ItemOS[]) => number;
+
+/** Custo da ordem calculado item a item pelos mapas de custo (Relações etc.). */
+export function custoDaOrdemPelosMapas(
+  custoPeca: MapaCusto,
+  custoServico: MapaCusto,
+): CustoDaOrdem {
+  return (_ordemId, itens) => custoDosItens(itens, custoPeca, custoServico);
+}
+
+/** O que a função `custo_das_ordens` do banco devolve por OS. */
+export type CustoDoBanco = Map<string, { custo: number; completo: boolean }>;
+
+/** Custo da ordem vindo pronto do banco (OS que o banco não devolveu conta 0). */
+export function custoDaOrdemPeloBanco(custos: CustoDoBanco): CustoDaOrdem {
+  return (ordemId) => custos.get(ordemId)?.custo ?? 0;
+}
+
 export interface ResumoCaixa {
   /** Tudo que entrou (vendas de OS + entradas manuais). */
   entradas: number;
@@ -72,8 +96,7 @@ export interface ResumoCaixa {
 
 export function resumirMovimentos(
   movimentos: MovimentoCaixa[],
-  custoPeca: MapaCusto,
-  custoServico: MapaCusto,
+  custoDaOrdem: CustoDaOrdem,
 ): ResumoCaixa {
   let entradas = 0;
   let saidas = 0;
@@ -103,11 +126,7 @@ export function resumirMovimentos(
     }
     if (ordensJaContadas.has(ordemId)) continue;
     ordensJaContadas.add(ordemId);
-    custoDeAquisicao += custoDosItens(
-      movimento.ordem_servico?.itens ?? [],
-      custoPeca,
-      custoServico,
-    );
+    custoDeAquisicao += custoDaOrdem(ordemId, movimento.ordem_servico?.itens ?? []);
   }
 
   const ordensDistintas = ordensDoTicket.size;
@@ -130,8 +149,7 @@ export function resumirMovimentos(
  */
 export function lucroPorMovimento(
   movimentos: MovimentoCaixa[],
-  custoPeca: MapaCusto,
-  custoServico: MapaCusto,
+  custoDaOrdem: CustoDaOrdem,
 ): Map<string, number> {
   const pagoPorOrdem = new Map<string, number>();
   for (const movimento of movimentos) {
@@ -146,7 +164,7 @@ export function lucroPorMovimento(
     if (movimento.tipo !== "entrada" || !movimento.ordem_servico_id || !ordem) continue;
 
     const lucroDaOrdem =
-      totalOrdem(ordem.itens ?? []) - custoDosItens(ordem.itens ?? [], custoPeca, custoServico);
+      totalOrdem(ordem.itens ?? []) - custoDaOrdem(movimento.ordem_servico_id, ordem.itens ?? []);
     const pagoNaOrdem = pagoPorOrdem.get(movimento.ordem_servico_id) ?? 0;
     const fatia = pagoNaOrdem > 0 ? movimento.valor / pagoNaOrdem : 1;
     lucros.set(movimento.id, arredondarCentavo(lucroDaOrdem * fatia));

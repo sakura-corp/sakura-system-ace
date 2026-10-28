@@ -1,6 +1,6 @@
 import { registrarCotacoes } from "./cotacoesPecas";
 import { hojeLocal } from "./datas";
-import { criarMovimento } from "./estoque";
+import { registrarMovimento } from "./estoque";
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
 import { nomePedido } from "@/types/pedidoCompra";
@@ -11,7 +11,7 @@ import type {
 } from "@/types/pedidoCompra";
 
 const SELECT_PEDIDO =
-  "*, fornecedor:fornecedores(nome), itens:pedidos_compra_itens(*, peca:pecas(descricao, unidade))";
+  "*, fornecedor:fornecedores(nome), itens:pedidos_compra_itens(*, peca:pecas_janela(descricao, unidade))";
 
 export async function listarPedidos(lojaId: string): Promise<PedidoCompra[]> {
   // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
@@ -106,7 +106,7 @@ export async function importarNotaFiscalCompra(
   if (erroItens) throw erroItens;
 
   for (const item of itens) {
-    await criarMovimento(
+    await registrarMovimento(
       {
         peca_id: item.pecaId,
         deposito_id: depositoId,
@@ -161,7 +161,7 @@ export async function receberItensPedido(
   const aplicaveis = recebimentos.filter((r) => r.quantidadeRecebidaAgora > 0);
 
   for (const recebimento of aplicaveis) {
-    await criarMovimento(
+    await registrarMovimento(
       {
         peca_id: recebimento.pecaId,
         tipo: "entrada",

@@ -36,7 +36,7 @@ import type {
   PatchOrdemServico,
 } from "@/types/os";
 import { STATUS_COM_FECHAMENTO, STATUS_LABEL, nomeDocumento } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
 import { DetalhesFields } from "./campos/DetalhesFields";
@@ -47,7 +47,7 @@ import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
-  pecas: Peca[];
+  pecas: PecaJanela[];
   servicos: Servico[];
   funcionarios: FuncionarioPublico[];
   funcionarioAtualId: string;

@@ -16,9 +16,12 @@ vi.mock("@/lib/configuracoes", () => ({
   buscarConfiguracaoFiscal: vi.fn(() => new Promise(() => {})),
 }));
 vi.mock("@/lib/fornecedores", () => ({ criarFornecedor: vi.fn() }));
-vi.mock("@/lib/pecas", () => ({ criarPeca: vi.fn() }));
+vi.mock("@/lib/pecas", () => ({
+  cadastrarPecaRapida: vi.fn(),
+  buscarDadosFiscaisDasPecas: async () => [],
+}));
 vi.mock("@/lib/pedidosCompra", () => ({ importarNotaFiscalCompra: vi.fn() }));
-vi.mock("@/lib/estoque", () => ({ criarMovimento: vi.fn() }));
+vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/iaNotaFiscal", () => ({ lerNotasFiscais: vi.fn() }));
 
 // O jsdom não calcula layout: sem isto, o Modal acharia que nenhum botão

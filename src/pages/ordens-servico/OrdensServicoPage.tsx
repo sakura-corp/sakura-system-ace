@@ -5,10 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { listarJurosParcelas } from "@/lib/configuracoes";
 import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
-import {
-  mapaCustoPecas,
-  mapaCustoServicos,
-} from "@/schemas/metricasCaixa";
+import type { CustoDoBanco } from "@/schemas/metricasCaixa";
+import { buscarCustoDasOrdens } from "@/lib/caixa";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { LinkPlaca } from "@/components/LinkPlaca";
 import {
@@ -23,7 +21,7 @@ import {
   textoDoModelo,
 } from "@/lib/modelosWhatsapp";
 import { preencherModelo } from "@/schemas/whatsapp";
-import { calcularSaldoPorPeca, listarMovimentos } from "@/lib/estoque";
+import { listarSaldos } from "@/lib/estoque";
 import { listarFuncionariosPublico } from "@/lib/funcionarios";
 import {
   adicionarItensOrdem,
@@ -42,12 +40,11 @@ import type {
   PagamentoOrdem,
 } from "@/lib/ordensServico";
 import { listarArquivosDasOrdens } from "@/lib/notasFiscais";
-import { listarPecas } from "@/lib/pecas";
+import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
-import type { MovimentoEstoque } from "@/types/estoque";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type {
   ItemOS,
@@ -66,8 +63,8 @@ import {
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { agruparNotasPorOrdem, temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
-import { contaNosNumeros, lucroDaOrdem, TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
-import type { Peca } from "@/types/peca";
+import { contaNosNumeros, lucroDaOrdemPeloBanco, TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
 import { FaturamentoCard } from "./FaturamentoCard";
@@ -96,7 +93,7 @@ export function OrdensServicoPage() {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
-  const [pecas, setPecas] = useState<Peca[]>([]);
+  const [pecas, setPecas] = useState<PecaJanela[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [funcionarios, setFuncionarios] = useState<FuncionarioPublico[]>([]);
   const [jurosParcelas, setJurosParcelas] = useState<JurosParcela[]>([]);
@@ -108,7 +105,10 @@ export function OrdensServicoPage() {
   // só olhar a lista de OS não paga por uma consulta que ela não usa. `null`
   // significa "ainda não veio", e nesse estado os avisos de estoque ficam
   // calados em vez de anunciar "saldo zero" pra tudo.
-  const [movimentos, setMovimentos] = useState<MovimentoEstoque[] | null>(null);
+  const [saldoPorPeca, setSaldoPorPeca] = useState<Map<string, number> | null>(null);
+  // Custo de cada OS da lista, calculado pelo banco (`custo_das_ordens`): a
+  // coluna Lucro não depende de ler o cadastro de peças (#366).
+  const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -131,20 +131,17 @@ export function OrdensServicoPage() {
   const funcionarioAtualId =
     funcionarios.find((f) => f.operador_id === operador?.id)?.id ?? "";
 
-  const saldoPorPeca = useMemo(() => calcularSaldoPorPeca(movimentos ?? []), [movimentos]);
+  const saldosParaForm = useMemo(() => saldoPorPeca ?? new Map<string, number>(), [saldoPorPeca]);
 
-  const custoPorPeca = useMemo(() => mapaCustoPecas(pecas), [pecas]);
-  const custoPorServico = useMemo(() => mapaCustoServicos(servicos), [servicos]);
-
-  // Usa a mesma conta de custo do Caixa, do Início e de Relações
-  // (schemas/metricasCaixa.ts) em vez de refazer a soma aqui: cada tela que
-  // recalculava lucro por conta própria acabou divergindo das outras — ver
-  // PROJETO_STATUS.md, seção 6, item 40.
+  // O custo vem pronto do banco, pela mesma conta item a item de
+  // `custoUnitarioDoItem` (schemas/orcamento.ts), em vez de refazer a soma
+  // aqui: cada tela que recalculava lucro por conta própria acabou
+  // divergindo das outras — ver PROJETO_STATUS.md, seção 6, item 40.
   //
   // Peça digitada sem cadastro e sem custo (#655) não tem lucro: devolve
   // `null` e a coluna mostra o texto, em vez de um número inventado.
   function textoLucro(ordem: OrdemServico) {
-    const { lucro } = lucroDaOrdem(ordem.itens ?? [], custoPorPeca, custoPorServico);
+    const { lucro } = lucroDaOrdemPeloBanco(ordem.itens ?? [], custoDasOrdens.get(ordem.id));
     if (lucro === null) {
       return <span className="text-rotulo text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
     }
@@ -214,7 +211,7 @@ export function OrdensServicoPage() {
       ] = await Promise.all([
         listarOrdens(lojaAtual.id),
         listarClientesParaEscolha(podeVerCadastro),
-        listarPecas(),
+        listarPecasJanela(),
         listarServicos(),
         listarFuncionariosPublico(lojaAtual.id),
         listarJurosParcelas(lojaAtual.id),
@@ -227,6 +224,17 @@ export function OrdensServicoPage() {
       setFuncionarios(funcionariosCarregados);
       setJurosParcelas(jurosCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
+
+      // Custo de todas as OS de uma vez só. Falhar aqui não derruba a lista:
+      // a coluna Lucro só mostra "custo não informado".
+      try {
+        setCustoDasOrdens(await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id)));
+      } catch (err) {
+        console.error("Erro ao carregar o custo das ordens:", err);
+        // O custo guardado é da carga anterior: com ele a coluna mostraria
+        // lucro de itens novos com custo velho. Melhor "custo não informado".
+        setCustoDasOrdens(new Map());
+      }
 
       // Notas de todas as OS de uma vez só (uma consulta, não uma por linha)
       // — é o que diz quais notas cada OS já tem. Falhar aqui não pode
@@ -272,13 +280,13 @@ export function OrdensServicoPage() {
   const formularioAberto = mostrarFormulario || !!ordemEmEdicao || mostrarVenda;
   useEffect(() => {
     if (!formularioAberto || !isSupabaseConfigured || !lojaAtual) {
-      setMovimentos(null);
+      setSaldoPorPeca(null);
       return;
     }
     let cancelado = false;
-    listarMovimentos(lojaAtual.id)
-      .then((lista) => {
-        if (!cancelado) setMovimentos(lista);
+    listarSaldos(lojaAtual.id)
+      .then((saldos) => {
+        if (!cancelado) setSaldoPorPeca(saldos);
       })
       .catch((err) => {
         // Falhar aqui não pode derrubar o formulário: sem o saldo, a OS
@@ -519,8 +527,8 @@ export function OrdensServicoPage() {
           funcionarios={funcionarios}
           funcionarioAtualId={funcionarioAtualId}
           ordens={ordens}
-          saldoPorPeca={saldoPorPeca}
-          saldoCarregado={movimentos !== null}
+          saldoPorPeca={saldosParaForm}
+          saldoCarregado={saldoPorPeca !== null}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
           onEditarItem={handleEditarItem}
@@ -539,8 +547,8 @@ export function OrdensServicoPage() {
           funcionarios={funcionarios}
           funcionarioAtualId={funcionarioAtualId}
           ordens={ordens}
-          saldoPorPeca={saldoPorPeca}
-          saldoCarregado={movimentos !== null}
+          saldoPorPeca={saldosParaForm}
+          saldoCarregado={saldoPorPeca !== null}
           ordemExistente={ordemEmEdicao}
           temNotaEmitida={temAlgumaNotaValida(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
           abaInicial={abaInicialEdicao}
@@ -561,8 +569,8 @@ export function OrdensServicoPage() {
           pecas={pecas}
           funcionarios={funcionarios}
           funcionarioAtualId={funcionarioAtualId}
-          saldoPorPeca={saldoPorPeca}
-          saldoCarregado={movimentos !== null}
+          saldoPorPeca={saldosParaForm}
+          saldoCarregado={saldoPorPeca !== null}
           jurosParcelas={jurosParcelas}
           onRegistrar={handleRegistrarVenda}
           onCadastrarCliente={handleCadastrarClienteDaVenda}

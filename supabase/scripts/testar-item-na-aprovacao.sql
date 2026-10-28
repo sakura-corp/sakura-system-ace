@@ -77,9 +77,13 @@ begin
     on conflict (id) do nothing;
 
   insert into auth.users (id) values (o_a), (o_b) on conflict do nothing;
+  -- Com Estoque, além de OS: as conferências daqui leem estoque_movimentos
+  -- como o balconista, e desde a 0074 (#366) só o módulo Estoque lê. Que a
+  -- baixa destas três funções funciona pra quem tem OS SEM Estoque é provado
+  -- em testar-pecas-permissao.sql.
   insert into operadores (id, usuario, nome, admin, permissoes, ativo) values
-    (o_a, 't706_a', 'Balconista A (teste #706)', false, array['painel', 'ordens_servico'], true),
-    (o_b, 't706_b', 'Balconista B (teste #706)', false, array['painel', 'ordens_servico'], true)
+    (o_a, 't706_a', 'Balconista A (teste #706)', false, array['painel', 'ordens_servico', 'estoque'], true),
+    (o_b, 't706_b', 'Balconista B (teste #706)', false, array['painel', 'ordens_servico', 'estoque'], true)
     on conflict (id) do nothing;
   insert into operador_lojas (operador_id, loja_id) values
     (o_a, loja_a), (o_a, loja_c), (o_b, loja_b)

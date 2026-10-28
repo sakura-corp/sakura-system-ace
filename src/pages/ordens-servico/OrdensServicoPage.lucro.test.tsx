@@ -30,14 +30,22 @@ vi.mock("@/lib/clientes", () => ({
   cadastrarClienteRapido: vi.fn(),
   cadastrarVeiculoRapido: vi.fn(),
 }));
-vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));
+vi.mock("@/lib/pecas", () => ({ listarPecasJanela: async () => [] }));
+// O custo de cada OS vem pronto do banco (`custo_das_ordens`, #366): a "a" tem
+// peça avulsa sem custo (incompleto); a "b" custou 30.
+vi.mock("@/lib/caixa", () => ({
+  buscarCustoDasOrdens: async () =>
+    new Map([
+      ["a", { custo: 0, completo: false }],
+      ["b", { custo: 30, completo: true }],
+    ]),
+}));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/funcionarios", () => ({ listarFuncionariosPublico: async () => [] }));
 vi.mock("@/lib/configuracoes", () => ({ listarJurosParcelas: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens: async () => [] }));
 vi.mock("@/lib/estoque", () => ({
-  listarMovimentos: async () => [],
-  calcularSaldoPorPeca: () => new Map(),
+  listarSaldos: async () => new Map(),
 }));
 vi.mock("@/lib/modelosWhatsapp", () => ({
   listarModelosWhatsapp: async () => ({}),

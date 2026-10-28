@@ -12,7 +12,7 @@ import {
 import { temPermissao } from "@/types/operador";
 import { diaBrasileiro, dataCurta } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
-import { calcularSaldoPorPeca, listarMovimentos } from "@/lib/estoque";
+import { listarSaldos } from "@/lib/estoque";
 import { listarFuncionariosPublico } from "@/lib/funcionarios";
 import {
   listarModelosWhatsapp,
@@ -30,7 +30,7 @@ import {
   listarOrdensDoVeiculo,
   recusarOrcamento,
 } from "@/lib/ordensServico";
-import { listarPecas } from "@/lib/pecas";
+import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { avisarOrcamentosMudaram } from "@/hooks/useOrcamentosAbertos";
@@ -44,7 +44,6 @@ import { formatarMoeda } from "@/schemas/dinheiro";
 import { preencherModelo } from "@/schemas/whatsapp";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { FuncionarioPublico } from "@/types/funcionario";
-import type { MovimentoEstoque } from "@/types/estoque";
 import type {
   ItemOS,
   NovaOrdemServico,
@@ -54,7 +53,7 @@ import type {
   PatchOrdemServico,
 } from "@/types/os";
 import { nomeDocumento, totalOrdem } from "@/types/os";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { StatusOrdem } from "./StatusOrdemBadge";
@@ -71,11 +70,11 @@ export function OrcamentosPage() {
   const navigate = useNavigate();
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
+  const [pecas, setPecas] = useState<PecaJanela[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [funcionarios, setFuncionarios] = useState<FuncionarioPublico[]>([]);
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
-  const [movimentos, setMovimentos] = useState<MovimentoEstoque[] | null>(null);
+  const [saldos, setSaldos] = useState<Map<string, number> | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -85,7 +84,7 @@ export function OrcamentosPage() {
   const [busca, setBusca] = useState("");
 
   const funcionarioAtualId = funcionarios.find((f) => f.operador_id === operador?.id)?.id ?? "";
-  const saldoPorPeca = useMemo(() => calcularSaldoPorPeca(movimentos ?? []), [movimentos]);
+  const saldoPorPeca = useMemo(() => saldos ?? new Map<string, number>(), [saldos]);
 
   const orcamentos = useMemo(() => ordens.filter(ehOrcamento), [ordens]);
   const quantosAbertos = contarOrcamentosAbertos(orcamentos);
@@ -116,7 +115,7 @@ export function OrcamentosPage() {
         await Promise.all([
           listarOrcamentos(lojaAtual.id),
           listarClientesParaEscolha(podeVerCadastro),
-          listarPecas(),
+          listarPecasJanela(),
           listarServicos(),
           listarFuncionariosPublico(lojaAtual.id),
           listarModelosWhatsapp(lojaAtual.id),
@@ -147,13 +146,13 @@ export function OrcamentosPage() {
   const formularioAberto = mostrarFormulario || !!aberto;
   useEffect(() => {
     if (!formularioAberto || !isSupabaseConfigured || !lojaAtual) {
-      setMovimentos(null);
+      setSaldos(null);
       return;
     }
     let cancelado = false;
-    listarMovimentos(lojaAtual.id)
+    listarSaldos(lojaAtual.id)
       .then((m) => {
-        if (!cancelado) setMovimentos(m);
+        if (!cancelado) setSaldos(m);
       })
       .catch((err) => console.error("Erro ao carregar o saldo de estoque:", err));
     return () => {
@@ -287,7 +286,7 @@ export function OrcamentosPage() {
     ordens: [],
     buscarOrdensDoVeiculo: listarOrdensDoVeiculo,
     saldoPorPeca,
-    saldoCarregado: movimentos !== null,
+    saldoCarregado: saldos !== null,
     modoOrcamento: true,
     onSalvarNova: handleSalvarNova,
     onSalvarEdicao: handleSalvarEdicao,

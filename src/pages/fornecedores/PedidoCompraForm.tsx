@@ -16,12 +16,12 @@ import {
 } from "@/schemas/pedidoCompra";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra } from "@/types/pedidoCompra";
-import type { Peca } from "@/types/peca";
+import type { PecaJanela } from "@/types/peca";
 import { PedidoCompraItemRow } from "./PedidoCompraItemRow";
 
 interface PedidoCompraFormProps {
   fornecedores: Fornecedor[];
-  pecas: Peca[];
+  pecas: PecaJanela[];
   onSalvar: (pedido: NovoPedidoCompra, itens: NovoItemPedidoCompra[]) => Promise<void>;
   onCancelar: () => void;
 }
