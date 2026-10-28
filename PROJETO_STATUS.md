@@ -18,6 +18,13 @@ escrito pensando nela. **No começo de toda sessão, conferir quem é**: a conta
 (`mcp__github__get_me`, ou `gh api user --jq .login`) ou o e-mail do Git (`git config user.email`).
 Se não der pra saber, perguntar.
 
+**Logo depois, avisar as pendências da pessoa** (Sofia, 28/10/2026), em até 5 linhas e antes do
+pedido: as issues abertas com ela de responsável nos repositórios da `sakura-corp` que a sessão
+alcança, marcando as de leva **sem PR** (elas travam o "Pegar tarefa" do painel); os PRs dela com
+pedido de mudança ou CI vermelho; onde mencionaram ela sem resposta; e, pra Sofia, as issues com a
+etiqueta `sofia`. Nada pendente: uma linha só. Não deu pra consultar: dizer e seguir. É aviso, nunca
+tranca.
+
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
 de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
