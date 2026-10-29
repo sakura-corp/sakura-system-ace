@@ -146,7 +146,8 @@ export function ComissoesSection({
 
       <p className="text-rotulo text-sakura-muted">
         Conta só OS já faturada, pela data do faturamento. A comissão é calculada sobre o lucro
-        (venda − custo), na porcentagem do cadastro de cada funcionário.
+        (venda − custo), na porcentagem do cadastro de cada funcionário. Serviço sem custo
+        cadastrado fica de fora: a comissão sai sobre o lucro das peças.
       </p>
 
       <div className="grid grid-cols-3 gap-4">
