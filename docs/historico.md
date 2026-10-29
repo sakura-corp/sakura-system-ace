@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 29/10/2026, meio-dia: a equipe admin no banco de teste; o #818 nos testes de perfil
+- **#831 mesclado**: a equipe é **admin só no banco de teste** (a Sofia já ligou os três) e monta sozinha, em Configurações → Operadores, o login de perfil que um teste de permissão pede. Teste de permissão é sempre com o login do perfil (`docs/equipe.md` e `docs/supabase-de-teste.md`, "Teste de permissão").
+- **#818 (Gusta)**: o teste com OS passou no PC dele; faltam os 3 de perfil (só Caixa, só Garantias, só Notas) e tirar o "(a Sofia confirma na issue)". Ele já tem o prompt; volta do almoço e roda.
+- **Depois**: "mescla o #818" (conferir o CI antes) → 0075 → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal (Sofia ou a loja).
+- **#814** (tirar o painel daqui) na `leva-6`: a escritorio#8 fechou.
+- **A venda (item 3 corrigido, escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
+- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou; aí pausar a rotina antiga e fechar a #625.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
+
 ### 29/10/2026, manhã: a 0074 aplicada; a Pneus Amigão na 74
 - **0074 aplicada** na Pneus Amigão (rodada 24 do "Atualizar o banco"; ensaio e aplicação verdes). A 1ª tentativa ficou segurada: o **Balcão** (DESKTOP-JG810PI) já estava na 0.9.55, mas só apareceu assim depois de reabrir o programa (`docs/licoes.md`, item 94).
 - **Falta na #809**: o lucro do dia no Caixa da loja bater com o normal. É no banco da loja, então **fica com a Sofia ou a loja** (a equipe só mexe no banco de teste). Bateu: fechar a #809 (os passos 5 a 7 fecham com a #367).
