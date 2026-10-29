@@ -1804,3 +1804,11 @@
     direito. **Regra**: em HTML que vira PDF, nada de sombra com desfoque (nem `filter: blur`);
     borda e degradê de fundo funcionam. E PDF que vai pra cliente se confere **no celular**, não só
     no computador (o `pdftoppm` também mostrava certo).
+94. **"Os dois computadores estão na 0.9.55", mas o botão segurou a 0074 (29/10/2026, #809).** O
+    "Atualizar o banco" disse "Balcão (0.9.54, visto há 5 dias)", com o programa já na 0.9.55 na
+    tela do próprio Balcão (DESKTOP-JG810PI). O computador só grava a versão no banco quando o
+    programa **abre**; atualizado e não reaberto (ou reaberto sem passar pelo registro), a conta fica
+    velha. Depois de fechar e abrir o programa, Configurações → Computadores desta empresa mostrou
+    "0.9.55, hoje", e a rodada seguinte aplicou. **Regra**: antes de rodar migration que espera
+    computadores, conferir **essa tela** (não o "Sobre" de um computador); e o nome da lista pode ser
+    um apelido ("Balcão"), com o nome do Windows embaixo.
