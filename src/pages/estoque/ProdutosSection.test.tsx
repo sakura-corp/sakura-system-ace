@@ -2,7 +2,7 @@
 /**
  * Teste de TELA da lista de Produtos (#781): a margem sai no formato
  * brasileiro, com vírgula ("59,1%"), igual ao resto dos números do programa.
- * A conta é a de `margemAPartirDoPreco` (sobre a venda desde a #835); aqui se
+ * A conta é a de `margemSobreAVenda` (sobre a venda desde a #835); aqui se
  * confere como ela aparece na tabela.
  */
 import { describe, expect, it, vi } from "vitest";

@@ -11,7 +11,7 @@ import {
   type SituacaoSaldo,
 } from "@/schemas/estoque";
 import { csosnMaisUsado } from "@/schemas/tributacao";
-import { margemAPartirDoPreco } from "@/schemas/peca";
+import { margemSobreAVenda } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { NovaPeca, Peca } from "@/types/peca";
@@ -328,7 +328,7 @@ export function ProdutosSection({
               {pecasFiltradas.map((peca) => {
                 const saldo = saldos.get(peca.id) ?? 0;
                 const leitura = lerSaldo(saldo, peca.estoque_minimo);
-                const margem = margemAPartirDoPreco(
+                const margem = margemSobreAVenda(
                   peca.preco_custo?.toString() ?? "",
                   peca.preco_venda?.toString() ?? "",
                 );

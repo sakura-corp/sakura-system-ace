@@ -45,7 +45,7 @@ export function PrecosFields({
             className={inputClasse}
           />
         </Campo>
-        <Campo label="Margem %">
+        <Campo label="Acréscimo sobre o custo %">
           <input
             type="number"
             step="0.1"

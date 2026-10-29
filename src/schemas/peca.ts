@@ -134,19 +134,12 @@ export function paraQuantidadeInicial(valores: PecaFormValues): number | null {
 // Os três campos se atualizam entre si conforme qual deles a pessoa mexeu por
 // último (ver PrecosFields.tsx). Retornar `null` significa "não mexe no outro
 // campo" (dado insuficiente pra calcular ainda); retornar "" limpa o campo.
-//
-// A margem é SOBRE A VENDA (#835, decisão da #791): (venda − custo) / venda.
-// É o que "margem" quer dizer pro dono de loja e pro contador. Custo 245 e
-// venda 389,90 dão 37%. A conta sobre o custo (que dava 59%) se chama
-// "markup", e o programa não mostra esse número.
 
 export function precoAPartirDaMargem(custo: string, margem: string): string | null {
   const custoNum = Number(custo);
   const margemNum = parseFloat(margem);
   if (custo.trim() === "" || Number.isNaN(custoNum) || Number.isNaN(margemNum)) return null;
-  // Margem de 100% ou mais sobre a venda não existe (o custo teria de ser zero).
-  if (margemNum >= 100) return null;
-  return arredondar(custoNum / (1 - margemNum / 100)).toString();
+  return arredondar(custoNum * (1 + margemNum / 100)).toString();
 }
 
 export function margemAPartirDoPreco(custo: string, precoVenda: string): string {
@@ -157,12 +150,11 @@ export function margemAPartirDoPreco(custo: string, precoVenda: string): string 
     Number.isNaN(custoNum) ||
     custoNum <= 0 ||
     precoVenda.trim() === "" ||
-    Number.isNaN(precoNum) ||
-    precoNum <= 0
+    Number.isNaN(precoNum)
   ) {
     return "";
   }
-  const margem = ((precoNum - custoNum) / precoNum) * 100;
+  const margem = ((precoNum - custoNum) / custoNum) * 100;
   return (Math.round(margem * 10) / 10).toString();
 }
 
@@ -226,4 +218,26 @@ export function precoAbaixoDoCusto(custo: string, precoVenda: string): boolean {
  */
 export function ehCategoriaDePneu(nomeDaCategoria: string | null | undefined): boolean {
   return /pneu/i.test(nomeDaCategoria ?? "");
+}
+
+// A "Margem" da lista do Estoque (#835, decisão da #791) é SOBRE A VENDA:
+// (venda − custo) / venda. É o que "margem" quer dizer pro dono de loja e pro
+// contador (custo 245, venda 389,90 → 37,2%). O campo do cadastro continua
+// sendo o acréscimo sobre o custo (`margemAPartirDoPreco`), pra nenhum preço
+// mudar de quem já está acostumado a digitar "20%" e ganhar custo + 20%.
+export function margemSobreAVenda(custo: string, precoVenda: string): string {
+  const custoNum = Number(custo);
+  const precoNum = Number(precoVenda);
+  if (
+    custo.trim() === "" ||
+    Number.isNaN(custoNum) ||
+    custoNum <= 0 ||
+    precoVenda.trim() === "" ||
+    Number.isNaN(precoNum) ||
+    precoNum <= 0
+  ) {
+    return "";
+  }
+  const margem = ((precoNum - custoNum) / precoNum) * 100;
+  return (Math.round(margem * 10) / 10).toString();
 }
