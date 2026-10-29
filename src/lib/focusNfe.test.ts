@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { emitirNFCe, FocusNfeError, montarCorpoNFCe, montarCorpoNFSe } from "./focusNfe";
+import {
+  codigoTributacaoNacional,
+  emitirNFCe,
+  FocusNfeError,
+  montarCorpoNFCe,
+  montarCorpoNFSe,
+  montarCorpoNFSeNacional,
+  padraoNFSe,
+} from "./focusNfe";
 import type { OrdemServico } from "@/types/os";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
@@ -332,6 +340,118 @@ describe("montarCorpoNFSe", () => {
 
     expect(corpo.tomador.cnpj).toBe("66217744000170");
     expect(corpo.tomador.cpf).toBeUndefined();
+  });
+});
+
+// NFS-e pelo Padrão Nacional (#837). Nomes dos campos conferidos na
+// documentação da Focus NFe (doc.focusnfe.com.br, "NFSe Nacional → Emitir",
+// e a lista completa em campos.focusnfe.com.br/nfse_nacional) — ver
+// docs/pendencias-e-futuro.md. O que ainda depende do suporte está lá também.
+describe("padraoNFSe", () => {
+  it("empresa do Simples Nacional emite pelo Padrão Nacional", () => {
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: "simples_nacional" }))).toBe("nacional");
+  });
+
+  it("os outros regimes (e regime em branco) continuam no caminho municipal de hoje", () => {
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: "lucro_presumido" }))).toBe("municipal");
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: null }))).toBe("municipal");
+  });
+});
+
+describe("codigoTributacaoNacional", () => {
+  it("o item da LC 116 vira os 6 dígitos do código nacional, com o desdobro 01", () => {
+    expect(codigoTributacaoNacional("14.01")).toBe("140101");
+    expect(codigoTributacaoNacional("7.02")).toBe("070201");
+  });
+
+  it("código já com o desdobro (14.01.02) é usado como está", () => {
+    expect(codigoTributacaoNacional("14.01.02")).toBe("140102");
+  });
+
+  it("vazio ou fora do formato devolve vazio (quem emite recusa)", () => {
+    expect(codigoTributacaoNacional(null)).toBe("");
+    expect(codigoTributacaoNacional("abc")).toBe("");
+  });
+});
+
+describe("montarCorpoNFSeNacional", () => {
+  const agora = new Date("2026-11-02T13:15:00Z");
+  const dados = (sobrescrever: Partial<Parameters<typeof montarCorpoNFSeNacional>[0]> = {}) => ({
+    ordem: { numero: 1 } as never,
+    discriminacao: "Alinhamento e balanceamento",
+    valorServicos: 150.000000001,
+    cliente: clientePessoaFisica(),
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: configuracaoFiscal(),
+    ...sobrescrever,
+  });
+
+  it("monta o corpo achatado da DPS, com prestador, serviço e tributação", () => {
+    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1793632500 });
+    expect(corpo).toMatchObject({
+      data_competencia: "2026-11-02",
+      serie_dps: 1,
+      numero_dps: 1793632500,
+      emitente_dps: 1,
+      codigo_municipio_emissora: 3503208,
+      cnpj_prestador: "51916585000125",
+      inscricao_municipal_prestador: "12345",
+      codigo_opcao_simples_nacional: 3,
+      regime_tributario_simples_nacional: 1,
+      regime_especial_tributacao: 0,
+      codigo_municipio_prestacao: 3503208,
+      codigo_tributacao_nacional_iss: "140101",
+      descricao_servico: "Alinhamento e balanceamento",
+      valor_servico: 150,
+      tributacao_iss: 1,
+      tipo_retencao_iss: 1,
+      percentual_aliquota_relativa_municipio: 5,
+    });
+    expect(corpo.data_emissao).toMatch(/^2026-11-02T\d{2}:15:00[+-]\d{2}:\d{2}$/);
+    // Nada do formato municipal vai junto.
+    expect(corpo).not.toHaveProperty("prestador");
+    expect(corpo).not.toHaveProperty("servico");
+  });
+
+  it("tomador pessoa física: CPF, nome e endereço com os nomes _tomador", () => {
+    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1 });
+    expect(corpo).toMatchObject({
+      cpf_tomador: "12345678909",
+      razao_social_tomador: "Cliente Exemplo da Silva",
+      logradouro_tomador: "Rua Exemplo",
+      numero_tomador: "100",
+      bairro_tomador: "Centro",
+      codigo_municipio_tomador: 3503208,
+      cep_tomador: "14800000",
+    });
+    expect(corpo).not.toHaveProperty("cnpj_tomador");
+  });
+
+  it("tomador pessoa jurídica vai pelo CNPJ, sem CPF", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ cliente: clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "66.217.744/0001-70" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.cnpj_tomador).toBe("66217744000170");
+    expect(corpo).not.toHaveProperty("cpf_tomador");
+  });
+
+  it("cliente sem rua ou CEP não manda endereço pela metade", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ rua: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(corpo).not.toHaveProperty("logradouro_tomador");
+    expect(corpo).not.toHaveProperty("cep_tomador");
+  });
+
+  it("empresa fora do Simples sai como não optante, sem o regime do Simples", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ regime_tributario: "lucro_presumido" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.codigo_opcao_simples_nacional).toBe(1);
+    expect(corpo).not.toHaveProperty("regime_tributario_simples_nacional");
   });
 });
 

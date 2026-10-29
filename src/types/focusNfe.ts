@@ -39,6 +39,9 @@ export interface RespostaFocusNfe {
   caminho_xml_cancelamento?: string;
   codigo_verificacao?: string;
   url?: string;
+  // Só na NFS-e Nacional: o endereço público do PDF (DANFSe). O programa
+  // copia pra `caminho_danfe` na consulta (ver consultarNFSe).
+  url_danfse?: string;
 }
 
 export interface ItemNFCe {
@@ -141,4 +144,41 @@ export interface NFSeCorpo {
     codigo_cnae: string;
     valor_servicos: number;
   };
+}
+
+// NFS-e pelo Padrão Nacional (#837), caminho `/v2/nfsen` da Focus NFe. O
+// corpo é "achatado" (sem os objetos prestador/tomador/servico). Os nomes
+// dos campos foram conferidos na documentação da Focus NFe em 29/10/2026:
+// https://doc.focusnfe.com.br/reference/emitir_dps_nacional e a lista
+// completa em https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html
+// (ver docs/pendencias-e-futuro.md). Os números seguem o exemplo oficial (código
+// IBGE e opções como número; CNPJ, CPF e CEP como texto de dígitos).
+export interface NFSeNacionalCorpo {
+  data_emissao: string;
+  data_competencia: string;
+  serie_dps: number;
+  numero_dps: number;
+  emitente_dps: number;
+  codigo_municipio_emissora: number;
+  cnpj_prestador: string;
+  inscricao_municipal_prestador?: string;
+  codigo_opcao_simples_nacional: number;
+  regime_tributario_simples_nacional?: number;
+  regime_especial_tributacao: number;
+  cpf_tomador?: string;
+  cnpj_tomador?: string;
+  razao_social_tomador: string;
+  email_tomador?: string;
+  logradouro_tomador?: string;
+  numero_tomador?: string;
+  bairro_tomador?: string;
+  codigo_municipio_tomador?: number;
+  cep_tomador?: string;
+  codigo_municipio_prestacao: number;
+  codigo_tributacao_nacional_iss: string;
+  descricao_servico: string;
+  valor_servico: number;
+  tributacao_iss: number;
+  tipo_retencao_iss: number;
+  percentual_aliquota_relativa_municipio?: number;
 }

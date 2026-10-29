@@ -216,6 +216,47 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
 > - **Senha do portal** (não vai na Focus): portal da NFS-e → **Alterar Senha**. Avisar a
 >   contabilidade, que entra lá todo mês pra cadastrar a alíquota.
 
+#### NFS-e pelo Padrão Nacional (#837, código em PR rascunho de 29/10/2026)
+
+Desde **01/11/2026** a empresa do **Simples** em Araraquara só emite NFS-e pelo **Padrão Nacional**
+(comunicado da prefeitura de 19/10, Resolução CGSN nº 191/2026); o Giap deixa de emitir pra ela.
+**Como o programa decide**: regime "Simples Nacional" nos dados fiscais → caminho nacional
+(`/v2/nfsen`); os outros regimes continuam no municipal (`/v2/nfse`). Sem coluna nova. A nota
+nacional ganha a `ref` `os<numero>-nfsen-<instante>`, e é a `ref` que diz por onde consultar,
+cancelar e baixar (nota antiga do Giap continua indo pelo municipal).
+
+**Confirmado na documentação da Focus NFe** (lida em 29/10/2026):
+- Emitir: `POST /v2/nfsen?ref=<ref>`, corpo "achatado" (sem objetos `prestador`/`tomador`/`servico`),
+  resposta `processando_autorizacao` e consulta depois
+  ([Emitir](https://doc.focusnfe.com.br/reference/emitir_dps_nacional);
+  [lista completa dos campos](https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html)).
+  Obrigatórios usados: `data_emissao` (com fuso), `serie_dps` (API: 1 a 49999), `numero_dps`,
+  `data_competencia`, `emitente_dps`, `codigo_municipio_emissora`, `cnpj_prestador`,
+  `codigo_opcao_simples_nacional`, `regime_especial_tributacao`, `cpf_tomador`/`cnpj_tomador`,
+  `codigo_municipio_prestacao`, `codigo_tributacao_nacional_iss` (6 dígitos), `descricao_servico`,
+  `valor_servico`, `tributacao_iss`.
+- Consultar: `GET /v2/nfsen/<ref>`; os status são os mesmos da municipal; a autorizada traz
+  `numero`, `codigo_verificacao`, `url` (consulta pública, com a chave de 50 dígitos),
+  `caminho_xml_nota_fiscal` e `url_danfse` (PDF num endereço do S3 da Focus)
+  ([Consultar](https://doc.focusnfe.com.br/reference/consultar_nfse_nacional)).
+- Cancelar: `DELETE /v2/nfsen/<ref>` com `{ "justificativa": ... }`, resposta síncrona `cancelado`
+  ou `erro_cancelamento` ([Cancelar](https://doc.focusnfe.com.br/reference/cancelar_nfse_nacional)).
+
+**Ainda depende do suporte da Focus** (ticket da Sofia de 29/10) **ou da contabilidade**:
+1. Se a conta precisa de alguma configuração no painel pra NFS-e Nacional, e se o token do Giap
+   deixa de ser necessário.
+2. O grupo da **reforma tributária** (`finalidade_emissao`, `consumidor_final`,
+   `indicador_destinatario`, `ibs_cbs_situacao_tributaria`, `ibs_cbs_classificacao_tributaria`),
+   marcado como obrigatório na lista de campos: o programa **ainda não manda**. Vale pro Simples em 2026?
+3. O **código de tributação nacional**: o programa usa o item da LC 116 + desdobro `01`
+   (`14.01` → `140101`). A contabilidade confirma o desdobro; outro desdobro se digita como `14.01.02`.
+4. A **alíquota** (`percentual_aliquota_relativa_municipio`): o programa manda a da competência.
+   A documentação diz que, se o município está no sistema nacional, ela vem parametrizada.
+5. `codigo_opcao_simples_nacional = 3` (ME/EPP) e `regime_tributario_simples_nacional = 1`
+   (tudo pelo Simples): conferir com a contabilidade.
+6. O **número da DPS** é o instante em segundos (não se repete); conferir que não precisa ser
+   sequencial.
+
 #### O que ainda está frágil na parte fiscal
 
 Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de confirmação de fora.
@@ -288,6 +329,8 @@ vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio
    recorrente da contabilidade, não de instalação.
 5. **Acesso ao portal da prefeitura pra NFS-e**: **varia por município**, inclusive o fornecedor
    do sistema municipal (Araraquara usa o Giap).
+   **Empresa do Simples**: a NFS-e sai pelo Padrão Nacional (ver "NFS-e pelo Padrão Nacional"
+   acima); o token do portal municipal provavelmente deixa de ser necessário (confirmar com a Focus).
 6. **Confirmar CST/CSOSN com a contabilidade do cliente**: depende do regime **daquela** empresa. A
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
 

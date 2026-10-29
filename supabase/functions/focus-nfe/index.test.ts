@@ -64,6 +64,7 @@ function montar(cenario: Cenario = {}) {
       return json(200, Array.from({ length: notasRegistradas }, (_, i) => ({ id: `nota-${i}` })));
     }
     if (/^https:\/\/(api|homologacao)\.focusnfe\.com\.br\//.test(c.url)) return focus(c);
+    if (c.url.startsWith("https://focusnfe.s3.sa-east-1.amazonaws.com/")) return focus(c);
     throw new Error(`o porteiro chamou um endereço inesperado: ${c.url}`);
   };
 
@@ -89,8 +90,9 @@ function montar(cenario: Cenario = {}) {
   };
 
   const naFocus = () => chamadas.filter((c) => c.url.includes("focusnfe.com.br"));
+  const noS3 = () => chamadas.filter((c) => c.url.includes("amazonaws.com"));
   const noCofre = () => chamadas.filter((c) => c.url.includes("segredos_fiscais_loja"));
-  return { pedir, chamadas, naFocus, noCofre };
+  return { pedir, chamadas, naFocus, noCofre, noS3 };
 }
 
 function json(status: number, corpo: unknown): Response {
@@ -359,6 +361,88 @@ describe("porteiro da Focus NFe — baixar PDF/XML", () => {
     const r = await pedir(baixar("../../v2/empresas"));
     expect(r.status).toBe(400);
     expect(chamadas).toHaveLength(0);
+  });
+});
+
+// NFS-e pelo Padrão Nacional (#837): caminho `/v2/nfsen`, corpo "achatado"
+// (cnpj_prestador no primeiro nível) e o PDF (DANFSe) num endereço público
+// do S3 da Focus NFe. Formato conferido em doc.focusnfe.com.br (NFSe
+// Nacional: Emitir, Consultar e Cancelar) — ver docs/pendencias-e-futuro.md.
+describe("porteiro da Focus NFe — NFS-e Nacional (nfsen)", () => {
+  const corpoNacional = { cnpj_prestador: CNPJ, valor_servico: 60, descricao_servico: "Troca de pneu" };
+  const REF = "os12-nfsen-1727200000000";
+
+  it("aceita o tipo nfsen e emite por POST em /v2/nfsen?ref=, com o token", async () => {
+    const { pedir, naFocus } = montar({ focus: () => json(202, { status: "processando_autorizacao" }) });
+    const r = await pedir(emitir({ tipo: "nfsen", ref: REF, corpo: corpoNacional }));
+    expect(r.status).toBe(200);
+    expect(naFocus()).toHaveLength(1);
+    expect(naFocus()[0]).toMatchObject({ metodo: "POST", url: `https://api.focusnfe.com.br/v2/nfsen?ref=${REF}` });
+    expect(naFocus()[0].headers.get("Authorization")).toBe(`Basic ${btoa(`${TOKEN}:`)}`);
+    expect(JSON.parse(naFocus()[0].corpo!)).toEqual(corpoNacional);
+  });
+
+  it("confere o CNPJ do prestador no campo achatado cnpj_prestador", async () => {
+    const { pedir, naFocus } = montar();
+    const r = await pedir(emitir({ tipo: "nfsen", ref: REF, corpo: { ...corpoNacional, cnpj_prestador: "99888777000166" } }));
+    expect(r.status).toBe(403);
+    expect(r.dados.motivo).toBe("outra_empresa");
+    expect(naFocus()).toHaveLength(0);
+  });
+
+  it("consulta por GET em /v2/nfsen/<ref>", async () => {
+    const { pedir, naFocus } = montar({ focus: () => json(200, { status: "autorizado", cnpj_prestador: CNPJ }) });
+    const r = await pedir({ loja_id: LOJA, acao: "consultar", tipo: "nfsen", ref: REF });
+    expect(naFocus()[0]).toMatchObject({ metodo: "GET", url: `https://api.focusnfe.com.br/v2/nfsen/${REF}` });
+    expect(r.dados).toMatchObject({ ok: true, dados: { status: "autorizado" } });
+  });
+
+  it("cancela por DELETE em /v2/nfsen/<ref>, conferindo o registro como nfse na tabela", async () => {
+    const { pedir, chamadas, naFocus } = montar({ focus: () => json(200, { status: "cancelado" }) });
+    await pedir({
+      loja_id: LOJA, acao: "cancelar", tipo: "nfsen", ref: REF,
+      justificativa: "Serviço lançado na OS errada",
+    });
+    const busca = chamadas.find((c) => c.url.includes("notas_fiscais_arquivos"))!;
+    expect(busca.url).toContain("tipo=eq.nfse");
+    expect(naFocus()[0]).toMatchObject({ metodo: "DELETE", url: `https://api.focusnfe.com.br/v2/nfsen/${REF}` });
+    expect(JSON.parse(naFocus()[0].corpo!)).toEqual({ justificativa: "Serviço lançado na OS errada" });
+  });
+
+  it("o PDF (DANFSe) vem do url_danfse no S3 da Focus NFe, SEM o token junto", async () => {
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const urlDanfse = "https://focusnfe.s3.sa-east-1.amazonaws.com/arquivos/x/DANFSEs/NFS1.pdf";
+    const { pedir, noS3 } = montar({
+      focus: (c) =>
+        c.url.includes("/v2/nfsen/")
+          ? json(200, { status: "autorizado", cnpj_prestador: CNPJ, url_danfse: urlDanfse })
+          : new Response(pdf, { status: 200, headers: { "Content-Type": "application/pdf" } }),
+    });
+    const r = await pedir({ loja_id: LOJA, acao: "baixar", tipo: "nfsen", ref: REF, arquivo: "danfe" });
+    expect(r.status).toBe(200);
+    expect(noS3()).toHaveLength(1);
+    expect(noS3()[0].url).toBe(urlDanfse);
+    expect(noS3()[0].headers.get("Authorization")).toBeNull();
+    expect(r.dados.tipo_conteudo).toBe("application/pdf");
+  });
+
+  it("o S3 só serve pro PDF público: XML apontando pra lá não é seguido (lá o token iria junto)", async () => {
+    const { pedir, noS3 } = montar({
+      focus: () =>
+        json(200, {
+          status: "autorizado",
+          caminho_xml_nota_fiscal: "https://focusnfe.s3.sa-east-1.amazonaws.com/x.xml",
+        }),
+    });
+    const r = await pedir({ loja_id: LOJA, acao: "baixar", tipo: "nfsen", ref: REF, arquivo: "xml" });
+    expect(r.status).toBe(502);
+    expect(noS3()).toHaveLength(0);
+  });
+
+  it("tipo desconhecido continua recusado", () => {
+    expect(validarPedido({ loja_id: LOJA, acao: "consultar", tipo: "nfsex", ref: REF })).toBe(
+      "Tipo de nota desconhecido.",
+    );
   });
 });
 
