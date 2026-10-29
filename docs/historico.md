@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 29/10/2026, manhã: a 0074 aplicada; a Pneus Amigão na 74
+- **0074 aplicada** na Pneus Amigão (rodada 24 do "Atualizar o banco"; ensaio e aplicação verdes). A 1ª tentativa ficou segurada: o **Balcão** (DESKTOP-JG810PI) já estava na 0.9.55, mas só apareceu assim depois de reabrir o programa (`docs/licoes.md`, item 94).
+- **Falta na #809**: o lucro do dia no Caixa da loja bater com o normal. É no banco da loja, então **fica com a Sofia ou a loja** (a equipe só mexe no banco de teste). Bateu: fechar a #809 (os passos 5 a 7 fecham com a #367).
+- **#818 (Gusta)**: código já revisado (nada mudou desde 28/10; CI 7/7). Falta ele fazer os 4 testes no PC e tirar o "(a Sofia confirma na issue)" da descrição; ele avisou que está fazendo. Ninguém cobra no PR.
+- **Depois**: mesclar o #818 (conferir o CI antes) → 0075 → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → 0076.
+- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou sozinho; aí a Sofia pausa a rotina antiga e fecha a #625.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
+- **Próximo**: "mescla o #818" quando o Gusta terminar os testes.
+
 ### 28/10/2026, fim da noite: o Resumo de segunda pela API no ar; a 0.9.55 liberada; a Pneus Amigão na 73
 - **Resumo de segunda pela API** (escritorio#17 e #28; aqui #824): workflow no escritório, chamando a API direto; a 1ª rodada à mão criou a escritorio#40. **Segunda, 9h29**: conferir se chegou sozinho; aí a Sofia pausa a rotina antiga e fecha a #625 (até lá, chegam dois).
 - **Revisão por `@claude revisa`** (escritorio#16; #825 e #826): pela API direta (`.github/scripts/revisao-claude.sh`, igual ao do escritório). Em PR grande, é lista do que conferir, não veredito (A5 de `docs/jeito-de-trabalhar.md`).

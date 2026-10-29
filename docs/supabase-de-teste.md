@@ -287,4 +287,5 @@ entrar na hora.
 | `PAREI: faltou trocar o usuário e o nome` | troque as linhas `<<< TROCAR` do `ligar-login.sql` |
 | `PAREI: não achei o login <usuario>@sakura.local` | o e-mail do Passo 6b está diferente (um espaço a mais, outro domínio, outro usuário) |
 | `Email logins are disabled` no programa | o Passo 4 não foi salvo |
+| `Invalid API key` na tela de login | não é o usuário nem a senha: o endereço (`VITE_SUPABASE_URL`) ou a chave (`VITE_SUPABASE_ANON_KEY`) do `.env` está errado. Confira letra por letra com o Send (em 29/10 foi um erro de digitação na URL) e rode o `npm run dev` de novo. Se o problema fosse o login, a mensagem seria `Invalid login credentials` |
 | o programa não conecta depois de uma semana parado | projeto pausado: entrar no projeto → **Restore project** |

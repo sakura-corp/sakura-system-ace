@@ -165,11 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 29/10/2026, manhã: a 0074 aplicada; a Pneus Amigão na 74
-- **0074 aplicada** na Pneus Amigão (rodada 24 do "Atualizar o banco"; ensaio e aplicação verdes). A 1ª tentativa ficou segurada: o **Balcão** (DESKTOP-JG810PI) já estava na 0.9.55, mas só apareceu assim depois de reabrir o programa (`docs/licoes.md`, item 94).
-- **Falta na #809**: o lucro do dia no Caixa da loja bater com o normal. É no banco da loja, então **fica com a Sofia ou a loja** (a equipe só mexe no banco de teste). Bateu: fechar a #809 (os passos 5 a 7 fecham com a #367).
-- **#818 (Gusta)**: código já revisado (nada mudou desde 28/10; CI 7/7). Falta ele fazer os 4 testes no PC e tirar o "(a Sofia confirma na issue)" da descrição; ele avisou que está fazendo. Ninguém cobra no PR.
-- **Depois**: mesclar o #818 (conferir o CI antes) → 0075 → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → 0076.
-- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou sozinho; aí a Sofia pausa a rotina antiga e fecha a #625.
+### 29/10/2026, meio-dia: a equipe admin no banco de teste; o #818 nos testes de perfil
+- **#831 mesclado**: a equipe é **admin só no banco de teste** (a Sofia já ligou os três) e monta sozinha, em Configurações → Operadores, o login de perfil que um teste de permissão pede. Teste de permissão é sempre com o login do perfil (`docs/equipe.md` e `docs/supabase-de-teste.md`, "Teste de permissão").
+- **#818 (Gusta)**: o teste com OS passou no PC dele; faltam os 3 de perfil (só Caixa, só Garantias, só Notas) e tirar o "(a Sofia confirma na issue)". Ele já tem o prompt; volta do almoço e roda.
+- **Depois**: "mescla o #818" (conferir o CI antes) → 0075 → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal (Sofia ou a loja).
+- **#814** (tirar o painel daqui) na `leva-6`: a escritorio#8 fechou.
+- **A venda (item 3 corrigido, escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
+- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou; aí pausar a rotina antiga e fechar a #625.
 - **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
-- **Próximo**: "mescla o #818" quando o Gusta terminar os testes.
