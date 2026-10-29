@@ -13,7 +13,8 @@
 
 **Pra que serve**: os três da equipe, que mexem no programa das lojas (tarefa #474, etapa 4)
 precisam de um banco pra rodar o programa com `npm run dev`, cheio de dado com cara de loja, onde
-errar não custa nada. É este. Cada um tem um login próprio, só com os módulos do dia a dia.
+errar não custa nada. É este. Cada um tem um login próprio, **admin neste banco** (desde 29/10/2026,
+veja "Teste de permissão", no Passo 6), pra criar sozinho os logins de perfil que um teste pedir.
 
 **Quem faz**: a Sofia, guiada, um passo por vez (uns 40 minutos). O Claude não alcança o painel do
 Supabase. **Os scripts precisam estar na `main`** antes (os links abaixo apontam pra ela).
@@ -25,7 +26,7 @@ painel do Supabase (as telas podem ter mudado de nome) e o programa aberto contr
 
 **Situação (19/10/2026)**: os passos 1 a 7 foram feitos pela Sofia, e as telas já estão descritas
 como eram nesse dia (a #517). O banco existe, com o esquema na versão 64, a loja de exemplo e quatro
-logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. Os Sends
+logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. **Em 29/10/2026** a Sofia decidiu que a equipe vira admin neste banco, pros testes de permissão (Passo 6, "Teste de permissão"). Os Sends
 ficaram prontos, mas ela só manda os links quando o caderno (`segundo-cerebro`) de cada um estiver
 pronto; eles vencem em 26/10, e depois disso é só criar um Send novo com o mesmo texto.
 
@@ -121,8 +122,9 @@ sempre é sinal de que você está no projeto errado. Me mande o print.
 
 ## Passo 6 — Os logins (um de cada vez)
 
-São quatro: **o seu** (admin, pra mexer em Configurações quando uma tarefa pedir) e **um pra cada
-pessoa da equipe** (Gustavo, Lázaro e Tiago, todos sem admin). Dá pra criar as senhas e os usuários
+São quatro: **o seu** e **um pra cada pessoa da equipe** (Gustavo, Lázaro e Tiago). **Todos admin
+neste banco** (Sofia, 29/10/2026; antes de 29/10 a equipe era sem admin): veja "Teste de
+permissão", no fim deste passo. Dá pra criar as senhas e os usuários
 de todos primeiro e depois rodar o `ligar-login.sql` uma vez por pessoa, na mesma aba, trocando só
 as três linhas. A senha nasce no Bitwarden e não passa por mais lugar
 nenhum.
@@ -158,25 +160,39 @@ marcadas com `<<< TROCAR`:
 |---|---|---|
 | `v_usuario` | `'<usuario>'` (o mesmo do e-mail, sem o `@sakura.local`) | `'sofia'` (ou o que você usou) |
 | `v_nome` | `'Nome Como Aparece'` | `'Sofia'` |
-| `v_admin` | `false` | `true` |
+| `v_admin` | `true` (desde 29/10/2026) | `true` |
 
-**Run**. Embaixo aparece a lista de quem entra no programa e em quais lojas. A pessoa da equipe deve
-aparecer com `admin = false` e **só** a loja `Autocenter Exemplo (TESTE)`; você, com `admin = true`
-e as duas lojas.
+**Run**. Embaixo aparece a lista de quem entra no programa e em quais lojas. Todo mundo deve
+aparecer com `admin = true` e as duas lojas (a de exemplo e a Loja 1, as duas inventadas).
 
-**O que a pessoa da equipe enxerga**: Início, Clientes, Ordens de Serviço, Estoque, Fornecedores,
-Serviços, Caixa, Contas a Pagar e a Receber, Relações e Garantias. **Não enxerga**: Configurações
-(só admin), Notas Fiscais e Funcionários. Se uma tarefa precisar de um módulo a mais, você marca em
-**Configurações → Operadores**, entrando no programa com o seu login de teste.
+**Já tem o login criado e só quer virar admin** (a mudança de 29/10)? Só o passo c), com a mesma
+pessoa e `v_admin = true`: rodar de novo não duplica nada, só atualiza.
 
-**Se uma tarefa pedir um login administrador** (a importação de planilha de clientes só aparece pra
-admin): é o mesmo passo, com `v_admin = true`, num login de teste a mais (ex: `admin-teste`). O banco é
-fictício, então o risco é só a pessoa bagunçar o exemplo, e o "zerar" resolve. Decisão sua.
+**O que a pessoa da equipe enxerga**: tudo, como você, porque é admin **só neste banco** (nas lojas,
+ninguém da equipe tem login). Inclusive Configurações → Operadores, que é o que resolve o teste de
+permissão (abaixo).
 
-> Por que não criar os logins pela tela **Configurações → Operadores** do programa? Porque, olhando
-> o código em 16/10, essa tela parece só funcionar no `npm run dev` e não no programa instalado (ela
-> lê o endereço do banco do `.env`, que o instalado não tem). Ainda não foi testado; está anotado
-> pra virar tarefa. Pelo Supabase + script funciona nos dois.
+**Teste de permissão** (Sofia, 29/10/2026). Muita tarefa pede "testar com um login só com o módulo X"
+(ex.: o #818 pedia um login só com Caixa, um só com Garantias e um só com Notas Fiscais). Antes, só
+você conseguia montar esses logins, e a pessoa ficava parada te esperando. Agora quem testa monta
+sozinho, **pelo próprio programa**, no `npm run dev`: **Configurações → + Novo operador** (a parte dos operadores),
+com só o módulo que o teste pede, e entra com ele. Não é SQL nem migration: a regra "a equipe não
+roda SQL" continua igual. O passo a passo pra pessoa está no `docs/equipe.md` ("Teste de
+permissão"). Os combinados:
+- **Teste de permissão é sempre com o login do perfil, nunca com o próprio** (admin vê tudo, e o
+  teste passaria sem provar nada).
+- O nome do login de perfil começa com o da pessoa (`gustavo-caixa`, `tiago-notas`), pra um não
+  mexer no do outro no meio de um teste.
+- **Ninguém salva token da Focus NFe neste banco** sem falar com você: com token guardado, os scripts
+  de `supabase/exemplo/` param de propósito (a tabela de erros, no fim).
+- Se alguém bagunçar o exemplo, o "zerar" (Passo 9) volta tudo, e os logins continuam valendo.
+
+**Se uma tarefa pedir um login administrador**: é o próprio login da pessoa (já é admin aqui).
+
+> A tela **Configurações → Operadores** lê o endereço do banco da mesma conexão do resto do programa
+> (`src/lib/operadores.ts`, `criarClienteTemporario`), então funciona no `npm run dev` da equipe.
+> Os quatro logins da equipe continuam sendo criados pelo Supabase + `ligar-login.sql` (os passos
+> acima), porque é por eles que a equipe entra pela primeira vez.
 
 ## Passo 7 — Entregar a chave pra cada pessoa
 
