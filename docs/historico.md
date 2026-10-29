@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 28/10/2026, fim da noite: o Resumo de segunda pela API no ar; a 0.9.55 liberada; a Pneus Amigão na 73
+- **Resumo de segunda pela API** (escritorio#17 e #28; aqui #824): workflow no escritório, chamando a API direto; a 1ª rodada à mão criou a escritorio#40. **Segunda, 9h29**: conferir se chegou sozinho; aí a Sofia pausa a rotina antiga e fecha a #625 (até lá, chegam dois).
+- **Revisão por `@claude revisa`** (escritorio#16; #825 e #826): pela API direta (`.github/scripts/revisao-claude.sh`, igual ao do escritório). Em PR grande, é lista do que conferir, não veredito (A5 de `docs/jeito-de-trabalhar.md`).
+- **#818 (Gusta)**: revisado, nenhum ponto muda o código. Falta ele fazer os 4 testes no PC e tirar o "(a Sofia confirma na issue)" da descrição.
+- **0.9.55 liberada**; a Pneus Amigão na **73**. **Esperando os computadores**: Balcão e DESKTOP-PKJ2A3B reabrirem na 0.9.55 → **ensaiar e aplicar a 0074** → teste do lucro do dia no Caixa (passo 4 da #809).
+- **Depois**: mesclar o #818 → 0075 → 0.9.56 (só depois da 0075 em todas) → 0076.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
+- **Próximo**: "ensaia a 0074" quando os computadores da loja reabrirem.
+
 ### 28/10/2026, noite: a revisão por `@claude revisa` no ar; a 0.9.55 liberada; a Pneus Amigão na 73
 - **Revisão por `@claude revisa`** (escritorio#16; aqui #825 e #826): quem é da equipe escreve isso no PR e o Claude comenta a revisão, pela **API direta** (`.github/scripts/revisao-claude.sh`, igual ao do escritório). No #818 custou uns US$ 0,46; em PR grande, ela é lista do que conferir, não veredito (A5 de `docs/jeito-de-trabalhar.md`).
 - **#818 conferido**: os 6 pontos da revisão automática vistos no código e nas issues, nenhum muda o código (comentário no PR). Falta o Gusta: os 4 testes no PC dele e tirar o "(a Sofia confirma na issue)" da descrição.
