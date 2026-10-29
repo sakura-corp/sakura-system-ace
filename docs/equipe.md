@@ -327,6 +327,19 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
      tela pedindo o endereço do Supabase, **não preencha nada**: o `.env` ficou errado; volte ao
      item 3 do passo 6 do "Primeiro dia".
    - Siga o roteiro curto que a sessão mandou, um passo por vez, contando o que apareceu.
+   - **Teste de permissão** (o teste pede um login "só com o módulo X"; Sofia, 29/10/2026): o seu
+     login de teste é admin no banco de teste, então você mesmo monta o login do perfil, sem
+     esperar a Sofia. Com o programa aberto e o seu login:
+     1. **Configurações**, na parte dos operadores, **+ Novo operador**.
+     2. Usuário: o seu nome e o perfil (ex.: `gustavo-caixa`). Senha: uma qualquer, só sua (é
+        um banco de mentira, mas não use a sua senha de verdade de nada). Marque **só** os
+        módulos que o teste pede e, em "Lojas com acesso", a `Autocenter Exemplo (TESTE)`.
+        "Administrador": **desmarcado**.
+     3. Saia (**Sair**, na barra da esquerda) e entre com o login novo. **Teste de permissão é sempre com o
+        login do perfil, nunca com o seu**: o seu vê tudo, e o teste passaria sem provar nada.
+     4. Pro próximo perfil, crie outro login, ou volte pro seu e troque os módulos desse.
+     Não mexa nos logins dos outros nem salve token da Focus NFe (`docs/supabase-de-teste.md`,
+     "Teste de permissão"). Isso é usar o programa, não rodar SQL: a regra abaixo continua igual.
    - Pra fechar: `Ctrl+C` no terminal (no Mac também é `Control+C`, não `Cmd`).
 6. **Levar o resultado pro PR**: mande o print ou o texto **pra conversa com a sessão da nuvem**;
    ela põe na descrição do PR e no relatório. Antes de mandar o print, confira que **não aparece o

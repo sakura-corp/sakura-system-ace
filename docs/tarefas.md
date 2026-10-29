@@ -86,7 +86,9 @@ Reservada pra: Tiago, pelo celular
 - [ ] `typecheck`, `lint` e o CI verdes
 
 **No PC de quem fez** (a pessoa testa antes de abrir o PR, guiada pelo Claude, no Supabase de teste):
-- [ ] <passo a passo: onde clicar e o que deve aparecer; "nada" só se não tiver tela>
+- [ ] <passo a passo: onde clicar e o que deve aparecer; "nada" só se não tiver tela. Se o teste
+  depende de permissão, dizer **com qual login**: "login só com Caixa" etc. Quem testa monta o login
+  sozinho (`docs/equipe.md`, "Teste de permissão")>
 
 **Depois de publicar** (a Sofia confere no dia de teste do fim de semana):
 - [ ] <só o que não dá pra ver no PC de quem fez (impressora da loja, nota de verdade, o `.exe`

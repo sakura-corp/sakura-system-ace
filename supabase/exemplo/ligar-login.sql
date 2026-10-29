@@ -19,11 +19,12 @@
 --      linhas marcadas com  <<< TROCAR  → Run.
 --   3. Tem que aparecer "Pronto: <usuario> ligado à loja de exemplo".
 --
--- O QUE A PESSOA ENXERGA. Operador comum (NÃO admin), só na loja de exemplo,
--- com os módulos do dia a dia. Fica de fora: Configurações (é só de admin),
--- Notas Fiscais e Funcionários (RH). Se uma tarefa precisar de mais, a
--- Sofia marca o módulo na tela Configurações → Operadores, no próprio
--- programa, entrando com o login de admin dela.
+-- O QUE A PESSOA ENXERGA. Desde 29/10/2026 a equipe também é admin NESTE
+-- banco (v_admin = true), pra montar sozinha, em Configurações → Operadores,
+-- os logins de perfil que um teste de permissão pede (docs/supabase-de-teste.md,
+-- "Teste de permissão"). Com v_admin = false: operador comum, só na loja de
+-- exemplo, com os módulos do dia a dia (sem Configurações, Notas Fiscais e
+-- Funcionários).
 --
 -- Nenhuma senha passa por aqui. Rodar de novo com o mesmo usuário não
 -- duplica nada (só atualiza nome e módulos).
@@ -34,7 +35,7 @@ declare
   -- ------------------------------------------------------------------------
   v_usuario text    := 'trocar';               -- <<< TROCAR: o que vem antes do @sakura.local
   v_nome    text    := 'Nome da Pessoa';       -- <<< TROCAR: como aparece no programa
-  v_admin   boolean := false;                  -- <<< TROCAR: true SÓ pro login da Sofia
+  v_admin   boolean := false;                  -- <<< TROCAR: true pra Sofia e pra equipe (só neste banco)
   -- ------------------------------------------------------------------------
   v_modulos text[] := array['painel', 'clientes', 'ordens_servico', 'estoque', 'fornecedores',
                             'servicos', 'caixa', 'contas_pagar', 'contas_receber',
