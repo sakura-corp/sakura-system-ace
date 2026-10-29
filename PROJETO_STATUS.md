@@ -165,11 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 29/10/2026, meio-dia: a equipe admin no banco de teste; o #818 nos testes de perfil
-- **#831 mesclado**: a equipe é **admin só no banco de teste** (a Sofia já ligou os três) e monta sozinha, em Configurações → Operadores, o login de perfil que um teste de permissão pede. Teste de permissão é sempre com o login do perfil (`docs/equipe.md` e `docs/supabase-de-teste.md`, "Teste de permissão").
-- **#818 (Gusta)**: o teste com OS passou no PC dele; faltam os 3 de perfil (só Caixa, só Garantias, só Notas) e tirar o "(a Sofia confirma na issue)". Ele já tem o prompt; volta do almoço e roda.
-- **Depois**: "mescla o #818" (conferir o CI antes) → 0075 → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal (Sofia ou a loja).
-- **#814** (tirar o painel daqui) na `leva-6`: a escritorio#8 fechou.
-- **A venda (item 3 corrigido, escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
+### 29/10/2026, fim da tarde: o #818 mesclado; a 0075 e a 0.9.56 na fila
+- **#818 (Gusta) mesclado**: os 4 testes de perfil passaram no PC dele, a ordem de subir certa, CI verde. A #367 fechou.
+- **Próximo (Sofia)**: a 0075 pelo "Atualizar o banco" (ensaiar, depois aplicar) → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → a 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal.
+- **Gusta**: proposta de projeto secundário (site + agendamento + painel pra spa), pelo `/nova-proposta` numa sessão na nuvem com o `secundarios`; o código já está no `sakura-spa`, criado antes da proposta. Quando abrir com `proposta:esperando-sofia`, a Sofia roda o `/analisar-proposta` e decide lá o que ficou com ela.
+- **#814** (tirar o painel daqui) na `leva-6`. No escritório: o #58 (o Escritório de verdade) no ar; o #60 e o #61 voltaram pro Tiago com consertos.
+- **A venda (escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
 - **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou; aí pausar a rotina antiga e fechar a #625.
 - **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
