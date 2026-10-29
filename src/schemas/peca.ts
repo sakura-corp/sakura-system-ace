@@ -134,12 +134,19 @@ export function paraQuantidadeInicial(valores: PecaFormValues): number | null {
 // Os três campos se atualizam entre si conforme qual deles a pessoa mexeu por
 // último (ver PrecosFields.tsx). Retornar `null` significa "não mexe no outro
 // campo" (dado insuficiente pra calcular ainda); retornar "" limpa o campo.
+//
+// A margem é SOBRE A VENDA (#835, decisão da #791): (venda − custo) / venda.
+// É o que "margem" quer dizer pro dono de loja e pro contador. Custo 245 e
+// venda 389,90 dão 37%. A conta sobre o custo (que dava 59%) se chama
+// "markup", e o programa não mostra esse número.
 
 export function precoAPartirDaMargem(custo: string, margem: string): string | null {
   const custoNum = Number(custo);
   const margemNum = parseFloat(margem);
   if (custo.trim() === "" || Number.isNaN(custoNum) || Number.isNaN(margemNum)) return null;
-  return arredondar(custoNum * (1 + margemNum / 100)).toString();
+  // Margem de 100% ou mais sobre a venda não existe (o custo teria de ser zero).
+  if (margemNum >= 100) return null;
+  return arredondar(custoNum / (1 - margemNum / 100)).toString();
 }
 
 export function margemAPartirDoPreco(custo: string, precoVenda: string): string {
@@ -150,11 +157,12 @@ export function margemAPartirDoPreco(custo: string, precoVenda: string): string 
     Number.isNaN(custoNum) ||
     custoNum <= 0 ||
     precoVenda.trim() === "" ||
-    Number.isNaN(precoNum)
+    Number.isNaN(precoNum) ||
+    precoNum <= 0
   ) {
     return "";
   }
-  const margem = ((precoNum - custoNum) / custoNum) * 100;
+  const margem = ((precoNum - custoNum) / precoNum) * 100;
   return (Math.round(margem * 10) / 10).toString();
 }
 

@@ -316,7 +316,9 @@ export function ProdutosSection({
                 <th className="px-4 py-3 font-medium">Unidade</th>
                 <th className="px-4 py-3 font-medium">Preço custo</th>
                 <th className="px-4 py-3 font-medium">Preço venda</th>
-                <th className="px-4 py-3 font-medium">Margem</th>
+                <th className="px-4 py-3 font-medium" title="Sobre a venda: (venda − custo) ÷ venda">
+                  Margem
+                </th>
                 <th className="px-4 py-3 font-medium">Estoque atual</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3" />

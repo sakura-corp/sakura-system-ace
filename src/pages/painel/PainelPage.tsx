@@ -50,7 +50,7 @@ import { MODULOS, temPermissao, type ModuloChave } from "@/types/operador";
 import type { OrdemServico } from "@/types/os";
 
 const TITULO_CARTAO: Record<CartaoMetrica, string> = {
-  vendas_mes: "Vendas mês",
+  vendas_mes: "Recebido no mês",
   custos_mes: "Custos mês",
   lucro_mes: "Lucros mês",
   ticket_medio_mes: "Ticket médio",
@@ -94,14 +94,14 @@ export function PainelPage() {
   const chaveDeHoje = chaveData(hoje);
 
   // Qual mês o calendário está mostrando — só ele anda com as setas ‹ ›. Os
-  // cartões continuam sempre no mês corrente: "Vendas mês" mudando junto com
+  // cartões continuam sempre no mês corrente: "Recebido no mês" mudando junto com
   // a navegação do calendário seria uma armadilha.
   // Quem não tem Contas a Pagar não recebe conta nenhuma do banco (migration
   // 0061) — então nem pergunta, e o cartão diz "sem acesso" em vez de R$ 0,00.
   const podeVerContas = temPermissao(operador, "contas_pagar");
   // Mesma coisa pro Caixa (migration 0062) — e aqui com um cuidado a mais:
   // quem tem só OS recebe do banco um PEDAÇO do Caixa (os lançamentos de OS).
-  // Pedir e somar esse pedaço daria "Vendas mês" errada com cara de certa.
+  // Pedir e somar esse pedaço daria "Recebido no mês" errado com cara de certo.
   const podeVerCaixa = MODULOS_QUE_LEEM_O_CAIXA.some((m) => temPermissao(operador, m));
 
   // Os aniversários do calendário vêm do cadastro de clientes, que desde a

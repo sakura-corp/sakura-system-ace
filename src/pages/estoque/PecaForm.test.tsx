@@ -67,7 +67,8 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
     await user.type(campo("Aquisição (custo)"), "100");
     await user.type(campo("Margem %"), "50");
 
-    expect(campo("Preço final")).toHaveValue(150);
+    // Margem sobre a venda (#835): metade do preço é lucro.
+    expect(campo("Preço final")).toHaveValue(200);
   });
 
   it("digitar o preço final calcula a margem de volta", async () => {
@@ -79,7 +80,8 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
     await user.clear(campo("Margem %"));
     await user.type(campo("Preço final"), "250");
 
-    expect(campo("Margem %")).toHaveValue(25);
+    // (250 − 200) / 250 = 20%, sobre a venda (#835).
+    expect(campo("Margem %")).toHaveValue(20);
   });
 
   it("mexer no custo depois recalcula o preço, mantendo a margem escolhida", async () => {
@@ -89,13 +91,13 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
 
     await user.type(campo("Aquisição (custo)"), "100");
     await user.type(campo("Margem %"), "20");
-    expect(campo("Preço final")).toHaveValue(120);
+    expect(campo("Preço final")).toHaveValue(125);
 
     await user.clear(campo("Aquisição (custo)"));
     await user.type(campo("Aquisição (custo)"), "150");
 
     expect(campo("Margem %")).toHaveValue(20);
-    expect(campo("Preço final")).toHaveValue(180);
+    expect(campo("Preço final")).toHaveValue(187.5);
   });
 });
 
