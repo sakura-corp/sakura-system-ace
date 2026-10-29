@@ -85,7 +85,7 @@ describe("dados de mentira: as telas não se contradizem", async () => {
     expect(entradasDeOs.length).toBeGreaterThan(10);
     for (const m of entradasDeOs) {
       expect(m.ordem_servico?.numero, m.id).toBeTypeOf("number");
-      expect(m.ordem_servico?.cliente?.nome, m.id).toBeTruthy();
+      expect(m.ordem_servico?.cliente_nome, m.id).toBeTruthy();
       expect(centavos(total(m.ordem_servico)), m.id).toBe(centavos(m.valor));
     }
   });
@@ -246,6 +246,36 @@ describe("dados de mentira: as telas não se contradizem", async () => {
       const o = ordemPorId.get(i.ordem_servico_id);
       expect(i.ordem.data_fechamento ?? null, `item da ${o.numero}`).toBe(o.data_fechamento ?? null);
       expect(i.ordem.status, `item da ${o.numero}`).toBe(o.status);
+    }
+  });
+
+  // #367: as janelas das OS (migration 0075) têm que contar a mesma história da OS.
+  it("as janelas das OS batem com as OS: garantias só de peça, comissões só de faturada", () => {
+    const porId = new Map(TABELAS.ordens_servico.map((o) => [o.id, o]));
+    // Como a view: orçamento e recusado não saem por janela nenhuma.
+    const orcamento = (status) => ["orcamento", "recusado"].includes(status);
+    const queContam = TABELAS.ordens_servico.filter((o) => !orcamento(o.status));
+    expect(queContam.length).toBeLessThan(TABELAS.ordens_servico.length);
+    expect(TABELAS.ordens_servico_clientes.length).toBe(queContam.length);
+    expect(TABELAS.ordens_servico_caixa.length).toBe(queContam.length);
+    expect(TABELAS.ordens_servico_notas.length).toBe(queContam.length);
+    for (const nome of ["ordens_servico_clientes", "ordens_servico_caixa", "ordens_servico_notas"]) {
+      for (const o of TABELAS[nome]) expect(orcamento(o.status), `${nome} ${o.id}`).toBe(false);
+    }
+    expect(TABELAS.ordens_servico_comissoes.length).toBeGreaterThan(10);
+    for (const o of TABELAS.ordens_servico_comissoes) expect(o.status).toBe("faturada");
+    expect(TABELAS.ordens_servico_garantias.length).toBeGreaterThan(10);
+    for (const g of TABELAS.ordens_servico_garantias) {
+      const o = porId.get(g.ordem_servico_id);
+      // Como a view: só peça de OS fechada, e nunca de orçamento.
+      expect(orcamento(g.ordem_status), g.id).toBe(false);
+      expect(g.ordem_data_fechamento, g.id).not.toBeNull();
+      expect(g.ordem_data_fechamento, g.id).toBe(o.data_fechamento ?? null);
+      expect(g.cliente_nome, g.id).toBe(o.cliente.nome);
+      expect(g.prazo_garantia_dias, g.id).toBeGreaterThan(0);
+    }
+    for (const m of TABELAS.caixa_movimentos.filter((x) => x.ordem_servico)) {
+      expect(m.ordem_servico.cliente_nome, m.id).toBe(porId.get(m.ordem_servico.id).cliente.nome);
     }
   });
 

@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
-import type { OrdemDaFicha } from "@/schemas/fichaVeiculo";
+import type { ItemDaFicha, OrdemDaFicha } from "@/schemas/fichaVeiculo";
 import { contaNosNumeros } from "@/schemas/orcamento";
 import type { Veiculo } from "@/types/cliente";
+import type { StatusOS, TipoOrdem } from "@/types/os";
 
 export type VeiculoDaFicha = Veiculo & {
   cliente: { id: string; nome: string; telefone: string | null } | null;
@@ -10,6 +11,34 @@ export type VeiculoDaFicha = Veiculo & {
 export interface FichaDoVeiculo {
   veiculo: VeiculoDaFicha;
   ordens: OrdemDaFicha[];
+}
+
+/** A linha da janela `ordens_servico_clientes` que a ficha lê. */
+export interface LinhaOrdemDaFicha {
+  id: string;
+  loja_id: string;
+  numero: number;
+  tipo?: TipoOrdem;
+  status: StatusOS;
+  data_abertura: string;
+  data_fechamento: string | null;
+  cliente_id: string;
+  cliente_nome: string | null;
+  km_entrada: number | null;
+  itens: (Omit<ItemDaFicha, "peca"> & { prazo_garantia_dias: number | null })[] | null;
+}
+
+/** Monta o formato da ficha (`cliente: { nome }`, `peca: { prazo_garantia_dias }`) a partir da janela. */
+export function ordemDaFichaDaJanela(linha: LinhaOrdemDaFicha): OrdemDaFicha {
+  const { cliente_nome: clienteNome, itens, ...resto } = linha;
+  return {
+    ...resto,
+    cliente: clienteNome != null ? { nome: clienteNome } : null,
+    itens: (itens ?? []).map(({ prazo_garantia_dias: prazo, ...item }) => ({
+      ...item,
+      peca: prazo != null ? { prazo_garantia_dias: prazo } : null,
+    })),
+  };
 }
 
 /**
@@ -23,10 +52,8 @@ export interface FichaDoVeiculo {
  * duas ter um histórico só (PROJETO_STATUS.md, seção 3). Quem decide o que
  * cada operador enxerga é a RLS: ele vê as OS das lojas a que tem acesso.
  *
- * `ordens_servico` vai com `*`, e não com a lista de colunas: `tipo` só
- * existe a partir da migration 0064, e pedir uma coluna que um banco mais
- * antigo não tem derrubaria a tela inteira (é o mesmo motivo do SELECT_ORDEM
- * em ordensServico.ts).
+ * As OS vêm pela janela `ordens_servico_clientes` (migration 0075, #367), pra
+ * quem tem Clientes mas não o módulo OS: só o que a ficha mostra.
  *
  * Quem não tem o módulo Clientes (só OS, migration 0068) lê o carro e o dono
  * pela janela estreita: placa, marca, modelo, cor e tipo, e o nome do dono.
@@ -50,12 +77,14 @@ export async function buscarFichaDoVeiculo(
   if (erroVeiculo) throw erroVeiculo;
   if (!veiculo) return null;
 
+  // As OS do carro vêm pela janela `ordens_servico_clientes` (migration 0075,
+  // #367): só o que a ficha mostra — número, datas, KM, cliente, itens e o
+  // prazo de garantia da peça. Nunca custo, observação nem forma de pagamento.
   const { data: ordens, error: erroOrdens } = await supabase
-    .from("ordens_servico")
+    .from("ordens_servico_clientes")
     .select(
-      "*, cliente:clientes_janela(nome), " +
-        "itens:ordens_servico_itens(id, tipo, peca_id, descricao, quantidade, preco_unitario, desconto, " +
-        "peca:pecas_janela(prazo_garantia_dias))",
+      "id, loja_id, numero, tipo, status, data_abertura, data_fechamento, cliente_id, " +
+        "cliente_nome, km_entrada, itens",
     )
     .eq("veiculo_id", veiculoId)
     .order("data_abertura", { ascending: false });
@@ -65,7 +94,7 @@ export async function buscarFichaDoVeiculo(
     veiculo: completarVeiculoDaJanela(veiculo as unknown as Partial<VeiculoDaFicha>),
     // Orçamento (#379) não é visita: aberto ou recusado, fica fora da
     // história do carro (linha do tempo, KM, total gasto, garantia).
-    ordens: ((ordens ?? []) as unknown as OrdemDaFicha[]).filter(contaNosNumeros),
+    ordens: ((ordens ?? []) as unknown as LinhaOrdemDaFicha[]).map(ordemDaFichaDaJanela).filter(contaNosNumeros),
   };
 }
 

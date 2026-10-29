@@ -2,14 +2,51 @@ import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
+import type { ItemParaVenda, StatusOS, TipoOrdem } from "@/types/os";
 
+// A OS do lançamento vem pela janela `ordens_servico_caixa` (migration 0075,
+// #367), e não da tabela: quem só tem o Caixa (ou Relações) não lê a OS
+// inteira, e a janela traz só o que o Caixa, o Início e Relações usam — número,
+// tipo (OS ou venda de balcão), nome do cliente e quantidade/preço/desconto
+// dos itens. Nunca custo, descrição, veículo nem observação.
 const SELECT_MOVIMENTO =
-  // `ordens_servico(*)` e não a lista de colunas: é o que traz o `tipo` (OS ou
-  // venda de balcão, migration 0064) SEM quebrar num banco que ainda não
-  // rodou a 0064 — nomear a coluna ali faria o Caixa, o Início e Relações
-  // estourarem "column does not exist" até a migration rodar.
-  "*, ordem_servico:ordens_servico(*, cliente:clientes_janela(nome), itens:ordens_servico_itens(*)), " +
+  "*, ordem_servico:ordens_servico_caixa(id, numero, tipo, status, cliente_nome, itens), " +
   "categoria:categorias_caixa(nome)";
+
+/** A linha da janela `ordens_servico_caixa`, do jeito que o banco devolve. */
+export interface LinhaOrdemDoCaixa {
+  id: string;
+  numero: number;
+  tipo?: TipoOrdem;
+  status?: StatusOS;
+  cliente_nome: string | null;
+  itens: ItemParaVenda[] | null;
+}
+
+type OrdemDoMovimento = NonNullable<MovimentoCaixa["ordem_servico"]>;
+
+/**
+ * Monta a OS do lançamento no formato que as telas já usam (`cliente: { nome }`),
+ * a partir da linha da janela (`cliente_nome`). As contas de dinheiro não mudam:
+ * os itens passam crus.
+ */
+export function ordemDoMovimentoDaJanela(linha: LinhaOrdemDoCaixa | null): OrdemDoMovimento | null {
+  if (!linha) return null;
+  return {
+    id: linha.id,
+    numero: linha.numero,
+    ...(linha.tipo ? { tipo: linha.tipo } : {}),
+    ...(linha.status ? { status: linha.status } : {}),
+    cliente: linha.cliente_nome != null ? { nome: linha.cliente_nome } : null,
+    itens: linha.itens ?? [],
+  };
+}
+
+export function movimentoDaJanela(
+  linha: Omit<MovimentoCaixa, "ordem_servico"> & { ordem_servico?: LinhaOrdemDoCaixa | null },
+): MovimentoCaixa {
+  return { ...linha, ordem_servico: ordemDoMovimentoDaJanela(linha.ordem_servico ?? null) };
+}
 
 export async function listarMovimentosCaixa(lojaId: string): Promise<MovimentoCaixa[]> {
   // Por páginas: o Supabase corta em 1.000 linhas. `id` desempata a ordem.
@@ -22,7 +59,7 @@ export async function listarMovimentosCaixa(lojaId: string): Promise<MovimentoCa
       .order("id", { ascending: true })
       .range(de, ate),
   );
-  return data as unknown as MovimentoCaixa[];
+  return (data as unknown as Parameters<typeof movimentoDaJanela>[0][]).map(movimentoDaJanela);
 }
 
 // Uma OS pode ter mais de um lançamento de Caixa quando o faturamento foi

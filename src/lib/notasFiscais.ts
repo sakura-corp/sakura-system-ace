@@ -14,9 +14,54 @@ import { criarZip, type ArquivoParaZip } from "./zip";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
+import type { OrdemParaNotas, StatusOS } from "@/types/os";
 
+// A OS da nota vem pela janela `ordens_servico_notas` (migration 0075, #367):
+// só o nome do cliente, pra quem tem Notas Fiscais mas não o módulo OS.
 const SELECT_ARQUIVO =
-  "*, ordem_servico:ordens_servico(cliente:clientes_janela(nome)), operador:operadores(nome)";
+  "*, ordem_servico:ordens_servico_notas(cliente_nome), operador:operadores(nome)";
+
+type ArquivoDaJanela = Omit<NotaFiscalArquivo, "ordem_servico"> & {
+  ordem_servico?: { cliente_nome: string | null } | null;
+};
+
+/** Põe o nome do cliente no formato que a tela usa (`ordem_servico.cliente.nome`). */
+export function arquivoDaJanela(linha: ArquivoDaJanela): NotaFiscalArquivo {
+  const { ordem_servico: ordem, ...resto } = linha;
+  return {
+    ...resto,
+    ordem_servico: ordem
+      ? { cliente: ordem.cliente_nome != null ? { nome: ordem.cliente_nome } : null }
+      : null,
+  };
+}
+
+/** A linha da janela `ordens_servico_notas` que o seletor "OS relacionada" usa. */
+interface LinhaOrdemParaNotas {
+  id: string;
+  status: StatusOS;
+  data_abertura: string;
+  cliente_nome: string | null;
+}
+
+/** As OS da loja pro seletor "OS relacionada" — só id, status, abertura e cliente. */
+export async function listarOrdensParaNotas(lojaId: string): Promise<OrdemParaNotas[]> {
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico_notas")
+      .select("id, status, data_abertura, cliente_nome")
+      .eq("loja_id", lojaId)
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
+  return (dados as unknown as LinhaOrdemParaNotas[]).map((linha) => ({
+    id: linha.id,
+    status: linha.status,
+    data_abertura: linha.data_abertura,
+    ...(linha.cliente_nome != null ? { cliente: { nome: linha.cliente_nome } } : {}),
+  }));
+}
 
 export async function listarArquivos(
   tipo: TipoNotaFiscal,
@@ -34,7 +79,7 @@ export async function listarArquivos(
       .order("id", { ascending: true })
       .range(de, ate),
   );
-  return data as unknown as NotaFiscalArquivo[];
+  return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
 }
 
 // Notas ligadas a um conjunto de OS — usada pra saber, sem uma consulta por

@@ -62,3 +62,26 @@ describe("PainelPage — permissão pro cadastro de clientes", () => {
     await waitFor(() => expect(listarClientes).toHaveBeenCalledTimes(1));
   });
 });
+
+// #367 (migration 0076): a OS só responde a quem tem o módulo Ordens de
+// Serviço. Sem ele, o Início nem pede as OS e os dois blocos de OS somem
+// (não ficam com "—"); o resto da tela continua.
+describe("PainelPage — permissão pra OS", () => {
+  it("sem o módulo OS: NÃO chama listarOrdens e os blocos 'OS abertas' e 'Veículos no pátio' somem", async () => {
+    operador = { id: "op", admin: false, permissoes: ["clientes"] };
+    montar();
+    await waitFor(() => expect(listarClientes).toHaveBeenCalled());
+    await screen.findByText(/Início|Painel|Calendário/i);
+    expect(listarOrdens).not.toHaveBeenCalled();
+    expect(screen.queryByText("OS abertas")).toBeNull();
+    expect(screen.queryByText("Veículos no pátio")).toBeNull();
+  });
+
+  it("com o módulo OS: chama listarOrdens e mostra os dois blocos", async () => {
+    operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+    montar();
+    await waitFor(() => expect(listarOrdens).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("OS abertas")).toBeTruthy();
+    expect(screen.getByText("Veículos no pátio")).toBeTruthy();
+  });
+});

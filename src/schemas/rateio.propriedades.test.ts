@@ -35,6 +35,7 @@ import { arredondarCentavo } from "./dinheiro";
 import { valorLiquidoItem, type ItemParaNFCe } from "@/lib/focusNfe";
 import type { JurosParcela } from "@/types/configuracao";
 import type { MovimentoCaixa } from "@/types/caixa";
+import type { ItemOS } from "@/types/os";
 
 const CASOS = { numRuns: 1000 };
 
@@ -269,7 +270,7 @@ describe("resumirMovimentos — propriedades", () => {
   const custoPeca: MapaCusto = new Map([["peca-1", 40]]);
   const custoServico: MapaCusto = new Map([["servico-1", 10]]);
 
-  const movimentoDaOrdem = (valor: number): MovimentoCaixa =>
+  const movimentoDaOrdem = (valor: number): MovimentoCaixa<ItemOS> =>
     ({
       id: `mov-${Math.random()}`,
       loja_id: "loja-1",
@@ -292,7 +293,7 @@ describe("resumirMovimentos — propriedades", () => {
           },
         ],
       },
-    }) as unknown as MovimentoCaixa;
+    }) as unknown as MovimentoCaixa<ItemOS>;
 
   it("o custo da OS entra uma vez só, não importa em quantas formas ela foi paga", () => {
     fc.assert(

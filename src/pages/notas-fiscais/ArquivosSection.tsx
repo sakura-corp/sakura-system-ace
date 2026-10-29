@@ -8,12 +8,12 @@ import {
   enviarArquivo,
   excluirArquivo,
   listarArquivos,
+  listarOrdensParaNotas,
 } from "@/lib/notasFiscais";
-import { listarOrdens } from "@/lib/ordensServico";
 import { contaNosNumeros } from "@/schemas/orcamento";
 import { situacaoDaNota, type TomSituacaoNota } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
-import type { OrdemServico } from "@/types/os";
+import type { OrdemParaNotas } from "@/types/os";
 import { CancelarNotaModal } from "./CancelarNotaModal";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 import { VerDanfeModal } from "./VerDanfeModal";
@@ -59,7 +59,7 @@ function formatarCompetencia(competencia: string): string {
 export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const { operador, lojaAtual } = useAuth();
   const [arquivos, setArquivos] = useState<NotaFiscalArquivo[]>([]);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  const [ordens, setOrdens] = useState<OrdemParaNotas[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -82,7 +82,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
     try {
       const [listaArquivos, listaOrdens] = await Promise.all([
         listarArquivos(tipo, lojaAtual.id),
-        listarOrdens(lojaAtual.id),
+        listarOrdensParaNotas(lojaAtual.id),
       ]);
       setArquivos(listaArquivos);
       setOrdens(listaOrdens);

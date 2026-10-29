@@ -109,14 +109,47 @@ cotacoes_pecas,delete,2,2,2,2,0,
 # ---------------------------------------------------------------------------
 # DADO DE NEGÓCIO DA LOJA — o isolamento que sustenta a multi-loja
 # ---------------------------------------------------------------------------
-ordens_servico,select,2,1,1,0,0,
-ordens_servico,insert,1,1,1,0,0,
-ordens_servico,update,2,1,1,0,0,
-ordens_servico,delete,2,1,1,0,0,
-ordens_servico_itens,select,2,1,1,0,0,não tem loja_id próprio: herda pela OS
-ordens_servico_itens,insert,1,1,1,0,0,
-ordens_servico_itens,update,2,1,1,0,0,
-ordens_servico_itens,delete,2,1,1,0,0,
+#
+# TR-04.1 lote 6 (migration 0076): as OS e os itens exigem a loja E o módulo
+# Ordens de Serviço (Relações também LÊ as duas). O balconista só-Caixa zerou
+# nas oito linhas. O que ele ainda vê de uma OS é a janela do Caixa, logo
+# abaixo; quem só tem Contas a Receber continua lançando no Caixa a entrada de
+# uma conta de OS pela função ordem_servico_da_loja (0075) — as duas coisas
+# testadas em testar-os-permissao.sql.
+ordens_servico,select,2,1,0,0,0,só com o módulo OS, ou Relações (só leitura)
+ordens_servico,insert,1,1,0,0,0,só com o módulo OS
+ordens_servico,update,2,1,0,0,0,
+ordens_servico,delete,2,1,0,0,0,
+ordens_servico_itens,select,2,1,0,0,0,não tem loja_id próprio: herda pela OS; só com OS ou Relações
+ordens_servico_itens,insert,1,1,0,0,0,só com o módulo OS
+ordens_servico_itens,update,2,1,0,0,0,
+ordens_servico_itens,delete,2,1,0,0,0,
+#
+# As cinco janelas da 0075, uma por tela. Rodam com os direitos do dono: o
+# filtro de loja e o de módulo estão escritos DENTRO de cada uma. Por isso o
+# balconista só-Caixa lê a do Caixa (1, a da loja dele) e nenhuma das outras,
+# e o órfão (que tem Caixa, mas nenhuma loja) não lê nada. As escritas
+# zeradas são o revoke (e, nas duas com join, o Postgres nem sabe escrever).
+ordens_servico_caixa,select,2,1,1,0,0,Caixa ou Relações: número, cliente e itens só com quantidade, preço e desconto
+ordens_servico_caixa,insert,0,0,0,0,0,só leitura: o revoke da 0075
+ordens_servico_caixa,update,0,0,0,0,0,
+ordens_servico_caixa,delete,0,0,0,0,0,
+ordens_servico_comissoes,select,2,1,0,0,0,Funcionários: só as OS faturadas
+ordens_servico_comissoes,insert,0,0,0,0,0,só leitura: o revoke da 0075
+ordens_servico_comissoes,update,0,0,0,0,0,
+ordens_servico_comissoes,delete,0,0,0,0,0,
+ordens_servico_garantias,select,2,1,0,0,0,Garantias: uma linha por peça vendida
+ordens_servico_garantias,insert,0,0,0,0,0,só leitura: view com join e o revoke da 0075
+ordens_servico_garantias,update,0,0,0,0,0,
+ordens_servico_garantias,delete,0,0,0,0,0,
+ordens_servico_notas,select,2,1,0,0,0,Notas Fiscais: o seletor de OS e o nome do cliente
+ordens_servico_notas,insert,0,0,0,0,0,só leitura: o revoke da 0075
+ordens_servico_notas,update,0,0,0,0,0,
+ordens_servico_notas,delete,0,0,0,0,0,
+ordens_servico_clientes,select,2,1,0,0,0,Clientes ou OS: a ficha do veículo e os clientes que sumiram
+ordens_servico_clientes,insert,0,0,0,0,0,só leitura: view com join e o revoke da 0075
+ordens_servico_clientes,update,0,0,0,0,0,
+ordens_servico_clientes,delete,0,0,0,0,0,
 caixa_movimentos,select,2,1,1,0,0,Caixa (0062): exige a loja E o módulo — ou Relações (lê tudo), ou as portas estreitas de OS/contas, testadas em testar-caixa-permissao.sql
 caixa_movimentos,insert,1,1,1,0,0,o balconista deste cenário TEM o Caixa: por isso nada muda aqui
 caixa_movimentos,update,2,1,1,0,0,

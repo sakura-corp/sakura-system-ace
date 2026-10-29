@@ -21,7 +21,7 @@ import {
 } from "./ComissoesPagamentos";
 import type { ContaReceber } from "@/types/contaReceber";
 import type { Funcionario } from "@/types/funcionario";
-import type { OrdemServico } from "@/types/os";
+import type { OrdemParaComissao } from "@/types/os";
 import { nomeOrdem } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
@@ -44,7 +44,7 @@ function hojeStr(): string {
 }
 
 interface ComissoesSectionProps {
-  ordens: OrdemServico[];
+  ordens: OrdemParaComissao[];
   pecas: Peca[];
   servicos: Servico[];
   funcionarios: Funcionario[];

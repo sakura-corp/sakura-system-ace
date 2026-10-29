@@ -111,9 +111,47 @@ export interface OrdemServico {
 export type OrdemNumerada = OrdemServico & { numero: number };
 
 /** Guarda de tipo: a ordem já tem número de OS (não é orçamento). */
-export function temNumeroDeOS(ordem: OrdemServico): ordem is OrdemNumerada {
+export function temNumeroDeOS<T extends { numero: number | null }>(
+  ordem: T,
+): ordem is T & { numero: number } {
   return ordem.numero !== null;
 }
+
+/**
+ * O que cada tela que NÃO é a de OS recebe do banco (tarefa #367, migration
+ * 0075): cada uma lê uma janela estreita e só com as colunas que usa, então o
+ * tipo diz isso em vez de fingir que é a OS inteira.
+ */
+/** Item de OS só com o que as contas de venda usam (Caixa, Início). */
+export type ItemParaVenda = Pick<ItemOS, "quantidade" | "preco_unitario" | "desconto">;
+
+/** Item de OS como a janela das comissões entrega. */
+export type ItemParaComissao = Pick<
+  ItemOS,
+  | "id"
+  | "tipo"
+  | "peca_id"
+  | "servico_id"
+  | "quantidade"
+  | "preco_unitario"
+  | "desconto"
+  | "custo_unitario"
+  | "tecnico_id"
+>;
+
+/** OS como a janela das comissões entrega (só faturadas, sem veículo nem descrição). */
+export type OrdemParaComissao = Pick<
+  OrdemServico,
+  "id" | "numero" | "tipo" | "status" | "data_abertura" | "data_fechamento" | "vendedor_id"
+> & {
+  cliente?: { nome: string };
+  itens?: ItemParaComissao[];
+};
+
+/** OS como o seletor "OS relacionada" das Notas Fiscais precisa. */
+export type OrdemParaNotas = Pick<OrdemServico, "id" | "status" | "data_abertura"> & {
+  cliente?: { nome: string };
+};
 
 export interface NovaOrdemServico {
   cliente_id: string;

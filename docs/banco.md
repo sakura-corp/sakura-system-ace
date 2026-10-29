@@ -12,7 +12,7 @@ a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
 (clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
 tarefa #368) em 23/10/2026, a `0071` (item e aprovação com a OS travada, tarefa #706) em
-26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, e a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026, e a `0075` e a `0076` (ordens de serviço só com o módulo, tarefa #367) em 28/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -526,6 +526,35 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   duas é um lote seguinte (Fornecedores), fora desta tarefa.
   Teste em `supabase/scripts/testar-pecas-permissao.sql` (as duas metades), conferido com 13
   mutações, todas vermelhas.
+- `0075` e `0076`: **Ordens de serviço só pra quem tem o módulo** (tarefa #367, lote 6 do TR-04.1).
+  Em duas, igual aos lotes 4 e 5: a `0075` só ACRESCENTA, a versão nova do programa passa a ler por
+  ela (pra todo mundo, inclusive quem tem o módulo OS), e a `0076` FECHA, com
+  `-- versao-minima-do-programa: 0.9.56`. **Este código NÃO pode sair na 0.9.55**: a `0074` espera a
+  0.9.55 nos computadores, e o botão de atualizar os bancos segura também as migrations seguintes; a
+  0.9.55 com este código precisaria da `0075`, que só entra depois dela (achado da revisão final).
+  **Ordem: publicar e liberar a 0.9.55 sem este código → `0074` + `0075` → publicar e liberar a
+  0.9.56 (com este código) → `0076`.** Quem lê `ordens_servico` e `ordens_servico_itens` inteiras: **OS e
+  Relações** (a Lucratividade mostra item a item) ou admin; quem escreve: só OS. Cada outra tela lê
+  pela **janela** dela (views `security_invoker = false`, filtro de loja e de módulo dentro, só
+  `select`; o nome do cliente e os itens vêm como colunas, os itens num `jsonb` com só os campos
+  combinados; orçamento e recusado não saem por janela nenhuma, como as telas já filtravam): **`ordens_servico_caixa`** (Caixa ou Relações: número, tipo, status, cliente e os
+  itens só com quantidade, preço e desconto; o custo continua na `custo_das_ordens`);
+  **`ordens_servico_comissoes`** (Funcionários: só OS faturadas, com vendedor, técnico e os campos
+  que a conta da comissão usa); **`ordens_servico_garantias`** (Garantias: uma linha por peça
+  vendida, com descrição e prazo da peça, data de fechamento, cliente e placa);
+  **`ordens_servico_notas`** (Notas Fiscais: número, status, data e cliente); e
+  **`ordens_servico_clientes`** (Clientes ou OS: a ficha do veículo e "clientes que sumiram", com o
+  que essas telas já mostravam: datas, km, veículo, cliente e os itens com descrição, valores e
+  garantia; **a Sofia ainda confirma** na issue #367). Mais duas funções `security definer`:
+  **`ordem_servico_da_loja(ordem, loja)`**, que tirou o `exists` em `ordens_servico` das policies de
+  inserção de `caixa_movimentos` e `contas_receber` (sem ela, quem tem só Contas a Receber deixaria
+  de lançar no Caixa a entrada de uma conta de OS), e **`ordem_servico_acessivel(ordem)`**, a
+  conferência de loja das policies de `ordens_servico_itens` (cerca de 2,7 vezes mais barata no
+  plano que o `exists`). O Início, sem o módulo OS, não pede as OS e **não mostra** "OS abertas" nem
+  "Veículos no pátio" (`mostraBlocosDeOS`, `src/schemas/painelInicio.ts`). Medido num PostgREST 12
+  local com 5 mil OS e 10 mil lançamentos por loja: a lista do Caixa caiu de 9,7 s pra 3,3 s (só
+  Caixa) e de 13,7 s pra 3,9 s (admin). Teste em `supabase/scripts/testar-os-permissao.sql` (as
+  duas metades, 15 perfis), conferido com 28 mutações, todas vermelhas.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
   `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
@@ -700,7 +729,7 @@ outro projeto Supabase do zero (ver seção 9).
   operador ativamente escolhe (Movimentações → Nova movimentação, Contagem) pedem o depósito na
   tela. Decisão de escopo pra manter o v1 do Depósito enxuto — se um dia fizer falta escolher
   depósito também nesses fluxos automáticos, é extensão aditiva.
-- **`ordens_servico`**: id, **numero** (int, sequencial **por loja** — 1, 2, 3..., atribuído
+- **`ordens_servico`** (desde a `0076`, lida só com OS ou Relações; as outras telas, pelas janelas da `0075`): id, **numero** (int, sequencial **por loja** — 1, 2, 3..., atribuído
   sozinho por trigger no insert; é como a OS aparece pra usuária em todo o app, nunca o `id`.
   Desde a `0065` fica **vazio no orçamento e no recusado**, e nasce na aprovação, pelo mesmo
   gatilho, com o próximo número, sem buraco),
@@ -720,7 +749,7 @@ outro projeto Supabase do zero (ver seção 9).
   Cartão de crédito"), parcelas (int, default 1, preenchido no faturamento), data_abertura,
   data_fechamento, vendedor_id (FK **funcionarios**)/criado_por_id/atualizado_por_id (FK operadores
   — autoria de sistema).
-- **`ordens_servico_itens`**: id, ordem_servico_id (FK), tipo (`peca`/`servico`), peca_id (FK
+- **`ordens_servico_itens`** (desde a `0076`, mesma regra de `ordens_servico`): id, ordem_servico_id (FK), tipo (`peca`/`servico`), peca_id (FK
   opcional, só tipo peça), servico_id (FK opcional, só tipo serviço — item de serviço pode ficar
   sem servico_id quando for "avulso"), tecnico_id (FK **funcionarios**, opcional — técnico
   responsável por aquele item, diferente do vendedor/atendente que é da OS toda), descricao,

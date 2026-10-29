@@ -15,6 +15,10 @@ import type { MotivoRecusa } from "@/schemas/orcamento";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
 import type {
   ItemOS,
+  ItemParaComissao,
+  OrdemParaComissao,
+  StatusOS,
+  TipoOrdem,
   NovaOrdemServico,
   NovoItemOS,
   OrdemServico,
@@ -52,6 +56,55 @@ export async function listarOrdens(lojaId: string): Promise<OrdemServico[]> {
   );
   const ordens = dados as unknown as OrdemServico[];
   return nomearFuncionarios(ordens, await buscarNomesDeFuncionarios(ordens));
+}
+
+/** A linha da janela `ordens_servico_comissoes` (migration 0075, #367). */
+interface LinhaOrdemParaComissao {
+  id: string;
+  numero: number | null;
+  tipo?: TipoOrdem;
+  status: StatusOS;
+  data_abertura: string;
+  data_fechamento: string | null;
+  vendedor_id: string | null;
+  cliente_nome: string | null;
+  itens: ItemParaComissao[] | null;
+}
+
+/** Monta o formato que a conta de comissões usa (`cliente: { nome }`) a partir da janela. */
+export function ordemParaComissaoDaJanela(linha: LinhaOrdemParaComissao): OrdemParaComissao {
+  return {
+    id: linha.id,
+    numero: linha.numero,
+    ...(linha.tipo ? { tipo: linha.tipo } : {}),
+    status: linha.status,
+    data_abertura: linha.data_abertura,
+    data_fechamento: linha.data_fechamento,
+    vendedor_id: linha.vendedor_id,
+    ...(linha.cliente_nome != null ? { cliente: { nome: linha.cliente_nome } } : {}),
+    itens: linha.itens ?? [],
+  };
+}
+
+/**
+ * As OS faturadas da loja pra aba Comissões, pela janela `ordens_servico_comissoes`:
+ * quem tem só o módulo Funcionários não lê a tabela de OS, e a janela traz
+ * só o que a conta usa (vendedor, técnico e itens crus, sem veículo nem
+ * descrição). A conta em `schemas/comissoes.ts` não muda.
+ */
+export async function listarOrdensParaComissoes(lojaId: string): Promise<OrdemParaComissao[]> {
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico_comissoes")
+      .select(
+        "id, numero, tipo, status, data_abertura, data_fechamento, vendedor_id, cliente_nome, itens",
+      )
+      .eq("loja_id", lojaId)
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
+  return (dados as unknown as LinhaOrdemParaComissao[]).map(ordemParaComissaoDaJanela);
 }
 
 /**

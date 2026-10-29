@@ -57,6 +57,14 @@ insert into teste_rls.sondas (tabela, insercao) values
 -- O saldo (0073) tem GROUP BY: nem o dono escreve por ele. A sonda existe pra
 -- a matriz medir isso a cada rodada, como nas outras views.
 ('estoque_saldos',        $$insert into estoque_saldos (peca_id, loja_id) values ('eeeeeeee-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa')$$),
+-- As cinco janelas das OS (0075). As três primeiras são views simples (o
+-- Postgres saberia escrever por elas: quem barra é o revoke); as das Garantias
+-- e de Clientes têm join e nem o dono escreve por elas.
+('ordens_servico_caixa',     $$insert into ordens_servico_caixa (loja_id, numero) values ('11111111-1111-1111-1111-1111111111aa', 901)$$),
+('ordens_servico_comissoes', $$insert into ordens_servico_comissoes (loja_id, numero, status) values ('11111111-1111-1111-1111-1111111111aa', 902, 'faturada')$$),
+('ordens_servico_garantias', $$insert into ordens_servico_garantias (quantidade) values (1)$$),
+('ordens_servico_notas',     $$insert into ordens_servico_notas (loja_id, numero) values ('11111111-1111-1111-1111-1111111111aa', 903)$$),
+('ordens_servico_clientes',  $$insert into ordens_servico_clientes (loja_id, numero) values ('11111111-1111-1111-1111-1111111111aa', 904)$$),
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),

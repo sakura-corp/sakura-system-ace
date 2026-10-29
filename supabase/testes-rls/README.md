@@ -26,7 +26,7 @@ do "alguém lembrar".
 | **`lacunas-de-proposito.csv`** | As tabelas que, de propósito, não têm policy pra algum comando. Entrar nesta lista é dizer por escrito "é assim mesmo". |
 | `cenario.sql` | O cenário fixo: duas lojas da mesma empresa, cinco papéis, dado de negócio nas duas. |
 | `sondas.sql` | A menor inserção válida de cada tabela — o "consigo escrever aqui?" de cada papel. |
-| `matriz.sql` | O motor: roda as sondas (hoje 760) e anota o resultado. |
+| `matriz.sql` | O motor: roda as sondas (hoje 940) e anota o resultado. |
 | `rodar.mjs` | Monta o banco descartável, compara com o esperado, imprime o que não bateu. |
 
 ## Como ler o `expectativas.csv`
