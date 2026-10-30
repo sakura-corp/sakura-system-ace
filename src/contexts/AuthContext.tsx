@@ -13,6 +13,13 @@ interface AuthContextValue {
   carregando: boolean;
   session: Session | null;
   operador: Operador | null;
+  /**
+   * Buscar o perfil do operador deu erro (rede, banco fora): o login existe,
+   * mas o perfil não veio. Diferente de "sem cadastro", que não é erro (#752).
+   */
+  perfilFalhou: boolean;
+  /** Busca o perfil de novo, sem fechar o programa (o "Tentar de novo"). */
+  tentarCarregarPerfil: () => void;
   lojaAtual: Loja | null;
   lojasDisponiveis: Loja[];
   definirLojaAtual: (lojaId: string) => void;
@@ -27,6 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [operador, setOperador] = useState<Operador | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [perfilFalhou, setPerfilFalhou] = useState(false);
+  // Mudar este número roda o efeito de novo: é o "Tentar de novo" (#752).
+  const [tentativa, setTentativa] = useState(0);
   const [lojasDisponiveis, setLojasDisponiveis] = useState<Loja[]>([]);
   const [lojaAtual, setLojaAtual] = useState<Loja | null>(null);
 
@@ -46,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // instante.
     async function processarSessao(novaSessao: Session | null) {
       setSession(novaSessao);
+      setPerfilFalhou(false);
       if (!novaSessao) {
         setOperador(null);
         setLojasDisponiveis([]);
@@ -69,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error("Erro ao carregar perfil do operador:", err);
         if (ativo) {
+          setPerfilFalhou(true);
           setOperador(null);
           setLojasDisponiveis([]);
           setLojaAtual(null);
@@ -92,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ativo = false;
       assinatura.subscription.unsubscribe();
     };
-  }, []);
+  }, [tentativa]);
 
   function definirLojaAtual(lojaId: string) {
     const loja = lojasDisponiveis.find((l) => l.id === lojaId);
@@ -124,6 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         carregando,
         session,
         operador,
+        perfilFalhou,
+        tentarCarregarPerfil: () => setTentativa((n) => n + 1),
         lojaAtual,
         lojasDisponiveis,
         definirLojaAtual,

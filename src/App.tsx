@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
 import { Sidebar } from "./components/Sidebar";
 import { VersaoApp } from "./components/VersaoApp";
@@ -132,7 +133,18 @@ export default function App() {
     );
   }
 
-  if (operador?.deve_trocar_senha) {
+  // Login feito, mas sem o perfil (erro ao carregar, ou sem cadastro): uma
+  // tela com o "Sair", em vez do programa sem barra de saída (#752).
+  if (!operador) {
+    return (
+      <>
+        <PerfilNaoCarregou />
+        <VersaoApp />
+      </>
+    );
+  }
+
+  if (operador.deve_trocar_senha) {
     return (
       <>
         <TrocarSenhaPage />
