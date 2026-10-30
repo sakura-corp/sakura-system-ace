@@ -1,5 +1,5 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
-import { hojeLocal } from "./datas";
+import { dataHoraLocalComFuso, diaLocal, hojeLocal } from "./datas";
 import { supabase } from "./supabase";
 import { arredondarCentavo as arredondar } from "@/schemas/dinheiro";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
@@ -10,6 +10,7 @@ import type {
   ItemNFCe,
   NFCeCorpo,
   NFSeCorpo,
+  NFSeNacionalCorpo,
   RespostaFocusNfe,
 } from "@/types/focusNfe";
 import type { OrdemServico } from "@/types/os";
@@ -50,7 +51,16 @@ export class FocusNfeError extends Error {
 // código e o corpo dela dentro de um envelope.
 // ---------------------------------------------------------------------------
 
-type TipoNotaPorteiro = "nfce" | "nfse";
+// nfsen = NFS-e pelo Padrão Nacional (#837). Quem decide entre nfse e nfsen
+// numa nota já emitida é a `ref` dela (ver tipoPelaRef): assim a nota antiga
+// do caminho municipal continua sendo consultada e cancelada por lá.
+type TipoNotaPorteiro = "nfce" | "nfse" | "nfsen";
+
+const REF_NACIONAL = /^os\d+-nfsen-\d+$/;
+
+function tipoPelaRef(tipo: TipoNotaPorteiro, ref: string): TipoNotaPorteiro {
+  return tipo === "nfse" && REF_NACIONAL.test(ref.trim()) ? "nfsen" : tipo;
+}
 
 type PedidoPorteiro =
   | { acao: "emitir"; tipo: TipoNotaPorteiro; ref: string; corpo: unknown }
@@ -76,7 +86,7 @@ export function motivoDaRecusa(erro: unknown): string | null {
 
 async function pedirAoPorteiro(lojaId: string, pedido: PedidoPorteiro): Promise<EnvelopePorteiro> {
   const { data, error } = await supabase.functions.invoke("focus-nfe", {
-    body: { loja_id: lojaId, ...pedido },
+    body: { loja_id: lojaId, ...pedido, tipo: tipoPelaRef(pedido.tipo, pedido.ref) },
   });
 
   if (error) {
@@ -194,7 +204,9 @@ export function refPertenceAOrdem(
   numeroOrdem: number,
   tipo: TipoNotaPorteiro,
 ): boolean {
-  return new RegExp(`^os${numeroOrdem}-${tipo}-\\d+$`).test(ref.trim());
+  // A NFS-e pode ter saído pelo caminho municipal (nfse) ou nacional (nfsen).
+  const sufixo = tipo === "nfce" ? "nfce" : "nfsen?";
+  return new RegExp(`^os${numeroOrdem}-${sufixo}-\\d+$`).test(ref.trim());
 }
 
 // Tabela de formas de pagamento do layout da NFe/NFC-e (SEFAZ) — mapeia as
@@ -523,10 +535,107 @@ export function montarCorpoNFSe({
   };
 }
 
+// ---------------------------------------------------------------------------
+// NFS-e pelo Padrão Nacional (#837)
+//
+// Desde 01/11/2026 a empresa do Simples Nacional em Araraquara só emite NFS-e
+// pelo Padrão Nacional (comunicado da prefeitura de 19/10/2026, Resolução
+// CGSN nº 191/2026): o portal municipal (Giap) não emite mais pra ela. Na
+// Focus NFe isso é outro endereço (`/v2/nfsen`) e outro corpo. Sem coluna
+// nova no banco: o regime tributário, que já está nos dados fiscais da loja,
+// decide o caminho. Os campos estão conferidos em docs/pendencias-e-futuro.md; o
+// que ainda depende do suporte da Focus NFe está anotado lá.
+// ---------------------------------------------------------------------------
+
+export type PadraoNFSe = "municipal" | "nacional";
+
+export function padraoNFSe(configuracaoFiscal: Pick<ConfiguracaoFiscalLoja, "regime_tributario">): PadraoNFSe {
+  return configuracaoFiscal.regime_tributario === "simples_nacional" ? "nacional" : "municipal";
+}
+
+// O código de tributação nacional (cTribNac) tem 6 dígitos: item (2),
+// subitem (2) e desdobro (2) da LC 116. O cadastro guarda o item como
+// "14.01"; sem desdobro informado, vai o "01". Quem precisar de outro
+// desdobro digita os três pedaços no mesmo campo ("14.01.02").
+export function codigoTributacaoNacional(item: string | null | undefined): string {
+  const partes = (item ?? "").trim().split(".");
+  if (partes.length < 2 || partes.length > 3 || partes.some((p) => !/^\d{1,2}$/.test(p))) return "";
+  const [itemLc, subitem, desdobro = "01"] = partes;
+  return `${itemLc.padStart(2, "0")}${subitem.padStart(2, "0")}${desdobro.padStart(2, "0")}`;
+}
+
+export function montarCorpoNFSeNacional(
+  { discriminacao, valorServicos, cliente, codigoMunicipioCliente, configuracaoFiscal }: DadosEmissaoNFSe,
+  { agora, numeroDps }: { agora: Date; numeroDps: number },
+): NFSeNacionalCorpo {
+  const documento = (cliente.cpf_cnpj ?? "").replace(/\D/g, "");
+  const municipio = Number((configuracaoFiscal.codigo_municipio ?? "").replace(/\D/g, ""));
+  const simples = configuracaoFiscal.regime_tributario === "simples_nacional";
+  const inscricaoMunicipal = (configuracaoFiscal.inscricao_municipal ?? "").trim();
+  const temEndereco = Boolean(cliente.rua && cliente.cep);
+
+  return {
+    data_emissao: dataHoraLocalComFuso(agora),
+    // Dia local — o mesmo cuidado da data de emissão da NFS-e municipal.
+    data_competencia: diaLocal(agora),
+    // Série da API: 00001 a 49999 (a documentação reserva o resto pros
+    // emissores do governo). O número só precisa não se repetir na série.
+    serie_dps: 1,
+    numero_dps: numeroDps,
+    emitente_dps: 1, // 1 = prestador
+    codigo_municipio_emissora: municipio,
+    cnpj_prestador: (configuracaoFiscal.cnpj ?? "").replace(/\D/g, ""),
+    ...(inscricaoMunicipal ? { inscricao_municipal_prestador: inscricaoMunicipal } : {}),
+    // 3 = optante ME/EPP; 1 = não optante. O cadastro não separa MEI (2).
+    codigo_opcao_simples_nacional: simples ? 3 : 1,
+    // 1 = tributos federais e municipal apurados pelo Simples.
+    ...(simples ? { regime_tributario_simples_nacional: 1 } : {}),
+    regime_especial_tributacao: 0, // 0 = nenhum
+    // Sem documento, não vai CPF vazio (o Ambiente Nacional recusa): o tomador sai só com o nome.
+    ...(!documento
+      ? {}
+      : cliente.tipo_pessoa === "juridica"
+        ? { cnpj_tomador: documento }
+        : { cpf_tomador: documento }),
+    razao_social_tomador: cliente.nome,
+    ...(cliente.email ? { email_tomador: cliente.email } : {}),
+    ...(temEndereco
+      ? {
+          logradouro_tomador: cliente.rua as string,
+          numero_tomador: cliente.numero || "S/N",
+          bairro_tomador: cliente.bairro ?? "",
+          codigo_municipio_tomador: Number(codigoMunicipioCliente.replace(/\D/g, "")),
+          cep_tomador: (cliente.cep ?? "").replace(/\D/g, ""),
+        }
+      : {}),
+    // O serviço é feito na loja.
+    codigo_municipio_prestacao: municipio,
+    codigo_tributacao_nacional_iss: codigoTributacaoNacional(configuracaoFiscal.item_lista_servico || "14.01"),
+    descricao_servico: discriminacao,
+    valor_servico: arredondar(valorServicos),
+    tributacao_iss: 1, // 1 = operação tributável
+    tipo_retencao_iss: 1, // 1 = não retido
+    percentual_aliquota_relativa_municipio: arredondar(configuracaoFiscal.aliquota_iss ?? 0),
+  };
+}
+
+// A resposta da NFS-e Nacional traz o PDF em `url_danfse` e a chave só
+// dentro do `url` da consulta pública. O resto do programa lê
+// `caminho_danfe` e `chave_nfe`: aqui os dois são preenchidos.
+function normalizarRespostaNacional(resposta: RespostaFocusNfe): RespostaFocusNfe {
+  const chave = resposta.url?.match(/[?&]chave=(\d{50})(?:&|$)/)?.[1];
+  return {
+    ...resposta,
+    caminho_danfe: resposta.caminho_danfe ?? resposta.url_danfse,
+    chave_nfe: resposta.chave_nfe ?? chave,
+  };
+}
+
 export async function emitirNFSe(dados: DadosEmissaoNFSe): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
   const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
+  if (padraoNFSe(configuracaoFiscal) === "nacional") return emitirNFSeNacional(dados, numero);
   if (!configuracaoFiscal.codigo_municipio) {
     throw new FocusNfeError(
       "Código do município da loja não configurado — cadastre em Configurações → Dados " +
@@ -564,8 +673,55 @@ export async function emitirNFSe(dados: DadosEmissaoNFSe): Promise<RespostaFocus
   return { ...resposta, ref: resposta.ref ?? ref };
 }
 
+async function emitirNFSeNacional(dados: DadosEmissaoNFSe, numero: number): Promise<RespostaFocusNfe> {
+  const { configuracaoFiscal } = dados;
+  if (!configuracaoFiscal.codigo_municipio) {
+    throw new FocusNfeError(
+      "Código do município da loja não configurado — cadastre em Configurações → Dados " +
+        "fiscais da loja, seção \"Emissão de NFS-e\".",
+    );
+  }
+  // Em branco vale o 14.01, como no caminho municipal; só o formato estranho para a nota.
+  if (!codigoTributacaoNacional(configuracaoFiscal.item_lista_servico || "14.01")) {
+    throw new FocusNfeError(
+      "Item da lista de serviços (LC 116) da loja não configurado ou fora do formato \"14.01\" — " +
+        "cadastre em Configurações → Dados fiscais da loja, seção \"Emissão de NFS-e\".",
+    );
+  }
+  if (!configuracaoFiscal.aliquota_iss) {
+    throw new FocusNfeError(
+      "Alíquota do ISS não configurada — cadastre em Configurações → Dados fiscais da loja, " +
+        "seção \"Emissão de NFS-e\". Sem ela a nota sairia com ISS zerado.",
+    );
+  }
+
+  const lojaId = configuracaoFiscal.loja_id;
+  const agora = new Date();
+  const ref = montarRefNota(numero, "nfsen");
+  // Número da DPS: os milissegundos desde 1970 (13 dígitos; o campo aceita 15).
+  // Não se repete na mesma loja, que é o que o Ambiente Nacional confere
+  // (série + número + município + CNPJ). Em segundos, dois computadores
+  // emitindo no mesmo segundo dariam o mesmo número.
+  const corpo = montarCorpoNFSeNacional(dados, { agora, numeroDps: agora.getTime() });
+
+  await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfsen", ref, corpo });
+
+  const resposta = await aguardarAutorizacao(
+    () => consultarNFSe(ref, lojaId),
+    ref,
+    "A prefeitura",
+    20,
+  );
+  return { ...resposta, ref: resposta.ref ?? ref };
+}
+
 export async function consultarNFSe(ref: string, lojaId: string): Promise<RespostaFocusNfe> {
-  return chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "consultar", tipo: "nfse", ref });
+  const resposta = await chamarFocusNfe<RespostaFocusNfe>(lojaId, {
+    acao: "consultar",
+    tipo: "nfse",
+    ref,
+  });
+  return tipoPelaRef("nfse", ref) === "nfsen" ? normalizarRespostaNacional(resposta) : resposta;
 }
 
 export async function cancelarNFSe(
