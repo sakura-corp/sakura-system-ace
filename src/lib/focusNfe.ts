@@ -591,7 +591,12 @@ export function montarCorpoNFSeNacional(
     // 1 = tributos federais e municipal apurados pelo Simples.
     ...(simples ? { regime_tributario_simples_nacional: 1 } : {}),
     regime_especial_tributacao: 0, // 0 = nenhum
-    ...(cliente.tipo_pessoa === "juridica" ? { cnpj_tomador: documento } : { cpf_tomador: documento }),
+    // Sem documento, não vai CPF vazio (o Ambiente Nacional recusa): o tomador sai só com o nome.
+    ...(!documento
+      ? {}
+      : cliente.tipo_pessoa === "juridica"
+        ? { cnpj_tomador: documento }
+        : { cpf_tomador: documento }),
     razao_social_tomador: cliente.nome,
     ...(cliente.email ? { email_tomador: cliente.email } : {}),
     ...(temEndereco
@@ -605,7 +610,7 @@ export function montarCorpoNFSeNacional(
       : {}),
     // O serviço é feito na loja.
     codigo_municipio_prestacao: municipio,
-    codigo_tributacao_nacional_iss: codigoTributacaoNacional(configuracaoFiscal.item_lista_servico),
+    codigo_tributacao_nacional_iss: codigoTributacaoNacional(configuracaoFiscal.item_lista_servico || "14.01"),
     descricao_servico: discriminacao,
     valor_servico: arredondar(valorServicos),
     tributacao_iss: 1, // 1 = operação tributável
@@ -676,7 +681,8 @@ async function emitirNFSeNacional(dados: DadosEmissaoNFSe, numero: number): Prom
         "fiscais da loja, seção \"Emissão de NFS-e\".",
     );
   }
-  if (!codigoTributacaoNacional(configuracaoFiscal.item_lista_servico)) {
+  // Em branco vale o 14.01, como no caminho municipal; só o formato estranho para a nota.
+  if (!codigoTributacaoNacional(configuracaoFiscal.item_lista_servico || "14.01")) {
     throw new FocusNfeError(
       "Item da lista de serviços (LC 116) da loja não configurado ou fora do formato \"14.01\" — " +
         "cadastre em Configurações → Dados fiscais da loja, seção \"Emissão de NFS-e\".",
@@ -692,13 +698,11 @@ async function emitirNFSeNacional(dados: DadosEmissaoNFSe, numero: number): Prom
   const lojaId = configuracaoFiscal.loja_id;
   const agora = new Date();
   const ref = montarRefNota(numero, "nfsen");
-  // Número da DPS: os segundos desde 1970 (10 dígitos; o campo aceita 15).
+  // Número da DPS: os milissegundos desde 1970 (13 dígitos; o campo aceita 15).
   // Não se repete na mesma loja, que é o que o Ambiente Nacional confere
-  // (série + número + município + CNPJ).
-  const corpo = montarCorpoNFSeNacional(dados, {
-    agora,
-    numeroDps: Math.floor(agora.getTime() / 1000),
-  });
+  // (série + número + município + CNPJ). Em segundos, dois computadores
+  // emitindo no mesmo segundo dariam o mesmo número.
+  const corpo = montarCorpoNFSeNacional(dados, { agora, numeroDps: agora.getTime() });
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfsen", ref, corpo });
 

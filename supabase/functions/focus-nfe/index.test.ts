@@ -426,6 +426,19 @@ describe("porteiro da Focus NFe — NFS-e Nacional (nfsen)", () => {
     expect(r.dados.tipo_conteudo).toBe("application/pdf");
   });
 
+  it("o PDF do S3 sai como PDF mesmo quando o S3 diz \"binary/octet-stream\"", async () => {
+    const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    const urlDanfse = "https://focusnfe.s3.sa-east-1.amazonaws.com/arquivos/x/DANFSEs/NFS1.pdf";
+    const { pedir } = montar({
+      focus: (c) =>
+        c.url.includes("/v2/nfsen/")
+          ? json(200, { status: "autorizado", cnpj_prestador: CNPJ, url_danfse: urlDanfse })
+          : new Response(pdf, { status: 200, headers: { "Content-Type": "binary/octet-stream" } }),
+    });
+    const r = await pedir({ loja_id: LOJA, acao: "baixar", tipo: "nfsen", ref: REF, arquivo: "danfe" });
+    expect(r.dados.tipo_conteudo).toBe("application/pdf");
+  });
+
   it("o S3 só serve pro PDF público: XML apontando pra lá não é seguido (lá o token iria junto)", async () => {
     const { pedir, noS3 } = montar({
       focus: () =>

@@ -436,6 +436,23 @@ describe("montarCorpoNFSeNacional", () => {
     expect(corpo).not.toHaveProperty("cpf_tomador");
   });
 
+  it("cliente sem CPF/CNPJ não manda documento vazio (o tomador sai só com o nome)", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ cpf_cnpj: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(corpo).not.toHaveProperty("cpf_tomador");
+    expect(corpo).not.toHaveProperty("cnpj_tomador");
+  });
+
+  it("loja sem o item da lista de serviços usa o 14.01, como no caminho municipal", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ item_lista_servico: null }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.codigo_tributacao_nacional_iss).toBe("140101");
+  });
+
   it("cliente sem rua ou CEP não manda endereço pela metade", () => {
     const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ rua: null }) }), {
       agora,

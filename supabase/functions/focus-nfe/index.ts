@@ -374,7 +374,8 @@ export async function atender(req: Request, amb: Ambiente): Promise<Response> {
       return responder(200, {
         ok: pdf.ok,
         status: pdf.status,
-        tipo_conteudo: pdf.tipo,
+        // O S3 pode servir como "binary/octet-stream"; a tela só mostra e imprime se for PDF.
+        tipo_conteudo: "application/pdf",
         conteudo_base64: pdf.ok ? paraBase64(pdf.bytes) : null,
       });
     }
