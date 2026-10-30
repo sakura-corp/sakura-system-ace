@@ -1,5 +1,5 @@
 import type { Session } from "@supabase/supabase-js";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { buscarOperadorAtual, entrar, sair } from "@/lib/auth";
 import { listarLojasDoOperador } from "@/lib/lojas";
@@ -13,6 +13,13 @@ interface AuthContextValue {
   carregando: boolean;
   session: Session | null;
   operador: Operador | null;
+  /**
+   * Buscar o perfil do operador deu erro (rede, banco fora): o login existe,
+   * mas o perfil não veio. Diferente de "sem cadastro", que não é erro (#752).
+   */
+  perfilFalhou: boolean;
+  /** Busca o perfil de novo, sem fechar o programa (o "Tentar de novo"). */
+  tentarCarregarPerfil: () => void;
   lojaAtual: Loja | null;
   lojasDisponiveis: Loja[];
   definirLojaAtual: (lojaId: string) => void;
@@ -27,6 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [operador, setOperador] = useState<Operador | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [perfilFalhou, setPerfilFalhou] = useState(false);
+  // O processarSessao do efeito, pro "Tentar de novo" chamar (#752).
+  const processar = useRef<(novaSessao: Session | null) => Promise<void>>(async () => {});
+  // A abertura dispara duas buscas (getSession e o INITIAL_SESSION), e a
+  // renovação do token outra: só a mais recente escreve, senão uma antiga
+  // que falha depois apaga o perfil que a nova já carregou.
+  const ultimaBusca = useRef(0);
   const [lojasDisponiveis, setLojasDisponiveis] = useState<Loja[]>([]);
   const [lojaAtual, setLojaAtual] = useState<Loja | null>(null);
 
@@ -45,7 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // perfil ainda não, o que faria as telas piscarem "sem permissão" por um
     // instante.
     async function processarSessao(novaSessao: Session | null) {
+      const minha = ++ultimaBusca.current;
+      const valendo = () => ativo && minha === ultimaBusca.current;
       setSession(novaSessao);
+      setPerfilFalhou(false);
       if (!novaSessao) {
         setOperador(null);
         setLojasDisponiveis([]);
@@ -56,11 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCarregando(true);
       try {
         const perfil = await buscarOperadorAtual(novaSessao.user.id);
-        if (!ativo) return;
+        if (!valendo()) return;
         setOperador(perfil);
 
         const lojas = perfil ? await listarLojasDoOperador(perfil.id) : [];
-        if (!ativo) return;
+        if (!valendo()) return;
         setLojasDisponiveis(lojas);
 
         const idSalvo = window.localStorage.getItem(CHAVE_LOJA_ATIVA);
@@ -68,15 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLojaAtual(lojaSalva ?? lojas[0] ?? null);
       } catch (err) {
         console.error("Erro ao carregar perfil do operador:", err);
-        if (ativo) {
+        if (valendo()) {
+          setPerfilFalhou(true);
           setOperador(null);
           setLojasDisponiveis([]);
           setLojaAtual(null);
         }
       } finally {
-        if (ativo) setCarregando(false);
+        if (valendo()) setCarregando(false);
       }
     }
+
+    processar.current = processarSessao;
 
     supabase.auth.getSession().then(({ data }) => {
       if (ativo) processarSessao(data.session);
@@ -124,6 +144,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         carregando,
         session,
         operador,
+        perfilFalhou,
+        tentarCarregarPerfil: () => void processar.current(session),
         lojaAtual,
         lojasDisponiveis,
         definirLojaAtual,
