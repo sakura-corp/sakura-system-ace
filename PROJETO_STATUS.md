@@ -165,11 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 29/10/2026, noite: a 0075 aplicada; a NFS-e nacional obrigatória desde 01/11
-- **A 0075 está na Pneus Amigão**; a **0076 espera** o Balcão e o DESKTOP-PKJ2A3B chegarem na 0.9.56 (#809).
-- **NFS-e (#837, urgente)**: desde **01/11** o Simples de Araraquara só emite pelo **Padrão Nacional**; o Giap parou. **PR #839 (rascunho)** pronto e testado: espera a resposta da **Focus** (ticket aberto) e da **contabilidade** (perguntas no PR), o ensaio em homologação e o `/code-review`. **Porteiro antes do programa.** As notas do fim de semana saem depois, pelo programa (plano B descartado).
-- **PR #840 (rascunho)**: "Vendido no mês" × "Recebido no mês"; margem do Estoque sobre a venda **só na lista** (o cadastro segue sobre o custo, "Acréscimo sobre o custo %"); comissão sem os serviços sem custo. Falta ela olhar as telas e mesclar.
-- **Decididas e fechadas**: #791, #502, #507 (cancelar nota não estorna; vai pra Devolução, #399), #503, #750. A #746 virou só os testes da loja (#379, #655).
-- **Próximo (segunda)**: 9h29, o Resumo de segunda (#625); a NFS-e (#839) → publicar a 0.9.56 (pode ir junto) → liberar → os dois computadores → a 0076.
-- **CBS de 2027 (#838)**: os valores das notas, depois que o Senado decidir em 15/12.
-- **Depende dela**: a mensagem e o PDF pro cliente novo; o token de homologação até 11/11 (#832); renovar a chave da API até 22/11 (escritorio#20).
+### 30/10/2026, manhã: a NFS-e nacional pronta pro ensaio, com o Tiago
+- **NFS-e (#837, urgente; PR #839 rascunho)**: a **Focus** e a **contabilidade** responderam (IBS/CBS só em 2027; sem token do Giap, só o certificado). `/code-review` feito, 4 consertos no PR. **Homologação ligada na Focus**; o token de homologação guardado no `ssace-teste` (#832 decidida, opção a; tirar depois, #842).
+- **O ensaio é do Tiago** (roteiro no PR #839, prioridade antes do escritorio #60/#61): porteiro novo **só no `ssace-teste`**, emitir, abrir o PDF e cancelar. Ele te pede o CNPJ e os dados da loja pra loja de exemplo.
+- **Em aberto com a contabilidade**: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime. O ensaio também mostra o número (o nosso × o "Próximo número" da Focus), o XML salvo e a hora.
+- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais.
+- **Próximo (fim de semana, se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 com a NFS-e e o #840 (já mesclado) → liberar → os dois computadores → a 0076 (#809).
+- **Segunda, 9h29**: o Resumo de segunda (#625). **CBS de 2027** (#838): depois de 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).

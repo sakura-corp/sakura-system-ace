@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 29/10/2026, noite: a 0075 aplicada; a NFS-e nacional obrigatória desde 01/11
+- **A 0075 está na Pneus Amigão**; a **0076 espera** o Balcão e o DESKTOP-PKJ2A3B chegarem na 0.9.56 (#809).
+- **NFS-e (#837, urgente)**: desde **01/11** o Simples de Araraquara só emite pelo **Padrão Nacional**; o Giap parou. **PR #839 (rascunho)** pronto e testado: espera a resposta da **Focus** (ticket aberto) e da **contabilidade** (perguntas no PR), o ensaio em homologação e o `/code-review`. **Porteiro antes do programa.** As notas do fim de semana saem depois, pelo programa (plano B descartado).
+- **PR #840 (rascunho)**: "Vendido no mês" × "Recebido no mês"; margem do Estoque sobre a venda **só na lista** (o cadastro segue sobre o custo, "Acréscimo sobre o custo %"); comissão sem os serviços sem custo. Falta ela olhar as telas e mesclar.
+- **Decididas e fechadas**: #791, #502, #507 (cancelar nota não estorna; vai pra Devolução, #399), #503, #750. A #746 virou só os testes da loja (#379, #655).
+- **Próximo (segunda)**: 9h29, o Resumo de segunda (#625); a NFS-e (#839) → publicar a 0.9.56 (pode ir junto) → liberar → os dois computadores → a 0076.
+- **CBS de 2027 (#838)**: os valores das notas, depois que o Senado decidir em 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o token de homologação até 11/11 (#832); renovar a chave da API até 22/11 (escritorio#20).
+
 ### 29/10/2026, fim da tarde: o #818 mesclado; a 0075 e a 0.9.56 na fila
 - **#818 (Gusta) mesclado**: os 4 testes de perfil passaram no PC dele, a ordem de subir certa, CI verde. A #367 fechou.
 - **Próximo (Sofia)**: a 0075 pelo "Atualizar o banco" (ensaiar, depois aplicar) → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → a 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal.
