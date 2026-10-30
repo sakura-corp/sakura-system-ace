@@ -6,7 +6,7 @@ import {
   type CustoDoBanco,
 } from "@/schemas/metricasCaixa";
 import { Valor } from "@/components/Valor";
-import { lancamentosDepoisDoFechamento } from "@/schemas/fechamentoCaixa";
+import { chaveDaForma, lancamentosDepoisDoFechamento, rotuloDaForma } from "@/schemas/fechamentoCaixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import { nomeOrdem } from "@/types/os";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
@@ -59,13 +59,17 @@ export function DiarioSection({
   const saidas = resumo.saidas;
 
   const porFormaPagamento = useMemo(() => {
-    const mapa = new Map<string, number>();
+    // Pela chave (#790): o faturamento grava "cartao_debito" e o lançamento
+    // manual pode ter "Cartão de débito"; os dois caem no mesmo cartão, com o nome.
+    const mapa = new Map<string, [string, number]>();
     for (const m of movimentosDoDia) {
       if (m.tipo !== "entrada") continue;
-      const forma = m.forma_pagamento || "Não informado";
-      mapa.set(forma, (mapa.get(forma) ?? 0) + m.valor);
+      const chave = m.forma_pagamento ? chaveDaForma(m.forma_pagamento) : "";
+      const rotulo = m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "Não informado";
+      const [, total] = mapa.get(chave) ?? [rotulo, 0];
+      mapa.set(chave, [rotulo, total + m.valor]);
     }
-    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+    return [...mapa.values()].sort((a, b) => b[1] - a[1]);
   }, [movimentosDoDia]);
 
   // Lucro de cada linha: numa OS paga em duas formas, o lucro da OS é
@@ -201,7 +205,7 @@ export function DiarioSection({
                       )}
                     </td>
                     <td className="px-4 py-3">{m.ordem_servico?.cliente?.nome ?? "—"}</td>
-                    <td className="px-4 py-3">{m.forma_pagamento || "—"}</td>
+                    <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
                     <td
                       className={`px-4 py-3 font-medium ${
                         m.tipo === "saida" ? "text-red-700" : ""
