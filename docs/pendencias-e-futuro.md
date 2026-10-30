@@ -242,20 +242,29 @@ cancelar e baixar (nota antiga do Giap continua indo pelo municipal).
 - Cancelar: `DELETE /v2/nfsen/<ref>` com `{ "justificativa": ... }`, resposta síncrona `cancelado`
   ou `erro_cancelamento` ([Cancelar](https://doc.focusnfe.com.br/reference/cancelar_nfse_nacional)).
 
-**Ainda depende do suporte da Focus** (ticket da Sofia de 29/10) **ou da contabilidade**:
-1. Se a conta precisa de alguma configuração no painel pra NFS-e Nacional, e se o token do Giap
-   deixa de ser necessário.
-2. O grupo da **reforma tributária** (`finalidade_emissao`, `consumidor_final`,
-   `indicador_destinatario`, `ibs_cbs_situacao_tributaria`, `ibs_cbs_classificacao_tributaria`),
-   marcado como obrigatório na lista de campos: o programa **ainda não manda**. Vale pro Simples em 2026?
-3. O **código de tributação nacional**: o programa usa o item da LC 116 + desdobro `01`
-   (`14.01` → `140101`). A contabilidade confirma o desdobro; outro desdobro se digita como `14.01.02`.
-4. A **alíquota** (`percentual_aliquota_relativa_municipio`): o programa manda a da competência.
+**Respondido em 30/10/2026** (suporte da Focus por e-mail; contabilidade pelo WhatsApp):
+- **Focus**: habilitar o documento **"Ambiente da NFSe Nacional"** no cadastro da empresa (painel →
+  empresa → **Documentos Fiscais**; há um interruptor pra Homologação e outro pra Produção, cada um
+  com "Série" e "Próximo número"). **O token do Giap deixa de ser necessário**: a nota nacional usa
+  só o certificado digital. A Pneus Amigão está com a **homologação ligada** desde 30/10; a produção
+  liga depois do ensaio.
+- **IBS e CBS** (`finalidade_emissao`, `consumidor_final`, `indicador_destinatario`,
+  `ibs_cbs_situacao_tributaria`, `ibs_cbs_classificacao_tributaria`): **só obrigatórios em 2027**
+  (as duas responderam igual). O programa segue sem mandar; os valores de 2027 ficam na #838.
+
+**Ainda em aberto** (com a contabilidade; o ensaio em homologação também mostra):
+1. O **código de tributação nacional**: o programa usa o item da LC 116 + desdobro `01`
+   (`14.01` → `140101`; item em branco vale `14.01`). Outro desdobro se digita como `14.01.02`.
+2. A **alíquota** (`percentual_aliquota_relativa_municipio`): o programa manda a da competência.
    A documentação diz que, se o município está no sistema nacional, ela vem parametrizada.
-5. `codigo_opcao_simples_nacional = 3` (ME/EPP) e `regime_tributario_simples_nacional = 1`
-   (tudo pelo Simples): conferir com a contabilidade.
-6. O **número da DPS** é o instante em segundos (não se repete); conferir que não precisa ser
-   sequencial.
+3. `codigo_opcao_simples_nacional = 3` (ME/EPP) e `regime_tributario_simples_nacional = 1`
+   (tudo pelo Simples).
+4. O **número da DPS** é o instante em milissegundos (não se repete, nem com dois computadores).
+   A contabilidade disse "o DPS não precisa selecionar, pode deixar em branco", sem dizer qual
+   campo. E o painel da Focus tem um "Próximo número" próprio: o ensaio mostra qual número vale.
+
+**O ensaio** (roteiro no PR #839): no `ssace-teste`, com o token de homologação guardado na loja de
+exemplo (#832, opção a; tirar depois, #842).
 
 #### O que ainda está frágil na parte fiscal
 
