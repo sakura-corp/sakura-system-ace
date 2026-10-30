@@ -20,14 +20,6 @@ export async function sair(): Promise<void> {
   if (error) throw error;
 }
 
-// Sai só neste computador, sem falar com o servidor. É a reserva do "Sair"
-// quando não há internet (#752): o `signOut` normal precisa do servidor e,
-// sem ele, devolve erro e deixa a pessoa presa logada.
-export async function sairSoNesteComputador(): Promise<void> {
-  const { error } = await supabase.auth.signOut({ scope: "local" });
-  if (error) throw error;
-}
-
 // Troca a própria senha (usa a sessão já logada — funciona tanto pra quem
 // só quer trocar por vontade própria quanto pra quem está cumprindo a troca
 // obrigatória depois de um reset feito pelo admin, ver TrocarSenhaPage).

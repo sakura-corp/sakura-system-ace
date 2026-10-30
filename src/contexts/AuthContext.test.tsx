@@ -20,7 +20,11 @@ vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
       getSession: () => Promise.resolve({ data: { session: sessao } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      // Como o de verdade: quem assina recebe logo um INITIAL_SESSION.
+      onAuthStateChange: (callback: (evento: string, s: unknown) => void) => {
+        queueMicrotask(() => callback("INITIAL_SESSION", sessao));
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
     },
   },
 }));
@@ -46,7 +50,11 @@ beforeEach(() => {
 
 describe("AuthContext — o perfil que não carregou (#752)", () => {
   it("erro ao buscar o perfil: perfilFalhou; Tentar de novo busca outra vez e limpa o erro", async () => {
-    buscarOperadorAtual.mockRejectedValueOnce(new Error("rede")).mockResolvedValue({ id: "u1", usuario: "amigao" });
+    // As duas buscas da abertura (getSession e INITIAL_SESSION) falham.
+    buscarOperadorAtual
+      .mockRejectedValueOnce(new Error("rede"))
+      .mockRejectedValueOnce(new Error("rede"))
+      .mockResolvedValue({ id: "u1", usuario: "amigao" });
     const { user } = renderizar(
       <AuthProvider>
         <Mostra />
@@ -56,8 +64,29 @@ describe("AuthContext — o perfil que não carregou (#752)", () => {
     expect(await screen.findByText("falhou")).toBeInTheDocument();
     expect(screen.getByText("sem operador")).toBeInTheDocument();
 
+    const antes = buscarOperadorAtual.mock.calls.length;
     await user.click(screen.getByRole("button", { name: "de novo" }));
     await waitFor(() => expect(screen.getByText("operador amigao")).toBeInTheDocument());
+    expect(screen.getByText("não falhou")).toBeInTheDocument();
+    // Uma busca por clique (antes, refazer o efeito assinava de novo e buscava duas vezes).
+    expect(buscarOperadorAtual.mock.calls.length - antes).toBe(1);
+  });
+
+  it("uma busca antiga que falha depois não apaga o perfil que a mais nova já carregou", async () => {
+    let falharAntiga: (e: Error) => void = () => {};
+    buscarOperadorAtual
+      .mockImplementationOnce(() => new Promise((_, rejeitar) => (falharAntiga = rejeitar)))
+      .mockResolvedValue({ id: "u1", usuario: "amigao" });
+    renderizar(
+      <AuthProvider>
+        <Mostra />
+      </AuthProvider>,
+    );
+    expect(await screen.findByText("operador amigao")).toBeInTheDocument();
+
+    falharAntiga(new Error("rede"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByText("operador amigao")).toBeInTheDocument();
     expect(screen.getByText("não falhou")).toBeInTheDocument();
   });
 
