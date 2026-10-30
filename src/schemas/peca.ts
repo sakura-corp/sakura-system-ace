@@ -219,3 +219,25 @@ export function precoAbaixoDoCusto(custo: string, precoVenda: string): boolean {
 export function ehCategoriaDePneu(nomeDaCategoria: string | null | undefined): boolean {
   return /pneu/i.test(nomeDaCategoria ?? "");
 }
+
+// A "Margem" da lista do Estoque (#835, decisão da #791) é SOBRE A VENDA:
+// (venda − custo) / venda. É o que "margem" quer dizer pro dono de loja e pro
+// contador (custo 245, venda 389,90 → 37,2%). O campo do cadastro continua
+// sendo o acréscimo sobre o custo (`margemAPartirDoPreco`), pra nenhum preço
+// mudar de quem já está acostumado a digitar "20%" e ganhar custo + 20%.
+export function margemSobreAVenda(custo: string, precoVenda: string): string {
+  const custoNum = Number(custo);
+  const precoNum = Number(precoVenda);
+  if (
+    custo.trim() === "" ||
+    Number.isNaN(custoNum) ||
+    custoNum <= 0 ||
+    precoVenda.trim() === "" ||
+    Number.isNaN(precoNum) ||
+    precoNum <= 0
+  ) {
+    return "";
+  }
+  const margem = ((precoNum - custoNum) / precoNum) * 100;
+  return (Math.round(margem * 10) / 10).toString();
+}

@@ -74,7 +74,7 @@ export type CartaoMetrica =
   | "contas_pagar_vencendo";
 
 export const CARTAO_METRICA_LABEL: Record<CartaoMetrica, string> = {
-  vendas_mes: "Vendas do mês",
+  vendas_mes: "Recebido no mês",
   custos_mes: "Custos do mês",
   lucro_mes: "Lucro do mês",
   ticket_medio_mes: "Ticket médio do mês",
@@ -99,11 +99,11 @@ export const DIAS_DE_CONTAS_VENCENDO = 15;
  */
 export const CARTAO_METRICA_DESCRICAO: Record<CartaoMetrica, string> = {
   vendas_mes:
-    "Tudo que entrou no caixa do dia 1º até hoje: ordens de serviço faturadas mais as entradas lançadas à mão.",
+    "Tudo que entrou no caixa do dia 1º até hoje: ordens de serviço faturadas mais as entradas lançadas à mão. OS aberta e ainda não recebida não entra (ela aparece no \"Vendido no mês\" da Lucratividade).",
   custos_mes:
     "O que a loja pagou pelas peças e pelos serviços vendidos no mês, mais as saídas lançadas à mão (aluguel, sucata, fornecedor).",
   lucro_mes:
-    "Vendas menos o custo das peças e serviços vendidos, menos as saídas lançadas no caixa.",
+    "O recebido no mês menos o custo das peças e serviços vendidos, menos as saídas lançadas no caixa.",
   ticket_medio_mes:
     "Quanto rendeu, em média, cada ordem de serviço faturada no mês — a média é por ordem, não por pagamento, então dividir em duas formas não muda o número. Venda de balcão não entra: ela conta nas vendas e no lucro, mas não é um carro atendido.",
   contas_pagar_vencendo: `Soma das contas ainda não pagas que vencem nos próximos ${DIAS_DE_CONTAS_VENCENDO} dias, já incluindo as que passaram do vencimento.`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { margemAPartirDoPreco, precoAPartirDaMargem } from "./peca";
+import { margemAPartirDoPreco, margemSobreAVenda, precoAPartirDaMargem } from "./peca";
 
 describe("precoAPartirDaMargem", () => {
   it("calcula o preço final a partir do custo e da margem", () => {
@@ -50,5 +50,25 @@ describe("margemAPartirDoPreco", () => {
     const preco = precoAPartirDaMargem("80", "25");
     expect(preco).not.toBeNull();
     expect(margemAPartirDoPreco("80", preco as string)).toBe("25");
+  });
+});
+
+// #835 (decisão da #791): a coluna "Margem" da lista do Estoque é SOBRE A
+// VENDA, (venda − custo) / venda. O campo do cadastro continua sendo o
+// acréscimo sobre o custo (acima), pra nenhum preço mudar.
+describe("margemSobreAVenda", () => {
+  it("custo 245, venda 389,90 -> 37,2% (sobre o custo daria 59,1%)", () => {
+    expect(margemSobreAVenda("245", "389.90")).toBe("37.2");
+  });
+
+  it("custo 100, venda 200 -> 50%", () => {
+    expect(margemSobreAVenda("100", "200")).toBe("50");
+  });
+
+  it("devolve string vazia sem custo cadastrado, ou com preço zero ou vazio", () => {
+    expect(margemSobreAVenda("0", "120")).toBe("");
+    expect(margemSobreAVenda("", "120")).toBe("");
+    expect(margemSobreAVenda("100", "0")).toBe("");
+    expect(margemSobreAVenda("100", "")).toBe("");
   });
 });

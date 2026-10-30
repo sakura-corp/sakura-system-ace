@@ -65,7 +65,7 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
     const { user } = montar();
 
     await user.type(campo("Aquisição (custo)"), "100");
-    await user.type(campo("Margem %"), "50");
+    await user.type(campo("Acréscimo sobre o custo %"), "50");
 
     expect(campo("Preço final")).toHaveValue(150);
   });
@@ -76,10 +76,10 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
     const { user } = montar();
 
     await user.type(campo("Aquisição (custo)"), "200");
-    await user.clear(campo("Margem %"));
+    await user.clear(campo("Acréscimo sobre o custo %"));
     await user.type(campo("Preço final"), "250");
 
-    expect(campo("Margem %")).toHaveValue(25);
+    expect(campo("Acréscimo sobre o custo %")).toHaveValue(25);
   });
 
   it("mexer no custo depois recalcula o preço, mantendo a margem escolhida", async () => {
@@ -88,13 +88,13 @@ describe("PecaForm — custo, margem e preço se recalculam entre si", () => {
     const { user } = montar();
 
     await user.type(campo("Aquisição (custo)"), "100");
-    await user.type(campo("Margem %"), "20");
+    await user.type(campo("Acréscimo sobre o custo %"), "20");
     expect(campo("Preço final")).toHaveValue(120);
 
     await user.clear(campo("Aquisição (custo)"));
     await user.type(campo("Aquisição (custo)"), "150");
 
-    expect(campo("Margem %")).toHaveValue(20);
+    expect(campo("Acréscimo sobre o custo %")).toHaveValue(20);
     expect(campo("Preço final")).toHaveValue(180);
   });
 });
@@ -127,7 +127,7 @@ describe("PecaForm — os avisos que não travam", () => {
 
     await preencherObrigatorios(user, "PNEU 175/70 R14");
     await user.type(campo("Aquisição (custo)"), "200");
-    await user.clear(campo("Margem %"));
+    await user.clear(campo("Acréscimo sobre o custo %"));
     await user.type(campo("Preço final"), "80");
 
     expect(screen.getByText(/abaixo do custo/)).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe("PecaForm — os avisos que não travam", () => {
     const { user } = montar();
 
     await user.type(campo("Aquisição (custo)"), "100");
-    await user.type(campo("Margem %"), "30");
+    await user.type(campo("Acréscimo sobre o custo %"), "30");
 
     expect(screen.queryByText(/abaixo do custo/)).not.toBeInTheDocument();
   });

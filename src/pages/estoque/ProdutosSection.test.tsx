@@ -2,8 +2,8 @@
 /**
  * Teste de TELA da lista de Produtos (#781): a margem sai no formato
  * brasileiro, com vírgula ("59,1%"), igual ao resto dos números do programa.
- * A conta continua a de `margemAPartirDoPreco` (sobre o custo); aqui se
- * confere só como ela aparece na tabela.
+ * A conta é a de `margemSobreAVenda` (sobre a venda desde a #835); aqui se
+ * confere como ela aparece na tabela.
  */
 import { describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
@@ -54,14 +54,16 @@ function montar(pecas: Peca[]) {
 }
 
 describe("ProdutosSection — margem", () => {
-  it("mostra a margem com vírgula: custo 220, venda 350 → 59,1%", () => {
-    montar([umaPeca({ preco_custo: 220, preco_venda: 350 })]);
-    expect(screen.getByText("59,1%")).toBeTruthy();
-    expect(screen.queryByText("59.1%")).toBeNull();
+  it("mostra a margem sobre a venda, com vírgula: custo 245, venda 389,90 → 37,2%", () => {
+    montar([umaPeca({ preco_custo: 245, preco_venda: 389.9 })]);
+    expect(screen.getByText("37,2%")).toBeTruthy();
+    expect(screen.queryByText("37.2%")).toBeNull();
+    // Sobre o custo (o "markup") daria 59,1%: não é o que a tela mostra.
+    expect(screen.queryByText("59,1%")).toBeNull();
   });
 
-  it("margem inteira não ganha casa decimal: custo 100, venda 150 → 50%", () => {
-    montar([umaPeca({ preco_custo: 100, preco_venda: 150 })]);
+  it("margem inteira não ganha casa decimal: custo 100, venda 200 → 50%", () => {
+    montar([umaPeca({ preco_custo: 100, preco_venda: 200 })]);
     expect(screen.getByText("50%")).toBeTruthy();
   });
 

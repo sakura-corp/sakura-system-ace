@@ -258,9 +258,67 @@ describe("resumirComissoes", () => {
       ],
     });
     const silvio = resumir([semCusto]).find((l) => l.funcionarioId === "vend")!;
-    expect(silvio.comoVendedor.itensSemCusto).toBe(2);
+    // #836: o serviço sem custo fica fora da conta e do aviso; só a peça conta.
+    expect(silvio.comoVendedor.itensSemCusto).toBe(1);
     expect(silvio.comoVendedor.custo).toBe(0);
-    expect(silvio.comoVendedor.lucro).toBe(190);
+    expect(silvio.comoVendedor.lucro).toBe(150);
+  });
+
+  // #836 (decisão da #502, opção b): enquanto serviço não tem custo (material
+  // gasto), o preço inteiro dele viraria lucro e a comissão sairia maior que a
+  // real. A conta e o aviso ignoram o serviço sem custo.
+  it("OS com peça e serviço sem custo: a comissão sai só sobre o lucro da peça", () => {
+    const os = ordem({
+      vendedor_id: "vend",
+      itens: [
+        item({ tecnico_id: "tec" }),
+        item({
+          tipo: "servico",
+          peca_id: null,
+          servico_id: "serv-sem-custo",
+          descricao: "Montagem",
+          preco_unitario: 80,
+          tecnico_id: "tec",
+        }),
+      ],
+    });
+    const linhas = resumir([os]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    const marcos = linhas.find((l) => l.funcionarioId === "tec")!;
+    // Peça: 150 − 100 = 50 de lucro. Serviço de 80 sem custo: fora.
+    expect(pedro.comoVendedor.vendido).toBe(150);
+    expect(pedro.comoVendedor.lucro).toBe(50);
+    expect(pedro.comoVendedor.comissao).toBe(5);
+    expect(pedro.comoVendedor.itensSemCusto).toBe(0);
+    expect(marcos.comoTecnico.lucro).toBe(50);
+    expect(marcos.comoTecnico.comissao).toBe(2.5);
+    expect(totaisComissoes(linhas).itensSemCusto).toBe(0);
+  });
+
+  it("serviço com custo cadastrado continua na conta", () => {
+    const os = ordem({
+      vendedor_id: "vend",
+      itens: [
+        item({}),
+        item({ tipo: "servico", peca_id: null, servico_id: "serv-alinhamento", preco_unitario: 60 }),
+      ],
+    });
+    const pedro = resumir([os]).find((l) => l.funcionarioId === "vend")!;
+    // (150 − 100) + (60 − 20) = 90 de lucro; 10% => 9.
+    expect(pedro.comoVendedor.lucro).toBe(90);
+    expect(pedro.comoVendedor.comissao).toBe(9);
+  });
+
+  it("técnico que só fez serviço sem custo não entra na comissão", () => {
+    const os = ordem({
+      vendedor_id: "vend",
+      itens: [
+        item({}),
+        item({ tipo: "servico", peca_id: null, servico_id: null, preco_unitario: 40, tecnico_id: "tec" }),
+      ],
+    });
+    const marcos = resumir([os]).find((l) => l.funcionarioId === "tec");
+    expect(marcos).toBeUndefined();
   });
 
   // #655: peça avulsa (sem peca_id) usa o custo digitado no orçamento.

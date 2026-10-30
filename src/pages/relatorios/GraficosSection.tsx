@@ -199,25 +199,25 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
     <>
       <div className="grid grid-cols-4 gap-4">
         <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Vendas hoje</p>
+          <p className="text-rotulo text-sakura-muted">Recebido hoje</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalHoje)}
           </p>
         </div>
         <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Vendas esta semana</p>
+          <p className="text-rotulo text-sakura-muted">Recebido esta semana</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalSemana)}
           </p>
         </div>
         <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Vendas este mês</p>
+          <p className="text-rotulo text-sakura-muted">Recebido no mês</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalMes)}
           </p>
         </div>
         <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Vendas este ano</p>
+          <p className="text-rotulo text-sakura-muted">Recebido este ano</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalAno)}
           </p>

@@ -11,7 +11,7 @@ import {
   type SituacaoSaldo,
 } from "@/schemas/estoque";
 import { csosnMaisUsado } from "@/schemas/tributacao";
-import { margemAPartirDoPreco } from "@/schemas/peca";
+import { margemSobreAVenda } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { NovaPeca, Peca } from "@/types/peca";
@@ -316,7 +316,9 @@ export function ProdutosSection({
                 <th className="px-4 py-3 font-medium">Unidade</th>
                 <th className="px-4 py-3 font-medium">Preço custo</th>
                 <th className="px-4 py-3 font-medium">Preço venda</th>
-                <th className="px-4 py-3 font-medium">Margem</th>
+                <th className="px-4 py-3 font-medium" title="Sobre a venda: (venda − custo) ÷ venda">
+                  Margem
+                </th>
                 <th className="px-4 py-3 font-medium">Estoque atual</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3" />
@@ -326,7 +328,7 @@ export function ProdutosSection({
               {pecasFiltradas.map((peca) => {
                 const saldo = saldos.get(peca.id) ?? 0;
                 const leitura = lerSaldo(saldo, peca.estoque_minimo);
-                const margem = margemAPartirDoPreco(
+                const margem = margemSobreAVenda(
                   peca.preco_custo?.toString() ?? "",
                   peca.preco_venda?.toString() ?? "",
                 );
