@@ -201,6 +201,8 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
    desligado ou se continua mandando pro nacional (o comum); se mudar, mandam um manual antes de
    1º/11. **Se o portal municipal for desligado**, a emissão pela Focus precisa passar pro padrão
    nacional: conferir com a Focus na hora.
+   **Desligado (comunicado da prefeitura de 19/10, chegou em 29/10, #503)**: desde **01/11/2026** o
+   Simples só emite NFS-e pelo Padrão Nacional, e o Giap parou. O trabalho está na #837 (PR #839).
 
 > **Credenciais que já estiveram neste repositório** (o CSC da SEFAZ, o token do Giap e a senha
 > do portal da prefeitura) continuam no histórico do Git, mas **foram trocadas em 19/10/2026**

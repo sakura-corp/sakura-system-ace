@@ -165,11 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 29/10/2026, fim da tarde: o #818 mesclado; a 0075 e a 0.9.56 na fila
-- **#818 (Gusta) mesclado**: os 4 testes de perfil passaram no PC dele, a ordem de subir certa, CI verde. A #367 fechou.
-- **Próximo (Sofia)**: a 0075 pelo "Atualizar o banco" (ensaiar, depois aplicar) → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → a 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal.
-- **Gusta**: proposta de projeto secundário (site + agendamento + painel pra spa), pelo `/nova-proposta` numa sessão na nuvem com o `secundarios`; o código já está no `sakura-spa`, criado antes da proposta. Quando abrir com `proposta:esperando-sofia`, a Sofia roda o `/analisar-proposta` e decide lá o que ficou com ela.
-- **#814** (tirar o painel daqui) na `leva-6`. No escritório: o #58 (o Escritório de verdade) no ar; o #60 e o #61 voltaram pro Tiago com consertos.
-- **A venda (escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
-- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou; aí pausar a rotina antiga e fechar a #625.
-- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
+### 29/10/2026, noite: a 0075 aplicada; a NFS-e nacional obrigatória desde 01/11
+- **A 0075 está na Pneus Amigão**; a **0076 espera** o Balcão e o DESKTOP-PKJ2A3B chegarem na 0.9.56 (#809).
+- **NFS-e (#837, urgente)**: desde **01/11** o Simples de Araraquara só emite pelo **Padrão Nacional**; o Giap parou. **PR #839 (rascunho)** pronto e testado: espera a resposta da **Focus** (ticket aberto) e da **contabilidade** (perguntas no PR), o ensaio em homologação e o `/code-review`. **Porteiro antes do programa.** As notas do fim de semana saem depois, pelo programa (plano B descartado).
+- **PR #840 (rascunho)**: "Vendido no mês" × "Recebido no mês"; margem do Estoque sobre a venda **só na lista** (o cadastro segue sobre o custo, "Acréscimo sobre o custo %"); comissão sem os serviços sem custo. Falta ela olhar as telas e mesclar.
+- **Decididas e fechadas**: #791, #502, #507 (cancelar nota não estorna; vai pra Devolução, #399), #503, #750. A #746 virou só os testes da loja (#379, #655).
+- **Próximo (segunda)**: 9h29, o Resumo de segunda (#625); a NFS-e (#839) → publicar a 0.9.56 (pode ir junto) → liberar → os dois computadores → a 0076.
+- **CBS de 2027 (#838)**: os valores das notas, depois que o Senado decidir em 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o token de homologação até 11/11 (#832); renovar a chave da API até 22/11 (escritorio#20).
