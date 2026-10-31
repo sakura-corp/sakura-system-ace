@@ -165,11 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 30/10/2026, manhã: a NFS-e nacional pronta pro ensaio, com o Tiago
-- **NFS-e (#837, urgente; PR #839 rascunho)**: a **Focus** e a **contabilidade** responderam (IBS/CBS só em 2027; sem token do Giap, só o certificado). `/code-review` feito, 4 consertos no PR. **Homologação ligada na Focus**; o token de homologação guardado no `ssace-teste` (#832 decidida, opção a; tirar depois, #842).
-- **O ensaio é do Tiago** (roteiro no PR #839, prioridade antes do escritorio #60/#61): porteiro novo **só no `ssace-teste`**, emitir, abrir o PDF e cancelar. Ele te pede o CNPJ e os dados da loja pra loja de exemplo.
-- **Em aberto com a contabilidade**: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime. O ensaio também mostra o número (o nosso × o "Próximo número" da Focus), o XML salvo e a hora.
-- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais.
-- **Próximo (fim de semana, se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 com a NFS-e e o #840 (já mesclado) → liberar → os dois computadores → a 0076 (#809).
+### 31/10/2026, manhã: o ensaio da NFS-e nacional ainda não feito; #844 e #845 na 0.9.56
+- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito** (lembrado no PR em 31/10, com o prazo). **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se o Tiago não fizer no fim de semana, combinar um plano B com a loja pra segunda.
+- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
+- **Mesclados em 30/10, vão na 0.9.56**: #844 (a forma de pagamento pelo nome no caixa, #790) e #845 (a tela do perfil que não carregou, com "Tentar de novo" e "Sair", #752; `/code-review` feito, 6 consertos). Não vistos num computador da loja: olhar no teste da 0.9.56.
+- **Próximo (se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
 - **Segunda, 9h29**: o Resumo de segunda (#625). **CBS de 2027** (#838): depois de 15/12.
 - **Depende dela**: a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
