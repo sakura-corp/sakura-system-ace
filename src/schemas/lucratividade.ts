@@ -28,7 +28,10 @@ export interface LinhaLucro {
 }
 
 export interface Lucratividade {
-  /** Uma linha por descrição de item, a de maior margem primeiro. */
+  /**
+   * Uma linha por peça ou serviço do cadastro (com o nome do cadastro), e por
+   * descrição na peça avulsa; a de maior margem primeiro.
+   */
   linhas: LinhaLucro[];
   totalReceita: number;
   totalCusto: number;
@@ -41,12 +44,17 @@ export function lucratividadePorItem({
   ordens,
   custoPeca,
   custoServico,
+  nomePeca,
+  nomeServico,
   de,
   ate,
 }: {
   ordens: OrdemServico[];
   custoPeca: MapaCusto;
   custoServico: MapaCusto;
+  /** id → nome no cadastro, pra linha de um item ligado ter o nome do cadastro (#744). */
+  nomePeca?: Map<string, string>;
+  nomeServico?: Map<string, string>;
   /** Dia de calendário "AAAA-MM-DD", inclusive. */
   de: string;
   ate: string;
@@ -63,8 +71,21 @@ export function lucratividadePorItem({
       const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
       const custo = item.quantidade * (custoUnitario ?? 0);
 
-      const existente = mapa.get(item.descricao) ?? {
-        descricao: item.descricao,
+      // #744: o item ligado ao cadastro guarda o nome digitado no orçamento
+      // ("Bico de valvula cromado"); a linha é a da peça do cadastro, senão a
+      // mesma peça sai partida em duas. A peça avulsa segue pelo nome.
+      const chave = item.peca_id
+        ? `peca:${item.peca_id}`
+        : item.servico_id
+          ? `servico:${item.servico_id}`
+          : `nome:${item.descricao}`;
+      const nomeDoCadastro = item.peca_id
+        ? nomePeca?.get(item.peca_id)
+        : item.servico_id
+          ? nomeServico?.get(item.servico_id)
+          : undefined;
+      const existente = mapa.get(chave) ?? {
+        descricao: nomeDoCadastro ?? item.descricao,
         quantidade: 0,
         receita: 0,
         custo: 0,
@@ -76,7 +97,7 @@ export function lucratividadePorItem({
       existente.custo += custo;
       existente.margem += receita - custo;
       if (custoUnitario === null) existente.custoNaoInformado = true;
-      mapa.set(item.descricao, existente);
+      mapa.set(chave, existente);
     }
   }
 
