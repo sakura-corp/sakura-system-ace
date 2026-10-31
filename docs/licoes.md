@@ -1823,3 +1823,8 @@
     "0.9.55, hoje", e a rodada seguinte aplicou. **Regra**: antes de rodar migration que espera
     computadores, conferir **essa tela** (não o "Sobre" de um computador); e o nome da lista pode ser
     um apelido ("Balcão"), com o nome do Windows embaixo.
+95. **"Não tem tarefa pra pegar no painel", com 6 tarefas livres na leva 6 (31/10/2026, #849).** A leva 5
+    estava toda fechada, mas o `docs/relatorios/leva-5.md` não estava na `main`. Sem ele a leva 5 fica em
+    "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
+    a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
+    o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.

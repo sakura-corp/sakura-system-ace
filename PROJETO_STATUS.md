@@ -165,10 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 31/10/2026, manhã: o ensaio da NFS-e nacional ainda não feito; #844, #845 e #847 na 0.9.56
-- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito** (lembrado no PR em 31/10, com o prazo). **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se o Tiago não fizer no fim de semana, combinar um plano B com a loja pra segunda.
-- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
-- **Mesclados em 30/10, vão na 0.9.56**: #844 (a forma de pagamento pelo nome no caixa, #790) e #845 (a tela do perfil que não carregou, com "Tentar de novo" e "Sair", #752; `/code-review` feito, 6 consertos), e em 31/10 o #847 (a Lucratividade agrupa pela peça do cadastro, #744). Não vistos num computador da loja: olhar no teste da 0.9.56.
-- **Próximo (se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
+### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
+- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se ele não fizer até domingo, combinar um plano B com a loja pra segunda (a mensagem não foi escrita).
+- **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
+- **Leva 5 aprovada** (#849, testes adiados pro dia de teste da 0.9.56, como na leva 4). **A leva 6 é a atual**: 6 tarefas livres (#814, #708, #459, #456, #454, #372; 51 h). O painel não tinha tarefa pra pegar porque faltava o relatório (`docs/licoes.md`, item 95).
+- **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
 - **Segunda, 9h29**: o Resumo de segunda (#625). **CBS de 2027** (#838): depois de 15/12.
-- **Depende dela**: a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+- **Depende dela**: conferir o lucro do dia no Caixa da loja (#809); a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
