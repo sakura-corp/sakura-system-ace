@@ -29,6 +29,8 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         ordens,
         custoPeca: mapaCustoPecas(pecas),
         custoServico: mapaCustoServicos(servicos),
+        nomePeca: new Map(pecas.map((peca) => [peca.id, peca.descricao])),
+        nomeServico: new Map(servicos.map((servico) => [servico.id, servico.descricao])),
         de: dataInicio,
         ate: dataFim,
       }),
