@@ -166,7 +166,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
 ### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
-- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se ele não fizer até domingo, combinar um plano B com a loja pra segunda (a mensagem não foi escrita).
+- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; o ensaio pode ser no domingo (segunda, 02/11, é feriado); se ele não fizer, combinar um plano B com a loja pra **terça** (a mensagem não foi escrita). Em 01/11 o Tiago ainda não tinha respondido no PR.
 - **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
 - **Leva 5 aprovada** (#849, testes adiados pro dia de teste da 0.9.56, como na leva 4). **A leva 6 é a atual**: 6 tarefas livres (#814, #708, #459, #456, #454, #372; 51 h). O painel não tinha tarefa pra pegar porque faltava o relatório (`docs/licoes.md`, item 95).
 - **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
