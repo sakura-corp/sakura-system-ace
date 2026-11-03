@@ -34,6 +34,7 @@ import {
   confirmarAliquotaCompetencia,
 } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
+import { CentralDoDia } from "@/components/CentralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -292,6 +293,14 @@ export function PainelPage() {
         <p className="text-corpo text-sakura-muted">Carregando...</p>
       ) : (
         <>
+          {/* O que precisa de atenção hoje (#454). Os cartões abaixo não mudam. */}
+          <CentralDoDia
+            ordens={ordens}
+            contasPagar={contas}
+            movimentos={movimentos}
+            clientes={clientes}
+          />
+
           <div className="grid grid-cols-3 gap-4">
             {cartoesConfig.map((chave) => (
               <CartaoValor

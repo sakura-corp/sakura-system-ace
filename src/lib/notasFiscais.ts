@@ -82,6 +82,22 @@ export async function listarArquivos(
   return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
 }
 
+// As notas emitidas pelo sistema que voltaram com problema da Focus NFe, pra
+// Central do dia do Início (#454). Filtra no banco: a lista inteira de notas
+// da loja só cresce, e a central só quer estas.
+export async function listarNotasComErro(lojaId: string): Promise<NotaFiscalArquivo[]> {
+  const { data, error } = await supabase
+    .from("notas_fiscais_arquivos")
+    .select(SELECT_ARQUIVO)
+    .eq("loja_id", lojaId)
+    .eq("origem", "automatica")
+    .in("status", ["erro_autorizacao", "erro_cancelamento", "denegado"])
+    .order("criado_em", { ascending: true })
+    .limit(50);
+  if (error) throw error;
+  return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
+}
+
 // Notas ligadas a um conjunto de OS — usada pra saber, sem uma consulta por
 // linha da lista, quais notas cada OS já tem (ver schemas/situacaoFiscal.ts).
 export async function listarArquivosDasOrdens(
