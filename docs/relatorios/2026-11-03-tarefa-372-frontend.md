@@ -3,7 +3,7 @@
 - **Tarefa**: #372, busca geral com Ctrl+K (placa, cliente, OS, peça e fornecedor numa caixa só; TR-03.3)
 - **Chefe**: frontend
 - **Data**: 2026-11-03
-- **PR**: (link na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/857
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
