@@ -181,4 +181,6 @@ export interface NFSeNacionalCorpo {
   tributacao_iss: number;
   tipo_retencao_iss: number;
   percentual_aliquota_relativa_municipio?: number;
+  // pTotTribSN: percentual aproximado dos tributos do Simples (grupo totTrib).
+  percentual_total_tributos_simples_nacional?: number;
 }

@@ -462,6 +462,13 @@ describe("montarCorpoNFSeNacional", () => {
     expect(corpo).not.toHaveProperty("cep_tomador");
   });
 
+  // Ensaio de 03/11: sem o grupo totTrib o Ambiente Nacional recusa a DPS
+  // ("Element trib: Missing child element(s). Expected is one of (tribFed, totTrib)").
+  it("empresa do Simples manda o percentual aproximado dos tributos do Simples (totTrib)", () => {
+    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1 });
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(0);
+  });
+
   it("empresa fora do Simples sai como não optante, sem o regime do Simples", () => {
     const corpo = montarCorpoNFSeNacional(
       dados({ configuracaoFiscal: configuracaoFiscal({ regime_tributario: "lucro_presumido" }) }),
