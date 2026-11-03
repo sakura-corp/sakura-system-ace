@@ -41,6 +41,11 @@ export function BuscaGlobal() {
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState(-1);
+  // O termo que gerou os resultados na tela: o Enter só vale pra eles se a
+  // pessoa não continuou digitando (senão abriria o carro da busca anterior).
+  const [termoDosResultados, setTermoDosResultados] = useState<string | null>(null);
+  // Enter dado antes da resposta chegar: abre o primeiro quando ela chegar.
+  const enterEsperando = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const quemTinhaOFoco = useRef<HTMLElement | null>(null);
   const listaId = useId();
@@ -62,6 +67,8 @@ export function BuscaGlobal() {
     setAviso(null);
     setBuscando(false);
     setSelecionado(-1);
+    setTermoDosResultados(null);
+    enterEsperando.current = false;
     const volta = quemTinhaOFoco.current;
     quemTinhaOFoco.current = null;
     if (volta && document.contains(volta)) volta.focus();
@@ -72,6 +79,11 @@ export function BuscaGlobal() {
     if (!habilitada) return;
     function aoTeclar(e: globalThis.KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        // Com uma janela da tela aberta (Modal), a busca abriria por baixo
+        // dela (mesma camada, e a janela vem depois no HTML) e o Tab da
+        // janela puxaria o foco de volta. Fica pra quando a janela fechar.
+        const outraJanela = document.querySelector('[aria-modal="true"]:not([data-busca-global])');
+        if (outraJanela) return;
         e.preventDefault();
         setAberta((jaAberta) => {
           if (!jaAberta) quemTinhaOFoco.current = document.activeElement as HTMLElement | null;
@@ -91,8 +103,11 @@ export function BuscaGlobal() {
   useEffect(() => {
     if (!aberta || !lojaId) return;
     const termo = termoDaBusca(texto);
+    setSelecionado(-1);
     if (termo === null) {
+      enterEsperando.current = false;
       setResultados([]);
+      setTermoDosResultados(null);
       setBuscando(false);
       setErro(null);
       setAviso(null);
@@ -104,7 +119,9 @@ export function BuscaGlobal() {
       buscarGlobal(termo, lojaId, controle.signal)
         .then((linhas) => {
           if (controle.signal.aborted) return;
-          setResultados(filtrarPorPermissao(linhas, operador));
+          const visiveis = filtrarPorPermissao(linhas, operador);
+          setResultados(visiveis);
+          setTermoDosResultados(termo);
           setSelecionado(-1);
           setErro(null);
           setAviso(null);
@@ -112,7 +129,9 @@ export function BuscaGlobal() {
         })
         .catch((err: unknown) => {
           if (controle.signal.aborted || ehAbort(err)) return;
+          enterEsperando.current = false;
           setResultados([]);
+          setTermoDosResultados(termo);
           if (buscaAindaNaoNoBanco(err)) {
             setErro(null);
             setAviso(AVISO_BUSCA_SEM_BANCO);
@@ -131,6 +150,15 @@ export function BuscaGlobal() {
 
   const grupos = useMemo(() => agruparResultados(resultados), [resultados]);
   const itens = useMemo(() => grupos.flatMap((g) => g.itens), [grupos]);
+  const resultadosEmDia = termoDosResultados !== null && termoDosResultados === termoDaBusca(texto);
+
+  // O Enter que ficou esperando a resposta: abre o primeiro resultado dela.
+  useEffect(() => {
+    if (!enterEsperando.current || !resultadosEmDia) return;
+    enterEsperando.current = false;
+    abrirItem(itens[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultadosEmDia, itens]);
 
   function abrirItem(item: ItemDoGrupo | undefined) {
     if (!item) return;
@@ -151,7 +179,8 @@ export function BuscaGlobal() {
       case "Enter":
         e.preventDefault();
         e.stopPropagation();
-        abrirItem(itens[selecionado] ?? itens[0]);
+        if (resultadosEmDia) abrirItem(itens[selecionado] ?? itens[0]);
+        else if (termoDaBusca(texto) !== null) enterEsperando.current = true;
         break;
       case "Escape":
         e.preventDefault();
@@ -186,8 +215,14 @@ export function BuscaGlobal() {
             role="dialog"
             aria-modal="true"
             aria-label="Busca geral"
+            data-busca-global=""
             className="sakura-modal max-h-[70vh] w-full max-w-xl overflow-y-auto p-4"
             onClick={(e) => e.stopPropagation()}
+            // Clicar fora do campo (num item desabilitado, num espaço vazio)
+            // não pode tirar o foco dele: é o campo que escuta as teclas.
+            onMouseDown={(e) => {
+              if (e.target !== inputRef.current) e.preventDefault();
+            }}
           >
             <input
               ref={inputRef}

@@ -10,7 +10,7 @@
 - **Sessão mãe (chefe)**: planejou, escreveu o contrato tela ↔ banco, a regra pura (`src/schemas/buscaGlobal.ts`) e a chamada (`src/lib/buscaGlobal.ts`) com teste, o aviso de "banco ainda sem a 0077", a linha da `0077` no `docs/banco.md`, as fotos e este relatório.
 - **Ajudante forte (banco)**: a migration `0077_busca_global.sql` (função `buscar_global`, `sem_acento`, `placa_normalizada` e os índices), o `testar-busca-global.sql`, a `VERSAO_ESQUEMA_ESPERADA` em 77, a instalação gerada e a medição de tempo num Postgres local com volume.
 - **Ajudante médio (construtor de tela)**: a caixa `src/components/BuscaGlobal.tsx`, o teste dela e a linha no `src/App.tsx`.
-- **Ajudante forte (revisor)**: a revisão final do diff, do zero (resultado abaixo).
+- **Ajudante forte (revisor)**: a revisão final do diff, do zero. Achou 5 pontos; 4 consertados nesta tarefa (Enter rápido abria o carro da busca anterior; Ctrl+K com uma janela da tela aberta abria a busca por baixo dela; placa trazia fornecedor pelo CNPJ; clicar dentro da caixa tirava o foco do campo) e 1 ficou pra Sofia (abaixo).
 
 ## Modelos usados
 - Planejar e regras: sessão mãe, forte, esforço médio.
@@ -23,7 +23,7 @@
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (a sessão não lê o próprio uso).
-- **Ajudantes**: 3 chamadas (pelo aviso de fim de cada um): banco cerca de 177 mil tokens, a caixa cerca de 92 mil, a revisão (ver a descrição do PR).
+- **Ajudantes**: 3 chamadas (pelo aviso de fim de cada um): banco cerca de 177 mil tokens, a caixa cerca de 92 mil, a revisão cerca de 143 mil.
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: não usei (o texto foi mostrado à pessoa no começo; ela não colou).
 
@@ -31,6 +31,8 @@
 - **Regra pura** (`buscaGlobal.test.ts`): tirei a checagem do Estoque da peça (5 testes vermelhos), tirei a limpeza do traço da placa (2 vermelhos), tirei a retirada do acento (1 vermelho), fiz a função de "banco sem a 0077" responder sempre não (2 vermelhos, um deles o da tela).
 - **A caixa** (`BuscaGlobal.test.tsx`, pelo ajudante médio): sem o `stopPropagation` do Enter, o teste de ↓ + Enter reprovou (o atalho global pulou de campo; o `offsetParent` foi simulado como manda o item 77); sem o `abort()`, o de cancelar a busca anterior reprovou; sem o `filtrarPorPermissao`, o de quem não tem Estoque reprovou; com a espera em 0 ms, o dos 250 ms reprovou.
 - **Banco** (`testar-busca-global.sql`, pelo ajudante forte): 12 quebras de propósito, todas vermelhas com a mensagem certa: peça sem checar Estoque; OS sem filtro de loja; OS sem checar acesso à loja; sem o `revoke` do anônimo; telefone no detalhe; cliente sem checar permissão; operador sem loja recebendo resultado; nome sem tirar acento; curinga do `like` sem escapar; fornecedor liberado pra Estoque; OS liberada pra Clientes; a ordem "quem começa com vem antes". A primeira rodada achou um defeito de verdade (a ordem das placas mudava com o idioma do banco), já consertado.
+
+- **Achados da revisão** (teste escrito antes do conserto, visto reprovar, e de novo quebrando o conserto): o Enter dado antes da resposta nova abria `/veiculos/errado` (agora espera a resposta e abre o do termo novo); o Ctrl+K com um `aria-modal` da tela aberto abria a busca (agora não abre); `XYZ1234` trazia o fornecedor de CNPJ `12.345.678/...` (`testar-busca-global.sql`, item 14b).
 
 ## O que passou sem eu ter visto reprovar
 - `npm run typecheck`, `npm run lint` (0 erros; 1 aviso antigo no `AuthContext.tsx`), `npm run contraste`, `npm run test:fusos`.
@@ -52,6 +54,8 @@
 Pior caso, forçando o plano genérico do Postgres: de 70 a 120 ms. Este é o tempo **dentro do banco**; o "menos de 300 ms até abrir a ficha" ainda soma a ida e volta pela internet até o Supabase e os 250 ms de espera depois da última tecla (que é de propósito). Isso só se mede na loja.
 
 ## O que ficou de fora
+- **Abrir uma OS pela busca estando na própria tela de OS não abre nada** (achado 3 da revisão): a `OrdensServicoPage` só lê o `abrirOrdemId` ao montar, e ir pra mesma rota não remonta. O conserto é um efeito ligado a `location.key` nessa tela, que está fora da lista de arquivos da issue. **Precisa do "sim" da Sofia.** De qualquer outra tela, a OS abre.
+- **O clique dentro da caixa** (achado 5) ficou consertado sem teste próprio (o jsdom não move o foco no clique): conferido só pela leitura.
 - **Abrir o cliente, a peça e o fornecedor já selecionados** na tela deles: a busca leva pra tela (Clientes, Estoque, Fornecedores), mas não abre o item, porque essas telas não aceitam "abra este". Mexer nelas está fora da lista de arquivos da issue. Só a placa (ficha) e a OS (`abrirOrdemId`, que já existia) abrem o item certo. Proposta pra Sofia: uma tarefa pequena de "abrir o item vindo da busca" nessas três telas.
 - **Peça e fornecedor desativados continuam aparecendo** na busca (a issue não diz). Se não quiser, é um `and ativo` em cada um.
 - **Telefone e CPF não entram na busca**, nem pra quem tem Clientes (o contrato foi escrito pela janela estreita, igual pra todos). Dá pra acrescentar depois só pra quem tem o módulo.

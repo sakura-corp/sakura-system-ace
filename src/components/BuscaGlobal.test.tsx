@@ -186,4 +186,40 @@ describe("BuscaGlobal", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("Nada encontrado")).not.toBeInTheDocument();
   });
+
+  it("Enter antes da busca nova chegar abre o resultado do termo novo, nunca o do anterior", async () => {
+    const outra: ResultadoBusca = { ...placa, id: "errado", titulo: "ABC1A11" };
+    let responderNova: (r: ResultadoBusca[]) => void = () => {};
+    buscar.mockResolvedValueOnce([outra]).mockImplementationOnce(
+      () => new Promise<ResultadoBusca[]>((ok) => (responderNova = ok)),
+    );
+    const { user } = renderizar(<Tela />);
+    await user.keyboard("{Control>}k{/Control}");
+    await user.type(screen.getByRole("combobox"), "abc");
+    expect(await screen.findByText("ABC1A11")).toBeInTheDocument();
+
+    await user.type(screen.getByRole("combobox"), "1d23{Enter}");
+    expect(screen.getByTestId("local")).not.toHaveTextContent("/veiculos/errado");
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300));
+      responderNova([placa]);
+    });
+    expect(await screen.findByText("/veiculos/v1")).toBeInTheDocument();
+  });
+
+  it("Ctrl+K com outra janela (modal) da tela aberta não abre a busca por baixo dela", async () => {
+    const { user } = renderizar(
+      <>
+        <Tela />
+        <div role="dialog" aria-modal="true" aria-label="Janela da tela">
+          <input aria-label="Campo da janela" />
+        </div>
+      </>,
+    );
+    screen.getByLabelText("Campo da janela").focus();
+    await user.keyboard("{Control>}k{/Control}");
+    expect(screen.queryByRole("dialog", { name: "Busca geral" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Campo da janela")).toHaveFocus();
+  });
 });

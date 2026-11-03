@@ -329,6 +329,13 @@ begin
     end if;
   end loop;
 
+  -- 14b. Termo com letra (uma placa) não procura pelo CNPJ: "XYZ1234" tem
+  --      os dígitos "1234", o começo do CNPJ da Ômega (achado da revisão).
+  select count(*) into quantas from buscar_global('XYZ1234', loja_a) where tipo = 'fornecedor';
+  if quantas <> 0 then
+    raise exception 'FALHOU: buscando a placa "XYZ1234" veio % fornecedor(es) pelo CNPJ', quantas;
+  end if;
+
   -- 15. Quem começa com o termo vem antes de quem só contém.
   perform set_config('request.jwt.claim.sub', o_tudo::text, true);
   select titulo into termo from buscar_global('joaq', loja_a) where tipo = 'cliente' limit 1;

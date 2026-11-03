@@ -7770,6 +7770,9 @@ declare
   v_placa     text    := placa_normalizada(coalesce(p_termo, ''));
   v_digitos   text    := regexp_replace(coalesce(p_termo, ''), '\D', '', 'g');
   v_so_numero boolean := regexp_replace(btrim(coalesce(p_termo, '')), '[\s#]', '', 'g') ~ '^[0-9]+$';
+  -- CNPJ só quando o termo não tem letra (números, ponto, barra, traço):
+  -- senão a placa "ABC1D23" viraria "123" e traria fornecedor pelo CNPJ.
+  v_cnpj      boolean := btrim(coalesce(p_termo, '')) ~ '^[0-9./\s-]+$';
   v_barras    text    := btrim(coalesce(p_termo, ''));
   v_clientes  boolean;
   v_os        boolean;
@@ -7894,7 +7897,7 @@ begin
              null::uuid
         from fornecedores f
        where sem_acento(f.nome) like '%' || v_like || '%'
-          or (length(v_digitos) >= 2
+          or (v_cnpj and length(v_digitos) >= 2
               and regexp_replace(coalesce(f.cnpj, ''), '\D', '', 'g') like v_digitos || '%')
        order by (sem_acento(f.nome) like v_like || '%') desc, f.nome, f.id
        limit v_limite;
