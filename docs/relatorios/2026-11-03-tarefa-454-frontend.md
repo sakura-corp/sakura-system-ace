@@ -3,7 +3,7 @@
 - **Tarefa**: #454, Central do dia: o que precisa de atenção hoje, no Início
 - **Chefe**: frontend
 - **Data**: 2026-11-03
-- **PR**: (o link está na descrição do PR desta branch, `claude/tarefa-454-central-do-dia`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/854
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
