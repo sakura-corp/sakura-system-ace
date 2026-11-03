@@ -84,12 +84,18 @@ export function CentralDoDia({
   contasPagar,
   movimentos,
   clientes,
+  dadosIncompletos = false,
 }: {
   ordens: OrdemServico[];
   contasPagar: ContaPagar[];
   movimentos: MovimentoCaixa[];
   /** Pro telefone do WhatsApp; vazia pra quem não tem o módulo Clientes. */
   clientes: Cliente[];
+  /**
+   * O Início não conseguiu carregar as OS, as contas a pagar ou o Caixa. Aí a
+   * lista não pode dizer "nada pendente": ela só não sabe.
+   */
+  dadosIncompletos?: boolean;
 }) {
   const { lojaAtual, operador } = useAuth();
   const navigate = useNavigate();
@@ -113,11 +119,16 @@ export function CentralDoDia({
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    // Troca de loja no meio da busca: a resposta atrasada da loja anterior
+    // não pode sobrescrever a desta.
+    let cancelado = false;
     async function carregar() {
+      setErro(null);
       if (!isSupabaseConfigured || !lojaAtual || !alcance.mostra) {
         setCarregando(false);
         return;
       }
+      setCarregando(true);
       try {
         const lojaId = lojaAtual.id;
         const [n, f, cr, p, s, m] = await Promise.all([
@@ -127,9 +138,14 @@ export function CentralDoDia({
           podeEstoque ? listarPecas() : Promise.resolve([]),
           podeEstoque ? listarSaldos(lojaId) : Promise.resolve(new Map<string, number>()),
           podeClientes && (podeReceber || podeOS)
-            ? listarModelosWhatsapp(lojaId)
+            ? // Sem os modelos da loja, vale o texto padrão: não derruba a lista.
+              listarModelosWhatsapp(lojaId).catch((err) => {
+                console.error("Erro ao carregar os modelos de WhatsApp:", err);
+                return {};
+              })
             : Promise.resolve({}),
         ]);
+        if (cancelado) return;
         setNotas(n);
         setFechamentos(f);
         setContasReceber(cr);
@@ -137,13 +153,17 @@ export function CentralDoDia({
         setSaldos(s);
         setModelos(m);
       } catch (err) {
+        if (cancelado) return;
         console.error("Erro ao carregar a Central do dia:", err);
         setErro(mensagemDeErro(err));
       } finally {
-        setCarregando(false);
+        if (!cancelado) setCarregando(false);
       }
     }
     carregar();
+    return () => {
+      cancelado = true;
+    };
   }, [lojaAtual, alcance.mostra, podeNotas, podeCaixa, podeReceber, podeEstoque, podeClientes, podeOS]);
 
   const hoje = hojeLocal();
@@ -284,11 +304,11 @@ export function CentralDoDia({
         <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>
       ) : carregando ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : visiveis.length === 0 ? (
+      ) : visiveis.length === 0 && !dadosIncompletos ? (
         <p className="text-corpo text-sakura-purple-dark/85">
           {mensagemDaListaVazia(alcance.parcial)}
         </p>
-      ) : (
+      ) : visiveis.length === 0 ? null : (
         <ul className="divide-y divide-white/10">
           {visiveis.map((p, i) => {
             const ultimoDoTipo = visiveis[i + 1]?.tipo !== p.tipo;
@@ -323,6 +343,12 @@ export function CentralDoDia({
             );
           })}
         </ul>
+      )}
+
+      {!erro && !carregando && dadosIncompletos && (
+        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+          Parte do Início não carregou: esta lista pode estar faltando coisa.
+        </p>
       )}
     </section>
   );

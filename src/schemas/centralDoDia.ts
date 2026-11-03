@@ -214,12 +214,15 @@ function placaEModelo(ordem: OrdemServico): string | null {
   return juntar(ordem.veiculo?.placa, modelo) || null;
 }
 
-/** OS concluída e ainda não faturada: o carro está pronto e o cliente não veio. */
+/**
+ * OS concluída e ainda não faturada: o carro está pronto e o cliente não veio.
+ * A OS não guarda quando foi concluída (`data_fechamento` só nasce no
+ * faturamento), então a idade que aparece é a da abertura, e diz isso.
+ */
 function carrosProntos(e: EntradaCentralDoDia): Pendencia[] {
-  const quando = (o: OrdemServico) => o.data_fechamento ?? o.data_abertura;
   return e.ordens
     .filter((o) => o.status === "concluida" && o.tipo !== "venda_balcao")
-    .sort((a, b) => quando(a).localeCompare(quando(b)))
+    .sort((a, b) => a.data_abertura.localeCompare(b.data_abertura))
     .map((ordem) => ({
       tipo: "carro_pronto",
       chave: `carro_pronto:${ordem.id}`,
@@ -227,7 +230,7 @@ function carrosProntos(e: EntradaCentralDoDia): Pendencia[] {
       detalhe: juntar(
         placaEModelo(ordem),
         nomeDocumento(ordem),
-        `pronto ${rotuloDeIdade(diasEntre(diaLocal(quando(ordem)), e.hoje))}`,
+        `concluída, OS aberta ${rotuloDeIdade(diasEntre(diaLocal(ordem.data_abertura), e.hoje))}`,
       ),
       ordem,
     }));
@@ -271,6 +274,11 @@ function osParadas(e: EntradaCentralDoDia): Pendencia[] {
     }));
 }
 
+/** Quantidade como se escreve no Brasil: 1,5 e não 1.5 (peça vendida em litro). */
+function quantidade(n: number): string {
+  return n.toLocaleString("pt-BR");
+}
+
 /** A mesma regra da lista "o que preciso comprar?" do Estoque (`precisaComprar`). */
 function estoqueBaixo(e: EntradaCentralDoDia): Pendencia[] {
   return e.pecas
@@ -282,7 +290,7 @@ function estoqueBaixo(e: EntradaCentralDoDia): Pendencia[] {
       tipo: "estoque_baixo",
       chave: `estoque_baixo:${peca.id}`,
       titulo: `Estoque baixo: ${peca.descricao}`,
-      detalhe: `tem ${saldo}, o mínimo é ${peca.estoque_minimo}`,
+      detalhe: `tem ${quantidade(saldo)}, o mínimo é ${quantidade(peca.estoque_minimo ?? 0)}`,
       peca,
       saldo,
     }));

@@ -115,7 +115,7 @@ describe("montarCentralDoDia: a ordem", () => {
       movimentos: [movimento("2026-11-02")],
       contasReceber: [contaReceber({ vencimento: "2026-11-01" })],
       ordens: [
-        ordem({ id: "pronta", status: "concluida", data_fechamento: instante("2026-11-02") }),
+        ordem({ id: "pronta", status: "concluida", data_fechamento: null }),
         ordem({ id: "parada", status: "em_andamento", data_abertura: instante("2026-10-30") }),
       ],
       contasPagar: [contaPagar({ vencimento: "2026-11-04" })],
@@ -395,6 +395,27 @@ describe("limitarPorTipo", () => {
     expect(visiveis).toHaveLength(LIMITE_POR_TIPO + 1);
     expect(escondidas.get("conta_receber_vencida")).toBe(2);
     expect(escondidas.has("caixa_sem_fechar")).toBe(false);
+  });
+});
+
+describe("os textos das linhas", () => {
+  it("carro pronto: a idade é a da abertura (a OS não guarda quando foi concluída)", () => {
+    const [p] = montarCentralDoDia(
+      {
+        ...vazia("2026-11-20"),
+        ordens: [ordem({ status: "concluida", data_abertura: instante("2026-11-10"), data_fechamento: null })],
+      },
+      todos,
+    );
+    expect(p.detalhe).toContain("OS aberta há 10 dias");
+  });
+
+  it("estoque: quantidade com vírgula", () => {
+    const [p] = montarCentralDoDia(
+      { ...vazia("2026-11-20"), pecas: [peca({ estoque_minimo: 2.5 })], saldos: new Map([["p1", 1.5]]) },
+      todos,
+    );
+    expect(p.detalhe).toBe("tem 1,5, o mínimo é 2,5");
   });
 });
 

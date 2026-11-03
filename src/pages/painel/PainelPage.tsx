@@ -87,6 +87,9 @@ export function PainelPage() {
   const [confirmandoAliquota, setConfirmandoAliquota] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Só o carregamento (não o erro da alíquota): é o que deixa a Central do
+  // dia sem as OS, as contas e o Caixa.
+  const [falhouCarregar, setFalhouCarregar] = useState(false);
 
   const hoje = new Date();
   // Data como texto ("2026-09-11") pra usar de dependência dos useMemo: um
@@ -157,6 +160,7 @@ export function PainelPage() {
       } catch (err) {
         console.error("Erro ao carregar painel:", err);
         setErro(mensagemDeErro(err));
+        setFalhouCarregar(true);
       } finally {
         setCarregando(false);
       }
@@ -299,6 +303,7 @@ export function PainelPage() {
             contasPagar={contas}
             movimentos={movimentos}
             clientes={clientes}
+            dadosIncompletos={falhouCarregar}
           />
 
           <div className="grid grid-cols-3 gap-4">

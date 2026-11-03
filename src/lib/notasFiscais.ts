@@ -92,7 +92,8 @@ export async function listarNotasComErro(lojaId: string): Promise<NotaFiscalArqu
     .eq("loja_id", lojaId)
     .eq("origem", "automatica")
     .in("status", ["erro_autorizacao", "erro_cancelamento", "denegado"])
-    .order("criado_em", { ascending: true })
+    // As mais novas, se passar do limite; a central reordena depois.
+    .order("criado_em", { ascending: false })
     .limit(50);
   if (error) throw error;
   return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
