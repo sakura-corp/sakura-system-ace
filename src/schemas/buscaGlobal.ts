@@ -130,3 +130,18 @@ export function moverSelecao(atual: number, total: number, direcao: 1 | -1): num
   if (total === 0) return -1;
   return (((atual + direcao) % total) + total) % total;
 }
+
+/**
+ * O banco desta empresa ainda não tem a função `buscar_global` (a migration
+ * 0077 espera os computadores chegarem na 0.9.56 pra ser aplicada). Nesse
+ * meio-tempo a caixa avisa com calma, em vez de mostrar um erro técnico.
+ * PGRST202: o PostgREST não achou a função; 42883: o Postgres não achou.
+ */
+export function buscaAindaNaoNoBanco(erro: unknown): boolean {
+  if (typeof erro !== "object" || erro === null || !("code" in erro)) return false;
+  const codigo = (erro as { code?: unknown }).code;
+  return codigo === "PGRST202" || codigo === "42883";
+}
+
+export const AVISO_BUSCA_SEM_BANCO =
+  "A busca geral começa a funcionar quando o banco desta empresa for atualizado.";

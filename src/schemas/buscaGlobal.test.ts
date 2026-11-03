@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparResultados,
+  buscaAindaNaoNoBanco,
   chaveDePlaca,
   destinoDoResultado,
   filtrarPorPermissao,
@@ -163,5 +164,17 @@ describe("moverSelecao", () => {
   });
   it("sem resultado, fica em -1", () => {
     expect(moverSelecao(0, 0, 1)).toBe(-1);
+  });
+});
+
+describe("buscaAindaNaoNoBanco", () => {
+  it("reconhece o banco que ainda não recebeu a migration 0077", () => {
+    expect(buscaAindaNaoNoBanco({ code: "PGRST202", message: "Could not find the function" })).toBe(true);
+    expect(buscaAindaNaoNoBanco({ code: "42883", message: "function does not exist" })).toBe(true);
+  });
+  it("erro de outro tipo continua sendo erro", () => {
+    expect(buscaAindaNaoNoBanco({ code: "42501", message: "permission denied" })).toBe(false);
+    expect(buscaAindaNaoNoBanco(new Error("Failed to fetch"))).toBe(false);
+    expect(buscaAindaNaoNoBanco(null)).toBe(false);
   });
 });

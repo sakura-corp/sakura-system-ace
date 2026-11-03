@@ -4,7 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarGlobal } from "@/lib/buscaGlobal";
 import {
+  AVISO_BUSCA_SEM_BANCO,
   agruparResultados,
+  buscaAindaNaoNoBanco,
   destinoDoResultado,
   filtrarPorPermissao,
   moverSelecao,
@@ -37,6 +39,7 @@ export function BuscaGlobal() {
   const [resultados, setResultados] = useState<ResultadoBusca[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const quemTinhaOFoco = useRef<HTMLElement | null>(null);
@@ -56,6 +59,7 @@ export function BuscaGlobal() {
     setTexto("");
     setResultados([]);
     setErro(null);
+    setAviso(null);
     setBuscando(false);
     setSelecionado(-1);
     const volta = quemTinhaOFoco.current;
@@ -91,6 +95,7 @@ export function BuscaGlobal() {
       setResultados([]);
       setBuscando(false);
       setErro(null);
+      setAviso(null);
       return;
     }
     const controle = new AbortController();
@@ -102,12 +107,19 @@ export function BuscaGlobal() {
           setResultados(filtrarPorPermissao(linhas, operador));
           setSelecionado(-1);
           setErro(null);
+          setAviso(null);
           setBuscando(false);
         })
         .catch((err: unknown) => {
           if (controle.signal.aborted || ehAbort(err)) return;
           setResultados([]);
-          setErro(mensagemDeErro(err));
+          if (buscaAindaNaoNoBanco(err)) {
+            setErro(null);
+            setAviso(AVISO_BUSCA_SEM_BANCO);
+          } else {
+            setAviso(null);
+            setErro(mensagemDeErro(err));
+          }
           setBuscando(false);
         });
     }, ESPERA_DA_DIGITACAO_MS);
@@ -201,7 +213,8 @@ export function BuscaGlobal() {
                 </p>
               )}
               {!erro && buscando && <p className="px-2 py-2 text-corpo text-sakura-muted">Buscando…</p>}
-              {!erro && !buscando && termoValido && itens.length === 0 && (
+              {!erro && !buscando && aviso && <p className="px-2 py-2 text-corpo text-sakura-muted">{aviso}</p>}
+              {!erro && !aviso && !buscando && termoValido && itens.length === 0 && (
                 <p className="px-2 py-2 text-corpo text-sakura-muted">Nada encontrado</p>
               )}
             </div>

@@ -176,4 +176,14 @@ describe("BuscaGlobal", () => {
     await user.type(screen.getByRole("combobox"), "y");
     expect(await screen.findByRole("alert")).toBeInTheDocument();
   });
+
+  it("banco ainda sem a migration 0077: aviso calmo, não erro", async () => {
+    buscar.mockRejectedValueOnce({ code: "PGRST202", message: "Could not find the function public.buscar_global" });
+    const { user } = renderizar(<Tela />);
+    await user.keyboard("{Control>}k{/Control}");
+    await user.type(screen.getByRole("combobox"), "abc");
+    expect(await screen.findByText(/começa a funcionar quando o banco/)).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nada encontrado")).not.toBeInTheDocument();
+  });
 });
