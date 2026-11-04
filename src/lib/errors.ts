@@ -118,5 +118,5 @@ export function mensagemDeErro(erro: unknown): string {
     if (typeof mensagem === "string" && mensagem.length > 0) return traduzir(mensagem);
   }
   if (erro instanceof Error) return traduzir(erro.message);
-  return "Erro desconhecido ao salvar. Se continuar, mande um print desta mensagem pro suporte.";
+  return "Erro desconhecido ao salvar. Se continuar, mande um print desta mensagem pra quem cuida do sistema.";
 }
