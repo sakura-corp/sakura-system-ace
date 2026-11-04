@@ -490,8 +490,8 @@ Quatro coisas que valem saber:
     comissão do vendedor, mas **fica fora do ticket médio** (que responde "quanto rende cada carro
     atendido") — o "?" do cartão diz isso. O rótulo é "Venda 17" no caixa, na movimentação de
     estoque, nas comissões, no recibo de comissão e na garantia.
-- **Orçamento** (22/10/2026, tarefa `#379`, item `FN-01`, migration `0065` — **ainda não
-  publicado nem aplicado**): o orçamento é uma **etapa da própria OS** (situação `orcamento`,
+- **Orçamento** (22/10/2026, tarefa `#379`, item `FN-01`, migration `0065` — publicado na
+  0.9.52 e aplicado na Pneus Amigão): o orçamento é uma **etapa da própria OS** (situação `orcamento`,
   antes de "em andamento"), não um módulo à parte. Menu **"Orçamentos"** (rota `/orcamentos`,
   mesma permissão das OS), logo depois de "Ordens de Serviço", com um número pequeno dos abertos.
   Nada no Início.
@@ -759,6 +759,11 @@ Quatro coisas que valem saber:
   corrente (item `TL-04` do guia) — a grade de 6 semanas resolvia o dia 31, mas "o que vence mês
   que vem?" continuava sem resposta. **Os cartões não seguem a navegação de propósito**: eles são
   sempre do mês corrente, senão "Vendas mês" mudaria junto e viraria armadilha.
+- **Início — Central do dia** (03/11/2026, tarefa #454; **ainda não publicada**, sai na 0.9.56): acima
+  dos cartões, a lista do que precisa de atenção hoje (nota com erro, caixa sem fechar, conta a
+  receber vencida, carro pronto, conta a pagar vencendo, OS parada, estoque baixo, o pacote da
+  contabilidade), do mais urgente pro menos, cada linha com o botão que resolve. É regra, não IA
+  (`src/schemas/centralDoDia.ts`); só avisa, nunca trava.
 - **Início**: 3 cartões de tendência personalizáveis (Configurações → "Cartões do Início", padrão
   Vendas/Lucro/Ticket médio; **"Lucros mês" e "Ticket médio" foram
   corrigidos em 28/08/2026** — o lucro passou a descontar o custo real de peça e serviço, e o
@@ -1063,3 +1068,7 @@ Quatro coisas que valem saber:
   | `v0.9.49` | 03/10 (só no teste; chegou nas lojas com a 0.9.51) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
   | `v0.9.50` | 04/10 (só no teste; chegou nas lojas com a 0.9.51) | **Só o Electron 33 → 36** (Chromium 130 → 136, Node 20 → 22), o 1º dos três saltos da #385; nada mais junto |
   | `v0.9.51` | 08/10 (liberada 08/10) | A rodinha do mouse não muda mais campo de número (#436, item 41); **a versão de transição pro `ssace-versoes`**: sai nos dois endereços, e da 0.9.51 em diante o programa procura atualização lá (#447; `docs/operacao.md`, "Onde as versões moram") |
+  | `v0.9.52` | 22/10 (liberada 22/10) | Orçamento como etapa da OS (`0065`, #379), aviso de peça parecida (#653), peça avulsa (`0066`, #655), juntar peças repetidas (`0067`, #656), clientes que sumiram (#455), listas em páginas (#509), criar operador no programa instalado (#495) |
+  | `v0.9.53` | 23/10 (só no teste; chegou nas lojas com a 0.9.54) | Consertos da leva 3 (#741, #742) |
+  | `v0.9.54` | 23/10 (liberada 23/10) | Clientes e veículos só com o módulo (`0068`/`0069`, #365), a cópia antiga do token da Focus apagada (`0070`, #368), a faixa "banco atrasado" some quando a migration espera os computadores (#758) |
+  | `v0.9.55` | 28/10 (liberada 28/10) | **Electron 36 → 40** (#385), item e aprovação do orçamento com a OS travada (`0071`, #706), serviços padrão da empresa nova (`0072`, #787), peças e estoque só com o módulo (`0073`/`0074`, #366), margem com vírgula (#788) |

@@ -23,10 +23,10 @@
    **O lote 2 saiu em 26/09/2026** (migration `0061`): `contas_pagar` e `contas_receber`.
    **E o lote 3, no mesmo dia** (migration `0062`): `caixa_movimentos`, com portas estreitas
    pra Relações, OS e as duas contas. **O lote 4 foi escrito em 23/10/2026** (migrations `0068` e
-   `0069`, tarefa #365, ainda não aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
+   `0069`, tarefa #365, aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
    placa/marca/modelo/cor/tipo, nas views `clientes_janela` e `veiculos_janela`), o cadastro
    rápido da OS e os dados da nota por funções. **O lote 5 foi escrito em 27/10/2026** (migrations
-   `0073` e `0074`, tarefa #366, ainda não aplicadas): `pecas`, `estoque_movimentos` e
+   `0073` e `0074`, tarefa #366, aplicadas): `pecas`, `estoque_movimentos` e
    `contagens_estoque`, com a janela `pecas_janela` (sem o custo), o saldo pronto em
    `estoque_saldos`, e o custo total de cada OS calculado no banco (`custo_das_ordens`) pro Caixa,
    o Início e a lista de OS. **Lição nova do lote 5**: a issue supunha que a baixa e a entrada de
@@ -35,7 +35,7 @@
    grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
    `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
    Fornecedores é que fecha de vez. **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
-   `0076`, tarefa #367, ainda não aplicadas): `ordens_servico` e `ordens_servico_itens`, lidas
+   `0076`, tarefa #367; a `0075` aplicada, a `0076` esperando os computadores na 0.9.56): `ordens_servico` e `ordens_servico_itens`, lidas
    inteiras só por OS e Relações; Caixa, Garantias, Comissões, Notas, a ficha do veículo e "clientes
    que sumiram" leem por cinco janelas (`ordens_servico_caixa`, `_comissoes`, `_garantias`,
    `_notas`, `_clientes`), e o Início esconde "OS abertas" e "Veículos no pátio" de quem não tem o
@@ -127,7 +127,7 @@
    dela).
    **E desde 13/09/2026 a RLS também é conferida por máquina**, fora do `npm test`:
    `npm run test:rls` (item `TR-07.3`) monta um banco do zero, simula cinco papéis e confere as
-   760 combinações de tabela × comando × papel — ver `supabase/testes-rls/` e o item 63 desta
+   940 combinações de tabela × comando × papel — ver `supabase/testes-rls/` e o item 63 desta
    seção. Continua sem falar com o Supabase de verdade: é um Postgres local/do CI.
    **Exceção**: `lib/notaFiscalXmlFornecedor.test.ts` testa
    o parser de XML de verdade

@@ -169,7 +169,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 - **NFS-e (#839)**: as perguntas foram pra Focus (Araraquara na homologação, ou produção direto e cancelar) e pra contabilidade (o percentual do Simples, o Giap #853, o CFOP 5405 #864). Esperando; comentário no #839.
 - **#866, o campo do percentual do Simples** (no lugar do 0 provisório; migration `0078`): é o que falta pra produção. O Tiago põe na leva. **Próximo**: respostas → #866 → produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → a 0076 (#809).
 - **Mesclados**: #862 (o ensaio da loja nova do Tiago: a skill e os guias até a primeira nota; a primeira nota sai no PC da Sofia, `docs/decisoes.md`) e #863 (o painel saiu daqui; mora no escritório).
-- **Tarefas novas, sem leva** (o Tiago põe): #861 (cliente sem CPF trava a NFC-e, aprovada), #864 (aviso de CFOP × CSOSN), #865 (dois textos velhos), #866.
+- **Na `leva-6`**: #861, #864, #865 e #866.
 - **#857, a busca geral (Gustavo)**: espera os dois consertos dele (abrir OS pela busca; desativados fora). A `0077` é da Sofia, depois da `0076`.
 - **Feito**: o "Resumo de segunda" antigo pausado e a #625 fechada.
 - **Depende dela**: a #842 (tirar o token de homologação e os cadastros "ENSAIO TIAGO" do `ssace-teste`, depois do #839); renovar a chave da API até 22/11 (escritorio#20); o lucro do dia no Caixa (#809).
