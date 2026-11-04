@@ -242,8 +242,8 @@ de instalar):
 4. `npm run dev` → o programa abre → entrar com o usuário e a senha do Send.
 
 Deve aparecer a loja **Autocenter Exemplo (TESTE)** com OS em andamento, vendas do dia e contas
-atrasadas. O `.env` só vale no `npm run dev`; ninguém da equipe instala o programa das lojas
-apontando pra banco nenhum.
+atrasadas. O `.env` só vale no `npm run dev`. A equipe usa o `npm run dev`; instalar o programa
+apontando pro `ssace-teste` só no ensaio da loja nova, aprovado pela Sofia (04/11/2026).
 
 ## Passo 9 — Manter
 

@@ -17,7 +17,9 @@ Passo a passo pra colocar o sistema rodando pra um cliente novo, do zero.
 > sua responsabilidade — por isso o backup (Parte 1, passo 2) não é opcional.
 
 Tempo estimado: **40 a 60 minutos**, sendo que a parte de nota fiscal (Parte 4) não entra nessa
-conta — ela leva dias ou semanas e depende de terceiros.
+conta — ela leva dias ou semanas e depende de terceiros. **A nota fiscal é parte da instalação: a
+loja só recebe acesso quando o sistema já emite (Sofia, 29/10/2026).** Comece a parte C do playbook
+logo no contrato, porque ela leva dias a semanas e depende de terceiros.
 
 ---
 
@@ -31,6 +33,11 @@ Painel do Supabase → **New project**, na **sua** organização.
 - **Database Password**: gere uma senha forte e **guarde num lugar seguro**. Ela não é usada no
   dia a dia, mas sem ela você não recupera o banco em caso de problema.
 - **Region**: **South America (São Paulo)** — mais perto, mais rápido.
+- **Enable Data API**: **ligado** (o programa conversa com o banco por aqui).
+- **Automatically expose new tables**: **ligado**, mesmo com o Supabase recomendando desligar: o
+  arquivo de instalação conta com isso pra liberar as tabelas pro programa. Quem protege os dados
+  são as regras de RLS que o próprio script cria.
+- **Enable automatic RLS**: **desligado** (o script cuida disso, tabela por tabela).
 
 ### 2. Colocar no plano pago (backup automático)
 
@@ -50,11 +57,21 @@ Confirme depois em Project Settings → **Database** → **Backups** que aparece
 
 ### 3. Criar as tabelas (o arquivo único)
 
+**Antes de colar**, confira que nenhuma migration do script pede programa mais novo que a versão
+liberada (a linha `-- versao-minima-do-programa:` das migrations em `supabase/migrations/`); se
+pedir, espere a liberação. Se não esperar, o programa liberado abre com o aviso "O banco desta
+empresa já recebeu uma atualização que este computador ainda não tem" (visto no ensaio de 04/11).
+
 SQL Editor → **New query** → abra `supabase/instalacao/instalacao-completa.sql`, copie **tudo** e
 cole → **Run**.
 
 Leva alguns segundos. Vão aparecer vários avisos `NOTICE: ... does not exist, skipping` — **isso é
 normal** num banco vazio, não é erro. O que não pode aparecer é `ERROR`.
+
+Antes de rodar, o Supabase pode mostrar "Potential issues detected": clique em **Run without RLS**
+(o botão verde mexeria no script; a `travas_resultado` é uma tabela temporária que some no fim).
+Pra confirmar que rodou até o fim: **New query** → `select max(versao) from schema_versao;` → tem
+que dar o número da última linha do script.
 
 > Esse arquivo é gerado a partir das migrations por `npm run gerar-instalacao`. Nunca instale
 > colando as migrations uma por uma: pular um arquivo ou trocar a ordem não dá erro na hora, só
@@ -70,6 +87,8 @@ Authentication → **Sign In / Providers** → Email:
 - **Enable email provider**: **ligado** — senão dá erro "Email logins are disabled" no login.
 - **Confirm email**: **desligado** — senão ninguém consegue entrar. Os e-mails do sistema são
   inventados (`usuario@sakura.local`), não existe caixa de entrada pra confirmar nada.
+- **Allow new users to sign up** (seção User Signups): **ligado** — a tela de Operadores do programa
+  cria o login por aqui.
 
 ### 5. Criar o primeiro usuário admin
 
@@ -103,7 +122,7 @@ values ('COLE_O_USER_UID_AQUI', '00000000-0000-0000-0000-000000000001');
 
 ### 6. Anotar a URL e a chave
 
-Project Settings → **API**:
+Project Settings → **API Keys**, aba **Legacy anon**:
 - **Project URL** (ex: `https://xxxxxxxx.supabase.co`)
 - **anon / publishable key**
 
@@ -129,6 +148,8 @@ e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
 
 ## Parte 2 — Deixar o app rodando na loja (~10 min)
 
+> Esta parte é a **entrega**: só depois da primeira nota (Parte 4). Antes disso a loja não recebe o programa.
+
 1. No computador da loja, baixe o instalador **da versão liberada** por este endereço, que sempre
    entrega a certa:
    `https://github.com/sakura-corp/ssace-versoes/releases/latest/download/SakuraSystem-Setup.exe`
@@ -141,7 +162,10 @@ e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
    - Se o "Testar conexão" reclamar mas você tiver certeza dos valores, dá pra usar
      **"Salvar assim mesmo"**.
    - Isso é **uma vez por computador**. Se a loja tiver dois PCs, repete em cada um.
-4. Entre com o usuário e a senha provisória do passo 5, e **troque a senha na hora**.
+4. Entre com o usuário e a senha provisória do passo 5, e **troque a senha na hora** (na primeira
+   vez que ele entrar, mesmo que seja antes da entrega, na Parte 3): Configurações
+   → **Operadores** → a sua linha → **⋯** → **Redefinir senha** → saia → entre com a temporária →
+   **"Crie uma senha nova"** (precisa da função do passo 7).
 5. **Não mexa em "Atualizações deste computador"** (Configurações). Computador novo já nasce no
    canal **normal**, que é o certo pra loja de cliente: ele só recebe versão depois que ela for
    liberada. O canal de teste é só pro seu computador e o da Pneus Amigão.
@@ -154,7 +178,8 @@ e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
      então este item é feito **na primeira OS do treino** (depois da Parte 3), antes da primeira
      venda de verdade: na OS, **Encerrar OS** (a tela de faturar que abre sozinha pode ser
      cancelada) → na lista de OS, botão **Fechamento** → **Ver garantia** → **Imprimir**. A aba
-     Fechamento só aparece em OS concluída ou faturada.
+     Fechamento só aparece em OS concluída ou faturada. Sem faturar, a garantia sai com a **data de
+     fechamento** e a **forma de pagamento** em branco ("—"): é o esperado, não defeito.
    - **c)** Confira que saiu **inteiro**, sem cortar as bordas.
 
 ---
@@ -187,35 +212,10 @@ O que a loja precisa cadastrar antes de abrir a primeira OS: **peças** (com pre
 
 ---
 
-## Parte 4 — Nota fiscal (etapa separada, dias a semanas)
+## Antes da primeira nota: o `BACKUP_EMPRESAS`
 
-**Não tente fazer isso junto com a instalação.** Trate como uma segunda etapa de ativação: a loja
-começa usando cadastro, OS, estoque e caixa no primeiro dia, e a emissão entra depois — foi
-exatamente assim na Pneus Amigão.
+A primeira nota já é dado real, então isto entra **antes da Parte 4**, não depois da entrega.
 
-O motivo é que essa parte não depende de você nem do sistema: depende da SEFAZ do estado, da
-prefeitura da cidade e da contabilidade do cliente. Envolve certificado digital pago, credenciamento
-em portal de governo e códigos que só a contabilidade dele pode confirmar.
-
-O passo a passo completo está em **`docs/pendencias-e-futuro.md`, item 1** (a antiga seção 8), no bloco
-"Playbook de habilitação fiscal por loja nova".
-
-Quando essa etapa chegar, a parte do **sistema** são dois passos, e levam 5 minutos:
-
-1. **Publicar o porteiro da Focus NFe** — no projeto Supabase da loja: **Edge Functions** →
-   **Deploy a new function** → **Via Editor** → digite o nome `focus-nfe` **antes** de clicar em
-   Deploy → apague o exemplo, cole todo o conteúdo de `supabase/functions/focus-nfe/index.ts` →
-   **Deploy function**. **Não precisa de secret nenhum.** É ele que guarda e usa o token: sem ele,
-   a emissão de nota avisa "falta publicar o porteiro".
-2. **Colar o token** em Configurações → **Dados fiscais da loja** → "Token de acesso" → Salvar.
-   Depois de salvo ele **não aparece mais** na tela — de propósito: o token emite e cancela nota
-   no CNPJ da loja, e fica guardado num lugar que nenhum computador lê. Pra trocar, cole o novo.
-
----
-
-## Depois de entregue
-
-- **Backup**: já é automático (Parte 1, passo 2). Vale conferir uma vez que está aparecendo.
 - **Acrescentar a empresa no `BACKUP_EMPRESAS`** do GitHub, **nos dois cofres**: `backup` e
   `lojas` (Settings → Environments; um bloco a mais na lista — modelo em `docs/operacao.md`,
   "Backup do banco", "Os secrets: nos cofres"). É **um bloco por empresa**, não por loja.
@@ -225,6 +225,44 @@ Quando essa etapa chegar, a parte do **sistema** são dois passos, e levam 5 min
   — e ninguém avisa. O backup lê o cofre `backup` e o botão lê o `lojas`: esquecer um dos dois
   deixa a empresa fora de uma das coisas. **Cuidado**: a caixa de editar secret aparece sempre
   vazia; monte a lista inteira no Bloco de Notas e cole pronta, igual nos dois.
+
+---
+
+## Parte 4 — Nota fiscal (parte da instalação, dias a semanas)
+
+**A nota fiscal é parte da instalação: a loja só recebe acesso quando o sistema já emite** (Sofia,
+29/10/2026). Comece a parte C do playbook logo no contrato, porque ela leva dias a semanas e depende
+de terceiros. Enquanto espera, siga com as Partes 1 e 3; a Parte 2 (entregar) fica pra depois da
+primeira nota.
+
+Essa parte não depende de você nem do sistema: depende da SEFAZ do estado, da
+prefeitura da cidade e da contabilidade do cliente. Envolve certificado digital pago, credenciamento
+em portal de governo e códigos que só a contabilidade dele pode confirmar.
+
+O passo a passo completo está em **`docs/pendencias-e-futuro.md`, item 1** (a antiga seção 8), no bloco
+"Playbook de habilitação fiscal por loja nova".
+
+A parte do **sistema** são três passos, e levam 5 minutos:
+
+1. **Publicar o porteiro da Focus NFe** — no projeto Supabase da loja: **Edge Functions** →
+   **Deploy a new function** → **Via Editor** → digite o nome `focus-nfe` **antes** de clicar em
+   Deploy → apague o exemplo, cole todo o conteúdo de `supabase/functions/focus-nfe/index.ts` →
+   **Deploy function**. **Não precisa de secret nenhum.** É ele que guarda e usa o token: sem ele,
+   a emissão de nota avisa "falta publicar o porteiro".
+2. **Colar o token** em Configurações → **Dados fiscais da loja** → "Token de acesso" → Salvar.
+   Depois de salvo ele **não aparece mais** na tela — de propósito: o token emite e cancela nota
+   no CNPJ da loja, e fica guardado num lugar que nenhum computador lê. Pra trocar, cole o novo.
+3. No mesmo lugar (Configurações → **Dados fiscais da loja**), **Ambiente**: **Produção**. Antes,
+   conferir os campos de NFS-e do playbook, parte B (município, item da LC 116, alíquota de ISS e
+   código tributário e o CNAE).
+
+---
+
+## Depois de entregue
+
+- **Backup**: já é automático (Parte 1, passo 2). Vale conferir uma vez que está aparecendo.
+- **`BACKUP_EMPRESAS`**: já deve estar feito, antes da primeira nota (seção "Antes da primeira nota",
+  acima).
 - **Atualização**: uma versão nova chega primeiro só nos computadores marcados como **Teste**
   (Configurações → "Atualizações deste computador"), e nas outras lojas só depois que você rodar o
   "Liberar versão para todas as lojas" (`docs/operacao.md`). Computador de loja nova

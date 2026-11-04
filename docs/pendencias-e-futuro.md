@@ -157,7 +157,7 @@ aqui está no histórico do Git; o que uma sessão nova precisa saber é isto:
   contador pra 100; dá pra fazer sozinha em Painel da API → **Documentos Fiscais**. Vale pra toda
   loja nova que já emitia nota (passo C.3 do playbook abaixo).
 - **⚠️ A alíquota da competência precisa ser cadastrada TODO MÊS no portal da prefeitura, antes da
-  primeira NFS-e do mês.** Sem isso a nota é recusada com *"conclua o cadastro de todas as
+  primeira NFS-e do mês (a confirmar, #853: pode ter acabado).** Sem isso a nota é recusada com *"conclua o cadastro de todas as
   alíquotas referentes à competência vigente"*. Não é código nosso: o app manda a alíquota certa
   (`configuracoes_fiscais_loja.aliquota_iss`, 3%). **O sistema lembra** desde 11/09 (`TR-11.2`):
   faixa no Início e dentro da janela de emitir NFS-e, com o botão "Já cadastrei" (seção 7, "Aviso
@@ -279,30 +279,41 @@ processo principal (sem CORS); e o erro real da Focus na tela.
 
 **(B) Muda por loja, mas é preencher uma tela.** Configurações → "Dados fiscais da loja": CNPJ,
 razão social, IE e IM, regime, endereço, telefone, token da Focus e, só pra NFS-e, código IBGE do
-município, item da LC 116, alíquota de ISS e código tributário do município. **Campo em branco aqui
-vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
+município, item da LC 116, alíquota de ISS, código tributário do município e **CNAE** (está no Cartão
+CNPJ; sem ele o programa para com "Código CNAE da loja não configurado", visto no ensaio de 04/11).
+**Campo em branco aqui vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
+E **cada peça** (Estoque → Produtos) leva NCM, CEST, CFOP e CSOSN **que combinem**: com o CSOSN
+`500` (ICMS já pago antes, por substituição), na venda dentro do estado o CFOP é o `5405` (confirmar
+com a contabilidade da loja); `5102` com `500` volta da SEFAZ
+como "Rejeição: CFOP não permitido para o CSOSN informado" (ensaio de 04/11). A tela de produto
+aceita a combinação errada sem avisar.
 
 **(C) Muda por loja e depende de terceiros: é o caro.** Nada disso é código; leva dias ou semanas:
 1. **Habilitar os documentos no painel da Focus** (Empresas → empresa → Documentos Fiscais → ligar
    NFCe e NFSe). É self-service; o suporte não faz.
 2. **Credenciar o CNPJ na SEFAZ do estado pra NFC-e**, feito pelo lojista ou pela contabilidade:
-   (a) o **credenciamento** (homologação e produção são separados; rejeição 245 é isso);
+   (a) o **credenciamento** (homologação e produção são separados; a rejeição 245, que aparece na
+   tela como "Rejeição: CNPJ Emitente não cadastrado", é isso);
    (b) o **certificado digital** da empresa, vinculado no painel da Focus; (c) **CSC e ID token**
    gerados na SEFAZ (um par por ambiente) e informados na Focus. Em SP o portal da NFC-e é próprio
    (`nfce.fazenda.sp.gov.br`). **Varia por estado.** É o passo mais pesado.
 3. **Conferir a numeração de RPS antes da primeira NFS-e**, se a loja já emitia nota de serviço:
    ajustar o contador da Focus pra bem acima do maior já usado.
-4. **Cadastrar a alíquota da competência todo mês** (pelo menos em Araraquara). É tarefa
-   recorrente da contabilidade, não de instalação.
-5. **Acesso ao portal da prefeitura pra NFS-e**: **varia por município**, inclusive o fornecedor
-   do sistema municipal (Araraquara usa o Giap).
+4. **Cadastrar a alíquota da competência todo mês** (pelo menos em Araraquara; **a confirmar,
+   #853**). É tarefa recorrente da contabilidade, não de instalação.
+5. **Acesso ao portal da prefeitura pra NFS-e**, **só se o município não aderiu ao Padrão
+   Nacional**: varia por município, inclusive o fornecedor do sistema municipal (Araraquara usava o
+   Giap; pro Simples, desde 01/11/2026 é o Padrão Nacional, item 7).
 6. **Confirmar CST/CSOSN com a contabilidade do cliente**: depende do regime **daquela** empresa. A
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
+7. **NFS-e Nacional**: ligar "Ambiente da NFSe Nacional" na Focus (homologação e produção são
+   chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. Até a 0.9.55, o
+   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
 
-**Consequência pro site de assinatura (item 2)**: assinar o sistema pode ser instantâneo, **emitir
-nota não**. Tratar **"usar o sistema" e "emitir nota" como duas ativações separadas** (a loja usa
-cadastro, OS, estoque e caixa desde o primeiro dia, como a Pneus Amigão fez), e conduzir o bucket
-(C) junto com o cliente, por este playbook. **Uma conta só da Focus pra todas as lojas** (o
+**Consequência pro site de assinatura (item 2)**: assinar pode ser instantâneo, emitir nota não.
+Por isso a loja só recebe o sistema quando ele já emite (Sofia, 29/10/2026). A parte C começa no
+contrato, e a entrega espera a primeira nota. Conduzir o bucket (C) junto com o cliente, por este
+playbook. **Uma conta só da Focus pra todas as lojas** (o
 porteiro já permite: é colar o mesmo token em cada loja, decisão comercial no privado) tira o C.1
 da mão do cliente, mas **não** o C.2, C.3 e C.4, que são no CNPJ dele.
 

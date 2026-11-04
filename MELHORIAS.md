@@ -1906,7 +1906,8 @@ o credenciamento fiscal de cada CNPJ novo**. Um checklist com estado é a ferram
 >
 > Duas consequências que o desenho precisa respeitar, ambas já decididas: **"usar o sistema" e
 > "emitir nota" são duas ativações separadas** — a loja começa usando cadastro/OS/estoque/caixa
-> no primeiro dia, e a emissão entra quando esse checklist fechar; e a tela é **operacional, não
+> no primeiro dia, e a emissão entra quando esse checklist fechar (mudou em 29/10/2026: a loja só
+> recebe o sistema já emitindo nota; `docs/decisoes.md`); e a tela é **operacional, não
 > bloqueante** — ela informa, nunca impede de usar o resto.
 
 ---
