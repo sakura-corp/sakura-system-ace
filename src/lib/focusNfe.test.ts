@@ -45,6 +45,7 @@ function configuracaoFiscal(sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}):
     codigo_cnae: "4520-0/01",
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
+    percentual_tributos_simples: null,
     atualizado_em: new Date().toISOString(),
     ...sobrescrever,
   };
@@ -464,9 +465,43 @@ describe("montarCorpoNFSeNacional", () => {
 
   // Ensaio de 03/11: sem o grupo totTrib o Ambiente Nacional recusa a DPS
   // ("Element trib: Missing child element(s). Expected is one of (tribFed, totTrib)").
-  it("empresa do Simples manda o percentual aproximado dos tributos do Simples (totTrib)", () => {
-    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1 });
+  // O percentual vem dos Dados fiscais da loja (#866, migration 0078).
+  it("empresa do Simples manda o percentual dos tributos do Simples cadastrado na loja (totTrib)", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: 6.5 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(6.5);
+  });
+
+  it("percentual com mais de duas casas sai arredondado em duas", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: 6.456 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(6.46);
+  });
+
+  // Vazio não trava a emissão: o grupo totTrib continua indo, com 0.
+  it("empresa do Simples sem o percentual cadastrado manda 0", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: null }) }),
+      { agora, numeroDps: 1 },
+    );
     expect(corpo.percentual_total_tributos_simples_nacional).toBe(0);
+  });
+
+  it("empresa fora do Simples não manda o percentual do Simples, mesmo cadastrado", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({
+        configuracaoFiscal: configuracaoFiscal({
+          regime_tributario: "lucro_presumido",
+          percentual_tributos_simples: 6.5,
+        }),
+      }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("percentual_total_tributos_simples_nacional");
   });
 
   it("empresa fora do Simples sai como não optante, sem o regime do Simples", () => {

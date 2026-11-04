@@ -81,6 +81,7 @@ const COLUNAS_FISCAIS = [
   "codigo_cnae",
   "competencia_aliquota_confirmada",
   "aliquota_passo_a_passo",
+  "percentual_tributos_simples",
   "atualizado_em",
 ].join(",");
 

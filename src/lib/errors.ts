@@ -36,6 +36,9 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_juros_percentual: "O juro de parcelamento precisa estar entre 0 e 100%.",
   ck_config_fiscal_aliquota_iss: "A alíquota de ISS precisa estar entre 0 e 10%.",
   ck_config_fiscal_cnpj: "O CNPJ da loja está incompleto — ele tem 14 caracteres.",
+  // Migration 0078 (#866).
+  ck_config_fiscal_percentual_tributos_simples:
+    "O percentual de tributos do Simples precisa estar entre 0 e 100%.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
