@@ -57,6 +57,11 @@ Confirme depois em Project Settings → **Database** → **Backups** que aparece
 
 ### 3. Criar as tabelas (o arquivo único)
 
+**Antes de colar**, confira que nenhuma migration do script pede programa mais novo que a versão
+liberada (a linha `-- versao-minima-do-programa:` das migrations em `supabase/migrations/`); se
+pedir, espere a liberação. Se não esperar, o programa liberado abre com o aviso "O banco desta
+empresa já recebeu uma atualização que este computador ainda não tem" (visto no ensaio de 04/11).
+
 SQL Editor → **New query** → abra `supabase/instalacao/instalacao-completa.sql`, copie **tudo** e
 cole → **Run**.
 
@@ -67,10 +72,6 @@ Antes de rodar, o Supabase pode mostrar "Potential issues detected": clique em *
 (o botão verde mexeria no script; a `travas_resultado` é uma tabela temporária que some no fim).
 Pra confirmar que rodou até o fim: **New query** → `select max(versao) from schema_versao;` → tem
 que dar o número da última linha do script.
-
-Antes de colar, confira que nenhuma migration do script pede programa mais novo que a versão
-liberada (a linha `-- versao-minima-do-programa:` das migrations em `supabase/migrations/`); se
-pedir, espere a liberação.
 
 > Esse arquivo é gerado a partir das migrations por `npm run gerar-instalacao`. Nunca instale
 > colando as migrations uma por uma: pular um arquivo ou trocar a ordem não dá erro na hora, só
@@ -161,7 +162,8 @@ e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
    - Se o "Testar conexão" reclamar mas você tiver certeza dos valores, dá pra usar
      **"Salvar assim mesmo"**.
    - Isso é **uma vez por computador**. Se a loja tiver dois PCs, repete em cada um.
-4. Entre com o usuário e a senha provisória do passo 5, e **troque a senha na hora**: Configurações
+4. Entre com o usuário e a senha provisória do passo 5, e **troque a senha na hora** (na primeira
+   vez que ele entrar, mesmo que seja antes da entrega, na Parte 3): Configurações
    → **Operadores** → a sua linha → **⋯** → **Redefinir senha** → saia → entre com a temporária →
    **"Crie uma senha nova"** (precisa da função do passo 7).
 5. **Não mexa em "Atualizações deste computador"** (Configurações). Computador novo já nasce no
@@ -252,7 +254,7 @@ A parte do **sistema** são três passos, e levam 5 minutos:
    no CNPJ da loja, e fica guardado num lugar que nenhum computador lê. Pra trocar, cole o novo.
 3. No mesmo lugar (Configurações → **Dados fiscais da loja**), **Ambiente**: **Produção**. Antes,
    conferir os campos de NFS-e do playbook, parte B (município, item da LC 116, alíquota de ISS e
-   código tributário).
+   código tributário e o CNAE).
 
 ---
 

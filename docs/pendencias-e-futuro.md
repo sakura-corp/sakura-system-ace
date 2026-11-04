@@ -283,7 +283,8 @@ município, item da LC 116, alíquota de ISS, código tributário do município 
 CNPJ; sem ele o programa para com "Código CNAE da loja não configurado", visto no ensaio de 04/11).
 **Campo em branco aqui vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
 E **cada peça** (Estoque → Produtos) leva NCM, CEST, CFOP e CSOSN **que combinem**: com o CSOSN
-`500` (ICMS já pago antes, por substituição), o CFOP é o `5405`; `5102` com `500` volta da SEFAZ
+`500` (ICMS já pago antes, por substituição), na venda dentro do estado o CFOP é o `5405` (confirmar
+com a contabilidade da loja); `5102` com `500` volta da SEFAZ
 como "Rejeição: CFOP não permitido para o CSOSN informado" (ensaio de 04/11). A tela de produto
 aceita a combinação errada sem avisar.
 
@@ -301,13 +302,13 @@ aceita a combinação errada sem avisar.
 4. **Cadastrar a alíquota da competência todo mês** (pelo menos em Araraquara; **a confirmar,
    #853**). É tarefa recorrente da contabilidade, não de instalação.
 5. **Acesso ao portal da prefeitura pra NFS-e**, **só se o município não aderiu ao Padrão
-   Nacional**: varia por município, inclusive o fornecedor do sistema municipal (Araraquara usa o
-   Giap).
+   Nacional**: varia por município, inclusive o fornecedor do sistema municipal (Araraquara usava o
+   Giap; pro Simples, desde 01/11/2026 é o Padrão Nacional, item 7).
 6. **Confirmar CST/CSOSN com a contabilidade do cliente**: depende do regime **daquela** empresa. A
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
 7. **NFS-e Nacional**: ligar "Ambiente da NFSe Nacional" na Focus (homologação e produção são
-   chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. O programa
-   liberado hoje só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
+   chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. Até a 0.9.55, o
+   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
 
 **Consequência pro site de assinatura (item 2)**: assinar pode ser instantâneo, emitir nota não.
 Por isso a loja só recebe o sistema quando ele já emite (Sofia, 29/10/2026). A parte C começa no

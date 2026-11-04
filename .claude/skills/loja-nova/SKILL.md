@@ -35,8 +35,9 @@ senha. Cada coisa tem o seu lugar:
   antes do próximo. Pelo celular, dê o link exato de cada passo.
 - **O Claude nunca roda SQL nem mexe em Supabase, secret, cofre ou workflow.** Quem clica é a
   Sofia; o Claude guia e confere o que ela mostra (print se confere com atenção).
-- Achou erro num documento: **não corrija**; abra issue dizendo "o que aconteceu, por quê e onde
-  (sem dado da loja)".
+- Achou erro num documento: **não corrija** no meio da instalação; abra issue dizendo "o que
+  aconteceu, por quê e onde (sem dado da loja)". No **modo ensaio**, os achados viram um PR só, com
+  a revisão da Sofia (como no ensaio de 04/11/2026).
 - **Lembretes**: ao fechar cada fase, diga a data da próxima e sugira que ela ponha um lembrete no
   celular. Os 30 dias e as conversas contam **da entrega** (Fase 5). A skill não cria tarefa
   agendada sozinha.
@@ -76,7 +77,7 @@ existe "2ª ativação". Por isso a primeira nota vem **antes** da entrega, e os
 - O que fazer: banco, funções, backup e cadastros. Só o login do primeiro admin (dono) existe, e é
   da Sofia.
 - Documento que manda: `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 1 — Banco de dados",
-  "Parte 3 — Configurar o sistema pra loja" e o bloco `BACKUP_EMPRESAS` (agora antes da Parte 4);
+  "Parte 3 — Configurar o sistema pra loja" e o bloco `BACKUP_EMPRESAS` ("Antes da primeira nota", antes da Parte 4);
   e `docs/operacao.md`, "Instalar uma empresa nova". Se algo falhar: "Quando algo der errado".
 - Atenção: o bloco do `BACKUP_EMPRESAS` é a Sofia que cola, **nos dois cofres**, `backup` e
   `lojas` (`docs/operacao.md`, "Os secrets: nos cofres (Settings → Environments)"). Sem ele a
