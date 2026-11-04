@@ -269,7 +269,7 @@ export function DadosFiscaisSection({
       <div className="mt-6 border-t border-sakura-gray/20 pt-4">
         <p className="text-rotulo font-medium text-sakura-purple-dark/90">Integração Focus NFe</p>
         <p className="mt-1 text-rotulo text-sakura-muted">
-          Cole aqui o token de acesso quando assinar um plano no Focus NFe. Use o ambiente de
+          Cole aqui o token de acesso da loja, que fica no painel do Focus NFe. Use o ambiente de
           homologação pra testar sem gerar nota de verdade.
         </p>
         <p className="mt-2 text-rotulo text-sakura-muted">

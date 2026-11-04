@@ -404,7 +404,7 @@ export function ConfiguracoesPage() {
 
           <SecaoRecolhivel
             titulo="Dados fiscais da loja"
-            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). O token do Focus NFe fica vazio até a assinatura de um plano — sem ele, a emissão automática continua indisponível."
+            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). Sem o token do Focus NFe, a emissão automática fica indisponível."
           >
             <DadosFiscaisSection
               configuracao={configuracaoFiscal}

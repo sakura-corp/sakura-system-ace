@@ -90,7 +90,7 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
           onClick={onConfigurarConexao}
           className="mx-auto mt-6 block text-rotulo text-sakura-muted hover:text-sakura-pink hover:underline"
         >
-          Configurar conexão com o banco de dados
+          Configurar a conexão
         </button>
       </div>
     </div>

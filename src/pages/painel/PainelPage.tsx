@@ -52,8 +52,8 @@ import type { OrdemServico } from "@/types/os";
 
 const TITULO_CARTAO: Record<CartaoMetrica, string> = {
   vendas_mes: "Recebido no mês",
-  custos_mes: "Custos mês",
-  lucro_mes: "Lucros mês",
+  custos_mes: "Custos do mês",
+  lucro_mes: "Lucro do mês",
   ticket_medio_mes: "Ticket médio",
   contas_pagar_vencendo: "Contas a pagar vencendo",
 };
