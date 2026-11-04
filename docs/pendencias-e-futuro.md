@@ -63,7 +63,7 @@ privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A 
 4. **o programa pronto pra equipe** (a parte do Claude ficou pronta em 16/10: `docs/equipe.md`, `docs/rascunhos/`,
    `docs/supabase-de-teste.md`; o banco foi criado pela Sofia em 19/10, #517): o **Supabase de teste** (separado da Pneus Amigão, com dados
    de exemplo e um login pra cada um), a regra nova da seção 0 (mudou em 19/10: os três no programa das lojas), um manual da
-   equipe e as primeiras tarefas no formato da equipe, **na `leva-0`** (`docs/painel.md`);
+   equipe e as primeiras tarefas no formato da equipe, **na `leva-0`** (`docs/painel.md` do `sakura-corp/escritorio`);
 5. **começar**: o "Primeiro dia" de cada um, e a primeira tarefa.
 
 **As primeiras tarefas do programa** (ela, 14/10): uma de **aquecimento** pra cada um, pequena e
@@ -412,11 +412,11 @@ Fechar o código depois fica sendo só o plano Team e parar a cópia no endereç
 privado; antes, a #442). **Cuidado barato até lá**: o Balcão no canal normal, pra versão de teste
 só chegar no PC dela.
 
-### 13. Painel da equipe (`docs/painel.md`)
+### 13. Painel da equipe (`docs/painel.md` do `sakura-corp/escritorio`)
 
 A **leva 0** foi criada em 30/09 (issues #350 a #355): o painel no ar, login, a leva com contador e
 tempo real. Depois, a **leva 1** (montada em 17/10: cabeçalho, pegar tarefa, horas por pessoa e três do
-programa; ver `docs/painel.md`, "Andamento"), a leva 2 (fases da leva, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
+programa; ver `docs/painel.md` do `sakura-corp/escritorio`, "Andamento"), a leva 2 (fases da leva, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
 O exemplo de DRE está no repositório privado (`dre/`).
 
 ### 14. Atualizar o Electron (tarefa #385; ritmo decidido por ela em 03/10/2026)

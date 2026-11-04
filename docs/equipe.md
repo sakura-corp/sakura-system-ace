@@ -11,7 +11,7 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   PR) a pessoa faz, guiada pelo Claude **um passo por vez**.
 - **As tarefas** são as issues do GitHub, já planejadas pela Sofia com o Claude dela: o que fazer,
   em quais arquivos, `Estimativa: N h`, "Pronto quando" e o que não fazer. Como a equipe se
-  organiza em levas: `docs/painel.md`, "Como a equipe trabalha".
+  organiza em levas: `docs/painel.md` do `sakura-corp/escritorio`, "Como a equipe trabalha".
 - **A primeira tarefa de todo mundo** é montar o seu caderno, o `segundo-cerebro` (roteiro
   abaixo), antes das tarefas da leva.
 - **Projetos secundários** (Sofia, 22/10/2026, #733): o Gusta guia os projetos secundários, cada um
@@ -38,12 +38,12 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   `.env`**, e o login só na tela do programa: nunca na conversa com o Claude, nunca no GitHub.
 
 Com isso em mãos, a pessoa instala o **Claude Code no PC** (não a versão pela internet: vai
-precisar abrir o programa ou o painel no próprio computador pra testar), entra com a **conta da
+precisar abrir o programa no próprio computador pra testar), entra com a **conta da
 Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre colchetes:
 
 > Oi, Claude. Vou trabalhar no projeto **Sakura System**, que está no GitHub no repositório
 > **`sakura-corp/sakura-system-ace`**. Meu computador é **[Windows ou Mac]** e eu vou trabalhar
-> **[no painel ou no programa das lojas]**. Me guie **um passo por vez**, como se eu nunca tivesse
+> **no programa das lojas**. Me guie **um passo por vez**, como se eu nunca tivesse
 > feito isso: diga exatamente onde clicar ou o que digitar, o que deve aparecer na tela, e
 > **espere eu responder "feito"** antes do próximo passo.
 >
@@ -57,11 +57,10 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >    vai me ajudar a escolher. **Não baixe como ZIP.** Precisa ser clonado, pra eu conseguir
 >    entregar meu trabalho depois.
 > 4. Me explique como abrir o Claude Code **dentro dessa pasta** e espere eu abrir.
-> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`** (e,
->    se eu for do painel, o **`docs/painel.md`**), e me explique em português simples, em poucas
->    linhas, como vai ser o meu trabalho.
+> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`**, e me
+>    explique em português simples, em poucas linhas, como vai ser o meu trabalho.
 > 6. Siga o "Primeiro dia" do `docs/equipe.md` até o fim: instalar as dependências e abrir o
->    programa (ou o painel) no meu computador. **Eu colo as chaves no arquivo**: não me
+>    programa no meu computador. **Eu colo as chaves no arquivo**: não me
 >    peça pra colar chave nenhuma aqui na conversa.
 >
 > **Hoje não mude nada no projeto, não crie branch e não pegue tarefa.** Quando tudo estiver
@@ -85,7 +84,7 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 5. Confere com a pessoa que os dados que aparecem são os **de exemplo** (nenhum cliente de
    verdade). `Ctrl+C` no terminal fecha o programa.
 
-Pra quem é do **painel**: os comandos estão em `docs/painel.md`, "Como rodar no PC" (o painel tem
+Pra quem é do **painel**: os comandos estão no `docs/painel.md` do `sakura-corp/escritorio`, "Como rodar no PC" (o painel tem
 a pasta e as dependências dele, e não usa o `.env`).
 
 **No Windows (PowerShell)**, se aparecer *"a execução de scripts foi desabilitada neste
@@ -227,7 +226,7 @@ A pessoa abre o Claude dela **dentro da pasta do repositório** e diz só o nome
 tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
 1. **Confere quem é** e **abre o caderno da pessoa** (seção 0 do `PROJETO_STATUS.md`; no PC, o
    Claude pede licença pra ler a pasta `segundo-cerebro` na primeira vez: é só aprovar); **lê a
-   issue inteira**, os comentários e este manual (e o `docs/painel.md`, se for do painel).
+   issue inteira**, os comentários e este manual (e o `docs/painel.md` do `sakura-corp/escritorio`, se for do painel).
    **Confere o "Depende de"**: se ainda não dá pra começar, explica o motivo, escreve a mensagem
    de WhatsApp pra Sofia e para aqui.
 2. **Explica em português simples**, antes de mexer em qualquer coisa:
@@ -378,7 +377,7 @@ está no meio de outra coisa, siga.
   | `npm run contraste:telas` e `npm run largura:telas` | quando a tarefa mexe numa tela: abrem o programa e medem cor e largura de verdade (precisam do Playwright, que o Claude instala só pra rodar, sem salvar no projeto) |
 
   Mudou alguma coisa do Electron (`electron/`)? Também `npm run test:electron`. O painel tem as
-  conferências dele (`docs/painel.md`).
+  conferências dele (`docs/painel.md` do `sakura-corp/escritorio`).
 - **Testar com os próprios olhos**, no programa aberto com `npm run dev` e o banco de teste: o
   Claude diz o que clicar e o que deve aparecer. O que a pessoa viu (ou o print) vai na descrição
   do PR.
@@ -440,13 +439,12 @@ trabalho que não precisa ser dela passa a rodar na cota do Tiago. **As decisõe
    `nova-tarefa`, cria a issue com a etiqueta **`rascunho`** e põe no corpo o que é decisão dela
    ("Pra Sofia decidir", com a recomendação). Ninguém começa um rascunho. Com o "aprovada" dela, sai
    o `rascunho` e entra a `leva-N` (`docs/tarefas.md`, "Quem escreve a tarefa").
-2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado, nasce depois que a Sofia
-   criar): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
+2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
    regras de lá ficam no próprio repositório.
 3. **O plantão.** Só quando a Sofia avisar que a cota dela acabou (ela manda "plantão ligado" e
-   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`) ou do
-   `painel/`**, com: o CI verde, a revisão de código colada no PR, e a **aprovação de outro da
-   equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
+   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`)** (o painel mora no
+   `sakura-corp/escritorio`), com: o CI verde, a revisão de código colada no PR, e a **aprovação de
+   outro da equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
    publicar e liberar **nunca**: esses esperam a Sofia. Depois de mesclar, um comentário no PR:
    "mesclado no plantão", pra ela ver na volta.
 
@@ -477,7 +475,7 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 Todo PR da equipe espera a **Sofia revisar**, e ela revisa os três. Por isso:
 - a leva tem **só as tarefas que cabem no tempo dela de revisar**; quando a leva acaba, ela
-  congela, todo mundo testa e só então vem a próxima (`docs/painel.md`, "Fim de uma leva");
+  congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
   Claude dela, e o teste no programa de verdade fica pro dia de teste do fim de semana
   (`docs/jeito-de-trabalhar.md`, "Testar de uma vez"). Por isso o "Pronto quando (depois de

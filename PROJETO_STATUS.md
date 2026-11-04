@@ -44,7 +44,7 @@ na frente de qualquer outra deste arquivo:
 - **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
   do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
   escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
-  avisar que a cota dela acabou, mescla PR **só de documentação ou do `painel/`**, com o CI verde, a
+  avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
   revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
@@ -52,7 +52,7 @@ na frente de qualquer outra deste arquivo:
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
 - **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do
-  painel, também no `docs/painel.md`).
+  painel, no `docs/painel.md` do `sakura-corp/escritorio`).
 - **Não adiciona à sessão o repositório privado `caranovavidanova/sakura-corp`** (preço, sócios,
   contratos).
 - **Guiar passo a passo, com calma, em tudo que não for programar** (pedido da Sofia, 30/09):
@@ -93,7 +93,7 @@ pede**:
 | `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
 | `docs/equipe.md` | **o manual de quem entra na equipe** (Windows e Mac) | quando quem trabalha não é a Sofia |
 | `docs/supabase-de-teste.md` | **o banco de teste da equipe** e os dados de exemplo | ao mexer no banco de teste ou em `supabase/exemplo/` |
-| `docs/painel.md` | o painel da equipe: levas, decisões técnicas, andamento | ao mexer no painel ou planejar leva |
+| `docs/painel.md` | aviso: o painel da equipe mora no `sakura-corp/escritorio` | ao procurar o painel |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
 
 **Referências antigas continuam valendo**: "item 33 da seção 6" é `docs/licoes.md`; a seção 5 é

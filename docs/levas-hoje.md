@@ -1,7 +1,7 @@
 # As levas como funcionam hoje (resumo pra planejar a separação)
 
-> Escrito em 22/10/2026, pra sessão que vai separar as levas por projeto. Retrato de **hoje**; o
-> detalhe e o porquê de cada regra estão em `docs/painel.md`. Quando a separação for decidida,
+> Escrito em 22/10/2026, pra sessão que vai separar as levas por projeto. Retrato de **hoje**.
+> Os caminhos `painel/...` daqui são do repositório `sakura-corp/escritorio`. O detalhe e o porquê de cada regra estão no `docs/painel.md` do `sakura-corp/escritorio`. Quando a separação for decidida,
 > este arquivo pode ser apagado (ou virar o "antes" da decisão).
 
 ## O modelo

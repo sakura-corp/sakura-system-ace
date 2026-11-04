@@ -1766,7 +1766,8 @@
     #644 também acrescentava a sua linha ali. O #671 ficou com conflito e o CI dele não rodou até o
     Tiago trazer a `main`. **Regra**: com PR do painel aberto, o Claude da Sofia não mexe no fim do
     "Andamento". A anotação vai no PR da tarefa, ou espera ele entrar. Arquivo novo (como o
-    relatório da leva) não conflita.
+    relatório da leva) não conflita. Desde a #814 (04/11/2026), o `docs/painel.md` mora no
+    `sakura-corp/escritorio`; a regra vale lá.
     **Repetiu duas vezes no mesmo dia entre PRs de tarefa** (#679 × #676 e #678 × #679): todo PR do
     painel acrescenta a sua linha no mesmo lugar, então o segundo a entrar sempre conflita. **Como
     resolve**: trazer a `main` pro branch com um commit de junção (sem reescrever nada) e manter as
