@@ -34,11 +34,11 @@ importação da nota do fornecedor por XML.
 | Ordem de Serviço | ✅ | Ordens de Serviço |
 | Análise de veículos | 🟡 | Ficha do veículo (histórico por placa) existe. Falta o **relatório por marca/modelo/aplicação** (ex: "que modelo mais aparece", "que peça sai mais pro Onix") (tarefa #404) |
 | Checklist de atendimento | ❌ | `FN-02` (checklist de entrada com fotos) (tarefa #380) |
-| Orçamento rápido (PDV) | 🟡 | A Venda de balcão é o PDV. Falta o **orçamento rápido**: montar o preço, imprimir/mandar e não baixar estoque (tarefa #379) |
+| Orçamento rápido (PDV) | 🟡 | A Venda de balcão é o PDV. O orçamento da OS (#379, feito) já monta o preço, manda pelo WhatsApp e só baixa estoque na aprovação; falta fazer o mesmo direto no balcão (ficou fora da #379) e imprimir |
 | Controle de estoque | ✅ | Estoque (saldo, mínimo, "precisa comprar", leitor de código de barras) |
 | Inventário | ✅ | Estoque → Contagem (gera o ajuste sozinho) |
 | Tabelas de preço | ❌ | Hoje cada peça tem **um** preço. Falta preço por tipo de cliente (varejo/frota/revenda) ou por forma de pagamento (tarefa #407) |
-| Orçamentos | ❌ | `FN-01` (orçamento como etapa da OS, com aprovação do cliente) (tarefa #379, reescrita em 19/10; junto: peça avulsa #655, aviso de peça parecida #653, juntar peças repetidas #656) |
+| Orçamentos | ✅ | `FN-01`: orçamento como etapa da OS, com aprovação do cliente (tarefa #379, feita; na `v0.9.52`, 22/10; junto: peça avulsa #655, aviso de peça parecida #653, juntar peças repetidas #656) |
 | Consultas sintéticas | 🟡 | Relatórios de estoque e Relações dão os totais; faltam consultas prontas por período/cliente/peça (tarefa #405) |
 | Centro de armazenamento de estoque | ✅ | Depósitos (Configurações → Depósitos) |
 

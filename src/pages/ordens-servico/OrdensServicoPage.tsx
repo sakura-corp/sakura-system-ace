@@ -499,14 +499,6 @@ export function OrdensServicoPage() {
         )}
       </header>
 
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a abrir ordens de serviço de verdade.
-        </p>
-      )}
-
       {isSupabaseConfigured && !carregando && !lojaAtual && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
           Seu usuário não tem loja atribuída. Fale com o administrador.

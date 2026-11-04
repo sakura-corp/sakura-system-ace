@@ -114,20 +114,19 @@ dá **mais resultado pelo menor tamanho**. O resultado se mede de dois jeitos: q
 tira da loja e quanto pesa na escolha de quem compara sistemas (a vitrine dos concorrentes está
 em `MELHORIAS.md`, "Mercado", e em `docs/comparativo-anexar.md`).
 
-**Continua na frente de tudo**, porque já foi combinado como base para vender: permissões no
-banco (#365, #366, #367), o token antigo da Focus (#368), o Electron (#385), e o contrato e a
-LGPD (item 10 da seção 8).
-**Mudou em 22/10** (ela): a #365, a #368 e a #385 entram na leva 4; **a #366 e a #367 esperam** até
-outra empresa ir usar o sistema (na Pneus Amigão o risco é teórico, `docs/licoes.md`, item 1). A
-leva 5 é a #454, a #456, a #372 e a #459 (`docs/painel.md` do `sakura-corp/escritorio`, "Andamento").
+**Na frente de tudo, até 22/10**: as permissões no banco (#365, #366, #367), o token antigo da
+Focus (#368) e o Electron (#385), todas feitas entre 23 e 29/10, e o contrato e a LGPD (item 10 da
+seção 8; o contrato foi revisado pelo advogado em 12/10). A **leva 5** foi aprovada em 31/10; as
+tarefas que ficaram abertas (a #456, a #372 e a #459) passaram pra **leva 6** (`docs/painel.md` do
+`sakura-corp/escritorio`, "Andamento").
 
 ### Onda 1: sem custo, rápidas, tiram trabalho já
 
 | Tarefa | Tamanho | Por quê |
 |---|---|---|
-| #454 Central do dia | média | o "assistente sem IA"; junta numa lista o que precisa de atenção, com o botão de agir |
+| ~~#454 Central do dia~~ (feita, 03/11) | média | o "assistente sem IA"; junta numa lista o que precisa de atenção, com o botão de agir |
 | #397 Resumo pro dono no WhatsApp | pequena | o dono fica sabendo sem abrir o programa |
-| #455 Clientes que sumiram (`FN-11`) | pequena | traz cliente de volta com dado que já existe |
+| ~~#455 Clientes que sumiram (`FN-11`)~~ (feita, 20/10) | pequena | traz cliente de volta com dado que já existe |
 | #456 Pix copia e cola na cobrança e no faturamento | pequena a média | o cliente paga o valor certo sem digitar, sem banco intermediário |
 | #459 Pedir avaliação no Google depois do serviço | pequena | ajuda a loja a ganhar cliente, e isso vende o sistema |
 | #457 Importar do sistema antigo, por planilha (`FN-15`) | grande, em partes | subiu da onda 2: as lojas da próxima fase **usam outro sistema**, que exporta planilhas (ela, 12/10). Precisa ser **compatível com tudo**, porque não se sabe o que a exportação traz |
@@ -140,7 +139,7 @@ leva 5 é a #454, a #456, a #372 e a #459 (`docs/painel.md` do `sakura-corp/escr
 
 | Tarefa | Tamanho | Por quê |
 |---|---|---|
-| #379 Orçamento com aprovação | grande | o que mais aparece na vitrine dos concorrentes |
+| ~~#379 Orçamento com aprovação~~ (feita, 22/10) | grande | o que mais aparece na vitrine dos concorrentes |
 | #380 Checklist com fotos | grande | idem; o custo é só o espaço das fotos |
 | #373 Listas longas com páginas | média | necessária quando a loja importar milhares de clientes |
 | #371 Menu agrupado | média | com mais funções, é o que mantém o programa fácil |

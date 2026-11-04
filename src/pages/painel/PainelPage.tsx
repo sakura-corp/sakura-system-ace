@@ -52,8 +52,8 @@ import type { OrdemServico } from "@/types/os";
 
 const TITULO_CARTAO: Record<CartaoMetrica, string> = {
   vendas_mes: "Recebido no mês",
-  custos_mes: "Custos mês",
-  lucro_mes: "Lucros mês",
+  custos_mes: "Custos do mês",
+  lucro_mes: "Lucro do mês",
   ticket_medio_mes: "Ticket médio",
   contas_pagar_vencendo: "Contas a pagar vencendo",
 };
@@ -272,14 +272,6 @@ export function PainelPage() {
         <h1 className="text-titulo font-semibold text-sakura-purple-dark">Início</h1>
         <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para ver o painel de verdade.
-        </p>
-      )}
 
       {erro && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>

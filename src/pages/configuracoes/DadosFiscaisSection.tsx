@@ -269,7 +269,7 @@ export function DadosFiscaisSection({
       <div className="mt-6 border-t border-sakura-gray/20 pt-4">
         <p className="text-rotulo font-medium text-sakura-purple-dark/90">Integração Focus NFe</p>
         <p className="mt-1 text-rotulo text-sakura-muted">
-          Cole aqui o token de acesso quando assinar um plano no Focus NFe. Use o ambiente de
+          Cole aqui o token de acesso da loja, que fica no painel do Focus NFe. Use o ambiente de
           homologação pra testar sem gerar nota de verdade.
         </p>
         <p className="mt-2 text-rotulo text-sakura-muted">
@@ -314,7 +314,7 @@ export function DadosFiscaisSection({
         </p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
-            Código IBGE do município
+            Código da cidade (IBGE)
             <input
               value={valores.codigo_municipio ?? ""}
               onChange={(e) => set("codigo_municipio", e.target.value)}

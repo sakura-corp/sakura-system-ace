@@ -19,20 +19,20 @@ Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma ta
 - **Tudo o que depende dela, no sistema e na loja**: [github.com/sakura-corp/sakura-system-ace/issues?q=is:issue+is:open+label:sofia](https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aissue+is%3Aopen+label%3Asofia).
   Quando surgir algo novo que dependa dela, abrir a tarefa com a etiqueta `sofia` (e a **data no título**
   quando houver, ex.: "Até 09/10/2027: renovar a chave `TOKEN_VERSOES`"). Feito, fecha a tarefa.
-- **Já tinham tarefa antes e continuam valendo**: a equipe no programa das lojas (#474), criar operador
-  no programa instalado (#482), enxugar o CI (#442), atualizar o Electron (#385, em saltos), os lotes de
-  permissão no banco (#365 a #367), apagar a cópia antiga do token da Focus (#368), a paginação das
-  listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em 1.000 linhas pelo Supabase).
+- **Já tinham tarefa antes e continuam valendo**: a equipe no programa das lojas (#474), enxugar o CI
+  (#442), a paginação das listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em
+  1.000 linhas pelo Supabase). Os lotes de permissão no banco (#365 a #367), o token antigo da Focus
+  (#368), o salto do Electron pra 40 (#385) e o operador no programa instalado (#482) foram feitos.
   O painel em tempo real (#355) saiu daqui: feito e testado ao vivo em 17/10.
 - **Assuntos da EMPRESA ficam no repositório privado** (`caranovavidanova/sakura-corp`), nunca aqui, e não
   são detalhados neste arquivo. Os que continuam pendentes, só pelo nome: **a TFE; o capital; o Claude Team
   (assinatura marcada para 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
   novas; o Termo de Colaboração, a cessão e o memorando da equipe; a conversa com o contador sobre o dinheiro
-  que entrou; levar o contrato e a LGPD (item 10) a um advogado ou à contabilidade; e o que falta da abertura
-  da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
+  que entrou; o que falta da LGPD (item 10: o registro de operações de tratamento e o que acontece
+  quando o contrato acaba; o contrato em si foi revisado em 12/10); e o que falta da abertura da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
   (`add_repo`, com a autorização dela) e ler lá.
-- **Depende do horário dela e do privado, ainda sem tarefa**: o resumo agendado da segunda de manhã (A2 da
-  #472; `docs/jeito-de-trabalhar.md`).
+- **O resumo da segunda de manhã** (A2 da #472) mora no `sakura-corp/escritorio` (escritorio#17, #28 e
+  #83); a rotina antiga, da conta do Team, foi pausada em 04/11/2026.
 - **Assunto importante: segurança contra ataque e contra cópia do código** (ela, 17/10). Não precisa de
   tudo de uma vez, mas precisa de um caminho que cresce junto com o projeto. As fases propostas (o que
   fazer agora de graça, em 3 a 12 meses e depois de ~30 lojas) estão no item **B2** do plano de 17/10, no
@@ -74,13 +74,11 @@ PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
-instrução de **parar e mandar mensagem pra ela** se quem estiver fazendo não for ela. Por enquanto
-só ela (com o Claude dela) mexe nessas: a equipe fica no painel até ela avisar.
+instrução de **parar e mandar mensagem pra ela** se quem estiver fazendo não for ela. Desde 19/10/2026
+a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PROJETO_STATUS.md`).
 
 | Tarefa | O que é |
 |---|---|
-| #365, #366, #367 | Permissão no banco: clientes e veículos; peças e estoque; OS (`TR-04.1`, lotes 4 a 6) |
-| #368 | Apagar a cópia antiga do token da Focus (`TR-04.2` parte 2) |
 | #369 | Uma nota por OS garantida pelo banco (`TR-05.2`) |
 | #370 | Erro de tela com as últimas ações (resto do `TR-08.3`) |
 | #371 | Menu agrupado (`TR-03.1`, conversa antes) |
@@ -91,13 +89,11 @@ só ela (com o Claude dela) mexe nessas: a equipe fica no painel até ela avisar
 | #376 | Checklist fiscal da loja nova (`TR-11.6`) |
 | #377 | Levantamento da assinatura do instalador (`TR-09.3`) |
 | #378 | Exportar os dados de uma loja (`TR-12.4`) |
-| #379 | Orçamento (`FN-01`) |
 | #380 | Checklist de entrada com fotos (`FN-02`) |
 | #381 | Lembrete de revisão (`FN-06`) |
 | #382 | Sugestão de compra (`FN-07`) |
 | #383 | Relatório mensal pra contabilidade (`FN-13`) |
 | #384 | Modo demonstração (`FN-14`) |
-| #385 | Atualizar o Electron (item 14) |
 | **Do comparativo** | |
 | #386 → #387 → #388 | **DRE**, nesta ordem: plano de contas em grupos; taxa da maquininha; a tela do DRE. O DRE de modelo, com números reais, fica só no repositório privado (`dre/`) |
 | #389 | Fluxo de caixa projetado |
@@ -123,8 +119,6 @@ só ela (com o Claude dela) mexe nessas: a equipe fica no painel até ela avisar
 | #411 | Boleto (levantamento) |
 | #412 | App de celular pro mecânico (levantamento; decisão estrutural) |
 | **Da visão** (12/10, `docs/visao.md`) | |
-| #454 | Central do dia: o que precisa de atenção hoje, no Início (o assistente sem IA) |
-| #455 | Clientes que sumiram (`FN-11`) |
 | #456 | Pix copia e cola na cobrança e no faturamento |
 | #457 | Importar do sistema antigo, por planilha (`FN-15`); as lojas da fase 2 usam outro sistema |
 | #458 | Desenho do assistente de IA (conversa, sem código) |
@@ -198,9 +192,7 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
    e a loja é Ltda no Simples. **Resposta da contabilidade (13/10)**: a prefeitura de Araraquara
    já manda tudo pro ambiente nacional, inclusive a última nota da loja, e o sistema deles puxa
    certinho. Eles estão conferindo, prefeitura por prefeitura, se o portal municipal vai ser
-   desligado ou se continua mandando pro nacional (o comum); se mudar, mandam um manual antes de
-   1º/11. **Se o portal municipal for desligado**, a emissão pela Focus precisa passar pro padrão
-   nacional: conferir com a Focus na hora.
+   desligado ou se continua mandando pro nacional (o comum). O manual deles chegou (#503, fechada):
    **Desligado (comunicado da prefeitura de 19/10, chegou em 29/10, #503)**: desde **01/11/2026** o
    Simples só emite NFS-e pelo Padrão Nacional, e o Giap parou. O trabalho está na #837 (PR #839).
    **Pra cada loja nova no Padrão Nacional** (aprendido no ensaio de 03/11): no painel da Focus,
@@ -358,7 +350,8 @@ um WhatsApp (hoje o contato é só o e-mail dela).
 
 ### 10. ⚠️ Contrato e papéis de LGPD, antes da primeira venda pra terceiro (`TR-12.2`)
 
-Não é código: **ela precisa levar isso a um advogado ou à contabilidade.** O texto de uma página
+Não é código. **O contrato com as lojas, com a cláusula de dados como anexo, foi revisado pelo advogado
+em 12/10/2026** (detalhe no privado; `ANTES-DA-PRIMEIRA-VENDA.md`, no topo). O texto de uma página
 está em **`ANTES-DA-PRIMEIRA-VENDA.md`**, na raiz: os seis pontos da cláusula de dados e o registro
 de operações de tratamento. Na LGPD **a loja é a controladora** dos dados dos clientes e **a
 operadora é a empresa dela** (a Sakura Corp, com CNPJ desde 02/10/2026; as contas dos serviços
@@ -419,19 +412,19 @@ tempo real. Depois, a **leva 1** (montada em 17/10: cabeçalho, pegar tarefa, ho
 programa; ver `docs/painel.md` do `sakura-corp/escritorio`, "Andamento"), a leva 2 (fases da leva, relatório e aprovação) e o **financeiro com DRE**, num banco privado (nunca no GitHub).
 O exemplo de DRE está no repositório privado (`dre/`).
 
-### 14. Atualizar o Electron (tarefa #385; ritmo decidido por ela em 03/10/2026)
+### 14. Atualizar o Electron (tarefa #385, feita; ritmo decidido por ela em 03/10/2026)
 
 O programa estava na **linha 33 do Electron** (Chromium 130), sem correção de segurança desde
-2025. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 por isso, e está certo.
+2025. O aviso `electron-desatualizado.yml` fica vermelho todo dia 1 enquanto a linha do programa
+estiver sem suporte, e está certo.
 - **Destino: a linha 44**, não a 42: sai uma linha nova a cada 8 semanas e o suporte é das três
-  últimas, então a 42 perde o suporte quando a 45 sair (~20/10/2026). A 44 vai até ~fev/2027.
-- **Andamento**: salto 1 (**36**) publicado no teste em 04/10 como `v0.9.50`, e no Balcão desde
-  05/10; no laboratório, nenhuma das 61 telas mudou a olho e os campos se comportaram igual.
-  Falta o teste dela. **Salto 2 (40)**: PR da #385 (23/10), com o `electron` em `^40.10.6`
-  (Chromium 144, Node 24); no laboratório, 36.9.5 × 40.10.6 deu 0 de 64 telas mudadas a olho
-  (só o contorno de um "0" no calendário do Início) e os campos iguais; `test:electron` e o
-  build com as quatro chavinhas ok. Falta publicar no teste e o teste dela na loja; o aviso
-  mensal continua vermelho até a 44 (o suporte hoje é da 43 à 45).
+  últimas. A 44 vai até ~fev/2027.
+- **Andamento**: salto 1 (**36**) na `v0.9.50` (04/10; no Balcão desde 05/10). **Salto 2 (40)**
+  feito na #385: o `electron` em `^40.10.6` (Chromium 144, Node 24) entrou na `main` em 23/10
+  (PR #763) e chegou nas lojas com a **`v0.9.55`, liberada em 28/10**. **A linha 40 já está sem
+  suporte** (o suporte é das três últimas), então o aviso mensal continua vermelho. **Falta o
+  teste dela da 40** (no Windows dela e no Balcão), e só depois vem o próximo salto, pra 44: a
+  [#869](https://github.com/sakura-corp/sakura-system-ace/issues/869).
 - **O Balcão é Windows 10 Home 22H2**: nenhuma linha até a 46 deixa de rodar nele (o Electron
   exige Windows 10 ou mais novo desde a 23). Ficar de olho quando o Chromium anunciar o fim do
   Windows 10.

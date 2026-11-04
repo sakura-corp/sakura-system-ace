@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import {
+  UNIDADE_OUTRA,
   UNIDADES_PADRAO,
   unidadeEstaNaLista,
   type PecaFormValues,
@@ -70,7 +71,7 @@ export function DadosCadastraisFields({
             <select
               value={watch("unidade")}
               onChange={(e) => {
-                if (e.target.value === "OUTRA") {
+                if (e.target.value === UNIDADE_OUTRA) {
                   setUnidadeLivre(true);
                   setValue("unidade", "");
                   return;
@@ -84,7 +85,7 @@ export function DadosCadastraisFields({
                   {unidade.rotulo}
                 </option>
               ))}
-              <option value="OUTRA">Outra...</option>
+              <option value={UNIDADE_OUTRA}>Outra...</option>
             </select>
           )}
         </Campo>

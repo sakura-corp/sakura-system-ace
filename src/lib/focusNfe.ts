@@ -467,8 +467,9 @@ export interface DadosEmissaoNFSe {
   discriminacao: string;
   valorServicos: number;
   cliente: Cliente;
-  // Código IBGE do município do cliente (tomador) — não tem campo próprio no
-  // cadastro de Clientes hoje, então é pedido na hora da emissão (ver
+  // Código IBGE do município do cliente (tomador). Vem do cadastro do cliente
+  // (`codigo_municipio`, preenchido pelo CEP), mas a tela de emissão deixa
+  // conferir e digitar na hora quando ele está vazio (ver
   // EmitirNotaFiscalModal.tsx).
   codigoMunicipioCliente: string;
   configuracaoFiscal: ConfiguracaoFiscalLoja;

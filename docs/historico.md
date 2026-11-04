@@ -16,8 +16,8 @@
   quem trabalha é ela, **mescla direto** (seção 3 do `PROJETO_STATUS.md`). Os PRs guardam o
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
-  "Empacotamento", seção 7). Em 12/10/2026: a `v0.9.51` é a liberada pra todas as lojas (desde
-  08/10); banco na `0064`. Da `0.9.51` em diante, as versões moram no
+  "Empacotamento", seção 7). Em 04/11/2026: a `v0.9.55` é a liberada pra todas as lojas (desde
+  28/10); o banco da Pneus Amigão na `0075`, com a `0076` esperando os computadores na 0.9.56. Da `0.9.51` em diante, as versões moram no
   `sakura-corp/ssace-versoes` (PR #447; `docs/operacao.md`, "Onde as versões moram").
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
@@ -29,6 +29,11 @@
   antes de qualquer comando que possa apagar.
 
 ## Marcos antigos, do mais novo pro mais velho
+
+Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **os status dentro
+deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
+`docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
+`docs/`, não o marco.
 
 ### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
 - **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
@@ -45,11 +50,6 @@
 - **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
 - **O Resumo de segunda** chegou em 02/11 (disparado à mão: o horário agendado atrasou; escritorio#77): **falta a Sofia pausar a rotina antiga e fechar a #625**. **CBS de 2027** (#838): depois de 15/12.
 - **Depende dela**: conferir o lucro do dia no Caixa da loja (#809); a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
-
-Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **os status dentro
-deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
-`docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
-`docs/`, não o marco.
 
 ### 31/10/2026, manhã: o ensaio da NFS-e nacional ainda não feito; #844, #845 e #847 na 0.9.56
 - **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito** (lembrado no PR em 31/10, com o prazo). **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se o Tiago não fizer no fim de semana, combinar um plano B com a loja pra segunda.

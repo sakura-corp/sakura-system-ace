@@ -11,7 +11,7 @@
 > **Nada aqui é ordem de execução.** É um cardápio priorizado. A usuária decide o que entra em
 > cada sessão. Ver "Regras invioláveis" abaixo.
 
-## Situação em 30/09/2026 (ler antes de escolher um item)
+## Situação em 04/11/2026 (ler antes de escolher um item)
 
 O guia foi escrito em 10/09, quando a memória era um arquivo só. **Onde ele diz "§3/§5/§6/§7/§8
 do `PROJETO_STATUS.md`"**, hoje é `docs/decisoes.md`, `docs/banco.md`, `docs/licoes.md`,
@@ -19,11 +19,11 @@ do `PROJETO_STATUS.md`"**, hoje é `docs/decisoes.md`, `docs/banco.md`, `docs/li
 
 | Etapa (Parte 4) | Situação |
 |---|---|
-| 0. Antes de tudo | A `v0.9.29` saiu (11/09) e o gerador das 54 telas está na `main` (a branch `claude/cool-lamport-uzyh8w` sobrou e pode ser apagada). **Falta trocar as três credenciais expostas** (`TR-04.7`, lista "O que depende dela" da seção 8) |
+| 0. Antes de tudo | A `v0.9.29` saiu (11/09) e o gerador das 54 telas está na `main` (a branch `claude/cool-lamport-uzyh8w` sobrou e pode ser apagada). As três credenciais expostas (`TR-04.7`) foram **trocadas em 19/10** (#505) |
 | 1. Fundação | **Feita** (11/09) |
 | 2. O que dói no balcão | **Feita** (12/09) |
 | 3. Confiança nos números | 6 de 7. Falta o `TR-05.2` (uma nota por OS), **adiado de propósito**: ver "O que ainda está frágil na parte fiscal", item 3, na seção 8 |
-| 4. Antes da segunda empresa | Todos começados. Em aberto: `TR-04.1` (no banco já estão RH, contas e Caixa; faltam clientes, peças/estoque e OS), a parte 2 do `TR-04.2` (liberada, quando ela pedir) e o resto do `TR-08.3` (a trilha das últimas ações) |
+| 4. Antes da segunda empresa | Todos começados. `TR-04.1` feito (#365 a #367: no banco estão RH, contas, Caixa, clientes, peças/estoque e OS; a `0076`, das OS, espera os computadores na 0.9.56) e a parte 2 do `TR-04.2` feita (#368). Em aberto: o resto do `TR-08.3` (a trilha das últimas ações, #370) |
 | 5. Escala e produto | `FN-09` (venda de balcão) feito. Fora do roteiro, também feitos: `FN-04` (ficha do veículo) e `TL-46.1` |
 
 O detalhe de cada entrega está na linha do tempo da seção 8 e nos módulos da seção 7. **Tudo o que
