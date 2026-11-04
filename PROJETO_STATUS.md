@@ -165,10 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
-- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; **o Tiago está fazendo o ensaio desde 02/11**, com os dados fiscais que a Sofia mandou (o resultado vai no PR); se não sair, combinar um plano B com a loja pra **terça** (a mensagem não foi escrita).
-- **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
-- **Leva 5 aprovada** (#849, testes adiados pro dia de teste da 0.9.56, como na leva 4). **A leva 6 é a atual**: 6 tarefas livres (#814, #708, #459, #456, #454, #372; 51 h). O painel não tinha tarefa pra pegar porque faltava o relatório (`docs/licoes.md`, item 95).
-- **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
-- **O Resumo de segunda** chegou em 02/11 (disparado à mão: o horário agendado atrasou; escritorio#77): **falta a Sofia pausar a rotina antiga e fechar a #625**. **CBS de 2027** (#838): depois de 15/12.
-- **Depende dela**: conferir o lucro do dia no Caixa da loja (#809); a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
+- **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
+- **Com a Sofia (manhã de 04/11)**: mandar o e-mail pra Focus (Araraquara na homologação? município de teste?) e a mensagem pra contabilidade (o percentual de tributos do Simples; se o cadastro mensal da alíquota no Giap acabou, #853). Sem homologação, a decisão é **testar em produção** com uma nota real que a loja ficou devendo.
+- **Mesclado**: #854, a Central do dia (#454, Gustavo). Ideias novas: #855, #856, #858.
+- **#857, a busca geral (#372, Gustavo; migration `0077`)**: perguntas respondidas pela recomendação; com o conserto da OS e os desativados fora, e o CI verde, a Sofia mescla. A `0077` é dela, depois da `0076`.
+- **Na 0.9.56**: #839, #844, #845, #847, #367, #854 (e #857, #853 se entrarem). **Próximo (com o ensaio)**: produção na Focus → porteiro na loja → publicar → liberar → a 0076 (#809).
+- **Depende dela**: pausar a rotina antiga do Resumo e fechar a #625; renovar a chave da API até 22/11 (escritorio#20); conferir o lucro do dia no Caixa da loja (#809).
+
