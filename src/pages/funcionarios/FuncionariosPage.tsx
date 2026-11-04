@@ -113,14 +113,6 @@ export function FuncionariosPage() {
         </div>
       </header>
 
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a cadastrar funcionários de verdade.
-        </p>
-      )}
-
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 
       <div className="flex gap-1 border-b border-sakura-gray/30">

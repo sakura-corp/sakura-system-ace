@@ -111,14 +111,6 @@ export function ServicosPage() {
         )}
       </header>
 
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a cadastrar serviços de verdade.
-        </p>
-      )}
-
       {mostrarFormulario && (
         <ServicoForm
           categorias={categorias}
