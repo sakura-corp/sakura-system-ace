@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   avisoPercentualTributosSimplesVazio,
   erroPercentualTributosSimples,
+  percentualTributosSimplesParaSalvar,
 } from "./percentualTributosSimples";
 
 describe("erroPercentualTributosSimples", () => {
@@ -22,5 +23,16 @@ describe("avisoPercentualTributosSimplesVazio", () => {
     expect(avisoPercentualTributosSimplesVazio("simples_nacional", 0)).toBeNull();
     expect(avisoPercentualTributosSimplesVazio("lucro_presumido", null)).toBeNull();
     expect(avisoPercentualTributosSimplesVazio(null, null)).toBeNull();
+  });
+});
+
+describe("percentualTributosSimplesParaSalvar", () => {
+  it("no Simples, valida e salva o que foi digitado", () => {
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 6.5, null)).toEqual({ valor: 6.5, erro: null });
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 150, null).erro).toMatch(/0 e 100/);
+  });
+  it("fora do Simples, o campo está escondido: não valida e mantém o que já estava guardado", () => {
+    expect(percentualTributosSimplesParaSalvar("lucro_presumido", 150, 6.5)).toEqual({ valor: 6.5, erro: null });
+    expect(percentualTributosSimplesParaSalvar("lucro_presumido", 150, null)).toEqual({ valor: null, erro: null });
   });
 });

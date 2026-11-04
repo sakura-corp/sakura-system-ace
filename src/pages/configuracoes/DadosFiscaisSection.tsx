@@ -7,7 +7,7 @@ import {
 import { PASSO_A_PASSO_ALIQUOTA_PADRAO } from "@/schemas/aliquotaCompetencia";
 import {
   avisoPercentualTributosSimplesVazio,
-  erroPercentualTributosSimples,
+  percentualTributosSimplesParaSalvar,
 } from "@/schemas/percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
@@ -94,15 +94,20 @@ export function DadosFiscaisSection({
   async function handleSalvar() {
     setErro(null);
     setSalvo(false);
-    const erroPercentual = erroPercentualTributosSimples(valores.percentual_tributos_simples);
-    if (erroPercentual) {
-      setErro(erroPercentual);
+    const percentual = percentualTributosSimplesParaSalvar(
+      valores.regime_tributario,
+      valores.percentual_tributos_simples,
+      configuracao?.percentual_tributos_simples ?? null,
+    );
+    if (percentual.erro) {
+      setErro(percentual.erro);
       return;
     }
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
         ...valores,
+        percentual_tributos_simples: percentual.valor,
         cnpj: valores.cnpj || null,
         razao_social: valores.razao_social || null,
         nome_fantasia: valores.nome_fantasia || null,
