@@ -165,12 +165,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 04/11/2026, tarde: o ensaio da loja nova mesclado; a NFS-e esperando a Focus e a contabilidade
-- **NFS-e (#839)**: as perguntas foram pra Focus (Araraquara na homologação, ou produção direto e cancelar) e pra contabilidade (o percentual do Simples, o Giap #853, o CFOP 5405 #864). Esperando; comentário no #839.
-- **#866, o campo do percentual do Simples** (no lugar do 0 provisório; migration `0078`): é o que falta pra produção. O Tiago põe na leva. **Próximo**: respostas → #866 → produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → a 0076 (#809).
-- **Mesclados**: #862 (o ensaio da loja nova do Tiago: a skill e os guias até a primeira nota; a primeira nota sai no PC da Sofia, `docs/decisoes.md`) e #863 (o painel saiu daqui; mora no escritório).
-- **Na `leva-6`**: #861, #864, #865 e #866.
-- **#857, a busca geral (Gustavo)**: espera os dois consertos dele (abrir OS pela busca; desativados fora). A `0077` é da Sofia, depois da `0076`.
-- **Feito**: o "Resumo de segunda" antigo pausado e a #625 fechada.
-- **Depende dela**: a #842 (tirar o token de homologação e os cadastros "ENSAIO TIAGO" do `ssace-teste`, depois do #839); renovar a chave da API até 22/11 (escritorio#20); o lucro do dia no Caixa (#809).
+### 04/11/2026, noite: a varredura geral dos 4 repositórios; docs em dia; 20 tarefas novas
+- **Varredura** (6 ajudantes, só leitura) e o que veio dela: docs em dia e textos simples na tela (#868, mesclado), 12 tarefas fechadas, 20 novas (#869 a #881, #883 a #886; escritorio#89 a #91).
+- **O mais sério**: o Electron 40 sem suporte (#869, depois do teste dela da 40) e 4 alertas nas dependências (#870).
+- **O Tiago**: pôr nas levas as tarefas novas da equipe e triar a #886 (o que a varredura achou e não mexeu).
+- **NFS-e (#839)**: esperando a Focus e a contabilidade; depois #866 → produção → publicar a 0.9.56 → liberar → a 0076 (#809).
+- **#857 (Gustavo)**: espera os dois consertos dele.
+- **Depende dela, com data**: #520 (06/11), #842 (11/11, ou depois do ensaio dela, #877), escritorio#20 (22/11); decidir a #885; apagar branches (#884).
 

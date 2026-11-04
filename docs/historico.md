@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 04/11/2026, tarde: o ensaio da loja nova mesclado; a NFS-e esperando a Focus e a contabilidade
+- **NFS-e (#839)**: as perguntas foram pra Focus (Araraquara na homologação, ou produção direto e cancelar) e pra contabilidade (o percentual do Simples, o Giap #853, o CFOP 5405 #864). Esperando; comentário no #839.
+- **#866, o campo do percentual do Simples** (no lugar do 0 provisório; migration `0078`): é o que falta pra produção. O Tiago põe na leva. **Próximo**: respostas → #866 → produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → a 0076 (#809).
+- **Mesclados**: #862 (o ensaio da loja nova do Tiago: a skill e os guias até a primeira nota; a primeira nota sai no PC da Sofia, `docs/decisoes.md`) e #863 (o painel saiu daqui; mora no escritório).
+- **Na `leva-6`**: #861, #864, #865 e #866.
+- **#857, a busca geral (Gustavo)**: espera os dois consertos dele (abrir OS pela busca; desativados fora). A `0077` é da Sofia, depois da `0076`.
+- **Feito**: o "Resumo de segunda" antigo pausado e a #625 fechada.
+- **Depende dela**: a #842 (tirar o token de homologação e os cadastros "ENSAIO TIAGO" do `ssace-teste`, depois do #839); renovar a chave da API até 22/11 (escritorio#20); o lucro do dia no Caixa (#809).
+
 ### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
 - **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
 - **Com a Sofia (manhã de 04/11)**: mandar o e-mail pra Focus (Araraquara na homologação? município de teste?) e a mensagem pra contabilidade (o percentual de tributos do Simples; se o cadastro mensal da alíquota no Giap acabou, #853). Sem homologação, a decisão é **testar em produção** com uma nota real que a loja ficou devendo.

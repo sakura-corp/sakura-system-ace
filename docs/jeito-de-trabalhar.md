@@ -102,6 +102,15 @@ no histórico. Passando do limite, avisa o Claude, **uma vez só por sessão**, 
   Code, não foi visto de dentro do app. Conferir na primeira sessão comprida de verdade e, se não
   aparecer, avisar (a lição vira item de `docs/licoes.md`).
 
+## A varredura geral (04/11/2026)
+
+Com cota sobrando antes do reset, ela pediu "olha todos os cantinhos e procura pendências". O que
+funcionou: **6 ajudantes só de leitura em paralelo**, um por canto (código, docs, banco e
+automações, as issues, o escritório com o caderno, o privado), cada um devolvendo um relatório por
+gravidade; depois **um PR por repositório** (docs), as tarefas novas, o fechamento das já feitas
+(com a prova no comentário) e um PR de código pequeno com `/code-review`. Nada publicado. Repetir
+quando sobrar cota; o resultado de 04/11 está nas #868 e #886.
+
 ## O aviso das pendências no começo da sessão (28/10/2026)
 
 Pedido da Sofia, depois de o painel travar o Tiago numa tarefa de 22/10 que ele tinha esquecido no
