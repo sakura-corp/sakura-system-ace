@@ -14,9 +14,6 @@ import type { ItemOS, OrdemServico, StatusOS } from "@/types/os";
  */
 export const STATUS_DE_ORCAMENTO = ["orcamento", "recusado"] as const satisfies readonly StatusOS[];
 
-/** O filtro pronto pro `.not("status", "in", ...)` do Supabase. */
-export const FILTRO_SEM_ORCAMENTO = `(${STATUS_DE_ORCAMENTO.join(",")})`;
-
 export function ehOrcamento(ordem: { status: StatusOS }): boolean {
   return (STATUS_DE_ORCAMENTO as readonly StatusOS[]).includes(ordem.status);
 }

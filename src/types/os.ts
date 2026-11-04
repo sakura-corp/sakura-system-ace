@@ -107,9 +107,6 @@ export interface OrdemServico {
   orcado_em?: string | null;
 }
 
-/** Ordem que já tem número de OS — toda ordem que não é orçamento. */
-export type OrdemNumerada = OrdemServico & { numero: number };
-
 /** Guarda de tipo: a ordem já tem número de OS (não é orçamento). */
 export function temNumeroDeOS<T extends { numero: number | null }>(
   ordem: T,

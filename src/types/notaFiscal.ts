@@ -19,8 +19,3 @@ export interface NotaFiscalArquivo {
   ordem_servico?: { cliente?: { nome: string } | null } | null;
   operador?: { nome: string } | null;
 }
-
-export const TIPO_NOTA_LABEL: Record<TipoNotaFiscal, string> = {
-  nfe: "NFe",
-  nfse: "NFS-e",
-};
