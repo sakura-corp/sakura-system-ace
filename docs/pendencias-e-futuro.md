@@ -279,14 +279,20 @@ processo principal (sem CORS); e o erro real da Focus na tela.
 
 **(B) Muda por loja, mas é preencher uma tela.** Configurações → "Dados fiscais da loja": CNPJ,
 razão social, IE e IM, regime, endereço, telefone, token da Focus e, só pra NFS-e, código IBGE do
-município, item da LC 116, alíquota de ISS e código tributário do município. **Campo em branco aqui
-vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
+município, item da LC 116, alíquota de ISS, código tributário do município e **CNAE** (está no Cartão
+CNPJ; sem ele o programa para com "Código CNAE da loja não configurado", visto no ensaio de 04/11).
+**Campo em branco aqui vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
+E **cada peça** (Estoque → Produtos) leva NCM, CEST, CFOP e CSOSN **que combinem**: com o CSOSN
+`500` (ICMS já pago antes, por substituição), o CFOP é o `5405`; `5102` com `500` volta da SEFAZ
+como "Rejeição: CFOP não permitido para o CSOSN informado" (ensaio de 04/11). A tela de produto
+aceita a combinação errada sem avisar.
 
 **(C) Muda por loja e depende de terceiros: é o caro.** Nada disso é código; leva dias ou semanas:
 1. **Habilitar os documentos no painel da Focus** (Empresas → empresa → Documentos Fiscais → ligar
    NFCe e NFSe). É self-service; o suporte não faz.
 2. **Credenciar o CNPJ na SEFAZ do estado pra NFC-e**, feito pelo lojista ou pela contabilidade:
-   (a) o **credenciamento** (homologação e produção são separados; rejeição 245 é isso);
+   (a) o **credenciamento** (homologação e produção são separados; a rejeição 245, que aparece na
+   tela como "Rejeição: CNPJ Emitente não cadastrado", é isso);
    (b) o **certificado digital** da empresa, vinculado no painel da Focus; (c) **CSC e ID token**
    gerados na SEFAZ (um par por ambiente) e informados na Focus. Em SP o portal da NFC-e é próprio
    (`nfce.fazenda.sp.gov.br`). **Varia por estado.** É o passo mais pesado.

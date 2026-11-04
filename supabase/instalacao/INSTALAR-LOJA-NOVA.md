@@ -176,7 +176,8 @@ e aí o app não acha a função) → apague o exemplo, cole todo o conteúdo de
      então este item é feito **na primeira OS do treino** (depois da Parte 3), antes da primeira
      venda de verdade: na OS, **Encerrar OS** (a tela de faturar que abre sozinha pode ser
      cancelada) → na lista de OS, botão **Fechamento** → **Ver garantia** → **Imprimir**. A aba
-     Fechamento só aparece em OS concluída ou faturada.
+     Fechamento só aparece em OS concluída ou faturada. Sem faturar, a garantia sai com a **data de
+     fechamento** e a **forma de pagamento** em branco ("—"): é o esperado, não defeito.
    - **c)** Confira que saiu **inteiro**, sem cortar as bordas.
 
 ---
