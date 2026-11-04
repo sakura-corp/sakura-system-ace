@@ -314,7 +314,7 @@ export function DadosFiscaisSection({
         </p>
         <div className="mt-3 grid grid-cols-3 gap-3">
           <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
-            Código IBGE do município
+            Código da cidade (IBGE)
             <input
               value={valores.codigo_municipio ?? ""}
               onChange={(e) => set("codigo_municipio", e.target.value)}

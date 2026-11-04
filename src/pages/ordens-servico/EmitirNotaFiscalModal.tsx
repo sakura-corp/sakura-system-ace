@@ -536,7 +536,7 @@ export function EmitirNotaFiscalModal({
 
           {tipoNota === "NFS-e" && (
             <label className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
-              Código IBGE do município do cliente
+              Código da cidade do cliente (IBGE)
               <input
                 value={codigoMunicipioCliente}
                 onChange={(e) => setCodigoMunicipioCliente(e.target.value)}

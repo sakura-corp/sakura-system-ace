@@ -28,7 +28,8 @@ Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma ta
   são detalhados neste arquivo. Os que continuam pendentes, só pelo nome: **a TFE; o capital; o Claude Team
   (assinatura marcada para 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
   novas; o Termo de Colaboração, a cessão e o memorando da equipe; a conversa com o contador sobre o dinheiro
-  que entrou; e o que falta da abertura da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
+  que entrou; o que falta da LGPD (item 10: o registro de operações de tratamento e o que acontece
+  quando o contrato acaba; o contrato em si foi revisado em 12/10); e o que falta da abertura da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
   (`add_repo`, com a autorização dela) e ler lá.
 - **O resumo da segunda de manhã** (A2 da #472) mora no `sakura-corp/escritorio` (escritorio#17, #28 e
   #83); a rotina antiga, da conta do Team, foi pausada em 04/11/2026.
@@ -421,8 +422,9 @@ estiver sem suporte, e está certo.
 - **Andamento**: salto 1 (**36**) na `v0.9.50` (04/10; no Balcão desde 05/10). **Salto 2 (40)**
   feito na #385: o `electron` em `^40.10.6` (Chromium 144, Node 24) entrou na `main` em 23/10
   (PR #763) e chegou nas lojas com a **`v0.9.55`, liberada em 28/10**. **A linha 40 já está sem
-  suporte** (o suporte é das três últimas), então o aviso mensal continua vermelho. **O próximo
-  salto, pra 44, é tarefa a criar.**
+  suporte** (o suporte é das três últimas), então o aviso mensal continua vermelho. **Falta o
+  teste dela da 40** (no Windows dela e no Balcão), e só depois vem o próximo salto, pra 44: a
+  [#869](https://github.com/sakura-corp/sakura-system-ace/issues/869).
 - **O Balcão é Windows 10 Home 22H2**: nenhuma linha até a 46 deixa de rodar nele (o Electron
   exige Windows 10 ou mais novo desde a 23). Ficar de olho quando o Chromium anunciar o fim do
   Windows 10.
