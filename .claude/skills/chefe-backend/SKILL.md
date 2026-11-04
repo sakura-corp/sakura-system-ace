@@ -53,7 +53,7 @@ Tela e aparência são do chefe de frontend; revisão de segurança é do chefe 
   `schema_versao`, idempotente (`IF NOT EXISTS`), testada num SQLite em memória (`node:sqlite`), e
   **quem aplica é a Sofia**, guiada pelo `docs/painel.md` de lá. No Console da Cloudflare o SQL vai **sem
   comentários** (o Console recusa). Lá o CI tem o job "Painel" (typecheck, testes e
-  build); à mão, `npx tsc -b` e `npx vitest run` dentro de `painel/`.
+  build); à mão, `npx tsc -b` e `npx vitest run` dentro de `painel/` de lá.
 
 ## 4. Agentes que pode chamar (subagentes, dentro desta sessão)
 **Como conduzir é o ritual fixo da skill `ritual-de-tarefa`** (sessão mãe, ajudantes com o modelo de cada etapa, sessões filhas só se a issue pedir, modelo que falha). A coluna "Modelo" é a categoria; o modelo de cada uma está em `docs/tarefas.md`. Se a issue disser outra categoria pra etapa, vale a da issue.

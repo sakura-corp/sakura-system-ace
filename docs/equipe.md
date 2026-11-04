@@ -38,12 +38,12 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   `.env`**, e o login só na tela do programa: nunca na conversa com o Claude, nunca no GitHub.
 
 Com isso em mãos, a pessoa instala o **Claude Code no PC** (não a versão pela internet: vai
-precisar abrir o programa ou o painel no próprio computador pra testar), entra com a **conta da
+precisar abrir o programa no próprio computador pra testar), entra com a **conta da
 Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre colchetes:
 
 > Oi, Claude. Vou trabalhar no projeto **Sakura System**, que está no GitHub no repositório
 > **`sakura-corp/sakura-system-ace`**. Meu computador é **[Windows ou Mac]** e eu vou trabalhar
-> **[no painel ou no programa das lojas]**. Me guie **um passo por vez**, como se eu nunca tivesse
+> **no programa das lojas**. Me guie **um passo por vez**, como se eu nunca tivesse
 > feito isso: diga exatamente onde clicar ou o que digitar, o que deve aparecer na tela, e
 > **espere eu responder "feito"** antes do próximo passo.
 >
@@ -57,11 +57,10 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >    vai me ajudar a escolher. **Não baixe como ZIP.** Precisa ser clonado, pra eu conseguir
 >    entregar meu trabalho depois.
 > 4. Me explique como abrir o Claude Code **dentro dessa pasta** e espere eu abrir.
-> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`** (e,
->    se eu for do painel, o **`docs/painel.md` do `sakura-corp/escritorio`**), e me explique em português simples, em poucas
->    linhas, como vai ser o meu trabalho.
+> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`**, e me
+>    explique em português simples, em poucas linhas, como vai ser o meu trabalho.
 > 6. Siga o "Primeiro dia" do `docs/equipe.md` até o fim: instalar as dependências e abrir o
->    programa (ou o painel) no meu computador. **Eu colo as chaves no arquivo**: não me
+>    programa no meu computador. **Eu colo as chaves no arquivo**: não me
 >    peça pra colar chave nenhuma aqui na conversa.
 >
 > **Hoje não mude nada no projeto, não crie branch e não pegue tarefa.** Quando tudo estiver
@@ -440,12 +439,12 @@ trabalho que não precisa ser dela passa a rodar na cota do Tiago. **As decisõe
    `nova-tarefa`, cria a issue com a etiqueta **`rascunho`** e põe no corpo o que é decisão dela
    ("Pra Sofia decidir", com a recomendação). Ninguém começa um rascunho. Com o "aprovada" dela, sai
    o `rascunho` e entra a `leva-N` (`docs/tarefas.md`, "Quem escreve a tarefa").
-2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado, nasce depois que a Sofia
-   criar): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
+2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
    regras de lá ficam no próprio repositório.
 3. **O plantão.** Só quando a Sofia avisar que a cota dela acabou (ela manda "plantão ligado" e
-   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`) (o painel mora no `sakura-corp/escritorio`)**, com: o CI verde, a revisão de código colada no PR, e a **aprovação de outro da
-   equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
+   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`)** (o painel mora no
+   `sakura-corp/escritorio`), com: o CI verde, a revisão de código colada no PR, e a **aprovação de
+   outro da equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
    publicar e liberar **nunca**: esses esperam a Sofia. Depois de mesclar, um comentário no PR:
    "mesclado no plantão", pra ela ver na volta.
 
