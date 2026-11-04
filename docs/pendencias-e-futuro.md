@@ -321,7 +321,8 @@ processo principal (sem CORS); e o erro real da Focus na tela.
 
 **(B) Muda por loja, mas é preencher uma tela.** Configurações → "Dados fiscais da loja": CNPJ,
 razão social, IE e IM, regime, endereço, telefone, token da Focus e, só pra NFS-e, código IBGE do
-município, item da LC 116, alíquota de ISS e código tributário do município. **Campo em branco aqui
+município, item da LC 116, alíquota de ISS e código tributário do município. **Percentual aproximado dos tributos do Simples:
+pedir à contabilidade; vazio, a NFS-e Nacional manda 0%** (a tela avisa, sem travar). **Campo em branco aqui
 vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
 
 **(C) Muda por loja e depende de terceiros: é o caro.** Nada disso é código; leva dias ou semanas:

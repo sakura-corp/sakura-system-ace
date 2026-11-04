@@ -5,6 +5,10 @@ import {
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
 import { PASSO_A_PASSO_ALIQUOTA_PADRAO } from "@/schemas/aliquotaCompetencia";
+import {
+  avisoPercentualTributosSimplesVazio,
+  erroPercentualTributosSimples,
+} from "@/schemas/percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import { REGIME_TRIBUTARIO_LABEL } from "@/types/configuracao";
@@ -45,6 +49,7 @@ function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFi
       configuracao?.aliquota_iss !== undefined && configuracao?.aliquota_iss !== null
         ? configuracao.aliquota_iss
         : null,
+    percentual_tributos_simples: configuracao?.percentual_tributos_simples ?? null,
     codigo_tributario_municipio: configuracao?.codigo_tributario_municipio ?? "",
     codigo_cnae: configuracao?.codigo_cnae ?? "",
     aliquota_passo_a_passo: configuracao?.aliquota_passo_a_passo ?? "",
@@ -89,6 +94,11 @@ export function DadosFiscaisSection({
   async function handleSalvar() {
     setErro(null);
     setSalvo(false);
+    const erroPercentual = erroPercentualTributosSimples(valores.percentual_tributos_simples);
+    if (erroPercentual) {
+      setErro(erroPercentual);
+      return;
+    }
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
@@ -125,6 +135,11 @@ export function DadosFiscaisSection({
       setSalvando(false);
     }
   }
+
+  const avisoPercentual = avisoPercentualTributosSimplesVazio(
+    valores.regime_tributario,
+    valores.percentual_tributos_simples,
+  );
 
   return (
     <>
@@ -339,6 +354,36 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
+          {valores.regime_tributario === "simples_nacional" && (
+            <div className="col-span-3">
+              <label className="flex max-w-sm flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+                Percentual aproximado dos tributos do Simples (%)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={valores.percentual_tributos_simples ?? ""}
+                  onChange={(e) =>
+                    set(
+                      "percentual_tributos_simples",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                  className={campoClasse}
+                />
+              </label>
+              <p className="mt-1 text-rotulo text-sakura-muted">
+                O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
+                serviço.
+              </p>
+              {avisoPercentual && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+                  {avisoPercentual}
+                </p>
+              )}
+            </div>
+          )}
           <label className="col-span-2 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
             Código tributário do município (se a prefeitura exigir)
             <input
