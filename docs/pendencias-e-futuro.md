@@ -203,6 +203,12 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
    nacional: conferir com a Focus na hora.
    **Desligado (comunicado da prefeitura de 19/10, chegou em 29/10, #503)**: desde **01/11/2026** o
    Simples só emite NFS-e pelo Padrão Nacional, e o Giap parou. O trabalho está na #837 (PR #839).
+   **Pra cada loja nova no Padrão Nacional** (aprendido no ensaio de 03/11): no painel da Focus,
+   empresa → Documentos Fiscais, ligar **"Ambiente da NFSe Nacional"** (homologação e produção são
+   chaves separadas; a "NFSe" de cima é a municipal). O Ambiente Nacional de **teste** pode não ter o
+   município no convênio (Araraquara não tinha) e recusa com "código do município emissor ...
+   inexistente no cadastro de convênio": não é código, é do governo. A DPS do Simples exige o
+   `percentual_total_tributos_simples_nacional` (o percentual vem da contabilidade).
 
 > **Credenciais que já estiveram neste repositório** (o CSC da SEFAZ, o token do Giap e a senha
 > do portal da prefeitura) continuam no histórico do Git, mas **foram trocadas em 19/10/2026**
