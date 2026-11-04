@@ -96,6 +96,8 @@ existe "2ª ativação". Por isso a primeira nota vem **antes** da entrega, e os
   o token, que a Sofia cola na tela do programa e **nunca na conversa**) e deixar o Ambiente em
   **Produção**. A parte C é a que trava: os passos dela dependem de terceiros. Siga um por vez,
   pelo playbook; no certificado, "playbook, parte C.2(b)".
+- A primeira nota de produção sai **no computador da Sofia** (ou no da loja, sem dar os logins),
+  numa **venda real combinada com a loja, com ela junto** (Sofia, 04/11/2026, #862).
 - Documento que manda: `docs/pendencias-e-futuro.md`, "Playbook de habilitação fiscal por loja
   nova" (partes B e C); e `supabase/instalacao/INSTALAR-LOJA-NOVA.md`, "Parte 4 — Nota fiscal".
 - Pronto quando: a primeira de cada tipo que a loja vai usar (NFC-e pra peça, NFS-e pra serviço),

@@ -165,11 +165,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
-- **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
-- **Com a Sofia (manhã de 04/11)**: mandar o e-mail pra Focus (Araraquara na homologação? município de teste?) e a mensagem pra contabilidade (o percentual de tributos do Simples; se o cadastro mensal da alíquota no Giap acabou, #853). Sem homologação, a decisão é **testar em produção** com uma nota real que a loja ficou devendo.
-- **Mesclado**: #854, a Central do dia (#454, Gustavo). Ideias novas: #855, #856, #858. **A leva 6 segue**: livres no painel a #814, a #708, a #459 e a #456 (no modelo, sem dependência).
-- **#857, a busca geral (#372, Gustavo; migration `0077`)**: perguntas respondidas pela recomendação; com o conserto da OS e os desativados fora, e o CI verde, a Sofia mescla. A `0077` é dela, depois da `0076`.
-- **Na 0.9.56**: #839, #844, #845, #847, #367, #854 (e #857, #853 se entrarem). **Próximo (com o ensaio)**: produção na Focus → porteiro na loja → publicar → liberar → a 0076 (#809).
-- **Depende dela**: pausar a rotina antiga do Resumo e fechar a #625; renovar a chave da API até 22/11 (escritorio#20); conferir o lucro do dia no Caixa da loja (#809).
+### 04/11/2026, tarde: o ensaio da loja nova mesclado; a NFS-e esperando a Focus e a contabilidade
+- **NFS-e (#839)**: as perguntas foram pra Focus (Araraquara na homologação, ou produção direto e cancelar) e pra contabilidade (o percentual do Simples, o Giap #853, o CFOP 5405 #864). Esperando; comentário no #839.
+- **#866, o campo do percentual do Simples** (no lugar do 0 provisório; migration `0078`): é o que falta pra produção. O Tiago põe na leva. **Próximo**: respostas → #866 → produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → a 0076 (#809).
+- **Mesclados**: #862 (o ensaio da loja nova do Tiago: a skill e os guias até a primeira nota; a primeira nota sai no PC da Sofia, `docs/decisoes.md`) e #863 (o painel saiu daqui; mora no escritório).
+- **Tarefas novas, sem leva** (o Tiago põe): #861 (cliente sem CPF trava a NFC-e, aprovada), #864 (aviso de CFOP × CSOSN), #865 (dois textos velhos), #866.
+- **#857, a busca geral (Gustavo)**: espera os dois consertos dele (abrir OS pela busca; desativados fora). A `0077` é da Sofia, depois da `0076`.
+- **Feito**: o "Resumo de segunda" antigo pausado e a #625 fechada.
+- **Depende dela**: a #842 (tirar o token de homologação e os cadastros "ENSAIO TIAGO" do `ssace-teste`, depois do #839); renovar a chave da API até 22/11 (escritorio#20); o lucro do dia no Caixa (#809).
 
