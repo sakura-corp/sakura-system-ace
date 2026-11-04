@@ -155,6 +155,7 @@ const configuracaoFiscal: ConfiguracaoFiscalLoja = {
   codigo_cnae: "4520-0/01",
   competencia_aliquota_confirmada: null,
   aliquota_passo_a_passo: null,
+  percentual_tributos_simples: null,
 } as ConfiguracaoFiscalLoja;
 
 const ordem = { id: "33333333-3333-3333-3333-333333333333", numero: 12 } as OrdemServico;
