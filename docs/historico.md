@@ -30,6 +30,14 @@
 
 ## Marcos antigos, do mais novo pro mais velho
 
+### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
+- **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
+- **Com a Sofia (manhã de 04/11)**: mandar o e-mail pra Focus (Araraquara na homologação? município de teste?) e a mensagem pra contabilidade (o percentual de tributos do Simples; se o cadastro mensal da alíquota no Giap acabou, #853). Sem homologação, a decisão é **testar em produção** com uma nota real que a loja ficou devendo.
+- **Mesclado**: #854, a Central do dia (#454, Gustavo). Ideias novas: #855, #856, #858. **A leva 6 segue**: livres no painel a #814, a #708, a #459 e a #456 (no modelo, sem dependência).
+- **#857, a busca geral (#372, Gustavo; migration `0077`)**: perguntas respondidas pela recomendação; com o conserto da OS e os desativados fora, e o CI verde, a Sofia mescla. A `0077` é dela, depois da `0076`.
+- **Na 0.9.56**: #839, #844, #845, #847, #367, #854 (e #857, #853 se entrarem). **Próximo (com o ensaio)**: produção na Focus → porteiro na loja → publicar → liberar → a 0076 (#809).
+- **Depende dela**: pausar a rotina antiga do Resumo e fechar a #625; renovar a chave da API até 22/11 (escritorio#20); conferir o lucro do dia no Caixa da loja (#809).
+
 ### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
 - **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; **o Tiago está fazendo o ensaio desde 02/11**, com os dados fiscais que a Sofia mandou (o resultado vai no PR); se não sair, combinar um plano B com a loja pra **terça** (a mensagem não foi escrita).
 - **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
