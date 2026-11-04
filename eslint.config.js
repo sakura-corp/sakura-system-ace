@@ -39,7 +39,7 @@ const PROIBE_CORTAR_DIA_DE_UTC = [
 ];
 
 export default tseslint.config(
-  { ignores: ["dist", "dist-electron", "release", "painel"] },
+  { ignores: ["dist", "dist-electron", "release"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
