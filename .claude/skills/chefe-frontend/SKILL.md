@@ -22,7 +22,7 @@ backend; se a tarefa precisar, diga no relatório e não invente).
 2. Ler a **issue inteira** e os comentários. Conferir o "Depende de": se não dá pra começar,
    explicar o motivo e parar.
 3. Ler: `docs/estrutura.md` (pastas, **padrão de formulário**), `docs/modulos.md` (só o módulo
-   mexido), `docs/licoes.md` (só os itens abaixo e os do módulo) e, se for o painel, `docs/painel.md`.
+   mexido), `docs/licoes.md` (só os itens abaixo e os do módulo) e, se for o painel, `docs/painel.md` do `sakura-corp/escritorio`.
 4. Explicar à pessoa, em poucas linhas, o que é a tarefa, o que o chefe faz sozinho e o que ela vai
    precisar fazer. Só então começar. Criar a branch da tarefa a partir da `main` atual.
 

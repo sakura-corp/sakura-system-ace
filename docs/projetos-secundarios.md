@@ -76,4 +76,4 @@ adicionar à sessão o repositório privado `caranovavidanova/sakura-corp`.
 
 A aba **"Projetos secundários"**, no 1º andar (Produção), com as propostas, um cartão por projeto e
 a leva de cada um (#731). O painel descobre sozinho quais repositórios são projetos: os da
-`sakura-corp` com o tópico `projeto-secundario`. Detalhe em `docs/painel.md`, "Os andares".
+`sakura-corp` com o tópico `projeto-secundario`. Detalhe em `docs/painel.md` do `sakura-corp/escritorio`, "Os andares".

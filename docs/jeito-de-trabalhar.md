@@ -164,7 +164,7 @@ Como as skills funcionam:
 - **Skill nova só com a aprovação dela**: quando algo se repetir umas 3 vezes, o Claude propõe.
 - **Skill que "evolui sozinha" (16/10)**: o agente só **propõe** a skill nova ou a mudança, e ela
   aprova antes. A proposta natural é a revisão do mês (R1). Mexer em trancas (publicar, liberar,
-  banco, regras do repositório) nunca é sozinho. Os agentes do Escritório: `docs/painel.md`.
+  banco, regras do repositório) nunca é sozinho. Os agentes do Escritório: `docs/painel.md` do `sakura-corp/escritorio`.
 - **Quando uma skill falhar**, ou ela corrigir o Claude no meio de uma, a skill é consertada na
   hora, como as lições.
 
@@ -221,7 +221,7 @@ As novas:
 - **V2.** Um mod no app do Claude, um painel ao lado da conversa com as sessões e o que cada uma
   está fazendo.
 - **V3.** **A sala da Sakura**, no painel: **já está na leva 0**, tarefas **#467** (com dados de
-  exemplo, a 3ª) e **#468** (ao vivo, a última). Detalhe em `docs/painel.md`.
+  exemplo, a 3ª) e **#468** (ao vivo, a última). Detalhe em `docs/painel.md` do `sakura-corp/escritorio`.
 
 ## Outra coisa combinada: arrumar o PC dela (depois)
 

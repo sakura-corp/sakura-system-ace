@@ -17,7 +17,7 @@ Se ela pedir ajuste, ajuste e mostre de novo. Silêncio não é "pode".
 Conferir como na seção 0 do `PROJETO_STATUS.md` (`mcp__github__get_me` ou `git config user.email`).
 - **Sofia** (`caranovavidanova`): fluxo completo abaixo.
 - **Equipe**: não mexe no "Onde parou" (é da Sofia), não mescla. O andamento vai na descrição do PR
-  (o do painel, também em `docs/painel.md`). Pular os passos 2.3 e 3 (mesclar) e dizer isso a ela.
+  (o do painel, no `docs/painel.md` do `sakura-corp/escritorio`). Pular os passos 2.3 e 3 (mesclar) e dizer isso a ela.
   O caderno (lista 4 e passo 2.5) vale pra todos: cada um grava no seu.
 
 ## 1. Juntar e mostrar — e PARAR pra ela conferir
@@ -30,7 +30,7 @@ Montar, em linguagem simples e curto, quatro listas:
    - decisão técnica → `docs/decisoes.md`; pasta/padrão de código → `docs/estrutura.md`;
    - banco/migration → `docs/banco.md`; bug novo ou lição → `docs/licoes.md`;
    - estado de uma tela → `docs/modulos.md`; método de trabalho → `docs/jeito-de-trabalhar.md`;
-   - publicar/rodar/instalar → `docs/operacao.md`; painel → `docs/painel.md`;
+   - publicar/rodar/instalar → `docs/operacao.md`; painel → `docs/painel.md` do `sakura-corp/escritorio`;
    - preferência da pessoa sobre *como* trabalhar → a lista 4, nunca o projeto;
    - **o que depende dela** → as tarefas com a etiqueta `sofia` (ver `docs/pendencias-e-futuro.md`);
    - assunto da empresa (sócios, dinheiro, contrato, preço) → **nunca neste repositório**, que é
