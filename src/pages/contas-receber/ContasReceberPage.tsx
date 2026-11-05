@@ -18,6 +18,7 @@ import type { Cliente } from "@/types/cliente";
 import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
+import { somar } from "@/schemas/dinheiro";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -104,7 +105,7 @@ export function ContasReceberPage() {
   const recebidas = contas
     .filter((c) => c.status === "recebido")
     .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
-  const totalPendente = pendentes.reduce((soma, c) => soma + c.valor, 0);
+  const totalPendente = somar(pendentes.map((c) => c.valor));
 
   function textoDaCobranca(conta: ContaReceber): string {
     return preencherModelo(textoDoModelo(modelosWhatsapp, "cobranca"), {

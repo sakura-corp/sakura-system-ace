@@ -1,6 +1,7 @@
 import { diaLocal } from "@/lib/datas";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
 import type { MapaCusto } from "./metricasCaixa";
+import { valorLiquidoDoItem } from "./valorItem";
 import type { OrdemServico } from "@/types/os";
 
 /**
@@ -67,7 +68,7 @@ export function lucratividadePorItem({
     if (dia < de || dia > ate) continue;
 
     for (const item of ordem.itens ?? []) {
-      const receita = item.quantidade * item.preco_unitario - item.desconto;
+      const receita = valorLiquidoDoItem(item);
       const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
       const custo = item.quantidade * (custoUnitario ?? 0);
 
