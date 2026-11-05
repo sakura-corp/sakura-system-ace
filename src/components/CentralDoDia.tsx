@@ -11,7 +11,6 @@ import { listarFechamentosCaixa } from "@/lib/fechamentoCaixa";
 import { listarModelosWhatsapp, registrarMensagemAberta, textoDoModelo } from "@/lib/modelosWhatsapp";
 import { listarNotasComErro } from "@/lib/notasFiscais";
 import { listarPecas } from "@/lib/pecas";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   alcanceDaCentral,
   limitarPorTipo,
@@ -124,7 +123,7 @@ export function CentralDoDia({
     let cancelado = false;
     async function carregar() {
       setErro(null);
-      if (!isSupabaseConfigured || !lojaAtual || !alcance.mostra) {
+      if (!lojaAtual || !alcance.mostra) {
         setCarregando(false);
         return;
       }

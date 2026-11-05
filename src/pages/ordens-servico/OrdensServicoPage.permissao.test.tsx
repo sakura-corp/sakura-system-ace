@@ -25,7 +25,7 @@ vi.mock("@/lib/ordensServico", () => ({
   registrarVendaBalcao: vi.fn(),
   VendaSemFaturamentoError: class extends Error {},
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 vi.mock("@/lib/pecas", () => ({ listarPecasJanela: async () => [] }));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/funcionarios", () => ({ listarFuncionariosPublico: async () => [] }));
