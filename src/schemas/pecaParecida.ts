@@ -77,38 +77,116 @@ function numerosDaPeca(p: PecaComparavel): string {
   return [...unicos].sort().join(",");
 }
 
-function bigramas(texto: string): Map<string, number> {
-  const mapa = new Map<string, number>();
+/**
+ * Os bigramas (pares de letras vizinhas) do texto, cada um virado número
+ * (código da 1ª letra × 65536 + da 2ª) e em ordem crescente, com repetição.
+ * Número e lista ordenada, e não um mapa de textos, pra a conta dos comuns ser
+ * uma passada só pelas duas listas (#721: o "juntar peças" faz essa conta
+ * centenas de milhares de vezes).
+ */
+function bigramas(texto: string): number[] {
+  const lista: number[] = [];
   for (let i = 0; i < texto.length - 1; i++) {
-    const par = texto.slice(i, i + 2);
-    mapa.set(par, (mapa.get(par) ?? 0) + 1);
+    lista.push(texto.charCodeAt(i) * 65536 + texto.charCodeAt(i + 1));
   }
-  return mapa;
+  return lista.sort((a, b) => a - b);
 }
 
-/** Coeficiente de Dice de bigramas, de 0 a 1. */
-function dice(a: string, b: string): number {
-  if (a === b) return a.length > 0 ? 1 : 0;
-  const ba = bigramas(a);
-  const bb = bigramas(b);
+/**
+ * Quantos bigramas as duas listas ordenadas têm em comum, contando repetição
+ * (um "aa" de um lado e dois do outro: 1 em comum).
+ */
+function bigramasEmComum(a: number[], b: number[]): number {
   let comuns = 0;
-  for (const [par, qtd] of ba) comuns += Math.min(qtd, bb.get(par) ?? 0);
-  const total = Math.max(a.length - 1, 0) + Math.max(b.length - 1, 0);
-  return total === 0 ? 0 : (2 * comuns) / total;
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      comuns++;
+      i++;
+      j++;
+    } else if (a[i] < b[j]) i++;
+    else j++;
+  }
+  return comuns;
 }
+
 
 /** "SEM GTIN" é o que a nota do fornecedor traz quando a peça não tem código
  *  de barras; digitado à mão, não pode virar "o mesmo código" de todas. */
 const NAO_E_CODIGO = new Set(["", "sem gtin"]);
 
-function mesmoCodigo(a: string | null, b: string | null): boolean {
-  const x = normalizar(a);
-  return !NAO_E_CODIGO.has(x) && x === normalizar(b);
+/** O código normalizado, ou null quando ele nunca casa (vazio, "SEM GTIN"). */
+function codigoQueCasa(codigo: string | null): string | null {
+  const x = normalizar(codigo);
+  return NAO_E_CODIGO.has(x) ? null : x;
 }
 
-function semelhancaDoNome(a: PecaComparavel, b: PecaComparavel): number {
-  if (numerosDaPeca(a) !== numerosDaPeca(b)) return 0; // a medida manda
-  return dice(pedacos(a.descricao).join(" "), pedacos(b.descricao).join(" "));
+/**
+ * A peça já normalizada pra comparar (#721): o que a regra olha, calculado
+ * uma vez só por peça. Quem compara muitas peças entre si (o "juntar peças
+ * repetidas") prepara cada uma uma vez e compara as preparadas, em vez de
+ * normalizar as duas de novo a cada par.
+ *
+ * `codigoBarras`, `codigoInterno` e `numeros` também servem de CHAVE de
+ * grupo: duas peças só podem ser parecidas se tiverem o mesmo código de
+ * barras, o mesmo código interno ou os mesmos números (`compararPreparadas`).
+ */
+export interface PecaPreparada {
+  /** Normalizado; null quando nunca casa (vazio, "SEM GTIN"). */
+  codigoBarras: string | null;
+  codigoInterno: string | null;
+  /** Os números da descrição + medida, sem zero à esquerda, ordenados ("13,175,70"). */
+  numeros: string;
+  /** Os pedaços do nome em ordem alfabética, unidos por espaço. */
+  nome: string;
+  /** Ver `bigramas`: ordenados, como número. */
+  bigramas: number[];
+}
+
+export function prepararPeca(p: PecaComparavel): PecaPreparada {
+  const nome = pedacos(p.descricao).join(" ");
+  return {
+    codigoBarras: codigoQueCasa(p.codigo_barras),
+    codigoInterno: codigoQueCasa(p.codigo_interno),
+    numeros: numerosDaPeca(p),
+    nome,
+    bigramas: bigramas(nome),
+  };
+}
+
+/** Coeficiente de Dice de bigramas das duas, de 0 a 1 (o mesmo `dice` de antes). */
+function diceDasPreparadas(a: PecaPreparada, b: PecaPreparada, limite: number): number {
+  if (a.nome === b.nome) return a.nome.length > 0 ? 1 : 0;
+  const ta = Math.max(a.nome.length - 1, 0);
+  const tb = Math.max(b.nome.length - 1, 0);
+  const total = ta + tb;
+  if (total === 0) return 0;
+  // Atalho: no máximo todos os bigramas do nome menor são comuns. Se nem
+  // assim chega no limite, nem conta (a resposta seria "não parecida" igual).
+  if ((2 * Math.min(ta, tb)) / total < limite) return 0;
+  return (2 * bigramasEmComum(a.bigramas, b.bigramas)) / total;
+}
+
+/**
+ * A regra inteira, entre duas peças já preparadas: o motivo mais forte, ou
+ * null quando não são parecidas. `acharPecasParecidas` é esta função
+ * aplicada a cada peça do cadastro.
+ */
+export function compararPreparadas(
+  a: PecaPreparada,
+  b: PecaPreparada,
+  limiteNome: number = LIMITE_NOME,
+): { motivo: MotivoParecida; semelhanca: number } | null {
+  if (a.codigoBarras !== null && a.codigoBarras === b.codigoBarras) {
+    return { motivo: "codigo_barras", semelhanca: 1 };
+  }
+  if (a.codigoInterno !== null && a.codigoInterno === b.codigoInterno) {
+    return { motivo: "codigo_interno", semelhanca: 1 };
+  }
+  if (a.numeros !== b.numeros) return null; // a medida manda
+  const semelhanca = diceDasPreparadas(a, b, limiteNome);
+  return semelhanca >= limiteNome ? { motivo: "nome", semelhanca } : null;
 }
 
 export function acharPecasParecidas<T extends PecaComparavel>(
@@ -117,16 +195,11 @@ export function acharPecasParecidas<T extends PecaComparavel>(
   { limiteNome = LIMITE_NOME }: { limiteNome?: number } = {},
 ): PecaParecida<T>[] {
   const achadas: PecaParecida<T>[] = [];
+  const preparada = prepararPeca(nova);
   for (const peca of cadastro) {
     if (nova.id !== undefined && peca.id === nova.id) continue;
-    if (mesmoCodigo(nova.codigo_barras, peca.codigo_barras)) {
-      achadas.push({ peca, motivo: "codigo_barras", semelhanca: 1 });
-    } else if (mesmoCodigo(nova.codigo_interno, peca.codigo_interno)) {
-      achadas.push({ peca, motivo: "codigo_interno", semelhanca: 1 });
-    } else {
-      const semelhanca = semelhancaDoNome(nova, peca);
-      if (semelhanca >= limiteNome) achadas.push({ peca, motivo: "nome", semelhanca });
-    }
+    const achada = compararPreparadas(preparada, prepararPeca(peca), limiteNome);
+    if (achada) achadas.push({ peca, ...achada });
   }
   return achadas.sort(
     (x, y) => FORCA[y.motivo] - FORCA[x.motivo] || y.semelhanca - x.semelhanca,

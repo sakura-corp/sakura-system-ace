@@ -21,7 +21,8 @@
 import type { Peca } from "@/types/peca";
 import { arredondarCentavo } from "./dinheiro";
 import {
-  acharPecasParecidas,
+  compararPreparadas,
+  prepararPeca,
   type MotivoParecida,
   type PecaComparavel,
 } from "./pecaParecida";
@@ -404,34 +405,11 @@ const ORDEM_MOTIVO: Record<MotivoParecida, number> = {
  * teste de propriedade (`juntarPecas.test.ts`) compara com a comparação de
  * todas contra todas em catálogos aleatórios.
  *
- * As chaves copiam a normalização de `pecaParecida.ts` (lá ela é privada).
- * Se a regra de lá mudar, o teste de propriedade avisa.
+ * As chaves vêm da própria peça preparada de `pecaParecida.ts`
+ * (`prepararPeca`, #721): a mesma normalização que a regra usa, sem cópia.
+ * Cada peça é preparada uma vez só, e cada par compara as preparadas
+ * (`compararPreparadas`), em vez de normalizar as duas de novo a cada par.
  */
-
-/** O mesmo `normalizar` de `pecaParecida.ts`: sem acento, minúsculo, sem espaço nas pontas. */
-function normalizarComoParecida(texto: string | null | undefined): string {
-  return (texto ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-/** Código que nunca casa em `pecaParecida.ts` (vazio, ou "SEM GTIN" da nota). */
-const NAO_E_CODIGO = new Set(["", "sem gtin"]);
-
-/** Chave do código, ou null quando ele nunca casa (aí a peça não entra no grupo). */
-function chaveDoCodigo(codigo: string | null): string | null {
-  const chave = normalizarComoParecida(codigo);
-  return NAO_E_CODIGO.has(chave) ? null : chave;
-}
-
-/** Os números da descrição + medida, sem zero à esquerda, como `numerosDaPeca`. */
-function chaveDosNumeros(p: PecaComparavel): string {
-  const texto = `${normalizarComoParecida(p.descricao)} ${normalizarComoParecida(p.medida)}`;
-  const unicos = new Set((texto.match(/\d+/g) ?? []).map((n) => String(Number(n))));
-  return [...unicos].sort().join(",");
-}
 
 /**
  * Os pares suspeitos do cadastro, cada um uma vez só (nunca (a,b) e (b,a)),
@@ -444,33 +422,37 @@ function chaveDosNumeros(p: PecaComparavel): string {
 export function paresSuspeitos<T extends PecaComparavel & { id: string }>(
   pecas: T[],
 ): ParSuspeito<T>[] {
+  const preparadas = pecas.map(prepararPeca);
   const grupos = new Map<string, number[]>();
   const entrar = (chave: string, i: number) => {
     const grupo = grupos.get(chave);
     if (grupo) grupo.push(i);
     else grupos.set(chave, [i]);
   };
-  pecas.forEach((p, i) => {
+  preparadas.forEach((p, i) => {
     // Prefixo diferente por chave: código "13" e medida "13" não se misturam.
-    const barras = chaveDoCodigo(p.codigo_barras);
-    if (barras !== null) entrar(`b:${barras}`, i);
-    const interno = chaveDoCodigo(p.codigo_interno);
-    if (interno !== null) entrar(`i:${interno}`, i);
-    entrar(`n:${chaveDosNumeros(p)}`, i);
+    if (p.codigoBarras !== null) entrar(`b:${p.codigoBarras}`, i);
+    if (p.codigoInterno !== null) entrar(`i:${p.codigoInterno}`, i);
+    entrar(`n:${p.numeros}`, i);
   });
 
-  // Cada par (i < j) uma vez só, mesmo que as duas peças dividam mais de um grupo.
-  const vistos = new Set<string>();
+  // Cada par (i < j) uma vez só, mesmo que as duas peças dividam mais de um
+  // grupo. A chave é número (i × total + j), não texto: com mil peças no
+  // mesmo grupo são meio milhão de pares, e montar meio milhão de textos
+  // custava mais que comparar as peças (#721).
+  const vistos = new Set<number>();
   const pares: (ParSuspeito<T> & { i: number; j: number })[] = [];
   for (const grupo of grupos.values()) {
     for (let x = 0; x < grupo.length; x++) {
       for (let y = x + 1; y < grupo.length; y++) {
         const i = grupo[x];
         const j = grupo[y]; // os índices entram em ordem crescente, então i < j
-        const chave = `${i},${j}`;
+        // A mesma peça duas vezes na lista não é par (como no aviso do cadastro).
+        if (pecas[i].id === pecas[j].id) continue;
+        const chave = i * pecas.length + j;
         if (vistos.has(chave)) continue;
         vistos.add(chave);
-        const [achada] = acharPecasParecidas(pecas[i], [pecas[j]]);
+        const achada = compararPreparadas(preparadas[i], preparadas[j]);
         if (achada) {
           const { motivo, semelhanca } = achada;
           pares.push({ a: pecas[i], b: pecas[j], motivo, semelhanca, i, j });

@@ -469,6 +469,29 @@ describe("paresSuspeitos", () => {
     expect(ids(paresSuspeitos(pecas))).toEqual(["1+2", "1+3", "2+3"]);
   });
 
+  // #721: peças sem número no nome caem todas no mesmo grupo e são comparadas
+  // todas contra todas. Normalizando cada peça uma vez só, 1.000 peças levam
+  // bem menos de 1 s (antes: uns 5 s com a janela travada). O limite é largo
+  // de propósito, pro CI lento não reprovar à toa.
+  it("1.000 peças sem número no nome: a procura não trava a janela", () => {
+    const palavras = ["pastilha", "freio", "dianteira", "traseira", "oleo", "filtro", "palheta",
+      "lampada", "amortecedor", "bico", "valvula", "correia", "vela", "bateria", "cabo", "junta",
+      "bomba", "sensor", "rolamento", "coxim"];
+    let semente = 7;
+    const sorteio = () => (semente = (semente * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pecas = Array.from({ length: 1000 }, (_, i) =>
+      peca({
+        id: `p${i}`,
+        descricao: Array.from({ length: 3 + Math.floor(sorteio() * 3) }, () =>
+          palavras[Math.floor(sorteio() * palavras.length)]).join(" "),
+      }),
+    );
+    const inicio = performance.now();
+    const pares = paresSuspeitos(pecas);
+    expect(performance.now() - inicio).toBeLessThan(1500);
+    expect(pares.length).toBeGreaterThan(0);
+  });
+
   it("sem parecida, nenhum par", () => {
     expect(paresSuspeitos([peca({ id: "a" }), peca({ id: "b", descricao: "Vela NGK" })])).toEqual([]);
   });
