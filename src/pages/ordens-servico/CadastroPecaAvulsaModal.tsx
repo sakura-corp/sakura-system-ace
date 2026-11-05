@@ -34,7 +34,7 @@ export function CadastroPecaAvulsaModal({
   onAbrirExistente,
   onFechar,
 }: CadastroPecaAvulsaModalProps) {
-  const { categorias, regime, csosnSugerido } = useDadosParaCadastroDePeca(lojaId, pecas, true);
+  const { categorias, regime, csosnSugerido } = useDadosParaCadastroDePeca(lojaId, pecas);
 
   return (
     <Modal titulo="Cadastrar peça" largura="5xl" onFechar={onFechar}>
