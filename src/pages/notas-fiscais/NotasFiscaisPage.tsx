@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { TipoNotaFiscal } from "@/types/notaFiscal";
 import { ArquivosSection } from "./ArquivosSection";
 
@@ -20,8 +21,8 @@ export function NotasFiscaisPage() {
       </header>
 
       <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="NFe" ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
-        <AbaBotao label="NFS-e" ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
+        <AbaBotao label={NOTA_LABEL.nfe} ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
+        <AbaBotao label={NOTA_LABEL.nfse} ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
       </div>
 
       <ArquivosSection tipo={aba} />
