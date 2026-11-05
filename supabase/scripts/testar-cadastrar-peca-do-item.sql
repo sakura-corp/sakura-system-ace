@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0077 (cadastrar peça do item com a ordem travada,
+-- TESTE da migration 0079 (cadastrar peça do item com a ordem travada,
 -- tarefa #803, caso 1). NÃO é migration, e NUNCA deve ser rodado no Supabase
 -- de verdade — grava e apaga dado de teste, e abre ligações de volta pro
 -- próprio banco (dblink) pra simular dois computadores ao mesmo tempo.

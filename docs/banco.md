@@ -14,8 +14,8 @@ a única empresa até agora. A `0076` (ordens de serviço só com o módulo, a s
 avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só com o módulo, #365),
 a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
 travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
-estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0077` (cadastrar peça do item
-com a OS travada, #803) está escrita no PR e espera ela aplicar. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0079` (cadastrar peça do item
+com a OS travada, #803; entra depois da `0077`, a busca geral do #857, e da `0078`, o percentual de tributos do #882) está escrita no PR e espera ela aplicar. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
 (`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
 de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
@@ -579,7 +579,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   também não entra. OS **faturada** recusa item novo e correção. Sem `versao-minima-do-programa`: o
   programa antigo continua gravando direto nas tabelas, com o mesmo risco raro de antes. Teste em
   `supabase/scripts/testar-item-na-aprovacao.sql`, com corridas de verdade entre duas ligações (`dblink`).
-- `0077`: **"Cadastrar agora" (ligar a peça avulsa ao cadastro, na emissão da nota) com a linha da
+- `0079`: **"Cadastrar agora" (ligar a peça avulsa ao cadastro, na emissão da nota) com a linha da
   OS travada** (tarefa #803, caso 1; o mesmo caminho da `0071`). Uma função,
   `cadastrar_peca_do_item(item, peça, operador)`, `security invoker` e só pra `authenticated`: trava a
   OS, liga a peça se o item ainda é avulso e, se a ordem já é OS (inclusive faturada), baixa a

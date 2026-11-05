@@ -84,7 +84,7 @@ describe("adicionarItensOrdem", () => {
 });
 
 // #803: "Cadastrar agora" na nota (#655) liga a peça avulsa ao cadastro numa
-// chamada só (`cadastrar_peca_do_item`, migration 0077), que trava a OS, liga e,
+// chamada só (`cadastrar_peca_do_item`, migration 0079), que trava a OS, liga e,
 // se já é OS, baixa. A regra (quando baixa, a trava, tudo ou nada) é provada em
 // supabase/scripts/testar-cadastrar-peca-do-item.sql.
 describe("cadastrarPecaDoItem", () => {

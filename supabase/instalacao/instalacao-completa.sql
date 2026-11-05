@@ -7561,11 +7561,11 @@ insert into schema_versao (versao) values (76) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0077_cadastrar_peca_do_item_trava.sql
+-- 0079_cadastrar_peca_do_item_trava.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0077: ligar a peça avulsa ao cadastro com a ordem travada
+-- Migration 0079: ligar a peça avulsa ao cadastro com a ordem travada
 -- (tarefa #803, caso 1). O mesmo caminho da 0071 (#706).
 --
 -- O PROBLEMA. "Cadastrar agora" na emissão da nota (#655) liga um item de
@@ -7676,4 +7676,4 @@ comment on function cadastrar_peca_do_item(uuid, uuid, uuid) is
 revoke all on function cadastrar_peca_do_item(uuid, uuid, uuid) from public, anon;
 grant execute on function cadastrar_peca_do_item(uuid, uuid, uuid) to authenticated;
 
-insert into schema_versao (versao) values (77) on conflict do nothing;
+insert into schema_versao (versao) values (79) on conflict do nothing;
