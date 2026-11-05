@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
   avisoPercentualTributosSimplesVazio,
   erroPercentualTributosSimples,
   percentualTributosSimplesParaSalvar,
 } from "./percentualTributosSimples";
+import { mensagemDeErro } from "@/lib/errors";
 
 describe("erroPercentualTributosSimples", () => {
   it("aceita vazio, 0, 6,5 e 100", () => {
@@ -11,8 +13,16 @@ describe("erroPercentualTributosSimples", () => {
   });
   it("recusa negativo, acima de 100 e número inválido", () => {
     for (const v of [-0.01, 100.01, Number.NaN]) {
-      expect(erroPercentualTributosSimples(v)).toMatch(/0 e 100/);
+      expect(erroPercentualTributosSimples(v)).toBe(MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES);
     }
+  });
+  it("a trava do banco mostra a mesma frase da tela", () => {
+    const erroDoBanco = {
+      code: "23514",
+      message:
+        'new row for relation "configuracoes_fiscais_loja" violates check constraint "ck_config_fiscal_percentual_tributos_simples"',
+    };
+    expect(mensagemDeErro(erroDoBanco)).toBe(MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES);
   });
 });
 
@@ -28,11 +38,33 @@ describe("avisoPercentualTributosSimplesVazio", () => {
 
 describe("percentualTributosSimplesParaSalvar", () => {
   it("no Simples, valida e salva o que foi digitado", () => {
-    expect(percentualTributosSimplesParaSalvar("simples_nacional", 6.5, null)).toEqual({ valor: 6.5, erro: null });
-    expect(percentualTributosSimplesParaSalvar("simples_nacional", 150, null).erro).toMatch(/0 e 100/);
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 6.5)).toEqual({
+      campos: { percentual_tributos_simples: 6.5 },
+      erro: null,
+    });
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", null)).toEqual({
+      campos: { percentual_tributos_simples: null },
+      erro: null,
+    });
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 150).erro).toBe(
+      MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+    );
   });
-  it("fora do Simples, o campo está escondido: não valida e mantém o que já estava guardado", () => {
-    expect(percentualTributosSimplesParaSalvar("lucro_presumido", 150, 6.5)).toEqual({ valor: 6.5, erro: null });
-    expect(percentualTributosSimplesParaSalvar("lucro_presumido", 150, null)).toEqual({ valor: null, erro: null });
+  it("arredonda pra 2 casas antes de conferir e de salvar (a coluna é numeric(5,2))", () => {
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 6.456).campos).toEqual({
+      percentual_tributos_simples: 6.46,
+    });
+    // 100,004 arredonda pra 100, que serve.
+    expect(percentualTributosSimplesParaSalvar("simples_nacional", 100.004)).toEqual({
+      campos: { percentual_tributos_simples: 100 },
+      erro: null,
+    });
+  });
+  it("fora do Simples o campo nem vai no salvar: o banco guarda o que já tem", () => {
+    expect(percentualTributosSimplesParaSalvar("lucro_presumido", 150)).toEqual({
+      campos: {},
+      erro: null,
+    });
+    expect(percentualTributosSimplesParaSalvar(null, 6.5)).toEqual({ campos: {}, erro: null });
   });
 });

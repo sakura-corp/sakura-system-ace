@@ -24,7 +24,8 @@ interface DadosFiscaisSectionProps {
   onSalvo: () => Promise<void>;
 }
 
-type FormularioFiscal = DadosFiscaisEditaveis;
+// Na tela o percentual sempre existe (vazio é null); no salvar ele é opcional.
+type FormularioFiscal = DadosFiscaisEditaveis & { percentual_tributos_simples: number | null };
 
 function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFiscal {
   return {
@@ -72,6 +73,7 @@ export function DadosFiscaisSection({
   const tokenCadastrado = Boolean(configuracao?.focus_nfe_configurado);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroPercentual, setErroPercentual] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
@@ -93,21 +95,25 @@ export function DadosFiscaisSection({
 
   async function handleSalvar() {
     setErro(null);
+    setErroPercentual(null);
     setSalvo(false);
     const percentual = percentualTributosSimplesParaSalvar(
       valores.regime_tributario,
       valores.percentual_tributos_simples,
-      configuracao?.percentual_tributos_simples ?? null,
     );
     if (percentual.erro) {
-      setErro(percentual.erro);
+      // Perto do campo e do botão: a faixa de erro do topo fica fora da vista.
+      setErroPercentual(percentual.erro);
       return;
     }
+    // Fora do Simples o campo não vai: `campos` vem vazio e o banco guarda o que já tem.
+    const { percentual_tributos_simples: _naTela, ...semPercentual } = valores;
+    void _naTela;
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
-        ...valores,
-        percentual_tributos_simples: percentual.valor,
+        ...semPercentual,
+        ...percentual.campos,
         cnpj: valores.cnpj || null,
         razao_social: valores.razao_social || null,
         nome_fantasia: valores.nome_fantasia || null,
@@ -369,15 +375,22 @@ export function DadosFiscaisSection({
                   min="0"
                   max="100"
                   value={valores.percentual_tributos_simples ?? ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setErroPercentual(null);
                     set(
                       "percentual_tributos_simples",
                       e.target.value === "" ? null : Number(e.target.value),
-                    )
-                  }
+                    );
+                  }}
+                  aria-invalid={erroPercentual ? true : undefined}
                   className={campoClasse}
                 />
               </label>
+              {erroPercentual && (
+                <p role="alert" className="mt-1 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+                  {erroPercentual}
+                </p>
+              )}
               <p className="mt-1 text-rotulo text-sakura-muted">
                 O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
                 serviço.
@@ -430,7 +443,10 @@ export function DadosFiscaisSection({
         </p>
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {erroPercentual && (
+          <p className="text-corpo text-red-700">Não salvou: confira o percentual dos tributos do Simples.</p>
+        )}
         <button
           type="button"
           onClick={handleSalvar}

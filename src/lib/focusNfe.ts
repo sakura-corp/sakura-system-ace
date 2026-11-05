@@ -620,7 +620,9 @@ export function montarCorpoNFSeNacional(
     // (ensaio de 03/11, "Expected is one of (tribFed, totTrib)"). Pro optante
     // do Simples é o pTotTribSN: o percentual aproximado dos tributos, que a
     // contabilidade passa e a loja cadastra nos Dados fiscais (#866, migration
-    // 0078). Vazio manda 0, pra não travar a emissão.
+    // 0078). Vazio manda 0, pra não travar a emissão. O `simples ?` é só
+    // defesa: hoje `padraoNFSe` só manda pra nota nacional a loja do Simples,
+    // então o outro lado não acontece (o teste dele trava isso se mudar).
     ...(simples
       ? {
           percentual_total_tributos_simples_nacional: arredondar(
