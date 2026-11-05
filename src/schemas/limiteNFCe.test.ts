@@ -16,7 +16,7 @@ describe("avisoLimiteNFCeSemDestinatario", () => {
 
   it("acima do limite, sem cliente identificado: avisa", () => {
     expect(avisoLimiteNFCeSemDestinatario(15000.5, false)).toBe(
-      "Esta nota passa de R$ 10.000 e vai sair sem CPF/CNPJ do cliente. Acima desse valor a SEFAZ costuma exigir o cliente identificado: cadastre o documento dele antes de emitir.",
+      "Esta nota é de R$ 10.000 ou mais e vai sair sem CPF/CNPJ do cliente. A partir desse valor a SEFAZ costuma exigir o cliente identificado: cadastre o documento dele antes de emitir.",
     );
   });
 

@@ -37,20 +37,23 @@ vi.mock("@/lib/ordensServico", () => ({
     }
   },
 }));
-vi.mock("@/lib/focusNfe", async () => ({
-  // A regra de verdade de "a nota sai identificada?", não uma cópia (#881).
-  destinatarioIdentificadoNFCe: (
-    await vi.importActual<typeof import("@/lib/focusNfe")>("@/lib/focusNfe")
-  ).destinatarioIdentificadoNFCe,
-  emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-  emitirNFSe: vi.fn(),
-  consultarNFCe: vi.fn(),
-  consultarNFSe: vi.fn(),
-  baixarArquivoNota: vi.fn(),
-  refPertenceAOrdem: vi.fn(),
-  FocusNfeError: class extends Error {},
-  EsperaVencidaError: class extends Error {},
-}));
+vi.mock("@/lib/focusNfe", async () => {
+  // As regras de verdade de "a nota sai identificada?" e do total da nota,
+  // não cópias (#881).
+  const real = await vi.importActual<typeof import("@/lib/focusNfe")>("@/lib/focusNfe");
+  return {
+    destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
+    valorTotalNFCe: real.valorTotalNFCe,
+    emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
+    emitirNFSe: vi.fn(),
+    consultarNFCe: vi.fn(),
+    consultarNFSe: vi.fn(),
+    baixarArquivoNota: vi.fn(),
+    refPertenceAOrdem: vi.fn(),
+    FocusNfeError: class extends Error {},
+    EsperaVencidaError: class extends Error {},
+  };
+});
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
@@ -296,7 +299,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
 });
 
 describe("EmitirNotaFiscalModal — limite da UF sem cliente identificado (#881)", () => {
-  const avisoDoLimite = /passa de R\$ 10\.000 e vai sair sem CPF\/CNPJ/;
+  const avisoDoLimite = /R\$ 10\.000 ou mais e vai sair sem CPF\/CNPJ/;
 
   it("acima de R$ 10.000, cliente sem CPF: avisa e o botão continua liberado", async () => {
     montar([item("i1", "Pneu 175/70 R13", "peca-1", 12000)]);
@@ -304,6 +307,17 @@ describe("EmitirNotaFiscalModal — limite da UF sem cliente identificado (#881)
     await screen.findByRole("button", { name: "Confirmar emissão" });
     expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
     expect(confirmar()).toBeEnabled();
+  });
+
+  it("compara o total da nota (cada linha arredondada), não a soma crua", async () => {
+    // 4.999,995 vira 5.000,00 em cada linha da nota: a nota é de 10.000,00.
+    montar([
+      item("i1", "Pneu 175/70 R13", "peca-1", 4999.995),
+      item("i2", "Pneu 175/70 R13", "peca-1", 4999.995),
+    ]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
   });
 
   it("abaixo de R$ 10.000, cliente sem CPF: sem o aviso", async () => {

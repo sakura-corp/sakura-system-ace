@@ -25,8 +25,8 @@ export function avisoLimiteNFCeSemDestinatario(
   // Em centavos, pra uma soma de itens como 9999.999999 não escapar do "no limite".
   if (Math.round(total * 100) < LIMITE_NFCE_SEM_DESTINATARIO * 100) return null;
   return (
-    `Esta nota passa de R$ ${LIMITE_NFCE_SEM_DESTINATARIO.toLocaleString("pt-BR")} e vai sair` +
-    " sem CPF/CNPJ do cliente. Acima desse valor a " +
-    "SEFAZ costuma exigir o cliente identificado: cadastre o documento dele antes de emitir."
+    `Esta nota é de R$ ${LIMITE_NFCE_SEM_DESTINATARIO.toLocaleString("pt-BR")} ou mais e vai` +
+    " sair sem CPF/CNPJ do cliente. A partir desse valor a SEFAZ costuma exigir o cliente" +
+    " identificado: cadastre o documento dele antes de emitir."
   );
 }

@@ -5,6 +5,7 @@ import {
   FocusNfeError,
   montarCorpoNFCe,
   montarCorpoNFSe,
+  valorTotalNFCe,
 } from "./focusNfe";
 import type { OrdemServico } from "@/types/os";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
@@ -410,5 +411,18 @@ describe("destinatarioIdentificadoNFCe", () => {
         clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678" }),
       ),
     ).toBe(false);
+  });
+});
+
+// O aviso do limite (#881) compara o MESMO total que vai na nota: cada linha
+// arredondada no centavo antes de somar, como o `valor_total` da NFC-e.
+describe("valorTotalNFCe", () => {
+  it("arredonda cada linha antes de somar, como a nota", () => {
+    const linha = { quantidade: 1, precoUnitario: 4999.995, desconto: 0 };
+    expect(valorTotalNFCe([linha, linha])).toBe(10000);
+  });
+
+  it("desconta o desconto da linha", () => {
+    expect(valorTotalNFCe([{ quantidade: 2, precoUnitario: 100, desconto: 15 }])).toBe(185);
   });
 });

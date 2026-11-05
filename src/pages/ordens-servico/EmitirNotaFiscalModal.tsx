@@ -17,6 +17,7 @@ import {
   EsperaVencidaError,
   FocusNfeError,
   refPertenceAOrdem,
+  valorTotalNFCe,
   type PagamentoParaNota,
 } from "@/lib/focusNfe";
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
@@ -136,14 +137,24 @@ export function EmitirNotaFiscalModal({
   const itensServico = itensDaOrdem.filter((item) => item.tipo === "servico");
   const totalPecas = totalPorTipo(ordem.itens ?? [], "peca");
   const totalServicos = totalPorTipo(ordem.itens ?? [], "servico");
-  // Mesma regra que `montarDestinatarioNFCe` usa pra decidir se identifica a
-  // empresa na nota — se mudar lá, muda aqui.
-  const cnpjClienteValido = (cliente?.cpf_cnpj ?? "").replace(/\D/g, "").length === 14;
+  // A empresa sai identificada na nota? A resposta é a regra de
+  // `montarDestinatarioNFCe`, sem cópia (#881).
+  const cnpjClienteValido = destinatarioIdentificadoNFCe(cliente);
   // Acima do limite da UF a SEFAZ costuma exigir o cliente identificado (#881).
   // Só depois de carregar o cliente: antes disso toda nota pareceria "sem CPF".
   const avisoLimite =
     tipoNota === "NFC-e" && cliente
-      ? avisoLimiteNFCeSemDestinatario(totalPecas, destinatarioIdentificadoNFCe(cliente))
+      ? avisoLimiteNFCeSemDestinatario(
+          // O mesmo total que vai na nota (cada linha arredondada antes de somar).
+          valorTotalNFCe(
+            itensPeca.map((item) => ({
+              quantidade: item.quantidade,
+              precoUnitario: item.preco_unitario,
+              desconto: item.desconto,
+            })),
+          ),
+          cnpjClienteValido,
+        )
       : null;
 
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
