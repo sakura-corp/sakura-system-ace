@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { emitirNFCe, FocusNfeError, montarCorpoNFCe, montarCorpoNFSe } from "./focusNfe";
+import {
+  destinatarioIdentificadoNFCe,
+  emitirNFCe,
+  FocusNfeError,
+  montarCorpoNFCe,
+  montarCorpoNFSe,
+} from "./focusNfe";
 import type { OrdemServico } from "@/types/os";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
@@ -361,5 +367,48 @@ describe("emitirNFCe — peça sem NCM", () => {
     await expect(promessa).rejects.toBeInstanceOf(FocusNfeError);
     await expect(promessa).rejects.toThrow(/Válvula de bico.*NCM/);
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+// O aviso do limite da NFC-e (#881) pergunta "a nota vai sair com o cliente
+// identificado?". A resposta é o que `montarDestinatarioNFCe` manda pra Focus,
+// e não uma regra copiada: se a regra do destinatário mudar, o aviso muda junto.
+describe("destinatarioIdentificadoNFCe", () => {
+  it("sem cliente: não identificado", () => {
+    expect(destinatarioIdentificadoNFCe(null)).toBe(false);
+  });
+
+  it("cliente Consumidor da venda de balcão: não identificado, mesmo com documento", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ id: CLIENTE_CONSUMIDOR_ID, cpf_cnpj: "123.456.789-09" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("pessoa física com CPF: identificado", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: "123.456.789-09" }))).toBe(
+      true,
+    );
+  });
+
+  it("pessoa física sem CPF: não identificado", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: null }))).toBe(false);
+  });
+
+  it("pessoa jurídica com CNPJ de 14 números: identificado", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-99" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("pessoa jurídica com CNPJ incompleto: não identificado", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678" }),
+      ),
+    ).toBe(false);
   });
 });

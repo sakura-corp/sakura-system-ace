@@ -5,11 +5,13 @@ import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import { buscarConfiguracaoFiscal, confirmarAliquotaCompetencia } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
+import { avisoLimiteNFCeSemDestinatario } from "@/schemas/limiteNFCe";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   baixarArquivoNota,
   consultarNFCe,
   consultarNFSe,
+  destinatarioIdentificadoNFCe,
   emitirNFCe,
   emitirNFSe,
   EsperaVencidaError,
@@ -137,6 +139,12 @@ export function EmitirNotaFiscalModal({
   // Mesma regra que `montarDestinatarioNFCe` usa pra decidir se identifica a
   // empresa na nota — se mudar lá, muda aqui.
   const cnpjClienteValido = (cliente?.cpf_cnpj ?? "").replace(/\D/g, "").length === 14;
+  // Acima do limite da UF a SEFAZ costuma exigir o cliente identificado (#881).
+  // Só depois de carregar o cliente: antes disso toda nota pareceria "sem CPF".
+  const avisoLimite =
+    tipoNota === "NFC-e" && cliente
+      ? avisoLimiteNFCeSemDestinatario(totalPecas, destinatarioIdentificadoNFCe(cliente))
+      : null;
 
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
@@ -551,13 +559,21 @@ export function EmitirNotaFiscalModal({
               incompleto no cadastro do cliente: nesse caso a nota sai como
               "consumidor não identificado" — válido, mas o cliente não usa
               essa nota no crédito dele, e acima de R$10 mil a SEFAZ passa a
-              exigir a identificação. Melhor ela saber disso antes de emitir
+              exigir a identificação (o aviso do limite logo abaixo, #881). Melhor ela saber disso antes de emitir
               do que descobrir depois. */}
           {tipoNota === "NFC-e" && cliente?.tipo_pessoa === "juridica" && !cnpjClienteValido && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
               Este cliente é pessoa jurídica, mas está <strong>sem o CNPJ no cadastro</strong> —
               a nota vai sair como consumidor não identificado. Se ele precisa da nota no nome da
               empresa, cadastre o CNPJ dele em Clientes antes de emitir.
+            </p>
+          )}
+
+          {/* Aviso, nunca tranca (#881): o limite pode mudar por UF e por
+              legislação, e quem decide é a SEFAZ. */}
+          {avisoLimite && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+              {avisoLimite}
             </p>
           )}
 

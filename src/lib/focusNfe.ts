@@ -354,6 +354,16 @@ export function montarDestinatarioNFCe(
   return { nome_destinatario: "", cpf_destinatario: "" };
 }
 
+/**
+ * A NFC-e vai sair com o cliente identificado (CPF ou CNPJ)? Responde pelo
+ * que `montarDestinatarioNFCe()` manda pra Focus, sem repetir a regra: é o que
+ * o aviso do limite da UF usa (#881, `src/schemas/limiteNFCe.ts`).
+ */
+export function destinatarioIdentificadoNFCe(cliente: Cliente | null): boolean {
+  const destinatario = montarDestinatarioNFCe(cliente);
+  return Boolean(destinatario.cpf_destinatario || destinatario.cnpj_destinatario);
+}
+
 function montarRefNota(numeroOrdem: number, sufixo: string): string {
   return `os${numeroOrdem}-${sufixo}-${Date.now()}`;
 }
