@@ -115,7 +115,8 @@ diferentes da mesma página:
    `https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/main/supabase/exemplo/dados-de-exemplo.sql`
 2. **SQL Editor** → **New query** → cole → **Run**.
 
-Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 peças."**
+Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 2 orçamentos, 12 peças."**
+(Antes da #872 a frase não tinha os orçamentos: se ela aparecer sem eles, o link abriu um script antigo.)
 
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
