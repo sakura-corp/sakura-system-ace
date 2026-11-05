@@ -2,6 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { hojeLocal } from "./datas";
 import { supabase } from "./supabase";
 import { arredondarCentavo as arredondar } from "@/schemas/dinheiro";
+import { valorLiquidoDoItem } from "@/schemas/valorItem";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
 import { ehConsumidor } from "@/types/cliente";
@@ -244,7 +245,13 @@ export interface DadosEmissaoNFCe {
  * conta — dois deles esquecendo o desconto.
  */
 export function valorLiquidoItem(item: ItemParaNFCe): number {
-  return arredondar(item.quantidade * item.precoUnitario - item.desconto);
+  return arredondar(
+    valorLiquidoDoItem({
+      quantidade: item.quantidade,
+      preco_unitario: item.precoUnitario,
+      desconto: item.desconto,
+    }),
+  );
 }
 
 function montarItemNFCe(item: ItemParaNFCe, numeroItem: number): ItemNFCe {

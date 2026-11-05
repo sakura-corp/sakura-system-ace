@@ -1,6 +1,7 @@
 import { custoDosItens, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo as arredondar } from "./dinheiro";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
+import { somarValoresLiquidos } from "./valorItem";
 import { temNumeroDeOS } from "@/types/os";
 import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os";
 
@@ -104,10 +105,7 @@ export function diaLocal(dataIso: string): string {
 }
 
 function valorDosItens(itens: readonly ItemParaComissao[]): number {
-  return itens.reduce(
-    (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
-    0,
-  );
+  return somarValoresLiquidos(itens);
 }
 
 function contarItensSemCusto(

@@ -4,6 +4,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { montarTextoGarantia } from "@/lib/garantiaTexto";
 import { listarArquivosDasOrdens } from "@/lib/notasFiscais";
 import { situacaoFiscalOrdem } from "@/schemas/situacaoFiscal";
+import { valorLiquidoDoItem } from "@/schemas/valorItem";
 import { VerDanfeModal } from "@/pages/notas-fiscais/VerDanfeModal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
@@ -166,7 +167,7 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
                 {item.tipo === "peca" ? "Peça" : "Serviço"} — {item.descricao} (
                 {item.quantidade}x){item.tecnico?.nome ? ` · técnico: ${item.tecnico.nome}` : ""}
               </span>
-              <span>{formatarMoeda(item.quantidade * item.preco_unitario - item.desconto)}</span>
+              <span>{formatarMoeda(valorLiquidoDoItem(item))}</span>
             </div>
           ))}
         </div>
