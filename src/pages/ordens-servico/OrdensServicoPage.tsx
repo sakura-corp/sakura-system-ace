@@ -42,7 +42,6 @@ import type {
 import { listarArquivosDasOrdens } from "@/lib/notasFiscais";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
@@ -193,7 +192,7 @@ export function OrdensServicoPage() {
   // corrige um item precisa da versão nova da OS que está aberta na tela, e
   // `setOrdens` sozinho não serve — `ordemEmEdicao` é um estado à parte.
   async function carregar(): Promise<OrdemServico[] | null> {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return null;
     }
@@ -279,7 +278,7 @@ export function OrdensServicoPage() {
   // anterior mostraria número velho na próxima abertura.
   const formularioAberto = mostrarFormulario || !!ordemEmEdicao || mostrarVenda;
   useEffect(() => {
-    if (!formularioAberto || !isSupabaseConfigured || !lojaAtual) {
+    if (!formularioAberto || !lojaAtual) {
       setSaldoPorPeca(null);
       return;
     }
@@ -339,13 +338,12 @@ export function OrdensServicoPage() {
       );
     }
     await editarItemOrdem(item, patch, operador.id);
-    const ordensAtualizadas = await carregar();
-    const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
-    if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
+    await recarregarOrdemEmEdicao();
   }
 
-  // Uma peça avulsa ganhou cadastro na janela da nota (#655): traz a OS aberta
-  // de novo, senão a aba Fechamento continuaria mostrando a peça como avulsa.
+  // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
+  // a peça avulsa que ganhou cadastro na janela da nota (#655), senão a aba
+  // Fechamento continuaria mostrando a peça como avulsa.
   async function recarregarOrdemEmEdicao() {
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
@@ -499,13 +497,13 @@ export function OrdensServicoPage() {
         )}
       </header>
 
-      {isSupabaseConfigured && !carregando && !lojaAtual && (
+      {!carregando && !lojaAtual && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
           Seu usuário não tem loja atribuída. Fale com o administrador.
         </p>
       )}
 
-      {isSupabaseConfigured && !carregando && lojaAtual && clientes.length === 0 && (
+      {!carregando && lojaAtual && clientes.length === 0 && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.
         </p>

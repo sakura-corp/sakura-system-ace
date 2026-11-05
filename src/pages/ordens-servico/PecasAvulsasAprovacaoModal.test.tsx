@@ -10,6 +10,7 @@
  * 4. "Cadastrar agora" abre o cadastro com nome e preço (e custo) já
  *    preenchidos e, ao salvar, guarda a peça nova como caminho.
  */
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor, within } from "@/testes/tela";
 import type { ItemOS } from "@/types/os";
@@ -28,6 +29,8 @@ vi.mock("@/lib/configuracoes", () => ({
 }));
 
 const { PecasAvulsasAprovacaoModal } = await import("./PecasAvulsasAprovacaoModal");
+const { ESCOLHAS_VAZIAS } = await import("./escolhasAvulsas");
+type EscolhasDaJanela = import("./escolhasAvulsas").EscolhasDaJanela;
 
 beforeEach(() => {
   localStorage.clear();
@@ -61,17 +64,24 @@ const cadastro = [
 function montar(itens: ItemOS[], extra: { pecas?: PecaJanela[]; erro?: string | null } = {}) {
   const onConfirmar = vi.fn();
   const onFechar = vi.fn();
-  const resultado = renderizar(
-    <PecasAvulsasAprovacaoModal
-      itens={itens}
-      pecas={extra.pecas ?? cadastro}
-      lojaId="loja-1"
-      enviando={false}
-      erro={extra.erro ?? null}
-      onConfirmar={onConfirmar}
-      onFechar={onFechar}
-    />,
-  );
+  // As escolhas moram em quem abre a janela (#720), como no formulário.
+  function ComPai() {
+    const [escolhas, setEscolhas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
+    return (
+      <PecasAvulsasAprovacaoModal
+        itens={itens}
+        pecas={extra.pecas ?? cadastro}
+        lojaId="loja-1"
+        escolhas={escolhas}
+        onMudarEscolhas={setEscolhas}
+        enviando={false}
+        erro={extra.erro ?? null}
+        onConfirmar={onConfirmar}
+        onFechar={onFechar}
+      />
+    );
+  }
+  const resultado = renderizar(<ComPai />);
   return { ...resultado, onConfirmar, onFechar };
 }
 

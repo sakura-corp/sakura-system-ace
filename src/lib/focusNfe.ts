@@ -243,8 +243,18 @@ export interface DadosEmissaoNFCe {
  * (o item, o total dos produtos e a base do ICMS) e antes cada um refazia a
  * conta — dois deles esquecendo o desconto.
  */
-export function valorLiquidoItem(item: ItemParaNFCe): number {
+type ValoresDaLinha = Pick<ItemParaNFCe, "quantidade" | "precoUnitario" | "desconto">;
+
+export function valorLiquidoItem(item: ValoresDaLinha): number {
   return arredondar(item.quantidade * item.precoUnitario - item.desconto);
+}
+
+/**
+ * O total da NFC-e (`valor_produtos`/`valor_total`): cada linha arredondada no
+ * centavo antes de somar. É o que o aviso do limite da UF compara (#881).
+ */
+export function valorTotalNFCe(itens: readonly ValoresDaLinha[]): number {
+  return arredondar(itens.reduce((soma, item) => soma + valorLiquidoItem(item), 0));
 }
 
 function montarItemNFCe(item: ItemParaNFCe, numeroItem: number): ItemNFCe {
@@ -354,6 +364,16 @@ export function montarDestinatarioNFCe(
   return { nome_destinatario: "", cpf_destinatario: "" };
 }
 
+/**
+ * A NFC-e vai sair com o cliente identificado (CPF ou CNPJ)? Responde pelo
+ * que `montarDestinatarioNFCe()` manda pra Focus, sem repetir a regra: é o que
+ * o aviso do limite da UF usa (#881, `src/schemas/limiteNFCe.ts`).
+ */
+export function destinatarioIdentificadoNFCe(cliente: Cliente | null): boolean {
+  const destinatario = montarDestinatarioNFCe(cliente);
+  return Boolean(destinatario.cpf_destinatario || destinatario.cnpj_destinatario);
+}
+
 function montarRefNota(numeroOrdem: number, sufixo: string): string {
   return `os${numeroOrdem}-${sufixo}-${Date.now()}`;
 }
@@ -376,7 +396,7 @@ export function montarCorpoNFCe({
   pagamentos,
   configuracaoFiscal,
 }: DadosEmissaoNFCe): NFCeCorpo {
-  const valorProdutos = itens.reduce((soma, item) => soma + valorLiquidoItem(item), 0);
+  const valorProdutos = valorTotalNFCe(itens);
   const valorIcmsTotal = itens.reduce((soma, item) => {
     const aliquota = item.peca.aliquota_icms ?? 0;
     return aliquota > 0 ? soma + (valorLiquidoItem(item) * aliquota) / 100 : soma;

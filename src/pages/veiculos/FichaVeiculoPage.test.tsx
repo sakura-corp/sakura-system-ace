@@ -19,7 +19,7 @@ const buscarFichaDoVeiculo = vi.fn();
 vi.mock("@/lib/veiculos", () => ({
   buscarFichaDoVeiculo: (...a: unknown[]) => buscarFichaDoVeiculo(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 const LOJA_A = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
 const LOJA_B = { id: "loja-b", nome: "Loja Vila", cidade: null, uf: null, ativo: true, criado_em: "" };
