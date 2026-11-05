@@ -454,8 +454,8 @@ from (values
 on conflict do nothing;
 
 -- A baixa de estoque de cada peça usada (o programa faz isso ao lançar o item;
--- no orçamento não: lá a peça só sai quando o cliente aprova, por isso o
--- `numero is not null`).
+-- no orçamento não: lá a peça só sai quando o cliente aprova, e quem baixa é
+-- a aprovação no programa; por isso só as OS 1 a 14 do exemplo).
 insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, referencia, loja_id, deposito_id, criado_em)
 select ('eeee000d-0000-4000-8000-0000000002' || right(i.id::text, 2))::uuid,
        i.peca_id, 'saida', i.quantidade, 'uso_em_os',
@@ -463,7 +463,8 @@ select ('eeee000d-0000-4000-8000-0000000002' || right(i.id::text, 2))::uuid,
        o.loja_id, 'eeee0002-0000-4000-8000-000000000001', o.data_abertura
 from ordens_servico_itens i
 join ordens_servico o on o.id = i.ordem_servico_id
-where i.id::text like 'eeee0009-%' and i.peca_id is not null and o.numero is not null
+where i.id::text like 'eeee0009-%' and i.peca_id is not null
+  and o.id::text like 'eeee0008-%' and right(o.id::text, 2)::int <= 14
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -543,25 +544,21 @@ on conflict do nothing;
 -- 9a. Peça avulsa (sem cadastro, migration 0066) na OS 8, que está concluída
 -- esperando faturar. Peça avulsa não mexe no estoque (baixarEstoqueDasPecas,
 -- src/lib/ordensServico.ts), e o custo digitado vai em custo_unitario.
+-- Só enquanto a OS 8 não foi faturada (o programa não aceita item em OS
+-- faturada, e alguém da equipe pode ter faturado ela no teste).
 insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, servico_id, descricao,
-                                  quantidade, preco_unitario, desconto, tecnico_id, custo_unitario) values
-  ('eeee0009-0000-4000-8000-000000000033', 'eeee0008-0000-4000-8000-000000000008', 'peca', null, null,
-   'Parafuso de roda (avulso, exemplo)', 4, 6.00, 0, null, 2.50)
+                                  quantidade, preco_unitario, desconto, tecnico_id, custo_unitario)
+select 'eeee0009-0000-4000-8000-000000000033', o.id, 'peca', null, null,
+       'Parafuso de roda (avulso, exemplo)', 4, 6.00, 0, null, 2.50
+from ordens_servico o
+where o.id = 'eeee0008-0000-4000-8000-000000000008' and o.status in ('em_andamento', 'concluida')
 on conflict do nothing;
 
 -- 9b. Orçamentos (migration 0065; criarOrcamento e recusarOrcamento, em
 -- src/lib/ordensServico.ts): sem número de OS (o banco dá o número do
 -- orçamento, por isso vai vazio) e SEM baixa de estoque — a peça só sai da
 -- prateleira quando o cliente aprova. Um aberto e um recusado, com motivo.
--- (Um insert de cada vez, pra o aberto ficar com o número menor.)
-insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
-                            descricao_problema, vendedor_id, data_abertura, validade) values
-  ('eeee0008-0000-4000-8000-000000000015', 'eeee0001-0000-4000-8000-000000000001', null, 'os',
-   'eeee0004-0000-4000-8000-000000000002', 'eeee0005-0000-4000-8000-000000000003', 'orcamento', 63800,
-   'Orçamento dos 4 pneus dianteiros e traseiros', 'eeee0003-0000-4000-8000-000000000002',
-   pg_temp.ex_quando(1, '15:30'), pg_temp.ex_dia(1) + 7)
-on conflict do nothing;
-
+-- (Um insert de cada vez, o mais velho primeiro: o número segue a data.)
 insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
                             descricao_problema, vendedor_id, data_abertura, validade,
                             motivo_recusa, recusado_em) values
@@ -570,6 +567,14 @@ insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, s
    'Orçamento de amortecedores', 'eeee0003-0000-4000-8000-000000000001',
    pg_temp.ex_quando(6, '10:00'), pg_temp.ex_dia(6) + 7,
    'preco', pg_temp.ex_quando(4, '11:00'))
+on conflict do nothing;
+
+insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
+                            descricao_problema, vendedor_id, data_abertura, validade) values
+  ('eeee0008-0000-4000-8000-000000000015', 'eeee0001-0000-4000-8000-000000000001', null, 'os',
+   'eeee0004-0000-4000-8000-000000000002', 'eeee0005-0000-4000-8000-000000000003', 'orcamento', 63800,
+   'Orçamento dos 4 pneus dianteiros e traseiros', 'eeee0003-0000-4000-8000-000000000002',
+   pg_temp.ex_quando(1, '15:30'), pg_temp.ex_dia(1) + 7)
 on conflict do nothing;
 
 insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, servico_id, descricao,
@@ -651,7 +656,8 @@ insert into contagens_estoque (id, peca_id, deposito_id, loja_id, quantidade_con
                                diferenca, observacao, criado_em)
 select v.id::uuid, v.peca::uuid, 'eeee0002-0000-4000-8000-000000000001',
        'eeee0001-0000-4000-8000-000000000001',
-       s.saldo + v.delta, s.saldo, v.delta, v.obs, pg_temp.ex_quando(7, '18:00')
+       greatest(s.saldo + v.delta, 0), s.saldo, greatest(s.saldo + v.delta, 0) - s.saldo, v.obs,
+       pg_temp.ex_quando(7, '18:00')
 from (values
   ('eeee0015-0000-4000-8000-000000000001', 'eeee0006-0000-4000-8000-000000000002', 0::numeric, null::text),
   ('eeee0015-0000-4000-8000-000000000002', 'eeee0006-0000-4000-8000-000000000010', -3, 'Faltaram 3 (exemplo)')
@@ -673,32 +679,42 @@ from contagens_estoque c
 where c.id::text like 'eeee0015-%' and c.diferenca <> 0
 on conflict do nothing;
 
--- 9f. Fechamento de caixa de dois dias passados (migration 0058; fechar_caixa
--- e src/schemas/fechamentoCaixa.ts): esperado na gaveta = fundo de troco +
--- entradas em dinheiro − saídas em dinheiro do dia; a diferença (contado −
--- esperado), quando existe, vira um lançamento de "Quebra/Sobra de caixa" no
--- fim daquele dia. Há 5 dias bateu; há 3 dias faltaram R$ 5,00.
--- Feito um dia por vez, e só se o dia ainda não foi fechado (um fechamento
--- por loja por dia), pra a segunda rodada não lançar outra quebra.
+-- 9f. Fechamento de caixa de dois dias passados (migration 0058): pela
+-- própria fechar_caixa(), que é o que o programa chama (src/lib/fechamentoCaixa.ts).
+-- A conta do "esperado" é a da tela (src/schemas/fechamentoCaixa.ts): fundo de
+-- troco + entradas em dinheiro − saídas em dinheiro do dia, com os totais por
+-- forma; a diferença (contado − esperado), quando existe, a função lança como
+-- "Quebra/Sobra de caixa" no fim daquele dia. Há 5 dias bateu; há 3 dias
+-- faltaram R$ 5,00. Só fecha o dia que ainda não foi fechado (um fechamento
+-- por loja por dia), então a segunda rodada não lança outra quebra.
+-- A forma de pagamento normalizada como a tela faz (chaveDaForma/ehDinheiro).
+create or replace function pg_temp.ex_forma(forma text)
+returns text
+language sql
+immutable
+as $$
+  select case when f in ('dinheiro', 'especie', 'em_especie', 'din') then 'dinheiro' else f end
+  from (select regexp_replace(regexp_replace(
+                 translate(lower(btrim(forma)), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc'),
+                 '\s+de\s+', '_', 'g'), '\s+', '_', 'g') as f) t;
+$$;
+
 do $$
 declare
   loja constant uuid := 'eeee0001-0000-4000-8000-000000000001';
   f record;
   v_totais jsonb;
   v_esperado numeric(12,2);
-  v_diferenca numeric(12,2);
-  v_movimento uuid;
 begin
   for f in select * from (values
-      ('eeee000f-0000-4000-8000-000000000001'::uuid, 5, 100.00::numeric, 0::numeric, null::uuid),
-      ('eeee000f-0000-4000-8000-000000000002'::uuid, 3, 100.00, -5.00, 'eeee000a-0000-4000-8000-000000000015'::uuid)
-    ) as v(id, dias, fundo, falta, movimento) loop
-    continue when exists (select 1 from fechamentos_caixa where id = f.id
-                          or (loja_id = loja and data = pg_temp.ex_dia(f.dias)));
+      (5, 100.00::numeric, 0::numeric, null::text),
+      (3, 100.00, -5.00, 'Faltou troco de uma venda (exemplo)')
+    ) as v(dias, fundo, falta, obs) loop
+    continue when exists (select 1 from fechamentos_caixa where loja_id = loja and data = pg_temp.ex_dia(f.dias));
 
     -- os totais do dia, por forma (o que o programa grava em totais_por_forma)
     select coalesce(jsonb_object_agg(forma, total), '{}'::jsonb) into v_totais
-    from (select lower(btrim(forma_pagamento)) as forma,
+    from (select pg_temp.ex_forma(forma_pagamento) as forma,
                  sum(case when tipo = 'entrada' then valor else -valor end) as total
             from caixa_movimentos
            where loja_id = loja
@@ -707,28 +723,10 @@ begin
            group by 1) t;
     v_totais := jsonb_build_object('dinheiro', 0) || v_totais;
     v_esperado := f.fundo + (v_totais ->> 'dinheiro')::numeric;
-    v_diferenca := f.falta;
-    v_movimento := null;
 
-    if v_diferenca <> 0 then
-      insert into caixa_movimentos (id, loja_id, data, tipo, forma_pagamento, valor, descricao, categoria_id)
-      values (f.movimento, loja, pg_temp.ex_quando(f.dias, '23:59'),
-              case when v_diferenca < 0 then 'saida' else 'entrada' end, 'dinheiro', abs(v_diferenca),
-              case when v_diferenca < 0 then 'Quebra de caixa — fechamento de '
-                   else 'Sobra de caixa — fechamento de ' end || to_char(pg_temp.ex_dia(f.dias), 'DD/MM/YYYY'),
-              (select id from categorias_caixa
-                where nome = case when v_diferenca < 0 then 'Quebra de caixa' else 'Sobra de caixa' end
-                  and tipo = case when v_diferenca < 0 then 'saida' else 'entrada' end))
-      on conflict do nothing;
-      v_movimento := f.movimento;
-    end if;
-
-    insert into fechamentos_caixa (id, loja_id, data, fundo_troco, saldo_sistema, valor_contado, diferenca,
-                                   totais_por_forma, observacao, caixa_movimento_id, criado_em)
-    values (f.id, loja, pg_temp.ex_dia(f.dias), f.fundo, v_esperado, v_esperado + v_diferenca, v_diferenca,
-            v_totais, case when v_diferenca <> 0 then 'Faltou troco de uma venda (exemplo)' end,
-            v_movimento, pg_temp.ex_quando(f.dias, '18:30'))
-    on conflict do nothing;
+    perform fechar_caixa(loja, pg_temp.ex_dia(f.dias), f.fundo, v_esperado,
+                         greatest(v_esperado + f.falta, 0), v_totais, f.obs,
+                         pg_temp.ex_quando(f.dias, '23:59'));
   end loop;
 end $$;
 

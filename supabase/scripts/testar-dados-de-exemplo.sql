@@ -393,7 +393,7 @@ begin
     if exists (select 1 from jsonb_array_elements(linha.snapshot) e
                left join ordens_servico o on o.id = (e ->> 'ordemId')::uuid
                where o.id is null or o.status <> 'faturada' or o.numero <> (e ->> 'numero')::int
-                  or (o.data_fechamento at time zone 'America/Sao_Paulo')::date
+                  or (coalesce(o.data_fechamento, o.data_abertura) at time zone 'America/Sao_Paulo')::date
                      not between linha.periodo_inicio and linha.periodo_fim) then
       raise exception 'FALHOU (B11): o retrato da comissão tem OS fora do período ou não faturada';
     end if;
@@ -462,7 +462,7 @@ begin
     raise exception 'FALHOU (B14): esperava uma contagem que bateu e uma com diferença';
   end if;
 
-  -- B15. computador: inventado, da loja de exemplo, com versão no formato
+  -- B15. computador: o inventado existe, na loja de exemplo
   if not exists (select 1 from computadores where loja_id = loja and id::text like 'eeee%') then
     raise exception 'FALHOU (B15): faltou o computador da loja de exemplo';
   end if;
