@@ -9,6 +9,8 @@
  *    preenchidos), liga ao item da OS e libera a emissão.
  * 3. Peça do cadastro com NCM: nada muda, emite como sempre.
  * 4. Sem o token do Focus NFe, o aviso das peças aparece junto com o do token (#742).
+ * 5. NFC-e no limite da UF (R$ 10.000) sem o cliente identificado avisa, sem
+ *    travar o botão (#881).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
@@ -28,25 +30,30 @@ vi.mock("@/lib/pecas", () => ({
 vi.mock("@/lib/ordensServico", () => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
 }));
-vi.mock("@/lib/focusNfe", () => ({
-  emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-  emitirNFSe: vi.fn(),
-  consultarNFCe: vi.fn(),
-  consultarNFSe: vi.fn(),
-  baixarArquivoNota: vi.fn(),
-  refPertenceAOrdem: vi.fn(),
-  FocusNfeError: class extends Error {},
-  EsperaVencidaError: class extends Error {},
-}));
+vi.mock("@/lib/focusNfe", async () => {
+  // As regras de verdade de "a nota sai identificada?" e do total da nota,
+  // não cópias (#881).
+  const real = await vi.importActual<typeof import("@/lib/focusNfe")>("@/lib/focusNfe");
+  return {
+    destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
+    valorTotalNFCe: real.valorTotalNFCe,
+    emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
+    emitirNFSe: vi.fn(),
+    consultarNFCe: vi.fn(),
+    consultarNFSe: vi.fn(),
+    baixarArquivoNota: vi.fn(),
+    refPertenceAOrdem: vi.fn(),
+    FocusNfeError: class extends Error {},
+    EsperaVencidaError: class extends Error {},
+  };
+});
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
+const clienteDaOrdem = vi.fn();
 vi.mock("@/lib/clientes", () => ({
-  buscarClienteEVeiculoDaOrdem: async () => ({
-    cliente: { id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null },
-    veiculo: null,
-  }),
+  buscarClienteEVeiculoDaOrdem: async () => ({ cliente: clienteDaOrdem(), veiculo: null }),
 }));
 const buscarConfiguracaoFiscal = vi.fn();
 vi.mock("@/lib/configuracoes", () => ({
@@ -65,9 +72,9 @@ const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "
 const pecaNova = { id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" } as unknown as Peca;
 const palhetaDoCadastro = { id: "peca-3", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500", ativo: true } as unknown as Peca;
 
-const item = (id: string, descricao: string, peca_id: string | null) => ({
+const item = (id: string, descricao: string, peca_id: string | null, preco_unitario = 80) => ({
   id, ordem_servico_id: "os-1", tipo: "peca", peca_id, servico_id: null, tecnico_id: null,
-  descricao, quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: null,
+  descricao, quantidade: 1, preco_unitario, desconto: 0, custo_unitario: null,
 });
 
 function ordem(itens: unknown[]): OrdemServico {
@@ -115,6 +122,7 @@ const configuracao = (focus_nfe_configurado: boolean) => ({
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
   buscarConfiguracaoFiscal.mockResolvedValue(configuracao(true));
   listarPecasJanela.mockResolvedValue([pecaComNcm]);
   buscarDadosFiscaisDasPecas.mockImplementation(async (ids: string[]) =>
@@ -285,5 +293,45 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
 
     expect(await screen.findByText("Essa peça precisa ser cadastrada pra sair na nota.")).toBeInTheDocument();
     expect(emitirNFCe).not.toHaveBeenCalled();
+  });
+});
+
+describe("EmitirNotaFiscalModal — limite da UF sem cliente identificado (#881)", () => {
+  const avisoDoLimite = /R\$ 10\.000 ou mais e vai sair sem CPF\/CNPJ/;
+
+  it("acima de R$ 10.000, cliente sem CPF: avisa e o botão continua liberado", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 12000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("compara o total da nota (cada linha arredondada), não a soma crua", async () => {
+    // 4.999,995 vira 5.000,00 em cada linha da nota: a nota é de 10.000,00.
+    montar([
+      item("i1", "Pneu 175/70 R13", "peca-1", 4999.995),
+      item("i2", "Pneu 175/70 R13", "peca-1", 4999.995),
+    ]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
+  });
+
+  it("abaixo de R$ 10.000, cliente sem CPF: sem o aviso", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 9000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.queryByText(avisoDoLimite)).not.toBeInTheDocument();
+  });
+
+  it("acima de R$ 10.000, cliente com CPF: sem o aviso", async () => {
+    clienteDaOrdem.mockReturnValue({
+      id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09",
+    });
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 12000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.queryByText(avisoDoLimite)).not.toBeInTheDocument();
   });
 });
