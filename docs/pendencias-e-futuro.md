@@ -344,8 +344,8 @@ Um instalador serve qualquer empresa (seção 7, "Conexão com o banco").
 
 Página em HTML e CSS puros, com telas do sistema e dados inventados, pronta pra publicar na Vercel
 (passo a passo em `site/README.md`). Ela disse: *"nem precisava ter feito site ainda... não vou
-mexer com isso agora"*. **Não retomar sozinho.** Quando ela quiser: apontar a Vercel pra pasta
-`site`, conferir o botão de download (aponta pro instalador da última versão) e decidir se entra
+mexer com isso agora"*. **Não retomar sozinho.** Quando ela quiser: instalar a Vercel de novo
+(o app saiu em 05/11/2026, #878; dar acesso **só** a este repositório), apontar pra pasta `site`, conferir o botão de download (aponta pro instalador da última versão) e decidir se entra
 um WhatsApp (hoje o contato é só o e-mail dela).
 
 ### 10. ⚠️ Contrato e papéis de LGPD, antes da primeira venda pra terceiro (`TR-12.2`)
