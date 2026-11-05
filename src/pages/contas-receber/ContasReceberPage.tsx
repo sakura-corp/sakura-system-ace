@@ -254,7 +254,7 @@ export function ContasReceberPage() {
                               )}
                               <button
                                 onClick={() => setContaRecebendo(conta)}
-                                className="h-8 rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
+                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
                               >
                                 Marcar como recebido
                               </button>

@@ -204,7 +204,7 @@ export function ProdutosSection({
                 onChange={(e) => setBusca(e.target.value)}
                 onKeyDown={handleTeclaNaBusca}
                 placeholder="Descrição, referência, código, marca ou medida"
-                className="w-80 rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="w-[23rem] rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
               />
             </label>
 
@@ -347,7 +347,7 @@ export function ProdutosSection({
                     <td className="px-4 py-3">
                       {categorias.find((c) => c.id === peca.categoria_id)?.nome ?? "—"}
                     </td>
-                    <td className="px-4 py-3">{peca.codigo_interno || "—"}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{peca.codigo_interno || "—"}</td>
                     <td className="px-4 py-3">{peca.unidade || "—"}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_custo)}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_venda)}</td>
