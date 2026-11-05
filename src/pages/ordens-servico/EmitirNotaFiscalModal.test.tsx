@@ -27,13 +27,6 @@ vi.mock("@/lib/pecas", () => ({
 }));
 vi.mock("@/lib/ordensServico", () => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
-  // Como o de verdade, mas com a frase pronta no 2º argumento (o real monta
-  // a frase com o nome da OS).
-  PecaLigadaSemEstoqueError: class extends Error {
-    constructor(_ordem: unknown, frase: string) {
-      super(frase);
-    }
-  },
 }));
 vi.mock("@/lib/focusNfe", () => ({
   emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
@@ -65,7 +58,6 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { EmitirNotaFiscalModal } = await import("./EmitirNotaFiscalModal");
-const { PecaLigadaSemEstoqueError } = await import("@/lib/ordensServico");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
@@ -200,10 +192,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 
     await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
-    const [itemLigado, pecaId, lojaId] = cadastrarPecaDoItem.mock.calls[0];
-    expect(itemLigado).toMatchObject({ id: "i2" });
-    expect(pecaId).toBe("peca-nova");
-    expect(lojaId).toBe("loja-1");
+    expect(cadastrarPecaDoItem.mock.calls[0]).toEqual(["i2", "peca-nova", "op"]);
     expect(onItensMudaram).toHaveBeenCalled();
 
     await waitFor(() => expect(confirmar()).toBeEnabled());
@@ -233,15 +222,14 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await waitFor(() => expect(confirmar()).toBeEnabled());
   });
 
-  // Revisão da Sofia (PR #717), ponto 1: a peça ficava ligada, mas a tela
-  // dizia "não entrou na OS" e deixava cadastrar de novo (peça duplicada).
-  it("se a peça liga mas a baixa do estoque falha, a tela diz a verdade e libera a nota", async () => {
+  // #803: ligar e baixar é tudo ou nada no banco. Se a baixa falha (sem
+  // depósito ativo), a peça NÃO fica ligada: a tela diz isso e, no próximo
+  // "Cadastrar agora", oferece a peça que acabou de entrar no cadastro (o
+  // aviso de peça parecida), pra não cadastrar outra igual (PR #717, ponto 1).
+  it("se o banco recusa, a peça não entra, a tela diz por quê e a nova vira a parecida", async () => {
     cadastrarPecaRapida.mockResolvedValue("peca-nova");
-    cadastrarPecaDoItem.mockRejectedValue(
-      new PecaLigadaSemEstoqueError(
-        ordem([]),
-        "A peça foi ligada à OS 51, mas a baixa no estoque não entrou: sem rede. Lance a saída à mão em Movimentações.",
-      ),
+    cadastrarPecaDoItem.mockRejectedValueOnce(
+      new Error("Nenhum depósito ativo encontrado pra essa loja."),
     );
     const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
 
@@ -249,12 +237,22 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await preencherCadastro(user);
     await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 
-    expect(await screen.findByText(/ligada à OS 51, mas a baixa no estoque não entrou/)).toBeInTheDocument();
-    expect(screen.queryByText(/não entrou na OS/)).not.toBeInTheDocument();
-    // O item conta como ligado: sem o botão de cadastrar de novo, e a nota sai.
+    expect(
+      await screen.findByText(/cadastrada, mas não entrou na OS: Nenhum depósito ativo/),
+    ).toBeInTheDocument();
+    expect(onItensMudaram).not.toHaveBeenCalled();
+    expect(confirmar()).toBeDisabled();
+
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    await user.click(screen.getByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: /Abrir a que já existe/ }));
+
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
+    expect(cadastrarPecaDoItem.mock.calls[1]).toEqual(["i2", "peca-nova", "op"]);
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(confirmar()).toBeEnabled());
-    expect(screen.queryByRole("button", { name: "Cadastrar agora" })).not.toBeInTheDocument();
-    expect(onItensMudaram).toHaveBeenCalled();
   });
 
   // Revisão da Sofia (PR #717), ponto 2: o aviso de peça parecida (#653) não

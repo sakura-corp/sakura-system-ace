@@ -68,6 +68,15 @@ export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
 
 /**
+ * Dois computadores se travaram um esperando o outro (deadlock, código 40P01
+ * do Postgres): o banco desfaz um dos dois por inteiro e o outro segue. Raro
+ * (ex.: juntar peças enquanto outra tela mexe nas mesmas peças), mas a frase
+ * do Postgres vinha em inglês (#803).
+ */
+export const MENSAGEM_TRAVAMENTO_MUTUO =
+  "Outro computador estava mexendo nas mesmas informações ao mesmo tempo, e este pedido não foi gravado. Atualize a tela e tente de novo.";
+
+/**
  * O programa pediu uma coluna ou view que o banco desta empresa ainda não tem: a
  * versão nova chegou antes da migration (a ordem certa é o banco primeiro,
  * mas migration com `versao-minima-do-programa` faz o contrário de
@@ -132,6 +141,7 @@ function objetoQueFalta(mensagem: string): string | null {
 
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
+  if (/^deadlock detected/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
   const objeto = objetoQueFalta(mensagem);
   if (objeto && (OBJETOS_NOVOS_DO_BANCO as readonly string[]).includes(objeto)) {
     return MENSAGEM_BANCO_DESATUALIZADO;

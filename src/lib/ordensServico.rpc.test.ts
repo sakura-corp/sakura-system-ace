@@ -18,8 +18,13 @@ vi.mock("./depositos", () => ({ buscarDepositoPadraoId: async () => "deposito-1"
 vi.mock("./caixa", () => ({ criarMovimentoCaixa: async () => undefined }));
 vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }));
 
-const { adicionarItensOrdem, aprovarOrcamento, editarItemOrdem, PecaNaoLigadaNaAprovacaoError } =
-  await import("./ordensServico");
+const {
+  adicionarItensOrdem,
+  aprovarOrcamento,
+  cadastrarPecaDoItem,
+  editarItemOrdem,
+  PecaNaoLigadaNaAprovacaoError,
+} = await import("./ordensServico");
 
 const pneu: NovoItemOS = {
   tipo: "peca",
@@ -75,6 +80,39 @@ describe("adicionarItensOrdem", () => {
     expect(sb.rpc).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledWith({ atualizado_por_id: "op-1" });
     expect(eq).toHaveBeenCalledWith("id", "ordem-1");
+  });
+});
+
+// #803: "Cadastrar agora" na nota (#655) liga a peça avulsa ao cadastro numa
+// chamada só (`cadastrar_peca_do_item`, migration 0077), que trava a OS, liga e,
+// se já é OS, baixa. A regra (quando baixa, a trava, tudo ou nada) é provada em
+// supabase/scripts/testar-cadastrar-peca-do-item.sql.
+describe("cadastrarPecaDoItem", () => {
+  it("manda o item, a peça e quem mexeu numa chamada só, sem ler a ordem nem gravar direto", async () => {
+    sb.rpc.mockResolvedValue({ data: true, error: null });
+    expect(await cadastrarPecaDoItem("item-1", "peca-nova", "op-1")).toBe(true);
+    expect(sb.rpc).toHaveBeenCalledTimes(1);
+    expect(sb.rpc).toHaveBeenCalledWith("cadastrar_peca_do_item", {
+      p_item: "item-1",
+      p_peca: "peca-nova",
+      p_operador: "op-1",
+    });
+    expect(sb.from).not.toHaveBeenCalled();
+  });
+
+  it("o banco diz que o item já não era avulso (outro computador ligou): devolve false", async () => {
+    sb.rpc.mockResolvedValue({ data: false, error: null });
+    expect(await cadastrarPecaDoItem("item-1", "peca-nova", "op-1")).toBe(false);
+  });
+
+  it("erro do banco (sem depósito ativo, por exemplo) sobe pra tela: nada foi ligado", async () => {
+    sb.rpc.mockResolvedValue({
+      data: null,
+      error: { message: "Nenhum depósito ativo encontrado pra essa loja." },
+    });
+    await expect(cadastrarPecaDoItem("item-1", "peca-nova", "op-1")).rejects.toMatchObject({
+      message: "Nenhum depósito ativo encontrado pra essa loja.",
+    });
   });
 });
 

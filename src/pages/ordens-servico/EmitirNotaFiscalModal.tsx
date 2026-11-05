@@ -19,7 +19,7 @@ import {
 } from "@/lib/focusNfe";
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { salvarArquivoEmitido } from "@/lib/notasFiscais";
-import { cadastrarPecaDoItem, PecaLigadaSemEstoqueError } from "@/lib/ordensServico";
+import { cadastrarPecaDoItem } from "@/lib/ordensServico";
 import { buscarDadosFiscaisDasPecas, listarPecasJanela } from "@/lib/pecas";
 import {
   itensQueImpedemNFCe,
@@ -211,9 +211,11 @@ export function EmitirNotaFiscalModal({
   async function aoLigarPeca(item: ItemOS, peca: PecaJanela, recemCadastrada: boolean) {
     setItemCadastrando(null);
     setErro("");
-    let avisoEstoque = "";
+    if (!operador) return;
     try {
-      const vinculado = await cadastrarPecaDoItem(item, peca.id, ordem.loja_id, ordem);
+      // O banco liga e, se a ordem já é OS, baixa, tudo ou nada (#803): se
+      // der erro, a peça NÃO ficou ligada.
+      const vinculado = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
       if (!vinculado) {
         setErro(
           "Esta peça já tinha sido ligada a um cadastro (talvez em outro computador). " +
@@ -222,19 +224,20 @@ export function EmitirNotaFiscalModal({
         return;
       }
     } catch (err) {
-      // Ligou, mas o estoque não baixou: o item conta como ligado (senão um
-      // segundo "Cadastrar agora" criaria a peça duplicada) e a tela diz o
-      // que fazer à mão.
-      if (!(err instanceof PecaLigadaSemEstoqueError)) {
-        console.error("Erro ao ligar a peça ao item da OS:", err);
-        setErro(
-          recemCadastrada
-            ? `A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err)}`
-            : `A peça não entrou na OS: ${mensagemDeErro(err)}`,
-        );
-        return;
+      console.error("Erro ao ligar a peça ao item da OS:", err);
+      // A peça nova já está no cadastro: entra na lista da loja, pra no
+      // próximo "Cadastrar agora" o aviso de peça parecida oferecer ela, em
+      // vez de cadastrar outra igual.
+      if (recemCadastrada) {
+        setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
       }
-      avisoEstoque = err.message;
+      setErro(
+        recemCadastrada
+          ? `A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err).replace(/\.$/, "")}. ` +
+              "Pra tentar de novo, escolha a peça que já está no cadastro, sem cadastrar outra."
+          : `A peça não entrou na OS: ${mensagemDeErro(err)}`,
+      );
+      return;
     }
     setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
     // A janela de peças não traz o NCM: os dados fiscais da peça ligada vêm
@@ -247,15 +250,13 @@ export function EmitirNotaFiscalModal({
       setErro(`A peça foi ligada, mas não deu pra buscar o NCM dela: ${mensagemDeErro(err)}`);
     }
     setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
-    if (avisoEstoque) setErro(avisoEstoque);
     // Recarregar a OS fica à parte: se falhar, a peça JÁ entrou na OS.
     try {
       await onItensMudaram?.();
     } catch (err) {
       console.error("Erro ao recarregar a OS depois de ligar a peça:", err);
       setErro(
-        `${avisoEstoque ? `${avisoEstoque} ` : ""}` +
-          `${recemCadastrada ? "A peça foi cadastrada e ligada à OS" : "A peça foi ligada à OS"}, ` +
+        `${recemCadastrada ? "A peça foi cadastrada e ligada à OS" : "A peça foi ligada à OS"}, ` +
           `mas a OS não recarregou: ` +
           `${mensagemDeErro(err)}. Feche e abra a OS de novo pra ver.`,
       );
