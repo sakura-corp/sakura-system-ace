@@ -52,11 +52,12 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
         Dá pra continuar trabalhando normalmente — mas, se alguma tela reclamar que “uma coluna
         não existe”, é por causa disto, e não é defeito do que você fez.
       </p>
+      {/* Migration entra só pelo botão "Atualizar o banco de todas as empresas"
+          (docs/operacao.md), nunca colada à mão no SQL Editor (#725). */}
       <p className="mt-2 text-rotulo text-amber-900">
-        Quem cuida do sistema precisa abrir o painel do Supabase desta empresa → SQL Editor → New
-        query, e rodar, na ordem, os arquivos que começam com{" "}
-        <span className="font-semibold">{situacao.faltando.join(", ")}</span> da pasta{" "}
-        <span className="font-semibold">supabase/migrations</span>.
+        Quem cuida do sistema precisa atualizar o banco desta empresa (
+        {situacao.faltando.length > 1 ? "faltam as atualizações" : "falta a atualização"}{" "}
+        <span className="font-semibold">{situacao.faltando.join(", ")}</span>).
       </p>
     </div>
   );
