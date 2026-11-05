@@ -55,7 +55,8 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
       {/* Migration entra só pelo botão "Atualizar o banco de todas as empresas"
           (docs/operacao.md), nunca colada à mão no SQL Editor (#725). */}
       <p className="mt-2 text-rotulo text-amber-900">
-        Quem cuida do sistema precisa atualizar o banco desta empresa (faltam as atualizações{" "}
+        Quem cuida do sistema precisa atualizar o banco desta empresa (
+        {situacao.faltando.length > 1 ? "faltam as atualizações" : "falta a atualização"}{" "}
         <span className="font-semibold">{situacao.faltando.join(", ")}</span>).
       </p>
     </div>

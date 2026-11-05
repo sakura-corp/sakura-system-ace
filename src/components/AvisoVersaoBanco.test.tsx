@@ -32,9 +32,15 @@ describe("AvisoVersaoBanco", () => {
     const { container } = render(<AvisoVersaoBanco situacao={situacaoDoEsquema(64, 67, {})} />);
     const texto = container.textContent ?? "";
 
-    expect(texto).not.toMatch(/SQL Editor|New query|supabase\/migrations|arquivo/i);
+    expect(texto).not.toMatch(/SQL Editor|New query|supabase\/migrations/i);
     expect(texto).toContain("Quem cuida do sistema precisa atualizar o banco desta empresa");
-    expect(texto).toContain("0065, 0066, 0067");
+    expect(texto).toContain("faltam as atualizações 0065, 0066, 0067");
+  });
+
+  it("com uma atualização só, a frase fica no singular", () => {
+    const { container } = render(<AvisoVersaoBanco situacao={situacaoDoEsquema(66, 67, {})} />);
+
+    expect(container.textContent).toContain("falta a atualização 0067)");
   });
 
   it("não mexe no aviso de computador atrasado", () => {
