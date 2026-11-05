@@ -106,8 +106,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0049`: duas colunas em `configuracoes_fiscais_loja` pro lembrete da
   alíquota da competência (NFS-e) — `competencia_aliquota_confirmada` (date: o mês, sempre no dia
   1º, cuja alíquota já foi cadastrada no portal da prefeitura) e `aliquota_passo_a_passo` (text: o
-  caminho dentro do portal, editável porque muda de município; em branco vale o padrão de
-  Araraquara, que está em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
+  caminho dentro do portal, editável porque muda de município; em branco vale o padrão da cidade
+  pelo `codigo_municipio` — o de Araraquara só pra loja de lá —, em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
   seção 7. **Ordem importa**: essa migration precisa estar rodada ANTES de a versão nova chegar no
   computador da loja — sem as colunas, salvar em Configurações → Dados fiscais dá erro de "coluna
   não existe".

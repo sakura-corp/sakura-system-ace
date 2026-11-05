@@ -143,6 +143,11 @@ describe("avisoAliquotaCompetencia", () => {
   it("passo a passo só com espaços cai no padrão da cidade", () => {
     const aviso = avisoAliquotaCompetencia(config({ aliquota_passo_a_passo: "   " }), setembro);
     expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    const outraCidade = avisoAliquotaCompetencia(
+      config({ aliquota_passo_a_passo: "   ", codigo_municipio: "3548906" }),
+      setembro,
+    );
+    expect(outraCidade.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
   });
 });
 
@@ -150,6 +155,11 @@ describe("passoAPassoAliquotaPadrao", () => {
   it("é o de Araraquara só pro código IBGE de Araraquara (3503208)", () => {
     expect(passoAPassoAliquotaPadrao("3503208")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
     expect(passoAPassoAliquotaPadrao(" 3503208 ")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+  });
+
+  it("aceita o código digitado com pontuação ou com 6 dígitos", () => {
+    expect(passoAPassoAliquotaPadrao("3503-208")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    expect(passoAPassoAliquotaPadrao("350320")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
   });
 
   it("é o geral pra qualquer outro código, vazio ou nulo", () => {

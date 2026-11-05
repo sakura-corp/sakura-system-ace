@@ -24,15 +24,22 @@ export const PASSO_A_PASSO_ALIQUOTA_ARARAQUARA = [
   "4. Clique em “Replicar Alíquota” — é o botão que salva (o outro é “Voltar”).",
 ].join("\n");
 
+// Aparece também na janela de emissão de NFS-e, pra quem não abre
+// Configurações: por isso fala em "quem administra o sistema".
 export const PASSO_A_PASSO_ALIQUOTA_GERAL =
-  "Peça à contabilidade o caminho no portal da prefeitura da sua cidade. Escrito em " +
-  "Configurações → Dados fiscais, ele passa a aparecer neste aviso.";
+  "Peça à contabilidade o caminho no portal da prefeitura da sua cidade. Quem administra " +
+  "o sistema pode deixá-lo escrito em Configurações → Dados fiscais, e aí ele aparece aqui.";
 
-/** O passo a passo de quando a loja não escreveu o dela, pela cidade (código IBGE). */
+/**
+ * O passo a passo de quando a loja não escreveu o dela, pela cidade (código
+ * IBGE). O campo do código é texto livre: só os dígitos contam, e vale também
+ * o código de 6 dígitos (sem o dígito verificador), que alguns sistemas usam.
+ */
 export function passoAPassoAliquotaPadrao(codigoMunicipio: string | null | undefined): string {
-  return codigoMunicipio?.trim() === CODIGO_IBGE_ARARAQUARA
-    ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA
-    : PASSO_A_PASSO_ALIQUOTA_GERAL;
+  const digitos = (codigoMunicipio ?? "").replace(/\D/g, "");
+  const ehAraraquara =
+    digitos === CODIGO_IBGE_ARARAQUARA || digitos === CODIGO_IBGE_ARARAQUARA.slice(0, 6);
+  return ehAraraquara ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA : PASSO_A_PASSO_ALIQUOTA_GERAL;
 }
 
 /** O mês corrente como competência ("YYYY-MM-01"), no fuso de quem usa. */

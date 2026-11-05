@@ -4,10 +4,7 @@ import {
   salvarConfiguracaoFiscal,
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
-import {
-  CODIGO_IBGE_ARARAQUARA,
-  PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
-} from "@/schemas/aliquotaCompetencia";
+import { passoAPassoAliquotaPadrao } from "@/schemas/aliquotaCompetencia";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import { REGIME_TRIBUTARIO_LABEL } from "@/types/configuracao";
@@ -371,11 +368,7 @@ export function DadosFiscaisSection({
             value={valores.aliquota_passo_a_passo ?? ""}
             onChange={(e) => set("aliquota_passo_a_passo", e.target.value)}
             rows={5}
-            placeholder={
-              valores.codigo_municipio?.trim() === CODIGO_IBGE_ARARAQUARA
-                ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA
-                : "Peça à contabilidade o caminho no portal da prefeitura da sua cidade e escreva aqui, um passo por linha."
-            }
+            placeholder={passoAPassoAliquotaPadrao(valores.codigo_municipio)}
             className={campoClasse}
           />
         </label>
@@ -383,7 +376,8 @@ export function DadosFiscaisSection({
           Todo mês, a prefeitura só autoriza a primeira NFS-e depois que a alíquota daquele mês
           for cadastrada no portal dela. O Início avisa quando chega a hora, e mostra este texto
           junto. Escreva aqui o caminho no portal da prefeitura da loja (a contabilidade sabe qual
-          é); em branco, o aviso mostra um texto padrão.
+          é); em branco, o aviso mostra o texto que aparece apagado no campo, que depende do código
+          IBGE da cidade.
         </p>
       </div>
 
