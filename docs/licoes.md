@@ -33,8 +33,8 @@
    estoque eram feitas por funções do banco; boa parte era o programa gravando direto, e gravar
    com `.select()` pede a policy de leitura junto. Antes de fechar uma tabela, mapear **quem
    grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
-   `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
-   Fornecedores é que fecha de vez. **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
+   `cotacoes_pecas` e `pedidos_compra_itens` costuma ser o mesmo número; o lote de
+   Fornecedores é que fecha de vez (lote 7, abaixo). **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
    `0076`, tarefa #367; a `0075` aplicada, a `0076` esperando os computadores na 0.9.56): `ordens_servico` e `ordens_servico_itens`, lidas
    inteiras só por OS e Relações; Caixa, Garantias, Comissões, Notas, a ficha do veículo e "clientes
    que sumiram" leem por cinco janelas (`ordens_servico_caixa`, `_comissoes`, `_garantias`,
@@ -51,11 +51,13 @@
    janela: só as telas de Fornecedores leem essas tabelas, e a `juntar_pecas` é `security definer`
    de admin. Com ele, o preço de compra fecha junto com o custo da peça. A lição do lote 6 se
    repetiu igual: o item do pedido herdava o módulo pelo `exists` no pedido, e a mutação passava
-   verde; foi pra função `pedido_compra_acessivel`. E uma mutação que **não** reprova de jeito
-   nenhum: tirar o módulo só da policy de UPDATE, porque o Postgres só deixa o UPDATE alcançar as
-   linhas que a policy de leitura mostra. Quem testa policy de UPDATE confere junto a de SELECT.
+   verde; foi pra função `pedido_compra_acessivel`. E uma armadilha do teste: um UPDATE ou DELETE
+   com `where id = ...` (ou com `returning`) passa também pela policy de leitura, então tirar o
+   módulo só da policy de alteração passava verde. O teste certo é o UPDATE/DELETE **sem** `where`
+   e sem `returning`, contando as linhas: aí só a policy do próprio comando decide.
    As outras **continuam como sempre foram** — o
-   parágrafo acima segue valendo pra fornecedores e o resto (o exemplo do balconista lendo
+   parágrafo acima segue valendo pras tabelas que ainda não têm lote (e pra Fornecedores até a
+   `0078` ser aplicada) (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
    e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou

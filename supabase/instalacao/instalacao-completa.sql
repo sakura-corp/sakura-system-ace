@@ -7834,8 +7834,10 @@ as $$
   select exists (
     select 1
       from pedidos_compra pc
+      join operador_lojas ol
+        on ol.loja_id = pc.loja_id
+       and ol.operador_id = auth.uid()
      where pc.id = p_pedido
-       and operador_tem_acesso_loja(pc.loja_id)
   );
 $$;
 

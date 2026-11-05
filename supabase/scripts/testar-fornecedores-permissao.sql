@@ -159,6 +159,40 @@ begin
     get diagnostics quantas = row_count;
     if quantas <> 0 then raise exception 'FALHOU (A9): % alterou item de pedido sem o módulo', novo_forn; end if;
 
+    -- Sem WHERE e sem RETURNING o Postgres não aplica a policy de leitura:
+    -- quem decide é só a de UPDATE/DELETE. (Com `where id = ...`, a de
+    -- leitura já esconderia a linha, e uma policy de alteração aberta
+    -- passaria calada.)
+    update fornecedores set ativo = false;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A15): % alterou fornecedores (update sem where) sem o módulo', novo_forn; end if;
+    update cotacoes_pecas set preco = 1.00;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A16): % alterou cotações (update sem where) sem o módulo', novo_forn; end if;
+    update pedidos_compra set observacao = 'mexido';
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A17): % alterou pedidos (update sem where) sem o módulo', novo_forn; end if;
+    update pedidos_compra_itens set quantidade_recebida = 0;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A18): % alterou itens de pedido (update sem where) sem o módulo', novo_forn; end if;
+    delete from pedidos_compra_itens;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A19): % apagou itens de pedido (delete sem where) sem o módulo', novo_forn; end if;
+    delete from pedidos_compra;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A20): % apagou pedidos (delete sem where) sem o módulo', novo_forn; end if;
+    delete from cotacoes_pecas;
+    get diagnostics quantas = row_count;
+    if quantas <> 0 then raise exception 'FALHOU (A21): % apagou cotações (delete sem where) sem o módulo', novo_forn; end if;
+    begin
+      delete from fornecedores;
+      get diagnostics quantas = row_count;
+    exception when foreign_key_violation then
+      -- Só chega aqui se a policy deixou tentar apagar (o pedido ainda aponta pra ele).
+      quantas := -1;
+    end;
+    if quantas <> 0 then raise exception 'FALHOU (A22): % tentou apagar fornecedores (delete sem where) sem o módulo e a policy deixou', novo_forn; end if;
+
     delete from pedidos_compra_itens where id = item_a;
     get diagnostics quantas = row_count;
     if quantas <> 0 then raise exception 'FALHOU (A10): % apagou item de pedido sem o módulo', novo_forn; end if;
@@ -208,6 +242,22 @@ begin
     raise exception 'FALHOU (B8): com Fornecedores fez pedido na loja B, que não é dele';
   exception when insufficient_privilege then null;
   end;
+  begin
+    insert into pedidos_compra_itens (pedido_compra_id, peca_id, quantidade_pedida, preco_unitario)
+      values (ped_b, p1, 1, 1.00);
+    raise exception 'FALHOU (B8b): com Fornecedores lançou item no pedido da loja B, que não é dele';
+  exception when insufficient_privilege then null;
+  end;
+  -- Na loja B, mesmo sem WHERE (só a policy de alteração/exclusão decide):
+  -- o update e o delete só pegam o que é da loja A.
+  -- Valor fixo no SET: referenciar a coluna traria a policy de leitura junto.
+  update pedidos_compra_itens set quantidade_recebida = 0;
+  get diagnostics quantas = row_count;
+  -- Na loja A há dois: o item_a e o do pedido novo.
+  if quantas <> 2 then raise exception 'FALHOU (B8c): com Fornecedores o update sem where pegou % item(ns) (deviam ser os 2 da loja A)', quantas; end if;
+  update pedidos_compra set observacao = 'conferido';
+  get diagnostics quantas = row_count;
+  if quantas <> 2 then raise exception 'FALHOU (B8d): com Fornecedores o update sem where pegou % pedido(s) (deviam ser os 2 da loja A)', quantas; end if;
   update pedidos_compra set status = 'cancelado' where id = ped_b;
   get diagnostics quantas = row_count;
   if quantas <> 0 then raise exception 'FALHOU (B9): com Fornecedores cancelou o pedido da loja B'; end if;
