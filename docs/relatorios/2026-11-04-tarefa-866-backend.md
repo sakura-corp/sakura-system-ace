@@ -53,3 +53,10 @@ Terminei. Falta só o CI do PR, que fica vermelho no teste "sem buraco na numera
 - **Onde eu errei ou tive que adivinhar**: o `npm ci` falhou no download do Electron na nuvem; refiz com `ELECTRON_SKIP_BINARY_DOWNLOAD=1` (os testes não precisam do binário).
 - **O que faltou na skill**: nada sobre o que fazer quando o número da migration depende de outro PR ainda aberto (aqui, a 0077 do #857).
 - **Sugestão de ajuste (opcional)**: no modelo de tarefa, quando a migration "conta os PRs abertos", dizer também em que ordem os PRs precisam entrar.
+
+## Segunda volta: a revisão da Sofia (05/11)
+- **Pedidos 1 a 6 feitos** (commit `8b6f404` e o seguinte): o erro do percentual do lado do campo e perto do botão, numa faixa clara; fora do Simples o percentual nem vai no salvar (o banco guarda o que tem); arredondamento em 2 casas antes de conferir e salvar; uma frase só pro erro (tela e trava do banco); os dados de exemplo com 6,5; o ramo fora do Simples da nota nacional comentado como defesa. O 7 (migrar a tela pra react-hook-form) ficou de fora, como ela disse.
+- **Vi reprovar**: os 5 testes novos de `percentualTributosSimples.test.ts` (função nova, arredondamento, frase única e "fora do Simples não vai") reprovaram antes do conserto e passaram depois.
+- **Revisão de novo** (`ajudante-forte`, esforço alto): nada grave. Uma sugestão feita (apagar o erro ao trocar o regime). Os prints mostraram que a frase perto do botão estava com pouco contraste no tema escuro: virou a mesma faixa do erro do campo.
+- **Modelos**: revisão forte (esforço alto, ~99 mil tokens); prints e varreduras médio (~92 mil tokens).
+- **Cuidado pra Sofia**: o `supabase/exemplo/dados-de-exemplo.sql` agora usa a coluna nova. Num banco sem a 0078 ele para (sem gravar nada pela metade, está entre `begin` e `commit`). Aplicar a 0078 no `ssace-teste` antes de usar o script.

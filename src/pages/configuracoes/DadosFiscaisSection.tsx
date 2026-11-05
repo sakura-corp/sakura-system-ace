@@ -208,9 +208,11 @@ export function DadosFiscaisSection({
           Regime tributário
           <select
             value={valores.regime_tributario ?? ""}
-            onChange={(e) =>
-              set("regime_tributario", (e.target.value || null) as RegimeTributario | null)
-            }
+            onChange={(e) => {
+              // Fora do Simples o campo some: o erro dele não pode ficar na tela.
+              setErroPercentual(null);
+              set("regime_tributario", (e.target.value || null) as RegimeTributario | null);
+            }}
             className={campoClasse}
           >
             <option value="">Selecione...</option>
@@ -445,7 +447,9 @@ export function DadosFiscaisSection({
 
       <div className="mt-4 flex items-center justify-end gap-3">
         {erroPercentual && (
-          <p className="text-corpo text-red-700">Não salvou: confira o percentual dos tributos do Simples.</p>
+          <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+            Não salvou: confira o percentual dos tributos do Simples.
+          </p>
         )}
         <button
           type="button"
