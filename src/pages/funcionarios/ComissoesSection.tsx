@@ -5,6 +5,7 @@ import {
   resumirComissoes,
   totaisComissoes,
   SEM_FUNCIONARIO,
+  colunaLucroSomaMaisQueOTotal,
   type ComissaoFuncionario,
   type ResumoPapel,
 } from "@/schemas/comissoes";
@@ -95,6 +96,7 @@ export function ComissoesSection({
   );
 
   const totais = totaisComissoes(linhas);
+  const colunaLucroSomaMais = colunaLucroSomaMaisQueOTotal(linhas);
   const semPercentual = linhas.filter(
     (linha) => linha.funcionarioId !== SEM_FUNCIONARIO && linha.percentual === null,
   );
@@ -157,11 +159,13 @@ export function ComissoesSection({
             {formatarMoeda(totais.lucro)}
           </p>
           {/* #876: o dono soma a coluna "Lucro gerado" e dá mais que isto. A
-              conta está certa — só faltava dizer por quê. */}
-          <p className="mt-1 text-meta text-sakura-muted">
-            A coluna "Lucro gerado" soma mais porque o lucro de uma OS conta pra quem vendeu e pra
-            quem fez.
-          </p>
+              conta está certa — só faltava dizer por quê. Só quando é verdade. */}
+          {colunaLucroSomaMais && (
+            <p className="mt-1 text-rotulo text-sakura-muted">
+              A coluna "Lucro gerado" soma mais porque o lucro de um item conta pra quem vendeu a OS
+              e pra quem fez o item.
+            </p>
+          )}
         </div>
         <div className="sakura-card p-4">
           <p className="text-rotulo text-sakura-muted">Total de comissões</p>
