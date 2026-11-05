@@ -110,6 +110,10 @@ describe("mensagemDeErro", () => {
     for (const nome of OBJETOS_NOVOS_DO_BANCO) {
       const comoColuna = { message: `Could not find the '${nome}' column of 'ordens_servico' in the schema cache` };
       const comoView = { message: `Could not find the table 'public.${nome}' in the schema cache` };
+      const comoEmbutida = {
+        message: `Could not find a relationship between 'ordens_servico' and '${nome}' in the schema cache`,
+      };
+      expect(mensagemDeErro(comoEmbutida), nome).toBe(MENSAGEM_BANCO_DESATUALIZADO);
       expect(mensagemDeErro(comoColuna), nome).toBe(MENSAGEM_BANCO_DESATUALIZADO);
       expect(mensagemDeErro(comoView), nome).toBe(MENSAGEM_BANCO_DESATUALIZADO);
     }
