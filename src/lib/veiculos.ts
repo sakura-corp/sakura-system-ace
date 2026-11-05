@@ -100,7 +100,7 @@ export async function buscarFichaDoVeiculo(
     veiculo: completarVeiculoDaJanela(veiculo as unknown as Partial<VeiculoDaFicha>),
     // Orçamento (#379) não é visita: aberto ou recusado, fica fora da
     // história do carro (linha do tempo, KM, total gasto, garantia).
-    ordens: ((ordens ?? []) as unknown as LinhaOrdemDaFicha[]).map(ordemDaFichaDaJanela).filter(contaNosNumeros),
+    ordens: (ordens as unknown as LinhaOrdemDaFicha[]).map(ordemDaFichaDaJanela).filter(contaNosNumeros),
   };
 }
 

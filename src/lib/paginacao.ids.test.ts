@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Têm dois limites, os dois sem aviso nenhum na tela:
 // - a resposta é cortada em 1.000 linhas (`max_rows` do Supabase);
 // - a lista de ids vai no endereço da consulta, e um endereço grande demais é
-//   recusado. Aqui o "banco de mentira" recusa acima de 200 ids, o tamanho de
-//   bloco que o código usa (200 ids de 36 letras já dão uns 8 KB de endereço).
+//   recusado. Aqui o "banco de mentira" recusa acima de 200 ids (200 ids de 36
+//   letras já dão uns 7,9 KB de endereço, perto do teto comum de 8 KB). O
+//   código usa blocos menores, de propósito, pra ter folga.
 const LIMITE_DE_LINHAS = 1000;
 const LIMITE_DE_IDS = 200;
 
@@ -87,7 +88,7 @@ describe("listarArquivosDasOrdens (#498)", () => {
     expect(new Set(notas.map((n) => n.id)).size).toBe(1500);
   });
 
-  it("com 650 ordens, divide em blocos de até 200 ids e não perde nenhuma nota", async () => {
+  it("com 650 ordens, divide em blocos pequenos e não perde nenhuma nota", async () => {
     const ordens = ids("os", 650);
     tabelas.notas_fiscais_arquivos = [
       ...ordens.flatMap((os) => ids(`nota-${os}`, 2).map((id) => ({ id, ordem_servico_id: os }))),
@@ -103,7 +104,7 @@ describe("listarArquivosDasOrdens (#498)", () => {
 
   it("id repetido em blocos diferentes não duplica a nota", async () => {
     tabelas.notas_fiscais_arquivos = [{ id: "n1", ordem_servico_id: "os-1" }];
-    // "os-1" no começo e de novo depois do 200º id: cairia em dois blocos
+    // "os-1" no começo e de novo no fim: cairia em dois blocos
     const notas = await listarArquivosDasOrdens(["os-1", ...ids("vazia", 250), "os-1"]);
     expect(notas).toHaveLength(1);
   });
@@ -148,5 +149,35 @@ describe("as outras listas por ids (#498)", () => {
     }));
     const ficha = await buscarFichaDoVeiculo("v1", true);
     expect(ficha?.ordens).toHaveLength(1500);
+  });
+});
+
+describe("buscarPorIdsEmBlocos", () => {
+  it("pede vários blocos ao mesmo tempo, sem esperar um terminar pra pedir o próximo", async () => {
+    const { buscarPorIdsEmBlocos } = await import("./paginacao");
+    let emAndamento = 0;
+    let maximo = 0;
+    const linhas = await buscarPorIdsEmBlocos(ids("os", 1000), async (bloco) => {
+      emAndamento++;
+      maximo = Math.max(maximo, emAndamento);
+      await new Promise((r) => setTimeout(r, 5));
+      emAndamento--;
+      return { data: bloco.map((id) => ({ id })), error: null };
+    });
+    expect(linhas).toHaveLength(1000);
+    expect(maximo).toBeGreaterThan(1);
+    // e com teto: não dispara dezenas de consultas de uma vez
+    expect(maximo).toBeLessThanOrEqual(6);
+  });
+
+  it("repassa o erro de um bloco em vez de devolver a lista pela metade", async () => {
+    const { buscarPorIdsEmBlocos } = await import("./paginacao");
+    await expect(
+      buscarPorIdsEmBlocos(ids("os", 500), async (bloco) =>
+        bloco.includes("os-00450")
+          ? { data: null, error: { message: "caiu" } }
+          : { data: bloco.map((id) => ({ id })), error: null },
+      ),
+    ).rejects.toMatchObject({ message: "caiu" });
   });
 });

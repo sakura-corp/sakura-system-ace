@@ -149,7 +149,7 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
 - Erro do Supabase **não é `instanceof Error`**: sempre `mensagemDeErro()` de `src/lib/errors.ts`.
 - **Lista que pode crescer** (`src/lib/paginacao.ts`): o Supabase corta toda resposta em 1.000
   linhas, sem erro. Lista inteira → `buscarTudoEmPaginas`; filtro por lista de ids (`.in`) →
-  `buscarPorIdsEmBlocos` (blocos de 200 ids, senão o endereço fica grande demais). As duas pedem
+  `buscarPorIdsEmBlocos` (blocos de 100 ids, senão o endereço fica grande demais). As duas pedem
   ordem total (último `.order()` em `id`). #509 e #498.
 - **Nunca `window.prompt()`**: o Electron não suporta. `alert()` e `confirm()` funcionam.
 - Toda tabela nova precisa de RLS e policy (item 1 da seção 6).

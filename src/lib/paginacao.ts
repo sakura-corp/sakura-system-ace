@@ -32,29 +32,43 @@ export async function buscarTudoEmPaginas<T>(
 }
 
 // Uma consulta por lista de ids (`.in(coluna, ids)`) leva os ids no endereço,
-// e endereço grande demais é recusado (#498): 200 ids de 36 letras já dão uns
-// 8 KB. Por isso a lista vai em blocos.
-export const IDS_POR_BLOCO = 200;
+// e endereço grande demais é recusado (#498). 200 ids de 36 letras já dão uns
+// 7,9 KB, colado no teto comum de 8 KB; 100 deixa folga pro resto da consulta.
+export const IDS_POR_BLOCO = 100;
+// Quantos blocos vão ao banco ao mesmo tempo: em fila, uma loja com 10 mil OS
+// esperaria 100 idas e voltas; tudo junto, dispararia 100 consultas de uma vez.
+export const BLOCOS_AO_MESMO_TEMPO = 6;
 
 /**
  * Busca as linhas de uma lista de ids, quantos forem: os ids vão em blocos de
- * `IDS_POR_BLOCO` (sem repetição) e cada bloco é lido por páginas
- * (`buscarTudoEmPaginas`), porque um bloco também pode passar de 1.000 linhas.
+ * `IDS_POR_BLOCO` (sem repetição), até `BLOCOS_AO_MESMO_TEMPO` por vez, e cada
+ * bloco é lido por páginas (`buscarTudoEmPaginas`), porque um bloco também
+ * pode passar de 1.000 linhas.
  *
  * `consultar(bloco, de, ate)` monta a consulta COMPLETA daquele bloco e faixa,
  * com `.in(coluna, bloco)`, ordem total (último `.order()` em coluna única) e
  * `.range(de, ate)`. Os blocos não se cruzam, então nenhuma linha vem duas
  * vezes, desde que cada linha case com um id só (o `.in` é numa coluna só).
+ *
+ * A ordem vale só DENTRO de cada bloco: o resultado é um bloco depois do
+ * outro. Quem precisa da lista ordenada no total ordena depois.
  */
 export async function buscarPorIdsEmBlocos<T>(
   ids: readonly string[],
   consultar: (bloco: string[], de: number, ate: number) => PromiseLike<Resposta<T>>,
 ): Promise<T[]> {
   const unicos = [...new Set(ids)];
-  const todas: T[] = [];
+  const blocos: string[][] = [];
   for (let i = 0; i < unicos.length; i += IDS_POR_BLOCO) {
-    const bloco = unicos.slice(i, i + IDS_POR_BLOCO);
-    todas.push(...(await buscarTudoEmPaginas((de, ate) => consultar(bloco, de, ate))));
+    blocos.push(unicos.slice(i, i + IDS_POR_BLOCO));
+  }
+  const todas: T[] = [];
+  for (let i = 0; i < blocos.length; i += BLOCOS_AO_MESMO_TEMPO) {
+    const leva = blocos.slice(i, i + BLOCOS_AO_MESMO_TEMPO);
+    const respostas = await Promise.all(
+      leva.map((bloco) => buscarTudoEmPaginas((de, ate) => consultar(bloco, de, ate))),
+    );
+    for (const linhas of respostas) todas.push(...linhas);
   }
   return todas;
 }
