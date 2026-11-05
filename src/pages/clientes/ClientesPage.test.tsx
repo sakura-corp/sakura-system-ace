@@ -39,7 +39,7 @@ vi.mock("@/lib/modelosWhatsapp", async (original) => ({
 vi.mock("@/lib/whatsapp", () => ({
   abrirConversaWhatsapp: (...a: unknown[]) => abrirConversaWhatsapp(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 const LOJA_A = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
 const LOJA_B = { id: "loja-b", nome: "Loja Vila", cidade: null, uf: null, ativo: true, criado_em: "" };

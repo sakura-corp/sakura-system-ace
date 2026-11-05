@@ -11,7 +11,6 @@ import {
   listarMovimentos,
 } from "@/lib/estoque";
 import { listarPecas } from "@/lib/pecas";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
@@ -40,7 +39,7 @@ export function EstoquePage() {
   const [erro, setErro] = useState<string | null>(null);
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
@@ -93,7 +92,7 @@ export function EstoquePage() {
             Produtos, peças e movimentações de estoque
           </p>
         </div>
-        {operador?.admin === true && isSupabaseConfigured && (
+        {operador?.admin === true && (
           <button
             onClick={() => setJuntando(true)}
             className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"

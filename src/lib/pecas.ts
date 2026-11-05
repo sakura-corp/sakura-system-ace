@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import type { NovaPeca, Peca, PecaDadosFiscais, PecaJanela } from "@/types/peca";
 import { lerResumo, type CampoJuntavel, type PecaVista, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
 
@@ -55,10 +55,11 @@ export async function cadastrarPecaRapida(peca: NovaPeca): Promise<string> {
   return data as string;
 }
 
+// Em blocos e por páginas (#498), pra quem chamar com uma lista grande.
 export async function buscarPecasPorIds(ids: string[]): Promise<Peca[]> {
-  if (ids.length === 0) return [];
-  const { data, error } = await supabase.from("pecas").select("*").in("id", ids);
-  if (error) throw error;
+  const data = await buscarPorIdsEmBlocos(ids, (bloco, de, ate) =>
+    supabase.from("pecas").select("*").in("id", bloco).order("id").range(de, ate),
+  );
   return data as Peca[];
 }
 
