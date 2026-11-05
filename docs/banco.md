@@ -585,6 +585,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   de loja nenhuma. Nome que já existe (comparado sem maiúscula nem espaço nas pontas) não entra de
   novo. Teste em `supabase/scripts/testar-servicos-padrao.sql`; os dados de exemplo dão preço de
   mentira aos 39.
+- `0078`: **o percentual dos tributos do Simples, por loja** (tarefa #866). Uma coluna nova,
+  opcional, em `configuracoes_fiscais_loja`: `percentual_tributos_simples` (`numeric(5,2)`, a mesma
+  precisão da `aliquota_iss`), com a trava `ck_config_fiscal_percentual_tributos_simples` (de 0 a
+  100; a frase da tela está em `src/lib/errors.ts`). Vai no campo pTotTribSN (grupo totTrib) da
+  NFS-e Nacional, **só da loja do Simples**; o número vem da contabilidade. **Vazio manda 0**, pra
+  não travar a emissão. Coluna nova e opcional: sobe **antes** da versão, sem
+  `versao-minima-do-programa`. **Entrou sozinha, num PR à parte (05/11)**, porque a tela e a nota
+  que usam a coluna (#882) dependem do #839 (NFS-e Nacional), que espera a Focus; assim a `0079` e
+  a `0080` não ficam presas atrás dela. Aplicar a `0077` (#857) antes desta. Teste em
+  `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
