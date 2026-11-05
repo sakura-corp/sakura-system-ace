@@ -5,7 +5,6 @@ import { Modal } from "@/components/Modal";
 import { listarAuditoria } from "@/lib/auditoria";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarOperadores } from "@/lib/operadores";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   ACAO_AUDITORIA_LABEL,
   TABELA_AUDITORIA_LABEL,
@@ -41,7 +40,6 @@ export function AuditoriaPage() {
   const [detalhe, setDetalhe] = useState<RegistroAuditoria | null>(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
     listarOperadores()
       .then(setOperadores)
       .catch((err) => {
@@ -51,10 +49,6 @@ export function AuditoriaPage() {
   }, []);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setCarregando(false);
-      return;
-    }
     let ativo = true;
     setCarregando(true);
     setErro(null);
