@@ -26,7 +26,7 @@ vi.mock("@/lib/ordensServico", () => ({
   editarItemOrdem: vi.fn(),
   AprovadoSemEstoqueError: class extends Error {},
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: async () => [
     { id: "c1", nome: "Maria da Silva", telefone: "(16) 99123-4567", veiculos: [] },

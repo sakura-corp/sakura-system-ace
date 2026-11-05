@@ -228,8 +228,10 @@ Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de 
    - o nome do destinatário é opcional (o sistema manda quando tem);
    - **entrega a domicílio exige o endereço completo** do destinatário, que o sistema não manda
      (hoje é só venda presencial, `presenca_comprador: "1"`);
-   - **acima do limite da UF (em geral R$ 10.000)** a SEFAZ exige o destinatário identificado, e
-     o sistema não avisa disso antes.
+   - **acima do limite da UF (em geral R$ 10.000)** a SEFAZ exige o destinatário identificado.
+     **Desde a #881 a tela de emissão avisa** (OS e venda de balcão), sem travar; o limite é um
+     só pra todas as UFs (`LIMITE_NFCE_SEM_DESTINATARIO`, `src/schemas/limiteNFCe.ts`): conferir
+     o da UF ao instalar loja de outro estado.
 2. **CSOSN `500` vai sem os campos de ICMS-ST** (`vBCSTRet`, `vICMSSTRet` e afins). A Focus **não**
    completa campo fiscal que a gente não manda (suporte, 03/09). **Respondido pela contabilidade
    (13/10)**: o CSOSN 500 quer dizer que o ICMS já foi recolhido antes, e na venda ao

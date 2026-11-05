@@ -37,7 +37,6 @@ import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia"
 import { CentralDoDia } from "@/components/CentralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   CARTAO_METRICA_DESCRICAO,
   CARTOES_INICIO_PADRAO,
@@ -124,7 +123,7 @@ export function PainelPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured || !lojaAtual) {
+      if (!lojaAtual) {
         setCarregando(false);
         return;
       }

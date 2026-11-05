@@ -22,7 +22,6 @@ import {
   listarOperadores,
   redefinirSenhaOperador,
 } from "@/lib/operadores";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Categoria } from "@/types/categoria";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { CategoriaServico } from "@/types/categoriaServico";
@@ -71,7 +70,7 @@ export function ConfiguracoesPage() {
   );
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
