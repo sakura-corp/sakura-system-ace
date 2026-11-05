@@ -32,7 +32,6 @@ import {
 } from "@/lib/ordensServico";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { avisarOrcamentosMudaram } from "@/hooks/useOrcamentosAbertos";
 import {
   contarOrcamentosAbertos,
@@ -104,7 +103,7 @@ export function OrcamentosPage() {
   const nadaAberto = !mostrarFormulario && !aberto;
 
   async function carregar(): Promise<OrdemServico[] | null> {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return null;
     }
@@ -145,7 +144,7 @@ export function OrcamentosPage() {
   // O saldo só serve pro formulário aberto (mesma ideia da lista de OS).
   const formularioAberto = mostrarFormulario || !!aberto;
   useEffect(() => {
-    if (!formularioAberto || !isSupabaseConfigured || !lojaAtual) {
+    if (!formularioAberto || !lojaAtual) {
       setSaldos(null);
       return;
     }
@@ -322,12 +321,6 @@ export function OrcamentosPage() {
           </button>
         )}
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado.
-        </p>
-      )}
 
       {mostrarFormulario && operador && (
         <OrdemServicoForm {...formProps} onCancelar={() => setMostrarFormulario(false)} />
