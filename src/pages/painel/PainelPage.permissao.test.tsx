@@ -14,7 +14,7 @@ const listarClientes = vi.fn();
 vi.mock("@/lib/clientes", () => ({ listarClientes: (...a: unknown[]) => listarClientes(...a) }));
 const listarOrdens = vi.fn();
 vi.mock("@/lib/ordensServico", () => ({ listarOrdens: (...a: unknown[]) => listarOrdens(...a) }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixa: async () => [] }));
 vi.mock("@/lib/contasPagar", () => ({ listarContasPagar: async () => [] }));
 vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));

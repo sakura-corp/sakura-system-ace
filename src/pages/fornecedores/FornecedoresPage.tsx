@@ -6,7 +6,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarFornecedores } from "@/lib/fornecedores";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarPedidos } from "@/lib/pedidosCompra";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { PedidoCompra } from "@/types/pedidoCompra";
@@ -27,7 +26,7 @@ export function FornecedoresPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
