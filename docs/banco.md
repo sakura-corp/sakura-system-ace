@@ -15,7 +15,9 @@ avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só
 a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
 travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
 estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
-banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
+banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
+(`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
+de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
 
