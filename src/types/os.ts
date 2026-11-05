@@ -146,7 +146,10 @@ export type OrdemParaComissao = Pick<
 };
 
 /** OS como o seletor "OS relacionada" das Notas Fiscais precisa. */
-export type OrdemParaNotas = Pick<OrdemServico, "id" | "status" | "data_abertura"> & {
+export type OrdemParaNotas = Pick<
+  OrdemServico,
+  "id" | "numero" | "tipo" | "status" | "data_abertura"
+> & {
   cliente?: { nome: string };
 };
 

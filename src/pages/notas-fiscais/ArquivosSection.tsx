@@ -33,7 +33,8 @@ function EtiquetaSituacao({ arquivo }: { arquivo: NotaFiscalArquivo }) {
   const situacao = situacaoDaNota(arquivo);
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${COR_SITUACAO[situacao.tom]}`}
+      title={situacao.rotulo}
+      className={`inline-block max-w-full truncate whitespace-nowrap rounded-full px-2.5 py-1 align-middle text-rotulo font-medium ${COR_SITUACAO[situacao.tom]}`}
     >
       {situacao.rotulo}
     </span>
@@ -250,9 +251,13 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
               <Combobox
                 opcoes={ordens.filter(contaNosNumeros).map((ordem) => ({
                   valor: ordem.id,
-                  rotulo: `${ordem.cliente?.nome ?? "Cliente"} — ${new Date(
-                    ordem.data_abertura,
-                  ).toLocaleDateString("pt-BR")}`,
+                  rotulo: [
+                    ordem.numero != null ? nomeOrdem(ordem.numero, ordem.tipo) : null,
+                    ordem.cliente?.nome ?? "Cliente",
+                    new Date(ordem.data_abertura).toLocaleDateString("pt-BR"),
+                  ]
+                    .filter(Boolean)
+                    .join(" — "),
                 }))}
                 valor={ordemServicoId}
                 onMudar={setOrdemServicoId}
@@ -306,13 +311,17 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                   tabela separada, e no layout automático cada uma alinhava as
                   colunas pelo próprio conteúdo — uma embaixo da outra ficavam
                   tortas (#876). Assim todas têm as mesmas colunas. */}
-              <table className="w-full table-fixed text-left text-corpo">
+              {/* A Situação e as ações têm largura fixa (a etiqueta e o
+                  "Ver DANFE" não podem quebrar nem vazar); as de texto se
+                  repartem o resto e cortam com "…". Abaixo de 42rem (zoom
+                  alto, janela estreita) a tabela rola de lado, como antes. */}
+              <table className="w-full min-w-[42rem] table-fixed text-left text-corpo">
                 <thead className="text-sakura-purple-dark/90">
                   <tr>
-                    <th className="w-[22%] px-4 py-2 font-medium">Arquivo</th>
-                    <th className="w-[14%] px-4 py-2 font-medium">Situação</th>
+                    <th className="w-[20%] px-4 py-2 font-medium">Arquivo</th>
+                    <th className="w-[9.5rem] px-4 py-2 font-medium">Situação</th>
                     <th className="px-4 py-2 font-medium">Ordem de Serviço</th>
-                    <th className="w-[17%] px-4 py-2 font-medium">Enviado por</th>
+                    <th className="w-[16%] px-4 py-2 font-medium">Enviado por</th>
                     <th className="w-[11.5rem] px-4 py-2">
                       <span className="sr-only">Ações</span>
                     </th>
@@ -324,13 +333,15 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                       <td className="truncate px-4 py-3" title={arquivo.nome_arquivo}>
                         {arquivo.nome_arquivo}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="overflow-hidden px-4 py-3">
                         <EtiquetaSituacao arquivo={arquivo} />
                       </td>
                       <td className="px-4 py-3">
                         <OrdemDaNota arquivo={arquivo} />
                       </td>
-                      <td className="truncate px-4 py-3">{arquivo.operador?.nome ?? "—"}</td>
+                      <td className="truncate px-4 py-3" title={arquivo.operador?.nome}>
+                        {arquivo.operador?.nome ?? "—"}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <AcoesDaLinha
                           descricao={`a nota ${arquivo.nome_arquivo}`}

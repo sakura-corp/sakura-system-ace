@@ -48,17 +48,19 @@ export function arquivoDaJanela(linha: ArquivoDaJanela): NotaFiscalArquivo {
 /** A linha da janela `ordens_servico_notas` que o seletor "OS relacionada" usa. */
 interface LinhaOrdemParaNotas {
   id: string;
+  numero: number | null;
+  tipo: TipoOrdem | null;
   status: StatusOS;
   data_abertura: string;
   cliente_nome: string | null;
 }
 
-/** As OS da loja pro seletor "OS relacionada" — só id, status, abertura e cliente. */
+/** As OS da loja pro seletor "OS relacionada" — só id, número, tipo, status, abertura e cliente. */
 export async function listarOrdensParaNotas(lojaId: string): Promise<OrdemParaNotas[]> {
   const dados = await buscarTudoEmPaginas((de, ate) =>
     supabase
       .from("ordens_servico_notas")
-      .select("id, status, data_abertura, cliente_nome")
+      .select("id, numero, tipo, status, data_abertura, cliente_nome")
       .eq("loja_id", lojaId)
       .order("data_abertura", { ascending: false })
       .order("id", { ascending: false })
@@ -66,6 +68,8 @@ export async function listarOrdensParaNotas(lojaId: string): Promise<OrdemParaNo
   );
   return (dados as unknown as LinhaOrdemParaNotas[]).map((linha) => ({
     id: linha.id,
+    numero: linha.numero,
+    tipo: linha.tipo ?? undefined,
     status: linha.status,
     data_abertura: linha.data_abertura,
     ...(linha.cliente_nome != null ? { cliente: { nome: linha.cliente_nome } } : {}),
@@ -171,7 +175,7 @@ interface SalvarArquivoEmitidoParams {
   lojaId: string;
 }
 
-// Na tabela a NFC-e aparece como "nfe" (a aba de Notas Fiscais é "NFe"); na
+// Na tabela a NFC-e aparece como "nfe" (a aba de Notas Fiscais é "NFC-e"); na
 // Focus NFe, e portanto no porteiro, ela é "nfce".
 function tipoNaFocusNfe(tipo: TipoNotaFiscal): "nfce" | "nfse" {
   return tipo === "nfe" ? "nfce" : "nfse";

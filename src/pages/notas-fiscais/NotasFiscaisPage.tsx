@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { TipoNotaFiscal } from "@/types/notaFiscal";
 import { ArquivosSection } from "./ArquivosSection";
 
@@ -21,8 +22,8 @@ export function NotasFiscaisPage() {
       </header>
 
       <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="NFC-e" ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
-        <AbaBotao label="NFS-e" ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
+        <AbaBotao label={NOTA_LABEL.nfe} ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
+        <AbaBotao label={NOTA_LABEL.nfse} ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
       </div>
 
       {isSupabaseConfigured && <ArquivosSection tipo={aba} />}

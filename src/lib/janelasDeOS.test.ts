@@ -277,15 +277,15 @@ describe("Notas fiscais pelas janelas", () => {
     expect(arquivos[2].ordem_servico?.cliente).toBeNull();
   });
 
-  it("o seletor 'OS relacionada' lê só id, status, abertura e cliente da janela, da loja", async () => {
+  it("o seletor 'OS relacionada' lê só id, número, tipo, status, abertura e cliente da janela, da loja", async () => {
     respostas.ordens_servico_notas = [
-      { id: "os-1", status: "faturada", data_abertura: "2026-09-02T12:00:00Z", cliente_nome: "Maria" },
+      { id: "os-1", numero: 17, tipo: "os", status: "faturada", data_abertura: "2026-09-02T12:00:00Z", cliente_nome: "Maria" },
     ];
     const ordens = await listarOrdensParaNotas("loja");
     expect(consultas[0].tabela).toBe("ordens_servico_notas");
     expect(consultas[0].filtros).toEqual(["loja_id=loja"]);
     expect(ordens).toEqual([
-      { id: "os-1", status: "faturada", data_abertura: "2026-09-02T12:00:00Z", cliente: { nome: "Maria" } },
+      { id: "os-1", numero: 17, tipo: "os", status: "faturada", data_abertura: "2026-09-02T12:00:00Z", cliente: { nome: "Maria" } },
     ]);
   });
 });
