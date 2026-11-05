@@ -45,7 +45,7 @@ jobs:
     environment: lojas
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Antes do build (que leva uns 10 minutos), e não depois: chave vencida
       # ou faltando tem que aparecer na hora, com o motivo escrito.
@@ -73,9 +73,12 @@ jobs:
             || echo "::warning::Não consegui apagar o ramo conferir-chave-$GITHUB_RUN_ID em $ENDERECO_DAS_VERSOES (pode apagar à mão; não atrapalha nada)."
           echo "A chave escreve em $ENDERECO_DAS_VERSOES."
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          # Sem cache automático do npm (setup-node v5+): este workflow mexe com
+          # publicação, banco ou chaves, e o cache pode ser envenenado (#871).
+          package-manager-cache: false
 
       - run: npm ci
 
