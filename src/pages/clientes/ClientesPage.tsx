@@ -17,7 +17,6 @@ import {
   textoDoModelo,
   ultimasMensagensPorReferencia,
 } from "@/lib/modelosWhatsapp";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   clientesSumidos,
   resumirPorCliente,
@@ -126,10 +125,6 @@ export function ClientesPage() {
   }
 
   async function carregar() {
-    if (!isSupabaseConfigured) {
-      setCarregando(false);
-      return;
-    }
     setCarregando(true);
     setErro(null);
     try {
