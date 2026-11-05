@@ -41,22 +41,32 @@ const PROIBE_CORTAR_DIA_DE_UTC = [
 // `import.meta.env.ALGO ?? "padrão"` não protege de nada: o `.env` copiado do
 // exemplo traz a variável como TEXTO VAZIO, e o `??` só troca `null`/`undefined`.
 // Já deu tela em branco (docs/licoes.md, item 8). O `??` no resto do código
-// continua liberado; só é proibido quando o lado esquerdo é `import.meta.env.*`
-// (inclusive embrulhado num `as string` ou `!`).
+// continua liberado; só é proibido quando o lado esquerdo LÊ o `import.meta.env`
+// (direto, com `?.`, com `.trim()`, embrulhado em `as`/`!`, etc.). O valor padrão
+// na desestruturação (`const { VITE_X = "y" } = import.meta.env`) tem o mesmo
+// defeito e também é proibido.
+//
+// O que NÃO dá pra pegar por sintaxe: guardar o env numa variável antes
+// (`const env = import.meta.env; env.VITE_X ?? "y"`) e o `??=` depois.
+const MENSAGEM_ENV =
+  "O ?? (e o valor padrão da desestruturação) não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)";
+const LE_O_ENV = "MemberExpression[object.type='MetaProperty'][object.meta.name='import'][property.name='env']";
 const PROIBE_ENV_COM_NULLISH = [
   {
-    selector:
-      "LogicalExpression[operator='??'] > MemberExpression.left[object.object.type='MetaProperty'][object.property.name='env']",
-    message:
-      "O ?? não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)",
+    selector: `LogicalExpression[operator='??'] > .left:matches(${LE_O_ENV}, :has(${LE_O_ENV}))`,
+    message: MENSAGEM_ENV,
   },
   {
-    selector:
-      "LogicalExpression[operator='??'] > :matches(TSAsExpression, TSNonNullExpression, TSSatisfiesExpression).left > MemberExpression.expression[object.object.type='MetaProperty'][object.property.name='env']",
-    message:
-      "O ?? não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)",
+    selector: `VariableDeclarator[init.type='MemberExpression'][init.object.type='MetaProperty'][init.property.name='env'] > ObjectPattern AssignmentPattern`,
+    message: MENSAGEM_ENV,
   },
 ];
+
+// Tudo do `no-restricted-syntax` que NÃO é o corte de dia. O ESLint troca a
+// lista inteira (não junta) quando um bloco redefine a regra; por isso a
+// exceção dos dois testes lá embaixo usa esta mesma lista, e proibição nova de
+// sintaxe entra AQUI, pra valer nos dois lugares.
+const DEMAIS_PROIBICOES_DE_SINTAXE = [...PROIBE_ENV_COM_NULLISH];
 
 // `window.prompt()` não funciona no Electron (não abre nada e devolve null).
 const MENSAGEM_PROMPT =
@@ -85,7 +95,7 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         ...PROIBE_CORTAR_DIA_DE_UTC,
-        ...PROIBE_ENV_COM_NULLISH,
+        ...DEMAIS_PROIBICOES_DE_SINTAXE,
       ],
       "no-restricted-globals": [
         "error",
@@ -95,6 +105,9 @@ export default tseslint.config(
         "error",
         { object: "window", property: "prompt", message: MENSAGEM_PROMPT },
         { object: "globalThis", property: "prompt", message: MENSAGEM_PROMPT },
+        { object: "self", property: "prompt", message: MENSAGEM_PROMPT },
+        { object: "parent", property: "prompt", message: MENSAGEM_PROMPT },
+        { object: "top", property: "prompt", message: MENSAGEM_PROMPT },
       ],
     },
   },
@@ -105,7 +118,7 @@ export default tseslint.config(
     // A exceção é SÓ pro corte de dia: as outras proibições continuam valendo.
     files: ["src/lib/datas.test.ts", "src/schemas/comissoes.test.ts"],
     rules: {
-      "no-restricted-syntax": ["error", ...PROIBE_ENV_COM_NULLISH],
+      "no-restricted-syntax": ["error", ...DEMAIS_PROIBICOES_DE_SINTAXE],
     },
   },
 );
