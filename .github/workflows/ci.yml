@@ -143,9 +143,33 @@ jobs:
       # app, que nunca roda esta ferramenta. Aqui ele é instalado só pra esta
       # rodada — `--no-save` não encosta no package.json.
       - name: Playwright (só nesta rodada)
+        id: playwright
         run: |
           npm i --no-save playwright
-          npx playwright install --with-deps chromium
+          echo "versao=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # O navegador fica guardado entre rodadas, pela versão do Playwright
+      # (#770): baixar de novo às vezes levava de 6 a 11 minutos e estourava
+      # o tempo do job, com o teste em si passando. Passo com tempo próprio,
+      # pra ficar claro quando a culpa é do download e não da tela.
+      - name: Navegador do Playwright (guardado)
+        id: navegador
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.versao }}
+
+      - name: Navegador do Playwright (instalar)
+        timeout-minutes: 8
+        env:
+          GUARDADO: ${{ steps.navegador.outputs.cache-hit }}
+        run: |
+          if [ "$GUARDADO" = "true" ]; then
+            # O navegador veio guardado; só faltam as bibliotecas do sistema.
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       # Abre o app de verdade, percorre as 54 telas e mede a cor que a pessoa
       # realmente enxerga — compondo cada fundo translúcido com o que está
@@ -176,9 +200,33 @@ jobs:
 
       # Mesmo motivo do job de contraste: o Playwright entra só nesta rodada.
       - name: Playwright (só nesta rodada)
+        id: playwright
         run: |
           npm i --no-save playwright
-          npx playwright install --with-deps chromium
+          echo "versao=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # O navegador fica guardado entre rodadas, pela versão do Playwright
+      # (#770): baixar de novo às vezes levava de 6 a 11 minutos e estourava
+      # o tempo do job, com o teste em si passando. Passo com tempo próprio,
+      # pra ficar claro quando a culpa é do download e não da tela.
+      - name: Navegador do Playwright (guardado)
+        id: navegador
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.versao }}
+
+      - name: Navegador do Playwright (instalar)
+        timeout-minutes: 8
+        env:
+          GUARDADO: ${{ steps.navegador.outputs.cache-hit }}
+        run: |
+          if [ "$GUARDADO" = "true" ]; then
+            # O navegador veio guardado; só faltam as bibliotecas do sistema.
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       # Abre cada tela em 1024 (o mínimo da janela do programa), 1280, 1366,
       # 1536 e 1600 e reprova se algum conteúdo passar da janela sem dar pra

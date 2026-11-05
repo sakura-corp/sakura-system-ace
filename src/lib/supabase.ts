@@ -6,6 +6,9 @@ import { conexaoAtual } from "./conexao";
 // tela de configuração e guardado nesta máquina.
 const conexao = conexaoAtual();
 
+// Só o `AuthContext` usa isto: ele roda antes do portão do `App.tsx` (inclusive
+// com a tela de Conexão aberta) e não deve tentar login sem conexão. As telas
+// não precisam conferir: sem conexão, o `App.tsx` mostra só a tela de Conexão.
 export const isSupabaseConfigured = conexao !== null;
 
 // O cliente precisa existir sempre (todo `lib/*.ts` importa esse módulo), mesmo

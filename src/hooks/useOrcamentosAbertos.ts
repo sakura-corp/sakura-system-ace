@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { contarOrcamentosAbertosDaLoja } from "@/lib/ordensServico";
-import { isSupabaseConfigured } from "@/lib/supabase";
 
 const EVENTO = "sakura:orcamentos-mudaram";
 
@@ -27,7 +26,7 @@ export function useOrcamentosAbertos(lojaId: string | undefined, ativo: boolean)
   }, []);
 
   useEffect(() => {
-    if (!ativo || !lojaId || !isSupabaseConfigured) {
+    if (!ativo || !lojaId) {
       setQuantos(0);
       return;
     }

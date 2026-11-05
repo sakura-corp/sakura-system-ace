@@ -27,7 +27,7 @@ vi.mock("@/lib/modelosWhatsapp", () => ({
   registrarMensagemAberta: vi.fn(),
   textoDoModelo: () => "texto",
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({

@@ -203,7 +203,8 @@ As novas:
   impedido de publicar, liberar, mexer em banco ou adicionar o repositório privado. Com o Claude
   Team, isso se trava de um lugar só.
 - **T3.** As regras de código da seção 3 do índice que ainda são só texto viram lint (o `??` no
-  `import.meta.env`, o `toISOString().slice`, o `window.prompt`).
+  `import.meta.env`, o `toISOString().slice`, o `window.prompt`): **feita em 05/11/2026** (#873),
+  as três são erro no `npm run lint` (`eslint.config.js`).
 - **T4.** Um aviso automático se o índice da memória passar de **15 KB** (era 30 KB; baixou em 17/10, no A1 do plano de memória): **feita em 17/10**, um passo do CI ("Tamanho do índice da memória") que só avisa, nunca reprova; a skill `fechar` também mede.
 
 ### Afazeres
