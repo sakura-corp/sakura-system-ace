@@ -181,10 +181,12 @@
    `playwright` já vem instalado **globalmente** neste ambiente
    (`/opt/node22/lib/node_modules/playwright`) mesmo sem estar no `package.json` do projeto — útil
    pra scripts avulsos de verificação visual sem mexer nas dependências do projeto.
-7. **Vercel**: o repositório tem uma integração de deploy automático na Vercel conectada (de
-   quando este repo era um site em Next.js, antes da reescrita como app Electron) — isso faz
-   alguns PRs mostrarem um check falhando sem relação com o código. Não dá pra desconectar pelo
-   código, só pelo painel da Vercel.
+7. **Vercel** (removida em 05/11/2026, #878): o repositório tinha uma integração de deploy
+   automático na Vercel, de quando era um site em Next.js, e alguns PRs mostravam um check falhando
+   sem relação com o código. Os projetos (`amigao`, `amigao-43hb`) já não existiam e o último deploy
+   foi em 27/07/2026; o que sobrava era o app da Vercel instalado na conta pessoal da Sofia, com
+   acesso de escrita a todos os repositórios dela. Desinstalado. Se um check da Vercel voltar a
+   aparecer, olhar os apps instalados na conta pessoal e na organização.
 8. **Padrão de bug: fallback com `??` em vez de `||`** — `src/lib/supabase.ts` já teve um bug real
    assim (tela em branco: `.env` copiado do `.env.example` define variáveis como **string vazia**,
    não ausente, e `??` só troca `null`/`undefined`). Sempre usar `||` pra fallback de
