@@ -446,7 +446,10 @@ estiver sem suporte, e está certo.
   Downloads.
 - **O electron-builder 26** foi junto do salto 3 (#869): a configuração passou sem mudança, e a
   chavinha de integridade do asar foi ligada (`scripts/ligar-fuses.mjs`). Se o instalador do
-  canal de teste não abrir, é ela que se desliga.
+  canal de teste não abrir, é ela que se desliga. **Por isso o teste dela antes do "Liberar"
+  é obrigatório nesta versão**: numa loja que já recebeu um programa que não abre, desligar a
+  chavinha numa versão nova não chega lá (quem baixa a versão nova é o próprio programa), e a
+  saída seria reinstalar à mão em cada loja.
 - **Depois de chegar na 44**: um salto a cada ~4 meses mantém o programa com suporte (a 44 sai
   do suporte por volta de fev/2027, quando sair a 47: o próximo salto vem antes disso).
 

@@ -8,7 +8,7 @@
 // definitiva naquele binário — não dá pra mudar por configuração, por
 // variável de ambiente nem por argumento de linha de comando.
 //
-// O que se ganha aqui: sem estas quatro chavinhas, quem tiver o
+// O que se ganha aqui: sem estas chavinhas, quem tiver o
 // `SakuraSystem-Setup.exe` instalado na máquina consegue rodar o executável
 // do sistema como se fosse um Node.js comum (`ELECTRON_RUN_AS_NODE=1`), ou
 // com o depurador acoplado, e a partir daí ler tudo que o processo
@@ -72,9 +72,9 @@ export default async function ligarFuses(contexto) {
     // Só carrega o código de dentro do app.asar — sem isso, deixar uma
     // pasta `app/` ao lado do executável substitui o programa inteiro.
     [FuseV1Options.OnlyLoadAppFromAsar]: true,
-    // Recusa abrir se o `app.asar` não bater com o hash gravado no .exe
-    // pelo electron-builder 26 (ver o comentário do topo). Vale no Windows
-    // e no macOS; no Linux o Electron não confere.
+    // Recusa abrir se o `app.asar` não bater com o hash que o
+    // electron-builder grava no .exe antes deste afterPack (ver o comentário
+    // do topo). Vale no Windows e no macOS; no Linux o Electron não confere.
     [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
     // `resetAdHocDarwinSignature` só vale pra macOS, que este projeto não
     // empacota; fica de fora pra não mexer no que não é usado.

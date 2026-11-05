@@ -211,7 +211,7 @@ jobs:
       - name: Playwright (só nesta rodada)
         run: npm i --no-save playwright
 
-      # Desde a linha 42, o `npm ci` instala o pacote do Electron mas NÃO baixa
+      # Desde o Electron 42, o `npm ci` instala o pacote do Electron mas NÃO baixa
       # mais o programa dele (uns 100 MB): ele só vem na primeira vez que
       # alguém o chama. Sem este passo, o download cairia dentro do
       # `electron.launch` do teste, que tem tempo limite, e o teste podia
