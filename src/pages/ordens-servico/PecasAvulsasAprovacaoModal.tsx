@@ -11,8 +11,7 @@ import { acharPecasParecidas, LIMITE_NOME_PARA_ORDENAR } from "@/schemas/pecaPar
 import type { ItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
-
-type Modo = "existente" | "cadastrar" | "sem_cadastro";
+import type { EscolhasDaJanela, ModoAvulsa as Modo } from "./escolhasAvulsas";
 
 const ROTULO_DO_MODO: Record<Modo, string> = {
   existente: "É uma peça que já tenho",
@@ -27,13 +26,13 @@ interface PecasAvulsasAprovacaoModalProps {
   pecas: PecaJanela[];
   lojaId: string;
   /**
-   * As peças já cadastradas nesta aprovação (id do item → peça). Moram em
-   * quem abre a janela, não nela: com "Voltar" a janela fecha, e a peça
-   * criada tem que estar lá quando ela abrir de novo, senão a pessoa
-   * cadastra outra e a primeira sobra no cadastro (#720).
+   * O que a pessoa já escolheu nesta aprovação. Mora em quem abre a janela,
+   * não nela: com "Voltar" a janela fecha, e as escolhas (principalmente a
+   * peça já cadastrada) têm que estar lá quando ela abrir de novo, senão a
+   * pessoa cadastra outra e a primeira sobra no cadastro (#720).
    */
-  cadastradas: Record<string, PecaJanela>;
-  onCadastrada: (itemId: string, peca: PecaJanela) => void;
+  escolhas: EscolhasDaJanela;
+  onMudarEscolhas: (mudar: (atual: EscolhasDaJanela) => EscolhasDaJanela) => void;
   /** Aprovando agora: trava os botões até a resposta voltar. */
   enviando: boolean;
   /** Erro da aprovação, mostrado aqui dentro pra janela não esconder. */
@@ -52,19 +51,21 @@ export function PecasAvulsasAprovacaoModal({
   itens,
   pecas,
   lojaId,
-  cadastradas,
-  onCadastrada,
+  escolhas: escolhasDaJanela,
+  onMudarEscolhas,
   enviando,
   erro,
   onConfirmar,
   onFechar,
 }: PecasAvulsasAprovacaoModalProps) {
-  // Item que já tem peça cadastrada (a janela foi fechada e aberta de novo)
-  // volta com "Cadastrar agora" marcado.
-  const [modos, setModos] = useState<Record<string, Modo>>(() =>
-    Object.fromEntries(Object.keys(cadastradas).map((itemId) => [itemId, "cadastrar" as Modo])),
-  );
-  const [escolhidas, setEscolhidas] = useState<Record<string, string>>({});
+  const { modos, escolhidas, cadastradas } = escolhasDaJanela;
+  const setModos = (mudar: (m: Record<string, Modo>) => Record<string, Modo>) =>
+    onMudarEscolhas((e) => ({ ...e, modos: mudar(e.modos) }));
+  const setEscolhidas = (mudar: (m: Record<string, string>) => Record<string, string>) =>
+    onMudarEscolhas((e) => ({ ...e, escolhidas: mudar(e.escolhidas) }));
+  const setCadastradas = (
+    mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
+  ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
@@ -248,7 +249,7 @@ export function PecasAvulsasAprovacaoModal({
           pecas={pecasDaJanela}
           lojaId={lojaId}
           onCadastrada={(peca) => {
-            onCadastrada(cadastrando.id, peca);
+            setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
             setModos((m) => ({ ...m, [cadastrando.id]: "cadastrar" }));
             setCadastrando(null);
           }}

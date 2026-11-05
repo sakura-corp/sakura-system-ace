@@ -29,6 +29,8 @@ vi.mock("@/lib/configuracoes", () => ({
 }));
 
 const { PecasAvulsasAprovacaoModal } = await import("./PecasAvulsasAprovacaoModal");
+const { ESCOLHAS_VAZIAS } = await import("./escolhasAvulsas");
+type EscolhasDaJanela = import("./escolhasAvulsas").EscolhasDaJanela;
 
 beforeEach(() => {
   localStorage.clear();
@@ -62,16 +64,16 @@ const cadastro = [
 function montar(itens: ItemOS[], extra: { pecas?: PecaJanela[]; erro?: string | null } = {}) {
   const onConfirmar = vi.fn();
   const onFechar = vi.fn();
-  // As peças cadastradas moram em quem abre a janela (#720), como no formulário.
+  // As escolhas moram em quem abre a janela (#720), como no formulário.
   function ComPai() {
-    const [cadastradas, setCadastradas] = useState<Record<string, PecaJanela>>({});
+    const [escolhas, setEscolhas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
     return (
       <PecasAvulsasAprovacaoModal
         itens={itens}
         pecas={extra.pecas ?? cadastro}
         lojaId="loja-1"
-        cadastradas={cadastradas}
-        onCadastrada={(itemId, peca) => setCadastradas((c) => ({ ...c, [itemId]: peca }))}
+        escolhas={escolhas}
+        onMudarEscolhas={setEscolhas}
         enviando={false}
         erro={extra.erro ?? null}
         onConfirmar={onConfirmar}
