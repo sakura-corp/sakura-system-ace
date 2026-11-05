@@ -263,6 +263,6 @@ describe("faturarOrdem", () => {
 });
 
 // "Cadastrar agora" na nota (cadastrarPecaDoItem) virou uma função do banco
-// (#803, migration 0077): o que a lib manda está em ordensServico.rpc.test.ts e
+// (#803, migration 0079): o que a lib manda está em ordensServico.rpc.test.ts e
 // a regra (baixa só em OS, a quantidade do banco, a trava, tudo ou nada) em
 // supabase/scripts/testar-cadastrar-peca-do-item.sql.

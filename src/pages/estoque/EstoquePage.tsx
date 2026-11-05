@@ -37,14 +37,34 @@ export function EstoquePage() {
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // O catálogo do "Juntar peças repetidas" (#721), à parte das listas da tela:
+  // ele não depende da loja, e a falha de OUTRA lista (depósitos,
+  // configuração) não pode deixar a janela sem peças nem dizer "tudo certo".
+  // `pecas` (da tela) só muda quando tudo carrega, pra a lista de Produtos não
+  // mostrar peça com saldo de movimentos que não vieram.
+  const [catalogo, setCatalogo] = useState<Peca[] | null>(null);
+  const [erroCatalogo, setErroCatalogo] = useState<string | null>(null);
 
   async function carregar() {
+    setCarregando(true);
+    setErro(null);
+    setErroCatalogo(null);
+    const promessaCatalogo = listarPecas().then(
+      (lista) => {
+        setCatalogo(lista);
+        return lista;
+      },
+      (err: unknown) => {
+        setErroCatalogo(mensagemDeErro(err));
+        throw err;
+      },
+    );
     if (!lojaAtual) {
+      // Sem loja a tela não mostra nada, mas o "Juntar" ainda usa o catálogo.
+      await promessaCatalogo.catch(() => undefined);
       setCarregando(false);
       return;
     }
-    setCarregando(true);
-    setErro(null);
     try {
       const [
         pecasCarregadas,
@@ -53,7 +73,7 @@ export function EstoquePage() {
         depositosCarregados,
         configFiscal,
       ] = await Promise.all([
-        listarPecas(),
+        promessaCatalogo,
         listarMovimentos(lojaAtual.id),
         listarCategorias(),
         listarDepositos(lojaAtual.id),
@@ -105,8 +125,11 @@ export function EstoquePage() {
       {juntando && (
         <JuntarPecasModal
           categorias={categorias}
+          pecas={catalogo ?? []}
+          carregando={carregando}
+          erroAoCarregar={erroCatalogo}
           onFechar={() => setJuntando(false)}
-          onJuntado={carregar}
+          onRecarregar={carregar}
         />
       )}
 

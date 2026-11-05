@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Telas baixas (#876). O notebook do Balcão é 1366 × 768, e com a barra de
+   tarefas e a barra de título do Windows sobra ~700 de altura pra janela:
+   o menu da esquerda terminava em "Relações", e o resto só aparecia
+   rolando uma barra fininha. Abaixo destas alturas o menu aperta o
+   espaçamento (o texto não diminui). `baixa` pega o 768 cheio (navegador,
+   tela cheia); `muito-baixa`, a janela maximizada com a barra de tarefas. */
+@custom-variant baixa (@media (height < 960px));
+@custom-variant muito-baixa (@media (height < 768px));
+
 @theme {
   /* Paleta oficial Sakura System - Dark Neon Edition */
   --color-sakura-pink: #ff4dce;

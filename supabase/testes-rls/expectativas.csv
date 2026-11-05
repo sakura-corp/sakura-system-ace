@@ -98,7 +98,7 @@ servicos,insert,1,1,1,1,0,
 servicos,update,2,2,2,2,0,
 servicos,delete,2,2,2,2,0,
 #
-# TR-04.1 lote 7 (migration 0078): fornecedores e cotações exigem o módulo
+# TR-04.1 lote 7 (migration 0080): fornecedores e cotações exigem o módulo
 # Fornecedores (o preço de compra costuma ser o custo da peça). O balconista
 # (só Caixa) e o órfão zeraram.
 fornecedores,select,2,2,0,0,0,só com o módulo Fornecedores
@@ -203,11 +203,11 @@ notas_fiscais_arquivos,select,2,1,1,0,0,
 notas_fiscais_arquivos,insert,1,1,1,0,0,
 notas_fiscais_arquivos,update,2,1,1,0,0,
 notas_fiscais_arquivos,delete,2,1,1,0,0,
-pedidos_compra,select,2,1,0,0,0,só com o módulo Fornecedores, na loja dele (0078)
+pedidos_compra,select,2,1,0,0,0,só com o módulo Fornecedores, na loja dele (0080)
 pedidos_compra,insert,1,1,0,0,0,
 pedidos_compra,update,2,1,0,0,0,
 pedidos_compra,delete,2,1,0,0,0,
-pedidos_compra_itens,select,2,1,0,0,0,herda a loja pelo pedido; só com o módulo Fornecedores (0078)
+pedidos_compra_itens,select,2,1,0,0,0,herda a loja pelo pedido; só com o módulo Fornecedores (0080)
 pedidos_compra_itens,insert,1,1,0,0,0,
 pedidos_compra_itens,update,2,1,0,0,0,
 pedidos_compra_itens,delete,2,1,0,0,0,

@@ -14,9 +14,9 @@ a única empresa até agora. A `0076` (ordens de serviço só com o módulo, a s
 avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só com o módulo, #365),
 a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
 travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
-estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0077` (cadastrar peça do item
-com a OS travada, #803) e a `0078` (fornecedores só com o módulo, #880) estão escritas nos PRs e
-esperam ela aplicar. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0079` (cadastrar peça do item
+com a OS travada, #803) e a `0080` (fornecedores só com o módulo, #880) estão escritas nos PRs e
+esperam ela aplicar, depois da `0077` (a busca geral, #857) e da `0078` (o percentual de tributos, #882). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
 (`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
 de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
@@ -108,8 +108,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0049`: duas colunas em `configuracoes_fiscais_loja` pro lembrete da
   alíquota da competência (NFS-e) — `competencia_aliquota_confirmada` (date: o mês, sempre no dia
   1º, cuja alíquota já foi cadastrada no portal da prefeitura) e `aliquota_passo_a_passo` (text: o
-  caminho dentro do portal, editável porque muda de município; em branco vale o padrão de
-  Araraquara, que está em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
+  caminho dentro do portal, editável porque muda de município; em branco vale o padrão da cidade
+  pelo `codigo_municipio` — o de Araraquara só pra loja de lá —, em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
   seção 7. **Ordem importa**: essa migration precisa estar rodada ANTES de a versão nova chegar no
   computador da loja — sem as colunas, salvar em Configurações → Dados fiscais dá erro de "coluna
   não existe".
@@ -580,7 +580,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   também não entra. OS **faturada** recusa item novo e correção. Sem `versao-minima-do-programa`: o
   programa antigo continua gravando direto nas tabelas, com o mesmo risco raro de antes. Teste em
   `supabase/scripts/testar-item-na-aprovacao.sql`, com corridas de verdade entre duas ligações (`dblink`).
-- `0077`: **"Cadastrar agora" (ligar a peça avulsa ao cadastro, na emissão da nota) com a linha da
+- `0079`: **"Cadastrar agora" (ligar a peça avulsa ao cadastro, na emissão da nota) com a linha da
   OS travada** (tarefa #803, caso 1; o mesmo caminho da `0071`). Uma função,
   `cadastrar_peca_do_item(item, peça, operador)`, `security invoker` e só pra `authenticated`: trava a
   OS, liga a peça se o item ainda é avulso e, se a ordem já é OS (inclusive faturada), baixa a
@@ -590,7 +590,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   lançar a saída à mão). Sem `versao-minima-do-programa` (só acrescenta), mas sobe **antes** da versão
   que chama a função. Teste em `supabase/scripts/testar-cadastrar-peca-do-item.sql`, com as duas
   ordens de corrida (`dblink`); sem o `for update`, a corrida reprova.
-- `0078`: **Fornecedores, pedidos de compra e cotações só pra quem tem o módulo** (tarefa #880, lote 7
+- `0080`: **Fornecedores, pedidos de compra e cotações só pra quem tem o módulo** (tarefa #880, lote 7
   do TR-04.1). `fornecedores` e `cotacoes_pecas` (catálogo da empresa): ler e gravar só com
   Fornecedores ou admin. `pedidos_compra` e `pedidos_compra_itens`: o mesmo, e na loja de quem mexe;
   o item confere a loja pela função `pedido_compra_acessivel(pedido)` (`security definer`, só

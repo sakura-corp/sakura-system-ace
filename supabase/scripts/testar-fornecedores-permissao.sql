@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE do lote 7 do TR-04.1 (migration 0078, tarefa #880). NÃO é migration,
+-- TESTE do lote 7 do TR-04.1 (migration 0080, tarefa #880). NÃO é migration,
 -- e NUNCA deve ser rodado no Supabase de verdade — grava e apaga dado de
 -- teste.
 --

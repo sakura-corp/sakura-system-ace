@@ -45,7 +45,7 @@
    silêncio. A pergunta foi pra uma função `security definer` (`ordem_servico_da_loja`). E o
    contrário também vale: nos itens, o `exists` na OS **herdava** a regra de módulo da OS, e um teste
    que tirava o módulo da policy dos itens passou verde; com a função, a regra ficou escrita num
-   lugar só e o teste reprova. **O lote 7 foi escrito em 05/11/2026** (migration `0078`, tarefa
+   lugar só e o teste reprova. **O lote 7 foi escrito em 05/11/2026** (migration `0080`, tarefa
    #880, esperando ela aplicar depois da `0076`): `fornecedores`, `cotacoes_pecas`,
    `pedidos_compra` e `pedidos_compra_itens`, só com Fornecedores (os pedidos, na loja dele). Sem
    janela: só as telas de Fornecedores leem essas tabelas, e a `juntar_pecas` é `security definer`
@@ -57,7 +57,7 @@
    e sem `returning`, contando as linhas: aí só a policy do próprio comando decide.
    As outras **continuam como sempre foram** — o
    parágrafo acima segue valendo pras tabelas que ainda não têm lote (e pra Fornecedores até a
-   `0078` ser aplicada) (o exemplo do balconista lendo
+   `0080` ser aplicada) (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
    e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou
@@ -201,8 +201,13 @@
 8. **Padrão de bug: fallback com `??` em vez de `||`** — `src/lib/supabase.ts` já teve um bug real
    assim (tela em branco: `.env` copiado do `.env.example` define variáveis como **string vazia**,
    não ausente, e `??` só troca `null`/`undefined`). Sempre usar `||` pra fallback de
-   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega** (#873): `import.meta.env.* ?? x` é
-   erro no `npm run lint`; o `??` no resto do código continua liberado.
+   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega** (#873; regra `sakura/env-sem-nullish` em
+   `eslint.config.js`, provada em `scripts/regras-de-lint.test.ts`): `??` e `??=` cujo valor da
+   esquerda pode ser um valor do `import.meta.env` (inclusive com `?.`, `.trim()`, `as`, `["X"]`,
+   em cadeia `a ?? env.X ?? y` ou num ramo de `? :`) e o valor padrão ao desestruturar o
+   `import.meta.env`. **Não pega** quem guarda o env numa variável antes
+   (`const env = import.meta.env; env.X ?? y`) ou o copia com spread (`{ ...import.meta.env }`):
+   nesses casos, olhar à mão.
 9. **Padrão de bug: caminho absoluto de asset quebra só no instalador** — `src="/..."` ou
    `url(/...)` funciona em `npm run dev` (Vite serve a partir de `/`) mas quebra no app empacotado
    (Electron carrega via `file://`, onde `/` tenta ler a raiz do disco). Usar sempre

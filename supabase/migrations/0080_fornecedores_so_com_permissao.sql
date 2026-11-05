@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- Migration 0078: Fornecedores, pedidos de compra e cotações só pra quem tem
+-- Migration 0080: Fornecedores, pedidos de compra e cotações só pra quem tem
 -- o módulo — o lote 7 do TR-04.1 (tarefa #880).
 --
 -- O PROBLEMA. Quem não tem o módulo Fornecedores não vê a tela, mas a RLS de
@@ -28,7 +28,7 @@
 -- do módulo, então não precisa esperar versão nenhuma: NÃO tem a linha de
 -- versão mínima do programa. O botão "Atualizar o banco de todas as
 -- empresas" aplica em ordem, então ela entra depois da 0076 (que espera a
--- 0.9.56) e da 0077.
+-- 0.9.56) e da 0077, da 0078 e da 0079.
 --
 -- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
 -- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem
@@ -157,7 +157,7 @@ as $$
 $$;
 
 comment on function pedido_compra_acessivel(uuid) is
-  'TR-04.1 lote 7 (0078). Sim se o pedido de compra existe e é de uma loja de '
+  'TR-04.1 lote 7 (0080). Sim se o pedido de compra existe e é de uma loja de '
   'quem pergunta. É a conferência de loja das policies de pedidos_compra_itens '
   '(o item não tem loja própria). Não confere módulo: isso é da policy.';
 
@@ -183,4 +183,4 @@ create policy "pedidos_compra_itens_exclusao" on pedidos_compra_itens
   for delete to authenticated
   using ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id));
 
-insert into schema_versao (versao) values (78) on conflict do nothing;
+insert into schema_versao (versao) values (80) on conflict do nothing;

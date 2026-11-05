@@ -426,7 +426,7 @@ export async function aprovarOrcamento(
  * apontar pra peça e, se a ordem já é OS, baixa o estoque dele. Em orçamento
  * só vincula: a aprovação é que baixa.
  *
- * Uma chamada só (`cadastrar_peca_do_item`, migration 0077, #803): o banco
+ * Uma chamada só (`cadastrar_peca_do_item`, migration 0079, #803): o banco
  * trava a OS, liga, decide a baixa pela situação da ordem NO BANCO (não a da
  * tela) e baixa a quantidade gravada, tudo numa transação. Assim, aprovar o
  * orçamento em outro computador no mesmo instante não deixa a peça sem
