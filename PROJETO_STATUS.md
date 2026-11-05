@@ -165,10 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026: a madrugada de cota; ~30 PRs mesclados (lista e pendências na #934)
-- **Entrou**: #870 (dependências), #498 e #897 (loja grande), #875 (contas pra `src/schemas`), #876 (telas), #720/#721, #881, #903, #911, #872 e 6 pequenas; no escritório, #33, #89, #83 e #95. Privado: a medição do CI (#442).
-- **Banco, nesta ordem**: #857 (0077) → #882 (0078, Tiago) → #912 (0079) → #923 (0080). O CI dos dois últimos fica vermelho no "sem buraco" até lá.
-- **Sofia (#934)**: testar o Electron 44 (#906) no fim de semana; decidir #896, #929, #720, a cor dos avisos e o faturar do #912; conferir no PC; fechar à mão as issues que o "Fecha" não fechou.
-- **O Tiago**: os pedidos de mudança no #882 e no escritorio#99; a #888; triar a #886.
-- **CI**: o apt do Playwright ainda derruba job de tela quando o espelho fica lento (#933).
-- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
+- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
+- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
+- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
+- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
+- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
+- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
