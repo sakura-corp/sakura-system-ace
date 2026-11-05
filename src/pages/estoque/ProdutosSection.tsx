@@ -192,7 +192,7 @@ export function ProdutosSection({
                 onChange={(e) => setBusca(e.target.value)}
                 onKeyDown={handleTeclaNaBusca}
                 placeholder="Descrição, referência, código, marca ou medida"
-                className="w-[23rem] rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="w-92 rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
               />
             </label>
 
@@ -329,13 +329,23 @@ export function ProdutosSection({
                           maioria das peças de pneu já traz a medida no nome
                           ("Pneu 175/70 R14"), e repetir ao lado vira ruído. */}
                       {peca.medida && !peca.descricao.includes(peca.medida) && (
-                        <span className="ml-2 text-rotulo text-sakura-muted">{peca.medida}</span>
+                        <span className="ml-2 whitespace-nowrap text-rotulo text-sakura-muted">
+                          {peca.medida}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {categorias.find((c) => c.id === peca.categoria_id)?.nome ?? "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">{peca.codigo_interno || "—"}</td>
+                    {/* Sem quebrar no meio ("PN-" / "17570R14", #876), mas com
+                        teto: o código é texto livre, e um EAN ou uma
+                        referência comprida não pode empurrar a tabela. */}
+                    <td
+                      className="max-w-[10rem] truncate whitespace-nowrap px-4 py-3"
+                      title={peca.codigo_interno || undefined}
+                    >
+                      {peca.codigo_interno || "—"}
+                    </td>
                     <td className="px-4 py-3">{peca.unidade || "—"}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_custo)}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_venda)}</td>

@@ -226,7 +226,7 @@ export function ContasReceberPage() {
                             >
                               {ultimaCobranca && (
                                 <span
-                                  className="text-rotulo text-sakura-muted"
+                                  className="whitespace-nowrap text-rotulo text-sakura-muted"
                                   title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
                                 >
                                   cobrado em {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
