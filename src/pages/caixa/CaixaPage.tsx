@@ -6,7 +6,6 @@ import { buscarCustoDasOrdens, criarMovimentoCaixa, listarMovimentosCaixa } from
 import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import { hojeLocal } from "@/lib/datas";
 import { listarFechamentosCaixa } from "@/lib/fechamentoCaixa";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
@@ -30,7 +29,7 @@ export function CaixaPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }

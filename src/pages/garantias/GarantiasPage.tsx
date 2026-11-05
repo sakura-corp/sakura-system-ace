@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarItensComGarantia, type ItemGarantia } from "@/lib/garantias";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { garantiaVencida, vencimentoDaGarantia } from "@/schemas/garantia";
 import { temPermissao } from "@/types/operador";
 
@@ -25,10 +24,6 @@ export function GarantiasPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured) {
-        setCarregando(false);
-        return;
-      }
       try {
         setItens(await listarItensComGarantia());
       } catch (err) {
