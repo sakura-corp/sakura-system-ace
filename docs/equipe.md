@@ -49,11 +49,12 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >
 > Hoje o objetivo é **só deixar meu computador pronto**, sem programar nada:
 > 1. Confira o que já tenho instalado e me ajude a instalar o que faltar: **Git**, **Node.js
->    versão 22.12 ou mais nova** e **GitHub CLI** (o programa `gh`). Pra conferir o Node, rode
->    `node -v`: se aparecer um número abaixo de `v22.12.0` (ex.: `v22.11.0` ou `v20…`), me ajude
->    a instalar o Node mais novo (versão LTS) pelo site nodejs.org, por cima do antigo, e a
->    conferir de novo com `node -v` num terminal novo. Com Node mais velho, o `npm install`
->    quebra ao baixar o Electron.
+>    22, a 22.12 ou mais nova da linha 22** (a mesma do CI) e **GitHub CLI** (o programa `gh`).
+>    Pra conferir o Node, rode `node -v`: se aparecer um número abaixo de `v22.12.0` (ex.:
+>    `v22.11.0` ou `v20…`), me ajude a instalar a versão 22 mais nova. Se o Node antigo veio de
+>    um gerenciador (nvm, nvm-windows, Volta ou Homebrew), atualize **por ele**; senão, pelo
+>    site nodejs.org, escolhendo a v22, por cima do antigo. Depois confira de novo com `node -v`
+>    num terminal novo. Com Node mais velho, o `npm install` quebra ao baixar o Electron.
 > 2. Me ajude a entrar na minha conta do GitHub (a do e-mail da Sakura) pelo GitHub CLI
 >    (`gh auth login`, pelo navegador), e a configurar o Git com o **meu nome e o e-mail da
 >    Sakura**.
