@@ -1846,3 +1846,13 @@
     passou nos 7), mas foi sorte. **Regra**: mesclar só com **todos** os jobs terminados e verdes.
     Se um cair por causa da máquina, rodar de novo só os que falharam ("Re-run failed jobs") e
     esperar. O conserto do apt é a #933.
+97. **Migration num PR que aponta pra branch de outro PR prende a fila (05/11/2026, #882 → #936).**
+    O #882 levava a 0078, mas a base dele era a branch do #839, que espera a Focus. Como a 0079 e a
+    0080 vêm depois, o #912 e o #923 ficaram presos sem prazo, mesmo prontos. **Regra**: migration
+    vai sempre num PR direto pra `main`. Se o resto do trabalho depende de outro PR, separar só a
+    migration num PR pequeno (foi o #936, igual byte a byte).
+98. **Pedido de mudança só num comentário não chega na pessoa (05/11/2026, #857).** Os pedidos de
+    04/11 ao Gustavo ficaram num comentário comum, e o PR continuou aparecendo como "esperando a
+    revisão da Sofia": cada um achava que a vez era do outro. **Regra**: pedir mudança sempre pelo
+    "Review changes" → **Request changes** (e pôr a pessoa como responsável do PR). Assim o GitHub
+    mostra "Changes requested" e a sessão dela lista isso nas pendências (seção 0).
