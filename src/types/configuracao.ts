@@ -54,7 +54,8 @@ export interface ConfiguracaoFiscalLoja {
   // cadastrada no portal da prefeitura — enquanto for diferente do mês
   // corrente, o Início avisa. aliquota_passo_a_passo é o caminho dentro do
   // portal, editável porque muda de município pra município (em branco, vale
-  // o padrão de Araraquara em schemas/aliquotaCompetencia.ts).
+  // o padrão da cidade pelo codigo_municipio — o de Araraquara só pra loja de
+  // lá, um texto geral pras outras — em schemas/aliquotaCompetencia.ts, #876).
   competencia_aliquota_confirmada: string | null;
   aliquota_passo_a_passo: string | null;
   atualizado_em: string;
