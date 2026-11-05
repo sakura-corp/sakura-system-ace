@@ -122,6 +122,13 @@ function objetoQueFalta(mensagem: string): string | null {
   // 'column "validade" of relation "ordens_servico" does not exist'
   const colunaDoPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
   if (colunaDoPostgres) return colunaDoPostgres[1];
+  // View nova lida DENTRO de outra tabela (`cliente:clientes_janela(nome)`):
+  // "Could not find a relationship between 'ordens_servico' and
+  // 'clientes_janela' in the schema cache" (PGRST200). Só o segundo nome conta:
+  // é o que está sendo embutido; o primeiro, se faltasse, daria o erro de
+  // tabela abaixo.
+  const ligacaoDoPostgrest = /Could not find a relationship between '[^']+' and '(?:[\w]+\.)?([\w]+)'/.exec(mensagem);
+  if (ligacaoDoPostgrest) return ligacaoDoPostgrest[1];
   // "Could not find the table 'public.clientes_janela' in the schema cache"
   const tabelaDoPostgrest = /Could not find the table '(?:[\w]+\.)?([\w]+)'/.exec(mensagem);
   if (tabelaDoPostgrest) return tabelaDoPostgrest[1];
