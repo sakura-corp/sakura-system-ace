@@ -83,14 +83,14 @@ export function Sidebar() {
     <aside className="flex h-full w-64 shrink-0 flex-col gap-4">
       <div className="sakura-card flex flex-1 flex-col overflow-hidden">
         <AreaRolavel className="flex flex-col">
-          <div className="px-6 pb-6 pt-8">
-            <Logo />
-            <p className="mt-4 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,77,206,0.5)]">
+          <div className="px-6 pb-6 pt-8 baixa:pb-3 baixa:pt-5 muito-baixa:pt-4">
+            <Logo className="muito-baixa:max-w-44" />
+            <p className="mt-4 baixa:mt-2 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,77,206,0.5)]">
               AUTOCENTER EDITION
             </p>
           </div>
 
-          <nav className="flex flex-1 flex-col gap-1 px-3 pb-3">
+          <nav className="flex flex-1 flex-col gap-1 px-3 pb-3 baixa:gap-0.5">
             {modulosLiberados.length === 0 && (
               <p className="px-4 py-2.5 text-rotulo text-sakura-purple-dark/85">
                 Nenhum módulo liberado. Fale com o administrador.
@@ -102,7 +102,7 @@ export function Sidebar() {
                 to={modulo.rota}
                 end={modulo.chave === "painel"}
                 className={({ isActive }) =>
-                  `rounded-xl px-4 py-2.5 text-corpo font-medium transition-all ${
+                  `rounded-xl px-4 py-2.5 baixa:py-1.5 muito-baixa:py-1 text-corpo font-medium transition-all ${
                     isActive
                       ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,77,206,0.2)] border border-sakura-pink/30"
                       : "text-sakura-purple-dark/90 hover:bg-white/5 hover:text-white"
@@ -127,10 +127,15 @@ export function Sidebar() {
       </div>
 
       {operador && (
-        <div className="sakura-card shrink-0 px-6 py-4">
+        <div className="sakura-card shrink-0 px-6 py-4 baixa:py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-corpo font-medium text-sakura-purple-dark">
+              {/* Até duas linhas, e não "Marcos A..." (#876): os três ícones
+                  do lado deixam ~90px pro nome. O nome inteiro fica na dica. */}
+              <p
+                title={operador.nome}
+                className="line-clamp-2 break-words text-corpo font-medium text-sakura-purple-dark"
+              >
                 {operador.nome}
               </p>
               <p className="truncate text-rotulo text-sakura-purple-dark/85">
