@@ -165,11 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
-- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
-- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
-- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
-- **Sessões**: todas arquivadas (#519, fechada).
-- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
-- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
-- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 05/11/2026: a madrugada de cota; ~30 PRs mesclados (lista e pendências na #934)
+- **Entrou**: #870 (dependências), #498 e #897 (loja grande), #875 (contas pra `src/schemas`), #876 (telas), #720/#721, #881, #903, #911, #872 e 6 pequenas; no escritório, #33, #89, #83 e #95. Privado: a medição do CI (#442).
+- **Banco, nesta ordem**: #857 (0077) → #882 (0078, Tiago) → #912 (0079) → #923 (0080). O CI dos dois últimos fica vermelho no "sem buraco" até lá.
+- **Sofia (#934)**: testar o Electron 44 (#906) no fim de semana; decidir #896, #929, #720, a cor dos avisos e o faturar do #912; conferir no PC; fechar à mão as issues que o "Fecha" não fechou.
+- **O Tiago**: os pedidos de mudança no #882 e no escritorio#99; a #888; triar a #886.
+- **CI**: o apt do Playwright ainda derruba job de tela quando o espelho fica lento (#933).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
