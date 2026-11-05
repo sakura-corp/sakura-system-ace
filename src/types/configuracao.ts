@@ -57,6 +57,10 @@ export interface ConfiguracaoFiscalLoja {
   // o padrão de Araraquara em schemas/aliquotaCompetencia.ts).
   competencia_aliquota_confirmada: string | null;
   aliquota_passo_a_passo: string | null;
+  // Percentual aproximado dos tributos do Simples (migration 0078, só NFS-e
+  // Nacional, só pra loja do Simples): vai no campo pTotTribSN da nota. Quem
+  // passa o número é a contabilidade; de 0 a 100, com duas casas. Vazio manda 0.
+  percentual_tributos_simples: number | null;
   atualizado_em: string;
 }
 

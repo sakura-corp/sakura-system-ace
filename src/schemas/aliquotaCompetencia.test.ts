@@ -34,6 +34,7 @@ function config(campos: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFisca
     codigo_cnae: "452000100",
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
+    percentual_tributos_simples: null,
     atualizado_em: "2026-09-01T00:00:00Z",
     ...campos,
   };

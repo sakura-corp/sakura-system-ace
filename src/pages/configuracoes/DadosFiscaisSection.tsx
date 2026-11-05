@@ -5,6 +5,10 @@ import {
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
 import { PASSO_A_PASSO_ALIQUOTA_PADRAO } from "@/schemas/aliquotaCompetencia";
+import {
+  avisoPercentualTributosSimplesVazio,
+  percentualTributosSimplesParaSalvar,
+} from "@/schemas/percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import { REGIME_TRIBUTARIO_LABEL } from "@/types/configuracao";
@@ -20,7 +24,8 @@ interface DadosFiscaisSectionProps {
   onSalvo: () => Promise<void>;
 }
 
-type FormularioFiscal = DadosFiscaisEditaveis;
+// Na tela o percentual sempre existe (vazio é null); no salvar ele é opcional.
+type FormularioFiscal = DadosFiscaisEditaveis & { percentual_tributos_simples: number | null };
 
 function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFiscal {
   return {
@@ -45,6 +50,7 @@ function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFi
       configuracao?.aliquota_iss !== undefined && configuracao?.aliquota_iss !== null
         ? configuracao.aliquota_iss
         : null,
+    percentual_tributos_simples: configuracao?.percentual_tributos_simples ?? null,
     codigo_tributario_municipio: configuracao?.codigo_tributario_municipio ?? "",
     codigo_cnae: configuracao?.codigo_cnae ?? "",
     aliquota_passo_a_passo: configuracao?.aliquota_passo_a_passo ?? "",
@@ -67,6 +73,7 @@ export function DadosFiscaisSection({
   const tokenCadastrado = Boolean(configuracao?.focus_nfe_configurado);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroPercentual, setErroPercentual] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
@@ -88,11 +95,25 @@ export function DadosFiscaisSection({
 
   async function handleSalvar() {
     setErro(null);
+    setErroPercentual(null);
     setSalvo(false);
+    const percentual = percentualTributosSimplesParaSalvar(
+      valores.regime_tributario,
+      valores.percentual_tributos_simples,
+    );
+    if (percentual.erro) {
+      // Perto do campo e do botão: a faixa de erro do topo fica fora da vista.
+      setErroPercentual(percentual.erro);
+      return;
+    }
+    // Fora do Simples o campo não vai: `campos` vem vazio e o banco guarda o que já tem.
+    const { percentual_tributos_simples: _naTela, ...semPercentual } = valores;
+    void _naTela;
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
-        ...valores,
+        ...semPercentual,
+        ...percentual.campos,
         cnpj: valores.cnpj || null,
         razao_social: valores.razao_social || null,
         nome_fantasia: valores.nome_fantasia || null,
@@ -125,6 +146,11 @@ export function DadosFiscaisSection({
       setSalvando(false);
     }
   }
+
+  const avisoPercentual = avisoPercentualTributosSimplesVazio(
+    valores.regime_tributario,
+    valores.percentual_tributos_simples,
+  );
 
   return (
     <>
@@ -182,9 +208,11 @@ export function DadosFiscaisSection({
           Regime tributário
           <select
             value={valores.regime_tributario ?? ""}
-            onChange={(e) =>
-              set("regime_tributario", (e.target.value || null) as RegimeTributario | null)
-            }
+            onChange={(e) => {
+              // Fora do Simples o campo some: o erro dele não pode ficar na tela.
+              setErroPercentual(null);
+              set("regime_tributario", (e.target.value || null) as RegimeTributario | null);
+            }}
             className={campoClasse}
           >
             <option value="">Selecione...</option>
@@ -339,6 +367,43 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
+          {valores.regime_tributario === "simples_nacional" && (
+            <div className="col-span-3">
+              <label className="flex max-w-sm flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+                Percentual aproximado dos tributos do Simples (%)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={valores.percentual_tributos_simples ?? ""}
+                  onChange={(e) => {
+                    setErroPercentual(null);
+                    set(
+                      "percentual_tributos_simples",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    );
+                  }}
+                  aria-invalid={erroPercentual ? true : undefined}
+                  className={campoClasse}
+                />
+              </label>
+              {erroPercentual && (
+                <p role="alert" className="mt-1 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+                  {erroPercentual}
+                </p>
+              )}
+              <p className="mt-1 text-rotulo text-sakura-muted">
+                O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
+                serviço.
+              </p>
+              {avisoPercentual && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+                  {avisoPercentual}
+                </p>
+              )}
+            </div>
+          )}
           <label className="col-span-2 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
             Código tributário do município (se a prefeitura exigir)
             <input
@@ -380,7 +445,12 @@ export function DadosFiscaisSection({
         </p>
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {erroPercentual && (
+          <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+            Não salvou: confira o percentual dos tributos do Simples.
+          </p>
+        )}
         <button
           type="button"
           onClick={handleSalvar}

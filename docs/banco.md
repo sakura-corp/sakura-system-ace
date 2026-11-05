@@ -12,7 +12,7 @@ a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça
 #655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
 (clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
 tarefa #368) em 23/10/2026, a `0071` (item e aprovação com a OS travada, tarefa #706) em
-26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026, e a `0075` e a `0076` (ordens de serviço só com o módulo, tarefa #367) em 28/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026, a `0075` e a `0076` (ordens de serviço só com o módulo, tarefa #367) em 28/10/2026, e a `0078` (o percentual dos tributos do Simples, tarefa #866) em 04/11/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
@@ -581,6 +581,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   de loja nenhuma. Nome que já existe (comparado sem maiúscula nem espaço nas pontas) não entra de
   novo. Teste em `supabase/scripts/testar-servicos-padrao.sql`; os dados de exemplo dão preço de
   mentira aos 39.
+- `0078`: **o percentual dos tributos do Simples, por loja** (tarefa #866). Uma coluna nova,
+  opcional, em `configuracoes_fiscais_loja`: `percentual_tributos_simples` (`numeric(5,2)`, a mesma
+  precisão da `aliquota_iss`), com a trava `ck_config_fiscal_percentual_tributos_simples` (de 0 a
+  100; a frase da tela está em `src/lib/errors.ts`). Vai no campo pTotTribSN (grupo totTrib) da
+  NFS-e Nacional, **só da loja do Simples** (`montarCorpoNFSeNacional`, `src/lib/focusNfe.ts`); o
+  número vem da contabilidade. **Vazio manda 0**, pra não travar a emissão. Coluna nova e
+  opcional: sobe **antes** da versão, sem `versao-minima-do-programa`. A `0077` é da busca geral
+  (#857), que entra por outro PR: **aplicar a `0077` antes desta** (o botão de atualizar os bancos
+  só roda as de número maior que a última aplicada). Teste em
+  `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

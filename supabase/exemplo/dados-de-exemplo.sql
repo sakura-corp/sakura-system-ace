@@ -121,13 +121,14 @@ on conflict do nothing;
 insert into configuracoes_fiscais_loja (
   loja_id, cnpj, razao_social, nome_fantasia, regime_tributario,
   cep, rua, numero, bairro, cidade, uf, telefone, email,
-  focus_nfe_token, focus_nfe_ambiente
+  focus_nfe_token, focus_nfe_ambiente, percentual_tributos_simples
 ) values (
   'eeee0001-0000-4000-8000-000000000001', '11.222.333/0001-81',
   'Autocenter Exemplo Ltda (TESTE)', 'Autocenter Exemplo', 'simples_nacional',
   '01000-000', 'Rua Exemplo', '100', 'Centro', 'São Paulo', 'SP',
   '(11) 90000-0000', 'contato@example.com',
-  null, 'homologacao'
+  -- 6,5: percentual de exemplo dos tributos do Simples (#866, migration 0078).
+  null, 'homologacao', 6.5
 )
 on conflict do nothing;
 

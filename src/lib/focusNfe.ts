@@ -564,9 +564,6 @@ export function codigoTributacaoNacional(item: string | null | undefined): strin
   return `${itemLc.padStart(2, "0")}${subitem.padStart(2, "0")}${desdobro.padStart(2, "0")}`;
 }
 
-// Percentual aproximado dos tributos do Simples (pTotTribSN) — ver montarCorpoNFSeNacional.
-const PERCENTUAL_TRIBUTOS_SIMPLES = 0;
-
 export function montarCorpoNFSeNacional(
   { discriminacao, valorServicos, cliente, codigoMunicipioCliente, configuracaoFiscal }: DadosEmissaoNFSe,
   { agora, numeroDps }: { agora: Date; numeroDps: number },
@@ -621,9 +618,18 @@ export function montarCorpoNFSeNacional(
     percentual_aliquota_relativa_municipio: arredondar(configuracaoFiscal.aliquota_iss ?? 0),
     // O grupo totTrib é obrigatório: sem ele o Ambiente Nacional recusa a DPS
     // (ensaio de 03/11, "Expected is one of (tribFed, totTrib)"). Pro optante
-    // do Simples é o pTotTribSN. PROVISÓRIO: vai 0 até a contabilidade dizer o
-    // percentual e a Sofia decidir onde ele mora (pendência no PR #839).
-    ...(simples ? { percentual_total_tributos_simples_nacional: PERCENTUAL_TRIBUTOS_SIMPLES } : {}),
+    // do Simples é o pTotTribSN: o percentual aproximado dos tributos, que a
+    // contabilidade passa e a loja cadastra nos Dados fiscais (#866, migration
+    // 0078). Vazio manda 0, pra não travar a emissão. O `simples ?` é só
+    // defesa: hoje `padraoNFSe` só manda pra nota nacional a loja do Simples,
+    // então o outro lado não acontece (o teste dele trava isso se mudar).
+    ...(simples
+      ? {
+          percentual_total_tributos_simples_nacional: arredondar(
+            configuracaoFiscal.percentual_tributos_simples ?? 0,
+          ),
+        }
+      : {}),
   };
 }
 
