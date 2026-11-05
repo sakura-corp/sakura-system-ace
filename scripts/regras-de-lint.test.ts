@@ -2,12 +2,14 @@
 // `import.meta.env` e o `window.prompt()`, #873) só valem se reprovam o que
 // devem e deixam passar o que é certo. Este teste roda o ESLint de verdade,
 // com o `eslint.config.js` do projeto, em pedacinhos de código.
+import { fileURLToPath } from "node:url";
 import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
-const eslint = new ESLint();
+// A raiz do projeto, pra achar o eslint.config.js de qualquer pasta.
+const eslint = new ESLint({ cwd: fileURLToPath(new URL("..", import.meta.url)) });
 
-async function regrasQueReclamam(codigo, arquivo = "src/__exemplo.ts") {
+async function regrasQueReclamam(codigo: string, arquivo = "src/__exemplo.ts"): Promise<(string | null)[]> {
   const [resultado] = await eslint.lintText(codigo, { filePath: arquivo });
   return resultado.messages.filter((m) => m.severity === 2).map((m) => m.ruleId);
 }
@@ -26,6 +28,12 @@ const ENV_DEVE_REPROVAR = [
   'const { VITE_X = "y" } = import.meta.env as Record<string, string>; export const a = VITE_X;',
   'let VITE_X: string; ({ VITE_X = "y" } = import.meta.env); export const a = VITE_X;',
   'export function f({ VITE_X = "y" } = import.meta.env) { return VITE_X; }',
+  'export const a = (<string>import.meta.env.VITE_X) ?? "y";',
+  'export const a = ((import.meta as { env: Record<string, string> }).env.VITE_X) ?? "y";',
+  'declare const o: string | undefined; export const a = o ?? import.meta.env.VITE_X ?? "y";',
+  'declare const o: string; export const a = (o || import.meta.env.VITE_X) ?? "y";',
+  'export const a = (import.meta.env.DEV ? import.meta.env.VITE_X : undefined) ?? "y";',
+  'export const a = import.meta.env.VITE_X?.trim().toLowerCase() ?? "y";',
 ];
 
 const ENV_DEVE_PASSAR = [
@@ -37,6 +45,9 @@ const ENV_DEVE_PASSAR = [
   'export const a = (null as string | null) ?? "y";',
   'const { VITE_X } = import.meta.env; export const a = VITE_X || "y";',
   'const o: { X?: string } = {}; const { X = "y" } = o; export const a = X;',
+  'export const a = import.meta.env.VITE_L?.split(",").find(Boolean) ?? "y";',
+  'export const a = import.meta.env.VITE_L?.match(/x(\\d)/)?.[1] ?? "y";',
+  'declare function f(x: string): string | undefined; export const a = f(import.meta.env.VITE_X) ?? "y";',
 ];
 
 describe("lint: ?? no import.meta.env", () => {

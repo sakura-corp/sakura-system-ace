@@ -53,39 +53,84 @@ const PROIBE_CORTAR_DIA_DE_UTC = [
 // parâmetro de função).
 //
 // O que NÃO pega: guardar o env numa variável antes
-// (`const env = import.meta.env; env.VITE_X ?? "y"`). Ver o item 8.
+// (`const env = import.meta.env; env.VITE_X ?? "y"`) ou copiá-lo com spread
+// (`{ ...import.meta.env }`). Ver o item 8.
 const MENSAGEM_ENV =
   "O ?? (e o valor padrão ao desestruturar) não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)";
 
-const EMBRULHOS = new Set(["TSAsExpression", "TSNonNullExpression", "TSSatisfiesExpression", "ChainExpression"]);
+const EMBRULHOS = new Set([
+  "TSAsExpression",
+  "TSTypeAssertion",
+  "TSNonNullExpression",
+  "TSSatisfiesExpression",
+  "ChainExpression",
+]);
+
+// Métodos de texto que devolvem texto vazio quando recebem texto vazio: o
+// valor continua "o env". Outros (`.find()`, `.match()`, `.split()[n]`) podem
+// devolver `undefined`/`null` de verdade, e aí o `??` está certo.
+const MANTEM_O_TEXTO = new Set([
+  "trim",
+  "trimStart",
+  "trimEnd",
+  "toLowerCase",
+  "toUpperCase",
+  "toString",
+  "replace",
+  "replaceAll",
+  "normalize",
+]);
+
+function desembrulhar(no) {
+  while (no && EMBRULHOS.has(no.type)) no = no.expression;
+  return no;
+}
 
 function ehImportMetaEnv(no) {
+  if (no?.type !== "MemberExpression") return false;
+  const objeto = desembrulhar(no.object);
   return (
-    no?.type === "MemberExpression" &&
-    no.object.type === "MetaProperty" &&
-    no.object.meta.name === "import" &&
-    (no.property.name === "env" || no.property.value === "env")
+    objeto?.type === "MetaProperty" &&
+    objeto.meta.name === "import" &&
+    (no.computed ? no.property.value === "env" : no.property.name === "env")
   );
 }
 
-/** O valor de `no` vem, por membro/chamada/embrulho, do `import.meta.env`? */
+/**
+ * O valor de `no` pode ser, sem passar por nada que troque texto vazio, um
+ * valor do `import.meta.env`? Segue membro, método de texto, embrulho de tipo
+ * e `?.`, e entra nos ramos de `? :` e no lado direito de `??`/`||`/`&&` (que é
+ * o valor quando o esquerdo não serve).
+ */
 function nasceNoEnv(no) {
-  while (no) {
-    if (ehImportMetaEnv(no)) return true;
-    if (EMBRULHOS.has(no.type)) no = no.expression;
-    else if (no.type === "CallExpression") no = no.callee;
-    else if (no.type === "MemberExpression") no = no.object;
-    else return false;
+  no = desembrulhar(no);
+  if (!no) return false;
+  if (ehImportMetaEnv(no)) return true;
+  switch (no.type) {
+    case "MemberExpression":
+      return nasceNoEnv(no.object);
+    case "CallExpression": {
+      const callee = desembrulhar(no.callee);
+      return (
+        callee?.type === "MemberExpression" &&
+        !callee.computed &&
+        MANTEM_O_TEXTO.has(callee.property.name) &&
+        nasceNoEnv(callee.object)
+      );
+    }
+    case "ConditionalExpression":
+      return nasceNoEnv(no.consequent) || nasceNoEnv(no.alternate);
+    case "LogicalExpression":
+      return nasceNoEnv(no.right);
+    default:
+      return false;
   }
-  return false;
 }
 
 /** `{ A = "x" } = <algo que é o import.meta.env>`: reclama de cada padrão. */
 function padroesAoDesestruturar(context, padrao, valor) {
   if (padrao?.type !== "ObjectPattern" || !valor) return;
-  let v = valor;
-  while (EMBRULHOS.has(v.type)) v = v.expression;
-  if (!ehImportMetaEnv(v)) return;
+  if (!ehImportMetaEnv(desembrulhar(valor))) return;
   for (const prop of padrao.properties) {
     if (prop.type === "Property" && prop.value.type === "AssignmentPattern") {
       context.report({ node: prop.value, message: MENSAGEM_ENV });
@@ -123,12 +168,6 @@ const REGRAS_LOCAIS = {
   },
 };
 
-// Tudo do `no-restricted-syntax` que NÃO é o corte de dia (hoje, nada). O
-// ESLint troca a lista inteira (não junta) quando um bloco redefine a regra;
-// por isso a exceção dos dois testes lá embaixo usa esta mesma lista, e
-// proibição nova de sintaxe entra AQUI, pra valer nos dois lugares.
-const DEMAIS_PROIBICOES_DE_SINTAXE = [];
-
 // `window.prompt()` não funciona no Electron (não abre nada e devolve null).
 const MENSAGEM_PROMPT =
   "window.prompt() não funciona no Electron. Use um modal do programa. (PROJETO_STATUS.md, seção 3)";
@@ -157,7 +196,6 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         ...PROIBE_CORTAR_DIA_DE_UTC,
-        ...DEMAIS_PROIBICOES_DE_SINTAXE,
       ],
       "sakura/env-sem-nullish": "error",
       "no-restricted-globals": [
@@ -179,12 +217,12 @@ export default tseslint.config(
     // A exceção é SÓ pro corte de dia: as outras proibições continuam valendo.
     files: ["src/lib/datas.test.ts", "src/schemas/comissoes.test.ts"],
     rules: {
-      // Lista vazia tem que ser "off": só a severidade (`["error"]`) faria o
-      // ESLint herdar as opções do bloco de cima, e o corte de dia voltaria.
-      "no-restricted-syntax":
-        DEMAIS_PROIBICOES_DE_SINTAXE.length > 0
-          ? ["error", ...DEMAIS_PROIBICOES_DE_SINTAXE]
-          : "off",
+      // Hoje o `no-restricted-syntax` só tem o corte de dia, então "off".
+      // Se um dia ele ganhar outra proibição, aqui vira ["error", ...a outra]
+      // (NUNCA só ["error"]: sem opções, o ESLint herda as do bloco de cima e
+      // o corte de dia volta). O `??` no env e o prompt são outras regras e
+      // continuam valendo nestes dois arquivos.
+      "no-restricted-syntax": "off",
     },
   },
 );
