@@ -4,7 +4,9 @@ import {
   competenciaDoMes,
   lojaEmiteNfse,
   mesPorExtenso,
-  PASSO_A_PASSO_ALIQUOTA_PADRAO,
+  PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
+  PASSO_A_PASSO_ALIQUOTA_GERAL,
+  passoAPassoAliquotaPadrao,
 } from "./aliquotaCompetencia";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 
@@ -110,10 +112,24 @@ describe("avisoAliquotaCompetencia", () => {
     expect(aviso.precisa).toBe(false);
   });
 
-  it("usa o passo a passo padrão quando a loja não escreveu o dela", () => {
+  it("loja de Araraquara sem texto próprio: o caminho do portal de Araraquara", () => {
     expect(avisoAliquotaCompetencia(config(), setembro).passoAPasso).toBe(
-      PASSO_A_PASSO_ALIQUOTA_PADRAO,
+      PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
     );
+  });
+
+  // #876: o passo a passo do portal de Araraquara aparecia pra loja de
+  // qualquer cidade — numa demonstração em São Carlos, o dono lia o caminho
+  // de um portal que não é o dele.
+  it("loja de outra cidade sem texto próprio: o texto geral, sem Araraquara", () => {
+    const aviso = avisoAliquotaCompetencia(config({ codigo_municipio: "3548906" }), setembro);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
+    expect(aviso.passoAPasso).not.toMatch(/Araraquara|Giap|Replicar/);
+  });
+
+  it("loja sem código do município: o texto geral", () => {
+    const aviso = avisoAliquotaCompetencia(config({ codigo_municipio: null }), setembro);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
   });
 
   it("usa o passo a passo da loja quando ela escreveu um", () => {
@@ -124,8 +140,26 @@ describe("avisoAliquotaCompetencia", () => {
     expect(aviso.passoAPasso).toBe("Portal de São Carlos → Alíquotas");
   });
 
-  it("passo a passo só com espaços cai no padrão", () => {
+  it("passo a passo só com espaços cai no padrão da cidade", () => {
     const aviso = avisoAliquotaCompetencia(config({ aliquota_passo_a_passo: "   " }), setembro);
-    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_PADRAO);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+  });
+});
+
+describe("passoAPassoAliquotaPadrao", () => {
+  it("é o de Araraquara só pro código IBGE de Araraquara (3503208)", () => {
+    expect(passoAPassoAliquotaPadrao("3503208")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    expect(passoAPassoAliquotaPadrao(" 3503208 ")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+  });
+
+  it("é o geral pra qualquer outro código, vazio ou nulo", () => {
+    for (const codigo of ["3548906", "", null, undefined]) {
+      expect(passoAPassoAliquotaPadrao(codigo)).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
+    }
+  });
+
+  it("o texto geral manda pedir o caminho à contabilidade, sem citar cidade", () => {
+    expect(PASSO_A_PASSO_ALIQUOTA_GERAL).toMatch(/contabilidade/);
+    expect(PASSO_A_PASSO_ALIQUOTA_GERAL).not.toMatch(/Araraquara/);
   });
 });

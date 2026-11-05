@@ -4,7 +4,10 @@ import {
   salvarConfiguracaoFiscal,
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
-import { PASSO_A_PASSO_ALIQUOTA_PADRAO } from "@/schemas/aliquotaCompetencia";
+import {
+  CODIGO_IBGE_ARARAQUARA,
+  PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
+} from "@/schemas/aliquotaCompetencia";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import { REGIME_TRIBUTARIO_LABEL } from "@/types/configuracao";
@@ -359,7 +362,7 @@ export function DadosFiscaisSection({
         </div>
         <p className="mt-2 text-rotulo text-sakura-muted">
           O código CNAE está no Cartão CNPJ da empresa, em "Atividade econômica principal" —
-          algumas prefeituras (Araraquara incluída) exigem esse campo pra autorizar a NFS-e.
+          algumas prefeituras exigem esse campo pra autorizar a NFS-e.
         </p>
 
         <label className="mt-4 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
@@ -368,15 +371,19 @@ export function DadosFiscaisSection({
             value={valores.aliquota_passo_a_passo ?? ""}
             onChange={(e) => set("aliquota_passo_a_passo", e.target.value)}
             rows={5}
-            placeholder={PASSO_A_PASSO_ALIQUOTA_PADRAO}
+            placeholder={
+              valores.codigo_municipio?.trim() === CODIGO_IBGE_ARARAQUARA
+                ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA
+                : "Peça à contabilidade o caminho no portal da prefeitura da sua cidade e escreva aqui, um passo por linha."
+            }
             className={campoClasse}
           />
         </label>
         <p className="mt-2 text-rotulo text-sakura-muted">
           Todo mês, a prefeitura só autoriza a primeira NFS-e depois que a alíquota daquele mês
           for cadastrada no portal dela. O Início avisa quando chega a hora, e mostra este texto
-          junto — deixe em branco pra usar o caminho do portal de Araraquara, ou escreva o da sua
-          cidade.
+          junto. Escreva aqui o caminho no portal da prefeitura da loja (a contabilidade sabe qual
+          é); em branco, o aviso mostra um texto padrão.
         </p>
       </div>
 
