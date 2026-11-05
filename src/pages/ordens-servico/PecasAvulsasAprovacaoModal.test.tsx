@@ -10,6 +10,7 @@
  * 4. "Cadastrar agora" abre o cadastro com nome e preço (e custo) já
  *    preenchidos e, ao salvar, guarda a peça nova como caminho.
  */
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor, within } from "@/testes/tela";
 import type { ItemOS } from "@/types/os";
@@ -61,17 +62,24 @@ const cadastro = [
 function montar(itens: ItemOS[], extra: { pecas?: PecaJanela[]; erro?: string | null } = {}) {
   const onConfirmar = vi.fn();
   const onFechar = vi.fn();
-  const resultado = renderizar(
-    <PecasAvulsasAprovacaoModal
-      itens={itens}
-      pecas={extra.pecas ?? cadastro}
-      lojaId="loja-1"
-      enviando={false}
-      erro={extra.erro ?? null}
-      onConfirmar={onConfirmar}
-      onFechar={onFechar}
-    />,
-  );
+  // As peças cadastradas moram em quem abre a janela (#720), como no formulário.
+  function ComPai() {
+    const [cadastradas, setCadastradas] = useState<Record<string, PecaJanela>>({});
+    return (
+      <PecasAvulsasAprovacaoModal
+        itens={itens}
+        pecas={extra.pecas ?? cadastro}
+        lojaId="loja-1"
+        cadastradas={cadastradas}
+        onCadastrada={(itemId, peca) => setCadastradas((c) => ({ ...c, [itemId]: peca }))}
+        enviando={false}
+        erro={extra.erro ?? null}
+        onConfirmar={onConfirmar}
+        onFechar={onFechar}
+      />
+    );
+  }
+  const resultado = renderizar(<ComPai />);
   return { ...resultado, onConfirmar, onFechar };
 }
 

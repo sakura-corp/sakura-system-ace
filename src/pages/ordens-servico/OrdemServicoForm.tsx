@@ -164,6 +164,9 @@ export function OrdemServicoForm({
   const [encerrando, setEncerrando] = useState(false);
   const [aprovando, setAprovando] = useState(false);
   const [janelaAvulsas, setJanelaAvulsas] = useState(false);
+  // As peças cadastradas na janela da aprovação (#720): ficam aqui pra não
+  // se perder quando a janela fecha no "Voltar".
+  const [avulsasCadastradas, setAvulsasCadastradas] = useState<Record<string, PecaJanela>>({});
   const [aprovadoPor, setAprovadoPor] = useState("");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
   const [enviando, setEnviando] = useState(false);
@@ -687,6 +690,8 @@ export function OrdemServicoForm({
         itens={avulsasDoOrcamento}
         pecas={pecas}
         lojaId={ordemExistente.loja_id}
+        cadastradas={avulsasCadastradas}
+        onCadastrada={(itemId, peca) => setAvulsasCadastradas((c) => ({ ...c, [itemId]: peca }))}
         enviando={enviando}
         erro={erro}
         onConfirmar={handleAprovar}

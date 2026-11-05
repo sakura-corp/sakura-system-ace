@@ -181,6 +181,20 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(emitirNFCe.mock.calls[0][0].itens).toHaveLength(1);
   });
 
+  // #720: o catálogo só serve ao cadastro da peça avulsa (aviso de parecida).
+  // Sem peça avulsa, a janela não baixa a lista inteira à toa.
+  it("sem peça avulsa, a janela não carrega o catálogo de peças", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(listarPecasJanela).not.toHaveBeenCalled();
+  });
+
+  it("com peça avulsa, carrega o catálogo (pro aviso de peça parecida)", async () => {
+    montar([item("i1", "Palheta", null)]);
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(listarPecasJanela).toHaveBeenCalledTimes(1);
+  });
+
   it("Cadastrar agora abre o cadastro com nome e preço, liga a peça ao item e libera a emissão", async () => {
     cadastrarPecaRapida.mockResolvedValue("peca-nova");
     cadastrarPecaDoItem.mockResolvedValue(true);

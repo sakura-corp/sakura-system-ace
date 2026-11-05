@@ -339,13 +339,12 @@ export function OrdensServicoPage() {
       );
     }
     await editarItemOrdem(item, patch, operador.id);
-    const ordensAtualizadas = await carregar();
-    const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
-    if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
+    await recarregarOrdemEmEdicao();
   }
 
-  // Uma peça avulsa ganhou cadastro na janela da nota (#655): traz a OS aberta
-  // de novo, senão a aba Fechamento continuaria mostrando a peça como avulsa.
+  // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
+  // a peça avulsa que ganhou cadastro na janela da nota (#655), senão a aba
+  // Fechamento continuaria mostrando a peça como avulsa.
   async function recarregarOrdemEmEdicao() {
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
