@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { valorDaPecaEmEstoque, valorDoEstoque } from "@/schemas/valorItem";
 import type { MovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
 
@@ -24,11 +25,7 @@ export function RelatoriosEstoqueSection({
   const pecasAtivas = useMemo(() => pecas.filter((p) => p.ativo), [pecas]);
 
   const valorTotalEstoque = useMemo(
-    () =>
-      pecasAtivas.reduce((total, peca) => {
-        const saldo = saldos.get(peca.id) ?? 0;
-        return total + saldo * (peca.preco_custo ?? 0);
-      }, 0),
+    () => valorDoEstoque(pecasAtivas, saldos),
     [pecasAtivas, saldos],
   );
 
@@ -115,7 +112,7 @@ export function RelatoriosEstoqueSection({
                       <td className="px-4 py-2.5">{peca.descricao}</td>
                       <td className="px-4 py-2.5">{saldo}</td>
                       <td className="px-4 py-2.5">
-                        {formatarMoeda(saldo * (peca.preco_custo ?? 0))}
+                        {formatarMoeda(valorDaPecaEmEstoque(saldo, peca.preco_custo))}
                       </td>
                     </tr>
                   );
