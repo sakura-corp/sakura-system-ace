@@ -5,6 +5,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import {
   acharPorCodigoExato,
   lerSaldo,
+  movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
   SITUACAO_SALDO_ROTULO,
@@ -135,18 +136,8 @@ export function ProdutosSection({
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
       const pecaCriada = await criarPeca(peca);
-      if (quantidadeInicial && quantidadeInicial > 0) {
-        await criarMovimento(
-          {
-            peca_id: pecaCriada.id,
-            tipo: "entrada",
-            quantidade: quantidadeInicial,
-            motivo: "ajuste",
-            referencia: "Estoque inicial (cadastro do produto)",
-          },
-          lojaId,
-        );
-      }
+      const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
+      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);

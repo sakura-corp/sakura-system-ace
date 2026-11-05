@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   acharPorCodigoExato,
   lerSaldo,
+  movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
 } from "./estoque";
@@ -155,5 +156,23 @@ describe("dado vindo de uma versão anterior à migration 0051", () => {
     expect(lerSaldo(1, undefined).situacao).toBe("normal");
     expect(lerSaldo(0, undefined)).toEqual({ situacao: "zerado", faltam: null });
     expect(precisaComprar(0, undefined)).toBe(false);
+  });
+});
+
+describe("movimentoDeEstoqueInicial (#720)", () => {
+  it("com quantidade, é uma entrada de ajuste com a referência do cadastro", () => {
+    expect(movimentoDeEstoqueInicial("p-1", 4)).toEqual({
+      peca_id: "p-1",
+      tipo: "entrada",
+      quantidade: 4,
+      motivo: "ajuste",
+      referencia: "Estoque inicial (cadastro do produto)",
+    });
+  });
+
+  it("vazio, zero ou negativo: não lança nada", () => {
+    expect(movimentoDeEstoqueInicial("p-1", null)).toBeNull();
+    expect(movimentoDeEstoqueInicial("p-1", 0)).toBeNull();
+    expect(movimentoDeEstoqueInicial("p-1", -2)).toBeNull();
   });
 });
