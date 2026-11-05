@@ -81,6 +81,24 @@ describe("mensagemDeErro", () => {
     expect(mensagemDeErro(doPostgresComSchema)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
   });
 
+  it("view nova lida dentro de outra tabela (embed do PostgREST) vira o aviso", () => {
+    // `listarOrdens()` lê `cliente:clientes_janela(nome)`: sem a 0068, o
+    // PostgREST não acha a ligação (PGRST200), não a tabela.
+    const erro = {
+      code: "PGRST200",
+      message: "Could not find a relationship between 'ordens_servico' and 'clientes_janela' in the schema cache",
+    };
+    expect(mensagemDeErro(erro)).toBe(MENSAGEM_BANCO_DESATUALIZADO);
+  });
+
+  it("ligação que falta com tabela que não é da lista passa como veio", () => {
+    const erro = {
+      code: "PGRST200",
+      message: "Could not find a relationship between 'clientes_janela' and 'tabela_inventada' in the schema cache",
+    };
+    expect(mensagemDeErro(erro)).toBe(erro.message);
+  });
+
   it("tabela inventada que falta passa como veio (é erro de programação, não banco atrasado)", () => {
     const doPostgrest = { message: "Could not find the table 'public.tabela_inventada' in the schema cache" };
     const doPostgres = { message: 'relation "tabela_inventada" does not exist' };
@@ -139,7 +157,7 @@ function objetosNovosDasMigrations(): { migration: string; nome: string }[] {
     const sql = readFileSync(join(PASTA, arquivo), "utf8").replace(/--.*$/gm, "");
     const padroes = [
       /add\s+column\s+(?:if\s+not\s+exists\s+)?"?(?:\w+\.)?(\w+)"?/gi,
-      /create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?"?(?:public\.)?(\w+)"?/gi,
+      /create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?"?(?:\w+"?\."?)?(\w+)"?/gi,
     ];
     for (const padrao of padroes) {
       for (const casou of sql.matchAll(padrao)) achados.push({ migration: arquivo, nome: casou[1] });
