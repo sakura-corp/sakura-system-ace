@@ -31,7 +31,16 @@ process.exit(await comServidorDeTelas(varrer));
 async function varrer() {
   const achados = [];
 
-  const { feitas, falhas } = await percorrerTelas(async (cena, pagina) => {
+  async function aoChegar(cena, pagina) {
+    // A sessão de mentira às vezes cai (percorrer-telas.mjs explica). Se cair
+    // depois do último clique, o que estaria na tela é o login, e medir o
+    // login no lugar da tela seria passar sem ter medido.
+    if (!cena.deslogado && !cena.trocarSenha && (await pagina.locator("aside").count()) === 0) {
+      throw new Error("a sessão caiu antes da medição");
+    }
+    // Os achados só valem se a cena inteira foi medida: uma cena que falha no
+    // meio e passa na segunda chance não pode contar duas vezes.
+    const daCena = [];
     const tamanhoOriginal = pagina.viewportSize();
     try {
       for (const largura of LARGURAS) {
@@ -41,7 +50,7 @@ async function varrer() {
         await pagina.waitForTimeout(250);
         const semRolar = cena.semRolarAPartirDe !== undefined && largura >= cena.semRolarAPartirDe;
         for (const achado of await pagina.evaluate(MEDIR_LARGURA, { semRolar })) {
-          achados.push({ tela: cena.titulo, largura, ...achado });
+          daCena.push({ tela: cena.titulo, largura, ...achado });
         }
       }
     } finally {
@@ -49,7 +58,26 @@ async function varrer() {
       // sempre; voltar evita uma falha que não tem nada a ver com largura.
       await pagina.setViewportSize(tamanhoOriginal);
     }
-  });
+    achados.push(...daCena);
+  }
+
+  const primeira = await percorrerTelas(aoChegar);
+  const feitas = [...primeira.feitas];
+  let falhas = primeira.falhas;
+
+  // Uma segunda chance pras cenas que falharam, num navegador novo (#911),
+  // como o comparar:electron já faz (lição 82). Com a máquina ocupada, a tela
+  // pode navegar sozinha no meio da medição (o "entrar de novo" depois que a
+  // sessão cai, o redirecionamento da tela de conexão) e o `evaluate` morre
+  // com "Execution context was destroyed". Não afrouxa nada: a cena é medida
+  // inteira de novo, e a que falhar duas vezes continua reprovando.
+  if (falhas.length > 0) {
+    const repetir = falhas.map(([arquivo]) => arquivo);
+    console.log(`\nrepetindo ${repetir.length} tela(s) que falharam: ${repetir.join(", ")}`);
+    const segunda = await percorrerTelas(aoChegar, (cena) => repetir.includes(cena.arquivo));
+    feitas.push(...segunda.feitas);
+    falhas = segunda.falhas;
+  }
 
   // A mesma caixa costuma reprovar em várias larguras, e a mesma linha de
   // tabela em várias telas. O que importa é quantos LUGARES estão errados.
