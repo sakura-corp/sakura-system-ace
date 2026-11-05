@@ -30,6 +30,7 @@ import {
   MENSAGEM_PECA_SEM_NCM,
   ratearPagamentos,
 } from "@/schemas/faturamento";
+import { pecasAvulsas } from "@/schemas/orcamento";
 import { motivoCodigoIncompativel } from "@/schemas/tributacao";
 import type { Cliente } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
@@ -193,13 +194,15 @@ export function EmitirNotaFiscalModal({
           .filter((item) => item.tipo === "peca")
           .map((item) => item.peca_id)
           .filter((id): id is string => Boolean(id));
+        const temPecaAvulsa = pecasAvulsas(ordem.itens ?? []).length > 0;
 
         const [config, { cliente: clienteCompleto }, pecas, cadastro] = await Promise.all([
           buscarConfiguracaoFiscal(ordem.loja_id),
           buscarClienteEVeiculoDaOrdem(ordem.id),
           buscarDadosFiscaisDasPecas(idsDasPecas),
-          // Só serve ao aviso de peça parecida: se não vier, o cadastro abre igual.
-          tipoNota === "NFC-e"
+          // Só serve ao aviso de peça parecida do cadastro da peça avulsa: sem
+          // peça avulsa nem carrega (#720). Se não vier, o cadastro abre igual.
+          tipoNota === "NFC-e" && temPecaAvulsa
             ? listarPecasJanela().catch((err) => {
                 console.error("Erro ao carregar o cadastro de peças:", err);
                 return [] as PecaJanela[];

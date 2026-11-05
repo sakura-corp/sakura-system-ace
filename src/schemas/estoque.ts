@@ -1,3 +1,5 @@
+import type { NovoMovimentoEstoque } from "@/types/estoque";
+
 /**
  * O que o saldo de uma peça está dizendo — em um lugar só.
  *
@@ -134,4 +136,26 @@ export function acharPorCodigoExato<T extends PecaBuscavel>(
       normalizar(peca.codigo_barras) === busca || normalizar(peca.codigo_interno) === busca,
   );
   return casaram.length === 1 ? casaram[0] : null;
+}
+
+/**
+ * A entrada de "estoque inicial" que nasce junto com a peça quando quem
+ * cadastra informa uma quantidade. Um lugar só pros dois cadastros — o do
+ * Estoque (`ProdutosSection`) e o da peça avulsa da OS (`cadastrarPecaNova`,
+ * #655) — pra o lançamento não sair diferente em cada um (#720).
+ *
+ * @returns o movimento, ou `null` quando não há o que lançar (vazio ou zero)
+ */
+export function movimentoDeEstoqueInicial(
+  pecaId: string,
+  quantidade: number | null,
+): Omit<NovoMovimentoEstoque, "deposito_id"> | null {
+  if (!quantidade || quantidade <= 0) return null;
+  return {
+    peca_id: pecaId,
+    tipo: "entrada",
+    quantidade,
+    motivo: "ajuste",
+    referencia: "Estoque inicial (cadastro do produto)",
+  };
 }

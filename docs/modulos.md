@@ -824,7 +824,8 @@ Quatro coisas que valem saber:
   clicar em "Já cadastrei" uma vez; (c) o mesmo aviso aparece dentro da janela de emitir
   NFS-e, sem o botão — ali o que resolve é ir no portal. A regra é função pura testada
   (`schemas/aliquotaCompetencia.ts`), o texto do passo a passo é editável em Configurações →
-  Dados fiscais (padrão: Araraquara/Giap), e a competência confirmada fica em
+  Dados fiscais (padrão pela cidade: o de Araraquara/Giap só pra loja de Araraquara, um texto
+  geral pras outras, #876), e a competência confirmada fica em
   `configuracoes_fiscais_loja` (migration `0049`).
 - **Configurações** (admin): Operadores (sempre visível, com "+ Novo operador", e agora um
   multi-select de lojas dentro do form, só aparece com 2+ lojas cadastradas), Lojas (novo card,
@@ -835,7 +836,7 @@ Quatro coisas que valem saber:
   garantia, **Mensagens de WhatsApp**, Dados fiscais da loja, Cartões do Início (essas últimas 4, junto com Juros, agora são
   **por loja** — ver seção 5). Em "Dados fiscais da loja" há também, desde 11/09/2026, o campo
   "Como cadastrar a alíquota no portal da prefeitura" — texto livre que alimenta o aviso mensal do
-  Início; em branco, vale o passo a passo de Araraquara que está no código. E, no fim, desde
+  Início; em branco, vale o padrão da cidade da loja (pelo código IBGE) que está no código. E, no fim, desde
   25/09/2026, **"Atualizações deste computador"** — a única seção que não mora no banco (ver
   "Canal de atualização" logo abaixo) — e, desde 26/09/2026, **"Computadores desta empresa"**
   (a versão de cada computador; ver o item logo depois de "Canal de atualização").

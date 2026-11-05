@@ -44,6 +44,7 @@ import { ItensFields } from "./campos/ItensFields";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
+import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -164,6 +165,9 @@ export function OrdemServicoForm({
   const [encerrando, setEncerrando] = useState(false);
   const [aprovando, setAprovando] = useState(false);
   const [janelaAvulsas, setJanelaAvulsas] = useState(false);
+  // O que foi escolhido na janela da aprovação (#720): fica aqui pra não se
+  // perder quando a janela fecha no "Voltar".
+  const [escolhasAvulsas, setEscolhasAvulsas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
   const [aprovadoPor, setAprovadoPor] = useState("");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
   const [enviando, setEnviando] = useState(false);
@@ -601,7 +605,11 @@ export function OrdemServicoForm({
             podeAdicionarItem={podeAdicionarItem}
             podeEditarItem={podeEditarItem}
             avisoItens={avisoItens}
-            onEditarItem={onEditarItem}
+            onEditarItem={async (item, patch) => {
+              await onEditarItem(item, patch);
+              // Item corrigido: a escolha da aprovação pode não valer mais (#720).
+              setEscolhasAvulsas((e) => esquecerEscolha(e, item.id));
+            }}
             pecas={pecas}
             servicos={servicos}
             funcionarios={funcionarios}
@@ -687,6 +695,8 @@ export function OrdemServicoForm({
         itens={avulsasDoOrcamento}
         pecas={pecas}
         lojaId={ordemExistente.loja_id}
+        escolhas={escolhasAvulsas}
+        onMudarEscolhas={setEscolhasAvulsas}
         enviando={enviando}
         erro={erro}
         onConfirmar={handleAprovar}

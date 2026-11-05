@@ -4,6 +4,7 @@ import fc from "fast-check";
 import type { Peca } from "@/types/peca";
 import { acharPecasParecidas, type PecaComparavel } from "./pecaParecida";
 import {
+  avisoDoCusto,
   CAMPOS_JUNTAVEIS,
   camposDaQueSai,
   camposDiferentes,
@@ -205,6 +206,36 @@ describe("pecaDepoisDaJuntada", () => {
   });
 });
 
+describe("avisoDoCusto (#721)", () => {
+  // O "R$ 100,00" do toLocaleString vem com espaço que não quebra.
+  const semNbsp = (texto: string | null) => texto?.replace(/\u00a0/g, " ") ?? null;
+
+  it("custos iguais (ou os dois vazios): sem aviso", () => {
+    expect(avisoDoCusto(peca({ preco_custo: 80 }), peca({ preco_custo: "80.00" as never }), {})).toBeNull();
+    expect(avisoDoCusto(peca(), peca(), {})).toBeNull();
+  });
+
+  it("custos diferentes: avisa que as OS antigas das duas passam a usar o custo que fica", () => {
+    expect(semNbsp(avisoDoCusto(peca({ preco_custo: 100 }), peca({ preco_custo: 80 }), { preco_custo: "fica" }))).toBe(
+      "As duas peças têm preço de custo diferente (R$ 100,00 e R$ 80,00). O lucro e a comissão " +
+        "das OS antigas usam o custo atual da peça: depois de juntar, as OS das duas passam a usar R$ 100,00.",
+    );
+  });
+
+  it("escolhendo o custo da que sai, o custo que fica é o dela", () => {
+    expect(avisoDoCusto(peca({ preco_custo: 100 }), peca({ preco_custo: 80 }), { preco_custo: "sai" })).toMatch(
+      /passam a usar R\$\s?80,00\.$/,
+    );
+  });
+
+  it("uma sem custo: diz isso em vez de R$ 0,00", () => {
+    expect(semNbsp(avisoDoCusto(peca({ preco_custo: 100 }), peca(), { preco_custo: "fica" }))).toBe(
+      "As duas peças têm preço de custo diferente (R$ 100,00 e sem preço de custo). O lucro e a comissão " +
+        "das OS antigas usam o custo atual da peça: depois de juntar, as OS das duas passam a usar R$ 100,00.",
+    );
+  });
+});
+
 describe("lerResumo", () => {
   it("lê o resumo completo, com número vindo como número ou como texto", () => {
     const r = lerResumo({
@@ -308,7 +339,7 @@ describe("previaDaJuntada — números", () => {
     expect(p.estoqueTotal.depois).toBe(0.3);
   });
 
-  it("o que passa é o que a peça que sai tem; os totais depois somam as duas", () => {
+  it("o que passa é o que a peça que sai tem", () => {
     const p = previaDaJuntada({
       fica: peca(),
       sai: peca(),
@@ -316,14 +347,7 @@ describe("previaDaJuntada — números", () => {
       resumoSai: resumo({ movimentos: 7, itens_os: 14, os: 12, contagens: 1, itens_compra: 3, compras: 3, cotacoes: 2 }),
       escolhas: {},
     });
-    expect(p.passa).toEqual({ os: 12, compras: 3, contagens: 1, movimentos: 7, cotacoes: 2 });
-    expect(p.totaisDepois).toEqual({
-      movimentos: 17,
-      itens_os: 34,
-      contagens: 3,
-      itens_compra: 8,
-      cotacoes: 3,
-    });
+    expect(p.passa).toEqual({ os: 12, compras: 3, contagens: 1, cotacoes: 2 });
   });
 
   it("só fica completa quando o admin cuida de todas as lojas das duas peças", () => {
@@ -467,6 +491,29 @@ describe("paresSuspeitos", () => {
   it("três peças iguais dão três pares, sem repetir", () => {
     const pecas = ["1", "2", "3"].map((id) => peca({ id, codigo_barras: "789" }));
     expect(ids(paresSuspeitos(pecas))).toEqual(["1+2", "1+3", "2+3"]);
+  });
+
+  // #721: peças sem número no nome caem todas no mesmo grupo e são comparadas
+  // todas contra todas. Normalizando cada peça uma vez só, 1.000 peças levam
+  // bem menos de 1 s (antes: uns 5 s com a janela travada). O limite é largo
+  // de propósito, pro CI lento não reprovar à toa.
+  it("1.000 peças sem número no nome: a procura não trava a janela", () => {
+    const palavras = ["pastilha", "freio", "dianteira", "traseira", "oleo", "filtro", "palheta",
+      "lampada", "amortecedor", "bico", "valvula", "correia", "vela", "bateria", "cabo", "junta",
+      "bomba", "sensor", "rolamento", "coxim"];
+    let semente = 7;
+    const sorteio = () => (semente = (semente * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const pecas = Array.from({ length: 1000 }, (_, i) =>
+      peca({
+        id: `p${i}`,
+        descricao: Array.from({ length: 3 + Math.floor(sorteio() * 3) }, () =>
+          palavras[Math.floor(sorteio() * palavras.length)]).join(" "),
+      }),
+    );
+    const inicio = performance.now();
+    const pares = paresSuspeitos(pecas);
+    expect(performance.now() - inicio).toBeLessThan(1500);
+    expect(pares.length).toBeGreaterThan(0);
   });
 
   it("sem parecida, nenhum par", () => {

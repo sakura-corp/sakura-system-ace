@@ -5,12 +5,14 @@ import { mensagemDeErro } from "@/lib/errors";
 import {
   acharPorCodigoExato,
   lerSaldo,
+  movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
   SITUACAO_SALDO_ROTULO,
   type SituacaoSaldo,
 } from "@/schemas/estoque";
 import { csosnMaisUsado } from "@/schemas/tributacao";
+import { formatarQuantidade } from "@/schemas/quantidade";
 import { margemSobreAVenda } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
@@ -55,10 +57,6 @@ interface ProdutosSectionProps {
 function formatarPreco(valor: number | null): string {
   if (valor === null) return "—";
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatarQuantidade(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 
 // Saldo negativo é ERRO DE LANÇAMENTO, não pouco estoque — precisa gritar. O
@@ -137,18 +135,8 @@ export function ProdutosSection({
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
       const pecaCriada = await criarPeca(peca);
-      if (quantidadeInicial && quantidadeInicial > 0) {
-        await criarMovimento(
-          {
-            peca_id: pecaCriada.id,
-            tipo: "entrada",
-            quantidade: quantidadeInicial,
-            motivo: "ajuste",
-            referencia: "Estoque inicial (cadastro do produto)",
-          },
-          lojaId,
-        );
-      }
+      const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
+      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);
