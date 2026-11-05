@@ -7,7 +7,7 @@
 
 ## 6. Dívidas técnicas / pontos de atenção — IMPORTANTE
 
-1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes, Peças/Estoque e Ordens de Serviço; nas outras tabelas, só na tela** — um operador
+1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes, Peças/Estoque, Ordens de Serviço e (escrito, #880) Fornecedores; nas outras tabelas, só na tela** — um operador
    logado com permissão só de "Caixa", por exemplo, ainda consegue chamar a API do Supabase
    direto pra mexer em "Clientes" se tentar de propósito. RLS exige **login** pra tudo (fecha o
    acesso sem estar logado), mas não reforça por módulo. **Enquanto quem opera é o pai dela e os
@@ -45,7 +45,16 @@
    silêncio. A pergunta foi pra uma função `security definer` (`ordem_servico_da_loja`). E o
    contrário também vale: nos itens, o `exists` na OS **herdava** a regra de módulo da OS, e um teste
    que tirava o módulo da policy dos itens passou verde; com a função, a regra ficou escrita num
-   lugar só e o teste reprova. As outras **continuam como sempre foram** — o
+   lugar só e o teste reprova. **O lote 7 foi escrito em 05/11/2026** (migration `0078`, tarefa
+   #880, esperando ela aplicar depois da `0076`): `fornecedores`, `cotacoes_pecas`,
+   `pedidos_compra` e `pedidos_compra_itens`, só com Fornecedores (os pedidos, na loja dele). Sem
+   janela: só as telas de Fornecedores leem essas tabelas, e a `juntar_pecas` é `security definer`
+   de admin. Com ele, o preço de compra fecha junto com o custo da peça. A lição do lote 6 se
+   repetiu igual: o item do pedido herdava o módulo pelo `exists` no pedido, e a mutação passava
+   verde; foi pra função `pedido_compra_acessivel`. E uma mutação que **não** reprova de jeito
+   nenhum: tirar o módulo só da policy de UPDATE, porque o Postgres só deixa o UPDATE alcançar as
+   linhas que a policy de leitura mostra. Quem testa policy de UPDATE confere junto a de SELECT.
+   As outras **continuam como sempre foram** — o
    parágrafo acima segue valendo pra fornecedores e o resto (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
