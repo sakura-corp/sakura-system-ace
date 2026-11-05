@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -191,7 +191,15 @@ export function OrdensServicoPage() {
   // Devolve as ordens recarregadas (ou null se nem chegou a consultar): quem
   // corrige um item precisa da versão nova da OS que está aberta na tela, e
   // `setOrdens` sozinho não serve — `ordemEmEdicao` é um estado à parte.
+  //
+  // Só a carga mais nova grava (#903): trocar de loja ou salvar uma OS enquanto
+  // a carga anterior ainda busca dispara outra, e a velha pode terminar depois
+  // — com a lista, o custo e as notas de antes. Carga que perdeu a vez não
+  // grava nada e devolve null (quem chamou trata como "não recarregou").
+  const cargaAtual = useRef(0);
   async function carregar(): Promise<OrdemServico[] | null> {
+    const minhaCarga = ++cargaAtual.current;
+    const aindaEhAtual = () => minhaCarga === cargaAtual.current;
     if (!lojaAtual) {
       setCarregando(false);
       return null;
@@ -216,6 +224,7 @@ export function OrdensServicoPage() {
         listarJurosParcelas(lojaAtual.id),
         listarModelosWhatsapp(lojaAtual.id),
       ]);
+      if (!aindaEhAtual()) return null;
       setOrdens(ordensCarregadas);
       setClientes(clientesCarregados);
       setPecas(pecasCarregadas);
@@ -227,8 +236,11 @@ export function OrdensServicoPage() {
       // Custo de todas as OS de uma vez só. Falhar aqui não derruba a lista:
       // a coluna Lucro só mostra "custo não informado".
       try {
-        setCustoDasOrdens(await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id)));
+        const custo = await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id));
+        if (!aindaEhAtual()) return null;
+        setCustoDasOrdens(custo);
       } catch (err) {
+        if (!aindaEhAtual()) return null;
         console.error("Erro ao carregar o custo das ordens:", err);
         // O custo guardado é da carga anterior: com ele a coluna mostraria
         // lucro de itens novos com custo velho. Melhor "custo não informado".
@@ -241,10 +253,12 @@ export function OrdensServicoPage() {
       // "Faturada", que é o comportamento de antes.
       try {
         const notas = await listarArquivosDasOrdens(ordensCarregadas.map((o) => o.id));
+        if (!aindaEhAtual()) return null;
         setNotasPorOrdem(agruparNotasPorOrdem(notas));
       } catch (err) {
         console.error("Erro ao carregar as notas fiscais das ordens:", err);
       }
+      if (!aindaEhAtual()) return null;
 
       const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
       if (abrirOrdemId) {
@@ -260,11 +274,12 @@ export function OrdensServicoPage() {
 
       return ordensCarregadas;
     } catch (err) {
+      if (!aindaEhAtual()) return null;
       console.error("Erro ao carregar ordens de serviço:", err);
       setErro(mensagemDeErro(err));
       return null;
     } finally {
-      setCarregando(false);
+      if (aindaEhAtual()) setCarregando(false);
     }
   }
 
