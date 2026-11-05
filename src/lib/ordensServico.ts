@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
@@ -174,12 +174,15 @@ async function buscarNomesDeFuncionarios(
   const ids = idsDeFuncionarios(ordens);
   if (ids.length === 0) return new Map();
 
-  const { data, error } = await supabase
-    .from("funcionarios_publico")
-    .select("id, nome")
-    .in("id", ids);
-
-  if (error) throw error;
+  // Em blocos e por páginas (#498): uma loja grande cita centenas.
+  const data = await buscarPorIdsEmBlocos(ids, (bloco, de, ate) =>
+    supabase
+      .from("funcionarios_publico")
+      .select("id, nome")
+      .in("id", bloco)
+      .order("id")
+      .range(de, ate),
+  );
   return new Map((data as { id: string; nome: string }[]).map((f) => [f.id, f.nome]));
 }
 
