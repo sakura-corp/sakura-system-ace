@@ -190,10 +190,11 @@
 8. **Padrão de bug: fallback com `??` em vez de `||`** — `src/lib/supabase.ts` já teve um bug real
    assim (tela em branco: `.env` copiado do `.env.example` define variáveis como **string vazia**,
    não ausente, e `??` só troca `null`/`undefined`). Sempre usar `||` pra fallback de
-   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega a forma direta** (#873): `??` com
-   `import.meta.env` do lado esquerdo (inclusive com `?.`, `.trim()` ou `as`) e o valor padrão na
-   desestruturação de `import.meta.env` são erro no `npm run lint`. **Não pega** quem guarda o env
-   numa variável antes (`const env = import.meta.env; env.X ?? y`) nem o `??=`: nesses, olhar à mão.
+   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega** (#873; regra `sakura/env-sem-nullish` em
+   `eslint.config.js`, provada em `scripts/regras-de-lint.test.mjs`): `??` e `??=` cujo valor da
+   esquerda vem do `import.meta.env` (inclusive com `?.`, `.trim()`, `as` ou `["X"]`) e o valor
+   padrão ao desestruturar o `import.meta.env`. **Não pega** quem guarda o env numa variável antes
+   (`const env = import.meta.env; env.X ?? y`): nesse caso, olhar à mão.
 9. **Padrão de bug: caminho absoluto de asset quebra só no instalador** — `src="/..."` ou
    `url(/...)` funciona em `npm run dev` (Vite serve a partir de `/`) mas quebra no app empacotado
    (Electron carrega via `file://`, onde `/` tenta ler a raiz do disco). Usar sempre

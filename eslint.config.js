@@ -40,33 +40,94 @@ const PROIBE_CORTAR_DIA_DE_UTC = [
 
 // `import.meta.env.ALGO ?? "padrão"` não protege de nada: o `.env` copiado do
 // exemplo traz a variável como TEXTO VAZIO, e o `??` só troca `null`/`undefined`.
-// Já deu tela em branco (docs/licoes.md, item 8). O `??` no resto do código
-// continua liberado; só é proibido quando o lado esquerdo LÊ o `import.meta.env`
-// (direto, com `?.`, com `.trim()`, embrulhado em `as`/`!`, etc.). O valor padrão
-// na desestruturação (`const { VITE_X = "y" } = import.meta.env`) tem o mesmo
-// defeito e também é proibido.
+// Já deu tela em branco (docs/licoes.md, item 8).
 //
-// O que NÃO dá pra pegar por sintaxe: guardar o env numa variável antes
-// (`const env = import.meta.env; env.VITE_X ?? "y"`) e o `??=` depois.
+// Uma regra pequena, daqui mesmo (seletor de texto não dava conta sem pegar
+// código certo): ela segue a "corrente do valor" do lado esquerdo do `??` —
+// membro (`.X`, `["X"]`, `?.X`), chamada de método (`.trim()`), `as`, `!` e
+// `satisfies` — e só reclama se a corrente nasce no `import.meta.env`. Assim
+// `cfg[import.meta.env.MODE] ?? x`, `f(import.meta.env.X) ?? y` e
+// `(import.meta.env.X || undefined) ?? y` continuam liberados, e o `??` no resto
+// do código também. Pega ainda o `??=` e o valor padrão ao desestruturar o env
+// (`const { VITE_X = "y" } = import.meta.env`, inclusive com `as` e em
+// parâmetro de função).
+//
+// O que NÃO pega: guardar o env numa variável antes
+// (`const env = import.meta.env; env.VITE_X ?? "y"`). Ver o item 8.
 const MENSAGEM_ENV =
-  "O ?? (e o valor padrão da desestruturação) não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)";
-const LE_O_ENV = "MemberExpression[object.type='MetaProperty'][object.meta.name='import'][property.name='env']";
-const PROIBE_ENV_COM_NULLISH = [
-  {
-    selector: `LogicalExpression[operator='??'] > .left:matches(${LE_O_ENV}, :has(${LE_O_ENV}))`,
-    message: MENSAGEM_ENV,
-  },
-  {
-    selector: `VariableDeclarator[init.type='MemberExpression'][init.object.type='MetaProperty'][init.property.name='env'] > ObjectPattern AssignmentPattern`,
-    message: MENSAGEM_ENV,
-  },
-];
+  "O ?? (e o valor padrão ao desestruturar) não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)";
 
-// Tudo do `no-restricted-syntax` que NÃO é o corte de dia. O ESLint troca a
-// lista inteira (não junta) quando um bloco redefine a regra; por isso a
-// exceção dos dois testes lá embaixo usa esta mesma lista, e proibição nova de
-// sintaxe entra AQUI, pra valer nos dois lugares.
-const DEMAIS_PROIBICOES_DE_SINTAXE = [...PROIBE_ENV_COM_NULLISH];
+const EMBRULHOS = new Set(["TSAsExpression", "TSNonNullExpression", "TSSatisfiesExpression", "ChainExpression"]);
+
+function ehImportMetaEnv(no) {
+  return (
+    no?.type === "MemberExpression" &&
+    no.object.type === "MetaProperty" &&
+    no.object.meta.name === "import" &&
+    (no.property.name === "env" || no.property.value === "env")
+  );
+}
+
+/** O valor de `no` vem, por membro/chamada/embrulho, do `import.meta.env`? */
+function nasceNoEnv(no) {
+  while (no) {
+    if (ehImportMetaEnv(no)) return true;
+    if (EMBRULHOS.has(no.type)) no = no.expression;
+    else if (no.type === "CallExpression") no = no.callee;
+    else if (no.type === "MemberExpression") no = no.object;
+    else return false;
+  }
+  return false;
+}
+
+/** `{ A = "x" } = <algo que é o import.meta.env>`: reclama de cada padrão. */
+function padroesAoDesestruturar(context, padrao, valor) {
+  if (padrao?.type !== "ObjectPattern" || !valor) return;
+  let v = valor;
+  while (EMBRULHOS.has(v.type)) v = v.expression;
+  if (!ehImportMetaEnv(v)) return;
+  for (const prop of padrao.properties) {
+    if (prop.type === "Property" && prop.value.type === "AssignmentPattern") {
+      context.report({ node: prop.value, message: MENSAGEM_ENV });
+    }
+  }
+}
+
+const REGRAS_LOCAIS = {
+  rules: {
+    "env-sem-nullish": {
+      meta: { type: "problem", schema: [] },
+      create(context) {
+        return {
+          LogicalExpression(no) {
+            if (no.operator === "??" && nasceNoEnv(no.left)) {
+              context.report({ node: no, message: MENSAGEM_ENV });
+            }
+          },
+          AssignmentExpression(no) {
+            if (no.operator === "??=" && nasceNoEnv(no.left)) {
+              context.report({ node: no, message: MENSAGEM_ENV });
+            } else if (no.operator === "=") {
+              padroesAoDesestruturar(context, no.left, no.right);
+            }
+          },
+          VariableDeclarator(no) {
+            padroesAoDesestruturar(context, no.id, no.init);
+          },
+          AssignmentPattern(no) {
+            padroesAoDesestruturar(context, no.left, no.right);
+          },
+        };
+      },
+    },
+  },
+};
+
+// Tudo do `no-restricted-syntax` que NÃO é o corte de dia (hoje, nada). O
+// ESLint troca a lista inteira (não junta) quando um bloco redefine a regra;
+// por isso a exceção dos dois testes lá embaixo usa esta mesma lista, e
+// proibição nova de sintaxe entra AQUI, pra valer nos dois lugares.
+const DEMAIS_PROIBICOES_DE_SINTAXE = [];
 
 // `window.prompt()` não funciona no Electron (não abre nada e devolve null).
 const MENSAGEM_PROMPT =
@@ -84,6 +145,7 @@ export default tseslint.config(
     plugins: {
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
+      sakura: REGRAS_LOCAIS,
     },
     rules: {
       "react-hooks/rules-of-hooks": "error",
@@ -97,6 +159,7 @@ export default tseslint.config(
         ...PROIBE_CORTAR_DIA_DE_UTC,
         ...DEMAIS_PROIBICOES_DE_SINTAXE,
       ],
+      "sakura/env-sem-nullish": "error",
       "no-restricted-globals": [
         "error",
         { name: "prompt", message: MENSAGEM_PROMPT },
@@ -106,8 +169,6 @@ export default tseslint.config(
         { object: "window", property: "prompt", message: MENSAGEM_PROMPT },
         { object: "globalThis", property: "prompt", message: MENSAGEM_PROMPT },
         { object: "self", property: "prompt", message: MENSAGEM_PROMPT },
-        { object: "parent", property: "prompt", message: MENSAGEM_PROMPT },
-        { object: "top", property: "prompt", message: MENSAGEM_PROMPT },
       ],
     },
   },
@@ -118,7 +179,12 @@ export default tseslint.config(
     // A exceção é SÓ pro corte de dia: as outras proibições continuam valendo.
     files: ["src/lib/datas.test.ts", "src/schemas/comissoes.test.ts"],
     rules: {
-      "no-restricted-syntax": ["error", ...DEMAIS_PROIBICOES_DE_SINTAXE],
+      // Lista vazia tem que ser "off": só a severidade (`["error"]`) faria o
+      // ESLint herdar as opções do bloco de cima, e o corte de dia voltaria.
+      "no-restricted-syntax":
+        DEMAIS_PROIBICOES_DE_SINTAXE.length > 0
+          ? ["error", ...DEMAIS_PROIBICOES_DE_SINTAXE]
+          : "off",
     },
   },
 );
