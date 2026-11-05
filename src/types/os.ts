@@ -1,5 +1,6 @@
 import type { TipoVeiculo } from "@/types/cliente";
 import type { MotivoRecusa } from "@/schemas/orcamento";
+import { somarValoresLiquidos } from "@/schemas/valorItem";
 
 /**
  * "orcamento" e "recusado" são a etapa de orçamento da OS (#379, migration
@@ -246,14 +247,9 @@ export const FORMA_PAGAMENTO_LABEL: Record<string, string> = {
 export function totalOrdem(
   itens: readonly Pick<ItemOS, "quantidade" | "preco_unitario" | "desconto">[],
 ): number {
-  return itens.reduce(
-    (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
-    0,
-  );
+  return somarValoresLiquidos(itens);
 }
 
 export function totalPorTipo(itens: ItemOS[], tipo: TipoItemOS): number {
-  return itens
-    .filter((item) => item.tipo === tipo)
-    .reduce((total, item) => total + item.quantidade * item.preco_unitario - item.desconto, 0);
+  return somarValoresLiquidos(itens.filter((item) => item.tipo === tipo));
 }

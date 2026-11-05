@@ -14,6 +14,7 @@ import {
   situacaoDaDiferenca,
   somarDiferencas,
   totaisParaGravar,
+  totaisPorFormaDePagamento,
 } from "./fechamentoCaixa";
 
 let proximo = 0;
@@ -188,5 +189,32 @@ describe("fundoSugerido", () => {
     expect(fundoSugerido(fechamentos, "2026-09-20")).toBe(100);
     expect(fundoSugerido(fechamentos, "2026-09-10")).toBe(0);
     expect(fundoSugerido([], "2026-09-20")).toBe(0);
+  });
+});
+
+describe("totaisPorFormaDePagamento (Caixa → Diário, #875)", () => {
+  it("só entradas; junta chave e texto livre da mesma forma; do maior pro menor", () => {
+    const movimentos = [
+      mov("entrada", 50, "pix"),
+      mov("entrada", 20.5, "Pix"),
+      mov("entrada", 100, "cartao_debito"),
+      mov("saida", 999, "pix"),
+      mov("entrada", 7, null),
+    ];
+    expect(totaisPorFormaDePagamento(movimentos)).toEqual([
+      ["Cartão de débito", 100],
+      ["Pix", 70.5],
+      ["Não informado", 7],
+    ]);
+  });
+
+  it("o rótulo é o do primeiro lançamento daquela forma", () => {
+    expect(totaisPorFormaDePagamento([mov("entrada", 1, "Dinheiro vivo")])).toEqual([
+      ["Dinheiro vivo", 1],
+    ]);
+  });
+
+  it("sem entrada, lista vazia", () => {
+    expect(totaisPorFormaDePagamento([mov("saida", 5, "pix")])).toEqual([]);
   });
 });

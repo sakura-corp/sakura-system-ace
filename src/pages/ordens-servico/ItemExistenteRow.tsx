@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
 import { ehPecaAvulsa } from "@/schemas/orcamento";
+import { valorLiquidoDoItem } from "@/schemas/valorItem";
 import {
   itemExistenteFormSchema,
   paraDisplayNumero,
@@ -135,7 +136,7 @@ export function ItemExistenteRow({
             : ""}
         </span>
         <span className="flex shrink-0 items-center gap-3">
-          <span>{formatarMoeda(item.quantidade * item.preco_unitario - item.desconto)}</span>
+          <span>{formatarMoeda(valorLiquidoDoItem(item))}</span>
           {podeEditar && (
             <button
               type="button"

@@ -7,6 +7,7 @@ import { montarHtmlGarantiaOS } from "@/lib/garantiaDocumento";
 import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
+import { somar } from "@/schemas/dinheiro";
 
 interface GarantiaVisualModalProps {
   ordem: OrdemServico;
@@ -33,9 +34,7 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
             : [],
         ]);
         const valorCobrado =
-          movimentos.length > 0
-            ? movimentos.reduce((soma, m) => soma + m.valor, 0)
-            : null;
+          movimentos.length > 0 ? somar(movimentos.map((m) => m.valor)) : null;
         setHtml(
           montarHtmlGarantiaOS({
             ordem,
