@@ -38,6 +38,30 @@ const PROIBE_CORTAR_DIA_DE_UTC = [
   },
 ];
 
+// `import.meta.env.ALGO ?? "padrão"` não protege de nada: o `.env` copiado do
+// exemplo traz a variável como TEXTO VAZIO, e o `??` só troca `null`/`undefined`.
+// Já deu tela em branco (docs/licoes.md, item 8). O `??` no resto do código
+// continua liberado; só é proibido quando o lado esquerdo é `import.meta.env.*`
+// (inclusive embrulhado num `as string` ou `!`).
+const PROIBE_ENV_COM_NULLISH = [
+  {
+    selector:
+      "LogicalExpression[operator='??'] > MemberExpression.left[object.object.type='MetaProperty'][object.property.name='env']",
+    message:
+      "O ?? não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)",
+  },
+  {
+    selector:
+      "LogicalExpression[operator='??'] > :matches(TSAsExpression, TSNonNullExpression, TSSatisfiesExpression).left > MemberExpression.expression[object.object.type='MetaProperty'][object.property.name='env']",
+    message:
+      "O ?? não troca o texto vazio que vem do .env copiado do exemplo — dá tela em branco. Use || no lugar. (docs/licoes.md, item 8)",
+  },
+];
+
+// `window.prompt()` não funciona no Electron (não abre nada e devolve null).
+const MENSAGEM_PROMPT =
+  "window.prompt() não funciona no Electron. Use um modal do programa. (PROJETO_STATUS.md, seção 3)";
+
 export default tseslint.config(
   { ignores: ["dist", "dist-electron", "release"] },
   {
@@ -58,16 +82,30 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
-      "no-restricted-syntax": ["error", ...PROIBE_CORTAR_DIA_DE_UTC],
+      "no-restricted-syntax": [
+        "error",
+        ...PROIBE_CORTAR_DIA_DE_UTC,
+        ...PROIBE_ENV_COM_NULLISH,
+      ],
+      "no-restricted-globals": [
+        "error",
+        { name: "prompt", message: MENSAGEM_PROMPT },
+      ],
+      "no-restricted-properties": [
+        "error",
+        { object: "window", property: "prompt", message: MENSAGEM_PROMPT },
+        { object: "globalThis", property: "prompt", message: MENSAGEM_PROMPT },
+      ],
     },
   },
   {
     // As duas ÚNICAS exceções, e as duas são deliberadas: estes testes cortam
     // o dia em UTC de propósito, pra provar que o jeito errado erra mesmo.
     // Sem eles, a regra acima ficaria sem nada que demonstrasse o porquê dela.
+    // A exceção é SÓ pro corte de dia: as outras proibições continuam valendo.
     files: ["src/lib/datas.test.ts", "src/schemas/comissoes.test.ts"],
     rules: {
-      "no-restricted-syntax": "off",
+      "no-restricted-syntax": ["error", ...PROIBE_ENV_COM_NULLISH],
     },
   },
 );
