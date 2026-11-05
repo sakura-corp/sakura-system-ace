@@ -420,11 +420,11 @@ estiver sem suporte, e está certo.
 - **Destino: a linha 44**, não a 42: sai uma linha nova a cada 8 semanas e o suporte é das três
   últimas. A 44 vai até ~fev/2027.
 - **Andamento**: salto 1 (**36**) na `v0.9.50` (04/10; no Balcão desde 05/10). **Salto 2 (40)**
-  feito na #385: o `electron` em `^40.10.6` (Chromium 144, Node 24) entrou na `main` em 23/10
-  (PR #763) e chegou nas lojas com a **`v0.9.55`, liberada em 28/10**. **A linha 40 já está sem
-  suporte** (o suporte é das três últimas), então o aviso mensal continua vermelho. **Falta o
-  teste dela da 40** (no Windows dela e no Balcão), e só depois vem o próximo salto, pra 44: a
-  [#869](https://github.com/sakura-corp/sakura-system-ace/issues/869).
+  feito na #385 (`^40.10.6`, Chromium 144, Node 24; nas lojas com a **`v0.9.55`**, 28/10).
+  **Salto 3 (44)**: o PR da [#869](https://github.com/sakura-corp/sakura-system-ace/issues/869)
+  (`electron` `^44.10.2`, Chromium 152, Node 24; `electron-builder` `^26.18.0`, e a quinta
+  chavinha, a de integridade do asar, ligada) fica **aberto até ela testar** a 40 e a 44 no
+  Windows dela e no Balcão. Com ele mesclado, o aviso mensal volta a ficar verde.
 - **O Balcão é Windows 10 Home 22H2**: nenhuma linha até a 46 deixa de rodar nele (o Electron
   exige Windows 10 ou mais novo desde a 23). Ficar de olho quando o Chromium anunciar o fim do
   Windows 10.
@@ -437,12 +437,18 @@ estiver sem suporte, e está certo.
   chavinhas (`scripts/ligar-fuses.mjs`). O que o laboratório não alcança e a loja testa:
   **imprimir** (garantia, recibo, nota, comissões) e o uso do dia a dia. O atualizador da versão
   nova só é posto à prova na versão SEGUINTE (é ela que vai chegar por ele).
-- **O que muda no código**: a lista oficial da 34 à 44 não toca em nada que o programa usa. Na
-  **42**, o Electron para de se baixar sozinho no `npm ci` (afeta o CI e o `test:electron`); na
-  **44**, deixa de existir Windows 32 bits (o instalador já é só 64).
-- **O electron-builder 26** (destrava a chavinha de integridade do asar) vai junto de um dos
-  saltos; avisar ela em qual antes.
-- **Depois de chegar na 44**: um salto a cada ~4 meses mantém o programa com suporte.
+- **O que muda no código**: a lista oficial da 34 à 44 não toca na API que o programa usa (o
+  detalhe da 41 à 44 está no PR da #869). Na **42**, o Electron para de se baixar sozinho no
+  `npm ci`: ele vem na primeira vez que é chamado, ou pelo `npx --no install-electron` (o passo
+  que o job `electron` do CI ganhou). Na **44**, deixa de existir Windows 32 bits (o instalador
+  já era só 64). Duas mudanças do Chromium pra ela olhar na loja: desde a **41** o PDF (a DANFE)
+  abre dentro da mesma janela, e desde a **43** a janela de salvar arquivo começa na pasta
+  Downloads.
+- **O electron-builder 26** foi junto do salto 3 (#869): a configuração passou sem mudança, e a
+  chavinha de integridade do asar foi ligada (`scripts/ligar-fuses.mjs`). Se o instalador do
+  canal de teste não abrir, é ela que se desliga.
+- **Depois de chegar na 44**: um salto a cada ~4 meses mantém o programa com suporte (a 44 sai
+  do suporte por volta de fev/2027, quando sair a 47: o próximo salto vem antes disso).
 
 ### Futuro, só com pedido explícito
 
