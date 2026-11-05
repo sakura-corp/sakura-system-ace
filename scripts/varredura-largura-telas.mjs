@@ -25,19 +25,26 @@ import { MEDIR_LARGURA } from "./medir-largura.mjs";
 // notebook Full HD com o zoom de 125% do Windows.
 const LARGURAS = [1024, 1280, 1366, 1536, 1600];
 const ALTURA = 768;
+// Até quantas telas que falharam ganham a segunda chance (#911).
+const MAXIMO_PRA_REPETIR = 5;
 
 process.exit(await comServidorDeTelas(varrer));
 
 async function varrer() {
   const achados = [];
 
-  async function aoChegar(cena, pagina) {
-    // A sessão de mentira às vezes cai (percorrer-telas.mjs explica). Se cair
-    // depois do último clique, o que estaria na tela é o login, e medir o
-    // login no lugar da tela seria passar sem ter medido.
+  // A sessão de mentira às vezes cai (percorrer-telas.mjs explica), e o app
+  // troca a tela pelo login sem navegar. Se cair depois do último clique, ou
+  // entre uma largura e outra, medir o login no lugar da tela seria passar
+  // sem ter medido. Por isso a conferência vem antes e depois de cada medida.
+  async function conferirSessao(cena, pagina) {
     if (!cena.deslogado && !cena.trocarSenha && (await pagina.locator("aside").count()) === 0) {
-      throw new Error("a sessão caiu antes da medição");
+      throw new Error("a sessão caiu durante a medição");
     }
+  }
+
+  async function aoChegar(cena, pagina) {
+    await conferirSessao(cena, pagina);
     // Os achados só valem se a cena inteira foi medida: uma cena que falha no
     // meio e passa na segunda chance não pode contar duas vezes.
     const daCena = [];
@@ -52,6 +59,7 @@ async function varrer() {
         for (const achado of await pagina.evaluate(MEDIR_LARGURA, { semRolar })) {
           daCena.push({ tela: cena.titulo, largura, ...achado });
         }
+        await conferirSessao(cena, pagina);
       }
     } finally {
       // A próxima cena clica em botões que podem só existir na largura de
@@ -71,12 +79,26 @@ async function varrer() {
   // sessão cai, o redirecionamento da tela de conexão) e o `evaluate` morre
   // com "Execution context was destroyed". Não afrouxa nada: a cena é medida
   // inteira de novo, e a que falhar duas vezes continua reprovando.
-  if (falhas.length > 0) {
+  //
+  // Só pra poucas: muitas falhas juntas (o login não entrou, o servidor sem o
+  // Supabase de mentira) não é tropeço, e repetir só dobraria a espera de um
+  // resultado que já é vermelho.
+  let recuperadas = [];
+  if (falhas.length > 0 && falhas.length <= MAXIMO_PRA_REPETIR) {
     const repetir = falhas.map(([arquivo]) => arquivo);
     console.log(`\nrepetindo ${repetir.length} tela(s) que falharam: ${repetir.join(", ")}`);
     const segunda = await percorrerTelas(aoChegar, (cena) => repetir.includes(cena.arquivo));
     feitas.push(...segunda.feitas);
-    falhas = segunda.falhas;
+    const deNovo = new Set(segunda.falhas.map(([arquivo]) => arquivo));
+    recuperadas = falhas.filter(([arquivo]) => !deNovo.has(arquivo));
+    // O erro da primeira vez fica junto do da segunda: é ele que mostra o
+    // tropeço que esta segunda chance existe pra cobrir.
+    falhas = segunda.falhas.map(([arquivo, erro]) => [
+      arquivo,
+      `${erro} (na primeira vez: ${falhas.find(([a]) => a === arquivo)?.[1]})`,
+    ]);
+  } else if (falhas.length > MAXIMO_PRA_REPETIR) {
+    console.log(`\n${falhas.length} telas falharam: falha em massa, sem segunda chance.`);
   }
 
   // A mesma caixa costuma reprovar em várias larguras, e a mesma linha de
@@ -96,7 +118,12 @@ async function varrer() {
   }
 
   console.log(`\n${feitas.length} telas percorridas, cada uma em ${LARGURAS.join(", ")} de largura.`);
-  if (falhas.length) console.log("telas que falharam:", falhas.map(([a]) => a).join(", "));
+  // Tela que só passou na segunda chance aparece no resumo: se a mesma tela
+  // tropeça em toda rodada, isso é sinal de tela instável, não de máquina lenta.
+  for (const [arquivo, erro] of recuperadas) {
+    console.log(`passou só na segunda chance: ${arquivo} (na primeira: ${erro})`);
+  }
+  for (const [arquivo, erro] of falhas) console.log(`tela que falhou: ${arquivo} — ${erro}`);
 
   // Tela que falhou é tela que não foi medida — inclusive a lista de OS,
   // que é a razão de esta varredura existir. Passar verde sem medir seria
