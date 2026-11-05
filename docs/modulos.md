@@ -511,7 +511,7 @@ Quatro coisas que valem saber:
     outro); o recusado vira histórico, na aba "Recusados".
   - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).
     **Impressão**: a OS não tem impressão própria hoje, então o orçamento também não.
-  - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`), peça avulsa, link de aprovação
+  - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`; virou a `#888`), peça avulsa, link de aprovação
     pelo celular.
 - **Ficha do veículo** (27/09/2026, item `FN-04`, sem migration, `v0.9.46` — **ainda não
   testada por ela na loja**): tudo que já foi feito num carro,
