@@ -261,16 +261,18 @@ describe("Clientes que sumiram pela janela ordens_servico_clientes", () => {
 });
 
 describe("Notas fiscais pelas janelas", () => {
-  it("o nome do cliente da nota vem de ordens_servico_notas e vira ordem_servico.cliente.nome", async () => {
+  it("o número, o tipo e o cliente da OS da nota vêm de ordens_servico_notas", async () => {
     respostas.notas_fiscais_arquivos = [
-      { id: "n1", ordem_servico: { cliente_nome: "Maria da Silva" } },
+      { id: "n1", ordem_servico: { numero: 147, tipo: "venda_balcao", cliente_nome: "Maria da Silva" } },
       { id: "n2", ordem_servico: null },
       { id: "n3", ordem_servico: { cliente_nome: null } },
     ];
     const arquivos = await listarArquivos("nfe", "loja");
-    expect(consultas[0].colunas).toContain("ordens_servico_notas(cliente_nome)");
+    expect(consultas[0].colunas).toContain("ordens_servico_notas(numero, tipo, cliente_nome)");
     expect(consultas[0].colunas).not.toContain("ordens_servico(");
     expect(arquivos[0].ordem_servico?.cliente?.nome).toBe("Maria da Silva");
+    expect(arquivos[0].ordem_servico?.numero).toBe(147);
+    expect(arquivos[0].ordem_servico?.tipo).toBe("venda_balcao");
     expect(arquivos[1].ordem_servico).toBeNull();
     expect(arquivos[2].ordem_servico?.cliente).toBeNull();
   });

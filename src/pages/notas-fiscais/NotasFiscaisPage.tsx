@@ -21,7 +21,7 @@ export function NotasFiscaisPage() {
       </header>
 
       <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="NFe" ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
+        <AbaBotao label="NFC-e" ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
         <AbaBotao label="NFS-e" ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
       </div>
 
