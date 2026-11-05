@@ -70,8 +70,12 @@ function ordem(id: string, lojaId: string, nome: string) {
 
 function adiada<T>() {
   let resolver!: (v: T) => void;
-  const promessa = new Promise<T>((r) => (resolver = r));
-  return { promessa, resolver };
+  let rejeitar!: (e: Error) => void;
+  const promessa = new Promise<T>((r, f) => {
+    resolver = r;
+    rejeitar = f;
+  });
+  return { promessa, resolver, rejeitar };
 }
 
 function montar() {
@@ -121,7 +125,7 @@ describe("OrdensServicoPage — carga velha que chega depois da nova (#903)", ()
   it("o custo da carga velha não sobrescreve o da nova", async () => {
     // As duas cargas trazem a mesma OS; a velha empaca no custo e, quando
     // chega, diz "custo não informado". A nova já trouxe o custo certo.
-    listarOrdens.mockResolvedValue([ordem("x", "loja-a", "Cliente X")]);
+    listarOrdens.mockImplementation(async (loja: string) => [ordem("x", loja, "Cliente X")]);
     const custoVelho = adiada<Map<string, { custo: number; completo: boolean }>>();
     buscarCustoDasOrdens
       .mockImplementationOnce(() => custoVelho.promessa)
@@ -143,5 +147,26 @@ describe("OrdensServicoPage — carga velha que chega depois da nova (#903)", ()
     const linhaDepois = screen.getByText("Cliente X").closest("tr") as HTMLElement;
     expect(within(linhaDepois).queryByText(TEXTO_CUSTO_NAO_INFORMADO)).not.toBeInTheDocument();
     expect(within(linhaDepois).getByText(/70,00/)).toBeInTheDocument();
+  });
+
+  it("o erro da carga velha não aparece por cima da lista nova", async () => {
+    const cargaA = adiada<OrdemServico[]>();
+    listarOrdens.mockImplementation((loja: string) =>
+      loja === "loja-a" ? cargaA.promessa : Promise.resolve([ordem("b", "loja-b", "Cliente da loja B")]),
+    );
+    buscarCustoDasOrdens.mockResolvedValue(new Map());
+    const rerender = montar();
+
+    lojaAtual = { id: "loja-b", nome: "Loja B" };
+    rerender();
+    expect(await screen.findByText("Cliente da loja B")).toBeInTheDocument();
+
+    await act(async () => {
+      cargaA.rejeitar(new Error("caiu a conexão"));
+      await cargaA.promessa.catch(() => {});
+    });
+
+    expect(screen.queryByText(/caiu a conexão/)).not.toBeInTheDocument();
+    expect(screen.getByText("Cliente da loja B")).toBeInTheDocument();
   });
 });

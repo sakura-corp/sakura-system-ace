@@ -194,16 +194,27 @@ export function OrdensServicoPage() {
   //
   // Só a carga mais nova grava (#903): trocar de loja ou salvar uma OS enquanto
   // a carga anterior ainda busca dispara outra, e a velha pode terminar depois
-  // — com a lista, o custo e as notas de antes. Carga que perdeu a vez não
-  // grava nada e devolve null (quem chamou trata como "não recarregou").
+  // — com a lista, o custo e as notas de antes. A que perdeu a vez não grava
+  // nada; devolve a lista que buscou só se ainda é a mesma loja (quem salvou
+  // precisa dela pra seguir pra nota ou atualizar a OS aberta), senão null.
+  // Um `carregar` guardado de antes da troca de loja (um salvar lento) não
+  // começa: senão ele viraria a carga mais nova e gravaria a loja antiga.
   const cargaAtual = useRef(0);
+  const lojaNaTela = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaNaTela.current = lojaAtual?.id;
+  }, [lojaAtual?.id]);
   async function carregar(): Promise<OrdemServico[] | null> {
-    const minhaCarga = ++cargaAtual.current;
-    const aindaEhAtual = () => minhaCarga === cargaAtual.current;
     if (!lojaAtual) {
       setCarregando(false);
       return null;
     }
+    const lojaId = lojaAtual.id;
+    if (lojaId !== lojaNaTela.current) return null;
+    const minhaCarga = ++cargaAtual.current;
+    const aindaEhAtual = () => minhaCarga === cargaAtual.current;
+    const descartada = (ordens: OrdemServico[]) =>
+      lojaId === lojaNaTela.current ? ordens : null;
     setCarregando(true);
     setErro(null);
     try {
@@ -216,15 +227,26 @@ export function OrdensServicoPage() {
         jurosCarregados,
         modelosWhatsappCarregados,
       ] = await Promise.all([
-        listarOrdens(lojaAtual.id),
+        listarOrdens(lojaId),
         listarClientesParaEscolha(podeVerCadastro),
         listarPecasJanela(),
         listarServicos(),
-        listarFuncionariosPublico(lojaAtual.id),
-        listarJurosParcelas(lojaAtual.id),
-        listarModelosWhatsapp(lojaAtual.id),
+        listarFuncionariosPublico(lojaId),
+        listarJurosParcelas(lojaId),
+        listarModelosWhatsapp(lojaId),
       ]);
-      if (!aindaEhAtual()) return null;
+
+      // Custo e notas de todas as OS de uma vez só (uma consulta, não uma por
+      // linha), as duas juntas. Falhar numa delas não derruba a lista: sem
+      // custo, a coluna Lucro mostra "custo não informado"; sem notas, a OS só
+      // aparece como "Faturada", que é o comportamento de antes.
+      const ids = ordensCarregadas.map((o) => o.id);
+      const [custo, notas] = await Promise.allSettled([
+        buscarCustoDasOrdens(ids),
+        listarArquivosDasOrdens(ids),
+      ]);
+      if (!aindaEhAtual()) return descartada(ordensCarregadas);
+
       setOrdens(ordensCarregadas);
       setClientes(clientesCarregados);
       setPecas(pecasCarregadas);
@@ -232,33 +254,19 @@ export function OrdensServicoPage() {
       setFuncionarios(funcionariosCarregados);
       setJurosParcelas(jurosCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
-
-      // Custo de todas as OS de uma vez só. Falhar aqui não derruba a lista:
-      // a coluna Lucro só mostra "custo não informado".
-      try {
-        const custo = await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id));
-        if (!aindaEhAtual()) return null;
-        setCustoDasOrdens(custo);
-      } catch (err) {
-        if (!aindaEhAtual()) return null;
-        console.error("Erro ao carregar o custo das ordens:", err);
+      if (custo.status === "fulfilled") {
+        setCustoDasOrdens(custo.value);
+      } else {
+        console.error("Erro ao carregar o custo das ordens:", custo.reason);
         // O custo guardado é da carga anterior: com ele a coluna mostraria
         // lucro de itens novos com custo velho. Melhor "custo não informado".
         setCustoDasOrdens(new Map());
       }
-
-      // Notas de todas as OS de uma vez só (uma consulta, não uma por linha)
-      // — é o que diz quais notas cada OS já tem. Falhar aqui não pode
-      // derrubar a lista inteira: sem essa informação a OS só aparece como
-      // "Faturada", que é o comportamento de antes.
-      try {
-        const notas = await listarArquivosDasOrdens(ordensCarregadas.map((o) => o.id));
-        if (!aindaEhAtual()) return null;
-        setNotasPorOrdem(agruparNotasPorOrdem(notas));
-      } catch (err) {
-        console.error("Erro ao carregar as notas fiscais das ordens:", err);
+      if (notas.status === "fulfilled") {
+        setNotasPorOrdem(agruparNotasPorOrdem(notas.value));
+      } else {
+        console.error("Erro ao carregar as notas fiscais das ordens:", notas.reason);
       }
-      if (!aindaEhAtual()) return null;
 
       const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
       if (abrirOrdemId) {
