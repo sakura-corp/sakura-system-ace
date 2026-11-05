@@ -65,7 +65,6 @@ function ePreviaVelha(mensagem: string): boolean {
   return mensagem.includes("mudaram desde a prévia");
 }
 
-
 export function JuntarPecasModal({
   categorias,
   pecas,
@@ -74,10 +73,11 @@ export function JuntarPecasModal({
   onFechar,
   onRecarregar,
 }: JuntarPecasModalProps) {
-  // Só refaz quando a lista muda (a tela recarregou), não a cada clique.
+  // Só refaz quando a lista muda (a tela recarregou), não a cada clique. Com
+  // erro, nem procura: a lista que sobrou é a velha, e a tela mostra o erro.
   const pares = useMemo<ParSuspeito<Peca>[] | null>(
-    () => (carregando ? null : paresSuspeitos(pecas)),
-    [pecas, carregando],
+    () => (carregando || erroAoCarregar ? null : paresSuspeitos(pecas)),
+    [pecas, carregando, erroAoCarregar],
   );
   const [analise, setAnalise] = useState<ParEmAnalise | null>(null);
   const [escolhas, setEscolhas] = useState<EscolhasDaJuntada>({});
@@ -139,7 +139,10 @@ export function JuntarPecasModal({
         : null,
     [analise, escolhas],
   );
-  const aviso = analise ? avisoDoCusto(analise.fica, analise.sai, escolhas) : null;
+  const aviso = useMemo(
+    () => (analise ? avisoDoCusto(analise.fica, analise.sai, escolhas) : null),
+    [analise, escolhas],
+  );
 
   const diferentes = useMemo(
     () => (analise ? camposDiferentes(analise.fica, analise.sai) : []),
@@ -186,13 +189,13 @@ export function JuntarPecasModal({
 
   async function atualizarPrevia(atual: ParEmAnalise, mensagem: string) {
     try {
-      const [pecas, resumoFica, resumoSai] = await Promise.all([
+      const [duas, resumoFica, resumoSai] = await Promise.all([
         buscarPecasPorIds([atual.fica.id, atual.sai.id]),
         resumoPecaParaJuntar(atual.fica.id),
         resumoPecaParaJuntar(atual.sai.id),
       ]);
-      const fica = pecas.find((p) => p.id === atual.fica.id);
-      const sai = pecas.find((p) => p.id === atual.sai.id);
+      const fica = duas.find((p) => p.id === atual.fica.id);
+      const sai = duas.find((p) => p.id === atual.sai.id);
       if (!fica || !sai) {
         // outro computador já juntou ou apagou uma delas: o par não existe mais
         setAnalise(null);
@@ -374,8 +377,6 @@ export function JuntarPecasModal({
               </button>
             )}
           </div>
-        ) : pares === null ? (
-          <p role="status" className="text-corpo text-sakura-muted">Procurando peças repetidas…</p>
         ) : erroAoCarregar ? (
           <div className="space-y-3">
             <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
@@ -392,6 +393,8 @@ export function JuntarPecasModal({
               Tentar de novo
             </button>
           </div>
+        ) : pares === null ? (
+          <p role="status" className="text-corpo text-sakura-muted">Procurando peças repetidas…</p>
         ) : pares.length === 0 ? (
           <p className="text-corpo text-sakura-muted">
             Não achei peças repetidas. Está tudo certo por aqui.

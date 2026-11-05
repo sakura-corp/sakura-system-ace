@@ -111,7 +111,6 @@ function bigramasEmComum(a: number[], b: number[]): number {
   return comuns;
 }
 
-
 /** "SEM GTIN" é o que a nota do fornecedor traz quando a peça não tem código
  *  de barras; digitado à mão, não pode virar "o mesmo código" de todas. */
 const NAO_E_CODIGO = new Set(["", "sem gtin"]);
@@ -138,25 +137,37 @@ export interface PecaPreparada {
   codigoInterno: string | null;
   /** Os números da descrição + medida, sem zero à esquerda, ordenados ("13,175,70"). */
   numeros: string;
-  /** Os pedaços do nome em ordem alfabética, unidos por espaço. */
-  nome: string;
-  /** Ver `bigramas`: ordenados, como número. */
-  bigramas: number[];
+  /**
+   * O nome, preparado só quando a regra chega a comparar nomes (mesmos
+   * números, nenhum código igual): no aviso do cadastro, a maioria das peças
+   * para antes, e preparar o nome de todas seria trabalho jogado fora.
+   */
+  descricao: string;
+  nomePreparado?: { nome: string; bigramas: number[] };
 }
 
 export function prepararPeca(p: PecaComparavel): PecaPreparada {
-  const nome = pedacos(p.descricao).join(" ");
   return {
     codigoBarras: codigoQueCasa(p.codigo_barras),
     codigoInterno: codigoQueCasa(p.codigo_interno),
     numeros: numerosDaPeca(p),
-    nome,
-    bigramas: bigramas(nome),
+    descricao: p.descricao,
   };
 }
 
+/** Os pedaços do nome em ordem alfabética (unidos por espaço) e os bigramas, na 1ª vez que precisa. */
+function nomeDe(p: PecaPreparada): { nome: string; bigramas: number[] } {
+  if (!p.nomePreparado) {
+    const nome = pedacos(p.descricao).join(" ");
+    p.nomePreparado = { nome, bigramas: bigramas(nome) };
+  }
+  return p.nomePreparado;
+}
+
 /** Coeficiente de Dice de bigramas das duas, de 0 a 1 (o mesmo `dice` de antes). */
-function diceDasPreparadas(a: PecaPreparada, b: PecaPreparada, limite: number): number {
+function diceDasPreparadas(pa: PecaPreparada, pb: PecaPreparada, limite: number): number {
+  const a = nomeDe(pa);
+  const b = nomeDe(pb);
   if (a.nome === b.nome) return a.nome.length > 0 ? 1 : 0;
   const ta = Math.max(a.nome.length - 1, 0);
   const tb = Math.max(b.nome.length - 1, 0);

@@ -299,7 +299,6 @@ function estoquePorLoja(fica: ResumoPecaJuntar, sai: ResumoPecaJuntar): EstoqueN
   return [...linhas.values()].map((l) => ({ ...l, depois: somarQtd(l.fica, l.sai) }));
 }
 
-
 /** "a", "a e b", "a, b e c". */
 function emLista(partes: string[]): string {
   if (partes.length <= 1) return partes.join("");

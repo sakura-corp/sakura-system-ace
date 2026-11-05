@@ -59,7 +59,6 @@ function formatarPreco(valor: number | null): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-
 // Saldo negativo é ERRO DE LANÇAMENTO, não pouco estoque — precisa gritar. O
 // relatório de estoque já tratava assim; a lista de Produtos mostrava o mesmo
 // número em preto, como se fosse normal (item TL-11 do guia).
