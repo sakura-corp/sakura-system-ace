@@ -1,3 +1,5 @@
+import { totalDoPedidoCompra } from "@/schemas/valorItem";
+
 export type StatusPedidoCompra = "pendente" | "parcial" | "recebido" | "cancelado";
 
 export interface ItemPedidoCompra {
@@ -55,5 +57,5 @@ export function nomePedido(numero: number): string {
 }
 
 export function totalPedido(itens: ItemPedidoCompra[]): number {
-  return itens.reduce((total, item) => total + item.quantidade_pedida * (item.preco_unitario ?? 0), 0);
+  return totalDoPedidoCompra(itens);
 }

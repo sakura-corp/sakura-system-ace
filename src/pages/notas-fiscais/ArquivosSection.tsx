@@ -13,7 +13,7 @@ import {
 import { contaNosNumeros } from "@/schemas/orcamento";
 import { situacaoDaNota, type TomSituacaoNota } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
-import type { OrdemParaNotas } from "@/types/os";
+import { nomeOrdem, type OrdemParaNotas } from "@/types/os";
 import { CancelarNotaModal } from "./CancelarNotaModal";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 import { VerDanfeModal } from "./VerDanfeModal";
@@ -33,9 +33,26 @@ function EtiquetaSituacao({ arquivo }: { arquivo: NotaFiscalArquivo }) {
   const situacao = situacaoDaNota(arquivo);
   return (
     <span
-      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${COR_SITUACAO[situacao.tom]}`}
+      title={situacao.rotulo}
+      className={`inline-block max-w-full truncate whitespace-nowrap rounded-full px-2.5 py-1 align-middle text-rotulo font-medium ${COR_SITUACAO[situacao.tom]}`}
     >
       {situacao.rotulo}
+    </span>
+  );
+}
+
+// A coluna "Ordem de Serviço": o número da OS (ou da venda de balcão), com o
+// cliente ao lado, mais apagado, cortado com "…" se não couber (#876 — antes
+// mostrava só o nome do cliente, e o dono da loja procurava a OS e não achava).
+function OrdemDaNota({ arquivo }: { arquivo: NotaFiscalArquivo }) {
+  const ordem = arquivo.ordem_servico;
+  const nome = ordem?.numero != null ? nomeOrdem(ordem.numero, ordem.tipo) : null;
+  const cliente = ordem?.cliente?.nome ?? null;
+  if (!nome && !cliente) return <>—</>;
+  return (
+    <span className="flex min-w-0 items-baseline gap-2" title={[nome, cliente].filter(Boolean).join(" · ")}>
+      {nome && <span className="whitespace-nowrap font-medium">{nome}</span>}
+      {cliente && <span className="truncate text-sakura-muted">{cliente}</span>}
     </span>
   );
 }
@@ -234,9 +251,13 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
               <Combobox
                 opcoes={ordens.filter(contaNosNumeros).map((ordem) => ({
                   valor: ordem.id,
-                  rotulo: `${ordem.cliente?.nome ?? "Cliente"} — ${new Date(
-                    ordem.data_abertura,
-                  ).toLocaleDateString("pt-BR")}`,
+                  rotulo: [
+                    ordem.numero != null ? nomeOrdem(ordem.numero, ordem.tipo) : null,
+                    ordem.cliente?.nome ?? "Cliente",
+                    new Date(ordem.data_abertura).toLocaleDateString("pt-BR"),
+                  ]
+                    .filter(Boolean)
+                    .join(" — "),
                 }))}
                 valor={ordemServicoId}
                 onMudar={setOrdemServicoId}
@@ -286,27 +307,41 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-corpo">
+              {/* `table-fixed` com as larguras no cabeçalho: cada mês é uma
+                  tabela separada, e no layout automático cada uma alinhava as
+                  colunas pelo próprio conteúdo — uma embaixo da outra ficavam
+                  tortas (#876). Assim todas têm as mesmas colunas. */}
+              {/* A Situação e as ações têm largura fixa (a etiqueta e o
+                  "Ver DANFE" não podem quebrar nem vazar); as de texto se
+                  repartem o resto e cortam com "…". Abaixo de 42rem (zoom
+                  alto, janela estreita) a tabela rola de lado, como antes. */}
+              <table className="w-full min-w-[42rem] table-fixed text-left text-corpo">
                 <thead className="text-sakura-purple-dark/90">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Arquivo</th>
-                    <th className="px-4 py-2 font-medium">Situação</th>
+                    <th className="w-[20%] px-4 py-2 font-medium">Arquivo</th>
+                    <th className="w-[9.5rem] px-4 py-2 font-medium">Situação</th>
                     <th className="px-4 py-2 font-medium">Ordem de Serviço</th>
-                    <th className="px-4 py-2 font-medium">Enviado por</th>
-                    <th className="px-4 py-2" />
+                    <th className="w-[16%] px-4 py-2 font-medium">Enviado por</th>
+                    <th className="w-[11.5rem] px-4 py-2">
+                      <span className="sr-only">Ações</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {arquivosDoMes.map((arquivo) => (
                     <tr key={arquivo.id} className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">{arquivo.nome_arquivo}</td>
-                      <td className="px-4 py-3">
+                      <td className="truncate px-4 py-3" title={arquivo.nome_arquivo}>
+                        {arquivo.nome_arquivo}
+                      </td>
+                      <td className="overflow-hidden px-4 py-3">
                         <EtiquetaSituacao arquivo={arquivo} />
                       </td>
                       <td className="px-4 py-3">
-                        {arquivo.ordem_servico?.cliente?.nome ?? "—"}
+                        <OrdemDaNota arquivo={arquivo} />
                       </td>
-                      <td className="px-4 py-3">{arquivo.operador?.nome ?? "—"}</td>
+                      <td className="truncate px-4 py-3" title={arquivo.operador?.nome}>
+                        {arquivo.operador?.nome ?? "—"}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <AcoesDaLinha
                           descricao={`a nota ${arquivo.nome_arquivo}`}

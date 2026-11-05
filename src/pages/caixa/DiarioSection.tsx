@@ -6,7 +6,11 @@ import {
   type CustoDoBanco,
 } from "@/schemas/metricasCaixa";
 import { Valor } from "@/components/Valor";
-import { chaveDaForma, lancamentosDepoisDoFechamento, rotuloDaForma } from "@/schemas/fechamentoCaixa";
+import {
+  lancamentosDepoisDoFechamento,
+  rotuloDaForma,
+  totaisPorFormaDePagamento,
+} from "@/schemas/fechamentoCaixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import { nomeOrdem } from "@/types/os";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
@@ -58,19 +62,10 @@ export function DiarioSection({
   const entradas = resumo.entradas;
   const saidas = resumo.saidas;
 
-  const porFormaPagamento = useMemo(() => {
-    // Pela chave (#790): o faturamento grava "cartao_debito" e o lançamento
-    // manual pode ter "Cartão de débito"; os dois caem no mesmo cartão, com o nome.
-    const mapa = new Map<string, [string, number]>();
-    for (const m of movimentosDoDia) {
-      if (m.tipo !== "entrada") continue;
-      const chave = m.forma_pagamento ? chaveDaForma(m.forma_pagamento) : "";
-      const rotulo = m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "Não informado";
-      const [, total] = mapa.get(chave) ?? [rotulo, 0];
-      mapa.set(chave, [rotulo, total + m.valor]);
-    }
-    return [...mapa.values()].sort((a, b) => b[1] - a[1]);
-  }, [movimentosDoDia]);
+  const porFormaPagamento = useMemo(
+    () => totaisPorFormaDePagamento(movimentosDoDia),
+    [movimentosDoDia],
+  );
 
   // Lucro de cada linha: numa OS paga em duas formas, o lucro da OS é
   // repartido entre os lançamentos — antes cada linha mostrava o lucro

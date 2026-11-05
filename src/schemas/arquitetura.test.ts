@@ -29,21 +29,13 @@ const PASTA_TELAS = "src/pages";
 /**
  * Casos que já estavam assim antes deste teste existir.
  *
- * Nenhum deles é "legítimo": é a mesma dívida de sempre, conta de dinheiro
- * dentro da tela. Está anotada aqui, com nome e sobrenome, em vez de o teste
- * ser afrouxado — assim a dívida fica contável e a próxima sessão sabe
- * exatamente o que falta mover. Eram duas telas; a `LucratividadeSection`
- * saiu da lista na tarefa #379 (a conta foi pra `schemas/lucratividade.ts`).
- *
- * Mexer na tela que sobrou é trabalho de outro item do guia (é refatoração
- * de tela, que pede preview renderizado pra conferir). O que este teste
- * garante desde já é que a lista **não cresce**.
+ * Ficou vazia na #875 (a última, o valor do estoque da
+ * `RelatoriosEstoqueSection`, foi pra `schemas/valorItem.ts`). Antes dela a
+ * `LucratividadeSection` tinha saído na #379. A lista fica aqui, vazia, pra
+ * que uma exceção futura precise vir com nome, sobrenome e motivo escrito —
+ * nunca afrouxando o teste.
  */
-const DIVIDA_CONHECIDA: Record<string, string> = {
-  "estoque/RelatoriosEstoqueSection.tsx":
-    "Calcula o valor financeiro do estoque (saldo × preço de custo) dentro do " +
-    "componente. Mesmo destino: função pura em src/schemas/.",
-};
+const DIVIDA_CONHECIDA: Record<string, string> = {};
 
 function arquivosDeTela(pasta: string, prefixo = ""): string[] {
   return readdirSync(pasta, { withFileTypes: true }).flatMap((entrada) => {
@@ -116,6 +108,25 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
   {
     nome: "juros ou alíquota virando porcentagem",
     padrao: /\b[A-Za-z_$.]*(juros|aliquota|alíquota)[A-Za-z_$]*\s*\/\s*100|\*\s*1\.\d/i,
+  },
+  {
+    nome: "valor do item (quantidade × preço) calculado na tela",
+    // #875: o `arquitetura.test.ts` procurava só "lucro" e "preco_custo", e a
+    // linha `quantidade * preco_unitario - desconto` passou batido em duas
+    // telas da OS. Ela mora em `schemas/valorItem.ts` (`valorLiquidoDoItem`).
+    // Aceita a conta embrulhada, como `paraNumero(item.quantidade) *
+    // paraNumero(item.preco_unitario)` (revisão da #875).
+    padrao:
+      /\bquantidade\w*\)?\s*\*\s*[A-Za-z_$.(]*preco_unitario|preco_unitario\w*\)?\s*\*\s*[A-Za-z_$.(]*quantidade/,
+  },
+  {
+    nome: "soma de valores em dinheiro feita na tela",
+    // #875: `reduce((soma, m) => soma + m.valor, 0)` e o acumulador de mapa
+    // `(mapa.get(x) ?? 0) + m.valor`, e o acumulador solto `total + m.valor`
+    // (era assim no Diário do Caixa, que a primeira versão deixou passar). Soma de dinheiro usa o `somar` de
+    // `schemas/dinheiro.ts` (fecha no centavo) ou uma função de `src/schemas/`.
+    padrao:
+      /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b|\b(?:soma|total)\w*\s*\+\s*\w+\.valor\b/i,
   },
 ];
 
