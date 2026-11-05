@@ -10,6 +10,7 @@ import type { RegimeTributario } from "@/types/configuracao";
 import type { ItemOS } from "@/types/os";
 import type { NovaPeca, Peca, PecaJanela } from "@/types/peca";
 import { pecaSemCusto } from "@/schemas/avisosOrdemServico";
+import { movimentoDeEstoqueInicial } from "@/schemas/estoque";
 
 /**
  * O que o cadastro de peça já traz preenchido quando nasce de uma peça
@@ -31,11 +32,11 @@ export function valoresIniciaisDaPecaAvulsa(
 
 /**
  * O que o `PecaForm` pede além da peça: categorias, regime da loja e o
- * código de ICMS que a loja mais usa. Só busca quando `ativo` (a janela que
- * vai mostrar o cadastro está aberta). Falhar não trava o cadastro: sem
- * eles o formulário abre do mesmo jeito, só sem as sugestões.
+ * código de ICMS que a loja mais usa (busca ao montar a janela do cadastro).
+ * Falhar não trava o cadastro: sem eles o formulário abre do mesmo jeito, só
+ * sem as sugestões.
  */
-export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[], ativo: boolean) {
+export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[]) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
   // O CSOSN mais usado vem dos dados fiscais (a janela de peças não os traz).
@@ -45,7 +46,6 @@ export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[], 
   const idsDasPecas = useMemo(() => pecas.map((peca) => peca.id), [pecas]);
 
   useEffect(() => {
-    if (!ativo) return;
     let cancelado = false;
     Promise.all([listarCategorias(), buscarConfiguracaoFiscal(lojaId)])
       .then(([categoriasC, configFiscal]) => {
@@ -64,7 +64,7 @@ export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[], 
     return () => {
       cancelado = true;
     };
-  }, [ativo, lojaId, idsDasPecas]);
+  }, [lojaId, idsDasPecas]);
 
   const csosnSugerido = useMemo(() => csosnMaisUsado(csosns), [csosns]);
 
@@ -90,17 +90,7 @@ export async function cadastrarPecaNova(
     criado_em: new Date().toISOString(),
     sem_custo: pecaSemCusto(peca.preco_custo),
   };
-  if (quantidadeInicial && quantidadeInicial > 0) {
-    await registrarMovimento(
-      {
-        peca_id: id,
-        tipo: "entrada",
-        quantidade: quantidadeInicial,
-        motivo: "ajuste",
-        referencia: "Estoque inicial (cadastro do produto)",
-      },
-      lojaId,
-    );
-  }
+  const estoqueInicial = movimentoDeEstoqueInicial(id, quantidadeInicial);
+  if (estoqueInicial) await registrarMovimento(estoqueInicial, lojaId);
   return criada;
 }
