@@ -9,6 +9,7 @@ const LIMITE_DE_IDS = 200;
 
 let movimentos: { id: string; categoria_id: string | null }[] = [];
 const pedidos: number[] = [];
+let falharNoPedido = 0; // 0 = nunca
 
 function construtor() {
   let dados: { categoria_id: string } | null = null;
@@ -25,6 +26,9 @@ function construtor() {
     select: () => q,
     then(ok: (v: unknown) => unknown, falhou?: (e: unknown) => unknown) {
       pedidos.push(ids.length);
+      if (pedidos.length === falharNoPedido) {
+        return Promise.resolve({ data: null, error: { message: "caiu a internet" } }).then(ok, falhou);
+      }
       if (ids.length > LIMITE_DE_IDS) {
         return Promise.resolve({ data: null, error: { message: "414 URI Too Long" } }).then(ok, falhou);
       }
@@ -48,6 +52,7 @@ function ids(n: number) {
 
 beforeEach(() => {
   pedidos.length = 0;
+  falharNoPedido = 0;
 });
 
 describe("definirCategoriaDosMovimentos com muitos lançamentos (#897)", () => {
@@ -64,6 +69,16 @@ describe("definirCategoriaDosMovimentos com muitos lançamentos (#897)", () => {
     await expect(definirCategoriaDosMovimentos(ids(300), "cat-1")).rejects.toThrow(
       "Só 250 de 300 lançamentos",
     );
+  });
+
+  it("se cair no meio, diz quantos já foram gravados e pede pra recarregar", async () => {
+    movimentos = ids(300).map((id) => ({ id, categoria_id: null }));
+    falharNoPedido = 2;
+    const erro = await definirCategoriaDosMovimentos(ids(300), "cat-1").catch((e: Error) => e);
+    expect(erro).toBeInstanceOf(Error);
+    expect((erro as Error).message).toContain("Só 100 de 300");
+    expect((erro as Error).message).toContain("caiu a internet");
+    expect((erro as Error).message).toContain("Recarregue a tela");
   });
 
   it("lista vazia não vai ao banco", async () => {

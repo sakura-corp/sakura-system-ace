@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { mensagemDeErro } from "./errors";
 import { IDS_POR_BLOCO, buscarTudoEmPaginas } from "./paginacao";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
@@ -151,7 +152,14 @@ export async function definirCategoriaDosMovimentos(
       .update({ categoria_id: categoriaId })
       .in("id", unicos.slice(i, i + IDS_POR_BLOCO))
       .select("id");
-    if (error) throw error;
+    if (error) {
+      if (atualizados === 0) throw error;
+      // Os blocos de antes já ficaram gravados: a pessoa precisa saber.
+      throw new Error(
+        `Só ${atualizados} de ${unicos.length} lançamentos foram atualizados antes do erro ` +
+          `(${mensagemDeErro(error)}). Recarregue a tela e tente de novo.`,
+      );
+    }
     atualizados += data?.length ?? 0;
   }
 
