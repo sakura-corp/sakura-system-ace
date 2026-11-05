@@ -15,6 +15,7 @@ import type { ContaPagar, NovaContaPagar } from "@/types/contaPagar";
 import { ContaPagarForm } from "./ContaPagarForm";
 import { PagarContaModal } from "./PagarContaModal";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { somar } from "@/schemas/dinheiro";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -116,7 +117,7 @@ export function ContasPagarPage() {
   const pagas = contas
     .filter((c) => c.status === "paga")
     .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
-  const totalPendente = pendentes.reduce((soma, c) => soma + c.valor, 0);
+  const totalPendente = somar(pendentes.map((c) => c.valor));
 
   return (
     <div className="space-y-6">

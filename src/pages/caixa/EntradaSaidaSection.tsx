@@ -3,8 +3,9 @@ import {
   movimentosManuais,
   movimentosSemCategoria,
   resumirSemCategoria,
+  totaisPorCategoria,
 } from "@/schemas/caixa";
-import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
 import { rotuloDaForma } from "@/schemas/fechamentoCaixa";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa, TipoCaixa } from "@/types/caixa";
@@ -48,16 +49,9 @@ export function EntradaSaidaSection({
     [categorias, tipo],
   );
 
-  const total = manuais.reduce((soma, m) => soma + m.valor, 0);
+  const total = somar(manuais.map((m) => m.valor));
 
-  const porCategoria = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const m of manuais) {
-      const nome = m.categoria?.nome ?? "Sem categoria";
-      mapa.set(nome, (mapa.get(nome) ?? 0) + m.valor);
-    }
-    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
-  }, [manuais]);
+  const porCategoria = useMemo(() => totaisPorCategoria(manuais), [manuais]);
 
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     await onSalvar(movimento);
