@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
-import { buscarPecasPorIds, juntarPecas, listarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
+import { buscarPecasPorIds, juntarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
 import {
+  avisoDoCusto,
   camposDaQueSai,
   camposDiferentes,
   escolhasPadrao,
@@ -16,15 +17,28 @@ import {
   type ResumoPecaJuntar,
 } from "@/schemas/juntarPecas";
 import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarQuantidade as qtd } from "@/schemas/quantidade";
 import { MOTIVO_PARECIDA_ROTULO } from "@/schemas/pecaParecida";
 import type { Categoria } from "@/types/categoria";
 import type { Peca } from "@/types/peca";
 
 interface JuntarPecasModalProps {
   categorias: Categoria[];
+  /**
+   * O catálogo que a tela de Estoque já carregou (#721): a janela procura os
+   * pares nele, em vez de buscar tudo de novo.
+   */
+  pecas: Peca[];
+  /** A tela está carregando (ou recarregando) o catálogo. */
+  carregando: boolean;
+  /** O catálogo não carregou: a janela não diz "está tudo certo". */
+  erroAoCarregar: string | null;
   onFechar: () => void;
-  /** Chamado depois de juntar, pra página do estoque recarregar tudo. */
-  onJuntado: () => Promise<void> | void;
+  /**
+   * Pede pra tela de Estoque recarregar tudo (depois de juntar, ou no "Tentar
+   * de novo"). É a ÚNICA recarga: a lista nova volta por `pecas`.
+   */
+  onRecarregar: () => Promise<void> | void;
 }
 
 interface ParEmAnalise {
@@ -51,12 +65,20 @@ function ePreviaVelha(mensagem: string): boolean {
   return mensagem.includes("mudaram desde a prévia");
 }
 
-function qtd(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-}
 
-export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPecasModalProps) {
-  const [pares, setPares] = useState<ParSuspeito<Peca>[] | null>(null);
+export function JuntarPecasModal({
+  categorias,
+  pecas,
+  carregando,
+  erroAoCarregar,
+  onFechar,
+  onRecarregar,
+}: JuntarPecasModalProps) {
+  // Só refaz quando a lista muda (a tela recarregou), não a cada clique.
+  const pares = useMemo<ParSuspeito<Peca>[] | null>(
+    () => (carregando ? null : paresSuspeitos(pecas)),
+    [pecas, carregando],
+  );
   const [analise, setAnalise] = useState<ParEmAnalise | null>(null);
   const [escolhas, setEscolhas] = useState<EscolhasDaJuntada>({});
   const [abrindo, setAbrindo] = useState<string | null>(null);
@@ -64,26 +86,6 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
   const [juntando, setJuntando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
-  const [buscaFalhou, setBuscaFalhou] = useState(false);
-
-  const procurar = useCallback(async () => {
-    setPares(null);
-    setBuscaFalhou(false);
-    try {
-      const pecas = await listarPecas();
-      setPares(paresSuspeitos(pecas));
-    } catch (err) {
-      console.error("Erro ao procurar peças repetidas:", err);
-      setErro(mensagemDeErro(err));
-      setBuscaFalhou(true);
-      setPares([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    procurar();
-  }, [procurar]);
-
   async function abrirPar(par: ParSuspeito<Peca>) {
     const chave = `${par.a.id}-${par.b.id}`;
     setAbrindo(chave);
@@ -137,6 +139,8 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
         : null,
     [analise, escolhas],
   );
+  const aviso = analise ? avisoDoCusto(analise.fica, analise.sai, escolhas) : null;
+
   const diferentes = useMemo(
     () => (analise ? camposDiferentes(analise.fica, analise.sai) : []),
     [analise],
@@ -166,8 +170,7 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
       );
       setAnalise(null);
       setConfirmando(false);
-      await onJuntado();
-      await procurar();
+      await onRecarregar();
     } catch (err) {
       console.error("Erro ao juntar peças:", err);
       const mensagem = mensagemDeErro(err);
@@ -194,7 +197,7 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
         // outro computador já juntou ou apagou uma delas: o par não existe mais
         setAnalise(null);
         setErro("Uma das peças não existe mais (outro computador pode ter juntado ou apagado). Procurei os pares de novo.");
-        await procurar();
+        await onRecarregar();
         return;
       }
       setAnalise({ fica, sai, resumoFica, resumoSai });
@@ -255,6 +258,9 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
             >
               {previa.frase}
             </p>
+            {previa.completa && aviso && (
+              <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">{aviso}</p>
+            )}
 
             {previa.completa && previa.estoquePorLoja.length > 0 && (
               <div className="overflow-x-auto">
@@ -370,17 +376,22 @@ export function JuntarPecasModal({ categorias, onFechar, onJuntado }: JuntarPeca
           </div>
         ) : pares === null ? (
           <p role="status" className="text-corpo text-sakura-muted">Procurando peças repetidas…</p>
-        ) : buscaFalhou ? (
-          <button
-            type="button"
-            onClick={() => {
-              setErro(null);
-              procurar();
-            }}
-            className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-          >
-            Tentar de novo
-          </button>
+        ) : erroAoCarregar ? (
+          <div className="space-y-3">
+            <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+              Não consegui carregar as peças: {erroAoCarregar}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setErro(null);
+                onRecarregar();
+              }}
+              className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+            >
+              Tentar de novo
+            </button>
+          </div>
         ) : pares.length === 0 ? (
           <p className="text-corpo text-sakura-muted">
             Não achei peças repetidas. Está tudo certo por aqui.

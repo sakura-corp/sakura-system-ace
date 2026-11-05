@@ -106,8 +106,11 @@ export function EstoquePage() {
       {juntando && (
         <JuntarPecasModal
           categorias={categorias}
+          pecas={pecas}
+          carregando={carregando}
+          erroAoCarregar={erro}
           onFechar={() => setJuntando(false)}
-          onJuntado={carregar}
+          onRecarregar={carregar}
         />
       )}
 

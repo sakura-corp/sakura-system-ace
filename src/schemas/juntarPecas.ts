@@ -19,7 +19,8 @@
  * negócio escrita em tela diverge (docs/licoes.md, itens 40 e 49).
  */
 import type { Peca } from "@/types/peca";
-import { arredondarCentavo } from "./dinheiro";
+import { arredondarCentavo, formatarMoeda } from "./dinheiro";
+import { formatarQuantidade as qtd } from "./quantidade";
 import {
   compararPreparadas,
   prepararPeca,
@@ -160,6 +161,32 @@ export function pecaDepoisDaJuntada<T extends PecaParaJuntar>(
   return depois;
 }
 
+/**
+ * O aviso do preço de custo (#721). O lucro e a comissão das OS antigas são
+ * calculados com o custo ATUAL da peça, não o da época: quando as duas peças
+ * têm custo diferente, juntar muda esses números nas OS de uma delas (a da
+ * que sai, se fica o custo da que fica; a da que fica, se a pessoa escolhe o
+ * custo da que sai). A prévia avisa, pra ninguém estranhar o lucro de antes.
+ *
+ * @returns o aviso, ou null quando os custos são iguais (ou os dois vazios)
+ */
+export function avisoDoCusto(
+  fica: PecaParaJuntar,
+  sai: PecaParaJuntar,
+  escolhas: EscolhasDaJuntada,
+): string | null {
+  if (!camposDiferentes(fica, sai).some(({ campo }) => campo === "preco_custo")) return null;
+  const custo = (valor: unknown) =>
+    vazio(valor) ? "sem preço de custo" : formatarMoeda(Number(valor));
+  const depois = pecaDepoisDaJuntada(fica, sai, escolhas).preco_custo;
+  const final = vazio(depois) ? "ficar sem preço de custo" : `usar ${custo(depois)}`;
+  return (
+    `As duas peças têm preço de custo diferente (${custo(fica.preco_custo)} e ${custo(sai.preco_custo)}). ` +
+    "O lucro e a comissão das OS antigas usam o custo atual da peça: " +
+    `depois de juntar, as OS das duas passam a ${final}.`
+  );
+}
+
 /** O saldo da peça numa loja, como o banco conta. */
 export interface EstoqueNaLoja {
   loja_id: string;
@@ -237,26 +264,18 @@ export interface EstoqueNaPrevia {
  * - `estoquePorLoja`: as lojas das duas peças (primeiro as da que fica, na
  *   ordem do banco; depois as que só a que sai tem). Loja que só um lado tem
  *   aparece com 0 do outro.
- * - `totaisDepois`: quanto a peça que fica vai ter depois, somando as duas.
- *   Depois de juntar, o resumo que a RPC devolve tem que bater com isto.
- *   OS e compras distintas não entram: uma OS com as duas peças contaria duas
- *   vezes na soma, então a conferência é pelas linhas (`itens_os`,
- *   `itens_compra`).
- * - `passa`: o que muda de peça (o que a que sai tinha).
+ * - `passa`: o que muda de peça (o que a que sai tinha), pra frase.
+ *
+ * Não tem "totais depois" pra conferir com o banco depois de juntar (#721):
+ * quem garante os números é o próprio banco, que recusa a junção se o que a
+ * prévia mostrou (`p_esperado`) não for mais o que está lá.
  */
 export interface PreviaDaJuntada {
   completa: boolean;
   descricaoFinal: string;
   estoquePorLoja: EstoqueNaPrevia[];
   estoqueTotal: { fica: number; sai: number; depois: number };
-  totaisDepois: {
-    movimentos: number;
-    itens_os: number;
-    contagens: number;
-    itens_compra: number;
-    cotacoes: number;
-  };
-  passa: { os: number; compras: number; contagens: number; movimentos: number; cotacoes: number };
+  passa: { os: number; compras: number; contagens: number; cotacoes: number };
   frase: string;
 }
 
@@ -280,10 +299,6 @@ function estoquePorLoja(fica: ResumoPecaJuntar, sai: ResumoPecaJuntar): EstoqueN
   return [...linhas.values()].map((l) => ({ ...l, depois: somarQtd(l.fica, l.sai) }));
 }
 
-/** Quantidade como a pessoa lê: "4", "4,5", "1.234,25" (no máximo 2 casas). */
-function qtd(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
-}
 
 /** "a", "a e b", "a, b e c". */
 function emLista(partes: string[]): string {
@@ -349,25 +364,15 @@ export function previaDaJuntada({
     os: resumoSai.os,
     compras: resumoSai.compras,
     contagens: resumoSai.contagens,
-    movimentos: resumoSai.movimentos,
     cotacoes: resumoSai.cotacoes,
   };
   const estoqueTotal = { fica: totalFica, sai: totalSai, depois: somarQtd(totalFica, totalSai) };
   const descricaoFinal = pecaDepoisDaJuntada(fica, sai, escolhas).descricao.trim();
-  const soma = (campo: "movimentos" | "itens_os" | "contagens" | "itens_compra" | "cotacoes") =>
-    resumoFica[campo] + resumoSai[campo];
   return {
     completa,
     descricaoFinal,
     estoquePorLoja: porLoja,
     estoqueTotal,
-    totaisDepois: {
-      movimentos: soma("movimentos"),
-      itens_os: soma("itens_os"),
-      contagens: soma("contagens"),
-      itens_compra: soma("itens_compra"),
-      cotacoes: soma("cotacoes"),
-    },
     passa,
     frase: completa
       ? montarFrase(estoqueTotal, passa, descricaoFinal)
