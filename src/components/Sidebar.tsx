@@ -80,53 +80,55 @@ export function Sidebar() {
     );
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col gap-4">
+    <aside className="flex h-full w-64 shrink-0 flex-col gap-4 baixa:gap-2">
       <div className="sakura-card flex flex-1 flex-col overflow-hidden">
-        <AreaRolavel className="flex flex-col">
-          <div className="px-6 pb-6 pt-8 baixa:pb-3 baixa:pt-5 muito-baixa:pb-2 muito-baixa:pt-3">
-            <Logo className="muito-baixa:max-w-44" />
-            <p className="mt-4 baixa:mt-2 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,77,206,0.5)]">
-              AUTOCENTER EDITION
-            </p>
-          </div>
-
-          <nav className="flex flex-1 flex-col gap-1 px-3 pb-3 baixa:gap-0.5">
-            {modulosLiberados.length === 0 && (
-              <p className="px-4 py-2.5 text-rotulo text-sakura-purple-dark/85">
-                Nenhum módulo liberado. Fale com o administrador.
+        <AreaRolavel>
+          {/* Um bloco só por dentro da área rolável: ela remede a barra de
+              rolagem quando o PRIMEIRO filho muda de altura. Com o logo e o
+              menu soltos, só o logo era vigiado, e o menu mudando de altura
+              (o espaçamento das telas baixas, #876) deixava a barra errada. */}
+          <div className="flex min-h-full flex-col">
+            <div className="px-6 pb-6 pt-8 baixa:pb-3 baixa:pt-5 muito-baixa:pb-2 muito-baixa:pt-3">
+              <Logo className="muito-baixa:max-w-44" />
+              <p className="mt-4 baixa:mt-2 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,77,206,0.5)]">
+                AUTOCENTER EDITION
               </p>
-            )}
-            {itensDoMenu.map((modulo) => (
-              <NavLink
-                key={modulo.chave}
-                to={modulo.rota}
-                end={modulo.chave === "painel"}
-                className={({ isActive }) =>
-                  // Transição só de cor e sombra, não `transition-all`: o
-                  // espaçamento muda com a altura da janela (baixa:), e
-                  // animado a barra de rolagem do menu era medida no meio da
-                  // animação e ficava aparecendo sem ter o que rolar (#876).
-                  `rounded-xl px-4 py-2.5 baixa:py-1.5 muito-baixa:py-1 text-corpo font-medium transition-[color,background-color,border-color,box-shadow] ${
-                    isActive
-                      ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,77,206,0.2)] border border-sakura-pink/30"
-                      : "text-sakura-purple-dark/90 hover:bg-white/5 hover:text-white"
-                  }`
-                }
-              >
-                <span className="flex items-center justify-between gap-2">
-                  {modulo.label}
-                  {!!modulo.numero && (
-                    <span
-                      aria-label={`${modulo.numero} em aberto`}
-                      className="rounded-full bg-sakura-pink/20 px-2 py-0.5 text-meta font-semibold text-sakura-pink"
-                    >
-                      {modulo.numero}
-                    </span>
-                  )}
-                </span>
-              </NavLink>
-            ))}
-          </nav>
+            </div>
+
+            <nav className="flex flex-1 flex-col gap-1 px-3 pb-3 baixa:gap-0.5">
+              {modulosLiberados.length === 0 && (
+                <p className="px-4 py-2.5 text-rotulo text-sakura-purple-dark/85">
+                  Nenhum módulo liberado. Fale com o administrador.
+                </p>
+              )}
+              {itensDoMenu.map((modulo) => (
+                <NavLink
+                  key={modulo.chave}
+                  to={modulo.rota}
+                  end={modulo.chave === "painel"}
+                  className={({ isActive }) =>
+                    `rounded-xl px-4 py-2.5 baixa:py-1.5 muito-baixa:py-1 text-corpo font-medium transition-all ${
+                      isActive
+                        ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,77,206,0.2)] border border-sakura-pink/30"
+                        : "text-sakura-purple-dark/90 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    {modulo.label}
+                    {!!modulo.numero && (
+                      <span
+                        aria-label={`${modulo.numero} em aberto`}
+                        className="rounded-full bg-sakura-pink/20 px-2 py-0.5 text-meta font-semibold text-sakura-pink"
+                      >
+                        {modulo.numero}
+                      </span>
+                    )}
+                  </span>
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         </AreaRolavel>
       </div>
 

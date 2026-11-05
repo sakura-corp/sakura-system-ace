@@ -6,8 +6,8 @@
    rolando uma barra fininha. Abaixo destas alturas o menu aperta o
    espaçamento (o texto não diminui). `baixa` pega o 768 cheio (navegador,
    tela cheia); `muito-baixa`, a janela maximizada com a barra de tarefas. */
-@custom-variant baixa (@media (max-height: 959px));
-@custom-variant muito-baixa (@media (max-height: 767px));
+@custom-variant baixa (@media (height < 960px));
+@custom-variant muito-baixa (@media (height < 768px));
 
 @theme {
   /* Paleta oficial Sakura System - Dark Neon Edition */
