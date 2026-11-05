@@ -30,3 +30,31 @@ export async function buscarTudoEmPaginas<T>(
     if (pagina.length < TAMANHO_DA_PAGINA) return todas;
   }
 }
+
+// Uma consulta por lista de ids (`.in(coluna, ids)`) leva os ids no endereço,
+// e endereço grande demais é recusado (#498): 200 ids de 36 letras já dão uns
+// 8 KB. Por isso a lista vai em blocos.
+export const IDS_POR_BLOCO = 200;
+
+/**
+ * Busca as linhas de uma lista de ids, quantos forem: os ids vão em blocos de
+ * `IDS_POR_BLOCO` (sem repetição) e cada bloco é lido por páginas
+ * (`buscarTudoEmPaginas`), porque um bloco também pode passar de 1.000 linhas.
+ *
+ * `consultar(bloco, de, ate)` monta a consulta COMPLETA daquele bloco e faixa,
+ * com `.in(coluna, bloco)`, ordem total (último `.order()` em coluna única) e
+ * `.range(de, ate)`. Os blocos não se cruzam, então nenhuma linha vem duas
+ * vezes, desde que cada linha case com um id só (o `.in` é numa coluna só).
+ */
+export async function buscarPorIdsEmBlocos<T>(
+  ids: readonly string[],
+  consultar: (bloco: string[], de: number, ate: number) => PromiseLike<Resposta<T>>,
+): Promise<T[]> {
+  const unicos = [...new Set(ids)];
+  const todas: T[] = [];
+  for (let i = 0; i < unicos.length; i += IDS_POR_BLOCO) {
+    const bloco = unicos.slice(i, i + IDS_POR_BLOCO);
+    todas.push(...(await buscarTudoEmPaginas((de, ate) => consultar(bloco, de, ate))));
+  }
+  return todas;
+}
