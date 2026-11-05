@@ -142,6 +142,18 @@ describe("travamento mútuo (deadlock)", () => {
     expect(mensagemDeErro(erro)).toBe(MENSAGEM_TRAVAMENTO_MUTUO);
     expect(MENSAGEM_TRAVAMENTO_MUTUO).toMatch(/tente de novo/i);
   });
+
+  it("pelo código 40P01, mesmo com a frase em outro idioma", () => {
+    expect(mensagemDeErro({ code: "40P01", message: "impasse détecté" })).toBe(
+      MENSAGEM_TRAVAMENTO_MUTUO,
+    );
+  });
+
+  it("pela frase, mesmo embrulhada por quem chamou", () => {
+    expect(mensagemDeErro(new Error("O orçamento não foi aprovado: deadlock detected"))).toBe(
+      MENSAGEM_TRAVAMENTO_MUTUO,
+    );
+  });
 });
 
 // A lembrança vira mecanismo: toda coluna ou view nova (da 0065 em diante)

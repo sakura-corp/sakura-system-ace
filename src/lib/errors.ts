@@ -141,7 +141,7 @@ function objetoQueFalta(mensagem: string): string | null {
 
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
-  if (/^deadlock detected/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
+  if (/\bdeadlock detected\b/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
   const objeto = objetoQueFalta(mensagem);
   if (objeto && (OBJETOS_NOVOS_DO_BANCO as readonly string[]).includes(objeto)) {
     return MENSAGEM_BANCO_DESATUALIZADO;
@@ -150,6 +150,10 @@ function traduzir(mensagem: string): string {
 }
 
 export function mensagemDeErro(erro: unknown): string {
+  // Pelo código, que não depende do idioma do banco nem de quem embrulhou a frase.
+  if (erro && typeof erro === "object" && (erro as { code?: unknown }).code === "40P01") {
+    return MENSAGEM_TRAVAMENTO_MUTUO;
+  }
   if (erro && typeof erro === "object" && "message" in erro) {
     const mensagem = (erro as { message?: unknown }).message;
     if (typeof mensagem === "string" && mensagem.length > 0) return traduzir(mensagem);

@@ -211,32 +211,31 @@ export function EmitirNotaFiscalModal({
   async function aoLigarPeca(item: ItemOS, peca: PecaJanela, recemCadastrada: boolean) {
     setItemCadastrando(null);
     setErro("");
-    if (!operador) return;
+    // A peça entra na lista da loja já: se o vínculo abaixo falhar, o próximo
+    // "Cadastrar agora" oferece ela pelo aviso de peça parecida, em vez de
+    // cadastrar outra igual (PR #717, ponto 1).
+    setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
+    const naoEntrou = recemCadastrada
+      ? "A peça foi cadastrada (já está no cadastro), mas não entrou na OS"
+      : "A peça não entrou na OS";
+    if (!operador) {
+      setErro(`${naoEntrou}: o login caiu. Entre de novo e tente outra vez.`);
+      return;
+    }
     try {
       // O banco liga e, se a ordem já é OS, baixa, tudo ou nada (#803): se
       // der erro, a peça NÃO ficou ligada.
       const vinculado = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
       if (!vinculado) {
         setErro(
-          "Esta peça já tinha sido ligada a um cadastro (talvez em outro computador). " +
-            "Feche esta janela e abra de novo.",
+          "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
+            "computador). Feche esta janela e abra de novo.",
         );
         return;
       }
     } catch (err) {
       console.error("Erro ao ligar a peça ao item da OS:", err);
-      // A peça nova já está no cadastro: entra na lista da loja, pra no
-      // próximo "Cadastrar agora" o aviso de peça parecida oferecer ela, em
-      // vez de cadastrar outra igual.
-      if (recemCadastrada) {
-        setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
-      }
-      setErro(
-        recemCadastrada
-          ? `A peça foi cadastrada, mas não entrou na OS: ${mensagemDeErro(err).replace(/\.$/, "")}. ` +
-              "Pra tentar de novo, escolha a peça que já está no cadastro, sem cadastrar outra."
-          : `A peça não entrou na OS: ${mensagemDeErro(err)}`,
-      );
+      setErro(`${naoEntrou}: ${mensagemDeErro(err)}`);
       return;
     }
     setVinculadas((v) => ({ ...v, [item.id]: peca.id }));
@@ -249,7 +248,6 @@ export function EmitirNotaFiscalModal({
       // Sem os dados fiscais o item fica travado como "sem NCM": diz o porquê.
       setErro(`A peça foi ligada, mas não deu pra buscar o NCM dela: ${mensagemDeErro(err)}`);
     }
-    setCadastroDaLoja((lista) => (lista.some((p) => p.id === peca.id) ? lista : [...lista, peca]));
     // Recarregar a OS fica à parte: se falhar, a peça JÁ entrou na OS.
     try {
       await onItensMudaram?.();

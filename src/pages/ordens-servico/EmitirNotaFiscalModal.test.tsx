@@ -238,7 +238,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 
     expect(
-      await screen.findByText(/cadastrada, mas não entrou na OS: Nenhum depósito ativo/),
+      await screen.findByText(/cadastrada \(já está no cadastro\), mas não entrou na OS: Nenhum depósito ativo/),
     ).toBeInTheDocument();
     expect(onItensMudaram).not.toHaveBeenCalled();
     expect(confirmar()).toBeDisabled();
