@@ -25,4 +25,21 @@ describe("AvisoVersaoBanco", () => {
 
     expect(container.textContent).toContain("0068, 0069");
   });
+
+  // #725: migration entra só pelo botão "Atualizar o banco de todas as
+  // empresas" (desde a 0055), nunca colada à mão. Quem lê a faixa é a loja.
+  it("pede pra quem cuida do sistema atualizar, sem mandar colar arquivo no SQL Editor", () => {
+    const { container } = render(<AvisoVersaoBanco situacao={situacaoDoEsquema(64, 67, {})} />);
+    const texto = container.textContent ?? "";
+
+    expect(texto).not.toMatch(/SQL Editor|New query|supabase\/migrations|arquivo/i);
+    expect(texto).toContain("Quem cuida do sistema precisa atualizar o banco desta empresa");
+    expect(texto).toContain("0065, 0066, 0067");
+  });
+
+  it("não mexe no aviso de computador atrasado", () => {
+    const { container } = render(<AvisoVersaoBanco situacao={situacaoDoEsquema(70, 69, {})} />);
+
+    expect(container.textContent).toContain("Feche e abra o programa");
+  });
 });
