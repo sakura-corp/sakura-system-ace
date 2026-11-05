@@ -118,3 +118,19 @@ export function agruparPorCategoria(
 
   return [...grupos.entries()].map(([categoriaId, ids]) => ({ categoriaId, ids }));
 }
+
+/**
+ * Quanto cada categoria soma (Caixa → Entradas/Saídas), da maior pra menor.
+ * Saiu da tela na #875; a conta é a mesma de antes (soma direta, sem
+ * arredondar por categoria — a tela formata no centavo).
+ */
+export function totaisPorCategoria(
+  movimentos: readonly Pick<MovimentoCaixa, "valor" | "categoria">[],
+): [string, number][] {
+  const mapa = new Map<string, number>();
+  for (const m of movimentos) {
+    const nome = m.categoria?.nome ?? "Sem categoria";
+    mapa.set(nome, (mapa.get(nome) ?? 0) + m.valor);
+  }
+  return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+}
