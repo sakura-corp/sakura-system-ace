@@ -111,6 +111,26 @@ gravidade; depois **um PR por repositório** (docs), as tarefas novas, o fechame
 (com a prova no comentário) e um PR de código pequeno com `/code-review`. Nada publicado. Repetir
 quando sobrar cota; o resultado de 04/11 está nas #868 e #886.
 
+## A madrugada de cota sobrando (05/11/2026)
+
+Com a cota da semana sobrando perto da renovação, ela pediu pra "queimar os tokens" tirando
+coisinhas chatas do futuro enquanto dormia. Funcionou assim (lista na #934, ~30 PRs mesclados):
+- **Antes de ela dormir, perguntar tudo de uma vez**: a lista, o que pode mesclar, se abre o
+  privado, o que fazer se sobrar tempo. Depois, ninguém pergunta nada.
+- **Uma coordenadora leve** (só coordena, não programa) e **uma sessão filha por tarefa ou lote**,
+  todas com a tag `madrugada-<data>`. Cada filha recebe as regras da madrugada no topo (`Second
+  brain: não precisa`, `Closes #N`, `/code-review high`, mesclar só com o CI todo verde) e manda
+  **uma** mensagem final pra coordenadora.
+- **No máximo 4 ou 5 filhas ao mesmo tempo, com "high"**: 9 de uma vez com "max" gastaram o
+  limite de 5h em ~25 min, e tudo parou por horas. Abrir as próximas conforme as primeiras acabam.
+- **Ficam abertos pro teste dela**: o que é grande (Electron, versão grande de biblioteca), o que
+  tem migration e o que é ambíguo (PR rascunho com opções). **Conferir a numeração das migrations
+  entre os PRs abertos**: em 05/11 quatro PRs disputavam dois números.
+- **Lembretes** (`send_later`): um no meio da madrugada e outro logo depois que o limite de 5h
+  renova, pra retomar com "continue de onde parou" as filhas que pararam.
+- **Fora das levas da equipe** e longe de PR aberto dela. No fim: arquivar tudo, um resumo curto
+  e a lista do que saiu da fila do Tiago.
+
 ## O aviso das pendências no começo da sessão (28/10/2026)
 
 Pedido da Sofia, depois de o painel travar o Tiago numa tarefa de 22/10 que ele tinha esquecido no

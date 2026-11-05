@@ -1756,6 +1756,8 @@
     O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
     mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
     o PR olha se a issue fechou junto.
+    **De novo em 05/11/2026** (a madrugada): 9 issues ficaram abertas com o PR mesclado (lista na
+    #934). A mensagem pras sessões filhas agora diz `Closes #N` com todas as letras.
 
 85. **Link de Send num print de conversa (19/10/2026).** Um print do WhatsApp mandado pra sessão
     mostrava o link inteiro de um Bitwarden Send (o que vem depois do `#` é a chave que abre). A
@@ -1837,3 +1839,10 @@
     "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
     a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
     o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.
+
+96. **Mesclar com o CI ainda rodando (05/11/2026, #925).** Uma sessão filha mesclou antes de os jobs
+    de tela terminarem. Um deles caiu porque a máquina do GitHub demorou mais de 8 min no apt
+    instalando o Playwright, não por causa do PR. Não quebrou nada (o #931, que já tinha o #925,
+    passou nos 7), mas foi sorte. **Regra**: mesclar só com **todos** os jobs terminados e verdes.
+    Se um cair por causa da máquina, rodar de novo só os que falharam ("Re-run failed jobs") e
+    esperar. O conserto do apt é a #933.

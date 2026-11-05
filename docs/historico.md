@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
+- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
+- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
+- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
+- **Sessões**: todas arquivadas (#519, fechada).
+- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
+- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
 ### 04/11/2026, noite: a varredura geral dos 4 repositórios; docs em dia; 20 tarefas novas
 - **Varredura** (6 ajudantes, só leitura) e o que veio dela: docs em dia e textos simples na tela (#868, mesclado), 12 tarefas fechadas, 20 novas (#869 a #881, #883 a #886; escritorio#89 a #91).
 - **O mais sério**: o Electron 40 sem suporte (#869, depois do teste dela da 40) e 4 alertas nas dependências (#870).
