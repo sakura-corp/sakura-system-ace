@@ -114,16 +114,19 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
     // #875: o `arquitetura.test.ts` procurava só "lucro" e "preco_custo", e a
     // linha `quantidade * preco_unitario - desconto` passou batido em duas
     // telas da OS. Ela mora em `schemas/valorItem.ts` (`valorLiquidoDoItem`).
+    // Aceita a conta embrulhada, como `paraNumero(item.quantidade) *
+    // paraNumero(item.preco_unitario)` (revisão da #875).
     padrao:
-      /\bquantidade\w*\s*\*\s*[A-Za-z_$.]*preco_unitario|preco_unitario\w*\s*\*\s*[A-Za-z_$.]*quantidade/,
+      /\bquantidade\w*\)?\s*\*\s*[A-Za-z_$.(]*preco_unitario|preco_unitario\w*\)?\s*\*\s*[A-Za-z_$.(]*quantidade/,
   },
   {
     nome: "soma de valores em dinheiro feita na tela",
     // #875: `reduce((soma, m) => soma + m.valor, 0)` e o acumulador de mapa
-    // `(mapa.get(x) ?? 0) + m.valor`. Soma de dinheiro usa o `somar` de
+    // `(mapa.get(x) ?? 0) + m.valor`, e o acumulador solto `total + m.valor`
+    // (era assim no Diário do Caixa, que a primeira versão deixou passar). Soma de dinheiro usa o `somar` de
     // `schemas/dinheiro.ts` (fecha no centavo) ou uma função de `src/schemas/`.
     padrao:
-      /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b/,
+      /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b|\b(?:soma|total)\w*\s*\+\s*\w+\.valor\b/i,
   },
 ];
 

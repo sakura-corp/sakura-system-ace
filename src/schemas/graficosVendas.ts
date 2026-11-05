@@ -7,6 +7,7 @@
  * seção 3): as somas continuam diretas, sem arredondar no meio, porque a tela
  * formata no centavo e mudar a ordem das contas mudaria a última casa.
  */
+import { diaLocal } from "@/lib/datas";
 import type { TipoCaixa } from "@/types/caixa";
 
 export type Periodo = "diario" | "semanal" | "mensal" | "anual";
@@ -23,10 +24,6 @@ export interface MovimentoDoGrafico {
 // que isso não deixa comparar nada, e mais só vai mostrar coluna zerada de
 // antes da loja usar o sistema.
 const QTD_BUCKETS: Record<Periodo, number> = { diario: 14, semanal: 8, mensal: 6, anual: 5 };
-
-function paraDataLocal(dataIso: string): string {
-  return new Date(dataIso).toLocaleDateString("sv-SE");
-}
 
 function inicioDaSemana(data: Date): Date {
   const dia = data.getDay();
@@ -46,9 +43,9 @@ function chaveDoMovimento(dataIso: string, periodo: Periodo): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }
   if (periodo === "semanal") {
-    return paraDataLocal(inicioDaSemana(d).toISOString());
+    return diaLocal(inicioDaSemana(d));
   }
-  return paraDataLocal(dataIso);
+  return diaLocal(dataIso);
 }
 
 function gerarChavesBuckets(periodo: Periodo, hoje: Date): string[] {
@@ -60,11 +57,11 @@ function gerarChavesBuckets(periodo: Periodo, hoje: Date): string[] {
     } else if (periodo === "diario") {
       const d = new Date(hoje);
       d.setDate(d.getDate() - i);
-      chaves.push(paraDataLocal(d.toISOString()));
+      chaves.push(diaLocal(d));
     } else if (periodo === "semanal") {
       const d = new Date(hoje);
       d.setDate(d.getDate() - i * 7);
-      chaves.push(paraDataLocal(inicioDaSemana(d).toISOString()));
+      chaves.push(diaLocal(inicioDaSemana(d)));
     } else {
       const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       chaves.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
@@ -108,7 +105,7 @@ export function totaisRecebidosPorDia(
 ): [string, number][] {
   const mapa = new Map<string, number>();
   for (const m of entradas) {
-    const dia = paraDataLocal(m.data);
+    const dia = diaLocal(m.data);
     mapa.set(dia, (mapa.get(dia) ?? 0) + m.valor);
   }
   return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
@@ -126,12 +123,15 @@ export function totaisRecebidos(
   entradas: readonly Pick<MovimentoDoGrafico, "data" | "valor">[],
   hoje: Date,
 ): TotaisRecebidos {
-  const hojeStr = paraDataLocal(hoje.toISOString());
+  const hojeStr = diaLocal(hoje);
   const inicioSemana = inicioDaSemana(hoje);
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   const inicioAno = new Date(hoje.getFullYear(), 0, 1);
 
-  const totalHoje = totaisRecebidosPorDia(entradas).find(([dia]) => dia === hojeStr)?.[1] ?? 0;
+  // Mesma soma, na mesma ordem, que a linha de hoje em totaisRecebidosPorDia.
+  const totalHoje = entradas
+    .filter((m) => diaLocal(m.data) === hojeStr)
+    .reduce((total, m) => total + m.valor, 0);
   const totalSemana = entradas
     .filter((m) => new Date(m.data) >= inicioSemana)
     .reduce((total, m) => total + m.valor, 0);
