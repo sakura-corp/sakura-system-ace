@@ -2,7 +2,7 @@
 
 > Feito em 29/09/2026 a partir de 8 prints do site do Anexar que ela mandou (a página de venda do
 > módulo de auto center deles). **Em 30/09 cada item que falta virou tarefa no GitHub** (etiqueta
-> `guia`, #386 a #412, mais o orçamento rápido na #379 e a assinatura na #380); o número está em
+> `guia`, #386 a #412, mais o orçamento na #379 e a assinatura na #380; o orçamento rápido do balcão ficou fora da #379 e virou a #888); o número está em
 > cada linha. Ficaram sem tarefa, de propósito, os do "provavelmente nunca" do fim. A tabela com
 > todas está na seção 8 (`docs/pendencias-e-futuro.md`, "O que depende dela").
 
@@ -34,7 +34,7 @@ importação da nota do fornecedor por XML.
 | Ordem de Serviço | ✅ | Ordens de Serviço |
 | Análise de veículos | 🟡 | Ficha do veículo (histórico por placa) existe. Falta o **relatório por marca/modelo/aplicação** (ex: "que modelo mais aparece", "que peça sai mais pro Onix") (tarefa #404) |
 | Checklist de atendimento | ❌ | `FN-02` (checklist de entrada com fotos) (tarefa #380) |
-| Orçamento rápido (PDV) | 🟡 | A Venda de balcão é o PDV. O orçamento da OS (#379, feito) já monta o preço, manda pelo WhatsApp e só baixa estoque na aprovação; falta fazer o mesmo direto no balcão (ficou fora da #379) e imprimir |
+| Orçamento rápido (PDV) | 🟡 | A Venda de balcão é o PDV. O orçamento da OS (#379, feito) já monta o preço, manda pelo WhatsApp e só baixa estoque na aprovação; falta fazer o mesmo direto no balcão e imprimir (ficou fora da #379, confirmado pela Sofia em 05/11; tarefa #888) |
 | Controle de estoque | ✅ | Estoque (saldo, mínimo, "precisa comprar", leitor de código de barras) |
 | Inventário | ✅ | Estoque → Contagem (gera o ajuste sozinho) |
 | Tabelas de preço | ❌ | Hoje cada peça tem **um** preço. Falta preço por tipo de cliente (varejo/frota/revenda) ou por forma de pagamento (tarefa #407) |
@@ -126,7 +126,7 @@ depois, reaproveitando.
 
 Não é decisão, é ponto de partida pra conversa:
 
-1. **Orçamento** (#379, com o orçamento rápido do balcão) + **checklist com fotos e assinatura**
+1. **Orçamento** (#379, feito; o orçamento rápido do balcão é a #888) + **checklist com fotos e assinatura**
    (#380): é o que o cliente da oficina vê, e o que mais aparece no site deles.
 2. **Devolução** (#399) e **agenda** (#400): buracos do dia a dia.
 3. **Financeiro "de dono"**: o **DRE** em três partes, nesta ordem (#386 plano de contas em grupos,
