@@ -6,7 +6,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarOrdens } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
@@ -28,7 +27,7 @@ export function RelatoriosPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured || !lojaAtual) {
+      if (!lojaAtual) {
         setCarregando(false);
         return;
       }

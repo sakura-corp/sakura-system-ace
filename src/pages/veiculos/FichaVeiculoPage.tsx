@@ -6,7 +6,6 @@ import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, diasEntre, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { buscarFichaDoVeiculo, type FichaDoVeiculo } from "@/lib/veiculos";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
@@ -49,7 +48,7 @@ export function FichaVeiculoPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured || !id) {
+      if (!id) {
         setCarregando(false);
         return;
       }

@@ -8,7 +8,7 @@ import {
   FocusNfeError,
 } from "./focusNfe";
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { salvarComoDownload } from "./download";
 import { criarZip, type ArquivoParaZip } from "./zip";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
@@ -114,17 +114,18 @@ export async function listarNotasComErro(lojaId: string): Promise<NotaFiscalArqu
 
 // Notas ligadas a um conjunto de OS — usada pra saber, sem uma consulta por
 // linha da lista, quais notas cada OS já tem (ver schemas/situacaoFiscal.ts).
+// A lista de OS pode ter milhares: vai em blocos e por páginas (#498).
 export async function listarArquivosDasOrdens(
   ordemIds: string[],
 ): Promise<NotaFiscalArquivo[]> {
-  if (ordemIds.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("notas_fiscais_arquivos")
-    .select("*")
-    .in("ordem_servico_id", ordemIds);
-
-  if (error) throw error;
+  const data = await buscarPorIdsEmBlocos(ordemIds, (bloco, de, ate) =>
+    supabase
+      .from("notas_fiscais_arquivos")
+      .select("*")
+      .in("ordem_servico_id", bloco)
+      .order("id")
+      .range(de, ate),
+  );
   return data as unknown as NotaFiscalArquivo[];
 }
 
