@@ -5,6 +5,7 @@ import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarClientesParaEscolha } from "@/lib/clientes";
 import { temPermissao } from "@/types/operador";
+import { buscarConfiguracaoPix } from "@/lib/configuracoes";
 import { criarContaReceber, listarContasReceber, receberConta } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -13,8 +14,10 @@ import {
   textoDoModelo,
   ultimasMensagensPorReferencia,
 } from "@/lib/modelosWhatsapp";
-import { preencherModelo } from "@/schemas/whatsapp";
+import { montarPixCopiaECola } from "@/schemas/pix";
+import { blocoPix, preencherModelo } from "@/schemas/whatsapp";
 import type { Cliente } from "@/types/cliente";
+import type { ConfiguracaoPix } from "@/types/configuracao";
 import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
@@ -43,6 +46,8 @@ export function ContasReceberPage() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [contaRecebendo, setContaRecebendo] = useState<ContaReceber | null>(null);
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
+  // O Pix da loja (#456). Sem ele (ou se não deu pra ler) a cobrança sai como sempre.
+  const [configuracaoPix, setConfiguracaoPix] = useState<ConfiguracaoPix | null>(null);
   // Quando cada conta teve a última cobrança ABERTA no WhatsApp. Responde a
   // pergunta que hoje mora só na memória de quem cobrou: "já falei com essa
   // pessoa?". Ver a tabela `whatsapp_mensagens` na migration 0052.
@@ -56,15 +61,17 @@ export function ContasReceberPage() {
     setCarregando(true);
     setErro(null);
     try {
-      const [listaContas, listaClientes, modelos, cobrancas] = await Promise.all([
+      const [listaContas, listaClientes, modelos, cobrancas, pix] = await Promise.all([
         listarContasReceber(lojaAtual.id),
         listarClientesParaEscolha(podeVerCadastro),
         listarModelosWhatsapp(lojaAtual.id),
         ultimasMensagensPorReferencia(lojaAtual.id, "cobranca"),
+        buscarConfiguracaoPix(lojaAtual.id),
       ]);
       setContas(listaContas);
       setClientes(listaClientes);
       setModelosWhatsapp(modelos);
+      setConfiguracaoPix(pix);
       setUltimasCobrancas(cobrancas);
     } catch (err) {
       console.error("Erro ao carregar contas a receber:", err);
@@ -114,6 +121,16 @@ export function ContasReceberPage() {
       vencimento: new Date(conta.vencimento).toLocaleDateString("pt-BR"),
       descricao: conta.descricao,
       loja: lojaAtual?.nome,
+      pix: blocoPix(
+        configuracaoPix
+          ? montarPixCopiaECola({
+              chave: configuracaoPix.chave,
+              nomeRecebedor: configuracaoPix.nome_recebedor,
+              cidadeRecebedor: configuracaoPix.cidade_recebedor,
+              valor: conta.valor,
+            })
+          : null,
+      ),
     });
   }
 
