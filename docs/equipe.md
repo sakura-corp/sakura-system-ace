@@ -27,7 +27,10 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
 **O que precisa ter antes** (os convites e as chaves, a Sofia manda):
 - a **conta do Claude Team da Sakura**, pelo convite que chega no **e-mail da Sakura**;
 - a **conta do GitHub com o e-mail da Sakura**, com a **verificação em duas etapas** ligada, e o
-  convite pra organização `sakura-corp` aceito;
+  convite pra organização `sakura-corp` aceito. **A Sofia dá "Write"** a essa conta em
+  `sakura-system-ace`, `escritorio` e `secundarios` (repositório → Settings → Collaborators → Add
+  people): só ser da organização dá leitura, e sem o "Write" não dá pra enviar trabalho nem abrir PR
+  (06/11, com a conta nova do Lázaro);
 - **quem vai trabalhar no programa das lojas**: o endereço e a chave do **Supabase de teste** e o
   **login de teste** de cada um. Tudo isso chega **só por um link do Bitwarden Send**, que se
   apaga sozinho. **Nunca** por WhatsApp, e-mail, conversa com o Claude nem pelo repositório.
@@ -114,8 +117,8 @@ diferente da descrita: print antes de clicar.
    etapas, se pedir). Se aparecer **Install** ou uma lista de organizações: **não instalar nada na
    `sakura-corp`** (a Sofia já instalou); mandar print a ela.
 4. **O ambiente na nuvem** (uma vez só): no `claude.ai/code`, perto da caixa de texto, a escolha do
-   ambiente → criar um novo. **Nome**: `sakura`. **Network access**: o mesmo nível do ambiente da
-   Sofia (ela passa). **Variáveis e segredos: vazios, sempre** (nenhuma chave vai ali).
+   ambiente → criar um novo. **Nome**: `sakura`. **Network access** (ou "Acesso à rede"): **Total**,
+   o mesmo do ambiente da Sofia (06/11). **Variáveis e segredos: vazios, sempre** (nenhuma chave vai ali).
    **Setup script**: vazio.
 5. **Abrir a sessão**: antes da primeira mensagem, o ambiente `sakura`, o repositório
    `sakura-corp/sakura-system-ace` e o modo **Auto**, se aparecer ("As funções da sessão", abaixo).
@@ -160,7 +163,9 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    em https://github.com/apps/claude/installations/select_target escolha a **sua conta** (não a
    `sakura-corp`) → **Only select repositories** → `segundo-cerebro` → **Install** (ou **Save**,
    se já estava instalado). Se mesmo assim não der, confira em https://claude.ai/connect-github
-   que o GitHub ligado é o da conta da Sakura. Depois, o Claude tenta de novo.
+   que o GitHub ligado é o da conta da Sakura. Ali pode aparecer o aviso **"1 organização do GitHub
+   não foi vinculada"** (a `sakura-corp`): **não clicar nele** (com o Lázaro, 06/11, deu certo sem
+   mexer). Depois, o Claude tenta de novo.
 3. **Não mandar a pasta do Obsidian**: o Claude grava no caderno um `.gitignore` com a linha
    `.obsidian/`. (Sem isso, o primeiro envio da Sofia levou 255 KB do próprio plugin, e essa pasta
    muda toda hora, até ao trocar de aba.)
@@ -224,13 +229,15 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 8. **O plugin Git** (só depois do passo 7, com o `segundo-cerebro` aberto): **o plugin é por
    cofre**, então quem já instalou num outro cofre instala de novo aqui dentro. Engrenagem ⚙️
    (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
-   o nome em português) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
+   o nome no menu; dentro da página, a parte se chama **"Plugins da comunidade"**: é a mesma) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
    "Ligar", já está liberado) → **Procurar** → buscar `Git` → o **Git, por Vinzent** (antigo
    "Obsidian Git") → **Instalar** → **Ativar**. Ele fica em "Plugins instalados" com o interruptor
    roxo, e no rodapé do Obsidian aparece `✓ main`.
-9. **Puxar e enviar sozinho**: engrenagem → **Plugins não oficiais** → **Git**. As opções estão
-   em inglês e em páginas: **Automatic** → `Auto commit-and-sync interval (minutes)` = `10` e
-   `Auto pull interval (minutes)` = `10`; setinha `<` → **Sync** → ligar **Pull on startup** (os
+9. **Puxar e enviar sozinho**: engrenagem → **role o menu da esquerda até o fim**: lá embaixo há um
+   segundo título **Plugins não oficiais** → **Git** (a lista de plugins do passo 8 não é essa
+   página). As opções estão em inglês e em páginas: **Automatic** → `Auto commit-and-sync interval (minutes)` = `10` e
+   `Auto pull interval (minutes)` = `10`; o **Pull on startup não fica na Automatic**: setinha `<` →
+   **Sync** → ligar **Pull on startup** (os
    dois "on commit-and-sync" já vêm ligados).
 10. **Testar a ida e a volta**: o Claude grava uma nota de teste no caderno; no Obsidian,
     **Ctrl + P** (Mac: **Cmd + P**) → `Git: Pull` → aparece "Pulled 1 file from remote" e a nota.
