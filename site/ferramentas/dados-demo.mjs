@@ -535,6 +535,12 @@ export const cotacoes = [
 // estado real de uma loja que não editou nada, e aí vale o texto padrão de
 // src/schemas/whatsapp.ts.
 export const modelosWhatsapp = [];
+// O link de avaliação no Google (#459, migration 0082). Com ele, o botão
+// "Avaliação" aparece nas OS e vendas faturadas — e é o que a varredura de
+// largura precisa medir, porque a coluna de ações ganha mais um botão.
+export const configAvaliacao = [
+  { loja_id: LOJA, link_google: "https://g.page/r/exemplo-da-loja/review", atualizado_em: dia(-10) },
+];
 // Uma cobrança já aberta, pra o "cobrado em dd/mm" aparecer no catálogo.
 export const whatsappMensagens = [
   { id: "wa1", loja_id: LOJA, chave: "cobranca", referencia: "cr2", destino: "(16) 99123-4567", operador_id: OP, criado_em: dia(-2) },
@@ -945,6 +951,7 @@ export const TABELAS = {
   funcionario_filhos: funcionarios.flatMap((f) => f.filhos),
   auditoria,
   configuracoes_whatsapp: modelosWhatsapp,
+  configuracoes_avaliacao: configAvaliacao,
   whatsapp_mensagens: whatsappMensagens,
 };
 // As funções do banco que o app chama por `supabase.rpc(...)`. Sem resposta
