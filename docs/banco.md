@@ -561,6 +561,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   local com 5 mil OS e 10 mil lançamentos por loja: a lista do Caixa caiu de 9,7 s pra 3,3 s (só
   Caixa) e de 13,7 s pra 3,9 s (admin). Teste em `supabase/scripts/testar-os-permissao.sql` (as
   duas metades, 15 perfis), conferido com 28 mutações, todas vermelhas.
+- `0077`: **a busca geral do `Ctrl+K`** (tarefa #372, TR-03.3). Uma função `security definer`,
+  **`buscar_global(termo, loja, limite)`**, que procura placa, cliente, OS, peça e fornecedor de uma
+  vez e devolve só `tipo, id, titulo, detalhe, veiculo_id`. Cada tipo só sai pra quem tem o módulo
+  (placa e cliente: Clientes ou OS, e o cliente só com o nome e as placas, como a janela da `0068`;
+  OS: OS e acesso à loja, só da loja aberta; peça: Estoque, nunca o custo; fornecedor:
+  Fornecedores). Mais duas funções `immutable` pros índices: **`sem_acento`** (sem a extensão
+  `unaccent`, que não serve pra índice) e **`placa_normalizada`**. Índices novos: trigrama
+  (`pg_trgm`) nos nomes de cliente, peça e fornecedor, a placa normalizada, o código de barras, o
+  código interno e o número da OS como texto. Declara `-- versao-minima-do-programa: 0.9.56`
+  (fica atrás da `0076`); até ela entrar, a caixa avisa que "começa a funcionar quando o banco for
+  atualizado". Medido num Postgres 16 local com volume de 10 lojas (30 mil clientes, 40 mil
+  veículos, 150 mil OS): a placa caiu de 155 ms pra 5 ms, o nome de 147 ms pra 10 ms. Teste em
+  `supabase/scripts/testar-busca-global.sql` (as duas metades), conferido com 12 mutações.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
   `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
@@ -604,6 +617,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   de loja nenhuma. Nome que já existe (comparado sem maiúscula nem espaço nas pontas) não entra de
   novo. Teste em `supabase/scripts/testar-servicos-padrao.sql`; os dados de exemplo dão preço de
   mentira aos 39.
+- `0078`: **o percentual dos tributos do Simples, por loja** (tarefa #866). Uma coluna nova,
+  opcional, em `configuracoes_fiscais_loja`: `percentual_tributos_simples` (`numeric(5,2)`, a mesma
+  precisão da `aliquota_iss`), com a trava `ck_config_fiscal_percentual_tributos_simples` (de 0 a
+  100; a frase da tela está em `src/lib/errors.ts`). Vai no campo pTotTribSN (grupo totTrib) da
+  NFS-e Nacional, **só da loja do Simples**; o número vem da contabilidade. **Vazio manda 0**, pra
+  não travar a emissão. Coluna nova e opcional: sobe **antes** da versão, sem
+  `versao-minima-do-programa`. **Entrou sozinha, num PR à parte (05/11)**, porque a tela e a nota
+  que usam a coluna (#882) dependem do #839 (NFS-e Nacional), que espera a Focus; assim a `0079` e
+  a `0080` não ficam presas atrás dela. Aplicar a `0077` (#857) antes desta. Teste em
+  `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

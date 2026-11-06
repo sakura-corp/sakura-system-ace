@@ -24,7 +24,7 @@ export const VERSAO_ESQUEMA_ESPERADA = 80;
 /**
  * As migrations que declaram `-- versao-minima-do-programa: X`, com o X de
  * cada uma. Essas sobem DEPOIS da versão do programa, de propósito: o botão
- * "Atualizar o banco" espera todos os computadores chegarem em X (0062, 0065, 0069, 0070, 0074, 0076).
+ * "Atualizar o banco" espera todos os computadores chegarem em X (0062, 0065, 0069, 0070, 0074, 0076, 0077).
  * Então o programa novo passa dias num banco sem elas, e isso não é atraso:
  * a faixa amarela nessa espera viraria telefonema em toda loja (#757).
  *
@@ -41,6 +41,10 @@ export const MIGRATIONS_QUE_ESPERAM_OS_COMPUTADORES: Readonly<Record<number, str
   // então o código que lê pelas janelas da 0075 só pode sair na 0.9.56
   // (cabeçalho da 0076).
   76: "0.9.56",
+  // A 0077 (busca geral) não precisa de versão nenhuma, mas vem depois da
+  // 0076 e o botão a segura junto: sem esta linha, um programa que já espera
+  // a 0077 acenderia a faixa amarela nas lojas durante a espera (#757).
+  77: "0.9.56",
 };
 
 /**

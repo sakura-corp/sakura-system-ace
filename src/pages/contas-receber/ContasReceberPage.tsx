@@ -226,7 +226,7 @@ export function ContasReceberPage() {
                             >
                               {ultimaCobranca && (
                                 <span
-                                  className="text-rotulo text-sakura-muted"
+                                  className="whitespace-nowrap text-rotulo text-sakura-muted"
                                   title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
                                 >
                                   cobrado em {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
@@ -255,7 +255,7 @@ export function ContasReceberPage() {
                               )}
                               <button
                                 onClick={() => setContaRecebendo(conta)}
-                                className="h-8 rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
+                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
                               >
                                 Marcar como recebido
                               </button>

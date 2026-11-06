@@ -201,7 +201,9 @@ export function PedidosCompraSection({
             <tbody>
               {pedidos.map((pedido) => (
                 <tr key={pedido.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3 text-sakura-purple-dark">{nomePedido(pedido.numero)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sakura-purple-dark">
+                    {nomePedido(pedido.numero)}
+                  </td>
                   <td className="px-4 py-3 text-sakura-purple-dark">
                     {pedido.fornecedor?.nome ?? "—"}
                   </td>
@@ -213,7 +215,7 @@ export function PedidosCompraSection({
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_PEDIDO_COR[pedido.status]}`}
+                      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_PEDIDO_COR[pedido.status]}`}
                     >
                       {STATUS_PEDIDO_LABEL[pedido.status]}
                     </span>

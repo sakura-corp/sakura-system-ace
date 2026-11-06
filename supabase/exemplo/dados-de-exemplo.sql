@@ -12,8 +12,11 @@
 -- instalação), 9 veículos, 12 peças com custo, preço e estoque, preço nos
 -- serviços padrão, 2 fornecedores, 14 ordens de serviço e vendas de balcão (2 antigas, de clientes que "sumiram")
 -- em todas as fases (em andamento, concluída, faturada à vista, dividida,
--- parcelada no cartão, a prazo), lançamentos de caixa, contas a pagar e a
--- receber (pagas, abertas e atrasadas). As datas são contadas a partir do dia
+-- parcelada no cartão, a prazo), uma peça avulsa (sem cadastro), 2 orçamentos
+-- (um aberto e um recusado), lançamentos de caixa, contas a pagar e a
+-- receber (pagas, abertas e atrasadas), 2 fechamentos de caixa, 1 comissão
+-- paga, 2 pedidos de compra (um recebido e um aberto) com as cotações, 2
+-- contagens de estoque e 1 computador da loja. As datas são contadas a partir do dia
 -- em que o script roda, então a loja sempre parece "de agora".
 --
 -- TUDO É FICTÍCIO. Nome, CPF, CNPJ, telefone, e-mail e endereço foram
@@ -450,7 +453,9 @@ from (values
 ) as v(id, os, tipo, peca, descricao, qtd, preco, desconto, tecnico)
 on conflict do nothing;
 
--- A baixa de estoque de cada peça usada (o programa faz isso ao lançar o item).
+-- A baixa de estoque de cada peça usada (o programa faz isso ao lançar o item;
+-- no orçamento não: lá a peça só sai quando o cliente aprova, e quem baixa é
+-- a aprovação no programa; por isso só as OS 1 a 14 do exemplo).
 insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, referencia, loja_id, deposito_id, criado_em)
 select ('eeee000d-0000-4000-8000-0000000002' || right(i.id::text, 2))::uuid,
        i.peca_id, 'saida', i.quantidade, 'uso_em_os',
@@ -459,6 +464,7 @@ select ('eeee000d-0000-4000-8000-0000000002' || right(i.id::text, 2))::uuid,
 from ordens_servico_itens i
 join ordens_servico o on o.id = i.ordem_servico_id
 where i.id::text like 'eeee0009-%' and i.peca_id is not null
+  and o.id::text like 'eeee0008-%' and right(o.id::text, 2)::int <= 14
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -530,7 +536,265 @@ join ordens_servico o on o.id = ('eeee0008-0000-4000-8000-0000000000' || lpad(v.
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
--- 9. Quem já existe no banco e é admin passa a enxergar a loja de exemplo
+-- 9. Peça avulsa, orçamentos, compras, contagem, fechamentos e computador
+--    (tarefa #872). Cada bloco grava do jeito que o programa grava; a função
+--    ou tela de referência está no comentário de cada um.
+-- ---------------------------------------------------------------------------
+
+-- 9a. Peça avulsa (sem cadastro, migration 0066) na OS 8, que está concluída
+-- esperando faturar. Peça avulsa não mexe no estoque (baixarEstoqueDasPecas,
+-- src/lib/ordensServico.ts), e o custo digitado vai em custo_unitario.
+-- Só enquanto a OS 8 não foi faturada (o programa não aceita item em OS
+-- faturada, e alguém da equipe pode ter faturado ela no teste).
+insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, servico_id, descricao,
+                                  quantidade, preco_unitario, desconto, tecnico_id, custo_unitario)
+select 'eeee0009-0000-4000-8000-000000000033', o.id, 'peca', null, null,
+       'Parafuso de roda (avulso, exemplo)', 4, 6.00, 0, null, 2.50
+from ordens_servico o
+where o.id = 'eeee0008-0000-4000-8000-000000000008' and o.status in ('em_andamento', 'concluida')
+on conflict do nothing;
+
+-- 9b. Orçamentos (migration 0065; criarOrcamento e recusarOrcamento, em
+-- src/lib/ordensServico.ts): sem número de OS (o banco dá o número do
+-- orçamento, por isso vai vazio) e SEM baixa de estoque — a peça só sai da
+-- prateleira quando o cliente aprova. Um aberto e um recusado, com motivo.
+-- (Um insert de cada vez, o mais velho primeiro: o número segue a data.)
+insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
+                            descricao_problema, vendedor_id, data_abertura, validade,
+                            motivo_recusa, recusado_em) values
+  ('eeee0008-0000-4000-8000-000000000016', 'eeee0001-0000-4000-8000-000000000001', null, 'os',
+   'eeee0004-0000-4000-8000-000000000003', 'eeee0005-0000-4000-8000-000000000004', 'recusado', 74100,
+   'Orçamento de amortecedores', 'eeee0003-0000-4000-8000-000000000001',
+   pg_temp.ex_quando(6, '10:00'), pg_temp.ex_dia(6) + 7,
+   'preco', pg_temp.ex_quando(4, '11:00'))
+on conflict do nothing;
+
+insert into ordens_servico (id, loja_id, numero, tipo, cliente_id, veiculo_id, status, km_entrada,
+                            descricao_problema, vendedor_id, data_abertura, validade) values
+  ('eeee0008-0000-4000-8000-000000000015', 'eeee0001-0000-4000-8000-000000000001', null, 'os',
+   'eeee0004-0000-4000-8000-000000000002', 'eeee0005-0000-4000-8000-000000000003', 'orcamento', 63800,
+   'Orçamento dos 4 pneus dianteiros e traseiros', 'eeee0003-0000-4000-8000-000000000002',
+   pg_temp.ex_quando(1, '15:30'), pg_temp.ex_dia(1) + 7)
+on conflict do nothing;
+
+insert into ordens_servico_itens (id, ordem_servico_id, tipo, peca_id, servico_id, descricao,
+                                  quantidade, preco_unitario, desconto, tecnico_id)
+select v.id::uuid, v.os::uuid, v.tipo,
+       v.peca::uuid,
+       case when v.tipo = 'servico' then (select id from servicos where descricao = v.descricao limit 1) end,
+       coalesce((select descricao from pecas where id = v.peca::uuid), v.descricao),
+       v.qtd, v.preco, 0, null
+from (values
+  -- orçamento aberto: 4 pneus, montagem e balanceamento
+  ('eeee0009-0000-4000-8000-000000000034', 'eeee0008-0000-4000-8000-000000000015', 'peca',
+   'eeee0006-0000-4000-8000-000000000001', null, 4, 389.90),
+  ('eeee0009-0000-4000-8000-000000000035', 'eeee0008-0000-4000-8000-000000000015', 'servico',
+   null, 'Montagem de Pneu', 4, 20.00),
+  ('eeee0009-0000-4000-8000-000000000036', 'eeee0008-0000-4000-8000-000000000015', 'servico',
+   null, 'Balanceamento', 4, 15.00),
+  -- orçamento recusado: amortecedores (achou caro)
+  ('eeee0009-0000-4000-8000-000000000037', 'eeee0008-0000-4000-8000-000000000016', 'peca',
+   'eeee0006-0000-4000-8000-000000000005', null, 2, 329.90),
+  ('eeee0009-0000-4000-8000-000000000038', 'eeee0008-0000-4000-8000-000000000016', 'servico',
+   null, 'Serviço técnico – Amortecedores', 1, 100.00)
+) as v(id, os, tipo, peca, descricao, qtd, preco)
+on conflict do nothing;
+
+-- 9c. Pedidos de compra (migration 0039; criarPedido e receberItensPedido,
+-- src/lib/pedidosCompra.ts). O número vem do banco. O recebido gera a entrada
+-- no estoque de cada item (motivo "compra", referência "Pedido N"); o
+-- pendente ainda não. Todo item com preço vira uma cotação (9d).
+insert into pedidos_compra (id, loja_id, fornecedor_id, status, data_pedido, observacao, criado_em) values
+  ('eeee0012-0000-4000-8000-000000000001', 'eeee0001-0000-4000-8000-000000000001',
+   'eeee0007-0000-4000-8000-000000000001', 'recebido', pg_temp.ex_dia(14),
+   'Reposição de pneus (exemplo)', pg_temp.ex_quando(14, '09:00'))
+on conflict do nothing;
+
+insert into pedidos_compra (id, loja_id, fornecedor_id, status, data_pedido, observacao, criado_em) values
+  ('eeee0012-0000-4000-8000-000000000002', 'eeee0001-0000-4000-8000-000000000001',
+   'eeee0007-0000-4000-8000-000000000002', 'pendente', pg_temp.ex_dia(2),
+   'Freios e um pneu pra comparar preço (exemplo)', pg_temp.ex_quando(2, '16:00'))
+on conflict do nothing;
+
+insert into pedidos_compra_itens (id, pedido_compra_id, peca_id, quantidade_pedida, preco_unitario, quantidade_recebida) values
+  ('eeee0013-0000-4000-8000-000000000001', 'eeee0012-0000-4000-8000-000000000001',
+   'eeee0006-0000-4000-8000-000000000002', 4, 300.00, 4),
+  ('eeee0013-0000-4000-8000-000000000002', 'eeee0012-0000-4000-8000-000000000001',
+   'eeee0006-0000-4000-8000-000000000003', 4, 390.00, 4),
+  ('eeee0013-0000-4000-8000-000000000003', 'eeee0012-0000-4000-8000-000000000002',
+   'eeee0006-0000-4000-8000-000000000007', 6, 78.00, 0),
+  ('eeee0013-0000-4000-8000-000000000004', 'eeee0012-0000-4000-8000-000000000002',
+   'eeee0006-0000-4000-8000-000000000002', 4, 310.00, 0)
+on conflict do nothing;
+
+-- A entrada do que chegou (só dos itens com quantidade recebida).
+insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, referencia, loja_id, deposito_id, criado_em)
+select ('eeee000d-0000-4000-8000-0000000003' || right(i.id::text, 2))::uuid,
+       i.peca_id, 'entrada', i.quantidade_recebida, 'compra', 'Pedido ' || p.numero,
+       p.loja_id, 'eeee0002-0000-4000-8000-000000000001', pg_temp.ex_quando(12, '14:00')
+from pedidos_compra_itens i
+join pedidos_compra p on p.id = i.pedido_compra_id
+where i.id::text like 'eeee0013-%' and i.quantidade_recebida > 0
+on conflict do nothing;
+
+-- 9d. Cotações (migration 0042; registrarCotacoes, src/lib/cotacoesPecas.ts):
+-- nascem dos itens de pedido com preço. O pneu 185/65 ficou com duas (uma de
+-- cada fornecedor), pra a comparação do pedido de compra ter o que mostrar.
+insert into cotacoes_pecas (id, peca_id, fornecedor_id, preco, criado_em)
+select ('eeee0014-0000-4000-8000-0000000000' || right(i.id::text, 2))::uuid,
+       i.peca_id, p.fornecedor_id, i.preco_unitario, p.criado_em
+from pedidos_compra_itens i
+join pedidos_compra p on p.id = i.pedido_compra_id
+where i.id::text like 'eeee0013-%' and i.preco_unitario > 0
+on conflict do nothing;
+
+-- 9e. Contagem de estoque (migration 0017; registrarContagem,
+-- src/lib/contagens.ts): guarda o saldo que o sistema tinha na hora, o que
+-- foi contado e a diferença; diferença diferente de zero vira um movimento de
+-- "ajuste". Uma bateu (pneu 185/65) e uma faltou (3 bicos de válvula).
+insert into contagens_estoque (id, peca_id, deposito_id, loja_id, quantidade_contada, saldo_sistema,
+                               diferenca, observacao, criado_em)
+select v.id::uuid, v.peca::uuid, 'eeee0002-0000-4000-8000-000000000001',
+       'eeee0001-0000-4000-8000-000000000001',
+       greatest(s.saldo + v.delta, 0), s.saldo, greatest(s.saldo + v.delta, 0) - s.saldo, v.obs,
+       pg_temp.ex_quando(7, '18:00')
+from (values
+  ('eeee0015-0000-4000-8000-000000000001', 'eeee0006-0000-4000-8000-000000000002', 0::numeric, null::text),
+  ('eeee0015-0000-4000-8000-000000000002', 'eeee0006-0000-4000-8000-000000000010', -3, 'Faltaram 3 (exemplo)')
+) as v(id, peca, delta, obs)
+cross join lateral (
+  select coalesce(sum(case when m.tipo = 'entrada' then m.quantidade else -m.quantidade end), 0) as saldo
+  from estoque_movimentos m
+  where m.peca_id = v.peca::uuid
+    and m.deposito_id = 'eeee0002-0000-4000-8000-000000000001'
+    and m.criado_em < pg_temp.ex_quando(7, '18:00')
+) s
+on conflict do nothing;
+
+insert into estoque_movimentos (id, peca_id, tipo, quantidade, motivo, referencia, loja_id, deposito_id, criado_em)
+select ('eeee000d-0000-4000-8000-0000000004' || right(c.id::text, 2))::uuid,
+       c.peca_id, case when c.diferenca > 0 then 'entrada' else 'saida' end, abs(c.diferenca),
+       'ajuste', 'Ajuste por contagem de estoque', c.loja_id, c.deposito_id, c.criado_em
+from contagens_estoque c
+where c.id::text like 'eeee0015-%' and c.diferenca <> 0
+on conflict do nothing;
+
+-- 9f. Fechamento de caixa de dois dias passados (migration 0058): pela
+-- própria fechar_caixa(), que é o que o programa chama (src/lib/fechamentoCaixa.ts).
+-- A conta do "esperado" é a da tela (src/schemas/fechamentoCaixa.ts): fundo de
+-- troco + entradas em dinheiro − saídas em dinheiro do dia, com os totais por
+-- forma; a diferença (contado − esperado), quando existe, a função lança como
+-- "Quebra/Sobra de caixa" no fim daquele dia. Há 5 dias bateu; há 3 dias
+-- faltaram R$ 5,00. Só fecha o dia que ainda não foi fechado (um fechamento
+-- por loja por dia), então a segunda rodada não lança outra quebra.
+-- A forma de pagamento normalizada como a tela faz (chaveDaForma/ehDinheiro).
+create or replace function pg_temp.ex_forma(forma text)
+returns text
+language sql
+immutable
+as $$
+  select case when f in ('dinheiro', 'especie', 'em_especie', 'din') then 'dinheiro' else f end
+  from (select regexp_replace(regexp_replace(
+                 translate(lower(btrim(forma)), 'áàâãäéèêëíìîïóòôõöúùûüç', 'aaaaaeeeeiiiiooooouuuuc'),
+                 '\s+de\s+', '_', 'g'), '\s+', '_', 'g') as f) t;
+$$;
+
+do $$
+declare
+  loja constant uuid := 'eeee0001-0000-4000-8000-000000000001';
+  f record;
+  v_totais jsonb;
+  v_esperado numeric(12,2);
+begin
+  for f in select * from (values
+      (5, 100.00::numeric, 0::numeric, null::text),
+      (3, 100.00, -5.00, 'Faltou troco de uma venda (exemplo)')
+    ) as v(dias, fundo, falta, obs) loop
+    continue when exists (select 1 from fechamentos_caixa where loja_id = loja and data = pg_temp.ex_dia(f.dias));
+
+    -- os totais do dia, por forma (o que o programa grava em totais_por_forma)
+    select coalesce(jsonb_object_agg(forma, total), '{}'::jsonb) into v_totais
+    from (select pg_temp.ex_forma(forma_pagamento) as forma,
+                 sum(case when tipo = 'entrada' then valor else -valor end) as total
+            from caixa_movimentos
+           where loja_id = loja
+             and coalesce(btrim(forma_pagamento), '') <> ''
+             and (data at time zone 'America/Sao_Paulo')::date = pg_temp.ex_dia(f.dias)
+           group by 1) t;
+    v_totais := jsonb_build_object('dinheiro', 0) || v_totais;
+    v_esperado := f.fundo + (v_totais ->> 'dinheiro')::numeric;
+
+    perform fechar_caixa(loja, pg_temp.ex_dia(f.dias), f.fundo, v_esperado,
+                         greatest(v_esperado + f.falta, 0), v_totais, f.obs,
+                         pg_temp.ex_quando(f.dias, '23:59'));
+  end loop;
+end $$;
+
+-- 9g. Comissão paga de um período passado (migration 0059; a tela
+-- Funcionários → Comissões, src/schemas/comissoes.ts e comissoesPagas.ts).
+-- A conta é a do programa: só OS faturada, pelo dia do faturamento; a base é
+-- o lucro (venda − custo), item a item; serviço sem custo fica fora (#836);
+-- o vendedor leva pela OS inteira e o técnico pelos itens que executou;
+-- a comissão de cada OS é arredondada no centavo. O retrato (snapshot) guarda
+-- cada OS, pra a tela comparar com o recálculo — e, com estes dados, bate.
+-- Quem: Marcos (5%), de 45 a 16 dias atrás (as OS 1 e 4, como vendedor).
+insert into comissoes_fechamentos (id, loja_id, funcionario_id, funcionario_nome, periodo_inicio, periodo_fim,
+                                   percentual, valor_calculado, valor_pago, data_pagamento, observacao,
+                                   snapshot, criado_em)
+with fun as (
+  select id, nome, comissao from funcionarios where id = 'eeee0003-0000-4000-8000-000000000001'
+),
+itens as (
+  select o.id as ordem_id, o.numero, o.tipo as tipo_ordem, o.vendedor_id, i.tecnico_id,
+         i.quantidade * i.preco_unitario - i.desconto as vendido,
+         i.quantidade * coalesce(case when i.tipo = 'servico' then s.custo
+                                      when i.peca_id is null then i.custo_unitario
+                                      else p.preco_custo end, 0) as custo
+  from ordens_servico o
+  join ordens_servico_itens i on i.ordem_servico_id = o.id
+  left join servicos s on s.id = i.servico_id
+  left join pecas p on p.id = i.peca_id
+  where o.loja_id = 'eeee0001-0000-4000-8000-000000000001'
+    and o.status = 'faturada' and o.numero is not null
+    and (coalesce(o.data_fechamento, o.data_abertura) at time zone 'America/Sao_Paulo')::date
+        between pg_temp.ex_dia(45) and pg_temp.ex_dia(16)
+    and (i.tipo <> 'servico' or coalesce(s.custo, 0) > 0)
+),
+por_papel as (
+  select ordem_id, numero, tipo_ordem, 'vendedor' as papel, sum(vendido - custo) as lucro
+    from itens, fun where vendedor_id = fun.id group by 1, 2, 3
+  union all
+  select ordem_id, numero, tipo_ordem, 'tecnico', sum(vendido - custo)
+    from itens, fun where tecnico_id = fun.id group by 1, 2, 3
+),
+retrato as (
+  select r.*, round(r.lucro * fun.comissao / 100, 2) as comissao from por_papel r, fun
+)
+select 'eeee0010-0000-4000-8000-000000000001', 'eeee0001-0000-4000-8000-000000000001', fun.id, fun.nome,
+       pg_temp.ex_dia(45), pg_temp.ex_dia(16), fun.comissao,
+       coalesce((select sum(comissao) from retrato), 0),
+       coalesce((select sum(comissao) from retrato), 0),
+       pg_temp.ex_dia(15), 'Pago em dinheiro (exemplo)',
+       coalesce((select jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+                   'ordemId', ordem_id, 'numero', numero,
+                   'tipo', case when tipo_ordem = 'venda_balcao' then tipo_ordem end,
+                   'papel', papel, 'comissao', comissao)) order by papel desc, numero)
+                 from retrato), '[]'::jsonb),
+       pg_temp.ex_quando(15, '17:00')
+from fun
+on conflict do nothing;
+
+-- 9h. Um computador da loja (migration 0063; registrar_computador, que o
+-- programa chama a cada login). Inventado: nome, versão e sistema.
+insert into computadores (id, nome_maquina, apelido, versao_app, canal, sistema, loja_id,
+                          primeiro_acesso, visto_em) values
+  ('eeee0011-0000-4000-8000-000000000001', 'BALCAO-EXEMPLO', 'Balcão (exemplo)', '0.9.55', 'normal',
+   'Windows 11 (exemplo)', 'eeee0001-0000-4000-8000-000000000001',
+   pg_temp.ex_quando(30, '08:00'), pg_temp.ex_quando(1, '17:45'))
+on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
+-- 10. Quem já existe no banco e é admin passa a enxergar a loja de exemplo
 -- ---------------------------------------------------------------------------
 -- (No Supabase de teste, o único admin é a Sofia. Os logins da equipe são
 -- ligados à loja pelo supabase/exemplo/ligar-login.sql.)
@@ -542,5 +806,8 @@ commit;
 
 select 'Dados de exemplo prontos: ' ||
        (select count(*) from clientes where id::text like 'eeee%') || ' clientes, ' ||
-       (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') || ' ordens, ' ||
+       (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001'
+                                              and numero is not null) || ' ordens, ' ||
+       (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001'
+                                              and numero is null) || ' orçamentos, ' ||
        (select count(*) from pecas where id::text like 'eeee%') || ' peças.' as resultado;

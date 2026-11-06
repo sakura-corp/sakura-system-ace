@@ -268,17 +268,7 @@ export function OrdensServicoPage() {
         console.error("Erro ao carregar as notas fiscais das ordens:", notas.reason);
       }
 
-      const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
-      if (abrirOrdemId) {
-        const ordemParaAbrir = ordensCarregadas.find((o) => o.id === abrirOrdemId);
-        if (ordemParaAbrir && ehVendaBalcao(ordemParaAbrir)) {
-          setLista("vendas");
-          setVendaAberta(ordemParaAbrir);
-        } else if (ordemParaAbrir) {
-          setOrdemEmEdicao(ordemParaAbrir);
-        }
-        navigate(location.pathname, { replace: true, state: null });
-      }
+      abrirOrdemPedida(ordensCarregadas);
 
       return ordensCarregadas;
     } catch (err) {
@@ -291,10 +281,35 @@ export function OrdensServicoPage() {
     }
   }
 
+  // Quem chega aqui com "abra esta OS" (Início, ficha do carro, a busca do
+  // Ctrl+K...) manda o id no `state` da navegação. Abre e limpa o pedido, pra
+  // ele não abrir de novo a cada carga.
+  function abrirOrdemPedida(lista: OrdemServico[]) {
+    const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
+    if (!abrirOrdemId) return;
+    const ordemParaAbrir = lista.find((o) => o.id === abrirOrdemId);
+    if (ordemParaAbrir && ehVendaBalcao(ordemParaAbrir)) {
+      setLista("vendas");
+      setVendaAberta(ordemParaAbrir);
+    } else if (ordemParaAbrir) {
+      setOrdemEmEdicao(ordemParaAbrir);
+    }
+    navigate(location.pathname, { replace: true, state: null });
+  }
+
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
+
+  // O pedido chegou com a tela JÁ aberta (a busca do Ctrl+K usada de dentro
+  // da tela de OS, PR #857): a carga não roda de novo, então abre pela lista
+  // que já está na tela. Durante a carga, quem abre é a própria carga.
+  useEffect(() => {
+    if (carregando) return;
+    abrirOrdemPedida(ordens);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   // Recarrega a cada abertura do formulário (em vez de guardar pra sempre):
   // lançar peça numa OS mexe no estoque, então um saldo guardado da vez

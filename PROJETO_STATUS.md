@@ -165,11 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
-- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
-- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
-- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
-- **Sessões**: todas arquivadas (#519, fechada).
-- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
-- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
-- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
+- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
+- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
+- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
+- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
+- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
+- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).

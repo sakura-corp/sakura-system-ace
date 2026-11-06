@@ -26,7 +26,7 @@ painel do Supabase (as telas podem ter mudado de nome) e o programa aberto contr
 
 **Situação (19/10/2026)**: os passos 1 a 7 foram feitos pela Sofia, e as telas já estão descritas
 como eram nesse dia (a #517). O banco existe, com o esquema na versão 64, a loja de exemplo e quatro
-logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. **Em 29/10/2026** a Sofia decidiu que a equipe vira admin neste banco, pros testes de permissão (Passo 6, "Teste de permissão"). Os Sends
+logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. **Em 05/11/2026**, colado da branch do PR #936 (a 0078, o percentual dos tributos do Simples, pro ensaio da NFS-e do #839): o esquema está na **78**, ainda **sem a 0077** (#857); quando ela chegar na `main`, colar a instalação de novo. **Em 29/10/2026** a Sofia decidiu que a equipe vira admin neste banco, pros testes de permissão (Passo 6, "Teste de permissão"). Os Sends
 ficaram prontos, mas ela só manda os links quando o caderno (`segundo-cerebro`) de cada um estiver
 pronto; eles vencem em 26/10, e depois disso é só criar um Send novo com o mesmo texto.
 
@@ -115,7 +115,8 @@ diferentes da mesma página:
    `https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/main/supabase/exemplo/dados-de-exemplo.sql`
 2. **SQL Editor** → **New query** → cole → **Run**.
 
-Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 peças."**
+Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 2 orçamentos, 12 peças."**
+(Antes da #872 a frase não tinha os orçamentos: se ela aparecer sem eles, o link abriu um script antigo.)
 
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
