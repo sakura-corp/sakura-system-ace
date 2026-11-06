@@ -600,7 +600,11 @@ export function montarCorpoNFSeNacional(
   const municipio = Number((configuracaoFiscal.codigo_municipio ?? "").replace(/\D/g, ""));
   const simples = configuracaoFiscal.regime_tributario === "simples_nacional";
   const inscricaoMunicipal = (configuracaoFiscal.inscricao_municipal ?? "").trim();
-  const temEndereco = Boolean(cliente.rua && cliente.cep);
+  // No leiaute da DPS, o tomador exige CPF, CNPJ ou NIF (o nome sozinho é
+  // recusado) e o endereço exige bairro. O tomador é opcional: sem documento,
+  // a nota sai sem ele (revisão de 06/11).
+  const temTomador = Boolean(documento);
+  const temEndereco = temTomador && Boolean(cliente.rua?.trim() && cliente.cep && cliente.bairro?.trim());
 
   return {
     data_emissao: dataHoraLocalComFuso(agora),
@@ -619,19 +623,20 @@ export function montarCorpoNFSeNacional(
     // 1 = tributos federais e municipal apurados pelo Simples.
     ...(simples ? { regime_tributario_simples_nacional: 1 } : {}),
     regime_especial_tributacao: 0, // 0 = nenhum
-    // Sem documento, não vai CPF vazio (o Ambiente Nacional recusa): o tomador sai só com o nome.
-    ...(!documento
-      ? {}
-      : cliente.tipo_pessoa === "juridica"
-        ? { cnpj_tomador: documento }
-        : { cpf_tomador: documento }),
-    razao_social_tomador: cliente.nome,
-    ...(cliente.email ? { email_tomador: cliente.email } : {}),
+    ...(temTomador
+      ? {
+          ...(cliente.tipo_pessoa === "juridica"
+            ? { cnpj_tomador: documento }
+            : { cpf_tomador: documento }),
+          razao_social_tomador: cliente.nome,
+          ...(cliente.email ? { email_tomador: cliente.email } : {}),
+        }
+      : {}),
     ...(temEndereco
       ? {
           logradouro_tomador: cliente.rua as string,
           numero_tomador: cliente.numero || "S/N",
-          bairro_tomador: cliente.bairro ?? "",
+          bairro_tomador: (cliente.bairro ?? "").trim(),
           codigo_municipio_tomador: Number(codigoMunicipioCliente.replace(/\D/g, "")),
           cep_tomador: (cliente.cep ?? "").replace(/\D/g, ""),
         }

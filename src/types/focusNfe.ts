@@ -159,7 +159,7 @@ export interface NFSeNacionalCorpo {
   regime_especial_tributacao: number;
   cpf_tomador?: string;
   cnpj_tomador?: string;
-  razao_social_tomador: string;
+  razao_social_tomador?: string; // só com CPF/CNPJ: sem documento a nota sai sem tomador
   email_tomador?: string;
   logradouro_tomador?: string;
   numero_tomador?: string;

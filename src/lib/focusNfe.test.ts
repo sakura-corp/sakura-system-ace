@@ -439,13 +439,26 @@ describe("montarCorpoNFSeNacional", () => {
     expect(corpo).not.toHaveProperty("cpf_tomador");
   });
 
-  it("cliente sem CPF/CNPJ não manda documento vazio (o tomador sai só com o nome)", () => {
+  // No leiaute da DPS, o grupo do tomador exige CPF, CNPJ ou NIF; o nome
+  // sozinho é recusado pelo esquema (revisão de 06/11). O tomador é opcional:
+  // sem documento, não vai nenhum campo dele.
+  it("cliente sem CPF/CNPJ: a nota sai sem tomador (nenhum campo _tomador)", () => {
     const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ cpf_cnpj: null }) }), {
       agora,
       numeroDps: 1,
     });
-    expect(corpo).not.toHaveProperty("cpf_tomador");
-    expect(corpo).not.toHaveProperty("cnpj_tomador");
+    expect(Object.keys(corpo).filter((k) => k.endsWith("_tomador"))).toEqual([]);
+  });
+
+  // O bairro do endereço precisa ter pelo menos uma letra no leiaute da DPS.
+  it("cliente sem bairro não manda endereço pela metade", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ bairro: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(corpo).not.toHaveProperty("bairro_tomador");
+    expect(corpo).not.toHaveProperty("logradouro_tomador");
+    expect(corpo.cpf_tomador).toBe("12345678909");
   });
 
   it("loja sem o item da lista de serviços usa o 14.01, como no caminho municipal", () => {
