@@ -16,6 +16,22 @@ export function diaLocal(dataIso: string | Date): string {
   return data.toLocaleDateString("sv-SE");
 }
 
+/**
+ * Data e hora "AAAA-MM-DDThh:mm:ss-03:00": no fuso local, com o fuso no fim
+ * e sem milésimos. É o formato que a NFS-e Nacional pede na data de emissão
+ * (#837). O dia sai pelo mesmo relógio do `diaLocal`, nunca pelo UTC.
+ */
+export function dataHoraLocalComFuso(data: Date = new Date()): string {
+  const dois = (n: number) => String(Math.abs(n)).padStart(2, "0");
+  const minutosAFrente = -data.getTimezoneOffset();
+  const sinal = minutosAFrente >= 0 ? "+" : "-";
+  const fuso = `${sinal}${dois(Math.trunc(minutosAFrente / 60))}:${dois(minutosAFrente % 60)}`;
+  return (
+    `${diaLocal(data)}T${dois(data.getHours())}:${dois(data.getMinutes())}:` +
+    `${dois(data.getSeconds())}${fuso}`
+  );
+}
+
 /** O dia de hoje, no fuso local, como "YYYY-MM-DD". */
 export function hojeLocal(): string {
   return diaLocal(new Date());
