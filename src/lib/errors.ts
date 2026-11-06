@@ -36,6 +36,9 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_juros_percentual: "O juro de parcelamento precisa estar entre 0 e 100%.",
   ck_config_fiscal_aliquota_iss: "A alíquota de ISS precisa estar entre 0 e 10%.",
   ck_config_fiscal_cnpj: "O CNPJ da loja está incompleto — ele tem 14 caracteres.",
+  // Migration 0078 (#866).
+  ck_config_fiscal_percentual_tributos_simples:
+    "O percentual de tributos do Simples precisa estar entre 0 e 100%.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
@@ -66,6 +69,15 @@ export function traduzirTrava(mensagem: string): string | null {
  */
 export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
+
+/**
+ * Dois computadores se travaram um esperando o outro (deadlock, código 40P01
+ * do Postgres): o banco desfaz um dos dois por inteiro e o outro segue. Raro
+ * (ex.: juntar peças enquanto outra tela mexe nas mesmas peças), mas a frase
+ * do Postgres vinha em inglês (#803).
+ */
+export const MENSAGEM_TRAVAMENTO_MUTUO =
+  "Outro computador estava mexendo nas mesmas informações ao mesmo tempo, e este pedido não foi gravado. Atualize a tela e tente de novo.";
 
 /**
  * O programa pediu uma coluna ou view que o banco desta empresa ainda não tem: a
@@ -109,6 +121,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "ordens_servico_garantias",
   "ordens_servico_notas",
   "ordens_servico_clientes",
+  // 0078 (percentual dos tributos do Simples): coluna de configuracoes_fiscais_loja.
+  "percentual_tributos_simples",
 ] as const;
 
 /**
@@ -132,6 +146,7 @@ function objetoQueFalta(mensagem: string): string | null {
 
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
+  if (/\bdeadlock detected\b/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
   const objeto = objetoQueFalta(mensagem);
   if (objeto && (OBJETOS_NOVOS_DO_BANCO as readonly string[]).includes(objeto)) {
     return MENSAGEM_BANCO_DESATUALIZADO;
@@ -140,6 +155,10 @@ function traduzir(mensagem: string): string {
 }
 
 export function mensagemDeErro(erro: unknown): string {
+  // Pelo código, que não depende do idioma do banco nem de quem embrulhou a frase.
+  if (erro && typeof erro === "object" && (erro as { code?: unknown }).code === "40P01") {
+    return MENSAGEM_TRAVAMENTO_MUTUO;
+  }
   if (erro && typeof erro === "object" && "message" in erro) {
     const mensagem = (erro as { message?: unknown }).message;
     if (typeof mensagem === "string" && mensagem.length > 0) return traduzir(mensagem);

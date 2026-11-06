@@ -97,14 +97,18 @@ servicos,select,2,2,2,2,0,
 servicos,insert,1,1,1,1,0,
 servicos,update,2,2,2,2,0,
 servicos,delete,2,2,2,2,0,
-fornecedores,select,2,2,2,2,0,
-fornecedores,insert,1,1,1,1,0,
-fornecedores,update,2,2,2,2,0,
-fornecedores,delete,2,2,2,2,0,
-cotacoes_pecas,select,2,2,2,2,0,
-cotacoes_pecas,insert,1,1,1,1,0,
-cotacoes_pecas,update,2,2,2,2,0,
-cotacoes_pecas,delete,2,2,2,2,0,
+#
+# TR-04.1 lote 7 (migration 0080): fornecedores e cotações exigem o módulo
+# Fornecedores (o preço de compra costuma ser o custo da peça). O balconista
+# (só Caixa) e o órfão zeraram.
+fornecedores,select,2,2,0,0,0,só com o módulo Fornecedores
+fornecedores,insert,1,1,0,0,0,
+fornecedores,update,2,2,0,0,0,
+fornecedores,delete,2,2,0,0,0,
+cotacoes_pecas,select,2,2,0,0,0,só com o módulo Fornecedores (é o preço de compra)
+cotacoes_pecas,insert,1,1,0,0,0,
+cotacoes_pecas,update,2,2,0,0,0,
+cotacoes_pecas,delete,2,2,0,0,0,
 
 # ---------------------------------------------------------------------------
 # DADO DE NEGÓCIO DA LOJA — o isolamento que sustenta a multi-loja
@@ -199,14 +203,14 @@ notas_fiscais_arquivos,select,2,1,1,0,0,
 notas_fiscais_arquivos,insert,1,1,1,0,0,
 notas_fiscais_arquivos,update,2,1,1,0,0,
 notas_fiscais_arquivos,delete,2,1,1,0,0,
-pedidos_compra,select,2,1,1,0,0,
-pedidos_compra,insert,1,1,1,0,0,
-pedidos_compra,update,2,1,1,0,0,
-pedidos_compra,delete,2,1,1,0,0,
-pedidos_compra_itens,select,2,1,1,0,0,herda a loja pelo pedido
-pedidos_compra_itens,insert,1,1,1,0,0,
-pedidos_compra_itens,update,2,1,1,0,0,
-pedidos_compra_itens,delete,2,1,1,0,0,
+pedidos_compra,select,2,1,0,0,0,só com o módulo Fornecedores, na loja dele (0080)
+pedidos_compra,insert,1,1,0,0,0,
+pedidos_compra,update,2,1,0,0,0,
+pedidos_compra,delete,2,1,0,0,0,
+pedidos_compra_itens,select,2,1,0,0,0,herda a loja pelo pedido; só com o módulo Fornecedores (0080)
+pedidos_compra_itens,insert,1,1,0,0,0,
+pedidos_compra_itens,update,2,1,0,0,0,
+pedidos_compra_itens,delete,2,1,0,0,0,
 #
 # TR-04.3 (migration 0056): dado de RH exige o módulo "Funcionários", e não
 # só acesso à loja. É por isso que o balconista zerou nas oito linhas abaixo

@@ -14,7 +14,9 @@ a única empresa até agora. A `0076` (ordens de serviço só com o módulo, a s
 avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só com o módulo, #365),
 a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
 travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
-estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0079` (cadastrar peça do item
+com a OS travada, #803) e a `0080` (fornecedores só com o módulo, #880) estão escritas nos PRs e
+esperam ela aplicar, depois da `0077` (a busca geral, #857) e da `0078` (o percentual de tributos, #882). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
 (`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
 de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
@@ -559,6 +561,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   local com 5 mil OS e 10 mil lançamentos por loja: a lista do Caixa caiu de 9,7 s pra 3,3 s (só
   Caixa) e de 13,7 s pra 3,9 s (admin). Teste em `supabase/scripts/testar-os-permissao.sql` (as
   duas metades, 15 perfis), conferido com 28 mutações, todas vermelhas.
+- `0077`: **a busca geral do `Ctrl+K`** (tarefa #372, TR-03.3). Uma função `security definer`,
+  **`buscar_global(termo, loja, limite)`**, que procura placa, cliente, OS, peça e fornecedor de uma
+  vez e devolve só `tipo, id, titulo, detalhe, veiculo_id`. Cada tipo só sai pra quem tem o módulo
+  (placa e cliente: Clientes ou OS, e o cliente só com o nome e as placas, como a janela da `0068`;
+  OS: OS e acesso à loja, só da loja aberta; peça: Estoque, nunca o custo; fornecedor:
+  Fornecedores). Mais duas funções `immutable` pros índices: **`sem_acento`** (sem a extensão
+  `unaccent`, que não serve pra índice) e **`placa_normalizada`**. Índices novos: trigrama
+  (`pg_trgm`) nos nomes de cliente, peça e fornecedor, a placa normalizada, o código de barras, o
+  código interno e o número da OS como texto. Declara `-- versao-minima-do-programa: 0.9.56`
+  (fica atrás da `0076`); até ela entrar, a caixa avisa que "começa a funcionar quando o banco for
+  atualizado". Medido num Postgres 16 local com volume de 10 lojas (30 mil clientes, 40 mil
+  veículos, 150 mil OS): a placa caiu de 155 ms pra 5 ms, o nome de 147 ms pra 10 ms. Teste em
+  `supabase/scripts/testar-busca-global.sql` (as duas metades), conferido com 12 mutações.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
   `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
@@ -578,6 +593,23 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   também não entra. OS **faturada** recusa item novo e correção. Sem `versao-minima-do-programa`: o
   programa antigo continua gravando direto nas tabelas, com o mesmo risco raro de antes. Teste em
   `supabase/scripts/testar-item-na-aprovacao.sql`, com corridas de verdade entre duas ligações (`dblink`).
+- `0079`: **"Cadastrar agora" (ligar a peça avulsa ao cadastro, na emissão da nota) com a linha da
+  OS travada** (tarefa #803, caso 1; o mesmo caminho da `0071`). Uma função,
+  `cadastrar_peca_do_item(item, peça, operador)`, `security invoker` e só pra `authenticated`: trava a
+  OS, liga a peça se o item ainda é avulso e, se a ordem já é OS (inclusive faturada), baixa a
+  quantidade gravada no banco, tudo numa transação; devolve `false` se o item já tinha peça ou não
+  foi achado. Assim, aprovar o orçamento em outro computador no mesmo instante não deixa a peça sem
+  baixa. **Tudo ou nada**: sem depósito ativo, a peça não fica ligada (antes ficava, e a tela mandava
+  lançar a saída à mão). Sem `versao-minima-do-programa` (só acrescenta), mas sobe **antes** da versão
+  que chama a função. Teste em `supabase/scripts/testar-cadastrar-peca-do-item.sql`, com as duas
+  ordens de corrida (`dblink`); sem o `for update`, a corrida reprova.
+- `0080`: **Fornecedores, pedidos de compra e cotações só pra quem tem o módulo** (tarefa #880, lote 7
+  do TR-04.1). `fornecedores` e `cotacoes_pecas` (catálogo da empresa): ler e gravar só com
+  Fornecedores ou admin. `pedidos_compra` e `pedidos_compra_itens`: o mesmo, e na loja de quem mexe;
+  o item confere a loja pela função `pedido_compra_acessivel(pedido)` (`security definer`, só
+  `authenticated`), como a `ordem_servico_acessivel` da `0076`. Sem janela e sem
+  `versao-minima-do-programa` (só as telas de Fornecedores, atrás do módulo, leem essas tabelas). Teste
+  em `supabase/scripts/testar-fornecedores-permissao.sql` (as duas metades), conferido com mutações.
 - `0072`: **mais 39 serviços padrão e 3 categorias de serviço (Óleo e Filtros, Elétrica,
   Ar-condicionado), só em empresa nova** (tarefa #787; a lista é a de `docs/servicos-padrao.md`, com
   nome curto). Tudo sem preço, igual à `0030`. **Só entra num banco sem nenhuma ordem de serviço**:
@@ -585,6 +617,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   de loja nenhuma. Nome que já existe (comparado sem maiúscula nem espaço nas pontas) não entra de
   novo. Teste em `supabase/scripts/testar-servicos-padrao.sql`; os dados de exemplo dão preço de
   mentira aos 39.
+- `0078`: **o percentual dos tributos do Simples, por loja** (tarefa #866). Uma coluna nova,
+  opcional, em `configuracoes_fiscais_loja`: `percentual_tributos_simples` (`numeric(5,2)`, a mesma
+  precisão da `aliquota_iss`), com a trava `ck_config_fiscal_percentual_tributos_simples` (de 0 a
+  100; a frase da tela está em `src/lib/errors.ts`). Vai no campo pTotTribSN (grupo totTrib) da
+  NFS-e Nacional, **só da loja do Simples**; o número vem da contabilidade. **Vazio manda 0**, pra
+  não travar a emissão. Coluna nova e opcional: sobe **antes** da versão, sem
+  `versao-minima-do-programa`. **Entrou sozinha, num PR à parte (05/11)**, porque a tela e a nota
+  que usam a coluna (#882) dependem do #839 (NFS-e Nacional), que espera a Focus; assim a `0079` e
+  a `0080` não ficam presas atrás dela. Aplicar a `0077` (#857) antes desta. Teste em
+  `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
