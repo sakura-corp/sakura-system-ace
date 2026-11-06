@@ -559,6 +559,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   local com 5 mil OS e 10 mil lançamentos por loja: a lista do Caixa caiu de 9,7 s pra 3,3 s (só
   Caixa) e de 13,7 s pra 3,9 s (admin). Teste em `supabase/scripts/testar-os-permissao.sql` (as
   duas metades, 15 perfis), conferido com 28 mutações, todas vermelhas.
+- `0077`: **a busca geral do `Ctrl+K`** (tarefa #372, TR-03.3). Uma função `security definer`,
+  **`buscar_global(termo, loja, limite)`**, que procura placa, cliente, OS, peça e fornecedor de uma
+  vez e devolve só `tipo, id, titulo, detalhe, veiculo_id`. Cada tipo só sai pra quem tem o módulo
+  (placa e cliente: Clientes ou OS, e o cliente só com o nome e as placas, como a janela da `0068`;
+  OS: OS e acesso à loja, só da loja aberta; peça: Estoque, nunca o custo; fornecedor:
+  Fornecedores). Mais duas funções `immutable` pros índices: **`sem_acento`** (sem a extensão
+  `unaccent`, que não serve pra índice) e **`placa_normalizada`**. Índices novos: trigrama
+  (`pg_trgm`) nos nomes de cliente, peça e fornecedor, a placa normalizada, o código de barras, o
+  código interno e o número da OS como texto. Declara `-- versao-minima-do-programa: 0.9.56`
+  (fica atrás da `0076`); até ela entrar, a caixa avisa que "começa a funcionar quando o banco for
+  atualizado". Medido num Postgres 16 local com volume de 10 lojas (30 mil clientes, 40 mil
+  veículos, 150 mil OS): a placa caiu de 155 ms pra 5 ms, o nome de 147 ms pra 10 ms. Teste em
+  `supabase/scripts/testar-busca-global.sql` (as duas metades), conferido com 12 mutações.
 - `0070`: **apaga a cópia antiga do token da Focus NFe** (tarefa #368, parte 2 do `TR-04.2`).
   `configuracoes_fiscais_loja.focus_nfe_token` fica vazia em toda loja; o token só existe no cofre
   (`segredos_fiscais_loja`, `0057`). Antes de limpar, copia pro cofre o token que só estivesse na
