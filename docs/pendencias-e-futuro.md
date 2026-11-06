@@ -218,10 +218,16 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
 
 #### NFS-e pelo Padrão Nacional (#837; o código entrou na 0.9.56, liberada em 06/11/2026)
 
-**Estado em 06/11/2026**: o #839 está mesclado e o porteiro novo (`focus-nfe`) foi publicado no
-Supabase da Pneus Amigão. A 0.9.56 está liberada. **Falta**: os computadores na 0.9.56, o
-"Atualizar o banco" (0076 a 0080), ligar a "NFSe Nacional – Produção" na Focus, o **6%** nos Dados
-fiscais e o ensaio em produção.
+**Estado em 06/11/2026, noite**: o porteiro novo (`focus-nfe`) está publicado na Pneus Amigão, os
+dois computadores estão na 0.9.56, o banco está na **0080**, a "NFSe Nacional – Produção" está ligada
+na Focus (série 1) e o **6%** está nos Dados fiscais. **A primeira nota (OS 18, real) foi recusada**
+pelo Ambiente Nacional: "IM do prestador não deve ser informado, pois não existem informações
+complementares registradas no CNC NFS-e do município emissor informado na DPS". A inscrição
+municipal foi apagada no programa (Dados fiscais) e no cadastro da empresa na Focus (aba
+Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a pergunta está com o
+suporte da Focus (06/11). O programa ainda manda a IM quando o campo está preenchido (#948).
+**Pra loja nova no Padrão Nacional**: deixar a "Inscrição municipal" **vazia** quando o município não
+tem as informações complementares no CNC (Araraquara não tem), no programa e na Focus.
 
 **A Focus respondeu em 05/11/2026** (suporte): Araraquara não está no convênio da **homologação**
 nacional (quem cadastra é a prefeitura, e nem sempre faz). Recomendação deles: **testar em produção**,
