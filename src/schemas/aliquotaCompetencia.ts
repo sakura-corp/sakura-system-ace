@@ -62,6 +62,15 @@ export function lojaEmiteNfse(configuracao: ConfiguracaoFiscalLoja | null): bool
   return Boolean(configuracao?.focus_nfe_configurado && configuracao?.inscricao_municipal);
 }
 
+// #853: desde 01/11/2026, a loja do Simples Nacional emite a NFS-e pelo
+// Padrão Nacional (PR #839 escolhe o caminho pela mesma regra: o regime nos
+// Dados fiscais). Lá não existe o cadastro mensal da alíquota no portal da
+// prefeitura (confirmado pela contabilidade em 05/11), então o aviso é só
+// pra quem continua no caminho municipal.
+export function nfsePeloPadraoNacional(configuracao: ConfiguracaoFiscalLoja | null): boolean {
+  return configuracao?.regime_tributario === "simples_nacional";
+}
+
 export interface AvisoAliquota {
   /** Se o aviso deve aparecer agora. */
   precisa: boolean;
@@ -84,7 +93,10 @@ export function avisoAliquotaCompetencia(
     // Comparado por mês, não por data exata: a coluna guarda sempre o dia 1º,
     // mas um valor gravado à mão com outro dia não deveria fazer o aviso
     // aparecer o mês inteiro.
-    precisa: lojaEmiteNfse(configuracao) && confirmada?.slice(0, 7) !== competencia.slice(0, 7),
+    precisa:
+      lojaEmiteNfse(configuracao) &&
+      !nfsePeloPadraoNacional(configuracao) &&
+      confirmada?.slice(0, 7) !== competencia.slice(0, 7),
     competencia,
     mes: mesPorExtenso(competencia),
     passoAPasso:

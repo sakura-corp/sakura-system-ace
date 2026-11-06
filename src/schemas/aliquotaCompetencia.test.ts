@@ -18,7 +18,9 @@ function config(campos: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFisca
     nome_fantasia: null,
     inscricao_estadual: null,
     inscricao_municipal: "30016580",
-    regime_tributario: "simples_nacional",
+    // O cadastro mensal da alíquota é do caminho municipal: a base dos
+    // testes é uma loja fora do Simples (a do Simples tem os testes dela).
+    regime_tributario: "lucro_presumido",
     cep: null,
     rua: null,
     numero: null,
@@ -111,6 +113,19 @@ describe("avisoAliquotaCompetencia", () => {
   it("não enche quem não emite nota de serviço", () => {
     const aviso = avisoAliquotaCompetencia(config({ focus_nfe_configurado: false }), setembro);
     expect(aviso.precisa).toBe(false);
+  });
+
+  // #853: desde 01/11/2026 a loja do Simples emite a NFS-e pelo Padrão
+  // Nacional (PR #839), onde não existe o cadastro mensal da alíquota no
+  // portal da prefeitura (confirmado pela contabilidade em 05/11).
+  it("não avisa a loja do Simples, que emite pelo Padrão Nacional", () => {
+    const aviso = avisoAliquotaCompetencia(config({ regime_tributario: "simples_nacional" }), setembro);
+    expect(aviso.precisa).toBe(false);
+  });
+
+  it("continua avisando a loja de outro regime (caminho municipal)", () => {
+    expect(avisoAliquotaCompetencia(config({ regime_tributario: "lucro_real" }), setembro).precisa).toBe(true);
+    expect(avisoAliquotaCompetencia(config({ regime_tributario: null }), setembro).precisa).toBe(true);
   });
 
   it("loja de Araraquara sem texto próprio: o caminho do portal de Araraquara", () => {
