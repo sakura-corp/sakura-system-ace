@@ -132,7 +132,18 @@ export function preencherModelo(
     // Função no lugar de texto: o código do Pix não pode ser lido como "$&".
     texto = texto.replaceAll("{pix}", () => pix);
   } else {
-    texto = texto.replace(/^\{pix\}\r?\n?/, "").replace(/(?:\r?\n|[ \t]+)?\{pix\}/g, "");
+    // Linha que só tem o {pix}: sai a linha inteira. {pix} no meio de uma
+    // linha: sai só ele (e os espaços em volta, deixando um entre as palavras).
+    texto = texto
+      .replace(/\r?\n[ \t]*\{pix\}[ \t]*(?=\r?\n|$)/g, "")
+      .replace(/^[ \t]*\{pix\}[ \t]*(?:\r?\n|$)/, "")
+      .replace(/[ \t]*\{pix\}[ \t]*/g, (trecho, posicao: number, tudo: string) => {
+        const antes = tudo[posicao - 1];
+        const depois = tudo[posicao + trecho.length];
+        const temTextoDosDoisLados =
+          antes !== undefined && antes !== "\n" && depois !== undefined && depois !== "\n" && depois !== "\r";
+        return temTextoDosDoisLados ? " " : "";
+      });
   }
   return texto;
 }

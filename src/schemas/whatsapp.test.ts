@@ -157,6 +157,9 @@ describe("marcador {pix} na cobrança (#456)", () => {
   it("modelo personalizado com {pix} no meio do texto, sem Pix, não deixa buraco", () => {
     expect(preencherModelo("A\n{pix}\nB", { ...valores })).toBe("A\nB");
     expect(preencherModelo("Pague: {pix}", { ...valores })).toBe("Pague:");
+    // Revisão final: o {pix} com texto depois, na mesma linha, não pode juntar as linhas.
+    expect(preencherModelo("A\n{pix} Obrigado!", { ...valores })).toBe("A\nObrigado!");
+    expect(preencherModelo("A {pix} B", { ...valores })).toBe("A B");
   });
 
   it("os outros marcadores vazios continuam virando travessão", () => {

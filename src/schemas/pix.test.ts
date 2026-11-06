@@ -316,19 +316,19 @@ describe("montarPixCopiaECola", () => {
 describe("valorDoQrPix (qual valor vai no QR do faturamento)", () => {
   it("forma única Pix: o valor cobrado", () => {
     expect(
-      valorDoQrPix({ dividir: false, formaPagamento: "pix", valorCobrado: 150.5, linhas: [] }),
+      valorDoQrPix({ dividir: false, linhasBatem: true, formaPagamento: "pix", valorCobrado: 150.5, linhas: [] }),
     ).toBe(150.5);
   });
 
   it("forma única que não é Pix: sem QR", () => {
     expect(
-      valorDoQrPix({ dividir: false, formaPagamento: "dinheiro", valorCobrado: 150, linhas: [] }),
+      valorDoQrPix({ dividir: false, linhasBatem: true, formaPagamento: "dinheiro", valorCobrado: 150, linhas: [] }),
     ).toBeNull();
   });
 
   it("forma única Pix com valor zero: sem QR", () => {
     expect(
-      valorDoQrPix({ dividir: false, formaPagamento: "pix", valorCobrado: 0, linhas: [] }),
+      valorDoQrPix({ dividir: false, linhasBatem: true, formaPagamento: "pix", valorCobrado: 0, linhas: [] }),
     ).toBeNull();
   });
 
@@ -340,14 +340,24 @@ describe("valorDoQrPix (qual valor vai no QR do faturamento)", () => {
       { formaPagamento: "pix", valorCobrado: 50 },
     ];
     expect(
-      valorDoQrPix({ dividir: true, formaPagamento: "pix", valorCobrado: 1050, linhas }),
+      valorDoQrPix({ dividir: true, linhasBatem: true, formaPagamento: "pix", valorCobrado: 1050, linhas }),
     ).toBe(300);
+  });
+
+  it("dividido com as linhas que ainda não fecham o total: sem QR (o cliente pagaria o valor errado)", () => {
+    const linhas = [
+      { formaPagamento: "pix", valorCobrado: 1000 },
+      { formaPagamento: "cartao_credito", valorCobrado: 300 },
+    ];
+    expect(
+      valorDoQrPix({ dividir: true, linhasBatem: false, formaPagamento: "pix", valorCobrado: 1300, linhas }),
+    ).toBeNull();
   });
 
   it("dividido sem linha Pix: sem QR (a forma única antiga não vale)", () => {
     const linhas = [{ formaPagamento: "dinheiro", valorCobrado: 100 }];
     expect(
-      valorDoQrPix({ dividir: true, formaPagamento: "pix", valorCobrado: 100, linhas }),
+      valorDoQrPix({ dividir: true, linhasBatem: true, formaPagamento: "pix", valorCobrado: 100, linhas }),
     ).toBeNull();
   });
 });

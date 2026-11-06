@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tipoDaChavePix, type TipoChavePix } from "./pix";
+import { sobraTextoNoPix, tipoDaChavePix, type TipoChavePix } from "./pix";
 import type { ConfiguracaoPix } from "@/types/configuracao";
 
 /** O formulário do Pix em Configurações (#456). Limites iguais aos da migration 0081. */
@@ -16,12 +16,14 @@ export const pixFormSchema = z.object({
     .string()
     .trim()
     .min(1, "Digite o nome de quem recebe.")
-    .max(25, "O nome pode ter no máximo 25 letras."),
+    .max(25, "O nome pode ter no máximo 25 letras.")
+    .refine(sobraTextoNoPix, "Use letras no nome: símbolo e emoji não entram no Pix."),
   cidade_recebedor: z
     .string()
     .trim()
     .min(1, "Digite a cidade.")
-    .max(15, "A cidade pode ter no máximo 15 letras."),
+    .max(15, "A cidade pode ter no máximo 15 letras.")
+    .refine(sobraTextoNoPix, "Use letras na cidade: símbolo e emoji não entram no Pix."),
 });
 
 export type PixFormValues = z.infer<typeof pixFormSchema>;

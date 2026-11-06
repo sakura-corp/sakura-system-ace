@@ -75,7 +75,10 @@ export async function salvarConfiguracaoPix(
 ): Promise<void> {
   const { error } = await supabase
     .from("configuracoes_pix")
-    .upsert({ loja_id: lojaId, ...dados }, { onConflict: "loja_id" });
+    .upsert(
+      { loja_id: lojaId, ...dados, atualizado_em: new Date().toISOString() },
+      { onConflict: "loja_id" },
+    );
   if (error) throw error;
 }
 

@@ -192,6 +192,15 @@ function textoAscii(texto: unknown, maximo: number): string {
 }
 
 /** txid: só letras e números, até 25; qualquer outra coisa vira "***". */
+/**
+ * Sobra alguma letra depois de tirar acento e o que não é ASCII? Nome ou
+ * cidade só com emoji ou símbolo viram nada no QR, e aí o Pix nunca aparece;
+ * o formulário de Configurações usa isto pra avisar antes de salvar.
+ */
+export function sobraTextoNoPix(texto: string): boolean {
+  return textoAscii(texto, 99) !== "";
+}
+
 function txidValido(txid: string | null | undefined): string {
   const ok = typeof txid === "string" && new RegExp(`^[A-Za-z0-9]{1,${MAXIMO_TXID}}$`).test(txid);
   return ok ? txid : "***";
@@ -243,14 +252,22 @@ export function montarPixCopiaECola(dados: DadosPix | null | undefined): string 
  * cobrado. Pagamento dividido: o valor da PRIMEIRA linha Pix com valor maior
  * que zero. Sem Pix (ou sem valor): null, e o QR não aparece. Os valores já
  * vêm calculados pela tela (juros e tudo); aqui só se escolhe qual usar.
+ *
+ * No dividido, o QR só aparece quando as linhas fecham o total: enquanto a
+ * tela avisa "falta" ou "passou", o valor da linha Pix ainda pode mudar, e um
+ * cliente que lesse o QR nessa hora pagaria o valor errado (o sistema não tem
+ * como estornar um Pix).
  */
 export function valorDoQrPix(entrada: {
   dividir: boolean;
+  /** No dividido: a soma das linhas bate com o total? Na forma única, não importa. */
+  linhasBatem: boolean;
   formaPagamento: string;
   valorCobrado: number;
   linhas: { formaPagamento: string; valorCobrado: number }[];
 }): number | null {
   if (entrada.dividir) {
+    if (!entrada.linhasBatem) return null;
     const linha = entrada.linhas.find((l) => l.formaPagamento === "pix" && l.valorCobrado > 0);
     return linha ? linha.valorCobrado : null;
   }

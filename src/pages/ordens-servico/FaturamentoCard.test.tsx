@@ -332,6 +332,11 @@ describe("FaturamentoCard — Pix da loja (#456)", () => {
     const primeira = linhaDePagamento(0);
     await user.clear(primeira.valor);
     await user.type(primeira.valor, "300");
+    // Enquanto as linhas não fecham o total, nada de QR: o valor ainda vai mudar.
+    await waitFor(() => expect(screen.queryByTestId("qr-pix")).not.toBeInTheDocument());
+    const segunda = linhaDePagamento(1);
+    await user.clear(segunda.valor);
+    await user.type(segunda.valor, "700");
     await waitFor(() =>
       expect(screen.getByTestId("codigo-pix").textContent).toContain("5406300.00"),
     );

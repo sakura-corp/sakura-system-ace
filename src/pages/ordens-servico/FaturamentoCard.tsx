@@ -64,14 +64,18 @@ function formatarMoeda(valor: number): string {
 // banco precisa de fundo claro mesmo quando o programa está no tema escuro.
 function PixQrCode({ codigo, valor }: { codigo: string; valor: number }) {
   const [copiado, setCopiado] = useState(false);
+  const [naoCopiou, setNaoCopiou] = useState(false);
 
   async function copiar() {
+    setNaoCopiou(false);
     try {
       await navigator.clipboard.writeText(codigo);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2500);
     } catch (err) {
+      // Sem aviso, a pessoa colaria o que já estava copiado antes.
       console.error("Não deu pra copiar o código Pix:", err);
+      setNaoCopiou(true);
     }
   }
 
@@ -107,6 +111,11 @@ function PixQrCode({ codigo, valor }: { codigo: string; valor: number }) {
               Copiado
             </span>
           )}
+          {naoCopiou && (
+            <span role="status" className="text-rotulo text-red-300">
+              Não deu pra copiar: selecione o código acima e copie à mão.
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -129,6 +138,8 @@ export function FaturamentoCard({
   const lojaId = lojaAtual?.id;
   useEffect(() => {
     let cancelado = false;
+    // Trocou de loja: some o Pix da anterior até chegar o da nova.
+    setConfiguracaoPix(null);
     if (!lojaId) return;
     buscarConfiguracaoPix(lojaId)
       .then((pix) => {
@@ -190,6 +201,7 @@ export function FaturamentoCard({
     configuracaoPix && (recebidoAgora || !permiteAReceber)
       ? valorDoQrPix({
           dividir: dividirPagamento && recebidoAgora,
+          linhasBatem,
           formaPagamento,
           valorCobrado,
           linhas: linhasCalculadas,

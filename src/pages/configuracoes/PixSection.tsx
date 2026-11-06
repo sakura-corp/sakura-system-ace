@@ -30,6 +30,7 @@ const campoClasse =
 export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou }: PixSectionProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [tirando, setTirando] = useState(false);
 
   const {
     register,
@@ -61,6 +62,9 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
   }
 
   async function aoTirar() {
+    if (tirando) return;
+    if (!confirm("Tirar o Pix desta loja? A cobrança e o faturamento deixam de mostrar o Pix.")) return;
+    setTirando(true);
     setErro(null);
     setAviso(null);
     try {
@@ -71,6 +75,8 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
     } catch (err) {
       console.error("Erro ao tirar o Pix da loja:", err);
       setErro(mensagemDeErro(err));
+    } finally {
+      setTirando(false);
     }
   }
 
@@ -146,7 +152,7 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
               <button
                 type="button"
                 onClick={aoTirar}
-                disabled={isSubmitting}
+                disabled={isSubmitting || tirando}
                 className="rounded-xl px-4 py-2 text-corpo font-medium text-red-300 hover:underline disabled:opacity-50"
               >
                 Tirar o Pix

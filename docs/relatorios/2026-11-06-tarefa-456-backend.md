@@ -3,7 +3,7 @@
 - **Tarefa**: #456, Pix copia e cola na cobrança e no faturamento, já com o valor
 - **Chefe**: backend
 - **Data**: 2026-11-06
-- **PR**: (link na descrição do PR desta branch, `claude/tarefa-456-backend-2rmkhc`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/941
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
@@ -25,8 +25,8 @@
 - nenhuma (a issue diz `Sessões filhas: não`).
 
 ## Gasto
-- **Uso da sessão mãe**: GASTO_MAE
-- **Ajudantes**: 4. Via aviso (`subagent_tokens`): migration ~138 mil; código Pix ~104 mil; telas ~167 mil; revisão GASTO_REVISOR.
+- **Uso da sessão mãe** (arquivo, medido depois da revisão final; o fechamento do PR fica de fora): 96 respostas; entrada 233, cache criado ~176 mil, cache lido ~15,9 milhões, saída ~45 mil.
+- **Ajudantes**: 4. Via aviso (`subagent_tokens`): migration ~138 mil; código Pix ~104 mil; telas ~167 mil; revisão ~119 mil (mais um agente do `/code-review` dentro dela). Via arquivo (cache criado / cache lido / saída): migration 134 mil / 3,7 mi / 27 mil; código Pix 102 mil / 2,2 mi / 29 mil; telas 171 mil / 8,8 mi / 40 mil; revisão 114 mil / 2,1 mi / 17 mil; agente do `/code-review` 92 mil / 1,8 mi / 14 mil.
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: ligado pelo Tiago no turno 17 (vi o comando chegar na conversa). Como parou: não sei ao certo no momento de escrever (o relatório é commitado antes do CI terminar); a condição pede o CI verde mostrado na conversa.
 
@@ -65,4 +65,7 @@ Terminei.
 - **Sugestão de ajuste (opcional)**: na `ritual-de-tarefa`, sugerir dividir em dois ajudantes médios as etapas de tela com mais de três arquivos; e anotar o ponto cego da matriz de RLS (tabelas com uma linha por loja) como tarefa à parte.
 
 ## Revisão final
-REVISAO
+O revisor (forte, esforço alto, `/code-review` high) não achou nada sério no BR Code, na migration nem nas regras de acesso. Conferi cada achado no código antes de mexer:
+- **Consertado, com teste visto reprovar antes**: no pagamento dividido, o QR aparecia mesmo com as linhas sem fechar o total (o cliente podia pagar o valor errado); agora só aparece quando fecham. Sem Pix, um `{pix}` no meio de uma linha juntava duas linhas. Nome ou cidade só com emoji ou símbolo passava no formulário e o Pix nunca aparecia; agora o formulário avisa.
+- **Consertado, sem teste próprio**: excluir uma loja com Pix apagava as outras configurações e depois falhava (a tabela nova entrou na lista de `src/lib/lojas.ts`, arquivo fora da lista da issue); `atualizado_em` agora atualiza ao salvar; ao trocar de loja, o Pix da anterior não aparece mais no faturamento; "Copiar código" avisa quando não consegue copiar; "Tirar o Pix" pede confirmação e não roda duas vezes.
+- **Não mexi (anotado pra Sofia)**: a Central do dia sem o Pix (fora da lista); se a leitura do Pix falhar, Configurações mostra o formulário vazio sem avisar; um celular de 11 dígitos sem o +55 que por acaso feche a conta de CPF é lido como CPF (a tela mostra "Reconhecida como CPF" e o app do banco mostra o nome de quem recebe); e um defeito antigo, de antes deste PR: a data de vencimento na mensagem de cobrança da Contas a Receber pode sair um dia antes (`docs/licoes.md`, item 42).
