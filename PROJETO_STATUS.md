@@ -28,7 +28,9 @@ tranca.
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
 de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
-**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não
+**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). **Vale mesmo quando a
+primeira mensagem é uma pergunta curta**: abrir antes de responder (em 2 sessões novas, #618 e #619,
+o caderno só abriu quando a pessoa perguntou). Se não abrir (não
 existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e
 **perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
 
