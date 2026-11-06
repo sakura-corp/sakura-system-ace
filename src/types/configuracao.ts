@@ -127,3 +127,11 @@ export interface ConfiguracaoPainelInicio {
   loja_id: string;
   cartoes: CartaoMetrica[];
 }
+
+// O Pix da loja (migration 0081, tarefa #456): os dados do Pix estático.
+export interface ConfiguracaoPix {
+  loja_id: string;
+  chave: string;
+  nome_recebedor: string;
+  cidade_recebedor: string;
+}

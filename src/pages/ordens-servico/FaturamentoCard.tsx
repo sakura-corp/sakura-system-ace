@@ -1,7 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { useAuth } from "@/contexts/AuthContext";
+import { buscarConfiguracaoPix } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import type { PagamentoOrdem } from "@/lib/ordensServico";
 import {
@@ -19,8 +22,9 @@ import {
   somarLinhasPagamento,
   type FaturamentoFormValues,
 } from "@/schemas/faturamento";
+import { montarPixCopiaECola, valorDoQrPix } from "@/schemas/pix";
 import { ehConsumidor } from "@/types/cliente";
-import type { JurosParcela } from "@/types/configuracao";
+import type { ConfiguracaoPix, JurosParcela } from "@/types/configuracao";
 import { FORMA_PAGAMENTO_LABEL, ehVendaBalcao, nomeDocumento, totalOrdem } from "@/types/os";
 import type { OrdemServico } from "@/types/os";
 
@@ -56,6 +60,68 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// O QR do Pix da loja (#456). O fundo é sempre branco, com margem: o leitor do
+// banco precisa de fundo claro mesmo quando o programa está no tema escuro.
+function PixQrCode({ codigo, valor }: { codigo: string; valor: number }) {
+  const [copiado, setCopiado] = useState(false);
+  const [naoCopiou, setNaoCopiou] = useState(false);
+
+  async function copiar() {
+    setNaoCopiou(false);
+    try {
+      await navigator.clipboard.writeText(codigo);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch (err) {
+      // Sem aviso, a pessoa colaria o que já estava copiado antes.
+      console.error("Não deu pra copiar o código Pix:", err);
+      setNaoCopiou(true);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-start gap-4 rounded-xl border border-sakura-gray/30 p-4">
+      <div className="rounded-lg bg-white p-3" data-testid="qr-pix">
+        <QRCodeSVG value={codigo} size={180} level="M" bgColor="#ffffff" fgColor="#000000" />
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="text-corpo font-medium text-sakura-purple-dark">
+          Pix de {formatarMoeda(valor)}
+        </p>
+        <p className="text-rotulo text-sakura-muted">
+          O cliente lê o QR no app do banco, ou você manda o código abaixo. O sistema não fica
+          sabendo que foi pago: confira no seu banco antes de confirmar.
+        </p>
+        <p
+          className="break-all rounded-lg bg-sakura-pink-soft px-3 py-2 font-mono text-rotulo text-sakura-purple-dark select-all"
+          data-testid="codigo-pix"
+        >
+          {codigo}
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={copiar}
+            className="rounded-xl border border-sakura-purple px-4 py-1.5 text-corpo font-medium text-sakura-purple hover:bg-sakura-pink-soft"
+          >
+            Copiar código
+          </button>
+          {copiado && (
+            <span role="status" className="text-rotulo text-emerald-700">
+              Copiado
+            </span>
+          )}
+          {naoCopiou && (
+            <span role="status" className="text-rotulo text-red-300">
+              Não deu pra copiar: selecione o código acima e copie à mão.
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function FaturamentoCard({
   ordem,
   jurosParcelas,
@@ -65,7 +131,25 @@ export function FaturamentoCard({
   onCancelar,
 }: FaturamentoCardProps) {
   const total = totalOrdem(ordem.itens ?? []);
+  const { lojaAtual } = useAuth();
   const [erro, setErro] = useState<string | null>(null);
+  // O Pix da loja, lido uma vez. Sem ele (ou se não deu pra ler) nada aparece.
+  const [configuracaoPix, setConfiguracaoPix] = useState<ConfiguracaoPix | null>(null);
+  const lojaId = lojaAtual?.id;
+  useEffect(() => {
+    let cancelado = false;
+    // Trocou de loja: some o Pix da anterior até chegar o da nova.
+    setConfiguracaoPix(null);
+    if (!lojaId) return;
+    buscarConfiguracaoPix(lojaId)
+      .then((pix) => {
+        if (!cancelado) setConfiguracaoPix(pix);
+      })
+      .catch((err) => console.error("Não deu pra ler o Pix da loja:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [lojaId]);
   const ehVenda = ehVendaBalcao(ordem);
   // Venda no Consumidor não fica "a receber": não há de quem cobrar, e a
   // conta nasceria no nome de "ninguém" (migration 0064).
@@ -111,6 +195,27 @@ export function FaturamentoCard({
   const jurosDividido = jurosDasLinhas(linhasPagamento, jurosParcelas);
 
   const formaPagamentoField = register("formaPagamento");
+
+  // O QR só vale pra dinheiro recebido agora; "a receber depois" não é cobrança no balcão.
+  const valorQrPix =
+    configuracaoPix && (recebidoAgora || !permiteAReceber)
+      ? valorDoQrPix({
+          dividir: dividirPagamento && recebidoAgora,
+          linhasBatem,
+          formaPagamento,
+          valorCobrado,
+          linhas: linhasCalculadas,
+        })
+      : null;
+  const codigoPix =
+    configuracaoPix && valorQrPix !== null
+      ? montarPixCopiaECola({
+          chave: configuracaoPix.chave,
+          nomeRecebedor: configuracaoPix.nome_recebedor,
+          cidadeRecebedor: configuracaoPix.cidade_recebedor,
+          valor: valorQrPix,
+        })
+      : null;
 
   function aoMudarDividirPagamento(dividir: boolean) {
     setValue("dividirPagamento", dividir);
@@ -423,6 +528,8 @@ export function FaturamentoCard({
             </p>
           </div>
         ))}
+
+      {codigoPix && valorQrPix !== null && <PixQrCode codigo={codigoPix} valor={valorQrPix} />}
 
       <div className="flex justify-end gap-3">
         <button

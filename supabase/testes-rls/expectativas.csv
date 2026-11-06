@@ -246,7 +246,7 @@ whatsapp_mensagens,delete,2,1,1,0,0,
 
 # ---------------------------------------------------------------------------
 # CONFIGURAÇÃO DA LOJA
-# As três de chave simples (garantia, fiscal, painel) têm linha SÓ na loja B
+# As quatro de chave simples (garantia, fiscal, painel, Pix) têm linha SÓ na loja B
 # no cenário — por isso a leitura delas é 1,0,0,0,0 e não 2,1,1,0,0. O motivo
 # está no cabeçalho de cenario.sql (item 1).
 # ---------------------------------------------------------------------------
@@ -274,6 +274,12 @@ configuracoes_painel_inicio,select,1,0,0,0,0,
 configuracoes_painel_inicio,insert,1,1,1,0,0,
 configuracoes_painel_inicio,update,1,0,0,0,0,
 configuracoes_painel_inicio,delete,1,0,0,0,0,
+# Pix da loja (#456): todo mundo da loja lê (precisa pra montar a cobrança),
+# mas só o admin daquela loja escreve — a chave é pra onde vai o dinheiro.
+configuracoes_pix,select,1,0,0,0,0,linha só na loja B
+configuracoes_pix,insert,1,1,0,0,0,
+configuracoes_pix,update,1,0,0,0,0,
+configuracoes_pix,delete,1,0,0,0,0,
 
 # ---------------------------------------------------------------------------
 # ADMINISTRAÇÃO — aqui o balconista tem que parar
