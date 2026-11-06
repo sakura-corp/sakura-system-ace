@@ -1,4 +1,5 @@
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
@@ -19,11 +20,17 @@ export function VendaBalcaoDetalhe({
   notas,
   onFaturar,
   onVoltar,
+  pedirAvaliacao,
 }: {
   ordem: OrdemServico;
   notas: NotaFiscalArquivo[];
   onFaturar: () => void;
   onVoltar: () => void;
+  /**
+   * O botão "Avaliação" (#459). Montado pela página só quando a loja tem o
+   * link e o operador vê o cadastro; ausente = sem botão.
+   */
+  pedirAvaliacao?: { telefone: string | null | undefined; texto: string; aoAbrir: () => void };
 }) {
   return (
     <div className="space-y-6 sakura-card p-6 shadow-sm">
@@ -48,6 +55,15 @@ export function VendaBalcaoDetalhe({
         </div>
         <div className="flex items-center gap-3">
           <StatusOrdem ordem={ordem} notas={notas} />
+          {pedirAvaliacao && ordem.status === "faturada" && (
+            <BotaoWhatsapp
+              telefone={pedirAvaliacao.telefone}
+              texto={pedirAvaliacao.texto}
+              rotulo="Avaliação"
+              titulo="Pedir ao cliente uma avaliação no Google pelo WhatsApp"
+              aoAbrir={pedirAvaliacao.aoAbrir}
+            />
+          )}
           {ordem.status !== "faturada" && (
             <button
               type="button"

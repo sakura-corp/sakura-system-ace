@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  linkAvaliacaoSchema,
   modeloPorChave,
+  montarTextoAvaliacao,
   montarUrlWhatsapp,
   preencherModelo,
   telefoneParaWhatsapp,
@@ -99,5 +101,63 @@ describe("modelo cliente_sumido (FN-11)", () => {
         "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no Fiat Uno? " +
         "É só responder que a gente marca um horário.",
     );
+  });
+});
+
+describe("link de avaliação no Google", () => {
+  const erroPadrao = "O link precisa começar com https://";
+
+  it.each(["http://g.page/r/x/review", "g.page/r/x/review", "https://", "https://g.page/r/x review"])(
+    "recusa %j",
+    (link) => {
+      const r = linkAvaliacaoSchema.safeParse({ link });
+      expect(r.success).toBe(false);
+      if (!r.success) expect(r.error.issues[0].message).toBe(erroPadrao);
+    },
+  );
+
+  it("aceita um link https e apara os espaços das pontas", () => {
+    const r = linkAvaliacaoSchema.safeParse({ link: "  https://g.page/r/x/review " });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.link).toBe("https://g.page/r/x/review");
+  });
+
+  it("aceita vazio (quer dizer: apagar o link)", () => {
+    expect(linkAvaliacaoSchema.safeParse({ link: "" }).success).toBe(true);
+    expect(linkAvaliacaoSchema.safeParse({ link: "   " }).success).toBe(true);
+  });
+});
+
+describe("montarTextoAvaliacao", () => {
+  it("usa o modelo padrão com cliente, loja e link", () => {
+    const texto = montarTextoAvaliacao({
+      cliente: "Maria",
+      loja: "Pneus Amigão",
+      link: "https://g.page/r/x/review",
+    });
+    expect(texto).toBe(
+      "Oi, Maria! Obrigado por escolher a Pneus Amigão. Se puder, deixa sua avaliação no Google, ajuda muito a gente: https://g.page/r/x/review",
+    );
+  });
+
+  it("usa o texto que a loja editou", () => {
+    expect(
+      montarTextoAvaliacao({
+        cliente: "Maria",
+        loja: "L",
+        link: "https://a.b/c",
+        modelo: "{cliente} na {loja}: {link_avaliacao}",
+      }),
+    ).toBe("Maria na L: https://a.b/c");
+  });
+});
+
+describe("modelo avaliacao", () => {
+  it("existe na lista com os três marcadores", () => {
+    expect(modeloPorChave("avaliacao").marcadores).toEqual([
+      "{cliente}",
+      "{loja}",
+      "{link_avaliacao}",
+    ]);
   });
 });

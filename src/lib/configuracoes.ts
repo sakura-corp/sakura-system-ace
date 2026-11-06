@@ -52,6 +52,35 @@ export async function salvarTextoGarantia(lojaId: string, texto: string): Promis
   if (error) throw error;
 }
 
+/** O link de avaliação no Google da loja (migration 0082); `null` = sem link. */
+export async function buscarLinkAvaliacao(lojaId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("configuracoes_avaliacao")
+    .select("link_google")
+    .eq("loja_id", lojaId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { link_google: string } | null)?.link_google || null;
+}
+
+/** Salva o link; vazio ou `null` apaga a linha (sem link = sem linha). */
+export async function salvarLinkAvaliacao(lojaId: string, link: string | null): Promise<void> {
+  const limpo = link?.trim() ?? "";
+  if (limpo === "") {
+    const { error } = await supabase.from("configuracoes_avaliacao").delete().eq("loja_id", lojaId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("configuracoes_avaliacao")
+    .upsert(
+      { loja_id: lojaId, link_google: limpo, atualizado_em: new Date().toISOString() },
+      { onConflict: "loja_id" },
+    );
+  if (error) throw error;
+}
+
 // As colunas que a tela lê, uma por uma — e NUNCA `select("*")`: a tabela
 // ainda tem a coluna antiga do token da Focus NFe (`focus_nfe_token`). A
 // migration 0070 (parte 2 do TR-04.2) a deixa vazia, mas num banco que ainda

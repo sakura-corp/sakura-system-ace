@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
-import { listarJurosParcelas } from "@/lib/configuracoes";
+import { buscarLinkAvaliacao, listarJurosParcelas } from "@/lib/configuracoes";
 import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
@@ -20,7 +20,7 @@ import {
   registrarMensagemAberta,
   textoDoModelo,
 } from "@/lib/modelosWhatsapp";
-import { preencherModelo } from "@/schemas/whatsapp";
+import { montarTextoAvaliacao, preencherModelo } from "@/schemas/whatsapp";
 import { listarSaldos } from "@/lib/estoque";
 import { listarFuncionariosPublico } from "@/lib/funcionarios";
 import {
@@ -92,6 +92,8 @@ export function OrdensServicoPage() {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
+  // Link de avaliação no Google (#459): null = a loja não configurou, e o botão não aparece.
+  const [linkAvaliacao, setLinkAvaliacao] = useState<string | null>(null);
   const [pecas, setPecas] = useState<PecaJanela[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [funcionarios, setFuncionarios] = useState<FuncionarioPublico[]>([]);
@@ -241,9 +243,11 @@ export function OrdensServicoPage() {
       // custo, a coluna Lucro mostra "custo não informado"; sem notas, a OS só
       // aparece como "Faturada", que é o comportamento de antes.
       const ids = ordensCarregadas.map((o) => o.id);
-      const [custo, notas] = await Promise.allSettled([
+      const [custo, notas, link] = await Promise.allSettled([
         buscarCustoDasOrdens(ids),
         listarArquivosDasOrdens(ids),
+        // async: um erro ao CHAMAR (e não só ao esperar) também cai no allSettled.
+        (async () => buscarLinkAvaliacao(lojaId))(),
       ]);
       if (!aindaEhAtual()) return descartada(ordensCarregadas);
 
@@ -254,6 +258,13 @@ export function OrdensServicoPage() {
       setFuncionarios(funcionariosCarregados);
       setJurosParcelas(jurosCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
+      // Falhou (banco sem a migration 0082, por exemplo): trata como sem link.
+      if (link.status === "fulfilled") {
+        setLinkAvaliacao(link.value);
+      } else {
+        console.error("Erro ao carregar o link de avaliação:", link.reason);
+        setLinkAvaliacao(null);
+      }
       if (custo.status === "fulfilled") {
         setCustoDasOrdens(custo.value);
       } else {
@@ -402,6 +413,32 @@ export function OrdensServicoPage() {
       os: nomeDocumento(ordem),
       loja: lojaAtual?.nome,
     });
+  }
+
+  // "Avaliação" (#459): só na OS/venda faturada, com o link da loja e com o
+  // módulo Clientes (sem ele o telefone não chega). Ausente = sem botão.
+  function pedidoDeAvaliacao(ordem: OrdemServico) {
+    if (!podeVerCadastro || ordem.status !== "faturada" || !linkAvaliacao) return undefined;
+    const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone ?? null;
+    return {
+      telefone,
+      texto: montarTextoAvaliacao({
+        cliente: ordem.cliente?.nome,
+        loja: lojaAtual?.nome,
+        link: linkAvaliacao,
+        modelo: textoDoModelo(modelosWhatsapp, "avaliacao"),
+      }),
+      aoAbrir: () => {
+        if (!lojaAtual) return;
+        registrarMensagemAberta(
+          lojaAtual.id,
+          "avaliacao",
+          ordem.id,
+          telefone,
+          operador?.id ?? null,
+        );
+      },
+    };
   }
 
   // Cadastro rápido de dentro da OS (item TL-08). Os dois recarregam a lista
@@ -612,6 +649,7 @@ export function OrdensServicoPage() {
           ordem={vendaAberta}
           notas={notasPorOrdem.get(vendaAberta.id) ?? []}
           onFaturar={() => setOrdemFaturando(vendaAberta)}
+          pedirAvaliacao={pedidoDeAvaliacao(vendaAberta)}
           onVoltar={() => {
             setVendaAberta(null);
             setOrdemFaturando(null);
@@ -842,6 +880,20 @@ export function OrdensServicoPage() {
                           }}
                         />
                       )}
+                      {(() => {
+                        const pedido = pedidoDeAvaliacao(ordem);
+                        return (
+                          pedido && (
+                            <BotaoWhatsapp
+                              telefone={pedido.telefone}
+                              texto={pedido.texto}
+                              rotulo="Avaliação"
+                              titulo="Pedir ao cliente uma avaliação no Google pelo WhatsApp"
+                              aoAbrir={pedido.aoAbrir}
+                            />
+                          )
+                        );
+                      })()}
                       {STATUS_COM_FECHAMENTO.includes(ordem.status) && (
                         <button
                           onClick={(e) => {
