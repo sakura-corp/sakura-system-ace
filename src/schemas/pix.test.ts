@@ -17,7 +17,13 @@
  * documentos usados são inventados, só com o dígito verificador certo.
  */
 import { describe, expect, it } from "vitest";
-import { crc16Pix, montarPixCopiaECola, normalizarChavePix, tipoDaChavePix } from "./pix";
+import {
+  crc16Pix,
+  montarPixCopiaECola,
+  normalizarChavePix,
+  tipoDaChavePix,
+  valorDoQrPix,
+} from "./pix";
 
 /** O código publicado pelo Banco Central no manual do BR Code. */
 const EXEMPLO_BC =
@@ -304,5 +310,44 @@ describe("montarPixCopiaECola", () => {
     expect(montarPixCopiaECola({ ...DADOS_BC, cidadeRecebedor: "" })).toBeNull();
     // Campo faltando de vez (dado velho do banco, por exemplo).
     expect(montarPixCopiaECola({ chave: DADOS_BC.chave } as unknown as Parameters<typeof montarPixCopiaECola>[0])).toBeNull();
+  });
+});
+
+describe("valorDoQrPix (qual valor vai no QR do faturamento)", () => {
+  it("forma única Pix: o valor cobrado", () => {
+    expect(
+      valorDoQrPix({ dividir: false, formaPagamento: "pix", valorCobrado: 150.5, linhas: [] }),
+    ).toBe(150.5);
+  });
+
+  it("forma única que não é Pix: sem QR", () => {
+    expect(
+      valorDoQrPix({ dividir: false, formaPagamento: "dinheiro", valorCobrado: 150, linhas: [] }),
+    ).toBeNull();
+  });
+
+  it("forma única Pix com valor zero: sem QR", () => {
+    expect(
+      valorDoQrPix({ dividir: false, formaPagamento: "pix", valorCobrado: 0, linhas: [] }),
+    ).toBeNull();
+  });
+
+  it("dividido: o valor da primeira linha Pix com valor maior que zero", () => {
+    const linhas = [
+      { formaPagamento: "cartao_credito", valorCobrado: 700 },
+      { formaPagamento: "pix", valorCobrado: 0 },
+      { formaPagamento: "pix", valorCobrado: 300 },
+      { formaPagamento: "pix", valorCobrado: 50 },
+    ];
+    expect(
+      valorDoQrPix({ dividir: true, formaPagamento: "pix", valorCobrado: 1050, linhas }),
+    ).toBe(300);
+  });
+
+  it("dividido sem linha Pix: sem QR (a forma única antiga não vale)", () => {
+    const linhas = [{ formaPagamento: "dinheiro", valorCobrado: 100 }];
+    expect(
+      valorDoQrPix({ dividir: true, formaPagamento: "pix", valorCobrado: 100, linhas }),
+    ).toBeNull();
   });
 });

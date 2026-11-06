@@ -237,3 +237,23 @@ export function montarPixCopiaECola(dados: DadosPix | null | undefined): string 
     "6304";
   return semCrc + crc16Pix(semCrc);
 }
+
+/**
+ * Qual valor vai no QR do faturamento (#456). Forma única Pix: o valor
+ * cobrado. Pagamento dividido: o valor da PRIMEIRA linha Pix com valor maior
+ * que zero. Sem Pix (ou sem valor): null, e o QR não aparece. Os valores já
+ * vêm calculados pela tela (juros e tudo); aqui só se escolhe qual usar.
+ */
+export function valorDoQrPix(entrada: {
+  dividir: boolean;
+  formaPagamento: string;
+  valorCobrado: number;
+  linhas: { formaPagamento: string; valorCobrado: number }[];
+}): number | null {
+  if (entrada.dividir) {
+    const linha = entrada.linhas.find((l) => l.formaPagamento === "pix" && l.valorCobrado > 0);
+    return linha ? linha.valorCobrado : null;
+  }
+  if (entrada.formaPagamento !== "pix") return null;
+  return entrada.valorCobrado > 0 ? entrada.valorCobrado : null;
+}
