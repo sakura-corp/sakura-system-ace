@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
+import { BuscaGlobal } from "./components/BuscaGlobal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
@@ -159,6 +160,7 @@ export default function App() {
       <Sidebar />
       <main className="min-h-0 min-w-0 flex-1">
         <AreaRolavel className="p-4">
+          <BuscaGlobal />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
             <Routes>
