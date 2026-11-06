@@ -167,10 +167,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
-- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
-- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
-- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
-- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
-- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
-- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 06/11/2026: a fila do banco e a NFS-e Nacional na 0.9.56 (liberada); o Lázaro de volta
+- **Na `main`**: #857 (terminado pela Sofia), #936, #912, #923 (0077 a 0080), #839 (NFS-e Nacional), #938 (#853), #939 (verificador de senhas), #942/#943 (Lázaro e roteiro). **0.9.56 publicada e liberada**; porteiro `focus-nfe` novo publicado na loja.
+- **NFS-e, próximos passos**: Balcão e DESKTOP-PKJ2A3B na 0.9.56 (pedido na loja) → "Atualizar o banco" (ensaiar, aplicar: 0076 a 0080) → conferir os números do Início → Focus: "NFSe Nacional – Produção" → **6%** nos Dados fiscais → ensaio em produção (emitir e cancelar; conferir XML, chave e relógio, `docs/pendencias-e-futuro.md`) → notas atrasadas desde 01/11 → fechar a #837.
+- **Passar pra #934** (o GitHub da sessão caiu no fim): os passos acima; aplicar 0077 a 0080 no `ssace-teste`; apagar o Send do Lázaro; revisar o #941 (Tiago, Pix, 0081) numa sessão própria.
+- **Lázaro**: conta nova `2oraza` (a `1oraza` saiu), Write nos 3 repositórios, ambiente `sakura` (rede Total), caderno pronto (#619). Pega tarefa pelo painel.
+- **Seguem valendo**: #906 (Electron 44, fim de semana); #912 caso 2 (A/B/C, #803); #933 (apt do Playwright); #879; #842 (11/11), escritorio#20 (22/11).
