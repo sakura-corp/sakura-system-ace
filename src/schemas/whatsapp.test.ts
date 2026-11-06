@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  blocoPix,
   modeloPorChave,
   montarUrlWhatsapp,
   preencherModelo,
@@ -99,5 +100,66 @@ describe("modelo cliente_sumido (FN-11)", () => {
         "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no Fiat Uno? " +
         "É só responder que a gente marca um horário.",
     );
+  });
+});
+
+describe("marcador {pix} na cobrança (#456)", () => {
+  // O texto padrão de antes do Pix, copiado literalmente: sem chave Pix o
+  // texto que sai tem que ser exatamente este.
+  const TEXTO_ANTIGO =
+    "Oi {cliente}, tudo bem? Aqui é da {loja}.\n" +
+    "Passando pra lembrar do valor de {valor} referente a {descricao}, com vencimento em {vencimento}.\n" +
+    "Qualquer coisa é só chamar por aqui!";
+  const valores = {
+    cliente: "Maria",
+    loja: "Loja Exemplo",
+    valor: "R$ 100,00",
+    descricao: "troca de óleo",
+    vencimento: "10/11/2026",
+  };
+
+  it("sem Pix, o texto padrão sai idêntico ao de antes (quem chama nem passa pix)", () => {
+    const novo = preencherModelo(modeloPorChave("cobranca").padrao, valores);
+    expect(novo).toBe(preencherModelo(TEXTO_ANTIGO, valores));
+  });
+
+  it("sem Pix, pix vazio, nulo ou em branco também some sem deixar linha sobrando", () => {
+    const antigo = preencherModelo(TEXTO_ANTIGO, valores);
+    for (const pix of ["", null, undefined, "   "]) {
+      expect(preencherModelo(modeloPorChave("cobranca").padrao, { ...valores, pix })).toBe(antigo);
+    }
+  });
+
+  it("com Pix, o bloco vai como última linha", () => {
+    const pix = blocoPix("000201ABC");
+    const texto = preencherModelo(modeloPorChave("cobranca").padrao, { ...valores, pix });
+    expect(texto.endsWith("Qualquer coisa é só chamar por aqui!\n" + pix)).toBe(true);
+    expect(texto).toContain("Pix copia e cola");
+    expect(texto).toContain("000201ABC");
+  });
+
+  it("blocoPix sem código devolve vazio", () => {
+    expect(blocoPix(null)).toBe("");
+    expect(blocoPix("")).toBe("");
+  });
+
+  it("o modelo da cobrança anuncia o marcador {pix}", () => {
+    expect(modeloPorChave("cobranca").marcadores).toContain("{pix}");
+  });
+
+  it("modelo personalizado sem {pix} continua igual, mesmo com Pix configurado", () => {
+    const meu = "Oi {cliente}, falta {valor}.";
+    expect(preencherModelo(meu, { ...valores, pix: blocoPix("000201ABC") })).toBe(
+      "Oi Maria, falta R$ 100,00.",
+    );
+  });
+
+  it("modelo personalizado com {pix} no meio do texto, sem Pix, não deixa buraco", () => {
+    expect(preencherModelo("A\n{pix}\nB", { ...valores })).toBe("A\nB");
+    expect(preencherModelo("Pague: {pix}", { ...valores })).toBe("Pague:");
+  });
+
+  it("os outros marcadores vazios continuam virando travessão", () => {
+    expect(preencherModelo("{cliente} / {valor}", { cliente: "", valor: null })).toBe("— / —");
   });
 });
