@@ -52,14 +52,14 @@ programa dão **cerca de 6 a 10 horas**, e precisam entrar até o teste do fim d
   vencido, empilha "Orçamento" + "vencido". Aprovar é em dois passos ("Aprovar" só abre o campo).
 - **Botão de arquivo em inglês** ("Choose File / No file chosen") em Importar XML e Enviar XML.
   Pode ser só do navegador da foto; **conferir no notebook do Balcão** antes de consertar.
-- **Início**: "Lucros mês" (devia ser "Lucro do mês"). **Relações** é um nome que o dono não liga
+- **Início**: ~~"Lucros mês"~~ (virou "Lucro do mês", 04/11, #868). **Relações** é um nome que o dono não liga
   a "gráficos de vendas e lucro"; o gráfico fica estreito no meio do cartão.
-- **Cadastro de cliente**: "Código IBGE do município (só p/ NFS-e)".
+- ~~**Cadastro de cliente**: "Código IBGE do município (só p/ NFS-e)".~~ Virou "Código da cidade (IBGE)" (04/11, #868).
 - **Lançamento manual no caixa**: a forma de pagamento é texto livre ("dinheiro", "pix", "PIX"…).
 - **Fechamento do caixa**: troco mostrado como "100", sem "R$" nem ",00".
 - **Computadores desta empresa**: mostra "canal de teste" e o número da versão (só explicar).
-- **Cancelar nota**: o texto cita "Focus NFe" (o fornecedor por trás da nota).
-- **Login**: "Configurar conexão com o banco de dados" no rodapé, termo de técnico.
+- ~~**Cancelar nota**: o texto cita "Focus NFe" (o fornecedor por trás da nota).~~ Virou "pelo serviço de notas" (04/11, #868).
+- ~~**Login**: "Configurar conexão com o banco de dados" no rodapé, termo de técnico.~~ Virou "Configurar a conexão" (04/11, #868).
 
 ### Cuidados pra terça (não são defeitos)
 

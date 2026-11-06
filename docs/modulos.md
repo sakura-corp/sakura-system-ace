@@ -490,8 +490,8 @@ Quatro coisas que valem saber:
     comissão do vendedor, mas **fica fora do ticket médio** (que responde "quanto rende cada carro
     atendido") — o "?" do cartão diz isso. O rótulo é "Venda 17" no caixa, na movimentação de
     estoque, nas comissões, no recibo de comissão e na garantia.
-- **Orçamento** (22/10/2026, tarefa `#379`, item `FN-01`, migration `0065` — **ainda não
-  publicado nem aplicado**): o orçamento é uma **etapa da própria OS** (situação `orcamento`,
+- **Orçamento** (22/10/2026, tarefa `#379`, item `FN-01`, migration `0065` — publicado na
+  0.9.52 e aplicado na Pneus Amigão): o orçamento é uma **etapa da própria OS** (situação `orcamento`,
   antes de "em andamento"), não um módulo à parte. Menu **"Orçamentos"** (rota `/orcamentos`,
   mesma permissão das OS), logo depois de "Ordens de Serviço", com um número pequeno dos abertos.
   Nada no Início.
@@ -511,7 +511,7 @@ Quatro coisas que valem saber:
     outro); o recusado vira histórico, na aba "Recusados".
   - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).
     **Impressão**: a OS não tem impressão própria hoje, então o orçamento também não.
-  - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`), peça avulsa, link de aprovação
+  - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`; virou a `#888`), peça avulsa, link de aprovação
     pelo celular.
 - **Ficha do veículo** (27/09/2026, item `FN-04`, sem migration, `v0.9.46` — **ainda não
   testada por ela na loja**): tudo que já foi feito num carro,
@@ -759,6 +759,11 @@ Quatro coisas que valem saber:
   corrente (item `TL-04` do guia) — a grade de 6 semanas resolvia o dia 31, mas "o que vence mês
   que vem?" continuava sem resposta. **Os cartões não seguem a navegação de propósito**: eles são
   sempre do mês corrente, senão "Vendas mês" mudaria junto e viraria armadilha.
+- **Início — Central do dia** (03/11/2026, tarefa #454; **ainda não publicada**, sai na 0.9.56): acima
+  dos cartões, a lista do que precisa de atenção hoje (nota com erro, caixa sem fechar, conta a
+  receber vencida, carro pronto, conta a pagar vencendo, OS parada, estoque baixo, o pacote da
+  contabilidade), do mais urgente pro menos, cada linha com o botão que resolve. É regra, não IA
+  (`src/schemas/centralDoDia.ts`); só avisa, nunca trava.
 - **Início**: 3 cartões de tendência personalizáveis (Configurações → "Cartões do Início", padrão
   Vendas/Lucro/Ticket médio; **"Lucros mês" e "Ticket médio" foram
   corrigidos em 28/08/2026** — o lucro passou a descontar o custo real de peça e serviço, e o
@@ -819,7 +824,8 @@ Quatro coisas que valem saber:
   clicar em "Já cadastrei" uma vez; (c) o mesmo aviso aparece dentro da janela de emitir
   NFS-e, sem o botão — ali o que resolve é ir no portal. A regra é função pura testada
   (`schemas/aliquotaCompetencia.ts`), o texto do passo a passo é editável em Configurações →
-  Dados fiscais (padrão: Araraquara/Giap), e a competência confirmada fica em
+  Dados fiscais (padrão pela cidade: o de Araraquara/Giap só pra loja de Araraquara, um texto
+  geral pras outras, #876), e a competência confirmada fica em
   `configuracoes_fiscais_loja` (migration `0049`).
 - **Configurações** (admin): Operadores (sempre visível, com "+ Novo operador", e agora um
   multi-select de lojas dentro do form, só aparece com 2+ lojas cadastradas), Lojas (novo card,
@@ -830,7 +836,7 @@ Quatro coisas que valem saber:
   garantia, **Mensagens de WhatsApp**, Dados fiscais da loja, Cartões do Início (essas últimas 4, junto com Juros, agora são
   **por loja** — ver seção 5). Em "Dados fiscais da loja" há também, desde 11/09/2026, o campo
   "Como cadastrar a alíquota no portal da prefeitura" — texto livre que alimenta o aviso mensal do
-  Início; em branco, vale o passo a passo de Araraquara que está no código. E, no fim, desde
+  Início; em branco, vale o padrão da cidade da loja (pelo código IBGE) que está no código. E, no fim, desde
   25/09/2026, **"Atualizações deste computador"** — a única seção que não mora no banco (ver
   "Canal de atualização" logo abaixo) — e, desde 26/09/2026, **"Computadores desta empresa"**
   (a versão de cada computador; ver o item logo depois de "Canal de atualização").
@@ -1063,3 +1069,7 @@ Quatro coisas que valem saber:
   | `v0.9.49` | 03/10 (só no teste; chegou nas lojas com a 0.9.51) | Bugs de tela: Situação das notas, "Ver veículos", tabelas largas e lista de OS em 1366, janelas opacas (#361, #362, #363, #417, #425) |
   | `v0.9.50` | 04/10 (só no teste; chegou nas lojas com a 0.9.51) | **Só o Electron 33 → 36** (Chromium 130 → 136, Node 20 → 22), o 1º dos três saltos da #385; nada mais junto |
   | `v0.9.51` | 08/10 (liberada 08/10) | A rodinha do mouse não muda mais campo de número (#436, item 41); **a versão de transição pro `ssace-versoes`**: sai nos dois endereços, e da 0.9.51 em diante o programa procura atualização lá (#447; `docs/operacao.md`, "Onde as versões moram") |
+  | `v0.9.52` | 22/10 (liberada 22/10) | Orçamento como etapa da OS (`0065`, #379), aviso de peça parecida (#653), peça avulsa (`0066`, #655), juntar peças repetidas (`0067`, #656), clientes que sumiram (#455), listas em páginas (#509), criar operador no programa instalado (#495) |
+  | `v0.9.53` | 23/10 (só no teste; chegou nas lojas com a 0.9.54) | Consertos da leva 3 (#741, #742) |
+  | `v0.9.54` | 23/10 (liberada 23/10) | Clientes e veículos só com o módulo (`0068`/`0069`, #365), a cópia antiga do token da Focus apagada (`0070`, #368), a faixa "banco atrasado" some quando a migration espera os computadores (#758) |
+  | `v0.9.55` | 28/10 (liberada 28/10) | **Electron 36 → 40** (#385), item e aprovação do orçamento com a OS travada (`0071`, #706), serviços padrão da empresa nova (`0072`, #787), peças e estoque só com o módulo (`0073`/`0074`, #366), margem com vírgula (#788) |

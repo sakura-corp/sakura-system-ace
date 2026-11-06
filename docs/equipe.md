@@ -11,7 +11,7 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   PR) a pessoa faz, guiada pelo Claude **um passo por vez**.
 - **As tarefas** são as issues do GitHub, já planejadas pela Sofia com o Claude dela: o que fazer,
   em quais arquivos, `Estimativa: N h`, "Pronto quando" e o que não fazer. Como a equipe se
-  organiza em levas: `docs/painel.md`, "Como a equipe trabalha".
+  organiza em levas: `docs/painel.md` do `sakura-corp/escritorio`, "Como a equipe trabalha".
 - **A primeira tarefa de todo mundo** é montar o seu caderno, o `segundo-cerebro` (roteiro
   abaixo), antes das tarefas da leva.
 - **Projetos secundários** (Sofia, 22/10/2026, #733): o Gusta guia os projetos secundários, cada um
@@ -38,18 +38,23 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
   `.env`**, e o login só na tela do programa: nunca na conversa com o Claude, nunca no GitHub.
 
 Com isso em mãos, a pessoa instala o **Claude Code no PC** (não a versão pela internet: vai
-precisar abrir o programa ou o painel no próprio computador pra testar), entra com a **conta da
+precisar abrir o programa no próprio computador pra testar), entra com a **conta da
 Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre colchetes:
 
 > Oi, Claude. Vou trabalhar no projeto **Sakura System**, que está no GitHub no repositório
 > **`sakura-corp/sakura-system-ace`**. Meu computador é **[Windows ou Mac]** e eu vou trabalhar
-> **[no painel ou no programa das lojas]**. Me guie **um passo por vez**, como se eu nunca tivesse
+> **no programa das lojas**. Me guie **um passo por vez**, como se eu nunca tivesse
 > feito isso: diga exatamente onde clicar ou o que digitar, o que deve aparecer na tela, e
 > **espere eu responder "feito"** antes do próximo passo.
 >
 > Hoje o objetivo é **só deixar meu computador pronto**, sem programar nada:
 > 1. Confira o que já tenho instalado e me ajude a instalar o que faltar: **Git**, **Node.js
->    versão 22** e **GitHub CLI** (o programa `gh`).
+>    22, a 22.12 ou mais nova da linha 22** (a mesma do CI) e **GitHub CLI** (o programa `gh`).
+>    Pra conferir o Node, rode `node -v`: se aparecer um número abaixo de `v22.12.0` (ex.:
+>    `v22.11.0` ou `v20…`), me ajude a instalar a versão 22 mais nova. Se o Node antigo veio de
+>    um gerenciador (nvm, nvm-windows, Volta ou Homebrew), atualize **por ele**; senão, pelo
+>    site nodejs.org, escolhendo a v22, por cima do antigo. Depois confira de novo com `node -v`
+>    num terminal novo. Com Node mais velho, o `npm install` quebra ao baixar o Electron.
 > 2. Me ajude a entrar na minha conta do GitHub (a do e-mail da Sakura) pelo GitHub CLI
 >    (`gh auth login`, pelo navegador), e a configurar o Git com o **meu nome e o e-mail da
 >    Sakura**.
@@ -57,11 +62,10 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >    vai me ajudar a escolher. **Não baixe como ZIP.** Precisa ser clonado, pra eu conseguir
 >    entregar meu trabalho depois.
 > 4. Me explique como abrir o Claude Code **dentro dessa pasta** e espere eu abrir.
-> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`** (e,
->    se eu for do painel, o **`docs/painel.md`**), e me explique em português simples, em poucas
->    linhas, como vai ser o meu trabalho.
+> 5. Já dentro da pasta, leia a **seção 0 do `PROJETO_STATUS.md`** e o **`docs/equipe.md`**, e me
+>    explique em português simples, em poucas linhas, como vai ser o meu trabalho.
 > 6. Siga o "Primeiro dia" do `docs/equipe.md` até o fim: instalar as dependências e abrir o
->    programa (ou o painel) no meu computador. **Eu colo as chaves no arquivo**: não me
+>    programa no meu computador. **Eu colo as chaves no arquivo**: não me
 >    peça pra colar chave nenhuma aqui na conversa.
 >
 > **Hoje não mude nada no projeto, não crie branch e não pegue tarefa.** Quando tudo estiver
@@ -85,7 +89,7 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 5. Confere com a pessoa que os dados que aparecem são os **de exemplo** (nenhum cliente de
    verdade). `Ctrl+C` no terminal fecha o programa.
 
-Pra quem é do **painel**: os comandos estão em `docs/painel.md`, "Como rodar no PC" (o painel tem
+Pra quem é do **painel**: os comandos estão no `docs/painel.md` do `sakura-corp/escritorio`, "Como rodar no PC" (o painel tem
 a pasta e as dependências dele, e não usa o `.env`).
 
 **No Windows (PowerShell)**, se aparecer *"a execução de scripts foi desabilitada neste
@@ -95,6 +99,31 @@ precisa mexer na trava de segurança do Windows.
 **No Mac**: o programa das lojas é feito pra Windows (impressora, instalador, atualização
 automática). Pra programar ele abre igual, mas se alguma coisa só funcionar no Windows, a pessoa
 anota na descrição do PR e a Sofia testa no dela.
+
+## O Claude na nuvem (GitHub, ambiente e celular)
+
+Escrito em 05/11/2026, na volta do Lázaro. Serve pras sessões do `claude.ai/code` (as do botão
+"Começar com o Claude"), que seguem a pessoa em qualquer aparelho. **Um passo por vez**; tela
+diferente da descrita: print antes de clicar.
+
+1. **A conta do GitHub**: no github.com, a foto (canto de cima à direita) tem que mostrar a conta
+   **do e-mail da Sakura**. Se for a pessoal: **Sign out** e entrar na da Sakura.
+2. **A conta do Claude**: no claude.ai, a **conta da Sakura (Team)**.
+3. **Ligar o GitHub ao Claude**: no mesmo navegador, abrir https://claude.ai/connect-github,
+   conectar, conferir de novo a conta no GitHub e clicar em **Authorize** (com o código de duas
+   etapas, se pedir). Se aparecer **Install** ou uma lista de organizações: **não instalar nada na
+   `sakura-corp`** (a Sofia já instalou); mandar print a ela.
+4. **O ambiente na nuvem** (uma vez só): no `claude.ai/code`, perto da caixa de texto, a escolha do
+   ambiente → criar um novo. **Nome**: `sakura`. **Network access**: o mesmo nível do ambiente da
+   Sofia (ela passa). **Variáveis e segredos: vazios, sempre** (nenhuma chave vai ali).
+   **Setup script**: vazio.
+5. **Abrir a sessão**: antes da primeira mensagem, o ambiente `sakura`, o repositório
+   `sakura-corp/sakura-system-ace` e o modo **Auto**, se aparecer ("As funções da sessão", abaixo).
+6. **No celular e no tablet**: o app do Claude, com a mesma conta e as notificações ligadas. A
+   sessão aberta no navegador aparece no app (parte do Code): começa num aparelho e continua no outro.
+
+A sessão da nuvem **não alcança o PC**: abrir o programa e testar é no Claude Code do PC ("Primeiro
+dia", acima, e "Testar no seu computador o que a sessão da nuvem fez", abaixo).
 
 ## A primeira tarefa: o seu caderno (`segundo-cerebro`)
 
@@ -227,7 +256,7 @@ A pessoa abre o Claude dela **dentro da pasta do repositório** e diz só o nome
 tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
 1. **Confere quem é** e **abre o caderno da pessoa** (seção 0 do `PROJETO_STATUS.md`; no PC, o
    Claude pede licença pra ler a pasta `segundo-cerebro` na primeira vez: é só aprovar); **lê a
-   issue inteira**, os comentários e este manual (e o `docs/painel.md`, se for do painel).
+   issue inteira**, os comentários e este manual (e o `docs/painel.md` do `sakura-corp/escritorio`, se for do painel).
    **Confere o "Depende de"**: se ainda não dá pra começar, explica o motivo, escreve a mensagem
    de WhatsApp pra Sofia e para aqui.
 2. **Explica em português simples**, antes de mexer em qualquer coisa:
@@ -378,7 +407,7 @@ está no meio de outra coisa, siga.
   | `npm run contraste:telas` e `npm run largura:telas` | quando a tarefa mexe numa tela: abrem o programa e medem cor e largura de verdade (precisam do Playwright, que o Claude instala só pra rodar, sem salvar no projeto) |
 
   Mudou alguma coisa do Electron (`electron/`)? Também `npm run test:electron`. O painel tem as
-  conferências dele (`docs/painel.md`).
+  conferências dele (`docs/painel.md` do `sakura-corp/escritorio`).
 - **Testar com os próprios olhos**, no programa aberto com `npm run dev` e o banco de teste: o
   Claude diz o que clicar e o que deve aparecer. O que a pessoa viu (ou o print) vai na descrição
   do PR.
@@ -440,13 +469,12 @@ trabalho que não precisa ser dela passa a rodar na cota do Tiago. **As decisõe
    `nova-tarefa`, cria a issue com a etiqueta **`rascunho`** e põe no corpo o que é decisão dela
    ("Pra Sofia decidir", com a recomendação). Ninguém começa um rascunho. Com o "aprovada" dela, sai
    o `rascunho` e entra a `leva-N` (`docs/tarefas.md`, "Quem escreve a tarefa").
-2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado, nasce depois que a Sofia
-   criar): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
+2. **O escritório.** O Tiago lidera o `sakura-corp/escritorio` (privado): recebe o plano, quebra em rascunhos de tarefa e distribui. O que é o escritório e as
    regras de lá ficam no próprio repositório.
 3. **O plantão.** Só quando a Sofia avisar que a cota dela acabou (ela manda "plantão ligado" e
-   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`) ou do
-   `painel/`**, com: o CI verde, a revisão de código colada no PR, e a **aprovação de outro da
-   equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
+   depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`)** (o painel mora no
+   `sakura-corp/escritorio`), com: o CI verde, a revisão de código colada no PR, e a **aprovação de
+   outro da equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
    publicar e liberar **nunca**: esses esperam a Sofia. Depois de mesclar, um comentário no PR:
    "mesclado no plantão", pra ela ver na volta.
 
@@ -477,7 +505,7 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 Todo PR da equipe espera a **Sofia revisar**, e ela revisa os três. Por isso:
 - a leva tem **só as tarefas que cabem no tempo dela de revisar**; quando a leva acaba, ela
-  congela, todo mundo testa e só então vem a próxima (`docs/painel.md`, "Fim de uma leva");
+  congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
   Claude dela, e o teste no programa de verdade fica pro dia de teste do fim de semana
   (`docs/jeito-de-trabalhar.md`, "Testar de uma vez"). Por isso o "Pronto quando (depois de

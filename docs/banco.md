@@ -7,13 +7,17 @@
 
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
-**Estado (30/09/2026)**: as migrations `0001` a `0064` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. A `0065` (orçamento, tarefa #379), a `0066` (peça avulsa, tarefa
-#655) e a `0067` (juntar peças, tarefa #656) foram escritas em 22/10/2026, e a `0068` e a `0069`
-(clientes só com o módulo, tarefa #365) e a `0070` (limpa a cópia antiga do token da Focus NFe,
-tarefa #368) em 23/10/2026, a `0071` (item e aprovação com a OS travada, tarefa #706) em
-26/10/2026, a `0072` (serviços padrão da empresa nova, tarefa #787) em 27/10/2026, a `0073` e a `0074` (peças e estoque só com o módulo, tarefa #366) também em 27/10/2026, e a `0075` e a `0076` (ordens de serviço só com o módulo, tarefa #367) em 28/10/2026; **ainda não estão aplicadas em banco nenhum**. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
-banco de todas as empresas" (seção 9). As `0001` a `0027` criam a base (cadastros, OS, estoque,
+**Estado (04/11/2026)**: as migrations `0001` a `0075` estão aplicadas no banco da Pneus Amigão,
+a única empresa até agora. A `0076` (ordens de serviço só com o módulo, a segunda metade da tarefa
+#367) já está escrita e **espera os computadores da loja chegarem na 0.9.56** antes de ser aplicada
+(#809). O que veio depois da `0064`, pra achar a tarefa: a `0065` (orçamento, #379), a `0066` (peça
+avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só com o módulo, #365),
+a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
+travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
+estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
+(`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
+de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
 caixa, operadores, RLS de login) e estão descritas tabela por tabela mais abaixo. O que cada uma
 das seguintes trouxe, e as decisões que valem saber antes de mexer:
 
@@ -102,8 +106,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0049`: duas colunas em `configuracoes_fiscais_loja` pro lembrete da
   alíquota da competência (NFS-e) — `competencia_aliquota_confirmada` (date: o mês, sempre no dia
   1º, cuja alíquota já foi cadastrada no portal da prefeitura) e `aliquota_passo_a_passo` (text: o
-  caminho dentro do portal, editável porque muda de município; em branco vale o padrão de
-  Araraquara, que está em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
+  caminho dentro do portal, editável porque muda de município; em branco vale o padrão da cidade
+  pelo `codigo_municipio` — o de Araraquara só pra loja de lá —, em `src/schemas/aliquotaCompetencia.ts`). Ver "Aviso da alíquota do mês" na
   seção 7. **Ordem importa**: essa migration precisa estar rodada ANTES de a versão nova chegar no
   computador da loja — sem as colunas, salvar em Configurações → Dados fiscais dá erro de "coluna
   não existe".

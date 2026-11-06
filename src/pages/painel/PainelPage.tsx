@@ -34,9 +34,9 @@ import {
   confirmarAliquotaCompetencia,
 } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
+import { CentralDoDia } from "@/components/CentralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   CARTAO_METRICA_DESCRICAO,
   CARTOES_INICIO_PADRAO,
@@ -51,8 +51,8 @@ import type { OrdemServico } from "@/types/os";
 
 const TITULO_CARTAO: Record<CartaoMetrica, string> = {
   vendas_mes: "Recebido no mês",
-  custos_mes: "Custos mês",
-  lucro_mes: "Lucros mês",
+  custos_mes: "Custos do mês",
+  lucro_mes: "Lucro do mês",
   ticket_medio_mes: "Ticket médio",
   contas_pagar_vencendo: "Contas a pagar vencendo",
 };
@@ -86,6 +86,9 @@ export function PainelPage() {
   const [confirmandoAliquota, setConfirmandoAliquota] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Só o carregamento (não o erro da alíquota): é o que deixa a Central do
+  // dia sem as OS, as contas e o Caixa.
+  const [falhouCarregar, setFalhouCarregar] = useState(false);
 
   const hoje = new Date();
   // Data como texto ("2026-09-11") pra usar de dependência dos useMemo: um
@@ -120,7 +123,7 @@ export function PainelPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured || !lojaAtual) {
+      if (!lojaAtual) {
         setCarregando(false);
         return;
       }
@@ -156,6 +159,7 @@ export function PainelPage() {
       } catch (err) {
         console.error("Erro ao carregar painel:", err);
         setErro(mensagemDeErro(err));
+        setFalhouCarregar(true);
       } finally {
         setCarregando(false);
       }
@@ -268,14 +272,6 @@ export function PainelPage() {
         <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
       </header>
 
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para ver o painel de verdade.
-        </p>
-      )}
-
       {erro && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>
       )}
@@ -292,6 +288,15 @@ export function PainelPage() {
         <p className="text-corpo text-sakura-muted">Carregando...</p>
       ) : (
         <>
+          {/* O que precisa de atenção hoje (#454). Os cartões abaixo não mudam. */}
+          <CentralDoDia
+            ordens={ordens}
+            contasPagar={contas}
+            movimentos={movimentos}
+            clientes={clientes}
+            dadosIncompletos={falhouCarregar}
+          />
+
           <div className="grid grid-cols-3 gap-4">
             {cartoesConfig.map((chave) => (
               <CartaoValor

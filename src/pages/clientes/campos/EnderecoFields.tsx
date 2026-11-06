@@ -60,7 +60,7 @@ export function EnderecoFields({
             className={inputClasse}
           />
         </Campo>
-        <Campo label="Código IBGE do município (só p/ NFS-e)">
+        <Campo label="Código da cidade (IBGE), só pra nota de serviço">
           <input type="text" {...register("codigo_municipio")} className={inputClasse} />
         </Campo>
       </div>

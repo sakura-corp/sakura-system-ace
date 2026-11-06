@@ -11,7 +11,6 @@ import {
   listarMovimentos,
 } from "@/lib/estoque";
 import { listarPecas } from "@/lib/pecas";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
@@ -38,14 +37,34 @@ export function EstoquePage() {
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // O catálogo do "Juntar peças repetidas" (#721), à parte das listas da tela:
+  // ele não depende da loja, e a falha de OUTRA lista (depósitos,
+  // configuração) não pode deixar a janela sem peças nem dizer "tudo certo".
+  // `pecas` (da tela) só muda quando tudo carrega, pra a lista de Produtos não
+  // mostrar peça com saldo de movimentos que não vieram.
+  const [catalogo, setCatalogo] = useState<Peca[] | null>(null);
+  const [erroCatalogo, setErroCatalogo] = useState<string | null>(null);
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    setCarregando(true);
+    setErro(null);
+    setErroCatalogo(null);
+    const promessaCatalogo = listarPecas().then(
+      (lista) => {
+        setCatalogo(lista);
+        return lista;
+      },
+      (err: unknown) => {
+        setErroCatalogo(mensagemDeErro(err));
+        throw err;
+      },
+    );
+    if (!lojaAtual) {
+      // Sem loja a tela não mostra nada, mas o "Juntar" ainda usa o catálogo.
+      await promessaCatalogo.catch(() => undefined);
       setCarregando(false);
       return;
     }
-    setCarregando(true);
-    setErro(null);
     try {
       const [
         pecasCarregadas,
@@ -54,7 +73,7 @@ export function EstoquePage() {
         depositosCarregados,
         configFiscal,
       ] = await Promise.all([
-        listarPecas(),
+        promessaCatalogo,
         listarMovimentos(lojaAtual.id),
         listarCategorias(),
         listarDepositos(lojaAtual.id),
@@ -93,7 +112,7 @@ export function EstoquePage() {
             Produtos, peças e movimentações de estoque
           </p>
         </div>
-        {operador?.admin === true && isSupabaseConfigured && (
+        {operador?.admin === true && (
           <button
             onClick={() => setJuntando(true)}
             className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
@@ -106,17 +125,12 @@ export function EstoquePage() {
       {juntando && (
         <JuntarPecasModal
           categorias={categorias}
+          pecas={catalogo ?? []}
+          carregando={carregando}
+          erroAoCarregar={erroCatalogo}
           onFechar={() => setJuntando(false)}
-          onJuntado={carregar}
+          onRecarregar={carregar}
         />
-      )}
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a usar o estoque de verdade.
-        </p>
       )}
 
       {erro && (

@@ -180,7 +180,8 @@ Dentro da sessão, a mãe faz o mesmo sozinha com ajudantes e filhas (skill `rit
 
 - **Ao entrar numa leva**: a skill `nova-tarefa` reescreve a issue no modelo, põe `chefe:` e
   `leva-N`, e a Sofia revisa o rascunho antes.
-- **Toda segunda** (item 6 da tarefa agendada "Resumo de segunda", colado pela Sofia no app em 17/10, porque a trava da sessão recusou a mudança feita pelo Claude), o resumo de segunda conta as tarefas abertas **com etiqueta de leva** que ainda
+- **Toda segunda** (item 6 do workflow `resumo-de-segunda.yml`, no `sakura-corp/escritorio`; a tarefa
+  agendada "Resumo de segunda" de antes foi pausada em 04/11/2026), o resumo de segunda conta as tarefas abertas **com etiqueta de leva** que ainda
   estão fora do modelo (sem `Chefe:` na 1ª linha ou sem `chefe:`), e lista as `guia` que estão
   paradas há mais de 60 dias. Só lê; quem reescreve é uma sessão, com ela aprovando.
 - **Na revisão do mês (R1)**: o `revisor-de-chefes` também olha se o modelo de issue precisa mudar

@@ -8,30 +8,39 @@ import {
   FocusNfeError,
 } from "./focusNfe";
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { salvarComoDownload } from "./download";
 import { criarZip, type ArquivoParaZip } from "./zip";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
-import type { OrdemParaNotas, StatusOS } from "@/types/os";
+import type { OrdemParaNotas, StatusOS, TipoOrdem } from "@/types/os";
 
 // A OS da nota vem pela janela `ordens_servico_notas` (migration 0075, #367):
-// só o nome do cliente, pra quem tem Notas Fiscais mas não o módulo OS.
+// número, tipo e nome do cliente, pra quem tem Notas Fiscais mas não o módulo
+// OS. O número entrou pela #876: a coluna mostrava só o cliente.
 const SELECT_ARQUIVO =
-  "*, ordem_servico:ordens_servico_notas(cliente_nome), operador:operadores(nome)";
+  "*, ordem_servico:ordens_servico_notas(numero, tipo, cliente_nome), operador:operadores(nome)";
 
 type ArquivoDaJanela = Omit<NotaFiscalArquivo, "ordem_servico"> & {
-  ordem_servico?: { cliente_nome: string | null } | null;
+  ordem_servico?: {
+    numero?: number | null;
+    tipo?: TipoOrdem | null;
+    cliente_nome: string | null;
+  } | null;
 };
 
-/** Põe o nome do cliente no formato que a tela usa (`ordem_servico.cliente.nome`). */
+/** Põe a OS no formato que a tela usa (`ordem_servico.numero`, `ordem_servico.cliente.nome`). */
 export function arquivoDaJanela(linha: ArquivoDaJanela): NotaFiscalArquivo {
   const { ordem_servico: ordem, ...resto } = linha;
   return {
     ...resto,
     ordem_servico: ordem
-      ? { cliente: ordem.cliente_nome != null ? { nome: ordem.cliente_nome } : null }
+      ? {
+          numero: ordem.numero ?? null,
+          tipo: ordem.tipo ?? null,
+          cliente: ordem.cliente_nome != null ? { nome: ordem.cliente_nome } : null,
+        }
       : null,
   };
 }
@@ -39,17 +48,19 @@ export function arquivoDaJanela(linha: ArquivoDaJanela): NotaFiscalArquivo {
 /** A linha da janela `ordens_servico_notas` que o seletor "OS relacionada" usa. */
 interface LinhaOrdemParaNotas {
   id: string;
+  numero: number | null;
+  tipo: TipoOrdem | null;
   status: StatusOS;
   data_abertura: string;
   cliente_nome: string | null;
 }
 
-/** As OS da loja pro seletor "OS relacionada" — só id, status, abertura e cliente. */
+/** As OS da loja pro seletor "OS relacionada" — só id, número, tipo, status, abertura e cliente. */
 export async function listarOrdensParaNotas(lojaId: string): Promise<OrdemParaNotas[]> {
   const dados = await buscarTudoEmPaginas((de, ate) =>
     supabase
       .from("ordens_servico_notas")
-      .select("id, status, data_abertura, cliente_nome")
+      .select("id, numero, tipo, status, data_abertura, cliente_nome")
       .eq("loja_id", lojaId)
       .order("data_abertura", { ascending: false })
       .order("id", { ascending: false })
@@ -57,6 +68,8 @@ export async function listarOrdensParaNotas(lojaId: string): Promise<OrdemParaNo
   );
   return (dados as unknown as LinhaOrdemParaNotas[]).map((linha) => ({
     id: linha.id,
+    numero: linha.numero,
+    tipo: linha.tipo ?? undefined,
     status: linha.status,
     data_abertura: linha.data_abertura,
     ...(linha.cliente_nome != null ? { cliente: { nome: linha.cliente_nome } } : {}),
@@ -82,19 +95,37 @@ export async function listarArquivos(
   return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
 }
 
+// As notas emitidas pelo sistema que voltaram com problema da Focus NFe, pra
+// Central do dia do Início (#454). Filtra no banco: a lista inteira de notas
+// da loja só cresce, e a central só quer estas.
+export async function listarNotasComErro(lojaId: string): Promise<NotaFiscalArquivo[]> {
+  const { data, error } = await supabase
+    .from("notas_fiscais_arquivos")
+    .select(SELECT_ARQUIVO)
+    .eq("loja_id", lojaId)
+    .eq("origem", "automatica")
+    .in("status", ["erro_autorizacao", "erro_cancelamento", "denegado"])
+    // As mais novas, se passar do limite; a central reordena depois.
+    .order("criado_em", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
+}
+
 // Notas ligadas a um conjunto de OS — usada pra saber, sem uma consulta por
 // linha da lista, quais notas cada OS já tem (ver schemas/situacaoFiscal.ts).
+// A lista de OS pode ter milhares: vai em blocos e por páginas (#498).
 export async function listarArquivosDasOrdens(
   ordemIds: string[],
 ): Promise<NotaFiscalArquivo[]> {
-  if (ordemIds.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("notas_fiscais_arquivos")
-    .select("*")
-    .in("ordem_servico_id", ordemIds);
-
-  if (error) throw error;
+  const data = await buscarPorIdsEmBlocos(ordemIds, (bloco, de, ate) =>
+    supabase
+      .from("notas_fiscais_arquivos")
+      .select("*")
+      .in("ordem_servico_id", bloco)
+      .order("id")
+      .range(de, ate),
+  );
   return data as unknown as NotaFiscalArquivo[];
 }
 
@@ -145,7 +176,7 @@ interface SalvarArquivoEmitidoParams {
   lojaId: string;
 }
 
-// Na tabela a NFC-e aparece como "nfe" (a aba de Notas Fiscais é "NFe"); na
+// Na tabela a NFC-e aparece como "nfe" (a aba de Notas Fiscais é "NFC-e"); na
 // Focus NFe, e portanto no porteiro, ela é "nfce".
 function tipoNaFocusNfe(tipo: TipoNotaFiscal): "nfce" | "nfse" {
   return tipo === "nfe" ? "nfce" : "nfse";

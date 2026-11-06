@@ -6,7 +6,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarOrdens } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
@@ -28,7 +27,7 @@ export function RelatoriosPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured || !lojaAtual) {
+      if (!lojaAtual) {
         setCarregando(false);
         return;
       }
@@ -65,14 +64,6 @@ export function RelatoriosPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para ver as relações de verdade.
-        </p>
-      )}
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 

@@ -44,7 +44,7 @@ na frente de qualquer outra deste arquivo:
 - **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
   do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
   escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
-  avisar que a cota dela acabou, mescla PR **só de documentação ou do `painel/`**, com o CI verde, a
+  avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
   revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
@@ -52,7 +52,7 @@ na frente de qualquer outra deste arquivo:
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
 - **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do
-  painel, também no `docs/painel.md`).
+  painel, no `docs/painel.md` do `sakura-corp/escritorio`).
 - **Não adiciona à sessão o repositório privado `caranovavidanova/sakura-corp`** (preço, sócios,
   contratos).
 - **Guiar passo a passo, com calma, em tudo que não for programar** (pedido da Sofia, 30/09):
@@ -93,7 +93,7 @@ pede**:
 | `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
 | `docs/equipe.md` | **o manual de quem entra na equipe** (Windows e Mac) | quando quem trabalha não é a Sofia |
 | `docs/supabase-de-teste.md` | **o banco de teste da equipe** e os dados de exemplo | ao mexer no banco de teste ou em `supabase/exemplo/` |
-| `docs/painel.md` | o painel da equipe: levas, decisões técnicas, andamento | ao mexer no painel ou planejar leva |
+| `docs/painel.md` | aviso: o painel da equipe mora no `sakura-corp/escritorio` | ao procurar o painel |
 | `MELHORIAS.md` | o guia de melhorias (TR-/TL-/FN-), 227 KB | só quando ela citar um item |
 
 **Referências antigas continuam valendo**: "item 33 da seção 6" é `docs/licoes.md`; a seção 5 é
@@ -165,10 +165,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
-- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; **o Tiago está fazendo o ensaio desde 02/11**, com os dados fiscais que a Sofia mandou (o resultado vai no PR); se não sair, combinar um plano B com a loja pra **terça** (a mensagem não foi escrita).
-- **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
-- **Leva 5 aprovada** (#849, testes adiados pro dia de teste da 0.9.56, como na leva 4). **A leva 6 é a atual**: 6 tarefas livres (#814, #708, #459, #456, #454, #372; 51 h). O painel não tinha tarefa pra pegar porque faltava o relatório (`docs/licoes.md`, item 95).
-- **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
-- **O Resumo de segunda** chegou em 02/11 (disparado à mão: o horário agendado atrasou; escritorio#77): **falta a Sofia pausar a rotina antiga e fechar a #625**. **CBS de 2027** (#838): depois de 15/12.
-- **Depende dela**: conferir o lucro do dia no Caixa da loja (#809); a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
+- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
+- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
+- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
+- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
+- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
+- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).

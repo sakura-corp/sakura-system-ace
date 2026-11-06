@@ -16,14 +16,6 @@
 // enviada nesse caso, por isso não existe campo `inscricao_estadual_destinatario`
 // aqui (ver PROJETO_STATUS.md, seção 8, item 1).
 
-export type StatusEmissaoFocusNfe =
-  | "processando_autorizacao"
-  | "autorizado"
-  | "erro_autorizacao"
-  | "cancelado"
-  | "erro_cancelamento"
-  | "denegado";
-
 export interface RespostaFocusNfe {
   ref?: string;
   status: string;

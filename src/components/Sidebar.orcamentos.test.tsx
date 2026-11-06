@@ -8,7 +8,7 @@ const contar = vi.fn();
 vi.mock("@/lib/ordensServico", () => ({
   contarOrcamentosAbertosDaLoja: (...a: unknown[]) => contar(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({

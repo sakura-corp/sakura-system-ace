@@ -110,10 +110,10 @@ jobs:
       # pra quem fez o PR não afrouxar a própria revisão. A branch do PR não é
       # baixada: o Claude só vê o diff, como texto. Sem guardar a chave do
       # GitHub na pasta (persist-credentials: false), que ninguém usa depois.
-      # Versão presa por commit (v4.2.2): uma tag pode ser movida, um commit
+      # Versão presa por commit (v7.0.1): uma tag pode ser movida, um commit
       # não.
       - name: Baixar as regras e o script (da main)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           persist-credentials: false

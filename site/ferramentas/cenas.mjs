@@ -16,7 +16,7 @@ export const CENAS = [
     deslogado: true, rota: "/",
     descricao: "A primeira tela. O operador digita só o usuário e a senha — sem e-mail, pra ser rápido no balcão. Por baixo dos panos o sistema monta um e-mail interno pra falar com o Supabase. A versão do programa aparece no canto inferior direito, e o link embaixo do formulário permite trocar a conexão com o banco caso o computador esteja apontando pro lugar errado." },
   { arquivo: "02-conexao", modulo: "Entrada no sistema", titulo: "Conexão com o banco da empresa",
-    deslogado: true, rota: "/", passos: [{ clicar: "Configurar conexão com o banco de dados" }],
+    deslogado: true, rota: "/", passos: [{ clicar: "Configurar a conexão" }],
     descricao: "Aparece na primeira vez que o programa é aberto em cada computador. É o que permite um instalador único servir qualquer empresa: quem instala cola o endereço e a chave do banco daquela empresa, e o valor fica guardado só naquela máquina. Sem isso, cada cliente novo precisaria de um instalador próprio." },
   { arquivo: "03-trocar-senha", modulo: "Entrada no sistema", titulo: "Troca de senha obrigatória",
     trocarSenha: true, rota: "/",

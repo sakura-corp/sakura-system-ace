@@ -23,10 +23,10 @@
    **O lote 2 saiu em 26/09/2026** (migration `0061`): `contas_pagar` e `contas_receber`.
    **E o lote 3, no mesmo dia** (migration `0062`): `caixa_movimentos`, com portas estreitas
    pra Relações, OS e as duas contas. **O lote 4 foi escrito em 23/10/2026** (migrations `0068` e
-   `0069`, tarefa #365, ainda não aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
+   `0069`, tarefa #365, aplicadas): `clientes` e `veiculos`, com a janela estreita (só nome e
    placa/marca/modelo/cor/tipo, nas views `clientes_janela` e `veiculos_janela`), o cadastro
    rápido da OS e os dados da nota por funções. **O lote 5 foi escrito em 27/10/2026** (migrations
-   `0073` e `0074`, tarefa #366, ainda não aplicadas): `pecas`, `estoque_movimentos` e
+   `0073` e `0074`, tarefa #366, aplicadas): `pecas`, `estoque_movimentos` e
    `contagens_estoque`, com a janela `pecas_janela` (sem o custo), o saldo pronto em
    `estoque_saldos`, e o custo total de cada OS calculado no banco (`custo_das_ordens`) pro Caixa,
    o Início e a lista de OS. **Lição nova do lote 5**: a issue supunha que a baixa e a entrada de
@@ -35,7 +35,7 @@
    grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
    `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
    Fornecedores é que fecha de vez. **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
-   `0076`, tarefa #367, ainda não aplicadas): `ordens_servico` e `ordens_servico_itens`, lidas
+   `0076`, tarefa #367; a `0075` aplicada, a `0076` esperando os computadores na 0.9.56): `ordens_servico` e `ordens_servico_itens`, lidas
    inteiras só por OS e Relações; Caixa, Garantias, Comissões, Notas, a ficha do veículo e "clientes
    que sumiram" leem por cinco janelas (`ordens_servico_caixa`, `_comissoes`, `_garantias`,
    `_notas`, `_clientes`), e o Início esconde "OS abertas" e "Veículos no pátio" de quem não tem o
@@ -127,7 +127,7 @@
    dela).
    **E desde 13/09/2026 a RLS também é conferida por máquina**, fora do `npm test`:
    `npm run test:rls` (item `TR-07.3`) monta um banco do zero, simula cinco papéis e confere as
-   760 combinações de tabela × comando × papel — ver `supabase/testes-rls/` e o item 63 desta
+   940 combinações de tabela × comando × papel — ver `supabase/testes-rls/` e o item 63 desta
    seção. Continua sem falar com o Supabase de verdade: é um Postgres local/do CI.
    **Exceção**: `lib/notaFiscalXmlFornecedor.test.ts` testa
    o parser de XML de verdade
@@ -181,14 +181,22 @@
    `playwright` já vem instalado **globalmente** neste ambiente
    (`/opt/node22/lib/node_modules/playwright`) mesmo sem estar no `package.json` do projeto — útil
    pra scripts avulsos de verificação visual sem mexer nas dependências do projeto.
-7. **Vercel**: o repositório tem uma integração de deploy automático na Vercel conectada (de
-   quando este repo era um site em Next.js, antes da reescrita como app Electron) — isso faz
-   alguns PRs mostrarem um check falhando sem relação com o código. Não dá pra desconectar pelo
-   código, só pelo painel da Vercel.
+7. **Vercel** (removida em 05/11/2026, #878): o repositório tinha uma integração de deploy
+   automático na Vercel, de quando era um site em Next.js, e alguns PRs mostravam um check falhando
+   sem relação com o código. Os projetos (`amigao`, `amigao-43hb`) já não existiam e o último deploy
+   foi em 27/07/2026; o que sobrava era o app da Vercel instalado na conta pessoal da Sofia, com
+   acesso de escrita a todos os repositórios dela. Desinstalado. Se um check da Vercel voltar a
+   aparecer, olhar os apps instalados na conta pessoal e na organização.
 8. **Padrão de bug: fallback com `??` em vez de `||`** — `src/lib/supabase.ts` já teve um bug real
    assim (tela em branco: `.env` copiado do `.env.example` define variáveis como **string vazia**,
    não ausente, e `??` só troca `null`/`undefined`). Sempre usar `||` pra fallback de
-   `import.meta.env.VITE_*`.
+   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega** (#873; regra `sakura/env-sem-nullish` em
+   `eslint.config.js`, provada em `scripts/regras-de-lint.test.ts`): `??` e `??=` cujo valor da
+   esquerda pode ser um valor do `import.meta.env` (inclusive com `?.`, `.trim()`, `as`, `["X"]`,
+   em cadeia `a ?? env.X ?? y` ou num ramo de `? :`) e o valor padrão ao desestruturar o
+   `import.meta.env`. **Não pega** quem guarda o env numa variável antes
+   (`const env = import.meta.env; env.X ?? y`) ou o copia com spread (`{ ...import.meta.env }`):
+   nesses casos, olhar à mão.
 9. **Padrão de bug: caminho absoluto de asset quebra só no instalador** — `src="/..."` ou
    `url(/...)` funciona em `npm run dev` (Vite serve a partir de `/`) mas quebra no app empacotado
    (Electron carrega via `file://`, onde `/` tenta ler a raiz do disco). Usar sempre
@@ -1748,6 +1756,8 @@
     O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
     mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
     o PR olha se a issue fechou junto.
+    **De novo em 05/11/2026** (a madrugada): 9 issues ficaram abertas com o PR mesclado (lista na
+    #934). A mensagem pras sessões filhas agora diz `Closes #N` com todas as letras.
 
 85. **Link de Send num print de conversa (19/10/2026).** Um print do WhatsApp mandado pra sessão
     mostrava o link inteiro de um Bitwarden Send (o que vem depois do `#` é a chave que abre). A
@@ -1766,7 +1776,8 @@
     #644 também acrescentava a sua linha ali. O #671 ficou com conflito e o CI dele não rodou até o
     Tiago trazer a `main`. **Regra**: com PR do painel aberto, o Claude da Sofia não mexe no fim do
     "Andamento". A anotação vai no PR da tarefa, ou espera ele entrar. Arquivo novo (como o
-    relatório da leva) não conflita.
+    relatório da leva) não conflita. Desde a #814 (04/11/2026), o `docs/painel.md` mora no
+    `sakura-corp/escritorio`; a regra vale lá.
     **Repetiu duas vezes no mesmo dia entre PRs de tarefa** (#679 × #676 e #678 × #679): todo PR do
     painel acrescenta a sua linha no mesmo lugar, então o segundo a entrar sempre conflita. **Como
     resolve**: trazer a `main` pro branch com um commit de junção (sem reescrever nada) e manter as
@@ -1828,3 +1839,20 @@
     "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
     a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
     o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.
+
+96. **Mesclar com o CI ainda rodando (05/11/2026, #925).** Uma sessão filha mesclou antes de os jobs
+    de tela terminarem. Um deles caiu porque a máquina do GitHub demorou mais de 8 min no apt
+    instalando o Playwright, não por causa do PR. Não quebrou nada (o #931, que já tinha o #925,
+    passou nos 7), mas foi sorte. **Regra**: mesclar só com **todos** os jobs terminados e verdes.
+    Se um cair por causa da máquina, rodar de novo só os que falharam ("Re-run failed jobs") e
+    esperar. O conserto do apt é a #933.
+97. **Migration num PR que aponta pra branch de outro PR prende a fila (05/11/2026, #882 → #936).**
+    O #882 levava a 0078, mas a base dele era a branch do #839, que espera a Focus. Como a 0079 e a
+    0080 vêm depois, o #912 e o #923 ficaram presos sem prazo, mesmo prontos. **Regra**: migration
+    vai sempre num PR direto pra `main`. Se o resto do trabalho depende de outro PR, separar só a
+    migration num PR pequeno (foi o #936, igual byte a byte).
+98. **Pedido de mudança só num comentário não chega na pessoa (05/11/2026, #857).** Os pedidos de
+    04/11 ao Gustavo ficaram num comentário comum, e o PR continuou aparecendo como "esperando a
+    revisão da Sofia": cada um achava que a vez era do outro. **Regra**: pedir mudança sempre pelo
+    "Review changes" → **Request changes** (e pôr a pessoa como responsável do PR). Assim o GitHub
+    mostra "Changes requested" e a sessão dela lista isso nas pendências (seção 0).

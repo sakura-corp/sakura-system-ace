@@ -1,5 +1,6 @@
 import type { TipoVeiculo } from "@/types/cliente";
 import type { MotivoRecusa } from "@/schemas/orcamento";
+import { somarValoresLiquidos } from "@/schemas/valorItem";
 
 /**
  * "orcamento" e "recusado" são a etapa de orçamento da OS (#379, migration
@@ -107,9 +108,6 @@ export interface OrdemServico {
   orcado_em?: string | null;
 }
 
-/** Ordem que já tem número de OS — toda ordem que não é orçamento. */
-export type OrdemNumerada = OrdemServico & { numero: number };
-
 /** Guarda de tipo: a ordem já tem número de OS (não é orçamento). */
 export function temNumeroDeOS<T extends { numero: number | null }>(
   ordem: T,
@@ -149,7 +147,10 @@ export type OrdemParaComissao = Pick<
 };
 
 /** OS como o seletor "OS relacionada" das Notas Fiscais precisa. */
-export type OrdemParaNotas = Pick<OrdemServico, "id" | "status" | "data_abertura"> & {
+export type OrdemParaNotas = Pick<
+  OrdemServico,
+  "id" | "numero" | "tipo" | "status" | "data_abertura"
+> & {
   cliente?: { nome: string };
 };
 
@@ -246,14 +247,9 @@ export const FORMA_PAGAMENTO_LABEL: Record<string, string> = {
 export function totalOrdem(
   itens: readonly Pick<ItemOS, "quantidade" | "preco_unitario" | "desconto">[],
 ): number {
-  return itens.reduce(
-    (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
-    0,
-  );
+  return somarValoresLiquidos(itens);
 }
 
 export function totalPorTipo(itens: ItemOS[], tipo: TipoItemOS): number {
-  return itens
-    .filter((item) => item.tipo === tipo)
-    .reduce((total, item) => total + item.quantidade * item.preco_unitario - item.desconto, 0);
+  return somarValoresLiquidos(itens.filter((item) => item.tipo === tipo));
 }

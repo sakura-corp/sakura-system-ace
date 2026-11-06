@@ -5,7 +5,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarItensComGarantia, type ItemGarantia } from "@/lib/garantias";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { garantiaVencida, vencimentoDaGarantia } from "@/schemas/garantia";
 import { temPermissao } from "@/types/operador";
 
@@ -25,10 +24,6 @@ export function GarantiasPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!isSupabaseConfigured) {
-        setCarregando(false);
-        return;
-      }
       try {
         setItens(await listarItensComGarantia());
       } catch (err) {
@@ -73,14 +68,6 @@ export function GarantiasPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para ver as garantias de verdade.
-        </p>
-      )}
 
       {erro && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>

@@ -18,6 +18,7 @@ import type { Cliente } from "@/types/cliente";
 import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
+import { somar } from "@/schemas/dinheiro";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -104,7 +105,7 @@ export function ContasReceberPage() {
   const recebidas = contas
     .filter((c) => c.status === "recebido")
     .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
-  const totalPendente = pendentes.reduce((soma, c) => soma + c.valor, 0);
+  const totalPendente = somar(pendentes.map((c) => c.valor));
 
   function textoDaCobranca(conta: ContaReceber): string {
     return preencherModelo(textoDoModelo(modelosWhatsapp, "cobranca"), {
@@ -225,7 +226,7 @@ export function ContasReceberPage() {
                             >
                               {ultimaCobranca && (
                                 <span
-                                  className="text-rotulo text-sakura-muted"
+                                  className="whitespace-nowrap text-rotulo text-sakura-muted"
                                   title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
                                 >
                                   cobrado em {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
@@ -254,7 +255,7 @@ export function ContasReceberPage() {
                               )}
                               <button
                                 onClick={() => setContaRecebendo(conta)}
-                                className="h-8 rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
+                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
                               >
                                 Marcar como recebido
                               </button>

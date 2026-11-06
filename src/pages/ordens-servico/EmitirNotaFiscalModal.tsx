@@ -5,16 +5,19 @@ import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import { buscarConfiguracaoFiscal, confirmarAliquotaCompetencia } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
+import { avisoLimiteNFCeSemDestinatario } from "@/schemas/limiteNFCe";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   baixarArquivoNota,
   consultarNFCe,
   consultarNFSe,
+  destinatarioIdentificadoNFCe,
   emitirNFCe,
   emitirNFSe,
   EsperaVencidaError,
   FocusNfeError,
   refPertenceAOrdem,
+  valorTotalNFCe,
   type PagamentoParaNota,
 } from "@/lib/focusNfe";
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
@@ -27,6 +30,7 @@ import {
   MENSAGEM_PECA_SEM_NCM,
   ratearPagamentos,
 } from "@/schemas/faturamento";
+import { pecasAvulsas } from "@/schemas/orcamento";
 import { motivoCodigoIncompativel } from "@/schemas/tributacao";
 import type { Cliente } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
@@ -134,9 +138,25 @@ export function EmitirNotaFiscalModal({
   const itensServico = itensDaOrdem.filter((item) => item.tipo === "servico");
   const totalPecas = totalPorTipo(ordem.itens ?? [], "peca");
   const totalServicos = totalPorTipo(ordem.itens ?? [], "servico");
-  // Mesma regra que `montarDestinatarioNFCe` usa pra decidir se identifica a
-  // empresa na nota — se mudar lá, muda aqui.
-  const cnpjClienteValido = (cliente?.cpf_cnpj ?? "").replace(/\D/g, "").length === 14;
+  // A empresa sai identificada na nota? A resposta é a regra de
+  // `montarDestinatarioNFCe`, sem cópia (#881).
+  const cnpjClienteValido = destinatarioIdentificadoNFCe(cliente);
+  // Acima do limite da UF a SEFAZ costuma exigir o cliente identificado (#881).
+  // Só depois de carregar o cliente: antes disso toda nota pareceria "sem CPF".
+  const avisoLimite =
+    tipoNota === "NFC-e" && cliente
+      ? avisoLimiteNFCeSemDestinatario(
+          // O mesmo total que vai na nota (cada linha arredondada antes de somar).
+          valorTotalNFCe(
+            itensPeca.map((item) => ({
+              quantidade: item.quantidade,
+              precoUnitario: item.preco_unitario,
+              desconto: item.desconto,
+            })),
+          ),
+          cnpjClienteValido,
+        )
+      : null;
 
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
@@ -174,13 +194,15 @@ export function EmitirNotaFiscalModal({
           .filter((item) => item.tipo === "peca")
           .map((item) => item.peca_id)
           .filter((id): id is string => Boolean(id));
+        const temPecaAvulsa = pecasAvulsas(ordem.itens ?? []).length > 0;
 
         const [config, { cliente: clienteCompleto }, pecas, cadastro] = await Promise.all([
           buscarConfiguracaoFiscal(ordem.loja_id),
           buscarClienteEVeiculoDaOrdem(ordem.id),
           buscarDadosFiscaisDasPecas(idsDasPecas),
-          // Só serve ao aviso de peça parecida: se não vier, o cadastro abre igual.
-          tipoNota === "NFC-e"
+          // Só serve ao aviso de peça parecida do cadastro da peça avulsa: sem
+          // peça avulsa nem carrega (#720). Se não vier, o cadastro abre igual.
+          tipoNota === "NFC-e" && temPecaAvulsa
             ? listarPecasJanela().catch((err) => {
                 console.error("Erro ao carregar o cadastro de peças:", err);
                 return [] as PecaJanela[];
@@ -536,7 +558,7 @@ export function EmitirNotaFiscalModal({
 
           {tipoNota === "NFS-e" && (
             <label className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
-              Código IBGE do município do cliente
+              Código da cidade do cliente (IBGE)
               <input
                 value={codigoMunicipioCliente}
                 onChange={(e) => setCodigoMunicipioCliente(e.target.value)}
@@ -551,13 +573,21 @@ export function EmitirNotaFiscalModal({
               incompleto no cadastro do cliente: nesse caso a nota sai como
               "consumidor não identificado" — válido, mas o cliente não usa
               essa nota no crédito dele, e acima de R$10 mil a SEFAZ passa a
-              exigir a identificação. Melhor ela saber disso antes de emitir
+              exigir a identificação (o aviso do limite logo abaixo, #881). Melhor ela saber disso antes de emitir
               do que descobrir depois. */}
           {tipoNota === "NFC-e" && cliente?.tipo_pessoa === "juridica" && !cnpjClienteValido && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
               Este cliente é pessoa jurídica, mas está <strong>sem o CNPJ no cadastro</strong> —
               a nota vai sair como consumidor não identificado. Se ele precisa da nota no nome da
               empresa, cadastre o CNPJ dele em Clientes antes de emitir.
+            </p>
+          )}
+
+          {/* Aviso, nunca tranca (#881): o limite pode mudar por UF e por
+              legislação, e quem decide é a SEFAZ. */}
+          {avisoLimite && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+              {avisoLimite}
             </p>
           )}
 

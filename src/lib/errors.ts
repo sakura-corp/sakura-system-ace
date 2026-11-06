@@ -68,7 +68,7 @@ export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
 
 /**
- * O programa pediu uma coluna que o banco desta empresa ainda não tem: a
+ * O programa pediu uma coluna ou view que o banco desta empresa ainda não tem: a
  * versão nova chegou antes da migration (a ordem certa é o banco primeiro,
  * mas migration com `versao-minima-do-programa` faz o contrário de
  * propósito — ex.: criar orçamento antes da 0065). Sem isto, a tela mostrava
@@ -78,11 +78,16 @@ export const MENSAGEM_BANCO_DESATUALIZADO =
   "O banco desta empresa ainda não foi atualizado pra esta versão do programa, então isto ainda não funciona. Avise quem cuida do sistema.";
 
 /**
- * Colunas que chegam com a 0065 (e o custo da peça avulsa, da 0066). Só elas viram o aviso de banco desatualizado:
- * uma coluna qualquer que falta é erro de programação (nome errado), e mandar
- * "atualizar o banco" ali só esconderia o defeito.
+ * Colunas e views novas do banco (da 0065 em diante). Só elas viram o aviso de
+ * banco desatualizado: uma coluna ou tabela qualquer que falta é erro de
+ * programação (nome errado), e mandar "atualizar o banco" ali só esconderia o
+ * defeito.
+ *
+ * Migration nova que acrescenta coluna ou cria view entra aqui: o teste em
+ * `errors.test.ts` lê `supabase/migrations/` e reprova se faltar.
  */
-export const COLUNAS_DA_0065 = [
+export const OBJETOS_NOVOS_DO_BANCO = [
+  // 0065 (orçamento): colunas de ordens_servico.
   "numero_orcamento",
   "validade",
   "aprovado_por",
@@ -90,23 +95,45 @@ export const COLUNAS_DA_0065 = [
   "motivo_recusa",
   "recusado_em",
   "orcado_em",
+  // 0066 (peça avulsa): coluna de ordens_servico_itens.
   "custo_unitario",
+  // 0068 (clientes por janela): views.
+  "clientes_janela",
+  "veiculos_janela",
+  // 0073 (peças por janela): views.
+  "pecas_janela",
+  "estoque_saldos",
+  // 0075 (OS por janela): views.
+  "ordens_servico_caixa",
+  "ordens_servico_comissoes",
+  "ordens_servico_garantias",
+  "ordens_servico_notas",
+  "ordens_servico_clientes",
 ] as const;
 
-/** O nome da coluna que falta, do jeito do PostgREST ou do Postgres; null se não é esse erro. */
-function colunaQueFalta(mensagem: string): string | null {
-  const doPostgrest = /Could not find the '([^']+)' column/.exec(mensagem);
-  if (doPostgrest) return doPostgrest[1];
+/**
+ * O nome da coluna, tabela ou view que falta, do jeito do PostgREST ou do
+ * Postgres; null se não é esse erro.
+ */
+function objetoQueFalta(mensagem: string): string | null {
+  const colunaDoPostgrest = /Could not find the '([^']+)' column/.exec(mensagem);
+  if (colunaDoPostgrest) return colunaDoPostgrest[1];
   // "column ordens_servico.validade does not exist" ou
   // 'column "validade" of relation "ordens_servico" does not exist'
-  const doPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
-  return doPostgres ? doPostgres[1] : null;
+  const colunaDoPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
+  if (colunaDoPostgres) return colunaDoPostgres[1];
+  // "Could not find the table 'public.clientes_janela' in the schema cache"
+  const tabelaDoPostgrest = /Could not find the table '(?:[\w]+\.)?([\w]+)'/.exec(mensagem);
+  if (tabelaDoPostgrest) return tabelaDoPostgrest[1];
+  // 'relation "clientes_janela" does not exist' (ou "public.clientes_janela")
+  const tabelaDoPostgres = /relation "(?:[\w]+\.)?([\w]+)" does not exist/.exec(mensagem);
+  return tabelaDoPostgres ? tabelaDoPostgres[1] : null;
 }
 
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
-  const coluna = colunaQueFalta(mensagem);
-  if (coluna && (COLUNAS_DA_0065 as readonly string[]).includes(coluna)) {
+  const objeto = objetoQueFalta(mensagem);
+  if (objeto && (OBJETOS_NOVOS_DO_BANCO as readonly string[]).includes(objeto)) {
     return MENSAGEM_BANCO_DESATUALIZADO;
   }
   return traduzirTrava(mensagem) ?? mensagem;
@@ -118,5 +145,5 @@ export function mensagemDeErro(erro: unknown): string {
     if (typeof mensagem === "string" && mensagem.length > 0) return traduzir(mensagem);
   }
   if (erro instanceof Error) return traduzir(erro.message);
-  return "Erro desconhecido ao salvar. Veja o console para mais detalhes.";
+  return "Erro desconhecido ao salvar. Se continuar, mande um print desta mensagem pra quem cuida do sistema.";
 }

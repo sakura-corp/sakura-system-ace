@@ -115,7 +115,8 @@ diferentes da mesma página:
    `https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/main/supabase/exemplo/dados-de-exemplo.sql`
 2. **SQL Editor** → **New query** → cole → **Run**.
 
-Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 peças."**
+Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 2 orçamentos, 12 peças."**
+(Antes da #872 a frase não tinha os orçamentos: se ela aparecer sem eles, o link abriu um script antigo.)
 
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
@@ -242,8 +243,8 @@ de instalar):
 4. `npm run dev` → o programa abre → entrar com o usuário e a senha do Send.
 
 Deve aparecer a loja **Autocenter Exemplo (TESTE)** com OS em andamento, vendas do dia e contas
-atrasadas. O `.env` só vale no `npm run dev`; ninguém da equipe instala o programa das lojas
-apontando pra banco nenhum.
+atrasadas. O `.env` só vale no `npm run dev`. A equipe usa o `npm run dev`; instalar o programa
+apontando pro `ssace-teste` só no ensaio da loja nova, aprovado pela Sofia (04/11/2026).
 
 ## Passo 9 — Manter
 

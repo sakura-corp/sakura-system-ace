@@ -131,8 +131,8 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   projeto, `TELAS_NO_ELECTRON=1` (vale pra qualquer varredura) ou o terceiro argumento
   (`{ electron, horaFixa }`), que é o que o `comparar:electron` usa (lição 82).
 - **`apresentacao/`**: o levantamento do sistema e o script das fotos da apresentação comercial.
-- **`painel/`**: o painel da equipe, projeto separado (Vite + React + TypeScript, com `package.json`
-  próprio), no ar na Cloudflare desde 01/10/2026 (`docs/painel.md`).
+- O painel da equipe não mora mais aqui: saiu na #814 e vive no `sakura-corp/escritorio` (pasta
+  `painel/` e `docs/painel.md` de lá).
 - **Documentos**: `PROJETO_STATUS.md` + `docs/` (a memória), `MELHORIAS.md` (o guia de melhorias,
   aberto só quando ela cita um item), `ANTES-DA-PRIMEIRA-VENDA.md` (LGPD), `RESTAURAR-BACKUP.md`
   ("deu problema no banco, e agora?"; a primeira tabela manda **não** usar backup na maioria dos
@@ -147,6 +147,10 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   (funções que usam o cliente `supabase`), `pages/<modulo>/<Modulo>Page.tsx` (lista, com
   carregando e erro) e `<Modulo>Form.tsx`.
 - Erro do Supabase **não é `instanceof Error`**: sempre `mensagemDeErro()` de `src/lib/errors.ts`.
+- **Lista que pode crescer** (`src/lib/paginacao.ts`): o Supabase corta toda resposta em 1.000
+  linhas, sem erro. Lista inteira → `buscarTudoEmPaginas`; filtro por lista de ids (`.in`) →
+  `buscarPorIdsEmBlocos` (blocos de 100 ids, senão o endereço fica grande demais). As duas pedem
+  ordem total (último `.order()` em `id`). #509 e #498.
 - **Nunca `window.prompt()`**: o Electron não suporta. `alert()` e `confirm()` funcionam.
 - Toda tabela nova precisa de RLS e policy (item 1 da seção 6).
 - Valor padrão a partir de `import.meta.env.VITE_*`: usar `||`, nunca `??`. O Vite injeta variável

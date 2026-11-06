@@ -173,9 +173,17 @@ begin
       ('funcionarios',        (select count(*) from funcionarios where loja_id = loja), 3),
       ('pecas',               (select count(*) from pecas where id::text like 'eeee%'), 12),
       ('fornecedores',        (select count(*) from fornecedores where id::text like 'eeee%'), 2),
-      ('ordens_servico',      (select count(*) from ordens_servico where loja_id = loja), 14),
-      ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 32),
-      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 14),
+      ('ordens_servico',      (select count(*) from ordens_servico where loja_id = loja and numero is not null), 14),
+      ('orcamentos',          (select count(*) from ordens_servico where loja_id = loja and numero is null), 2),
+      ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 38),
+      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 15),
+      ('fechamentos_caixa',   (select count(*) from fechamentos_caixa where loja_id = loja), 2),
+      ('comissoes_fechamentos',(select count(*) from comissoes_fechamentos where loja_id = loja), 1),
+      ('computadores',        (select count(*) from computadores where loja_id = loja), 1),
+      ('pedidos_compra',      (select count(*) from pedidos_compra where loja_id = loja), 2),
+      ('pedidos_compra_itens',(select count(*) from pedidos_compra_itens i join pedidos_compra p on p.id = i.pedido_compra_id where p.loja_id = loja), 4),
+      ('cotacoes_pecas',      (select count(*) from cotacoes_pecas where peca_id::text like 'eeee%'), 4),
+      ('contagens_estoque',   (select count(*) from contagens_estoque where loja_id = loja), 2),
       ('contas_pagar',        (select count(*) from contas_pagar where loja_id = loja), 5),
       ('contas_receber',      (select count(*) from contas_receber where loja_id = loja), 3),
       ('depositos',           (select count(*) from depositos where loja_id = loja), 1)
@@ -187,8 +195,8 @@ begin
 
   -- B2. todas as fases e os dois tipos
   select count(distinct status) into quantas from ordens_servico where loja_id = loja;
-  if quantas <> 3 then
-    raise exception 'FALHOU (B2): esperava OS nas 3 fases (em andamento, concluída, faturada), achei %', quantas;
+  if quantas <> 5 then
+    raise exception 'FALHOU (B2): esperava OS nas 3 fases (em andamento, concluída, faturada) e orçamento aberto e recusado, achei % status', quantas;
   end if;
   select count(distinct tipo) into quantas from ordens_servico where loja_id = loja;
   if quantas <> 2 then
@@ -291,8 +299,9 @@ begin
   end if;
 
   -- B6. estoque: toda peça usada tem baixa, e nenhum saldo fica negativo
+  --     (orçamento não baixa: a peça só sai quando o cliente aprova)
   if exists (select 1 from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id
-             where o.loja_id = loja and i.peca_id is not null
+             where o.loja_id = loja and i.peca_id is not null and o.numero is not null
                and not exists (select 1 from estoque_movimentos m
                                where m.peca_id = i.peca_id and m.tipo = 'saida' and m.motivo = 'uso_em_os'
                                  and m.quantidade = i.quantidade and m.loja_id = loja)) then
@@ -310,6 +319,155 @@ begin
   end if;
 end $$;
 
+-- B8 a B14: o que veio na tarefa #872 (cada um do jeito que o programa grava)
+do $$
+declare
+  loja constant uuid := 'eeee0001-0000-4000-8000-000000000001';
+  linha record;
+  quantas int;
+  esperado numeric;
+begin
+  -- B8. orçamentos: um aberto e um recusado com motivo; sem número de OS, com
+  --     número de orçamento, validade, e NENHUM movimento de estoque.
+  if not exists (select 1 from ordens_servico where loja_id = loja and status = 'orcamento'
+                 and numero is null and numero_orcamento is not null and validade is not null)
+     or not exists (select 1 from ordens_servico where loja_id = loja and status = 'recusado'
+                    and numero is null and motivo_recusa is not null and recusado_em is not null) then
+    raise exception 'FALHOU (B8): faltou orçamento aberto, ou recusado com motivo';
+  end if;
+  if exists (select 1 from estoque_movimentos m
+             where m.loja_id = loja and (m.referencia ilike 'Orçamento%'
+                   or m.criado_em in (select data_abertura from ordens_servico where loja_id = loja and numero is null))) then
+    raise exception 'FALHOU (B8): orçamento baixou estoque';
+  end if;
+  if exists (select 1 from ordens_servico o where o.loja_id = loja and o.numero is null
+             and not exists (select 1 from ordens_servico_itens i where i.ordem_servico_id = o.id)) then
+    raise exception 'FALHOU (B8): orçamento sem item';
+  end if;
+
+  -- B9. peça avulsa: item de peça sem cadastro, com o custo digitado
+  if not exists (select 1 from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id
+                 where o.loja_id = loja and i.tipo = 'peca' and i.peca_id is null and i.custo_unitario > 0) then
+    raise exception 'FALHOU (B9): faltou peça avulsa com custo no exemplo';
+  end if;
+
+  -- B10. fechamento de caixa bate com o caixa do dia: esperado = fundo +
+  --      dinheiro do dia (sem o próprio lançamento da diferença); diferença =
+  --      contado − esperado; e a diferença virou o lançamento certo.
+  for linha in select * from fechamentos_caixa where loja_id = loja loop
+    select linha.fundo_troco + coalesce(sum(case when tipo = 'entrada' then valor else -valor end), 0)
+      into esperado
+      from caixa_movimentos
+     where loja_id = loja and lower(forma_pagamento) = 'dinheiro'
+       and (data at time zone 'America/Sao_Paulo')::date = linha.data
+       and id is distinct from linha.caixa_movimento_id;
+    if linha.saldo_sistema <> esperado
+       or linha.diferenca <> linha.valor_contado - linha.saldo_sistema
+       or (linha.totais_por_forma ->> 'dinheiro')::numeric <> esperado - linha.fundo_troco then
+      raise exception 'FALHOU (B10): o fechamento de % não bate com o caixa (gravou %, o caixa dá %)',
+        linha.data, linha.saldo_sistema, esperado;
+    end if;
+    if (linha.diferenca = 0) <> (linha.caixa_movimento_id is null)
+       or (linha.diferenca <> 0 and not exists (
+             select 1 from caixa_movimentos c where c.id = linha.caixa_movimento_id
+               and c.valor = abs(linha.diferenca) and c.forma_pagamento = 'dinheiro'
+               and c.tipo = case when linha.diferenca < 0 then 'saida' else 'entrada' end
+               and (c.data at time zone 'America/Sao_Paulo')::date = linha.data)) then
+      raise exception 'FALHOU (B10): a diferença do fechamento de % não virou o lançamento certo no caixa', linha.data;
+    end if;
+  end loop;
+  if not exists (select 1 from fechamentos_caixa where loja_id = loja and diferenca = 0)
+     or not exists (select 1 from fechamentos_caixa where loja_id = loja and diferenca <> 0) then
+    raise exception 'FALHOU (B10): esperava um fechamento que bateu e um com diferença';
+  end if;
+
+  -- B11. comissão paga: o valor é a soma do retrato, o retrato só tem OS
+  --      faturada do período, e o valor é o que a conta do programa dá com
+  --      estes dados (Marcos, 5% do lucro das peças das OS 1 e 4:
+  --      5% de 69,80 = 3,49 e 5% de 85,80 = 4,29 → 7,78).
+  for linha in select * from comissoes_fechamentos where loja_id = loja loop
+    if linha.valor_calculado <> (select coalesce(sum((e ->> 'comissao')::numeric), 0)
+                                   from jsonb_array_elements(linha.snapshot) e) then
+      raise exception 'FALHOU (B11): o valor da comissão não é a soma do retrato';
+    end if;
+    if exists (select 1 from jsonb_array_elements(linha.snapshot) e
+               left join ordens_servico o on o.id = (e ->> 'ordemId')::uuid
+               where o.id is null or o.status <> 'faturada' or o.numero <> (e ->> 'numero')::int
+                  or (coalesce(o.data_fechamento, o.data_abertura) at time zone 'America/Sao_Paulo')::date
+                     not between linha.periodo_inicio and linha.periodo_fim) then
+      raise exception 'FALHOU (B11): o retrato da comissão tem OS fora do período ou não faturada';
+    end if;
+  end loop;
+  if (select valor_calculado from comissoes_fechamentos where id = 'eeee0010-0000-4000-8000-000000000001') is distinct from 7.78
+     or (select jsonb_array_length(snapshot) from comissoes_fechamentos where id = 'eeee0010-0000-4000-8000-000000000001') <> 2 then
+    raise exception 'FALHOU (B11): a comissão de exemplo não deu os 7,78 das OS 1 e 4: %',
+      (select row_to_json(c) from comissoes_fechamentos c where id = 'eeee0010-0000-4000-8000-000000000001');
+  end if;
+
+  -- B12. pedidos de compra: um recebido e um aberto; o recebido gerou a
+  --      entrada de cada item ("Pedido N"), o aberto não gerou nada.
+  if not exists (select 1 from pedidos_compra where loja_id = loja and status = 'recebido')
+     or not exists (select 1 from pedidos_compra where loja_id = loja and status = 'pendente') then
+    raise exception 'FALHOU (B12): esperava um pedido recebido e um aberto';
+  end if;
+  for linha in
+    select p.numero, p.status, i.peca_id, i.quantidade_pedida, i.quantidade_recebida,
+           (select coalesce(sum(m.quantidade), 0) from estoque_movimentos m
+             where m.loja_id = loja and m.tipo = 'entrada' and m.motivo = 'compra'
+               and m.referencia = 'Pedido ' || p.numero and m.peca_id = i.peca_id) as entrou
+    from pedidos_compra p join pedidos_compra_itens i on i.pedido_compra_id = p.id
+    where p.loja_id = loja
+  loop
+    if linha.entrou <> linha.quantidade_recebida
+       or (linha.status = 'recebido' and linha.quantidade_recebida <> linha.quantidade_pedida)
+       or (linha.status = 'pendente' and linha.quantidade_recebida <> 0) then
+      raise exception 'FALHOU (B12): o pedido % (%) não bate com a entrada no estoque (recebido %, entrou %)',
+        linha.numero, linha.status, linha.quantidade_recebida, linha.entrou;
+    end if;
+  end loop;
+
+  -- B13. cotação: todo item de pedido com preço tem a cotação do fornecedor,
+  --      e ao menos uma peça tem cotação de dois fornecedores (pra comparar).
+  if exists (select 1 from pedidos_compra p join pedidos_compra_itens i on i.pedido_compra_id = p.id
+             where p.loja_id = loja and i.preco_unitario > 0
+               and not exists (select 1 from cotacoes_pecas c where c.peca_id = i.peca_id
+                               and c.fornecedor_id = p.fornecedor_id and c.preco = i.preco_unitario)) then
+    raise exception 'FALHOU (B13): item de pedido com preço sem a cotação';
+  end if;
+  if not exists (select 1 from cotacoes_pecas where peca_id::text like 'eeee%'
+                 group by peca_id having count(distinct fornecedor_id) >= 2) then
+    raise exception 'FALHOU (B13): nenhuma peça com cotação de dois fornecedores';
+  end if;
+
+  -- B14. contagem: o saldo gravado é o do sistema naquela hora, a diferença é
+  --      contado − saldo, e diferença diferente de zero virou um "ajuste".
+  for linha in select * from contagens_estoque where loja_id = loja loop
+    select coalesce(sum(case when tipo = 'entrada' then quantidade else -quantidade end), 0) into esperado
+      from estoque_movimentos
+     where peca_id = linha.peca_id and deposito_id = linha.deposito_id and criado_em < linha.criado_em;
+    if linha.saldo_sistema <> esperado or linha.diferenca <> linha.quantidade_contada - linha.saldo_sistema then
+      raise exception 'FALHOU (B14): a contagem não bate com o estoque (gravou saldo %, o estoque dava %)',
+        linha.saldo_sistema, esperado;
+    end if;
+    select count(*) into quantas from estoque_movimentos
+     where peca_id = linha.peca_id and deposito_id = linha.deposito_id and motivo = 'ajuste'
+       and criado_em = linha.criado_em and quantidade = abs(linha.diferenca)
+       and tipo = case when linha.diferenca > 0 then 'entrada' else 'saida' end;
+    if (linha.diferenca <> 0 and quantas <> 1) or (linha.diferenca = 0 and quantas <> 0) then
+      raise exception 'FALHOU (B14): a contagem com diferença % não gerou o ajuste certo', linha.diferenca;
+    end if;
+  end loop;
+  if not exists (select 1 from contagens_estoque where loja_id = loja and diferenca = 0)
+     or not exists (select 1 from contagens_estoque where loja_id = loja and diferenca <> 0) then
+    raise exception 'FALHOU (B14): esperava uma contagem que bateu e uma com diferença';
+  end if;
+
+  -- B15. computador: o inventado existe, na loja de exemplo
+  if not exists (select 1 from computadores where loja_id = loja and id::text like 'eeee%') then
+    raise exception 'FALHOU (B15): faltou o computador da loja de exemplo';
+  end if;
+end $$;
+
 create temp table depois_da_primeira as select * from pg_temp.contagens();
 
 -- ===================================================================
@@ -320,6 +478,13 @@ create temp table depois_da_primeira as select * from pg_temp.contagens();
 do $$
 declare linha record;
 begin
+  -- orçamento não baixa estoque nem na segunda rodada (a baixa das OS roda de novo)
+  if exists (select 1 from estoque_movimentos m
+             join ordens_servico_itens i on i.peca_id = m.peca_id
+             join ordens_servico o on o.id = i.ordem_servico_id
+             where o.numero is null and m.tipo = 'saida' and m.criado_em = o.data_abertura) then
+    raise exception 'FALHOU (C): a segunda rodada baixou estoque de orçamento';
+  end if;
   for linha in
     select c.tabela, p.linhas as antes, c.linhas as depois
     from pg_temp.contagens() c join depois_da_primeira p using (tabela)
@@ -387,12 +552,12 @@ do $$
 declare quantas int;
 begin
   select count(*) into quantas from ordens_servico;
-  if quantas <> 14 then
-    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % OS (esperava as 14 da loja de exemplo, e nenhuma da Loja 1)', quantas;
+  if quantas <> 16 then
+    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % OS (esperava as 14 e os 2 orçamentos da loja de exemplo, e nenhuma da Loja 1)', quantas;
   end if;
   select count(*) into quantas from caixa_movimentos;
-  if quantas <> 14 then
-    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 14)', quantas;
+  if quantas <> 15 then
+    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 15)', quantas;
   end if;
   select count(*) into quantas from clientes where id::text like 'eeee%';
   if quantas <> 8 then
@@ -413,7 +578,7 @@ insert into segredos_fiscais_loja (loja_id, focus_nfe_token)
 \set ON_ERROR_STOP 1
 delete from segredos_fiscais_loja;
 do $$ begin
-  if (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 14 then
+  if (select count(*) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 16 then
     raise exception 'FALHOU (E1): com token no banco, o apagar apagou mesmo assim';
   end if;
 end $$;
@@ -426,7 +591,14 @@ do $$ begin
   if exists (select 1 from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001')
      or exists (select 1 from caixa_movimentos where loja_id = 'eeee0001-0000-4000-8000-000000000001')
      or exists (select 1 from clientes where id::text like 'eeee%')
-     or exists (select 1 from pecas where id::text like 'eeee%') then
+     or exists (select 1 from pecas where id::text like 'eeee%')
+     or exists (select 1 from fornecedores where id::text like 'eeee%')
+     or exists (select 1 from fechamentos_caixa where loja_id = 'eeee0001-0000-4000-8000-000000000001')
+     or exists (select 1 from comissoes_fechamentos where loja_id = 'eeee0001-0000-4000-8000-000000000001')
+     or exists (select 1 from pedidos_compra where loja_id = 'eeee0001-0000-4000-8000-000000000001')
+     or exists (select 1 from cotacoes_pecas where peca_id::text like 'eeee%' or fornecedor_id::text like 'eeee%')
+     or exists (select 1 from contagens_estoque where loja_id = 'eeee0001-0000-4000-8000-000000000001')
+     or exists (select 1 from computadores where id::text like 'eeee%') then
     raise exception 'FALHOU (E2): o apagar deixou dado de exemplo pra trás';
   end if;
   if not exists (select 1 from operador_lojas where operador_id = 'd0d0d0d0-0000-4000-8000-000000000001'
