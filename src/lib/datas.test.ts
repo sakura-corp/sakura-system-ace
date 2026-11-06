@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dataCurta, diaLocal, diasEntre, hojeLocal, primeiroDiaDoMesLocal } from "./datas";
+import { dataCurta, dataHoraLocalComFuso, diaLocal, diasEntre, hojeLocal, primeiroDiaDoMesLocal } from "./datas";
 
 describe("diaLocal", () => {
   it("devolve o dia no formato YYYY-MM-DD", () => {
@@ -76,5 +76,18 @@ describe("dataCurta", () => {
 
   it("às 23h30 continua no mesmo dia, mesmo que em UTC já seja o seguinte", () => {
     expect(dataCurta(instante(2026, 12, 31, 23, 30), "2026-12-31")).toBe("31/12");
+  });
+});
+
+// A NFS-e Nacional (#837) pede data e hora "AAAA-MM-DDThh:mm:ssTZD": com o
+// fuso no fim e sem milésimos. O dia tem de ser o LOCAL (o mesmo cuidado do
+// diaLocal) e o instante tem de ser o mesmo — nos dois fusos do test:fusos.
+describe("dataHoraLocalComFuso", () => {
+  it("sai no formato com fuso, sem milésimos, no dia local e no mesmo instante", () => {
+    const instante = new Date("2026-11-02T01:30:45.678Z"); // 22:30 do dia 01 em Brasília
+    const texto = dataHoraLocalComFuso(instante);
+    expect(texto).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/);
+    expect(texto.slice(0, 10)).toBe(diaLocal(instante));
+    expect(new Date(texto).getTime()).toBe(Math.floor(instante.getTime() / 1000) * 1000);
   });
 });

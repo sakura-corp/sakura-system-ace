@@ -49,7 +49,10 @@
 // configurar. O token fica na tabela, uma por loja.
 
 export type AcaoPorteiro = "emitir" | "consultar" | "cancelar" | "baixar";
-export type TipoNota = "nfce" | "nfse";
+// nfsen = NFS-e pelo Padrão Nacional (#837): desde 01/11/2026 é o único
+// caminho pra empresa do Simples em Araraquara. Mesmo token, outro endereço
+// (`/v2/nfsen`) e outro formato de corpo.
+export type TipoNota = "nfce" | "nfse" | "nfsen";
 
 export interface Ambiente {
   env: (nome: string) => string | undefined;
@@ -62,6 +65,12 @@ export const HOSTS_DA_FOCUS_NFE: Record<string, string> = {
 };
 
 const HOSTS_PERMITIDOS = new Set(Object.values(HOSTS_DA_FOCUS_NFE));
+
+// O PDF da NFS-e Nacional (DANFSe) a Focus NFe devolve num endereço público
+// do S3 dela (campo `url_danfse`, conferido em doc.focusnfe.com.br,
+// "NFSe Nacional → Consultar"). Ele é buscado SEM o token: o token só vai
+// pros dois hosts acima.
+const HOST_PUBLICO_DO_DANFSE = "focusnfe.s3.sa-east-1.amazonaws.com";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -130,7 +139,7 @@ export function validarPedido(bruto: unknown): Pedido | string {
   if (p.acao !== "emitir" && p.acao !== "consultar" && p.acao !== "cancelar" && p.acao !== "baixar") {
     return "Ação desconhecida.";
   }
-  if (p.tipo !== "nfce" && p.tipo !== "nfse") return "Tipo de nota desconhecido.";
+  if (p.tipo !== "nfce" && p.tipo !== "nfse" && p.tipo !== "nfsen") return "Tipo de nota desconhecido.";
   if (typeof p.ref !== "string" || !REF_VALIDA.test(p.ref)) return "Referência da nota inválida.";
 
   const pedido: Pedido = { loja_id: p.loja_id, acao: p.acao, tipo: p.tipo, ref: p.ref };
@@ -160,6 +169,8 @@ export function validarPedido(bruto: unknown): Pedido | string {
 /** O CNPJ que a nota diz ser o do emitente (NFC-e) ou do prestador (NFS-e). */
 export function cnpjDoCorpo(tipo: TipoNota, corpo: Record<string, unknown>): string {
   if (tipo === "nfce") return soDigitos(corpo.cnpj_emitente);
+  // A NFS-e Nacional tem o corpo "achatado": o prestador não é um objeto.
+  if (tipo === "nfsen") return soDigitos(corpo.cnpj_prestador);
   const prestador = corpo.prestador;
   return typeof prestador === "object" && prestador !== null
     ? soDigitos((prestador as Record<string, unknown>).cnpj)
@@ -192,6 +203,19 @@ export function enderecoDoArquivo(caminho: unknown, host: string): string | null
     return null;
   }
   if (endereco.protocol !== "https:" || !HOSTS_PERMITIDOS.has(endereco.hostname)) return null;
+  return endereco.toString();
+}
+
+/** O endereço do DANFSe da NFS-e Nacional, só se for o S3 da Focus NFe. */
+export function enderecoPublicoDoDanfse(caminho: unknown): string | null {
+  if (typeof caminho !== "string") return null;
+  let endereco: URL;
+  try {
+    endereco = new URL(caminho);
+  } catch {
+    return null;
+  }
+  if (endereco.protocol !== "https:" || endereco.hostname !== HOST_PUBLICO_DO_DANFSE) return null;
   return endereco.toString();
 }
 
@@ -278,10 +302,13 @@ export async function atender(req: Request, amb: Ambiente): Promise<Response> {
     metodo: string,
     endereco: string,
     corpo?: unknown,
+    semToken = false,
   ): Promise<{ ok: boolean; status: number; tipo: string; bytes: Uint8Array }> => {
     const r = await amb.fetch(endereco, {
       method: metodo,
-      headers: { Authorization: basicAuth(token), "Content-Type": "application/json" },
+      headers: semToken
+        ? { "Content-Type": "application/json" }
+        : { Authorization: basicAuth(token), "Content-Type": "application/json" },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
     });
     return {
@@ -308,6 +335,7 @@ export async function atender(req: Request, amb: Ambiente): Promise<Response> {
 
   // ---- 3. cancelar: só nota emitida por esta loja ------------------------
   if (pedido.acao === "cancelar") {
+    // Na tabela, municipal e nacional são as duas "nfse".
     const tipoNaTabela = pedido.tipo === "nfce" ? "nfe" : "nfse";
     const registradas = await lerTabela(
       `notas_fiscais_arquivos?loja_id=eq.${loja}&focus_nfe_ref=eq.${encodeURIComponent(pedido.ref)}` +
@@ -338,6 +366,21 @@ export async function atender(req: Request, amb: Ambiente): Promise<Response> {
   }
 
   // ---- 4. baixar: o endereço vem da resposta da Focus NFe -----------------
+  if (pedido.tipo === "nfsen" && pedido.arquivo === "danfe") {
+    const urlDanfse = (dados as Record<string, unknown> | null)?.url_danfse;
+    const publico = enderecoPublicoDoDanfse(urlDanfse);
+    if (publico) {
+      const pdf = await chamarFocus("GET", publico, undefined, true);
+      return responder(200, {
+        ok: pdf.ok,
+        status: pdf.status,
+        // O S3 pode servir como "binary/octet-stream"; a tela só mostra e imprime se for PDF.
+        tipo_conteudo: "application/pdf",
+        conteudo_base64: pdf.ok ? paraBase64(pdf.bytes) : null,
+      });
+    }
+    // Sem url_danfse no S3, segue pelo caminho_danfe de sempre (abaixo).
+  }
   const campo = pedido.arquivo === "xml" ? "caminho_xml_nota_fiscal" : "caminho_danfe";
   const caminho = (dados as Record<string, unknown> | null)?.[campo];
   if (!caminho) {

@@ -446,7 +446,8 @@ export function EmitirNotaFiscalModal({
     if (ordem.numero === null || !refPertenceAOrdem(ref, ordem.numero, tipo)) {
       setErro(
         `Essa referência não é de uma ${tipoNota} da OS ${ordem.numero}. No painel da Focus ` +
-          `NFe, ela fica na coluna "Referência" e começa com "os${ordem.numero}-${tipo}-".`,
+          `NFe, ela fica na coluna "Referência" e começa com "os${ordem.numero}-${tipo}-"` +
+          (tipo === "nfse" ? ` (ou "os${ordem.numero}-nfsen-", na nota pelo Padrão Nacional).` : "."),
       );
       return;
     }

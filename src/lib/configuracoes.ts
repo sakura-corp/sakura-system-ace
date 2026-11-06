@@ -81,6 +81,7 @@ const COLUNAS_FISCAIS = [
   "codigo_cnae",
   "competencia_aliquota_confirmada",
   "aliquota_passo_a_passo",
+  "percentual_tributos_simples",
   "atualizado_em",
 ].join(",");
 
@@ -156,10 +157,18 @@ export async function salvarConfiguracaoPainelInicio(
 // emissão de NFS-e autorizada), não o formulário de dados fiscais — senão
 // salvar um telefone novo poderia apagar, sem querer, a confirmação feita no
 // computador do lado.
+//
+// O percentual dos tributos do Simples (#866) é opcional pelo mesmo motivo:
+// fora do Simples a tela não o manda, e o banco guarda o que já tem.
 export type DadosFiscaisEditaveis = Omit<
   ConfiguracaoFiscalLoja,
-  "loja_id" | "atualizado_em" | "competencia_aliquota_confirmada" | "focus_nfe_configurado"
->;
+  | "loja_id"
+  | "atualizado_em"
+  | "competencia_aliquota_confirmada"
+  | "focus_nfe_configurado"
+  | "percentual_tributos_simples"
+> &
+  Partial<Pick<ConfiguracaoFiscalLoja, "percentual_tributos_simples">>;
 
 export async function salvarConfiguracaoFiscal(
   lojaId: string,
