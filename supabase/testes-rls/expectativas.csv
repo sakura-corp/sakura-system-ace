@@ -246,7 +246,7 @@ whatsapp_mensagens,delete,2,1,1,0,0,
 
 # ---------------------------------------------------------------------------
 # CONFIGURAÇÃO DA LOJA
-# As três de chave simples (garantia, fiscal, painel) têm linha SÓ na loja B
+# As quatro de chave simples (garantia, fiscal, painel, avaliação) têm linha SÓ na loja B
 # no cenário — por isso a leitura delas é 1,0,0,0,0 e não 2,1,1,0,0. O motivo
 # está no cabeçalho de cenario.sql (item 1).
 # ---------------------------------------------------------------------------
@@ -262,6 +262,10 @@ configuracoes_garantia,select,1,0,0,0,0,linha só na loja B
 configuracoes_garantia,insert,1,1,1,0,0,
 configuracoes_garantia,update,1,0,0,0,0,
 configuracoes_garantia,delete,1,0,0,0,0,
+configuracoes_avaliacao,select,1,0,0,0,0,linha só na loja B (o link de avaliação, #459)
+configuracoes_avaliacao,insert,1,1,1,0,0,
+configuracoes_avaliacao,update,1,0,0,0,0,
+configuracoes_avaliacao,delete,1,0,0,0,0,
 configuracoes_fiscais_loja,select,1,0,0,0,0,ainda carrega uma cópia do token até a parte 2 do TR-04.2 limpar a coluna
 configuracoes_fiscais_loja,insert,1,1,1,0,0,
 configuracoes_fiscais_loja,update,1,0,0,0,0,

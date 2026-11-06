@@ -627,6 +627,9 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   que usam a coluna (#882) dependem do #839 (NFS-e Nacional), que espera a Focus; assim a `0079` e
   a `0080` não ficam presas atrás dela. Aplicar a `0077` (#857) antes desta. Teste em
   `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
+- `0082`: **o link de avaliação no Google, por loja** (tarefa #459; a `0081` está reservada pelo
+  PR #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
+  opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -925,6 +928,11 @@ outro projeto Supabase do zero (ver seção 9).
   atualizado_em. Os textos de mensagem editáveis por loja — uma linha por modelo
   (`cobranca`, `carro_pronto`, `pedido_compra`). A linha só existe depois que alguém edita;
   enquanto não existir, vale o padrão de `src/schemas/whatsapp.ts`.
+- **`configuracoes_avaliacao`** (migration `0082`, #459): loja_id (PK, 1 linha por loja),
+  link_google, atualizado_em. O link de avaliação no Google da loja; a trava
+  `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
+  "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
+  RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
 - **`whatsapp_mensagens`** (migration `0052`): id, loja_id, chave, referencia (o id do que
   motivou a mensagem — conta a receber, OS, pedido —, texto e sem FK de propósito, porque aponta
   pra tabelas diferentes conforme a chave), destino, operador_id, criado_em. Registra que a
