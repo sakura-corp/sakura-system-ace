@@ -128,6 +128,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "ordens_servico_clientes",
   // 0078 (percentual dos tributos do Simples): coluna de configuracoes_fiscais_loja.
   "percentual_tributos_simples",
+  // 0081 (Pix da loja): tabela.
+  "configuracoes_pix",
 ] as const;
 
 /**
