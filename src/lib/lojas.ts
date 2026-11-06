@@ -77,6 +77,8 @@ const TABELAS_CONFIG_POR_LOJA = [
   "configuracoes_fiscais_loja",
   "configuracoes_painel_inicio",
   "configuracoes_juros_parcelas",
+  // 0082 (#459): o link de avaliação no Google também é só configuração.
+  "configuracoes_avaliacao",
 ] as const;
 
 export async function excluirLoja(id: string): Promise<void> {
