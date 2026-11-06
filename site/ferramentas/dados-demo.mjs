@@ -563,7 +563,7 @@ const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }
     ordem_servico_id: ordem?.id ?? null, operador_id: OP, criado_em: criadoEm,
     origem, numero, chave_acesso: numero ? "3526" + String(numero).padStart(40, "0") : null,
     status, focus_nfe_ref: origem === "automatica" ? `${ordem.id}-${tipo === "nfe" ? "nfce" : "nfse"}-${numero}` : null,
-    ordem_servico: ordem ? { cliente_nome: ordem.cliente.nome } : null,
+    ordem_servico: ordem ? { numero: ordem.numero, tipo: ordem.tipo ?? "os", cliente_nome: ordem.cliente.nome } : null,
     operador: { nome: "Marcos Andrade" },
   };
 };

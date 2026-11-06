@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +42,6 @@ import type {
 import { listarArquivosDasOrdens } from "@/lib/notasFiscais";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
@@ -192,11 +191,30 @@ export function OrdensServicoPage() {
   // Devolve as ordens recarregadas (ou null se nem chegou a consultar): quem
   // corrige um item precisa da versão nova da OS que está aberta na tela, e
   // `setOrdens` sozinho não serve — `ordemEmEdicao` é um estado à parte.
+  //
+  // Só a carga mais nova grava (#903): trocar de loja ou salvar uma OS enquanto
+  // a carga anterior ainda busca dispara outra, e a velha pode terminar depois
+  // — com a lista, o custo e as notas de antes. A que perdeu a vez não grava
+  // nada; devolve a lista que buscou só se ainda é a mesma loja (quem salvou
+  // precisa dela pra seguir pra nota ou atualizar a OS aberta), senão null.
+  // Um `carregar` guardado de antes da troca de loja (um salvar lento) não
+  // começa: senão ele viraria a carga mais nova e gravaria a loja antiga.
+  const cargaAtual = useRef(0);
+  const lojaNaTela = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaNaTela.current = lojaAtual?.id;
+  }, [lojaAtual?.id]);
   async function carregar(): Promise<OrdemServico[] | null> {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return null;
     }
+    const lojaId = lojaAtual.id;
+    if (lojaId !== lojaNaTela.current) return null;
+    const minhaCarga = ++cargaAtual.current;
+    const aindaEhAtual = () => minhaCarga === cargaAtual.current;
+    const descartada = (ordens: OrdemServico[]) =>
+      lojaId === lojaNaTela.current ? ordens : null;
     setCarregando(true);
     setErro(null);
     try {
@@ -209,14 +227,26 @@ export function OrdensServicoPage() {
         jurosCarregados,
         modelosWhatsappCarregados,
       ] = await Promise.all([
-        listarOrdens(lojaAtual.id),
+        listarOrdens(lojaId),
         listarClientesParaEscolha(podeVerCadastro),
         listarPecasJanela(),
         listarServicos(),
-        listarFuncionariosPublico(lojaAtual.id),
-        listarJurosParcelas(lojaAtual.id),
-        listarModelosWhatsapp(lojaAtual.id),
+        listarFuncionariosPublico(lojaId),
+        listarJurosParcelas(lojaId),
+        listarModelosWhatsapp(lojaId),
       ]);
+
+      // Custo e notas de todas as OS de uma vez só (uma consulta, não uma por
+      // linha), as duas juntas. Falhar numa delas não derruba a lista: sem
+      // custo, a coluna Lucro mostra "custo não informado"; sem notas, a OS só
+      // aparece como "Faturada", que é o comportamento de antes.
+      const ids = ordensCarregadas.map((o) => o.id);
+      const [custo, notas] = await Promise.allSettled([
+        buscarCustoDasOrdens(ids),
+        listarArquivosDasOrdens(ids),
+      ]);
+      if (!aindaEhAtual()) return descartada(ordensCarregadas);
+
       setOrdens(ordensCarregadas);
       setClientes(clientesCarregados);
       setPecas(pecasCarregadas);
@@ -224,49 +254,47 @@ export function OrdensServicoPage() {
       setFuncionarios(funcionariosCarregados);
       setJurosParcelas(jurosCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
-
-      // Custo de todas as OS de uma vez só. Falhar aqui não derruba a lista:
-      // a coluna Lucro só mostra "custo não informado".
-      try {
-        setCustoDasOrdens(await buscarCustoDasOrdens(ordensCarregadas.map((o) => o.id)));
-      } catch (err) {
-        console.error("Erro ao carregar o custo das ordens:", err);
+      if (custo.status === "fulfilled") {
+        setCustoDasOrdens(custo.value);
+      } else {
+        console.error("Erro ao carregar o custo das ordens:", custo.reason);
         // O custo guardado é da carga anterior: com ele a coluna mostraria
         // lucro de itens novos com custo velho. Melhor "custo não informado".
         setCustoDasOrdens(new Map());
       }
-
-      // Notas de todas as OS de uma vez só (uma consulta, não uma por linha)
-      // — é o que diz quais notas cada OS já tem. Falhar aqui não pode
-      // derrubar a lista inteira: sem essa informação a OS só aparece como
-      // "Faturada", que é o comportamento de antes.
-      try {
-        const notas = await listarArquivosDasOrdens(ordensCarregadas.map((o) => o.id));
-        setNotasPorOrdem(agruparNotasPorOrdem(notas));
-      } catch (err) {
-        console.error("Erro ao carregar as notas fiscais das ordens:", err);
+      if (notas.status === "fulfilled") {
+        setNotasPorOrdem(agruparNotasPorOrdem(notas.value));
+      } else {
+        console.error("Erro ao carregar as notas fiscais das ordens:", notas.reason);
       }
 
-      const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
-      if (abrirOrdemId) {
-        const ordemParaAbrir = ordensCarregadas.find((o) => o.id === abrirOrdemId);
-        if (ordemParaAbrir && ehVendaBalcao(ordemParaAbrir)) {
-          setLista("vendas");
-          setVendaAberta(ordemParaAbrir);
-        } else if (ordemParaAbrir) {
-          setOrdemEmEdicao(ordemParaAbrir);
-        }
-        navigate(location.pathname, { replace: true, state: null });
-      }
+      abrirOrdemPedida(ordensCarregadas);
 
       return ordensCarregadas;
     } catch (err) {
+      if (!aindaEhAtual()) return null;
       console.error("Erro ao carregar ordens de serviço:", err);
       setErro(mensagemDeErro(err));
       return null;
     } finally {
-      setCarregando(false);
+      if (aindaEhAtual()) setCarregando(false);
     }
+  }
+
+  // Quem chega aqui com "abra esta OS" (Início, ficha do carro, a busca do
+  // Ctrl+K...) manda o id no `state` da navegação. Abre e limpa o pedido, pra
+  // ele não abrir de novo a cada carga.
+  function abrirOrdemPedida(lista: OrdemServico[]) {
+    const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
+    if (!abrirOrdemId) return;
+    const ordemParaAbrir = lista.find((o) => o.id === abrirOrdemId);
+    if (ordemParaAbrir && ehVendaBalcao(ordemParaAbrir)) {
+      setLista("vendas");
+      setVendaAberta(ordemParaAbrir);
+    } else if (ordemParaAbrir) {
+      setOrdemEmEdicao(ordemParaAbrir);
+    }
+    navigate(location.pathname, { replace: true, state: null });
   }
 
   useEffect(() => {
@@ -274,12 +302,21 @@ export function OrdensServicoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
+  // O pedido chegou com a tela JÁ aberta (a busca do Ctrl+K usada de dentro
+  // da tela de OS, PR #857): a carga não roda de novo, então abre pela lista
+  // que já está na tela. Durante a carga, quem abre é a própria carga.
+  useEffect(() => {
+    if (carregando) return;
+    abrirOrdemPedida(ordens);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
+
   // Recarrega a cada abertura do formulário (em vez de guardar pra sempre):
   // lançar peça numa OS mexe no estoque, então um saldo guardado da vez
   // anterior mostraria número velho na próxima abertura.
   const formularioAberto = mostrarFormulario || !!ordemEmEdicao || mostrarVenda;
   useEffect(() => {
-    if (!formularioAberto || !isSupabaseConfigured || !lojaAtual) {
+    if (!formularioAberto || !lojaAtual) {
       setSaldoPorPeca(null);
       return;
     }
@@ -339,13 +376,12 @@ export function OrdensServicoPage() {
       );
     }
     await editarItemOrdem(item, patch, operador.id);
-    const ordensAtualizadas = await carregar();
-    const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao.id);
-    if (ordemAtualizada) setOrdemEmEdicao(ordemAtualizada);
+    await recarregarOrdemEmEdicao();
   }
 
-  // Uma peça avulsa ganhou cadastro na janela da nota (#655): traz a OS aberta
-  // de novo, senão a aba Fechamento continuaria mostrando a peça como avulsa.
+  // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
+  // a peça avulsa que ganhou cadastro na janela da nota (#655), senão a aba
+  // Fechamento continuaria mostrando a peça como avulsa.
   async function recarregarOrdemEmEdicao() {
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
@@ -499,21 +535,13 @@ export function OrdensServicoPage() {
         )}
       </header>
 
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a abrir ordens de serviço de verdade.
-        </p>
-      )}
-
-      {isSupabaseConfigured && !carregando && !lojaAtual && (
+      {!carregando && !lojaAtual && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
           Seu usuário não tem loja atribuída. Fale com o administrador.
         </p>
       )}
 
-      {isSupabaseConfigured && !carregando && lojaAtual && clientes.length === 0 && (
+      {!carregando && lojaAtual && clientes.length === 0 && (
         <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.
         </p>

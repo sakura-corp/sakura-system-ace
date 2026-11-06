@@ -8,7 +8,6 @@ import { listarFuncionarios } from "@/lib/funcionarios";
 import { listarOrdensParaComissoes } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
 import type { ContaReceber } from "@/types/contaReceber";
 import type { Funcionario } from "@/types/funcionario";
@@ -44,7 +43,7 @@ export function FuncionariosPage() {
   // migration 0059, a tabela não existe — a comissão continua calculando e a
   // faixa de "banco desatualizado" explica o resto.
   async function carregarPagamentos() {
-    if (!isSupabaseConfigured || !lojaAtual) return;
+    if (!lojaAtual) return;
     try {
       setPagamentos(await listarComissoesPagas(lojaAtual.id));
     } catch (err) {
@@ -54,7 +53,7 @@ export function FuncionariosPage() {
   }
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
@@ -78,7 +77,7 @@ export function FuncionariosPage() {
 
   useEffect(() => {
     async function carregarComissoes() {
-      if (aba !== "comissoes" || dadosComissoes || !isSupabaseConfigured || !lojaAtual) return;
+      if (aba !== "comissoes" || dadosComissoes || !lojaAtual) return;
       setCarregandoComissoes(true);
       setErro(null);
       try {
@@ -112,14 +111,6 @@ export function FuncionariosPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a cadastrar funcionários de verdade.
-        </p>
-      )}
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 

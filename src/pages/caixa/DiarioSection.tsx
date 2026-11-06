@@ -6,7 +6,11 @@ import {
   type CustoDoBanco,
 } from "@/schemas/metricasCaixa";
 import { Valor } from "@/components/Valor";
-import { lancamentosDepoisDoFechamento } from "@/schemas/fechamentoCaixa";
+import {
+  lancamentosDepoisDoFechamento,
+  rotuloDaForma,
+  totaisPorFormaDePagamento,
+} from "@/schemas/fechamentoCaixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import { nomeOrdem } from "@/types/os";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
@@ -58,15 +62,10 @@ export function DiarioSection({
   const entradas = resumo.entradas;
   const saidas = resumo.saidas;
 
-  const porFormaPagamento = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const m of movimentosDoDia) {
-      if (m.tipo !== "entrada") continue;
-      const forma = m.forma_pagamento || "Não informado";
-      mapa.set(forma, (mapa.get(forma) ?? 0) + m.valor);
-    }
-    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
-  }, [movimentosDoDia]);
+  const porFormaPagamento = useMemo(
+    () => totaisPorFormaDePagamento(movimentosDoDia),
+    [movimentosDoDia],
+  );
 
   // Lucro de cada linha: numa OS paga em duas formas, o lucro da OS é
   // repartido entre os lançamentos — antes cada linha mostrava o lucro
@@ -201,7 +200,7 @@ export function DiarioSection({
                       )}
                     </td>
                     <td className="px-4 py-3">{m.ordem_servico?.cliente?.nome ?? "—"}</td>
-                    <td className="px-4 py-3">{m.forma_pagamento || "—"}</td>
+                    <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
                     <td
                       className={`px-4 py-3 font-medium ${
                         m.tipo === "saida" ? "text-red-700" : ""

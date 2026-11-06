@@ -45,14 +45,6 @@ export function textoDoModelo(
   return modelos[chave] ?? modeloPorChave(chave).padrao;
 }
 
-export interface MensagemWhatsapp {
-  id: string;
-  chave: string;
-  referencia: string | null;
-  destino: string | null;
-  criado_em: string;
-}
-
 /**
  * Guarda que a conversa foi ABERTA — nunca que foi enviada: o sistema abre o
  * WhatsApp com o texto pronto e, dali em diante, quem decide é a pessoa.

@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
@@ -174,12 +174,15 @@ async function buscarNomesDeFuncionarios(
   const ids = idsDeFuncionarios(ordens);
   if (ids.length === 0) return new Map();
 
-  const { data, error } = await supabase
-    .from("funcionarios_publico")
-    .select("id, nome")
-    .in("id", ids);
-
-  if (error) throw error;
+  // Em blocos e por páginas (#498): uma loja grande cita centenas.
+  const data = await buscarPorIdsEmBlocos(ids, (bloco, de, ate) =>
+    supabase
+      .from("funcionarios_publico")
+      .select("id, nome")
+      .in("id", bloco)
+      .order("id")
+      .range(de, ate),
+  );
   return new Map((data as { id: string; nome: string }[]).map((f) => [f.id, f.nome]));
 }
 
@@ -420,62 +423,32 @@ export async function aprovarOrcamento(
 /**
  * A peça avulsa ganhou cadastro depois da aprovação (#655) — o caminho da
  * nota: a NFC-e precisa do NCM, e a tela cadastra a peça ali. O item passa a
- * apontar pra peça e, se a ordem já é OS (`contaNosNumeros`), baixa o estoque
- * dele, igual ao "cadastrar" da aprovação. Em orçamento só vincula: a
- * aprovação é que baixa.
+ * apontar pra peça e, se a ordem já é OS, baixa o estoque dele. Em orçamento
+ * só vincula: a aprovação é que baixa.
+ *
+ * Uma chamada só (`cadastrar_peca_do_item`, migration 0079, #803): o banco
+ * trava a OS, liga, decide a baixa pela situação da ordem NO BANCO (não a da
+ * tela) e baixa a quantidade gravada, tudo numa transação. Assim, aprovar o
+ * orçamento em outro computador no mesmo instante não deixa a peça sem
+ * baixa. Se a baixa falha (sem depósito ativo), a peça também não fica ligada.
  *
  * Só pega o item se ele ainda for avulso: chamado duas vezes (clique duplo,
  * outro computador), a segunda não troca a peça nem baixa de novo.
  *
- * @returns se o item foi vinculado agora (false: já tinha peça)
+ * @returns se o item foi vinculado agora (false: já tinha peça, ou sumiu)
  */
 export async function cadastrarPecaDoItem(
-  item: ItemOS,
+  itemId: string,
   pecaId: string,
-  lojaId: string,
-  ordem: OrdemServico,
+  operadorId: string,
 ): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("ordens_servico_itens")
-    .update({ peca_id: pecaId })
-    .eq("id", item.id)
-    .eq("ordem_servico_id", ordem.id)
-    .eq("tipo", "peca")
-    .is("peca_id", null)
-    .select();
+  const { data, error } = await supabase.rpc("cadastrar_peca_do_item", {
+    p_item: itemId,
+    p_peca: pecaId,
+    p_operador: operadorId,
+  });
   if (error) throw error;
-  const vinculados = (data ?? []) as Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[];
-  if (vinculados.length === 0) return false;
-
-  // Baixa o item como está no banco agora (quantidade de lá), não o da tela.
-  // Daqui pra frente o item JÁ está ligado: se a baixa falhar, o erro diz
-  // isso, pra ninguém cadastrar a peça de novo achando que não entrou.
-  if (contaNosNumeros(ordem)) {
-    try {
-      await baixarEstoqueDasPecas(vinculados, nomeDocumento(ordem), lojaId);
-    } catch (erroEstoque) {
-      throw new PecaLigadaSemEstoqueError(ordem, mensagemDeErro(erroEstoque));
-    }
-  }
-  return true;
-}
-
-/**
- * A peça foi ligada ao item da OS, mas a baixa no estoque não entrou. Como no
- * `AprovadoSemEstoqueError`, a reação certa é NÃO tentar de novo (o item já
- * tem a peça) e lançar a saída à mão em Movimentações.
- */
-export class PecaLigadaSemEstoqueError extends Error {
-  constructor(
-    readonly ordem: OrdemServico,
-    motivo: string,
-  ) {
-    super(
-      `A peça foi ligada à ${nomeDocumento(ordem)}, mas a baixa no estoque não entrou: ` +
-        `${motivo}. Lance a saída à mão em Movimentações.`,
-    );
-    this.name = "PecaLigadaSemEstoqueError";
-  }
+  return data === true;
 }
 
 /**

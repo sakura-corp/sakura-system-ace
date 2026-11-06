@@ -13,6 +13,7 @@ import {
   lancamentosDepoisDoFechamento,
   momentoDoLancamento,
   resumirDiaParaFechamento,
+  rotuloDaForma,
   situacaoDaDiferenca,
   somarDiferencas,
   totaisParaGravar,
@@ -414,7 +415,7 @@ function FechamentoFeito({
               <li key={m.id}>
                 {new Date(m.data).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ·{" "}
                 {m.tipo === "saida" ? "saída" : "entrada"} de {formatarMoeda(m.valor)}
-                {m.forma_pagamento ? ` (${m.forma_pagamento})` : ""}
+                {m.forma_pagamento ? ` (${rotuloDaForma(m.forma_pagamento)})` : ""}
                 {m.descricao ? ` — ${m.descricao}` : ""}
               </li>
             ))}

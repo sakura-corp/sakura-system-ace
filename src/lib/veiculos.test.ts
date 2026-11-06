@@ -12,6 +12,7 @@ function construtor(tabela: string) {
     select: () => q,
     eq: () => q,
     order: () => q,
+    range: () => q,
     maybeSingle: () => q,
     then(ok: (v: unknown) => unknown) {
       return Promise.resolve({ data: respostas[tabela], error: null }).then(ok);

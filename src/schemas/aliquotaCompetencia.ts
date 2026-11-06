@@ -9,16 +9,38 @@ import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 // nome da loja. O que o sistema pode fazer é lembrar antes de falhar, que é
 // justamente o que ele faz bem.
 //
-// O passo a passo abaixo é o de Araraquara (portal Giap). Como isso muda de
-// município pra município, ele é só o PADRÃO — a loja pode trocar o texto em
-// Configurações → Dados fiscais, e aí o que vale é o texto dela.
-export const PASSO_A_PASSO_ALIQUOTA_PADRAO = [
+// O caminho dentro do portal muda de município pra município. A loja pode
+// escrever o dela em Configurações → Dados fiscais, e aí o que vale é o texto
+// dela. Em branco, vale o PADRÃO da cidade da loja (pelo código IBGE): o
+// caminho do portal de Araraquara (Giap) só pra loja de Araraquara, e pras
+// outras um texto geral (#876 — antes o de Araraquara aparecia pra todas).
+export const CODIGO_IBGE_ARARAQUARA = "3503208";
+
+export const PASSO_A_PASSO_ALIQUOTA_ARARAQUARA = [
   "1. Entre no portal da prefeitura (site da prefeitura → Serviços Empresa → Nota Fiscal",
   "   Eletrônica → Contribuintes).",
   "2. Menu “Emissor/Consulta NFS-e” → tela “Cadastro de Alíquota”.",
   "3. Preencha Mês/Ano (a competência deste mês), a Alíquota e a Atividade.",
   "4. Clique em “Replicar Alíquota” — é o botão que salva (o outro é “Voltar”).",
 ].join("\n");
+
+// Aparece também na janela de emissão de NFS-e, pra quem não abre
+// Configurações: por isso fala em "quem administra o sistema".
+export const PASSO_A_PASSO_ALIQUOTA_GERAL =
+  "Peça à contabilidade o caminho no portal da prefeitura da sua cidade. Quem administra " +
+  "o sistema pode deixá-lo escrito em Configurações → Dados fiscais, e aí ele aparece aqui.";
+
+/**
+ * O passo a passo de quando a loja não escreveu o dela, pela cidade (código
+ * IBGE). O campo do código é texto livre: só os dígitos contam, e vale também
+ * o código de 6 dígitos (sem o dígito verificador), que alguns sistemas usam.
+ */
+export function passoAPassoAliquotaPadrao(codigoMunicipio: string | null | undefined): string {
+  const digitos = (codigoMunicipio ?? "").replace(/\D/g, "");
+  const ehAraraquara =
+    digitos === CODIGO_IBGE_ARARAQUARA || digitos === CODIGO_IBGE_ARARAQUARA.slice(0, 6);
+  return ehAraraquara ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA : PASSO_A_PASSO_ALIQUOTA_GERAL;
+}
 
 /** O mês corrente como competência ("YYYY-MM-01"), no fuso de quem usa. */
 export function competenciaDoMes(hoje: Date = new Date()): string {
@@ -47,7 +69,7 @@ export interface AvisoAliquota {
   competencia: string;
   /** O mês por extenso, pro texto do aviso ("setembro"). */
   mes: string;
-  /** O caminho dentro do portal — o da loja, ou o padrão de Araraquara. */
+  /** O caminho dentro do portal — o da loja, ou o padrão da cidade dela. */
   passoAPasso: string;
 }
 
@@ -65,6 +87,8 @@ export function avisoAliquotaCompetencia(
     precisa: lojaEmiteNfse(configuracao) && confirmada?.slice(0, 7) !== competencia.slice(0, 7),
     competencia,
     mes: mesPorExtenso(competencia),
-    passoAPasso: configuracao?.aliquota_passo_a_passo?.trim() || PASSO_A_PASSO_ALIQUOTA_PADRAO,
+    passoAPasso:
+      configuracao?.aliquota_passo_a_passo?.trim() ||
+      passoAPassoAliquotaPadrao(configuracao?.codigo_municipio),
   };
 }

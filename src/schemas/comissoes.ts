@@ -1,6 +1,7 @@
 import { custoDosItens, type MapaCusto } from "./metricasCaixa";
 import { arredondarCentavo as arredondar } from "./dinheiro";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
+import { somarValoresLiquidos } from "./valorItem";
 import { temNumeroDeOS } from "@/types/os";
 import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os";
 
@@ -18,6 +19,8 @@ import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os"
  * 3. Só conta OS **faturada**, pela data do faturamento — com a parte ainda
  *    não recebida (OS faturada como "a receber depois") destacada à parte,
  *    pra não pagar comissão de cliente que ainda não pagou sem perceber.
+ * 4. Serviço sem custo cadastrado fica fora da conta e do aviso (#836):
+ *    a comissão sai sobre o lucro das peças. Ver `itensDaComissao`.
  *
  * O custo vem das mesmas funções usadas pelo Caixa, Início e Relações
  * (`metricasCaixa.ts`) de propósito: conta de dinheiro repetida em cada tela
@@ -55,8 +58,8 @@ export interface ResumoPapel {
   /** Parte da comissão que veio de OS ainda não recebida. */
   comissaoAReceber: number;
   /**
-   * Itens que entraram com custo zero (peça/serviço sem custo cadastrado,
-   * serviço avulso, ou peça avulsa sem custo digitado — #655). O lucro deles é o preço cheio, então a comissão sai
+   * Itens que entraram com custo zero (peça sem custo cadastrado, ou peça
+   * avulsa sem custo digitado — #655; serviço sem custo nem entra, #836). O lucro deles é o preço cheio, então a comissão sai
    * maior que a real — a tela avisa quando isso acontece.
    */
   itensSemCusto: number;
@@ -102,10 +105,7 @@ export function diaLocal(dataIso: string): string {
 }
 
 function valorDosItens(itens: readonly ItemParaComissao[]): number {
-  return itens.reduce(
-    (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
-    0,
-  );
+  return somarValoresLiquidos(itens);
 }
 
 function contarItensSemCusto(
@@ -119,6 +119,22 @@ function contarItensSemCusto(
     const unitario = custoUnitarioDoItem(item, custoPeca, custoServico);
     return unitario === null || unitario === 0;
   }).length;
+}
+
+/**
+ * Itens que entram na conta da comissão (#836, decisão da #502, opção b):
+ * serviço sem custo cadastrado fica de fora. Sem o custo (material gasto), o
+ * preço inteiro do serviço viraria lucro e a comissão sairia maior que a real;
+ * então a comissão sai sobre o lucro das peças (e dos serviços que têm custo).
+ * Peça sem custo continua entrando, com o aviso de "sem custo".
+ */
+export function itensDaComissao<T extends ItemParaComissao>(
+  itens: readonly T[],
+  custoServico: MapaCusto,
+): T[] {
+  return itens.filter(
+    (item) => item.tipo !== "servico" || (custoServico.get(item.servico_id ?? "") ?? 0) > 0,
+  );
 }
 
 function papelVazio(): ResumoPapel {
@@ -236,7 +252,7 @@ export function resumirComissoes({
   }
 
   for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
-    const itens = ordem.itens ?? [];
+    const itens = itensDaComissao(ordem.itens ?? [], custoServico);
     if (itens.length === 0) continue;
 
     // Vendedor: leva pela OS inteira que atendeu.
@@ -299,4 +315,16 @@ export function totaisComissoes(linhas: ComissaoFuncionario[]): TotaisComissoes 
     }),
     { lucro: 0, comissao: 0, comissaoAReceber: 0, itensSemCusto: 0 },
   );
+}
+
+/**
+ * A coluna "Lucro gerado" da tabela soma mais que o "Lucro do período"? Soma
+ * quando o técnico de um item não é quem vendeu a OS: o lucro daquele item
+ * entra na linha de cada um, mas no total só uma vez. Decide se a tela mostra
+ * a frase que explica isso (#876) — mostrar sempre seria dizer uma coisa falsa
+ * na loja em que quem vende é quem faz.
+ */
+export function colunaLucroSomaMaisQueOTotal(linhas: ComissaoFuncionario[]): boolean {
+  const somaDaColuna = linhas.reduce((soma, linha) => soma + linha.lucroTotal, 0);
+  return arredondar(somaDaColuna) > arredondar(totaisComissoes(linhas).lucro);
 }

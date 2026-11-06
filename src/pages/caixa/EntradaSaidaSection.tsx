@@ -3,8 +3,10 @@ import {
   movimentosManuais,
   movimentosSemCategoria,
   resumirSemCategoria,
+  totaisPorCategoria,
 } from "@/schemas/caixa";
-import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
+import { rotuloDaForma } from "@/schemas/fechamentoCaixa";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa, TipoCaixa } from "@/types/caixa";
 import { CaixaForm } from "./CaixaForm";
@@ -47,16 +49,9 @@ export function EntradaSaidaSection({
     [categorias, tipo],
   );
 
-  const total = manuais.reduce((soma, m) => soma + m.valor, 0);
+  const total = somar(manuais.map((m) => m.valor));
 
-  const porCategoria = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const m of manuais) {
-      const nome = m.categoria?.nome ?? "Sem categoria";
-      mapa.set(nome, (mapa.get(nome) ?? 0) + m.valor);
-    }
-    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
-  }, [manuais]);
+  const porCategoria = useMemo(() => totaisPorCategoria(manuais), [manuais]);
 
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     await onSalvar(movimento);
@@ -163,7 +158,7 @@ export function EntradaSaidaSection({
                   <td className="px-4 py-3">{new Date(m.data).toLocaleDateString("pt-BR")}</td>
                   <td className="px-4 py-3">{m.categoria?.nome ?? "—"}</td>
                   <td className="px-4 py-3">{m.descricao || "—"}</td>
-                  <td className="px-4 py-3">{m.forma_pagamento || "—"}</td>
+                  <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
                   <td className="px-4 py-3 font-medium">{formatarMoeda(m.valor)}</td>
                 </tr>
               ))}

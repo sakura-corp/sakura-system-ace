@@ -29,11 +29,18 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         ordens,
         custoPeca: mapaCustoPecas(pecas),
         custoServico: mapaCustoServicos(servicos),
+        nomePeca: new Map(pecas.map((peca) => [peca.id, peca.descricao])),
+        nomeServico: new Map(servicos.map((servico) => [servico.id, servico.descricao])),
         de: dataInicio,
         ate: dataFim,
       }),
     [ordens, pecas, servicos, dataInicio, dataFim],
   );
+
+  // #835: o total daqui conta as OS ABERTAS no período, recebidas ou não; o
+  // "Recebido no mês" dos Gráficos e do Início conta o que entrou no Caixa.
+  const ehOMesCorrente = dataInicio === primeiroDiaDoMesLocal() && dataFim === hojeLocal();
+  const rotuloVendido = ehOMesCorrente ? "Vendido no mês" : "Vendido no período";
 
   return (
     <>
@@ -60,7 +67,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
 
       <div className="grid grid-cols-3 gap-4">
         <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Receita do período</p>
+          <p className="text-rotulo text-sakura-muted">{rotuloVendido}</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totalReceita)}
           </p>
@@ -84,6 +91,12 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           )}
         </div>
       </div>
+
+      <p className="text-rotulo text-sakura-muted">
+        Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos
+        Gráficos e do Início é só o que já entrou no Caixa: a diferença são as OS ainda não
+        recebidas.
+      </p>
 
       {linhas.length === 0 ? (
         <p className="text-corpo text-sakura-muted">Nenhuma peça ou serviço vendido nesse período.</p>

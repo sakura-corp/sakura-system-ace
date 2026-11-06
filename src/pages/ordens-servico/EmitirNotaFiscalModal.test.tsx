@@ -9,6 +9,8 @@
  *    preenchidos), liga ao item da OS e libera a emissão.
  * 3. Peça do cadastro com NCM: nada muda, emite como sempre.
  * 4. Sem o token do Focus NFe, o aviso das peças aparece junto com o do token (#742).
+ * 5. NFC-e no limite da UF (R$ 10.000) sem o cliente identificado avisa, sem
+ *    travar o botão (#881).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
@@ -27,33 +29,31 @@ vi.mock("@/lib/pecas", () => ({
 }));
 vi.mock("@/lib/ordensServico", () => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
-  // Como o de verdade, mas com a frase pronta no 2º argumento (o real monta
-  // a frase com o nome da OS).
-  PecaLigadaSemEstoqueError: class extends Error {
-    constructor(_ordem: unknown, frase: string) {
-      super(frase);
-    }
-  },
 }));
-vi.mock("@/lib/focusNfe", () => ({
-  emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-  emitirNFSe: vi.fn(),
-  consultarNFCe: vi.fn(),
-  consultarNFSe: vi.fn(),
-  baixarArquivoNota: vi.fn(),
-  refPertenceAOrdem: vi.fn(),
-  FocusNfeError: class extends Error {},
-  EsperaVencidaError: class extends Error {},
-}));
+vi.mock("@/lib/focusNfe", async () => {
+  // As regras de verdade de "a nota sai identificada?" e do total da nota,
+  // não cópias (#881).
+  const real = await vi.importActual<typeof import("@/lib/focusNfe")>("@/lib/focusNfe");
+  return {
+    destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
+    valorTotalNFCe: real.valorTotalNFCe,
+    emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
+    emitirNFSe: vi.fn(),
+    consultarNFCe: vi.fn(),
+    consultarNFSe: vi.fn(),
+    baixarArquivoNota: vi.fn(),
+    refPertenceAOrdem: vi.fn(),
+    FocusNfeError: class extends Error {},
+    EsperaVencidaError: class extends Error {},
+  };
+});
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
+const clienteDaOrdem = vi.fn();
 vi.mock("@/lib/clientes", () => ({
-  buscarClienteEVeiculoDaOrdem: async () => ({
-    cliente: { id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null },
-    veiculo: null,
-  }),
+  buscarClienteEVeiculoDaOrdem: async () => ({ cliente: clienteDaOrdem(), veiculo: null }),
 }));
 const buscarConfiguracaoFiscal = vi.fn();
 vi.mock("@/lib/configuracoes", () => ({
@@ -65,7 +65,6 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { EmitirNotaFiscalModal } = await import("./EmitirNotaFiscalModal");
-const { PecaLigadaSemEstoqueError } = await import("@/lib/ordensServico");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
@@ -73,9 +72,9 @@ const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "
 const pecaNova = { id: "peca-nova", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500" } as unknown as Peca;
 const palhetaDoCadastro = { id: "peca-3", descricao: "Palheta", ncm: "40169300", cst_ou_csosn: "500", ativo: true } as unknown as Peca;
 
-const item = (id: string, descricao: string, peca_id: string | null) => ({
+const item = (id: string, descricao: string, peca_id: string | null, preco_unitario = 80) => ({
   id, ordem_servico_id: "os-1", tipo: "peca", peca_id, servico_id: null, tecnico_id: null,
-  descricao, quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: null,
+  descricao, quantidade: 1, preco_unitario, desconto: 0, custo_unitario: null,
 });
 
 function ordem(itens: unknown[]): OrdemServico {
@@ -123,6 +122,7 @@ const configuracao = (focus_nfe_configurado: boolean) => ({
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
   buscarConfiguracaoFiscal.mockResolvedValue(configuracao(true));
   listarPecasJanela.mockResolvedValue([pecaComNcm]);
   buscarDadosFiscaisDasPecas.mockImplementation(async (ids: string[]) =>
@@ -181,6 +181,20 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(emitirNFCe.mock.calls[0][0].itens).toHaveLength(1);
   });
 
+  // #720: o catálogo só serve ao cadastro da peça avulsa (aviso de parecida).
+  // Sem peça avulsa, a janela não baixa a lista inteira à toa.
+  it("sem peça avulsa, a janela não carrega o catálogo de peças", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(listarPecasJanela).not.toHaveBeenCalled();
+  });
+
+  it("com peça avulsa, carrega o catálogo (pro aviso de peça parecida)", async () => {
+    montar([item("i1", "Palheta", null)]);
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(listarPecasJanela).toHaveBeenCalledTimes(1);
+  });
+
   it("Cadastrar agora abre o cadastro com nome e preço, liga a peça ao item e libera a emissão", async () => {
     cadastrarPecaRapida.mockResolvedValue("peca-nova");
     cadastrarPecaDoItem.mockResolvedValue(true);
@@ -200,10 +214,7 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 
     await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
-    const [itemLigado, pecaId, lojaId] = cadastrarPecaDoItem.mock.calls[0];
-    expect(itemLigado).toMatchObject({ id: "i2" });
-    expect(pecaId).toBe("peca-nova");
-    expect(lojaId).toBe("loja-1");
+    expect(cadastrarPecaDoItem.mock.calls[0]).toEqual(["i2", "peca-nova", "op"]);
     expect(onItensMudaram).toHaveBeenCalled();
 
     await waitFor(() => expect(confirmar()).toBeEnabled());
@@ -233,15 +244,14 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await waitFor(() => expect(confirmar()).toBeEnabled());
   });
 
-  // Revisão da Sofia (PR #717), ponto 1: a peça ficava ligada, mas a tela
-  // dizia "não entrou na OS" e deixava cadastrar de novo (peça duplicada).
-  it("se a peça liga mas a baixa do estoque falha, a tela diz a verdade e libera a nota", async () => {
+  // #803: ligar e baixar é tudo ou nada no banco. Se a baixa falha (sem
+  // depósito ativo), a peça NÃO fica ligada: a tela diz isso e, no próximo
+  // "Cadastrar agora", oferece a peça que acabou de entrar no cadastro (o
+  // aviso de peça parecida), pra não cadastrar outra igual (PR #717, ponto 1).
+  it("se o banco recusa, a peça não entra, a tela diz por quê e a nova vira a parecida", async () => {
     cadastrarPecaRapida.mockResolvedValue("peca-nova");
-    cadastrarPecaDoItem.mockRejectedValue(
-      new PecaLigadaSemEstoqueError(
-        ordem([]),
-        "A peça foi ligada à OS 51, mas a baixa no estoque não entrou: sem rede. Lance a saída à mão em Movimentações.",
-      ),
+    cadastrarPecaDoItem.mockRejectedValueOnce(
+      new Error("Nenhum depósito ativo encontrado pra essa loja."),
     );
     const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
 
@@ -249,12 +259,22 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await preencherCadastro(user);
     await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 
-    expect(await screen.findByText(/ligada à OS 51, mas a baixa no estoque não entrou/)).toBeInTheDocument();
-    expect(screen.queryByText(/não entrou na OS/)).not.toBeInTheDocument();
-    // O item conta como ligado: sem o botão de cadastrar de novo, e a nota sai.
+    expect(
+      await screen.findByText(/cadastrada \(já está no cadastro\), mas não entrou na OS: Nenhum depósito ativo/),
+    ).toBeInTheDocument();
+    expect(onItensMudaram).not.toHaveBeenCalled();
+    expect(confirmar()).toBeDisabled();
+
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    await user.click(screen.getByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: /Abrir a que já existe/ }));
+
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
+    expect(cadastrarPecaDoItem.mock.calls[1]).toEqual(["i2", "peca-nova", "op"]);
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(confirmar()).toBeEnabled());
-    expect(screen.queryByRole("button", { name: "Cadastrar agora" })).not.toBeInTheDocument();
-    expect(onItensMudaram).toHaveBeenCalled();
   });
 
   // Revisão da Sofia (PR #717), ponto 2: o aviso de peça parecida (#653) não
@@ -287,5 +307,45 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
 
     expect(await screen.findByText("Essa peça precisa ser cadastrada pra sair na nota.")).toBeInTheDocument();
     expect(emitirNFCe).not.toHaveBeenCalled();
+  });
+});
+
+describe("EmitirNotaFiscalModal — limite da UF sem cliente identificado (#881)", () => {
+  const avisoDoLimite = /R\$ 10\.000 ou mais e vai sair sem CPF\/CNPJ/;
+
+  it("acima de R$ 10.000, cliente sem CPF: avisa e o botão continua liberado", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 12000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("compara o total da nota (cada linha arredondada), não a soma crua", async () => {
+    // 4.999,995 vira 5.000,00 em cada linha da nota: a nota é de 10.000,00.
+    montar([
+      item("i1", "Pneu 175/70 R13", "peca-1", 4999.995),
+      item("i2", "Pneu 175/70 R13", "peca-1", 4999.995),
+    ]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.getByText(avisoDoLimite)).toBeInTheDocument();
+  });
+
+  it("abaixo de R$ 10.000, cliente sem CPF: sem o aviso", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 9000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.queryByText(avisoDoLimite)).not.toBeInTheDocument();
+  });
+
+  it("acima de R$ 10.000, cliente com CPF: sem o aviso", async () => {
+    clienteDaOrdem.mockReturnValue({
+      id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09",
+    });
+    montar([item("i1", "Pneu 175/70 R13", "peca-1", 12000)]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.queryByText(avisoDoLimite)).not.toBeInTheDocument();
   });
 });

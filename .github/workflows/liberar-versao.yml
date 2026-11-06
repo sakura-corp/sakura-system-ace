@@ -44,11 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
+          # Sem cache automático do npm (setup-node v5+): este workflow mexe com
+          # publicação, banco ou chaves, e o cache pode ser envenenado (#871).
+          package-manager-cache: false
 
       # A versão digitada entra por variável de ambiente, e nunca direto no
       # comando: texto digitado num campo de formulário é dado, não código.

@@ -5,6 +5,7 @@ import {
   resumirComissoes,
   totaisComissoes,
   SEM_FUNCIONARIO,
+  colunaLucroSomaMaisQueOTotal,
   type ComissaoFuncionario,
   type ResumoPapel,
 } from "@/schemas/comissoes";
@@ -95,6 +96,7 @@ export function ComissoesSection({
   );
 
   const totais = totaisComissoes(linhas);
+  const colunaLucroSomaMais = colunaLucroSomaMaisQueOTotal(linhas);
   const semPercentual = linhas.filter(
     (linha) => linha.funcionarioId !== SEM_FUNCIONARIO && linha.percentual === null,
   );
@@ -146,7 +148,8 @@ export function ComissoesSection({
 
       <p className="text-rotulo text-sakura-muted">
         Conta só OS já faturada, pela data do faturamento. A comissão é calculada sobre o lucro
-        (venda − custo), na porcentagem do cadastro de cada funcionário.
+        (venda − custo), na porcentagem do cadastro de cada funcionário. Serviço sem custo
+        cadastrado fica de fora: a comissão sai sobre o lucro das peças.
       </p>
 
       <div className="grid grid-cols-3 gap-4">
@@ -155,6 +158,14 @@ export function ComissoesSection({
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             {formatarMoeda(totais.lucro)}
           </p>
+          {/* #876: o dono soma a coluna "Lucro gerado" e dá mais que isto. A
+              conta está certa — só faltava dizer por quê. Só quando é verdade. */}
+          {colunaLucroSomaMais && (
+            <p className="mt-1 text-rotulo text-sakura-muted">
+              A coluna "Lucro gerado" soma mais porque o lucro de um item conta pra quem vendeu a OS
+              e pra quem fez o item.
+            </p>
+          )}
         </div>
         <div className="sakura-card p-4">
           <p className="text-rotulo text-sakura-muted">Total de comissões</p>
@@ -171,14 +182,14 @@ export function ComissoesSection({
       </div>
 
       {totais.comissaoAReceber > 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           {formatarMoeda(totais.comissaoAReceber)} dessa comissão vem de OS faturada como "a
           receber depois", que o cliente ainda não pagou.
         </p>
       )}
 
       {totais.itensSemCusto > 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           {totais.itensSemCusto === 1
             ? "1 item vendido no período está sem preço de custo cadastrado"
             : `${totais.itensSemCusto} itens vendidos no período estão sem preço de custo cadastrado`}
@@ -188,7 +199,7 @@ export function ComissoesSection({
       )}
 
       {semPercentual.length > 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           Sem porcentagem de comissão cadastrada:{" "}
           {semPercentual.map((linha) => linha.nome).join(", ")}. A comissão deles fica em zero até
           preencher o campo "Comissão (%)" no cadastro do funcionário.
@@ -196,7 +207,7 @@ export function ComissoesSection({
       )}
 
       {semDono && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           {formatarMoeda(semDono.lucroTotal)} de lucro ficou sem
           dono no período — OS sem vendedor escolhido, ou item sem técnico. Esse valor não gera
           comissão pra ninguém.
@@ -204,7 +215,7 @@ export function ComissoesSection({
       )}
 
       {divergencias.map(({ pagamento, comparacao }) => (
-        <div key={pagamento.id} className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <div key={pagamento.id} className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           <p className="font-medium">
             A comissão de {pagamento.funcionario_nome} mudou depois do pagamento de{" "}
             {diaBrasileiro(pagamento.data_pagamento)}.
@@ -227,7 +238,7 @@ export function ComissoesSection({
       ))}
 
       {jaPagosEmOutros.map(({ linha, jaPago }) => (
-        <p key={linha.funcionarioId} className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p key={linha.funcionarioId} className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
           {formatarMoeda(jaPago.valor)} da comissão de {linha.nome} neste período vem de OS que já
           entraram num pagamento anterior (OS {jaPago.numeros.join(", ")}). Confira antes de pagar de novo.
         </p>

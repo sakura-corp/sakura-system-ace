@@ -22,7 +22,6 @@ import {
   listarOperadores,
   redefinirSenhaOperador,
 } from "@/lib/operadores";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Categoria } from "@/types/categoria";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { CategoriaServico } from "@/types/categoriaServico";
@@ -71,7 +70,7 @@ export function ConfiguracoesPage() {
   );
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
@@ -197,14 +196,6 @@ export function ConfiguracoesPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para gerenciar operadores de verdade.
-        </p>
-      )}
 
       {erro && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
@@ -404,7 +395,7 @@ export function ConfiguracoesPage() {
 
           <SecaoRecolhivel
             titulo="Dados fiscais da loja"
-            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). O token do Focus NFe fica vazio até a assinatura de um plano — sem ele, a emissão automática continua indisponível."
+            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). Sem o token do Focus NFe, a emissão automática fica indisponível."
           >
             <DadosFiscaisSection
               configuracao={configuracaoFiscal}

@@ -9,6 +9,7 @@ import type {
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
 import { ehPecaAvulsa } from "./orcamento";
+import { somarValoresLiquidos } from "./valorItem";
 
 // Mesma ideia dos outros schemas: formulário trabalha só com strings (mesmo
 // pros campos number | null no banco) — a conversão pra NovaOrdemServico/
@@ -210,10 +211,12 @@ export function paraPatchItem(valores: ItemFormValues): PatchItemOS {
 }
 
 export function totalItensFormulario(itens: ItemFormValues[]): number {
-  return itens.reduce(
-    (total, item) =>
-      total + paraNumero(item.quantidade) * paraNumero(item.preco_unitario) - paraNumero(item.desconto),
-    0,
+  return somarValoresLiquidos(
+    itens.map((item) => ({
+      quantidade: paraNumero(item.quantidade),
+      preco_unitario: paraNumero(item.preco_unitario),
+      desconto: paraNumero(item.desconto),
+    })),
   );
 }
 

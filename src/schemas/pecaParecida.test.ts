@@ -1,3 +1,4 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import {
   acharPecasParecidas,
@@ -144,5 +145,79 @@ describe("acharPecasParecidas", () => {
     expect(MOTIVO_PARECIDA_ROTULO.codigo_barras).toBe("mesmo código de barras");
     expect(MOTIVO_PARECIDA_ROTULO.codigo_interno).toBe("mesmo código interno");
     expect(MOTIVO_PARECIDA_ROTULO.nome).toBe("nome muito parecido");
+  });
+});
+
+/**
+ * A regra como era antes da forma preparada (#721), copiada à mão de propósito:
+ * é a resposta de referência. A versão nova (peça normalizada uma vez só,
+ * bigramas como números, atalho pelo tamanho do nome) tem que dar EXATAMENTE
+ * o mesmo resultado, motivo e semelhança.
+ */
+function regraAntiga(nova: PecaComparavel, cadastro: PecaComparavel[], limiteNome: number) {
+  const normalizar = (t: string | null | undefined) =>
+    (t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const pedacos = (t: string) => (normalizar(t).match(/\d+|[a-z]+/g) ?? []).sort();
+  const numeros = (p: PecaComparavel) => {
+    const todos = `${normalizar(p.descricao)} ${normalizar(p.medida)}`.match(/\d+/g) ?? [];
+    return [...new Set(todos.map((n) => String(Number(n))))].sort().join(",");
+  };
+  const bigramas = (t: string) => {
+    const m = new Map<string, number>();
+    for (let i = 0; i < t.length - 1; i++) m.set(t.slice(i, i + 2), (m.get(t.slice(i, i + 2)) ?? 0) + 1);
+    return m;
+  };
+  const dice = (a: string, b: string) => {
+    if (a === b) return a.length > 0 ? 1 : 0;
+    const ba = bigramas(a);
+    const bb = bigramas(b);
+    let comuns = 0;
+    for (const [par, q] of ba) comuns += Math.min(q, bb.get(par) ?? 0);
+    const total = Math.max(a.length - 1, 0) + Math.max(b.length - 1, 0);
+    return total === 0 ? 0 : (2 * comuns) / total;
+  };
+  const mesmoCodigo = (a: string | null, b: string | null) => {
+    const x = normalizar(a);
+    return !["", "sem gtin"].includes(x) && x === normalizar(b);
+  };
+  const forca = { codigo_barras: 3, codigo_interno: 2, nome: 1 };
+  const achadas: { id?: string; motivo: keyof typeof forca; semelhanca: number }[] = [];
+  for (const p of cadastro) {
+    if (nova.id !== undefined && p.id === nova.id) continue;
+    if (mesmoCodigo(nova.codigo_barras, p.codigo_barras)) achadas.push({ id: p.id, motivo: "codigo_barras", semelhanca: 1 });
+    else if (mesmoCodigo(nova.codigo_interno, p.codigo_interno)) achadas.push({ id: p.id, motivo: "codigo_interno", semelhanca: 1 });
+    else {
+      const sem = numeros(nova) !== numeros(p) ? 0 : dice(pedacos(nova.descricao).join(" "), pedacos(p.descricao).join(" "));
+      if (sem >= limiteNome) achadas.push({ id: p.id, motivo: "nome", semelhanca: sem });
+    }
+  }
+  return achadas.sort((x, y) => forca[y.motivo] - forca[x.motivo] || y.semelhanca - x.semelhanca);
+}
+
+describe("acharPecasParecidas — igual à regra de antes da forma preparada (#721)", () => {
+  const palavra = fc.constantFrom(
+    "Pneu", "PNEU", "pnéu", "Pirelli", "Filtro", "FILTRO", "óleo", "OLEO", "R13", "R14", "175/70",
+    "175/070", "PSL55", "psl055", "Lâmpada", "LAMPADA", "H4", "a", "aa", "aaa", "ab", "ba", "-", "  ",
+  );
+  const codigo = fc.constantFrom(null, "", "SEM GTIN", " sem gtin ", "789", " 789 ", "VL-10", "vl-10");
+  const medida = fc.constantFrom(null, "", "175/70 R13", "175/070 r13");
+  const pecaAleatoria = fc.record({
+    id: fc.constantFrom("1", "2", "3", "4"),
+    descricao: fc.array(palavra, { minLength: 0, maxLength: 5 }).map((p) => p.join(" ")),
+    codigo_barras: codigo,
+    codigo_interno: codigo,
+    medida,
+  });
+
+  it("mesmos achados, motivo e semelhança, nos dois limites", () => {
+    fc.assert(
+      fc.property(pecaAleatoria, fc.array(pecaAleatoria, { maxLength: 8 }), (nova, cadastro) => {
+        for (const limiteNome of [0.8, LIMITE_NOME_PARA_ORDENAR]) {
+          const nova_ = acharPecasParecidas(nova, cadastro, { limiteNome }).map(({ peca: p, motivo, semelhanca }) => ({ id: p.id, motivo, semelhanca }));
+          expect(nova_).toEqual(regraAntiga(nova, cadastro, limiteNome));
+        }
+      }),
+      { numRuns: 1000 },
+    );
   });
 });

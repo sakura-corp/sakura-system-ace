@@ -42,8 +42,8 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
     <Modal titulo="Cancelar nota fiscal" onFechar={onFechar}>
       <div className="space-y-4">
         <p className="text-corpo text-sakura-purple-dark/90">
-          Isso cancela <strong>{arquivo.nome_arquivo}</strong> direto na SEFAZ/prefeitura, através
-          da Focus NFe. Não dá pra desfazer.
+          Isso cancela <strong>{arquivo.nome_arquivo}</strong> direto na SEFAZ/prefeitura, pelo
+          serviço de notas. Não dá pra desfazer.
         </p>
 
         <label className="flex flex-col gap-1 text-corpo">

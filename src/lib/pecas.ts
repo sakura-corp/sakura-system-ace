@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import type { NovaPeca, Peca, PecaDadosFiscais, PecaJanela } from "@/types/peca";
 import { lerResumo, type CampoJuntavel, type PecaVista, type ResumoPecaJuntar } from "@/schemas/juntarPecas";
 
@@ -55,10 +55,11 @@ export async function cadastrarPecaRapida(peca: NovaPeca): Promise<string> {
   return data as string;
 }
 
+// Em blocos e por páginas (#498), pra quem chamar com uma lista grande.
 export async function buscarPecasPorIds(ids: string[]): Promise<Peca[]> {
-  if (ids.length === 0) return [];
-  const { data, error } = await supabase.from("pecas").select("*").in("id", ids);
-  if (error) throw error;
+  const data = await buscarPorIdsEmBlocos(ids, (bloco, de, ate) =>
+    supabase.from("pecas").select("*").in("id", bloco).order("id").range(de, ate),
+  );
   return data as Peca[];
 }
 
@@ -113,7 +114,9 @@ export async function resumoPecaParaJuntar(id: string): Promise<ResumoPecaJuntar
 // existir. `esperado` são os resumos que a prévia mostrou e os campos das duas
 // peças como a tela mostrou (`peca`): se o banco já estiver diferente (alguém
 // mexeu nas peças nesse meio-tempo), ele recusa em vez de juntar com números
-// ou valores que a pessoa não viu. Devolve o resumo da peça que ficou.
+// ou valores que a pessoa não viu. O resumo que o banco devolve não é lido
+// (#721): ninguém o conferia, e ler um formato inesperado daria erro na tela
+// depois de a junção já ter entrado.
 export async function juntarPecas(
   ficaId: string,
   saiId: string,
@@ -122,13 +125,12 @@ export async function juntarPecas(
     fica: ResumoPecaJuntar & { peca: PecaVista };
     sai: ResumoPecaJuntar & { peca: PecaVista };
   },
-): Promise<ResumoPecaJuntar> {
-  const { data, error } = await supabase.rpc("juntar_pecas", {
+): Promise<void> {
+  const { error } = await supabase.rpc("juntar_pecas", {
     p_fica: ficaId,
     p_sai: saiId,
     p_campos_da_que_sai: campos,
     p_esperado: esperado,
   });
   if (error) throw error;
-  return lerResumo(data);
 }

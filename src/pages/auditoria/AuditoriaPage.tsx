@@ -5,7 +5,6 @@ import { Modal } from "@/components/Modal";
 import { listarAuditoria } from "@/lib/auditoria";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarOperadores } from "@/lib/operadores";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import {
   ACAO_AUDITORIA_LABEL,
   TABELA_AUDITORIA_LABEL,
@@ -41,7 +40,6 @@ export function AuditoriaPage() {
   const [detalhe, setDetalhe] = useState<RegistroAuditoria | null>(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) return;
     listarOperadores()
       .then(setOperadores)
       .catch((err) => {
@@ -51,10 +49,6 @@ export function AuditoriaPage() {
   }, []);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setCarregando(false);
-      return;
-    }
     let ativo = true;
     setCarregando(true);
     setErro(null);
@@ -89,14 +83,6 @@ export function AuditoriaPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para ver a auditoria de verdade.
-        </p>
-      )}
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 

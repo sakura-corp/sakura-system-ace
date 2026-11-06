@@ -19,9 +19,11 @@
  * negócio escrita em tela diverge (docs/licoes.md, itens 40 e 49).
  */
 import type { Peca } from "@/types/peca";
-import { arredondarCentavo } from "./dinheiro";
+import { arredondarCentavo, formatarMoeda } from "./dinheiro";
+import { formatarQuantidade as qtd } from "./quantidade";
 import {
-  acharPecasParecidas,
+  compararPreparadas,
+  prepararPeca,
   type MotivoParecida,
   type PecaComparavel,
 } from "./pecaParecida";
@@ -159,6 +161,32 @@ export function pecaDepoisDaJuntada<T extends PecaParaJuntar>(
   return depois;
 }
 
+/**
+ * O aviso do preço de custo (#721). O lucro e a comissão das OS antigas são
+ * calculados com o custo ATUAL da peça, não o da época: quando as duas peças
+ * têm custo diferente, juntar muda esses números nas OS de uma delas (a da
+ * que sai, se fica o custo da que fica; a da que fica, se a pessoa escolhe o
+ * custo da que sai). A prévia avisa, pra ninguém estranhar o lucro de antes.
+ *
+ * @returns o aviso, ou null quando os custos são iguais (ou os dois vazios)
+ */
+export function avisoDoCusto(
+  fica: PecaParaJuntar,
+  sai: PecaParaJuntar,
+  escolhas: EscolhasDaJuntada,
+): string | null {
+  if (!camposDiferentes(fica, sai).some(({ campo }) => campo === "preco_custo")) return null;
+  const custo = (valor: unknown) =>
+    vazio(valor) ? "sem preço de custo" : formatarMoeda(Number(valor));
+  const depois = pecaDepoisDaJuntada(fica, sai, escolhas).preco_custo;
+  const final = vazio(depois) ? "ficar sem preço de custo" : `usar ${custo(depois)}`;
+  return (
+    `As duas peças têm preço de custo diferente (${custo(fica.preco_custo)} e ${custo(sai.preco_custo)}). ` +
+    "O lucro e a comissão das OS antigas usam o custo atual da peça: " +
+    `depois de juntar, as OS das duas passam a ${final}.`
+  );
+}
+
 /** O saldo da peça numa loja, como o banco conta. */
 export interface EstoqueNaLoja {
   loja_id: string;
@@ -236,26 +264,18 @@ export interface EstoqueNaPrevia {
  * - `estoquePorLoja`: as lojas das duas peças (primeiro as da que fica, na
  *   ordem do banco; depois as que só a que sai tem). Loja que só um lado tem
  *   aparece com 0 do outro.
- * - `totaisDepois`: quanto a peça que fica vai ter depois, somando as duas.
- *   Depois de juntar, o resumo que a RPC devolve tem que bater com isto.
- *   OS e compras distintas não entram: uma OS com as duas peças contaria duas
- *   vezes na soma, então a conferência é pelas linhas (`itens_os`,
- *   `itens_compra`).
- * - `passa`: o que muda de peça (o que a que sai tinha).
+ * - `passa`: o que muda de peça (o que a que sai tinha), pra frase.
+ *
+ * Não tem "totais depois" pra conferir com o banco depois de juntar (#721):
+ * quem garante os números é o próprio banco, que recusa a junção se o que a
+ * prévia mostrou (`p_esperado`) não for mais o que está lá.
  */
 export interface PreviaDaJuntada {
   completa: boolean;
   descricaoFinal: string;
   estoquePorLoja: EstoqueNaPrevia[];
   estoqueTotal: { fica: number; sai: number; depois: number };
-  totaisDepois: {
-    movimentos: number;
-    itens_os: number;
-    contagens: number;
-    itens_compra: number;
-    cotacoes: number;
-  };
-  passa: { os: number; compras: number; contagens: number; movimentos: number; cotacoes: number };
+  passa: { os: number; compras: number; contagens: number; cotacoes: number };
   frase: string;
 }
 
@@ -277,11 +297,6 @@ function estoquePorLoja(fica: ResumoPecaJuntar, sai: ResumoPecaJuntar): EstoqueN
   for (const e of fica.estoque) linha(e).fica = somarQtd(linha(e).fica, e.saldo);
   for (const e of sai.estoque) linha(e).sai = somarQtd(linha(e).sai, e.saldo);
   return [...linhas.values()].map((l) => ({ ...l, depois: somarQtd(l.fica, l.sai) }));
-}
-
-/** Quantidade como a pessoa lê: "4", "4,5", "1.234,25" (no máximo 2 casas). */
-function qtd(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 
 /** "a", "a e b", "a, b e c". */
@@ -348,25 +363,15 @@ export function previaDaJuntada({
     os: resumoSai.os,
     compras: resumoSai.compras,
     contagens: resumoSai.contagens,
-    movimentos: resumoSai.movimentos,
     cotacoes: resumoSai.cotacoes,
   };
   const estoqueTotal = { fica: totalFica, sai: totalSai, depois: somarQtd(totalFica, totalSai) };
   const descricaoFinal = pecaDepoisDaJuntada(fica, sai, escolhas).descricao.trim();
-  const soma = (campo: "movimentos" | "itens_os" | "contagens" | "itens_compra" | "cotacoes") =>
-    resumoFica[campo] + resumoSai[campo];
   return {
     completa,
     descricaoFinal,
     estoquePorLoja: porLoja,
     estoqueTotal,
-    totaisDepois: {
-      movimentos: soma("movimentos"),
-      itens_os: soma("itens_os"),
-      contagens: soma("contagens"),
-      itens_compra: soma("itens_compra"),
-      cotacoes: soma("cotacoes"),
-    },
     passa,
     frase: completa
       ? montarFrase(estoqueTotal, passa, descricaoFinal)
@@ -404,34 +409,11 @@ const ORDEM_MOTIVO: Record<MotivoParecida, number> = {
  * teste de propriedade (`juntarPecas.test.ts`) compara com a comparação de
  * todas contra todas em catálogos aleatórios.
  *
- * As chaves copiam a normalização de `pecaParecida.ts` (lá ela é privada).
- * Se a regra de lá mudar, o teste de propriedade avisa.
+ * As chaves vêm da própria peça preparada de `pecaParecida.ts`
+ * (`prepararPeca`, #721): a mesma normalização que a regra usa, sem cópia.
+ * Cada peça é preparada uma vez só, e cada par compara as preparadas
+ * (`compararPreparadas`), em vez de normalizar as duas de novo a cada par.
  */
-
-/** O mesmo `normalizar` de `pecaParecida.ts`: sem acento, minúsculo, sem espaço nas pontas. */
-function normalizarComoParecida(texto: string | null | undefined): string {
-  return (texto ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-}
-
-/** Código que nunca casa em `pecaParecida.ts` (vazio, ou "SEM GTIN" da nota). */
-const NAO_E_CODIGO = new Set(["", "sem gtin"]);
-
-/** Chave do código, ou null quando ele nunca casa (aí a peça não entra no grupo). */
-function chaveDoCodigo(codigo: string | null): string | null {
-  const chave = normalizarComoParecida(codigo);
-  return NAO_E_CODIGO.has(chave) ? null : chave;
-}
-
-/** Os números da descrição + medida, sem zero à esquerda, como `numerosDaPeca`. */
-function chaveDosNumeros(p: PecaComparavel): string {
-  const texto = `${normalizarComoParecida(p.descricao)} ${normalizarComoParecida(p.medida)}`;
-  const unicos = new Set((texto.match(/\d+/g) ?? []).map((n) => String(Number(n))));
-  return [...unicos].sort().join(",");
-}
 
 /**
  * Os pares suspeitos do cadastro, cada um uma vez só (nunca (a,b) e (b,a)),
@@ -444,33 +426,37 @@ function chaveDosNumeros(p: PecaComparavel): string {
 export function paresSuspeitos<T extends PecaComparavel & { id: string }>(
   pecas: T[],
 ): ParSuspeito<T>[] {
+  const preparadas = pecas.map(prepararPeca);
   const grupos = new Map<string, number[]>();
   const entrar = (chave: string, i: number) => {
     const grupo = grupos.get(chave);
     if (grupo) grupo.push(i);
     else grupos.set(chave, [i]);
   };
-  pecas.forEach((p, i) => {
+  preparadas.forEach((p, i) => {
     // Prefixo diferente por chave: código "13" e medida "13" não se misturam.
-    const barras = chaveDoCodigo(p.codigo_barras);
-    if (barras !== null) entrar(`b:${barras}`, i);
-    const interno = chaveDoCodigo(p.codigo_interno);
-    if (interno !== null) entrar(`i:${interno}`, i);
-    entrar(`n:${chaveDosNumeros(p)}`, i);
+    if (p.codigoBarras !== null) entrar(`b:${p.codigoBarras}`, i);
+    if (p.codigoInterno !== null) entrar(`i:${p.codigoInterno}`, i);
+    entrar(`n:${p.numeros}`, i);
   });
 
-  // Cada par (i < j) uma vez só, mesmo que as duas peças dividam mais de um grupo.
-  const vistos = new Set<string>();
+  // Cada par (i < j) uma vez só, mesmo que as duas peças dividam mais de um
+  // grupo. A chave é número (i × total + j), não texto: com mil peças no
+  // mesmo grupo são meio milhão de pares, e montar meio milhão de textos
+  // custava mais que comparar as peças (#721).
+  const vistos = new Set<number>();
   const pares: (ParSuspeito<T> & { i: number; j: number })[] = [];
   for (const grupo of grupos.values()) {
     for (let x = 0; x < grupo.length; x++) {
       for (let y = x + 1; y < grupo.length; y++) {
         const i = grupo[x];
         const j = grupo[y]; // os índices entram em ordem crescente, então i < j
-        const chave = `${i},${j}`;
+        // A mesma peça duas vezes na lista não é par (como no aviso do cadastro).
+        if (pecas[i].id === pecas[j].id) continue;
+        const chave = i * pecas.length + j;
         if (vistos.has(chave)) continue;
         vistos.add(chave);
-        const [achada] = acharPecasParecidas(pecas[i], [pecas[j]]);
+        const achada = compararPreparadas(preparadas[i], preparadas[j]);
         if (achada) {
           const { motivo, semelhanca } = achada;
           pares.push({ a: pecas[i], b: pecas[j], motivo, semelhanca, i, j });

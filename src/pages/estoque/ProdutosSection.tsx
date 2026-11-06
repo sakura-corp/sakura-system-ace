@@ -5,13 +5,15 @@ import { mensagemDeErro } from "@/lib/errors";
 import {
   acharPorCodigoExato,
   lerSaldo,
+  movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
   SITUACAO_SALDO_ROTULO,
   type SituacaoSaldo,
 } from "@/schemas/estoque";
 import { csosnMaisUsado } from "@/schemas/tributacao";
-import { margemAPartirDoPreco } from "@/schemas/peca";
+import { formatarQuantidade } from "@/schemas/quantidade";
+import { margemSobreAVenda } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { NovaPeca, Peca } from "@/types/peca";
@@ -55,10 +57,6 @@ interface ProdutosSectionProps {
 function formatarPreco(valor: number | null): string {
   if (valor === null) return "—";
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function formatarQuantidade(valor: number): string {
-  return valor.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
 
 // Saldo negativo é ERRO DE LANÇAMENTO, não pouco estoque — precisa gritar. O
@@ -137,18 +135,8 @@ export function ProdutosSection({
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
       const pecaCriada = await criarPeca(peca);
-      if (quantidadeInicial && quantidadeInicial > 0) {
-        await criarMovimento(
-          {
-            peca_id: pecaCriada.id,
-            tipo: "entrada",
-            quantidade: quantidadeInicial,
-            motivo: "ajuste",
-            referencia: "Estoque inicial (cadastro do produto)",
-          },
-          lojaId,
-        );
-      }
+      const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
+      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);
@@ -204,7 +192,7 @@ export function ProdutosSection({
                 onChange={(e) => setBusca(e.target.value)}
                 onKeyDown={handleTeclaNaBusca}
                 placeholder="Descrição, referência, código, marca ou medida"
-                className="w-80 rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="w-92 rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
               />
             </label>
 
@@ -316,7 +304,9 @@ export function ProdutosSection({
                 <th className="px-4 py-3 font-medium">Unidade</th>
                 <th className="px-4 py-3 font-medium">Preço custo</th>
                 <th className="px-4 py-3 font-medium">Preço venda</th>
-                <th className="px-4 py-3 font-medium">Margem</th>
+                <th className="px-4 py-3 font-medium" title="Sobre a venda: (venda − custo) ÷ venda">
+                  Margem
+                </th>
                 <th className="px-4 py-3 font-medium">Estoque atual</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3" />
@@ -326,7 +316,7 @@ export function ProdutosSection({
               {pecasFiltradas.map((peca) => {
                 const saldo = saldos.get(peca.id) ?? 0;
                 const leitura = lerSaldo(saldo, peca.estoque_minimo);
-                const margem = margemAPartirDoPreco(
+                const margem = margemSobreAVenda(
                   peca.preco_custo?.toString() ?? "",
                   peca.preco_venda?.toString() ?? "",
                 );
@@ -339,13 +329,23 @@ export function ProdutosSection({
                           maioria das peças de pneu já traz a medida no nome
                           ("Pneu 175/70 R14"), e repetir ao lado vira ruído. */}
                       {peca.medida && !peca.descricao.includes(peca.medida) && (
-                        <span className="ml-2 text-rotulo text-sakura-muted">{peca.medida}</span>
+                        <span className="ml-2 whitespace-nowrap text-rotulo text-sakura-muted">
+                          {peca.medida}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {categorias.find((c) => c.id === peca.categoria_id)?.nome ?? "—"}
                     </td>
-                    <td className="px-4 py-3">{peca.codigo_interno || "—"}</td>
+                    {/* Sem quebrar no meio ("PN-" / "17570R14", #876), mas com
+                        teto: o código é texto livre, e um EAN ou uma
+                        referência comprida não pode empurrar a tabela. */}
+                    <td
+                      className="max-w-[10rem] truncate whitespace-nowrap px-4 py-3"
+                      title={peca.codigo_interno || undefined}
+                    >
+                      {peca.codigo_interno || "—"}
+                    </td>
                     <td className="px-4 py-3">{peca.unidade || "—"}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_custo)}</td>
                     <td className="px-4 py-3">{formatarPreco(peca.preco_venda)}</td>

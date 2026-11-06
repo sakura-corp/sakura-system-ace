@@ -6,7 +6,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarFornecedores } from "@/lib/fornecedores";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarPedidos } from "@/lib/pedidosCompra";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { PedidoCompra } from "@/types/pedidoCompra";
@@ -27,7 +26,7 @@ export function FornecedoresPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   async function carregar() {
-    if (!isSupabaseConfigured || !lojaAtual) {
+    if (!lojaAtual) {
       setCarregando(false);
       return;
     }
@@ -69,14 +68,6 @@ export function FornecedoresPage() {
           </p>
         </div>
       </header>
-
-      {!isSupabaseConfigured && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          O Supabase ainda não está configurado. Defina{" "}
-          <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code>{" "}
-          no arquivo <code>.env</code> para começar a usar fornecedores de verdade.
-        </p>
-      )}
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 

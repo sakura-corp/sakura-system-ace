@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
+import { BuscaGlobal } from "./components/BuscaGlobal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
 import { Sidebar } from "./components/Sidebar";
 import { VersaoApp } from "./components/VersaoApp";
@@ -132,7 +134,18 @@ export default function App() {
     );
   }
 
-  if (operador?.deve_trocar_senha) {
+  // Login feito, mas sem o perfil (erro ao carregar, ou sem cadastro): uma
+  // tela com o "Sair", em vez do programa sem barra de saída (#752).
+  if (!operador) {
+    return (
+      <>
+        <PerfilNaoCarregou />
+        <VersaoApp />
+      </>
+    );
+  }
+
+  if (operador.deve_trocar_senha) {
     return (
       <>
         <TrocarSenhaPage />
@@ -147,6 +160,7 @@ export default function App() {
       <Sidebar />
       <main className="min-h-0 min-w-0 flex-1">
         <AreaRolavel className="p-4">
+          <BuscaGlobal />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
             <Routes>

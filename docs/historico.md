@@ -16,8 +16,8 @@
   quem trabalha é ela, **mescla direto** (seção 3 do `PROJETO_STATUS.md`). Os PRs guardam o
   detalhe de cada mudança; aqui fica só o que ajuda uma sessão nova.
 - **Versão e banco**: conferir sempre nas releases do GitHub (a tabela de versões está em
-  "Empacotamento", seção 7). Em 12/10/2026: a `v0.9.51` é a liberada pra todas as lojas (desde
-  08/10); banco na `0064`. Da `0.9.51` em diante, as versões moram no
+  "Empacotamento", seção 7). Em 04/11/2026: a `v0.9.55` é a liberada pra todas as lojas (desde
+  28/10); o banco da Pneus Amigão na `0075`, com a `0076` esperando os computadores na 0.9.56. Da `0.9.51` em diante, as versões moram no
   `sakura-corp/ssace-versoes` (PR #447; `docs/operacao.md`, "Onde as versões moram").
 - **Lição do episódio "duas linhas de trabalho paralelas" (agosto de 2026)**: enquanto uma sessão
   do Claude mesclava Fornecedores simples na `main`, ela tinha no próprio PC, sem commit, um
@@ -34,6 +34,91 @@ Cada bloco é o "Onde parou" de uma sessão, como estava quando ela terminou: **
 deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pros arquivos de
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
+
+### 05/11/2026: a madrugada de cota; ~30 PRs mesclados (lista e pendências na #934)
+- **Entrou**: #870 (dependências), #498 e #897 (loja grande), #875 (contas pra `src/schemas`), #876 (telas), #720/#721, #881, #903, #911, #872 e 6 pequenas; no escritório, #33, #89, #83 e #95. Privado: a medição do CI (#442).
+- **Banco, nesta ordem**: #857 (0077) → #882 (0078, Tiago) → #912 (0079) → #923 (0080). O CI dos dois últimos fica vermelho no "sem buraco" até lá.
+- **Sofia (#934)**: testar o Electron 44 (#906) no fim de semana; decidir #896, #929, #720, a cor dos avisos e o faturar do #912; conferir no PC; fechar à mão as issues que o "Fecha" não fechou.
+- **O Tiago**: os pedidos de mudança no #882 e no escritorio#99; a #888; triar a #886.
+- **CI**: o apt do Playwright ainda derruba job de tela quando o espelho fica lento (#933).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
+### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
+- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
+- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
+- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
+- **Sessões**: todas arquivadas (#519, fechada).
+- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
+- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
+### 04/11/2026, noite: a varredura geral dos 4 repositórios; docs em dia; 20 tarefas novas
+- **Varredura** (6 ajudantes, só leitura) e o que veio dela: docs em dia e textos simples na tela (#868, mesclado), 12 tarefas fechadas, 20 novas (#869 a #881, #883 a #886; escritorio#89 a #91).
+- **O mais sério**: o Electron 40 sem suporte (#869, depois do teste dela da 40) e 4 alertas nas dependências (#870).
+- **O Tiago**: pôr nas levas as tarefas novas da equipe e triar a #886 (o que a varredura achou e não mexeu).
+- **NFS-e (#839)**: esperando a Focus e a contabilidade; depois #866 → produção → publicar a 0.9.56 → liberar → a 0076 (#809).
+- **#857 (Gustavo)**: espera os dois consertos dele.
+- **Depende dela, com data**: #520 (06/11), #842 (11/11, ou depois do ensaio dela, #877), escritorio#20 (22/11); decidir a #885; apagar branches (#884).
+
+### 04/11/2026, tarde: o ensaio da loja nova mesclado; a NFS-e esperando a Focus e a contabilidade
+- **NFS-e (#839)**: as perguntas foram pra Focus (Araraquara na homologação, ou produção direto e cancelar) e pra contabilidade (o percentual do Simples, o Giap #853, o CFOP 5405 #864). Esperando; comentário no #839.
+- **#866, o campo do percentual do Simples** (no lugar do 0 provisório; migration `0078`): é o que falta pra produção. O Tiago põe na leva. **Próximo**: respostas → #866 → produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → a 0076 (#809).
+- **Mesclados**: #862 (o ensaio da loja nova do Tiago: a skill e os guias até a primeira nota; a primeira nota sai no PC da Sofia, `docs/decisoes.md`) e #863 (o painel saiu daqui; mora no escritório).
+- **Na `leva-6`**: #861, #864, #865 e #866.
+- **#857, a busca geral (Gustavo)**: espera os dois consertos dele (abrir OS pela busca; desativados fora). A `0077` é da Sofia, depois da `0076`.
+- **Feito**: o "Resumo de segunda" antigo pausado e a #625 fechada.
+- **Depende dela**: a #842 (tirar o token de homologação e os cadastros "ENSAIO TIAGO" do `ssace-teste`, depois do #839); renovar a chave da API até 22/11 (escritorio#20); o lucro do dia no Caixa (#809).
+
+### 04/11/2026, madrugada: o ensaio da NFS-e parado no governo; a Central do dia mesclada
+- **NFS-e (#839, CI verde)**: o porteiro publicado no `ssace-teste` e a NFS-e Nacional de homologação ligada na Focus, pela Sofia; o conserto do Tiago (`totTrib`, valor **0 provisório**) entrou no PR. O Ambiente Nacional de **teste** recusa: **Araraquara não está no convênio dele**. Não é código.
+- **Com a Sofia (manhã de 04/11)**: mandar o e-mail pra Focus (Araraquara na homologação? município de teste?) e a mensagem pra contabilidade (o percentual de tributos do Simples; se o cadastro mensal da alíquota no Giap acabou, #853). Sem homologação, a decisão é **testar em produção** com uma nota real que a loja ficou devendo.
+- **Mesclado**: #854, a Central do dia (#454, Gustavo). Ideias novas: #855, #856, #858. **A leva 6 segue**: livres no painel a #814, a #708, a #459 e a #456 (no modelo, sem dependência).
+- **#857, a busca geral (#372, Gustavo; migration `0077`)**: perguntas respondidas pela recomendação; com o conserto da OS e os desativados fora, e o CI verde, a Sofia mescla. A `0077` é dela, depois da `0076`.
+- **Na 0.9.56**: #839, #844, #845, #847, #367, #854 (e #857, #853 se entrarem). **Próximo (com o ensaio)**: produção na Focus → porteiro na loja → publicar → liberar → a 0076 (#809).
+- **Depende dela**: pausar a rotina antiga do Resumo e fechar a #625; renovar a chave da API até 22/11 (escritorio#20); conferir o lucro do dia no Caixa da loja (#809).
+
+### 31/10/2026, tarde: a leva 5 aprovada, a leva 6 aberta; o ensaio da NFS-e nacional ainda não feito
+- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito**. **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; **o Tiago está fazendo o ensaio desde 02/11**, com os dados fiscais que a Sofia mandou (o resultado vai no PR); se não sair, combinar um plano B com a loja pra **terça** (a mensagem não foi escrita).
+- **Antes do ensaio**: conferir "Simples Nacional" nos dados fiscais da loja. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
+- **Leva 5 aprovada** (#849, testes adiados pro dia de teste da 0.9.56, como na leva 4). **A leva 6 é a atual**: 6 tarefas livres (#814, #708, #459, #456, #454, #372; 51 h). O painel não tinha tarefa pra pegar porque faltava o relatório (`docs/licoes.md`, item 95).
+- **Na 0.9.56**: #844, #845 e #847 (não vistos num computador da loja) e a #367. **Próximo (se o ensaio passar)**: produção na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
+- **O Resumo de segunda** chegou em 02/11 (disparado à mão: o horário agendado atrasou; escritorio#77): **falta a Sofia pausar a rotina antiga e fechar a #625**. **CBS de 2027** (#838): depois de 15/12.
+- **Depende dela**: conferir o lucro do dia no Caixa da loja (#809); a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+
+### 31/10/2026, manhã: o ensaio da NFS-e nacional ainda não feito; #844, #845 e #847 na 0.9.56
+- **NFS-e (#837, urgente; PR #839 rascunho)**: o ensaio do Tiago **ainda não foi feito** (lembrado no PR em 31/10, com o prazo). **Desde 01/11 a Pneus Amigão fica sem NFS-e pelo programa** até a 0.9.56 chegar; se o Tiago não fizer no fim de semana, combinar um plano B com a loja pra segunda.
+- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais. Em aberto com a contabilidade: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime.
+- **Mesclados em 30/10, vão na 0.9.56**: #844 (a forma de pagamento pelo nome no caixa, #790) e #845 (a tela do perfil que não carregou, com "Tentar de novo" e "Sair", #752; `/code-review` feito, 6 consertos), e em 31/10 o #847 (a Lucratividade agrupa pela peça do cadastro, #744). Não vistos num computador da loja: olhar no teste da 0.9.56.
+- **Próximo (se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 → liberar → os dois computadores → a 0076 (#809).
+- **Segunda, 9h29**: o Resumo de segunda (#625). **CBS de 2027** (#838): depois de 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+
+### 30/10/2026, manhã: a NFS-e nacional pronta pro ensaio, com o Tiago
+- **NFS-e (#837, urgente; PR #839 rascunho)**: a **Focus** e a **contabilidade** responderam (IBS/CBS só em 2027; sem token do Giap, só o certificado). `/code-review` feito, 4 consertos no PR. **Homologação ligada na Focus**; o token de homologação guardado no `ssace-teste` (#832 decidida, opção a; tirar depois, #842).
+- **O ensaio é do Tiago** (roteiro no PR #839, prioridade antes do escritorio #60/#61): porteiro novo **só no `ssace-teste`**, emitir, abrir o PDF e cancelar. Ele te pede o CNPJ e os dados da loja pra loja de exemplo.
+- **Em aberto com a contabilidade**: o campo da DPS "em branco", o código de 6 dígitos, a alíquota e o regime. O ensaio também mostra o número (o nosso × o "Próximo número" da Focus), o XML salvo e a hora.
+- **Antes do ensaio**: conferir que a Pneus Amigão está em "Simples Nacional" nos dados fiscais.
+- **Próximo (fim de semana, se o ensaio passar)**: produção ligada na Focus → porteiro na loja → publicar a 0.9.56 com a NFS-e e o #840 (já mesclado) → liberar → os dois computadores → a 0076 (#809).
+- **Segunda, 9h29**: o Resumo de segunda (#625). **CBS de 2027** (#838): depois de 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; renovar a chave da API até 22/11 (escritorio#20).
+
+### 29/10/2026, noite: a 0075 aplicada; a NFS-e nacional obrigatória desde 01/11
+- **A 0075 está na Pneus Amigão**; a **0076 espera** o Balcão e o DESKTOP-PKJ2A3B chegarem na 0.9.56 (#809).
+- **NFS-e (#837, urgente)**: desde **01/11** o Simples de Araraquara só emite pelo **Padrão Nacional**; o Giap parou. **PR #839 (rascunho)** pronto e testado: espera a resposta da **Focus** (ticket aberto) e da **contabilidade** (perguntas no PR), o ensaio em homologação e o `/code-review`. **Porteiro antes do programa.** As notas do fim de semana saem depois, pelo programa (plano B descartado).
+- **PR #840 (rascunho)**: "Vendido no mês" × "Recebido no mês"; margem do Estoque sobre a venda **só na lista** (o cadastro segue sobre o custo, "Acréscimo sobre o custo %"); comissão sem os serviços sem custo. Falta ela olhar as telas e mesclar.
+- **Decididas e fechadas**: #791, #502, #507 (cancelar nota não estorna; vai pra Devolução, #399), #503, #750. A #746 virou só os testes da loja (#379, #655).
+- **Próximo (segunda)**: 9h29, o Resumo de segunda (#625); a NFS-e (#839) → publicar a 0.9.56 (pode ir junto) → liberar → os dois computadores → a 0076.
+- **CBS de 2027 (#838)**: os valores das notas, depois que o Senado decidir em 15/12.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o token de homologação até 11/11 (#832); renovar a chave da API até 22/11 (escritorio#20).
+
+### 29/10/2026, fim da tarde: o #818 mesclado; a 0075 e a 0.9.56 na fila
+- **#818 (Gusta) mesclado**: os 4 testes de perfil passaram no PC dele, a ordem de subir certa, CI verde. A #367 fechou.
+- **Próximo (Sofia)**: a 0075 pelo "Atualizar o banco" (ensaiar, depois aplicar) → publicar a 0.9.56 (**só liberar com a 0075 em todas**) → a 0076. Segue na #809: o lucro do dia no Caixa da loja bater com o normal.
+- **Gusta**: proposta de projeto secundário (site + agendamento + painel pra spa), pelo `/nova-proposta` numa sessão na nuvem com o `secundarios`; o código já está no `sakura-spa`, criado antes da proposta. Quando abrir com `proposta:esperando-sofia`, a Sofia roda o `/analisar-proposta` e decide lá o que ficou com ela.
+- **#814** (tirar o painel daqui) na `leva-6`. No escritório: o #58 (o Escritório de verdade) no ar; o #60 e o #61 voltaram pro Tiago com consertos.
+- **A venda (escritorio#56)**: a loja só recebe o sistema já emitindo nota. Até 11/11, **decidir o token de homologação** pro ensaio do Tiago (#832, `sofia`).
+- **Resumo de segunda** (escritorio#17): **segunda, 9h29**, conferir se chegou; aí pausar a rotina antiga e fechar a #625.
+- **Depende dela**: a mensagem e o PDF pro cliente novo; o manual da NFS-e **até 01/11** (#503); a comissão (#502); renovar a chave da API até 22/11 (escritorio#20).
 
 ### 29/10/2026, meio-dia: a equipe admin no banco de teste; o #818 nos testes de perfil
 - **#831 mesclado**: a equipe é **admin só no banco de teste** (a Sofia já ligou os três) e monta sozinha, em Configurações → Operadores, o login de perfil que um teste de permissão pede. Teste de permissão é sempre com o login do perfil (`docs/equipe.md` e `docs/supabase-de-teste.md`, "Teste de permissão").
