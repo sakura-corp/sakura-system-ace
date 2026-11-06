@@ -147,7 +147,7 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
                 type="button"
                 onClick={aoTirar}
                 disabled={isSubmitting}
-                className="rounded-xl px-4 py-2 text-corpo font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                className="rounded-xl px-4 py-2 text-corpo font-medium text-red-300 hover:underline disabled:opacity-50"
               >
                 Tirar o Pix
               </button>
