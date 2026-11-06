@@ -17,7 +17,7 @@
  * documentos usados são inventados, só com o dígito verificador certo.
  */
 import { describe, expect, it } from "vitest";
-import { crc16Pix, normalizarChavePix, tipoDaChavePix } from "./pix";
+import { crc16Pix, montarPixCopiaECola, normalizarChavePix, tipoDaChavePix } from "./pix";
 
 /** O código publicado pelo Banco Central no manual do BR Code. */
 const EXEMPLO_BC =
@@ -144,5 +144,165 @@ describe("normalizarChavePix e tipoDaChavePix", () => {
       expect(normalizarChavePix(lixo), lixo).toBeNull();
       expect(tipoDaChavePix(lixo), lixo).toBeNull();
     }
+  });
+});
+
+/** Fecha um código escrito à mão (que já termina em "6304") com o CRC de conferência. */
+function comCrc(semCrc: string): string {
+  return semCrc + crcDeConferencia(semCrc);
+}
+
+/** Os dados do exemplo do Banco Central, pra variar um campo por teste. */
+const DADOS_BC = {
+  chave: "123e4567-e12b-12d1-a456-426655440000",
+  nomeRecebedor: "Fulano de Tal",
+  cidadeRecebedor: "BRASILIA",
+};
+
+describe("montarPixCopiaECola", () => {
+  it("monta exatamente o código publicado no exemplo do Banco Central", () => {
+    expect(montarPixCopiaECola({ ...DADOS_BC, txid: "***" })).toBe(EXEMPLO_BC);
+    // Sem txid, o padrão é "***": dá o mesmo código.
+    expect(montarPixCopiaECola(DADOS_BC)).toBe(EXEMPLO_BC);
+  });
+
+  it("com valor (R$ 10,50): campo 54 entre o 53 e o 58, com ponto e 2 casas", () => {
+    const esperado = comCrc(
+      "000201" +
+        "26580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-426655440000" +
+        "52040000" +
+        "5303986" +
+        "540510.50" +
+        "5802BR" +
+        "5913Fulano de Tal" +
+        "6008BRASILIA" +
+        "62070503***" +
+        "6304",
+    );
+    expect(montarPixCopiaECola({ ...DADOS_BC, valor: 10.5 })).toBe(esperado);
+  });
+
+  it("valor ausente, zero, negativo, NaN ou que arredonda pra zero: sem campo 54", () => {
+    for (const valor of [undefined, null, 0, -5, Number.NaN, 0.004]) {
+      expect(montarPixCopiaECola({ ...DADOS_BC, valor }), String(valor)).toBe(EXEMPLO_BC);
+    }
+  });
+
+  it("valor no limite do campo (13 caracteres) vai; acima disso, null", () => {
+    const codigo = montarPixCopiaECola({ ...DADOS_BC, valor: 9999999999.99 });
+    expect(codigo).toContain("54139999999999.99");
+    expect(montarPixCopiaECola({ ...DADOS_BC, valor: 10000000000 })).toBeNull();
+    expect(montarPixCopiaECola({ ...DADOS_BC, valor: Number.POSITIVE_INFINITY })).toBeNull();
+  });
+
+  it("chave e-mail: normalizada e com o tamanho do campo 26 certo", () => {
+    const esperado = comCrc(
+      "000201" +
+        "26490014br.gov.bcb.pix0127loja.exemplo@exemplo.com.br" +
+        "52040000" +
+        "5303986" +
+        "5802BR" +
+        "5919Borracharia Exemplo" +
+        "6010Araraquara" +
+        "62070503***" +
+        "6304",
+    );
+    expect(
+      montarPixCopiaECola({
+        chave: "Loja.Exemplo@Exemplo.com.br",
+        nomeRecebedor: "Borracharia Exemplo",
+        cidadeRecebedor: "Araraquara",
+      }),
+    ).toBe(esperado);
+  });
+
+  it("chave telefone: vai com +55", () => {
+    const esperado = comCrc(
+      "000201" +
+        "26360014br.gov.bcb.pix0114+5516991234567" +
+        "52040000" +
+        "5303986" +
+        "5802BR" +
+        "5919Borracharia Exemplo" +
+        "6010Araraquara" +
+        "62070503***" +
+        "6304",
+    );
+    expect(
+      montarPixCopiaECola({
+        chave: "(16) 99123-4567",
+        nomeRecebedor: "Borracharia Exemplo",
+        cidadeRecebedor: "Araraquara",
+      }),
+    ).toBe(esperado);
+  });
+
+  it("chave CPF, com valor: vai só com os dígitos", () => {
+    const esperado = comCrc(
+      "000201" +
+        "26330014br.gov.bcb.pix011141853290750" +
+        "52040000" +
+        "5303986" +
+        "54071234.50" +
+        "5802BR" +
+        "5919Borracharia Exemplo" +
+        "6010Araraquara" +
+        "62070503***" +
+        "6304",
+    );
+    expect(
+      montarPixCopiaECola({
+        chave: "418.532.907-50",
+        nomeRecebedor: "Borracharia Exemplo",
+        cidadeRecebedor: "Araraquara",
+        valor: 1234.5,
+      }),
+    ).toBe(esperado);
+  });
+
+  it("tira acento do nome e da cidade (São Carlos → Sao Carlos)", () => {
+    const esperado = comCrc(
+      "000201" +
+        "26580014br.gov.bcb.pix0136123e4567-e12b-12d1-a456-426655440000" +
+        "52040000" +
+        "5303986" +
+        "5802BR" +
+        "5917Jose da Conceicao" +
+        "6010Sao Carlos" +
+        "62070503***" +
+        "6304",
+    );
+    expect(
+      montarPixCopiaECola({ ...DADOS_BC, nomeRecebedor: "José da Conceição", cidadeRecebedor: "São Carlos" }),
+    ).toBe(esperado);
+  });
+
+  it("corta o nome em 25 e a cidade em 15, sem deixar espaço no fim", () => {
+    const codigo = montarPixCopiaECola({
+      ...DADOS_BC,
+      nomeRecebedor: "Pneus e Rodas do Exemplo  Ltda",
+      cidadeRecebedor: "São José do Rio Preto",
+    });
+    expect(codigo).toContain("5924Pneus e Rodas do Exemplo6015Sao Jose do Rio6207");
+  });
+
+  it("txid: aceita letras e números até 25; fora disso volta pro ***", () => {
+    expect(montarPixCopiaECola({ ...DADOS_BC, txid: "PEDIDO123" })).toContain("62130509PEDIDO1236304");
+    expect(montarPixCopiaECola({ ...DADOS_BC, txid: "pedido-1" })).toBe(EXEMPLO_BC);
+    expect(montarPixCopiaECola({ ...DADOS_BC, txid: "A".repeat(26) })).toBe(EXEMPLO_BC);
+    expect(montarPixCopiaECola({ ...DADOS_BC, txid: "" })).toBe(EXEMPLO_BC);
+  });
+
+  it("sem dado, sem chave, chave lixo, sem nome ou sem cidade: null, sem lançar erro", () => {
+    expect(montarPixCopiaECola(null)).toBeNull();
+    expect(montarPixCopiaECola(undefined)).toBeNull();
+    expect(montarPixCopiaECola({ ...DADOS_BC, chave: "" })).toBeNull();
+    expect(montarPixCopiaECola({ ...DADOS_BC, chave: "não sei a chave" })).toBeNull();
+    expect(montarPixCopiaECola({ ...DADOS_BC, nomeRecebedor: "   " })).toBeNull();
+    // Nome que some inteiro no filtro de ASCII também conta como sem nome.
+    expect(montarPixCopiaECola({ ...DADOS_BC, nomeRecebedor: "™™" })).toBeNull();
+    expect(montarPixCopiaECola({ ...DADOS_BC, cidadeRecebedor: "" })).toBeNull();
+    // Campo faltando de vez (dado velho do banco, por exemplo).
+    expect(montarPixCopiaECola({ chave: DADOS_BC.chave } as unknown as Parameters<typeof montarPixCopiaECola>[0])).toBeNull();
   });
 });

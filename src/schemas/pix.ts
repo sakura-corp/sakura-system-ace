@@ -1,8 +1,22 @@
+/**
+ * O "Pix copia e cola" da loja (tarefa #456): o BR Code estático do Banco
+ * Central, montado só com os dados que a loja cadastrou. Função pura: não fala
+ * com banco nem com tela, e não lança erro (devolve null quando não dá).
+ *
+ * Referência: Manual do BR Code e Manual de Padrões para Iniciação do Pix
+ * (Banco Central). Cada campo é ID (2) + tamanho (2, com zero à esquerda) +
+ * valor, e o código termina num CRC16 sobre tudo que vem antes.
+ */
+import { arredondarCentavo } from "./dinheiro";
+
 export interface DadosPix {
+  /** Como a loja cadastrou (com ou sem pontuação). */
   chave: string;
   nomeRecebedor: string;
   cidadeRecebedor: string;
+  /** Em reais; ausente/0/negativo/NaN = Pix sem valor fixo (campo 54 omitido). */
   valor?: number | null;
+  /** Padrão "***" (o pagador não precisa informar nada). */
   txid?: string | null;
 }
 
@@ -145,6 +159,81 @@ export function tipoDaChavePix(chave: string): TipoChavePix | null {
   return classificarChave(chave)?.tipo ?? null;
 }
 
-export function montarPixCopiaECola(_dados: DadosPix | null | undefined): string | null {
-  return null;
+/** Limites do manual: nome até 25, cidade até 15, txid até 25, valor até 13 caracteres. */
+const MAXIMO_NOME = 25;
+const MAXIMO_CIDADE = 15;
+const MAXIMO_TXID = 25;
+const MAXIMO_VALOR = 9999999999.99; // "9999999999.99" = 13 caracteres
+
+/**
+ * Um campo do BR Code: ID + tamanho com 2 dígitos + valor. O tamanho é
+ * contado em caracteres; como tudo que entra aqui já foi filtrado pra ASCII,
+ * caractere e byte dão o mesmo número (com acento não daria, por isso o filtro).
+ */
+function campo(id: string, valor: string): string {
+  return `${id}${String(valor.length).padStart(2, "0")}${valor}`;
+}
+
+/**
+ * Nome e cidade só em ASCII imprimível: tira o acento (NFD separa a letra da
+ * marca, e a marca é removida), joga fora o que sobrar fora do ASCII, corta
+ * no limite e tira espaço das pontas (de novo depois do corte, pra não
+ * terminar em espaço).
+ */
+function textoAscii(texto: unknown, maximo: number): string {
+  if (typeof texto !== "string") return "";
+  return texto
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "") // \p{M} = qualquer marca de acento separada pelo NFD
+    .replace(/[^\x20-\x7e]/g, "")
+    .trim()
+    .slice(0, maximo)
+    .trim();
+}
+
+/** txid: só letras e números, até 25; qualquer outra coisa vira "***". */
+function txidValido(txid: string | null | undefined): string {
+  const ok = typeof txid === "string" && new RegExp(`^[A-Za-z0-9]{1,${MAXIMO_TXID}}$`).test(txid);
+  return ok ? txid : "***";
+}
+
+/**
+ * O "Pix copia e cola" (BR Code estático do Banco Central). null quando não dá
+ * pra montar (sem chave, sem nome, sem cidade, ou valor maior que o campo
+ * aguenta). Nunca lança.
+ */
+export function montarPixCopiaECola(dados: DadosPix | null | undefined): string | null {
+  if (!dados) return null;
+  const chave = normalizarChavePix(typeof dados.chave === "string" ? dados.chave : "");
+  const nome = textoAscii(dados.nomeRecebedor, MAXIMO_NOME);
+  const cidade = textoAscii(dados.cidadeRecebedor, MAXIMO_CIDADE);
+  if (!chave || !nome || !cidade) return null;
+
+  // Valor: arredonda no centavo com a conta padrão do sistema. Se não for um
+  // número positivo depois disso, o Pix vai sem valor fixo (a pessoa digita
+  // no app do banco) e o campo 54 some.
+  let valor = "";
+  const bruto = dados.valor;
+  if (typeof bruto === "number" && Number.isFinite(bruto) && bruto > 0) {
+    const arredondado = arredondarCentavo(bruto);
+    if (arredondado > MAXIMO_VALOR) return null;
+    if (arredondado > 0) valor = arredondado.toFixed(2);
+  } else if (bruto === Number.POSITIVE_INFINITY) {
+    // Infinito é "acima do limite", não "sem valor": não monta.
+    return null;
+  }
+
+  const semCrc =
+    campo("00", "01") +
+    campo("26", campo("00", "br.gov.bcb.pix") + campo("01", chave)) +
+    campo("52", "0000") +
+    campo("53", "986") +
+    (valor ? campo("54", valor) : "") +
+    campo("58", "BR") +
+    campo("59", nome) +
+    campo("60", cidade) +
+    campo("62", campo("05", txidValido(dados.txid))) +
+    // O CRC é calculado sobre tudo, inclusive o "6304" do próprio campo dele.
+    "6304";
+  return semCrc + crc16Pix(semCrc);
 }
