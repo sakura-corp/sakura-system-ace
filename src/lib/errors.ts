@@ -40,6 +40,10 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_config_fiscal_cnpj: "O CNPJ da loja está incompleto — ele tem 14 caracteres.",
   // Migration 0078 (#866).
   ck_config_fiscal_percentual_tributos_simples: MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+  // Migration 0081 (#456): os limites do código do Pix (BR Code).
+  ck_config_pix_chave: "A chave Pix não pode ficar em branco nem passar de 77 letras.",
+  ck_config_pix_nome_recebedor: "O nome de quem recebe o Pix não pode ficar em branco nem passar de 25 letras.",
+  ck_config_pix_cidade_recebedor: "A cidade de quem recebe o Pix não pode ficar em branco nem passar de 15 letras.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
