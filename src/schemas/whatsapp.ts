@@ -134,7 +134,10 @@ export function preencherModelo(
 ): string {
   let texto = template;
   for (const [marcador, valor] of Object.entries(valores)) {
-    texto = texto.replaceAll(`{${marcador}}`, valor?.trim() ? valor : "—");
+    // Troca por função, e não por texto: num texto de troca, "$&" e "$$" são
+    // padrões especiais, e um link digitado pela loja (#459) sairia alterado.
+    const troca = valor?.trim() ? valor : "—";
+    texto = texto.replaceAll(`{${marcador}}`, () => troca);
   }
   return texto;
 }

@@ -42,6 +42,7 @@ import type {
 import { listarArquivosDasOrdens } from "@/lib/notasFiscais";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
+import { ehConsumidor } from "@/types/cliente";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
@@ -417,8 +418,11 @@ export function OrdensServicoPage() {
 
   // "Avaliação" (#459): só na OS/venda faturada, com o link da loja e com o
   // módulo Clientes (sem ele o telefone não chega). Ausente = sem botão.
+  // A venda do Consumidor também fica sem: não tem cadastro nem telefone, e o
+  // botão só serviria pra dar erro.
   function pedidoDeAvaliacao(ordem: OrdemServico) {
     if (!podeVerCadastro || ordem.status !== "faturada" || !linkAvaliacao) return undefined;
+    if (ehConsumidor(ordem.cliente_id)) return undefined;
     const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone ?? null;
     return {
       telefone,

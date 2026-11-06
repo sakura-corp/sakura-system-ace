@@ -61,6 +61,12 @@ describe("preencherModelo", () => {
     ).toBe("Oi Maria, o valor é R$ 250,00.");
   });
 
+  it("valor com $ entra do jeito que está (link de avaliação digitado pela loja, #459)", () => {
+    expect(preencherModelo("Veja: {link}", { link: "https://a.b/?x=$&y=$$1" })).toBe(
+      "Veja: https://a.b/?x=$&y=$$1",
+    );
+  });
+
   it("troca todas as aparições do mesmo marcador", () => {
     expect(preencherModelo("{a} e {a}", { a: "x" })).toBe("x e x");
   });
