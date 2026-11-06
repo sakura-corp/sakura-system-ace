@@ -376,8 +376,12 @@ export function montarDestinatarioNFCe(
       : { nome_destinatario: "" };
   }
 
+  // O nome só vai junto com o CPF de 11 números: a Focus recusa o nome
+  // sozinho antes da SEFAZ ("xNome não esperado", #861).
   if (cliente?.tipo_pessoa === "fisica") {
-    return { nome_destinatario: cliente.nome, cpf_destinatario: documento };
+    return documento.length === 11
+      ? { nome_destinatario: cliente.nome, cpf_destinatario: documento }
+      : { nome_destinatario: "", cpf_destinatario: "" };
   }
 
   return { nome_destinatario: "", cpf_destinatario: "" };
