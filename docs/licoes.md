@@ -1756,6 +1756,8 @@
     O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
     mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
     o PR olha se a issue fechou junto.
+    **De novo em 05/11/2026** (a madrugada): 9 issues ficaram abertas com o PR mesclado (lista na
+    #934). A mensagem pras sessões filhas agora diz `Closes #N` com todas as letras.
 
 85. **Link de Send num print de conversa (19/10/2026).** Um print do WhatsApp mandado pra sessão
     mostrava o link inteiro de um Bitwarden Send (o que vem depois do `#` é a chave que abre). A
@@ -1837,3 +1839,20 @@
     "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
     a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
     o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.
+
+96. **Mesclar com o CI ainda rodando (05/11/2026, #925).** Uma sessão filha mesclou antes de os jobs
+    de tela terminarem. Um deles caiu porque a máquina do GitHub demorou mais de 8 min no apt
+    instalando o Playwright, não por causa do PR. Não quebrou nada (o #931, que já tinha o #925,
+    passou nos 7), mas foi sorte. **Regra**: mesclar só com **todos** os jobs terminados e verdes.
+    Se um cair por causa da máquina, rodar de novo só os que falharam ("Re-run failed jobs") e
+    esperar. O conserto do apt é a #933.
+97. **Migration num PR que aponta pra branch de outro PR prende a fila (05/11/2026, #882 → #936).**
+    O #882 levava a 0078, mas a base dele era a branch do #839, que espera a Focus. Como a 0079 e a
+    0080 vêm depois, o #912 e o #923 ficaram presos sem prazo, mesmo prontos. **Regra**: migration
+    vai sempre num PR direto pra `main`. Se o resto do trabalho depende de outro PR, separar só a
+    migration num PR pequeno (foi o #936, igual byte a byte).
+98. **Pedido de mudança só num comentário não chega na pessoa (05/11/2026, #857).** Os pedidos de
+    04/11 ao Gustavo ficaram num comentário comum, e o PR continuou aparecendo como "esperando a
+    revisão da Sofia": cada um achava que a vez era do outro. **Regra**: pedir mudança sempre pelo
+    "Review changes" → **Request changes** (e pôr a pessoa como responsável do PR). Assim o GitHub
+    mostra "Changes requested" e a sessão dela lista isso nas pendências (seção 0).

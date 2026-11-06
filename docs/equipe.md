@@ -100,6 +100,31 @@ precisa mexer na trava de segurança do Windows.
 automática). Pra programar ele abre igual, mas se alguma coisa só funcionar no Windows, a pessoa
 anota na descrição do PR e a Sofia testa no dela.
 
+## O Claude na nuvem (GitHub, ambiente e celular)
+
+Escrito em 05/11/2026, na volta do Lázaro. Serve pras sessões do `claude.ai/code` (as do botão
+"Começar com o Claude"), que seguem a pessoa em qualquer aparelho. **Um passo por vez**; tela
+diferente da descrita: print antes de clicar.
+
+1. **A conta do GitHub**: no github.com, a foto (canto de cima à direita) tem que mostrar a conta
+   **do e-mail da Sakura**. Se for a pessoal: **Sign out** e entrar na da Sakura.
+2. **A conta do Claude**: no claude.ai, a **conta da Sakura (Team)**.
+3. **Ligar o GitHub ao Claude**: no mesmo navegador, abrir https://claude.ai/connect-github,
+   conectar, conferir de novo a conta no GitHub e clicar em **Authorize** (com o código de duas
+   etapas, se pedir). Se aparecer **Install** ou uma lista de organizações: **não instalar nada na
+   `sakura-corp`** (a Sofia já instalou); mandar print a ela.
+4. **O ambiente na nuvem** (uma vez só): no `claude.ai/code`, perto da caixa de texto, a escolha do
+   ambiente → criar um novo. **Nome**: `sakura`. **Network access**: o mesmo nível do ambiente da
+   Sofia (ela passa). **Variáveis e segredos: vazios, sempre** (nenhuma chave vai ali).
+   **Setup script**: vazio.
+5. **Abrir a sessão**: antes da primeira mensagem, o ambiente `sakura`, o repositório
+   `sakura-corp/sakura-system-ace` e o modo **Auto**, se aparecer ("As funções da sessão", abaixo).
+6. **No celular e no tablet**: o app do Claude, com a mesma conta e as notificações ligadas. A
+   sessão aberta no navegador aparece no app (parte do Code): começa num aparelho e continua no outro.
+
+A sessão da nuvem **não alcança o PC**: abrir o programa e testar é no Claude Code do PC ("Primeiro
+dia", acima, e "Testar no seu computador o que a sessão da nuvem fez", abaixo).
+
 ## A primeira tarefa: o seu caderno (`segundo-cerebro`)
 
 Antes de qualquer tarefa da leva, cada um monta o **seu caderno**: notas que dizem ao Claude **como

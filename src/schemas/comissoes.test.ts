@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resumirComissoes,
   totaisComissoes,
+  colunaLucroSomaMaisQueOTotal,
   ordensDoPeriodo,
   SEM_FUNCIONARIO,
 } from "./comissoes";
@@ -377,5 +378,24 @@ describe("totaisComissoes", () => {
     const totais = totaisComissoes(linhas);
     expect(totais.comissao).toBe(10);
     expect(totais.comissaoAReceber).toBe(5);
+  });
+});
+
+// #876: a frase sob o "Lucro do período" só aparece quando é verdade — a
+// coluna "Lucro gerado" somando mais que o total porque o item conta pra
+// quem vendeu e pra quem fez.
+describe("colunaLucroSomaMaisQueOTotal", () => {
+  it("é verdade quando o técnico do item não é quem vendeu a OS", () => {
+    const linhas = resumir([ordem({ vendedor_id: "vend", itens: [item({ tecnico_id: "tec" })] })]);
+    expect(colunaLucroSomaMaisQueOTotal(linhas)).toBe(true);
+  });
+
+  it("é falso quando quem vendeu também fez (a coluna bate com o total)", () => {
+    const linhas = resumir([ordem({ vendedor_id: "vend", itens: [item({ tecnico_id: "vend" })] })]);
+    expect(colunaLucroSomaMaisQueOTotal(linhas)).toBe(false);
+  });
+
+  it("é falso sem OS no período", () => {
+    expect(colunaLucroSomaMaisQueOTotal([])).toBe(false);
   });
 });

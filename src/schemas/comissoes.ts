@@ -316,3 +316,15 @@ export function totaisComissoes(linhas: ComissaoFuncionario[]): TotaisComissoes 
     { lucro: 0, comissao: 0, comissaoAReceber: 0, itensSemCusto: 0 },
   );
 }
+
+/**
+ * A coluna "Lucro gerado" da tabela soma mais que o "Lucro do período"? Soma
+ * quando o técnico de um item não é quem vendeu a OS: o lucro daquele item
+ * entra na linha de cada um, mas no total só uma vez. Decide se a tela mostra
+ * a frase que explica isso (#876) — mostrar sempre seria dizer uma coisa falsa
+ * na loja em que quem vende é quem faz.
+ */
+export function colunaLucroSomaMaisQueOTotal(linhas: ComissaoFuncionario[]): boolean {
+  const somaDaColuna = linhas.reduce((soma, linha) => soma + linha.lucroTotal, 0);
+  return arredondar(somaDaColuna) > arredondar(totaisComissoes(linhas).lucro);
+}
