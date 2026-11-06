@@ -7,6 +7,7 @@ import {
   montarCorpoNFCe,
   montarCorpoNFSe,
   montarCorpoNFSeNacional,
+  montarDestinatarioNFCe,
   padraoNFSe,
   valorTotalNFCe,
 } from "./focusNfe";
@@ -558,6 +559,55 @@ describe("emitirNFCe — peça sem NCM", () => {
   });
 });
 
+// #861: pessoa física sem CPF (ou com CPF pela metade) mandava o nome sem o
+// CPF, e a Focus recusa o `xNome` sozinho antes da SEFAZ ("Expected is one of
+// CNPJ, CPF, idEstrangeiro"). A regra é a do comentário da função: documento
+// faltando ou incompleto → consumidor não identificado, igual à pessoa jurídica.
+describe("montarDestinatarioNFCe", () => {
+  it.each([null, "", "   ", "123.456.789", "123.456.789-0", "123.456.789-091"])(
+    "pessoa física com CPF %j: consumidor não identificado, sem o nome",
+    (cpf) => {
+      expect(montarDestinatarioNFCe(clientePessoaFisica({ cpf_cnpj: cpf }))).toEqual({
+        nome_destinatario: "",
+        cpf_destinatario: "",
+      });
+    },
+  );
+
+  it("pessoa física com CPF de 11 números: nome e CPF só com os números", () => {
+    expect(
+      montarDestinatarioNFCe(
+        clientePessoaFisica({ nome: "Maria da Silva", cpf_cnpj: "123.456.789-09" }),
+      ),
+    ).toEqual({ nome_destinatario: "Maria da Silva", cpf_destinatario: "12345678909" });
+  });
+
+  it.each([null, "", "12.345.678", "12.345.678/0001-9"])(
+    "pessoa jurídica com CNPJ %j: consumidor não identificado, sem o nome",
+    (cnpj) => {
+      expect(
+        montarDestinatarioNFCe(clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: cnpj })),
+      ).toEqual({ nome_destinatario: "" });
+    },
+  );
+
+  it("pessoa jurídica com CNPJ de 14 números: nome, CNPJ e indicador 9", () => {
+    expect(
+      montarDestinatarioNFCe(
+        clientePessoaFisica({
+          nome: "Transportes Exemplo Ltda",
+          tipo_pessoa: "juridica",
+          cpf_cnpj: "12.345.678/0001-99",
+        }),
+      ),
+    ).toEqual({
+      nome_destinatario: "Transportes Exemplo Ltda",
+      cnpj_destinatario: "12345678000199",
+      indicador_inscricao_estadual_destinatario: "9",
+    });
+  });
+});
+
 // O aviso do limite da NFC-e (#881) pergunta "a nota vai sair com o cliente
 // identificado?". A resposta é o que `montarDestinatarioNFCe` manda pra Focus,
 // e não uma regra copiada: se a regra do destinatário mudar, o aviso muda junto.
@@ -582,6 +632,12 @@ describe("destinatarioIdentificadoNFCe", () => {
 
   it("pessoa física sem CPF: não identificado", () => {
     expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: null }))).toBe(false);
+  });
+
+  it("pessoa física com CPF incompleto: não identificado (#861)", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: "123.456.789" }))).toBe(
+      false,
+    );
   });
 
   it("pessoa jurídica com CNPJ de 14 números: identificado", () => {
