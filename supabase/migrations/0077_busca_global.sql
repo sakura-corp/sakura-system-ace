@@ -19,8 +19,8 @@
 --     marca, modelo e cor do carro. NUNCA telefone, CPF ou endereço.
 --   • OS: quem tem Ordens de Serviço, e só da loja aberta no programa (e só se
 --     a pessoa tem acesso a ela).
---   • peça: quem tem Estoque. Nunca o custo.
---   • fornecedor: quem tem Fornecedores.
+--   • peça: quem tem Estoque. Nunca o custo. Só a peça ativa.
+--   • fornecedor: quem tem Fornecedores. Só o fornecedor ativo.
 --
 -- A FUNÇÃO NÃO CONFIA NA TELA. Ela mesma limpa o termo: tira espaço das
 -- pontas, acento e maiúscula pro nome; tira tudo que não é letra ou número
@@ -311,9 +311,12 @@ begin
                               nullif(btrim(p.medida), '')), ''),
              null::uuid
         from pecas p
-       where sem_acento(p.descricao) like '%' || v_like || '%'
-          or lower(p.codigo_interno) like v_like || '%'
-          or p.codigo_barras = v_barras
+       -- Só a peça em uso: a desativada continua achável na tela do Estoque
+       -- (pedido da Sofia no PR #857).
+       where p.ativo
+         and (sem_acento(p.descricao) like '%' || v_like || '%'
+              or lower(p.codigo_interno) like v_like || '%'
+              or p.codigo_barras = v_barras)
        order by (p.codigo_barras = v_barras or lower(p.codigo_interno) like v_like || '%'
                  or sem_acento(p.descricao) like v_like || '%') desc nulls last,
                 p.descricao, p.id
@@ -330,9 +333,11 @@ begin
                       nullif(concat_ws('/', nullif(btrim(f.cidade), ''), nullif(btrim(f.uf), '')), '')),
              null::uuid
         from fornecedores f
-       where sem_acento(f.nome) like '%' || v_like || '%'
-          or (v_cnpj and length(v_digitos) >= 2
-              and regexp_replace(coalesce(f.cnpj, ''), '\D', '', 'g') like v_digitos || '%')
+       -- Só o fornecedor em uso, como a peça acima (PR #857).
+       where f.ativo
+         and (sem_acento(f.nome) like '%' || v_like || '%'
+              or (v_cnpj and length(v_digitos) >= 2
+                  and regexp_replace(coalesce(f.cnpj, ''), '\D', '', 'g') like v_digitos || '%'))
        order by (sem_acento(f.nome) like v_like || '%') desc, f.nome, f.id
        limit v_limite;
   end if;

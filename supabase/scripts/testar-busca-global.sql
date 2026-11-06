@@ -41,6 +41,8 @@ declare
   os_b       uuid := 'b05c4444-0000-0000-0000-00000000000b';
   p_pneu     uuid := 'b05c5555-0000-0000-0000-000000000001';
   f_omega    uuid := 'b05c6666-0000-0000-0000-000000000001';
+  p_velha    uuid := 'b05c5555-0000-0000-0000-000000000002';  -- peça desativada
+  f_velho    uuid := 'b05c6666-0000-0000-0000-000000000002';  -- fornecedor desativado
   consumidor uuid := '00000000-0000-0000-0000-00000000c000';
   quem       uuid;
   termo      text;
@@ -98,8 +100,16 @@ begin
     (p_pneu, 'Pneu Aro 14 Buscateste', 'PN-BUSCA-14', '7891234567895', 'Bridgestone', '175/70R14', 123.45, 399.90)
     on conflict (id) do nothing;
 
+  -- Desativados: nunca aparecem na busca (pedido da Sofia no PR #857, 04/11).
+  insert into pecas (id, descricao, codigo_interno, codigo_barras, preco_custo, preco_venda, ativo) values
+    (p_velha, 'Pneu Desativadoteste', 'PN-DESATIV', '7890000000001', 10, 20, false)
+    on conflict (id) do nothing;
+
   insert into fornecedores (id, nome, cnpj, cidade, uf) values
     (f_omega, 'Distribuidora Ômega', '12.345.678/0001-90', 'Ribeirão Preto', 'SP')
+    on conflict (id) do nothing;
+  insert into fornecedores (id, nome, cnpj, ativo) values
+    (f_velho, 'Distribuidora Desativadoteste', '98.765.432/0001-10', false)
     on conflict (id) do nothing;
 
   -- 25 clientes com o mesmo começo, pra medir o limite (1 a 20, padrão 5).
@@ -335,6 +345,18 @@ begin
   if quantas <> 0 then
     raise exception 'FALHOU: buscando a placa "XYZ1234" veio % fornecedor(es) pelo CNPJ', quantas;
   end if;
+
+  -- 14c. Peça e fornecedor DESATIVADOS nunca aparecem (Sofia, PR #857):
+  --      quem procura quer o que está em uso; o desativado continua achável
+  --      na própria tela. Por descrição/nome, código, código de barras e CNPJ.
+  perform set_config('request.jwt.claim.sub', o_tudo::text, true);
+  foreach termo in array array['desativadoteste', 'PN-DESATIV', '7890000000001', '98765432'] loop
+    select count(*) into quantas from buscar_global(termo, loja_a)
+     where (tipo = 'peca' and id = p_velha) or (tipo = 'fornecedor' and id = f_velho);
+    if quantas <> 0 then
+      raise exception 'FALHOU: buscando "%" vieram % desativado(s)', termo, quantas;
+    end if;
+  end loop;
 
   -- 15. Quem começa com o termo vem antes de quem só contém.
   perform set_config('request.jwt.claim.sub', o_tudo::text, true);
