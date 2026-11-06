@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ItemOS, NovoItemOS, OrdemServico } from "@/types/os";
+import type { NovoItemOS, OrdemServico } from "@/types/os";
 
 // Orçamento como etapa da OS (#379). A regra que mais custa se quebrar: a
 // peça só sai do estoque quando o cliente APROVA — nunca ao orçar, nunca duas
@@ -137,8 +137,6 @@ vi.mock("./caixa", () => ({
 vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }));
 
 const {
-  PecaLigadaSemEstoqueError,
-  cadastrarPecaDoItem,
   criarOrcamento,
   faturarOrdem,
   recusarOrcamento,
@@ -264,88 +262,7 @@ describe("faturarOrdem", () => {
   });
 });
 
-// O caminho da nota (#655): a OS já aprovada com uma peça "sem cadastro" vai
-// emitir NFC-e, e a tela cadastra a peça ali. O item ganha a peça e, como já é
-// OS, baixa o estoque — igual ao "cadastrar" da aprovação.
-describe("cadastrarPecaDoItem", () => {
-  const valvulaAvulsa: NovoItemOS = {
-    ...pneu,
-    peca_id: null,
-    descricao: "Válvula de bico",
-    quantidade: 4,
-    preco_unitario: 15,
-  };
-  const itemAvulso = (ordemId: string) =>
-    banco.ordens_servico_itens.find(
-      (l) => l.ordem_servico_id === ordemId && l.descricao === "Válvula de bico",
-    ) as unknown as ItemOS;
-
-  async function osComAvulsa() {
-    const criado = await criarOrcamento(dados, [pneu, valvulaAvulsa], "2026-10-29", "op-1", "loja-1");
-    const aprovada = aprovarNoBanco(criado.id);
-    return { aprovada, item: { ...itemAvulso(criado.id) } };
-  }
-
-  it("OS: o item ganha a peça e baixa o estoque, com o nome da OS", async () => {
-    const { aprovada, item } = await osComAvulsa();
-    expect(await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada)).toBe(true);
-    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
-    expect(estoque().map((m) => [m.peca_id, m.quantidade, m.tipo, m.referencia])).toEqual([
-      ["pneu", 4, "saida", "OS 18"],
-      ["peca-nova", 4, "saida", "OS 18"],
-    ]);
-  });
-
-  it("baixa a quantidade que está no banco, não a da tela", async () => {
-    const { aprovada, item } = await osComAvulsa();
-    await cadastrarPecaDoItem({ ...item, quantidade: 1 }, "peca-nova", "loja-1", aprovada);
-    expect(estoque().find((m) => m.peca_id === "peca-nova")?.quantidade).toBe(4);
-  });
-
-  it("duas vezes (clique duplo, outro computador): não troca a peça nem baixa de novo", async () => {
-    const { aprovada, item } = await osComAvulsa();
-    await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada);
-    expect(await cadastrarPecaDoItem(item, "outra", "loja-1", aprovada)).toBe(false);
-    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
-    expect(estoque().filter((m) => m.peca_id !== "pneu")).toHaveLength(1);
-  });
-
-  it("em orçamento: o item ganha a peça, mas não baixa (só a aprovação baixa)", async () => {
-    const criado = await criarOrcamento(dados, [valvulaAvulsa], "2026-10-29", "op-1", "loja-1");
-    const item = { ...itemAvulso(criado.id) };
-    await cadastrarPecaDoItem(item, "peca-nova", "loja-1", criado);
-    expect(itemAvulso(criado.id).peca_id).toBe("peca-nova");
-    expect(estoque()).toHaveLength(0);
-  });
-
-  it("item de serviço nunca ganha peça (nem pela aprovação, nem pela nota)", async () => {
-    const criado = await criarOrcamento(dados, [alinhamento], "2026-10-29", "op-1", "loja-1");
-    const servico = banco.ordens_servico_itens.find(
-      (l) => l.ordem_servico_id === criado.id,
-    ) as unknown as ItemOS;
-    const aprovada = aprovarNoBanco(criado.id);
-    expect(await cadastrarPecaDoItem(servico, "pneu", "loja-1", aprovada)).toBe(false);
-    expect(servico.peca_id).toBeNull();
-    expect(estoque()).toHaveLength(0);
-  });
-
-  // Revisão da Sofia (PR #717): a peça ficava ligada, a baixa falhava, e a
-  // tela dizia "não entrou na OS". Um segundo "Cadastrar agora" criava outra
-  // peça, o vínculo devolvia false e o estoque nunca baixava.
-  it("se a peça liga mas a baixa falha, o erro diz que ligou e pra lançar a saída à mão", async () => {
-    const { aprovada, item } = await osComAvulsa();
-    falharEm.add("estoque_movimentos:insert");
-    const erro = await cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada).catch((e) => e);
-    expect(erro).toBeInstanceOf(PecaLigadaSemEstoqueError);
-    expect(erro.message).toMatch(/ligada à OS 18/);
-    expect(erro.message).toMatch(/lance a saída à mão/i);
-    expect(itemAvulso(aprovada.id).peca_id).toBe("peca-nova");
-  });
-
-  it("se o item não grava, não baixa nada", async () => {
-    const { aprovada, item } = await osComAvulsa();
-    falharEm.add("ordens_servico_itens:update");
-    await expect(cadastrarPecaDoItem(item, "peca-nova", "loja-1", aprovada)).rejects.toBeTruthy();
-    expect(estoque().map((m) => m.peca_id)).toEqual(["pneu"]);
-  });
-});
+// "Cadastrar agora" na nota (cadastrarPecaDoItem) virou uma função do banco
+// (#803, migration 0079): o que a lib manda está em ordensServico.rpc.test.ts e
+// a regra (baixa só em OS, a quantidade do banco, a trava, tudo ou nada) em
+// supabase/scripts/testar-cadastrar-peca-do-item.sql.

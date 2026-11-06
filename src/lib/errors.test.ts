@@ -8,7 +8,11 @@ import {
   OBJETOS_NOVOS_DO_BANCO,
   MENSAGEM_BANCO_DESATUALIZADO,
   MENSAGEM_DA_TRAVA,
-  MENSAGEM_SEM_PERMISSAO, mensagemDeErro, traduzirTrava } from "./errors";
+  MENSAGEM_SEM_PERMISSAO,
+  MENSAGEM_TRAVAMENTO_MUTUO,
+  mensagemDeErro,
+  traduzirTrava,
+} from "./errors";
 
 const PASTA = "supabase/migrations";
 
@@ -122,6 +126,33 @@ describe("recusa por permissão", () => {
     };
     expect(mensagemDeErro(erro)).toBe(MENSAGEM_SEM_PERMISSAO);
     expect(MENSAGEM_SEM_PERMISSAO).toMatch(/Configurações → Operadores/);
+  });
+});
+
+// #803: dois computadores esbarrando um no outro (juntar peças × uma OS, por
+// exemplo) fazem o Postgres desfazer um dos dois. O banco desfaz direito, mas
+// a frase vinha em inglês.
+describe("travamento mútuo (deadlock)", () => {
+  it("vira uma frase em português que manda tentar de novo", () => {
+    const erro = {
+      code: "40P01",
+      message: "deadlock detected",
+      details: "Process 123 waits for ShareLock on transaction 456; blocked by process 789.",
+    };
+    expect(mensagemDeErro(erro)).toBe(MENSAGEM_TRAVAMENTO_MUTUO);
+    expect(MENSAGEM_TRAVAMENTO_MUTUO).toMatch(/tente de novo/i);
+  });
+
+  it("pelo código 40P01, mesmo com a frase em outro idioma", () => {
+    expect(mensagemDeErro({ code: "40P01", message: "impasse détecté" })).toBe(
+      MENSAGEM_TRAVAMENTO_MUTUO,
+    );
+  });
+
+  it("pela frase, mesmo embrulhada por quem chamou", () => {
+    expect(mensagemDeErro(new Error("O orçamento não foi aprovado: deadlock detected"))).toBe(
+      MENSAGEM_TRAVAMENTO_MUTUO,
+    );
   });
 });
 
