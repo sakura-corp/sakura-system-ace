@@ -167,9 +167,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 06/11/2026: a fila do banco e a NFS-e Nacional na 0.9.56 (liberada); o Lázaro de volta
-- **Na `main`**: #857 (terminado pela Sofia), #936, #912, #923 (0077 a 0080), #839 (NFS-e Nacional), #938 (#853), #939 (verificador de senhas), #942/#943 (Lázaro e roteiro). **0.9.56 publicada e liberada**; porteiro `focus-nfe` novo publicado na loja.
-- **NFS-e, próximos passos**: Balcão e DESKTOP-PKJ2A3B na 0.9.56 (pedido na loja) → "Atualizar o banco" (ensaiar, aplicar: 0076 a 0080) → conferir os números do Início → Focus: "NFSe Nacional – Produção" → **6%** nos Dados fiscais → ensaio em produção (emitir e cancelar; conferir XML, chave e relógio, `docs/pendencias-e-futuro.md`) → notas atrasadas desde 01/11 → fechar a #837.
-- **Passar pra #934** (o GitHub da sessão caiu no fim): os passos acima; aplicar 0077 a 0080 no `ssace-teste`; apagar o Send do Lázaro; revisar o #941 (Tiago, Pix, 0081) numa sessão própria.
-- **Lázaro**: conta nova `2oraza` (a `1oraza` saiu), Write nos 3 repositórios, ambiente `sakura` (rede Total), caderno pronto (#619). Pega tarefa pelo painel.
-- **Seguem valendo**: #906 (Electron 44, fim de semana); #912 caso 2 (A/B/C, #803); #933 (apt do Playwright); #879; #842 (11/11), escritorio#20 (22/11).
+### 06/11/2026, noite: banco na 0080 na loja; a primeira NFS-e Nacional recusada pela IM
+- **Pneus Amigão**: os 2 computadores na 0.9.56; "Atualizar o banco" aplicado (0075 → **0080**); Início conferido; Focus com "NFSe Nacional – Produção" ligada (série 1); **6%** nos Dados fiscais.
+- **Primeira nota** (OS 18, real, sem OS de teste por escolha dela): **recusada**, "IM do prestador não deve ser informado". A inscrição municipal foi apagada no programa e no cadastro da Focus, e o erro continua. **Mensagem mandada ao suporte da Focus** (06/11). Detalhe na #837; conserto do programa na #948.
+- **Próximo**: a resposta da Focus → emitir a OS 18 → as notas atrasadas desde 01/11 → fechar a #837. Plano B se demorar: Emissor Nacional.
+- **Novos**: #947 (Configurações: o "salvo" não aparece e a tela pula pro topo); trocar o CSC da NFC-e (apareceu num print; item na #934).
+- **Seguem valendo**: o resto da #934 (`ssace-teste` 0077 a 0080, o Send do Lázaro, #941, #944, #945); #906 (fim de semana); #912 caso 2; #842 (11/11), escritorio#20 (22/11).
