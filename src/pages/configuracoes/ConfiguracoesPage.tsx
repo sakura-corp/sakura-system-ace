@@ -11,6 +11,7 @@ import {
   buscarConfiguracaoFiscal,
   buscarConfiguracaoPix,
   buscarConfiguracaoPainelInicio,
+  buscarLinkAvaliacao,
   buscarTextoGarantia,
   listarJurosParcelas,
 } from "@/lib/configuracoes";
@@ -63,6 +64,7 @@ export function ConfiguracoesPage() {
   const [categoriasServico, setCategoriasServico] = useState<CategoriaServico[]>([]);
   const [textoGarantia, setTextoGarantia] = useState("");
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
+  const [linkAvaliacao, setLinkAvaliacao] = useState("");
   const [configuracaoFiscal, setConfiguracaoFiscal] = useState<ConfiguracaoFiscalLoja | null>(
     null,
   );
@@ -112,6 +114,15 @@ export function ConfiguracoesPage() {
         listarModelosWhatsapp(lojaAtual.id),
         buscarConfiguracaoPix(lojaAtual.id),
       ]);
+      // Fora do Promise.all: banco sem a migration 0082 não pode derrubar a
+      // página; vira "sem link" (validação incerta é aviso, nunca tranca).
+      let linkCarregado = "";
+      try {
+        linkCarregado = (await buscarLinkAvaliacao(lojaAtual.id)) || "";
+      } catch (err) {
+        console.error("Erro ao carregar o link de avaliação:", err);
+      }
+      setLinkAvaliacao(linkCarregado);
       setOperadores(operadoresCarregados);
       setLojas(lojasCarregadas);
       setDepositos(depositosCarregados);
@@ -395,11 +406,12 @@ export function ConfiguracoesPage() {
 
           <SecaoRecolhivel
             titulo="Mensagens de WhatsApp"
-            descricao="Os textos que o sistema abre no WhatsApp — na cobrança de uma conta a receber, no aviso de que o carro está pronto e no pedido para o fornecedor. O sistema abre a conversa com a mensagem pronta; quem envia é você."
+            descricao="Os textos que o sistema abre no WhatsApp — na cobrança de uma conta a receber, no aviso de que o carro está pronto, no pedido de avaliação e no pedido para o fornecedor. O sistema abre a conversa com a mensagem pronta; quem envia é você."
           >
             <ModelosWhatsappSection
               modelos={modelosWhatsapp}
               lojaId={lojaAtual.id}
+              linkAvaliacao={linkAvaliacao}
               onSalvo={carregar}
             />
           </SecaoRecolhivel>

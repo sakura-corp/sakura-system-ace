@@ -44,6 +44,9 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_config_pix_chave: "A chave Pix não pode ficar em branco nem passar de 77 letras.",
   ck_config_pix_nome_recebedor: "O nome de quem recebe o Pix não pode ficar em branco nem passar de 25 letras.",
   ck_config_pix_cidade_recebedor: "A cidade de quem recebe o Pix não pode ficar em branco nem passar de 15 letras.",
+  // Migration 0082 (#459): o link de avaliação no Google.
+  ck_configuracoes_avaliacao_link_https:
+    "O link de avaliação precisa começar com https:// e não pode ter espaço.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
@@ -130,6 +133,9 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "percentual_tributos_simples",
   // 0081 (Pix da loja): tabela.
   "configuracoes_pix",
+  // 0082 (link de avaliação, #459): tabela nova. Sobe antes do programa, mas
+  // se alguém publicar sem rodar, a tela de Configurações cai aqui.
+  "configuracoes_avaliacao",
 ] as const;
 
 /**

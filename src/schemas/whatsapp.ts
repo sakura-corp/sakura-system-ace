@@ -12,12 +12,15 @@
  * pra outra, todo dia.
  */
 
+import { z } from "zod";
+
 export type ChaveModeloWhatsapp =
   | "cobranca"
   | "carro_pronto"
   | "pedido_compra"
   | "cliente_sumido"
-  | "orcamento";
+  | "orcamento"
+  | "avaliacao";
 
 export interface ModeloWhatsapp {
   chave: ChaveModeloWhatsapp;
@@ -100,6 +103,17 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
       "Vale até {validade}.\n" +
       "Qualquer dúvida, é só responder aqui.",
   },
+  {
+    chave: "avaliacao",
+    titulo: "Pedir avaliação no Google",
+    descricao:
+      "Aparece na ordem de serviço faturada e na venda de balcão faturada, no botão Avaliação, e só quando a loja tem o link de avaliação configurado (campo acima). Pede ao cliente que deixe a avaliação no Google; um clique por cliente, nada é enviado sozinho.",
+    marcadores: ["{cliente}", "{loja}", "{link_avaliacao}"],
+    // Texto aprovado pela Sofia em 22/10/2026 (tarefa #459).
+    padrao:
+      "Oi, {cliente}! Obrigado por escolher a {loja}. " +
+      "Se puder, deixa sua avaliação no Google, ajuda muito a gente: {link_avaliacao}",
+  },
 ];
 
 export function modeloPorChave(chave: ChaveModeloWhatsapp): ModeloWhatsapp {
@@ -125,7 +139,10 @@ export function preencherModelo(
     // ele some junto com a quebra de linha que sobraria, e o texto sai igual
     // ao de antes do Pix. Tratado depois do laço.
     if (marcador === "pix") continue;
-    texto = texto.replaceAll(`{${marcador}}`, valor?.trim() ? valor : "—");
+    // Troca por função, e não por texto: num texto de troca, "$&" e "$$" são
+    // padrões especiais, e um link digitado pela loja (#459) sairia alterado.
+    const troca = valor?.trim() ? valor : "—";
+    texto = texto.replaceAll(`{${marcador}}`, () => troca);
   }
   const pix = valores.pix?.trim() ? valores.pix : "";
   if (pix) {
@@ -208,4 +225,35 @@ export function telefoneParaWhatsapp(telefone: string | null | undefined): strin
  */
 export function montarUrlWhatsapp(telefoneNormalizado: string, texto: string): string {
   return `https://wa.me/${telefoneNormalizado}?text=${encodeURIComponent(texto)}`;
+}
+
+/**
+ * O link de avaliação no Google da loja (tarefa #459). Vazio é permitido e
+ * quer dizer "apagar o link" (sem link, o botão Avaliação não aparece).
+ * Preenchido precisa começar com https:// e não ter espaço — o banco tem a
+ * mesma trava (migration 0082), e aqui a mensagem chega antes do erro dele.
+ */
+export const linkAvaliacaoSchema = z.object({
+  link: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^https:\/\/\S+$/.test(v), {
+      message: "O link precisa começar com https://",
+    }),
+});
+
+export type LinkAvaliacaoFormValores = z.infer<typeof linkAvaliacaoSchema>;
+
+/** O texto do pedido de avaliação, a partir do modelo da loja (ou do padrão). */
+export function montarTextoAvaliacao(dados: {
+  cliente: string | null | undefined;
+  loja: string | null | undefined;
+  link: string;
+  modelo?: string;
+}): string {
+  return preencherModelo(dados.modelo ?? modeloPorChave("avaliacao").padrao, {
+    cliente: dados.cliente,
+    loja: dados.loja,
+    link_avaliacao: dados.link,
+  });
 }
