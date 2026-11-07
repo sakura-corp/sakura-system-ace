@@ -46,6 +46,13 @@ describe("AvisoVersaoBanco", () => {
   it("não mexe no aviso de computador atrasado", () => {
     const { container } = render(<AvisoVersaoBanco situacao={situacaoDoEsquema(70, 69, {})} />);
 
-    expect(container.textContent).toContain("Feche e abra o programa");
+    const texto = container.textContent ?? "";
+    expect(texto).toContain(
+      "Não é erro, e dá pra continuar trabalhando. Se tiver versão nova, o programa se atualiza " +
+        "sozinho ao abrir. Se o aviso continuar depois de fechar e abrir, avise quem cuida do " +
+        "sistema: a versão nova talvez ainda não tenha sido liberada.",
+    );
+    // O "feche e abra" sozinho não resolve quando a versão nova ainda não foi liberada (#865).
+    expect(texto).not.toContain("Feche e abra o programa");
   });
 });

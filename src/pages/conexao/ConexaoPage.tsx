@@ -97,7 +97,8 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
         </h1>
         <p className="mb-6 text-center text-corpo text-sakura-purple-dark/90">
           Só precisa fazer isso uma vez neste computador. Os dois valores abaixo ficam no painel
-          do Supabase da sua empresa, em <strong>Settings → API</strong>.
+          do Supabase da sua empresa, em <strong>Project Settings → API Keys</strong>, aba{" "}
+          <strong>Legacy anon</strong>.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
