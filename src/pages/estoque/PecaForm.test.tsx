@@ -348,4 +348,28 @@ describe("PecaForm — aviso de peça parecida", () => {
     expect(screen.getByText(/mesmo código de barras/)).toBeInTheDocument();
     expect(onSalvar).not.toHaveBeenCalled();
   });
+
+  // #708: a peça desativada continua no aviso, mas com a marca "(inativa)",
+  // igual à tela de juntar peças; senão a pessoa abre uma peça desativada sem saber.
+  it("peça inativa aparece no aviso com a marca '(inativa)'", async () => {
+    const { user } = montar({ pecasDoCadastro: [umaPeca({ ativo: false })] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+
+    const aviso = await screen.findByRole("dialog");
+    expect(aviso).toHaveTextContent("Parece com PNEU 175/70 R13 PIRELLI (inativa). É a mesma?");
+    expect(screen.getByRole("listitem")).toHaveTextContent("PNEU 175/70 R13 PIRELLI (inativa)");
+  });
+
+  it("peça ativa aparece no aviso sem a marca '(inativa)'", async () => {
+    const { user } = montar({ pecasDoCadastro: [cadastrada] });
+
+    await preencherObrigatorios(user, "Pneu 175/70 R13 Pirelli");
+    await user.click(salvar());
+
+    const aviso = await screen.findByRole("dialog");
+    expect(aviso).toHaveTextContent("PNEU 175/70 R13 PIRELLI");
+    expect(aviso).not.toHaveTextContent("(inativa)");
+  });
 });

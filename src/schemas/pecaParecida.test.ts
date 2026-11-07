@@ -141,6 +141,70 @@ describe("acharPecasParecidas", () => {
     expect(r).toEqual([]);
   });
 
+  // #708 (Sofia, 23/10): lado diferente é peça diferente, como R13 × R14.
+  it("amortecedor LE x LD NÃO é parecido: lado diferente é peça diferente", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Amortecedor dianteiro LE" }), [
+      peca({ id: "ld", descricao: "Amortecedor dianteiro LD" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
+  it("lado escrito por extenso também separa (esquerdo x direito)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Bandeja suspensão dianteira esquerda" }), [
+      peca({ id: "d", descricao: "Bandeja suspensão dianteira direita" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
+  it("mesmo lado continua parecido (LE x le, com acento e maiúscula diferentes)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "AMORTECEDOR DIANTEIRO le" }), [
+      peca({ id: "le", descricao: "Amortecedor dianteiro LE" }),
+    ]);
+    expect(r[0]?.motivo).toBe("nome");
+  });
+
+  it("LE x esquerdo é o mesmo lado: continua parecido", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Amortecedor dianteiro esquerdo" }), [
+      peca({ id: "le", descricao: "Amortecedor dianteiro LE" }),
+    ]);
+    expect(r[0]?.motivo).toBe("nome");
+  });
+
+  it("lado diferente com o mesmo código continua avisando pelo código", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Amortecedor dianteiro LE", codigo_interno: "AM-1" }), [
+      peca({ id: "ld", descricao: "Amortecedor dianteiro LD", codigo_interno: "am-1" }),
+    ]);
+    expect(r[0]?.motivo).toBe("codigo_interno");
+  });
+
+  // #708 (Sofia, 23/10): o índice de carga e velocidade do pneu não conta como medida.
+  it("pneu com e sem o índice de carga (82T) é parecido", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70 R14 82T" }), [
+      peca({ id: "p", descricao: "Pneu 175/70 R14" }),
+    ]);
+    expect(r).toHaveLength(1);
+    expect(r[0].motivo).toBe("nome");
+  });
+
+  it("índice de carga também é ignorado quando está no campo medida (91H)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu Pirelli", medida: "195/55 R15 91H" }), [
+      peca({ id: "p", descricao: "Pneu Pirelli", medida: "195/55 R15" }),
+    ]);
+    expect(r).toHaveLength(1);
+  });
+
+  it("com o índice de carga, a medida continua mandando (R14 82T x R13 não é parecido)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70 R14 82T" }), [pneu]);
+    expect(r).toEqual([]);
+  });
+
+  it("fora de pneu, número com letra continua sendo medida (lâmpada 55W x 60W)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Lâmpada H4 60W" }), [
+      peca({ id: "l", descricao: "Lâmpada H4 55W" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
   it("tem frase curta pra cada motivo", () => {
     expect(MOTIVO_PARECIDA_ROTULO.codigo_barras).toBe("mesmo código de barras");
     expect(MOTIVO_PARECIDA_ROTULO.codigo_interno).toBe("mesmo código interno");

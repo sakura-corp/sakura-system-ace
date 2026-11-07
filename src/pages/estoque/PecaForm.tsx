@@ -24,6 +24,13 @@ import { PneuFields } from "./campos/PneuFields";
 import { PrecosFields } from "./campos/PrecosFields";
 import { TributosFields } from "./campos/TributosFields";
 
+/** O nome da peça no aviso, com "(inativa)" quando ela está desativada (#708),
+ *  igual à tela de juntar peças: "Abrir a que já existe" não pode levar a uma
+ *  peça desativada sem a pessoa saber. */
+function nomeNoAviso(peca: PecaJanela): string {
+  return peca.ativo ? peca.descricao : `${peca.descricao} (inativa)`;
+}
+
 interface PecaFormProps {
   pecaExistente?: Peca;
   /** Campos já preenchidos numa peça NOVA (ex.: nome e preço da peça avulsa
@@ -219,7 +226,7 @@ export function PecaForm({
         >
           <div className="space-y-4">
             <p className="text-corpo text-sakura-purple-dark">
-              Parece com <em className="font-semibold">{pendente.parecidas[0].peca.descricao}</em>. É a
+              Parece com <em className="font-semibold">{nomeNoAviso(pendente.parecidas[0].peca)}</em>. É a
               mesma?
             </p>
             <ul className="space-y-2">
@@ -230,7 +237,7 @@ export function PecaForm({
                 >
                   <div className="min-w-0">
                     <p className="break-words text-corpo font-medium text-sakura-purple-dark">
-                      {peca.descricao}
+                      {nomeNoAviso(peca)}
                     </p>
                     <p className="break-words text-corpo text-sakura-muted">
                       {[
