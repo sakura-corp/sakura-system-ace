@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 06/11/2026, noite: a fila da equipe revisada; o Pix (0081) na `main`
+- **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e estamos **esperando a Focus** (#837; o conserto do programa é a #948).
+- **Mesclados à noite**: o #944 (NFC-e de pessoa física sem CPF) e o #941 (Pix na cobrança e QR no faturamento, **migration 0081**, `qrcode.react`); `VERSAO_ESQUEMA_ESPERADA` = 81. No escritório: o #102, o #103 e o #104.
+- **#945** (avaliação no Google, 0082): voltou pro Tiago (rebase sobre o #941 e a tabela na exclusão de loja). Decidido: botões numa linha. A 0082 vai **depois** da 0081.
+- **Antes da próxima versão**: aplicar a 0081 nas empresas e no `ssace-teste`. Depois de publicar: ler o QR do Pix no app do banco (#934).
+- **Novos**: #950 (aviso de CPF na NFC-e), #951 (excluir loja com textos de WhatsApp), escritorio#106 (limite de etiquetas do painel); e seguem a #947 e a troca do CSC.
+- **Seguem valendo**: o resto da #934; #906 (fim de semana); #912 caso 2; #842 (11/11); escritorio#20 (22/11).
+
 ### 06/11/2026, noite: banco na 0080 na loja; a primeira NFS-e Nacional recusada pela IM
 - **Pneus Amigão**: os 2 computadores na 0.9.56; "Atualizar o banco" aplicado (0075 → **0080**); Início conferido; Focus com "NFSe Nacional – Produção" ligada (série 1); **6%** nos Dados fiscais.
 - **Primeira nota** (OS 18, real, sem OS de teste por escolha dela): **recusada**, "IM do prestador não deve ser informado". A inscrição municipal foi apagada no programa e no cadastro da Focus, e o erro continua. **Mensagem mandada ao suporte da Focus** (06/11). Detalhe na #837; conserto do programa na #948.
