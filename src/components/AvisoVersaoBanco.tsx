@@ -35,9 +35,9 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
           O banco desta empresa já recebeu uma atualização que este computador ainda não tem.
         </p>
         <p className="mt-1 text-rotulo">
-          Não é erro, e dá pra continuar trabalhando. Feche e abra o programa: ele se atualiza
-          sozinho ao abrir. Se depois de duas aberturas continuar aparecendo, avise quem cuida do
-          sistema.
+          Não é erro, e dá pra continuar trabalhando. Se tiver versão nova, o programa se
+          atualiza sozinho ao abrir. Se o aviso continuar depois de fechar e abrir, avise quem
+          cuida do sistema: a versão nova talvez ainda não tenha sido liberada.
         </p>
       </div>
     );
