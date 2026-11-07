@@ -22,8 +22,10 @@
  * é peça diferente, como R13 × R14. Se só uma das duas diz o lado, o nome decide.
  *
  * No pneu, o índice de carga e velocidade ("82T", "91H") NÃO é medida (#708):
- * com ele ou sem ele, é a mesma peça. Só vale pra pneu (a palavra "pneu" ou uma
- * medida tipo 175/70): fora dele, "55W" × "60W" numa lâmpada é peça diferente.
+ * com ele ou sem ele, é a mesma peça. Só vale quando há uma MEDIDA de pneu
+ * (175/70 R13, 90/90-18, aro 14): a palavra "pneu" sozinha não basta, senão o
+ * "compressor para pneu 12V" × "220V" virava a mesma peça; e fora de pneu,
+ * "55W" × "60W" numa lâmpada é peça diferente.
  */
 
 export interface PecaComparavel {
@@ -71,8 +73,9 @@ function normalizar(texto: string | null | undefined): string {
     .trim();
 }
 
-/** É pneu? A palavra "pneu" ou uma medida de pneu (175/70, 195/55...) na descrição ou na medida. */
-const PARECE_PNEU = /(^|[^a-z0-9])pneus?([^a-z0-9]|$)|\d{3}\s*\/\s*\d{2}/;
+/** É pneu? Uma medida de pneu na descrição ou na medida: 175/70 R13 (ou ZR, ou colado), 90/90-18 (moto), aro 14. */
+const PARECE_PNEU =
+  /\d{3}\s*\/\s*\d{2}\s*z?r\s*\d{2}|\d{2,3}\s*\/\s*\d{2}\s*-\s*\d{2}|(^|[^a-z0-9])aro\s*\d{2}(?!\d)/;
 
 /** O índice de carga e velocidade do pneu: 2 ou 3 dígitos e a letra da velocidade ("82T", "91H"), palavra solta. */
 const INDICE_DE_CARGA = /(^|[^a-z0-9])\d{2,3}[hjklmnpqrstuvwyz](?![a-z0-9])/g;
@@ -101,7 +104,7 @@ const LADOS: Record<string, "e" | "d"> = {
   direita: "d",
 };
 
-/** O lado da peça ("e", "d", "ed" se diz os dois) ou "" quando não diz. */
+/** O lado da peça ("e", "d", "de" se diz os dois) ou "" quando não diz. */
 function ladoDaPeca(descricao: string): string {
   const lados = new Set<string>();
   for (const palavra of descricao.match(/[a-z]+/g) ?? []) {
@@ -180,7 +183,7 @@ export interface PecaPreparada {
   codigoInterno: string | null;
   /** Os números da descrição + medida, sem zero à esquerda, ordenados ("13,175,70"). */
   numeros: string;
-  /** O lado que a descrição diz ("e", "d", "ed"), ou "" quando não diz (#708). */
+  /** O lado que a descrição diz ("e", "d", "de"), ou "" quando não diz (#708). */
   lado: string;
   /**
    * O nome, preparado só quando a regra chega a comparar nomes (mesmos

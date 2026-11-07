@@ -198,6 +198,27 @@ describe("acharPecasParecidas", () => {
     expect(r).toEqual([]);
   });
 
+  it("acessório com a palavra pneu, sem medida de pneu, não perde a voltagem (compressor 12V x 220V)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Compressor de ar para pneu 220V" }), [
+      peca({ id: "c", descricao: "Compressor de ar para pneu 12V" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
+  it("medida 3/2 dígitos fora de pneu não apaga número com letra (disco de freio 256/22 20V)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Disco de freio 256/22 20V" }), [
+      peca({ id: "d", descricao: "Disco de freio 256/22" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
+  it("pneu de moto (90/90-18) também ignora o índice de carga (51P)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 90/90-18 51P" }), [
+      peca({ id: "m", descricao: "Pneu 90/90-18" }),
+    ]);
+    expect(r).toHaveLength(1);
+  });
+
   it("fora de pneu, número com letra continua sendo medida (lâmpada 55W x 60W)", () => {
     const r = acharPecasParecidas(peca({ descricao: "Lâmpada H4 60W" }), [
       peca({ id: "l", descricao: "Lâmpada H4 55W" }),
@@ -258,6 +279,8 @@ function regraAntiga(nova: PecaComparavel, cadastro: PecaComparavel[], limiteNom
   return achadas.sort((x, y) => forca[y.motivo] - forca[x.motivo] || y.semelhanca - x.semelhanca);
 }
 
+// O vocabulário abaixo evita DE PROPÓSITO as palavras da #708 (lado LE/LD e o
+// índice de carga do pneu): fora delas, a regra tem que dar o mesmo de antes.
 describe("acharPecasParecidas — igual à regra de antes da forma preparada (#721)", () => {
   const palavra = fc.constantFrom(
     "Pneu", "PNEU", "pnéu", "Pirelli", "Filtro", "FILTRO", "óleo", "OLEO", "R13", "R14", "175/70",
