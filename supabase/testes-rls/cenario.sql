@@ -30,7 +30,8 @@
 -- Três decisões que parecem estranhas e não são:
 --
 --   1. `configuracoes_garantia`, `configuracoes_fiscais_loja`,
---      `configuracoes_painel_inicio`, `configuracoes_avaliacao` e
+--      `configuracoes_painel_inicio`, `configuracoes_pix`,
+--      `configuracoes_avaliacao` e
 --      `segredos_fiscais_loja` têm linha só na loja B, de propósito.
 --      A chave primária delas é o `loja_id` sozinho, então, com a loja A já
 --      ocupada, a sonda de INSERT bateria na chave duplicada — e um erro de
@@ -50,7 +51,7 @@ set session_replication_role = replica;
 truncate table
   computadores, schema_versao, auditoria, fechamentos_caixa, comissoes_fechamentos, whatsapp_mensagens, configuracoes_whatsapp,
   configuracoes_juros_parcelas, configuracoes_painel_inicio,
-  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_avaliacao, segredos_fiscais_loja,
+  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, segredos_fiscais_loja,
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
@@ -211,7 +212,7 @@ insert into configuracoes_whatsapp (loja_id, chave, texto) values
   ('11111111-1111-1111-1111-1111111111aa', 'cobranca', 'Texto da loja A'),
   ('11111111-1111-1111-1111-1111111111bb', 'cobranca', 'Texto da loja B');
 
--- E estas cinco têm o `loja_id` como chave primária inteira: recebem linha SÓ
+-- E estas seis têm o `loja_id` como chave primária inteira: recebem linha SÓ
 -- na loja B, pra deixar a loja A livre pra sonda de INSERT (ver o item 1 do
 -- cabeçalho). É por isso que a leitura delas na matriz é "1,0,0,0,0".
 insert into configuracoes_garantia (loja_id, texto) values
@@ -222,6 +223,10 @@ insert into configuracoes_fiscais_loja (loja_id, cnpj, razao_social) values
 
 insert into configuracoes_painel_inicio (loja_id, cartoes) values
   ('11111111-1111-1111-1111-1111111111bb', array['vendas_mes']);
+
+-- A chave Pix da loja (#456). Chave inventada, de exemplo.
+insert into configuracoes_pix (loja_id, chave, nome_recebedor, cidade_recebedor) values
+  ('11111111-1111-1111-1111-1111111111bb', 'pix-teste@exemplo.com.br', 'Loja B', 'Araraquara');
 
 insert into configuracoes_avaliacao (loja_id, link_google) values
   ('11111111-1111-1111-1111-1111111111bb', 'https://g.page/r/loja-b/review');

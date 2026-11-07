@@ -28,7 +28,9 @@ tranca.
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
 de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
-**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não
+**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). **Vale mesmo quando a
+primeira mensagem é uma pergunta curta**: abrir antes de responder (em 2 sessões novas, #618 e #619,
+o caderno só abriu quando a pessoa perguntou). Se não abrir (não
 existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e
 **perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
 
@@ -165,10 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
-- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
-- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
-- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
-- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
-- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
-- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 06/11/2026, noite: a fila da equipe revisada; o Pix (0081) na `main`
+- **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e estamos **esperando a Focus** (#837; o conserto do programa é a #948).
+- **Mesclados à noite**: o #944 (NFC-e de pessoa física sem CPF) e o #941 (Pix na cobrança e QR no faturamento, **migration 0081**, `qrcode.react`); `VERSAO_ESQUEMA_ESPERADA` = 81. No escritório: o #102, o #103 e o #104.
+- **#945** (avaliação no Google, 0082): voltou pro Tiago (rebase sobre o #941 e a tabela na exclusão de loja). Decidido: botões numa linha. A 0082 vai **depois** da 0081.
+- **Antes da próxima versão**: aplicar a 0081 nas empresas e no `ssace-teste`. Depois de publicar: ler o QR do Pix no app do banco (#934).
+- **Novos**: #950 (aviso de CPF na NFC-e), #951 (excluir loja com textos de WhatsApp), escritorio#106 (limite de etiquetas do painel); e seguem a #947 e a troca do CSC.
+- **Seguem valendo**: o resto da #934; #906 (fim de semana); #912 caso 2; #842 (11/11); escritorio#20 (22/11).

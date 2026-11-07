@@ -40,6 +40,10 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_config_fiscal_cnpj: "O CNPJ da loja está incompleto — ele tem 14 caracteres.",
   // Migration 0078 (#866).
   ck_config_fiscal_percentual_tributos_simples: MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+  // Migration 0081 (#456): os limites do código do Pix (BR Code).
+  ck_config_pix_chave: "A chave Pix não pode ficar em branco nem passar de 77 letras.",
+  ck_config_pix_nome_recebedor: "O nome de quem recebe o Pix não pode ficar em branco nem passar de 25 letras.",
+  ck_config_pix_cidade_recebedor: "A cidade de quem recebe o Pix não pode ficar em branco nem passar de 15 letras.",
   // Migration 0082 (#459): o link de avaliação no Google.
   ck_configuracoes_avaliacao_link_https:
     "O link de avaliação precisa começar com https:// e não pode ter espaço.",
@@ -127,6 +131,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "ordens_servico_clientes",
   // 0078 (percentual dos tributos do Simples): coluna de configuracoes_fiscais_loja.
   "percentual_tributos_simples",
+  // 0081 (Pix da loja): tabela.
+  "configuracoes_pix",
   // 0082 (link de avaliação, #459): tabela nova. Sobe antes do programa, mas
   // se alguém publicar sem rodar, a tela de Configurações cai aqui.
   "configuracoes_avaliacao",

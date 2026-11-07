@@ -216,7 +216,32 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
 > - **Senha do portal** (não vai na Focus): portal da NFS-e → **Alterar Senha**. Avisar a
 >   contabilidade, que entra lá todo mês pra cadastrar a alíquota.
 
-#### NFS-e pelo Padrão Nacional (#837, código em PR rascunho de 29/10/2026)
+#### NFS-e pelo Padrão Nacional (#837; o código entrou na 0.9.56, liberada em 06/11/2026)
+
+**Estado em 06/11/2026, noite**: o porteiro novo (`focus-nfe`) está publicado na Pneus Amigão, os
+dois computadores estão na 0.9.56, o banco está na **0080**, a "NFSe Nacional – Produção" está ligada
+na Focus (série 1) e o **6%** está nos Dados fiscais. **A primeira nota (OS 18, real) foi recusada**
+pelo Ambiente Nacional: "IM do prestador não deve ser informado, pois não existem informações
+complementares registradas no CNC NFS-e do município emissor informado na DPS". A inscrição
+municipal foi apagada no programa (Dados fiscais) e no cadastro da empresa na Focus (aba
+Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a pergunta está com o
+suporte da Focus (06/11). O programa ainda manda a IM quando o campo está preenchido (#948).
+**Pra loja nova no Padrão Nacional**: deixar a "Inscrição municipal" **vazia** quando o município não
+tem as informações complementares no CNC (Araraquara não tem), no programa e na Focus.
+
+**A Focus respondeu em 05/11/2026** (suporte): Araraquara não está no convênio da **homologação**
+nacional (quem cadastra é a prefeitura, e nem sempre faz). Recomendação deles: **testar em produção**,
+com uma nota de valor baixo, e **cancelar em seguida** pela API. Os tributos aproximados são exigidos
+pelo `percentual_total_tributos_simples_nacional` **ou** pelos `percentual_total_tributos_federais`,
+`_estaduais` e `_municipais`; o que não se aplica vai zero. O programa manda o do Simples (6% na
+Pneus Amigão, contabilidade, 05/11).
+
+**No ensaio em produção, conferir** (achados da revisão de 06/11): o XML da nota nacional pode vir
+num endereço do S3, e aí o porteiro recusa e o registro falha depois da nota autorizada ("Conferir
+de novo", nunca emitir de novo); a chave de 50 dígitos no `url` da consulta; o relógio do Windows no
+automático (a hora de emissão vai junto e não pode passar da do servidor). Cliente sem CPF/CNPJ sai
+**sem tomador**; endereço do cliente só vai com bairro.
+
 
 Desde **01/11/2026** a empresa do **Simples** em Araraquara só emite NFS-e pelo **Padrão Nacional**
 (comunicado da prefeitura de 19/10, Resolução CGSN nº 191/2026); o Giap deixa de emitir pra ela.

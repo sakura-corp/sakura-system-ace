@@ -9,6 +9,7 @@ import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import { listarCategoriasServico } from "@/lib/categoriasServico";
 import {
   buscarConfiguracaoFiscal,
+  buscarConfiguracaoPix,
   buscarConfiguracaoPainelInicio,
   buscarLinkAvaliacao,
   buscarTextoGarantia,
@@ -26,7 +27,12 @@ import {
 import type { Categoria } from "@/types/categoria";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { CategoriaServico } from "@/types/categoriaServico";
-import type { CartaoMetrica, ConfiguracaoFiscalLoja, JurosParcela } from "@/types/configuracao";
+import type {
+  CartaoMetrica,
+  ConfiguracaoFiscalLoja,
+  ConfiguracaoPix,
+  JurosParcela,
+} from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
 import type { Loja } from "@/types/loja";
 import { MODULOS } from "@/types/operador";
@@ -40,6 +46,7 @@ import { DepositosSection } from "./DepositosSection";
 import { JurosParcelasSection } from "./JurosParcelasSection";
 import { LojasSection } from "./LojasSection";
 import { OperadorForm } from "./OperadorForm";
+import { PixSection } from "./PixSection";
 import { TextoGarantiaSection } from "./TextoGarantiaSection";
 import { ModelosWhatsappSection } from "./ModelosWhatsappSection";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
@@ -61,6 +68,7 @@ export function ConfiguracoesPage() {
   const [configuracaoFiscal, setConfiguracaoFiscal] = useState<ConfiguracaoFiscalLoja | null>(
     null,
   );
+  const [configuracaoPix, setConfiguracaoPix] = useState<ConfiguracaoPix | null>(null);
   const [cartoesInicio, setCartoesInicio] = useState<CartaoMetrica[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -91,6 +99,7 @@ export function ConfiguracoesPage() {
         configuracaoFiscalCarregada,
         cartoesInicioCarregados,
         modelosWhatsappCarregados,
+        configuracaoPixCarregada,
       ] = await Promise.all([
         listarOperadores(),
         listarLojas(),
@@ -103,6 +112,7 @@ export function ConfiguracoesPage() {
         buscarConfiguracaoFiscal(lojaAtual.id),
         buscarConfiguracaoPainelInicio(lojaAtual.id),
         listarModelosWhatsapp(lojaAtual.id),
+        buscarConfiguracaoPix(lojaAtual.id),
       ]);
       // Fora do Promise.all: banco sem a migration 0082 não pode derrubar a
       // página; vira "sem link" (validação incerta é aviso, nunca tranca).
@@ -124,6 +134,7 @@ export function ConfiguracoesPage() {
       setConfiguracaoFiscal(configuracaoFiscalCarregada);
       setCartoesInicio(cartoesInicioCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
+      setConfiguracaoPix(configuracaoPixCarregada);
     } catch (err) {
       console.error("Erro ao carregar operadores:", err);
       setErro(mensagemDeErro(err));
@@ -402,6 +413,22 @@ export function ConfiguracoesPage() {
               lojaId={lojaAtual.id}
               linkAvaliacao={linkAvaliacao}
               onSalvo={carregar}
+            />
+          </SecaoRecolhivel>
+
+          <SecaoRecolhivel
+            titulo="Pix (cobrança e faturamento)"
+            descricao="A chave Pix da loja. Com ela, a mensagem de cobrança ganha o Pix copia e cola e o faturamento mostra o QR code, já com o valor."
+          >
+            <PixSection
+              configuracao={configuracaoPix}
+              lojaId={lojaAtual.id}
+              podeEditar={Boolean(operadorLogado?.admin)}
+              sugestao={{
+                nome: configuracaoFiscal?.nome_fantasia || lojaAtual.nome,
+                cidade: configuracaoFiscal?.cidade || lojaAtual.cidade,
+              }}
+              onMudou={setConfiguracaoPix}
             />
           </SecaoRecolhivel>
 

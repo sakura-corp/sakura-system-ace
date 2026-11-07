@@ -48,11 +48,12 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
     titulo: "Cobrança de conta a receber",
     descricao:
       "Aparece no botão de WhatsApp de cada conta pendente, em Contas a Receber. Serve pra lembrar o cliente de um valor combinado.",
-    marcadores: ["{cliente}", "{valor}", "{vencimento}", "{descricao}", "{loja}"],
+    marcadores: ["{cliente}", "{valor}", "{vencimento}", "{descricao}", "{loja}", "{pix}"],
     padrao:
       "Oi {cliente}, tudo bem? Aqui é da {loja}.\n" +
       "Passando pra lembrar do valor de {valor} referente a {descricao}, com vencimento em {vencimento}.\n" +
-      "Qualquer coisa é só chamar por aqui!",
+      "Qualquer coisa é só chamar por aqui!\n" +
+      "{pix}",
   },
   {
     chave: "carro_pronto",
@@ -134,12 +135,43 @@ export function preencherModelo(
 ): string {
   let texto = template;
   for (const [marcador, valor] of Object.entries(valores)) {
+    // O {pix} é a exceção (#456): sem chave Pix configurada ele não vira "—",
+    // ele some junto com a quebra de linha que sobraria, e o texto sai igual
+    // ao de antes do Pix. Tratado depois do laço.
+    if (marcador === "pix") continue;
     // Troca por função, e não por texto: num texto de troca, "$&" e "$$" são
     // padrões especiais, e um link digitado pela loja (#459) sairia alterado.
     const troca = valor?.trim() ? valor : "—";
     texto = texto.replaceAll(`{${marcador}}`, () => troca);
   }
+  const pix = valores.pix?.trim() ? valores.pix : "";
+  if (pix) {
+    // Função no lugar de texto: o código do Pix não pode ser lido como "$&".
+    texto = texto.replaceAll("{pix}", () => pix);
+  } else {
+    // Linha que só tem o {pix}: sai a linha inteira. {pix} no meio de uma
+    // linha: sai só ele (e os espaços em volta, deixando um entre as palavras).
+    texto = texto
+      .replace(/\r?\n[ \t]*\{pix\}[ \t]*(?=\r?\n|$)/g, "")
+      .replace(/^[ \t]*\{pix\}[ \t]*(?:\r?\n|$)/, "")
+      .replace(/[ \t]*\{pix\}[ \t]*/g, (trecho, posicao: number, tudo: string) => {
+        const antes = tudo[posicao - 1];
+        const depois = tudo[posicao + trecho.length];
+        const temTextoDosDoisLados =
+          antes !== undefined && antes !== "\n" && depois !== undefined && depois !== "\n" && depois !== "\r";
+        return temTextoDosDoisLados ? " " : "";
+      });
+  }
   return texto;
+}
+
+/**
+ * O bloco que entra no lugar do {pix} da cobrança. Sem código (a loja não
+ * configurou o Pix, ou não deu pra montar) devolve "", e o marcador some.
+ */
+export function blocoPix(codigo: string | null | undefined): string {
+  if (!codigo) return "";
+  return `Se preferir, pague pelo Pix copia e cola (já com o valor):\n${codigo}`;
 }
 
 /**

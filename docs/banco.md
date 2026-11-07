@@ -627,8 +627,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   que usam a coluna (#882) dependem do #839 (NFS-e Nacional), que espera a Focus; assim a `0079` e
   a `0080` não ficam presas atrás dela. Aplicar a `0077` (#857) antes desta. Teste em
   `supabase/scripts/testar-percentual-tributos-simples.sql`, que roda a `0078` de verdade (`\ir`).
-- `0082`: **o link de avaliação no Google, por loja** (tarefa #459; a `0081` está reservada pelo
-  PR #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
+- `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
+  o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
