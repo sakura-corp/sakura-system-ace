@@ -3,7 +3,7 @@
 - **Tarefa**: #865, dois textos velhos ("Settings → API" na conexão e o "feche e abra" do aviso de versão)
 - **Chefe**: frontend
 - **Data**: 2026-11-07
-- **PR**: aberto a partir da branch `claude/serene-faraday-lgwtoa` (o link está na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/954
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
