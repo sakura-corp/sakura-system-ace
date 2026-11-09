@@ -654,7 +654,12 @@ export function montarCorpoNFSeNacional(
     valor_servico: arredondar(valorServicos),
     tributacao_iss: 1, // 1 = operação tributável
     tipo_retencao_iss: 1, // 1 = não retido
-    percentual_aliquota_relativa_municipio: arredondar(configuracaoFiscal.aliquota_iss ?? 0),
+    // A alíquota só vai fora do Simples. Pro ME/EPP do Simples, com o ISS
+    // apurado pelo Simples e sem retenção, o Ambiente Nacional recusa a DPS
+    // que traz a alíquota (OS 18, 09/11, #837): o ISS vai dentro do DAS.
+    ...(simples
+      ? {}
+      : { percentual_aliquota_relativa_municipio: arredondar(configuracaoFiscal.aliquota_iss ?? 0) }),
     // O grupo totTrib é obrigatório: sem ele o Ambiente Nacional recusa a DPS
     // (ensaio de 03/11, "Expected is one of (tribFed, totTrib)"). Pro optante
     // do Simples é o pTotTribSN: o percentual aproximado dos tributos, que a
@@ -741,7 +746,9 @@ async function emitirNFSeNacional(dados: DadosEmissaoNFSe, numero: number): Prom
         "cadastre em Configurações → Dados fiscais da loja, seção \"Emissão de NFS-e\".",
     );
   }
-  if (!configuracaoFiscal.aliquota_iss) {
+  // A loja do Simples não manda a alíquota (ver `montarCorpoNFSeNacional`),
+  // então só a de fora do Simples precisa dela cadastrada.
+  if (configuracaoFiscal.regime_tributario !== "simples_nacional" && !configuracaoFiscal.aliquota_iss) {
     throw new FocusNfeError(
       "Alíquota do ISS não configurada — cadastre em Configurações → Dados fiscais da loja, " +
         "seção \"Emissão de NFS-e\". Sem ela a nota sairia com ISS zerado.",

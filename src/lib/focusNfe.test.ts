@@ -408,7 +408,6 @@ describe("montarCorpoNFSeNacional", () => {
       valor_servico: 150,
       tributacao_iss: 1,
       tipo_retencao_iss: 1,
-      percentual_aliquota_relativa_municipio: 5,
     });
     expect(corpo.data_emissao).toMatch(/^2026-11-02T\d{2}:15:00[+-]\d{2}:\d{2}$/);
     // Nada do formato municipal vai junto.
@@ -529,6 +528,26 @@ describe("montarCorpoNFSeNacional", () => {
       { agora, numeroDps: 1 },
     );
     expect(corpo).not.toHaveProperty("percentual_total_tributos_simples_nacional");
+  });
+
+  // Recusa da OS 18 em 09/11 (#837): pro ME/EPP do Simples (opSimpNac 3,
+  // ISS apurado pelo Simples) sem retenção, o Ambiente Nacional não aceita a
+  // alíquota ("Não é permitido informar alíquota quando não há indicação de
+  // retenção do ISSQN..."). O ISS vai dentro do DAS.
+  it("loja do Simples sem retenção: a alíquota do ISS não vai, mesmo cadastrada", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ aliquota_iss: 2 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("percentual_aliquota_relativa_municipio");
+  });
+
+  it("empresa fora do Simples continua mandando a alíquota do ISS", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ regime_tributario: "lucro_presumido" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_aliquota_relativa_municipio).toBe(5);
   });
 
   it("empresa fora do Simples sai como não optante, sem o regime do Simples", () => {
