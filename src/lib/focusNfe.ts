@@ -148,7 +148,19 @@ export async function baixarArquivoNota(
     );
   }
   const bytes = Uint8Array.from(atob(envelope.conteudo_base64), (c) => c.charCodeAt(0));
-  return new Blob([bytes], { type: envelope.tipo_conteudo || "application/octet-stream" });
+  return new Blob([bytes], { type: tipoDoArquivo(arquivo, bytes, envelope.tipo_conteudo) });
+}
+
+// O S3 da NFS-e Nacional pode servir o DANFSe como "binary/octet-stream" (ou
+// sem tipo), e um Blob assim o iframe da prévia não mostra: o Electron trata
+// como download (#965). Se os bytes começam com "%PDF", é PDF, venha com o
+// tipo que vier. O XML e o DANFE em HTML (NFC-e) ficam com o tipo de antes.
+function tipoDoArquivo(arquivo: "xml" | "danfe", bytes: Uint8Array, tipo?: string): string {
+  const assinaturaPdf = [0x25, 0x50, 0x44, 0x46]; // "%PDF"
+  if (arquivo === "danfe" && assinaturaPdf.every((b, i) => bytes[i] === b)) {
+    return "application/pdf";
+  }
+  return tipo || "application/octet-stream";
 }
 
 function aguardar(ms: number): Promise<void> {
