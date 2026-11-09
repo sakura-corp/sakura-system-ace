@@ -23,7 +23,7 @@ Provas (app buildado, `xvfb`, um PDF de uma página com "DANFSE TESTE"):
   e o Electron registra um download.
 - `fotos/tarefa-965/3-proposta-csp-pdf-aparece.png`: com o conserto da CSP, o visualizador abre e
   mostra a página (a miniatura com "DANFSE TESTE"). O painel grande ficou vazio também **sem CSP
-  nenhuma**, então é a tela virtual da nuvem (sem placa de vídeo); confirmar no PC.
+  nenhuma**, por um motivo que não confirmei; a Sofia mediu os pixels depois e a página aparece.
 - O roteiro usado está em `fotos/tarefa-965/reproduzir-previa-pdf.mjs.txt`.
 
 Também testei variações da CSP: tirar só o `object-src 'none'` **não** resolve; o que resolve é
@@ -75,8 +75,10 @@ A Sofia decidiu que a linha da CSP entra neste PR e liberou `electron/main.ts` e
 ## O que ficou de fora
 - Na 1ª rodada, a CSP e o teste do Electron ficaram de fora (fora da lista); entraram na 2ª,
   com a decisão da Sofia.
-- O passo 6b prova que o visualizador **rodou**, não que a página foi desenhada (a tela virtual da
-  nuvem não desenha o painel grande nem sem CSP). O desenho fica pro teste no PC.
+- O passo 6b prova que o visualizador **rodou**, não que a página foi desenhada. Eu escrevi que a
+  tela virtual da nuvem não desenhava a página: **estava errado**. A Sofia mediu os pixels da janela
+  (`webContents.capturePage()` + `toBitmap()`): sem a linha, 1 cor só; com ela, 233 cores e 28% de
+  área clara. Somar essa medida no 6b fica pra uma tarefa pequena (ela disse que não trava este PR).
 - `%PDF` aceito só no começo do arquivo (o formato aceita até 1 KB adiante). Os PDFs da Focus
   começam no byte 0; deixei simples.
 - O "Imprimir": a nuvem não consegue ver a janela de impressão. Depende do PC (abaixo). Com a
