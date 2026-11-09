@@ -295,12 +295,16 @@ try {
       return { achou: quadros.length > 0, rodou: false };
     });
   }
-  await pagina.evaluate(() => document.getElementById("teste-danfe-pdf")?.remove());
+  await pagina.evaluate(() => {
+    const quadro = document.getElementById("teste-danfe-pdf");
+    if (quadro) URL.revokeObjectURL(quadro.src);
+    quadro?.remove();
+  });
   conferir(
     "DANFE em PDF (iframe blob:) abre o visualizador de PDF e ele roda",
     visualizador.rodou,
     visualizador.achou
-      ? "o visualizador abriu mas os scripts dele não rodaram (CSP nas páginas chrome-extension://?)"
+      ? "o visualizador abriu mas os scripts dele não rodaram (a CSP do app chegou nele? o ID dele mudou?)"
       : "o visualizador de PDF nem abriu",
   );
 
