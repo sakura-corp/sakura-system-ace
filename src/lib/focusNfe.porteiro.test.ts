@@ -290,6 +290,16 @@ describe("NFS-e Nacional: o pedido vai pelo tipo nfsen", () => {
     } as ConfiguracaoFiscalLoja,
   } as Parameters<typeof emitirNFSe>[0];
 
+  it("loja do Simples emite sem a alíquota do ISS cadastrada (o ISS vai no DAS)", async () => {
+    invoke.mockResolvedValue(repassou({ status: "autorizado" }));
+    const semAliquota = {
+      ...dadosNacional,
+      configuracaoFiscal: { ...dadosNacional.configuracaoFiscal, aliquota_iss: null },
+    } as Parameters<typeof emitirNFSe>[0];
+    await emitirNFSe(semAliquota);
+    expect(invoke.mock.calls[0][1].body).toMatchObject({ acao: "emitir", tipo: "nfsen" });
+  });
+
   it("loja do Simples emite com tipo nfsen, ref os15-nfsen-..., corpo nacional — e sem pedir CNAE", async () => {
     invoke.mockResolvedValue(repassou({ status: "autorizado" }));
     const resposta = await emitirNFSe(dadosNacional);

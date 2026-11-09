@@ -230,6 +230,12 @@ suporte da Focus (06/11). **A Focus respondeu em 09/11**: na tentativa que eles 
 Desde a #948 o programa **nunca** manda a IM na NFS-e Nacional (o campo é opcional no leiaute); o
 campo da loja segue valendo pro caminho municipal. Até essa versão chegar na loja, o contorno é
 deixar a "Inscrição municipal" **vazia** nos Dados fiscais.
+**Segunda recusa (09/11, OS 18, com a IM já vazia)**: "Não é permitido informar alíquota quando não
+há indicação de retenção do ISSQN (tpRetISSQN = 1) para o prestador ME/EPP (opSimpNac = 3) [...] com
+apuração do ISSQN pelo Simples (regApTribISSQN = 1)". Desde o PR desta correção, a loja do Simples
+**não manda a alíquota** na NFS-e Nacional (o ISS vai no DAS) e não precisa mais dela cadastrada pra
+emitir; fora do Simples, nada muda. Na 0.9.56 não há contorno (apagar a alíquota trava a emissão):
+precisa da versão nova.
 
 **A Focus respondeu em 05/11/2026** (suporte): Araraquara não está no convênio da **homologação**
 nacional (quem cadastra é a prefeitura, e nem sempre faz). Recomendação deles: **testar em produção**,
