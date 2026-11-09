@@ -603,7 +603,6 @@ export function montarCorpoNFSeNacional(
   const documento = (cliente.cpf_cnpj ?? "").replace(/\D/g, "");
   const municipio = Number((configuracaoFiscal.codigo_municipio ?? "").replace(/\D/g, ""));
   const simples = configuracaoFiscal.regime_tributario === "simples_nacional";
-  const inscricaoMunicipal = (configuracaoFiscal.inscricao_municipal ?? "").trim();
   // No leiaute da DPS, o tomador exige CPF, CNPJ ou NIF (o nome sozinho é
   // recusado) e o endereço exige bairro. O tomador é opcional: sem documento,
   // a nota sai sem ele (revisão de 06/11).
@@ -621,7 +620,10 @@ export function montarCorpoNFSeNacional(
     emitente_dps: 1, // 1 = prestador
     codigo_municipio_emissora: municipio,
     cnpj_prestador: (configuracaoFiscal.cnpj ?? "").replace(/\D/g, ""),
-    ...(inscricaoMunicipal ? { inscricao_municipal_prestador: inscricaoMunicipal } : {}),
+    // A IM do prestador não vai (#948): é opcional no leiaute, e o Ambiente
+    // Nacional recusa a DPS que traz a IM quando o município não registra as
+    // informações complementares no CNC NFS-e (Araraquara; a Focus confirmou
+    // em 09/11). O campo da loja segue valendo pro caminho municipal.
     // 3 = optante ME/EPP; 1 = não optante. O cadastro não separa MEI (2).
     codigo_opcao_simples_nacional: simples ? 3 : 1,
     // 1 = tributos federais e municipal apurados pelo Simples.

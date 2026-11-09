@@ -399,7 +399,6 @@ describe("montarCorpoNFSeNacional", () => {
       emitente_dps: 1,
       codigo_municipio_emissora: 3503208,
       cnpj_prestador: "51916585000125",
-      inscricao_municipal_prestador: "12345",
       codigo_opcao_simples_nacional: 3,
       regime_tributario_simples_nacional: 1,
       regime_especial_tributacao: 0,
@@ -415,6 +414,18 @@ describe("montarCorpoNFSeNacional", () => {
     // Nada do formato municipal vai junto.
     expect(corpo).not.toHaveProperty("prestador");
     expect(corpo).not.toHaveProperty("servico");
+  });
+
+  // #948: o Ambiente Nacional recusa a DPS com a IM quando o município não
+  // registra as informações complementares no CNC NFS-e (Araraquara, 06/11;
+  // a Focus confirmou em 09/11: "remova a IM dos dados enviados"). A IM é
+  // opcional no leiaute, então ela nunca vai, mesmo preenchida na loja.
+  it("loja com a inscrição municipal preenchida: a IM não vai no corpo (#948)", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ inscricao_municipal: "30016580" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("inscricao_municipal_prestador");
   });
 
   it("tomador pessoa física: CPF, nome e endereço com os nomes _tomador", () => {
