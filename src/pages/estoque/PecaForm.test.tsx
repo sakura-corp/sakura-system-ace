@@ -162,6 +162,27 @@ describe("PecaForm — o código de ICMS não nasce em branco", () => {
   });
 });
 
+describe("PecaForm — o CFOP que não combina com o CSOSN (#864)", () => {
+  // 5102 com CSOSN 500 (ICMS já pago antes) a SEFAZ recusa: o certo é 5405.
+  // É AVISO, nunca trava o salvar (item 33 da seção 6).
+  it("avisa 5102 com CSOSN 500, some ao trocar pra 5405, e salva com o aviso", async () => {
+    const { user, onSalvar } = montar();
+
+    await preencherObrigatorios(user, "PNEU 175/70 R14"); // CFOP 5102 + CSOSN 500
+
+    const aviso = screen.getByText(/não combina com o CSOSN 500/);
+    expect(aviso).toHaveTextContent("5405");
+
+    // Com o aviso na tela, salvar continua funcionando.
+    await user.click(screen.getByRole("button", { name: /^Salvar/ }));
+    expect(onSalvar).toHaveBeenCalledTimes(1);
+
+    await user.clear(campo("CFOP padrão *"));
+    await user.type(campo("CFOP padrão *"), "5405");
+    expect(screen.queryByText(/não combina com o CSOSN/)).not.toBeInTheDocument();
+  });
+});
+
 describe("PecaForm — validação", () => {
   it("não salva sem descrição", async () => {
     const { user, onSalvar } = montar();
