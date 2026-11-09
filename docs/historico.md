@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 09/11/2026: a primeira NFS-e Nacional autorizada; a 0.9.57 liberada; leva 6 reaberta
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada (sem a IM, #956, e sem a alíquota pro Simples, #958). A **NFS-e nº 1 saiu autorizada** (OS 18); a #837 fechou. A prévia do PDF na janela fica vazia (#965); o "Baixar PDF" funciona.
+- **Mesclados**: #960, #961, #963, #964 (a leva 6 de hoje) e escritorio#107. O **#953** voltou pro Tiago com "Request changes" (82T × 86T e o `/code-review`).
+- **Leva 6 reaberta** com #965, #966, #967, #968 e #969 (todas pegáveis). Triagem #886 fechada; proposta do spa adiada (secundarios#4); #888 respondida.
+- **`ssace-teste`** na 82, com o fiscal das peças de exemplo; o `dados-de-exemplo.sql` inteiro espera o token sair (#842, depois do ensaio de 14 e 15/11, #877).
+- **Com a Sofia**: a pergunta do CNPJ com letras pra Focus (#513, destrava o #962); o "Texto de garantia" (#501); a linha dos tributos aproximados com "-" no DANFSe (contabilidade); ler o QR do Pix e o "API Keys" (#934); faxina das `sofia` antigas.
+- **Seguem valendo**: #951, a troca do CSC; #906 (fim de semana); #912 caso 2; escritorio#20 (22/11).
+
 ### 07/11/2026: a avaliação no Google (0082) e os textos do #865 na `main`
 - **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e seguimos **esperando a Focus** (#837; o conserto do programa é a #948).
 - **Mesclados hoje**: o #945 (avaliação no Google pelo WhatsApp, **migration 0082**; `VERSAO_ESQUEMA_ESPERADA` = 82) e o #954 (os textos "API Keys" e o do computador atrasado, #865).
