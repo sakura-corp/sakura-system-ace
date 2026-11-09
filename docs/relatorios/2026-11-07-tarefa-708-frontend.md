@@ -42,8 +42,13 @@
 - `nomeNoAviso` repete a função de `JuntarPecasModal.tsx`: juntar as duas seria mexer num arquivo fora da lista da issue.
 - Agora só conta como pneu a peça com uma medida de pneu (175/70 R13, 90/90-18, aro 14). Pneu cadastrado só como "Pneu Pirelli", sem medida em lugar nenhum, não tem o índice apagado.
 
+## Testado no PC (Tiago, 09/11, caso B, Supabase de teste)
+- **LD × LE**: ao salvar "Amortecedor dianteiro LE", o "Amortecedor dianteiro LD" não apareceu no aviso. Apareceu só o "Amortecedor dianteiro (exemplo)" dos dados de exemplo, que não diz o lado, como esperado.
+- **R14 × R14 82T**: ao salvar "Pneu 175/70 R14 82T", o aviso apareceu: "Parece com Pneu 175/70 R14".
+- **Peça inativa**: com o "Pneu 175/70 R14" inativado, cadastrar outro igual mostrou "Parece com Pneu 175/70 R14 (inativa)", no título e na lista.
+- Observação: o banco de teste ainda está sem as migrations 0079 a 0081 (o aviso amarelo do programa). Não afeta esta tarefa.
+
 ## O que depende de alguém
-- **Tiago, no PC** (`docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez", caso B, branch `claude/tarefa-708-frontend-3fkw3e`, Supabase de teste): os 3 itens do "No PC" da issue (LD × LE sem aviso; R14 × R14 82T com aviso; peça desativada com "(inativa)").
 - **Sofia**: revisar o PR e decidir o "82T × 86T".
 
 ## Onde parou
@@ -52,5 +57,6 @@ Terminei.
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: o teste primeiro e a revisão forte. A revisão achou um falso aviso que meus testes não pegavam.
 - **Onde eu errei ou tive que adivinhar**: na 1ª versão, achei que a palavra "pneu" bastava pra saber que a peça é pneu. Também adivinhei a lista de letras de velocidade e as palavras de lado (le, ld, esquerdo/a, direito/a).
+- **No teste no PC**: mandei os 3 testes de uma vez sem dizer o que pôr nos campos obrigatórios (NCM, CEST, CFOP, origem), e a pessoa travou. Depois voltei a um passo por vez.
 - **O que faltou na skill**: não diz se pode juntar as etapas de ajudante médio na sessão mãe quando a tarefa é pequena. Fiz isso e anotei.
 - **Sugestão de ajuste (opcional)**: no ritual, "etapa médio de menos de 1 h pode ficar na sessão mãe; a revisão forte nunca".
