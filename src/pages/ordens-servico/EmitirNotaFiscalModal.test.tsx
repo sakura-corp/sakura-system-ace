@@ -11,10 +11,14 @@
  * 4. Sem o token do Focus NFe, o aviso das peças aparece junto com o do token (#742).
  * 5. NFC-e no limite da UF (R$ 10.000) sem o cliente identificado avisa, sem
  *    travar o botão (#881).
+ * 6. Pessoa física sem CPF completo (11 números) avisa que a nota sai sem o
+ *    nome dela, sem travar o botão; "Consumidor" e venda sem cliente não
+ *    avisam (#950).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { OrdemServico } from "@/types/os";
+import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { Peca } from "@/types/peca";
 
 const buscarDadosFiscaisDasPecas = vi.fn();
@@ -347,5 +351,51 @@ describe("EmitirNotaFiscalModal — limite da UF sem cliente identificado (#881)
 
     await screen.findByRole("button", { name: "Confirmar emissão" });
     expect(screen.queryByText(avisoDoLimite)).not.toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — pessoa física sem CPF completo (#950)", () => {
+  const avisoCpf = () => screen.queryByText(/sem o CPF completo no cadastro/);
+  const avisoCnpj = () => screen.queryByText(/sem o CNPJ no cadastro/);
+  const abrir = async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+  };
+
+  it("sem CPF: avisa e não trava o botão", async () => {
+    await abrir();
+    expect(avisoCpf()).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("CPF pela metade: avisa", async () => {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456" });
+    await abrir();
+    expect(avisoCpf()).toBeInTheDocument();
+  });
+
+  it("CPF com 11 números: sem aviso", async () => {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09" });
+    await abrir();
+    expect(avisoCpf()).not.toBeInTheDocument();
+  });
+
+  it("Consumidor: sem aviso de CPF", async () => {
+    clienteDaOrdem.mockReturnValue({ id: CLIENTE_CONSUMIDOR_ID, nome: "Consumidor", tipo_pessoa: "fisica", cpf_cnpj: null });
+    await abrir();
+    expect(avisoCpf()).not.toBeInTheDocument();
+  });
+
+  it("pessoa jurídica sem CNPJ: avisa do CNPJ e não do CPF", async () => {
+    clienteDaOrdem.mockReturnValue({ id: "c2", nome: "Oficina", tipo_pessoa: "juridica", cpf_cnpj: null });
+    await abrir();
+    expect(avisoCnpj()).toBeInTheDocument();
+    expect(avisoCpf()).not.toBeInTheDocument();
+  });
+
+  it("venda sem cliente: sem aviso de CPF", async () => {
+    clienteDaOrdem.mockReturnValue(null);
+    await abrir();
+    expect(avisoCpf()).not.toBeInTheDocument();
   });
 });
