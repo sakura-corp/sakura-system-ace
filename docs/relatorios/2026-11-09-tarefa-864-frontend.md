@@ -40,14 +40,17 @@
 - O aviso na peça avulsa da OS (`CadastroPecaAvulsaModal`): conferido lendo o código (ele usa o mesmo `PecaForm` e passa o `regime`), sem teste de tela próprio.
 - O print, renderizado de verdade (`fotos/tarefa-864/`): com 5102+500 o aviso aparece; com 5405 ele some.
 
+- **Teste no PC do Tiago** (caso B, Supabase de teste, 09/11): com 5102+500 o aviso apareceu embaixo do CFOP, legível; a peça salvou mesmo assim e entrou na lista; ao abrir de novo e trocar para 5405, o aviso sumiu. O print dele não subiu porque mostrava o login.
+
 ## O que ficou de fora
 - **CFOP 6xxx na NFC-e** (revisão, média, plausível): o programa só emite NFC-e, que só aceita CFOP começando com 5. A regra segue o que a contabilidade confirmou (6102/6404 fora do estado), então quem decide se o aviso deve sempre sugerir o par com 5 é a Sofia.
 - **O mesmo aviso antes de emitir a NFC-e** (`EmitirNotaFiscalModal`) **e na importação de XML**: fora dos arquivos da issue. Uma peça antiga com 5102+500 só mostra o aviso quando alguém abre a peça. Vale uma tarefa nova.
 - **CFOP com ponto** ("5.405"): a frase do aviso fica confusa. É detalhe pequeno e fora do pedido.
+- **Achado no teste do PC, fora da tarefa**: na lista do Estoque, clicar na canetinha (editar) com a lista rolada pra baixo parece não fazer nada. O formulário abre no **topo** da página e a tela não rola até ele (`ProdutosSection.tsx`, `handleEditar`). O Tiago diz que acontece "meio direto". Não mexi (arquivo fora da issue); vale uma tarefa nova.
 - Os dados de demonstração (`site/ferramentas/dados-demo.mjs`) e o ajudante `preencherObrigatorios` do `PecaForm.test.tsx` ainda usam 5102+500. Na demo, abrir uma dessas peças mostra o aviso; as fotos do site não mudam (a cena é "Novo produto", com o CFOP vazio).
 
 ## O que depende de alguém
-- **Tiago, no PC** (caso B do `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez"), branch `claude/tarefa-864-frontend-v9ctb1`, no Supabase de teste: Estoque → "+ Novo produto", CFOP `5102`, CST/CSOSN `500`. O aviso amarelo aparece embaixo do CFOP. Salvar: a peça salva mesmo assim. Trocar o CFOP para `5405`: o aviso some.
+- ~~**Tiago, no PC**~~ **feito em 09/11, passou** (caso B do `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez"), branch `claude/tarefa-864-frontend-v9ctb1`, no Supabase de teste: Estoque → "+ Novo produto", CFOP `5102`, CST/CSOSN `500`. O aviso amarelo aparece embaixo do CFOP. Salvar: a peça salva mesmo assim. Trocar o CFOP para `5405`: o aviso some.
 - **Sofia**: revisar o PR, decidir sobre o CFOP 6xxx e, depois de publicar, abrir uma peça de pneu com CSOSN 500 numa loja e conferir que, se estiver com 5102, o aviso aparece.
 
 ## Onde parou
