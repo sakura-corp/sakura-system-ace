@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 07/11/2026: a avaliação no Google (0082) e os textos do #865 na `main`
+- **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e seguimos **esperando a Focus** (#837; o conserto do programa é a #948).
+- **Mesclados hoje**: o #945 (avaliação no Google pelo WhatsApp, **migration 0082**; `VERSAO_ESQUEMA_ESPERADA` = 82) e o #954 (os textos "API Keys" e o do computador atrasado, #865).
+- **#953** (peça parecida, #708): voltou pro Tiago. Decidido: "82T" × "86T" são peças diferentes (só "com × sem índice" avisa); falta o `/code-review` colado.
+- **Antes da próxima versão**: aplicar a **0081 e depois a 0082** nas empresas e no `ssace-teste`. Depois de publicar: ler o QR do Pix no app do banco e conferir "API Keys" num computador novo (#934).
+- **Seguem valendo**: #950, #951, #947, a troca do CSC, escritorio#106; o resto da #934; #906 (fim de semana); #912 caso 2; #842 (11/11); escritorio#20 (22/11).
+
 ### 06/11/2026, noite: a fila da equipe revisada; o Pix (0081) na `main`
 - **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e estamos **esperando a Focus** (#837; o conserto do programa é a #948).
 - **Mesclados à noite**: o #944 (NFC-e de pessoa física sem CPF) e o #941 (Pix na cobrança e QR no faturamento, **migration 0081**, `qrcode.react`); `VERSAO_ESQUEMA_ESPERADA` = 81. No escritório: o #102, o #103 e o #104.
