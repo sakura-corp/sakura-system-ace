@@ -1,0 +1,55 @@
+// Reproduz a prévia do DANFE dentro do Electron de verdade (o app buildado).
+import path from "node:path";
+import fs from "node:fs";
+const RAIZ = "/home/user/sakura-system-ace";
+const { _electron: electron } = await import("/opt/node22/lib/node_modules/playwright/index.mjs");
+function pdfMinimo() {
+  const objs = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    null,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  const conteudo = "BT /F1 24 Tf 30 100 Td (DANFSE TESTE) Tj ET";
+  objs[3] = `<< /Length ${conteudo.length} >>\nstream\n${conteudo}\nendstream`;
+  let s = "%PDF-1.4\n"; const offs = [];
+  objs.forEach((o, i) => { offs.push(s.length); s += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = s.length;
+  s += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("");
+  s += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(s, "latin1").toString("base64");
+}
+const b64 = pdfMinimo();
+const tipos = process.argv.slice(2).length ? process.argv.slice(2) : ["application/pdf", "binary/octet-stream", "application/octet-stream", ""];
+const app = await electron.launch({ executablePath: path.join(RAIZ, "node_modules/.bin/electron"), args: ["."], cwd: RAIZ, env: { ...process.env, VITE_DEV_SERVER_URL: "" } });
+app.process().stdout?.on("data", (d) => process.stdout.write("[main] " + d));
+const pagina = await app.firstWindow();
+pagina.on("console", (m) => console.log("[console]", m.text()));
+await pagina.waitForLoadState("domcontentloaded");
+await pagina.waitForTimeout(2000);
+if (process.env.SEM_CSP || process.env.CSP) {
+  await app.evaluate(({ session }, csp) => {
+    session.defaultSession.webRequest.onHeadersReceived(csp ? (d, r) => { console.log("HDR", d.resourceType, d.url.slice(0,90)); if (process.env.PULAR_EXT && !d.url.startsWith("file:")) return r({}); r({ responseHeaders: { ...d.responseHeaders, "Content-Security-Policy": [csp] } }); } : null);
+  }, process.env.CSP || "");
+  await pagina.reload(); await pagina.waitForTimeout(2000);
+  console.log("CSP agora:", process.env.CSP || "(nenhuma)");
+}
+await app.evaluate(({ session }) => { session.defaultSession.on("will-download", (_e, item) => { console.log("WILL-DOWNLOAD", item.getMimeType(), item.getFilename()); }); });
+for (const tipo of tipos) {
+  await pagina.evaluate(({ b64, tipo }) => {
+    document.querySelectorAll("iframe.repro").forEach((q) => q.remove());
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const q = document.createElement("iframe");
+    q.className = "repro";
+    q.style.cssText = "position:fixed;top:20px;left:20px;width:600px;height:400px;z-index:99999;background:white;border:3px solid red";
+    q.src = URL.createObjectURL(new Blob([bytes], tipo ? { type: tipo } : {}));
+    document.body.appendChild(q);
+  }, { b64, tipo });
+  await pagina.waitForTimeout(8000);
+  const nome = `/tmp/claude-0/repro/${process.env.PREFIXO||""}tipo-${(tipo || "vazio").replace(/\W/g, "_")}.png`;
+  await pagina.screenshot({ path: nome, clip: { x: 0, y: 0, width: 660, height: 450 } });
+  const frames = pagina.frames().map((f) => f.url());
+  console.log(tipo || "(sem tipo)", "->", nome, "frames:", JSON.stringify(frames));
+}
+await app.close();

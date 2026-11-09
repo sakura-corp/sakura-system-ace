@@ -210,7 +210,7 @@ describe("baixar o PDF/XML", () => {
     expect(semTipo.type).toBe("application/octet-stream");
   });
 
-  it("um XML que por acaso tenha %PDF no meio não vira PDF", async () => {
+  it("DANFE com %PDF só no meio (não no começo) não vira PDF", async () => {
     invoke.mockResolvedValue(envelopeDoArquivo("<x>%PDF</x>", "application/octet-stream"));
     const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "danfe");
     expect(blob.type).toBe("application/octet-stream");
