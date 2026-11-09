@@ -78,11 +78,13 @@ export function DadosFiscaisSection({
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
     setValores((atual) => ({ ...atual, [campo]: valor }));
+    setSalvo(false);
   }
 
   async function aoSairDoCep(valor: string) {
     const endereco = await buscarEnderecoPorCep(valor);
     if (!endereco) return;
+    setSalvo(false);
     setValores((atual) => ({
       ...atual,
       rua: endereco.logradouro,
@@ -305,7 +307,10 @@ export function DadosFiscaisSection({
             <input
               type="password"
               value={novoToken}
-              onChange={(e) => setNovoToken(e.target.value)}
+              onChange={(e) => {
+                setNovoToken(e.target.value);
+                setSalvo(false);
+              }}
               placeholder={tokenCadastrado ? "Em branco, mantém o atual" : ""}
               autoComplete="off"
               className={campoClasse}

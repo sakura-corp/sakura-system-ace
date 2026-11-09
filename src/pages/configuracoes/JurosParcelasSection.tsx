@@ -64,9 +64,10 @@ export function JurosParcelasSection({
                 step="0.1"
                 min="0"
                 value={valores[n]}
-                onChange={(e) =>
-                  setValores((atual) => ({ ...atual, [n]: e.target.value }))
-                }
+                onChange={(e) => {
+                  setValores((atual) => ({ ...atual, [n]: e.target.value }));
+                  setSalvo(false);
+                }}
                 className="w-full rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
               />
               <span className="text-sakura-muted">%</span>

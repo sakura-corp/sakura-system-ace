@@ -112,6 +112,10 @@ describe("Configurações: salvar não pode fechar a seção nem esconder o avis
     expect(m.salvarTextoGarantia).toHaveBeenCalledWith("loja-a", "Texto novo");
     await waitFor(() => expect(m.buscarTextoGarantia).toHaveBeenCalledTimes(2));
 
+    // Voltou a editar: o "salvo" some, senão ele mente sobre uma mudança não salva.
+    await user.type(screen.getByDisplayValue("Texto novo"), "!");
+    expect(screen.queryByText("Texto de garantia salvo.")).not.toBeInTheDocument();
+
     // Fechar e abrir a seção: o texto que veio do recarregar continua lá.
     await user.click(screen.getByText("Texto de garantia"));
     expect(screen.queryByDisplayValue("Texto novo")).not.toBeInTheDocument();

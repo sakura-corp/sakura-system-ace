@@ -28,6 +28,7 @@ export function CartoesInicioSection({
 
   function set(indice: number, valor: CartaoMetrica) {
     setValores((atual) => atual.map((v, i) => (i === indice ? valor : v)));
+    setSalvo(false);
   }
 
   async function handleSalvar() {
