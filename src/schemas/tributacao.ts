@@ -179,7 +179,7 @@ export function motivoCfopIncompativel(
   if (!esperado) return null;
   if (valorCfop === esperado.dentro || valorCfop === esperado.fora) return null;
 
-  const inicio = `o CFOP ${valorCfop} não combina com o CSOSN ${valorCsosn} (${esperado.peca}): a SEFAZ recusa`;
+  const inicio = `o CFOP ${valorCfop} não combina com o CSOSN ${valorCsosn} (${esperado.peca})`;
   if (valorCfop.startsWith("6")) {
     return `${inicio}; para venda para outro estado use ${esperado.fora} (dentro do estado, ${esperado.dentro})`;
   }
