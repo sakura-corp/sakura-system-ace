@@ -94,7 +94,8 @@ const peca = (parcial: Partial<Peca>): Peca => ({
   preco_venda: 320,
   ncm: "40111000",
   cest: null,
-  cfop_padrao: "5102",
+  // CSOSN 500 (ICMS já pago antes) pede CFOP 5405: com 5102 a SEFAZ recusa (#864).
+  cfop_padrao: "5405",
   origem: "0",
   // Simples Nacional: CSOSN de 3 dígitos (o 500 é o que esta loja usa, e foi
   // confirmado pela contabilidade em 31/08/2026).
