@@ -3,7 +3,7 @@
 - **Tarefa**: #957, as peças de exemplo saem com CSOSN, CFOP e origem (a NFC-e de teste não é mais recusada)
 - **Chefe**: backend
 - **Data**: 2026-11-09
-- **PR**: o PR da branch `claude/trusting-brown-11hgcp` (link na conversa da sessão)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/960
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
