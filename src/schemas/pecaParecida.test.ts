@@ -201,6 +201,20 @@ describe("acharPecasParecidas", () => {
     expect(r).toHaveLength(1);
   });
 
+  it("medida com zero à esquerda (175/070) também é pneu: o 82T continua sendo ignorado", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70 R13 82T" }), [
+      peca({ id: "p", descricao: "Pneu 175/070 R13 82T" }),
+    ]);
+    expect(r).toHaveLength(1);
+  });
+
+  it("'175/70R 13' (R colado na série) não vira índice de carga: continua parecido com '175/70 R13'", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70R 13" }), [
+      peca({ id: "p", descricao: "Pneu 175/70 R13" }),
+    ]);
+    expect(r).toHaveLength(1);
+  });
+
   it("índice de carga também é ignorado quando está no campo medida (91H)", () => {
     const r = acharPecasParecidas(peca({ descricao: "Pneu Pirelli", medida: "195/55 R15 91H" }), [
       peca({ id: "p", descricao: "Pneu Pirelli", medida: "195/55 R15" }),

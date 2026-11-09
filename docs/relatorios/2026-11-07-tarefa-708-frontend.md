@@ -14,6 +14,7 @@
 ## Modelos usados
 - Planejar, testes, regra e tela: sessão mãe, forte (claude-opus-5-5), esforço médio.
 - Revisão final: `ajudante-forte`, esforço alto. Não trocou.
+- `/code-review` (09/11, esforço médio, pedido da Sofia): rodou na própria sessão, depois do ajuste do 82T × 86T.
 
 ## Sessões filhas
 - Nenhuma.
@@ -27,6 +28,8 @@
 ## O que testei e VI reprovar
 - `pecaParecida.test.ts`, antes do conserto: "amortecedor LE x LD não é parecido", "pneu com e sem 82T é parecido" e "índice de carga no campo medida (91H)".
 - `pecaParecida.test.ts`, depois da revisão: "compressor para pneu 12V x 220V" e "disco de freio 256/22 20V". Reprovaram com a 1ª versão, que tratava como pneu qualquer peça com a palavra "pneu".
+- `pecaParecida.test.ts`, pedido da Sofia (09/11): "82T x 86T não é parecido" reprovou antes do ajuste.
+- `pecaParecida.test.ts`, achados do `/code-review` (09/11): "175/070 R13 82T × 175/70 R13 82T é parecido" e "175/70R 13 × 175/70 R13 é parecido" reprovaram antes do conserto.
 - `PecaForm.test.tsx`: "peça inativa aparece no aviso com a marca '(inativa)'".
 
 ## O que passou sem eu ter visto reprovar
@@ -36,7 +39,8 @@
 - `typecheck`, `lint` (0 erros; 1 aviso antigo em `AuthContext.tsx`), `test:fusos` (1.563), `contraste`, `contraste:telas` (nenhuma reprovação nova) e `largura:telas` (65 telas, nada passando da janela).
 
 ## O que ficou de fora
-- **Pra Sofia decidir**: hoje "82T" × "86T" conta como a mesma peça. Segue a decisão ao pé da letra, mas carga diferente é pneu diferente. Se ela quiser que só "com índice × sem índice" seja parecido, é um ajuste pequeno.
+- **Decidido pela Sofia (07/11)**: "82T" × "86T" é pneu diferente; só "com índice × sem índice" avisa. Feito em 09/11. Índice diferente só na letra da velocidade ("82T" × "82H") também conta como diferente, pelo mesmo critério ("só com × sem avisa").
+- Do `/code-review`, ficou de fora: peça que é pneu mas não tem medida reconhecível ("Pneu 175 70 R14 82T", sem a barra) contra uma reconhecida: o índice sai só de um lado e o aviso não aparece. É raro, e resolver mexeria na chave de grupo do "juntar peças".
 - Abreviações de lado ("esq", "dir", "L/E", "L/D") e índice com espaço ("82 T") não são reconhecidos. Esses casos continuam como antes: as abreviações seguem avisando e o "82 T" segue sem avisar. A decisão falava de LE × LD.
 - Pneu de utilitário com índice duplo ("107/105R"): continua sem avisar.
 - `nomeNoAviso` repete a função de `JuntarPecasModal.tsx`: juntar as duas seria mexer num arquivo fora da lista da issue.
@@ -49,12 +53,13 @@
 - Observação: o banco de teste ainda está sem as migrations 0079 a 0081 (o aviso amarelo do programa). Não afeta esta tarefa.
 
 ## O que depende de alguém
-- **Sofia**: revisar o PR e decidir o "82T × 86T".
+- **Sofia**: revisar o PR de novo.
 
 ## Onde parou
 Terminei.
 
 ## Como eu agi
+- **Perdi o comentário da Sofia de 07/11**: o acompanhamento do PR acorda a sessão com revisão e CI, mas não com comentário comum. Só vi na revisão de 09/11. E não rodei o `/code-review` antes de pedir a revisão, como manda a seção 0 pra equipe.
 - **O que a skill me ajudou a fazer**: o teste primeiro e a revisão forte. A revisão achou um falso aviso que meus testes não pegavam.
 - **Onde eu errei ou tive que adivinhar**: na 1ª versão, achei que a palavra "pneu" bastava pra saber que a peça é pneu. Também adivinhei a lista de letras de velocidade e as palavras de lado (le, ld, esquerdo/a, direito/a).
 - **No teste no PC**: mandei os 3 testes de uma vez sem dizer o que pôr nos campos obrigatórios (NCM, CEST, CFOP, origem), e a pessoa travou. Depois voltei a um passo por vez.

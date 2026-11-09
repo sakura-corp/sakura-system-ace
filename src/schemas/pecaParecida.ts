@@ -76,27 +76,25 @@ function normalizar(texto: string | null | undefined): string {
 
 /** É pneu? Uma medida de pneu na descrição ou na medida: 175/70 R13 (ou ZR, ou colado), 90/90-18 (moto), aro 14. */
 const PARECE_PNEU =
-  /\d{3}\s*\/\s*\d{2}\s*z?r\s*\d{2}|\d{2,3}\s*\/\s*\d{2}\s*-\s*\d{2}|(^|[^a-z0-9])aro\s*\d{2}(?!\d)/;
+  /\d{3}\s*\/\s*\d{2,3}\s*z?r\s*\d{2}|\d{2,3}\s*\/\s*\d{2}\s*-\s*\d{2}|(^|[^a-z0-9])aro\s*\d{2}(?!\d)/;
 
-/** O índice de carga e velocidade do pneu: 2 ou 3 dígitos e a letra da velocidade ("82T", "91H"), palavra solta. */
-const INDICE_DE_CARGA = /(^|[^a-z0-9])\d{2,3}[hjklmnpqrstuvwyz](?![a-z0-9])/g;
+/** O índice de carga e velocidade do pneu: 2 ou 3 dígitos e a letra da velocidade ("82T", "91H"), palavra solta.
+ *  Nunca logo depois de "/": em "175/70R 13", o "70R" é a série e o R do radial, não índice. */
+const INDICE_DE_CARGA = /(^|[^a-z0-9/])\d{2,3}[hjklmnpqrstuvwyz](?![a-z0-9])/g;
 
 /** O texto normalizado, sem o índice de carga quando a peça é pneu (#708). */
 function semIndiceDeCarga(texto: string, ehPneu: boolean): string {
   return ehPneu ? texto.replace(INDICE_DE_CARGA, "$1") : texto;
 }
 
-/** Os índices de carga da peça ("82t", ou "82t,86t"), ou "" quando não diz (ou não é pneu). */
-function indicesDaPeca(p: PecaComparavel, pneu: boolean): string {
+/** Os índices de carga da peça ("82t", ou "82t,86t"), ou "" quando não diz (ou não é pneu).
+ *  `texto` é a descrição + medida já normalizadas. */
+function indicesDaPeca(texto: string, pneu: boolean): string {
   if (!pneu) return "";
-  const texto = `${normalizar(p.descricao)} ${normalizar(p.medida)}`;
   const achados = [...texto.matchAll(INDICE_DE_CARGA)].map((m) => m[0].slice(m[1].length));
   return [...new Set(achados)].sort().join(",");
 }
 
-function ehPneu(p: PecaComparavel): boolean {
-  return PARECE_PNEU.test(`${normalizar(p.descricao)} ${normalizar(p.medida)}`);
-}
 
 /** Pedaços do nome: letra separada de número, sem pontuação, em ordem alfabética. */
 function pedacos(texto: string): string[] {
@@ -123,9 +121,8 @@ function ladoDaPeca(descricao: string): string {
   return [...lados].sort().join("");
 }
 
-/** Conjunto de números (sequências de dígitos) da descrição + medida, como texto ordenado. */
-function numerosDaPeca(p: PecaComparavel, pneu: boolean): string {
-  const texto = `${normalizar(p.descricao)} ${normalizar(p.medida)}`;
+/** Conjunto de números (sequências de dígitos) da descrição + medida (já normalizadas), como texto ordenado. */
+function numerosDaPeca(texto: string, pneu: boolean): string {
   const todos = semIndiceDeCarga(texto, pneu).match(/\d+/g) ?? [];
   // Sem zeros à esquerda: "070" e "70" são o mesmo número.
   const unicos = new Set(todos.map((n) => String(Number(n))));
@@ -208,15 +205,18 @@ export interface PecaPreparada {
 }
 
 export function prepararPeca(p: PecaComparavel): PecaPreparada {
-  const pneu = ehPneu(p);
+  // Normaliza uma vez só por peça: o "juntar peças" prepara o cadastro inteiro (#721).
+  const descricao = normalizar(p.descricao);
+  const texto = `${descricao} ${normalizar(p.medida)}`;
+  const pneu = PARECE_PNEU.test(texto);
   return {
     codigoBarras: codigoQueCasa(p.codigo_barras),
     codigoInterno: codigoQueCasa(p.codigo_interno),
-    numeros: numerosDaPeca(p, pneu),
-    lado: ladoDaPeca(normalizar(p.descricao)),
+    numeros: numerosDaPeca(texto, pneu),
+    lado: ladoDaPeca(descricao),
     descricao: p.descricao,
     pneu,
-    indices: indicesDaPeca(p, pneu),
+    indices: indicesDaPeca(texto, pneu),
   };
 }
 
