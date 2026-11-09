@@ -4,6 +4,7 @@ import {
   csosnMaisUsado,
   ehCsosn,
   ehCst,
+  motivoCfopIncompativel,
   motivoCodigoIncompativel,
   regimeUsaCsosn,
 } from "./tributacao";
@@ -95,5 +96,84 @@ describe("codigoParaPecaImportada", () => {
 
   it("não mexe em nada quando o regime da loja não está preenchido", () => {
     expect(codigoParaPecaImportada("00", null, "500")).toBe("00");
+  });
+});
+
+describe("motivoCfopIncompativel", () => {
+  // O caso real (ensaio de 04/11): peça com CSOSN 500 saindo com CFOP 5102.
+  it("avisa CFOP 5102 com CSOSN 500 e sugere 5405", () => {
+    const motivo = motivoCfopIncompativel("5102", "500", "simples_nacional");
+    expect(motivo).toContain("CFOP 5102");
+    expect(motivo).toContain("CSOSN 500");
+    expect(motivo).toContain("5405");
+  });
+
+  it("não avisa CFOP 5405 com CSOSN 500 — é o par certo dentro do estado", () => {
+    expect(motivoCfopIncompativel("5405", "500", "simples_nacional")).toBeNull();
+  });
+
+  it("venda para outro estado (CFOP 6xxx) com CSOSN 500 sugere 6404", () => {
+    const motivo = motivoCfopIncompativel("6102", "500", "simples_nacional");
+    expect(motivo).toContain("CFOP 6102");
+    expect(motivo).toContain("use 6404");
+  });
+
+  it("não avisa CFOP 6404 com CSOSN 500 — é o par certo fora do estado", () => {
+    expect(motivoCfopIncompativel("6404", "500", "simples_nacional")).toBeNull();
+  });
+
+  it("não avisa CFOP 5102 com CSOSN 102 — é o par certo da peça comum", () => {
+    expect(motivoCfopIncompativel("5102", "102", "simples_nacional")).toBeNull();
+  });
+
+  it("avisa CFOP 5405 com CSOSN 102 e sugere 5102", () => {
+    const motivo = motivoCfopIncompativel("5405", "102", "simples_nacional");
+    expect(motivo).toContain("CFOP 5405");
+    expect(motivo).toContain("CSOSN 102");
+    expect(motivo).toContain("use 5102");
+    expect(motivo).toContain("6102");
+  });
+
+  it("vale para os CSOSN 101, 103, 300 e 400 também", () => {
+    for (const csosn of ["101", "103", "300", "400"]) {
+      expect(motivoCfopIncompativel("5405", csosn, "simples_nacional")).toContain("use 5102");
+      expect(motivoCfopIncompativel("6404", csosn, "simples_nacional")).toContain("use 6102");
+      expect(motivoCfopIncompativel("5102", csosn, "simples_nacional")).toBeNull();
+    }
+  });
+
+  it("ignora espaço em volta do CFOP e do CSOSN", () => {
+    expect(motivoCfopIncompativel(" 5405 ", " 500 ", "simples_nacional")).toBeNull();
+    expect(motivoCfopIncompativel(" 5102 ", " 500 ", "simples_nacional")).toContain(
+      "o CFOP 5102 não combina com o CSOSN 500 (",
+    );
+  });
+
+  // A regra é só do Simples Nacional (CSOSN). No regime normal o código é CST
+  // e a combinação com o CFOP é outra — melhor calar do que palpitar.
+  it("fica calado no regime normal, com CST", () => {
+    expect(motivoCfopIncompativel("5102", "60", "lucro_presumido")).toBeNull();
+    expect(motivoCfopIncompativel("5102", "500", "lucro_real")).toBeNull();
+  });
+
+  it("fica calado quando o regime da loja não está preenchido", () => {
+    expect(motivoCfopIncompativel("5102", "500", null)).toBeNull();
+    expect(motivoCfopIncompativel("5102", "500", undefined)).toBeNull();
+  });
+
+  // CFOP ou CSOSN em branco já têm aviso próprio em outro lugar.
+  it("fica calado quando o CFOP ou o CSOSN está vazio", () => {
+    expect(motivoCfopIncompativel("", "500", "simples_nacional")).toBeNull();
+    expect(motivoCfopIncompativel("   ", "500", "simples_nacional")).toBeNull();
+    expect(motivoCfopIncompativel(null, "102", "simples_nacional")).toBeNull();
+    expect(motivoCfopIncompativel("5102", "", "simples_nacional")).toBeNull();
+    expect(motivoCfopIncompativel("5102", null, "simples_nacional")).toBeNull();
+  });
+
+  it("não opina nos CSOSN 201, 202, 203 e 900", () => {
+    for (const csosn of ["201", "202", "203", "900"]) {
+      expect(motivoCfopIncompativel("5102", csosn, "simples_nacional")).toBeNull();
+      expect(motivoCfopIncompativel("5405", csosn, "simples_nacional")).toBeNull();
+    }
   });
 });
