@@ -17,6 +17,16 @@
  * (da descrição + do campo `medida`) forem diferentes, não é parecida pelo
  * nome, por mais parecido que o texto seja. É o que separa R13 de R14 e o
  * filtro PSL55 do PSL56 — pra um autocenter, são peças diferentes.
+ *
+ * O LADO também manda (#708, Sofia 23/10): "LE" × "LD" (ou esquerdo × direito)
+ * é peça diferente, como R13 × R14. Se só uma das duas diz o lado, o nome decide.
+ *
+ * No pneu, o índice de carga e velocidade ("82T", "91H") NÃO é medida (#708):
+ * com ele ou sem ele, é a mesma peça. Mas "82T" × "86T" é pneu diferente
+ * (Sofia, 07/11): se as duas dizem o índice, ele tem que ser o mesmo. Só vale quando há uma MEDIDA de pneu
+ * (175/70 R13, 90/90-18, aro 14): a palavra "pneu" sozinha não basta, senão o
+ * "compressor para pneu 12V" × "220V" virava a mesma peça; e fora de pneu,
+ * "55W" × "60W" numa lâmpada é peça diferente.
  */
 
 export interface PecaComparavel {
@@ -64,14 +74,56 @@ function normalizar(texto: string | null | undefined): string {
     .trim();
 }
 
-/** Pedaços do nome: letra separada de número, sem pontuação, em ordem alfabética. */
-function pedacos(texto: string): string[] {
-  return (normalizar(texto).match(/\d+|[a-z]+/g) ?? []).sort();
+/** É pneu? Uma medida de pneu na descrição ou na medida: 175/70 R13 (ou ZR, ou colado), 90/90-18 (moto), aro 14. */
+const PARECE_PNEU =
+  /\d{3}\s*\/\s*\d{2,3}\s*z?r\s*\d{2}|\d{2,3}\s*\/\s*\d{2}\s*-\s*\d{2}|(^|[^a-z0-9])aro\s*\d{2}(?!\d)/;
+
+/** O índice de carga e velocidade do pneu: 2 ou 3 dígitos e a letra da velocidade ("82T", "91H"), palavra solta.
+ *  Nunca logo depois de "/": em "175/70R 13", o "70R" é a série e o R do radial, não índice. */
+const INDICE_DE_CARGA = /(^|[^a-z0-9/])\d{2,3}[hjklmnpqrstuvwyz](?![a-z0-9])/g;
+
+/** O texto normalizado, sem o índice de carga quando a peça é pneu (#708). */
+function semIndiceDeCarga(texto: string, ehPneu: boolean): string {
+  return ehPneu ? texto.replace(INDICE_DE_CARGA, "$1") : texto;
 }
 
-/** Conjunto de números (sequências de dígitos) da descrição + medida, como texto ordenado. */
-function numerosDaPeca(p: PecaComparavel): string {
-  const todos = `${normalizar(p.descricao)} ${normalizar(p.medida)}`.match(/\d+/g) ?? [];
+/** Os índices de carga da peça ("82t", ou "82t,86t"), ou "" quando não diz (ou não é pneu).
+ *  `texto` é a descrição + medida já normalizadas. */
+function indicesDaPeca(texto: string, pneu: boolean): string {
+  if (!pneu) return "";
+  const achados = [...texto.matchAll(INDICE_DE_CARGA)].map((m) => m[0].slice(m[1].length));
+  return [...new Set(achados)].sort().join(",");
+}
+
+
+/** Pedaços do nome: letra separada de número, sem pontuação, em ordem alfabética. */
+function pedacos(texto: string): string[] {
+  return (texto.match(/\d+|[a-z]+/g) ?? []).sort();
+}
+
+/** As palavras que dizem o lado da peça, e o lado de cada uma. */
+const LADOS: Record<string, "e" | "d"> = {
+  le: "e",
+  esquerdo: "e",
+  esquerda: "e",
+  ld: "d",
+  direito: "d",
+  direita: "d",
+};
+
+/** O lado da peça ("e", "d", "de" se diz os dois) ou "" quando não diz. */
+function ladoDaPeca(descricao: string): string {
+  const lados = new Set<string>();
+  for (const palavra of descricao.match(/[a-z]+/g) ?? []) {
+    const lado = LADOS[palavra];
+    if (lado) lados.add(lado);
+  }
+  return [...lados].sort().join("");
+}
+
+/** Conjunto de números (sequências de dígitos) da descrição + medida (já normalizadas), como texto ordenado. */
+function numerosDaPeca(texto: string, pneu: boolean): string {
+  const todos = semIndiceDeCarga(texto, pneu).match(/\d+/g) ?? [];
   // Sem zeros à esquerda: "070" e "70" são o mesmo número.
   const unicos = new Set(todos.map((n) => String(Number(n))));
   return [...unicos].sort().join(",");
@@ -137,28 +189,41 @@ export interface PecaPreparada {
   codigoInterno: string | null;
   /** Os números da descrição + medida, sem zero à esquerda, ordenados ("13,175,70"). */
   numeros: string;
+  /** O lado que a descrição diz ("e", "d", "de"), ou "" quando não diz (#708). */
+  lado: string;
   /**
    * O nome, preparado só quando a regra chega a comparar nomes (mesmos
    * números, nenhum código igual): no aviso do cadastro, a maioria das peças
    * para antes, e preparar o nome de todas seria trabalho jogado fora.
    */
   descricao: string;
+  /** É pneu? Decide se o índice de carga ("82T") sai do nome. */
+  pneu: boolean;
+  /** Os índices de carga ("82t"), ou "" quando não diz: dois diferentes, pneu diferente. */
+  indices: string;
   nomePreparado?: { nome: string; bigramas: number[] };
 }
 
 export function prepararPeca(p: PecaComparavel): PecaPreparada {
+  // Normaliza uma vez só por peça: o "juntar peças" prepara o cadastro inteiro (#721).
+  const descricao = normalizar(p.descricao);
+  const texto = `${descricao} ${normalizar(p.medida)}`;
+  const pneu = PARECE_PNEU.test(texto);
   return {
     codigoBarras: codigoQueCasa(p.codigo_barras),
     codigoInterno: codigoQueCasa(p.codigo_interno),
-    numeros: numerosDaPeca(p),
+    numeros: numerosDaPeca(texto, pneu),
+    lado: ladoDaPeca(descricao),
     descricao: p.descricao,
+    pneu,
+    indices: indicesDaPeca(texto, pneu),
   };
 }
 
 /** Os pedaços do nome em ordem alfabética (unidos por espaço) e os bigramas, na 1ª vez que precisa. */
 function nomeDe(p: PecaPreparada): { nome: string; bigramas: number[] } {
   if (!p.nomePreparado) {
-    const nome = pedacos(p.descricao).join(" ");
+    const nome = pedacos(semIndiceDeCarga(normalizar(p.descricao), p.pneu)).join(" ");
     p.nomePreparado = { nome, bigramas: bigramas(nome) };
   }
   return p.nomePreparado;
@@ -196,6 +261,8 @@ export function compararPreparadas(
     return { motivo: "codigo_interno", semelhanca: 1 };
   }
   if (a.numeros !== b.numeros) return null; // a medida manda
+  if (a.lado !== "" && b.lado !== "" && a.lado !== b.lado) return null; // o lado também (#708)
+  if (a.indices !== "" && b.indices !== "" && a.indices !== b.indices) return null; // 82T × 86T
   const semelhanca = diceDasPreparadas(a, b, limiteNome);
   return semelhanca >= limiteNome ? { motivo: "nome", semelhanca } : null;
 }
