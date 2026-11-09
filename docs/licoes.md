@@ -1867,3 +1867,12 @@
     revisão da Sofia": cada um achava que a vez era do outro. **Regra**: pedir mudança sempre pelo
     "Review changes" → **Request changes** (e pôr a pessoa como responsável do PR). Assim o GitHub
     mostra "Changes requested" e a sessão dela lista isso nas pendências (seção 0).
+
+99. **NFS-e Nacional do Simples: o Ambiente Nacional recusa campo "a mais" (06 a 09/11/2026, #837).**
+    A primeira nota da Pneus Amigão foi recusada duas vezes por campos que o leiaute aceita mas o
+    governo não quer naquele caso: a **IM do prestador** (Araraquara não tem as informações
+    complementares no CNC NFS-e) e a **alíquota do ISS** (ME/EPP do Simples, com o ISS apurado pelo
+    Simples e sem retenção: o ISS vai no DAS). Os dois foram tirados (#956, #958) e a nota saiu.
+    **Regra**: na nota nacional, mandar só o que é obrigatório pro caso da loja; campo opcional
+    entra só quando a documentação ou a recusa mostrar que é preciso. E a mensagem de recusa da
+    DPS diz o campo e o motivo: ler antes de abrir ticket (a Focus levou 3 dias pra apontar a IM).
