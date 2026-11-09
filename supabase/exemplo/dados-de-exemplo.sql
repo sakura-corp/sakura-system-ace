@@ -236,6 +236,26 @@ from (values
 ) as v(id, codigo, descricao, custo, venda, ncm, medida, minimo, garantia, categoria)
 on conflict do nothing;
 
+-- O fiscal da peça (#957): sem ele a SEFAZ recusa a NFC-e de teste ("NF-e sem
+-- informação de ICMS / ISSQN"). A loja de exemplo é Simples Nacional → CSOSN
+-- (regra da #864): pneu 500 + 5405 (substituição tributária), o resto 102 + 5102.
+-- Só preenche o campo vazio (nunca sobrescreve) e só pega peça com algum vazio,
+-- pra segunda rodada não mexer em nada (nem na auditoria).
+update pecas p
+   set cst_ou_csosn = coalesce(nullif(trim(p.cst_ou_csosn), ''), v.csosn),
+       cfop_padrao  = coalesce(nullif(trim(p.cfop_padrao), ''), v.cfop),
+       origem       = coalesce(nullif(trim(p.origem), ''), '0')
+from (values
+  ('EX-001', '500', '5405'), ('EX-002', '500', '5405'), ('EX-003', '500', '5405'),
+  ('EX-004', '500', '5405'), ('EX-005', '102', '5102'), ('EX-006', '102', '5102'),
+  ('EX-007', '102', '5102'), ('EX-008', '102', '5102'), ('EX-009', '102', '5102'),
+  ('EX-010', '102', '5102'), ('EX-011', '102', '5102'), ('EX-012', '102', '5102')
+) as v(codigo, csosn, cfop)
+where p.id = ('eeee0006-0000-4000-8000-0000000000' || substr(v.codigo, 5, 2))::uuid
+  and p.id::text like 'eeee0006-%'
+  and (coalesce(trim(p.cst_ou_csosn), '') = '' or coalesce(trim(p.cfop_padrao), '') = ''
+       or coalesce(trim(p.origem), '') = '');
+
 -- Preço nos serviços padrão, só onde ainda está vazio (nunca sobrescreve).
 update servicos s set preco_padrao = v.preco, custo = v.custo
 from (values
