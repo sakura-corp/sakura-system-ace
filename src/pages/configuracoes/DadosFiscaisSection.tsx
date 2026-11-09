@@ -78,11 +78,13 @@ export function DadosFiscaisSection({
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
     setValores((atual) => ({ ...atual, [campo]: valor }));
+    setSalvo(false);
   }
 
   async function aoSairDoCep(valor: string) {
     const endereco = await buscarEnderecoPorCep(valor);
     if (!endereco) return;
+    setSalvo(false);
     setValores((atual) => ({
       ...atual,
       rua: endereco.logradouro,
@@ -155,12 +157,6 @@ export function DadosFiscaisSection({
   return (
     <>
       {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Dados fiscais salvos.
-        </p>
-      )}
-
       <div className="mt-4 grid grid-cols-3 gap-3">
         <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
           CNPJ
@@ -311,7 +307,10 @@ export function DadosFiscaisSection({
             <input
               type="password"
               value={novoToken}
-              onChange={(e) => setNovoToken(e.target.value)}
+              onChange={(e) => {
+                setNovoToken(e.target.value);
+                setSalvo(false);
+              }}
               placeholder={tokenCadastrado ? "Em branco, mantém o atual" : ""}
               autoComplete="off"
               className={campoClasse}
@@ -450,6 +449,11 @@ export function DadosFiscaisSection({
         {erroPercentual && (
           <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
             Não salvou: confira o percentual dos tributos do Simples.
+          </p>
+        )}
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Dados fiscais salvos.
           </p>
         )}
         <button

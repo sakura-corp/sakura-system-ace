@@ -28,6 +28,7 @@ export function CartoesInicioSection({
 
   function set(indice: number, valor: CartaoMetrica) {
     setValores((atual) => atual.map((v, i) => (i === indice ? valor : v)));
+    setSalvo(false);
   }
 
   async function handleSalvar() {
@@ -49,12 +50,6 @@ export function CartoesInicioSection({
   return (
     <>
       {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Cartões salvos.
-        </p>
-      )}
-
       <div className="mt-4 grid grid-cols-3 gap-3">
         {valores.map((valor, indice) => (
           <label key={indice} className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
@@ -74,7 +69,12 @@ export function CartoesInicioSection({
         ))}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Cartões salvos.
+          </p>
+        )}
         <button
           type="button"
           onClick={handleSalvar}

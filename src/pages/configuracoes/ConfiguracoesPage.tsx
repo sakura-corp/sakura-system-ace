@@ -79,12 +79,16 @@ export function ConfiguracoesPage() {
     null,
   );
 
-  async function carregar() {
+  // `silencioso`: recarregar depois de salvar sem ligar o "Carregando..." de
+  // página inteira. Com ele, as seções saíam da tela e voltavam do zero: a
+  // rolagem pulava pro topo, a seção voltava fechada e o "salvo" se perdia
+  // (#947). O "Carregando..." fica só pra primeira carga e a troca de loja.
+  async function carregar({ silencioso = false }: { silencioso?: boolean } = {}) {
     if (!lojaAtual) {
       setCarregando(false);
       return;
     }
-    setCarregando(true);
+    if (!silencioso) setCarregando(true);
     setErro(null);
     try {
       const [
@@ -143,6 +147,8 @@ export function ConfiguracoesPage() {
     }
   }
 
+  const recarregar = () => carregar({ silencioso: true });
+
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,13 +183,13 @@ export function ConfiguracoesPage() {
       await criarOperador(operador, senha, lojaIds);
     }
     setFormulario(null);
-    await carregar();
+    await recarregar();
   }
 
   async function handleAlternarStatus(op: Operador) {
     try {
       await atualizarOperador(op.id, { ativo: !op.ativo });
-      await carregar();
+      await recarregar();
     } catch (err) {
       console.error("Erro ao atualizar status do operador:", err);
       setErro(mensagemDeErro(err));
@@ -340,7 +346,7 @@ export function ConfiguracoesPage() {
           <LojasSection
             lojas={lojas}
             operadorCriadorId={operadorLogado.id}
-            onSalvo={carregar}
+            onSalvo={recarregar}
           />
         </div>
       )}
@@ -354,7 +360,7 @@ export function ConfiguracoesPage() {
             <JurosParcelasSection
               jurosParcelas={jurosParcelas}
               lojaId={lojaAtual.id}
-              onSalvo={carregar}
+              onSalvo={recarregar}
             />
           </SecaoRecolhivel>
 
@@ -362,28 +368,28 @@ export function ConfiguracoesPage() {
             titulo="Depósitos"
             descricao="Locais físicos de estoque dentro da loja (ex: Depósito Principal, Fundos). Toda loja já nasce com um depósito padrão — crie mais só se tiver mais de um lugar físico guardando peça."
           >
-            <DepositosSection depositos={depositos} lojaId={lojaAtual.id} onSalvo={carregar} />
+            <DepositosSection depositos={depositos} lojaId={lojaAtual.id} onSalvo={recarregar} />
           </SecaoRecolhivel>
 
           <SecaoRecolhivel
             titulo="Categorias de produto"
             descricao="Usadas no cadastro de produtos (aba Estoque → Produtos) para agrupar peças."
           >
-            <CategoriasSection categorias={categorias} onSalvo={carregar} />
+            <CategoriasSection categorias={categorias} onSalvo={recarregar} />
           </SecaoRecolhivel>
 
           <SecaoRecolhivel
             titulo="Categorias de serviço"
             descricao="Usadas no cadastro de serviços (módulo Serviços) para agrupar por área do veículo (ex: Pneus, Suspensão, Freios)."
           >
-            <CategoriasServicoSection categorias={categoriasServico} onSalvo={carregar} />
+            <CategoriasServicoSection categorias={categoriasServico} onSalvo={recarregar} />
           </SecaoRecolhivel>
 
           <SecaoRecolhivel
             titulo="Categorias de caixa (Entradas e Saídas)"
             descricao='Usadas nas abas "Entradas" e "Saídas" do Caixa Diário para classificar lançamentos manuais que não vêm de uma OS — ex: aluguel, mercado, limpeza (saída) ou venda de sucata (entrada).'
           >
-            <CategoriasCaixaSection categorias={categoriasCaixa} onSalvo={carregar} />
+            <CategoriasCaixaSection categorias={categoriasCaixa} onSalvo={recarregar} />
           </SecaoRecolhivel>
 
           <SecaoRecolhivel
@@ -400,7 +406,7 @@ export function ConfiguracoesPage() {
             <TextoGarantiaSection
               texto={textoGarantia}
               lojaId={lojaAtual.id}
-              onSalvo={carregar}
+              onSalvo={recarregar}
             />
           </SecaoRecolhivel>
 
@@ -412,7 +418,7 @@ export function ConfiguracoesPage() {
               modelos={modelosWhatsapp}
               lojaId={lojaAtual.id}
               linkAvaliacao={linkAvaliacao}
-              onSalvo={carregar}
+              onSalvo={recarregar}
             />
           </SecaoRecolhivel>
 
@@ -439,7 +445,7 @@ export function ConfiguracoesPage() {
             <DadosFiscaisSection
               configuracao={configuracaoFiscal}
               lojaId={lojaAtual.id}
-              onSalvo={carregar}
+              onSalvo={recarregar}
             />
           </SecaoRecolhivel>
 
@@ -450,7 +456,7 @@ export function ConfiguracoesPage() {
             <CartoesInicioSection
               cartoes={cartoesInicio}
               lojaId={lojaAtual.id}
-              onSalvo={carregar}
+              onSalvo={recarregar}
             />
           </SecaoRecolhivel>
         </>

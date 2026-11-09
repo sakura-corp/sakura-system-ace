@@ -54,12 +54,6 @@ export function JurosParcelasSection({
       {erro && (
         <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
       )}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Juros salvos.
-        </p>
-      )}
-
       <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-6">
         {NUMEROS_PARCELA.map((n) => (
           <label key={n} className="flex flex-col gap-1 text-rotulo">
@@ -70,9 +64,10 @@ export function JurosParcelasSection({
                 step="0.1"
                 min="0"
                 value={valores[n]}
-                onChange={(e) =>
-                  setValores((atual) => ({ ...atual, [n]: e.target.value }))
-                }
+                onChange={(e) => {
+                  setValores((atual) => ({ ...atual, [n]: e.target.value }));
+                  setSalvo(false);
+                }}
                 className="w-full rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
               />
               <span className="text-sakura-muted">%</span>
@@ -81,7 +76,12 @@ export function JurosParcelasSection({
         ))}
       </div>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Juros salvos.
+          </p>
+        )}
         <button
           type="button"
           onClick={handleSalvar}

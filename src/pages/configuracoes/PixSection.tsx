@@ -88,9 +88,6 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
       </p>
 
       {erro && <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      {aviso && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">{aviso}</p>
-      )}
       {!podeEditar && (
         <p className="mt-3 text-rotulo text-sakura-muted">
           Só quem é administrador da loja pode mudar o Pix.
@@ -147,7 +144,12 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
         </div>
 
         {podeEditar && (
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {aviso && (
+              <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+                {aviso}
+              </p>
+            )}
             {configuracao && (
               <button
                 type="button"

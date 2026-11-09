@@ -84,12 +84,6 @@ export function AtualizacoesComputadorSection() {
       {erro && (
         <p className="mb-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
       )}
-      {salvo && (
-        <p className="mb-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Salvo. Vale a partir da próxima vez que o programa for aberto.
-        </p>
-      )}
-
       <fieldset className="space-y-3">
         <legend className="sr-only">Canal de atualização deste computador</legend>
         {CANAIS_ATUALIZACAO.map((canal) => (
@@ -128,7 +122,12 @@ export function AtualizacoesComputadorSection() {
         </p>
       )}
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Salvo. Vale a partir da próxima vez que o programa for aberto.
+          </p>
+        )}
         <button
           type="button"
           onClick={handleSalvar}

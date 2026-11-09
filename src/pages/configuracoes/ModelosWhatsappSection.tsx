@@ -104,12 +104,6 @@ function ModeloEditavel({
       {erro && (
         <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
       )}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Modelo salvo.
-        </p>
-      )}
-
       <textarea
         value={valor}
         onChange={(e) => {
@@ -120,7 +114,12 @@ function ModeloEditavel({
         className="mt-3 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
       />
 
-      <div className="mt-2 flex justify-end gap-3">
+      <div className="mt-2 flex items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Modelo salvo.
+          </p>
+        )}
         <button
           type="button"
           onClick={() => {
@@ -193,12 +192,6 @@ function LinkAvaliacaoCampo({
       {erro && (
         <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
       )}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Link salvo.
-        </p>
-      )}
-
       <input
         id="link-avaliacao"
         type="text"
@@ -211,7 +204,12 @@ function LinkAvaliacaoCampo({
         <span className="mt-1 block text-rotulo text-red-600">{errors.link.message}</span>
       )}
 
-      <div className="mt-2 flex justify-end">
+      <div className="mt-2 flex items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            Link salvo.
+          </p>
+        )}
         <button
           type="submit"
           disabled={isSubmitting}
