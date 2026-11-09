@@ -225,9 +225,11 @@ pelo Ambiente Nacional: "IM do prestador não deve ser informado, pois não exis
 complementares registradas no CNC NFS-e do município emissor informado na DPS". A inscrição
 municipal foi apagada no programa (Dados fiscais) e no cadastro da empresa na Focus (aba
 Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a pergunta está com o
-suporte da Focus (06/11). O programa ainda manda a IM quando o campo está preenchido (#948).
-**Pra loja nova no Padrão Nacional**: deixar a "Inscrição municipal" **vazia** quando o município não
-tem as informações complementares no CNC (Araraquara não tem), no programa e na Focus.
+suporte da Focus (06/11). **A Focus respondeu em 09/11**: na tentativa que eles olharam
+(`os18-nfsen-1793999245429`, 06/11 18:07) a IM **veio do programa**, no corpo enviado; é pra tirar.
+Desde a #948 o programa **nunca** manda a IM na NFS-e Nacional (o campo é opcional no leiaute); o
+campo da loja segue valendo pro caminho municipal. Até essa versão chegar na loja, o contorno é
+deixar a "Inscrição municipal" **vazia** nos Dados fiscais.
 
 **A Focus respondeu em 05/11/2026** (suporte): Araraquara não está no convênio da **homologação**
 nacional (quem cadastra é a prefeitura, e nem sempre faz). Recomendação deles: **testar em produção**,
