@@ -32,7 +32,7 @@ import {
 } from "@/schemas/faturamento";
 import { pecasAvulsas } from "@/schemas/orcamento";
 import { motivoCodigoIncompativel } from "@/schemas/tributacao";
-import type { Cliente } from "@/types/cliente";
+import { ehConsumidor, type Cliente } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { ItemOS, OrdemServico } from "@/types/os";
@@ -138,9 +138,9 @@ export function EmitirNotaFiscalModal({
   const itensServico = itensDaOrdem.filter((item) => item.tipo === "servico");
   const totalPecas = totalPorTipo(ordem.itens ?? [], "peca");
   const totalServicos = totalPorTipo(ordem.itens ?? [], "servico");
-  // A empresa sai identificada na nota? A resposta é a regra de
+  // O cliente (CPF ou CNPJ) sai identificado na nota? A resposta é a regra de
   // `montarDestinatarioNFCe`, sem cópia (#881).
-  const cnpjClienteValido = destinatarioIdentificadoNFCe(cliente);
+  const clienteIdentificado = destinatarioIdentificadoNFCe(cliente);
   // Acima do limite da UF a SEFAZ costuma exigir o cliente identificado (#881).
   // Só depois de carregar o cliente: antes disso toda nota pareceria "sem CPF".
   const avisoLimite =
@@ -154,7 +154,7 @@ export function EmitirNotaFiscalModal({
               desconto: item.desconto,
             })),
           ),
-          cnpjClienteValido,
+          clienteIdentificado,
         )
       : null;
 
@@ -575,13 +575,29 @@ export function EmitirNotaFiscalModal({
               essa nota no crédito dele, e acima de R$10 mil a SEFAZ passa a
               exigir a identificação (o aviso do limite logo abaixo, #881). Melhor ela saber disso antes de emitir
               do que descobrir depois. */}
-          {tipoNota === "NFC-e" && cliente?.tipo_pessoa === "juridica" && !cnpjClienteValido && (
+          {tipoNota === "NFC-e" && cliente?.tipo_pessoa === "juridica" && !clienteIdentificado && (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
               Este cliente é pessoa jurídica, mas está <strong>sem o CNPJ no cadastro</strong> —
               a nota vai sair como consumidor não identificado. Se ele precisa da nota no nome da
               empresa, cadastre o CNPJ dele em Clientes antes de emitir.
             </p>
           )}
+
+          {/* Aviso, nunca tranca (docs/licoes.md, item 33): pessoa física sem CPF
+              completo no cadastro sai como "consumidor não identificado", sem o
+              nome dela. A regra é a de `destinatarioIdentificadoNFCe`, sem cópia
+              (#881, #950). "Consumidor" e venda sem cliente não avisam: ali não
+              identificado é o esperado. */}
+          {tipoNota === "NFC-e" &&
+            cliente?.tipo_pessoa === "fisica" &&
+            !ehConsumidor(cliente.id) &&
+            !clienteIdentificado && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+                Este cliente está <strong>sem o CPF completo no cadastro</strong>: a nota vai sair
+                como consumidor não identificado, sem o nome dele. Se ele quer a nota no nome dele,
+                cadastre o CPF (11 números) em Clientes antes de emitir.
+              </p>
+            )}
 
           {/* Aviso, nunca tranca (#881): o limite pode mudar por UF e por
               legislação, e quem decide é a SEFAZ. */}
