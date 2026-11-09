@@ -186,6 +186,21 @@ describe("acharPecasParecidas", () => {
     expect(r[0].motivo).toBe("nome");
   });
 
+  // Sofia, 07/11: carga diferente é pneu diferente; só "com × sem índice" avisa.
+  it("pneu 82T x 86T NÃO é parecido: índice de carga diferente é pneu diferente", () => {
+    const r = acharPecasParecidas(peca({ descricao: "Pneu 175/70 R14 82T" }), [
+      peca({ id: "p", descricao: "Pneu 175/70 R14 86T" }),
+    ]);
+    expect(r).toEqual([]);
+  });
+
+  it("mesmo índice de carga continua parecido (82T x 82t)", () => {
+    const r = acharPecasParecidas(peca({ descricao: "PNEU 175/70 R14 82t" }), [
+      peca({ id: "p", descricao: "Pneu 175/70 R14 82T" }),
+    ]);
+    expect(r).toHaveLength(1);
+  });
+
   it("índice de carga também é ignorado quando está no campo medida (91H)", () => {
     const r = acharPecasParecidas(peca({ descricao: "Pneu Pirelli", medida: "195/55 R15 91H" }), [
       peca({ id: "p", descricao: "Pneu Pirelli", medida: "195/55 R15" }),

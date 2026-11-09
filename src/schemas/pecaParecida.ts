@@ -22,7 +22,8 @@
  * é peça diferente, como R13 × R14. Se só uma das duas diz o lado, o nome decide.
  *
  * No pneu, o índice de carga e velocidade ("82T", "91H") NÃO é medida (#708):
- * com ele ou sem ele, é a mesma peça. Só vale quando há uma MEDIDA de pneu
+ * com ele ou sem ele, é a mesma peça. Mas "82T" × "86T" é pneu diferente
+ * (Sofia, 07/11): se as duas dizem o índice, ele tem que ser o mesmo. Só vale quando há uma MEDIDA de pneu
  * (175/70 R13, 90/90-18, aro 14): a palavra "pneu" sozinha não basta, senão o
  * "compressor para pneu 12V" × "220V" virava a mesma peça; e fora de pneu,
  * "55W" × "60W" numa lâmpada é peça diferente.
@@ -83,6 +84,14 @@ const INDICE_DE_CARGA = /(^|[^a-z0-9])\d{2,3}[hjklmnpqrstuvwyz](?![a-z0-9])/g;
 /** O texto normalizado, sem o índice de carga quando a peça é pneu (#708). */
 function semIndiceDeCarga(texto: string, ehPneu: boolean): string {
   return ehPneu ? texto.replace(INDICE_DE_CARGA, "$1") : texto;
+}
+
+/** Os índices de carga da peça ("82t", ou "82t,86t"), ou "" quando não diz (ou não é pneu). */
+function indicesDaPeca(p: PecaComparavel, pneu: boolean): string {
+  if (!pneu) return "";
+  const texto = `${normalizar(p.descricao)} ${normalizar(p.medida)}`;
+  const achados = [...texto.matchAll(INDICE_DE_CARGA)].map((m) => m[0].slice(m[1].length));
+  return [...new Set(achados)].sort().join(",");
 }
 
 function ehPneu(p: PecaComparavel): boolean {
@@ -193,6 +202,8 @@ export interface PecaPreparada {
   descricao: string;
   /** É pneu? Decide se o índice de carga ("82T") sai do nome. */
   pneu: boolean;
+  /** Os índices de carga ("82t"), ou "" quando não diz: dois diferentes, pneu diferente. */
+  indices: string;
   nomePreparado?: { nome: string; bigramas: number[] };
 }
 
@@ -205,6 +216,7 @@ export function prepararPeca(p: PecaComparavel): PecaPreparada {
     lado: ladoDaPeca(normalizar(p.descricao)),
     descricao: p.descricao,
     pneu,
+    indices: indicesDaPeca(p, pneu),
   };
 }
 
@@ -250,6 +262,7 @@ export function compararPreparadas(
   }
   if (a.numeros !== b.numeros) return null; // a medida manda
   if (a.lado !== "" && b.lado !== "" && a.lado !== b.lado) return null; // o lado também (#708)
+  if (a.indices !== "" && b.indices !== "" && a.indices !== b.indices) return null; // 82T × 86T
   const semelhanca = diceDasPreparadas(a, b, limiteNome);
   return semelhanca >= limiteNome ? { motivo: "nome", semelhanca } : null;
 }
