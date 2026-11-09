@@ -466,6 +466,44 @@ begin
   if not exists (select 1 from computadores where loja_id = loja and id::text like 'eeee%') then
     raise exception 'FALHOU (B15): faltou o computador da loja de exemplo';
   end if;
+
+  -- B16. peça com o fiscal preenchido (#957: sem isso a SEFAZ recusa a NFC-e
+  -- "sem informação de ICMS"). Loja de exemplo é Simples Nacional → CSOSN:
+  -- pneu (EX-001 a EX-004) 500 + 5405; o resto 102 + 5102; origem 0.
+  if (select count(*) from pecas where id::text like 'eeee0006%') <> 12 then
+    raise exception 'FALHOU (B16): esperava 12 peças de exemplo, achou %',
+      (select count(*) from pecas where id::text like 'eeee0006%');
+  end if;
+  for linha in
+    select codigo_interno, cst_ou_csosn, cfop_padrao, origem from pecas
+    where id::text like 'eeee0006%'
+      and (coalesce(trim(cst_ou_csosn), '') = '' or coalesce(trim(cfop_padrao), '') = ''
+           or coalesce(trim(origem), '') = ''
+           or origem <> '0'
+           or cst_ou_csosn || '/' || cfop_padrao <>
+              case when codigo_interno in ('EX-001', 'EX-002', 'EX-003', 'EX-004')
+                   then '500/5405' else '102/5102' end)
+  loop
+    raise exception 'FALHOU (B16): a peça % saiu com o fiscal errado ou vazio (CSOSN %, CFOP %, origem %)',
+      linha.codigo_interno, linha.cst_ou_csosn, linha.cfop_padrao, linha.origem;
+  end loop;
+end $$;
+
+-- B17. O fiscal da peça nunca é sobrescrito (#957): a pessoa mudou a origem
+-- de uma peça e apagou o CFOP. Rodar o exemplo de novo devolve só o CFOP e
+-- deixa a origem dela. (Antes do retrato, pra auditoria já contar essas linhas;
+-- a parte C confere que a origem continua a dela.)
+update pecas set origem = '2', cfop_padrao = '' where id = 'eeee0006-0000-4000-8000-000000000005';
+\ir ../exemplo/dados-de-exemplo.sql
+do $$
+declare linha record;
+begin
+  select cst_ou_csosn, cfop_padrao, origem into linha from pecas
+  where id = 'eeee0006-0000-4000-8000-000000000005';
+  if linha.origem is distinct from '2' or linha.cfop_padrao is distinct from '5102'
+     or linha.cst_ou_csosn is distinct from '102' then
+    raise exception 'FALHOU (B17): a peça mudada pela pessoa saiu com %', row_to_json(linha);
+  end if;
 end $$;
 
 create temp table depois_da_primeira as select * from pg_temp.contagens();
@@ -494,6 +532,9 @@ begin
   end loop;
   if (select max(numero) from ordens_servico where loja_id = 'eeee0001-0000-4000-8000-000000000001') <> 14 then
     raise exception 'FALHOU (C): a segunda rodada gastou número de OS';
+  end if;
+  if (select origem from pecas where id = 'eeee0006-0000-4000-8000-000000000005') <> '2' then
+    raise exception 'FALHOU (C): a segunda rodada sobrescreveu o fiscal que a pessoa mudou na peça';
   end if;
 end $$;
 
