@@ -256,6 +256,54 @@ try {
     JSON.stringify(aparencia.blob),
   );
 
+  // --- 6b. O DANFE em PDF aparece de verdade (#965) ----------------------
+  //
+  // O passo acima usa HTML, e por isso passou verde enquanto o visualizador
+  // de PDF estava quebrado: a CSP do app era colada nas páginas internas dele
+  // (chrome-extension://), os scripts do visualizador não rodavam e a prévia
+  // do DANFSe ficava escura e vazia. Aqui vai um PDF de verdade num iframe
+  // `blob:`, como na emissão, e a prova é o visualizador ter rodado: o
+  // elemento `pdf-viewer` definido dentro da página dele.
+  await pagina.evaluate(() => {
+    const pdf =
+      "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+      "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+      "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n" +
+      "trailer<</Root 1 0 R>>\n%%EOF";
+    const quadro = document.createElement("iframe");
+    quadro.id = "teste-danfe-pdf";
+    quadro.src = URL.createObjectURL(new Blob([pdf], { type: "application/pdf" }));
+    document.body.appendChild(quadro);
+  });
+  let visualizador = { achou: false, rodou: false };
+  for (let tentativa = 0; tentativa < 20 && !visualizador.rodou; tentativa++) {
+    await pagina.waitForTimeout(500);
+    visualizador = await app.evaluate(async ({ BrowserWindow }) => {
+      const janela = BrowserWindow.getAllWindows()[0];
+      const quadros = janela.webContents.mainFrame.framesInSubtree.filter((f) =>
+        f.url.startsWith("chrome-extension://"),
+      );
+      for (const quadro of quadros) {
+        try {
+          if (await quadro.executeJavaScript("!!customElements.get('pdf-viewer')")) {
+            return { achou: true, rodou: true };
+          }
+        } catch {
+          // o quadro ainda está carregando: tenta de novo
+        }
+      }
+      return { achou: quadros.length > 0, rodou: false };
+    });
+  }
+  await pagina.evaluate(() => document.getElementById("teste-danfe-pdf")?.remove());
+  conferir(
+    "DANFE em PDF (iframe blob:) abre o visualizador de PDF e ele roda",
+    visualizador.rodou,
+    visualizador.achou
+      ? "o visualizador abriu mas os scripts dele não rodaram (CSP nas páginas chrome-extension://?)"
+      : "o visualizador de PDF nem abriu",
+  );
+
   // --- 7. O IPC legítimo continua funcionando ----------------------------
   //
   // O outro lado da moeda da checagem de remetente: se ela passasse a

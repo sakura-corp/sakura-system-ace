@@ -159,6 +159,11 @@ function aplicarPoliticaDeSeguranca() {
   // proteger o app que vai pra loja, que é sempre o empacotado.
   if (VITE_DEV_SERVER_URL) return;
   session.defaultSession.webRequest.onHeadersReceived((detalhes, responder) => {
+    // O visualizador de PDF do próprio Electron (a prévia do DANFE) é uma
+    // página chrome-extension://: com a CSP do app, os scripts dele não rodam
+    // e o quadro fica escuro e vazio (#965). O programa não carrega nenhuma
+    // extensão, então só ele passa por aqui; o resto continua com a CSP.
+    if (detalhes.url.startsWith("chrome-extension://")) return responder({});
     responder({
       responseHeaders: {
         ...detalhes.responseHeaders,
