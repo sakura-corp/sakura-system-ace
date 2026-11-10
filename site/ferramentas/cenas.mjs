@@ -43,6 +43,16 @@ export const CENAS = [
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
     descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
 
+  // Planilha inventada: uma linha sem nome (problema) e uma placa que já está no cadastro de mentira.
+  { arquivo: "06c-clientes-importar", modulo: "Clientes", titulo: "Importar clientes de uma planilha",
+    rota: "/clientes",
+    passos: [
+      { clicar: "Importar planilha" },
+      { enviarArquivo: { em: 'input[type="file"]', nome: "clientes-exemplo.csv",
+        conteudo: "Nome;CPF;Telefone;Placa;Modelo\nAna Exemplo;529.982.247-25;(16) 99999-0001;QWE1R23;Gol\n;111.444.777-35;;ZXC4V56;Uno\nBia Teste;;(16) 99999-0002;ASD7F89;Palio\n" } },
+      { clicar: "Continuar" },
+    ],
+    descricao: "Só o administrador vê o botão 'Importar planilha'. Escolhe-se um arquivo .csv, diz-se o que é cada coluna e revisa-se linha por linha antes de gravar: quem já existe só é pulado, linha com problema aparece com o motivo e dá pra corrigir na própria tabela. Nada entra antes do Confirmar, e a importação pode ser desfeita depois." },
   { arquivo: "06b-ficha-veiculo", modulo: "Clientes", titulo: "Ficha do veículo",
     rota: "/veiculos/v1",
     descricao: "Tudo que já foi feito num carro, por placa: dono atual, KM mais recente e quanto ele costuma rodar por mês, quanto já foi gasto nele, de quanto em quanto tempo ele volta, as peças que ainda estão na garantia e a linha do tempo de todas as OS, com data, KM, itens e total. Abre pelo 'Ver veículos' em Clientes, ou clicando na placa na lista de OS ou em Garantias." },

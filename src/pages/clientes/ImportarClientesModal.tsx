@@ -498,10 +498,10 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                       <span
                         className={
                           linha.situacao === "problema"
-                            ? "font-medium text-red-700"
+                            ? "rounded bg-red-50 px-1.5 font-medium text-red-700"
                             : linha.situacao === "ja_existe"
-                              ? "font-medium text-amber-800"
-                              : "font-medium text-emerald-700"
+                              ? "rounded bg-amber-50 px-1.5 font-medium text-amber-800"
+                              : "rounded bg-emerald-50 px-1.5 font-medium text-emerald-700"
                         }
                       >
                         {NOME_DA_SITUACAO[linha.situacao]}
@@ -520,12 +520,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                     ))}
                     <td className="px-2 py-1.5">
                       {linha.problemas.map((p) => (
-                        <p key={p} className="text-red-700">
+                        <p key={p} className="mb-0.5 w-fit rounded bg-red-50 px-1.5 text-red-700">
                           {p}
                         </p>
                       ))}
                       {linha.avisos.map((a) => (
-                        <p key={a} className="text-amber-800">
+                        <p key={a} className="mb-0.5 w-fit rounded bg-amber-50 px-1.5 text-amber-800">
                           {a}
                         </p>
                       ))}
