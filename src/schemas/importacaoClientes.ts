@@ -12,16 +12,17 @@
  *    fica de fora (documento errado liga o cliente à pessoa errada).
  *  - Placa em formato estranho: o cliente entra, o veículo não, com aviso. A
  *    linha só vira "problema" se não sobrar nada novo pra gravar.
- *  - Placa repetida na própria planilha: a segunda linha é "problema" e fica
- *    inteira de fora.
- *  - Placa que já está no banco: a linha é "ja_existe" e fica inteira de fora.
+ *  - Placa repetida na própria planilha, ou já no banco: se o cliente é novo, ele
+ *    entra sem o veículo, com aviso. Se o cliente já existe, a linha fica inteira
+ *    de fora ("ja_existe" pra placa do banco; "problema" pra repetida na planilha).
+ *  - Documento sem o zero da frente (Excel): completa e aceita só se o dígito bater.
  *  - `cpf_cnpj` é gravado só com os dígitos (o formulário grava o que a pessoa
  *    digitou; só dígitos evita o mesmo CPF entrar duas vezes com e sem ponto).
  *    Telefone é gravado como veio (igual o formulário); `telefoneParaWhatsapp`
  *    só serve pra avisar de número estranho. Textos vazios viram "" (como o
  *    formulário); data, ano e km vazios viram null.
- *  - Linha em branco no meio da planilha some em `lerCsv`, então o número da
- *    linha é a posição entre as linhas com conteúdo (+2).
+ *  - O número da linha vem de `lerCsv` (`numerosDeLinha`, linha do arquivo);
+ *    sem ele, vale a posição entre as linhas com conteúdo (+2).
  */
 
 import type { NovoCliente, NovoVeiculo, TipoPessoa } from "@/types/cliente";
@@ -184,10 +185,15 @@ function converterData(texto: string): string | null {
   return `${ano}-${doisDigitos(mes)}-${doisDigitos(dia)}`;
 }
 
+/** Teto de km que aceitamos (a coluna é `int`; acima disso é erro de digitação). */
+const KM_MAXIMO = 2_000_000;
+
 function converterKm(texto: string): number | null {
   const limpo = texto.toLowerCase().replace(/km/g, "").replace(/[\s.]/g, "");
-  if (!/^\d+(,\d+)?$/.test(limpo)) return null;
-  return Math.floor(Number(limpo.replace(",", ".")));
+  // Só número inteiro (",0" do Excel é aceito); com casas decimais de verdade, não.
+  if (!/^\d+(,0+)?$/.test(limpo)) return null;
+  const km = Number(limpo.split(",")[0]);
+  return Number.isSafeInteger(km) && km <= KM_MAXIMO ? km : null;
 }
 
 function textoDaLinha(
@@ -206,6 +212,8 @@ export function conferirLinhas(
   linhas: string[][],
   mapeamento: CampoImportacao[],
   existente: CadastroExistente,
+  /** Linha DO ARQUIVO de cada registro (de `lerCsv`); sem isso, vale posição + 2. */
+  numerosDeLinha?: number[],
 ): ResultadoConferencia {
   const clientesPorDoc = new Map<string, string>();
   const clientesPorNome = new Map<string, string>();
@@ -226,11 +234,12 @@ export function conferirLinhas(
     const problemas: string[] = [];
     const avisos: string[] = [];
     const nome = (v.nome ?? "").replace(/\s+/g, " ");
-    const docDigitos = soDigitos(v.cpf_cnpj ?? "");
+    let docDigitos = soDigitos(v.cpf_cnpj ?? "");
+    const numeroDaLinha = numerosDeLinha?.[indice] ?? indice + 2;
     const placaTexto = v.placa ?? "";
 
     const conferida = (situacao: SituacaoLinha): LinhaConferida => ({
-      linha: indice + 2,
+      linha: numeroDaLinha,
       situacao,
       problemas,
       avisos,
@@ -245,6 +254,22 @@ export function conferirLinhas(
     if (nome === "") {
       problemas.push("sem nome");
       return terminar("problema");
+    }
+
+    // O Excel come o zero da frente de CPF/CNPJ (vira número). Completa e só
+    // aceita se o dígito verificador bater.
+    if (docDigitos.length === 9 || docDigitos.length === 10) {
+      const completo = docDigitos.padStart(11, "0");
+      if (cpfValido(completo)) {
+        docDigitos = completo;
+        avisos.push("documento sem o zero da frente (corrigido)");
+      }
+    } else if (docDigitos.length === 12 || docDigitos.length === 13) {
+      const completo = docDigitos.padStart(14, "0");
+      if (cnpjValido(completo)) {
+        docDigitos = completo;
+        avisos.push("documento sem o zero da frente (corrigido)");
+      }
     }
 
     let tipoPessoa: TipoPessoa = "fisica";
@@ -267,16 +292,6 @@ export function conferirLinhas(
       if (parecePlaca(placaTexto)) placa = chaveDePlaca(placaTexto);
       else placaEstranha = true;
     }
-    if (placa !== null) {
-      if (placasNoBanco.has(placa)) {
-        avisos.push("placa já cadastrada: a linha foi pulada");
-        return terminar("ja_existe");
-      }
-      if (placasDaPlanilha.has(placa)) {
-        problemas.push("placa repetida na planilha");
-        return terminar("problema");
-      }
-    }
 
     // O cliente: já existe no banco, ou já apareceu antes na planilha, ou é novo.
     const chave = docDigitos !== "" ? docDigitos : `nome:${nomeNormalizado(nome)}`;
@@ -286,9 +301,31 @@ export function conferirLinhas(
     const clienteJaNaPlanilha = grupo !== undefined;
     const clienteNovoNestaLinha = !clienteJaNaPlanilha && existenteId === null;
 
+    // Placa que não pode entrar. Cliente novo: ele entra sem o veículo, com
+    // aviso. Cliente que já existe: a linha é pulada (ou é problema, se a
+    // placa repete dentro da própria planilha).
+    let placaNaoEntra = false;
+    if (placa !== null) {
+      if (placasNoBanco.has(placa)) {
+        if (!clienteNovoNestaLinha) {
+          avisos.push("placa já cadastrada: a linha foi pulada");
+          return terminar("ja_existe");
+        }
+        avisos.push("placa já cadastrada: o veículo não entra");
+        placaNaoEntra = true;
+      } else if (placasDaPlanilha.has(placa)) {
+        if (!clienteNovoNestaLinha) {
+          problemas.push("placa repetida na planilha");
+          return terminar("problema");
+        }
+        avisos.push("placa repetida na planilha: o veículo não entra");
+        placaNaoEntra = true;
+      }
+    }
+
     // Veículo.
     let veiculo: NovoVeiculo | null = null;
-    if (placa !== null) {
+    if (placa !== null && !placaNaoEntra) {
       let ano: number | null = null;
       if ((v.ano ?? "") !== "") {
         if (/^\d{4}$/.test(v.ano!) && Number(v.ano) >= 1900 && Number(v.ano) <= 2100) ano = Number(v.ano);
@@ -395,7 +432,7 @@ export function conferirLinhas(
     }
 
     if (grupo !== undefined) {
-      grupo.linhas.push(indice + 2);
+      grupo.linhas.push(numeroDaLinha);
       if (veiculo !== null && placa !== null) {
         grupo.veiculos.push(veiculo);
         placasDaPlanilha.add(placa);

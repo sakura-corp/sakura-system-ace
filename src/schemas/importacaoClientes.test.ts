@@ -126,8 +126,10 @@ describe("conferirLinhas — veículo", () => {
   it("placa antiga e Mercosul, com e sem traço ou espaço, gravadas em maiúscula", () => {
     const placas = ["abc1234", "ABC-1234", "bra1a23", "BRA-2B34", "GHI 9012"];
     const r = conferir(placas.map((placa, i) => linha({ nome: `P${i}`, placa })));
-    expect(r.clientes.map((c) => c.veiculos[0].placa)).toEqual(["ABC1234", "BRA1A23", "BRA2B34", "GHI9012"]);
-    expect(r.resumo.comProblema).toBe(1); // a segunda é repetida da primeira
+    // a segunda é repetida da primeira: o cliente P1 entra, mas sem o veículo
+    expect(r.clientes.flatMap((c) => c.veiculos.map((v) => v.placa))).toEqual(["ABC1234", "BRA1A23", "BRA2B34", "GHI9012"]);
+    expect(r.clientes[1].veiculos).toEqual([]);
+    expect(r.resumo.comProblema).toBe(0);
   });
 
   it("placa em formato estranho: o cliente entra, o veículo não, com aviso", () => {
@@ -154,14 +156,53 @@ describe("conferirLinhas — veículo", () => {
     expect(r.linhas[1].avisos).toHaveLength(2);
   });
 
-  it("placa repetida dentro da planilha: a segunda linha é problema", () => {
+  it("placa repetida na planilha e cliente novo: o cliente entra sem o veículo, com aviso", () => {
     const r = conferir([
       linha({ nome: "A", placa: "ABC1234" }),
       linha({ nome: "B", placa: "ABC-1234" }),
     ]);
     expect(r.linhas[0].situacao).toBe("entra");
+    expect(r.linhas[1]).toMatchObject({
+      situacao: "entra",
+      problemas: [],
+      avisos: ["placa repetida na planilha: o veículo não entra"],
+    });
+    expect(r.clientes.map((c) => [c.cliente.nome, c.veiculos.length])).toEqual([["A", 1], ["B", 0]]);
+    expect(r.resumo).toMatchObject({ entram: 2, comProblema: 0, clientesNovos: 2, veiculosNovos: 1 });
+  });
+
+  it("placa repetida na planilha e o cliente já entrou antes: continua problema", () => {
+    const r = conferir([
+      linha({ nome: "A", placa: "ABC1234" }),
+      linha({ nome: "A", placa: "ABC-1234" }),
+    ]);
     expect(r.linhas[1]).toMatchObject({ situacao: "problema", problemas: ["placa repetida na planilha"] });
+  });
+
+  it("placa já cadastrada e cliente novo: o cliente entra sem o veículo, com aviso", () => {
+    const r = conferir([linha({ nome: "Ana", placa: "abc1234" })], { clientes: [], placas: ["ABC-1234"] });
+    expect(r.linhas[0]).toMatchObject({
+      situacao: "entra",
+      avisos: ["placa já cadastrada: o veículo não entra"],
+    });
     expect(r.clientes).toHaveLength(1);
+    expect(r.clientes[0].veiculos).toEqual([]);
+    expect(r.resumo).toMatchObject({ entram: 1, jaExistem: 0, clientesNovos: 1, veiculosNovos: 0 });
+  });
+
+  it("km acima de 2.000.000 ou não inteiro fica em branco com aviso; ano fora da faixa também", () => {
+    const r = conferir([
+      linha({ nome: "A", placa: "ABC1234", km_atual: "2.000.001" }),
+      linha({ nome: "B", placa: "DEF5678", km_atual: "2.000.000" }),
+      linha({ nome: "C", placa: "GHI9012", km_atual: "99999999999999" }),
+      linha({ nome: "D", placa: "JKL3456", ano: "1850" }),
+    ]);
+    expect(r.clientes[0].veiculos[0].km_atual).toBeNull();
+    expect(r.linhas[0].avisos).toContain("km em formato estranho: ficou em branco");
+    expect(r.clientes[1].veiculos[0].km_atual).toBe(2000000);
+    expect(r.clientes[2].veiculos[0].km_atual).toBeNull();
+    expect(r.clientes[3].veiculos[0].ano).toBeNull();
+    expect(r.linhas[3].avisos).toContain("ano em formato estranho: ficou em branco");
   });
 });
 
@@ -225,8 +266,8 @@ describe("conferirLinhas — já existe (só pula)", () => {
     expect(r.clientes[0].clienteExistenteId).toBe("c2");
   });
 
-  it("mesma placa com e sem traço: ja_existe e o veículo não entra", () => {
-    const r = conferir([linha({ nome: "Carlos", cpf_cnpj: CPF_B, placa: "abc1234" })], existente);
+  it("mesma placa com e sem traço e o cliente também já existe: ja_existe e o veículo não entra", () => {
+    const r = conferir([linha({ nome: "Ana Souza", cpf_cnpj: CPF_A, placa: "abc1234" })], existente);
     expect(r.linhas[0].situacao).toBe("ja_existe");
     expect(r.clientes).toEqual([]);
   });
@@ -234,6 +275,54 @@ describe("conferirLinhas — já existe (só pula)", () => {
   it("documento igual com nome diferente ainda é o mesmo cliente", () => {
     const r = conferir([linha({ nome: "A. Souza", cpf_cnpj: CPF_A, placa: "DEF5678" })], existente);
     expect(r.clientes[0].clienteExistenteId).toBe("c1");
+  });
+});
+
+describe("conferirLinhas — zero da frente perdido pelo Excel", () => {
+  it("CPF com 10 e com 9 dígitos: completa com zeros e aceita só se o dígito bater", () => {
+    const r = conferir([
+      linha({ nome: "A", cpf_cnpj: "1234567890" }),
+      linha({ nome: "B", cpf_cnpj: "123456797" }),
+    ]);
+    expect(r.linhas.map((l) => l.situacao)).toEqual(["entra", "entra"]);
+    expect(r.clientes[0].cliente).toMatchObject({ cpf_cnpj: "01234567890", tipo_pessoa: "fisica" });
+    expect(r.clientes[1].cliente).toMatchObject({ cpf_cnpj: "00123456797", tipo_pessoa: "fisica" });
+    expect(r.linhas[0].avisos).toContain("documento sem o zero da frente (corrigido)");
+  });
+
+  it("CNPJ com 13 e com 12 dígitos: completa até 14 e vira pessoa jurídica", () => {
+    const r = conferir([
+      linha({ nome: "A", cpf_cnpj: "1234567000195" }),
+      linha({ nome: "B", cpf_cnpj: "123456000149" }),
+    ]);
+    expect(r.clientes[0].cliente).toMatchObject({ cpf_cnpj: "01234567000195", tipo_pessoa: "juridica" });
+    expect(r.clientes[1].cliente).toMatchObject({ cpf_cnpj: "00123456000149", tipo_pessoa: "juridica" });
+    expect(r.linhas[1].avisos).toContain("documento sem o zero da frente (corrigido)");
+  });
+
+  it("se o dígito não bate depois de completar, continua problema de tamanho", () => {
+    const r = conferir([linha({ nome: "A", cpf_cnpj: "1234567891" }), linha({ nome: "B", cpf_cnpj: "123456000148" })]);
+    expect(r.linhas.map((l) => l.situacao)).toEqual(["problema", "problema"]);
+    expect(r.linhas[0].problemas[0]).toMatch(/tamanho estranho/);
+  });
+
+  it("o documento corrigido acha o cliente que já existe", () => {
+    const existente = { clientes: [{ id: "c1", nome: "Z", cpf_cnpj: "012.345.678-90" }], placas: [] };
+    const r = conferir([linha({ nome: "A", cpf_cnpj: "1234567890" })], existente);
+    expect(r.linhas[0].situacao).toBe("ja_existe");
+  });
+});
+
+describe("conferirLinhas — número da linha do arquivo", () => {
+  it("usa os números passados em vez de posição + 2", () => {
+    const r = conferirLinhas([linha({ nome: "A" }), linha({ nome: "" }), linha({ nome: "C" })], MAP, VAZIO, [2, 5, 9]);
+    expect(r.linhas.map((l) => l.linha)).toEqual([2, 5, 9]);
+    expect(r.clientes.map((c) => c.linhas)).toEqual([[2], [9]]);
+  });
+
+  it("sem os números, continua posição + 2", () => {
+    const r = conferir([linha({ nome: "A" }), linha({ nome: "B" })]);
+    expect(r.linhas.map((l) => l.linha)).toEqual([2, 3]);
   });
 });
 
@@ -263,7 +352,8 @@ describe("planilha de exemplo (supabase/exemplo/importar-clientes-exemplo.csv)",
     expect(r.linhas.find((l) => l.problemas.includes("sem nome"))).toBeDefined();
     expect(r.linhas.filter((l) => l.problemas.includes("CPF com dígito errado"))).toHaveLength(1);
     expect(r.linhas.filter((l) => l.problemas.includes("CNPJ com dígito errado"))).toHaveLength(1);
-    expect(r.linhas.filter((l) => l.problemas.includes("placa repetida na planilha"))).toHaveLength(1);
+    // placa repetida de cliente novo: entra sem o veículo, com aviso (antes era problema)
+    expect(r.linhas.filter((l) => l.avisos.includes("placa repetida na planilha: o veículo não entra"))).toHaveLength(1);
     expect(porNome("Carlos Eduardo Lima")?.veiculos).toHaveLength(2); // dois veículos, mesmo CPF
     expect(porNome("Lúcia Fernandes")?.cliente.cpf_cnpj).toMatch(/^\d{11}$/);
     expect(porNome("Fátima Rodrigues")).toBeDefined();
@@ -274,7 +364,7 @@ describe("planilha de exemplo (supabase/exemplo/importar-clientes-exemplo.csv)",
   it("o resumo bate com o que a tela vai mostrar", () => {
     expect(r.resumo.totalLinhas).toBe(csv.linhas.length);
     expect(r.resumo.entram + r.resumo.jaExistem + r.resumo.comProblema).toBe(r.resumo.totalLinhas);
-    expect(r.resumo.comProblema).toBeGreaterThanOrEqual(4);
+    expect(r.resumo.comProblema).toBeGreaterThanOrEqual(3);
     expect(r.resumo.veiculosNovos).toBeGreaterThan(15);
   });
 });
