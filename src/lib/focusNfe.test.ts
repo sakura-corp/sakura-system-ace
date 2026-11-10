@@ -100,6 +100,7 @@ function clientePessoaFisica(sobrescrever: Partial<Cliente> = {}): Cliente {
     uf: "SP",
     codigo_municipio: "3503208",
     data_nascimento: null,
+    nao_avisar: false,
     criado_em: new Date().toISOString(),
     ...sobrescrever,
   };

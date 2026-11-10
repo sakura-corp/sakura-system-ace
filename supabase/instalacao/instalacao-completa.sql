@@ -8458,11 +8458,11 @@ insert into schema_versao (versao) values (82) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0084_retorno_do_cliente.sql
+-- 0083_retorno_do_cliente.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0084: o retorno do cliente (lembrete de revisão, FN-06, #381).
+-- Migration 0083: o retorno do cliente (lembrete de revisão, FN-06, #381).
 --
 -- O PROBLEMA. O sistema sabe o que foi feito em cada carro, quando e com que
 -- KM, mas não usa isso pra chamar o cliente de volta na hora da próxima
@@ -8515,9 +8515,9 @@ alter table servicos
   );
 
 comment on column servicos.intervalo_dias is
-  'FN-06 (0084). A cada quantos dias o cliente deve voltar pra este serviço (6 meses = 180). Vazio = este serviço não gera retorno pelo tempo.';
+  'FN-06 (0083). A cada quantos dias o cliente deve voltar pra este serviço (6 meses = 180). Vazio = este serviço não gera retorno pelo tempo.';
 comment on column servicos.intervalo_km is
-  'FN-06 (0084). A cada quantos km o cliente deve voltar pra este serviço. Vazio = este serviço não gera retorno pelo KM. A previsão pelo KM é sempre uma estimativa.';
+  'FN-06 (0083). A cada quantos km o cliente deve voltar pra este serviço. Vazio = este serviço não gera retorno pelo KM. A previsão pelo KM é sempre uma estimativa.';
 
 -- ===================================================================
 -- 2. "Não mandar lembrete pra este cliente"
@@ -8526,7 +8526,7 @@ comment on column servicos.intervalo_km is
 alter table clientes add column if not exists nao_avisar boolean not null default false;
 
 comment on column clientes.nao_avisar is
-  'FN-06 (0084). O cliente pediu pra não receber mensagem da loja: nunca entra na lista de retornos nem na de clientes que sumiram.';
+  'FN-06 (0083). O cliente pediu pra não receber mensagem da loja: nunca entra na lista de retornos nem na de clientes que sumiram.';
 
 -- ===================================================================
 -- 3. A janela de Clientes passa a dizer QUAL serviço foi feito
@@ -8578,7 +8578,7 @@ as
      );
 
 comment on view ordens_servico_clientes is
-  'TR-04.1 lote 6 (0075), servico_id na 0084 (FN-06). As OS do jeito que a '
+  'TR-04.1 lote 6 (0075), servico_id na 0083 (FN-06). As OS do jeito que a '
   'ficha do veículo, a lista "clientes que sumiram" e a lista de retornos '
   'mostram: número, datas, km, cliente, veículo e os itens com descrição, '
   'quantidade, preço, desconto, o serviço do cadastro (servico_id) e o prazo '
@@ -8589,4 +8589,4 @@ comment on view ordens_servico_clientes is
 revoke all on ordens_servico_clientes from anon, authenticated;
 grant select on ordens_servico_clientes to authenticated;
 
-insert into schema_versao (versao) values (84) on conflict do nothing;
+insert into schema_versao (versao) values (83) on conflict do nothing;

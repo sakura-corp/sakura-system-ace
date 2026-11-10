@@ -47,7 +47,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   // Migration 0082 (#459): o link de avaliação no Google.
   ck_configuracoes_avaliacao_link_https:
     "O link de avaliação precisa começar com https:// e não pode ter espaço.",
-  // Migration 0084 (#381): o intervalo do retorno do cliente, no cadastro do serviço.
+  // Migration 0083 (#381): o intervalo do retorno do cliente, no cadastro do serviço.
   ck_servicos_intervalo: "O intervalo do serviço precisa ser maior que zero (ou ficar vazio).",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
@@ -138,7 +138,7 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0082 (link de avaliação, #459): tabela nova. Sobe antes do programa, mas
   // se alguém publicar sem rodar, a tela de Configurações cai aqui.
   "configuracoes_avaliacao",
-  // 0084 (retorno do cliente, #381): colunas de servicos e de clientes.
+  // 0083 (retorno do cliente, #381): colunas de servicos e de clientes.
   "intervalo_dias",
   "intervalo_km",
   "nao_avisar",

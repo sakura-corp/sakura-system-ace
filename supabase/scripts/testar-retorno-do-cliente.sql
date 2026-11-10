@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0084 (o retorno do cliente, FN-06, #381). NÃO é
+-- TESTE da migration 0083 (o retorno do cliente, FN-06, #381). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade — grava dado de
 -- teste (dentro de uma transação que é desfeita no fim, então não sobra nada).
 --
@@ -29,7 +29,7 @@
 begin;
 
 -- ===================================================================
--- Antes da segunda rodada: a instalação completa JÁ rodou a 0084.
+-- Antes da segunda rodada: a instalação completa JÁ rodou a 0083.
 -- ===================================================================
 do $$
 declare
@@ -56,7 +56,7 @@ end;
 $$;
 
 -- A segunda rodada: idempotente, sem erro.
-\ir ../migrations/0084_retorno_do_cliente.sql
+\ir ../migrations/0083_retorno_do_cliente.sql
 
 do $$
 declare
@@ -76,8 +76,8 @@ declare
   valor     int;
 begin
   -- 1. a migration grava a versão
-  if not exists (select 1 from schema_versao where versao = 84) then
-    raise exception 'FALHOU 1: a 0084 não gravou a versão 84';
+  if not exists (select 1 from schema_versao where versao = 83) then
+    raise exception 'FALHOU 1: a 0083 não gravou a versão 83';
   end if;
 
   -- 2. as colunas, com o tipo, o "pode ficar vazio" e o padrão certos

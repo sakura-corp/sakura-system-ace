@@ -170,6 +170,8 @@ function clienteDaJanela(linha: ClienteDaJanela): Cliente {
     uf: null,
     codigo_municipio: null,
     data_nascimento: null,
+    // A janela não traz esta coluna; a lista de escolha não usa o aviso.
+    nao_avisar: false,
     criado_em: "",
     veiculos: (linha.veiculos ?? []).map((v) => ({ ...v, ano: null, km_atual: null, criado_em: "" })),
   };

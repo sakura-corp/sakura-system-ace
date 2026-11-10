@@ -81,6 +81,7 @@ function cliente(id: string, nome: string, telefone: string | null): Cliente {
     uf: null,
     codigo_municipio: null,
     data_nascimento: null,
+    nao_avisar: false,
     criado_em: "",
     veiculos: [],
   } as Cliente;
