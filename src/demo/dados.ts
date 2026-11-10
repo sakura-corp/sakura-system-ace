@@ -1,8 +1,13 @@
 // Dados 100% inventados pra gerar as imagens do site.
 // Nenhum cliente, placa ou CPF de verdade da loja do pai dela.
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { VERSAO_ESQUEMA_ESPERADA } from "@/schemas/versaoEsquema";
+import pacote from "../../package.json";
+
+// Dado de mentira: os tipos aqui são frouxos de propósito. Cada linha inventada
+// tem só as colunas que a tela daquele exemplo precisa, e tipar tabela por
+// tabela daria mais trabalho que o dado vale.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Qualquer = any;
 const LOJA = "10000000-0000-0000-0000-000000000001";
 const OP = "20000000-0000-0000-0000-000000000001";
 const OP2 = "20000000-0000-0000-0000-000000000002";
@@ -16,7 +21,7 @@ const hoje = new Date();
 // sumia da lista (que mostra o mês corrente) e a varredura de telas quebrava.
 // A fração conta a partir das 8h (a loja abrindo), pra a OS de hoje não sair
 // aberta de madrugada; antes das 8h, a partir da meia-noite.
-const dia = (n) => {
+const dia = (n: Qualquer) => {
   const inteiro = Math.trunc(n);
   const fracao = n - inteiro; // de -1 a 0: as frações usadas aqui são todas pra trás
   const d = new Date(hoje);
@@ -28,25 +33,25 @@ const dia = (n) => {
 };
 // O dia de calendário no fuso local (como o `diaLocal()` do programa), não o
 // corte do texto em UTC: depois das 21h em São Paulo, o corte já dava amanhã.
-const diaCurto = (n) => new Date(dia(n)).toLocaleDateString("sv-SE");
+const diaCurto = (n: Qualquer) => new Date(dia(n)).toLocaleDateString("sv-SE");
 // `diaAs(-3, 14, 20)` é três dias atrás, às 14h20 (no fuso de quem gera as
 // telas). Pros dias passados, em vez de `dia()`: com ele, tudo que é de outro
 // dia saía com a mesma hora (a hora em que a tela abriu), e a lista de
 // Movimentações do Estoque parecia lançada toda de uma vez (#777, item 6).
-const diaAs = (n, hora, minuto = 0) => {
+const diaAs = (n: Qualquer, hora: Qualquer, minuto = 0) => {
   const d = new Date(hoje);
   d.setDate(d.getDate() + n);
   d.setHours(hora, minuto, 0, 0);
   return d.toISOString();
 };
 // Como `diaAs`, mas domingo (loja fechada) vira o sábado antes.
-const diaDeLojaAs = (n, hora, minuto = 0) => {
+const diaDeLojaAs = (n: Qualquer, hora: Qualquer, minuto = 0) => {
   const d = new Date(hoje);
   d.setDate(d.getDate() + n);
   return diaAs(d.getDay() === 0 ? n - 1 : n, hora, minuto);
 };
 // "AAAA-MM-DD" no fuso local (o mesmo do `diaLocal()` do programa).
-const diaLocal = (iso) => new Date(iso).toLocaleDateString("sv-SE");
+const diaLocal = (iso: Qualquer) => new Date(iso).toLocaleDateString("sv-SE");
 
 export const lojas = [
   { id: LOJA, nome: "Auto Center Modelo", cidade: "Araraquara", uf: "SP", ativo: true, criado_em: dia(-400) },
@@ -84,8 +89,8 @@ export const clientes = [
   { id: "00000000-0000-0000-0000-00000000c000", nome: "Consumidor", tipo_pessoa: "fisica", cpf_cnpj: null, telefone: null, email: null, cep: null, rua: null, numero: null, bairro: null, cidade: null, uf: null, data_nascimento: null, criado_em: dia(-400) },
 ].map((c) => ({ ...c, veiculos: veiculos.filter((v) => v.cliente_id === c.id) }));
 
-const vlk = (id) => veiculos.find((v) => v.id === id);
-const item = (tipo, id, descricao, qtd, preco) => ({
+const vlk = (id: Qualquer) => veiculos.find((v) => v.id === id);
+const item = (tipo: Qualquer, id: Qualquer, descricao: Qualquer, qtd: Qualquer, preco: Qualquer) => ({
   id: Math.random().toString(36).slice(2), tipo, descricao,
   quantidade: qtd, preco_unitario: preco, desconto: 0,
   peca_id: tipo === "peca" ? id : null, servico_id: tipo === "servico" ? id : null,
@@ -94,7 +99,7 @@ const item = (tipo, id, descricao, qtd, preco) => ({
 
 // As OS de hoje, com o número subindo junto com a hora (a 146 foi concluída
 // hoje, depois da 145).
-export const ordens = [
+export const ordens: Qualquer[] = [
   { numero: 148, cliente: "c1", veiculo: "v1", status: "em_andamento", abertura: -0.25,
     itens: [item("peca", "p1", "Pneu 175/70 R14", 2, 389.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 120)] },
   { numero: 147, cliente: "c4", veiculo: "v4", status: "em_andamento", abertura: -0.4,
@@ -117,20 +122,20 @@ export const ordens = [
     itens: [item("peca", "p1", "Pneu 175/70 R14", 4, 369.9), item("servico", "s1", "Alinhamento e balanceamento", 1, 110)] },
 ].map(montarOrdem);
 
-function montarOrdem(o) {
+function montarOrdem(o: Qualquer) {
   const cli = clientes.find((c) => c.id === o.cliente);
   const v = vlk(o.veiculo);
   return {
     id: "os" + o.numero, numero: o.numero, loja_id: LOJA,
     cliente_id: o.cliente, veiculo_id: o.veiculo,
-    status: o.status, km_entrada: o.km ?? v.km_atual,
+    status: o.status, km_entrada: o.km ?? v!.km_atual,
     descricao_problema: "", forma_pagamento: o.status === "faturada" ? "Pix" : null,
     parcelas: 1, data_abertura: o.dataAbertura ?? dia(o.abertura),
     data_fechamento: o.status !== "faturada" ? null : o.dataFechamento ?? dia(o.abertura + 0.3),
     vendedor_id: o.numero % 2 === 0 ? "f2" : "f3",
     criado_por_id: OP, atualizado_por_id: OP,
-    cliente: { nome: cli.nome },
-    veiculo: { placa: v.placa, marca: v.marca, modelo: v.modelo, cor: v.cor, tipo: v.tipo },
+    cliente: { nome: cli!.nome },
+    veiculo: { placa: v!.placa, marca: v!.marca, modelo: v!.modelo, cor: v!.cor, tipo: v!.tipo },
     vendedor: { nome: o.numero % 2 === 0 ? "Bruna Tavares" : "Marcos Andrade" },
     criado_por: { nome: "Marcos Andrade" },
     atualizado_por: { nome: "Marcos Andrade" },
@@ -183,7 +188,7 @@ const BASE = [
 const SEQUENCIA = Array.from({ length: 132 }, (_, i) => BASE[(i * 7) % BASE.length]);
 // Os dias de loja aberta das últimas 8 semanas (domingo fechado), do mais
 // antigo pro mais novo.
-const DIAS_DE_LOJA = [];
+const DIAS_DE_LOJA: number[] = [];
 for (let n = -56; n <= -1; n++) {
   const d = new Date(hoje);
   d.setDate(d.getDate() + n);
@@ -196,7 +201,7 @@ for (let n = -56; n <= -1; n++) {
 // capa da apresentação (#785). A conta: a posição `f` (de 0 a 1) da OS na
 // sequência vira o ponto `x` do período em que a curva a·x² + (1−a)·x chega em `f`.
 const CRESCIMENTO = 0.12;
-const diaDaOs = (i) => {
+const diaDaOs = (i: Qualquer) => {
   const f = i / SEQUENCIA.length;
   const a = CRESCIMENTO;
   const x = (-(1 - a) + Math.sqrt((1 - a) ** 2 + 4 * a * f)) / (2 * a);
@@ -219,8 +224,8 @@ const historico = SEQUENCIA.map((pacote, i) => {
     numero, cliente, veiculo, status: "faturada",
     dataAbertura: diaAs(n, hora, minuto),
     dataFechamento: diaAs(n, hora + 1, minuto),
-    km: vlk(veiculo).km_atual - 3000 + i * 20,
-    itens: PACOTES[pacote](),
+    km: vlk(veiculo)!.km_atual - 3000 + i * 20,
+    itens: (PACOTES as Record<string, () => Qualquer[]>)[pacote]!(),
   });
 });
 
@@ -244,18 +249,18 @@ ordens.unshift({
 // `ordens` e não pode contá-los. Só entram na tabela `ordens_servico`, de onde
 // a lista de orçamentos e o número do menu os leem. A validade é relativa a
 // hoje pra a cena nunca "vencer" sozinha com o tempo (nem deixar de vencer).
-const orcamentoDemo = (n, cliente, veiculo, status, validadeEmDias, itens, extra = {}) => {
+const orcamentoDemo = (n: Qualquer, cliente: Qualquer, veiculo: Qualquer, status: Qualquer, validadeEmDias: Qualquer, itens: Qualquer, extra = {}) => {
   const cli = clientes.find((c) => c.id === cliente);
   const v = vlk(veiculo);
   return {
     id: "orc" + n, numero: null, numero_orcamento: n, loja_id: LOJA,
     cliente_id: cliente, veiculo_id: veiculo, status,
-    validade: diaCurto(validadeEmDias), km_entrada: v.km_atual,
+    validade: diaCurto(validadeEmDias), km_entrada: v!.km_atual,
     descricao_problema: "", forma_pagamento: null, parcelas: 1,
     data_abertura: diaDeLojaAs(-3 - n, 10, 15), data_fechamento: null,
     vendedor_id: "f2", criado_por_id: OP, atualizado_por_id: OP,
-    cliente: { nome: cli.nome },
-    veiculo: { placa: v.placa, marca: v.marca, modelo: v.modelo, cor: v.cor, tipo: v.tipo },
+    cliente: { nome: cli!.nome },
+    veiculo: { placa: v!.placa, marca: v!.marca, modelo: v!.modelo, cor: v!.cor, tipo: v!.tipo },
     vendedor: { nome: "Bruna Tavares" },
     criado_por: { nome: "Marcos Andrade" }, atualizado_por: { nome: "Marcos Andrade" },
     itens: itens,
@@ -283,12 +288,12 @@ export const categoriasCaixa = [
   { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", criado_em: dia(-400) },
   { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", criado_em: dia(-400) },
 ];
-function nomeDaCategoriaCaixa(id) {
-  return categoriasCaixa.find((c) => c.id === id).nome;
+function nomeDaCategoriaCaixa(id: Qualquer) {
+  return categoriasCaixa.find((c) => c.id === id)!.nome;
 }
 
-const totalItens = (o) =>
-  o.itens.reduce((s, i) => s + i.quantidade * i.preco_unitario - i.desconto, 0);
+const totalItens = (o: Qualquer) =>
+  o.itens.reduce((s: Qualquer, i: Qualquer) => s + i.quantidade * i.preco_unitario - i.desconto, 0);
 
 // A OS 145 (a frota da Transportes Boa Vista) foi faturada "a receber
 // depois": no programa, isso cria a conta a receber e NÃO lança no caixa até
@@ -314,13 +319,13 @@ const DESPESAS = [
 ];
 // O dia `diaDoMes` de `mesesAtras` meses atrás, em dias a partir de hoje (só
 // os que já passaram), pulando o domingo.
-const despesasPagas = [];
+const despesasPagas: Qualquer[] = [];
 for (const mesesAtras of [1, 0]) {
   for (const [descricao, valor, categoria, diaDoMes] of DESPESAS) {
-    const quando = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtras, diaDoMes);
+    const quando = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtras, Number(diaDoMes));
     const meiaNoiteDeHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
     if (quando >= meiaNoiteDeHoje) continue;
-    const n = Math.round((quando - meiaNoiteDeHoje) / 864e5);
+    const n = Math.round((quando.getTime() - meiaNoiteDeHoje.getTime()) / 864e5);
     despesasPagas.push([descricao, valor, categoria, n]);
   }
 }
@@ -331,7 +336,7 @@ for (const mesesAtras of [1, 0]) {
 // (#777, item 2). `cliente_nome` é o que o programa lê; `cliente` e os itens
 // inteiros ficam só porque os testes de dados-de-mentira conferem o custo e o
 // total em cima deles (o banco falso devolve o que está aqui, sem filtrar colunas).
-const ordemNoCaixa = (o) => ({
+const ordemNoCaixa = (o: Qualquer) => ({
   id: o.id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   cliente_nome: o.cliente.nome,
   cliente: o.cliente, itens: o.itens,
@@ -346,10 +351,10 @@ const vendasNoCaixa = [...historico, ...ordens]
   .filter((o) => o.status === "faturada" && o.id !== OS_A_RECEBER && o.data_fechamento > dia(-60))
   .map((o, i) => {
     const forma = o.tipo === "venda_balcao" ? "dinheiro" : FORMAS[i % FORMAS.length];
-    o.forma_pagamento = NOME_DA_FORMA[forma];
+    o.forma_pagamento = NOME_DA_FORMA[forma as keyof typeof NOME_DA_FORMA];
     return {
       id: "cx-" + o.id, loja_id: LOJA, data: o.data_fechamento,
-      ordem_servico_id: o.id, tipo: "entrada", forma_pagamento: NOME_DA_FORMA[forma],
+      ordem_servico_id: o.id, tipo: "entrada", forma_pagamento: NOME_DA_FORMA[forma as keyof typeof NOME_DA_FORMA],
       valor: totalItens(o),
       descricao: `Faturamento da ${o.tipo === "venda_balcao" ? "Venda" : "OS"} ${o.numero}`,
       categoria_id: null, ordem_servico: ordemNoCaixa(o), categoria: null,
@@ -425,7 +430,7 @@ for (const [peca_id, quantidade, referencia, diasAtras, hora] of ENTRADAS) {
 for (const o of [...historico, ...ordens]) {
   if (o.data_abertura < dia(-28)) continue;
   const lancadoEm = new Date(new Date(o.data_abertura).getTime() + 10 * 60 * 1000).toISOString();
-  for (const i of o.itens.filter((x) => x.tipo === "peca")) {
+  for (const i of o.itens.filter((x: Qualquer) => x.tipo === "peca")) {
     movimentosDeEstoque.push({
       peca_id: i.peca_id, tipo: "saida", quantidade: i.quantidade, motivo: "uso_em_os",
       referencia: `${o.tipo === "venda_balcao" ? "Venda" : "OS"} ${o.numero}`,
@@ -440,7 +445,7 @@ movimentosDeEstoque.push({
   peca_id: "p1", tipo: "saida", quantidade: 1, motivo: "ajuste",
   referencia: "Ajuste por contagem de estoque", criado_em: diaAs(-3, 18, 31),
 });
-const delta = (m) => (m.tipo === "entrada" ? m.quantidade : -m.quantidade);
+const delta = (m: Qualquer) => (m.tipo === "entrada" ? m.quantidade : -m.quantidade);
 movimentosDeEstoque.sort((a, b) => (a.criado_em < b.criado_em ? -1 : 1));
 for (const peca_id of Object.keys(SALDO_FINAL)) {
   // Sem a partida, o saldo andaria assim; a partida cobre o ponto mais baixo
@@ -452,7 +457,7 @@ for (const peca_id of Object.keys(SALDO_FINAL)) {
     maisBaixo = Math.min(maisBaixo, semPartida);
   }
   movimentosDeEstoque.push({
-    peca_id, tipo: "entrada", quantidade: Math.max(SALDO_FINAL[peca_id] - semPartida, 2 - maisBaixo), motivo: "ajuste",
+    peca_id, tipo: "entrada", quantidade: Math.max(SALDO_FINAL[peca_id as keyof typeof SALDO_FINAL] - semPartida, 2 - maisBaixo), motivo: "ajuste",
     referencia: "Contagem geral do estoque", criado_em: diaAs(-28, 8, 0),
   });
 }
@@ -462,7 +467,7 @@ export const estoque = movimentosDeEstoque.map((m, i) => ({
   id: "e" + String(i + 1).padStart(3, "0"), loja_id: LOJA, deposito_id: "d1", ...m,
 }));
 
-const saldoAntesDe = (peca_id, momento) =>
+const saldoAntesDe = (peca_id: Qualquer, momento: Qualquer) =>
   estoque.filter((m) => m.peca_id === peca_id && m.criado_em < momento).reduce((t, m) => t + delta(m), 0);
 
 // ---------------------------------------------------------------------------
@@ -486,7 +491,7 @@ export const fornecedores = [
   { id: "fo4", nome: "Baterias do Vale Distribuidora", cnpj: "44.555.666/0001-77", telefone: "(16) 3355-1200", email: "atendimento@exemplo.com.br", cep: "14807-000", rua: "Rua Carlos Gomes", numero: "77", bairro: "Vila Melhado", cidade: "Araraquara", uf: "SP", ativo: false, criado_em: dia(-160) },
 ];
 
-const itemPedido = (id, pedido, pecaId, descricao, unidade, pedida, preco, recebida) => ({
+const itemPedido = (id: Qualquer, pedido: Qualquer, pecaId: Qualquer, descricao: Qualquer, unidade: Qualquer, pedida: Qualquer, preco: Qualquer, recebida: Qualquer) => ({
   id, pedido_compra_id: pedido, peca_id: pecaId,
   quantidade_pedida: pedida, preco_unitario: preco, quantidade_recebida: recebida,
   peca: { descricao, unidade },
@@ -552,14 +557,14 @@ export const contasReceber = [
   { id: "cr3", loja_id: LOJA, cliente_id: "c1", ordem_servico_id: null, descricao: "Parcela 2/2 do jogo de amortecedores", valor: 720, vencimento: diaCurto(-41), status: "recebido", data_recebimento: diaLocal(diaAs(-40, 10, 40)), caixa_movimento_id: "cx-cr3", operador_id: OP, criado_em: dia(-70), cliente: { nome: "Ricardo Menezes" } },
 ];
 
-const competenciaDe = (iso) => diaLocal(iso).slice(0, 8) + "01";
-const mesCompetencia = (n) => {
+const competenciaDe = (iso: Qualquer) => diaLocal(iso).slice(0, 8) + "01";
+const mesCompetencia = (n: Qualquer) => {
   const d = new Date(hoje);
   d.setMonth(d.getMonth() + n, 1);
   return d.toLocaleDateString("sv-SE");
 };
 
-const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }) => {
+const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }: Qualquer) => {
   const nome = tipo === "nfe"
     ? `NFCe-${String(numero).padStart(9, "0")}.xml`
     : `NFSe-${String(numero).padStart(8, "0")}.xml`;
@@ -581,7 +586,7 @@ const nota = ({ id, tipo, competencia, numero, origem, status, ordem, criadoEm }
 // emitidas" na mesma tela, com "Ver PDF da NFS-e" duas vezes (#777, item 1).
 // A OS 143 teve a primeira NFC-e cancelada e emitida de novo, pra a tela de
 // Notas ter uma cancelada sem a OS ficar devendo nota.
-const notasDasOrdens = [];
+const notasDasOrdens: Qualquer[] = [];
 {
   // Numeração das notas longe da das OS, pra "NFS-e 141" não parecer a OS 141.
   let nfce = 2100;
@@ -590,18 +595,18 @@ const notasDasOrdens = [];
     .filter((o) => o.status === "faturada")
     .sort((a, b) => (a.data_fechamento < b.data_fechamento ? -1 : 1));
   for (const o of faturadas) {
-    const emitir = (tipo, status = "autorizado") => {
+    const emitir = (tipo: Qualquer, status = "autorizado") => {
       const numero = tipo === "nfe" ? ++nfce : ++nfse;
       notasDasOrdens.push(nota({
         id: `nf-${tipo}-${numero}`, tipo, competencia: competenciaDe(o.data_fechamento), numero,
         origem: "automatica", status, ordem: o, criadoEm: o.data_fechamento,
       }));
     };
-    if (o.itens.some((i) => i.tipo === "peca")) {
+    if (o.itens.some((i: Qualquer) => i.tipo === "peca")) {
       if (o.numero === 143) emitir("nfe", "cancelado");
       emitir("nfe");
     }
-    if (o.itens.some((i) => i.tipo === "servico")) emitir("nfse");
+    if (o.itens.some((i: Qualquer) => i.tipo === "servico")) emitir("nfse");
   }
 }
 
@@ -622,7 +627,7 @@ export const auditoria = [
 
 // O saldo do sistema de cada contagem é o saldo de verdade naquela hora,
 // tirado dos movimentos acima.
-const contagem = (id, peca_id, em, diferenca, observacao) => {
+const contagem = (id: Qualquer, peca_id: Qualquer, em: Qualquer, diferenca: Qualquer, observacao: Qualquer) => {
   const saldo = saldoAntesDe(peca_id, em);
   return {
     id, loja_id: LOJA, deposito_id: "d1", peca_id, quantidade_contada: saldo + diferenca,
@@ -679,7 +684,7 @@ for (const o of [...historico, ...ordens]) {
 // direto (a garantia não tem tabela própria: sai do item de peça + o prazo
 // cadastrado na peça + a data em que a OS foi fechada).
 export const ordensItens = [...historico, ...ordens].flatMap((o) =>
-  o.itens.map((i) => ({
+  o.itens.map((i: Qualquer) => ({
     ...i,
     ordem_servico_id: o.id,
     ordem: {
@@ -733,12 +738,7 @@ export const configGarantia = [{
 // mentira "atrasado" faria a faixa de aviso do TR-05.7 aparecer nas 54 telas
 // do catálogo e nas imagens do site. Lido em vez de copiado justamente pra
 // não ficar pra trás na próxima migration.
-const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const versaoDoEsquema = Number(
-  readFileSync(join(RAIZ, "src/schemas/versaoEsquema.ts"), "utf8").match(
-    /VERSAO_ESQUEMA_ESPERADA = (\d+)/,
-  )[1],
-);
+const versaoDoEsquema = VERSAO_ESQUEMA_ESPERADA;
 
 const schemaVersao = [{ versao: versaoDoEsquema, aplicada_em: dia(-30) }];
 
@@ -747,7 +747,7 @@ const schemaVersao = [{ versao: versaoDoEsquema, aplicada_em: dia(-30) }];
 // mostra o histórico e a soma das diferenças. O esperado é o que o programa
 // calcula (`resumirDiaParaFechamento`): o fundo de troco + o dinheiro do dia.
 const FUNDO_DE_TROCO = 100;
-const dinheiroDoDia = (data) =>
+const dinheiroDoDia = (data: Qualquer) =>
   caixa
     .filter((m) => diaLocal(m.data) === data && /dinheiro/i.test(m.forma_pagamento ?? ""))
     .reduce((t, m) => t + (m.tipo === "entrada" ? m.valor : -m.valor), 0);
@@ -776,14 +776,14 @@ const primeiroDoMesPassado = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1
 const ultimoDoMesPassado = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
 const inicioPago = primeiroDoMesPassado.toLocaleDateString("sv-SE");
 const fimPago = ultimoDoMesPassado.toLocaleDateString("sv-SE");
-const custoDoItem = (i) =>
-  i.peca_id ? pecas.find((p) => p.id === i.peca_id).preco_custo : servicos.find((x) => x.id === i.servico_id).custo;
+const custoDoItem = (i: Qualquer) =>
+  i.peca_id ? pecas.find((p) => p.id === i.peca_id)!.preco_custo : servicos.find((x) => x.id === i.servico_id)!.custo;
 const snapshotPago = historico
   .filter((o) => diaLocal(o.data_fechamento) >= inicioPago && diaLocal(o.data_fechamento) <= fimPago)
   .slice(0, 2)
   .map((o) => ({
     ordemId: o.id, numero: o.numero, papel: "tecnico",
-    comissao: Math.round(0.1 * o.itens.reduce((t, i) => t + i.quantidade * (i.preco_unitario - custoDoItem(i)), 0) * 100) / 100,
+    comissao: Math.round(0.1 * o.itens.reduce((t: Qualquer, i: Qualquer) => t + i.quantidade * (i.preco_unitario - custoDoItem(i)), 0) * 100) / 100,
   }));
 const totalPago = Math.round(snapshotPago.reduce((t, l) => t + l.comissao, 0) * 100) / 100;
 // Pago no dia 5 deste mês (ou hoje, se ainda não chegou o dia 5).
@@ -802,10 +802,8 @@ const comissoesPagas = [{
 // Os computadores da empresa (migration 0063): quatro, pra seção de
 // Configurações mostrar o que ela existe pra mostrar — um no canal de teste,
 // um uma versão atrás, e um notebook que sumiu há mais de 30 dias.
-const versaoDoApp = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf8"),
-).version;
-const versaoAnterior = versaoDoApp.replace(/(\d+)$/, (n) => String(Math.max(0, Number(n) - 1)));
+const versaoDoApp: string = pacote.version;
+const versaoAnterior = versaoDoApp.replace(/(\d+)$/, (n: Qualquer) => String(Math.max(0, Number(n) - 1)));
 const computadores = [
   { id: "pc-1", nome_maquina: "DESKTOP-4K7PQ2", apelido: "Balcão", versao_app: versaoDoApp,
     canal: "teste", sistema: "Windows 11 Pro", loja_id: LOJA, operador_id: OP,
@@ -828,11 +826,11 @@ const computadores = [
 // saem na ordem em que foram gravados, como na tela de OS.
 const todasAsOrdens = [...ordens, ...historico, ...ordensDeQuemSumiu, ...orcamentos];
 const ordensQueContam = todasAsOrdens.filter((o) => !["orcamento", "recusado"].includes(o.status));
-const sub = (item, campos) => Object.fromEntries(campos.map((c) => [c, item[c] ?? null]));
+const sub = (item: Qualquer, campos: Qualquer) => Object.fromEntries(campos.map((c: Qualquer) => [c, item[c] ?? null]));
 const janelaOrdensCaixa = ordensQueContam.map((o) => ({
   id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
   cliente_nome: o.cliente.nome,
-  itens: o.itens.map((i) => sub(i, ["quantidade", "preco_unitario", "desconto"])),
+  itens: o.itens.map((i: Qualquer) => sub(i, ["quantidade", "preco_unitario", "desconto"])),
 }));
 const janelaOrdensComissoes = todasAsOrdens
   .filter((o) => o.status === "faturada")
@@ -840,14 +838,14 @@ const janelaOrdensComissoes = todasAsOrdens
     id: o.id, loja_id: o.loja_id, numero: o.numero, tipo: o.tipo ?? "os", status: o.status,
     data_abertura: o.data_abertura, data_fechamento: o.data_fechamento,
     vendedor_id: o.vendedor_id, cliente_nome: o.cliente.nome,
-    itens: o.itens.map((i) =>
+    itens: o.itens.map((i: Qualquer) =>
       sub(i, ["id", "tipo", "peca_id", "servico_id", "quantidade", "preco_unitario", "desconto", "custo_unitario", "tecnico_id"]),
     ),
   }));
 const janelaOrdensGarantias = ordensQueContam.filter((o) => o.data_fechamento != null).flatMap((o) =>
   o.itens
-    .filter((i) => i.tipo === "peca")
-    .map((i) => {
+    .filter((i: Qualquer) => i.tipo === "peca")
+    .map((i: Qualquer) => {
       const peca = pecas.find((p) => p.id === i.peca_id);
       return {
         id: i.id, quantidade: i.quantidade, peca_id: i.peca_id,
@@ -871,7 +869,7 @@ const janelaOrdensClientes = ordensQueContam.map((o) => ({
   veiculo_placa: o.veiculo ? o.veiculo.placa : null,
   veiculo_marca: o.veiculo ? o.veiculo.marca : null,
   veiculo_modelo: o.veiculo ? o.veiculo.modelo : null,
-  itens: o.itens.map((i) => ({
+  itens: o.itens.map((i: Qualquer) => ({
     ...sub(i, ["id", "tipo", "peca_id", "descricao", "quantidade", "preco_unitario", "desconto"]),
     prazo_garantia_dias: i.peca ? (i.peca.prazo_garantia_dias ?? null) : null,
   })),
@@ -961,8 +959,8 @@ export const TABELAS = {
 export const FUNCOES = {
   // As da #366 (migration 0073) respondem conforme o pedido: função aqui
   // recebe o corpo da chamada.
-  custo_das_ordens: ({ p_ordens }) => custoDasOrdens(p_ordens ?? []),
-  dados_fiscais_das_pecas: ({ p_pecas }) =>
+  custo_das_ordens: ({ p_ordens }: Qualquer) => custoDasOrdens(p_ordens ?? []),
+  dados_fiscais_das_pecas: ({ p_pecas }: Qualquer) =>
     pecas
       .filter((p) => (p_pecas ?? []).includes(p.id))
       .map(({ id, codigo_interno, codigo_barras, descricao, unidade, ncm, cest, cfop_padrao, origem, cst_ou_csosn, aliquota_icms }) => ({
@@ -1002,8 +1000,8 @@ function saldosDeEstoque() {
 
 // O custo de cada OS, a mesma regra da função `custo_das_ordens` (0073) e do
 // custoUnitarioDoItem do programa.
-function custoDasOrdens(ids) {
-  return ids.map((id) => {
+function custoDasOrdens(ids: Qualquer) {
+  return ids.map((id: Qualquer) => {
     let custo = 0;
     let completo = true;
     for (const i of ordensItens.filter((item) => item.ordem_servico_id === id)) {

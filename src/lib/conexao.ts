@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { ENDERECO_DEMO } from "@/demo/fetchDemo";
 
 // Decide com qual Supabase (qual empresa) este computador vai falar.
 //
@@ -18,14 +19,77 @@ export interface Conexao {
 // instalador não carrega mais a conexão de empresa nenhuma dentro dele (ver o
 // comentário em .github/workflows/release.yml), justamente pra um instalador
 // entregue a um cliente novo não vir apontando pro banco de outra empresa.
-const urlDoDesenvolvimento = import.meta.env.DEV
-  ? import.meta.env.VITE_SUPABASE_URL || ""
-  : "";
-const chaveDoDesenvolvimento = import.meta.env.DEV
+//
+// Exceção: no `npm run dev:demo` (modo "demo" do Vite) o `.env` também é
+// ignorado, senão ele passaria na frente e a demonstração nunca abriria.
+const usaEnvDoDesenvolvimento = import.meta.env.DEV && import.meta.env.MODE !== "demo";
+const urlDoDesenvolvimento = usaEnvDoDesenvolvimento ? import.meta.env.VITE_SUPABASE_URL || "" : "";
+const chaveDoDesenvolvimento = usaEnvDoDesenvolvimento
   ? import.meta.env.VITE_SUPABASE_ANON_KEY || ""
   : "";
 
+// ---------------------------------------------------------------------------
+// Modo demonstração (FN-14): o programa inteiro funcionando com dados
+// inventados, só na memória, pra mostrar o sistema sem tocar em banco nenhum.
+//
+// O sinal fica no `sessionStorage`, que o Electron apaga ao fechar a janela:
+// assim a demonstração vale "até fechar o programa" e, ao abrir de novo, o
+// programa volta à conexão de verdade (não fica preso na demonstração). Nada
+// é gravado no `conexao.json` do computador.
+// ---------------------------------------------------------------------------
+const SINAL_DEMO = "sakura_modo_demonstracao";
+
+// Digitar "demo" no campo do endereço da tela de conexão abre a demonstração.
+export function ehPalavraDemo(texto: string): boolean {
+  return texto.trim().toLowerCase() === "demo";
+}
+
+function lerSinalDemo(): string | null {
+  try {
+    return sessionStorage.getItem(SINAL_DEMO);
+  } catch {
+    // Armazenamento bloqueado: segue como se não houvesse sinal.
+    return null;
+  }
+}
+
+function gravarSinalDemo(valor: "sim" | "saiu" | null) {
+  try {
+    if (valor === null) sessionStorage.removeItem(SINAL_DEMO);
+    else sessionStorage.setItem(SINAL_DEMO, valor);
+  } catch {
+    // Sem armazenamento a demonstração não liga; não há o que fazer além disso.
+  }
+}
+
+export function modoDemonstracao(): boolean {
+  const sinal = lerSinalDemo();
+  if (sinal === "sim") return true;
+  if (sinal === "saiu") return false;
+  // Sem sinal nenhum: só o `npm run dev:demo` abre direto na demonstração.
+  return import.meta.env.DEV && import.meta.env.MODE === "demo";
+}
+
+// O cliente do Supabase é criado quando o módulo carrega, então mudar de
+// modo exige recarregar a janela inteira (é o que o salvarConexao também faz).
+function recarregarJanela() {
+  if (typeof window !== "undefined") window.location.reload();
+}
+
+export function entrarNaDemonstracao() {
+  gravarSinalDemo("sim");
+  recarregarJanela();
+}
+
+export function sairDaDemonstracao() {
+  gravarSinalDemo("saiu");
+  recarregarJanela();
+}
+
 export function conexaoAtual(): Conexao | null {
+  // Endereço e chave de mentira: só servem pro App.tsx entender que "há
+  // conexão" e não mostrar a tela de conexão. Quem responde é o fetchDemo.
+  if (modoDemonstracao()) return { url: ENDERECO_DEMO, chave: "demo" };
   if (urlDoDesenvolvimento && chaveDoDesenvolvimento) {
     return { url: urlDoDesenvolvimento, chave: chaveDoDesenvolvimento };
   }
@@ -44,6 +108,9 @@ export async function salvarConexao(conexao: Conexao): Promise<void> {
     );
   }
   await window.sakuraApp.salvarConexao(conexao);
+  // Quem salva uma conexão de verdade sai da demonstração (o app recarrega em
+  // seguida e já abre na conexão nova).
+  gravarSinalDemo(null);
 }
 
 // Confere se a URL e a chave funcionam de verdade, pra usuária não descobrir
