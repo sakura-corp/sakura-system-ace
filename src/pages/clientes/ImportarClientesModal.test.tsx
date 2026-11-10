@@ -44,12 +44,23 @@ beforeEach(() => {
   importarClientes.mockReset();
   listarLotesImportacao.mockReset();
   desfazerImportacao.mockReset();
-  carregarCadastroParaConferir.mockResolvedValue({ clientes: [], placas: ["OLD1A11"] });
+  // A Bia já é cliente e a placa dela já está cadastrada: a linha 4 é "já existe".
+  // (Cliente NOVO com placa repetida agora entra, sem o veículo: está em schemas/.)
+  carregarCadastroParaConferir.mockResolvedValue({
+    clientes: [{ id: "c-bia", nome: "Bia Exemplo", cpf_cnpj: null }],
+    placas: ["OLD1A11"],
+  });
   listarLotesImportacao.mockResolvedValue([]);
 });
 
-function abrir(aoConcluir = vi.fn()) {
-  return { aoConcluir, ...renderizar(<ImportarClientesModal onFechar={vi.fn()} onConcluido={aoConcluir} />) };
+function abrir(aoConcluir = vi.fn(), aoFechar = vi.fn()) {
+  return { aoConcluir, aoFechar, ...renderizar(<ImportarClientesModal onFechar={aoFechar} onConcluido={aoConcluir} />) };
+}
+
+async function ateOConfirmar(user: ReturnType<typeof renderizar>["user"]) {
+  await ateORevisar(user);
+  await user.click(screen.getByRole("button", { name: "Continuar" }));
+  await screen.findByRole("button", { name: "Confirmar importação" });
 }
 
 async function ateORevisar(user: ReturnType<typeof renderizar>["user"]) {
@@ -194,5 +205,86 @@ describe("ImportarClientesModal", () => {
     expect(screen.getByText(/Ana Teste/)).toBeInTheDocument();
     expect(screen.getByText(/tem ordem de serviço/)).toBeInTheDocument();
     await waitFor(() => expect(aoConcluir).toHaveBeenCalled());
+  });
+
+  it("depois de um erro na gravação, não oferece Confirmar de novo: recomeça pela revisão com o cadastro recarregado", async () => {
+    importarClientes.mockRejectedValue(new Error("A importação parou no meio. dá pra desfazer"));
+    const { user } = abrir();
+    await ateOConfirmar(user);
+    const lotesAntes = listarLotesImportacao.mock.calls.length;
+    const cadastroAntes = carregarCadastroParaConferir.mock.calls.length;
+    await user.click(screen.getByRole("button", { name: "Confirmar importação" }));
+    expect(await screen.findByText(/parou no meio/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar importação" })).not.toBeInTheDocument();
+    expect(listarLotesImportacao.mock.calls.length).toBeGreaterThan(lotesAntes); // lista recarregada
+    // o que entrou agora existe no cadastro: ao recomeçar, Ana vira "já existe"
+    carregarCadastroParaConferir.mockResolvedValue({
+      clientes: [
+        { id: "c1", nome: "Ana Teste", cpf_cnpj: "52998224725" },
+        { id: "c-bia", nome: "Bia Exemplo", cpf_cnpj: null },
+      ],
+      placas: ["OLD1A11", "ABC1D23"],
+    });
+    await user.click(screen.getByRole("button", { name: "Recomeçar pela revisão" }));
+    await screen.findByTestId("resumo-entram");
+    expect(carregarCadastroParaConferir.mock.calls.length).toBeGreaterThan(cadastroAntes);
+    expect(screen.getByTestId("resumo-entram")).toHaveTextContent("0");
+    expect(screen.getByTestId("resumo-ja-existem")).toHaveTextContent("2");
+    expect(importarClientes).toHaveBeenCalledTimes(1);
+  });
+
+  it("se só os números do lote falharam, mostra o relatório com a linha de aviso", async () => {
+    importarClientes.mockResolvedValue({ loteId: "l", clientesCriados: 1, veiculosCriados: 1, avisoNumerosDoLote: true });
+    const { user } = abrir();
+    await ateOConfirmar(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar importação" }));
+    expect(await screen.findByText(/1 cliente\(s\) e 1 veículo\(s\) entraram/i)).toBeInTheDocument();
+    expect(screen.getByText(/os números do lote não foram gravados, mas tudo entrou/i)).toBeInTheDocument();
+  });
+
+  it("filtro 'Só com problema': a linha corrigida continua na tela enquanto o filtro não muda", async () => {
+    const { user } = abrir();
+    await ateORevisar(user);
+    await user.selectOptions(screen.getByLabelText("Mostrar"), "problema");
+    await user.type(screen.getByLabelText("Nome da linha 3"), "Caio Exemplo");
+    expect(screen.getByTestId("resumo-problemas")).toHaveTextContent("0");
+    expect(screen.getByTestId("linha-3")).toBeInTheDocument(); // não some no meio da digitação
+    expect(within(screen.getByTestId("linha-3")).getByText("Entra")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome da linha 3")).toHaveValue("Caio Exemplo");
+    // trocando o filtro, recalcula
+    await user.selectOptions(screen.getByLabelText("Mostrar"), "problema");
+    expect(screen.queryByTestId("linha-3")).not.toBeInTheDocument();
+  });
+
+  it("o número da linha é o do arquivo (conta linha em branco) e a edição acerta a linha certa", async () => {
+    const csv = ["Nome;Placa", "Ana;", "", ";XYZ9K88", "Bia;"].join("\n"); // 1 cab, 2 Ana, 3 vazia, 4 sem nome, 5 Bia
+    const { user } = abrir();
+    await user.upload(
+      await screen.findByLabelText(/arquivo da planilha/i),
+      new File([csv], "c.csv", { type: "text/csv" }),
+    );
+    await screen.findByText(/lido como/i);
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await screen.findByTestId("resumo-entram");
+    expect(within(screen.getByTestId("linha-4")).getByText(/sem nome/i)).toBeInTheDocument();
+    expect(screen.getByTestId("linha-5")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Nome da linha 4"), "Caio");
+    expect(screen.getByTestId("resumo-problemas")).toHaveTextContent("0");
+  });
+
+  it("enquanto grava, o ✕ e o Esc não fecham a janela", async () => {
+    let terminar: (v: unknown) => void = () => {};
+    importarClientes.mockImplementation(() => new Promise((ok) => (terminar = ok)));
+    const { user, aoFechar } = abrir();
+    await ateOConfirmar(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar importação" }));
+    await screen.findByText("Gravando...");
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Fechar" }));
+    expect(aoFechar).not.toHaveBeenCalled();
+    terminar({ loteId: "l", clientesCriados: 1, veiculosCriados: 1 });
+    await screen.findByText(/1 cliente\(s\) e 1 veículo\(s\) entraram/i);
+    await user.keyboard("{Escape}");
+    expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 });

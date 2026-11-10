@@ -83,12 +83,22 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
   const [comoFoiLido, setComoFoiLido] = useState("");
   const [cabecalho, setCabecalho] = useState<string[]>([]);
   const [linhas, setLinhas] = useState<string[][]>([]);
+  // A linha DO ARQUIVO de cada registro (a tabela editável continua indexando por posição).
+  const [numerosDeLinha, setNumerosDeLinha] = useState<number[]>([]);
   const [mapeamento, setMapeamento] = useState<CampoImportacao[]>([]);
   const [existente, setExistente] = useState<CadastroExistente>({ clientes: [], placas: [] });
 
   const [filtro, setFiltro] = useState<Filtro>("todas");
   const [quantasMostrar, setQuantasMostrar] = useState(LINHAS_POR_VEZ);
   const [andamento, setAndamento] = useState<[number, number]>([0, 0]);
+  // Posições das linhas mostradas, congeladas quando o filtro é escolhido: a
+  // linha corrigida não some no meio da digitação. `null` = sem filtro.
+  const [indicesCongelados, setIndicesCongelados] = useState<number[] | null>(null);
+  // A gravação parou no meio: o que entrou já está no cadastro, então a mesma
+  // conferência não pode ser confirmada de novo (duplicaria).
+  const [gravacaoParou, setGravacaoParou] = useState(false);
+  // Gravando ou desfazendo: a janela não fecha (o ✕, o Esc e o clique no fundo).
+  const [travado, setTravado] = useState(false);
   const [entrada, setEntrada] = useState<ResultadoImportacao | null>(null);
   const [copiado, setCopiado] = useState(false);
 
@@ -118,8 +128,8 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
   const temNome = mapeamento.includes("nome");
 
   const conferencia = useMemo(
-    () => (passo === "arquivo" || passo === "colunas" ? null : conferirLinhas(linhas, mapeamento, existente)),
-    [passo, linhas, mapeamento, existente],
+    () => (passo === "arquivo" || passo === "colunas" ? null : conferirLinhas(linhas, mapeamento, existente, numerosDeLinha)),
+    [passo, linhas, numerosDeLinha, mapeamento, existente],
   );
 
   async function handleArquivo(arquivo: File | undefined) {
@@ -138,6 +148,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
       );
       setCabecalho(planilha.cabecalho);
       setLinhas(planilha.linhas);
+      setNumerosDeLinha(planilha.numerosDeLinha);
       setMapeamento(sugerirMapeamento(planilha.cabecalho));
       setPasso("colunas");
     } catch (err) {
@@ -162,6 +173,8 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
     try {
       setExistente(await carregarCadastroParaConferir());
       setFiltro("todas");
+      setIndicesCongelados(null);
+      setGravacaoParou(false);
       setQuantasMostrar(LINHAS_POR_VEZ);
       setPasso("revisar");
     } catch (err) {
@@ -181,6 +194,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
   async function confirmar() {
     if (!conferencia) return;
     setOcupado(true);
+    setTravado(true);
     setErro(null);
     setAndamento([0, conferencia.clientes.length]);
     try {
@@ -196,10 +210,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
     } catch (err) {
       console.error("Erro ao importar clientes:", err);
       setErro(mensagemDeErro(err));
+      setGravacaoParou(true);
       await carregarLotes();
       await onConcluido();
     } finally {
       setOcupado(false);
+      setTravado(false);
     }
   }
 
@@ -216,6 +232,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
 
   async function desfazer(lote: LoteImportacao) {
     setOcupado(true);
+    setTravado(true);
     setErro(null);
     try {
       const resultado = await desfazerImportacao(lote.id);
@@ -228,6 +245,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
       setErro(mensagemDeErro(err));
     } finally {
       setOcupado(false);
+      setTravado(false);
     }
   }
 
@@ -239,7 +257,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
   const visiveis: { linha: LinhaConferida; indice: number }[] = conferencia
     ? conferencia.linhas
         .map((linha, indice) => ({ linha, indice }))
-        .filter(({ linha }) => filtro === "todas" || linha.situacao === filtro)
+        .filter(({ indice }) => (indicesCongelados === null ? true : indicesCongelados.includes(indice)))
     : [];
 
   return (
@@ -247,7 +265,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
       titulo="Importar clientes de uma planilha"
       descricao="Escolha um arquivo .csv, diga o que é cada coluna e revise antes de gravar. Nada entra no cadastro antes do Confirmar."
       largura="5xl"
-      onFechar={onFechar}
+      onFechar={() => {
+        if (!travado) onFechar();
+      }}
     >
       {erro && (
         <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
@@ -465,7 +485,13 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               aria-label="Mostrar"
               value={filtro}
               onChange={(e) => {
-                setFiltro(e.target.value as Filtro);
+                const novo = e.target.value as Filtro;
+                setFiltro(novo);
+                setIndicesCongelados(
+                  novo === "todas" || !conferencia
+                    ? null
+                    : conferencia.linhas.flatMap((l, i) => (l.situacao === novo ? [i] : [])),
+                );
                 setQuantasMostrar(LINHAS_POR_VEZ);
               }}
               className="rounded border border-sakura-borda-campo px-2 py-1 focus:border-sakura-purple"
@@ -583,6 +609,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
             </div>
           ) : (
             <>
+              {gravacaoParou ? (
+                <p className="text-corpo text-sakura-purple-dark">
+                  A gravação parou. Para não duplicar nada, a conferência será refeita com o cadastro atualizado: o
+                  que já entrou vai aparecer como &quot;Já existe&quot;.
+                </p>
+              ) : (
               <p className="text-corpo text-sakura-purple-dark">
                 Vão ser gravados <strong>{conferencia.resumo.clientesNovos}</strong> cliente(s) novo(s) e{" "}
                 <strong>{conferencia.resumo.veiculosNovos}</strong> veículo(s) novo(s).{" "}
@@ -590,13 +622,22 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                   `${conferencia.resumo.jaExistem + conferencia.resumo.comProblema} linha(s) ficam de fora (já existem ou têm problema). `}
                 Se precisar voltar atrás, a importação aparece na lista de importações anteriores, com o botão Desfazer.
               </p>
+              )}
               <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setPasso("revisar")} className={botaoSecundario}>
-                  Voltar
-                </button>
-                <button type="button" onClick={confirmar} className={botaoPrincipal}>
-                  Confirmar importação
-                </button>
+                {gravacaoParou ? (
+                  <button type="button" onClick={irParaRevisao} className={botaoPrincipal}>
+                    Recomeçar pela revisão
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" onClick={() => setPasso("revisar")} className={botaoSecundario}>
+                      Voltar
+                    </button>
+                    <button type="button" onClick={confirmar} className={botaoPrincipal}>
+                      Confirmar importação
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}
@@ -608,6 +649,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
           <p className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-800">
             Pronto: {entrada.clientesCriados} cliente(s) e {entrada.veiculosCriados} veículo(s) entraram.
           </p>
+          {entrada.avisoNumerosDoLote && (
+            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+              Os números do lote não foram gravados, mas tudo entrou. Na lista de importações anteriores essa
+              importação pode aparecer com 0 cliente(s) e 0 veículo(s); o Desfazer continua valendo.
+            </p>
+          )}
           <ul className="list-disc pl-5 text-corpo">
             <li>{conferencia.resumo.jaExistem} linha(s) já existiam e foram puladas.</li>
             <li>{conferencia.resumo.comProblema} linha(s) com problema não entraram.</li>
