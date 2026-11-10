@@ -23,3 +23,4 @@ fechamentos_caixa,UPDATE,um fechamento de caixa não se altera — desfaz (só a
 comissoes_fechamentos,UPDATE,um pagamento de comissão registrado não se altera — admin desfaz e registra de novo (TL-46.1)
 computadores,INSERT,gravar é só pela função registrar_computador() — o balconista registra o computador dele sem poder ler a lista (0063)
 computadores,UPDATE,trocar o apelido é só pela função definir_apelido_computador(); o resto muda a cada login pela registrar_computador()
+importacao_lotes,DELETE,o lote de importação nunca é apagado: desfazer é pela função desfazer_importacao() e o lote fica marcado como desfeito (0083)
