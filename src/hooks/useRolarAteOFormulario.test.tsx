@@ -5,9 +5,16 @@
  * trocar o item com o formulário já aberto (o "Abrir a que já existe" do
  * Estoque) rola de novo, e fechado não rola nem rouba o foco.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
 import { useRolarAteOFormulario } from "./useRolarAteOFormulario";
+
+// Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
+// no fim de cada um, volta o que era.
+const scrollIntoViewOriginal = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 function Formulario({ chave }: { chave: string | null }) {
   const caixa = useRolarAteOFormulario(chave);

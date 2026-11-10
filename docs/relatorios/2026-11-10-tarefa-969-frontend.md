@@ -42,6 +42,8 @@
 - Clientes, Serviços e Fornecedores: os 6 testes reprovaram antes do conserto e passaram depois.
 - Estoque, "Cancelar" devolve o cursor pra busca: tirei de propósito o `setTimeout` e o `autoFocus`
   da busca e ele reprovou. Só tirar o `setTimeout` não basta, porque o `autoFocus` já devolve o foco.
+- Clientes, trocar de canetinha com o formulário aberto (achado da Sofia na revisão do PR):
+  sem a `key` o campo continuava com o cliente anterior. Reprovou; com a `key`, passou.
 - Os achados da revisão, cada um com um teste que reprovou antes: trocar de canetinha com o
   formulário aberto (Fornecedores e Serviços) mantinha os dados do anterior; no Clientes o foco ia
   pro "Pessoa física", não pro Nome; no Serviços, com o "+ Novo" aberto, a canetinha levava o
@@ -59,8 +61,7 @@
 - O Electron instalado e o Supabase de teste: o app de telas usa Chromium e um banco falso.
 - O "+ Novo" com a lista rolada: o botão fica em cima da lista, então pra clicar nele a tela já
   sobe. A canetinha da última linha é que prova a rolagem.
-- `ClienteForm` e `PecaForm` não precisaram de `key` nova: no Clientes a lista some com o
-  formulário aberto, e o `PecaForm` já tinha a dele.
+- O `PecaForm` não precisou de `key` nova, porque já tinha a dele.
 
 ## O que depende de alguém
 - **Gustavo, no PC** (`docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez",
@@ -74,9 +75,15 @@ Terminei.
 - **O que a skill me ajudou a fazer**: a regra do teste antes, visto reprovar, e a revisão
   adversarial, que pegou um defeito que o meu plano criava (a tela subia até um formulário com os
   dados de outro item).
-- **Onde eu errei ou tive que adivinhar**: o meu seletor de "primeiro campo" pegava o botão de
+- **Onde eu errei ou tive que adivinhar**: achei que no Clientes a lista sumia com o formulário
+  aberto e deixei o `ClienteForm` sem `key`. Só some o cartão dos "sumidos"; a tabela fica. A
+  Sofia pegou na revisão do PR: trocar de canetinha gravaria o cliente A por cima do B. Consertei
+  com a `key` e um teste visto reprovar sem ela. Lição: conferir na tela, e não pela leitura do
+  código, se a lista some. Também o meu seletor de "primeiro campo" pegava o botão de
   opção do Clientes, e o teste copiava o mesmo seletor, então passava junto. Teste de foco tem que
   dizer **qual** campo, não repetir o seletor do código.
 - **O que faltou na skill**: nada essencial.
-- **Sugestão de ajuste (opcional)**: no chefe-frontend, uma linha: "teste de foco ou de 'primeiro
-  campo' confere o campo pelo nome ou pelo valor, nunca com o mesmo seletor do código".
+- **Sugestão de ajuste (opcional)**: no chefe-frontend, duas linhas: "teste de foco ou de 'primeiro
+  campo' confere o campo pelo nome ou pelo valor, nunca com o mesmo seletor do código"; e "formulário
+  com `defaultValues` que abre com a lista ainda na tela precisa de `key` (confira se a lista some
+  mesmo; não deduza)".

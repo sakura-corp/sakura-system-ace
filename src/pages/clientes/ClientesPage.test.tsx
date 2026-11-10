@@ -8,11 +8,18 @@
  * some pra quem não pode ver valores; e que o botão abre o WhatsApp com a
  * mensagem certa e registra a abertura, como os outros botões.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, within } from "@/testes/tela";
 import type { Cliente } from "@/types/cliente";
 import type { Operador } from "@/types/operador";
 import type { OrdemDoCliente } from "@/schemas/clientesSumidos";
+
+// Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
+// no fim de cada um, volta o que era.
+const scrollIntoViewOriginal = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 const listarClientes = vi.fn();
 const listarOrdensFaturadasDosClientes = vi.fn();
@@ -251,4 +258,18 @@ describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
     expect(foco.type).toBe("text");
     expect(rolar).toHaveBeenCalled();
   });
+
+  it("trocar de canetinha com o formulário aberto abre o outro, com os dados dele", async () => {
+    // A tabela fica na tela com o formulário aberto (só o cartão dos "sumidos"
+    // some). Sem a key, o formulário ficava com os dados do anterior, e salvar
+    // gravava o cliente A por cima do B.
+    Element.prototype.scrollIntoView = vi.fn();
+    const { user } = renderizar(<ClientesPage />);
+    await user.click(await screen.findByRole("button", { name: /^Editar .*Cliente Pouco/ }));
+    await user.click(screen.getByRole("button", { name: /^Editar .*Cliente Muito/ }));
+
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Cliente Muito"));
+    expect(screen.queryByDisplayValue("Cliente Pouco")).toBeNull();
+  });
 });
+

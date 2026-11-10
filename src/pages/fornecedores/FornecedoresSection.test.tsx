@@ -5,9 +5,16 @@
  * a lista rolada, o formulário abria fora da vista e parecia que o clique não
  * tinha feito nada. O gancho é `hooks/useRolarAteOFormulario.ts`.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
 import type { Fornecedor } from "@/types/fornecedor";
+
+// Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
+// no fim de cada um, volta o que era.
+const scrollIntoViewOriginal = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 vi.mock("@/lib/fornecedores", () => ({
   criarFornecedor: vi.fn(),

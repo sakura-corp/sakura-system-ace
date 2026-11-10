@@ -197,7 +197,12 @@ export function ClientesPage() {
 
       {formulario && (
         <div ref={caixaDoFormulario} className="scroll-mt-4">
+          {/* key: a tabela fica na tela com o formulário aberto (só o cartão dos
+              "sumidos" some), e sem ela trocar de canetinha mantinha os valores
+              do anterior (defaultValues só valem na montagem); salvar gravava o
+              cliente A por cima do B (#969). */}
           <ClienteForm
+            key={formulario === "novo" ? "novo" : formulario.id}
             clienteExistente={formulario === "novo" ? undefined : formulario}
             onSalvar={handleSalvar}
             onCancelar={() => setFormulario(null)}

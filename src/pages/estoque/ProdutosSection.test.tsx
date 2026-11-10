@@ -5,10 +5,17 @@
  * A conta é a de `margemSobreAVenda` (sobre a venda desde a #835); aqui se
  * confere como ela aparece na tabela.
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen } from "@/testes/tela";
 import { ProdutosSection } from "./ProdutosSection";
 import type { Peca } from "@/types/peca";
+
+// Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
+// no fim de cada um, volta o que era.
+const scrollIntoViewOriginal = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 function umaPeca(extra: Partial<Peca>): Peca {
   return {
