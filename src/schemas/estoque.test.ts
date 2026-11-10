@@ -9,6 +9,7 @@ import {
   acharPorCodigoExato,
   agruparPorFornecedor,
   consumoPorDiaDasPecas,
+  lerQuantidadeDigitada,
   lerSaldo,
   montarSugestaoCompra,
   movimentoDeEstoqueInicial,
@@ -540,5 +541,26 @@ describe("agruparPorFornecedor", () => {
 
   it("sem nada pra comprar, nenhum grupo", () => {
     expect(agruparPorFornecedor([])).toEqual([]);
+  });
+});
+
+describe("lerQuantidadeDigitada (a caixa \"Comprar\" da Sugestão de compra)", () => {
+  it("aceita inteiro e até 2 casas, com vírgula ou ponto (litro de óleo)", () => {
+    expect(lerQuantidadeDigitada("7")).toBe(7);
+    expect(lerQuantidadeDigitada("2,5")).toBe(2.5);
+    expect(lerQuantidadeDigitada("2.25")).toBe(2.25);
+    expect(lerQuantidadeDigitada(" 3 ")).toBe(3);
+  });
+
+  it("vazio vale 0: a pessoa apagou, a peça sai do pedido", () => {
+    expect(lerQuantidadeDigitada("")).toBe(0);
+  });
+
+  it("negativo, 3 casas, texto e número que não cabe no banco são inválidos (null), nunca 0 calado", () => {
+    expect(lerQuantidadeDigitada("-1")).toBeNull();
+    expect(lerQuantidadeDigitada("1,234")).toBeNull();
+    expect(lerQuantidadeDigitada("abc")).toBeNull();
+    expect(lerQuantidadeDigitada("1e3")).toBeNull();
+    expect(lerQuantidadeDigitada("10000000000")).toBeNull();
   });
 });

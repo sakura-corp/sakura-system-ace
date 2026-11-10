@@ -56,7 +56,7 @@ describe("SugestaoCompraSection", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Filtro de óleo")).toBeInTheDocument();
     expect(screen.getAllByText("sem cotação").length).toBe(1);
-    expect(screen.getByLabelText("Quantidade de Pneu 175/70")).toHaveValue(4);
+    expect(screen.getByLabelText("Quantidade de Pneu 175/70")).toHaveValue("4");
   });
 
   it("editar a quantidade recalcula o total da linha", async () => {
@@ -87,7 +87,8 @@ describe("SugestaoCompraSection", () => {
         { fornecedorNome: "Fornecedor A", numero: 12 },
         { fornecedorNome: "Fornecedor B", numero: 13 },
       ],
-      naoCriados: [],
+      comFalha: null,
+      naoTentados: [],
       erro: null,
     });
     const confirmar = vi.spyOn(window, "confirm");
@@ -119,17 +120,81 @@ describe("SugestaoCompraSection", () => {
     expect(carregarDadosDaSugestao).toHaveBeenCalledTimes(2);
   });
 
-  it("se um pedido falhar, mostra quais foram criados, quais não e o erro", async () => {
+  it("se um pedido falhar, mostra os criados, o que falhou (pode ter ficado gravado) e os não tentados", async () => {
     gerarPedidosDaSugestao.mockResolvedValue({
       criados: [{ fornecedorNome: "Fornecedor A", numero: 12 }],
-      naoCriados: [{ fornecedorNome: "Fornecedor B" }],
+      comFalha: { fornecedorNome: "Fornecedor B" },
+      naoTentados: [{ fornecedorNome: "Fornecedor C" }],
       erro: "rede caiu",
     });
     const { user } = montar();
     await user.click(await screen.findByRole("button", { name: "Gerar pedidos" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Criar" }));
     expect(await screen.findByText(/Pedido 12 — Fornecedor A/)).toBeInTheDocument();
-    expect(screen.getByText(/Não foi criado: Fornecedor B/)).toBeInTheDocument();
+    expect(screen.getByText(/Fornecedor B: deu erro, e o pedido pode ter ficado gravado/)).toBeInTheDocument();
+    expect(screen.getByText(/Não foram tentados: Fornecedor C/)).toBeInTheDocument();
     expect(screen.getByText(/rede caiu/)).toBeInTheDocument();
+  });
+
+  it("falha sem nenhum criado também recarrega a sugestão e a aba de pedidos (o pedido pode ter sido gravado)", async () => {
+    gerarPedidosDaSugestao.mockResolvedValue({
+      criados: [],
+      comFalha: { fornecedorNome: "Fornecedor A" },
+      naoTentados: [],
+      erro: "rede caiu",
+    });
+    const { user, onPedidosCriados } = montar();
+    await user.click(await screen.findByRole("button", { name: "Gerar pedidos" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Criar" }));
+    await waitFor(() => expect(carregarDadosDaSugestao).toHaveBeenCalledTimes(2));
+    expect(onPedidosCriados).toHaveBeenCalled();
+  });
+
+  it("enquanto recarrega depois de criar, o \"Gerar pedidos\" fica travado (senão cria de novo)", async () => {
+    gerarPedidosDaSugestao.mockResolvedValue({
+      criados: [{ fornecedorNome: "Fornecedor A", numero: 12 }],
+      comFalha: null,
+      naoTentados: [],
+      erro: null,
+    });
+    const { user } = montar();
+    const gerar = await screen.findByRole("button", { name: "Gerar pedidos" });
+    let soltar: (v: unknown) => void = () => {};
+    carregarDadosDaSugestao.mockReturnValueOnce(new Promise((r) => (soltar = r)));
+    await user.click(gerar);
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Criar" }));
+    await waitFor(() => expect(carregarDadosDaSugestao).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("button", { name: "Gerar pedidos" })).toBeDisabled();
+    soltar(DADOS);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Gerar pedidos" })).toBeEnabled());
+  });
+
+  it("quantidade inválida marca o campo e trava o Gerar pedidos; 2,5 (litro) vale", async () => {
+    const { user } = montar();
+    const campo = await screen.findByLabelText("Quantidade de Filtro de óleo");
+    await user.clear(campo);
+    await user.type(campo, "-1");
+    expect(campo).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText(/quantidade que não dá pra pedir/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gerar pedidos" })).toBeDisabled();
+    await user.clear(campo);
+    await user.type(campo, "2,5");
+    expect(campo).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByRole("button", { name: "Gerar pedidos" })).toBeEnabled();
+    const linha = screen.getByText("Filtro de óleo").closest("tr") as HTMLElement;
+    expect(within(linha).getByText(/50,00/)).toBeInTheDocument();
+  });
+
+  it("trocar de loja no meio da carga: a resposta da loja antiga não toma o lugar da nova", async () => {
+    let soltarAntiga: (v: unknown) => void = () => {};
+    carregarDadosDaSugestao
+      .mockReturnValueOnce(new Promise((r) => (soltarAntiga = r)))
+      .mockResolvedValueOnce({ ...DADOS, pecas: [DADOS.pecas[1]] });
+    const { rerender } = montar();
+    rerender(<SugestaoCompraSection lojaId="loja-2" operadorId="op-1" onPedidosCriados={vi.fn()} />);
+    expect(await screen.findByText("Filtro de óleo")).toBeInTheDocument();
+    soltarAntiga(DADOS);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Pneu 175/70")).toBeNull();
   });
 });

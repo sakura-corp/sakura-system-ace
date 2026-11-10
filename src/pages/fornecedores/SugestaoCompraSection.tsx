@@ -13,6 +13,7 @@ import {
   DIAS_DE_FOLGA_SUGESTAO,
   DIAS_DO_RITMO_DE_SAIDA,
   agruparPorFornecedor,
+  lerQuantidadeDigitada,
   montarSugestaoCompra,
   totalDaLinha,
 } from "@/schemas/estoque";
@@ -25,12 +26,6 @@ interface Props {
 }
 
 const UM_DECIMAL = { minimumFractionDigits: 1, maximumFractionDigits: 1 } as const;
-
-// O que a pessoa digitou na caixa vira número inteiro >= 0; vazio ou lixo vale 0.
-function lerQuantidade(texto: string): number {
-  const n = Number(texto);
-  return Number.isInteger(n) && n >= 0 ? n : 0;
-}
 
 function juntarComE(partes: string[]): string {
   if (partes.length <= 1) return partes.join("");
@@ -50,6 +45,10 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   // resposta da loja antiga chega depois e não pode tomar o lugar da nova
   // (o mesmo da #903, #927 e #967).
   const lojaDaCarga = useRef(lojaId);
+  // A loja que está na tela agora: o "Gerar pedidos" que termina depois de a
+  // pessoa trocar de loja não pode recarregar (nem mostrar) a loja antiga.
+  const lojaNaTela = useRef(lojaId);
+  lojaNaTela.current = lojaId;
 
   async function carregar() {
     const loja = lojaId;
@@ -79,9 +78,11 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
     [dados],
   );
 
-  function quantidadeDa(pecaId: string, sugerida: number): number {
-    return pecaId in editadas ? lerQuantidade(editadas[pecaId]) : sugerida;
+  // null = o que foi digitado não dá pra pedir (a tela marca e trava o gerar).
+  function quantidadeDa(pecaId: string, sugerida: number): number | null {
+    return pecaId in editadas ? lerQuantidadeDigitada(editadas[pecaId]) : sugerida;
   }
+  const invalidas = linhas.filter((l) => quantidadeDa(l.peca_id, l.quantidadeSugerida) === null).length;
 
   const grupos = useMemo(
     () =>
@@ -89,11 +90,12 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
         linhas.map((l) => ({
           peca_id: l.peca_id,
           descricao: l.descricao,
-          quantidade: l.peca_id in editadas ? lerQuantidade(editadas[l.peca_id]) : l.quantidadeSugerida,
+          quantidade: quantidadeDa(l.peca_id, l.quantidadeSugerida) ?? 0,
           fornecedor: l.fornecedor,
           preco: l.preco,
         })),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- quantidadeDa só lê `editadas`
     [linhas, editadas],
   );
   const semFornecedor = linhas.filter((l) => l.fornecedor === null).length;
@@ -106,16 +108,21 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   )}. Criar?`;
 
   async function criar() {
+    const loja = lojaId;
     setGerando(true);
-    const r = await gerarPedidosDaSugestao(grupos, lojaId, operadorId);
-    setGerando(false);
-    setConfirmando(false);
-    setResultado(r);
-    // Mesmo com falha no meio, o que foi criado já conta: a sugestão desconta
-    // o que está pedido e a aba de pedidos mostra os novos.
-    if (r.criados.length > 0) {
-      await carregar();
+    try {
+      const r = await gerarPedidosDaSugestao(grupos, loja, operadorId);
+      if (lojaNaTela.current !== loja) return;
+      setConfirmando(false);
+      setResultado(r);
+      // Recarrega SEMPRE, com erro ou sem: o `criarPedido()` grava em partes,
+      // então até o fornecedor que falhou pode ter ficado gravado. Com a lista
+      // velha na tela, gerar de novo duplicaria o pedido. E o "Gerar pedidos"
+      // só destrava depois da recarga (o `gerando` segue ligado até aqui).
       onPedidosCriados();
+      await carregar();
+    } finally {
+      setGerando(false);
     }
   }
 
@@ -155,11 +162,19 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
           )}
           {resultado.erro && (
             <>
-              <p className="mt-2 font-medium">
-                Não foi criado: {resultado.naoCriados.map((n) => n.fornecedorNome).join(", ")}
-              </p>
+              {resultado.comFalha && (
+                <p className="mt-2 font-medium">
+                  {resultado.comFalha.fornecedorNome}: deu erro, e o pedido pode ter ficado gravado
+                  (inteiro ou sem itens). Confira na aba Pedidos de compra antes de gerar de novo.
+                </p>
+              )}
+              {resultado.naoTentados.length > 0 && (
+                <p className="mt-2 font-medium">
+                  Não foram tentados: {resultado.naoTentados.map((n) => n.fornecedorNome).join(", ")}
+                </p>
+              )}
               <p>{resultado.erro}</p>
-              <p>Nada foi repetido sozinho. Confira a aba Pedidos de compra e gere de novo o que faltou.</p>
+              <p>Nada foi repetido sozinho. A lista abaixo já foi atualizada com o que ficou pedido.</p>
             </>
           )}
         </div>
@@ -204,14 +219,17 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
                     <td className="px-3 py-3">{l.jaPedido}</td>
                     <td className="px-3 py-3">
                       <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        inputMode="numeric"
+                        // Texto, e não "number": a caixa de número não aceita a vírgula
+                        // do "2,5" (litro); quem confere é o lerQuantidadeDigitada.
+                        type="text"
+                        inputMode="decimal"
                         aria-label={`Quantidade de ${l.descricao}`}
                         value={l.peca_id in editadas ? editadas[l.peca_id] : String(l.quantidadeSugerida)}
+                        aria-invalid={quantidade === null}
                         onChange={(e) => setEditadas((antes) => ({ ...antes, [l.peca_id]: e.target.value }))}
-                        className="h-9 w-20 rounded-lg border border-sakura-borda-campo px-2 text-corpo"
+                        className={`h-9 w-20 rounded-lg border px-2 text-corpo ${
+                          quantidade === null ? "border-red-500" : "border-sakura-borda-campo"
+                        }`}
                       />
                     </td>
                     <td className="px-3 py-3">
@@ -221,7 +239,9 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
                       {l.preco === null ? "—" : formatarMoeda(l.preco)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-3">
-                      {l.preco === null ? "—" : formatarMoeda(totalDaLinha(quantidade, l.preco))}
+                      {l.preco === null || quantidade === null
+                        ? "—"
+                        : formatarMoeda(totalDaLinha(quantidade, l.preco))}
                     </td>
                   </tr>
                 );
@@ -251,11 +271,18 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
         </p>
       )}
 
+      {invalidas > 0 && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          {invalidas === 1 ? "1 linha tem" : `${invalidas} linhas têm`} quantidade que não dá pra pedir
+          (use número sem sinal, com até 2 casas, ex.: 3 ou 2,5). Corrija pra gerar os pedidos.
+        </p>
+      )}
+
       <div className="flex justify-end">
         <button
           type="button"
           onClick={() => setConfirmando(true)}
-          disabled={grupos.length === 0}
+          disabled={gerando || invalidas > 0 || grupos.length === 0}
           className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           Gerar pedidos

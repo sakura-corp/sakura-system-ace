@@ -467,3 +467,24 @@ export function agruparPorFornecedor(itens: readonly ItemParaAgrupar[]): GrupoPo
     .map((grupo) => ({ ...grupo, total: somar(grupo.itens.map((i) => i.total)) }))
     .sort((a, b) => compararNomes(a.fornecedor.nome, b.fornecedor.nome));
 }
+
+/** O maior número que `pedidos_compra_itens.quantidade_pedida` (numeric(12,2)) guarda. */
+const MAIOR_QUANTIDADE_DO_PEDIDO = 9_999_999_999.99;
+
+/**
+ * O que a pessoa digitou na caixa "Comprar" da Sugestão de compra.
+ *
+ * - vazio vale 0: a pessoa apagou, a peça sai do pedido (é o jeito de tirar);
+ * - aceita até 2 casas, com vírgula ou ponto, porque óleo e graxa se compram
+ *   em litro e a coluna do banco é `numeric(12,2)`;
+ * - negativo, 3 casas, texto, notação "1e3" ou número que não cabe no banco
+ *   devolvem `null` (inválido). Antes viravam 0 sem aviso e a peça sumia do
+ *   pedido calada; com `null` a tela marca o campo e trava o "Gerar pedidos".
+ */
+export function lerQuantidadeDigitada(texto: string): number | null {
+  const limpo = texto.trim().replace(",", ".");
+  if (limpo === "") return 0;
+  if (!/^\d+(\.\d{1,2})?$/.test(limpo)) return null;
+  const numero = Number(limpo);
+  return numero <= MAIOR_QUANTIDADE_DO_PEDIDO ? numero : null;
+}

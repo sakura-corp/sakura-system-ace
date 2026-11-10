@@ -57,9 +57,17 @@ describe("FornecedoresPage — aba Sugestão de compra", () => {
 
   it("pedido criado recarrega os pedidos sem tirar a sugestão da tela", async () => {
     const { user } = montar({ aba: "sugestao" });
-    await user.click(await screen.findByRole("button", { name: "simular pedido criado" }));
+    await screen.findByText("tela da sugestão");
+    // A segunda leitura fica pendurada: é DURANTE ela que a sugestão (com o
+    // resultado do "Gerar pedidos") não pode virar "Carregando...".
+    let soltar: (v: unknown[]) => void = () => {};
+    listarPedidos.mockReturnValueOnce(new Promise((r) => (soltar = r)));
+    await user.click(screen.getByRole("button", { name: "simular pedido criado" }));
     await waitFor(() => expect(listarPedidos).toHaveBeenCalledTimes(2));
     expect(screen.getByText("tela da sugestão")).toBeInTheDocument();
+    expect(screen.queryByText("Carregando...")).toBeNull();
+    soltar([]);
+    await waitFor(() => expect(screen.getByText("tela da sugestão")).toBeInTheDocument());
   });
 
   it("sem Estoque, a aba não aparece", async () => {

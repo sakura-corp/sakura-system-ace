@@ -80,7 +80,8 @@ describe("gerarPedidosDaSugestao", () => {
         { fornecedorNome: "Fornecedor B", numero: 13 },
         { fornecedorNome: "Fornecedor C", numero: 14 },
       ],
-      naoCriados: [],
+      comFalha: null,
+      naoTentados: [],
       erro: null,
     });
     expect(criarPedido).toHaveBeenCalledTimes(3);
@@ -97,7 +98,7 @@ describe("gerarPedidosDaSugestao", () => {
     expect(criarPedido.mock.calls[1][0].fornecedor_id).toBe("f2");
   });
 
-  it("se o 2º falhar: o 1º fica criado, o 2º e o 3º não, e ninguém é repetido", async () => {
+  it("se o 2º falhar: o 1º fica criado, o 2º pode ter ficado gravado, o 3º nem foi tentado, e ninguém é repetido", async () => {
     criarPedido
       .mockResolvedValueOnce({ numero: 12 })
       .mockRejectedValueOnce(new Error("rede caiu"));
@@ -105,10 +106,10 @@ describe("gerarPedidosDaSugestao", () => {
     const r = await gerarPedidosDaSugestao(GRUPOS, "loja-1", null);
 
     expect(r.criados).toEqual([{ fornecedorNome: "Fornecedor A", numero: 12 }]);
-    expect(r.naoCriados).toEqual([
-      { fornecedorNome: "Fornecedor B" },
-      { fornecedorNome: "Fornecedor C" },
-    ]);
+    // O criarPedido() grava em partes (pedido, itens, cotações): o que falhou
+    // pode ter ficado gravado pela metade, e a tela manda conferir.
+    expect(r.comFalha).toEqual({ fornecedorNome: "Fornecedor B" });
+    expect(r.naoTentados).toEqual([{ fornecedorNome: "Fornecedor C" }]);
     expect(r.erro).toBeTruthy();
     expect(criarPedido).toHaveBeenCalledTimes(2);
   });

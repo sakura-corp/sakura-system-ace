@@ -107,7 +107,15 @@ export async function carregarDadosDaSugestao(
 
 export interface ResultadoDoGerarPedidos {
   criados: { fornecedorNome: string; numero: number }[];
-  naoCriados: { fornecedorNome: string }[];
+  /**
+   * O fornecedor em que deu erro. O `criarPedido()` grava em partes (o pedido,
+   * depois os itens, depois as cotações), então o pedido dele PODE ter ficado
+   * gravado, inteiro ou sem itens: a tela manda conferir em vez de dizer "não
+   * foi criado", senão a pessoa gera de novo e duplica.
+   */
+  comFalha: { fornecedorNome: string } | null;
+  /** Os que vinham depois e nem foram tentados. */
+  naoTentados: { fornecedorNome: string }[];
   erro: string | null;
 }
 
@@ -143,10 +151,11 @@ export async function gerarPedidosDaSugestao(
     } catch (err) {
       return {
         criados,
-        naoCriados: grupos.slice(i).map((g) => ({ fornecedorNome: g.fornecedor.nome })),
+        comFalha: { fornecedorNome: grupo.fornecedor.nome },
+        naoTentados: grupos.slice(i + 1).map((g) => ({ fornecedorNome: g.fornecedor.nome })),
         erro: mensagemDeErro(err),
       };
     }
   }
-  return { criados, naoCriados: [], erro: null };
+  return { criados, comFalha: null, naoTentados: [], erro: null };
 }
