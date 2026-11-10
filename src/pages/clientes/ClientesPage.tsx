@@ -30,6 +30,7 @@ import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { temPermissao } from "@/types/operador";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { ImportarClientesModal } from "./ImportarClientesModal";
 import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
@@ -45,6 +46,7 @@ export function ClientesPage() {
     formulario === "novo" ? "novo" : (formulario?.id ?? null),
   );
   const [veiculosDe, setVeiculosDe] = useState<Cliente | null>(null);
+  const [importando, setImportando] = useState(false);
 
   // Filtro "clientes que sumiram" (FN-11). As ordens só são buscadas quando a
   // pessoa liga o filtro: a lista de clientes comum não precisa delas.
@@ -186,12 +188,22 @@ export function ClientesPage() {
           </div>
         </div>
         {!formulario && (
-          <button
-            onClick={() => setFormulario("novo")}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-          >
-            + Novo cliente
-          </button>
+          <div className="flex items-center gap-3">
+            {operador?.admin && (
+              <button
+                onClick={() => setImportando(true)}
+                className="rounded-xl border border-sakura-purple px-5 py-2.5 text-corpo font-medium text-sakura-purple hover:bg-sakura-purple/5"
+              >
+                Importar planilha
+              </button>
+            )}
+            <button
+              onClick={() => setFormulario("novo")}
+              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+            >
+              + Novo cliente
+            </button>
+          </div>
         )}
       </header>
 
@@ -377,6 +389,10 @@ export function ClientesPage() {
 
       {veiculosDe && (
         <VeiculosDoClienteModal cliente={veiculosDe} onFechar={() => setVeiculosDe(null)} />
+      )}
+
+      {importando && operador?.admin && (
+        <ImportarClientesModal onFechar={() => setImportando(false)} onConcluido={carregar} />
       )}
     </div>
   );
