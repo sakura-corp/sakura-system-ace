@@ -150,12 +150,12 @@ export function ClientesPage() {
   }
 
   // A loja tem cliente (ou a pessoa está buscando): mostra a busca e o filtro.
-  const temClientes = lista.total > 0 || lista.buscaAplicada !== "" || lista.busca !== "";
+  const temClientes = lista.total > 0 || lista.buscaDaTela !== "" || lista.busca !== "";
 
   // Depois de salvar ou excluir: a página atual da lista e, se o filtro
   // "sumiram" já foi usado, a lista completa dele também.
   async function carregar() {
-    await lista.recarregar();
+    lista.recarregar();
     if (ordens !== null) {
       try {
         setTodosClientes(await listarClientes());
@@ -357,8 +357,8 @@ export function ClientesPage() {
         )
       ) : lista.total === 0 ? (
         <p className="text-corpo text-sakura-muted">
-          {lista.buscaAplicada
-            ? `Nenhum cliente encontrado com "${lista.buscaAplicada}".`
+          {lista.buscaDaTela
+            ? `Nenhum cliente encontrado com "${lista.buscaDaTela}".`
             : "Nenhum cliente cadastrado ainda."}
         </p>
       ) : (

@@ -62,9 +62,14 @@ function escaparLike(texto: string): string {
  * conta: "joao" não acha "João", decisão da #373).
  *
  * Telefone e CPF ficam gravados do jeito que foram digitados, com ou sem
- * pontuação. Por isso, quando a busca tem número, os algarismos também são
- * procurados em sequência, com qualquer coisa entre eles: "16990000001" acha
- * "(16) 99000-0001". Devolve `null` quando não há o que buscar.
+ * pontuação. Por isso, quando a busca é só número (e pontuação), com 4
+ * algarismos ou mais, eles também são procurados em sequência, com qualquer
+ * coisa entre eles: "16990000001" acha "(16) 99000-0001". Com letra no meio
+ * ("Ana 123") não: acharia quase todo telefone que tem 1, 2 e 3.
+ *
+ * O `*` digitado vira curinga (o PostgREST troca `*` por `%` no like, mesmo
+ * entre aspas): só aumenta o que a busca acha, não quebra a consulta.
+ * Devolve `null` quando não há o que buscar.
  */
 export function filtroDaBuscaDeClientes(busca: string): string | null {
   const texto = busca.trim();
@@ -76,7 +81,7 @@ export function filtroDaBuscaDeClientes(busca: string): string | null {
     `cpf_cnpj.ilike.${literal}`,
   ];
   const digitos = texto.replace(/\D/g, "");
-  if (digitos.length >= 3) {
+  if (/^[\d\s().\-/+]+$/.test(texto) && digitos.length >= 4) {
     const espalhado = padraoDoIlike(digitos.split("").join("%"));
     partes.push(`telefone.ilike.${espalhado}`, `cpf_cnpj.ilike.${espalhado}`);
   }
@@ -89,7 +94,8 @@ export function filtroDaBuscaDeClientes(busca: string): string | null {
  *
  * A ordem sempre termina em `id`: com dois "João Silva", sem desempate um
  * deles podia cair em duas páginas ou em nenhuma (a mesma regra de
- * `paginacao.ts`). Cliente sem cidade fica no fim nas duas direções.
+ * `paginacao.ts`). Cidade nula fica no fim nas duas direções; a cidade em
+ * branco (o formulário grava "") é texto vazio e vem primeiro na crescente.
  *
  * O "Consumidor" fica de fora, como em `listarClientes()`.
  */

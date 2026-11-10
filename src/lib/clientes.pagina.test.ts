@@ -124,3 +124,19 @@ describe("filtroDaBuscaDeClientes", () => {
     expect(filtroDaBuscaDeClientes("Ana")!.split(",")).toHaveLength(3);
   });
 });
+
+describe("filtroDaBuscaDeClientes — achados da revisão final", () => {
+  it("com letra no meio ('Ana 123') não espalha os números", () => {
+    expect(filtroDaBuscaDeClientes("Ana 123")!.split(",")).toHaveLength(3);
+  });
+
+  it("número curto (menos de 4 algarismos) não espalha", () => {
+    expect(filtroDaBuscaDeClientes("999")!.split(",")).toHaveLength(3);
+  });
+
+  it("CPF com pontuação espalha", () => {
+    expect(filtroDaBuscaDeClientes("123.456.789-09")).toContain(
+      'cpf_cnpj.ilike."%1%2%3%4%5%6%7%8%9%0%9%"',
+    );
+  });
+});

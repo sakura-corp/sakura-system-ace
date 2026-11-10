@@ -104,8 +104,19 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
   const [busca, setBusca] = useState("");
   /** O que já foi pro banco (depois da espera). */
   const [buscaAplicada, setBuscaAplicada] = useState("");
-  const [linhas, setLinhas] = useState<T[]>([]);
-  const [total, setTotal] = useState(0);
+  // O que está na tela, junto da página e da busca de onde veio: enquanto a
+  // próxima página carrega, o "Mostrando 51 a 100" continua falando das
+  // linhas que a pessoa está vendo, não da página que ainda vai chegar.
+  const [carregada, setCarregada] = useState<{
+    linhas: T[];
+    total: number;
+    pagina: number;
+    busca: string;
+  }>({ linhas: [], total: 0, pagina: 0, busca: "" });
+  const { linhas, total } = carregada;
+  // Sobe a cada "recarregar": a consulta é refeita com a página, a ordem e a
+  // busca de AGORA, e não as de quando a pessoa clicou em salvar ou excluir.
+  const [versao, setVersao] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -141,8 +152,12 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
         setPagina(ultimaQueExiste);
         return;
       }
-      setLinhas(resposta.linhas);
-      setTotal(resposta.total);
+      setCarregada({
+        linhas: resposta.linhas,
+        total: resposta.total,
+        pagina,
+        busca: buscaAplicada,
+      });
     } catch (err) {
       if (!aindaEhAtual()) return;
       console.error(`Erro ao carregar a lista (${chave}):`, err);
@@ -150,7 +165,10 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
     } finally {
       if (aindaEhAtual()) setCarregando(false);
     }
-  }, [pagina, porPagina, ordem, buscaAplicada, chave]);
+    // `versao` não é lida aqui dentro: está na lista só pra o "recarregar"
+    // refazer a consulta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagina, porPagina, ordem, buscaAplicada, chave, versao]);
 
   useEffect(() => {
     void carregar();
@@ -194,9 +212,12 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
     /** Página atual, contando do 0. */
     pagina,
     totalDePaginas,
-    /** Pra "Mostrando 51 a 100 de 2.340" (contando do 1; 0 quando não há linha). */
-    primeira: linhas.length > 0 ? pagina * porPagina + 1 : 0,
-    ultima: pagina * porPagina + linhas.length,
+    /**
+     * Pra "Mostrando 51 a 100 de 2.340" (contando do 1; 0 quando não há
+     * linha), sempre das linhas que estão na tela.
+     */
+    primeira: linhas.length > 0 ? carregada.pagina * porPagina + 1 : 0,
+    ultima: carregada.pagina * porPagina + linhas.length,
     temAnterior,
     temProxima,
     anterior: () => {
@@ -209,9 +230,11 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
     trocarOrdem,
     busca,
     setBusca,
-    /** A busca que já foi pro banco (a da lista que está na tela). */
+    /** A busca que já foi pro banco. */
     buscaAplicada,
+    /** A busca de onde vieram as linhas que estão na tela. */
+    buscaDaTela: carregada.busca,
     /** Recarrega a página atual (depois de salvar ou excluir). */
-    recarregar: carregar,
+    recarregar: () => setVersao((v) => v + 1),
   };
 }

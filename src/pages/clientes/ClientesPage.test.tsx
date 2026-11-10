@@ -391,6 +391,29 @@ describe("ClientesPage — a lista por página (#373)", () => {
     expect(screen.getByRole("searchbox", { name: "Buscar cliente" })).toHaveValue("zzz");
   });
 
+  it("apagar uma busca que não achou nada não tira a busca da tela", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    const campo = screen.getByRole("searchbox", { name: "Buscar cliente" });
+    await user.type(campo, "zzz");
+    await screen.findByText('Nenhum cliente encontrado com "zzz".');
+
+    let soltar: (() => void) | null = null;
+    const banco = bancoComOsClientes(CENTO_E_VINTE);
+    listarClientesPagina.mockImplementation(
+      (pedido: PedidoDaPagina) =>
+        new Promise((ok) => {
+          soltar = () => void banco(pedido).then(ok);
+        }),
+    );
+    await user.clear(campo);
+    await vi.waitFor(() => expect(soltar).not.toBeNull());
+    // A resposta ainda não chegou: a busca continua na tela, com o foco.
+    expect(screen.getByRole("searchbox", { name: "Buscar cliente" })).toHaveFocus();
+    soltar!();
+    await screen.findByText("Teste 000");
+  });
+
   it("excluir um cliente da página 2 recarrega a página 2", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     excluirCliente.mockResolvedValue(undefined);

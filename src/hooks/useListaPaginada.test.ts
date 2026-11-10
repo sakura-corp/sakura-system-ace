@@ -276,3 +276,43 @@ describe("useListaPaginada — recarregar", () => {
     expect(result.current.temProxima).toBe(false);
   });
 });
+
+describe("useListaPaginada — achados da revisão final", () => {
+  it("um 'recarregar' guardado de antes (salvar demorado) recarrega a página de AGORA", async () => {
+    const { result, buscarPagina } = montar();
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+    const recarregarDeAntes = result.current.recarregar;
+
+    act(() => result.current.proxima());
+    await waitFor(() => expect(result.current.primeira).toBe(51));
+    buscarPagina.mockClear();
+
+    act(() => recarregarDeAntes());
+    await waitFor(() => expect(buscarPagina).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+    expect(buscarPagina).toHaveBeenLastCalledWith({ de: 50, ate: 99, ordem: PADRAO, busca: "" });
+    expect(result.current.primeira).toBe(51);
+  });
+
+  it("enquanto a próxima página carrega, o 'Mostrando' fala das linhas que estão na tela", async () => {
+    let soltar: (() => void) | null = null;
+    const buscarPagina = vi.fn((pedido: PedidoDePagina<Coluna>) =>
+      pedido.de === 0
+        ? bancoDeMentira(pedido)
+        : new Promise<PaginaDaLista<Linha>>((ok) => {
+            soltar = () => void bancoDeMentira(pedido).then(ok);
+          }),
+    );
+    const { result } = montar(buscarPagina);
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+
+    act(() => result.current.proxima());
+    await waitFor(() => expect(soltar).not.toBeNull());
+    expect(result.current.carregando).toBe(true);
+    expect(result.current.primeira).toBe(1);
+    expect(result.current.ultima).toBe(50);
+
+    await act(async () => soltar!());
+    await waitFor(() => expect(result.current.primeira).toBe(51));
+  });
+});
