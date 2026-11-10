@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
 import { SecaoRecolhivel } from "@/components/SecaoRecolhivel";
@@ -79,15 +79,33 @@ export function ConfiguracoesPage() {
     null,
   );
 
+  // Só a carga mais nova grava (#967, o mesmo jeito das OS, #903): trocar de
+  // loja com a carga anterior ainda buscando dispara outra, e a velha pode
+  // terminar depois e encher as seções da loja nova com os dados da antiga
+  // (quem salvasse em seguida gravaria o dado de uma loja na outra). A que
+  // perdeu a vez não mexe em nada: nem nos dados, nem no erro, nem no
+  // "Carregando...". Um `recarregar` guardado de antes da troca de loja (um
+  // salvar lento) nem começa, senão viraria a carga mais nova.
+  const cargaAtual = useRef(0);
+  const lojaNaTela = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaNaTela.current = lojaAtual?.id;
+  }, [lojaAtual?.id]);
+
   // `silencioso`: recarregar depois de salvar sem ligar o "Carregando..." de
   // página inteira. Com ele, as seções saíam da tela e voltavam do zero: a
   // rolagem pulava pro topo, a seção voltava fechada e o "salvo" se perdia
   // (#947). O "Carregando..." fica só pra primeira carga e a troca de loja.
   async function carregar({ silencioso = false }: { silencioso?: boolean } = {}) {
     if (!lojaAtual) {
+      cargaAtual.current++; // a carga que ainda busca é de uma loja que saiu
       setCarregando(false);
       return;
     }
+    const lojaId = lojaAtual.id;
+    if (lojaId !== lojaNaTela.current) return;
+    const minhaCarga = ++cargaAtual.current;
+    const aindaEhAtual = () => minhaCarga === cargaAtual.current;
     if (!silencioso) setCarregando(true);
     setErro(null);
     try {
@@ -107,25 +125,26 @@ export function ConfiguracoesPage() {
       ] = await Promise.all([
         listarOperadores(),
         listarLojas(),
-        listarDepositos(lojaAtual.id),
-        listarJurosParcelas(lojaAtual.id),
+        listarDepositos(lojaId),
+        listarJurosParcelas(lojaId),
         listarCategorias(),
         listarCategoriasCaixa(),
         listarCategoriasServico(),
-        buscarTextoGarantia(lojaAtual.id),
-        buscarConfiguracaoFiscal(lojaAtual.id),
-        buscarConfiguracaoPainelInicio(lojaAtual.id),
-        listarModelosWhatsapp(lojaAtual.id),
-        buscarConfiguracaoPix(lojaAtual.id),
+        buscarTextoGarantia(lojaId),
+        buscarConfiguracaoFiscal(lojaId),
+        buscarConfiguracaoPainelInicio(lojaId),
+        listarModelosWhatsapp(lojaId),
+        buscarConfiguracaoPix(lojaId),
       ]);
       // Fora do Promise.all: banco sem a migration 0082 não pode derrubar a
       // página; vira "sem link" (validação incerta é aviso, nunca tranca).
       let linkCarregado = "";
       try {
-        linkCarregado = (await buscarLinkAvaliacao(lojaAtual.id)) || "";
+        linkCarregado = (await buscarLinkAvaliacao(lojaId)) || "";
       } catch (err) {
         console.error("Erro ao carregar o link de avaliação:", err);
       }
+      if (!aindaEhAtual()) return;
       setLinkAvaliacao(linkCarregado);
       setOperadores(operadoresCarregados);
       setLojas(lojasCarregadas);
@@ -140,10 +159,11 @@ export function ConfiguracoesPage() {
       setModelosWhatsapp(modelosWhatsappCarregados);
       setConfiguracaoPix(configuracaoPixCarregada);
     } catch (err) {
+      if (!aindaEhAtual()) return;
       console.error("Erro ao carregar operadores:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (aindaEhAtual()) setCarregando(false);
     }
   }
 

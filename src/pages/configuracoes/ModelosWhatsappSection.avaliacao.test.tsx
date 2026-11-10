@@ -53,6 +53,21 @@ describe("Link de avaliação no Google", () => {
     expect(onSalvo).toHaveBeenCalled();
   });
 
+  // #967: voltou a mexer no link depois de salvar, o aviso some (senão ele
+  // diria "salvo" de uma mudança que ainda não foi salva).
+  it("digitar de novo no link depois de salvar tira o 'Link salvo.'", async () => {
+    salvarLinkAvaliacao.mockReset();
+    salvarLinkAvaliacao.mockResolvedValue(undefined);
+    const { user } = montar();
+    const campo = screen.getByLabelText("Link de avaliação no Google");
+    await user.type(campo, "https://g.page/r/x/review");
+    await user.click(screen.getByRole("button", { name: "Salvar link" }));
+    expect(await screen.findByText("Link salvo.")).toBeInTheDocument();
+
+    await user.type(campo, "a");
+    expect(screen.queryByText("Link salvo.")).not.toBeInTheDocument();
+  });
+
   it("vazio apaga o link (salva null)", async () => {
     salvarLinkAvaliacao.mockReset();
     salvarLinkAvaliacao.mockResolvedValue(undefined);
