@@ -240,29 +240,35 @@ on conflict do nothing;
 -- informação de ICMS / ISSQN"). A loja de exemplo é Simples Nacional → CSOSN
 -- (regra da #864): pneu (EX-001 a 004) 500 + 5405 (substituição tributária),
 -- o resto 102 + 5102.
+-- O CEST (#966): o formulário de peça exige, e sem ele editar e salvar uma
+-- peça de exemplo dava erro. 7 dígitos, sem ponto, pelo NCM da peça na tabela
+-- do Convênio ICMS 142/2018 (pneu de carro 1600100, de moto 1600300, peças da
+-- posição 8708 0107500, palheta 0105500, bico de válvula 1007900, fluido de
+-- freio 2806300). É dado de mentira; a lista peça por peça está no PR da #966.
 -- Só preenche o campo vazio (nunca sobrescreve) e só pega peça com algum vazio,
 -- pra segunda rodada não mexer em nada (nem na auditoria).
 update pecas p
    set cst_ou_csosn = coalesce(nullif(trim(p.cst_ou_csosn), ''), v.csosn),
        cfop_padrao  = coalesce(nullif(trim(p.cfop_padrao), ''), v.cfop),
-       origem       = coalesce(nullif(trim(p.origem), ''), '0')
+       origem       = coalesce(nullif(trim(p.origem), ''), '0'),
+       cest         = coalesce(nullif(trim(p.cest), ''), v.cest)
 from (values
-  ('eeee0006-0000-4000-8000-000000000001', '500', '5405'),
-  ('eeee0006-0000-4000-8000-000000000002', '500', '5405'),
-  ('eeee0006-0000-4000-8000-000000000003', '500', '5405'),
-  ('eeee0006-0000-4000-8000-000000000004', '500', '5405'),
-  ('eeee0006-0000-4000-8000-000000000005', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000006', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000007', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000008', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000009', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000010', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000011', '102', '5102'),
-  ('eeee0006-0000-4000-8000-000000000012', '102', '5102')
-) as v(id, csosn, cfop)
+  ('eeee0006-0000-4000-8000-000000000001', '500', '5405', '1600100'),
+  ('eeee0006-0000-4000-8000-000000000002', '500', '5405', '1600100'),
+  ('eeee0006-0000-4000-8000-000000000003', '500', '5405', '1600100'),
+  ('eeee0006-0000-4000-8000-000000000004', '500', '5405', '1600300'),
+  ('eeee0006-0000-4000-8000-000000000005', '102', '5102', '0107500'),
+  ('eeee0006-0000-4000-8000-000000000006', '102', '5102', '0107500'),
+  ('eeee0006-0000-4000-8000-000000000007', '102', '5102', '0107500'),
+  ('eeee0006-0000-4000-8000-000000000008', '102', '5102', '0107500'),
+  ('eeee0006-0000-4000-8000-000000000009', '102', '5102', '0107500'),
+  ('eeee0006-0000-4000-8000-000000000010', '102', '5102', '1007900'),
+  ('eeee0006-0000-4000-8000-000000000011', '102', '5102', '0105500'),
+  ('eeee0006-0000-4000-8000-000000000012', '102', '5102', '2806300')
+) as v(id, csosn, cfop, cest)
 where p.id = v.id::uuid
   and (coalesce(trim(p.cst_ou_csosn), '') = '' or coalesce(trim(p.cfop_padrao), '') = ''
-       or coalesce(trim(p.origem), '') = '');
+       or coalesce(trim(p.origem), '') = '' or coalesce(trim(p.cest), '') = '');
 
 -- Preço nos serviços padrão, só onde ainda está vazio (nunca sobrescreve).
 update servicos s set preco_padrao = v.preco, custo = v.custo
