@@ -48,7 +48,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_configuracoes_avaliacao_link_https:
     "O link de avaliação precisa começar com https:// e não pode ter espaço.",
   // Migration 0083 (#381): o intervalo do retorno do cliente, no cadastro do serviço.
-  ck_servicos_intervalo: "O intervalo do serviço precisa ser maior que zero (ou ficar vazio).",
+  ck_servicos_intervalo: "O intervalo do serviço precisa ser maior que zero e no máximo 3.650 dias ou 1.000.000 km (ou ficar vazio).",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",

@@ -180,6 +180,28 @@ begin
     end;
   end loop;
 
+  -- 7b. e o teto: mais de 10 anos ou de 1 milhão de km (número que só sai de
+  -- erro de digitação e estragaria a conta da data prevista)
+  begin
+    update servicos set intervalo_dias = 3651 where id = s_alin;
+    raise exception 'FALHOU 7b: a trava deixou o intervalo em dias passar de 3650';
+  exception
+    when check_violation then
+      if sqlerrm not like '%ck_servicos_intervalo%' then
+        raise exception 'FALHOU 7b: esperava a trava ck_servicos_intervalo, veio: %', sqlerrm;
+      end if;
+  end;
+  begin
+    update servicos set intervalo_km = 1000001 where id = s_alin;
+    raise exception 'FALHOU 7b: a trava deixou o intervalo em km passar de 1.000.000';
+  exception
+    when check_violation then
+      if sqlerrm not like '%ck_servicos_intervalo%' then
+        raise exception 'FALHOU 7b: esperava a trava ck_servicos_intervalo, veio: %', sqlerrm;
+      end if;
+  end;
+  update servicos set intervalo_dias = 3650, intervalo_km = 1000000 where id = s_alin;
+
   -- 8. e aceita positivo e vazio, em qualquer combinação
   update servicos set intervalo_dias = 180, intervalo_km = null  where id = s_alin;
   update servicos set intervalo_dias = null, intervalo_km = 10000 where id = s_alin;

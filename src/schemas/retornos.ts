@@ -89,6 +89,22 @@ function descreverVeiculo(veiculo: NonNullable<OrdemParaRetorno["veiculo"]>): st
 }
 
 /**
+ * O carro como entra na mensagem de WhatsApp ("no {veiculo} ({placa})").
+ * A placa pode estar vazia no cadastro, e o "veiculo" do retorno é a própria
+ * placa quando não há marca nem modelo: sem este ajuste a mensagem sairia
+ * "no Fiat Uno ()" ou "no ABC1D23 (ABC1D23)".
+ */
+export function partesDoVeiculoNaMensagem(retorno: Pick<RetornoPrevisto, "veiculo" | "placa">): {
+  veiculo: string;
+  placa: string;
+} {
+  const placa = retorno.placa.trim();
+  if (!placa) return { veiculo: retorno.veiculo, placa: "sem placa" };
+  if (retorno.veiculo.trim() === placa) return { veiculo: "carro", placa };
+  return { veiculo: retorno.veiculo, placa };
+}
+
+/**
  * Todos os retornos previstos, um por carro e por serviço com intervalo, sem
  * janela e sem olhar o cadastro do cliente (a ficha do veículo usa assim; a
  * lista da semana passa por `listaDeRetornos`).

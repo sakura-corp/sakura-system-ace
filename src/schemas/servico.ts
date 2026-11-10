@@ -2,13 +2,23 @@ import { z } from "zod";
 import type { NovoServico, Servico } from "@/types/servico";
 
 // Intervalo de retorno (FN-06, #381): inteiro maior que zero, ou vazio (o
-// serviço não gera lembrete). Texto no formulário, número só na borda.
-const intervaloOpcional = z
-  .string()
-  .trim()
-  .refine((v) => v === "" || (/^\d+$/.test(v) && Number(v) > 0), {
-    message: "Use um número inteiro maior que zero, ou deixe vazio.",
-  });
+// serviço não gera lembrete). Texto no formulário, número só na borda. O teto
+// é o mesmo da trava `ck_servicos_intervalo` (0083): sem ele, um número
+// gigante passava aqui e virava erro técnico no banco, ou uma data inválida
+// na conta dos retornos.
+export const INTERVALO_MAXIMO_DIAS = 3650;
+export const INTERVALO_MAXIMO_KM = 1_000_000;
+
+const intervaloOpcional = (maximo: number, unidade: string) =>
+  z
+    .string()
+    .trim()
+    .refine((v) => v === "" || (/^\d+$/.test(v) && Number(v) > 0), {
+      message: "Use um número inteiro maior que zero, ou deixe vazio.",
+    })
+    .refine((v) => v === "" || Number(v) <= maximo, {
+      message: `No máximo ${maximo.toLocaleString("pt-BR")} ${unidade}.`,
+    });
 
 export const servicoFormSchema = z.object({
   codigo_interno: z.string(),
@@ -16,8 +26,8 @@ export const servicoFormSchema = z.object({
   preco_padrao: z.string(),
   custo: z.string(),
   categoria_id: z.string(),
-  intervalo_dias: intervaloOpcional,
-  intervalo_km: intervaloOpcional,
+  intervalo_dias: intervaloOpcional(INTERVALO_MAXIMO_DIAS, "dias (10 anos)"),
+  intervalo_km: intervaloOpcional(INTERVALO_MAXIMO_KM, "km"),
 });
 
 export type ServicoFormValues = z.infer<typeof servicoFormSchema>;

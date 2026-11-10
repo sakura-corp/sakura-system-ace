@@ -283,6 +283,16 @@ describe("FichaVeiculoPage — próximo retorno previsto (#381)", () => {
     expect(screen.getByText(/É uma previsão/)).toBeInTheDocument();
   });
 
+  it("retorno que já passou da data diz que está atrasado, e há quantos dias", async () => {
+    // Faturada há 10 dias, a cada 3 dias: venceu há 7.
+    listarServicosComIntervalo.mockResolvedValue([{ ...oleo, intervalo_dias: 3 }]);
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
+    montar();
+
+    await screen.findByRole("heading", { name: "Próximo retorno previsto" });
+    expect(screen.getByText(/Troca de óleo em .* atrasado há 7 dias$/)).toBeInTheDocument();
+  });
+
   it("sem serviço com intervalo, não mostra nada", async () => {
     buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
     montar();

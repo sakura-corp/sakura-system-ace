@@ -69,9 +69,10 @@ export interface Cliente {
   veiculos?: Veiculo[];
 }
 
-// `nao_avisar` é opcional na gravação pelo mesmo motivo dos intervalos do
-// serviço: formulário sem o campo não manda a coluna (nem apaga, nem quebra
-// num banco sem a migration 0083).
+// `nao_avisar` é opcional no tipo de gravação pelo mesmo motivo dos intervalos
+// do serviço. O formulário de cliente (e o cadastro rápido na OS e no balcão)
+// manda SEMPRE: num banco sem a migration 0083, salvar cliente falha com o
+// aviso de banco desatualizado. Por isso a 0083 sobe ANTES da versão.
 export type NovoCliente = Omit<Cliente, "id" | "criado_em" | "veiculos" | "nao_avisar"> &
   Partial<Pick<Cliente, "nao_avisar">>;
 export type NovoVeiculo = Omit<Veiculo, "id" | "cliente_id" | "criado_em">;

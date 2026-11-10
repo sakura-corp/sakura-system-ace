@@ -13,6 +13,7 @@ import {
 import { listarOrdensParaRetornos, listarServicosComIntervalo } from "@/lib/retornos";
 import {
   listaDeRetornos,
+  partesDoVeiculoNaMensagem,
   retornosPrevistos,
   type OrdemParaRetorno,
   type RetornoDoCliente,
@@ -105,8 +106,7 @@ export function RetornosLista({ clientes }: { clientes: Cliente[] }) {
       cliente: cliente.nome,
       loja: lojaAtual?.nome,
       servico: retorno.servico,
-      veiculo: retorno.veiculo,
-      placa: retorno.placa,
+      ...partesDoVeiculoNaMensagem(retorno),
     });
   }
 

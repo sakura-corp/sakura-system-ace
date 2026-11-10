@@ -83,9 +83,10 @@ export const clientes = [
   // fora das listas com um filtro `neq` — que o banco-falso sabe aplicar.
   { id: "00000000-0000-0000-0000-00000000c000", nome: "Consumidor", tipo_pessoa: "fisica", cpf_cnpj: null, telefone: null, email: null, cep: null, rua: null, numero: null, bairro: null, cidade: null, uf: null, data_nascimento: null, criado_em: dia(-400) },
 ]
-  // "Não mandar lembrete" (FN-06, #381): só a Sandra pediu, pra a tela de
-  // retornos ter um cliente que NÃO aparece.
-  .map((c) => ({ ...c, nao_avisar: c.id === "c7" }))
+  // "Não mandar lembrete" (FN-06, #381): só a Camila pediu. Não a Sandra: ela
+  // está na cena "Clientes que sumiram" (#684), e o "não avisar" a tiraria
+  // de lá também.
+  .map((c) => ({ ...c, nao_avisar: c.id === "c5" }))
   .map((c) => ({ ...c, veiculos: veiculos.filter((v) => v.cliente_id === c.id) }));
 
 const vlk = (id) => veiculos.find((v) => v.id === id);

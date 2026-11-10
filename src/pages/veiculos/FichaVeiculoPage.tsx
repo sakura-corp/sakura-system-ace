@@ -267,6 +267,8 @@ export function FichaVeiculoPage() {
           <p className="text-corpo text-sakura-purple-dark/85">
             {proximoRetorno.servico} em {diaBrasileiro(proximoRetorno.prevista)}
             {proximoRetorno.estimadoPeloKm && " (estimado pelo KM)"}
+            {proximoRetorno.diasDeAtraso > 0 &&
+              ` — atrasado há ${proximoRetorno.diasDeAtraso} ${proximoRetorno.diasDeAtraso === 1 ? "dia" : "dias"}`}
           </p>
           <p className="mt-1 text-rotulo text-sakura-muted">
             É uma previsão: conta o intervalo do serviço a partir da última vez que ele foi feito neste

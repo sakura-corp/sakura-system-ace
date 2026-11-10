@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DIAS_DE_ANTECEDENCIA,
   listaDeRetornos,
+  partesDoVeiculoNaMensagem,
   proximoRetornoDoVeiculo,
   retornosPrevistos,
   somarDias,
@@ -477,5 +478,30 @@ describe("proximoRetornoDoVeiculo", () => {
 
   it("carro sem retorno: nada", () => {
     expect(proximoRetornoDoVeiculo([previsto("2026-12-01")], "v9")).toBeNull();
+  });
+});
+
+describe("partesDoVeiculoNaMensagem", () => {
+  // O modelo diz "no {veiculo} ({placa})": sem placa, ou sem marca e modelo,
+  // a mensagem não pode sair "no Fiat Uno ()" nem "no ABC1D23 (ABC1D23)".
+  it("com marca, modelo e placa: os dois", () => {
+    expect(partesDoVeiculoNaMensagem({ veiculo: "Fiat Uno", placa: "ABC1D23" })).toEqual({
+      veiculo: "Fiat Uno",
+      placa: "ABC1D23",
+    });
+  });
+
+  it("sem placa: diz que está sem placa, nunca parênteses vazios", () => {
+    expect(partesDoVeiculoNaMensagem({ veiculo: "Fiat Uno", placa: "" })).toEqual({
+      veiculo: "Fiat Uno",
+      placa: "sem placa",
+    });
+  });
+
+  it("sem marca e modelo (o veículo é a própria placa): 'carro' no lugar do nome", () => {
+    expect(partesDoVeiculoNaMensagem({ veiculo: "ABC1D23", placa: "ABC1D23" })).toEqual({
+      veiculo: "carro",
+      placa: "ABC1D23",
+    });
   });
 });

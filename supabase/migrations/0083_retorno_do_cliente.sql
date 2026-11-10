@@ -47,8 +47,8 @@ alter table servicos drop constraint if exists ck_servicos_intervalo;
 alter table servicos
   add constraint ck_servicos_intervalo
   check (
-    (intervalo_dias is null or intervalo_dias > 0)
-    and (intervalo_km is null or intervalo_km > 0)
+    (intervalo_dias is null or intervalo_dias between 1 and 3650)
+    and (intervalo_km is null or intervalo_km between 1 and 1000000)
   );
 
 comment on column servicos.intervalo_dias is

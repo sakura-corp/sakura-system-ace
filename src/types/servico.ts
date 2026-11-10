@@ -16,8 +16,10 @@ export interface Servico {
   criado_em: string;
 }
 
-// Os intervalos são opcionais na gravação: o formulário que ainda não tem os
-// campos não manda a coluna, e assim nem apaga o que já estava lá nem quebra
-// num banco que ainda não recebeu a migration 0083.
+// Os intervalos são opcionais no tipo de gravação pra quem grava serviço por
+// outro caminho (sem o formulário) não precisar conhecê-los nem apagá-los. O
+// formulário de Serviço manda os dois SEMPRE: num banco que ainda não recebeu
+// a migration 0083, salvar serviço falha com o aviso de banco desatualizado.
+// Por isso a 0083 sobe ANTES da versão do programa (regra de sempre).
 export type NovoServico = Omit<Servico, "id" | "criado_em" | "intervalo_dias" | "intervalo_km"> &
   Partial<Pick<Servico, "intervalo_dias" | "intervalo_km">>;

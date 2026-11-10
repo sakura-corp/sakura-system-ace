@@ -29,6 +29,13 @@ describe("intervalo de retorno no formulário de serviço (#381)", () => {
     expect(validar({ intervalo_km: valor }).success).toBe(false);
   });
 
+  it("tem teto, o mesmo da trava do banco: 3.650 dias e 1.000.000 km", () => {
+    expect(validar({ intervalo_dias: "3650", intervalo_km: "1000000" }).success).toBe(true);
+    expect(validar({ intervalo_dias: "3651" }).success).toBe(false);
+    expect(validar({ intervalo_km: "1000001" }).success).toBe(false);
+    expect(validar({ intervalo_dias: "99999999999" }).success).toBe(false);
+  });
+
   it("o formulário nasce com o intervalo do serviço existente", () => {
     const servico = { id: "s", descricao: "Óleo", intervalo_dias: 180, intervalo_km: null } as Servico;
     const valores = paraValoresFormulario(servico);
