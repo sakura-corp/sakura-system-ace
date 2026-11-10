@@ -270,6 +270,12 @@ Antes, confira que a branch está em dia com a `main` (senão falta migration de
 última linha traz o número **novo** (`values (71)`, por exemplo). Feito assim pela primeira vez em
 27/10/2026, na 0071 do PR #802.
 
+**Dois PRs com o mesmo número de migration** (10/11/2026: a 0083 do #985 e a do #987): fica com o
+número o que **já foi aplicado aqui**; o outro renumera pro seguinte **em cima da branch do primeiro**
+(juntando ela), pra instalação dele trazer as duas e a Sofia colar uma vez só. Nunca colar uma
+instalação com o mesmo número de uma que já está aqui: o `schema_versao` não muda, e o aviso de banco
+desatualizado deixa de valer.
+
 **Começar do zero de verdade** (raro): Project Settings → General → **Delete project**, e refazer
 do Passo 2. Os logins somem junto; refaça o Passo 6 e mande Sends novos.
 

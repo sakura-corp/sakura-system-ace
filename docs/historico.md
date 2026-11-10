@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 10/11/2026 (noite): o vídeo de divulgação planejado e no painel (#995, #996)
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 e o #994 também já entraram.
+- **Leva 7**: 21 tarefas no modelo (as 20 de 10/11 e a #995). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`. PRs abertos da leva: #985 (Gusta) e #986 (Tiago).
+- **Vídeo de divulgação**: roteiro aprovado (atemporal, vertical, voz feminina por IA, sem contato) na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois, a sessão final dela, #996 (escolher a voz ouvindo e fechar). Ideia guardada: aba "Produção de vídeo" no painel (escritorio#114).
+- **Com a Sofia**: #982 (dados de exemplo no `ssace-teste`); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #996; #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos.
+
 ### 10/11/2026 (tarde): fotos das telas pra equipe e o plano do visual novo (#990)
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
 - **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 também já entrou.
