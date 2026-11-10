@@ -72,15 +72,27 @@
   - a consulta pegando 91 dias.
   - Tudo desfeito, com o `git status` limpo depois.
 
+- **Pedidos da revisão da Sofia no PR** (mãe, teste antes, cada um visto reprovar e desfeito):
+  - a recarga que falha depois do "Criar" deixava a lista velha (e o "Gerar pedidos") na tela;
+  - peça com sugestão 0 e nada pendente ficava na lista;
+  - trocar de loja durante o "Criar" deixava a confirmação aberta. O primeiro teste disso passava sem o conserto, porque conferia enquanto a lista carregava. Foi reescrito para esperar a lista nova;
+  - o aviso de "sem fornecedor" contava linha com 0;
+  - **a decisão dela, que a correção de item da OS abate o consumo**, com 4 quebras:
+    - a correção não abatendo;
+    - o ajuste da Contagem abatendo;
+    - o consumo ficando negativo;
+    - a leitura sem a consulta das correções.
+
 ## O que passou sem eu ter visto reprovar
-- O "Gerar pedidos" que termina **depois de trocar de loja** não mostrar o resultado (`lojaNaTela`). Está escrito, mas sem teste próprio.
+- A trava `useRef` contra o duplo clique no "Criar" (opcional da revisão): está no código, mas sem teste próprio.
 - A mensagem de confirmação ("Vai criar 2 pedidos: …"): testada, mas não quebrada de propósito.
 - `contraste:telas` e `largura:telas`: passam, mas nenhuma das duas visita a aba nova (elas param em "Pedidos de compra"). A largura da aba foi medida à parte, no script das fotos, em 1024, 1280, 1366 e 1600.
 
 ## O que ficou de fora
-- **Correção de item da OS** (achado 3 da revisão): quando um item da OS diminui, a migration 0071 devolve a peça como `entrada`/`ajuste` com "(correção de item)", e a conta não desconta. O ritmo fica um pouco maior que o real.
-  - A issue manda contar só as saídas por venda e uso em OS, então segui a issue.
-  - **A Sofia decide** se a conta passa a descontar essas devoluções.
+- **Correção de item da OS**: a Sofia decidiu **descontar**, e foi feito sem mexer no banco.
+  - A peça que volta é reconhecida pela referência que a 0071 grava ("<documento> (correção de item)", `entrada`/`ajuste`).
+  - Uma consulta a mais traz só essas linhas.
+  - Se alguém lançar à mão um ajuste com esse mesmo texto no fim, ele também abate. É pouco provável.
 - **O `criarPedido()` registra de novo a mesma cotação** a cada pedido gerado: o mesmo preço vira uma linha nova em `cotacoes_pecas`.
   - Não muda a escolha do fornecedor, porque a última continua com o mesmo preço.
   - A issue manda não mexer, só avisar.
