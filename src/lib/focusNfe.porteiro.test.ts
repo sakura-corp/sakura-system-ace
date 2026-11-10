@@ -174,6 +174,48 @@ describe("baixar o PDF/XML", () => {
     expect(Array.from(new Uint8Array(await blob.arrayBuffer()))).toEqual(bytes);
   });
 
+  // #965: o S3 da NFS-e Nacional pode servir o DANFSe como "binary/octet-stream"
+  // (ou sem tipo). Um Blob assim o iframe da prévia não mostra (o Electron trata
+  // como download); se os bytes começam com "%PDF", é PDF, venha com o tipo que vier.
+  function envelopeDoArquivo(conteudo: string, tipo_conteudo?: string) {
+    return {
+      data: { ok: true, status: 200, tipo_conteudo, conteudo_base64: btoa(conteudo) },
+      error: null,
+    };
+  }
+  const PDF = "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n%%EOF\n";
+
+  it.each([["binary/octet-stream"], ["application/octet-stream"], [undefined], [""]])(
+    "DANFE com bytes de PDF sai como application/pdf (tipo do porteiro: %s)",
+    async (tipo) => {
+      invoke.mockResolvedValue(envelopeDoArquivo(PDF, tipo));
+      const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "danfe");
+      expect(blob.type).toBe("application/pdf");
+      expect(await blob.text()).toBe(PDF);
+    },
+  );
+
+  it("DANFE que não é PDF (o HTML da NFC-e) fica com o tipo que veio", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<html><body>DANFE</body></html>", "text/html"));
+    const blob = await baixarArquivoNota(LOJA, "nfce", "os12-nfce-1", "danfe");
+    expect(blob.type).toBe("text/html");
+  });
+
+  it("o XML continua com o tipo de antes, mesmo vindo octet-stream", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<NFe/>", "binary/octet-stream"));
+    const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "xml");
+    expect(blob.type).toBe("binary/octet-stream");
+    invoke.mockResolvedValue(envelopeDoArquivo("<NFe/>"));
+    const semTipo = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "xml");
+    expect(semTipo.type).toBe("application/octet-stream");
+  });
+
+  it("DANFE com %PDF só no meio (não no começo) não vira PDF", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<x>%PDF</x>", "application/octet-stream"));
+    const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "danfe");
+    expect(blob.type).toBe("application/octet-stream");
+  });
+
   it("arquivo que não veio vira erro, não um PDF vazio", async () => {
     invoke.mockResolvedValue({ data: { ok: false, status: 404, conteudo_base64: null }, error: null });
     await expect(baixarArquivoNota(LOJA, "nfse", "os12-nfse-1", "xml")).rejects.toThrow(/HTTP 404/);

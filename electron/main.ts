@@ -152,6 +152,8 @@ function politicaDeSeguranca(): string {
   ].join("; ");
 }
 
+const VISUALIZADOR_DE_PDF = "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
+
 function aplicarPoliticaDeSeguranca() {
   // Só no app empacotado: o servidor de desenvolvimento do Vite precisa de
   // script embutido e `eval` pro recarregamento automático, então uma CSP
@@ -159,6 +161,12 @@ function aplicarPoliticaDeSeguranca() {
   // proteger o app que vai pra loja, que é sempre o empacotado.
   if (VITE_DEV_SERVER_URL) return;
   session.defaultSession.webRequest.onHeadersReceived((detalhes, responder) => {
+    // O visualizador de PDF do próprio Electron (a prévia do DANFE) é uma
+    // página chrome-extension://: com a CSP do app, os scripts dele não rodam
+    // e o quadro fica escuro e vazio (#965). A exceção é só pra ele (o ID é
+    // o fixo do visualizador do Chromium); qualquer outra página continua com
+    // a CSP. Se uma atualização do Electron trocar o ID, o test:electron reprova.
+    if (detalhes.url.startsWith(VISUALIZADOR_DE_PDF)) return responder({});
     responder({
       responseHeaders: {
         ...detalhes.responseHeaders,
