@@ -38,6 +38,7 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('categorias_caixa',      $$insert into categorias_caixa (nome, tipo) values ('Sonda', 'entrada')$$),
 ('clientes',              $$insert into clientes (nome) values ('Cliente sonda')$$),
 ('veiculos',              $$insert into veiculos (cliente_id, placa) values ('cccccccc-0000-0000-0000-0000000000aa', 'SON1D01')$$),
+('importacao_lotes',      $$insert into importacao_lotes (nome_arquivo) values ('sonda.csv')$$),
 ('pecas',                 $$insert into pecas (descricao) values ('Peça sonda')$$),
 ('servicos',              $$insert into servicos (descricao) values ('Serviço sonda')$$),
 ('fornecedores',          $$insert into fornecedores (nome) values ('Fornecedor sonda')$$),
