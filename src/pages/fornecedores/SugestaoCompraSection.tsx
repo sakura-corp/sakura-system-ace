@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
@@ -46,18 +46,30 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   const [gerando, setGerando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoDoGerarPedidos | null>(null);
 
+  // A loja da última carga pedida: se a pessoa trocar de loja no meio, a
+  // resposta da loja antiga chega depois e não pode tomar o lugar da nova
+  // (o mesmo da #903, #927 e #967).
+  const lojaDaCarga = useRef(lojaId);
+
   async function carregar() {
+    const loja = lojaId;
+    lojaDaCarga.current = loja;
     setErro(null);
     try {
-      setDados(await carregarDadosDaSugestao(lojaId, hojeLocal()));
+      const novos = await carregarDadosDaSugestao(loja, hojeLocal());
+      if (lojaDaCarga.current !== loja) return;
+      setDados(novos);
       setEditadas({});
     } catch (err) {
+      if (lojaDaCarga.current !== loja) return;
       console.error("Erro ao carregar a sugestão de compra:", err);
       setErro(mensagemDeErro(err));
     }
   }
 
   useEffect(() => {
+    setDados(null);
+    setResultado(null);
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaId]);

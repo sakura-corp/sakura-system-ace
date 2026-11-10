@@ -4,10 +4,11 @@
  * só existe pra quem tem o módulo Estoque (nunca uma lista vazia no lugar), e
  * a Central do dia abre direto nela.
  */
+import { render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen, waitFor } from "@/testes/tela";
+import { screen, userEvent, waitFor } from "@/testes/tela";
 import type { Operador } from "@/types/operador";
 
 let operador: Partial<Operador> | null = null;
@@ -32,11 +33,14 @@ vi.mock("./SugestaoCompraSection", () => ({
 const { FornecedoresPage } = await import("./FornecedoresPage");
 
 function montar(state?: unknown) {
-  return renderizar(<FornecedoresPage />, {
-    wrapper: ({ children }: { children: ReactNode }) => (
-      <MemoryRouter initialEntries={[{ pathname: "/fornecedores", state }]}>{children}</MemoryRouter>
-    ),
-  });
+  return {
+    user: userEvent.setup(),
+    ...render(<FornecedoresPage />, {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <MemoryRouter initialEntries={[{ pathname: "/fornecedores", state }]}>{children}</MemoryRouter>
+      ),
+    }),
+  };
 }
 
 beforeEach(() => {
