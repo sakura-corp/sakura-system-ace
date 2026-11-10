@@ -179,10 +179,35 @@ export interface MovimentoParaConsumo {
   motivo: MotivoMovimento;
   quantidade: number;
   criado_em: string;
+  /** Só pra reconhecer a correção de item da OS (abaixo). */
+  referencia?: string | null;
 }
 
 /** Os motivos de saída que são a peça indo embora de verdade, pro cliente. */
 const MOTIVOS_DE_CONSUMO: readonly MotivoMovimento[] = ["venda", "uso_em_os"];
+
+/**
+ * O fim da referência que a migration 0071 (`editar_item_ordem`) grava quando
+ * um item de OS já lançado é corrigido: "OS 12 (correção de item)". Peça a
+ * mais sai como "saida"/"uso_em_os" (já é consumo); peça a menos VOLTA como
+ * "entrada"/"ajuste", porque não existe um motivo "des-uso em OS".
+ */
+export const SUFIXO_CORRECAO_DE_ITEM_DA_OS = " (correção de item)";
+
+/**
+ * A peça que voltou pra prateleira porque um item de OS foi corrigido pra
+ * menos. Ela desfaz um consumo que nunca aconteceu de verdade (a OS lançou 4,
+ * o carro levou 2), então ABATE o ritmo de saída (decisão da Sofia na revisão
+ * do #989). O ajuste da Contagem e o lançado à mão continuam fora: eles
+ * corrigem um número errado, não uma saída.
+ */
+export function ehDevolucaoPorCorrecaoDeOS(movimento: MovimentoParaConsumo): boolean {
+  return (
+    movimento.tipo === "entrada" &&
+    movimento.motivo === "ajuste" &&
+    (movimento.referencia ?? "").endsWith(SUFIXO_CORRECAO_DE_ITEM_DA_OS)
+  );
+}
 
 /**
  * Quanto de cada peça sai por dia, na média dos últimos `dias` (contando
@@ -209,15 +234,23 @@ export function consumoPorDiaDasPecas(
 ): Map<string, number> {
   const somaPorPeca = new Map<string, number>();
   for (const movimento of movimentos) {
-    if (movimento.tipo !== "saida" || !MOTIVOS_DE_CONSUMO.includes(movimento.motivo)) continue;
+    const ehConsumo = movimento.tipo === "saida" && MOTIVOS_DE_CONSUMO.includes(movimento.motivo);
+    const ehDevolucao = ehDevolucaoPorCorrecaoDeOS(movimento);
+    if (!ehConsumo && !ehDevolucao) continue;
     // 0 = hoje, dias−1 = o dia mais antigo da janela. Negativo é dia
     // depois de hoje (relógio errado de algum computador): fica fora.
     const diasAtras = diasEntre(diaLocal(movimento.criado_em), hoje);
     if (diasAtras < 0 || diasAtras > dias - 1) continue;
-    somaPorPeca.set(movimento.peca_id, (somaPorPeca.get(movimento.peca_id) ?? 0) + movimento.quantidade);
+    const quantidade = Number(movimento.quantidade);
+    somaPorPeca.set(
+      movimento.peca_id,
+      (somaPorPeca.get(movimento.peca_id) ?? 0) + (ehDevolucao ? -quantidade : quantidade),
+    );
   }
   const consumo = new Map<string, number>();
-  for (const [pecaId, soma] of somaPorPeca) consumo.set(pecaId, soma / dias);
+  // Nunca negativo: a correção pode estar na janela e a saída original não
+  // (OS de 4 meses atrás corrigida ontem). Aí a peça só não tem ritmo.
+  for (const [pecaId, soma] of somaPorPeca) if (soma > 0) consumo.set(pecaId, soma / dias);
   return consumo;
 }
 
@@ -382,6 +415,11 @@ export function montarSugestaoCompra(dados: {
     const jaPedido = pedidoPorPeca.get(peca.id) ?? 0;
     const alvo = (peca.estoque_minimo ?? 0) + consumoPorDia * diasDeFolga;
     const quantidadeSugerida = quantidadeParaComprar(alvo, saldo, jaPedido);
+    // "Comprar 0" sem nada a caminho não é sugestão: é a peça no mínimo exato
+    // e sem venda (mínimo 4, saldo 4), ou que acabou de receber a compra. Ela
+    // ficaria na lista pra sempre (revisão do #989). Com pedido pendente, fica:
+    // a linha mostra o "Já pedido" e explica por que não pede de novo.
+    if (quantidadeSugerida === 0 && jaPedido === 0) continue;
     const cotacao = cotacaoPorPeca.get(peca.id);
     linhas.push({
       peca_id: peca.id,

@@ -17,15 +17,20 @@ vi.mock("./supabase", () => ({
   supabase: {
     from(tabela: string) {
       const construtor: Record<string, unknown> = {};
-      for (const metodo of ["select", "eq", "in", "gte", "order"]) {
+      // A consulta com `.like()` é a das correções de item da OS: responde
+      // as linhas de "<tabela>:like", pra não misturar com as saídas.
+      let usouLike = false;
+      for (const metodo of ["select", "eq", "in", "gte", "order", "like"]) {
         construtor[metodo] = (...args: unknown[]) => {
+          if (metodo === "like") usouLike = true;
           chamadas.push({ tabela, metodo, args });
           return construtor;
         };
       }
       construtor.range = (...args: unknown[]) => {
         chamadas.push({ tabela, metodo: "range", args });
-        return Promise.resolve({ data: linhasPorTabela[tabela] ?? [], error: null });
+        const chave = usouLike ? `${tabela}:like` : tabela;
+        return Promise.resolve({ data: linhasPorTabela[chave] ?? [], error: null });
       };
       return construtor;
     },
@@ -124,6 +129,9 @@ describe("carregarDadosDaSugestao", () => {
     linhasPorTabela.estoque_movimentos = [
       { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 3, criado_em: "2026-11-01T10:00:00-03:00" },
     ];
+    linhasPorTabela["estoque_movimentos:like"] = [
+      { peca_id: "p1", tipo: "entrada", motivo: "ajuste", quantidade: 1, criado_em: "2026-11-02T10:00:00-03:00", referencia: "OS 7 (correção de item)" },
+    ];
     linhasPorTabela.cotacoes_pecas = [
       { peca_id: "p1", fornecedor_id: "f1", preco: 10, criado_em: "2026-11-01T10:00:00Z", fornecedor: { nome: "A", ativo: true } },
       { peca_id: "p1", fornecedor_id: "f2", preco: 8, criado_em: "2026-11-01T10:00:00Z", fornecedor: { nome: "B", ativo: false } },
@@ -138,7 +146,9 @@ describe("carregarDadosDaSugestao", () => {
       { id: "p1", descricao: "Pneu", unidade: "UN", estoque_minimo: 4, ativo: true },
     ]);
     expect(d.saldos.get("p1")).toBe(2);
-    expect(d.movimentos).toHaveLength(1);
+    // A saída e a volta pela correção de item da OS (que abate o consumo).
+    expect(d.movimentos).toHaveLength(2);
+    expect(d.movimentos[1]).toMatchObject({ tipo: "entrada", referencia: "OS 7 (correção de item)" });
     // Fornecedor inativo não entra nas cotações.
     expect(d.cotacoes).toEqual([
       { peca_id: "p1", fornecedor_id: "f1", fornecedor_nome: "A", preco: 10, criado_em: "2026-11-01T10:00:00Z" },
@@ -152,6 +162,15 @@ describe("carregarDadosDaSugestao", () => {
     const gte = mov.find((c) => c.metodo === "gte")?.args as string[];
     expect(gte[0]).toBe("criado_em");
     expect(gte[1]).toMatch(/^2026-08-13T00:00:00[+-]\d{2}:\d{2}$/);
+    // A segunda consulta: só entrada/ajuste com a referência da correção de
+    // item (0071), da loja, na mesma janela. O ajuste da Contagem não vem.
+    const like = chamadas.find((c) => c.tabela === "estoque_movimentos" && c.metodo === "like");
+    expect(like?.args).toEqual(["referencia", "%(correção de item)"]);
+    const eqs = mov.filter((c) => c.metodo === "eq").map((c) => c.args);
+    expect(eqs).toContainEqual(["tipo", "entrada"]);
+    expect(eqs).toContainEqual(["motivo", "ajuste"]);
+    expect(eqs.filter((a) => a[0] === "loja_id")).toHaveLength(2);
+    expect(mov.filter((c) => c.metodo === "gte")).toHaveLength(2);
     const ped = chamadas.filter((c) => c.tabela === "pedidos_compra");
     expect(ped.find((c) => c.metodo === "in")?.args).toEqual(["status", ["pendente", "parcial"]]);
     expect(ped.find((c) => c.metodo === "eq")?.args).toEqual(["loja_id", "loja-1"]);

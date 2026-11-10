@@ -198,3 +198,57 @@ describe("SugestaoCompraSection", () => {
     expect(screen.queryByText("Pneu 175/70")).toBeNull();
   });
 });
+
+describe("SugestaoCompraSection — revisão do #989", () => {
+  const CRIADO = {
+    criados: [{ fornecedorNome: "Fornecedor A", numero: 12 }],
+    comFalha: null,
+    naoTentados: [],
+    erro: null,
+  };
+
+  it("se a recarga depois do Criar falhar, a lista velha sai da tela (sem \"Gerar pedidos\") e há \"Tentar de novo\"", async () => {
+    gerarPedidosDaSugestao.mockResolvedValue(CRIADO);
+    const { user } = montar();
+    await user.click(await screen.findByRole("button", { name: "Gerar pedidos" }));
+    carregarDadosDaSugestao.mockRejectedValueOnce(new Error("internet caiu"));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Criar" }));
+
+    // Os criados continuam avisados; a lista antiga (com o "Já pedido" zerado) não.
+    expect(await screen.findByText(/Pedido 12 — Fornecedor A/)).toBeInTheDocument();
+    expect(screen.getByText(/internet caiu/)).toBeInTheDocument();
+    expect(screen.queryByText("Pneu 175/70")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Gerar pedidos" })).toBeNull();
+    expect(screen.queryByText(/já foi atualizada/)).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByText("Pneu 175/70")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gerar pedidos" })).toBeEnabled();
+  });
+
+  it("trocar de loja durante o Criar fecha a confirmação (não fica aberta com os grupos da loja nova)", async () => {
+    let soltar: (v: unknown) => void = () => {};
+    gerarPedidosDaSugestao.mockReturnValueOnce(new Promise((r) => (soltar = r)));
+    const { user, rerender } = montar();
+    await user.click(await screen.findByRole("button", { name: "Gerar pedidos" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Criar" }));
+    rerender(<SugestaoCompraSection lojaId="loja-2" operadorId="op-1" onPedidosCriados={vi.fn()} />);
+    // Espera a lista da loja nova chegar: é com ela na tela que a confirmação
+    // (montada com os grupos da loja nova) não pode estar aberta.
+    expect(await screen.findByText("Pneu 175/70")).toBeInTheDocument();
+    soltar(CRIADO);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("o aviso de \"sem fornecedor\" não conta linha com quantidade 0", async () => {
+    carregarDadosDaSugestao.mockResolvedValue({
+      ...DADOS,
+      // p3 sem cotação e com tudo já pedido: fica na lista com 0, mas não "fica fora" de nada.
+      pedidos: [{ status: "pendente", itens: [{ peca_id: "p3", quantidade_pedida: 2, quantidade_recebida: 0 }] }],
+    });
+    montar();
+    expect(await screen.findByText("Peça sem cotação")).toBeInTheDocument();
+    expect(screen.queryByText(/fica fora dos pedidos/)).toBeNull();
+  });
+});

@@ -564,3 +564,81 @@ describe("lerQuantidadeDigitada (a caixa \"Comprar\" da Sugestão de compra)", (
     expect(lerQuantidadeDigitada("10000000000")).toBeNull();
   });
 });
+
+describe("consumoPorDiaDasPecas — correção de item da OS (decisão da Sofia, revisão do #989)", () => {
+  const correcao = (pecaId: string, quantidade: number, referencia: string | null): MovimentoParaConsumo => ({
+    peca_id: pecaId,
+    tipo: "entrada",
+    motivo: "ajuste",
+    quantidade,
+    criado_em: meioDia(HOJE),
+    referencia,
+  });
+
+  it("a peça que volta pela correção de um item de OS abate o consumo", () => {
+    // OS lançou 4 e foi corrigida pra 2: a 0071 grava a volta de 2 assim.
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "uso_em_os", quantidade: 4, criado_em: meioDia(HOJE) },
+        correcao("p1", 2, "OS 12 (correção de item)"),
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBeCloseTo(2 / 90, 10);
+  });
+
+  it("o ajuste da Contagem (e qualquer outro ajuste) continua fora", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 4, criado_em: meioDia(HOJE) },
+        correcao("p1", 3, "Ajuste por contagem de estoque"),
+        correcao("p1", 1, null),
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBeCloseTo(4 / 90, 10);
+  });
+
+  it("a correção nunca deixa o consumo negativo (a saída original ficou fora da janela)", () => {
+    const consumo = consumoPorDiaDasPecas([correcao("p1", 2, "OS 12 (correção de item)")], HOJE);
+    expect(consumo.get("p1") ?? 0).toBe(0);
+  });
+
+  it("correção fora da janela de 90 dias não abate", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 4, criado_em: meioDia(HOJE) },
+        { ...correcao("p1", 2, "OS 12 (correção de item)"), criado_em: meioDia("2026-08-12") },
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBeCloseTo(4 / 90, 10);
+  });
+});
+
+describe("montarSugestaoCompra — sugestão 0 sem nada pedido sai da lista (revisão do #989)", () => {
+  it("peça no mínimo sem venda (mínimo 4, saldo 4) não aparece com \"Comprar 0\"", () => {
+    const linhas = montarSugestaoCompra({
+      pecas: [peca("p1", { estoque_minimo: 4 })],
+      saldos: new Map([["p1", 4]]),
+      movimentos: [],
+      cotacoes: [],
+      pedidos: [],
+      hoje: HOJE,
+    });
+    expect(linhas).toEqual([]);
+  });
+
+  it("com pedido pendente cobrindo tudo, continua na lista (mostra o \"Já pedido\")", () => {
+    const linhas = montarSugestaoCompra({
+      pecas: [peca("p1", { estoque_minimo: 4 })],
+      saldos: new Map([["p1", 2]]),
+      movimentos: [],
+      cotacoes: [],
+      pedidos: [{ status: "pendente", itens: [{ peca_id: "p1", quantidade_pedida: 2, quantidade_recebida: 0 }] }],
+      hoje: HOJE,
+    });
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0]).toMatchObject({ quantidadeSugerida: 0, jaPedido: 2 });
+  });
+});

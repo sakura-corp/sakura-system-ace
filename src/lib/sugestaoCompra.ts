@@ -45,7 +45,7 @@ export async function carregarDadosDaSugestao(
 ): Promise<DadosDaSugestao> {
   const desde = inicioDaJanela(hoje, DIAS_DO_RITMO_DE_SAIDA);
 
-  const [pecas, saldos, movimentos, cotacoesLidas, pedidos] = await Promise.all([
+  const [pecas, saldos, movimentos, devolucoes, cotacoesLidas, pedidos] = await Promise.all([
     listarPecas(),
     listarSaldos(lojaId),
     // Só saída de venda e de uso em OS: ajuste e compra não são consumo.
@@ -56,6 +56,23 @@ export async function carregarDadosDaSugestao(
         .eq("loja_id", lojaId)
         .eq("tipo", "saida")
         .in("motivo", ["venda", "uso_em_os"])
+        .gte("criado_em", desde)
+        .order("criado_em", { ascending: true })
+        .order("id", { ascending: true })
+        .range(de, ate),
+    ),
+    // A peça que VOLTOU porque um item de OS foi corrigido pra menos (0071:
+    // "entrada"/"ajuste", referência "<documento> (correção de item)"): abate
+    // o consumo (Sofia, revisão do #989). O `like` só traz poucas linhas; quem
+    // confere o fim exato da referência é `ehDevolucaoPorCorrecaoDeOS`.
+    buscarTudoEmPaginas((de, ate) =>
+      supabase
+        .from("estoque_movimentos")
+        .select("peca_id, tipo, motivo, quantidade, criado_em, referencia")
+        .eq("loja_id", lojaId)
+        .eq("tipo", "entrada")
+        .eq("motivo", "ajuste")
+        .like("referencia", "%(correção de item)")
         .gte("criado_em", desde)
         .order("criado_em", { ascending: true })
         .order("id", { ascending: true })
@@ -90,7 +107,10 @@ export async function carregarDadosDaSugestao(
       ativo: p.ativo,
     })),
     saldos,
-    movimentos: movimentos as unknown as MovimentoParaConsumo[],
+    movimentos: [
+      ...(movimentos as unknown as MovimentoParaConsumo[]),
+      ...(devolucoes as unknown as MovimentoParaConsumo[]),
+    ],
     // Cotação de fornecedor inativo (ou sem nome) não vira sugestão de compra.
     cotacoes: (cotacoesLidas as unknown as CotacaoLida[])
       .filter((c) => c.fornecedor !== null && c.fornecedor.ativo !== false)

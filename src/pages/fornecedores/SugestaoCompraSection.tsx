@@ -50,19 +50,26 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   const lojaNaTela = useRef(lojaId);
   lojaNaTela.current = lojaId;
 
-  async function carregar() {
+  // Trava contra o segundo clique no "Criar" antes de o React redesenhar o
+  // botão desligado (o `gerando` é estado, e estado só muda no próximo desenho).
+  const criando = useRef(false);
+
+  /** @returns se a lista nova chegou (falso se deu erro ou se a loja mudou). */
+  async function carregar(): Promise<boolean> {
     const loja = lojaId;
     lojaDaCarga.current = loja;
     setErro(null);
     try {
       const novos = await carregarDadosDaSugestao(loja, hojeLocal());
-      if (lojaDaCarga.current !== loja) return;
+      if (lojaDaCarga.current !== loja) return false;
       setDados(novos);
       setEditadas({});
+      return true;
     } catch (err) {
-      if (lojaDaCarga.current !== loja) return;
+      if (lojaDaCarga.current !== loja) return false;
       console.error("Erro ao carregar a sugestão de compra:", err);
       setErro(mensagemDeErro(err));
+      return false;
     }
   }
 
@@ -98,7 +105,10 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- quantidadeDa só lê `editadas`
     [linhas, editadas],
   );
-  const semFornecedor = linhas.filter((l) => l.fornecedor === null).length;
+  // Só conta quem iria pro pedido: linha com 0 (tudo já pedido) não "fica fora" de nada.
+  const semFornecedor = linhas.filter(
+    (l) => l.fornecedor === null && (quantidadeDa(l.peca_id, l.quantidadeSugerida) ?? 0) > 0,
+  ).length;
 
   const textoDaConfirmacao = `Vai criar ${grupos.length} ${grupos.length === 1 ? "pedido" : "pedidos"}: ${juntarComE(
     grupos.map(
@@ -108,26 +118,99 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   )}. Criar?`;
 
   async function criar() {
+    if (criando.current) return;
+    criando.current = true;
     const loja = lojaId;
     setGerando(true);
     try {
       const r = await gerarPedidosDaSugestao(grupos, loja, operadorId);
-      if (lojaNaTela.current !== loja) return;
+      // Fecha a confirmação em qualquer caminho: se a loja mudou no meio, ela
+      // ficaria aberta com os grupos da loja nova (revisão do #989).
       setConfirmando(false);
+      if (lojaNaTela.current !== loja) return;
       setResultado(r);
       // Recarrega SEMPRE, com erro ou sem: o `criarPedido()` grava em partes,
-      // então até o fornecedor que falhou pode ter ficado gravado. Com a lista
-      // velha na tela, gerar de novo duplicaria o pedido. E o "Gerar pedidos"
-      // só destrava depois da recarga (o `gerando` segue ligado até aqui).
+      // então até o fornecedor que falhou pode ter ficado gravado. E o "Gerar
+      // pedidos" só destrava depois da recarga (o `gerando` segue ligado).
       onPedidosCriados();
-      await carregar();
+      const recarregou = await carregar();
+      // Se a recarga falhou, a lista na tela é a de ANTES dos pedidos (com o
+      // "Já pedido" zerado): gerar de novo dali duplicaria tudo. Ela sai da
+      // tela, e só volta com um "Tentar de novo" que dê certo.
+      if (!recarregou && lojaNaTela.current === loja) setDados(null);
     } finally {
+      criando.current = false;
       setGerando(false);
     }
   }
 
+  // O aviso do que o "Gerar pedidos" fez. `listaAtualizada` é falso quando a
+  // recarga falhou: aí não se pode dizer que a lista abaixo está em dia.
+  function avisoDoResultado(listaAtualizada: boolean) {
+    if (!resultado) return null;
+    return (
+      <div
+        className={`rounded-xl px-4 py-3 text-corpo ${
+          resultado.erro ? "bg-red-50 text-red-700" : "bg-green-50 text-green-800"
+        }`}
+      >
+        {resultado.criados.length > 0 && (
+          <>
+            <p className="font-medium">Pedidos criados:</p>
+            <ul className="list-inside list-disc">
+              {resultado.criados.map((c) => (
+                <li key={c.numero}>
+                  Pedido {c.numero} — {c.fornecedorNome}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {resultado.erro && (
+          <>
+            {resultado.comFalha && (
+              <p className="mt-2 font-medium">
+                {resultado.comFalha.fornecedorNome}: deu erro, e o pedido pode ter ficado gravado
+                (inteiro ou sem itens). Confira na aba Pedidos de compra antes de gerar de novo.
+              </p>
+            )}
+            {resultado.naoTentados.length > 0 && (
+              <p className="mt-2 font-medium">
+                Não foram tentados: {resultado.naoTentados.map((n) => n.fornecedorNome).join(", ")}
+              </p>
+            )}
+            <p>{resultado.erro}</p>
+            <p>
+              Nada foi repetido sozinho.
+              {listaAtualizada && " A lista abaixo já foi atualizada com o que ficou pedido."}
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
+
   if (erro && !dados) {
-    return <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>;
+    return (
+      <div className="space-y-4">
+        {avisoDoResultado(false)}
+        <div className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          <p>Não deu pra carregar a sugestão de compra: {erro}</p>
+          {resultado && (
+            <p className="mt-1">
+              A lista some até carregar de novo, pra não pedir em dobro o que acabou de ser pedido.
+            </p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => carregar()}
+          className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+        >
+          Tentar de novo
+        </button>
+      </div>
+    );
   }
   if (!dados) return <p className="text-corpo text-sakura-muted">Carregando...</p>;
 
@@ -142,43 +225,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 
-      {resultado && (
-        <div
-          className={`rounded-xl px-4 py-3 text-corpo ${
-            resultado.erro ? "bg-red-50 text-red-700" : "bg-green-50 text-green-800"
-          }`}
-        >
-          {resultado.criados.length > 0 && (
-            <>
-              <p className="font-medium">Pedidos criados:</p>
-              <ul className="list-inside list-disc">
-                {resultado.criados.map((c) => (
-                  <li key={c.numero}>
-                    Pedido {c.numero} — {c.fornecedorNome}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {resultado.erro && (
-            <>
-              {resultado.comFalha && (
-                <p className="mt-2 font-medium">
-                  {resultado.comFalha.fornecedorNome}: deu erro, e o pedido pode ter ficado gravado
-                  (inteiro ou sem itens). Confira na aba Pedidos de compra antes de gerar de novo.
-                </p>
-              )}
-              {resultado.naoTentados.length > 0 && (
-                <p className="mt-2 font-medium">
-                  Não foram tentados: {resultado.naoTentados.map((n) => n.fornecedorNome).join(", ")}
-                </p>
-              )}
-              <p>{resultado.erro}</p>
-              <p>Nada foi repetido sozinho. A lista abaixo já foi atualizada com o que ficou pedido.</p>
-            </>
-          )}
-        </div>
-      )}
+      {avisoDoResultado(true)}
 
       {linhas.length === 0 ? (
         <p className="text-corpo text-sakura-muted">Nenhuma peça precisa de compra agora.</p>
