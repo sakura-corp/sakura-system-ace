@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 10/11/2026 (tarde): fotos das telas pra equipe e o plano do visual novo (#990)
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 também já entrou.
+- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
+- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
+- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos. Antes vem o **vídeo de divulgação** (sessão própria).
+
 ### 10/11/2026: a leva 6 aprovada (#980) e a leva 7 aberta, com 20 tarefas
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
 - **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). Aberta só a #969: o #975 voltou pro Gusta (falta a `key` em Clientes).

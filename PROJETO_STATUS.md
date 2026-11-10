@@ -167,10 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 10/11/2026 (tarde): fotos das telas pra equipe e o plano do visual novo (#990)
+### 10/11/2026 (noite): o vídeo de divulgação planejado e no painel (#995, #996)
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
-- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 também já entrou.
-- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
-- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
-- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
-- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos. Antes vem o **vídeo de divulgação** (sessão própria).
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 e o #994 também já entraram.
+- **Leva 7**: 21 tarefas no modelo (as 20 de 10/11 e a #995). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`. PRs abertos da leva: #985 (Gusta) e #986 (Tiago).
+- **Vídeo de divulgação**: roteiro aprovado (atemporal, vertical, voz feminina por IA, sem contato) na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois, a sessão final dela, #996 (escolher a voz ouvindo e fechar). Ideia guardada: aba "Produção de vídeo" no painel (escritorio#114).
+- **Com a Sofia**: #982 (dados de exemplo no `ssace-teste`); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #996; #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos.
