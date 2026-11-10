@@ -217,3 +217,37 @@ describe("ClientesPage — trocar de loja com o filtro ligado", () => {
     expect(registrarMensagemAberta).toHaveBeenCalledWith("loja-b", "cliente_sumido", "c2", "(16) 99000-0002", "op");
   });
 });
+
+/**
+ * #969: abrir o formulário (canetinha ou "+ Novo cliente") rola a tela até ele
+ * e põe o cursor no primeiro campo. Antes, com a lista rolada, o formulário
+ * abria fora da vista e parecia que o clique não tinha feito nada.
+ */
+describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
+  const SELETOR_CAMPO =
+    "input:not([type=hidden]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
+
+  it("a canetinha pede a rolagem e põe o foco no primeiro campo do formulário", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = renderizar(<ClientesPage />);
+    await user.click(await screen.findByRole("button", { name: /^Editar .*Cliente Pouco/ }));
+
+    const formulario = container.querySelector("form")!;
+    expect(formulario).toBeTruthy();
+    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    expect(rolar).toHaveBeenCalled();
+  });
+
+  it("o \"+ Novo cliente\" também", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    await user.click(screen.getByRole("button", { name: /^\+ Novo/ }));
+
+    const formulario = container.querySelector("form")!;
+    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    expect(rolar).toHaveBeenCalled();
+  });
+});

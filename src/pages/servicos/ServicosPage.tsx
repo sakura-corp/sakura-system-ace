@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { listarCategoriasServico } from "@/lib/categoriasServico";
 import { mensagemDeErro } from "@/lib/errors";
+import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import {
   atualizarServico,
   atualizarStatusServico,
@@ -26,6 +27,9 @@ export function ServicosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
+  const caixaDoFormulario = useRolarAteOFormulario(
+    servicoEditando?.id ?? (mostrarFormulario ? "novo" : null),
+  );
 
   async function carregar() {
     setCarregando(true);
@@ -106,22 +110,26 @@ export function ServicosPage() {
         )}
       </header>
 
-      {mostrarFormulario && (
-        <ServicoForm
-          categorias={categorias}
-          onSalvar={handleSalvar}
-          onCancelar={() => setMostrarFormulario(false)}
-        />
-      )}
+      {(mostrarFormulario || servicoEditando) && (
+        <div ref={caixaDoFormulario} className="space-y-6">
+          {mostrarFormulario && (
+            <ServicoForm
+              categorias={categorias}
+              onSalvar={handleSalvar}
+              onCancelar={() => setMostrarFormulario(false)}
+            />
+          )}
 
-      {servicoEditando && (
-        <ServicoForm
-          categorias={categorias}
-          servicoExistente={servicoEditando}
-          onSalvar={handleSalvar}
-          onSalvarEdicao={handleSalvarEdicao}
-          onCancelar={() => setServicoEditando(null)}
-        />
+          {servicoEditando && (
+            <ServicoForm
+              categorias={categorias}
+              servicoExistente={servicoEditando}
+              onSalvar={handleSalvar}
+              onSalvarEdicao={handleSalvarEdicao}
+              onCancelar={() => setServicoEditando(null)}
+            />
+          )}
+        </div>
       )}
 
       {erro && (

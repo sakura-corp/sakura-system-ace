@@ -73,3 +73,50 @@ describe("ProdutosSection — margem", () => {
     expect(linha.textContent).not.toContain("%");
   });
 });
+
+/**
+ * #969: com a lista rolada, a canetinha abria o formulário lá no topo e a tela
+ * não subia até ele: parecia que o clique não tinha feito nada. Ao abrir (editar
+ * ou "+ Novo"), a tela rola até o formulário e o cursor vai pro primeiro campo.
+ */
+describe("ProdutosSection — abrir o formulário rola até ele (#969)", () => {
+  const SELETOR_CAMPO =
+    "input:not([type=hidden]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
+
+  it("a canetinha pede a rolagem e põe o foco no primeiro campo do formulário", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = montar([umaPeca({ descricao: "PNEU 175/70 R13 PIRELLI" })]);
+
+    await user.click(screen.getByRole("button", { name: /^Editar .*PNEU 175\/70 R13 PIRELLI/ }));
+
+    const formulario = container.querySelector("form")!;
+    expect(formulario).toBeTruthy();
+    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    expect(rolar).toHaveBeenCalled();
+  });
+
+  it("o \"+ Novo produto\" também", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = montar([umaPeca({})]);
+
+    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+
+    const formulario = container.querySelector("form")!;
+    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    expect(rolar).toHaveBeenCalled();
+  });
+});
+
+describe("ProdutosSection — fechar o formulário continua como antes (#969)", () => {
+  it("\"Cancelar\" devolve o cursor pra busca", async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const { user } = montar([umaPeca({})]);
+    await user.click(screen.getByRole("button", { name: /^Editar .*PNEU 175\/70 R13 PIRELLI/ }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("searchbox", { name: /Buscar/ })),
+    );
+  });
+});
