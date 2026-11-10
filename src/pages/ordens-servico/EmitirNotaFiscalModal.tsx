@@ -31,7 +31,7 @@ import {
   ratearPagamentos,
 } from "@/schemas/faturamento";
 import { pecasAvulsas } from "@/schemas/orcamento";
-import { motivoCodigoIncompativel } from "@/schemas/tributacao";
+import { motivoCfopIncompativel, motivoCodigoIncompativel } from "@/schemas/tributacao";
 import { ehConsumidor, type Cliente } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
@@ -169,17 +169,23 @@ export function EmitirNotaFiscalModal({
   // recusar a nota inteira, e a mensagem dela só diz o número do item
   // ("[nItem:1]"), nunca o nome da peça. Conferir aqui transforma isso num
   // aviso com nome e sobrenome, antes de gastar a viagem até a SEFAZ.
+  // O CFOP que não combina com o CSOSN (5102 numa peça com CSOSN 500) também
+  // faz a SEFAZ recusar, e a peça antiga pode estar assim sem nunca ter sido
+  // aberta no Estoque (#968). Mesma regra da tela da peça, sem cópia.
+  const regimeDaLoja = configuracaoFiscal?.regime_tributario ?? null;
   const pecasComProblemaFiscal =
     tipoNota === "NFC-e"
       ? pecasDaNota
           .map((peca) => ({
             descricao: peca.descricao,
-            motivo: motivoCodigoIncompativel(
-              peca.cst_ou_csosn,
-              configuracaoFiscal?.regime_tributario ?? null,
-            ),
+            motivos: [
+              motivoCodigoIncompativel(peca.cst_ou_csosn, regimeDaLoja),
+              // O mesmo CFOP que vai na nota: sem CFOP no cadastro, a nota
+              // sai com 5102 (`montarItem`, em lib/focusNfe.ts).
+              motivoCfopIncompativel(peca.cfop_padrao ?? "5102", peca.cst_ou_csosn, regimeDaLoja),
+            ].filter((motivo): motivo is string => motivo !== null),
           }))
-          .filter((item): item is { descricao: string; motivo: string } => item.motivo !== null)
+          .filter((item) => item.motivos.length > 0)
       : [];
 
   useEffect(() => {
@@ -621,7 +627,7 @@ export function EmitirNotaFiscalModal({
                   {pecasComProblemaFiscal.length === 1
                     ? "Uma peça desta nota está"
                     : `${pecasComProblemaFiscal.length} peças desta nota estão`}{" "}
-                  com o código de ICMS que a SEFAZ não aceita pra sua loja
+                  com o código de ICMS ou o CFOP que a SEFAZ não aceita pra sua loja
                 </strong>{" "}
                 — provavelmente a nota vai ser recusada. Dá pra corrigir em Estoque → Produtos →
                 Editar, e emitir depois.
@@ -629,7 +635,7 @@ export function EmitirNotaFiscalModal({
               <ul className="mt-1 list-disc space-y-0.5 pl-4">
                 {pecasComProblemaFiscal.map((peca) => (
                   <li key={peca.descricao}>
-                    <strong>{peca.descricao}</strong> — {peca.motivo}.
+                    <strong>{peca.descricao}</strong> — {peca.motivos.join("; ")}.
                   </li>
                 ))}
               </ul>

@@ -10,6 +10,7 @@ import { criarPeca } from "@/lib/pecas";
 import {
   codigoParaPecaImportada,
   csosnMaisUsado,
+  motivoCfopIncompativel,
   motivoCodigoIncompativel,
   regimeUsaCsosn,
 } from "@/schemas/tributacao";
@@ -94,6 +95,15 @@ export function ImportarNotasFiscaisModal({
   const itensComCodigoIncompativel = (itens ?? []).filter(
     (item) => item.incluir && motivoCodigoIncompativel(item.cst_ou_csosn, regime) !== null,
   );
+
+  // Só aviso, na linha do item (#968): cadastrar continua liberado, e o CFOP
+  // não é trocado sozinho. Mesma regra da tela da peça, sem cópia.
+  function motivoCfopDoItem(item: ItemRevisao): string | null {
+    if (!item.incluir) return null;
+    return motivoCfopIncompativel(item.cfop_padrao, item.cst_ou_csosn, regime);
+  }
+
+  const motivosCfop = (itens ?? []).map(motivoCfopDoItem);
 
   async function handleCadastrar(e: React.FormEvent) {
     e.preventDefault();
@@ -261,6 +271,12 @@ export function ImportarNotasFiscaisModal({
                           onChange={(v) => atualizarItem(indice, { descricao: v })}
                           largura="w-48"
                         />
+                        {motivosCfop[indice] && (
+                          <p className="mt-1 w-48 rounded bg-amber-50 px-2 py-1 text-rotulo text-amber-800">
+                            <strong>CFOP:</strong> {motivosCfop[indice]}. A coluna CFOP é
+                            editável; sem acertar, a nota dessa peça pode ser recusada.
+                          </p>
+                        )}
                       </td>
                       <td className="px-2 py-1.5">
                         <Combobox
