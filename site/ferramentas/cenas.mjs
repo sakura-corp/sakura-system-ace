@@ -39,9 +39,13 @@ export const CENAS = [
     rota: "/clientes",
     passos: [{ seletor: 'label:has-text("Só os clientes que sumiram") input[type="checkbox"]' }],
     descricao: "Quem não volta há mais de 6 meses (o número de meses dá pra mudar), começando por quem mais gastou: a última visita, o que fez naquela vez e quanto já gastou na loja. O botão do WhatsApp abre a conversa com a mensagem pronta pra chamar o cliente de volta. Conta só OS e vendas de balcão faturadas, de todas as lojas que a pessoa acessa." },
+  { arquivo: "05d-clientes-retornos", modulo: "Clientes", titulo: "Retornos: quem deve voltar",
+    rota: "/clientes",
+    passos: [{ seletor: 'label:has-text("Retornos: quem deve voltar") input[type="checkbox"]' }],
+    descricao: "Quem já deveria ter voltado (atrasados) e quem deve voltar nesta semana, calculado a partir do intervalo cadastrado em cada serviço (em dias ou em km) e da última OS faturada do carro. A data é uma previsão; quando vem do KM, diz 'estimado pelo KM'. O botão do WhatsApp abre a conversa com a mensagem pronta e a tela mostra quando o aviso foi aberto pela última vez. Quem está marcado como 'não mandar lembrete' não aparece." },
   { arquivo: "06-cliente-form", modulo: "Clientes", titulo: "Cadastro de cliente e veículos",
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
-    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
+    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP a caixinha 'Não mandar lembrete pra este cliente' e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
 
   { arquivo: "06b-ficha-veiculo", modulo: "Clientes", titulo: "Ficha do veículo",
     rota: "/veiculos/v1",
@@ -154,7 +158,7 @@ export const CENAS = [
     descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), cada uma com preço padrão e custo — o custo é o que permite calcular o lucro de verdade nos relatórios." },
   { arquivo: "25-servico-form", modulo: "Serviços", titulo: "Cadastro de serviço",
     rota: "/servicos", passos: [{ clicar: "+ Novo serviço" }],
-    descricao: "Descrição, código, categoria, preço padrão e custo. O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
+    descricao: "Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
 
   // ------------------------------------------------------------------- caixa
   { arquivo: "26-caixa-diario", modulo: "Caixa Diário", titulo: "Caixa do dia",

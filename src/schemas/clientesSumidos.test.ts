@@ -242,6 +242,21 @@ describe("clientesSumidos", () => {
     expect(ids(lista)).toEqual(["cli-b"]);
   });
 
+  it("quem pediu pra não receber lembrete (nao_avisar) não entra (#381)", () => {
+    const comAviso = [
+      { id: "cli-a", nome: "Cliente A", nao_avisar: true },
+      { id: "cli-b", nome: "Cliente B", nao_avisar: false },
+      { id: "cli-c", nome: "Cliente C", nao_avisar: null },
+    ];
+    const lista = clientesSumidos(
+      comAviso,
+      mapa(resumo("cli-a", "2025-01-01", 900), resumo("cli-b", "2025-01-01", 100), resumo("cli-c", "2025-01-01", 50)),
+      "2026-10-30",
+      6,
+    );
+    expect(ids(lista)).toEqual(["cli-b", "cli-c"]);
+  });
+
   it("devolve o cliente inteiro junto do resumo", () => {
     const lista = clientesSumidos(clientes, mapa(resumo("cli-b", "2025-01-01", 70)), "2026-10-30", 6);
     expect(lista).toEqual([{ cliente: { id: "cli-b", nome: "Cliente B" }, resumo: resumo("cli-b", "2025-01-01", 70) }]);

@@ -215,3 +215,25 @@ describe("ClienteForm — validação e tipo de pessoa", () => {
     expect(veiculos[0]).toMatchObject({ km_atual: 82000, ano: null, tipo: null });
   });
 });
+
+describe("ClienteForm — não mandar lembrete (#381)", () => {
+  it("a caixinha vai marcada pro salvamento, e vem marcada de um cliente que já pediu", async () => {
+    const { user, onSalvar } = montar();
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(screen.getByRole("checkbox", { name: /não mandar lembrete/i }));
+    await user.click(botaoSalvar());
+    expect(onSalvar.mock.calls[0][0]).toMatchObject({ nao_avisar: true });
+  });
+
+  it("sem marcar, manda falso", async () => {
+    const { user, onSalvar } = montar();
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(botaoSalvar());
+    expect(onSalvar.mock.calls[0][0]).toMatchObject({ nao_avisar: false });
+  });
+
+  it("cliente que já pediu abre com a caixinha marcada", () => {
+    montar({ ...clienteComUmVeiculo(), nao_avisar: true });
+    expect(screen.getByRole("checkbox", { name: /não mandar lembrete/i })).toBeChecked();
+  });
+});

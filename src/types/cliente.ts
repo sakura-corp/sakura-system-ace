@@ -71,7 +71,7 @@ export interface Cliente {
 
 // `nao_avisar` é opcional na gravação pelo mesmo motivo dos intervalos do
 // serviço: formulário sem o campo não manda a coluna (nem apaga, nem quebra
-// num banco sem a migration 0084).
+// num banco sem a migration 0083).
 export type NovoCliente = Omit<Cliente, "id" | "criado_em" | "veiculos" | "nao_avisar"> &
   Partial<Pick<Cliente, "nao_avisar">>;
 export type NovoVeiculo = Omit<Veiculo, "id" | "cliente_id" | "criado_em">;

@@ -90,6 +90,7 @@ const positivo = (n: number | null | undefined) => n != null && n > 0;
 
 /**
  * Os serviços que têm intervalo de retorno (em dias, em km ou nos dois).
+ * Serviço desligado (`ativo === false`) não gera lembrete: sai daqui.
  *
  * `select("*")` de propósito: num banco que ainda não recebeu a 0083, pedir
  * `intervalo_dias` pelo nome daria erro de coluna; com `*` os campos só não
@@ -98,7 +99,8 @@ const positivo = (n: number | null | undefined) => n != null && n > 0;
 export async function listarServicosComIntervalo(): Promise<ServicoComIntervalo[]> {
   const { data, error } = await supabase.from("servicos").select("*");
   if (error) throw error;
-  return ((data ?? []) as Partial<ServicoComIntervalo>[])
+  return ((data ?? []) as (Partial<ServicoComIntervalo> & { ativo?: boolean })[])
+    .filter((servico) => servico.ativo !== false)
     .map((servico) => ({
       id: servico.id as string,
       descricao: servico.descricao as string,

@@ -106,17 +106,20 @@ describe("listarOrdensParaRetornos", () => {
 });
 
 describe("listarServicosComIntervalo", () => {
-  it("só os que têm intervalo; sem a coluna no banco (antes da 0083), vira nulo e fica de fora", async () => {
+  it("só os que têm intervalo e estão ativos; sem a coluna no banco (antes da 0083), vira nulo e fica de fora", async () => {
     respostas.servicos = [
       { id: "oleo", descricao: "Troca de óleo", intervalo_dias: 180, intervalo_km: 10_000 },
       { id: "alinhamento", descricao: "Alinhamento", intervalo_dias: null, intervalo_km: 10_000 },
       { id: "lavagem", descricao: "Lavagem", intervalo_dias: null, intervalo_km: null },
       { id: "zero", descricao: "Zero", intervalo_dias: 0, intervalo_km: 0 },
       { id: "antigo", descricao: "Banco sem a migration" },
+      { id: "desligado", descricao: "Serviço desligado", intervalo_dias: 90, intervalo_km: null, ativo: false },
+      { id: "ligado", descricao: "Serviço ligado", intervalo_dias: 90, intervalo_km: null, ativo: true },
     ];
     expect(await listarServicosComIntervalo()).toEqual([
       { id: "oleo", descricao: "Troca de óleo", intervalo_dias: 180, intervalo_km: 10_000 },
       { id: "alinhamento", descricao: "Alinhamento", intervalo_dias: null, intervalo_km: 10_000 },
+      { id: "ligado", descricao: "Serviço ligado", intervalo_dias: 90, intervalo_km: null },
     ]);
   });
 });

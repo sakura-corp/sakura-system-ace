@@ -55,6 +55,17 @@ export function DadosClienteFields({
           <input type="date" {...register("data_nascimento")} className={inputClasse} />
         </Campo>
       </div>
+      <label className="mt-4 flex items-center gap-2 text-corpo">
+        <input
+          type="checkbox"
+          {...register("nao_avisar")}
+          className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+        />
+        <span className="text-sakura-purple-dark/80">Não mandar lembrete pra este cliente</span>
+      </label>
+      <p className="mt-1 text-rotulo text-sakura-muted">
+        Ele não aparece na lista de Retornos nem na de clientes que sumiram.
+      </p>
     </Secao>
   );
 }

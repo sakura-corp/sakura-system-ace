@@ -18,6 +18,6 @@ export interface Servico {
 
 // Os intervalos são opcionais na gravação: o formulário que ainda não tem os
 // campos não manda a coluna, e assim nem apaga o que já estava lá nem quebra
-// num banco que ainda não recebeu a migration 0084.
+// num banco que ainda não recebeu a migration 0083.
 export type NovoServico = Omit<Servico, "id" | "criado_em" | "intervalo_dias" | "intervalo_km"> &
   Partial<Pick<Servico, "intervalo_dias" | "intervalo_km">>;
