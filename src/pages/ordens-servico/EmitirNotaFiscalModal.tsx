@@ -1,3 +1,4 @@
+import { useConexao } from "@/hooks/useConexao";
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -101,6 +102,8 @@ export function EmitirNotaFiscalModal({
   onEmitido,
   onItensMudaram,
 }: EmitirNotaFiscalModalProps) {
+  // #374: aviso perto do botão; o botão continua clicável (aviso, nunca tranca).
+  const { semConexao } = useConexao();
   const { operador, lojaAtual } = useAuth();
   const [carregando, setCarregando] = useState(true);
   const [emitindo, setEmitindo] = useState(false);
@@ -700,6 +703,15 @@ export function EmitirNotaFiscalModal({
             </div>
           )}
 
+          {semConexao && (
+            <p
+              role="status"
+              className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+            >
+              Sem internet a nota não sai: a SEFAZ e a prefeitura precisam receber. Espere a
+              conexão voltar pra emitir.
+            </p>
+          )}
           <div className="flex justify-end gap-3">
             <button
               type="button"
