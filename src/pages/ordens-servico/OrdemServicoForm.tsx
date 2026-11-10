@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   MOTIVOS_RECUSA,
   MOTIVO_RECUSA_LABEL,
@@ -272,6 +272,8 @@ export function OrdemServicoForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar ordem de serviço:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }
