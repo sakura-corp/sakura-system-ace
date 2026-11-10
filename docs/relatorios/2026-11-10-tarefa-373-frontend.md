@@ -55,6 +55,9 @@ desenho da tela, sem a internet.
   faria sentido com centenas de milhares. Não medi no banco de verdade (não roda consulta em
   Supabase nenhum daqui).
 
+## Fora da lista de arquivos da issue (pra Sofia decidir)
+- `site/ferramentas/banco-falso.mjs`: 1 cabeçalho (`access-control-expose-headers: content-range`). O banco de mentira das varreduras não liberava o total pro navegador, a lista abria com total 0 e o `largura:telas` do CI reprovou em "Ver veículos" e "sumiram". Reproduzi aqui (as 3 cenas de Clientes falharam), com o cabeçalho passaram. O Lázaro autorizou mandar, marcado pra Sofia decidir.
+
 ## O que ficou de fora
 - As outras listas (OS, Produtos, Movimentações, Notas, Auditoria): partes seguintes, como a issue manda.
 - Busca sem acento ("joao" acha "João"): decisão da Sofia, fica pra quando ela sentir falta (precisa de migration).
@@ -63,10 +66,7 @@ desenho da tela, sem a internet.
   (recarregar mantém a página) e pelo de excluir na tela; o formulário inteiro não foi preenchido em teste.
 
 ## O que depende de alguém
-- **Lázaro, no PC** (caso B do `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem
-  fez"), branch `claude/tarefa-373-clientes-paginada`: o roteiro do "Pronto quando no PC de quem
-  fez" da issue (50 por página, Próxima/Anterior, ordem por Nome que fica guardada, busca por nome,
-  telefone e CPF, editar na página 2, "sumiram").
+- **Lázaro, no PC**: FEITO em 10/11, no Supabase de teste: ordem por Nome (e guardada ao fechar e abrir), busca por nome, telefone e CPF, salvar sem perder a ordem, "sumiram". Pulou a troca de página (o banco de teste tem 10 clientes; provada nos testes com 120).
 - **Sofia**: revisar e mesclar o PR.
 
 ## Onde parou
