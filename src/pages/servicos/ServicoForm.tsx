@@ -123,6 +123,41 @@ export function ServicoForm({
             placeholder="Sem categoria"
           />
         </label>
+
+        <label className="flex flex-col gap-1 text-corpo">
+          <span className="text-sakura-purple-dark/80">Retorno a cada (dias)</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            step="1"
+            min="1"
+            {...register("intervalo_dias")}
+            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+          />
+          {errors.intervalo_dias && (
+            <span className="text-rotulo text-red-600">{errors.intervalo_dias.message}</span>
+          )}
+        </label>
+
+        <label className="flex flex-col gap-1 text-corpo">
+          <span className="text-sakura-purple-dark/80">Retorno a cada (km)</span>
+          <input
+            type="number"
+            inputMode="numeric"
+            step="1"
+            min="1"
+            {...register("intervalo_km")}
+            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+          />
+          {errors.intervalo_km && (
+            <span className="text-rotulo text-red-600">{errors.intervalo_km.message}</span>
+          )}
+        </label>
+
+        <p className="col-span-2 text-rotulo text-sakura-muted">
+          A cada quantos dias ou quantos km o cliente deve voltar; 6 meses = 180 dias. Vazio: este
+          serviço não gera lembrete.
+        </p>
       </div>
 
       <div className="flex justify-end gap-3">

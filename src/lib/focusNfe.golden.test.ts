@@ -127,6 +127,7 @@ const cliente = (parcial: Partial<Cliente>): Cliente => ({
   uf: null,
   codigo_municipio: null,
   data_nascimento: null,
+  nao_avisar: false,
   criado_em: "2026-01-10T12:00:00.000Z",
   ...parcial,
 });

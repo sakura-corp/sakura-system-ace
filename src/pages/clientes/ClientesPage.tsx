@@ -30,6 +30,7 @@ import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { temPermissao } from "@/types/operador";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { RetornosLista } from "./RetornosLista";
 import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
@@ -49,6 +50,8 @@ export function ClientesPage() {
   // Filtro "clientes que sumiram" (FN-11). As ordens só são buscadas quando a
   // pessoa liga o filtro: a lista de clientes comum não precisa delas.
   const [soSumidos, setSoSumidos] = useState(false);
+  // A lista de retornos (FN-06, #381) é outra visão, que busca os próprios dados.
+  const [verRetornos, setVerRetornos] = useState(false);
   const [textoMeses, setTextoMeses] = useState(String(MESES_PADRAO));
   const [ordens, setOrdens] = useState<OrdemDoCliente[] | null>(null);
   const [carregandoSumidos, setCarregandoSumidos] = useState(false);
@@ -116,6 +119,7 @@ export function ClientesPage() {
   }, [soSumidos, lojaId]);
 
   function handleLigarSumidos(ligar: boolean) {
+    if (ligar) setVerRetornos(false);
     setSoSumidos(ligar);
     if (ligar && ordens === null) carregarSumidos();
   }
@@ -241,6 +245,18 @@ export function ClientesPage() {
             />
             meses
           </label>
+          <label className="flex items-center gap-2 text-corpo">
+            <input
+              type="checkbox"
+              checked={verRetornos}
+              onChange={(e) => {
+                setVerRetornos(e.target.checked);
+                if (e.target.checked) setSoSumidos(false);
+              }}
+              className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+            />
+            <span className="text-sakura-purple-dark/80">Retornos: quem deve voltar pra um serviço</span>
+          </label>
           {soSumidos && (
             <p className="w-full text-rotulo text-sakura-muted">
               Conta as OS e vendas de balcão faturadas das lojas que você acessa.
@@ -251,6 +267,8 @@ export function ClientesPage() {
 
       {carregando || (soSumidos && carregandoSumidos) ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
+      ) : verRetornos ? (
+        <RetornosLista clientes={clientes} />
       ) : soSumidos && ordens ? (
         sumidos.length === 0 ? (
           <p className="text-corpo text-sakura-muted">

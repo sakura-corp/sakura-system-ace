@@ -480,7 +480,7 @@ begin
   select string_agg(k, ',' order by k) into obtido
     from (select distinct jsonb_object_keys(e) k
             from ordens_servico_clientes v, jsonb_array_elements(v.itens) e) t;
-  if obtido is distinct from 'desconto,descricao,id,peca_id,prazo_garantia_dias,preco_unitario,quantidade,tipo' then
+  if obtido is distinct from 'desconto,descricao,id,peca_id,prazo_garantia_dias,preco_unitario,quantidade,servico_id,tipo' then  -- servico_id desde a 0083 (#381)
     raise exception 'FALHOU (D7): os itens da janela de clientes têm as chaves [%]', obtido;
   end if;
 

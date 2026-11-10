@@ -111,6 +111,26 @@ describe("modelo cliente_sumido (FN-11)", () => {
   });
 });
 
+describe("modelo retorno (FN-06, #381)", () => {
+  it("existe, com os cinco marcadores, e o texto aprovado pela Sofia", () => {
+    const modelo = modeloPorChave("retorno");
+    expect(modelo.marcadores).toEqual(["{cliente}", "{loja}", "{servico}", "{veiculo}", "{placa}"]);
+    expect(
+      preencherModelo(modelo.padrao, {
+        cliente: "Cliente A",
+        loja: "Loja Centro",
+        servico: "Troca de óleo",
+        veiculo: "Fiat Uno",
+        placa: "ABC1D23",
+      }),
+    ).toBe(
+      "Oi Cliente A, tudo bem? Aqui é da Loja Centro. " +
+        "Pelo nosso controle, já está na hora de fazer Troca de óleo no Fiat Uno (ABC1D23). " +
+        "Quer que a gente marque um horário? É só responder aqui.",
+    );
+  });
+});
+
 describe("link de avaliação no Google", () => {
   const erroPadrao = "O link precisa começar com https://";
 

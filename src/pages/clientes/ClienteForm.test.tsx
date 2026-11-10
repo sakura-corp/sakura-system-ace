@@ -43,6 +43,7 @@ function clienteComUmVeiculo(): Cliente {
     uf: null,
     codigo_municipio: null,
     data_nascimento: null,
+    nao_avisar: false,
     criado_em: "2026-01-10T12:00:00.000Z",
     veiculos: [
       {
@@ -212,5 +213,27 @@ describe("ClienteForm — validação e tipo de pessoa", () => {
 
     const [, veiculos] = onSalvar.mock.calls[0];
     expect(veiculos[0]).toMatchObject({ km_atual: 82000, ano: null, tipo: null });
+  });
+});
+
+describe("ClienteForm — não mandar lembrete (#381)", () => {
+  it("a caixinha vai marcada pro salvamento, e vem marcada de um cliente que já pediu", async () => {
+    const { user, onSalvar } = montar();
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(screen.getByRole("checkbox", { name: /não mandar lembrete/i }));
+    await user.click(botaoSalvar());
+    expect(onSalvar.mock.calls[0][0]).toMatchObject({ nao_avisar: true });
+  });
+
+  it("sem marcar, manda falso", async () => {
+    const { user, onSalvar } = montar();
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(botaoSalvar());
+    expect(onSalvar.mock.calls[0][0]).toMatchObject({ nao_avisar: false });
+  });
+
+  it("cliente que já pediu abre com a caixinha marcada", () => {
+    montar({ ...clienteComUmVeiculo(), nao_avisar: true });
+    expect(screen.getByRole("checkbox", { name: /não mandar lembrete/i })).toBeChecked();
   });
 });

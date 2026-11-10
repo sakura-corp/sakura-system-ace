@@ -63,11 +63,18 @@ export interface Cliente {
   // quando o CEP é buscado, ver lib/viaCep.ts.
   codigo_municipio: string | null;
   data_nascimento: string | null;
+  /** Pediu pra não receber lembrete de retorno (FN-06, #381): some da lista de retornos. */
+  nao_avisar: boolean;
   criado_em: string;
   veiculos?: Veiculo[];
 }
 
-export type NovoCliente = Omit<Cliente, "id" | "criado_em" | "veiculos">;
+// `nao_avisar` é opcional no tipo de gravação pelo mesmo motivo dos intervalos
+// do serviço. O formulário de cliente (e o cadastro rápido na OS e no balcão)
+// manda SEMPRE: num banco sem a migration 0083, salvar cliente falha com o
+// aviso de banco desatualizado. Por isso a 0083 sobe ANTES da versão.
+export type NovoCliente = Omit<Cliente, "id" | "criado_em" | "veiculos" | "nao_avisar"> &
+  Partial<Pick<Cliente, "nao_avisar">>;
 export type NovoVeiculo = Omit<Veiculo, "id" | "cliente_id" | "criado_em">;
 
 // Usado no formulário: veículo já existente carrega o `id` (pra atualizar em

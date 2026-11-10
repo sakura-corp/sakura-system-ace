@@ -42,6 +42,8 @@ const ALINHAMENTO: Servico = {
   custo: null,
   categoria_id: null,
   ativo: true,
+  intervalo_dias: null,
+  intervalo_km: null,
   criado_em: "2026-01-01T00:00:00.000Z",
 };
 

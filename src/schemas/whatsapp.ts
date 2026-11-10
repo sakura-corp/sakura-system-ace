@@ -19,6 +19,7 @@ export type ChaveModeloWhatsapp =
   | "carro_pronto"
   | "pedido_compra"
   | "cliente_sumido"
+  | "retorno"
   | "orcamento"
   | "avaliacao";
 
@@ -90,6 +91,18 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
       "Oi {cliente}, tudo bem? Aqui é da {loja}.\n" +
       "Faz um tempinho que você não passa por aqui. Que tal dar uma olhada no {veiculo}? " +
       "É só responder que a gente marca um horário.",
+  },
+  {
+    chave: "retorno",
+    titulo: "Hora de voltar (retorno)",
+    descricao:
+      "Aparece em Clientes, na lista de Retornos. Avisa o cliente que já está na hora de refazer um serviço, como a troca de óleo ou o alinhamento.",
+    marcadores: ["{cliente}", "{loja}", "{servico}", "{veiculo}", "{placa}"],
+    // Texto aprovado pela Sofia em 10/11/2026 (tarefa #381).
+    padrao:
+      "Oi {cliente}, tudo bem? Aqui é da {loja}. " +
+      "Pelo nosso controle, já está na hora de fazer {servico} no {veiculo} ({placa}). " +
+      "Quer que a gente marque um horário? É só responder aqui.",
   },
   {
     chave: "orcamento",

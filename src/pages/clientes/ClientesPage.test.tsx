@@ -27,6 +27,8 @@ const listarModelosWhatsapp = vi.fn();
 const ultimasMensagensPorReferencia = vi.fn();
 const registrarMensagemAberta = vi.fn();
 const abrirConversaWhatsapp = vi.fn();
+const listarOrdensParaRetornos = vi.fn();
+const listarServicosComIntervalo = vi.fn();
 
 vi.mock("@/lib/clientes", () => ({
   listarClientes: () => listarClientes(),
@@ -36,6 +38,10 @@ vi.mock("@/lib/clientes", () => ({
 }));
 vi.mock("@/lib/clientesSumidos", () => ({
   listarOrdensFaturadasDosClientes: () => listarOrdensFaturadasDosClientes(),
+}));
+vi.mock("@/lib/retornos", () => ({
+  listarOrdensParaRetornos: () => listarOrdensParaRetornos(),
+  listarServicosComIntervalo: () => listarServicosComIntervalo(),
 }));
 vi.mock("@/lib/modelosWhatsapp", async (original) => ({
   ...(await original<typeof import("@/lib/modelosWhatsapp")>()),
@@ -81,6 +87,7 @@ function cliente(id: string, nome: string, telefone: string | null): Cliente {
     uf: null,
     codigo_municipio: null,
     data_nascimento: null,
+    nao_avisar: false,
     criado_em: "",
     veiculos: [],
   } as Cliente;
@@ -119,6 +126,8 @@ beforeEach(() => {
     ordem("o2", "c2", 250, 900, "Troca de pneus"),
     ordem("o3", "c3", 10, 5000, "Suspensão"),
   ]);
+  listarOrdensParaRetornos.mockResolvedValue([]);
+  listarServicosComIntervalo.mockResolvedValue([]);
   listarModelosWhatsapp.mockResolvedValue({});
   ultimasMensagensPorReferencia.mockResolvedValue(new Map());
   registrarMensagemAberta.mockResolvedValue(undefined);
@@ -273,3 +282,125 @@ describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
   });
 });
 
+
+
+/**
+ * A lista "Retornos" (FN-06, #381). As contas estão em schemas/retornos.test.ts;
+ * aqui só a costura: a linha aparece, "não avisar" some, o WhatsApp abre com
+ * o texto do modelo e registra a abertura.
+ */
+describe("ClientesPage — retornos (#381)", () => {
+  const OLEO = { id: "oleo", descricao: "Troca de óleo", intervalo_dias: 180, intervalo_km: null };
+
+  function osComOleo(id: string, clienteId: string, veiculoId: string, placa: string, diasAtras: number) {
+    return {
+      id,
+      numero: 1,
+      loja_id: "loja-a",
+      cliente_id: clienteId,
+      status: "faturada",
+      km_entrada: null,
+      data_abertura: diaHa(diasAtras),
+      data_fechamento: diaHa(diasAtras),
+      veiculo_id: veiculoId,
+      veiculo: { placa, marca: "Fiat", modelo: "Uno" },
+      itens: [
+        {
+          id: `i-${id}`,
+          tipo: "servico",
+          peca_id: null,
+          servico_id: "oleo",
+          descricao: "Troca de óleo",
+          quantidade: 1,
+          preco_unitario: 100,
+          desconto: 0,
+          peca: null,
+        },
+      ],
+    };
+  }
+
+  beforeEach(() => {
+    listarServicosComIntervalo.mockResolvedValue([OLEO]);
+    listarOrdensParaRetornos.mockResolvedValue([
+      // 200 dias atrás + 180 = venceu há 20 dias.
+      osComOleo("r1", "c1", "v1", "ABC-1D23", 200),
+      // 175 dias atrás + 180 = vence em 5 dias.
+      osComOleo("r2", "c2", "v2", "XYZ-9K88", 175),
+      // Atrasado, mas o cliente pediu pra não ser avisado.
+      osComOleo("r3", "c3", "v3", "NAO-0A00", 400),
+    ]);
+    listarClientes.mockResolvedValue([
+      cliente("c1", "Cliente Pouco", "(16) 99000-0001"),
+      cliente("c2", "Cliente Muito", null),
+      { ...cliente("c3", "Cliente Calado", "(16) 99000-0003"), nao_avisar: true },
+    ]);
+  });
+
+  async function abrirRetornos() {
+    const tela = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    await tela.user.click(screen.getByRole("checkbox", { name: /retornos/i }));
+    await screen.findByRole("heading", { name: /atrasados/i });
+    return tela;
+  }
+
+  it("mostra o atrasado e o da semana, com a placa, o serviço e quando vence", async () => {
+    await abrirRetornos();
+    const linhaAtrasada = screen.getByText("Cliente Pouco").closest("tr")!;
+    expect(within(linhaAtrasada).getByRole("button", { name: "ABC-1D23" })).toBeInTheDocument();
+    expect(within(linhaAtrasada).getByText("Troca de óleo")).toBeInTheDocument();
+    expect(within(linhaAtrasada).getByText("20 dias de atraso")).toBeInTheDocument();
+    const linhaDaSemana = screen.getByText("Cliente Muito").closest("tr")!;
+    expect(within(linhaDaSemana).getByText("vence em 5 dias")).toBeInTheDocument();
+  });
+
+  it("quem pediu pra não receber lembrete não aparece", async () => {
+    await abrirRetornos();
+    expect(screen.queryByText("Cliente Calado")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "NAO-0A00" })).not.toBeInTheDocument();
+  });
+
+  it("o botão abre o WhatsApp com o texto do modelo e registra a abertura", async () => {
+    const { user } = await abrirRetornos();
+    const linha = screen.getByText("Cliente Pouco").closest("tr")!;
+    await user.click(within(linha).getByRole("button", { name: /^avisar$/i }));
+    expect(abrirConversaWhatsapp).toHaveBeenCalledWith(
+      "(16) 99000-0001",
+      "Oi Cliente Pouco, tudo bem? Aqui é da Loja Centro. " +
+        "Pelo nosso controle, já está na hora de fazer Troca de óleo no Fiat Uno (ABC-1D23). " +
+        "Quer que a gente marque um horário? É só responder aqui.",
+    );
+    expect(registrarMensagemAberta).toHaveBeenCalledWith("loja-a", "retorno", "v1:oleo", "(16) 99000-0001", "op");
+  });
+
+  it("sem telefone, o botão fica desligado e explica por quê", async () => {
+    await abrirRetornos();
+    const linha = screen.getByText("Cliente Muito").closest("tr")!;
+    const botao = within(linha).getByRole("button", { name: /sem telefone/i });
+    expect(botao).toBeDisabled();
+    expect(botao).toHaveAttribute("title", expect.stringMatching(/sem telefone/i));
+  });
+
+  it("lista vazia explica que só entra serviço com intervalo no cadastro", async () => {
+    listarOrdensParaRetornos.mockResolvedValue([]);
+    const tela = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    await tela.user.click(screen.getByRole("checkbox", { name: /retornos/i }));
+    expect(await screen.findByText(/cadastro de Serviços/)).toBeInTheDocument();
+  });
+
+  it("erro ao carregar aparece na tela", async () => {
+    listarOrdensParaRetornos.mockRejectedValue(new Error("falhou a rede"));
+    const tela = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    await tela.user.click(screen.getByRole("checkbox", { name: /retornos/i }));
+    expect(await screen.findByText(/falhou a rede/)).toBeInTheDocument();
+  });
+
+  it("mostra quando o aviso foi aberto pela última vez", async () => {
+    ultimasMensagensPorReferencia.mockResolvedValue(new Map([["v1:oleo", diaHa(2)]]));
+    await abrirRetornos();
+    expect(await screen.findByText(/avisado em/)).toBeInTheDocument();
+  });
+});
