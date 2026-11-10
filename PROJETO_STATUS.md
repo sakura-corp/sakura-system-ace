@@ -167,11 +167,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 09/11/2026, tarde: o #953 mesclado; o #971 esperando o teste no PC
-- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. A NFS-e nº 1 saiu autorizada (OS 18); a prévia do PDF na janela fica vazia (#965), o "Baixar PDF" funciona.
-- **Mesclados hoje**: #960, #961, #963, #964, **#953** (peça parecida: LE/LD, 82T × 86T, "(inativa)") e escritorio#107.
-- **#971** (#965, prévia do PDF): aprovado e com o CI verde; a CSP do app fica fora só do visualizador de PDF do Electron (decidido). **Falta o Tiago testar no PC** (app buildado), e aí ele entra.
-- **Leva 6**: #966, #967, #968 e #969 ainda **sem PR**. A próxima sessão revisa o que chegar.
-- **Escritório**: a leva 3 fechou e a leva nova ficou **adiada** (candidatas: escritorio#37 e #13; rascunhos do Tiago quando ela quiser).
-- **Com a Sofia**: #513 (CNPJ com letras, destrava o #962); #501 (texto de garantia); os tributos aproximados com "-" no DANFSe; o QR do Pix e o "API Keys" (#934); faxina das `sofia` antigas.
-- **Seguem valendo**: #842 (token, depois do ensaio de 14 e 15/11, #877); #951, a troca do CSC; #906 (fim de semana); #912 caso 2; escritorio#20 (22/11).
+### 10/11/2026: a leva 6 aprovada (#980) e a leva 7 aberta, com 20 tarefas
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). Aberta só a #969: o #975 voltou pro Gusta (falta a `key` em Clientes).
+- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
+- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
+- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).

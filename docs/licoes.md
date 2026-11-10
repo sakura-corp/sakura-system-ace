@@ -1849,7 +1849,9 @@
     estava toda fechada, mas o `docs/relatorios/leva-5.md` não estava na `main`. Sem ele a leva 5 fica em
     "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
     a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
-    o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.
+    o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar. **Aconteceu
+    de novo em 10/11** (a leva 7 em "Montando" atrás da 6, #980): ao abrir uma leva nova, já conferir se a
+    anterior tem o relatório na `main`.
 
 96. **Mesclar com o CI ainda rodando (05/11/2026, #925).** Uma sessão filha mesclou antes de os jobs
     de tela terminarem. Um deles caiu porque a máquina do GitHub demorou mais de 8 min no apt
@@ -1876,3 +1878,8 @@
     **Regra**: na nota nacional, mandar só o que é obrigatório pro caso da loja; campo opcional
     entra só quando a documentação ou a recusa mostrar que é preciso. E a mensagem de recusa da
     DPS diz o campo e o motivo: ler antes de abrir ticket (a Focus levou 3 dias pra apontar a IM).
+100. **"Fecha #N" no PR não fecha a issue (09 e 10/11/2026, #956 → #948).** O PR consertou a #948 e
+    entrou na 0.9.57, mas a issue ficou aberta e quase voltou pra leva 7 como tarefa nova. O GitHub só
+    fecha a issue sozinho com as palavras em inglês: `Closes #N`, `Fixes #N` ou `Resolves #N`.
+    **Regra**: no PR, sempre `Closes #N` (pode vir com a explicação em português depois). Ao montar
+    uma leva, conferir se alguma issue aberta já tem PR mesclado.

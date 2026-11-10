@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 09/11/2026, tarde: o #953 mesclado; o #971 esperando o teste no PC
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. A NFS-e nº 1 saiu autorizada (OS 18); a prévia do PDF na janela fica vazia (#965), o "Baixar PDF" funciona.
+- **Mesclados hoje**: #960, #961, #963, #964, **#953** (peça parecida: LE/LD, 82T × 86T, "(inativa)") e escritorio#107.
+- **#971** (#965, prévia do PDF): aprovado e com o CI verde; a CSP do app fica fora só do visualizador de PDF do Electron (decidido). **Falta o Tiago testar no PC** (app buildado), e aí ele entra.
+- **Leva 6**: #966, #967, #968 e #969 ainda **sem PR**. A próxima sessão revisa o que chegar.
+- **Escritório**: a leva 3 fechou e a leva nova ficou **adiada** (candidatas: escritorio#37 e #13; rascunhos do Tiago quando ela quiser).
+- **Com a Sofia**: #513 (CNPJ com letras, destrava o #962); #501 (texto de garantia); os tributos aproximados com "-" no DANFSe; o QR do Pix e o "API Keys" (#934); faxina das `sofia` antigas.
+- **Seguem valendo**: #842 (token, depois do ensaio de 14 e 15/11, #877); #951, a troca do CSC; #906 (fim de semana); #912 caso 2; escritorio#20 (22/11).
+
 ### 09/11/2026: a primeira NFS-e Nacional autorizada; a 0.9.57 liberada; leva 6 reaberta
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada (sem a IM, #956, e sem a alíquota pro Simples, #958). A **NFS-e nº 1 saiu autorizada** (OS 18); a #837 fechou. A prévia do PDF na janela fica vazia (#965); o "Baixar PDF" funciona.
 - **Mesclados**: #960, #961, #963, #964 (a leva 6 de hoje) e escritorio#107. O **#953** voltou pro Tiago com "Request changes" (82T × 86T e o `/code-review`).
