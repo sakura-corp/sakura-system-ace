@@ -103,6 +103,8 @@ export function ImportarNotasFiscaisModal({
     return motivoCfopIncompativel(item.cfop_padrao, item.cst_ou_csosn, regime);
   }
 
+  const motivosCfop = (itens ?? []).map(motivoCfopDoItem);
+
   async function handleCadastrar(e: React.FormEvent) {
     e.preventDefault();
     if (!itens) return;
@@ -269,9 +271,9 @@ export function ImportarNotasFiscaisModal({
                           onChange={(v) => atualizarItem(indice, { descricao: v })}
                           largura="w-48"
                         />
-                        {motivoCfopDoItem(item) && (
+                        {motivosCfop[indice] && (
                           <p className="mt-1 w-48 rounded bg-amber-50 px-2 py-1 text-rotulo text-amber-800">
-                            <strong>CFOP:</strong> {motivoCfopDoItem(item)}. A coluna CFOP é
+                            <strong>CFOP:</strong> {motivosCfop[indice]}. A coluna CFOP é
                             editável; sem acertar, a nota dessa peça pode ser recusada.
                           </p>
                         )}

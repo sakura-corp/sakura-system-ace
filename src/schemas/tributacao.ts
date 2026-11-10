@@ -140,6 +140,10 @@ export function codigoParaPecaImportada(
 // recusa a nota. Provado no ensaio de 04/11/2026 e confirmado pela
 // contabilidade em 05/11/2026.
 //
+// Na NFC-e só vale o par de dentro do estado (5102/5405): o par de fora
+// (6102/6404) fica na tabela, mas `motivoCfopIncompativel` avisa dele também
+// (Sofia, 09/11/2026, #968).
+//
 // Mudar a regra é mudar só esta tabela. CSOSN fora dela (201, 202, 203, 900)
 // fica sem opinião de propósito.
 const PECA_COMUM = { dentro: "5102", fora: "6102", peca: "peça comum, sem ICMS pago antes" };

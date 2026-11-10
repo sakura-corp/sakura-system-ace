@@ -180,7 +180,9 @@ export function EmitirNotaFiscalModal({
             descricao: peca.descricao,
             motivos: [
               motivoCodigoIncompativel(peca.cst_ou_csosn, regimeDaLoja),
-              motivoCfopIncompativel(peca.cfop_padrao, peca.cst_ou_csosn, regimeDaLoja),
+              // O mesmo CFOP que vai na nota: sem CFOP no cadastro, a nota
+              // sai com 5102 (`montarItem`, em lib/focusNfe.ts).
+              motivoCfopIncompativel(peca.cfop_padrao ?? "5102", peca.cst_ou_csosn, regimeDaLoja),
             ].filter((motivo): motivo is string => motivo !== null),
           }))
           .filter((item) => item.motivos.length > 0)

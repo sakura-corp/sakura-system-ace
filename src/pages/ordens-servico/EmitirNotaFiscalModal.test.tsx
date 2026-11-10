@@ -427,6 +427,17 @@ describe("EmitirNotaFiscalModal — CFOP que não combina com o CSOSN (#968)", (
     expect(confirmar()).toBeEnabled();
   });
 
+  it("peça com CSOSN 500 e sem CFOP: avisa, porque a nota sai com 5102", async () => {
+    buscarDadosFiscaisDasPecas.mockResolvedValue([{ ...pecaCfopErrado, cfop_padrao: null }]);
+    montar([item("i1", "Pneu 185/65 R15", "peca-cfop")]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(
+      await screen.findByText(/o CFOP 5102 não combina com o CSOSN 500 .*use 5405/),
+    ).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
   it("peça com 5.405 + CSOSN 500: sem aviso do CFOP", async () => {
     montar([item("i1", "Pneu 195/55 R16", "peca-cfop-ok")]);
 
