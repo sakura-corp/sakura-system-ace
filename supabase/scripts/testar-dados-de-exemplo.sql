@@ -495,7 +495,7 @@ begin
     select codigo_interno, ncm, cest from pecas
     where id::text like 'eeee0006%'
       and (cest is null or cest !~ '^[0-9]{7}$'
-           or cest <> case ncm
+           or cest is distinct from case ncm
                 when '40111000' then '1600100'
                 when '40114000' then '1600300'
                 when '87088000' then '0107500'
@@ -571,7 +571,7 @@ begin
   if (select origem from pecas where id = 'eeee0006-0000-4000-8000-000000000005') <> '2' then
     raise exception 'FALHOU (C): a segunda rodada sobrescreveu o fiscal que a pessoa mudou na peça';
   end if;
-  if (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000005') <> '0107999' then
+  if (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000005') is distinct from '0107999' then
     raise exception 'FALHOU (C): a segunda rodada sobrescreveu o CEST que a pessoa mudou na peça';
   end if;
 end $$;
