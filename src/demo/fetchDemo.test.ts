@@ -5,7 +5,7 @@ import { ENDERECO_DEMO, fetchDemo } from "./fetchDemo";
 // O modo demonstração não pode falar com rede nenhuma. Aqui o `fetch` de
 // verdade é trocado por um que reprova o teste se for chamado: tudo que vai
 // pro endereço de demonstração tem de ser respondido da memória.
-const fetchDeVerdade = vi.fn(async () => {
+const fetchDeVerdade = vi.fn(async (): Promise<Response> => {
   throw new Error("saiu pra rede");
 });
 
@@ -76,6 +76,9 @@ describe("fetch de demonstração", () => {
     await c.from("clientes").delete().eq("id", data![0].id);
     const { data: fim } = await c.from("clientes").select("*").eq("id", data![0].id);
     expect(fim).toEqual([]);
+    // o filtro vale: só a linha apagada saiu, as outras seguem lá
+    const { data: restantes } = await c.from("clientes").select("*").eq("id", "c1");
+    expect(restantes?.length).toBe(1);
   });
 
   it("o total com head:true é o de antes da paginação", async () => {
