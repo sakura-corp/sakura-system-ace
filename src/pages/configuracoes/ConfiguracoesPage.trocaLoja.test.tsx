@@ -21,6 +21,7 @@ vi.mock("@/contexts/AuthContext", () => ({
 const m = vi.hoisted(() => ({
   buscarConfiguracaoFiscal: vi.fn(),
   buscarTextoGarantia: vi.fn(),
+  salvarTextoGarantia: vi.fn(),
 }));
 
 vi.mock("@/lib/configuracoes", async (original) => ({
@@ -31,6 +32,7 @@ vi.mock("@/lib/configuracoes", async (original) => ({
   buscarLinkAvaliacao: vi.fn().mockResolvedValue(null),
   buscarConfiguracaoFiscal: m.buscarConfiguracaoFiscal,
   buscarTextoGarantia: m.buscarTextoGarantia,
+  salvarTextoGarantia: m.salvarTextoGarantia,
 }));
 vi.mock("@/lib/operadores", async (original) => ({
   ...(await original<object>()),
@@ -151,5 +153,27 @@ describe("Configurações: troca de loja no meio da carga", () => {
     await new Promise((r) => setTimeout(r, 30));
     expect(screen.queryByText(/Falha da loja A/)).not.toBeInTheDocument();
     expect(screen.getByText("Texto de garantia")).toBeInTheDocument();
+  });
+
+  it("um salvar lento da loja A que termina depois da troca não recarrega a loja A", async () => {
+    const { a, b } = prepararRespostas();
+    const salvar = adiada<void>();
+    m.salvarTextoGarantia.mockReturnValue(salvar.promessa);
+    const { user, rerender } = renderizar(<ConfiguracoesPage />);
+    a.resolver("Garantia da loja A");
+    await user.click(await screen.findByText("Texto de garantia"));
+    await screen.findByDisplayValue("Garantia da loja A");
+    await user.click(screen.getByRole("button", { name: "Salvar texto" }));
+    expect(m.salvarTextoGarantia).toHaveBeenCalledWith("loja-a", "Garantia da loja A");
+
+    await trocarPraLojaB(rerender);
+    b.resolver("Garantia da loja B");
+    expect(await screen.findByText("Texto de garantia")).toBeInTheDocument();
+
+    // O salvar da loja A termina agora: o recarregar dele não pode virar a
+    // carga mais nova e trazer os dados da loja A pra tela da loja B.
+    salvar.resolver();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(m.buscarTextoGarantia.mock.calls.filter(([id]) => id === "loja-a")).toHaveLength(1);
   });
 });

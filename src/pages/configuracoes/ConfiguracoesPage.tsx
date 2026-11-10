@@ -88,6 +88,8 @@ export function ConfiguracoesPage() {
   // salvar lento) nem começa, senão viraria a carga mais nova.
   const cargaAtual = useRef(0);
   const lojaNaTela = useRef(lojaAtual?.id);
+  // Este efeito precisa ficar ANTES do que chama `carregar()`: o React roda os
+  // dois nessa ordem, e a carga da loja nova só começa se o ref já mudou.
   useEffect(() => {
     lojaNaTela.current = lojaAtual?.id;
   }, [lojaAtual?.id]);
