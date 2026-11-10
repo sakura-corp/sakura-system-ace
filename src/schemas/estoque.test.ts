@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   acharPorCodigoExato,
+  consumoPorDiaDasPecas,
   lerSaldo,
   movimentoDeEstoqueInicial,
   pecaCasaComBusca,
@@ -174,5 +175,66 @@ describe("movimentoDeEstoqueInicial (#720)", () => {
     expect(movimentoDeEstoqueInicial("p-1", null)).toBeNull();
     expect(movimentoDeEstoqueInicial("p-1", 0)).toBeNull();
     expect(movimentoDeEstoqueInicial("p-1", -2)).toBeNull();
+  });
+});
+
+// --- Sugestão de compra (#382, FN-07) --------------------------------------
+
+// Meio-dia em São Paulo é o mesmo dia em UTC: o teste passa nos dois fusos
+// (`npm run test:fusos`) sem depender de onde roda.
+const meioDia = (dia: string) => `${dia}T12:00:00-03:00`;
+const HOJE = "2026-11-10";
+
+describe("consumoPorDiaDasPecas", () => {
+  it("soma as saídas de venda e de uso em OS e divide pelos dias da janela", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 6, criado_em: meioDia(HOJE) },
+        { peca_id: "p1", tipo: "saida", motivo: "uso_em_os", quantidade: 3, criado_em: meioDia("2026-10-01") },
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBe(0.1); // 9 em 90 dias
+  });
+
+  it("ajuste e compra não são consumo", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "ajuste", quantidade: 50, criado_em: meioDia(HOJE) },
+        { peca_id: "p1", tipo: "entrada", motivo: "compra", quantidade: 50, criado_em: meioDia(HOJE) },
+        { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 9, criado_em: meioDia(HOJE) },
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBe(0.1);
+  });
+
+  it("a janela de 90 dias conta hoje: o 90º dia (13/08) entra, o 91º (12/08) não", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [
+        { peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 9, criado_em: meioDia("2026-08-13") },
+        { peca_id: "p2", tipo: "saida", motivo: "venda", quantidade: 9, criado_em: meioDia("2026-08-12") },
+      ],
+      HOJE,
+    );
+    expect(consumo.get("p1")).toBe(0.1);
+    expect(consumo.get("p2") ?? 0).toBe(0);
+  });
+
+  it("movimento com dia depois de hoje fica fora", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [{ peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 9, criado_em: meioDia("2026-11-11") }],
+      HOJE,
+    );
+    expect(consumo.get("p1") ?? 0).toBe(0);
+  });
+
+  it("aceita outra janela", () => {
+    const consumo = consumoPorDiaDasPecas(
+      [{ peca_id: "p1", tipo: "saida", motivo: "venda", quantidade: 6, criado_em: meioDia("2026-11-01") }],
+      HOJE,
+      30,
+    );
+    expect(consumo.get("p1")).toBe(0.2);
   });
 });

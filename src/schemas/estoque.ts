@@ -1,4 +1,5 @@
-import type { NovoMovimentoEstoque } from "@/types/estoque";
+import { diaLocal, diasEntre } from "@/lib/datas";
+import type { MotivoMovimento, NovoMovimentoEstoque, TipoMovimento } from "@/types/estoque";
 
 /**
  * O que o saldo de uma peça está dizendo — em um lugar só.
@@ -158,4 +159,57 @@ export function movimentoDeEstoqueInicial(
     motivo: "ajuste",
     referencia: "Estoque inicial (cadastro do produto)",
   };
+}
+
+// --- Sugestão de compra (#382, FN-07) ------------------------------------
+
+export const DIAS_DE_FOLGA_SUGESTAO = 15;
+export const DIAS_DO_RITMO_DE_SAIDA = 90;
+
+export interface MovimentoParaConsumo {
+  peca_id: string;
+  tipo: TipoMovimento;
+  motivo: MotivoMovimento;
+  quantidade: number;
+  criado_em: string;
+}
+
+/** Os motivos de saída que são a peça indo embora de verdade, pro cliente. */
+const MOTIVOS_DE_CONSUMO: readonly MotivoMovimento[] = ["venda", "uso_em_os"];
+
+/**
+ * Quanto de cada peça sai por dia, na média dos últimos `dias` (contando
+ * hoje). É o "ritmo de saída" que faz a sugestão enxergar a peça que ainda
+ * não chegou no mínimo, mas vai acabar antes da próxima compra.
+ *
+ * Só venda e uso em OS contam. Ajuste NÃO é consumo: é a Contagem corrigindo
+ * um número errado, e contar isso como saída inventaria um ritmo que nunca
+ * existiu (uma contagem que acha 20 pneus a menos faria o sistema sugerir 20
+ * pneus a mais todo mês).
+ *
+ * A janela é por dia de calendário LOCAL (`diaLocal`), não por 90×24 horas
+ * nem pelo dia em UTC: uma venda das 22h do dia 13/08 é do dia 13/08 pra quem
+ * está no balcão, e é assim que ela entra ou sai da janela.
+ *
+ * Divide pelo tamanho da janela inteira, e não pelos dias que tiveram venda:
+ * a pergunta é "quanto sai num dia qualquer", e o dia sem venda também é um
+ * dia. Peça sem saída nenhuma não aparece no mapa (quem lê usa 0).
+ */
+export function consumoPorDiaDasPecas(
+  movimentos: readonly MovimentoParaConsumo[],
+  hoje: string,
+  dias: number = DIAS_DO_RITMO_DE_SAIDA,
+): Map<string, number> {
+  const somaPorPeca = new Map<string, number>();
+  for (const movimento of movimentos) {
+    if (movimento.tipo !== "saida" || !MOTIVOS_DE_CONSUMO.includes(movimento.motivo)) continue;
+    // 0 = hoje, dias−1 = o dia mais antigo da janela. Negativo é dia
+    // depois de hoje (relógio errado de algum computador): fica fora.
+    const diasAtras = diasEntre(diaLocal(movimento.criado_em), hoje);
+    if (diasAtras < 0 || diasAtras > dias - 1) continue;
+    somaPorPeca.set(movimento.peca_id, (somaPorPeca.get(movimento.peca_id) ?? 0) + movimento.quantidade);
+  }
+  const consumo = new Map<string, number>();
+  for (const [pecaId, soma] of somaPorPeca) consumo.set(pecaId, soma / dias);
+  return consumo;
 }
