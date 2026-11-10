@@ -14,6 +14,8 @@
  * 6. Pessoa física sem CPF completo (11 números) avisa que a nota sai sem o
  *    nome dela, sem travar o botão; "Consumidor" e venda sem cliente não
  *    avisam (#950).
+ * 7. Peça com o CFOP que não combina com o CSOSN (5102 + 500) avisa com o
+ *    nome da peça, sem travar o botão (#968).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
@@ -397,5 +399,40 @@ describe("EmitirNotaFiscalModal — pessoa física sem CPF completo (#950)", () 
     clienteDaOrdem.mockReturnValue(null);
     await abrir();
     expect(avisoCpf()).not.toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — CFOP que não combina com o CSOSN (#968)", () => {
+  const pecaCfopErrado = {
+    id: "peca-cfop", descricao: "Pneu 185/65 R15", ncm: "40111000", cfop_padrao: "5102", cst_ou_csosn: "500",
+  } as unknown as Peca;
+  const pecaCfopCerto = {
+    id: "peca-cfop-ok", descricao: "Pneu 195/55 R16", ncm: "40111000", cfop_padrao: "5.405", cst_ou_csosn: "500",
+  } as unknown as Peca;
+
+  beforeEach(() => {
+    buscarDadosFiscaisDasPecas.mockImplementation(async (ids: string[]) =>
+      [pecaCfopErrado, pecaCfopCerto].filter((p) => ids.includes(p.id)),
+    );
+  });
+
+  it("peça com 5102 + CSOSN 500: avisa com o nome da peça e o botão continua liberado", async () => {
+    montar([item("i1", "Pneu 185/65 R15", "peca-cfop")]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(await screen.findByText("Pneu 185/65 R15")).toBeInTheDocument();
+    expect(
+      screen.getByText(/o CFOP 5102 não combina com o CSOSN 500 .*use 5405/),
+    ).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("peça com 5.405 + CSOSN 500: sem aviso do CFOP", async () => {
+    montar([item("i1", "Pneu 195/55 R16", "peca-cfop-ok")]);
+
+    await screen.findByRole("button", { name: "Confirmar emissão" });
+    expect(screen.queryByText(/não combina com o CSOSN/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/código de ICMS ou o CFOP/)).not.toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
   });
 });

@@ -10,6 +10,7 @@ import { importarNotaFiscalCompra } from "@/lib/pedidosCompra";
 import {
   codigoParaPecaImportada,
   csosnMaisUsado,
+  motivoCfopIncompativel,
   motivoCodigoIncompativel,
   regimeUsaCsosn,
 } from "@/schemas/tributacao";
@@ -231,6 +232,19 @@ export function ImportarNotaFiscalXmlModal({
       motivoCodigoIncompativel(item.cst_ou_csosn, regime) !== null,
   );
 
+  // O CFOP da nota vai pro cadastro da peça nova junto com o CSOSN que ela
+  // vai receber; se os dois não combinam, a NFC-e dessa peça volta recusada
+  // (#968). Só aviso: importar continua liberado, e o CFOP não é trocado.
+  // Peça já cadastrada fica de fora: a importação não mexe no que ela tem.
+  function motivoCfopDoItem(item: ItemRevisao): string | null {
+    if (!item.incluir || item.pecaId) return null;
+    return motivoCfopIncompativel(
+      item.cfop_padrao,
+      codigoParaPecaImportada(item.cst_ou_csosn, regime, codigoIcmsNovas),
+      regime,
+    );
+  }
+
   const quantidadeSelecionada =
     itens?.filter((item) => item.incluir && item.quantidadeEditavel > 0).length ?? 0;
 
@@ -373,6 +387,13 @@ export function ImportarNotaFiscalXmlModal({
                         <p className="text-sakura-muted">
                           NCM {item.ncm ?? "—"} · CFOP {item.cfop_padrao ?? "—"}
                         </p>
+                        {motivoCfopDoItem(item) && (
+                          <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-rotulo text-amber-800">
+                            <strong>CFOP:</strong> {motivoCfopDoItem(item)}. A nota fiscal dessa
+                            peça pode ser recusada; dá pra importar assim e acertar depois em
+                            Estoque → Produtos.
+                          </p>
+                        )}
                       </td>
                       <td className="px-2 py-1.5">
                         <Combobox

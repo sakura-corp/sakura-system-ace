@@ -161,8 +161,10 @@ const CFOP_ESPERADO_POR_CSOSN: Record<string, { dentro: string; fora: string; pe
  *
  * Só fala no Simples Nacional (no regime normal o código é CST, e a regra é
  * outra). Fica calado com o regime vazio, e com CFOP ou CSOSN em branco —
- * esses já têm aviso próprio. O CFOP sugerido respeita o estado: CFOP que
- * começa com "6" (venda para outro estado) recebe o par de fora do estado.
+ * esses já têm aviso próprio. A sugestão é sempre o par de dentro do estado
+ * (5102 ou 5405): a NFC-e só aceita CFOP que começa com 5 (Sofia, 09/11/2026,
+ * #968). Por isso o par de fora do estado (6102/6404), mesmo combinando com o
+ * CSOSN, também ganha aviso.
  */
 export function motivoCfopIncompativel(
   cfop: string | null | undefined,
@@ -171,17 +173,18 @@ export function motivoCfopIncompativel(
 ): string | null {
   if (!regimeUsaCsosn(regime)) return null;
 
-  const valorCfop = normalizar(cfop);
+  // Só no CFOP: tira o que não é número ("5.405" vira "5405"). O
+  // `normalizar()` serve também ao CSOSN/CST e fica como está.
+  const valorCfop = normalizar(cfop).replace(/\D/g, "");
   const valorCsosn = normalizar(csosn);
   if (!valorCfop || !valorCsosn) return null;
 
   const esperado = CFOP_ESPERADO_POR_CSOSN[valorCsosn];
   if (!esperado) return null;
-  if (valorCfop === esperado.dentro || valorCfop === esperado.fora) return null;
-
-  const inicio = `o CFOP ${valorCfop} não combina com o CSOSN ${valorCsosn} (${esperado.peca})`;
-  if (valorCfop.startsWith("6")) {
-    return `${inicio}; para venda para outro estado use ${esperado.fora} (dentro do estado, ${esperado.dentro})`;
+  if (valorCfop === esperado.dentro) return null;
+  if (valorCfop === esperado.fora) {
+    return `o CFOP ${valorCfop} é de venda para outro estado, e a NFC-e só aceita CFOP de dentro do estado: use ${esperado.dentro}`;
   }
-  return `${inicio}; para venda dentro do estado use ${esperado.dentro} (para outro estado, ${esperado.fora})`;
+
+  return `o CFOP ${valorCfop} não combina com o CSOSN ${valorCsosn} (${esperado.peca}); use ${esperado.dentro}`;
 }
