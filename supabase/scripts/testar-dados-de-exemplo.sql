@@ -487,13 +487,40 @@ begin
     raise exception 'FALHOU (B16): a peça % saiu com o fiscal errado ou vazio (CSOSN %, CFOP %, origem %)',
       linha.codigo_interno, linha.cst_ou_csosn, linha.cfop_padrao, linha.origem;
   end loop;
+
+  -- B16b. toda peça de exemplo tem CEST (#966: o formulário de peça exige, e
+  -- sem ele editar e salvar uma peça de exemplo dá erro). 7 dígitos, sem
+  -- ponto, e o do NCM da peça (Convênio ICMS 142/2018).
+  for linha in
+    select codigo_interno, ncm, cest from pecas
+    where id::text like 'eeee0006%'
+      and (cest is null or cest !~ '^[0-9]{7}$'
+           or cest <> case ncm
+                when '40111000' then '1600100'
+                when '40114000' then '1600300'
+                when '87088000' then '0107500'
+                when '87083090' then '0107500'
+                when '84818099' then '1007900'
+                when '85129000' then '0105500'
+                when '38190000' then '2806300'
+              end)
+  loop
+    raise exception 'FALHOU (B16b): a peça % (NCM %) saiu com o CEST errado ou vazio: %',
+      linha.codigo_interno, linha.ncm, coalesce(linha.cest, '(vazio)');
+  end loop;
 end $$;
 
 -- B17. O fiscal da peça nunca é sobrescrito (#957): a pessoa mudou a origem
 -- de uma peça e apagou o CFOP. Rodar o exemplo de novo devolve só o CFOP e
 -- deixa a origem dela. (Antes do retrato, pra auditoria já contar essas linhas;
 -- a parte C confere que a origem continua a dela.)
-update pecas set origem = '2', cfop_padrao = '' where id = 'eeee0006-0000-4000-8000-000000000005';
+--
+-- B17b. O mesmo com o CEST (#966): na mesma peça (que o exemplo vai pegar,
+-- por causa do CFOP apagado) a pessoa trocou o CEST, e numa outra apagou.
+-- Rodar de novo devolve só o apagado e deixa o dela.
+update pecas set origem = '2', cfop_padrao = '', cest = '0107999'
+ where id = 'eeee0006-0000-4000-8000-000000000005';
+update pecas set cest = ' ' where id = 'eeee0006-0000-4000-8000-000000000007';
 \ir ../exemplo/dados-de-exemplo.sql
 do $$
 declare linha record;
@@ -503,6 +530,14 @@ begin
   if linha.origem is distinct from '2' or linha.cfop_padrao is distinct from '5102'
      or linha.cst_ou_csosn is distinct from '102' then
     raise exception 'FALHOU (B17): a peça mudada pela pessoa saiu com %', row_to_json(linha);
+  end if;
+  if (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000005') is distinct from '0107999' then
+    raise exception 'FALHOU (B17b): o exemplo sobrescreveu o CEST que a pessoa mudou (ficou %)',
+      (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000005');
+  end if;
+  if (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000007') is distinct from '0107500' then
+    raise exception 'FALHOU (B17b): o CEST apagado pela pessoa não voltou (ficou %)',
+      coalesce((select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000007'), '(vazio)');
   end if;
 end $$;
 
@@ -535,6 +570,9 @@ begin
   end if;
   if (select origem from pecas where id = 'eeee0006-0000-4000-8000-000000000005') <> '2' then
     raise exception 'FALHOU (C): a segunda rodada sobrescreveu o fiscal que a pessoa mudou na peça';
+  end if;
+  if (select cest from pecas where id = 'eeee0006-0000-4000-8000-000000000005') <> '0107999' then
+    raise exception 'FALHOU (C): a segunda rodada sobrescreveu o CEST que a pessoa mudou na peça';
   end if;
 end $$;
 
