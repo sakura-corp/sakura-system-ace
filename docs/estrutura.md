@@ -37,8 +37,8 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
     (guarda de rota por módulo), `VersaoApp.tsx`, `BotaoVoltar.tsx`, `BotaoWhatsapp.tsx`.
 - **`src/hooks/`**: `useEnterParaProximoCampo`, `useLimparDataAoApagar` (item 27),
   `useNaoMexerNoNumeroSemDigitar` (item 41), `useRascunhoFormulario` (rascunho salvo a cada 30 s;
-  `useRascunho` junta salvar e restaurar) e `useSituacaoDoEsquema` (compara a versão do banco com a
-  esperada, `TR-05.7`).
+  `useRascunho` junta salvar e restaurar), `useSituacaoDoEsquema` (compara a versão do banco com a
+  esperada, `TR-05.7`) e `useListaPaginada` (a lista por página, ver "Lista que pode crescer").
 - **`src/lib/`**: uma por entidade, com o acesso ao Supabase (`listar`, `criar`, `excluir`…); toda
   tabela que é por loja recebe `lojaId` explícito. E a infraestrutura:
   - `supabase.ts` + `conexao.ts` (com qual banco este computador fala), `errors.ts`
@@ -151,6 +151,12 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   linhas, sem erro. Lista inteira → `buscarTudoEmPaginas`; filtro por lista de ids (`.in`) →
   `buscarPorIdsEmBlocos` (blocos de 100 ids, senão o endereço fica grande demais). As duas pedem
   ordem total (último `.order()` em `id`). #509 e #498.
+  **Lista que a pessoa vê e que cresce** (Clientes desde a #373; as outras entram uma tela por vez):
+  `useListaPaginada` (`src/hooks/`). A tela passa uma função que pede ao banco **uma página**
+  (`.range(de, ate)`, `.order()` terminando em `id`, o filtro e a busca no servidor, e
+  `count: "exact"` pro total); o gancho cuida da página, da ordem guardada por tela, da espera da
+  busca e de só gravar a resposta mais nova (#903). Modelo: `listarClientesPagina` em
+  `lib/clientes.ts` (inclusive como escapar a busca dentro do `.or()`) e `ClientesPage.tsx`.
 - **Nunca `window.prompt()`**: o Electron não suporta. `alert()` e `confirm()` funcionam.
 - Toda tabela nova precisa de RLS e policy (item 1 da seção 6).
 - Valor padrão a partir de `import.meta.env.VITE_*`: usar `||`, nunca `??`. O Vite injeta variável

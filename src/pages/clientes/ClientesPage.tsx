@@ -3,11 +3,15 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
+import { useListaPaginada, type OrdemDaLista } from "@/hooks/useListaPaginada";
 import {
   atualizarCliente,
+  COLUNAS_DA_LISTA_DE_CLIENTES,
   criarCliente,
   excluirCliente,
   listarClientes,
+  listarClientesPagina,
+  type ColunaDaListaDeClientes,
 } from "@/lib/clientes";
 import { listarOrdensFaturadasDosClientes } from "@/lib/clientesSumidos";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
@@ -35,10 +39,21 @@ import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
 const MESES_PADRAO = 6;
 
+const ORDEM_PADRAO = { coluna: "nome" as const, crescente: true };
+
 export function ClientesPage() {
   const { operador, lojaAtual } = useAuth();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  // A lista principal vem do banco uma página por vez, já ordenada e
+  // filtrada lá (#373, TR-03.5).
+  const lista = useListaPaginada<Cliente, ColunaDaListaDeClientes>({
+    chave: "clientes",
+    buscarPagina: listarClientesPagina,
+    ordemPadrao: ORDEM_PADRAO,
+    colunas: COLUNAS_DA_LISTA_DE_CLIENTES,
+  });
+  // O filtro "sumiram" ainda precisa de TODOS os clientes (cruza com as OS),
+  // e só é buscado quando a pessoa liga a caixinha.
+  const [todosClientes, setTodosClientes] = useState<Cliente[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Cliente | null>(null);
   const caixaDoFormulario = useRolarAteOFormulario(
@@ -67,15 +82,21 @@ export function ClientesPage() {
   const meses = Number(textoMeses) >= 1 ? Math.floor(Number(textoMeses)) : MESES_PADRAO;
 
   const sumidos = useMemo(
-    () => (ordens ? clientesSumidos(clientes, resumirPorCliente(ordens), hojeLocal(), meses) : []),
-    [clientes, ordens, meses],
+    () =>
+      ordens ? clientesSumidos(todosClientes, resumirPorCliente(ordens), hojeLocal(), meses) : [],
+    [todosClientes, ordens, meses],
   );
 
   async function carregarSumidos() {
     setCarregandoSumidos(true);
     setErro(null);
     try {
-      setOrdens(await listarOrdensFaturadasDosClientes());
+      const [clientes, ordensCarregadas] = await Promise.all([
+        listarClientes(),
+        listarOrdensFaturadasDosClientes(),
+      ]);
+      setTodosClientes(clientes);
+      setOrdens(ordensCarregadas);
     } catch (err) {
       console.error("Erro ao carregar os clientes que sumiram:", err);
       setErro(mensagemDeErro(err));
@@ -128,22 +149,22 @@ export function ClientesPage() {
     });
   }
 
+  // A loja tem cliente (ou a pessoa está buscando): mostra a busca e o filtro.
+  const temClientes = lista.total > 0 || lista.buscaDaTela !== "" || lista.busca !== "";
+
+  // Depois de salvar ou excluir: a página atual da lista e, se o filtro
+  // "sumiram" já foi usado, a lista completa dele também.
   async function carregar() {
-    setCarregando(true);
-    setErro(null);
-    try {
-      setClientes(await listarClientes());
-    } catch (err) {
-      console.error("Erro ao carregar clientes:", err);
-      setErro(mensagemDeErro(err));
-    } finally {
-      setCarregando(false);
+    lista.recarregar();
+    if (ordens !== null) {
+      try {
+        setTodosClientes(await listarClientes());
+      } catch (err) {
+        console.error("Erro ao recarregar os clientes:", err);
+        setErro(mensagemDeErro(err));
+      }
     }
   }
-
-  useEffect(() => {
-    carregar();
-  }, []);
 
   async function handleSalvar(cliente: NovoCliente, veiculos: VeiculoFormulario[]) {
     if (formulario && formulario !== "novo") {
@@ -210,13 +231,13 @@ export function ClientesPage() {
         </div>
       )}
 
-      {erro && (
+      {(erro || lista.erro) && (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
+          {erro || lista.erro}
         </p>
       )}
 
-      {!formulario && clientes.length > 0 && (
+      {!formulario && temClientes && (
         <div className="sakura-card flex flex-wrap items-center gap-x-3 gap-y-2 p-4">
           <label className="flex items-center gap-2 text-corpo">
             <input
@@ -249,7 +270,19 @@ export function ClientesPage() {
         </div>
       )}
 
-      {carregando || (soSumidos && carregandoSumidos) ? (
+      {temClientes && !soSumidos && (
+        <input
+          type="search"
+          value={lista.busca}
+          onChange={(e) => lista.setBusca(e.target.value)}
+          placeholder="Buscar por nome, telefone ou CPF/CNPJ"
+          aria-label="Buscar cliente"
+          className="w-full max-w-md rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+        />
+      )}
+
+      {(lista.carregando && lista.linhas.length === 0 && !soSumidos) ||
+      (soSumidos && carregandoSumidos) ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
       ) : soSumidos && ordens ? (
         sumidos.length === 0 ? (
@@ -322,56 +355,96 @@ export function ClientesPage() {
             </table>
           </div>
         )
-      ) : clientes.length === 0 ? (
+      ) : lista.total === 0 ? (
         <p className="text-corpo text-sakura-muted">
-          Nenhum cliente cadastrado ainda.
+          {lista.buscaDaTela
+            ? `Nenhum cliente encontrado com "${lista.buscaDaTela}".`
+            : "Nenhum cliente cadastrado ainda."}
         </p>
       ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Telefone</th>
-                <th className="px-4 py-3 font-medium">Cidade/UF</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((cliente) => (
-                <tr key={cliente.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{cliente.nome}</td>
-                  <td className="px-4 py-3">{cliente.telefone || "—"}</td>
-                  <td className="px-4 py-3">
-                    {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <AcoesDaLinha
-                      descricao={`o cliente ${cliente.nome}`}
-                      acoes={[
-                        ...(cliente.veiculos && cliente.veiculos.length > 0
-                          ? [
-                              {
-                                tipo: "texto" as const,
-                                rotulo: "Ver veículos",
-                                aoClicar: () => setVeiculosDe(cliente),
-                              },
-                            ]
-                          : []),
-                        { tipo: "editar", aoClicar: () => setFormulario(cliente) },
-                        {
-                          tipo: "menu",
-                          rotulo: "Excluir cliente",
-                          perigosa: true,
-                          aoClicar: () => handleExcluir(cliente.id),
-                        },
-                      ]}
-                    />
-                  </td>
+        <div className="space-y-3">
+          <div
+            className={`overflow-x-auto sakura-card ${lista.carregando ? "opacity-60" : ""}`}
+            aria-busy={lista.carregando}
+          >
+            <table className="w-full text-left text-corpo">
+              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <tr>
+                  <CabecalhoOrdenavel
+                    coluna="nome"
+                    rotulo="Nome"
+                    ordem={lista.ordem}
+                    aoClicar={lista.trocarOrdem}
+                  />
+                  <th className="px-4 py-3 font-medium">Telefone</th>
+                  <CabecalhoOrdenavel
+                    coluna="cidade"
+                    rotulo="Cidade/UF"
+                    ordem={lista.ordem}
+                    aoClicar={lista.trocarOrdem}
+                  />
+                  <th className="px-4 py-3" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {lista.linhas.map((cliente) => (
+                  <tr key={cliente.id} className="border-t border-sakura-gray/20">
+                    <td className="px-4 py-3">{cliente.nome}</td>
+                    <td className="px-4 py-3">{cliente.telefone || "—"}</td>
+                    <td className="px-4 py-3">
+                      {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <AcoesDaLinha
+                        descricao={`o cliente ${cliente.nome}`}
+                        acoes={[
+                          ...(cliente.veiculos && cliente.veiculos.length > 0
+                            ? [
+                                {
+                                  tipo: "texto" as const,
+                                  rotulo: "Ver veículos",
+                                  aoClicar: () => setVeiculosDe(cliente),
+                                },
+                              ]
+                            : []),
+                          { tipo: "editar", aoClicar: () => setFormulario(cliente) },
+                          {
+                            tipo: "menu",
+                            rotulo: "Excluir cliente",
+                            perigosa: true,
+                            aoClicar: () => handleExcluir(cliente.id),
+                          },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-corpo text-sakura-muted">
+              Mostrando {numero(lista.primeira)} a {numero(lista.ultima)} de {numero(lista.total)}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={lista.anterior}
+                disabled={!lista.temAnterior}
+                className="rounded-lg border border-sakura-borda-campo px-4 py-2 text-corpo text-sakura-purple-dark hover:bg-sakura-pink-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={lista.proxima}
+                disabled={!lista.temProxima}
+                className="rounded-lg border border-sakura-borda-campo px-4 py-2 text-corpo text-sakura-purple-dark hover:bg-sakura-pink-soft disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -379,5 +452,42 @@ export function ClientesPage() {
         <VeiculosDoClienteModal cliente={veiculosDe} onFechar={() => setVeiculosDe(null)} />
       )}
     </div>
+  );
+}
+
+function numero(n: number): string {
+  return n.toLocaleString("pt-BR");
+}
+
+/** Um cabeçalho que ordena a tabela inteira (no banco) ao ser clicado. */
+function CabecalhoOrdenavel({
+  coluna,
+  rotulo,
+  ordem,
+  aoClicar,
+}: {
+  coluna: ColunaDaListaDeClientes;
+  rotulo: string;
+  ordem: OrdemDaLista<ColunaDaListaDeClientes>;
+  aoClicar: (coluna: ColunaDaListaDeClientes) => void;
+}) {
+  const ativa = ordem.coluna === coluna;
+  return (
+    <th
+      className="px-4 py-3 font-medium"
+      aria-sort={ativa ? (ordem.crescente ? "ascending" : "descending") : "none"}
+    >
+      <button
+        type="button"
+        onClick={() => aoClicar(coluna)}
+        title={`Ordenar por ${rotulo}`}
+        className="inline-flex items-center gap-1 font-medium hover:underline"
+      >
+        {rotulo}
+        <span aria-hidden="true" className={ativa ? "" : "opacity-30"}>
+          {ativa && !ordem.crescente ? "▼" : "▲"}
+        </span>
+      </button>
+    </th>
   );
 }
