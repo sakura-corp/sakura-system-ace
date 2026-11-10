@@ -37,6 +37,8 @@ export interface ResultadoImportacao {
   loteId: string;
   clientesCriados: number;
   veiculosCriados: number;
+  /** Tudo entrou, mas os números do lote não foram gravados (a lista de importações mostra 0). */
+  avisoNumerosDoLote?: true;
 }
 
 /**
@@ -109,7 +111,12 @@ export async function importarClientes(
     .from("importacao_lotes")
     .update({ clientes_criados: clientesCriados, veiculos_criados: veiculosCriados })
     .eq("id", loteId);
-  if (erroFinal) throw erroFinal;
+  // Tudo já entrou: falhar aqui faria a tela oferecer "Confirmar" de novo e
+  // duplicar. Então devolve o resultado, com o aviso.
+  if (erroFinal) {
+    console.error("Erro ao gravar os números do lote:", erroFinal);
+    return { loteId, clientesCriados, veiculosCriados, avisoNumerosDoLote: true };
+  }
 
   return { loteId, clientesCriados, veiculosCriados };
 }

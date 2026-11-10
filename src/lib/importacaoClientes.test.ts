@@ -14,6 +14,7 @@ let chamadas: Chamada[] = [];
 let leituras: Record<string, (faixa: [number, number]) => unknown[]> = {};
 let falharNaInsercaoDe: { tabela: string; numero: number } | null = null;
 let insercoesFeitas: Record<string, number> = {};
+let falharNoUpdateDoLote = false;
 const rpc = vi.fn();
 
 function construtor(tabela: string) {
@@ -49,7 +50,7 @@ function construtor(tabela: string) {
         resposta = { data: null, error: null };
       }
     } else if (c.operacao === "update") {
-      resposta = { data: null, error: null };
+      resposta = { data: null, error: falharNoUpdateDoLote ? { message: "sem rede" } : null };
     } else {
       resposta = { data: (leituras[tabela] ?? (() => []))(c.faixa ?? [0, 0]), error: null };
     }
@@ -90,6 +91,7 @@ beforeEach(() => {
   leituras = {};
   falharNaInsercaoDe = null;
   insercoesFeitas = {};
+  falharNoUpdateDoLote = false;
   rpc.mockReset();
 });
 
@@ -159,6 +161,19 @@ describe("importarClientes", () => {
     // o que já tinha entrado fica contado no lote
     const upd = doTipo("importacao_lotes", "update");
     expect(upd[0].dados).toMatchObject({ clientes_criados: 500 });
+  });
+});
+
+describe("importarClientes: só o número final do lote falha", () => {
+  it("tudo entrou: devolve o resultado normal com o aviso, sem lançar erro", async () => {
+    falharNoUpdateDoLote = true;
+    const r = await lib.importarClientes([grupo("Ana", ["AAA1A11"])], { nomeArquivo: "a.csv", totalLinhas: 1 });
+    expect(r).toEqual({ loteId: "lote-1", clientesCriados: 1, veiculosCriados: 1, avisoNumerosDoLote: true });
+  });
+
+  it("sem falha, o aviso não aparece", async () => {
+    const r = await lib.importarClientes([grupo("Ana", ["AAA1A11"])], { nomeArquivo: "a.csv", totalLinhas: 1 });
+    expect(r.avisoNumerosDoLote).toBeUndefined();
   });
 });
 
