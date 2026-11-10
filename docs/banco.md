@@ -630,6 +630,13 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
   o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
+- `0083`: **os lotes da importação por planilha e o "desfazer"** (tarefa #457, FN-15 parte 1).
+  Tabela nova `importacao_lotes`, a coluna `importacao_lote_id` em `clientes` e `veiculos`, e a
+  função `desfazer_importacao` (ver a seção das tabelas). Também **dois índices que faltavam**:
+  `ordens_servico (veiculo_id)` e `contas_receber (cliente_id)` — sem eles, apagar um veículo lia
+  todas as OS (pra cumprir o `on delete set null`); com 2.000 importados contra 20 mil OS, o
+  desfazer caiu de 2,3 s pra 0,27 s. Só soma: sobe **antes** da versão, sem
+  `versao-minima-do-programa`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -719,11 +726,14 @@ outro projeto Supabase do zero (ver seção 9).
   do cadastro e das listas de escolha, e a NFC-e nunca leva documento dele): id, nome (vira "Razão social" na tela quando `tipo_pessoa` é jurídica, mesmo
   campo), tipo_pessoa (`fisica`/`juridica`, default `fisica`), cpf_cnpj (rótulo muda pra "CPF" ou
   "CNPJ" conforme o tipo), telefone, email, cep, rua, numero, bairro, cidade, uf,
-  data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em
+  data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em,
+  importacao_lote_id (FK `importacao_lotes`, opcional, `on delete set null` — desde a `0083`: o
+  lote da planilha de onde o cliente veio; vazio no cadastro feito à mão)
 - **`veiculos`** (desde a `0069`, só com o módulo Clientes; sem ele, pela view
   `veiculos_janela`): id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
   (`hatch`/`sedan`/`suv`/`picape`/`moto`, opcional — usado só pra escolher o ícone certo na seção
-  "Veículos no pátio" do Início), km_atual, criado_em
+  "Veículos no pátio" do Início), km_atual, criado_em, importacao_lote_id (como em `clientes`,
+  desde a `0083`)
 - **`pecas`** (desde a `0074`, lida só com Estoque, Relações ou Funcionários; sem eles, pela view
   `pecas_janela`, sem o custo): id, codigo_interno (exibido como "Referência"), codigo_barras, descricao, marca,
   modelo, aplicacao, unidade, preco_custo, preco_venda, ncm, cest, cfop_padrao, origem,
@@ -933,6 +943,24 @@ outro projeto Supabase do zero (ver seção 9).
   `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
   "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
   RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
+- **`importacao_lotes`** (migration `0083`, #457): id, tipo (`clientes`; as partes 2 e 3 da
+  importação somam tipos na trava `ck_importacao_lotes_tipo`), nome_arquivo, operador_id (quem
+  importou, `default auth.uid()`), criado_em, total_linhas, clientes_criados, veiculos_criados,
+  desfeito_em, desfeito_por. **Cada importação de planilha é um lote**, sem `loja_id` (clientes e
+  veículos são da empresa toda); `clientes` e `veiculos` guardam o lote em `importacao_lote_id`.
+  **RLS: só o administrador com o módulo Clientes** lê, cria e altera (decisão 3 da Sofia); o lote
+  nasce sempre em nome de quem está logado; **ninguém apaga lote** (sem policy de delete, lacuna
+  declarada na matriz). **Desfazer é pela função `desfazer_importacao(p_lote)`** (`security
+  definer`, só admin com Clientes): apaga os veículos e clientes do lote que não estão em uso,
+  marca `desfeito_em`/`desfeito_por` e devolve
+  `{ veiculos_apagados, clientes_apagados, mantidos: [{ tipo, id, nome, motivo }] }`. Fica (com o
+  motivo em português): veículo ou cliente que alguma tabela aponta (OS, conta a receber, e
+  **qualquer chave futura**: a lista vem do `pg_constraint`, não escrita na função), cliente com
+  veículo de fora do lote, cliente cujo veículo do lote ficou. É `definer` porque a conferência
+  precisa ver as OS de **todas** as lojas: com `invoker`, um admin de uma loja só não veria a OS da
+  outra, e o `on delete set null` de `ordens_servico.veiculo_id` deixaria essa OS sem veículo,
+  calado (medido no teste, checagem 7c). Teste em `supabase/scripts/testar-importacao.sql`, com 16
+  mutações vistas reprovar (anotadas no PR da #457).
 - **`whatsapp_mensagens`** (migration `0052`): id, loja_id, chave, referencia (o id do que
   motivou a mensagem — conta a receber, OS, pedido —, texto e sem FK de propósito, porque aponta
   pra tabelas diferentes conforme a chave), destino, operador_id, criado_em. Registra que a

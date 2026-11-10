@@ -63,6 +63,15 @@ veiculos,insert,1,1,0,0,0,
 veiculos,update,2,2,0,0,0,
 veiculos,delete,2,2,0,0,0,
 #
+# Os lotes de importação da planilha de clientes (0083, #457): só o
+# administrador com o módulo Clientes (decisão 3 da Sofia: importar é gravação
+# em massa de dado pessoal). Ninguém apaga lote — o histórico fica e o
+# "desfazer" é pela função desfazer_importacao, testada em testar-importacao.sql.
+importacao_lotes,select,2,2,0,0,0,só admin com o módulo Clientes
+importacao_lotes,insert,1,1,0,0,0,e só em nome de quem está logado
+importacao_lotes,update,2,2,0,0,0,
+importacao_lotes,delete,0,0,0,0,0,ninguém apaga lote: desfazer é pela função
+#
 # As views da 0068. Como a funcionarios_publico, rodam com os direitos do dono:
 # o 2,2,2,0,0 da leitura é o where (operador ativo com alguma loja) escrito
 # dentro delas — o órfão fica de fora. As escritas zeradas são o revoke.
