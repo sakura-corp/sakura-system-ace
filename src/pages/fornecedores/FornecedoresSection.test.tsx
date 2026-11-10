@@ -44,10 +44,10 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = rolar;
 });
 
-function montar() {
+function montar(fornecedores: Fornecedor[] = [DISTRIBUIDORA]) {
   return renderizar(
     <FornecedoresSection
-      fornecedores={[DISTRIBUIDORA]}
+      fornecedores={fornecedores}
       onRecarregar={vi.fn().mockResolvedValue(undefined)}
     />,
   );
@@ -71,5 +71,18 @@ describe("FornecedoresSection — abrir o formulário rola até ele (#969)", () 
     const formulario = container.querySelector("form")!;
     expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
     expect(rolar).toHaveBeenCalled();
+  });
+
+  it("trocar de canetinha com o formulário aberto abre o outro, com os dados dele", async () => {
+    // A lista fica na tela com o formulário aberto. Antes, o formulário não
+    // trocava os valores: subia até ele com os dados do anterior, e salvar
+    // gravava esses dados no fornecedor novo.
+    const outro: Fornecedor = { ...DISTRIBUIDORA, id: "f-2", nome: "Atacado Segundo" };
+    const { user } = montar([DISTRIBUIDORA, outro]);
+    await user.click(screen.getByRole("button", { name: /^Editar .*Distribuidora Exemplo/ }));
+    await user.click(screen.getByRole("button", { name: /^Editar .*Atacado Segundo/ }));
+
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Atacado Segundo"));
+    expect(screen.queryByDisplayValue("Distribuidora Exemplo")).toBeNull();
   });
 });

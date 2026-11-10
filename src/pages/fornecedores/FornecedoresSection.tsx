@@ -73,8 +73,12 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
       )}
 
       {formulario && (
-        <div ref={caixaDoFormulario}>
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
+          {/* key: a lista fica na tela com o formulário aberto, e sem ela trocar
+              de canetinha mantinha os valores do anterior (defaultValues só
+              valem na montagem); salvar gravava esses dados no outro (#969). */}
           <FornecedorForm
+            key={formulario === "novo" ? "novo" : formulario.id}
             fornecedorExistente={formulario === "novo" ? undefined : formulario}
             onSalvar={handleSalvar}
             onCancelar={() => setFormulario(null)}

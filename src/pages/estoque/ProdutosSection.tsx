@@ -255,7 +255,7 @@ export function ProdutosSection({
       )}
 
       {mostrarFormulario && (
-        <div ref={caixaDoFormulario}>
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
         {/* key: sem ela o formulário não troca os valores ao abrir outra peça
             (defaultValues só valem na montagem), p.ex. pelo "Abrir a que já existe". */}
         <PecaForm

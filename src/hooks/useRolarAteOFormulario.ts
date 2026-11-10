@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 
-const SELETOR_PRIMEIRO_CAMPO =
-  "input:not([type=hidden]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
+// O primeiro campo de DIGITAR: botão de opção e caixinha de marcar ficam de
+// fora. No Clientes o "Pessoa física" vem antes do Nome, e com o cursor nele
+// quem começa a digitar não escreve nada (e o espaço marcaria "física").
+const SELETOR_PRIMEIRO_CAMPO = [
+  "input:not([type=hidden]):not([type=radio]):not([type=checkbox]):not(:disabled):not([readonly])",
+  "select:not(:disabled)",
+  "textarea:not(:disabled)",
+].join(", ");
 
 /**
  * Quando o formulário de cadastro abre (canetinha de editar ou "+ Novo"), rola
@@ -15,7 +21,8 @@ const SELETOR_PRIMEIRO_CAMPO =
  * `chave` diz qual formulário está aberto: `null`/`undefined`/`false` = fechado;
  * qualquer outro valor (o id do item, ou "novo") = aberto. Trocar a chave com
  * o formulário já aberto (o "Abrir a que já existe" do Estoque) rola de novo.
- * O ref devolvido vai numa caixa em volta do formulário.
+ * O ref devolvido vai numa caixa em volta do formulário (com `scroll-mt-4`,
+ * pra sobrar a folga do topo da área rolável depois de rolar).
  *
  * O `scrollIntoView` acha sozinho a área que rola de verdade (no app é a
  * `AreaRolavel`, não a janela). Aqui ele é seguro: estas telas não têm barra

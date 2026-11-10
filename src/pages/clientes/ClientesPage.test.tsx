@@ -224,18 +224,16 @@ describe("ClientesPage — trocar de loja com o filtro ligado", () => {
  * abria fora da vista e parecia que o clique não tinha feito nada.
  */
 describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
-  const SELETOR_CAMPO =
-    "input:not([type=hidden]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
-
   it("a canetinha pede a rolagem e põe o foco no primeiro campo do formulário", async () => {
     const rolar = vi.fn();
     Element.prototype.scrollIntoView = rolar;
     const { user, container } = renderizar(<ClientesPage />);
     await user.click(await screen.findByRole("button", { name: /^Editar .*Cliente Pouco/ }));
 
-    const formulario = container.querySelector("form")!;
-    expect(formulario).toBeTruthy();
-    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    expect(container.querySelector("form")).toBeTruthy();
+    // O cursor vai pro Nome (onde se digita), não pro "Pessoa física" que vem
+    // antes dele: digitando ali, nada seria escrito.
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Cliente Pouco"));
     expect(rolar).toHaveBeenCalled();
   });
 
@@ -247,7 +245,10 @@ describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
     await user.click(screen.getByRole("button", { name: /^\+ Novo/ }));
 
     const formulario = container.querySelector("form")!;
-    expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
+    const foco = document.activeElement as HTMLInputElement;
+    expect(formulario.contains(foco)).toBe(true);
+    expect(foco.tagName).toBe("INPUT");
+    expect(foco.type).toBe("text");
     expect(rolar).toHaveBeenCalled();
   });
 });

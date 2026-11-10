@@ -196,7 +196,7 @@ export function ClientesPage() {
       </header>
 
       {formulario && (
-        <div ref={caixaDoFormulario}>
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
           <ClienteForm
             clienteExistente={formulario === "novo" ? undefined : formulario}
             onSalvar={handleSalvar}

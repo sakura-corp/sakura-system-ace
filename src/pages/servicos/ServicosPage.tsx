@@ -27,9 +27,10 @@ export function ServicosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
-  const caixaDoFormulario = useRolarAteOFormulario(
-    servicoEditando?.id ?? (mostrarFormulario ? "novo" : null),
-  );
+  // Uma caixa pra cada formulário: os dois podem estar abertos juntos, e o
+  // cursor vai pro que acabou de abrir.
+  const caixaDoNovo = useRolarAteOFormulario(mostrarFormulario ? "novo" : null);
+  const caixaDaEdicao = useRolarAteOFormulario(servicoEditando?.id ?? null);
 
   async function carregar() {
     setCarregando(true);
@@ -110,25 +111,29 @@ export function ServicosPage() {
         )}
       </header>
 
-      {(mostrarFormulario || servicoEditando) && (
-        <div ref={caixaDoFormulario} className="space-y-6">
-          {mostrarFormulario && (
-            <ServicoForm
-              categorias={categorias}
-              onSalvar={handleSalvar}
-              onCancelar={() => setMostrarFormulario(false)}
-            />
-          )}
+      {mostrarFormulario && (
+        <div ref={caixaDoNovo} className="scroll-mt-4">
+          <ServicoForm
+            categorias={categorias}
+            onSalvar={handleSalvar}
+            onCancelar={() => setMostrarFormulario(false)}
+          />
+        </div>
+      )}
 
-          {servicoEditando && (
-            <ServicoForm
-              categorias={categorias}
-              servicoExistente={servicoEditando}
-              onSalvar={handleSalvar}
-              onSalvarEdicao={handleSalvarEdicao}
-              onCancelar={() => setServicoEditando(null)}
-            />
-          )}
+      {servicoEditando && (
+        <div ref={caixaDaEdicao} className="scroll-mt-4">
+          {/* key: a lista fica na tela com o formulário aberto, e sem ela trocar
+              de canetinha mantinha os valores do anterior (defaultValues só
+              valem na montagem); salvar gravava esses dados no outro (#969). */}
+          <ServicoForm
+            key={servicoEditando.id}
+            categorias={categorias}
+            servicoExistente={servicoEditando}
+            onSalvar={handleSalvar}
+            onSalvarEdicao={handleSalvarEdicao}
+            onCancelar={() => setServicoEditando(null)}
+          />
         </div>
       )}
 

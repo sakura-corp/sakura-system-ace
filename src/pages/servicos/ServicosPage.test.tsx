@@ -66,4 +66,29 @@ describe("ServicosPage — abrir o formulário rola até ele (#969)", () => {
     expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
     expect(rolar).toHaveBeenCalled();
   });
+
+  it("trocar de canetinha com a edição aberta abre o outro, com os dados dele", async () => {
+    // A lista fica na tela com o formulário aberto. Antes, o formulário não
+    // trocava os valores, e salvar gravava os dados do anterior no outro.
+    listarServicos.mockResolvedValue([
+      ALINHAMENTO,
+      { ...ALINHAMENTO, id: "s-2", descricao: "Balanceamento" },
+    ]);
+    const { user } = renderizar(<ServicosPage />);
+    await user.click(await screen.findByRole("button", { name: /^Editar .*Alinhamento/ }));
+    await user.click(screen.getByRole("button", { name: /^Editar .*Balanceamento/ }));
+
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Balanceamento"));
+    expect(screen.queryByDisplayValue("Alinhamento")).toBeNull();
+  });
+
+  it("com o \"+ Novo\" aberto, a canetinha leva o cursor pra edição, não pro Novo", async () => {
+    const { user } = renderizar(<ServicosPage />);
+    await screen.findByText("Alinhamento");
+    await user.click(screen.getByRole("button", { name: "+ Novo serviço" }));
+    // A lista continua na tela com o Novo aberto.
+    await user.click(screen.getByRole("button", { name: /^Editar .*Alinhamento/ }));
+
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Alinhamento"));
+  });
 });
