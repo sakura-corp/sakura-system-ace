@@ -21,6 +21,24 @@ O `.env` só vale no `npm run dev`; o programa instalado pede a conexão na prim
 7). **Quem é da equipe não usa o banco de verdade** (ver `EQUIPE.md` no privado); o painel nem
 usa banco.
 
+### Mostrar o sistema a um cliente: o modo demonstração (FN-14, #384)
+
+Abre o programa inteiro com **dados inventados** (a "Auto Center Modelo"), com a faixa
+"MODO DEMONSTRAÇÃO · nada aqui é de verdade" no topo, **sem falar com banco nenhum** nem com a
+Focus NFe. Pra apresentar sem abrir a Pneus Amigão.
+
+- **No programa instalado**: num computador **sem** banco configurado (um notebook só pra isso), a
+  tela de conexão aparece. Digitar `demo` no endereço → "Entrar na demonstração". Não pede chave e
+  não grava nada. Vale até fechar o programa: ao abrir de novo, volta pra tela de conexão. No
+  computador da loja a tela de conexão não aparece, então a loja nunca vê o modo.
+- **Em desenvolvimento**: `npm run dev:demo` abre já em demonstração, mesmo com o `.env`.
+- **O que dá pra fazer**: andar por todas as telas, abrir e salvar OS, faturar. O que se salva fica
+  só na memória e some ao fechar. **Emitir nota** (e qualquer Edge Function) só mostra o aviso
+  "No modo demonstração não sai nota."
+- **Como funciona**: o cliente do Supabase é criado com um `fetch` de mentira (`src/demo/fetchDemo.ts`)
+  que responde da memória (`src/demo/dados.ts`, os mesmos dados das imagens do site). A CSP do
+  programa não muda. O `npm run test:electron` prova que nada vai pra `*.supabase.co` nem pra Focus.
+
 ### Em que versão está o banco de cada empresa
 
 **Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0075` aplicadas** (a `0076` espera os computadores
