@@ -148,4 +148,31 @@ describe("CentralDoDia", () => {
       expect(screen.getByTestId("local")).toHaveTextContent('/ordens-servico{"abrirOrdemId":"os-9"}'),
     );
   });
+
+  describe("estoque baixo", () => {
+    const PECA_BAIXA = { id: "p1", descricao: "Pneu 175/70", estoque_minimo: 5, ativo: true, unidade: "UN" };
+    beforeEach(() => {
+      listarPecas.mockResolvedValue([PECA_BAIXA]);
+      listarSaldos.mockResolvedValue(new Map([["p1", 1]]));
+    });
+
+    it("com Fornecedores: o botão abre a aba Sugestão de compra", async () => {
+      operador = { id: "op", admin: false, permissoes: ["estoque", "fornecedores"] };
+      montar();
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Sugestão de compra" }));
+      await waitFor(() =>
+        expect(screen.getByTestId("local")).toHaveTextContent('/fornecedores{"aba":"sugestao"}'),
+      );
+    });
+
+    it("sem Fornecedores: continua levando ao estoque", async () => {
+      operador = { id: "op", admin: false, permissoes: ["estoque"] };
+      montar();
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Ver no estoque" }));
+      await waitFor(() => expect(screen.getByTestId("local")).toHaveTextContent("/estoque"));
+      expect(screen.queryByRole("button", { name: "Sugestão de compra" })).toBeNull();
+    });
+  });
 });

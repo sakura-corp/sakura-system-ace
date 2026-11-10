@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
+import type {
+  CotacaoParaSugestao,
+  MovimentoParaConsumo,
+  PecaParaSugestao,
+  PedidoParaSugestao,
+} from "./estoque";
 import {
   acharPorCodigoExato,
+  agruparPorFornecedor,
   consumoPorDiaDasPecas,
   lerSaldo,
+  montarSugestaoCompra,
   movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
+  totalDaLinha,
 } from "./estoque";
 
 describe("lerSaldo", () => {
@@ -236,5 +245,300 @@ describe("consumoPorDiaDasPecas", () => {
       30,
     );
     expect(consumo.get("p1")).toBe(0.2);
+  });
+});
+
+function peca(id: string, extra: Partial<PecaParaSugestao> = {}): PecaParaSugestao {
+  return { id, descricao: `Peça ${id}`, unidade: "un", estoque_minimo: null, ativo: true, ...extra };
+}
+
+/** `quantidade` vendida hoje: em 90 dias, dá `quantidade / 90` por dia. */
+function vendaDeHoje(pecaId: string, quantidade: number): MovimentoParaConsumo {
+  return { peca_id: pecaId, tipo: "saida", motivo: "venda", quantidade, criado_em: meioDia(HOJE) };
+}
+
+function sugestao(dados: {
+  pecas: PecaParaSugestao[];
+  saldos?: Record<string, number>;
+  movimentos?: MovimentoParaConsumo[];
+  cotacoes?: CotacaoParaSugestao[];
+  pedidos?: PedidoParaSugestao[];
+}) {
+  return montarSugestaoCompra({
+    pecas: dados.pecas,
+    saldos: new Map(Object.entries(dados.saldos ?? {})),
+    movimentos: dados.movimentos ?? [],
+    cotacoes: dados.cotacoes ?? [],
+    pedidos: dados.pedidos ?? [],
+    hoje: HOJE,
+  });
+}
+
+describe("montarSugestaoCompra — quem entra e quanto", () => {
+  it("peça sem histórico de saída entra pelo mínimo, sem ritmo e sem dias restantes", () => {
+    const [linha, ...resto] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 4 }), peca("p2")],
+      saldos: { p1: 1, p2: 0 },
+    });
+    // p2: zerada, mas sem mínimo e sem saída nenhuma — nada diz que falta.
+    expect(resto).toEqual([]);
+    expect(linha).toMatchObject({
+      peca_id: "p1",
+      saldo: 1,
+      estoque_minimo: 4,
+      consumoPorDia: 0,
+      diasRestantes: null,
+      jaPedido: 0,
+      quantidadeSugerida: 3,
+    });
+  });
+
+  it("saldo negativo fica fora, mesmo com mínimo e com saída", () => {
+    expect(
+      sugestao({
+        pecas: [peca("p1", { estoque_minimo: 4 })],
+        saldos: { p1: -2 },
+        movimentos: [vendaDeHoje("p1", 90)],
+      }),
+    ).toEqual([]);
+  });
+
+  it("peça inativa fica fora", () => {
+    expect(
+      sugestao({ pecas: [peca("p1", { estoque_minimo: 4, ativo: false })], saldos: { p1: 0 } }),
+    ).toEqual([]);
+  });
+
+  it("peça sem mínimo só entra pelo ritmo de saída", () => {
+    const linhas = sugestao({
+      pecas: [peca("rapida"), peca("lenta")],
+      saldos: { rapida: 5, lenta: 5 },
+      // rápida: 45 em 90 dias = 0,5/dia → 5 dão 10 dias (< 15, entra)
+      // lenta:   9 em 90 dias = 0,1/dia → 5 dão 50 dias (fica fora)
+      movimentos: [vendaDeHoje("rapida", 45), vendaDeHoje("lenta", 9)],
+    });
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0]).toMatchObject({
+      peca_id: "rapida",
+      consumoPorDia: 0.5,
+      diasRestantes: 10,
+      // alvo = 0 + 0,5 × 15 = 7,5; faltam 2,5 → 3
+      quantidadeSugerida: 3,
+    });
+  });
+
+  it("peça que não está no mapa de saldos conta como saldo zero", () => {
+    const [linha] = sugestao({ pecas: [peca("p1", { estoque_minimo: 2 })] });
+    expect(linha).toMatchObject({ saldo: 0, quantidadeSugerida: 2 });
+  });
+
+  it("cauda de ponto flutuante não vira uma unidade a mais", () => {
+    // 186 / 90 × 15 = 31 na conta, mas 31.000000000000004 no computador:
+    // sem o arredondamento antes do ceil, sugeriria 32.
+    const [linha] = sugestao({ pecas: [peca("p1")], movimentos: [vendaDeHoje("p1", 186)] });
+    expect(linha.quantidadeSugerida).toBe(31);
+  });
+});
+
+describe("montarSugestaoCompra — o que já está pedido", () => {
+  const item = (pedida: number, recebida: number) => ({
+    peca_id: "p1",
+    quantidade_pedida: pedida,
+    quantidade_recebida: recebida,
+  });
+
+  it("pedido pendente e parcial descontam o que falta chegar", () => {
+    const [linha] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 10 })],
+      saldos: { p1: 0 },
+      pedidos: [
+        { status: "pendente", itens: [item(3, 0)] }, // faltam 3
+        { status: "parcial", itens: [item(5, 2)] }, // faltam 3
+      ],
+    });
+    expect(linha).toMatchObject({ jaPedido: 6, quantidadeSugerida: 4 });
+  });
+
+  it("recebido e cancelado não descontam", () => {
+    const [linha] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 10 })],
+      saldos: { p1: 0 },
+      pedidos: [
+        { status: "recebido", itens: [item(10, 4)] }, // fechado com falta: não vem mais
+        { status: "cancelado", itens: [item(7, 0)] },
+      ],
+    });
+    expect(linha).toMatchObject({ jaPedido: 0, quantidadeSugerida: 10 });
+  });
+
+  it("item que chegou a mais não vira desconto negativo", () => {
+    const [linha] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 10 })],
+      saldos: { p1: 0 },
+      pedidos: [{ status: "parcial", itens: [item(2, 5), item(4, 1)] }],
+    });
+    expect(linha.jaPedido).toBe(3);
+  });
+
+  it("item de outra peça no mesmo pedido não desconta", () => {
+    const [linha] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 10 })],
+      saldos: { p1: 0 },
+      pedidos: [
+        { status: "pendente", itens: [{ peca_id: "p2", quantidade_pedida: 8, quantidade_recebida: 0 }] },
+      ],
+    });
+    expect(linha.jaPedido).toBe(0);
+  });
+
+  it("com tudo já pedido, a peça continua na lista com sugestão zero", () => {
+    const [linha] = sugestao({
+      pecas: [peca("p1", { estoque_minimo: 10 })],
+      saldos: { p1: 2 },
+      pedidos: [{ status: "pendente", itens: [item(12, 0)] }],
+    });
+    expect(linha).toMatchObject({ jaPedido: 12, quantidadeSugerida: 0 });
+  });
+});
+
+function cotacao(
+  pecaId: string,
+  fornecedorId: string,
+  nome: string,
+  preco: number,
+  dia: string,
+): CotacaoParaSugestao {
+  return { peca_id: pecaId, fornecedor_id: fornecedorId, fornecedor_nome: nome, preco, criado_em: meioDia(dia) };
+}
+
+describe("totalDaLinha", () => {
+  it("fecha no centavo", () => {
+    expect(totalDaLinha(3, 0.1)).toBe(0.3); // 0.30000000000000004 sem arredondar
+    expect(totalDaLinha(3, 33.335)).toBe(100.01);
+  });
+});
+
+describe("montarSugestaoCompra — fornecedor e preço", () => {
+  const p1 = peca("p1", { estoque_minimo: 3 });
+
+  it("peça sem cotação fica sem fornecedor, sem preço e sem total", () => {
+    const [linha] = sugestao({
+      pecas: [p1],
+      saldos: { p1: 0 },
+      cotacoes: [cotacao("outra", "f1", "Ana Pneus", 10, "2026-11-01")],
+    });
+    expect(linha).toMatchObject({ fornecedor: null, preco: null, total: null });
+  });
+
+  it("escolhe o mais barato e calcula o total", () => {
+    const [linha] = sugestao({
+      pecas: [p1],
+      saldos: { p1: 0 },
+      cotacoes: [
+        cotacao("p1", "f1", "Ana Pneus", 120.5, "2026-11-01"),
+        cotacao("p1", "f2", "Bruno Peças", 99.9, "2026-11-01"),
+      ],
+    });
+    expect(linha).toMatchObject({
+      fornecedor: { id: "f2", nome: "Bruno Peças" },
+      preco: 99.9,
+      total: 299.7,
+    });
+  });
+
+  it("dois fornecedores com o mesmo preço: desempata pelo nome", () => {
+    const [linha] = sugestao({
+      pecas: [p1],
+      saldos: { p1: 0 },
+      cotacoes: [
+        // o id "a" viria primeiro; o nome "Zeca" vem depois de "Ágata"
+        cotacao("p1", "a", "Zeca Pneus", 50, "2026-11-01"),
+        cotacao("p1", "b", "Ágata Distribuidora", 50, "2026-11-01"),
+      ],
+    });
+    expect(linha.fornecedor).toEqual({ id: "b", nome: "Ágata Distribuidora" });
+  });
+
+  it("vale a última cotação de cada fornecedor, mesmo mais cara que uma antiga", () => {
+    const [linha] = sugestao({
+      pecas: [p1],
+      saldos: { p1: 0 },
+      cotacoes: [
+        cotacao("p1", "f1", "Ana Pneus", 40, "2026-09-01"), // antiga, não vale mais
+        cotacao("p1", "f1", "Ana Pneus", 80, "2026-11-01"),
+        cotacao("p1", "f2", "Bruno Peças", 70, "2026-10-01"),
+      ],
+    });
+    expect(linha).toMatchObject({ fornecedor: { id: "f2", nome: "Bruno Peças" }, preco: 70, total: 210 });
+  });
+});
+
+describe("montarSugestaoCompra — ordem", () => {
+  it("menos dias restantes primeiro, sem ritmo por último, empate pela descrição", () => {
+    const linhas = sugestao({
+      pecas: [
+        peca("sem-ritmo-b", { descricao: "Bico", estoque_minimo: 2 }),
+        peca("sem-ritmo-a", { descricao: "Água de bateria", estoque_minimo: 2 }),
+        peca("dez", { descricao: "Pneu" }),
+        peca("zero", { descricao: "Válvula" }),
+        peca("dez-b", { descricao: "Amortecedor" }),
+      ],
+      saldos: { "sem-ritmo-b": 0, "sem-ritmo-a": 1, dez: 5, zero: 0, "dez-b": 5 },
+      movimentos: [vendaDeHoje("dez", 45), vendaDeHoje("zero", 9), vendaDeHoje("dez-b", 45)],
+    });
+    expect(linhas.map((l) => l.peca_id)).toEqual(["zero", "dez-b", "dez", "sem-ritmo-a", "sem-ritmo-b"]);
+  });
+});
+
+describe("agruparPorFornecedor", () => {
+  const bruno = { id: "f2", nome: "Bruno Peças" };
+  const ana = { id: "f1", nome: "Ana Pneus" };
+
+  it("um grupo por fornecedor, em ordem de nome, itens na ordem de entrada", () => {
+    const grupos = agruparPorFornecedor([
+      { peca_id: "p1", descricao: "Pneu", quantidade: 4, fornecedor: bruno, preco: 300 },
+      { peca_id: "p2", descricao: "Válvula", quantidade: 10, fornecedor: ana, preco: 2.5 },
+      { peca_id: "p3", descricao: "Bico", quantidade: 3, fornecedor: bruno, preco: 0.1 },
+    ]);
+    expect(grupos).toEqual([
+      {
+        fornecedor: ana,
+        itens: [{ peca_id: "p2", descricao: "Válvula", quantidade: 10, preco: 2.5, total: 25 }],
+        total: 25,
+      },
+      {
+        fornecedor: bruno,
+        itens: [
+          { peca_id: "p1", descricao: "Pneu", quantidade: 4, preco: 300, total: 1200 },
+          { peca_id: "p3", descricao: "Bico", quantidade: 3, preco: 0.1, total: 0.3 },
+        ],
+        total: 1200.3,
+      },
+    ]);
+  });
+
+  it("deixa de fora item sem fornecedor, sem preço ou com quantidade zero", () => {
+    const grupos = agruparPorFornecedor([
+      { peca_id: "p1", descricao: "Sem fornecedor", quantidade: 4, fornecedor: null, preco: 10 },
+      { peca_id: "p2", descricao: "Sem preço", quantidade: 4, fornecedor: ana, preco: null },
+      { peca_id: "p3", descricao: "Já pedido", quantidade: 0, fornecedor: ana, preco: 10 },
+      { peca_id: "p4", descricao: "Negativo", quantidade: -1, fornecedor: ana, preco: 10 },
+      { peca_id: "p5", descricao: "Vai", quantidade: 1, fornecedor: ana, preco: 10 },
+    ]);
+    expect(grupos).toHaveLength(1);
+    expect(grupos[0].itens.map((i) => i.peca_id)).toEqual(["p5"]);
+    expect(grupos[0].total).toBe(10);
+  });
+
+  it("o total do grupo fecha no centavo", () => {
+    const [grupo] = agruparPorFornecedor([
+      { peca_id: "p1", descricao: "A", quantidade: 1, fornecedor: ana, preco: 0.1 },
+      { peca_id: "p2", descricao: "B", quantidade: 1, fornecedor: ana, preco: 0.2 },
+    ]);
+    expect(grupo.total).toBe(0.3); // 0.30000000000000004 numa soma direta
+  });
+
+  it("sem nada pra comprar, nenhum grupo", () => {
+    expect(agruparPorFornecedor([])).toEqual([]);
   });
 });
