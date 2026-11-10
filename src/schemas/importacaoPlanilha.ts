@@ -23,6 +23,11 @@ export interface PlanilhaLida {
   separador: ";" | ",";
   cabecalho: string[];
   linhas: string[][];
+  /**
+   * A linha DO ARQUIVO onde cada registro de `linhas` começa (cabeçalho = 1).
+   * Conta linha em branco e quebra de linha dentro de aspas.
+   */
+  numerosDeLinha: number[];
 }
 
 /** Acha o separador olhando só a primeira linha lógica, fora de aspas. */
@@ -50,16 +55,28 @@ export function lerCsv(texto: string): PlanilhaLida {
   let campo = "";
   let dentroDeAspas = false;
   let linhaTemAlgo = false;
+  // Só abre campo entre aspas se a aspa é o primeiro caractere do campo.
+  let inicioDeCampo = true;
+  // Linha física do arquivo (1 = cabeçalho) e onde o registro atual começou.
+  let linhaFisica = 1;
+  let inicioDoRegistro = 1;
+  const inicios: number[] = [];
 
   const fecharCampo = () => {
     linha.push(campo);
     campo = "";
+    inicioDeCampo = true;
   };
   const fecharLinha = () => {
     fecharCampo();
-    if (linhaTemAlgo || linha.some((c) => c.trim() !== "")) todas.push(linha);
+    if (linhaTemAlgo || linha.some((c) => c.trim() !== "")) {
+      todas.push(linha);
+      inicios.push(inicioDoRegistro);
+    }
     linha = [];
     linhaTemAlgo = false;
+    linhaFisica++;
+    inicioDoRegistro = linhaFisica;
   };
 
   for (let i = 0; i < texto.length; i++) {
@@ -70,12 +87,16 @@ export function lerCsv(texto: string): PlanilhaLida {
           campo += '"';
           i++;
         } else dentroDeAspas = false;
-      } else campo += c;
+      } else {
+        campo += c;
+        if (c === "\n" || (c === "\r" && texto[i + 1] !== "\n")) linhaFisica++;
+      }
       continue;
     }
-    if (c === '"') {
+    if (c === '"' && inicioDeCampo) {
       dentroDeAspas = true;
       linhaTemAlgo = true;
+      inicioDeCampo = false;
     } else if (c === separador) {
       fecharCampo();
       linhaTemAlgo = true;
@@ -86,13 +107,16 @@ export function lerCsv(texto: string): PlanilhaLida {
       fecharLinha();
     } else {
       campo += c;
+      inicioDeCampo = false;
     }
   }
   if (campo !== "" || linha.length > 0 || linhaTemAlgo) fecharLinha();
 
   // Linha só de separadores (`;;;`) é linha em branco: o Excel gera isso.
-  const naoVazias = todas.filter((l) => l.some((c) => c.trim() !== ""));
-  if (naoVazias.length === 0) return { separador, cabecalho: [], linhas: [] };
+  const manter = todas.map((l) => l.some((c) => c.trim() !== ""));
+  const naoVazias = todas.filter((_, i) => manter[i]);
+  const numeros = inicios.filter((_, i) => manter[i]);
+  if (naoVazias.length === 0) return { separador, cabecalho: [], linhas: [], numerosDeLinha: [] };
 
   const cabecalho = naoVazias[0].map((c) => c.trim());
   const largura = cabecalho.length;
@@ -101,5 +125,5 @@ export function lerCsv(texto: string): PlanilhaLida {
     while (copia.length < largura) copia.push("");
     return copia;
   });
-  return { separador, cabecalho, linhas };
+  return { separador, cabecalho, linhas, numerosDeLinha: numeros.slice(1) };
 }

@@ -90,6 +90,27 @@ describe("lerCsv", () => {
   });
 
   it("arquivo vazio não quebra", () => {
-    expect(lerCsv("")).toEqual({ separador: ";", cabecalho: [], linhas: [] });
+    expect(lerCsv("")).toEqual({ separador: ";", cabecalho: [], linhas: [], numerosDeLinha: [] });
+  });
+
+  it("aspa no meio do campo é texto comum: não abre campo entre aspas", () => {
+    const r = lerCsv('Nome;Obs\nJoao;Pneu 17" aro\nMaria;ok\nPedro;x');
+    expect(r.linhas).toEqual([
+      ["Joao", 'Pneu 17" aro'],
+      ["Maria", "ok"],
+      ["Pedro", "x"],
+    ]);
+  });
+
+  it("devolve o número da linha do arquivo onde cada registro começa", () => {
+    // 1 cabeçalho, 2 Ana, 3 em branco, 4-5 Bia (quebra dentro de aspas), 6 Caio
+    const r = lerCsv('Nome;Obs\nAna;a\n\nBia;"x\ny"\nCaio;c');
+    expect(r.linhas.map((l) => l[0])).toEqual(["Ana", "Bia", "Caio"]);
+    expect(r.numerosDeLinha).toEqual([2, 4, 6]);
+  });
+
+  it("numerosDeLinha conta \\r\\n como uma quebra só", () => {
+    const r = lerCsv("Nome;Obs\r\nAna;a\r\n;;\r\nBia;b");
+    expect(r.numerosDeLinha).toEqual([2, 4]);
   });
 });
