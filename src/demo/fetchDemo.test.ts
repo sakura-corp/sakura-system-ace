@@ -53,6 +53,23 @@ describe("fetch de demonstração", () => {
     expect(data).toBe(true);
   });
 
+  // Sem esta função, o "Confirmar emissão" da nota saía calado (sem cliente)
+  // em vez de mostrar o aviso de que nota não sai na demonstração.
+  it("rpc cliente_e_veiculo_da_ordem devolve o cliente e o veículo da OS", async () => {
+    const { data: ordem } = await novoCliente()
+      .from("ordens_servico")
+      .select("*")
+      .eq("numero", 146)
+      .maybeSingle();
+    const { data, error } = await novoCliente().rpc("cliente_e_veiculo_da_ordem", {
+      p_ordem_id: ordem.id,
+    });
+    expect(error).toBeNull();
+    expect(data?.cliente?.id).toBe(ordem.cliente_id);
+    expect(data?.cliente?.nome).toBeTruthy();
+    if (ordem.veiculo_id) expect(data?.veiculo?.id).toBe(ordem.veiculo_id);
+  });
+
   it("a nota fiscal diz que não sai no modo demonstração", async () => {
     const { error } = await novoCliente().functions.invoke("focus-nfe", { body: {} });
     expect(error).toBeTruthy();

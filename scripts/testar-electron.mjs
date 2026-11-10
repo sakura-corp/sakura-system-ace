@@ -19,7 +19,11 @@
 //   - o canal de atualização escolhido na tela chega no disco, e o
 //     atualizador procura no canal que estava gravado (item TR-09.1);
 //   - nada navega pra fora do app nem abre janela nova; só o link do portal
-//     da prefeitura (documento oficial da NFS-e) abre no navegador (#773).
+//     da prefeitura (documento oficial da NFS-e) abre no navegador (#773);
+//   - no modo demonstração nada sai do computador (nem pro Supabase, nem pra
+//     Focus NFe), a CSP é a mesma e o conexao.json não muda (#384).
+//
+// Com FOTOS_DEMO=<pasta>, salva também as fotos da demonstração (pro PR).
 //
 // Como rodar:  npm run test:electron
 // Precisa de:  npm run build feito antes, e (em Linux) um servidor gráfico
@@ -513,6 +517,311 @@ try {
     enderecoDepois === enderecoAntes,
     `foi de ${enderecoAntes} para ${enderecoDepois}`,
   );
+
+  // --- 9. Modo demonstração: nada sai do computador (#384) ---------------
+  //
+  // A demonstração é o programa inteiro com dados inventados, pra mostrar o
+  // sistema a quem ainda não é cliente. A promessa é: nada sai do computador
+  // (nem pro Supabase, nem pra Focus NFe), a política de segurança é a mesma
+  // de sempre e a conexão salva deste computador não muda. Teste de função
+  // não prova isso: só o programa de verdade, clicado como uma pessoa clica,
+  // com tudo que ele pede pra rede anotado.
+  //
+  // Fica no fim de propósito: entrar e sair da demonstração recarrega a
+  // janela, e as checagens de cima precisam da janela como ela abriu.
+  //
+  // Com FOTOS_DEMO=<pasta> (só à mão, nunca no CI), salva as fotos da
+  // demonstração pra descrição do PR. Os dados nelas são todos inventados.
+  const pastaFotos = process.env.FOTOS_DEMO ? path.resolve(RAIZ, process.env.FOTOS_DEMO) : null;
+  if (pastaFotos) fs.mkdirSync(pastaFotos, { recursive: true });
+  const fotografar = async (nome) => {
+    if (pastaFotos) await pagina.screenshot({ path: path.join(pastaFotos, nome) });
+  };
+  // Um passo feito na tela: deu certo, "ok"; não achou o que procurava, vira
+  // FALHOU com o motivo, em vez de derrubar o teste inteiro sem mostrar as
+  // outras checagens.
+  const tentar = async (descricao, passo) => {
+    try {
+      await passo();
+      conferir(descricao, true);
+      return true;
+    } catch (erro) {
+      conferir(descricao, false, String(erro?.message ?? erro).split("\n")[0]);
+      return false;
+    }
+  };
+  const ESPERA = { timeout: 10_000 };
+
+  const arquivoConexao = path.join(pastaDados, "conexao.json");
+  const conexaoAntes = fs.existsSync(arquivoConexao) ? fs.readFileSync(arquivoConexao, "utf8") : null;
+
+  // A CSP que o documento principal recebeu em cada carga, na ordem. O
+  // Playwright enxerga o cabeçalho da página `file://` (o mesmo que o
+  // `onHeadersReceived` do main.ts põe), então não precisa mexer nele —
+  // registrar outro `onHeadersReceived` SUBSTITUIRIA o do programa.
+  const cspPorCarga = [];
+  const anotarCsp = (resposta) => {
+    if (resposta.request().isNavigationRequest() && resposta.frame() === pagina.mainFrame()) {
+      cspPorCarga.push(
+        resposta.allHeaders().then((h) => h["content-security-policy"] ?? "(sem CSP)"),
+      );
+    }
+  };
+  pagina.on("response", anotarCsp);
+
+  // Todo pedido de rede, por dois caminhos independentes:
+  //   - pela tela (Playwright): o que a página pede, inclusive WebSocket;
+  //   - pelo processo principal (`onBeforeRequest`): o que chega na pilha de
+  //     rede vindo de qualquer lugar. O main.ts NÃO registra `onBeforeRequest`
+  //     (só `onHeadersReceived`, que é outro evento), então este não tira o
+  //     lugar de nada; e é desligado no fim.
+  // E um terceiro sinal: pedido que a CSP barrou antes de sair nem chega na
+  // rede (nenhum dos dois vê), mas deixa o recado "Refused to connect" no
+  // console — e uma tentativa de sair também conta.
+  let gravando = false;
+  const pedidosDaTela = [];
+  const anotarPedido = (pedido) => {
+    if (gravando) pedidosDaTela.push(pedido.url());
+  };
+  const anotarWebSocket = (ws) => {
+    if (gravando) pedidosDaTela.push(ws.url());
+  };
+  app.context().on("request", anotarPedido);
+  pagina.on("websocket", anotarWebSocket);
+  await app.evaluate(({ session }) => {
+    globalThis.__pedidosDaDemonstracao = [];
+    globalThis.__gravandoDemonstracao = false;
+    session.defaultSession.webRequest.onBeforeRequest((detalhes, seguir) => {
+      if (globalThis.__gravandoDemonstracao) globalThis.__pedidosDaDemonstracao.push(detalhes.url);
+      seguir({});
+    });
+  });
+  const ligarGravacao = async (ligado) => {
+    gravando = ligado;
+    await app.evaluate((_, valor) => {
+      globalThis.__gravandoDemonstracao = valor;
+    }, ligado);
+  };
+  let violacoesNoInicio = violacoes.length;
+  let violacoesNoFim = violacoes.length;
+
+  try {
+    // Uma carga de antes da demonstração, pra ter a CSP de comparação (a
+    // primeira abertura aconteceu antes de dar pra escutar).
+    await pagina.reload();
+    await pagina.waitForLoadState("domcontentloaded");
+
+    const campoEndereco = pagina.getByPlaceholder("https://xxxxxxxx.supabase.co");
+    const chegouNaConexao = await tentar("chega na tela de conexão", async () => {
+      // Num computador que já tem banco salvo o programa abre no login, e a
+      // tela de conexão é aberta pelo link dele, como uma pessoa faria.
+      const linkDoLogin = pagina.getByRole("button", { name: "Configurar a conexão" });
+      await campoEndereco.or(linkDoLogin).first().waitFor(ESPERA);
+      if (!(await campoEndereco.isVisible())) {
+        await linkDoLogin.click();
+        await campoEndereco.waitFor(ESPERA);
+      }
+    });
+
+    if (chegouNaConexao) {
+      await campoEndereco.click();
+      await pagina.keyboard.press("Control+A");
+      await pagina.keyboard.type("demo");
+      const botaoEntrar = pagina.getByRole("button", { name: "Entrar na demonstração" });
+      const apareceuBotao = await tentar(
+        'digitar "demo" no endereço troca o botão por "Entrar na demonstração"',
+        () => botaoEntrar.waitFor(ESPERA),
+      );
+      await fotografar("conexao-demo.png");
+
+      if (apareceuBotao) {
+        // A partir daqui, tudo que sair é anotado.
+        violacoesNoInicio = violacoes.length;
+        await ligarGravacao(true);
+        await botaoEntrar.click();
+
+        const faixa = pagina.getByText("MODO DEMONSTRAÇÃO · nada aqui é de verdade");
+        const titulo = pagina.getByRole("heading", { level: 1 });
+        await tentar("a demonstração abre logada no Início, com a faixa no topo", async () => {
+          await faixa.waitFor(ESPERA);
+          await pagina.getByText("@demo", { exact: true }).waitFor(ESPERA);
+          await titulo.filter({ hasText: "Início" }).waitFor(ESPERA);
+        });
+        // Dá tempo dos quadros do Início pedirem os dados deles.
+        await pagina.waitForTimeout(1500);
+        await fotografar("faixa-inicio.png");
+
+        // Anda pelo menu, como uma pessoa. Cada tela pede os dados dela
+        // pelo cliente do Supabase de verdade — é isso que tem de ficar em casa.
+        const telasVisitadas = [];
+        for (const [menu, foto] of [
+          ["Clientes", null],
+          ["Ordens de Serviço", "ordens-servico.png"],
+          ["Caixa Diário", "caixa.png"],
+          ["Estoque", null],
+        ]) {
+          try {
+            await pagina.getByRole("link", { name: menu, exact: true }).click(ESPERA);
+            await titulo.filter({ hasText: menu }).waitFor(ESPERA);
+          } catch {
+            continue;
+          }
+          telasVisitadas.push(menu);
+          await pagina.waitForTimeout(1200);
+          if (foto) await fotografar(foto);
+        }
+        conferir(
+          "anda pelo menu: Clientes, Ordens de Serviço, Caixa Diário e Estoque",
+          telasVisitadas.length === 4,
+          `abriram: ${telasVisitadas.join(", ") || "nenhuma"}`,
+        );
+
+        // A loja da demonstração. Com uma loja só, o nome dela não aparece
+        // no menu; aparece em Configurações (botão da engrenagem).
+        await tentar('está na loja "Auto Center Modelo"', async () => {
+          await pagina.getByRole("link", { name: "Configurações" }).click(ESPERA);
+          await titulo.filter({ hasText: "Configurações" }).waitFor(ESPERA);
+          await pagina.getByText("Auto Center Modelo").first().waitFor(ESPERA);
+        });
+
+        // A nota fiscal: abrir a OS 146 (concluída), aba Fechamento, "Emitir
+        // NFC-e". O pedido à Focus NFe vai pelo porteiro (Edge Function
+        // focus-nfe), e na demonstração ele tem de responder com o aviso, sem
+        // sair. É o caminho de quem está apresentando: "Confirmar emissão",
+        // pelo cliente de verdade.
+        await tentar('pedir a nota na demonstração mostra "No modo demonstração não sai nota."', async () => {
+          await pagina.getByRole("link", { name: "Ordens de Serviço", exact: true }).click(ESPERA);
+          await pagina
+            .getByRole("row")
+            .filter({ hasText: "OS 146" })
+            .getByRole("button", { name: "Fechamento" })
+            .click(ESPERA);
+          await pagina.getByRole("button", { name: "Emitir NFC-e" }).click(ESPERA);
+          await pagina.getByRole("button", { name: "Confirmar emissão" }).click(ESPERA);
+          await pagina.getByText("No modo demonstração não sai nota.").waitFor(ESPERA);
+          await fotografar("nota-aviso.png");
+        });
+        await pagina
+          .getByRole("button", { name: "Cancelar" })
+          .last()
+          .click({ timeout: 3000 })
+          .catch(() => {});
+
+        // Fim da gravação: o "Sair" recarrega a janela e, num computador com
+        // banco salvo, o programa de verdade volta a falar com ele — isso não
+        // é a demonstração.
+        await pagina.waitForTimeout(800);
+        await ligarGravacao(false);
+        violacoesNoFim = violacoes.length;
+
+        // A CSP continua valendo dentro da demonstração: endereço fora da
+        // lista é recusado, e a política que o documento aplica é a mesma do
+        // cabeçalho. (Fora da gravação: este pedido é do teste, não da tela.)
+        const politicaAplicada = await pagina.evaluate(async () => {
+          let politica = null;
+          const anotar = (evento) => {
+            politica = evento.originalPolicy;
+          };
+          document.addEventListener("securitypolicyviolation", anotar);
+          try {
+            await fetch("https://endereco-que-nao-deveria-passar.invalid/demo");
+          } catch {
+            // O que conta é a violação, não o erro daqui.
+          }
+          await new Promise((pronto) => setTimeout(pronto, 400));
+          document.removeEventListener("securitypolicyviolation", anotar);
+          return politica;
+        });
+
+        // Sair da demonstração, pelo botão da faixa.
+        const saiu = await tentar('"Sair da demonstração" volta pra tela de antes', async () => {
+          await pagina.getByRole("button", { name: "Sair da demonstração" }).click(ESPERA);
+          await pagina.waitForLoadState("domcontentloaded");
+          // Sem banco salvo, volta pra tela de conexão; com banco salvo, pro login.
+          if (conexaoAntes === null) await campoEndereco.waitFor(ESPERA);
+          else await pagina.getByRole("button", { name: "Configurar a conexão" }).waitFor(ESPERA);
+        });
+        if (saiu) {
+          await pagina.waitForTimeout(500);
+          conferir("depois de sair, a faixa da demonstração some", !(await faixa.isVisible()));
+        }
+
+        // --- As contas ---
+        const pedidosDoPrincipal = await app.evaluate(() => globalThis.__pedidosDaDemonstracao);
+        const pegouAlgo = (lista) => lista.some((url) => url.startsWith("file:"));
+        conferir(
+          "o gravador de pedidos estava ligado (viu a tela carregar os arquivos dela)",
+          pegouAlgo(pedidosDaTela) && pegouAlgo(pedidosDoPrincipal),
+          `tela: ${pedidosDaTela.length} pedidos, processo principal: ${pedidosDoPrincipal.length}`,
+        );
+        const barradosPelaCsp = violacoes
+          .slice(violacoesNoInicio, violacoesNoFim)
+          .filter((v) => /connect-src|Refused to connect/i.test(v))
+          // O Chromium dá dois recados por pedido barrado: fica só o endereço.
+          .map((v) => `(barrado pela CSP) ${v.match(/(?:https?|wss?):\/\/[^\s'"]+/)?.[0]?.replace(/\.$/, "") ?? v}`);
+        const LOCAL = /^(file|data|blob|chrome-extension|devtools|about):/i;
+        const saidas = [
+          ...new Set([
+            ...[...pedidosDaTela, ...pedidosDoPrincipal].filter((url) => !LOCAL.test(url)),
+            ...barradosPelaCsp,
+          ]),
+        ];
+        const listar = (lista) => (lista.length ? lista.slice(0, 12).join(" | ") : "");
+        const praSupabase = saidas.filter((url) => /\.supabase\.(co|in)\b/i.test(url));
+        const praFocus = saidas.filter((url) => /focusnfe/i.test(url));
+        const praDemo = saidas.filter((url) => /demonstracao\.invalid/i.test(url));
+        conferir("na demonstração, nenhum pedido sai pro Supabase", praSupabase.length === 0, listar(praSupabase));
+        conferir("na demonstração, nenhum pedido sai pra Focus NFe", praFocus.length === 0, listar(praFocus));
+        conferir(
+          "na demonstração, o endereço de mentira (demonstracao.invalid) nunca vai pra rede",
+          praDemo.length === 0,
+          listar(praDemo),
+        );
+        conferir(
+          "na demonstração, nada sai do computador (nem tentativa barrada pela CSP)",
+          saidas.length === 0,
+          listar(saidas),
+        );
+
+        const [cspAntes, cspNaDemo, cspDepois] = await Promise.all(cspPorCarga);
+        conferir(
+          "a CSP da demonstração é a mesma de antes, e continua a mesma depois de sair",
+          cspPorCarga.length >= 3 &&
+            !!cspAntes &&
+            cspAntes !== "(sem CSP)" &&
+            cspNaDemo === cspAntes &&
+            cspDepois === cspAntes,
+          `${cspPorCarga.length} cargas; antes: ${cspAntes}; na demonstração: ${cspNaDemo}; depois: ${cspDepois}`,
+        );
+        conferir(
+          "dentro da demonstração a CSP está valendo (recusa endereço fora da lista)",
+          politicaAplicada === cspAntes,
+          `política aplicada: ${politicaAplicada}`,
+        );
+      }
+    }
+
+    const conexaoDepois = fs.existsSync(arquivoConexao) ? fs.readFileSync(arquivoConexao, "utf8") : null;
+    conferir(
+      "a demonstração não mexe no conexao.json deste computador",
+      conexaoDepois === conexaoAntes,
+      `antes: ${conexaoAntes === null ? "não existia" : "existia"}; depois: ${conexaoDepois === null ? "não existe" : "existe, com outro conteúdo"}`,
+    );
+  } finally {
+    // Devolve tudo como estava.
+    await ligarGravacao(false).catch(() => {});
+    await app
+      .evaluate(({ session }) => session.defaultSession.webRequest.onBeforeRequest(null))
+      .catch(() => {});
+    app.context().off("request", anotarPedido);
+    pagina.off("websocket", anotarWebSocket);
+    pagina.off("response", anotarCsp);
+    await pagina
+      .evaluate(() => sessionStorage.removeItem("sakura_modo_demonstracao"))
+      .catch(() => {});
+    if (conexaoAntes === null) fs.rmSync(arquivoConexao, { force: true });
+    else fs.writeFileSync(arquivoConexao, conexaoAntes);
+  }
 } finally {
   await app.close();
 }

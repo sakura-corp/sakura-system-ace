@@ -960,6 +960,16 @@ export const FUNCOES = {
   // As da #366 (migration 0073) respondem conforme o pedido: função aqui
   // recebe o corpo da chamada.
   custo_das_ordens: ({ p_ordens }: Qualquer) => custoDasOrdens(p_ordens ?? []),
+  // A da nota fiscal e da garantia (migration 0068): o cadastro do cliente e
+  // do veículo de UMA OS. Sem ela, o "Confirmar emissão" da nota saía calado
+  // na demonstração (sem cliente), em vez de mostrar o aviso de que nota não sai.
+  cliente_e_veiculo_da_ordem: ({ p_ordem_id }: Qualquer) => {
+    const ordem = todasAsOrdens.find((o) => o.id === p_ordem_id);
+    if (!ordem) return { cliente: null, veiculo: null };
+    const cliente = clientes.find((c) => c.id === ordem.cliente_id) ?? null;
+    const veiculo = veiculos.find((v) => v.id === ordem.veiculo_id) ?? null;
+    return { cliente, veiculo };
+  },
   dados_fiscais_das_pecas: ({ p_pecas }: Qualquer) =>
     pecas
       .filter((p) => (p_pecas ?? []).includes(p.id))
