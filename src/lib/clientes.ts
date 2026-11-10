@@ -27,6 +27,92 @@ export async function listarClientes(): Promise<Cliente[]> {
   return clientes as unknown as Cliente[];
 }
 
+/** As colunas que a pessoa pode ordenar na lista de Clientes. */
+export type ColunaDaListaDeClientes = "nome" | "cidade";
+export const COLUNAS_DA_LISTA_DE_CLIENTES: readonly ColunaDaListaDeClientes[] = ["nome", "cidade"];
+
+export interface PedidoDaPaginaDeClientes {
+  /** Primeira e última linha da página, contando do 0 (o `.range()`). */
+  de: number;
+  ate: number;
+  ordem: { coluna: ColunaDaListaDeClientes; crescente: boolean };
+  /** O que a pessoa digitou na busca ("" = sem busca). */
+  busca: string;
+}
+
+/**
+ * Escapa o que a pessoa digitou pra entrar num `ilike` dentro do `.or()`.
+ *
+ * Duas camadas: o `%`, o `_` e a `\` viram letra comum pro LIKE (senão "50%"
+ * acharia tudo que começa com 50); depois o valor vai entre aspas pro
+ * PostgREST, que senão leria a vírgula e os parênteses como separadores do
+ * `.or()` e a consulta quebraria.
+ */
+function padraoDoIlike(miolo: string): string {
+  return `"%${miolo.replace(/["\\]/g, (c) => `\\${c}`)}%"`;
+}
+
+function escaparLike(texto: string): string {
+  return texto.replace(/[\\%_]/g, (c) => `\\${c}`);
+}
+
+/**
+ * O filtro do `.or()` da busca da lista de Clientes: o pedaço digitado no
+ * nome, no telefone ou no CPF/CNPJ, sem ligar pra maiúscula (o acento ainda
+ * conta: "joao" não acha "João", decisão da #373).
+ *
+ * Telefone e CPF ficam gravados do jeito que foram digitados, com ou sem
+ * pontuação. Por isso, quando a busca tem número, os algarismos também são
+ * procurados em sequência, com qualquer coisa entre eles: "16990000001" acha
+ * "(16) 99000-0001". Devolve `null` quando não há o que buscar.
+ */
+export function filtroDaBuscaDeClientes(busca: string): string | null {
+  const texto = busca.trim();
+  if (!texto) return null;
+  const literal = padraoDoIlike(escaparLike(texto));
+  const partes = [
+    `nome.ilike.${literal}`,
+    `telefone.ilike.${literal}`,
+    `cpf_cnpj.ilike.${literal}`,
+  ];
+  const digitos = texto.replace(/\D/g, "");
+  if (digitos.length >= 3) {
+    const espalhado = padraoDoIlike(digitos.split("").join("%"));
+    partes.push(`telefone.ilike.${espalhado}`, `cpf_cnpj.ilike.${espalhado}`);
+  }
+  return partes.join(",");
+}
+
+/**
+ * UMA página da lista de Clientes, já ordenada e filtrada no banco (#373), e
+ * o total de clientes que a busca acha (pra "Mostrando 51 a 100 de 2.340").
+ *
+ * A ordem sempre termina em `id`: com dois "João Silva", sem desempate um
+ * deles podia cair em duas páginas ou em nenhuma (a mesma regra de
+ * `paginacao.ts`). Cliente sem cidade fica no fim nas duas direções.
+ *
+ * O "Consumidor" fica de fora, como em `listarClientes()`.
+ */
+export async function listarClientesPagina(
+  pedido: PedidoDaPaginaDeClientes,
+): Promise<{ linhas: Cliente[]; total: number }> {
+  const { de, ate, ordem, busca } = pedido;
+  let consulta = supabase
+    .from("clientes")
+    .select("*, veiculos(*)", { count: "exact" })
+    .neq("id", CLIENTE_CONSUMIDOR_ID);
+  const filtro = filtroDaBuscaDeClientes(busca);
+  if (filtro) consulta = consulta.or(filtro);
+  const direcao = { ascending: ordem.crescente, nullsFirst: false };
+  consulta =
+    ordem.coluna === "cidade"
+      ? consulta.order("cidade", direcao).order("uf", direcao)
+      : consulta.order("nome", direcao);
+  const { data, error, count } = await consulta.order("id", { ascending: true }).range(de, ate);
+  if (error) throw error;
+  return { linhas: (data ?? []) as unknown as Cliente[], total: count ?? 0 };
+}
+
 export async function criarCliente(
   cliente: NovoCliente,
   veiculos: VeiculoFormulario[],
