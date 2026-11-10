@@ -139,4 +139,17 @@ describe("useConexao", () => {
     });
     expect(buscar).toHaveBeenCalledTimes(1);
   });
+
+  it("tela principal sai e volta com a faixa ligada: a conferência volta a rodar (revisão final)", async () => {
+    buscar.mockResolvedValue(82);
+    const primeira = renderHook(() => useConexao());
+    cair();
+    primeira.unmount();
+    const { result } = renderHook(() => useConexao());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(INTERVALO_CONFERIR_CONEXAO_MS);
+    });
+    expect(buscar).toHaveBeenCalled();
+    expect(result.current.semConexao).toBe(false);
+  });
 });

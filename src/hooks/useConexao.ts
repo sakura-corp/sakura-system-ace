@@ -67,6 +67,13 @@ function ligarOuvintes() {
   window.addEventListener("online", aoVoltarAPlaca);
   desligarRede = aoMudarARede((estado) => mudar(estado === "falhou"));
   if (typeof navigator !== "undefined" && navigator.onLine === false) mudar(true);
+  // A faixa já estava ligada quando a tela principal saiu (ex.: login de novo):
+  // `mudar(true)` não faz nada, então a conferência precisa voltar aqui, senão
+  // a faixa fica presa (achado da revisão final).
+  if (semConexao) {
+    ligarConferencia();
+    void conferir();
+  }
 }
 
 function desligarOuvintes() {

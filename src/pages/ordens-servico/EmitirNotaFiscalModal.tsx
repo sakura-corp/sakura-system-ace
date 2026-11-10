@@ -1,5 +1,5 @@
-import { useConexao } from "@/hooks/useConexao";
 import { useEffect, useRef, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";

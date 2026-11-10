@@ -12,10 +12,12 @@ export function FaixaSemConexao() {
   if (!semConexao) return null;
 
   return (
+    // `sticky`: fica à vista no fim de uma OS comprida, onde está o Salvar
+    // (achado da revisão final). O fundo é opaco, então não mistura com a tela.
     <div
       role="status"
       aria-live="polite"
-      className="mb-4 min-w-0 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800"
+      className="sticky top-0 z-10 mb-4 min-w-0 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800"
     >
       <p className="font-semibold">
         Sem conexão com o banco: o que você digitar agora não vai ser salvo.
