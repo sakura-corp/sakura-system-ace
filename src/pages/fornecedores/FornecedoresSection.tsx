@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
+import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import {
   atualizarFornecedor,
   atualizarStatusFornecedor,
@@ -18,6 +19,9 @@ interface FornecedoresSectionProps {
 export function FornecedoresSection({ fornecedores, onRecarregar }: FornecedoresSectionProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Fornecedor | null>(null);
+  const caixaDoFormulario = useRolarAteOFormulario(
+    formulario === "novo" ? "novo" : (formulario?.id ?? null),
+  );
 
   async function handleSalvar(fornecedor: NovoFornecedor) {
     if (formulario && formulario !== "novo") {
@@ -69,11 +73,17 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
       )}
 
       {formulario && (
-        <FornecedorForm
-          fornecedorExistente={formulario === "novo" ? undefined : formulario}
-          onSalvar={handleSalvar}
-          onCancelar={() => setFormulario(null)}
-        />
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
+          {/* key: a lista fica na tela com o formulário aberto, e sem ela trocar
+              de canetinha mantinha os valores do anterior (defaultValues só
+              valem na montagem); salvar gravava esses dados no outro (#969). */}
+          <FornecedorForm
+            key={formulario === "novo" ? "novo" : formulario.id}
+            fornecedorExistente={formulario === "novo" ? undefined : formulario}
+            onSalvar={handleSalvar}
+            onCancelar={() => setFormulario(null)}
+          />
+        </div>
       )}
 
       {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}

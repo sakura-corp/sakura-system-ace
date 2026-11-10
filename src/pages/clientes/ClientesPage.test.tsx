@@ -8,11 +8,18 @@
  * some pra quem não pode ver valores; e que o botão abre o WhatsApp com a
  * mensagem certa e registra a abertura, como os outros botões.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, within } from "@/testes/tela";
 import type { Cliente } from "@/types/cliente";
 import type { Operador } from "@/types/operador";
 import type { OrdemDoCliente } from "@/schemas/clientesSumidos";
+
+// Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
+// no fim de cada um, volta o que era.
+const scrollIntoViewOriginal = Element.prototype.scrollIntoView;
+afterEach(() => {
+  Element.prototype.scrollIntoView = scrollIntoViewOriginal;
+});
 
 const listarClientes = vi.fn();
 const listarOrdensFaturadasDosClientes = vi.fn();
@@ -217,3 +224,52 @@ describe("ClientesPage — trocar de loja com o filtro ligado", () => {
     expect(registrarMensagemAberta).toHaveBeenCalledWith("loja-b", "cliente_sumido", "c2", "(16) 99000-0002", "op");
   });
 });
+
+/**
+ * #969: abrir o formulário (canetinha ou "+ Novo cliente") rola a tela até ele
+ * e põe o cursor no primeiro campo. Antes, com a lista rolada, o formulário
+ * abria fora da vista e parecia que o clique não tinha feito nada.
+ */
+describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
+  it("a canetinha pede a rolagem e põe o foco no primeiro campo do formulário", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = renderizar(<ClientesPage />);
+    await user.click(await screen.findByRole("button", { name: /^Editar .*Cliente Pouco/ }));
+
+    expect(container.querySelector("form")).toBeTruthy();
+    // O cursor vai pro Nome (onde se digita), não pro "Pessoa física" que vem
+    // antes dele: digitando ali, nada seria escrito.
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Cliente Pouco"));
+    expect(rolar).toHaveBeenCalled();
+  });
+
+  it("o \"+ Novo cliente\" também", async () => {
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const { user, container } = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    await user.click(screen.getByRole("button", { name: /^\+ Novo/ }));
+
+    const formulario = container.querySelector("form")!;
+    const foco = document.activeElement as HTMLInputElement;
+    expect(formulario.contains(foco)).toBe(true);
+    expect(foco.tagName).toBe("INPUT");
+    expect(foco.type).toBe("text");
+    expect(rolar).toHaveBeenCalled();
+  });
+
+  it("trocar de canetinha com o formulário aberto abre o outro, com os dados dele", async () => {
+    // A tabela fica na tela com o formulário aberto (só o cartão dos "sumidos"
+    // some). Sem a key, o formulário ficava com os dados do anterior, e salvar
+    // gravava o cliente A por cima do B.
+    Element.prototype.scrollIntoView = vi.fn();
+    const { user } = renderizar(<ClientesPage />);
+    await user.click(await screen.findByRole("button", { name: /^Editar .*Cliente Pouco/ }));
+    await user.click(screen.getByRole("button", { name: /^Editar .*Cliente Muito/ }));
+
+    expect(document.activeElement).toBe(screen.getByDisplayValue("Cliente Muito"));
+    expect(screen.queryByDisplayValue("Cliente Pouco")).toBeNull();
+  });
+});
+

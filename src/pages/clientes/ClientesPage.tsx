@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import {
   atualizarCliente,
   criarCliente,
@@ -40,6 +41,9 @@ export function ClientesPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Cliente | null>(null);
+  const caixaDoFormulario = useRolarAteOFormulario(
+    formulario === "novo" ? "novo" : (formulario?.id ?? null),
+  );
   const [veiculosDe, setVeiculosDe] = useState<Cliente | null>(null);
 
   // Filtro "clientes que sumiram" (FN-11). As ordens só são buscadas quando a
@@ -192,11 +196,18 @@ export function ClientesPage() {
       </header>
 
       {formulario && (
-        <ClienteForm
-          clienteExistente={formulario === "novo" ? undefined : formulario}
-          onSalvar={handleSalvar}
-          onCancelar={() => setFormulario(null)}
-        />
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
+          {/* key: a tabela fica na tela com o formulário aberto (só o cartão dos
+              "sumidos" some), e sem ela trocar de canetinha mantinha os valores
+              do anterior (defaultValues só valem na montagem); salvar gravava o
+              cliente A por cima do B (#969). */}
+          <ClienteForm
+            key={formulario === "novo" ? "novo" : formulario.id}
+            clienteExistente={formulario === "novo" ? undefined : formulario}
+            onSalvar={handleSalvar}
+            onCancelar={() => setFormulario(null)}
+          />
+        </div>
       )}
 
       {erro && (

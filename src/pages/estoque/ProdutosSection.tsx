@@ -20,6 +20,7 @@ import type { NovaPeca, Peca } from "@/types/peca";
 import { pecaSemCusto } from "@/schemas/avisosOrdemServico";
 import { ImportarNotasFiscaisModal } from "./ImportarNotasFiscaisModal";
 import { PecaForm } from "./PecaForm";
+import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 
 // "Importar por foto/PDF" desligado a pedido dela (25/09/2026), até ela
@@ -90,6 +91,9 @@ export function ProdutosSection({
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [soPrecisaComprar, setSoPrecisaComprar] = useState(false);
   const campoBusca = useRef<HTMLInputElement>(null);
+  const caixaDoFormulario = useRolarAteOFormulario(
+    mostrarFormulario ? (pecaEmEdicao?.id ?? "nova") : null,
+  );
 
   // O código que a própria loja mais usa — vira a sugestão de uma peça nova,
   // em vez do campo em branco de antes. Sai do cadastro DELA, nunca de um
@@ -251,8 +255,9 @@ export function ProdutosSection({
       )}
 
       {mostrarFormulario && (
-        // key: sem ela o formulário não troca os valores ao abrir outra peça
-        // (defaultValues só valem na montagem), p.ex. pelo "Abrir a que já existe".
+        <div ref={caixaDoFormulario} className="scroll-mt-4">
+        {/* key: sem ela o formulário não troca os valores ao abrir outra peça
+            (defaultValues só valem na montagem), p.ex. pelo "Abrir a que já existe". */}
         <PecaForm
           key={pecaEmEdicao?.id ?? "nova"}
           pecasDoCadastro={pecas.map((p) => ({ ...p, sem_custo: pecaSemCusto(p.preco_custo) }))}
@@ -267,6 +272,7 @@ export function ProdutosSection({
           onSalvar={handleSalvar}
           onCancelar={handleFecharFormulario}
         />
+        </div>
       )}
 
       {mostrarImportar && (
