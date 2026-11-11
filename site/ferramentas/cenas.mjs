@@ -202,6 +202,9 @@ export const CENAS = [
   { arquivo: "37-lucratividade", modulo: "Relações", titulo: "Lucratividade por item",
     rota: "/relatorios", passos: [{ aba: "Lucratividade" }],
     descricao: "Quanto cada peça e cada serviço deu de margem no período. É o que mostra o que vende muito mas dá pouco lucro." },
+  { arquivo: "37b-fluxo-de-caixa", modulo: "Relações", titulo: "Fluxo de caixa projetado",
+    rota: "/relatorios", passos: [{ aba: "Fluxo de caixa" }],
+    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, dia a dia, com o saldo andando a partir de hoje. As contas recorrentes que ainda não foram criadas aparecem como \"prevista\", e as vencidas e não pagas entram no dia de hoje como \"atrasada\"." },
 
   // --------------------------------------------------------------- garantias
   { arquivo: "38-garantias", modulo: "Garantias", titulo: "Garantias em vigor",
