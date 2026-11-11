@@ -10,14 +10,20 @@
 // leitura com a rede caída é tentada 4 vezes, não 16.
 import { createClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MENSAGEM_SEM_CONEXAO, mensagemDeErro } from "./errors";
+import { MENSAGEM_SEM_CONEXAO, ehErroDeRede, mensagemDeErro } from "./errors";
 
 const { conexaoAtual } = vi.hoisted(() => ({
   conexaoAtual: vi.fn(() => ({ url: "https://exemplo.supabase.co", chave: "chave-de-mentira" })),
 }));
 vi.mock("./conexao", () => ({ conexaoAtual }));
 
-import { aoMudarARede, criarFetchDoPrograma, supabase } from "./supabase";
+import {
+  TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS,
+  TEMPO_LIMITE_LEITURA_MS,
+  aoMudarARede,
+  criarFetchDoPrograma,
+  supabase,
+} from "./supabase";
 
 const URL_BASE = "https://exemplo.supabase.co";
 const CHAVE = "chave-de-mentira";
@@ -301,5 +307,95 @@ describe("o cliente do programa", () => {
     await vi.advanceTimersByTimeAsync(60_000);
     await gravar;
     expect(fetchBase).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Teste no PC do Tiago (11/11): com o cabo tirado, o Windows não avisou a
+// queda (placas de rede virtuais continuam "ligadas") e cada pedido ficou
+// pendurado por minutos: a tela ficou em "Carregando..." em vez de mostrar a
+// frase. Leitura sem resposta passa a desistir sozinha; gravação, nunca.
+/** Um fetch que nunca responde, como o real: só termina se cancelarem. */
+function semResposta(): FetchDeMentira {
+  return vi.fn<typeof fetch>(
+    (_input, init) =>
+      new Promise<Response>((_ok, falhar) => {
+        init?.signal?.addEventListener("abort", () =>
+          falhar(new DOMException("The operation was aborted.", "AbortError")),
+        );
+      }),
+  );
+}
+
+describe("criarFetchDoPrograma: leitura que fica sem resposta", () => {
+  beforeEach(() => vi.useFakeTimers());
+
+  it(`leitura sem resposta desiste em ${TEMPO_LIMITE_LEITURA_MS / 1000} s como queda de rede`, async () => {
+    const estados = ouvir();
+    const fetchBase = semResposta();
+    const pedido = criarFetchDoPrograma(fetchBase)(`${URL_BASE}/rest/v1/clientes`).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS - 100);
+    expect(estados).toEqual([]);
+    await vi.advanceTimersByTimeAsync(200);
+    const erro = await pedido;
+    expect(ehErroDeRede(erro)).toBe(true);
+    expect(estados).toEqual(["falhou"]);
+  });
+
+  it("depois de uma queda, a próxima leitura desiste mais rápido", async () => {
+    const fetchDoPrograma = criarFetchDoPrograma(semResposta());
+    const primeira = fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS + 100);
+    await primeira;
+    const segunda = fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS + 100);
+    expect(ehErroDeRede(await segunda)).toBe(true);
+  });
+
+  it("resposta que chega antes do tempo limite é devolvida (o tempo não conta o corpo)", async () => {
+    const fetchBase = vi.fn<typeof fetch>(
+      () => new Promise<Response>((ok) => setTimeout(() => ok(new Response("ok")), TEMPO_LIMITE_LEITURA_MS - 1000)),
+    );
+    const pedido = criarFetchDoPrograma(fetchBase)(ARQUIVO);
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS * 3);
+    expect(await (await pedido).text()).toBe("ok");
+  });
+
+  it("gravação sem resposta NÃO é cancelada (pode ter chegado ao banco)", async () => {
+    const fetchBase = semResposta();
+    let terminou = false;
+    void criarFetchDoPrograma(fetchBase)(`${URL_BASE}/rest/v1/clientes`, { method: "POST", body: "{}" })
+      .catch(() => {})
+      .finally(() => {
+        terminou = true;
+      });
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS * 10);
+    expect(terminou).toBe(false);
+    expect(fetchBase.mock.calls[0][1]?.signal?.aborted ?? false).toBe(false);
+  });
+
+  it("quem chamou cancelou: continua sendo cancelamento, não queda", async () => {
+    const estados = ouvir();
+    const controle = new AbortController();
+    const pedido = criarFetchDoPrograma(semResposta())(ARQUIVO, { signal: controle.signal }).catch(
+      (e: unknown) => e,
+    );
+    controle.abort();
+    const erro = await pedido;
+    expect((erro as Error).name).toBe("AbortError");
+    expect(ehErroDeRede(erro)).toBe(false);
+    expect(estados).toEqual([]);
+  });
+
+  it("ponta a ponta: .select() sem resposta vira a frase de sem conexão, sem ficar carregando pra sempre", async () => {
+    const fetchBase = semResposta();
+    const cliente = createClient(URL_BASE, CHAVE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { fetch: criarFetchDoPrograma(fetchBase) },
+    });
+    const pedido = cliente.from("clientes").select().then((r) => r);
+    await vi.advanceTimersByTimeAsync(120_000);
+    const { error } = await pedido;
+    expect(mensagemDeErro(error)).toBe(MENSAGEM_SEM_CONEXAO);
+    expect(fetchBase).toHaveBeenCalledTimes(4);
   });
 });

@@ -34,6 +34,51 @@ const ESPERAS_ENTRE_TENTATIVAS_MS = [1000, 2000, 4000];
 
 const esperarDeVerdade = (ms: number) => new Promise<void>((pronto) => setTimeout(pronto, ms));
 
+/**
+ * Quanto uma LEITURA espera o servidor começar a responder antes de desistir
+ * como queda de rede (#374, teste no PC em 11/11): com o cabo tirado, o
+ * Windows nem sempre avisa a queda (placas de rede virtuais, de VPN ou de
+ * acesso remoto, continuam "ligadas"), e o pedido ficava pendurado por
+ * minutos, com a tela em "Carregando...". Conta só até chegar a resposta
+ * (os cabeçalhos), não o download do corpo: um PDF grande numa internet lenta
+ * não é cortado. Quando a rede já caiu, a espera é curta, pra a frase de sem
+ * conexão aparecer logo (o postgrest-js tenta 4 vezes).
+ */
+export const TEMPO_LIMITE_LEITURA_MS = 15_000;
+export const TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS = 4_000;
+
+/**
+ * Faz a leitura com tempo limite. Estourou: cancela o pedido e lança o mesmo
+ * TypeError de uma queda de rede, pra quem chamou (e o postgrest-js) tratar
+ * igual. Se foi QUEM CHAMOU que cancelou, o cancelamento passa como veio.
+ */
+async function lerComTempoLimite(
+  fetchBase: typeof fetch,
+  input: RequestInfo | URL,
+  init: RequestInit | undefined,
+  limiteMs: number,
+): Promise<Response> {
+  const controle = new AbortController();
+  const deQuemChamou = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+  if (deQuemChamou?.aborted) controle.abort(deQuemChamou.reason);
+  const repassar = () => controle.abort(deQuemChamou?.reason);
+  deQuemChamou?.addEventListener("abort", repassar);
+  let estourou = false;
+  const relogio = setTimeout(() => {
+    estourou = true;
+    controle.abort();
+  }, limiteMs);
+  try {
+    return await fetchBase(input, { ...init, signal: controle.signal });
+  } catch (erro) {
+    if (estourou) throw new TypeError("Failed to fetch");
+    throw erro;
+  } finally {
+    clearTimeout(relogio);
+    deQuemChamou?.removeEventListener("abort", repassar);
+  }
+}
+
 function metodoDoPedido(input: RequestInfo | URL, init?: RequestInit): string {
   const metodo = init?.method || (input instanceof Request ? input.method : "") || "GET";
   return metodo.toUpperCase();
@@ -68,17 +113,31 @@ export function criarFetchDoPrograma(
   fetchBase: typeof fetch,
   esperar: (ms: number) => Promise<void> = esperarDeVerdade,
 ): typeof fetch {
+  // A última notícia da rede, só pra escolher o tempo limite da leitura.
+  let redeCaiu = false;
   return async (input, init) => {
     const ehLeitura = ["GET", "HEAD"].includes(metodoDoPedido(input, init));
     const repete = ehLeitura && !enderecoDoPedido(input).includes("/rest/v1/");
     for (let tentativa = 0; ; tentativa++) {
       try {
-        const resposta = await fetchBase(input, init);
+        // Gravação nunca tem tempo limite: cancelar no meio não desfaz o que
+        // talvez já chegou ao banco, e a tela diria "não salvou" sem saber.
+        const caiu = redeCaiu || (typeof navigator !== "undefined" && navigator.onLine === false);
+        const resposta = ehLeitura
+          ? await lerComTempoLimite(
+              fetchBase,
+              input,
+              init,
+              caiu ? TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS : TEMPO_LIMITE_LEITURA_MS,
+            )
+          : await fetchBase(input, init);
+        redeCaiu = false;
         avisar("respondeu");
         return resposta;
       } catch (erro) {
         if (!ehErroDeRede(erro)) throw erro;
         if (!repete || tentativa >= ESPERAS_ENTRE_TENTATIVAS_MS.length) {
+          redeCaiu = true;
           avisar("falhou");
           throw erro;
         }
