@@ -37,14 +37,14 @@
 - Contraste e largura da aba nova, medidos com as mesmas funções do `contraste:telas` e do `largura:telas`. Deu zero achado nas larguras 1024, 1280, 1366, 1536 e 1600, por venda e por lucro.
 
 ## O que ficou de fora
-- **A aba nova não entrou na lista de cenas** (`site/ferramentas/cenas.mjs`). Esse arquivo está fora da lista da issue. Por isso o `contraste:telas` e o `largura:telas` do CI ainda não passam pela aba. Medi com um script meu, que acrescenta a cena só enquanto ele roda. Sugestão: uma cena `{ aba: "Curva ABC" }` ao lado da `37-lucratividade`, se a Sofia aprovar.
-- **Cliente por lucro**: um item sem custo em qualquer OS do cliente tira ele inteiro da curva por lucro (vai pro C, "custo não informado"). Segue a regra da issue, mas pesa mais no cliente do que numa peça. Fica pra Sofia decidir se quer outro jeito.
-- **Caso raro, que já existia antes**: uma peça avulsa e um serviço antigo (sem `servico_id`, antes da 0012) com exatamente o mesmo nome viram uma linha só, e ela cai numa das duas listas. Não mexi no agrupamento, porque a issue proíbe mudar a conta.
-- **Selos A/B/C**: escolhi um visual (A cheio, B com contorno roxo, C com contorno cinza) depois de ver, na foto, que a primeira versão sumia no tema escuro. A regra diz que aparência a Sofia escolhe por imagem: as fotos estão no PR.
+- **A cena da aba** (`site/ferramentas/cenas.mjs`) ficou de fora no começo, porque esse arquivo não estava na lista da issue; medi com um script meu. **Depois da revisão, a Sofia aprovou** e a cena `37a-curva-abc` entrou neste PR. `npm run contraste:telas` e `npm run largura:telas` passaram com as 67 telas, incluindo a nova.
+- **Cliente por lucro**: um item sem custo em qualquer OS do cliente tira ele inteiro da curva por lucro (vai pro C, "custo não informado"). Segue a regra da issue, mas pesa mais no cliente do que numa peça. A Sofia aprovou assim por enquanto: se na loja isso esvaziar a curva de clientes, vira tarefa.
+- **Caso raro, que já existia antes**: uma peça avulsa e um serviço antigo (sem `servico_id`, antes da 0012) com exatamente o mesmo nome viram uma linha só, e ela cai numa das duas listas. Não mexi no agrupamento, porque a issue proíbe mudar a conta. A Sofia anotou na revisão, sem pedir mudança.
+- **Selos A/B/C**: escolhi um visual (A cheio, B com contorno roxo, C com contorno cinza) depois de ver, na foto, que a primeira versão sumia no tema escuro. A Sofia viu as fotos e aprovou como está.
 
 ## O que depende de alguém
 - **Tiago, no PC** (`docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez"), **caso B** (abrir o programa), branch `claude/tarefa-390-frontend-q1cct6`, no Supabase de teste. Roteiro: Relações → Curva ABC no mês, conferir as letras e os 100% no fim. Em Lucratividade, o "Vendido no período" tem que ser igual a peças + serviços. Mudar o período e ver as listas mudarem. Fazer o teste de permissão com um login só com Relações.
-- **Sofia**: revisar o PR. Decidir a regra do empate (fui pela de sempre: entre iguais, a ordem pelo nome decide), os selos e a cena no `cenas.mjs`. Depois de publicar, conferir a curva do mês passado na loja.
+- **Sofia**: revisou (sem nada grave nem médio) e aprovou a regra da linha que cruza os 80%, o cliente sem custo no C, os selos e a cena. Ela aprova o PR depois do teste do Tiago no PC e do CI verde. Depois de publicar, confere a curva do mês passado na loja.
 
 ## Onde parou
 Terminei.
