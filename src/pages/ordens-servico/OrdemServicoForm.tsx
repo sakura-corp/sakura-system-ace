@@ -4,6 +4,7 @@ import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -401,7 +402,17 @@ export function OrdemServicoForm({
                 {ordemExistente.criado_por?.nome ?? "—"}
               </p>
               <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
-                {ordemExistente.cliente?.nome ?? "Cliente"}
+                {ordemExistente.cliente?.nome ? (
+                  <LinkCliente
+                    clienteId={ordemExistente.cliente_id}
+                    nome={ordemExistente.cliente.nome}
+                    podeAbrir
+                    desligado={isDirty}
+                    motivoDesligado="Salve as alterações da OS antes de abrir a ficha do cliente."
+                  />
+                ) : (
+                  "Cliente"
+                )}
                 {ordemExistente.veiculo?.placa ? ` — ${ordemExistente.veiculo.placa}` : ""}
               </h2>
             </div>

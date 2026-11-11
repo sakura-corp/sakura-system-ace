@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Explicacao } from "@/components/Explicacao";
+import { LinkCliente } from "@/components/LinkCliente";
 import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, diasEntre, hojeLocal } from "@/lib/datas";
@@ -159,7 +160,11 @@ export function FichaVeiculoPage() {
           explicacao="O cliente em cujo cadastro este veículo está hoje. Uma OS antiga pode ter sido aberta em nome de outra pessoa."
         >
           <p className="truncate text-destaque font-semibold text-sakura-purple-dark">
-            {veiculo.cliente?.nome ?? "—"}
+            {veiculo.cliente ? (
+              <LinkCliente clienteId={veiculo.cliente.id} nome={veiculo.cliente.nome} podeAbrir />
+            ) : (
+              "—"
+            )}
           </p>
           {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
               "sem telefone cadastrado" seria mentira, então a linha some. */}
