@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { telefoneParaWhatsapp } from "./whatsapp";
 
 /**
  * O contato da contabilidade da loja, como a tela de Configurações o valida
@@ -14,6 +15,10 @@ export const contatoContabilidadeSchema = z
       .trim()
       .refine((v) => v === "" || /^\d{10,13}$/.test(v.replace(/\D/g, "")), {
         message: "O WhatsApp precisa ter de 10 a 13 números, com o DDD.",
+      })
+      // A mesma regra do botão Abrir conversa: o que ele recusaria não se salva.
+      .refine((v) => !/^\d{10,13}$/.test(v.replace(/\D/g, "")) || telefoneParaWhatsapp(v) !== null, {
+        message: "Esse WhatsApp não abre conversa. Confira o DDD e o número, por exemplo (11) 90000-0000.",
       }),
     email: z
       .string()

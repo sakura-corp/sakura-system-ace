@@ -163,6 +163,24 @@ describe("planejarPacoteContabilidade: o LEIA-ME", () => {
     expect(texto).toContain("- NFC-e nº 9 (nfce/nfe-9.xml): o PDF não foi buscado");
   });
 
+  it("pacote de uma aba só: o LEIA-ME diz que é só daquele tipo e onde está o outro", () => {
+    const texto = planejarPacoteContabilidade({
+      mes: "2026-10",
+      tipo: "nfe",
+      notas: [nota({ id: "a" })],
+      pdfs: new Map([["a", PDF_OK]]),
+    }).leiaMe;
+    expect(texto).toContain("SÓ das NFC-e");
+    expect(texto).toContain("NFS-e");
+    expect(texto).toContain("Gerar o pacote");
+    expect(texto).not.toContain("o XML de cada nota do mês");
+  });
+
+  it("pacote dos dois tipos (sem `tipo`) não diz que é parcial", () => {
+    const texto = leiaMe([nota({ id: "a" })], { a: PDF_OK });
+    expect(texto).not.toContain("SÓ das");
+  });
+
   it("quando todas têm PDF, diz isso", () => {
     const texto = leiaMe([nota({ id: "a" })], { a: PDF_OK });
     expect(texto).toContain("Todas as notas estão com o XML e o PDF.");
@@ -173,6 +191,11 @@ describe("planejarPacoteContabilidade: o LEIA-ME", () => {
 describe("o mês do pacote", () => {
   it("o nome do .zip leva o mês", () => {
     expect(nomeDoPacote("2026-10")).toBe("pacote-contabilidade-2026-10.zip");
+  });
+
+  it("o pacote de uma aba só leva o tipo no nome", () => {
+    expect(nomeDoPacote("2026-10", "nfe")).toBe("pacote-contabilidade-2026-10-nfce.zip");
+    expect(nomeDoPacote("2026-10", "nfse")).toBe("pacote-contabilidade-2026-10-nfse.zip");
   });
 
   it("só entram as notas daquele mês (competência no dia 1º ou no dia da emissão)", () => {

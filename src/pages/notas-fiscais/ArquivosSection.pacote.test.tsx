@@ -73,6 +73,7 @@ describe("ArquivosSection: pacote pro contador", () => {
       { mes: string; notas: NotaFiscalArquivo[] },
     ];
     expect(opcoes.mes).toBe("2026-10");
+    expect((opcoes as { tipo?: string }).tipo).toBe("nfe");
     expect(opcoes.notas.map((n) => n.id)).toEqual(["1", "2"]);
 
     const andamento = await screen.findByRole("button", { name: "Buscando PDF 1 de 2…" });

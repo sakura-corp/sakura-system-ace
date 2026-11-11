@@ -46,8 +46,9 @@ import { modeloPorChave } from "@/schemas/whatsapp";
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 let operador: Partial<Operador> = {};
+let lojaAtual = { id: "loja-a", nome: "Loja Centro" };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador, lojaAtual: { id: "loja-a", nome: "Loja Centro" } }),
+  useAuth: () => ({ operador, lojaAtual }),
 }));
 
 const { CentralDoDia } = await import("./CentralDoDia");
@@ -79,6 +80,23 @@ function montar(props: { ordens?: OrdemServico[]; dadosIncompletos?: boolean } =
   );
 }
 
+function montarComRerender() {
+  // Árvore nova a cada chamada: o React ignora um elemento idêntico ao anterior.
+  const arvore = () => (
+    <MemoryRouter initialEntries={["/"]}>
+      <Routes>
+        <Route
+          path="/"
+          element={<CentralDoDia ordens={[]} contasPagar={[]} movimentos={[]} clientes={[]} />}
+        />
+        <Route path="*" element={<LocalAtual />} />
+      </Routes>
+    </MemoryRouter>
+  );
+  const r = render(arvore());
+  return { rerender: () => r.rerender(arvore()) };
+}
+
 const MODULOS_DA_CENTRAL = [
   "notas_fiscais",
   "caixa",
@@ -93,6 +111,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 10, 20, 12, 0, 0));
   vi.clearAllMocks();
+  lojaAtual = { id: "loja-a", nome: "Loja Centro" };
   listarNotasComErro.mockResolvedValue([]);
   listarFechamentosCaixa.mockResolvedValue([]);
   listarContasReceber.mockResolvedValue([]);
@@ -185,7 +204,7 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
     await linhaDasNotas();
     expect(await screen.findByRole("button", { name: "Abrir conversa" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gerar o pacote" })).toBeInTheDocument();
-    expect(screen.queryByText("cadastrar o contato do contador")).toBeNull();
+    expect(screen.queryByText("cadastrar o WhatsApp do contador")).toBeNull();
     expect(buscarContatoContabilidade).toHaveBeenCalledTimes(1);
     expect(buscarContatoContabilidade).toHaveBeenCalledWith("loja-a");
   });
@@ -204,15 +223,54 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
     await linhaDasNotas();
     const user = userEvent.setup();
     expect(screen.queryByRole("button", { name: "Abrir conversa" })).toBeNull();
-    await user.click(await screen.findByRole("button", { name: "cadastrar o contato do contador" }));
+    await user.click(await screen.findByRole("button", { name: "cadastrar o WhatsApp do contador" }));
     await waitFor(() => expect(screen.getByTestId("local")).toHaveTextContent("/configuracoes"));
+  });
+
+  it("quem não é admin não vê o link (Configurações só abre pra admin)", async () => {
+    operador = { id: "op-2", admin: false, permissoes: ["notas_fiscais"] };
+    montar();
+    await linhaDasNotas();
+    await screen.findByRole("button", { name: "Gerar o pacote" });
+    await waitFor(() => expect(buscarContatoContabilidade).toHaveBeenCalled());
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("button", { name: /cadastrar o/ })).toBeNull();
+  });
+
+  it("troca de loja no meio do pacote: a loja nova não herda o andamento nem o aviso", async () => {
+    let progresso: ((f: number, t: number) => void) | undefined;
+    let terminar!: (v: { semPdf: number }) => void;
+    gerarPacoteContabilidade.mockImplementation(
+      (a: { aoProgredir: (f: number, t: number) => void }) => {
+        progresso = a.aoProgredir;
+        return new Promise((r) => (terminar = r));
+      },
+    );
+    const { rerender } = montarComRerender();
+    await linhaDasNotas();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Gerar o pacote" }));
+    await waitFor(() => expect(gerarPacoteContabilidade).toHaveBeenCalled());
+    progresso!(1, 3);
+    await screen.findByRole("button", { name: "Buscando PDF 1 de 3…" });
+
+    lojaAtual = { id: "loja-b", nome: "Loja Sul" };
+    rerender();
+    await linhaDasNotas();
+    expect(await screen.findByRole("button", { name: "Gerar o pacote" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /Buscando PDF/ })).toBeNull();
+
+    terminar({ semPdf: 0 });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Pacote baixado.")).toBeNull();
+    expect(screen.getByRole("button", { name: "Gerar o pacote" })).toBeEnabled();
   });
 
   it("contato só com e-mail: também mostra o link, sem Abrir conversa", async () => {
     buscarContatoContabilidade.mockResolvedValue({ nome: "Marta", whatsapp: null, email: "m@exemplo.com" });
     montar();
     await linhaDasNotas();
-    expect(await screen.findByRole("button", { name: "cadastrar o contato do contador" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "cadastrar o WhatsApp do contador" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Abrir conversa" })).toBeNull();
   });
 

@@ -430,11 +430,14 @@ async function emLotes<T, R>(itens: T[], fazer: (item: T) => Promise<R>): Promis
 export async function gerarPacoteContabilidade({
   notas,
   mes,
+  tipo,
   aoProgredir,
 }: {
   notas: NotaFiscalArquivo[];
   /** "AAAA-MM" */
   mes: string;
+  /** Pacote de uma aba só: o nome e o LEIA-ME dizem o tipo. Sem isto, os dois tipos. */
+  tipo?: TipoNotaFiscal;
   /** A cada PDF buscado na Focus NFe (pra tela mostrar "Buscando PDF 12 de 40"). */
   aoProgredir?: (feitos: number, total: number) => void;
 }): Promise<{ semPdf: number }> {
@@ -482,7 +485,7 @@ export async function gerarPacoteContabilidade({
     aoProgredir?.(feitos, paraBuscar.length);
   });
 
-  const plano = planejarPacoteContabilidade({ mes, notas: doMes, pdfs });
+  const plano = planejarPacoteContabilidade({ mes, notas: doMes, pdfs, tipo });
   const xmlDaNota = new Map(doMes.map((nota, indice) => [nota.id, xmls[indice]]));
   const arquivos: ArquivoParaZip[] = plano.entradas.map((entrada) => ({
     nome: entrada.caminho,
@@ -497,6 +500,6 @@ export async function gerarPacoteContabilidade({
     conteudo: new TextEncoder().encode(`\uFEFF${plano.leiaMe}`),
   });
 
-  salvarComoDownload(criarZip(arquivos), nomeDoPacote(mes));
+  salvarComoDownload(criarZip(arquivos), nomeDoPacote(mes, tipo));
   return { semPdf: doMes.length - conteudosPdf.size };
 }

@@ -74,8 +74,11 @@ export function planejarPacoteContabilidade({
   mes,
   notas,
   pdfs,
+  tipo,
 }: {
   mes: string;
+  /** Pacote de uma aba só (NFC-e ou NFS-e); sem isto, é o dos dois tipos. */
+  tipo?: TipoNotaFiscal;
   notas: NotaFiscalArquivo[];
   pdfs: ReadonlyMap<string, ResultadoPdf>;
 }): PlanoDoPacote {
@@ -102,7 +105,7 @@ export function planejarPacoteContabilidade({
       semPdf.push(`- ${NOTA_LABEL[nota.tipo]}${numero} (${caminhoXml}): ${motivo}`);
     }
   }
-  return { entradas, leiaMe: textoLeiaMe(mes, notas, semPdf) };
+  return { entradas, leiaMe: textoLeiaMe(mes, notas, semPdf, tipo) };
 }
 
 const NOMES_DOS_MESES = [
@@ -132,15 +135,32 @@ function plural(quantidade: number, singular: string, varias: string): string {
 }
 
 // Linhas com \r\n: o contador abre no Bloco de Notas do Windows.
-function textoLeiaMe(mes: string, notas: NotaFiscalArquivo[], semPdf: string[]): string {
-  const linhas = [
-    `Pacote de notas fiscais de ${mesPorExtenso(mes)}`,
-    "",
-    "Este pacote tem o XML de cada nota do mês e, quando o sistema conseguiu buscar, o PDF",
+function textoLeiaMe(
+  mes: string,
+  notas: NotaFiscalArquivo[],
+  semPdf: string[],
+  tipo?: TipoNotaFiscal,
+): string {
+  const linhas = [`Pacote de notas fiscais de ${mesPorExtenso(mes)}`, ""];
+  if (tipo) {
+    const outro = tipo === "nfe" ? "nfse" : "nfe";
+    linhas.push(
+      `ATENÇÃO: este pacote tem SÓ das ${NOTA_LABEL[tipo]} do mês. As ${NOTA_LABEL[outro]} não`,
+      `estão aqui: estão no pacote das ${NOTA_LABEL[outro]} (aba ${NOTA_LABEL[outro]} em Notas fiscais)`,
+      'ou no botão "Gerar o pacote" da Central do dia, que leva as duas juntas.',
+      "",
+      `Aqui está o XML de cada ${NOTA_LABEL[tipo]} do mês e, quando o sistema conseguiu buscar, o PDF`,
+    );
+  } else {
+    linhas.push(
+      "Este pacote tem o XML de cada nota do mês e, quando o sistema conseguiu buscar, o PDF",
+    );
+  }
+  linhas.push(
     "ao lado, com o mesmo nome. As canceladas estão aqui também, com CANCELADA- no começo",
     "do nome do arquivo: elas não valem como venda.",
     "",
-  ];
+  );
 
   for (const tipo of Object.keys(PASTA_DO_TIPO) as TipoNotaFiscal[]) {
     const doTipo = notas.filter((nota) => nota.tipo === tipo);
@@ -175,9 +195,9 @@ function conferirMes(mes: string): { ano: number; mes: number } {
   return { ano: Number(partes[1]), mes: Number(partes[2]) };
 }
 
-export function nomeDoPacote(mes: string): string {
+export function nomeDoPacote(mes: string, tipo?: TipoNotaFiscal): string {
   conferirMes(mes);
-  return `pacote-contabilidade-${mes}.zip`;
+  return `pacote-contabilidade-${mes}${tipo ? `-${PASTA_DO_TIPO[tipo]}` : ""}.zip`;
 }
 
 // `competencia` é uma data "AAAA-MM-DD": o dia 1º do mês, ou (em nota emitida

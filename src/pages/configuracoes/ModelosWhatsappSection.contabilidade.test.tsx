@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /** Tarefa #383: o bloco "Contato da contabilidade" em Configurações → WhatsApp. */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 
 const buscarContatoContabilidade = vi.fn();
@@ -27,13 +27,40 @@ function montar(lojaId = "loja-a") {
 }
 
 beforeEach(() => {
+  vi.spyOn(window, "confirm").mockReturnValue(true);
   buscarContatoContabilidade.mockReset();
   salvarContatoContabilidade.mockReset();
   buscarContatoContabilidade.mockResolvedValue(null);
   salvarContatoContabilidade.mockResolvedValue(undefined);
 });
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("Contato da contabilidade", () => {
+  it("carga que falha trava os campos e os botões (salvar em branco não apaga o contato guardado)", async () => {
+    buscarContatoContabilidade.mockRejectedValue(new Error("sem rede"));
+    montar();
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome da contabilidade")).toBeDisabled();
+    expect(screen.getByLabelText("WhatsApp da contabilidade")).toBeDisabled();
+    expect(screen.getByLabelText("E-mail da contabilidade")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Salvar contato" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Apagar contato" })).toBeDisabled();
+  });
+
+  it("Apagar contato pergunta antes; dizendo não, nada é apagado", async () => {
+    vi.mocked(window.confirm).mockReturnValue(false);
+    buscarContatoContabilidade.mockResolvedValue({ nome: "Marta", whatsapp: "11900000000", email: null });
+    const { user } = montar();
+    await screen.findByDisplayValue("Marta");
+    await user.click(screen.getByRole("button", { name: "Apagar contato" }));
+    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(salvarContatoContabilidade).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Nome da contabilidade")).toHaveValue("Marta");
+  });
+
   it("mostra o contato salvo da loja", async () => {
     buscarContatoContabilidade.mockResolvedValue({ nome: "Marta", whatsapp: "11900000000", email: null });
     montar();

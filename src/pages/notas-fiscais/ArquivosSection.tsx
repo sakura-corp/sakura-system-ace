@@ -178,6 +178,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
       await gerarPacoteContabilidade({
         notas: arquivosDoMes,
         mes: chave,
+        tipo,
         aoProgredir: (feitos, total) => setPacote({ chave, feitos, total }),
       });
     } catch (err) {

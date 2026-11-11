@@ -41,7 +41,7 @@
 ## Gasto
 - **Uso da sessão mãe**: não medido (a sessão não tem o número à mão).
 - **Ajudantes**: 6. Pelos avisos de fim: migration ~140 mil tokens; pacote ~141 mil; telas ~157 mil;
-  revisão ~126 mil; consertos: ver o aviso de fim (não anotado aqui).
+  revisão ~126 mil; consertos ~122 mil.
 - **Sessões filhas**: nenhuma
 - **`/goal`**: não sei se foi ligado (o texto foi mostrado ao Tiago na primeira mensagem).
 
@@ -63,6 +63,11 @@
 - **Central**: mês de hoje no lugar do mês anterior → 3 reprovaram; chave errada no registro do
   WhatsApp → reprovou; buscar o contato fora do dia 1 a 7 → reprovou; ramo "sem WhatsApp" forçado → 4.
 - **Configurações**: sem "esvaziar tudo apaga" → reprovou; limite de 8 dígitos → reprovou.
+- **Consertos da revisão** (cada teste novo rodado contra o código antigo antes): pacote da aba
+  sem o tipo no nome/LEIA-ME → 4 reprovaram; Central com troca de loja no meio (contra o
+  `CentralDoDia.tsx` antigo) → continuava "Buscando PDF 1 de 3…"; link pra quem não é admin e o
+  texto novo → reprovaram; carga do contato com erro deixava os campos liberados e o "Apagar" sem
+  confirmação → 2 reprovaram; "(16) 99123-45678" era aceito → reprovou.
 - **Numeração**: com a migration como 0085 (buraco), `scripts/atualizar-bancos.test.ts` reprovou
   ("expected 85 to be 83"); como 0083, passa.
 

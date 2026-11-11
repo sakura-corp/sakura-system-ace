@@ -240,6 +240,10 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
+  // Carga que falhou: os campos ficam travados, senão um "Salvar" em branco
+  // apagaria o contato que está guardado e a tela não chegou a mostrar.
+  const [cargaFalhou, setCargaFalhou] = useState(false);
+  const travado = carregando || cargaFalhou;
   const {
     register,
     handleSubmit,
@@ -265,6 +269,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
       .catch((err) => {
         if (cancelado) return;
         console.error("Erro ao carregar o contato da contabilidade:", err);
+        setCargaFalhou(true);
         setErro(mensagemDeErro(err));
       })
       .finally(() => {
@@ -276,6 +281,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
   }, [lojaId, reset]);
 
   async function gravar(contato: ContatoContabilidadeFormValores | null) {
+    if (contato === null && !confirm("Apagar o contato da contabilidade desta loja?")) return;
     setErro(null);
     setSalvo(null);
     try {
@@ -330,7 +336,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
           <input
             id="contab-nome"
             type="text"
-            disabled={carregando}
+            disabled={travado}
             {...register("nome", { onChange: () => setSalvo(null) })}
             className={classeCampo}
           />
@@ -347,7 +353,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
             type="text"
             inputMode="tel"
             placeholder="(11) 90000-0000"
-            disabled={carregando}
+            disabled={travado}
             {...register("whatsapp", { onChange: () => setSalvo(null) })}
             className={classeCampo}
           />
@@ -363,7 +369,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
             id="contab-email"
             type="text"
             inputMode="email"
-            disabled={carregando}
+            disabled={travado}
             {...register("email", { onChange: () => setSalvo(null) })}
             className={classeCampo}
           />
@@ -381,7 +387,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
         )}
         <button
           type="button"
-          disabled={isSubmitting || carregando}
+          disabled={isSubmitting || travado}
           onClick={() => gravar(null)}
           className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
         >
@@ -389,7 +395,7 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
         </button>
         <button
           type="submit"
-          disabled={isSubmitting || carregando}
+          disabled={isSubmitting || travado}
           className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {isSubmitting ? "Salvando..." : "Salvar contato"}

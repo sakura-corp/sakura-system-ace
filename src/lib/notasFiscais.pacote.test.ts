@@ -139,6 +139,13 @@ describe("gerarPacoteContabilidade", () => {
     expect(zip.get("LEIA-ME.txt")).toContain("Todas as notas estão com o XML e o PDF.");
   });
 
+  it("com `tipo` (botão de uma aba), o .zip leva o tipo no nome", async () => {
+    await gerarPacoteContabilidade({ notas: [nota("1")], mes: "2026-10", tipo: "nfe" });
+    expect(salvos.map((s) => s.nome)).toEqual(["pacote-contabilidade-2026-10-nfce.zip"]);
+    const zip = await lerZip(salvos[0].conteudo);
+    expect(zip.get("LEIA-ME.txt")).toContain("SÓ das NFC-e");
+  });
+
   it("um PDF que falha não derruba: o .zip sai, a nota vai só com o XML e o LEIA-ME diz por quê", async () => {
     pdfQueFalha.add("ref-2");
     const resultado = await gerarPacoteContabilidade({

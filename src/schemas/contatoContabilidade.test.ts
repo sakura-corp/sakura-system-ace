@@ -23,6 +23,15 @@ describe("contatoContabilidadeSchema (#383)", () => {
     expect(ok({ whatsapp: "5511900000000" }).success).toBe(true);
     expect(ok({ whatsapp: "55119000000001" }).success).toBe(false);
   });
+  it("recusa o WhatsApp que o Abrir conversa não abriria", () => {
+    // 12 dígitos sem o 55: o botão recusa (não é DDD + 8/9 dígitos, nem 55 + isso).
+    const r = ok({ whatsapp: "(16) 99123-45678" });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0].message).toMatch(/DDD/);
+    expect(ok({ whatsapp: "(16) 99123-4567" }).success).toBe(true);
+    // DDD que não existe (10 dígitos começando em 05).
+    expect(ok({ whatsapp: "0512345678" }).success).toBe(false);
+  });
   it("e-mail inválido é recusado", () => {
     expect(ok({ email: "sem-arroba" }).success).toBe(false);
   });

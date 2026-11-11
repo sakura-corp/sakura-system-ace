@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { Explicacao } from "@/components/Explicacao";
@@ -123,6 +123,14 @@ export function CentralDoDia({
   const [contato, setContato] = useState<ContatoContabilidade | null | undefined>(undefined);
   const [pacote, setPacote] = useState<{ feitos: number; total: number } | null>(null);
   const [avisoPacote, setAvisoPacote] = useState<{ erro: boolean; texto: string } | null>(null);
+  // A loja de agora: o pacote que termina depois de uma troca de loja não
+  // mexe na tela da loja nova (mesmo padrão do #974).
+  const lojaAtualRef = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaAtualRef.current = lojaAtual?.id;
+    setPacote(null);
+    setAvisoPacote(null);
+  }, [lojaAtual?.id]);
 
   useEffect(() => {
     // Troca de loja no meio da busca: a resposta atrasada da loja anterior
@@ -218,16 +226,22 @@ export function CentralDoDia({
 
   async function gerarPacote() {
     if (!lojaAtual) return;
+    const lojaId = lojaAtual.id;
+    const mesmaLoja = () => lojaAtualRef.current === lojaId;
     setAvisoPacote(null);
     setPacote({ feitos: 0, total: 0 });
     try {
       const mes = mesDoPacote(hoje);
-      const doMes = await listarNotasDoMesParaPacote(lojaAtual.id, mes);
+      const doMes = await listarNotasDoMesParaPacote(lojaId, mes);
+      if (!mesmaLoja()) return;
       const { semPdf } = await gerarPacoteContabilidade({
         notas: doMes,
         mes,
-        aoProgredir: (feitos, total) => setPacote({ feitos, total }),
+        aoProgredir: (feitos, total) => {
+          if (mesmaLoja()) setPacote({ feitos, total });
+        },
       });
+      if (!mesmaLoja()) return;
       setAvisoPacote({
         erro: false,
         texto:
@@ -237,9 +251,9 @@ export function CentralDoDia({
       });
     } catch (err) {
       console.error("Erro ao gerar o pacote da contabilidade:", err);
-      setAvisoPacote({ erro: true, texto: mensagemDeErro(err) });
+      if (mesmaLoja()) setAvisoPacote({ erro: true, texto: mensagemDeErro(err) });
     } finally {
-      setPacote(null);
+      if (mesmaLoja()) setPacote(null);
     }
   }
 
@@ -360,13 +374,13 @@ export function CentralDoDia({
                   );
                 }}
               />
-            ) : contato === undefined ? null : (
+            ) : contato === undefined || !operador?.admin ? null : (
               <button
                 type="button"
                 onClick={() => navigate("/configuracoes")}
                 className="text-rotulo font-medium text-sakura-purple-dark underline underline-offset-2"
               >
-                cadastrar o contato do contador
+                cadastrar o WhatsApp do contador
               </button>
             )}
             {avisoPacote && (
