@@ -225,7 +225,8 @@ export function PainelPage() {
     montarTexto: async ({ modelo, loja, podeVer }) => {
       if (!lojaAtual) throw new Error("Nenhuma loja selecionada.");
       const referencia = dataDaChave(chaveData(new Date()));
-      const [movimentosAgora, ordensAgora, contasAgora] = await Promise.all([
+      const [modeloDaLoja, movimentosAgora, ordensAgora, contasAgora] = await Promise.all([
+        modelo,
         listarMovimentosCaixa(lojaAtual.id),
         mostraBlocosDeOS(podeVer) ? listarOrdens(lojaAtual.id) : Promise.resolve([]),
         podeVer("contas_pagar") ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
@@ -237,7 +238,7 @@ export function PainelPage() {
       return textoResumoDono({
         loja,
         periodo: periodoDoResumo(periodo, referencia, referencia),
-        modelo,
+        modelo: modeloDaLoja,
         numeros: numerosDoResumoDono({
           periodo,
           referencia,

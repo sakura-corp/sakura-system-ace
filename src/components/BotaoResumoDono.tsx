@@ -9,12 +9,12 @@ import { temPermissao, type ModuloChave } from "@/types/operador";
 export interface EscolhaResumoDono {
   rotulo: string;
   /**
-   * Monta o texto. Recebe o modelo da loja (ou o padrão), o nome da loja e o
+   * Monta o texto. Recebe o modelo da loja (ou o padrão, ainda chegando), o nome da loja e o
    * "pode ver" de quem apertou: a montagem (`textoResumoDono`) tira do texto a
    * linha de cada número que a pessoa não pode ver.
    */
   montarTexto: (contexto: {
-    modelo: string;
+    modelo: Promise<string>;
     loja: string | null;
     podeVer: (modulo: ModuloChave) => boolean;
   }) => Promise<string> | string;
@@ -44,16 +44,16 @@ export function BotaoResumoDono({ escolhas }: { escolhas: EscolhaResumoDono[] })
     setErro(null);
     setAbrindo(escolha.rotulo);
     try {
-      // Sem os modelos da loja vale o texto padrão: não impede o resumo.
-      const modelos = await listarModelosWhatsapp(lojaAtual.id).catch((err) => {
-        console.error("Erro ao carregar os modelos de WhatsApp:", err);
-        return {} as Record<string, string>;
-      });
-      const texto = await escolha.montarTexto({
-        modelo: textoDoModelo(modelos, "resumo_dono"),
-        loja: lojaAtual.nome ?? null,
-        podeVer,
-      });
+      // Sem os modelos da loja vale o texto padrão: não impede o resumo. O
+      // modelo vai "a caminho" pra quem monta, que espera por ele junto com
+      // os próprios dados (uma espera só, não duas seguidas).
+      const modelo = listarModelosWhatsapp(lojaAtual.id)
+        .catch((err) => {
+          console.error("Erro ao carregar os modelos de WhatsApp:", err);
+          return {} as Record<string, string>;
+        })
+        .then((modelos) => textoDoModelo(modelos, "resumo_dono"));
+      const texto = await escolha.montarTexto({ modelo, loja: lojaAtual.nome ?? null, podeVer });
       await abrirWhatsappSemNumero(texto);
     } catch (err) {
       console.error("Erro ao abrir o resumo pro dono:", err);

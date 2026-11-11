@@ -379,11 +379,12 @@ function FechamentoFeito({
     loja,
     podeVer,
   }: {
-    modelo: string;
+    modelo: Promise<string>;
     loja: string | null;
     podeVer: (modulo: ModuloChave) => boolean;
   }): Promise<string> {
-    const [ordens, contas] = await Promise.all([
+    const [modeloDaLoja, ordens, contas] = await Promise.all([
+      modelo,
       mostraBlocosDeOS(podeVer) ? listarOrdens(lojaId) : Promise.resolve([]),
       podeVer("contas_pagar") ? listarContasPagar(lojaId) : Promise.resolve([]),
     ]);
@@ -393,7 +394,7 @@ function FechamentoFeito({
     return textoResumoDono({
       loja,
       periodo: periodoDoResumo("dia", referencia, hoje),
-      modelo,
+      modelo: modeloDaLoja,
       numeros: numerosDoResumoDono({
         periodo: "dia",
         referencia,

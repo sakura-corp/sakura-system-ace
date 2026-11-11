@@ -10,7 +10,12 @@
 - Sessão mãe (chefe frontend): leu a issue e o código (Início, Caixa, WhatsApp), escreveu os testes
   antes, a montagem do texto em `src/schemas/whatsapp.ts`, os dois botões, as fotos e o relatório.
 - `ajudante-forte` (revisão final): leu o diff do zero procurando erro de dinheiro e de permissão.
-  RESULTADO_DA_REVISAO
+  Nada de gravidade alta. Um achado médio, que corrigi: o Início montava o resumo com os dados
+  carregados quando a tela abriu, e um PC parado ali desde cedo mandaria números velhos. Agora busca
+  tudo de novo no clique. Os achados baixos estão em "O que ficou de fora" ou na lista pra Sofia.
+- `/code-review` (esforço médio, no PR inteiro): 10 pontos. Corrigi um (o modelo da loja e os dados
+  agora são buscados ao mesmo tempo). Dois vão pra Sofia decidir (ver "O que depende de alguém").
+  Não mexi nos outros 7: o motivo de cada um está na descrição do PR.
 - As etapas "achar de onde vem cada número" (rápido), "montagem e testes" (forte) e "botões"
   (médio) da tabela da issue **foram feitas pela própria mãe**: a leitura já estava feita no
   planejamento, e passar o contexto pra três ajudantes custaria mais do que fazer.
@@ -18,13 +23,15 @@
 ## Modelos usados
 - Planejamento, montagem, testes e botões: a sessão mãe (forte), esforço médio.
 - Revisão final: forte, esforço alto. Sem troca por falha.
+- `/code-review`: o que a própria skill escolhe, com esforço médio.
 
 ## Sessões filhas
 - nenhuma (a issue diz `Sessões filhas: não`).
 
 ## Gasto
 - **Uso da sessão mãe**: não medido (medição pelo arquivo da conversa não feita nesta sessão).
-- **Ajudantes**: 1 (forte, esforço alto); tokens: ver o aviso de fim do ajudante, não anotado.
+- **Ajudantes**: 1, o forte com esforço alto: uns 136 mil tokens e 23 ferramentas (pelo aviso).
+  O `/code-review` rodou separado, sem número medido.
 - **Sessões filhas**: nenhuma.
 - **`/goal`**: não sei se foi ligado (não mostrei o texto do `/goal` na primeira mensagem: falha minha,
   ver "Como eu agi").
@@ -41,13 +48,18 @@
   e sem Relações: o botão não aparece" reprovou.
 - **"Pode ver" passado à montagem**: troquei por "pode tudo"; reprovaram os testes "só com Caixa"
   do Início e do Fechamento (contas e OS apareciam no texto).
+- **Dados buscados no clique** (depois da revisão): voltei a usar os dados de quando a tela abriu;
+  o teste "busca os dados de novo na hora do clique" reprovou.
+- **"Hoje" é só do dia**: troquei "Hoje" pelo mês; o teste "Hoje usa os números do dia" reprovou.
+- **Texto editado pela loja**: fiz o botão ignorar o modelo salvo; o teste "usa o texto que a loja
+  editou" reprovou.
 - Os 11 testes novos do schema e os 2 de tela do resumo reprovaram antes do código existir.
 
 ## O que passou sem eu ter visto reprovar
 - O endereço sem número `https://wa.me/?text=…` com o texto codificado (o teste passou de primeira
   depois da mudança; reprovou antes só porque a função não aceitava `null`).
 - "Não aparece antes de fechar o dia" e "Hoje usa os números do dia" no Início.
-- `typecheck`, `lint`, a suíte inteira (1800 testes), `test:fusos` (São Paulo e UTC), `contraste`,
+- `typecheck`, `lint`, a suíte inteira (1802 testes), `test:fusos` (São Paulo e UTC), `contraste`,
   `contraste:telas` e `largura:telas` (66 telas, 5 larguras): verdes.
 - Na tela de demonstração (Playwright), os três botões abriram `https://wa.me/?text=…` com o texto
   certo; fotos em `docs/relatorios/tarefa-397/`.
@@ -56,6 +68,11 @@
 - O campo "WhatsApp do dono" (decisão 3 B): a Sofia escolheu abrir sem número agora.
 - Não registro a abertura em `whatsapp_mensagens` (os outros botões registram pra saber "já cobrei
   esse cliente?"; no resumo não tem pergunta a responder).
+- Do `/code-review`, sem mexer: o clique busca o histórico inteiro do Caixa (o Início já faz a
+  mesma busca ao abrir); no navegador comum, o `window.open` depois das buscas pode ser barrado (no
+  programa quem abre é o Electron, igual aos outros botões de WhatsApp); repetições de código e de
+  data (só arrumação); e um modelo editado com tudo numa linha só sai vazio se um número for
+  escondido (documentado na descrição do modelo).
 - O `test:electron` não rodou: `electron/main.ts` não mudou, e o endereço sem número passa na trava
   (https + `wa.me`), como o teste do schema confere com `new URL`.
 
@@ -65,6 +82,13 @@
   quem fez" da issue #397 (Início → Resumo pro dono → Este mês e Hoje; Caixa → fechar com diferença
   → Resumo pro dono; Configurações → editar o modelo; login só com OS e só com Caixa).
 - **Sofia**: a revisão do PR, e o teste do fim de semana depois de publicar.
+- **Sofia decide (veio do `/code-review`)**:
+  1. No Fechamento, o "Recebido" e o "Lucro" do dia **já incluem** o lançamento de sobra ou de
+     quebra que o fechamento cria (igual ao Caixa Diário), e a linha "Fechamento do caixa" mostra a
+     mesma diferença. O dono pode ler a sobra duas vezes. Deixei igual à tela, porque a tarefa
+     proíbe mudar os números. Opção: tirar esse lançamento só do resumo.
+  2. No resumo de um **dia que já passou**, "OS abertas" e "Contas a pagar" são as de **hoje**.
+     Opção: escrever "(agora)" nessas duas linhas.
 - **Arquivos fora da lista da issue** (a Sofia confere se concorda): `src/lib/whatsapp.ts` (abrir sem
   número), `src/components/BotaoResumoDono.tsx` (novo, o botão usado nas duas telas),
   `src/pages/caixa/CaixaPage.tsx` (uma linha: passa o custo das OS pro Fechamento) e

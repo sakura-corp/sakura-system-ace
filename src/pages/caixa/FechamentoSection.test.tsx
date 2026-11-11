@@ -30,9 +30,10 @@ const listarOrdens = vi.fn();
 vi.mock("@/lib/ordensServico", () => ({ listarOrdens: (...a: unknown[]) => listarOrdens(...a) }));
 const listarContasPagar = vi.fn();
 vi.mock("@/lib/contasPagar", () => ({ listarContasPagar: (...a: unknown[]) => listarContasPagar(...a) }));
+const listarModelosWhatsapp = vi.fn();
 vi.mock("@/lib/modelosWhatsapp", async (original) => ({
   ...(await original<typeof import("@/lib/modelosWhatsapp")>()),
-  listarModelosWhatsapp: async () => ({}),
+  listarModelosWhatsapp: (...a: unknown[]) => listarModelosWhatsapp(...a),
 }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 let operador: Record<string, unknown> | null = { id: "op", admin: true, permissoes: [] };
@@ -80,6 +81,7 @@ beforeEach(() => {
   abrirWhatsappSemNumero.mockReset().mockResolvedValue(undefined);
   listarOrdens.mockReset().mockResolvedValue([{ id: "o1", status: "em_andamento" }]);
   listarContasPagar.mockReset().mockResolvedValue([]);
+  listarModelosWhatsapp.mockReset().mockResolvedValue({});
   operador = { id: "op", admin: true, permissoes: [] };
 });
 
@@ -233,5 +235,16 @@ describe("FechamentoSection", () => {
     expect(listarContasPagar).not.toHaveBeenCalled();
     expect(texto).not.toMatch(/OS abertas|Contas a pagar/);
     expect(texto).toContain("Fechamento do caixa: bateu certinho");
+  });
+
+  it("resumo pro dono: usa o texto que a loja editou em Configurações", async () => {
+    listarModelosWhatsapp.mockResolvedValue({ resumo_dono: "Chefe, {periodo}: {diferenca_caixa}" });
+    const fechado = fechamento({ data: hoje, saldo_sistema: 100, valor_contado: 90, diferenca: -10 });
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[fechado]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Resumo pro dono" }));
+    expect(listarModelosWhatsapp).toHaveBeenCalledWith("l");
+    expect(textoAberto()).toMatch(/^Chefe, hoje \(\d{2}\/\d{2}\/\d{4}\): faltaram R\$ 10,00$/);
   });
 });
