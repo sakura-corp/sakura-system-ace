@@ -5,6 +5,7 @@ import {
   nomeDoPacote,
   notasDoMes,
   planejarPacoteContabilidade,
+  slugDaLoja,
   type ResultadoPdf,
 } from "./pacoteContabilidade";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
@@ -34,6 +35,7 @@ const PDF_OK: ResultadoPdf = { ok: true };
 function caminhos(notas: NotaFiscalArquivo[], pdfs: Record<string, ResultadoPdf> = {}) {
   return planejarPacoteContabilidade({
     mes: "2026-10",
+    loja: "Loja Teste",
     notas,
     pdfs: new Map(Object.entries(pdfs)),
   }).entradas.map((entrada) => entrada.caminho);
@@ -120,12 +122,23 @@ describe("motivoSemPdf", () => {
 function leiaMe(notas: NotaFiscalArquivo[], pdfs: Record<string, ResultadoPdf> = {}) {
   return planejarPacoteContabilidade({
     mes: "2026-10",
+    loja: "Loja Teste",
     notas,
     pdfs: new Map(Object.entries(pdfs)),
   }).leiaMe;
 }
 
 describe("planejarPacoteContabilidade: o LEIA-ME", () => {
+  it("a primeira linha diz de qual loja é o pacote, com o nome como está no cadastro", () => {
+    const texto = planejarPacoteContabilidade({
+      mes: "2026-10",
+      loja: "Borracharia São João",
+      notas: [nota({ id: "a" })],
+      pdfs: new Map([["a", PDF_OK]]),
+    }).leiaMe;
+    expect(texto.split("\r\n")[0]).toBe("Loja: Borracharia São João");
+  });
+
   it("diz de que mês é e quantas notas tem de cada tipo, contando as canceladas", () => {
     const texto = leiaMe(
       [
@@ -166,6 +179,7 @@ describe("planejarPacoteContabilidade: o LEIA-ME", () => {
   it("pacote de uma aba só: o LEIA-ME diz que é só daquele tipo e onde está o outro", () => {
     const texto = planejarPacoteContabilidade({
       mes: "2026-10",
+      loja: "Loja Teste",
       tipo: "nfe",
       notas: [nota({ id: "a" })],
       pdfs: new Map([["a", PDF_OK]]),
@@ -181,6 +195,31 @@ describe("planejarPacoteContabilidade: o LEIA-ME", () => {
     expect(texto).not.toContain("SÓ das");
   });
 
+  it("nota denegada (ou com outra situação que não seja autorizada) ganha uma marca no LEIA-ME, sem mudar o nome do arquivo", () => {
+    const notas = [
+      nota({ id: "a", numero: "5", nome_arquivo: "nfe-5.xml", status: "denegado" }),
+      nota({ id: "b", numero: "6", nome_arquivo: "nfe-6.xml", status: "processando_autorizacao" }),
+      nota({ id: "c", numero: "7", nome_arquivo: "nfe-7.xml", status: "autorizado" }),
+      nota({ id: "d", numero: "8", nome_arquivo: "nfe-8.xml", status: "cancelado" }),
+      nota({ id: "e", numero: null, nome_arquivo: "manual.xml", origem: "manual", status: null }),
+    ];
+    const pdfs = { a: PDF_OK, b: PDF_OK, c: PDF_OK, d: PDF_OK, e: PDF_OK };
+    const texto = leiaMe(notas, pdfs);
+    expect(texto).toContain(
+      "Notas com situação diferente de autorizada (confira antes de lançar): 2 notas\r\n" +
+        "- NFC-e nº 5 (nfce/nfe-5.xml): Denegado\r\n" +
+        "- NFC-e nº 6 (nfce/nfe-6.xml): Processando autorizacao\r\n",
+    );
+    expect(texto).not.toContain("nfe-7.xml");
+    expect(texto).not.toContain("manual.xml");
+    expect(caminhos(notas, pdfs)).toContain("nfce/nfe-5.xml");
+  });
+
+  it("sem nota fora do normal, a seção da situação não aparece", () => {
+    const texto = leiaMe([nota({ id: "a" })], { a: PDF_OK });
+    expect(texto).not.toContain("situação diferente");
+  });
+
   it("quando todas têm PDF, diz isso", () => {
     const texto = leiaMe([nota({ id: "a" })], { a: PDF_OK });
     expect(texto).toContain("Todas as notas estão com o XML e o PDF.");
@@ -189,13 +228,54 @@ describe("planejarPacoteContabilidade: o LEIA-ME", () => {
 });
 
 describe("o mês do pacote", () => {
-  it("o nome do .zip leva o mês", () => {
-    expect(nomeDoPacote("2026-10")).toBe("pacote-contabilidade-2026-10.zip");
+  it("o nome do .zip leva a loja e o mês", () => {
+    expect(nomeDoPacote("2026-10", { loja: "Pneus Teste" })).toBe(
+      "pacote-contabilidade-pneus-teste-2026-10.zip",
+    );
   });
 
   it("o pacote de uma aba só leva o tipo no nome", () => {
-    expect(nomeDoPacote("2026-10", "nfe")).toBe("pacote-contabilidade-2026-10-nfce.zip");
-    expect(nomeDoPacote("2026-10", "nfse")).toBe("pacote-contabilidade-2026-10-nfse.zip");
+    expect(nomeDoPacote("2026-10", { loja: "Loja A", tipo: "nfe" })).toBe(
+      "pacote-contabilidade-loja-a-2026-10-nfce.zip",
+    );
+    expect(nomeDoPacote("2026-10", { loja: "Loja A", tipo: "nfse" })).toBe(
+      "pacote-contabilidade-loja-a-2026-10-nfse.zip",
+    );
+  });
+
+  it("duas lojas no mesmo mês dão dois nomes diferentes (o contador sabe de qual é)", () => {
+    expect(nomeDoPacote("2026-10", { loja: "Loja A" })).not.toBe(
+      nomeDoPacote("2026-10", { loja: "Loja B" }),
+    );
+  });
+});
+
+describe("slugDaLoja: o nome da loja no nome do arquivo", () => {
+  it("tira o acento e deixa minúsculo", () => {
+    expect(slugDaLoja("Borracharia São João")).toBe("borracharia-sao-joao");
+  });
+
+  it("barra, ponto e outros sinais viram traço, sem traço repetido nem nas pontas", () => {
+    expect(slugDaLoja("  Centro / Matriz (Nº 2).  ")).toBe("centro-matriz-n-2");
+  });
+
+  it("vários espaços viram um traço só", () => {
+    expect(slugDaLoja("Loja   do   Centro")).toBe("loja-do-centro");
+  });
+
+  it("nome vazio, ou só com sinais, vira \"loja\"", () => {
+    expect(slugDaLoja("")).toBe("loja");
+    expect(slugDaLoja("  /// ")).toBe("loja");
+  });
+
+  it("nome comprido é cortado em 40 letras, sem terminar em traço", () => {
+    const slug = slugDaLoja("Auto Center e Borracharia Muito Comprida da Avenida Principal");
+    expect(slug).toBe("auto-center-e-borracharia-muito-comprida");
+    expect(slug.length).toBeLessThanOrEqual(40);
+    // A 40ª letra seria o traço: ele sai.
+    expect(slugDaLoja("abcdefghij abcdefghij abcdefghij abcdef ghij")).toBe(
+      "abcdefghij-abcdefghij-abcdefghij-abcdef",
+    );
   });
 
   it("só entram as notas daquele mês (competência no dia 1º ou no dia da emissão)", () => {

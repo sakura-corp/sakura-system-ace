@@ -226,7 +226,8 @@ export function CentralDoDia({
 
   async function gerarPacote() {
     if (!lojaAtual) return;
-    const lojaId = lojaAtual.id;
+    const loja = { id: lojaAtual.id, nome: lojaAtual.nome };
+    const lojaId = loja.id;
     const mesmaLoja = () => lojaAtualRef.current === lojaId;
     setAvisoPacote(null);
     setPacote({ feitos: 0, total: 0 });
@@ -234,14 +235,19 @@ export function CentralDoDia({
       const mes = mesDoPacote(hoje);
       const doMes = await listarNotasDoMesParaPacote(lojaId, mes);
       if (!mesmaLoja()) return;
-      const { semPdf } = await gerarPacoteContabilidade({
+      // `aindaValido`: trocou de loja enquanto os PDFs vinham, o .zip da
+      // loja anterior não baixa (revisão do #1003; a tela já se cuidava, o
+      // download não).
+      const { semPdf, baixado } = await gerarPacoteContabilidade({
+        loja,
         notas: doMes,
         mes,
         aoProgredir: (feitos, total) => {
           if (mesmaLoja()) setPacote({ feitos, total });
         },
+        aindaValido: mesmaLoja,
       });
-      if (!mesmaLoja()) return;
+      if (!baixado || !mesmaLoja()) return;
       setAvisoPacote({
         erro: false,
         texto:

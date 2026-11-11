@@ -428,11 +428,15 @@ async function emLotes<T, R>(itens: T[], fazer: (item: T) => Promise<R>): Promis
 // não fica guardado aqui (vem da Focus NFe, pelo porteiro, como no "Ver
 // DANFE"): se falhar, a nota vai só com o XML e o motivo entra no LEIA-ME.
 export async function gerarPacoteContabilidade({
+  loja,
   notas,
   mes,
   tipo,
   aoProgredir,
+  aindaValido,
 }: {
+  /** A loja do pacote: o nome vai no .zip e no LEIA-ME. */
+  loja: { id: string; nome: string };
   notas: NotaFiscalArquivo[];
   /** "AAAA-MM" */
   mes: string;
@@ -440,7 +444,22 @@ export async function gerarPacoteContabilidade({
   tipo?: TipoNotaFiscal;
   /** A cada PDF buscado na Focus NFe (pra tela mostrar "Buscando PDF 12 de 40"). */
   aoProgredir?: (feitos: number, total: number) => void;
-}): Promise<{ semPdf: number }> {
+  /**
+   * Perguntado logo antes de baixar: se devolver false (a pessoa trocou de
+   * loja no meio), o .zip é descartado e nada é baixado.
+   */
+  aindaValido?: () => boolean;
+}): Promise<{ semPdf: number; baixado: boolean }> {
+  // Recusa em vez de filtrar (revisão do #1003): nota de outra loja aqui quer
+  // dizer que a tela ainda tinha a lista da loja anterior. Filtrar calado
+  // daria um pacote faltando nota (ou vazio) com o nome da loja certa, e a
+  // pessoa mandaria ao contador sem saber; com o erro, ela vê e gera de novo.
+  if (notas.some((nota) => nota.loja_id !== loja.id)) {
+    throw new Error(
+      `Uma das notas não é da loja ${loja.nome} (a loja foi trocada no meio?). ` +
+        "Abra a tela de novo e gere o pacote outra vez.",
+    );
+  }
   const doMes = notasDoMes(notas, mes);
   // Erro em vez de não fazer nada: quem chama (a tela, a Central do dia)
   // mostra a frase, e a pessoa entende por que nenhum arquivo apareceu.
@@ -485,7 +504,7 @@ export async function gerarPacoteContabilidade({
     aoProgredir?.(feitos, paraBuscar.length);
   });
 
-  const plano = planejarPacoteContabilidade({ mes, notas: doMes, pdfs, tipo });
+  const plano = planejarPacoteContabilidade({ mes, loja: loja.nome, notas: doMes, pdfs, tipo });
   const xmlDaNota = new Map(doMes.map((nota, indice) => [nota.id, xmls[indice]]));
   const arquivos: ArquivoParaZip[] = plano.entradas.map((entrada) => ({
     nome: entrada.caminho,
@@ -500,6 +519,11 @@ export async function gerarPacoteContabilidade({
     conteudo: new TextEncoder().encode(`\uFEFF${plano.leiaMe}`),
   });
 
-  salvarComoDownload(criarZip(arquivos), nomeDoPacote(mes, tipo));
-  return { semPdf: doMes.length - conteudosPdf.size };
+  const semPdf = doMes.length - conteudosPdf.size;
+  // A pessoa trocou de loja enquanto os PDFs vinham: o pacote é da loja
+  // anterior, e baixá-lo agora, na tela da loja nova, é como ele acabaria
+  // indo pro contador errado (revisão do #1003). Descarta.
+  if (aindaValido && !aindaValido()) return { semPdf, baixado: false };
+  salvarComoDownload(criarZip(arquivos), nomeDoPacote(mes, { loja: loja.nome, tipo }));
+  return { semPdf, baixado: true };
 }

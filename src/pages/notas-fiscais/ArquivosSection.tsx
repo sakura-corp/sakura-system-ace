@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
@@ -93,6 +93,13 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const [pacote, setPacote] = useState<{ chave: string; feitos: number; total: number } | null>(
     null,
   );
+  // A loja de agora (padrão do #974): o pacote que termina depois de uma
+  // troca de loja não baixa nem mexe na tela da loja nova (revisão do #1003).
+  const lojaAtualRef = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaAtualRef.current = lojaAtual?.id;
+    setPacote(null);
+  }, [lojaAtual?.id]);
 
   async function carregar() {
     if (!lojaAtual) {
@@ -172,20 +179,27 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
 
   // Só as notas desta aba (o tipo) e deste mês: são as que a tela já tem.
   async function handlePacoteDoMes(chave: string, arquivosDoMes: NotaFiscalArquivo[]) {
+    if (!lojaAtual) return;
+    const loja = { id: lojaAtual.id, nome: lojaAtual.nome };
+    const mesmaLoja = () => lojaAtualRef.current === loja.id;
     setErro(null);
     setPacote({ chave, feitos: 0, total: 0 });
     try {
       await gerarPacoteContabilidade({
+        loja,
         notas: arquivosDoMes,
         mes: chave,
         tipo,
-        aoProgredir: (feitos, total) => setPacote({ chave, feitos, total }),
+        aoProgredir: (feitos, total) => {
+          if (mesmaLoja()) setPacote({ chave, feitos, total });
+        },
+        aindaValido: mesmaLoja,
       });
     } catch (err) {
       console.error("Erro ao montar o pacote pro contador:", err);
-      setErro(mensagemDeErro(err));
+      if (mesmaLoja()) setErro(mensagemDeErro(err));
     } finally {
-      setPacote(null);
+      if (mesmaLoja()) setPacote(null);
     }
   }
 

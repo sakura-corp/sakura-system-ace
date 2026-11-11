@@ -24,6 +24,10 @@
 - **ajudante-forte** ("Revisão final do diff"): 5 achados, nenhum grave, todos conferidos pela mãe
   e aceitos (ver abaixo).
 - **ajudante-medio** ("Consertos da revisão"): consertou os 5 achados, cada um com teste visto reprovar.
+- **Revisão da Sofia no PR (11/11, pedido de mudança)**: a mãe renumerou a migration pra **0085**;
+  um **ajudante-forte** (esforço alto, ~139 mil tokens) pôs a loja no nome do `.zip` e na primeira linha
+  do LEIA-ME, conferiu a loja antes de baixar (Central e Notas Fiscais), recusa nota de outra loja e
+  marcou no LEIA-ME as notas com situação diferente de autorizada (o opcional dela).
 
 ## Modelos usados
 - Ler e planejar: forte (sessão mãe), esforço médio
@@ -68,8 +72,14 @@
   `CentralDoDia.tsx` antigo) → continuava "Buscando PDF 1 de 3…"; link pra quem não é admin e o
   texto novo → reprovaram; carga do contato com erro deixava os campos liberados e o "Apagar" sem
   confirmação → 2 reprovaram; "(16) 99123-45678" era aceito → reprovou.
-- **Numeração**: com a migration como 0085 (buraco), `scripts/atualizar-bancos.test.ts` reprovou
-  ("expected 85 to be 83"); como 0083, passa.
+- **Loja no pacote** (revisão da Sofia): nome do zip sem a loja → reprovou; LEIA-ME sem "Loja:" →
+  reprovou; `aindaValido` ignorado → reprovou (`baixado: true`); nota de outra loja aceita → reprovou;
+  na tela de Notas Fiscais, 4 quebras (sem zerar na troca, erro e andamento sem conferir a loja,
+  `aindaValido` sempre verdadeiro) → todas reprovaram; slug sem tirar acento → reprovou.
+- **Numeração**: com a migration como 0085, `scripts/atualizar-bancos.test.ts` e o
+  `test:atualizar-bancos` reprovam pelo buraco (sem a 0083 e a 0084 do Gusta na `main`). Prova de que
+  é só isso: com duas migrations vazias 0083 e 0084 de mentira, o `test:atualizar-bancos` ficou sem
+  nenhum ✗ (apagadas depois). A Sofia aceitou: o PR espera o #985 e o #987.
 
 ## O que passou sem eu ter visto reprovar
 - O `key={lojaId}` do bloco do contato em Configurações: tirá-lo não reprova nada, porque o
@@ -81,19 +91,17 @@
 - O PDF de verdade: o banco de teste não tem token da Focus NFe; quem confere é a Sofia, depois de
   publicar (o "Pronto quando depois de publicar" da issue).
 - O teste no PC do Tiago (espera a Sofia aplicar a migration no `ssace-teste`).
-- O nome do `.zip` não leva a loja: numa empresa com várias lojas, o pacote de cada loja sai com o
-  mesmo nome (o navegador põe "(1)"). Pequeno; fica como observação.
+- Depois da troca de loja, a busca dos PDFs da loja antiga vai até o fim (só o download é
+  cancelado).
 - As fotos saíram no tema escuro (o programa só tem esse).
 - A descrição da seção "Mensagens de WhatsApp" em `ConfiguracoesPage.tsx` não cita o contato
   (arquivo fora da lista da issue; não mexi).
 
 ## O que depende de alguém
-- **Sofia**: a migration **0083** (`0083_contato_contabilidade.sql`). Tabela nova e opcional, **sem**
-  `versao-minima-do-programa`: sobe **antes** da versão, pelo "Atualizar o banco". **Atenção ao número**:
-  o #985 (importação, já aplicado no `ssace-teste`) e o #987 também usam 0083. Usei o próximo livre
-  na `main` porque o teste de numeração não aceita buraco; quem entrar na `main` por último renumera
-  (`docs/supabase-de-teste.md`, "Dois PRs com o mesmo número"). Pro teste do Tiago no `ssace-teste`
-  (que já está na 83 do #985), esta precisa virar a seguinte **antes** de ser colada lá.
+- **Sofia**: a migration **0085** (`0085_contato_contabilidade.sql`). Tabela nova e opcional, **sem**
+  `versao-minima-do-programa`: sobe **antes** da versão, pelo "Atualizar o banco". Ordem na `main`
+  (decisão dela): #985 (0083) → #987 (0084) → este (0085). Ela aplica a 0085 no `ssace-teste` quando
+  chegar a vez.
 - **Tiago, no PC**: o "Pronto quando no PC" da issue, depois do "aplicado" da Sofia.
 - **Sofia, depois de publicar**: os PDFs de outubro na Pneus Amigão e cadastrar o contato real.
 
@@ -106,8 +114,10 @@ Terminei.
   "explorar → migration e pacote em paralelo → telas → revisão" saiu da tabela de etapas da issue.
 - **Onde eu errei ou tive que adivinhar**: o número da migration. A issue dizia "0083 (o número
   certo é o próximo livre)", e a 0083 já estava em dois PRs abertos. Mandei 0085 pra não colidir,
-  e o teste de numeração da `main` recusou o buraco; voltei pra 0083 e a colisão fica pra quem
-  mesclar por último. Também pedi foto em tema claro, que o programa não tem.
+  e o teste de numeração da `main` recusou o buraco; voltei pra 0083. Na revisão a Sofia mostrou que
+  a 0083 não serviria (o `ssace-teste` já está na 83, e o "Atualizar o banco" diria "em dia") e mandou
+  a 0085, aceitando o teste vermelho até os outros entrarem. A minha primeira escolha estava certa e
+  eu devia ter perguntado em vez de trocar. Também pedi foto em tema claro, que o programa não tem.
 - **O que faltou na skill**: uma linha sobre **número de migration com PRs abertos**: hoje a regra
   está só em `docs/supabase-de-teste.md`, e o teste de "sem buraco" obriga a usar o próximo livre
   na `main`, mesmo que colida com um PR aberto.

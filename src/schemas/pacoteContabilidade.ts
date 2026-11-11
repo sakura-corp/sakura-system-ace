@@ -8,7 +8,7 @@
 // dois nomes iguais ("nota (2).xml") vale pros dois arquivos da mesma nota.
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
 import { motivoDanfeIndisponivel } from "./danfe";
-import { NOTA_LABEL } from "./situacaoFiscal";
+import { NOTA_LABEL, situacaoDaNota } from "./situacaoFiscal";
 
 export type ResultadoPdf = { ok: true } | { ok: false; motivo: string };
 
@@ -72,11 +72,14 @@ function ocupada(base: string, usados: Set<string>): boolean {
 
 export function planejarPacoteContabilidade({
   mes,
+  loja,
   notas,
   pdfs,
   tipo,
 }: {
   mes: string;
+  /** O nome da loja, como está no cadastro: é a primeira linha do LEIA-ME. */
+  loja: string;
   /** Pacote de uma aba só (NFC-e ou NFS-e); sem isto, é o dos dois tipos. */
   tipo?: TipoNotaFiscal;
   notas: NotaFiscalArquivo[];
@@ -84,6 +87,7 @@ export function planejarPacoteContabilidade({
 }): PlanoDoPacote {
   const entradas: EntradaDoPacote[] = [];
   const semPdf: string[] = [];
+  const foraDoNormal: string[] = [];
   // Os nomes já usados, por pasta, em minúscula: o Windows não separa
   // "Nota.xml" de "nota.xml", e um sobrescreveria o outro ao descompactar.
   const usados = new Map<string, Set<string>>();
@@ -95,17 +99,23 @@ export function planejarPacoteContabilidade({
     const base = baseLivre(`${marca}${semExtensaoXml(nota.nome_arquivo)}`, daPasta);
     const caminhoXml = `${pasta}/${base}.xml`;
     entradas.push({ caminho: caminhoXml, nota, arquivo: "xml" });
+    const numero = nota.numero ? ` nº ${nota.numero}` : "";
+    const quem = `- ${NOTA_LABEL[nota.tipo]}${numero} (${caminhoXml})`;
+    // Denegada, em processamento, sem situação...: o nome do arquivo fica
+    // como está (só a cancelada ganha marca no nome), mas o LEIA-ME avisa.
+    // A palavra é a mesma da etiqueta da tela (`situacaoDaNota`).
+    const situacao = situacaoDaNota(nota);
+    if (situacao.tom === "outra") foraDoNormal.push(`${quem}: ${situacao.rotulo}`);
     const pdf = pdfs.get(nota.id);
     if (pdf?.ok) {
       entradas.push({ caminho: `${pasta}/${base}.pdf`, nota, arquivo: "pdf" });
     } else {
       // Sem resultado nenhum também é "sem PDF": a nota nunca some calada.
       const motivo = pdf ? pdf.motivo : "o PDF não foi buscado";
-      const numero = nota.numero ? ` nº ${nota.numero}` : "";
-      semPdf.push(`- ${NOTA_LABEL[nota.tipo]}${numero} (${caminhoXml}): ${motivo}`);
+      semPdf.push(`${quem}: ${motivo}`);
     }
   }
-  return { entradas, leiaMe: textoLeiaMe(mes, notas, semPdf, tipo) };
+  return { entradas, leiaMe: textoLeiaMe({ mes, loja, notas, semPdf, foraDoNormal, tipo }) };
 }
 
 const NOMES_DOS_MESES = [
@@ -135,13 +145,25 @@ function plural(quantidade: number, singular: string, varias: string): string {
 }
 
 // Linhas com \r\n: o contador abre no Bloco de Notas do Windows.
-function textoLeiaMe(
-  mes: string,
-  notas: NotaFiscalArquivo[],
-  semPdf: string[],
-  tipo?: TipoNotaFiscal,
-): string {
-  const linhas = [`Pacote de notas fiscais de ${mesPorExtenso(mes)}`, ""];
+// A primeira linha é a loja (revisão do #1003): quem abre o pacote sabe de
+// qual loja ele é, mesmo que o nome do .zip tenha sido trocado.
+function textoLeiaMe({
+  mes,
+  loja,
+  notas,
+  semPdf,
+  foraDoNormal,
+  tipo,
+}: {
+  mes: string;
+  loja: string;
+  notas: NotaFiscalArquivo[];
+  semPdf: string[];
+  /** Notas que não são autorizadas, canceladas nem enviadas à mão. */
+  foraDoNormal: string[];
+  tipo?: TipoNotaFiscal;
+}): string {
+  const linhas = [`Loja: ${loja.trim()}`, `Pacote de notas fiscais de ${mesPorExtenso(mes)}`, ""];
   if (tipo) {
     const outro = tipo === "nfe" ? "nfse" : "nfe";
     linhas.push(
@@ -171,6 +193,15 @@ function textoLeiaMe(
     linhas.push(`${NOTA_LABEL[tipo]} (pasta ${PASTA_DO_TIPO[tipo]}): ${contagem}${marca}`);
   }
 
+  if (foraDoNormal.length > 0) {
+    linhas.push("");
+    linhas.push(
+      "Notas com situação diferente de autorizada (confira antes de lançar): " +
+        plural(foraDoNormal.length, "nota", "notas"),
+    );
+    linhas.push(...foraDoNormal);
+  }
+
   linhas.push("");
   if (semPdf.length === 0) {
     linhas.push("Todas as notas estão com o XML e o PDF.");
@@ -195,9 +226,35 @@ function conferirMes(mes: string): { ano: number; mes: number } {
   return { ano: Number(partes[1]), mes: Number(partes[2]) };
 }
 
-export function nomeDoPacote(mes: string, tipo?: TipoNotaFiscal): string {
+const TAMANHO_MAXIMO_DO_SLUG = 40;
+
+/**
+ * O nome da loja do jeito que cabe num nome de arquivo: sem acento, minúsculo,
+ * só letra, número e traço ("Borracharia São João" → "borracharia-sao-joao").
+ * Até 40 letras; se não sobrar nada, "loja".
+ */
+export function slugDaLoja(nome: string): string {
+  const slug = nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, TAMANHO_MAXIMO_DO_SLUG)
+    .replace(/-+$/, "");
+  return slug || "loja";
+}
+
+// A loja vai no nome (revisão do #1003): o pacote da loja A e o da B, no mesmo
+// mês, não podem sair os dois "pacote-contabilidade-2026-10.zip" (o segundo
+// com "(1)"), sem ninguém saber qual é de qual loja.
+export function nomeDoPacote(
+  mes: string,
+  { loja, tipo }: { loja: string; tipo?: TipoNotaFiscal },
+): string {
   conferirMes(mes);
-  return `pacote-contabilidade-${mes}${tipo ? `-${PASTA_DO_TIPO[tipo]}` : ""}.zip`;
+  const sufixo = tipo ? `-${PASTA_DO_TIPO[tipo]}` : "";
+  return `pacote-contabilidade-${slugDaLoja(loja)}-${mes}${sufixo}.zip`;
 }
 
 // `competencia` é uma data "AAAA-MM-DD": o dia 1º do mês, ou (em nota emitida

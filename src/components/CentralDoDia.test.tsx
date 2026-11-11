@@ -120,7 +120,7 @@ beforeEach(() => {
   listarModelosWhatsapp.mockResolvedValue({});
   buscarContatoContabilidade.mockResolvedValue(null);
   listarNotasDoMesParaPacote.mockResolvedValue([]);
-  gerarPacoteContabilidade.mockResolvedValue({ semPdf: 0 });
+  gerarPacoteContabilidade.mockResolvedValue({ semPdf: 0, baixado: true });
   abrirConversaWhatsapp.mockResolvedValue(undefined);
 });
 
@@ -239,7 +239,7 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
 
   it("troca de loja no meio do pacote: a loja nova não herda o andamento nem o aviso", async () => {
     let progresso: ((f: number, t: number) => void) | undefined;
-    let terminar!: (v: { semPdf: number }) => void;
+    let terminar!: (v: { semPdf: number; baixado: boolean }) => void;
     gerarPacoteContabilidade.mockImplementation(
       (a: { aoProgredir: (f: number, t: number) => void }) => {
         progresso = a.aoProgredir;
@@ -260,10 +260,39 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
     expect(await screen.findByRole("button", { name: "Gerar o pacote" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: /Buscando PDF/ })).toBeNull();
 
-    terminar({ semPdf: 0 });
+    terminar({ semPdf: 0, baixado: true });
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByText("Pacote baixado.")).toBeNull();
     expect(screen.getByRole("button", { name: "Gerar o pacote" })).toBeEnabled();
+  });
+
+  it("troca de loja no meio do pacote: o pacote é da loja do clique e não baixa depois da troca", async () => {
+    let opcoes!: { loja: { id: string; nome: string }; aindaValido?: () => boolean };
+    let terminar!: (v: { semPdf: number; baixado: boolean }) => void;
+    gerarPacoteContabilidade.mockImplementation((a: typeof opcoes) => {
+      opcoes = a;
+      return new Promise((r) => (terminar = r));
+    });
+    const { rerender } = montarComRerender();
+    await linhaDasNotas();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Gerar o pacote" }));
+    await waitFor(() => expect(gerarPacoteContabilidade).toHaveBeenCalled());
+
+    // O nome e o id vão juntos: o nome entra no .zip e no LEIA-ME.
+    expect(opcoes.loja).toEqual({ id: "loja-a", nome: "Loja Centro" });
+    // Ainda na loja A: pode baixar.
+    expect(opcoes.aindaValido?.()).toBe(true);
+
+    lojaAtual = { id: "loja-b", nome: "Loja Sul" };
+    rerender();
+    await linhaDasNotas();
+    // Na loja B: o pacote da A, que ainda está buscando PDF, não baixa mais.
+    expect(opcoes.aindaValido?.()).toBe(false);
+
+    terminar({ semPdf: 0, baixado: false });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Pacote baixado.")).toBeNull();
   });
 
   it("contato só com e-mail: também mostra o link, sem Abrir conversa", async () => {
@@ -278,7 +307,7 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
     const notas = [{ id: "n1" }];
     listarNotasDoMesParaPacote.mockResolvedValue(notas);
     let progresso: ((f: number, t: number) => void) | undefined;
-    let terminar!: (v: { semPdf: number }) => void;
+    let terminar!: (v: { semPdf: number; baixado: boolean }) => void;
     gerarPacoteContabilidade.mockImplementation(
       (a: { aoProgredir: (f: number, t: number) => void }) => {
         progresso = a.aoProgredir;
@@ -297,7 +326,7 @@ describe("CentralDoDia: pacote da contabilidade (#383)", () => {
     );
     progresso!(1, 3);
     expect(await screen.findByRole("button", { name: "Buscando PDF 1 de 3…" })).toBeDisabled();
-    terminar({ semPdf: 0 });
+    terminar({ semPdf: 0, baixado: true });
     expect(await screen.findByText("Pacote baixado.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gerar o pacote" })).toBeEnabled();
   });

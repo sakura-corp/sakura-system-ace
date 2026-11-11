@@ -70,6 +70,8 @@ vi.mock("./download", () => ({
 
 const { gerarPacoteContabilidade, listarNotasDoMesParaPacote } = await import("./notasFiscais");
 
+const LOJA = { id: "loja-1", nome: "Loja Teste" };
+
 function nota(id: string, campos: Partial<NotaFiscalArquivo> = {}): NotaFiscalArquivo {
   return {
     id,
@@ -120,12 +122,13 @@ beforeEach(() => {
 describe("gerarPacoteContabilidade", () => {
   it("monta o .zip com o XML e o PDF de cada nota, nas pastas certas, e o LEIA-ME", async () => {
     const resultado = await gerarPacoteContabilidade({
+      loja: LOJA,
       notas: [nota("1"), nota("2", { tipo: "nfse", nome_arquivo: "nfse-2.xml" })],
       mes: "2026-10",
     });
 
-    expect(resultado).toEqual({ semPdf: 0 });
-    expect(salvos.map((s) => s.nome)).toEqual(["pacote-contabilidade-2026-10.zip"]);
+    expect(resultado).toEqual({ semPdf: 0, baixado: true });
+    expect(salvos.map((s) => s.nome)).toEqual(["pacote-contabilidade-loja-teste-2026-10.zip"]);
     const zip = await lerZip(salvos[0].conteudo);
     expect([...zip.keys()].sort()).toEqual([
       "LEIA-ME.txt",
@@ -137,11 +140,53 @@ describe("gerarPacoteContabilidade", () => {
     expect(zip.get("nfce/nfe-1.xml")).toBe("<xml>nfe/2026-10/1.xml</xml>");
     expect(zip.get("nfce/nfe-1.pdf")).toBe("%PDF ref-1");
     expect(zip.get("LEIA-ME.txt")).toContain("Todas as notas estão com o XML e o PDF.");
+    // A marca de UTF-8 vem antes; depois, a loja na primeira linha.
+    expect(zip.get("LEIA-ME.txt")?.replace(/^\uFEFF/, "").split("\r\n")[0]).toBe("Loja: Loja Teste");
+  });
+
+  it("trocou de loja no meio dos PDFs (`aindaValido` vira false): não baixa, e diz que descartou", async () => {
+    let mesmaLoja = true;
+    const resultado = await gerarPacoteContabilidade({
+      loja: LOJA,
+      notas: [nota("1"), nota("2")],
+      mes: "2026-10",
+      aoProgredir: (feitos) => {
+        if (feitos === 1) mesmaLoja = false;
+      },
+      aindaValido: () => mesmaLoja,
+    });
+    expect(resultado).toEqual({ semPdf: 0, baixado: false });
+    expect(salvos).toEqual([]);
+  });
+
+  it("com `aindaValido` dizendo que sim, baixa normal", async () => {
+    const resultado = await gerarPacoteContabilidade({
+      loja: LOJA,
+      notas: [nota("1")],
+      mes: "2026-10",
+      aindaValido: () => true,
+    });
+    expect(resultado).toEqual({ semPdf: 0, baixado: true });
+    expect(salvos).toHaveLength(1);
+  });
+
+  it("nota de outra loja no meio: recusa com uma frase em português, sem buscar nem baixar nada", async () => {
+    await expect(
+      gerarPacoteContabilidade({
+        loja: LOJA,
+        notas: [nota("1"), nota("2", { loja_id: "loja-2" })],
+        mes: "2026-10",
+      }),
+    ).rejects.toThrow(
+      "Uma das notas não é da loja Loja Teste (a loja foi trocada no meio?). Abra a tela de novo e gere o pacote outra vez.",
+    );
+    expect(consultas).toEqual([]);
+    expect(salvos).toEqual([]);
   });
 
   it("com `tipo` (botão de uma aba), o .zip leva o tipo no nome", async () => {
-    await gerarPacoteContabilidade({ notas: [nota("1")], mes: "2026-10", tipo: "nfe" });
-    expect(salvos.map((s) => s.nome)).toEqual(["pacote-contabilidade-2026-10-nfce.zip"]);
+    await gerarPacoteContabilidade({ loja: LOJA, notas: [nota("1")], mes: "2026-10", tipo: "nfe" });
+    expect(salvos.map((s) => s.nome)).toEqual(["pacote-contabilidade-loja-teste-2026-10-nfce.zip"]);
     const zip = await lerZip(salvos[0].conteudo);
     expect(zip.get("LEIA-ME.txt")).toContain("SÓ das NFC-e");
   });
@@ -149,11 +194,12 @@ describe("gerarPacoteContabilidade", () => {
   it("um PDF que falha não derruba: o .zip sai, a nota vai só com o XML e o LEIA-ME diz por quê", async () => {
     pdfQueFalha.add("ref-2");
     const resultado = await gerarPacoteContabilidade({
+      loja: LOJA,
       notas: [nota("1"), nota("2"), nota("3")],
       mes: "2026-10",
     });
 
-    expect(resultado).toEqual({ semPdf: 1 });
+    expect(resultado).toEqual({ semPdf: 1, baixado: true });
     const zip = await lerZip(salvos[0].conteudo);
     expect(zip.has("nfce/nfe-2.xml")).toBe(true);
     expect(zip.has("nfce/nfe-2.pdf")).toBe(false);
@@ -166,18 +212,19 @@ describe("gerarPacoteContabilidade", () => {
   it("um XML que falha derruba, com uma frase em português dizendo qual nota", async () => {
     xmlQueFalha.add("nfe/2026-10/2.xml");
     await expect(
-      gerarPacoteContabilidade({ notas: [nota("1"), nota("2")], mes: "2026-10" }),
+      gerarPacoteContabilidade({ loja: LOJA, notas: [nota("1"), nota("2")], mes: "2026-10" }),
     ).rejects.toThrow(/^Não deu pra baixar o XML da nota nfe-2\.xml: /);
     expect(salvos).toEqual([]);
   });
 
   it("nota enviada à mão não pergunta à Focus NFe: vai só com o XML, e o motivo no LEIA-ME", async () => {
     const resultado = await gerarPacoteContabilidade({
+      loja: LOJA,
       notas: [nota("1"), nota("9", { origem: "manual", focus_nfe_ref: null, numero: null })],
       mes: "2026-10",
     });
 
-    expect(resultado).toEqual({ semPdf: 1 });
+    expect(resultado).toEqual({ semPdf: 1, baixado: true });
     expect(consultas).toEqual(["ref-1"]);
     const zip = await lerZip(salvos[0].conteudo);
     expect(zip.get("LEIA-ME.txt")).toContain(
@@ -188,6 +235,7 @@ describe("gerarPacoteContabilidade", () => {
   it("avisa o progresso a cada PDF buscado, contando só os que vão à Focus NFe", async () => {
     const avisos: string[] = [];
     await gerarPacoteContabilidade({
+      loja: LOJA,
       notas: [nota("1"), nota("2"), nota("3", { origem: "manual", focus_nfe_ref: null })],
       mes: "2026-10",
       aoProgredir: (feitos, total) => avisos.push(`${feitos} de ${total}`),
@@ -197,6 +245,7 @@ describe("gerarPacoteContabilidade", () => {
 
   it("só entram as notas do mês pedido", async () => {
     await gerarPacoteContabilidade({
+      loja: LOJA,
       notas: [nota("1"), nota("2", { competencia: "2026-09-01" })],
       mes: "2026-10",
     });
@@ -206,7 +255,11 @@ describe("gerarPacoteContabilidade", () => {
 
   it("mês sem nota: avisa em português e não baixa nada", async () => {
     await expect(
-      gerarPacoteContabilidade({ notas: [nota("1", { competencia: "2026-09-01" })], mes: "2026-10" }),
+      gerarPacoteContabilidade({
+        loja: LOJA,
+        notas: [nota("1", { competencia: "2026-09-01" })],
+        mes: "2026-10",
+      }),
     ).rejects.toThrow("Não há notas de outubro de 2026 pra montar o pacote.");
     expect(salvos).toEqual([]);
   });
