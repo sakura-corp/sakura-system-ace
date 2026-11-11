@@ -33,7 +33,7 @@
 
 ## O que passou sem eu ter visto reprovar
 - Os testes antigos de `lucratividade.test.ts`. Continuam verdes sem mudar nenhum número: nos objetos esperados só entrou o campo `tipo`.
-- `arquitetura.test.ts`, `typecheck` e `lint` (fica 1 aviso antigo, de `AuthContext.tsx`, que já existe na `main`). Também `test:fusos` (1718 testes nos dois fusos) e `contraste`.
+- `arquitetura.test.ts`, `typecheck` e `lint` (fica 1 aviso antigo, de `AuthContext.tsx`, que já existe na `main`). Também `test:fusos` (1806 testes nos dois fusos, já em cima da `main` com o #389) e `contraste`.
 - Contraste e largura da aba nova, medidos com as mesmas funções do `contraste:telas` e do `largura:telas`. Deu zero achado nas larguras 1024, 1280, 1366, 1536 e 1600, por venda e por lucro.
 
 ## O que ficou de fora
@@ -54,3 +54,5 @@ Terminei.
 - **Onde eu errei ou tive que adivinhar**: escrevi esperados errados de cabeça 3 vezes (o teste pegou todas). A regra de empate fui eu que inventei, sem a issue pedir. Uma restauração com `sed` pegou uma linha da conta antiga, e voltei pelo backup antes do commit.
 - **O que faltou na skill**: dizer como fotografar uma tela que ainda não está em `cenas.mjs` quando esse arquivo está fora da lista da issue.
 - **Sugestão de ajuste (opcional)**: no modelo de tarefa de tela nova, pôr `site/ferramentas/cenas.mjs` na lista de arquivos sempre que a tarefa pede fotos.
+
+Nota: no meio da tarefa a `main` recebeu o #389 (aba Fluxo de caixa em Relações). Atualizei a branch e juntei as duas. A ordem das abas ficou Gráficos, Lucratividade, Curva ABC, Fluxo de caixa, com a Curva ao lado da Lucratividade, como a issue pede. As conferências e as fotos foram refeitas depois disso.
