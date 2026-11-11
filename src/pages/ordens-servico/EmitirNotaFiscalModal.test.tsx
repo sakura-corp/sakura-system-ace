@@ -53,7 +53,8 @@ vi.mock("@/lib/focusNfe", async () => {
     EsperaVencidaError: class extends Error {},
   };
 });
-vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
+const registrarMovimento = vi.fn();
+vi.mock("@/lib/estoque", () => ({ registrarMovimento: (...a: unknown[]) => registrarMovimento(...a) }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
 vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
@@ -279,6 +280,33 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
 
     await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
     expect(cadastrarPecaDoItem.mock.calls[1]).toEqual(["i2", "peca-nova", "op"]);
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(confirmar()).toBeEnabled());
+  });
+
+  // #909: a peça foi criada, mas o estoque inicial não entrou. Antes o erro
+  // subia antes do `onCadastrada`: a janela não ligava a peça e um novo
+  // "Salvar" criava outra igual. Agora liga, avisa e não trava a emissão.
+  it("se só o estoque inicial falha, liga a peça criada, avisa e não cadastra duas vezes", async () => {
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
+    registrarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.type(screen.getByLabelText("Qtde. estoque inicial", { exact: true }), "3");
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
+    expect(cadastrarPecaDoItem.mock.calls[0]).toEqual(["i2", "peca-nova", "op"]);
+    expect(onItensMudaram).toHaveBeenCalled();
+    expect(
+      await screen.findByText(
+        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+          "Peça a quem cuida do Estoque para lançar a entrada.",
+      ),
+    ).toBeInTheDocument();
     expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(confirmar()).toBeEnabled());
   });

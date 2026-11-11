@@ -5,10 +5,28 @@
  * A conta é a de `margemSobreAVenda` (sobre a venda desde a #835); aqui se
  * confere como ela aparece na tabela.
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
-import { ProdutosSection } from "./ProdutosSection";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { Peca } from "@/types/peca";
+
+// O cadastro e o estoque inicial (#909): o resto de `@/lib/pecas` fica o de verdade.
+const criarPeca = vi.fn();
+const criarMovimento = vi.fn();
+vi.mock("@/lib/pecas", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/pecas")>()),
+  criarPeca: (...a: unknown[]) => criarPeca(...a),
+}));
+vi.mock("@/lib/estoque", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/estoque")>()),
+  criarMovimento: (...a: unknown[]) => criarMovimento(...a),
+}));
+
+const { ProdutosSection } = await import("./ProdutosSection");
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.clearAllMocks();
+});
 
 // Os testes do #969 trocam o scrollIntoView (o jsdom não tem) por um espião;
 // no fim de cada um, volta o que era.
@@ -47,7 +65,7 @@ function umaPeca(extra: Partial<Peca>): Peca {
   };
 }
 
-function montar(pecas: Peca[]) {
+function montar(pecas: Peca[], onRecarregar = vi.fn().mockResolvedValue(undefined)) {
   return renderizar(
     <ProdutosSection
       pecas={pecas}
@@ -55,7 +73,7 @@ function montar(pecas: Peca[]) {
       saldos={new Map()}
       regime="simples_nacional"
       lojaId="loja-1"
-      onRecarregar={vi.fn().mockResolvedValue(undefined)}
+      onRecarregar={onRecarregar}
     />,
   );
 }
@@ -113,6 +131,90 @@ describe("ProdutosSection — abrir o formulário rola até ele (#969)", () => {
     const formulario = container.querySelector("form")!;
     expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
     expect(rolar).toHaveBeenCalled();
+  });
+});
+
+/**
+ * #909: o cadastro cria a peça e DEPOIS lança o estoque inicial. Se só o
+ * estoque inicial falha, a peça já existe: o formulário fecha e avisa, pra um
+ * novo "Salvar" não criar uma segunda peça igual.
+ */
+describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
+  const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+
+  async function cadastrarNova(user: ReturnType<typeof montar>["user"], quantidade: string | null) {
+    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    await user.type(campo("Descrição *"), "TESTE 909 Palheta");
+    await user.type(campo("NCM *"), "40169300");
+    await user.type(campo("C.E.S.T *"), "0100100");
+    await user.type(campo("CFOP padrão *"), "5102");
+    await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+    await user.type(campo("CST / CSOSN *"), "500");
+    if (quantidade) await user.type(campo("Qtde. estoque inicial"), quantidade);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+  }
+
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    criarPeca.mockResolvedValue(umaPeca({ id: "p-nova", descricao: "TESTE 909 Palheta" }));
+  });
+
+  it("a peça foi criada e só o estoque inicial falhou: fecha, avisa e não cria de novo", async () => {
+    criarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    const onRecarregar = vi.fn().mockResolvedValue(undefined);
+    const { user, container } = montar([umaPeca({})], onRecarregar);
+
+    await cadastrarNova(user, "3");
+
+    expect(
+      await screen.findByText(
+        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+          "Lance a entrada em Estoque → Movimentações.",
+      ),
+    ).toBeInTheDocument();
+    expect(container.querySelector("form")).toBeNull();
+    expect(criarPeca).toHaveBeenCalledTimes(1);
+    expect(onRecarregar).toHaveBeenCalled();
+
+    // Reabrir o "Novo produto" não traz a peça de volta (o rascunho foi limpo).
+    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    expect(campo("Descrição *")).toHaveValue("");
+    expect(criarPeca).toHaveBeenCalledTimes(1);
+  });
+
+  it("com o estoque inicial entrando: fecha sem aviso, como sempre", async () => {
+    criarMovimento.mockResolvedValue(undefined);
+    const { user, container } = montar([umaPeca({})]);
+
+    await cadastrarNova(user, "3");
+
+    await waitFor(() => expect(container.querySelector("form")).toBeNull());
+    expect(criarMovimento).toHaveBeenCalledWith(
+      expect.objectContaining({ peca_id: "p-nova", quantidade: 3 }),
+      "loja-1",
+    );
+    expect(screen.queryByText(/estoque inicial não entrou/)).toBeNull();
+  });
+
+  it("sem quantidade: não lança movimento e fecha sem aviso", async () => {
+    const { user, container } = montar([umaPeca({})]);
+
+    await cadastrarNova(user, null);
+
+    await waitFor(() => expect(container.querySelector("form")).toBeNull());
+    expect(criarMovimento).not.toHaveBeenCalled();
+    expect(screen.queryByText(/estoque inicial não entrou/)).toBeNull();
+  });
+
+  it("se a própria peça não foi criada: o erro fica no formulário, que continua aberto", async () => {
+    criarPeca.mockRejectedValue(new Error("sem internet"));
+    const { user, container } = montar([umaPeca({})]);
+
+    await cadastrarNova(user, "3");
+
+    expect(await screen.findByText("sem internet")).toBeInTheDocument();
+    expect(container.querySelector("form")).not.toBeNull();
+    expect(criarMovimento).not.toHaveBeenCalled();
   });
 });
 

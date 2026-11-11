@@ -135,12 +135,27 @@ export function ProdutosSection({
   }
 
   async function handleSalvar(peca: NovaPeca, quantidadeInicial: number | null) {
+    setErro(null);
     if (pecaEmEdicao) {
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
+      // Se a peça não foi criada, o erro sobe e o formulário fica aberto.
       const pecaCriada = await criarPeca(peca);
       const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
-      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
+      if (estoqueInicial) {
+        // A peça já existe: se só o estoque inicial falha, o erro NÃO sobe
+        // (senão o formulário fica aberto e um novo "Salvar" cria outra peça
+        // igual). Fecha e avisa pra lançar a entrada à mão (#909).
+        try {
+          await criarMovimento(estoqueInicial, lojaId);
+        } catch (err) {
+          console.error("Erro ao lançar o estoque inicial da peça:", err);
+          setErro(
+            `Peça cadastrada, mas o estoque inicial não entrou (${mensagemDeErro(err)}). ` +
+              "Lance a entrada em Estoque → Movimentações.",
+          );
+        }
+      }
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);

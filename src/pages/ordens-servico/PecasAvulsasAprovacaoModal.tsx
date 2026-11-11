@@ -67,6 +67,8 @@ export function PecasAvulsasAprovacaoModal({
     mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
   ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
+  // A peça foi cadastrada, mas o estoque inicial não entrou (#909): só avisa.
+  const [avisoEstoqueInicial, setAvisoEstoqueInicial] = useState<string | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
   // sem peça escolhida e "cadastrar" sem peça criada ficam com id vazio, e
@@ -214,6 +216,11 @@ export function PecasAvulsasAprovacaoModal({
           {erro && (
             <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
           )}
+          {avisoEstoqueInicial && (
+            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+              {avisoEstoqueInicial}
+            </p>
+          )}
           {faltam > 0 && (
             <p className="text-rotulo text-amber-300">
               {faltam === 1
@@ -248,8 +255,9 @@ export function PecasAvulsasAprovacaoModal({
           item={cadastrando}
           pecas={pecasDaJanela}
           lojaId={lojaId}
-          onCadastrada={(peca) => {
+          onCadastrada={(peca, aviso) => {
             setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
+            setAvisoEstoqueInicial(aviso);
             setModos((m) => ({ ...m, [cadastrando.id]: "cadastrar" }));
             setCadastrando(null);
           }}

@@ -224,6 +224,43 @@ describe("PecasAvulsasAprovacaoModal — cadastrar agora", () => {
   });
 });
 
+// #909: a peça foi criada, mas o estoque inicial não entrou. A peça fica como
+// o caminho do item (sem cadastrar outra), e a janela avisa, sem travar o Aprovar.
+describe("PecasAvulsasAprovacaoModal — estoque inicial que não entra (#909)", () => {
+  it("liga a peça criada, avisa e não cadastra duas vezes", async () => {
+    cadastrarPecaRapida.mockResolvedValue("p-nova");
+    registrarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    const { user, onConfirmar } = montar([palheta], { pecas: [] });
+
+    await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+    await waitFor(() => expect(campo("Descrição *")).toHaveValue("Palheta 20 polegadas"));
+    await user.type(campo("NCM *"), "40169300");
+    await user.type(campo("C.E.S.T *"), "0100100");
+    await user.type(campo("CFOP padrão *"), "5102");
+    await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+    await user.type(campo("CST / CSOSN *"), "500");
+    await user.type(campo("Qtde. estoque inicial"), "3");
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+
+    expect(await screen.findByText("Peça cadastrada: Palheta 20 polegadas")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+          "Peça a quem cuida do Estoque para lançar a entrada.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Salvar peça" })).not.toBeInTheDocument();
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
+
+    // Aviso, nunca tranca: aprova normalmente com a peça criada.
+    expect(aprovar()).toBeEnabled();
+    await user.click(aprovar());
+    expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
+  });
+});
+
 describe("PecasAvulsasAprovacaoModal — erro da aprovação", () => {
   it("mostra o erro dentro da janela", () => {
     montar([palheta], { erro: "A OS 9 foi aprovada, mas a baixa não entrou" });
