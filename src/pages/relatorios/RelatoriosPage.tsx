@@ -34,6 +34,7 @@ export function RelatoriosPage() {
   const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(
     null,
   );
+  const [erroContas, setErroContas] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -43,36 +44,38 @@ export function RelatoriosPage() {
         setCarregando(false);
         return;
       }
+      // As contas vêm à parte: um erro nelas não pode apagar Gráficos e
+      // Lucratividade, nem virar "Sem acesso" pra quem tem o acesso (#389).
+      const contas = Promise.all([
+        podeVerPagar ? listarContasPagar(lojaAtual.id) : Promise.resolve(null),
+        podeVerReceber ? listarContasReceber(lojaAtual.id) : Promise.resolve(null),
+      ])
+        .then(([pagarCarregadas, receberCarregadas]) => {
+          setContasPagar(pagarCarregadas);
+          setContasReceber(receberCarregadas);
+          setErroContas(null);
+        })
+        .catch((err) => {
+          console.error("Erro ao carregar as contas do fluxo de caixa:", err);
+          setErroContas(mensagemDeErro(err));
+        });
       try {
-        const [
-          movimentosCarregados,
-          ordensCarregadas,
-          pecasCarregadas,
-          servicosCarregados,
-          pagarCarregadas,
-          receberCarregadas,
-        ] = await Promise.all([
-          listarMovimentosCaixa(lojaAtual.id),
-          listarOrdens(lojaAtual.id),
-          listarPecas(),
-          listarServicos(),
-          podeVerPagar
-            ? listarContasPagar(lojaAtual.id)
-            : Promise.resolve(null),
-          podeVerReceber
-            ? listarContasReceber(lojaAtual.id)
-            : Promise.resolve(null),
-        ]);
+        const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
+          await Promise.all([
+            listarMovimentosCaixa(lojaAtual.id),
+            listarOrdens(lojaAtual.id),
+            listarPecas(),
+            listarServicos(),
+          ]);
         setMovimentos(movimentosCarregados);
         setOrdens(ordensCarregadas);
         setPecas(pecasCarregadas);
         setServicos(servicosCarregados);
-        setContasPagar(pagarCarregadas);
-        setContasReceber(receberCarregadas);
       } catch (err) {
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
       } finally {
+        await contas;
         setCarregando(false);
       }
     }
@@ -132,6 +135,10 @@ export function RelatoriosPage() {
           pecas={pecas}
           servicos={servicos}
         />
+      ) : erroContas ? (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          Não deu pra carregar as contas: {erroContas}
+        </p>
       ) : (
         <FluxoProjetadoSection
           contasPagar={contasPagar}

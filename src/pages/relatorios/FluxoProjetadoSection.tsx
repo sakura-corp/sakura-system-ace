@@ -21,7 +21,7 @@ interface FluxoProjetadoSectionProps {
 function Valor({ valor }: { valor: number | null }) {
   if (valor === null) return <>—</>;
   return (
-    <span className={valor < 0 ? "text-red-700" : undefined}>
+    <span className={valor < 0 ? "text-red-300" : undefined}>
       {formatarMoeda(valor)}
     </span>
   );
@@ -114,6 +114,11 @@ export function FluxoProjetadoSection({
           <p className="text-destaque font-semibold text-sakura-purple-dark">
             <Valor valor={fluxo.saldo} />
           </p>
+          {fluxo.saldo === null && (
+            <p className="text-rotulo text-sakura-muted">
+              Precisa de Contas a Pagar e Contas a Receber
+            </p>
+          )}
         </div>
       </div>
 
@@ -197,7 +202,7 @@ export function FluxoProjetadoSection({
                                 )}
                                 {item.atrasada && (
                                   <>
-                                    <span className="rounded-full border border-red-700 px-2 text-rotulo text-red-700">
+                                    <span className="rounded-full border border-red-300 px-2 text-rotulo text-red-300">
                                       atrasada
                                     </span>
                                     <span className="text-rotulo text-sakura-muted">
