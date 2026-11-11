@@ -53,8 +53,21 @@
 - **A Sofia**:
   - decidir sobre o "Voltar" (acima);
   - decidir se o "Total comprado" deve ficar escondido de quem não tem Caixa ou Relações. Na lista de clientes sumidos, o "total gasto" fica escondido; na ficha do veículo e nesta, aparece pra quem tem Clientes ou OS, como a issue pede.
-- **Tiago, no PC**: os testes do "Pronto quando no PC", no Supabase de teste. É o caso B de `docs/equipe.md` ("Testar no seu computador o que a sessão da nuvem fez"): abrir o programa na branch `claude/tarefa-393-frontend-jgpyhn`. O roteiro curto está no PR.
+- **Tiago, no PC**: **feito em 11/11/2026**, no Supabase de teste, com `npm run dev` na branch `claude/tarefa-393-frontend-jgpyhn` (resultado na seção "Teste no PC", abaixo).
 - **Contas a Receber e a ficha mostram vencimentos diferentes por enquanto**: Contas a Receber ainda mostra o vencimento um dia antes, no Brasil, e a ficha mostra o dia certo. Quem conserta é a #1005.
+
+## Teste no PC (Tiago, 11/11/2026, Supabase de teste)
+- **Carlos Eduardo Lima**, aberto pelo nome em Clientes:
+  - Deve: R$ 394,80 (R$ 314,80 da OS 4, **Atrasada**, mais R$ 80,00 **Pendente**);
+  - Total comprado: R$ 2.174,80 (OS 3, R$ 1.860,00, cartão de crédito em 3x; OS 4, R$ 314,80, dinheiro à vista).
+- **Os totais batem com as listas**: em Ordens de Serviço, a OS 3 é R$ 1.860,00 e a OS 4 é R$ 314,80; em Contas a Receber, as pendentes do Carlos somam R$ 394,80.
+- **Atalhos**:
+  - o nome em Contas a Receber abre a ficha, e não a OS da linha; a setinha volta pra Contas a Receber;
+  - o "Abrir" da ficha abre a OS 5, e o nome do cliente dentro da OS volta pra ficha.
+- **Transportes Exemplo Ltda**: a conta da OS 5 aparece **Atrasada**, com vencimento em 08/11/2026. A issue esperava "pendente, não atrasada", mas o vencimento já passou (hoje é 11/11): o certo agora é atrasada. Contas a Receber mostra 07/11 e "Vencida", um dia antes, que é o defeito da #1005.
+- **Login só com Clientes**: "—" e a frase em Deve, O que deve e Como pagou, **nunca R$ 0,00**; as OS 3 e 4 aparecem, sem o "Abrir".
+- **Login só com Contas a Receber**: em Contas a Receber, os nomes aparecem como texto, sem atalho.
+- **Visto de passagem, fora desta tarefa**: um login sem o módulo Início cai, logo depois de entrar, na tela "Você não tem permissão para acessar este módulo". Já era assim antes.
 
 ## Onde parou
 Terminei.
