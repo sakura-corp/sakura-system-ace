@@ -115,7 +115,7 @@ export function EmitirNotaFiscalModal({
   // peça): a `ordem` que chega por prop só se atualiza quando o pai recarrega.
   const [vinculadas, setVinculadas] = useState<Record<string, string>>({});
   const [itemCadastrando, setItemCadastrando] = useState<ItemOS | null>(null);
-  const [avisoEstoqueInicial, setAvisoEstoqueInicial] = useState<string | null>(null);
+  const [avisosEstoqueInicial, setAvisosEstoqueInicial] = useState<Record<string, string>>({});
   const [codigoMunicipioCliente, setCodigoMunicipioCliente] = useState("");
   const [resultado, setResultado] = useState<RespostaFocusNfe | null>(null);
   const [danfeUrl, setDanfeUrl] = useState<string | null>(null);
@@ -246,8 +246,11 @@ export function EmitirNotaFiscalModal({
     setItemCadastrando(null);
     setErro("");
     // A peça foi cadastrada, mas o estoque inicial não entrou (#909): avisa,
-    // sem travar a emissão, e liga a peça do mesmo jeito.
-    setAvisoEstoqueInicial(avisoEstoque);
+    // sem travar a emissão, e liga a peça do mesmo jeito. Um aviso por peça:
+    // ligar a próxima não apaga o da anterior.
+    if (avisoEstoque) {
+      setAvisosEstoqueInicial((a) => ({ ...a, [item.id]: `${peca.descricao}: ${avisoEstoque}` }));
+    }
     // A peça entra na lista da loja já: se o vínculo abaixo falhar, o próximo
     // "Cadastrar agora" oferece ela pelo aviso de peça parecida, em vez de
     // cadastrar outra igual (PR #717, ponto 1).
@@ -541,11 +544,12 @@ export function EmitirNotaFiscalModal({
         <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>
       )}
 
-      {!carregando && avisoEstoqueInicial && (
-        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
-          {avisoEstoqueInicial}
-        </p>
-      )}
+      {!carregando &&
+        Object.entries(avisosEstoqueInicial).map(([itemId, aviso]) => (
+          <p key={itemId} className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+            {aviso}
+          </p>
+        ))}
 
       {!carregando && !resultado && !focusNfeConfigurado && (
         <div className="space-y-3">

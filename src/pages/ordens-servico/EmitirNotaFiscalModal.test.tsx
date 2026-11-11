@@ -303,12 +303,45 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     expect(onItensMudaram).toHaveBeenCalled();
     expect(
       await screen.findByText(
-        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+        "Palheta: Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja). " +
           "Peça a quem cuida do Estoque para lançar a entrada.",
       ),
     ).toBeInTheDocument();
     expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(confirmar()).toBeEnabled());
+  });
+
+  // Revisão: ligar outra peça (aqui, a que já existe) apagava o aviso da anterior.
+  it("ligar a próxima peça não apaga o aviso de estoque da anterior", async () => {
+    listarPecasJanela.mockResolvedValue([pecaComNcm, palhetaDoCadastro]);
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
+    registrarMovimento.mockRejectedValue(new Error("sem internet"));
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    const { user } = montar([item("i2", "Escova", null), item("i3", "Palheta", null)]);
+
+    // A primeira: cadastra nova (sem parecida), com o estoque inicial falhando.
+    const [primeiro] = await screen.findAllByRole("button", { name: "Cadastrar agora" });
+    await user.click(primeiro);
+    const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+    await waitFor(() => expect(campo("Descrição *")).toHaveValue("Escova"));
+    await user.type(campo("NCM *"), "40169300");
+    await user.type(campo("C.E.S.T *"), "0100100");
+    await user.type(campo("CFOP padrão *"), "5102");
+    await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+    await user.type(campo("CST / CSOSN *"), "500");
+    await user.type(campo("Qtde. estoque inicial"), "3");
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    expect(await screen.findByText(/estoque inicial não entrou \(sem internet\)/)).toBeInTheDocument();
+
+    // A segunda: liga a que já existe, pelo aviso de peça parecida.
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: /Abrir a que já existe/ }));
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
+
+    expect(screen.getByText(/estoque inicial não entrou \(sem internet\)/)).toBeInTheDocument();
   });
 
   // Revisão da Sofia (PR #717), ponto 2: o aviso de peça parecida (#653) não

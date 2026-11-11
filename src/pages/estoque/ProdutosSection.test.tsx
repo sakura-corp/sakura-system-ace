@@ -168,7 +168,7 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
 
     expect(
       await screen.findByText(
-        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja). " +
           "Lance a entrada em Estoque → Movimentações.",
       ),
     ).toBeInTheDocument();
@@ -177,6 +177,22 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
     expect(onRecarregar).toHaveBeenCalled();
 
     // Reabrir o "Novo produto" não traz a peça de volta (o rascunho foi limpo).
+    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    expect(campo("Descrição *")).toHaveValue("");
+    expect(criarPeca).toHaveBeenCalledTimes(1);
+  });
+
+  // Revisão: se recarregar a lista falhava depois de criar, o erro subia, o
+  // formulário (já fechado) não limpava o rascunho e reabrir trazia a peça.
+  it("se só recarregar a lista falha, avisa e o rascunho não traz a peça de volta", async () => {
+    criarMovimento.mockResolvedValue(undefined);
+    const onRecarregar = vi.fn().mockRejectedValue(new Error("sem internet"));
+    const { user, container } = montar([umaPeca({})], onRecarregar);
+
+    await cadastrarNova(user, "3");
+
+    expect(await screen.findByText(/A peça foi salva, mas a lista não recarregou \(sem internet\)/)).toBeInTheDocument();
+    expect(container.querySelector("form")).toBeNull();
     await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
     expect(campo("Descrição *")).toHaveValue("");
     expect(criarPeca).toHaveBeenCalledTimes(1);

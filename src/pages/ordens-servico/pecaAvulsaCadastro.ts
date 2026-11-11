@@ -72,6 +72,11 @@ export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[]) 
   return { categorias, regime, csosnSugerido };
 }
 
+/** Tira o ponto do fim do motivo, que vai entre parênteses no aviso ("(...loja). Lance"). */
+export function semPontoFinal(texto: string): string {
+  return texto.trim().replace(/\.+$/, "");
+}
+
 /** A peça criada e, se o estoque inicial não entrou, o aviso pra mostrar (#909). */
 export interface PecaNovaCadastrada {
   peca: Peca & PecaJanela;
@@ -113,7 +118,7 @@ export async function cadastrarPecaNova(
     return {
       peca: criada,
       avisoEstoqueInicial:
-        `Peça cadastrada, mas o estoque inicial não entrou (${mensagemDeErro(err)}). ` +
+        `Peça cadastrada, mas o estoque inicial não entrou (${semPontoFinal(mensagemDeErro(err))}). ` +
         "Peça a quem cuida do Estoque para lançar a entrada.",
     };
   }

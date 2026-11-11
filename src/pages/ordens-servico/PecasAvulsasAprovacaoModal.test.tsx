@@ -247,7 +247,7 @@ describe("PecasAvulsasAprovacaoModal — estoque inicial que não entra (#909)",
     expect(await screen.findByText("Peça cadastrada: Palheta 20 polegadas")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja.). " +
+        "Peça cadastrada, mas o estoque inicial não entrou (Nenhum depósito ativo encontrado pra essa loja). " +
           "Peça a quem cuida do Estoque para lançar a entrada.",
       ),
     ).toBeInTheDocument();
@@ -258,6 +258,35 @@ describe("PecasAvulsasAprovacaoModal — estoque inicial que não entra (#909)",
     expect(aprovar()).toBeEnabled();
     await user.click(aprovar());
     expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
+  });
+});
+
+describe("PecasAvulsasAprovacaoModal — um aviso por peça (#909, revisão)", () => {
+  it("cadastrar a segunda peça sem problema não apaga o aviso da primeira", async () => {
+    cadastrarPecaRapida.mockResolvedValueOnce("p-nova").mockResolvedValueOnce("p-outra");
+    registrarMovimento.mockRejectedValueOnce(new Error("sem internet")).mockResolvedValue(undefined);
+    const { user } = montar([palheta, filtro], { pecas: [] });
+    const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+
+    async function cadastrar(nome: string) {
+      await user.click(secao(nome).getByRole("radio", { name: "Cadastrar agora" }));
+      await user.click(secao(nome).getByRole("button", { name: "Cadastrar a peça" }));
+      await waitFor(() => expect(campo("Descrição *")).toHaveValue(nome));
+      await user.type(campo("NCM *"), "40169300");
+      await user.type(campo("C.E.S.T *"), "0100100");
+      await user.type(campo("CFOP padrão *"), "5102");
+      await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+      await user.type(campo("CST / CSOSN *"), "500");
+      await user.type(campo("Qtde. estoque inicial"), "3");
+      await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+      await screen.findByText(`Peça cadastrada: ${nome}`);
+    }
+
+    await cadastrar("Palheta 20 polegadas");
+    await cadastrar("Filtro de óleo PSL55");
+
+    expect(secao("Palheta 20 polegadas").getByText(/estoque inicial não entrou \(sem internet\)/)).toBeInTheDocument();
+    expect(secao("Filtro de óleo PSL55").queryByText(/estoque inicial não entrou/)).not.toBeInTheDocument();
   });
 });
 

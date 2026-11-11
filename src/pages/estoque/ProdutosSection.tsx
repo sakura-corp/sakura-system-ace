@@ -2,6 +2,9 @@ import { useMemo, useRef, useState } from "react";
 import { atualizarPeca, atualizarStatusPeca, criarPeca, excluirPeca } from "@/lib/pecas";
 import { criarMovimento } from "@/lib/estoque";
 import { mensagemDeErro } from "@/lib/errors";
+
+// O motivo vai entre parênteses no aviso: sem o ponto do fim ("(...loja). Lance").
+const semPontoFinal = (texto: string) => texto.trim().replace(/\.+$/, "");
 import {
   acharPorCodigoExato,
   lerSaldo,
@@ -151,7 +154,7 @@ export function ProdutosSection({
         } catch (err) {
           console.error("Erro ao lançar o estoque inicial da peça:", err);
           setErro(
-            `Peça cadastrada, mas o estoque inicial não entrou (${mensagemDeErro(err)}). ` +
+            `Peça cadastrada, mas o estoque inicial não entrou (${semPontoFinal(mensagemDeErro(err))}). ` +
               "Lance a entrada em Estoque → Movimentações.",
           );
         }
@@ -159,7 +162,19 @@ export function ProdutosSection({
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);
-    await onRecarregar();
+    // A peça já foi salva: se só recarregar a lista falha, não sobe o erro
+    // (o formulário já fechou, e o rascunho tem que ser limpo, senão reabrir
+    // o "Novo produto" traz a peça de volta e cria outra igual, #909).
+    try {
+      await onRecarregar();
+    } catch (err) {
+      console.error("Erro ao recarregar os produtos:", err);
+      setErro(
+        (atual) =>
+          `${atual ? `${atual} ` : ""}A peça foi salva, mas a lista não recarregou ` +
+          `(${semPontoFinal(mensagemDeErro(err))}). Saia e entre de novo em Produtos pra ver.`,
+      );
+    }
   }
 
   function handleFecharFormulario() {

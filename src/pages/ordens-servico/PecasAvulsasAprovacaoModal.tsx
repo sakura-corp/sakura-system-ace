@@ -67,8 +67,9 @@ export function PecasAvulsasAprovacaoModal({
     mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
   ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
-  // A peça foi cadastrada, mas o estoque inicial não entrou (#909): só avisa.
-  const [avisoEstoqueInicial, setAvisoEstoqueInicial] = useState<string | null>(null);
+  // A peça foi cadastrada, mas o estoque inicial não entrou (#909): só avisa,
+  // embaixo da linha dela (um aviso por peça, pra um não apagar o outro).
+  const [avisosEstoqueInicial, setAvisosEstoqueInicial] = useState<Record<string, string>>({});
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
   // sem peça escolhida e "cadastrar" sem peça criada ficam com id vazio, e
@@ -186,9 +187,16 @@ export function PecasAvulsasAprovacaoModal({
                 {modo === "cadastrar" && (
                   <div className="space-y-1">
                     {cadastradas[item.id] ? (
-                      <p className="text-corpo text-emerald-300">
-                        Peça cadastrada: {cadastradas[item.id].descricao}
-                      </p>
+                      <>
+                        <p className="text-corpo text-emerald-300">
+                          Peça cadastrada: {cadastradas[item.id].descricao}
+                        </p>
+                        {avisosEstoqueInicial[item.id] && (
+                          <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+                            {avisosEstoqueInicial[item.id]}
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <button
                         type="button"
@@ -215,11 +223,6 @@ export function PecasAvulsasAprovacaoModal({
 
           {erro && (
             <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-          )}
-          {avisoEstoqueInicial && (
-            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
-              {avisoEstoqueInicial}
-            </p>
           )}
           {faltam > 0 && (
             <p className="text-rotulo text-amber-300">
@@ -257,7 +260,7 @@ export function PecasAvulsasAprovacaoModal({
           lojaId={lojaId}
           onCadastrada={(peca, aviso) => {
             setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
-            setAvisoEstoqueInicial(aviso);
+            if (aviso) setAvisosEstoqueInicial((a) => ({ ...a, [cadastrando.id]: aviso }));
             setModos((m) => ({ ...m, [cadastrando.id]: "cadastrar" }));
             setCadastrando(null);
           }}
