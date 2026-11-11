@@ -10,6 +10,8 @@ import {
   alcanceDaCentral,
   marcadoresDaCobranca,
   marcadoresDoCarroPronto,
+  marcadoresDaContabilidade,
+  mesDoPacote,
   type EntradaCentralDoDia,
 } from "./centralDoDia";
 import type { ContaPagar } from "@/types/contaPagar";
@@ -441,5 +443,25 @@ describe("as mensagens de WhatsApp", () => {
     expect(m.veiculo).toBe("Fiat Uno");
     expect(m.placa).toBe("ABC1D23");
     expect(m.valor).toMatch(/190,00/);
+  });
+});
+
+describe("mesDoPacote (#383)", () => {
+  it("é o mês anterior ao de hoje, no formato AAAA-MM", () => {
+    expect(mesDoPacote("2026-11-05")).toBe("2026-10");
+    expect(mesDoPacote("2026-03-01")).toBe("2026-02");
+  });
+  it("em janeiro volta pra dezembro do ano anterior", () => {
+    expect(mesDoPacote("2027-01-03")).toBe("2026-12");
+  });
+});
+
+describe("marcadoresDaContabilidade (#383)", () => {
+  it("troca contador, loja e mês por extenso", () => {
+    expect(marcadoresDaContabilidade("Marta", "Loja Centro", "2026-10")).toEqual({
+      contador: "Marta",
+      loja: "Loja Centro",
+      mes: "outubro de 2026",
+    });
   });
 });
