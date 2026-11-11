@@ -7,11 +7,21 @@ import {
   consultarNFSe,
   FocusNfeError,
 } from "./focusNfe";
+import { mensagemDeErro } from "./errors";
 import { supabase } from "./supabase";
 import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { salvarComoDownload } from "./download";
 import { criarZip, type ArquivoParaZip } from "./zip";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
+import {
+  intervaloDoMes,
+  mesPorExtenso,
+  motivoSemPdf,
+  nomeDoPacote,
+  notasDoMes,
+  planejarPacoteContabilidade,
+  type ResultadoPdf,
+} from "@/schemas/pacoteContabilidade";
 import type { RespostaFocusNfe } from "@/types/focusNfe";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
 import type { OrdemParaNotas, StatusOS, TipoOrdem } from "@/types/os";
@@ -91,6 +101,29 @@ export async function listarArquivos(
       .order("criado_em", { ascending: false })
       .order("id", { ascending: true })
       .range(de, ate),
+  );
+  return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
+}
+
+// As notas (NFC-e e NFS-e) de um mês da loja, pro pacote do contador (#383).
+// Filtra no banco por intervalo, e não por `competencia = AAAA-MM-01`: nota
+// emitida por versão antiga gravou o dia da emissão (ver lib/datas.ts).
+export async function listarNotasDoMesParaPacote(
+  lojaId: string,
+  mes: string,
+): Promise<NotaFiscalArquivo[]> {
+  const { de, ateAntesDe } = intervaloDoMes(mes);
+  const data = await buscarTudoEmPaginas((inicio, fim) =>
+    supabase
+      .from("notas_fiscais_arquivos")
+      .select(SELECT_ARQUIVO)
+      .eq("loja_id", lojaId)
+      .gte("competencia", de)
+      .lt("competencia", ateAntesDe)
+      .order("tipo", { ascending: true })
+      .order("criado_em", { ascending: true })
+      .order("id", { ascending: true })
+      .range(inicio, fim),
   );
   return (data as unknown as ArquivoDaJanela[]).map(arquivoDaJanela);
 }
@@ -370,4 +403,100 @@ export async function buscarDanfeEmitida(arquivo: NotaFiscalArquivo): Promise<Bl
   }
 
   return baixarArquivoNota(arquivo.loja_id, tipoNaFocusNfe(arquivo.tipo), ref, "danfe");
+}
+
+// O mesmo tamanho de lote do "Baixar XMLs do mês": disparar tudo junto
+// costuma acabar em erro de limite (aqui no Storage, e no porteiro da Focus).
+const TAMANHO_DO_LOTE_DO_PACOTE = 5;
+
+async function emLotes<T, R>(itens: T[], fazer: (item: T) => Promise<R>): Promise<R[]> {
+  const resultados: R[] = [];
+  for (let inicio = 0; inicio < itens.length; inicio += TAMANHO_DO_LOTE_DO_PACOTE) {
+    const lote = itens.slice(inicio, inicio + TAMANHO_DO_LOTE_DO_PACOTE);
+    resultados.push(...(await Promise.all(lote.map(fazer))));
+  }
+  return resultados;
+}
+
+// O pacote do mês pro contador (#383): um .zip com as pastas nfce/ e nfse/, o
+// XML de cada nota e, quando der, o PDF ao lado, mais um LEIA-ME.txt. Quem
+// decide nome, pasta e o texto é `planejarPacoteContabilidade`
+// (schemas/pacoteContabilidade.ts); aqui só se busca e se junta.
+//
+// XML e PDF não pesam igual: o XML é o documento que vale, e sem ele o pacote
+// não serve (erro derruba, dizendo qual nota). O PDF é só a versão pra ler, e
+// não fica guardado aqui (vem da Focus NFe, pelo porteiro, como no "Ver
+// DANFE"): se falhar, a nota vai só com o XML e o motivo entra no LEIA-ME.
+export async function gerarPacoteContabilidade({
+  notas,
+  mes,
+  aoProgredir,
+}: {
+  notas: NotaFiscalArquivo[];
+  /** "AAAA-MM" */
+  mes: string;
+  /** A cada PDF buscado na Focus NFe (pra tela mostrar "Buscando PDF 12 de 40"). */
+  aoProgredir?: (feitos: number, total: number) => void;
+}): Promise<{ semPdf: number }> {
+  const doMes = notasDoMes(notas, mes);
+  // Erro em vez de não fazer nada: quem chama (a tela, a Central do dia)
+  // mostra a frase, e a pessoa entende por que nenhum arquivo apareceu.
+  if (doMes.length === 0) {
+    throw new Error(`Não há notas de ${mesPorExtenso(mes)} pra montar o pacote.`);
+  }
+
+  const xmls = await emLotes(doMes, async (nota) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("notas-fiscais")
+        .download(nota.storage_path);
+      if (error) throw error;
+      return new Uint8Array(await data.arrayBuffer());
+    } catch (erro) {
+      throw new Error(
+        `Não deu pra baixar o XML da nota ${nota.nome_arquivo}: ${mensagemDeErro(erro)}`,
+      );
+    }
+  });
+
+  const pdfs = new Map<string, ResultadoPdf>();
+  const conteudosPdf = new Map<string, Uint8Array>();
+  const paraBuscar: NotaFiscalArquivo[] = [];
+  for (const nota of doMes) {
+    const motivo = motivoSemPdf(nota);
+    if (motivo) pdfs.set(nota.id, { ok: false, motivo });
+    else paraBuscar.push(nota);
+  }
+
+  let feitos = 0;
+  aoProgredir?.(feitos, paraBuscar.length);
+  await emLotes(paraBuscar, async (nota) => {
+    try {
+      const pdf = await buscarDanfeEmitida(nota);
+      conteudosPdf.set(nota.id, new Uint8Array(await pdf.arrayBuffer()));
+      pdfs.set(nota.id, { ok: true });
+    } catch (erro) {
+      pdfs.set(nota.id, { ok: false, motivo: mensagemDeErro(erro) });
+    }
+    feitos += 1;
+    aoProgredir?.(feitos, paraBuscar.length);
+  });
+
+  const plano = planejarPacoteContabilidade({ mes, notas: doMes, pdfs });
+  const xmlDaNota = new Map(doMes.map((nota, indice) => [nota.id, xmls[indice]]));
+  const arquivos: ArquivoParaZip[] = plano.entradas.map((entrada) => ({
+    nome: entrada.caminho,
+    conteudo:
+      (entrada.arquivo === "xml"
+        ? xmlDaNota.get(entrada.nota.id)
+        : conteudosPdf.get(entrada.nota.id)) ?? new Uint8Array(),
+  }));
+  // Com a marca de UTF-8 no começo, pro Bloco de Notas não estragar os acentos.
+  arquivos.push({
+    nome: "LEIA-ME.txt",
+    conteudo: new TextEncoder().encode(`\uFEFF${plano.leiaMe}`),
+  });
+
+  salvarComoDownload(criarZip(arquivos), nomeDoPacote(mes));
+  return { semPdf: doMes.length - conteudosPdf.size };
 }

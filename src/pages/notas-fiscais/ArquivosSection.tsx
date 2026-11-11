@@ -7,6 +7,7 @@ import {
   baixarZipDoMes,
   enviarArquivo,
   excluirArquivo,
+  gerarPacoteContabilidade,
   listarArquivos,
   listarOrdensParaNotas,
 } from "@/lib/notasFiscais";
@@ -88,6 +89,10 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const [arquivoCancelando, setArquivoCancelando] = useState<NotaFiscalArquivo | null>(null);
   const [arquivoDanfe, setArquivoDanfe] = useState<NotaFiscalArquivo | null>(null);
   const [mesBaixando, setMesBaixando] = useState<string | null>(null);
+  // O pacote pro contador (#383): de que mês, e quantos PDFs já vieram.
+  const [pacote, setPacote] = useState<{ chave: string; feitos: number; total: number } | null>(
+    null,
+  );
 
   async function carregar() {
     if (!lojaAtual) {
@@ -162,6 +167,24 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
       setErro(mensagemDeErro(err));
     } finally {
       setMesBaixando(null);
+    }
+  }
+
+  // Só as notas desta aba (o tipo) e deste mês: são as que a tela já tem.
+  async function handlePacoteDoMes(chave: string, arquivosDoMes: NotaFiscalArquivo[]) {
+    setErro(null);
+    setPacote({ chave, feitos: 0, total: 0 });
+    try {
+      await gerarPacoteContabilidade({
+        notas: arquivosDoMes,
+        mes: chave,
+        aoProgredir: (feitos, total) => setPacote({ chave, feitos, total }),
+      });
+    } catch (err) {
+      console.error("Erro ao montar o pacote pro contador:", err);
+      setErro(mensagemDeErro(err));
+    } finally {
+      setPacote(null);
     }
   }
 
@@ -296,15 +319,29 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
               <h3 className="text-corpo font-semibold text-sakura-purple-dark">
                 {formatarCompetencia(arquivosDoMes[0].competencia)}
               </h3>
-              <button
-                onClick={() => handleBaixarMes(chave, arquivosDoMes)}
-                disabled={mesBaixando !== null}
-                className="text-rotulo font-medium text-sakura-purple hover:underline disabled:opacity-50 disabled:hover:no-underline"
-              >
-                {mesBaixando === chave
-                  ? "Preparando..."
-                  : `Baixar XMLs do mês (${arquivosDoMes.length})`}
-              </button>
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                <button
+                  onClick={() => handleBaixarMes(chave, arquivosDoMes)}
+                  disabled={mesBaixando !== null || pacote !== null}
+                  className="text-rotulo font-medium text-sakura-purple hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                >
+                  {mesBaixando === chave
+                    ? "Preparando..."
+                    : `Baixar XMLs do mês (${arquivosDoMes.length})`}
+                </button>
+                <button
+                  onClick={() => handlePacoteDoMes(chave, arquivosDoMes)}
+                  disabled={mesBaixando !== null || pacote !== null}
+                  title="Um .zip com o XML e o PDF de cada nota do mês, e um LEIA-ME com as que ficaram sem PDF"
+                  className="text-rotulo font-medium text-sakura-purple hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                >
+                  {pacote?.chave === chave
+                    ? pacote.total > 0
+                      ? `Buscando PDF ${pacote.feitos} de ${pacote.total}…`
+                      : "Preparando..."
+                    : "Pacote pro contador (XML e PDF)"}
+                </button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               {/* `table-fixed` com as larguras no cabeçalho: cada mês é uma
