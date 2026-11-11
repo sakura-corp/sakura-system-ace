@@ -9,7 +9,7 @@
 ## O que cada agente fez
 - **Sessão mãe (chefe backend)**: leu a issue, achou os arquivos (a etapa do `ajudante-rapido`
   foi feita pela mãe: eram poucas leituras e o contexto já estava aberto), escolheu o número da
-  migration, distribuiu as etapas, renumerou a migration de 0085 pra 0083 (ver "Como eu agi"),
+  migration, distribuiu as etapas, renumerou a migration de 0085 pra 0083 e, na revisão da Sofia, de volta pra 0085 (ver "Como eu agi"),
   rodou de novo `test:sql`/`test:rls`, juntou os commits e abriu o PR.
 - **ajudante-forte** ("Migration 0083 contato contabilidade"): migration, `testar-contato-contabilidade.sql`,
   matriz de RLS, `src/lib/contabilidade.ts` (+ teste), a tabela no "Excluir loja" (`lojas.ts`, o mesmo
@@ -84,7 +84,7 @@
 ## O que passou sem eu ter visto reprovar
 - O `key={lojaId}` do bloco do contato em Configurações: tirá-lo não reprova nada, porque o
   `useEffect` já recarrega pela loja (fica como segurança a mais).
-- Idempotência: a instalação completa rodou 2 vezes e a 0083 mais 2 vezes no mesmo banco, sem erro
+- Idempotência: a instalação completa rodou 2 vezes e a migration nova mais 2 vezes no mesmo banco, sem erro
   (não há como "ver reprovar" isso sem escrever uma migration não idempotente).
 
 ## O que ficou de fora
