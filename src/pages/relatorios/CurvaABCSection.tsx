@@ -119,10 +119,12 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
         {criterio === "venda"
           ? "A curva por venda mostra o que não pode faltar: A são os poucos que fazem a maior parte do que entrou no período."
           : "A curva por lucro mostra o que vale a pena: o que vendeu menos o custo."}{" "}
-        A vai até {CORTES_ABC.A}% do total, B até {CORTES_ABC.B}%, C é o resto. Conta as mesmas OS
-        da aba Lucratividade (abertas no período, orçamento fora).
-        {criterio === "lucro" &&
-          ` Item com ${TEXTO_CUSTO_NAO_INFORMADO} e lucro zero ou negativo ficam no C, fora da conta.`}
+        A vai até {CORTES_ABC.A}% do total (a linha que passa dos {CORTES_ABC.A}% ainda é A), B até{" "}
+        {CORTES_ABC.B}%, C é o resto. Conta as mesmas OS da aba Lucratividade (abertas no período,
+        orçamento fora).{" "}
+        {criterio === "lucro"
+          ? `Item com ${TEXTO_CUSTO_NAO_INFORMADO}, ou com lucro zero ou negativo, fica no C, fora da conta.`
+          : "Item com venda zero fica no C, fora da conta."}
       </p>
 
       <ListaABC
@@ -219,6 +221,7 @@ function ListaABC<T>({
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-rotulo font-semibold ${CLASSE_DO_SELO[l.letra]}`}
+                      role="img"
                       aria-label={`Curva ${l.letra}`}
                     >
                       {l.letra}

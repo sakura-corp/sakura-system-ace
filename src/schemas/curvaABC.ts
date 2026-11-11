@@ -53,9 +53,10 @@ export interface CurvaABC<T> {
  * Com isso o primeiro é sempre A (mesmo com 90% sozinho), e o A é o menor
  * grupo que alcança 80%.
  *
- * Empate: valores iguais ficam na mesma letra (a de cima), pra ordem entre
- * iguais não decidir nada. Entre iguais, a ordem da lista sai pelo `chave`
- * (o nome, por padrão: `String(linha)`), só pra tela não pular.
+ * Empate: entre valores iguais, a ordem sai pela `chave` (o nome, por
+ * padrão) e decide a letra, como na curva ABC de sempre — a tela não pula.
+ * Dar a mesma letra a todo o bloco de iguais foi tentado e caiu na revisão:
+ * com 100 clientes de R$ 30 (o conserto avulso), o bloco inteiro ia pro A.
  *
  * A conta é em centavos inteiros: o 0,1 + 0,2 não vira 0,30000000000000004
  * e a última linha fecha em 100% exatos.
@@ -90,16 +91,13 @@ export function classificarABC<T>(
   const totalCentavos = dentro.reduce((soma, l) => soma + (l.centavos ?? 0), 0);
 
   let acumuladoCentavos = 0;
-  let anterior: { centavos: number; letra: LetraABC } | null = null;
   const classificadas: LinhaABC<T>[] = dentro.map(({ linha, centavos }) => {
     const valor = centavos ?? 0;
     // Comparação em inteiros: antes × 100 < corte × total.
     const antes = acumuladoCentavos * 100;
-    let letra: LetraABC =
+    const letra: LetraABC =
       antes < cortes.A * totalCentavos ? "A" : antes < cortes.B * totalCentavos ? "B" : "C";
-    if (anterior && anterior.centavos === valor) letra = anterior.letra;
     acumuladoCentavos += valor;
-    anterior = { centavos: valor, letra };
     return {
       linha,
       letra,

@@ -69,31 +69,41 @@ describe("classificarABC", () => {
     ]);
   });
 
-  it("empate na fronteira: valores iguais ficam na mesma letra", () => {
-    // 60, 20, 20: o segundo começa em 60% (A); o terceiro começaria em 80%
-    // (B), mas vende o mesmo que o segundo — a ordem entre iguais não pode
-    // decidir a letra.
-    const resultado = classificarABC(
-      [
-        { nome: "x", valor: 60 },
-        { nome: "y", valor: 20 },
-        { nome: "z", valor: 20 },
-      ],
-      valorDe,
-    );
-    expect(letras(resultado)).toEqual([
+  it("empate na fronteira: a ordem pelo nome decide, sempre a mesma", () => {
+    // 60, 20, 20: "y" começa em 60% (A); "z" começa em 80% (B). Os dois
+    // vendem igual: quem vem antes no nome fica em cima, em toda abertura.
+    const linhas = [
+      { nome: "z", valor: 20 },
+      { nome: "x", valor: 60 },
+      { nome: "y", valor: 20 },
+    ];
+    expect(letras(classificarABC(linhas, valorDe))).toEqual([
       ["x", "A"],
       ["y", "A"],
-      ["z", "A"],
+      ["z", "B"],
     ]);
+    expect(letras(classificarABC([...linhas].reverse(), valorDe))).toEqual(
+      letras(classificarABC(linhas, valorDe)),
+    );
   });
 
-  it("tudo igual: todo mundo no A (ninguém se destaca)", () => {
+  it("muitos de valor igual não vão todos pro A (100 clientes de R$ 30)", () => {
+    const linhas = [
+      { nome: "grande", valor: 500 },
+      ...Array.from({ length: 100 }, (_, i) => ({ nome: `c${String(i).padStart(3, "0")}`, valor: 30 })),
+    ];
+    const contagem = contarPorLetra(classificarABC(linhas, valorDe));
+    // Total 3500: o A para em 2800 (80%), o B em 3325 (95%).
+    expect(contagem).toEqual({ A: 78, B: 18, C: 5 });
+  });
+
+  it("tudo igual: a curva corta pela ordem, e a última fecha em 100%", () => {
     const resultado = classificarABC(
-      ["a", "b", "c", "d", "e"].map((nome) => ({ nome, valor: 10 })),
+      Array.from({ length: 20 }, (_, i) => ({ nome: `n${String(i).padStart(2, "0")}`, valor: 10 })),
       valorDe,
     );
-    expect(resultado.linhas.every((l) => l.letra === "A")).toBe(true);
+    // Cada um tem 5%: começam em 0%, 5%, ..., 95%.
+    expect(contarPorLetra(resultado)).toEqual({ A: 16, B: 3, C: 1 });
     expect(resultado.linhas.at(-1)?.acumulada).toBe(100);
   });
 
