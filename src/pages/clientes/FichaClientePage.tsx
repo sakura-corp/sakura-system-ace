@@ -102,7 +102,8 @@ export function FichaClientePage() {
   }, [ficha, hoje]);
 
   function abrirOrdem(ordemId: string) {
-    navigate("/ordens-servico", { state: { abrirOrdemId: ordemId } });
+    // `voltarAoFechar`: o Voltar da OS traz de volta pra esta ficha.
+    navigate("/ordens-servico", { state: { abrirOrdemId: ordemId, voltarAoFechar: true } });
   }
 
   function nomeDaLoja(lojaId: string): string {
@@ -296,6 +297,15 @@ export function FichaClientePage() {
                   {formatarMoeda(totalOrdem(ordem.itens ?? []))}
                 </td>
                 <td className="px-4 py-3 text-right">
+                  {/* Sem o botão, a linha diria nada: diz por quê. */}
+                  {podeVerOS && !podeAbrir(ordem) && (
+                    <span
+                      className="whitespace-nowrap text-rotulo text-sakura-muted"
+                      title="A lista de OS mostra só a loja ativa: troque de loja, embaixo à esquerda, pra abrir esta OS."
+                    >
+                      outra loja
+                    </span>
+                  )}
                   {podeAbrir(ordem) && (
                     <button
                       type="button"

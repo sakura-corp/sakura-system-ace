@@ -1,4 +1,5 @@
-// As 54 telas do sistema, com os cliques necessários pra chegar até cada uma.
+// Todas as telas do sistema, com os cliques necessários pra chegar até cada uma.
+// (Sem o número: "54 telas" ficou velho a cada tela nova.)
 //
 // Mora num arquivo só porque DOIS programas percorrem esta lista: o gerador
 // de imagens do catálogo (gerar-catalogo-telas.mjs) e a varredura de

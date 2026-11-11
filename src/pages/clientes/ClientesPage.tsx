@@ -393,8 +393,8 @@ export function ClientesPage() {
                 {lista.linhas.map((cliente) => (
                   <tr key={cliente.id} className="border-t border-sakura-gray/20">
                     <td className="px-4 py-3">
-                        <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
-                      </td>
+                      <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
+                    </td>
                     <td className="px-4 py-3">{cliente.telefone || "—"}</td>
                     <td className="px-4 py-3">
                       {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}

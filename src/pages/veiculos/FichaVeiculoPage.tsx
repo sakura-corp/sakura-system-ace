@@ -92,7 +92,8 @@ export function FichaVeiculoPage() {
   const podeAbrirOS = temPermissao(operador, "ordens_servico");
 
   function abrirOrdem(ordem: OrdemDaFicha) {
-    navigate("/ordens-servico", { state: { abrirOrdemId: ordem.id } });
+    // `voltarAoFechar` (#393): o Voltar da OS traz de volta pra esta ficha.
+    navigate("/ordens-servico", { state: { abrirOrdemId: ordem.id, voltarAoFechar: true } });
   }
 
   function nomeDaLoja(lojaId: string): string {

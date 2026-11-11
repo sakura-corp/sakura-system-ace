@@ -554,6 +554,29 @@ Quatro coisas que valem saber:
   - **Não abre de dentro do formulário da OS** — sair da OS no meio perderia o que foi digitado.
     Se fizer falta ver o histórico na hora de abrir a OS, o caminho é a ficha numa janela
     (modal), não um link. Não foi pedido.
+- **Ficha do cliente** (11/11/2026, `#393`, sem migration — **ainda não publicada**): o dinheiro
+  de um cliente numa tela só. Rota `/clientes/:id`, aberta com **Clientes ou Ordens de Serviço**,
+  sem entrada no menu. Abre **clicando no nome do cliente** (`LinkCliente`) em Clientes (lista e
+  sumidos), no topo da OS, em Contas a Receber e no "Dono atual" da ficha do veículo. Só lê:
+  receber continua em Contas a Receber. O que mostra:
+  - **Deve** (contas a receber pendentes, com o **atrasado** em destaque: vencimento antes de
+    hoje, no fuso local), **Total comprado** (OS e vendas faturadas, o mesmo "Total" da lista de
+    OS) e **Visitas** (dias diferentes, com a última);
+  - **O que deve**, **O que comprou** (cada OS com "Abrir", só a da loja ativa; a de outra loja
+    diz "outra loja") e **Como pagou** (forma e parcelas de cada OS faturada, e as contas
+    recebidas com a data);
+  - **todas as lojas que a pessoa alcança** (a RLS limita), com o nome da loja quando há mais
+    de uma, como a ficha do veículo.
+  - **Permissão, parte por parte**: sem Contas a Receber, as contas **nem são buscadas** e "Deve"
+    mostra "—" com a frase "Você não tem acesso a Contas a Receber", **nunca R$ 0,00**; sem
+    Ordens de Serviço, as OS vêm pela janela `ordens_servico_clientes` (sem a forma de
+    pagamento) e "Como pagou" mostra "—". Quem não tem Clientes nem OS vê o nome do cliente
+    como texto, sem atalho. O "Consumidor" nunca vira atalho.
+  - **O Voltar da OS aberta por uma ficha** (do cliente ou do veículo) volta pra ficha: a ficha
+    manda `voltarAoFechar` junto do `abrirOrdemId`. Aberta pela lista, pelo Início ou pela
+    busca, o Voltar continua na lista de OS.
+  - As contas em `src/schemas/fichaCliente.ts` (as mesmas da ficha do veículo), a leitura em
+    `src/lib/fichaCliente.ts`.
 - **Funcionários** (duas abas desde 03/09/2026): **"Cadastro"** — RH completo (documentos,
   endereço, cargo/admissão, família/filhos; o formulário em si tem as sub-abas "Dados
   gerais"/"Família"). Todo operador ganha um `funcionarios` espelhado automaticamente. E

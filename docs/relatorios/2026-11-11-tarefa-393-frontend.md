@@ -42,8 +42,7 @@
 - **As checagens do projeto**, todas verdes: `typecheck`, `lint`, `test:fusos` (1818 testes nos dois fusos), `contraste`, `contraste:telas` e `largura:telas`. A ficha entrou como cena nova e foi medida em 1024, 1280, 1366, 1536 e 1600.
 
 ## O que ficou de fora
-- **"Voltar" da OS pra ficha.** No "Pronto quando no PC", depois de abrir uma OS pela ficha, o Voltar deveria trazer de volta pra ficha. Hoje ele leva à lista de OS, igual na ficha do veículo. Pra voltar à ficha, é preciso mexer em `src/pages/ordens-servico/OrdensServicoPage.tsx`, que está fora da lista de arquivos da issue. Pela regra da issue, não mexi, e a pergunta à Sofia está no PR.
-- **`docs/modulos.md`** não ganhou a linha da tela nova: também está fora da lista. Se a Sofia quiser, entra junto com o item acima.
+- ~~"Voltar" da OS pra ficha e `docs/modulos.md`~~: fora da lista da issue; a Sofia aprovou na revisão, e foram feitos (seção "Depois da revisão da Sofia").
 - **Arquivos fora da lista que mexi**, só de teste ou de prova:
   - `site/ferramentas/cenas.mjs`, com a cena nova: sem ela, o `contraste:telas` e o `largura:telas` nem olhariam a tela, e o "Pronto quando" pede os dois;
   - as fotos em `docs/relatorios/fotos-393/`.
@@ -68,6 +67,19 @@
 - **Login só com Clientes**: "—" e a frase em Deve, O que deve e Como pagou, **nunca R$ 0,00**; as OS 3 e 4 aparecem, sem o "Abrir".
 - **Login só com Contas a Receber**: em Contas a Receber, os nomes aparecem como texto, sem atalho.
 - **Visto de passagem, fora desta tarefa**: um login sem o módulo Início cai, logo depois de entrar, na tela "Você não tem permissão para acessar este módulo". Já era assim antes.
+
+## Depois da revisão da Sofia (11/11/2026, pedido de mudança)
+Ela aprovou mexer fora da lista e pediu 4 coisas; fiz todas, mais o opcional:
+- **Voltar da OS aberta por uma ficha volta pra ficha** (`OrdensServicoPage.tsx`):
+  - a ficha do cliente e a do veículo mandam `voltarAoFechar` junto do `abrirOrdemId`, e o Voltar da OS (e da venda de balcão) faz `navigate(-1)`;
+  - aberta pela lista, pelo Início, pela busca ou por Contas a Receber, nada muda.
+  
+  Teste novo em `OrdensServicoPage.voltarParaFicha.test.tsx`: **vi os 2 casos da ficha reprovarem antes do conserto**, e o caso "sem o pedido, fica na lista" passa nos dois.
+- **`docs/modulos.md`**: ganhou a linha da ficha do cliente.
+- **`cenas.mjs`**: o comentário "54 telas" virou "todas as telas", sem número (ficava velho a cada tela nova).
+- **Indentação** em `ClientesPage.tsx` e `ContasReceberPage.tsx`: acertada à mão. O `prettier` reformataria os dois arquivos inteiros (mais de 100 linhas cada), porque eles não estavam formatados por ele.
+- **Opcional, "outra loja"**: no lugar do "Abrir", na OS de outra loja, com uma dica de trocar de loja. Teste visto reprovar sem o código.
+- Falta: o passo do Voltar de novo no PC (Tiago).
 
 ## Onde parou
 Terminei.

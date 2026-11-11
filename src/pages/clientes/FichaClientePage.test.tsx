@@ -118,6 +118,7 @@ function OndeEstou() {
   return (
     <p>
       Fui pra {local.pathname}, abrir: {(local.state as { abrirOrdemId?: string } | null)?.abrirOrdemId}
+      {(local.state as { voltarAoFechar?: boolean } | null)?.voltarAoFechar ? ", voltar pra ficha" : ""}
     </p>
   );
 }
@@ -232,7 +233,7 @@ describe("FichaClientePage", () => {
     const comprou = screen.getByRole("heading", { name: /O que comprou/ }).closest("section")!;
     const linhaDaOS4 = within(comprou).getByRole("cell", { name: "OS 4" }).closest("tr")!;
     await userEvent.setup().click(within(linhaDaOS4).getByRole("button", { name: "Abrir" }));
-    expect(screen.getByText("Fui pra /ordens-servico, abrir: os4")).toBeInTheDocument();
+    expect(screen.getByText("Fui pra /ordens-servico, abrir: os4, voltar pra ficha")).toBeInTheDocument();
   });
 
   it("OS de outra loja: aparece com o nome da loja, sem um 'Abrir' que não abriria", async () => {
@@ -243,6 +244,8 @@ describe("FichaClientePage", () => {
     const comprou = screen.getByRole("heading", { name: /O que comprou/ }).closest("section")!;
     expect(within(comprou).getAllByRole("button", { name: "Abrir" })).toHaveLength(1);
     expect(within(comprou).getByRole("cell", { name: "Loja Vila" })).toBeInTheDocument();
+    // no lugar do botão, o porquê
+    expect(within(comprou).getByRole("cell", { name: "outra loja" })).toBeInTheDocument();
   });
 
   it("cliente que não existe: diz isso, sem quebrar", async () => {

@@ -324,16 +324,16 @@ export function ContasReceberPage() {
                           {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
                         </td>
                         <td className="px-4 py-3">
-                            {conta.cliente?.nome ? (
-                              <LinkCliente
-                                clienteId={conta.cliente_id}
-                                nome={conta.cliente.nome}
-                                podeAbrir={podeAbrirFichaDoCliente}
-                              />
-                            ) : (
-                              "—"
-                            )}
-                          </td>
+                          {conta.cliente?.nome ? (
+                            <LinkCliente
+                              clienteId={conta.cliente_id}
+                              nome={conta.cliente.nome}
+                              podeAbrir={podeAbrirFichaDoCliente}
+                            />
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                         <td className="px-4 py-3">{conta.descricao}</td>
                         <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
                         <td className="px-4 py-3">
