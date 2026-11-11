@@ -83,6 +83,23 @@
     - o consumo ficando negativo;
     - a leitura sem a consulta das correções.
 
+## O teste no PC (Tiago, 11/11, `npm run dev` no Supabase de teste)
+Tudo passou:
+- **A lista**: com o mínimo do "Pneu 185/65 R15 (exemplo)" em 9 e o saldo em 8, ele aparece. Conferido à mão:
+  - saída de 1,3 por mês (4 em 90 dias);
+  - 180 dias até acabar;
+  - comprar 2 (9 + 0,67 − 8 = 1,67, arredondado pra cima).
+- **O fornecedor mais barato**: o banco de teste não tinha cotação nem pedido (os dados de exemplo novos ainda não rodaram, #982). Por isso criamos 2 pedidos (Autopeças a R$ 310 e Distribuidora a R$ 300) e cancelamos os dois. A sugestão escolheu a Distribuidora, a R$ 300.
+- **Mudar a quantidade**: 3 → total da linha e do fornecedor R$ 900,00. Com -1, a borda fica vermelha, aparece o aviso e o "Gerar pedidos" fica apagado.
+- **Gerar pedidos**: confirmação → Criar → "Pedido 3 — Distribuidora", e a aba Pedidos de compra mostra o Pedido 3 "Pendente", R$ 900,00.
+- **Não pede de novo**: logo depois, a linha mostra "Já pedido 3", "Comprar 0" e o "Gerar pedidos" apagado.
+- **Permissão** (login de perfil, não admin):
+  - só com Estoque, o menu não mostra Fornecedores;
+  - só com Fornecedores, aparecem só "Cadastro" e "Pedidos de compra", sem a aba e sem lista vazia.
+- **Achado fora da tarefa**: a lista de Pedidos de compra mostra a data **um dia antes** (pedido de 11/11 aparece "10/11"). Isso vale também para os pedidos feitos pelo formulário antigo.
+  - Causa: `PedidosCompraSection.tsx:211` faz `new Date(pedido.data_pedido).toLocaleDateString()`, que lê "2026-11-11" como meia-noite em UTC.
+  - O arquivo está fora da lista da tarefa: fica para a Sofia decidir.
+
 ## O que passou sem eu ter visto reprovar
 - A trava `useRef` contra o duplo clique no "Criar" (opcional da revisão): está no código, mas sem teste próprio.
 - A mensagem de confirmação ("Vai criar 2 pedidos: …"): testada, mas não quebrada de propósito.
