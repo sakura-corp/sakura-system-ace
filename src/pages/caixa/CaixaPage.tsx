@@ -129,6 +129,7 @@ export function CaixaPage() {
         <FechamentoSection
           lojaId={lojaAtual.id}
           movimentos={movimentos}
+          custoDasOrdens={custoDasOrdens}
           fechamentos={fechamentos}
           podeDesfazer={operador?.admin === true}
           onAtualizado={carregar}

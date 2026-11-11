@@ -2,11 +2,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { BotaoResumoDono } from "@/components/BotaoResumoDono";
 import { Valor } from "@/components/Valor";
 import { diaLocal, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
+import { listarContasPagar } from "@/lib/contasPagar";
 import { desfazerFechamentoCaixa, fecharCaixa } from "@/lib/fechamentoCaixa";
+import { listarOrdens } from "@/lib/ordensServico";
 import { formatarMoeda } from "@/schemas/dinheiro";
+import { custoDaOrdemPeloBanco, type CustoDoBanco } from "@/schemas/metricasCaixa";
+import { mostraBlocosDeOS } from "@/schemas/painelInicio";
+import { numerosDoResumoDono, periodoDoResumo, textoResumoDono } from "@/schemas/whatsapp";
 import {
   diferencaDoFechamento,
   fundoSugerido,
@@ -20,10 +26,13 @@ import {
 } from "@/schemas/fechamentoCaixa";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
+import type { ModuloChave } from "@/types/operador";
 
 interface FechamentoSectionProps {
   lojaId: string;
   movimentos: MovimentoCaixa[];
+  /** Custo de cada OS (do banco), pro lucro do resumo pro dono (#397). */
+  custoDasOrdens: CustoDoBanco;
   fechamentos: FechamentoCaixa[];
   /** Só admin da loja desfaz — o banco confere de novo (migration 0058). */
   podeDesfazer: boolean;
@@ -53,6 +62,7 @@ const campo =
 export function FechamentoSection({
   lojaId,
   movimentos,
+  custoDasOrdens,
   fechamentos,
   podeDesfazer,
   onAtualizado,
@@ -88,7 +98,10 @@ export function FechamentoSection({
         <p className="text-corpo text-sakura-muted">Não dá pra fechar um dia que ainda não chegou.</p>
       ) : fechamentoDoDia ? (
         <FechamentoFeito
+          lojaId={lojaId}
           fechamento={fechamentoDoDia}
+          movimentos={movimentos}
+          custoDasOrdens={custoDasOrdens}
           movimentosDoDia={movimentosDoDia}
           podeDesfazer={podeDesfazer}
           onAtualizado={onAtualizado}
@@ -311,12 +324,18 @@ function LinhaConta({ rotulo, valor }: { rotulo: string; valor: number }) {
 }
 
 function FechamentoFeito({
+  lojaId,
   fechamento,
+  movimentos,
+  custoDasOrdens,
   movimentosDoDia,
   podeDesfazer,
   onAtualizado,
 }: {
+  lojaId: string;
   fechamento: FechamentoCaixa;
+  movimentos: MovimentoCaixa[];
+  custoDasOrdens: CustoDoBanco;
   movimentosDoDia: MovimentoCaixa[];
   podeDesfazer: boolean;
   onAtualizado: () => Promise<void>;
@@ -351,10 +370,48 @@ function FechamentoFeito({
     }
   }
 
+  // Resumo pro dono (#397), do dia fechado. A diferença é a do fechamento
+  // (`diferencaDoFechamento`, a mesma conta que o banco gravou e a tela
+  // mostra); OS abertas e contas vencendo são buscadas só na hora do clique e
+  // só pra quem tem o módulo (sem ele, a linha sai do texto).
+  async function montarResumo({
+    modelo,
+    loja,
+    podeVer,
+  }: {
+    modelo: string;
+    loja: string | null;
+    podeVer: (modulo: ModuloChave) => boolean;
+  }): Promise<string> {
+    const [ordens, contas] = await Promise.all([
+      mostraBlocosDeOS(podeVer) ? listarOrdens(lojaId) : Promise.resolve([]),
+      podeVer("contas_pagar") ? listarContasPagar(lojaId) : Promise.resolve([]),
+    ]);
+    const [ano, mes, d] = fechamento.data.split("-").map(Number);
+    const referencia = new Date(ano, mes - 1, d);
+    const hoje = new Date();
+    return textoResumoDono({
+      loja,
+      periodo: periodoDoResumo("dia", referencia, hoje),
+      modelo,
+      numeros: numerosDoResumoDono({
+        periodo: "dia",
+        referencia,
+        hoje,
+        movimentos,
+        custoDaOrdem: custoDaOrdemPeloBanco(custoDasOrdens),
+        ordens,
+        contas,
+        podeVer,
+        diferencaCaixa: diferencaDoFechamento(fechamento.saldo_sistema, fechamento.valor_contado),
+      }),
+    });
+  }
+
   return (
     <section className="space-y-4 sakura-card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
             ✓ Caixa de {diaBonito(fechamento.data)} fechado
           </h2>
@@ -363,16 +420,19 @@ function FechamentoFeito({
             em {new Date(fechamento.criado_em).toLocaleString("pt-BR")}
           </p>
         </div>
-        {podeDesfazer && (
-          <button
-            type="button"
-            onClick={desfazer}
-            disabled={desfazendo}
-            className="min-h-8 rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
-          >
-            {desfazendo ? "Desfazendo..." : "Desfazer fechamento"}
-          </button>
-        )}
+        <div className="flex min-w-0 flex-wrap items-start gap-2">
+          <BotaoResumoDono escolhas={[{ rotulo: "Resumo pro dono", montarTexto: montarResumo }]} />
+          {podeDesfazer && (
+            <button
+              type="button"
+              onClick={desfazer}
+              disabled={desfazendo}
+              className="min-h-8 rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
+            >
+              {desfazendo ? "Desfazendo..." : "Desfazer fechamento"}
+            </button>
+          )}
+        </div>
       </div>
 
       {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}

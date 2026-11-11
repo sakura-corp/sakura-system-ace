@@ -15,6 +15,7 @@ import {
   DIAS_PARA_ALERTAR_OS,
   contasVencendoAte,
   diasDesde,
+  ehOsAberta,
   janelaDoMesAteODia,
   mesmaJanelaNoMesAnterior,
   metricasDoPeriodo,
@@ -34,6 +35,13 @@ import {
   confirmarAliquotaCompetencia,
 } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
+import { BotaoResumoDono, type EscolhaResumoDono } from "@/components/BotaoResumoDono";
+import {
+  numerosDoResumoDono,
+  periodoDoResumo,
+  textoResumoDono,
+  type PeriodoResumoDono,
+} from "@/schemas/whatsapp";
 import { CentralDoDia } from "@/components/CentralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
@@ -208,8 +216,32 @@ export function PainelPage() {
     };
   }, [movimentos, custoDasOrdens, contas, chaveDeHoje]);
 
+  // Resumo pro dono (#397): os mesmos dados que os cartões e o bloco de OS
+  // acabaram de usar, pelas mesmas funções (`numerosDoResumoDono`).
+  const escolhaDoResumo = (periodo: PeriodoResumoDono, rotulo: string): EscolhaResumoDono => ({
+    rotulo,
+    montarTexto: ({ modelo, loja, podeVer }) => {
+      const referencia = dataDaChave(chaveDeHoje);
+      return textoResumoDono({
+        loja,
+        periodo: periodoDoResumo(periodo, referencia, referencia),
+        modelo,
+        numeros: numerosDoResumoDono({
+          periodo,
+          referencia,
+          hoje: referencia,
+          movimentos,
+          custoDaOrdem: custoDaOrdemPeloBanco(custoDasOrdens),
+          ordens,
+          contas,
+          podeVer,
+        }),
+      });
+    },
+  });
+
   const filaDeAtendimento = ordens
-    .filter((o) => o.status === "em_andamento")
+    .filter(ehOsAberta)
     .sort((a, b) => (a.data_abertura < b.data_abertura ? -1 : 1));
 
   const veiculosNoPatio = filaDeAtendimento.filter((o) => o.veiculo);
@@ -267,9 +299,18 @@ export function PainelPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-titulo font-semibold text-sakura-purple-dark">Início</h1>
-        <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Início</h1>
+          <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
+        </div>
+        {/* Some se o carregamento falhou: com os dados pela metade, o resumo
+            sairia com números errados com cara de certos. */}
+        {!carregando && !falhouCarregar && (
+          <BotaoResumoDono
+            escolhas={[escolhaDoResumo("dia", "Hoje"), escolhaDoResumo("mes", "Este mês")]}
+          />
+        )}
       </header>
 
       {erro && (
