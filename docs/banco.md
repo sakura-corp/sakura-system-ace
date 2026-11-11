@@ -630,6 +630,11 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
   o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
+- `0083`: **o contato da contabilidade, por loja** (tarefa #383). Mesmo número da `0083` do #985
+  (e da do #987), os três abertos em 11/11/2026: quem entrar na `main` por último renumera pro
+  seguinte (`docs/supabase-de-teste.md`, "Dois PRs com o mesmo número"). Tabela nova
+  `configuracoes_contabilidade` (ver a seção das tabelas). Tabela nova e opcional: sobe **antes**
+  da versão, sem `versao-minima-do-programa`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -933,6 +938,15 @@ outro projeto Supabase do zero (ver seção 9).
   `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
   "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
   RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
+- **`configuracoes_contabilidade`** (migration `0083`, #383): loja_id (PK, 1 linha por loja),
+  nome, whatsapp, email, atualizado_em. Pra quem a loja manda o pacote do mês (as notas). Tabela
+  própria, e não colunas nos Dados fiscais (Sofia, 10/11/2026): o contato não é fiscal, e quem
+  mexe nele é quem cuida das mensagens. Travas: `ck_configuracoes_contabilidade_nome` (não só
+  espaço, até 80), `_whatsapp` (só dígitos, 10 a 13; o programa grava só os dígitos), `_email`
+  (um @ com algo dos dois lados, sem espaço, até 120) e `_algum_contato` (WhatsApp **ou** e-mail).
+  **Sem linha, a loja não tem contato**; contato sem nome ou sem nenhum dos dois é linha apagada
+  (`src/lib/contabilidade.ts`). RLS igual à `configuracoes_avaliacao`. Teste em
+  `supabase/scripts/testar-contato-contabilidade.sql`.
 - **`whatsapp_mensagens`** (migration `0052`): id, loja_id, chave, referencia (o id do que
   motivou a mensagem — conta a receber, OS, pedido —, texto e sem FK de propósito, porque aponta
   pra tabelas diferentes conforme a chave), destino, operador_id, criado_em. Registra que a

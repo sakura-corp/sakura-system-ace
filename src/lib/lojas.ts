@@ -81,6 +81,8 @@ const TABELAS_CONFIG_POR_LOJA = [
   "configuracoes_pix",
   // 0082 (#459): o link de avaliação no Google também é só configuração.
   "configuracoes_avaliacao",
+  // 0083 (#383): o contato da contabilidade também é só configuração.
+  "configuracoes_contabilidade",
 ] as const;
 
 export async function excluirLoja(id: string): Promise<void> {

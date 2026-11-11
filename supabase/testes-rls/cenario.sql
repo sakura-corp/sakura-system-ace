@@ -31,7 +31,7 @@
 --
 --   1. `configuracoes_garantia`, `configuracoes_fiscais_loja`,
 --      `configuracoes_painel_inicio`, `configuracoes_pix`,
---      `configuracoes_avaliacao` e
+--      `configuracoes_avaliacao`, `configuracoes_contabilidade` e
 --      `segredos_fiscais_loja` têm linha só na loja B, de propósito.
 --      A chave primária delas é o `loja_id` sozinho, então, com a loja A já
 --      ocupada, a sonda de INSERT bateria na chave duplicada — e um erro de
@@ -51,7 +51,7 @@ set session_replication_role = replica;
 truncate table
   computadores, schema_versao, auditoria, fechamentos_caixa, comissoes_fechamentos, whatsapp_mensagens, configuracoes_whatsapp,
   configuracoes_juros_parcelas, configuracoes_painel_inicio,
-  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, segredos_fiscais_loja,
+  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, configuracoes_contabilidade, segredos_fiscais_loja,
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
@@ -212,7 +212,7 @@ insert into configuracoes_whatsapp (loja_id, chave, texto) values
   ('11111111-1111-1111-1111-1111111111aa', 'cobranca', 'Texto da loja A'),
   ('11111111-1111-1111-1111-1111111111bb', 'cobranca', 'Texto da loja B');
 
--- E estas seis têm o `loja_id` como chave primária inteira: recebem linha SÓ
+-- E estas sete têm o `loja_id` como chave primária inteira: recebem linha SÓ
 -- na loja B, pra deixar a loja A livre pra sonda de INSERT (ver o item 1 do
 -- cabeçalho). É por isso que a leitura delas na matriz é "1,0,0,0,0".
 insert into configuracoes_garantia (loja_id, texto) values
@@ -230,6 +230,10 @@ insert into configuracoes_pix (loja_id, chave, nome_recebedor, cidade_recebedor)
 
 insert into configuracoes_avaliacao (loja_id, link_google) values
   ('11111111-1111-1111-1111-1111111111bb', 'https://g.page/r/loja-b/review');
+
+-- O contato da contabilidade (#383). Contato inventado, de exemplo.
+insert into configuracoes_contabilidade (loja_id, nome, email) values
+  ('11111111-1111-1111-1111-1111111111bb', 'Contabilidade da loja B', 'contabilidade@exemplo.com.br');
 
 -- O cofre do token da Focus NFe (TR-04.2). Tem linha na loja B pra que o
 -- "0" do dono na leitura queira dizer "a tabela recusou", e não "estava
