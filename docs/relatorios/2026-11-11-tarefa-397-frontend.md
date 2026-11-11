@@ -3,7 +3,7 @@
 - **Tarefa**: #397, Resumo pro dono pelo WhatsApp (botão no Início e no Fechamento do caixa)
 - **Chefe**: frontend
 - **Data**: 2026-11-11
-- **PR**: (preenchido na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1014
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
