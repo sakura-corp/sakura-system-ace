@@ -224,6 +224,15 @@ describe("formasDePagamento", () => {
     });
   });
 
+  it("traduz o código antigo da forma (\"cartao_credito\") e deixa o texto pronto como está", () => {
+    const linhas = formasDePagamento([
+      ordem({ forma_pagamento: "cartao_credito", data_fechamento: "2026-02-02T15:00:00.000Z" }),
+      ordem({ forma_pagamento: "Pix + Dinheiro", data_fechamento: "2026-01-02T15:00:00.000Z" }),
+      ordem({ forma_pagamento: null, data_fechamento: "2025-12-02T15:00:00.000Z" }),
+    ]);
+    expect(linhas.map((l) => l.forma)).toEqual(["Cartão de crédito", "Pix + Dinheiro", null]);
+  });
+
   it("a mais recente primeiro, pelo dia do faturamento", () => {
     const antiga = ordem({ data_fechamento: "2026-01-02T15:00:00.000Z" });
     const nova = ordem({ data_fechamento: "2026-08-02T15:00:00.000Z" });

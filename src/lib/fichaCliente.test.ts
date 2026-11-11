@@ -104,6 +104,16 @@ describe("buscarFichaDoCliente: cada parte só com o módulo dela", () => {
     expect(ficha?.cliente.telefone).toBeNull();
   });
 
+  it("com Ordens de Serviço: a placa vem pela veiculos_janela, mesmo de carro que hoje é de outro cliente", async () => {
+    respostaPorTabela.ordens_servico = [
+      { id: "os1", numero: 1, status: "faturada", veiculo_id: "v-vendido", veiculo: { placa: "XYZ9A88" }, data_abertura: "2026-10-01T13:00:00.000Z", itens: [] },
+    ];
+    const ficha = await buscarFichaDoCliente("c1", TUDO);
+    const os = consultas.find((c) => c.tabela === "ordens_servico");
+    expect(os?.select).toContain("veiculo:veiculos_janela(placa)");
+    expect(ficha?.ordens[0].placa).toBe("XYZ9A88");
+  });
+
   it("orçamento vindo da tabela de OS fica de fora", async () => {
     respostaPorTabela.ordens_servico = [
       { id: "orc", numero: null, status: "orcamento", data_abertura: "2026-10-01T13:00:00.000Z", itens: [] },

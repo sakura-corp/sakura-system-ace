@@ -102,7 +102,7 @@ async function buscarVeiculos(clienteId: string, podeVerCadastro: boolean) {
 
 const COLUNAS_DA_OS =
   "id, loja_id, numero, tipo, status, data_abertura, data_fechamento, cliente_id, veiculo_id, " +
-  "km_entrada, forma_pagamento, parcelas, " +
+  "km_entrada, forma_pagamento, parcelas, veiculo:veiculos_janela(placa), " +
   "itens:ordens_servico_itens(id, tipo, peca_id, descricao, quantidade, preco_unitario, desconto)";
 
 const COLUNAS_DA_JANELA =
@@ -125,8 +125,13 @@ async function buscarOrdens(
       .range(de, ate),
   );
 
+  // A placa vem pela `veiculos_janela` (0068), que abre com Clientes ou OS:
+  // assim a OS antiga de um carro que hoje é de outro cliente continua
+  // mostrando a placa, igual à janela de OS (que faz o mesmo `join`).
   const ordens: OrdemDaFichaDoCliente[] = podeVerOS
-    ? (linhas as unknown as OrdemDaFichaDoCliente[])
+    ? (linhas as unknown as (OrdemDaFichaDoCliente & { veiculo?: { placa: string } | null })[]).map(
+        ({ veiculo, ...ordem }) => ({ ...ordem, placa: veiculo?.placa ?? null }),
+      )
     : (linhas as unknown as (LinhaOrdemDaFicha & { veiculo_id: string | null; veiculo_placa: string | null })[]).map(
         ({ veiculo_placa: placa, ...linha }) => ({
           ...ordemDaFichaDaJanela(linha),

@@ -60,6 +60,8 @@ export function FichaClientePage() {
       }
       setCarregando(true);
       setErro(null);
+      // Sem isto, um erro ao trocar de cliente deixaria o anterior na tela.
+      setFicha(null);
       try {
         const lida = await buscarFichaDoCliente(id, {
           clientes: podeVerCadastro,
@@ -335,7 +337,12 @@ export function FichaClientePage() {
                     )}
                     <td className="px-4 py-3">{pagamento.forma || "—"}</td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      {pagamento.parcelas && pagamento.parcelas > 1 ? `${pagamento.parcelas}x` : "À vista"}
+                      {/* Sem a forma gravada, "à vista" seria um palpite. */}
+                      {!pagamento.forma
+                        ? "—"
+                        : pagamento.parcelas && pagamento.parcelas > 1
+                          ? `${pagamento.parcelas}x`
+                          : "À vista"}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-medium">
                       {formatarMoeda(pagamento.valor)}

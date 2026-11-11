@@ -2,7 +2,7 @@ import { diaLocal } from "@/lib/datas";
 import { somar } from "./dinheiro";
 import { diasDeVisita, linhaDoTempo, totalGastoNoVeiculo, type OrdemDaFicha } from "./fichaVeiculo";
 import { contaNosNumeros } from "./orcamento";
-import { totalOrdem } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, totalOrdem } from "@/types/os";
 import type { StatusContaReceber } from "@/types/contaReceber";
 
 /**
@@ -147,7 +147,12 @@ export function formasDePagamento(ordens: readonly OrdemDaFichaDoCliente[]): Pag
       tipo: ordem.tipo,
       loja_id: ordem.loja_id,
       momento: ordem.data_fechamento ?? ordem.data_abertura,
-      forma: ordem.forma_pagamento ?? null,
+      // Hoje o faturamento grava o texto pronto ("Pix + Cartão de crédito");
+      // a tradução cobre OS antiga gravada com o código ("cartao_credito"),
+      // do mesmo jeito do documento de garantia.
+      forma: ordem.forma_pagamento
+        ? (FORMA_PAGAMENTO_LABEL[ordem.forma_pagamento] ?? ordem.forma_pagamento)
+        : null,
       parcelas: ordem.parcelas ?? null,
       valor: totalOrdem(ordem.itens ?? []),
     }))
@@ -161,12 +166,16 @@ export type ContaRecebida = ContaDaFicha & { diaRecebimento: string | null };
 export function contasRecebidas(contas: readonly ContaDaFicha[]): ContaRecebida[] {
   return contas
     .filter((conta) => conta.status === "recebido")
-    .sort(
-      (a, b) =>
-        Date.parse(b.data_recebimento ?? b.vencimento) - Date.parse(a.data_recebimento ?? a.vencimento),
-    )
     .map((conta) => ({
       ...conta,
       diaRecebimento: conta.data_recebimento ? diaLocal(conta.data_recebimento) : null,
-    }));
+    }))
+    // Pelo dia local (texto "AAAA-MM-DD" compara como calendário); sem a data
+    // do recebimento, vale o vencimento, que já é um dia de calendário.
+    .sort(
+      (a, b) =>
+        (b.diaRecebimento ?? b.vencimento).localeCompare(a.diaRecebimento ?? a.vencimento) ||
+        (b.data_recebimento ?? "").localeCompare(a.data_recebimento ?? "") ||
+        a.id.localeCompare(b.id),
+    );
 }

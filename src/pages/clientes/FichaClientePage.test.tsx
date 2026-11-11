@@ -213,6 +213,17 @@ describe("FichaClientePage", () => {
     expect(screen.queryByRole("button", { name: "Abrir" })).not.toBeInTheDocument();
   });
 
+  it("OS faturada sem a forma gravada: '—' nas parcelas, nunca 'À vista' de palpite", async () => {
+    buscarFichaDoCliente.mockResolvedValue(
+      ficha({ ordens: [{ ...os3, forma_pagamento: null, parcelas: 1 }], contas: [] }),
+    );
+    montar();
+
+    await screen.findByRole("heading", { name: "Carlos Eduardo Lima" });
+    const comoPagou = screen.getByRole("heading", { name: "Como pagou" }).closest("section")!;
+    expect(within(comoPagou).queryByText("À vista")).not.toBeInTheDocument();
+  });
+
   it("'Abrir' leva pra lista de OS pedindo pra abrir aquela ordem", async () => {
     buscarFichaDoCliente.mockResolvedValue(ficha());
     montar();
