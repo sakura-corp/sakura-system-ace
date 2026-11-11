@@ -630,9 +630,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
   o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
-- `0083`: **o contato da contabilidade, por loja** (tarefa #383). Mesmo número da `0083` do #985
-  (e da do #987), os três abertos em 11/11/2026: quem entrar na `main` por último renumera pro
-  seguinte (`docs/supabase-de-teste.md`, "Dois PRs com o mesmo número"). Tabela nova
+- `0085`: **o contato da contabilidade, por loja** (tarefa #383). Número `0085` por decisão da
+  Sofia (11/11/2026): a ordem na `main` é #985 (`0083`) → #987 (`0084`) → #383 (`0085`). Tabela nova
   `configuracoes_contabilidade` (ver a seção das tabelas). Tabela nova e opcional: sobe **antes**
   da versão, sem `versao-minima-do-programa`.
 
@@ -938,7 +937,7 @@ outro projeto Supabase do zero (ver seção 9).
   `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
   "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
   RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
-- **`configuracoes_contabilidade`** (migration `0083`, #383): loja_id (PK, 1 linha por loja),
+- **`configuracoes_contabilidade`** (migration `0085`, #383): loja_id (PK, 1 linha por loja),
   nome, whatsapp, email, atualizado_em. Pra quem a loja manda o pacote do mês (as notas). Tabela
   própria, e não colunas nos Dados fiscais (Sofia, 10/11/2026): o contato não é fiscal, e quem
   mexe nele é quem cuida das mensagens. Travas: `ck_configuracoes_contabilidade_nome` (não só

@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-// O contato da contabilidade da loja (#383, migration 0083): pra quem o
+// O contato da contabilidade da loja (#383, migration 0085): pra quem o
 // pacote do mês é mandado. Uma linha por loja; a linha só existe quando o
 // contato serve pra alguma coisa (nome e, pelo menos, WhatsApp ou e-mail).
 

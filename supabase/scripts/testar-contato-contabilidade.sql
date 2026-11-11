@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0083 (o contato da contabilidade, #383). NÃO é
+-- TESTE da migration 0085 (o contato da contabilidade, #383). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade — grava dado de
 -- teste (e apaga o que gravou no fim).
 --
@@ -21,9 +21,9 @@
 -- (depois da instalação completa), ou `npm run test:sql -- testar-contato-contabilidade`.
 -- Terminou imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
--- A instalação completa JÁ rodou a 0083; esta segunda rodada é a de
+-- A instalação completa JÁ rodou a 0085; esta segunda rodada é a de
 -- "rodar de novo" (idempotente).
-\ir ../migrations/0083_contato_contabilidade.sql
+\ir ../migrations/0085_contato_contabilidade.sql
 
 do $$
 declare
@@ -33,8 +33,8 @@ declare
   trava    text;
 begin
   -- 1. a migration grava a versão
-  if not exists (select 1 from schema_versao where versao = 83) then
-    raise exception 'FALHOU 1: a 0083 não gravou a versão 83';
+  if not exists (select 1 from schema_versao where versao = 85) then
+    raise exception 'FALHOU 1: a 0085 não gravou a versão 85';
   end if;
 
   -- 2. as colunas: nome obrigatório, WhatsApp e e-mail opcionais, e o

@@ -8458,11 +8458,11 @@ insert into schema_versao (versao) values (82) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0083_contato_contabilidade.sql
+-- 0085_contato_contabilidade.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0083: o contato da contabilidade, por loja (#383).
+-- Migration 0085: o contato da contabilidade, por loja (#383).
 --
 -- O PROBLEMA. Todo mês a loja manda pra contabilidade as notas do mês (o
 -- pacote do mês). Hoje quem manda precisa procurar o WhatsApp ou o e-mail do
@@ -8547,4 +8547,4 @@ create policy "configuracoes_contabilidade_acesso_por_loja" on configuracoes_con
   using (operador_tem_acesso_loja(loja_id))
   with check (operador_tem_acesso_loja(loja_id));
 
-insert into schema_versao (versao) values (83) on conflict do nothing;
+insert into schema_versao (versao) values (85) on conflict do nothing;

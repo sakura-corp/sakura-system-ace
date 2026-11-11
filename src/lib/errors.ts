@@ -47,7 +47,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   // Migration 0082 (#459): o link de avaliação no Google.
   ck_configuracoes_avaliacao_link_https:
     "O link de avaliação precisa começar com https:// e não pode ter espaço.",
-  // Migration 0083 (#383): o contato da contabilidade.
+  // Migration 0085 (#383): o contato da contabilidade.
   ck_configuracoes_contabilidade_nome:
     "O nome da contabilidade não pode ficar em branco nem passar de 80 letras.",
   ck_configuracoes_contabilidade_whatsapp:
@@ -145,7 +145,7 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0082 (link de avaliação, #459): tabela nova. Sobe antes do programa, mas
   // se alguém publicar sem rodar, a tela de Configurações cai aqui.
   "configuracoes_avaliacao",
-  // 0083 (contato da contabilidade, #383): tabela nova. Sobe antes do
+  // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
 ] as const;

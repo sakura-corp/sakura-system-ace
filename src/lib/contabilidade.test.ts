@@ -1,5 +1,5 @@
 /**
- * O contato da contabilidade da loja (#383, migration 0083). A tela manda o
+ * O contato da contabilidade da loja (#383, migration 0085). A tela manda o
  * que a pessoa digitou; a lib limpa (o WhatsApp vira só dígitos, vazio vira
  * `null`) e decide: contato que não serve pra nada (sem nome, ou sem WhatsApp
  * e sem e-mail) é linha apagada, não linha gravada pela metade.
