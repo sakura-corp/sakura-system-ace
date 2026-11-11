@@ -2,26 +2,38 @@ import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarMovimentosCaixa } from "@/lib/caixa";
+import { listarContasPagar } from "@/lib/contasPagar";
+import { listarContasReceber } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarOrdens } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
 import type { MovimentoCaixa } from "@/types/caixa";
+import type { ContaPagar } from "@/types/contaPagar";
+import type { ContaReceber } from "@/types/contaReceber";
+import { temPermissao } from "@/types/operador";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { FluxoProjetadoSection } from "./FluxoProjetadoSection";
 import { GraficosSection } from "./GraficosSection";
 import { LucratividadeSection } from "./LucratividadeSection";
 
-type Aba = "graficos" | "lucratividade";
+type Aba = "graficos" | "lucratividade" | "fluxo";
 
 export function RelatoriosPage() {
-  const { lojaAtual } = useAuth();
+  const { lojaAtual, operador } = useAuth();
+  const podeVerPagar = temPermissao(operador, "contas_pagar");
+  const podeVerReceber = temPermissao(operador, "contas_receber");
   const [aba, setAba] = useState<Aba>("graficos");
   const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
   const [pecas, setPecas] = useState<Peca[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [contasPagar, setContasPagar] = useState<ContaPagar[] | null>(null);
+  const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(
+    null,
+  );
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -32,17 +44,31 @@ export function RelatoriosPage() {
         return;
       }
       try {
-        const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
-          await Promise.all([
-            listarMovimentosCaixa(lojaAtual.id),
-            listarOrdens(lojaAtual.id),
-            listarPecas(),
-            listarServicos(),
-          ]);
+        const [
+          movimentosCarregados,
+          ordensCarregadas,
+          pecasCarregadas,
+          servicosCarregados,
+          pagarCarregadas,
+          receberCarregadas,
+        ] = await Promise.all([
+          listarMovimentosCaixa(lojaAtual.id),
+          listarOrdens(lojaAtual.id),
+          listarPecas(),
+          listarServicos(),
+          podeVerPagar
+            ? listarContasPagar(lojaAtual.id)
+            : Promise.resolve(null),
+          podeVerReceber
+            ? listarContasReceber(lojaAtual.id)
+            : Promise.resolve(null),
+        ]);
         setMovimentos(movimentosCarregados);
         setOrdens(ordensCarregadas);
         setPecas(pecasCarregadas);
         setServicos(servicosCarregados);
+        setContasPagar(pagarCarregadas);
+        setContasReceber(receberCarregadas);
       } catch (err) {
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
@@ -51,21 +77,27 @@ export function RelatoriosPage() {
       }
     }
     carregar();
-  }, [lojaAtual]);
+  }, [lojaAtual, podeVerPagar, podeVerReceber]);
 
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Relações</h1>
+          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
+            Relações
+          </h1>
           <p className="text-corpo text-sakura-muted">
             Vendas, custos, lucro e margem do negócio ao longo do tempo
           </p>
         </div>
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          {erro}
+        </p>
+      )}
 
       <div className="flex gap-1 border-b border-sakura-gray/30">
         <AbaBotao
@@ -78,6 +110,11 @@ export function RelatoriosPage() {
           ativa={aba === "lucratividade"}
           onClick={() => setAba("lucratividade")}
         />
+        <AbaBotao
+          label="Fluxo de caixa"
+          ativa={aba === "fluxo"}
+          onClick={() => setAba("fluxo")}
+        />
       </div>
 
       {carregando ? (
@@ -89,8 +126,17 @@ export function RelatoriosPage() {
           pecas={pecas}
           servicos={servicos}
         />
+      ) : aba === "lucratividade" ? (
+        <LucratividadeSection
+          ordens={ordens}
+          pecas={pecas}
+          servicos={servicos}
+        />
       ) : (
-        <LucratividadeSection ordens={ordens} pecas={pecas} servicos={servicos} />
+        <FluxoProjetadoSection
+          contasPagar={contasPagar}
+          contasReceber={contasReceber}
+        />
       )}
     </div>
   );
