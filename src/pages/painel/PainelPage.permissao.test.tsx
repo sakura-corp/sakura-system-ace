@@ -138,8 +138,15 @@ describe("PainelPage — resumo pro dono", () => {
 
   it("com Relações também aparece, e Hoje usa os números do dia", async () => {
     operador = { id: "op", admin: false, permissoes: ["relatorios"] };
+    // Um lançamento de hoje e um de outro dia do mês (no dia 1º, um do mês
+    // passado): "Hoje" só pode somar o de hoje.
+    const outroDia =
+      hoje.getDate() > 1
+        ? new Date(hoje.getFullYear(), hoje.getMonth(), 1, 12)
+        : new Date(hoje.getFullYear(), hoje.getMonth() - 1, 15, 12);
     movimentosDoBanco = [
       { id: "m1", loja_id: "loja-a", data: agora, ordem_servico_id: null, tipo: "entrada", forma_pagamento: "pix", valor: 40, descricao: null, categoria_id: null },
+      { id: "m2", loja_id: "loja-a", data: outroDia.toISOString(), ordem_servico_id: null, tipo: "entrada", forma_pagamento: "pix", valor: 1000, descricao: null, categoria_id: null },
     ];
     const { getByRole } = montar();
     const botao = await waitFor(() => getByRole("button", { name: "Hoje" }));
@@ -148,5 +155,19 @@ describe("PainelPage — resumo pro dono", () => {
     const texto = String(abrirWhatsappSemNumero.mock.calls[0][0]).replace(/\u00a0/g, " ");
     expect(texto).toMatch(/hoje \(\d{2}\/\d{2}\/\d{4}\)/);
     expect(texto).toContain("Recebido: R$ 40,00");
+  });
+
+  it("busca os dados de novo na hora do clique (o Início não recarrega sozinho)", async () => {
+    operador = { id: "op", admin: false, permissoes: ["caixa"] };
+    movimentosDoBanco = [];
+    const { getByRole } = montar();
+    const botao = await waitFor(() => getByRole("button", { name: "Hoje" }));
+    // Uma venda feita em outro computador depois que o Início abriu.
+    movimentosDoBanco = [
+      { id: "m9", loja_id: "loja-a", data: agora, ordem_servico_id: null, tipo: "entrada", forma_pagamento: "pix", valor: 77, descricao: null, categoria_id: null },
+    ];
+    botao.click();
+    await waitFor(() => expect(abrirWhatsappSemNumero).toHaveBeenCalledTimes(1));
+    expect(String(abrirWhatsappSemNumero.mock.calls[0][0]).replace(/\u00a0/g, " ")).toContain("Recebido: R$ 77,00");
   });
 });

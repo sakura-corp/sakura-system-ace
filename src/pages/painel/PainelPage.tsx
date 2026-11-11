@@ -216,12 +216,24 @@ export function PainelPage() {
     };
   }, [movimentos, custoDasOrdens, contas, chaveDeHoje]);
 
-  // Resumo pro dono (#397): os mesmos dados que os cartões e o bloco de OS
-  // acabaram de usar, pelas mesmas funções (`numerosDoResumoDono`).
+  // Resumo pro dono (#397). Os dados são buscados DE NOVO na hora do clique,
+  // e o "hoje" também é o do clique: o Início não recarrega sozinho, e um PC
+  // parado nesta tela desde cedo mandaria pro dono os números de horas atrás
+  // (ou de ontem). As contas são as mesmas dos cartões (`numerosDoResumoDono`).
   const escolhaDoResumo = (periodo: PeriodoResumoDono, rotulo: string): EscolhaResumoDono => ({
     rotulo,
-    montarTexto: ({ modelo, loja, podeVer }) => {
-      const referencia = dataDaChave(chaveDeHoje);
+    montarTexto: async ({ modelo, loja, podeVer }) => {
+      if (!lojaAtual) throw new Error("Nenhuma loja selecionada.");
+      const referencia = dataDaChave(chaveData(new Date()));
+      const [movimentosAgora, ordensAgora, contasAgora] = await Promise.all([
+        listarMovimentosCaixa(lojaAtual.id),
+        mostraBlocosDeOS(podeVer) ? listarOrdens(lojaAtual.id) : Promise.resolve([]),
+        podeVer("contas_pagar") ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
+      ]);
+      // Sem o custo o lucro sairia inflado: se falhar, o botão mostra o erro.
+      const custos = await buscarCustoDasOrdens(
+        movimentosAgora.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
+      );
       return textoResumoDono({
         loja,
         periodo: periodoDoResumo(periodo, referencia, referencia),
@@ -230,10 +242,10 @@ export function PainelPage() {
           periodo,
           referencia,
           hoje: referencia,
-          movimentos,
-          custoDaOrdem: custoDaOrdemPeloBanco(custoDasOrdens),
-          ordens,
-          contas,
+          movimentos: movimentosAgora,
+          custoDaOrdem: custoDaOrdemPeloBanco(custos),
+          ordens: ordensAgora,
+          contas: contasAgora,
           podeVer,
         }),
       });
