@@ -31,10 +31,9 @@ export function RelatoriosPage() {
   const [pecas, setPecas] = useState<Peca[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [contasPagar, setContasPagar] = useState<ContaPagar[] | null>(null);
-  const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(
-    null,
-  );
+  const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(null);
   const [erroContas, setErroContas] = useState<string | null>(null);
+  const [carregandoContas, setCarregandoContas] = useState(true);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -44,21 +43,6 @@ export function RelatoriosPage() {
         setCarregando(false);
         return;
       }
-      // As contas vêm à parte: um erro nelas não pode apagar Gráficos e
-      // Lucratividade, nem virar "Sem acesso" pra quem tem o acesso (#389).
-      const contas = Promise.all([
-        podeVerPagar ? listarContasPagar(lojaAtual.id) : Promise.resolve(null),
-        podeVerReceber ? listarContasReceber(lojaAtual.id) : Promise.resolve(null),
-      ])
-        .then(([pagarCarregadas, receberCarregadas]) => {
-          setContasPagar(pagarCarregadas);
-          setContasReceber(receberCarregadas);
-          setErroContas(null);
-        })
-        .catch((err) => {
-          console.error("Erro ao carregar as contas do fluxo de caixa:", err);
-          setErroContas(mensagemDeErro(err));
-        });
       try {
         const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
           await Promise.all([
@@ -75,11 +59,44 @@ export function RelatoriosPage() {
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
       } finally {
-        await contas;
         setCarregando(false);
       }
     }
     carregar();
+  }, [lojaAtual]);
+
+  // As contas do Fluxo de caixa vêm à parte (#389): um erro nelas não pode
+  // apagar Gráficos e Lucratividade, nem virar "Sem acesso" pra quem tem o
+  // acesso; e os Gráficos não esperam por elas. `ativo` descarta a resposta
+  // que chega depois de trocar de loja (senão a da loja antiga podia ganhar).
+  useEffect(() => {
+    if (!lojaAtual) {
+      setCarregandoContas(false);
+      return;
+    }
+    let ativo = true;
+    setCarregandoContas(true);
+    setErroContas(null);
+    Promise.all([
+      podeVerPagar ? listarContasPagar(lojaAtual.id) : Promise.resolve(null),
+      podeVerReceber ? listarContasReceber(lojaAtual.id) : Promise.resolve(null),
+    ])
+      .then(([pagarCarregadas, receberCarregadas]) => {
+        if (!ativo) return;
+        setContasPagar(pagarCarregadas);
+        setContasReceber(receberCarregadas);
+      })
+      .catch((err) => {
+        if (!ativo) return;
+        console.error("Erro ao carregar as contas do fluxo de caixa:", err);
+        setErroContas(mensagemDeErro(err));
+      })
+      .finally(() => {
+        if (ativo) setCarregandoContas(false);
+      });
+    return () => {
+      ativo = false;
+    };
   }, [lojaAtual, podeVerPagar, podeVerReceber]);
 
   return (
@@ -87,20 +104,14 @@ export function RelatoriosPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Relações
-          </h1>
+          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Relações</h1>
           <p className="text-corpo text-sakura-muted">
             Vendas, custos, lucro e margem do negócio ao longo do tempo
           </p>
         </div>
       </header>
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
 
       <div className="flex gap-1 border-b border-sakura-gray/30">
         <AbaBotao
@@ -130,11 +141,9 @@ export function RelatoriosPage() {
           servicos={servicos}
         />
       ) : aba === "lucratividade" ? (
-        <LucratividadeSection
-          ordens={ordens}
-          pecas={pecas}
-          servicos={servicos}
-        />
+        <LucratividadeSection ordens={ordens} pecas={pecas} servicos={servicos} />
+      ) : carregandoContas ? (
+        <p className="text-corpo text-sakura-muted">Carregando as contas...</p>
       ) : erroContas ? (
         <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
           Não deu pra carregar as contas: {erroContas}
