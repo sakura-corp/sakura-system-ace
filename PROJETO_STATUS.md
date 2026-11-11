@@ -167,11 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 10/11/2026 (noite): revisões da leva 7, o banco de teste na 83 e o painel com "com quem está a bola"
-- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373, Clientes por página).
-- **Leva 7** (21 tarefas, com a #995): **devolvidos, esperando o Gusta**: #985 (importação; opção A no homônimo) e #987 (retornos: vira **0084** em cima do #985, atrasados até 12 meses); **#986 e #989 aprovados** (o #989 já desconta a devolução da OS), falta o teste do Tiago no PC. Novas sem leva: #988, #992, #993, #1000 (e #978, #979). O #929 fechou (opção B; a C virou a #1000).
-- **`ssace-teste` na 83** (a 0083 do #985); o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
-- **Painel**: o "Em revisão" diz com quem está a bola (Em revisão / Devolvido / Em revisão de novo / Aprovado, falta teste no PC; escritorio#115 e #116).
-- **Vídeo de divulgação**: roteiro aprovado na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois a sessão final dela, #996. Ideia: aba "Produção de vídeo" (escritorio#114).
-- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; #996; #513 (pergunta mandada à Focus, esperando), #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
-- **Visual novo (#990)**: fotos e a folha enviadas à equipe; esperando os conceitos.
+### 11/11/2026 (madrugada): a ordem das próximas semanas e o vídeo adiado
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373).
+- **Leva 7** (20 tarefas): **devolvidos ao Gusta**: #985 (importação) e #987 (retornos, a **0084** em cima do #985); **#986 e #989 aprovados**, falta o teste do Tiago no PC. **15 sem ninguém.** A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
+- **Vídeo (#995) adiado** (Sofia, 10/11): saiu da leva 7 e do painel; volta depois, no Opus. A #996 espera.
+- **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).

@@ -35,6 +35,15 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 10/11/2026 (noite): revisões da leva 7, o banco de teste na 83 e o painel com "com quem está a bola"
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373, Clientes por página).
+- **Leva 7** (21 tarefas, com a #995): **devolvidos, esperando o Gusta**: #985 (importação; opção A no homônimo) e #987 (retornos: vira **0084** em cima do #985, atrasados até 12 meses); **#986 e #989 aprovados** (o #989 já desconta a devolução da OS), falta o teste do Tiago no PC. Novas sem leva: #988, #992, #993, #1000 (e #978, #979). O #929 fechou (opção B; a C virou a #1000).
+- **`ssace-teste` na 83** (a 0083 do #985); o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Painel**: o "Em revisão" diz com quem está a bola (Em revisão / Devolvido / Em revisão de novo / Aprovado, falta teste no PC; escritorio#115 e #116).
+- **Vídeo de divulgação**: roteiro aprovado na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois a sessão final dela, #996. Ideia: aba "Produção de vídeo" (escritorio#114).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; #996; #513 (pergunta mandada à Focus, esperando), #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e a folha enviadas à equipe; esperando os conceitos.
+
 ### 10/11/2026 (noite): o vídeo de divulgação planejado e no painel (#995, #996)
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
 - **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 e o #994 também já entraram.
