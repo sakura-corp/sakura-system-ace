@@ -341,23 +341,121 @@ describe("criarFetchDoPrograma: leitura que fica sem resposta", () => {
     expect(estados).toEqual(["falhou"]);
   });
 
-  it("depois de uma queda, a próxima leitura desiste mais rápido", async () => {
+  /** Diz se a promessa já terminou, sem esperar por ela. */
+  function acompanhar<T>(p: Promise<T>) {
+    const estado = { terminou: false, valor: undefined as unknown };
+    p.then(
+      (v) => Object.assign(estado, { terminou: true, valor: v }),
+      (e: unknown) => Object.assign(estado, { terminou: true, valor: e }),
+    );
+    return estado;
+  }
+
+  it(`depois de uma queda, a próxima leitura desiste em ${TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS / 1000} s, e não em ${TEMPO_LIMITE_LEITURA_MS / 1000} s`, async () => {
     const fetchDoPrograma = criarFetchDoPrograma(semResposta());
-    const primeira = fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`).catch((e: unknown) => e);
+    const primeira = acompanhar(fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`));
     await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS + 100);
-    await primeira;
-    const segunda = fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`).catch((e: unknown) => e);
-    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS + 100);
-    expect(ehErroDeRede(await segunda)).toBe(true);
+    expect(primeira.terminou).toBe(true);
+    const segunda = acompanhar(fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`));
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS - 100);
+    expect(segunda.terminou).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(segunda.terminou).toBe(true);
+    expect(ehErroDeRede(segunda.valor)).toBe(true);
   });
 
-  it("resposta que chega antes do tempo limite é devolvida (o tempo não conta o corpo)", async () => {
-    const fetchBase = vi.fn<typeof fetch>(
-      () => new Promise<Response>((ok) => setTimeout(() => ok(new Response("ok")), TEMPO_LIMITE_LEITURA_MS - 1000)),
+  it("uma resposta depois da queda volta o tempo limite pro normal", async () => {
+    let responde = false;
+    const fetchBase = vi.fn<typeof fetch>((input, init) =>
+      responde ? Promise.resolve(new Response("ok")) : semResposta()(input, init),
     );
-    const pedido = criarFetchDoPrograma(fetchBase)(ARQUIVO);
+    const fetchDoPrograma = criarFetchDoPrograma(fetchBase);
+    const caiu = acompanhar(fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`));
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS + 100);
+    expect(caiu.terminou).toBe(true);
+    responde = true;
+    await fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`);
+    responde = false;
+    const depois = acompanhar(fetchDoPrograma(`${URL_BASE}/rest/v1/clientes`));
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS + 100);
+    expect(depois.terminou).toBe(false);
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS);
+    expect(depois.terminou).toBe(true);
+  });
+
+  it("com o navegador dizendo que está sem rede, a leitura já desiste no tempo curto", async () => {
+    vi.stubGlobal("navigator", { onLine: false });
+    const leitura = acompanhar(criarFetchDoPrograma(semResposta())(`${URL_BASE}/rest/v1/clientes`));
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS + 100);
+    expect(leitura.terminou).toBe(true);
+    expect(ehErroDeRede(leitura.valor)).toBe(true);
+  });
+
+  it("HEAD sem resposta também desiste (é leitura)", async () => {
+    const leitura = acompanhar(
+      criarFetchDoPrograma(semResposta())(`${URL_BASE}/rest/v1/clientes`, { method: "HEAD" }),
+    );
+    await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS + 100);
+    expect(leitura.terminou).toBe(true);
+    expect(ehErroDeRede(leitura.valor)).toBe(true);
+  });
+
+  /** Uma resposta cujo corpo chega aos pedaços: o primeiro na hora, o resto quando o teste mandar. */
+  function respostaEmPedacos() {
+    let controleDoCorpo!: ReadableStreamDefaultController<Uint8Array>;
+    const corpo = new ReadableStream<Uint8Array>({
+      start(c) {
+        controleDoCorpo = c;
+        c.enqueue(new TextEncoder().encode("come"));
+      },
+    });
+    const fetchBase = vi.fn<typeof fetch>((_input, init) => {
+      // Como o fetch de verdade: cancelar o pedido corta também o corpo que ainda chega.
+      init?.signal?.addEventListener("abort", () =>
+        controleDoCorpo.error(new DOMException("The operation was aborted.", "AbortError")),
+      );
+      return Promise.resolve(new Response(corpo));
+    });
+    return {
+      fetchBase,
+      terminarCorpo: () => {
+        controleDoCorpo.enqueue(new TextEncoder().encode("ço e fim"));
+        controleDoCorpo.close();
+      },
+    };
+  }
+
+  it("o tempo não conta o corpo: corpo que termina depois do limite chega inteiro", async () => {
+    const { fetchBase, terminarCorpo } = respostaEmPedacos();
+    const resposta = await criarFetchDoPrograma(fetchBase)(ARQUIVO);
+    const texto = acompanhar(resposta.text());
     await vi.advanceTimersByTimeAsync(TEMPO_LIMITE_LEITURA_MS * 3);
-    expect(await (await pedido).text()).toBe("ok");
+    expect(texto.terminou).toBe(false);
+    terminarCorpo();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(texto.valor).toBe("começo e fim");
+  });
+
+  it("quem chamou cancela depois da resposta: a leitura do corpo é cortada (revisão da Sofia)", async () => {
+    const { fetchBase } = respostaEmPedacos();
+    const controle = new AbortController();
+    const resposta = await criarFetchDoPrograma(fetchBase)(ARQUIVO, { signal: controle.signal });
+    const texto = acompanhar(resposta.text());
+    controle.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(texto.terminou).toBe(true);
+    expect((texto.valor as Error).name).toBe("AbortError");
+  });
+
+  it("o cancelamento também vem do Request, quando o init não traz signal", async () => {
+    const controle = new AbortController();
+    const pedido = new Request(ARQUIVO, { signal: controle.signal });
+    const leitura = acompanhar(criarFetchDoPrograma(semResposta())(pedido));
+    controle.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(leitura.terminou).toBe(true);
+    expect((leitura.valor as Error).name).toBe("AbortError");
+    expect(ehErroDeRede(leitura.valor)).toBe(false);
   });
 
   it("gravação sem resposta NÃO é cancelada (pode ter chegado ao banco)", async () => {

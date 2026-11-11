@@ -53,6 +53,37 @@ não repete (download de arquivo, `GET`/`HEAD` fora de `/rest/v1/`). A regra é 
 com o cliente de verdade: `.select()` caído é tentado 4 vezes no total; `insert`, `update`,
 `delete` e `rpc` caídos, 1 vez cada.
 
+## O que o teste no PC achou (11/11)
+- Com o cabo de rede tirado, a faixa apareceu, mas Clientes e Ordens de Serviço ficaram em
+  "Carregando..." por minutos, em vez de mostrar a frase de sem conexão. O Windows não avisou a
+  queda (placas de rede virtuais continuam "ligadas"), então cada pedido ficou pendurado, sem falhar.
+  Os testes da nuvem não pegaram isso porque o fetch de mentira sempre falhava na hora.
+- Conserto (`src/lib/supabase.ts`): **leitura** sem resposta desiste sozinha em 15 s, ou em 4 s
+  quando a rede já caiu ou o navegador diz que está sem rede. O tempo conta só até a resposta
+  começar (os cabeçalhos), nunca o download do corpo. **Gravação continua sem tempo limite.**
+- A revisão da Sofia achou um efeito colateral: o cancelamento de quem chamou deixou de alcançar
+  o corpo. Consertado (o repasse do cancelamento só sai no erro), e os testes ficaram mais fortes:
+  - corpo em pedaços que termina depois do limite;
+  - o tempo curto conferido de verdade;
+  - HEAD;
+  - `navigator.onLine === false`;
+  - a volta ao tempo normal depois de uma resposta;
+  - o cancelamento vindo do `Request`.
+- Na ferramenta de telas (Playwright com o banco de mentira), não deu pra reproduzir o caso da
+  tela inteira com o banco pendurado: o relógio da página parou no meio. Lendo o banco direto pelo
+  cliente do programa, com 18 leituras penduradas ao mesmo tempo, o erro chegou em 34 s. A
+  palavra final é do teste no PC.
+- A faixa "O banco desta empresa já recebeu uma atualização que este computador ainda não tem",
+  que apareceu no PC, não é desta tarefa: o banco de teste está à frente desta branch.
+
+## Limites conhecidos (sem mexer agora)
+- O cabo saindo **no meio** de um download grande do Storage ainda pode deixar a tela esperando:
+  o tempo limite não cobre o corpo.
+- Logo depois de uma queda, uma consulta lenta e legítima tem só 4 s até algum pedido responder.
+  A conferência de 30 s do `useConexao` volta o tempo normal sozinha.
+- Gravação pendurada (sem resposta) continua esperando: cortar uma gravação poderia dizer "não
+  salvou" sobre o que já chegou ao banco.
+
 ## O que testei e VI reprovar
 - Fetch: deixar POST ser repetido (4 testes reprovaram); tirar a exceção do `/rest/v1/` (a leitura
   foi tentada 16 vezes); repetir tudo (14 reprovaram, entre eles insert, update, delete e rpc).
@@ -62,6 +93,16 @@ com o cliente de verdade: `.select()` caído é tentado 4 vezes no total; `inser
 - `useConexao`: a conferência não parar (3 reprovaram); `online` limpar sozinho (2); ignorar o
   "respondeu" (1). O caso da revisão (a tela sai e volta com a faixa ligada) foi visto reprovar
   ("expected to be called at least once") antes do conserto.
+- Tempo limite (11/11): antes do conserto, os 4 testes de leitura sem resposta reprovaram (ficavam
+  pendurados). Quebras de propósito, cada uma pega pelo seu teste:
+  - tempo limite também na gravação;
+  - nunca voltar ao tempo normal;
+  - ignorar o navegador sem rede;
+  - sempre 15 s;
+  - o relógio cortando o corpo;
+  - não olhar o signal do `Request`;
+  - HEAD fora da leitura.
+  O teste "quem chamou cancela depois da resposta" reprovou antes do conserto pedido pela Sofia.
 - Rascunho: sem `salvarAgora` no catch do `ClienteForm`, o teste "sem rede: grava o rascunho na
   hora" reprovou; com `valoresRef` no lugar do `watch()`, "não grava se nada mudou" reprovou.
 

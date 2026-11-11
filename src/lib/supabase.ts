@@ -62,7 +62,11 @@ async function lerComTempoLimite(
   const deQuemChamou = init?.signal ?? (input instanceof Request ? input.signal : undefined);
   if (deQuemChamou?.aborted) controle.abort(deQuemChamou.reason);
   const repassar = () => controle.abort(deQuemChamou?.reason);
-  deQuemChamou?.addEventListener("abort", repassar);
+  // Fica ligado depois da resposta: quem chamou cancelando durante a leitura
+  // do corpo (o `.text()` do postgrest-js, o `.blob()` do Storage) ainda corta
+  // o download, como fazia antes do tempo limite (revisão da Sofia, 11/11).
+  // Sai só no erro, quando não há mais corpo pra cortar.
+  deQuemChamou?.addEventListener("abort", repassar, { once: true });
   let estourou = false;
   const relogio = setTimeout(() => {
     estourou = true;
@@ -71,11 +75,11 @@ async function lerComTempoLimite(
   try {
     return await fetchBase(input, { ...init, signal: controle.signal });
   } catch (erro) {
+    deQuemChamou?.removeEventListener("abort", repassar);
     if (estourou) throw new TypeError("Failed to fetch");
     throw erro;
   } finally {
     clearTimeout(relogio);
-    deQuemChamou?.removeEventListener("abort", repassar);
   }
 }
 
