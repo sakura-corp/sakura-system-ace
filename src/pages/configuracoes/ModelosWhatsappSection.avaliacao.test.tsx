@@ -7,6 +7,10 @@ const salvarLinkAvaliacao = vi.fn();
 vi.mock("@/lib/configuracoes", () => ({
   salvarLinkAvaliacao: (...a: unknown[]) => salvarLinkAvaliacao(...a),
 }));
+vi.mock("@/lib/contabilidade", () => ({
+  buscarContatoContabilidade: vi.fn().mockResolvedValue(null),
+  salvarContatoContabilidade: vi.fn(),
+}));
 vi.mock("@/lib/modelosWhatsapp", async () => {
   const { modeloPorChave } = await import("@/schemas/whatsapp");
   return {

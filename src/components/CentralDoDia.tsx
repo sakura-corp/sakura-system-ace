@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { Explicacao } from "@/components/Explicacao";
@@ -9,14 +9,17 @@ import { listarContasReceber } from "@/lib/contasReceber";
 import { listarSaldos } from "@/lib/estoque";
 import { listarFechamentosCaixa } from "@/lib/fechamentoCaixa";
 import { listarModelosWhatsapp, registrarMensagemAberta, textoDoModelo } from "@/lib/modelosWhatsapp";
-import { listarNotasComErro } from "@/lib/notasFiscais";
+import { buscarContatoContabilidade, type ContatoContabilidade } from "@/lib/contabilidade";
+import { gerarPacoteContabilidade, listarNotasComErro, listarNotasDoMesParaPacote } from "@/lib/notasFiscais";
 import { listarPecas } from "@/lib/pecas";
 import {
   alcanceDaCentral,
   limitarPorTipo,
   marcadoresDaCobranca,
+  marcadoresDaContabilidade,
   marcadoresDoCarroPronto,
   mensagemDaListaVazia,
+  mesDoPacote,
   montarCentralDoDia,
   type Pendencia,
   type TipoPendencia,
@@ -116,6 +119,18 @@ export function CentralDoDia({
   const [modelos, setModelos] = useState<Record<string, string>>({});
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // `undefined` = ainda não buscou; `null` = a loja não tem contato.
+  const [contato, setContato] = useState<ContatoContabilidade | null | undefined>(undefined);
+  const [pacote, setPacote] = useState<{ feitos: number; total: number } | null>(null);
+  const [avisoPacote, setAvisoPacote] = useState<{ erro: boolean; texto: string } | null>(null);
+  // A loja de agora: o pacote que termina depois de uma troca de loja não
+  // mexe na tela da loja nova (mesmo padrão do #974).
+  const lojaAtualRef = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaAtualRef.current = lojaAtual?.id;
+    setPacote(null);
+    setAvisoPacote(null);
+  }, [lojaAtual?.id]);
 
   useEffect(() => {
     // Troca de loja no meio da busca: a resposta atrasada da loja anterior
@@ -136,7 +151,7 @@ export function CentralDoDia({
           podeReceber ? listarContasReceber(lojaId) : Promise.resolve([]),
           podeEstoque ? listarPecas() : Promise.resolve([]),
           podeEstoque ? listarSaldos(lojaId) : Promise.resolve(new Map<string, number>()),
-          podeClientes && (podeReceber || podeOS)
+          (podeClientes && (podeReceber || podeOS)) || podeNotas
             ? // Sem os modelos da loja, vale o texto padrão: não derruba a lista.
               listarModelosWhatsapp(lojaId).catch((err) => {
                 console.error("Erro ao carregar os modelos de WhatsApp:", err);
@@ -185,7 +200,68 @@ export function CentralDoDia({
     [hoje, notas, movimentos, podeCaixa, fechamentos, contasReceber, ordens, contasPagar, pecas, saldos, operador],
   );
 
+  // O contato da contabilidade só é buscado quando a linha do pacote está na
+  // lista (dia 1 a 7, com o módulo Notas fiscais), e uma vez por loja.
+  const lojaDoContatoId = lojaAtual?.id;
+  const temLinhaDoPacote = pendencias.some((p) => p.tipo === "contabilidade_notas");
+  useEffect(() => {
+    if (!lojaDoContatoId || !temLinhaDoPacote) return;
+    let cancelado = false;
+    setContato(undefined);
+    buscarContatoContabilidade(lojaDoContatoId)
+      .then((c) => {
+        if (!cancelado) setContato(c);
+      })
+      .catch((err) => {
+        // Sem o contato, a linha cai no "cadastrar o contato": não derruba a lista.
+        console.error("Erro ao carregar o contato da contabilidade:", err);
+        if (!cancelado) setContato(null);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [lojaDoContatoId, temLinhaDoPacote]);
+
   if (!alcance.mostra) return null;
+
+  async function gerarPacote() {
+    if (!lojaAtual) return;
+    const loja = { id: lojaAtual.id, nome: lojaAtual.nome };
+    const lojaId = loja.id;
+    const mesmaLoja = () => lojaAtualRef.current === lojaId;
+    setAvisoPacote(null);
+    setPacote({ feitos: 0, total: 0 });
+    try {
+      const mes = mesDoPacote(hoje);
+      const doMes = await listarNotasDoMesParaPacote(lojaId, mes);
+      if (!mesmaLoja()) return;
+      // `aindaValido`: trocou de loja enquanto os PDFs vinham, o .zip da
+      // loja anterior não baixa (revisão do #1003; a tela já se cuidava, o
+      // download não).
+      const { semPdf, baixado } = await gerarPacoteContabilidade({
+        loja,
+        notas: doMes,
+        mes,
+        aoProgredir: (feitos, total) => {
+          if (mesmaLoja()) setPacote({ feitos, total });
+        },
+        aindaValido: mesmaLoja,
+      });
+      if (!baixado || !mesmaLoja()) return;
+      setAvisoPacote({
+        erro: false,
+        texto:
+          semPdf > 0
+            ? `Pacote baixado. ${semPdf} nota${semPdf === 1 ? "" : "s"} sem PDF (o LEIA-ME diz quais).`
+            : "Pacote baixado.",
+      });
+    } catch (err) {
+      console.error("Erro ao gerar o pacote da contabilidade:", err);
+      if (mesmaLoja()) setAvisoPacote({ erro: true, texto: mensagemDeErro(err) });
+    } finally {
+      if (mesmaLoja()) setPacote(null);
+    }
+  }
 
   const { visiveis, escondidas } = limitarPorTipo(pendencias);
   const telefoneDe = (clienteId: string | undefined) =>
@@ -277,7 +353,54 @@ export function CentralDoDia({
           ir("/estoque", "Ver no estoque")
         );
       case "contabilidade_notas":
-        return ir("/notas-fiscais", "Baixar as notas");
+        return (
+          <>
+            <button type="button" className={CLASSE_BOTAO} onClick={gerarPacote} disabled={pacote !== null}>
+              {pacote === null
+                ? "Gerar o pacote"
+                : pacote.total > 0
+                  ? `Buscando PDF ${pacote.feitos} de ${pacote.total}…`
+                  : "Preparando..."}
+            </button>
+            {contato?.whatsapp ? (
+              <BotaoWhatsapp
+                telefone={contato.whatsapp}
+                texto={preencherModelo(
+                  textoDoModelo(modelos, "contabilidade"),
+                  marcadoresDaContabilidade(contato.nome, lojaAtual?.nome, mesDoPacote(hoje)),
+                )}
+                rotulo="Abrir conversa"
+                titulo="Abrir a conversa no WhatsApp com a mensagem pronta (o pacote .zip você anexa)"
+                aoAbrir={() => {
+                  if (!lojaAtual) return;
+                  registrarMensagemAberta(
+                    lojaAtual.id,
+                    "contabilidade",
+                    mesDoPacote(hoje),
+                    contato.whatsapp,
+                    operador?.id ?? null,
+                  );
+                }}
+              />
+            ) : contato === undefined || !operador?.admin ? null : (
+              <button
+                type="button"
+                onClick={() => navigate("/configuracoes")}
+                className="text-rotulo font-medium text-sakura-purple-dark underline underline-offset-2"
+              >
+                cadastrar o WhatsApp do contador
+              </button>
+            )}
+            {avisoPacote && (
+              <p
+                role={avisoPacote.erro ? "alert" : "status"}
+                className={`basis-full text-right text-rotulo ${avisoPacote.erro ? "text-red-300" : "text-emerald-300"}`}
+              >
+                {avisoPacote.texto}
+              </p>
+            )}
+          </>
+        );
       case "contabilidade_extrato":
         // O extrato é do banco, não do programa: não há tela que resolva.
         return null;

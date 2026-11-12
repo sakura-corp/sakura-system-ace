@@ -541,6 +541,11 @@ export const modelosWhatsapp = [];
 export const configAvaliacao = [
   { loja_id: LOJA, link_google: "https://g.page/r/exemplo-da-loja/review", atualizado_em: dia(-10) },
 ];
+// O contato da contabilidade (#383, migration 0083): é ele que faz a Central
+// do dia mostrar o "Abrir conversa". Tudo inventado; o WhatsApp é de mentira.
+export const configContabilidade = [
+  { loja_id: LOJA, nome: "Contabilidade Exemplo", whatsapp: "11900000000", email: null, atualizado_em: dia(-10) },
+];
 // Uma cobrança já aberta, pra o "cobrado em dd/mm" aparecer no catálogo.
 export const whatsappMensagens = [
   { id: "wa1", loja_id: LOJA, chave: "cobranca", referencia: "cr2", destino: "(16) 99123-4567", operador_id: OP, criado_em: dia(-2) },
@@ -952,6 +957,7 @@ export const TABELAS = {
   auditoria,
   configuracoes_whatsapp: modelosWhatsapp,
   configuracoes_avaliacao: configAvaliacao,
+  configuracoes_contabilidade: configContabilidade,
   whatsapp_mensagens: whatsappMensagens,
 };
 // As funções do banco que o app chama por `supabase.rpc(...)`. Sem resposta

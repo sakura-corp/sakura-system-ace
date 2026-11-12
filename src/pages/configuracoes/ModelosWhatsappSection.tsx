@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { buscarContatoContabilidade, salvarContatoContabilidade } from "@/lib/contabilidade";
 import { salvarLinkAvaliacao } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarModeloWhatsapp, textoDoModelo } from "@/lib/modelosWhatsapp";
+import {
+  contatoContabilidadeSchema,
+  type ContatoContabilidadeFormValores,
+} from "@/schemas/contatoContabilidade";
 import {
   linkAvaliacaoSchema,
   MODELOS_WHATSAPP,
@@ -35,6 +40,8 @@ export function ModelosWhatsappSection({
   return (
     <div className="mt-4 space-y-8">
       <LinkAvaliacaoCampo lojaId={lojaId} linkSalvo={linkAvaliacao} onSalvo={onSalvo} />
+      {/* key: trocar de loja remonta o bloco e busca o contato da outra. */}
+      <ContatoContabilidadeCampo key={lojaId} lojaId={lojaId} />
       {MODELOS_WHATSAPP.map((modelo) => (
         <ModeloEditavel
           key={modelo.chave}
@@ -216,6 +223,182 @@ function LinkAvaliacaoCampo({
           className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {isSubmitting ? "Salvando..." : "Salvar link"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const VAZIO: ContatoContabilidadeFormValores = { nome: "", whatsapp: "", email: "" };
+
+/**
+ * O contato da contabilidade da loja (#383): pra quem o pacote do mês é
+ * mandado. Por loja, e fora do `onSalvo` da página: ele não é da tabela de
+ * configurações, é de `configuracoes_contabilidade`.
+ */
+function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  // Carga que falhou: os campos ficam travados, senão um "Salvar" em branco
+  // apagaria o contato que está guardado e a tela não chegou a mostrar.
+  const [cargaFalhou, setCargaFalhou] = useState(false);
+  const travado = carregando || cargaFalhou;
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContatoContabilidadeFormValores>({
+    resolver: zodResolver(contatoContabilidadeSchema),
+    defaultValues: VAZIO,
+  });
+
+  useEffect(() => {
+    let cancelado = false;
+    buscarContatoContabilidade(lojaId)
+      .then((contato) => {
+        if (cancelado) return;
+        reset(
+          contato
+            ? { nome: contato.nome, whatsapp: contato.whatsapp ?? "", email: contato.email ?? "" }
+            : VAZIO,
+        );
+      })
+      .catch((err) => {
+        if (cancelado) return;
+        console.error("Erro ao carregar o contato da contabilidade:", err);
+        setCargaFalhou(true);
+        setErro(mensagemDeErro(err));
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [lojaId, reset]);
+
+  async function gravar(contato: ContatoContabilidadeFormValores | null) {
+    if (contato === null && !confirm("Apagar o contato da contabilidade desta loja?")) return;
+    setErro(null);
+    setSalvo(null);
+    try {
+      await salvarContatoContabilidade(lojaId, contato);
+      if (contato) {
+        setSalvo("Contato salvo.");
+      } else {
+        reset(VAZIO);
+        setSalvo("Contato apagado.");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar o contato da contabilidade:", err);
+      setErro(mensagemDeErro(err));
+    }
+  }
+
+  const estaVazio = () => {
+    const v = getValues();
+    return !v.nome.trim() && !v.whatsapp.trim() && !v.email.trim();
+  };
+
+  // Tudo vazio quer dizer "apagar": não passa pela validação (que pede nome).
+  const aoEnviar = (e: React.FormEvent<HTMLFormElement>) => {
+    if (estaVazio()) {
+      e.preventDefault();
+      return gravar(null);
+    }
+    return handleSubmit(gravar)(e);
+  };
+
+  const classeCampo =
+    "mt-1 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple";
+
+  return (
+    <form onSubmit={aoEnviar} noValidate>
+      <h4 className="text-corpo font-semibold text-sakura-purple-dark">Contato da contabilidade</h4>
+      <p className="mt-1 text-rotulo text-sakura-muted">
+        Pra quem vai o pacote das notas do mês. Com o WhatsApp, a Central do dia ganha o botão
+        Abrir conversa. Esvazie os campos e salve (ou use Apagar contato) para remover.
+      </p>
+
+      {erro && (
+        <p role="alert" className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+          {erro}
+        </p>
+      )}
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div>
+          <label htmlFor="contab-nome" className="block text-rotulo text-sakura-purple-dark">
+            Nome da contabilidade
+          </label>
+          <input
+            id="contab-nome"
+            type="text"
+            disabled={travado}
+            {...register("nome", { onChange: () => setSalvo(null) })}
+            className={classeCampo}
+          />
+          {errors.nome && (
+            <span className="mt-1 block text-rotulo text-red-600">{errors.nome.message}</span>
+          )}
+        </div>
+        <div>
+          <label htmlFor="contab-whatsapp" className="block text-rotulo text-sakura-purple-dark">
+            WhatsApp da contabilidade
+          </label>
+          <input
+            id="contab-whatsapp"
+            type="text"
+            inputMode="tel"
+            placeholder="(11) 90000-0000"
+            disabled={travado}
+            {...register("whatsapp", { onChange: () => setSalvo(null) })}
+            className={classeCampo}
+          />
+          {errors.whatsapp && (
+            <span className="mt-1 block text-rotulo text-red-600">{errors.whatsapp.message}</span>
+          )}
+        </div>
+        <div>
+          <label htmlFor="contab-email" className="block text-rotulo text-sakura-purple-dark">
+            E-mail da contabilidade
+          </label>
+          <input
+            id="contab-email"
+            type="text"
+            inputMode="email"
+            disabled={travado}
+            {...register("email", { onChange: () => setSalvo(null) })}
+            className={classeCampo}
+          />
+          {errors.email && (
+            <span className="mt-1 block text-rotulo text-red-600">{errors.email.message}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-2 flex items-center justify-end gap-3">
+        {salvo && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
+            {salvo}
+          </p>
+        )}
+        <button
+          type="button"
+          disabled={isSubmitting || travado}
+          onClick={() => gravar(null)}
+          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
+        >
+          Apagar contato
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || travado}
+          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {isSubmitting ? "Salvando..." : "Salvar contato"}
         </button>
       </div>
     </form>

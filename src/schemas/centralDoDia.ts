@@ -3,6 +3,7 @@ import { formatarMoeda } from "./dinheiro";
 import { precisaComprar } from "./estoque";
 import { NOTA_LABEL, situacaoDaNota } from "./situacaoFiscal";
 import { rotuloDeIdade } from "./painelInicio";
+import { mesPorExtenso } from "./pacoteContabilidade";
 import type { ContaPagar } from "@/types/contaPagar";
 import type { ContaReceber } from "@/types/contaReceber";
 import type { MovimentoCaixa } from "@/types/caixa";
@@ -134,6 +135,26 @@ function diaDaSemana(dia: string): string {
 function nomeDoMesAnterior(hoje: string): string {
   const mes = Number(hoje.slice(5, 7)); // 1 a 12
   return MESES[(mes + 10) % 12];
+}
+
+/**
+ * O mês do pacote da contabilidade, "AAAA-MM": o anterior ao de `hoje`, o mesmo
+ * que o nome da linha da Central diz (#383). Sem `Date`, pra não depender de fuso.
+ */
+export function mesDoPacote(hoje: string): string {
+  const ano = Number(hoje.slice(0, 4));
+  const mes = Number(hoje.slice(5, 7));
+  const [a, m] = mes === 1 ? [ano - 1, 12] : [ano, mes - 1];
+  return `${a}-${String(m).padStart(2, "0")}`;
+}
+
+/** Os marcadores do modelo `contabilidade`. */
+export function marcadoresDaContabilidade(
+  contador: string,
+  loja: string | null | undefined,
+  mes: string,
+): Record<string, string | null | undefined> {
+  return { contador, loja, mes: mesPorExtenso(mes) };
 }
 
 /** "dd/mm" de um "YYYY-MM-DD". */

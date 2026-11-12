@@ -20,7 +20,8 @@ export type ChaveModeloWhatsapp =
   | "pedido_compra"
   | "cliente_sumido"
   | "orcamento"
-  | "avaliacao";
+  | "avaliacao"
+  | "contabilidade";
 
 export interface ModeloWhatsapp {
   chave: ChaveModeloWhatsapp;
@@ -113,6 +114,17 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
     padrao:
       "Oi, {cliente}! Obrigado por escolher a {loja}. " +
       "Se puder, deixa sua avaliação no Google, ajuda muito a gente: {link_avaliacao}",
+  },
+  {
+    chave: "contabilidade",
+    titulo: "Pacote das notas para a contabilidade",
+    descricao:
+      "Aparece na Central do dia, na linha do pacote da contabilidade (do dia 1 ao 7), no botão Abrir conversa, e só quando a loja tem o contato da contabilidade com WhatsApp (campo acima). A conversa abre com a mensagem pronta; o pacote .zip você anexa; nada é enviado sozinho.",
+    marcadores: ["{contador}", "{loja}", "{mes}"],
+    // Texto aprovado pela Sofia em 10/11/2026 (tarefa #383).
+    padrao:
+      "Oi, {contador}! Aqui é da {loja}. Segue o pacote das notas de {mes} (XML e PDF). " +
+      "O extrato do banco eu mando até o dia 10. Qualquer coisa, é só chamar.",
   },
 ];
 

@@ -34,6 +34,12 @@ describe("excluirLoja", () => {
     expect(apagadas.indexOf("configuracoes_avaliacao")).toBeLessThan(apagadas.indexOf("lojas"));
   });
 
+  it("apaga o contato da contabilidade da loja antes de apagar a loja (#383)", async () => {
+    await excluirLoja("loja-1");
+    expect(apagadas).toContain("configuracoes_contabilidade");
+    expect(apagadas.indexOf("configuracoes_contabilidade")).toBeLessThan(apagadas.indexOf("lojas"));
+  });
+
   it("a loja é a última a sair", async () => {
     await excluirLoja("loja-1");
     expect(apagadas.at(-1)).toBe("lojas");
