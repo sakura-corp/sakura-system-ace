@@ -78,6 +78,12 @@ renova a cada 7 dias; em 23/10, primeiro dia da semana, já estava em 13 a 14%).
   banco → versão → computadores → banco. Essa fica marcada pro dia de teste.
 - Uma versão que precisa sair **sozinha** (como o Electron 40, #385) continua num número só dela;
   o teste dela vai pro mesmo dia.
+- **Revisão em nome da Sofia é sempre decisiva** (Sofia, 11/11/2026): "Aprovar" (com o que falta,
+  ex.: o teste no PC) ou "Pedir mudança", **nunca só um comentário**. O painel só conta essas duas pra
+  dizer com quem está a bola; um comentário solto deixa a tarefa em "Em revisão", como se faltasse algo
+  dela (escritorio#119 melhora o caso do commit que só mexe no relatório).
+- **Antes de dizer que um PR não andou**, olhar **todos** os commits desde a última revisão, não só o
+  último: em 11/11 o último do #1003 era só o relatório, e o conserto pedido estava no anterior.
 
 ## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
 

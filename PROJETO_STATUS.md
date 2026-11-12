@@ -167,10 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 11/11/2026 (tarde): as revisões de hoje, o #989 e o #1004 na `main`, a #1005 na leva 7
-- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (sem o teste no PC), #973, #974, #977, #975, #984, **#989 (sugestão de compra) e #1004 (fluxo de caixa)**.
-- **Leva 7**: **#1003 devolvido ao Tiago** (a migration vira **0085** e a loja entra no nome do pacote); #985 e #987 com o Gusta; o **#986 espera o teste do Tiago no PC**. A ordem do banco: #985 (0083) → #987 (0084) → #1003 (0085). A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
-- **#1005 entrou na leva 7** (Sofia, 11/11): as datas um dia antes em 8 lugares (vencimento das contas, a cobrança do WhatsApp, os pedidos de compra), já nas lojas. Livre, 2 h.
-- **Vídeo (#995) adiado**; a #996 espera. **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
-- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
-- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar) e a 0085 quando chegar a vez do #1003; publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).
+### 11/11/2026 (noite, 2): o levantamento das pontas soltas; a leva 8 até 30/11
+- **Feito**: o levantamento das pontas soltas dos 4 repositórios (o plano fica no privado da Sofia); a **#978** (a garantia sem tratar "<" e "&") **entrou na leva 7**. Sem código nesta sessão.
+- **Leva 7** (sem mudança desde a tarde): #986, #1007, #1009 e #1003 aprovados esperando o teste no PC do Tiago (o #1003 só entra depois do #985 e do #987: o CI dele falha de verdade com a 0085 antes da 0084); devolvidos #1008, #985 e #987; o #384 (Gusta) tem branch sem PR.
+- **A ordem** (Sofia, 11/11): **até 30/11, a leva 8 completa e a leva 9 encaminhada**. A leva 8 ela planeja **quinta 12/11, às 9h**; a #979 vai nela. A leva 9: o vídeo (#995/#996) e o material de venda. O visual novo (#990) fica pra janeiro.
+- **No escritório**: a leva 4 montada (sakura-corp/escritorio#120 a #122, #119, #37, #66, #84, #117); o plano e a estratégia novos nascem lá (escritorio#121 tira a visão e o comparativo daqui).
+- **Com a Sofia** (12/11, a lista dela): **#1011 (trocar o CSC)**, #513 (Focus), #504 (contador), #976 antes do ensaio de 14 e 15/11 (#877), #998 quando o Gusta avisar, #501, #842 depois do ensaio; a Recepção dela (escritorio#123).
+- Levantamentos novos marcados sozinhos pra **22/11** e **30/11**, às 8h.
