@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarClientesParaEscolha } from "@/lib/clientes";
 import { temPermissao } from "@/types/operador";
@@ -38,6 +39,9 @@ export function ContasReceberPage() {
   const { operador, lojaAtual } = useAuth();
   // Sem o módulo Clientes a lista vem pela janela estreita (migration 0068).
   const podeVerCadastro = temPermissao(operador, "clientes");
+  // O nome do cliente abre a ficha dele (#393), que pede Clientes ou Ordens
+  // de Serviço: quem só cobra vê o nome como texto.
+  const podeAbrirFichaDoCliente = podeVerCadastro || temPermissao(operador, "ordens_servico");
   const navigate = useNavigate();
   const [contas, setContas] = useState<ContaReceber[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -220,7 +224,17 @@ export function ContasReceberPage() {
                           <td className="px-4 py-3">
                             {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
                           </td>
-                          <td className="px-4 py-3">{conta.cliente?.nome ?? "—"}</td>
+                          <td className="px-4 py-3">
+                            {conta.cliente?.nome ? (
+                              <LinkCliente
+                                clienteId={conta.cliente_id}
+                                nome={conta.cliente.nome}
+                                podeAbrir={podeAbrirFichaDoCliente}
+                              />
+                            ) : (
+                              "—"
+                            )}
+                          </td>
                           <td className="px-4 py-3">{conta.descricao}</td>
                           <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
                           <td className="px-4 py-3">
@@ -309,7 +323,17 @@ export function ContasReceberPage() {
                         <td className="px-4 py-3">
                           {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
                         </td>
-                        <td className="px-4 py-3">{conta.cliente?.nome ?? "—"}</td>
+                        <td className="px-4 py-3">
+                          {conta.cliente?.nome ? (
+                            <LinkCliente
+                              clienteId={conta.cliente_id}
+                              nome={conta.cliente.nome}
+                              podeAbrir={podeAbrirFichaDoCliente}
+                            />
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                         <td className="px-4 py-3">{conta.descricao}</td>
                         <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
                         <td className="px-4 py-3">

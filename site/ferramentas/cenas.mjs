@@ -1,4 +1,5 @@
-// As 54 telas do sistema, com os cliques necessários pra chegar até cada uma.
+// Todas as telas do sistema, com os cliques necessários pra chegar até cada uma.
+// (Sem o número: "54 telas" ficou velho a cada tela nova.)
 //
 // Mora num arquivo só porque DOIS programas percorrem esta lista: o gerador
 // de imagens do catálogo (gerar-catalogo-telas.mjs) e a varredura de
@@ -46,6 +47,10 @@ export const CENAS = [
   { arquivo: "06b-ficha-veiculo", modulo: "Clientes", titulo: "Ficha do veículo",
     rota: "/veiculos/v1",
     descricao: "Tudo que já foi feito num carro, por placa: dono atual, KM mais recente e quanto ele costuma rodar por mês, quanto já foi gasto nele, de quanto em quanto tempo ele volta, as peças que ainda estão na garantia e a linha do tempo de todas as OS, com data, KM, itens e total. Abre pelo 'Ver veículos' em Clientes, ou clicando na placa na lista de OS ou em Garantias." },
+
+  { arquivo: "06c-ficha-cliente", modulo: "Clientes", titulo: "Ficha do cliente",
+    rota: "/clientes/c4",
+    descricao: "O dinheiro de um cliente numa tela só: quanto ele deve (com o atrasado em destaque), quanto já comprou e quantas vezes veio, as contas pendentes, as OS e vendas dele e como pagou cada uma. Abre pelo nome do cliente em Clientes, na OS, em Contas a Receber e na ficha do veículo. Quem não tem o módulo de uma parte vê \"—\" e o porquê, nunca R$ 0,00." },
 
   // -------------------------------------------------------- ordens de serviço
   { arquivo: "07-ordens", modulo: "Ordens de Serviço", titulo: "Lista de ordens de serviço",

@@ -126,6 +126,11 @@ export function OrdensServicoPage() {
   const [vendaAberta, setVendaAberta] = useState<OrdemServico | null>(null);
   const [vendaParaNota, setVendaParaNota] = useState<OrdemServico | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // A OS (ou venda) foi aberta por uma ficha (do cliente ou do veículo) que
+  // pediu `voltarAoFechar` (#393): o Voltar leva de volta pra ficha, em vez de
+  // ficar na lista. Quem abre pela lista, pelo Início ou pela busca não pede,
+  // e o Voltar continua fechando a OS aqui mesmo.
+  const [voltarAoFechar, setVoltarAoFechar] = useState(false);
   const [lista, setLista] = useState<"os" | "vendas">("os");
   const [dataInicio, setDataInicio] = useState(primeiroDiaDoMesLocal());
   const [dataFim, setDataFim] = useState(hojeLocal());
@@ -297,9 +302,13 @@ export function OrdensServicoPage() {
   // Ctrl+K...) manda o id no `state` da navegação. Abre e limpa o pedido, pra
   // ele não abrir de novo a cada carga.
   function abrirOrdemPedida(lista: OrdemServico[]) {
-    const abrirOrdemId = (location.state as { abrirOrdemId?: string } | null)?.abrirOrdemId;
+    const pedido = location.state as { abrirOrdemId?: string; voltarAoFechar?: boolean } | null;
+    const abrirOrdemId = pedido?.abrirOrdemId;
     if (!abrirOrdemId) return;
     const ordemParaAbrir = lista.find((o) => o.id === abrirOrdemId);
+    // Só vale se a OS abriu de verdade. A troca de `state` abaixo usa
+    // `replace`, então a entrada anterior do histórico continua sendo a ficha.
+    setVoltarAoFechar(!!ordemParaAbrir && pedido?.voltarAoFechar === true);
     if (ordemParaAbrir && ehVendaBalcao(ordemParaAbrir)) {
       setLista("vendas");
       setVendaAberta(ordemParaAbrir);
@@ -501,6 +510,7 @@ export function OrdensServicoPage() {
   // Fecha tudo que estiver aberto antes de abrir outra coisa: a página só
   // mostra um formulário por vez.
   function fecharPaineis() {
+    setVoltarAoFechar(false);
     setMostrarFormulario(false);
     setOrdemEmEdicao(null);
     setOrdemFaturando(null);
@@ -628,7 +638,13 @@ export function OrdensServicoPage() {
           onEncerrar={handleEncerrar}
           onCadastrarCliente={handleCadastrarCliente}
           onCadastrarVeiculo={handleCadastrarVeiculo}
-          onCancelar={() => setOrdemEmEdicao(null)}
+          onCancelar={() => {
+            if (voltarAoFechar) {
+              navigate(-1);
+              return;
+            }
+            setOrdemEmEdicao(null);
+          }}
         />
       )}
 
@@ -655,6 +671,10 @@ export function OrdensServicoPage() {
           onFaturar={() => setOrdemFaturando(vendaAberta)}
           pedirAvaliacao={pedidoDeAvaliacao(vendaAberta)}
           onVoltar={() => {
+            if (voltarAoFechar) {
+              navigate(-1);
+              return;
+            }
             setVendaAberta(null);
             setOrdemFaturando(null);
           }}

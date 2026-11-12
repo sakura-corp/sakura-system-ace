@@ -37,6 +37,7 @@ import { PainelPage } from "./pages/painel/PainelPage";
 import { RelatoriosPage } from "./pages/relatorios/RelatoriosPage";
 import { ServicosPage } from "./pages/servicos/ServicosPage";
 import { FichaVeiculoPage } from "./pages/veiculos/FichaVeiculoPage";
+import { FichaClientePage } from "./pages/clientes/FichaClientePage";
 import { MODULOS, temPermissao } from "./types/operador";
 
 // Se o operador não tiver permissão pro Início (o "/" padrão),
@@ -172,6 +173,17 @@ export default function App() {
                 element={
                   <PermissaoRoute modulo="clientes">
                     <ClientesPage />
+                  </PermissaoRoute>
+                }
+              />
+              {/* A ficha do cliente (#393) abre como a do veículo: com
+                  Clientes ou Ordens de Serviço. Cada parte dela respeita o
+                  módulo próprio (Contas a Receber, Ordens de Serviço). */}
+              <Route
+                path="/clientes/:id"
+                element={
+                  <PermissaoRoute modulo={["clientes", "ordens_servico"]}>
+                    <FichaClientePage />
                   </PermissaoRoute>
                 }
               />
