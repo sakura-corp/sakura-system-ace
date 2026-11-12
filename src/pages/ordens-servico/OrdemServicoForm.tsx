@@ -305,9 +305,15 @@ export function OrdemServicoForm({
 
   // A janela ligou a peça cadastrada ao item (#720): a escolha dele já não
   // serve, e o orçamento recarrega pra mostrar o item com a peça do cadastro.
+  // A peça cadastrada fica guardada (`cadastradas`): até o orçamento
+  // recarregar (ou se o recarregar falhar), é por ela que a peça nova aparece
+  // no "já tenho" das outras linhas, em vez de a pessoa cadastrar outra igual.
   async function aoLigarNaJanela(itemId: string) {
     setLigadosNaJanela((ligados) => new Set(ligados).add(itemId));
-    setEscolhasAvulsas((e) => esquecerEscolha(e, itemId));
+    setEscolhasAvulsas((e) => ({
+      ...esquecerEscolha(e, itemId),
+      cadastradas: e.cadastradas,
+    }));
     try {
       await onItensMudaram?.();
     } catch (err) {

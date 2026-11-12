@@ -196,6 +196,29 @@ describe("OrdemServicoForm — a peça cadastrada na aprovação liga ao item na
   });
 });
 
+describe("OrdemServicoForm — a peça ligada continua no 'já tenho' das outras linhas (#720)", () => {
+  // Revisão: ligar esquecia a peça nova, e enquanto o orçamento não
+  // recarregava (ou se o recarregar falhasse) a segunda linha da mesma peça
+  // não achava ela e a pessoa cadastrava outra igual.
+  it("duas linhas da mesma peça: ligada a primeira, a segunda acha a peça nova", async () => {
+    const segunda = { ...avulsa, id: "item-2" };
+    const duas = { ...ordem, itens: [avulsa, segunda] } as unknown as OrdemServico;
+    const { user, onAprovar } = montar(duas);
+    await abrirJanela(user);
+    const [primeiraLinha] = screen.getAllByRole("group").map((g) => within(g));
+    await user.click(primeiraLinha.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+    await screen.findByText(/Falta escolher o que fazer com 1 peça/);
+
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta nova/ }));
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+    expect(onAprovar).toHaveBeenCalledWith(duas, "pelo telefone", [{ itemId: "item-2", pecaId: "p-nova" }]);
+  });
+});
+
 // Se ligar na hora falha (sem internet), vale o de antes: a escolha fica
 // guardada na janela, e a aprovação é que liga.
 describe("OrdemServicoForm — ligar falhou: as escolhas não se perdem no Voltar (#720)", () => {

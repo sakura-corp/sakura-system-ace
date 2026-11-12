@@ -248,6 +248,58 @@ describe("OrcamentosPage", () => {
     expect(aprovarOrcamento).toHaveBeenCalledWith(expect.objectContaining({ id: "o4" }), "pelo telefone", "op", []);
   });
 
+  // Revisão: fechar o orçamento enquanto o banco ligava a peça fazia ele
+  // reabrir sozinho quando a resposta chegava.
+  it("fechar o orçamento enquanto a peça liga não faz ele reabrir sozinho (#720)", async () => {
+    const avulsa = { id: "i9", tipo: "peca", peca_id: null, descricao: "Palheta 20 polegadas", quantidade: 1, preco_unitario: 80, desconto: 0 };
+    const comAvulsa = ordem({ id: "o4", numero_orcamento: 4, validade: "2099-01-01", itens: [avulsa] as never });
+    listarOrcamentos.mockResolvedValue([comAvulsa]);
+    let terminar!: (v: boolean) => void;
+    cadastrarPecaDoItem.mockImplementation(() => new Promise<boolean>((r) => (terminar = r)));
+    const user = montar();
+
+    await user.click(await screen.findByText("Orçamento 4"));
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+    const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
+    await user.click(within(janela).getByRole("button", { name: "Voltar" }));
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("button", { name: "Confirmar aprovação" })).not.toBeInTheDocument();
+
+    terminar(true);
+    await vi.waitFor(() => expect(listarOrcamentos).toHaveBeenCalledTimes(2));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole("button", { name: "Confirmar aprovação" })).not.toBeInTheDocument();
+    expect(screen.getByText("Orçamento 4")).toBeInTheDocument();
+  });
+
+  // Revisão: o carregar() da página não lança, então a falha do recarregar
+  // ficava atrás da janela e ninguém via.
+  it("ligou, mas o orçamento não recarregou: o aviso aparece dentro da janela (#720)", async () => {
+    const avulsa = { id: "i9", tipo: "peca", peca_id: null, descricao: "Palheta 20 polegadas", quantidade: 1, preco_unitario: 80, desconto: 0 };
+    const comAvulsa = ordem({ id: "o4", numero_orcamento: 4, validade: "2099-01-01", itens: [avulsa] as never });
+    listarOrcamentos.mockResolvedValueOnce([comAvulsa]).mockRejectedValue(new Error("sem internet"));
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    const user = montar();
+
+    await user.click(await screen.findByText("Orçamento 4"));
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+
+    const janela = await screen.findByRole("dialog", { name: "Peças sem cadastro" });
+    expect(
+      await within(janela).findByText(/A peça foi cadastrada e ligada ao item, mas o orçamento não recarregou/),
+    ).toBeInTheDocument();
+  });
+
   it("recusar com motivo chama recusarOrcamento e some dos abertos", async () => {
     recusarOrcamento.mockResolvedValue(undefined);
     const user = montar();

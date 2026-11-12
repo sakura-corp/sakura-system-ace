@@ -294,6 +294,30 @@ describe("PecasAvulsasAprovacaoModal — a peça cadastrada liga ao item na hora
     expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
   });
 
+  // Revisão: um "ligando" só, pra duas ligações ao mesmo tempo, liberava o
+  // Aprovar quando a primeira acabava, com a segunda ainda no banco.
+  it("duas peças ligando ao mesmo tempo: o Aprovar espera as duas", async () => {
+    let terminarPrimeira!: (v: boolean) => void;
+    let terminarSegunda!: (v: boolean) => void;
+    cadastrarPecaDoItem
+      .mockImplementationOnce(() => new Promise<boolean>((r) => (terminarPrimeira = r)))
+      .mockImplementationOnce(() => new Promise<boolean>((r) => (terminarSegunda = r)));
+    const { user } = montar([palheta, filtro], { pecas: [] });
+
+    await cadastrarAPeca(user, "Palheta 20 polegadas");
+    await cadastrarAPeca(user, "Filtro de óleo PSL55");
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
+    expect(aprovar()).toBeDisabled();
+
+    terminarPrimeira(true);
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(2));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(aprovar()).toBeDisabled();
+
+    terminarSegunda(true);
+    await waitFor(() => expect(aprovar()).toBeEnabled());
+  });
+
   it("sem peça avulsa sobrando, diz que pode aprovar e aprova sem vínculo", async () => {
     const { user, onConfirmar } = montar([]);
 

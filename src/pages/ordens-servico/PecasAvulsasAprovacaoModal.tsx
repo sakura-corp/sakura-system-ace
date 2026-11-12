@@ -82,9 +82,10 @@ export function PecasAvulsasAprovacaoModal({
     mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
   ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
-  // Ligando a peça recém-cadastrada ao item: o Aprovar espera, pra não mandar
-  // o vínculo de um item que o banco está ligando agora.
-  const [ligando, setLigando] = useState(false);
+  // Quantas peças recém-cadastradas estão sendo ligadas agora: o Aprovar
+  // espera TODAS, pra não mandar o vínculo de um item que o banco está ligando
+  // (uma contagem, e não sim/não: a primeira a acabar não pode soltar o botão).
+  const [ligando, setLigando] = useState(0);
   const [aviso, setAviso] = useState<string | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
@@ -130,7 +131,7 @@ export function PecasAvulsasAprovacaoModal({
       setAviso("A peça foi cadastrada, mas não foi ligada ao item agora: o login caiu. Ao aprovar, ela é ligada.");
       return;
     }
-    setLigando(true);
+    setLigando((n) => n + 1);
     try {
       const ligou = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
       if (!ligou) setAviso(AVISO_PECA_SOBROU);
@@ -140,10 +141,10 @@ export function PecasAvulsasAprovacaoModal({
         `A peça foi cadastrada, mas não foi ligada ao item agora: ${mensagemDeErro(err)}. ` +
           "Ao aprovar, ela é ligada.",
       );
-      setLigando(false);
       return;
+    } finally {
+      setLigando((n) => n - 1);
     }
-    setLigando(false);
     // Ligou (ou o item já não era avulso): sai da lista e o orçamento recarrega.
     await onItemLigado(item.id);
   }
@@ -293,7 +294,7 @@ export function PecasAvulsasAprovacaoModal({
             <button
               type="button"
               onClick={() => onConfirmar(vinculosDaAprovacao(itens, escolhas))}
-              disabled={faltam > 0 || enviando || ligando}
+              disabled={faltam > 0 || enviando || ligando > 0}
               className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {enviando ? "Aprovando..." : "Aprovar orçamento"}
