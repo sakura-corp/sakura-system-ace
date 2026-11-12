@@ -15,11 +15,12 @@ import { temPermissao } from "@/types/operador";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { CurvaABCSection } from "./CurvaABCSection";
 import { FluxoProjetadoSection } from "./FluxoProjetadoSection";
 import { GraficosSection } from "./GraficosSection";
 import { LucratividadeSection } from "./LucratividadeSection";
 
-type Aba = "graficos" | "lucratividade" | "fluxo";
+type Aba = "graficos" | "lucratividade" | "curvaABC" | "fluxo";
 
 export function RelatoriosPage() {
   const { lojaAtual, operador } = useAuth();
@@ -125,6 +126,11 @@ export function RelatoriosPage() {
           onClick={() => setAba("lucratividade")}
         />
         <AbaBotao
+          label="Curva ABC"
+          ativa={aba === "curvaABC"}
+          onClick={() => setAba("curvaABC")}
+        />
+        <AbaBotao
           label="Fluxo de caixa"
           ativa={aba === "fluxo"}
           onClick={() => setAba("fluxo")}
@@ -142,6 +148,8 @@ export function RelatoriosPage() {
         />
       ) : aba === "lucratividade" ? (
         <LucratividadeSection ordens={ordens} pecas={pecas} servicos={servicos} />
+      ) : aba === "curvaABC" ? (
+        <CurvaABCSection ordens={ordens} pecas={pecas} servicos={servicos} />
       ) : carregandoContas ? (
         <p className="text-corpo text-sakura-muted">Carregando as contas...</p>
       ) : erroContas ? (
