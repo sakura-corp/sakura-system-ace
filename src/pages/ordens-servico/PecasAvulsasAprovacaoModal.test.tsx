@@ -9,6 +9,8 @@
  * 3. As parecidas com o que foi digitado vêm no topo da lista.
  * 4. "Cadastrar agora" abre o cadastro com nome e preço (e custo) já
  *    preenchidos e, ao salvar, guarda a peça nova como caminho.
+ * 5. A peça cadastrada aqui é ligada ao item NA HORA (#720): se a pessoa fechar
+ *    o orçamento, ou outro computador aprovar antes, ela não fica solta.
  */
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,6 +29,13 @@ vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/configuracoes", () => ({
   buscarConfiguracaoFiscal: async () => ({ regime_tributario: "simples_nacional" }),
 }));
+const cadastrarPecaDoItem = vi.fn();
+vi.mock("@/lib/ordensServico", () => ({
+  cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
+}));
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+}));
 
 const { PecasAvulsasAprovacaoModal } = await import("./PecasAvulsasAprovacaoModal");
 const { ESCOLHAS_VAZIAS } = await import("./escolhasAvulsas");
@@ -35,6 +44,7 @@ type EscolhasDaJanela = import("./escolhasAvulsas").EscolhasDaJanela;
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  cadastrarPecaDoItem.mockResolvedValue(true);
 });
 
 function avulsa(id: string, descricao: string, extra: Partial<ItemOS> = {}): ItemOS {
@@ -64,6 +74,7 @@ const cadastro = [
 function montar(itens: ItemOS[], extra: { pecas?: PecaJanela[]; erro?: string | null } = {}) {
   const onConfirmar = vi.fn();
   const onFechar = vi.fn();
+  const onItemLigado = vi.fn();
   // As escolhas moram em quem abre a janela (#720), como no formulário.
   function ComPai() {
     const [escolhas, setEscolhas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
@@ -77,12 +88,13 @@ function montar(itens: ItemOS[], extra: { pecas?: PecaJanela[]; erro?: string | 
         enviando={false}
         erro={extra.erro ?? null}
         onConfirmar={onConfirmar}
+        onItemLigado={onItemLigado}
         onFechar={onFechar}
       />
     );
   }
   const resultado = renderizar(<ComPai />);
-  return { ...resultado, onConfirmar, onFechar };
+  return { ...resultado, onConfirmar, onFechar, onItemLigado };
 }
 
 const aprovar = () => screen.getByRole("button", { name: "Aprovar orçamento" });
@@ -221,6 +233,73 @@ describe("PecasAvulsasAprovacaoModal — cadastrar agora", () => {
       { itemId: "i1", pecaId: "p-nova" },
       { itemId: "i3", pecaId: "p-nova" },
     ]);
+  });
+});
+
+type Usuario = ReturnType<typeof montar>["user"];
+
+/** Cadastra a peça da única linha avulsa pela janela de cadastro de verdade. */
+async function cadastrarAPeca(user: Usuario, nome: string) {
+  cadastrarPecaRapida.mockResolvedValue("p-nova");
+  await user.click(secao(nome).getByRole("radio", { name: "Cadastrar agora" }));
+  await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+  const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+  await waitFor(() => expect(campo("Descrição *")).toHaveValue(nome));
+  await user.type(campo("NCM *"), "40169300");
+  await user.type(campo("C.E.S.T *"), "0100100");
+  await user.type(campo("CFOP padrão *"), "5102");
+  await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+  await user.type(campo("CST / CSOSN *"), "500");
+  await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+}
+
+describe("PecasAvulsasAprovacaoModal — a peça cadastrada liga ao item na hora (#720)", () => {
+  it("cadastrar liga a peça ao item logo depois de ela nascer, sem esperar a aprovação", async () => {
+    const { user, onItemLigado, onConfirmar } = montar([palheta], { pecas: [] });
+
+    await cadastrarAPeca(user, "Palheta 20 polegadas");
+
+    await waitFor(() => expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1));
+    expect(cadastrarPecaDoItem.mock.calls[0]).toEqual(["i1", "p-nova", "op"]);
+    await waitFor(() => expect(onItemLigado).toHaveBeenCalledWith("i1"));
+    expect(screen.queryByText(/ficou no cadastro/)).not.toBeInTheDocument();
+    expect(onConfirmar).not.toHaveBeenCalled();
+  });
+
+  it("o banco devolve false (ligado em outro computador): avisa que a peça cadastrada ficou no cadastro", async () => {
+    cadastrarPecaDoItem.mockResolvedValue(false);
+    const { user, onItemLigado } = montar([palheta], { pecas: [] });
+
+    await cadastrarAPeca(user, "Palheta 20 polegadas");
+
+    expect(
+      await screen.findByText(
+        /já tinha sido ligado a uma peça.*A peça que você cadastrou ficou no cadastro: se ela sobrou, inative em Estoque\./,
+      ),
+    ).toBeInTheDocument();
+    // O item já não é avulso: quem abriu a janela recarrega o orçamento.
+    expect(onItemLigado).toHaveBeenCalledWith("i1");
+  });
+
+  it("ligar dá erro: avisa, e a peça continua como caminho pra aprovação ligar", async () => {
+    cadastrarPecaDoItem.mockRejectedValue(new Error("sem internet"));
+    const { user, onItemLigado, onConfirmar } = montar([palheta], { pecas: [] });
+
+    await cadastrarAPeca(user, "Palheta 20 polegadas");
+
+    expect(await screen.findByText(/A peça foi cadastrada, mas não foi ligada ao item agora: sem internet/)).toBeInTheDocument();
+    expect(onItemLigado).not.toHaveBeenCalled();
+    expect(screen.getByText("Peça cadastrada: Palheta 20 polegadas")).toBeInTheDocument();
+    await user.click(aprovar());
+    expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
+  });
+
+  it("sem peça avulsa sobrando, diz que pode aprovar e aprova sem vínculo", async () => {
+    const { user, onConfirmar } = montar([]);
+
+    expect(screen.getByText(/Não sobrou nenhuma peça sem cadastro/)).toBeInTheDocument();
+    await user.click(aprovar());
+    expect(onConfirmar).toHaveBeenCalledWith([]);
   });
 });
 

@@ -6,7 +6,7 @@
 import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, userEvent } from "@/testes/tela";
+import { screen, userEvent, within } from "@/testes/tela";
 import type { OrdemServico } from "@/types/os";
 
 const aprovarOrcamento = vi.fn();
@@ -24,7 +24,23 @@ vi.mock("@/lib/ordensServico", () => ({
   atualizarOrdem: vi.fn(),
   adicionarItensOrdem: vi.fn(),
   editarItemOrdem: vi.fn(),
+  cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
   AprovadoSemEstoqueError: class extends Error {},
+}));
+const cadastrarPecaDoItem = vi.fn();
+// O cadastro de peça inteiro vira um botão: aqui só importa o que a tela faz
+// com a peça que ele devolve.
+vi.mock("./CadastroPecaAvulsaModal", () => ({
+  CadastroPecaAvulsaModal: ({ onCadastrada }: { onCadastrada: (peca: unknown) => void }) => (
+    <button
+      type="button"
+      onClick={() =>
+        onCadastrada({ id: "p-nova", descricao: "Palheta nova", codigo_interno: null, codigo_barras: null, medida: null })
+      }
+    >
+      Salvar peça de mentira
+    </button>
+  ),
 }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 vi.mock("@/lib/clientes", () => ({
@@ -195,6 +211,41 @@ describe("OrcamentosPage", () => {
       "op",
       [{ itemId: "i9", pecaId: "p-1" }],
     );
+  });
+
+  it("peça cadastrada na aprovação: liga na hora e o orçamento aberto recarrega já ligado (#720)", async () => {
+    const avulsa = { id: "i9", tipo: "peca", peca_id: null, descricao: "Palheta 20 polegadas", quantidade: 1, preco_unitario: 80, desconto: 0 };
+    const comAvulsa = ordem({
+      id: "o4",
+      numero_orcamento: 4,
+      validade: "2099-01-01",
+      itens: [avulsa] as never,
+    });
+    const ligado = { ...comAvulsa, itens: [{ ...avulsa, peca_id: "p-nova" }] } as unknown as OrdemServico;
+    listarOrcamentos.mockResolvedValueOnce([comAvulsa]).mockResolvedValue([ligado]);
+    cadastrarPecaDoItem.mockResolvedValue(true);
+    aprovarOrcamento.mockResolvedValue({ ...ligado, numero: 53, status: "em_andamento" });
+    const user = montar();
+
+    await user.click(await screen.findByText("Orçamento 4"));
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+
+    expect(cadastrarPecaDoItem).toHaveBeenCalledWith("i9", "p-nova", "op");
+    expect(await screen.findByText(/Não sobrou nenhuma peça sem cadastro/)).toBeInTheDocument();
+    expect(listarOrcamentos).toHaveBeenCalledTimes(2);
+
+    // Voltar e confirmar de novo: o orçamento recarregado já não tem peça
+    // avulsa, então aprova direto, sem janela e sem vínculo.
+    const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
+    await user.click(within(janela).getByRole("button", { name: "Voltar" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    expect(screen.queryByRole("dialog", { name: "Peças sem cadastro" })).not.toBeInTheDocument();
+    expect(aprovarOrcamento).toHaveBeenCalledWith(expect.objectContaining({ id: "o4" }), "pelo telefone", "op", []);
   });
 
   it("recusar com motivo chama recusarOrcamento e some dos abertos", async () => {

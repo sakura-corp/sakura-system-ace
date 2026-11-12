@@ -189,8 +189,16 @@ export function OrcamentosPage() {
   async function handleEditarItem(item: ItemOS, patch: PatchItemOS) {
     if (!operador || !lojaAtual || !aberto) return;
     await editarItemOrdem(item, patch, operador.id);
+    await recarregarAberto();
+  }
+
+  // Traz o orçamento aberto de novo: depois de corrigir um item, ou de a
+  // janela da aprovação ligar a peça cadastrada ao item (#720), senão ele
+  // continuaria aparecendo como "sem cadastro".
+  async function recarregarAberto() {
+    const idAberto = aberto?.id;
     const atualizadas = await carregar();
-    const atualizada = atualizadas?.find((o) => o.id === aberto.id);
+    const atualizada = atualizadas?.find((o) => o.id === idAberto);
     if (atualizada) setAberto(atualizada);
   }
 
@@ -290,6 +298,7 @@ export function OrcamentosPage() {
     onSalvarNova: handleSalvarNova,
     onSalvarEdicao: handleSalvarEdicao,
     onEditarItem: handleEditarItem,
+    onItensMudaram: recarregarAberto,
     onEncerrar: async () => undefined,
     onAprovar: handleAprovar,
     onRecusar: handleRecusar,

@@ -23,6 +23,7 @@ import {
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { salvarArquivoEmitido } from "@/lib/notasFiscais";
 import { cadastrarPecaDoItem } from "@/lib/ordensServico";
+import { AVISO_PECA_SOBROU } from "./escolhasAvulsas";
 import { buscarDadosFiscaisDasPecas, listarPecasJanela } from "@/lib/pecas";
 import {
   itensQueImpedemNFCe,
@@ -255,9 +256,13 @@ export function EmitirNotaFiscalModal({
       // der erro, a peça NÃO ficou ligada.
       const vinculado = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
       if (!vinculado) {
+        // A peça que a pessoa acabou de cadastrar sobrou no cadastro (#720):
+        // a tela diz, e quem decide se ela sobrou mesmo é a pessoa.
         setErro(
-          "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
-            "computador). Feche esta janela e abra de novo.",
+          recemCadastrada
+            ? `${AVISO_PECA_SOBROU} Feche esta janela e abra de novo.`
+            : "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
+                "computador). Feche esta janela e abra de novo.",
         );
         return;
       }
