@@ -167,11 +167,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 12/11/2026: a leva 8 planejada e montada (10 tarefas, 60 h)
+### 12/11/2026: a leva 8 planejada e montada (16 tarefas, 83 h)
 - **Feito**: a leva 8 no modelo, com a etiqueta `leva-8`: o DRE (#386 → #387 → #388), o orçamento (#1019 imprimir, #888 balcão), a nota de compra pelo XML com as contas a pagar (#1020), a origem do cliente (#1021 o campo, #1022 o relatório), a #979 e a #376 (ativação fiscal). Prioridade: #386, #387, #1019, #1021, #1020. Sem código nesta sessão.
+- **Ampliada à tarde** (ela quis a leva maior): #1000 (aviso de banco), #988, #1016, #1017 (juntou a #1018), #993 (espera a #457) e #856 (Central do dia abre o item).
 - **Entra depois**: "consertar nota" (#855 com a #369), rascunho do Tiago; a Sofia aprova antes da `leva-8`.
-- **Ficou pra leva 9**: o leitor de nota em PDF (refeito: a nota diz o produto, a loja diz o imposto), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
+- **Ficou pra leva 9**: o leitor de nota em PDF (**ela vai pensar melhor antes**), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
 - **Atenção**: quatro migrations na leva 8 (#386, #387, #1021, #376) mexem em `VERSAO_ESQUEMA_ESPERADA`: entram uma de cada vez. A Sofia vai aplicar no `ssace-teste` guiada por outra sessão (ainda aberto).
-- **Leva 7** (sem mudança): 10 tarefas sem ninguém; aprovados esperando o teste no PC; a leva 8 só aparece no painel quando virar a atual.
+- **Leva 7**: 10 tarefas sem ninguém; a leva 8 só aparece no painel quando virar a atual.
 - **Com a Sofia**: #1023 (a parte dela da leva 8), **#1011 (trocar o CSC)**, #976 antes do ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
 - Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos marcados pra **22/11** e **30/11**, às 8h.
