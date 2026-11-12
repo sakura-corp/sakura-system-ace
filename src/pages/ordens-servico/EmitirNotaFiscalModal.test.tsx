@@ -477,5 +477,7 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
     expect(await screen.findByText(/Sem conexão com a internet/)).toBeInTheDocument();
     expect(screen.getByText(/Sem internet a nota não sai/)).toBeInTheDocument();
     expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
+    // As peças também não vieram: não dá pra dizer que falta cadastrar a peça.
+    expect(screen.queryByText(/Esta nota não pode sair ainda/)).not.toBeInTheDocument();
   });
 });

@@ -166,9 +166,11 @@ export function EmitirNotaFiscalModal({
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
   // Só vale depois de carregar as peças — antes disso toda peça pareceria
-  // "sem cadastro".
+  // "sem cadastro". Se não deu pra carregar (ex.: sem internet), também não (#374).
   const itensQueImpedem =
-    tipoNota === "NFC-e" && !carregando ? itensQueImpedemNFCe(itensPeca, pecasDaNota) : [];
+    tipoNota === "NFC-e" && !carregando && !configuracaoNaoVeio
+      ? itensQueImpedemNFCe(itensPeca, pecasDaNota)
+      : [];
 
   // Peça com código de ICMS que não bate com o regime da loja faz a SEFAZ
   // recusar a nota inteira, e a mensagem dela só diz o número do item
@@ -549,8 +551,6 @@ export function EmitirNotaFiscalModal({
           voltar pra emitir.
         </p>
       )}
-
-      {!carregando && !resultado && configuracaoNaoVeio && quadroDasPecasQueImpedem}
 
       {!carregando && !resultado && !configuracaoNaoVeio && !focusNfeConfigurado && (
         <div className="space-y-3">
