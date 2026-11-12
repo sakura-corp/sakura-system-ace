@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   funcionarioFormSchema,
   paraFilhosPreenchidos,
@@ -73,6 +73,8 @@ export function FuncionarioForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar funcionário:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }

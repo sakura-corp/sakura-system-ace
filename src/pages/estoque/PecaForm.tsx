@@ -5,7 +5,7 @@ import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   ehCategoriaDePneu,
   paraNovaPeca,
@@ -104,6 +104,8 @@ export function PecaForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar peça:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }

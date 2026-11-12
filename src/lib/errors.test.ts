@@ -3,13 +3,18 @@
 // nela ler "violates check constraint", que não diz o que fazer.
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { AuthApiError, AuthRetryableFetchError } from "@supabase/auth-js";
+import { FunctionsFetchError, FunctionsHttpError } from "@supabase/functions-js";
+import { StorageApiError, StorageUnknownError } from "@supabase/storage-js";
 import { describe, expect, it } from "vitest";
 import {
   OBJETOS_NOVOS_DO_BANCO,
   MENSAGEM_BANCO_DESATUALIZADO,
   MENSAGEM_DA_TRAVA,
+  MENSAGEM_SEM_CONEXAO,
   MENSAGEM_SEM_PERMISSAO,
   MENSAGEM_TRAVAMENTO_MUTUO,
+  ehErroDeRede,
   mensagemDeErro,
   traduzirTrava,
 } from "./errors";
@@ -197,5 +202,101 @@ describe("OBJETOS_NOVOS_DO_BANCO acompanha as migrations", () => {
       faltando,
       "Coluna ou view nova entra em OBJETOS_NOVOS_DO_BANCO (src/lib/errors.ts)",
     ).toEqual([]);
+  });
+});
+
+// #374: a internet da loja cai (o roteador reinicia, o cabo solta) e a tela
+// mostrava "TypeError: Failed to fetch". A queda chega de vários jeitos —
+// cada biblioteca do Supabase embrulha o erro do navegador no seu próprio —,
+// e nenhum deles pode ser confundido com uma recusa do banco: aí a frase
+// "sem conexão" mandaria a pessoa conferir a rede à toa.
+describe("ehErroDeRede", () => {
+  const quedaDoNavegador = () => new TypeError("Failed to fetch");
+
+  it("reconhece o TypeError do navegador, em cada navegador", () => {
+    expect(ehErroDeRede(new TypeError("Failed to fetch"))).toBe(true); // Chromium/Electron
+    expect(ehErroDeRede(new TypeError("NetworkError when attempting to fetch resource."))).toBe(true); // Firefox
+    expect(ehErroDeRede(new TypeError("Load failed"))).toBe(true); // Safari
+    expect(ehErroDeRede(new TypeError("Network request failed"))).toBe(true);
+  });
+
+  it("reconhece o erro do PostgREST (.from/.rpc), que vem como objeto e com o nome na frente", () => {
+    // Do jeito que o postgrest-js 2.110.9 devolve em `{ error }` quando o fetch lança.
+    const erro = {
+      message: "TypeError: Failed to fetch",
+      details: "TypeError: Failed to fetch\n    at ...",
+      hint: "",
+      code: "",
+    };
+    expect(ehErroDeRede(erro)).toBe(true);
+  });
+
+  it("reconhece o erro do login (auth), do arquivo (storage) e da função (functions)", () => {
+    expect(ehErroDeRede(new AuthRetryableFetchError("Failed to fetch", 0))).toBe(true);
+    expect(ehErroDeRede(new StorageUnknownError("Failed to fetch", quedaDoNavegador()))).toBe(true);
+    expect(ehErroDeRede(new FunctionsFetchError(quedaDoNavegador()))).toBe(true);
+  });
+
+  it("não confunde com recusa do banco", () => {
+    const rls = { code: "42501", message: 'new row violates row-level security policy for table "clientes"' };
+    const trava = {
+      code: "23514",
+      message: 'new row for relation "pecas" violates check constraint "ck_pecas_preco_venda"',
+    };
+    const semTabela = { code: "42P01", message: 'relation "clientes_janela" does not exist' };
+    const semTabelaNoCache = {
+      code: "PGRST205",
+      message: "Could not find the table 'public.clientes_janela' in the schema cache",
+    };
+    const deadlock = { code: "40P01", message: "deadlock detected" };
+    for (const erro of [rls, trava, semTabela, semTabelaNoCache, deadlock]) {
+      expect(ehErroDeRede(erro), erro.message).toBe(false);
+    }
+    // Código do banco preenchido manda, mesmo que a frase pareça de rede.
+    expect(ehErroDeRede({ code: "08006", message: "Failed to fetch" })).toBe(false);
+  });
+
+  it("não confunde com o servidor que respondeu com erro (ele respondeu: a rede está de pé)", () => {
+    expect(ehErroDeRede(new AuthRetryableFetchError("Service Unavailable", 503))).toBe(false);
+    expect(ehErroDeRede(new AuthApiError("Invalid login credentials", 400, "invalid_credentials"))).toBe(false);
+    expect(ehErroDeRede(new StorageApiError("Object not found", 404, "not_found"))).toBe(false);
+    expect(ehErroDeRede(new FunctionsHttpError(new Response("x", { status: 500 })))).toBe(false);
+  });
+
+  it("cancelar não é queda (o AbortError de quem desistiu do pedido)", () => {
+    const cancelado = new DOMException("This operation was aborted", "AbortError");
+    expect(ehErroDeRede(cancelado)).toBe(false);
+    expect(ehErroDeRede({ message: "AbortError: This operation was aborted", details: "", hint: "", code: "" }))
+      .toBe(false);
+    expect(ehErroDeRede(new AuthRetryableFetchError("This operation was aborted", 0))).toBe(false);
+    expect(ehErroDeRede(new StorageUnknownError("aborted", cancelado))).toBe(false);
+    expect(ehErroDeRede(new FunctionsFetchError(cancelado))).toBe(false);
+  });
+
+  it("não reconhece qualquer coisa", () => {
+    expect(ehErroDeRede("Failed to fetch")).toBe(false);
+    expect(ehErroDeRede("qualquer coisa")).toBe(false);
+    expect(ehErroDeRede(null)).toBe(false);
+    expect(ehErroDeRede(undefined)).toBe(false);
+    expect(ehErroDeRede(new Error("x"))).toBe(false);
+    expect(ehErroDeRede({ message: "falhou a rede" })).toBe(false);
+    // Uma frase nossa que só cita a do navegador não é a queda.
+    expect(ehErroDeRede(new Error("Não deu pra emitir: Failed to fetch the XML from Focus"))).toBe(false);
+  });
+});
+
+describe("mensagemDeErro com a rede caída", () => {
+  it("vira a frase de sem conexão, em todas as formas", () => {
+    expect(mensagemDeErro(new TypeError("Failed to fetch"))).toBe(MENSAGEM_SEM_CONEXAO);
+    expect(mensagemDeErro({ message: "TypeError: Failed to fetch", details: "", hint: "", code: "" }))
+      .toBe(MENSAGEM_SEM_CONEXAO);
+    expect(mensagemDeErro(new AuthRetryableFetchError("Failed to fetch", 0))).toBe(MENSAGEM_SEM_CONEXAO);
+    expect(mensagemDeErro(new FunctionsFetchError(new TypeError("Failed to fetch")))).toBe(MENSAGEM_SEM_CONEXAO);
+    expect(MENSAGEM_SEM_CONEXAO).toBe("Sem conexão com a internet. Confira a rede e tente de novo.");
+  });
+
+  it("e a recusa do banco continua com a frase dela", () => {
+    expect(mensagemDeErro({ code: "42501", message: "new row violates row-level security policy" }))
+      .toBe(MENSAGEM_SEM_PERMISSAO);
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
@@ -101,11 +102,15 @@ export function EmitirNotaFiscalModal({
   onEmitido,
   onItensMudaram,
 }: EmitirNotaFiscalModalProps) {
+  // #374: aviso perto do botão; o botão continua clicável (aviso, nunca tranca).
+  const { semConexao } = useConexao();
   const { operador, lojaAtual } = useAuth();
   const [carregando, setCarregando] = useState(true);
   const [emitindo, setEmitindo] = useState(false);
   const [erro, setErro] = useState("");
   const [configuracaoFiscal, setConfiguracaoFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
+  // A configuração não veio (ex.: sem internet): não dá pra dizer que falta o token (#374).
+  const [configuracaoNaoVeio, setConfiguracaoNaoVeio] = useState(false);
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [pecasDaNota, setPecasDaNota] = useState<PecaDadosFiscais[]>([]);
   // O cadastro inteiro da loja, só pro aviso de "peça parecida" no cadastro
@@ -161,9 +166,11 @@ export function EmitirNotaFiscalModal({
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
   // Só vale depois de carregar as peças — antes disso toda peça pareceria
-  // "sem cadastro".
+  // "sem cadastro". Se não deu pra carregar (ex.: sem internet), também não (#374).
   const itensQueImpedem =
-    tipoNota === "NFC-e" && !carregando ? itensQueImpedemNFCe(itensPeca, pecasDaNota) : [];
+    tipoNota === "NFC-e" && !carregando && !configuracaoNaoVeio
+      ? itensQueImpedemNFCe(itensPeca, pecasDaNota)
+      : [];
 
   // Peça com código de ICMS que não bate com o regime da loja faz a SEFAZ
   // recusar a nota inteira, e a mensagem dela só diz o número do item
@@ -192,6 +199,7 @@ export function EmitirNotaFiscalModal({
     async function carregar() {
       setCarregando(true);
       setErro("");
+      setConfiguracaoNaoVeio(false);
       try {
         // As peças vêm antes de emitir (não só na hora de montar a nota) pra
         // dar pra conferir o código de ICMS de cada uma e avisar aqui,
@@ -223,6 +231,7 @@ export function EmitirNotaFiscalModal({
           setCodigoMunicipioCliente(clienteCompleto.codigo_municipio);
         }
       } catch (err) {
+        setConfiguracaoNaoVeio(true);
         setErro(mensagemDeErro(err));
       } finally {
         setCarregando(false);
@@ -532,7 +541,18 @@ export function EmitirNotaFiscalModal({
         <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>
       )}
 
-      {!carregando && !resultado && !focusNfeConfigurado && (
+      {/* #374: aviso, nunca tranca; aparece mesmo quando a configuração não veio. */}
+      {!carregando && !resultado && semConexao && (
+        <p
+          role="status"
+          className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+        >
+          Sem internet a nota não sai: a SEFAZ e a prefeitura precisam receber. Espere a conexão
+          voltar pra emitir.
+        </p>
+      )}
+
+      {!carregando && !resultado && !configuracaoNaoVeio && !focusNfeConfigurado && (
         <div className="space-y-3">
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
             Falta cadastrar o token do Focus NFe (e os dados fiscais da loja) em Configurações →
