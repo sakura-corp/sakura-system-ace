@@ -464,4 +464,18 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
     expect(screen.getByText(/Sem internet a nota não sai/)).toBeInTheDocument();
     expect(confirmar()).toBeEnabled();
   });
+
+  // Teste no PC (12/11): abrir a janela já sem internet não lê a configuração
+  // da loja; não pode dizer "falta cadastrar o token" e precisa da frase.
+  it("abrindo já sem internet: a frase aparece e não diz que falta o token", async () => {
+    buscarConfiguracaoFiscal.mockRejectedValue(new TypeError("Failed to fetch"));
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    act(() => {
+      window.dispatchEvent(new Event("offline"));
+    });
+
+    expect(await screen.findByText(/Sem conexão com a internet/)).toBeInTheDocument();
+    expect(screen.getByText(/Sem internet a nota não sai/)).toBeInTheDocument();
+    expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
+  });
 });
