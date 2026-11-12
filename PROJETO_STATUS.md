@@ -167,10 +167,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 11/11/2026 (noite, 2): o levantamento das pontas soltas; a leva 8 até 30/11
-- **Feito**: o levantamento das pontas soltas dos 4 repositórios (o plano fica no privado da Sofia); a **#978** (a garantia sem tratar "<" e "&") **entrou na leva 7**. Sem código nesta sessão.
-- **Leva 7** (sem mudança desde a tarde): #986, #1007, #1009 e #1003 aprovados esperando o teste no PC do Tiago (o #1003 só entra depois do #985 e do #987: o CI dele falha de verdade com a 0085 antes da 0084); devolvidos #1008, #985 e #987; o #384 (Gusta) tem branch sem PR.
-- **A ordem** (Sofia, 11/11): **até 30/11, a leva 8 completa e a leva 9 encaminhada**. A leva 8 ela planeja **quinta 12/11, às 9h**; a #979 vai nela. A leva 9: o vídeo (#995/#996) e o material de venda. O visual novo (#990) fica pra janeiro.
-- **No escritório**: a leva 4 montada (sakura-corp/escritorio#120 a #122, #119, #37, #66, #84, #117); o plano e a estratégia novos nascem lá (escritorio#121 tira a visão e o comparativo daqui).
-- **Com a Sofia** (12/11, a lista dela): **#1011 (trocar o CSC)**, #513 (Focus), #504 (contador), #976 antes do ensaio de 14 e 15/11 (#877), #998 quando o Gusta avisar, #501, #842 depois do ensaio; a Recepção dela (escritorio#123).
-- Levantamentos novos marcados sozinhos pra **22/11** e **30/11**, às 8h.
+### 12/11/2026: a leva 8 planejada e montada (10 tarefas, 60 h)
+- **Feito**: a leva 8 no modelo, com a etiqueta `leva-8`: o DRE (#386 → #387 → #388), o orçamento (#1019 imprimir, #888 balcão), a nota de compra pelo XML com as contas a pagar (#1020), a origem do cliente (#1021 o campo, #1022 o relatório), a #979 e a #376 (ativação fiscal). Prioridade: #386, #387, #1019, #1021, #1020. Sem código nesta sessão.
+- **Entra depois**: "consertar nota" (#855 com a #369), rascunho do Tiago; a Sofia aprova antes da `leva-8`.
+- **Ficou pra leva 9**: o leitor de nota em PDF (refeito: a nota diz o produto, a loja diz o imposto), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
+- **Atenção**: quatro migrations na leva 8 (#386, #387, #1021, #376) mexem em `VERSAO_ESQUEMA_ESPERADA`: entram uma de cada vez. A Sofia vai aplicar no `ssace-teste` guiada por outra sessão (ainda aberto).
+- **Leva 7** (sem mudança): 10 tarefas sem ninguém; aprovados esperando o teste no PC; a leva 8 só aparece no painel quando virar a atual.
+- **Com a Sofia**: #1023 (a parte dela da leva 8), **#1011 (trocar o CSC)**, #976 antes do ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos marcados pra **22/11** e **30/11**, às 8h.

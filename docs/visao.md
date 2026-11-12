@@ -144,7 +144,7 @@ tarefas que ficaram abertas (a #456, a #372 e a #459) passaram pra **leva 6** (`
 | #373 Listas longas com páginas | média | necessária quando a loja importar milhares de clientes |
 | #371 Menu agrupado | média | com mais funções, é o que mantém o programa fácil |
 | #384 Modo demonstração | média | mostrar o sistema na hora de vender |
-| #386 → #387 → #388 DRE, #389 Fluxo projetado, #390 Curva ABC, #393 Tela do cliente | médias e uma grande | o "financeiro de dono", com dados que já existem |
+| #386 → #387 → #388 DRE (**na leva 8**, 12/11), #389 Fluxo projetado, #390 Curva ABC, #393 Tela do cliente | médias e uma grande | o "financeiro de dono", com dados que já existem |
 | #399 Devolução, #400 Agenda | média, grande | buracos do dia a dia |
 | #458 Desenho do assistente (sem código) | conversa | depois da Central do dia |
 
