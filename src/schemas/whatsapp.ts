@@ -13,6 +13,22 @@
  */
 
 import { z } from "zod";
+import { DIAS_DE_CONTAS_VENCENDO } from "@/types/configuracao";
+import type { ContaPagar } from "@/types/contaPagar";
+import type { MovimentoCaixa } from "@/types/caixa";
+import type { ModuloChave } from "@/types/operador";
+import { formatarMoeda } from "./dinheiro";
+import { situacaoDaDiferenca } from "./fechamentoCaixa";
+import type { CustoDaOrdem } from "./metricasCaixa";
+import {
+  contasVencendoAte,
+  ehOsAberta,
+  janelaDoDia,
+  janelaDoMesAteODia,
+  metricasDoPeriodo,
+  moduloQueFaltaAoCartao,
+  mostraBlocosDeOS,
+} from "./painelInicio";
 
 export type ChaveModeloWhatsapp =
   | "cobranca"
@@ -20,7 +36,8 @@ export type ChaveModeloWhatsapp =
   | "pedido_compra"
   | "cliente_sumido"
   | "orcamento"
-  | "avaliacao";
+  | "avaliacao"
+  | "resumo_dono";
 
 export interface ModeloWhatsapp {
   chave: ChaveModeloWhatsapp;
@@ -113,6 +130,32 @@ export const MODELOS_WHATSAPP: ModeloWhatsapp[] = [
     padrao:
       "Oi, {cliente}! Obrigado por escolher a {loja}. " +
       "Se puder, deixa sua avaliação no Google, ajuda muito a gente: {link_avaliacao}",
+  },
+  {
+    chave: "resumo_dono",
+    titulo: "Resumo pro dono",
+    descricao:
+      "Aparece no Início (Hoje ou Este mês) e no Fechamento do caixa, depois de fechar. Abre o WhatsApp com os números do dia ou do mês, e quem escolhe o contato e manda é você. Linha que quem aperta o botão não pode ver sai do texto inteira.",
+    marcadores: [
+      "{loja}",
+      "{periodo}",
+      "{vendas}",
+      "{lucro}",
+      "{ticket}",
+      "{os_abertas}",
+      "{contas_vencendo}",
+      "{diferenca_caixa}",
+    ],
+    // Tarefa #397. Cada número numa linha própria: é a linha inteira que sai
+    // quando a pessoa não pode ver aquele número.
+    padrao:
+      "Resumo da {loja}, {periodo}:\n" +
+      "Recebido: {vendas}\n" +
+      "Lucro: {lucro}\n" +
+      "Ticket médio: {ticket}\n" +
+      "OS abertas: {os_abertas}\n" +
+      `Contas a pagar vencidas ou vencendo em até ${DIAS_DE_CONTAS_VENCENDO} dias: {contas_vencendo}\n` +
+      "Fechamento do caixa: {diferenca_caixa}",
   },
 ];
 
@@ -223,8 +266,11 @@ export function telefoneParaWhatsapp(telefone: string | null | undefined): strin
  * montada com dado do banco é exatamente o caso que o checklist de segurança
  * do Electron alerta (item 15).
  */
-export function montarUrlWhatsapp(telefoneNormalizado: string, texto: string): string {
-  return `https://wa.me/${telefoneNormalizado}?text=${encodeURIComponent(texto)}`;
+export function montarUrlWhatsapp(telefoneNormalizado: string | null, texto: string): string {
+  // Sem número (#397, o resumo pro dono): `https://wa.me/?text=…` abre o
+  // WhatsApp pedindo pra pessoa escolher o contato. O processo principal só
+  // confere o endereço (https e wa.me), então este passa igual.
+  return `https://wa.me/${telefoneNormalizado ?? ""}?text=${encodeURIComponent(texto)}`;
 }
 
 /**
@@ -255,5 +301,126 @@ export function montarTextoAvaliacao(dados: {
     cliente: dados.cliente,
     loja: dados.loja,
     link_avaliacao: dados.link,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Resumo pro dono (#397)
+// ---------------------------------------------------------------------------
+
+/**
+ * Os números do resumo. `null` quer dizer "a pessoa não pode ver este número"
+ * (ou ele não existe nesse resumo, como a diferença do caixa fora do
+ * fechamento): a linha dele SAI do texto. Nunca vira R$ 0,00, pela mesma
+ * razão dos cartões do Início (`MODULOS_DO_CARTAO`): zero linha somada é um
+ * número com cara de verdade pra quem só não tem acesso.
+ */
+export interface NumerosResumoDono {
+  vendas: number | null;
+  lucro: number | null;
+  ticket: number | null;
+  osAbertas: number | null;
+  contasVencendo: number | null;
+  diferencaCaixa: number | null;
+}
+
+export type PeriodoResumoDono = "dia" | "mes";
+
+/**
+ * Junta os números do resumo SEM conta nova: cada um vem da mesma função que
+ * o Início e o Caixa usam (`metricasDoPeriodo`, `contasVencendoAte`,
+ * `ehOsAberta` e, no fechamento, `diferencaDoFechamento` já calculada por
+ * quem chama). Se um dia o cartão mudar, o resumo muda junto.
+ *
+ * @param referencia o dia do resumo (no fechamento, o dia que foi fechado)
+ * @param hoje       o dia de agora: as contas vencendo olham daqui pra frente
+ */
+export function numerosDoResumoDono(entrada: {
+  periodo: PeriodoResumoDono;
+  referencia: Date;
+  hoje: Date;
+  movimentos: readonly MovimentoCaixa[];
+  custoDaOrdem: CustoDaOrdem;
+  ordens: readonly { status: string }[];
+  contas: ContaPagar[];
+  podeVer: (modulo: ModuloChave) => boolean;
+  diferencaCaixa?: number | null;
+}): NumerosResumoDono {
+  const janela =
+    entrada.periodo === "mes" ? janelaDoMesAteODia(entrada.referencia) : janelaDoDia(entrada.referencia);
+  const metricas = metricasDoPeriodo([...entrada.movimentos], janela, entrada.custoDaOrdem);
+  const ve = (cartao: Parameters<typeof moduloQueFaltaAoCartao>[0]) =>
+    moduloQueFaltaAoCartao(cartao, entrada.podeVer) === null;
+
+  return {
+    vendas: ve("vendas_mes") ? metricas.vendas : null,
+    lucro: ve("lucro_mes") ? metricas.lucro : null,
+    ticket: ve("ticket_medio_mes") ? metricas.ticketMedio : null,
+    osAbertas: mostraBlocosDeOS(entrada.podeVer) ? entrada.ordens.filter(ehOsAberta).length : null,
+    contasVencendo: ve("contas_pagar_vencendo") ? contasVencendoAte(entrada.contas, entrada.hoje) : null,
+    diferencaCaixa: entrada.diferencaCaixa ?? null,
+  };
+}
+
+function dataBr(data: Date, comAno = true): string {
+  const dia = String(data.getDate()).padStart(2, "0");
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  return comAno ? `${dia}/${mes}/${data.getFullYear()}` : `${dia}/${mes}`;
+}
+
+function mesmoDia(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** O que entra no {periodo}: "hoje (11/11/2026)", "este mês (01/11 a 11/11/2026)" ou "dia 10/11/2026". */
+export function periodoDoResumo(periodo: PeriodoResumoDono, referencia: Date, hoje: Date): string {
+  if (periodo === "mes") {
+    const inicio = janelaDoMesAteODia(referencia).inicio;
+    return `este mês (${dataBr(inicio, false)} a ${dataBr(referencia)})`;
+  }
+  return mesmoDia(referencia, hoje) ? `hoje (${dataBr(referencia)})` : `dia ${dataBr(referencia)}`;
+}
+
+/** A diferença do fechamento em palavras, com o sinal certo. */
+function textoDaDiferenca(diferenca: number): string {
+  const situacao = situacaoDaDiferenca(diferenca);
+  if (situacao === "bateu") return "bateu certinho";
+  return `${situacao === "faltou" ? "faltaram" : "sobraram"} ${formatarMoeda(Math.abs(diferenca))}`;
+}
+
+/**
+ * O texto do resumo, a partir do modelo da loja (ou do padrão).
+ *
+ * Linha que tem um marcador cujo número é `null` sai INTEIRA, inclusive num
+ * modelo editado pela loja (se ela puser dois números na mesma linha e um
+ * deles for escondido, a linha toda sai: é o jeito de nunca mostrar meia
+ * informação nem um "—" que pareça erro).
+ */
+export function textoResumoDono(dados: {
+  loja: string | null | undefined;
+  periodo: string;
+  numeros: NumerosResumoDono;
+  modelo?: string;
+}): string {
+  const { numeros } = dados;
+  const valores: Record<string, string | null> = {
+    vendas: numeros.vendas === null ? null : formatarMoeda(numeros.vendas),
+    lucro: numeros.lucro === null ? null : formatarMoeda(numeros.lucro),
+    ticket: numeros.ticket === null ? null : formatarMoeda(numeros.ticket),
+    os_abertas: numeros.osAbertas === null ? null : String(numeros.osAbertas),
+    contas_vencendo: numeros.contasVencendo === null ? null : formatarMoeda(numeros.contasVencendo),
+    diferenca_caixa: numeros.diferencaCaixa === null ? null : textoDaDiferenca(numeros.diferencaCaixa),
+  };
+  const escondidos = Object.entries(valores)
+    .filter(([, valor]) => valor === null)
+    .map(([marcador]) => `{${marcador}}`);
+
+  const modelo = dados.modelo ?? modeloPorChave("resumo_dono").padrao;
+  const linhas = modelo.split(/\r?\n/).filter((linha) => !escondidos.some((m) => linha.includes(m)));
+
+  return preencherModelo(linhas.join("\n"), {
+    loja: dados.loja,
+    periodo: dados.periodo,
+    ...valores,
   });
 }

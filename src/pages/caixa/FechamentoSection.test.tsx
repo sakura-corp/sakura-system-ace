@@ -21,7 +21,33 @@ vi.mock("@/lib/fechamentoCaixa", () => ({
   desfazerFechamentoCaixa: (...a: unknown[]) => desfazerFechamentoCaixa(...a),
 }));
 
+// Resumo pro dono (#397): o WhatsApp, as OS, as contas e os modelos.
+const abrirWhatsappSemNumero = vi.fn();
+vi.mock("@/lib/whatsapp", () => ({
+  abrirWhatsappSemNumero: (...a: unknown[]) => abrirWhatsappSemNumero(...a),
+}));
+const listarOrdens = vi.fn();
+vi.mock("@/lib/ordensServico", () => ({ listarOrdens: (...a: unknown[]) => listarOrdens(...a) }));
+const listarContasPagar = vi.fn();
+vi.mock("@/lib/contasPagar", () => ({ listarContasPagar: (...a: unknown[]) => listarContasPagar(...a) }));
+const listarModelosWhatsapp = vi.fn();
+vi.mock("@/lib/modelosWhatsapp", async (original) => ({
+  ...(await original<typeof import("@/lib/modelosWhatsapp")>()),
+  listarModelosWhatsapp: (...a: unknown[]) => listarModelosWhatsapp(...a),
+}));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+let operador: Record<string, unknown> | null = { id: "op", admin: true, permissoes: [] };
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ operador, lojaAtual: { id: "l", nome: "Loja Centro" } }),
+}));
+
 const { FechamentoSection } = await import("./FechamentoSection");
+const { diferencaDoFechamento } = await import("@/schemas/fechamentoCaixa");
+
+/** O texto que foi pro WhatsApp, com o espaço do "R$ " trocado por um comum. */
+function textoAberto(): string {
+  return String(abrirWhatsappSemNumero.mock.calls[0][0]).replace(/\u00a0/g, " ");
+}
 
 const hoje = hojeLocal();
 const agora = new Date().toISOString();
@@ -52,6 +78,11 @@ beforeEach(() => {
   fecharCaixa.mockReset().mockResolvedValue("novo-id");
   desfazerFechamentoCaixa.mockReset().mockResolvedValue(undefined);
   vi.spyOn(window, "confirm").mockReturnValue(true);
+  abrirWhatsappSemNumero.mockReset().mockResolvedValue(undefined);
+  listarOrdens.mockReset().mockResolvedValue([{ id: "o1", status: "em_andamento" }]);
+  listarContasPagar.mockReset().mockResolvedValue([]);
+  listarModelosWhatsapp.mockReset().mockResolvedValue({});
+  operador = { id: "op", admin: true, permissoes: [] };
 });
 
 describe("FechamentoSection", () => {
@@ -60,6 +91,7 @@ describe("FechamentoSection", () => {
     const { user } = renderizar(
       <FechamentoSection
         lojaId="l"
+        custoDasOrdens={new Map()}
         movimentos={[
           mov("a", "entrada", 150, "dinheiro"),
           mov("b", "saida", 20, "dinheiro"),
@@ -96,7 +128,7 @@ describe("FechamentoSection", () => {
 
   it("não fecha sem o valor contado", async () => {
     const { user } = renderizar(
-      <FechamentoSection lojaId="l" movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+      <FechamentoSection lojaId="l" movimentos={[]} custoDasOrdens={new Map()} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
     );
     await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
     expect(fecharCaixa).not.toHaveBeenCalled();
@@ -106,7 +138,7 @@ describe("FechamentoSection", () => {
   it("desistir na confirmação não fecha nada", async () => {
     vi.spyOn(window, "confirm").mockReturnValue(false);
     const { user } = renderizar(
-      <FechamentoSection lojaId="l" movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+      <FechamentoSection lojaId="l" movimentos={[]} custoDasOrdens={new Map()} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
     );
     await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "0");
     await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
@@ -117,6 +149,7 @@ describe("FechamentoSection", () => {
     renderizar(
       <FechamentoSection
         lojaId="l"
+        custoDasOrdens={new Map()}
         movimentos={[mov("a", "saida", 45, null)]}
         fechamentos={[]}
         podeDesfazer={false}
@@ -137,6 +170,7 @@ describe("FechamentoSection", () => {
     });
     const props = {
       lojaId: "l",
+      custoDasOrdens: new Map(),
       movimentos: [mov("quebra", "saida", 12.5, "dinheiro"), mov("tarde", "entrada", 70, "dinheiro")],
       fechamentos: [fechado],
       onAtualizado: vi.fn(),
@@ -149,5 +183,68 @@ describe("FechamentoSection", () => {
 
     renderizar(<FechamentoSection {...props} podeDesfazer />);
     expect(screen.getByRole("button", { name: "Desfazer fechamento" })).toBeInTheDocument();
+  });
+
+  it("resumo pro dono: só depois de fechar, e a diferença é a da tela, com o sinal certo", async () => {
+    const fechado = fechamento({ data: hoje, saldo_sistema: 845, valor_contado: 832.5, diferenca: -12.5 });
+    const { user } = renderizar(
+      <FechamentoSection
+        lojaId="l"
+        custoDasOrdens={new Map()}
+        movimentos={[mov("a", "entrada", 150, "dinheiro")]}
+        fechamentos={[fechado]}
+        podeDesfazer={false}
+        onAtualizado={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Resumo pro dono" }));
+    expect(abrirWhatsappSemNumero).toHaveBeenCalledTimes(1);
+    const texto = textoAberto();
+    expect(diferencaDoFechamento(845, 832.5)).toBe(-12.5);
+    expect(texto).toContain("Fechamento do caixa: faltaram R$ 12,50");
+    expect(texto).toContain("Recebido: R$ 150,00");
+    expect(texto).toContain("OS abertas: 1");
+    expect(texto).toContain("Loja Centro");
+  });
+
+  it("resumo pro dono: sobra sai como sobra", async () => {
+    const fechado = fechamento({ data: hoje, saldo_sistema: 100, valor_contado: 105, diferenca: 5 });
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[fechado]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Resumo pro dono" }));
+    expect(textoAberto()).toContain("Fechamento do caixa: sobraram R$ 5,00");
+  });
+
+  it("resumo pro dono: não aparece antes de fechar o dia", () => {
+    renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    expect(screen.queryByRole("button", { name: "Resumo pro dono" })).not.toBeInTheDocument();
+  });
+
+  it("resumo pro dono: só com Caixa, sem buscar OS nem contas, e as duas linhas somem", async () => {
+    operador = { id: "op", admin: false, permissoes: ["caixa"] };
+    const fechado = fechamento({ data: hoje, saldo_sistema: 100, valor_contado: 100, diferenca: 0 });
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[fechado]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Resumo pro dono" }));
+    const texto = textoAberto();
+    expect(listarOrdens).not.toHaveBeenCalled();
+    expect(listarContasPagar).not.toHaveBeenCalled();
+    expect(texto).not.toMatch(/OS abertas|Contas a pagar/);
+    expect(texto).toContain("Fechamento do caixa: bateu certinho");
+  });
+
+  it("resumo pro dono: usa o texto que a loja editou em Configurações", async () => {
+    listarModelosWhatsapp.mockResolvedValue({ resumo_dono: "Chefe, {periodo}: {diferenca_caixa}" });
+    const fechado = fechamento({ data: hoje, saldo_sistema: 100, valor_contado: 90, diferenca: -10 });
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[fechado]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Resumo pro dono" }));
+    expect(listarModelosWhatsapp).toHaveBeenCalledWith("l");
+    expect(textoAberto()).toMatch(/^Chefe, hoje \(\d{2}\/\d{2}\/\d{4}\): faltaram R\$ 10,00$/);
   });
 });
