@@ -77,7 +77,7 @@ function documento(os: OrdemServico, valorCobrado: number | null = null): string
 function texto(trecho: string): string {
   return trecho
     .replace(/<[^>]+>/g, " ")
-    .replace(/ /g, " ")
+    .replace(/\u00a0/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -171,7 +171,7 @@ describe("documento de garantia: os números do papel (#915)", () => {
       parcelas: [
         "1x | 10/04/2026 | Cartão de crédito | R$ 146,53",
         "2x | 10/05/2026 | Cartão de crédito | R$ 146,53",
-        "3x | 10/06/2026 | Cartão de crédito | R$ 146,53",
+        "3x | 10/06/2026 | Cartão de crédito | R$ 146,54",
       ],
       aVista: null,
     });
@@ -203,7 +203,7 @@ describe("documento de garantia: os números do papel (#915)", () => {
       // Aqui não é só a última que muda: 100,28 em 3 sobra 2 centavos, e a
       // repartição dá 33,42 / 33,43 / 33,43, igual à tela de faturamento.
       parcelas: [
-        "1x | 10/04/2026 | Cartão de crédito | R$ 33,43",
+        "1x | 10/04/2026 | Cartão de crédito | R$ 33,42",
         "2x | 10/05/2026 | Cartão de crédito | R$ 33,43",
         "3x | 10/06/2026 | Cartão de crédito | R$ 33,43",
       ],
@@ -232,7 +232,7 @@ describe("documento de garantia: os números do papel (#915)", () => {
       parcelas: [
         "1x | 10/04/2026 | Cartão de crédito | R$ 33,33",
         "2x | 10/05/2026 | Cartão de crédito | R$ 33,33",
-        "3x | 10/06/2026 | Cartão de crédito | R$ 33,33",
+        "3x | 10/06/2026 | Cartão de crédito | R$ 33,34",
       ],
       aVista: null,
     });

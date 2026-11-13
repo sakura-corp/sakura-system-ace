@@ -37,6 +37,45 @@ export function somarValoresLiquidos(itens: readonly ItemComValor[]): number {
   );
 }
 
+export interface TotaisDoDocumento {
+  /** Soma de quantidade × preço das peças, ANTES do desconto. */
+  brutoPecas: number;
+  /** Soma de quantidade × preço dos serviços, ANTES do desconto. */
+  brutoServicos: number;
+  /** brutoPecas + brutoServicos. */
+  subtotal: number;
+  /** A soma dos descontos de todas as linhas. */
+  descontos: number;
+  /** O que a OS vale: a mesma soma de `totalOrdem` (`somarValoresLiquidos`). */
+  total: number;
+}
+
+/**
+ * Os totais do documento de garantia (#915): ele mostra Produtos e Serviços
+ * **brutos** e os Descontos numa linha à parte, por isso não dá pra usar
+ * `totalPorTipo` (que já desconta) sem mudar o número impresso.
+ *
+ * Não arredonda (igual ao resto deste arquivo). Os brutos e os descontos
+ * somam na mesma ordem da conta que o documento fazia à mão, bit a bit.
+ */
+export function totaisDoDocumento(
+  itens: readonly (ItemComValor & { tipo: string })[],
+): TotaisDoDocumento {
+  const bruto = (tipo: string) =>
+    itens
+      .filter((item) => item.tipo === tipo)
+      .reduce((soma, item) => soma + item.quantidade * item.preco_unitario, 0);
+  const brutoPecas = bruto("peca");
+  const brutoServicos = bruto("servico");
+  return {
+    brutoPecas,
+    brutoServicos,
+    subtotal: brutoPecas + brutoServicos,
+    descontos: itens.reduce((soma, item) => soma + item.desconto, 0),
+    total: somarValoresLiquidos(itens),
+  };
+}
+
 /** Total de um pedido de compra: quantidade pedida × preço (sem preço conta zero). */
 export function totalDoPedidoCompra(
   itens: readonly { quantidade_pedida: number; preco_unitario: number | null }[],
