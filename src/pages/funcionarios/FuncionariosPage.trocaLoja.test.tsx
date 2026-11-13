@@ -155,6 +155,32 @@ describe("Funcionários (Comissões): troca de loja no meio da carga (#927)", ()
     expect(screen.queryByText("OS da-a")).not.toBeInTheDocument();
   });
 
+  // Achado da revisão final: com os dados da A na tela, ir pra B e voltar pra
+  // A antes de a B responder. A busca da B não pode continuar valendo.
+  it("A → B → A com a B respondendo por último: a tela fica com os da A, sem 'Carregando...'", async () => {
+    const b = adiada<OrdemParaComissao[]>();
+    m.listarOrdensParaComissoes.mockImplementation(async (loja: string) =>
+      loja === "loja-a" ? [os("da-a")] : b.promessa,
+    );
+    const { user, rerender } = renderizar(<FuncionariosPage />);
+    await user.click(screen.getByRole("button", { name: "Comissões" }));
+    expect(await screen.findByText("OS da-a")).toBeInTheDocument();
+
+    await trocarPraB(rerender, m.listarOrdensParaComissoes);
+    auth.lojaAtual = lojaA;
+    rerender(<FuncionariosPage />);
+    expect(await screen.findByText("OS da-a")).toBeInTheDocument();
+
+    await act(async () => {
+      b.resolver([os("da-b")]);
+      await b.promessa;
+    });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.getByText("OS da-a")).toBeInTheDocument();
+    expect(screen.queryByText("OS da-b")).not.toBeInTheDocument();
+    expect(screen.queryByText("Carregando...")).not.toBeInTheDocument();
+  });
+
   it("os pagamentos da A chegam depois da B: a tela fica com os da B", async () => {
     const { a, b } = porLoja<ComissaoFechamento[]>(m.listarComissoesPagas);
     const { user, rerender } = renderizar(<FuncionariosPage />);

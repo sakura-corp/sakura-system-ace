@@ -98,7 +98,15 @@ export function FuncionariosPage() {
 
   useEffect(() => {
     async function carregarComissoes() {
-      if (aba !== "comissoes" || !lojaAtual || comissoesNaTela) return;
+      if (aba !== "comissoes" || !lojaAtual || comissoesNaTela) {
+        // Sem busca nova: a que ainda anda (de outra loja, ou desta antes de
+        // sair da aba) perde a vez. Senão, ir pra B e voltar pra A antes de a
+        // B responder deixava a resposta da B por cima da A, e a aba presa em
+        // "Carregando...". Fora da aba, ela recomeça ao voltar.
+        cargaComissoes.comecar(lojaAtual?.id);
+        setCarregandoComissoes(false);
+        return;
+      }
       const carga = cargaComissoes.comecar(lojaAtual.id);
       if (!carga) return;
       setCarregandoComissoes(true);
