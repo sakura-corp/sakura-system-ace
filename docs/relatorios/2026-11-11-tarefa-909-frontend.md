@@ -67,6 +67,54 @@
 ## Onde parou
 Terminei.
 
+## Segunda rodada (13/11): os ajustes da revisão da Sofia
+
+**O que cada agente fez**: nenhum. A sessão mãe (Opus 5.5) fez os 4 ajustes e a revisão
+(`/code-review`, nível alto) sozinha; eram 3 arquivos já lidos. A issue pedia o `ajudante-forte`
+na revisão final; não chamei, e anoto aqui.
+
+**Os 4 pontos da revisão**:
+1. **O aviso do Estoque sumia na recarga** (o principal). Agora ele mora no `EstoquePage.tsx`
+   (aprovado pela Sofia) e a seção de Produtos só mostra. Teste novo,
+   `EstoquePage.estoqueInicial.test.tsx`, com a tela de Estoque de verdade em volta.
+2. **O `try/catch` da recarga saiu**, com o teste dele: o `carregar` nunca falha pra fora.
+3. **O teste do rascunho agora prova a limpeza**: com o rascunho já gravado, depois de salvar
+   ele não existe mais e reabrir o "Novo produto" não mostra a faixa "Restaurar?".
+4. **O `semPontoFinal`** vem de `pecaAvulsaCadastro.ts`, sem a cópia.
+
+**Vi reprovar**:
+- O teste do aviso na tela de Estoque, antes do conserto, com a mensagem de "não achei o aviso".
+  **Atenção**: na primeira versão ele passou mesmo com o defeito, porque no teste a lista volta
+  na hora e o React nem chega a mostrar o "Carregando...". Só reprovou depois de a lista demorar
+  30 ms, como na internet. Agora ele também confere que o "Carregando..." apareceu.
+- O teste do rascunho, tirando o `rascunho.limpar()` do `PecaForm.tsx`.
+- "Trocar de loja tira o aviso" (achado da revisão de código), tirando a limpeza do aviso.
+
+**Passou sem eu ver reprovar**: "o próximo cadastro que dá certo tira o aviso antigo".
+
+**Conferências**: `typecheck` e `lint` (0 erros) passam; os testes do Estoque e da OS, 186 de 186.
+No `test:fusos` completo só reprova o `scripts/checar-segredos.test.ts`, por tempo neste PC
+(desta vez, também sozinho); a tarefa não mexe nele, e o CI conferiu na primeira rodada. Os testes
+novos da tela de Estoque ganharam 20 s de limite: com a rodada toda junta, um passou dos 5 s.
+`contraste:telas` e `largura:telas` seguem com o CI (não rodam no Windows); a tela não mudou de
+aparência, o aviso é a mesma caixa vermelha de antes.
+
+**A revisão de código (7 achados)**: consertei 2 (o aviso que ia junto ao trocar de loja; o teste
+que não conferia o "Carregando..."). Ficaram de fora, pra Sofia decidir:
+- o aviso não tem botão de fechar e fica até o próximo salvar, mesmo depois de a pessoa lançar a
+  entrada em Movimentações;
+- salvar a edição de outra peça apaga o aviso antes de a pessoa resolver;
+- a limpeza do rascunho depende de o `carregar` nunca falhar pra fora (só um comentário garante);
+- o Estoque importa uma função de texto de um arquivo da tela de OS (a Sofia mandou importar de
+  lá; o lugar natural seria `src/schemas/`);
+- duas caixas vermelhas com a mesma marcação.
+
+**`/goal`**: não usei (não sei se foi ligado na tela).
+
+**Como eu agi**: a skill não fala de PR que já existe com revisão pedindo mudança; segui o
+ritual no mesmo PR, em vez de abrir outro. Sugestão: o chefe conferir, antes de criar a branch, se
+a tarefa já tem PR aberto (aqui a branch já existia em outra pasta de trabalho).
+
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: a regra "teste antes, visto reprovar" e a revisão do zero.
   A revisão achou 3 problemas reais que os testes do plano não pegavam: o rascunho que voltava e

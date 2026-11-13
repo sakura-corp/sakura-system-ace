@@ -97,6 +97,8 @@ export function EstoquePage() {
   }
 
   useEffect(() => {
+    // Outra loja: o aviso do estoque inicial era de uma peça da anterior.
+    setAvisoEstoqueInicial(null);
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);

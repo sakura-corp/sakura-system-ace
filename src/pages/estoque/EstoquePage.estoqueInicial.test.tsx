@@ -13,8 +13,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { Peca } from "@/types/peca";
 
+const auth = vi.hoisted(() => ({ lojaAtual: { id: "l1", nome: "Matriz" } }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ lojaAtual: { id: "l1", nome: "Matriz" }, operador: { id: "op", admin: false } }),
+  useAuth: () => ({ lojaAtual: auth.lojaAtual, operador: { id: "op", admin: false } }),
 }));
 const listarPecas = vi.fn();
 const criarPeca = vi.fn();
@@ -58,6 +59,7 @@ const AVISO =
   "Lance a entrada em Estoque → Movimentações.";
 
 beforeEach(() => {
+  auth.lojaAtual = { id: "l1", nome: "Matriz" };
   localStorage.clear();
   vi.clearAllMocks();
   Element.prototype.scrollIntoView = vi.fn();
@@ -83,19 +85,38 @@ async function cadastrarNova(user: ReturnType<typeof renderizar>["user"]) {
   await user.click(screen.getByRole("button", { name: "Salvar peça" }));
 }
 
-describe("EstoquePage — o aviso do estoque inicial sobrevive à recarga (#909)", () => {
+// Cada teste preenche o formulário inteiro (às vezes duas vezes): com a
+// rodada toda junta num PC mais lento, passava dos 5 s padrão.
+describe("EstoquePage — o aviso do estoque inicial sobrevive à recarga (#909)", { timeout: 20_000 }, () => {
   it("a peça foi criada e o estoque inicial falhou: depois da recarga, o aviso continua na tela", async () => {
     criarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
     const { user, container } = renderizar(<EstoquePage />);
 
     await cadastrarNova(user);
 
-    // A recarga de verdade aconteceu (a lista foi pedida de novo) e acabou.
+    // A recarga de verdade aconteceu: a seção saiu da tela ("Carregando..."),
+    // a lista foi pedida de novo e voltou.
+    expect(await screen.findByText("Carregando...")).toBeInTheDocument();
     await waitFor(() => expect(listarPecas).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByText("Carregando...")).toBeNull());
     expect(screen.getByText(AVISO)).toBeInTheDocument();
     expect(container.querySelector("form")).toBeNull();
     expect(criarPeca).toHaveBeenCalledTimes(1);
+  });
+
+  // Revisão de código (13/11): o aviso falava de uma peça da loja anterior.
+  it("trocar de loja tira o aviso", async () => {
+    criarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    const { user, rerender } = renderizar(<EstoquePage />);
+    await cadastrarNova(user);
+    expect(await screen.findByText(AVISO)).toBeInTheDocument();
+
+    auth.lojaAtual = { id: "l2", nome: "Filial" };
+    rerender(<EstoquePage />);
+    await waitFor(() => expect(listarPecas).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(screen.queryByText("Carregando...")).toBeNull());
+    expect(screen.getByRole("button", { name: "+ Novo produto" })).toBeInTheDocument();
+    expect(screen.queryByText(AVISO)).toBeNull();
   });
 
   it("o próximo cadastro que dá certo tira o aviso antigo", async () => {
