@@ -161,11 +161,7 @@ export function AuditoriaPage() {
                     {TABELA_AUDITORIA_LABEL[registro.tabela] ?? registro.tabela}
                   </td>
                   <td className="px-4 py-3">
-                    <Etiqueta
-                      className={
-                        CLASSE_DO_SELO[registro.acao]
-                      }
-                    >
+                    <Etiqueta className={CLASSE_DO_SELO[registro.acao]}>
                       {ACAO_AUDITORIA_LABEL[registro.acao]}
                     </Etiqueta>
                   </td>
