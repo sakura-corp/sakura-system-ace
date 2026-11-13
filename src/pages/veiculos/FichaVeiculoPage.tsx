@@ -23,6 +23,7 @@ import {
 } from "@/schemas/fichaVeiculo";
 import { nomeOrdem, STATUS_COR, STATUS_LABEL, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
+import { Etiqueta } from "@/components/Etiqueta";
 
 function km(valor: number): string {
   return `${valor.toLocaleString("pt-BR")} km`;
@@ -325,11 +326,9 @@ export function FichaVeiculoPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span
-                        className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_COR[ordem.status]}`}
-                      >
+                      <Etiqueta className={STATUS_COR[ordem.status]}>
                         {STATUS_LABEL[ordem.status]}
-                      </span>
+                      </Etiqueta>
                       <span className="whitespace-nowrap text-corpo font-semibold text-sakura-purple-dark">
                         {formatarMoeda(totalOrdem(ordem.itens ?? []))}
                       </span>

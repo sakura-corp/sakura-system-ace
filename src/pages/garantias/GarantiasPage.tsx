@@ -7,6 +7,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarItensComGarantia, type ItemGarantia } from "@/lib/garantias";
 import { garantiaVencida, vencimentoDaGarantia } from "@/schemas/garantia";
 import { temPermissao } from "@/types/operador";
+import { Etiqueta } from "@/components/Etiqueta";
 
 type FiltroStatus = "todos" | "dentro_do_prazo" | "vencida";
 
@@ -134,15 +135,15 @@ export function GarantiasPage() {
                   </td>
                   <td className="px-4 py-3">{diaBrasileiro(vencimento)}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                    <Etiqueta
+                      className={
                         vencida
                           ? "bg-red-50 text-red-700"
                           : "bg-emerald-50 text-emerald-700"
-                      }`}
+                      }
                     >
                       {vencida ? "Vencida" : "Dentro do prazo"}
-                    </span>
+                    </Etiqueta>
                   </td>
                 </tr>
               ))}

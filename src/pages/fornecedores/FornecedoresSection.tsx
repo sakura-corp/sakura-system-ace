@@ -10,6 +10,7 @@ import {
 import type { Fornecedor, NovoFornecedor } from "@/types/fornecedor";
 import { FornecedorForm } from "./FornecedorForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Etiqueta } from "@/components/Etiqueta";
 
 interface FornecedoresSectionProps {
   fornecedores: Fornecedor[];
@@ -113,15 +114,15 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
                     {fornecedor.cidade ? `${fornecedor.cidade}/${fornecedor.uf ?? ""}` : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                    <Etiqueta
+                      className={
                         fornecedor.ativo
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
+                      }
                     >
                       {fornecedor.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                    </Etiqueta>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <AcoesDaLinha

@@ -23,6 +23,7 @@ import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
 import { somar } from "@/schemas/dinheiro";
+import { Etiqueta } from "@/components/Etiqueta";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -238,15 +239,15 @@ export function ContasReceberPage() {
                           <td className="px-4 py-3">{conta.descricao}</td>
                           <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                            <Etiqueta
+                              className={
                                 vencida
                                   ? "bg-red-50 text-red-700"
                                   : "bg-amber-50 text-amber-700"
-                              }`}
+                              }
                             >
                               {vencida ? "Vencida" : "Pendente"}
-                            </span>
+                            </Etiqueta>
                           </td>
                           <td className="px-4 py-3 text-right">
                             {/* O clique no botão não pode abrir a OS junto: a

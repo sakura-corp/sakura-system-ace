@@ -18,6 +18,7 @@ import { CancelarNotaModal } from "./CancelarNotaModal";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 import { VerDanfeModal } from "./VerDanfeModal";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Etiqueta } from "@/components/Etiqueta";
 
 // Verde no mesmo tom do "Finalizada" da lista de OS; vermelho no mesmo tom
 // do "cancelada" da janela da nota (VerDanfeModal), pra a mesma situação ter
@@ -32,12 +33,12 @@ const COR_SITUACAO: Record<TomSituacaoNota, string> = {
 function EtiquetaSituacao({ arquivo }: { arquivo: NotaFiscalArquivo }) {
   const situacao = situacaoDaNota(arquivo);
   return (
-    <span
+    <Etiqueta
       title={situacao.rotulo}
-      className={`inline-block max-w-full truncate whitespace-nowrap rounded-full px-2.5 py-1 align-middle text-rotulo font-medium ${COR_SITUACAO[situacao.tom]}`}
+      className={`inline-block max-w-full truncate align-middle ${COR_SITUACAO[situacao.tom]}`}
     >
       {situacao.rotulo}
-    </span>
+    </Etiqueta>
   );
 }
 

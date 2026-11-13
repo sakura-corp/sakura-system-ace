@@ -19,6 +19,7 @@ import { ImportarNotaFiscalXmlModal } from "./ImportarNotaFiscalXmlModal";
 import { PedidoCompraForm } from "./PedidoCompraForm";
 import { ReceberPedidoModal } from "./ReceberPedidoModal";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Etiqueta } from "@/components/Etiqueta";
 
 interface PedidosCompraSectionProps {
   pedidos: PedidoCompra[];
@@ -214,11 +215,9 @@ export function PedidosCompraSection({
                     {formatarMoeda(totalPedido(pedido.itens ?? []))}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_PEDIDO_COR[pedido.status]}`}
-                    >
+                    <Etiqueta className={STATUS_PEDIDO_COR[pedido.status]}>
                       {STATUS_PEDIDO_LABEL[pedido.status]}
-                    </span>
+                    </Etiqueta>
                   </td>
                   <td className="px-4 py-3">
                     {/* Mandar o pedido pro fornecedor é o gesto seguinte a

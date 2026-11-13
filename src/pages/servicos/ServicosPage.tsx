@@ -14,6 +14,7 @@ import type { CategoriaServico } from "@/types/categoriaServico";
 import type { NovoServico, Servico } from "@/types/servico";
 import { ServicoForm } from "./ServicoForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Etiqueta } from "@/components/Etiqueta";
 
 function formatarPreco(valor: number | null): string {
   if (valor === null) return "—";
@@ -170,19 +171,27 @@ export function ServicosPage() {
                   <td className="px-4 py-3">
                     {categorias.find((c) => c.id === servico.categoria_id)?.nome ?? "—"}
                   </td>
-                  <td className="px-4 py-3">{servico.codigo_interno || "—"}</td>
+                  {/* O código não quebra no hífen em 1366 ("SV-ALINH-" numa linha,
+                      "01" na outra): teto de largura, "…" e o código inteiro ao
+                      passar o mouse, como em Produtos (#876, #932). */}
+                  <td
+                    className="max-w-[10rem] truncate whitespace-nowrap px-4 py-3"
+                    title={servico.codigo_interno || undefined}
+                  >
+                    {servico.codigo_interno || "—"}
+                  </td>
                   <td className="px-4 py-3">{formatarPreco(servico.preco_padrao)}</td>
                   <td className="px-4 py-3">{formatarPreco(servico.custo)}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                    <Etiqueta
+                      className={
                         servico.ativo
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
+                      }
                     >
                       {servico.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                    </Etiqueta>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <AcoesDaLinha

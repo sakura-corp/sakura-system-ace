@@ -12,6 +12,7 @@ import {
   type RegistroAuditoria,
 } from "@/types/auditoria";
 import type { Operador } from "@/types/operador";
+import { Etiqueta } from "@/components/Etiqueta";
 
 const CLASSE_DO_SELO: Record<AcaoAuditoria, string> = {
   criar: "bg-emerald-50 text-emerald-800",
@@ -160,13 +161,13 @@ export function AuditoriaPage() {
                     {TABELA_AUDITORIA_LABEL[registro.tabela] ?? registro.tabela}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                    <Etiqueta
+                      className={
                         CLASSE_DO_SELO[registro.acao]
-                      }`}
+                      }
                     >
                       {ACAO_AUDITORIA_LABEL[registro.acao]}
-                    </span>
+                    </Etiqueta>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button
