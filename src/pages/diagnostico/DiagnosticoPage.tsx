@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { baixarDiagnostico, coletarDiagnostico } from "@/lib/diagnostico";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -76,20 +77,43 @@ function Registro({ titulo, texto, vazio }: { titulo: string; texto: string; vaz
 
 export function DiagnosticoPage() {
   const { operador, lojaAtual } = useAuth();
-  const [dados, setDados] = useState<Diagnostico | null>(null);
+  // #927: só a coleta mais nova mexe na tela; e se a da loja nova der erro, o
+  // diagnóstico guardado (da loja anterior) não aparece.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  // Sem loja ativa o gancho não começa carga, mas o diagnóstico TEM que rodar
+  // (é a tela de socorro, e o relatório diz "nenhuma loja ativa"): aí a coleta
+  // mais nova é a de maior número aqui.
+  const coletaSemLoja = useRef(0);
+  const [dadosGuardados, setDados] = useState<Diagnostico | null>(null);
+  const dados = !lojaAtual || dadosSaoDaLoja ? dadosGuardados : null;
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
 
   const verificar = useCallback(() => {
+    const carga = comecar(lojaAtual?.id);
+    // Um "verificar" guardado de antes da troca de loja nem começa.
+    if (!carga && lojaAtual) return;
+    const minhaSemLoja = ++coletaSemLoja.current;
+    const aindaEhAtual = () =>
+      carga ? carga.aindaEhAtual() : minhaSemLoja === coletaSemLoja.current;
     setCarregando(true);
     setErro(null);
     setCopiado(false);
     coletarDiagnostico(operador, lojaAtual)
-      .then(setDados)
-      .catch((err) => setErro(mensagemDeErro(err)))
-      .finally(() => setCarregando(false));
-  }, [operador, lojaAtual]);
+      .then((coletado) => {
+        if (!aindaEhAtual()) return;
+        setDados(coletado);
+        carga?.gravou();
+      })
+      .catch((err) => {
+        if (!aindaEhAtual()) return;
+        setErro(mensagemDeErro(err));
+      })
+      .finally(() => {
+        if (aindaEhAtual()) setCarregando(false);
+      });
+  }, [operador, lojaAtual, comecar]);
 
   useEffect(verificar, [verificar]);
 
