@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
@@ -40,6 +41,8 @@ export function ImportarNotasFiscaisModal({
   onFechar,
   onImportado,
 }: ImportarNotasFiscaisModalProps) {
+  // #374: aviso perto do botão; o botão continua clicável (aviso, nunca tranca).
+  const { semConexao } = useConexao();
   const [arquivos, setArquivos] = useState<File[]>([]);
   const [itens, setItens] = useState<ItemRevisao[] | null>(null);
   const [lendo, setLendo] = useState(false);
@@ -191,6 +194,14 @@ export function ImportarNotasFiscaisModal({
           {arquivos.length > 0 && (
             <p className="text-corpo text-sakura-muted">
               {arquivos.length} arquivo(s) selecionado(s).
+            </p>
+          )}
+          {semConexao && (
+            <p
+              role="status"
+              className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+            >
+              Sem internet não dá pra ler a nota por foto: a leitura é feita na nuvem.
             </p>
           )}
           <div className="flex justify-end gap-3">

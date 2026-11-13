@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   CANAIS_ATUALIZACAO,
@@ -17,6 +18,8 @@ import {
 // não é coisa pra estar ao alcance de um clique distraído no balcão.
 export function AtualizacoesComputadorSection() {
   const ponte = typeof window !== "undefined" ? window.sakuraApp : undefined;
+  // #374: aviso perto do botão; nada trava.
+  const { semConexao } = useConexao();
   const disponivel = Boolean(ponte?.canalAtualizacao && ponte?.definirCanalAtualizacao);
 
   const [atual, setAtual] = useState<CanalAtualizacao | null>(null);
@@ -119,6 +122,16 @@ export function AtualizacoesComputadorSection() {
         <p className="mt-3 text-rotulo text-sakura-muted">
           Se este computador já recebeu uma versão que ainda está em teste, ele continua nela até as
           outras lojas passarem dela — nunca volta sozinho para uma versão mais velha.
+        </p>
+      )}
+
+      {semConexao && (
+        <p
+          role="status"
+          className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+        >
+          Sem internet o programa não procura atualização: ele procura sozinho da próxima vez que
+          for aberto com internet. Trocar o canal aqui funciona mesmo assim.
         </p>
       )}
 

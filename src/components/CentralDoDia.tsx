@@ -269,8 +269,10 @@ export function CentralDoDia({
           </button>
         );
       case "estoque_baixo":
+        // A linha só aparece pra quem tem Estoque; com Fornecedores também, vai
+        // direto à Sugestão de compra (a aba só existe pra quem tem os dois).
         return podeFornecedores ? (
-          ir("/fornecedores", "Pedido de compra")
+          ir("/fornecedores", "Sugestão de compra", { aba: "sugestao" })
         ) : (
           ir("/estoque", "Ver no estoque")
         );
@@ -282,9 +284,9 @@ export function CentralDoDia({
     }
   }
 
-  function ir(para: string, rotulo: string) {
+  function ir(para: string, rotulo: string, state?: { aba: string }) {
     return (
-      <button type="button" className={CLASSE_BOTAO} onClick={() => navigate(para)}>
+      <button type="button" className={CLASSE_BOTAO} onClick={() => navigate(para, { state })}>
         {rotulo}
       </button>
     );

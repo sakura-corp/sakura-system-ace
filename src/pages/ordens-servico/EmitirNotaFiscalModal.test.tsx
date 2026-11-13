@@ -18,6 +18,8 @@
  *    nome da peça, sem travar o botão (#968).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "@testing-library/react";
+import { reiniciarConexaoParaTeste } from "@/hooks/useConexao";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { OrdemServico } from "@/types/os";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
@@ -127,6 +129,7 @@ const configuracao = (focus_nfe_configurado: boolean) => ({
 });
 
 beforeEach(() => {
+  reiniciarConexaoParaTeste();
   localStorage.clear();
   vi.clearAllMocks();
   clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
@@ -506,5 +509,36 @@ describe("EmitirNotaFiscalModal — CFOP que não combina com o CSOSN (#968)", (
     expect(screen.queryByText(/não combina com o CSOSN/)).not.toBeInTheDocument();
     expect(screen.queryByText(/código de ICMS ou o CFOP/)).not.toBeInTheDocument();
     expect(confirmar()).toBeEnabled();
+  });
+});
+
+describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
+  it("offline: avisa perto do botão e o Confirmar emissão continua liberado", async () => {
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    expect(await screen.findByRole("button", { name: "Confirmar emissão" })).toBeEnabled();
+    expect(screen.queryByText(/Sem internet a nota não sai/)).not.toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(new Event("offline"));
+    });
+
+    expect(screen.getByText(/Sem internet a nota não sai/)).toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  // Teste no PC (12/11): abrir a janela já sem internet não lê a configuração
+  // da loja; não pode dizer "falta cadastrar o token" e precisa da frase.
+  it("abrindo já sem internet: a frase aparece e não diz que falta o token", async () => {
+    buscarConfiguracaoFiscal.mockRejectedValue(new TypeError("Failed to fetch"));
+    montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    act(() => {
+      window.dispatchEvent(new Event("offline"));
+    });
+
+    expect(await screen.findByText(/Sem conexão com a internet/)).toBeInTheDocument();
+    expect(screen.getByText(/Sem internet a nota não sai/)).toBeInTheDocument();
+    expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
+    // As peças também não vieram: não dá pra dizer que falta cadastrar a peça.
+    expect(screen.queryByText(/Esta nota não pode sair ainda/)).not.toBeInTheDocument();
   });
 });

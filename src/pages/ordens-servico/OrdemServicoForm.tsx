@@ -4,8 +4,9 @@ import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   MOTIVOS_RECUSA,
   MOTIVO_RECUSA_LABEL,
@@ -272,6 +273,8 @@ export function OrdemServicoForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar ordem de serviço:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }
@@ -401,7 +404,17 @@ export function OrdemServicoForm({
                 {ordemExistente.criado_por?.nome ?? "—"}
               </p>
               <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
-                {ordemExistente.cliente?.nome ?? "Cliente"}
+                {ordemExistente.cliente?.nome ? (
+                  <LinkCliente
+                    clienteId={ordemExistente.cliente_id}
+                    nome={ordemExistente.cliente.nome}
+                    podeAbrir
+                    desligado={isDirty}
+                    motivoDesligado="Salve as alterações da OS antes de abrir a ficha do cliente."
+                  />
+                ) : (
+                  "Cliente"
+                )}
                 {ordemExistente.veiculo?.placa ? ` — ${ordemExistente.veiculo.placa}` : ""}
               </h2>
             </div>

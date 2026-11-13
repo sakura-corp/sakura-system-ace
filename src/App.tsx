@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
 import { BuscaGlobal } from "./components/BuscaGlobal";
+import { FaixaSemConexao } from "./components/FaixaSemConexao";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
@@ -37,6 +38,7 @@ import { PainelPage } from "./pages/painel/PainelPage";
 import { RelatoriosPage } from "./pages/relatorios/RelatoriosPage";
 import { ServicosPage } from "./pages/servicos/ServicosPage";
 import { FichaVeiculoPage } from "./pages/veiculos/FichaVeiculoPage";
+import { FichaClientePage } from "./pages/clientes/FichaClientePage";
 import { MODULOS, temPermissao } from "./types/operador";
 
 // Se o operador não tiver permissão pro Início (o "/" padrão),
@@ -161,6 +163,7 @@ export default function App() {
       <main className="min-h-0 min-w-0 flex-1">
         <AreaRolavel className="p-4">
           <BuscaGlobal />
+          <FaixaSemConexao />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
             <Routes>
@@ -172,6 +175,17 @@ export default function App() {
                 element={
                   <PermissaoRoute modulo="clientes">
                     <ClientesPage />
+                  </PermissaoRoute>
+                }
+              />
+              {/* A ficha do cliente (#393) abre como a do veículo: com
+                  Clientes ou Ordens de Serviço. Cada parte dela respeita o
+                  módulo próprio (Contas a Receber, Ordens de Serviço). */}
+              <Route
+                path="/clientes/:id"
+                element={
+                  <PermissaoRoute modulo={["clientes", "ordens_servico"]}>
+                    <FichaClientePage />
                   </PermissaoRoute>
                 }
               />

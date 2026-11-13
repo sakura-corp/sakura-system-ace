@@ -24,8 +24,18 @@ export async function abrirConversaWhatsapp(
     );
   }
 
-  const url = montarUrlWhatsapp(numero, texto);
+  await abrirUrl(montarUrlWhatsapp(numero, texto));
+}
 
+/**
+ * Abre o WhatsApp com a mensagem pronta e SEM número: a pessoa escolhe o
+ * contato (#397, o resumo pro dono — o programa não guarda o telefone dele).
+ */
+export async function abrirWhatsappSemNumero(texto: string): Promise<void> {
+  await abrirUrl(montarUrlWhatsapp(null, texto));
+}
+
+async function abrirUrl(url: string): Promise<void> {
   const ponte = typeof window !== "undefined" ? window.sakuraApp?.abrirWhatsapp : undefined;
   if (ponte) {
     const abriu = await ponte(url);

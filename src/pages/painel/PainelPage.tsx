@@ -15,6 +15,7 @@ import {
   DIAS_PARA_ALERTAR_OS,
   contasVencendoAte,
   diasDesde,
+  ehOsAberta,
   janelaDoMesAteODia,
   mesmaJanelaNoMesAnterior,
   metricasDoPeriodo,
@@ -34,6 +35,13 @@ import {
   confirmarAliquotaCompetencia,
 } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
+import { BotaoResumoDono, type EscolhaResumoDono } from "@/components/BotaoResumoDono";
+import {
+  numerosDoResumoDono,
+  periodoDoResumo,
+  textoResumoDono,
+  type PeriodoResumoDono,
+} from "@/schemas/whatsapp";
 import { CentralDoDia } from "@/components/CentralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
@@ -208,8 +216,45 @@ export function PainelPage() {
     };
   }, [movimentos, custoDasOrdens, contas, chaveDeHoje]);
 
+  // Resumo pro dono (#397). Os dados são buscados DE NOVO na hora do clique,
+  // e o "hoje" também é o do clique: o Início não recarrega sozinho, e um PC
+  // parado nesta tela desde cedo mandaria pro dono os números de horas atrás
+  // (ou de ontem). As contas são as mesmas dos cartões (`numerosDoResumoDono`).
+  const escolhaDoResumo = (periodo: PeriodoResumoDono, rotulo: string): EscolhaResumoDono => ({
+    rotulo,
+    montarTexto: async ({ modelo, loja, podeVer }) => {
+      if (!lojaAtual) throw new Error("Nenhuma loja selecionada.");
+      const referencia = dataDaChave(chaveData(new Date()));
+      const [modeloDaLoja, movimentosAgora, ordensAgora, contasAgora] = await Promise.all([
+        modelo,
+        listarMovimentosCaixa(lojaAtual.id),
+        mostraBlocosDeOS(podeVer) ? listarOrdens(lojaAtual.id) : Promise.resolve([]),
+        podeVer("contas_pagar") ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
+      ]);
+      // Sem o custo o lucro sairia inflado: se falhar, o botão mostra o erro.
+      const custos = await buscarCustoDasOrdens(
+        movimentosAgora.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
+      );
+      return textoResumoDono({
+        loja,
+        periodo: periodoDoResumo(periodo, referencia, referencia),
+        modelo: modeloDaLoja,
+        numeros: numerosDoResumoDono({
+          periodo,
+          referencia,
+          hoje: referencia,
+          movimentos: movimentosAgora,
+          custoDaOrdem: custoDaOrdemPeloBanco(custos),
+          ordens: ordensAgora,
+          contas: contasAgora,
+          podeVer,
+        }),
+      });
+    },
+  });
+
   const filaDeAtendimento = ordens
-    .filter((o) => o.status === "em_andamento")
+    .filter(ehOsAberta)
     .sort((a, b) => (a.data_abertura < b.data_abertura ? -1 : 1));
 
   const veiculosNoPatio = filaDeAtendimento.filter((o) => o.veiculo);
@@ -267,9 +312,18 @@ export function PainelPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-titulo font-semibold text-sakura-purple-dark">Início</h1>
-        <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Início</h1>
+          <p className="text-corpo text-sakura-muted">Visão geral da loja, em tempo real</p>
+        </div>
+        {/* Some se o carregamento falhou: com os dados pela metade, o resumo
+            sairia com números errados com cara de certos. */}
+        {!carregando && !falhouCarregar && (
+          <BotaoResumoDono
+            escolhas={[escolhaDoResumo("dia", "Hoje"), escolhaDoResumo("mes", "Este mês")]}
+          />
+        )}
       </header>
 
       {erro && (

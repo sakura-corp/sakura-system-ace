@@ -122,7 +122,8 @@ abriu e ignora formulário intocado — sem isso, só abrir uma tela e deixar 30
 rascunho falso pra próxima abertura, o que em cinco telas viraria chateação.
 
 **WhatsApp (12/09/2026, item `FN-03` do guia)**: o sistema abre a conversa no WhatsApp com a
-mensagem já escrita, em três lugares — **"Cobrar"** em cada conta pendente de Contas a Receber,
+mensagem já escrita (o "Resumo pro dono" da #397 abre **sem número**, `https://wa.me/?text=…`, e
+a pessoa escolhe o contato), em três lugares — **"Cobrar"** em cada conta pendente de Contas a Receber,
 **"Avisar"** ("seu carro está pronto") em cada OS concluída ou faturada, e **"Enviar"** em cada
 pedido de compra ainda não recebido, com a lista de itens. Existe porque o WhatsApp já é o canal
 por onde essa operação funciona — é por lá que o pai dela manda foto de nota, que ela fala com a
@@ -554,6 +555,29 @@ Quatro coisas que valem saber:
   - **Não abre de dentro do formulário da OS** — sair da OS no meio perderia o que foi digitado.
     Se fizer falta ver o histórico na hora de abrir a OS, o caminho é a ficha numa janela
     (modal), não um link. Não foi pedido.
+- **Ficha do cliente** (11/11/2026, `#393`, sem migration — **ainda não publicada**): o dinheiro
+  de um cliente numa tela só. Rota `/clientes/:id`, aberta com **Clientes ou Ordens de Serviço**,
+  sem entrada no menu. Abre **clicando no nome do cliente** (`LinkCliente`) em Clientes (lista e
+  sumidos), no topo da OS, em Contas a Receber e no "Dono atual" da ficha do veículo. Só lê:
+  receber continua em Contas a Receber. O que mostra:
+  - **Deve** (contas a receber pendentes, com o **atrasado** em destaque: vencimento antes de
+    hoje, no fuso local), **Total comprado** (OS e vendas faturadas, o mesmo "Total" da lista de
+    OS) e **Visitas** (dias diferentes, com a última);
+  - **O que deve**, **O que comprou** (cada OS com "Abrir", só a da loja ativa; a de outra loja
+    diz "outra loja") e **Como pagou** (forma e parcelas de cada OS faturada, e as contas
+    recebidas com a data);
+  - **todas as lojas que a pessoa alcança** (a RLS limita), com o nome da loja quando há mais
+    de uma, como a ficha do veículo.
+  - **Permissão, parte por parte**: sem Contas a Receber, as contas **nem são buscadas** e "Deve"
+    mostra "—" com a frase "Você não tem acesso a Contas a Receber", **nunca R$ 0,00**; sem
+    Ordens de Serviço, as OS vêm pela janela `ordens_servico_clientes` (sem a forma de
+    pagamento) e "Como pagou" mostra "—". Quem não tem Clientes nem OS vê o nome do cliente
+    como texto, sem atalho. O "Consumidor" nunca vira atalho.
+  - **O Voltar da OS aberta por uma ficha** (do cliente ou do veículo) volta pra ficha: a ficha
+    manda `voltarAoFechar` junto do `abrirOrdemId`. Aberta pela lista, pelo Início ou pela
+    busca, o Voltar continua na lista de OS.
+  - As contas em `src/schemas/fichaCliente.ts` (as mesmas da ficha do veículo), a leitura em
+    `src/lib/fichaCliente.ts`.
 - **Funcionários** (duas abas desde 03/09/2026): **"Cadastro"** — RH completo (documentos,
   endereço, cargo/admissão, família/filhos; o formulário em si tem as sub-abas "Dados
   gerais"/"Família"). Todo operador ganha um `funcionarios` espelhado automaticamente. E
@@ -657,6 +681,11 @@ Quatro coisas que valem saber:
     confirmação, e no Diário tudo que entrou depois do fechamento — manual ou OS faturada —
     aparece com a etiqueta "depois do fechamento". No próprio fechamento, uma faixa lista esses
     lançamentos.
+  - **"Resumo pro dono"** (11/11/2026, tarefa #397; ainda não publicado): no dia já fechado, o
+    botão abre o WhatsApp sem número com o resumo **daquele dia** (os mesmos números do Início,
+    na janela do dia) e mais a linha "Fechamento do caixa: faltaram / sobraram R$ X / bateu
+    certinho" (`diferencaDoFechamento`). OS abertas e contas vencendo são buscadas só no clique,
+    e só pra quem tem o módulo. Detalhe no item do Início.
   - **Desfazer é só de admin** (o botão nem aparece pra quem não é), e o histórico embaixo
     soma as diferenças dos últimos dias — a resposta pra "está faltando dinheiro no caixa?".
   As contas ficam em `src/schemas/fechamentoCaixa.ts`, com teste (inclusive de propriedade:
@@ -766,6 +795,15 @@ Quatro coisas que valem saber:
   corrente (item `TL-04` do guia) — a grade de 6 semanas resolvia o dia 31, mas "o que vence mês
   que vem?" continuava sem resposta. **Os cartões não seguem a navegação de propósito**: eles são
   sempre do mês corrente, senão "Vendas mês" mudaria junto e viraria armadilha.
+- **Início — Resumo pro dono** (11/11/2026, tarefa #397; **ainda não publicado**): no canto do
+  título, "Resumo pro dono: **Hoje** | **Este mês**" abre o WhatsApp **sem número** (a pessoa
+  escolhe o contato e manda; nada sai sozinho) com recebido, lucro, ticket médio, OS abertas e
+  contas a pagar vencendo. **Sem conta nova**: os números vêm de `numerosDoResumoDono`
+  (`src/schemas/whatsapp.ts`), que chama as mesmas funções dos cartões e do bloco de OS. Só
+  aparece pra quem tem **Caixa** ou **Relações**; linha que a pessoa não pode ver (contas sem
+  Contas a Pagar, OS sem Ordens de Serviço) **sai do texto**, nunca vira R$ 0,00. Texto editável
+  em Configurações → Mensagens de WhatsApp (modelo `resumo_dono`). O mesmo botão está no
+  Fechamento do caixa (seção do Caixa).
 - **Início — Central do dia** (03/11/2026, tarefa #454; **ainda não publicada**, sai na 0.9.56): acima
   dos cartões, a lista do que precisa de atenção hoje (nota com erro, caixa sem fechar, conta a
   receber vencida, carro pronto, conta a pagar vencendo, OS parada, estoque baixo, o pacote da

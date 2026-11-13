@@ -35,6 +35,39 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 11/11/2026 (noite, 2): o levantamento das pontas soltas; a leva 8 até 30/11
+- **Feito**: o levantamento das pontas soltas dos 4 repositórios (o plano fica no privado da Sofia); a **#978** (a garantia sem tratar "<" e "&") **entrou na leva 7**. Sem código nesta sessão.
+- **Leva 7** (sem mudança desde a tarde): #986, #1007, #1009 e #1003 aprovados esperando o teste no PC do Tiago (o #1003 só entra depois do #985 e do #987: o CI dele falha de verdade com a 0085 antes da 0084); devolvidos #1008, #985 e #987; o #384 (Gusta) tem branch sem PR.
+- **A ordem** (Sofia, 11/11): **até 30/11, a leva 8 completa e a leva 9 encaminhada**. A leva 8 ela planeja **quinta 12/11, às 9h**; a #979 vai nela. A leva 9: o vídeo (#995/#996) e o material de venda. O visual novo (#990) fica pra janeiro.
+- **No escritório**: a leva 4 montada (sakura-corp/escritorio#120 a #122, #119, #37, #66, #84, #117); o plano e a estratégia novos nascem lá (escritorio#121 tira a visão e o comparativo daqui).
+- **Com a Sofia** (12/11, a lista dela): **#1011 (trocar o CSC)**, #513 (Focus), #504 (contador), #976 antes do ensaio de 14 e 15/11 (#877), #998 quando o Gusta avisar, #501, #842 depois do ensaio; a Recepção dela (escritorio#123).
+- Levantamentos novos marcados sozinhos pra **22/11** e **30/11**, às 8h.
+
+### 11/11/2026 (noite): a leva 7 revisada inteira; quatro aprovados esperando o teste no PC
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (sem o teste no PC), #973, #974, #977, #975, #984, #989 e #1004.
+- **Leva 7, aprovados, falta o teste no PC**: #986 (#374), #1007 (#390), #1009 (#393) e #1003 (#383, a **0085**, que entra depois do #985 e do #987). **Devolvidos**: #1008 (#909, Lázaro: o aviso do estoque some na recarga), #985 e #987 (Gusta). **10 sem ninguém**, entre elas a #1005 (as datas um dia antes). A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**.
+- **Revisão em nome da Sofia é sempre "Aprovar" ou "Pedir mudança"** (`docs/jeito-de-trabalhar.md`); o painel melhora com a escritorio#119 (aprovada, o Tiago põe na leva).
+- **Faxina**: fechadas #809, #871, #517, #874, #934 e #474; o que sobrou da #934 é a **#1011**. A equipe troca a própria senha de teste pelo programa (#1010, `docs/equipe.md`).
+- **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Vídeo (#995) adiado; visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982).
+- **Com a Sofia**: **#1011 (trocar o CSC da NFC-e)**; a 0084 (#998) e a 0085 no `ssace-teste` quando avisarem; a função de senha no `ssace-teste` se o Tiago avisar erro; publicar e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #842, #906, escritorio#20 (22/11).
+
+### 11/11/2026 (tarde): as revisões de hoje, o #989 e o #1004 na `main`, a #1005 na leva 7
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (sem o teste no PC), #973, #974, #977, #975, #984, **#989 (sugestão de compra) e #1004 (fluxo de caixa)**.
+- **Leva 7**: **#1003 devolvido ao Tiago** (a migration vira **0085** e a loja entra no nome do pacote); #985 e #987 com o Gusta; o **#986 espera o teste do Tiago no PC**. A ordem do banco: #985 (0083) → #987 (0084) → #1003 (0085). A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
+- **#1005 entrou na leva 7** (Sofia, 11/11): as datas um dia antes em 8 lugares (vencimento das contas, a cobrança do WhatsApp, os pedidos de compra), já nas lojas. Livre, 2 h.
+- **Vídeo (#995) adiado**; a #996 espera. **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar) e a 0085 quando chegar a vez do #1003; publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).
+
+### 11/11/2026 (madrugada): a ordem das próximas semanas e o vídeo adiado
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373).
+- **Leva 7** (20 tarefas): **devolvidos ao Gusta**: #985 (importação) e #987 (retornos, a **0084** em cima do #985); **#986 e #989 aprovados**, falta o teste do Tiago no PC. **15 sem ninguém.** A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
+- **Vídeo (#995) adiado** (Sofia, 10/11): saiu da leva 7 e do painel; volta depois, no Opus. A #996 espera.
+- **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).
+
 ### 10/11/2026 (noite): revisões da leva 7, o banco de teste na 83 e o painel com "com quem está a bola"
 - **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373, Clientes por página).
 - **Leva 7** (21 tarefas, com a #995): **devolvidos, esperando o Gusta**: #985 (importação; opção A no homônimo) e #987 (retornos: vira **0084** em cima do #985, atrasados até 12 meses); **#986 e #989 aprovados** (o #989 já desconta a devolução da OS), falta o teste do Tiago no PC. Novas sem leva: #988, #992, #993, #1000 (e #978, #979). O #929 fechou (opção B; a C virou a #1000).

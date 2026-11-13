@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import { useListaPaginada, type OrdemDaLista } from "@/hooks/useListaPaginada";
@@ -307,7 +308,9 @@ export function ClientesPage() {
                   const ultimoChamado = ultimosChamados.get(cliente.id);
                   return (
                     <tr key={cliente.id} className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">{cliente.nome}</td>
+                      <td className="px-4 py-3">
+                        <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3">{cliente.telefone || "—"}</td>
                       <td className="whitespace-nowrap px-4 py-3">{diaBrasileiro(resumo.ultimaVisita)}</td>
                       <td className="px-4 py-3">{resumo.ultimoServico ?? "—"}</td>
@@ -389,7 +392,9 @@ export function ClientesPage() {
               <tbody>
                 {lista.linhas.map((cliente) => (
                   <tr key={cliente.id} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">{cliente.nome}</td>
+                    <td className="px-4 py-3">
+                      <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
+                    </td>
                     <td className="px-4 py-3">{cliente.telefone || "—"}</td>
                     <td className="px-4 py-3">
                       {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}
