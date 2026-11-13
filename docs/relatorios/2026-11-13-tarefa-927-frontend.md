@@ -48,6 +48,7 @@
 
 ## O que depende de alguém
 - **O Lázaro no PC** (caso B de `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez"; branch `claude/tarefa-927-carga-mais-nova`; Supabase de teste, com duas lojas): em Caixa, Contas a receber, Estoque e Início, trocar de loja várias vezes rápido e ver que fica a loja do seletor; em Configurações, trocar e voltar e ver as seções sempre da loja do seletor.
+  **Feito em 13/11**: passou no Início, em Contas a receber, no Estoque e em Configurações. No Caixa não deu pra comparar, porque a loja de exemplo não tinha movimento nos dias testados. O resultado está num comentário do PR.
 - **A Sofia**: a revisão do PR.
 
 ## Onde parou
