@@ -11,6 +11,7 @@ import {
 } from "@/lib/clientes";
 import { temPermissao } from "@/types/operador";
 import { diaBrasileiro, dataCurta } from "@/lib/datas";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarSaldos } from "@/lib/estoque";
 import { listarFuncionariosPublico } from "@/lib/funcionarios";
@@ -57,6 +58,10 @@ import type { Servico } from "@/types/servico";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { StatusOrdem } from "./StatusOrdemBadge";
 
+const SEM_ORDENS: OrdemServico[] = [];
+const SEM_FUNCIONARIOS: FuncionarioPublico[] = [];
+const SEM_MODELOS: Record<string, string> = {};
+
 /**
  * Lista de orçamentos (#379). Mesmo módulo e mesma permissão das OS
  * (`ordens_servico`). Orçamento não é venda: não aparece na lista de OS, não
@@ -67,12 +72,18 @@ export function OrcamentosPage() {
   // Sem o módulo Clientes a lista vem pela janela estreita (migration 0068).
   const podeVerCadastro = temPermissao(operador, "clientes");
   const navigate = useNavigate();
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados da loja anterior (guardados no estado) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [ordensGuardadas, setOrdens] = useState<OrdemServico[]>([]);
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [pecas, setPecas] = useState<PecaJanela[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
-  const [funcionarios, setFuncionarios] = useState<FuncionarioPublico[]>([]);
-  const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
+  const [funcionariosGuardados, setFuncionarios] = useState<FuncionarioPublico[]>([]);
+  const funcionarios = dadosSaoDaLoja ? funcionariosGuardados : SEM_FUNCIONARIOS;
+  const [modelosGuardados, setModelosWhatsapp] = useState<Record<string, string>>({});
+  const modelosWhatsapp = dadosSaoDaLoja ? modelosGuardados : SEM_MODELOS;
   const [saldos, setSaldos] = useState<Map<string, number> | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -103,8 +114,9 @@ export function OrcamentosPage() {
   const nadaAberto = !mostrarFormulario && !aberto;
 
   async function carregar(): Promise<OrdemServico[] | null> {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return null;
     }
     setCarregando(true);
@@ -112,27 +124,30 @@ export function OrcamentosPage() {
     try {
       const [ordensCarregadas, clientesC, pecasC, servicosC, funcionariosC, modelosC] =
         await Promise.all([
-          listarOrcamentos(lojaAtual.id),
+          listarOrcamentos(carga.lojaId),
           listarClientesParaEscolha(podeVerCadastro),
           listarPecasJanela(),
           listarServicos(),
-          listarFuncionariosPublico(lojaAtual.id),
-          listarModelosWhatsapp(lojaAtual.id),
+          listarFuncionariosPublico(carga.lojaId),
+          listarModelosWhatsapp(carga.lojaId),
         ]);
+      if (!carga.aindaEhAtual()) return null;
       setOrdens(ordensCarregadas);
       setClientes(clientesC);
       setPecas(pecasC);
       setServicos(servicosC);
       setFuncionarios(funcionariosC);
       setModelosWhatsapp(modelosC);
+      carga.gravou();
       avisarOrcamentosMudaram();
       return ordensCarregadas;
     } catch (err) {
+      if (!carga.aindaEhAtual()) return null;
       console.error("Erro ao carregar orçamentos:", err);
       setErro(mensagemDeErro(err));
       return null;
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
