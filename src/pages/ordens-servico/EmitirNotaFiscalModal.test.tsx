@@ -287,6 +287,39 @@ describe("EmitirNotaFiscalModal — peça que não pode sair na nota (#655)", ()
     await waitFor(() => expect(confirmar()).toBeEnabled());
   });
 
+  // #720, caso (b): o item já tinha sido ligado em outro computador. A peça
+  // que a pessoa ACABOU de cadastrar sobra no cadastro, e a tela tem que dizer.
+  it("item já ligado em outro computador: diz que a peça recém-cadastrada ficou no cadastro", async () => {
+    cadastrarPecaRapida.mockResolvedValue("peca-nova");
+    cadastrarPecaDoItem.mockResolvedValue(false);
+    const { user, onItensMudaram } = montar([item("i2", "Palheta", null)]);
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+
+    expect(
+      await screen.findByText(
+        /já tinha sido ligado a uma peça.*A peça que você cadastrou ficou no cadastro: se ela sobrou, inative em Estoque\./,
+      ),
+    ).toBeInTheDocument();
+    expect(onItensMudaram).not.toHaveBeenCalled();
+  });
+
+  it("item já ligado, mas a peça escolhida já existia (parecida): não fala em peça que sobrou", async () => {
+    listarPecasJanela.mockResolvedValue([pecaComNcm, palhetaDoCadastro]);
+    cadastrarPecaDoItem.mockResolvedValue(false);
+    const { user } = montar([item("i2", "Palheta", null)]);
+
+    await user.click(await screen.findByRole("button", { name: "Cadastrar agora" }));
+    await preencherCadastro(user);
+    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: /Abrir a que já existe/ }));
+
+    expect(await screen.findByText(/já tinha sido ligado a uma peça/)).toBeInTheDocument();
+    expect(screen.queryByText(/ficou no cadastro/)).not.toBeInTheDocument();
+  });
+
   // #909: a peça foi criada, mas o estoque inicial não entrou. Antes o erro
   // subia antes do `onCadastrada`: a janela não ligava a peça e um novo
   // "Salvar" criava outra igual. Agora liga, avisa e não trava a emissão.

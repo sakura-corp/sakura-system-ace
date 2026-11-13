@@ -109,6 +109,20 @@ que não conferia o "Carregando..."). Ficaram de fora, pra Sofia decidir:
   lá; o lugar natural seria `src/schemas/`);
 - duas caixas vermelhas com a mesma marcação.
 
+**Junção com a `main` (13/11, à tarde)**: entrou o PR #1015 (#720), em que a peça cadastrada na
+aprovação do orçamento passa a ser ligada ao item na hora, e o item **sai da lista** da janela.
+O aviso do estoque inicial ficava na linha do item e ia sumir junto. Agora ele fica na área de
+avisos da janela, com o nome da peça na frente (como na nota). Teste novo: "o item sai da lista
+depois de ligado, e o aviso continua na janela", visto reprovar com o aviso preso à linha do item.
+Os testes do #720 que vieram da `main` passam. Depois da junção: `typecheck`, `lint` (0 erros),
+`contraste`, Estoque e OS 207/207; no `test:fusos`, 1958 de 1959 (só o `checar-segredos`, por
+tempo neste PC).
+
+**Teste no PC (Lázaro, 13/11, Supabase de teste, antes da junção com o #1015)**: peça com
+quantidade 3 → formulário fechou, estoque 3, sem aviso; peça sem quantidade → estoque 0, sem
+aviso; no fim, as 4 peças "TESTE 909" (as de 11/11 também estavam ativas) foram inativadas. A
+janela "Peça parecida" apareceu por causa das peças de 11/11, como esperado.
+
 **`/goal`**: não usei (não sei se foi ligado na tela).
 
 **Como eu agi**: a skill não fala de PR que já existe com revisão pedindo mudança; segui o

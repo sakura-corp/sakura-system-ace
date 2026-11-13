@@ -203,7 +203,7 @@ export function DiarioSection({
                     <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
                     <td
                       className={`px-4 py-3 font-medium ${
-                        m.tipo === "saida" ? "text-red-700" : ""
+                        m.tipo === "saida" ? "text-red-400" : ""
                       }`}
                     >
                       {m.tipo === "saida" ? "− " : ""}
