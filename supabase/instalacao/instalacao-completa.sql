@@ -8569,6 +8569,11 @@ begin
          data_fechamento = now(),
          atualizado_por_id = p_operador
    where id = v_ordem.id;
+  -- Defesa barata: se a RLS deixasse ler e travar mas não gravar, o update
+  -- passaria calado e a tela lançaria o Caixa de uma OS que não faturou.
+  if not found then
+    raise exception 'Você não tem permissão pra faturar esta OS.';
+  end if;
 end;
 $$;
 
