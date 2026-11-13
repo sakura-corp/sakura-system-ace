@@ -67,7 +67,17 @@ function construtor(tabela: string) {
   return q;
 }
 
-vi.mock("./supabase", () => ({ supabase: { from: (t: string) => construtor(t) } }));
+// Faturar é uma função do banco (#803): o fake só guarda o que a lib mandou.
+const rpcs: { nome: string; args: Record<string, unknown> }[] = [];
+vi.mock("./supabase", () => ({
+  supabase: {
+    from: (t: string) => construtor(t),
+    rpc: async (nome: string, args: Record<string, unknown>) => {
+      rpcs.push({ nome, args });
+      return { data: null, error: null };
+    },
+  },
+}));
 vi.mock("./depositos", () => ({ buscarDepositoPadraoId: async () => "deposito-1" }));
 
 const caixa = vi.hoisted(() => ({ lancamentos: [] as unknown[], falhar: false }));
@@ -111,6 +121,7 @@ function registrar() {
 
 beforeEach(() => {
   chamadas.length = 0;
+  rpcs.length = 0;
   falharEm.clear();
   caixa.lancamentos.length = 0;
   caixa.falhar = false;
@@ -140,6 +151,16 @@ describe("registrarVendaBalcao", () => {
     await registrar();
     expect(caixa.lancamentos).toEqual([
       expect.objectContaining({ descricao: "Faturamento da Venda 17", valor: 70, ordem_servico_id: "venda-1" }),
+    ]);
+  });
+
+  it("marca a venda como faturada pelo banco, mandando o total dos itens e o operador", async () => {
+    await registrar();
+    expect(rpcs).toEqual([
+      {
+        nome: "marcar_ordem_faturada",
+        args: expect.objectContaining({ p_ordem: "venda-1", p_total_da_tela: 70, p_operador: "op-1" }),
+      },
     ]);
   });
 

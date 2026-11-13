@@ -4,7 +4,7 @@ import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
 import { mensagemDeErro } from "./errors";
-import { somar } from "@/schemas/dinheiro";
+import { arredondarCentavo, somar } from "@/schemas/dinheiro";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
@@ -12,7 +12,7 @@ import {
   STATUS_DE_ORCAMENTO,
 } from "@/schemas/orcamento";
 import type { MotivoRecusa } from "@/schemas/orcamento";
-import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, nomeDocumento, totalOrdem } from "@/types/os";
 import type {
   ItemOS,
   ItemParaComissao,
@@ -562,6 +562,21 @@ export class VendaSemFaturamentoError extends Error {
   }
 }
 
+/**
+ * A OS foi mexida em outro computador entre a tela abrir e o "Confirmar" (#803):
+ * o total que o banco tem não é o que a pessoa viu. Nada foi cobrado nem
+ * lançado; a tela recarrega a OS e a pessoa confere o total novo.
+ */
+export class OrdemMudouError extends Error {
+  constructor(readonly ordem: OrdemServico) {
+    super(
+      `A ${nomeDocumento(ordem)} mudou em outro computador (alguém acrescentou ou corrigiu ` +
+        `um item). Nada foi cobrado: atualize a tela e fature de novo.`,
+    );
+    this.name = "OrdemMudouError";
+  }
+}
+
 export interface DadosVendaBalcao {
   cliente_id: string;
   vendedor_id: string | null;
@@ -637,8 +652,15 @@ export async function registrarVendaBalcao(
       pagamento.pagamentos,
       pagamento.parcelas,
       pagamento.previsaoRecebimento,
+      operadorId,
+      // A ordem recém-criada não tem itens carregados: o total é o dos itens
+      // que acabaram de entrar.
+      totalOrdem(itens),
     );
   } catch (erroPagamento) {
+    // Inclui OrdemMudouError: numa venda que acabou de nascer ninguém mais a
+    // conhece, então é praticamente impossível; se vier, o aviso de "fature
+    // pela lista" também é o certo.
     throw new VendaSemFaturamentoError(ordem, mensagemDeErro(erroPagamento));
   }
 
@@ -656,6 +678,11 @@ export async function faturarOrdem(
   pagamentos: PagamentoOrdem[],
   parcelas: number,
   previsaoRecebimento: string | null,
+  operadorId: string,
+  // O "Total dos itens" que a tela mostrou (não a soma dos pagamentos: os
+  // juros do cartão deixam o cobrado maior). O banco confere com o que está
+  // gravado e recusa se a OS mudou em outro computador.
+  totalDosItens: number,
 ): Promise<void> {
   // Orçamento não é venda (#379): não entra no caixa nem em contas a
   // receber. Aprovar antes faz dele uma OS.
@@ -674,17 +701,19 @@ export async function faturarOrdem(
     .map((forma) => FORMA_PAGAMENTO_LABEL[forma] ?? forma)
     .join(" + ");
 
-  const { error: erroOrdem } = await supabase
-    .from("ordens_servico")
-    .update({
-      status: "faturada",
-      forma_pagamento: formaPagamentoResumo,
-      parcelas,
-      data_fechamento: new Date().toISOString(),
-    })
-    .eq("id", ordem.id);
-
-  if (erroOrdem) throw erroOrdem;
+  // O banco trava a OS, confere o total e marca como faturada numa transação
+  // só. Só depois de ele aceitar é que o caixa / a conta a receber são lançados.
+  const { error: erroOrdem } = await supabase.rpc("marcar_ordem_faturada", {
+    p_ordem: ordem.id,
+    p_forma_pagamento: formaPagamentoResumo,
+    p_parcelas: parcelas,
+    p_total_da_tela: arredondarCentavo(totalDosItens),
+    p_operador: operadorId,
+  });
+  if (erroOrdem) {
+    if ((erroOrdem as { code?: string }).code === "SK803") throw new OrdemMudouError(ordem);
+    throw erroOrdem;
+  }
 
   // Sem previsão de recebimento = cliente já pagou na hora, lança a Entrada
   // no Caixa direto (comportamento de sempre) — um lançamento por forma de

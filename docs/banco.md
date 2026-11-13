@@ -630,6 +630,20 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
   o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
+- `0083`: **faturar a OS com a linha da OS travada e o total conferido no banco** (tarefa #803,
+  caso 2; o mesmo caminho da `0071` e da `0079`). Uma função,
+  `marcar_ordem_faturada(ordem, forma de pagamento, parcelas, total da tela, operador)`,
+  `security invoker` e só pra `authenticated`: trava a OS, recusa orçamento/recusado e OS já
+  faturada, soma os itens como estão no banco (quantidade × preço − desconto) e compara no centavo
+  com o total que a tela cobrou; diferente (ou sem total), recusa com o código próprio **`SK803`**
+  ("Esta OS mudou em outro computador…") e não grava nada; bateu, marca faturada (forma, parcelas,
+  data de fechamento, quem mexeu). Assim, item acrescentado ou corrigido em outro computador no
+  mesmo instante não deixa o Caixa receber o total velho. O Caixa e as Contas a Receber continuam
+  com o programa, depois da função. Nenhuma policy muda. Sem `versao-minima-do-programa` (só
+  acrescenta), mas sobe **antes** da versão que chama a função. O número pode mudar se outro PR
+  com migration (`0083`) entrar antes; quem mescla depois renumera. Teste em
+  `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
+  corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
