@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarContagens, registrarContagem } from "@/lib/contagens";
 import { mensagemDeErro } from "@/lib/errors";
 import type { ContagemEstoque } from "@/types/contagem";
@@ -33,15 +34,25 @@ export function ContagemSection({
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
 
+  // #927: só a busca mais nova mexe na tela (trocar de loja com a anterior ainda andando).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaId);
+
   async function carregarHistorico() {
+    // Um carregar guardado de antes da troca de loja nem começa.
+    const carga = comecar(lojaId);
+    if (!carga) return;
     setCarregandoHistorico(true);
     try {
-      setContagens(await listarContagens(lojaId));
+      const lista = await listarContagens(carga.lojaId);
+      if (!carga.aindaEhAtual()) return;
+      setContagens(lista);
+      carga.gravou();
     } catch (err) {
       console.error("Erro ao carregar histórico de contagens:", err);
+      if (!carga.aindaEhAtual()) return;
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregandoHistorico(false);
+      if (carga.aindaEhAtual()) setCarregandoHistorico(false);
     }
   }
 
@@ -51,6 +62,8 @@ export function ContagemSection({
   }, [lojaId]);
 
   const saldoSistema = saldosPorDeposito.get(pecaId)?.get(depositoId) ?? 0;
+  // Carga da loja nova com erro: o histórico da anterior não aparece.
+  const contagensNaTela = dadosSaoDaLoja ? contagens : [];
   const quantidadeNumero = Number(quantidadeContada);
   const diferenca =
     quantidadeContada !== "" && !isNaN(quantidadeNumero)
@@ -217,7 +230,7 @@ export function ContagemSection({
         </h2>
         {carregandoHistorico ? (
           <p className="text-corpo text-sakura-muted">Carregando...</p>
-        ) : contagens.length === 0 ? (
+        ) : contagensNaTela.length === 0 ? (
           <p className="text-corpo text-sakura-muted">Nenhuma contagem registrada ainda.</p>
         ) : (
           <div className="overflow-x-auto sakura-card">
@@ -234,7 +247,7 @@ export function ContagemSection({
                 </tr>
               </thead>
               <tbody>
-                {contagens.map((contagem) => (
+                {contagensNaTela.map((contagem) => (
                   <tr key={contagem.id} className="border-t border-sakura-gray/20">
                     <td className="px-4 py-3">
                       {new Date(contagem.criado_em).toLocaleString("pt-BR")}

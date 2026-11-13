@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { useConexao } from "@/hooks/useConexao";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
@@ -53,11 +54,19 @@ export function ImportarNotasFiscaisModal({
   // O regime da loja decide se o código de ICMS lido na nota do fornecedor
   // serve ou não. Falhar aqui não derruba a importação: sem regime,
   // `codigoParaPecaImportada` mantém o comportamento antigo.
+  // #927: só a leitura mais nova do regime vale (a loja pode mudar com a anterior ainda andando).
+  const { comecar } = useCargaMaisNova(lojaId);
   useEffect(() => {
-    buscarConfiguracaoFiscal(lojaId)
-      .then((config) => setRegime(config?.regime_tributario ?? null))
+    const carga = comecar(lojaId);
+    if (!carga) return;
+    // O regime da loja anterior não fica valendo enquanto o da nova não chega.
+    setRegime(null);
+    buscarConfiguracaoFiscal(carga.lojaId)
+      .then((config) => {
+        if (carga.aindaEhAtual()) setRegime(config?.regime_tributario ?? null);
+      })
       .catch((err) => console.error("Erro ao carregar o regime tributário da loja:", err));
-  }, [lojaId]);
+  }, [lojaId, comecar]);
 
   async function handleLer() {
     if (arquivos.length === 0) return;

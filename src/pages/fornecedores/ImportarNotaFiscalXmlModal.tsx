@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
@@ -92,11 +93,19 @@ export function ImportarNotaFiscalXmlModal({
   // O regime da loja decide se o código do fornecedor serve ou não. Falhar
   // aqui não pode derrubar a importação: sem regime, `codigoParaPecaImportada`
   // simplesmente mantém o comportamento antigo (copia o código da nota).
+  // #927: só a leitura mais nova do regime vale (a loja pode mudar com a anterior ainda andando).
+  const { comecar } = useCargaMaisNova(lojaId);
   useEffect(() => {
-    buscarConfiguracaoFiscal(lojaId)
-      .then((config) => setRegime(config?.regime_tributario ?? null))
+    const carga = comecar(lojaId);
+    if (!carga) return;
+    // O regime da loja anterior não fica valendo enquanto o da nova não chega.
+    setRegime(null);
+    buscarConfiguracaoFiscal(carga.lojaId)
+      .then((config) => {
+        if (carga.aindaEhAtual()) setRegime(config?.regime_tributario ?? null);
+      })
       .catch((err) => console.error("Erro ao carregar o regime tributário da loja:", err));
-  }, [lojaId]);
+  }, [lojaId, comecar]);
 
   async function handleLer() {
     if (!arquivo) return;
