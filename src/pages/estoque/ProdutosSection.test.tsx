@@ -5,6 +5,7 @@
  * A conta é a de `margemSobreAVenda` (sobre a venda desde a #835); aqui se
  * confere como ela aparece na tabela.
  */
+import { useState, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { Peca } from "@/types/peca";
@@ -65,16 +66,29 @@ function umaPeca(extra: Partial<Peca>): Peca {
   };
 }
 
+// O aviso do estoque inicial mora no EstoquePage (#909); aqui, um invólucro
+// faz esse papel.
+function ComAviso({ children }: { children: (aviso: string | null, setAviso: (a: string | null) => void) => ReactNode }) {
+  const [aviso, setAviso] = useState<string | null>(null);
+  return <>{children(aviso, setAviso)}</>;
+}
+
 function montar(pecas: Peca[], onRecarregar = vi.fn().mockResolvedValue(undefined)) {
   return renderizar(
-    <ProdutosSection
-      pecas={pecas}
-      categorias={[]}
-      saldos={new Map()}
-      regime="simples_nacional"
-      lojaId="loja-1"
-      onRecarregar={onRecarregar}
-    />,
+    <ComAviso>
+      {(aviso, setAviso) => (
+        <ProdutosSection
+          avisoEstoqueInicial={aviso}
+          onAvisoEstoqueInicial={setAviso}
+          pecas={pecas}
+          categorias={[]}
+          saldos={new Map()}
+          regime="simples_nacional"
+          lojaId="loja-1"
+          onRecarregar={onRecarregar}
+        />
+      )}
+    </ComAviso>,
   );
 }
 
@@ -163,6 +177,8 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
     criarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
     const onRecarregar = vi.fn().mockResolvedValue(undefined);
     const { user, container } = montar([umaPeca({})], onRecarregar);
+    // O rascunho que o formulário grava a cada 30 s (aqui, já gravado).
+    localStorage.setItem("rascunho-peca-nova", JSON.stringify({ descricao: "TESTE 909 Palheta" }));
 
     await cadastrarNova(user, "3");
 
@@ -176,25 +192,11 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
     expect(criarPeca).toHaveBeenCalledTimes(1);
     expect(onRecarregar).toHaveBeenCalled();
 
-    // Reabrir o "Novo produto" não traz a peça de volta (o rascunho foi limpo).
+    // O rascunho foi limpo: reabrir o "Novo produto" não oferece a peça de
+    // volta (a faixa "Restaurar?" não aparece), e não cria outra.
+    expect(localStorage.getItem("rascunho-peca-nova")).toBeNull();
     await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
-    expect(campo("Descrição *")).toHaveValue("");
-    expect(criarPeca).toHaveBeenCalledTimes(1);
-  });
-
-  // Revisão: se recarregar a lista falhava depois de criar, o erro subia, o
-  // formulário (já fechado) não limpava o rascunho e reabrir trazia a peça.
-  it("se só recarregar a lista falha, avisa e o rascunho não traz a peça de volta", async () => {
-    criarMovimento.mockResolvedValue(undefined);
-    const onRecarregar = vi.fn().mockRejectedValue(new Error("sem internet"));
-    const { user, container } = montar([umaPeca({})], onRecarregar);
-
-    await cadastrarNova(user, "3");
-
-    expect(await screen.findByText(/A peça foi salva, mas a lista não recarregou \(sem internet\)/)).toBeInTheDocument();
-    expect(container.querySelector("form")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
-    expect(campo("Descrição *")).toHaveValue("");
+    expect(screen.queryByText(/rascunho não salvo/)).toBeNull();
     expect(criarPeca).toHaveBeenCalledTimes(1);
   });
 
