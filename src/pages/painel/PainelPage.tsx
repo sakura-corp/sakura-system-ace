@@ -6,6 +6,7 @@ import { Valor, Variacao } from "@/components/Valor";
 import { Explicacao } from "@/components/Explicacao";
 import { useAuth } from "@/contexts/AuthContext";
 import { feriadosNacionais } from "@/lib/feriados";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarCustoDasOrdens, listarMovimentosCaixa } from "@/lib/caixa";
 import { listarClientes } from "@/lib/clientes";
@@ -79,18 +80,34 @@ function dataDaChave(chave: string): Date {
   return new Date(ano, mes - 1, dia);
 }
 
+const SEM_MOVIMENTOS: MovimentoCaixa[] = [];
+const SEM_ORDENS: OrdemServico[] = [];
+const SEM_CLIENTES: Cliente[] = [];
+const SEM_CONTAS: ContaPagar[] = [];
+const SEM_CUSTOS: CustoDoBanco = new Map();
+
 export function PainelPage() {
   const { lojaAtual, operador } = useAuth();
   const navigate = useNavigate();
-  const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados guardados (da loja anterior) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [movimentosGuardados, setMovimentos] = useState<MovimentoCaixa[]>([]);
+  const [ordensGuardadas, setOrdens] = useState<OrdemServico[]>([]);
+  const [clientesGuardados, setClientes] = useState<Cliente[]>([]);
   // Custo de cada OS dos lançamentos, calculado pelo banco (`custo_das_ordens`):
   // o Início não lê o cadastro de peças (#366).
-  const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
-  const [contas, setContas] = useState<ContaPagar[]>([]);
-  const [cartoesConfig, setCartoesConfig] = useState<CartaoMetrica[]>(CARTOES_INICIO_PADRAO);
-  const [configFiscal, setConfigFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
+  const [custoGuardado, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
+  const [contasGuardadas, setContas] = useState<ContaPagar[]>([]);
+  const [cartoesGuardados, setCartoesConfig] = useState<CartaoMetrica[]>(CARTOES_INICIO_PADRAO);
+  const [fiscalGuardada, setConfigFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
+  const movimentos = dadosSaoDaLoja ? movimentosGuardados : SEM_MOVIMENTOS;
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
+  const clientes = dadosSaoDaLoja ? clientesGuardados : SEM_CLIENTES;
+  const custoDasOrdens = dadosSaoDaLoja ? custoGuardado : SEM_CUSTOS;
+  const contas = dadosSaoDaLoja ? contasGuardadas : SEM_CONTAS;
+  const cartoesConfig = dadosSaoDaLoja ? cartoesGuardados : CARTOES_INICIO_PADRAO;
+  const configFiscal = dadosSaoDaLoja ? fiscalGuardada : null;
   const [confirmandoAliquota, setConfirmandoAliquota] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -131,10 +148,13 @@ export function PainelPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!lojaAtual) {
-        setCarregando(false);
+      const carga = comecar(lojaAtual?.id);
+      if (!carga) {
+        if (!lojaAtual) setCarregando(false);
         return;
       }
+      setErro(null);
+      setFalhouCarregar(false);
       try {
         const [
           movimentosCarregados,
@@ -144,12 +164,12 @@ export function PainelPage() {
           cartoesCarregados,
           fiscalCarregada,
         ] = await Promise.all([
-          podeVerCaixa ? listarMovimentosCaixa(lojaAtual.id) : Promise.resolve([]),
-          podeVerOS ? listarOrdens(lojaAtual.id) : Promise.resolve([]),
+          podeVerCaixa ? listarMovimentosCaixa(carga.lojaId) : Promise.resolve([]),
+          podeVerOS ? listarOrdens(carga.lojaId) : Promise.resolve([]),
           podeVerClientes ? listarClientes() : Promise.resolve([]),
-          podeVerContas ? listarContasPagar(lojaAtual.id) : Promise.resolve([]),
-          buscarConfiguracaoPainelInicio(lojaAtual.id),
-          buscarConfiguracaoFiscal(lojaAtual.id),
+          podeVerContas ? listarContasPagar(carga.lojaId) : Promise.resolve([]),
+          buscarConfiguracaoPainelInicio(carga.lojaId),
+          buscarConfiguracaoFiscal(carga.lojaId),
         ]);
         // Sem o custo o lucro sairia inflado: se falhar, a tela mostra o erro.
         const custos = podeVerCaixa
@@ -157,6 +177,7 @@ export function PainelPage() {
               movimentosCarregados.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
             )
           : new Map();
+        if (!carga.aindaEhAtual()) return;
         setMovimentos(movimentosCarregados);
         setCustoDasOrdens(custos);
         setOrdens(ordensCarregadas);
@@ -164,16 +185,18 @@ export function PainelPage() {
         setContas(contasCarregadas);
         setCartoesConfig(cartoesCarregados);
         setConfigFiscal(fiscalCarregada);
+        carga.gravou();
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar painel:", err);
         setErro(mensagemDeErro(err));
         setFalhouCarregar(true);
       } finally {
-        setCarregando(false);
+        if (carga.aindaEhAtual()) setCarregando(false);
       }
     }
     carregar();
-  }, [lojaAtual, podeVerContas, podeVerCaixa, podeVerClientes, podeVerOS]);
+  }, [lojaAtual, comecar, podeVerContas, podeVerCaixa, podeVerClientes, podeVerOS]);
 
   const avisoAliquota = avisoAliquotaCompetencia(configFiscal, hoje);
 
