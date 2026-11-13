@@ -12,6 +12,8 @@
  * por cima (a nota fiscal faz `arredondarCentavo(valorLiquidoDoItem(...))`).
  */
 
+import { arredondarCentavo } from "./dinheiro";
+
 export interface ItemComValor {
   quantidade: number;
   preco_unitario: number;
@@ -46,7 +48,7 @@ export interface TotaisDoDocumento {
   subtotal: number;
   /** A soma dos descontos de todas as linhas. */
   descontos: number;
-  /** O que a OS vale: a mesma soma de `totalOrdem` (`somarValoresLiquidos`). */
+  /** O que a OS vale: a soma de `totalOrdem` (`somarValoresLiquidos`), fechada no centavo. */
   total: number;
 }
 
@@ -55,8 +57,8 @@ export interface TotaisDoDocumento {
  * **brutos** e os Descontos numa linha à parte, por isso não dá pra usar
  * `totalPorTipo` (que já desconta) sem mudar o número impresso.
  *
- * Não arredonda (igual ao resto deste arquivo). Os brutos e os descontos
- * somam na mesma ordem da conta que o documento fazia à mão, bit a bit.
+ * Os brutos e os descontos não arredondam e somam na mesma ordem da conta
+ * que o documento fazia à mão, bit a bit. Só o total fecha no centavo.
  */
 export function totaisDoDocumento(
   itens: readonly (ItemComValor & { tipo: string })[],
@@ -72,7 +74,9 @@ export function totaisDoDocumento(
     brutoServicos,
     subtotal: brutoPecas + brutoServicos,
     descontos: itens.reduce((soma, item) => soma + item.desconto, 0),
-    total: somarValoresLiquidos(itens),
+    // Fecha no centavo (Sofia, 13/11/2026, no PR da #915): 217,395 tem que
+    // sair 217,40, o mesmo que o faturamento cobra (`calcularValorCobrado`).
+    total: arredondarCentavo(somarValoresLiquidos(itens)),
   };
 }
 

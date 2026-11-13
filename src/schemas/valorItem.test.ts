@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { arredondarCentavo } from "./dinheiro";
 import {
   somarValoresLiquidos,
   totaisDoDocumento,
@@ -135,12 +136,22 @@ describe("totaisDoDocumento (#915, documento de garantia)", () => {
     expect(totais.subtotal).toBe(totais.brutoPecas + totais.brutoServicos);
   });
 
-  it("o total é o mesmo de totalOrdem: a soma dos valores líquidos", () => {
+  it("o total é a soma dos valores líquidos, fechada no centavo", () => {
     const totais = totaisDoDocumento(itens);
-    expect(totais.total).toBe(somarValoresLiquidos(itens));
+    expect(totais.total).toBe(arredondarCentavo(somarValoresLiquidos(itens)));
     // E fecha com subtotal − descontos (no centavo).
     expect(totais.total).toBeCloseTo(totais.subtotal - totais.descontos, 9);
     expect(totais.total).toBeCloseTo(359.6 + 95.5 + 99.99 - 15.51, 9);
+  });
+
+  it("quantidade quebrada: fecha no centavo pra cima, como o valor cobrado (Sofia, 13/11)", () => {
+    // 3,22 × 9,75 − 4,82 + 190,82 = 217,395. Somando linha a linha, o
+    // computador chega em 217,39499999999998; sem arredondar, sairia 217,39.
+    const quebrada = [
+      { tipo: "peca", quantidade: 3.22, preco_unitario: 9.75, desconto: 4.82 },
+      { tipo: "servico", quantidade: 1, preco_unitario: 190.82, desconto: 0 },
+    ];
+    expect(totaisDoDocumento(quebrada).total).toBe(217.4);
   });
 
   it("sem itens: tudo zero", () => {

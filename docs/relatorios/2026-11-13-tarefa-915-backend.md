@@ -27,10 +27,10 @@
 ## O que testei e VI reprovar
 - **`garantiaDocumento.test.ts`**: passou contra o código **de antes**, com os números de antes (commit `2af4325`). Depois da mudança, com os números de antes, reprovou **só** em 3 valores de parcela: 146,53→146,54, 33,43→33,42 e 33,33→33,34. Itens, totais e vencimentos bateram iguais.
 - **`totaisDoDocumento`** (`valorItem.test.ts`): reprovou antes de a função existir. Também reprovou quebrado de propósito duas vezes: o total sem o desconto (1 teste vermelho) e os descontos zerados (2 testes vermelhos).
+- **Total fechado no centavo** (decisão da Sofia no PR): os 2 testes da quantidade quebrada reprovaram com o código de antes do conserto (217,39) e passaram depois (217,40).
 - **`arquitetura.test.ts`**: varrendo `src/lib/`, reprovou contra o `garantiaDocumento.ts` de antes, e só nele (os outros 57 arquivos passaram). Depois da mudança, passou.
 
 ## O que passou sem eu ter visto reprovar
-- O caso "quantidade quebrada" do `garantiaDocumento.test.ts`. Entrou depois da revisão, só pra deixar registrado o número novo (R$ 217,39). O revisor mostrou o código antigo dando R$ 217,40, e eu conferi a conta à parte, mas não rodei esse caso contra o código antigo.
 - `typecheck`, `lint` (sem erro, com 1 aviso antigo em `AuthContext.tsx`) e `test:fusos` (2013 testes, nos dois fusos).
 
 ## O que ficou de fora
@@ -38,7 +38,7 @@
 - A conta dentro do HTML (`${a * b}`) continua invisível pro `arquitetura.test.ts`. É o limite conhecido que a issue já cita.
 
 ## O que depende de alguém
-- **Sofia, decidir o centavo da quantidade quebrada.** Com quantidade quebrada (ex.: 3,22 × 9,75), o Total geral pode sair 1 centavo diferente do papel antigo: antes R$ 217,40, agora R$ 217,39. Segui o passo 3 da issue, que pede o total pela mesma soma do `totalOrdem`. Com isso o papel passa a bater com a tela da OS, que já mostrava R$ 217,39. Se ela preferir o número antigo, é uma linha (`total = subtotal − descontos`) e o caso do teste muda.
+- **Centavo da quantidade quebrada: decidido pela Sofia (13/11, comentário no PR).** Vale **R$ 217,40**, o mesmo que o faturamento cobra. O total do documento agora fecha no centavo (`arredondarCentavo` dentro de `totaisDoDocumento`). Antes do conserto, os dois testes do caso (em `garantiaDocumento.test.ts` e `valorItem.test.ts`) foram vistos reprovar com 217,39. A aba de fechamento da OS, que ainda mostra 217,39, é a #1036, fora desta tarefa.
 - **Tiago, o teste no PC** (o "Pronto quando no PC" da issue).
 - **Sem migration**: nada pra aplicar no banco.
 

@@ -238,13 +238,12 @@ describe("documento de garantia: os números do papel (#915)", () => {
     });
   });
 
-  it("quantidade quebrada: o Total geral é o mesmo de totalOrdem (a tela da OS)", () => {
-    // Achado da revisão final da #915. Antes, o documento fazia
-    // (Produtos + Serviços) − Descontos = 217,395 e imprimia R$ 217,40. Agora
-    // o total é `somarValoresLiquidos` (o pedido da issue, passo 3), a mesma
-    // soma da tela da OS, que dá 217,39499999999998 e imprime R$ 217,39. É o
-    // único caso conhecido em que o total do papel muda, e só com quantidade
-    // quebrada: num sorteio de 2 milhões de OS, 2 mudaram.
+  it("quantidade quebrada: o Total geral fecha no centavo, igual ao valor cobrado", () => {
+    // Achado da revisão final da #915. A conta exata é 217,395. Somando linha
+    // a linha (`somarValoresLiquidos`) o computador chega em 217,3949999... e
+    // a moeda imprimiria R$ 217,39. Decisão da Sofia (13/11/2026, no PR):
+    // vale R$ 217,40, o mesmo que o faturamento cobra (`calcularValorCobrado`
+    // arredonda pro centavo). Por isso o total do documento é arredondado.
     const os = ordem(
       [item("peca", "Fita", 3.22, 9.75, 4.82), item("servico", "Revisão", 1, 190.82)],
       "pix",
@@ -254,7 +253,7 @@ describe("documento de garantia: os números do papel (#915)", () => {
     const numeros = numerosDoDocumento(documento(os));
     expect(numeros.subtotal).toBe("R$ 222,22");
     expect(numeros.descontos).toBe("R$ 4,82");
-    expect(numeros.totaisGerais).toEqual(["Total geral: R$ 217,39"]);
-    expect(numeros.aVista).toBe("Pix — R$ 217,39");
+    expect(numeros.totaisGerais).toEqual(["Total geral: R$ 217,40"]);
+    expect(numeros.aVista).toBe("Pix — R$ 217,40");
   });
 });
