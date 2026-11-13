@@ -20,7 +20,8 @@ A sessão em que a tarefa começou é a **mãe**. Ela:
 Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
 
 ## 2. Antes de começar (nesta ordem)
-1. Conferir quem trabalha (seção 0 do `PROJETO_STATUS.md`).
+1. Conferir quem trabalha (seção 0 do `PROJETO_STATUS.md`) e **avisar a Recepção** que abriu ("Abri:
+   #N, vou <o quê>"; seção "Avisar a Recepção" do `CLAUDE.md`, pulando se o pedido já traz o id dela).
 2. Ler a issue inteira e os comentários. **Conferir o cabeçalho**: `Chefe:`, `Ajudantes:`,
    `Estimativa:`, `Depende de:` e `Sessões filhas:` (formato em `docs/tarefas.md`).
    - **Faltou alguma linha, ou a issue não segue o modelo**: não adivinhe. Diga à pessoa o que
@@ -146,6 +147,8 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
    push e pedir a revisão dela outra vez). PR mesclado ou fechado: `unsubscribe_pr_activity`.
    **Sem `subscribe_pr_activity`** (o Claude do PC não tem): dizer à pessoa onde olhar, com o link
    do PR e "aba Conversation, lá embaixo", e pra colar esse link numa sessão quando a Sofia responder.
+6. **Avisar a Recepção** ao abrir o PR, ou se travar ou precisar de alguém: uma linha ("Feito/Travei/Preciso:
+   <link>; falta <o quê, de quem>"), seção "Avisar a Recepção" do `CLAUDE.md` (detalhe: `docs/recepcao.md`).
 
 ## 7. Limites (valem sempre)
 Os da skill do chefe e da seção 0 do `PROJETO_STATUS.md`: nunca mesclar, publicar, liberar, rodar
