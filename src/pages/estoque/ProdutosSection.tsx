@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { atualizarPeca, atualizarStatusPeca, criarPeca, excluirPeca } from "@/lib/pecas";
 import { criarMovimento } from "@/lib/estoque";
 import { mensagemDeErro } from "@/lib/errors";
+import { semPontoFinal } from "@/pages/ordens-servico/pecaAvulsaCadastro";
 import {
   acharPorCodigoExato,
   lerSaldo,
@@ -53,6 +54,13 @@ interface ProdutosSectionProps {
   regime: RegimeTributario | null;
   lojaId: string;
   onRecarregar: () => Promise<void>;
+  /**
+   * O aviso do estoque inicial que não entrou (#909). Mora no `EstoquePage`,
+   * não aqui: a recarga depois de salvar troca esta seção por "Carregando..."
+   * e ela volta zerada, levando junto um aviso guardado nela.
+   */
+  avisoEstoqueInicial: string | null;
+  onAvisoEstoqueInicial: (aviso: string | null) => void;
 }
 
 function formatarPreco(valor: number | null): string {
@@ -81,6 +89,8 @@ export function ProdutosSection({
   regime,
   lojaId,
   onRecarregar,
+  avisoEstoqueInicial,
+  onAvisoEstoqueInicial,
 }: ProdutosSectionProps) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [pecaEmEdicao, setPecaEmEdicao] = useState<Peca | null>(null);
@@ -135,15 +145,32 @@ export function ProdutosSection({
   }
 
   async function handleSalvar(peca: NovaPeca, quantidadeInicial: number | null) {
+    setErro(null);
+    onAvisoEstoqueInicial(null);
     if (pecaEmEdicao) {
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
+      // Se a peça não foi criada, o erro sobe e o formulário fica aberto.
       const pecaCriada = await criarPeca(peca);
       const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
-      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
+      if (estoqueInicial) {
+        // A peça já existe: se só o estoque inicial falha, o erro NÃO sobe
+        // (senão o formulário fica aberto e um novo "Salvar" cria outra peça
+        // igual). Fecha e avisa pra lançar a entrada à mão (#909).
+        try {
+          await criarMovimento(estoqueInicial, lojaId);
+        } catch (err) {
+          console.error("Erro ao lançar o estoque inicial da peça:", err);
+          onAvisoEstoqueInicial(
+            `Peça cadastrada, mas o estoque inicial não entrou (${semPontoFinal(mensagemDeErro(err))}). ` +
+              "Lance a entrada em Estoque → Movimentações.",
+          );
+        }
+      }
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);
+    // O `carregar` do EstoquePage captura o próprio erro e nunca falha pra fora.
     await onRecarregar();
   }
 
@@ -283,6 +310,12 @@ export function ProdutosSection({
           onFechar={() => setMostrarImportar(false)}
           onImportado={onRecarregar}
         />
+      )}
+
+      {avisoEstoqueInicial && (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          {avisoEstoqueInicial}
+        </p>
       )}
 
       {erro && (

@@ -37,6 +37,10 @@ export function EstoquePage() {
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // O aviso do estoque inicial que não entrou (#909) fica aqui, e não na
+  // seção de Produtos: o `carregar` abaixo troca a seção por "Carregando..."
+  // e ela volta zerada. O `carregar` não limpa; só o próximo salvar.
+  const [avisoEstoqueInicial, setAvisoEstoqueInicial] = useState<string | null>(null);
   // O catálogo do "Juntar peças repetidas" (#721), à parte das listas da tela:
   // ele não depende da loja, e a falha de OUTRA lista (depósitos,
   // configuração) não pode deixar a janela sem peças nem dizer "tudo certo".
@@ -93,6 +97,8 @@ export function EstoquePage() {
   }
 
   useEffect(() => {
+    // Outra loja: o aviso do estoque inicial era de uma peça da anterior.
+    setAvisoEstoqueInicial(null);
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
@@ -172,6 +178,8 @@ export function EstoquePage() {
           regime={regime}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
+          avisoEstoqueInicial={avisoEstoqueInicial}
+          onAvisoEstoqueInicial={setAvisoEstoqueInicial}
         />
       ) : aba === "movimentacoes" ? (
         <MovimentacoesSection

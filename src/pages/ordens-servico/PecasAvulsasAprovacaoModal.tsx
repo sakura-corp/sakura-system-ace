@@ -82,6 +82,10 @@ export function PecasAvulsasAprovacaoModal({
     mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
   ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
+  // A peça foi cadastrada, mas o estoque inicial não entrou (#909): só avisa,
+  // um aviso por item (pra um não apagar o outro). Fica na área de avisos da
+  // janela, e não na linha do item: ligada a peça (#720), o item sai da lista.
+  const [avisosEstoqueInicial, setAvisosEstoqueInicial] = useState<Record<string, string>>({});
   // Quantas peças recém-cadastradas estão sendo ligadas agora: o Aprovar
   // espera TODAS, pra não mandar o vínculo de um item que o banco está ligando
   // (uma contagem, e não sim/não: a primeira a acabar não pode soltar o botão).
@@ -268,6 +272,11 @@ export function PecasAvulsasAprovacaoModal({
             );
           })}
 
+          {Object.entries(avisosEstoqueInicial).map(([itemId, avisoDoEstoque]) => (
+            <p key={itemId} className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+              {`${cadastradas[itemId] ? `${cadastradas[itemId].descricao}: ` : ""}${avisoDoEstoque}`}
+            </p>
+          ))}
           {aviso && (
             <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">{aviso}</p>
           )}
@@ -308,7 +317,10 @@ export function PecasAvulsasAprovacaoModal({
           item={cadastrando}
           pecas={pecasDaJanela}
           lojaId={lojaId}
-          onCadastrada={(peca) => {
+          onCadastrada={(peca, avisoDoEstoque) => {
+            if (avisoDoEstoque) {
+              setAvisosEstoqueInicial((a) => ({ ...a, [cadastrando.id]: avisoDoEstoque }));
+            }
             void aoCadastrar(cadastrando, peca);
           }}
           onAbrirExistente={(peca) => {
