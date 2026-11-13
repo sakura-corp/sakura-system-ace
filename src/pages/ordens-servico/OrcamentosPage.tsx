@@ -189,9 +189,30 @@ export function OrcamentosPage() {
   async function handleEditarItem(item: ItemOS, patch: PatchItemOS) {
     if (!operador || !lojaAtual || !aberto) return;
     await editarItemOrdem(item, patch, operador.id);
+    await recarregarAberto();
+  }
+
+  // Traz o orçamento aberto de novo: depois de corrigir um item, ou de a
+  // janela da aprovação ligar a peça cadastrada ao item (#720), senão ele
+  // continuaria aparecendo como "sem cadastro". Devolve se conseguiu buscar.
+  async function recarregarAberto(): Promise<boolean> {
+    const idAberto = aberto?.id;
     const atualizadas = await carregar();
-    const atualizada = atualizadas?.find((o) => o.id === aberto.id);
-    if (atualizada) setAberto(atualizada);
+    const atualizada = atualizadas?.find((o) => o.id === idAberto);
+    // Só troca se o MESMO orçamento continua aberto: a pessoa pode ter
+    // fechado ele (ou aberto outro) enquanto o banco respondia, e ele não
+    // pode reabrir sozinho.
+    if (atualizada) setAberto((atual) => (atual?.id === atualizada.id ? atualizada : atual));
+    return atualizadas !== null;
+  }
+
+  // A janela da aprovação ligou uma peça (#720). O `carregar()` não lança
+  // (mostra o erro na página, atrás da janela): aqui vira erro pra o
+  // formulário mostrar dentro da janela.
+  async function aposLigarPeca() {
+    if (!(await recarregarAberto())) {
+      throw new Error("não deu pra buscar o orçamento de novo");
+    }
   }
 
   // Aprovou: vira OS e a gente leva pra ela, que passa a ser "OS N" na lista de
@@ -290,6 +311,7 @@ export function OrcamentosPage() {
     onSalvarNova: handleSalvarNova,
     onSalvarEdicao: handleSalvarEdicao,
     onEditarItem: handleEditarItem,
+    onItensMudaram: aposLigarPeca,
     onEncerrar: async () => undefined,
     onAprovar: handleAprovar,
     onRecusar: handleRecusar,

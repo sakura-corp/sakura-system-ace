@@ -6,6 +6,11 @@
  * pessoa cadastrava de novo e a primeira ficava sobrando no cadastro. E o
  * item corrigido depois perde a escolha: a peça de antes pode não ser a dele.
  *
+ * Desde a parte 2 da #720, a peça cadastrada na janela é ligada ao item NA
+ * HORA: fechar o orçamento e abrir de novo não deixa ela solta no cadastro.
+ * Se ligar falha (sem internet), vale o de antes: a escolha fica guardada e
+ * a aprovação liga.
+ *
  * O cadastro de peça (o formulário inteiro) é trocado por um botão: aqui só
  * importa o que a janela da aprovação faz com a peça que ele devolve.
  */
@@ -30,7 +35,20 @@ vi.mock("./CadastroPecaAvulsaModal", () => ({
   ),
 }));
 
-beforeEach(() => localStorage.clear());
+const cadastrarPecaDoItem = vi.fn();
+vi.mock("@/lib/ordensServico", async (original) => ({
+  ...(await original<typeof import("@/lib/ordensServico")>()),
+  cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
+}));
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+}));
+
+beforeEach(() => {
+  localStorage.clear();
+  vi.clearAllMocks();
+  cadastrarPecaDoItem.mockResolvedValue(true);
+});
 
 const funcionarios = [
   { id: "func-1", loja_id: "loja-1", nome: "Carlos", cargo: "Mecânico", ativo: true },
@@ -67,13 +85,13 @@ const ordem = {
   itens: [avulsa],
 } as unknown as OrdemServico;
 
-function montar(ordemAberta: OrdemServico) {
+function montar(ordemAberta: OrdemServico, onItensMudaram = vi.fn().mockResolvedValue(undefined)) {
   const onAprovar = vi.fn().mockResolvedValue(undefined);
   const onEditarItem = vi.fn().mockResolvedValue(undefined);
-  const { user } = renderizar(
+  const formulario = (o: OrdemServico) => (
     <OrdemServicoForm
       modoOrcamento
-      ordemExistente={ordemAberta}
+      ordemExistente={o}
       clientes={clientes}
       pecas={[]}
       servicos={[]}
@@ -91,9 +109,18 @@ function montar(ordemAberta: OrdemServico) {
       onCadastrarCliente={vi.fn()}
       onCadastrarVeiculo={vi.fn()}
       onCancelar={vi.fn()}
-    />,
+      onItensMudaram={onItensMudaram}
+    />
   );
-  return { user, onAprovar, onEditarItem };
+  const { user, rerender } = renderizar(formulario(ordemAberta));
+  return {
+    user,
+    onAprovar,
+    onEditarItem,
+    onItensMudaram,
+    // A tela de Orçamentos recarregou e mandou a ordem nova (mesma chave).
+    trocarOrdem: (o: OrdemServico) => rerender(formulario(o)),
+  };
 }
 
 type Usuario = ReturnType<typeof montar>["user"];
@@ -118,7 +145,87 @@ async function voltarEAbrirDeNovo(user: Usuario) {
   await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
 }
 
-describe("OrdemServicoForm — as escolhas da aprovação não se perdem no Voltar (#720)", () => {
+describe("OrdemServicoForm — a peça cadastrada na aprovação liga ao item na hora (#720)", () => {
+  it("cadastrar liga na hora e recarrega; a janela não pede mais nada daquele item", async () => {
+    const { user, onAprovar, onItensMudaram } = montar(ordem);
+    await abrirJanela(user);
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+
+    expect(cadastrarPecaDoItem).toHaveBeenCalledWith("item-1", "p-nova", "op");
+    expect(onItensMudaram).toHaveBeenCalled();
+    expect(await screen.findByText(/Não sobrou nenhuma peça sem cadastro/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", []);
+  });
+
+  it("fechar e abrir o orçamento não deixa a peça solta: o item volta já ligado", async () => {
+    const { user, onAprovar, trocarOrdem } = montar(ordem);
+    await abrirJanela(user);
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+    const janela = await screen.findByRole("dialog", { name: "Peças sem cadastro" });
+    await user.click(within(janela).getByRole("button", { name: "Voltar" }));
+
+    // O banco já ligou: o orçamento recarregado vem com a peça no item.
+    const ligada = { ...ordem, itens: [{ ...avulsa, peca_id: "p-nova" }] } as unknown as OrdemServico;
+    trocarOrdem(ligada);
+
+    // Sem peça avulsa, a aprovação vai direto, sem janela e sem cadastrar de novo.
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
+    expect(screen.queryByRole("dialog", { name: "Peças sem cadastro" })).not.toBeInTheDocument();
+    expect(onAprovar).toHaveBeenCalledWith(ligada, "pelo telefone");
+    expect(cadastrarPecaDoItem).toHaveBeenCalledTimes(1);
+  });
+
+  it("ligou, mas o orçamento não recarregou: avisa, sem dizer que a peça não entrou", async () => {
+    const { user } = montar(ordem, vi.fn().mockRejectedValue(new Error("sem internet")));
+    await abrirJanela(user);
+    await user.click(screen.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+
+    // Aparece no formulário e dentro da janela (o mesmo erro, como o da aprovação).
+    expect(
+      await screen.findAllByText(/A peça foi cadastrada e ligada ao item, mas o orçamento não recarregou: sem internet/),
+    ).not.toHaveLength(0);
+    // Já ligada: a janela não oferece cadastrar de novo.
+    expect(screen.queryByRole("radio", { name: "Cadastrar agora" })).not.toBeInTheDocument();
+  });
+});
+
+describe("OrdemServicoForm — a peça ligada continua no 'já tenho' das outras linhas (#720)", () => {
+  // Revisão: ligar esquecia a peça nova, e enquanto o orçamento não
+  // recarregava (ou se o recarregar falhasse) a segunda linha da mesma peça
+  // não achava ela e a pessoa cadastrava outra igual.
+  it("duas linhas da mesma peça: ligada a primeira, a segunda acha a peça nova", async () => {
+    const segunda = { ...avulsa, id: "item-2" };
+    const duas = { ...ordem, itens: [avulsa, segunda] } as unknown as OrdemServico;
+    const { user, onAprovar } = montar(duas);
+    await abrirJanela(user);
+    const [primeiraLinha] = screen.getAllByRole("group").map((g) => within(g));
+    await user.click(primeiraLinha.getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
+    await screen.findByText(/Falta escolher o que fazer com 1 peça/);
+
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta nova/ }));
+    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
+    expect(onAprovar).toHaveBeenCalledWith(duas, "pelo telefone", [{ itemId: "item-2", pecaId: "p-nova" }]);
+  });
+});
+
+// Se ligar na hora falha (sem internet), vale o de antes: a escolha fica
+// guardada na janela, e a aprovação é que liga.
+describe("OrdemServicoForm — ligar falhou: as escolhas não se perdem no Voltar (#720)", () => {
+  beforeEach(() => {
+    cadastrarPecaDoItem.mockRejectedValue(new Error("sem internet"));
+  });
+
   it("a peça cadastrada continua como caminho, sem cadastrar outra", async () => {
     const { user, onAprovar } = montar(ordem);
     await abrirJanela(user);

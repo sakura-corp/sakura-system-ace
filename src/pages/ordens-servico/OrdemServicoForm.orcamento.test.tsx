@@ -20,6 +20,11 @@ import type { Cliente } from "@/types/cliente";
 import type { Funcionario } from "@/types/funcionario";
 import type { OrdemServico } from "@/types/os";
 
+// A janela da peça sem cadastro usa o login (pra ligar a peça cadastrada, #720).
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+}));
+
 beforeEach(() => localStorage.clear());
 
 const funcionarios = [

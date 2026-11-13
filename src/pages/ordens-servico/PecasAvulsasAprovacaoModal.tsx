@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
+import { useAuth } from "@/contexts/AuthContext";
+import { mensagemDeErro } from "@/lib/errors";
+import { cadastrarPecaDoItem } from "@/lib/ordensServico";
 import {
   pendenciasDaAprovacao,
   vinculosDaAprovacao,
@@ -11,7 +14,11 @@ import { acharPecasParecidas, LIMITE_NOME_PARA_ORDENAR } from "@/schemas/pecaPar
 import type { ItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
-import type { EscolhasDaJanela, ModoAvulsa as Modo } from "./escolhasAvulsas";
+import {
+  AVISO_PECA_SOBROU,
+  type EscolhasDaJanela,
+  type ModoAvulsa as Modo,
+} from "./escolhasAvulsas";
 
 const ROTULO_DO_MODO: Record<Modo, string> = {
   existente: "É uma peça que já tenho",
@@ -38,6 +45,12 @@ interface PecasAvulsasAprovacaoModalProps {
   /** Erro da aprovação, mostrado aqui dentro pra janela não esconder. */
   erro: string | null;
   onConfirmar: (vinculos: { itemId: string; pecaId: string }[]) => void;
+  /**
+   * A peça cadastrada aqui foi ligada ao item na hora (#720), ou o item já
+   * não era avulso: ele sai da lista, e quem abriu a janela recarrega o
+   * orçamento.
+   */
+  onItemLigado: (itemId: string) => void | Promise<void>;
   onFechar: () => void;
 }
 
@@ -56,8 +69,10 @@ export function PecasAvulsasAprovacaoModal({
   enviando,
   erro,
   onConfirmar,
+  onItemLigado,
   onFechar,
 }: PecasAvulsasAprovacaoModalProps) {
+  const { operador } = useAuth();
   const { modos, escolhidas, cadastradas } = escolhasDaJanela;
   const setModos = (mudar: (m: Record<string, Modo>) => Record<string, Modo>) =>
     onMudarEscolhas((e) => ({ ...e, modos: mudar(e.modos) }));
@@ -67,6 +82,11 @@ export function PecasAvulsasAprovacaoModal({
     mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
   ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
+  // Quantas peças recém-cadastradas estão sendo ligadas agora: o Aprovar
+  // espera TODAS, pra não mandar o vínculo de um item que o banco está ligando
+  // (uma contagem, e não sim/não: a primeira a acabar não pode soltar o botão).
+  const [ligando, setLigando] = useState(0);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
   // sem peça escolhida e "cadastrar" sem peça criada ficam com id vazio, e
@@ -97,6 +117,38 @@ export function PecasAvulsasAprovacaoModal({
     return [...pecas, ...new Map(novas.map((peca) => [peca.id, peca])).values()];
   }, [pecas, cadastradas]);
 
+  // A peça nasceu no cadastro: liga ao item JÁ (#720), como a janela da nota
+  // faz. Esperar a aprovação deixava a peça solta se a pessoa fechasse o
+  // orçamento ou outro computador aprovasse antes. Em orçamento o banco só
+  // liga, sem baixar (migration 0079); a aprovação é que baixa.
+  async function aoCadastrar(item: ItemOS, peca: PecaJanela) {
+    // Guardada como caminho antes de tudo: se ligar falhar, a aprovação liga.
+    setCadastradas((c) => ({ ...c, [item.id]: peca }));
+    setModos((m) => ({ ...m, [item.id]: "cadastrar" }));
+    setCadastrando(null);
+    setAviso(null);
+    if (!operador) {
+      setAviso("A peça foi cadastrada, mas não foi ligada ao item agora: o login caiu. Ao aprovar, ela é ligada.");
+      return;
+    }
+    setLigando((n) => n + 1);
+    try {
+      const ligou = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
+      if (!ligou) setAviso(AVISO_PECA_SOBROU);
+    } catch (err) {
+      console.error("Erro ao ligar a peça cadastrada ao item do orçamento:", err);
+      setAviso(
+        `A peça foi cadastrada, mas não foi ligada ao item agora: ${mensagemDeErro(err)}. ` +
+          "Ao aprovar, ela é ligada.",
+      );
+      return;
+    } finally {
+      setLigando((n) => n - 1);
+    }
+    // Ligou (ou o item já não era avulso): sai da lista e o orçamento recarrega.
+    await onItemLigado(item.id);
+  }
+
   function escolherPeca(itemId: string, pecaId: string) {
     setModos((m) => ({ ...m, [itemId]: "existente" }));
     setEscolhidas((e) => ({ ...e, [itemId]: pecaId }));
@@ -113,6 +165,11 @@ export function PecasAvulsasAprovacaoModal({
         }}
       >
         <div className="space-y-4">
+          {itens.length === 0 && (
+            <p className="text-corpo text-sakura-purple-dark">
+              Não sobrou nenhuma peça sem cadastro. Pode aprovar.
+            </p>
+          )}
           {itens.map((item) => {
             const modo = modos[item.id];
             // As parecidas com o que foi digitado vão no topo da lista. Aqui só ordena, então o limite é mais baixo (#741).
@@ -211,6 +268,9 @@ export function PecasAvulsasAprovacaoModal({
             );
           })}
 
+          {aviso && (
+            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">{aviso}</p>
+          )}
           {erro && (
             <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
           )}
@@ -234,7 +294,7 @@ export function PecasAvulsasAprovacaoModal({
             <button
               type="button"
               onClick={() => onConfirmar(vinculosDaAprovacao(itens, escolhas))}
-              disabled={faltam > 0 || enviando}
+              disabled={faltam > 0 || enviando || ligando > 0}
               className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {enviando ? "Aprovando..." : "Aprovar orçamento"}
@@ -249,9 +309,7 @@ export function PecasAvulsasAprovacaoModal({
           pecas={pecasDaJanela}
           lojaId={lojaId}
           onCadastrada={(peca) => {
-            setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
-            setModos((m) => ({ ...m, [cadastrando.id]: "cadastrar" }));
-            setCadastrando(null);
+            void aoCadastrar(cadastrando, peca);
           }}
           onAbrirExistente={(peca) => {
             escolherPeca(cadastrando.id, peca.id);
