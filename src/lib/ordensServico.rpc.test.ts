@@ -251,10 +251,12 @@ describe("faturarOrdem", () => {
     expect(caixa.criarMovimentoCaixa).toHaveBeenCalledTimes(1);
   });
 
-  it("fecha o total da tela no centavo", async () => {
+  it("manda o total da tela sem arredondar (o meio centavo de 1,5 × 85,35 não pode virar 128,02)", async () => {
+    // Revisão da #803: arredondar aqui e lá separados recusava pra sempre uma
+    // OS com quantidade quebrada. O banco compara pela diferença.
     sb.rpc.mockResolvedValue({ data: null, error: null });
-    await faturarOrdem(os, pix, 1, null, "op-1", 0.1 + 0.2);
-    expect(sb.rpc.mock.calls[0][1].p_total_da_tela).toBe(0.3);
+    await faturarOrdem(os, pix, 1, null, "op-1", 1.5 * 85.35);
+    expect(sb.rpc.mock.calls[0][1].p_total_da_tela).toBe(1.5 * 85.35);
   });
 
   it("OS que mudou em outro computador: OrdemMudouError e nada de caixa nem conta a receber", async () => {

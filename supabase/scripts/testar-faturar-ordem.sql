@@ -111,6 +111,7 @@ declare
   os_and  uuid;
   venda   uuid;
   os_cent uuid;
+  os_meio uuid;
   os_dif  uuid;
   orc     uuid;
   rec     uuid;
@@ -135,6 +136,7 @@ begin
   insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'em_andamento') returning id into os_and;
   insert into ordens_servico (loja_id, cliente_id, status, tipo) values (loja_a, cliente, 'concluida', 'venda_balcao') returning id into venda;
   insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'em_andamento') returning id into os_cent;
+  insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'em_andamento') returning id into os_meio;
   insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'em_andamento') returning id into os_dif;
   insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'orcamento') returning id into orc;
   insert into ordens_servico (loja_id, cliente_id, status) values (loja_a, cliente, 'recusado') returning id into rec;
@@ -154,6 +156,10 @@ begin
   insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade, preco_unitario) values
     (os_cent, 'peca', 'Bico', 1, 0.10),
     (os_cent, 'peca', 'Tampa', 1, 0.20);
+  -- O meio centavo (revisão da #803): 1,5 h × 85,35 = 128,025 exatos no banco;
+  -- a tela soma 128.02499999999998. Arredondar cada lado dá 128,03 × 128,02.
+  insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade, preco_unitario) values
+    (os_meio, 'servico', 'Mão de obra', 1.5, 85.35);
   -- O do total diferente: 50 com 5 de desconto = 45.
   insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade, preco_unitario, desconto) values
     (os_dif, 'servico', 'Alinhamento', 1, 50, 5);
@@ -213,6 +219,12 @@ begin
   perform marcar_ordem_faturada(os_cent, 'Pix', 1, (0.1::float8 + 0.2::float8)::numeric, o_a);
   if (select status from ordens_servico where id = os_cent) <> 'faturada' then
     raise exception 'FALHOU (C5): 0.1 + 0.2 contra um total de 0,30 devia faturar';
+  end if;
+  -- C6. Quantidade quebrada no meio centavo: o total que a tela mandou
+  -- (sem arredondar) é o mesmo dos itens, e tem de faturar.
+  t := pg_temp.t803f_tentar(os_meio, 128.02499999999998, o_a);
+  if t.codigo is not null or (select status from ordens_servico where id = os_meio) <> 'faturada' then
+    raise exception 'FALHOU (C6): 1,5 × 85,35 com o total da tela (128.02499999999998) devia faturar (veio %: %)', t.codigo, t.mensagem;
   end if;
 
   -- D. Recusas pela situação: orçamento, recusado, já faturada.

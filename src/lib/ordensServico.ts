@@ -4,7 +4,7 @@ import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
 import { mensagemDeErro } from "./errors";
-import { arredondarCentavo, somar } from "@/schemas/dinheiro";
+import { somar } from "@/schemas/dinheiro";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
@@ -707,7 +707,9 @@ export async function faturarOrdem(
     p_ordem: ordem.id,
     p_forma_pagamento: formaPagamentoResumo,
     p_parcelas: parcelas,
-    p_total_da_tela: arredondarCentavo(totalDosItens),
+    // Sem arredondar: o banco compara pela diferença (até meio centavo), e
+    // arredondar aqui jogaria o meio centavo pro lado errado.
+    p_total_da_tela: totalDosItens,
     p_operador: operadorId,
   });
   if (erroOrdem) {

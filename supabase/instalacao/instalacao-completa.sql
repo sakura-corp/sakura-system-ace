@@ -8557,7 +8557,13 @@ begin
     from ordens_servico_itens
    where ordem_servico_id = v_ordem.id;
 
-  if p_total_da_tela is null or round(v_total_do_banco, 2) <> round(p_total_da_tela, 2) then
+  -- Compara pela DIFERENÇA, não arredondando cada lado: com quantidade
+  -- quebrada o total cai no meio centavo (1,5 × 85,35 = 128,025 aqui e
+  -- 128.02499999999998 na tela), e arredondar os dois separados dava 128,03
+  -- × 128,02, recusando pra sempre uma OS que não mudou (revisão da #803).
+  -- Até meio centavo é a mesma conta; qualquer mudança de verdade (um item,
+  -- um preço, um desconto) mexe pelo menos 1 centavo.
+  if p_total_da_tela is null or abs(v_total_do_banco - p_total_da_tela) > 0.005 then
     raise exception 'Esta OS mudou em outro computador. Atualize a tela e fature de novo.'
       using errcode = 'SK803';
   end if;
