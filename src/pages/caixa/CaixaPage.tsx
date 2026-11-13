@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { buscarCustoDasOrdens, criarMovimentoCaixa, listarMovimentosCaixa } from "@/lib/caixa";
 import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import { hojeLocal } from "@/lib/datas";
@@ -27,40 +28,50 @@ export function CaixaPage() {
   const [fechamentos, setFechamentos] = useState<FechamentoCaixa[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Só a carga mais nova mexe na tela (#927).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
 
   async function carregar() {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     setCarregando(true);
     setErro(null);
     try {
       const [movimentosCarregados, categoriasCarregadas] = await Promise.all([
-        listarMovimentosCaixa(lojaAtual.id),
+        listarMovimentosCaixa(carga.lojaId),
         listarCategoriasCaixa(),
       ]);
+      if (!carga.aindaEhAtual()) return;
       // Sem o custo o lucro sairia inflado: se falhar, a tela mostra o erro.
       const custos = await buscarCustoDasOrdens(
         movimentosCarregados.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
       );
+      if (!carga.aindaEhAtual()) return;
       setMovimentos(movimentosCarregados);
       setCustoDasOrdens(custos);
       setCategorias(categoriasCarregadas);
+      carga.gravou();
       // O fechamento vem à parte e não derruba a tela: num banco que ainda
       // não recebeu a migration 0058, a tabela não existe — o Caixa continua
       // funcionando e a faixa de "banco desatualizado" já explica o resto.
       try {
-        setFechamentos(await listarFechamentosCaixa(lojaAtual.id));
+        const listaFechamentos = await listarFechamentosCaixa(carga.lojaId);
+        if (!carga.aindaEhAtual()) return;
+        setFechamentos(listaFechamentos);
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar fechamentos de caixa:", err);
         setFechamentos([]);
       }
     } catch (err) {
+      if (!carga.aindaEhAtual()) return;
       console.error("Erro ao carregar caixa:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -117,7 +128,7 @@ export function CaixaPage() {
 
       {carregando ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : aba === "diario" ? (
+      ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
         <DiarioSection
           movimentos={movimentos}
           custoDasOrdens={custoDasOrdens}
