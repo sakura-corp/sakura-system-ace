@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarDepositos } from "@/lib/depositos";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarFornecedores } from "@/lib/fornecedores";
@@ -35,9 +36,14 @@ export function FornecedoresPage() {
 
   // `semPiscar`: recarrega sem trocar a tela por "Carregando..." (a Sugestão de
   // compra precisa continuar na tela mostrando os pedidos que acabou de criar).
+  // #927: só a carga mais nova mexe na tela (trocar de loja com a anterior ainda buscando).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+
   async function carregar(semPiscar = false) {
-    if (!lojaAtual) {
-      setCarregando(false);
+    // Um carregar guardado de antes da troca de loja nem começa.
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     if (!semPiscar) setCarregando(true);
@@ -47,18 +53,21 @@ export function FornecedoresPage() {
         await Promise.all([
           listarFornecedores(),
           listarPecasJanela(),
-          listarPedidos(lojaAtual.id),
-          listarDepositos(lojaAtual.id),
+          listarPedidos(carga.lojaId),
+          listarDepositos(carga.lojaId),
         ]);
+      if (!carga.aindaEhAtual()) return;
       setFornecedores(fornecedoresCarregados);
       setPecas(pecasCarregadas);
       setPedidos(pedidosCarregados);
       setDepositos(depositosCarregados);
+      carga.gravou();
     } catch (err) {
       console.error("Erro ao carregar fornecedores:", err);
+      if (!carga.aindaEhAtual()) return;
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -66,6 +75,11 @@ export function FornecedoresPage() {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
+
+  // Carga da loja nova com erro: pedidos e depósitos da anterior não aparecem
+  // (fornecedores e peças são globais, não dependem da loja).
+  const pedidosNaTela = dadosSaoDaLoja ? pedidos : [];
+  const depositosNaTela = dadosSaoDaLoja ? depositos : [];
 
   return (
     <div className="space-y-6">
@@ -113,10 +127,10 @@ export function FornecedoresPage() {
         />
       ) : (
         <PedidosCompraSection
-          pedidos={pedidos}
+          pedidos={pedidosNaTela}
           fornecedores={fornecedores}
           pecas={pecas}
-          depositos={depositos}
+          depositos={depositosNaTela}
           lojaId={lojaAtual.id}
           operadorId={operador?.id ?? null}
           onRecarregar={() => carregar()}

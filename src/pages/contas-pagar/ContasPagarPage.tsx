@@ -10,6 +10,7 @@ import {
   pagarConta,
 } from "@/lib/contasPagar";
 import { mensagemDeErro } from "@/lib/errors";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { ContaPagar, NovaContaPagar } from "@/types/contaPagar";
 import { ContaPagarForm } from "./ContaPagarForm";
@@ -36,26 +37,32 @@ export function ContasPagarPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [contaPagando, setContaPagando] = useState<ContaPagar | null>(null);
+  // Só a carga mais nova mexe na tela (#927).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
 
   async function carregar() {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     setCarregando(true);
     setErro(null);
     try {
       const [listaContas, listaCategorias] = await Promise.all([
-        listarContasPagar(lojaAtual.id),
+        listarContasPagar(carga.lojaId),
         listarCategoriasCaixa(),
       ]);
+      if (!carga.aindaEhAtual()) return;
       setContas(listaContas);
       setCategorias(listaCategorias);
+      carga.gravou();
     } catch (err) {
+      if (!carga.aindaEhAtual()) return;
       console.error("Erro ao carregar contas a pagar:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -152,7 +159,7 @@ export function ContasPagarPage() {
         />
       )}
 
-      {!carregando && (
+      {!carregando && dadosSaoDaLoja && (
         <div className="sakura-card p-4">
           <p className="text-rotulo text-sakura-muted">Total pendente</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
@@ -163,7 +170,7 @@ export function ContasPagarPage() {
 
       {carregando ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : (
+      ) : !dadosSaoDaLoja ? null : (
         <>
           <section>
             <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pendentes</h2>

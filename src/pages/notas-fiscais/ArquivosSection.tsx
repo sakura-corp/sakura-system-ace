@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   baixarArquivo,
@@ -73,10 +74,18 @@ function formatarCompetencia(competencia: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+const SEM_ARQUIVOS: NotaFiscalArquivo[] = [];
+const SEM_ORDENS: OrdemParaNotas[] = [];
+
 export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const { operador, lojaAtual } = useAuth();
-  const [arquivos, setArquivos] = useState<NotaFiscalArquivo[]>([]);
-  const [ordens, setOrdens] = useState<OrdemParaNotas[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados da loja anterior (guardados no estado) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [arquivosGuardados, setArquivos] = useState<NotaFiscalArquivo[]>([]);
+  const [ordensGuardadas, setOrdens] = useState<OrdemParaNotas[]>([]);
+  const arquivos = dadosSaoDaLoja ? arquivosGuardados : SEM_ARQUIVOS;
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -90,24 +99,28 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const [mesBaixando, setMesBaixando] = useState<string | null>(null);
 
   async function carregar() {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     setCarregando(true);
     setErro(null);
     try {
       const [listaArquivos, listaOrdens] = await Promise.all([
-        listarArquivos(tipo, lojaAtual.id),
-        listarOrdensParaNotas(lojaAtual.id),
+        listarArquivos(tipo, carga.lojaId),
+        listarOrdensParaNotas(carga.lojaId),
       ]);
+      if (!carga.aindaEhAtual()) return;
       setArquivos(listaArquivos);
       setOrdens(listaOrdens);
+      carga.gravou();
     } catch (err) {
+      if (!carga.aindaEhAtual()) return;
       console.error("Erro ao carregar notas fiscais:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 

@@ -10,6 +10,7 @@ import {
   calcularSaldoPorPecaEDeposito,
   listarMovimentos,
 } from "@/lib/estoque";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarPecas } from "@/lib/pecas";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
@@ -49,7 +50,13 @@ export function EstoquePage() {
   const [catalogo, setCatalogo] = useState<Peca[] | null>(null);
   const [erroCatalogo, setErroCatalogo] = useState<string | null>(null);
 
+  // #927: só a carga mais nova mexe na tela (trocar de loja com a anterior ainda buscando).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+
   async function carregar() {
+    // Um `carregar` guardado de antes da troca de loja nem começa.
+    const carga = comecar(lojaAtual?.id);
+    if (!carga && lojaAtual) return;
     setCarregando(true);
     setErro(null);
     setErroCatalogo(null);
@@ -69,6 +76,7 @@ export function EstoquePage() {
       setCarregando(false);
       return;
     }
+    if (!carga) return;
     try {
       const [
         pecasCarregadas,
@@ -78,21 +86,24 @@ export function EstoquePage() {
         configFiscal,
       ] = await Promise.all([
         promessaCatalogo,
-        listarMovimentos(lojaAtual.id),
+        listarMovimentos(carga.lojaId),
         listarCategorias(),
-        listarDepositos(lojaAtual.id),
-        buscarConfiguracaoFiscal(lojaAtual.id),
+        listarDepositos(carga.lojaId),
+        buscarConfiguracaoFiscal(carga.lojaId),
       ]);
+      if (!carga.aindaEhAtual()) return;
       setPecas(pecasCarregadas);
       setMovimentos(movimentosCarregados);
       setCategorias(categoriasCarregadas);
       setDepositos(depositosCarregados);
       setRegime(configFiscal?.regime_tributario ?? null);
+      carga.gravou();
     } catch (err) {
       console.error("Erro ao carregar estoque:", err);
+      if (!carga.aindaEhAtual()) return;
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -103,8 +114,13 @@ export function EstoquePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
-  const saldos = calcularSaldoPorPeca(movimentos);
-  const saldosPorDeposito = calcularSaldoPorPecaEDeposito(movimentos);
+  // Carga da loja nova com erro: nada da loja anterior na tela, só o erro.
+  const pecasNaTela = dadosSaoDaLoja ? pecas : [];
+  const movimentosNaTela = dadosSaoDaLoja ? movimentos : [];
+  const depositosNaTela = dadosSaoDaLoja ? depositos : [];
+  const regimeNaTela = dadosSaoDaLoja ? regime : null;
+  const saldos = calcularSaldoPorPeca(movimentosNaTela);
+  const saldosPorDeposito = calcularSaldoPorPecaEDeposito(movimentosNaTela);
 
   return (
     <div className="space-y-6">
@@ -172,10 +188,10 @@ export function EstoquePage() {
         </p>
       ) : aba === "produtos" ? (
         <ProdutosSection
-          pecas={pecas}
+          pecas={pecasNaTela}
           categorias={categorias}
           saldos={saldos}
-          regime={regime}
+          regime={regimeNaTela}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
           avisoEstoqueInicial={avisoEstoqueInicial}
@@ -183,24 +199,24 @@ export function EstoquePage() {
         />
       ) : aba === "movimentacoes" ? (
         <MovimentacoesSection
-          pecas={pecas}
-          movimentos={movimentos}
-          depositos={depositos}
+          pecas={pecasNaTela}
+          movimentos={movimentosNaTela}
+          depositos={depositosNaTela}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
         />
       ) : aba === "contagem" ? (
         <ContagemSection
-          pecas={pecas}
-          depositos={depositos}
+          pecas={pecasNaTela}
+          depositos={depositosNaTela}
           saldosPorDeposito={saldosPorDeposito}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
         />
       ) : (
         <RelatoriosEstoqueSection
-          pecas={pecas}
-          movimentos={movimentos}
+          pecas={pecasNaTela}
+          movimentos={movimentosNaTela}
           saldos={saldos}
         />
       )}

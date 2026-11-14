@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarMovimentosCaixa } from "@/lib/caixa";
 import { listarContasPagar } from "@/lib/contasPagar";
 import { listarContasReceber } from "@/lib/contasReceber";
@@ -22,15 +23,27 @@ import { LucratividadeSection } from "./LucratividadeSection";
 
 type Aba = "graficos" | "lucratividade" | "curvaABC" | "fluxo";
 
+const SEM_MOVIMENTOS: MovimentoCaixa[] = [];
+const SEM_ORDENS: OrdemServico[] = [];
+const SEM_PECAS: Peca[] = [];
+const SEM_SERVICOS: Servico[] = [];
+
 export function RelatoriosPage() {
   const { lojaAtual, operador } = useAuth();
   const podeVerPagar = temPermissao(operador, "contas_pagar");
   const podeVerReceber = temPermissao(operador, "contas_receber");
   const [aba, setAba] = useState<Aba>("graficos");
-  const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados guardados (da loja anterior) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [movimentosGuardados, setMovimentos] = useState<MovimentoCaixa[]>([]);
+  const [ordensGuardadas, setOrdens] = useState<OrdemServico[]>([]);
+  const [pecasGuardadas, setPecas] = useState<Peca[]>([]);
+  const [servicosGuardados, setServicos] = useState<Servico[]>([]);
+  const movimentos = dadosSaoDaLoja ? movimentosGuardados : SEM_MOVIMENTOS;
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
+  const pecas = dadosSaoDaLoja ? pecasGuardadas : SEM_PECAS;
+  const servicos = dadosSaoDaLoja ? servicosGuardados : SEM_SERVICOS;
   const [contasPagar, setContasPagar] = useState<ContaPagar[] | null>(null);
   const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(null);
   const [erroContas, setErroContas] = useState<string | null>(null);
@@ -40,31 +53,36 @@ export function RelatoriosPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!lojaAtual) {
-        setCarregando(false);
+      const carga = comecar(lojaAtual?.id);
+      if (!carga) {
+        if (!lojaAtual) setCarregando(false);
         return;
       }
+      setErro(null);
       try {
         const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
           await Promise.all([
-            listarMovimentosCaixa(lojaAtual.id),
-            listarOrdens(lojaAtual.id),
+            listarMovimentosCaixa(carga.lojaId),
+            listarOrdens(carga.lojaId),
             listarPecas(),
             listarServicos(),
           ]);
+        if (!carga.aindaEhAtual()) return;
         setMovimentos(movimentosCarregados);
         setOrdens(ordensCarregadas);
         setPecas(pecasCarregadas);
         setServicos(servicosCarregados);
+        carga.gravou();
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
       } finally {
-        setCarregando(false);
+        if (carga.aindaEhAtual()) setCarregando(false);
       }
     }
     carregar();
-  }, [lojaAtual]);
+  }, [lojaAtual, comecar]);
 
   // As contas do Fluxo de caixa vêm à parte (#389): um erro nelas não pode
   // apagar Gráficos e Lucratividade, nem virar "Sem acesso" pra quem tem o

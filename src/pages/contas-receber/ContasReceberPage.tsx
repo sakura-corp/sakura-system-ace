@@ -9,6 +9,7 @@ import { temPermissao } from "@/types/operador";
 import { buscarConfiguracaoPix } from "@/lib/configuracoes";
 import { criarContaReceber, listarContasReceber, receberConta } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import {
   listarModelosWhatsapp,
   registrarMensagemAberta,
@@ -56,32 +57,38 @@ export function ContasReceberPage() {
   // pergunta que hoje mora só na memória de quem cobrou: "já falei com essa
   // pessoa?". Ver a tabela `whatsapp_mensagens` na migration 0052.
   const [ultimasCobrancas, setUltimasCobrancas] = useState<Map<string, string>>(new Map());
+  // Só a carga mais nova mexe na tela (#927).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
 
   async function carregar() {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     setCarregando(true);
     setErro(null);
     try {
       const [listaContas, listaClientes, modelos, cobrancas, pix] = await Promise.all([
-        listarContasReceber(lojaAtual.id),
+        listarContasReceber(carga.lojaId),
         listarClientesParaEscolha(podeVerCadastro),
-        listarModelosWhatsapp(lojaAtual.id),
-        ultimasMensagensPorReferencia(lojaAtual.id, "cobranca"),
-        buscarConfiguracaoPix(lojaAtual.id),
+        listarModelosWhatsapp(carga.lojaId),
+        ultimasMensagensPorReferencia(carga.lojaId, "cobranca"),
+        buscarConfiguracaoPix(carga.lojaId),
       ]);
+      if (!carga.aindaEhAtual()) return;
       setContas(listaContas);
       setClientes(listaClientes);
       setModelosWhatsapp(modelos);
       setConfiguracaoPix(pix);
       setUltimasCobrancas(cobrancas);
+      carga.gravou();
     } catch (err) {
+      if (!carga.aindaEhAtual()) return;
       console.error("Erro ao carregar contas a receber:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -171,7 +178,7 @@ export function ContasReceberPage() {
         />
       )}
 
-      {!carregando && (
+      {!carregando && dadosSaoDaLoja && (
         <div className="sakura-card p-4">
           <p className="text-rotulo text-sakura-muted">Total pendente</p>
           <p className="text-destaque font-semibold text-sakura-purple-dark">
@@ -182,7 +189,7 @@ export function ContasReceberPage() {
 
       {carregando ? (
         <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : (
+      ) : !dadosSaoDaLoja ? null : (
         <>
           <section>
             <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pendentes</h2>

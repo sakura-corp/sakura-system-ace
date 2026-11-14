@@ -72,6 +72,12 @@ export function ConfiguracoesPage() {
   const [cartoesInicio, setCartoesInicio] = useState<CartaoMetrica[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // De qual loja são os dados guardados acima (#927). Quando a carga da loja
+  // nova dá erro, eles continuam sendo os da loja anterior: as seções que
+  // dependem da loja só aparecem quando os dados são da loja do seletor, senão
+  // quem salvasse gravaria o dado de uma loja (garantia, juros, Pix, fiscal...)
+  // na outra. Um recarregar da mesma loja que dá erro mantém as seções.
+  const [lojaDosDados, setLojaDosDados] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Operador | null>(null);
   const [lojaIdsFormulario, setLojaIdsFormulario] = useState<string[]>([]);
   const [redefinindoId, setRedefinindoId] = useState<string | null>(null);
@@ -160,6 +166,7 @@ export function ConfiguracoesPage() {
       setCartoesInicio(cartoesInicioCarregados);
       setModelosWhatsapp(modelosWhatsappCarregados);
       setConfiguracaoPix(configuracaoPixCarregada);
+      setLojaDosDados(lojaId);
     } catch (err) {
       if (!aindaEhAtual()) return;
       console.error("Erro ao carregar operadores:", err);
@@ -170,6 +177,7 @@ export function ConfiguracoesPage() {
   }
 
   const recarregar = () => carregar({ silencioso: true });
+  const dadosSaoDaLoja = !!lojaAtual && lojaDosDados === lojaAtual.id;
 
   useEffect(() => {
     carregar();
@@ -358,7 +366,7 @@ export function ConfiguracoesPage() {
         )}
       </div>
 
-      {!carregando && lojaAtual && operadorLogado && (
+      {!carregando && lojaAtual && dadosSaoDaLoja && operadorLogado && (
         <div className="sakura-card p-6">
           <h2 className="text-corpo font-semibold text-sakura-purple-dark">Lojas</h2>
           <p className="mt-1 text-rotulo text-sakura-muted">
@@ -373,7 +381,7 @@ export function ConfiguracoesPage() {
         </div>
       )}
 
-      {!carregando && lojaAtual && (
+      {!carregando && lojaAtual && dadosSaoDaLoja && (
         <>
           <SecaoRecolhivel
             titulo="Juros de parcelamento"
