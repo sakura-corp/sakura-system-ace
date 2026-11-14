@@ -45,7 +45,7 @@ export function FuncionariosSection({
         <div className="flex justify-end">
           <button
             onClick={() => setFormulario("novo")}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
             + Novo funcionário
           </button>

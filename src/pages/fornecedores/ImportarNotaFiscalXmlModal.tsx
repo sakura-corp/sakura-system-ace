@@ -293,7 +293,7 @@ export function ImportarNotaFiscalXmlModal({
               type="button"
               onClick={handleLer}
               disabled={!arquivo || lendo}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {lendo ? "Lendo..." : "Ler arquivo"}
             </button>
@@ -463,7 +463,7 @@ export function ImportarNotaFiscalXmlModal({
             <button
               type="submit"
               disabled={quantidadeSelecionada === 0 || !depositoId || salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
             </button>

@@ -273,7 +273,7 @@ export function ItemExistenteRow({
             type="button"
             onClick={handleSubmit(aoSubmeter)}
             disabled={isSubmitting}
-            className="rounded-lg bg-sakura-pink px-3 py-1.5 text-rotulo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-sakura-pink px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? "Salvando..." : "Salvar item"}
           </button>

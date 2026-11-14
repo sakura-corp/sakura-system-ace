@@ -45,11 +45,8 @@ export function TrocarSenhaPage() {
   }
 
   return (
-    <div
-      className="flex h-screen items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: `url(${import.meta.env.BASE_URL}sakura-login-bg-premium.png)` }}
-    >
-      <div className="sakura-card w-full max-w-sm p-8">
+    <div className="sakura-fundo-marca sakura-grao flex h-screen items-center justify-center">
+      <div className="sakura-card relative z-[2] w-full max-w-sm p-8">
         <div className="mb-6 flex justify-center">
           <Logo className="drop-shadow-sm" />
         </div>
@@ -90,7 +87,7 @@ export function TrocarSenhaPage() {
           <button
             type="submit"
             disabled={salvando}
-            className="w-full rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white shadow-[0_0_15px_rgba(182,36,255,0.4)] hover:shadow-[0_0_25px_rgba(182,36,255,0.7)] hover:bg-sakura-purple/90 transition-all disabled:opacity-50"
+            className="w-full rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.4)] hover:shadow-[0_0_25px_rgba(255,87,34,0.7)] hover:bg-sakura-purple/90 transition-all disabled:opacity-50"
           >
             {salvando ? "Salvando..." : "Salvar nova senha e entrar"}
           </button>

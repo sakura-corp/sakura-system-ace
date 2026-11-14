@@ -19,7 +19,15 @@ const RAIZ = "src";
 const FUNDO_CLARO = [
   /\bbg-white\b(?!\/)/,
   /\bbg-[a-z]+-(?:50|100|200)\b/,
-  /\bbg-sakura-purple-dark\b/, // #e8d5e5 — apesar do nome "dark", é claro no tema novo
+  /\bbg-sakura-purple-dark\b/, // apesar do nome "dark", é a cor CLARA do texto
+  // O laranja de ação (visual novo, #990). Letra branca em cima dele dá 3,2:1,
+  // abaixo dos 4,5:1 do mínimo: a letra tem que ser a `sobre-acao`, escura
+  // (regra 3 de docs/referencia/visual-novo/README.md). Vale também pro
+  // `hover:`: passar o mouse não pode apagar o texto do botão. Com "/" (ex.:
+  // bg-sakura-purple/20) é só um véu sobre o fundo escuro, e não entra.
+  /\bbg-sakura-purple(?:\/(?:[7-9]\d|100))?(?![-/\w])/, // de 70% pra cima ainda é laranja
+  /\bbg-sakura-pink(?:\/(?:[7-9]\d|100))?(?![-/\w])/,
+  /\bbg-acao(?:-clara)?(?![-/\w])/,
 ];
 const FUNDO_ESCURO = [
   /\bbg-sakura-bg\b/,

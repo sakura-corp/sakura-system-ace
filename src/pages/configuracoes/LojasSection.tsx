@@ -102,7 +102,7 @@ export function LojasSection({ lojas, operadorCriadorId, onSalvo }: LojasSection
         <button
           type="submit"
           disabled={isSubmitting}
-          className="col-span-4 rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50 sm:col-span-1 sm:justify-self-end"
+          className="col-span-4 rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50 sm:col-span-1 sm:justify-self-end"
         >
           {isSubmitting ? "Salvando..." : "+ Nova loja"}
         </button>

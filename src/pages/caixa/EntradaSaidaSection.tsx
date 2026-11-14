@@ -68,7 +68,7 @@ export function EntradaSaidaSection({
         {!mostrarFormulario && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
             + Nova {rotulo}
           </button>
@@ -97,7 +97,7 @@ export function EntradaSaidaSection({
           <button
             onClick={() => setMostrarCategorizar(true)}
             disabled={categoriasDoTipo.length === 0}
-            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-40"
+            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-40"
           >
             Categorizar agora
           </button>

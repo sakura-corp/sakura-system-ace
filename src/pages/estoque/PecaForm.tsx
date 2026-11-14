@@ -202,7 +202,7 @@ export function PecaForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting
               ? "Salvando..."
@@ -255,7 +255,7 @@ export function PecaForm({
                     type="button"
                     onClick={() => abrirExistente(peca)}
                     disabled={gravandoPendente}
-                    className="shrink-0 rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                    className="shrink-0 rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
                   >
                     Abrir a que já existe
                   </button>

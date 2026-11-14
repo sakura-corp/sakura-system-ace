@@ -109,7 +109,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
               <button
                 type="button"
                 onClick={handleImprimir}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
+                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
               >
                 Imprimir
               </button>

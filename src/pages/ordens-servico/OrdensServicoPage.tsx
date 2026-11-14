@@ -577,7 +577,7 @@ export function OrdensServicoPage() {
                   fecharPaineis();
                   setMostrarFormulario(true);
                 }}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
               >
                 + Nova ordem de serviço
               </button>
@@ -942,7 +942,7 @@ export function OrdensServicoPage() {
                             fecharPaineis();
                             setOrdemFaturando(ordem);
                           }}
-                          className="rounded-full bg-sakura-purple px-3 py-1.5 text-rotulo font-medium text-white hover:opacity-90"
+                          className="rounded-full bg-sakura-purple px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90"
                         >
                           Faturar
                         </button>

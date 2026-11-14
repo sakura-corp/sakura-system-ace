@@ -222,7 +222,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
         {!mostrarFormulario && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
             + Enviar XML
           </button>
@@ -290,7 +290,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
             <button
               type="submit"
               disabled={enviando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {enviando ? "Enviando..." : "Enviar"}
             </button>

@@ -37,12 +37,9 @@ Total até a tela-piloto aprovada: umas 39 h. Tudo é `chefe:frontend`, sem banc
 Ela responde de uma vez, olhando a página do conceito:
 
 1. **Qual logo**: **decidido, a B**, com o ícone do programa no quadrado claro (14/11).
-2. **As letras dentro do programa**: embutir Plus Jakarta Sans e Inter como arquivo local. Recomendo
-   **sim**: sem isso o programa mostra a letra do Windows em PC que não tem a Inter instalada, que é
-   o que acontece hoje.
-3. **Os ícones do menu**: desenhados à mão no código (como os três que o menu já tem) ou uma
-   biblioteca de ícones. Recomendo **a biblioteca** (`lucide-react`): são uns 35 ícones, todos no
-   mesmo traço, e desenhar à mão é onde a equipe mais perde tempo.
+2. **As letras dentro do programa**: **decidido, sim** (14/11): Plus Jakarta Sans e Inter embutidas,
+   como arquivo local.
+3. **Os ícones do menu**: **decidido, a biblioteca `lucide-react`** (14/11).
 4. **O jeito de migrar**: primeiro trocar só os valores das cores de hoje, depois criar os nomes de
    papel (seção 10 das regras). Recomendo **sim**.
 5. **O fio de gráfico nos cartões do Início**: muda a sua decisão de 11/09 (só o valor e a seta).
@@ -50,9 +47,16 @@ Ela responde de uma vez, olhando a página do conceito:
 6. **Faturar numa janela** e **as ações da lista no botão de três pontos**. Recomendo **sim** pros
    dois.
 7. **Quando o ícone novo entra**: junto com a primeira tela nova (recomendo) ou já.
-8. **O tema claro**: ela quer os dois temas, com configuração, e a logo mudando junto. Falta decidir
-   se entra agora (antes das outras telas, pra cada tela já nascer nos dois) ou depois. Recomendo
-   **agora, logo depois da tarefa 2**: fazer depois é repassar tela por tela de novo.
+8. **O tema claro**: **decidido, agora, logo depois da tarefa 2** (14/11), pra cada tela já nascer
+   nos dois. Ela quer os dois temas, com configuração, e a logo mudando junto.
+
+As de número 4 a 7 seguem a recomendação: ao mandar aplicar as tarefas 1 a 7, ela aceitou o jeito
+de migrar, o fio de gráfico, o Faturar em janela e o botão de três pontos. A sessão mostra o Início
+e a lista de OS prontos antes de seguir, e ela pode trocar ali.
+
+**Pedido dela durante a aplicação (14/11)**: nada cresce sem limite. A Central do dia tem sempre a
+altura de 4 linhas e a lista rola por dentro; o mesmo vale pra todo bloco que recebe lista (regras,
+seção 6, "O que pode crescer"). Entra na tarefa 4 e vale pras tarefas 8 em diante.
 
 ---
 
@@ -193,7 +197,9 @@ Sessões filhas: não
 **O que fazer** (a referência é a foto `3-inicio.jpg`)
 1. Título com o "Resumo pro dono" à direita (o `BotaoResumoDono.tsx` de hoje, só a aparência).
 2. `CentralDoDia.tsx` como cartão de destaque: a capa com a mancha e o grão, o número de itens em
-   54 px, e a lista com um selo por linha e o botão que resolve. **As regras de o que aparece e em
+   54 px, e a lista com um selo por linha e o botão que resolve. **O cartão tem sempre a altura de
+   4 linhas** (a da foto), com 1 item ou com 15: a lista rola por dentro (`AreaRolavel.tsx`) e a
+   capa diz o total (pedido da Sofia, 14/11). **As regras de o que aparece e em
    que ordem não mudam** (`src/schemas/centralDoDia.ts`). Com zero itens, a capa diz "Tudo em dia".
 3. Os três cartões de número, com a variação, o "?" e o fio de gráfico. O fio precisa do valor de
    cada dia do mês: a conta nova vai em `src/schemas/`, **nunca dentro da tela**, com teste, e usa

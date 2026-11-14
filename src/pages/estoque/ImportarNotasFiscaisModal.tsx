@@ -225,7 +225,7 @@ export function ImportarNotasFiscaisModal({
               type="button"
               onClick={handleLer}
               disabled={arquivos.length === 0 || lendo}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {lendo ? "Lendo..." : "Ler arquivos"}
             </button>
@@ -401,7 +401,7 @@ export function ImportarNotasFiscaisModal({
             <button
               type="submit"
               disabled={quantidadeSelecionada === 0 || salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {salvando
                 ? "Cadastrando..."

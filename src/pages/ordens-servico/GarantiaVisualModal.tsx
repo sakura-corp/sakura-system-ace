@@ -108,7 +108,7 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90"
+                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
                 >
                   Imprimir
                 </button>

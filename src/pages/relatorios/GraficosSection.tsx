@@ -113,7 +113,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
                 onClick={() => setPeriodo(p.chave)}
                 className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
                   periodo === p.chave
-                    ? "bg-sakura-purple text-white"
+                    ? "bg-sakura-purple text-sobre-acao"
                     : "text-sakura-purple-dark/85 hover:bg-white/10"
                 }`}
               >

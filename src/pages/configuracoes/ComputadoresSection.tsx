@@ -295,7 +295,7 @@ function FormularioApelido({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-xl bg-sakura-purple px-4 py-1.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+        className="rounded-xl bg-sakura-purple px-4 py-1.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
       >
         {isSubmitting ? "Salvando..." : "Salvar"}
       </button>

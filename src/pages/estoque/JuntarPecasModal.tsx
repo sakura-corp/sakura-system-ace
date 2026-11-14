@@ -353,7 +353,7 @@ export function JuntarPecasModal({
                     type="button"
                     onClick={handleJuntar}
                     disabled={juntando}
-                    className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-60"
+                    className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-60"
                   >
                     {juntando ? "Juntando..." : "Sim, juntar"}
                   </button>
@@ -371,7 +371,7 @@ export function JuntarPecasModal({
               <button
                 type="button"
                 onClick={() => setConfirmando(true)}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
               >
                 Juntar estas duas
               </button>

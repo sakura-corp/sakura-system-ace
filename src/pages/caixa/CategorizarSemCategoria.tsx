@@ -107,7 +107,7 @@ export function CategorizarSemCategoria({
           type="button"
           onClick={aplicarNosVazios}
           disabled={!categoriaParaTodos}
-          className="rounded-xl bg-sakura-purple/80 px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-40"
+          className="rounded-xl bg-sakura-purple/80 px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-40"
         >
           Aplicar
         </button>
@@ -161,7 +161,7 @@ export function CategorizarSemCategoria({
             type="button"
             onClick={salvar}
             disabled={salvando || escolhidos === 0}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {salvando ? "Salvando..." : `Salvar ${escolhidos}`}
           </button>

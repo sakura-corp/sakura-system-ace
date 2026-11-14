@@ -466,7 +466,7 @@ export function OrdemServicoForm({
                 type="button"
                 onClick={handleEncerrar}
                 disabled={encerrando}
-                className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {encerrando ? "Encerrando..." : "Encerrar OS"}
               </button>
@@ -503,7 +503,7 @@ export function OrdemServicoForm({
               type="button"
               onClick={() => setAprovando((aberto) => !aberto)}
               disabled={enviando}
-              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               Aprovar
             </button>
@@ -558,7 +558,7 @@ export function OrdemServicoForm({
                   type="button"
                   onClick={aoConfirmarAprovacao}
                   disabled={enviando || isDirty}
-                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
                 >
                   Confirmar aprovação
                 </button>
@@ -684,7 +684,7 @@ export function OrdemServicoForm({
         data-rodape-da-os
         className={`${
           aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_rgba(0,0,0,0.65)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3`}
+        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#16161c] px-4 py-3`}
       >
         {aba === "detalhes" ? (
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -716,7 +716,7 @@ export function OrdemServicoForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting
                 ? "Salvando..."
