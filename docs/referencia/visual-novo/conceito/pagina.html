@@ -1,0 +1,939 @@
+<title>SSACE Visual Novo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--FONTLINK-->
+<style>
+/*FONTES*/
+/* Layout: página de conceito em coluna única; dentro dela, a "janela" do programa é um palco de
+   tamanho fixo (1360x850) que encolhe por escala pra caber. Um visual só, escuro, de propósito. */
+:root{
+  color-scheme:dark;
+  /* superfícies */
+  --fundo:#0A0A0D; --painel:#121217; --cartao:#191920; --passar:#22222B; --campo:#14141A;
+  --linha:rgba(255,255,255,.08); --linha-forte:rgba(255,255,255,.16); --borda-campo:rgba(255,255,255,.35);
+  /* texto */
+  --texto:#FFFFFF; --texto-2:#A1A1AA; --texto-3:#8A8A94;
+  /* marca e ação */
+  --carmesim:#E11D48; --carmesim-fundo:#6B1229; --laranja:#FF5722; --laranja-claro:#FF7A4D;
+  --sobre-laranja:#1B0B05;
+  /* avisos: sempre com ícone e palavra junto */
+  --ok:#34D399; --atencao:#FACC15; --perigo:#F87171; --info:#60A5FA; --zap:#25D366;
+  /* letras */
+  --titulo:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
+  --corpo:"Inter","Segoe UI",system-ui,sans-serif;
+  /* movimento */
+  --suave:cubic-bezier(.2,.8,.2,1);
+  --grao:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='3.2' intercept='-1.1'/><feFuncG type='linear' slope='3.2' intercept='-1.1'/><feFuncB type='linear' slope='3.2' intercept='-1.1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--fundo);color:var(--texto);font-family:var(--corpo);font-size:15px;line-height:1.5;margin:0;
+  padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--laranja-claro);outline-offset:2px}
+.pagina{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
+.rotulo{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--texto-2);font-weight:600}
+
+/* ---------- grão: uma camada de ruído por cima do degradê ---------- */
+.grao{position:relative;isolation:isolate}
+.grao::after{content:"";position:absolute;inset:0;background-image:var(--grao);mix-blend-mode:overlay;opacity:.62;pointer-events:none;border-radius:inherit;z-index:1}
+
+/* ---------- topo da página ---------- */
+.capa{border-radius:28px;overflow:hidden;padding:44px 40px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px;align-items:center;
+  background:
+    radial-gradient(60% 90% at 4% 0%,rgba(225,29,72,.75),transparent 62%),
+    radial-gradient(55% 90% at 100% 100%,rgba(255,87,34,.8),transparent 60%),
+    #0B0B10;}
+.capa>*{position:relative;z-index:2}
+.assinatura{display:flex;gap:20px;align-items:center}
+.assinatura svg{width:104px;height:104px;flex:none;filter:drop-shadow(0 10px 28px rgba(225,29,72,.35))}
+.nome b{display:block;font-family:var(--titulo);font-weight:800;font-size:clamp(28px,4vw,46px);letter-spacing:-.025em;line-height:1}
+.nome i{display:block;font-style:normal;font-family:var(--titulo);font-weight:500;font-size:clamp(11px,1.3vw,15px);letter-spacing:.3em;margin-top:10px;white-space:nowrap}
+.nome small{display:block;color:rgba(255,255,255,.72);font-size:12px;margin-top:6px}
+.responder{background:rgba(10,10,13,.62);border:1px solid var(--linha-forte);border-radius:18px;padding:18px 20px;backdrop-filter:blur(14px)}
+.responder h2{font-size:15px;margin-bottom:8px}
+.responder ul{margin:0;padding-left:18px;color:#E4E4E7;font-size:14px;display:grid;gap:4px}
+.responder code{font-family:var(--corpo);font-weight:600;color:#fff;background:rgba(255,255,255,.1);padding:1px 7px;border-radius:6px;white-space:nowrap}
+
+.secao{display:flex;flex-direction:column;gap:16px}
+.secao>header{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;justify-content:space-between}
+.secao>header h2{font-size:24px;letter-spacing:-.01em}
+.secao>header p{margin:0;color:var(--texto-2);max-width:68ch}
+
+/* ---------- logos ---------- */
+.logos{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.logo-cartao{background:var(--painel);border:1px solid var(--linha);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s}
+.logo-cartao[aria-pressed="true"]{border-color:var(--laranja)}
+.logo-palco{height:240px;display:grid;place-items:center;
+  background:radial-gradient(85% 110% at 0% 0%,rgba(225,29,72,.85),transparent 64%),radial-gradient(80% 110% at 100% 100%,rgba(255,87,34,.9),transparent 62%),#0C0C11}
+.logo-palco svg{width:168px;height:168px;position:relative;z-index:2;filter:drop-shadow(0 12px 30px rgba(0,0,0,.45))}
+.logo-info{padding:16px 18px 18px;display:flex;flex-direction:column;gap:14px}
+.logo-info h3{font-size:17px}
+.logo-info p{margin:4px 0 0;color:var(--texto-2);font-size:14px}
+.logo-usos{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.icone-app{width:72px;height:72px;border-radius:20px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(155deg,#2A1A1E,#111116);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.07),0 10px 24px rgba(225,29,72,.22)}
+.icone-app svg{width:48px;height:48px}
+.icone-app.cheio{background:linear-gradient(135deg,var(--carmesim),var(--laranja))}
+.icone-app.claro{background:#F4F1EE;box-shadow:none}
+.tamanhos{display:flex;gap:10px;align-items:flex-end;margin-left:auto}
+.escolher{align-self:flex-start;border:1px solid var(--linha-forte);border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px;transition:background .15s,color .15s}
+.escolher:hover{background:var(--passar)}
+.logo-cartao[aria-pressed="true"] .escolher{background:var(--laranja);color:var(--sobre-laranja);border-color:transparent}
+
+/* ---------- controles da miniatura ---------- */
+.atalhos{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.atalhos button{border:1px solid var(--linha-forte);border-radius:999px;padding:7px 14px;font-size:14px;font-weight:500;color:#E4E4E7;transition:background .15s}
+.atalhos button:hover{background:var(--passar)}
+.atalhos span{color:var(--texto-3);font-size:13px;margin-right:2px}
+.moldura{width:100%;position:relative}
+.palco{width:1360px;height:850px;transform-origin:0 0;position:absolute;left:0;top:0}
+
+/* =====================================================================
+   A JANELA DO PROGRAMA (o conceito em si)
+   ===================================================================== */
+.janela{width:1360px;height:850px;border-radius:14px;overflow:hidden;background:var(--fundo);border:1px solid var(--linha-forte);
+  display:flex;flex-direction:column;box-shadow:0 40px 90px rgba(0,0,0,.6);position:relative;font-size:14px}
+.barra-janela{height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;background:#0D0D11;border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
+.barra-janela svg.m{width:16px;height:16px}
+.barra-janela .botoes{margin-left:auto;display:flex;height:100%}
+.barra-janela .botoes i{width:46px;display:grid;place-items:center;color:var(--texto-2)}
+.conteudo{flex:1;min-height:0;position:relative}
+.tela-cheia{position:absolute;inset:0}
+
+/* ----- Login ----- */
+.login{display:grid;place-items:center;
+  background:radial-gradient(72% 88% at 0% 0%,rgba(225,29,72,.92),transparent 64%),radial-gradient(66% 86% at 100% 100%,rgba(255,87,34,.95),transparent 62%),radial-gradient(42% 52% at 88% 0%,rgba(107,18,41,.9),transparent 72%),#09090C}
+.login-cartao{position:relative;z-index:2;width:400px;padding:36px 34px 28px;border-radius:26px;background:rgba(14,14,19,.72);backdrop-filter:blur(22px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);display:flex;flex-direction:column;gap:16px}
+.login-marca{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:8px;text-align:center}
+.login-marca svg{width:84px;height:84px;filter:drop-shadow(0 10px 26px rgba(225,29,72,.45))}
+.login-marca b{font-family:var(--titulo);font-weight:800;font-size:27px;letter-spacing:-.02em;line-height:1;display:block}
+.login-marca i{font-style:normal;font-family:var(--titulo);font-weight:500;font-size:10.5px;letter-spacing:.32em;display:block;margin-top:8px;color:#E4E4E7}
+.campo{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--texto-2);font-weight:500}
+.campo input,.campo select,.entrada{height:44px;border-radius:12px;border:1px solid var(--borda-campo);background:var(--campo);color:var(--texto);padding:0 14px;font:inherit;font-size:15px;transition:border-color .15s,box-shadow .15s;width:100%}
+.campo input::placeholder,.entrada::placeholder{color:var(--texto-3)}
+.campo input:focus,.campo select:focus,.entrada:focus{outline:none;border-color:rgba(255,87,34,.7);box-shadow:0 0 0 3px rgba(255,87,34,.18)}
+.login-rodape{display:flex;justify-content:center;margin-top:4px}
+.elo{color:var(--texto-2);font-size:13px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.25)}
+.elo:hover{color:#fff}
+.versao{position:absolute;right:18px;bottom:14px;z-index:2;font-size:12px;color:rgba(255,255,255,.7)}
+
+/* ----- Botões ----- */
+.bt{height:40px;padding:0 16px;border-radius:12px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  transition:transform .12s var(--suave),background .15s,box-shadow .2s,border-color .15s}
+.bt:active{transform:scale(.97)}
+.bt svg{width:17px;height:17px;flex:none}
+.bt.principal{background:var(--laranja);color:var(--sobre-laranja);box-shadow:0 6px 18px rgba(255,87,34,.28),inset 0 1px 0 rgba(255,255,255,.3)}
+.bt.principal:hover{background:var(--laranja-claro);box-shadow:0 8px 26px rgba(255,87,34,.42),inset 0 1px 0 rgba(255,255,255,.35)}
+.bt.segundo{border:1px solid var(--linha-forte);color:#fff}
+.bt.segundo:hover{background:var(--passar)}
+.bt.fantasma{color:var(--texto-2)}
+.bt.fantasma:hover{color:#fff;background:var(--passar)}
+.bt.zap{border:1px solid rgba(37,211,102,.45);color:var(--ok)}
+.bt.zap:hover{background:rgba(37,211,102,.12)}
+.bt.pequeno{height:32px;padding:0 12px;font-size:13px;border-radius:10px}
+.bt.grande{height:48px;font-size:16px;justify-content:center;border-radius:14px}
+.bt.so-icone{width:32px;padding:0;justify-content:center}
+
+/* ----- Casca: menu + área ----- */
+.casca{display:flex;height:100%}
+.menu{width:236px;flex:none;background:var(--painel);border-right:1px solid var(--linha);display:flex;flex-direction:column;padding:14px 12px 12px;gap:10px;
+  transition:width .26s var(--suave);position:relative;z-index:3}
+.casca.encolhido .menu{width:68px}
+.menu-topo{display:flex;align-items:center;gap:10px;height:44px;padding-left:4px;overflow:hidden;flex:none}
+.menu-topo svg.m{width:36px;height:36px;flex:none}
+.menu-nome{white-space:nowrap;transition:opacity .16s;min-width:0}
+.menu-nome b{display:block;font-family:var(--titulo);font-weight:800;font-size:16px;letter-spacing:-.01em;line-height:1.1}
+.menu-nome i{display:block;font-style:normal;font-family:var(--titulo);font-weight:500;font-size:8.5px;letter-spacing:.26em;color:var(--texto-2);margin-top:3px}
+.casca.encolhido .menu-nome,.casca.encolhido .item span,.casca.encolhido .grupo-nome,.casca.encolhido .quem-texto,.casca.encolhido .conta{opacity:0;pointer-events:none}
+.encolher{position:absolute;top:22px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--cartao);border:1px solid var(--linha-forte);display:grid;place-items:center;color:var(--texto-2);z-index:4;transition:color .15s,background .15s}
+.encolher:hover{color:#fff;background:var(--passar)}
+.encolher svg{width:14px;height:14px;transition:transform .26s var(--suave)}
+.casca.encolhido .encolher svg{transform:rotate(180deg)}
+.lista{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;gap:1px;overflow:hidden}
+.grupo-nome{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--texto-3);font-weight:600;padding:10px 12px 4px;white-space:nowrap;transition:opacity .16s;height:28px;flex:none}
+.casca.encolhido .grupo-nome{height:13px;padding:0;margin:0 14px;border-top:1px solid var(--linha);margin-top:6px}
+.item{height:36px;flex:none;border-radius:10px;display:flex;align-items:center;gap:12px;padding:0 12px;color:var(--texto-2);font-weight:500;width:100%;text-align:left;position:relative;z-index:1;white-space:nowrap;transition:color .15s}
+.item svg{width:19px;height:19px;flex:none;transition:color .2s}
+.item span{transition:opacity .16s;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.item:hover{color:#fff}
+.item[aria-current="page"]{color:#fff}
+.item[aria-current="page"] svg{color:var(--laranja-claro)}
+.conta{font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:1px 7px;transition:opacity .16s;font-variant-numeric:tabular-nums}
+.casca.encolhido .item::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:var(--laranja);opacity:0}
+.casca.encolhido .item.tem-conta::after{opacity:1}
+/* o "trilho" que desliza até o item ativo */
+.trilho{position:absolute;left:0;right:0;height:36px;border-radius:10px;background:linear-gradient(90deg,rgba(255,87,34,.2),rgba(225,29,72,.08));box-shadow:inset 0 0 0 1px rgba(255,120,80,.22);
+  transition:transform .3s var(--suave);pointer-events:none}
+.quem{flex:none;border-top:1px solid var(--linha);padding-top:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.quem-linha{display:flex;align-items:center;gap:10px;padding-left:4px}
+.avatar{width:36px;height:36px;border-radius:50%;flex:none;background:linear-gradient(135deg,var(--carmesim-fundo),#2A1216);display:grid;place-items:center;font-weight:700;font-size:13px;border:1px solid var(--linha-forte)}
+.quem-texto{white-space:nowrap;transition:opacity .16s;line-height:1.25}
+.quem-texto b{display:block;font-weight:600;font-size:13.5px}
+.quem-texto small{color:var(--texto-2);font-size:12px}
+.quem-botoes{display:flex;gap:2px;flex-wrap:wrap}
+.casca.encolhido .quem-botoes{flex-direction:column;align-items:center}
+.ib{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--texto-2);transition:color .15s,background .15s}
+.ib:hover{color:#fff;background:var(--passar)}
+.ib svg{width:18px;height:18px}
+
+.area{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
+.topo{height:60px;flex:none;display:flex;align-items:center;gap:14px;padding:0 26px;border-bottom:1px solid var(--linha)}
+.busca{flex:1;max-width:560px;height:38px;border-radius:11px;background:var(--campo);border:1px solid var(--linha);display:flex;align-items:center;gap:10px;padding:0 12px;color:var(--texto-3);font-size:14px;text-align:left;transition:border-color .15s}
+.busca:hover{border-color:var(--linha-forte)}
+.busca svg{width:16px;height:16px;flex:none}
+.busca kbd{margin-left:auto;font:600 11px var(--corpo);color:var(--texto-2);border:1px solid var(--linha-forte);border-radius:6px;padding:2px 6px}
+.loja{margin-left:auto;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:11px;border:1px solid var(--linha);font-weight:500;font-size:13.5px}
+.loja svg{width:15px;height:15px;color:var(--texto-2)}
+.rolagem{flex:1;min-height:0;overflow-y:auto;padding:24px 26px 30px;scrollbar-width:thin;scrollbar-color:#33333d transparent}
+.tela{display:flex;flex-direction:column;gap:18px}
+.tela-titulo{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.tela-titulo h3{font-size:26px;letter-spacing:-.02em;line-height:1.1}
+.tela-titulo p{margin:4px 0 0;color:var(--texto-2)}
+.tela-titulo .lado{margin-left:auto;display:flex;gap:8px;align-items:center}
+.tela-titulo .lado>span{color:var(--texto-2);font-size:13px}
+
+/* a entrada em cena: cada bloco sobe 10px e aparece, um depois do outro */
+@keyframes subir{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.entrando [data-cena]{animation:subir .42s var(--suave) both;animation-delay:calc(var(--ordem,0) * 45ms)}
+
+.cartao{background:var(--cartao);border:1px solid var(--linha);border-radius:18px}
+.cartao-titulo{display:flex;align-items:center;gap:10px;padding:16px 18px 10px}
+.cartao-titulo h4{font:700 15px var(--titulo);margin:0}
+.cartao-titulo .direita{margin-left:auto}
+
+/* ----- Central do dia: o cartão de destaque ----- */
+.central{display:grid;grid-template-columns:270px minmax(0,1fr);border-radius:20px;overflow:hidden;border:1px solid var(--linha)}
+.central-capa{padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;
+  background:radial-gradient(120% 90% at 0% 0%,rgba(225,29,72,.95),transparent 62%),radial-gradient(110% 100% at 100% 100%,rgba(255,87,34,.95),transparent 62%),var(--carmesim-fundo)}
+.central-capa>*{position:relative;z-index:2}
+.central-capa .rotulo{color:rgba(255,255,255,.85)}
+.central-capa b{font:800 54px/1 var(--titulo);letter-spacing:-.03em;display:block}
+.central-capa p{margin:6px 0 0;font-weight:500;font-size:15px;line-height:1.35}
+.central-lista{background:var(--cartao);display:flex;flex-direction:column}
+.aviso{display:flex;align-items:center;gap:12px;padding:0 16px;height:52px;border-top:1px solid var(--linha)}
+.aviso:first-child{border-top:0}
+.aviso .sinal{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+.aviso .sinal svg{width:16px;height:16px}
+.aviso .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aviso .txt b{font-weight:600}
+.aviso .txt span{color:var(--texto-2)}
+.t-perigo{color:var(--perigo);background:rgba(248,113,113,.13)}
+.t-atencao{color:var(--atencao);background:rgba(250,204,21,.12)}
+.t-ok{color:var(--ok);background:rgba(52,211,153,.12)}
+.t-info{color:var(--info);background:rgba(96,165,250,.13)}
+.t-neutro{color:#D4D4D8;background:rgba(255,255,255,.08)}
+
+/* ----- Cartões de número ----- */
+.numeros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.numero{padding:16px 18px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;text-align:left;transition:border-color .2s,transform .2s var(--suave),background .2s;position:relative}
+.numero:hover{border-color:var(--linha-forte);transform:translateY(-2px);background:#1C1C24}
+.numero .nome-n{color:var(--texto-2);font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.ajuda{width:18px;height:18px;border-radius:50%;border:1px solid var(--linha-forte);font-size:11px;font-weight:700;color:var(--texto-2);display:inline-grid;place-items:center}
+.numero .seta{color:var(--texto-3);justify-self:end}
+.numero .seta svg{width:16px;height:16px}
+.numero .valor{font:700 30px/1.15 var(--titulo);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;align-self:end}
+.numero .valor small{font-size:16px;font-weight:600;color:var(--texto-2);margin-right:4px}
+.numero .variacao{grid-column:1;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--ok)}
+.numero .variacao svg{width:13px;height:13px}
+.numero .variacao span{color:var(--texto-3);font-weight:500}
+.numero .fio{grid-column:2;grid-row:2 / span 2;width:132px;height:50px;align-self:end}
+.fio path.l{fill:none;stroke:var(--laranja);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.entrando .fio path.l{stroke-dasharray:1;stroke-dashoffset:1;animation:tracar .9s .25s var(--suave) forwards}
+@keyframes tracar{to{stroke-dashoffset:0}}
+
+.duas{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+.pilha{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* ----- Tabelas ----- */
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-size:12px;font-weight:600;color:var(--texto-2);text-align:left;padding:10px 9px;white-space:nowrap;border-bottom:1px solid var(--linha)}
+td{padding:0 9px;height:52px;border-bottom:1px solid var(--linha);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+td.num,th.num{text-align:right}
+td.fraco{color:var(--texto-2)}
+td.acoes{text-align:right;padding-right:12px}
+th:first-child,td:first-child{padding-left:18px}
+td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
+.forte{font-weight:600}
+
+/* placa: lembra a placa Mercosul (faixa azul em cima), e é clicável */
+.placa{display:inline-flex;flex-direction:column;border-radius:7px;overflow:hidden;border:1px solid var(--linha-forte);background:#0E0E13;transition:border-color .15s,transform .12s;vertical-align:middle}
+.placa::before{content:"";height:4px;background:#2F62E0}
+.placa span{font:700 12.5px var(--corpo);letter-spacing:.08em;padding:3px 9px 4px;color:#fff}
+.placa:hover{border-color:#fff;transform:translateY(-1px)}
+
+.selo{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:999px;font-size:12.5px;font-weight:600}
+.selo svg{width:13px;height:13px}
+
+/* ----- Calendário ----- */
+.cal{padding:4px 16px 16px}
+.cal-topo{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 8px}
+.cal-topo b{font:700 15px var(--titulo)}
+.cal-grade{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-variant-numeric:tabular-nums}
+.cal-grade i{font-style:normal;font-size:11px;color:var(--texto-3);font-weight:600;padding:4px 0}
+.dia{height:34px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;position:relative;color:#E4E4E7}
+.dia.fora{color:#55555E}
+.dia.hoje{background:var(--laranja);color:var(--sobre-laranja);font-weight:700}
+.dia u{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%}
+.eventos{margin:12px 0 0;padding:12px 4px 0;border-top:1px solid var(--linha);list-style:none;display:grid;gap:8px;font-size:13px}
+.eventos li{display:grid;grid-template-columns:16px 34px minmax(0,1fr);gap:6px;align-items:start}
+.eventos svg{width:14px;height:14px;margin-top:3px}
+.eventos b{font-weight:600}
+.eventos span{color:var(--texto-2)}
+
+.patio{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:0 16px 16px}
+.carro{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:13px;background:var(--campo);border:1px solid var(--linha)}
+.carro svg{width:58px;height:30px;flex:none}
+.carro b{display:block;font-weight:600}
+.carro small{color:var(--texto-2);font-size:12.5px}
+
+/* ----- Lista de OS ----- */
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--linha);align-items:center}
+.aba{padding:10px 14px;font-weight:600;color:var(--texto-2);position:relative;border-radius:8px 8px 0 0}
+.aba:hover{color:#fff}
+.aba[aria-selected="true"]{color:#fff}
+.aba[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--laranja)}
+.aba small{font-weight:600;color:var(--texto-2);margin-left:4px}
+.filtros{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.filtros .campo{flex:none}
+.filtros .campo input{height:38px;font-size:14px}
+.filtros .nota{color:var(--texto-2);font-size:13px;flex:1;min-width:240px;padding-bottom:9px}
+.menu-mais{position:absolute;right:0;top:36px;z-index:5;min-width:170px;background:#1F1F28;border:1px solid var(--linha-forte);border-radius:12px;padding:5px;box-shadow:0 18px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;
+  transform-origin:top right;animation:brotar .16s var(--suave)}
+@keyframes brotar{from{opacity:0;transform:scale(.94) translateY(-4px)}}
+.menu-mais button{display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:8px;font-size:13.5px;text-align:left}
+.menu-mais button:hover{background:rgba(255,255,255,.07)}
+.menu-mais svg{width:15px;height:15px;color:var(--texto-2)}
+
+/* ----- Janela de Faturar: painel opaco, nunca vidro ----- */
+.veu{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(5,5,8,.66);backdrop-filter:blur(6px);animation:aparecer .18s ease-out}
+@keyframes aparecer{from{opacity:0}}
+.modal{width:760px;background:#16161C;border:1px solid var(--linha-forte);border-radius:22px;box-shadow:0 40px 100px rgba(0,0,0,.7);animation:chegar .28s var(--suave);display:flex;flex-direction:column}
+@keyframes chegar{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.modal-topo{display:flex;align-items:center;gap:14px;padding:20px 22px 16px;border-bottom:1px solid var(--linha)}
+.modal-topo h4{font:700 19px var(--titulo);margin:0;letter-spacing:-.01em}
+.modal-topo p{margin:2px 0 0;color:var(--texto-2);font-size:13.5px}
+.modal-topo .total{margin-left:auto;text-align:right}
+.modal-topo .total small{display:block;color:var(--texto-2);font-size:12px}
+.modal-topo .total b{font:700 24px var(--titulo);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.modal-corpo{padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.escolha{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opcao{border:1px solid var(--linha-forte);border-radius:14px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start;text-align:left;transition:border-color .15s,background .15s}
+.opcao i{width:18px;height:18px;border-radius:50%;border:2px solid var(--texto-3);flex:none;margin-top:1px;display:grid;place-items:center}
+.opcao b{display:block;font-weight:600}
+.opcao small{color:var(--texto-2);font-size:12.5px}
+.opcao[aria-checked="true"]{border-color:rgba(255,87,34,.75);background:rgba(255,87,34,.08)}
+.opcao[aria-checked="true"] i{border-color:var(--laranja)}
+.opcao[aria-checked="true"] i::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--laranja)}
+.marcar{display:flex;gap:10px;align-items:center;font-weight:500}
+.marcar i{width:18px;height:18px;border-radius:5px;background:var(--laranja);display:grid;place-items:center;color:var(--sobre-laranja)}
+.marcar i svg{width:13px;height:13px}
+.forma{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 150px 34px;gap:8px;align-items:center}
+.forma .entrada{height:42px}
+.forma .entrada.valor{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.dica{color:var(--texto-2);font-size:13px;margin:-6px 0 0;text-align:right}
+.modal-pe{display:flex;align-items:center;gap:12px;padding:16px 22px 20px;border-top:1px solid var(--linha)}
+.modal-pe .conta-final{font-size:13.5px;color:var(--texto-2);line-height:1.45}
+.modal-pe .conta-final b{color:#fff}
+.modal-pe .fim{margin-left:auto;display:flex;gap:8px}
+
+.torrada{position:absolute;left:50%;bottom:26px;z-index:30;transform:translateX(-50%);background:#1F1F28;border:1px solid var(--linha-forte);border-radius:14px;padding:12px 18px 12px 14px;display:flex;gap:10px;align-items:center;font-weight:500;box-shadow:0 18px 40px rgba(0,0,0,.6);animation:torrar .34s var(--suave)}
+@keyframes torrar{from{opacity:0;transform:translate(-50%,16px)}}
+.torrada svg{width:18px;height:18px;color:var(--ok)}
+
+.dica-flutuante{position:absolute;z-index:40;background:#fff;color:#111;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.5);animation:aparecer .12s}
+
+.vazio{border:1px dashed var(--linha-forte);border-radius:18px;padding:56px 24px;text-align:center;color:var(--texto-2)}
+.vazio b{display:block;color:#fff;font:700 18px var(--titulo);margin-bottom:6px}
+
+/* =====================================================================
+   AS PEÇAS (as regras, resumidas)
+   ===================================================================== */
+.pecas{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.peca{background:var(--painel);border:1px solid var(--linha);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.peca h3{font-size:16px}
+.peca p{margin:0;color:var(--texto-2);font-size:14px}
+.cores{display:grid;gap:6px}
+.cor{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13.5px}
+.cor i{width:38px;height:30px;border-radius:8px;border:1px solid var(--linha-forte)}
+.cor small{color:var(--texto-2);font-variant-numeric:tabular-nums}
+.cor code{font:500 12.5px var(--corpo);color:var(--texto-2)}
+.fileira{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.amostra-grao{height:92px;border-radius:14px;background:radial-gradient(90% 120% at 0% 0%,rgba(225,29,72,.95),transparent 62%),radial-gradient(90% 120% at 100% 100%,rgba(255,87,34,.95),transparent 62%),#0B0B10}
+.letras b{display:block;font:800 30px/1.1 var(--titulo);letter-spacing:-.02em}
+.letras span{display:block;font:700 26px var(--titulo);font-variant-numeric:tabular-nums;margin-top:6px}
+.letras small{display:block;color:var(--texto-2);margin-top:6px}
+
+@media (max-width:820px){
+  .capa{grid-template-columns:1fr;padding:28px 20px}
+  .assinatura svg{width:72px;height:72px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">__DEFS__</svg>
+
+<div class="pagina">
+
+  <section class="capa grao">
+    <div class="assinatura">
+      <svg viewBox="-256 -256 512 512" data-marca></svg>
+      <div class="nome"><b>Sakura System</b><i>AUTOCENTER EDITION</i><small>conceito do visual novo · 14/11/2026 · dados inventados</small></div>
+    </div>
+    <div class="responder">
+      <h2>Como responder</h2>
+      <ul>
+        <li>Logo: <code>logo: A</code>, <code>B</code> ou <code>C</code>. Pode misturar: <code>pétala da B, miolo da A</code>.</li>
+        <li>Telas: o que gostou e o que mudar, do jeito que vier.</li>
+        <li>Na miniatura dá pra clicar: entrar, trocar de tela, encolher o menu, faturar.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="secao">
+    <header>
+      <h2>1. A logo, em três versões</h2>
+      <p>As três seguem o seu print: flor de cerejeira, engrenagem, degradê do claro ao carmesim. Clique numa pra ver como fica dentro do programa.</p>
+    </header>
+    <div class="logos" id="logos"></div>
+  </section>
+
+  <section class="secao">
+    <header>
+      <h2>2. O programa, em miniatura</h2>
+      <p>Login, Início, Ordens de Serviço e a janela de Faturar. As outras telas do menu ainda não foram desenhadas.</p>
+    </header>
+    <div class="atalhos">
+      <span>Ir direto pra:</span>
+      <button data-ir="login">Login</button>
+      <button data-ir="inicio">Início</button>
+      <button data-ir="os">Ordens de Serviço</button>
+      <button data-ir="faturar">Faturar</button>
+      <button data-ir="menu">Encolher ou abrir o menu</button>
+    </div>
+    <div class="moldura" id="moldura"><div class="palco" id="palco">
+
+      <div class="janela" id="janela">
+        <div class="barra-janela">
+          <svg class="m" viewBox="-256 -256 512 512" data-marca="mini"></svg>
+          <span>Sakura System · AutoCenter Edition</span>
+          <div class="botoes"><i>—</i><i>▢</i><i>✕</i></div>
+        </div>
+        <div class="conteudo">
+
+          <!-- ================= LOGIN ================= -->
+          <div class="tela-cheia login grao" id="t-login">
+            <form class="login-cartao" id="form-login">
+              <div class="login-marca" data-cena style="--ordem:0">
+                <svg viewBox="-256 -256 512 512" data-marca></svg>
+                <div><b>Sakura System</b><i>AUTOCENTER EDITION</i></div>
+              </div>
+              <label class="campo" data-cena style="--ordem:1">Usuário<input id="l-usuario" value="demo" autocomplete="off"></label>
+              <label class="campo" data-cena style="--ordem:2">Senha<input id="l-senha" type="password" value="12345678" autocomplete="off"></label>
+              <button class="bt principal grande" data-cena style="--ordem:3" type="submit">Entrar</button>
+              <div class="login-rodape" data-cena style="--ordem:4"><a class="elo" href="#" data-nada>Configurar a conexão</a></div>
+            </form>
+            <span class="versao">versão 0.9.56</span>
+          </div>
+
+          <!-- ================= CASCA ================= -->
+          <div class="tela-cheia casca" id="t-casca" hidden>
+            <nav class="menu" aria-label="Menu">
+              <div class="menu-topo">
+                <svg class="m" viewBox="-256 -256 512 512" data-marca></svg>
+                <div class="menu-nome"><b>Sakura System</b><i>AUTOCENTER EDITION</i></div>
+              </div>
+              <button class="encolher" id="encolher" aria-label="Encolher o menu" data-dica="Encolher ou abrir o menu">__I_chevron__</button>
+              <div class="lista" id="lista"><div class="trilho" id="trilho"></div></div>
+              <div class="quem">
+                <div class="quem-linha">
+                  <div class="avatar">MA</div>
+                  <div class="quem-texto"><b>Marcos Andrade</b><small>@demo</small></div>
+                </div>
+                <div class="quem-botoes">
+                  <button class="ib" data-dica="Diagnóstico" aria-label="Diagnóstico">__I_info__</button>
+                  <button class="ib" data-dica="Auditoria" aria-label="Auditoria">__I_auditoria__</button>
+                  <button class="ib" data-dica="Configurações" aria-label="Configurações">__I_ajustes__</button>
+                  <button class="ib" data-dica="Sair" aria-label="Sair" id="sair">__I_sair__</button>
+                </div>
+              </div>
+            </nav>
+
+            <div class="area">
+              <div class="topo">
+                <button class="busca" data-nada>__I_busca__<span>Buscar placa, cliente, OS, peça…</span><kbd>Ctrl K</kbd></button>
+                <div class="loja">__I_loja__ Auto Center Modelo · Matriz</div>
+              </div>
+              <div class="rolagem" id="rolagem">
+
+                <!-- ---------- INÍCIO ---------- -->
+                <div class="tela" id="s-inicio">
+                  <div class="tela-titulo" data-cena style="--ordem:0">
+                    <div><h3>Início</h3><p>Visão geral da loja, em tempo real</p></div>
+                    <div class="lado">
+                      <span>Resumo pro dono:</span>
+                      <button class="bt zap pequeno" data-nada>__I_zap__ Hoje</button>
+                      <button class="bt zap pequeno" data-nada>__I_zap__ Este mês</button>
+                    </div>
+                  </div>
+
+                  <div class="central" data-cena style="--ordem:1">
+                    <div class="central-capa grao">
+                      <span class="rotulo">Central do dia</span>
+                      <div><b>4</b><p>coisas pedem a sua atenção hoje</p></div>
+                    </div>
+                    <div class="central-lista">
+                      <div class="aviso"><i class="sinal t-perigo">__I_alerta__</i><div class="txt"><b>Nota com erro</b> <span>· a NFC-e da OS 145 foi rejeitada</span></div><button class="bt segundo pequeno" data-nada>Ver a nota</button></div>
+                      <div class="aviso"><i class="sinal t-atencao">__I_relogio__</i><div class="txt"><b>Conta vence hoje</b> <span>· Aluguel do galpão, R$ 3.200,00</span></div><button class="bt segundo pequeno" data-nada>Abrir a conta</button></div>
+                      <div class="aviso"><i class="sinal t-ok">__I_check__</i><div class="txt"><b>Carro pronto</b> <span>· PVE-8H55, Juliana Prado, esperando retirada</span></div><button class="bt zap pequeno" data-nada>__I_zap__ Avisar</button></div>
+                      <div class="aviso"><i class="sinal t-neutro">__I_caixa__</i><div class="txt"><b>Estoque baixo</b> <span>· Pneu 175/70 R14: tem 2, o mínimo é 4</span></div><button class="bt segundo pequeno" data-nada>Ver a peça</button></div>
+                    </div>
+                  </div>
+
+                  <div class="numeros" id="numeros" data-cena style="--ordem:2"></div>
+
+                  <div class="duas">
+                    <div class="pilha">
+                      <div class="cartao" data-cena style="--ordem:3">
+                        <div class="cartao-titulo"><h4>OS abertas</h4><span class="selo t-neutro">2</span>
+                          <a class="elo direita" href="#" data-nada>Ver relações completas →</a></div>
+                        <table>
+                          <thead><tr><th>Nº</th><th>Cliente</th><th>Veículo</th><th>Aberta</th><th></th></tr></thead>
+                          <tbody>
+                            <tr><td class="fraco">OS 148</td><td class="forte">Ricardo Menezes</td><td><button class="placa" data-dica="Abrir a ficha do veículo"><span>RTA-4B71</span></button></td><td class="fraco">hoje</td><td class="acoes"><span class="selo t-info">__I_andando__ Em andamento</span></td></tr>
+                            <tr><td class="fraco">OS 147</td><td class="forte">Eduardo Salles</td><td><button class="placa" data-dica="Abrir a ficha do veículo"><span>SBK-3C19</span></button></td><td class="fraco">hoje</td><td class="acoes"><span class="selo t-info">__I_andando__ Em andamento</span></td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="cartao" data-cena style="--ordem:4">
+                        <div class="cartao-titulo"><h4>Veículos no pátio</h4></div>
+                        <div class="patio">
+                          <div class="carro">__CARRO_1__<div><b>Ricardo Menezes</b><small>RTA-4B71 · Volkswagen Gol 1.6</small></div></div>
+                          <div class="carro">__CARRO_2__<div><b>Eduardo Salles</b><small>SBK-3C19 · Jeep Renegade</small></div></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="cartao cal" data-cena style="--ordem:4">
+                      <div class="cal-topo"><button class="ib" aria-label="Mês anterior" data-nada>__I_esq__</button><b>Novembro de 2026</b><button class="ib" aria-label="Próximo mês" data-nada>__I_dir__</button></div>
+                      <div class="cal-grade" id="cal"></div>
+                      <ul class="eventos">
+                        <li><span style="color:var(--perigo)">__I_alerta__</span><b>10</b><span>Venceu: Fornecedor de pneus (R$ 4.750,00)</span></li>
+                        <li><span style="color:var(--atencao)">__I_relogio__</span><b>14</b><span>Vence hoje: Aluguel do galpão (R$ 3.200,00)</span></li>
+                        <li><span style="color:var(--info)">__I_estrela__</span><b>15</b><span>Proclamação da República</span></li>
+                        <li><span style="color:var(--ok)">__I_presente__</span><b>18</b><span>Aniversário: Camila Rocha</span></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ---------- ORDENS DE SERVIÇO ---------- -->
+                <div class="tela" id="s-os" hidden>
+                  <div class="tela-titulo" data-cena style="--ordem:0">
+                    <div><h3>Ordens de Serviço</h3><p>Cliente + veículo + peças usadas + serviço realizado</p></div>
+                    <div class="lado">
+                      <button class="bt segundo" data-nada>__I_mais__ Venda de balcão</button>
+                      <button class="bt principal" data-nada>__I_mais__ Nova ordem de serviço</button>
+                    </div>
+                  </div>
+                  <div class="abas" data-cena style="--ordem:1" role="tablist">
+                    <button class="aba" role="tab" aria-selected="true">Ordens de serviço <small>18</small></button>
+                    <button class="aba" role="tab" aria-selected="false" data-nada>Vendas de balcão <small>1</small></button>
+                    <button class="ib" style="margin-left:auto" data-dica="O que mostrar na lista" aria-label="O que mostrar na lista" data-nada>__I_colunas__</button>
+                  </div>
+                  <div class="filtros" data-cena style="--ordem:2">
+                    <label class="campo" style="width:260px">Buscar por cliente ou placa<input id="f-busca" placeholder="Ex: João ou ABC1D23"></label>
+                    <label class="campo" style="width:150px">De<input id="f-de" value="01/11/2026"></label>
+                    <label class="campo" style="width:150px">Até<input id="f-ate" value="14/11/2026"></label>
+                    <p class="nota">OS em aberto sempre aparecem, não importa a data. O período filtra só o histórico já faturado.</p>
+                  </div>
+                  <div class="cartao" data-cena style="--ordem:3">
+                    <table>
+                      <thead><tr><th>Nº</th><th>Cliente</th><th>Veículo</th><th>Abertura</th><th>Status</th><th class="num">Peças</th><th class="num">Serviços</th><th class="num">Total</th><th class="num">Lucro</th><th></th></tr></thead>
+                      <tbody id="linhas-os"></tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- ---------- as outras ---------- -->
+                <div class="tela" id="s-outra" hidden>
+                  <div class="tela-titulo" data-cena style="--ordem:0"><div><h3 id="outra-nome">Clientes</h3><p>Esta tela ainda não foi desenhada no conceito</p></div></div>
+                  <div class="vazio" data-cena style="--ordem:1"><b>Fica pra próxima rodada</b>Ela vai seguir as mesmas regras do Início e das Ordens de Serviço. Clique num item do menu pra ver o movimento da troca de tela.</div>
+                </div>
+
+              </div>
+
+              <!-- ---------- FATURAR ---------- -->
+              <div class="veu" id="veu" hidden>
+                <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fat-titulo">
+                  <div class="modal-topo">
+                    <div><h4 id="fat-titulo">Faturar OS 148</h4><p>Ricardo Menezes · RTA-4B71</p></div>
+                    <div class="total"><small>Total dos itens</small><b>R$ 899,80</b></div>
+                  </div>
+                  <div class="modal-corpo">
+                    <div class="escolha" role="radiogroup" aria-label="Quando recebe">
+                      <button class="opcao" role="radio" aria-checked="true"><i></i><span><b>Recebido agora</b><small>Lança o valor como Entrada no Caixa agora mesmo.</small></span></button>
+                      <button class="opcao" role="radio" aria-checked="false"><i></i><span><b>A receber depois</b><small>Vira uma conta a receber, com vencimento.</small></span></button>
+                    </div>
+                    <div class="marcar"><i>__I_check__</i> Dividir em mais de uma forma de pagamento</div>
+                    <div class="forma">
+                      <select class="entrada" id="fp1"><option>Pix</option><option>Dinheiro</option></select>
+                      <select class="entrada" id="fx1" disabled><option>1x à vista</option></select>
+                      <input class="entrada valor" id="fv1" value="400,00">
+                      <button class="ib" data-dica="Remover" aria-label="Remover">__I_x__</button>
+                    </div>
+                    <div class="forma">
+                      <select class="entrada" id="fp2"><option>Cartão de crédito</option></select>
+                      <select class="entrada" id="fx2"><option>3x (2,74% de juros)</option></select>
+                      <input class="entrada valor" id="fv2" value="499,80">
+                      <button class="ib" data-dica="Remover" aria-label="Remover">__I_x__</button>
+                    </div>
+                    <p class="dica">3x de R$ 171,16. Com 2,74% de juros, essa forma fecha em R$ 513,49.</p>
+                    <button class="bt fantasma pequeno" style="align-self:flex-start;margin-left:-8px" data-nada>__I_mais__ Adicionar forma de pagamento</button>
+                  </div>
+                  <div class="modal-pe">
+                    <div class="conta-final">Total: <b>R$ 899,80</b><br>Com os juros do cartão: <b>R$ 913,49</b> (R$ 13,69 de juros)</div>
+                    <div class="fim">
+                      <button class="bt fantasma" id="fat-cancelar">Cancelar</button>
+                      <button class="bt principal" id="fat-confirmar">Confirmar faturamento</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="secao">
+    <header>
+      <h2>3. As peças</h2>
+      <p>O que vira regra escrita pra equipe. Os números de contraste são calculados aqui na página; o mínimo pra texto é 4,5.</p>
+    </header>
+    <div class="pecas">
+      <div class="peca"><h3>Superfícies e texto</h3><div class="cores" id="cores-base"></div></div>
+      <div class="peca"><h3>Marca e ação</h3><div class="cores" id="cores-marca"></div>
+        <p>Carmesim só na logo e nos brilhos. Laranja só no botão principal, com letra escura por cima.</p></div>
+      <div class="peca"><h3>Avisos</h3>
+        <div class="fileira">
+          <span class="selo t-info">__I_andando__ Em andamento</span>
+          <span class="selo t-atencao">__I_relogio__ Concluída</span>
+          <span class="selo t-ok">__I_check__ Finalizada</span>
+          <span class="selo t-perigo">__I_alerta__ Vencida</span>
+        </div>
+        <p>Toda cor de aviso vem com ícone e palavra. "Em andamento" é azul e "atenção" é amarelo, longe do laranja dos botões.</p>
+        <div class="cores" id="cores-aviso"></div></div>
+      <div class="peca"><h3>Botões</h3>
+        <div class="fileira"><button class="bt principal">__I_mais__ Nova ordem de serviço</button><button class="bt segundo">Venda de balcão</button></div>
+        <div class="fileira"><button class="bt zap">__I_zap__ Avisar</button><button class="bt fantasma">Cancelar</button><button class="placa"><span>RTA-4B71</span></button></div>
+        <p>Um botão laranja por tela: o próximo passo. A placa é um botão e abre a ficha do veículo.</p></div>
+      <div class="peca"><h3>Letras</h3>
+        <div class="letras"><b>Ordens de Serviço</b><span>R$ 43.790,20</span><small>Títulos e números em Plus Jakarta Sans. Texto, campos e tabelas em Inter, com os algarismos alinhados em coluna.</small></div></div>
+      <div class="peca"><h3>Degradê com grão</h3>
+        <div class="amostra-grao grao"></div>
+        <p>Só no Login, na Central do dia e na marca. Nunca atrás de tabela.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const MARCAS = __MARCAS__;
+const I = __ICONES__;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const semMovimento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- logo ---------- */
+let logoAtual = "b";
+try { logoAtual = localStorage.getItem("ssace-logo") || "b"; } catch (e) {}
+const NOMES = {
+  a: ["A · Fiel ao print", "A engrenagem fica atrás e os dentes aparecem entre as pétalas. É a mais rica em detalhe; abaixo de 32 px os dentes somem."],
+  b: ["B · Limpa", "Só a flor, mais cheia, e a engrenagem sozinha no miolo. Lê bem em qualquer tamanho."],
+  c: ["C · Uma peça só", "As pétalas saem de um aro, como dentes. Lembra flor e também cubo de roda. É a mais forte de longe."],
+};
+function pintarMarcas() {
+  $$("[data-marca]").forEach((el) => {
+    const v = el.dataset.marca || logoAtual;
+    el.innerHTML = MARCAS[v];
+  });
+  $$(".logo-cartao").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === logoAtual)));
+  $$(".escolher").forEach((b) => (b.textContent = b.closest(".logo-cartao").dataset.v === logoAtual ? "No programa agora" : "Ver no programa"));
+}
+$("#logos").innerHTML = ["a", "b", "c"].map((v) => {
+  const m = (t, extra = "") => `<svg viewBox="-256 -256 512 512" width="${t}" height="${t}" ${extra}>${MARCAS[v]}</svg>`;
+  const branca = `<svg viewBox="-256 -256 512 512">${MARCAS[v + "_branca"]}</svg>`;
+  return `<article class="logo-cartao" data-v="${v}" aria-pressed="false">
+    <div class="logo-palco grao">${m(168)}</div>
+    <div class="logo-info">
+      <div><h3>${NOMES[v][0]}</h3><p>${NOMES[v][1]}</p></div>
+      <div class="logo-usos">
+        <div class="icone-app">${m(48)}</div>
+        <div class="icone-app cheio">${branca}</div>
+        <div class="icone-app claro">${m(48)}</div>
+        <div class="tamanhos">${m(48)}${m(32)}${m(24)}${m(16)}</div>
+      </div>
+      <button class="escolher">Ver no programa</button>
+    </div></article>`;
+}).join("");
+$("#logos").addEventListener("click", (e) => {
+  const c = e.target.closest(".logo-cartao");
+  if (!c) return;
+  logoAtual = c.dataset.v;
+  try { localStorage.setItem("ssace-logo", logoAtual); } catch (e2) {}
+  pintarMarcas();
+});
+
+/* ---------- escala do palco ---------- */
+let escala = 1;
+function ajustar() {
+  const l = $("#moldura").clientWidth;
+  escala = Math.min(1, l / 1360);
+  $("#palco").style.transform = `scale(${escala})`;
+  $("#palco").style.left = Math.max(0, (l - 1360 * escala) / 2) + "px";
+  $("#moldura").style.height = 850 * escala + "px";
+}
+addEventListener("resize", ajustar);
+ajustar();
+
+/* ---------- menu ---------- */
+const MENU = [
+  ["Atendimento", [["inicio", "Início", "casa"], ["clientes", "Clientes", "pessoas"], ["os", "Ordens de Serviço", "prancheta"], ["orcamentos", "Orçamentos", "orcamento", 2], ["garantias", "Garantias", "escudo"]]],
+  ["Estoque", [["estoque", "Estoque", "caixa"], ["fornecedores", "Fornecedores", "caminhao"], ["servicos", "Serviços", "chave"]]],
+  ["Financeiro", [["caixa", "Caixa Diário", "carteira"], ["pagar", "Contas a Pagar", "pagar"], ["receber", "Contas a Receber", "receber"], ["notas", "Notas Fiscais", "recibo"]]],
+  ["Gestão", [["relacoes", "Relações", "barras"], ["funcionarios", "Funcionários", "cracha"]]],
+];
+const lista = $("#lista");
+MENU.forEach(([grupo, itens]) => {
+  lista.insertAdjacentHTML("beforeend", `<div class="grupo-nome">${grupo}</div>` + itens.map(([id, nome, ic, n]) =>
+    `<button class="item${n ? " tem-conta" : ""}" data-tela="${id}" data-nome="${nome}">${I[ic]}<span>${nome}</span>${n ? `<b class="conta">${n}</b>` : ""}</button>`).join(""));
+});
+let telaAtual = "inicio";
+function moverTrilho() {
+  const el = $(`.item[data-tela="${telaAtual}"]`);
+  if (el) $("#trilho").style.transform = `translateY(${el.offsetTop}px)`;
+}
+function irPara(id, animar = true) {
+  telaAtual = id;
+  $$(".item").forEach((b) => b.toggleAttribute("aria-current", false));
+  const el = $(`.item[data-tela="${id}"]`);
+  el.setAttribute("aria-current", "page");
+  moverTrilho();
+  const alvo = id === "inicio" ? "#s-inicio" : id === "os" ? "#s-os" : "#s-outra";
+  if (alvo === "#s-outra") $("#outra-nome").textContent = el.dataset.nome;
+  $$(".tela").forEach((t) => (t.hidden = true));
+  const t = $(alvo);
+  t.hidden = false;
+  $("#rolagem").scrollTop = 0;
+  entrar(t, animar);
+  if (id === "inicio") numeros(animar);
+}
+function entrar(el, animar = true) {
+  el.classList.remove("entrando");
+  if (!animar || semMovimento) return;
+  void el.offsetWidth;
+  el.classList.add("entrando");
+}
+lista.addEventListener("click", (e) => {
+  const b = e.target.closest(".item");
+  if (b) irPara(b.dataset.tela);
+});
+$("#encolher").addEventListener("click", () => {
+  $("#t-casca").classList.toggle("encolhido");
+  setTimeout(moverTrilho, 0);
+  setTimeout(moverTrilho, 280);
+});
+
+/* ---------- dica ao passar o mouse ---------- */
+let dica;
+function mostrarDica(el, texto, lado) {
+  esconderDica();
+  dica = document.createElement("div");
+  dica.className = "dica-flutuante";
+  dica.textContent = texto;
+  const j = $("#janela");
+  j.appendChild(dica);
+  const r = el.getBoundingClientRect(), b = j.getBoundingClientRect();
+  const x = (r.left - b.left) / escala, y = (r.top - b.top) / escala, w = r.width / escala, h = r.height / escala;
+  if (lado === "direita") { dica.style.left = x + w + 10 + "px"; dica.style.top = y + h / 2 - 15 + "px"; }
+  else { dica.style.left = Math.max(8, Math.min(1360 - dica.offsetWidth - 8, x + w / 2 - dica.offsetWidth / 2)) + "px"; dica.style.top = y - 36 + "px"; }
+}
+function esconderDica() { if (dica) { dica.remove(); dica = null; } }
+$("#janela").addEventListener("mouseover", (e) => {
+  const item = e.target.closest(".item");
+  if (item && $("#t-casca").classList.contains("encolhido")) return mostrarDica(item, item.dataset.nome, "direita");
+  const d = e.target.closest("[data-dica]");
+  if (d) return mostrarDica(d, d.dataset.dica, d.closest(".menu") && $("#t-casca").classList.contains("encolhido") ? "direita" : "cima");
+});
+$("#janela").addEventListener("mouseout", (e) => { if (e.target.closest(".item,[data-dica]")) esconderDica(); });
+
+/* ---------- Início: números que contam e o fio do gráfico ---------- */
+const NUMEROS = [
+  ["Vendas mês", 43790.2, "+9%", [22, 25, 24, 28, 27, 31, 30, 34, 33, 38, 37, 41, 43.8], "Tudo que foi faturado em novembro, até hoje."],
+  ["Lucros mês", 3792.2, "+30%", [1.2, 1.6, 1.5, 2.0, 1.9, 2.3, 2.2, 2.7, 2.9, 3.1, 3.0, 3.5, 3.8], "Vendas menos o custo das peças e dos serviços."],
+  ["Ticket médio", 686.37, "+4%", [640, 655, 648, 660, 671, 664, 670, 676, 668, 680, 677, 684, 686], "Total vendido dividido pelo número de OS."],
+];
+const reais = (v) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fio(pontos, i) {
+  const min = Math.min(...pontos), max = Math.max(...pontos), L = 132, A = 50, m = 6;
+  const xy = pontos.map((p, k) => [m + (k * (L - 2 * m)) / (pontos.length - 1), A - m - ((p - min) / (max - min || 1)) * (A - 2 * m - 6)]);
+  const d = xy.map(([x, y], k) => (k ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
+  const [ux, uy] = xy[xy.length - 1];
+  return `<svg class="fio" viewBox="0 0 ${L} ${A}" aria-hidden="true"><defs><linearGradient id="fg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5722" stop-opacity=".34"/><stop offset="1" stop-color="#FF5722" stop-opacity="0"/></linearGradient></defs>
+    <path d="${d} L${ux},${A} L${xy[0][0]},${A} Z" fill="url(#fg${i})"/><path class="l" pathLength="1" d="${d}"/><circle cx="${ux}" cy="${uy}" r="3.5" fill="#FF5722" stroke="#191920" stroke-width="2"/></svg>`;
+}
+function numeros(animar) {
+  $("#numeros").innerHTML = NUMEROS.map(([nome, v, delta, pts, ajuda], i) => `
+    <button class="cartao numero" data-nada>
+      <span class="nome-n">${nome} <i class="ajuda" data-dica="${ajuda}">?</i></span><span class="seta">${I.dir}</span>
+      <span class="valor"><small>R$</small><span data-ate="${v}">${reais(v)}</span></span>
+      ${fio(pts, i)}
+      <span class="variacao">${I.sobe} ${delta} <span>contra outubro</span></span>
+    </button>`).join("");
+  if (!animar || semMovimento) return;
+  $$("#numeros [data-ate]").forEach((el) => {
+    const fim = +el.dataset.ate, t0 = performance.now();
+    (function passo(t) {
+      const p = Math.min(1, (t - t0) / 750), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = reais(fim * e);
+      if (p < 1) requestAnimationFrame(passo);
+    })(t0);
+  });
+}
+
+/* ---------- calendário de novembro de 2026 (dia 1 cai num domingo) ---------- */
+(function () {
+  const marcas = { 2: "info", 10: "perigo", 14: "atencao", 15: "info", 18: "ok", 20: "info" };
+  let h = "DSTQQSS".split("").map((d) => `<i>${d}</i>`).join("");
+  for (let d = 1; d <= 30; d++) h += `<div class="dia${d === 14 ? " hoje" : ""}">${d}${marcas[d] && d !== 14 ? `<u style="background:var(--${marcas[d]})"></u>` : ""}</div>`;
+  for (let d = 1; d <= 5; d++) h += `<div class="dia fora">${d}</div>`;
+  $("#cal").innerHTML = h;
+})();
+
+/* ---------- lista de OS ---------- */
+const OS = [
+  [148, "Ricardo Menezes", "RTA-4B71", "14/11", "andamento", 779.8, 120, 899.8, 374.8],
+  [147, "Eduardo Salles", "SBK-3C19", "14/11", "andamento", 890, 260, 1150, 464],
+  [146, "Juliana Prado", "PVE-8H55", "13/11", "concluida", 189.5, 90, 279.5, 128.5],
+  [145, "Transportes Boa Vista Ltda", "QNS-1D02", "13/11", "finalizada", 2448, 140, 2588, 913],
+  [144, "Camila Rocha", "MJU-9F44", "12/11", "finalizada", 0, 165, 165, 105],
+  [143, "Ricardo Menezes", "RTA-4B71", "12/11", "finalizada", 549, 40, 589, 205],
+  [142, "Eduardo Salles", "SBK-3C19", "11/11", "finalizada", 890, 260, 1150, 464],
+  [141, "Juliana Prado", "PVE-8H55", "10/11", "finalizada", 189.5, 90, 279.5, 128.5],
+];
+const SELO = {
+  andamento: `<span class="selo t-info">${I.andando} Em andamento</span>`,
+  concluida: `<span class="selo t-atencao">${I.relogio} Concluída</span>`,
+  finalizada: `<span class="selo t-ok">${I.check} Finalizada</span>`,
+};
+function linhasOS() {
+  $("#linhas-os").innerHTML = OS.map(([n, cli, placa, dia, st, pecas, serv, total, lucro]) => {
+    const mais = `<button class="ib" data-mais="${n}" data-dica="Mais ações" aria-label="Mais ações da OS ${n}">${I.tres}</button>`;
+    const acao = st === "finalizada"
+      ? `<button class="bt zap pequeno" data-nada>${I.zap} Avisar</button>${mais}`
+      : `<button class="bt principal pequeno" data-faturar="${n}">Faturar</button>${mais}`;
+    return `<tr data-os="${n}"><td class="fraco">OS ${n}</td><td class="forte">${cli}</td>
+      <td><button class="placa" data-dica="Abrir a ficha do veículo"><span>${placa}</span></button></td><td class="fraco">${dia}</td><td>${SELO[st]}</td>
+      <td class="num">${reais(pecas)}</td><td class="num">${reais(serv)}</td><td class="num forte">${reais(total)}</td><td class="num" style="color:var(--ok)">${reais(lucro)}</td>
+      <td class="acoes"><div>${acao}</div></td></tr>`;
+  }).join("");
+}
+linhasOS();
+function fecharMais() { $$(".menu-mais").forEach((m) => m.remove()); }
+$("#linhas-os").addEventListener("click", (e) => {
+  const f = e.target.closest("[data-faturar]");
+  if (f) return abrirFaturar();
+  const m = e.target.closest("[data-mais]");
+  if (m) {
+    esconderDica();
+    const aberto = m.parentElement.querySelector(".menu-mais");
+    fecharMais();
+    if (aberto) return;
+    const st = OS.find((o) => o[0] == m.dataset.mais)[4];
+    const itens = st === "finalizada" ? [["Avaliação", "estrela"], ["Fechamento", "recibo"], ["Abrir a OS", "prancheta"]]
+      : st === "concluida" ? [["Avisar o cliente", "zap"], ["Fechamento", "recibo"], ["Abrir a OS", "prancheta"]]
+      : [["Abrir a OS", "prancheta"], ["Fechamento", "recibo"]];
+    m.parentElement.insertAdjacentHTML("beforeend", `<div class="menu-mais">${itens.map(([t, ic]) => `<button>${I[ic]} ${t}</button>`).join("")}</div>`);
+    e.stopPropagation();
+  }
+});
+document.addEventListener("click", (e) => { if (!e.target.closest("[data-mais]")) fecharMais(); });
+
+/* ---------- Faturar ---------- */
+function abrirFaturar() { esconderDica(); $("#veu").hidden = false; }
+function fecharFaturar() { $("#veu").hidden = true; }
+$("#fat-cancelar").addEventListener("click", fecharFaturar);
+$("#veu").addEventListener("click", (e) => { if (e.target.id === "veu") fecharFaturar(); });
+$$(".opcao").forEach((o) => o.addEventListener("click", () => $$(".opcao").forEach((x) => x.setAttribute("aria-checked", String(x === o)))));
+$("#fat-confirmar").addEventListener("click", () => {
+  fecharFaturar();
+  OS[0][4] = "finalizada";
+  linhasOS();
+  const t = document.createElement("div");
+  t.className = "torrada";
+  t.innerHTML = `${I.check} OS 148 faturada. R$ 913,49 lançados no Caixa.`;
+  $("#t-casca .area").appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+});
+
+/* ---------- Login ---------- */
+function mostrarLogin() { $("#t-casca").hidden = true; $("#t-login").hidden = false; entrar($("#t-login")); }
+function mostrarCasca(tela = "inicio", animar = true) {
+  $("#t-login").hidden = true; $("#t-casca").hidden = false; fecharFaturar();
+  irPara(tela, animar);
+}
+$("#form-login").addEventListener("submit", (e) => { e.preventDefault(); mostrarCasca("inicio"); });
+$("#sair").addEventListener("click", mostrarLogin);
+document.addEventListener("click", (e) => { if (e.target.closest("[data-nada]") && e.target.closest("a")) e.preventDefault(); });
+
+/* ---------- atalhos de fora ---------- */
+$$("[data-ir]").forEach((b) => b.addEventListener("click", () => {
+  const d = b.dataset.ir;
+  if (d === "login") mostrarLogin();
+  else if (d === "inicio") mostrarCasca("inicio");
+  else if (d === "os") mostrarCasca("os");
+  else if (d === "faturar") { mostrarCasca("os", false); OS[0][4] = "andamento"; linhasOS(); abrirFaturar(); }
+  else if (d === "menu") { if ($("#t-casca").hidden) mostrarCasca("inicio", false); $("#encolher").click(); }
+}));
+
+/* ---------- as peças: cores com o contraste calculado ---------- */
+function lum(hex) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+const contraste = (a, b) => { const x = lum(a), y = lum(b); return ((Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)).toFixed(1).replace(".", ","); };
+const cor = (hex, nome, nota) => `<div class="cor"><i style="background:${hex}"></i><span>${nome} <code>${hex}</code></span><small>${nota || ""}</small></div>`;
+$("#cores-base").innerHTML = [
+  cor("#0A0A0D", "Fundo"), cor("#121217", "Menu e painéis"), cor("#191920", "Cartões"), cor("#22222B", "Ao passar o mouse"),
+  cor("#FFFFFF", "Texto principal", contraste("#FFFFFF", "#191920") + " no cartão"),
+  cor("#A1A1AA", "Texto secundário", contraste("#A1A1AA", "#191920") + " no cartão"),
+  cor("#8A8A94", "Dica dentro de campo", contraste("#8A8A94", "#14141A") + " no campo"),
+  cor("#66666B", "Borda de campo (branco a 35%)", contraste("#66666B", "#191920") + ": o mínimo é 3"),
+].join("");
+$("#cores-marca").innerHTML = [
+  cor("#E11D48", "Carmesim Sakura", "só marca"),
+  cor("#FF5722", "Laranja ignição", "letra escura: " + contraste("#1B0B05", "#FF5722")),
+  cor("#FF5722", "O mesmo, com letra branca", "só " + contraste("#FFFFFF", "#FF5722") + ": não usar"),
+].join("");
+$("#cores-aviso").innerHTML = [
+  cor("#60A5FA", "Em andamento", contraste("#60A5FA", "#191920")), cor("#FACC15", "Atenção", contraste("#FACC15", "#191920")),
+  cor("#34D399", "Certo", contraste("#34D399", "#191920")), cor("#F87171", "Problema", contraste("#F87171", "#191920")),
+].join("");
+
+/* ---------- começo ---------- */
+pintarMarcas();
+const comeco = (location.hash || "").replace("#", "");
+if (comeco === "inicio" || comeco === "os") mostrarCasca(comeco, false);
+else if (comeco === "faturar") { mostrarCasca("os", false); abrirFaturar(); }
+else if (comeco === "encolhido") { mostrarCasca("inicio", false); $("#t-casca").classList.add("encolhido"); setTimeout(moverTrilho, 320); }
+else entrar($("#t-login"));
+</script>
