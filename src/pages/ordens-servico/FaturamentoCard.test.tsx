@@ -351,3 +351,47 @@ describe("FaturamentoCard — Pix da loja (#456)", () => {
     expect(await navigator.clipboard.readText()).toBe(codigo);
   });
 });
+
+describe("FaturamentoCard — a OS mudou em outro computador (#803)", () => {
+  it("quando a OS recarregada chega com outro total, o formulário recomeça do total novo", async () => {
+    // A página troca a `ordem` do cartão pela recarregada depois da recusa do
+    // banco. Os valores digitados eram do total velho (R$ 600 + R$ 400 de
+    // R$ 1.000); se ficassem, a pessoa cobraria com as contas de antes.
+    const { user, rerender } = montar();
+    await dividirPagamento(user);
+    await user.clear(linhaDePagamento(0).valor);
+    await user.type(linhaDePagamento(0).valor, "600");
+    await user.clear(linhaDePagamento(1).valor);
+    await user.type(linhaDePagamento(1).valor, "400");
+
+    const recarregada = ordemDeMil();
+    recarregada.itens = [
+      ...(recarregada.itens ?? []),
+      {
+        id: "item-3",
+        ordem_servico_id: "os-1",
+        tipo: "peca",
+        peca_id: "peca-2",
+        servico_id: null,
+        tecnico_id: null,
+        descricao: "Válvula",
+        quantidade: 1,
+        preco_unitario: 150,
+        desconto: 0,
+      } as ItemOS,
+    ];
+    rerender(
+      <FaturamentoCard
+        ordem={recarregada}
+        jurosParcelas={jurosParcelas}
+        onConfirmar={vi.fn()}
+        onCancelar={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: /Dividir em mais de uma forma/ })).not.toBeChecked(),
+    );
+    expect(screen.getByText(/Total dos itens: R\$\s*1\.150,00/)).toBeInTheDocument();
+  });
+});

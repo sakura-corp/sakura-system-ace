@@ -15,14 +15,19 @@ const sb = vi.hoisted(() => ({
 }));
 vi.mock("./supabase", () => ({ supabase: sb }));
 vi.mock("./depositos", () => ({ buscarDepositoPadraoId: async () => "deposito-1" }));
-vi.mock("./caixa", () => ({ criarMovimentoCaixa: async () => undefined }));
-vi.mock("./contasReceber", () => ({ criarContaReceber: async () => undefined }));
+const caixa = vi.hoisted(() => ({ criarMovimentoCaixa: vi.fn() }));
+const receber = vi.hoisted(() => ({ criarContaReceber: vi.fn() }));
+vi.mock("./caixa", () => caixa);
+vi.mock("./contasReceber", () => receber);
 
 const {
   adicionarItensOrdem,
   aprovarOrcamento,
   cadastrarPecaDoItem,
   editarItemOrdem,
+  faturarOrdem,
+  OrdemMudouError,
+  registrarVendaBalcao,
   PecaNaoLigadaNaAprovacaoError,
 } = await import("./ordensServico");
 
@@ -47,6 +52,8 @@ const ordemAprovada = {
 beforeEach(() => {
   sb.rpc.mockReset();
   sb.from.mockReset();
+  caixa.criarMovimentoCaixa.mockReset();
+  receber.criarContaReceber.mockReset();
   sb.from.mockImplementation((tabela: string) => {
     throw new Error(`a lib não podia ler/gravar "${tabela}" direto`);
   });
@@ -213,5 +220,105 @@ describe("aprovarOrcamento", () => {
     expect(erro).toBeInstanceOf(PecaNaoLigadaNaAprovacaoError);
     expect((erro as { ordem: OrdemServico }).ordem).toBe(ordemAprovada);
     expect((erro as Error).message).toMatch(/OS 18 foi aprovada.*"Válvula de bico".*não foi ligada/s);
+  });
+});
+
+// #803 (caso 2): faturar passou a ser uma chamada ao banco que trava a OS e
+// confere o total que a tela mostrou com o que está gravado.
+describe("faturarOrdem", () => {
+  const os = {
+    id: "ordem-1",
+    loja_id: "loja-1",
+    cliente_id: "cli-1",
+    numero: 18,
+    status: "concluida",
+    tipo: "os",
+  } as unknown as OrdemServico;
+  const pix = [{ formaPagamento: "pix" as const, valor: 1200 }];
+
+  it("manda o total dos itens e o operador pra função do banco, sem gravar a ordem direto", async () => {
+    sb.rpc.mockResolvedValue({ data: null, error: null });
+    await faturarOrdem(os, pix, 1, null, "op-1", 1200);
+    expect(sb.rpc).toHaveBeenCalledTimes(1);
+    expect(sb.rpc).toHaveBeenCalledWith("marcar_ordem_faturada", {
+      p_ordem: "ordem-1",
+      p_forma_pagamento: "Pix",
+      p_parcelas: 1,
+      p_total_da_tela: 1200,
+      p_operador: "op-1",
+    });
+    expect(sb.from).not.toHaveBeenCalled();
+    expect(caixa.criarMovimentoCaixa).toHaveBeenCalledTimes(1);
+  });
+
+  it("manda o total da tela sem arredondar (o meio centavo de 1,5 × 85,35 não pode virar 128,02)", async () => {
+    // Revisão da #803: arredondar aqui e lá separados recusava pra sempre uma
+    // OS com quantidade quebrada. O banco compara pela diferença.
+    sb.rpc.mockResolvedValue({ data: null, error: null });
+    await faturarOrdem(os, pix, 1, null, "op-1", 1.5 * 85.35);
+    expect(sb.rpc.mock.calls[0][1].p_total_da_tela).toBe(1.5 * 85.35);
+  });
+
+  it("OS que mudou em outro computador: OrdemMudouError e nada de caixa nem conta a receber", async () => {
+    sb.rpc.mockResolvedValue({
+      data: null,
+      error: { code: "SK803", message: "Esta OS mudou em outro computador." },
+    });
+    const erro = await faturarOrdem(os, pix, 1, null, "op-1", 1200).catch((e) => e);
+    expect(erro).toBeInstanceOf(OrdemMudouError);
+    expect(erro.name).toBe("OrdemMudouError");
+    expect(erro.message).toMatch(/mudou em outro computador/);
+    expect(erro.message).toMatch(/Nada foi cobrado/);
+    expect(caixa.criarMovimentoCaixa).not.toHaveBeenCalled();
+    expect(receber.criarContaReceber).not.toHaveBeenCalled();
+    await expect(
+      faturarOrdem(os, pix, 1, "2026-12-01", "op-1", 1200),
+    ).rejects.toBeInstanceOf(OrdemMudouError);
+    expect(receber.criarContaReceber).not.toHaveBeenCalled();
+  });
+
+  it("outro erro do banco sobe como veio e também não lança nada", async () => {
+    const erroBanco = { code: "P0001", message: "Esta OS já foi faturada." };
+    sb.rpc.mockResolvedValue({ data: null, error: erroBanco });
+    await expect(faturarOrdem(os, pix, 1, null, "op-1", 1200)).rejects.toBe(erroBanco);
+    expect(caixa.criarMovimentoCaixa).not.toHaveBeenCalled();
+  });
+
+  it("com previsão, cria a conta a receber só depois de o banco aceitar", async () => {
+    const ordemDasChamadas: string[] = [];
+    sb.rpc.mockImplementation(async () => {
+      ordemDasChamadas.push("rpc");
+      return { data: null, error: null };
+    });
+    receber.criarContaReceber.mockImplementation(async () => {
+      ordemDasChamadas.push("receber");
+    });
+    await faturarOrdem(os, pix, 1, "2026-12-01", "op-1", 1200);
+    expect(ordemDasChamadas).toEqual(["rpc", "receber"]);
+    expect(receber.criarContaReceber).toHaveBeenCalledWith(
+      expect.objectContaining({ ordem_servico_id: "ordem-1", valor: 1200, vencimento: "2026-12-01" }),
+      "loja-1",
+    );
+    expect(caixa.criarMovimentoCaixa).not.toHaveBeenCalled();
+  });
+});
+
+describe("registrarVendaBalcao", () => {
+  it("fatura mandando o total dos itens da venda (a ordem nova não tem itens carregados)", async () => {
+    const nova = { id: "venda-1", loja_id: "loja-1", cliente_id: "cli-1", numero: 5, tipo: "venda_balcao" };
+    const single = vi.fn().mockResolvedValue({ data: nova, error: null });
+    sb.from.mockImplementation(() => ({
+      insert: () => ({ select: () => ({ single }) }),
+    }));
+    sb.rpc.mockResolvedValue({ data: null, error: null });
+    await registrarVendaBalcao(
+      { cliente_id: "cli-1", vendedor_id: null },
+      [pneu],
+      { pagamentos: [{ formaPagamento: "pix", valor: 1200 }], parcelas: 1, previsaoRecebimento: null },
+      "op-1",
+      "loja-1",
+    );
+    const fatura = sb.rpc.mock.calls.find((c) => c[0] === "marcar_ordem_faturada");
+    expect(fatura?.[1]).toMatchObject({ p_ordem: "venda-1", p_total_da_tela: 1200, p_operador: "op-1" });
   });
 });

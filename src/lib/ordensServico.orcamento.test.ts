@@ -255,7 +255,7 @@ describe("faturarOrdem", () => {
   it("orçamento não é faturado (não entra no caixa)", async () => {
     const criado = await orcar();
     await expect(
-      faturarOrdem(criado, [{ formaPagamento: "pix", valor: 1280 }], 1, null),
+      faturarOrdem(criado, [{ formaPagamento: "pix", valor: 1280 }], 1, null, "op-1", 1280),
     ).rejects.toThrow(/orçamento/i);
     expect(caixa.lancamentos).toHaveLength(0);
     expect(ordem(criado.id).status).toBe("orcamento");
