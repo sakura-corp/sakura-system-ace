@@ -332,8 +332,8 @@
                 <dt>Consulta</dt><dd class="normal">Aponte a câmera para o QR code, ou digite a chave no site da Secretaria da Fazenda do estado.</dd>
               </dl>
               <p class="tributos">
-                <b>Tributos aproximados: R$ 632,70 (31,20%)</b> · federais R$ 268,49 · estaduais R$ 364,21.
-                Fonte: IBPT. Lei 12.741/2012.
+                <b>Tributos aproximados: R$ 103,42 (5,10%)</b> · alíquota efetiva do Simples Nacional,
+                inclui estimativa do ICMS-ST. Lei 12.741/2012.
               </p>
             </div>
           </div>
@@ -473,8 +473,8 @@
                 <dt>Consulta</dt><dd class="normal">Aponte a câmera para o QR code, ou digite a chave no portal nacional da NFS-e (nfse.gov.br).</dd>
               </dl>
               <p class="tributos">
-                <b>Tributos aproximados (Lei 12.741/2012):</b> federais R$ 21,35 · estaduais R$ 0,00 ·
-                municipais R$ 7,00.
+                <b>Tributos aproximados: R$ 25,55 (7,30%)</b> · alíquota efetiva do Simples Nacional.
+                Lei 12.741/2012.
               </p>
             </div>
           </div>
@@ -503,7 +503,13 @@
       <li><b>Do XML da nota</b> (já existe): loja, cliente, itens com código e unidade, desconto, pagamentos, troco, chave, protocolo, QR code da NFC-e, código do serviço, ISS, valor líquido.</li>
       <li><b>Da ordem de serviço do sistema</b> (não está na nota): veículo, placa, quilometragem, atendente, garantia, próxima revisão, telefone do cliente, discriminação do serviço linha a linha.</li>
       <li><b>Das Configurações da loja</b>: telefone, WhatsApp, horário, logotipo e o texto de garantia.</li>
-      <li><b>Ainda não existe no sistema</b>: os tributos aproximados (a nota de hoje não leva esse valor). É a pergunta 1 pra contadora.</li>
+      <li><b>Tributos aproximados</b>: copiados da própria nota (informações complementares do XML). Quem calcula e manda na emissão é a #1040, pela alíquota efetiva do Simples configurada na loja (resposta da contadora, 14/11). Sem a linha no XML, o recibo sai sem ela.</li>
+    </ul>
+    <h3>NFS-e de prefeitura que não manda os itens no XML (Giap, Araraquara)</h3>
+    <ul>
+      <li>Mesma folha da NFS-e, com os itens da OS. Logo acima dos itens, uma faixa: <b>"Documento sem valor fiscal - itens conforme OS nº 1.843"</b>.</li>
+      <li>O total mostrado é sempre o valor da nota. Se o total da OS for diferente do da nota, a folha não lista os itens: mostra só o total da nota e "Itens na OS nº 1.843".</li>
+      <li>O DANFE NFC-e continua sendo impresso sempre; este recibo é um complemento (decidido em 14/11).</li>
     </ul>
   </aside>
 </body>
