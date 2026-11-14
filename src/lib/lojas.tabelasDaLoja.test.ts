@@ -37,19 +37,27 @@ const TRAVAM_DE_PROPOSITO: Record<string, string> = {
   comissoes_fechamentos: "fechamentos de comissão pagos (0059)",
 };
 
-/** Tira os comentários `-- ...` (eles podem citar `references lojas` ou ter `;`). */
+/** Tira os comentários `/* ... *\/` e `-- ...` (podem citar `references lojas` ou ter `;`). */
 function semComentarios(sql: string): string {
-  return sql.replace(/--[^\n]*/g, "");
+  return sql.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--[^\n]*/g, "");
 }
 
-const REF_LOJAS = /references\s+(?:public\.)?lojas\s*\(\s*id\s*\)([^,)]*)/gi;
+// `references lojas`, com ou sem `public.`, aspas e `(id)` (sem coluna, o
+// Postgres usa a chave primária). O que vem depois, até a vírgula, diz se
+// tem `on delete`.
+const REF_LOJAS = /references\s+(?:"?public"?\.)?"?lojas"?(?!\w)\s*(?:\(\s*"?id"?\s*\))?([^,)]*)/gi;
 const NOME = /^\s*(?:create\s+table|alter\s+table)\s+(?:if\s+(?:not\s+)?exists\s+)?(?:only\s+)?(?:public\.)?(\w+)/i;
 const DROP = /^\s*drop\s+table\s+(?:if\s+exists\s+)?(?:public\.)?(\w+)/i;
 
 /**
  * Lê as migrations em ordem e devolve, pra cada tabela que aponta pra
- * `lojas`, se ela trava a exclusão (sem cascade/set null). A última
- * migration que mexe na tabela é a que vale.
+ * `lojas`, se ela trava a exclusão (sem cascade/set null).
+ *
+ * Uma vez que trava, continua travando até um `drop table`: uma FK nova com
+ * cascade não apaga a antiga sem cascade, e o leitor não sabe seguir
+ * `drop constraint`. Se um dia uma migration trocar a FK por uma com
+ * cascade de verdade, este teste reprova pedindo pra tabela ficar numa das
+ * listas — aí ajuste o teste (reprovar à toa é melhor que deixar passar).
  */
 function tabelasQueApontamPraLojas(): { travam: Set<string>; naoEntendi: string[] } {
   const estado = new Map<string, boolean>();
@@ -74,7 +82,8 @@ function tabelasQueApontamPraLojas(): { travam: Set<string>; naoEntendi: string[
         continue;
       }
       const trava = refs.some((r) => !/on\s+delete\s+(cascade|set\s+null)/i.test(r[1]));
-      estado.set(nome[1].toLowerCase(), trava);
+      const tabela = nome[1].toLowerCase();
+      estado.set(tabela, estado.get(tabela) === true || trava);
     }
   }
 
