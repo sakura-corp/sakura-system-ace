@@ -64,14 +64,14 @@ export async function atualizarStatusLoja(id: string, ativo: boolean): Promise<v
 const ERRO_LOJA_COM_DADOS =
   "Não é possível excluir: essa loja ainda tem dados vinculados (estoque, caixa, ordens de serviço, funcionários...). Deixe-a inativa em vez de excluir.";
 
-// As 4 tabelas de configuração viraram "1 linha por loja" na fundação
-// multi-loja (migration 0033) — toda loja sempre tem uma linha em cada uma
-// (backfill/criação automática), e nenhuma tem ON DELETE CASCADE pra
-// loja_id. Diferente de estoque/caixa/OS (dado de negócio, que a gente
+// As tabelas de configuração da loja: as 4 que viraram "1 linha por loja"
+// na fundação multi-loja (migration 0033), mais depósitos e as que vieram
+// depois (Pix, link de avaliação, textos de WhatsApp, que só têm linha se a
+// loja personalizou). Nenhuma tem ON DELETE CASCADE pra loja_id. Diferente de estoque/caixa/OS (dado de negócio, que a gente
 // quer que bloqueie a exclusão de propósito), essas são só configuração —
 // sempre seguro apagar junto ao excluir a loja, nunca fica "presa" por
 // causa delas.
-const TABELAS_CONFIG_POR_LOJA = [
+export const TABELAS_CONFIG_POR_LOJA = [
   "depositos",
   "configuracoes_garantia",
   "configuracoes_fiscais_loja",
@@ -81,6 +81,12 @@ const TABELAS_CONFIG_POR_LOJA = [
   "configuracoes_pix",
   // 0082 (#459): o link de avaliação no Google também é só configuração.
   "configuracoes_avaliacao",
+  // 0052 (#951): os textos de WhatsApp personalizados também são só
+  // configuração. O histórico de mensagens (`whatsapp_mensagens`) fica de
+  // fora de propósito: é dado de negócio e trava a exclusão.
+  "configuracoes_whatsapp",
+  // Tabela nova com loja_id sem cascade: o teste lojas.tabelasDaLoja.test.ts
+  // reprova até ela entrar aqui ou na lista das que travam de propósito.
 ] as const;
 
 export async function excluirLoja(id: string): Promise<void> {
