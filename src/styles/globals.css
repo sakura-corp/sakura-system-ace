@@ -10,10 +10,18 @@
 @custom-variant muito-baixa (@media (height < 768px));
 
 @theme {
-  /* Paleta oficial Sakura System - Dark Neon Edition */
-  --color-sakura-pink: #ff4dce;
-  --color-sakura-purple: #b624ff;
-  --color-sakura-gray: #3a3238;
+  /* Paleta do visual novo (#990, 14/11/2026): laranja com carmesim, escuro.
+     As regras estão em docs/referencia/visual-novo/README.md.
+
+     ⚠️ Os NOMES abaixo são os antigos, do tema rosa e roxo, e mentem: o
+     "sakura-purple" hoje é o LARANJA de ação, o "sakura-pink" é o laranja
+     claro (passar o mouse, ícone ativo). Foi de propósito: trocar só o valor
+     muda as 54 telas num arquivo só, sem tocar em nenhuma (seção 10 das
+     regras). Tela nova usa os nomes de PAPEL, mais abaixo; os antigos só
+     saem quando nenhuma tela usar mais. */
+  --color-sakura-pink: #ff7a4d; /* = acao-clara */
+  --color-sakura-purple: #ff5722; /* = acao. Letra em cima dele é ESCURA (sobre-acao), nunca branca */
+  --color-sakura-gray: #2c2c35;
 
   /* Borda dos campos de formulário (input/select/textarea).
      NÃO é o mesmo cinza das bordas de tabela e de card: os campos ficam em
@@ -31,21 +39,67 @@
      bordas dele. Mexer na opacidade daqui muda TODO formulário do app. */
   --color-sakura-borda-campo: rgba(255, 255, 255, 0.35);
 
-  /* Variações de fundo escuro e detalhes neon */
-  --color-sakura-purple-dark: #e8d5e5;
-  --color-sakura-pink-soft: #1a1018;
-  --color-sakura-bg: #0b070a;
+  /* Superfícies escuras e o texto. O "purple-dark" é uma cor CLARA (o texto
+     principal); o "pink-soft" é o tom do cartão. */
+  --color-sakura-purple-dark: #f4f4f5;
+  --color-sakura-pink-soft: #191920; /* = cartao */
+  --color-sakura-bg: #0a0a0d; /* = fundo */
 
-  /* Muted agora é mais claro pra ler sobre fundo escuro */
-  --color-sakura-muted: #9e8d9a;
+  /* Texto secundário: 6,8:1 contra o cartão */
+  --color-sakura-muted: #a1a1aa; /* = texto-2 */
 
   /* Cor do anel de foco de teclado. Clara de propósito: o anel precisa
      aparecer sobre o fundo quase preto do app e sobre o vidro do
      sakura-card. Ver o bloco ":focus-visible" mais abaixo. */
-  --color-sakura-focus: #ffb3ec;
+  --color-sakura-focus: #ffb199;
 
+  /* ------------------------------------------------------------------
+     As cores com nome de PAPEL (seção 3 das regras do visual novo).
+
+     O nome diz pra que a cor serve, não que cor ela é: assim o tema claro
+     troca o valor sem o nome passar a mentir (que foi o que aconteceu com
+     o "sakura-purple-dark", uma cor clara usada mais de 600 vezes).
+
+     As quatro regras que evitam a tela virar uma mancha laranja:
+       1. carmesim é só MARCA (logo, brilho de fundo, cartão de destaque):
+          nunca em dado, em texto ou em botão;
+       2. acao (laranja) é só AÇÃO, e um botão laranja por tela;
+       3. letra em cima do laranja é sobre-acao (escura), nunca branca:
+          branco no #FF5722 dá 3,2:1, e o mínimo pra texto é 4,5:1;
+       4. todo aviso tem ícone e palavra junto da cor.
+     ------------------------------------------------------------------ */
+  --color-fundo: #0a0a0d; /* atrás de tudo */
+  --color-painel: #121217; /* menu lateral, barra do topo */
+  --color-cartao: #191920; /* cartões, tabelas */
+  --color-passar: #22222b; /* linha, item, botão secundário com o mouse em cima */
+  --color-campo: #14141a; /* input, select */
+  --color-janela: #16161c; /* janela (modal): opaca */
+  --color-linha: rgba(255, 255, 255, 0.08); /* divisória de tabela, borda de cartão */
+  --color-linha-forte: rgba(255, 255, 255, 0.16); /* borda de botão secundário, de janela */
+  --color-borda-campo: rgba(255, 255, 255, 0.35); /* 3,1:1 contra o cartão */
+  --color-texto: #ffffff;
+  --color-texto-2: #a1a1aa; /* secundário: 6,8:1 no cartão */
+  --color-texto-3: #8a8a94; /* dica de campo vazio: 5,4:1 no campo */
+  --color-carmesim: #e11d48; /* só marca (regra 1) */
+  --color-carmesim-fundo: #6b1229; /* base do cartão de destaque */
+  --color-acao: #ff5722; /* botão principal (regra 2) */
+  --color-acao-clara: #ff7a4d; /* passar o mouse, ícone ativo, anel de foco */
+  --color-sobre-acao: #1b0b05; /* a letra em cima do laranja (regra 3): 6,1:1 */
+  --color-info: #60a5fa; /* em andamento */
+  --color-atencao: #facc15;
+  --color-ok: #34d399;
+  --color-perigo: #f87171;
+  --color-zap: #25d366; /* só a borda e o ícone do botão "Avisar" */
+
+  /* As duas letras vão DENTRO do programa (importadas no src/main.tsx, dos
+     pacotes @fontsource-variable): ele roda sem internet, e em PC sem a Inter
+     instalada caía na letra do Windows. */
   --font-sans:
-    "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Títulos, números grandes e a marca */
+  --font-titulo:
+    "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Inter Variable", "Inter", ui-sans-serif,
+    system-ui, sans-serif;
 
   /* ------------------------------------------------------------------
      Escala tipográfica do app (item TR-01.1 do guia de melhorias).
@@ -70,9 +124,9 @@
      baixar pra 13 seria piorar justo o que o item veio consertar. O
      "tabela" ficou pras 3 tabelas densas, de muitas colunas, que de fato
      estavam em 12px. */
-  --text-metrica: 1.5rem; /* número grande de cartão (Início, Caixa) */
+  --text-metrica: 1.875rem; /* número grande de cartão (Início, Caixa): 30px no visual novo */
   --text-metrica--line-height: 1.2;
-  --text-titulo: 1.5rem; /* o <h1> de cada tela */
+  --text-titulo: 1.625rem; /* o <h1> de cada tela: 26px no visual novo */
   --text-titulo--line-height: 1.2;
   --text-destaque: 1.25rem; /* valor que salta dentro de um card */
   --text-destaque--line-height: 1.25;
@@ -95,7 +149,16 @@
 body {
   background-color: var(--color-sakura-bg);
   font-family: var(--font-sans);
-  color: #f2eef1;
+  color: #f4f4f5;
+}
+
+/* Título de tela e de seção na letra dos títulos (Plus Jakarta Sans). O
+   :where() deixa a especificidade em zero: qualquer classe de tela vence. */
+@layer base {
+  :where(h1, h2, h3) {
+    font-family: var(--font-titulo);
+    letter-spacing: -0.01em;
+  }
 }
 
 input,
@@ -192,9 +255,27 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     outline: 2px solid var(--color-sakura-focus);
     outline-offset: 2px;
     box-shadow:
-      0 0 0 2px rgba(11, 7, 10, 0.95),
-      0 0 12px rgba(255, 77, 206, 0.45);
+      0 0 0 2px rgba(10, 10, 13, 0.95),
+      0 0 12px rgba(255, 122, 77, 0.45);
   }
+}
+
+/* Botão laranja DESLIGADO vira cinza, em vez de laranja esmaecido.
+
+   As telas desligam o botão com "disabled:opacity-50", e isso funcionava com
+   a letra branca do tema antigo. Com a letra escura do laranja (regra 3 do
+   visual novo), meia opacidade dá 2,4:1: não se lê o que o botão faria. Cinza
+   sólido com a letra secundária dá 6:1 e diz "agora não dá" sem competir com
+   o botão ligado. Fica fora de camada de propósito, pra vencer o
+   "disabled:opacity-*" das telas; o seletor ~= pega só a classe exata, não
+   o "bg-sakura-purple/20" nem o "hover:bg-sakura-purple". Quando as telas
+   passarem a usar o componente Botao, isto sai. */
+:is(button, a)[class~="bg-sakura-purple"]:disabled,
+:is(button, a)[class~="bg-acao"]:disabled {
+  background-color: var(--color-passar);
+  color: var(--color-texto-2);
+  opacity: 1;
+  box-shadow: none;
 }
 
 /* Barra de rolagem nativa discreta — usada só como reforço/fallback nos
@@ -208,7 +289,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 77, 206, 0.35) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -228,45 +309,84 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 77, 206, 0.2);
+    /* Cinza, e não laranja: laranja é só ação (regra 2 do visual novo). */
+    background-color: rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
     border: 3px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 77, 206, 0.5);
+    background-color: rgba(255, 255, 255, 0.38);
   }
 }
 
-/* Fundo dark do app inteiro */
+/* Fundo do programa inteiro: quase preto, com um brilho bem fraco de carmesim
+   em cima à esquerda e de laranja embaixo à direita. SEM grão: atrás de tabela
+   e de formulário, ler ganha de enfeitar (seção 5 das regras). */
 @utility sakura-shell-bg {
   background-color: var(--color-sakura-bg);
   background-image:
-    radial-gradient(circle at 10% 10%, rgba(255, 77, 206, 0.08), transparent 45%),
-    radial-gradient(circle at 90% 90%, rgba(182, 36, 255, 0.12), transparent 50%);
+    radial-gradient(circle at 6% 0%, rgba(225, 29, 72, 0.1), transparent 42%),
+    radial-gradient(circle at 96% 100%, rgba(255, 87, 34, 0.09), transparent 46%);
   background-attachment: fixed;
 }
 
-/* Bloco arredondado dark glassmorphism com neon glow */
+/* O fundo de marca: manchas de carmesim e de laranja desfocadas num fundo
+   quase preto. É o do Login (e das telas de conexão e de trocar a senha), no
+   lugar da imagem public/sakura-login-bg-premium.png. Usar junto com
+   `sakura-grao`. Só onde as regras deixam: Login, o cartão de destaque do
+   Início e o material de divulgação. */
+@utility sakura-fundo-marca {
+  background-color: #09090c;
+  background-image:
+    radial-gradient(72% 88% at 0% 0%, rgba(225, 29, 72, 0.92), transparent 64%),
+    radial-gradient(66% 86% at 100% 100%, rgba(255, 87, 34, 0.95), transparent 62%),
+    radial-gradient(42% 52% at 88% 0%, rgba(107, 18, 41, 0.9), transparent 72%);
+}
+
+/* O grão: uma camada de ruído por cima do degradê (copiada do conceito,
+   docs/referencia/visual-novo/conceito/pagina.html). O ruído é um SVG
+   (feTurbulence) passado pra cinza de contraste alto; com `overlay`, ele
+   aparece onde tem cor e some no preto. A Sofia gosta dele BEM visível: não
+   é pra suavizar. O conteúdo de dentro precisa de `relative z-[2]` pra ficar
+   por cima do grão. */
+@utility sakura-grao {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='3.2' intercept='-1.1'/><feFuncG type='linear' slope='3.2' intercept='-1.1'/><feFuncB type='linear' slope='3.2' intercept='-1.1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+    opacity: 0.62;
+    pointer-events: none;
+  }
+}
+
+/* O cartão das telas. Ainda é o vidro de antes, só sem o roxo e sem o brilho
+   rosa; ele vira sólido (cor `cartao`) na tarefa das peças do visual novo. */
 @utility sakura-card {
   border-radius: 1.75rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-left: 1px solid rgba(255, 255, 255, 0.15);
-  background-color: rgba(20, 15, 20, 0.35);
+  background-color: rgba(25, 25, 32, 0.55);
   background-image: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.06) 0%,
     rgba(255, 255, 255, 0.01) 40%,
-    rgba(182, 36, 255, 0.05) 100%
+    rgba(255, 255, 255, 0) 100%
   );
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   box-shadow:
     0 12px 40px -10px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 25px rgba(255, 77, 206, 0.08); /* Glow mais visível */
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Janela (modal) por cima da tela — #361, versão "sólida", escolhida por
@@ -295,7 +415,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background-color: rgba(6, 3, 6, 0.6);
+  background-color: rgba(5, 5, 8, 0.6);
 }
 
 @utility sakura-modal {
@@ -303,17 +423,16 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-left: 1px solid rgba(255, 255, 255, 0.15);
-  background-color: #170f16;
+  background-color: var(--color-janela);
   background-image: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.06) 0%,
     rgba(255, 255, 255, 0.01) 40%,
-    rgba(182, 36, 255, 0.05) 100%
+    rgba(255, 255, 255, 0) 100%
   );
   box-shadow:
     0 12px 40px -10px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 25px rgba(255, 77, 206, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Botão circular de vidro escuro */
@@ -341,11 +460,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
   &:hover {
     transform: translateY(-2px) scale(1.06);
-    background-color: rgba(255, 77, 206, 0.1);
-    border-color: rgba(255, 77, 206, 0.4);
+    background-color: rgba(255, 122, 77, 0.1);
+    border-color: rgba(255, 122, 77, 0.4);
     box-shadow:
-      0 12px 26px -8px rgba(255, 77, 206, 0.2),
-      0 0 15px rgba(255, 77, 206, 0.2),
+      0 12px 26px -8px rgba(255, 122, 77, 0.2),
+      0 0 15px rgba(255, 122, 77, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
   }
 

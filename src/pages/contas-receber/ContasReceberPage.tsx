@@ -161,7 +161,7 @@ export function ContasReceberPage() {
         {!mostrarFormulario && (
           <button
             onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
             + Nova conta
           </button>
@@ -293,7 +293,7 @@ export function ContasReceberPage() {
                               )}
                               <button
                                 onClick={() => setContaRecebendo(conta)}
-                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-white hover:opacity-90"
+                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-sobre-acao hover:opacity-90"
                               >
                                 Marcar como recebido
                               </button>

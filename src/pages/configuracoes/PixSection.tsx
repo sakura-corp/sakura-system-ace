@@ -163,7 +163,7 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? "Salvando..." : "Salvar Pix"}
             </button>

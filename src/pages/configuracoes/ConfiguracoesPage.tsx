@@ -272,7 +272,7 @@ export function ConfiguracoesPage() {
           {!formulario && (
             <button
               onClick={() => abrirFormulario("novo")}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
+              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
             >
               + Novo operador
             </button>
@@ -527,7 +527,7 @@ export function ConfiguracoesPage() {
             <button
               type="button"
               onClick={() => setSenhaGerada(null)}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
             >
               Já anotei
             </button>

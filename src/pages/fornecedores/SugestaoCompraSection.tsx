@@ -330,7 +330,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
           type="button"
           onClick={() => setConfirmando(true)}
           disabled={gerando || invalidas > 0 || grupos.length === 0}
-          className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
         >
           Gerar pedidos
         </button>
@@ -353,7 +353,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
                 type="button"
                 onClick={criar}
                 disabled={gerando}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {gerando ? "Criando..." : "Criar"}
               </button>

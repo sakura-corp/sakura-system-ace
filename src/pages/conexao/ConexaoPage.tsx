@@ -83,11 +83,11 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
   }
 
   return (
-    <div
-      className="flex h-screen items-center justify-center overflow-auto bg-cover bg-center"
-      style={{ backgroundImage: `url(${import.meta.env.BASE_URL}sakura-login-bg-premium.png)` }}
-    >
-      <div className="sakura-card my-8 w-full max-w-lg p-8">
+    // O grão fica no bloco de fora, que não rola: se ele ficasse no que rola,
+    // subia junto com o conteúdo numa janela baixa e o pé do fundo ficava liso.
+    <div className="sakura-fundo-marca sakura-grao h-screen">
+    <div className="relative z-[2] flex h-full items-center justify-center overflow-auto">
+      <div className="sakura-card relative z-[2] my-8 w-full max-w-lg p-8">
         <div className="mb-6 flex justify-center">
           <Logo className="drop-shadow-sm" />
         </div>
@@ -182,13 +182,14 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
             <button
               type="submit"
               disabled={!dadosPreenchidos || testando || salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {salvando ? "Salvando..." : "Salvar e entrar"}
             </button>
           </div>
         </form>
       </div>
+    </div>
     </div>
   );
 }

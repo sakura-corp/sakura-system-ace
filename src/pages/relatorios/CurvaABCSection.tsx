@@ -32,7 +32,7 @@ const CRITERIOS: { chave: CriterioABC; label: string }[] = [
 // Contorno em vez de fundo claro: no tema escuro o rosa-claro some e o
 // cinza-claro vira o selo mais chamativo da lista (visto na foto da tela).
 const CLASSE_DO_SELO: Record<LetraABC, string> = {
-  A: "bg-sakura-purple text-white",
+  A: "bg-sakura-purple text-sobre-acao",
   B: "border-2 border-sakura-purple text-sakura-purple-dark",
   C: "border border-sakura-gray/50 text-sakura-muted",
 };
@@ -105,7 +105,7 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
               onClick={() => setCriterio(c.chave)}
               className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
                 criterio === c.chave
-                  ? "bg-sakura-purple text-white"
+                  ? "bg-sakura-purple text-sobre-acao"
                   : "text-sakura-purple-dark/85 hover:bg-white/10"
               }`}
             >

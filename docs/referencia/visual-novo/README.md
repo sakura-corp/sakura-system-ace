@@ -28,11 +28,34 @@
 - **Dos vídeos de referência ela quer o movimento** (trocar de tela, coisas surgindo) **e a
   organização**. Som fica pra outro momento.
 - **O menu vira ícones**, com o nome aparecendo ao passar o mouse.
+- **Nada cresce sem limite** (14/11, na sessão que aplicou a base): "as coisas não podem ficar
+  aumentando muito; é um problema do sistema hoje". O que pode aumentar tem tamanho fixo e **rola por
+  dentro**, ou **abre em outra aba**. A Central do dia é o modelo (seção 6, "O que pode crescer").
+- **As respostas das três perguntas** (14/11): as duas letras vão **dentro do programa**; os ícones
+  vêm da biblioteca **`lucide-react`**; o **tema claro entra já**, logo depois das peças (tarefa 2).
+  As referências verdes que ela trouxe valem **pelo estilo** (o grão, o cartão de destaque com
+  brilho, o menu de ícones arredondado); a cor continua laranja com carmesim.
 - **O resto ela delegou** ("o que for melhor, com base em técnica e design"). O que foi escolhido por
   essa delegação está marcado com **(escolha do Claude)** e pode ser trocado por ela.
 
 O que **não** muda: nenhum campo, coluna, filtro, atalho ou botão some (regra da #990). Só muda
 aparência, hierarquia e organização.
+
+**O conceito vale pela aparência, não pelo conteúdo** (Sofia, 14/11: "confere se aquilo faz sentido,
+não vai fazendo cegamente"). As telas do conceito foram desenhadas com dados e botões inventados, e
+algumas coisas ali estão erradas. Antes de aplicar cada bloco, comparar com a tela de verdade: no
+que divergir em **texto, botão, coluna ou lugar**, vale a tela de verdade, e a dúvida vai pra ela
+com a recomendação. O que já foi achado no Início do conceito (`3-inicio.jpg`):
+
+| No conceito | No programa de verdade | O que fazer |
+|---|---|---|
+| Cada linha da Central do dia tem **um** botão ("Ver a nota", "Abrir a conta") | Tem **um ou dois** ("Cobrar" e "Receber"; "Avisar" e "Abrir a OS"; "Pagar") | Manter os botões de verdade, todos; nenhum some |
+| Os cartões dizem "Vendas mês" e "Lucros mês" | "Recebido no mês" e "Lucro do mês" | Manter os nomes de verdade (recebido não é vendido) |
+| "Ver relações completas" dentro do cartão "OS abertas" | Fica embaixo dos três cartões de número, que é do que ele fala | Deixar junto dos números |
+| Selo "Em andamento" em toda linha de "OS abertas" | A tabela não tem coluna de status | Perguntar: a lista só tem OS aberta, o selo repete a mesma palavra em toda linha |
+| "Auto Center Modelo · Matriz" no alto, à direita | Conferir onde a troca de loja fica hoje antes de mover | Não inventar botão novo |
+| O número de "Orçamentos" num círculo cinza | As regras (seção 7) pedem o ponto laranja | Seguir as regras |
+
 
 ## 2. As quatro regras que evitam o erro mais provável
 
@@ -141,6 +164,23 @@ O efeito que ela gostou é: **manchas de cor desfocadas num fundo quase preto, c
 | **Janela (modal)** | painel opaco, canto de 22 px, o fundo de trás escurecido e desfocado. Título e total em cima, ações embaixo à direita, o botão principal por último. |
 | **Aviso que some sozinho** | embaixo, no meio, com o visto verde ("OS 148 faturada"). |
 | **Dica ao passar o mouse** | caixinha branca com letra preta. |
+
+### O que pode crescer (regra da Sofia, 14/11)
+
+Um bloco que recebe uma lista **não estica a tela** quando a lista aumenta. Vale pra toda tela nova:
+
+- **Tamanho fixo, rolando por dentro.** O bloco tem a altura de um número certo de linhas e a lista
+  rola dentro dele, com o `AreaRolavel.tsx` (a barra arredondada que o programa já tem). O que está
+  em volta não sai do lugar.
+- **A Central do dia é o modelo**: sempre a altura de **4 linhas** (a da foto `3-inicio.jpg`), com 1
+  item ou com 15. A capa continua dizendo o total ("9 coisas pedem a sua atenção"), pra ninguém
+  achar que só existem as 4 que estão à vista; com mais de 4, a lista rola.
+- **Quando rolar não serve** (a lista é o assunto da tela, ou a pessoa precisa comparar linhas
+  distantes): o bloco mostra as primeiras e um "Ver todas", que **abre em outra aba ou tela**.
+- **Dá pra ver que tem mais**: a última linha à vista aparece cortada ou esmaecida, e a barra de
+  rolagem fica visível. Lista que rola sem avisar é lista que ninguém rola.
+- **Não vale pra tabela principal da tela** (a lista de OS, de clientes): essa é a tela, e continua
+  rolando a página inteira, como hoje.
 
 **Duas mudanças de comportamento** (não são só tinta, então vão em tarefa própria, com o "sim" dela):
 1. **Faturar abre numa janela**, em vez de empurrar a lista pra baixo.

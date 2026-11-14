@@ -130,7 +130,7 @@ export function RegistrarPagamentoModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? "Registrando..." : "Registrar pagamento"}
           </button>
@@ -170,7 +170,7 @@ export function ReciboComissaoModal({
         <button
           type="button"
           onClick={() => iframeRef.current?.contentWindow?.print()}
-          className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90"
+          className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
         >
           Imprimir
         </button>

@@ -120,7 +120,7 @@ export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendario
               title={eventosDoDia.map((e) => e.nome).join(", ") || undefined}
               className={`flex flex-col items-center gap-0.5 rounded-lg py-1 ${
                 ehHoje
-                  ? "bg-sakura-purple text-white"
+                  ? "bg-sakura-purple text-sobre-acao"
                   : deOutroMes
                     ? "text-sakura-purple-dark/35"
                     : "text-sakura-purple-dark"

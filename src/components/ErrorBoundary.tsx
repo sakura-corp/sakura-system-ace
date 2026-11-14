@@ -80,7 +80,7 @@ class LimiteDeErro extends Component<Props, Estado> {
         <div className="flex flex-wrap justify-center gap-3">
           <button
             onClick={this.props.aoVoltarParaOInicio}
-            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white transition-all hover:bg-sakura-pink"
+            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao transition-all hover:bg-sakura-pink"
           >
             Voltar ao Início
           </button>

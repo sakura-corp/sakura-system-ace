@@ -757,7 +757,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={() => conferirNota(refPendente)}
                 disabled={conferindo}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {conferindo ? "Conferindo..." : "Conferir de novo"}
               </button>
@@ -766,7 +766,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={handleEmitir}
                 disabled={emitindo || conferindo || itensQueImpedem.length > 0}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {emitindo ? "Emitindo..." : "Confirmar emissão"}
               </button>
@@ -831,7 +831,7 @@ export function EmitirNotaFiscalModal({
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
+                  className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
                 >
                   Imprimir
                 </button>

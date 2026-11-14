@@ -100,7 +100,7 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
         <button
           type="submit"
           disabled={salvando || !nome.trim()}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
         >
           {salvando ? "Salvando..." : "+ Adicionar"}
         </button>

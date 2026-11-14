@@ -90,7 +90,7 @@ export function Sidebar() {
           <div className="flex min-h-full flex-col">
             <div className="px-6 pb-6 pt-8 baixa:pb-3 baixa:pt-5 muito-baixa:pb-2 muito-baixa:pt-3">
               <Logo className="muito-baixa:max-w-44" />
-              <p className="mt-4 baixa:mt-2 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,77,206,0.5)]">
+              <p className="mt-4 baixa:mt-2 text-meta font-semibold tracking-widest text-sakura-pink drop-shadow-[0_0_5px_rgba(255,122,77,0.5)]">
                 AUTOCENTER EDITION
               </p>
             </div>
@@ -109,7 +109,7 @@ export function Sidebar() {
                   className={({ isActive }) =>
                     `rounded-xl px-4 py-2.5 baixa:py-1.5 muito-baixa:py-1 text-corpo font-medium transition-all ${
                       isActive
-                        ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,77,206,0.2)] border border-sakura-pink/30"
+                        ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,122,77,0.2)] border border-sakura-pink/30"
                         : "text-sakura-purple-dark/90 hover:bg-white/5 hover:text-white"
                     }`
                   }

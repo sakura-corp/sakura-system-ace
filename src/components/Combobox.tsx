@@ -210,7 +210,7 @@ export function Combobox({
       />
 
       {aberto && (
-        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-sakura-gray/30 bg-[#160f16] py-1 shadow-xl">
+        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-sakura-gray/30 bg-[#16161c] py-1 shadow-xl">
           {mostrarOpcaoVazia && (
             <button
               type="button"
