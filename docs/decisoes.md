@@ -47,6 +47,11 @@ Três fases, nessa ordem, sem pressa de pular etapa:
 
 ### Identidade visual (como está hoje)
 
+> **Vai mudar** (Sofia, 14/11/2026, #990): o programa sai do rosa e roxo neon pro **laranja com
+> carmesim**, escuro, com grão no degradê, **logo B** (flor com a engrenagem no miolo), menu de
+> ícones e dois temas (escuro e claro). As regras estão em `docs/referencia/visual-novo/README.md`.
+> **Até a base ser aplicada, o que vale no programa é o que está descrito abaixo.**
+
 - **Tema escuro/neon**: rosa e roxo neon sobre fundo quase preto. Tokens `--color-sakura-*` em
   `src/styles/globals.css`: `sakura-pink` `#ff4dce`, `sakura-purple` `#b624ff`, fundo `sakura-bg`
   `#0b070a`, `color-scheme: dark`. Substituiu o tema claro/rosa original (troca feita por ela com

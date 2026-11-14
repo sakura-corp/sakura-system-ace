@@ -35,6 +35,16 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 12 e 13/11/2026: a leva 8 planejada e montada (18 tarefas, 100 h)
+- **Feito**: a leva 8 no modelo, com a etiqueta `leva-8`: o DRE (#386 → #387 → #388), o orçamento (#1019, #888), a nota de compra pelo XML com as contas a pagar (#1020), a origem do cliente (#1021 o campo, #1022 o relatório), a #979 e a #376 (ativação fiscal). **13/11**: entram a #1031 (o recibo novo da nota, 12 h) e a #1033 (o que ele precisa da loja, 5 h). Prioridade: #1031, #386, #387, #1019, #1021, #1020, #1033.
+- **Ampliada à tarde**: #1000 (aviso de banco), #988, #1016, #1017 (juntou a #1018), #993 (espera a #457) e #856 (Central do dia abre o item).
+- **Entra depois**: "consertar nota" (#855 com a #369), rascunho do Tiago; a Sofia aprova antes da `leva-8`.
+- **Ficou pra leva 9**: o leitor de nota em PDF (**ela vai pensar melhor antes**), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
+- **Atenção**: cinco migrations na leva 8 (#386, #387, #1021, #376, #1033) mexem em `VERSAO_ESQUEMA_ESPERADA`: entram uma de cada vez. A Sofia aplica no `ssace-teste`, guiada por outra sessão.
+- **Leva 7**: 10 tarefas sem ninguém; a leva 8 só aparece no painel quando virar a atual.
+- **Com a Sofia**: #1023 (a parte dela da leva 8), **#1011 (trocar o CSC)**, #976 antes do ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos marcados pra **22/11** e **30/11**, às 8h.
+
 ### 11/11/2026 (noite, 2): o levantamento das pontas soltas; a leva 8 até 30/11
 - **Feito**: o levantamento das pontas soltas dos 4 repositórios (o plano fica no privado da Sofia); a **#978** (a garantia sem tratar "<" e "&") **entrou na leva 7**. Sem código nesta sessão.
 - **Leva 7** (sem mudança desde a tarde): #986, #1007, #1009 e #1003 aprovados esperando o teste no PC do Tiago (o #1003 só entra depois do #985 e do #987: o CI dele falha de verdade com a 0085 antes da 0084); devolvidos #1008, #985 e #987; o #384 (Gusta) tem branch sem PR.

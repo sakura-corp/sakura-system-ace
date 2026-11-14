@@ -167,12 +167,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 12 e 13/11/2026: a leva 8 planejada e montada (18 tarefas, 100 h)
-- **Feito**: a leva 8 no modelo, com a etiqueta `leva-8`: o DRE (#386 → #387 → #388), o orçamento (#1019, #888), a nota de compra pelo XML com as contas a pagar (#1020), a origem do cliente (#1021 o campo, #1022 o relatório), a #979 e a #376 (ativação fiscal). **13/11**: entram a #1031 (o recibo novo da nota, 12 h) e a #1033 (o que ele precisa da loja, 5 h). Prioridade: #1031, #386, #387, #1019, #1021, #1020, #1033.
-- **Ampliada à tarde**: #1000 (aviso de banco), #988, #1016, #1017 (juntou a #1018), #993 (espera a #457) e #856 (Central do dia abre o item).
-- **Entra depois**: "consertar nota" (#855 com a #369), rascunho do Tiago; a Sofia aprova antes da `leva-8`.
-- **Ficou pra leva 9**: o leitor de nota em PDF (**ela vai pensar melhor antes**), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
-- **Atenção**: cinco migrations na leva 8 (#386, #387, #1021, #376, #1033) mexem em `VERSAO_ESQUEMA_ESPERADA`: entram uma de cada vez. A Sofia aplica no `ssace-teste`, guiada por outra sessão.
-- **Leva 7**: 10 tarefas sem ninguém; a leva 8 só aparece no painel quando virar a atual.
-- **Com a Sofia**: #1023 (a parte dela da leva 8), **#1011 (trocar o CSC)**, #976 antes do ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
-- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos marcados pra **22/11** e **30/11**, às 8h.
+### 14/11/2026: o visual novo decidido (logo B, laranja com carmesim) e a base pré-escrita
+- **Decidido** (#990): o programa vai pro laranja com carmesim, escuro, com grão no degradê; **logo B**, ícone no quadrado claro; dois temas (escuro e claro) com configuração; menu de ícones em 4 grupos.
+- **Pronto**: as regras (`docs/referencia/visual-novo/README.md`), o conceito clicável com as fotos (`conceito/`, na mesma pasta) e as tarefas pré-escritas (`docs/rascunhos/visual-novo-tarefas.md`). **Nada mudou no programa.**
+- **Próximo**: uma sessão nova aplica a base (tarefas 1 a 7, um PR por tarefa, nada publicado): cores, letras, logo, Login e menu primeiro; Início e OS por último, pra não bater com a leva 8. Antes, três perguntas a ela: letras embutidas, biblioteca de ícones, tema claro já.
+- **Aberto**: o tema claro não foi desenhado; as outras telas ficam com a equipe (tarefas 8 em diante).
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
+- **Com a Sofia**: #1023, **#1011 (trocar o CSC)**, #976 (passou no teste de 14/11, falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
