@@ -4,6 +4,7 @@ import { atualizarFuncionario, criarFuncionario } from "@/lib/funcionarios";
 import type { Funcionario, NovoFuncionario, NovoFuncionarioFilho } from "@/types/funcionario";
 import { FuncionarioForm } from "./FuncionarioForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Etiqueta } from "@/components/Etiqueta";
 
 interface FuncionariosSectionProps {
   funcionarios: Funcionario[];
@@ -85,15 +86,15 @@ export function FuncionariosSection({
                     {funcionario.operador?.usuario ? `@${funcionario.operador.usuario}` : "—"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                    <Etiqueta
+                      className={
                         funcionario.ativo
                           ? "bg-emerald-50 text-emerald-700"
                           : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
+                      }
                     >
                       {funcionario.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                    </Etiqueta>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <AcoesDaLinha

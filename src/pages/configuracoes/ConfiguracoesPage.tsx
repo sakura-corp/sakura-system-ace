@@ -52,6 +52,7 @@ import { ModelosWhatsappSection } from "./ModelosWhatsappSection";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { AtualizacoesComputadorSection } from "./AtualizacoesComputadorSection";
 import { ComputadoresSection } from "./ComputadoresSection";
+import { Etiqueta } from "@/components/Etiqueta";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
@@ -306,34 +307,34 @@ export function ConfiguracoesPage() {
                     <p className="font-medium text-sakura-purple-dark">{op.nome}</p>
                     <p className="text-corpo text-sakura-muted">@{op.usuario}</p>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
+                  <Etiqueta
+                    className={
                       op.ativo
                         ? "bg-emerald-50 text-emerald-700"
                         : "bg-sakura-gray/20 text-sakura-muted"
-                    }`}
+                    }
                   >
                     {op.ativo ? "Ativo" : "Inativo"}
-                  </span>
+                  </Etiqueta>
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {op.admin ? (
-                    <span className="rounded-full bg-sakura-pink-soft px-2.5 py-1 text-rotulo font-medium text-sakura-purple-dark">
+                    <Etiqueta className="bg-sakura-pink-soft text-sakura-purple-dark">
                       Administrador (acesso total)
-                    </span>
+                    </Etiqueta>
                   ) : op.permissoes.length === 0 ? (
                     <span className="text-rotulo text-sakura-muted">
                       Nenhum módulo liberado
                     </span>
                   ) : (
                     op.permissoes.map((chave) => (
-                      <span
+                      <Etiqueta
                         key={chave}
-                        className="rounded-full bg-sakura-pink-soft px-2.5 py-1 text-rotulo font-medium text-sakura-purple-dark"
+                        className="bg-sakura-pink-soft text-sakura-purple-dark"
                       >
                         {MODULOS.find((m) => m.chave === chave)?.label ?? chave}
-                      </span>
+                      </Etiqueta>
                     ))
                   )}
                 </div>
