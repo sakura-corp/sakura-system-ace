@@ -228,8 +228,9 @@ Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a 
 suporte da Focus (06/11). **A Focus respondeu em 09/11**: na tentativa que eles olharam
 (`os18-nfsen-1793999245429`, 06/11 18:07) a IM **veio do programa**, no corpo enviado; é pra tirar.
 Desde a #948 o programa **nunca** manda a IM na NFS-e Nacional (o campo é opcional no leiaute); o
-campo da loja segue valendo pro caminho municipal. Até essa versão chegar na loja, o contorno é
-deixar a "Inscrição municipal" **vazia** nos Dados fiscais.
+campo da loja segue valendo pro caminho municipal. O conserto entrou na **0.9.57** (liberada em
+09/11/2026, PR #956): desde ela, a "Inscrição municipal" preenchida não atrapalha a NFS-e Nacional.
+(Na Pneus Amigão o campo segue vazio desde o contorno de 06/11, e assim fica: nada o usa hoje.)
 **Segunda recusa (09/11, OS 18, com a IM já vazia)**: "Não é permitido informar alíquota quando não
 há indicação de retenção do ISSQN (tpRetISSQN = 1) para o prestador ME/EPP (opSimpNac = 3) [...] com
 apuração do ISSQN pelo Simples (regApTribISSQN = 1)". Desde o PR desta correção, a loja do Simples
@@ -387,7 +388,10 @@ aceita a combinação errada sem avisar.
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
 7. **NFS-e Nacional**: ligar "Ambiente da NFSe Nacional" na Focus (homologação e produção são
    chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. Até a 0.9.55, o
-   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
+   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839). A **inscrição
+   municipal não vai** na NFS-e Nacional (#948, desde a 0.9.57): o Ambiente Nacional recusa quando
+   o município não tem as informações complementares no CNC NFS-e, como Araraquara. A loja que só
+   emite pelo Nacional pode deixar o campo em branco; a que ainda usa o caminho municipal precisa dele.
 
 **Consequência pro site de assinatura (item 2)**: assinar pode ser instantâneo, emitir nota não.
 Por isso a loja só recebe o sistema quando ele já emite (Sofia, 29/10/2026). A parte C começa no
