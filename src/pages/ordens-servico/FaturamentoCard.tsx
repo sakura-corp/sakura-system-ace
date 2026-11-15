@@ -1,8 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { Plus, TriangleAlert, X } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useFieldArray, useForm } from "react-hook-form";
-import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
+import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarConfiguracaoPix } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
@@ -34,15 +37,22 @@ import type { OrdemServico } from "@/types/os";
 export type OrdemParaFaturar = Pick<
   OrdemServico,
   "numero" | "tipo" | "cliente_id" | "cliente" | "itens"
->;
+> &
+  // A placa vai na linha de baixo do título ("Ricardo · RTA-4B71"); a venda
+  // não tem veículo.
+  Partial<Pick<OrdemServico, "veiculo">>;
 
 interface FaturamentoCardProps {
   ordem: OrdemParaFaturar;
   jurosParcelas: JurosParcela[];
-  /** Troca o "Faturar OS 12 de Fulano" do topo (a venda nova ainda não tem número). */
+  /** Troca o "Faturar OS 12" do topo (a venda nova ainda não tem número). */
   titulo?: string;
+  /** Troca a linha de baixo do título (sem dizer: o cliente e a placa). */
+  descricao?: string;
   /** Texto do botão de confirmar. */
   rotuloConfirmar?: string;
+  /** Texto do botão de desistir (a venda nova volta pras peças: "Mudar as peças"). */
+  rotuloCancelar?: string;
   onConfirmar: (
     pagamentos: PagamentoOrdem[],
     parcelas: number,
@@ -59,6 +69,14 @@ const FORMAS_PAGAMENTO = Object.entries(FORMA_PAGAMENTO_LABEL).map(([valor, labe
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+
+// "Recebido agora" e "A receber depois" como dois cartões que se escolhe
+// clicando em qualquer lugar deles (o conceito, `6-faturar.jpg`). O escolhido
+// ganha a borda laranja e o fundo laranja bem fraco; a bolinha marcada
+// continua lá, porque cor sozinha não avisa (regra 4).
+const CLASSE_OPCAO =
+  "flex cursor-pointer items-start gap-3 rounded-[14px] border border-linha-forte p-4 text-corpo transition-colors hover:bg-passar";
+const CLASSE_OPCAO_ESCOLHIDA = "border-[color:var(--foco-campo-borda)] bg-acao/[0.08] hover:bg-acao/[0.12]";
 
 // O QR do Pix da loja (#456). O fundo é sempre branco, com margem: o leitor do
 // banco precisa de fundo claro mesmo quando o programa está no tema escuro.
@@ -80,39 +98,35 @@ function PixQrCode({ codigo, valor }: { codigo: string; valor: number }) {
   }
 
   return (
-    <div className="flex flex-wrap items-start gap-4 rounded-xl border border-sakura-gray/30 p-4">
+    <div className="flex flex-wrap items-start gap-4 rounded-[14px] border border-linha p-4">
       <div className="rounded-lg bg-white p-3" data-testid="qr-pix">
         <QRCodeSVG value={codigo} size={180} level="M" bgColor="#ffffff" fgColor="#000000" />
       </div>
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="text-corpo font-medium text-sakura-purple-dark">
+        <p className="text-corpo font-semibold text-texto">
           Pix de {formatarMoeda(valor)}
         </p>
-        <p className="text-rotulo text-sakura-muted">
+        <p className="text-rotulo text-texto-2">
           O cliente lê o QR no app do banco, ou você manda o código abaixo. O sistema não fica
           sabendo que foi pago: confira no seu banco antes de confirmar.
         </p>
         <p
-          className="break-all rounded-lg bg-sakura-pink-soft px-3 py-2 font-mono text-rotulo text-sakura-purple-dark select-all"
+          className="break-all rounded-lg bg-poco px-3 py-2 font-mono text-rotulo text-texto select-all"
           data-testid="codigo-pix"
         >
           {codigo}
         </p>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={copiar}
-            className="rounded-xl border border-sakura-purple px-4 py-1.5 text-corpo font-medium text-sakura-purple hover:bg-sakura-pink-soft"
-          >
+          <Botao tamanho="pequeno" onClick={copiar}>
             Copiar código
-          </button>
+          </Botao>
           {copiado && (
-            <span role="status" className="text-rotulo text-emerald-700">
+            <span role="status" className="text-rotulo text-ok">
               Copiado
             </span>
           )}
           {naoCopiou && (
-            <span role="status" className="text-rotulo text-red-300">
+            <span role="status" className="text-rotulo text-perigo">
               Não deu pra copiar: selecione o código acima e copie à mão.
             </span>
           )}
@@ -126,10 +140,13 @@ export function FaturamentoCard({
   ordem,
   jurosParcelas,
   titulo,
+  descricao,
   rotuloConfirmar = "Confirmar faturamento",
+  rotuloCancelar = "Cancelar",
   onConfirmar,
   onCancelar,
 }: FaturamentoCardProps) {
+  const idDoFormulario = useId();
   const total = totalOrdem(ordem.itens ?? []);
   const { lojaAtual } = useAuth();
   const [erro, setErro] = useState<string | null>(null);
@@ -261,292 +278,319 @@ export function FaturamentoCard({
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-5 sakura-card p-6 shadow-sm">
-      <div className="flex items-center gap-3">
-        <BotaoVoltar onClick={onCancelar} />
-        <div>
-          <h3 className="text-corpo font-semibold text-sakura-purple-dark">
-            {titulo ??
-              `Faturar ${nomeDocumento(ordem)} de ${ordem.cliente?.nome ?? "cliente"}`}
-          </h3>
-          <p className="text-rotulo text-sakura-muted">Total dos itens: {formatarMoeda(total)}</p>
-        </div>
-      </div>
-
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-
-      {!permiteAReceber ? (
-        <p className="text-rotulo text-sakura-muted">
-          Venda no Consumidor é recebida na hora. Pra deixar a receber depois, escolha quem está
-          comprando.
+  // A conta que fecha a janela, embaixo à esquerda (o conceito, `6-faturar.jpg`):
+  // o total e, se houver, o total com os juros. Os números vêm prontos das
+  // funções de `schemas/faturamento.ts`: aqui só se escolhe a frase.
+  const notaDoRodape =
+    recebidoAgora && dividirPagamento ? (
+      <div className="space-y-0.5">
+        <p
+          className={`flex items-center gap-1.5 font-medium ${linhasBatem ? "text-texto" : "text-perigo"}`}
+        >
+          {!linhasBatem && <TriangleAlert aria-hidden="true" className="size-4 shrink-0" />}
+          {linhasBatem
+            ? `Total: ${formatarMoeda(somaLinhasPagamento)}`
+            : diferencaLinhasPagamento > 0
+              ? `Falta ${formatarMoeda(diferencaLinhasPagamento)} de ${formatarMoeda(total)}`
+              : `Passou ${formatarMoeda(-diferencaLinhasPagamento)} de ${formatarMoeda(total)}`}
         </p>
-      ) : (
-        <div className="rounded-xl border border-sakura-gray/30 p-4">
-          <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-corpo">
-              <input
-                type="radio"
-                name="recebimento"
-                checked={recebidoAgora}
-                onChange={() => setValue("recebidoAgora", true)}
-                className="h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
-              />
-              <span className="text-sakura-purple-dark/80">Recebido agora</span>
-            </label>
-            <label className="flex items-center gap-2 text-corpo">
-              <input
-                type="radio"
-                name="recebimento"
-                checked={!recebidoAgora}
-                onChange={() => setValue("recebidoAgora", false)}
-                className="h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
-              />
-              <span className="text-sakura-purple-dark/80">A receber depois</span>
-            </label>
-          </div>
-
-          {recebidoAgora ? (
-            <p className="mt-2 text-rotulo text-sakura-muted">
-              Lança o valor como Entrada no Caixa agora mesmo.
-            </p>
-          ) : (
-            <>
-              <p className="mt-2 text-rotulo text-sakura-muted">
-                Não lança nada no Caixa ainda — cria uma pendência em "Contas a Receber", que só vira
-                Entrada quando você marcar como recebido de verdade.
-              </p>
-              <label className="mt-2 flex items-center gap-2 text-corpo">
-                <span className="text-sakura-purple-dark/80">Previsão de recebimento</span>
-                <input
-                  type="date"
-                  {...register("previsaoRecebimento")}
-                  className="rounded-lg border border-sakura-borda-campo px-3 py-1.5 focus:border-sakura-purple"
-                />
-              </label>
-            </>
-          )}
-        </div>
-      )}
-
-      {recebidoAgora && (
-        <label className="flex items-center gap-2 text-corpo">
-          <input
-            type="checkbox"
-            checked={dividirPagamento}
-            onChange={(e) => aoMudarDividirPagamento(e.target.checked)}
-            className="h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
-          />
-          <span className="text-sakura-purple-dark/80">
-            Dividir em mais de uma forma de pagamento
-          </span>
-        </label>
-      )}
-
-      {recebidoAgora && dividirPagamento ? (
-        <div className="space-y-2">
-          {fields.map((campo, index) => {
-            const linha = linhasCalculadas[index];
-            const podeParcelarLinha = formaPermiteParcelar(
-              linhasPagamento[index]?.formaPagamento ?? "",
-            );
-            const formaLinhaField = register(`linhasPagamento.${index}.formaPagamento`);
-
-            return (
-              <div key={campo.id} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <select
-                    {...formaLinhaField}
-                    onChange={(e) => {
-                      formaLinhaField.onChange(e);
-                      // Trocou pra uma forma que não parcela (Pix, dinheiro,
-                      // débito): volta pra 1x, senão ficaria um parcelamento
-                      // invisível sobrando de uma escolha anterior.
-                      if (!formaPermiteParcelar(e.target.value)) {
-                        setValue(`linhasPagamento.${index}.parcelas`, "1");
-                      }
-                    }}
-                    className="flex-1 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
-                  >
-                    {FORMAS_PAGAMENTO.map((forma) => (
-                      <option key={forma.valor} value={forma.valor}>
-                        {forma.label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    {...register(`linhasPagamento.${index}.parcelas`)}
-                    disabled={!podeParcelarLinha}
-                    title={
-                      podeParcelarLinha
-                        ? "Em quantas vezes o cliente passou no cartão"
-                        : "Só o cartão de crédito parcela"
-                    }
-                    className="w-40 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple disabled:opacity-50"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
-                      const percentual = calcularJurosPercentual(jurosParcelas, n);
-                      return (
-                        <option key={n} value={n}>
-                          {n}x
-                          {n === 1
-                            ? " à vista"
-                            : percentual > 0
-                              ? ` (${percentual}% juros)`
-                              : " sem juros"}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register(`linhasPagamento.${index}.valor`)}
-                    className="w-32 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
-                  />
-                  {fields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => remove(index)}
-                      className="text-rotulo font-medium text-red-300 hover:underline"
-                    >
-                      Remover
-                    </button>
-                  )}
-                </div>
-                {linha && linha.parcelas > 1 && linha.valorBase > 0 && (
-                  <p className="pr-2 text-right text-rotulo text-sakura-muted">
-                    {linha.jurosPercentual > 0
-                      ? `${linha.parcelas}x de ${formatarMoeda(
-                          linha.valorCobrado / linha.parcelas,
-                        )} — com ${linha.jurosPercentual}% de juros, essa forma fecha em ${formatarMoeda(
-                          linha.valorCobrado,
-                        )}`
-                      : `${linha.parcelas}x de ${formatarMoeda(
-                          linha.valorCobrado / linha.parcelas,
-                        )} — sem juros`}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => append({ formaPagamento: "dinheiro", valor: "0", parcelas: "1" })}
-            className="text-rotulo font-medium text-sakura-purple hover:underline"
-          >
-            + Adicionar forma de pagamento
-          </button>
-          <p
-            className={`text-right text-corpo font-medium ${
-              linhasBatem ? "text-sakura-purple-dark" : "text-red-300"
-            }`}
-          >
-            {linhasBatem
-              ? `Total: ${formatarMoeda(somaLinhasPagamento)}`
-              : diferencaLinhasPagamento > 0
-                ? `Falta ${formatarMoeda(diferencaLinhasPagamento)} de ${formatarMoeda(total)}`
-                : `Passou ${formatarMoeda(-diferencaLinhasPagamento)} de ${formatarMoeda(total)}`}
+        {linhasBatem && jurosDividido > 0 && (
+          <p className="font-semibold text-texto">
+            Com os juros do cartão: {formatarMoeda(totalCobradoDividido)} (
+            {formatarMoeda(jurosDividido)} de juros)
           </p>
-          {linhasBatem && jurosDividido > 0 && (
-            <p className="text-right text-corpo font-semibold text-sakura-purple-dark">
-              Com os juros do cartão: {formatarMoeda(totalCobradoDividido)} (
-              {formatarMoeda(jurosDividido)} de juros)
+        )}
+      </div>
+    ) : parcelas === 1 ? (
+      <p className="font-semibold text-texto">{`Total: ${formatarMoeda(valorCobrado)}`}</p>
+    ) : (
+      <p className="font-semibold text-texto">
+        {`${jurosPercentual > 0 ? "Total com juros" : "Total"}: ${formatarMoeda(valorCobrado)}`}
+      </p>
+    );
+
+  const bloqueado = isSubmitting || (recebidoAgora && dividirPagamento && !linhasBatem);
+
+  return (
+    <Modal
+      titulo={titulo ?? `Faturar ${nomeDocumento(ordem)}`}
+      descricao={
+        descricao ??
+        ([ordem.cliente?.nome, ordem.veiculo?.placa].filter(Boolean).join(" · ") || undefined)
+      }
+      largura="3xl"
+      total={{ rotulo: "Total dos itens", valor: formatarMoeda(total) }}
+      notaDoRodape={notaDoRodape}
+      // Faturando, a janela não fecha: o pedido já foi pro banco, e o erro (se
+      // vier) precisa de onde aparecer.
+      onFechar={() => {
+        if (!isSubmitting) onCancelar();
+      }}
+      rodape={
+        <>
+          {/* O erro fica do lado do botão que falhou, e não some sozinho. */}
+          {erro && (
+            <p
+              role="alert"
+              className="flex w-full items-start justify-end gap-1.5 text-right text-corpo font-medium text-perigo"
+            >
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              <span className="min-w-0">{erro}</span>
             </p>
           )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Forma de pagamento</span>
-            <select
-              {...formaPagamentoField}
-              onChange={(e) => {
-                formaPagamentoField.onChange(e);
-                if (e.target.value !== "cartao_credito") setValue("parcelas", "1");
-              }}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-            >
-              {FORMAS_PAGAMENTO.map((forma) => (
-                <option key={forma.valor} value={forma.valor}>
-                  {forma.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Parcelas</span>
-            <select
-              {...register("parcelas")}
-              disabled={!permiteParcelar}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple disabled:opacity-50"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
-                const percentual = calcularJurosPercentual(jurosParcelas, n);
-                return (
-                  <option key={n} value={n}>
-                    {n}x{n === 1 ? " à vista" : percentual > 0 ? ` (${percentual}% de juros)` : " sem juros"}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-        </div>
-      )}
-
-      {!(recebidoAgora && dividirPagamento) &&
-        (parcelas === 1 ? (
-          <p className="text-right text-subtitulo font-semibold text-sakura-purple-dark">
-            {formatarMoeda(valorCobrado)}
+          <Botao variante="fantasma" onClick={onCancelar} disabled={isSubmitting}>
+            {rotuloCancelar}
+          </Botao>
+          <Botao
+            variante="principal"
+            type="submit"
+            form={idDoFormulario}
+            disabled={bloqueado}
+            ocupado={isSubmitting}
+          >
+            {isSubmitting ? "Faturando..." : rotuloConfirmar}
+          </Botao>
+        </>
+      }
+    >
+      <form id={idDoFormulario} onSubmit={handleSubmit(aoSubmeter)} className="space-y-5">
+        {!permiteAReceber ? (
+          <p className="text-rotulo text-texto-2">
+            Venda no Consumidor é recebida na hora. Pra deixar a receber depois, escolha quem está
+            comprando.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label
+                className={`${CLASSE_OPCAO} ${recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="recebimento"
+                  checked={recebidoAgora}
+                  onChange={() => setValue("recebidoAgora", true)}
+                  className="mt-0.5 size-4 shrink-0"
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-texto">Recebido agora</span>
+                  <span className="mt-0.5 block text-rotulo text-texto-2">
+                    Lança o valor como Entrada no Caixa agora mesmo.
+                  </span>
+                </span>
+              </label>
+              <label
+                className={`${CLASSE_OPCAO} ${!recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="recebimento"
+                  checked={!recebidoAgora}
+                  onChange={() => setValue("recebidoAgora", false)}
+                  className="mt-0.5 size-4 shrink-0"
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-texto">A receber depois</span>
+                  <span className="mt-0.5 block text-rotulo text-texto-2">
+                    Vira uma conta a receber, com vencimento.
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {!recebidoAgora && (
+              <div className="space-y-2">
+                <p className="text-rotulo text-texto-2">
+                  Não lança nada no Caixa ainda: cria uma pendência em "Contas a Receber", que só
+                  vira Entrada quando você marcar como recebido de verdade.
+                </p>
+                <label className="sakura-rotulo w-56">
+                  Previsão de recebimento
+                  <input type="date" {...register("previsaoRecebimento")} className="sakura-campo" />
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+
+        {recebidoAgora && (
+          <label className="flex w-fit items-center gap-2.5 text-corpo font-medium text-texto">
+            <input
+              type="checkbox"
+              checked={dividirPagamento}
+              onChange={(e) => aoMudarDividirPagamento(e.target.checked)}
+              className="size-[18px]"
+            />
+            Dividir em mais de uma forma de pagamento
+          </label>
+        )}
+
+        {recebidoAgora && dividirPagamento ? (
+          <div className="space-y-3">
+            {fields.map((campo, index) => {
+              const linha = linhasCalculadas[index];
+              const podeParcelarLinha = formaPermiteParcelar(
+                linhasPagamento[index]?.formaPagamento ?? "",
+              );
+              const formaLinhaField = register(`linhasPagamento.${index}.formaPagamento`);
+              const numero = index + 1;
+
+              return (
+                <div key={campo.id} className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <select
+                      {...formaLinhaField}
+                      aria-label={`Forma de pagamento ${numero}`}
+                      onChange={(e) => {
+                        formaLinhaField.onChange(e);
+                        // Trocou pra uma forma que não parcela (Pix, dinheiro,
+                        // débito): volta pra 1x, senão ficaria um parcelamento
+                        // invisível sobrando de uma escolha anterior.
+                        if (!formaPermiteParcelar(e.target.value)) {
+                          setValue(`linhasPagamento.${index}.parcelas`, "1");
+                        }
+                      }}
+                      className="sakura-campo min-w-0 flex-1"
+                    >
+                      {FORMAS_PAGAMENTO.map((forma) => (
+                        <option key={forma.valor} value={forma.valor}>
+                          {forma.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      {...register(`linhasPagamento.${index}.parcelas`)}
+                      aria-label={`Parcelas da forma ${numero}`}
+                      disabled={!podeParcelarLinha}
+                      title={
+                        podeParcelarLinha
+                          ? "Em quantas vezes o cliente passou no cartão"
+                          : "Só o cartão de crédito parcela"
+                      }
+                      className="sakura-campo w-48 shrink-0"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                        const percentual = calcularJurosPercentual(jurosParcelas, n);
+                        return (
+                          <option key={n} value={n}>
+                            {n}x
+                            {n === 1
+                              ? " à vista"
+                              : percentual > 0
+                                ? ` (${percentual}% juros)`
+                                : " sem juros"}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      aria-label={`Valor da forma ${numero}`}
+                      {...register(`linhasPagamento.${index}.valor`)}
+                      className="sakura-campo w-32 shrink-0 text-right tabular-nums"
+                    />
+                    {fields.length > 1 && (
+                      <Dica texto="Remover esta forma">
+                        <Botao
+                          variante="fantasma"
+                          soIcone
+                          icone={<X />}
+                          aria-label={`Remover a forma de pagamento ${numero}`}
+                          onClick={() => remove(index)}
+                        />
+                      </Dica>
+                    )}
+                  </div>
+                  {linha && linha.parcelas > 1 && linha.valorBase > 0 && (
+                    <p className="text-right text-rotulo text-texto-2">
+                      {linha.jurosPercentual > 0
+                        ? `${linha.parcelas}x de ${formatarMoeda(
+                            linha.valorCobrado / linha.parcelas,
+                          )} — com ${linha.jurosPercentual}% de juros, essa forma fecha em ${formatarMoeda(
+                            linha.valorCobrado,
+                          )}`
+                        : `${linha.parcelas}x de ${formatarMoeda(
+                            linha.valorCobrado / linha.parcelas,
+                          )} — sem juros`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            <Botao
+              variante="fantasma"
+              icone={<Plus />}
+              onClick={() => append({ formaPagamento: "dinheiro", valor: "0", parcelas: "1" })}
+            >
+              Adicionar forma de pagamento
+            </Botao>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <label className="sakura-rotulo">
+              Forma de pagamento
+              <select
+                {...formaPagamentoField}
+                onChange={(e) => {
+                  formaPagamentoField.onChange(e);
+                  if (e.target.value !== "cartao_credito") setValue("parcelas", "1");
+                }}
+                className="sakura-campo"
+              >
+                {FORMAS_PAGAMENTO.map((forma) => (
+                  <option key={forma.valor} value={forma.valor}>
+                    {forma.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="sakura-rotulo">
+              Parcelas
+              <select {...register("parcelas")} disabled={!permiteParcelar} className="sakura-campo">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => {
+                  const percentual = calcularJurosPercentual(jurosParcelas, n);
+                  return (
+                    <option key={n} value={n}>
+                      {n}x
+                      {n === 1 ? " à vista" : percentual > 0 ? ` (${percentual}% de juros)` : " sem juros"}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+          </div>
+        )}
+
+        {!(recebidoAgora && dividirPagamento) && parcelas > 1 && (
+          // Tabela secundária: 12 parcelas no máximo, então ela tem fim e não
+          // precisa rolar por dentro ("O que pode crescer", regras, seção 6).
+          <div className="overflow-hidden rounded-xl border border-linha">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-2 font-medium">Parcela</th>
-                  <th className="px-4 py-2 font-medium">Vencimento</th>
-                  <th className="px-4 py-2 font-medium">Valor</th>
+                  <th>Parcela</th>
+                  <th>Vencimento</th>
+                  <th className="text-right">Valor</th>
                 </tr>
               </thead>
               <tbody>
                 {listaParcelas.map((p) => (
-                  <tr key={p.numero} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-2 text-sakura-purple-dark">{p.numero}x</td>
-                    <td className="px-4 py-2 text-sakura-purple-dark">
-                      {p.vencimento.toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="px-4 py-2 text-sakura-purple-dark">{formatarMoeda(p.valor)}</td>
+                  <tr key={p.numero}>
+                    <td>{p.numero}x</td>
+                    <td>{p.vencimento.toLocaleDateString("pt-BR")}</td>
+                    <td className="text-right">{formatarMoeda(p.valor)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="border-t border-sakura-gray/20 px-4 py-2 text-right text-corpo font-semibold text-sakura-purple-dark">
-              Total {jurosPercentual > 0 ? "com juros" : ""}: {formatarMoeda(valorCobrado)}
-            </p>
           </div>
-        ))}
+        )}
 
-      {codigoPix && valorQrPix !== null && <PixQrCode codigo={codigoPix} valor={valorQrPix} />}
-
-      <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting || (recebidoAgora && dividirPagamento && !linhasBatem)}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
-          {isSubmitting ? "Faturando..." : rotuloConfirmar}
-        </button>
-      </div>
-    </form>
+        {codigoPix && valorQrPix !== null && <PixQrCode codigo={codigoPix} valor={valorQrPix} />}
+      </form>
+    </Modal>
   );
 }

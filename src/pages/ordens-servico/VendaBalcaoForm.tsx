@@ -23,6 +23,7 @@ import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type { NovoItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
+import { Botao } from "@/components/Botao";
 import { NovoClienteVendaModal } from "./CadastroRapidoModais";
 import { FaturamentoCard } from "./FaturamentoCard";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
@@ -91,7 +92,6 @@ export function VendaBalcaoForm({
   const [itensDoPagamento, setItensDoPagamento] = useState<NovoItemOS[] | null>(null);
   const [cadastrandoCliente, setCadastrandoCliente] = useState(false);
   const buscaRef = useRef<HTMLInputElement>(null);
-  const pagamentoRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -119,11 +119,6 @@ export function VendaBalcaoForm({
   useEffect(() => {
     buscaRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    // `?.` de propósito: o ambiente de teste (jsdom) não tem scrollIntoView.
-    if (noPagamento) pagamentoRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-  }, [noPagamento]);
 
   function adicionar(peca: PecaJanela) {
     replace(incluirPeca(watch("itens"), peca));
@@ -391,39 +386,27 @@ export function VendaBalcaoForm({
           <span className="text-subtitulo font-semibold text-sakura-purple-dark">
             Total {formatarMoeda(total)}
           </span>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancelar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
-              Cancelar
-            </button>
-            {noPagamento ? (
-              <button
-                type="button"
-                onClick={() => setItensDoPagamento(null)}
-                className="rounded-xl border border-sakura-purple px-5 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40"
-              >
-                Mudar as peças
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
-              >
+          {/* Com o pagamento aberto (na janela, por cima), estes botões ficam
+              de fora: "Mudar as peças" é o botão de desistir da própria janela. */}
+          {!noPagamento && (
+            <div className="flex gap-3">
+              <Botao variante="fantasma" onClick={onCancelar}>
+                Cancelar
+              </Botao>
+              <Botao variante="principal" type="submit">
                 Ir para o pagamento
-              </button>
-            )}
-          </div>
+              </Botao>
+            </div>
+          )}
         </div>
       </form>
 
       {/* Fora do <form> das peças: o pagamento é outro <form>, e um dentro
-          do outro é HTML inválido. */}
+          do outro é HTML inválido. Abre numa janela (visual novo, tarefa 7):
+          as peças ficam travadas atrás dela, e "Mudar as peças" volta pra
+          elas. */}
       {itensDoPagamento && (
-        <div ref={pagamentoRef}>
-          <FaturamentoCard
+        <FaturamentoCard
             ordem={{
               numero: 0,
               tipo: "venda_balcao",
@@ -431,8 +414,10 @@ export function VendaBalcaoForm({
               cliente: { nome: nomeDoCliente },
               itens: comoItensDaOrdem(itensDoPagamento),
             }}
-            titulo={`Pagamento da venda — ${nomeDoCliente}`}
+            titulo="Pagamento da venda"
+            descricao={nomeDoCliente}
             rotuloConfirmar="Confirmar venda"
+            rotuloCancelar="Mudar as peças"
             jurosParcelas={jurosParcelas}
             onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
               onRegistrar(
@@ -443,7 +428,6 @@ export function VendaBalcaoForm({
             }
             onCancelar={() => setItensDoPagamento(null)}
           />
-        </div>
       )}
 
       {cadastrandoCliente && (
