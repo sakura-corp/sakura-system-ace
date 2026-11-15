@@ -29,6 +29,13 @@ Total até a tela-piloto aprovada: umas 39 h. Tudo é `chefe:frontend`, sem banc
 - `npm run contraste`, `contraste:telas` e `largura:telas` verdes, além de `typecheck`, `lint` e CI.
 - Foto de antes e depois de cada tela mexida, no relatório da tarefa.
 - Não publicar nem liberar. A Sofia testa tudo de uma vez, no fim de semana.
+- **Melhorar enquanto mexe** (Sofia, 15/11): quem leva uma tela pro visual novo usa ela como quem
+  está no balcão e anota o que deixaria ela menos confusa: o que já fez, o que sugere e o que virou
+  tarefa (regras, seção 12). Aparência e clareza, decide e mostra; costume da loja, conta ou nota
+  fiscal, volta pra ela antes.
+- **Usar as peças** (prontas desde a tarefa 2): `Botao`, `Selo`, `LinkPlaca`, `CartaoNumero`,
+  `Modal`, `Dica`, `avisar()` e as classes `sakura-campo` e `sakura-tabela` (regras, seção 6, "Onde
+  está cada peça"). Peça nova entra na mostra das peças no mesmo PR.
 
 ---
 
@@ -107,7 +114,18 @@ que o contraste apontar (ajudante, médio); revisão do diff (revisor, forte).
 
 ---
 
-## Tarefa 2 — As peças
+## Tarefa 2 — As peças (FEITA em 15/11)
+
+> **O que entrou**: `Botao` e `LinkBotao`, `Selo`, `Dica`, `CartaoNumero`, o aviso que some
+> (`avisar()`), a placa com a faixa azul, a janela com o total em cima e as ações embaixo, e as
+> classes de campo, tabela e cartão. O `sakura-card` virou sólido em todas as telas; o vidro ficou
+> só no Login (`sakura-vidro`). No Início, só os três cartões de número trocaram. A lista completa,
+> e o que saiu diferente do conceito, está nas regras (seção 6, "Onde está cada peça"); as fotos, em
+> `docs/referencia/visual-novo/andamento/2-pecas/`.
+>
+> **Ficou pra tarefa de cada tela**: trocar os botões, os selos, os campos e as tabelas das telas
+> pelas peças. A regra fora de camada do `globals.css` que deixa cinza o botão `bg-sakura-purple`
+> desligado sai quando a última tela usar o `Botao`.
 
 ```
 Chefe: frontend
@@ -273,11 +291,20 @@ Sessões filhas: não
    cima, Usuário, Senha, Entrar, "Configurar a conexão" e a versão no canto. As telas de conexão e
    de trocar senha no mesmo molde.
 4. As cópias em `site/` (ícone e logo).
+5. **A barra da janela** (pedido da Sofia, 15/11; regras, seção 12): tirar a faixa branca do
+   Windows, deixando a barra na cor do programa com os três botões de verdade por cima
+   (`titleBarStyle: "hidden"` com `titleBarOverlay`, no `electron/main.ts`), e uma faixa de arrastar
+   no topo do programa. Trocar também o `backgroundColor: "#FFF7FC"` (o rosa-claro do tema antigo,
+   que pisca ao abrir) pelo `#0A0A0D`. O canto arredondado vem sozinho no Windows 11; **não forçar**
+   no 10 sem perguntar a ela (custa a sombra e o encaixe na lateral).
 
 **Pronto quando**
 - No PR: `test:electron` verde; foto do Login em 1366×768 e em 1920×1080.
 - No PC de quem fez: gerar o instalador de teste e conferir o ícone na área de trabalho, na barra
   de tarefas e no canto da janela.
+  Com a barra nova: arrastar a janela pelo topo, dar duplo clique no topo (maximiza), encaixar na
+  lateral da tela, e clicar nos três botões, **no Windows 10 e no 11**; nenhum botão do programa
+  pode ficar embaixo dos três botões da janela.
 - Depois de publicar: a Sofia confere o ícone no PC da loja depois da atualização automática.
 
 **O que não fazer**: não pôr a flor na capa nem no fim da apresentação comercial (regra dela).
@@ -304,6 +331,9 @@ Sessões filhas: não
    conta muda.**
 3. Ao confirmar, a janela fecha, a linha muda de selo e aparece o aviso "OS 148 faturada".
 4. O mesmo pra aba "Vendas de balcão" e pra tela de Orçamentos.
+5. **A nota do cliente à mão depois de faturar** (pedido da Sofia, 15/11; regras, seção 12): na
+   linha da OS finalizada e no aviso de "OS faturada", um caminho direto pra ver, imprimir ou mandar
+   a nota do cliente, sem ir até Notas Fiscais procurar. Mostrar a ela antes de fechar.
 
 **Pronto quando**
 - No PR: os testes de faturamento de hoje continuam verdes sem mudar uma linha de conta; teste de
@@ -332,7 +362,9 @@ do tema claro são outras, mais escuras.
 
 Uma tarefa por grupo do menu, cada uma depois do "sim" da Sofia no Início:
 Clientes e a ficha do veículo; Orçamentos e Garantias; Estoque, Fornecedores e Serviços; Caixa
-Diário; Contas a Pagar e a Receber; Notas Fiscais; Relações (os gráficos passam a usar as cores de
+Diário; Contas a Pagar e a Receber; Notas Fiscais (**com o pedido dela de 15/11**: a nota do cliente
+fácil de achar, no lugar de só "Ver DANFE", e cada botão de baixar dizendo o que baixa e pra quem
+é: o PDF pro cliente, o XML pro contador; regras, seção 12); Relações (os gráficos passam a usar as cores de
 aviso e o laranja); Funcionários; Configurações, Auditoria e Diagnóstico. Por último, uma tarefa só
 pra **tirar os tokens antigos** (`sakura-purple-dark` e os outros) e atualizar a "Identidade visual"
 do `docs/decisoes.md`.
