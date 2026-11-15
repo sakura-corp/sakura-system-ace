@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador, lojaAtual: { id: "loja-a" }, logout: vi.fn() }),
+  useAuth: () => ({ operador, lojaAtual: { id: "loja-a" }, lojasDisponiveis: [], logout: vi.fn() }),
 }));
 vi.mock("./LojaSwitcher", () => ({ LojaSwitcher: () => null }));
 // A barra de rolagem própria (AreaRolavel) mede com ResizeObserver, que o jsdom não tem.
@@ -23,6 +23,7 @@ vi.mock("./AreaRolavel", () => ({
 const { Sidebar } = await import("./Sidebar");
 
 beforeEach(() => {
+  window.localStorage.clear();
   contar.mockReset();
   contar.mockResolvedValue(3);
 });
@@ -44,7 +45,6 @@ describe("Sidebar — Orçamentos", () => {
 
     const ponto = await screen.findByLabelText("3 em aberto");
     expect(ponto).toBeEmptyDOMElement();
-    window.localStorage.clear();
   });
 
   it("sem nenhum orçamento aberto, não mostra número", async () => {

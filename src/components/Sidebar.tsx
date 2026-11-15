@@ -1,11 +1,34 @@
-import { ChevronLeft, FileText, Info, LogOut, Moon, Settings, SquareCheckBig, Store, Sun } from "lucide-react";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import {
+  ChartColumn,
+  ChevronLeft,
+  CircleArrowOutDownLeft,
+  CircleArrowOutUpRight,
+  ClipboardList,
+  FileText,
+  House,
+  IdCard,
+  Info,
+  LogOut,
+  Moon,
+  Package,
+  ReceiptText,
+  Settings,
+  ShieldCheck,
+  SquareCheckBig,
+  Store,
+  Sun,
+  Truck,
+  Users,
+  Wallet,
+  Wrench,
+} from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrcamentosAbertos } from "@/hooks/useOrcamentosAbertos";
 import { guardarMenuEncolhido, lerMenuEncolhido } from "@/lib/menuLateral";
 import { definirTema, useTema } from "@/lib/tema";
-import { GRUPOS_DO_MENU, MODULOS, type GrupoDoMenu } from "@/types/operador";
+import { GRUPOS_DO_MENU, MODULOS, type GrupoDoMenu, type ModuloChave } from "@/types/operador";
 import { AreaRolavel } from "./AreaRolavel";
 import { Dica } from "./Dica";
 import { MarcaDoMenu } from "./Logo";
@@ -24,6 +47,23 @@ import { LojaSwitcher } from "./LojaSwitcher";
  * Nenhuma classe de tema aqui: as cores são nomes de papel e trocam sozinhas
  * no claro (seção 13).
  */
+
+// O ícone de cada módulo. Módulo novo sem ícone aqui não compila.
+const ICONE_DO_MODULO: Record<ModuloChave, typeof FileText> = {
+  painel: House,
+  clientes: Users,
+  ordens_servico: ClipboardList,
+  garantias: ShieldCheck,
+  estoque: Package,
+  fornecedores: Truck,
+  servicos: Wrench,
+  caixa: Wallet,
+  contas_pagar: CircleArrowOutUpRight,
+  contas_receber: CircleArrowOutDownLeft,
+  notas_fiscais: ReceiptText,
+  relatorios: ChartColumn,
+  funcionarios: IdCard,
+};
 
 interface ItemDoMenu {
   chave: string;
@@ -65,9 +105,9 @@ export function Sidebar() {
   const tema = useTema();
   const { pathname } = useLocation();
 
-  const modulosLiberados: readonly ItemDoMenu[] = operador?.admin
-    ? MODULOS
-    : MODULOS.filter((modulo) => operador?.permissoes?.includes(modulo.chave));
+  const modulosLiberados: readonly ItemDoMenu[] = (
+    operador?.admin ? MODULOS : MODULOS.filter((modulo) => operador?.permissoes.includes(modulo.chave))
+  ).map((modulo) => ({ ...modulo, icone: ICONE_DO_MODULO[modulo.chave] }));
 
   // "Orçamentos" (#379) não é um módulo à parte: é do mesmo módulo das OS,
   // então aparece pra quem tem "ordens_servico" e não ganha permissão nova.
@@ -95,39 +135,53 @@ export function Sidebar() {
   })).filter((grupo) => grupo.itens.length > 0);
 
   function alternar() {
-    setEncolhido((atual) => {
-      guardarMenuEncolhido(!atual);
-      return !atual;
-    });
+    const novo = !encolhido;
+    guardarMenuEncolhido(novo);
+    setEncolhido(novo);
   }
+
+  // Encolhido não cabe a lista das lojas: o ícone da loja abre o menu e põe
+  // o foco na lista, pra quem veio trocar de loja chegar nela de uma vez.
+  const [focarALoja, setFocarALoja] = useState(false);
+  const rodapeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!focarALoja || encolhido) return;
+    rodapeRef.current?.querySelector<HTMLSelectElement>("select")?.focus();
+    setFocarALoja(false);
+  }, [focarALoja, encolhido]);
 
   // O trilho: o fundo laranja fraco que desliza até o item ativo. Ele é um
   // bloco só, posto na altura do link que o roteador marcou como a página de
   // agora. Fora dos itens (Configurações, Diagnóstico), ele some.
   const navRef = useRef<HTMLElement>(null);
-  const [trilho, setTrilho] = useState<{ topo: number; altura: number } | null>(null);
+  // `desliza`: só quando a pessoa TROCOU de tela. Quando o que mudou foi o
+  // desenho do menu (encolheu, a janela ficou mais baixa), o item ativo pula
+  // de lugar na hora, e o fundo tem que pular junto, não ir atrás dele.
+  const [trilho, setTrilho] = useState<{ topo: number; altura: number; desliza: boolean } | null>(null);
+  const telaAnterior = useRef<string | null>(null);
   const chavesDosItens = itensDoMenu.map((item) => item.chave).join(",");
   useLayoutEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    function medir() {
+    function medir(desliza: boolean) {
       const ativo = nav?.querySelector<HTMLElement>('a[aria-current="page"]');
       setTrilho((atual) => {
         if (!ativo) return null;
-        const novo = { topo: ativo.offsetTop, altura: ativo.offsetHeight };
+        const novo = { topo: ativo.offsetTop, altura: ativo.offsetHeight, desliza };
         return atual && atual.topo === novo.topo && atual.altura === novo.altura ? atual : novo;
       });
     }
-    medir();
+    medir(telaAnterior.current !== null && telaAnterior.current !== pathname);
+    telaAnterior.current = pathname;
     // A altura dos itens muda com a altura da janela (as telas baixas, #876),
     // e os títulos dos grupos mudam de altura ao encolher: medir de novo.
     if (typeof ResizeObserver === "undefined") return;
-    const observador = new ResizeObserver(medir);
+    const observador = new ResizeObserver(() => medir(false));
     observador.observe(nav);
     return () => observador.disconnect();
   }, [pathname, encolhido, chavesDosItens]);
 
-  const temVariasLojas = (lojasDisponiveis?.length ?? 0) > 1;
+  const temVariasLojas = lojasDisponiveis.length > 1;
 
   return (
     <aside
@@ -167,7 +221,9 @@ export function Sidebar() {
                 aria-hidden
                 data-trilho
                 style={{ transform: `translateY(${trilho.topo}px)`, height: trilho.altura }}
-                className="pointer-events-none absolute inset-x-3 top-0 rounded-[10px] bg-gradient-to-r from-acao/20 to-carmesim/10 ring-1 ring-inset ring-acao-clara/25 transition-transform duration-300 ease-suave motion-reduce:transition-none"
+                className={`pointer-events-none absolute inset-x-3 top-0 rounded-[10px] bg-gradient-to-r from-acao/20 to-carmesim/10 ring-1 ring-inset ring-acao-clara/25 ease-suave motion-reduce:transition-none ${
+                  trilho.desliza ? "transition-transform duration-300" : ""
+                }`}
               />
             )}
             {grupos.length === 0 && !encolhido && (
@@ -202,8 +258,10 @@ export function Sidebar() {
       </div>
 
       {operador && (
-        <div className="flex flex-none flex-col gap-2 border-t border-linha pt-2.5 baixa:gap-1 baixa:pt-2">
-          <Dica texto={encolhido ? `${operador.nome} (@${operador.usuario})` : ""} lado="direita">
+        <div ref={rodapeRef} className="flex flex-none flex-col gap-2 border-t border-linha pt-2.5 baixa:gap-1 baixa:pt-2">
+          {/* O nome inteiro fica na dica: aberto, ele pode estar cortado em
+              duas linhas; encolhido, só as iniciais aparecem. */}
+          <Dica texto={`${operador.nome} (@${operador.usuario})`} lado={encolhido ? "direita" : "cima"}>
             <div className="flex items-center gap-2.5 pl-1">
               <div
                 aria-hidden
@@ -225,11 +283,14 @@ export function Sidebar() {
               a lista: o ícone diz qual é a loja e abre o menu pra trocar. */}
           {encolhido
             ? temVariasLojas && (
-                <Dica texto={`Loja: ${lojaAtual?.nome ?? ""}. Clique pra trocar.`} lado="direita">
+                <Dica texto={`Loja: ${lojaAtual?.nome ?? ""}. Clique pra abrir o menu e trocar.`} lado="direita">
                   <button
                     type="button"
-                    onClick={alternar}
-                    aria-label={`Trocar de loja (agora: ${lojaAtual?.nome ?? ""})`}
+                    onClick={() => {
+                      setFocarALoja(true);
+                      alternar();
+                    }}
+                    aria-label={`Abrir o menu pra trocar de loja (agora: ${lojaAtual?.nome ?? ""})`}
                     className={`self-center ${BOTAO_DO_RODAPE_BASE} ${ALTURA_DO_RODAPE_ENCOLHIDO} ${BOTAO_DO_RODAPE_PARADO}`}
                   >
                     <Store aria-hidden className="h-[18px] w-[18px]" />

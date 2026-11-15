@@ -12,9 +12,12 @@ vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 let operador: Partial<Operador> = {};
 const logout = vi.fn();
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador, lojaAtual: { id: "loja-a" }, logout }),
+  useAuth: () => ({ operador, lojaAtual: { id: "loja-a", nome: "Matriz" }, lojasDisponiveis, logout }),
 }));
-vi.mock("./LojaSwitcher", () => ({ LojaSwitcher: () => null }));
+let lojasDisponiveis: { id: string; nome: string }[] = [];
+vi.mock("./LojaSwitcher", () => ({
+  LojaSwitcher: () => (lojasDisponiveis.length > 1 ? <select aria-label="Loja" /> : null),
+}));
 vi.mock("./AreaRolavel", () => ({
   AreaRolavel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
@@ -35,6 +38,7 @@ beforeEach(() => {
   delete document.documentElement.dataset.tema;
   logout.mockReset();
   operador = ADMIN;
+  lojasDisponiveis = [];
 });
 
 describe("Sidebar — os grupos", () => {
@@ -170,6 +174,26 @@ describe("Sidebar — o rodapé", () => {
 
     expect(screen.getByText("MA")).toBeInTheDocument();
     expect(screen.getByText("Marcos Andrade").closest(".sr-only")).not.toBeNull();
+  });
+
+  it("com mais de uma loja e o menu encolhido, o ícone da loja abre o menu e leva o foco pra lista", async () => {
+    window.localStorage.setItem("sakura.menu", "encolhido");
+    lojasDisponiveis = [
+      { id: "loja-a", nome: "Matriz" },
+      { id: "loja-b", nome: "Filial" },
+    ];
+    const { user } = renderizar(<Sidebar />);
+    expect(screen.queryByRole("combobox", { name: "Loja" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Abrir o menu pra trocar de loja (agora: Matriz)" }));
+    expect(screen.getByRole("complementary")).toHaveAttribute("data-menu", "aberto");
+    expect(screen.getByRole("combobox", { name: "Loja" })).toHaveFocus();
+  });
+
+  it("com uma loja só, não aparece ícone de loja nenhum", () => {
+    window.localStorage.setItem("sakura.menu", "encolhido");
+    renderizar(<Sidebar />);
+    expect(screen.queryByRole("button", { name: /trocar de loja/ })).not.toBeInTheDocument();
   });
 
   it("o atalho do tema troca entre escuro e claro, e fica guardado", async () => {
