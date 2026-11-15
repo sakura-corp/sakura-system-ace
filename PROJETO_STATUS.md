@@ -167,12 +167,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 15/11/2026: visual novo, o tema claro na `main`
-- **Feito** (#1046, nada publicado): o programa tem dois temas. Troca em Configurações → "Aparência deste computador" (por computador, lembrado; o padrão é o escuro); a logo troca junto. As cores do claro: regras, seção 13.
-- **Decidido por ela**: a cara do tema claro fica como está, por enquanto.
-- **Aberto** (sugestões, ela não decidiu): um atalho de tema no rodapé do menu (Configurações só o administrador abre) e a opção "Automático"; a logo nova nas duas versões é da tarefa 6.
-- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **menu** (tarefa 3) já tem sessão aberta; depois o Início, o movimento, a logo com o Login e as OS.
-- **Atenção, equipe**: toda tela vale nos dois temas. Nada de `text-white`, `bg-white/N` ou `bg-black/N` em cima de superfície (é `text-texto`, `bg-texto/N`, `bg-poco`); `contraste` e `contraste:telas` rodam nos dois.
+### 15/11/2026 (tarde): visual novo, o menu novo na `main`
+- **Feito** (#1049, nada publicado): o menu tem quatro grupos com ícones, abre e encolhe (lembrado por computador) e encosta na borda da janela; no alto, a flor da logo B. Como saiu: regras do visual novo, seção 7.
+- **Decidido por ela**: o menu fica como está; o atalho de trocar o tema no rodapé do menu fica.
+- **Aberto** (sugestões, ela não decidiu): um ícone de socorro pro Diagnóstico; a ordem dos grupos; a opção "Automático" do tema. A logo nova no Login e no ícone é da tarefa 6.
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **Início** (tarefa 4, a tela-piloto, que ela aprova antes das outras; ainda sem sessão); depois o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: toda tela vale nos dois temas (nada de `text-white`, `bg-white/N` ou `bg-black/N` em cima de superfície; é `text-texto`, `bg-texto/N`, `bg-poco`). Módulo novo precisa de grupo em `MODULOS` e de ícone no `Sidebar.tsx`.
 - **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
-- **Com a Sofia**: no teste do fim de semana, o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
+- **Com a Sofia**: no teste do fim de semana, o menu (encolher, fechar e abrir de novo; um login só com Caixa), o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
 - Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
