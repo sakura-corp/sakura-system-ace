@@ -194,7 +194,7 @@ antigas trocam cada uma na tarefa dela (as 8 em diante); até lá convivem os do
 | Selo de aviso | `src/components/Selo.tsx` | `<Selo tipo="atencao" palavra="Concluída" />`. Tipos: `info`, `atencao`, `ok`, `perigo`, `neutro`. **Sem a `palavra` não compila** (regra 4); o ícone tem um padrão por tipo e pode ser trocado. |
 | Placa | `src/components/LinkPlaca.tsx` | `<LinkPlaca veiculoId={…} placa={…} />`, como antes. |
 | Cartão | a classe `sakura-card` | sólido, canto de 18 px. |
-| Cartão de número | `src/components/CartaoNumero.tsx` | o rótulo, o "?", o número (um `<Valor />`) e a `<Variacao contra="outubro" />`. Com `para="/rota"`, o cartão inteiro é clicável. Ainda sem o fio de gráfico. |
+| Cartão de número | `src/components/CartaoNumero.tsx` | o rótulo, o "?", o número (um `<Valor />`) e a `<Variacao contra="outubro" />`. Com `para="/rota"`, o cartão inteiro é clicável. Com `fio={valores}`, desenha o fio de gráfico à direita (sem `fio`, ou com menos de 2 pontos, fica sem). |
 | Tabela | a classe `sakura-tabela` | no `<table>`, dentro de um `sakura-card overflow-hidden`; valor em dinheiro com `text-right`. |
 | Campo | as classes `sakura-campo` e `sakura-rotulo` | `<label class="sakura-rotulo">Nome <input class="sakura-campo" /></label>`. No filtro, somar `sakura-campo-filtro`. Serve pra `input`, `select` e `textarea`. Recusado pela validação: `aria-invalid="true"`. |
 | Janela | `src/components/Modal.tsx` | como antes, e agora com `total={{ rotulo, valor }}` no cabeçalho e `rodape={…}` com as ações (o botão principal por último). |
@@ -303,6 +303,23 @@ com o menu aberto, que é o que deixa menos espaço e o que o CI roda). Fotos co
 - **Diagnóstico** tem o ícone de "informação" (um "i"). Um ícone de socorro (uma boia) diria melhor
   pra que ele serve: é o botão de quem liga pedindo ajuda.
 - **"Relações"** é o nome que a loja usa pros relatórios; o ícone é o de gráfico de barras.
+
+### Como saiu no programa (tarefa 4, 15/11)
+
+O Início é `src/pages/painel/PainelPage.tsx`. As fotos (1366 × 768, escuro e claro, menu aberto e encolhido,
+e a Central do dia com muitos itens e com zero) estão em `andamento/5-inicio/`.
+
+| O quê | Como ficou |
+|---|---|
+| Título | "Início" na letra de títulos; à direita, "Resumo pro dono" com os dois botões do WhatsApp (variante `whatsapp`). O ícone é o de balão da biblioteca, não o logotipo do WhatsApp. Só aparência: quem vê, o que abre e o texto mandado são os de antes. |
+| Central do dia | A capa (mancha, grão, o total em 54 px e "coisas pedem a sua atenção hoje") fica **escura nos dois temas** (é marca) e a lista à direita tem **sempre a altura de 4 linhas**, rolando por dentro (`AreaRolavel`). Uma linha = um selo (ícone e palavra), o texto e **todos** os botões de antes. Zero itens: "Tudo em dia". As regras (`schemas/centralDoDia.ts`) não mudaram: o total da capa é o de todas as pendências, e o "e mais N…" continua. |
+| Cartões de número | `CartaoNumero` com a variação, o "?" e o fio. Os nomes são os de verdade ("Recebido no mês", "Lucro do mês"). O fio é o **acumulado do mês, dia a dia**, e o último ponto é exatamente o número do cartão (`schemas/serieDoMes.ts`, com teste). Sem fio: menos de 3 dias do mês, mês sem lançamento, "Contas a pagar vencendo" e quem não tem o módulo. Em cartão estreito (< 16 rem) o fio some em vez de apertar o número. |
+| "Ver relações completas" | Fica junto dos números, à direita, abaixo dos três cartões (no conceito estava dentro de "OS abertas"). |
+| OS abertas | Tabela `sakura-tabela`, com a placa (`LinkPlaca`, que abre a ficha do veículo) e a idade. **Sem o selo "Em andamento"** do conceito (a lista só tem OS aberta). Passando de 5 linhas, a tabela rola por dentro. |
+| Veículos no pátio | Mesmos cartões, em fileiras de três; passando de duas fileiras, rola por dentro. |
+| Calendário | Hoje em laranja com letra escura; pontos por tipo (azul feriado, verde aniversário, amarelo conta a vencer, vermelho conta vencida; no dia de hoje o ponto é escuro); lista de datas com ícone, palavra (pra leitor de tela) e o dia; passando de 3 datas, rola por dentro. Os dias do mês vizinho passaram ao `texto-3` (5,4:1) e a "dívida de contraste" deles foi quitada. |
+
+**Pra conferir com o menu encolhido e a loja de 1366**: `npm run largura:telas -- encolhido`.
 
 ## 8. O movimento
 

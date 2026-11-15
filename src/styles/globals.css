@@ -785,3 +785,77 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     transform: scale(0.96);
   }
 }
+
+/* ------------------------------------------------------------------
+   tarefa 4: o Início (visual novo, #990)
+
+   A capa da Central do dia: o cartão de destaque. É o momento de marca, então
+   fica ESCURO nos dois temas (regras, seção 13): aqui dentro os nomes de papel
+   voltam aos valores do escuro, e o texto e o "?" continuam legíveis mesmo
+   com o tema claro ligado. Usar junto com `sakura-grao` (o conteúdo de dentro
+   precisa de `relative z-[2]`).
+   ------------------------------------------------------------------ */
+@theme {
+  --text-capa: 3.375rem; /* o total da Central do dia, na capa: 54px */
+  --text-capa--line-height: 1;
+  --text-capa-curto: 2.125rem; /* o "Tudo em dia" da capa: 34px */
+  --text-capa-curto--line-height: 1;
+}
+
+/* As cores da capa são variáveis `--capa-*`, com o escuro como valor de
+   fábrica. No tema claro a Sofia achou a capa escura demais contra a página
+   clara (15/11), então há duas versões pra ela escolher por foto; a troca é
+   o atributo `data-capa` no <html> (só serve pra foto) ou, depois da escolha,
+   apagar o bloco da que sobrou:
+     (sem atributo) A: a mesma mancha com grão, sobre vinho médio, letra clara;
+     "b"            B: base creme, mancha suave, letra escura (como o Login claro);
+     "atual"        a capa escura de antes, só pra comparar. */
+:root[data-tema="claro"] {
+  --capa-base: #5a1630;
+  --capa-m1: rgba(240, 52, 96, 0.95);
+  --capa-m2: rgba(255, 110, 54, 0.95);
+  --capa-m3: rgba(150, 30, 70, 0.9);
+  --capa-escurece: rgba(30, 4, 16, 0.5);
+  --capa-grao-mistura: soft-light;
+  --capa-grao-opacidade: 0.8;
+}
+
+:root[data-tema="claro"][data-capa="b"] {
+  --capa-base: #fff3ea;
+  --capa-m1: rgba(240, 90, 128, 0.7);
+  --capa-m2: rgba(255, 120, 70, 0.85);
+  --capa-m3: rgba(255, 170, 126, 0.8);
+  --capa-escurece: transparent;
+  --capa-grao-mistura: soft-light;
+  --capa-grao-opacidade: 0.75;
+  --capa-texto: #1b1b1f;
+  --capa-texto-2: #3f3f46;
+  --capa-linha-forte: rgba(27, 17, 10, 0.3);
+  --capa-passar: rgba(27, 17, 10, 0.1);
+}
+
+:root[data-tema="claro"][data-capa="atual"] {
+  --capa-base: #09090c;
+  --capa-m1: rgba(225, 29, 72, 0.95);
+  --capa-m2: rgba(255, 87, 34, 0.9);
+  --capa-m3: rgba(107, 18, 41, 0.9);
+  --capa-escurece: transparent;
+  --capa-grao-mistura: overlay;
+  --capa-grao-opacidade: 0.62;
+}
+
+@utility sakura-capa-central {
+  --color-texto: var(--capa-texto, #ffffff);
+  --color-texto-2: var(--capa-texto-2, #e4e4e7);
+  --color-linha-forte: var(--capa-linha-forte, rgba(255, 255, 255, 0.28));
+  --color-passar: var(--capa-passar, rgba(255, 255, 255, 0.14));
+  --grao-mistura: var(--capa-grao-mistura, overlay);
+  --grao-opacidade: var(--capa-grao-opacidade, 0.62);
+  color: var(--capa-texto, #ffffff);
+  background-color: var(--capa-base, #09090c);
+  background-image:
+    linear-gradient(35deg, var(--capa-escurece, transparent) 0%, transparent 55%),
+    radial-gradient(86% 96% at 0% 0%, var(--capa-m1, rgba(225, 29, 72, 0.95)), transparent 66%),
+    radial-gradient(60% 62% at 100% 100%, var(--capa-m2, rgba(255, 87, 34, 0.9)), transparent 70%),
+    radial-gradient(46% 52% at 92% 0%, var(--capa-m3, rgba(107, 18, 41, 0.9)), transparent 72%);
+}
