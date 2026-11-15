@@ -167,11 +167,11 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 14/11/2026 (noite): visual novo, a tarefa 1 na `main` (cores e letras)
-- **Feito** (#1043, nada publicado): o programa trocou o rosa e roxo pelo laranja com carmesim, só nos valores das cores; letra escura nos botões laranja; Inter e Plus Jakarta Sans embutidas; fundo novo com grão no Login. O layout e a logo ainda são os antigos.
-- **Decidido por ela**: letras embutidas; ícones pela `lucide-react`; tema claro logo depois da tarefa 2; **nada cresce sem limite** (a Central do dia com 4 linhas, rolando por dentro); **o conceito vale pela aparência, não pelo conteúdo** (regras, seções 1 e 6).
-- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: a 2 (as peças) já tem sessão aberta; depois o tema claro, o menu, o Início, o movimento, a logo e as OS.
-- **Atenção, equipe**: botão `bg-sakura-purple` com `text-white` agora reprova no `npm run contraste`; a letra é `text-sobre-acao`.
+### 15/11/2026 (madrugada): visual novo, a tarefa 2 na `main` (as peças)
+- **Feito** (#1045, nada publicado): as peças: `Botao`, `Selo`, `Dica`, `CartaoNumero`, o aviso que some, a placa com a faixa azul, a janela com total e rodapé, as classes de campo e tabela. O cartão virou sólido; o vidro ficou só no Login. A mostra: `docs/referencia/visual-novo/pecas.html`. A tarefa 1 (#1043) entrou em 14/11.
+- **Pedidos dela em 15/11** (regras, seção 12): quem mexe numa tela procura o que deixaria ela menos confusa; a barra da janela na cor do programa (tarefa 6); a nota do cliente fácil de achar e os botões de baixar claros (Notas Fiscais e tarefa 7).
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **tema claro** já tem sessão aberta (ela vê por imagem antes); depois o menu, o Início, o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: tela nova usa as peças (regras, seção 6, "Onde está cada peça"); botão `bg-sakura-purple` com `text-white` reprova no `npm run contraste` (a letra é `text-sobre-acao`).
 - **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
-- **Com a Sofia**: no teste do fim de semana, ver a letra nova com o Wi-Fi desligado; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- **Com a Sofia**: no teste do fim de semana, a letra nova com o Wi-Fi desligado, a placa com a faixa azul e o fundo desfocado atrás das janelas (em 03/10 ela escolheu nítido); #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
 - Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
