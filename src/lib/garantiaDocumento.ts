@@ -1,5 +1,6 @@
 import type { Cliente, Veiculo } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
+import { escaparHtml } from "@/lib/reciboComissao";
 import { calcularListaParcelas } from "@/schemas/faturamento";
 import { totaisDoDocumento, valorLiquidoDoItem } from "@/schemas/valorItem";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
@@ -11,6 +12,10 @@ import type { ItemOS, OrdemServico } from "@/types/os";
 // pagamento, texto de garantia configurável e linhas de assinatura) —
 // inspirado no modelo que a usuária já usa hoje na Pneus Amigão. Reaproveita
 // a mesma técnica da versão visual da nota fiscal (HTML pra imprimir/baixar).
+//
+// Todo texto que vem do cadastro (item, técnico, cliente, veículo, loja,
+// forma de pagamento, texto de garantia) passa por `escaparHtml` antes de
+// entrar no HTML (#978): um "Pneu <aro 15>" cru viraria tag e sumiria do papel.
 
 export interface DadosGarantiaDocumento {
   ordem: OrdemServico;
@@ -37,7 +42,7 @@ function enderecoLoja(loja: ConfiguracaoFiscalLoja | null): string | null {
     loja.bairro,
     [loja.cidade, loja.uf].filter(Boolean).join("/"),
   ].filter(Boolean);
-  return partes.length > 0 ? partes.join(" — ") : null;
+  return partes.length > 0 ? escaparHtml(partes.join(" — ")) : null;
 }
 
 function enderecoCliente(cliente: Cliente | null): string | null {
@@ -47,7 +52,7 @@ function enderecoCliente(cliente: Cliente | null): string | null {
     cliente.bairro,
     [cliente.cidade, cliente.uf].filter(Boolean).join("/"),
   ].filter(Boolean);
-  return partes.length > 0 ? partes.join(" — ") : null;
+  return partes.length > 0 ? escaparHtml(partes.join(" — ")) : null;
 }
 
 function linhaItens(itens: ItemOS[]): string {
@@ -55,8 +60,8 @@ function linhaItens(itens: ItemOS[]): string {
     .map(
       (item) => `
         <tr>
-          <td>${item.descricao}</td>
-          <td>${item.tecnico?.nome ?? "—"}</td>
+          <td>${escaparHtml(item.descricao)}</td>
+          <td>${escaparHtml(item.tecnico?.nome ?? "—")}</td>
           <td class="numero">${item.quantidade}</td>
           <td class="numero">${formatarMoeda(item.preco_unitario)}</td>
           <td class="numero">${formatarMoeda(valorLiquidoDoItem(item))}</td>
@@ -75,9 +80,11 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 
   const valorFinal = valorCobrado ?? totais.total;
   const parcelas = ordem.parcelas ?? 1;
-  const formaPagamentoLabel = ordem.forma_pagamento
-    ? (FORMA_PAGAMENTO_LABEL[ordem.forma_pagamento] ?? ordem.forma_pagamento)
-    : "—";
+  const formaPagamentoLabel = escaparHtml(
+    ordem.forma_pagamento
+      ? (FORMA_PAGAMENTO_LABEL[ordem.forma_pagamento] ?? ordem.forma_pagamento)
+      : "—",
+  );
 
   const dataBase = ordem.data_fechamento ? new Date(ordem.data_fechamento) : new Date();
   // As mesmas parcelas da tela de faturamento: a soma fecha com o total
@@ -85,14 +92,15 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   // contado do fechamento, como antes.
   const listaParcelas = parcelas > 1 ? calcularListaParcelas(valorFinal, parcelas, dataBase) : [];
 
-  const nomeLoja = loja?.nome_fantasia || loja?.razao_social || "—";
-  const contatoLoja = [loja?.telefone, loja?.email].filter(Boolean).join(" · ");
+  const nomeLoja = escaparHtml(loja?.nome_fantasia || loja?.razao_social || "—");
+  const contatoLoja = escaparHtml([loja?.telefone, loja?.email].filter(Boolean).join(" · "));
+  const nomeDoc = escaparHtml(nomeDocumento(ordem));
 
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<title>Garantia — ${nomeDocumento(ordem)}</title>
+<title>Garantia — ${nomeDoc}</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -141,7 +149,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
     ${enderecoLoja(loja) ? `<p class="subtitulo">${enderecoLoja(loja)}</p>` : ""}
     ${contatoLoja ? `<p class="subtitulo">${contatoLoja}</p>` : ""}
     <p class="subtitulo" style="margin-top:8px;font-weight:600;">
-      Garantia — ${nomeDocumento(ordem)} · ${formatarData(ordem.data_fechamento)}
+      Garantia — ${nomeDoc} · ${formatarData(ordem.data_fechamento)}
     </p>
   </div>
 
@@ -149,15 +157,15 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   <div class="grid">
     <div class="bloco">
       <p class="rotulo">Nome</p>
-      <p class="valor">${cliente?.nome ?? ordem.cliente?.nome ?? "—"}</p>
+      <p class="valor">${escaparHtml(cliente?.nome ?? ordem.cliente?.nome ?? "—")}</p>
     </div>
     <div class="bloco">
       <p class="rotulo">${cliente?.tipo_pessoa === "juridica" ? "CNPJ" : "CPF"}</p>
-      <p class="valor">${cliente?.cpf_cnpj ?? "—"}</p>
+      <p class="valor">${escaparHtml(cliente?.cpf_cnpj ?? "—")}</p>
     </div>
     <div class="bloco">
       <p class="rotulo">Telefone</p>
-      <p class="valor">${cliente?.telefone ?? "—"}</p>
+      <p class="valor">${escaparHtml(cliente?.telefone ?? "—")}</p>
     </div>
     <div class="bloco" style="flex-basis:100%;">
       <p class="rotulo">Endereço</p>
@@ -169,15 +177,15 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   <div class="grid">
     <div class="bloco">
       <p class="rotulo">Marca / Modelo</p>
-      <p class="valor">${[veiculo?.marca, veiculo?.modelo].filter(Boolean).join(" / ") || "—"}</p>
+      <p class="valor">${escaparHtml([veiculo?.marca, veiculo?.modelo].filter(Boolean).join(" / ") || "—")}</p>
     </div>
     <div class="bloco">
       <p class="rotulo">Cor</p>
-      <p class="valor">${veiculo?.cor ?? "—"}</p>
+      <p class="valor">${escaparHtml(veiculo?.cor ?? "—")}</p>
     </div>
     <div class="bloco">
       <p class="rotulo">Placa</p>
-      <p class="valor">${veiculo?.placa ?? ordem.veiculo?.placa ?? "—"}</p>
+      <p class="valor">${escaparHtml(veiculo?.placa ?? ordem.veiculo?.placa ?? "—")}</p>
     </div>
     <div class="bloco">
       <p class="rotulo">Ano</p>
@@ -238,10 +246,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 
   ${
     textoGarantia
-      ? `<div class="titulo-secao">Garantia</div><p class="texto-garantia">${textoGarantia
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")}</p>`
+      ? `<div class="titulo-secao">Garantia</div><p class="texto-garantia">${escaparHtml(textoGarantia)}</p>`
       : ""
   }
 
