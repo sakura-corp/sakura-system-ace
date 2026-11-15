@@ -16,6 +16,11 @@ Painel/Início.
 Início, Clientes, Ordens de Serviço, Estoque, Serviços, Caixa Diário, Contas a Pagar, Relações,
 Garantias, Notas Fiscais, Funcionários (RH por último, de propósito — é cadastro usado bem menos
 no dia a dia do balcão do que os módulos anteriores). Ver `MODULOS` em `src/types/operador.ts`.
+**Desde o visual novo (tarefa 3, 15/11/2026)** o menu mostra os itens em quatro grupos, com ícone,
+e pode ser encolhido: Atendimento (Início, Clientes, Ordens de Serviço, Orçamentos, Garantias),
+Estoque (Estoque, Fornecedores, Serviços), Financeiro (Caixa Diário, Contas a Pagar, Contas a
+Receber, Notas Fiscais) e Gestão (Relações, Funcionários). A ordem é provisória. Detalhe em
+`docs/referencia/visual-novo/README.md`, seção 7.
 
 **Enter avança pro próximo campo**: em qualquer formulário do app, apertar Enter move o foco pro
 próximo campo em vez de tentar enviar o formulário — pensado pra quem trabalha só de teclado, sem

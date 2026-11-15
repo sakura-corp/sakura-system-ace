@@ -274,6 +274,36 @@ Um bloco que recebe uma lista **não estica a tela** quando a lista aumenta. Val
 - **As abas de dentro das telas continuam com palavra**, com um traço laranja embaixo da ativa.
 - **Embaixo**: quem está logado, e Diagnóstico, Auditoria, Configurações e Sair como ícones com dica.
 
+### Como saiu no programa (tarefa 3, 15/11)
+
+O menu é o `src/components/Sidebar.tsx`. O grupo e o ícone de cada item estão no `MODULOS` de
+`src/types/operador.ts` (a `chave` e a `rota` não mudaram: as permissões dependem delas); a escolha
+de aberto ou encolhido, em `src/lib/menuLateral.ts`. As fotos estão em `andamento/4-menu/`.
+
+| O quê | Como ficou |
+|---|---|
+| A moldura | O menu **encosta na borda da janela**, de cima a baixo, como no conceito (antes eram dois cartões soltos). Aberto, a tela ganha uns 36 px de largura; encolhido, 204 px. |
+| O alto do menu | A **flor da logo B** e o nome em letra de verdade. O Login, o ícone do programa e o site continuam com a logo antiga até a tarefa 6. |
+| "Orçamentos" | Aberto, mostra o **número** dos em aberto (num selo laranja); encolhido, o **ponto laranja**. O número não sumiu. |
+| Encolhido | O nome de cada item aparece na dica (à direita) e continua existindo pra leitor de tela. O título do grupo vira um traço. |
+| Quem está logado | As iniciais num círculo, o nome e o usuário. Encolhido, só as iniciais (o nome na dica). |
+| Trocar de loja | Continua no rodapé, só pra quem tem mais de uma. Encolhido não cabe a lista: aparece um ícone de loja que diz qual é a loja e abre o menu. **Não foi pro alto da tela**, como no conceito: seria um botão novo. |
+| Sair | Virou ícone com dica, no fim da fileira (antes era a palavra "Sair"). |
+| **Trocar o tema** | Um atalho no rodapé (sol ou lua), pra todo mundo: Configurações só o administrador abre. **(sugestão do Claude, esperando o "sim" da Sofia)**; se ela não quiser, sai num commit só. |
+| Tela baixa | No notebook de 1366 × 768 o menu inteiro cabe sem rolar, aberto e encolhido (os itens perdem altura, a letra não diminui). Se não couber, rola por dentro. |
+| O movimento | A largura muda em 0,26 s e o fundo do item ativo desliza em 0,3 s, com a curva única (`ease-suave`). Com as animações desligadas no Windows, nada se move. O resto do movimento é da tarefa 5. |
+
+**Pra conferir a largura com o menu encolhido**: `npm run largura:telas -- encolhido` (sem nada, mede
+com o menu aberto, que é o que deixa menos espaço e o que o CI roda). Fotos com o menu encolhido:
+`fotografar-telas.mjs <pasta> <cenas> encolhido`.
+
+**Sugestões achadas de passagem** (seção 12), pra Sofia decidir:
+- **A ordem**: "Garantias" ficou em Atendimento, depois de Orçamentos, como as regras pedem (antes
+  ficava lá embaixo, entre Relações e Notas Fiscais). A ordem continua provisória.
+- **Diagnóstico** tem o ícone de "informação" (um "i"). Um ícone de socorro (uma boia) diria melhor
+  pra que ele serve: é o botão de quem liga pedindo ajuda.
+- **"Relações"** é o nome que a loja usa pros relatórios; o ícone é o de gráfico de barras.
+
 ## 8. O movimento
 
 Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de onde a coisa veio.

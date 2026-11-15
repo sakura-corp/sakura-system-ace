@@ -160,7 +160,16 @@ com teste:
 
 ---
 
-## Tarefa 3 — O menu novo
+## Tarefa 3 — O menu novo (FEITA em 15/11, num PR que espera o do tema claro)
+
+> **O que entrou**: os quatro grupos com ícone, aberto e encolhido (lembrado por computador), o
+> fundo que desliza até o item ativo, a dica com o nome quando encolhido, o ponto laranja em
+> "Orçamentos", e o rodapé com Diagnóstico, Auditoria, Configurações e Sair como ícones. O menu
+> passou a encostar na borda da janela. O que saiu diferente do conceito, e as sugestões, estão nas
+> regras (seção 7, "Como saiu no programa"); as fotos, em
+> `docs/referencia/visual-novo/andamento/4-menu/`.
+>
+> **Espera a Sofia**: o atalho de trocar o tema no rodapé do menu (sugestão; ela vê a imagem e diz).
 
 ```
 Chefe: frontend

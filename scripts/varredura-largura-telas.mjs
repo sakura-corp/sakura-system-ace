@@ -28,6 +28,17 @@ const ALTURA = 768;
 // Até quantas telas que falharam ganham a segunda chance (#911).
 const MAXIMO_PRA_REPETIR = 5;
 
+// O menu lateral tem dois tamanhos (visual novo, #990): aberto, que é o
+// padrão e o que deixa MENOS largura pra tela, e encolhido. Sem nada, mede
+// com ele aberto (é o que o CI roda); `npm run largura:telas -- encolhido`
+// mede com ele encolhido, pra quando o próprio menu mudar.
+const MENU = process.argv[2] === "encolhido" ? "encolhido" : "aberto";
+if (process.argv[2] && process.argv[2] !== "encolhido" && process.argv[2] !== "aberto") {
+  console.error('O menu é "aberto" ou "encolhido".');
+  process.exit(1);
+}
+console.log(`Menu lateral: ${MENU}.`);
+
 process.exit(await comServidorDeTelas(varrer));
 
 async function varrer() {
@@ -69,7 +80,7 @@ async function varrer() {
     achados.push(...daCena);
   }
 
-  const primeira = await percorrerTelas(aoChegar);
+  const primeira = await percorrerTelas(aoChegar, () => true, { menu: MENU });
   const feitas = [...primeira.feitas];
   let falhas = primeira.falhas;
 
@@ -87,7 +98,7 @@ async function varrer() {
   if (falhas.length > 0 && falhas.length <= MAXIMO_PRA_REPETIR) {
     const repetir = falhas.map(([arquivo]) => arquivo);
     console.log(`\nrepetindo ${repetir.length} tela(s) que falharam: ${repetir.join(", ")}`);
-    const segunda = await percorrerTelas(aoChegar, (cena) => repetir.includes(cena.arquivo));
+    const segunda = await percorrerTelas(aoChegar, (cena) => repetir.includes(cena.arquivo), { menu: MENU });
     feitas.push(...segunda.feitas);
     const deNovo = new Set(segunda.falhas.map(([arquivo]) => arquivo));
     recuperadas = falhas.filter(([arquivo]) => !deNovo.has(arquivo));
