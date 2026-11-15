@@ -397,6 +397,8 @@ aoAvisoDaTela("janela:tema", (tema: unknown) => {
   if (tema !== "escuro" && tema !== "claro") return;
   try {
     mainWindow.setTitleBarOverlay({ ...CORES_DA_BARRA[tema], height: ALTURA_DA_BARRA });
+    // O fundo da janela também: ao redimensionar, a borda não pisca escura no claro.
+    mainWindow.setBackgroundColor(CORES_DA_BARRA[tema].color);
   } catch (erro) {
     logErroDaTela(`Barra da janela: ${String(erro).slice(0, 200)}`);
   }

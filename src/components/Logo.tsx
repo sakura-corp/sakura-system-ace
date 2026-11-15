@@ -19,11 +19,7 @@ interface LogoProps {
 export function Logo({ className = "", tamanho = 88 }: LogoProps) {
   const tema = useTema();
   return (
-    <div
-      role="img"
-      aria-label="Sakura System, AutoCenter Edition, by Sakura Corp"
-      className={`flex flex-col items-center text-center ${className}`}
-    >
+    <div className={`flex flex-col items-center text-center ${className}`}>
       <img
         src={`${import.meta.env.BASE_URL}sakura-icon.svg`}
         alt=""

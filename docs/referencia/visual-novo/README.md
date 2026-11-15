@@ -363,7 +363,7 @@ Electron de verdade; conexão e trocar senha; o ícone em 16, 32, 256 e 1024 px;
 | O canto arredondado | **Não forçado** (recomendação mantida): vem sozinho no Windows 11. |
 | O site | `site/`: o ícone novo e o nome em texto no topo da página (o `site/sakura-logo.svg` ficou: a apresentação comercial ainda o usa como marca-d'água). A flor **não** entrou na capa nem no fim da apresentação comercial. |
 
-**O teste do Electron** (`npm run test:electron`) ganhou seis checagens da barra: a janela sabe que a
+**O teste do Electron** (`npm run test:electron`) ganhou sete checagens da barra: a janela sabe que a
 barra é do programa; ela está no topo, com 40 px e de ponta a ponta; é a faixa de arrastar; o
 programa começa abaixo dela; a janela nasce escura; e a faixa dos botões troca de cor com o tema (e
 ignora tema inválido). Vistas reprovar trocando o fundo de volta para o rosa e a cor do tema claro.
@@ -382,8 +382,8 @@ O que ele **não** prova (a sessão é Linux): arrastar, duplo clique, encaixe e
 6. Entrar, ir em Configurações > Aparência e trocar para o tema claro: **a barra e a faixa dos três
    botões ficam claras juntas**, com os símbolos escuros. Voltar para o escuro.
 7. Olhar o canto de cima do menu e dos cartões: **nenhum botão do programa fica embaixo dos três da
-   janela**. Abrir uma janela (por exemplo "Faturar"): o fundo escurece a tela, mas a barra continua
-   no lugar e dá pra arrastar.
+   janela**. Abrir uma janela (por exemplo "Faturar"): o fundo escurece só o que está abaixo da barra, e a
+   barra continua no lugar e dá pra arrastar.
 8. Ícone: na área de trabalho, na barra de tarefas e no canto da janela do instalador, **a flor no
    quadrado claro** (no canto da janela e na barra de tarefas o Windows usa os tamanhos pequenos: se
    a flor ficar borrada em 16 px, avisar; a versão `mini` existe pra isso).

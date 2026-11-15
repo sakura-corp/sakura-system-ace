@@ -822,6 +822,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 :root[data-barra="propria"] #root .h-screen {
   height: 100%;
 }
+/* O fundo das janelas (modais) começa abaixo da barra: uma janela alta não
+   fica com o título embaixo dela nem dos três botões do Windows. */
+:root[data-barra="propria"] .sakura-modal-fundo {
+  top: var(--barra-janela);
+}
 
 /* Login, conexão e trocar a senha (peça `TelaDeEntrada`): o grão fica no bloco
    de fora, que não rola; o cartão de vidro no meio rola por dentro numa janela

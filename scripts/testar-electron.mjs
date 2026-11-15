@@ -555,6 +555,19 @@ try {
     barra.topoDoPrograma === 40 && barra.fundoDoPrograma <= 0,
     JSON.stringify(barra),
   );
+  const fundoDasJanelas = await pagina.evaluate(() => {
+    const f = document.createElement("div");
+    f.className = "sakura-modal-fundo";
+    document.getElementById("root").appendChild(f);
+    const topo = f.getBoundingClientRect().top;
+    f.remove();
+    return topo;
+  });
+  conferir(
+    "o fundo das janelas (modais) começa abaixo da barra, não embaixo dos três botões",
+    fundoDasJanelas === 40,
+    `veio ${fundoDasJanelas}`,
+  );
   const fundoDaJanela = await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].getBackgroundColor(),
   );
