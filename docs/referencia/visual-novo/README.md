@@ -345,8 +345,8 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
 
 ## 11. O que ficou aberto
 
-- **O tema claro**: desenhado em 15/11 e **esperando o "sim" da Sofia** (seção 13). Enquanto ela não
-  aprovar a cara, não entra na `main`.
+- **O tema claro**: feito e aprovado em 15/11 (seção 13). Abertas: o atalho de tema no menu e a opção
+  "Automático".
 - **O ícone que muda com o tema**: dentro do programa (menu, Login) é simples. O ícone do Windows (área
   de trabalho, instalador) é um arquivo só, fixo: fica o claro. O da barra de tarefas dá pra trocar
   com o programa aberto; decidir se vale o trabalho.
@@ -407,7 +407,7 @@ pro visual novo faz, na mesma tarefa:
 - Antes de desenhar, conferir a #773 (o "Ver documento oficial completo" da NFS-e que não abre):
   pode ser parte do mesmo aperto.
 
-## 13. O tema claro (RASCUNHO de 15/11/2026, esperando o "sim" da Sofia)
+## 13. O tema claro (na `main` desde 15/11/2026; a Sofia aprovou a cara "por enquanto")
 
 **Como funciona.** O tema é um atributo no `<html>` (`data-tema="claro"`), posto pelo
 `src/lib/tema.ts` com a escolha guardada **neste computador** (o padrão é o escuro). Quem troca é a
