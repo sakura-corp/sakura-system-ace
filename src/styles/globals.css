@@ -180,6 +180,11 @@
   --text-rotulo--line-height: 1.4;
   --text-meta: 0.75rem; /* só metadado: versão do app, "criado em" */
   --text-meta--line-height: 1.4;
+
+  /* A curva única do movimento (regras, seção 8): começa rápido, freia macio.
+     Vira a classe `ease-suave`. O menu é o primeiro a usar; o resto do
+     movimento é da tarefa 5. */
+  --ease-suave: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root {
