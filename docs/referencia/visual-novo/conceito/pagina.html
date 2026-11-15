@@ -17,6 +17,10 @@
   --sobre-laranja:#1B0B05;
   /* avisos: sempre com ícone e palavra junto */
   --ok:#34D399; --atencao:#FACC15; --perigo:#F87171; --info:#60A5FA; --zap:#25D366;
+  /* o que o tema claro troca e não tinha nome */
+  --texto-suave:#E4E4E7; --barra:#0D0D11; --passar-fraco:#1C1C24; --placa:#0E0E13; --flutua:#1F1F28; --janela:#16161C;
+  --veu:rgba(5,5,8,.66); --rolagem:#33333d; --dia-fora:#55555E; --sombra:rgba(0,0,0,.6); --vidro:rgba(14,14,19,.72);
+  --mancha-1:rgba(225,29,72,.92); --mancha-2:rgba(255,87,34,.95); --mancha-3:rgba(107,18,41,.9); --base-marca:#09090C;
   /* letras */
   --titulo:"Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;
   --corpo:"Inter","Segoe UI",system-ui,sans-serif;
@@ -93,8 +97,8 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
    A JANELA DO PROGRAMA (o conceito em si)
    ===================================================================== */
 .janela{width:1360px;height:850px;border-radius:14px;overflow:hidden;background:var(--fundo);border:1px solid var(--linha-forte);
-  display:flex;flex-direction:column;box-shadow:0 40px 90px rgba(0,0,0,.6);position:relative;font-size:14px}
-.barra-janela{height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;background:#0D0D11;border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
+  display:flex;flex-direction:column;box-shadow:0 40px 90px var(--sombra);position:relative;font-size:14px}
+.barra-janela{height:34px;flex:none;display:flex;align-items:center;gap:9px;padding:0 0 0 12px;background:var(--barra);border-bottom:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
 .barra-janela svg.m{width:16px;height:16px}
 .barra-janela .botoes{margin-left:auto;display:flex;height:100%}
 .barra-janela .botoes i{width:46px;display:grid;place-items:center;color:var(--texto-2)}
@@ -103,35 +107,35 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 
 /* ----- Login ----- */
 .login{display:grid;place-items:center;
-  background:radial-gradient(72% 88% at 0% 0%,rgba(225,29,72,.92),transparent 64%),radial-gradient(66% 86% at 100% 100%,rgba(255,87,34,.95),transparent 62%),radial-gradient(42% 52% at 88% 0%,rgba(107,18,41,.9),transparent 72%),#09090C}
-.login-cartao{position:relative;z-index:2;width:400px;padding:36px 34px 28px;border-radius:26px;background:rgba(14,14,19,.72);backdrop-filter:blur(22px) saturate(1.2);
-  border:1px solid rgba(255,255,255,.12);box-shadow:0 30px 80px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.1);display:flex;flex-direction:column;gap:16px}
+  background:radial-gradient(72% 88% at 0% 0%,var(--mancha-1),transparent 64%),radial-gradient(66% 86% at 100% 100%,var(--mancha-2),transparent 62%),radial-gradient(42% 52% at 88% 0%,var(--mancha-3),transparent 72%),var(--base-marca)}
+.login-cartao{position:relative;z-index:2;width:400px;padding:36px 34px 28px;border-radius:26px;background:var(--vidro);backdrop-filter:blur(22px) saturate(1.2);
+  border:1px solid color-mix(in srgb,var(--texto) 12%,transparent);box-shadow:0 30px 80px var(--sombra),inset 0 1px 0 color-mix(in srgb,var(--texto) 10%,transparent);display:flex;flex-direction:column;gap:16px}
 .login-marca{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:8px;text-align:center}
 .login-marca svg{width:84px;height:84px;filter:drop-shadow(0 10px 26px rgba(225,29,72,.45))}
 .login-marca b{font-family:var(--titulo);font-weight:800;font-size:27px;letter-spacing:-.02em;line-height:1;display:block}
-.login-marca i{font-style:normal;font-family:var(--titulo);font-weight:500;font-size:10.5px;letter-spacing:.32em;display:block;margin-top:8px;color:#E4E4E7}
+.login-marca i{font-style:normal;font-family:var(--titulo);font-weight:500;font-size:10.5px;letter-spacing:.32em;display:block;margin-top:8px;color:var(--texto-suave)}
 .campo{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--texto-2);font-weight:500}
 .campo input,.campo select,.entrada{height:44px;border-radius:12px;border:1px solid var(--borda-campo);background:var(--campo);color:var(--texto);padding:0 14px;font:inherit;font-size:15px;transition:border-color .15s,box-shadow .15s;width:100%}
 .campo input::placeholder,.entrada::placeholder{color:var(--texto-3)}
 .campo input:focus,.campo select:focus,.entrada:focus{outline:none;border-color:rgba(255,87,34,.7);box-shadow:0 0 0 3px rgba(255,87,34,.18)}
 .login-rodape{display:flex;justify-content:center;margin-top:4px}
-.elo{color:var(--texto-2);font-size:13px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.25)}
-.elo:hover{color:#fff}
-.versao{position:absolute;right:18px;bottom:14px;z-index:2;font-size:12px;color:rgba(255,255,255,.7)}
+.elo{color:var(--texto-2);font-size:13px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:color-mix(in srgb,var(--texto) 25%,transparent)}
+.elo:hover{color:var(--texto)}
+.versao{position:absolute;right:18px;bottom:14px;z-index:2;font-size:12px;color:color-mix(in srgb,var(--texto) 70%,transparent)}
 
 /* ----- Botões ----- */
 .bt{height:40px;padding:0 16px;border-radius:12px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
   transition:transform .12s var(--suave),background .15s,box-shadow .2s,border-color .15s}
 .bt:active{transform:scale(.97)}
 .bt svg{width:17px;height:17px;flex:none}
-.bt.principal{background:var(--laranja);color:var(--sobre-laranja);box-shadow:0 6px 18px rgba(255,87,34,.28),inset 0 1px 0 rgba(255,255,255,.3)}
-.bt.principal:hover{background:var(--laranja-claro);box-shadow:0 8px 26px rgba(255,87,34,.42),inset 0 1px 0 rgba(255,255,255,.35)}
-.bt.segundo{border:1px solid var(--linha-forte);color:#fff}
+.bt.principal{background:var(--laranja);color:var(--sobre-laranja);box-shadow:0 6px 18px rgba(255,87,34,.28),inset 0 1px 0 color-mix(in srgb,var(--texto) 30%,transparent)}
+.bt.principal:hover{background:var(--laranja-claro);box-shadow:0 8px 26px rgba(255,87,34,.42),inset 0 1px 0 color-mix(in srgb,var(--texto) 35%,transparent)}
+.bt.segundo{border:1px solid var(--linha-forte);color:var(--texto)}
 .bt.segundo:hover{background:var(--passar)}
 .bt.fantasma{color:var(--texto-2)}
-.bt.fantasma:hover{color:#fff;background:var(--passar)}
-.bt.zap{border:1px solid rgba(37,211,102,.45);color:var(--ok)}
-.bt.zap:hover{background:rgba(37,211,102,.12)}
+.bt.fantasma:hover{color:var(--texto);background:var(--passar)}
+.bt.zap{border:1px solid color-mix(in srgb,var(--zap) 45%,transparent);color:var(--zap)}
+.bt.zap:hover{background:color-mix(in srgb,var(--zap) 12%,transparent)}
 .bt.pequeno{height:32px;padding:0 12px;font-size:13px;border-radius:10px}
 .bt.grande{height:48px;font-size:16px;justify-content:center;border-radius:14px}
 .bt.so-icone{width:32px;padding:0;justify-content:center}
@@ -148,7 +152,7 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .menu-nome i{display:block;font-style:normal;font-family:var(--titulo);font-weight:500;font-size:8.5px;letter-spacing:.26em;color:var(--texto-2);margin-top:3px}
 .casca.encolhido .menu-nome,.casca.encolhido .item span,.casca.encolhido .grupo-nome,.casca.encolhido .quem-texto,.casca.encolhido .conta{opacity:0;pointer-events:none}
 .encolher{position:absolute;top:22px;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--cartao);border:1px solid var(--linha-forte);display:grid;place-items:center;color:var(--texto-2);z-index:4;transition:color .15s,background .15s}
-.encolher:hover{color:#fff;background:var(--passar)}
+.encolher:hover{color:var(--texto);background:var(--passar)}
 .encolher svg{width:14px;height:14px;transition:transform .26s var(--suave)}
 .casca.encolhido .encolher svg{transform:rotate(180deg)}
 .lista{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;gap:1px;overflow:hidden}
@@ -157,10 +161,10 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .item{height:36px;flex:none;border-radius:10px;display:flex;align-items:center;gap:12px;padding:0 12px;color:var(--texto-2);font-weight:500;width:100%;text-align:left;position:relative;z-index:1;white-space:nowrap;transition:color .15s}
 .item svg{width:19px;height:19px;flex:none;transition:color .2s}
 .item span{transition:opacity .16s;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
-.item:hover{color:#fff}
-.item[aria-current="page"]{color:#fff}
+.item:hover{color:var(--texto)}
+.item[aria-current="page"]{color:var(--texto)}
 .item[aria-current="page"] svg{color:var(--laranja-claro)}
-.conta{font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:#fff;border-radius:999px;padding:1px 7px;transition:opacity .16s;font-variant-numeric:tabular-nums}
+.conta{font-size:11px;font-weight:700;background:color-mix(in srgb,var(--texto) 10%,transparent);color:var(--texto);border-radius:999px;padding:1px 7px;transition:opacity .16s;font-variant-numeric:tabular-nums}
 .casca.encolhido .item::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:var(--laranja);opacity:0}
 .casca.encolhido .item.tem-conta::after{opacity:1}
 /* o "trilho" que desliza até o item ativo */
@@ -175,7 +179,7 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .quem-botoes{display:flex;gap:2px;flex-wrap:wrap}
 .casca.encolhido .quem-botoes{flex-direction:column;align-items:center}
 .ib{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--texto-2);transition:color .15s,background .15s}
-.ib:hover{color:#fff;background:var(--passar)}
+.ib:hover{color:var(--texto);background:var(--passar)}
 .ib svg{width:18px;height:18px}
 
 .area{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
@@ -186,7 +190,7 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .busca kbd{margin-left:auto;font:600 11px var(--corpo);color:var(--texto-2);border:1px solid var(--linha-forte);border-radius:6px;padding:2px 6px}
 .loja{margin-left:auto;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:11px;border:1px solid var(--linha);font-weight:500;font-size:13.5px}
 .loja svg{width:15px;height:15px;color:var(--texto-2)}
-.rolagem{flex:1;min-height:0;overflow-y:auto;padding:24px 26px 30px;scrollbar-width:thin;scrollbar-color:#33333d transparent}
+.rolagem{flex:1;min-height:0;overflow-y:auto;padding:24px 26px 30px;scrollbar-width:thin;scrollbar-color:var(--rolagem) transparent}
 .tela{display:flex;flex-direction:column;gap:18px}
 .tela-titulo{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .tela-titulo h3{font-size:26px;letter-spacing:-.02em;line-height:1.1}
@@ -208,7 +212,7 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .central-capa{padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:18px;
   background:radial-gradient(120% 90% at 0% 0%,rgba(225,29,72,.95),transparent 62%),radial-gradient(110% 100% at 100% 100%,rgba(255,87,34,.95),transparent 62%),var(--carmesim-fundo)}
 .central-capa>*{position:relative;z-index:2}
-.central-capa .rotulo{color:rgba(255,255,255,.85)}
+.central-capa .rotulo{color:color-mix(in srgb,var(--texto) 85%,transparent)}
 .central-capa b{font:800 54px/1 var(--titulo);letter-spacing:-.03em;display:block}
 .central-capa p{margin:6px 0 0;font-weight:500;font-size:15px;line-height:1.35}
 .central-lista{background:var(--cartao);display:flex;flex-direction:column}
@@ -219,16 +223,16 @@ h1,h2,h3{font-family:var(--titulo);margin:0;text-wrap:balance}
 .aviso .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aviso .txt b{font-weight:600}
 .aviso .txt span{color:var(--texto-2)}
-.t-perigo{color:var(--perigo);background:rgba(248,113,113,.13)}
-.t-atencao{color:var(--atencao);background:rgba(250,204,21,.12)}
-.t-ok{color:var(--ok);background:rgba(52,211,153,.12)}
-.t-info{color:var(--info);background:rgba(96,165,250,.13)}
-.t-neutro{color:#D4D4D8;background:rgba(255,255,255,.08)}
+.t-perigo{color:var(--perigo);background:color-mix(in srgb,var(--perigo) 13%,transparent)}
+.t-atencao{color:var(--atencao);background:color-mix(in srgb,var(--atencao) 12%,transparent)}
+.t-ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.t-info{color:var(--info);background:color-mix(in srgb,var(--info) 13%,transparent)}
+.t-neutro{color:var(--texto-suave);background:color-mix(in srgb,var(--texto) 8%,transparent)}
 
 /* ----- Cartões de número ----- */
 .numeros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .numero{padding:16px 18px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;text-align:left;transition:border-color .2s,transform .2s var(--suave),background .2s;position:relative}
-.numero:hover{border-color:var(--linha-forte);transform:translateY(-2px);background:#1C1C24}
+.numero:hover{border-color:var(--linha-forte);transform:translateY(-2px);background:var(--passar-fraco)}
 .numero .nome-n{color:var(--texto-2);font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
 .ajuda{width:18px;height:18px;border-radius:50%;border:1px solid var(--linha-forte);font-size:11px;font-weight:700;color:var(--texto-2);display:inline-grid;place-items:center}
 .numero .seta{color:var(--texto-3);justify-self:end}
@@ -252,7 +256,7 @@ th{font-size:12px;font-weight:600;color:var(--texto-2);text-align:left;padding:1
 td{padding:0 9px;height:52px;border-bottom:1px solid var(--linha);white-space:nowrap}
 tr:last-child td{border-bottom:0}
 tbody tr{transition:background .12s}
-tbody tr:hover{background:rgba(255,255,255,.03)}
+tbody tr:hover{background:color-mix(in srgb,var(--texto) 3%,transparent)}
 td.num,th.num{text-align:right}
 td.fraco{color:var(--texto-2)}
 td.acoes{text-align:right;padding-right:12px}
@@ -261,10 +265,10 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 .forte{font-weight:600}
 
 /* placa: lembra a placa Mercosul (faixa azul em cima), e é clicável */
-.placa{display:inline-flex;flex-direction:column;border-radius:7px;overflow:hidden;border:1px solid var(--linha-forte);background:#0E0E13;transition:border-color .15s,transform .12s;vertical-align:middle}
+.placa{display:inline-flex;flex-direction:column;border-radius:7px;overflow:hidden;border:1px solid var(--linha-forte);background:var(--placa);transition:border-color .15s,transform .12s;vertical-align:middle}
 .placa::before{content:"";height:4px;background:#2F62E0}
-.placa span{font:700 12.5px var(--corpo);letter-spacing:.08em;padding:3px 9px 4px;color:#fff}
-.placa:hover{border-color:#fff;transform:translateY(-1px)}
+.placa span{font:700 12.5px var(--corpo);letter-spacing:.08em;padding:3px 9px 4px;color:var(--texto)}
+.placa:hover{border-color:var(--texto);transform:translateY(-1px)}
 
 .selo{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:999px;font-size:12.5px;font-weight:600}
 .selo svg{width:13px;height:13px}
@@ -275,8 +279,8 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 .cal-topo b{font:700 15px var(--titulo)}
 .cal-grade{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-variant-numeric:tabular-nums}
 .cal-grade i{font-style:normal;font-size:11px;color:var(--texto-3);font-weight:600;padding:4px 0}
-.dia{height:34px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;position:relative;color:#E4E4E7}
-.dia.fora{color:#55555E}
+.dia{height:34px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;position:relative;color:var(--texto-suave)}
+.dia.fora{color:var(--dia-fora)}
 .dia.hoje{background:var(--laranja);color:var(--sobre-laranja);font-weight:700}
 .dia u{position:absolute;bottom:3px;width:5px;height:5px;border-radius:50%}
 .eventos{margin:12px 0 0;padding:12px 4px 0;border-top:1px solid var(--linha);list-style:none;display:grid;gap:8px;font-size:13px}
@@ -294,25 +298,25 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 /* ----- Lista de OS ----- */
 .abas{display:flex;gap:4px;border-bottom:1px solid var(--linha);align-items:center}
 .aba{padding:10px 14px;font-weight:600;color:var(--texto-2);position:relative;border-radius:8px 8px 0 0}
-.aba:hover{color:#fff}
-.aba[aria-selected="true"]{color:#fff}
+.aba:hover{color:var(--texto)}
+.aba[aria-selected="true"]{color:var(--texto)}
 .aba[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;border-radius:2px;background:var(--laranja)}
 .aba small{font-weight:600;color:var(--texto-2);margin-left:4px}
 .filtros{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 .filtros .campo{flex:none}
 .filtros .campo input{height:38px;font-size:14px}
 .filtros .nota{color:var(--texto-2);font-size:13px;flex:1;min-width:240px;padding-bottom:9px}
-.menu-mais{position:absolute;right:0;top:36px;z-index:5;min-width:170px;background:#1F1F28;border:1px solid var(--linha-forte);border-radius:12px;padding:5px;box-shadow:0 18px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;
+.menu-mais{position:absolute;right:0;top:36px;z-index:5;min-width:170px;background:var(--flutua);border:1px solid var(--linha-forte);border-radius:12px;padding:5px;box-shadow:0 18px 40px var(--sombra);display:flex;flex-direction:column;
   transform-origin:top right;animation:brotar .16s var(--suave)}
 @keyframes brotar{from{opacity:0;transform:scale(.94) translateY(-4px)}}
 .menu-mais button{display:flex;align-items:center;gap:9px;height:34px;padding:0 10px;border-radius:8px;font-size:13.5px;text-align:left}
-.menu-mais button:hover{background:rgba(255,255,255,.07)}
+.menu-mais button:hover{background:color-mix(in srgb,var(--texto) 7%,transparent)}
 .menu-mais svg{width:15px;height:15px;color:var(--texto-2)}
 
 /* ----- Janela de Faturar: painel opaco, nunca vidro ----- */
-.veu{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(5,5,8,.66);backdrop-filter:blur(6px);animation:aparecer .18s ease-out}
+.veu{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:var(--veu);backdrop-filter:blur(6px);animation:aparecer .18s ease-out}
 @keyframes aparecer{from{opacity:0}}
-.modal{width:760px;background:#16161C;border:1px solid var(--linha-forte);border-radius:22px;box-shadow:0 40px 100px rgba(0,0,0,.7);animation:chegar .28s var(--suave);display:flex;flex-direction:column}
+.modal{width:760px;background:var(--janela);border:1px solid var(--linha-forte);border-radius:22px;box-shadow:0 40px 100px var(--sombra);animation:chegar .28s var(--suave);display:flex;flex-direction:column}
 @keyframes chegar{from{opacity:0;transform:translateY(14px) scale(.96)}}
 .modal-topo{display:flex;align-items:center;gap:14px;padding:20px 22px 16px;border-bottom:1px solid var(--linha)}
 .modal-topo h4{font:700 19px var(--titulo);margin:0;letter-spacing:-.01em}
@@ -338,17 +342,17 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 .dica{color:var(--texto-2);font-size:13px;margin:-6px 0 0;text-align:right}
 .modal-pe{display:flex;align-items:center;gap:12px;padding:16px 22px 20px;border-top:1px solid var(--linha)}
 .modal-pe .conta-final{font-size:13.5px;color:var(--texto-2);line-height:1.45}
-.modal-pe .conta-final b{color:#fff}
+.modal-pe .conta-final b{color:var(--texto)}
 .modal-pe .fim{margin-left:auto;display:flex;gap:8px}
 
-.torrada{position:absolute;left:50%;bottom:26px;z-index:30;transform:translateX(-50%);background:#1F1F28;border:1px solid var(--linha-forte);border-radius:14px;padding:12px 18px 12px 14px;display:flex;gap:10px;align-items:center;font-weight:500;box-shadow:0 18px 40px rgba(0,0,0,.6);animation:torrar .34s var(--suave)}
+.torrada{position:absolute;left:50%;bottom:26px;z-index:30;transform:translateX(-50%);background:var(--flutua);border:1px solid var(--linha-forte);border-radius:14px;padding:12px 18px 12px 14px;display:flex;gap:10px;align-items:center;font-weight:500;box-shadow:0 18px 40px var(--sombra);animation:torrar .34s var(--suave)}
 @keyframes torrar{from{opacity:0;transform:translate(-50%,16px)}}
 .torrada svg{width:18px;height:18px;color:var(--ok)}
 
-.dica-flutuante{position:absolute;z-index:40;background:#fff;color:#111;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;box-shadow:0 10px 24px rgba(0,0,0,.5);animation:aparecer .12s}
+.dica-flutuante{position:absolute;z-index:40;background:#fff;color:#111;font-size:12.5px;font-weight:600;padding:6px 10px;border-radius:8px;pointer-events:none;white-space:nowrap;box-shadow:0 10px 24px var(--sombra);animation:aparecer .12s}
 
 .vazio{border:1px dashed var(--linha-forte);border-radius:18px;padding:56px 24px;text-align:center;color:var(--texto-2)}
-.vazio b{display:block;color:#fff;font:700 18px var(--titulo);margin-bottom:6px}
+.vazio b{display:block;color:var(--texto);font:700 18px var(--titulo);margin-bottom:6px}
 
 /* =====================================================================
    AS PEÇAS (as regras, resumidas)
@@ -375,6 +379,29 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+/* =====================================================================
+   O TEMA CLARO (só dentro da janela do programa; o botão fica nos atalhos).
+   Os mesmos valores do src/styles/globals.css.
+   ===================================================================== */
+.janela[data-tema="claro"]{
+  color-scheme:light;
+  --fundo:#F3F2EF; --painel:#FAF9F7; --cartao:#FFFFFF; --passar:#EFEDEA; --campo:#FFFFFF;
+  --linha:rgba(27,17,10,.10); --linha-forte:rgba(27,17,10,.22); --borda-campo:rgba(27,17,10,.55);
+  --texto:#1B1B1F; --texto-2:#55555E; --texto-3:#6C6C76; --texto-suave:#3F3F46;
+  --ok:#05694D; --atencao:#8A5300; --perigo:#B91C1C; --info:#1D4ED8; --zap:#0E7A3F;
+  --barra:#ECEAE6; --passar-fraco:#FAF9F7; --placa:#FFFFFF; --flutua:#FFFFFF; --janela:#FFFFFF;
+  --veu:rgba(40,30,25,.45); --rolagem:#C9C5C0; --dia-fora:#A3A3AD; --sombra:rgba(60,35,20,.25); --vidro:rgba(255,255,255,.8);
+  --mancha-1:rgba(225,29,72,.78); --mancha-2:rgba(255,87,34,.9); --mancha-3:rgba(255,160,112,.85); --base-marca:#FFF3EA;
+  color:var(--texto);
+}
+/* O cartão de destaque continua escuro nos dois temas: é o momento de marca. */
+.janela[data-tema="claro"] .central-capa{--texto:#FFFFFF;color:#fff}
+.janela[data-tema="claro"] .grao::after{mix-blend-mode:soft-light;opacity:.75}
+.janela[data-tema="claro"] .central-capa.grao::after{mix-blend-mode:overlay;opacity:.62}
+.seletor-tema{display:inline-flex;border:1px solid var(--linha-forte);border-radius:999px;padding:3px;margin-left:auto;gap:2px}
+.seletor-tema button{border:0!important;border-radius:999px;padding:6px 14px!important}
+.seletor-tema button[aria-pressed="true"]{background:var(--laranja);color:var(--sobre-laranja)}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">__DEFS__</svg>
@@ -416,6 +443,10 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
       <button data-ir="os">Ordens de Serviço</button>
       <button data-ir="faturar">Faturar</button>
       <button data-ir="menu">Encolher ou abrir o menu</button>
+      <div class="seletor-tema" role="group" aria-label="Tema do programa">
+        <button data-tema="escuro" aria-pressed="true">Escuro</button>
+        <button data-tema="claro" aria-pressed="false">Claro</button>
+      </div>
     </div>
     <div class="moldura" id="moldura"><div class="palco" id="palco">
 
@@ -894,6 +925,14 @@ function mostrarCasca(tela = "inicio", animar = true) {
 $("#form-login").addEventListener("submit", (e) => { e.preventDefault(); mostrarCasca("inicio"); });
 $("#sair").addEventListener("click", mostrarLogin);
 document.addEventListener("click", (e) => { if (e.target.closest("[data-nada]") && e.target.closest("a")) e.preventDefault(); });
+
+/* ---------- o tema (escuro ou claro), só na janela do programa ---------- */
+function porTema(tema) {
+  document.getElementById("janela").dataset.tema = tema;
+  document.querySelectorAll(".seletor-tema button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tema === tema)));
+}
+document.querySelectorAll(".seletor-tema button").forEach((b) => b.addEventListener("click", () => porTema(b.dataset.tema)));
+if (new URLSearchParams(location.search).get("tema") === "claro") porTema("claro");
 
 /* ---------- atalhos de fora ---------- */
 $$("[data-ir]").forEach((b) => b.addEventListener("click", () => {
