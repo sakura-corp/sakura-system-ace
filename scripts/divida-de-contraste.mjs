@@ -42,10 +42,15 @@ export const DIVIDA_DE_CONTRASTE = [
     // feriado mudava a mistura do cinza; no tema rosa e roxo, #5a5059 e
     // #60545e.
     quando: (g) =>
-      g.tipo === "texto" &&
-      // No tema claro (15/11/2026) é o mesmo cinza apagado, em cima do branco: 2,19:1.
-      ((g.tema === "escuro" && g.frente === "#65656b" && g.fundo === "#191920") ||
-        (g.tema === "claro" && g.frente === "#afafb1" && g.fundo === "#ffffff")),
+      g.tema === "escuro" && g.tipo === "texto" && g.frente === "#65656b" && g.fundo === "#191920",
+  },
+  {
+    id: "calendario-dias-do-mes-vizinho-no-tema-claro",
+    // A mesma decisão, no tema claro (15/11/2026): o mesmo cinza apagado em
+    // cima do cartão branco, 2,19:1. Entrada separada pra a lista perceber
+    // quando só uma das duas for resolvida.
+    quando: (g) =>
+      g.tema === "claro" && g.tipo === "texto" && g.frente === "#afafb1" && g.fundo === "#ffffff",
   },
 ];
 

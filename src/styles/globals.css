@@ -120,6 +120,7 @@
   --text-color-amber-400: oklch(82.8% 0.189 84.429);
   --text-color-emerald-300: oklch(84.5% 0.143 164.978);
   --text-color-emerald-400: oklch(76.5% 0.177 163.223);
+  --background-color-red-950: oklch(25.8% 0.092 26.042); /* a faixa de erro escura (Caixa) */
   --background-color-amber-950: oklch(27.9% 0.077 45.635); /* a faixa de aviso escura (Comissões, Caixa) */
   /* O laranja de BORDA e de anel (o foco dos campos antigos): no claro, o
      laranja do botão contra o fundo dá 2,6:1 a 2,8:1; o contorno pede 3:1. */
@@ -189,6 +190,11 @@
   --foco-anel-de-dentro: rgba(10, 10, 13, 0.95);
   --foco-brilho: rgba(255, 122, 77, 0.45);
   --foco-campo-anel: rgba(255, 87, 34, 0.22);
+  --foco-campo-borda: #ff7a4d; /* a borda do campo com o foco, e a caixinha de marcar */
+  --campo-no-vidro: rgba(0, 0, 0, 0.4); /* os campos do Login, em cima do vidro */
+  --grafico-grade: #e7dde5;
+  --grafico-comparacao: #c7c7c7;
+  --grafico-eixo: #b9a9b5;
   --rolagem: rgba(255, 255, 255, 0.18);
   --rolagem-firefox: rgba(255, 255, 255, 0.28);
   --rolagem-passar: rgba(255, 255, 255, 0.38);
@@ -266,6 +272,7 @@
   --text-color-amber-400: #8a5300;
   --text-color-emerald-300: #05694d;
   --text-color-emerald-400: #05694d;
+  --background-color-red-950: #f2a3a3; /* a 60% sobre o branco: um vermelho pálido */
   --background-color-amber-950: #f0b040; /* a 40% sobre o branco: um amarelo pálido */
   --border-color-sakura-pink: #d9430f;
   --border-color-sakura-purple: #d9430f;
@@ -284,6 +291,11 @@
   --foco-anel-de-dentro: rgba(255, 255, 255, 0.95);
   --foco-brilho: rgba(255, 87, 34, 0.35);
   --foco-campo-anel: rgba(255, 87, 34, 0.26);
+  --foco-campo-borda: #d9430f; /* 4:1 no branco; o laranja do botão dava 2,6:1 */
+  --campo-no-vidro: #ffffff;
+  --grafico-grade: #d6d3ce;
+  --grafico-comparacao: #7a7a84;
+  --grafico-eixo: #8a8a94;
   --rolagem: rgba(27, 17, 10, 0.28);
   --rolagem-firefox: rgba(27, 17, 10, 0.38);
   --rolagem-passar: rgba(27, 17, 10, 0.5);
@@ -336,7 +348,7 @@ option {
 
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: var(--color-sakura-pink);
+  accent-color: var(--foco-campo-borda);
 }
 
 /* O botãozinho de abrir o calendário (dentro de todo campo de data). O ícone
@@ -433,7 +445,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    o "bg-sakura-purple/20" nem o "hover:bg-sakura-purple". Quando as telas
    passarem a usar o componente Botao, isto sai. */
 :is(button, a)[class~="bg-sakura-purple"]:disabled,
-:is(button, a)[class~="bg-red-600"]:disabled,
+:root[data-tema="claro"] :is(button, a)[class~="bg-red-600"]:disabled,
 :is(button, a)[class~="bg-acao"]:disabled {
   background-color: var(--color-passar);
   color: var(--color-texto-2);
@@ -629,9 +641,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   &:focus,
   &:focus-visible {
     outline: none;
-    border-color: var(--color-acao-clara);
+    border-color: var(--foco-campo-borda);
     box-shadow:
-      0 0 0 1px var(--color-acao-clara),
+      0 0 0 1px var(--foco-campo-borda),
       0 0 0 4px var(--foco-campo-anel);
   }
 

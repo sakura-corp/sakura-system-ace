@@ -90,7 +90,7 @@ export function GraficoRadar({
               .map((p) => `${p.x},${p.y}`)
               .join(" ")}
             fill="none"
-            stroke="#e7dde5"
+            style={{ stroke: "var(--grafico-grade)" }}
             strokeWidth={1}
           />
         ))}
@@ -101,13 +101,13 @@ export function GraficoRadar({
           const rotulo = ponto(angulo, RAIO + 22);
           return (
             <g key={eixo.chave}>
-              <line x1={CENTRO} y1={CENTRO} x2={ponta.x} y2={ponta.y} stroke="#e7dde5" strokeWidth={1} />
+              <line x1={CENTRO} y1={CENTRO} x2={ponta.x} y2={ponta.y} style={{ stroke: "var(--grafico-grade)" }} strokeWidth={1} />
               <text
                 x={rotulo.x}
                 y={rotulo.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-sakura-purple-dark/60"
+                className="fill-sakura-muted"
                 fontSize={11}
               >
                 {eixo.nome}
@@ -119,7 +119,7 @@ export function GraficoRadar({
         <polygon
           points={pontosAnterior.map((p) => `${p.x},${p.y}`).join(" ")}
           fill="none"
-          stroke="#c7c7c7"
+          style={{ stroke: "var(--grafico-comparacao)" }}
           strokeWidth={2}
           strokeDasharray="4 3"
         />
@@ -163,7 +163,7 @@ export function GraficoRadar({
             cx={p.x}
             cy={p.y}
             r={4}
-            fill="#c7c7c7"
+            style={{ fill: "var(--grafico-comparacao)" }}
             stroke="#fff"
             strokeWidth={2}
             onMouseEnter={(e) => {

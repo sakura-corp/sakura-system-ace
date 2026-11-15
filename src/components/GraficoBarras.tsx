@@ -88,7 +88,7 @@ export function GraficoBarras({
                 x2={LARGURA - MARGEM_DIREITA}
                 y1={y}
                 y2={y}
-                stroke="#e7dde5"
+                style={{ stroke: "var(--grafico-grade)" }}
                 strokeWidth={1}
               />
               <text
@@ -96,7 +96,7 @@ export function GraficoBarras({
                 y={y}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="fill-sakura-purple-dark/50"
+                className="fill-sakura-muted"
                 fontSize={10}
               >
                 {marca.toLocaleString("pt-BR")}
@@ -110,7 +110,7 @@ export function GraficoBarras({
           x2={LARGURA - MARGEM_DIREITA}
           y1={MARGEM_SUPERIOR + alturaUtil}
           y2={MARGEM_SUPERIOR + alturaUtil}
-          stroke="#b9a9b5"
+          style={{ stroke: "var(--grafico-eixo)" }}
           strokeWidth={1}
         />
 
@@ -158,7 +158,7 @@ export function GraficoBarras({
                 x={inicioGrupo + larguraGrupo / 2}
                 y={ALTURA - 10}
                 textAnchor="middle"
-                className="fill-sakura-purple-dark/50"
+                className="fill-sakura-muted"
                 fontSize={10}
               >
                 {categoria}
