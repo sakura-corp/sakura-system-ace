@@ -358,9 +358,9 @@ lugar.
 
 ## Tarefa do tema claro (entra depois da 2, se ela disser "agora")
 
-> **Andamento (15/11)**: desenhado e com o mecanismo pronto num PR **aberto, sem mesclar**: espera o
-> "sim" da Sofia pra cara do tema claro. O que foi feito e as cores estão nas regras, seção 13; as
-> fotos, em `docs/referencia/visual-novo/andamento/3-tema-claro/`.
+> **FEITA em 15/11** (#1046), com o "sim" da Sofia pra cara do tema claro ("por mim pode ficar assim
+> por enquanto"). O que foi feito e as cores estão nas regras, seção 13; as fotos, em
+> `docs/referencia/visual-novo/andamento/3-tema-claro/`.
 
 Estimativa: 8 h. Desenhar o tema claro primeiro, **por imagem**, e mostrar à Sofia (a mesma página do
 conceito, com um botão de claro e escuro). Depois: os tokens de papel ganham o segundo conjunto de

@@ -212,6 +212,15 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
   // As telas de antes do login primeiro, pra não precisar deslogar no meio.
   await pagina.goto(BASE, { waitUntil: "networkidle" });
   await pagina.waitForTimeout(1200);
+
+  // O tema pedido é mesmo o que está na tela? Se a chave guardada mudar de
+  // nome um dia, a rodada do "claro" mediria o escuro duas vezes e passaria
+  // verde sem ter medido nada.
+  const temaNaTela = await pagina.evaluate(() => document.documentElement.dataset.tema);
+  if (temaNaTela !== (opcoes.tema ?? "escuro")) {
+    await fechar();
+    throw new Error(`O passeio pediu o tema "${opcoes.tema ?? "escuro"}" e a tela abriu em "${temaNaTela}".`);
+  }
   for (const cena of cenas.filter((c) => c.deslogado)) await visitar(cena, 1200);
 
   console.log((await entrar()) ? "login simulado: OK" : "login simulado: FALHOU");

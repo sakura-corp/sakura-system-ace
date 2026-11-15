@@ -167,11 +167,12 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 14/11/2026 (noite): visual novo, a tarefa 1 na `main` (cores e letras)
-- **Feito** (#1043, nada publicado): o programa trocou o rosa e roxo pelo laranja com carmesim, só nos valores das cores; letra escura nos botões laranja; Inter e Plus Jakarta Sans embutidas; fundo novo com grão no Login. O layout e a logo ainda são os antigos.
-- **Decidido por ela**: letras embutidas; ícones pela `lucide-react`; tema claro logo depois da tarefa 2; **nada cresce sem limite** (a Central do dia com 4 linhas, rolando por dentro); **o conceito vale pela aparência, não pelo conteúdo** (regras, seções 1 e 6).
-- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: a 2 (as peças) já tem sessão aberta; depois o tema claro, o menu, o Início, o movimento, a logo e as OS.
-- **Atenção, equipe**: botão `bg-sakura-purple` com `text-white` agora reprova no `npm run contraste`; a letra é `text-sobre-acao`.
-- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
-- **Com a Sofia**: no teste do fim de semana, ver a letra nova com o Wi-Fi desligado; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+### 15/11/2026: visual novo, o tema claro na `main`
+- **Feito** (#1046, nada publicado): o programa tem dois temas. Troca em Configurações → "Aparência deste computador" (por computador, lembrado; o padrão é o escuro); a logo troca junto. As cores do claro: regras, seção 13.
+- **Decidido por ela**: a cara do tema claro fica como está, por enquanto.
+- **Aberto** (sugestões, ela não decidiu): um atalho de tema no rodapé do menu (Configurações só o administrador abre) e a opção "Automático"; a logo nova nas duas versões é da tarefa 6.
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **menu** (tarefa 3) já tem sessão aberta; depois o Início, o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: toda tela vale nos dois temas. Nada de `text-white`, `bg-white/N` ou `bg-black/N` em cima de superfície (é `text-texto`, `bg-texto/N`, `bg-poco`); `contraste` e `contraste:telas` rodam nos dois.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
 - Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.

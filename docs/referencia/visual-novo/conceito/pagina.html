@@ -397,6 +397,8 @@ td.acoes>div{display:inline-flex;gap:6px;align-items:center;position:relative}
 }
 /* O cartão de destaque continua escuro nos dois temas: é o momento de marca. */
 .janela[data-tema="claro"] .central-capa{--texto:#FFFFFF;color:#fff}
+/* A dica inverte no claro (escura, com a letra branca), pra continuar saltando. */
+.janela[data-tema="claro"] .dica-flutuante{background:#1B1B1F;color:#fff}
 .janela[data-tema="claro"] .grao::after{mix-blend-mode:soft-light;opacity:.75}
 .janela[data-tema="claro"] .central-capa.grao::after{mix-blend-mode:overlay;opacity:.62}
 .seletor-tema{display:inline-flex;border:1px solid var(--linha-forte);border-radius:999px;padding:3px;margin-left:auto;gap:2px}
@@ -820,7 +822,7 @@ function fio(pontos, i) {
   const d = xy.map(([x, y], k) => (k ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
   const [ux, uy] = xy[xy.length - 1];
   return `<svg class="fio" viewBox="0 0 ${L} ${A}" aria-hidden="true"><defs><linearGradient id="fg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5722" stop-opacity=".34"/><stop offset="1" stop-color="#FF5722" stop-opacity="0"/></linearGradient></defs>
-    <path d="${d} L${ux},${A} L${xy[0][0]},${A} Z" fill="url(#fg${i})"/><path class="l" pathLength="1" d="${d}"/><circle cx="${ux}" cy="${uy}" r="3.5" fill="#FF5722" stroke="#191920" stroke-width="2"/></svg>`;
+    <path d="${d} L${ux},${A} L${xy[0][0]},${A} Z" fill="url(#fg${i})"/><path class="l" pathLength="1" d="${d}"/><circle cx="${ux}" cy="${uy}" r="3.5" fill="#FF5722" stroke="var(--cartao)" stroke-width="2"/></svg>`;
 }
 function numeros(animar) {
   $("#numeros").innerHTML = NUMEROS.map(([nome, v, delta, pts, ajuda], i) => `
