@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Explicacao } from "./Explicacao";
+import { FioDeGrafico } from "./FioDeGrafico";
 
 /**
  * O cartão de número do visual novo (#990, seção 6 das regras): o rótulo
@@ -20,8 +21,10 @@ import { Explicacao } from "./Explicacao";
  * O número vem pronto de quem chama (o `Valor`, que já sabe mostrar
  * prejuízo): **conta de dinheiro nunca é feita aqui**.
  *
- * Ainda sem o fio de gráfico: ele entra com o Início (tarefa 4 do visual
- * novo), no espaço à direita do número.
+ * O fio de gráfico (`fio`) é opcional e fica à direita do número: os valores
+ * (um por dia) vêm prontos de `schemas/serieDoMes.ts`. Sem `fio`, ou com
+ * menos de 2 pontos, o cartão fica sem ele. Quando o cartão está estreito
+ * (menos de 16 rem), o fio some pra não apertar o número.
  */
 export function CartaoNumero({
   titulo,
@@ -29,6 +32,7 @@ export function CartaoNumero({
   variacao,
   semAcesso,
   para,
+  fio,
   children,
 }: {
   titulo: string;
@@ -44,13 +48,15 @@ export function CartaoNumero({
   semAcesso?: string;
   /** A rota que o cartão abre. Com ela, o cartão inteiro é clicável. */
   para?: string;
+  /** Os valores do fio de gráfico, um por dia. Sem eles, o cartão não tem fio. */
+  fio?: readonly number[] | null;
   /** O número: um `<Valor />`, ou um texto curto. */
   children: ReactNode;
 }) {
   return (
     <div
       data-cartao-numero
-      className={`sakura-card relative px-[18px] pb-3.5 pt-4 ${
+      className={`sakura-card @container relative px-[18px] pb-3.5 pt-4 ${
         para
           ? "transition-[border-color,transform,background-color] duration-200 hover:-translate-y-0.5 hover:border-linha-forte hover:bg-passar/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           : ""
@@ -86,12 +92,17 @@ export function CartaoNumero({
           <p className="mt-1 text-rotulo text-texto-2">{semAcesso}</p>
         </>
       ) : (
-        <>
-          <p className="mt-1.5 whitespace-nowrap font-titulo text-metrica font-bold tracking-[-0.02em] tabular-nums">
-            {children}
-          </p>
-          {variacao && <div className="mt-1 flex min-h-5 items-center">{variacao}</div>}
-        </>
+        <div className="mt-1.5 flex items-end justify-between gap-3">
+          <div className="shrink-0">
+            <p className="whitespace-nowrap font-titulo text-metrica font-bold tracking-[-0.02em] tabular-nums">
+              {children}
+            </p>
+            {variacao && <div className="mt-1 flex min-h-5 items-center">{variacao}</div>}
+          </div>
+          {fio && fio.length >= 2 && (
+            <FioDeGrafico valores={fio} className="hidden h-11 min-w-14 max-w-[120px] flex-1 @[16rem]:block" />
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 //
 // O cartão de número do visual novo (#990, tarefa 2): o rótulo com o "?", o
-// número grande e a variação embaixo. Ainda sem o fio de gráfico, que entra
-// com o Início (tarefa 4).
+// número grande e a variação embaixo, e (tarefa 4) o fio de gráfico à direita.
 
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -73,5 +72,44 @@ describe("CartaoNumero", () => {
     const ajuda = screen.getByRole("button", { name: "O que é Lucro do mês?" });
     expect(link.contains(ajuda)).toBe(false);
     expect(ajuda.closest("[data-acima-do-link]")).not.toBeNull();
+  });
+
+  describe("o fio de gráfico", () => {
+    it("com os valores do mês, desenha o fio, com a ponta marcada", () => {
+      render(
+        <CartaoNumero titulo="Recebido no mês" fio={[10, 30, 20, 50]}>
+          <Valor valor={50} />
+        </CartaoNumero>,
+      );
+      const cartao = screen.getByText("Recebido no mês").closest("[data-cartao-numero]") as HTMLElement;
+      const fio = cartao.querySelector("[data-fio-de-grafico]");
+      expect(fio).not.toBeNull();
+      // Decoração: o número é quem informa, e o leitor de tela não lê o desenho.
+      expect(fio?.getAttribute("aria-hidden")).toBe("true");
+      expect(fio?.querySelectorAll("circle")).toHaveLength(1);
+    });
+
+    it("sem dados (null) ou com menos de 2 pontos, o cartão fica sem o fio e o número continua", () => {
+      for (const fio of [null, undefined, [], [5]]) {
+        const { unmount } = render(
+          <CartaoNumero titulo="Recebido no mês" fio={fio}>
+            <Valor valor={5} />
+          </CartaoNumero>,
+        );
+        const cartao = screen.getByText("Recebido no mês").closest("[data-cartao-numero]") as HTMLElement;
+        expect(cartao.querySelector("[data-fio-de-grafico]")).toBeNull();
+        expect(cartao.textContent).toContain("5,00");
+        unmount();
+      }
+    });
+
+    it("sem acesso ao módulo, não desenha fio nenhum, mesmo recebendo valores", () => {
+      render(
+        <CartaoNumero titulo="Custos do mês" semAcesso="Sem acesso a Contas a Pagar" fio={[1, 2, 3]}>
+          <Valor valor={0} />
+        </CartaoNumero>,
+      );
+      expect(document.querySelector("[data-fio-de-grafico]")).toBeNull();
+    });
   });
 });
