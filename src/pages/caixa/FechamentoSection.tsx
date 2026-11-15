@@ -285,7 +285,7 @@ function FecharDia({
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {resumo.outrasFormas.map((f) => (
-              <div key={f.forma} className="rounded-lg bg-black/20 px-4 py-3">
+              <div key={f.forma} className="rounded-lg bg-poco px-4 py-3">
                 <p className="text-rotulo text-sakura-muted">{f.rotulo}</p>
                 <p className="text-corpo font-semibold text-sakura-purple-dark">
                   {formatarMoeda(f.entradas)}
@@ -442,7 +442,7 @@ function FechamentoFeito({
         <Cartao rotulo="Troco ao abrir" valor={fechamento.fundo_troco} />
         <Cartao rotulo="Esperado na gaveta" valor={fechamento.saldo_sistema} />
         <Cartao rotulo="Contado" valor={fechamento.valor_contado} />
-        <div className="rounded-lg bg-black/20 px-4 py-3">
+        <div className="rounded-lg bg-poco px-4 py-3">
           <p className="text-rotulo text-sakura-muted">
             {situacao === "bateu" ? "Diferença" : situacao === "faltou" ? "Faltou" : "Sobrou"}
           </p>
@@ -489,7 +489,7 @@ function FechamentoFeito({
 
 function Cartao({ rotulo, valor }: { rotulo: string; valor: number }) {
   return (
-    <div className="rounded-lg bg-black/20 px-4 py-3">
+    <div className="rounded-lg bg-poco px-4 py-3">
       <p className="text-rotulo text-sakura-muted">{rotulo}</p>
       <p className="text-destaque font-semibold text-sakura-purple-dark">{formatarMoeda(valor)}</p>
     </div>

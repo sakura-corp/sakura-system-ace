@@ -683,8 +683,8 @@ export function OrdemServicoForm({
         ref={barraRef}
         data-rodape-da-os
         className={`${
-          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_rgba(0,0,0,0.65)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#16161c] px-4 py-3`}
+          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-janela px-4 py-3`}
       >
         {aba === "detalhes" ? (
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">

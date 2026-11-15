@@ -50,6 +50,7 @@ import { PixSection } from "./PixSection";
 import { TextoGarantiaSection } from "./TextoGarantiaSection";
 import { ModelosWhatsappSection } from "./ModelosWhatsappSection";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { AparenciaSection } from "./AparenciaSection";
 import { AtualizacoesComputadorSection } from "./AtualizacoesComputadorSection";
 import { ComputadoresSection } from "./ComputadoresSection";
 
@@ -493,6 +494,13 @@ export function ConfiguracoesPage() {
       )}
 
       <SecaoRecolhivel
+        titulo="Aparência deste computador"
+        descricao="O programa com o fundo escuro ou com o fundo claro. Vale só para este computador, e troca na hora."
+      >
+        <AparenciaSection />
+      </SecaoRecolhivel>
+
+      <SecaoRecolhivel
         titulo="Atualizações deste computador"
         descricao="Se este computador recebe cada versão nova assim que ela sai (canal de teste) ou só depois que ela for liberada para todas as lojas (normal). Vale só para este computador."
       >
@@ -513,7 +521,7 @@ export function ConfiguracoesPage() {
             pessoalmente etc.). Ela só aparece aqui uma vez — ao fazer login com ela, o sistema
             já vai pedir pra criar uma senha nova.
           </p>
-          <p className="mt-4 select-all rounded-xl border border-sakura-gray/30 bg-black/30 px-4 py-3 text-center font-mono text-subtitulo tracking-wider text-sakura-pink">
+          <p className="mt-4 select-all rounded-xl border border-sakura-gray/30 bg-poco px-4 py-3 text-center font-mono text-subtitulo tracking-wider text-sakura-pink">
             {senhaGerada.senha}
           </p>
           <div className="mt-4 flex justify-end gap-3">

@@ -41,7 +41,8 @@ export const DIVIDA_DE_CONTRASTE = [
     // era vidro eram dois tons, #616165 e #65656a (2,56:1), porque o fundo do
     // feriado mudava a mistura do cinza; no tema rosa e roxo, #5a5059 e
     // #60545e.
-    quando: (g) => g.tipo === "texto" && g.frente === "#65656b" && g.fundo === "#191920",
+    quando: (g) =>
+      g.tema === "escuro" && g.tipo === "texto" && g.frente === "#65656b" && g.fundo === "#191920",
   },
 ];
 

@@ -211,7 +211,7 @@ export function Dica({
               // Até a posição ser medida, existe mas não aparece.
               visibility: posicao ? "visible" : "hidden",
             }}
-            className="fixed z-[80] max-w-[min(20rem,calc(100vw-1rem))] rounded-lg bg-dica px-2.5 py-1.5 text-rotulo font-semibold text-sobre-dica shadow-[0_10px_24px_rgba(0,0,0,0.5)]"
+            className="fixed z-[80] max-w-[min(20rem,calc(100vw-1rem))] rounded-lg bg-dica px-2.5 py-1.5 text-rotulo font-semibold text-sobre-dica shadow-[0_10px_24px_var(--sombra-forte)]"
           >
             {texto}
           </div>,

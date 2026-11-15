@@ -67,7 +67,7 @@ function Registro({ titulo, texto, vazio }: { titulo: string; texto: string; vaz
       {linhas.length === 0 ? (
         <p className="text-corpo text-sakura-muted">{vazio}</p>
       ) : (
-        <pre className="max-h-64 overflow-auto rounded-xl bg-black/30 p-3 text-meta text-sakura-purple-dark">
+        <pre className="max-h-64 overflow-auto rounded-xl bg-poco p-3 text-meta text-sakura-purple-dark">
           {linhas.join("\n")}
         </pre>
       )}
@@ -152,14 +152,14 @@ export function DiagnosticoPage() {
         <button
           onClick={() => dados && baixarDiagnostico(dados)}
           disabled={!dados}
-          className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-white/10 disabled:opacity-50"
+          className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-texto/10 disabled:opacity-50"
         >
           Salvar arquivo para enviar
         </button>
         <button
           onClick={verificar}
           disabled={carregando}
-          className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-white/10 disabled:opacity-50"
+          className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-texto/10 disabled:opacity-50"
         >
           {carregando ? "Verificando..." : "Verificar de novo"}
         </button>

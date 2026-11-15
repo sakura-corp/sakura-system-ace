@@ -10,7 +10,7 @@ interface ConexaoPageProps {
 }
 
 const inputClasse =
-  "rounded-xl border border-sakura-borda-campo bg-black/40 px-3 py-2.5 text-white placeholder:text-white/40 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all";
+  "rounded-xl border border-sakura-borda-campo bg-campo px-3 py-2.5 text-texto placeholder:text-texto-3 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all";
 
 export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
   // Só vem preenchido quando a usuária está trocando uma conexão já

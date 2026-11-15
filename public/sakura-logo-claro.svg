@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 170" width="620" height="170">
+  <!-- A mesma logo de sakura-logo.svg, pra fundo CLARO (tema claro, #990): a
+       de lá vai do branco ao rosa e sumiria no branco. A logo nova (a flor B)
+       entra na tarefa 6 do visual novo, nas duas versões. -->
+  <defs>
+    <linearGradient id="sakuraGradClaro" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b0a45" />
+      <stop offset="100%" stop-color="#c2189a" />
+    </linearGradient>
+  </defs>
+  <text x="10" y="105" font-family="'Georgia', 'Times New Roman', serif" font-size="88" font-style="italic" fill="url(#sakuraGradClaro)">Sakura System</text>
+  <text x="330" y="145" font-family="'Georgia', 'Times New Roman', serif" font-size="26" font-style="italic" fill="#7a14b8" letter-spacing="4">by Sakura Corp</text>
+</svg>

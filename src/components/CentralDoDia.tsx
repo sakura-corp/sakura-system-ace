@@ -69,7 +69,7 @@ const TELA_DO_TIPO: Record<TipoPendencia, string> = {
 
 const CLASSE_BOTAO =
   "inline-flex h-8 items-center rounded-lg border border-sakura-borda-campo px-3 text-rotulo " +
-  "font-medium text-sakura-purple-dark transition hover:bg-white/10";
+  "font-medium text-sakura-purple-dark transition hover:bg-texto/10";
 
 const EXPLICACAO =
   "O que precisa de atenção hoje, do mais urgente pro menos: nota com problema, caixa sem " +
@@ -310,7 +310,7 @@ export function CentralDoDia({
           {mensagemDaListaVazia(alcance.parcial)}
         </p>
       ) : visiveis.length === 0 ? null : (
-        <ul className="divide-y divide-white/10">
+        <ul className="divide-y divide-texto/10">
           {visiveis.map((p, i) => {
             const ultimoDoTipo = visiveis[i + 1]?.tipo !== p.tipo;
             const sobra = ultimoDoTipo ? escondidas.get(p.tipo) : undefined;

@@ -44,10 +44,10 @@ interface AcoesDaLinhaProps {
 }
 
 const CLASSE_BOTAO_ICONE =
-  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
 
 const CLASSE_BOTAO_TEXTO =
-  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-sakura-purple transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
 
 function IconeLapis() {
   return (
@@ -220,7 +220,7 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
             role="menu"
             aria-label={`Ações — ${descricao}`}
             style={{ top: posicao.top, right: posicao.right }}
-            className="fixed z-[60] min-w-44 rounded-xl border border-white/10 bg-sakura-pink-soft py-1 shadow-xl"
+            className="fixed z-[60] min-w-44 rounded-xl border border-texto/10 bg-sakura-pink-soft py-1 shadow-xl"
           >
             {ordenadas.map((acao) => {
               if (acao.tipo !== "menu") return null;
@@ -238,7 +238,7 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
                   className={`block w-full px-4 py-2 text-left text-corpo transition disabled:cursor-not-allowed disabled:opacity-40 ${
                     acao.perigosa
                       ? "text-red-400 hover:bg-red-500/15"
-                      : "text-sakura-purple-dark hover:bg-white/10"
+                      : "text-sakura-purple-dark hover:bg-texto/10"
                   }`}
                 >
                   {acao.rotulo}

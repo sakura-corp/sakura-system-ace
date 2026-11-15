@@ -96,7 +96,7 @@ export function Explicacao({ titulo, texto }: { titulo: string; texto: string })
             role="dialog"
             aria-label={`O que é ${titulo}`}
             style={{ top: posicao.top, left: posicao.left, width: LARGURA }}
-            className="fixed z-[60] rounded-xl border border-linha-forte bg-passar p-3 shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
+            className="fixed z-[60] rounded-xl border border-linha-forte bg-passar p-3 shadow-[0_18px_40px_var(--sombra-forte)]"
           >
             <p className="text-rotulo font-semibold text-texto">{titulo}</p>
             <p className="mt-1 text-rotulo text-texto-2">{texto}</p>

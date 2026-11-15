@@ -93,7 +93,7 @@ export function CategorizarSemCategoria({
         <p className="rounded-lg bg-red-950/60 px-4 py-2 text-corpo text-red-300">{erro}</p>
       )}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl bg-black/20 p-4">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl bg-poco p-4">
         <label className="flex flex-1 flex-col gap-1 text-corpo">
           <span className="text-sakura-purple-dark/80">Aplicar a todos que estão em branco</span>
           <Combobox

@@ -310,7 +310,7 @@ export function FichaClientePage() {
                     <button
                       type="button"
                       onClick={() => abrirOrdem(ordem.id)}
-                      className="min-h-8 whitespace-nowrap rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-white/10"
+                      className="min-h-8 whitespace-nowrap rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-texto/10"
                     >
                       Abrir
                     </button>

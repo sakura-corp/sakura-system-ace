@@ -9,6 +9,7 @@ import { Modal } from "@/components/Modal";
 import { Selo, type TipoDeSelo } from "@/components/Selo";
 import { Valor, Variacao } from "@/components/Valor";
 import { avisar } from "@/lib/avisoQueSome";
+import { definirTema, useTema } from "@/lib/tema";
 import { formatarMoeda } from "@/schemas/dinheiro";
 
 /**
@@ -60,6 +61,7 @@ function Codigo({ children }: { children: string }) {
 
 export function GaleriaDePecas() {
   const [janelaAberta, setJanelaAberta] = useState(false);
+  const tema = useTema();
 
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-5 p-6">
@@ -69,6 +71,11 @@ export function GaleriaDePecas() {
           Cada peça abaixo é o componente de verdade, o mesmo que as telas vão usar. As regras estão em
           docs/referencia/visual-novo/README.md, seção 6. Os dados são inventados.
         </p>
+        <div className="mt-3">
+          <Botao onClick={() => definirTema(tema === "claro" ? "escuro" : "claro")}>
+            {tema === "claro" ? "Ver no tema escuro" : "Ver no tema claro"}
+          </Botao>
+        </div>
       </header>
 
       <Bloco

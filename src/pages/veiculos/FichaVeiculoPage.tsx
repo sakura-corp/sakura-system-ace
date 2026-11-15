@@ -301,7 +301,7 @@ export function FichaVeiculoPage() {
               return (
                 <li
                   key={ordem.id}
-                  className="rounded-xl border border-sakura-gray/25 bg-black/20 p-4"
+                  className="rounded-xl border border-sakura-gray/25 bg-poco p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -337,7 +337,7 @@ export function FichaVeiculoPage() {
                         <button
                           type="button"
                           onClick={() => abrirOrdem(ordem)}
-                          className="min-h-8 rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-white/10"
+                          className="min-h-8 rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-texto/10"
                         >
                           Abrir OS
                         </button>

@@ -94,6 +94,18 @@
   --color-sobre-dica: #111111; /* a letra dela: 18,9:1 */
   --color-placa: #0e0e13; /* o fundo da placa do carro (componente LinkPlaca) */
   --color-placa-faixa: #2f62e0; /* a faixa azul de cima, que lembra a placa Mercosul */
+  --color-poco: rgba(0, 0, 0, 0.25); /* o fundo rebaixado dentro de um cartão (um total, um trecho de código) */
+
+  /* O laranja quando é LETRA ou ÍCONE (o link, a aba ativa, o ícone do menu).
+     No escuro é o mesmo laranja do botão; no tema claro o laranja do botão em
+     cima do branco dá 3,2:1, então a letra usa um laranja mais fundo. O
+     Tailwind deixa dar um valor só pra cor de letra (`--text-color-*`): assim
+     `text-sakura-pink` e `bg-sakura-pink` podem ter valores diferentes sem
+     nenhuma tela mudar de classe. */
+  --text-color-sakura-pink: #ff7a4d;
+  --text-color-sakura-purple: #ff5722;
+  --text-color-acao: #ff5722;
+  --text-color-acao-clara: #ff7a4d;
 
   /* As duas letras vão DENTRO do programa (importadas no src/main.tsx, dos
      pacotes @fontsource-variable): ele roda sem internet, e em PC sem a Inter
@@ -150,12 +162,122 @@
 
 :root {
   color-scheme: dark;
+
+  /* O que é cor mas não é classe do Tailwind (sombra, anel de foco, barra de
+     rolagem, o fundo do Login…). Fica aqui pra o tema claro trocar junto. */
+  --foco-anel-de-dentro: rgba(10, 10, 13, 0.95);
+  --foco-brilho: rgba(255, 122, 77, 0.45);
+  --foco-campo-anel: rgba(255, 87, 34, 0.22);
+  --rolagem: rgba(255, 255, 255, 0.18);
+  --rolagem-firefox: rgba(255, 255, 255, 0.28);
+  --rolagem-passar: rgba(255, 255, 255, 0.38);
+  --linha-passar: rgba(255, 255, 255, 0.03); /* a linha da tabela com o mouse em cima */
+  --sombra-forte: rgba(0, 0, 0, 0.55); /* do que flutua: dica, aviso, menu de três pontos */
+  --sombra-janela: 0 40px 100px rgba(0, 0, 0, 0.7);
+  --fundo-atras-da-janela: rgba(5, 5, 8, 0.66);
+  --borda-passar: rgba(255, 122, 77, 0.45);
+  --filtro-icone-data: invert(100%);
+  --fundo-icone-data: rgba(0, 0, 0, 0.2);
+  --fundo-icone-data-passar: rgba(0, 0, 0, 0.42);
+  --seta-select: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  --shell-brilho-1: rgba(225, 29, 72, 0.1);
+  --shell-brilho-2: rgba(255, 87, 34, 0.09);
+  --marca-base: #09090c;
+  --marca-mancha-1: rgba(225, 29, 72, 0.92);
+  --marca-mancha-2: rgba(255, 87, 34, 0.95);
+  --marca-mancha-3: rgba(107, 18, 41, 0.9);
+  --grao-mistura: overlay;
+  --grao-opacidade: 0.62;
+  --vidro: rgba(14, 14, 19, 0.72);
+  --vidro-sombra: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* ------------------------------------------------------------------
+   O TEMA CLARO (visual novo, #990; regras, seção 11).
+
+   Liga com `data-tema="claro"` no <html> (quem põe é o src/lib/tema.ts, pela
+   escolha guardada neste computador; o padrão é o escuro). Só troca VALOR:
+   nenhuma tela tem classe de tema. Vale pros nomes de papel e pros nomes
+   antigos (`sakura-purple-dark` é o texto, `sakura-pink-soft` é o cartão…),
+   porque as 54 telas ainda usam os antigos.
+
+   O que muda de ideia, e não só de tom:
+     - as cores de aviso são MAIS ESCURAS: o amarelo e o verde do tema escuro
+       não se leem em fundo branco (1,5:1 e 1,9:1);
+     - o laranja do botão continua o mesmo, com a letra escura (regra 3); o
+       laranja de LETRA é mais fundo (`--text-color-*`), pra dar 4,5:1;
+     - a dica inverte (escura com letra branca) e a placa fica branca com a
+       letra escura, como a placa Mercosul de verdade.
+   ------------------------------------------------------------------ */
+:root[data-tema="claro"] {
+  color-scheme: light;
+
+  --color-fundo: #f3f2ef;
+  --color-painel: #faf9f7;
+  --color-cartao: #ffffff;
+  --color-passar: #efedea;
+  --color-campo: #ffffff;
+  --color-janela: #ffffff;
+  --color-linha: rgba(27, 17, 10, 0.1);
+  --color-linha-forte: rgba(27, 17, 10, 0.22);
+  --color-borda-campo: rgba(27, 17, 10, 0.55); /* 4:1 contra o cartão */
+  --color-texto: #1b1b1f;
+  --color-texto-2: #55555e;
+  --color-texto-3: #6c6c76;
+  --color-info: #1d4ed8;
+  --color-atencao: #8a5300;
+  --color-ok: #05694d;
+  --color-perigo: #b91c1c;
+  --color-zap: #0e7a3f;
+  --color-dica: #1b1b1f;
+  --color-sobre-dica: #ffffff;
+  --color-placa: #ffffff;
+  --color-poco: rgba(27, 17, 10, 0.05);
+  --text-color-sakura-pink: #ad3508;
+  --text-color-sakura-purple: #ad3508;
+  --text-color-acao: #ad3508;
+  --text-color-acao-clara: #ad3508;
+
+  /* Os nomes antigos, com o valor do papel que cada um faz. */
+  --color-sakura-bg: #f3f2ef;
+  --color-sakura-pink-soft: #ffffff;
+  --color-sakura-gray: #55555e;
+  --color-sakura-purple-dark: #1b1b1f;
+  --color-sakura-muted: #55555e;
+  --color-sakura-borda-campo: rgba(27, 17, 10, 0.55);
+  --color-sakura-focus: #ad3508;
+
+  --foco-anel-de-dentro: rgba(255, 255, 255, 0.95);
+  --foco-brilho: rgba(255, 87, 34, 0.35);
+  --foco-campo-anel: rgba(255, 87, 34, 0.26);
+  --rolagem: rgba(27, 17, 10, 0.28);
+  --rolagem-firefox: rgba(27, 17, 10, 0.38);
+  --rolagem-passar: rgba(27, 17, 10, 0.5);
+  --linha-passar: rgba(27, 17, 10, 0.035);
+  --sombra-forte: rgba(60, 35, 20, 0.22);
+  --sombra-janela: 0 40px 100px rgba(60, 35, 20, 0.3);
+  --fundo-atras-da-janela: rgba(40, 30, 25, 0.45);
+  --borda-passar: rgba(173, 53, 8, 0.55);
+  --filtro-icone-data: none;
+  --fundo-icone-data: rgba(27, 17, 10, 0.08);
+  --fundo-icone-data-passar: rgba(27, 17, 10, 0.18);
+  --seta-select: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2355555e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+  --shell-brilho-1: rgba(225, 29, 72, 0.07);
+  --shell-brilho-2: rgba(255, 87, 34, 0.09);
+  --marca-base: #fff3ea;
+  --marca-mancha-1: rgba(225, 29, 72, 0.78);
+  --marca-mancha-2: rgba(255, 87, 34, 0.9);
+  --marca-mancha-3: rgba(255, 160, 112, 0.85);
+  --grao-mistura: soft-light;
+  --grao-opacidade: 0.75;
+  --vidro: rgba(255, 255, 255, 0.8);
+  --vidro-sombra: 0 30px 80px -20px rgba(120, 40, 10, 0.4);
 }
 
 body {
   background-color: var(--color-sakura-bg);
   font-family: var(--font-sans);
-  color: #f4f4f5;
+  color: var(--color-sakura-purple-dark);
 }
 
 /* Título de tela e de seção na letra dos títulos (Plus Jakarta Sans). O
@@ -170,12 +292,12 @@ body {
 input,
 select,
 textarea {
-  color: #fff;
+  color: var(--color-texto);
 }
 
 option {
-  background-color: var(--color-sakura-pink-soft); /* Fundo bem escuro pra ler bem */
-  color: #fff;
+  background-color: var(--color-sakura-pink-soft); /* o tom do cartão, pra ler bem */
+  color: var(--color-texto);
 }
 
 input[type="checkbox"],
@@ -194,19 +316,19 @@ input[type="radio"] {
    que aparece na tela. O `rgba(0, 0, 0, ...)` abaixo é o que vira um cinza
    claro depois da inversão; escrever branco ali sumiria com o fundo. */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(100%);
+  filter: var(--filtro-icone-data);
   cursor: pointer;
   width: 1.15rem;
   height: 1.15rem;
   padding: 3px;
   margin-left: 2px;
   border-radius: 6px;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--fundo-icone-data);
   opacity: 1;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  background-color: rgba(0, 0, 0, 0.42);
+  background-color: var(--fundo-icone-data-passar);
 }
 
 /* Setinhas de somar/subtrair dentro dos campos numéricos: escondidas de
@@ -261,8 +383,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     outline: 2px solid var(--color-sakura-focus);
     outline-offset: 2px;
     box-shadow:
-      0 0 0 2px rgba(10, 10, 13, 0.95),
-      0 0 12px rgba(255, 122, 77, 0.45);
+      0 0 0 2px var(--foco-anel-de-dentro),
+      0 0 12px var(--foco-brilho);
   }
 }
 
@@ -295,7 +417,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+    scrollbar-color: var(--rolagem-firefox) transparent;
   }
 
   ::-webkit-scrollbar {
@@ -316,14 +438,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
   ::-webkit-scrollbar-thumb {
     /* Cinza, e não laranja: laranja é só ação (regra 2 do visual novo). */
-    background-color: rgba(255, 255, 255, 0.18);
+    background-color: var(--rolagem);
     border-radius: 9999px;
     border: 3px solid transparent;
     background-clip: padding-box;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.38);
+    background-color: var(--rolagem-passar);
   }
 }
 
@@ -333,8 +455,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 @utility sakura-shell-bg {
   background-color: var(--color-sakura-bg);
   background-image:
-    radial-gradient(circle at 6% 0%, rgba(225, 29, 72, 0.1), transparent 42%),
-    radial-gradient(circle at 96% 100%, rgba(255, 87, 34, 0.09), transparent 46%);
+    radial-gradient(circle at 6% 0%, var(--shell-brilho-1), transparent 42%),
+    radial-gradient(circle at 96% 100%, var(--shell-brilho-2), transparent 46%);
   background-attachment: fixed;
 }
 
@@ -344,11 +466,11 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    `sakura-grao`. Só onde as regras deixam: Login, o cartão de destaque do
    Início e o material de divulgação. */
 @utility sakura-fundo-marca {
-  background-color: #09090c;
+  background-color: var(--marca-base);
   background-image:
-    radial-gradient(72% 88% at 0% 0%, rgba(225, 29, 72, 0.92), transparent 64%),
-    radial-gradient(66% 86% at 100% 100%, rgba(255, 87, 34, 0.95), transparent 62%),
-    radial-gradient(42% 52% at 88% 0%, rgba(107, 18, 41, 0.9), transparent 72%);
+    radial-gradient(72% 88% at 0% 0%, var(--marca-mancha-1), transparent 64%),
+    radial-gradient(66% 86% at 100% 100%, var(--marca-mancha-2), transparent 62%),
+    radial-gradient(42% 52% at 88% 0%, var(--marca-mancha-3), transparent 72%);
 }
 
 /* O grão: uma camada de ruído por cima do degradê (copiada do conceito,
@@ -368,8 +490,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     z-index: 1;
     border-radius: inherit;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/><feComponentTransfer><feFuncR type='linear' slope='3.2' intercept='-1.1'/><feFuncG type='linear' slope='3.2' intercept='-1.1'/><feFuncB type='linear' slope='3.2' intercept='-1.1'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-    mix-blend-mode: overlay;
-    opacity: 0.62;
+    mix-blend-mode: var(--grao-mistura);
+    opacity: var(--grao-opacidade);
     pointer-events: none;
   }
 }
@@ -395,10 +517,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 @utility sakura-vidro {
   border-radius: 1.625rem;
   border: 1px solid var(--color-linha-forte);
-  background-color: rgba(14, 14, 19, 0.72);
+  background-color: var(--vidro);
   backdrop-filter: blur(22px) saturate(1.2);
   -webkit-backdrop-filter: blur(22px) saturate(1.2);
-  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--vidro-sombra);
 }
 
 /* Janela (modal) por cima da tela (visual novo, seção 6 das regras).
@@ -422,7 +544,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background-color: rgba(5, 5, 8, 0.66);
+  background-color: var(--fundo-atras-da-janela);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -431,7 +553,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   border-radius: 1.375rem;
   border: 1px solid var(--color-linha-forte);
   background-color: var(--color-janela);
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
+  box-shadow: var(--sombra-janela);
 }
 
 /* ------------------------------------------------------------------
@@ -475,7 +597,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     border-color: var(--color-acao-clara);
     box-shadow:
       0 0 0 1px var(--color-acao-clara),
-      0 0 0 4px rgba(255, 87, 34, 0.22);
+      0 0 0 4px var(--foco-campo-anel);
   }
 
   /* O que a validação recusou: borda vermelha (e o texto do erro embaixo, que
@@ -505,7 +627,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   &:is(select) {
     appearance: none;
     padding-right: 2.25rem;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-image: var(--seta-select);
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
   }
@@ -580,7 +702,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 
   & tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: var(--linha-passar);
   }
 }
 
@@ -596,7 +718,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   border-radius: 9999px;
   border: 1px solid var(--color-linha-forte);
   background-color: var(--color-cartao);
-  color: var(--color-acao-clara);
+  color: var(--text-color-acao-clara);
   transition:
     transform 0.12s ease,
     background-color 0.15s ease,
@@ -604,7 +726,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
   &:hover {
     background-color: var(--color-passar);
-    border-color: rgba(255, 122, 77, 0.45);
+    border-color: var(--borda-passar);
   }
 
   &:active {
