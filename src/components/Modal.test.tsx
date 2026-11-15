@@ -174,3 +174,89 @@ describe("Modal: largura", () => {
     expect(screen.getByRole("dialog").getAttribute("aria-describedby")).toBe(descricao.id);
   });
 });
+
+// O visual novo (#990, tarefa 2): o total no cabeçalho e as ações no rodapé.
+describe("Modal: cabeçalho com total e rodapé com as ações", () => {
+  it("o total aparece no cabeçalho, com o rótulo dele", () => {
+    abrir((onFechar) => (
+      <Modal titulo="Faturar a OS 148" total={{ rotulo: "Total da OS", valor: "R$ 1.240,00" }} onFechar={onFechar}>
+        <p>conteúdo</p>
+      </Modal>
+    ));
+    const cabecalho = screen.getByRole("heading", { name: "Faturar a OS 148" }).closest("[data-modal-topo]");
+    expect(cabecalho).not.toBeNull();
+    expect(cabecalho?.textContent).toContain("Total da OS");
+    expect(cabecalho?.textContent).toContain("R$ 1.240,00");
+  });
+
+  it("as ações do rodapé ficam FORA da parte que rola: o botão de confirmar nunca some da vista", () => {
+    abrir((onFechar) => (
+      <Modal
+        titulo="Faturar a OS 148"
+        onFechar={onFechar}
+        rodape={
+          <>
+            <button type="button">Cancelar</button>
+            <button type="button">Confirmar</button>
+          </>
+        }
+      >
+        <p>conteúdo comprido</p>
+      </Modal>
+    ));
+    const dialogo = screen.getByRole("dialog");
+    const corpo = dialogo.querySelector("[data-modal-corpo]");
+    const rodape = dialogo.querySelector("[data-modal-rodape]");
+    expect(corpo?.textContent).toContain("conteúdo comprido");
+    expect(rodape?.textContent).toBe("CancelarConfirmar");
+    expect(corpo?.contains(rodape as Node)).toBe(false);
+    // Quem rola é o corpo, não a janela inteira (senão o rodapé rolaria junto).
+    expect(corpo?.className).toContain("overflow-y-auto");
+    expect(dialogo.className).not.toContain("overflow-y-auto");
+  });
+
+  it("a nota do rodapé (a conta final) fica à esquerda das ações", () => {
+    abrir((onFechar) => (
+      <Modal
+        titulo="Faturar"
+        onFechar={onFechar}
+        notaDoRodape="Recebido agora: R$ 620,00"
+        rodape={<button type="button">Confirmar</button>}
+      >
+        <p>conteúdo</p>
+      </Modal>
+    ));
+    const rodape = screen.getByRole("dialog").querySelector("[data-modal-rodape]");
+    expect(rodape?.textContent).toBe("Recebido agora: R$ 620,00Confirmar");
+  });
+
+  it("com rodapé, o foco ainda começa no ✕: Enter no automático fecha, nunca confirma", () => {
+    abrir((onFechar) => (
+      <Modal titulo="Cancelar nota" onFechar={onFechar} rodape={<button type="button">Confirmar cancelamento</button>}>
+        <p>Não dá pra desfazer.</p>
+      </Modal>
+    ));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar" }));
+  });
+
+  it("o Tab passa pelas ações do rodapé e dá a volta, sem escapar", () => {
+    abrir((onFechar) => (
+      <Modal titulo="Teste" onFechar={onFechar} rodape={<button type="button">Confirmar</button>}>
+        <input aria-label="campo" />
+      </Modal>
+    ));
+    const confirmar = screen.getByRole("button", { name: "Confirmar" });
+    confirmar.focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Fechar" }));
+  });
+
+  it("sem rodapé, não sobra uma faixa vazia embaixo", () => {
+    abrir((onFechar) => (
+      <Modal titulo="Teste" onFechar={onFechar}>
+        <p>conteúdo</p>
+      </Modal>
+    ));
+    expect(screen.getByRole("dialog").querySelector("[data-modal-rodape]")).toBeNull();
+  });
+});

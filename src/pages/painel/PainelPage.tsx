@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { MiniCalendario, type EventoCalendario } from "@/components/MiniCalendario";
 import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { Valor, Variacao } from "@/components/Valor";
-import { Explicacao } from "@/components/Explicacao";
+import { CartaoNumero } from "@/components/CartaoNumero";
 import { useAuth } from "@/contexts/AuthContext";
 import { feriadosNacionais } from "@/lib/feriados";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
@@ -44,6 +44,7 @@ import {
   type PeriodoResumoDono,
 } from "@/schemas/whatsapp";
 import { CentralDoDia } from "@/components/CentralDoDia";
+import { nomeDoMesAnterior } from "@/schemas/centralDoDia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { listarOrdens } from "@/lib/ordensServico";
 import {
@@ -64,14 +65,6 @@ const TITULO_CARTAO: Record<CartaoMetrica, string> = {
   lucro_mes: "Lucro do mês",
   ticket_medio_mes: "Ticket médio",
   contas_pagar_vencendo: "Contas a pagar vencendo",
-};
-
-const COR_CARTAO: Record<CartaoMetrica, string> = {
-  vendas_mes: "#B38DAC",
-  custos_mes: "#C7C7C7",
-  lucro_mes: "#6E4D68",
-  ticket_medio_mes: "#7A9CC6",
-  contas_pagar_vencendo: "#D99A4E",
 };
 
 /** Reconstrói a data a partir de "YYYY-MM-DD", sem fuso no meio do caminho. */
@@ -384,7 +377,7 @@ export function PainelPage() {
                 variacao={variacoes[chave]}
                 semAcessoA={moduloQueFaltaAoCartao(chave, (m) => temPermissao(operador, m))}
                 subirEBom={SUBIR_E_BOM[chave]}
-                cor={COR_CARTAO[chave]}
+                mesAnterior={nomeDoMesAnterior(chaveDeHoje)}
               />
             ))}
           </div>
@@ -538,7 +531,7 @@ function CartaoValor({
   valor,
   variacao,
   subirEBom,
-  cor,
+  mesAnterior,
   semAcessoA,
 }: {
   titulo: string;
@@ -546,42 +539,30 @@ function CartaoValor({
   valor: number;
   variacao: number | null;
   subirEBom: boolean;
-  cor: string;
+  /** "outubro": o nome do mês com que a variação compara, escrito no cartão. */
+  mesAnterior: string;
   /** O módulo que o operador não tem — aí o cartão mostra "—", não R$ 0,00. */
   semAcessoA: ModuloChave | null;
 }) {
   return (
-    <div
-      className="sakura-card p-5"
-      style={{
-        boxShadow:
-          "0 14px 34px -10px rgba(110, 77, 104, 0.4), " +
-          "0 2px 8px -2px rgba(110, 77, 104, 0.2), " +
-          "inset 0 1px 0 rgba(255, 255, 255, 0.75), " +
-          `inset -12px 2px 26px -6px ${cor}66`,
-      }}
+    <CartaoNumero
+      titulo={titulo}
+      explicacao={explicacao}
+      semAcesso={
+        semAcessoA
+          ? `Sem acesso a ${MODULOS.find((m) => m.chave === semAcessoA)?.label ?? semAcessoA}`
+          : undefined
+      }
+      variacao={
+        <Variacao
+          percentual={variacao}
+          subirEBom={subirEBom}
+          comparadoCom="o mesmo período do mês passado"
+          contra={mesAnterior}
+        />
+      }
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-rotulo text-sakura-muted">{titulo}</p>
-        <Explicacao titulo={titulo} texto={explicacao} />
-      </div>
-      {semAcessoA ? (
-        <div className="mt-2">
-          <p className="text-metrica font-semibold text-sakura-muted">—</p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            Sem acesso a {MODULOS.find((m) => m.chave === semAcessoA)?.label ?? semAcessoA}
-          </p>
-        </div>
-      ) : (
-        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <Valor valor={valor} className="text-metrica font-semibold" />
-          <Variacao
-            percentual={variacao}
-            subirEBom={subirEBom}
-            comparadoCom="o mesmo período do mês passado"
-          />
-        </div>
-      )}
-    </div>
+      <Valor valor={valor} />
+    </CartaoNumero>
   );
 }

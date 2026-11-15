@@ -23,7 +23,7 @@ function classesDe(html: string): string[] {
 describe("Valor", () => {
   it("marca o negativo com cor, seta e sinal — não só com a cor", () => {
     const html = renderToStaticMarkup(<Valor valor={-8368} />);
-    expect(html).toContain("text-red-400");
+    expect(html).toContain("text-perigo");
     expect(html).toContain("▼");
     expect(html).toContain("−");
     expect(html).toContain("8.368,00");
@@ -42,7 +42,8 @@ describe("Valor", () => {
 
   it("o positivo sai com a cor normal, sem seta", () => {
     const html = renderToStaticMarkup(<Valor valor={1200} />);
-    expect(html).toContain("text-sakura-purple-dark");
+    expect(html).toContain("text-texto");
+    expect(html).not.toContain("text-perigo");
     expect(html).not.toContain("▼");
   });
 });
@@ -59,7 +60,7 @@ describe("Variacao", () => {
     const html = renderToStaticMarkup(
       <Variacao percentual={12} subirEBom comparadoCom="o mês passado" />,
     );
-    expect(html).toContain("text-emerald-400");
+    expect(html).toContain("text-ok");
     expect(html).toContain("+12%");
   });
 
@@ -67,7 +68,7 @@ describe("Variacao", () => {
     const html = renderToStaticMarkup(
       <Variacao percentual={30} subirEBom={false} comparadoCom="o mês passado" />,
     );
-    expect(html).toContain("text-red-400");
+    expect(html).toContain("text-perigo");
   });
 
   it("não escreve porcentagem absurda — acima do teto vira 'mais de'", () => {
@@ -87,7 +88,32 @@ describe("Variacao", () => {
     const html = renderToStaticMarkup(
       <Variacao percentual={-30} subirEBom={false} comparadoCom="o mês passado" />,
     );
-    expect(html).toContain("text-emerald-400");
+    expect(html).toContain("text-ok");
     expect(html).toContain("−30%");
+  });
+
+  // Visual novo (#990, regra 4): a cor nunca avisa sozinha. A seta diz pra
+  // que lado foi, e o texto diz com o que se compara.
+  it("tem uma seta desenhada (ícone), que o leitor de tela pula: o sinal já está no número", () => {
+    const html = renderToStaticMarkup(
+      <Variacao percentual={12} subirEBom comparadoCom="o mês passado" />,
+    );
+    expect(html).toMatch(/<svg[^>]*aria-hidden="true"/);
+    expect(html).toContain("lucide-arrow-up");
+  });
+
+  it("com `contra`, escreve com o que compara ao lado do número", () => {
+    const html = renderToStaticMarkup(
+      <Variacao percentual={12} subirEBom comparadoCom="o mesmo período do mês passado" contra="outubro" />,
+    );
+    const visivel = html.replace(/\s+title="[^"]*"/g, "").replace(/<[^>]+>/g, "");
+    expect(visivel).toContain("contra outubro");
+  });
+
+  it("sem `contra`, não inventa texto nenhum", () => {
+    const html = renderToStaticMarkup(
+      <Variacao percentual={12} subirEBom comparadoCom="o mês passado" />,
+    );
+    expect(html.replace(/\s+title="[^"]*"/g, "")).not.toContain("contra");
   });
 });

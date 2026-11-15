@@ -69,7 +69,7 @@ const VARIANTE: Record<VarianteDoBotao, string[]> = {
 const TAMANHO: Record<TamanhoDoBotao, string> = {
   pequeno: "h-8 gap-1.5 rounded-[10px] px-3 text-rotulo [&_svg]:size-4",
   medio: "h-10 gap-2 rounded-xl px-4 text-corpo [&_svg]:size-[17px]",
-  grande: "h-12 justify-center gap-2 rounded-[14px] px-5 text-base [&_svg]:size-[18px]",
+  grande: "h-12 justify-center gap-2 rounded-[14px] px-5 text-botao-grande [&_svg]:size-[18px]",
 };
 
 // Botão só com ícone: quadrado, do lado do tamanho.

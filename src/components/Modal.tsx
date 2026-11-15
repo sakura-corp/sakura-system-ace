@@ -1,9 +1,11 @@
+import { X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
 // Classes escritas por extenso: o Tailwind só gera a classe que acha inteira
 // no código, nunca uma montada por texto (`max-w-${largura}`).
 const CLASSE_DA_LARGURA = {
   lg: "max-w-lg",
+  "3xl": "max-w-3xl",
   "4xl": "max-w-4xl",
   "5xl": "max-w-5xl",
 } as const;
@@ -14,6 +16,21 @@ interface ModalProps {
   descricao?: string;
   /** Sem dizer, "lg": o tamanho de sempre. As janelas com tabela usam as maiores. */
   largura?: keyof typeof CLASSE_DA_LARGURA;
+  /**
+   * Um valor em destaque no cabeçalho, à direita do título: o total da OS na
+   * janela de faturar, por exemplo. O `valor` vem pronto de quem chama
+   * (formatado; conta de dinheiro nunca é feita aqui).
+   */
+  total?: { rotulo: string; valor: ReactNode };
+  /**
+   * As ações da janela, embaixo à direita, **o botão principal por último**.
+   * Ficam fora da parte que rola: numa janela comprida, "Confirmar" está
+   * sempre à vista. Sem isto, a janela não tem rodapé (as que já existiam
+   * trazem os botões dentro do conteúdo, e continuam funcionando).
+   */
+  rodape?: ReactNode;
+  /** Um texto à esquerda das ações: a conta final, um aviso curto. */
+  notaDoRodape?: ReactNode;
   onFechar: () => void;
   children: ReactNode;
 }
@@ -75,7 +92,21 @@ function inertizarFundo(elementoDoModal: HTMLElement): () => void {
   };
 }
 
-export function Modal({ titulo, descricao, largura = "lg", onFechar, children }: ModalProps) {
+/**
+ * A janela do programa. Aparência do visual novo (#990, seção 6 das regras):
+ * painel opaco, canto de 22 px, o título (e o total, se houver) em cima, o
+ * conteúdo rolando no meio e as ações embaixo à direita.
+ */
+export function Modal({
+  titulo,
+  descricao,
+  largura = "lg",
+  total,
+  rodape,
+  notaDoRodape,
+  onFechar,
+  children,
+}: ModalProps) {
   const tituloId = useId();
   const descricaoId = useId();
   const sobreposicaoRef = useRef<HTMLDivElement>(null);
@@ -164,30 +195,54 @@ export function Modal({ titulo, descricao, largura = "lg", onFechar, children }:
         aria-labelledby={tituloId}
         aria-describedby={descricao ? descricaoId : undefined}
         tabIndex={-1}
-        className={`sakura-modal max-h-[85vh] w-full ${CLASSE_DA_LARGURA[largura]} overflow-y-auto p-6`}
+        className={`sakura-modal flex max-h-[85vh] w-full ${CLASSE_DA_LARGURA[largura]} flex-col overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div>
-            <h2 id={tituloId} className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <div data-modal-topo className="flex shrink-0 items-start gap-4 border-b border-linha px-[22px] pb-4 pt-5">
+          <div className="min-w-0 flex-1">
+            <h2 id={tituloId} className="text-subtitulo font-bold text-texto">
               {titulo}
             </h2>
             {descricao && (
-              <p id={descricaoId} className="text-corpo text-sakura-muted">
+              <p id={descricaoId} className="mt-0.5 text-corpo text-texto-2">
                 {descricao}
               </p>
             )}
           </div>
+          {total && (
+            <div className="shrink-0 text-right">
+              <p className="text-meta text-texto-2">{total.rotulo}</p>
+              <p className="font-titulo text-destaque font-bold tracking-[-0.02em] text-texto tabular-nums">
+                {total.valor}
+              </p>
+            </div>
+          )}
+          {/* Depois do título e do total no HTML, mas antes do conteúdo: é o
+              primeiro lugar onde o foco para ao abrir (ver o efeito acima). */}
           <button
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="shrink-0 rounded-full p-1.5 text-sakura-purple-dark/85 hover:bg-sakura-gray/10 hover:text-sakura-purple-dark"
+            className="-mr-1.5 -mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-texto-2 transition-colors hover:bg-passar hover:text-texto"
           >
-            ✕
+            <X aria-hidden="true" className="size-[18px]" />
           </button>
         </div>
-        {children}
+        {/* Só o corpo rola: o cabeçalho e o rodapé ficam parados. A barra é a
+            nativa, discreta (a do globals.css), de propósito: ver o comentário
+            de lá. */}
+        <div data-modal-corpo className="min-h-0 flex-1 overflow-y-auto px-[22px] py-[18px]">
+          {children}
+        </div>
+        {rodape && (
+          <div
+            data-modal-rodape
+            className="flex shrink-0 flex-wrap items-center gap-3 border-t border-linha px-[22px] pb-5 pt-4"
+          >
+            {notaDoRodape && <div className="min-w-0 text-corpo text-texto-2">{notaDoRodape}</div>}
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{rodape}</div>
+          </div>
+        )}
       </div>
     </div>
   );

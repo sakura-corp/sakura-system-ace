@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
+import { AvisosQueSomem } from "./components/AvisoQueSome";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
 import { BuscaGlobal } from "./components/BuscaGlobal";
 import { FaixaSemConexao } from "./components/FaixaSemConexao";
@@ -159,6 +160,7 @@ export default function App() {
   return (
     <div className="sakura-shell-bg flex h-screen gap-4 overflow-hidden p-4">
       <VersaoApp />
+      <AvisosQueSomem />
       <Sidebar />
       <main className="min-h-0 min-w-0 flex-1">
         <AreaRolavel className="p-4">

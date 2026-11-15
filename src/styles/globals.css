@@ -136,6 +136,8 @@
   --text-destaque--line-height: 1.25;
   --text-subtitulo: 1.125rem; /* título de seção dentro da tela */
   --text-subtitulo--line-height: 1.25;
+  --text-botao-grande: 1rem; /* só o texto do botão de 48 px (o "Entrar" do Login) */
+  --text-botao-grande--line-height: 1.25;
   --text-corpo: 0.875rem; /* texto normal — a base do app */
   --text-corpo--line-height: 1.45;
   --text-tabela: 0.8125rem; /* tabela DENSA (muita coluna); a normal usa corpo */
