@@ -169,9 +169,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ### 15/11/2026 (madrugada): visual novo, a tarefa 2 na `main` (as peças)
 - **Feito** (#1045, nada publicado): as peças (`Botao`, `Selo`, `Dica`, `CartaoNumero`, o aviso que some, a placa, a janela, campo e tabela). O cartão virou sólido; o vidro ficou só no Login. A mostra: `docs/referencia/visual-novo/pecas.html`.
-- **Pedidos dela em 15/11** (regras, seção 12): quem mexe numa tela procura o que deixaria ela menos confusa; a barra da janela na cor do programa (tarefa 6); a nota do cliente fácil de achar e os botões de baixar claros (Notas Fiscais e tarefa 7).
+- **Pedidos dela em 15/11** (regras, seção 12): quem mexe numa tela procura o que a deixaria menos confusa; a barra da janela na cor do programa (tarefa 6); a nota do cliente fácil de achar e os botões de baixar claros (Notas Fiscais e tarefa 7).
 - **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **tema claro** já tem sessão aberta (ela vê por imagem antes); depois o menu, o Início, o movimento, a logo com o Login e as OS.
 - **Atenção, equipe**: tela nova usa as peças (regras, seção 6); botão `bg-sakura-purple` com `text-white` reprova no `contraste` (a letra é `text-sobre-acao`).
-- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
 - **Com a Sofia**: no teste do fim de semana, a letra nova com o Wi-Fi desligado, a placa com a faixa azul e o fundo desfocado das janelas (em 03/10: nítido); #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
 - Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
