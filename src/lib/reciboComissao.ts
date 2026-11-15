@@ -6,19 +6,14 @@
 // Mesma técnica da garantia e do recibo de nota: HTML num iframe, com o
 // botão Imprimir do próprio app.
 import { diaBrasileiro as dataBr } from "@/lib/datas";
+import { escaparHtml } from "@/lib/html";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
 import { nomeOrdem } from "@/types/os";
 
-/** Todo texto que veio do banco passa por aqui antes de virar HTML. */
-export function escaparHtml(texto: string): string {
-  return texto
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+// Todo texto que veio do banco passa por `escaparHtml` antes de virar HTML.
+// A função mora em `@/lib/html` (#978); o reexport fica pra quem já importa daqui.
+export { escaparHtml };
 
 
 const PAPEL = { vendedor: "Vendedor (atendeu a OS)", tecnico: "Técnico (executou o item)" } as const;

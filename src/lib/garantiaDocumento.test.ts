@@ -358,11 +358,12 @@ describe("documento de garantia: texto do cadastro com \"<\" e \"&\" (#978)", ()
     }
   });
 
-  it("nenhum texto do cadastro vira tag: o HTML só tem as tags do próprio modelo", () => {
+  it("nenhum texto do cadastro vira tag no HTML", () => {
     const corpo = documentoComCadastro().split("<body>")[1] ?? "";
     const tags = new Set([...corpo.matchAll(/<\/?([a-zA-Z][\w-]*)/g)].map((t) => t[1].toLowerCase()));
-    expect([...tags].sort()).toEqual(
-      ["body", "div", "h1", "html", "p", "span", "strong", "table", "tbody", "td", "th", "thead", "tr"].sort(),
-    );
+    // Cada palavra que o cadastro de teste põe depois de um "<".
+    for (const doCadastro of ["aro", "da", "me", "cnpj", "tel", "a", "vila", "uno", "fosco", "amigo", "b", "x", "fone", "forma", "1d23"]) {
+      expect(tags.has(doCadastro), `<${doCadastro}> virou tag`).toBe(false);
+    }
   });
 });

@@ -1,6 +1,6 @@
 import type { Cliente, Veiculo } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
-import { escaparHtml } from "@/lib/reciboComissao";
+import { escaparHtml } from "@/lib/html";
 import { calcularListaParcelas } from "@/schemas/faturamento";
 import { totaisDoDocumento, valorLiquidoDoItem } from "@/schemas/valorItem";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
@@ -95,6 +95,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   const nomeLoja = escaparHtml(loja?.nome_fantasia || loja?.razao_social || "—");
   const contatoLoja = escaparHtml([loja?.telefone, loja?.email].filter(Boolean).join(" · "));
   const nomeDoc = escaparHtml(nomeDocumento(ordem));
+  const enderecoDaLoja = enderecoLoja(loja);
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -146,7 +147,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 <body>
   <div class="cabecalho">
     <h1>${nomeLoja}</h1>
-    ${enderecoLoja(loja) ? `<p class="subtitulo">${enderecoLoja(loja)}</p>` : ""}
+    ${enderecoDaLoja ? `<p class="subtitulo">${enderecoDaLoja}</p>` : ""}
     ${contatoLoja ? `<p class="subtitulo">${contatoLoja}</p>` : ""}
     <p class="subtitulo" style="margin-top:8px;font-weight:600;">
       Garantia — ${nomeDoc} · ${formatarData(ordem.data_fechamento)}
