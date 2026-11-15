@@ -3,7 +3,7 @@
 - **Tarefa**: #978, documento de garantia: texto do cadastro entrava no HTML sem escapar "<" e "&"
 - **Chefe**: frontend
 - **Data**: 2026-11-15
-- **PR**: ver a descrição do PR da branch `claude/tarefa-978-frontend-xm6qfw`
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1053
 - **Jeito**: sessão direta
 
 ## O que cada agente fez
