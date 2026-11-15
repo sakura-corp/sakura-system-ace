@@ -38,7 +38,7 @@ export function AvisosQueSomem() {
       {avisos.map((aviso) => (
         <div
           key={aviso.id}
-          className="flex max-w-[min(32rem,100%)] items-center gap-2.5 rounded-[14px] border border-linha-forte bg-passar py-3 pl-3.5 pr-[18px] text-corpo font-medium text-texto shadow-[0_18px_40px_rgba(0,0,0,0.6)]"
+          className="flex max-w-[min(32rem,100%)] items-center gap-2.5 rounded-[14px] border border-linha-forte bg-passar py-3 pl-3.5 pr-[18px] text-corpo font-medium text-texto shadow-[0_18px_40px_var(--sombra-forte)]"
         >
           <CircleCheck aria-hidden="true" className="size-[18px] shrink-0 text-ok" />
           <span className="min-w-0">{aviso.texto}</span>

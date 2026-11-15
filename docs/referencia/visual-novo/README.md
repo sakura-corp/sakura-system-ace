@@ -345,9 +345,8 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
 
 ## 11. O que ficou aberto
 
-- **O tema claro**: falta desenhar (as superfícies claras, e conferir cada cor de aviso contra fundo
-  claro, porque o amarelo e o verde de hoje não passam no branco). Onde fica a configuração: por
-  computador, em Configurações, é a recomendação.
+- **O tema claro**: desenhado em 15/11 e **esperando o "sim" da Sofia** (seção 13). Enquanto ela não
+  aprovar a cara, não entra na `main`.
 - **O ícone que muda com o tema**: dentro do programa (menu, Login) é simples. O ícone do Windows (área
   de trabalho, instalador) é um arquivo só, fixo: fica o claro. O da barra de tarefas dá pra trocar
   com o programa aberto; decidir se vale o trabalho.
@@ -407,6 +406,62 @@ pro visual novo faz, na mesma tarefa:
   pacote que vai pro contador de uma vez.
 - Antes de desenhar, conferir a #773 (o "Ver documento oficial completo" da NFS-e que não abre):
   pode ser parte do mesmo aperto.
+
+## 13. O tema claro (RASCUNHO de 15/11/2026, esperando o "sim" da Sofia)
+
+**Como funciona.** O tema é um atributo no `<html>` (`data-tema="claro"`), posto pelo
+`src/lib/tema.ts` com a escolha guardada **neste computador** (o padrão é o escuro). Quem troca é a
+seção **"Aparência deste computador"**, em Configurações: troca na hora, sem salvar. Os valores do
+segundo tema estão num bloco só do `src/styles/globals.css` (`:root[data-tema="claro"]`). **Nenhuma
+tela tem classe de tema**: a tela usa o nome de papel (ou o nome antigo) e o valor troca sozinho. Só
+a logo pergunta qual é o tema (`useTema()`), porque troca de arquivo.
+
+**As cores do claro** (contraste contra o cartão branco):
+
+| Papel | Escuro | Claro | |
+|---|---|---|---|
+| `fundo` | `#0A0A0D` | `#F3F2EF` | um branco levemente quente, pra combinar com o laranja |
+| `painel` | `#121217` | `#FAF9F7` | |
+| `cartao`, `campo`, `janela` | `#191920`… | `#FFFFFF` | |
+| `passar` | `#22222B` | `#EFEDEA` | |
+| `linha` / `linha-forte` | branco a 8% / 16% | escuro a 10% / 22% | |
+| `borda-campo` | branco a 35% | escuro a 55% | 4:1 |
+| `texto` | `#FFFFFF` | `#1B1B1F` | 17:1 |
+| `texto-2` | `#A1A1AA` | `#55555E` | 7,4:1 |
+| `texto-3` | `#8A8A94` | `#6C6C76` | 5,2:1 |
+| `acao` e `sobre-acao` | `#FF5722` e `#1B0B05` | **iguais** | o botão é o mesmo nos dois (regra 3) |
+| laranja como **letra ou ícone** | `#FF7A4D` | `#AD3508` | o laranja do botão em letra no branco dá 3,2:1 |
+| laranja como **borda de foco** | `#FF5722` | `#D9430F` | o contorno pede 3:1 |
+| `info` | `#60A5FA` | `#1D4ED8` | |
+| `atencao` | `#FACC15` | `#8A5300` | o amarelo vira um âmbar escuro: amarelo no branco dá 1,5:1 |
+| `ok` | `#34D399` | `#05694D` | |
+| `perigo` | `#F87171` | `#B91C1C` | |
+| `zap` | `#25D366` | `#0E7A3F` | |
+| `dica` e `sobre-dica` | branca, letra preta | **escura, letra branca** | inverte, pra continuar saltando |
+| `placa` | `#0E0E13` | `#FFFFFF` | branca com a letra escura, como a placa Mercosul de verdade |
+| `poco` (fundo rebaixado) | preto a 25% | escuro a 5% | novo: entrou no lugar do `bg-black/20` e `/30` |
+
+**(escolhas do Claude)**, todas. O carmesim e o cartão de destaque não mudam: o destaque continua
+escuro nos dois temas, é o momento de marca.
+
+**Regras pra quem escreve tela** (valem desde já, nos dois temas):
+- **Nada de `text-white`, `bg-white/10`, `border-white/10`, `bg-black/20`** em cima de superfície do
+  tema: é `text-texto`, `bg-texto/10`, `border-texto/10`, `bg-poco`. No escuro dá na mesma; no claro
+  é o que faz a tela aparecer. `text-white` só em cima de cor cheia (um botão vermelho).
+- **Sombra do que flutua**: `var(--sombra-forte)`, não `rgba(0,0,0,…)`.
+- **As varreduras rodam nos dois temas**: `npm run contraste` (rápida) e `npm run contraste:telas`
+  (`-- claro` ou `-- escuro` roda um só). Reprovou num, reprovou.
+- **Fotos nos dois temas**: `node docs/referencia/visual-novo/fotografar-telas.mjs <pasta> [cenas]` e
+  `fotografar-pecas.mjs <pasta> claro`. As desta tarefa estão em `andamento/3-tema-claro/`.
+
+**O que ficou de fora, de propósito**: a logo de dentro do programa no claro é a antiga com a letra
+escura (`public/sakura-logo-claro.svg`); a nova, nas duas versões, é da tarefa 6. A barra da janela
+e o fundo com que o Electron nasce também são da tarefa 6. O Login no claro usa o mesmo desenho de
+manchas com grão, em base creme.
+
+**Sugestões achadas de passagem** (seção 12): um atalho de trocar o tema no rodapé do menu (entra
+bem na tarefa do menu), porque Configurações só o administrador abre; e a seção "Aparência" poder
+seguir o tema do Windows ("Automático"), se ela quiser.
 
 ## Como refazer a página e as fotos
 

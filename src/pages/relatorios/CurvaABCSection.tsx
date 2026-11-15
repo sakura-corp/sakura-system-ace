@@ -95,7 +95,7 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
         <div
           role="group"
           aria-label="Classificar por"
-          className="flex gap-1 rounded-full bg-white/10 p-1"
+          className="flex gap-1 rounded-full bg-texto/10 p-1"
         >
           {CRITERIOS.map((c) => (
             <button
@@ -106,7 +106,7 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
               className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
                 criterio === c.chave
                   ? "bg-sakura-purple text-sobre-acao"
-                  : "text-sakura-purple-dark/85 hover:bg-white/10"
+                  : "text-sakura-purple-dark/85 hover:bg-texto/10"
               }`}
             >
               {c.label}

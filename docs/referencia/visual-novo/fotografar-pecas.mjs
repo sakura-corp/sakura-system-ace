@@ -2,7 +2,7 @@
 // contraste de cada texto dela, com a mesma medida do `npm run contraste:telas`.
 //
 // Rodar da RAIZ do repositório:
-//   node docs/referencia/visual-novo/fotografar-pecas.mjs [pasta-de-saida]
+//   node docs/referencia/visual-novo/fotografar-pecas.mjs [pasta-de-saida] [escuro|claro]
 //
 // Sem a pasta, as fotos vão pra docs/referencia/visual-novo/andamento/2-pecas/.
 // Sobe o mesmo servidor das varreduras de telas (porta 5199): não rodar junto
@@ -15,6 +15,10 @@ import { comServidorDeTelas } from "../../../site/ferramentas/servidor-telas.mjs
 import { MEDIR_CONTRASTE } from "../../../scripts/medir-contraste.mjs";
 
 const pasta = process.argv[2] ?? "docs/referencia/visual-novo/andamento/2-pecas";
+const tema = process.argv[3] === "claro" ? "claro" : "escuro";
+// As fotos do tema claro ganham "-claro" no nome, pra ficarem lado a lado com
+// as do escuro na mesma pasta.
+const sufixo = tema === "claro" ? "-claro" : "";
 mkdirSync(pasta, { recursive: true });
 
 process.exit(
@@ -26,6 +30,9 @@ process.exit(
       deviceScaleFactor: 2,
       locale: "pt-BR",
     });
+    if (tema === "claro") {
+      await pagina.addInitScript(() => window.localStorage.setItem("sakura.tema", "claro"));
+    }
     const erros = [];
     pagina.on("console", (m) => m.type() === "error" && erros.push(m.text().slice(0, 300)));
     pagina.on("pageerror", (e) => erros.push(String(e).slice(0, 300)));
@@ -35,11 +42,11 @@ process.exit(
     await pagina.evaluate(() => document.fonts.ready);
 
     let achados = await pagina.evaluate(MEDIR_CONTRASTE);
-    await pagina.screenshot({ path: join(pasta, "pecas.png"), fullPage: true });
+    await pagina.screenshot({ path: join(pasta, `pecas${sufixo}.png`), fullPage: true });
 
     // O campo com o foco (a borda laranja e o anel).
     await pagina.locator("input.sakura-campo").first().focus();
-    await pagina.locator("section", { hasText: "Campo, select" }).screenshot({ path: join(pasta, "campo-com-foco.png") });
+    await pagina.locator("section", { hasText: "Campo, select" }).screenshot({ path: join(pasta, `campo-com-foco${sufixo}.png`) });
 
     // A dica, pelo teclado. Ela só acende no foco quando a última coisa usada
     // foi o teclado (foco posto por código, sem tecla, não conta): por isso a
@@ -47,18 +54,18 @@ process.exit(
     await pagina.keyboard.press("Shift");
     await pagina.getByRole("button", { name: "RTA-4B71" }).focus();
     await pagina.waitForSelector('[role="tooltip"]');
-    await pagina.locator("section", { hasText: "Tabela, com a placa" }).screenshot({ path: join(pasta, "tabela-com-a-dica.png") });
+    await pagina.locator("section", { hasText: "Tabela, com a placa" }).screenshot({ path: join(pasta, `tabela-com-a-dica${sufixo}.png`) });
 
     // A janela, e o aviso que some depois de confirmar.
     await pagina.getByRole("button", { name: "Abrir a janela de faturar" }).click();
     await pagina.waitForSelector('[role="dialog"]');
     await pagina.evaluate(() => window.scrollTo(0, 0));
     achados = achados.concat(await pagina.evaluate(MEDIR_CONTRASTE));
-    await pagina.screenshot({ path: join(pasta, "janela.png") });
+    await pagina.screenshot({ path: join(pasta, `janela${sufixo}.png`) });
     await pagina.getByRole("button", { name: "Confirmar o faturamento" }).click();
     await pagina.waitForSelector('[role="status"] >> text=OS 147 faturada');
     achados = achados.concat(await pagina.evaluate(MEDIR_CONTRASTE));
-    await pagina.screenshot({ path: join(pasta, "aviso-que-some.png") });
+    await pagina.screenshot({ path: join(pasta, `aviso-que-some${sufixo}.png`) });
 
     await navegador.close();
 

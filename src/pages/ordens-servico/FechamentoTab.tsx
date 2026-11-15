@@ -224,7 +224,7 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
           <button
             type="button"
             onClick={() => setPreviewGarantiaAberta(true)}
-            className="w-full rounded-xl bg-sakura-pink px-3 py-2.5 text-rotulo font-semibold text-sakura-bg shadow-[0_0_15px_rgba(255,122,77,0.35)] transition-all hover:bg-sakura-pink/90 hover:shadow-[0_0_22px_rgba(255,122,77,0.6)]"
+            className="w-full rounded-xl bg-sakura-pink px-3 py-2.5 text-rotulo font-semibold text-sobre-acao shadow-[0_0_15px_rgba(255,122,77,0.35)] transition-all hover:bg-sakura-pink/90 hover:shadow-[0_0_22px_rgba(255,122,77,0.6)]"
           >
             Ver garantia
           </button>

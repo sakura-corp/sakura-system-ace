@@ -26,8 +26,8 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 const COR_SITUACAO: Record<TomSituacaoNota, string> = {
   autorizada: "bg-emerald-100 text-emerald-900",
   cancelada: "bg-red-500/15 text-red-400",
-  manual: "bg-white/10 text-sakura-purple-dark",
-  outra: "bg-white/10 text-sakura-purple-dark",
+  manual: "bg-texto/10 text-sakura-purple-dark",
+  outra: "bg-texto/10 text-sakura-purple-dark",
 };
 
 function EtiquetaSituacao({ arquivo }: { arquivo: NotaFiscalArquivo }) {

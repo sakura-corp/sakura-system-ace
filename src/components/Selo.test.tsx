@@ -53,7 +53,7 @@ describe("Selo", () => {
       atencao: ["text-atencao", "bg-atencao/[0.12]"],
       ok: ["text-ok", "bg-ok/[0.12]"],
       perigo: ["text-perigo", "bg-perigo/[0.13]"],
-      neutro: ["text-texto-2", "bg-white/[0.08]"],
+      neutro: ["text-texto-2", "bg-texto/[0.08]"],
     };
     for (const [tipo, [letra, fundo]] of Object.entries(esperado) as [TipoDeSelo, [string, string]][]) {
       const { unmount } = render(<Selo tipo={tipo} palavra="Palavra" />);

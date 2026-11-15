@@ -120,14 +120,14 @@ export function DepositosSection({ depositos, lojaId, onSalvo }: DepositosSectio
                     setEditandoId(deposito.id);
                   }}
                   title="Editar depósito"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => handleAlternarStatus(deposito)}
                   title={deposito.ativo ? "Inativar depósito" : "Reativar depósito"}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
                 >
                   {deposito.ativo ? "×" : "↺"}
                 </button>
@@ -176,7 +176,7 @@ function LinhaEdicaoDeposito({
   return (
     <form
       onSubmit={handleSubmit(aoSalvar)}
-      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-black/20 px-3 py-1.5"
+      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-poco px-3 py-1.5"
     >
       <input
         type="text"

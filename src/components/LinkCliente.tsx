@@ -47,7 +47,7 @@ export function LinkCliente({
         navigate(`/clientes/${clienteId}`);
       }}
       title={`Ver a ficha de ${nome}`}
-      className="inline-flex min-h-8 min-w-0 max-w-full items-center rounded-lg border border-sakura-borda-campo px-2 text-left font-medium text-sakura-purple-dark hover:bg-white/10"
+      className="inline-flex min-h-8 min-w-0 max-w-full items-center rounded-lg border border-sakura-borda-campo px-2 text-left font-medium text-sakura-purple-dark hover:bg-texto/10"
     >
       <span className="min-w-0 truncate">{nome}</span>
     </button>

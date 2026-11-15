@@ -145,14 +145,14 @@ export function LojasSection({ lojas, operadorCriadorId, onSalvo }: LojasSection
                     setEditandoId(loja.id);
                   }}
                   title="Editar loja"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
                 >
                   ✎
                 </button>
                 <button
                   onClick={() => handleAlternarStatus(loja)}
                   title={loja.ativo ? "Inativar loja" : "Reativar loja"}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
+                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
                 >
                   {loja.ativo ? "×" : "↺"}
                 </button>
@@ -211,7 +211,7 @@ function LinhaEdicaoLoja({
   return (
     <form
       onSubmit={handleSubmit(aoSalvar)}
-      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-black/20 px-3 py-1.5"
+      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-poco px-3 py-1.5"
     >
       <input
         type="text"

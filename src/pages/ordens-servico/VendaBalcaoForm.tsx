@@ -387,7 +387,7 @@ export function VendaBalcaoForm({
         {/* Mesma barra grudada no rodapé da OS (e pelo mesmo motivo: com a
             venda cheia, o total não pode sair de vista). `sticky`, nunca
             `fixed` — ver o comentário em OrdemServicoForm. */}
-        <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#16161c] px-4 py-3">
+        <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-janela px-4 py-3">
           <span className="text-subtitulo font-semibold text-sakura-purple-dark">
             Total {formatarMoeda(total)}
           </span>

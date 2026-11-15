@@ -74,7 +74,7 @@ class LimiteDeErro extends Component<Props, Estado> {
           O resto do sistema continua funcionando. O erro foi registrado neste computador — se
           acontecer de novo, abra o Diagnóstico e mande o arquivo pro suporte.
         </p>
-        <p className="break-words rounded-xl bg-black/30 p-3 text-meta text-sakura-purple-dark">
+        <p className="break-words rounded-xl bg-poco p-3 text-meta text-sakura-purple-dark">
           {this.state.erro.message}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
@@ -86,7 +86,7 @@ class LimiteDeErro extends Component<Props, Estado> {
           </button>
           <button
             onClick={this.props.aoAbrirDiagnostico}
-            className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-white/10"
+            className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-texto/10"
           >
             Abrir diagnóstico
           </button>

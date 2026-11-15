@@ -56,7 +56,7 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
               autoFocus
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-black/40 px-3 py-2.5 text-white placeholder:text-white/40 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="rounded-xl border border-sakura-borda-campo bg-[var(--campo-no-vidro)] px-3 py-2.5 text-texto placeholder:text-texto-3 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
             />
           </label>
 
@@ -66,7 +66,7 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
               type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-black/40 px-3 py-2.5 text-white placeholder:text-white/40 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="rounded-xl border border-sakura-borda-campo bg-[var(--campo-no-vidro)] px-3 py-2.5 text-texto placeholder:text-texto-3 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
             />
           </label>
 

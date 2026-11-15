@@ -35,7 +35,7 @@ const NOMES_MES = [
 ];
 
 const CLASSE_SETA =
-  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-white/10";
+  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-texto/10";
 
 export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendarioProps) {
   const agora = new Date();
@@ -90,7 +90,7 @@ export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendario
         <button
           type="button"
           onClick={() => aoMudarMes(agora.getFullYear(), agora.getMonth())}
-          className="mb-3 w-full rounded-lg bg-white/10 py-1 text-rotulo font-medium text-sakura-pink hover:bg-white/20"
+          className="mb-3 w-full rounded-lg bg-texto/10 py-1 text-rotulo font-medium text-sakura-pink hover:bg-texto/20"
         >
           Voltar para hoje
         </button>

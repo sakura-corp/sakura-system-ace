@@ -152,7 +152,7 @@ export function ItemExistenteRow({
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-black/20 p-3">
+    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-poco p-3">
       <div className="flex gap-2">
         <select
           value={tipo}

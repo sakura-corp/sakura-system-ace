@@ -27,7 +27,7 @@ const APARENCIA: Record<TipoDeSelo, { classes: string; icone: LucideIcon; palavr
   atencao: { classes: "text-atencao bg-atencao/[0.12]", icone: Clock, palavraDeSocorro: "Atenção" },
   ok: { classes: "text-ok bg-ok/[0.12]", icone: Check, palavraDeSocorro: "Certo" },
   perigo: { classes: "text-perigo bg-perigo/[0.13]", icone: TriangleAlert, palavraDeSocorro: "Problema" },
-  neutro: { classes: "text-texto-2 bg-white/[0.08]", icone: Circle, palavraDeSocorro: "Sem status" },
+  neutro: { classes: "text-texto-2 bg-texto/[0.08]", icone: Circle, palavraDeSocorro: "Sem status" },
 };
 
 /**

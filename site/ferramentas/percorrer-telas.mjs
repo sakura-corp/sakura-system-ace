@@ -51,19 +51,27 @@ const ESPERA_POR_BOTAO = 30_000;
  * @param {(cena: object) => boolean} [incluir]
  *        Pra visitar só algumas cenas (ex.: fotografar a tela que mudou, sem
  *        esperar o passeio inteiro). Sem ele, visita todas.
- * @param {{ electron?: string, horaFixa?: Date }} [opcoes]
+ * @param {{ electron?: string, horaFixa?: Date, tema?: "escuro" | "claro" }} [opcoes]
  *        `electron`: o executável de um Electron, pra abrir as telas DENTRO
  *        dele em vez de num Chromium avulso (ver electron-telas.mjs). A
  *        variável de ambiente TELAS_NO_ELECTRON=1 faz o mesmo com o Electron
  *        do projeto, pra qualquer varredura.
  *        `horaFixa`: o relógio da tela parado nesse instante — pra duas
  *        rodadas desenharem o mesmo "hoje" e a mesma hora.
+ *        `tema`: "claro" pra percorrer as telas no tema claro (o padrão é o
+ *        escuro, como no programa).
  */
 export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}) {
   const cenas = CENAS.filter(incluir);
   const { contexto, pagina, fechar } = await abrirNavegador(opcoes);
 
   await instalarBancoFalso(contexto);
+  // O tema é uma escolha guardada no computador (src/lib/tema.ts). Vai num
+  // script de início, e não num clique nas Configurações, porque o passeio
+  // limpa o que está guardado quando sai e entra de novo.
+  if (opcoes.tema === "claro") {
+    await contexto.addInitScript(() => window.localStorage.setItem("sakura.tema", "claro"));
+  }
   if (opcoes.horaFixa) await contexto.clock.setFixedTime(opcoes.horaFixa);
 
   const errosDeConsole = [];
@@ -197,6 +205,15 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
   // As telas de antes do login primeiro, pra não precisar deslogar no meio.
   await pagina.goto(BASE, { waitUntil: "networkidle" });
   await pagina.waitForTimeout(1200);
+
+  // O tema pedido é mesmo o que está na tela? Se a chave guardada mudar de
+  // nome um dia, a rodada do "claro" mediria o escuro duas vezes e passaria
+  // verde sem ter medido nada.
+  const temaNaTela = await pagina.evaluate(() => document.documentElement.dataset.tema);
+  if (temaNaTela !== (opcoes.tema ?? "escuro")) {
+    await fechar();
+    throw new Error(`O passeio pediu o tema "${opcoes.tema ?? "escuro"}" e a tela abriu em "${temaNaTela}".`);
+  }
   for (const cena of cenas.filter((c) => c.deslogado)) await visitar(cena, 1200);
 
   console.log((await entrar()) ? "login simulado: OK" : "login simulado: FALHOU");

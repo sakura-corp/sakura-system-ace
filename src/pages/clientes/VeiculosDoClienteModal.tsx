@@ -33,7 +33,7 @@ export function VeiculosDoClienteModal({
                 type="button"
                 onClick={() => navigate(`/veiculos/${veiculo.id}`)}
                 title={`Ver a ficha do veículo ${placa || carro || "sem placa"}`}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border border-sakura-borda-campo px-4 py-3 text-left transition hover:bg-white/10"
+                className="flex w-full items-center justify-between gap-4 rounded-xl border border-sakura-borda-campo px-4 py-3 text-left transition hover:bg-texto/10"
               >
                 <span className="min-w-0">
                   <span

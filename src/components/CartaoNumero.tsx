@@ -52,7 +52,7 @@ export function CartaoNumero({
       data-cartao-numero
       className={`sakura-card relative px-[18px] pb-3.5 pt-4 ${
         para
-          ? "transition-[border-color,transform,background-color] duration-200 hover:-translate-y-0.5 hover:border-linha-forte hover:bg-[#1c1c24] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+          ? "transition-[border-color,transform,background-color] duration-200 hover:-translate-y-0.5 hover:border-linha-forte hover:bg-passar/50 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           : ""
       }`}
     >

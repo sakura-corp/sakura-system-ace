@@ -9,7 +9,10 @@ import "@fontsource-variable/inter";
 import "@fontsource-variable/plus-jakarta-sans";
 import "../styles/globals.css";
 import { AvisosQueSomem } from "@/components/AvisoQueSome";
+import { aplicarTemaGuardado } from "@/lib/tema";
 import { GaleriaDePecas } from "./GaleriaDePecas";
+
+aplicarTemaGuardado();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

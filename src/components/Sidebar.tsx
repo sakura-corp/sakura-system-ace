@@ -109,8 +109,8 @@ export function Sidebar() {
                   className={({ isActive }) =>
                     `rounded-xl px-4 py-2.5 baixa:py-1.5 muito-baixa:py-1 text-corpo font-medium transition-all ${
                       isActive
-                        ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-white shadow-[0_0_15px_rgba(255,122,77,0.2)] border border-sakura-pink/30"
-                        : "text-sakura-purple-dark/90 hover:bg-white/5 hover:text-white"
+                        ? "bg-gradient-to-r from-sakura-pink/20 to-sakura-purple/10 text-texto shadow-[0_0_15px_rgba(255,122,77,0.2)] border border-sakura-pink/30"
+                        : "text-sakura-purple-dark/90 hover:bg-texto/5 hover:text-texto"
                     }`
                   }
                 >
@@ -159,7 +159,7 @@ export function Sidebar() {
                   `rounded-full p-2 transition-all ${
                     isActive
                       ? "bg-sakura-purple/20 text-sakura-pink"
-                      : "text-sakura-purple-dark/85 hover:bg-white/10 hover:text-white"
+                      : "text-sakura-purple-dark/85 hover:bg-texto/10 hover:text-texto"
                   }`
                 }
               >
@@ -174,7 +174,7 @@ export function Sidebar() {
                       `rounded-full p-2 transition-all ${
                         isActive
                           ? "bg-sakura-purple/20 text-sakura-pink"
-                          : "text-sakura-purple-dark/85 hover:bg-white/10 hover:text-white"
+                          : "text-sakura-purple-dark/85 hover:bg-texto/10 hover:text-texto"
                       }`
                     }
                   >
@@ -187,7 +187,7 @@ export function Sidebar() {
                       `rounded-full p-2 transition-all ${
                         isActive
                           ? "bg-sakura-purple/20 text-sakura-pink"
-                          : "text-sakura-purple-dark/85 hover:bg-white/10 hover:text-white"
+                          : "text-sakura-purple-dark/85 hover:bg-texto/10 hover:text-texto"
                       }`
                     }
                   >
