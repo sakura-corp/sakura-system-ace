@@ -334,7 +334,11 @@ export function CentralDoDia({
                 {carregando ? "…" : "—"}
               </p>
             ) : semNada ? (
-              <p className="font-titulo text-capa-curto font-extrabold">Tudo em dia</p>
+              // Com só parte dos módulos a pessoa não sabe da loja inteira: a capa não afirma
+              // "Tudo em dia" (a lista ao lado já diz "nas áreas que você pode ver").
+              <p className="font-titulo text-capa-curto font-extrabold">
+                {alcance.parcial ? "Nada pendente" : "Tudo em dia"}
+              </p>
             ) : (
               <>
                 <p data-total-da-central className="font-titulo text-capa font-extrabold">
@@ -386,7 +390,7 @@ export function CentralDoDia({
                         <button
                           type="button"
                           onClick={() => navigate(TELA_DO_TIPO[p.tipo])}
-                          className="mb-2 ml-[8.5rem] text-rotulo font-medium text-texto-2 underline-offset-2 hover:text-texto hover:underline"
+                          className="mb-2 ml-[8.75rem] text-rotulo font-medium text-texto-2 underline-offset-2 hover:text-texto hover:underline"
                         >
                           e mais {sobra}…
                         </button>

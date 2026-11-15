@@ -176,6 +176,14 @@ describe("CentralDoDia", () => {
       expect(document.querySelector("[data-total-da-central]")).toBeNull();
     });
 
+    it("com só parte dos módulos e nada pendente, a capa não afirma 'Tudo em dia'", async () => {
+      operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+      montar();
+      await screen.findByText("Nada pendente hoje nas áreas que você pode ver.");
+      expect(screen.queryByText("Tudo em dia")).toBeNull();
+      expect(document.querySelector("[data-capa-central]")).toHaveTextContent("Nada pendente");
+    });
+
     it("a capa diz o total e cada linha tem um selo com palavra", async () => {
       operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
       montar({ ordens: [osParada(1), osParada(2), osParada(3)] });

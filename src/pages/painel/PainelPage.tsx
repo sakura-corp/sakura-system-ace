@@ -22,6 +22,7 @@ import {
   diasDesde,
   ehOsAberta,
   janelaDoMesAteODia,
+  movimentosDaJanela,
   mesmaJanelaNoMesAnterior,
   metricasDoPeriodo,
   MODULOS_QUE_LEEM_O_CAIXA,
@@ -232,8 +233,11 @@ export function PainelPage() {
 
     // O fio de cada cartão: o acumulado do mês, dia a dia (`schemas/serieDoMes.ts`).
     // Sem dados pra um fio honesto, vem `null` e o cartão fica sem ele.
+    // Só os lançamentos do mês entram na série: filtra uma vez, e não uma por cartão
+    // (o Caixa traz o histórico inteiro da loja).
+    const doMes = movimentosDaJanela(movimentos, janelaDoMesAteODia(referencia));
     const series = Object.fromEntries(
-      cartoesConfig.map((chave) => [chave, serieDoMesPorDia(movimentos, referencia, custoDaOrdem, chave)]),
+      cartoesConfig.map((chave) => [chave, serieDoMesPorDia(doMes, referencia, custoDaOrdem, chave)]),
     ) as Partial<Record<CartaoMetrica, number[] | null>>;
 
     return {
@@ -423,6 +427,7 @@ export function PainelPage() {
                     className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-passar px-2 text-rotulo font-semibold text-texto"
                   >
                     {filaDeAtendimento.length}
+                    <span className="sr-only"> em aberto</span>
                   </span>
                 </div>
                 {filaDeAtendimento.length === 0 ? (

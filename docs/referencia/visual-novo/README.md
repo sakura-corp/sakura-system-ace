@@ -312,7 +312,7 @@ e a Central do dia com muitos itens e com zero) estão em `andamento/5-inicio/`.
 | O quê | Como ficou |
 |---|---|
 | Título | "Início" na letra de títulos; à direita, "Resumo pro dono" com os dois botões do WhatsApp (variante `whatsapp`). O ícone é o de balão da biblioteca, não o logotipo do WhatsApp. Só aparência: quem vê, o que abre e o texto mandado são os de antes. |
-| Central do dia | A capa (mancha, grão, o total em 54 px e "coisas pedem a sua atenção hoje") fica **escura nos dois temas** (é marca) e a lista à direita tem **sempre a altura de 4 linhas**, rolando por dentro (`AreaRolavel`). Uma linha = um selo (ícone e palavra), o texto e **todos** os botões de antes. Zero itens: "Tudo em dia". As regras (`schemas/centralDoDia.ts`) não mudaram: o total da capa é o de todas as pendências, e o "e mais N…" continua. |
+| Central do dia | A capa (mancha, grão, o total em 54 px e "coisas pedem a sua atenção hoje") é **escura no tema escuro e clara no claro** (decisão da Sofia, 15/11; seção 13) e a lista à direita tem **sempre a altura de 4 linhas**, rolando por dentro (`AreaRolavel`). Uma linha = um selo (ícone e palavra), o texto e **todos** os botões de antes. Zero itens: "Tudo em dia". As regras (`schemas/centralDoDia.ts`) não mudaram: o total da capa é o de todas as pendências, e o "e mais N…" continua. |
 | Cartões de número | `CartaoNumero` com a variação, o "?" e o fio. Os nomes são os de verdade ("Recebido no mês", "Lucro do mês"). O fio é o **acumulado do mês, dia a dia**, e o último ponto é exatamente o número do cartão (`schemas/serieDoMes.ts`, com teste). Sem fio: menos de 3 dias do mês, mês sem lançamento, "Contas a pagar vencendo" e quem não tem o módulo. Em cartão estreito (< 16 rem) o fio some em vez de apertar o número. |
 | "Ver relações completas" | Fica junto dos números, à direita, abaixo dos três cartões (no conceito estava dentro de "OS abertas"). |
 | OS abertas | Tabela `sakura-tabela`, com a placa (`LinkPlaca`, que abre a ficha do veículo) e a idade. **Sem o selo "Em andamento"** do conceito (a lista só tem OS aberta). Passando de 5 linhas, a tabela rola por dentro. |
@@ -488,8 +488,11 @@ a logo pergunta qual é o tema (`useTema()`), porque troca de arquivo.
 | `placa` | `#0E0E13` | `#FFFFFF` | branca com a letra escura, como a placa Mercosul de verdade |
 | `poco` (fundo rebaixado) | preto a 25% | escuro a 5% | novo: entrou no lugar do `bg-black/20` e `/30` |
 
-**(escolhas do Claude)**, todas. O carmesim e o cartão de destaque não mudam: o destaque continua
-escuro nos dois temas, é o momento de marca.
+**(escolhas do Claude)**, todas, menos a capa. O carmesim não muda. **A capa do cartão de destaque
+(a Central do dia) é escura no escuro e CLARA no claro** (creme e pêssego, com a mancha suave, o grão e
+a letra escura, no espírito do Login claro): decisão da Sofia em 15/11, que achou a capa escura
+demais contra a página clara. Antes (escolha do Claude) ela era escura nos dois temas. As cores são as
+variáveis `--capa-*` do `globals.css`.
 
 **Regras pra quem escreve tela** (valem desde já, nos dois temas):
 - **Nada de `text-white`, `bg-white/10`, `border-white/10`, `bg-black/20`** em cima de superfície do
