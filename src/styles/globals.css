@@ -184,6 +184,11 @@
 :root {
   color-scheme: dark;
 
+  /* A curva única do movimento (regras, seção 8): começa rápido, freia macio.
+     Vira a classe `ease-suave`. O menu é o primeiro a usar; o resto do
+     movimento é da tarefa 5. */
+  --ease-suave: cubic-bezier(0.2, 0.8, 0.2, 1);
+
   /* O que é cor mas não é classe do Tailwind (sombra, anel de foco, barra de
      rolagem, o fundo do Login…). Fica aqui pra o tema claro trocar junto. */
   --foco-anel-de-dentro: rgba(10, 10, 13, 0.95);

@@ -3,7 +3,7 @@
 // mesma medida do `npm run contraste:telas`.
 //
 // Rodar da RAIZ do repositório:
-//   node docs/referencia/visual-novo/fotografar-telas.mjs <pasta> [prefixos]
+//   node docs/referencia/visual-novo/fotografar-telas.mjs <pasta> [prefixos] [encolhido]
 //
 // `prefixos` são os começos dos nomes das cenas (site/ferramentas/cenas.mjs),
 // separados por vírgula. Sem eles: Login, Início, Clientes, OS e Configurações.
@@ -24,6 +24,10 @@ if (!pasta) {
   process.exit(1);
 }
 const prefixos = (process.argv[3] ?? "01,04,05,07,47").split(",");
+// O quarto pedaço, "encolhido", fotografa com o menu lateral encolhido (as
+// fotos ganham "-encolhido" no nome).
+const menu = process.argv[4] === "encolhido" ? "encolhido" : "aberto";
+const sufixo = menu === "encolhido" ? "-encolhido" : "";
 mkdirSync(pasta, { recursive: true });
 
 process.exit(
@@ -34,7 +38,7 @@ process.exit(
       const { falhas } = await percorrerTelas(
         async (cena, pagina) => {
           await pagina.screenshot({
-            path: join(pasta, `${cena.arquivo}-${tema}.jpg`),
+            path: join(pasta, `${cena.arquivo}${sufixo}-${tema}.jpg`),
             type: "jpeg",
             quality: 82,
           });
@@ -45,7 +49,7 @@ process.exit(
         },
         (cena) => prefixos.some((p) => cena.arquivo.startsWith(p)),
         // O relógio parado, pra as duas rodadas desenharem o mesmo "hoje".
-        { tema, horaFixa: new Date("2026-11-14T15:00:00-03:00") },
+        { tema, menu, horaFixa: new Date("2026-11-14T15:00:00-03:00") },
       );
       falharam += falhas.length;
     }

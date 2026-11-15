@@ -37,6 +37,16 @@ describe("Sidebar — Orçamentos", () => {
     expect(contar).toHaveBeenCalledWith("loja-a");
   });
 
+  it("com o menu encolhido, o número vira um ponto, que continua dizendo quantos são", async () => {
+    window.localStorage.setItem("sakura.menu", "encolhido");
+    operador = { id: "op", nome: "Ana", usuario: "ana", admin: false, permissoes: ["ordens_servico"] };
+    renderizar(<Sidebar />);
+
+    const ponto = await screen.findByLabelText("3 em aberto");
+    expect(ponto).toBeEmptyDOMElement();
+    window.localStorage.clear();
+  });
+
   it("sem nenhum orçamento aberto, não mostra número", async () => {
     contar.mockResolvedValue(0);
     operador = { id: "op", nome: "Ana", usuario: "ana", admin: false, permissoes: ["ordens_servico"] };

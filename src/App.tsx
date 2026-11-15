@@ -158,11 +158,14 @@ export default function App() {
   }
 
   return (
-    <div className="sakura-shell-bg flex h-screen gap-4 overflow-hidden p-4">
+    // O menu encosta na borda da janela, de cima a baixo (visual novo, seção
+    // 7): sem a moldura de antes, sobram uns 36 px de largura pra tela mesmo
+    // com o menu aberto, e 204 px com ele encolhido.
+    <div className="sakura-shell-bg flex h-screen overflow-hidden">
       <VersaoApp />
       <AvisosQueSomem />
       <Sidebar />
-      <main className="min-h-0 min-w-0 flex-1">
+      <main className="min-h-0 min-w-0 flex-1 p-4">
         <AreaRolavel className="p-4">
           <BuscaGlobal />
           <FaixaSemConexao />

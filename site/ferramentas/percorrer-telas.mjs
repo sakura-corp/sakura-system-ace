@@ -51,7 +51,7 @@ const ESPERA_POR_BOTAO = 30_000;
  * @param {(cena: object) => boolean} [incluir]
  *        Pra visitar só algumas cenas (ex.: fotografar a tela que mudou, sem
  *        esperar o passeio inteiro). Sem ele, visita todas.
- * @param {{ electron?: string, horaFixa?: Date, tema?: "escuro" | "claro" }} [opcoes]
+ * @param {{ electron?: string, horaFixa?: Date, tema?: "escuro" | "claro", menu?: "aberto" | "encolhido" }} [opcoes]
  *        `electron`: o executável de um Electron, pra abrir as telas DENTRO
  *        dele em vez de num Chromium avulso (ver electron-telas.mjs). A
  *        variável de ambiente TELAS_NO_ELECTRON=1 faz o mesmo com o Electron
@@ -60,6 +60,8 @@ const ESPERA_POR_BOTAO = 30_000;
  *        rodadas desenharem o mesmo "hoje" e a mesma hora.
  *        `tema`: "claro" pra percorrer as telas no tema claro (o padrão é o
  *        escuro, como no programa).
+ *        `menu`: "encolhido" pra percorrer as telas com o menu lateral
+ *        encolhido (o padrão é o aberto, como no programa).
  */
 export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}) {
   const cenas = CENAS.filter(incluir);
@@ -71,6 +73,11 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
   // limpa o que está guardado quando sai e entra de novo.
   if (opcoes.tema === "claro") {
     await contexto.addInitScript(() => window.localStorage.setItem("sakura.tema", "claro"));
+  }
+  // O menu aberto ou encolhido também é guardado no computador
+  // (src/lib/menuLateral.ts), e vai do mesmo jeito.
+  if (opcoes.menu === "encolhido") {
+    await contexto.addInitScript(() => window.localStorage.setItem("sakura.menu", "encolhido"));
   }
   if (opcoes.horaFixa) await contexto.clock.setFixedTime(opcoes.horaFixa);
 
