@@ -289,7 +289,7 @@ de aberto ou encolhido, em `src/lib/menuLateral.ts`. As fotos estão em `andamen
 | Quem está logado | As iniciais num círculo, o nome e o usuário. Encolhido, só as iniciais (o nome na dica). |
 | Trocar de loja | Continua no rodapé, só pra quem tem mais de uma. Encolhido não cabe a lista: aparece um ícone de loja que diz qual é a loja e abre o menu. **Não foi pro alto da tela**, como no conceito: seria um botão novo. |
 | Sair | Virou ícone com dica, no fim da fileira (antes era a palavra "Sair"). |
-| **Trocar o tema** | Um atalho no rodapé (sol ou lua), pra todo mundo: Configurações só o administrador abre. **(sugestão do Claude, esperando o "sim" da Sofia)**; se ela não quiser, sai num commit só. |
+| **Trocar o tema** | Um atalho no rodapé (sol ou lua), pra todo mundo: Configurações só o administrador abre. Era sugestão do Claude; **a Sofia aprovou em 15/11** ("o atalho do tema fica"). |
 | Tela baixa | No notebook de 1366 × 768 o menu inteiro cabe sem rolar, aberto e encolhido (os itens perdem altura, a letra não diminui). Se não couber, rola por dentro. |
 | O movimento | A largura muda em 0,26 s e o fundo do item ativo desliza em 0,3 s, com a curva única (`ease-suave`). Com as animações desligadas no Windows, nada se move. O resto do movimento é da tarefa 5. |
 

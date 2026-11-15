@@ -160,7 +160,7 @@ com teste:
 
 ---
 
-## Tarefa 3 — O menu novo (FEITA em 15/11, num PR que espera o do tema claro)
+## Tarefa 3 — O menu novo (FEITA em 15/11)
 
 > **O que entrou**: os quatro grupos com ícone, aberto e encolhido (lembrado por computador), o
 > fundo que desliza até o item ativo, a dica com o nome quando encolhido, o ponto laranja em
@@ -169,7 +169,8 @@ com teste:
 > regras (seção 7, "Como saiu no programa"); as fotos, em
 > `docs/referencia/visual-novo/andamento/4-menu/`.
 >
-> **Espera a Sofia**: o atalho de trocar o tema no rodapé do menu (sugestão; ela vê a imagem e diz).
+> **Aprovado pela Sofia em 15/11** ("pode ficar assim, e o atalho do tema fica"): o menu e o atalho de
+> trocar o tema no rodapé.
 
 ```
 Chefe: frontend
