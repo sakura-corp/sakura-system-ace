@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { mensagemDeErro } from "@/lib/errors";
+import { Botao, type TamanhoDoBotao } from "./Botao";
 
 function IconeWhatsapp({ className = "" }: { className?: string }) {
   return (
@@ -17,12 +18,17 @@ function IconeWhatsapp({ className = "" }: { className?: string }) {
  * cadastro é o caso mais comum, e "cliquei e não aconteceu nada" é
  * exatamente o padrão de bug que este projeto já viu várias vezes
  * (PROJETO_STATUS.md, seção 6, itens 11 e 15).
+ *
+ * A aparência é a variante `whatsapp` do `Botao` (visual novo, #990): borda e
+ * ícone verdes, sem fundo. Este componente só acrescenta o que é do WhatsApp:
+ * abrir a conversa e mostrar o erro.
  */
 export function BotaoWhatsapp({
   telefone,
   texto,
   rotulo = "WhatsApp",
   titulo,
+  tamanho = "pequeno",
   aoAbrir,
 }: {
   telefone: string | null | undefined;
@@ -30,6 +36,8 @@ export function BotaoWhatsapp({
   texto: string;
   rotulo?: string;
   titulo?: string;
+  /** "pequeno" (32 px) é o da linha de tabela, onde ele mais aparece. */
+  tamanho?: TamanhoDoBotao;
   /** Chamado depois de abrir — é onde a abertura é registrada. */
   aoAbrir?: () => void;
 }) {
@@ -52,17 +60,17 @@ export function BotaoWhatsapp({
 
   return (
     <>
-      <button
-        type="button"
+      <Botao
+        variante="whatsapp"
+        tamanho={tamanho}
         onClick={handleClique}
-        disabled={abrindo}
+        ocupado={abrindo}
         title={titulo ?? "Abrir a conversa no WhatsApp com a mensagem pronta"}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-400/40 px-3 text-rotulo font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:opacity-50"
+        icone={<IconeWhatsapp className="text-zap" />}
       >
-        <IconeWhatsapp className="h-4 w-4" />
         {rotulo}
-      </button>
-      {erro && <p className="mt-1 text-rotulo text-red-300">{erro}</p>}
+      </Botao>
+      {erro && <p className="mt-1 text-rotulo text-perigo">{erro}</p>}
     </>
   );
 }

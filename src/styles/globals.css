@@ -90,6 +90,10 @@
   --color-ok: #34d399;
   --color-perigo: #f87171;
   --color-zap: #25d366; /* só a borda e o ícone do botão "Avisar" */
+  --color-dica: #ffffff; /* a caixinha que aparece ao passar o mouse (componente Dica) */
+  --color-sobre-dica: #111111; /* a letra dela: 18,9:1 */
+  --color-placa: #0e0e13; /* o fundo da placa do carro (componente LinkPlaca) */
+  --color-placa-faixa: #2f62e0; /* a faixa azul de cima, que lembra a placa Mercosul */
 
   /* As duas letras vão DENTRO do programa (importadas no src/main.tsx, dos
      pacotes @fontsource-variable): ele roda sem internet, e em PC sem a Inter
@@ -368,40 +372,41 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
-/* O cartão das telas. Ainda é o vidro de antes, só sem o roxo e sem o brilho
-   rosa; ele vira sólido (cor `cartao`) na tarefa das peças do visual novo. */
+/* O cartão das telas (visual novo, seção 6 das regras): SÓLIDO, na cor
+   `cartao`, com a borda fina e canto de 18 px. Sem sombra e sem brilho.
+
+   Era vidro (fundo a 55% com desfoque do que está atrás). Deixou de ser por
+   dois motivos já vividos: vidro em cima de fundo que muda foi o que derrubou
+   o contraste dos campos em setembro (TR-01.3), e a janela já tinha virado
+   opaca pelo mesmo motivo (#361). Sólido, a cor de trás de cada texto é
+   sempre a mesma, e a conta de contraste da tabela de cores vale de verdade.
+   O vidro ficou só no cartão do Login (`sakura-vidro`, logo abaixo). */
 @utility sakura-card {
-  border-radius: 1.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
-  background-color: rgba(25, 25, 32, 0.55);
-  background-image: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.01) 40%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow:
-    0 12px 40px -10px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 1.125rem;
+  border: 1px solid var(--color-linha);
+  background-color: var(--color-cartao);
 }
 
-/* Janela (modal) por cima da tela — #361, versão "sólida", escolhida por
-   ela pela imagem em 03/10/2026.
+/* O vidro escuro: SÓ no cartão do Login e das telas irmãs dele (conexão e
+   trocar a senha), em cima do `sakura-fundo-marca` com o grão. Em nenhuma
+   outra tela: atrás de tabela e de formulário, ler ganha de enfeitar. */
+@utility sakura-vidro {
+  border-radius: 1.625rem;
+  border: 1px solid var(--color-linha-forte);
+  background-color: rgba(14, 14, 19, 0.72);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+}
 
-   A janela usava o sakura-card, que é vidro (35% de opacidade), por cima de
-   um fundo pouco escurecido: o texto da tela de trás aparecia através dela e
-   atrapalhava a leitura (visto por ela em 28/09, na janela da nota fiscal).
-   Aqui o painel é OPACO (a cor é o tom do card já composto sobre o fundo do
-   app) e a tela de trás fica nítida, só escurecida. Borda, brilho e sombra
-   são os mesmos do sakura-card, pra janela continuar com a cara do resto do
-   app. O `largura:telas` confere que o fundo cobre a tela inteira.
+/* Janela (modal) por cima da tela (visual novo, seção 6 das regras).
 
-   NÃO trocar o sakura-card por isto fora das janelas: ele é usado em quase
-   toda tela, e só a janela precisa esconder o que está atrás. */
+   O painel é OPACO (cor `janela`), como já era desde a #361: a janela era
+   vidro, e o texto da tela de trás aparecia através dela (visto pela Sofia em
+   28/09, na janela da nota fiscal). O que mudou no visual novo: canto de
+   22 px, borda `linha-forte`, e a tela de trás, além de escurecida, fica
+   levemente desfocada, pra janela ser a única coisa nítida. O
+   `largura:telas` confere que o fundo cobre a tela inteira. */
 @utility sakura-modal-fundo {
   position: fixed;
   inset: 0;
@@ -415,27 +420,167 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background-color: rgba(5, 5, 8, 0.6);
+  background-color: rgba(5, 5, 8, 0.66);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 @utility sakura-modal {
-  border-radius: 1.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1.375rem;
+  border: 1px solid var(--color-linha-forte);
   background-color: var(--color-janela);
-  background-image: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.06) 0%,
-    rgba(255, 255, 255, 0.01) 40%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  box-shadow:
-    0 12px 40px -10px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7);
 }
 
-/* Botão circular de vidro escuro */
+/* ------------------------------------------------------------------
+   Campo, select e área de texto (visual novo, seção 6 das regras).
+
+       <label class="sakura-rotulo">
+         Buscar por cliente ou placa
+         <input class="sakura-campo" placeholder="Ex: João ou ABC1D23" />
+       </label>
+
+   Altura 44 (38 com `sakura-campo-filtro`, pra linha de filtros), canto 12,
+   borda `borda-campo` (3,1:1 contra o cartão: o mínimo pra contorno é 3).
+
+   O FOCO: a borda vira laranja com 2 px e ganha um anel laranja fraco. Aqui
+   ele entra no lugar do anel de foco geral do programa (o claro, mais acima):
+   os dois juntos viravam três contornos no mesmo campo. O laranja contra o
+   cartão dá 6,9:1, bem acima dos 3:1 que o indicador de foco precisa, e o
+   balcão é operado só no teclado: o foco não pode ser discreto.
+   ------------------------------------------------------------------ */
+@utility sakura-campo {
+  width: 100%;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-borda-campo);
+  background-color: var(--color-campo);
+  color: var(--color-texto);
+  padding: 0 0.875rem;
+  font-size: var(--text-corpo);
+  line-height: var(--text-corpo--line-height);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--color-texto-3);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border-color: var(--color-acao-clara);
+    box-shadow:
+      0 0 0 1px var(--color-acao-clara),
+      0 0 0 4px rgba(255, 87, 34, 0.22);
+  }
+
+  /* O que a validação recusou: borda vermelha (e o texto do erro embaixo, que
+     é quem explica: cor sozinha não avisa). */
+  &[aria-invalid="true"] {
+    border-color: var(--color-perigo);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    border-color: var(--color-linha-forte);
+    color: var(--color-texto-3);
+  }
+
+  /* Área de texto: a altura é do conteúdo, não os 44 de uma linha. */
+  &:is(textarea) {
+    height: auto;
+    min-height: 5.5rem;
+    padding-block: 0.625rem;
+  }
+
+  /* Select: a setinha do sistema dá lugar a uma do programa, no mesmo lugar
+     em qualquer Windows. */
+  &:is(select) {
+    appearance: none;
+    padding-right: 2.25rem;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+  }
+}
+
+/* O campo na linha de filtros de uma lista: mais baixo. Usar JUNTO com
+   `sakura-campo`. */
+@utility sakura-campo-filtro {
+  height: 2.375rem;
+}
+
+/* O rótulo em cima do campo: envolve o campo, pra clicar no nome focar nele. */
+@utility sakura-rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: var(--text-rotulo);
+  line-height: var(--text-rotulo--line-height);
+  font-weight: 500;
+  color: var(--color-texto-2);
+}
+
+/* ------------------------------------------------------------------
+   Tabela (visual novo, seção 6 das regras): `<table class="sakura-tabela">`,
+   dentro de um `sakura-card` com `overflow-hidden`.
+
+   Cabeçalho em 12 px na cor secundária; linha de 52 px; algarismos em coluna
+   (um valor embaixo do outro alinha vírgula com vírgula). Valor em dinheiro
+   vai à direita: `text-right` na célula e no cabeçalho dela.
+
+   Na linha fica SÓ o botão do próximo passo; as outras ações vão no botão de
+   três pontos (`AcoesDaLinha`).
+   ------------------------------------------------------------------ */
+@utility sakura-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-corpo);
+  line-height: var(--text-corpo--line-height);
+  text-align: left;
+
+  & th {
+    padding: 0.625rem 0.5625rem;
+    border-bottom: 1px solid var(--color-linha);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 600;
+    color: var(--color-texto-2);
+    white-space: nowrap;
+  }
+
+  & td {
+    height: 3.25rem;
+    padding: 0.375rem 0.5625rem;
+    border-bottom: 1px solid var(--color-linha);
+  }
+
+  & :is(th, td):first-child {
+    padding-left: 1.125rem;
+  }
+
+  & :is(th, td):last-child {
+    padding-right: 1.125rem;
+  }
+
+  & tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  & tbody tr {
+    transition: background-color 0.12s;
+  }
+
+  & tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+}
+
+/* Botão redondo de ícone (o "voltar" do topo das telas). Era vidro; no visual
+   novo é sólido como o cartão (o vidro ficou só no Login). */
 @utility sakura-icon-button {
   display: inline-flex;
   align-items: center;
@@ -444,32 +589,20 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   height: 2.5rem;
   flex-shrink: 0;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background-color: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  color: var(--color-sakura-pink);
-  box-shadow:
-    0 8px 20px -8px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--color-linha-forte);
+  background-color: var(--color-cartao);
+  color: var(--color-acao-clara);
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
+    transform 0.12s ease,
     background-color 0.15s ease,
     border-color 0.15s ease;
 
   &:hover {
-    transform: translateY(-2px) scale(1.06);
-    background-color: rgba(255, 122, 77, 0.1);
-    border-color: rgba(255, 122, 77, 0.4);
-    box-shadow:
-      0 12px 26px -8px rgba(255, 122, 77, 0.2),
-      0 0 15px rgba(255, 122, 77, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background-color: var(--color-passar);
+    border-color: rgba(255, 122, 77, 0.45);
   }
 
   &:active {
-    transform: translateY(0) scale(0.96);
+    transform: scale(0.96);
   }
 }
-

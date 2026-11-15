@@ -87,7 +87,7 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
     // subia junto com o conteúdo numa janela baixa e o pé do fundo ficava liso.
     <div className="sakura-fundo-marca sakura-grao h-screen">
     <div className="relative z-[2] flex h-full items-center justify-center overflow-auto">
-      <div className="sakura-card relative z-[2] my-8 w-full max-w-lg p-8">
+      <div className="sakura-vidro relative z-[2] my-8 w-full max-w-lg p-8">
         <div className="mb-6 flex justify-center">
           <Logo className="drop-shadow-sm" />
         </div>
