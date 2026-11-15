@@ -260,3 +260,22 @@ describe("Modal: cabeçalho com total e rodapé com as ações", () => {
     expect(screen.getByRole("dialog").querySelector("[data-modal-rodape]")).toBeNull();
   });
 });
+
+// Da revisão de código do PR do visual novo (15/11).
+describe("Modal: o que a janela NÃO deixa mudo", () => {
+  it("a região dos avisos que somem continua viva com a janela aberta; o resto da tela, não", () => {
+    render(
+      <div>
+        <button type="button">Botão da tela de trás</button>
+        <div role="status" data-fora-do-inert>
+          avisos
+        </div>
+        <Modal titulo="Teste" onFechar={() => {}}>
+          <p>conteúdo</p>
+        </Modal>
+      </div>,
+    );
+    expect(screen.getByText("avisos").hasAttribute("inert")).toBe(false);
+    expect(screen.getByText("Botão da tela de trás").hasAttribute("inert")).toBe(true);
+  });
+});

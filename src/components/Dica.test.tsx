@@ -8,6 +8,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Dica } from "./Dica";
+import { Modal } from "./Modal";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -29,6 +30,13 @@ function montar(texto = "Abrir a ficha do veículo") {
 
 const passarTempo = (ms: number) => act(() => void vi.advanceTimersByTime(ms));
 
+/** Chegar num botão com o Tab: a tecla, e depois o foco. */
+function chegarPeloTeclado(elemento: HTMLElement) {
+  fireEvent.keyDown(document, { key: "Tab" });
+  elemento.focus();
+  fireEvent.focus(elemento);
+}
+
 describe("Dica", () => {
   it("aparece um instante depois de o mouse parar em cima, e some quando ele sai", () => {
     const botao = montar();
@@ -46,7 +54,7 @@ describe("Dica", () => {
 
   it("no teclado aparece na hora, e o leitor de tela lê a dica junto do botão", () => {
     const botao = montar();
-    fireEvent.focus(botao);
+    chegarPeloTeclado(botao);
     const dica = screen.getByRole("tooltip");
     expect(dica.textContent).toBe("Abrir a ficha do veículo");
     expect(botao.getAttribute("aria-describedby")).toBe(dica.id);
@@ -58,8 +66,7 @@ describe("Dica", () => {
 
   it("Esc fecha a dica sem tirar o foco do botão", () => {
     const botao = montar();
-    botao.focus();
-    fireEvent.focus(botao);
+    chegarPeloTeclado(botao);
     expect(screen.getByRole("tooltip")).toBeTruthy();
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -86,7 +93,7 @@ describe("Dica", () => {
       ({ top, bottom: top + 32, left: 200, right: 280, width: 80, height: 32, x: 200, y: top }) as DOMRect;
     const medida = vi.spyOn(botao, "getBoundingClientRect").mockReturnValue(retangulo(400));
 
-    fireEvent.focus(botao);
+    chegarPeloTeclado(botao);
     const dica = screen.getByRole("tooltip");
     const antes = dica.style.top;
 
@@ -101,7 +108,7 @@ describe("Dica", () => {
     const medida = vi.spyOn(botao, "getBoundingClientRect").mockReturnValue({
       top: 400, bottom: 432, left: 200, right: 280, width: 80, height: 32, x: 200, y: 400,
     } as DOMRect);
-    fireEvent.focus(botao);
+    chegarPeloTeclado(botao);
     expect(screen.getByRole("tooltip")).toBeTruthy();
 
     medida.mockReturnValue({
@@ -113,8 +120,80 @@ describe("Dica", () => {
 
   it("sem texto, não existe dica nenhuma (nem caixinha vazia)", () => {
     const botao = montar("  ");
+    chegarPeloTeclado(botao);
+    passarTempo(1000);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  // Os testes daqui pra baixo vieram da revisão de código do PR (15/11).
+
+  it("foco devolvido por código depois de um clique não acende a dica (a janela que fecha e devolve o foco)", () => {
+    const botao = montar();
+    // A pessoa clicou em outro lugar da tela (o "Cancelar" de uma janela)...
+    fireEvent.pointerDown(document.body);
+    // ...e o programa devolveu o foco pro botão, sem ninguém apertar tecla.
+    botao.focus();
     fireEvent.focus(botao);
     passarTempo(1000);
     expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("apertar o mouse em cima da dica não estraga o próximo Tab", () => {
+    const botao = montar();
+    chegarPeloTeclado(botao);
+    fireEvent.pointerDown(screen.getByRole("tooltip"));
+    fireEvent.blur(botao);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    chegarPeloTeclado(botao);
+    expect(screen.getByRole("tooltip")).toBeTruthy();
+  });
+
+  it("não apaga a descrição que o elemento já tinha (o erro do campo): soma a dica a ela", () => {
+    render(
+      <Dica texto="Só números">
+        <input aria-label="Telefone" aria-describedby="erro-do-telefone" />
+      </Dica>,
+    );
+    const campo = screen.getByLabelText("Telefone");
+    chegarPeloTeclado(campo);
+    const dica = screen.getByRole("tooltip");
+    expect(campo.getAttribute("aria-describedby")).toBe(`erro-do-telefone ${dica.id}`);
+
+    fireEvent.blur(campo);
+    expect(campo.getAttribute("aria-describedby")).toBe("erro-do-telefone");
+  });
+
+  it("abrir com o botão fora da vista não deixa uma dica escondida pendurada", () => {
+    const botao = montar();
+    vi.spyOn(botao, "getBoundingClientRect").mockReturnValue({
+      top: -500, bottom: -468, left: 200, right: 280, width: 80, height: 32, x: 200, y: -500,
+    } as DOMRect);
+    chegarPeloTeclado(botao);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    expect(botao.getAttribute("aria-describedby")).toBeNull();
+  });
+
+  it("dentro de uma janela, o Esc fecha só a dica; a janela fica, com o que foi preenchido", () => {
+    vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
+    const onFechar = vi.fn();
+    render(
+      <Modal titulo="Faturar" onFechar={onFechar}>
+        <Dica texto="Abrir a ficha do veículo">
+          <button type="button">RTA-4B71</button>
+        </Dica>
+      </Modal>,
+    );
+    chegarPeloTeclado(screen.getByRole("button", { name: "RTA-4B71" }));
+    expect(screen.getByRole("tooltip")).toBeTruthy();
+
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    expect(screen.queryByRole("tooltip")).toBeNull();
+    expect(onFechar).not.toHaveBeenCalled();
+
+    // Sem dica aberta, o Esc volta a ser da janela.
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    expect(onFechar).toHaveBeenCalledTimes(1);
+    vi.restoreAllMocks();
   });
 });

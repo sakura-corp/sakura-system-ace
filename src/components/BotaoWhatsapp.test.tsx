@@ -48,4 +48,15 @@ describe("BotaoWhatsapp", () => {
     expect(classes).toContain("h-8");
     expect(classes.some((c) => /^bg-(zap|ok|emerald)/.test(c))).toBe(false);
   });
+
+  // Da revisão de código do PR (15/11): o ícone tinha a cor verde escrita
+  // nele, e continuava verde vivo com o botão desligado (abrindo a conversa).
+  it("o ícone não tem cor própria: quem pinta é o botão, que sabe quando está desligado", () => {
+    render(<BotaoWhatsapp telefone="16999990000" texto="Oi" />);
+    const botao = screen.getByRole("button", { name: "WhatsApp" });
+    expect(botao.querySelector("svg")?.getAttribute("class") ?? "").not.toMatch(/text-/);
+    const classes = botao.getAttribute("class")?.split(/\s+/) ?? [];
+    expect(classes).toContain("[&_svg]:text-zap");
+    expect(classes).toContain("disabled:[&_svg]:text-texto-3");
+  });
 });

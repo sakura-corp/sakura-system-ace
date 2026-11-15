@@ -38,6 +38,22 @@ const MARGEM_DA_TELA = 8;
 
 type Lado = "cima" | "direita";
 
+// A última coisa que a pessoa usou: o teclado ou o mouse (ou o dedo). A dica
+// só acende no FOCO quando ele veio do teclado. Sem isto, ela acenderia em
+// dois casos errados: no clique (que também dá foco no botão) e quando o
+// programa devolve o foco por conta própria, como a janela que fecha e põe o
+// foco de volta no botão que a abriu.
+//
+// É um ouvinte só pro programa inteiro, na fase de captura, pra valer mesmo
+// quando alguém mais abaixo segura o evento. O navegador sabe isto sozinho
+// (`:focus-visible`), mas o ambiente dos testes não, e ter um jeito só é
+// melhor que dois.
+let ultimaInteracao: "teclado" | "ponteiro" = "ponteiro";
+if (typeof document !== "undefined") {
+  document.addEventListener("keydown", () => (ultimaInteracao = "teclado"), true);
+  document.addEventListener("pointerdown", () => (ultimaInteracao = "ponteiro"), true);
+}
+
 export function Dica({
   texto,
   lado = "cima",
@@ -55,9 +71,6 @@ export function Dica({
   const envelopeRef = useRef<HTMLSpanElement>(null);
   const dicaRef = useRef<HTMLDivElement>(null);
   const relogio = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // O clique do mouse dá foco no botão logo depois do pointerdown. Esse foco
-  // não é "cheguei pelo teclado", e não deve acender a dica.
-  const focoVeioDoClique = useRef(false);
 
   const temTexto = texto.trim() !== "";
 
@@ -107,10 +120,13 @@ export function Dica({
     }
     const maxLeft = window.innerWidth - dica.width - MARGEM_DA_TELA;
     const maxTop = window.innerHeight - dica.height - MARGEM_DA_TELA;
-    setPosicao({
-      top: Math.max(MARGEM_DA_TELA, Math.min(top, maxTop)),
-      left: Math.max(MARGEM_DA_TELA, Math.min(left, maxLeft)),
-    });
+    const novoTop = Math.max(MARGEM_DA_TELA, Math.min(top, maxTop));
+    const novoLeft = Math.max(MARGEM_DA_TELA, Math.min(left, maxLeft));
+    // Rolar uma lista dispara este cálculo dezenas de vezes por segundo: só
+    // redesenha quando a dica mudou de lugar de verdade.
+    setPosicao((atual) =>
+      atual && atual.top === novoTop && atual.left === novoLeft ? atual : { top: novoTop, left: novoLeft },
+    );
     return true;
   }
 
@@ -127,13 +143,21 @@ export function Dica({
       setPosicao(null);
       return;
     }
-    posicionarRef.current();
+    // Sem lugar pra ela (o alvo está fora da vista): fecha, em vez de ficar
+    // uma dica invisível pendurada, com o leitor de tela apontando pra ela.
+    if (!posicionarRef.current()) setAberta(false);
   }, [aberta, lado, texto]);
 
   useEffect(() => {
     if (!aberta) return;
+    // Na fase de captura, e marcando o Esc como USADO (`preventDefault`): a
+    // janela (Modal) também ouve o Esc no documento, e só não fecha quando
+    // alguém de dentro já usou a tecla. Sem isto, fechar uma dica dentro da
+    // janela de faturar fechava a janela junto, com tudo que foi preenchido.
     function aoTeclar(evento: KeyboardEvent) {
-      if (evento.key === "Escape") setAberta(false);
+      if (evento.key !== "Escape") return;
+      evento.preventDefault();
+      setAberta(false);
     }
     // A tela rolou ou mudou de tamanho: a dica ACOMPANHA o alvo. Ela não pode
     // simplesmente fechar: chegar com o Tab num botão fora da vista faz a
@@ -142,11 +166,11 @@ export function Dica({
     function aoMexerNaTela() {
       if (!posicionarRef.current()) setAberta(false);
     }
-    document.addEventListener("keydown", aoTeclar);
+    document.addEventListener("keydown", aoTeclar, true);
     window.addEventListener("resize", aoMexerNaTela);
     window.addEventListener("scroll", aoMexerNaTela, true);
     return () => {
-      document.removeEventListener("keydown", aoTeclar);
+      document.removeEventListener("keydown", aoTeclar, true);
       window.removeEventListener("resize", aoMexerNaTela);
       window.removeEventListener("scroll", aoMexerNaTela, true);
     };
@@ -160,23 +184,20 @@ export function Dica({
       className="contents"
       onMouseEnter={() => abrir(ESPERA_PRA_ABRIR)}
       onMouseLeave={() => fechar(ESPERA_PRA_FECHAR)}
-      onPointerDown={() => {
-        focoVeioDoClique.current = true;
-        fechar();
-      }}
+      // Clicou: a dica sai da frente do que o clique vai abrir.
+      onPointerDown={() => fechar()}
       onFocus={() => {
-        if (focoVeioDoClique.current) {
-          focoVeioDoClique.current = false;
-          return;
-        }
-        abrir(0);
+        if (ultimaInteracao === "teclado") abrir(0);
       }}
-      onBlur={() => {
-        focoVeioDoClique.current = false;
-        fechar();
-      }}
+      onBlur={() => fechar()}
     >
-      {aberta && temTexto ? cloneElement(children, { "aria-describedby": id }) : children}
+      {aberta && temTexto
+        ? cloneElement(children, {
+            // Soma à descrição que o elemento já tinha (o erro de um campo,
+            // por exemplo), em vez de apagar.
+            "aria-describedby": [children.props["aria-describedby"], id].filter(Boolean).join(" "),
+          })
+        : children}
       {aberta &&
         temTexto &&
         createPortal(

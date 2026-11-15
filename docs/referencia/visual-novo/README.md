@@ -224,7 +224,10 @@ nova entra na mostra no mesmo PR**: é onde o tema claro vai conferir todas de u
   faria.
 - **A placa** tem 32 px de altura (o conceito tinha 26): é o alvo de clique das listas (TR-02.1).
 - **A dica** espera o mouse parar (0,35 s) e acompanha o botão quando a tela rola. No teclado
-  aparece na hora.
+  aparece na hora, e só no teclado: foco que veio de clique, ou que o programa devolveu sozinho (a
+  janela que fecha), não acende dica. Dentro de uma janela, o Esc fecha só a dica.
+- **O aviso que some** fica fora do alcance do "mudo" que a janela põe no resto da tela: o aviso de
+  "OS faturada" sai no mesmo clique que fecha a janela, e o leitor de tela precisa anunciar.
 - **O fundo atrás da janela** fica desfocado, como no conceito. Em 03/10 (#361) ela tinha escolhido,
   por imagem, o fundo nítido e só escurecido; o painel continua opaco, que era o motivo daquela
   escolha. Se o desfoque incomodar no uso, é uma linha (`sakura-modal-fundo`, no `globals.css`).

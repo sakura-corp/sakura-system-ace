@@ -66,7 +66,7 @@ export function BotaoWhatsapp({
         onClick={handleClique}
         ocupado={abrindo}
         title={titulo ?? "Abrir a conversa no WhatsApp com a mensagem pronta"}
-        icone={<IconeWhatsapp className="text-zap" />}
+        icone={<IconeWhatsapp />}
       >
         {rotulo}
       </Botao>

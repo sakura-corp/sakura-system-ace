@@ -41,6 +41,7 @@ describe("LinkPlaca", () => {
 
   it("diz o que o clique faz, pra quem chega pelo teclado também", () => {
     const placa = montar();
+    fireEvent.keyDown(document, { key: "Tab" });
     fireEvent.focus(placa);
     expect(screen.getByRole("tooltip").textContent).toBe("Abrir a ficha do veículo");
     // A dica do programa entrou no lugar da do navegador: as duas juntas

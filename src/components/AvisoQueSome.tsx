@@ -1,5 +1,6 @@
 import { CircleCheck } from "lucide-react";
 import { useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { assinarAvisos, avisosAtuais } from "@/lib/avisoQueSome";
 
 /**
@@ -10,14 +11,26 @@ import { assinarAvisos, avisosAtuais } from "@/lib/avisoQueSome";
  * A região com `role="status"` fica sempre na tela, mesmo vazia: o leitor de
  * tela só anuncia o que ENTRA numa região que ele já conhecia. Criada junto
  * com o primeiro aviso, esse primeiro passaria calado.
+ *
+ * Três cuidados pra o aviso ser OUVIDO, e uma vez só:
+ * - fica direto no <body> (portal) e leva `data-fora-do-inert`: a janela
+ *   (`Modal`) deixa `inert` tudo que está fora dela, e o que é inert o leitor
+ *   de tela não anuncia. "OS 147 faturada" é avisado no mesmo clique que fecha
+ *   a janela de faturar; sem a marca, a região ainda estaria muda nessa hora;
+ * - `aria-atomic="false"`: um `status` é lido INTEIRO a cada mudança. Com dois
+ *   avisos na pilha, o primeiro seria repetido quando o segundo entrasse;
+ * - `aria-relevant="additions"`: o aviso que some não é anunciado de novo.
  */
 export function AvisosQueSomem() {
   const avisos = useSyncExternalStore(assinarAvisos, avisosAtuais, avisosAtuais);
 
-  return (
+  return createPortal(
     <div
       role="status"
       aria-live="polite"
+      aria-atomic="false"
+      aria-relevant="additions"
+      data-fora-do-inert
       // Não pega clique: o aviso fica por cima da tela sem tampar o botão que
       // estiver embaixo dele.
       className="pointer-events-none fixed inset-x-0 bottom-6 z-[70] flex flex-col items-center gap-2 px-4"
@@ -31,6 +44,7 @@ export function AvisosQueSomem() {
           <span className="min-w-0">{aviso.texto}</span>
         </div>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }

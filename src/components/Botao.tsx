@@ -59,10 +59,12 @@ const VARIANTE: Record<VarianteDoBotao, string[]> = {
     "disabled:text-texto-3",
   ],
   whatsapp: [
-    "border border-zap/45 text-ok",
+    // O ícone é pintado AQUI, e não nele mesmo: assim ele também apaga quando
+    // o botão desliga (abrindo a conversa), junto com a letra e a borda.
+    "border border-zap/45 text-ok [&_svg]:text-zap",
     "hover:bg-zap/[0.12]",
     "disabled:border-linha disabled:bg-transparent",
-    "disabled:text-texto-3",
+    "disabled:text-texto-3 disabled:[&_svg]:text-texto-3",
   ],
 };
 

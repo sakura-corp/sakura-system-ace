@@ -81,6 +81,10 @@ function inertizarFundo(elementoDoModal: HTMLElement): () => void {
     for (const irmao of Array.from(pai.children)) {
       if (irmao === atual || !(irmao instanceof HTMLElement)) continue;
       if (irmao.hasAttribute("inert")) continue;
+      // A região dos avisos que somem (AvisoQueSome.tsx): não pega clique nem
+      // foco, e precisa continuar FALANDO com a janela aberta, porque o aviso
+      // "OS faturada" sai no mesmo clique que fecha a janela.
+      if (irmao.hasAttribute("data-fora-do-inert")) continue;
       irmao.setAttribute("inert", "");
       marcados.push(irmao);
     }

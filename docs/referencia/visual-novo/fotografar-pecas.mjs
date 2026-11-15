@@ -41,7 +41,10 @@ process.exit(
     await pagina.locator("input.sakura-campo").first().focus();
     await pagina.locator("section", { hasText: "Campo, select" }).screenshot({ path: join(pasta, "campo-com-foco.png") });
 
-    // A dica, pelo teclado.
+    // A dica, pelo teclado. Ela só acende no foco quando a última coisa usada
+    // foi o teclado (foco posto por código, sem tecla, não conta): por isso a
+    // tecla antes.
+    await pagina.keyboard.press("Shift");
     await pagina.getByRole("button", { name: "RTA-4B71" }).focus();
     await pagina.waitForSelector('[role="tooltip"]');
     await pagina.locator("section", { hasText: "Tabela, com a placa" }).screenshot({ path: join(pasta, "tabela-com-a-dica.png") });

@@ -554,12 +554,16 @@ function CartaoValor({
           : undefined
       }
       variacao={
-        <Variacao
-          percentual={variacao}
-          subirEBom={subirEBom}
-          comparadoCom="o mesmo período do mês passado"
-          contra={mesAnterior}
-        />
+        // Sem com o que comparar, o cartão fica sem a linha da variação (e não
+        // com uma faixa vazia embaixo do número).
+        variacao === null ? undefined : (
+          <Variacao
+            percentual={variacao}
+            subirEBom={subirEBom}
+            comparadoCom="o mesmo período do mês passado"
+            contra={mesAnterior}
+          />
+        )
       }
     >
       <Valor valor={valor} />

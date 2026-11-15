@@ -54,6 +54,27 @@ describe("aviso que some sozinho", () => {
     expect(screen.getByRole("status").textContent).toBe("");
   });
 
+  // Da revisão de código do PR (15/11): a região é um `status`, que por
+  // padrão é lido INTEIRO a cada mudança. Com dois avisos na pilha, o leitor
+  // de tela repetia o primeiro quando o segundo entrava.
+  it("o leitor de tela lê só o aviso que ENTROU, não a pilha inteira de novo", () => {
+    render(<AvisosQueSomem />);
+    const regiao = screen.getByRole("status");
+    expect(regiao.getAttribute("aria-atomic")).toBe("false");
+    expect(regiao.getAttribute("aria-relevant")).toBe("additions");
+  });
+
+  // Idem: a janela (Modal) deixa `inert` tudo que está fora dela, e o que é
+  // inert o leitor de tela não anuncia. "OS 147 faturada" é avisado no mesmo
+  // clique que fecha a janela de faturar: a região não pode estar muda.
+  it("fica direto no <body>, marcada pra janela não deixar ela muda", () => {
+    const { container } = render(<AvisosQueSomem />);
+    const regiao = screen.getByRole("status");
+    expect(container.contains(regiao)).toBe(false);
+    expect(regiao.parentElement).toBe(document.body);
+    expect(regiao.hasAttribute("data-fora-do-inert")).toBe(true);
+  });
+
   it("nada cresce sem limite: no máximo três à vista, os mais novos", () => {
     render(<AvisosQueSomem />);
     act(() => {
