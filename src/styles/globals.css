@@ -107,6 +107,27 @@
   --text-color-acao: #ff5722;
   --text-color-acao-clara: #ff7a4d;
 
+  /* Os tons CLAROS da paleta do Tailwind que as telas antigas usam como letra
+     de aviso (text-red-400, text-amber-300…). No escuro são os de sempre; no
+     tema claro, em fundo branco, dão de 1,3:1 a 3,8:1, e viram as cores de
+     aviso do tema. Mesmo truque do laranja: só a cor de LETRA ganha valor
+     próprio. Saem quando as telas passarem a usar o Selo e os nomes de papel. */
+  --text-color-red-300: oklch(80.8% 0.114 19.571);
+  --text-color-red-400: oklch(70.4% 0.191 22.216);
+  --text-color-red-500: oklch(63.7% 0.237 25.331);
+  --text-color-amber-200: oklch(92.4% 0.12 95.746);
+  --text-color-amber-300: oklch(87.9% 0.169 91.605);
+  --text-color-amber-400: oklch(82.8% 0.189 84.429);
+  --text-color-emerald-300: oklch(84.5% 0.143 164.978);
+  --text-color-emerald-400: oklch(76.5% 0.177 163.223);
+  --background-color-amber-950: oklch(27.9% 0.077 45.635); /* a faixa de aviso escura (Comissões, Caixa) */
+  /* O laranja de BORDA e de anel (o foco dos campos antigos): no claro, o
+     laranja do botão contra o fundo dá 2,6:1 a 2,8:1; o contorno pede 3:1. */
+  --border-color-sakura-pink: #ff7a4d;
+  --border-color-sakura-purple: #ff5722;
+  --ring-color-sakura-pink: #ff7a4d;
+  --ring-color-sakura-purple: #ff5722;
+
   /* As duas letras vão DENTRO do programa (importadas no src/main.tsx, dos
      pacotes @fontsource-variable): ele roda sem internet, e em PC sem a Inter
      instalada caía na letra do Windows. */
@@ -237,6 +258,19 @@
   --text-color-sakura-purple: #ad3508;
   --text-color-acao: #ad3508;
   --text-color-acao-clara: #ad3508;
+  --text-color-red-300: #b91c1c;
+  --text-color-red-400: #b91c1c;
+  --text-color-red-500: #b91c1c;
+  --text-color-amber-200: #7a4a00;
+  --text-color-amber-300: #8a5300;
+  --text-color-amber-400: #8a5300;
+  --text-color-emerald-300: #05694d;
+  --text-color-emerald-400: #05694d;
+  --background-color-amber-950: #f0b040; /* a 40% sobre o branco: um amarelo pálido */
+  --border-color-sakura-pink: #d9430f;
+  --border-color-sakura-purple: #d9430f;
+  --ring-color-sakura-pink: #d9430f;
+  --ring-color-sakura-purple: #d9430f;
 
   /* Os nomes antigos, com o valor do papel que cada um faz. */
   --color-sakura-bg: #f3f2ef;
@@ -399,6 +433,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    o "bg-sakura-purple/20" nem o "hover:bg-sakura-purple". Quando as telas
    passarem a usar o componente Botao, isto sai. */
 :is(button, a)[class~="bg-sakura-purple"]:disabled,
+:is(button, a)[class~="bg-red-600"]:disabled,
 :is(button, a)[class~="bg-acao"]:disabled {
   background-color: var(--color-passar);
   color: var(--color-texto-2);
