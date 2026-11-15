@@ -16,43 +16,71 @@ import { join } from "node:path";
 const RAIZ = "src";
 
 // Tokens do tema (src/styles/globals.css) traduzidos pra "isso é claro ou escuro?"
-const FUNDO_CLARO = [
+//
+// O programa tem DOIS temas (visual novo, #990), e os tokens trocam de lado: a
+// superfície `cartao` é escura no tema escuro e branca no claro; o `texto` é
+// o contrário. Então há três grupos: o que é FIXO (branco é branco nos dois),
+// o que é superfície do tema e o que é texto do tema. A varredura roda uma vez
+// pra cada tema, e uma string reprova se for ilegível em qualquer um.
+
+// Fixos: valem nos dois temas.
+const FUNDO_CLARO_FIXO = [
   /\bbg-white\b(?!\/)/,
   /\bbg-[a-z]+-(?:50|100|200)\b/,
-  /\bbg-sakura-purple-dark\b/, // apesar do nome "dark", é a cor CLARA do texto
   // O laranja de ação (visual novo, #990). Letra branca em cima dele dá 3,2:1,
   // abaixo dos 4,5:1 do mínimo: a letra tem que ser a `sobre-acao`, escura
   // (regra 3 de docs/referencia/visual-novo/README.md). Vale também pro
   // `hover:`: passar o mouse não pode apagar o texto do botão. Com "/" (ex.:
-  // bg-sakura-purple/20) é só um véu sobre o fundo escuro, e não entra.
+  // bg-sakura-purple/20) é só um véu sobre o fundo, e não entra.
   /\bbg-sakura-purple(?:\/(?:[7-9]\d|100))?(?![-/\w])/, // de 70% pra cima ainda é laranja
   /\bbg-sakura-pink(?:\/(?:[7-9]\d|100))?(?![-/\w])/,
   /\bbg-acao(?:-clara)?(?![-/\w])/,
-  /\bbg-dica(?![-/\w])/, // a caixinha clara da Dica: a letra dela é a `sobre-dica`
 ];
-const FUNDO_ESCURO = [
-  /\bbg-sakura-bg\b/,
-  /\bbg-sakura-pink-soft\b/,
-  /\bbg-sakura-gray\b/,
-  /\bbg-black\b/,
+const FUNDO_ESCURO_FIXO = [
+  /\bbg-sakura-gray\b(?!\/)/, // cinza escuro nos dois temas
+  /\bbg-black\b(?!\/)/,
   /\bbg-\[#[0-1][0-9a-f]/, // hex começando bem escuro, ex: bg-[#160f16]
-  // As superfícies com nome de PAPEL do visual novo (#990): todas escuras.
-  /\bbg-(?:fundo|painel|cartao|passar|campo|janela|placa)(?![-/\w])/,
 ];
-const TEXTO_CLARO = [
-  /\btext-white\b(?!\/)/,
-  /\btext-sakura-purple-dark\b/,
-  /\btext-sakura-muted\b/,
-  /\btext-[a-z]+-(?:50|100|200)\b/,
-  /\btext-texto(?:-[23])?(?![-/\w])/, // os três textos com nome de papel: todos claros
-];
-const TEXTO_ESCURO = [
+const TEXTO_CLARO_FIXO = [/\btext-white\b(?!\/)/, /\btext-[a-z]+-(?:50|100|200)\b/];
+const TEXTO_ESCURO_FIXO = [
   /\btext-black\b/,
   /\btext-sakura-gray\b/,
-  /\btext-sakura-bg\b/,
   /\btext-[a-z]+-(?:700|800|900)\b/,
-  /\btext-sobre-(?:acao|dica)(?![-/\w])/, // as letras escuras, pra cima do laranja e da dica
+  /\btext-sobre-acao(?![-/\w])/, // a letra escura de cima do laranja
 ];
+
+// As superfícies do tema: escuras no escuro, claras no claro.
+const SUPERFICIE = [
+  /\bbg-sakura-bg\b/,
+  /\bbg-sakura-pink-soft\b/,
+  /\bbg-(?:fundo|painel|cartao|passar|campo|janela|placa)(?![-/\w])/,
+];
+// Os textos do tema: claros no escuro, escuros no claro. O `sakura-purple-dark`,
+// apesar do nome, é o texto principal.
+const TEXTO_DO_TEMA = [
+  /\btext-sakura-purple-dark\b/,
+  /\btext-sakura-muted\b/,
+  /\btext-texto(?:-[23])?(?![-/\w])/,
+];
+// O avesso do tema: a caixinha da Dica (clara no escuro, escura no claro) e o
+// texto principal usado como FUNDO; e as letras que vão em cima deles.
+const FUNDO_AVESSO = [/\bbg-dica(?![-/\w])/, /\bbg-sakura-purple-dark\b(?!\/)/];
+const TEXTO_AVESSO = [/\btext-sobre-dica(?![-/\w])/, /\btext-sakura-bg\b/];
+
+const REGRAS = {
+  escuro: {
+    fundoClaro: [...FUNDO_CLARO_FIXO, ...FUNDO_AVESSO],
+    fundoEscuro: [...FUNDO_ESCURO_FIXO, ...SUPERFICIE],
+    textoClaro: [...TEXTO_CLARO_FIXO, ...TEXTO_DO_TEMA],
+    textoEscuro: [...TEXTO_ESCURO_FIXO, ...TEXTO_AVESSO],
+  },
+  claro: {
+    fundoClaro: [...FUNDO_CLARO_FIXO, ...SUPERFICIE],
+    fundoEscuro: [...FUNDO_ESCURO_FIXO, ...FUNDO_AVESSO],
+    textoClaro: [...TEXTO_CLARO_FIXO, ...TEXTO_AVESSO],
+    textoEscuro: [...TEXTO_ESCURO_FIXO, ...TEXTO_DO_TEMA],
+  },
+};
 
 const casa = (regras, texto) => regras.some((r) => r.test(texto));
 
@@ -74,22 +102,24 @@ for (const caminho of arquivos(RAIZ)) {
     .forEach((linha, i) => {
       // pega qualquer trecho entre aspas que pareça lista de classes Tailwind
       for (const [, classes] of linha.matchAll(/["'`]([^"'`]*\b(?:bg|text)-[^"'`]*)["'`]/g)) {
-        const claroClaro = casa(FUNDO_CLARO, classes) && casa(TEXTO_CLARO, classes);
-        const escuroEscuro = casa(FUNDO_ESCURO, classes) && casa(TEXTO_ESCURO, classes);
-        if (claroClaro || escuroEscuro) {
-          achados.push({
-            caminho,
-            linha: i + 1,
-            tipo: claroClaro ? "fundo claro + letra clara" : "fundo escuro + letra escura",
-            classes: classes.trim().slice(0, 110),
-          });
+        for (const [tema, r] of Object.entries(REGRAS)) {
+          const claroClaro = casa(r.fundoClaro, classes) && casa(r.textoClaro, classes);
+          const escuroEscuro = casa(r.fundoEscuro, classes) && casa(r.textoEscuro, classes);
+          if (claroClaro || escuroEscuro) {
+            achados.push({
+              caminho,
+              linha: i + 1,
+              tipo: `tema ${tema}: ${claroClaro ? "fundo claro + letra clara" : "fundo escuro + letra escura"}`,
+              classes: classes.trim().slice(0, 110),
+            });
+          }
         }
       }
     });
 }
 
 if (achados.length === 0) {
-  console.log("Nenhuma combinação ilegível encontrada.");
+  console.log("Nenhuma combinação ilegível encontrada, em nenhum dos dois temas.");
 } else {
   console.log(`${achados.length} combinação(ões) suspeita(s):\n`);
   for (const a of achados) {
