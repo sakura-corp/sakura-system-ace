@@ -110,6 +110,16 @@ describe("Variacao", () => {
     expect(visivel).toContain("contra outubro");
   });
 
+  it("o que arredonda pra zero sai como 0%, sem sinal: '+0%' não quer dizer nada", () => {
+    for (const quase of [0.2, -0.3, 0]) {
+      const html = renderToStaticMarkup(
+        <Variacao percentual={quase} subirEBom comparadoCom="o mês passado" />,
+      );
+      const visivel = html.replace(/\s+title="[^"]*"/g, "").replace(/<[^>]+>/g, "");
+      expect(visivel, `variação de ${quase}%`).toBe("0%");
+    }
+  });
+
   it("sem `contra`, não inventa texto nenhum", () => {
     const html = renderToStaticMarkup(
       <Variacao percentual={12} subirEBom comparadoCom="o mês passado" />,

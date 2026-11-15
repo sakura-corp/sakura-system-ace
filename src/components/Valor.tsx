@@ -97,7 +97,7 @@ export function Variacao({
   const bom = subiu === subirEBom;
   const cor = parado ? "text-texto-2" : bom ? "text-ok" : "text-perigo";
   const Seta = parado ? ArrowRight : subiu ? ArrowUp : ArrowDown;
-  const sinal = subiu ? "+" : percentual < 0 ? "−" : "";
+  const sinal = parado ? "" : subiu ? "+" : "−";
 
   // Um mês que rendeu R$ 20 e outro que rendeu R$ 20.000 dão "+99.900%", que
   // não informa nada além de "muito mais". Acima do teto, o número mostrado

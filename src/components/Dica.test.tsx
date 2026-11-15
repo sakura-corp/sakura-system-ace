@@ -77,6 +77,40 @@ describe("Dica", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
+  // Achado ao fotografar a mostra das peças num navegador de verdade: chegar
+  // com o Tab num botão fora da vista faz a tela ROLAR até ele, e a dica, que
+  // fechava em qualquer rolagem, sumia no mesmo instante em que aparecia.
+  it("a tela rolar não fecha a dica: ela acompanha o botão", () => {
+    const botao = montar();
+    const retangulo = (top: number) =>
+      ({ top, bottom: top + 32, left: 200, right: 280, width: 80, height: 32, x: 200, y: top }) as DOMRect;
+    const medida = vi.spyOn(botao, "getBoundingClientRect").mockReturnValue(retangulo(400));
+
+    fireEvent.focus(botao);
+    const dica = screen.getByRole("tooltip");
+    const antes = dica.style.top;
+
+    medida.mockReturnValue(retangulo(300));
+    fireEvent.scroll(window);
+    expect(screen.getByRole("tooltip")).toBe(dica);
+    expect(dica.style.top).not.toBe(antes);
+  });
+
+  it("se o botão saiu da vista com a rolagem, aí sim a dica fecha", () => {
+    const botao = montar();
+    const medida = vi.spyOn(botao, "getBoundingClientRect").mockReturnValue({
+      top: 400, bottom: 432, left: 200, right: 280, width: 80, height: 32, x: 200, y: 400,
+    } as DOMRect);
+    fireEvent.focus(botao);
+    expect(screen.getByRole("tooltip")).toBeTruthy();
+
+    medida.mockReturnValue({
+      top: -500, bottom: -468, left: 200, right: 280, width: 80, height: 32, x: 200, y: -500,
+    } as DOMRect);
+    fireEvent.scroll(window);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
   it("sem texto, não existe dica nenhuma (nem caixinha vazia)", () => {
     const botao = montar("  ");
     fireEvent.focus(botao);

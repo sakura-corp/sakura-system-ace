@@ -81,17 +81,18 @@ export function Dica({
 
   useEffect(() => limparRelogio, []);
 
-  // A posição sai do tamanho de verdade da dica, medido depois de desenhada e
-  // antes de o navegador pintar (por isso o layout effect): assim ela não
-  // pisca num canto pra depois pular pro lugar.
-  useLayoutEffect(() => {
-    if (!aberta) {
-      setPosicao(null);
-      return;
-    }
+  /**
+   * Põe a dica no lugar, a partir do tamanho de verdade dela e de onde o alvo
+   * está AGORA. Devolve `false` se o alvo não está mais à vista (rolou pra
+   * fora da tela): aí não há onde pôr a dica.
+   */
+  function posicionar(): boolean {
     const alvo = envelopeRef.current?.firstElementChild?.getBoundingClientRect();
     const dica = dicaRef.current?.getBoundingClientRect();
-    if (!alvo || !dica) return;
+    if (!alvo || !dica) return false;
+    const foraDaVista =
+      alvo.bottom < 0 || alvo.top > window.innerHeight || alvo.right < 0 || alvo.left > window.innerWidth;
+    if (foraDaVista) return false;
 
     let top: number;
     let left: number;
@@ -110,6 +111,23 @@ export function Dica({
       top: Math.max(MARGEM_DA_TELA, Math.min(top, maxTop)),
       left: Math.max(MARGEM_DA_TELA, Math.min(left, maxLeft)),
     });
+    return true;
+  }
+
+  // Sempre a versão mais nova da função, pros dois efeitos abaixo não
+  // precisarem recriar os ouvintes a cada desenho.
+  const posicionarRef = useRef(posicionar);
+  posicionarRef.current = posicionar;
+
+  // Medida depois de desenhada e antes de o navegador pintar (por isso o
+  // layout effect): assim a dica não pisca num canto pra depois pular pro
+  // lugar.
+  useLayoutEffect(() => {
+    if (!aberta) {
+      setPosicao(null);
+      return;
+    }
+    posicionarRef.current();
   }, [aberta, lado, texto]);
 
   useEffect(() => {
@@ -117,10 +135,12 @@ export function Dica({
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") setAberta(false);
     }
-    // A posição é calculada na abertura: rolar a tela deixaria a dica solta,
-    // longe do botão. Fechar é mais honesto que mostrar torto.
+    // A tela rolou ou mudou de tamanho: a dica ACOMPANHA o alvo. Ela não pode
+    // simplesmente fechar: chegar com o Tab num botão fora da vista faz a
+    // tela rolar até ele, e a dica sumiria no instante em que apareceu (visto
+    // ao fotografar a mostra das peças). Só fecha se o alvo saiu da vista.
     function aoMexerNaTela() {
-      setAberta(false);
+      if (!posicionarRef.current()) setAberta(false);
     }
     document.addEventListener("keydown", aoTeclar);
     window.addEventListener("resize", aoMexerNaTela);

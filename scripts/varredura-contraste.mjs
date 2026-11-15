@@ -28,6 +28,7 @@ const FUNDO_CLARO = [
   /\bbg-sakura-purple(?:\/(?:[7-9]\d|100))?(?![-/\w])/, // de 70% pra cima ainda é laranja
   /\bbg-sakura-pink(?:\/(?:[7-9]\d|100))?(?![-/\w])/,
   /\bbg-acao(?:-clara)?(?![-/\w])/,
+  /\bbg-dica(?![-/\w])/, // a caixinha clara da Dica: a letra dela é a `sobre-dica`
 ];
 const FUNDO_ESCURO = [
   /\bbg-sakura-bg\b/,
@@ -35,18 +36,22 @@ const FUNDO_ESCURO = [
   /\bbg-sakura-gray\b/,
   /\bbg-black\b/,
   /\bbg-\[#[0-1][0-9a-f]/, // hex começando bem escuro, ex: bg-[#160f16]
+  // As superfícies com nome de PAPEL do visual novo (#990): todas escuras.
+  /\bbg-(?:fundo|painel|cartao|passar|campo|janela|placa)(?![-/\w])/,
 ];
 const TEXTO_CLARO = [
   /\btext-white\b(?!\/)/,
   /\btext-sakura-purple-dark\b/,
   /\btext-sakura-muted\b/,
   /\btext-[a-z]+-(?:50|100|200)\b/,
+  /\btext-texto(?:-[23])?(?![-/\w])/, // os três textos com nome de papel: todos claros
 ];
 const TEXTO_ESCURO = [
   /\btext-black\b/,
   /\btext-sakura-gray\b/,
   /\btext-sakura-bg\b/,
   /\btext-[a-z]+-(?:700|800|900)\b/,
+  /\btext-sobre-(?:acao|dica)(?![-/\w])/, // as letras escuras, pra cima do laranja e da dica
 ];
 
 const casa = (regras, texto) => regras.some((r) => r.test(texto));

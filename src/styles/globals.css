@@ -484,9 +484,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     border-color: var(--color-perigo);
   }
 
+  /* Desligado: a borda fica tracejada e a letra mais fraca. A borda NÃO
+     clareia: abaixo de 3:1 o campo some do formulário, e quem está no balcão
+     precisa ver que ele existe e que não é pra preencher. */
   &:disabled {
     cursor: not-allowed;
-    border-color: var(--color-linha-forte);
+    border-style: dashed;
     color: var(--color-texto-3);
   }
 
