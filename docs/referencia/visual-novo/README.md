@@ -37,6 +37,18 @@
   brilho, o menu de ícones arredondado); a cor continua laranja com carmesim.
 - **O resto ela delegou** ("o que for melhor, com base em técnica e design"). O que foi escolhido por
   essa delegação está marcado com **(escolha do Claude)** e pode ser trocado por ela.
+- **Quem mexe numa tela procura o que melhorar nela** (15/11, na sessão das peças): "quero melhorar
+  bastante, deixar o sistema mais bonito, funcionando melhor, **menos confuso**. Acho que esse é o
+  principal." Toda tarefa do visual novo olha a tela inteira, não só a tinta, e **sugere** o que
+  deixaria ela mais clara. O que for essencial pode ser pesquisado e decidido por quem está fazendo,
+  **mostrando o resultado a ela**; o que muda costume da loja, conta ou documento continua voltando
+  pra ela antes. Como fazer está na seção 12.
+- **A janela do programa** (15/11): a faixa branca do Windows em cima do programa "fica feia"; ela
+  quer a barra na cor do programa e, se der, a janela de canto arredondado. Entra na tarefa da logo
+  e do Login (seção 12).
+- **Notas Fiscais** (15/11): a nota **do cliente** tem que ser fácil de achar (hoje só aparece "Ver
+  DANFE", e depois de finalizar a OS o caminho é difícil), e os botões de **baixar** têm que dizer
+  o que baixam e pra quem é. Entra na tarefa da tela de Notas Fiscais e na das OS (seção 12).
 
 O que **não** muda: nenhum campo, coluna, filtro, atalho ou botão some (regra da #990). Só muda
 aparência, hierarquia e organização.
@@ -101,6 +113,10 @@ texto) usado 662 vezes. Nome de cor mente quando a cor muda. Os nomes novos dize
 | Certo | `ok` | `#34D399` | 9,1 |
 | Problema | `perigo` | `#F87171` | 6,3 |
 | WhatsApp | `zap` | `#25D366` | só a borda e o ícone do botão "Avisar" |
+| Dica | `dica` | `#FFFFFF` | a caixinha que aparece ao passar o mouse |
+| Letra sobre a dica | `sobre-dica` | `#111111` | 18,9 |
+| Placa | `placa` | `#0E0E13` | o fundo da placa do carro |
+| Faixa da placa | `placa-faixa` | `#2F62E0` | a faixa azul de cima |
 
 Os números de contraste são contra o cartão (`#191920`) e foram calculados pela fórmula da WCAG, a
 mesma do `npm run contraste`. **(escolha do Claude)** em tudo que não é o carmesim, o laranja e as
@@ -144,8 +160,9 @@ O efeito que ela gostou é: **manchas de cor desfocadas num fundo quase preto, c
   material de divulgação.
 - **Onde não pode**: atrás de tabela, de formulário ou de texto corrido. No balcão, ler ganha de
   enfeitar.
-- **O vidro** (`backdrop-filter: blur`) fica **só no cartão do Login**. Os cartões das telas passam a
-  ser sólidos. Motivo: vidro em cima de fundo que muda foi o que derrubou o contraste dos campos em
+- **O vidro** (`backdrop-filter: blur`) fica **só no cartão do Login** (a classe `sakura-vidro`, usada
+  também na tela de conexão e na de trocar a senha). Os cartões das telas (`sakura-card`) são
+  sólidos desde a tarefa 2. Motivo: vidro em cima de fundo que muda foi o que derrubou o contraste dos campos em
   setembro (item TR-01.3), e a janela já tinha virado opaca pelo mesmo motivo (#361).
 
 ## 6. As peças
@@ -164,6 +181,57 @@ O efeito que ela gostou é: **manchas de cor desfocadas num fundo quase preto, c
 | **Janela (modal)** | painel opaco, canto de 22 px, o fundo de trás escurecido e desfocado. Título e total em cima, ações embaixo à direita, o botão principal por último. |
 | **Aviso que some sozinho** | embaixo, no meio, com o visto verde ("OS 148 faturada"). |
 | **Dica ao passar o mouse** | caixinha branca com letra preta. |
+
+### Onde está cada peça (prontas desde a tarefa 2, 15/11)
+
+**Tela nova não escreve mais as classes do botão, do selo ou do campo à mão: usa a peça.** As telas
+antigas trocam cada uma na tarefa dela (as 8 em diante); até lá convivem os dois jeitos.
+
+| Peça | Onde | Como usar |
+|---|---|---|
+| Botão | `src/components/Botao.tsx` | `<Botao variante="principal">Faturar</Botao>`. Variantes: `principal`, `secundario` (o padrão), `fantasma`, `whatsapp`. Tamanhos: `pequeno` (32), `medio` (40), `grande` (48). `LinkBotao` é o mesmo botão quando o clique leva pra outra tela. Só com ícone: `soIcone`, e aí o `aria-label` é obrigatório. |
+| Botão do WhatsApp | `src/components/BotaoWhatsapp.tsx` | como antes; por dentro é a variante `whatsapp` do `Botao`. |
+| Selo de aviso | `src/components/Selo.tsx` | `<Selo tipo="atencao" palavra="Concluída" />`. Tipos: `info`, `atencao`, `ok`, `perigo`, `neutro`. **Sem a `palavra` não compila** (regra 4); o ícone tem um padrão por tipo e pode ser trocado. |
+| Placa | `src/components/LinkPlaca.tsx` | `<LinkPlaca veiculoId={…} placa={…} />`, como antes. |
+| Cartão | a classe `sakura-card` | sólido, canto de 18 px. |
+| Cartão de número | `src/components/CartaoNumero.tsx` | o rótulo, o "?", o número (um `<Valor />`) e a `<Variacao contra="outubro" />`. Com `para="/rota"`, o cartão inteiro é clicável. Ainda sem o fio de gráfico. |
+| Tabela | a classe `sakura-tabela` | no `<table>`, dentro de um `sakura-card overflow-hidden`; valor em dinheiro com `text-right`. |
+| Campo | as classes `sakura-campo` e `sakura-rotulo` | `<label class="sakura-rotulo">Nome <input class="sakura-campo" /></label>`. No filtro, somar `sakura-campo-filtro`. Serve pra `input`, `select` e `textarea`. Recusado pela validação: `aria-invalid="true"`. |
+| Janela | `src/components/Modal.tsx` | como antes, e agora com `total={{ rotulo, valor }}` no cabeçalho e `rodape={…}` com as ações (o botão principal por último). |
+| Aviso que some sozinho | `avisar("OS 148 faturada")`, de `src/lib/avisoQueSome.ts` | **só pra confirmação**. Erro não some sozinho: continua do lado do botão que falhou. |
+| Dica | `src/components/Dica.tsx` | `<Dica texto="Mais ações"><button>…</button></Dica>`. Entra no lugar do `title`; **não usar os dois juntos**. Aparece no mouse e no teclado. |
+
+**A mostra das peças.** Todas as peças, desenhadas com o componente de verdade e com a linha de
+código de como usar, estão numa página que **não faz parte do programa das lojas**
+(`docs/referencia/visual-novo/pecas.html`, com o código em `src/galeria-de-pecas/`). As fotos dela
+estão em `andamento/2-pecas/`. Pra abrir no PC, com o projeto instalado:
+
+```
+npx vite --config site/ferramentas/vite.telas.config.ts
+```
+
+e no navegador `http://localhost:5199/docs/referencia/visual-novo/pecas.html`. Pra refazer as fotos
+e conferir o contraste da página: `node docs/referencia/visual-novo/fotografar-pecas.mjs`. **Peça
+nova entra na mostra no mesmo PR**: é onde o tema claro vai conferir todas de uma vez.
+
+**O que as peças fizeram diferente do conceito, e por quê** (escolhas do Claude, 15/11):
+- **O foco do campo** é a borda laranja com 2 px mais o anel fraco, no lugar do anel de foco geral
+  do programa. No conceito a borda tinha 1 px a 70%; o balcão é operado só no teclado, então o foco
+  ficou mais forte (6,9:1 contra o cartão).
+- **O campo desligado** fica com a borda tracejada e a letra mais fraca. A borda não clareia: abaixo
+  de 3:1 o campo some do formulário (a medição de contraste reprovou a primeira versão).
+- **O botão desligado** é cinza sólido com a letra secundária, nos quatro tipos: dá pra ler o que ele
+  faria.
+- **A placa** tem 32 px de altura (o conceito tinha 26): é o alvo de clique das listas (TR-02.1).
+- **A dica** espera o mouse parar (0,35 s) e acompanha o botão quando a tela rola. No teclado
+  aparece na hora, e só no teclado: foco que veio de clique, ou que o programa devolveu sozinho (a
+  janela que fecha), não acende dica. Dentro de uma janela, o Esc fecha só a dica.
+- **O aviso que some** fica fora do alcance do "mudo" que a janela põe no resto da tela: o aviso de
+  "OS faturada" sai no mesmo clique que fecha a janela, e o leitor de tela precisa anunciar.
+- **O fundo atrás da janela** fica desfocado, como no conceito. Em 03/10 (#361) ela tinha escolhido,
+  por imagem, o fundo nítido e só escurecido; o painel continua opaco, que era o motivo daquela
+  escolha. Se o desfoque incomodar no uso, é uma linha (`sakura-modal-fundo`, no `globals.css`).
+- **"0%" sem sinal** na variação que arredonda pra zero (antes saía "+0%").
 
 ### O que pode crescer (regra da Sofia, 14/11)
 
@@ -290,6 +358,55 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
 - **Som**: na gaveta.
 - **A marca da empresa** (rosa e roxo): outro assunto, outra sessão. Os códigos de cor que aparecem
   na imagem rosa foram inventados pela IA de imagem e não servem.
+
+## 12. Melhorar enquanto mexe (pedido da Sofia, 15/11)
+
+O visual novo não é só tinta: o objetivo é o programa ficar **menos confuso**. Quem leva uma tela
+pro visual novo faz, na mesma tarefa:
+
+1. **Usa a tela como quem está no balcão** antes de mexer: o que a pessoa veio fazer aqui, e em
+   quantos cliques ela chega lá. O que está escondido e é usado todo dia? O que tem nome que só quem
+   programou entende?
+2. **Anota o que achou** no relatório da tarefa, em três montes: o que **já fez** (era aparência ou
+   organização, sem mudar costume); o que **sugere**, com a recomendação; e o que **virou tarefa**
+   (defeito achado de passagem vira issue na hora).
+3. **Decide sozinho só o que é de aparência e de clareza** (nome de botão, ordem, o que fica à vista
+   e o que vai pros três pontos), e **mostra o resultado**. Mudou costume da loja, conta, nota
+   fiscal ou documento: volta pra Sofia antes.
+4. **Nada some** (a regra da #990 continua): mudou de lugar, diz onde foi parar.
+
+### O que ela já apontou (15/11), com a recomendação
+
+**A janela do programa** (entra na tarefa 6, a da logo e do Login, que já mexe no Electron):
+- **A barra de cima na cor do programa.** O Electron deixa esconder a barra do Windows e manter os
+  três botões de verdade (minimizar, maximizar, fechar) por cima do programa, na cor que a gente
+  escolher (`titleBarStyle: "hidden"` com `titleBarOverlay`, no `electron/main.ts`). Arrastar a
+  janela, o duplo clique que maximiza e o encaixe na lateral continuam funcionando, porque os botões
+  e a área de arrastar continuam sendo do Windows. **(recomendação do Claude)**: é o jeito que não
+  quebra nada do que o Windows já faz.
+- **O canto arredondado.** No Windows 11 a janela já ganha canto arredondado sozinha, com a barra
+  nova inclusive. No Windows 10 o canto é reto, e forçar o arredondado exige uma janela
+  transparente desenhada inteira pelo programa, que perde a sombra, o encaixe na lateral e o
+  redimensionar pelas bordas. **(recomendação do Claude)**: não forçar; conferir qual Windows as
+  lojas usam antes de decidir.
+- **Isto ainda não foi testado num Windows de verdade**: a sessão das peças não abre o Electron.
+  Quem fizer a tarefa confere as duas coisas no instalador de teste, no Windows 10 e no 11, antes
+  de dar como certo.
+- **De passagem**: a janela nasce com o fundo **rosa-claro** do tema antigo (`backgroundColor:
+  "#FFF7FC"` no `electron/main.ts`), que aparece por um instante ao abrir o programa. Trocar pelo
+  `#0A0A0D` na mesma tarefa.
+
+**Notas Fiscais** (entra na tarefa da tela de Notas Fiscais, e a parte da OS na tarefa 7):
+- **A nota do cliente à vista.** Hoje a linha mostra "Ver DANFE", que é nome de quem programa. O
+  botão passa a dizer o que a pessoa quer ("Ver a nota" ou "Nota do cliente"), e na linha fica o
+  próximo passo de verdade: abrir, imprimir ou mandar pro cliente.
+- **Depois de finalizar a OS**, o caminho pra nota fica à mão: no aviso de "OS faturada" e na linha
+  da OS finalizada, sem precisar ir até Notas Fiscais procurar.
+- **Baixar, sem adivinhação.** Cada opção de baixar diz o que é e pra quem serve: o **PDF** é a nota
+  pra ler e imprimir (a do cliente); o **XML** é o arquivo que o contador pede; "os XML do mês" é o
+  pacote que vai pro contador de uma vez.
+- Antes de desenhar, conferir a #773 (o "Ver documento oficial completo" da NFS-e que não abre):
+  pode ser parte do mesmo aperto.
 
 ## Como refazer a página e as fotos
 

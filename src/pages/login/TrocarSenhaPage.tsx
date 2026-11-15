@@ -46,7 +46,7 @@ export function TrocarSenhaPage() {
 
   return (
     <div className="sakura-fundo-marca sakura-grao flex h-screen items-center justify-center">
-      <div className="sakura-card relative z-[2] w-full max-w-sm p-8">
+      <div className="sakura-vidro relative z-[2] w-full max-w-sm p-8">
         <div className="mb-6 flex justify-center">
           <Logo className="drop-shadow-sm" />
         </div>

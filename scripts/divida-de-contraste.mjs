@@ -31,17 +31,17 @@
 export const DIVIDA_DE_CONTRASTE = [
   {
     id: "calendario-dias-do-mes-vizinho",
-    // 2,56:1. Estes são apagados DE PROPÓSITO: o calendário do Início mostra
+    // 3,04:1. Estes são apagados DE PROPÓSITO: o calendário do Início mostra
     // a sobra do mês anterior e os primeiros dias do seguinte em cinza, pra
     // não competir com o mês corrente. Clarear resolve o número e estraga a
     // ideia. Fica aqui como decisão consciente, não como esquecimento.
-    // O segundo tom é o mesmo dia apagado quando ele é feriado: o fundo do
-    // feriado muda a mistura do cinza. Só aparece quando um feriado cai na
-    // sobra visível (Finados, 2/11, no calendário de outubro; 1º/1 no de
-    // dezembro), por isso a varredura reprovou pela primeira vez em 1º/10/2026.
-    // Os dois tons são os do visual novo (#990), medidos com o relógio parado
-    // em outubro; no tema rosa e roxo eram #5a5059 e #60545e.
-    quando: (g) => g.tipo === "texto" && (g.frente === "#616165" || g.frente === "#65656a"),
+    // É um tom só desde 15/11/2026, quando o cartão virou sólido (visual
+    // novo, #990, tarefa 2): medido com o relógio parado em outubro (com o
+    // feriado de Finados na sobra visível) e em novembro. Enquanto o cartão
+    // era vidro eram dois tons, #616165 e #65656a (2,56:1), porque o fundo do
+    // feriado mudava a mistura do cinza; no tema rosa e roxo, #5a5059 e
+    // #60545e.
+    quando: (g) => g.tipo === "texto" && g.frente === "#65656b" && g.fundo === "#191920",
   },
 ];
 

@@ -131,7 +131,8 @@ function diaDaSemana(dia: string): string {
   return DIAS_DA_SEMANA[new Date(a, m - 1, d).getDay()];
 }
 
-function nomeDoMesAnterior(hoje: string): string {
+/** O nome do mês anterior ao de `hoje` ("YYYY-MM-DD"): em novembro, "outubro". */
+export function nomeDoMesAnterior(hoje: string): string {
   const mes = Number(hoje.slice(5, 7)); // 1 a 12
   return MESES[(mes + 10) % 12];
 }
