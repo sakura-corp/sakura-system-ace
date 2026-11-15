@@ -13,6 +13,7 @@ site/
 ├── index.html          # a página inteira (todo o texto está aqui)
 ├── styles.css          # a aparência, na mesma paleta do aplicativo
 ├── sakura-icon.svg     # cópias das artes do app (public/ do projeto): a flor da logo B
+├── sakura-logo.svg     # a logo ANTIGA: só a apresentação comercial (apresentacao/) ainda usa
 ├── sakura-icon-mini.svg  # a versão pequena (16 a 32 px), usada de ícone da aba
 ├── telas/*.jpg         # imagens das telas do sistema, com dados inventados
 └── ferramentas/        # como as imagens de telas/ foram geradas (ver abaixo)

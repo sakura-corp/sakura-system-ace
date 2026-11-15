@@ -361,7 +361,7 @@ Electron de verdade; conexão e trocar senha; o ícone em 16, 32, 256 e 1024 px;
 | Nada embaixo dos botões | Com a barra própria, o `#root` começa 40 px abaixo do topo (`:root[data-barra="propria"]` no `globals.css`, bloco "tarefa 6") e as telas `h-screen` ocupam a altura que sobrou. Fora do Electron (navegador, varreduras) e no Mac nada disso existe. |
 | O fundo ao abrir | `backgroundColor` da janela: de `#FFF7FC` (rosa) para `#0A0A0D`. |
 | O canto arredondado | **Não forçado** (recomendação mantida): vem sozinho no Windows 11. |
-| O site | `site/`: o ícone novo e o nome em texto no topo da página (saiu o `sakura-logo.svg`). A flor **não** entrou na capa nem no fim da apresentação comercial. |
+| O site | `site/`: o ícone novo e o nome em texto no topo da página (o `site/sakura-logo.svg` ficou: a apresentação comercial ainda o usa como marca-d'água). A flor **não** entrou na capa nem no fim da apresentação comercial. |
 
 **O teste do Electron** (`npm run test:electron`) ganhou seis checagens da barra: a janela sabe que a
 barra é do programa; ela está no topo, com 40 px e de ponta a ponta; é a faixa de arrastar; o
@@ -397,7 +397,8 @@ O que ele **não** prova (a sessão é Linux): arrastar, duplo clique, encaixe e
   só, já que a logo diz onde a pessoa está (não removi: nada some sem ela decidir); (2) a tela de
   conexão fala de "Project Settings → API Keys, aba Legacy anon", palavras do painel do Supabase que
   a loja não deveria precisar ler: esse passo é de quem instala, e o texto pode ficar mais curto.
-- **Virou tarefa**: o `docs/decisoes.md` (linha da "Logo") ainda descreve a logo antiga: é da
+- **Sugere também**: a dica (`Dica.tsx`) não sabe da barra de 40 px: perto do topo, à direita, ela pode ficar atrás dos três botões do Windows. Só se vê no Windows; conferir no teste.
+- **Virou tarefa**: o `apresentacao/apresentacao.html` ainda usa a logo antiga (de propósito, pela regra da flor); e o `docs/decisoes.md` (linha da "Logo") ainda descreve a logo antiga: é da
   coordenadora atualizar.
 
 ## 10. Como levar pro programa sem quebrar as 54 telas

@@ -392,7 +392,7 @@ const CORES_DA_BARRA = {
   claro: { color: "#F3F2EF", symbolColor: "#1B1B1F" },
 } as const;
 
-ipcMain.on("janela:tema", (_evento, tema: unknown) => {
+aoAvisoDaTela("janela:tema", (tema: unknown) => {
   if (!TEM_BARRA_PROPRIA || !mainWindow || mainWindow.isDestroyed()) return;
   if (tema !== "escuro" && tema !== "claro") return;
   try {
