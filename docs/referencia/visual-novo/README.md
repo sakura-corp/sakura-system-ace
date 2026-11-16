@@ -342,6 +342,26 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
 - **Só CSS**, sem biblioteca de animação. **(escolha do Claude)**: o que os vídeos mostram cabe em
   CSS, e biblioteca a mais é peso e manutenção.
 
+### Como saiu no programa (tarefa 5, 16/11)
+
+Tudo é CSS no bloco "tarefa 5: o movimento" do `globals.css` (durações em `--duration-*`, curva
+`--ease-suave`), menos a contagem do número, que é um pouco de JavaScript só de aparência. Os vídeos
+(escuro e claro, uns 14 s cada) estão em `andamento/7-movimento/`; refazer com
+`node docs/referencia/visual-novo/gravar-movimento.mjs <pasta>`.
+
+| O quê | Como ficou |
+|---|---|
+| Trocar de tela | `App.tsx` põe um `.sakura-tela` (`display: contents`, não muda o layout) com `key` na rota; o CSS anima os **filhos da tela** (`.sakura-tela > * > *`): sobem 12 px e aparecem, 45 ms de intervalo, 0,42 s. Do 9º bloco em diante entram juntos. Tela cujo primeiro filho é um fragmento anima os netos. |
+| Abrir janela | `.sakura-modal-fundo` (escurece) e `.sakura-modal` (sobe 14 px, 96% a 100%), 0,28 s. Vale pra todo `Modal`, sem mexer nas telas. Fechar é instantâneo. |
+| Menu de três pontos | Classe **`sakura-menu-brota`** (0,16 s, de cima à direita; `--origem-brota` troca o canto). Quem desenha o menu põe a classe: a tarefa 7, no `AcoesDaLinha`. |
+| Número grande | `CartaoNumero` liga `ContarAoAparecer`; o `Valor` de dentro conta de R$ 0,00 até o valor em 0,75 s. É só o texto mudando (centavos inteiros, curva de freio); no último passo o texto é o `formatarMoeda` do valor de sempre. Com "reduzir movimento" nem começa. Fora do cartão (tabelas, listas) nada conta. |
+| Fio do gráfico | A linha é desenhada da esquerda pra direita (0,9 s, `stroke-dashoffset`); a área e a ponta aparecem no fim. |
+| Botão | 0,12 s com a curva única (antes 0,15 s). |
+| Reduzir movimento | `@media (prefers-reduced-motion: reduce)` zera todas as animações acima; o teste está em `scripts/testar-electron.mjs` (monta cada movimento com as classes de verdade, confere que tem animação ligado e **nenhuma** com "reduzir movimento"). |
+
+Leitor de tela: o texto do número nasce com o valor final e a contagem só troca esse texto (sem
+região viva), então nada é anunciado a cada passo.
+
 ## 9. A logo
 
 - **Escolhida: a B** (Sofia, 14/11/2026). A A e a C ficam guardadas só como registro.
