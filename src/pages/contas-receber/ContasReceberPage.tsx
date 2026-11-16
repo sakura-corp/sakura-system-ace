@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Check, Plus, TriangleAlert } from "lucide-react";
+import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Dica } from "@/components/Dica";
+import { Selo } from "@/components/Selo";
+import { Valor } from "@/components/Valor";
 import { LinkCliente } from "@/components/LinkCliente";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarClientesParaEscolha } from "@/lib/clientes";
 import { temPermissao } from "@/types/operador";
 import { buscarConfiguracaoPix } from "@/lib/configuracoes";
 import { criarContaReceber, listarContasReceber, receberConta } from "@/lib/contasReceber";
+import { avisar } from "@/lib/avisoQueSome";
+import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import {
@@ -23,18 +32,9 @@ import type { ConfiguracaoPix } from "@/types/configuracao";
 import type { ContaReceber, NovaContaReceber } from "@/types/contaReceber";
 import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
-import { somar } from "@/schemas/dinheiro";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function hojeIso(): string {
-  const hoje = new Date();
-  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(
-    hoje.getDate(),
-  ).padStart(2, "0")}`;
-}
+import { SeloDoVencimento } from "@/pages/contas-pagar/SeloDoVencimento";
+import { situacaoDoVencimento } from "@/pages/contas-pagar/vencimento";
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
 
 export function ContasReceberPage() {
   const { operador, lojaAtual } = useAuth();
@@ -101,6 +101,7 @@ export function ContasReceberPage() {
     if (!lojaAtual) return;
     await criarContaReceber(conta, lojaAtual.id);
     setMostrarFormulario(false);
+    avisar(`Conta a receber cadastrada: ${conta.descricao}`);
     await carregar();
   }
 
@@ -112,11 +113,12 @@ export function ContasReceberPage() {
       formaPagamento,
       operadorId: operador.id,
     });
+    avisar(`Conta recebida: ${contaRecebendo.descricao}`);
     setContaRecebendo(null);
     await carregar();
   }
 
-  const hoje = hojeIso();
+  const hoje = hojeLocal();
   const pendentes = contas
     .filter((c) => c.status === "pendente")
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
@@ -124,12 +126,23 @@ export function ContasReceberPage() {
     .filter((c) => c.status === "recebido")
     .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
   const totalPendente = somar(pendentes.map((c) => c.valor));
+  // Só a contagem, pro selo ao lado de "Pendentes": nenhum valor novo.
+  const quantasAtrasadas = pendentes.filter(
+    (c) => situacaoDoVencimento(c.vencimento, hoje) === "atrasada",
+  ).length;
+
+  function abrirOrdem(conta: ContaReceber) {
+    if (!conta.ordem_servico_id) return;
+    navigate("/ordens-servico", { state: { abrirOrdemId: conta.ordem_servico_id } });
+  }
 
   function textoDaCobranca(conta: ContaReceber): string {
     return preencherModelo(textoDoModelo(modelosWhatsapp, "cobranca"), {
       cliente: conta.cliente?.nome,
       valor: formatarMoeda(conta.valor),
-      vencimento: new Date(conta.vencimento).toLocaleDateString("pt-BR"),
+      // O `vencimento` é uma coluna `date`: `new Date` leria meia-noite em UTC
+      // e a mensagem iria pro cliente com o dia anterior (#1005).
+      vencimento: diaBrasileiro(conta.vencimento),
       descricao: conta.descricao,
       loja: lojaAtual?.nome,
       pix: blocoPix(
@@ -147,28 +160,33 @@ export function ContasReceberPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
-          <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">Contas a Receber</h1>
-            <p className="text-corpo text-sakura-muted">
+          <div className="min-w-0">
+            <h1 className="text-titulo font-semibold text-texto">Contas a Receber</h1>
+            <p className="text-corpo text-texto-2">
               Criadas sozinhas ao faturar uma OS escolhendo "a receber" — ou lançadas à mão,
               pra cobrança que não passou por OS
             </p>
           </div>
         </div>
         {!mostrarFormulario && (
-          <button
-            onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
-          >
-            + Nova conta
-          </button>
+          <Botao variante="principal" icone={<Plus />} onClick={() => setMostrarFormulario(true)}>
+            Nova conta
+          </Botao>
         )}
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
+        >
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
+        </p>
+      )}
 
       {mostrarFormulario && (
         <ContaReceberForm
@@ -179,59 +197,61 @@ export function ContasReceberPage() {
       )}
 
       {!carregando && dadosSaoDaLoja && (
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Total pendente</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalPendente)}
-          </p>
+        <div className="max-w-sm">
+          <CartaoNumero
+            titulo="Total pendente"
+            explicacao="A soma do que os clientes ainda devem à loja, atrasado ou não. O que já foi recebido fica de fora."
+          >
+            <Valor valor={totalPendente} />
+          </CartaoNumero>
         </div>
       )}
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !dadosSaoDaLoja ? null : (
         <>
           <section>
-            <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pendentes</h2>
+            <h2 className="mb-3 flex flex-wrap items-center gap-2 text-corpo font-semibold text-texto">
+              Pendentes
+              {quantasAtrasadas > 0 && (
+                <Selo
+                  tipo="perigo"
+                  palavra={quantasAtrasadas === 1 ? "1 atrasada" : `${quantasAtrasadas} atrasadas`}
+                />
+              )}
+            </h2>
             {pendentes.length === 0 ? (
-              <p className="text-corpo text-sakura-muted">Nenhuma conta a receber pendente.</p>
+              <p className="text-corpo text-texto-2">Nenhuma conta a receber pendente.</p>
             ) : (
               <div className="overflow-x-auto sakura-card">
-                <table className="w-full text-left text-corpo">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <table className="sakura-tabela">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 font-medium">Previsão</th>
-                      <th className="px-4 py-3 font-medium">Cliente</th>
-                      <th className="px-4 py-3 font-medium">Descrição</th>
-                      <th className="px-4 py-3 font-medium">Valor</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3" />
+                      <th>Previsão</th>
+                      <th>Cliente</th>
+                      <th>Descrição</th>
+                      <th className="text-right">Valor</th>
+                      <th>Status</th>
+                      <th>
+                        <span className="sr-only">Ações</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {pendentes.map((conta) => {
-                      const vencida = conta.vencimento < hoje;
                       const cliente = clientes.find((c) => c.id === conta.cliente_id);
                       const ultimaCobranca = ultimasCobrancas.get(conta.id);
                       return (
                         <tr
                           key={conta.id}
-                          onClick={() =>
-                            conta.ordem_servico_id &&
-                            navigate("/ordens-servico", {
-                              state: { abrirOrdemId: conta.ordem_servico_id },
-                            })
-                          }
-                          className={`border-t border-sakura-gray/20 ${
-                            conta.ordem_servico_id
-                              ? "cursor-pointer hover:bg-sakura-pink-soft/30"
-                              : ""
-                          }`}
+                          onClick={() => abrirOrdem(conta)}
+                          className={conta.ordem_servico_id ? "cursor-pointer" : undefined}
                         >
-                          <td className="px-4 py-3">
-                            {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
+                          <td className="whitespace-nowrap text-texto">
+                            {diaBrasileiro(conta.vencimento)}
                           </td>
-                          <td className="px-4 py-3">
+                          <td>
                             {conta.cliente?.nome ? (
                               <LinkCliente
                                 clienteId={conta.cliente_id}
@@ -242,34 +262,37 @@ export function ContasReceberPage() {
                               "—"
                             )}
                           </td>
-                          <td className="px-4 py-3">{conta.descricao}</td>
-                          <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                                vencida
-                                  ? "bg-red-50 text-red-700"
-                                  : "bg-amber-50 text-amber-700"
-                              }`}
-                            >
-                              {vencida ? "Vencida" : "Pendente"}
-                            </span>
+                          <td className="text-texto [overflow-wrap:anywhere]">{conta.descricao}</td>
+                          <td className="whitespace-nowrap text-right font-semibold text-texto">
+                            {formatarMoeda(conta.valor)}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            {/* O clique no botão não pode abrir a OS junto: a
+                          <td>
+                            <div className="flex flex-col items-start gap-1">
+                              <SeloDoVencimento vencimento={conta.vencimento} hoje={hoje} />
+                              {/* A última cobrança aberta no WhatsApp, embaixo do
+                                  status (antes ficava ao lado dos botões). O clique
+                                  aqui não abre a OS: quem para o mouse pra ler a dica
+                                  não quer sair da tela. */}
+                              {ultimaCobranca && (
+                                <Dica texto="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe.">
+                                  <span
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="cursor-default whitespace-nowrap text-meta text-texto-2"
+                                  >
+                                    cobrado em{" "}
+                                    {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
+                                  </span>
+                                </Dica>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            {/* O clique nos botões não pode abrir a OS junto: a
                                 linha inteira é clicável. */}
                             <div
                               onClick={(e) => e.stopPropagation()}
-                              className="flex items-center justify-end gap-2"
+                              className="flex items-center justify-end gap-1.5"
                             >
-                              {ultimaCobranca && (
-                                <span
-                                  className="whitespace-nowrap text-rotulo text-sakura-muted"
-                                  title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
-                                >
-                                  cobrado em {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
-                                </span>
-                              )}
                               {/* Sem o módulo Clientes o telefone não chega (a janela da
                                   migration 0068 só tem o nome): o botão diria "cadastro sem
                                   telefone", que é mentira — então some. */}
@@ -291,12 +314,34 @@ export function ContasReceberPage() {
                                   }}
                                 />
                               )}
-                              <button
+                              <Botao
+                                tamanho="pequeno"
+                                icone={<Check />}
+                                aria-label={`Marcar como recebido — a conta ${conta.descricao}`}
                                 onClick={() => setContaRecebendo(conta)}
-                                className="h-8 whitespace-nowrap rounded-full bg-sakura-purple px-3 text-rotulo font-medium text-sobre-acao hover:opacity-90"
                               >
                                 Marcar como recebido
-                              </button>
+                              </Botao>
+                              {/* A OS também abre clicando na linha, mas só com o
+                                  mouse e sem nada que diga isso: no "Mais ações"
+                                  ela fica achável e no teclado (como na lista de
+                                  OS, tarefa 7). */}
+                              {conta.ordem_servico_id ? (
+                                <AcoesDaLinha
+                                  descricao={`a conta ${conta.descricao}`}
+                                  acoes={[
+                                    {
+                                      tipo: "menu",
+                                      rotulo: "Abrir a OS",
+                                      aoClicar: () => abrirOrdem(conta),
+                                    },
+                                  ]}
+                                />
+                              ) : (
+                                // O lugar dos três pontos, vazio: os botões das
+                                // linhas sem OS ficam alinhados com os das outras.
+                                <span aria-hidden="true" className="w-8 shrink-0" />
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -310,27 +355,26 @@ export function ContasReceberPage() {
 
           {recebidas.length > 0 && (
             <section>
-              <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-                Recebidas recentemente
-              </h2>
+              <h2 className="mb-3 text-corpo font-semibold text-texto">Recebidas recentemente</h2>
               <div className="overflow-x-auto sakura-card">
-                <table className="w-full text-left text-corpo">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <table className="sakura-tabela">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 font-medium">Previsão</th>
-                      <th className="px-4 py-3 font-medium">Cliente</th>
-                      <th className="px-4 py-3 font-medium">Descrição</th>
-                      <th className="px-4 py-3 font-medium">Valor</th>
-                      <th className="px-4 py-3 font-medium">Recebido em</th>
+                      <th>Previsão</th>
+                      <th>Cliente</th>
+                      <th>Descrição</th>
+                      <th className="text-right">Valor</th>
+                      {/* Era "Recebido em": o dia continua, dentro do selo. */}
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recebidas.map((conta) => (
-                      <tr key={conta.id} className="border-t border-sakura-gray/20">
-                        <td className="px-4 py-3">
-                          {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
+                      <tr key={conta.id}>
+                        <td className="whitespace-nowrap text-texto-2">
+                          {diaBrasileiro(conta.vencimento)}
                         </td>
-                        <td className="px-4 py-3">
+                        <td>
                           {conta.cliente?.nome ? (
                             <LinkCliente
                               clienteId={conta.cliente_id}
@@ -341,12 +385,21 @@ export function ContasReceberPage() {
                             "—"
                           )}
                         </td>
-                        <td className="px-4 py-3">{conta.descricao}</td>
-                        <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
-                        <td className="px-4 py-3">
-                          {conta.data_recebimento
-                            ? new Date(conta.data_recebimento).toLocaleDateString("pt-BR")
-                            : "—"}
+                        <td className="text-texto [overflow-wrap:anywhere]">{conta.descricao}</td>
+                        <td className="whitespace-nowrap text-right font-semibold text-texto">
+                          {formatarMoeda(conta.valor)}
+                        </td>
+                        <td>
+                          {/* `data_recebimento` é data COM hora (timestamptz): o
+                              `new Date` está certo aqui (#1005, "ficam como estão"). */}
+                          <Selo
+                            tipo="ok"
+                            palavra={
+                              conta.data_recebimento
+                                ? `Recebida em ${new Date(conta.data_recebimento).toLocaleDateString("pt-BR")}`
+                                : "Recebida"
+                            }
+                          />
                         </td>
                       </tr>
                     ))}
@@ -361,6 +414,7 @@ export function ContasReceberPage() {
       {contaRecebendo && (
         <ReceberContaModal
           conta={contaRecebendo}
+          hoje={hoje}
           onConfirmar={handleConfirmarRecebimento}
           onFechar={() => setContaRecebendo(null)}
         />

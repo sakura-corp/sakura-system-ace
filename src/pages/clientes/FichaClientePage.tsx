@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
-import { Explicacao } from "@/components/Explicacao";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Dica } from "@/components/Dica";
 import { LinkPlaca } from "@/components/LinkPlaca";
+import { Selo } from "@/components/Selo";
+import { Valor } from "@/components/Valor";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, diasEntre, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarFichaDoCliente, type FichaDoCliente } from "@/lib/fichaCliente";
-import { formatarMoeda } from "@/schemas/dinheiro";
 import {
   comprasDoCliente,
   contaAtrasada,
@@ -18,12 +21,12 @@ import {
   resumoDoCliente,
   type OrdemDaFichaDoCliente,
 } from "@/schemas/fichaCliente";
+import { formatarMoeda } from "@/schemas/dinheiro";
 import { tempoDesde } from "@/schemas/fichaVeiculo";
-import { nomeOrdem, STATUS_COR, STATUS_LABEL, totalOrdem } from "@/types/os";
+import { nomeOrdem, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
-
-/** O que aparece no lugar de um valor que a pessoa não pode ver: nunca "R$ 0,00". */
-const SEM_ACESSO = "—";
+import { AvisoDeErro } from "./AvisoDeErro";
+import { SeloDoStatusDaOrdem } from "./SeloDoStatusDaOrdem";
 
 /**
  * A ficha do cliente (#393): o que ele comprou, como pagou e o que deve. É a
@@ -124,14 +127,14 @@ export function FichaClientePage() {
       <div className="space-y-6">
         <header className="flex items-center gap-3">
           <BotaoVoltar onClick={voltar} />
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Ficha do cliente</h1>
+          <h1 className="font-titulo text-titulo font-bold text-texto">Ficha do cliente</h1>
         </header>
         {carregando ? (
-          <p className="text-corpo text-sakura-muted">Carregando...</p>
+          <p className="text-corpo text-texto-2">Carregando...</p>
         ) : erro ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>
+          <AvisoDeErro>{erro}</AvisoDeErro>
         ) : (
-          <p className="text-corpo text-sakura-muted">
+          <p className="text-corpo text-texto-2">
             Cliente não encontrado. Ele pode ter sido excluído do cadastro.
           </p>
         )}
@@ -147,13 +150,11 @@ export function FichaClientePage() {
       <header className="flex flex-wrap items-center gap-3">
         <BotaoVoltar onClick={voltar} />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-titulo font-semibold text-sakura-purple-dark">
-            {cliente.nome}
-          </h1>
+          <h1 className="truncate font-titulo text-titulo font-bold text-texto">{cliente.nome}</h1>
           {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
               "sem telefone cadastrado" seria mentira, então a linha some. */}
           {podeVerCadastro && (
-            <p className="text-corpo text-sakura-muted">
+            <p className="text-corpo text-texto-2">
               {cliente.telefone || "Sem telefone cadastrado"}
             </p>
           )}
@@ -169,7 +170,7 @@ export function FichaClientePage() {
 
       {veiculos.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-rotulo text-sakura-muted">
+          <span className="text-rotulo text-texto-2">
             {veiculos.length === 1 ? "Carro:" : "Carros:"}
           </span>
           {veiculos.map((v) => (
@@ -179,86 +180,77 @@ export function FichaClientePage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Cartao
+        <CartaoNumero
           titulo="Deve"
           explicacao="A soma das contas a receber dele ainda pendentes, em todas as lojas que você alcança. Atrasada é a que venceu antes de hoje. Pra receber, use Contas a Receber."
+          semAcesso={divida ? undefined : "Você não tem acesso a Contas a Receber."}
+          variacao={
+            divida &&
+            (divida.atrasadas > 0 ? (
+              <Selo tipo="perigo" palavra={`${formatarMoeda(divida.totalAtrasado)} atrasado`} />
+            ) : (
+              <span className="text-rotulo text-texto-2">
+                {divida.pendentes.length === 0 ? "Não deve nada" : "Nada atrasado"}
+              </span>
+            ))
+          }
         >
-          {divida ? (
-            <>
-              <p className="text-destaque font-semibold text-sakura-purple-dark">
-                {formatarMoeda(divida.totalEmAberto)}
-              </p>
-              {divida.atrasadas > 0 ? (
-                <p className="mt-1">
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-rotulo font-medium text-red-700">
-                    {formatarMoeda(divida.totalAtrasado)} atrasado
-                  </span>
-                </p>
-              ) : (
-                <p className="mt-1 text-rotulo text-sakura-muted">
-                  {divida.pendentes.length === 0 ? "Não deve nada" : "Nada atrasado"}
-                </p>
-              )}
-            </>
-          ) : (
-            <SemAcesso modulo="Contas a Receber" />
-          )}
-        </Cartao>
+          {divida && <Valor valor={divida.totalEmAberto} />}
+        </CartaoNumero>
 
-        <Cartao
+        <CartaoNumero
           titulo="Total comprado"
           explicacao="A soma das OS e vendas de balcão já faturadas dele, com desconto e sem os juros do cartão — o mesmo 'Total' da lista de OS. OS ainda em andamento e orçamentos não entram."
+          variacao={
+            <span className="text-rotulo text-texto-2">
+              {resumo.faturadas === 1 ? "1 faturada" : `${resumo.faturadas} faturadas`}
+            </span>
+          }
         >
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(resumo.totalComprado)}
-          </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {resumo.faturadas === 1 ? "1 faturada" : `${resumo.faturadas} faturadas`}
-          </p>
-        </Cartao>
+          <Valor valor={resumo.totalComprado} />
+        </CartaoNumero>
 
-        <Cartao
+        <CartaoNumero
           titulo="Visitas"
           explicacao="Os dias diferentes em que ele passou pela loja com uma OS ou uma venda (duas no mesmo dia contam como uma visita). Orçamento não conta."
+          variacao={
+            <span className="text-rotulo text-texto-2">
+              {resumo.ultimaVisita
+                ? `Última: ${diaBrasileiro(resumo.ultimaVisita)} (${tempoDesde(diasEntre(resumo.ultimaVisita, hoje))})`
+                : "Ainda não passou pela loja"}
+            </span>
+          }
         >
-          <p className="text-destaque font-semibold text-sakura-purple-dark">{resumo.visitas}</p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {resumo.ultimaVisita
-              ? `Última: ${diaBrasileiro(resumo.ultimaVisita)} (${tempoDesde(diasEntre(resumo.ultimaVisita, hoje))})`
-              : "Ainda não passou pela loja"}
-          </p>
-        </Cartao>
+          <span className="text-texto">{resumo.visitas}</span>
+        </CartaoNumero>
       </div>
 
       <Secao titulo="O que deve">
         {!divida ? (
           <SemAcesso modulo="Contas a Receber" />
         ) : divida.pendentes.length === 0 ? (
-          <p className="text-corpo text-sakura-purple-dark/85">
-            Nenhuma conta a receber pendente.
-          </p>
+          <Vazio>Nenhuma conta a receber pendente.</Vazio>
         ) : (
           <Tabela
             colunas={["Vencimento", "Descrição", ...(dados.variasLojas ? ["Loja"] : []), "Valor", "Situação"]}
+            direita={["Valor"]}
           >
             {divida.pendentes.map((conta) => {
               const atrasada = contaAtrasada(conta, hoje);
               return (
-                <tr key={conta.id} className="border-t border-sakura-gray/20">
-                  <td className="whitespace-nowrap px-4 py-3">{diaBrasileiro(conta.vencimento)}</td>
-                  <td className="px-4 py-3">{conta.descricao}</td>
-                  {dados.variasLojas && <td className="px-4 py-3">{nomeDaLoja(conta.loja_id)}</td>}
-                  <td className="whitespace-nowrap px-4 py-3 font-medium">
+                <tr key={conta.id}>
+                  <td className="whitespace-nowrap">{diaBrasileiro(conta.vencimento)}</td>
+                  <td>{conta.descricao}</td>
+                  {dados.variasLojas && <td>{nomeDaLoja(conta.loja_id)}</td>}
+                  <td className="whitespace-nowrap text-right font-medium text-texto">
                     {formatarMoeda(conta.valor)}
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                        atrasada ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {atrasada ? "Atrasada" : "Pendente"}
-                    </span>
+                  <td>
+                    {atrasada ? (
+                      <Selo tipo="perigo" palavra="Atrasada" />
+                    ) : (
+                      <Selo tipo="atencao" palavra="Pendente" />
+                    )}
                   </td>
                 </tr>
               );
@@ -271,49 +263,37 @@ export function FichaClientePage() {
         titulo={`O que comprou (${dados.compras.length === 1 ? "1 OS ou venda" : `${dados.compras.length} OS e vendas`})`}
       >
         {dados.compras.length === 0 ? (
-          <p className="text-corpo text-sakura-purple-dark/85">
-            Ainda não tem nenhuma OS nem venda.
-          </p>
+          <Vazio>Ainda não tem nenhuma OS nem venda.</Vazio>
         ) : (
           <Tabela
             colunas={["Dia", "OS / Venda", "Carro", ...(dados.variasLojas ? ["Loja"] : []), "Situação", "Total", ""]}
+            direita={["Total"]}
           >
             {dados.compras.map((ordem) => (
-              <tr key={ordem.id} className="border-t border-sakura-gray/20">
-                <td className="whitespace-nowrap px-4 py-3">
-                  {diaBrasileiro(diaLocal(ordem.data_abertura))}
+              <tr key={ordem.id}>
+                <td className="whitespace-nowrap">{diaBrasileiro(diaLocal(ordem.data_abertura))}</td>
+                <td className="whitespace-nowrap">{nomeOrdem(ordem.numero, ordem.tipo)}</td>
+                <td className="whitespace-nowrap">{ordem.placa ?? "—"}</td>
+                {dados.variasLojas && <td>{nomeDaLoja(ordem.loja_id)}</td>}
+                <td>
+                  <SeloDoStatusDaOrdem status={ordem.status} />
                 </td>
-                <td className="whitespace-nowrap px-4 py-3">{nomeOrdem(ordem.numero, ordem.tipo)}</td>
-                <td className="whitespace-nowrap px-4 py-3">{ordem.placa ?? "—"}</td>
-                {dados.variasLojas && <td className="px-4 py-3">{nomeDaLoja(ordem.loja_id)}</td>}
-                <td className="px-4 py-3">
-                  <span
-                    className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_COR[ordem.status]}`}
-                  >
-                    {STATUS_LABEL[ordem.status]}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 font-medium">
+                <td className="whitespace-nowrap text-right font-medium text-texto">
                   {formatarMoeda(totalOrdem(ordem.itens ?? []))}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="text-right">
                   {/* Sem o botão, a linha diria nada: diz por quê. */}
                   {podeVerOS && !podeAbrir(ordem) && (
-                    <span
-                      className="whitespace-nowrap text-rotulo text-sakura-muted"
-                      title="A lista de OS mostra só a loja ativa: troque de loja, embaixo à esquerda, pra abrir esta OS."
-                    >
-                      outra loja
-                    </span>
+                    <Dica texto="A lista de OS mostra só a loja ativa: troque de loja, embaixo à esquerda, pra abrir esta OS.">
+                      <span className="cursor-default whitespace-nowrap text-rotulo text-texto-2" tabIndex={0}>
+                        outra loja
+                      </span>
+                    </Dica>
                   )}
                   {podeAbrir(ordem) && (
-                    <button
-                      type="button"
-                      onClick={() => abrirOrdem(ordem.id)}
-                      className="min-h-8 whitespace-nowrap rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-texto/10"
-                    >
+                    <Botao tamanho="pequeno" onClick={() => abrirOrdem(ordem.id)}>
                       Abrir
-                    </button>
+                    </Botao>
                   )}
                 </td>
               </tr>
@@ -323,30 +303,29 @@ export function FichaClientePage() {
       </Secao>
 
       <Secao titulo="Como pagou">
-        <div className="space-y-5">
+        <div className="space-y-5 pb-3">
           <div>
-            <h3 className="mb-2 text-rotulo font-semibold text-sakura-purple-dark">
+            <h3 className="px-[18px] pb-1 text-rotulo font-semibold text-texto-2">
               No faturamento das OS e vendas
             </h3>
             {!podeVerOS ? (
               <SemAcesso modulo="Ordens de Serviço" />
             ) : dados.pagamentos.length === 0 ? (
-              <p className="text-corpo text-sakura-purple-dark/85">Nenhuma OS ou venda faturada.</p>
+              <Vazio>Nenhuma OS ou venda faturada.</Vazio>
             ) : (
               <Tabela
                 colunas={["Dia", "OS / Venda", ...(dados.variasLojas ? ["Loja"] : []), "Forma", "Parcelas", "Valor"]}
+                direita={["Valor"]}
               >
                 {dados.pagamentos.map((pagamento) => (
-                  <tr key={pagamento.ordemId} className="border-t border-sakura-gray/20">
-                    <td className="whitespace-nowrap px-4 py-3">{diaBrasileiro(pagamento.dia)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                  <tr key={pagamento.ordemId}>
+                    <td className="whitespace-nowrap">{diaBrasileiro(pagamento.dia)}</td>
+                    <td className="whitespace-nowrap">
                       {nomeOrdem(pagamento.numero, pagamento.tipo)}
                     </td>
-                    {dados.variasLojas && (
-                      <td className="px-4 py-3">{nomeDaLoja(pagamento.loja_id)}</td>
-                    )}
-                    <td className="px-4 py-3">{pagamento.forma || "—"}</td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    {dados.variasLojas && <td>{nomeDaLoja(pagamento.loja_id)}</td>}
+                    <td>{pagamento.forma || "—"}</td>
+                    <td className="whitespace-nowrap">
                       {/* Sem a forma gravada, "à vista" seria um palpite. */}
                       {!pagamento.forma
                         ? "—"
@@ -354,7 +333,7 @@ export function FichaClientePage() {
                           ? `${pagamento.parcelas}x`
                           : "À vista"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                    <td className="whitespace-nowrap text-right font-medium text-texto">
                       {formatarMoeda(pagamento.valor)}
                     </td>
                   </tr>
@@ -364,25 +343,26 @@ export function FichaClientePage() {
           </div>
 
           <div>
-            <h3 className="mb-2 text-rotulo font-semibold text-sakura-purple-dark">
+            <h3 className="px-[18px] pb-1 text-rotulo font-semibold text-texto-2">
               Contas a receber já pagas
             </h3>
             {!dados.recebidas ? (
               <SemAcesso modulo="Contas a Receber" />
             ) : dados.recebidas.length === 0 ? (
-              <p className="text-corpo text-sakura-purple-dark/85">Nenhuma conta recebida ainda.</p>
+              <Vazio>Nenhuma conta recebida ainda.</Vazio>
             ) : (
               <Tabela
                 colunas={["Recebida em", "Descrição", ...(dados.variasLojas ? ["Loja"] : []), "Valor"]}
+                direita={["Valor"]}
               >
                 {dados.recebidas.map((conta) => (
-                  <tr key={conta.id} className="border-t border-sakura-gray/20">
-                    <td className="whitespace-nowrap px-4 py-3">
+                  <tr key={conta.id}>
+                    <td className="whitespace-nowrap">
                       {conta.diaRecebimento ? diaBrasileiro(conta.diaRecebimento) : "—"}
                     </td>
-                    <td className="px-4 py-3">{conta.descricao}</td>
-                    {dados.variasLojas && <td className="px-4 py-3">{nomeDaLoja(conta.loja_id)}</td>}
-                    <td className="whitespace-nowrap px-4 py-3 font-medium">
+                    <td>{conta.descricao}</td>
+                    {dados.variasLojas && <td>{nomeDaLoja(conta.loja_id)}</td>}
+                    <td className="whitespace-nowrap text-right font-medium text-texto">
                       {formatarMoeda(conta.valor)}
                     </td>
                   </tr>
@@ -399,57 +379,54 @@ export function FichaClientePage() {
 /** "—" e a frase do porquê: sem o módulo, a parte não é zero, é desconhecida. */
 function SemAcesso({ modulo }: { modulo: string }) {
   return (
-    <div>
-      <p className="text-destaque font-semibold text-sakura-purple-dark">{SEM_ACESSO}</p>
-      <p className="mt-1 text-rotulo text-sakura-muted">Você não tem acesso a {modulo}.</p>
+    <div className="px-[18px] pb-2">
+      <p className="font-titulo text-destaque font-semibold text-texto-2">—</p>
+      <p className="mt-1 text-rotulo text-texto-2">Você não tem acesso a {modulo}.</p>
     </div>
   );
 }
 
+function Vazio({ children }: { children: ReactNode }) {
+  return <p className="px-[18px] pb-3 text-corpo text-texto-2">{children}</p>;
+}
+
+/**
+ * Uma parte da ficha: cartão com o título em cima e a tabela de borda a borda
+ * (o `sakura-tabela` põe o respiro das colunas).
+ */
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <section className="sakura-card min-w-0 p-4">
-      <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">{titulo}</h2>
+    <section className="sakura-card min-w-0 overflow-hidden pt-4">
+      <h2 className="mb-2 px-[18px] text-corpo font-semibold text-texto">{titulo}</h2>
       {children}
     </section>
   );
 }
 
-function Tabela({ colunas, children }: { colunas: string[]; children: ReactNode }) {
+function Tabela({
+  colunas,
+  direita = [],
+  children,
+}: {
+  colunas: string[];
+  /** As colunas de dinheiro, alinhadas à direita (a célula faz o mesmo). */
+  direita?: string[];
+  children: ReactNode;
+}) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-sakura-gray/25">
-      <table className="w-full text-left text-corpo">
-        <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+    <div className="overflow-x-auto">
+      <table className="sakura-tabela">
+        <thead>
           <tr>
             {colunas.map((coluna, i) => (
-              <th key={`${coluna}-${i}`} className="px-4 py-3 font-medium">
-                {coluna}
+              <th key={`${coluna}-${i}`} className={direita.includes(coluna) ? "text-right" : undefined}>
+                {coluna || <span className="sr-only">Ações</span>}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>{children}</tbody>
       </table>
-    </div>
-  );
-}
-
-function Cartao({
-  titulo,
-  explicacao,
-  children,
-}: {
-  titulo: string;
-  explicacao: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="sakura-card min-w-0 p-5">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-rotulo text-sakura-muted">{titulo}</p>
-        <Explicacao titulo={titulo} texto={explicacao} />
-      </div>
-      <div className="mt-2">{children}</div>
     </div>
   );
 }

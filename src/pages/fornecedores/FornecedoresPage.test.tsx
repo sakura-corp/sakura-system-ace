@@ -51,7 +51,7 @@ beforeEach(() => {
 describe("FornecedoresPage — aba Sugestão de compra", () => {
   it("com Estoque, mostra a aba e abre a tela da sugestão ao clicar", async () => {
     const { user } = montar();
-    await user.click(await screen.findByRole("button", { name: "Sugestão de compra" }));
+    await user.click(await screen.findByRole("tab", { name: "Sugestão de compra" }));
     expect(await screen.findByText("tela da sugestão")).toBeInTheDocument();
   });
 
@@ -73,8 +73,8 @@ describe("FornecedoresPage — aba Sugestão de compra", () => {
   it("sem Estoque, a aba não aparece", async () => {
     operador = { id: "op-1", admin: false, permissoes: ["fornecedores"] };
     montar();
-    await screen.findByRole("button", { name: "Pedidos de compra" });
-    expect(screen.queryByRole("button", { name: "Sugestão de compra" })).toBeNull();
+    await screen.findByRole("tab", { name: "Pedidos de compra" });
+    expect(screen.queryByRole("tab", { name: "Sugestão de compra" })).toBeNull();
   });
 
   it("vindo da Central do dia (state.aba), abre direto na sugestão", async () => {
@@ -85,7 +85,7 @@ describe("FornecedoresPage — aba Sugestão de compra", () => {
   it("vindo da Central do dia SEM Estoque, não abre a sugestão", async () => {
     operador = { id: "op-1", admin: false, permissoes: ["fornecedores"] };
     montar({ aba: "sugestao" });
-    await screen.findByRole("button", { name: "Cadastro" });
+    await screen.findByRole("tab", { name: "Cadastro" });
     expect(screen.queryByText("tela da sugestão")).toBeNull();
   });
 });
