@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisosQueSomem } from "./components/AvisoQueSome";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
@@ -69,8 +69,28 @@ function PaginaInicial() {
   );
 }
 
+/**
+ * O invólucro que faz os blocos da tela entrarem (tarefa 5). O atributo
+ * `data-entrando` só existe nos primeiros 0,8 s depois de trocar de rota: o
+ * CSS só anima nesse tempo, então um bloco que aparece depois (o fim do
+ * "Carregando", um formulário "Novo...") não repete a entrada.
+ */
+function TelaQueEntra({ children }: { children: ReactNode }) {
+  const [entrando, setEntrando] = useState(true);
+  useEffect(() => {
+    const espera = window.setTimeout(() => setEntrando(false), 800);
+    return () => window.clearTimeout(espera);
+  }, []);
+  return (
+    <div className="sakura-tela" data-entrando={entrando ? "" : undefined}>
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   const { carregando, session, operador, lojaAtual } = useAuth();
+  const localizacao = useLocation();
   useEnterParaProximoCampo();
   useLimparDataAoApagar();
   useNaoMexerNoNumeroSemDigitar();
@@ -171,6 +191,10 @@ export default function App() {
           <FaixaSemConexao />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
+            {/* Trocar de tela (tarefa 5): o `key` refaz o invólucro a cada rota, e
+                o CSS (`.sakura-tela`) faz os blocos da tela entrarem. Ele não
+                muda o layout (`display: contents`). */}
+            <TelaQueEntra key={localizacao.pathname}>
             <Routes>
               <Route path="/" element={<PaginaInicial />} />
               {/* Sem AdminRoute de propósito: quem pede socorro é o balcão. */}
@@ -317,6 +341,7 @@ export default function App() {
                 }
               />
             </Routes>
+            </TelaQueEntra>
           </ErrorBoundary>
         </AreaRolavel>
       </main>

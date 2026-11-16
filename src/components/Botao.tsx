@@ -29,7 +29,7 @@ export type TamanhoDoBotao = "pequeno" | "medio" | "grande";
 // extenso porque o Tailwind só gera a classe que acha inteira no código.
 const BASE = [
   "inline-flex shrink-0 items-center whitespace-nowrap font-semibold",
-  "transition-[transform,background-color,border-color,box-shadow,color] duration-150",
+  "transition-[transform,background-color,border-color,box-shadow,color] duration-(--duration-botao) ease-suave",
   "active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100",
   "disabled:cursor-not-allowed disabled:active:scale-100 aria-disabled:pointer-events-none",
 ];

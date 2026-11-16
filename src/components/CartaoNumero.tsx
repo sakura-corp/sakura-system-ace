@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Explicacao } from "./Explicacao";
 import { FioDeGrafico } from "./FioDeGrafico";
+import { ContarAoAparecer } from "./contagem";
 
 /**
  * O cartão de número do visual novo (#990, seção 6 das regras): o rótulo
@@ -95,7 +96,8 @@ export function CartaoNumero({
         <div className="mt-1.5 flex items-end justify-between gap-3">
           <div className="shrink-0">
             <p className="whitespace-nowrap font-titulo text-metrica font-bold tracking-[-0.02em] tabular-nums">
-              {children}
+              {/* O número conta de zero até o valor (tarefa 5): só aparência. */}
+              <ContarAoAparecer.Provider value>{children}</ContarAoAparecer.Provider>
             </p>
             {variacao && <div className="mt-1 flex min-h-5 items-center">{variacao}</div>}
           </div>
