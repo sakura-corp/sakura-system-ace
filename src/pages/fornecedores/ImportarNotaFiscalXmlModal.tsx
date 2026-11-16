@@ -389,7 +389,7 @@ export function ImportarNotaFiscalXmlModal({
               <table className="sakura-tabela min-w-[820px]">
                 <thead>
                   <tr>
-                    <th>
+                    <th className="relative">
                       <span className="sr-only">Incluir</span>
                     </th>
                     <th>Item da nota</th>

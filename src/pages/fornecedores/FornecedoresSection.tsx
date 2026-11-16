@@ -100,7 +100,7 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
                 <th>Telefone</th>
                 <th>Cidade/UF</th>
                 <th>Status</th>
-                <th>
+                <th className="relative">
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>

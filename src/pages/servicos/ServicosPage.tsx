@@ -154,7 +154,7 @@ export function ServicosPage() {
                 <th className="text-right">Preço padrão</th>
                 <th className="text-right">Custo</th>
                 <th>Status</th>
-                <th>
+                <th className="relative">
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>

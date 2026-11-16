@@ -186,10 +186,10 @@ export function PedidosCompraSection({
                 <th>Data</th>
                 <th className="text-right">Total</th>
                 <th>Status</th>
-                <th>
+                <th className="relative">
                   <span className="sr-only">Avisar o fornecedor</span>
                 </th>
-                <th>
+                <th className="relative">
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>

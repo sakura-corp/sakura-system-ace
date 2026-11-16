@@ -348,7 +348,7 @@ export function ProdutosSection({
                 </th>
                 <th className="text-right">Estoque atual</th>
                 <th>Status</th>
-                <th>
+                <th className="relative">
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>
