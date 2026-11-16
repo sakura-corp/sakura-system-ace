@@ -34,11 +34,7 @@ import { ContaReceberForm } from "./ContaReceberForm";
 import { ReceberContaModal } from "./ReceberContaModal";
 import { SeloDoVencimento } from "@/pages/contas-pagar/SeloDoVencimento";
 import { situacaoDoVencimento } from "@/pages/contas-pagar/vencimento";
-import { somar } from "@/schemas/dinheiro";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
 
 export function ContasReceberPage() {
   const { operador, lojaAtual } = useAuth();
@@ -274,10 +270,15 @@ export function ContasReceberPage() {
                             <div className="flex flex-col items-start gap-1">
                               <SeloDoVencimento vencimento={conta.vencimento} hoje={hoje} />
                               {/* A última cobrança aberta no WhatsApp, embaixo do
-                                  status (antes ficava ao lado dos botões). */}
+                                  status (antes ficava ao lado dos botões). O clique
+                                  aqui não abre a OS: quem para o mouse pra ler a dica
+                                  não quer sair da tela. */}
                               {ultimaCobranca && (
                                 <Dica texto="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe.">
-                                  <span className="whitespace-nowrap text-meta text-texto-2">
+                                  <span
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="cursor-default whitespace-nowrap text-meta text-texto-2"
+                                  >
                                     cobrado em{" "}
                                     {new Date(ultimaCobranca).toLocaleDateString("pt-BR")}
                                   </span>
@@ -363,7 +364,8 @@ export function ContasReceberPage() {
                       <th>Cliente</th>
                       <th>Descrição</th>
                       <th className="text-right">Valor</th>
-                      <th>Recebido em</th>
+                      {/* Era "Recebido em": o dia continua, dentro do selo. */}
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>

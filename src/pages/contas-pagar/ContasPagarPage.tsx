@@ -25,11 +25,7 @@ import { PagarContaModal } from "./PagarContaModal";
 import { SeloDoVencimento } from "./SeloDoVencimento";
 import { situacaoDoVencimento } from "./vencimento";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
-import { somar } from "@/schemas/dinheiro";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
 
 export function ContasPagarPage() {
   const { operador, lojaAtual } = useAuth();
@@ -281,7 +277,8 @@ export function ContasPagarPage() {
                       <th>Descrição</th>
                       <th>Categoria</th>
                       <th className="text-right">Valor</th>
-                      <th>Pago em</th>
+                      {/* Era "Pago em": o dia continua, dentro do selo. */}
+                      <th>Status</th>
                       <th>
                         <span className="sr-only">Ações</span>
                       </th>

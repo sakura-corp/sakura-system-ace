@@ -6,6 +6,7 @@ import { Info, TriangleAlert } from "lucide-react";
 import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
+import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ContaReceber } from "@/types/contaReceber";
 import { fraseDaPrevisao } from "@/pages/contas-pagar/vencimento";
 
@@ -25,10 +26,6 @@ const receberContaSchema = z.object({
 });
 
 type ReceberContaValues = z.infer<typeof receberContaSchema>;
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export function ReceberContaModal({ conta, hoje, onConfirmar, onFechar }: ReceberContaModalProps) {
   const [erro, setErro] = useState<string | null>(null);
