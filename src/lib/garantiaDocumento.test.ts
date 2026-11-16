@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { Cliente, Veiculo } from "@/types/cliente";
+import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { ItemOS, OrdemServico, TipoItemOS } from "@/types/os";
 import { montarHtmlGarantiaOS } from "./garantiaDocumento";
 
@@ -255,5 +257,113 @@ describe("documento de garantia: os números do papel (#915)", () => {
     expect(numeros.descontos).toBe("R$ 4,82");
     expect(numeros.totaisGerais).toEqual(["Total geral: R$ 217,40"]);
     expect(numeros.aVista).toBe("Pix — R$ 217,40");
+  });
+});
+
+describe("documento de garantia: texto do cadastro com \"<\" e \"&\" (#978)", () => {
+  // Antes da #978, só o texto de garantia passava por escapar: a descrição do
+  // item, o técnico, o cliente, o veículo e a loja entravam crus no HTML, e um
+  // "Pneu <aro 15>" virava uma tag e sumia do papel.
+  const cliente = {
+    id: "cliente-1",
+    nome: "Silva & Filhos <ME>",
+    tipo_pessoa: "juridica",
+    cpf_cnpj: "<cnpj>",
+    telefone: "(16) <tel> & cia",
+    email: null,
+    cep: null,
+    rua: "Rua <A> & B",
+    numero: "10",
+    bairro: "Centro & <Vila>",
+    cidade: "Araraquara",
+    uf: "SP",
+    codigo_municipio: null,
+    data_nascimento: null,
+    criado_em: "2026-01-01T00:00:00Z",
+  } as Cliente;
+  const veiculo = {
+    id: "veiculo-1",
+    cliente_id: "cliente-1",
+    placa: "ABC<1D23>",
+    marca: "Fiat & Cia",
+    modelo: "<Uno>",
+    ano: 2010,
+    cor: "Preto <fosco>",
+    tipo: null,
+    km_atual: null,
+    criado_em: "2026-01-01T00:00:00Z",
+  } as Veiculo;
+  const loja = {
+    nome_fantasia: "Pneus <Amigo> & Cia",
+    razao_social: null,
+    rua: "Av. <B>",
+    numero: "1",
+    bairro: "Bairro & <X>",
+    cidade: "Araraquara",
+    uf: "SP",
+    telefone: "<fone>",
+    email: "a&b@loja",
+  } as unknown as ConfiguracaoFiscalLoja;
+
+  function documentoComCadastro(): string {
+    const itemComTecnico = {
+      ...item("peca", "Pneu <aro 15> & válvula", 1, 100),
+      tecnico: { nome: "Zé <da> Borracha & Cia" },
+    } as ItemOS;
+    return montarHtmlGarantiaOS({
+      ordem: ordem([itemComTecnico], "<forma & estranha>", 1),
+      cliente,
+      veiculo,
+      loja,
+      valorCobrado: null,
+      textoGarantia: "",
+    });
+  }
+
+  /** O texto que o navegador mostra no papel: tira as tags e desfaz os escapes. */
+  function textoNoPapel(html: string): string {
+    const corpo = html.split("<body>")[1] ?? "";
+    return texto(corpo)
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&");
+  }
+
+  it("a descrição do item aparece inteira, com \"<\" e \"&\", como texto", () => {
+    const html = documentoComCadastro();
+    expect(html).toContain("<td>Pneu &lt;aro 15&gt; &amp; válvula</td>");
+    expect(html).toContain("<td>Zé &lt;da&gt; Borracha &amp; Cia</td>");
+    expect(textoNoPapel(html)).toContain("Pneu <aro 15> & válvula");
+  });
+
+  it("cliente, veículo, loja e forma de pagamento aparecem como texto", () => {
+    const papel = textoNoPapel(documentoComCadastro());
+    for (const esperado of [
+      "Silva & Filhos <ME>",
+      "<cnpj>",
+      "(16) <tel> & cia",
+      "Rua <A> & B, 10 — Centro & <Vila> — Araraquara/SP",
+      "Fiat & Cia / <Uno>",
+      "Preto <fosco>",
+      "ABC<1D23>",
+      "Pneus <Amigo> & Cia",
+      "Av. <B>, 1 — Bairro & <X> — Araraquara/SP",
+      "<fone> · a&b@loja",
+      "<forma & estranha> — R$ 100,00",
+    ]) {
+      expect(papel).toContain(esperado);
+    }
+  });
+
+  it("nenhum texto do cadastro vira tag no HTML", () => {
+    const corpo = documentoComCadastro().split("<body>")[1] ?? "";
+    const tags = new Set([...corpo.matchAll(/<\/?([a-zA-Z][\w-]*)/g)].map((t) => t[1].toLowerCase()));
+    // Cada palavra que o cadastro de teste põe depois de um "<".
+    for (const doCadastro of ["aro", "da", "me", "cnpj", "tel", "a", "vila", "uno", "fosco", "amigo", "b", "x", "fone", "forma", "1d23"]) {
+      expect(tags.has(doCadastro), `<${doCadastro}> virou tag`).toBe(false);
+    }
   });
 });
