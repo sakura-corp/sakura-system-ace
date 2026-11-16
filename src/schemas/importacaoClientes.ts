@@ -223,13 +223,13 @@ export function conferirLinhas(
   // revisão do PR #985): o "João Silva" com CPF pode ser outra pessoa.
   const clientesPorNome = new Map<string, string>();
   // Nome de cliente do cadastro COM documento → "CPF" ou "CNPJ", pro aviso.
-  const nomesComDocumento = new Map<string, "CPF" | "CNPJ">();
+  const nomesComDocumento = new Map<string, "CPF" | "CNPJ" | "CPF/CNPJ">();
   for (const c of existente.clientes) {
     const doc = soDigitos(c.cpf_cnpj ?? "");
     const nome = nomeNormalizado(c.nome);
     if (doc !== "") {
       if (!clientesPorDoc.has(doc)) clientesPorDoc.set(doc, c.id);
-      if (nome !== "" && !nomesComDocumento.has(nome)) nomesComDocumento.set(nome, doc.length === 14 ? "CNPJ" : "CPF");
+      if (nome !== "" && !nomesComDocumento.has(nome)) nomesComDocumento.set(nome, doc.length === 14 ? "CNPJ" : doc.length === 11 ? "CPF" : "CPF/CNPJ");
     } else if (nome !== "" && !clientesPorNome.has(nome)) {
       clientesPorNome.set(nome, c.id);
     }
@@ -301,6 +301,11 @@ export function conferirLinhas(
     if (docDigitos === "" && !clientesPorNome.has(nomeNormalizado(nome))) {
       const tipoDoc = nomesComDocumento.get(nomeNormalizado(nome));
       if (tipoDoc !== undefined) {
+        // Placa que já está no cadastro: nada novo a trazer, só pula (como antes).
+        if (placaTexto !== "" && parecePlaca(placaTexto) && placasNoBanco.has(chaveDePlaca(placaTexto))) {
+          avisos.push("placa já cadastrada: a linha foi pulada");
+          return terminar("ja_existe");
+        }
         problemas.push(`tem um cliente com esse nome e ${tipoDoc} no cadastro: ponha o ${tipoDoc} na planilha`);
         return terminar("problema");
       }
@@ -368,7 +373,7 @@ export function conferirLinhas(
       };
     } else if (placaEstranha) {
       avisos.push("placa em formato estranho: o veículo não entra");
-    } else if (placaTexto === "" && CAMPOS_DO_VEICULO_SEM_PLACA.some((c) => (v[c] ?? "") !== "")) {
+    } else if (placaTexto === "" && CAMPOS_DO_VEICULO_SEM_PLACA.some((c) => !/^0*$/.test(v[c] ?? ""))) {
       // Sem placa o banco não aceita o veículo: avisa, em vez de sumir calado.
       avisos.push("veículo sem placa: não vai entrar");
     }

@@ -335,6 +335,21 @@ describe("conferirLinhas — homônimo sem documento", () => {
     expect(r.clientes[0].clienteExistenteId).toBe("c1");
   });
 
+  it("placa já cadastrada: continua 'já existe' (pula), não vira problema", () => {
+    const comPlaca: CadastroExistente = { ...existente, placas: ["ABC-1234"] };
+    const r = conferir([linha({ nome: "Ana Souza", placa: "abc1234" })], comPlaca);
+    expect(r.linhas[0].situacao).toBe("ja_existe");
+    expect(r.clientes).toEqual([]);
+  });
+
+  it("documento de tamanho estranho no cadastro: a mensagem fala de CPF/CNPJ", () => {
+    const estranho: CadastroExistente = { clientes: [{ id: "c9", nome: "Rui", cpf_cnpj: "123" }], placas: [] };
+    const r = conferir([linha({ nome: "Rui" })], estranho);
+    expect(r.linhas[0].problemas).toEqual([
+      "tem um cliente com esse nome e CPF/CNPJ no cadastro: ponha o CPF/CNPJ na planilha",
+    ]);
+  });
+
   it("dentro da planilha, agrupar pelo nome continua igual", () => {
     const r = conferir([linha({ nome: "Zé Novo", placa: "DEF5678" }), linha({ nome: "ze novo", placa: "GHI9012" })], existente);
     expect(r.clientes).toHaveLength(1);
@@ -364,6 +379,11 @@ describe("conferirLinhas — veículo sem placa (revisão do PR #985)", () => {
     const r = conferir([linha({ nome: "Ana", cpf_cnpj: CPF_A, modelo: "Gol" })], existente);
     expect(r.linhas[0].situacao).toBe("ja_existe");
     expect(r.linhas[0].avisos).toContain(AVISO);
+  });
+
+  it("km 0 sozinho (coluna cheia de zeros) não conta como veículo", () => {
+    const r = conferir([linha({ nome: "Bia", km_atual: "0" })]);
+    expect(r.linhas[0].avisos).toEqual([]);
   });
 
   it("sem nenhum dado de veículo, não avisa nada", () => {

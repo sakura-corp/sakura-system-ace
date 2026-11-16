@@ -350,7 +350,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                               >
                                 Sim, desfazer
                               </button>
-                              <Botao variante="secundario" onClick={() => setConfirmandoLote(null)}>
+                              <Botao variante="secundario" tamanho="pequeno" onClick={() => setConfirmandoLote(null)}>
                                 Não
                               </Botao>
                             </span>
