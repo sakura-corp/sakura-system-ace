@@ -38,6 +38,10 @@
   (2) a janela fecha e sai "OS 148 faturada"; (3) com erro, a janela fica aberta e o erro aparece
   dentro dela, sem aviso de sucesso. Cada um reprovou quando quebrei de propósito: tirei o aviso;
   deixei a janela aberta; fiz o erro fechar a janela; troquei as parcelas por 1.
+- `OrdensServicoPage.notaDoCliente.test.tsx` (novo, 4 testes): "Emitir nota" na faturada sem nota,
+  com o "Avisar" no menu; "Avisar" e "Nota do cliente" na finalizada, abrindo a janela da nota; a
+  escolha entre as duas notas; a nota cancelada não conta. Tirando o "Emitir nota", o botão da nota
+  ou a escolha, cada um reprovou.
 - `useEnterParaProximoCampo.test.tsx` (novo): o Enter no último campo acha o botão de enviar que
   mora fora do formulário. Reprovou com o gancho antigo.
 
@@ -51,8 +55,6 @@
   `contraste`, `contraste:telas` e `largura:telas` (aberto e encolhido): ver a descrição do PR.
 
 ## O que ficou de fora
-- **A nota do cliente à mão (item 5)**: a proposta foi pra coordenadora antes de fazer (é nota
-  fiscal); espera a resposta da Sofia.
 - **A mostra das peças** (`src/galeria-de-pecas/`) não ganhou as abas novas: o arquivo não é desta
   tarefa. Sugestão: entra na próxima tarefa que mexer na mostra.
 - **O `StatusOrdemBadge.tsx` antigo** ficou sem uso nas telas: o PR #1038 da equipe mexe nele, e
@@ -62,13 +64,13 @@
   na tela, como antes (não é conta nova e não mexi; pode mudar 1 centavo da parcela gravada).
 
 ## O que depende de alguém
-- **A Sofia**: o ok da proposta da nota do cliente; e o teste do fim de semana (os passos estão na
-  descrição do PR).
-- **A coordenadora**: o ok pra dois arquivos fora da lista (`site/ferramentas/cenas.mjs`, já
-  aprovado; `src/hooks/useEnterParaProximoCampo.ts`, perguntado).
+- **A Sofia**: o teste do fim de semana (os passos estão na descrição do PR). A nota do cliente foi
+  feita como ela decidiu em 16/11 (proposta mandada antes de fazer, por ser nota fiscal).
+- Dois arquivos fora da lista, os dois com o ok da coordenadora: `site/ferramentas/cenas.mjs` e
+  `src/hooks/useEnterParaProximoCampo.ts`.
 
 ## Onde parou
-Feito, menos o item 5 (espera a Sofia).
+Feito.
 
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: o "teste só prova o que se viu reprovar" me fez quebrar cada

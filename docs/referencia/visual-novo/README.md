@@ -268,11 +268,17 @@ Fotos de antes e depois em `andamento/8-ordens/` (1366×768, escuro e claro).
   falta nota fica **amarela**, como a concluída: as duas pedem uma ação; o verde é só "Finalizada".
   O `StatusOrdemBadge.tsx` antigo ficou sem uso nas telas (o PR #1038 da equipe mexe nele; apagar
   depois que ele entrar).
-- **Na linha, só o próximo passo**: "Faturar" (laranja) em toda OS ou venda não faturada; "Avisar"
-  (WhatsApp) na OS faturada; nada na venda faturada (não tem carro pra avisar). **Mais de um botão
-  laranja na tela**: um por linha não faturada, como no conceito; é o mesmo próximo passo, repetido
-  por linha.
-- **"Mais ações"** (`AcoesDaLinha.tsx`): "Avisar o cliente" (quando não é o próximo passo),
+- **Na linha, só o próximo passo**: "Faturar" (laranja) em toda OS ou venda não faturada; **"Emitir
+  nota"** (laranja) na faturada que ainda falta nota, que abre o Fechamento; na **finalizada**,
+  "Avisar" (WhatsApp, só OS) e **"Nota do cliente"** lado a lado. **Mais de um botão laranja na
+  tela**: um por linha que pede ação, como no conceito; é o mesmo próximo passo, repetido por linha.
+- **A nota do cliente à mão** (pedido da Sofia, 15/11; decidido por ela em 16/11): "Nota do cliente"
+  abre a janela de nota que já existe (`VerDanfeModal`: ver, imprimir, baixar o PDF pra mandar);
+  com duas notas, uma janelinha pergunta qual ("Nota das peças (NFC-e)" ou "Nota do serviço
+  (NFS-e)"), no `NotaDoClienteModal.tsx`. Só as notas que o programa emitiu e não foram canceladas.
+  O aviso "OS 148 faturada" continua só texto: some em 4,5 s, e o caminho fica na linha. Nada mudou
+  na emissão nem no conteúdo da nota.
+- **"Mais ações"** (`AcoesDaLinha.tsx`): "Avisar o cliente" (quando não está na linha),
   "Fechamento", "Avaliação" e **"Abrir a OS"**, que é novo: até aqui só o clique do mouse na linha
   abria, e quem usa só o teclado não tinha como. O menu agora anda pelo teclado (setas, Home, End,
   Esc devolve o foco ao botão, Tab fecha) e tem ícone em cada item. Esc dentro de uma janela fecha
