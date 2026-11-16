@@ -165,7 +165,7 @@ export function ComissoesSection({
       <div className="grid grid-cols-3 gap-4">
         <CartaoNumero
           titulo="Lucro do período"
-          explicacao="A venda menos o custo das OS já faturadas no período."
+          explicacao="O que sobrou das OS já faturadas no período: a venda menos o custo cadastrado. Serviço sem custo cadastrado fica de fora."
         >
           <Valor valor={totais.lucro} />
         </CartaoNumero>

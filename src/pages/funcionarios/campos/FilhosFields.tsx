@@ -38,7 +38,7 @@ export function FilhosFields({
             <Botao
               variante="fantasma"
               onClick={() => remove(index)}
-              className="text-perigo hover:text-perigo"
+              className="!text-perigo hover:!text-perigo"
             >
               Remover
             </Botao>

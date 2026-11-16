@@ -3,7 +3,6 @@
 // (retrato, comparação, "já pago em outro período") estão em
 // schemas/comissoesPagas.ts — aqui é só tela.
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TriangleAlert } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,6 +17,7 @@ import { retratoDaLinha, type JaPagoEmOutroPeriodo } from "@/schemas/comissoesPa
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
 import { AvisoDaTela } from "./AvisoDaTela";
+import { MensagemDeErro } from "./campos/FormCompartilhado";
 
 const campo = "sakura-campo";
 
@@ -146,16 +146,6 @@ export function RegistrarPagamentoModal({
         </div>
       </form>
     </Modal>
-  );
-}
-
-/** A mensagem de um campo recusado: ícone e palavra junto da cor (regra 4). */
-function MensagemDeErro({ children }: { children?: string }) {
-  return (
-    <span role="alert" className="flex items-center gap-1.5 text-rotulo text-perigo">
-      <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
-      {children}
-    </span>
   );
 }
 

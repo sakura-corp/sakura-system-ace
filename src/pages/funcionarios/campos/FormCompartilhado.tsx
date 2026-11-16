@@ -15,6 +15,16 @@ export function Secao({ titulo, children }: { titulo: string; children: React.Re
   );
 }
 
+/** A mensagem de um campo recusado: ícone e palavra junto da cor (regra 4). */
+export function MensagemDeErro({ children }: { children?: string }) {
+  return (
+    <span role="alert" className="flex items-center gap-1.5 text-rotulo text-perigo">
+      <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
+      {children}
+    </span>
+  );
+}
+
 export function Campo({
   label,
   obrigatorio,
@@ -40,13 +50,7 @@ export function Campo({
         )}
       </span>
       {children}
-      {/* Erro: ícone e palavra junto da cor (regra 4). */}
-      {erro && (
-        <span role="alert" className="flex items-center gap-1.5 text-rotulo text-perigo">
-          <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
-          {erro}
-        </span>
-      )}
+      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
     </label>
   );
 }
@@ -69,7 +73,7 @@ export function AbaBotao({
     <button
       type="button"
       onClick={onClick}
-      aria-current={ativa ? "page" : undefined}
+      aria-pressed={ativa}
       className={`border-b-2 px-4 py-2.5 text-corpo font-medium transition-colors ${
         ativa
           ? "border-sakura-purple text-texto"

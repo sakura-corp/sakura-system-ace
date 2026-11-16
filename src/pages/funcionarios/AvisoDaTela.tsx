@@ -1,4 +1,4 @@
-import { Info, TriangleAlert } from "lucide-react";
+import { CircleAlert, Info, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
@@ -23,7 +23,8 @@ export function AvisoDaTela({
   children: ReactNode;
   className?: string;
 }) {
-  const Icone = tipo === "perigo" ? TriangleAlert : Info;
+  // Três ícones, três formatos: nem a forma depende só da cor (regra 4).
+  const Icone = { perigo: TriangleAlert, atencao: CircleAlert, info: Info }[tipo];
   const cor = {
     perigo: "bg-perigo/[0.13] text-perigo",
     atencao: "bg-atencao/[0.12] text-atencao",
