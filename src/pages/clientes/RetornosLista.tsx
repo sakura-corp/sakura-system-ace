@@ -108,10 +108,14 @@ export function RetornosLista() {
   const lista = useMemo(() => {
     if (!ordens) return null;
     const hoje = hojeLocal();
-    return listaDeRetornos(retornosPrevistos(ordens, servicos, hoje, donos), clientes, hoje, {
-      mostrarAntigos,
-    });
-  }, [ordens, servicos, clientes, donos, mostrarAntigos]);
+    // A conta olha as OS da empresa toda (o carro pode ter voltado em outra
+    // loja), mas cada loja só vê o retorno cuja última OS foi feita nela: o
+    // "avisado em" é da loja, e assim o cliente não recebe duas mensagens
+    // (decisão da Sofia, 16/11/2026).
+    const daLoja = new Set(ordens.filter((o) => o.loja_id === lojaId).map((o) => o.id));
+    const previstos = retornosPrevistos(ordens, servicos, hoje, donos).filter((r) => daLoja.has(r.ordemId));
+    return listaDeRetornos(previstos, clientes, hoje, { mostrarAntigos });
+  }, [ordens, servicos, clientes, donos, mostrarAntigos, lojaId]);
 
   if (erro) {
     return <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>;

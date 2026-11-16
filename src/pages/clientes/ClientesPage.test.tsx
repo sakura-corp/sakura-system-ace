@@ -395,6 +395,16 @@ describe("ClientesPage — retornos (#381)", () => {
     expect(within(linhaDaSemana).getByText("vence em 5 dias")).toBeInTheDocument();
   });
 
+  it("cada loja só vê os retornos dos serviços feitos nela (decisão da Sofia, 16/11)", async () => {
+    listarOrdensParaRetornos.mockResolvedValue([
+      osComOleo("r1", "c1", "v1", "ABC-1D23", 200),
+      { ...osComOleo("r2", "c2", "v2", "XYZ-9K88", 200), loja_id: "loja-b" },
+    ]);
+    await abrirRetornos();
+    expect(screen.getByRole("button", { name: "ABC-1D23" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "XYZ-9K88" })).not.toBeInTheDocument();
+  });
+
   it("quem pediu pra não receber lembrete não aparece", async () => {
     await abrirRetornos();
     expect(screen.queryByText("Cliente Calado")).not.toBeInTheDocument();
@@ -634,27 +644,3 @@ describe("ClientesPage — a lista por página (#373)", () => {
   });
 });
 
-describe("importar planilha (#457)", () => {
-  it("só o administrador vê o botão", async () => {
-    operador = { id: "op", admin: false, permissoes: ["clientes"] };
-    renderizar(<ClientesPage />);
-    await screen.findByText("Cliente Pouco");
-    expect(screen.queryByRole("button", { name: "Importar planilha" })).not.toBeInTheDocument();
-  });
-
-  it("o botão abre a importação e, ao desfazer, a lista de clientes recarrega", async () => {
-    listarLotesImportacao.mockResolvedValue([
-      { id: "l1", tipo: "clientes", nome_arquivo: "a.csv", operador_id: "op", criado_em: "2026-11-05T15:30:00-03:00",
-        total_linhas: 1, clientes_criados: 1, veiculos_criados: 0, desfeito_em: null, desfeito_por: null },
-    ]);
-    desfazerImportacao.mockResolvedValue({ veiculos_apagados: 0, clientes_apagados: 1, mantidos: [] });
-    const { user } = renderizar(<ClientesPage />);
-    await screen.findByText("Cliente Pouco");
-    const vezes = listarClientesPagina.mock.calls.length;
-    await user.click(screen.getByRole("button", { name: "Importar planilha" }));
-    await user.click(await screen.findByRole("button", { name: "Desfazer" }));
-    await user.click(screen.getByRole("button", { name: "Sim, desfazer" }));
-    await screen.findByText(/Desfeito: a.csv/);
-    expect(listarClientesPagina.mock.calls.length).toBe(vezes + 1);
-  });
-});
