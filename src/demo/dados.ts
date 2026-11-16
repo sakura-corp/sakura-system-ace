@@ -879,6 +879,8 @@ export const TABELAS = {
   computadores,
   schema_versao: schemaVersao,
   lojas, clientes, pecas, servicos, depositos,
+  // A importação por planilha (#457, migration 0083): começa sem lote nenhum.
+  importacao_lotes: [],
   // A janela de peças e o saldo pronto (migration 0073, #366): é por eles que
   // a OS, o balcão, o pedido de compra e a nota leem. Sem eles as telas
   // geradas abririam sem peça nenhuma pra escolher.
