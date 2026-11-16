@@ -166,6 +166,7 @@ export function OrdensServicoPage() {
   // "Nota do cliente" aberta pela linha de uma OS finalizada.
   const [notaDoCliente, setNotaDoCliente] = useState<{
     documento: string;
+    venda: boolean;
     notas: NotaFiscalArquivo[];
   } | null>(null);
   const [erroDaLinha, setErroDaLinha] = useState<{ ordemId: string; texto: string } | null>(
@@ -754,7 +755,7 @@ export function OrdensServicoPage() {
                 className="relative max-[1365px]:w-8 max-[1365px]:justify-center max-[1365px]:px-0"
                 onClick={() => {
                   setErroDaLinha(null);
-                  setNotaDoCliente({ documento: nomeDocumento(ordem), notas: notasParaVer });
+                  setNotaDoCliente({ documento: nomeDocumento(ordem), venda, notas: notasParaVer });
                 }}
               >
                 <span className="max-[1365px]:sr-only">Nota do cliente</span>
@@ -938,6 +939,7 @@ export function OrdensServicoPage() {
       {notaDoCliente && (
         <NotaDoClienteModal
           documento={notaDoCliente.documento}
+          venda={notaDoCliente.venda}
           notas={notaDoCliente.notas}
           onFechar={() => setNotaDoCliente(null)}
         />
