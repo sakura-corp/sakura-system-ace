@@ -1,6 +1,8 @@
+import { Botao } from "@/components/Botao";
 import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarTextoGarantia } from "@/lib/configuracoes";
+import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
 
 interface TextoGarantiaSectionProps {
   texto: string;
@@ -36,9 +38,7 @@ export function TextoGarantiaSection({
 
   return (
     <>
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <MensagemDeErro className="mt-3">{erro}</MensagemDeErro>}
       <textarea
         value={valor}
         onChange={(e) => {
@@ -46,23 +46,17 @@ export function TextoGarantiaSection({
           setSalvo(false);
         }}
         rows={8}
-        className="mt-4 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple"
+        aria-label="Texto de garantia"
+        className="sakura-campo mt-4"
       />
 
-      <div className="mt-4 flex items-center justify-end gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
         {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            Texto de garantia salvo.
-          </p>
+          <AvisoDeSalvo>Texto de garantia salvo.</AvisoDeSalvo>
         )}
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao type="button" variante="principal" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar texto"}
-        </button>
+        </Botao>
       </div>
     </>
   );

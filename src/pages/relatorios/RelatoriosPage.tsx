@@ -1,57 +1,122 @@
 import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarMovimentosCaixa } from "@/lib/caixa";
+import { listarContasPagar } from "@/lib/contasPagar";
+import { listarContasReceber } from "@/lib/contasReceber";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarOrdens } from "@/lib/ordensServico";
 import { listarPecas } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
 import type { MovimentoCaixa } from "@/types/caixa";
+import type { ContaPagar } from "@/types/contaPagar";
+import type { ContaReceber } from "@/types/contaReceber";
+import { temPermissao } from "@/types/operador";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { CurvaABCSection } from "./CurvaABCSection";
+import { FluxoProjetadoSection } from "./FluxoProjetadoSection";
 import { GraficosSection } from "./GraficosSection";
 import { LucratividadeSection } from "./LucratividadeSection";
 
-type Aba = "graficos" | "lucratividade";
+type Aba = "graficos" | "lucratividade" | "curvaABC" | "fluxo";
+
+const SEM_MOVIMENTOS: MovimentoCaixa[] = [];
+const SEM_ORDENS: OrdemServico[] = [];
+const SEM_PECAS: Peca[] = [];
+const SEM_SERVICOS: Servico[] = [];
 
 export function RelatoriosPage() {
-  const { lojaAtual } = useAuth();
+  const { lojaAtual, operador } = useAuth();
+  const podeVerPagar = temPermissao(operador, "contas_pagar");
+  const podeVerReceber = temPermissao(operador, "contas_receber");
   const [aba, setAba] = useState<Aba>("graficos");
-  const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados guardados (da loja anterior) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [movimentosGuardados, setMovimentos] = useState<MovimentoCaixa[]>([]);
+  const [ordensGuardadas, setOrdens] = useState<OrdemServico[]>([]);
+  const [pecasGuardadas, setPecas] = useState<Peca[]>([]);
+  const [servicosGuardados, setServicos] = useState<Servico[]>([]);
+  const movimentos = dadosSaoDaLoja ? movimentosGuardados : SEM_MOVIMENTOS;
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
+  const pecas = dadosSaoDaLoja ? pecasGuardadas : SEM_PECAS;
+  const servicos = dadosSaoDaLoja ? servicosGuardados : SEM_SERVICOS;
+  const [contasPagar, setContasPagar] = useState<ContaPagar[] | null>(null);
+  const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(null);
+  const [erroContas, setErroContas] = useState<string | null>(null);
+  const [carregandoContas, setCarregandoContas] = useState(true);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     async function carregar() {
-      if (!lojaAtual) {
-        setCarregando(false);
+      const carga = comecar(lojaAtual?.id);
+      if (!carga) {
+        if (!lojaAtual) setCarregando(false);
         return;
       }
+      setErro(null);
       try {
         const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
           await Promise.all([
-            listarMovimentosCaixa(lojaAtual.id),
-            listarOrdens(lojaAtual.id),
+            listarMovimentosCaixa(carga.lojaId),
+            listarOrdens(carga.lojaId),
             listarPecas(),
             listarServicos(),
           ]);
+        if (!carga.aindaEhAtual()) return;
         setMovimentos(movimentosCarregados);
         setOrdens(ordensCarregadas);
         setPecas(pecasCarregadas);
         setServicos(servicosCarregados);
+        carga.gravou();
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
       } finally {
-        setCarregando(false);
+        if (carga.aindaEhAtual()) setCarregando(false);
       }
     }
     carregar();
-  }, [lojaAtual]);
+  }, [lojaAtual, comecar]);
+
+  // As contas do Fluxo de caixa vêm à parte (#389): um erro nelas não pode
+  // apagar Gráficos e Lucratividade, nem virar "Sem acesso" pra quem tem o
+  // acesso; e os Gráficos não esperam por elas. `ativo` descarta a resposta
+  // que chega depois de trocar de loja (senão a da loja antiga podia ganhar).
+  useEffect(() => {
+    if (!lojaAtual) {
+      setCarregandoContas(false);
+      return;
+    }
+    let ativo = true;
+    setCarregandoContas(true);
+    setErroContas(null);
+    Promise.all([
+      podeVerPagar ? listarContasPagar(lojaAtual.id) : Promise.resolve(null),
+      podeVerReceber ? listarContasReceber(lojaAtual.id) : Promise.resolve(null),
+    ])
+      .then(([pagarCarregadas, receberCarregadas]) => {
+        if (!ativo) return;
+        setContasPagar(pagarCarregadas);
+        setContasReceber(receberCarregadas);
+      })
+      .catch((err) => {
+        if (!ativo) return;
+        console.error("Erro ao carregar as contas do fluxo de caixa:", err);
+        setErroContas(mensagemDeErro(err));
+      })
+      .finally(() => {
+        if (ativo) setCarregandoContas(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [lojaAtual, podeVerPagar, podeVerReceber]);
 
   return (
     <div className="space-y-6">
@@ -78,6 +143,16 @@ export function RelatoriosPage() {
           ativa={aba === "lucratividade"}
           onClick={() => setAba("lucratividade")}
         />
+        <AbaBotao
+          label="Curva ABC"
+          ativa={aba === "curvaABC"}
+          onClick={() => setAba("curvaABC")}
+        />
+        <AbaBotao
+          label="Fluxo de caixa"
+          ativa={aba === "fluxo"}
+          onClick={() => setAba("fluxo")}
+        />
       </div>
 
       {carregando ? (
@@ -89,8 +164,21 @@ export function RelatoriosPage() {
           pecas={pecas}
           servicos={servicos}
         />
-      ) : (
+      ) : aba === "lucratividade" ? (
         <LucratividadeSection ordens={ordens} pecas={pecas} servicos={servicos} />
+      ) : aba === "curvaABC" ? (
+        <CurvaABCSection ordens={ordens} pecas={pecas} servicos={servicos} />
+      ) : carregandoContas ? (
+        <p className="text-corpo text-sakura-muted">Carregando as contas...</p>
+      ) : erroContas ? (
+        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+          Não deu pra carregar as contas: {erroContas}
+        </p>
+      ) : (
+        <FluxoProjetadoSection
+          contasPagar={contasPagar}
+          contasReceber={contasReceber}
+        />
       )}
     </div>
   );

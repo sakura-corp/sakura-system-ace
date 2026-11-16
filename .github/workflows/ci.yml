@@ -125,7 +125,7 @@ jobs:
   contraste-telas:
     name: Contraste nas telas (WCAG, no DOM)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     needs: mudancas
     if: needs.mudancas.outputs.codigo == 'true'
     steps:

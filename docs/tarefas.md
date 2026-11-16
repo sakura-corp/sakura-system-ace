@@ -147,6 +147,8 @@ novo, **muda só aqui**.
 - **O esforço** muda o gasto tanto quanto o modelo. O ajudante é chamado com o `model` e o `effort` da linha (a ferramenta de agente aceita os dois por chamada) ou pelo agente pronto da categoria em `.claude/agents/` (`ajudante-forte`, `ajudante-medio`, `ajudante-rapido`), que já traz o modelo, o esforço e o limite de turnos. A skill declara o dela no cabeçalho (`model:` e `effort:`). Pede o **Claude Code v2.1.293 ou mais novo** (antes disso o `haiku` e o `sonnet` apontam pra modelos mais velhos e o esforço na chamada não existe). Campos conferidos na documentação em 18/10: [skills](https://code.claude.com/docs/en/skills.md), [agentes](https://code.claude.com/docs/en/sub-agents.md).
 - **O Fable não está na tabela de propósito**: em 17/10 uma sessão aberta no Fable falhou por falta
   de crédito. Só entra quando **todo mundo da equipe** tiver acesso a ele.
+  **Exceção até 16/11/2026** (Sofia, 10/11): o Fable está liberado pra toda a equipe até essa data, e a
+  #995 (o vídeo de divulgação) usa ele. Depois de 16/11, volta a valer a regra acima.
 - **A conferir no Team (19/10)**: que os três modelos acima aparecem pra todo mundo da equipe.
 
 ## Quando o modelo falha (o que a pessoa faz)

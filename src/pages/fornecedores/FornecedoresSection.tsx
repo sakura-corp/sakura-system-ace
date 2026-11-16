@@ -10,6 +10,9 @@ import {
 import type { Fornecedor, NovoFornecedor } from "@/types/fornecedor";
 import { FornecedorForm } from "./FornecedorForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
+import { Selo } from "@/components/Selo";
+import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
 
 interface FornecedoresSectionProps {
   fornecedores: Fornecedor[];
@@ -63,12 +66,9 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
     <div className="space-y-6">
       {!formulario && (
         <div className="flex justify-end">
-          <button
-            onClick={() => setFormulario("novo")}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-          >
+          <Botao variante="principal" onClick={() => setFormulario("novo")}>
             + Novo fornecedor
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -86,44 +86,41 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
         </div>
       )}
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {fornecedores.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum fornecedor cadastrado ainda.</p>
+        <p className="text-corpo text-texto-2">Nenhum fornecedor cadastrado ainda.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">CNPJ</th>
-                <th className="px-4 py-3 font-medium">Telefone</th>
-                <th className="px-4 py-3 font-medium">Cidade/UF</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
+                <th>Nome</th>
+                <th>CNPJ</th>
+                <th>Telefone</th>
+                <th>Cidade/UF</th>
+                <th>Status</th>
+                <th className="relative">
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {fornecedores.map((fornecedor) => (
-                <tr key={fornecedor.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{fornecedor.nome}</td>
-                  <td className="px-4 py-3">{fornecedor.cnpj || "—"}</td>
-                  <td className="px-4 py-3">{fornecedor.telefone || "—"}</td>
-                  <td className="px-4 py-3">
+                <tr key={fornecedor.id}>
+                  <td className="font-medium">{fornecedor.nome}</td>
+                  <td className="whitespace-nowrap text-texto-2">{fornecedor.cnpj || "—"}</td>
+                  <td className="whitespace-nowrap text-texto-2">{fornecedor.telefone || "—"}</td>
+                  <td className="text-texto-2">
                     {fornecedor.cidade ? `${fornecedor.cidade}/${fornecedor.uf ?? ""}` : "—"}
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                        fornecedor.ativo
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
-                    >
-                      {fornecedor.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                  <td>
+                    <Selo
+                      tipo={fornecedor.ativo ? "ok" : "neutro"}
+                      palavra={fornecedor.ativo ? "Ativo" : "Inativo"}
+                    />
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="text-right">
                     <AcoesDaLinha
                       descricao={`o fornecedor ${fornecedor.nome}`}
                       acoes={[

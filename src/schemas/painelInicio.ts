@@ -60,6 +60,17 @@ export function janelaDoMesAteODia(referencia: Date): JanelaDeDias {
   };
 }
 
+/** O dia de referência inteiro, da meia-noite ao último milissegundo (#397). */
+export function janelaDoDia(referencia: Date): JanelaDeDias {
+  const ano = referencia.getFullYear();
+  const mes = referencia.getMonth();
+  const dia = referencia.getDate();
+  return {
+    inicio: new Date(ano, mes, dia),
+    fim: new Date(ano, mes, dia, 23, 59, 59, 999),
+  };
+}
+
 /**
  * A mesma fatia de dias, um mês atrás — é contra ela que a variação dos
  * cartões é medida.
@@ -182,6 +193,14 @@ export function variacoesPorCartao(
  * OS ao banco. Decisão da Sofia.
  */
 export const MODULOS_DOS_BLOCOS_DE_OS: readonly ModuloChave[] = ["ordens_servico"];
+
+/**
+ * A OS que conta como "aberta" no bloco "OS abertas" do Início: a que está em
+ * andamento. O resumo pro dono (#397) conta pela mesma regra.
+ */
+export function ehOsAberta(ordem: { status: string }): boolean {
+  return ordem.status === "em_andamento";
+}
 
 export function mostraBlocosDeOS(temModulo: (modulo: ModuloChave) => boolean): boolean {
   return MODULOS_DOS_BLOCOS_DE_OS.some(temModulo);

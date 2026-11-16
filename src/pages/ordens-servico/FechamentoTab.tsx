@@ -53,7 +53,7 @@ function BotaoEmitir({
       className={
         emitida
           ? "flex-1 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 py-2.5 text-rotulo font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20"
-          : "flex-1 rounded-xl bg-sakura-purple px-3 py-2.5 text-rotulo font-semibold text-white shadow-[0_0_15px_rgba(182,36,255,0.35)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_22px_rgba(182,36,255,0.6)]"
+          : "flex-1 rounded-xl bg-sakura-purple px-3 py-2.5 text-rotulo font-semibold text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.35)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_22px_rgba(255,87,34,0.6)]"
       }
     >
       {emitida ? `${rotulo} emitida ✓` : `Emitir ${rotulo}`}
@@ -224,7 +224,7 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
           <button
             type="button"
             onClick={() => setPreviewGarantiaAberta(true)}
-            className="w-full rounded-xl bg-sakura-pink px-3 py-2.5 text-rotulo font-semibold text-sakura-bg shadow-[0_0_15px_rgba(255,77,206,0.35)] transition-all hover:bg-sakura-pink/90 hover:shadow-[0_0_22px_rgba(255,77,206,0.6)]"
+            className="w-full rounded-xl bg-sakura-pink px-3 py-2.5 text-rotulo font-semibold text-sobre-acao shadow-[0_0_15px_rgba(255,122,77,0.35)] transition-all hover:bg-sakura-pink/90 hover:shadow-[0_0_22px_rgba(255,122,77,0.6)]"
           >
             Ver garantia
           </button>

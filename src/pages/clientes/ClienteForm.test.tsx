@@ -214,3 +214,36 @@ describe("ClienteForm — validação e tipo de pessoa", () => {
     expect(veiculos[0]).toMatchObject({ km_atual: 82000, ano: null, tipo: null });
   });
 });
+
+describe("ClienteForm — queda de rede no Salvar não perde o que foi digitado", () => {
+  const erroDeRede = { message: "TypeError: Failed to fetch", details: "", hint: "", code: "" };
+
+  it("sem rede: grava o rascunho na hora e avisa que está sem conexão", async () => {
+    const { user, onSalvar } = montar();
+    onSalvar.mockRejectedValueOnce(erroDeRede);
+
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(botaoSalvar());
+
+    expect(await screen.findByText(/Sem conexão com a internet/)).toBeInTheDocument();
+    // Na hora: o teste não avança os 30 s do autosave.
+    const gravado = JSON.parse(localStorage.getItem("rascunho-cliente-novo")!);
+    expect(gravado.nome).toBe("João Pereira");
+  });
+
+  it("erro que NÃO é de rede (permissão do banco) não grava rascunho na hora", async () => {
+    const { user, onSalvar } = montar();
+    onSalvar.mockRejectedValueOnce({
+      message: "new row violates row-level security policy",
+      details: "",
+      hint: "",
+      code: "42501",
+    });
+
+    await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await user.click(botaoSalvar());
+
+    await screen.findByText(/permissão/i);
+    expect(localStorage.getItem("rascunho-cliente-novo")).toBeNull();
+  });
+});

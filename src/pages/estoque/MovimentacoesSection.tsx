@@ -1,10 +1,14 @@
+import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
+import { Selo } from "@/components/Selo";
 import { criarMovimento } from "@/lib/estoque";
 import type { Deposito } from "@/types/deposito";
 import type { MovimentoEstoque, NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
 import { MovimentoForm } from "./MovimentoForm";
+import { AvisoDeAtencao, CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
 
 interface MovimentacoesSectionProps {
   pecas: Peca[];
@@ -43,19 +47,16 @@ export function MovimentacoesSection({
   return (
     <div className="space-y-6">
       {pecas.length === 0 ? (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Cadastre ao menos um produto na aba "Produtos" antes de registrar
           movimentações de estoque.
-        </p>
+        </AvisoDeAtencao>
       ) : (
         !mostrarFormulario && (
           <div className="flex justify-end">
-            <button
-              onClick={() => setMostrarFormulario(true)}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-            >
+            <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
               + Registrar movimentação
-            </button>
+            </Botao>
           </div>
         )
       )}
@@ -71,14 +72,14 @@ export function MovimentacoesSection({
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-corpo font-semibold text-sakura-purple-dark">
+          <h2 className="font-titulo text-subtitulo font-semibold text-texto">
             Histórico de movimentações
           </h2>
           {movimentos.length > 0 && (
-            <label className="flex items-center gap-2 text-corpo">
-              <span className="text-sakura-purple-dark/80">Produto</span>
+            <label className="flex items-center gap-2 text-rotulo font-medium text-texto-2">
+              Produto
               <Combobox
-                className="w-56"
+                className={`w-56 ${CAMPO_NOVO_NO_COMBOBOX_FILTRO}`}
                 opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
                 valor={filtroPecaId}
                 onMudar={setFiltroPecaId}
@@ -90,23 +91,23 @@ export function MovimentacoesSection({
         </div>
 
         {movimentosFiltrados.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">
+          <p className="text-corpo text-texto-2">
             {movimentos.length === 0
               ? "Nenhuma movimentação registrada ainda."
               : "Nenhuma movimentação para este produto."}
           </p>
         ) : (
           <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Data</th>
-                  <th className="px-4 py-3 font-medium">Produto</th>
-                  <th className="px-4 py-3 font-medium">Depósito</th>
-                  <th className="px-4 py-3 font-medium">Tipo</th>
-                  <th className="px-4 py-3 font-medium">Quantidade</th>
-                  <th className="px-4 py-3 font-medium">Motivo</th>
-                  <th className="px-4 py-3 font-medium">Referência</th>
+                  <th>Data</th>
+                  <th>Produto</th>
+                  <th>Depósito</th>
+                  <th>Tipo</th>
+                  <th className="text-right">Quantidade</th>
+                  <th>Motivo</th>
+                  <th>Referência</th>
                 </tr>
               </thead>
               <tbody>
@@ -114,18 +115,22 @@ export function MovimentacoesSection({
                   const peca = pecas.find((p) => p.id === movimento.peca_id);
                   const deposito = depositos.find((d) => d.id === movimento.deposito_id);
                   return (
-                    <tr key={movimento.id} className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">
+                    <tr key={movimento.id}>
+                      <td className="whitespace-nowrap text-texto-2">
                         {new Date(movimento.criado_em).toLocaleString("pt-BR")}
                       </td>
-                      <td className="px-4 py-3">{peca?.descricao ?? "—"}</td>
-                      <td className="px-4 py-3">{deposito?.nome ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        {movimento.tipo === "entrada" ? "Entrada" : "Saída"}
+                      <td>{peca?.descricao ?? "—"}</td>
+                      <td className="text-texto-2">{deposito?.nome ?? "—"}</td>
+                      <td>
+                        {movimento.tipo === "entrada" ? (
+                          <Selo tipo="ok" palavra="Entrada" icone={ArrowDownToLine} />
+                        ) : (
+                          <Selo tipo="neutro" palavra="Saída" icone={ArrowUpFromLine} />
+                        )}
                       </td>
-                      <td className="px-4 py-3">{movimento.quantidade}</td>
-                      <td className="px-4 py-3">{motivoLabel[movimento.motivo]}</td>
-                      <td className="px-4 py-3">{movimento.referencia || "—"}</td>
+                      <td className="text-right font-medium">{movimento.quantidade}</td>
+                      <td>{motivoLabel[movimento.motivo]}</td>
+                      <td className="text-texto-2">{movimento.referencia || "—"}</td>
                     </tr>
                   );
                 })}

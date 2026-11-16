@@ -371,15 +371,57 @@ aoPedidoDaTela("whatsapp:abrir", async (url: unknown): Promise<boolean> => {
 // barra nativa.
 Menu.setApplicationMenu(null);
 
+// A barra da janela (visual novo, #990, tarefa 6). O Windows desenhava uma
+// faixa branca em cima do programa; agora a barra é do programa (na cor dele,
+// com a flor e o nome), e o Windows só põe por cima os três botões de verdade
+// (minimizar, maximizar, fechar) — `titleBarStyle: "hidden"` com
+// `titleBarOverlay`. Arrastar pelo topo, duplo clique, encaixe na lateral e
+// os três botões continuam sendo do sistema. NÃO se força canto arredondado:
+// no Windows 11 ele vem sozinho; no 10 exigiria janela transparente, que perde
+// a sombra e o encaixe (decisão em docs/referencia/visual-novo/README.md,
+// seção 12). No Mac o Electron mantém a barra de sempre (o programa é só Windows).
+const ALTURA_DA_BARRA = 40;
+const TEM_BARRA_PROPRIA = process.platform !== "darwin";
+
+// Mesmos valores de `fundo` e `texto` de cada tema em src/styles/globals.css:
+// a faixa dos botões é pintada pelo sistema, então precisa casar com a barra
+// que o programa desenha. O fundo da janela, enquanto a tela carrega, é o
+// escuro (o padrão); era o rosa-claro do tema antigo e piscava ao abrir.
+const CORES_DA_BARRA = {
+  escuro: { color: "#0A0A0D", symbolColor: "#FFFFFF" },
+  claro: { color: "#F3F2EF", symbolColor: "#1B1B1F" },
+} as const;
+
+aoAvisoDaTela("janela:tema", (tema: unknown) => {
+  if (!TEM_BARRA_PROPRIA || !mainWindow || mainWindow.isDestroyed()) return;
+  if (tema !== "escuro" && tema !== "claro") return;
+  try {
+    mainWindow.setTitleBarOverlay({ ...CORES_DA_BARRA[tema], height: ALTURA_DA_BARRA });
+    // O fundo da janela também: ao redimensionar, a borda não pisca escura no claro.
+    mainWindow.setBackgroundColor(CORES_DA_BARRA[tema].color);
+  } catch (erro) {
+    logErroDaTela(`Barra da janela: ${String(erro).slice(0, 200)}`);
+  }
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
     minHeight: 700,
-    backgroundColor: "#FFF7FC",
+    backgroundColor: CORES_DA_BARRA.escuro.color,
+    ...(TEM_BARRA_PROPRIA
+      ? {
+          titleBarStyle: "hidden" as const,
+          titleBarOverlay: { ...CORES_DA_BARRA.escuro, height: ALTURA_DA_BARRA },
+        }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
+      // A tela precisa saber, já na primeira pintura, se a barra é dela (o
+      // preload lê isto; ver `barraDaJanela`).
+      additionalArguments: [`--barra-da-janela=${TEM_BARRA_PROPRIA ? ALTURA_DA_BARRA : 0}`],
       backgroundThrottling: false,
       // Os quatro abaixo já são o padrão do Electron 33 — foram conferidos
       // ligados, rodando o app de verdade, antes de serem escritos aqui.

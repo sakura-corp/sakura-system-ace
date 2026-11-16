@@ -12,6 +12,10 @@ interface ImportMeta {
 interface Window {
   sakuraApp?: {
     version: string;
+    // Altura (px) da barra que o programa desenha no topo; 0 ou ausente = a
+    // janela tem a barra do sistema (Mac, navegador). Tarefa 6 do visual novo.
+    barraDaJanela?: number;
+    definirTemaDaJanela?: (tema: "escuro" | "claro") => void;
     conexao?: { url: string; chave: string };
     salvarConexao: (conexao: { url: string; chave: string }) => Promise<void>;
     registrarErro?: (mensagem: string) => void;

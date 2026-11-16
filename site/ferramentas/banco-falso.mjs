@@ -58,7 +58,13 @@ export async function instalarBancoFalso(contexto) {
       return rota.fulfill({
         status: 200,
         contentType: "application/json",
-        headers: { "content-range": `0-${Math.max(linhas.length - 1, 0)}/${linhas.length}` },
+        headers: {
+          "content-range": `0-${Math.max(linhas.length - 1, 0)}/${linhas.length}`,
+          // O total do ".select(..., { count })" vem neste cabeçalho, e o navegador
+          // só deixa a página ler se ele for liberado, como o Supabase de verdade faz
+          // (sem isso, a lista de Clientes por página via total 0, #373).
+          "access-control-expose-headers": "content-range",
+        },
         body: JSON.stringify(corpo),
       });
     }

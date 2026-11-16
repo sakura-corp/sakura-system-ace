@@ -155,6 +155,57 @@ describe("Configurações: troca de loja no meio da carga", () => {
     expect(screen.getByText("Texto de garantia")).toBeInTheDocument();
   });
 
+  // #927: a carga da loja B dá erro depois de a A ter carregado. A página
+  // ainda guarda os dados da A; se as seções aparecessem, com o `lojaId` da B,
+  // quem salvasse gravaria o dado da loja A na loja B.
+  it("a loja A carregou e a carga da B dá erro: aparece o erro e nenhuma seção com os dados da A", async () => {
+    const { a, b } = prepararRespostas();
+    const { user, rerender } = renderizar(<ConfiguracoesPage />);
+    a.resolver("Garantia da loja A");
+    await user.click(await screen.findByText("Texto de garantia"));
+    await screen.findByDisplayValue("Garantia da loja A");
+
+    await trocarPraLojaB(rerender);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    b.rejeitar(new Error("Falha da loja B"));
+
+    expect(await screen.findByText(/Falha da loja B/)).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Garantia da loja A")).not.toBeInTheDocument();
+    for (const secao of [
+      "Lojas",
+      "Juros de parcelamento",
+      "Depósitos",
+      "Texto de garantia",
+      "Mensagens de WhatsApp",
+      "Pix (cobrança e faturamento)",
+      "Dados fiscais da loja",
+      "Cartões do Início",
+    ]) {
+      expect(screen.queryByText(secao)).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "Salvar texto" })).not.toBeInTheDocument();
+  });
+
+  it("recarregar a mesma loja que dá erro continua mostrando os dados dela", async () => {
+    const { a } = prepararRespostas();
+    const salvar = adiada<void>();
+    m.salvarTextoGarantia.mockReturnValue(salvar.promessa);
+    const { user } = renderizar(<ConfiguracoesPage />);
+    a.resolver("Garantia da loja A");
+    await user.click(await screen.findByText("Texto de garantia"));
+    await screen.findByDisplayValue("Garantia da loja A");
+
+    // O recarregar depois de salvar dá erro, na mesma loja.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    m.buscarTextoGarantia.mockRejectedValue(new Error("Falha ao recarregar"));
+    await user.click(screen.getByRole("button", { name: "Salvar texto" }));
+    salvar.resolver();
+
+    expect(await screen.findByText(/Falha ao recarregar/)).toBeInTheDocument();
+    expect(screen.getByText("Texto de garantia")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Garantia da loja A")).toBeInTheDocument();
+  });
+
   it("um salvar lento da loja A que termina depois da troca não recarrega a loja A", async () => {
     const { a, b } = prepararRespostas();
     const salvar = adiada<void>();

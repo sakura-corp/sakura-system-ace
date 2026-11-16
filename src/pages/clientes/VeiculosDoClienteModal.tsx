@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import { Botao } from "@/components/Botao";
+import { LinkPlaca } from "@/components/LinkPlaca";
 import { Modal } from "@/components/Modal";
 import type { Cliente } from "@/types/cliente";
 
@@ -9,6 +11,10 @@ import type { Cliente } from "@/types/cliente";
  * carros a linha ficava poluída, e carro cadastrado sem placa virava uma
  * caixinha vazia. Aqui cada carro é uma linha inteira que leva pra ficha
  * dele, e o sem placa aparece pela marca e pelo modelo.
+ *
+ * No visual novo (#990, tarefa 8) a placa é a `LinkPlaca` de sempre (que já é
+ * o atalho pra ficha) e o "Ver ficha" é um botão de verdade ao lado dela:
+ * antes a linha inteira era um botão, e a placa de dentro era só texto.
  */
 export function VeiculosDoClienteModal({
   cliente,
@@ -28,29 +34,25 @@ export function VeiculosDoClienteModal({
           const carro = [veiculo.marca, veiculo.modelo].filter(Boolean).join(" ");
           const detalhe = [carro, veiculo.ano, veiculo.cor].filter(Boolean).join(" · ");
           return (
-            <li key={veiculo.id}>
-              <button
-                type="button"
+            <li
+              key={veiculo.id}
+              className="flex items-center justify-between gap-4 rounded-xl border border-linha bg-poco px-4 py-3"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                {placa ? (
+                  <LinkPlaca veiculoId={veiculo.id} placa={placa} />
+                ) : (
+                  <span className="shrink-0 italic text-texto-2">sem placa</span>
+                )}
+                {detalhe && <span className="min-w-0 truncate text-corpo text-texto-2">{detalhe}</span>}
+              </div>
+              <Botao
+                tamanho="pequeno"
+                aria-label={`Ver ficha do veículo ${placa || carro || "sem placa"}`}
                 onClick={() => navigate(`/veiculos/${veiculo.id}`)}
-                title={`Ver a ficha do veículo ${placa || carro || "sem placa"}`}
-                className="flex w-full items-center justify-between gap-4 rounded-xl border border-sakura-borda-campo px-4 py-3 text-left transition hover:bg-white/10"
               >
-                <span className="min-w-0">
-                  <span
-                    className={`block font-semibold tracking-wide ${
-                      placa ? "text-sakura-purple-dark" : "italic text-sakura-muted"
-                    }`}
-                  >
-                    {placa || "sem placa"}
-                  </span>
-                  {detalhe && (
-                    <span className="block truncate text-rotulo text-sakura-muted">{detalhe}</span>
-                  )}
-                </span>
-                <span className="shrink-0 text-rotulo font-medium text-sakura-pink">
-                  Ver ficha →
-                </span>
-              </button>
+                Ver ficha
+              </Botao>
             </li>
           );
         })}

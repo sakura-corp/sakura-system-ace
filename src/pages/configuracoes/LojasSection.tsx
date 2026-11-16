@@ -1,6 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Pencil, Power, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
+import { Selo } from "@/components/Selo";
 import { atualizarLoja, atualizarStatusLoja, criarLoja, excluirLoja } from "@/lib/lojas";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -12,15 +15,13 @@ import {
   type LojaFormValues,
 } from "@/schemas/loja";
 import type { Loja } from "@/types/loja";
+import { BotaoDeLista, MensagemDeErro } from "./pecas";
 
 interface LojasSectionProps {
   lojas: Loja[];
   operadorCriadorId: string;
   onSalvo: () => Promise<void>;
 }
-
-const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple";
 
 export function LojasSection({ lojas, operadorCriadorId, onSalvo }: LojasSectionProps) {
   const [erro, setErro] = useState<string | null>(null);
@@ -73,100 +74,104 @@ export function LojasSection({ lojas, operadorCriadorId, onSalvo }: LojasSection
 
   return (
     <>
-      {erro && <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
 
-      <form onSubmit={handleSubmit(aoAdicionar)} className="mt-4 grid grid-cols-4 gap-2">
-        <input
-          type="text"
-          placeholder="Nome da loja"
-          {...register("nome")}
-          className={`col-span-2 ${inputClasse}`}
-        />
-        <input
-          type="text"
-          placeholder="Cidade"
-          {...register("cidade")}
-          className={inputClasse}
-        />
-        <input
-          type="text"
-          placeholder="UF"
-          maxLength={2}
-          {...ufField}
-          onChange={(e) => {
-            e.target.value = e.target.value.toUpperCase();
-            ufField.onChange(e);
-          }}
-          className={inputClasse}
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="col-span-4 rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50 sm:col-span-1 sm:justify-self-end"
-        >
+      <form
+        onSubmit={handleSubmit(aoAdicionar)}
+        className="mt-5 grid gap-3 sm:grid-cols-[2fr_1.2fr_5rem_auto] sm:items-end"
+      >
+        <label className="sakura-rotulo">
+          Nome da loja
+          <input
+            type="text"
+            placeholder="Ex: Loja Centro"
+            {...register("nome")}
+            className="sakura-campo"
+          />
+        </label>
+        <label className="sakura-rotulo">
+          Cidade
+          <input
+            type="text"
+            placeholder="Ex: Araraquara"
+            {...register("cidade")}
+            className="sakura-campo"
+          />
+        </label>
+        <label className="sakura-rotulo">
+          UF
+          <input
+            type="text"
+            placeholder="SP"
+            maxLength={2}
+            {...ufField}
+            onChange={(e) => {
+              e.target.value = e.target.value.toUpperCase();
+              ufField.onChange(e);
+            }}
+            className="sakura-campo"
+          />
+        </label>
+        <Botao type="submit" ocupado={isSubmitting} className="h-11">
           {isSubmitting ? "Salvando..." : "+ Nova loja"}
-        </button>
+        </Botao>
       </form>
 
       {lojas.length === 0 ? (
-        <p className="mt-4 text-corpo text-sakura-muted">Nenhuma loja cadastrada ainda.</p>
+        <p className="mt-4 text-corpo text-texto-2">Nenhuma loja cadastrada ainda.</p>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {lojas.map((loja) =>
-            editandoId === loja.id ? (
-              <LinhaEdicaoLoja
-                key={loja.id}
-                loja={loja}
-                onSalvo={async () => {
-                  setEditandoId(null);
-                  await onSalvo();
-                }}
-                onErro={setErro}
-                onCancelar={() => setEditandoId(null)}
-              />
-            ) : (
-              <span
-                key={loja.id}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-rotulo font-medium ${
-                  loja.ativo
-                    ? "bg-sakura-pink-soft text-sakura-purple-dark"
-                    : "bg-sakura-gray/20 text-sakura-muted"
-                }`}
-              >
-                {loja.nome}
-                {(loja.cidade || loja.uf) && (
-                  <span className="text-sakura-purple-dark/70">
-                    · {[loja.cidade, loja.uf].filter(Boolean).join("/")}
-                  </span>
-                )}
-                <button
-                  onClick={() => {
-                    setErro(null);
-                    setEditandoId(loja.id);
+        <ul className="mt-5 divide-y divide-linha overflow-hidden rounded-2xl border border-linha">
+          {lojas.map((loja) => (
+            <li key={loja.id} className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
+              {editandoId === loja.id ? (
+                <LinhaEdicaoLoja
+                  loja={loja}
+                  onSalvo={async () => {
+                    setEditandoId(null);
+                    await onSalvo();
                   }}
-                  title="Editar loja"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
-                >
-                  ✎
-                </button>
-                <button
-                  onClick={() => handleAlternarStatus(loja)}
-                  title={loja.ativo ? "Inativar loja" : "Reativar loja"}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-white/10 hover:text-sakura-purple-dark"
-                >
-                  {loja.ativo ? "×" : "↺"}
-                </button>
-                <button
-                  onClick={() => handleExcluir(loja)}
-                  title="Excluir loja"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-red-500/15 hover:text-red-400"
-                >
-                  🗑
-                </button>
-              </span>
-            ),
-          )}
-        </div>
+                  onErro={setErro}
+                  onCancelar={() => setEditandoId(null)}
+                />
+              ) : (
+                <>
+                  <span className="min-w-0 font-medium text-texto">{loja.nome}</span>
+                  {(loja.cidade || loja.uf) && (
+                    <span className="text-corpo text-texto-2">
+                      {[loja.cidade, loja.uf].filter(Boolean).join("/")}
+                    </span>
+                  )}
+                  {loja.ativo ? (
+                    <Selo tipo="ok" palavra="Ativa" />
+                  ) : (
+                    <Selo tipo="neutro" palavra="Inativa" />
+                  )}
+                  <span className="ml-auto flex items-center gap-1">
+                    <BotaoDeLista
+                      rotulo={`Editar a loja ${loja.nome}`}
+                      icone={Pencil}
+                      aoClicar={() => {
+                        setErro(null);
+                        setEditandoId(loja.id);
+                      }}
+                    />
+                    <BotaoDeLista
+                      rotulo={`${loja.ativo ? "Inativar" : "Reativar"} a loja ${loja.nome}`}
+                      icone={loja.ativo ? Power : RotateCcw}
+                      aoClicar={() => handleAlternarStatus(loja)}
+                    />
+                    <BotaoDeLista
+                      rotulo={`Excluir a loja ${loja.nome}`}
+                      icone={Trash2}
+                      perigoso
+                      aoClicar={() => handleExcluir(loja)}
+                    />
+                  </span>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </>
   );
@@ -211,46 +216,41 @@ function LinhaEdicaoLoja({
   return (
     <form
       onSubmit={handleSubmit(aoSalvar)}
-      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-black/20 px-3 py-1.5"
+      className="flex w-full flex-wrap items-center gap-2"
     >
       <input
         type="text"
         placeholder="Nome da loja"
+        aria-label="Nome da loja"
         autoFocus
         {...register("nome")}
-        className="w-28 rounded-lg border border-sakura-borda-campo px-2 py-1 text-rotulo focus:border-sakura-purple"
+        className="sakura-campo sakura-campo-filtro min-w-40 flex-1"
       />
       <input
         type="text"
         placeholder="Cidade"
+        aria-label="Cidade"
         {...register("cidade")}
-        className="w-20 rounded-lg border border-sakura-borda-campo px-2 py-1 text-rotulo focus:border-sakura-purple"
+        className="sakura-campo sakura-campo-filtro w-40"
       />
       <input
         type="text"
         placeholder="UF"
+        aria-label="UF"
         maxLength={2}
         {...ufField}
         onChange={(e) => {
           e.target.value = e.target.value.toUpperCase();
           ufField.onChange(e);
         }}
-        className="w-12 rounded-lg border border-sakura-borda-campo px-2 py-1 text-rotulo focus:border-sakura-purple"
+        className="sakura-campo sakura-campo-filtro w-16"
       />
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="text-rotulo font-medium text-sakura-purple hover:underline disabled:opacity-50"
-      >
+      <Botao type="submit" variante="principal" tamanho="pequeno" ocupado={isSubmitting}>
         Salvar
-      </button>
-      <button
-        type="button"
-        onClick={onCancelar}
-        className="text-rotulo font-medium text-sakura-muted hover:underline"
-      >
+      </Botao>
+      <Botao variante="fantasma" tamanho="pequeno" onClick={onCancelar}>
         Cancelar
-      </button>
+      </Botao>
     </form>
   );
 }

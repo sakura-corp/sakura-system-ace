@@ -1,5 +1,7 @@
 import type { Cliente, Veiculo } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
+import { calcularListaParcelas } from "@/schemas/faturamento";
+import { totaisDoDocumento, valorLiquidoDoItem } from "@/schemas/valorItem";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
@@ -26,12 +28,6 @@ function formatarMoeda(valor: number): string {
 function formatarData(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("pt-BR");
-}
-
-function addMeses(data: Date, meses: number): Date {
-  const nova = new Date(data);
-  nova.setMonth(nova.getMonth() + meses);
-  return nova;
 }
 
 function enderecoLoja(loja: ConfiguracaoFiscalLoja | null): string | null {
@@ -63,7 +59,7 @@ function linhaItens(itens: ItemOS[]): string {
           <td>${item.tecnico?.nome ?? "—"}</td>
           <td class="numero">${item.quantidade}</td>
           <td class="numero">${formatarMoeda(item.preco_unitario)}</td>
-          <td class="numero">${formatarMoeda(item.quantidade * item.preco_unitario - item.desconto)}</td>
+          <td class="numero">${formatarMoeda(valorLiquidoDoItem(item))}</td>
         </tr>
       `,
     )
@@ -74,31 +70,20 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   const { ordem, cliente, veiculo, loja, valorCobrado, textoGarantia } = dados;
   const itens = ordem.itens ?? [];
 
-  const totalProdutos = itens
-    .filter((i) => i.tipo === "peca")
-    .reduce((soma, i) => soma + i.quantidade * i.preco_unitario, 0);
-  const totalServicos = itens
-    .filter((i) => i.tipo === "servico")
-    .reduce((soma, i) => soma + i.quantidade * i.preco_unitario, 0);
-  const totalDescontos = itens.reduce((soma, i) => soma + i.desconto, 0);
-  const subtotal = totalProdutos + totalServicos;
-  const totalGeral = subtotal - totalDescontos;
+  // As contas de dinheiro moram em src/schemas/ (#915): aqui só se mostra.
+  const totais = totaisDoDocumento(itens);
 
-  const valorFinal = valorCobrado ?? totalGeral;
+  const valorFinal = valorCobrado ?? totais.total;
   const parcelas = ordem.parcelas ?? 1;
   const formaPagamentoLabel = ordem.forma_pagamento
     ? (FORMA_PAGAMENTO_LABEL[ordem.forma_pagamento] ?? ordem.forma_pagamento)
     : "—";
 
   const dataBase = ordem.data_fechamento ? new Date(ordem.data_fechamento) : new Date();
-  const listaParcelas =
-    parcelas > 1
-      ? Array.from({ length: parcelas }, (_, i) => ({
-          numero: i + 1,
-          vencimento: addMeses(dataBase, i + 1),
-          valor: valorFinal / parcelas,
-        }))
-      : [];
+  // As mesmas parcelas da tela de faturamento: a soma fecha com o total
+  // (decisão da Sofia, 10/11/2026, #915). Vencimento: um mês por parcela,
+  // contado do fechamento, como antes.
+  const listaParcelas = parcelas > 1 ? calcularListaParcelas(valorFinal, parcelas, dataBase) : [];
 
   const nomeLoja = loja?.nome_fantasia || loja?.razao_social || "—";
   const contatoLoja = [loja?.telefone, loja?.email].filter(Boolean).join(" · ");
@@ -218,12 +203,12 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 
   <div class="titulo-secao">Totalização</div>
   <div class="totais">
-    <span>Produtos<strong>${formatarMoeda(totalProdutos)}</strong></span>
-    <span>Serviços<strong>${formatarMoeda(totalServicos)}</strong></span>
-    <span>Subtotal<strong>${formatarMoeda(subtotal)}</strong></span>
-    <span>Descontos<strong>${formatarMoeda(totalDescontos)}</strong></span>
+    <span>Produtos<strong>${formatarMoeda(totais.brutoPecas)}</strong></span>
+    <span>Serviços<strong>${formatarMoeda(totais.brutoServicos)}</strong></span>
+    <span>Subtotal<strong>${formatarMoeda(totais.subtotal)}</strong></span>
+    <span>Descontos<strong>${formatarMoeda(totais.descontos)}</strong></span>
   </div>
-  <p class="total-geral">Total geral: ${formatarMoeda(totalGeral)}</p>
+  <p class="total-geral">Total geral: ${formatarMoeda(totais.total)}</p>
 
   <div class="titulo-secao">Forma de pagamento</div>
   ${

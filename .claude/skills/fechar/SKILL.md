@@ -15,6 +15,7 @@ Se ela pedir ajuste, ajuste e mostre de novo. Silêncio não é "pode".
 ## 0. Quem está fechando?
 
 Conferir como na seção 0 do `PROJETO_STATUS.md` (`mcp__github__get_me` ou `git config user.email`).
+Se a sessão ainda não avisou a Recepção ao abrir, não precisa agora: só o aviso do fim (passo 3.4).
 - **Sofia** (`caranovavidanova`): fluxo completo abaixo.
 - **Equipe**: não mexe no "Onde parou" (é da Sofia), não mescla. O andamento vai na descrição do PR
   (o do painel, no `docs/painel.md` do `sakura-corp/escritorio`). Pular os passos 2.3 e 3 (mesclar) e dizer isso a ela.
@@ -68,6 +69,8 @@ Terminar com a pergunta: **"Confere? Posso gravar assim?"** — e **esperar a re
 2. Commit em branch de trabalho (nunca direto na `main`) e PR. Só a Sofia mescla; a equipe para no PR.
 3. Se a pessoa é a Sofia e pediu pra mesclar, mesclar; depois dizer a ela, em português simples, o que
    mudou e o que ela precisa fazer.
+4. **Avisar a Recepção**: uma linha ("Feito: <link do PR>; falta <o quê, de quem>"), seção "Avisar a
+   Recepção" do `CLAUDE.md` (detalhe: `docs/recepcao.md`).
 
 ## 4. Terminar com a frase pronta
 
