@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisosQueSomem } from "./components/AvisoQueSome";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
@@ -71,6 +71,7 @@ function PaginaInicial() {
 
 export default function App() {
   const { carregando, session, operador, lojaAtual } = useAuth();
+  const localizacao = useLocation();
   useEnterParaProximoCampo();
   useLimparDataAoApagar();
   useNaoMexerNoNumeroSemDigitar();
@@ -171,6 +172,10 @@ export default function App() {
           <FaixaSemConexao />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
+            {/* Trocar de tela (tarefa 5): o `key` refaz o invólucro a cada rota, e
+                o CSS (`.sakura-tela`) faz os blocos da tela entrarem. Ele não
+                muda o layout (`display: contents`). */}
+            <div key={localizacao.pathname} className="sakura-tela">
             <Routes>
               <Route path="/" element={<PaginaInicial />} />
               {/* Sem AdminRoute de propósito: quem pede socorro é o balcão. */}
@@ -317,6 +322,7 @@ export default function App() {
                 }
               />
             </Routes>
+            </div>
           </ErrorBoundary>
         </AreaRolavel>
       </main>

@@ -5,11 +5,21 @@
 
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CartaoNumero } from "./CartaoNumero";
 import { Valor, Variacao } from "./Valor";
 
-afterEach(cleanup);
+// Estes testes olham o número JÁ PRONTO. A contagem de zero até o valor (tarefa
+// 5) tem teste próprio em `ContagemDoNumero.test.tsx`; aqui "reduzir movimento"
+// fica ligado, que é o jeito de o número aparecer direto.
+beforeEach(() => {
+  vi.stubGlobal("matchMedia", (consulta: string) => ({ matches: consulta.includes("reduce"), media: consulta }));
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe("CartaoNumero", () => {
   it("mostra o rótulo, o número e a variação, com o '?' que explica a conta", () => {

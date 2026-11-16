@@ -1,5 +1,40 @@
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
+import { useContext, useLayoutEffect, useRef } from "react";
 import { formatarMoeda } from "@/schemas/dinheiro";
+import { ContarAoAparecer, DURACAO_DA_CONTAGEM_MS, valorDaContagem } from "./contagem";
+
+/**
+ * Conta de zero até o valor mexendo só no texto do elemento (o mesmo nó de
+ * texto que o React escreveu, pra ele continuar dono dele). O HTML nasce com o
+ * valor final; o leitor de tela, que não anuncia texto fora de região viva,
+ * lê o final. Com "reduzir movimento" ligado não faz nada.
+ */
+function useContagem(ref: React.RefObject<HTMLElement | null>, absoluto: number, ativo: boolean) {
+  const absolutoRef = useRef(absoluto);
+  absolutoRef.current = absoluto;
+
+  useLayoutEffect(() => {
+    const no = ref.current?.firstChild;
+    if (!ativo || !no || absolutoRef.current === 0) return;
+    if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const final = () => formatarMoeda(absolutoRef.current);
+    const inicio = performance.now();
+    let quadro = 0;
+    no.nodeValue = formatarMoeda(0);
+    const passo = (agora: number) => {
+      const progresso = Math.min(1, (agora - inicio) / DURACAO_DA_CONTAGEM_MS);
+      no.nodeValue = progresso >= 1 ? final() : formatarMoeda(valorDaContagem(absolutoRef.current, progresso));
+      if (progresso < 1) quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+    return () => {
+      cancelAnimationFrame(quadro);
+      no.nodeValue = final();
+    };
+  }, [ref, ativo]);
+}
 
 /**
  * Um valor em dinheiro, com número negativo parecendo negativo.
@@ -42,6 +77,9 @@ export function Valor({
   tituloDeAcessibilidade?: string;
 }) {
   const negativo = valor < 0;
+  const contar = useContext(ContarAoAparecer);
+  const numeroRef = useRef<HTMLSpanElement>(null);
+  useContagem(numeroRef, Math.abs(valor), contar);
   return (
     <span
       className={`${negativo ? "text-perigo" : classeDeCor} ${className}`.trim()}
@@ -53,7 +91,7 @@ export function Valor({
         </span>
       )}
       {negativo && "−"}
-      {formatarMoeda(Math.abs(valor))}
+      <span ref={numeroRef}>{formatarMoeda(Math.abs(valor))}</span>
     </span>
   );
 }
