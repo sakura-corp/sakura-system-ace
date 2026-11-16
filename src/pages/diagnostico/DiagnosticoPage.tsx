@@ -127,7 +127,10 @@ export function DiagnosticoPage() {
     }
   }
 
-  const todasOk = dados ? dados.checagens.every((c) => c.ok) : false;
+  // O resumo só vale com checagens de verdade e com a rodada terminada: lista
+  // vazia daria "tudo certo" sem nada ter rodado, e durante o "Verificar de
+  // novo" o resultado antigo ainda estaria na tela.
+  const resumoPronto = Boolean(dados) && !carregando && (dados?.checagens.length ?? 0) > 0;
   const falharam = dados ? dados.checagens.filter((c) => !c.ok).length : 0;
 
   return (
@@ -181,14 +184,15 @@ export function DiagnosticoPage() {
           <section className="sakura-card p-5">
             <div className="mb-3 flex flex-wrap items-center gap-3">
               <h2 className="text-subtitulo font-semibold text-texto">Checagens ao vivo</h2>
-              {todasOk ? (
-                <Selo tipo="ok" palavra="Tudo certo" />
-              ) : (
-                <Selo
-                  tipo="perigo"
-                  palavra={falharam === 1 ? "1 checagem falhou" : `${falharam} checagens falharam`}
-                />
-              )}
+              {resumoPronto &&
+                (falharam === 0 ? (
+                  <Selo tipo="ok" palavra="Tudo certo" />
+                ) : (
+                  <Selo
+                    tipo="perigo"
+                    palavra={falharam === 1 ? "1 checagem falhou" : `${falharam} checagens falharam`}
+                  />
+                ))}
             </div>
             {dados.checagens.map((checagem) => (
               <Checagem key={checagem.nome} checagem={checagem} />

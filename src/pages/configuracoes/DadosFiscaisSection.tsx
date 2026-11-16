@@ -306,7 +306,7 @@ export function DadosFiscaisSection({
           ) : (
             <Selo tipo="atencao" palavra="Sem token" />
           )}
-          {valores.focus_nfe_ambiente === "producao" ? (
+          {(configuracao?.focus_nfe_ambiente ?? "homologacao") === "producao" ? (
             <Selo tipo="ok" icone={Receipt} palavra="Produção: a nota vale de verdade" />
           ) : (
             <Selo tipo="atencao" icone={FlaskConical} palavra="Teste: não gera nota de verdade" />

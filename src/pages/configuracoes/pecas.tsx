@@ -3,10 +3,11 @@ import { useId, useState, type ReactNode } from "react";
 import { Botao } from "@/components/Botao";
 import { Dica } from "@/components/Dica";
 
-// Peças que só as Configurações usam (tarefa 15 do visual novo, #990). Moram
-// aqui, e não em `src/components/`, de propósito: a tarefa não mexe nas peças
-// compartilhadas. Se outra tela precisar de uma delas, sobe pra lá numa tarefa
-// própria (anotado como sugestão no PR).
+// Peças da tarefa 15 do visual novo (#990): Configurações, Auditoria e
+// Diagnóstico, que são da mesma tarefa. Moram aqui, e não em `src/components/`,
+// de propósito: a tarefa não mexe nas peças compartilhadas. Quando uma tela de
+// OUTRA tarefa precisar de uma delas, sobe pra lá (anotado como sugestão no PR);
+// a Auditoria e o Diagnóstico só importam `MensagemDeErro`.
 
 /**
  * O erro de uma ação: continua do lado do botão que falhou (não some sozinho:
@@ -132,30 +133,31 @@ export function SecaoDeConfiguracao({
 
   return (
     <div className="sakura-card p-6">
-      <button
-        type="button"
-        onClick={() => setAberta((atual) => !atual)}
-        aria-expanded={aberta}
-        aria-controls={aberta ? idDoConteudo : undefined}
-        className="group -m-2 flex w-[calc(100%+1rem)] items-start gap-4 rounded-xl p-2 text-left transition-colors hover:bg-passar"
-      >
-        <span
-          aria-hidden="true"
-          className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-texto/[0.08] text-acao-clara"
+      {/* O padrão de sanfona: o título é um <h3> e o botão está DENTRO dele, só
+          com texto corrido (um <button> não aceita <h3> nem <p> por dentro). */}
+      <h3>
+        <button
+          type="button"
+          onClick={() => setAberta((atual) => !atual)}
+          aria-expanded={aberta}
+          aria-controls={aberta ? idDoConteudo : undefined}
+          className="-m-2 flex w-[calc(100%+1rem)] items-start gap-4 rounded-xl p-2 text-left transition-colors hover:bg-passar"
         >
-          <Icone className="size-[18px]" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <h3 className="text-corpo font-semibold text-texto">{titulo}</h3>
-          {descricao && <p className="mt-1 text-rotulo text-texto-2">{descricao}</p>}
-        </span>
-        <ChevronDown
-          aria-hidden="true"
-          className={`mt-2 size-4 shrink-0 text-texto-2 transition-transform duration-(--duration-botao) ease-suave motion-reduce:transition-none ${
-            aberta ? "rotate-180" : ""
-          }`}
-        />
-      </button>
+          <IconeDeSecao icone={Icone} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-corpo font-semibold text-texto">{titulo}</span>
+            {descricao && (
+              <span className="mt-1 block text-rotulo font-normal text-texto-2">{descricao}</span>
+            )}
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`mt-2 size-4 shrink-0 text-texto-2 transition-transform duration-(--duration-botao) ease-suave motion-reduce:transition-none ${
+              aberta ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </h3>
 
       {aberta && (
         <div id={idDoConteudo} className="mt-5">
@@ -163,6 +165,18 @@ export function SecaoDeConfiguracao({
         </div>
       )}
     </div>
+  );
+}
+
+/** O quadradinho com o ícone do assunto, no começo de cada seção e cartão. */
+export function IconeDeSecao({ icone: Icone }: { icone: LucideIcon }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-texto/[0.08] text-acao-clara"
+    >
+      <Icone className="size-[18px]" />
+    </span>
   );
 }
 

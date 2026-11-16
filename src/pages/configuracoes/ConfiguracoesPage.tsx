@@ -72,7 +72,7 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { AparenciaSection } from "./AparenciaSection";
 import { AtualizacoesComputadorSection } from "./AtualizacoesComputadorSection";
 import { ComputadoresSection } from "./ComputadoresSection";
-import { MensagemDeErro, SecaoDeConfiguracao, TituloDeGrupo } from "./pecas";
+import { IconeDeSecao, MensagemDeErro, SecaoDeConfiguracao, TituloDeGrupo } from "./pecas";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
@@ -105,6 +105,7 @@ export function ConfiguracoesPage() {
   const [senhaGerada, setSenhaGerada] = useState<{ operador: Operador; senha: string } | null>(
     null,
   );
+  const [naoCopiou, setNaoCopiou] = useState(false);
 
   // Só a carga mais nova grava (#967, o mesmo jeito das OS, #903): trocar de
   // loja com a carga anterior ainda buscando dispara outra, e a velha pode
@@ -262,16 +263,18 @@ export function ConfiguracoesPage() {
     }
   }
 
-
   const secoesDaLoja = !carregando && lojaAtual && dadosSaoDaLoja;
 
   async function copiarSenha(senha: string) {
+    setNaoCopiou(false);
     try {
       await navigator.clipboard.writeText(senha);
       avisar("Senha copiada");
     } catch (err) {
-      // Sem a área de transferência, a senha continua na tela (selecionável).
+      // A senha só aparece uma vez: sem a área de transferência, a janela diz
+      // isso e a senha continua na tela, pra copiar à mão.
       console.error("Erro ao copiar a senha:", err);
+      setNaoCopiou(true);
     }
   }
 
@@ -292,12 +295,7 @@ export function ConfiguracoesPage() {
       <div className="sakura-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <span
-              aria-hidden="true"
-              className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-texto/[0.08] text-acao-clara"
-            >
-              <UsersRound className="size-[18px]" />
-            </span>
+            <IconeDeSecao icone={UsersRound} />
             <div>
               <h3 className="text-corpo font-semibold text-texto">Operadores</h3>
               <p className="mt-1 text-rotulo text-texto-2">
@@ -392,12 +390,7 @@ export function ConfiguracoesPage() {
       {secoesDaLoja && operadorLogado && (
         <div className="sakura-card p-6">
           <div className="flex items-start gap-4">
-            <span
-              aria-hidden="true"
-              className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-texto/[0.08] text-acao-clara"
-            >
-              <Store className="size-[18px]" />
-            </span>
+            <IconeDeSecao icone={Store} />
             <div>
               <h3 className="text-corpo font-semibold text-texto">Lojas</h3>
               <p className="mt-1 text-rotulo text-texto-2">
@@ -566,7 +559,10 @@ export function ConfiguracoesPage() {
       {senhaGerada && (
         <Modal
           titulo="Senha temporária gerada"
-          onFechar={() => setSenhaGerada(null)}
+          onFechar={() => {
+            setSenhaGerada(null);
+            setNaoCopiou(false);
+          }}
           rodape={
             <>
               <Botao
@@ -575,7 +571,13 @@ export function ConfiguracoesPage() {
               >
                 Copiar
               </Botao>
-              <Botao variante="principal" onClick={() => setSenhaGerada(null)}>
+              <Botao
+                variante="principal"
+                onClick={() => {
+                  setSenhaGerada(null);
+                  setNaoCopiou(false);
+                }}
+              >
                 Já anotei
               </Botao>
             </>
@@ -589,6 +591,11 @@ export function ConfiguracoesPage() {
           <p className="mt-4 select-all rounded-xl border border-linha-forte bg-poco px-4 py-3 text-center font-mono text-subtitulo tracking-wider text-acao-clara">
             {senhaGerada.senha}
           </p>
+          {naoCopiou && (
+            <MensagemDeErro className="mt-4">
+              Não consegui copiar. Selecione a senha acima e copie à mão: ela só aparece uma vez.
+            </MensagemDeErro>
+          )}
         </Modal>
       )}
     </div>
