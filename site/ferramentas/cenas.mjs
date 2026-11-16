@@ -223,11 +223,20 @@ export const CENAS = [
   { arquivo: "39-notas-nfe", modulo: "Notas Fiscais", titulo: "Notas de produto (NFC-e)",
     rota: "/notas-fiscais",
     descricao: "O arquivo de todas as notas de venda de peça, separadas por mês. As emitidas pelo próprio sistema entram aqui sozinhas; as antigas podem ser enviadas à mão. O botão do mês baixa todos os XMLs de uma vez, no formato que a contabilidade pede." },
+  // Desde a tarefa 12 do visual novo (#990), a linha mostra "Nota do cliente"
+  // (era "Ver DANFE") e "Versão para o cliente" mora no "Mais ações".
+  { arquivo: "39b-nota-do-cliente", modulo: "Notas Fiscais", titulo: "A nota do cliente",
+    rota: "/notas-fiscais", passos: [{ clicar: "Nota do cliente" }],
+    descricao: "O PDF da nota que o sistema emitiu, pra ver, imprimir e mandar ao cliente quando ele volta pedindo. Cada botão de baixar diz o que baixa e pra quem: o PDF pro cliente, o XML pro contador." },
+  { arquivo: "39c-versao-para-o-cliente", modulo: "Notas Fiscais", titulo: "Versão para o cliente (resumo do XML)",
+    rota: "/notas-fiscais",
+    passos: [{ seletor: 'button[aria-haspopup="menu"]' }, { clicar: "Versão para o cliente (resumo do XML)" }],
+    descricao: "Um resumo legível que o programa monta a partir do XML. É o que existe pra nota feita fora do programa, que não tem PDF guardado." },
   { arquivo: "40-notas-nfse", modulo: "Notas Fiscais", titulo: "Notas de serviço (NFS-e)",
-    rota: "/notas-fiscais", passos: [{ aba: "NFS-e" }],
-    descricao: "O mesmo arquivo, para as notas de serviço emitidas na prefeitura. 'Versão para o cliente' monta um recibo legível a partir do XML, e 'Cancelar nota' cancela de verdade na prefeitura, com justificativa." },
+    rota: "/notas-fiscais", passos: [{ aba: "Notas dos serviços (NFS-e)" }],
+    descricao: "O mesmo arquivo, para as notas de serviço emitidas na prefeitura. 'Nota do cliente' abre o PDF da nota, 'Versão para o cliente' monta um recibo legível a partir do XML, e 'Cancelar nota' cancela de verdade na prefeitura, com justificativa." },
   { arquivo: "41-enviar-xml", modulo: "Notas Fiscais", titulo: "Enviar XML manualmente",
-    rota: "/notas-fiscais", passos: [{ clicar: "+ Enviar XML" }],
+    rota: "/notas-fiscais", passos: [{ clicar: "Enviar XML" }],
     descricao: "Para notas emitidas fora do sistema (pela contabilidade, por exemplo), guardando tudo no mesmo lugar — a lei exige manter o XML por cinco anos." },
   { arquivo: "42-cancelar-nota", modulo: "Notas Fiscais", titulo: "Cancelar uma nota emitida",
     // "Cancelar nota" deixou de ser um link solto na linha e passou a viver
