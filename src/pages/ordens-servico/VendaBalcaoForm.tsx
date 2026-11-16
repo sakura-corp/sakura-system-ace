@@ -407,27 +407,27 @@ export function VendaBalcaoForm({
           elas. */}
       {itensDoPagamento && (
         <FaturamentoCard
-            ordem={{
-              numero: 0,
-              tipo: "venda_balcao",
-              cliente_id: clienteId,
-              cliente: { nome: nomeDoCliente },
-              itens: comoItensDaOrdem(itensDoPagamento),
-            }}
-            titulo="Pagamento da venda"
-            descricao={nomeDoCliente}
-            rotuloConfirmar="Confirmar venda"
-            rotuloCancelar="Mudar as peças"
-            jurosParcelas={jurosParcelas}
-            onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
-              onRegistrar(
-                { cliente_id: clienteId, vendedor_id: vendedorId || null },
-                itensDoPagamento,
-                { pagamentos, parcelas, previsaoRecebimento },
-              )
-            }
-            onCancelar={() => setItensDoPagamento(null)}
-          />
+          ordem={{
+            numero: 0,
+            tipo: "venda_balcao",
+            cliente_id: clienteId,
+            cliente: { nome: nomeDoCliente },
+            itens: comoItensDaOrdem(itensDoPagamento),
+          }}
+          titulo="Pagamento da venda"
+          descricao={nomeDoCliente}
+          rotuloConfirmar="Confirmar venda"
+          rotuloCancelar="Mudar as peças"
+          jurosParcelas={jurosParcelas}
+          onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
+            onRegistrar(
+              { cliente_id: clienteId, vendedor_id: vendedorId || null },
+              itensDoPagamento,
+              { pagamentos, parcelas, previsaoRecebimento },
+            )
+          }
+          onCancelar={() => setItensDoPagamento(null)}
+        />
       )}
 
       {cadastrandoCliente && (

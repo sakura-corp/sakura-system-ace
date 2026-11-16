@@ -1,4 +1,4 @@
-import { CircleX, Receipt } from "lucide-react";
+import { CircleX, Clock, Receipt } from "lucide-react";
 import { Selo } from "@/components/Selo";
 import { orcamentoVencido } from "@/schemas/orcamento";
 import { ordemEstaFinalizada, situacaoFiscalOrdem } from "@/schemas/situacaoFiscal";
@@ -47,7 +47,7 @@ export function SeloDaOrdem({
       {/* Orçamento passado da validade (#379): sem alarme, ainda dá pra
           aprovar; só avisa que o preço pode ter mudado. */}
       {ordem.status === "orcamento" && orcamentoVencido(ordem.validade) && (
-        <Selo tipo="neutro" palavra="Vencido" />
+        <Selo tipo="neutro" palavra="Vencido" icone={Clock} />
       )}
       {ordem.status === "faturada" && situacao.pendentes.length > 0 && (
         <span className="whitespace-nowrap text-meta font-medium text-texto-2">

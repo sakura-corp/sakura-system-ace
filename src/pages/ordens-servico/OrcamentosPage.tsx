@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CircleCheck, FolderOpen, Plus, TriangleAlert } from "lucide-react";
+import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { LinkPlaca } from "@/components/LinkPlaca";
@@ -56,7 +59,7 @@ import { nomeDocumento, totalOrdem } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { OrdemServicoForm } from "./OrdemServicoForm";
-import { StatusOrdem } from "./StatusOrdemBadge";
+import { SeloDaOrdem } from "./SeloDaOrdem";
 
 const SEM_ORDENS: OrdemServico[] = [];
 const SEM_FUNCIONARIOS: FuncionarioPublico[] = [];
@@ -336,26 +339,27 @@ export function OrcamentosPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
-          <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">Orçamentos</h1>
-            <p className="text-corpo text-sakura-muted">
+          <div className="min-w-0">
+            <h1 className="text-titulo font-semibold text-texto">Orçamentos</h1>
+            <p className="text-corpo text-texto-2">
               Preço combinado antes de virar ordem de serviço. Não baixa estoque até ser aprovado.
             </p>
           </div>
         </div>
         {nadaAberto && operador && lojaAtual && clientes.length > 0 && (
-          <button
+          <Botao
+            variante="principal"
+            icone={<Plus />}
             onClick={() => {
               setAviso(null);
               setMostrarFormulario(true);
             }}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
-            + Novo orçamento
-          </button>
+            Novo orçamento
+          </Botao>
         )}
       </header>
 
@@ -374,47 +378,51 @@ export function OrcamentosPage() {
       )}
 
       {aviso && (
-        <p className="rounded-xl bg-emerald-50 px-4 py-3 text-corpo text-emerald-700">{aviso}</p>
+        <p className="flex items-start gap-2 rounded-xl bg-ok/[0.12] px-4 py-3 text-corpo text-ok">
+          <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{aviso}</span>
+        </p>
       )}
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
+        >
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
+        </p>
+      )}
 
       {nadaAberto && !carregando && orcamentos.length > 0 && (
         <>
-          <div
-            role="tablist"
-            aria-label="O que mostrar na lista"
-            className="flex gap-2 border-b border-sakura-gray/20"
-          >
+          <div role="tablist" aria-label="O que mostrar na lista" className="sakura-abas">
             {(
               [
-                ["abertos", `Abertos (${quantosAbertos})`],
-                ["recusados", `Recusados (${quantosRecusados})`],
+                ["abertos", "Abertos", quantosAbertos],
+                ["recusados", "Recusados", quantosRecusados],
               ] as const
-            ).map(([valor, rotulo]) => (
+            ).map(([valor, rotulo, quantos]) => (
               <button
                 key={valor}
                 type="button"
                 role="tab"
                 aria-selected={lista === valor}
                 onClick={() => setLista(valor)}
-                className={`px-4 py-2 text-corpo font-medium ${
-                  lista === valor
-                    ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-                    : "text-sakura-purple-dark/75 hover:text-sakura-purple-dark"
-                }`}
+                className="sakura-aba"
               >
-                {rotulo}
+                {rotulo}{" "}
+                <span className="sakura-aba-conta">{quantos}</span>
               </button>
             ))}
           </div>
-          <label className="flex w-56 flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Buscar por cliente ou placa</span>
+          <label className="sakura-rotulo w-64">
+            Buscar por cliente ou placa
             <input
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Ex: João ou ABC1D23"
-              className="rounded-lg border border-sakura-borda-campo px-3 py-1.5 text-corpo focus:border-sakura-purple"
+              className="sakura-campo sakura-campo-filtro"
             />
           </label>
         </>
@@ -422,28 +430,30 @@ export function OrcamentosPage() {
 
       {nadaAberto &&
         (carregando ? (
-          <p className="text-corpo text-sakura-muted">Carregando...</p>
+          <p className="text-corpo text-texto-2">Carregando...</p>
         ) : orcamentos.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">Nenhum orçamento ainda.</p>
+          <p className="text-corpo text-texto-2">Nenhum orçamento ainda.</p>
         ) : daLista.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">
+          <p className="text-corpo text-texto-2">
             {lista === "abertos"
               ? "Nenhum orçamento aberto com esse filtro."
               : "Nenhum orçamento recusado com esse filtro."}
           </p>
         ) : (
           <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-2.5 py-3 font-medium">Nº</th>
-                  <th className="px-2.5 py-3 font-medium">Cliente</th>
-                  <th className="px-2.5 py-3 font-medium">Veículo</th>
-                  <th className="px-2.5 py-3 font-medium">Feito em</th>
-                  <th className="px-2.5 py-3 font-medium">Validade</th>
-                  <th className="px-2.5 py-3 font-medium">Status</th>
-                  <th className="px-2.5 py-3 font-medium">Total</th>
-                  <th className="px-2.5 py-3" />
+                  <th>Nº</th>
+                  <th>Cliente</th>
+                  <th>Veículo</th>
+                  <th>Feito em</th>
+                  <th>Validade</th>
+                  <th>Status</th>
+                  <th className="text-right">Total</th>
+                  <th>
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -454,34 +464,51 @@ export function OrcamentosPage() {
                       setAviso(null);
                       setAberto(ordem);
                     }}
-                    className="cursor-pointer border-t border-sakura-gray/20 hover:bg-sakura-pink-soft/30"
+                    className="cursor-pointer"
                   >
-                    <td className="whitespace-nowrap px-2.5 py-3 text-sakura-muted">
-                      {nomeDocumento(ordem)}
-                    </td>
-                    <td className="px-2.5 py-3 [overflow-wrap:anywhere]">
+                    <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
+                    <td className="font-medium text-texto [overflow-wrap:anywhere]">
                       {ordem.cliente?.nome ?? "—"}
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-3">
+                    <td className="whitespace-nowrap">
                       {ordem.veiculo_id && ordem.veiculo?.placa ? (
                         <LinkPlaca veiculoId={ordem.veiculo_id} placa={ordem.veiculo.placa} />
                       ) : (
                         "—"
                       )}
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-3">
+                    <td className="whitespace-nowrap text-texto-2">
                       {dataCurta(ordem.data_abertura)}
                     </td>
-                    <td className="whitespace-nowrap px-2.5 py-3">
+                    <td className="whitespace-nowrap text-texto-2">
                       {ordem.validade ? diaBrasileiro(ordem.validade) : "—"}
                     </td>
-                    <td className="px-2.5 py-3">
-                      <StatusOrdem ordem={ordem} notas={[]} />
+                    <td>
+                      <SeloDaOrdem ordem={ordem} notas={[]} />
                     </td>
-                    <td className="px-2.5 py-3">{formatarMoeda(totalOrdem(ordem.itens ?? []))}</td>
-                    <td className="px-2.5 py-3 text-right">
-                      <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+                    <td className="whitespace-nowrap text-right font-semibold text-texto">
+                      {formatarMoeda(totalOrdem(ordem.itens ?? []))}
+                    </td>
+                    {/* Na linha, o próximo passo (mandar pelo WhatsApp); no
+                        "Mais ações", abrir o orçamento, pra quem usa só o
+                        teclado (até aqui só o clique do mouse na linha abria). */}
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
                         {botaoWhatsapp(ordem)}
+                        <AcoesDaLinha
+                          descricao={nomeDocumento(ordem)}
+                          acoes={[
+                            {
+                              tipo: "menu",
+                              rotulo: "Abrir o orçamento",
+                              icone: <FolderOpen />,
+                              aoClicar: () => {
+                                setAviso(null);
+                                setAberto(ordem);
+                              },
+                            },
+                          ]}
+                        />
                       </div>
                     </td>
                   </tr>
