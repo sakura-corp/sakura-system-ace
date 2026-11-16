@@ -41,7 +41,7 @@
 2. **Margem em % por linha** na Lucratividade (é conta nova; fica pro chefe de backend).
 3. **Rosca por valor na Curva ABC** (quanto do total vem de cada curva): precisa de uma soma por letra em `schemas/curvaABC.ts`. Hoje a rosca conta itens, que é o que a tela já calculava.
 4. **Texto que leva à ação** onde diz "custo não informado": "cadastre o custo da peça". Costume da loja, não mexi.
-5. **Abas completas** (falta o `tabpanel` e o `aria-controls`; as setas, Home e End já funcionam) e uma peça única de abas em `src/components/` (a tarefa 7 criou `sakura-aba` no `globals.css`; depois que ela entrar, trocar as abas daqui por ela). Idem o `Segmentos` daqui, que pode virar peça.
+5. **Abas completas** (falta o `tabpanel` e o `aria-controls`; as setas, Home e End já funcionam) (as abas daqui já usam a classe `sakura-aba` da tarefa 7, que entrou na `main` antes). O `Segmentos` daqui pode virar peça em `src/components/`.
 6. **Barras acessíveis pelo teclado**: hoje a caixinha de valor só aparece com o mouse. A tabela "Vendas por dia" cobre só as vendas.
 7. **Apagar** `components/GraficoBarras.tsx` e `components/GraficoRadar.tsx` (sem uso agora), ou levar as cópias novas pra lá e trocar as importações.
 8. Em Curva ABC "Por lucro", a linha "Venda de balcão sem cliente" mostra lucro negativo sem a seta e a cor do `Valor` (já era assim; achado do ajudante forte).

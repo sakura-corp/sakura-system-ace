@@ -136,7 +136,7 @@ export function RelatoriosPage() {
       <div
         role="tablist"
         aria-label="O que mostrar"
-        className="flex gap-1 border-b border-linha"
+        className="sakura-abas"
         onKeyDown={(e) => {
           // As setas, o Home e o End trocam de aba (padrão de abas): a ligada é
           // a única que entra na ordem do Tab, e o foco acompanha a escolha.
@@ -194,15 +194,6 @@ export function RelatoriosPage() {
   );
 }
 
-// Cada estado numa string separada (a varredura `npm run contraste` olha
-// string por string: o traço laranja junto da letra clara dava alarme falso).
-const BASE_DA_ABA =
-  "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo transition-colors duration-150 after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-sm motion-reduce:transition-none";
-const ABA_LIGADA = "font-semibold text-texto";
-const ABA_DESLIGADA = "font-medium text-texto-2 hover:bg-passar hover:text-texto";
-const TRACO_LIGADO = "after:bg-acao";
-const TRACO_DESLIGADO = "after:bg-transparent";
-
 const ABAS: { chave: Aba; texto: string }[] = [
   { chave: "graficos", texto: "Gráficos" },
   { chave: "lucratividade", texto: "Lucratividade" },
@@ -223,9 +214,8 @@ function AvisoDeErro({ children }: { children: React.ReactNode }) {
   );
 }
 
-// A aba do visual novo: o texto escuro/claro do tema, e o laranja só no
-// traço de baixo da aba ligada (laranja é ação, regra 2). A ligada também
-// fica em negrito, porque a cor sozinha não avisa (regra 4).
+// A aba do visual novo é a peça `sakura-aba` (tarefa 7): o traço laranja só na
+// ligada, e a ligada também em negrito (a cor sozinha não avisa, regra 4).
 function AbaBotao({
   label,
   ativa,
@@ -242,9 +232,7 @@ function AbaBotao({
       aria-selected={ativa}
       tabIndex={ativa ? 0 : -1}
       onClick={onClick}
-      className={[BASE_DA_ABA, ativa ? ABA_LIGADA : ABA_DESLIGADA, ativa ? TRACO_LIGADO : TRACO_DESLIGADO].join(
-        " ",
-      )}
+      className="sakura-aba"
     >
       {label}
     </button>
