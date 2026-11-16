@@ -8,7 +8,7 @@ import type { Deposito } from "@/types/deposito";
 import type { MovimentoEstoque, NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
 import { MovimentoForm } from "./MovimentoForm";
-import { AvisoDeAtencao, CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { AvisoDeAtencao, CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
 
 interface MovimentacoesSectionProps {
   pecas: Peca[];
@@ -79,7 +79,7 @@ export function MovimentacoesSection({
             <label className="flex items-center gap-2 text-rotulo font-medium text-texto-2">
               Produto
               <Combobox
-                className={`w-56 ${CAMPO_NOVO_NO_COMBOBOX}`}
+                className={`w-56 ${CAMPO_NOVO_NO_COMBOBOX_FILTRO}`}
                 opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
                 valor={filtroPecaId}
                 onMudar={setFiltroPecaId}

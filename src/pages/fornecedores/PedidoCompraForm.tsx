@@ -87,7 +87,7 @@ export function PedidoCompraForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="sakura-rotulo">
-          Fornecedor <span className="text-perigo">*</span>
+          <span>Fornecedor <span className="text-perigo">*</span></span>
           <Combobox
             className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={fornecedores.map((f) => ({ valor: f.id, rotulo: f.nome }))}
@@ -101,7 +101,7 @@ export function PedidoCompraForm({
         </label>
 
         <label className="sakura-rotulo">
-          Data do pedido <span className="text-perigo">*</span>
+          <span>Data do pedido <span className="text-perigo">*</span></span>
           <input
             type="date"
             {...register("data_pedido")}

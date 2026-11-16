@@ -74,7 +74,7 @@ export function FornecedorForm({
         <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">Dados do fornecedor</h3>
         <div className="grid grid-cols-2 gap-4">
           <label className="sakura-rotulo">
-            Nome / Razão social <span className="text-perigo">*</span>
+            <span>Nome / Razão social <span className="text-perigo">*</span></span>
             <input
               type="text"
               {...register("nome")}

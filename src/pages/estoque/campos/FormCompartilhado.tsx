@@ -57,7 +57,9 @@ export function Campo({
 
   return (
     <div className={`flex flex-col gap-1.5 text-corpo ${className ?? ""}`}>
-      <div className="flex items-center gap-1.5">
+      {/* min-h-6: a altura do "?" da explicação. Sem ela, o rótulo que tem "?" ficava
+          mais alto que o que não tem, e os campos da mesma linha desalinhavam. */}
+      <div className="flex min-h-6 items-center gap-1.5">
         <label htmlFor={id} className="text-rotulo font-medium text-texto-2">
           {label}
           {obrigatorio && <span className="text-perigo"> *</span>}

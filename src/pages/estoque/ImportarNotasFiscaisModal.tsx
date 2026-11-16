@@ -195,7 +195,7 @@ export function ImportarNotasFiscaisModal({
               accept="image/*,.pdf,application/pdf"
               multiple
               onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
-              className="sakura-campo text-corpo"
+              className="sakura-campo h-auto! py-2! text-corpo file:mr-3 file:rounded-lg file:border-0 file:bg-passar file:px-3 file:py-1.5 file:text-rotulo file:font-medium file:text-texto"
             />
           </label>
           {arquivos.length > 0 && (

@@ -159,39 +159,42 @@ export function ContagemSection({
               </select>
             </label>
 
-            <div className="sakura-rotulo">
-              Saldo no sistema
-              <p className="flex h-11 items-center text-corpo font-semibold text-texto">
-                {saldoSistema} {peca?.unidade ?? ""}
-              </p>
-            </div>
+            {/* Saldo, quantidade e diferença lado a lado: é a conta que a pessoa faz. */}
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <div className="sakura-rotulo">
+                Saldo no sistema
+                <p className="flex h-11 items-center text-corpo font-semibold text-texto">
+                  {saldoSistema} {peca?.unidade ?? ""}
+                </p>
+              </div>
 
-            <label className="sakura-rotulo">
-              Quantidade contada
-              <input
-                type="number"
-                step="1"
-                min="0"
-                value={quantidadeContada}
-                onChange={(e) => setQuantidadeContada(e.target.value)}
-                className="sakura-campo"
-              />
-            </label>
+              <label className="sakura-rotulo">
+                Quantidade contada
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={quantidadeContada}
+                  onChange={(e) => setQuantidadeContada(e.target.value)}
+                  className="sakura-campo"
+                />
+              </label>
 
-            <div className="sakura-rotulo">
-              Diferença
-              <p
-                className={`flex h-11 items-center gap-2 text-corpo font-semibold ${
-                  diferenca === null || diferenca === 0
-                    ? "text-texto"
-                    : diferenca > 0
-                      ? "text-ok"
-                      : "text-perigo"
-                }`}
-              >
-                {diferenca === null ? "—" : diferenca > 0 ? `+${diferenca}` : diferenca}
-                {diferenca !== null && diferenca !== 0 && <SeloDaDiferenca diferenca={diferenca} />}
-              </p>
+              <div className="sakura-rotulo">
+                Diferença
+                <p
+                  className={`flex h-11 items-center gap-2 text-corpo font-semibold ${
+                    diferenca === null || diferenca === 0
+                      ? "text-texto"
+                      : diferenca > 0
+                        ? "text-ok"
+                        : "text-perigo"
+                  }`}
+                >
+                  {diferenca === null ? "—" : diferenca > 0 ? `+${diferenca}` : diferenca}
+                  {diferenca !== null && diferenca !== 0 && <SeloDaDiferenca diferenca={diferenca} />}
+                </p>
+              </div>
             </div>
 
             <label className="sakura-rotulo col-span-2">

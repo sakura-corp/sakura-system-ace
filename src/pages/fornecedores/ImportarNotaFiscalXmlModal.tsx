@@ -311,7 +311,7 @@ export function ImportarNotaFiscalXmlModal({
               type="file"
               accept=".xml,text/xml,application/xml"
               onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
-              className="sakura-campo text-corpo"
+              className="sakura-campo h-auto! py-2! text-corpo file:mr-3 file:rounded-lg file:border-0 file:bg-passar file:px-3 file:py-1.5 file:text-rotulo file:font-medium file:text-texto"
             />
           </label>
         </div>
@@ -339,7 +339,7 @@ export function ImportarNotaFiscalXmlModal({
             </div>
 
             <label className="sakura-rotulo">
-              Depósito (onde a mercadoria entrou) <span className="text-perigo">*</span>
+              <span>Depósito (onde a mercadoria entrou) <span className="text-perigo">*</span></span>
               <select
                 value={depositoId}
                 onChange={(e) => setDepositoId(e.target.value)}

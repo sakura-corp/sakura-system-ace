@@ -1,9 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
+import { AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
 import {
   paraNovoServico,
   paraValoresFormulario,
@@ -57,22 +59,23 @@ export function ServicoForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-texto">
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">
           {servicoExistente ? "Editar serviço" : "Novo serviço"}
         </h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-perigo/[0.12] px-4 py-2 text-corpo text-perigo">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="grid grid-cols-2 gap-4">
         <label className="sakura-rotulo col-span-2">
-          Descrição <span className="text-perigo">*</span>
+          <span>Descrição <span className="text-perigo">*</span></span>
           <input
             type="text"
             {...register("descricao")}
+            aria-invalid={errors.descricao ? true : undefined}
             className="sakura-campo"
           />
           {errors.descricao && (
@@ -114,6 +117,7 @@ export function ServicoForm({
         <label className="sakura-rotulo">
           Categoria
           <Combobox
+            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={categorias.map((categoria) => ({ valor: categoria.id, rotulo: categoria.nome }))}
             valor={watch("categoria_id")}
             onMudar={(v) => setValue("categoria_id", v)}
@@ -124,20 +128,12 @@ export function ServicoForm({
       </div>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : servicoExistente ? "Salvar alterações" : "Salvar serviço"}
-        </button>
+        </Botao>
       </div>
     </form>
   );
