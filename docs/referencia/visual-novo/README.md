@@ -300,6 +300,10 @@ Fotos de antes e depois em `andamento/8-ordens/` (1366×768, escuro e claro).
   aberta pela lista ganhou o selo e o botão novos.
 - **Orçamentos**: abas, filtro, tabela e selo iguais aos da OS; na linha fica o "Enviar" (WhatsApp),
   e o "Mais ações" tem "Abrir o orçamento". O "vencido" virou o selo cinza "Vencido", com relógio.
+- **Em janela estreita** (1024 com o menu aberto, 16/11): o nome do cliente quebra só entre as
+  palavras (nunca no meio da sílaba), e a coluna do próximo passo fica **grudada na direita** da
+  tabela: a tabela rola de lado, mas o "Faturar" fica sempre à vista; o que rola por baixo dela
+  esmaece. Com o menu encolhido, a linha cabe inteira. Nenhuma coluna foi escondida.
 - **Os botões do topo** perderam o "+" do texto: o "+" virou ícone ("Nova ordem de serviço").
 
 ## 7. O menu

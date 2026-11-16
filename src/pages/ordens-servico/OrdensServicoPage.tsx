@@ -101,6 +101,21 @@ import { VendaBalcaoForm } from "./VendaBalcaoForm";
 // com o zoom de 125% do Windows.
 const SO_EM_TELA_GRANDE = "hidden min-[1600px]:table-cell";
 
+// A coluna do próximo passo fica grudada na direita da tabela (tarefa 7,
+// pedido de 16/11): numa janela estreita (1024 com o menu aberto) a tabela
+// rola de lado, mas o "Faturar" fica sempre à vista. Precisa de fundo próprio,
+// senão o que rola passa por baixo dela aparecendo; ao passar o mouse na
+// linha, ganha por cima o mesmo tom da linha (a cor da linha é transparente).
+// O começo da célula (o respiro da esquerda) é transparente, esmaecendo até a
+// cor do cartão: o que rola por baixo some aos poucos, em vez de aparecer
+// cortado ao meio. Com a tabela cabendo, o respiro é só cartão e não aparece.
+// (Classes escritas por extenso: o Tailwind só gera a classe que acha inteira.)
+const COLUNA_GRUDADA = [
+  "sticky right-0 z-[1] !pl-4",
+  "[background-image:linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
+  "group-hover:[background-image:linear-gradient(var(--linha-passar),var(--linha-passar)),linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
+].join(" ");
+
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -1022,12 +1037,16 @@ export function OrdensServicoPage() {
               "B", escolhida por ela pela imagem em 03/10/2026): abaixo de
               1600, Peças e Serviços somem (o Total e o Lucro ficam, e o
               detalhe está dentro da OS); a data perde o ano quando é do ano
-              corrente; nome de cliente comprido quebra até no meio da palavra
-              se precisar. Coluna nova aqui precisa caber na folga —
+              corrente; nome de cliente comprido quebra só entre as palavras
+              (16/11: quebrar no meio da sílaba, "Ricar / do", não serve). Coluna nova aqui precisa caber na folga —
               `npm run largura:telas` confere em 1366, 1536 e 1600.
               A tabela principal rola com a página, sem altura fixa ("O que
               pode crescer", regras, seção 6). */}
-          <table className="sakura-tabela">
+          {/* Respiro das células um pouco menor que o das outras tabelas
+              (8 px, era 9), como já era antes (#425): é o que faz a linha
+              caber em 1024 com o menu encolhido. A primeira e a última
+              coluna mantêm a margem da tabela. */}
+          <table className="sakura-tabela [&_:is(td,th)]:px-2">
             <thead>
               <tr>
                 <th>Nº</th>
@@ -1039,16 +1058,16 @@ export function OrdensServicoPage() {
                 {lista === "os" && <th className={`${SO_EM_TELA_GRANDE} text-right`}>Serviços</th>}
                 <th className="text-right">Total</th>
                 <th className="text-right">Lucro</th>
-                <th>
+                <th className={COLUNA_GRUDADA}>
                   <span className="sr-only">Ações</span>
                 </th>
               </tr>
             </thead>
             <tbody>
               {ordensDaLista.map((ordem) => (
-                <tr key={ordem.id} onClick={() => abrirOrdem(ordem)} className="cursor-pointer">
+                <tr key={ordem.id} onClick={() => abrirOrdem(ordem)} className="group cursor-pointer">
                   <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
-                  <td className="font-medium text-texto [overflow-wrap:anywhere]">
+                  <td className="font-medium text-texto [overflow-wrap:break-word]">
                     {ordem.cliente?.nome ?? "—"}
                   </td>
                   {lista === "os" && (
@@ -1079,7 +1098,9 @@ export function OrdensServicoPage() {
                   </td>
                   <td className="text-right">{textoLucro(ordem)}</td>
                   {/* O clique nas ações não abre a OS junto. */}
-                  <td onClick={(e) => e.stopPropagation()}>{acoesDaLinha(ordem)}</td>
+                  <td onClick={(e) => e.stopPropagation()} className={COLUNA_GRUDADA}>
+                    {acoesDaLinha(ordem)}
+                  </td>
                 </tr>
               ))}
             </tbody>

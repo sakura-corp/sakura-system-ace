@@ -467,7 +467,7 @@ export function OrcamentosPage() {
                     className="cursor-pointer"
                   >
                     <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
-                    <td className="font-medium text-texto [overflow-wrap:anywhere]">
+                    <td className="font-medium text-texto [overflow-wrap:break-word]">
                       {ordem.cliente?.nome ?? "—"}
                     </td>
                     <td className="whitespace-nowrap">
