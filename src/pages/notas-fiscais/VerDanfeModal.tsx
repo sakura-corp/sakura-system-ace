@@ -24,9 +24,9 @@ interface VerDanfeModalProps {
 //
 // Visual novo (tarefa 12, #990): é a "Nota do cliente" (o nome que a pessoa
 // procura, no lugar de "DANFE"), aberta pela linha de Notas Fiscais e pela
-// lista de OS (tarefa 7). Cada botão de baixar diz o que baixa e pra quem
-// (pedido da Sofia, 15/11): o PDF é a nota pra ler, imprimir e mandar ao
-// cliente; o XML é o arquivo que o contador pede.
+// lista de OS (tarefa 7) e pelo Fechamento da OS. Cada botão de baixar diz o
+// que baixa e pra quem (pedido da Sofia, 15/11): a nota é pra ler, imprimir e
+// mandar ao cliente; o XML é o arquivo que o contador pede.
 export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -90,7 +90,11 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   return (
     <Modal
       titulo="Nota do cliente"
-      descricao={`${nome}. O PDF é a nota pra ver, imprimir e mandar ao cliente.`}
+      descricao={
+        cancelada
+          ? `${nome}. Cancelada: não vale mais como nota.`
+          : `${nome}. A nota pra ver, imprimir e mandar ao cliente.`
+      }
       largura="3xl"
       onFechar={onFechar}
       rodape={
@@ -104,7 +108,9 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
           {pdfUrl && (
             <>
               <Botao icone={<Download />} onClick={handleBaixarPdf}>
-                Baixar o PDF (pro cliente)
+                {/* "a nota", e não "o PDF": a da NFC-e a Focus pode mandar
+                    em HTML (src/lib/focusNfe.ts, tipoDoArquivo). */}
+                Baixar a nota (pro cliente)
               </Botao>
               <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
                 Imprimir
