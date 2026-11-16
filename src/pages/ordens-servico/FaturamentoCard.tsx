@@ -477,7 +477,7 @@ export function FaturamentoCard({
                             {n === 1
                               ? " à vista"
                               : percentual > 0
-                                ? ` (${percentual}% juros)`
+                                ? ` (${percentual.toLocaleString("pt-BR")}% juros)`
                                 : " sem juros"}
                           </option>
                         );
@@ -508,7 +508,7 @@ export function FaturamentoCard({
                       {linha.jurosPercentual > 0
                         ? `${linha.parcelas}x de ${formatarMoeda(
                             linha.valorCobrado / linha.parcelas,
-                          )} — com ${linha.jurosPercentual}% de juros, essa forma fecha em ${formatarMoeda(
+                          )} — com ${linha.jurosPercentual.toLocaleString("pt-BR")}% de juros, essa forma fecha em ${formatarMoeda(
                             linha.valorCobrado,
                           )}`
                         : `${linha.parcelas}x de ${formatarMoeda(
@@ -555,7 +555,7 @@ export function FaturamentoCard({
                   return (
                     <option key={n} value={n}>
                       {n}x
-                      {n === 1 ? " à vista" : percentual > 0 ? ` (${percentual}% de juros)` : " sem juros"}
+                      {n === 1 ? " à vista" : percentual > 0 ? ` (${percentual.toLocaleString("pt-BR")}% de juros)` : " sem juros"}
                     </option>
                   );
                 })}

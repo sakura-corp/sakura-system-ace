@@ -256,6 +256,46 @@ Um bloco que recebe uma lista **não estica a tela** quando a lista aumenta. Val
    um clique a mais pra "Fechamento" e "Avaliação"; em troca a tabela fica legível. **(escolha do
    Claude)**
 
+### Como saiu no programa (tarefa 7, 16/11)
+
+Fotos de antes e depois em `andamento/8-ordens/` (1366×768, escuro e claro).
+
+- **A lista de OS** (`OrdensServicoPage.tsx`): abas com o traço laranja (`sakura-abas`, `sakura-aba`
+  e `sakura-aba-conta`, no `globals.css`, bloco "tarefa 7": a aba escolhida é a de
+  `aria-selected="true"`), os filtros com `sakura-campo-filtro`, a tabela com `sakura-tabela`,
+  `LinkPlaca` e o selo. Dinheiro à direita.
+- **O selo da OS** é o `SeloDaOrdem.tsx` (o `Selo` com a tabela da seção 3). "Faturada" que ainda
+  falta nota fica **amarela**, como a concluída: as duas pedem uma ação; o verde é só "Finalizada".
+  O `StatusOrdemBadge.tsx` antigo ficou sem uso nas telas (o PR #1038 da equipe mexe nele; apagar
+  depois que ele entrar).
+- **Na linha, só o próximo passo**: "Faturar" (laranja) em toda OS ou venda não faturada; "Avisar"
+  (WhatsApp) na OS faturada; nada na venda faturada (não tem carro pra avisar). **Mais de um botão
+  laranja na tela**: um por linha não faturada, como no conceito; é o mesmo próximo passo, repetido
+  por linha.
+- **"Mais ações"** (`AcoesDaLinha.tsx`): "Avisar o cliente" (quando não é o próximo passo),
+  "Fechamento", "Avaliação" e **"Abrir a OS"**, que é novo: até aqui só o clique do mouse na linha
+  abria, e quem usa só o teclado não tinha como. O menu agora anda pelo teclado (setas, Home, End,
+  Esc devolve o foco ao botão, Tab fecha) e tem ícone em cada item. Esc dentro de uma janela fecha
+  só o menu. A classe `sakura-menu-acoes` no painel é o gancho da animação da tarefa 5.
+- **O erro de WhatsApp de um item do menu** (o telefone sem DDD) fica embaixo das ações da linha
+  dela, em vermelho com o triângulo, e não some sozinho (o menu fecha no clique).
+- **O Faturar em janela** (`FaturamentoCard.tsx`, dentro do `Modal`): título "Faturar OS 148", o
+  cliente e a placa embaixo, "Total dos itens" à direita; "Recebido agora" e "A receber depois"
+  viraram dois cartões; os campos das formas ganharam nome pro leitor de tela ("Valor da forma
+  2"); o total, o "Falta R$ X" e o "Com os juros do cartão" foram pro rodapé, à esquerda dos botões.
+  **Nenhuma conta mudou**: as funções são as mesmas de `schemas/faturamento.ts`, e os 14 testes de
+  antes passaram sem mudar uma linha. A janela não fecha enquanto fatura (o erro precisa de onde
+  aparecer). O percentual de juros passou a sair com vírgula ("2,74%").
+- **Ao confirmar**: a janela fecha, a linha troca de selo (a lista recarrega) e sai o aviso
+  `avisar("OS 148 faturada")`. Erro: a janela fica aberta e o erro aparece no rodapé, do lado do
+  botão, com `role="alert"`.
+- **A venda de balcão**: o pagamento da venda nova abre na mesma janela, com "Confirmar venda" e
+  "Mudar as peças" (que volta pras peças); "Venda 149 registrada" virou aviso que some. A venda
+  aberta pela lista ganhou o selo e o botão novos.
+- **Orçamentos**: abas, filtro, tabela e selo iguais aos da OS; na linha fica o "Enviar" (WhatsApp),
+  e o "Mais ações" tem "Abrir o orçamento". O "vencido" virou o selo cinza "Vencido", com relógio.
+- **Os botões do topo** perderam o "+" do texto: o "+" virou ícone ("Nova ordem de serviço").
+
 ## 7. O menu
 
 - **14 itens em quatro grupos**: Atendimento (Início, Clientes, Ordens de Serviço, Orçamentos,
