@@ -351,7 +351,7 @@ Tudo é CSS no bloco "tarefa 5: o movimento" do `globals.css` (durações em `--
 
 | O quê | Como ficou |
 |---|---|
-| Trocar de tela | `App.tsx` põe um `.sakura-tela` (`display: contents`, não muda o layout) com `key` na rota; o CSS anima os **filhos da tela** (`.sakura-tela > * > *`): sobem 12 px e aparecem, 45 ms de intervalo, 0,42 s. Do 9º bloco em diante entram juntos. Tela cujo primeiro filho é um fragmento anima os netos. |
+| Trocar de tela | `App.tsx` põe um `.sakura-tela` (`display: contents`, não muda o layout) com `key` na rota; o CSS anima os **filhos da tela** (`.sakura-tela > * > *`): sobem 12 px e aparecem, 45 ms de intervalo, 0,42 s, só nos primeiros 0,8 s depois da troca (`data-entrando`), pra um bloco que aparece depois, como o fim do "Carregando", não repetir. Do 9º bloco em diante entram juntos. Tela cujo primeiro filho é um fragmento anima os netos. |
 | Abrir janela | `.sakura-modal-fundo` (escurece) e `.sakura-modal` (sobe 14 px, 96% a 100%), 0,28 s. Vale pra todo `Modal`, sem mexer nas telas. Fechar é instantâneo. |
 | Menu de três pontos | Classe **`sakura-menu-brota`** (0,16 s, de cima à direita; `--origem-brota` troca o canto). Quem desenha o menu põe a classe: a tarefa 7, no `AcoesDaLinha`. |
 | Número grande | `CartaoNumero` liga `ContarAoAparecer`; o `Valor` de dentro conta de R$ 0,00 até o valor em 0,75 s. É só o texto mudando (centavos inteiros, curva de freio); no último passo o texto é o `formatarMoeda` do valor de sempre. Com "reduzir movimento" nem começa. Fora do cartão (tabelas, listas) nada conta. |
@@ -359,8 +359,14 @@ Tudo é CSS no bloco "tarefa 5: o movimento" do `globals.css` (durações em `--
 | Botão | 0,12 s com a curva única (antes 0,15 s). |
 | Reduzir movimento | `@media (prefers-reduced-motion: reduce)` zera todas as animações acima; o teste está em `scripts/testar-electron.mjs` (monta cada movimento com as classes de verdade, confere que tem animação ligado e **nenhuma** com "reduzir movimento"). |
 
-Leitor de tela: o texto do número nasce com o valor final e a contagem só troca esse texto (sem
-região viva), então nada é anunciado a cada passo.
+Leitor de tela: a contagem só troca o texto (sem região viva), então nada é anunciado a cada passo;
+quem chega no número durante os 0,75 s ouve um valor parcial (e o HTML de teste/servidor já vem com o
+final). Se a Sofia quiser blindar, a contagem vira um `span` `aria-hidden` ao lado de um só pro leitor.
+
+Conhecido, já existia antes: o `AreaRolavel` observa o tamanho só do primeiro filho da área, que
+no programa é o botão da busca global, e não a tela. A tela que carrega uma lista depois pode ficar com
+a barra de rolagem desenhada desatualizada. O `.sakura-tela` (`display: contents`) não muda isso. Fica pra
+quem mexer no `AreaRolavel` (não é da tarefa 5).
 
 ## 9. A logo
 

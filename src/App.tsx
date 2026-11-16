@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
 import { AvisosQueSomem } from "./components/AvisoQueSome";
@@ -65,6 +65,25 @@ function PaginaInicial() {
       <p className="text-corpo text-sakura-purple-dark/90">
         Nenhum módulo liberado para o seu usuário. Fale com o administrador.
       </p>
+    </div>
+  );
+}
+
+/**
+ * O invólucro que faz os blocos da tela entrarem (tarefa 5). O atributo
+ * `data-entrando` só existe nos primeiros 0,8 s depois de trocar de rota: o
+ * CSS só anima nesse tempo, então um bloco que aparece depois (o fim do
+ * "Carregando", um formulário "Novo...") não repete a entrada.
+ */
+function TelaQueEntra({ children }: { children: ReactNode }) {
+  const [entrando, setEntrando] = useState(true);
+  useEffect(() => {
+    const espera = window.setTimeout(() => setEntrando(false), 800);
+    return () => window.clearTimeout(espera);
+  }, []);
+  return (
+    <div className="sakura-tela" data-entrando={entrando ? "" : undefined}>
+      {children}
     </div>
   );
 }
@@ -175,7 +194,7 @@ export default function App() {
             {/* Trocar de tela (tarefa 5): o `key` refaz o invólucro a cada rota, e
                 o CSS (`.sakura-tela`) faz os blocos da tela entrarem. Ele não
                 muda o layout (`display: contents`). */}
-            <div key={localizacao.pathname} className="sakura-tela">
+            <TelaQueEntra key={localizacao.pathname}>
             <Routes>
               <Route path="/" element={<PaginaInicial />} />
               {/* Sem AdminRoute de propósito: quem pede socorro é o balcão. */}
@@ -322,7 +341,7 @@ export default function App() {
                 }
               />
             </Routes>
-            </div>
+            </TelaQueEntra>
           </ErrorBoundary>
         </AreaRolavel>
       </main>

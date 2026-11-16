@@ -910,22 +910,30 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   display: contents;
 }
 
-.sakura-tela > * > * {
+.sakura-tela[data-entrando] > * > * {
   animation: sakura-sobe var(--duration-tela) var(--ease-suave) backwards;
 }
 
-.sakura-tela > * > :nth-child(2) { animation-delay: 45ms; }
-.sakura-tela > * > :nth-child(3) { animation-delay: 90ms; }
-.sakura-tela > * > :nth-child(4) { animation-delay: 135ms; }
-.sakura-tela > * > :nth-child(5) { animation-delay: 180ms; }
-.sakura-tela > * > :nth-child(6) { animation-delay: 225ms; }
-.sakura-tela > * > :nth-child(7) { animation-delay: 270ms; }
-.sakura-tela > * > :nth-child(8) { animation-delay: 315ms; }
-.sakura-tela > * > :nth-child(n + 9) { animation-delay: 360ms; }
+.sakura-tela[data-entrando] > * > :nth-child(2) { animation-delay: 45ms; }
+.sakura-tela[data-entrando] > * > :nth-child(3) { animation-delay: 90ms; }
+.sakura-tela[data-entrando] > * > :nth-child(4) { animation-delay: 135ms; }
+.sakura-tela[data-entrando] > * > :nth-child(5) { animation-delay: 180ms; }
+.sakura-tela[data-entrando] > * > :nth-child(6) { animation-delay: 225ms; }
+.sakura-tela[data-entrando] > * > :nth-child(7) { animation-delay: 270ms; }
+.sakura-tela[data-entrando] > * > :nth-child(8) { animation-delay: 315ms; }
+.sakura-tela[data-entrando] > * > :nth-child(n + 9) { animation-delay: 360ms; }
 
 /* Abrir janela: o fundo escurece e o painel sobe 14 px, de 96% a 100%. */
 .sakura-modal-fundo {
   animation: sakura-fundo-aparece var(--duration-janela) var(--ease-suave) backwards;
+}
+
+/* A janela costuma nascer como filha direta da tela: aí as regras de atraso por
+   posição (`nth-child`, mais fortes) valeriam pra ela e o fundo ficaria
+   invisível, mas já clicável, por até 0,36 s. Esta empata com elas em força e
+   ganha por vir DEPOIS: não mudar de lugar (o teste do Electron pega). */
+.sakura-tela[data-entrando] > * > .sakura-modal-fundo {
+  animation-delay: 0s;
 }
 
 .sakura-modal-fundo > .sakura-modal {
@@ -955,7 +963,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 /* Reduzir movimento: nenhuma animação roda, em lugar nenhum destes. */
 @media (prefers-reduced-motion: reduce) {
-  .sakura-tela > * > *,
+  .sakura-tela[data-entrando] > * > *,
   .sakura-modal-fundo,
   .sakura-modal-fundo > .sakura-modal,
   .sakura-menu-brota,
