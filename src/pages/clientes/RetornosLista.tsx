@@ -11,7 +11,7 @@ import {
   textoDoModelo,
   ultimasMensagensPorReferencia,
 } from "@/lib/modelosWhatsapp";
-import { listarOrdensParaRetornos, listarServicosComIntervalo } from "@/lib/retornos";
+import { listarDonosDosVeiculos, listarOrdensParaRetornos, listarServicosComIntervalo } from "@/lib/retornos";
 import {
   listaDeRetornos,
   partesDoVeiculoNaMensagem,
@@ -50,18 +50,28 @@ export function RetornosLista() {
   // Todos os clientes da empresa (a lista principal de Clientes vem por página
   // desde a #373; aqui precisa de todos pra achar o dono de cada carro).
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  // O dono atual de cada carro: o lembrete vai pra ele, não pro cliente da última OS.
+  const [donos, setDonos] = useState<Map<string, string>>(new Map());
+  // Atrasados há mais de 12 meses ficam escondidos até a pessoa pedir.
+  const [mostrarAntigos, setMostrarAntigos] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [modelos, setModelos] = useState<Record<string, string>>({});
   const [ultimosAvisos, setUltimosAvisos] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     let valendo = true;
-    Promise.all([listarOrdensParaRetornos(), listarServicosComIntervalo(), listarClientes()])
-      .then(([listaOrdens, listaServicos, listaClientes]) => {
+    Promise.all([
+      listarOrdensParaRetornos(),
+      listarServicosComIntervalo(),
+      listarClientes(),
+      listarDonosDosVeiculos(),
+    ])
+      .then(([listaOrdens, listaServicos, listaClientes, donosDosVeiculos]) => {
         if (!valendo) return;
         setOrdens(listaOrdens);
         setServicos(listaServicos);
         setClientes(listaClientes);
+        setDonos(donosDosVeiculos);
       })
       .catch((err) => {
         console.error("Erro ao carregar os retornos:", err);
@@ -98,8 +108,10 @@ export function RetornosLista() {
   const lista = useMemo(() => {
     if (!ordens) return null;
     const hoje = hojeLocal();
-    return listaDeRetornos(retornosPrevistos(ordens, servicos, hoje), clientes, hoje);
-  }, [ordens, servicos, clientes]);
+    return listaDeRetornos(retornosPrevistos(ordens, servicos, hoje, donos), clientes, hoje, {
+      mostrarAntigos,
+    });
+  }, [ordens, servicos, clientes, donos, mostrarAntigos]);
 
   if (erro) {
     return <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>;
@@ -218,7 +230,8 @@ export function RetornosLista() {
     );
   }
 
-  const nada = lista.atrasados.length === 0 && lista.estaSemana.length === 0;
+  const nada = lista.atrasados.length === 0 && lista.estaSemana.length === 0 && lista.antigosEscondidos === 0;
+  const temAntigos = lista.antigosEscondidos > 0 || mostrarAntigos;
 
   return (
     <div className="space-y-6">
@@ -233,6 +246,21 @@ export function RetornosLista() {
         </p>
       ) : (
         <>
+          {temAntigos && (
+            <label className="flex items-center gap-2 text-corpo">
+              <input
+                type="checkbox"
+                checked={mostrarAntigos}
+                onChange={(e) => setMostrarAntigos(e.target.checked)}
+                className="h-4 w-4 rounded"
+              />
+              <span className="text-texto">
+                Mostrar os mais antigos (atrasados há mais de 12 meses)
+                {!mostrarAntigos &&
+                  `: ${lista.antigosEscondidos} ${lista.antigosEscondidos === 1 ? "escondido" : "escondidos"}`}
+              </span>
+            </label>
+          )}
           {tabela("Atrasados", lista.atrasados, "Ninguém atrasado.")}
           {tabela("Nesta semana", lista.estaSemana, "Ninguém pra voltar nesta semana.")}
         </>

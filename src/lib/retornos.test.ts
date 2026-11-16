@@ -28,7 +28,7 @@ function construtor(tabela: string) {
 }
 vi.mock("./supabase", () => ({ supabase: { from: (t: string) => construtor(t) } }));
 
-const { listarOrdensParaRetornos, listarServicosComIntervalo } = await import("./retornos");
+const { listarDonosDosVeiculos, listarOrdensParaRetornos, listarServicosComIntervalo } = await import("./retornos");
 const { CLIENTE_CONSUMIDOR_ID } = await import("@/types/cliente");
 
 const linha = {
@@ -121,5 +121,20 @@ describe("listarServicosComIntervalo", () => {
       { id: "alinhamento", descricao: "Alinhamento", intervalo_dias: null, intervalo_km: 10_000 },
       { id: "ligado", descricao: "Serviço ligado", intervalo_dias: 90, intervalo_km: null },
     ]);
+  });
+});
+
+describe("listarDonosDosVeiculos", () => {
+  it("devolve o dono atual de cada carro, lendo id e cliente_id de veiculos, em páginas", async () => {
+    respostas.veiculos = [
+      { id: "v1", cliente_id: "cli-b" },
+      { id: "v2", cliente_id: "cli-a" },
+    ];
+    chamadas.length = 0;
+    const donos = await listarDonosDosVeiculos();
+    expect(donos).toEqual(new Map([["v1", "cli-b"], ["v2", "cli-a"]]));
+    const doVeiculo = chamadas.filter((c) => c.tabela === "veiculos");
+    expect(doVeiculo.find((c) => c.metodo === "select")?.args[0]).toBe("id, cliente_id");
+    expect(doVeiculo.some((c) => c.metodo === "range")).toBe(true);
   });
 });

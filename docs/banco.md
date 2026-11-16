@@ -637,6 +637,15 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   todas as OS (pra cumprir o `on delete set null`); com 2.000 importados contra 20 mil OS, o
   desfazer caiu de 2,3 s pra 0,27 s. Só soma: sobe **antes** da versão, sem
   `versao-minima-do-programa`.
+- `0084`: **o retorno do cliente** (tarefa #381, FN-06; aplicar depois da `0083`). Colunas
+  `servicos.intervalo_dias` (1 a 3.650) e `servicos.intervalo_km` (1 a 1.000.000), opcionais, com
+  a trava `ck_servicos_intervalo`; `clientes.nao_avisar` (padrão falso). A janela
+  `ordens_servico_clientes` passa a mandar o `servico_id` de cada item (o resto igual à `0075`).
+  Nenhuma tabela nova: os retornos são calculados na hora (`src/schemas/retornos.ts`). Nenhum
+  serviço ganha intervalo pela migration. Só soma: sobe **antes** da versão, sem
+  `versao-minima-do-programa` (o programa novo grava `nao_avisar` e os intervalos ao salvar
+  cliente e serviço, então num banco sem a `0084` salvar falha). Teste em
+  `supabase/scripts/testar-retorno-do-cliente.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -728,7 +737,9 @@ outro projeto Supabase do zero (ver seção 9).
   "CNPJ" conforme o tipo), telefone, email, cep, rua, numero, bairro, cidade, uf,
   data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em,
   importacao_lote_id (FK `importacao_lotes`, opcional, `on delete set null` — desde a `0083`: o
-  lote da planilha de onde o cliente veio; vazio no cadastro feito à mão)
+  lote da planilha de onde o cliente veio; vazio no cadastro feito à mão), nao_avisar (boolean,
+  padrão falso — desde a `0084`: o cliente pediu pra não receber mensagem da loja; nunca entra nos
+  Retornos nem nos clientes que sumiram)
 - **`veiculos`** (desde a `0069`, só com o módulo Clientes; sem ele, pela view
   `veiculos_janela`): id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
   (`hatch`/`sedan`/`suv`/`picape`/`moto`, opcional — usado só pra escolher o ícone certo na seção
@@ -753,8 +764,10 @@ outro projeto Supabase do zero (ver seção 9).
   nova, mais Óleo e Filtros, Elétrica e Ar-condicionado — migration `0072`).
 - **`servicos`** (catálogo de serviços, análogo a `pecas` mas sem estoque/fiscal): id,
   codigo_interno (opcional), descricao, preco_padrao, categoria_id (FK categorias_servicos,
-  opcional), ativo, criado_em. Vem semeado com ~17 serviços padrão sem preço (migration `0030`);
-  empresa nova recebe mais 39, também sem preço (migration `0072`).
+  opcional), ativo, criado_em, intervalo_dias e intervalo_km (int, opcionais, desde a `0084`: a
+  cada quantos dias ou km o cliente deve voltar pra refazer o serviço; vazios = o serviço não gera
+  retorno; trava `ck_servicos_intervalo`). Vem semeado com ~17 serviços padrão sem preço (migration
+  `0030`); empresa nova recebe mais 39, também sem preço (migration `0072`).
 - **`fornecedores`** (compartilhado entre lojas, migration `0039`): id, nome, cnpj, telefone,
   email, cep/rua/numero/bairro/cidade/uf, ativo, criado_em. Mesmo padrão de `clientes`
   (endereço completo) mas sem veículos nem tipo pessoa física/jurídica — fornecedor é sempre

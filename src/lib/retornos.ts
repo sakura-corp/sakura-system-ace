@@ -109,3 +109,18 @@ export async function listarServicosComIntervalo(): Promise<ServicoComIntervalo[
     }))
     .filter((servico) => positivo(servico.intervalo_dias) || positivo(servico.intervalo_km));
 }
+
+/**
+ * O dono ATUAL de cada carro (`veiculos.cliente_id`), pra o lembrete ir pra
+ * quem tem o carro hoje e não pro cliente da última OS (carro vendido e
+ * passado pra outro cliente no cadastro). Ler `veiculos` pede o módulo
+ * Clientes, o mesmo da tela que mostra os Retornos. Por páginas (#498).
+ */
+export async function listarDonosDosVeiculos(): Promise<Map<string, string>> {
+  const dados = await buscarTudoEmPaginas((de, ate) =>
+    supabase.from("veiculos").select("id, cliente_id").order("id").range(de, ate),
+  );
+  return new Map(
+    (dados as unknown as { id: string; cliente_id: string }[]).map((veiculo) => [veiculo.id, veiculo.cliente_id]),
+  );
+}

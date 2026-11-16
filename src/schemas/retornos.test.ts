@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ATRASO_MAXIMO_PADRAO,
   DIAS_DE_ANTECEDENCIA,
   listaDeRetornos,
   partesDoVeiculoNaMensagem,
@@ -278,6 +279,37 @@ describe("retornosPrevistos", () => {
     });
   });
 
+  describe("carro que trocou de dono", () => {
+    it("o retorno vai pro dono atual do carro, não pro cliente da última OS", () => {
+      const os = ordem({ cliente_id: "cli-a" });
+      const [retorno] = retornosPrevistos([os], [servico()], "2026-11-10", new Map([["v1", "cli-b"]]));
+      expect(retorno.clienteId).toBe("cli-b");
+    });
+
+    it("sem o dono no mapa (carro fora da leitura), vale o cliente da OS", () => {
+      const os = ordem({ cliente_id: "cli-a" });
+      const [retorno] = retornosPrevistos([os], [servico()], "2026-11-10", new Map());
+      expect(retorno.clienteId).toBe("cli-a");
+    });
+
+    it("o carro passou pro Consumidor: o retorno não sai pra ninguém", () => {
+      const os = ordem({ cliente_id: "cli-a" });
+      // 01/06 + 180 dias = 28/11: em 10/12 já está atrasado.
+      const retornos = retornosPrevistos([os], [servico()], "2026-12-10", new Map([["v1", CLIENTE_CONSUMIDOR_ID]]));
+      expect(listaDeRetornos(retornos, clientes, "2026-12-10", { mostrarAntigos: true }).atrasados).toEqual([]);
+    });
+
+    it("vale o \"não avisar\" do dono atual, não o do antigo", () => {
+      // cli-a pode ser avisada; o carro agora é do cli-c, que pediu pra não receber.
+      const os = ordem({ cliente_id: "cli-a" });
+      const retornos = retornosPrevistos([os], [servico()], "2026-12-10", new Map([["v1", "cli-c"]]));
+      expect(listaDeRetornos(retornos, clientes, "2026-12-10").atrasados).toEqual([]);
+      // Sem o dono atual, o lembrete iria pra cli-a (prova de que o teste enxerga a troca).
+      const semDono = retornosPrevistos([os], [servico()], "2026-12-10");
+      expect(listaDeRetornos(semDono, clientes, "2026-12-10").atrasados.map((l) => l.cliente.id)).toEqual(["cli-a"]);
+    });
+  });
+
   it("uma OS faturada depois com o mesmo serviço tira o retorno antigo", () => {
     const antiga = ordem();
     const nova = ordem({
@@ -404,7 +436,7 @@ describe("listaDeRetornos", () => {
   });
 
   it("aceita outra janela de dias", () => {
-    const lista = listaDeRetornos([previsto("2026-11-12")], clientes, HOJE, 1);
+    const lista = listaDeRetornos([previsto("2026-11-12")], clientes, HOJE, { dias: 1 });
     expect(lista.estaSemana).toEqual([]);
   });
 
@@ -414,7 +446,7 @@ describe("listaDeRetornos", () => {
       clientes,
       HOJE,
     );
-    expect(lista).toEqual({ atrasados: [], estaSemana: [] });
+    expect(lista).toEqual({ atrasados: [], estaSemana: [], antigosEscondidos: 0 });
   });
 
   it("nao_avisar nulo (banco sem a coluna preenchida) conta como avisar", () => {
@@ -431,7 +463,7 @@ describe("listaDeRetornos", () => {
       [...clientes, { id: CLIENTE_CONSUMIDOR_ID, nome: "Consumidor", nao_avisar: false }],
       HOJE,
     );
-    expect(lista).toEqual({ atrasados: [], estaSemana: [] });
+    expect(lista).toEqual({ atrasados: [], estaSemana: [], antigosEscondidos: 0 });
   });
 
   it("do mais atrasado pro menos; empate pela placa e depois pelo serviço", () => {
@@ -451,6 +483,45 @@ describe("listaDeRetornos", () => {
       "AAA1A11 oleo",
       "BBB2B22 oleo",
     ]);
+  });
+
+  describe("atrasados há mais de 12 meses", () => {
+    it("o limite padrão é de 365 dias de atraso", () => {
+      expect(ATRASO_MAXIMO_PADRAO).toBe(365);
+    });
+
+    it("por padrão, quem passou de 12 meses de atraso fica escondido, e a lista diz quantos", () => {
+      const lista = listaDeRetornos(
+        [
+          // 10/11/2025 → 365 dias antes de HOJE: ainda entra.
+          previsto("2025-11-10", { servicoId: "doze-meses" }),
+          // 09/11/2025 → 366 dias: fica escondido.
+          previsto("2025-11-09", { servicoId: "treze-meses" }),
+          previsto("2020-01-01", { servicoId: "anos" }),
+          previsto("2026-11-01", { servicoId: "recente" }),
+        ],
+        clientes,
+        HOJE,
+      );
+      expect(lista.atrasados.map((l) => l.retorno.servicoId)).toEqual(["doze-meses", "recente"]);
+      expect(lista.antigosEscondidos).toBe(2);
+    });
+
+    it("com \"mostrar os mais antigos\", entram todos, do mais atrasado pro menos", () => {
+      const lista = listaDeRetornos(
+        [previsto("2026-11-01", { servicoId: "recente" }), previsto("2020-01-01", { servicoId: "anos" })],
+        clientes,
+        HOJE,
+        { mostrarAntigos: true },
+      );
+      expect(lista.atrasados.map((l) => l.retorno.servicoId)).toEqual(["anos", "recente"]);
+      expect(lista.antigosEscondidos).toBe(0);
+    });
+
+    it("quem pediu pra não ser avisado não conta entre os escondidos", () => {
+      const lista = listaDeRetornos([previsto("2020-01-01", { clienteId: "cli-c" })], clientes, HOJE);
+      expect(lista.antigosEscondidos).toBe(0);
+    });
   });
 
   it("intervalo de 1 dia faturado hoje: prevista amanhã, na lista desta semana", () => {

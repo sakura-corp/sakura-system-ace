@@ -31,6 +31,7 @@ const registrarMensagemAberta = vi.fn();
 const abrirConversaWhatsapp = vi.fn();
 const listarOrdensParaRetornos = vi.fn();
 const listarServicosComIntervalo = vi.fn();
+const listarDonosDosVeiculos = vi.fn();
 
 vi.mock("@/lib/clientes", () => ({
   COLUNAS_DA_LISTA_DE_CLIENTES: ["nome", "cidade"],
@@ -46,6 +47,7 @@ vi.mock("@/lib/clientesSumidos", () => ({
 vi.mock("@/lib/retornos", () => ({
   listarOrdensParaRetornos: () => listarOrdensParaRetornos(),
   listarServicosComIntervalo: () => listarServicosComIntervalo(),
+  listarDonosDosVeiculos: () => listarDonosDosVeiculos(),
 }));
 vi.mock("@/lib/modelosWhatsapp", async (original) => ({
   ...(await original<typeof import("@/lib/modelosWhatsapp")>()),
@@ -165,6 +167,7 @@ beforeEach(() => {
   ]);
   listarOrdensParaRetornos.mockResolvedValue([]);
   listarServicosComIntervalo.mockResolvedValue([]);
+  listarDonosDosVeiculos.mockResolvedValue(new Map());
   listarModelosWhatsapp.mockResolvedValue({});
   ultimasMensagensPorReferencia.mockResolvedValue(new Map());
   registrarMensagemAberta.mockResolvedValue(undefined);
@@ -433,6 +436,30 @@ describe("ClientesPage — retornos (#381)", () => {
     await screen.findByText("Cliente Pouco");
     await tela.user.click(screen.getByRole("checkbox", { name: /retornos/i }));
     expect(await screen.findByText(/falhou a rede/)).toBeInTheDocument();
+  });
+
+  it("carro passado pra outro cliente: a linha vai pro dono atual", async () => {
+    // O v1 (ABC-1D23) foi da Cliente Pouco na OS, mas hoje é da Cliente Muito no cadastro.
+    listarDonosDosVeiculos.mockResolvedValue(new Map([["v1", "c2"]]));
+    await abrirRetornos();
+    const linha = screen.getByRole("button", { name: "ABC-1D23" }).closest("tr")!;
+    expect(within(linha).getByText("Cliente Muito")).toBeInTheDocument();
+    expect(within(linha).queryByText("Cliente Pouco")).not.toBeInTheDocument();
+  });
+
+  it("atrasado há mais de 12 meses fica escondido até marcar \"Mostrar os mais antigos\"", async () => {
+    listarOrdensParaRetornos.mockResolvedValue([
+      osComOleo("r1", "c1", "v1", "ABC-1D23", 200),
+      // 600 dias atrás + 180 = 420 dias de atraso.
+      osComOleo("r4", "c2", "v4", "VEL-4H00", 600),
+    ]);
+    const { user } = await abrirRetornos();
+    expect(screen.queryByRole("button", { name: "VEL-4H00" })).not.toBeInTheDocument();
+    const caixa = screen.getByRole("checkbox", { name: /mostrar os mais antigos/i });
+    expect(caixa).toHaveAccessibleName(/1 escondido/);
+    await user.click(caixa);
+    expect(await screen.findByRole("button", { name: "VEL-4H00" })).toBeInTheDocument();
+    expect(screen.getByText("420 dias de atraso")).toBeInTheDocument();
   });
 
   it("mostra quando o aviso foi aberto pela última vez", async () => {

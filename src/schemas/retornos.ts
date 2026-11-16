@@ -125,6 +125,12 @@ export function partesDoVeiculoNaMensagem(retorno: Pick<RetornoPrevisto, "veicul
  *   certo; o km é estimativa). Sem nenhum dos dois (só km e sem rodagem), o
  *   retorno não sai — a ficha pode explicar pelo `rodagemEstimada`.
  *
+ * - O cliente do retorno é o **dono atual** do carro (`donoAtual`, o
+ *   `veiculos.cliente_id` de hoje), não o da última OS: carro vendido e
+ *   passado pra outro cliente no cadastro avisa o dono novo, com o "não
+ *   avisar" e o telefone dele. Carro fora do mapa (ex.: a ficha, que não
+ *   precisa) fica com o cliente da OS.
+ *
  * Saída na ordem da prevista, depois placa e serviço, pra não mudar de ordem
  * a cada vez que a tela desenha.
  */
@@ -132,6 +138,7 @@ export function retornosPrevistos(
   ordens: readonly OrdemParaRetorno[],
   servicos: readonly ServicoComIntervalo[],
   hoje: string,
+  donoAtual: ReadonlyMap<string, string> = new Map(),
 ): RetornoPrevisto[] {
   const servicoPorId = new Map(servicos.filter(temIntervalo).map((servico) => [servico.id, servico]));
   const faturadasPorVeiculo = new Map<string, OrdemParaRetorno[]>();
@@ -182,7 +189,7 @@ export function retornosPrevistos(
     const prevista = (estimadoPeloKm ? peloKm : pelosDias) as string;
     retornos.push({
       veiculoId,
-      clienteId: ordem.cliente_id,
+      clienteId: donoAtual.get(veiculoId) ?? ordem.cliente_id,
       placa: veiculo.placa,
       veiculo: descreverVeiculo(veiculo),
       servicoId: servico.id,
@@ -209,6 +216,13 @@ function compararRetornos(a: RetornoPrevisto, b: RetornoPrevisto): number {
 /** Com quantos dias de antecedência o retorno entra na lista "desta semana". */
 export const DIAS_DE_ANTECEDENCIA = 7;
 
+/**
+ * Até quantos dias de atraso o retorno aparece nos "Atrasados" sem pedir
+ * (12 meses; decisão da Sofia na revisão do #987). Sem corte, um intervalo de
+ * 180 dias traria todo carro que um dia fez o serviço e nunca voltou.
+ */
+export const ATRASO_MAXIMO_PADRAO = 365;
+
 export interface RetornoDoCliente<C> {
   retorno: RetornoPrevisto;
   cliente: C;
@@ -222,6 +236,9 @@ export interface RetornoDoCliente<C> {
  *   (banco ainda sem a coluna) conta como "pode avisar".
  * - Atrasados: `diasDeAtraso > 0`. Desta semana: prevista de hoje até hoje +
  *   `dias`, inclusive — o que vence hoje entra aqui, não nos atrasados.
+ * - Atrasado há mais de `ATRASO_MAXIMO_PADRAO` dias fica escondido, a não
+ *   ser com `mostrarAntigos`; `antigosEscondidos` diz quantos ficaram de fora
+ *   (só os que seriam avisados: "não avisar" não conta).
  * - Do mais atrasado pro menos (prevista mais antiga primeiro); empate pela
  *   placa e depois pelo serviço.
  */
@@ -229,23 +246,25 @@ export function listaDeRetornos<C extends { id: string; nao_avisar?: boolean | n
   retornos: readonly RetornoPrevisto[],
   clientes: readonly C[],
   hoje: string,
-  dias = DIAS_DE_ANTECEDENCIA,
-): { atrasados: RetornoDoCliente<C>[]; estaSemana: RetornoDoCliente<C>[] } {
+  { dias = DIAS_DE_ANTECEDENCIA, mostrarAntigos = false }: { dias?: number; mostrarAntigos?: boolean } = {},
+): { atrasados: RetornoDoCliente<C>[]; estaSemana: RetornoDoCliente<C>[]; antigosEscondidos: number } {
   const clientePorId = new Map(clientes.map((cliente) => [cliente.id, cliente]));
   const limite = somarDias(hoje, dias);
   const atrasados: RetornoDoCliente<C>[] = [];
   const estaSemana: RetornoDoCliente<C>[] = [];
+  let antigosEscondidos = 0;
 
   for (const retorno of retornos) {
     if (ehConsumidor(retorno.clienteId)) continue;
     const cliente = clientePorId.get(retorno.clienteId);
     if (!cliente || cliente.nao_avisar) continue;
-    if (retorno.diasDeAtraso > 0) atrasados.push({ retorno, cliente });
+    if (retorno.diasDeAtraso > ATRASO_MAXIMO_PADRAO && !mostrarAntigos) antigosEscondidos++;
+    else if (retorno.diasDeAtraso > 0) atrasados.push({ retorno, cliente });
     else if (retorno.prevista >= hoje && retorno.prevista <= limite) estaSemana.push({ retorno, cliente });
   }
 
   const ordem = (a: RetornoDoCliente<C>, b: RetornoDoCliente<C>) => compararRetornos(a.retorno, b.retorno);
-  return { atrasados: atrasados.sort(ordem), estaSemana: estaSemana.sort(ordem) };
+  return { atrasados: atrasados.sort(ordem), estaSemana: estaSemana.sort(ordem), antigosEscondidos };
 }
 
 /** O próximo retorno do carro (o de prevista mais cedo), pra ficha do veículo; `null` se não tem. */
