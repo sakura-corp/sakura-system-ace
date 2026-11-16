@@ -167,12 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 15/11/2026 (tarde): visual novo, o menu novo na `main`
-- **Feito** (#1049, nada publicado): o menu tem quatro grupos com ícones, abre e encolhe (lembrado por computador) e encosta na borda da janela; no alto, a flor da logo B. Regras: seção 7.
-- **Decidido por ela**: o menu fica como está; o atalho de trocar o tema no rodapé do menu fica.
-- **Aberto** (sugestões, ela não decidiu): um ícone de socorro pro Diagnóstico; a ordem dos grupos; a opção "Automático" do tema. A logo nova no Login e no ícone é da tarefa 6.
-- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **Início** (tarefa 4, a tela-piloto, que ela aprova antes das outras; ainda sem sessão); depois o movimento, a logo com o Login e as OS.
-- **Atenção, equipe**: toda tela vale nos dois temas (regras, seção 13). Módulo novo precisa de grupo em `MODULOS` e de ícone no `Sidebar.tsx`.
-- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
-- **Com a Sofia**: no teste do fim de semana, o menu (encolher, fechar e abrir de novo; um login só com Caixa), o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
-- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+### 16/11/2026: visual novo, quase todas as telas na `main`
+- **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
+- **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.
+- **Aberto**: em 1024 com o menu aberto, a tabela das OS rola de lado (esconder uma coluna é decisão dela); as sugestões de cada PR.
+- **Próximo**: Relações (sessão rodando) e Configurações com Auditoria e Diagnóstico (#1062); depois a tarefa de tirar os tokens antigos.
+- **Atenção**: as sessões pararam no limite semanal (16/11); a fila está em `docs/rascunhos/visual-novo-tarefas.md`.
+- **Com a Sofia**: no Windows 11, a barra da janela e o ícone do instalador; no fim de semana, as telas novas e o faturar com um login de verdade.

@@ -210,7 +210,7 @@ escolha por computador). A ordem dos itens é provisória.
 
 ---
 
-## Tarefa 4 — Tela-piloto: o Início
+## Tarefa 4 — Tela-piloto: o Início (FEITA em 15/11, #1052)
 
 ```
 Chefe: frontend
@@ -252,7 +252,7 @@ começar outra tela antes do "sim" dela.
 
 ---
 
-## Tarefa 5 — O movimento
+## Tarefa 5 — O movimento (FEITA em 16/11, #1054)
 
 ```
 Chefe: frontend
@@ -281,7 +281,7 @@ Windows, **nada se move**.
 
 ---
 
-## Tarefa 6 — A logo, o ícone do programa e o Login
+## Tarefa 6 — A logo, o ícone do programa e o Login (FEITA em 16/11, #1051)
 
 ```
 Chefe: frontend
@@ -321,7 +321,7 @@ Sessões filhas: não
 
 ---
 
-## Tarefa 7 — Ordens de Serviço e o Faturar em janela
+## Tarefa 7 — Ordens de Serviço e o Faturar em janela (FEITA em 16/11, #1055)
 
 ```
 Chefe: frontend
@@ -373,6 +373,10 @@ do tema claro são outras, mais escuras.
 ---
 
 ## Tarefas 8 em diante — As outras telas (com a equipe)
+
+> **Andamento em 16/11**: na `main`: Clientes, veículo e Garantias (#1057); Estoque, Fornecedores e
+> Serviços (#1059); Caixa (#1058); Contas (#1056); Notas Fiscais (#1060); Funcionários (#1066).
+> Orçamentos entrou na tarefa 7. Faltam: Relações, Configurações/Auditoria/Diagnóstico (#1062) e os tokens.
 
 Uma tarefa por grupo do menu, cada uma depois do "sim" da Sofia no Início:
 Clientes e a ficha do veículo; Orçamentos e Garantias; Estoque, Fornecedores e Serviços; Caixa
