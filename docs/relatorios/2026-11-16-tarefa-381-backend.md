@@ -56,8 +56,8 @@ pedidos da revisão da Sofia (10/11, repetidos no lembrete fixo de 15/11).
   junção com a `main`, porque ele contava `listarClientes` e a lista agora usa
   `listarClientesPagina`. Ajustado pra contar a página.
 - **Contraste**: a varredura reprovou o botão "Continuar" da importação (#985): letra branca sobre
-  o laranja do visual novo, 3,16:1. Trocada a cor da letra pra `text-sobre-acao`; a varredura
-  passou.
+  o laranja do visual novo, 3,16:1. Troquei a cor da letra e a varredura passou. Depois, a
+  junção com o #985 trouxe o conserto dele (os botões do visual novo), e ficou o dele.
 
 ## O que passou sem eu ter visto reprovar
 - `npm run test:sql` (28 scripts) e `npm run test:rls` (1000 células), num Postgres 16 local.
@@ -80,10 +80,10 @@ pedidos da revisão da Sofia (10/11, repetidos no lembrete fixo de 15/11).
   - aplicar no `ssace-teste` a **0084** (`0084_retorno_do_cliente.sql`, sem
     `versao-minima-do-programa`, depois da 0083). A instalação desta branch traz as duas.
     Nas lojas: a migration **antes** da versão do programa.
-  - decidir sobre duas mudanças fora da lista de arquivos da issue, que vieram da junção:
-    `ImportarClientesModal.tsx` (a cor da letra do "Continuar") e o teste da importação em
-    `ClientesPage.test.tsx`. As duas são do #985, e o #985 vai precisar das mesmas quando juntar a
-    `main`.
+  - saber que, enquanto esta sessão trabalhava, **outra sessão do Claude** (`session_01UYz…`)
+    empurrou commits nesta mesma branch: a junção nova do #985 e "cada loja vê só os retornos dos
+    serviços feitos nela" (decisão dela de 16/11). Juntei os dois lados; o único conflito foi o
+    `ImportarClientesModal.tsx`, e ficou a versão do #985.
   - mesclar o #985 antes deste.
 - **Gustavo, no PC**: os 7 testes do "No PC de quem fez", depois do "aplicado" da Sofia.
 

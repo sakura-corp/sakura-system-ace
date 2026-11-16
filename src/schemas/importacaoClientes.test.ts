@@ -390,3 +390,28 @@ describe("desempenho: 2.000 linhas", () => {
     expect(ms).toBeLessThan(500);
   });
 });
+
+describe("conferirLinhas — ajustes da revisão de 16/11", () => {
+  it("sem documento, com o mesmo nome de um cliente que TEM CPF: é problema, não se liga a ele", () => {
+    const existente = { clientes: [{ id: "c1", nome: "João Silva", cpf_cnpj: CPF_A }], placas: [] };
+    const r = conferir([linha({ nome: "joão  silva", placa: "ABC1234" })], existente);
+    expect(r.linhas[0].situacao).toBe("problema");
+    expect(r.linhas[0].problemas[0]).toMatch(/mesmo nome de um cliente com CPF\/CNPJ/);
+    expect(r.clientes).toHaveLength(0);
+  });
+
+  it("sem documento, com o mesmo nome de um cliente SEM CPF: continua se ligando a ele", () => {
+    const existente = { clientes: [{ id: "c1", nome: "João Silva", cpf_cnpj: null }], placas: [] };
+    const r = conferir([linha({ nome: "João Silva", placa: "ABC1234" })], existente);
+    expect(r.linhas[0].situacao).toBe("entra");
+    expect(r.clientes[0].clienteExistenteId).toBe("c1");
+  });
+
+  it("veículo sem placa avisa que não vai entrar", () => {
+    const mapa: CampoImportacao[] = ["nome", "placa", "modelo"];
+    const r = conferirLinhas([["João", "", "Uno"], ["Bia", "", ""]], mapa, VAZIO);
+    expect(r.linhas[0].situacao).toBe("entra");
+    expect(r.linhas[0].avisos).toContain("veículo sem placa: não vai entrar");
+    expect(r.linhas[1].avisos).not.toContain("veículo sem placa: não vai entrar");
+  });
+});

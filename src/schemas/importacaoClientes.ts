@@ -217,11 +217,15 @@ export function conferirLinhas(
 ): ResultadoConferencia {
   const clientesPorDoc = new Map<string, string>();
   const clientesPorNome = new Map<string, string>();
+  // Nomes de quem tem CPF/CNPJ: uma linha sem documento com esse nome não se
+  // liga a ele (pode ser um homônimo) e vira problema (revisão de 16/11, opção A).
+  const nomesComDocumento = new Set<string>();
   for (const c of existente.clientes) {
     const doc = soDigitos(c.cpf_cnpj ?? "");
     if (doc !== "" && !clientesPorDoc.has(doc)) clientesPorDoc.set(doc, c.id);
     const nome = nomeNormalizado(c.nome);
     if (nome !== "" && !clientesPorNome.has(nome)) clientesPorNome.set(nome, c.id);
+    if (nome !== "" && doc !== "") nomesComDocumento.add(nome);
   }
   const placasNoBanco = new Set(existente.placas.map(chaveDePlaca));
   const placasDaPlanilha = new Set<string>();
@@ -293,6 +297,11 @@ export function conferirLinhas(
       else placaEstranha = true;
     }
 
+    if (docDigitos === "" && nomesComDocumento.has(nomeNormalizado(nome))) {
+      problemas.push("mesmo nome de um cliente com CPF/CNPJ: preencha o documento pra ligar a ele");
+      return terminar("problema");
+    }
+
     // O cliente: já existe no banco, ou já apareceu antes na planilha, ou é novo.
     const chave = docDigitos !== "" ? docDigitos : `nome:${nomeNormalizado(nome)}`;
     const existenteId =
@@ -347,6 +356,10 @@ export function conferirLinhas(
       };
     } else if (placaEstranha) {
       avisos.push("placa em formato estranho: o veículo não entra");
+    }
+    const camposDoVeiculo: CampoImportacao[] = ["marca", "modelo", "ano", "cor", "km_atual"];
+    if (placaTexto === "" && camposDoVeiculo.some((c) => (v[c] ?? "") !== "")) {
+      avisos.push("veículo sem placa: não vai entrar");
     }
 
     const algoNovo = clienteNovoNestaLinha || veiculo !== null;

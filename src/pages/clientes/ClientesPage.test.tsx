@@ -395,6 +395,16 @@ describe("ClientesPage — retornos (#381)", () => {
     expect(within(linhaDaSemana).getByText("vence em 5 dias")).toBeInTheDocument();
   });
 
+  it("cada loja só vê os retornos dos serviços feitos nela (decisão da Sofia, 16/11)", async () => {
+    listarOrdensParaRetornos.mockResolvedValue([
+      osComOleo("r1", "c1", "v1", "ABC-1D23", 200),
+      { ...osComOleo("r2", "c2", "v2", "XYZ-9K88", 200), loja_id: "loja-b" },
+    ]);
+    await abrirRetornos();
+    expect(screen.getByRole("button", { name: "ABC-1D23" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "XYZ-9K88" })).not.toBeInTheDocument();
+  });
+
   it("quem pediu pra não receber lembrete não aparece", async () => {
     await abrirRetornos();
     expect(screen.queryByText("Cliente Calado")).not.toBeInTheDocument();
@@ -633,3 +643,4 @@ describe("ClientesPage — a lista por página (#373)", () => {
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });
 });
+
