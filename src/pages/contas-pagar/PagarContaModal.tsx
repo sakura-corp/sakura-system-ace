@@ -1,13 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Info, TriangleAlert } from "lucide-react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import type { ContaPagar } from "@/types/contaPagar";
+import { fraseDoVencimento } from "./vencimento";
 
 interface PagarContaModalProps {
   conta: ContaPagar;
+  /** O dia de hoje ("AAAA-MM-DD"), o mesmo que a lista usou pros selos. */
+  hoje: string;
   onConfirmar: (valorPago: number, formaPagamento: string) => Promise<void>;
   onFechar: () => void;
 }
@@ -26,8 +31,9 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function PagarContaModal({ conta, onConfirmar, onFechar }: PagarContaModalProps) {
+export function PagarContaModal({ conta, hoje, onConfirmar, onFechar }: PagarContaModalProps) {
   const [erro, setErro] = useState<string | null>(null);
+  const idDoErroDoValor = useId();
   const {
     register,
     watch,
@@ -51,58 +57,68 @@ export function PagarContaModal({ conta, onConfirmar, onFechar }: PagarContaModa
   const valorAtual = Number(watch("valor")) || 0;
 
   return (
-    <Modal titulo="Marcar como paga" onFechar={onFechar}>
-      <form onSubmit={handleSubmit(aoConfirmar)} className="space-y-3 text-corpo">
-        <p className="text-sakura-purple-dark/80">
-          {conta.descricao} — venceu em {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
+    <Modal
+      titulo="Marcar como paga"
+      total={{ rotulo: "Valor da conta", valor: formatarMoeda(conta.valor) }}
+      onFechar={onFechar}
+    >
+      <form onSubmit={handleSubmit(aoConfirmar)} className="space-y-4 text-corpo">
+        <p className="text-texto-2">
+          <span className="font-medium text-texto">{conta.descricao}</span> —{" "}
+          {fraseDoVencimento(conta.vencimento, hoje)}
           {conta.recorrente ? " · a próxima ocorrência já é criada automaticamente" : ""}
         </p>
 
-        {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>}
+        {erro && (
+          <p
+            role="alert"
+            className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-3 py-2 text-perigo"
+          >
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span className="min-w-0">{erro}</span>
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sakura-purple-dark/80">Valor pago</span>
+          <label className="sakura-rotulo">
+            Valor pago
             <input
               type="number"
               min="0.01"
               step="0.01"
+              aria-invalid={errors.valor ? "true" : undefined}
+              aria-describedby={errors.valor ? idDoErroDoValor : undefined}
               {...register("valor")}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+              className="sakura-campo"
             />
             {errors.valor && (
-              <span className="text-rotulo text-red-600">{errors.valor.message}</span>
+              <span id={idDoErroDoValor} className="text-rotulo font-normal text-perigo">
+                {errors.valor.message}
+              </span>
             )}
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sakura-purple-dark/80">Forma de pagamento</span>
-            <input
-              type="text"
-              {...register("formaPagamento")}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-            />
+          <label className="sakura-rotulo">
+            Forma de pagamento
+            <input type="text" {...register("formaPagamento")} className="sakura-campo" />
           </label>
         </div>
 
-        <p className="rounded-lg bg-sakura-pink-soft/60 px-3 py-2 text-rotulo text-sakura-purple-dark/90">
-          Isso lança uma Saída de {formatarMoeda(valorAtual)} no Caixa automaticamente.
+        <p className="flex items-start gap-2 rounded-xl bg-poco px-3 py-2 text-rotulo text-texto-2">
+          <Info aria-hidden="true" className="mt-px size-4 shrink-0 text-info" />
+          <span>
+            Isso lança uma Saída de{" "}
+            <span className="font-semibold text-texto">{formatarMoeda(valorAtual)}</span> no Caixa
+            automaticamente.
+          </span>
         </p>
 
-        <div className="mt-4 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onFechar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-          >
+        <div className="flex justify-end gap-2 pt-1">
+          <Botao variante="fantasma" onClick={onFechar}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-          >
+          </Botao>
+          <Botao type="submit" variante="principal" ocupado={isSubmitting}>
             {isSubmitting ? "Confirmando..." : "Confirmar pagamento"}
-          </button>
+          </Botao>
         </div>
       </form>
     </Modal>
