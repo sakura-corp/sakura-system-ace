@@ -5,6 +5,7 @@ import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { Selo, type TipoDeSelo } from "@/components/Selo";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
+import { diaBrasileiro } from "@/lib/datas";
 import {
   listarModelosWhatsapp,
   registrarMensagemAberta,
@@ -203,7 +204,7 @@ export function PedidosCompraSection({
                     <td className="whitespace-nowrap font-medium">{nomePedido(pedido.numero)}</td>
                     <td>{pedido.fornecedor?.nome ?? "—"}</td>
                     <td className="whitespace-nowrap text-texto-2">
-                      {new Date(pedido.data_pedido).toLocaleDateString("pt-BR")}
+                      {diaBrasileiro(pedido.data_pedido)}
                     </td>
                     <td className="whitespace-nowrap text-right">
                       {formatarMoeda(totalPedido(pedido.itens ?? []))}
