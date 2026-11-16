@@ -321,7 +321,7 @@ Sessões filhas: não
 
 ---
 
-## Tarefa 7 — Ordens de Serviço e o Faturar em janela (PR #1055, esperando o "sim" dela)
+## Tarefa 7 — Ordens de Serviço e o Faturar em janela (FEITA em 16/11, #1055)
 
 ```
 Chefe: frontend
@@ -374,9 +374,9 @@ do tema claro são outras, mais escuras.
 
 ## Tarefas 8 em diante — As outras telas (com a equipe)
 
-> **Andamento em 16/11**: em PR, esperando a Sofia: Clientes, veículo e Garantias (#1057); Estoque,
-> Fornecedores e Serviços (#1059); Caixa (#1058); Contas (#1056); Notas Fiscais (#1060). Orçamentos
-> entrou na tarefa 7. Faltam: Relações, Funcionários, Configurações/Auditoria/Diagnóstico e os tokens.
+> **Andamento em 16/11**: na `main`: Clientes, veículo e Garantias (#1057); Estoque, Fornecedores e
+> Serviços (#1059); Caixa (#1058); Contas (#1056); Notas Fiscais (#1060); Funcionários (#1066).
+> Orçamentos entrou na tarefa 7. Faltam: Relações, Configurações/Auditoria/Diagnóstico (#1062) e os tokens.
 
 Uma tarefa por grupo do menu, cada uma depois do "sim" da Sofia no Início:
 Clientes e a ficha do veículo; Orçamentos e Garantias; Estoque, Fornecedores e Serviços; Caixa
