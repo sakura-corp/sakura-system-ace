@@ -30,6 +30,8 @@ export function lerTema(): Tema {
 
 function aplicar(tema: Tema) {
   document.documentElement.dataset.tema = tema;
+  // A faixa dos três botões da janela é pintada pelo Windows: avisa o tema.
+  window.sakuraApp?.definirTemaDaJanela?.(tema);
 }
 
 /** Chamado uma vez, antes de desenhar a primeira tela (src/main.tsx). */

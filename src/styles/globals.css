@@ -795,6 +795,63 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+
+/* ------------------------------------------------------------------
+   Tarefa 6 do visual novo (#990): a barra da janela e as telas de entrada.
+   ------------------------------------------------------------------ */
+
+/* A barra de cima, desenhada pelo programa. É a faixa de ARRASTAR; os três
+   botões da janela o Windows põe por cima, à direita (electron/main.ts). Fica
+   acima de tudo (até do fundo escuro das janelas), pra ser sempre arrastável. */
+.sakura-barra-janela {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: var(--barra-janela, 40px);
+  padding-left: 0.875rem;
+  background-color: var(--color-fundo);
+  border-bottom: 1px solid var(--color-linha);
+  color: var(--color-texto-2);
+  font-size: var(--text-rotulo);
+  line-height: var(--text-rotulo--line-height);
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+/* Com a barra própria, o programa começa abaixo dela: assim nenhum botão
+   fica embaixo dos três da janela. As telas que usam `h-screen` passam a
+   ocupar a altura que sobrou, e não 100vh (que estouraria a janela). */
+:root[data-barra="propria"] #root {
+  position: fixed;
+  inset: var(--barra-janela) 0 0 0;
+}
+:root[data-barra="propria"] #root .h-screen {
+  height: 100%;
+}
+/* O fundo das janelas (modais) começa abaixo da barra: uma janela alta não
+   fica com o título embaixo dela nem dos três botões do Windows. */
+:root[data-barra="propria"] .sakura-modal-fundo {
+  top: var(--barra-janela);
+}
+
+/* Login, conexão e trocar a senha (peça `TelaDeEntrada`): o grão fica no bloco
+   de fora, que não rola; o cartão de vidro no meio rola por dentro numa janela
+   baixa (a `margin: auto` do cartão centra sem cortar o alto). */
+.tela-de-entrada-rola {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 100%;
+  overflow: auto;
+  padding: 1.5rem 1rem;
+}
+.tela-de-entrada-rola > * {
+  margin: auto;
+}
+
 /* ------------------------------------------------------------------
    tarefa 4: o Início (visual novo, #990)
 
