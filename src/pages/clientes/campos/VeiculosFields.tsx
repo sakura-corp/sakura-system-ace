@@ -1,5 +1,6 @@
 import type { Control, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { useFieldArray } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
 import { MARCAS_VEICULO } from "@/lib/marcasVeiculo";
 import { type ClienteFormValues, veiculoFormVazio } from "@/schemas/cliente";
@@ -27,17 +28,18 @@ export function VeiculosFields({
         {fields.map((campo, index) => {
           const placa = register(`veiculos.${index}.placa`);
           return (
-            <div key={campo.id} className="relative rounded-xl border border-sakura-gray/30 p-4">
+            <div key={campo.id} className="relative rounded-xl border border-linha bg-poco p-4">
               {fields.length > 1 && (
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="text-rotulo font-medium text-sakura-muted">Veículo {index + 1}</p>
-                  <button
-                    type="button"
+                  <p className="text-rotulo font-medium text-texto-2">Veículo {index + 1}</p>
+                  <Botao
+                    tamanho="pequeno"
+                    variante="fantasma"
                     onClick={() => remove(index)}
-                    className="text-rotulo font-medium text-red-600 hover:underline"
+                    className="text-perigo hover:text-perigo"
                   >
                     Remover
-                  </button>
+                  </Botao>
                 </div>
               )}
               <input type="hidden" {...register(`veiculos.${index}.id`)} />
@@ -107,13 +109,13 @@ export function VeiculosFields({
         })}
       </div>
 
-      <button
-        type="button"
+      <Botao
+        tamanho="pequeno"
+        className="mt-4"
         onClick={() => append({ ...veiculoFormVazio })}
-        className="mt-4 text-rotulo font-medium text-sakura-purple hover:underline"
       >
         + Adicionar veículo
-      </button>
+      </Botao>
     </Secao>
   );
 }
