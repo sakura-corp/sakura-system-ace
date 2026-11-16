@@ -283,7 +283,7 @@ de aberto ou encolhido, em `src/lib/menuLateral.ts`. As fotos estão em `andamen
 | O quê | Como ficou |
 |---|---|
 | A moldura | O menu **encosta na borda da janela**, de cima a baixo, como no conceito (antes eram dois cartões soltos). Aberto, a tela ganha uns 36 px de largura; encolhido, 204 px. |
-| O alto do menu | A **flor da logo B** e o nome em letra de verdade. O Login, o ícone do programa e o site continuam com a logo antiga até a tarefa 6. |
+| O alto do menu | A **flor da logo B** e o nome em letra de verdade. O Login, o ícone do programa e o site passaram pra logo nova na tarefa 6. |
 | "Orçamentos" | Aberto, mostra o **número** dos em aberto (num selo laranja); encolhido, o **ponto laranja**. O número não sumiu. |
 | Encolhido | O nome de cada item aparece na dica (à direita) e continua existindo pra leitor de tela. O título do grupo vira um traço. |
 | Quem está logado | As iniciais num círculo, o nome e o usuário. Encolhido, só as iniciais (o nome na dica). |
@@ -361,6 +361,62 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
   (1024 px, o do instalador), `src/components/Logo.tsx`, e as cópias em `site/`.
 - **A regra da apresentação comercial continua**: sem a flor na capa e no encerramento, até ela dizer
   o contrário (`docs/decisoes.md`).
+
+### Como saiu no programa (tarefa 6, 15/11)
+
+Fotos em `andamento/6-logo-login/` (o Login em 1366×768 e 1920×1080, escuro e claro, tiradas no
+Electron de verdade; conexão e trocar senha; o ícone em 16, 32, 256 e 1024 px; o topo com a barra).
+
+| O quê | Como ficou |
+|---|---|
+| A logo | A **flor da logo B** em `public/sakura-icon.svg` (a mesma do menu; saiu o `sakura-flor.svg`) e a versão pequena em `public/sakura-icon-mini.svg` (aba e barra da janela). Saíram `sakura-logo.svg` e `sakura-logo-claro.svg`. |
+| O ícone do programa | `build/icon.png` (1024 px): a B no **quadrado claro**, como ela decidiu em 14/11. |
+| `Logo.tsx` | A flor e, embaixo, o nome em letra de verdade (Plus Jakarta Sans 800), "AUTOCENTER EDITION" espaçado e "by Sakura Corp". A flor é a mesma nos dois temas (brilho laranja no escuro, sombra fina no claro); o nome usa `texto` e `texto-2`, que já trocam sozinhos. |
+| Login, conexão, trocar senha | Pelo molde `TelaDeEntrada` (fundo de marca com grão que não rola; cartão `sakura-vidro` que rola por dentro numa janela baixa), com `sakura-campo`, `sakura-rotulo` e `Botao`. Nenhum campo, botão ou texto saiu: o "Bem-vindo de volta" e a frase de baixo ficaram, menores, embaixo da logo. |
+| A versão no canto | Ganhou um fundo pequeno e arredondado e a palavra "versão": sobre a mancha laranja ela sumia. |
+| A barra da janela | `titleBarStyle: "hidden"` com `titleBarOverlay` (40 px, nas cores de `fundo` e `texto` de cada tema) no `electron/main.ts`. A peça `BarraDaJanela` desenha a flor e o nome e é a **faixa de arrastar**; os três botões são do Windows. O tema avisa a janela (`definirTemaDaJanela`) pra faixa dos botões trocar de cor junto. |
+| Nada embaixo dos botões | Com a barra própria, o `#root` começa 40 px abaixo do topo (`:root[data-barra="propria"]` no `globals.css`, bloco "tarefa 6") e as telas `h-screen` ocupam a altura que sobrou. Fora do Electron (navegador, varreduras) e no Mac nada disso existe. |
+| O fundo ao abrir | `backgroundColor` da janela: de `#FFF7FC` (rosa) para `#0A0A0D`. |
+| O canto arredondado | **Não forçado** (recomendação mantida): vem sozinho no Windows 11. |
+| O site | `site/`: o ícone novo e o nome em texto no topo da página (o `site/sakura-logo.svg` ficou: a apresentação comercial ainda o usa como marca-d'água). A flor **não** entrou na capa nem no fim da apresentação comercial. |
+
+**O teste do Electron** (`npm run test:electron`) ganhou sete checagens da barra: a janela sabe que a
+barra é do programa; ela está no topo, com 40 px e de ponta a ponta; é a faixa de arrastar; o
+programa começa abaixo dela; a janela nasce escura; e a faixa dos botões troca de cor com o tema (e
+ignora tema inválido). Vistas reprovar trocando o fundo de volta para o rosa e a cor do tema claro.
+O que ele **não** prova (a sessão é Linux): arrastar, duplo clique, encaixe e os botões de verdade.
+
+**Teste da Sofia no Windows (10 e 11), com o instalador de teste:**
+1. Instalar a versão de teste e abrir o programa. **Deve** aparecer o Login com o fundo escuro desde
+   o primeiro instante (nenhum piscar rosa) e uma barra escura no topo com a flor e "Sakura System ·
+   AutoCenter Edition"; os três botões (minimizar, maximizar, fechar) no canto direito, na mesma cor.
+2. Arrastar a janela segurando em qualquer ponto vazio da barra: **ela se move**.
+3. Dar **duplo clique** na barra: **a janela maximiza**; de novo, **volta**.
+4. Arrastar a janela até a borda esquerda e a direita da tela: **ela encaixa na metade** (Windows 10:
+   solta o mouse; Windows 11: aparece o quadro de encaixe).
+5. Clicar nos três botões, um de cada vez: minimizar esconde, maximizar/restaurar alterna, fechar
+   fecha. Passar o mouse no de fechar: **fica vermelho**.
+6. Entrar, ir em Configurações > Aparência e trocar para o tema claro: **a barra e a faixa dos três
+   botões ficam claras juntas**, com os símbolos escuros. Voltar para o escuro.
+7. Olhar o canto de cima do menu e dos cartões: **nenhum botão do programa fica embaixo dos três da
+   janela**. Abrir uma janela (por exemplo "Faturar"): o fundo escurece só o que está abaixo da barra, e a
+   barra continua no lugar e dá pra arrastar.
+8. Ícone: na área de trabalho, na barra de tarefas e no canto da janela do instalador, **a flor no
+   quadrado claro** (no canto da janela e na barra de tarefas o Windows usa os tamanhos pequenos: se
+   a flor ficar borrada em 16 px, avisar; a versão `mini` existe pra isso).
+9. Windows 11: o canto da janela **é arredondado**. Windows 10: é reto (esperado).
+
+**Os três montes (seção 12):**
+- **Já fez**: a "Sair" da troca de senha virou botão (era um link pequeno, difícil de acertar); as
+  mensagens de erro do Login, da conexão e da troca de senha ganharam `role="alert"` e cor do papel
+  `perigo` (leem melhor nos dois temas); a versão no canto ganhou fundo.
+- **Sugere**: (1) trocar a frase "Bem-vindo de volta / Entre com seu usuário para continuar" por uma
+  só, já que a logo diz onde a pessoa está (não removi: nada some sem ela decidir); (2) a tela de
+  conexão fala de "Project Settings → API Keys, aba Legacy anon", palavras do painel do Supabase que
+  a loja não deveria precisar ler: esse passo é de quem instala, e o texto pode ficar mais curto.
+- **Sugere também**: a dica (`Dica.tsx`) não sabe da barra de 40 px: perto do topo, à direita, ela pode ficar atrás dos três botões do Windows. Só se vê no Windows; conferir no teste.
+- **Virou tarefa**: o `apresentacao/apresentacao.html` ainda usa a logo antiga (de propósito, pela regra da flor); e o `docs/decisoes.md` (linha da "Logo") ainda descreve a logo antiga: é da
+  coordenadora atualizar.
 
 ## 10. Como levar pro programa sem quebrar as 54 telas
 
