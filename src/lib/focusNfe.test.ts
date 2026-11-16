@@ -167,6 +167,32 @@ describe("montarCorpoNFCe", () => {
     expect(Number(corpo.items[0].valor_unitario_comercial)).toBeCloseTo(225, 10);
   });
 
+  // #981: o CFOP sai na nota só com os números, mesmo gravado com ponto ou
+  // espaço na peça (o aviso do #968 já comparava assim).
+  function cfopDoItem(cfop: string | null): string {
+    const corpo = montarCorpoNFCe({
+      ordem: { numero: 1 } as never,
+      itens: [{ peca: peca({ cfop_padrao: cfop }), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+      cliente: clientePessoaFisica(),
+      pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+      configuracaoFiscal: configuracaoFiscal(),
+    });
+    return corpo.items[0].cfop;
+  }
+
+  it("tira o ponto do CFOP gravado na peça (\"5.405\" sai \"5405\")", () => {
+    expect(cfopDoItem("5.405")).toBe("5405");
+  });
+
+  it("tira os espaços do CFOP gravado na peça (\" 5102 \" sai \"5102\")", () => {
+    expect(cfopDoItem(" 5102 ")).toBe("5102");
+  });
+
+  it("peça sem CFOP continua saindo 5102, e CFOP vazio continua vazio", () => {
+    expect(cfopDoItem(null)).toBe("5102");
+    expect(cfopDoItem("")).toBe("");
+  });
+
   it("usa o valor já com desconto como base do IBS/CBS e do ICMS", () => {
     const corpo = montarCorpoNFCe({
       ordem: { numero: 1 } as never,
