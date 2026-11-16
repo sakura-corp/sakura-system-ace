@@ -142,7 +142,7 @@ export function CaixaPage() {
         role="tablist"
         aria-label="Partes do caixa"
         onKeyDown={andarPelasAbas}
-        className="flex gap-1 border-b border-linha"
+        className="sakura-abas"
       >
         {ABAS.map(({ chave, rotulo }, i) => (
           <AbaBotao
@@ -208,14 +208,10 @@ const ABAS: { chave: Aba; rotulo: string }[] = [
 ];
 
 /**
- * A aba do visual novo: o traço laranja embaixo da escolhida (regra 2, "a aba
- * ativa" é um dos lugares do laranja) e a palavra em negrito na cor do texto,
- * porque cor sozinha não avisa. A aparência segue o `aria-selected`, o mesmo
- * estado que o leitor de tela anuncia.
- *
- * É o mesmo desenho das abas da tarefa 7 (Ordens de Serviço), que criou a peça
- * `sakura-aba` no globals.css; esta tarefa partiu de antes dela. Quando as duas
- * estiverem na `main`, esta aba pode virar a peça (sugestão no PR).
+ * A aba do visual novo: a peça `sakura-aba` (tarefa 7), com o traço laranja
+ * embaixo da escolhida e a palavra em negrito. A aparência segue o
+ * `aria-selected`, o mesmo estado que o leitor de tela anuncia. As setas entre
+ * as abas são desta tela (`andarPelasAbas`).
  */
 function AbaBotao({
   ref,
@@ -242,16 +238,7 @@ function AbaBotao({
       // abas que o leitor de tela anuncia).
       tabIndex={ativa ? 0 : -1}
       onClick={onClick}
-      className={[
-        "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo font-medium text-texto-2",
-        "transition-colors hover:bg-passar hover:text-texto",
-        "after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-sm after:content-['']",
-        "aria-selected:font-semibold aria-selected:text-texto",
-        // O traço laranja é só uma linha de 2 px embaixo, não o fundo da
-        // palavra: fica numa string à parte pra varredura de contraste (que
-        // olha string por string) não somar o laranja com a letra.
-        "aria-selected:after:bg-acao",
-      ].join(" ")}
+      className="sakura-aba"
     >
       {label}
     </button>
