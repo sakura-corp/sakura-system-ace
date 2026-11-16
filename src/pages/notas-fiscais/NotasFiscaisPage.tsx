@@ -17,11 +17,17 @@ const ABAS: { tipo: TipoNotaFiscal; rotulo: string }[] = [
 // de tela anuncia. Igual à `sakura-aba` da tarefa 7, escrita aqui porque
 // aquela ainda não está na `main` (sugestão no PR: trocar pela classe quando
 // ela entrar).
-const CLASSE_ABA =
-  "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo font-medium text-texto-2 transition-colors " +
-  "hover:bg-passar hover:text-texto " +
-  "after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:content-[''] " +
-  "aria-selected:font-semibold aria-selected:text-texto aria-selected:after:bg-acao";
+//
+// O traço é uma constante à parte de propósito: ele é um risco de 2 px
+// EMBAIXO da palavra, não o fundo dela. Juntos na mesma string, o
+// `npm run contraste` lê "fundo laranja com letra clara" e avisa à toa.
+const TRACO_DA_ABA =
+  "after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:content-[''] aria-selected:after:bg-acao";
+const CLASSE_ABA = [
+  "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo font-medium text-texto-2 transition-colors",
+  "hover:bg-passar hover:text-texto aria-selected:font-semibold aria-selected:text-texto",
+  TRACO_DA_ABA,
+].join(" ");
 
 export function NotasFiscaisPage() {
   const [aba, setAba] = useState<TipoNotaFiscal>("nfe");

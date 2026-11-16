@@ -18,6 +18,12 @@ interface CancelarNotaModalProps {
 // com um erro de validação sobre o tamanho do texto.
 const TAMANHO_MINIMO_JUSTIFICATIVA = 15;
 
+// O botão de confirmar: vermelho cheio com letra branca quando dá pra
+// clicar; cinza com a letra secundária quando não (como o botão desligado
+// das peças: dá pra ler o que ele faria).
+const VERMELHO_LIGADO = "bg-red-600 text-white hover:bg-red-700 active:scale-[0.97]";
+const CINZA_DESLIGADO = "cursor-not-allowed bg-passar text-texto-2";
+
 export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNotaModalProps) {
   const [justificativa, setJustificativa] = useState("");
   const [cancelando, setCancelando] = useState(false);
@@ -62,7 +68,9 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
             onClick={handleConfirmar}
             disabled={!justificativaValida || cancelando}
             aria-busy={cancelando || undefined}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-corpo font-semibold text-white transition hover:bg-red-700 active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-passar disabled:text-texto-2"
+            className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-corpo font-semibold transition ${
+              justificativaValida && !cancelando ? VERMELHO_LIGADO : CINZA_DESLIGADO
+            }`}
           >
             {cancelando ? "Cancelando..." : "Confirmar cancelamento"}
           </button>
