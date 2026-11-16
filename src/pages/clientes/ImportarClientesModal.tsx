@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { diaBrasileiro, diaLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
@@ -249,10 +250,6 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
     }
   }
 
-  const botaoPrincipal =
-    "rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50";
-  const botaoSecundario =
-    "rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50";
 
   const visiveis: { linha: LinhaConferida; indice: number }[] = conferencia
     ? conferencia.linhas
@@ -354,9 +351,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                               >
                                 Sim, desfazer
                               </button>
-                              <button type="button" onClick={() => setConfirmandoLote(null)} className={botaoSecundario}>
+                              <Botao variante="fantasma" onClick={() => setConfirmandoLote(null)}>
                                 Não
-                              </button>
+                              </Botao>
                             </span>
                           ) : (
                             <button
@@ -377,9 +374,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
           </section>
 
           <div className="flex justify-end">
-            <button type="button" onClick={onFechar} className={botaoSecundario}>
+            <Botao variante="fantasma" onClick={onFechar}>
               Cancelar
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -445,12 +442,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
             </p>
           )}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setPasso("arquivo")} className={botaoSecundario}>
+            <Botao variante="fantasma" onClick={() => setPasso("arquivo")}>
               Voltar
-            </button>
-            <button type="button" onClick={irParaRevisao} disabled={!temNome || ocupado} className={botaoPrincipal}>
+            </Botao>
+            <Botao variante="principal" onClick={irParaRevisao} disabled={!temNome || ocupado}>
               {ocupado ? "Conferindo..." : "Continuar"}
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -565,28 +562,23 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
           {visiveis.length > quantasMostrar && (
             <p className="flex items-center gap-3 text-corpo text-sakura-muted">
               Mostrando {quantasMostrar} de {visiveis.length} linhas: faltam {visiveis.length - quantasMostrar} linhas.
-              <button
-                type="button"
-                onClick={() => setQuantasMostrar((n) => n + LINHAS_POR_VEZ)}
-                className={botaoSecundario}
-              >
+              <Botao variante="fantasma" onClick={() => setQuantasMostrar((n) => n + LINHAS_POR_VEZ)}>
                 Mostrar mais {LINHAS_POR_VEZ}
-              </button>
+              </Botao>
             </p>
           )}
 
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setPasso("colunas")} className={botaoSecundario}>
+            <Botao variante="fantasma" onClick={() => setPasso("colunas")}>
               Voltar
-            </button>
-            <button
-              type="button"
+            </Botao>
+            <Botao
+              variante="principal"
               onClick={() => setPasso("confirmar")}
               disabled={conferencia.clientes.length === 0}
-              className={botaoPrincipal}
             >
               Continuar
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -625,17 +617,17 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               )}
               <div className="flex justify-end gap-3">
                 {gravacaoParou ? (
-                  <button type="button" onClick={irParaRevisao} className={botaoPrincipal}>
+                  <Botao variante="principal" onClick={irParaRevisao}>
                     Recomeçar pela revisão
-                  </button>
+                  </Botao>
                 ) : (
                   <>
-                    <button type="button" onClick={() => setPasso("revisar")} className={botaoSecundario}>
+                    <Botao variante="fantasma" onClick={() => setPasso("revisar")}>
                       Voltar
-                    </button>
-                    <button type="button" onClick={confirmar} className={botaoPrincipal}>
+                    </Botao>
+                    <Botao variante="principal" onClick={confirmar}>
                       Confirmar importação
-                    </button>
+                    </Botao>
                   </>
                 )}
               </div>
@@ -674,12 +666,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
             </div>
           )}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={copiarRelatorio} className={botaoSecundario}>
+            <Botao variante="fantasma" onClick={copiarRelatorio}>
               {copiado ? "Relatório copiado" : "Copiar relatório"}
-            </button>
-            <button type="button" onClick={onFechar} className={botaoPrincipal}>
+            </Botao>
+            <Botao variante="principal" onClick={onFechar}>
               Fechar
-            </button>
+            </Botao>
           </div>
         </div>
       )}
