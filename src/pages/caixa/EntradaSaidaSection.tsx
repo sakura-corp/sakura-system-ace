@@ -1,4 +1,9 @@
+import { Plus, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Botao } from "@/components/Botao";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Selo } from "@/components/Selo";
+import { Valor } from "@/components/Valor";
 import {
   movimentosManuais,
   movimentosSemCategoria,
@@ -60,18 +65,21 @@ export function EntradaSaidaSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-corpo text-sakura-muted">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="min-w-0 flex-1 basis-80 text-corpo text-texto-2">
           Lançamentos manuais de {rotulo} — não inclui faturamento de OS, que já aparece na
           aba Diário
         </p>
         {!mostrarFormulario && (
-          <button
+          // Um botão laranja por tela (regra 2): com o "Categorizar" aberto, o
+          // próximo passo é o "Salvar" de lá, e este vira secundário.
+          <Botao
+            variante={mostrarCategorizar ? "secundario" : "principal"}
+            icone={<Plus />}
             onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
           >
-            + Nova {rotulo}
-          </button>
+            Nova {rotulo}
+          </Botao>
         )}
       </div>
 
@@ -86,21 +94,20 @@ export function EntradaSaidaSection({
       )}
 
       {resumoSemCategoria.quantidade > 0 && !mostrarCategorizar && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-950/40 px-4 py-3">
-          <p className="text-corpo text-amber-200">
-            {resumoSemCategoria.quantidade === 1
-              ? "1 lançamento antigo está sem categoria"
-              : `${resumoSemCategoria.quantidade} lançamentos antigos estão sem categoria`}
-            , somando {formatarMoeda(resumoSemCategoria.total)} — eles ficam de fora do
-            resumo por categoria.
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-atencao/[0.12] px-4 py-3">
+          <p className="flex min-w-0 flex-1 basis-80 items-start gap-2 text-corpo text-atencao">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span className="min-w-0">
+              {resumoSemCategoria.quantidade === 1
+                ? "1 lançamento antigo está sem categoria"
+                : `${resumoSemCategoria.quantidade} lançamentos antigos estão sem categoria`}
+              , somando {formatarMoeda(resumoSemCategoria.total)} — eles ficam de fora do
+              resumo por categoria.
+            </span>
           </p>
-          <button
-            onClick={() => setMostrarCategorizar(true)}
-            disabled={categoriasDoTipo.length === 0}
-            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-40"
-          >
+          <Botao onClick={() => setMostrarCategorizar(true)} disabled={categoriasDoTipo.length === 0}>
             Categorizar agora
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -117,19 +124,23 @@ export function EntradaSaidaSection({
         />
       )}
 
-      <div className="sakura-card p-4">
-        <p className="text-rotulo text-sakura-muted">Total de {rotulo}s (todo o período)</p>
-        <p className="text-destaque font-semibold text-sakura-purple-dark">{formatarMoeda(total)}</p>
+      <div className="grid grid-cols-4 gap-4">
+        <CartaoNumero
+          titulo={`Total de ${rotulo}s (todo o período)`}
+          explicacao={`A soma de todas as ${rotulo}s desta loja que não vieram de uma ordem de serviço, desde o primeiro lançamento. O faturamento das ordens está na aba Diário.`}
+        >
+          <Valor valor={total} />
+        </CartaoNumero>
       </div>
 
       {porCategoria.length > 0 && (
         <section>
-          <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Por categoria</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <h2 className="mb-3 font-titulo text-corpo font-semibold text-texto">Por categoria</h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {porCategoria.map(([nome, valor]) => (
               <div key={nome} className="sakura-card px-4 py-3">
-                <p className="text-rotulo text-sakura-muted">{nome}</p>
-                <p className="text-destaque font-semibold text-sakura-purple-dark">
+                <p className="text-rotulo font-medium text-texto-2">{nome}</p>
+                <p className="mt-0.5 font-titulo text-destaque font-semibold tabular-nums text-texto">
                   {formatarMoeda(valor)}
                 </p>
               </div>
@@ -139,27 +150,37 @@ export function EntradaSaidaSection({
       )}
 
       {manuais.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum lançamento manual de {rotulo} ainda.</p>
+        <p className="sakura-card px-[18px] py-4 text-corpo text-texto-2">
+          Nenhum lançamento manual de {rotulo} ainda.
+        </p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Descrição</th>
-                <th className="px-4 py-3 font-medium">Forma de pagamento</th>
-                <th className="px-4 py-3 font-medium">Valor</th>
+                <th>Data</th>
+                <th>Categoria</th>
+                <th>Descrição</th>
+                <th>Forma de pagamento</th>
+                <th className="text-right">Valor</th>
               </tr>
             </thead>
             <tbody>
               {manuais.map((m) => (
-                <tr key={m.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{new Date(m.data).toLocaleDateString("pt-BR")}</td>
-                  <td className="px-4 py-3">{m.categoria?.nome ?? "—"}</td>
-                  <td className="px-4 py-3">{m.descricao || "—"}</td>
-                  <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
-                  <td className="px-4 py-3 font-medium">{formatarMoeda(m.valor)}</td>
+                <tr key={m.id}>
+                  <td className="whitespace-nowrap text-texto-2">
+                    {new Date(m.data).toLocaleDateString("pt-BR")}
+                  </td>
+                  <td className="text-texto">
+                    {m.categoria?.nome ?? <Selo tipo="neutro" palavra="Sem categoria" />}
+                  </td>
+                  <td className="text-texto">{m.descricao || "—"}</td>
+                  <td className="text-texto-2">
+                    {m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}
+                  </td>
+                  <td className="whitespace-nowrap text-right font-semibold text-texto">
+                    {formatarMoeda(m.valor)}
+                  </td>
                 </tr>
               ))}
             </tbody>

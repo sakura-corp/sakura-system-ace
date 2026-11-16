@@ -1,8 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowUp, Check, TriangleAlert, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Botao } from "@/components/Botao";
 import { BotaoResumoDono } from "@/components/BotaoResumoDono";
+import { Selo } from "@/components/Selo";
 import { Valor } from "@/components/Valor";
 import { diaLocal, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
@@ -27,6 +30,7 @@ import {
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { ModuloChave } from "@/types/operador";
+import { Aviso } from "./Aviso";
 
 interface FechamentoSectionProps {
   lojaId: string;
@@ -56,8 +60,37 @@ function diaBonito(dia: string): string {
   return `${d}/${mes}/${ano}`;
 }
 
-const campo =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const campo = "sakura-campo";
+
+/**
+ * A diferença de um dia já fechado, num selo com a palavra: "Bateu", "Faltou
+ * R$ 12,50", "Sobrou R$ 5,00". Antes a sobra era só um número amarelo, sem
+ * sinal e sem ícone (cor sozinha não avisa, regra 4). O valor é o que o banco
+ * gravou; aqui só se escolhe a palavra pelo sinal.
+ */
+function SeloDaDiferenca({ diferenca }: { diferenca: number }) {
+  const situacao = situacaoDaDiferenca(diferenca);
+  if (situacao === "bateu") return <Selo tipo="ok" palavra="Bateu" />;
+  if (situacao === "faltou") return <Selo tipo="perigo" palavra={`Faltou ${formatarMoeda(-diferenca)}`} />;
+  return <Selo tipo="atencao" icone={ArrowUp} palavra={`Sobrou ${formatarMoeda(diferenca)}`} />;
+}
+
+/**
+ * Uma diferença diferente de zero como número com sinal: a falta é o `<Valor>`
+ * (▼ e −, em vermelho) e a sobra ganha a seta pra cima e o "+" (antes era só
+ * um número amarelo, sem sinal). Serve pro cartão do dia fechado e pra soma do
+ * histórico, que é um SALDO de vários dias (faltou 50 num, sobrou 20 noutro:
+ * −R$ 30,00), e por isso não leva a palavra "Faltaram", que faria parecer que
+ * foi o total que faltou.
+ */
+function DiferencaComSinal({ diferenca, className = "" }: { diferenca: number; className?: string }) {
+  if (diferenca < 0) return <Valor valor={diferenca} className={className} />;
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap text-atencao ${className}`.trim()}>
+      <ArrowUp aria-hidden="true" className="size-[1em] shrink-0" strokeWidth={2.5} />+{formatarMoeda(diferenca)}
+    </span>
+  );
+}
 
 export function FechamentoSection({
   lojaId,
@@ -78,24 +111,24 @@ export function FechamentoSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          Dia:
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <label className="sakura-rotulo w-44">
+          Dia
           <input
             type="date"
             value={dia}
             max={hoje}
             onChange={(e) => e.target.value && setDia(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
+            className="sakura-campo sakura-campo-filtro"
           />
         </label>
-        <p className="text-rotulo text-sakura-muted">
+        <p className="pb-2 text-rotulo text-texto-2">
           Conte o dinheiro da gaveta e compare com o que o sistema espera.
         </p>
       </div>
 
       {dia > hoje ? (
-        <p className="text-corpo text-sakura-muted">Não dá pra fechar um dia que ainda não chegou.</p>
+        <p className="text-corpo text-texto-2">Não dá pra fechar um dia que ainda não chegou.</p>
       ) : fechamentoDoDia ? (
         <FechamentoFeito
           lojaId={lojaId}
@@ -198,81 +231,89 @@ function FecharDia({
 
   return (
     <form onSubmit={handleSubmit(aoFechar)} className="space-y-5 sakura-card p-6">
-      <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+      <h2 className="font-titulo text-subtitulo font-semibold text-texto">
         Fechar o caixa de {diaBonito(dia)}
       </h2>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
-          <p className="text-corpo font-medium text-sakura-purple-dark">Dinheiro que devia estar na gaveta</p>
+          <p className="text-corpo font-semibold text-texto">Dinheiro que devia estar na gaveta</p>
           <label className="flex items-center justify-between gap-3 text-corpo">
-            <span className="text-sakura-purple-dark/85">Troco que já estava na gaveta ao abrir</span>
+            <span className="text-texto-2">Troco que já estava na gaveta ao abrir</span>
             <input
               type="number"
               min="0"
               step="0.01"
               placeholder="0,00"
+              aria-invalid={errors.fundo ? true : undefined}
               {...register("fundo")}
-              className={`${campo} w-36 text-right`}
+              className={`${campo} w-36 text-right tabular-nums`}
             />
           </label>
-          {errors.fundo && <p className="text-rotulo text-red-400">{errors.fundo.message}</p>}
+          {errors.fundo && <p className="text-rotulo text-perigo">{errors.fundo.message}</p>}
           <LinhaConta rotulo="+ Entradas em dinheiro" valor={resumo.entradasDinheiro} />
           <LinhaConta rotulo="− Saídas em dinheiro" valor={-resumo.saidasDinheiro} />
-          <div className="flex items-center justify-between border-t border-sakura-gray/30 pt-3">
-            <span className="text-corpo font-semibold text-sakura-purple-dark">= Esperado na gaveta</span>
-            <Valor valor={resumo.esperado} className="text-destaque font-semibold" />
+          <div className="flex items-center justify-between border-t border-linha-forte pt-3">
+            <span className="text-corpo font-semibold text-texto">= Esperado na gaveta</span>
+            <Valor valor={resumo.esperado} className="font-titulo text-destaque font-semibold tabular-nums" />
           </div>
 
           {resumo.semForma.quantidade > 0 && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <Aviso tipo="atencao" icone={TriangleAlert} className="text-rotulo">
               {resumo.semForma.quantidade === 1
                 ? "1 lançamento está"
                 : `${resumo.semForma.quantidade} lançamentos estão`}{" "}
               sem forma de pagamento ({formatarMoeda(resumo.semForma.entradas)} de entrada,{" "}
               {formatarMoeda(resumo.semForma.saidas)} de saída) e não entraram nesta conta. Se foram em
               dinheiro, é provável que a diferença venha daí.
-            </p>
+            </Aviso>
           )}
         </div>
 
         <div className="space-y-3">
           <label className="flex flex-col gap-1 text-corpo">
-            <span className="font-medium text-sakura-purple-dark">Quanto tem na gaveta agora (contado)</span>
+            <span className="font-semibold text-texto">Quanto tem na gaveta agora (contado)</span>
             <input
               type="number"
               min="0"
               step="0.01"
               placeholder="0,00"
               autoFocus
+              aria-invalid={errors.contado ? true : undefined}
               {...register("contado")}
-              className={`${campo} text-destaque`}
+              className={`${campo} h-12 font-titulo text-destaque font-semibold tabular-nums`}
             />
-            {errors.contado && <span className="text-rotulo text-red-400">{errors.contado.message}</span>}
+            {errors.contado && <span className="text-rotulo text-perigo">{errors.contado.message}</span>}
           </label>
 
-          {situacao && diferenca !== null && (
-            <p
-              className={`rounded-lg px-3 py-2 text-corpo font-medium ${
-                situacao === "bateu"
-                  ? "bg-emerald-50 text-emerald-800"
+          {/* Anunciado ao digitar: quem conta a gaveta olhando pro dinheiro
+              ouve se bateu sem tirar o olho dele. A região fica sempre na
+              tela (vazia antes do primeiro número): se ela nascesse junto com
+              o aviso, o leitor de tela pularia o primeiro. */}
+          <div aria-live="polite">
+            {situacao && diferenca !== null && (
+              <Aviso
+                tipo={situacao === "bateu" ? "ok" : situacao === "faltou" ? "perigo" : "atencao"}
+                icone={situacao === "bateu" ? Check : situacao === "faltou" ? TriangleAlert : ArrowUp}
+                className="text-corpo font-semibold"
+              >
+                {situacao === "bateu"
+                  ? "Bateu certinho."
                   : situacao === "faltou"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-amber-50 text-amber-800"
-              }`}
-            >
-              {situacao === "bateu"
-                ? "✓ Bateu certinho."
-                : situacao === "faltou"
-                  ? `▼ Faltam ${formatarMoeda(-diferenca)} — vira uma Saída "Quebra de caixa".`
-                  : `▲ Sobram ${formatarMoeda(diferenca)} — vira uma Entrada "Sobra de caixa".`}
-            </p>
-          )}
+                    ? `Faltam ${formatarMoeda(-diferenca)} — vira uma Saída "Quebra de caixa".`
+                    : `Sobram ${formatarMoeda(diferenca)} — vira uma Entrada "Sobra de caixa".`}
+              </Aviso>
+            )}
+          </div>
 
           <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/85">Observação (se sobrou ou faltou, o que pode ter sido)</span>
+            <span className="text-texto-2">Observação (se sobrou ou faltou, o que pode ter sido)</span>
             <textarea rows={2} {...register("observacao")} className={campo} />
           </label>
         </div>
@@ -280,17 +321,17 @@ function FecharDia({
 
       {resumo.outrasFormas.length > 0 && (
         <div>
-          <p className="mb-2 text-corpo font-medium text-sakura-purple-dark">
+          <p className="mb-2 text-corpo font-semibold text-texto">
             Não passa pela gaveta — confira com o extrato
           </p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {resumo.outrasFormas.map((f) => (
-              <div key={f.forma} className="rounded-lg bg-poco px-4 py-3">
-                <p className="text-rotulo text-sakura-muted">{f.rotulo}</p>
-                <p className="text-corpo font-semibold text-sakura-purple-dark">
+              <div key={f.forma} className="rounded-xl bg-poco px-4 py-3">
+                <p className="text-rotulo font-medium text-texto-2">{f.rotulo}</p>
+                <p className="text-corpo font-semibold tabular-nums text-texto">
                   {formatarMoeda(f.entradas)}
                   {f.saidas > 0 && (
-                    <span className="block text-rotulo font-normal text-sakura-muted">
+                    <span className="block text-rotulo font-normal text-texto-2">
                       saídas: {formatarMoeda(f.saidas)}
                     </span>
                   )}
@@ -302,13 +343,9 @@ function FecharDia({
       )}
 
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao variante="principal" type="submit" ocupado={isSubmitting}>
           {isSubmitting ? "Fechando..." : `Fechar o caixa de ${diaBonito(dia)}`}
-        </button>
+        </Botao>
       </div>
     </form>
   );
@@ -317,8 +354,8 @@ function FecharDia({
 function LinhaConta({ rotulo, valor }: { rotulo: string; valor: number }) {
   return (
     <div className="flex items-center justify-between text-corpo">
-      <span className="text-sakura-purple-dark/85">{rotulo}</span>
-      <span className="text-sakura-purple-dark">{formatarMoeda(Math.abs(valor))}</span>
+      <span className="text-texto-2">{rotulo}</span>
+      <span className="tabular-nums text-texto">{formatarMoeda(Math.abs(valor))}</span>
     </div>
   );
 }
@@ -413,10 +450,11 @@ function FechamentoFeito({
     <section className="space-y-4 sakura-card p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
-            ✓ Caixa de {diaBonito(fechamento.data)} fechado
+          <h2 className="flex items-center gap-2 font-titulo text-subtitulo font-semibold text-texto">
+            <Check aria-hidden="true" className="size-5 shrink-0 text-ok" strokeWidth={2.5} />
+            Caixa de {diaBonito(fechamento.data)} fechado
           </h2>
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             {fechamento.operador?.nome ? `por ${fechamento.operador.nome}, ` : ""}
             em {new Date(fechamento.criado_em).toLocaleString("pt-BR")}
           </p>
@@ -424,48 +462,50 @@ function FechamentoFeito({
         <div className="flex min-w-0 flex-wrap items-start gap-2">
           <BotaoResumoDono escolhas={[{ rotulo: "Resumo pro dono", montarTexto: montarResumo }]} />
           {podeDesfazer && (
-            <button
-              type="button"
-              onClick={desfazer}
-              disabled={desfazendo}
-              className="min-h-8 rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
-            >
+            <Botao variante="fantasma" icone={<Undo2 />} onClick={desfazer} ocupado={desfazendo}>
               {desfazendo ? "Desfazendo..." : "Desfazer fechamento"}
-            </button>
+            </Botao>
           )}
         </div>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
+      )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Cartao rotulo="Troco ao abrir" valor={fechamento.fundo_troco} />
         <Cartao rotulo="Esperado na gaveta" valor={fechamento.saldo_sistema} />
         <Cartao rotulo="Contado" valor={fechamento.valor_contado} />
-        <div className="rounded-lg bg-poco px-4 py-3">
-          <p className="text-rotulo text-sakura-muted">
+        <div className="rounded-xl bg-poco px-4 py-3">
+          <p className="text-rotulo font-medium text-texto-2">
             {situacao === "bateu" ? "Diferença" : situacao === "faltou" ? "Faltou" : "Sobrou"}
           </p>
-          <p className="text-destaque font-semibold">
+          <p className="font-titulo text-destaque font-semibold tabular-nums">
             {situacao === "bateu" ? (
-              <span className="text-sakura-purple-dark">Bateu</span>
+              <span className="inline-flex items-center gap-1.5 text-ok">
+                <Check aria-hidden="true" className="size-5 shrink-0" strokeWidth={2.5} />
+                Bateu
+              </span>
             ) : (
-              <Valor valor={fechamento.diferenca} />
+              <DiferencaComSinal diferenca={fechamento.diferenca} />
             )}
           </p>
         </div>
       </div>
 
       {fechamento.observacao && (
-        <p className="text-corpo text-sakura-purple-dark/85">
-          <span className="text-sakura-muted">Observação: </span>
+        <p className="text-corpo text-texto">
+          <span className="text-texto-2">Observação: </span>
           {fechamento.observacao}
         </p>
       )}
 
       {depois.length > 0 && (
-        <div className="rounded-lg bg-amber-50 px-4 py-3 text-corpo text-amber-800">
-          <p className="font-medium">
+        <Aviso tipo="atencao" icone={TriangleAlert} className="text-corpo">
+          <p className="font-semibold">
             {depois.length === 1
               ? "1 lançamento entrou depois do fechamento"
               : `${depois.length} lançamentos entraram depois do fechamento`}{" "}
@@ -481,7 +521,7 @@ function FechamentoFeito({
               </li>
             ))}
           </ul>
-        </div>
+        </Aviso>
       )}
     </section>
   );
@@ -489,9 +529,9 @@ function FechamentoFeito({
 
 function Cartao({ rotulo, valor }: { rotulo: string; valor: number }) {
   return (
-    <div className="rounded-lg bg-poco px-4 py-3">
-      <p className="text-rotulo text-sakura-muted">{rotulo}</p>
-      <p className="text-destaque font-semibold text-sakura-purple-dark">{formatarMoeda(valor)}</p>
+    <div className="rounded-xl bg-poco px-4 py-3">
+      <p className="text-rotulo font-medium text-texto-2">{rotulo}</p>
+      <p className="font-titulo text-destaque font-semibold tabular-nums text-texto">{formatarMoeda(valor)}</p>
     </div>
   );
 }
@@ -505,7 +545,7 @@ function Historico({
 }) {
   if (fechamentos.length === 0) {
     return (
-      <p className="text-corpo text-sakura-muted">
+      <p className="sakura-card px-[18px] py-4 text-corpo text-texto-2">
         Nenhum dia fechado ainda. Os fechamentos aparecem aqui, com o que faltou ou sobrou em cada um.
       </p>
     );
@@ -513,47 +553,54 @@ function Historico({
   const soma = somarDiferencas(fechamentos);
   return (
     <section>
-      <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Últimos fechamentos</h2>
+      <h2 className="mb-3 font-titulo text-corpo font-semibold text-texto">Últimos fechamentos</h2>
       <div className="overflow-x-auto sakura-card">
-        <table className="w-full text-left text-corpo">
-          <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+        <table className="sakura-tabela">
+          <thead>
             <tr>
-              <th className="px-4 py-3 font-medium">Dia</th>
-              <th className="px-4 py-3 font-medium">Esperado</th>
-              <th className="px-4 py-3 font-medium">Contado</th>
-              <th className="px-4 py-3 font-medium">Diferença</th>
-              <th className="px-4 py-3 font-medium">Quem fechou</th>
+              <th>Dia</th>
+              <th className="text-right">Esperado</th>
+              <th className="text-right">Contado</th>
+              {/* À esquerda: é o selo com a palavra ("Faltou R$ 12,50"), não um
+                  número pra somar de olho em coluna. */}
+              <th className="pl-6!">Diferença</th>
+              <th>Quem fechou</th>
             </tr>
           </thead>
           <tbody>
             {fechamentos.map((f) => (
-              <tr key={f.id} className="border-t border-sakura-gray/20">
-                <td className="px-4 py-3">
+              <tr key={f.id}>
+                <td>
                   <button
                     type="button"
                     onClick={() => onEscolher(f.data)}
-                    className="min-h-8 text-sakura-purple-dark underline-offset-2 hover:underline"
+                    className="min-h-8 font-medium text-acao-clara underline underline-offset-2 hover:text-texto"
                   >
                     {diaBonito(f.data)}
                   </button>
                 </td>
-                <td className="px-4 py-3">{formatarMoeda(f.saldo_sistema)}</td>
-                <td className="px-4 py-3">{formatarMoeda(f.valor_contado)}</td>
-                <td className="px-4 py-3">
-                  {f.diferenca === 0 ? "—" : <Valor valor={f.diferenca} classeDeCor="text-amber-300" />}
+                <td className="whitespace-nowrap text-right text-texto">{formatarMoeda(f.saldo_sistema)}</td>
+                <td className="whitespace-nowrap text-right text-texto">{formatarMoeda(f.valor_contado)}</td>
+                <td className="pl-6!">
+                  <SeloDaDiferenca diferenca={f.diferenca} />
                 </td>
-                <td className="px-4 py-3 text-sakura-purple-dark/85">{f.operador?.nome ?? "—"}</td>
+                <td className="text-texto-2">{f.operador?.nome ?? "—"}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
-            <tr className="border-t border-sakura-gray/30 bg-sakura-pink-soft/50 font-semibold text-sakura-purple-dark">
-              <td className="px-4 py-3" colSpan={3}>
+            <tr className="border-t border-linha-forte bg-poco font-semibold">
+              <td className="text-texto" colSpan={3}>
                 Soma das diferenças destes {fechamentos.length} {fechamentos.length === 1 ? "dia" : "dias"}
               </td>
-              <td className="px-4 py-3" colSpan={2}>
-                {soma === 0 ? "—" : <Valor valor={soma} classeDeCor="text-amber-300" />}
+              <td className="pl-6!">
+                {soma === 0 ? (
+                  <span className="text-texto-2">—</span>
+                ) : (
+                  <DiferencaComSinal diferenca={soma} className="font-semibold" />
+                )}
               </td>
+              <td />
             </tr>
           </tfoot>
         </table>

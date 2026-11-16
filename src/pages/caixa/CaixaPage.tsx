@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
@@ -13,6 +13,7 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
+import { Aviso } from "./Aviso";
 import { FechamentoSection } from "./FechamentoSection";
 
 type Aba = "diario" | "entradas" | "saidas" | "fechamento";
@@ -80,6 +81,26 @@ export function CaixaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
+  // As setas, Home e End andam entre as abas e já trocam de aba.
+  const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
+  function andarPelasAbas(e: KeyboardEvent<HTMLDivElement>) {
+    const atual = ABAS.findIndex((a) => a.chave === aba);
+    const proxima =
+      e.key === "ArrowRight"
+        ? (atual + 1) % ABAS.length
+        : e.key === "ArrowLeft"
+          ? (atual - 1 + ABAS.length) % ABAS.length
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? ABAS.length - 1
+              : null;
+    if (proxima === null) return;
+    e.preventDefault();
+    setAba(ABAS[proxima].chave);
+    abasRef.current[proxima]?.focus();
+  }
+
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     if (!lojaAtual) return;
     // Lançar depois do fechamento não é proibido (regra 7 do guia: aviso,
@@ -103,31 +124,43 @@ export function CaixaPage() {
     <div className="space-y-6">
       <header className="flex items-center gap-3">
         <BotaoVoltar />
-        <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Caixa Diário
-          </h1>
-          <p className="text-corpo text-sakura-muted">
+        <div className="min-w-0">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Caixa Diário</h1>
+          <p className="text-corpo text-texto-2">
             Vendas e movimentação do dia, nascendo das ordens de serviço faturadas
           </p>
         </div>
       </header>
 
       {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <Aviso tipo="perigo" alerta className="text-corpo">
           {erro}
-        </p>
+        </Aviso>
       )}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="Diário" ativa={aba === "diario"} onClick={() => setAba("diario")} />
-        <AbaBotao label="Entradas" ativa={aba === "entradas"} onClick={() => setAba("entradas")} />
-        <AbaBotao label="Saídas" ativa={aba === "saidas"} onClick={() => setAba("saidas")} />
-        <AbaBotao label="Fechamento" ativa={aba === "fechamento"} onClick={() => setAba("fechamento")} />
+      <div
+        role="tablist"
+        aria-label="Partes do caixa"
+        onKeyDown={andarPelasAbas}
+        className="sakura-abas"
+      >
+        {ABAS.map(({ chave, rotulo }, i) => (
+          <AbaBotao
+            key={chave}
+            ref={(el) => {
+              abasRef.current[i] = el;
+            }}
+            id={`caixa-aba-${chave}`}
+            label={rotulo}
+            ativa={aba === chave}
+            onClick={() => setAba(chave)}
+          />
+        ))}
       </div>
 
+      <div role="tabpanel" id="caixa-painel" aria-labelledby={`caixa-aba-${aba}`}>
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
         <DiarioSection
           movimentos={movimentos}
@@ -162,27 +195,50 @@ export function CaixaPage() {
           onAtualizado={carregar}
         />
       )}
+      </div>
     </div>
   );
 }
 
+const ABAS: { chave: Aba; rotulo: string }[] = [
+  { chave: "diario", rotulo: "Diário" },
+  { chave: "entradas", rotulo: "Entradas" },
+  { chave: "saidas", rotulo: "Saídas" },
+  { chave: "fechamento", rotulo: "Fechamento" },
+];
+
+/**
+ * A aba do visual novo: a peça `sakura-aba` (tarefa 7), com o traço laranja
+ * embaixo da escolhida e a palavra em negrito. A aparência segue o
+ * `aria-selected`, o mesmo estado que o leitor de tela anuncia. As setas entre
+ * as abas são desta tela (`andarPelasAbas`).
+ */
 function AbaBotao({
+  ref,
+  id,
   label,
   ativa,
   onClick,
 }: {
+  ref: (el: HTMLButtonElement | null) => void;
+  id: string;
   label: string;
   ativa: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      ref={ref}
+      id={id}
+      type="button"
+      role="tab"
+      aria-selected={ativa}
+      aria-controls="caixa-painel"
+      // Só a aba escolhida entra no Tab; entre as abas, as setas (o jeito de
+      // abas que o leitor de tela anuncia).
+      tabIndex={ativa ? 0 : -1}
       onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
+      className="sakura-aba"
     >
       {label}
     </button>

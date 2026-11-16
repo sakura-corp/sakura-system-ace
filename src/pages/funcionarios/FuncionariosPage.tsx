@@ -16,6 +16,8 @@ import type { OrdemParaComissao } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { ComissoesSection } from "./ComissoesSection";
+import { AvisoDaTela } from "./AvisoDaTela";
+import { AbaBotao } from "./campos/FormCompartilhado";
 import { FuncionariosSection } from "./FuncionariosSection";
 
 type Aba = "cadastro" | "comissoes";
@@ -139,16 +141,16 @@ export function FuncionariosPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Funcionários</h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Funcionários</h1>
+          <p className="text-corpo text-texto-2">
             Técnicos, vendedores e demais funcionários — e quanto cada um tem de comissão a receber
           </p>
         </div>
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
+      <div className="flex gap-1 border-b border-linha">
         <AbaBotao label="Cadastro" ativa={aba === "cadastro"} onClick={() => setAba("cadastro")} />
         <AbaBotao
           label="Comissões"
@@ -159,11 +161,11 @@ export function FuncionariosPage() {
 
       {aba === "cadastro" ? (
         carregando ? (
-          <p className="text-corpo text-sakura-muted">Carregando...</p>
+          <p className="text-corpo text-texto-2">Carregando...</p>
         ) : !lojaAtual ? (
-          <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+          <AvisoDaTela tipo="atencao">
             Seu usuário não tem loja atribuída. Fale com o administrador.
-          </p>
+          </AvisoDaTela>
         ) : (
           <FuncionariosSection
             funcionarios={funcionariosNaTela}
@@ -172,7 +174,7 @@ export function FuncionariosPage() {
           />
         )
       ) : carregandoComissoes || !comissoesNaTela ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : (
         <ComissoesSection
           ordens={comissoesNaTela.ordens}
@@ -188,28 +190,5 @@ export function FuncionariosPage() {
         />
       )}
     </div>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
   );
 }
