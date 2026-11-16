@@ -1163,7 +1163,7 @@ em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `d
 em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **A visão dela, documentada e aprovada** (`docs/visao.md` (mora no `sakura-corp/escritorio`, privado)), a partir do artigo "Services: The
+- **A visão dela, documentada e aprovada** (`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), a partir do artigo "Services: The
   New Software" (Sequoia): um programa só pra loja inteira, o máximo automático, integração com o
   WhatsApp e, mais pra frente, um assistente de IA. Os princípios que ela confirmou: **a IA
   sugere, a pessoa confirma**, com a dinâmica do assistente muito bem planejada antes de qualquer
@@ -1814,7 +1814,7 @@ ele deixou em aberto continua valendo**.
 
 **Estado do código**: não mudou. `main` na **`v0.9.46`** (publicada e liberada), banco na **`0064`**.
 
-- **Comparativo com o Anexar** (`docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado)): ela mandou 8 prints do site do
+- **Comparativo com o Anexar** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado): ela mandou 8 prints do site do
   concorrente. Dos 56 recursos que eles anunciam, temos 12, temos em parte 10 e faltam 34. Os que
   mais pesam: orçamento (`FN-01`), checklist com fotos e assinatura (`FN-02`), agenda (`FN-05`),
   devolução (`FN-08`), DRE, curva ABC, fluxo de caixa projetado e o app de celular. **É lista de

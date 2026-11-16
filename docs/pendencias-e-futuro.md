@@ -72,7 +72,7 @@ de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa pa
 cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
 PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
 
-**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado))
+**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
 instrução de **parar e mandar mensagem pra ela** se quem estiver fazendo não for ela. Desde 19/10/2026
 a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PROJETO_STATUS.md`).
@@ -118,7 +118,7 @@ a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PR
 | #409, #410 | NF-e modelo 55; manifestação do destinatário (MD-e). Fiscal: só com ela |
 | #411 | Boleto (levantamento) |
 | #412 | App de celular pro mecânico (levantamento; decisão estrutural) |
-| **Da visão** (12/10, `docs/visao.md` (mora no `sakura-corp/escritorio`, privado)) | |
+| **Da visão** (12/10, `docs/visao.md`, que mora no `sakura-corp/escritorio`, privado) | |
 | #456 | Pix copia e cola na cobrança e no faturamento |
 | #457 | Importar do sistema antigo, por planilha (`FN-15`); as lojas da fase 2 usam outro sistema |
 | #458 | Desenho do assistente de IA (conversa, sem código) |
@@ -538,7 +538,7 @@ estiver sem suporte, e está certo.
 ### Futuro, só com pedido explícito
 
 Integração com maquininha de cartão (TEF), assistente de IA (a direção dela está em
-`docs/visao.md` (mora no `sakura-corp/escritorio`, privado)), importador de dados de outros sistemas, app de celular, outras edições do Sakura
+`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), importador de dados de outros sistemas, app de celular, outras edições do Sakura
 System. Manter a arquitetura aberta pra isso, sem construir.
 
 ## Linha do tempo (o que cada sessão deixou pronto)

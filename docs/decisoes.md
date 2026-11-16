@@ -12,7 +12,7 @@
 mercado: o S3Auto (Comsis), um sistema tradicional e completo, mas de tela densa e datada. O
 diferencial do SSACE é ser simples e moderno de usar, sem perder as funções essenciais. Validado o
 SSACE, a ideia é fazer outras edições (ex: Supermarket Edition) reaproveitando a base. O concorrente
-direto que ela acompanha é o Anexar (`docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado)).
+direto que ela acompanha é o Anexar (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado).
 
 **Pra onde o produto vai** (a visão dela, 12/10/2026): `docs/visao.md` (mora no `sakura-corp/escritorio`, privado).
 
