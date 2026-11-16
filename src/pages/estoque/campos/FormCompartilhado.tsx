@@ -1,13 +1,13 @@
 import { cloneElement, isValidElement, useId } from "react";
 import { Explicacao } from "@/components/Explicacao";
 
-export const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+/** O campo do visual novo (#990): altura 44, borda de campo, foco laranja. */
+export const inputClasse = "sakura-campo";
 
 export function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">{titulo}</h3>
+      <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">{titulo}</h3>
       {children}
     </section>
   );
@@ -46,21 +46,28 @@ export function Campo({
   // Então a ligação passou a ser explícita, por `htmlFor`: o id nasce aqui e
   // é colocado no campo. Vale pros controles deste formulário (input, select,
   // textarea e o Combobox, que já aceita `id`).
-  const campo = isValidElement<{ id?: string }>(children)
-    ? cloneElement(children, { id: children.props.id ?? id })
+  // O campo que a validação recusou ganha `aria-invalid` (a borda vermelha do
+  // `sakura-campo` e o leitor de tela); o texto do erro embaixo é quem explica.
+  const campo = isValidElement<{ id?: string; "aria-invalid"?: boolean }>(children)
+    ? cloneElement(children, {
+        id: children.props.id ?? id,
+        ...(erro ? { "aria-invalid": true } : {}),
+      })
     : children;
 
   return (
-    <div className={`flex flex-col gap-1 text-corpo ${className ?? ""}`}>
-      <div className="flex items-center gap-1.5">
-        <label htmlFor={id} className="text-sakura-purple-dark/80">
+    <div className={`flex flex-col gap-1.5 text-corpo ${className ?? ""}`}>
+      {/* min-h-6: a altura do "?" da explicação. Sem ela, o rótulo que tem "?" ficava
+          mais alto que o que não tem, e os campos da mesma linha desalinhavam. */}
+      <div className="flex min-h-6 items-center gap-1.5">
+        <label htmlFor={id} className="text-rotulo font-medium text-texto-2">
           {label}
-          {obrigatorio && <span className="text-red-400"> *</span>}
+          {obrigatorio && <span className="text-perigo"> *</span>}
         </label>
         {explicacao && <Explicacao titulo={label} texto={explicacao} />}
       </div>
       {campo}
-      {erro && <span className="text-rotulo text-red-300">{erro}</span>}
+      {erro && <span className="text-rotulo text-perigo">{erro}</span>}
     </div>
   );
 }

@@ -1,6 +1,20 @@
+import {
+  FileText,
+  FolderOpen,
+  MessageCircle,
+  Plus,
+  Receipt,
+  Star,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { AcoesDaLinha, type AcaoDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { avisar } from "@/lib/avisoQueSome";
+import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarLinkAvaliacao, listarJurosParcelas } from "@/lib/configuracoes";
 import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
@@ -62,13 +76,20 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { agruparNotasPorOrdem, temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
+import {
+  agruparNotasPorOrdem,
+  ordemEstaFinalizada,
+  situacaoFiscalOrdem,
+  temAlgumaNotaValida,
+} from "@/schemas/situacaoFiscal";
 import { contaNosNumeros, lucroDaOrdemPeloBanco, TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
 import { FaturamentoCard } from "./FaturamentoCard";
-import { StatusOrdem } from "./StatusOrdemBadge";
+import { NotaDoClienteModal } from "./NotaDoClienteModal";
+import { notasDoCliente } from "./notaDoCliente";
+import { SeloDaOrdem } from "./SeloDaOrdem";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
@@ -79,6 +100,21 @@ import { VendaBalcaoForm } from "./VendaBalcaoForm";
 // lista voltava a rolar de lado — e 1536 é a largura de um notebook Full HD
 // com o zoom de 125% do Windows.
 const SO_EM_TELA_GRANDE = "hidden min-[1600px]:table-cell";
+
+// A coluna do próximo passo fica grudada na direita da tabela (tarefa 7,
+// pedido de 16/11): numa janela estreita (1024 com o menu aberto) a tabela
+// rola de lado, mas o "Faturar" fica sempre à vista. Precisa de fundo próprio,
+// senão o que rola passa por baixo dela aparecendo; ao passar o mouse na
+// linha, ganha por cima o mesmo tom da linha (a cor da linha é transparente).
+// O começo da célula (o respiro da esquerda) é transparente, esmaecendo até a
+// cor do cartão: o que rola por baixo some aos poucos, em vez de aparecer
+// cortado ao meio. Com a tabela cabendo, o respiro é só cartão e não aparece.
+// (Classes escritas por extenso: o Tailwind só gera a classe que acha inteira.)
+const COLUNA_GRUDADA = [
+  "sticky right-0 z-[1] !pl-4",
+  "[background-image:linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
+  "group-hover:[background-image:linear-gradient(var(--linha-passar),var(--linha-passar)),linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
+].join(" ");
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -125,7 +161,17 @@ export function OrdensServicoPage() {
   const [mostrarVenda, setMostrarVenda] = useState(false);
   const [vendaAberta, setVendaAberta] = useState<OrdemServico | null>(null);
   const [vendaParaNota, setVendaParaNota] = useState<OrdemServico | null>(null);
-  const [aviso, setAviso] = useState<string | null>(null);
+  // O erro de uma ação de WhatsApp escolhida no "Mais ações" (ver
+  // `abrirWhatsappDaLinha`): fica embaixo das ações da linha dela.
+  // "Nota do cliente" aberta pela linha de uma OS finalizada.
+  const [notaDoCliente, setNotaDoCliente] = useState<{
+    documento: string;
+    venda: boolean;
+    notas: NotaFiscalArquivo[];
+  } | null>(null);
+  const [erroDaLinha, setErroDaLinha] = useState<{ ordemId: string; texto: string } | null>(
+    null,
+  );
   // A OS (ou venda) foi aberta por uma ficha (do cliente ou do veículo) que
   // pediu `voltarAoFechar` (#393): o Voltar leva de volta pra ficha, em vez de
   // ficar na lista. Quem abre pela lista, pelo Início ou pela busca não pede,
@@ -150,9 +196,9 @@ export function OrdensServicoPage() {
   function textoLucro(ordem: OrdemServico) {
     const { lucro } = lucroDaOrdemPeloBanco(ordem.itens ?? [], custoDasOrdens.get(ordem.id));
     if (lucro === null) {
-      return <span className="text-rotulo text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
+      return <span className="text-rotulo text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
     }
-    return formatarMoeda(lucro);
+    return <span className="whitespace-nowrap">{formatarMoeda(lucro)}</span>;
   }
 
   // Ordens em aberto (ainda não faturadas) sempre aparecem, não importa a
@@ -425,6 +471,25 @@ export function OrdensServicoPage() {
     });
   }
 
+  // "Avisar" (o carro está pronto): o carro só fica pronto pra retirar quando a
+  // OS é concluída ou faturada — antes disso o aviso seria mentira. Sem o
+  // módulo Clientes o telefone não chega (a janela da migration 0068 só tem o
+  // nome), e o botão diria "cadastro sem telefone" — então some. Venda de
+  // balcão não tem carro.
+  function avisoCarroPronto(ordem: OrdemServico) {
+    if (!podeVerCadastro || !STATUS_COM_FECHAMENTO.includes(ordem.status)) return undefined;
+    if (ehVendaBalcao(ordem)) return undefined;
+    const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone ?? null;
+    return {
+      telefone,
+      texto: textoCarroPronto(ordem),
+      aoAbrir: () => {
+        if (!lojaAtual) return;
+        registrarMensagemAberta(lojaAtual.id, "carro_pronto", ordem.id, telefone, operador?.id ?? null);
+      },
+    };
+  }
+
   // "Avaliação" (#459): só na OS/venda faturada, com o link da loja e com o
   // módulo Clientes (sem ele o telefone não chega). Ausente = sem botão.
   // A venda do Consumidor também fica sem: não tem cadastro nem telefone, e o
@@ -489,7 +554,7 @@ export function OrdensServicoPage() {
       setMostrarVenda(false);
       setLista("vendas");
       const recarregadas = await carregar();
-      setAviso(`${nomeDocumento(criada)} registrada.`);
+      avisar(`${nomeDocumento(criada)} registrada`);
       const completa = recarregadas?.find((o) => o.id === criada.id);
       if (completa) setVendaParaNota(completa);
     } catch (err) {
@@ -516,7 +581,7 @@ export function OrdensServicoPage() {
     setOrdemFaturando(null);
     setMostrarVenda(false);
     setVendaAberta(null);
-    setAviso(null);
+    setErroDaLinha(null);
   }
 
   async function handleEncerrar(ordem: OrdemServico) {
@@ -535,8 +600,12 @@ export function OrdensServicoPage() {
     if (!ordemFaturando) return;
     await faturarOrdem(ordemFaturando, pagamentos, parcelas, previsaoRecebimento);
     const faturada = ordemFaturando;
+    // Deu certo: a janela fecha e sai a confirmação que some sozinha ("OS 148
+    // faturada"). Se `faturarOrdem` falhou, nada disto roda: o erro volta pro
+    // `FaturamentoCard`, que o mostra dentro da janela, do lado do botão.
     setOrdemFaturando(null);
     setVendaAberta(null);
+    avisar(`${nomeDocumento(faturada)} faturada`);
     const recarregadas = await carregar();
     // Venda de balcão faturada pela lista (a que ficou sem pagamento) segue
     // pro mesmo lugar que uma venda nova: a NFC-e.
@@ -546,54 +615,214 @@ export function OrdensServicoPage() {
     }
   }
 
+  // As ações de WhatsApp que moram no "Mais ações" (Avisar, quando não é o
+  // próximo passo, e Avaliação). O menu fecha no clique, então o erro (o mais
+  // comum: telefone sem DDD) não pode ficar no botão como no `BotaoWhatsapp`:
+  // fica embaixo das ações da linha dela, e não some sozinho.
+  async function abrirWhatsappDaLinha(
+    ordem: OrdemServico,
+    pedido: { telefone: string | null | undefined; texto: string; aoAbrir: () => void },
+  ) {
+    setErroDaLinha(null);
+    try {
+      await abrirConversaWhatsapp(pedido.telefone, pedido.texto);
+      pedido.aoAbrir();
+    } catch (err) {
+      console.error("Erro ao abrir o WhatsApp:", err);
+      setErroDaLinha({ ordemId: ordem.id, texto: mensagemDeErro(err) });
+    }
+  }
+
+  function abrirOrdem(ordem: OrdemServico, aba: "detalhes" | "fechamento" = "detalhes") {
+    fecharPaineis();
+    if (ehVendaBalcao(ordem)) {
+      setVendaAberta(ordem);
+      return;
+    }
+    setAbaInicialEdicao(aba);
+    setOrdemEmEdicao(ordem);
+  }
+
+  // As ações de uma linha (visual novo, tarefa 7): na linha fica SÓ o próximo
+  // passo; o resto vai pro "Mais ações". Nenhuma ação sumiu, e cada uma
+  // aparece nas mesmas condições de antes (ver a tabela no PR):
+  //   • não faturada → "Faturar" (laranja); "Avisar o cliente" (se concluída)
+  //     e "Fechamento" (se concluída) vão pro menu;
+  //   • faturada que ainda falta nota → "Emitir nota" (abre o Fechamento,
+  //     onde a nota é emitida); "Avisar o cliente" vai pro menu;
+  //   • finalizada (todas as notas saíram) → "Avisar" (WhatsApp, só OS) e
+  //     "Nota do cliente" (ver, imprimir ou mandar a nota), lado a lado;
+  //   • "Fechamento" e "Avaliação" ficam no menu.
+  // As três do meio são decisão da Sofia (16/11) pro pedido dela de 15/11: a
+  // nota do cliente à mão depois de faturar.
+  // "Abrir a OS" é novo no menu: até aqui só o clique do mouse na linha abria,
+  // e quem usa só o teclado não tinha como.
+  function acoesDaLinha(ordem: OrdemServico) {
+    const venda = ehVendaBalcao(ordem);
+    const aviso = avisoCarroPronto(ordem);
+    const avaliacao = pedidoDeAvaliacao(ordem);
+    const notas = notasPorOrdem.get(ordem.id) ?? [];
+    const situacao = situacaoFiscalOrdem(ordem.itens ?? [], notas);
+    const faltaNota = ordem.status === "faturada" && situacao.pendentes.length > 0;
+    const notasParaVer = ordemEstaFinalizada(ordem, situacao) ? notasDoCliente(notas) : [];
+    const proximo: "faturar" | "emitir" | "avisar" | null =
+      ordem.status !== "faturada"
+        ? "faturar"
+        : faltaNota
+          ? "emitir"
+          : aviso
+            ? "avisar"
+            : null;
+
+    const menu: AcaoDaLinha[] = [];
+    if (aviso && proximo !== "avisar") {
+      menu.push({
+        tipo: "menu",
+        rotulo: "Avisar o cliente",
+        icone: <MessageCircle />,
+        aoClicar: () => void abrirWhatsappDaLinha(ordem, aviso),
+      });
+    }
+    if (STATUS_COM_FECHAMENTO.includes(ordem.status)) {
+      menu.push({
+        tipo: "menu",
+        rotulo: "Fechamento",
+        icone: <Receipt />,
+        aoClicar: () => abrirOrdem(ordem, "fechamento"),
+      });
+    }
+    if (avaliacao) {
+      menu.push({
+        tipo: "menu",
+        rotulo: "Avaliação",
+        icone: <Star />,
+        aoClicar: () => void abrirWhatsappDaLinha(ordem, avaliacao),
+      });
+    }
+    menu.push({
+      tipo: "menu",
+      rotulo: venda ? "Abrir a venda" : "Abrir a OS",
+      icone: <FolderOpen />,
+      aoClicar: () => abrirOrdem(ordem),
+    });
+
+    return (
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center justify-end gap-1.5">
+          {proximo === "faturar" && (
+            <Botao
+              variante="principal"
+              tamanho="pequeno"
+              onClick={() => {
+                fecharPaineis();
+                setOrdemFaturando(ordem);
+              }}
+            >
+              Faturar
+            </Botao>
+          )}
+          {proximo === "emitir" && (
+            <Dica texto={`Falta ${situacao.pendentes.join(" e ")}. Abre o Fechamento, onde a nota é emitida`}>
+              <Botao
+                variante="principal"
+                tamanho="pequeno"
+                onClick={() => abrirOrdem(ordem, "fechamento")}
+              >
+                Emitir nota
+              </Botao>
+            </Dica>
+          )}
+          {proximo === "avisar" && aviso && (
+            <BotaoWhatsapp
+              telefone={aviso.telefone}
+              texto={aviso.texto}
+              rotulo="Avisar"
+              titulo="Avisar o cliente pelo WhatsApp que o carro está pronto"
+              aoAbrir={aviso.aoAbrir}
+            />
+          )}
+          {notasParaVer.length > 0 && (
+            // Abaixo de 1366 só o ícone (o nome continua pro leitor de tela e
+            // na dica): é o que faz a linha da finalizada caber em 1024 com o
+            // menu encolhido (pedido da Sofia, 16/11). O `relative` segura o
+            // nome escondido (`sr-only` é absoluto) dentro do botão: sem ele,
+            // o nome "vazava" e cortava a tela em 1024 (achado pelo
+            // largura:telas).
+            <Dica texto="Ver, imprimir ou mandar a nota do cliente">
+              <Botao
+                tamanho="pequeno"
+                icone={<FileText />}
+                className="relative max-[1365px]:w-8 max-[1365px]:justify-center max-[1365px]:px-0"
+                onClick={() => {
+                  setErroDaLinha(null);
+                  setNotaDoCliente({ documento: nomeDocumento(ordem), venda, notas: notasParaVer });
+                }}
+              >
+                <span className="max-[1365px]:sr-only">Nota do cliente</span>
+              </Botao>
+            </Dica>
+          )}
+          <AcoesDaLinha descricao={nomeDocumento(ordem)} acoes={menu} />
+        </div>
+        {erroDaLinha?.ordemId === ordem.id && (
+          <p role="alert" className="flex max-w-64 items-start gap-1 text-left text-rotulo text-perigo">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+            <span className="min-w-0">{erroDaLinha.texto}</span>
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
-          <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-              Ordens de Serviço
-            </h1>
-            <p className="text-corpo text-sakura-muted">
+          <div className="min-w-0">
+            <h1 className="text-titulo font-semibold text-texto">Ordens de Serviço</h1>
+            <p className="text-corpo text-texto-2">
               Cliente + veículo + peças usadas + serviço realizado
             </p>
           </div>
         </div>
         {nadaAberto && operador && lojaAtual && (
           <div className="flex gap-3">
-            <button
+            <Botao
+              icone={<Plus />}
               onClick={() => {
                 fecharPaineis();
                 setMostrarVenda(true);
               }}
-              className="rounded-xl border border-sakura-purple px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40"
             >
-              + Venda de balcão
-            </button>
+              Venda de balcão
+            </Botao>
             {clientes.length > 0 && (
-              <button
+              <Botao
+                variante="principal"
+                icone={<Plus />}
                 onClick={() => {
                   fecharPaineis();
                   setMostrarFormulario(true);
                 }}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
               >
-                + Nova ordem de serviço
-              </button>
+                Nova ordem de serviço
+              </Botao>
             )}
           </div>
         )}
       </header>
 
       {!carregando && !lojaAtual && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Seu usuário não tem loja atribuída. Fale com o administrador.
         </p>
       )}
 
       {!carregando && lojaAtual && clientes.length === 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.
         </p>
       )}
@@ -681,6 +910,8 @@ export function OrdensServicoPage() {
         />
       )}
 
+      {/* O Faturar abre numa janela (visual novo, tarefa 7), por cima da
+          lista: ela não é mais empurrada pra baixo. */}
       {ordemFaturando && (
         <FaturamentoCard
           ordem={ordemFaturando}
@@ -705,41 +936,46 @@ export function OrdensServicoPage() {
         />
       )}
 
-      {aviso && (
-        <p className="rounded-xl bg-emerald-50 px-4 py-3 text-corpo text-emerald-700">{aviso}</p>
+      {notaDoCliente && (
+        <NotaDoClienteModal
+          documento={notaDoCliente.documento}
+          venda={notaDoCliente.venda}
+          notas={notaDoCliente.notas}
+          onFechar={() => setNotaDoCliente(null)}
+        />
       )}
 
       {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
+        >
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
         </p>
       )}
 
       {!carregando && temOrdens && (
-        <div
-          role="tablist"
-          aria-label="O que mostrar na lista"
-          className="flex gap-2 border-b border-sakura-gray/20"
-        >
+        <div role="tablist" aria-label="O que mostrar na lista" className="sakura-abas">
           {(
             [
-              ["os", `Ordens de serviço (${quantasOs})`],
-              ["vendas", `Vendas de balcão (${quantasVendas})`],
+              ["os", "Ordens de serviço", quantasOs],
+              ["vendas", "Vendas de balcão", quantasVendas],
             ] as const
-          ).map(([valor, rotulo]) => (
+          ).map(([valor, rotulo, quantas]) => (
             <button
               key={valor}
               type="button"
               role="tab"
               aria-selected={lista === valor}
-              onClick={() => setLista(valor)}
-              className={`px-4 py-2 text-corpo font-medium ${
-                lista === valor
-                  ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-                  : "text-sakura-purple-dark/75 hover:text-sakura-purple-dark"
-              }`}
+              onClick={() => {
+                setLista(valor);
+                setErroDaLinha(null);
+              }}
+              className="sakura-aba"
             >
-              {rotulo}
+              {rotulo}{" "}
+              <span className="sakura-aba-conta">{quantas}</span>
             </button>
           ))}
         </div>
@@ -747,54 +983,52 @@ export function OrdensServicoPage() {
 
       {!carregando && temOrdens && (
         <div className="flex flex-wrap items-end gap-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Buscar por cliente ou placa</span>
+          <label className="sakura-rotulo w-64">
+            Buscar por cliente ou placa
             <input
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Ex: João ou ABC1D23"
-              className="w-56 rounded-lg border border-sakura-borda-campo px-3 py-1.5 text-corpo focus:border-sakura-purple"
+              className="sakura-campo sakura-campo-filtro"
             />
           </label>
-          <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-            De:
+          <label className="sakura-rotulo w-44">
+            De
             <input
               type="date"
               value={dataInicio}
               onChange={(e) => setDataInicio(e.target.value)}
               disabled={!!busca.trim()}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-1.5 disabled:opacity-40"
+              className="sakura-campo sakura-campo-filtro"
             />
           </label>
-          <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-            Até:
+          <label className="sakura-rotulo w-44">
+            Até
             <input
               type="date"
               value={dataFim}
               onChange={(e) => setDataFim(e.target.value)}
               disabled={!!busca.trim()}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-1.5 disabled:opacity-40"
+              className="sakura-campo sakura-campo-filtro"
             />
           </label>
-          <p className="text-rotulo text-sakura-muted">
+          <p className="min-w-0 flex-1 basis-64 pb-1 text-rotulo text-texto-2">
             {busca.trim()
               ? "Buscando em todo o histórico, sem limite de data."
               : lista === "vendas"
-                ? "Venda sem pagamento sempre aparece, não importa a data — o período filtra só as já faturadas."
-                : "OS em aberto sempre aparecem, não importa a data — o período filtra só o histórico já faturado."}
+                ? "Venda sem pagamento sempre aparece, não importa a data. O período filtra só as já faturadas."
+                : "OS em aberto sempre aparecem, não importa a data. O período filtra só o histórico já faturado."}
           </p>
         </div>
       )}
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !temOrdens ? (
-        <p className="text-corpo text-sakura-muted">
-          Nenhuma ordem de serviço aberta ainda.
-        </p>
+        <p className="text-corpo text-texto-2">Nenhuma ordem de serviço aberta ainda.</p>
       ) : ordensDaLista.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           {lista === "vendas"
             ? "Nenhuma venda de balcão neste período."
             : "Nenhuma ordem de serviço encontrada com esse filtro."}
@@ -805,52 +1039,41 @@ export function OrdensServicoPage() {
               "B", escolhida por ela pela imagem em 03/10/2026): abaixo de
               1600, Peças e Serviços somem (o Total e o Lucro ficam, e o
               detalhe está dentro da OS); a data perde o ano quando é do ano
-              corrente; nome de cliente comprido quebra até no meio da palavra
-              se precisar; e as células têm um respiro menor que o das outras
-              listas. Coluna nova aqui precisa caber na folga —
-              `npm run largura:telas` confere em 1366, 1536 e 1600. */}
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+              corrente; nome de cliente comprido quebra só entre as palavras
+              (16/11: quebrar no meio da sílaba, "Ricar / do", não serve). Coluna nova aqui precisa caber na folga —
+              `npm run largura:telas` confere em 1366, 1536 e 1600.
+              A tabela principal rola com a página, sem altura fixa ("O que
+              pode crescer", regras, seção 6). */}
+          {/* Respiro das células um pouco menor que o das outras tabelas
+              (8 px, era 9), como já era antes (#425): é o que faz a linha
+              caber em 1024 com o menu encolhido. A primeira e a última
+              coluna mantêm a margem da tabela. */}
+          <table className="sakura-tabela [&_:is(td,th)]:px-2">
+            <thead>
               <tr>
-                <th className="px-2.5 py-3 font-medium">Nº</th>
-                <th className="px-2.5 py-3 font-medium">Cliente</th>
-                {lista === "os" && <th className="px-2.5 py-3 font-medium">Veículo</th>}
-                <th className="px-2.5 py-3 font-medium">{lista === "os" ? "Abertura" : "Data"}</th>
-                <th className="px-2.5 py-3 font-medium">Status</th>
-                {lista === "os" && (
-                  <th className={`${SO_EM_TELA_GRANDE} px-2.5 py-3 font-medium`}>Peças</th>
-                )}
-                {lista === "os" && (
-                  <th className={`${SO_EM_TELA_GRANDE} px-2.5 py-3 font-medium`}>Serviços</th>
-                )}
-                <th className="px-2.5 py-3 font-medium">Total</th>
-                <th className="px-2.5 py-3 font-medium">Lucro</th>
-                <th className="px-2.5 py-3" />
+                <th>Nº</th>
+                <th>Cliente</th>
+                {lista === "os" && <th>Veículo</th>}
+                <th>{lista === "os" ? "Abertura" : "Data"}</th>
+                <th>Status</th>
+                {lista === "os" && <th className={`${SO_EM_TELA_GRANDE} text-right`}>Peças</th>}
+                {lista === "os" && <th className={`${SO_EM_TELA_GRANDE} text-right`}>Serviços</th>}
+                <th className="text-right">Total</th>
+                <th className="text-right">Lucro</th>
+                <th className={COLUNA_GRUDADA}>
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {ordensDaLista.map((ordem) => (
-                <tr
-                  key={ordem.id}
-                  onClick={() => {
-                    fecharPaineis();
-                    if (ehVendaBalcao(ordem)) {
-                      setVendaAberta(ordem);
-                      return;
-                    }
-                    setAbaInicialEdicao("detalhes");
-                    setOrdemEmEdicao(ordem);
-                  }}
-                  className="cursor-pointer border-t border-sakura-gray/20 hover:bg-sakura-pink-soft/30"
-                >
-                  <td className="whitespace-nowrap px-2.5 py-3 text-sakura-muted">
-                    {nomeDocumento(ordem)}
-                  </td>
-                  <td className="px-2.5 py-3 [overflow-wrap:anywhere]">
+                <tr key={ordem.id} onClick={() => abrirOrdem(ordem)} className="group cursor-pointer">
+                  <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
+                  <td className="font-medium text-texto [overflow-wrap:break-word]">
                     {ordem.cliente?.nome ?? "—"}
                   </td>
                   {lista === "os" && (
-                    <td className="whitespace-nowrap px-2.5 py-3">
+                    <td className="whitespace-nowrap">
                       {ordem.veiculo_id && ordem.veiculo?.placa ? (
                         <LinkPlaca veiculoId={ordem.veiculo_id} placa={ordem.veiculo.placa} />
                       ) : (
@@ -858,96 +1081,27 @@ export function OrdensServicoPage() {
                       )}
                     </td>
                   )}
-                  <td className="whitespace-nowrap px-2.5 py-3">{dataCurta(ordem.data_abertura)}</td>
-                  <td className="px-2.5 py-3">
-                    <StatusOrdem ordem={ordem} notas={notasPorOrdem.get(ordem.id) ?? []} />
+                  <td className="whitespace-nowrap text-texto-2">{dataCurta(ordem.data_abertura)}</td>
+                  <td>
+                    <SeloDaOrdem ordem={ordem} notas={notasPorOrdem.get(ordem.id) ?? []} />
                   </td>
                   {lista === "os" && (
-                    <td className={`${SO_EM_TELA_GRANDE} px-2.5 py-3`}>
+                    <td className={`${SO_EM_TELA_GRANDE} whitespace-nowrap text-right`}>
                       {formatarMoeda(totalPorTipo(ordem.itens ?? [], "peca"))}
                     </td>
                   )}
                   {lista === "os" && (
-                    <td className={`${SO_EM_TELA_GRANDE} px-2.5 py-3`}>
+                    <td className={`${SO_EM_TELA_GRANDE} whitespace-nowrap text-right`}>
                       {formatarMoeda(totalPorTipo(ordem.itens ?? [], "servico"))}
                     </td>
                   )}
-                  <td className="px-2.5 py-3">{formatarMoeda(totalOrdem(ordem.itens ?? []))}</td>
-                  <td className="px-2.5 py-3">{textoLucro(ordem)}</td>
-                  <td className="px-2.5 py-3 text-right">
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center justify-end gap-2"
-                    >
-                      {/* O carro só fica pronto pra retirar quando a OS é
-                          concluída ou faturada — antes disso o aviso seria
-                          mentira. Sem o módulo Clientes o telefone não chega
-                          (a janela da migration 0068 só tem o nome), e o
-                          botão diria "cadastro sem telefone" — então some. */}
-                      {podeVerCadastro && STATUS_COM_FECHAMENTO.includes(ordem.status) && !ehVendaBalcao(ordem) && (
-                        <BotaoWhatsapp
-                          telefone={
-                            clientes.find((c) => c.id === ordem.cliente_id)?.telefone
-                          }
-                          texto={textoCarroPronto(ordem)}
-                          rotulo="Avisar"
-                          titulo="Avisar o cliente pelo WhatsApp que o carro está pronto"
-                          aoAbrir={() => {
-                            if (!lojaAtual) return;
-                            registrarMensagemAberta(
-                              lojaAtual.id,
-                              "carro_pronto",
-                              ordem.id,
-                              clientes.find((c) => c.id === ordem.cliente_id)?.telefone ?? null,
-                              operador?.id ?? null,
-                            );
-                          }}
-                        />
-                      )}
-                      {(() => {
-                        const pedido = pedidoDeAvaliacao(ordem);
-                        return (
-                          pedido && (
-                            <BotaoWhatsapp
-                              telefone={pedido.telefone}
-                              texto={pedido.texto}
-                              rotulo="Avaliação"
-                              titulo="Pedir ao cliente uma avaliação no Google pelo WhatsApp"
-                              aoAbrir={pedido.aoAbrir}
-                            />
-                          )
-                        );
-                      })()}
-                      {STATUS_COM_FECHAMENTO.includes(ordem.status) && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fecharPaineis();
-                            if (ehVendaBalcao(ordem)) {
-                              setVendaAberta(ordem);
-                              return;
-                            }
-                            setAbaInicialEdicao("fechamento");
-                            setOrdemEmEdicao(ordem);
-                          }}
-                          className="rounded-full border border-sakura-purple px-3 py-1.5 text-rotulo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40"
-                        >
-                          Fechamento
-                        </button>
-                      )}
-                      {ordem.status !== "faturada" && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fecharPaineis();
-                            setOrdemFaturando(ordem);
-                          }}
-                          className="rounded-full bg-sakura-purple px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90"
-                        >
-                          Faturar
-                        </button>
-                      )}
-                    </div>
+                  <td className="whitespace-nowrap text-right font-semibold text-texto">
+                    {formatarMoeda(totalOrdem(ordem.itens ?? []))}
+                  </td>
+                  <td className="text-right">{textoLucro(ordem)}</td>
+                  {/* O clique nas ações não abre a OS junto. */}
+                  <td onClick={(e) => e.stopPropagation()} className={COLUNA_GRUDADA}>
+                    {acoesDaLinha(ordem)}
                   </td>
                 </tr>
               ))}

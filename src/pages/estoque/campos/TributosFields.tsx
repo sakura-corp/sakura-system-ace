@@ -9,6 +9,7 @@ import { OPCOES_ORIGEM } from "@/lib/origemMercadoria";
 import type { PecaFormValues } from "@/schemas/peca";
 import { motivoCfopIncompativel, motivoCodigoIncompativel, regimeUsaCsosn } from "@/schemas/tributacao";
 import type { RegimeTributario } from "@/types/configuracao";
+import { AvisoDeAtencao } from "../avisosEAbas";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
 // Estes campos são a maior fonte de erro do sistema, e o erro deles é
@@ -93,10 +94,10 @@ export function TributosFields({
             <input type="text" {...register("cfop_padrao")} className={inputClasse} />
           </Campo>
           {motivoCfop && (
-            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-900">
+            <AvisoDeAtencao>
               Atenção: {motivoCfop}. Dá para salvar assim mesmo, mas a nota fiscal desta peça
               provavelmente será recusada.
-            </p>
+            </AvisoDeAtencao>
           )}
         </div>
         <Campo
@@ -142,10 +143,10 @@ export function TributosFields({
           de aviso é clara, e `globals.css` força letra branca em todo campo,
           então campo dentro dela nasce ilegível (mesmo item 47). */}
       {motivo && codigo.trim() !== "" && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-900">
+        <AvisoDeAtencao className="mt-3">
           Atenção: este código {motivo}. Dá para salvar assim mesmo, mas a nota fiscal desta peça
           provavelmente será recusada.
-        </p>
+        </AvisoDeAtencao>
       )}
     </Secao>
   );
