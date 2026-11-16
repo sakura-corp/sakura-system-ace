@@ -4,6 +4,7 @@ import { orcamentoVencido } from "@/schemas/orcamento";
 import { ordemEstaFinalizada, situacaoFiscalOrdem } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
+import { STATUS_LABEL } from "@/types/os";
 
 /**
  * O status da OS no visual novo (tarefa 7, #990): o `Selo`, com cor, ícone e
@@ -33,13 +34,16 @@ export function SeloDaOrdem({
   const situacao = situacaoFiscalOrdem(ordem.itens ?? [], notas);
   const finalizada = ordemEstaFinalizada(ordem, situacao);
 
+  // As palavras vêm de `STATUS_LABEL` (a mesma fonte do resto do programa);
+  // só "Finalizada" é desta tela, porque é deduzida das notas.
+  const palavra = STATUS_LABEL[ordem.status];
   let selo;
   if (finalizada) selo = <Selo tipo="ok" palavra="Finalizada" />;
-  else if (ordem.status === "faturada") selo = <Selo tipo="atencao" palavra="Faturada" icone={Receipt} />;
-  else if (ordem.status === "concluida") selo = <Selo tipo="atencao" palavra="Concluída" />;
-  else if (ordem.status === "em_andamento") selo = <Selo tipo="info" palavra="Em andamento" />;
-  else if (ordem.status === "recusado") selo = <Selo tipo="neutro" palavra="Recusado" icone={CircleX} />;
-  else selo = <Selo tipo="neutro" palavra="Orçamento" />;
+  else if (ordem.status === "faturada") selo = <Selo tipo="atencao" palavra={palavra} icone={Receipt} />;
+  else if (ordem.status === "concluida") selo = <Selo tipo="atencao" palavra={palavra} />;
+  else if (ordem.status === "em_andamento") selo = <Selo tipo="info" palavra={palavra} />;
+  else if (ordem.status === "recusado") selo = <Selo tipo="neutro" palavra={palavra} icone={CircleX} />;
+  else selo = <Selo tipo="neutro" palavra={palavra} />;
 
   return (
     <div className="flex flex-col items-start gap-1">

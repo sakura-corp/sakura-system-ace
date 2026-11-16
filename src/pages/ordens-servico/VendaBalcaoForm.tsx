@@ -387,17 +387,18 @@ export function VendaBalcaoForm({
             Total {formatarMoeda(total)}
           </span>
           {/* Com o pagamento aberto (na janela, por cima), estes botões ficam
-              de fora: "Mudar as peças" é o botão de desistir da própria janela. */}
-          {!noPagamento && (
-            <div className="flex gap-3">
-              <Botao variante="fantasma" onClick={onCancelar}>
-                Cancelar
-              </Botao>
-              <Botao variante="principal" type="submit">
-                Ir para o pagamento
-              </Botao>
-            </div>
-          )}
+              atrás dela, sem clique (a janela trava o fundo). Continuam na
+              tela de propósito: ao fechar a janela, o foco volta pro "Ir para
+              o pagamento" que a abriu. "Mudar as peças" é o botão de desistir
+              da própria janela. */}
+          <div className="flex gap-3">
+            <Botao variante="fantasma" onClick={onCancelar}>
+              Cancelar
+            </Botao>
+            <Botao variante="principal" type="submit">
+              Ir para o pagamento
+            </Botao>
+          </div>
         </div>
       </form>
 

@@ -876,7 +876,10 @@ export function OrdensServicoPage() {
               type="button"
               role="tab"
               aria-selected={lista === valor}
-              onClick={() => setLista(valor)}
+              onClick={() => {
+                setLista(valor);
+                setErroDaLinha(null);
+              }}
               className="sakura-aba"
             >
               {rotulo}{" "}

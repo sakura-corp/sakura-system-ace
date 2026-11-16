@@ -186,7 +186,10 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
         return;
       }
       if (evento.key === "Tab") {
-        fechar(false);
+        // O painel mora no fim do <body> (portal): o Tab de lá sairia da
+        // página. O foco volta pro botão ANTES do Tab acontecer, e o Tab
+        // segue dali pro próximo da tela, como se o menu nem tivesse aberto.
+        fechar();
         return;
       }
       const itens = itensDoMenu();

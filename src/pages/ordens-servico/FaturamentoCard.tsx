@@ -74,9 +74,14 @@ function formatarMoeda(valor: number): string {
 // clicando em qualquer lugar deles (o conceito, `6-faturar.jpg`). O escolhido
 // ganha a borda laranja e o fundo laranja bem fraco; a bolinha marcada
 // continua lá, porque cor sozinha não avisa (regra 4).
+// As classes de cor vão SÓ numa das duas: com as duas juntas, a ordem em que
+// o Tailwind escreve o CSS decide quem ganha, e a borda laranja perdia pra
+// cinza (achado da revisão).
 const CLASSE_OPCAO =
-  "flex cursor-pointer items-start gap-3 rounded-[14px] border border-linha-forte p-4 text-corpo transition-colors hover:bg-passar";
-const CLASSE_OPCAO_ESCOLHIDA = "border-[color:var(--foco-campo-borda)] bg-acao/[0.08] hover:bg-acao/[0.12]";
+  "flex cursor-pointer items-start gap-3 rounded-[14px] border p-4 text-corpo transition-colors";
+const CLASSE_OPCAO_COMUM = "border-linha-forte hover:bg-passar";
+const CLASSE_OPCAO_ESCOLHIDA =
+  "border-[color:var(--foco-campo-borda)] bg-acao/[0.08] hover:bg-acao/[0.12]";
 
 // O QR do Pix da loja (#456). O fundo é sempre branco, com margem: o leitor do
 // banco precisa de fundo claro mesmo quando o programa está no tema escuro.
@@ -301,9 +306,8 @@ export function FaturamentoCard({
           </p>
         )}
       </div>
-    ) : parcelas === 1 ? (
-      <p className="font-semibold text-texto">{`Total: ${formatarMoeda(valorCobrado)}`}</p>
     ) : (
+      // À vista não tem juros (jurosPercentual 0): sai "Total: R$ …".
       <p className="font-semibold text-texto">
         {`${jurosPercentual > 0 ? "Total com juros" : "Total"}: ${formatarMoeda(valorCobrado)}`}
       </p>
@@ -363,7 +367,7 @@ export function FaturamentoCard({
           <div className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <label
-                className={`${CLASSE_OPCAO} ${recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : ""}`}
+                className={`${CLASSE_OPCAO} ${recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : CLASSE_OPCAO_COMUM}`}
               >
                 <input
                   type="radio"
@@ -380,7 +384,7 @@ export function FaturamentoCard({
                 </span>
               </label>
               <label
-                className={`${CLASSE_OPCAO} ${!recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : ""}`}
+                className={`${CLASSE_OPCAO} ${!recebidoAgora ? CLASSE_OPCAO_ESCOLHIDA : CLASSE_OPCAO_COMUM}`}
               >
                 <input
                   type="radio"

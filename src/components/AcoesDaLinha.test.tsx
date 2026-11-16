@@ -79,3 +79,23 @@ describe("AcoesDaLinha, o menu Mais ações", () => {
     expect(aoFecharJanela).not.toHaveBeenCalled();
   });
 });
+
+describe("AcoesDaLinha, o Tab com o menu aberto", () => {
+  it("fecha o menu e segue pro próximo da tela, depois do botão (não pro fim da página)", async () => {
+    const { user } = renderizar(
+      <div>
+        <AcoesDaLinha
+          descricao="OS 148"
+          acoes={[{ tipo: "menu", rotulo: "Fechamento", aoClicar: vi.fn() }]}
+        />
+        <button type="button">Depois</button>
+      </div>,
+    );
+    await user.tab();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("menuitem", { name: "Fechamento" })).toHaveFocus();
+    await user.tab();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Depois" })).toHaveFocus();
+  });
+});
