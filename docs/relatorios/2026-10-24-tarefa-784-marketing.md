@@ -70,7 +70,7 @@ sem mesclar, sem publicar.
     do repositório dá esse prazo: o roteiro de instalação diz "dias a semanas", e a skill `loja-nova`
     conta 7 dias **depois** que a parte fiscal da loja fica pronta. Se for arriscado, trocar por
     "a meta é emitir nota em até 7 dias depois que o certificado e as autorizações ficam prontos";
-  - confirmar os 5 itens do "O que vem por aí" (todos da onda 1 da `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), sem data);
+  - confirmar os 5 itens do "O que vem por aí" (todos da onda 1 da `docs/visao.md`, que mora no `sakura-corp/escritorio`, privado; sem data);
   - o slide 2 não cita a cidade (pra não identificar a loja); se ela quiser "no interior de São
     Paulo", é só acrescentar.
 - **Quem montar o PDF (#785)**: as fotos `10f-orcamentos`, `29b-caixa-fechamento` e `06b-ficha-veiculo`
