@@ -18,6 +18,7 @@ import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { FiltroDeDatas } from "./FiltroDeDatas";
+import { GraficoDeRosca } from "./GraficoDeRosca";
 import { Segmentos } from "./Segmentos";
 
 interface CurvaABCSectionProps {
@@ -182,7 +183,8 @@ function ListaABC<T>({
           {rodape && <div className="sakura-card mt-2">{rodape}</div>}
         </>
       ) : (
-        <div className="sakura-card overflow-hidden">
+        <div className="flex items-start gap-4">
+        <div className="sakura-card min-w-0 flex-1 overflow-hidden">
           <table className="sakura-tabela">
             <thead>
               <tr>
@@ -230,6 +232,18 @@ function ListaABC<T>({
             </tbody>
           </table>
           {rodape && <div className="border-t border-linha">{rodape}</div>}
+        </div>
+        {/* Quantos itens em cada curva: a mesma contagem do "A: 3 · B: 2" de cima. */}
+        <div className="sakura-card hidden shrink-0 p-4 xl:block">
+          <GraficoDeRosca
+            descricao={`${titulo} por curva`}
+            fatias={[
+              { nome: "Curva A", valor: contagem.A, cor: "var(--color-ok)", texto: `${contagem.A} ${contagem.A === 1 ? "item" : "itens"}` },
+              { nome: "Curva B", valor: contagem.B, cor: "var(--color-atencao)", texto: `${contagem.B} ${contagem.B === 1 ? "item" : "itens"}` },
+              { nome: "Curva C", valor: contagem.C, cor: "var(--color-texto-3)", texto: `${contagem.C} ${contagem.C === 1 ? "item" : "itens"}` },
+            ]}
+          />
+        </div>
         </div>
       )}
     </section>

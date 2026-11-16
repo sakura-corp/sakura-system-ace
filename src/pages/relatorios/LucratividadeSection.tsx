@@ -5,11 +5,13 @@ import { Valor } from "@/components/Valor";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { lucratividadePorItem } from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
+import { formatarMoeda } from "@/schemas/dinheiro";
 import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { FiltroDeDatas } from "./FiltroDeDatas";
+import { GraficoDeRosca } from "./GraficoDeRosca";
 
 interface LucratividadeSectionProps {
   ordens: OrdemServico[];
@@ -83,7 +85,46 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         </CartaoNumero>
       </div>
 
-      <p className="flex items-start gap-2 text-rotulo text-texto-2">
+      <div className="grid grid-cols-3 gap-4">
+      {/* O que já está nos dois cartões de cima (custo e margem), em fatias: a
+          margem é a receita menos o custo, então as duas fatias fecham o
+          vendido. Com margem negativa não há "fatia", e o cartão já mostra o
+          prejuízo em vermelho. */}
+      {totalCusto >= 0 && totalMargem >= 0 && (totalCusto > 0 || totalMargem > 0) && (
+        <section className="sakura-card p-5" aria-labelledby="divisao-do-vendido-titulo">
+          <h2
+            id="divisao-do-vendido-titulo"
+            className="mb-4 font-titulo text-subtitulo font-semibold text-texto"
+          >
+            Do vendido, quanto é custo e quanto é margem
+          </h2>
+          <GraficoDeRosca
+            descricao="Divisão do vendido entre custo e margem"
+            fatias={[
+              {
+                nome: "Custo",
+                valor: totalCusto,
+                cor: "var(--color-atencao)",
+                texto: formatarMoeda(totalCusto),
+              },
+              {
+                nome: "Margem",
+                valor: totalMargem,
+                cor: "var(--color-acao)",
+                texto: formatarMoeda(totalMargem),
+              },
+            ]}
+          />
+          {algumCustoNaoInformado && (
+            <p className="mt-3 text-rotulo text-texto-2">
+              Item com {TEXTO_CUSTO_NAO_INFORMADO} conta como custo zero: a margem pode estar maior
+              que a real.
+            </p>
+          )}
+        </section>
+      )}
+
+      <p className="col-span-2 flex items-start gap-2 self-center text-rotulo text-texto-2">
         <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
         <span>
           Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos
@@ -91,6 +132,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           recebidas.
         </span>
       </p>
+      </div>
 
       {linhas.length === 0 ? (
         <p className="text-corpo text-texto-2">Nenhuma peça ou serviço vendido nesse período.</p>

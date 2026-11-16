@@ -18,8 +18,8 @@ import type { MovimentoCaixa } from "@/types/caixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { CartaoDeComparacao } from "./CartaoDeComparacao";
 import { GraficoDeBarras } from "./GraficoDeBarras";
-import { GraficoDeRadar } from "./GraficoDeRadar";
 import { Segmentos } from "./Segmentos";
 
 // As cores do gráfico (#990, tarefa 13): as de aviso do tema e o laranja da
@@ -43,6 +43,14 @@ const PERIODOS: { chave: Periodo; texto: string }[] = [
   { chave: "mensal", texto: "Mensal" },
   { chave: "anual", texto: "Anual" },
 ];
+
+/** Com o que o período atual é comparado, pro "+16% contra o dia anterior". */
+const CONTRA: Record<Periodo, string> = {
+  diario: "dia anterior",
+  semanal: "semana anterior",
+  mensal: "mês anterior",
+  anual: "ano anterior",
+};
 
 /** Quantos dias de "Vendas por dia" cabem à vista; com mais, a lista rola por dentro. */
 const DIAS_A_VISTA = 7;
@@ -91,10 +99,6 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
   const penultimoIndice = vendas.length - 2;
 
   const nomeDoPeriodo = PERIODOS.find((p) => p.chave === periodo)?.texto;
-  // O radar não desenha lucro abaixo de zero (ele fica no centro); o valor
-  // certo está na tabela ao lado, e o aviso diz isso.
-  const lucroNegativo = lucro[ultimoIndice] < 0 || lucro[penultimoIndice] < 0;
-
   const tabelaDosDias = (
     <table className="sakura-tabela">
       <thead>
@@ -119,7 +123,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
       <div className="grid grid-cols-4 gap-4">
         <CartaoNumero
           titulo="Recebido hoje"
-          explicacao="Tudo que entrou no caixa hoje: ordens de serviço faturadas mais as entradas lançadas à mão."
+          explicacao="Tudo que entrou no caixa hoje: ordens de serviço, contas recebidas e entradas lançadas à mão."
         >
           <Valor valor={totalHoje} />
         </CartaoNumero>
@@ -151,7 +155,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
             </h2>
             <Explicacao
               titulo="Vendas x Custos x Lucro"
-              texto="Vendas é o que entrou no caixa. Custos é o que as peças e os serviços vendidos custaram, mais as saídas lançadas no caixa. Lucro é vendas menos custos."
+              texto="Vendas é o que entrou no caixa. Custos é o que as peças e os serviços das ordens recebidas no período custaram, mais as saídas lançadas no caixa. Lucro é vendas menos custos."
             />
           </div>
           <Segmentos
@@ -175,7 +179,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
       </section>
 
       {penultimoIndice >= 0 && (
-        <section className="sakura-card p-5" aria-labelledby="grafico-comparativo-titulo">
+        <section aria-labelledby="grafico-comparativo-titulo">
           <h2
             id="grafico-comparativo-titulo"
             className="mb-1 font-titulo text-subtitulo font-semibold text-texto"
@@ -185,67 +189,31 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
           <p className="mb-4 text-rotulo text-texto-2">
             {nomeDoPeriodo} atual comparado com o anterior.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-            <GraficoDeRadar
-              descricao={`Radar comparando vendas, custos e lucro: ${nomeDoPeriodo?.toLowerCase()} atual e o anterior`}
-              eixos={[
-                {
-                  chave: "vendas",
-                  nome: "Vendas",
-                  atual: vendas[ultimoIndice],
-                  anterior: vendas[penultimoIndice],
-                },
-                {
-                  chave: "custos",
-                  nome: "Custos",
-                  atual: custos[ultimoIndice],
-                  anterior: custos[penultimoIndice],
-                },
-                {
-                  chave: "lucro",
-                  nome: "Lucro",
-                  atual: Math.max(lucro[ultimoIndice], 0),
-                  anterior: Math.max(lucro[penultimoIndice], 0),
-                },
-              ]}
-              formatarValor={formatarMoeda}
+          <div className="grid grid-cols-3 gap-4">
+            <CartaoDeComparacao
+              titulo="Vendas"
+              explicacao="O que entrou no caixa no período, comparado com o período de antes."
+              atual={vendas[ultimoIndice]}
+              anterior={vendas[penultimoIndice]}
+              subirEBom
+              contra={CONTRA[periodo]}
             />
-            {/* Os mesmos números do radar, escritos: quem lê o gráfico de relance
-                confere o valor sem passar o mouse em cada ponta. */}
-            <div className="min-w-72 max-w-md flex-1">
-              <table className="sakura-tabela" aria-label="Valores do comparativo">
-                <thead>
-                  <tr>
-                    <th>&nbsp;</th>
-                    <th className="text-right">Este período</th>
-                    <th className="text-right">Anterior</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { nome: "Vendas", atual: vendas[ultimoIndice], anterior: vendas[penultimoIndice] },
-                    { nome: "Custos", atual: custos[ultimoIndice], anterior: custos[penultimoIndice] },
-                    { nome: "Lucro", atual: lucro[ultimoIndice], anterior: lucro[penultimoIndice] },
-                  ].map((linha) => (
-                    <tr key={linha.nome}>
-                      <td className="font-medium">{linha.nome}</td>
-                      <td className="text-right">
-                        <Valor valor={linha.atual} />
-                      </td>
-                      <td className="text-right">
-                        <Valor valor={linha.anterior} classeDeCor="text-texto-2" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {lucroNegativo && (
-                <p className="mt-2 text-rotulo text-texto-2">
-                  O radar não desenha lucro negativo: o ponto fica no centro. O valor certo está
-                  na tabela.
-                </p>
-              )}
-            </div>
+            <CartaoDeComparacao
+              titulo="Custos"
+              explicacao="O que as peças e os serviços das ordens recebidas no período custaram, mais as saídas lançadas no caixa, comparado com o período de antes. Aqui subir não é bom."
+              atual={custos[ultimoIndice]}
+              anterior={custos[penultimoIndice]}
+              subirEBom={false}
+              contra={CONTRA[periodo]}
+            />
+            <CartaoDeComparacao
+              titulo="Lucro"
+              explicacao="Vendas menos custos no período, comparado com o período de antes."
+              atual={lucro[ultimoIndice]}
+              anterior={lucro[penultimoIndice]}
+              subirEBom
+              contra={CONTRA[periodo]}
+            />
           </div>
         </section>
       )}
