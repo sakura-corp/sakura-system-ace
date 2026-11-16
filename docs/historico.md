@@ -35,6 +35,16 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 15/11/2026 (tarde): visual novo, o menu novo na `main`
+- **Feito** (#1049, nada publicado): o menu tem quatro grupos com ícones, abre e encolhe (lembrado por computador) e encosta na borda da janela; no alto, a flor da logo B. Regras: seção 7.
+- **Decidido por ela**: o menu fica como está; o atalho de trocar o tema no rodapé do menu fica.
+- **Aberto** (sugestões, ela não decidiu): um ícone de socorro pro Diagnóstico; a ordem dos grupos; a opção "Automático" do tema. A logo nova no Login e no ícone é da tarefa 6.
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **Início** (tarefa 4, a tela-piloto, que ela aprova antes das outras; ainda sem sessão); depois o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: toda tela vale nos dois temas (regras, seção 13). Módulo novo precisa de grupo em `MODULOS` e de ícone no `Sidebar.tsx`.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, o menu (encolher, fechar e abrir de novo; um login só com Caixa), o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
 ### 15/11/2026: visual novo, o tema claro na `main`
 - **Feito** (#1046, nada publicado): o programa tem dois temas. Troca em Configurações → "Aparência deste computador" (por computador, lembrado; o padrão é o escuro); a logo troca junto. As cores do claro: regras, seção 13.
 - **Decidido por ela**: a cara do tema claro fica como está, por enquanto.
@@ -1130,7 +1140,7 @@ em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `d
 - **Assuntos da empresa com a equipe**, decididos e revisados pelo advogado em 14/10: ficam **no
   privado** (`EMPRESA.md` e `contratos/README.md` do `caranovavidanova/sakura-corp`).
 - **A equipe vai mexer também no programa das lojas** (decidido em 13/10): uma pessoa no painel e
-  duas no programa, com tarefas da onda 1 de `docs/visao.md`, primeiro as que deixam a entrada de
+  duas no programa, com tarefas da onda 1 de `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), primeiro as que deixam a entrada de
   loja nova mais rápida (ex.: a #457). Detalhe no privado, `EQUIPE.md`.
 - **O painel estava parado em 13/10**: a tarefa 2 (#351) com o Gustavo desde 01/10, sem PR.
 
@@ -1153,7 +1163,7 @@ em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `d
 em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **A visão dela, documentada e aprovada** (`docs/visao.md`), a partir do artigo "Services: The
+- **A visão dela, documentada e aprovada** (`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), a partir do artigo "Services: The
   New Software" (Sequoia): um programa só pra loja inteira, o máximo automático, integração com o
   WhatsApp e, mais pra frente, um assistente de IA. Os princípios que ela confirmou: **a IA
   sugere, a pessoa confirma**, com a dinâmica do assistente muito bem planejada antes de qualquer
@@ -1188,7 +1198,7 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
      14/10;
    - o WhatsApp e o horário do suporte;
    - o **acordo de vesting ou memorando com os amigos**, que o advogado pediu pra não demorar.
-5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
+5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md` (mora no `sakura-corp/escritorio`, privado).
 6. **Ainda vale**:
    - o Balcão pegar a `v0.9.51` (conferir no Diagnóstico);
    - o salto 2 do Electron (40);
@@ -1572,7 +1582,7 @@ falta virou tarefa, #361 a #412) está no topo de `docs/historico.md`.
 3. **Quando ela disser "faz a tarefa N"**: ler a issue inteira, fazer as perguntas do "Precisa da
    Sofia?" antes de começar, e o PR fecha a issue (`Closes #N`); a linha sai da tabela da seção 8.
    Sugestão de ordem, se ela perguntar: os ajustes rápidos (#361 a #363) e depois o
-   `docs/comparativo-anexar.md`, "Sugestão de ordem".
+   `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado), "Sugestão de ordem".
 4. **A lista "O que depende dela"** (seção 8). Com data (a alíquota de 10/2026
    foi cadastrada em 1º/10): a fatura da Focus em 10/10; o que vem do CNPJ depois de 16/10 (no
    privado).
@@ -1601,7 +1611,7 @@ travas, senhas e o painel) está no topo de `docs/historico.md`.
   - #386 a #412 (etiqueta `guia`): o que o concorrente tem e nós não, inclusive o **DRE em três
     partes, nesta ordem** (#386, #387, #388). O orçamento rápido entrou na #379 e a assinatura na
     #380. A tabela com todas está na seção 8; o número de cada uma também está em
-    `docs/comparativo-anexar.md`.
+    `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado).
 
 #### Por onde a próxima sessão começa
 1. **Gustavo (`kalendoscope`) já está dentro** (30/09, à noite): membro da `sakura-corp`, **Write**
@@ -1614,7 +1624,7 @@ travas, senhas e o painel) está no topo de `docs/historico.md`.
 4. **Quando ela disser "faz a tarefa N"**: ler a issue inteira, fazer as perguntas do "Precisa da
    Sofia?" antes de começar, e o PR fecha a issue (`Closes #N`); a linha sai da tabela da seção 8.
    Sugestão de ordem, se ela perguntar: os ajustes rápidos (#361 a #363) e depois o
-   `docs/comparativo-anexar.md`, "Sugestão de ordem".
+   `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado), "Sugestão de ordem".
 5. **A lista "O que depende dela"** (seção 8). Com data: **1º/10, a alíquota de 10/2026** no
    portal da prefeitura; o CNPJ (contratado em 30/09, sai em 10 a 20 dias; detalhe no privado); a
    fatura da Focus em 10/10.
@@ -1804,7 +1814,7 @@ ele deixou em aberto continua valendo**.
 
 **Estado do código**: não mudou. `main` na **`v0.9.46`** (publicada e liberada), banco na **`0064`**.
 
-- **Comparativo com o Anexar** (`docs/comparativo-anexar.md`): ela mandou 8 prints do site do
+- **Comparativo com o Anexar** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado): ela mandou 8 prints do site do
   concorrente. Dos 56 recursos que eles anunciam, temos 12, temos em parte 10 e faltam 34. Os que
   mais pesam: orçamento (`FN-01`), checklist com fotos e assinatura (`FN-02`), agenda (`FN-05`),
   devolução (`FN-08`), DRE, curva ABC, fluxo de caixa projetado e o app de celular. **É lista de

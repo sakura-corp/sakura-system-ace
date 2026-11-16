@@ -38,6 +38,8 @@ import { temPermissao } from "@/types/operador";
 import { AvisoDeErro } from "./AvisoDeErro";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { ImportarClientesModal } from "./ImportarClientesModal";
+import { RetornosLista } from "./RetornosLista";
 import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
@@ -64,10 +66,13 @@ export function ClientesPage() {
     formulario === "novo" ? "novo" : (formulario?.id ?? null),
   );
   const [veiculosDe, setVeiculosDe] = useState<Cliente | null>(null);
+  const [importando, setImportando] = useState(false);
 
   // Filtro "clientes que sumiram" (FN-11). As ordens só são buscadas quando a
   // pessoa liga o filtro: a lista de clientes comum não precisa delas.
   const [soSumidos, setSoSumidos] = useState(false);
+  // A lista de retornos (FN-06, #381) é outra visão, que busca os próprios dados.
+  const [verRetornos, setVerRetornos] = useState(false);
   const [textoMeses, setTextoMeses] = useState(String(MESES_PADRAO));
   const [ordens, setOrdens] = useState<OrdemDoCliente[] | null>(null);
   const [carregandoSumidos, setCarregandoSumidos] = useState(false);
@@ -141,6 +146,7 @@ export function ClientesPage() {
   }, [soSumidos, lojaId]);
 
   function handleLigarSumidos(ligar: boolean) {
+    if (ligar) setVerRetornos(false);
     setSoSumidos(ligar);
     if (ligar && ordens === null) carregarSumidos();
   }
@@ -207,9 +213,14 @@ export function ClientesPage() {
           </div>
         </div>
         {!formulario && (
-          <Botao variante="principal" onClick={() => setFormulario("novo")}>
-            + Novo cliente
-          </Botao>
+          <div className="flex items-center gap-3">
+            {operador?.admin && (
+              <Botao onClick={() => setImportando(true)}>Importar planilha</Botao>
+            )}
+            <Botao variante="principal" onClick={() => setFormulario("novo")}>
+              + Novo cliente
+            </Botao>
+          </div>
         )}
       </header>
 
@@ -237,7 +248,7 @@ export function ClientesPage() {
           {/* A busca vem primeiro: é o que se faz todo dia no balcão. O filtro
               dos que sumiram (uma vez por mês, no máximo) ficou ao lado dela,
               em vez de num cartão de largura inteira em cima. */}
-          {!soSumidos && (
+          {!soSumidos && !verRetornos && (
             <input
               type="search"
               value={lista.busca}
@@ -272,6 +283,18 @@ export function ClientesPage() {
                 />
                 meses
               </label>
+              <label className="flex items-center gap-2 text-corpo">
+                <input
+                  type="checkbox"
+                  checked={verRetornos}
+                  onChange={(e) => {
+                    setVerRetornos(e.target.checked);
+                    if (e.target.checked) setSoSumidos(false);
+                  }}
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-texto">Retornos: quem deve voltar pra um serviço</span>
+              </label>
             </div>
           )}
           {soSumidos && !formulario && (
@@ -282,9 +305,11 @@ export function ClientesPage() {
         </div>
       )}
 
-      {(lista.carregando && lista.linhas.length === 0 && !soSumidos) ||
+      {(lista.carregando && lista.linhas.length === 0 && !soSumidos && !verRetornos) ||
       (soSumidos && carregandoSumidos) ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
+      ) : verRetornos ? (
+        <RetornosLista />
       ) : soSumidos && ordens ? (
         sumidos.length === 0 ? (
           <p className="text-corpo text-texto-2">
@@ -450,6 +475,10 @@ export function ClientesPage() {
 
       {veiculosDe && (
         <VeiculosDoClienteModal cliente={veiculosDe} onFechar={() => setVeiculosDe(null)} />
+      )}
+
+      {importando && operador?.admin && (
+        <ImportarClientesModal onFechar={() => setImportando(false)} onConcluido={carregar} />
       )}
     </div>
   );
