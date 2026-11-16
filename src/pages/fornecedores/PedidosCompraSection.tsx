@@ -133,7 +133,7 @@ export function PedidosCompraSection({
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setMostrarImportarXml(true)}
-            className="flex items-center gap-2 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+            className="flex items-center gap-2 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-texto hover:bg-passar"
           >
             <IconeArquivo className="h-4 w-4" />
             Importar XML de nota fiscal
@@ -161,12 +161,12 @@ export function PedidosCompraSection({
       )}
 
       {fornecedores.length === 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
           Cadastre ao menos um fornecedor na aba "Cadastro" antes de criar um pedido de compra.
         </p>
       )}
       {fornecedores.length > 0 && pecas.length === 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
           Cadastre ao menos um produto em Estoque → Produtos antes de criar um pedido de compra.
         </p>
       )}
@@ -180,14 +180,14 @@ export function PedidosCompraSection({
         />
       )}
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">{erro}</p>}
 
       {pedidos.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum pedido de compra registrado ainda.</p>
+        <p className="text-corpo text-texto-2">Nenhum pedido de compra registrado ainda.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <thead className="bg-cartao text-texto">
               <tr>
                 <th className="px-4 py-3 font-medium">Nº</th>
                 <th className="px-4 py-3 font-medium">Fornecedor</th>
@@ -200,17 +200,17 @@ export function PedidosCompraSection({
             </thead>
             <tbody>
               {pedidos.map((pedido) => (
-                <tr key={pedido.id} className="border-t border-sakura-gray/20">
-                  <td className="whitespace-nowrap px-4 py-3 text-sakura-purple-dark">
+                <tr key={pedido.id} className="border-t border-linha">
+                  <td className="whitespace-nowrap px-4 py-3 text-texto">
                     {nomePedido(pedido.numero)}
                   </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
+                  <td className="px-4 py-3 text-texto">
                     {pedido.fornecedor?.nome ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
+                  <td className="px-4 py-3 text-texto">
                     {new Date(pedido.data_pedido).toLocaleDateString("pt-BR")}
                   </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
+                  <td className="px-4 py-3 text-texto">
                     {formatarMoeda(totalPedido(pedido.itens ?? []))}
                   </td>
                   <td className="px-4 py-3">

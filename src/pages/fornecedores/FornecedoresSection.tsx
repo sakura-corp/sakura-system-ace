@@ -86,14 +86,14 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
         </div>
       )}
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">{erro}</p>}
 
       {fornecedores.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum fornecedor cadastrado ainda.</p>
+        <p className="text-corpo text-texto-2">Nenhum fornecedor cadastrado ainda.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <thead className="bg-cartao text-texto">
               <tr>
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">CNPJ</th>
@@ -105,7 +105,7 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
             </thead>
             <tbody>
               {fornecedores.map((fornecedor) => (
-                <tr key={fornecedor.id} className="border-t border-sakura-gray/20">
+                <tr key={fornecedor.id} className="border-t border-linha">
                   <td className="px-4 py-3">{fornecedor.nome}</td>
                   <td className="px-4 py-3">{fornecedor.cnpj || "—"}</td>
                   <td className="px-4 py-3">{fornecedor.telefone || "—"}</td>
@@ -116,8 +116,8 @@ export function FornecedoresSection({ fornecedores, onRecarregar }: Fornecedores
                     <span
                       className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
                         fornecedor.ativo
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-sakura-gray/20 text-sakura-muted"
+                          ? "bg-ok/[0.12] text-ok"
+                          : "bg-passar text-texto-2"
                       }`}
                     >
                       {fornecedor.ativo ? "Ativo" : "Inativo"}

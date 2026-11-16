@@ -65,7 +65,7 @@ export function PedidoCompraItemRow({
   const melhores = melhorCotacaoPorFornecedor(cotacoes);
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-gray/30 p-3">
+    <div className="space-y-2 rounded-lg border border-linha p-3">
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <Combobox
@@ -74,7 +74,7 @@ export function PedidoCompraItemRow({
             onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}
             placeholder="Selecione a peça"
           />
-          {erroPecaId && <span className="text-rotulo text-red-600">{erroPecaId}</span>}
+          {erroPecaId && <span className="text-rotulo text-perigo">{erroPecaId}</span>}
         </div>
         <div className="w-28">
           <input
@@ -100,18 +100,18 @@ export function PedidoCompraItemRow({
           <button
             type="button"
             onClick={onRemover}
-            className="shrink-0 text-rotulo font-medium text-red-600 hover:underline"
+            className="shrink-0 text-rotulo font-medium text-perigo hover:underline"
           >
             Remover
           </button>
         )}
       </div>
 
-      {erroCotacoes && <p className="text-rotulo text-red-600">{erroCotacoes}</p>}
+      {erroCotacoes && <p className="text-rotulo text-perigo">{erroCotacoes}</p>}
 
       {melhores.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-rotulo text-sakura-purple-dark/85">
-          <span className="text-sakura-muted">Cotações anteriores:</span>
+        <div className="flex flex-wrap items-center gap-2 text-rotulo text-texto-2">
+          <span className="text-texto-2">Cotações anteriores:</span>
           {melhores.map((cotacao) => (
             <button
               key={cotacao.fornecedor_id}
@@ -120,7 +120,7 @@ export function PedidoCompraItemRow({
               onClick={() =>
                 setValue(`itens.${index}.preco_unitario`, String(cotacao.preco))
               }
-              className="rounded-full bg-sakura-pink-soft px-2.5 py-1 font-medium hover:opacity-80"
+              className="rounded-full bg-cartao px-2.5 py-1 font-medium hover:opacity-80"
             >
               {cotacao.fornecedor?.nome ?? "Fornecedor"}: {formatarMoeda(cotacao.preco)} (
               {formatarDataCurta(cotacao.criado_em)})

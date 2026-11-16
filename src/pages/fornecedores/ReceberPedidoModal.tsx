@@ -57,16 +57,16 @@ export function ReceberPedidoModal({ pedido, onConfirmar, onFechar }: ReceberPed
   return (
     <Modal titulo={`Receber ${nomePedido(pedido.numero)}`} onFechar={onFechar}>
       <form onSubmit={handleSubmit(aoConfirmar)} className="space-y-3 text-corpo">
-        <p className="text-sakura-purple-dark/80">
+        <p className="text-texto-2">
           Confira as quantidades que chegaram de verdade. O que você confirmar aqui já dá entrada
           no estoque automaticamente.
         </p>
 
-        {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>}
+        {erro && <p className="rounded-lg bg-perigo/[0.12] px-3 py-2 text-perigo">{erro}</p>}
 
-        <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+        <div className="overflow-x-auto rounded-xl border border-linha">
           <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <thead className="bg-cartao text-texto">
               <tr>
                 <th className="px-3 py-2 font-medium">Peça</th>
                 <th className="px-3 py-2 font-medium">Pedido</th>
@@ -76,19 +76,19 @@ export function ReceberPedidoModal({ pedido, onConfirmar, onFechar }: ReceberPed
             </thead>
             <tbody>
               {itens.map((item, index) => (
-                <tr key={item.id} className="border-t border-sakura-gray/20">
-                  <td className="px-3 py-2 text-sakura-purple-dark">
+                <tr key={item.id} className="border-t border-linha">
+                  <td className="px-3 py-2 text-texto">
                     {item.peca?.descricao ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-sakura-purple-dark">{item.quantidade_pedida}</td>
-                  <td className="px-3 py-2 text-sakura-purple-dark">{item.quantidade_recebida}</td>
+                  <td className="px-3 py-2 text-texto">{item.quantidade_pedida}</td>
+                  <td className="px-3 py-2 text-texto">{item.quantidade_recebida}</td>
                   <td className="px-3 py-2">
                     <input
                       type="number"
                       step="1"
                       min="0"
                       {...register(`quantidades.${index}.valor`)}
-                      className="w-24 rounded-lg border border-sakura-borda-campo px-2 py-1 focus:border-sakura-purple"
+                      className="sakura-campo w-24"
                     />
                   </td>
                 </tr>
@@ -101,7 +101,7 @@ export function ReceberPedidoModal({ pedido, onConfirmar, onFechar }: ReceberPed
           <button
             type="button"
             onClick={onFechar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+            className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
           >
             Cancelar
           </button>

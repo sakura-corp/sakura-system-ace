@@ -151,7 +151,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
     return (
       <div
         className={`rounded-xl px-4 py-3 text-corpo ${
-          resultado.erro ? "bg-red-50 text-red-700" : "bg-green-50 text-green-800"
+          resultado.erro ? "bg-perigo/[0.12] text-perigo" : "bg-ok/[0.12] text-ok"
         }`}
       >
         {resultado.criados.length > 0 && (
@@ -194,7 +194,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
     return (
       <div className="space-y-4">
         {avisoDoResultado(false)}
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <div className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
           <p>Não deu pra carregar a sugestão de compra: {erro}</p>
           {resultado && (
             <p className="mt-1">
@@ -205,34 +205,34 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
         <button
           type="button"
           onClick={() => carregar()}
-          className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+          className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-texto hover:bg-passar"
         >
           Tentar de novo
         </button>
       </div>
     );
   }
-  if (!dados) return <p className="text-corpo text-sakura-muted">Carregando...</p>;
+  if (!dados) return <p className="text-corpo text-texto-2">Carregando...</p>;
 
   return (
     <div className="space-y-4">
-      <p className="text-corpo text-sakura-muted">
+      <p className="text-corpo text-texto-2">
         Peças no estoque mínimo ou que, no ritmo dos últimos {DIAS_DO_RITMO_DE_SAIDA} dias, acabam em
         menos de {DIAS_DE_FOLGA_SUGESTAO} dias. A quantidade sugerida cobre o mínimo mais o que sai em{" "}
         {DIAS_DE_FOLGA_SUGESTAO} dias, menos o que já foi pedido. O fornecedor e o preço são os da
         cotação mais barata.
       </p>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">{erro}</p>}
 
       {avisoDoResultado(true)}
 
       {linhas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhuma peça precisa de compra agora.</p>
+        <p className="text-corpo text-texto-2">Nenhuma peça precisa de compra agora.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <thead className="bg-cartao text-texto">
               <tr>
                 <th className="px-3 py-3 font-medium">Peça</th>
                 <th className="px-3 py-3 font-medium">Saldo</th>
@@ -250,7 +250,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
               {linhas.map((l) => {
                 const quantidade = quantidadeDa(l.peca_id, l.quantidadeSugerida);
                 return (
-                  <tr key={l.peca_id} className="border-t border-sakura-gray/20 text-sakura-purple-dark">
+                  <tr key={l.peca_id} className="border-t border-linha text-texto">
                     <td className="px-3 py-3">{l.descricao}</td>
                     <td className="whitespace-nowrap px-3 py-3">
                       {l.saldo}
@@ -280,7 +280,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
                       />
                     </td>
                     <td className="px-3 py-3">
-                      {l.fornecedor ? l.fornecedor.nome : <span className="text-sakura-muted">sem cotação</span>}
+                      {l.fornecedor ? l.fornecedor.nome : <span className="text-texto-2">sem cotação</span>}
                     </td>
                     <td className="whitespace-nowrap px-3 py-3">
                       {l.preco === null ? "—" : formatarMoeda(l.preco)}
@@ -299,7 +299,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
       )}
 
       {grupos.length > 0 && (
-        <div className="sakura-card space-y-1 p-4 text-corpo text-sakura-purple-dark">
+        <div className="sakura-card space-y-1 p-4 text-corpo text-texto">
           <p className="font-medium">Total por fornecedor</p>
           <ul>
             {grupos.map((g) => (
@@ -312,14 +312,14 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
       )}
 
       {semFornecedor > 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <p className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
           {semFornecedor} {semFornecedor === 1 ? "peça fica fora dos pedidos" : "peças ficam fora dos pedidos"}{" "}
           por não ter fornecedor com cotação. Registre um preço num pedido de compra pra ela entrar.
         </p>
       )}
 
       {invalidas > 0 && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
           {invalidas === 1 ? "1 linha tem" : `${invalidas} linhas têm`} quantidade que não dá pra pedir
           (use número sem sinal, com até 2 casas, ex.: 3 ou 2,5). Corrija pra gerar os pedidos.
         </p>
@@ -338,14 +338,14 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
 
       {confirmando && (
         <Modal titulo="Gerar pedidos" onFechar={() => !gerando && setConfirmando(false)}>
-          <div className="space-y-4 text-corpo text-sakura-purple-dark">
+          <div className="space-y-4 text-corpo text-texto">
             <p>{textoDaConfirmacao}</p>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmando(false)}
                 disabled={gerando}
-                className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10 disabled:opacity-50"
+                className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-texto hover:bg-passar disabled:opacity-50"
               >
                 Cancelar
               </button>

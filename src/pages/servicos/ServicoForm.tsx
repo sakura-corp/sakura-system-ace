@@ -60,61 +60,61 @@ export function ServicoForm({
     <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6 shadow-sm">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h2 className="text-subtitulo font-semibold text-texto">
           {servicoExistente ? "Editar serviço" : "Novo serviço"}
         </h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <p className="rounded-lg bg-perigo/[0.12] px-4 py-2 text-corpo text-perigo">{erro}</p>}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Descrição <span className="text-red-500">*</span>
+        <label className="sakura-rotulo col-span-2">
+          
+            Descrição <span className="text-perigo">*
           </span>
           <input
             type="text"
             {...register("descricao")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
           {errors.descricao && (
-            <span className="text-rotulo text-red-600">{errors.descricao.message}</span>
+            <span className="text-rotulo text-perigo">{errors.descricao.message}</span>
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Código (opcional)</span>
+        <label className="sakura-rotulo">
+          Código (opcional)
           <input
             type="text"
             {...register("codigo_interno")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Preço padrão</span>
+        <label className="sakura-rotulo">
+          Preço padrão
           <input
             type="number"
             step="0.01"
             min="0"
             {...register("preco_padrao")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Custo (ex: mão de obra)</span>
+        <label className="sakura-rotulo">
+          Custo (ex: mão de obra)
           <input
             type="number"
             step="0.01"
             min="0"
             {...register("custo")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Categoria</span>
+        <label className="sakura-rotulo">
+          Categoria
           <Combobox
             opcoes={categorias.map((categoria) => ({ valor: categoria.id, rotulo: categoria.nome }))}
             valor={watch("categoria_id")}
@@ -129,7 +129,7 @@ export function ServicoForm({
         <button
           type="button"
           onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
         >
           Cancelar
         </button>

@@ -93,10 +93,10 @@ export function ServicosPage() {
         <div className="flex items-center gap-3">
           <BotaoVoltar />
           <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">
+            <h1 className="text-titulo font-semibold text-texto">
               Serviços
             </h1>
-            <p className="text-corpo text-sakura-muted">
+            <p className="text-corpo text-texto-2">
               Catálogo de serviços oferecidos, com preço padrão
             </p>
           </div>
@@ -138,21 +138,21 @@ export function ServicosPage() {
       )}
 
       {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
           {erro}
         </p>
       )}
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : servicos.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhum serviço cadastrado ainda.
         </p>
       ) : (
         <div className="overflow-x-auto sakura-card">
           <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <thead className="bg-cartao text-texto">
               <tr>
                 <th className="px-4 py-3 font-medium">Descrição</th>
                 <th className="px-4 py-3 font-medium">Categoria</th>
@@ -165,7 +165,7 @@ export function ServicosPage() {
             </thead>
             <tbody>
               {servicos.map((servico) => (
-                <tr key={servico.id} className="border-t border-sakura-gray/20">
+                <tr key={servico.id} className="border-t border-linha">
                   <td className="px-4 py-3">{servico.descricao}</td>
                   <td className="px-4 py-3">
                     {categorias.find((c) => c.id === servico.categoria_id)?.nome ?? "—"}
@@ -177,8 +177,8 @@ export function ServicosPage() {
                     <span
                       className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
                         servico.ativo
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-sakura-gray/20 text-sakura-muted"
+                          ? "bg-ok/[0.12] text-ok"
+                          : "bg-passar text-texto-2"
                       }`}
                     >
                       {servico.ativo ? "Ativo" : "Inativo"}

@@ -183,32 +183,32 @@ export function ImportarNotasFiscaisModal({
       onFechar={onFechar}
     >
       {erro && (
-        <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+        <p className="mb-4 rounded-lg bg-perigo/[0.12] px-4 py-2 text-corpo text-perigo">
           {erro}
         </p>
       )}
 
       {itens === null && (
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Fotos ou PDFs das notas</span>
+          <label className="sakura-rotulo">
+            Fotos ou PDFs das notas
             <input
               type="file"
               accept="image/*,.pdf,application/pdf"
               multiple
               onChange={(e) => setArquivos(Array.from(e.target.files ?? []))}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+              className="sakura-campo text-corpo"
             />
           </label>
           {arquivos.length > 0 && (
-            <p className="text-corpo text-sakura-muted">
+            <p className="text-corpo text-texto-2">
               {arquivos.length} arquivo(s) selecionado(s).
             </p>
           )}
           {semConexao && (
             <p
               role="status"
-              className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+              className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao"
             >
               Sem internet não dá pra ler a nota por foto: a leitura é feita na nuvem.
             </p>
@@ -217,7 +217,7 @@ export function ImportarNotasFiscaisModal({
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
             >
               Cancelar
             </button>
@@ -239,7 +239,7 @@ export function ImportarNotasFiscaisModal({
               depois em Estoque → Produtos. Só evita a surpresa de descobrir
               isso lá na frente, na recusa da SEFAZ. */}
           {itensComCodigoIncompativel.length > 0 && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <p className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao">
               {itensComCodigoIncompativel.length === 1
                 ? "Um produto está"
                 : `${itensComCodigoIncompativel.length} produtos estão`}{" "}
@@ -251,13 +251,13 @@ export function ImportarNotasFiscaisModal({
           )}
 
           {itens.length === 0 ? (
-            <p className="text-corpo text-sakura-muted">
+            <p className="text-corpo text-texto-2">
               Não consegui identificar nenhum produto nessas fotos.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+            <div className="overflow-x-auto rounded-xl border border-linha">
               <table className="w-full min-w-[1100px] text-left text-tabela">
-                <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <thead className="bg-cartao text-texto">
                   <tr>
                     <th className="px-2 py-2" />
                     <th className="px-2 py-2 font-medium">Descrição</th>
@@ -275,7 +275,7 @@ export function ImportarNotasFiscaisModal({
                 </thead>
                 <tbody>
                   {itens.map((item, indice) => (
-                    <tr key={indice} className="border-t border-sakura-gray/20">
+                    <tr key={indice} className="border-t border-linha">
                       <td className="px-2 py-1.5">
                         <input
                           type="checkbox"
@@ -292,7 +292,7 @@ export function ImportarNotasFiscaisModal({
                           largura="w-48"
                         />
                         {motivosCfop[indice] && (
-                          <p className="mt-1 w-48 rounded bg-amber-50 px-2 py-1 text-rotulo text-amber-800">
+                          <p className="mt-1 w-48 rounded bg-atencao/[0.12] px-2 py-1 text-rotulo text-atencao">
                             <strong>CFOP:</strong> {motivosCfop[indice]}. A coluna CFOP é
                             editável; sem acertar, a nota dessa peça pode ser recusada.
                           </p>
@@ -338,7 +338,7 @@ export function ImportarNotasFiscaisModal({
                           onChange={(e) =>
                             atualizarItem(indice, { origem: e.target.value || null })
                           }
-                          className="w-16 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                          className="sakura-campo w-16 rounded px-1.5"
                         >
                           <option value="">—</option>
                           {OPCOES_ORIGEM.map((opcao) => (
@@ -394,7 +394,7 @@ export function ImportarNotasFiscaisModal({
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
             >
               Cancelar
             </button>
