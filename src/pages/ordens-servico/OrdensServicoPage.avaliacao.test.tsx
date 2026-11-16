@@ -103,11 +103,20 @@ beforeEach(() => {
   registrarMensagemAberta.mockReset();
 });
 
+// Desde o visual novo (tarefa 7, #990), "Avaliação" mora no menu "Mais ações"
+// da linha. Os testes de "não aparece" abrem o menu e conferem que o item não
+// está lá: só procurar o botão na tela passaria sempre, com o menu fechado.
+async function abrirMaisAcoes() {
+  await userEvent.click(await screen.findByRole("button", { name: /^Mais ações/ }));
+  return screen.getByRole("menu");
+}
+
 describe("OrdensServicoPage — botão Avaliação", () => {
   it("com o link e a OS faturada, abre o WhatsApp com o link e registra", async () => {
     buscarLinkAvaliacao.mockResolvedValue("https://g.page/r/abc/review");
     montar();
-    await userEvent.click(await screen.findByRole("button", { name: /avaliação/i }));
+    await abrirMaisAcoes();
+    await userEvent.click(screen.getByRole("menuitem", { name: /avaliação/i }));
     await waitFor(() => expect(abrirConversaWhatsapp).toHaveBeenCalled());
     expect(abrirConversaWhatsapp.mock.calls[0][1]).toContain("https://g.page/r/abc/review");
     expect(abrirConversaWhatsapp.mock.calls[0][1]).toContain("Cliente Exemplo");
@@ -120,6 +129,8 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     buscarLinkAvaliacao.mockResolvedValue(null);
     montar();
     await screen.findAllByText("Cliente Exemplo");
+    await abrirMaisAcoes();
+    expect(screen.queryByRole("menuitem", { name: /avaliação/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /avaliação/i })).toBeNull();
   });
 
@@ -127,6 +138,8 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     buscarLinkAvaliacao.mockRejectedValue(new Error("relation does not exist"));
     montar();
     await screen.findAllByText("Cliente Exemplo");
+    await abrirMaisAcoes();
+    expect(screen.queryByRole("menuitem", { name: /avaliação/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /avaliação/i })).toBeNull();
   });
 
@@ -135,6 +148,8 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     buscarLinkAvaliacao.mockResolvedValue("https://g.page/r/abc/review");
     montar();
     await screen.findAllByText("Cliente Exemplo");
+    await abrirMaisAcoes();
+    expect(screen.queryByRole("menuitem", { name: /avaliação/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /avaliação/i })).toBeNull();
   });
 
@@ -143,6 +158,8 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     buscarLinkAvaliacao.mockResolvedValue("https://g.page/r/abc/review");
     montar();
     await screen.findAllByText("Cliente Exemplo");
+    await abrirMaisAcoes();
+    expect(screen.queryByRole("menuitem", { name: /avaliação/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /avaliação/i })).toBeNull();
   });
 
@@ -151,8 +168,9 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     buscarLinkAvaliacao.mockResolvedValue("https://g.page/r/abc/review");
     montar();
     await userEvent.click(await screen.findByRole("tab", { name: /vendas de balcão/i }));
-    expect(await screen.findByRole("button", { name: /avaliação/i })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /^fechamento$/i }));
+    await abrirMaisAcoes();
+    expect(screen.getByRole("menuitem", { name: /avaliação/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("menuitem", { name: /^fechamento$/i }));
     // O detalhe da venda abre em cima da lista: o botão é o do cabeçalho dele.
     const detalhe = (await screen.findByText(/venda de balcão · registrada/i)).closest(".sakura-card");
     if (!(detalhe instanceof HTMLElement)) throw new Error("o detalhe da venda não abriu");
@@ -168,6 +186,8 @@ describe("OrdensServicoPage — botão Avaliação", () => {
     montar();
     await userEvent.click(await screen.findByRole("tab", { name: /vendas de balcão/i }));
     await screen.findAllByText("Cliente Exemplo");
+    await abrirMaisAcoes();
+    expect(screen.queryByRole("menuitem", { name: /avaliação/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /avaliação/i })).toBeNull();
   });
 });

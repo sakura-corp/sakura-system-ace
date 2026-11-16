@@ -795,6 +795,75 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
 }
 
+/* ------------------------------------------------------------------
+   tarefa 7 (#990): as abas com o traço laranja.
+
+       <div role="tablist" class="sakura-abas">
+         <button role="tab" aria-selected="true" class="sakura-aba">
+           Ordens de serviço <span class="sakura-aba-conta">18</span>
+         </button>
+       </div>
+
+   A aba escolhida é a que tem `aria-selected="true"`: a aparência segue o
+   estado que o leitor de tela já anuncia, sem uma classe a mais pra esquecer.
+   O traço é o laranja da ação (regra 2: "a aba ativa" é um dos lugares dele);
+   a palavra fica na cor do texto, em negrito, porque cor sozinha não avisa.
+   ------------------------------------------------------------------ */
+@utility sakura-abas {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-linha);
+}
+
+@utility sakura-aba {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem 0.75rem;
+  font-size: var(--text-corpo);
+  line-height: var(--text-corpo--line-height);
+  font-weight: 500;
+  color: var(--color-texto-2);
+  border-radius: 0.625rem 0.625rem 0 0;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+
+  &:hover {
+    color: var(--color-texto);
+    background-color: var(--color-passar);
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px;
+    background-color: transparent;
+  }
+
+  &[aria-selected="true"] {
+    color: var(--color-texto);
+    font-weight: 600;
+  }
+
+  &[aria-selected="true"]::after {
+    background-color: var(--color-acao);
+  }
+}
+
+/* O número ao lado do nome da aba, menor e na cor secundária. */
+@utility sakura-aba-conta {
+  font-size: var(--text-meta);
+  line-height: var(--text-meta--line-height);
+  font-weight: 500;
+  color: var(--color-texto-2);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ------------------------------------------------------------------
    Tarefa 6 do visual novo (#990): a barra da janela e as telas de entrada.
