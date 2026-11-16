@@ -153,17 +153,17 @@ describe("OrcamentosPage", () => {
     expect(await screen.findByText("Orçamento 1")).toBeInTheDocument();
     expect(screen.getByText("Orçamento 2")).toBeInTheDocument();
     expect(screen.getByText("01/01/2099")).toBeInTheDocument();
-    expect(screen.getAllByText("vencido")).toHaveLength(1);
+    expect(screen.getAllByText("Vencido")).toHaveLength(1);
     // Nem OS, nem recusado, na aba de abertos.
     expect(screen.queryByText("Ana Recusada")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "+ Novo orçamento" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Novo orçamento" })).toBeInTheDocument();
   });
 
   it("recusados ficam numa aba própria", async () => {
     const user = montar();
     await screen.findByText("Orçamento 1");
 
-    await user.click(screen.getByRole("tab", { name: "Recusados (1)" }));
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
 
     expect(screen.getByText("Ana Recusada")).toBeInTheDocument();
     expect(screen.queryByText("Orçamento 1")).not.toBeInTheDocument();

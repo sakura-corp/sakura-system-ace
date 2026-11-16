@@ -256,6 +256,56 @@ Um bloco que recebe uma lista **não estica a tela** quando a lista aumenta. Val
    um clique a mais pra "Fechamento" e "Avaliação"; em troca a tabela fica legível. **(escolha do
    Claude)**
 
+### Como saiu no programa (tarefa 7, 16/11)
+
+Fotos de antes e depois em `andamento/8-ordens/` (1366×768, escuro e claro).
+
+- **A lista de OS** (`OrdensServicoPage.tsx`): abas com o traço laranja (`sakura-abas`, `sakura-aba`
+  e `sakura-aba-conta`, no `globals.css`, bloco "tarefa 7": a aba escolhida é a de
+  `aria-selected="true"`), os filtros com `sakura-campo-filtro`, a tabela com `sakura-tabela`,
+  `LinkPlaca` e o selo. Dinheiro à direita.
+- **O selo da OS** é o `SeloDaOrdem.tsx` (o `Selo` com a tabela da seção 3). "Faturada" que ainda
+  falta nota fica **amarela**, como a concluída: as duas pedem uma ação; o verde é só "Finalizada".
+  O `StatusOrdemBadge.tsx` antigo ficou sem uso nas telas (o PR #1038 da equipe mexe nele; apagar
+  depois que ele entrar).
+- **Na linha, só o próximo passo**: "Faturar" (laranja) em toda OS ou venda não faturada; **"Emitir
+  nota"** (laranja) na faturada que ainda falta nota, que abre o Fechamento; na **finalizada**,
+  "Avisar" (WhatsApp, só OS) e **"Nota do cliente"** lado a lado. **Mais de um botão laranja na
+  tela**: um por linha que pede ação, como no conceito; é o mesmo próximo passo, repetido por linha.
+- **A nota do cliente à mão** (pedido da Sofia, 15/11; decidido por ela em 16/11): "Nota do cliente"
+  abre a janela de nota que já existe (`VerDanfeModal`: ver, imprimir, baixar o PDF pra mandar);
+  com duas notas, uma janelinha pergunta qual ("Nota das peças (NFC-e)" ou "Nota do serviço
+  (NFS-e)"), no `NotaDoClienteModal.tsx`. Só as notas que o programa emitiu e não foram canceladas.
+  O aviso "OS 148 faturada" continua só texto: some em 4,5 s, e o caminho fica na linha. Nada mudou
+  na emissão nem no conteúdo da nota.
+- **"Mais ações"** (`AcoesDaLinha.tsx`): "Avisar o cliente" (quando não está na linha),
+  "Fechamento", "Avaliação" e **"Abrir a OS"**, que é novo: até aqui só o clique do mouse na linha
+  abria, e quem usa só o teclado não tinha como. O menu agora anda pelo teclado (setas, Home, End,
+  Esc devolve o foco ao botão, Tab fecha) e tem ícone em cada item. Esc dentro de uma janela fecha
+  só o menu. O painel usa a classe `sakura-menu-brota`, a animação de abrir da tarefa 5 (depende do PR #1054; sem ela, o menu só aparece).
+- **O erro de WhatsApp de um item do menu** (o telefone sem DDD) fica embaixo das ações da linha
+  dela, em vermelho com o triângulo, e não some sozinho (o menu fecha no clique).
+- **O Faturar em janela** (`FaturamentoCard.tsx`, dentro do `Modal`): título "Faturar OS 148", o
+  cliente e a placa embaixo, "Total dos itens" à direita; "Recebido agora" e "A receber depois"
+  viraram dois cartões; os campos das formas ganharam nome pro leitor de tela ("Valor da forma
+  2"); o total, o "Falta R$ X" e o "Com os juros do cartão" foram pro rodapé, à esquerda dos botões.
+  **Nenhuma conta mudou**: as funções são as mesmas de `schemas/faturamento.ts`, e os 14 testes de
+  antes passaram sem mudar uma linha. A janela não fecha enquanto fatura (o erro precisa de onde
+  aparecer). O percentual de juros passou a sair com vírgula ("2,74%").
+- **Ao confirmar**: a janela fecha, a linha troca de selo (a lista recarrega) e sai o aviso
+  `avisar("OS 148 faturada")`. Erro: a janela fica aberta e o erro aparece no rodapé, do lado do
+  botão, com `role="alert"`.
+- **A venda de balcão**: o pagamento da venda nova abre na mesma janela, com "Confirmar venda" e
+  "Mudar as peças" (que volta pras peças); "Venda 149 registrada" virou aviso que some. A venda
+  aberta pela lista ganhou o selo e o botão novos.
+- **Orçamentos**: abas, filtro, tabela e selo iguais aos da OS; na linha fica o "Enviar" (WhatsApp),
+  e o "Mais ações" tem "Abrir o orçamento". O "vencido" virou o selo cinza "Vencido", com relógio.
+- **Em janela estreita** (1024 com o menu aberto, 16/11): o nome do cliente quebra só entre as
+  palavras (nunca no meio da sílaba), e a coluna do próximo passo fica **grudada na direita** da
+  tabela: a tabela rola de lado, mas o "Faturar" fica sempre à vista; o que rola por baixo dela
+  esmaece. Com o menu encolhido, a linha cabe inteira. Nenhuma coluna foi escondida.
+- **Os botões do topo** perderam o "+" do texto: o "+" virou ícone ("Nova ordem de serviço").
+
 ## 7. O menu
 
 - **14 itens em quatro grupos**: Atendimento (Início, Clientes, Ordens de Serviço, Orçamentos,
