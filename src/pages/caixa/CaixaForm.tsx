@@ -14,6 +14,7 @@ import {
 } from "@/schemas/caixa";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { NovoMovimentoCaixa, TipoCaixa } from "@/types/caixa";
+import { Aviso } from "./Aviso";
 
 interface CaixaFormProps {
   categorias: CategoriaCaixa[];
@@ -68,10 +69,9 @@ export function CaixaForm({
       </div>
 
       {erro && (
-        <p role="alert" className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-2.5 text-corpo text-perigo">
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
       <div className="grid grid-cols-2 gap-4">

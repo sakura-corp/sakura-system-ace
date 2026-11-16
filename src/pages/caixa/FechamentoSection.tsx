@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUp, Check, TriangleAlert, Undo2, type LucideIcon } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { ArrowUp, Check, TriangleAlert, Undo2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Botao } from "@/components/Botao";
@@ -30,6 +30,7 @@ import {
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { ModuloChave } from "@/types/operador";
+import { Aviso } from "./Aviso";
 
 interface FechamentoSectionProps {
   lojaId: string;
@@ -62,43 +63,33 @@ function diaBonito(dia: string): string {
 const campo = "sakura-campo";
 
 /**
- * A caixa de aviso do visual novo: ícone e palavra junto da cor (regra 4).
- * Só aparência; o texto é o mesmo de antes.
- */
-function Aviso({
-  tipo,
-  icone: Icone,
-  className = "",
-  children,
-}: {
-  tipo: "ok" | "atencao" | "perigo";
-  icone: LucideIcon;
-  className?: string;
-  children: ReactNode;
-}) {
-  const cor =
-    tipo === "ok" ? "bg-ok/[0.12] text-ok" : tipo === "perigo" ? "bg-perigo/[0.12] text-perigo" : "bg-atencao/[0.12] text-atencao";
-  return (
-    <div className={`flex items-start gap-2 rounded-xl px-3.5 py-2.5 ${cor} ${className}`.trim()}>
-      <Icone aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.25} />
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
-
-/**
  * A diferença de um dia já fechado, num selo com a palavra: "Bateu", "Faltou
  * R$ 12,50", "Sobrou R$ 5,00". Antes a sobra era só um número amarelo, sem
  * sinal e sem ícone (cor sozinha não avisa, regra 4). O valor é o que o banco
  * gravou; aqui só se escolhe a palavra pelo sinal.
  */
-function SeloDaDiferenca({ diferenca, plural = false }: { diferenca: number; plural?: boolean }) {
+function SeloDaDiferenca({ diferenca }: { diferenca: number }) {
   const situacao = situacaoDaDiferenca(diferenca);
   if (situacao === "bateu") return <Selo tipo="ok" palavra="Bateu" />;
-  if (situacao === "faltou") {
-    return <Selo tipo="perigo" palavra={`${plural ? "Faltaram" : "Faltou"} ${formatarMoeda(-diferenca)}`} />;
-  }
-  return <Selo tipo="atencao" icone={ArrowUp} palavra={`${plural ? "Sobraram" : "Sobrou"} ${formatarMoeda(diferenca)}`} />;
+  if (situacao === "faltou") return <Selo tipo="perigo" palavra={`Faltou ${formatarMoeda(-diferenca)}`} />;
+  return <Selo tipo="atencao" icone={ArrowUp} palavra={`Sobrou ${formatarMoeda(diferenca)}`} />;
+}
+
+/**
+ * Uma diferença diferente de zero como número com sinal: a falta é o `<Valor>`
+ * (▼ e −, em vermelho) e a sobra ganha a seta pra cima e o "+" (antes era só
+ * um número amarelo, sem sinal). Serve pro cartão do dia fechado e pra soma do
+ * histórico, que é um SALDO de vários dias (faltou 50 num, sobrou 20 noutro:
+ * −R$ 30,00), e por isso não leva a palavra "Faltaram", que faria parecer que
+ * foi o total que faltou.
+ */
+function DiferencaComSinal({ diferenca, className = "" }: { diferenca: number; className?: string }) {
+  if (diferenca < 0) return <Valor valor={diferenca} className={className} />;
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap text-atencao ${className}`.trim()}>
+      <ArrowUp aria-hidden="true" className="size-[1em] shrink-0" strokeWidth={2.5} />+{formatarMoeda(diferenca)}
+    </span>
+  );
 }
 
 export function FechamentoSection({
@@ -245,11 +236,9 @@ function FecharDia({
       </h2>
 
       {erro && (
-        <div role="alert">
-          <Aviso tipo="perigo" icone={TriangleAlert} className="text-corpo">
-            {erro}
-          </Aviso>
-        </div>
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -303,10 +292,12 @@ function FecharDia({
             {errors.contado && <span className="text-rotulo text-perigo">{errors.contado.message}</span>}
           </label>
 
-          {situacao && diferenca !== null && (
-            // Anunciado ao digitar: quem conta a gaveta olhando pro dinheiro
-            // ouve se bateu sem tirar o olho dele.
-            <div aria-live="polite">
+          {/* Anunciado ao digitar: quem conta a gaveta olhando pro dinheiro
+              ouve se bateu sem tirar o olho dele. A região fica sempre na
+              tela (vazia antes do primeiro número): se ela nascesse junto com
+              o aviso, o leitor de tela pularia o primeiro. */}
+          <div aria-live="polite">
+            {situacao && diferenca !== null && (
               <Aviso
                 tipo={situacao === "bateu" ? "ok" : situacao === "faltou" ? "perigo" : "atencao"}
                 icone={situacao === "bateu" ? Check : situacao === "faltou" ? TriangleAlert : ArrowUp}
@@ -318,8 +309,8 @@ function FecharDia({
                     ? `Faltam ${formatarMoeda(-diferenca)} — vira uma Saída "Quebra de caixa".`
                     : `Sobram ${formatarMoeda(diferenca)} — vira uma Entrada "Sobra de caixa".`}
               </Aviso>
-            </div>
-          )}
+            )}
+          </div>
 
           <label className="flex flex-col gap-1 text-corpo">
             <span className="text-texto-2">Observação (se sobrou ou faltou, o que pode ter sido)</span>
@@ -479,11 +470,9 @@ function FechamentoFeito({
       </div>
 
       {erro && (
-        <div role="alert">
-          <Aviso tipo="perigo" icone={TriangleAlert} className="text-corpo">
-            {erro}
-          </Aviso>
-        </div>
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -500,15 +489,8 @@ function FechamentoFeito({
                 <Check aria-hidden="true" className="size-5 shrink-0" strokeWidth={2.5} />
                 Bateu
               </span>
-            ) : situacao === "faltou" ? (
-              <Valor valor={fechamento.diferenca} />
             ) : (
-              // A sobra ganha a seta pra cima e o "+": o "Sobrou" em cima já
-              // diz, mas o número sozinho, sem sinal, parecia um valor qualquer.
-              <span className="inline-flex items-center gap-1 text-atencao">
-                <ArrowUp aria-hidden="true" className="size-5 shrink-0" strokeWidth={2.5} />+
-                {formatarMoeda(fechamento.diferenca)}
-              </span>
+              <DiferencaComSinal diferenca={fechamento.diferenca} />
             )}
           </p>
         </div>
@@ -612,7 +594,11 @@ function Historico({
                 Soma das diferenças destes {fechamentos.length} {fechamentos.length === 1 ? "dia" : "dias"}
               </td>
               <td className="pl-6!">
-                {soma === 0 ? <span className="text-texto-2">—</span> : <SeloDaDiferenca diferenca={soma} plural />}
+                {soma === 0 ? (
+                  <span className="text-texto-2">—</span>
+                ) : (
+                  <DiferencaComSinal diferenca={soma} className="font-semibold" />
+                )}
               </td>
               <td />
             </tr>

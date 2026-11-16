@@ -1,4 +1,3 @@
-import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -9,6 +8,7 @@ import { agruparPorCategoria } from "@/schemas/caixa";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, TipoCaixa } from "@/types/caixa";
+import { Aviso } from "./Aviso";
 
 interface CategorizarSemCategoriaProps {
   tipo: TipoCaixa;
@@ -92,10 +92,9 @@ export function CategorizarSemCategoria({
       </p>
 
       {erro && (
-        <p role="alert" className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-2.5 text-corpo text-perigo">
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl bg-poco p-4">
@@ -117,12 +116,15 @@ export function CategorizarSemCategoria({
           crescer"): a lista pode ter dezenas de linhas. */}
       <div className="max-h-[24rem] overflow-y-auto rounded-xl border border-linha">
         <table className="sakura-tabela">
-          <thead>
+          {/* O cabeçalho fica parado ao rolar. A linha embaixo dele é uma
+              sombra, e não a borda da tabela: com as bordas coladas
+              (border-collapse) a borda não acompanha a célula que fica parada. */}
+          <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-[1] [&_th]:bg-cartao [&_th]:shadow-[inset_0_-1px_0_var(--color-linha)]">
             <tr>
-              <th className="sticky top-0 z-[1] bg-cartao">Data</th>
-              <th className="sticky top-0 z-[1] bg-cartao">Descrição</th>
-              <th className="sticky top-0 z-[1] bg-cartao text-right">Valor</th>
-              <th className="sticky top-0 z-[1] w-64 bg-cartao">Categoria</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th className="text-right">Valor</th>
+              <th className="w-64">Categoria</th>
             </tr>
           </thead>
           <tbody>

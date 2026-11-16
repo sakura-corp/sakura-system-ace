@@ -1,5 +1,4 @@
-import { TriangleAlert } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
@@ -14,6 +13,7 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
+import { Aviso } from "./Aviso";
 import { FechamentoSection } from "./FechamentoSection";
 
 type Aba = "diario" | "entradas" | "saidas" | "fechamento";
@@ -81,6 +81,26 @@ export function CaixaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
+  // As setas, Home e End andam entre as abas e já trocam de aba.
+  const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
+  function andarPelasAbas(e: KeyboardEvent<HTMLDivElement>) {
+    const atual = ABAS.findIndex((a) => a.chave === aba);
+    const proxima =
+      e.key === "ArrowRight"
+        ? (atual + 1) % ABAS.length
+        : e.key === "ArrowLeft"
+          ? (atual - 1 + ABAS.length) % ABAS.length
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? ABAS.length - 1
+              : null;
+    if (proxima === null) return;
+    e.preventDefault();
+    setAba(ABAS[proxima].chave);
+    abasRef.current[proxima]?.focus();
+  }
+
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     if (!lojaAtual) return;
     // Lançar depois do fechamento não é proibido (regra 7 do guia: aviso,
@@ -113,18 +133,32 @@ export function CaixaPage() {
       </header>
 
       {erro && (
-        <p className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <Aviso tipo="perigo" alerta className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
-      <div role="tablist" aria-label="Partes do caixa" className="flex gap-1 border-b border-linha">
-        {ABAS.map(({ chave, rotulo }) => (
-          <AbaBotao key={chave} label={rotulo} ativa={aba === chave} onClick={() => setAba(chave)} />
+      <div
+        role="tablist"
+        aria-label="Partes do caixa"
+        onKeyDown={andarPelasAbas}
+        className="flex gap-1 border-b border-linha"
+      >
+        {ABAS.map(({ chave, rotulo }, i) => (
+          <AbaBotao
+            key={chave}
+            ref={(el) => {
+              abasRef.current[i] = el;
+            }}
+            id={`caixa-aba-${chave}`}
+            label={rotulo}
+            ativa={aba === chave}
+            onClick={() => setAba(chave)}
+          />
         ))}
       </div>
 
+      <div role="tabpanel" id="caixa-painel" aria-labelledby={`caixa-aba-${aba}`}>
       {carregando ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
@@ -161,6 +195,7 @@ export function CaixaPage() {
           onAtualizado={carregar}
         />
       )}
+      </div>
     </div>
   );
 }
@@ -183,19 +218,29 @@ const ABAS: { chave: Aba; rotulo: string }[] = [
  * estiverem na `main`, esta aba pode virar a peça (sugestão no PR).
  */
 function AbaBotao({
+  ref,
+  id,
   label,
   ativa,
   onClick,
 }: {
+  ref: (el: HTMLButtonElement | null) => void;
+  id: string;
   label: string;
   ativa: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      ref={ref}
+      id={id}
       type="button"
       role="tab"
       aria-selected={ativa}
+      aria-controls="caixa-painel"
+      // Só a aba escolhida entra no Tab; entre as abas, as setas (o jeito de
+      // abas que o leitor de tela anuncia).
+      tabIndex={ativa ? 0 : -1}
       onClick={onClick}
       className={[
         "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo font-medium text-texto-2",

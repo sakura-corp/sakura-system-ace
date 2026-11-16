@@ -115,7 +115,11 @@ export function DiarioSection({
         />
       )}
 
-      <div className="grid grid-cols-4 gap-4">
+      {/* Quatro lado a lado só quando cabem (a largura da TELA, não da janela:
+          o menu aberto come 236 px). Abaixo disso, dois por linha: o número
+          tem 30 px e não quebra, e "R$ 12.345,67" não cabe num quarto de 980 px. */}
+      <div className="@container">
+      <div className="grid grid-cols-2 gap-4 @5xl:grid-cols-4">
         <CartaoNumero titulo="Entradas do dia" explicacao={EXPLICA.entradas}>
           <Valor valor={entradas} />
         </CartaoNumero>
@@ -131,6 +135,7 @@ export function DiarioSection({
         <CartaoNumero titulo="Lucro do dia" explicacao={EXPLICA.lucro}>
           <Valor valor={totalLucro} />
         </CartaoNumero>
+      </div>
       </div>
 
       {porFormaPagamento.length > 0 && (
@@ -188,6 +193,13 @@ export function DiarioSection({
                         <Dica texto="Entrou depois de o caixa do dia ser fechado — não estava na gaveta quando ela foi contada.">
                           <span tabIndex={0} className="ml-2 inline-flex rounded-full align-middle">
                             <Selo tipo="atencao" palavra="Depois do fechamento" />
+                            {/* A explicação também no texto, pro leitor de
+                                tela ouvir lendo a linha (a dica só aparece com
+                                o mouse ou o foco). */}
+                            <span className="sr-only">
+                              : entrou depois de o caixa do dia ser fechado, não estava na gaveta quando
+                              ela foi contada.
+                            </span>
                           </span>
                         </Dica>
                       )}
@@ -237,10 +249,11 @@ export function DiarioSection({
  */
 const EXPLICA = {
   entradas:
-    "Tudo que entrou no caixa neste dia: o que as ordens de serviço e as vendas de balcão receberam, mais as outras entradas (lançadas à mão ou de uma conta recebida).",
-  saidas: "Tudo que saiu do caixa neste dia: as contas pagas e as saídas lançadas à mão.",
+    "Tudo que entrou no caixa neste dia: o que as ordens de serviço e as vendas de balcão receberam, as contas a receber pagas, as entradas lançadas à mão e a sobra de caixa do fechamento.",
+  saidas:
+    "Tudo que saiu do caixa neste dia: as contas pagas, as saídas lançadas à mão e a quebra de caixa do fechamento.",
   saldo:
     "Entradas menos saídas do dia. Não é o dinheiro da gaveta: Pix e cartão também entram aqui. Pra conferir a gaveta, use a aba Fechamento.",
   lucro:
-    "Entradas menos saídas, menos o custo das peças e dos serviços vendidos nas ordens do dia. Fica vermelho, com a seta pra baixo, quando o dia deu prejuízo.",
+    "Entradas menos saídas, menos o custo das peças e dos serviços das ordens e vendas de balcão que receberam neste dia. Fica vermelho, com a seta pra baixo, quando o dia deu prejuízo.",
 };
