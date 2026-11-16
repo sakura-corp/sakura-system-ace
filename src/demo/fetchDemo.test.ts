@@ -126,7 +126,7 @@ describe("fetch de demonstração", () => {
   it("cadastrar um login novo (signUp) cria um usuário novo, só na memória", async () => {
     const { data, error } = await novoCliente().auth.signUp({
       email: "novo@sakura.local",
-      password: "senha123",
+      password: "qualquer",
     });
     expect(error).toBeNull();
     expect(data.user?.email).toBe("novo@sakura.local");
