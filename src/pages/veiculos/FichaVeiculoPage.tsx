@@ -174,7 +174,10 @@ export function FichaVeiculoPage() {
             {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
                 "sem telefone cadastrado" seria mentira, então a linha some. */}
             {podeVerCadastro && (
-              <span>· {veiculo.cliente?.telefone || "Sem telefone cadastrado"}</span>
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{veiculo.cliente?.telefone || "Sem telefone cadastrado"}</span>
+              </>
             )}
             <Explicacao
               titulo="Dono atual"

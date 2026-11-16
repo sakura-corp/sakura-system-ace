@@ -73,7 +73,7 @@ export function GarantiasPage() {
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div role="tablist" aria-label="Situação da garantia" className="flex gap-1 border-b border-linha">
+      <div role="group" aria-label="Situação da garantia" className="flex gap-1 border-b border-linha">
         <FiltroBotao
           label={`Todos (${linhas.length})`}
           ativo={filtroStatus === "todos"}
@@ -164,8 +164,7 @@ function FiltroBotao({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={ativo}
+      aria-pressed={ativo}
       onClick={onClick}
       className={`-mb-px px-4 py-2.5 text-corpo font-medium transition-colors ${
         ativo

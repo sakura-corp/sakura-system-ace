@@ -64,6 +64,20 @@ quadro da contagem. O teste agora olha só o cartão "Deve" (que é o que ele qu
 ## O que foi conferido
 
 - `npm run typecheck`, `lint` (0 erros), `test` (182 arquivos, 2.216 testes), `contraste`, `contraste:telas` (dois temas) e `largura:telas` (menu aberto e encolhido): verdes.
-- Testes novos: `GarantiasPage.test.tsx` (6, visto reprovar ao trocar o selo de "Vencida"), `VeiculosDoClienteModal.test.tsx` (4) e três conferências de selo na ficha do cliente.
+- Testes novos: `GarantiasPage.test.tsx` (6, visto reprovar ao trocar o selo de "Vencida"), `VeiculosDoClienteModal.test.tsx` (4), três conferências de selo na ficha do cliente e o do dono no cabeçalho da ficha do veículo (visto reprovar ao mostrar o telefone sem o módulo Clientes).
+- Depois do merge com a `main` (16/11): tudo rodado de novo, verde.
 - Nenhuma linha de conta mudou (`src/schemas/`, `src/lib/` intactos).
 - Não testado num Windows de verdade (a sessão não abre o Electron).
+
+## A revisão de código (`/code-review`, médio) e o que se fez com cada achado
+
+| Achado | Conferido | O que foi feito |
+|---|---|---|
+| As abas de Garantias tinham `role="tab"` sem o resto do contrato de abas (seta do teclado) | verdadeiro | Viraram botões com `aria-pressed` (grupo "Situação da garantia"). |
+| O teste "sem o módulo Clientes não mostra 'Sem telefone cadastrado'" não provava mais nada: o texto novo era "· Sem telefone…", que o teste exato nunca acharia | verdadeiro (achado de passagem) | O ponto virou um item à parte; o teste agora reprova de verdade (visto quebrando de propósito) e ganhou o caso com permissão. |
+| Faturada é verde nas fichas, e na lista de OS pode ser amarela ("falta nota") | verdadeiro, já dito | Sugestão 6 acima: ligar ao `SeloDaOrdem` depois da tarefa 7. Antes também era verde. |
+| Busca continua visível com o formulário aberto; o filtro "sumiram" some | já era assim antes | Não mudei (costume). |
+| Placa e "Ver ficha" são duas paradas de Tab na janela de veículos | verdadeiro | Mantido de propósito: a placa é a peça (regra 6) e o carro sem placa precisa do botão; o texto "Ver ficha" não deixa dúvida. A Sofia decide se prefere só um. |
+| Ordenar por: `title` virou `Dica`; sem teste do cabeçalho | o comportamento (clicar e ordenar) já tem teste na lista; a dica é de aparência | Mantido. |
+| `AvisoDeErro` e `SeloDoStatusDaOrdem` em `pages/clientes/`, usados por outras telas | verdadeiro | Eu não posso criar em `src/components/` nesta tarefa; fica como sugestão: mover quando a equipe permitir. |
+| `SemAcesso` local parecido com o `semAcesso` do `CartaoNumero` | o local é de seção (tabela), o outro é de cartão | Mantido. |

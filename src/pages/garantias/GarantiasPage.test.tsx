@@ -88,11 +88,11 @@ describe("GarantiasPage", () => {
   it("as abas contam e filtram", async () => {
     montar();
     await screen.findByText("Bateria 60Ah");
-    expect(screen.getByRole("tab", { name: "Todos (3)" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "Dentro do prazo (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Todos (3)" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Dentro do prazo (2)" })).toBeInTheDocument();
 
-    await userEvent.setup().click(screen.getByRole("tab", { name: "Vencida (1)" }));
-    expect(screen.getByRole("tab", { name: "Vencida (1)" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.setup().click(screen.getByRole("button", { name: "Vencida (1)" }));
+    expect(screen.getByRole("button", { name: "Vencida (1)" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Pastilha de freio")).toBeInTheDocument();
     expect(screen.queryByText("Bateria 60Ah")).not.toBeInTheDocument();
   });
