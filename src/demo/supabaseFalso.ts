@@ -84,6 +84,41 @@ function filtrarEOrdenar(linhasOriginais: Linha[], parametros: URLSearchParams):
   return linhas;
 }
 
+// O filtro da GRAVAÇÃO (PATCH e DELETE), mais rígido que o da leitura: lá,
+// passar o que não se entende é inofensivo; aqui alteraria ou apagaria a
+// tabela inteira. Filtro que este banco de mentira não conhece, ou coluna que
+// a linha não tem, NÃO casa (revisão final da #384).
+const IGNORADOS_NA_GRAVACAO = ["select", "order", "limit", "offset", "on_conflict", "columns"];
+
+function listaDoFiltro(texto: string): string[] | null {
+  if (!texto.startsWith("(") || !texto.endsWith(")")) return null;
+  return texto
+    .slice(1, -1)
+    .split(",")
+    .map((v) => v.replace(/^"(.*)"$/, "$1"));
+}
+
+function casaNaGravacao(linha: Linha, parametros: URLSearchParams): boolean {
+  for (const [campo, valorBruto] of parametros.entries()) {
+    if (IGNORADOS_NA_GRAVACAO.includes(campo)) continue;
+    if (!(campo in linha)) return false;
+    const negado = valorBruto.startsWith("not.");
+    const valor = negado ? valorBruto.slice(4) : valorBruto;
+    const atual = linha[campo];
+    let casa: boolean;
+    if (valor.startsWith("eq.")) casa = atual !== null && String(atual) === valor.slice(3);
+    else if (valor.startsWith("neq.")) casa = atual !== null && String(atual) !== valor.slice(4);
+    else if (valor === "is.null") casa = atual === null;
+    else if (valor.startsWith("in.")) {
+      const lista = listaDoFiltro(valor.slice(3));
+      if (!lista) return false;
+      casa = atual !== null && lista.includes(String(atual));
+    } else return false;
+    if (negado ? casa : !casa) return false;
+  }
+  return true;
+}
+
 function faixaDe(parametros: URLSearchParams) {
   const deslocamento = Number(parametros.get("offset") ?? 0);
   const limite = parametros.get("limit");
@@ -189,7 +224,7 @@ function gravar(
     return devolver(resposta, 201);
   }
 
-  const alvo = filtrarEOrdenar(lista, parametros);
+  const alvo = lista.filter((l) => casaNaGravacao(l, parametros));
   if (metodo === "PATCH") {
     const mudanca = lerJson(corpo);
     if (mudanca && typeof mudanca === "object") for (const l of alvo) Object.assign(l, mudanca);

@@ -16,7 +16,8 @@ const carregarFalso = () => import("./supabaseFalso");
 export const fetchDemo: typeof fetch = async (entrada, opcoes) => {
   const pedidoOriginal = entrada instanceof Request ? entrada : null;
   const url = pedidoOriginal ? pedidoOriginal.url : String(entrada);
-  // Qualquer outro endereço (ex.: ViaCEP) segue pela rede de verdade.
+  // Qualquer outro endereço segue pela rede de verdade (hoje o cliente da
+  // demonstração só pede o endereço de mentira; o ViaCEP nem passa por aqui).
   if (!url.startsWith(ENDERECO_DEMO)) return globalThis.fetch(entrada, opcoes);
 
   const cabecalhos: Record<string, string> = {};

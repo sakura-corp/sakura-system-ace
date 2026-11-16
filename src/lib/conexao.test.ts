@@ -103,6 +103,28 @@ describe("modo demonstração", () => {
     expect(modoDemonstracao()).toBe(false);
   });
 
+  // O processo principal recarrega a janela ANTES de responder ao "salvar"
+  // (electron/main.ts, conexao:salvar): o sinal tem de sair antes, senão a
+  // recarga pode vencer e o programa voltar em demonstração (revisão final).
+  it("o sinal da demonstração já saiu quando o programa grava e recarrega", async () => {
+    const { salvarConexaoDoApp } = montarJanela();
+    entrarNaDemonstracao();
+    let naHoraDeGravar: boolean | null = null;
+    salvarConexaoDoApp.mockImplementation(async () => {
+      naHoraDeGravar = modoDemonstracao();
+    });
+    await salvarConexao({ url: "https://loja.supabase.co", chave: "k" });
+    expect(naHoraDeGravar).toBe(false);
+  });
+
+  it("se gravar falhar, continua na demonstração", async () => {
+    const { salvarConexaoDoApp } = montarJanela();
+    entrarNaDemonstracao();
+    salvarConexaoDoApp.mockRejectedValue(new Error("disco cheio"));
+    await expect(salvarConexao({ url: "https://loja.supabase.co", chave: "k" })).rejects.toThrow();
+    expect(modoDemonstracao()).toBe(true);
+  });
+
   it("sem sessionStorage (bloqueado) não quebra e fica fora da demonstração", () => {
     vi.stubGlobal("window", { sakuraApp: {} });
     vi.stubGlobal("sessionStorage", {

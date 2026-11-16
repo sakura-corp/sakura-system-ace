@@ -30,14 +30,20 @@ Focus NFe. Pra apresentar sem abrir a Pneus Amigão.
 - **No programa instalado**: num computador **sem** banco configurado (um notebook só pra isso), a
   tela de conexão aparece. Digitar `demo` no endereço → "Entrar na demonstração". Não pede chave e
   não grava nada. Vale até fechar o programa: ao abrir de novo, volta pra tela de conexão. No
-  computador da loja a tela de conexão não aparece, então a loja nunca vê o modo.
+  computador da loja a tela de conexão só abre pelo "Configurar a conexão" do login, e lá a dica
+  "digite demo" não aparece; quem souber a palavra ainda entra (com a faixa no topo, e o que
+  salvar some ao fechar).
 - **Em desenvolvimento**: `npm run dev:demo` abre já em demonstração, mesmo com o `.env`.
 - **O que dá pra fazer**: andar por todas as telas, abrir e salvar OS, faturar. O que se salva fica
-  só na memória e some ao fechar. **Emitir nota** (e qualquer Edge Function) só mostra o aviso
-  "No modo demonstração não sai nota."
+  só na memória e some ao fechar. **Emitir nota** só mostra o aviso "No modo demonstração não sai
+  nota."; as outras funções do servidor (ler nota de entrada com IA, redefinir senha) mostram que
+  na demonstração aquilo não funciona. **Cadastrar operador ainda não funciona** na demonstração
+  (mostra "sem conexão"; ver o PR da #384).
 - **Como funciona**: o cliente do Supabase é criado com um `fetch` de mentira (`src/demo/fetchDemo.ts`)
   que responde da memória (`src/demo/dados.ts`, os mesmos dados das imagens do site). A CSP do
   programa não muda. O `npm run test:electron` prova que nada vai pra `*.supabase.co` nem pra Focus.
+  O que não passa pelo Supabase continua como sempre: a busca de CEP vai ao ViaCEP, e o
+  Diagnóstico confere a internet (e mostra o "banco" como fora do ar).
 
 ### Em que versão está o banco de cada empresa
 

@@ -146,10 +146,14 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
               autoComplete="off"
               spellCheck={false}
             />
-            <span className="text-texto-2">
-              Só quer conhecer o sistema? Digite <strong>demo</strong> aqui: abre com dados
-              inventados, sem conectar a nenhuma empresa.
-            </span>
+            {/* A dica só num computador ainda sem banco (decisão 3 da #384: a loja
+                não vê o modo). Num computador configurado, a palavra ainda funciona. */}
+            {!onCancelar && (
+              <span className="text-texto-2">
+                Só quer conhecer o sistema? Digite <strong>demo</strong> aqui: abre com dados
+                inventados, sem conectar a nenhuma empresa.
+              </span>
+            )}
           </label>
 
           {!demonstracao && (

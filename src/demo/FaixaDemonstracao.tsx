@@ -24,6 +24,7 @@ export function FaixaDemonstracao() {
       <style>{`
         :root:not([data-barra="propria"]) body { padding-top: ${ALTURA}; }
         :root:not([data-barra="propria"]) .h-screen { height: calc(100vh - ${ALTURA}); }
+        :root:not([data-barra="propria"]) .sakura-modal-fundo { top: ${ALTURA}; }
         .faixa-demonstracao { top: 0; }
         :root[data-barra="propria"] .faixa-demonstracao { top: var(--barra-janela); }
         :root[data-barra="propria"] #root,

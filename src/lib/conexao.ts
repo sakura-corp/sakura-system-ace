@@ -107,10 +107,19 @@ export async function salvarConexao(conexao: Conexao): Promise<void> {
       "Não foi possível salvar a conexão: esta tela precisa rodar dentro do aplicativo instalado.",
     );
   }
-  await window.sakuraApp.salvarConexao(conexao);
-  // Quem salva uma conexão de verdade sai da demonstração (o app recarrega em
-  // seguida e já abre na conexão nova).
-  gravarSinalDemo(null);
+  // Quem salva uma conexão de verdade sai da demonstração. O sinal sai ANTES
+  // de gravar: o processo principal recarrega a janela antes de responder
+  // (electron/main.ts, conexao:salvar), e a recarga não pode achar o "sim".
+  // "saiu", e não apagar: apagado, o `npm run dev:demo` voltaria à demonstração.
+  // Se gravar falhar, nada mudou: volta o sinal de antes.
+  const sinalAntes = lerSinalDemo();
+  if (sinalAntes !== null) gravarSinalDemo("saiu");
+  try {
+    await window.sakuraApp.salvarConexao(conexao);
+  } catch (erro) {
+    if (sinalAntes === "sim" || sinalAntes === "saiu") gravarSinalDemo(sinalAntes);
+    throw erro;
+  }
 }
 
 // Confere se a URL e a chave funcionam de verdade, pra usuária não descobrir

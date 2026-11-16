@@ -98,6 +98,31 @@ describe("fetch de demonstração", () => {
     expect(restantes?.length).toBe(1);
   });
 
+  // O filtro de leitura deixa passar o que não entende (pra dado de mentira
+  // não precisar de toda coluna). Na gravação isso alteraria/apagaria TUDO:
+  // lá, filtro desconhecido ou coluna que a linha não tem não casa.
+  it("alterar com filtro que o banco de mentira não entende não mexe em tudo", async () => {
+    const cliente = novoCliente();
+    const { data: antes } = await cliente.from("clientes").select("*");
+    await cliente.from("clientes").update({ nome: "TROCADO" }).gt("numero_que_nao_existe", 5);
+    await cliente.from("clientes").update({ nome: "TROCADO" }).eq("coluna_que_nao_existe", "1");
+    const { data: depois } = await cliente.from("clientes").select("*");
+    expect(depois?.filter((c) => c.nome === "TROCADO")).toHaveLength(0);
+    expect(depois).toHaveLength(antes!.length);
+  });
+
+  it("apagar com not.in tira só quem não está na lista", async () => {
+    const cliente = novoCliente();
+    const { data: antes } = await cliente.from("veiculos").select("*").eq("cliente_id", "c1");
+    expect(antes!.length).toBeGreaterThan(1);
+    const fica = antes![0].id;
+    await cliente.from("veiculos").delete().eq("cliente_id", "c1").not("id", "in", `(${fica})`);
+    const { data: depois } = await cliente.from("veiculos").select("*").eq("cliente_id", "c1");
+    expect(depois!.map((v) => v.id)).toEqual([fica]);
+    const { data: outros } = await cliente.from("veiculos").select("*").eq("cliente_id", "c2");
+    expect(outros!.length).toBeGreaterThan(0);
+  });
+
   it("o total com head:true é o de antes da paginação", async () => {
     const c = novoCliente();
     const { count, data } = await c.from("clientes").select("*", { count: "exact", head: true });
