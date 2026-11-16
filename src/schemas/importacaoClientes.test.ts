@@ -16,7 +16,19 @@ const CPF_B = "38236626946";
 const CNPJ_OK = "11222333000181";
 
 const VAZIO: CadastroExistente = { clientes: [], placas: [] };
-const MAP: CampoImportacao[] = ["nome", "cpf_cnpj", "telefone", "data_nascimento", "placa", "ano", "km_atual", "uf"];
+const MAP: CampoImportacao[] = [
+  "nome",
+  "cpf_cnpj",
+  "telefone",
+  "data_nascimento",
+  "placa",
+  "ano",
+  "km_atual",
+  "uf",
+  "marca",
+  "modelo",
+  "cor",
+];
 function linha(parte: Partial<Record<CampoImportacao, string>>): string[] {
   return MAP.map((c) => parte[c] ?? "");
 }
@@ -275,6 +287,88 @@ describe("conferirLinhas — já existe (só pula)", () => {
   it("documento igual com nome diferente ainda é o mesmo cliente", () => {
     const r = conferir([linha({ nome: "A. Souza", cpf_cnpj: CPF_A, placa: "DEF5678" })], existente);
     expect(r.clientes[0].clienteExistenteId).toBe("c1");
+  });
+});
+
+// Decisão da Sofia (revisão do PR #985, achado 9, opção A): sem documento na
+// linha, o nome só liga a um cliente do cadastro que TAMBÉM não tem documento.
+describe("conferirLinhas — homônimo sem documento", () => {
+  const MSG_CPF = "tem um cliente com esse nome e CPF no cadastro: ponha o CPF na planilha";
+  const existente: CadastroExistente = {
+    clientes: [
+      { id: "c1", nome: "Ana Souza", cpf_cnpj: CPF_A_PONTOS },
+      { id: "c3", nome: "Oficina Boa Ltda", cpf_cnpj: CNPJ_OK },
+    ],
+    placas: [],
+  };
+
+  it("nome igual a cliente do cadastro COM CPF: a linha é problema e nada entra", () => {
+    const r = conferir([linha({ nome: "ANA  souza", placa: "DEF5678" })], existente);
+    expect(r.linhas[0]).toMatchObject({ situacao: "problema", problemas: [MSG_CPF] });
+    expect(r.clientes).toEqual([]);
+    expect(r.resumo.comProblema).toBe(1);
+  });
+
+  it("sem veículo também é problema (não cria um segundo cliente com o mesmo nome)", () => {
+    const r = conferir([linha({ nome: "Ana Souza", telefone: "16999990000" })], existente);
+    expect(r.linhas[0].situacao).toBe("problema");
+    expect(r.clientes).toEqual([]);
+  });
+
+  it("com CNPJ no cadastro, a mensagem fala de CNPJ", () => {
+    const r = conferir([linha({ nome: "Oficina Boa Ltda" })], existente);
+    expect(r.linhas[0].problemas).toEqual(["tem um cliente com esse nome e CNPJ no cadastro: ponha o CNPJ na planilha"]);
+  });
+
+  it("se também há um cliente com esse nome SEM documento, liga a ele", () => {
+    const comOsDois: CadastroExistente = {
+      clientes: [...existente.clientes, { id: "c2", nome: "Ana Souza", cpf_cnpj: "" }],
+      placas: [],
+    };
+    const r = conferir([linha({ nome: "Ana Souza", placa: "DEF5678" })], comOsDois);
+    expect(r.linhas[0].situacao).toBe("entra");
+    expect(r.clientes[0].clienteExistenteId).toBe("c2");
+  });
+
+  it("com o CPF na linha, liga normalmente ao cliente do cadastro", () => {
+    const r = conferir([linha({ nome: "Ana Souza", cpf_cnpj: CPF_A, placa: "DEF5678" })], existente);
+    expect(r.clientes[0].clienteExistenteId).toBe("c1");
+  });
+
+  it("dentro da planilha, agrupar pelo nome continua igual", () => {
+    const r = conferir([linha({ nome: "Zé Novo", placa: "DEF5678" }), linha({ nome: "ze novo", placa: "GHI9012" })], existente);
+    expect(r.clientes).toHaveLength(1);
+    expect(r.clientes[0].veiculos).toHaveLength(2);
+  });
+});
+
+describe("conferirLinhas — veículo sem placa (revisão do PR #985)", () => {
+  const AVISO = "veículo sem placa: não vai entrar";
+
+  it("modelo sem placa: o cliente entra, o veículo não, com aviso na linha", () => {
+    const r = conferir([linha({ nome: "Bia", modelo: "Gol" })]);
+    expect(r.linhas[0].situacao).toBe("entra");
+    expect(r.linhas[0].avisos).toContain(AVISO);
+    expect(r.clientes[0].veiculos).toEqual([]);
+  });
+
+  it("vale pra qualquer dado do veículo (marca, ano, cor, km)", () => {
+    for (const parte of [{ marca: "VW" }, { ano: "2010" }, { cor: "Prata" }, { km_atual: "1000" }]) {
+      const r = conferir([linha({ nome: "Bia", ...parte })]);
+      expect(r.linhas[0].avisos).toContain(AVISO);
+    }
+  });
+
+  it("cliente que já existe e veículo sem placa: o aviso aparece também", () => {
+    const existente: CadastroExistente = { clientes: [{ id: "c1", nome: "Ana", cpf_cnpj: CPF_A }], placas: [] };
+    const r = conferir([linha({ nome: "Ana", cpf_cnpj: CPF_A, modelo: "Gol" })], existente);
+    expect(r.linhas[0].situacao).toBe("ja_existe");
+    expect(r.linhas[0].avisos).toContain(AVISO);
+  });
+
+  it("sem nenhum dado de veículo, não avisa nada", () => {
+    const r = conferir([linha({ nome: "Bia" })]);
+    expect(r.linhas[0].avisos).toEqual([]);
   });
 });
 

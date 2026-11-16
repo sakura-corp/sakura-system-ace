@@ -185,6 +185,9 @@ function converterData(texto: string): string | null {
   return `${ano}-${doisDigitos(mes)}-${doisDigitos(dia)}`;
 }
 
+/** Dados do veículo que, preenchidos sem placa, pedem o aviso de que ele não entra. */
+const CAMPOS_DO_VEICULO_SEM_PLACA: CampoImportacao[] = ["marca", "modelo", "ano", "cor", "km_atual"];
+
 /** Teto de km que aceitamos (a coluna é `int`; acima disso é erro de digitação). */
 const KM_MAXIMO = 2_000_000;
 
@@ -216,12 +219,20 @@ export function conferirLinhas(
   numerosDeLinha?: number[],
 ): ResultadoConferencia {
   const clientesPorDoc = new Map<string, string>();
+  // Pelo nome, só liga a cliente do cadastro SEM documento (decisão da Sofia,
+  // revisão do PR #985): o "João Silva" com CPF pode ser outra pessoa.
   const clientesPorNome = new Map<string, string>();
+  // Nome de cliente do cadastro COM documento → "CPF" ou "CNPJ", pro aviso.
+  const nomesComDocumento = new Map<string, "CPF" | "CNPJ">();
   for (const c of existente.clientes) {
     const doc = soDigitos(c.cpf_cnpj ?? "");
-    if (doc !== "" && !clientesPorDoc.has(doc)) clientesPorDoc.set(doc, c.id);
     const nome = nomeNormalizado(c.nome);
-    if (nome !== "" && !clientesPorNome.has(nome)) clientesPorNome.set(nome, c.id);
+    if (doc !== "") {
+      if (!clientesPorDoc.has(doc)) clientesPorDoc.set(doc, c.id);
+      if (nome !== "" && !nomesComDocumento.has(nome)) nomesComDocumento.set(nome, doc.length === 14 ? "CNPJ" : "CPF");
+    } else if (nome !== "" && !clientesPorNome.has(nome)) {
+      clientesPorNome.set(nome, c.id);
+    }
   }
   const placasNoBanco = new Set(existente.placas.map(chaveDePlaca));
   const placasDaPlanilha = new Set<string>();
@@ -285,6 +296,16 @@ export function conferirLinhas(
     }
     if (problemas.length > 0) return terminar("problema");
 
+    // Sem documento, com o nome de um cliente do cadastro que TEM documento (e
+    // nenhum sem): pode ser outra pessoa. Não liga nem cria um homônimo.
+    if (docDigitos === "" && !clientesPorNome.has(nomeNormalizado(nome))) {
+      const tipoDoc = nomesComDocumento.get(nomeNormalizado(nome));
+      if (tipoDoc !== undefined) {
+        problemas.push(`tem um cliente com esse nome e ${tipoDoc} no cadastro: ponha o ${tipoDoc} na planilha`);
+        return terminar("problema");
+      }
+    }
+
     // Placa.
     let placa: string | null = null;
     let placaEstranha = false;
@@ -347,6 +368,9 @@ export function conferirLinhas(
       };
     } else if (placaEstranha) {
       avisos.push("placa em formato estranho: o veículo não entra");
+    } else if (placaTexto === "" && CAMPOS_DO_VEICULO_SEM_PLACA.some((c) => (v[c] ?? "") !== "")) {
+      // Sem placa o banco não aceita o veículo: avisa, em vez de sumir calado.
+      avisos.push("veículo sem placa: não vai entrar");
     }
 
     const algoNovo = clienteNovoNestaLinha || veiculo !== null;
