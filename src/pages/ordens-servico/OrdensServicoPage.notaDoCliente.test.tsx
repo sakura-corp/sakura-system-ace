@@ -155,7 +155,7 @@ describe("OrdensServicoPage — a nota do cliente à mão", () => {
     expect(screen.queryByRole("button", { name: "Emitir nota" })).toBeNull();
     expect(screen.getByRole("button", { name: "Avisar" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Nota do cliente" }));
-    expect(await screen.findByRole("dialog", { name: "Nota fiscal" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Nota do cliente" })).toBeInTheDocument();
   });
 
   it("finalizada com duas notas: escolhe a das peças ou a do serviço", async () => {
@@ -166,7 +166,7 @@ describe("OrdensServicoPage — a nota do cliente à mão", () => {
     const escolha = screen.getByRole("dialog", { name: "Nota do cliente · OS 141" });
     expect(within(escolha).getByRole("button", { name: "Nota das peças (NFC-e)" })).toBeInTheDocument();
     await user.click(within(escolha).getByRole("button", { name: "Nota do serviço (NFS-e)" }));
-    expect(await screen.findByRole("dialog", { name: "Nota fiscal" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Nota do cliente" })).toBeInTheDocument();
   });
 
   it("nota cancelada não conta: volta a pedir 'Emitir nota'", async () => {
