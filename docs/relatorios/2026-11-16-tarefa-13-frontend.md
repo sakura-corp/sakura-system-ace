@@ -61,7 +61,7 @@
 ## O que passou sem eu ter visto reprovar
 - `GraficoDeRosca.test.tsx` (legenda, fatia zerada, máximo de 5, sem nada pra dividir, arco proporcional) e as outras 4 de `CartaoDeComparacao.test.tsx` (valor escrito, barras proporcionais, lucro negativo sem barra, sem % quando o anterior é zero), `GraficosSection.test.tsx` e as duas da rosca da Lucratividade: escritos junto com o código, não quebrei de propósito.
 - Setas, Home e End nas abas (`RelatoriosPage.test.tsx`): escrito junto com o código, não quebrei de propósito.
-- `contraste`, `contraste:telas` (dois temas) e `largura:telas` (menu aberto e encolhido): todos verdes (68 telas). A primeira rodada de largura reprovou Gráficos em 1024 (+19 px: os 4 cartões "Recebido…" com o número novo, maior, não cabiam em linha); agora são 2 por linha abaixo de 1280.
+- `contraste`, `contraste:telas` (dois temas) e `largura:telas` (menu aberto e encolhido): verdes antes da última junção com a `main` (68 telas). Depois dela rodei de novo só `typecheck`, `lint` e `test` (2.479 testes); `contraste` e `contraste:telas` (70 telas) ficaram verdes numa rodada logo antes da última junção, e a `largura:telas` final ficou pro CI. A primeira rodada de largura reprovou Gráficos em 1024 (+19 px: os 4 cartões "Recebido…" com o número novo, maior, não cabiam em linha); agora são 2 por linha abaixo de 1280.
 
 ## O que ficou de fora
 - **Fio de gráfico nos cartões "Recebido…"**: precisa de uma série por dia (`serieDoMesPorDia`) e de uma decisão do que mostrar em "hoje" e "semana".
