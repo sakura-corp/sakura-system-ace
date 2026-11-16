@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarCategorias } from "@/lib/categorias";
@@ -22,6 +23,7 @@ import { ContagemSection } from "./ContagemSection";
 import { MovimentacoesSection } from "./MovimentacoesSection";
 import { ProdutosSection } from "./ProdutosSection";
 import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
+import { AbasDaTela, AvisoDeAtencao, AvisoDeErro } from "./avisosEAbas";
 
 type Aba = "produtos" | "movimentacoes" | "contagem" | "relatorios";
 
@@ -127,20 +129,13 @@ export function EstoquePage() {
       <header className="flex flex-wrap items-center gap-3">
         <BotaoVoltar />
         <div className="mr-auto">
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Estoque
-          </h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Estoque</h1>
+          <p className="text-corpo text-texto-2">
             Produtos, peças e movimentações de estoque
           </p>
         </div>
         {operador?.admin === true && (
-          <button
-            onClick={() => setJuntando(true)}
-            className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-          >
-            Juntar peças repetidas
-          </button>
+          <Botao onClick={() => setJuntando(true)}>Juntar peças repetidas</Botao>
         )}
       </header>
 
@@ -155,37 +150,26 @@ export function EstoquePage() {
         />
       )}
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="Produtos" ativa={aba === "produtos"} onClick={() => setAba("produtos")} />
-        <AbaBotao
-          label="Movimentações"
-          ativa={aba === "movimentacoes"}
-          onClick={() => setAba("movimentacoes")}
-        />
-        <AbaBotao
-          label="Contagem"
-          ativa={aba === "contagem"}
-          onClick={() => setAba("contagem")}
-        />
-        <AbaBotao
-          label="Relatórios"
-          ativa={aba === "relatorios"}
-          onClick={() => setAba("relatorios")}
-        />
-      </div>
+      <AbasDaTela
+        rotulo="Partes do estoque"
+        ativa={aba}
+        aoEscolher={setAba}
+        abas={[
+          ["produtos", "Produtos"],
+          ["movimentacoes", "Movimentações"],
+          ["contagem", "Contagem"],
+          ["relatorios", "Relatórios"],
+        ]}
+      />
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !lojaAtual ? (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Seu usuário não tem loja atribuída. Fale com o administrador.
-        </p>
+        </AvisoDeAtencao>
       ) : aba === "produtos" ? (
         <ProdutosSection
           pecas={pecasNaTela}
@@ -221,28 +205,5 @@ export function EstoquePage() {
         />
       )}
     </div>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

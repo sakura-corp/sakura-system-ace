@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import {
@@ -18,8 +20,7 @@ interface FornecedorFormProps {
   onCancelar: () => void;
 }
 
-const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const inputClasse = "sakura-campo";
 
 export function FornecedorForm({
   fornecedorExistente,
@@ -59,46 +60,49 @@ export function FornecedorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">
           {fornecedorExistente ? "Editar fornecedor" : "Novo fornecedor"}
         </h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <section>
-        <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Dados do fornecedor</h3>
+        <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">Dados do fornecedor</h3>
         <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">
-              Nome / Razão social <span className="text-red-500">*</span>
-            </span>
-            <input type="text" {...register("nome")} className={inputClasse} />
-            {errors.nome && <span className="text-rotulo text-red-600">{errors.nome.message}</span>}
+          <label className="sakura-rotulo">
+            <span>Nome / Razão social <span className="text-perigo">*</span></span>
+            <input
+              type="text"
+              {...register("nome")}
+              aria-invalid={errors.nome ? true : undefined}
+              className={inputClasse}
+            />
+            {errors.nome && <span className="text-rotulo text-perigo">{errors.nome.message}</span>}
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">CNPJ</span>
+          <label className="sakura-rotulo">
+            CNPJ
             <input type="text" {...register("cnpj")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Telefone</span>
+          <label className="sakura-rotulo">
+            Telefone
             <input type="text" {...register("telefone")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">E-mail</span>
+          <label className="sakura-rotulo">
+            E-mail
             <input type="email" {...register("email")} className={inputClasse} />
           </label>
         </div>
       </section>
 
       <section>
-        <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Endereço</h3>
+        <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">Endereço</h3>
         <div className="grid grid-cols-3 gap-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">CEP</span>
+          <label className="sakura-rotulo">
+            CEP
             <input
               type="text"
               {...cepField}
@@ -109,24 +113,24 @@ export function FornecedorForm({
               className={inputClasse}
             />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Rua</span>
+          <label className="sakura-rotulo">
+            Rua
             <input type="text" {...register("rua")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Número</span>
+          <label className="sakura-rotulo">
+            Número
             <input type="text" {...register("numero")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Bairro</span>
+          <label className="sakura-rotulo">
+            Bairro
             <input type="text" {...register("bairro")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Cidade</span>
+          <label className="sakura-rotulo">
+            Cidade
             <input type="text" {...register("cidade")} className={inputClasse} />
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">UF</span>
+          <label className="sakura-rotulo">
+            UF
             <input
               type="text"
               maxLength={2}
@@ -142,24 +146,16 @@ export function FornecedorForm({
       </section>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting
             ? "Salvando..."
             : fornecedorExistente
               ? "Salvar alterações"
               : "Salvar fornecedor"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

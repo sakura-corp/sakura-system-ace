@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import type { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
+import { Dica } from "@/components/Dica";
 import { listarCotacoesPorPeca, melhorCotacaoPorFornecedor } from "@/lib/cotacoesPecas";
 import { mensagemDeErro } from "@/lib/errors";
 import type { PedidoCompraFormValues } from "@/schemas/pedidoCompra";
 import type { CotacaoPeca } from "@/types/cotacaoPeca";
 import type { PecaJanela } from "@/types/peca";
+import { CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
 
 interface PedidoCompraItemRowProps {
   index: number;
@@ -18,8 +21,7 @@ interface PedidoCompraItemRowProps {
   erroPecaId?: string;
 }
 
-const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const inputClasse = "sakura-campo";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -65,66 +67,71 @@ export function PedidoCompraItemRow({
   const melhores = melhorCotacaoPorFornecedor(cotacoes);
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-gray/30 p-3">
-      <div className="flex items-center gap-2">
+    <div className="space-y-2 rounded-xl border border-linha p-3">
+      {/* Cada campo tem o nome escrito em cima: antes só o que aparecia no
+          campo vazio ("Qtde.", "Preço unit.") dizia o que era, e sumia ao
+          digitar. */}
+      <div className="flex items-end gap-2">
         <div className="flex-1">
-          <Combobox
-            opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
-            valor={pecaId}
-            onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}
-            placeholder="Selecione a peça"
-          />
-          {erroPecaId && <span className="text-rotulo text-red-600">{erroPecaId}</span>}
+          <label className="sakura-rotulo">
+            Peça
+            <Combobox
+              className={CAMPO_NOVO_NO_COMBOBOX}
+              opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
+              valor={pecaId}
+              onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}
+              placeholder="Selecione a peça"
+            />
+          </label>
+          {erroPecaId && <span className="mt-1 block text-rotulo text-perigo">{erroPecaId}</span>}
         </div>
-        <div className="w-28">
+        <label className="sakura-rotulo w-28">
+          Quantidade
           <input
             type="number"
             step="1"
             min="1"
             placeholder="Qtde."
             {...register(`itens.${index}.quantidade_pedida`)}
-            className={`w-full ${inputClasse}`}
+            className={inputClasse}
           />
-        </div>
-        <div className="w-32">
+        </label>
+        <label className="sakura-rotulo w-32">
+          Preço unitário
           <input
             type="number"
             step="0.01"
             min="0"
             placeholder="Preço unit."
             {...register(`itens.${index}.preco_unitario`)}
-            className={`w-full ${inputClasse}`}
+            className={inputClasse}
           />
-        </div>
+        </label>
         {podeRemover && (
-          <button
-            type="button"
-            onClick={onRemover}
-            className="shrink-0 text-rotulo font-medium text-red-600 hover:underline"
-          >
+          <Botao variante="fantasma" className="text-perigo! shrink-0" onClick={onRemover}>
             Remover
-          </button>
+          </Botao>
         )}
       </div>
 
-      {erroCotacoes && <p className="text-rotulo text-red-600">{erroCotacoes}</p>}
+      {erroCotacoes && <p className="text-rotulo text-perigo">{erroCotacoes}</p>}
 
       {melhores.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-rotulo text-sakura-purple-dark/85">
-          <span className="text-sakura-muted">Cotações anteriores:</span>
+        <div className="flex flex-wrap items-center gap-2 text-rotulo text-texto-2">
+          <span className="text-texto-2">Cotações anteriores:</span>
           {melhores.map((cotacao) => (
-            <button
-              key={cotacao.fornecedor_id}
-              type="button"
-              title="Usar esse preço"
-              onClick={() =>
-                setValue(`itens.${index}.preco_unitario`, String(cotacao.preco))
-              }
-              className="rounded-full bg-sakura-pink-soft px-2.5 py-1 font-medium hover:opacity-80"
-            >
-              {cotacao.fornecedor?.nome ?? "Fornecedor"}: {formatarMoeda(cotacao.preco)} (
-              {formatarDataCurta(cotacao.criado_em)})
-            </button>
+            <Dica key={cotacao.fornecedor_id} texto="Usar esse preço">
+              <button
+                type="button"
+                onClick={() =>
+                  setValue(`itens.${index}.preco_unitario`, String(cotacao.preco))
+                }
+                className="rounded-full bg-passar px-2.5 py-1 font-medium text-texto transition-colors hover:bg-texto/15"
+              >
+                {cotacao.fornecedor?.nome ?? "Fornecedor"}: {formatarMoeda(cotacao.preco)} (
+                {formatarDataCurta(cotacao.criado_em)})
+              </button>
+            </Dica>
           ))}
         </div>
       )}

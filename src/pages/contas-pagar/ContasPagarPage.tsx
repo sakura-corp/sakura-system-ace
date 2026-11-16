@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
+import { Check, Plus, Repeat, TriangleAlert, Undo2 } from "lucide-react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { Botao } from "@/components/Botao";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Selo } from "@/components/Selo";
+import { Valor } from "@/components/Valor";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import {
@@ -9,25 +14,18 @@ import {
   listarContasPagar,
   pagarConta,
 } from "@/lib/contasPagar";
+import { avisar } from "@/lib/avisoQueSome";
+import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { ContaPagar, NovaContaPagar } from "@/types/contaPagar";
 import { ContaPagarForm } from "./ContaPagarForm";
 import { PagarContaModal } from "./PagarContaModal";
+import { SeloDoVencimento } from "./SeloDoVencimento";
+import { situacaoDoVencimento } from "./vencimento";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
-import { somar } from "@/schemas/dinheiro";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-function hojeIso(): string {
-  const hoje = new Date();
-  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(
-    hoje.getDate(),
-  ).padStart(2, "0")}`;
-}
+import { formatarMoeda, somar } from "@/schemas/dinheiro";
 
 export function ContasPagarPage() {
   const { operador, lojaAtual } = useAuth();
@@ -75,6 +73,7 @@ export function ContasPagarPage() {
     if (!lojaAtual) return;
     await criarContaPagar(conta, lojaAtual.id);
     setMostrarFormulario(false);
+    avisar(`Conta cadastrada: ${conta.descricao}`);
     await carregar();
   }
 
@@ -86,6 +85,7 @@ export function ContasPagarPage() {
       formaPagamento,
       operadorId: operador.id,
     });
+    avisar(`Conta paga: ${contaPagando.descricao}`);
     setContaPagando(null);
     await carregar();
   }
@@ -94,6 +94,7 @@ export function ContasPagarPage() {
     if (!confirm(`Excluir a conta "${conta.descricao}"?`)) return;
     try {
       await excluirContaPagar(conta.id);
+      avisar(`Conta excluída: ${conta.descricao}`);
       await carregar();
     } catch (err) {
       console.error("Erro ao excluir conta a pagar:", err);
@@ -110,6 +111,7 @@ export function ContasPagarPage() {
       return;
     try {
       await desfazerPagamento(conta);
+      avisar(`Pagamento desfeito: ${conta.descricao}`);
       await carregar();
     } catch (err) {
       console.error("Erro ao desfazer pagamento:", err);
@@ -117,7 +119,7 @@ export function ContasPagarPage() {
     }
   }
 
-  const hoje = hojeIso();
+  const hoje = hojeLocal();
   const pendentes = contas
     .filter((c) => c.status === "pendente")
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
@@ -125,31 +127,40 @@ export function ContasPagarPage() {
     .filter((c) => c.status === "paga")
     .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
   const totalPendente = somar(pendentes.map((c) => c.valor));
+  // Só a contagem, pro selo ao lado de "Pendentes": nenhum valor novo.
+  const quantasAtrasadas = pendentes.filter(
+    (c) => situacaoDoVencimento(c.vencimento, hoje) === "atrasada",
+  ).length;
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
-          <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">Contas a Pagar</h1>
-            <p className="text-corpo text-sakura-muted">
+          <div className="min-w-0">
+            <h1 className="text-titulo font-semibold text-texto">Contas a Pagar</h1>
+            <p className="text-corpo text-texto-2">
               Contas mensais (aluguel, etc.) com vencimento — diferente das Entradas/Saídas
               manuais do Caixa
             </p>
           </div>
         </div>
         {!mostrarFormulario && (
-          <button
-            onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
-          >
-            + Nova conta
-          </button>
+          <Botao variante="principal" icone={<Plus />} onClick={() => setMostrarFormulario(true)}>
+            Nova conta
+          </Botao>
         )}
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
+        >
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
+        </p>
+      )}
 
       {mostrarFormulario && (
         <ContaPagarForm
@@ -160,73 +171,83 @@ export function ContasPagarPage() {
       )}
 
       {!carregando && dadosSaoDaLoja && (
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Total pendente</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalPendente)}
-          </p>
+        <div className="max-w-sm">
+          <CartaoNumero
+            titulo="Total pendente"
+            explicacao="A soma das contas que ainda não foram pagas, vencidas ou não. As pagas ficam de fora."
+          >
+            <Valor valor={totalPendente} />
+          </CartaoNumero>
         </div>
       )}
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !dadosSaoDaLoja ? null : (
         <>
           <section>
-            <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pendentes</h2>
+            <h2 className="mb-3 flex flex-wrap items-center gap-2 text-corpo font-semibold text-texto">
+              Pendentes
+              {quantasAtrasadas > 0 && (
+                <Selo
+                  tipo="perigo"
+                  palavra={quantasAtrasadas === 1 ? "1 atrasada" : `${quantasAtrasadas} atrasadas`}
+                />
+              )}
+            </h2>
             {pendentes.length === 0 ? (
-              <p className="text-corpo text-sakura-muted">Nenhuma conta pendente.</p>
+              <p className="text-corpo text-texto-2">Nenhuma conta pendente.</p>
             ) : (
               <div className="overflow-x-auto sakura-card">
-                <table className="w-full text-left text-corpo">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <table className="sakura-tabela">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 font-medium">Vencimento</th>
-                      <th className="px-4 py-3 font-medium">Descrição</th>
-                      <th className="px-4 py-3 font-medium">Categoria</th>
-                      <th className="px-4 py-3 font-medium">Valor</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3" />
+                      <th>Vencimento</th>
+                      <th>Descrição</th>
+                      <th>Categoria</th>
+                      <th className="text-right">Valor</th>
+                      <th>Status</th>
+                      <th>
+                        <span className="sr-only">Ações</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {pendentes.map((conta) => {
-                      const vencida = conta.vencimento < hoje;
-                      return (
-                        <tr key={conta.id} className="border-t border-sakura-gray/20">
-                          <td className="px-4 py-3">
-                            {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-3">
-                            {conta.descricao}
-                            {conta.recorrente && (
-                              <span className="ml-2 rounded-full bg-sakura-pink-soft px-2 py-0.5 text-rotulo text-sakura-purple-dark/90">
-                                mensal
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">{conta.categoria?.nome ?? "—"}</td>
-                          <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                                vencida
-                                  ? "bg-red-50 text-red-700"
-                                  : "bg-amber-50 text-amber-700"
-                              }`}
-                            >
-                              {vencida ? "Vencida" : "Pendente"}
+                    {pendentes.map((conta) => (
+                      <tr key={conta.id}>
+                        <td className="whitespace-nowrap text-texto">
+                          {diaBrasileiro(conta.vencimento)}
+                        </td>
+                        <td className="text-texto">
+                          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span className="font-medium [overflow-wrap:anywhere]">
+                              {conta.descricao}
                             </span>
-                          </td>
-                          <td className="px-4 py-3 text-right">
+                            {conta.recorrente && (
+                              <Selo tipo="neutro" palavra="Mensal" icone={Repeat} />
+                            )}
+                          </span>
+                        </td>
+                        <td className="text-texto-2">{conta.categoria?.nome ?? "—"}</td>
+                        <td className="whitespace-nowrap text-right font-semibold text-texto">
+                          {formatarMoeda(conta.valor)}
+                        </td>
+                        <td>
+                          <SeloDoVencimento vencimento={conta.vencimento} hoje={hoje} />
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Botao
+                              tamanho="pequeno"
+                              icone={<Check />}
+                              aria-label={`Marcar como paga — a conta ${conta.descricao}`}
+                              onClick={() => setContaPagando(conta)}
+                            >
+                              Marcar como paga
+                            </Botao>
                             <AcoesDaLinha
                               descricao={`a conta ${conta.descricao}`}
                               acoes={[
-                                {
-                                  tipo: "texto",
-                                  rotulo: "Marcar como paga",
-                                  aoClicar: () => setContaPagando(conta),
-                                },
                                 {
                                   tipo: "menu",
                                   rotulo: "Excluir conta",
@@ -235,10 +256,10 @@ export function ContasPagarPage() {
                                 },
                               ]}
                             />
-                          </td>
-                        </tr>
-                      );
-                    })}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -247,42 +268,58 @@ export function ContasPagarPage() {
 
           {pagas.length > 0 && (
             <section>
-              <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-                Pagas recentemente
-              </h2>
+              <h2 className="mb-3 text-corpo font-semibold text-texto">Pagas recentemente</h2>
               <div className="overflow-x-auto sakura-card">
-                <table className="w-full text-left text-corpo">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                <table className="sakura-tabela">
+                  <thead>
                     <tr>
-                      <th className="px-4 py-3 font-medium">Vencimento</th>
-                      <th className="px-4 py-3 font-medium">Descrição</th>
-                      <th className="px-4 py-3 font-medium">Categoria</th>
-                      <th className="px-4 py-3 font-medium">Valor</th>
-                      <th className="px-4 py-3 font-medium">Pago em</th>
-                      <th className="px-4 py-3" />
+                      <th>Vencimento</th>
+                      <th>Descrição</th>
+                      <th>Categoria</th>
+                      <th className="text-right">Valor</th>
+                      {/* Era "Pago em": o dia continua, dentro do selo. */}
+                      <th>Status</th>
+                      <th>
+                        <span className="sr-only">Ações</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {pagas.map((conta) => (
-                      <tr key={conta.id} className="border-t border-sakura-gray/20">
-                        <td className="px-4 py-3">
-                          {new Date(conta.vencimento).toLocaleDateString("pt-BR")}
+                      <tr key={conta.id}>
+                        <td className="whitespace-nowrap text-texto-2">
+                          {diaBrasileiro(conta.vencimento)}
                         </td>
-                        <td className="px-4 py-3">{conta.descricao}</td>
-                        <td className="px-4 py-3">{conta.categoria?.nome ?? "—"}</td>
-                        <td className="px-4 py-3 font-medium">{formatarMoeda(conta.valor)}</td>
-                        <td className="px-4 py-3">
-                          {conta.data_pagamento
-                            ? new Date(conta.data_pagamento).toLocaleDateString("pt-BR")
-                            : "—"}
+                        <td className="text-texto [overflow-wrap:anywhere]">{conta.descricao}</td>
+                        <td className="text-texto-2">{conta.categoria?.nome ?? "—"}</td>
+                        <td className="whitespace-nowrap text-right font-semibold text-texto">
+                          {formatarMoeda(conta.valor)}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
+                        <td>
+                          {/* `data_pagamento` é data COM hora (timestamptz): o
+                              `new Date` está certo aqui (#1005, "ficam como estão"). */}
+                          <Selo
+                            tipo="ok"
+                            palavra={
+                              conta.data_pagamento
+                                ? `Paga em ${new Date(conta.data_pagamento).toLocaleDateString("pt-BR")}`
+                                : "Paga"
+                            }
+                          />
+                        </td>
+                        <td className="text-right">
+                          {/* Fantasma, e não escondido nos três pontos: é a
+                              única ação da linha, e desfazer um engano não
+                              pode dar trabalho de achar. */}
+                          <Botao
+                            variante="fantasma"
+                            tamanho="pequeno"
+                            icone={<Undo2 />}
+                            aria-label={`Desfazer pagamento — a conta ${conta.descricao}`}
                             onClick={() => handleDesfazerPagamento(conta)}
-                            className="text-rotulo font-medium text-sakura-purple hover:underline"
                           >
                             Desfazer pagamento
-                          </button>
+                          </Botao>
                         </td>
                       </tr>
                     ))}
@@ -297,6 +334,7 @@ export function ContasPagarPage() {
       {contaPagando && (
         <PagarContaModal
           conta={contaPagando}
+          hoje={hoje}
           onConfirmar={handleConfirmarPagamento}
           onFechar={() => setContaPagando(null)}
         />
