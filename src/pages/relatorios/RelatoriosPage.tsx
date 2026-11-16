@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -123,40 +124,51 @@ export function RelatoriosPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Relações</h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Relações</h1>
+          <p className="text-corpo text-texto-2">
             Vendas, custos, lucro e margem do negócio ao longo do tempo
           </p>
         </div>
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao
-          label="Gráficos"
-          ativa={aba === "graficos"}
-          onClick={() => setAba("graficos")}
-        />
-        <AbaBotao
-          label="Lucratividade"
-          ativa={aba === "lucratividade"}
-          onClick={() => setAba("lucratividade")}
-        />
-        <AbaBotao
-          label="Curva ABC"
-          ativa={aba === "curvaABC"}
-          onClick={() => setAba("curvaABC")}
-        />
-        <AbaBotao
-          label="Fluxo de caixa"
-          ativa={aba === "fluxo"}
-          onClick={() => setAba("fluxo")}
-        />
+      <div
+        role="tablist"
+        aria-label="O que mostrar"
+        className="sakura-abas"
+        onKeyDown={(e) => {
+          // As setas, o Home e o End trocam de aba (padrão de abas): a ligada é
+          // a única que entra na ordem do Tab, e o foco acompanha a escolha.
+          const atual = ABAS.findIndex((a) => a.chave === aba);
+          const destino =
+            e.key === "ArrowRight"
+              ? (atual + 1) % ABAS.length
+              : e.key === "ArrowLeft"
+                ? (atual + ABAS.length - 1) % ABAS.length
+                : e.key === "Home"
+                  ? 0
+                  : e.key === "End"
+                    ? ABAS.length - 1
+                    : -1;
+          if (destino < 0) return;
+          e.preventDefault();
+          setAba(ABAS[destino].chave);
+          (e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[destino])?.focus();
+        }}
+      >
+        {ABAS.map((a) => (
+          <AbaBotao
+            key={a.chave}
+            label={a.texto}
+            ativa={aba === a.chave}
+            onClick={() => setAba(a.chave)}
+          />
+        ))}
       </div>
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : aba === "graficos" ? (
         <GraficosSection
           movimentos={movimentos}
@@ -169,11 +181,9 @@ export function RelatoriosPage() {
       ) : aba === "curvaABC" ? (
         <CurvaABCSection ordens={ordens} pecas={pecas} servicos={servicos} />
       ) : carregandoContas ? (
-        <p className="text-corpo text-sakura-muted">Carregando as contas...</p>
+        <p className="text-corpo text-texto-2">Carregando as contas...</p>
       ) : erroContas ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          Não deu pra carregar as contas: {erroContas}
-        </p>
+        <AvisoDeErro>Não deu pra carregar as contas: {erroContas}</AvisoDeErro>
       ) : (
         <FluxoProjetadoSection
           contasPagar={contasPagar}
@@ -184,6 +194,28 @@ export function RelatoriosPage() {
   );
 }
 
+const ABAS: { chave: Aba; texto: string }[] = [
+  { chave: "graficos", texto: "Gráficos" },
+  { chave: "lucratividade", texto: "Lucratividade" },
+  { chave: "curvaABC", texto: "Curva ABC" },
+  { chave: "fluxo", texto: "Fluxo de caixa" },
+];
+
+/** Erro que não some sozinho: ícone e palavra junto da cor (regra 4). */
+function AvisoDeErro({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      role="alert"
+      className="flex items-start gap-2 rounded-xl bg-perigo/[0.13] px-4 py-3 text-corpo text-perigo"
+    >
+      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      <span className="min-w-0">{children}</span>
+    </p>
+  );
+}
+
+// A aba do visual novo é a peça `sakura-aba` (tarefa 7): o traço laranja só na
+// ligada, e a ligada também em negrito (a cor sozinha não avisa, regra 4).
 function AbaBotao({
   label,
   ativa,
@@ -195,12 +227,12 @@ function AbaBotao({
 }) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={ativa}
+      tabIndex={ativa ? 0 : -1}
       onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
+      className="sakura-aba"
     >
       {label}
     </button>

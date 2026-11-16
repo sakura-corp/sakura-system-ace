@@ -68,3 +68,22 @@ describe("LucratividadeSection — peça avulsa", () => {
     expect(screen.getAllByText(`Inclui item com ${TEXTO_CUSTO_NAO_INFORMADO}`)).toHaveLength(2);
   });
 });
+
+describe("LucratividadeSection — rosca do vendido (#990, tarefa 13)", () => {
+  it("mostra custo e margem do vendido quando os dois são positivos", () => {
+    render(<LucratividadeSection ordens={[ordem]} pecas={[]} servicos={[]} />);
+    const rosca = screen.getByRole("group", { name: "Divisão do vendido entre custo e margem" });
+    expect(within(rosca).getByText("Custo")).toBeInTheDocument();
+    expect(within(rosca).getByText("Margem")).toBeInTheDocument();
+  });
+
+  it("com margem negativa não desenha rosca (o cartão já mostra o prejuízo)", () => {
+    const prejuizo: OrdemServico = {
+      ...ordem,
+      itens: [item({ descricao: "Pneu", preco_unitario: 100, custo_unitario: 150 })],
+    };
+    render(<LucratividadeSection ordens={[prejuizo]} pecas={[]} servicos={[]} />);
+    expect(screen.queryByRole("group", { name: "Divisão do vendido entre custo e margem" })).toBeNull();
+    expect(screen.getByText("Margem do período")).toBeInTheDocument();
+  });
+});

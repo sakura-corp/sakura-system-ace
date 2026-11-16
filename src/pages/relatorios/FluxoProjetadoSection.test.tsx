@@ -127,14 +127,14 @@ describe("FluxoProjetadoSection", () => {
     // Em 30 dias só a conta real (20/11); a prevista do mês seguinte (20/12) fica de fora.
     await user.click(screen.getByRole("button", { name: /20\/11\/2026/ }));
     expect(screen.getByText("Aluguel")).toBeInTheDocument();
-    expect(screen.queryByText("prevista")).toBeNull();
+    expect(screen.queryByText(/^prevista$/i)).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "60 dias" }));
     const botaoPrevista = screen.getByRole("button", { name: /20\/12\/2026/ });
     expect(botaoPrevista).toHaveAttribute("aria-expanded", "false");
     await user.click(botaoPrevista);
     expect(botaoPrevista).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText("prevista")).toBeInTheDocument();
+    expect(screen.getByText("Prevista")).toBeInTheDocument();
   });
 
   it("trocar o período muda o que aparece", async () => {

@@ -48,7 +48,7 @@ beforeEach(() => {
 
 async function abrirFluxo() {
   const { user: usuario } = renderizar(<RelatoriosPage />);
-  await usuario.click(await screen.findByRole("button", { name: "Fluxo de caixa" }));
+  await usuario.click(await screen.findByRole("tab", { name: "Fluxo de caixa" }));
 }
 
 describe("RelatoriosPage — aba Fluxo de caixa (#389)", () => {
@@ -78,13 +78,34 @@ describe("RelatoriosPage — aba Fluxo de caixa (#389)", () => {
     const { user: usuario } = renderizar(<RelatoriosPage />);
 
     // Gráficos: os movimentos carregaram mesmo com as contas falhando.
-    await screen.findByRole("button", { name: "Fluxo de caixa" });
+    await screen.findByRole("tab", { name: "Fluxo de caixa" });
     expect(listarMovimentosCaixa).toHaveBeenCalled();
     expect(screen.queryByText("caiu a internet")).not.toBeInTheDocument();
 
-    await usuario.click(screen.getByRole("button", { name: "Fluxo de caixa" }));
+    await usuario.click(screen.getByRole("tab", { name: "Fluxo de caixa" }));
     expect(await screen.findByText(/Não deu pra carregar as contas/)).toBeInTheDocument();
     expect(screen.getByText(/caiu a internet/)).toBeInTheDocument();
     expect(screen.queryByText(/Sem acesso/)).not.toBeInTheDocument();
+  });
+});
+
+describe("RelatoriosPage — abas pelo teclado (#990, tarefa 13)", () => {
+  it("a seta pra direita passa pra próxima aba, e só a ligada entra na ordem do Tab", async () => {
+    operador = { id: "op", admin: true, permissoes: [] };
+    const { user: usuario } = renderizar(<RelatoriosPage />);
+    const graficos = await screen.findByRole("tab", { name: "Gráficos" });
+    expect(graficos).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Lucratividade" })).toHaveAttribute("tabindex", "-1");
+
+    graficos.focus();
+    await usuario.keyboard("{ArrowRight}");
+    const lucratividade = screen.getByRole("tab", { name: "Lucratividade" });
+    expect(lucratividade).toHaveAttribute("aria-selected", "true");
+    expect(lucratividade).toHaveFocus();
+
+    await usuario.keyboard("{End}");
+    expect(screen.getByRole("tab", { name: "Fluxo de caixa" })).toHaveAttribute("aria-selected", "true");
+    await usuario.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Gráficos" })).toHaveAttribute("aria-selected", "true");
   });
 });

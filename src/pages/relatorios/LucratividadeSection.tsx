@@ -1,15 +1,17 @@
+import { Info, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Valor } from "@/components/Valor";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { lucratividadePorItem } from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
+import { formatarMoeda } from "@/schemas/dinheiro";
 import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
-
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+import { FiltroDeDatas } from "./FiltroDeDatas";
+import { GraficoDeRosca } from "./GraficoDeRosca";
 
 interface LucratividadeSectionProps {
   ordens: OrdemServico[];
@@ -42,95 +44,140 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
   const ehOMesCorrente = dataInicio === primeiroDiaDoMesLocal() && dataFim === hojeLocal();
   const rotuloVendido = ehOMesCorrente ? "Vendido no mês" : "Vendido no período";
 
+  const mostrarRosca = totalCusto >= 0 && totalMargem >= 0 && (totalCusto > 0 || totalMargem > 0);
+
+  const avisoDeCusto = (
+    <span className="inline-flex items-center gap-1 text-rotulo font-medium text-atencao">
+      <TriangleAlert aria-hidden="true" className="size-[13px] shrink-0" strokeWidth={2.25} />
+      Inclui item com {TEXTO_CUSTO_NAO_INFORMADO}
+    </span>
+  );
+
   return (
     <>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          De:
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          Até:
-          <input
-            type="date"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
-        </label>
+      <div className="flex flex-wrap items-end gap-4">
+        <FiltroDeDatas
+          de={dataInicio}
+          ate={dataFim}
+          aoMudarDe={setDataInicio}
+          aoMudarAte={setDataFim}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">{rotuloVendido}</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalReceita)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Custo do período</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalCusto)}
-          </p>
-          {algumCustoNaoInformado && (
-            <p className="text-rotulo text-sakura-muted">Inclui item com {TEXTO_CUSTO_NAO_INFORMADO}</p>
-          )}
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Margem do período</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalMargem)}
-          </p>
-          {algumCustoNaoInformado && (
-            <p className="text-rotulo text-sakura-muted">Inclui item com {TEXTO_CUSTO_NAO_INFORMADO}</p>
-          )}
-        </div>
+        <CartaoNumero
+          titulo={rotuloVendido}
+          explicacao="O que as ordens de serviço abertas neste período somam, já recebidas ou não. Orçamento fica de fora."
+        >
+          <Valor valor={totalReceita} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Custo do período"
+          explicacao="O que as peças e os serviços dessas ordens custaram pra loja."
+          variacao={algumCustoNaoInformado ? avisoDeCusto : undefined}
+        >
+          <Valor valor={totalCusto} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Margem do período"
+          explicacao="O que sobrou: o vendido menos o custo das peças e dos serviços."
+          variacao={algumCustoNaoInformado ? avisoDeCusto : undefined}
+        >
+          <Valor valor={totalMargem} />
+        </CartaoNumero>
       </div>
 
-      <p className="text-rotulo text-sakura-muted">
-        Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos
-        Gráficos e do Início é só o que já entrou no Caixa: a diferença são as OS ainda não
-        recebidas.
+      <div className={mostrarRosca ? "grid grid-cols-3 gap-4" : undefined}>
+      {/* O que já está nos dois cartões de cima (custo e margem), em fatias: a
+          margem é a receita menos o custo, então as duas fatias fecham o
+          vendido. Com margem negativa não há "fatia", e o cartão já mostra o
+          prejuízo em vermelho. */}
+      {mostrarRosca && (
+        <section className="sakura-card p-5" aria-labelledby="divisao-do-vendido-titulo">
+          <h2
+            id="divisao-do-vendido-titulo"
+            className="mb-4 font-titulo text-subtitulo font-semibold text-texto"
+          >
+            Do vendido, quanto é custo e quanto é margem
+          </h2>
+          <GraficoDeRosca
+            descricao="Divisão do vendido entre custo e margem"
+            fatias={[
+              {
+                nome: "Custo",
+                valor: totalCusto,
+                cor: "var(--color-atencao)",
+                texto: formatarMoeda(totalCusto),
+              },
+              {
+                nome: "Margem",
+                valor: totalMargem,
+                cor: "var(--color-acao)",
+                texto: formatarMoeda(totalMargem),
+              },
+            ]}
+          />
+          {algumCustoNaoInformado && (
+            <p className="mt-3 text-rotulo text-texto-2">
+              Item com {TEXTO_CUSTO_NAO_INFORMADO} conta como custo zero: a margem pode estar maior
+              que a real.
+            </p>
+          )}
+        </section>
+      )}
+
+      <p className={`flex items-start gap-2 text-rotulo text-texto-2 ${mostrarRosca ? "col-span-2 self-center" : ""}`}>
+        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
+          Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos
+          Gráficos e do Início é só o que já entrou no Caixa: a diferença são as OS ainda não
+          recebidas.
+        </span>
       </p>
+      </div>
 
       {linhas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhuma peça ou serviço vendido nesse período.</p>
+        <p className="text-corpo text-texto-2">Nenhuma peça ou serviço vendido nesse período.</p>
       ) : (
-        <section>
-          <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+        <section aria-labelledby="margem-por-item-titulo">
+          <h2
+            id="margem-por-item-titulo"
+            className="mb-3 font-titulo text-subtitulo font-semibold text-texto"
+          >
             Margem por peça/serviço
           </h2>
-          <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <div className="sakura-card overflow-hidden">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Descrição</th>
-                  <th className="px-4 py-3 font-medium">Qtd. vendida</th>
-                  <th className="px-4 py-3 font-medium">Receita</th>
-                  <th className="px-4 py-3 font-medium">Custo</th>
-                  <th className="px-4 py-3 font-medium">Margem</th>
+                  <th>Descrição</th>
+                  <th className="text-right">Qtd. vendida</th>
+                  <th className="text-right">Receita</th>
+                  <th className="text-right">Custo</th>
+                  <th className="text-right">Margem</th>
                 </tr>
               </thead>
               <tbody>
                 {linhas.map((linha) => (
-                  <tr key={linha.descricao} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">{linha.descricao}</td>
-                    <td className="px-4 py-3">{linha.quantidade}</td>
-                    <td className="px-4 py-3">{formatarMoeda(linha.receita)}</td>
+                  <tr key={linha.descricao}>
+                    <td>{linha.descricao}</td>
+                    <td className="text-right">{linha.quantidade}</td>
+                    <td className="text-right">
+                      <Valor valor={linha.receita} />
+                    </td>
                     {linha.custoNaoInformado ? (
                       <>
-                        <td className="px-4 py-3 text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</td>
-                        <td className="px-4 py-3 text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</td>
+                        <td className="text-right text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</td>
+                        <td className="text-right text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</td>
                       </>
                     ) : (
                       <>
-                        <td className="px-4 py-3">{formatarMoeda(linha.custo)}</td>
-                        <td className="px-4 py-3 font-medium">{formatarMoeda(linha.margem)}</td>
+                        <td className="text-right">
+                          <Valor valor={linha.custo} />
+                        </td>
+                        <td className="text-right font-semibold">
+                          <Valor valor={linha.margem} />
+                        </td>
                       </>
                     )}
                   </tr>
