@@ -339,7 +339,9 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
 2. **Trazer a branch da nuvem**: `git fetch origin` e depois `git switch <branch>`, com o nome que
    a sessão disser (ex: `claude/tarefa-511-...`). Deve aparecer *"Switched to a new branch"* (ou
    *"Switched to branch"*, se você já testou essa branch antes; aí rode também `git pull`, pra
-   pegar o que a sessão enviou depois).
+   pegar o que a sessão enviou depois). Confira que o nome entre parênteses no fim da linha do
+   terminal mudou pra branch nova. Se aparecer *"fatal: only one reference expected"*, ou se o nome
+   não mudou, o comando chegou embaralhado ao colar (em 16/11 o `claude/` sumiu): **digite à mão**.
 3. **Instalar as dependências**: `npm install` (na primeira vez demora uns minutos). No Git Bash e
    no Mac é assim mesmo; no **PowerShell**, se aparecer o erro de scripts desabilitados,
    `npm.cmd install` (ver "Primeiro dia").
@@ -386,6 +388,8 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
      3. No Bitwarden, abra o item `SSACE teste – login <seu nome>`, troque a senha pela nova e salve.
      Só a sua: nunca a de outra pessoa nem a dos logins de perfil dos outros. Se o passo 1 der erro
      (a função de redefinir senha pode não estar instalada no banco de teste), pare e avise a Sofia.
+     Esse erro aparece como *"Sem conexão com a internet"*, mesmo com o resto do programa
+     funcionando (16/11): não é a internet, é a função que falta.
    - Pra fechar: `Ctrl+C` no terminal (no Mac também é `Control+C`, não `Cmd`).
 6. **Levar o resultado pro PR**: mande o print ou o texto **pra conversa com a sessão da nuvem**;
    ela põe na descrição do PR e no relatório. Antes de mandar o print, confira que **não aparece o
