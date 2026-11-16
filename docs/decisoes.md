@@ -47,12 +47,26 @@ Três fases, nessa ordem, sem pressa de pular etapa:
 
 ### Identidade visual (como está hoje)
 
-- **Tema escuro/neon**: rosa e roxo neon sobre fundo quase preto. Tokens `--color-sakura-*` em
-  `src/styles/globals.css`: `sakura-pink` `#ff4dce`, `sakura-purple` `#b624ff`, fundo `sakura-bg`
-  `#0b070a`, `color-scheme: dark`. Substituiu o tema claro/rosa original (troca feita por ela com
-  o Gemini, fora do Claude Code, e confirmada depois de ver rodando).
-  - **Cuidado com os nomes**: `sakura-purple-dark` virou um tom **claro** (`#e8d5e5`) e
-    `sakura-muted` é `#9e8d9a`; os dois são pra texto sobre fundo escuro. Documento ou exemplo
+> **Mudando** (Sofia, 14/11/2026, #990): o programa está saindo do rosa e roxo neon pro **laranja
+> com carmesim**, escuro, com grão no degradê, **logo B** (flor com a engrenagem no miolo), menu de
+> ícones e dois temas (escuro e claro). As regras estão em `docs/referencia/visual-novo/README.md`,
+> e a ordem das tarefas em `docs/rascunhos/visual-novo-tarefas.md`. **Já entrou** (tarefa 1): as
+> cores, as letras embutidas e o fundo do Login. O que está abaixo vale pro que ainda não mudou
+> (o vidro dos cartões, o menu, a logo); a última tarefa do visual novo reescreve esta seção.
+
+- **Tema escuro, laranja com carmesim**. Tokens `--color-sakura-*` em `src/styles/globals.css`,
+  **com os nomes antigos e os valores novos**: `sakura-purple` é o laranja de ação `#ff5722`,
+  `sakura-pink` o laranja claro `#ff7a4d`, fundo `sakura-bg` `#0a0a0d`, `color-scheme: dark`. Ao
+  lado deles, as cores com **nome de papel** (`acao`, `sobre-acao`, `cartao`, `perigo`…), que são as
+  que tela nova usa. **Letra em cima do laranja é `text-sobre-acao` (escura), nunca branca**: o
+  `npm run contraste` reprova. O tema rosa e roxo neon (a troca feita com o Gemini) valeu até
+  14/11/2026; antes dele, o tema claro/rosa original.
+- **Letras embutidas** (Sofia, 14/11/2026): Inter (texto) e Plus Jakarta Sans (títulos, `--font-titulo`),
+  dos pacotes `@fontsource-variable`, importadas no `src/main.tsx`. O programa roda sem internet, e
+  sem isso caía na letra do Windows em PC sem a Inter. **Ícones**: a biblioteca `lucide-react`
+  (mesma decisão; entra com o menu novo).
+  - **Cuidado com os nomes**: `sakura-purple-dark` é um tom **claro** (`#f4f4f5`) e
+    `sakura-muted` é `#a1a1aa`; os dois são pra texto sobre fundo escuro. Documento ou exemplo
     antigo que diga "purple-dark é escuro" é do tema anterior. Nunca usar `text-sakura-gray` como
     texto, nem opacidade baixa em cima de `sakura-card`.
   - **Contraste**: conferido por `npm run contraste` (classes) e `npm run contraste:telas` (as 54
@@ -61,7 +75,8 @@ Três fases, nessa ordem, sem pressa de pular etapa:
   um brilho neon sutil) sobre um fundo escuro com brilho difuso (`sakura-shell-bg`), em quase toda
   tela. **A janela (modal) é a exceção**: painel opaco (`sakura-modal` + `sakura-modal-fundo`),
   porque no vidro o texto da tela de trás atrapalhava a leitura (#361, escolhido por ela em
-  03/10/2026). O Login usa `public/sakura-login-bg-premium.png` de fundo. Os cartões do Início mostram só
+  03/10/2026). O Login usa o fundo de marca (`sakura-fundo-marca` + `sakura-grao`: manchas de
+  carmesim e laranja com o granulado), no lugar da imagem antiga. Os cartões do Início mostram só
   valor grande + seta `›`, sem gráfico (seção 7).
 - **Barra de rolagem própria** (`src/components/AreaRolavel.tsx`): a nativa do Windows não respeita
   canto arredondado, então ela é escondida e o "polegar" é uma div comum, arrastável. Vale no

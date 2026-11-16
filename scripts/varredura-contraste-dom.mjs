@@ -27,22 +27,62 @@ import {
   ehDividaConhecida,
 } from "./divida-de-contraste.mjs";
 
-process.exit(await comServidorDeTelas(varrer));
+// Os DOIS temas (visual novo, #990): o escuro, que é o padrão, e o claro.
+// Uma cor que passa num pode reprovar no outro (o amarelo de aviso do escuro
+// dá 1,5:1 no branco), então cada tela é medida duas vezes.
+// `npm run contraste:telas -- claro` (ou `escuro`) roda um só, pra quem está
+// consertando um tema e não quer esperar o outro.
+const TEMAS = ["escuro", "claro"].filter((t) => !process.argv[2] || process.argv[2] === t);
+if (TEMAS.length === 0) {
+  console.error('O tema é "escuro" ou "claro".');
+  process.exit(1);
+}
 
-async function varrer() {
+process.exit(
+  await comServidorDeTelas(async () => {
+    let saida = 0;
+    const todos = [];
+    for (const tema of TEMAS) {
+      console.log(`\n===== TEMA ${tema.toUpperCase()} =====`);
+      const { saida: saidaDoTema, grupos } = await varrer(tema);
+      saida ||= saidaDoTema;
+      todos.push(...grupos);
+    }
+    // Mesma disciplina do teste de arquitetura (seção 6, item 49): a lista de
+    // dívida encolhe, nunca envelhece. Se uma entrada dela deixou de casar com
+    // qualquer coisa, é porque foi corrigida — e aí tem que sair da lista. Só
+    // dá pra dizer isso com os dois temas medidos.
+    if (TEMAS.length === 2) {
+      const resolvidos = dividaResolvida(todos);
+      if (resolvidos.length > 0) {
+        console.log("\nEstas entradas da dívida não casam mais com nada — apague-as");
+        console.log("de scripts/divida-de-contraste.mjs:\n");
+        for (const d of resolvidos) console.log(`  ${d.id}`);
+        saida = 1;
+      }
+    }
+    return saida;
+  }),
+);
+
+async function varrer(tema) {
   let saida = 0;
   const achadosPorTela = [];
-  const { feitas, falhas } = await percorrerTelas(async (cena, pagina) => {
-    const achados = await pagina.evaluate(MEDIR_CONTRASTE);
-    for (const achado of achados) achadosPorTela.push({ tela: cena.titulo, ...achado });
-  });
+  const { feitas, falhas } = await percorrerTelas(
+    async (cena, pagina) => {
+      const achados = await pagina.evaluate(MEDIR_CONTRASTE);
+      for (const achado of achados) achadosPorTela.push({ tela: cena.titulo, tema, ...achado });
+    },
+    undefined,
+    { tema },
+  );
 
   // Muita linha de tabela repete exatamente a mesma combinação de cores. Uma
   // lista com as 400 ocorrências não se lê; o que importa é quantos LUGARES
   // diferentes do código estão errados.
   const grupos = new Map();
   for (const achado of achadosPorTela) {
-    const chave = `${achado.tipo}|${achado.caminho}|${achado.frente}|${achado.fundo}`;
+    const chave = `${achado.tema}|${achado.tipo}|${achado.caminho}|${achado.frente}|${achado.fundo}`;
     const grupo = grupos.get(chave) ?? { ...achado, telas: new Set(), vezes: 0 };
     grupo.telas.add(achado.tela);
     grupo.vezes += 1;
@@ -93,15 +133,7 @@ async function varrer() {
     saida = 1;
   }
 
-  // Mesma disciplina do teste de arquitetura (seção 6, item 49): a lista de
-  // dívida encolhe, nunca envelhece. Se uma entrada dela deixou de casar com
-  // qualquer coisa, é porque foi corrigida — e aí tem que sair da lista.
-  const resolvidos = dividaResolvida(ordenados);
-  if (resolvidos.length > 0) {
-    console.log("\nEstas entradas da dívida não casam mais com nada — apague-as");
-    console.log("de scripts/divida-de-contraste.mjs:\n");
-    for (const d of resolvidos) console.log(`  ${d.id}`);
-    saida = 1;
-  }
-  return saida;
+  // Tela que não abriu não foi medida: não pode passar por "sem reprovação".
+  if (falhas.length) saida = 1;
+  return { saida, grupos: ordenados };
 }

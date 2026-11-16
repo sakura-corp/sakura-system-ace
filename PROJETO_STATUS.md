@@ -167,9 +167,10 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 10/11/2026: a leva 6 aprovada (#980) e a leva 7 aberta, com 20 tarefas
-- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
-- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). Aberta só a #969: o #975 voltou pro Gusta (falta a `key` em Clientes).
-- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
-- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
-- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+### 16/11/2026: visual novo, quase todas as telas na `main`
+- **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
+- **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.
+- **Aberto**: em 1024 com o menu aberto, a tabela das OS rola de lado (esconder uma coluna é decisão dela); as sugestões de cada PR.
+- **Próximo**: Relações (sessão rodando) e Configurações com Auditoria e Diagnóstico (#1062); depois a tarefa de tirar os tokens antigos.
+- **Atenção**: as sessões pararam no limite semanal (16/11); a fila está em `docs/rascunhos/visual-novo-tarefas.md`.
+- **Com a Sofia**: no Windows 11, a barra da janela e o ícone do instalador; no fim de semana, as telas novas e o faturar com um login de verdade.

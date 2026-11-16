@@ -1883,3 +1883,9 @@
     fecha a issue sozinho com as palavras em inglês: `Closes #N`, `Fixes #N` ou `Resolves #N`.
     **Regra**: no PR, sempre `Closes #N` (pode vir com a explicação em português depois). Ao montar
     uma leva, conferir se alguma issue aberta já tem PR mesclado.
+101. **Botão desligado com meia opacidade some quando a letra é escura (14/11/2026, #1043).** As telas
+    desligam o botão com `disabled:opacity-50`, e com a letra branca do tema antigo isso se lia. No
+    visual novo a letra do botão laranja é escura, e a meia opacidade deu 2,4:1 em dois botões
+    ("+ Adicionar", "Ler arquivo"): o `contraste:telas` pegou, o `npm run contraste` não tinha como.
+    **Regra**: botão desligado troca de cor (cinza sólido, letra secundária), não só de opacidade. Há
+    uma regra de ponte no `globals.css` pros botões antigos; o componente `Botao` novo já nasce assim.

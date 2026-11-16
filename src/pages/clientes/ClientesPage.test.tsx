@@ -22,6 +22,8 @@ afterEach(() => {
 });
 
 const listarClientes = vi.fn();
+const listarClientesPagina = vi.fn();
+const excluirCliente = vi.fn();
 const listarOrdensFaturadasDosClientes = vi.fn();
 const listarModelosWhatsapp = vi.fn();
 const ultimasMensagensPorReferencia = vi.fn();
@@ -29,10 +31,12 @@ const registrarMensagemAberta = vi.fn();
 const abrirConversaWhatsapp = vi.fn();
 
 vi.mock("@/lib/clientes", () => ({
+  COLUNAS_DA_LISTA_DE_CLIENTES: ["nome", "cidade"],
   listarClientes: () => listarClientes(),
+  listarClientesPagina: (...a: unknown[]) => listarClientesPagina(...a),
   criarCliente: vi.fn(),
   atualizarCliente: vi.fn(),
-  excluirCliente: vi.fn(),
+  excluirCliente: (...a: unknown[]) => excluirCliente(...a),
 }));
 vi.mock("@/lib/clientesSumidos", () => ({
   listarOrdensFaturadasDosClientes: () => listarOrdensFaturadasDosClientes(),
@@ -112,16 +116,41 @@ function ordem(
   };
 }
 
+interface PedidoDaPagina {
+  de: number;
+  ate: number;
+  ordem: { coluna: "nome" | "cidade"; crescente: boolean };
+  busca: string;
+}
+
+/**
+ * O banco de mentira da lista por página: ordena e corta a tabela INTEIRA,
+ * como o Postgres faria. O que o teste prova é que a tela mostra o que ele
+ * devolveu, na ordem dele.
+ */
+function bancoComOsClientes(todos: Cliente[]) {
+  return async ({ de, ate, ordem: o, busca }: PedidoDaPagina) => {
+    const achados = todos.filter((c) => c.nome.toLowerCase().includes(busca.toLowerCase()));
+    const ordenados = [...achados].sort(
+      (a, b) => (a[o.coluna] ?? "").localeCompare(b[o.coluna] ?? "") * (o.crescente ? 1 : -1),
+    );
+    return { linhas: ordenados.slice(de, ate + 1), total: achados.length };
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   operador = { id: "op", admin: true, permissoes: [] };
   lojaAtual = LOJA_A;
-  listarClientes.mockResolvedValue([
+  const quatro = [
     cliente("c1", "Cliente Pouco", "(16) 99000-0001"),
     cliente("c2", "Cliente Muito", "(16) 99000-0002"),
     cliente("c3", "Cliente Sempre", "(16) 99000-0003"),
     cliente("c4", "Cliente Novo", "(16) 99000-0004"),
-  ]);
+  ];
+  listarClientes.mockResolvedValue(quatro);
+  listarClientesPagina.mockImplementation(bancoComOsClientes(quatro));
   listarOrdensFaturadasDosClientes.mockResolvedValue([
     ordem("o1", "c1", 300, 80, "Alinhamento"),
     ordem("o2", "c2", 250, 900, "Troca de pneus"),
@@ -281,6 +310,145 @@ describe("ClientesPage — abrir o formulário rola até ele (#969)", () => {
   });
 });
 
+describe("ClientesPage — a lista por página (#373)", () => {
+  // 120 clientes, cadastrados fora da ordem do alfabeto: "Teste 000" … "Teste 119".
+  const CENTO_E_VINTE = Array.from({ length: 120 }, (_, i) => {
+    const n = String((i * 37) % 120).padStart(3, "0");
+    return cliente(`id-${n}`, `Teste ${n}`, null);
+  });
+
+  function nomesDaLista(): string[] {
+    return screen
+      .getAllByRole("row")
+      .slice(1)
+      .map((linha) => within(linha).getAllByRole("cell")[0].textContent ?? "");
+  }
+
+  beforeEach(() => {
+    listarClientesPagina.mockImplementation(bancoComOsClientes(CENTO_E_VINTE));
+  });
+
+  it("mostra 50 por vez, e embaixo de quantos", async () => {
+    renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    expect(nomesDaLista()).toHaveLength(50);
+    expect(screen.getByText("Mostrando 1 a 50 de 120")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Anterior" })).toBeDisabled();
+    // A lista inteira não é mais baixada pra lista principal.
+    expect(listarClientes).not.toHaveBeenCalled();
+  });
+
+  it("ordenar por Nome decrescente traz os últimos do alfabeto da tabela INTEIRA", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+
+    await user.click(screen.getByRole("button", { name: /^Nome/ }));
+
+    await screen.findByText("Teste 119");
+    const nomes = nomesDaLista();
+    expect(nomes[0]).toBe("Teste 119");
+    expect(nomes[49]).toBe("Teste 070");
+    expect(screen.getByRole("columnheader", { name: /Nome/ })).toHaveAttribute(
+      "aria-sort",
+      "descending",
+    );
+    expect(listarClientesPagina).toHaveBeenLastCalledWith({
+      de: 0,
+      ate: 49,
+      ordem: { coluna: "nome", crescente: false },
+      busca: "",
+    });
+  });
+
+  it("Próxima e Anterior andam pelas páginas, e o número embaixo acompanha", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+
+    await user.click(screen.getByRole("button", { name: "Próxima" }));
+    await screen.findByText("Mostrando 51 a 100 de 120");
+    expect(nomesDaLista()[0]).toBe("Teste 050");
+
+    await user.click(screen.getByRole("button", { name: "Próxima" }));
+    await screen.findByText("Mostrando 101 a 120 de 120");
+    expect(screen.getByRole("button", { name: "Próxima" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Anterior" }));
+    await screen.findByText("Mostrando 51 a 100 de 120");
+  });
+
+  it("a busca vai pro banco e acha quem está em outra página", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    expect(screen.queryByText("Teste 117")).not.toBeInTheDocument();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar cliente" }), "117");
+
+    await screen.findByText("Teste 117");
+    expect(nomesDaLista()).toEqual(["Teste 117"]);
+    expect(screen.getByText("Mostrando 1 a 1 de 1")).toBeInTheDocument();
+    expect(listarClientesPagina).toHaveBeenLastCalledWith(
+      expect.objectContaining({ de: 0, busca: "117" }),
+    );
+  });
+
+  it("busca sem resultado diz que não achou, e a busca continua na tela", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    await user.type(screen.getByRole("searchbox", { name: "Buscar cliente" }), "zzz");
+    await screen.findByText('Nenhum cliente encontrado com "zzz".');
+    expect(screen.getByRole("searchbox", { name: "Buscar cliente" })).toHaveValue("zzz");
+  });
+
+  it("apagar uma busca que não achou nada não tira a busca da tela", async () => {
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    const campo = screen.getByRole("searchbox", { name: "Buscar cliente" });
+    await user.type(campo, "zzz");
+    await screen.findByText('Nenhum cliente encontrado com "zzz".');
+
+    let soltar: (() => void) | null = null;
+    const banco = bancoComOsClientes(CENTO_E_VINTE);
+    listarClientesPagina.mockImplementation(
+      (pedido: PedidoDaPagina) =>
+        new Promise((ok) => {
+          soltar = () => void banco(pedido).then(ok);
+        }),
+    );
+    await user.clear(campo);
+    await vi.waitFor(() => expect(soltar).not.toBeNull());
+    // A resposta ainda não chegou: a busca continua na tela, com o foco.
+    expect(screen.getByRole("searchbox", { name: "Buscar cliente" })).toHaveFocus();
+    soltar!();
+    await screen.findByText("Teste 000");
+  });
+
+  it("excluir um cliente da página 2 recarrega a página 2", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    excluirCliente.mockResolvedValue(undefined);
+    const { user } = renderizar(<ClientesPage />);
+    await screen.findByText("Teste 000");
+    await user.click(screen.getByRole("button", { name: "Próxima" }));
+    await screen.findByText("Mostrando 51 a 100 de 120");
+    listarClientesPagina.mockClear();
+
+    const linha = screen.getByText("Teste 050").closest("tr")!;
+    await user.click(within(linha).getByRole("button", { name: /mais ações|ações/i }));
+    await user.click(screen.getByRole("menuitem", { name: /excluir cliente/i }));
+
+    await vi.waitFor(() => expect(excluirCliente).toHaveBeenCalledWith("id-050"));
+    await vi.waitFor(() =>
+      expect(listarClientesPagina).toHaveBeenCalledWith(expect.objectContaining({ de: 50, ate: 99 })),
+    );
+  });
+
+  it("sem cliente nenhum, diz que não há cadastro e esconde a busca", async () => {
+    listarClientesPagina.mockResolvedValue({ linhas: [], total: 0 });
+    renderizar(<ClientesPage />);
+    await screen.findByText("Nenhum cliente cadastrado ainda.");
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+});
+
 describe("importar planilha (#457)", () => {
   it("só o administrador vê o botão", async () => {
     operador = { id: "op", admin: false, permissoes: ["clientes"] };
@@ -297,11 +465,11 @@ describe("importar planilha (#457)", () => {
     desfazerImportacao.mockResolvedValue({ veiculos_apagados: 0, clientes_apagados: 1, mantidos: [] });
     const { user } = renderizar(<ClientesPage />);
     await screen.findByText("Cliente Pouco");
-    const vezes = listarClientes.mock.calls.length;
+    const vezes = listarClientesPagina.mock.calls.length;
     await user.click(screen.getByRole("button", { name: "Importar planilha" }));
     await user.click(await screen.findByRole("button", { name: "Desfazer" }));
     await user.click(screen.getByRole("button", { name: "Sim, desfazer" }));
     await screen.findByText(/Desfeito: a.csv/);
-    expect(listarClientes.mock.calls.length).toBe(vezes + 1);
+    expect(listarClientesPagina.mock.calls.length).toBe(vezes + 1);
   });
 });

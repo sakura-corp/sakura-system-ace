@@ -5,9 +5,23 @@ import {
   modeloPorChave,
   montarTextoAvaliacao,
   montarUrlWhatsapp,
+  numerosDoResumoDono,
+  periodoDoResumo,
   preencherModelo,
   telefoneParaWhatsapp,
+  textoResumoDono,
 } from "./whatsapp";
+import {
+  janelaDoMesAteODia,
+  metricasDoPeriodo,
+  contasVencendoAte,
+  valoresPorCartao,
+} from "./painelInicio";
+import { custoDaOrdemPeloBanco } from "./metricasCaixa";
+import { diferencaDoFechamento } from "./fechamentoCaixa";
+import type { MovimentoCaixa } from "@/types/caixa";
+import type { ContaPagar } from "@/types/contaPagar";
+import type { ModuloChave } from "@/types/operador";
 
 describe("telefoneParaWhatsapp", () => {
   it("aceita o formato que a loja digita de verdade", () => {
@@ -230,5 +244,241 @@ describe("marcador {pix} na cobrança (#456)", () => {
 
   it("os outros marcadores vazios continuam virando travessão", () => {
     expect(preencherModelo("{cliente} / {valor}", { cliente: "", valor: null })).toBe("— / —");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Resumo pro dono (#397)
+// ---------------------------------------------------------------------------
+
+// 11/11/2026 às 15h, no fuso de quem roda o teste.
+const HOJE = new Date(2026, 10, 11, 15, 0, 0);
+
+function movimento(
+  id: string,
+  tipo: "entrada" | "saida",
+  valor: number,
+  data: Date,
+  ordemId: string | null = null,
+): MovimentoCaixa {
+  return {
+    id,
+    loja_id: "l",
+    data: data.toISOString(),
+    ordem_servico_id: ordemId,
+    tipo,
+    forma_pagamento: "dinheiro",
+    valor,
+    descricao: null,
+    categoria_id: null,
+    ordem_servico: ordemId
+      ? { id: ordemId, numero: 1, tipo: "os", cliente: null, itens: [] }
+      : null,
+  };
+}
+
+const MOVIMENTOS: MovimentoCaixa[] = [
+  // Hoje: uma OS paga em duas formas (custo 100) e uma saída.
+  movimento("m1", "entrada", 300, new Date(2026, 10, 11, 9), "os-1"),
+  movimento("m2", "entrada", 200, new Date(2026, 10, 11, 9, 5), "os-1"),
+  movimento("m3", "saida", 50, new Date(2026, 10, 11, 10)),
+  // Começo do mês: outra OS (custo 40).
+  movimento("m4", "entrada", 120, new Date(2026, 10, 2, 14), "os-2"),
+  // Mês passado: não entra em nada.
+  movimento("m5", "entrada", 999, new Date(2026, 9, 30, 14), "os-3"),
+];
+const CUSTOS = custoDaOrdemPeloBanco(
+  new Map([
+    ["os-1", { custo: 100, completo: true }],
+    ["os-2", { custo: 40, completo: true }],
+    ["os-3", { custo: 1, completo: true }],
+  ]),
+);
+
+function conta(id: string, valor: number, vencimento: string): ContaPagar {
+  return { id, valor, vencimento, status: "pendente", descricao: id } as unknown as ContaPagar;
+}
+const CONTAS = [conta("c1", 80, "2026-11-12"), conta("c2", 20, "2026-11-05"), conta("c3", 500, "2027-01-30")];
+const ORDENS = [
+  { id: "o1", status: "em_andamento" },
+  { id: "o2", status: "em_andamento" },
+  { id: "o3", status: "concluida" },
+] as never[];
+
+const pode = (...modulos: ModuloChave[]) => (m: ModuloChave) => modulos.includes(m);
+const TUDO = pode("caixa", "ordens_servico", "contas_pagar");
+
+describe("resumo pro dono: os números são os mesmos do Início e do Caixa", () => {
+  it("mês: recebido, lucro e ticket iguais aos cartões do Início com os mesmos dados", () => {
+    const cartoes = valoresPorCartao(
+      metricasDoPeriodo(MOVIMENTOS, janelaDoMesAteODia(HOJE), CUSTOS),
+      contasVencendoAte(CONTAS, HOJE),
+    );
+    const numeros = numerosDoResumoDono({
+      periodo: "mes",
+      referencia: HOJE,
+      hoje: HOJE,
+      movimentos: MOVIMENTOS,
+      custoDaOrdem: CUSTOS,
+      ordens: ORDENS,
+      contas: CONTAS,
+      podeVer: TUDO,
+    });
+    expect(numeros.vendas).toBe(cartoes.vendas_mes);
+    expect(numeros.lucro).toBe(cartoes.lucro_mes);
+    expect(numeros.ticket).toBe(cartoes.ticket_medio_mes);
+    expect(numeros.contasVencendo).toBe(cartoes.contas_pagar_vencendo);
+    // E os valores de verdade, pra o teste não passar com os dois errados juntos.
+    expect(numeros.vendas).toBe(620);
+    expect(numeros.lucro).toBe(620 - 50 - 140);
+    expect(numeros.ticket).toBe(310);
+    expect(numeros.contasVencendo).toBe(100);
+    expect(numeros.osAbertas).toBe(2);
+    expect(numeros.diferencaCaixa).toBeNull();
+  });
+
+  it("dia: só os lançamentos de hoje", () => {
+    const numeros = numerosDoResumoDono({
+      periodo: "dia",
+      referencia: HOJE,
+      hoje: HOJE,
+      movimentos: MOVIMENTOS,
+      custoDaOrdem: CUSTOS,
+      ordens: ORDENS,
+      contas: CONTAS,
+      podeVer: TUDO,
+    });
+    expect(numeros.vendas).toBe(500);
+    expect(numeros.lucro).toBe(500 - 50 - 100);
+    expect(numeros.ticket).toBe(500);
+  });
+
+  it("fechamento: a diferença é a mesma de diferencaDoFechamento, com o sinal certo", () => {
+    for (const [esperado, contado] of [
+      [500, 480],
+      [500, 512.5],
+      [500, 500],
+    ]) {
+      const numeros = numerosDoResumoDono({
+        periodo: "dia",
+        referencia: HOJE,
+        hoje: HOJE,
+        movimentos: MOVIMENTOS,
+        custoDaOrdem: CUSTOS,
+        ordens: ORDENS,
+        contas: CONTAS,
+        podeVer: TUDO,
+        diferencaCaixa: diferencaDoFechamento(esperado, contado),
+      });
+      expect(numeros.diferencaCaixa).toBe(diferencaDoFechamento(esperado, contado));
+    }
+  });
+
+  it("sem Contas a Pagar a linha some; sem OS, a das OS some", () => {
+    const numeros = numerosDoResumoDono({
+      periodo: "mes",
+      referencia: HOJE,
+      hoje: HOJE,
+      movimentos: MOVIMENTOS,
+      custoDaOrdem: CUSTOS,
+      ordens: ORDENS,
+      contas: CONTAS,
+      podeVer: pode("caixa"),
+    });
+    expect(numeros.contasVencendo).toBeNull();
+    expect(numeros.osAbertas).toBeNull();
+    expect(numeros.vendas).toBe(620);
+  });
+
+  it("sem Caixa e sem Relações, recebido, lucro e ticket ficam de fora (nunca R$ 0,00)", () => {
+    const numeros = numerosDoResumoDono({
+      periodo: "mes",
+      referencia: HOJE,
+      hoje: HOJE,
+      movimentos: [],
+      custoDaOrdem: CUSTOS,
+      ordens: ORDENS,
+      contas: CONTAS,
+      podeVer: pode("contas_pagar"),
+    });
+    expect(numeros.vendas).toBeNull();
+    expect(numeros.lucro).toBeNull();
+    expect(numeros.ticket).toBeNull();
+    expect(numeros.contasVencendo).toBe(100);
+  });
+});
+
+describe("textoResumoDono", () => {
+  const cheio = {
+    vendas: 620,
+    lucro: 430,
+    ticket: 310,
+    osAbertas: 2,
+    contasVencendo: 100,
+    diferencaCaixa: null,
+  };
+
+  it("monta o texto padrão com todos os números", () => {
+    const texto = textoResumoDono({ loja: "Loja Centro", periodo: "este mês (01/11 a 11/11/2026)", numeros: cheio });
+    expect(texto).toContain("Loja Centro");
+    expect(texto).toContain("este mês (01/11 a 11/11/2026)");
+    expect(texto).toContain("Recebido: R$\u00a0620,00");
+    expect(texto).toContain("Lucro: R$\u00a0430,00");
+    expect(texto).toContain("Ticket médio: R$\u00a0310,00");
+    expect(texto).toContain("OS abertas: 2");
+    expect(texto).toMatch(/Contas a pagar.*R\$\u00a0100,00/);
+    // Sem fechamento, a linha da diferença não aparece.
+    expect(texto).not.toMatch(/caixa:/i);
+    expect(texto).not.toContain("{");
+  });
+
+  it("linha que a pessoa não pode ver SOME (não vira R$ 0,00 nem —)", () => {
+    const texto = textoResumoDono({
+      loja: "Loja Centro",
+      periodo: "hoje",
+      numeros: { ...cheio, contasVencendo: null, osAbertas: null },
+    });
+    expect(texto).not.toMatch(/Contas a pagar/);
+    expect(texto).not.toMatch(/OS abertas/);
+    expect(texto).not.toContain("—");
+    expect(texto).not.toContain("R$\u00a00,00");
+    expect(texto).toContain("Recebido: R$\u00a0620,00");
+  });
+
+  it("diferença do fechamento: faltou, sobrou e bateu", () => {
+    const comDiferenca = (d: number) =>
+      textoResumoDono({ loja: "L", periodo: "dia 10/11/2026", numeros: { ...cheio, diferencaCaixa: d } });
+    expect(comDiferenca(-20)).toContain("Fechamento do caixa: faltaram R$\u00a020,00");
+    expect(comDiferenca(12.5)).toContain("Fechamento do caixa: sobraram R$\u00a012,50");
+    expect(comDiferenca(0)).toContain("Fechamento do caixa: bateu certinho");
+  });
+
+  it("usa o modelo editado pela loja, e tira a linha do marcador escondido mesmo no texto dela", () => {
+    const texto = textoResumoDono({
+      loja: "L",
+      periodo: "hoje",
+      numeros: { ...cheio, lucro: null },
+      modelo: "Oi chefe! {periodo}\nGanhamos {lucro} hoje\nEntrou {vendas}",
+    });
+    expect(texto).toBe("Oi chefe! hoje\nEntrou R$\u00a0620,00");
+  });
+});
+
+describe("periodoDoResumo", () => {
+  it("dia e mês, com as datas no formato do Brasil", () => {
+    expect(periodoDoResumo("dia", HOJE, HOJE)).toBe("hoje (11/11/2026)");
+    expect(periodoDoResumo("mes", HOJE, HOJE)).toBe("este mês (01/11 a 11/11/2026)");
+    // Um dia que já passou (fechamento feito na manhã seguinte).
+    expect(periodoDoResumo("dia", new Date(2026, 10, 10), HOJE)).toBe("dia 10/11/2026");
+  });
+});
+
+describe("montarUrlWhatsapp sem número (#397)", () => {
+  it("abre a escolha de contato: https://wa.me/?text=… com o texto codificado", () => {
+    const url = montarUrlWhatsapp(null, "Resumo & lucro: R$ 10,00\nOK?");
+    expect(url).toBe(`https://wa.me/?text=${encodeURIComponent("Resumo & lucro: R$ 10,00\nOK?")}`);
+    expect(url).toContain("%26");
+    expect(url).toContain("%0A");
+    expect(new URL(url).hostname).toBe("wa.me");
   });
 });

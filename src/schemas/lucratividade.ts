@@ -2,7 +2,8 @@ import { diaLocal } from "@/lib/datas";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
 import type { MapaCusto } from "./metricasCaixa";
 import { valorLiquidoDoItem } from "./valorItem";
-import type { OrdemServico } from "@/types/os";
+import { ehConsumidor } from "@/types/cliente";
+import type { ItemOS, OrdemServico, TipoItemOS } from "@/types/os";
 
 /**
  * Relações → Lucratividade: receita, custo e margem por peça/serviço, no
@@ -16,6 +17,11 @@ import type { OrdemServico } from "@/types/os";
 
 export interface LinhaLucro {
   descricao: string;
+  /**
+   * Peça ou serviço (#390, pra curva ABC separar as duas listas). Vem do
+   * primeiro item da linha; não muda conta nenhuma.
+   */
+  tipo: TipoItemOS;
   quantidade: number;
   receita: number;
   custo: number;
@@ -41,6 +47,30 @@ export interface Lucratividade {
   algumCustoNaoInformado: boolean;
 }
 
+/** As OS que entram nos números do período: dia de abertura no fuso local, orçamento fora. */
+function ordensDoPeriodo(ordens: OrdemServico[], de: string, ate: string): OrdemServico[] {
+  return ordens.filter((ordem) => {
+    if (!contaNosNumeros(ordem)) return false;
+    const dia = diaLocal(ordem.data_abertura);
+    return dia >= de && dia <= ate;
+  });
+}
+
+/**
+ * Quanto um item vende e custa. É o pedaço que a Lucratividade por item e a
+ * por cliente (#390) usam — a mesma conta, num lugar só.
+ */
+function contaDoItem(
+  item: ItemOS,
+  custoPeca: MapaCusto,
+  custoServico: MapaCusto,
+): { receita: number; custo: number; custoNaoInformado: boolean } {
+  const receita = valorLiquidoDoItem(item);
+  const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
+  const custo = item.quantidade * (custoUnitario ?? 0);
+  return { receita, custo, custoNaoInformado: custoUnitario === null };
+}
+
 export function lucratividadePorItem({
   ordens,
   custoPeca,
@@ -62,15 +92,9 @@ export function lucratividadePorItem({
 }): Lucratividade {
   const mapa = new Map<string, LinhaLucro>();
 
-  for (const ordem of ordens) {
-    if (!contaNosNumeros(ordem)) continue;
-    const dia = diaLocal(ordem.data_abertura);
-    if (dia < de || dia > ate) continue;
-
+  for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
     for (const item of ordem.itens ?? []) {
-      const receita = valorLiquidoDoItem(item);
-      const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
-      const custo = item.quantidade * (custoUnitario ?? 0);
+      const { receita, custo, custoNaoInformado } = contaDoItem(item, custoPeca, custoServico);
 
       // #744: o item ligado ao cadastro guarda o nome digitado no orçamento
       // ("Bico de valvula cromado"); a linha é a da peça do cadastro, senão a
@@ -87,6 +111,7 @@ export function lucratividadePorItem({
           : undefined;
       const existente = mapa.get(chave) ?? {
         descricao: nomeDoCadastro ?? item.descricao,
+        tipo: item.tipo,
         quantidade: 0,
         receita: 0,
         custo: 0,
@@ -97,7 +122,7 @@ export function lucratividadePorItem({
       existente.receita += receita;
       existente.custo += custo;
       existente.margem += receita - custo;
-      if (custoUnitario === null) existente.custoNaoInformado = true;
+      if (custoNaoInformado) existente.custoNaoInformado = true;
       mapa.set(chave, existente);
     }
   }
@@ -113,5 +138,83 @@ export function lucratividadePorItem({
     totalCusto: linhas.reduce((total, l) => total + l.custo, 0),
     totalMargem: linhas.reduce((total, l) => total + l.margem, 0),
     algumCustoNaoInformado: linhas.some((l) => l.custoNaoInformado),
+  };
+}
+
+export interface LinhaLucroCliente {
+  clienteId: string;
+  /** O nome vem da `clientes_janela` (aparece mesmo sem o módulo Clientes). */
+  nome: string;
+  receita: number;
+  custo: number;
+  margem: number;
+  /** Mesmo sentido da `LinhaLucro`: algum item sem custo informado. */
+  custoNaoInformado: boolean;
+}
+
+export interface LucratividadePorCliente {
+  /** Um por cliente de verdade, o de maior venda primeiro. */
+  linhas: LinhaLucroCliente[];
+  /**
+   * A venda de balcão sem cliente escolhido (o Consumidor), à parte: não é
+   * um cliente de verdade e tomaria o lugar de quem a loja quer enxergar
+   * (#390, pergunta 3). `null` quando não houve.
+   */
+  consumidor: LinhaLucroCliente | null;
+  /** Com o Consumidor: bate com o `totalReceita` da `lucratividadePorItem`. */
+  totalReceita: number;
+}
+
+export const NOME_CLIENTE_SEM_NOME = "Cliente sem nome";
+
+/**
+ * #390: a mesma conta da `lucratividadePorItem` (mesmas OS, mesmo período,
+ * mesmo valor e custo de cada item), agrupada pelo cliente da OS.
+ */
+export function lucratividadePorCliente({
+  ordens,
+  custoPeca,
+  custoServico,
+  de,
+  ate,
+}: {
+  ordens: OrdemServico[];
+  custoPeca: MapaCusto;
+  custoServico: MapaCusto;
+  de: string;
+  ate: string;
+}): LucratividadePorCliente {
+  const mapa = new Map<string, LinhaLucroCliente>();
+
+  for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
+    // OS sem item não vendeu nada: não cria um cliente com R$ 0 na lista.
+    if (!ordem.itens?.length) continue;
+    const existente = mapa.get(ordem.cliente_id) ?? {
+      clienteId: ordem.cliente_id,
+      nome: ordem.cliente?.nome || NOME_CLIENTE_SEM_NOME,
+      receita: 0,
+      custo: 0,
+      margem: 0,
+      custoNaoInformado: false,
+    };
+    for (const item of ordem.itens ?? []) {
+      const { receita, custo, custoNaoInformado } = contaDoItem(item, custoPeca, custoServico);
+      existente.receita += receita;
+      existente.custo += custo;
+      existente.margem += receita - custo;
+      if (custoNaoInformado) existente.custoNaoInformado = true;
+    }
+    mapa.set(ordem.cliente_id, existente);
+  }
+
+  const todas = [...mapa.values()];
+  const consumidor = todas.find((l) => ehConsumidor(l.clienteId)) ?? null;
+  const linhas = todas
+    .filter((l) => !ehConsumidor(l.clienteId))
+    .sort((a, b) => b.receita - a.receita || a.nome.localeCompare(b.nome, "pt-BR"));
+  return {
+    linhas,
+    consumidor,
+    totalReceita: todas.reduce((total, l) => total + l.receita, 0),
   };
 }

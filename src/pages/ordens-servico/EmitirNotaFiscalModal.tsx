@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
@@ -23,6 +24,7 @@ import {
 import { listarMovimentosCaixaPorOrdem } from "@/lib/caixa";
 import { salvarArquivoEmitido } from "@/lib/notasFiscais";
 import { cadastrarPecaDoItem } from "@/lib/ordensServico";
+import { AVISO_PECA_SOBROU } from "./escolhasAvulsas";
 import { buscarDadosFiscaisDasPecas, listarPecasJanela } from "@/lib/pecas";
 import {
   itensQueImpedemNFCe,
@@ -101,11 +103,15 @@ export function EmitirNotaFiscalModal({
   onEmitido,
   onItensMudaram,
 }: EmitirNotaFiscalModalProps) {
+  // #374: aviso perto do botão; o botão continua clicável (aviso, nunca tranca).
+  const { semConexao } = useConexao();
   const { operador, lojaAtual } = useAuth();
   const [carregando, setCarregando] = useState(true);
   const [emitindo, setEmitindo] = useState(false);
   const [erro, setErro] = useState("");
   const [configuracaoFiscal, setConfiguracaoFiscal] = useState<ConfiguracaoFiscalLoja | null>(null);
+  // A configuração não veio (ex.: sem internet): não dá pra dizer que falta o token (#374).
+  const [configuracaoNaoVeio, setConfiguracaoNaoVeio] = useState(false);
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [pecasDaNota, setPecasDaNota] = useState<PecaDadosFiscais[]>([]);
   // O cadastro inteiro da loja, só pro aviso de "peça parecida" no cadastro
@@ -115,6 +121,7 @@ export function EmitirNotaFiscalModal({
   // peça): a `ordem` que chega por prop só se atualiza quando o pai recarrega.
   const [vinculadas, setVinculadas] = useState<Record<string, string>>({});
   const [itemCadastrando, setItemCadastrando] = useState<ItemOS | null>(null);
+  const [avisosEstoqueInicial, setAvisosEstoqueInicial] = useState<Record<string, string>>({});
   const [codigoMunicipioCliente, setCodigoMunicipioCliente] = useState("");
   const [resultado, setResultado] = useState<RespostaFocusNfe | null>(null);
   const [danfeUrl, setDanfeUrl] = useState<string | null>(null);
@@ -161,9 +168,11 @@ export function EmitirNotaFiscalModal({
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
   // Só vale depois de carregar as peças — antes disso toda peça pareceria
-  // "sem cadastro".
+  // "sem cadastro". Se não deu pra carregar (ex.: sem internet), também não (#374).
   const itensQueImpedem =
-    tipoNota === "NFC-e" && !carregando ? itensQueImpedemNFCe(itensPeca, pecasDaNota) : [];
+    tipoNota === "NFC-e" && !carregando && !configuracaoNaoVeio
+      ? itensQueImpedemNFCe(itensPeca, pecasDaNota)
+      : [];
 
   // Peça com código de ICMS que não bate com o regime da loja faz a SEFAZ
   // recusar a nota inteira, e a mensagem dela só diz o número do item
@@ -192,6 +201,7 @@ export function EmitirNotaFiscalModal({
     async function carregar() {
       setCarregando(true);
       setErro("");
+      setConfiguracaoNaoVeio(false);
       try {
         // As peças vêm antes de emitir (não só na hora de montar a nota) pra
         // dar pra conferir o código de ICMS de cada uma e avisar aqui,
@@ -223,6 +233,7 @@ export function EmitirNotaFiscalModal({
           setCodigoMunicipioCliente(clienteCompleto.codigo_municipio);
         }
       } catch (err) {
+        setConfiguracaoNaoVeio(true);
         setErro(mensagemDeErro(err));
       } finally {
         setCarregando(false);
@@ -236,9 +247,20 @@ export function EmitirNotaFiscalModal({
   // ou, pelo aviso de peça parecida, uma que já existia: o item passa a
   // apontar pra ela (e baixa o estoque, se a ordem já é OS), a janela confere
   // a nota de novo e o pai recarrega a OS.
-  async function aoLigarPeca(item: ItemOS, peca: PecaJanela, recemCadastrada: boolean) {
+  async function aoLigarPeca(
+    item: ItemOS,
+    peca: PecaJanela,
+    recemCadastrada: boolean,
+    avisoEstoque: string | null = null,
+  ) {
     setItemCadastrando(null);
     setErro("");
+    // A peça foi cadastrada, mas o estoque inicial não entrou (#909): avisa,
+    // sem travar a emissão, e liga a peça do mesmo jeito. Um aviso por peça:
+    // ligar a próxima não apaga o da anterior.
+    if (avisoEstoque) {
+      setAvisosEstoqueInicial((a) => ({ ...a, [item.id]: `${peca.descricao}: ${avisoEstoque}` }));
+    }
     // A peça entra na lista da loja já: se o vínculo abaixo falhar, o próximo
     // "Cadastrar agora" oferece ela pelo aviso de peça parecida, em vez de
     // cadastrar outra igual (PR #717, ponto 1).
@@ -255,9 +277,13 @@ export function EmitirNotaFiscalModal({
       // der erro, a peça NÃO ficou ligada.
       const vinculado = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
       if (!vinculado) {
+        // A peça que a pessoa acabou de cadastrar sobrou no cadastro (#720):
+        // a tela diz, e quem decide se ela sobrou mesmo é a pessoa.
         setErro(
-          "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
-            "computador). Feche esta janela e abra de novo.",
+          recemCadastrada
+            ? `${AVISO_PECA_SOBROU} Feche esta janela e abra de novo.`
+            : "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
+                "computador). Feche esta janela e abra de novo.",
         );
         return;
       }
@@ -532,7 +558,25 @@ export function EmitirNotaFiscalModal({
         <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>
       )}
 
-      {!carregando && !resultado && !focusNfeConfigurado && (
+      {!carregando &&
+        Object.entries(avisosEstoqueInicial).map(([itemId, aviso]) => (
+          <p key={itemId} className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+            {aviso}
+          </p>
+        ))}
+
+      {/* #374: aviso, nunca tranca; aparece mesmo quando a configuração não veio. */}
+      {!carregando && !resultado && semConexao && (
+        <p
+          role="status"
+          className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+        >
+          Sem internet a nota não sai: a SEFAZ e a prefeitura precisam receber. Espere a conexão
+          voltar pra emitir.
+        </p>
+      )}
+
+      {!carregando && !resultado && !configuracaoNaoVeio && !focusNfeConfigurado && (
         <div className="space-y-3">
           <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
             Falta cadastrar o token do Focus NFe (e os dados fiscais da loja) em Configurações →
@@ -713,7 +757,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={() => conferirNota(refPendente)}
                 disabled={conferindo}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {conferindo ? "Conferindo..." : "Conferir de novo"}
               </button>
@@ -722,7 +766,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={handleEmitir}
                 disabled={emitindo || conferindo || itensQueImpedem.length > 0}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {emitindo ? "Emitindo..." : "Confirmar emissão"}
               </button>
@@ -787,7 +831,7 @@ export function EmitirNotaFiscalModal({
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
+                  className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
                 >
                   Imprimir
                 </button>
@@ -802,7 +846,7 @@ export function EmitirNotaFiscalModal({
           item={itemCadastrando}
           pecas={cadastroDaLoja}
           lojaId={ordem.loja_id}
-          onCadastrada={(peca) => aoLigarPeca(itemCadastrando, peca, true)}
+          onCadastrada={(peca, aviso) => aoLigarPeca(itemCadastrando, peca, true, aviso)}
           onAbrirExistente={(peca) => aoLigarPeca(itemCadastrando, peca, false)}
           onFechar={() => setItemCadastrando(null)}
         />

@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { Dica } from "@/components/Dica";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
+import { useListaPaginada, type OrdemDaLista } from "@/hooks/useListaPaginada";
 import {
   atualizarCliente,
+  COLUNAS_DA_LISTA_DE_CLIENTES,
   criarCliente,
   excluirCliente,
   listarClientes,
+  listarClientesPagina,
+  type ColunaDaListaDeClientes,
 } from "@/lib/clientes";
 import { listarOrdensFaturadasDosClientes } from "@/lib/clientesSumidos";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
@@ -28,6 +35,7 @@ import { MODULOS_QUE_LEEM_O_CAIXA } from "@/schemas/painelInicio";
 import { preencherModelo } from "@/schemas/whatsapp";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { temPermissao } from "@/types/operador";
+import { AvisoDeErro } from "./AvisoDeErro";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { ImportarClientesModal } from "./ImportarClientesModal";
@@ -36,10 +44,21 @@ import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
 const MESES_PADRAO = 6;
 
+const ORDEM_PADRAO = { coluna: "nome" as const, crescente: true };
+
 export function ClientesPage() {
   const { operador, lojaAtual } = useAuth();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  // A lista principal vem do banco uma página por vez, já ordenada e
+  // filtrada lá (#373, TR-03.5).
+  const lista = useListaPaginada<Cliente, ColunaDaListaDeClientes>({
+    chave: "clientes",
+    buscarPagina: listarClientesPagina,
+    ordemPadrao: ORDEM_PADRAO,
+    colunas: COLUNAS_DA_LISTA_DE_CLIENTES,
+  });
+  // O filtro "sumiram" ainda precisa de TODOS os clientes (cruza com as OS),
+  // e só é buscado quando a pessoa liga a caixinha.
+  const [todosClientes, setTodosClientes] = useState<Cliente[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<"novo" | Cliente | null>(null);
   const caixaDoFormulario = useRolarAteOFormulario(
@@ -69,15 +88,21 @@ export function ClientesPage() {
   const meses = Number(textoMeses) >= 1 ? Math.floor(Number(textoMeses)) : MESES_PADRAO;
 
   const sumidos = useMemo(
-    () => (ordens ? clientesSumidos(clientes, resumirPorCliente(ordens), hojeLocal(), meses) : []),
-    [clientes, ordens, meses],
+    () =>
+      ordens ? clientesSumidos(todosClientes, resumirPorCliente(ordens), hojeLocal(), meses) : [],
+    [todosClientes, ordens, meses],
   );
 
   async function carregarSumidos() {
     setCarregandoSumidos(true);
     setErro(null);
     try {
-      setOrdens(await listarOrdensFaturadasDosClientes());
+      const [clientes, ordensCarregadas] = await Promise.all([
+        listarClientes(),
+        listarOrdensFaturadasDosClientes(),
+      ]);
+      setTodosClientes(clientes);
+      setOrdens(ordensCarregadas);
     } catch (err) {
       console.error("Erro ao carregar os clientes que sumiram:", err);
       setErro(mensagemDeErro(err));
@@ -130,22 +155,22 @@ export function ClientesPage() {
     });
   }
 
+  // A loja tem cliente (ou a pessoa está buscando): mostra a busca e o filtro.
+  const temClientes = lista.total > 0 || lista.buscaDaTela !== "" || lista.busca !== "";
+
+  // Depois de salvar ou excluir: a página atual da lista e, se o filtro
+  // "sumiram" já foi usado, a lista completa dele também.
   async function carregar() {
-    setCarregando(true);
-    setErro(null);
-    try {
-      setClientes(await listarClientes());
-    } catch (err) {
-      console.error("Erro ao carregar clientes:", err);
-      setErro(mensagemDeErro(err));
-    } finally {
-      setCarregando(false);
+    lista.recarregar();
+    if (ordens !== null) {
+      try {
+        setTodosClientes(await listarClientes());
+      } catch (err) {
+        console.error("Erro ao recarregar os clientes:", err);
+        setErro(mensagemDeErro(err));
+      }
     }
   }
-
-  useEffect(() => {
-    carregar();
-  }, []);
 
   async function handleSalvar(cliente: NovoCliente, veiculos: VeiculoFormulario[]) {
     if (formulario && formulario !== "novo") {
@@ -175,34 +200,24 @@ export function ClientesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
-          <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-              Clientes
-            </h1>
-            <p className="text-corpo text-sakura-muted">
-              Cadastro de clientes e veículos
-            </p>
+          <div className="min-w-0">
+            <h1 className="font-titulo text-titulo font-bold text-texto">Clientes</h1>
+            <p className="text-corpo text-texto-2">Cadastro de clientes e veículos</p>
           </div>
         </div>
         {!formulario && (
           <div className="flex items-center gap-3">
             {operador?.admin && (
-              <button
-                onClick={() => setImportando(true)}
-                className="rounded-xl border border-sakura-purple px-5 py-2.5 text-corpo font-medium text-sakura-purple hover:bg-sakura-purple/5"
-              >
+              <Botao variante="secundario" onClick={() => setImportando(true)}>
                 Importar planilha
-              </button>
+              </Botao>
             )}
-            <button
-              onClick={() => setFormulario("novo")}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-            >
+            <Botao variante="principal" onClick={() => setFormulario("novo")}>
               + Novo cliente
-            </button>
+            </Botao>
           </div>
         )}
       </header>
@@ -222,168 +237,223 @@ export function ClientesPage() {
         </div>
       )}
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
+      {(erro || lista.erro) && (
+        <AvisoDeErro>{erro || lista.erro}</AvisoDeErro>
       )}
 
-      {!formulario && clientes.length > 0 && (
-        <div className="sakura-card flex flex-wrap items-center gap-x-3 gap-y-2 p-4">
-          <label className="flex items-center gap-2 text-corpo">
+      {temClientes && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          {/* A busca vem primeiro: é o que se faz todo dia no balcão. O filtro
+              dos que sumiram (uma vez por mês, no máximo) ficou ao lado dela,
+              em vez de num cartão de largura inteira em cima. */}
+          {!soSumidos && (
             <input
-              type="checkbox"
-              checked={soSumidos}
-              onChange={(e) => handleLigarSumidos(e.target.checked)}
-              className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+              type="search"
+              value={lista.busca}
+              onChange={(e) => lista.setBusca(e.target.value)}
+              placeholder="Buscar por nome, telefone ou CPF/CNPJ"
+              aria-label="Buscar cliente"
+              className="sakura-campo sakura-campo-filtro max-w-md flex-1 basis-72"
             />
-            <span className="text-sakura-purple-dark/80">Só os clientes que sumiram:</span>
-          </label>
-          <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-            sem vir há mais de
-            <input
-              type="number"
-              min="1"
-              max="120"
-              step="1"
-              value={textoMeses}
-              onChange={(e) => setTextoMeses(e.target.value)}
-              aria-label="Meses sem vir"
-              className="w-20 rounded-lg border border-sakura-borda-campo px-3 py-1.5 focus:border-sakura-purple"
-            />
-            meses
-          </label>
-          {soSumidos && (
-            <p className="w-full text-rotulo text-sakura-muted">
+          )}
+          {!formulario && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <label className="flex items-center gap-2 text-corpo">
+                <input
+                  type="checkbox"
+                  checked={soSumidos}
+                  onChange={(e) => handleLigarSumidos(e.target.checked)}
+                  className="h-4 w-4 rounded"
+                />
+                <span className="text-texto">Só os clientes que sumiram:</span>
+              </label>
+              <label className="flex items-center gap-2 text-corpo text-texto-2">
+                sem vir há mais de
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  step="1"
+                  value={textoMeses}
+                  onChange={(e) => setTextoMeses(e.target.value)}
+                  aria-label="Meses sem vir"
+                  className="sakura-campo sakura-campo-filtro !w-20"
+                />
+                meses
+              </label>
+            </div>
+          )}
+          {soSumidos && !formulario && (
+            <p className="w-full text-rotulo text-texto-2">
               Conta as OS e vendas de balcão faturadas das lojas que você acessa.
             </p>
           )}
         </div>
       )}
 
-      {carregando || (soSumidos && carregandoSumidos) ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+      {(lista.carregando && lista.linhas.length === 0 && !soSumidos) ||
+      (soSumidos && carregandoSumidos) ? (
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : soSumidos && ordens ? (
         sumidos.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">
+          <p className="text-corpo text-texto-2">
             Nenhum cliente sem vir há mais de {meses} {meses === 1 ? "mês" : "meses"}.
           </p>
         ) : (
-          <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Nome</th>
-                  <th className="px-4 py-3 font-medium">Telefone</th>
-                  <th className="px-4 py-3 font-medium">Última visita</th>
-                  <th className="px-4 py-3 font-medium">Último serviço</th>
-                  {podeVerValores && <th className="px-4 py-3 font-medium">Total gasto</th>}
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {sumidos.map(({ cliente, resumo }) => {
-                  const ultimoChamado = ultimosChamados.get(cliente.id);
-                  return (
-                    <tr key={cliente.id} className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">{cliente.nome}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{cliente.telefone || "—"}</td>
-                      <td className="whitespace-nowrap px-4 py-3">{diaBrasileiro(resumo.ultimaVisita)}</td>
-                      <td className="px-4 py-3">{resumo.ultimoServico ?? "—"}</td>
-                      {podeVerValores && (
-                        <td className="whitespace-nowrap px-4 py-3 font-medium">
-                          {formatarMoeda(resumo.totalGasto)}
+          <div className="sakura-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="sakura-tabela">
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Última visita</th>
+                    <th>Último serviço</th>
+                    {podeVerValores && <th className="text-right">Total gasto</th>}
+                    <th>
+                      <span className="sr-only">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sumidos.map(({ cliente, resumo }) => {
+                    const ultimoChamado = ultimosChamados.get(cliente.id);
+                    return (
+                      <tr key={cliente.id}>
+                        <td>
+                          <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
                         </td>
-                      )}
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {ultimoChamado && (
-                            <span
-                              className="text-rotulo text-sakura-muted"
-                              title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
-                            >
-                              chamado em {new Date(ultimoChamado).toLocaleDateString("pt-BR")}
-                            </span>
-                          )}
-                          <BotaoWhatsapp
-                            telefone={cliente.telefone}
-                            texto={textoDoChamado(cliente, resumo.veiculo)}
-                            rotulo="Chamar"
-                            titulo="Abrir a conversa no WhatsApp com a mensagem pronta pra chamar o cliente de volta"
-                            aoAbrir={() => {
-                              if (!lojaAtual) return;
-                              registrarMensagemAberta(
-                                lojaAtual.id,
-                                "cliente_sumido",
-                                cliente.id,
-                                cliente.telefone ?? null,
-                                operador?.id ?? null,
-                              ).then(() =>
-                                ultimasMensagensPorReferencia(lojaAtual.id, "cliente_sumido")
-                                  .then(setUltimosChamados)
-                                  .catch((err) => console.error("Erro ao recarregar os chamados:", err)),
-                              );
-                            }}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td className="whitespace-nowrap">{cliente.telefone || "—"}</td>
+                        <td className="whitespace-nowrap">{diaBrasileiro(resumo.ultimaVisita)}</td>
+                        <td>{resumo.ultimoServico ?? "—"}</td>
+                        {podeVerValores && (
+                          <td className="whitespace-nowrap text-right font-medium text-texto">
+                            {formatarMoeda(resumo.totalGasto)}
+                          </td>
+                        )}
+                        <td className="whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-3">
+                            {ultimoChamado && (
+                              <Dica texto="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe.">
+                                <span className="cursor-default text-rotulo text-texto-2" tabIndex={0}>
+                                  chamado em {new Date(ultimoChamado).toLocaleDateString("pt-BR")}
+                                </span>
+                              </Dica>
+                            )}
+                            <BotaoWhatsapp
+                              telefone={cliente.telefone}
+                              texto={textoDoChamado(cliente, resumo.veiculo)}
+                              rotulo="Chamar"
+                              titulo="Abrir a conversa no WhatsApp com a mensagem pronta pra chamar o cliente de volta"
+                              aoAbrir={() => {
+                                if (!lojaAtual) return;
+                                registrarMensagemAberta(
+                                  lojaAtual.id,
+                                  "cliente_sumido",
+                                  cliente.id,
+                                  cliente.telefone ?? null,
+                                  operador?.id ?? null,
+                                ).then(() =>
+                                  ultimasMensagensPorReferencia(lojaAtual.id, "cliente_sumido")
+                                    .then(setUltimosChamados)
+                                    .catch((err) => console.error("Erro ao recarregar os chamados:", err)),
+                                );
+                              }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )
-      ) : clientes.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
-          Nenhum cliente cadastrado ainda.
+      ) : lista.total === 0 ? (
+        <p className="text-corpo text-texto-2">
+          {lista.buscaDaTela
+            ? `Nenhum cliente encontrado com "${lista.buscaDaTela}".`
+            : "Nenhum cliente cadastrado ainda."}
         </p>
       ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Telefone</th>
-                <th className="px-4 py-3 font-medium">Cidade/UF</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((cliente) => (
-                <tr key={cliente.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{cliente.nome}</td>
-                  <td className="px-4 py-3">{cliente.telefone || "—"}</td>
-                  <td className="px-4 py-3">
-                    {cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <AcoesDaLinha
-                      descricao={`o cliente ${cliente.nome}`}
-                      acoes={[
-                        ...(cliente.veiculos && cliente.veiculos.length > 0
-                          ? [
-                              {
-                                tipo: "texto" as const,
-                                rotulo: "Ver veículos",
-                                aoClicar: () => setVeiculosDe(cliente),
-                              },
-                            ]
-                          : []),
-                        { tipo: "editar", aoClicar: () => setFormulario(cliente) },
-                        {
-                          tipo: "menu",
-                          rotulo: "Excluir cliente",
-                          perigosa: true,
-                          aoClicar: () => handleExcluir(cliente.id),
-                        },
-                      ]}
+        <div className="space-y-3">
+          <div
+            className={`sakura-card overflow-hidden ${lista.carregando ? "opacity-60" : ""}`}
+            aria-busy={lista.carregando}
+          >
+            <div className="overflow-x-auto">
+              <table className="sakura-tabela">
+                <thead>
+                  <tr>
+                    <CabecalhoOrdenavel
+                      coluna="nome"
+                      rotulo="Nome"
+                      ordem={lista.ordem}
+                      aoClicar={lista.trocarOrdem}
                     />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <th>Telefone</th>
+                    <CabecalhoOrdenavel
+                      coluna="cidade"
+                      rotulo="Cidade/UF"
+                      ordem={lista.ordem}
+                      aoClicar={lista.trocarOrdem}
+                    />
+                    <th>
+                      <span className="sr-only">Ações</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lista.linhas.map((cliente) => (
+                    <tr key={cliente.id}>
+                      <td>
+                        <LinkCliente clienteId={cliente.id} nome={cliente.nome} podeAbrir />
+                      </td>
+                      <td className="whitespace-nowrap">{cliente.telefone || "—"}</td>
+                      <td>{cliente.cidade ? `${cliente.cidade}/${cliente.uf ?? ""}` : "—"}</td>
+                      <td className="text-right">
+                        <AcoesDaLinha
+                          descricao={`o cliente ${cliente.nome}`}
+                          acoes={[
+                            ...(cliente.veiculos && cliente.veiculos.length > 0
+                              ? [
+                                  {
+                                    tipo: "texto" as const,
+                                    rotulo: "Ver veículos",
+                                    aoClicar: () => setVeiculosDe(cliente),
+                                  },
+                                ]
+                              : []),
+                            { tipo: "editar", aoClicar: () => setFormulario(cliente) },
+                            {
+                              tipo: "menu",
+                              rotulo: "Excluir cliente",
+                              perigosa: true,
+                              aoClicar: () => handleExcluir(cliente.id),
+                            },
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-corpo text-texto-2">
+              Mostrando {numero(lista.primeira)} a {numero(lista.ultima)} de {numero(lista.total)}
+            </p>
+            <div className="flex gap-2">
+              <Botao onClick={lista.anterior} disabled={!lista.temAnterior}>
+                Anterior
+              </Botao>
+              <Botao onClick={lista.proxima} disabled={!lista.temProxima}>
+                Próxima
+              </Botao>
+            </div>
+          </div>
         </div>
       )}
 
@@ -395,5 +465,40 @@ export function ClientesPage() {
         <ImportarClientesModal onFechar={() => setImportando(false)} onConcluido={carregar} />
       )}
     </div>
+  );
+}
+
+function numero(n: number): string {
+  return n.toLocaleString("pt-BR");
+}
+
+/** Um cabeçalho que ordena a tabela inteira (no banco) ao ser clicado. */
+function CabecalhoOrdenavel({
+  coluna,
+  rotulo,
+  ordem,
+  aoClicar,
+}: {
+  coluna: ColunaDaListaDeClientes;
+  rotulo: string;
+  ordem: OrdemDaLista<ColunaDaListaDeClientes>;
+  aoClicar: (coluna: ColunaDaListaDeClientes) => void;
+}) {
+  const ativa = ordem.coluna === coluna;
+  return (
+    <th aria-sort={ativa ? (ordem.crescente ? "ascending" : "descending") : "none"}>
+      <Dica texto={`Ordenar por ${rotulo}`}>
+        <button
+          type="button"
+          onClick={() => aoClicar(coluna)}
+          className="inline-flex items-center gap-1 font-semibold hover:text-texto"
+        >
+          {rotulo}
+          <span aria-hidden="true" className={ativa ? "text-texto" : "opacity-40"}>
+            {ativa && !ordem.crescente ? "▼" : "▲"}
+          </span>
+        </button>
+      </Dica>
+    </th>
   );
 }
