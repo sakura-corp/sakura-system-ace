@@ -96,6 +96,20 @@ isso, e só com o mouse.
 - `typecheck`, `lint` (o único aviso já existia na `main`), `test:fusos` (2217 testes, nos dois
   fusos), `contraste`, `contraste:telas` e `largura:telas` (aberto e encolhido): ver a descrição do PR.
 
+## As revisões
+- **`/code-review` (médio)**: 8 pontos. Conferi cada um. **Corrigidos (3)**: o "cobrado em", que
+  mudou pra dentro da linha clicável, abria a OS no clique (agora não abre); "Pago em | Paga em …"
+  repetido (a coluna virou "Status"); o `formatarMoeda` copiado em 4 arquivos (agora o de
+  `@/schemas/dinheiro`, idêntico). **Ficaram como estão (5)**: a dica do "cobrado em" só no mouse
+  (já era assim com o `title`); "Vence hoje" × "previsto para hoje" na janela de receber (mantive a
+  frase antiga da janela); "A vencer" cinza e não amarelo (escolha explicada acima); as peças em
+  `contas-pagar/` e o aviso de erro repetido (sugestão 5: esta tarefa não podia mexer em
+  `src/components/`).
+- **Ajudante forte (revisão final, dinheiro)**: nada alto nem médio nas quatro frentes (o que é
+  gravado e calculado, os fluxos, data e fuso, o que sumiu). Mesmos argumentos em `pagarConta`,
+  `receberConta`, criar, excluir e desfazer; o total igual; os `new Date` que ficaram são todos de
+  coluna com hora. Um baixo: a dica do "cobrado em" (o mesmo de cima).
+
 ## O que depende de alguém
 - **A Sofia**: o teste do fim de semana (passos na descrição do PR) e as sugestões 1 a 3.
 - Um arquivo fora da lista: `site/ferramentas/cenas.mjs` (2 linhas, "+ Nova conta" → "Nova conta"),
