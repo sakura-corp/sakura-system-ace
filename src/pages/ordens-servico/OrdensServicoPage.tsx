@@ -725,16 +725,25 @@ export function OrdensServicoPage() {
             />
           )}
           {notasParaVer.length > 0 && (
-            <Botao
-              tamanho="pequeno"
-              icone={<FileText />}
-              onClick={() => {
-                setErroDaLinha(null);
-                setNotaDoCliente({ documento: nomeDocumento(ordem), notas: notasParaVer });
-              }}
-            >
-              Nota do cliente
-            </Botao>
+            // Abaixo de 1366 só o ícone (o nome continua pro leitor de tela e
+            // na dica): é o que faz a linha da finalizada caber em 1024 com o
+            // menu encolhido (pedido da Sofia, 16/11). O `relative` segura o
+            // nome escondido (`sr-only` é absoluto) dentro do botão: sem ele,
+            // o nome "vazava" e cortava a tela em 1024 (achado pelo
+            // largura:telas).
+            <Dica texto="Ver, imprimir ou mandar a nota do cliente">
+              <Botao
+                tamanho="pequeno"
+                icone={<FileText />}
+                className="relative max-[1365px]:w-8 max-[1365px]:justify-center max-[1365px]:px-0"
+                onClick={() => {
+                  setErroDaLinha(null);
+                  setNotaDoCliente({ documento: nomeDocumento(ordem), notas: notasParaVer });
+                }}
+              >
+                <span className="max-[1365px]:sr-only">Nota do cliente</span>
+              </Botao>
+            </Dica>
           )}
           <AcoesDaLinha descricao={nomeDocumento(ordem)} acoes={menu} />
         </div>
