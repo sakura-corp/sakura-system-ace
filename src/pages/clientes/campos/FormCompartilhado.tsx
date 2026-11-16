@@ -1,10 +1,12 @@
-export const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+import { TriangleAlert } from "lucide-react";
+
+/** O campo do visual novo (#990, tarefa 8): a classe `sakura-campo`, das peças. */
+export const inputClasse = "sakura-campo";
 
 export function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">{titulo}</h3>
+      <h3 className="mb-3 text-corpo font-semibold text-texto">{titulo}</h3>
       {children}
     </section>
   );
@@ -24,13 +26,20 @@ export function Campo({
   children: React.ReactNode;
 }) {
   return (
-    <label className={`flex flex-col gap-1 text-corpo ${className ?? ""}`}>
-      <span className="text-sakura-purple-dark/80">
+    <label className={`sakura-rotulo ${className ?? ""}`}>
+      <span>
         {label}
-        {obrigatorio && <span className="text-red-500"> *</span>}
+        {obrigatorio && <span className="text-perigo"> *</span>}
       </span>
       {children}
-      {erro && <span className="text-rotulo text-red-600">{erro}</span>}
+      {/* Ícone e palavra junto da cor (regra 4): a borda vermelha do campo
+          sozinha não avisa quem confunde o vermelho. */}
+      {erro && (
+        <span className="flex items-center gap-1.5 text-rotulo text-perigo">
+          <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
+          {erro}
+        </span>
+      )}
     </label>
   );
 }

@@ -4,7 +4,7 @@
  * banco; lista vazia diz "nada pendente hoje" (e só quando sabe); o botão leva
  * à ação. A regra em si está em `schemas/centralDoDia.test.ts`.
  */
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, userEvent, waitFor } from "@/testes/tela";
@@ -28,6 +28,10 @@ vi.mock("@/lib/modelosWhatsapp", () => ({
   textoDoModelo: () => "texto",
 }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A barra de rolagem própria (AreaRolavel) mede com ResizeObserver, que o jsdom não tem.
+vi.mock("@/components/AreaRolavel", () => ({
+  AreaRolavel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({
@@ -147,5 +151,95 @@ describe("CentralDoDia", () => {
     await waitFor(() =>
       expect(screen.getByTestId("local")).toHaveTextContent('/ordens-servico{"abrirOrdemId":"os-9"}'),
     );
+  });
+
+  describe("o cartão de destaque (visual novo, tarefa 4)", () => {
+    function osParada(n: number) {
+      return {
+        id: `os-${n}`,
+        numero: n,
+        tipo: "os",
+        status: "em_andamento",
+        data_abertura: new Date(2026, 10, 10, 9, 0, 0).toISOString(),
+        data_fechamento: null,
+        cliente: { nome: `Cliente ${n}` },
+        veiculo: null,
+        itens: [],
+      } as unknown as OrdemServico;
+    }
+
+    it("zero itens: a capa diz 'Tudo em dia', sem número", async () => {
+      operador = { id: "op", admin: false, permissoes: [...MODULOS_DA_CENTRAL] as Operador["permissoes"] };
+      montar();
+      await screen.findByText("Nada pendente hoje.");
+      expect(screen.getByText("Tudo em dia")).toBeInTheDocument();
+      expect(document.querySelector("[data-total-da-central]")).toBeNull();
+    });
+
+    it("com só parte dos módulos e nada pendente, a capa não afirma 'Tudo em dia'", async () => {
+      operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+      montar();
+      await screen.findByText("Nada pendente hoje nas áreas que você pode ver.");
+      expect(screen.queryByText("Tudo em dia")).toBeNull();
+      expect(document.querySelector("[data-capa-central]")).toHaveTextContent("Nada pendente");
+    });
+
+    it("a capa diz o total e cada linha tem um selo com palavra", async () => {
+      operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+      montar({ ordens: [osParada(1), osParada(2), osParada(3)] });
+      await screen.findAllByRole("button", { name: "Abrir a OS" });
+      expect(document.querySelector("[data-total-da-central]")).toHaveTextContent("3");
+      expect(screen.getByText(/coisas pedem a sua atenção hoje/)).toBeInTheDocument();
+      const linhas = document.querySelectorAll("[data-linha-da-central]");
+      expect(linhas).toHaveLength(3);
+      for (const linha of linhas) {
+        expect(linha.querySelector("[data-selo]")).toHaveTextContent("Parada");
+      }
+    });
+
+    it("com 1 item ou com 15, o cartão tem a mesma altura (4 linhas) e a capa diz o total", async () => {
+      operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+      montar({ ordens: [osParada(1)] });
+      await screen.findByRole("button", { name: "Abrir a OS" });
+      const alturaCom1 = (document.querySelector("[data-capa-central]") as HTMLElement).style.minHeight;
+      expect(screen.getByText(/coisa pede a sua atenção hoje/)).toBeInTheDocument();
+      cleanup();
+
+      montar({ ordens: Array.from({ length: 15 }, (_, i) => osParada(i + 1)) });
+      await screen.findAllByRole("button", { name: "Abrir a OS" });
+      const alturaCom15 = (document.querySelector("[data-capa-central]") as HTMLElement).style.minHeight;
+      expect(alturaCom15).toBe(alturaCom1);
+      expect(alturaCom15).toBe("224px");
+      // O limite por tipo (5 linhas + "e mais 10") continua valendo: a regra não mudou.
+      expect(document.querySelectorAll("[data-linha-da-central]")).toHaveLength(5);
+      expect(document.querySelector("[data-total-da-central]")).toHaveTextContent("15");
+    });
+  });
+
+  describe("estoque baixo", () => {
+    const PECA_BAIXA = { id: "p1", descricao: "Pneu 175/70", estoque_minimo: 5, ativo: true, unidade: "UN" };
+    beforeEach(() => {
+      listarPecas.mockResolvedValue([PECA_BAIXA]);
+      listarSaldos.mockResolvedValue(new Map([["p1", 1]]));
+    });
+
+    it("com Fornecedores: o botão abre a aba Sugestão de compra", async () => {
+      operador = { id: "op", admin: false, permissoes: ["estoque", "fornecedores"] };
+      montar();
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Sugestão de compra" }));
+      await waitFor(() =>
+        expect(screen.getByTestId("local")).toHaveTextContent('/fornecedores{"aba":"sugestao"}'),
+      );
+    });
+
+    it("sem Fornecedores: continua levando ao estoque", async () => {
+      operador = { id: "op", admin: false, permissoes: ["estoque"] };
+      montar();
+      const user = userEvent.setup();
+      await user.click(await screen.findByRole("button", { name: "Ver no estoque" }));
+      await waitFor(() => expect(screen.getByTestId("local")).toHaveTextContent("/estoque"));
+      expect(screen.queryByRole("button", { name: "Sugestão de compra" })).toBeNull();
+    });
   });
 });

@@ -152,7 +152,7 @@ export function ItemExistenteRow({
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-black/20 p-3">
+    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-poco p-3">
       <div className="flex gap-2">
         <select
           value={tipo}
@@ -273,7 +273,7 @@ export function ItemExistenteRow({
             type="button"
             onClick={handleSubmit(aoSubmeter)}
             disabled={isSubmitting}
-            className="rounded-lg bg-sakura-pink px-3 py-1.5 text-rotulo font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-sakura-pink px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? "Salvando..." : "Salvar item"}
           </button>

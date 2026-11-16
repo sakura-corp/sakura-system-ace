@@ -59,7 +59,7 @@ export function TextoGarantiaSection({
           type="button"
           onClick={handleSalvar}
           disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
         >
           {salvando ? "Salvando..." : "Salvar texto"}
         </button>

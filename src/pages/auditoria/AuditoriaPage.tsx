@@ -200,7 +200,7 @@ export function AuditoriaPage() {
                 <h4 className="mb-1 text-rotulo font-semibold text-sakura-purple-dark">
                   Dados do registro excluído
                 </h4>
-                <pre className="max-h-80 overflow-auto rounded-lg bg-black/30 p-3 text-rotulo text-sakura-purple-dark/90">
+                <pre className="max-h-80 overflow-auto rounded-lg bg-poco p-3 text-rotulo text-sakura-purple-dark/90">
                   {JSON.stringify(detalhe.dados_antes, null, 2)}
                 </pre>
               </div>
@@ -209,7 +209,7 @@ export function AuditoriaPage() {
                 <h4 className="mb-1 text-rotulo font-semibold text-sakura-purple-dark">
                   Dados do registro criado
                 </h4>
-                <pre className="max-h-80 overflow-auto rounded-lg bg-black/30 p-3 text-rotulo text-sakura-purple-dark/90">
+                <pre className="max-h-80 overflow-auto rounded-lg bg-poco p-3 text-rotulo text-sakura-purple-dark/90">
                   {JSON.stringify(detalhe.dados_depois, null, 2)}
                 </pre>
               </div>
@@ -217,13 +217,13 @@ export function AuditoriaPage() {
               <>
                 <div>
                   <h4 className="mb-1 text-rotulo font-semibold text-sakura-purple-dark">Antes</h4>
-                  <pre className="max-h-60 overflow-auto rounded-lg bg-black/30 p-3 text-rotulo text-sakura-purple-dark/90">
+                  <pre className="max-h-60 overflow-auto rounded-lg bg-poco p-3 text-rotulo text-sakura-purple-dark/90">
                     {JSON.stringify(detalhe.dados_antes, null, 2)}
                   </pre>
                 </div>
                 <div>
                   <h4 className="mb-1 text-rotulo font-semibold text-sakura-purple-dark">Depois</h4>
-                  <pre className="max-h-60 overflow-auto rounded-lg bg-black/30 p-3 text-rotulo text-sakura-purple-dark/90">
+                  <pre className="max-h-60 overflow-auto rounded-lg bg-poco p-3 text-rotulo text-sakura-purple-dark/90">
                     {JSON.stringify(detalhe.dados_depois, null, 2)}
                   </pre>
                 </div>

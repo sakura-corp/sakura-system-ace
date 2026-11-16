@@ -12,6 +12,8 @@
  * por cima (a nota fiscal faz `arredondarCentavo(valorLiquidoDoItem(...))`).
  */
 
+import { arredondarCentavo } from "./dinheiro";
+
 export interface ItemComValor {
   quantidade: number;
   preco_unitario: number;
@@ -35,6 +37,47 @@ export function somarValoresLiquidos(itens: readonly ItemComValor[]): number {
     (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
     0,
   );
+}
+
+export interface TotaisDoDocumento {
+  /** Soma de quantidade × preço das peças, ANTES do desconto. */
+  brutoPecas: number;
+  /** Soma de quantidade × preço dos serviços, ANTES do desconto. */
+  brutoServicos: number;
+  /** brutoPecas + brutoServicos. */
+  subtotal: number;
+  /** A soma dos descontos de todas as linhas. */
+  descontos: number;
+  /** O que a OS vale: a soma de `totalOrdem` (`somarValoresLiquidos`), fechada no centavo. */
+  total: number;
+}
+
+/**
+ * Os totais do documento de garantia (#915): ele mostra Produtos e Serviços
+ * **brutos** e os Descontos numa linha à parte, por isso não dá pra usar
+ * `totalPorTipo` (que já desconta) sem mudar o número impresso.
+ *
+ * Os brutos e os descontos não arredondam e somam na mesma ordem da conta
+ * que o documento fazia à mão, bit a bit. Só o total fecha no centavo.
+ */
+export function totaisDoDocumento(
+  itens: readonly (ItemComValor & { tipo: string })[],
+): TotaisDoDocumento {
+  const bruto = (tipo: string) =>
+    itens
+      .filter((item) => item.tipo === tipo)
+      .reduce((soma, item) => soma + item.quantidade * item.preco_unitario, 0);
+  const brutoPecas = bruto("peca");
+  const brutoServicos = bruto("servico");
+  return {
+    brutoPecas,
+    brutoServicos,
+    subtotal: brutoPecas + brutoServicos,
+    descontos: itens.reduce((soma, item) => soma + item.desconto, 0),
+    // Fecha no centavo (Sofia, 13/11/2026, no PR da #915): 217,395 tem que
+    // sair 217,40, o mesmo que o faturamento cobra (`calcularValorCobrado`).
+    total: arredondarCentavo(somarValoresLiquidos(itens)),
+  };
 }
 
 /** Total de um pedido de compra: quantidade pedida × preço (sem preço conta zero). */

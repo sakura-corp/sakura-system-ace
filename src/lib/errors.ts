@@ -157,6 +157,71 @@ function objetoQueFalta(mensagem: string): string | null {
   return tabelaDoPostgres ? tabelaDoPostgres[1] : null;
 }
 
+/**
+ * A internet da loja caiu (#374): o pedido nem chegou ao Supabase. Sem isto, a
+ * tela mostrava "TypeError: Failed to fetch", que não diz o que fazer.
+ */
+export const MENSAGEM_SEM_CONEXAO = "Sem conexão com a internet. Confira a rede e tente de novo.";
+
+/**
+ * A frase que cada navegador põe no `TypeError` do fetch quando a rede cai:
+ * Chromium/Electron, Firefox, Safari e o polyfill do React Native, nessa
+ * ordem. Inteira (com `^` e `$`) de propósito: uma frase nossa que só cita a
+ * do navegador não é a queda. Aceita o nome do erro na frente, como o
+ * postgrest-js escreve ("TypeError: Failed to fetch"), e o endereço entre
+ * parênteses no fim, que o Chromium passou a acrescentar em algumas versões.
+ */
+const FRASE_DE_QUEDA =
+  /^(?:\w*Error:\s*)?(?:Failed to fetch|NetworkError when attempting to fetch resource\.?|Load failed|Network request failed)(?:\s*\([^)]*\))?$/i;
+
+/** Quem chamou desistiu do pedido (AbortError): isso não é queda de rede. */
+function foiCancelado(erro: { name?: unknown; code?: unknown; message?: unknown }): boolean {
+  if (erro.name === "AbortError" || erro.code === "ABORT_ERR") return true;
+  // O postgrest-js e o auth-js copiam só a frase: "AbortError: This operation was aborted".
+  return typeof erro.message === "string" && /^AbortError\b|\baborted\b/i.test(erro.message);
+}
+
+/**
+ * A rede caiu? Reconhece a queda em todas as formas que chegam às telas: o
+ * `TypeError` do navegador; o objeto `{ message, details, hint, code: "" }` que
+ * o PostgREST (`.from`/`.rpc`) devolve; o `AuthRetryableFetchError` do login
+ * (com `status` 0, que é "nem houve resposta" — com 5xx o servidor respondeu);
+ * o `StorageUnknownError` dos arquivos e o `FunctionsFetchError` das funções,
+ * que guardam o erro do navegador dentro (`originalError` e `context`).
+ *
+ * Nunca confunde com recusa do banco: erro com `code` do Postgres/PostgREST
+ * preenchido (RLS 42501, trava 23514, 42P01, PGRST205, deadlock 40P01…) não é
+ * rede, e cancelamento (AbortError) também não.
+ */
+export function ehErroDeRede(erro: unknown): boolean {
+  return quedaDeRede(erro, 0);
+}
+
+// A profundidade só protege de um erro que guarda a si mesmo dentro.
+function quedaDeRede(erro: unknown, profundidade: number): boolean {
+  if (!erro || typeof erro !== "object" || profundidade > 3) return false;
+  const e = erro as {
+    name?: unknown;
+    code?: unknown;
+    message?: unknown;
+    status?: unknown;
+    originalError?: unknown;
+    context?: unknown;
+  };
+  if (foiCancelado(e)) return false;
+  if (typeof e.code === "string" && e.code !== "") return false;
+  switch (e.name) {
+    case "AuthRetryableFetchError":
+      // status 0: o fetch lançou, nem houve resposta. 5xx: o servidor respondeu.
+      return e.status === 0;
+    case "StorageUnknownError":
+      return quedaDeRede(e.originalError, profundidade + 1);
+    case "FunctionsFetchError":
+      return quedaDeRede(e.context, profundidade + 1);
+  }
+  return typeof e.message === "string" && FRASE_DE_QUEDA.test(e.message.trim());
+}
+
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
   if (/\bdeadlock detected\b/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
@@ -168,6 +233,8 @@ function traduzir(mensagem: string): string {
 }
 
 export function mensagemDeErro(erro: unknown): string {
+  // Primeiro a queda de rede: a frase do navegador (em inglês) não diz o que fazer.
+  if (ehErroDeRede(erro)) return MENSAGEM_SEM_CONEXAO;
   // Pelo código, que não depende do idioma do banco nem de quem embrulhou a frase.
   if (erro && typeof erro === "object" && (erro as { code?: unknown }).code === "40P01") {
     return MENSAGEM_TRAVAMENTO_MUTUO;

@@ -1,9 +1,16 @@
+import { Download, FileCode, Printer } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
+import { Selo } from "@/components/Selo";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarDanfeEmitida } from "@/lib/notasFiscais";
 import { nomeArquivoDanfe } from "@/schemas/danfe";
+import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import { AvisoNaTela } from "./AvisoNaTela";
+import { useBaixarXml } from "./useBaixarXml";
+import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 
 interface VerDanfeModalProps {
   arquivo: NotaFiscalArquivo;
@@ -14,10 +21,18 @@ interface VerDanfeModalProps {
 // comum que existe (o cliente volta e pede a nota de novo). Antes disso, o
 // PDF só existia dentro da janela de emissão: fechou, acabou, e a única
 // saída era entrar no painel da Focus NFe.
+//
+// Visual novo (tarefa 12, #990): é a "Nota do cliente" (o nome que a pessoa
+// procura, no lugar de "DANFE"), aberta pela linha de Notas Fiscais e pela
+// lista de OS (tarefa 7) e pelo Fechamento da OS. Cada botão de baixar diz o
+// que baixa e pra quem (pedido da Sofia, 15/11): a nota é pra ler, imprimir e
+// mandar ao cliente; o XML é o arquivo que o contador pede.
 export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
+  const [mostrarResumo, setMostrarResumo] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -62,60 +77,78 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
     link.click();
   }
 
-  return (
-    <Modal titulo="Nota fiscal" onFechar={onFechar}>
-      <div className="space-y-3 text-corpo">
-        <p className="text-sakura-purple-dark/90">
-          {arquivo.numero ? `Número ${arquivo.numero}` : arquivo.nome_arquivo}
-          {arquivo.status === "cancelado" && (
-            <span className="ml-2 rounded-full bg-red-500/15 px-2 py-0.5 text-rotulo font-semibold text-red-400">
-              cancelada
-            </span>
-          )}
-        </p>
+  // Sem PDF (nota de prefeitura que não tem, ou emitida antes de o programa
+  // guardar a referência), a mensagem de erro manda pra "Versão para o
+  // cliente": o botão leva direto pra lá, sem fechar e procurar no menu.
+  if (mostrarResumo) return <NotaFiscalVisualModal arquivo={arquivo} onFechar={onFechar} />;
 
-        {carregando && <p className="text-sakura-muted">Buscando o PDF da nota...</p>}
+  const cancelada = arquivo.status === "cancelado";
+  const nome = arquivo.numero
+    ? `${NOTA_LABEL[arquivo.tipo]} nº ${arquivo.numero}`
+    : arquivo.nome_arquivo;
+
+  return (
+    <Modal
+      titulo="Nota do cliente"
+      descricao={
+        cancelada
+          ? `${nome}. Cancelada: não vale mais como nota.`
+          : `${nome}. A nota pra ver, imprimir e mandar ao cliente.`
+      }
+      largura="3xl"
+      onFechar={onFechar}
+      rodape={
+        <>
+          <Botao variante="fantasma" onClick={onFechar}>
+            Fechar
+          </Botao>
+          <Botao icone={<FileCode />} onClick={baixarXml} ocupado={baixandoXml}>
+            Baixar o XML (pro contador)
+          </Botao>
+          {pdfUrl && (
+            <>
+              <Botao icone={<Download />} onClick={handleBaixarPdf}>
+                {/* "a nota", e não "o PDF": a da NFC-e a Focus pode mandar
+                    em HTML (src/lib/focusNfe.ts, tipoDoArquivo). */}
+                Baixar a nota (pro cliente)
+              </Botao>
+              <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
+                Imprimir
+              </Botao>
+            </>
+          )}
+        </>
+      }
+    >
+      <div className="space-y-3 text-corpo">
+        {cancelada && (
+          <p className="flex flex-wrap items-center gap-2 text-texto-2">
+            <Selo tipo="perigo" palavra="Cancelada" />
+            Esta nota foi cancelada.
+          </p>
+        )}
+
+        {carregando && <p className="text-texto-2">Buscando o PDF da nota...</p>}
 
         {!carregando && erro && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">{erro}</p>
+          <div className="space-y-2">
+            <AvisoNaTela tipo="atencao">{erro}</AvisoNaTela>
+            <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
+              Abrir a Versão para o cliente
+            </Botao>
+          </div>
         )}
+
+        {erroXml && <AvisoNaTela>{erroXml}</AvisoNaTela>}
 
         {pdfUrl && (
           <iframe
             ref={iframeRef}
-            title="Nota fiscal"
+            title={`Nota do cliente: ${nome}`}
             src={pdfUrl}
-            className="h-96 w-full rounded-lg border border-sakura-gray/30 bg-white"
+            className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
           />
         )}
-
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onFechar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-          >
-            Fechar
-          </button>
-          {pdfUrl && (
-            <>
-              <button
-                type="button"
-                onClick={handleBaixarPdf}
-                className="rounded-xl border border-sakura-gray/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-              >
-                Baixar PDF
-              </button>
-              <button
-                type="button"
-                onClick={handleImprimir}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
-              >
-                Imprimir
-              </button>
-            </>
-          )}
-        </div>
       </div>
     </Modal>
   );

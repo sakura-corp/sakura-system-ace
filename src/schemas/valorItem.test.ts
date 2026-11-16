@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { arredondarCentavo } from "./dinheiro";
 import {
   somarValoresLiquidos,
+  totaisDoDocumento,
   totalDoPedidoCompra,
   valorDaPecaEmEstoque,
   valorDoEstoque,
@@ -114,5 +116,51 @@ describe("valorDaPecaEmEstoque", () => {
     expect(valorDaPecaEmEstoque(4, 2.5)).toBe(10);
     expect(valorDaPecaEmEstoque(4, null)).toBe(0);
     expect(valorDaPecaEmEstoque(-1, 3)).toBe(-3);
+  });
+});
+
+describe("totaisDoDocumento (#915, documento de garantia)", () => {
+  const itens = [
+    { tipo: "peca", quantidade: 4, preco_unitario: 89.9, desconto: 10 },
+    { tipo: "servico", quantidade: 1, preco_unitario: 60, desconto: 0 },
+    { tipo: "servico", quantidade: 1, preco_unitario: 35.5, desconto: 5.5 },
+    { tipo: "peca", quantidade: 3, preco_unitario: 33.33, desconto: 0.01 },
+  ] as const;
+
+  it("peças e serviços BRUTOS (antes do desconto), os descontos à parte", () => {
+    const totais = totaisDoDocumento(itens);
+    // Bit a bit iguais à conta que o documento fazia à mão.
+    expect(totais.brutoPecas).toBe(0 + 4 * 89.9 + 3 * 33.33);
+    expect(totais.brutoServicos).toBe(0 + 1 * 60 + 1 * 35.5);
+    expect(totais.descontos).toBe(0 + 10 + 0 + 5.5 + 0.01);
+    expect(totais.subtotal).toBe(totais.brutoPecas + totais.brutoServicos);
+  });
+
+  it("o total é a soma dos valores líquidos, fechada no centavo", () => {
+    const totais = totaisDoDocumento(itens);
+    expect(totais.total).toBe(arredondarCentavo(somarValoresLiquidos(itens)));
+    // E fecha com subtotal − descontos (no centavo).
+    expect(totais.total).toBeCloseTo(totais.subtotal - totais.descontos, 9);
+    expect(totais.total).toBeCloseTo(359.6 + 95.5 + 99.99 - 15.51, 9);
+  });
+
+  it("quantidade quebrada: fecha no centavo pra cima, como o valor cobrado (Sofia, 13/11)", () => {
+    // 3,22 × 9,75 − 4,82 + 190,82 = 217,395. Somando linha a linha, o
+    // computador chega em 217,39499999999998; sem arredondar, sairia 217,39.
+    const quebrada = [
+      { tipo: "peca", quantidade: 3.22, preco_unitario: 9.75, desconto: 4.82 },
+      { tipo: "servico", quantidade: 1, preco_unitario: 190.82, desconto: 0 },
+    ];
+    expect(totaisDoDocumento(quebrada).total).toBe(217.4);
+  });
+
+  it("sem itens: tudo zero", () => {
+    expect(totaisDoDocumento([])).toEqual({
+      brutoPecas: 0,
+      brutoServicos: 0,
+      subtotal: 0,
+      descontos: 0,
+      total: 0,
+    });
   });
 });

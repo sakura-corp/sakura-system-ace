@@ -1,6 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { TriangleAlert } from "lucide-react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
@@ -44,18 +46,26 @@ export function ContaReceberForm({ clientes, onSalvar, onCancelar }: ContaRecebe
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-5 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">Nova conta a receber</h2>
+        <h2 className="text-subtitulo font-semibold text-texto">Nova conta a receber</h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
+        >
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Cliente <span className="text-red-500">*</span>
+        <label className="sakura-rotulo col-span-2">
+          <span>
+            Cliente <span className="text-perigo">*</span>
           </span>
           <Combobox
             opcoes={clientes.map((cliente) => ({
@@ -67,69 +77,64 @@ export function ContaReceberForm({ clientes, onSalvar, onCancelar }: ContaRecebe
             placeholder="Escolha o cliente"
           />
           {errors.cliente_id && (
-            <span className="text-rotulo text-red-600">{errors.cliente_id.message}</span>
+            <span className="text-rotulo font-normal text-perigo">{errors.cliente_id.message}</span>
           )}
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Descrição <span className="text-red-500">*</span>
+        <label className="sakura-rotulo col-span-2">
+          <span>
+            Descrição <span className="text-perigo">*</span>
           </span>
           <input
             type="text"
             placeholder="Ex: Acerto de serviço fora de OS"
+            aria-invalid={errors.descricao ? "true" : undefined}
             {...register("descricao")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
           {errors.descricao && (
-            <span className="text-rotulo text-red-600">{errors.descricao.message}</span>
+            <span className="text-rotulo font-normal text-perigo">{errors.descricao.message}</span>
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Valor <span className="text-red-500">*</span>
+        <label className="sakura-rotulo">
+          <span>
+            Valor <span className="text-perigo">*</span>
           </span>
           <input
             type="number"
             min="0.01"
             step="0.01"
+            aria-invalid={errors.valor ? "true" : undefined}
             {...register("valor")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
-          {errors.valor && <span className="text-rotulo text-red-600">{errors.valor.message}</span>}
+          {errors.valor && <span className="text-rotulo font-normal text-perigo">{errors.valor.message}</span>}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Previsão de recebimento <span className="text-red-500">*</span>
+        <label className="sakura-rotulo">
+          <span>
+            Previsão de recebimento <span className="text-perigo">*</span>
           </span>
           <input
             type="date"
+            aria-invalid={errors.vencimento ? "true" : undefined}
             {...register("vencimento")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
           {errors.vencimento && (
-            <span className="text-rotulo text-red-600">{errors.vencimento.message}</span>
+            <span className="text-rotulo font-normal text-perigo">{errors.vencimento.message}</span>
           )}
         </label>
       </div>
 
-      <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+      <div className="flex justify-end gap-2">
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Cadastrar"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

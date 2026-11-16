@@ -22,36 +22,16 @@
  * A entrada `borda-de-campo` (51 combinações, 1,15:1) saiu daqui em
  * 12/09/2026: a usuária aprovou clarear a borda, e ela virou o token
  * --color-sakura-borda-campo em globals.css.
+ *
+ * As entradas `botao-roxo-com-letra-branca` (4,48:1) e `texto-roxo-como-link`
+ * (4,14:1) saíram em 14/11/2026, com o visual novo (#990): o botão principal
+ * virou laranja com a letra escura (6,1:1) e o laranja como texto dá 5,5:1
+ * contra o cartão.
+ *
+ * As entradas `calendario-dias-do-mes-vizinho*` saíram em 15/11/2026, com o
+ * Início novo (tarefa 4): os dias do mês vizinho passaram ao `texto-3`, 5,4:1.
  */
-export const DIVIDA_DE_CONTRASTE = [
-  {
-    id: "botao-roxo-com-letra-branca",
-    // 23 combinações, todas em 4,48:1 contra 4,5:1 — o botão principal do app
-    // inteiro, a dois centésimos do mínimo. Corrigir exige mexer no roxo da
-    // marca (que o item TR-01.3 proíbe) ou engrossar/aumentar a letra dos
-    // botões. Decisão dela.
-    quando: (g) => g.tipo === "texto" && g.frente === "#ffffff" && g.fundo === "#b624ff",
-  },
-  {
-    id: "texto-roxo-como-link",
-    // 9 combinações, 4,4:1 e 4,14:1 contra 4,5:1 — "Sair", "+ adicionar
-    // item", "Ver as OS", as setas do calendário. Mesmo caso do anterior:
-    // perto demais do limite pra trocar a cor da marca por conta própria.
-    quando: (g) => g.tipo === "texto" && g.frente === "#b624ff",
-  },
-  {
-    id: "calendario-dias-do-mes-vizinho",
-    // 2,56:1. Estes são apagados DE PROPÓSITO: o calendário do Início mostra
-    // a sobra do mês anterior e os primeiros dias do seguinte em cinza, pra
-    // não competir com o mês corrente. Clarear resolve o número e estraga a
-    // ideia. Fica aqui como decisão consciente, não como esquecimento.
-    // O #60545e é o mesmo dia apagado quando ele é feriado: o fundo rosa do
-    // feriado muda a mistura do cinza. Só aparece quando um feriado cai na
-    // sobra visível (Finados, 2/11, no calendário de outubro; 1º/1 no de
-    // dezembro), por isso a varredura reprovou pela primeira vez em 1º/10/2026.
-    quando: (g) => g.tipo === "texto" && (g.frente === "#5a5059" || g.frente === "#60545e"),
-  },
-];
+export const DIVIDA_DE_CONTRASTE = [];
 
 export function ehDividaConhecida(grupo) {
   return DIVIDA_DE_CONTRASTE.some((d) => d.quando(grupo));

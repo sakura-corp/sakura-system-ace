@@ -14,7 +14,12 @@ export function IdentificacaoFields({
     <Secao titulo="Identificação">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <Campo label="Nome" obrigatorio erro={errors.nome?.message}>
-          <input type="text" {...register("nome")} className={inputClasse} />
+          <input
+            type="text"
+            aria-invalid={errors.nome ? true : undefined}
+            {...register("nome")}
+            className={inputClasse}
+          />
         </Campo>
         <Campo label="Cargo">
           <input

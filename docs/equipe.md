@@ -376,6 +376,16 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
      4. Pro próximo perfil, crie outro login, ou volte pro seu e troque os módulos desse.
      Não mexa nos logins dos outros nem salve token da Focus NFe (`docs/supabase-de-teste.md`,
      "Teste de permissão"). Isso é usar o programa, não rodar SQL: a regra abaixo continua igual.
+   - **Trocar a sua senha de teste por uma fácil de lembrar** (Sofia, 11/11/2026; a gerada pelo
+     Bitwarden é difícil de digitar). Pode, e é pelo próprio programa, com o seu login:
+     1. **Configurações**, na parte dos operadores: na **sua** linha, no menu, **Redefinir senha**.
+        Confirme. Aparece uma senha temporária: anote.
+     2. Saia (**Sair**, na barra da esquerda) e entre com o seu usuário e a senha temporária. O
+        programa abre sozinho a tela de **criar a senha nova**: escolha uma fácil de lembrar, mas
+        **que você não usa em mais nada** (e-mail, banco, GitHub).
+     3. No Bitwarden, abra o item `SSACE teste – login <seu nome>`, troque a senha pela nova e salve.
+     Só a sua: nunca a de outra pessoa nem a dos logins de perfil dos outros. Se o passo 1 der erro
+     (a função de redefinir senha pode não estar instalada no banco de teste), pare e avise a Sofia.
    - Pra fechar: `Ctrl+C` no terminal (no Mac também é `Control+C`, não `Cmd`).
 6. **Levar o resultado pro PR**: mande o print ou o texto **pra conversa com a sessão da nuvem**;
    ela põe na descrição do PR e no relatório. Antes de mandar o print, confira que **não aparece o

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConexao } from "@/hooks/useConexao";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   CANAIS_ATUALIZACAO,
@@ -17,6 +18,8 @@ import {
 // não é coisa pra estar ao alcance de um clique distraído no balcão.
 export function AtualizacoesComputadorSection() {
   const ponte = typeof window !== "undefined" ? window.sakuraApp : undefined;
+  // #374: aviso perto do botão; nada trava.
+  const { semConexao } = useConexao();
   const disponivel = Boolean(ponte?.canalAtualizacao && ponte?.definirCanalAtualizacao);
 
   const [atual, setAtual] = useState<CanalAtualizacao | null>(null);
@@ -122,6 +125,16 @@ export function AtualizacoesComputadorSection() {
         </p>
       )}
 
+      {semConexao && (
+        <p
+          role="status"
+          className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
+        >
+          Sem internet o programa não procura atualização: ele procura sozinho da próxima vez que
+          for aberto com internet. Trocar o canal aqui funciona mesmo assim.
+        </p>
+      )}
+
       <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
         {salvo && (
           <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
@@ -132,7 +145,7 @@ export function AtualizacoesComputadorSection() {
           type="button"
           onClick={handleSalvar}
           disabled={salvando || escolha === atual}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
         >
           {salvando ? "Salvando..." : "Salvar"}
         </button>

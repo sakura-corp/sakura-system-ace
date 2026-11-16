@@ -10,20 +10,30 @@ const ALTURA = "2rem";
 //
 // As telas usam `h-screen` (100vh), então uma faixa por cima cobriria o topo
 // delas. Em vez de mexer em cada tela (ou no CSS global), a própria faixa
-// empurra o corpo da página pra baixo e encolhe o `h-screen` na mesma medida:
-// o total continua 100vh e nada sai da janela.
+// empurra o programa pra baixo na mesma medida, e nada sai da janela:
+// - sem a barra própria da janela: o corpo da página desce e o `h-screen`
+//   encolhe;
+// - com a barra própria (`data-barra="propria"`, visual novo #990): a faixa
+//   fica logo ABAIXO da barra (nunca em cima dos três botões da janela), e o
+//   programa (`#root`) e o fundo das janelas (modais) começam abaixo da faixa.
 export function FaixaDemonstracao() {
   if (!emDemonstracao) return null;
 
   return (
     <>
       <style>{`
-        body { padding-top: ${ALTURA}; }
-        .h-screen { height: calc(100vh - ${ALTURA}); }
+        :root:not([data-barra="propria"]) body { padding-top: ${ALTURA}; }
+        :root:not([data-barra="propria"]) .h-screen { height: calc(100vh - ${ALTURA}); }
+        .faixa-demonstracao { top: 0; }
+        :root[data-barra="propria"] .faixa-demonstracao { top: var(--barra-janela); }
+        :root[data-barra="propria"] #root,
+        :root[data-barra="propria"] .sakura-modal-fundo {
+          top: calc(var(--barra-janela) + ${ALTURA});
+        }
       `}</style>
       <div
         role="status"
-        className="fixed inset-x-0 top-0 z-[1000] flex items-center justify-center gap-4 bg-sakura-pink px-4 text-rotulo font-semibold text-black"
+        className="faixa-demonstracao fixed inset-x-0 z-[1000] flex items-center justify-center gap-4 bg-sakura-pink px-4 text-rotulo font-semibold text-black"
         style={{ height: ALTURA }}
       >
         <span>MODO DEMONSTRAÇÃO · nada aqui é de verdade</span>

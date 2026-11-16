@@ -49,7 +49,7 @@ export function PerfilNaoCarregou() {
             <button
               onClick={tentarCarregarPerfil}
               disabled={saindo}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white shadow-[0_0_15px_rgba(182,36,255,0.4)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_25px_rgba(182,36,255,0.7)] disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.4)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_25px_rgba(255,87,34,0.7)] disabled:opacity-50"
             >
               Tentar de novo
             </button>

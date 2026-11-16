@@ -111,6 +111,8 @@ try {
   }));
   const CHAVES_ESPERADAS = [
     "abrirWhatsapp",
+    "barraDaJanela",
+    "definirTemaDaJanela",
     "canalAtualizacao",
     "conexao",
     "diagnostico",
@@ -486,6 +488,9 @@ try {
   await pagina.evaluate(() => {
     const quadro = document.createElement("iframe");
     quadro.id = "recibo-teste";
+    // Fora de baixo da barra do programa (fixa no topo, 40 px), senão ela
+    // "intercepta" o clique do teste.
+    quadro.style.cssText = "position:fixed;top:80px;left:20px;z-index:100;width:300px;height:80px";
     quadro.srcdoc =
       '<a id="outro" href="https://exemplo.test/" target="_blank">outro</a> ' +
       '<a id="portal" href="https://araraquara.giap.com.br/ords/pma/f?p=616:116" target="_blank">portal</a>';
@@ -518,7 +523,143 @@ try {
     `foi de ${enderecoAntes} para ${enderecoDepois}`,
   );
 
-  // --- 9. Modo demonstração: nada sai do computador (#384) ---------------
+  // --- 9. "Reduzir movimento": nenhuma animação roda (tarefa 5, #990) -------
+  // Monta, com as classes de verdade, um pedaço de cada movimento da tabela da
+  // seção 8 das regras (trocar de tela, abrir janela, menu de três pontos, fio
+  // do gráfico) e pergunta ao navegador qual animação cada um tem. Primeiro
+  // com as animações LIGADAS (precisa ter: se não tiver, o teste não prova
+  // nada), depois com "reduzir movimento" ligado (tem que ser nenhuma).
+  await pagina.evaluate(() => {
+    const caixa = document.createElement("div");
+    caixa.id = "movimento-teste";
+    caixa.innerHTML =
+      '<div class="sakura-tela" data-entrando><div><p id="m-bloco-1">a</p><p id="m-bloco-2">b</p>' +
+      '<p>c</p><p>d</p><p>e</p><p>f</p><p>g</p><p>h</p><p>i</p><div class="sakura-modal-fundo" id="m-fundo-na-tela"></div></div></div>' +
+      '<div class="sakura-modal-fundo" id="m-fundo"><div class="sakura-modal" id="m-janela"></div></div>' +
+      '<div class="sakura-menu-brota" id="m-menu"></div>' +
+      '<svg data-fio-de-grafico><path id="m-fio-linha" class="fio-linha" d="M0 0 L1 1"/>' +
+      '<path id="m-fio-area" class="fio-area" d="M0 0 L1 1"/><circle id="m-fio-ponta" class="fio-ponta" r="1"/></svg>';
+    document.body.appendChild(caixa);
+  });
+  const IDS_DO_MOVIMENTO = ["m-bloco-1", "m-bloco-2", "m-fundo", "m-fundo-na-tela", "m-janela", "m-menu", "m-fio-linha", "m-fio-area", "m-fio-ponta"];
+  const animacoesDe = () =>
+    pagina.evaluate(
+      (ids) => Object.fromEntries(ids.map((id) => [id, getComputedStyle(document.getElementById(id)).animationName])),
+      IDS_DO_MOVIMENTO,
+    );
+  await pagina.emulateMedia({ reducedMotion: "no-preference" });
+  const comMovimento = await animacoesDe();
+  conferir(
+    "com as animações ligadas, cada movimento da tabela tem a sua animação",
+    IDS_DO_MOVIMENTO.every((id) => comMovimento[id] && comMovimento[id] !== "none"),
+    JSON.stringify(comMovimento),
+  );
+  const atrasoDaJanelaNaTela = await pagina.evaluate(
+    () => getComputedStyle(document.getElementById("m-fundo-na-tela")).animationDelay,
+  );
+  conferir(
+    "a janela que nasce dentro da tela abre sem o atraso dos blocos (senão fica invisível e clicável)",
+    atrasoDaJanelaNaTela === "0s",
+    atrasoDaJanelaNaTela,
+  );
+  const semEntrando = await pagina.evaluate(() => {
+    const tela = document.querySelector("#movimento-teste .sakura-tela");
+    tela.removeAttribute("data-entrando");
+    return getComputedStyle(document.getElementById("m-bloco-2")).animationName;
+  });
+  conferir("passados os 0,8 s da troca de tela, um bloco novo não repete a entrada", semEntrando === "none", semEntrando);
+  await pagina.evaluate(() => document.querySelector("#movimento-teste .sakura-tela").setAttribute("data-entrando", ""));
+  await pagina.emulateMedia({ reducedMotion: "reduce" });
+  const semMovimento = await animacoesDe();
+  conferir(
+    "com 'reduzir movimento' ligado, NENHUMA animação roda",
+    IDS_DO_MOVIMENTO.every((id) => semMovimento[id] === "none"),
+    JSON.stringify(semMovimento),
+  );
+  await pagina.emulateMedia({ reducedMotion: "no-preference" });
+  await pagina.evaluate(() => document.getElementById("movimento-teste")?.remove());
+  // --- A barra da janela (visual novo, #990, tarefa 6) --------------------
+  // O Windows não desenha mais a faixa branca: a barra é do programa (faixa de
+  // arrastar), e os três botões vêm por cima (`titleBarOverlay`). O que dá pra
+  // provar aqui, no Linux: a janela nasce escura (sem piscar o rosa-claro), a
+  // barra existe no topo e é "arrastável", o programa começa ABAIXO dela (nada
+  // fica embaixo dos botões) e a cor da faixa dos botões acompanha o tema.
+  // Arrastar, duplo clique, encaixe e os botões de verdade: só no Windows.
+  const barra = await pagina.evaluate(() => {
+    const faixa = document.querySelector('[data-testid="barra-da-janela"]');
+    const raiz = document.getElementById("root");
+    const caixa = faixa?.getBoundingClientRect();
+    const caixaRaiz = raiz?.getBoundingClientRect();
+    return {
+      altura: window.sakuraApp?.barraDaJanela,
+      existe: Boolean(faixa),
+      topo: caixa?.top,
+      alturaDaFaixa: caixa?.height,
+      largura: caixa?.width,
+      arrastar: faixa ? getComputedStyle(faixa).getPropertyValue("-webkit-app-region") : "",
+      topoDoPrograma: caixaRaiz?.top,
+      fundoDoPrograma: caixaRaiz ? caixaRaiz.bottom - window.innerHeight : null,
+      larguraDaJanela: window.innerWidth,
+    };
+  });
+  conferir("a janela sabe que a barra é do programa (40 px)", barra.altura === 40, `veio ${barra.altura}`);
+  conferir(
+    "a barra do programa está no topo, de ponta a ponta, com 40 px",
+    barra.existe && barra.topo === 0 && barra.alturaDaFaixa === 40 && barra.largura === barra.larguraDaJanela,
+    JSON.stringify(barra),
+  );
+  conferir("a barra é a faixa de arrastar da janela", barra.arrastar === "drag", `veio "${barra.arrastar}"`);
+  conferir(
+    "o programa começa abaixo da barra, sem passar do pé da janela",
+    barra.topoDoPrograma === 40 && barra.fundoDoPrograma <= 0,
+    JSON.stringify(barra),
+  );
+  const fundoDasJanelas = await pagina.evaluate(() => {
+    const f = document.createElement("div");
+    f.className = "sakura-modal-fundo";
+    document.getElementById("root").appendChild(f);
+    const topo = f.getBoundingClientRect().top;
+    f.remove();
+    return topo;
+  });
+  conferir(
+    "o fundo das janelas (modais) começa abaixo da barra, não embaixo dos três botões",
+    fundoDasJanelas === 40,
+    `veio ${fundoDasJanelas}`,
+  );
+  const fundoDaJanela = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].getBackgroundColor(),
+  );
+  conferir(
+    "a janela nasce no fundo escuro (não no rosa-claro do tema antigo)",
+    fundoDaJanela.toUpperCase() === "#0A0A0D",
+    `veio ${fundoDaJanela}`,
+  );
+  // A faixa dos três botões acompanha o tema: o `setTitleBarOverlay` é
+  // trocado por um que anota o que recebeu.
+  await app.evaluate(({ BrowserWindow }) => {
+    const janela = BrowserWindow.getAllWindows()[0];
+    globalThis.__faixasDosBotoes = [];
+    janela.setTitleBarOverlay = (opcoes) => globalThis.__faixasDosBotoes.push(opcoes);
+  });
+  await pagina.evaluate(() => {
+    window.sakuraApp.definirTemaDaJanela("claro");
+    window.sakuraApp.definirTemaDaJanela("escuro");
+    window.sakuraApp.definirTemaDaJanela("roxo"); // inválido: tem que ser ignorado
+  });
+  await pagina.waitForTimeout(400);
+  const faixas = await app.evaluate(() => globalThis.__faixasDosBotoes);
+  conferir(
+    "a faixa dos três botões troca de cor com o tema (e ignora tema inválido)",
+    faixas.length === 2 &&
+      faixas[0].color.toUpperCase() === "#F3F2EF" &&
+      faixas[0].symbolColor.toUpperCase() === "#1B1B1F" &&
+      faixas[1].color.toUpperCase() === "#0A0A0D" &&
+      faixas[0].height === 40,
+    JSON.stringify(faixas),
+  );
+
+  // --- 10. Modo demonstração: nada sai do computador (#384) ---------------
   //
   // A demonstração é o programa inteiro com dados inventados, pra mostrar o
   // sistema a quem ainda não é cliente. A promessa é: nada sai do computador
@@ -684,18 +825,17 @@ try {
           await pagina.getByText("Auto Center Modelo").first().waitFor(ESPERA);
         });
 
-        // A nota fiscal: abrir a OS 146 (concluída), aba Fechamento, "Emitir
+        // A nota fiscal: abrir a OS 146 (concluída), Fechamento, "Emitir
         // NFC-e". O pedido à Focus NFe vai pelo porteiro (Edge Function
         // focus-nfe), e na demonstração ele tem de responder com o aviso, sem
         // sair. É o caminho de quem está apresentando: "Confirmar emissão",
         // pelo cliente de verdade.
         await tentar('pedir a nota na demonstração mostra "No modo demonstração não sai nota."', async () => {
           await pagina.getByRole("link", { name: "Ordens de Serviço", exact: true }).click(ESPERA);
-          await pagina
-            .getByRole("row")
-            .filter({ hasText: "OS 146" })
-            .getByRole("button", { name: "Fechamento" })
-            .click(ESPERA);
+          // Visual novo (#990, tarefa 7): o "Fechamento" de uma OS concluída
+          // mora no menu "Mais ações" da linha.
+          await pagina.getByRole("button", { name: "Mais ações — OS 146" }).click(ESPERA);
+          await pagina.getByRole("menuitem", { name: "Fechamento" }).click(ESPERA);
           await pagina.getByRole("button", { name: "Emitir NFC-e" }).click(ESPERA);
           await pagina.getByRole("button", { name: "Confirmar emissão" }).click(ESPERA);
           await pagina.getByText("No modo demonstração não sai nota.").waitFor(ESPERA);
