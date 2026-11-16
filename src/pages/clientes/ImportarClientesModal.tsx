@@ -250,7 +250,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
   }
 
   const botaoPrincipal =
-    "rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50";
+    "rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50";
   const botaoSecundario =
     "rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50";
 
