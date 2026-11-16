@@ -4,8 +4,9 @@ import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { LinkCliente } from "@/components/LinkCliente";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   MOTIVOS_RECUSA,
   MOTIVO_RECUSA_LABEL,
@@ -104,7 +105,11 @@ interface OrdemServicoFormProps {
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
   /** Botões a mais no cabeçalho do orçamento aberto (WhatsApp). */
   acoesExtras?: ReactNode;
-  /** A aba Fechamento cadastrou uma peça avulsa (#655): recarregar a OS aberta. */
+  /**
+   * Uma peça avulsa ganhou cadastro e foi ligada ao item: pela aba Fechamento
+   * (#655) ou pela janela da aprovação do orçamento (#720). Recarregar a
+   * ordem aberta.
+   */
   onItensMudaram?: () => void | Promise<void>;
 }
 
@@ -168,6 +173,10 @@ export function OrdemServicoForm({
   // O que foi escolhido na janela da aprovação (#720): fica aqui pra não se
   // perder quando a janela fecha no "Voltar".
   const [escolhasAvulsas, setEscolhasAvulsas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
+  // Itens que a janela da aprovação já ligou no banco (#720). Saem da janela
+  // na hora, sem esperar o orçamento recarregar: se o recarregar falhar, a
+  // janela não oferece cadastrar a mesma peça de novo.
+  const [ligadosNaJanela, setLigadosNaJanela] = useState<ReadonlySet<string>>(new Set());
   const [aprovadoPor, setAprovadoPor] = useState("");
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
   const [enviando, setEnviando] = useState(false);
@@ -272,6 +281,8 @@ export function OrdemServicoForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar ordem de serviço:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }
@@ -291,7 +302,31 @@ export function OrdemServicoForm({
 
   // Orçamento com peça sem cadastro (#655) passa antes pela janela, que diz o
   // que fazer com cada uma; sem peça avulsa, aprova direto, como sempre.
-  const avulsasDoOrcamento = pecasAvulsas(itensExistentes);
+  const avulsasDoOrcamento = pecasAvulsas(itensExistentes).filter(
+    (item) => !ligadosNaJanela.has(item.id),
+  );
+
+  // A janela ligou a peça cadastrada ao item (#720): a escolha dele já não
+  // serve, e o orçamento recarrega pra mostrar o item com a peça do cadastro.
+  // A peça cadastrada fica guardada (`cadastradas`): até o orçamento
+  // recarregar (ou se o recarregar falhar), é por ela que a peça nova aparece
+  // no "já tenho" das outras linhas, em vez de a pessoa cadastrar outra igual.
+  async function aoLigarNaJanela(itemId: string) {
+    setLigadosNaJanela((ligados) => new Set(ligados).add(itemId));
+    setEscolhasAvulsas((e) => ({
+      ...esquecerEscolha(e, itemId),
+      cadastradas: e.cadastradas,
+    }));
+    try {
+      await onItensMudaram?.();
+    } catch (err) {
+      console.error("Erro ao recarregar o orçamento depois de ligar a peça:", err);
+      setErro(
+        `A peça foi cadastrada e ligada ao item, mas o orçamento não recarregou: ` +
+          `${mensagemDeErro(err)}. Feche e abra o orçamento de novo pra ver.`,
+      );
+    }
+  }
 
   function aoConfirmarAprovacao() {
     if (avulsasDoOrcamento.length > 0) {
@@ -401,7 +436,17 @@ export function OrdemServicoForm({
                 {ordemExistente.criado_por?.nome ?? "—"}
               </p>
               <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
-                {ordemExistente.cliente?.nome ?? "Cliente"}
+                {ordemExistente.cliente?.nome ? (
+                  <LinkCliente
+                    clienteId={ordemExistente.cliente_id}
+                    nome={ordemExistente.cliente.nome}
+                    podeAbrir
+                    desligado={isDirty}
+                    motivoDesligado="Salve as alterações da OS antes de abrir a ficha do cliente."
+                  />
+                ) : (
+                  "Cliente"
+                )}
                 {ordemExistente.veiculo?.placa ? ` — ${ordemExistente.veiculo.placa}` : ""}
               </h2>
             </div>
@@ -421,7 +466,7 @@ export function OrdemServicoForm({
                 type="button"
                 onClick={handleEncerrar}
                 disabled={encerrando}
-                className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {encerrando ? "Encerrando..." : "Encerrar OS"}
               </button>
@@ -458,7 +503,7 @@ export function OrdemServicoForm({
               type="button"
               onClick={() => setAprovando((aberto) => !aberto)}
               disabled={enviando}
-              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               Aprovar
             </button>
@@ -513,7 +558,7 @@ export function OrdemServicoForm({
                   type="button"
                   onClick={aoConfirmarAprovacao}
                   disabled={enviando || isDirty}
-                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
                 >
                   Confirmar aprovação
                 </button>
@@ -638,8 +683,8 @@ export function OrdemServicoForm({
         ref={barraRef}
         data-rodape-da-os
         className={`${
-          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_rgba(0,0,0,0.65)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3`}
+          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-janela px-4 py-3`}
       >
         {aba === "detalhes" ? (
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -671,7 +716,7 @@ export function OrdemServicoForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting
                 ? "Salvando..."
@@ -700,6 +745,7 @@ export function OrdemServicoForm({
         enviando={enviando}
         erro={erro}
         onConfirmar={handleAprovar}
+        onItemLigado={aoLigarNaJanela}
         onFechar={() => setJanelaAvulsas(false)}
       />
     )}

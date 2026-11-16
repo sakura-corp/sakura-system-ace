@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
+import { AvisosQueSomem } from "./components/AvisoQueSome";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
 import { BuscaGlobal } from "./components/BuscaGlobal";
+import { FaixaSemConexao } from "./components/FaixaSemConexao";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
@@ -37,6 +39,7 @@ import { PainelPage } from "./pages/painel/PainelPage";
 import { RelatoriosPage } from "./pages/relatorios/RelatoriosPage";
 import { ServicosPage } from "./pages/servicos/ServicosPage";
 import { FichaVeiculoPage } from "./pages/veiculos/FichaVeiculoPage";
+import { FichaClientePage } from "./pages/clientes/FichaClientePage";
 import { MODULOS, temPermissao } from "./types/operador";
 
 // Se o operador não tiver permissão pro Início (o "/" padrão),
@@ -66,8 +69,28 @@ function PaginaInicial() {
   );
 }
 
+/**
+ * O invólucro que faz os blocos da tela entrarem (tarefa 5). O atributo
+ * `data-entrando` só existe nos primeiros 0,8 s depois de trocar de rota: o
+ * CSS só anima nesse tempo, então um bloco que aparece depois (o fim do
+ * "Carregando", um formulário "Novo...") não repete a entrada.
+ */
+function TelaQueEntra({ children }: { children: ReactNode }) {
+  const [entrando, setEntrando] = useState(true);
+  useEffect(() => {
+    const espera = window.setTimeout(() => setEntrando(false), 800);
+    return () => window.clearTimeout(espera);
+  }, []);
+  return (
+    <div className="sakura-tela" data-entrando={entrando ? "" : undefined}>
+      {children}
+    </div>
+  );
+}
+
 export default function App() {
   const { carregando, session, operador, lojaAtual } = useAuth();
+  const localizacao = useLocation();
   useEnterParaProximoCampo();
   useLimparDataAoApagar();
   useNaoMexerNoNumeroSemDigitar();
@@ -155,14 +178,23 @@ export default function App() {
   }
 
   return (
-    <div className="sakura-shell-bg flex h-screen gap-4 overflow-hidden p-4">
+    // O menu encosta na borda da janela, de cima a baixo (visual novo, seção
+    // 7): sem a moldura de antes, sobram uns 36 px de largura pra tela mesmo
+    // com o menu aberto, e 204 px com ele encolhido.
+    <div className="sakura-shell-bg flex h-screen overflow-hidden">
       <VersaoApp />
+      <AvisosQueSomem />
       <Sidebar />
-      <main className="min-h-0 min-w-0 flex-1">
+      <main className="min-h-0 min-w-0 flex-1 p-4">
         <AreaRolavel className="p-4">
           <BuscaGlobal />
+          <FaixaSemConexao />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
+            {/* Trocar de tela (tarefa 5): o `key` refaz o invólucro a cada rota, e
+                o CSS (`.sakura-tela`) faz os blocos da tela entrarem. Ele não
+                muda o layout (`display: contents`). */}
+            <TelaQueEntra key={localizacao.pathname}>
             <Routes>
               <Route path="/" element={<PaginaInicial />} />
               {/* Sem AdminRoute de propósito: quem pede socorro é o balcão. */}
@@ -172,6 +204,17 @@ export default function App() {
                 element={
                   <PermissaoRoute modulo="clientes">
                     <ClientesPage />
+                  </PermissaoRoute>
+                }
+              />
+              {/* A ficha do cliente (#393) abre como a do veículo: com
+                  Clientes ou Ordens de Serviço. Cada parte dela respeita o
+                  módulo próprio (Contas a Receber, Ordens de Serviço). */}
+              <Route
+                path="/clientes/:id"
+                element={
+                  <PermissaoRoute modulo={["clientes", "ordens_servico"]}>
+                    <FichaClientePage />
                   </PermissaoRoute>
                 }
               />
@@ -298,6 +341,7 @@ export default function App() {
                 }
               />
             </Routes>
+            </TelaQueEntra>
           </ErrorBoundary>
         </AreaRolavel>
       </main>

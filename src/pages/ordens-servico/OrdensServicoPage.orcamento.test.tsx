@@ -79,7 +79,7 @@ describe("OrdensServicoPage — sem orçamento", () => {
     expect(await screen.findByText("Cliente da OS")).toBeInTheDocument();
     expect(screen.queryByText("Cliente do Orçamento")).not.toBeInTheDocument();
     expect(screen.queryByText("Cliente Recusado")).not.toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Ordens de serviço (1)" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Ordens de serviço 1" })).toBeInTheDocument();
   });
 
   it("loja que só tem orçamento diz que ainda não tem OS, sem abas vazias", async () => {

@@ -3,6 +3,7 @@ import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { LinkPlaca } from "@/components/LinkPlaca";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, hojeLocal } from "@/lib/datas";
+import { listarClientes } from "@/lib/clientes";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   listarModelosWhatsapp,
@@ -42,21 +43,25 @@ function quandoVence(diasDeAtraso: number): string {
   return faltam === 1 ? "vence em 1 dia" : `vence em ${faltam} dias`;
 }
 
-export function RetornosLista({ clientes }: { clientes: Cliente[] }) {
+export function RetornosLista() {
   const { operador, lojaAtual } = useAuth();
   const [ordens, setOrdens] = useState<OrdemParaRetorno[] | null>(null);
   const [servicos, setServicos] = useState<ServicoComIntervalo[]>([]);
+  // Todos os clientes da empresa (a lista principal de Clientes vem por página
+  // desde a #373; aqui precisa de todos pra achar o dono de cada carro).
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [erro, setErro] = useState<string | null>(null);
   const [modelos, setModelos] = useState<Record<string, string>>({});
   const [ultimosAvisos, setUltimosAvisos] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     let valendo = true;
-    Promise.all([listarOrdensParaRetornos(), listarServicosComIntervalo()])
-      .then(([listaOrdens, listaServicos]) => {
+    Promise.all([listarOrdensParaRetornos(), listarServicosComIntervalo(), listarClientes()])
+      .then(([listaOrdens, listaServicos, listaClientes]) => {
         if (!valendo) return;
         setOrdens(listaOrdens);
         setServicos(listaServicos);
+        setClientes(listaClientes);
       })
       .catch((err) => {
         console.error("Erro ao carregar os retornos:", err);

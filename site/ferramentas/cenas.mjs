@@ -1,4 +1,5 @@
-// As 54 telas do sistema, com os cliques necessários pra chegar até cada uma.
+// Todas as telas do sistema, com os cliques necessários pra chegar até cada uma.
+// (Sem o número: "54 telas" ficou velho a cada tela nova.)
 //
 // Mora num arquivo só porque DOIS programas percorrem esta lista: o gerador
 // de imagens do catálogo (gerar-catalogo-telas.mjs) e a varredura de
@@ -61,6 +62,10 @@ export const CENAS = [
     rota: "/veiculos/v1",
     descricao: "Tudo que já foi feito num carro, por placa: dono atual, KM mais recente e quanto ele costuma rodar por mês, quanto já foi gasto nele, de quanto em quanto tempo ele volta, as peças que ainda estão na garantia e a linha do tempo de todas as OS, com data, KM, itens e total. Abre pelo 'Ver veículos' em Clientes, ou clicando na placa na lista de OS ou em Garantias." },
 
+  { arquivo: "06c-ficha-cliente", modulo: "Clientes", titulo: "Ficha do cliente",
+    rota: "/clientes/c4",
+    descricao: "O dinheiro de um cliente numa tela só: quanto ele deve (com o atrasado em destaque), quanto já comprou e quantas vezes veio, as contas pendentes, as OS e vendas dele e como pagou cada uma. Abre pelo nome do cliente em Clientes, na OS, em Contas a Receber e na ficha do veículo. Quem não tem o módulo de uma parte vê \"—\" e o porquê, nunca R$ 0,00." },
+
   // -------------------------------------------------------- ordens de serviço
   { arquivo: "07-ordens", modulo: "Ordens de Serviço", titulo: "Lista de ordens de serviço",
     rota: "/ordens-servico",
@@ -69,20 +74,26 @@ export const CENAS = [
     semRolarAPartirDe: 1366,
     descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra total e lucro de cada ordem (e, em tela larga, quanto foi de peças e de serviços)." },
   { arquivo: "08-os-form", modulo: "Ordens de Serviço", titulo: "Abertura de ordem de serviço",
-    rota: "/ordens-servico", passos: [{ clicar: "+ Nova ordem de serviço" }],
+    rota: "/ordens-servico", passos: [{ clicar: "Nova ordem de serviço" }],
     descricao: "Escolhe cliente e veículo, quilometragem de entrada, vendedor responsável e vai lançando os itens — peça ou serviço, cada um com quantidade, preço, desconto e o técnico que executou. Peça lançada aqui já dá baixa no estoque sozinha." },
   { arquivo: "09-os-faturamento", modulo: "Ordens de Serviço", titulo: "Faturamento da ordem",
     rota: "/ordens-servico", passos: [{ clicar: "Faturar" }],
     descricao: "Fecha a conta com o cliente. Dá pra dividir o pagamento em mais de uma forma (metade Pix, metade cartão), parcelar só a parte do cartão com os juros configurados, e escolher entre receber na hora — que lança a entrada no caixa — ou deixar como conta a receber." },
   { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechamento: notas fiscais e garantia",
-    rota: "/ordens-servico", passos: [{ clicar: "Fechamento" }],
+    // Desde a tarefa 7 do visual novo, "Fechamento" mora no "Mais ações" da
+    // linha (o primeiro que tem é o de uma OS concluída ou faturada).
+    rota: "/ordens-servico",
+    passos: [
+      { seletor: 'tr:has-text("Concluída") button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
     descricao: "Aqui saem os documentos da OS. O sistema sabe de que nota aquela ordem precisa — NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois — e mostra só o botão que faz sentido. A emissão é automática, via Focus NFe, e o PDF aparece na própria tela. O botão de garantia gera o documento pro cliente assinar." },
 
   // ------------------------------------------------ venda de balcão (FN-09)
   { arquivo: "10b-venda-balcao", modulo: "Ordens de Serviço", titulo: "Venda de balcão",
     rota: "/ordens-servico",
     passos: [
-      { clicar: "+ Venda de balcão" },
+      { clicar: "Venda de balcão" },
       { digitar: "7891234567894", em: 'input[placeholder^="Código de barras"]', enter: true },
       { digitar: "pneu", em: 'input[placeholder^="Código de barras"]' },
     ],
@@ -90,16 +101,21 @@ export const CENAS = [
   { arquivo: "10c-venda-pagamento", modulo: "Ordens de Serviço", titulo: "Pagamento da venda de balcão",
     rota: "/ordens-servico",
     passos: [
-      { clicar: "+ Venda de balcão" },
+      { clicar: "Venda de balcão" },
       { digitar: "7891234567894", em: 'input[placeholder^="Código de barras"]', enter: true },
       { clicar: "Ir para o pagamento" },
     ],
     descricao: "O mesmo pagamento da OS — dividir em formas, parcelar o cartão com os juros da loja. Venda no Consumidor é sempre recebida na hora: pra deixar a receber, é preciso saber de quem cobrar." },
   { arquivo: "10d-vendas-lista", modulo: "Ordens de Serviço", titulo: "Vendas de balcão na lista",
-    rota: "/ordens-servico", passos: [{ aba: "Vendas de balcão (1)" }],
+    rota: "/ordens-servico", passos: [{ seletor: 'button[role="tab"]:has-text("Vendas de balcão")' }],
     descricao: "As vendas de balcão ficam numa aba própria, separadas das ordens de serviço — e fora do ticket médio, que responde quanto rende cada carro atendido. O número é o mesmo contador das OS, então 'Venda 149' e 'OS 148' nunca se repetem." },
   { arquivo: "10e-venda-detalhe", modulo: "Ordens de Serviço", titulo: "Uma venda de balcão já registrada",
-    rota: "/ordens-servico", passos: [{ aba: "Vendas de balcão (1)" }, { clicar: "Fechamento" }],
+    rota: "/ordens-servico",
+    passos: [
+      { seletor: 'button[role="tab"]:has-text("Vendas de balcão")' },
+      { seletor: 'button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
     descricao: "Aberta pela lista, a venda mostra o que sobra pra fazer depois de registrada: emitir (ou reemitir) a NFC-e, ver o DANFE e imprimir a garantia da peça. As peças de uma venda não mudam depois de registrada." },
 
   // --------------------------------------------------------- orçamentos (#379)
@@ -109,7 +125,7 @@ export const CENAS = [
     semRolarAPartirDe: 1366,
     descricao: "Os orçamentos que esperam resposta do cliente, com número próprio, total e até quando valem. Passou da validade ganha a etiqueta 'vencido' (ainda dá pra aprovar). Os recusados ficam numa aba à parte. Um orçamento não é venda: não baixa estoque nem entra em número nenhum até ser aprovado." },
   { arquivo: "10g-orcamento-form", modulo: "Ordens de Serviço", titulo: "Novo orçamento",
-    rota: "/orcamentos", passos: [{ clicar: "+ Novo orçamento" }],
+    rota: "/orcamentos", passos: [{ clicar: "Novo orçamento" }],
     descricao: "O mesmo formulário da ordem de serviço, com a validade (7 dias, se ninguém mudar) e sem baixa de estoque." },
   { arquivo: "10h-orcamento-aprovar", modulo: "Ordens de Serviço", titulo: "Aprovar um orçamento vencido",
     rota: "/orcamentos",
@@ -175,7 +191,7 @@ export const CENAS = [
     rota: "/caixa",
     descricao: "Tudo que entrou e saiu no dia, junto: as ordens faturadas e os lançamentos feitos à mão. Mostra o lucro do dia já descontando o custo das peças e serviços vendidos e as despesas lançadas, e o resumo por forma de recebimento." },
   { arquivo: "27-caixa-form", modulo: "Caixa Diário", titulo: "Lançamento manual no caixa",
-    rota: "/caixa", passos: [{ clicar: "+ Lançamento manual" }],
+    rota: "/caixa", passos: [{ clicar: "Lançamento manual" }],
     descricao: "Dinheiro que entrou ou saiu sem passar por uma ordem de serviço — venda de sucata, pagamento de fornecedor, troco. A categoria é o que faz esses valores aparecerem organizados nos relatórios." },
   { arquivo: "28-caixa-entradas", modulo: "Caixa Diário", titulo: "Entradas",
     rota: "/caixa", passos: [{ aba: "Entradas" }],
@@ -192,7 +208,7 @@ export const CENAS = [
     rota: "/contas-pagar",
     descricao: "O que a loja ainda deve, com vencimento. As vencidas aparecem destacadas e também no calendário do início. Conta marcada como mensal se recria sozinha depois de paga." },
   { arquivo: "31-conta-pagar-form", modulo: "Contas a Pagar", titulo: "Nova conta a pagar",
-    rota: "/contas-pagar", passos: [{ clicar: "+ Nova conta" }],
+    rota: "/contas-pagar", passos: [{ clicar: "Nova conta" }],
     descricao: "Descrição, valor, vencimento e categoria. Marcando 'conta mensal', dá pra dizer até quando ela se repete — em branco, repete pra sempre." },
   { arquivo: "32-pagar-conta", modulo: "Contas a Pagar", titulo: "Marcar conta como paga",
     rota: "/contas-pagar", passos: [{ clicar: "Marcar como paga" }],
@@ -203,7 +219,7 @@ export const CENAS = [
     rota: "/contas-receber",
     descricao: "O espelho do Contas a Pagar: o que a loja tem pra receber. Nasce sozinha quando uma OS é faturada como 'a receber depois', e também pode ser lançada à mão pra cobrança que não passou por ordem nenhuma." },
   { arquivo: "34-conta-receber-form", modulo: "Contas a Receber", titulo: "Nova conta a receber",
-    rota: "/contas-receber", passos: [{ clicar: "+ Nova conta" }],
+    rota: "/contas-receber", passos: [{ clicar: "Nova conta" }],
     descricao: "Cliente, descrição, valor e previsão de recebimento." },
   { arquivo: "35-receber-conta", modulo: "Contas a Receber", titulo: "Marcar como recebido",
     rota: "/contas-receber", passos: [{ clicar: "Marcar como recebido" }],
@@ -216,6 +232,12 @@ export const CENAS = [
   { arquivo: "37-lucratividade", modulo: "Relações", titulo: "Lucratividade por item",
     rota: "/relatorios", passos: [{ aba: "Lucratividade" }],
     descricao: "Quanto cada peça e cada serviço deu de margem no período. É o que mostra o que vende muito mas dá pouco lucro." },
+  { arquivo: "37a-curva-abc", modulo: "Relações", titulo: "Curva ABC",
+    rota: "/relatorios", passos: [{ aba: "Curva ABC" }],
+    descricao: "Peças, serviços e clientes em A, B e C pelo quanto rendem no período, por venda ou por lucro. O A são os poucos que fazem a maior parte: o que não pode faltar no estoque e os clientes mais importantes." },
+  { arquivo: "37b-fluxo-de-caixa", modulo: "Relações", titulo: "Fluxo de caixa projetado",
+    rota: "/relatorios", passos: [{ aba: "Fluxo de caixa" }],
+    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, dia a dia, com o saldo andando a partir de hoje. As contas recorrentes que ainda não foram criadas aparecem como \"prevista\", e as vencidas e não pagas entram no dia de hoje como \"atrasada\"." },
 
   // --------------------------------------------------------------- garantias
   { arquivo: "38-garantias", modulo: "Garantias", titulo: "Garantias em vigor",
@@ -226,17 +248,30 @@ export const CENAS = [
   { arquivo: "39-notas-nfe", modulo: "Notas Fiscais", titulo: "Notas de produto (NFC-e)",
     rota: "/notas-fiscais",
     descricao: "O arquivo de todas as notas de venda de peça, separadas por mês. As emitidas pelo próprio sistema entram aqui sozinhas; as antigas podem ser enviadas à mão. O botão do mês baixa todos os XMLs de uma vez, no formato que a contabilidade pede." },
+  // Desde a tarefa 12 do visual novo (#990), a linha mostra "Nota do cliente"
+  // (era "Ver DANFE") e "Versão para o cliente" mora no "Mais ações".
+  { arquivo: "39b-nota-do-cliente", modulo: "Notas Fiscais", titulo: "A nota do cliente",
+    rota: "/notas-fiscais", passos: [{ clicar: "Nota do cliente" }],
+    descricao: "O PDF da nota que o sistema emitiu, pra ver, imprimir e mandar ao cliente quando ele volta pedindo. Cada botão de baixar diz o que baixa e pra quem: o PDF pro cliente, o XML pro contador." },
+  { arquivo: "39c-versao-para-o-cliente", modulo: "Notas Fiscais", titulo: "Versão para o cliente (resumo do XML)",
+    rota: "/notas-fiscais",
+    passos: [
+      { seletor: 'tr:has-text("Autorizada") button[aria-haspopup="menu"]' },
+      { clicar: "Versão para o cliente (resumo do XML)" },
+    ],
+    descricao: "Um resumo legível que o programa monta a partir do XML. É o que existe pra nota feita fora do programa, que não tem PDF guardado." },
   { arquivo: "40-notas-nfse", modulo: "Notas Fiscais", titulo: "Notas de serviço (NFS-e)",
-    rota: "/notas-fiscais", passos: [{ aba: "NFS-e" }],
-    descricao: "O mesmo arquivo, para as notas de serviço emitidas na prefeitura. 'Versão para o cliente' monta um recibo legível a partir do XML, e 'Cancelar nota' cancela de verdade na prefeitura, com justificativa." },
+    rota: "/notas-fiscais", passos: [{ aba: "Notas dos serviços (NFS-e)" }],
+    descricao: "O mesmo arquivo, para as notas de serviço emitidas na prefeitura. 'Nota do cliente' abre o PDF da nota, 'Versão para o cliente' monta um recibo legível a partir do XML, e 'Cancelar nota' cancela de verdade na prefeitura, com justificativa." },
   { arquivo: "41-enviar-xml", modulo: "Notas Fiscais", titulo: "Enviar XML manualmente",
-    rota: "/notas-fiscais", passos: [{ clicar: "+ Enviar XML" }],
+    rota: "/notas-fiscais", passos: [{ clicar: "Enviar XML" }],
     descricao: "Para notas emitidas fora do sistema (pela contabilidade, por exemplo), guardando tudo no mesmo lugar — a lei exige manter o XML por cinco anos." },
   { arquivo: "42-cancelar-nota", modulo: "Notas Fiscais", titulo: "Cancelar uma nota emitida",
     // "Cancelar nota" deixou de ser um link solto na linha e passou a viver
     // dentro do menu de três pontinhos (item TR-02.1) — por isso os 2 passos.
     rota: "/notas-fiscais",
-    passos: [{ seletor: 'button[aria-haspopup="menu"]' }, { clicar: "Cancelar nota" }],
+    // "Cancelar nota" só existe na nota autorizada que o programa emitiu.
+    passos: [{ seletor: 'tr:has-text("Autorizada") button[aria-haspopup="menu"]' }, { clicar: "Cancelar nota" }],
     descricao: "Cancela na SEFAZ ou na prefeitura uma nota que o sistema emitiu. Exige uma justificativa de no mínimo 15 caracteres, que é o que o órgão pede." },
 
   // ------------------------------------------------------------ funcionários

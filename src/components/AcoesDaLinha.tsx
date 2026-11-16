@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Dica } from "./Dica";
 
 /**
  * Ação de uma linha de lista.
@@ -31,6 +32,8 @@ export type AcaoDaLinha =
       aoClicar: () => void;
       perigosa?: boolean;
       desabilitada?: boolean;
+      /** Um ícone (da `lucide-react`) na frente do nome. Enfeite: o leitor de tela pula. */
+      icone?: ReactNode;
     };
 
 interface AcoesDaLinhaProps {
@@ -44,10 +47,15 @@ interface AcoesDaLinhaProps {
 }
 
 const CLASSE_BOTAO_ICONE =
-  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
+
+// O botão de três pontos do visual novo (tarefa 7, #990): cinza secundário,
+// que acende ao passar o mouse e fica marcado enquanto o menu está aberto.
+const CLASSE_BOTAO_MAIS =
+  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-texto-2 transition-colors hover:bg-passar hover:text-texto aria-expanded:bg-passar aria-expanded:text-texto";
 
 const CLASSE_BOTAO_TEXTO =
-  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-sakura-purple transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
 
 function IconeLapis() {
   return (
@@ -153,18 +161,49 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
   useEffect(() => {
     if (!aberto) return;
 
-    painelRef.current?.querySelector<HTMLElement>("[role='menuitem']")?.focus();
+    painelRef.current?.querySelector<HTMLElement>("[role='menuitem']:not(:disabled)")?.focus();
 
     function aoApontarFora(evento: MouseEvent) {
       const alvo = evento.target as Node;
       if (painelRef.current?.contains(alvo) || botaoRef.current?.contains(alvo)) return;
       fechar(false);
     }
+    // O teclado do menu (o padrão "menu" da WAI-ARIA): as setas andam pelos
+    // itens e dão a volta, Home e End vão pras pontas, Esc fecha e devolve o
+    // foco pro botão, e o Tab fecha (o foco segue pro próximo da tela).
+    function itensDoMenu() {
+      return Array.from(
+        painelRef.current?.querySelectorAll<HTMLButtonElement>("[role='menuitem']:not(:disabled)") ?? [],
+      );
+    }
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === "Escape") {
+        // A janela (Modal) também ouve o Esc, e ignora o que já veio
+        // "usado" (defaultPrevented): este é do menu, não dela. Por isso o
+        // menu ouve na captura, antes de qualquer outro.
         evento.preventDefault();
         fechar();
+        return;
       }
+      if (evento.key === "Tab") {
+        // O painel mora no fim do <body> (portal): o Tab de lá sairia da
+        // página. O foco volta pro botão ANTES do Tab acontecer, e o Tab
+        // segue dali pro próximo da tela, como se o menu nem tivesse aberto.
+        fechar();
+        return;
+      }
+      const itens = itensDoMenu();
+      if (itens.length === 0) return;
+      const atual = itens.indexOf(document.activeElement as HTMLButtonElement);
+      let proximo: number | null = null;
+      if (evento.key === "ArrowDown") proximo = atual < 0 ? 0 : (atual + 1) % itens.length;
+      else if (evento.key === "ArrowUp")
+        proximo = atual < 0 ? itens.length - 1 : (atual - 1 + itens.length) % itens.length;
+      else if (evento.key === "Home") proximo = 0;
+      else if (evento.key === "End") proximo = itens.length - 1;
+      if (proximo === null) return;
+      evento.preventDefault();
+      itens[proximo].focus();
     }
     // Rolar ou redimensionar deixaria o painel "solto" longe do botão, já que
     // a posição é calculada uma vez na abertura. Fechar é mais honesto que
@@ -174,12 +213,12 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
     }
 
     document.addEventListener("mousedown", aoApontarFora);
-    document.addEventListener("keydown", aoTeclar);
+    document.addEventListener("keydown", aoTeclar, true);
     window.addEventListener("resize", aoMexerNaTela);
     window.addEventListener("scroll", aoMexerNaTela, true);
     return () => {
       document.removeEventListener("mousedown", aoApontarFora);
-      document.removeEventListener("keydown", aoTeclar);
+      document.removeEventListener("keydown", aoTeclar, true);
       window.removeEventListener("resize", aoMexerNaTela);
       window.removeEventListener("scroll", aoMexerNaTela, true);
     };
@@ -200,27 +239,31 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
 
   return (
     <>
-      <button
-        ref={botaoRef}
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={aberto}
-        aria-label={`Mais ações — ${descricao}`}
-        title="Mais ações"
-        onClick={() => (aberto ? fechar(false) : abrir())}
-        className={CLASSE_BOTAO_ICONE}
-      >
-        <IconeTresPontinhos />
-      </button>
+      <Dica texto="Mais ações">
+        <button
+          ref={botaoRef}
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={aberto}
+          aria-label={`Mais ações — ${descricao}`}
+          onClick={() => (aberto ? fechar(false) : abrir())}
+          className={CLASSE_BOTAO_MAIS}
+        >
+          <IconeTresPontinhos />
+        </button>
+      </Dica>
 
       {aberto &&
         createPortal(
+          // `sakura-menu-brota` é a animação de abrir, nascendo do canto
+          // superior direito (tarefa 5, o movimento, PR #1054). Enquanto a
+          // classe não está na `main`, o menu só aparece.
           <div
             ref={painelRef}
             role="menu"
             aria-label={`Ações — ${descricao}`}
             style={{ top: posicao.top, right: posicao.right }}
-            className="fixed z-[60] min-w-44 rounded-xl border border-white/10 bg-sakura-pink-soft py-1 shadow-xl"
+            className="sakura-menu-brota fixed z-[60] min-w-48 rounded-[14px] border border-linha-forte bg-janela p-1.5 shadow-[0_18px_40px_var(--sombra-forte)]"
           >
             {ordenadas.map((acao) => {
               if (acao.tipo !== "menu") return null;
@@ -235,12 +278,17 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
                     escolher(acao);
                   }}
                   onClick={() => escolher(acao)}
-                  className={`block w-full px-4 py-2 text-left text-corpo transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                  className={`flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 text-left text-corpo transition-colors focus-visible:bg-passar disabled:cursor-not-allowed disabled:opacity-40 [&_svg]:size-4 [&_svg]:shrink-0 ${
                     acao.perigosa
-                      ? "text-red-400 hover:bg-red-500/15"
-                      : "text-sakura-purple-dark hover:bg-white/10"
+                      ? "text-perigo hover:bg-perigo/[0.12]"
+                      : "text-texto hover:bg-passar [&_svg]:text-texto-2"
                   }`}
                 >
+                  {acao.icone && (
+                    <span aria-hidden="true" className="inline-flex">
+                      {acao.icone}
+                    </span>
+                  )}
                   {acao.rotulo}
                 </button>
               );

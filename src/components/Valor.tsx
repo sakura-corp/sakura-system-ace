@@ -1,4 +1,55 @@
+import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
+import { useContext, useLayoutEffect, useRef } from "react";
 import { formatarMoeda } from "@/schemas/dinheiro";
+import { ContarAoAparecer, DURACAO_DA_CONTAGEM_MS, valorDaContagem } from "./contagem";
+
+/**
+ * Conta de zero até o valor mexendo só no texto do elemento (o mesmo nó de
+ * texto que o React escreveu, pra ele continuar dono dele). Com "reduzir
+ * movimento" ligado não faz nada.
+ *
+ * **Leitor de tela**: durante a contagem o número que passa é escondido dele
+ * (`aria-hidden`) e um irmão só-pra-leitor (`sr-only`) leva o valor FINAL; no
+ * fim, os dois saem e o texto de verdade volta a valer. Assim ele nunca ouve
+ * número intermediário, nem quem chega no número no meio dos 0,75 s.
+ */
+function useContagem(ref: React.RefObject<HTMLElement | null>, absoluto: number, ativo: boolean) {
+  const absolutoRef = useRef(absoluto);
+  absolutoRef.current = absoluto;
+
+  useLayoutEffect(() => {
+    const elemento = ref.current;
+    const no = elemento?.firstChild;
+    if (!ativo || !elemento || !no || absolutoRef.current === 0) return;
+    if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const final = () => formatarMoeda(absolutoRef.current);
+    const paraLeitor = document.createElement("span");
+    paraLeitor.className = "sr-only";
+    paraLeitor.textContent = final();
+    elemento.after(paraLeitor);
+    elemento.setAttribute("aria-hidden", "true");
+    const inicio = performance.now();
+    let quadro = 0;
+    no.nodeValue = formatarMoeda(0);
+    const terminar = () => {
+      cancelAnimationFrame(quadro);
+      no.nodeValue = final();
+      elemento.removeAttribute("aria-hidden");
+      paraLeitor.remove();
+    };
+    const passo = (agora: number) => {
+      const progresso = Math.min(1, (agora - inicio) / DURACAO_DA_CONTAGEM_MS);
+      if (progresso >= 1) return terminar();
+      no.nodeValue = formatarMoeda(valorDaContagem(absolutoRef.current, progresso));
+      paraLeitor.textContent = final();
+      quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+    return terminar;
+  }, [ref, ativo]);
+}
 
 /**
  * Um valor em dinheiro, com número negativo parecendo negativo.
@@ -16,7 +67,7 @@ import { formatarMoeda } from "@/schemas/dinheiro";
 export function Valor({
   valor,
   className = "",
-  classeDeCor = "text-sakura-purple-dark",
+  classeDeCor = "text-texto",
   tituloDeAcessibilidade,
 }: {
   valor: number;
@@ -29,8 +80,8 @@ export function Valor({
    * A cor do número quando ele é positivo.
    *
    * É um parâmetro à parte, e não mais uma classe no `className`, por um
-   * motivo que só apareceu ao renderizar a tela de verdade: com
-   * `text-red-400` e `text-sakura-purple-dark` no mesmo elemento, quem vence
+   * motivo que só apareceu ao renderizar a tela de verdade: com a cor do
+   * prejuízo e a cor normal do texto no mesmo elemento, quem vence
    * é a que o Tailwind escreveu por último **no CSS gerado**, não a última do
    * atributo `class`. O prejuízo saía com a cor de sempre, sem nada de
    * vermelho — o bug exato que este componente veio consertar. É primo dos
@@ -41,9 +92,12 @@ export function Valor({
   tituloDeAcessibilidade?: string;
 }) {
   const negativo = valor < 0;
+  const contar = useContext(ContarAoAparecer);
+  const numeroRef = useRef<HTMLSpanElement>(null);
+  useContagem(numeroRef, Math.abs(valor), contar);
   return (
     <span
-      className={`${negativo ? "text-red-400" : classeDeCor} ${className}`.trim()}
+      className={`${negativo ? "text-perigo" : classeDeCor} ${className}`.trim()}
       title={tituloDeAcessibilidade}
     >
       {negativo && (
@@ -52,7 +106,7 @@ export function Valor({
         </span>
       )}
       {negativo && "−"}
-      {formatarMoeda(Math.abs(valor))}
+      <span ref={numeroRef}>{formatarMoeda(Math.abs(valor))}</span>
     </span>
   );
 }
@@ -67,29 +121,36 @@ export function Valor({
  * Verde e vermelho dependem do que o cartão conta: vender mais é bom, gastar
  * mais não. Por isso `subirEBom` é obrigatório — sem ele, "custos +30%"
  * sairia em verde.
+ *
+ * No visual novo (#990) a cor nunca avisa sozinha (regra 4): a seta é um
+ * ícone, o sinal vai escrito no número, e com `contra` o cartão diz com o que
+ * está comparando ("contra outubro"), em vez de deixar isso só no balão do
+ * mouse.
  */
 export function Variacao({
   percentual,
   subirEBom,
   comparadoCom,
+  contra,
 }: {
   percentual: number | null;
   subirEBom: boolean;
   /** O que está do outro lado da comparação, pro balãozinho do mouse. */
   comparadoCom: string;
+  /**
+   * O nome curto do outro lado, pra escrever ao lado do número: com
+   * `contra="outubro"` sai "+16% contra outubro". Sem isto, só o número.
+   */
+  contra?: string;
 }) {
   if (percentual === null) return null;
 
   const subiu = percentual > 0;
   const parado = Math.round(percentual) === 0;
   const bom = subiu === subirEBom;
-  const cor = parado
-    ? "text-sakura-muted"
-    : bom
-      ? "text-emerald-400"
-      : "text-red-400";
-  const seta = parado ? "→" : subiu ? "↑" : "↓";
-  const sinal = subiu ? "+" : percentual < 0 ? "−" : "";
+  const cor = parado ? "text-texto-2" : bom ? "text-ok" : "text-perigo";
+  const Seta = parado ? ArrowRight : subiu ? ArrowUp : ArrowDown;
+  const sinal = parado ? "" : subiu ? "+" : "−";
 
   // Um mês que rendeu R$ 20 e outro que rendeu R$ 20.000 dão "+99.900%", que
   // não informa nada além de "muito mais". Acima do teto, o número mostrado
@@ -99,16 +160,20 @@ export function Variacao({
 
   return (
     <span
-      className={`whitespace-nowrap text-rotulo font-medium ${cor}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap text-rotulo font-semibold ${cor}`}
       title={
         estourou
           ? `${sinal}${exato}% comparado com ${comparadoCom}`
           : `Comparado com ${comparadoCom}`
       }
     >
-      <span aria-hidden="true">{seta}</span> {estourou ? "mais de " : ""}
-      {sinal}
-      {estourou ? TETO_DA_VARIACAO : exato}%
+      <Seta aria-hidden="true" className="size-[13px] shrink-0" strokeWidth={2.5} />
+      <span>
+        {estourou ? "mais de " : ""}
+        {sinal}
+        {estourou ? TETO_DA_VARIACAO : exato}%
+      </span>
+      {contra && <span className="font-medium text-texto-3">contra {contra}</span>}
     </span>
   );
 }

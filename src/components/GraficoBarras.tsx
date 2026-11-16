@@ -88,7 +88,7 @@ export function GraficoBarras({
                 x2={LARGURA - MARGEM_DIREITA}
                 y1={y}
                 y2={y}
-                stroke="#e7dde5"
+                style={{ stroke: "var(--grafico-grade)" }}
                 strokeWidth={1}
               />
               <text
@@ -96,7 +96,7 @@ export function GraficoBarras({
                 y={y}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="fill-sakura-purple-dark/50"
+                className="fill-sakura-muted"
                 fontSize={10}
               >
                 {marca.toLocaleString("pt-BR")}
@@ -110,7 +110,7 @@ export function GraficoBarras({
           x2={LARGURA - MARGEM_DIREITA}
           y1={MARGEM_SUPERIOR + alturaUtil}
           y2={MARGEM_SUPERIOR + alturaUtil}
-          stroke="#b9a9b5"
+          style={{ stroke: "var(--grafico-eixo)" }}
           strokeWidth={1}
         />
 
@@ -158,7 +158,7 @@ export function GraficoBarras({
                 x={inicioGrupo + larguraGrupo / 2}
                 y={ALTURA - 10}
                 textAnchor="middle"
-                className="fill-sakura-purple-dark/50"
+                className="fill-sakura-muted"
                 fontSize={10}
               >
                 {categoria}
@@ -170,11 +170,11 @@ export function GraficoBarras({
 
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-sakura-gray/30 bg-sakura-pink-soft px-2.5 py-1.5 text-rotulo text-white shadow-lg"
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-sakura-gray/30 bg-sakura-pink-soft px-2.5 py-1.5 text-rotulo text-texto shadow-lg"
           style={{ left: tooltip.x, top: tooltip.y - 6 }}
         >
           <p className="font-medium">{tooltip.categoria}</p>
-          <p className="flex items-center gap-1.5 text-white/90">
+          <p className="flex items-center gap-1.5 text-texto/90">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tooltip.cor }} />
             {tooltip.serie}: {tooltip.valor}
           </p>

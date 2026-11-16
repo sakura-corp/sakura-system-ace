@@ -1,20 +1,29 @@
+import { Download, FileCode, Printer } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import { AvisoNaTela } from "./AvisoNaTela";
+import { useBaixarXml } from "./useBaixarXml";
 
 interface NotaFiscalVisualModalProps {
   arquivo: NotaFiscalArquivo;
   onFechar: () => void;
 }
 
+// A "Versão para o cliente": um resumo da nota que o programa monta a partir
+// do XML. É o que existe pra nota feita fora do programa (que não tem PDF
+// guardado). Visual novo (tarefa 12, #990): diz o que é, e cada botão de
+// baixar diz o que baixa e pra quem (pedido da Sofia, 15/11).
 export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualModalProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [reconhecido, setReconhecido] = useState(true);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -51,52 +60,58 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
     URL.revokeObjectURL(url);
   }
 
+  const pronto = !carregando && !erro && html;
+
   return (
-    <Modal titulo="Versão para o cliente" onFechar={onFechar}>
-      {carregando && <p className="text-corpo text-sakura-muted">Gerando pré-visualização...</p>}
-
-      {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>}
-
-      {!carregando && !erro && !reconhecido && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
-          Não foi possível interpretar automaticamente todos os dados deste XML — o layout deste
-          arquivo pode ser diferente do esperado. Confira baixando o XML original.
-        </p>
-      )}
-
-      {!carregando && !erro && html && (
+    <Modal
+      titulo="Versão para o cliente"
+      descricao={`${arquivo.nome_arquivo}. Um resumo da nota, montado pelo programa a partir do XML.`}
+      largura="3xl"
+      onFechar={onFechar}
+      rodape={
         <>
+          <Botao variante="fantasma" onClick={onFechar}>
+            Fechar
+          </Botao>
+          <Botao icone={<FileCode />} onClick={baixarXml} ocupado={baixandoXml}>
+            Baixar o XML (pro contador)
+          </Botao>
+          {pronto && (
+            <>
+              <Botao icone={<Download />} onClick={handleBaixarHtml}>
+                Baixar o resumo (pro cliente)
+              </Botao>
+              <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
+                Imprimir
+              </Botao>
+            </>
+          )}
+        </>
+      }
+    >
+      <div className="space-y-3">
+        {carregando && <p className="text-corpo text-texto-2">Gerando pré-visualização...</p>}
+
+        {erro && <AvisoNaTela>{erro}</AvisoNaTela>}
+
+        {!carregando && !erro && !reconhecido && (
+          <AvisoNaTela tipo="atencao">
+            Não foi possível interpretar automaticamente todos os dados deste XML — o layout deste
+            arquivo pode ser diferente do esperado. Confira baixando o XML original.
+          </AvisoNaTela>
+        )}
+
+        {erroXml && <AvisoNaTela>{erroXml}</AvisoNaTela>}
+
+        {pronto && (
           <iframe
             ref={iframeRef}
             title="Pré-visualização da nota fiscal"
             srcDoc={html}
-            className="h-96 w-full rounded-lg border border-sakura-gray/30 bg-white"
+            className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
           />
-          <div className="mt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
-              Fechar
-            </button>
-            <button
-              type="button"
-              onClick={handleBaixarHtml}
-              className="rounded-xl border border-sakura-gray/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-            >
-              Baixar HTML
-            </button>
-            <button
-              type="button"
-              onClick={handleImprimir}
-              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90"
-            >
-              Imprimir
-            </button>
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </Modal>
   );
 }

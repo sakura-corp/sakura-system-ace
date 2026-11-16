@@ -221,6 +221,22 @@ describe("FichaVeiculoPage", () => {
     expect(screen.queryByText("Sem telefone cadastrado")).not.toBeInTheDocument();
   });
 
+  it("o dono fica no cabeçalho, com o telefone; sem telefone, a frase diz isso", async () => {
+    operador = { id: "op", admin: true, permissoes: [] };
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([]));
+    const { unmount } = montar();
+    expect(await screen.findByText("Dono atual:")).toBeInTheDocument();
+    expect(screen.getByText("Ricardo Menezes")).toBeInTheDocument();
+    expect(screen.getByText("(16) 99000-1122")).toBeInTheDocument();
+    unmount();
+
+    const f = ficha([]);
+    f.veiculo.cliente = { id: "c1", nome: "Ricardo Menezes", telefone: null };
+    buscarFichaDoVeiculo.mockResolvedValue(f);
+    montar();
+    expect(await screen.findByText("Sem telefone cadastrado")).toBeInTheDocument();
+  });
+
   it("diz em português quando o veículo não existe mais", async () => {
     buscarFichaDoVeiculo.mockResolvedValue(null);
     montar();

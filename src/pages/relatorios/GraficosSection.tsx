@@ -106,15 +106,15 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
           <h2 className="text-corpo font-semibold text-sakura-purple-dark">
             Vendas x Custos x Lucro
           </h2>
-          <div className="flex gap-1 rounded-full bg-white/10 p-1">
+          <div className="flex gap-1 rounded-full bg-texto/10 p-1">
             {PERIODOS.map((p) => (
               <button
                 key={p.chave}
                 onClick={() => setPeriodo(p.chave)}
                 className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
                   periodo === p.chave
-                    ? "bg-sakura-purple text-white"
-                    : "text-sakura-purple-dark/85 hover:bg-white/10"
+                    ? "bg-sakura-purple text-sobre-acao"
+                    : "text-sakura-purple-dark/85 hover:bg-texto/10"
                 }`}
               >
                 {p.label}

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { lucratividadePorItem } from "./lucratividade";
+import { lucratividadePorCliente, lucratividadePorItem } from "./lucratividade";
+import { classificarABC } from "./curvaABC";
+import { somar } from "./dinheiro";
+import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
 // Relações → Lucratividade: receita, custo e margem por peça/serviço no
@@ -68,8 +71,8 @@ describe("lucratividadePorItem", () => {
     // Pneu: 3 un., receita 600-20+300 = 880, custo 3x200 = 600, margem 280.
     // Alinhamento: receita 80, custo 30, margem 50.
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", quantidade: 3, receita: 880, custo: 600, margem: 280, custoNaoInformado: false },
-      { descricao: "Alinhamento", quantidade: 1, receita: 80, custo: 30, margem: 50, custoNaoInformado: false },
+      { descricao: "Pneu", tipo: "peca", quantidade: 3, receita: 880, custo: 600, margem: 280, custoNaoInformado: false },
+      { descricao: "Alinhamento", tipo: "servico", quantidade: 1, receita: 80, custo: 30, margem: 50, custoNaoInformado: false },
     ]);
     expect(resultado.totalReceita).toBe(960);
     expect(resultado.totalCusto).toBe(630);
@@ -102,7 +105,7 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
+      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
     ]);
   });
 
@@ -126,9 +129,9 @@ describe("lucratividadePorItem", () => {
     });
     // Pneu: 300 − 200 = 100. Palheta: 100 − 2x40 = 20. Farol: sem custo.
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
-      { descricao: "Palheta", quantidade: 2, receita: 100, custo: 80, margem: 20, custoNaoInformado: false },
-      { descricao: "Farol", quantidade: 1, receita: 500, custo: 0, margem: 500, custoNaoInformado: true },
+      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
+      { descricao: "Palheta", tipo: "peca", quantidade: 2, receita: 100, custo: 80, margem: 20, custoNaoInformado: false },
+      { descricao: "Farol", tipo: "peca", quantidade: 1, receita: 500, custo: 0, margem: 500, custoNaoInformado: true },
     ]);
     expect(resultado.algumCustoNaoInformado).toBe(true);
   });
@@ -164,7 +167,7 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas).toEqual([
-      { descricao: "Bico de válvula (exemplo)", quantidade: 2, receita: 22, custo: 8, margem: 14, custoNaoInformado: false },
+      { descricao: "Bico de válvula (exemplo)", tipo: "peca", quantidade: 2, receita: 22, custo: 8, margem: 14, custoNaoInformado: false },
     ]);
   });
 
@@ -199,5 +202,97 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas.map((l) => [l.descricao, l.quantidade])).toEqual([["Pneu aro 13", 2]]);
+  });
+});
+
+// #390: a curva ABC por cliente usa a mesma conta, agrupada pelo cliente da
+// OS em vez do item. O Consumidor (a venda de balcão sem cliente escolhido)
+// fica fora da lista, numa linha à parte, e a soma continua batendo.
+describe("lucratividadePorCliente", () => {
+  const ordens = [
+    ordem({
+      id: "os-1",
+      cliente_id: "joao",
+      cliente: { nome: "João" },
+      itens: [item({ quantidade: 2, preco_unitario: 300, desconto: 20 })],
+    }),
+    ordem({
+      id: "os-2",
+      cliente_id: "maria",
+      cliente: { nome: "Maria" },
+      itens: [
+        item({ tipo: "servico", peca_id: null, servico_id: "alinhamento", descricao: "Alinhamento", preco_unitario: 80 }),
+      ],
+    }),
+    ordem({
+      id: "os-3",
+      cliente_id: "joao",
+      cliente: { nome: "João" },
+      status: "em_andamento",
+      itens: [item({ quantidade: 1 })],
+    }),
+    ordem({
+      id: "os-4",
+      cliente_id: CLIENTE_CONSUMIDOR_ID,
+      cliente: { nome: "Consumidor" },
+      itens: [item({ peca_id: null, custo_unitario: null, descricao: "Farol", preco_unitario: 500 })],
+    }),
+    // Fora do período e orçamento: não entram, igual à Lucratividade.
+    ordem({ id: "os-5", cliente_id: "maria", data_abertura: "2026-09-30T12:00:00.000Z", itens: [item({})] }),
+    ordem({ id: "os-6", cliente_id: "maria", status: "orcamento", itens: [item({})] }),
+  ];
+
+  it("agrupa por cliente, com a mesma conta de venda, custo e margem", () => {
+    const resultado = lucratividadePorCliente({ ordens, custoPeca, custoServico, ...periodo });
+    // João: 600 − 20 + 300 = 880 de venda, custo 3 × 200 = 600.
+    expect(resultado.linhas).toEqual([
+      { clienteId: "joao", nome: "João", receita: 880, custo: 600, margem: 280, custoNaoInformado: false },
+      { clienteId: "maria", nome: "Maria", receita: 80, custo: 30, margem: 50, custoNaoInformado: false },
+    ]);
+    expect(resultado.consumidor).toEqual({
+      clienteId: CLIENTE_CONSUMIDOR_ID,
+      nome: "Consumidor",
+      receita: 500,
+      custo: 0,
+      margem: 500,
+      custoNaoInformado: true,
+    });
+  });
+
+  it("sem venda de balcão no período, não há linha do Consumidor", () => {
+    const resultado = lucratividadePorCliente({
+      ordens: ordens.filter((o) => o.cliente_id !== CLIENTE_CONSUMIDOR_ID),
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    expect(resultado.consumidor).toBeNull();
+  });
+
+  it("cliente sem nome carregado aparece como \"Cliente sem nome\", sem sumir da soma", () => {
+    const resultado = lucratividadePorCliente({
+      ordens: [ordem({ cliente_id: "x", itens: [item({})] })],
+      custoPeca,
+      custoServico,
+      ...periodo,
+    });
+    expect(resultado.linhas.map((l) => [l.nome, l.receita])).toEqual([["Cliente sem nome", 300]]);
+  });
+
+  it("a soma de cada curva bate com o \"Vendido no período\" da Lucratividade", () => {
+    const parametros = { ordens, custoPeca, custoServico, ...periodo };
+    const lucro = lucratividadePorItem(parametros);
+    const clientes = lucratividadePorCliente(parametros);
+
+    const porVenda = <T extends { receita: number }>(l: T) => l.receita;
+    const pecas = classificarABC(lucro.linhas.filter((l) => l.tipo === "peca"), porVenda);
+    const servicos = classificarABC(lucro.linhas.filter((l) => l.tipo === "servico"), porVenda);
+    const curvaClientes = classificarABC(clientes.linhas, porVenda);
+
+    // 880 + 80 + 500 (o Farol do balcão) = 1460.
+    expect(lucro.totalReceita).toBe(1460);
+    expect(somar([pecas.total, servicos.total])).toBe(lucro.totalReceita);
+    expect(somar([curvaClientes.total, clientes.consumidor?.receita ?? 0])).toBe(lucro.totalReceita);
+    expect(clientes.totalReceita).toBe(lucro.totalReceita);
   });
 });
