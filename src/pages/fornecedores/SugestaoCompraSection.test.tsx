@@ -55,7 +55,7 @@ describe("SugestaoCompraSection", () => {
       screen.getByText(/no estoque mínimo ou que, no ritmo dos últimos 90 dias, acabam em menos de 15 dias/i),
     ).toBeInTheDocument();
     expect(screen.getByText("Filtro de óleo")).toBeInTheDocument();
-    expect(screen.getAllByText("sem cotação").length).toBe(1);
+    expect(screen.getAllByText("Sem cotação").length).toBe(1);
     expect(screen.getByLabelText("Quantidade de Pneu 175/70")).toHaveValue("4");
   });
 

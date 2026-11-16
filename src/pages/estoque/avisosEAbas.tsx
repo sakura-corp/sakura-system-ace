@@ -63,42 +63,43 @@ export function AbasDaTela<T extends string>({
 
 /**
  * O aviso de erro (vermelho, com o triângulo e a frase: regra 4). Erro NÃO
- * some sozinho; fica na tela até a pessoa agir.
+ * some sozinho; fica na tela até a pessoa agir. É um `div`, e não um `p`,
+ * porque alguns avisos levam lista e mais de um parágrafo.
  */
 export function AvisoDeErro({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <p
+    <div
       role="alert"
       className={`flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo ${className}`.trim()}
     >
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span className="min-w-0">{children}</span>
-    </p>
+      <div className="min-w-0">{children}</div>
+    </div>
   );
 }
 
 /** O aviso de atenção (amarelo, com o triângulo): pede uma ação, mas não é erro. */
 export function AvisoDeAtencao({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <p
+    <div
       className={`flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao ${className}`.trim()}
     >
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span className="min-w-0">{children}</span>
-    </p>
+      <div className="min-w-0">{children}</div>
+    </div>
   );
 }
 
 /** O aviso de "deu certo" que fica na tela (verde, com o visto). */
 export function AvisoDeCerto({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <p
+    <div
       role="status"
       className={`flex items-start gap-2 rounded-xl bg-ok/[0.12] px-4 py-3 text-corpo text-ok ${className}`.trim()}
     >
       <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span className="min-w-0">{children}</span>
-    </p>
+      <div className="min-w-0">{children}</div>
+    </div>
   );
 }
 

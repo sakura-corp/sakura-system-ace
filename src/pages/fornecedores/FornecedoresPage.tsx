@@ -13,6 +13,7 @@ import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { PedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
+import { AbasDaTela, AvisoDeAtencao, AvisoDeErro } from "@/pages/estoque/avisosEAbas";
 import { FornecedoresSection } from "./FornecedoresSection";
 import { PedidosCompraSection } from "./PedidosCompraSection";
 import { SugestaoCompraSection } from "./SugestaoCompraSection";
@@ -86,39 +87,34 @@ export function FornecedoresPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-texto">Fornecedores</h1>
+          <h1 className="font-titulo text-titulo font-bold text-texto">Fornecedores</h1>
           <p className="text-corpo text-texto-2">
             Cadastro de fornecedores e pedidos de compra
           </p>
         </div>
       </header>
 
-      {erro && <p className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-linha">
-        <AbaBotao label="Cadastro" ativa={aba === "cadastro"} onClick={() => setAba("cadastro")} />
-        <AbaBotao
-          label="Pedidos de compra"
-          ativa={aba === "pedidos"}
-          onClick={() => setAba("pedidos")}
-        />
-        {podeSugestao && (
-          <AbaBotao
-            label="Sugestão de compra"
-            ativa={aba === "sugestao"}
-            onClick={() => setAba("sugestao")}
-          />
-        )}
-      </div>
+      <AbasDaTela
+        rotulo="Partes dos fornecedores"
+        ativa={aba}
+        aoEscolher={setAba}
+        abas={[
+          ["cadastro", "Cadastro"],
+          ["pedidos", "Pedidos de compra"],
+          ...(podeSugestao ? ([["sugestao", "Sugestão de compra"]] as const) : []),
+        ]}
+      />
 
       {carregando ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
       ) : aba === "cadastro" ? (
         <FornecedoresSection fornecedores={fornecedores} onRecarregar={() => carregar()} />
       ) : !lojaAtual ? (
-        <p className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+        <AvisoDeAtencao>
           Seu usuário não tem loja atribuída. Fale com o administrador.
-        </p>
+        </AvisoDeAtencao>
       ) : aba === "sugestao" && podeSugestao ? (
         <SugestaoCompraSection
           lojaId={lojaAtual.id}
@@ -137,28 +133,5 @@ export function FornecedoresPage() {
         />
       )}
     </div>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-texto"
-          : "text-texto-2 hover:text-texto"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

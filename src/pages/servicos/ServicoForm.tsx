@@ -69,9 +69,7 @@ export function ServicoForm({
 
       <div className="grid grid-cols-2 gap-4">
         <label className="sakura-rotulo col-span-2">
-          
-            Descrição <span className="text-perigo">*
-          </span>
+          Descrição <span className="text-perigo">*</span>
           <input
             type="text"
             {...register("descricao")}

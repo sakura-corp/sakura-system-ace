@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { useConexao } from "@/hooks/useConexao";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
@@ -20,6 +21,7 @@ import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { ItemNotaFiscalExtraido } from "@/types/itemNotaFiscal";
 import type { Peca } from "@/types/peca";
+import { AvisoDeAtencao, AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
 
 interface ItemRevisao extends ItemNotaFiscalExtraido {
   incluir: boolean;
@@ -182,11 +184,7 @@ export function ImportarNotasFiscaisModal({
       largura="5xl"
       onFechar={onFechar}
     >
-      {erro && (
-        <p className="mb-4 rounded-lg bg-perigo/[0.12] px-4 py-2 text-corpo text-perigo">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
 
       {itens === null && (
         <div className="space-y-4">
@@ -206,29 +204,22 @@ export function ImportarNotasFiscaisModal({
             </p>
           )}
           {semConexao && (
-            <p
-              role="status"
-              className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao"
-            >
+            <AvisoDeAtencao>
               Sem internet não dá pra ler a nota por foto: a leitura é feita na nuvem.
-            </p>
+            </AvisoDeAtencao>
           )}
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
-            >
+            <Botao variante="fantasma" onClick={onFechar}>
               Cancelar
-            </button>
-            <button
-              type="button"
+            </Botao>
+            <Botao
+              variante="principal"
               onClick={handleLer}
-              disabled={arquivos.length === 0 || lendo}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+              disabled={arquivos.length === 0}
+              ocupado={lendo}
             >
               {lendo ? "Lendo..." : "Ler arquivos"}
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -239,7 +230,7 @@ export function ImportarNotasFiscaisModal({
               depois em Estoque → Produtos. Só evita a surpresa de descobrir
               isso lá na frente, na recusa da SEFAZ. */}
           {itensComCodigoIncompativel.length > 0 && (
-            <p className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao">
+            <AvisoDeAtencao>
               {itensComCodigoIncompativel.length === 1
                 ? "Um produto está"
                 : `${itensComCodigoIncompativel.length} produtos estão`}{" "}
@@ -247,7 +238,7 @@ export function ImportarNotasFiscaisModal({
               sua loja — a coluna <strong>CST/CSOSN</strong> da tabela é editável, dá pra
               preencher aqui mesmo. Sem isso, a nota fiscal dessas peças vai ser recusada
               quando você for emitir.
-            </p>
+            </AvisoDeAtencao>
           )}
 
           {itens.length === 0 ? (
@@ -255,28 +246,30 @@ export function ImportarNotasFiscaisModal({
               Não consegui identificar nenhum produto nessas fotos.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-linha">
-              <table className="w-full min-w-[1100px] text-left text-tabela">
-                <thead className="bg-cartao text-texto">
+            <div className="sakura-card overflow-x-auto">
+              <table className="sakura-tabela min-w-[1100px]">
+                <thead>
                   <tr>
-                    <th className="px-2 py-2" />
-                    <th className="px-2 py-2 font-medium">Descrição</th>
-                    <th className="px-2 py-2 font-medium">Categoria</th>
-                    <th className="px-2 py-2 font-medium">NCM</th>
-                    <th className="px-2 py-2 font-medium">CEST</th>
-                    <th className="px-2 py-2 font-medium">CFOP</th>
-                    <th className="px-2 py-2 font-medium">Origem</th>
-                    <th className="px-2 py-2 font-medium">CST/CSOSN</th>
-                    <th className="px-2 py-2 font-medium">ICMS %</th>
-                    <th className="px-2 py-2 font-medium">Un.</th>
-                    <th className="px-2 py-2 font-medium">Custo</th>
-                    <th className="px-2 py-2 font-medium">Qtde.</th>
+                    <th>
+                      <span className="sr-only">Incluir</span>
+                    </th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>NCM</th>
+                    <th>CEST</th>
+                    <th>CFOP</th>
+                    <th>Origem</th>
+                    <th>CST/CSOSN</th>
+                    <th>ICMS %</th>
+                    <th>Un.</th>
+                    <th>Custo</th>
+                    <th>Qtde.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {itens.map((item, indice) => (
-                    <tr key={indice} className="border-t border-linha">
-                      <td className="px-2 py-1.5">
+                    <tr key={indice}>
+                      <td>
                         <input
                           type="checkbox"
                           checked={item.incluir}
@@ -285,22 +278,22 @@ export function ImportarNotasFiscaisModal({
                           }
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.descricao}
                           onChange={(v) => atualizarItem(indice, { descricao: v })}
-                          largura="w-48"
+                          largura="w-48!"
                         />
                         {motivosCfop[indice] && (
-                          <p className="mt-1 w-48 rounded bg-atencao/[0.12] px-2 py-1 text-rotulo text-atencao">
+                          <p className="mt-1 w-48 rounded-lg bg-atencao/[0.12] px-2 py-1 text-rotulo text-atencao">
                             <strong>CFOP:</strong> {motivosCfop[indice]}. A coluna CFOP é
                             editável; sem acertar, a nota dessa peça pode ser recusada.
                           </p>
                         )}
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <Combobox
-                          className="w-28"
+                          className={`w-28 ${CAMPO_NOVO_NO_COMBOBOX_FILTRO}`}
                           opcoes={categorias.map((categoria) => ({
                             valor: categoria.id,
                             rotulo: categoria.nome,
@@ -311,34 +304,34 @@ export function ImportarNotasFiscaisModal({
                           placeholder="Sem categoria"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.ncm ?? ""}
                           onChange={(v) => atualizarItem(indice, { ncm: v })}
-                          largura="w-20"
+                          largura="w-20!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.cest ?? ""}
                           onChange={(v) => atualizarItem(indice, { cest: v })}
-                          largura="w-20"
+                          largura="w-20!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.cfop_padrao ?? ""}
                           onChange={(v) => atualizarItem(indice, { cfop_padrao: v })}
-                          largura="w-16"
+                          largura="w-16!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <select
                           value={item.origem ?? ""}
                           onChange={(e) =>
                             atualizarItem(indice, { origem: e.target.value || null })
                           }
-                          className="sakura-campo w-16 rounded px-1.5"
+                          className="sakura-campo sakura-campo-filtro w-16! px-1.5!"
                         >
                           <option value="">—</option>
                           {OPCOES_ORIGEM.map((opcao) => (
@@ -348,39 +341,39 @@ export function ImportarNotasFiscaisModal({
                           ))}
                         </select>
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.cst_ou_csosn ?? ""}
                           onChange={(v) => atualizarItem(indice, { cst_ou_csosn: v })}
-                          largura="w-16"
+                          largura="w-16!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaNumero
                           valor={item.aliquota_icms}
                           onChange={(v) => atualizarItem(indice, { aliquota_icms: v })}
-                          largura="w-16"
+                          largura="w-16!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaTexto
                           valor={item.unidade ?? ""}
                           onChange={(v) => atualizarItem(indice, { unidade: v })}
-                          largura="w-14"
+                          largura="w-14!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaNumero
                           valor={item.preco_custo}
                           onChange={(v) => atualizarItem(indice, { preco_custo: v })}
-                          largura="w-20"
+                          largura="w-20!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <CelulaNumero
                           valor={item.quantidade}
                           onChange={(v) => atualizarItem(indice, { quantidade: v })}
-                          largura="w-16"
+                          largura="w-16!"
                         />
                       </td>
                     </tr>
@@ -391,22 +384,19 @@ export function ImportarNotasFiscaisModal({
           )}
 
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
-            >
+            <Botao variante="fantasma" onClick={onFechar}>
               Cancelar
-            </button>
-            <button
+            </Botao>
+            <Botao
               type="submit"
-              disabled={quantidadeSelecionada === 0 || salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+              variante="principal"
+              disabled={quantidadeSelecionada === 0}
+              ocupado={salvando}
             >
               {salvando
                 ? "Cadastrando..."
                 : `Cadastrar ${quantidadeSelecionada} produto(s)`}
-            </button>
+            </Botao>
           </div>
         </form>
       )}
@@ -428,7 +418,7 @@ function CelulaTexto({
       type="text"
       value={valor}
       onChange={(e) => onChange(e.target.value)}
-      className={`${largura} rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple`}
+      className={`sakura-campo sakura-campo-filtro px-2! ${largura}`}
     />
   );
 }
@@ -448,7 +438,7 @@ function CelulaNumero({
       step="0.01"
       value={valor ?? ""}
       onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-      className={`${largura} rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple`}
+      className={`sakura-campo sakura-campo-filtro px-2! ${largura}`}
     />
   );
 }

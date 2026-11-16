@@ -1,4 +1,6 @@
+import { ArrowLeft } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarPecasPorIds, juntarPecas, resumoPecaParaJuntar } from "@/lib/pecas";
@@ -21,6 +23,7 @@ import { formatarQuantidade as qtd } from "@/schemas/quantidade";
 import { MOTIVO_PARECIDA_ROTULO } from "@/schemas/pecaParecida";
 import type { Categoria } from "@/types/categoria";
 import type { Peca } from "@/types/peca";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "./avisosEAbas";
 
 interface JuntarPecasModalProps {
   categorias: Categoria[];
@@ -217,75 +220,63 @@ export function JuntarPecasModal({
       descricao="O sistema procura peças que parecem ser a mesma. Nada é juntado sozinho: você confere e confirma uma de cada vez."
       largura="4xl"
       onFechar={juntando ? () => {} : onFechar}
+      rodape={
+        <Botao onClick={onFechar} disabled={juntando}>
+          Fechar
+        </Botao>
+      }
     >
       <div className="space-y-4">
-        {erro && (
-          <p role="alert" className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
-            {erro}
-          </p>
-        )}
-        {sucesso && (
-          <p role="status" className="rounded-xl bg-ok/[0.12] px-4 py-3 text-corpo text-ok">
-            {sucesso}
-          </p>
-        )}
+        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+        {sucesso && <AvisoDeCerto>{sucesso}</AvisoDeCerto>}
 
         {analise && previa ? (
           <div className="space-y-5">
-            <button
-              type="button"
+            <Botao
+              variante="fantasma"
+              icone={<ArrowLeft />}
               onClick={voltarParaLista}
               disabled={juntando}
-              className="text-corpo font-medium text-texto underline"
             >
               Voltar para a lista
-            </button>
+            </Botao>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <CartaoPeca titulo="Peça que fica" peca={analise.fica} />
               <CartaoPeca titulo="Peça que sai (será apagada)" peca={analise.sai} />
             </div>
-            <button
-              type="button"
-              onClick={trocarQuemFica}
-              disabled={juntando}
-              className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-texto hover:bg-passar disabled:opacity-60"
-            >
+            <Botao onClick={trocarQuemFica} disabled={juntando}>
               Trocar: a outra é que fica
-            </button>
+            </Botao>
 
-            <p
-              className={`rounded-xl px-4 py-3 text-corpo ${
-                previa.completa ? "bg-cartao text-texto" : "bg-atencao/[0.12] text-atencao"
-              }`}
-            >
-              {previa.frase}
-            </p>
-            {previa.completa && aviso && (
-              <p className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">{aviso}</p>
+            {previa.completa ? (
+              <p className="rounded-xl bg-passar px-4 py-3 text-corpo text-texto">{previa.frase}</p>
+            ) : (
+              <AvisoDeAtencao>{previa.frase}</AvisoDeAtencao>
             )}
+            {previa.completa && aviso && <AvisoDeAtencao>{aviso}</AvisoDeAtencao>}
 
             {previa.completa && previa.estoquePorLoja.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-corpo">
-                  <caption className="pb-2 text-left font-medium text-texto">
+              <div className="sakura-card overflow-x-auto">
+                <table className="sakura-tabela">
+                  <caption className="px-4.5 py-3 text-left font-titulo text-corpo font-semibold text-texto">
                     Estoque por loja
                   </caption>
                   <thead>
-                    <tr className="text-texto-2">
-                      <th scope="col" className="px-3 py-2 font-medium">Loja</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Peça que fica</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Peça que sai</th>
-                      <th scope="col" className="px-3 py-2 font-medium">Depois de juntar</th>
+                    <tr>
+                      <th scope="col">Loja</th>
+                      <th scope="col" className="text-right">Peça que fica</th>
+                      <th scope="col" className="text-right">Peça que sai</th>
+                      <th scope="col" className="text-right">Depois de juntar</th>
                     </tr>
                   </thead>
                   <tbody>
                     {previa.estoquePorLoja.map((l) => (
-                      <tr key={l.loja_id} className="border-t border-linha">
-                        <th scope="row" className="px-3 py-2 font-normal">{l.loja_nome}</th>
-                        <td className="px-3 py-2">{qtd(l.fica)}</td>
-                        <td className="px-3 py-2">{qtd(l.sai)}</td>
-                        <td className="px-3 py-2 font-medium">{qtd(l.depois)}</td>
+                      <tr key={l.loja_id}>
+                        <th scope="row" className="font-normal! text-texto!">{l.loja_nome}</th>
+                        <td className="text-right">{qtd(l.fica)}</td>
+                        <td className="text-right">{qtd(l.sai)}</td>
+                        <td className="text-right font-semibold">{qtd(l.depois)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -295,7 +286,7 @@ export function JuntarPecasModal({
 
             {previa.completa && (
               <section aria-labelledby="titulo-campos" className="space-y-3">
-                <h3 id="titulo-campos" className="font-semibold text-texto">
+                <h3 id="titulo-campos" className="font-titulo text-corpo font-semibold text-texto">
                   O que fica em cada campo
                 </h3>
                 {diferentes.length === 0 ? (
@@ -339,59 +330,39 @@ export function JuntarPecasModal({
             )}
 
             {!previa.completa ? (
-              <p className="text-corpo text-atencao">
-                Por isso o botão de juntar está desligado para este par.
-              </p>
+              <AvisoDeAtencao>Por isso o botão de juntar está desligado para este par.</AvisoDeAtencao>
             ) : confirmando ? (
-              <div role="group" aria-label="Confirmar a junção" className="space-y-3 rounded-xl border border-red-300 px-4 py-3">
+              <div role="group" aria-label="Confirmar a junção" className="space-y-3 rounded-xl border border-perigo/40 px-4 py-3">
                 <p className="text-corpo">
                   Tem certeza? A peça <strong>{nomeDaPeca(analise.sai)}</strong> será apagada e não
                   dá para desfazer.
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleJuntar}
-                    disabled={juntando}
-                    className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-60"
-                  >
+                  <Botao variante="principal" onClick={handleJuntar} ocupado={juntando}>
                     {juntando ? "Juntando..." : "Sim, juntar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmando(false)}
-                    disabled={juntando}
-                    className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-texto hover:bg-passar"
-                  >
+                  </Botao>
+                  <Botao onClick={() => setConfirmando(false)} disabled={juntando}>
                     Não, voltar
-                  </button>
+                  </Botao>
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmando(true)}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
-              >
+              <Botao variante="principal" onClick={() => setConfirmando(true)}>
                 Juntar estas duas
-              </button>
+              </Botao>
             )}
           </div>
         ) : erroAoCarregar ? (
           <div className="space-y-3">
-            <p role="alert" className="rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
-              Não consegui carregar as peças: {erroAoCarregar}
-            </p>
-            <button
-              type="button"
+            <AvisoDeErro>Não consegui carregar as peças: {erroAoCarregar}</AvisoDeErro>
+            <Botao
               onClick={() => {
                 setErro(null);
                 onRecarregar();
               }}
-              className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-texto hover:bg-passar"
             >
               Tentar de novo
-            </button>
+            </Botao>
           </div>
         ) : pares === null ? (
           <p role="status" className="text-corpo text-texto-2">Procurando peças repetidas…</p>
@@ -420,32 +391,19 @@ export function JuntarPecasModal({
                       <p className="text-texto-2">{codigosDaPeca(par.b)}</p>
                       <p>Motivo: {MOTIVO_PARECIDA_ROTULO[par.motivo]}</p>
                     </div>
-                    <button
-                      type="button"
+                    <Botao
                       onClick={() => abrirPar(par)}
                       disabled={abrindo !== null}
                       aria-label={`Conferir ${par.a.descricao} e ${par.b.descricao}`}
-                      className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-texto hover:bg-passar disabled:opacity-60"
                     >
                       {abrindo === chave ? "Abrindo..." : "Conferir"}
-                    </button>
+                    </Botao>
                   </li>
                 );
               })}
             </ul>
           </div>
         )}
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onFechar}
-            disabled={juntando}
-            className="disabled:opacity-60 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-texto hover:bg-passar"
-          >
-            Fechar
-          </button>
-        </div>
       </div>
     </Modal>
   );

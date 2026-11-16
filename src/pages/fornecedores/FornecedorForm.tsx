@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import {
@@ -18,8 +20,7 @@ interface FornecedorFormProps {
   onCancelar: () => void;
 }
 
-const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const inputClasse = "sakura-campo";
 
 export function FornecedorForm({
   fornecedorExistente,
@@ -59,24 +60,27 @@ export function FornecedorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-texto">
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">
           {fornecedorExistente ? "Editar fornecedor" : "Novo fornecedor"}
         </h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-perigo/[0.12] px-4 py-2 text-corpo text-perigo">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <section>
-        <h3 className="mb-3 text-corpo font-semibold text-texto">Dados do fornecedor</h3>
+        <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">Dados do fornecedor</h3>
         <div className="grid grid-cols-2 gap-4">
           <label className="sakura-rotulo">
-            
-              Nome / Razão social <span className="text-perigo">*
-            </span>
-            <input type="text" {...register("nome")} className={inputClasse} />
+            Nome / Razão social <span className="text-perigo">*</span>
+            <input
+              type="text"
+              {...register("nome")}
+              aria-invalid={errors.nome ? true : undefined}
+              className={inputClasse}
+            />
             {errors.nome && <span className="text-rotulo text-perigo">{errors.nome.message}</span>}
           </label>
           <label className="sakura-rotulo">
@@ -95,7 +99,7 @@ export function FornecedorForm({
       </section>
 
       <section>
-        <h3 className="mb-3 text-corpo font-semibold text-texto">Endereço</h3>
+        <h3 className="mb-3 font-titulo text-corpo font-semibold text-texto">Endereço</h3>
         <div className="grid grid-cols-3 gap-4">
           <label className="sakura-rotulo">
             CEP
@@ -142,24 +146,16 @@ export function FornecedorForm({
       </section>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto-2 hover:bg-passar"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting
             ? "Salvando..."
             : fornecedorExistente
               ? "Salvar alterações"
               : "Salvar fornecedor"}
-        </button>
+        </Botao>
       </div>
     </form>
   );
