@@ -108,6 +108,9 @@ export function PedidoCompraForm({
             aria-invalid={errors.data_pedido ? true : undefined}
             className={inputClasse}
           />
+          {errors.data_pedido && (
+            <span className="text-rotulo text-perigo">{errors.data_pedido.message}</span>
+          )}
         </label>
 
         <label className="sakura-rotulo col-span-2">

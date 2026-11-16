@@ -204,7 +204,7 @@ export function ImportarNotasFiscaisModal({
             </p>
           )}
           {semConexao && (
-            <AvisoDeAtencao>
+            <AvisoDeAtencao role="status">
               Sem internet não dá pra ler a nota por foto: a leitura é feita na nuvem.
             </AvisoDeAtencao>
           )}

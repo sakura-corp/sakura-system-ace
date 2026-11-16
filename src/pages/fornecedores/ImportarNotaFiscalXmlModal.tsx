@@ -287,7 +287,7 @@ export function ImportarNotaFiscalXmlModal({
             <Botao variante="principal" onClick={handleLer} disabled={!arquivo} ocupado={lendo}>
               {lendo ? "Lendo..." : "Ler arquivo"}
             </Botao>
-          ) : (
+          ) : nota ? (
             <Botao
               type="submit"
               form={ID_DO_FORMULARIO}
@@ -297,7 +297,7 @@ export function ImportarNotaFiscalXmlModal({
             >
               {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
             </Botao>
-          )}
+          ) : null}
         </>
       }
     >

@@ -72,17 +72,19 @@ export function PedidoCompraItemRow({
           campo vazio ("Qtde.", "Preço unit.") dizia o que era, e sumia ao
           digitar. */}
       <div className="flex items-end gap-2">
-        <label className="sakura-rotulo flex-1">
-          Peça
-          <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
-            opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
-            valor={pecaId}
-            onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}
-            placeholder="Selecione a peça"
-          />
-          {erroPecaId && <span className="text-rotulo text-perigo">{erroPecaId}</span>}
-        </label>
+        <div className="flex-1">
+          <label className="sakura-rotulo">
+            Peça
+            <Combobox
+              className={CAMPO_NOVO_NO_COMBOBOX}
+              opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
+              valor={pecaId}
+              onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}
+              placeholder="Selecione a peça"
+            />
+          </label>
+          {erroPecaId && <span className="mt-1 block text-rotulo text-perigo">{erroPecaId}</span>}
+        </div>
         <label className="sakura-rotulo w-28">
           Quantidade
           <input

@@ -383,15 +383,14 @@ export function ProdutosSection({
                     {/* Sem quebrar no meio ("PN-" / "17570R14", #876), mas com
                         teto: o código é texto livre, e um EAN ou uma
                         referência comprida não pode empurrar a tabela. O
-                        código inteiro aparece na dica quando está cortado. */}
-                    <td className="max-w-[10rem] truncate whitespace-nowrap text-texto-2">
-                      {peca.codigo_interno ? (
-                        <Dica texto={peca.codigo_interno}>
-                          <span tabIndex={0}>{peca.codigo_interno}</span>
-                        </Dica>
-                      ) : (
-                        "—"
-                      )}
+                        código inteiro está no balão do mouse (`title`, como
+                        antes): uma `Dica` com foco por linha seriam centenas
+                        de paradas de Tab numa lista grande. */}
+                    <td
+                      className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
+                      title={peca.codigo_interno || undefined}
+                    >
+                      {peca.codigo_interno || "—"}
                     </td>
                     <td className="text-texto-2">{peca.unidade || "—"}</td>
                     <td className="whitespace-nowrap text-right">{formatarPreco(peca.preco_custo)}</td>
@@ -411,7 +410,10 @@ export function ProdutosSection({
                         </span>
                         {seloDoSaldo && (
                           <Dica texto={SITUACAO_SALDO_ROTULO[leitura.situacao]}>
-                            <span tabIndex={0} className="inline-flex">
+                            {/* Sem `tabIndex`: a palavra do selo já diz tudo; a frase
+                                inteira é só um complemento do mouse, e uma parada de
+                                Tab por linha pesaria numa lista grande. */}
+                            <span className="inline-flex">
                               <Selo tipo={seloDoSaldo.tipo} palavra={seloDoSaldo.palavra} />
                             </span>
                           </Dica>

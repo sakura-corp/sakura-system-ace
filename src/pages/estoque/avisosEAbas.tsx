@@ -1,5 +1,5 @@
 import { Check, TriangleAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 
 /**
  * Três pecinhas de tela que o Estoque, os Fornecedores e os Serviços repetem
@@ -32,19 +32,37 @@ export function AbasDaTela<T extends string>({
   ativa: T;
   aoEscolher: (aba: T) => void;
 }) {
+  // O teclado do padrão "abas" da WAI-ARIA: só a aba escolhida entra na ordem
+  // do Tab, e as setas (e Home/End) andam entre as abas, escolhendo e dando o
+  // foco à nova. Sem isto, o papel `tab` prometeria um teclado que não existe.
+  function aoTeclar(evento: KeyboardEvent<HTMLButtonElement>, indice: number) {
+    let novo: number | null = null;
+    if (evento.key === "ArrowRight") novo = (indice + 1) % abas.length;
+    else if (evento.key === "ArrowLeft") novo = (indice - 1 + abas.length) % abas.length;
+    else if (evento.key === "Home") novo = 0;
+    else if (evento.key === "End") novo = abas.length - 1;
+    if (novo === null) return;
+    evento.preventDefault();
+    aoEscolher(abas[novo][0]);
+    const irmas = evento.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[role='tab']");
+    irmas?.[novo]?.focus();
+  }
+
   return (
     <div
       role="tablist"
       aria-label={rotulo}
       className="flex flex-wrap gap-1 border-b border-linha"
     >
-      {abas.map(([valor, nome]) => (
+      {abas.map(([valor, nome], indice) => (
         <button
           key={valor}
           type="button"
           role="tab"
           aria-selected={ativa === valor}
+          tabIndex={ativa === valor ? 0 : -1}
           onClick={() => aoEscolher(valor)}
+          onKeyDown={(e) => aoTeclar(e, indice)}
           className={[
             "relative inline-flex items-baseline rounded-t-[10px] px-4 pb-3 pt-2.5",
             "text-corpo font-medium text-texto-2 transition-colors",
@@ -79,9 +97,19 @@ export function AvisoDeErro({ children, className = "" }: { children: ReactNode;
 }
 
 /** O aviso de atenção (amarelo, com o triângulo): pede uma ação, mas não é erro. */
-export function AvisoDeAtencao({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function AvisoDeAtencao({
+  children,
+  className = "",
+  role,
+}: {
+  children: ReactNode;
+  className?: string;
+  /** `status` quando o aviso aparece ou some com a tela aberta (a conexão que cai): o leitor de tela anuncia. */
+  role?: "status";
+}) {
   return (
     <div
+      role={role}
       className={`flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao ${className}`.trim()}
     >
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
