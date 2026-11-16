@@ -34,6 +34,7 @@
 - `fetchDemo.test.ts`: escrito antes, reprovou por módulo inexistente; depois, trocando o total do `content-range`, a frase da nota e o filtro do PATCH/DELETE, os testes certos reprovaram.
 - `cliente_e_veiculo_da_ordem`: teste novo reprovou ("expected undefined to be 'c3'") antes da função existir.
 - Gravação com filtro desconhecido e `not.in`: os dois testes novos reprovaram antes do conserto.
+- Cadastrar operador na demonstração (autorizado pela Sofia no PR, 16/11, opção B): os testes novos de `operadores.test.ts` (usa o `fetchDemo`) e de `fetchDemo.test.ts` (o `signUp`) reprovaram antes do conserto; o `test:electron` continuou com zero pedidos.
 - `conexao.test.ts`: os 7 testes da palavra `demo` reprovaram antes do código; tirar a limpeza do sinal fez reprovar "salvar tira da demonstração"; o teste novo "o sinal já saiu quando o programa grava" reprovou com o código antigo.
 - `test:electron`, seção 10: com o cliente de demonstração apontando pra `xxxx.supabase.co` sem o `fetchDemo`, reprovou listando os pedidos que saíram; só sem o `fetchDemo` (endereço `.invalid`), reprovou pelo recado da CSP; mudando a CSP e o `conexao.json` no meio, as duas checagens reprovaram.
 - Depois da junção com a `main`, o passo da nota reprovou (o "Fechamento" foi pro menu "Mais ações"); acertado, 56 checagens verdes.
@@ -45,13 +46,12 @@
 - A faixa sem a barra própria da janela (navegador, `dev:demo`): só a regra de CSS, sem foto.
 
 ## O que ficou de fora
-- **Cadastrar operador na demonstração** mostra "sem conexão": usa um cliente à parte em `src/lib/operadores.ts`, fora da lista de arquivos da tarefa. Conserto sugerido no PR, esperando a Sofia.
 - CEP (ViaCEP) e o Diagnóstico (GitHub e "saúde" do banco) continuam saindo pra rede na demonstração: não passam pelo cliente do Supabase.
 - O banco de mentira ainda ignora na LEITURA filtros que não entende (`gte`, `ilike`, `or`) e o `.single()` sem linha não dá erro: igual a antes, pra não mudar as imagens do site.
 - Nos dados inventados, a configuração fiscal está em "produção" (o aviso "esta nota será emitida de verdade" aparece embaixo do "não sai nota") e o lucro do mês sai negativo. Mexer muda as imagens do site.
 
 ## O que depende de alguém
-- **A Sofia**: revisar o PR; decidir sobre `src/lib/operadores.ts`; no fim de semana, o "depois de publicar" da issue (o `.exe` num computador sem banco).
+- **A Sofia**: revisar o PR; no fim de semana, o "depois de publicar" da issue (o `.exe` num computador sem banco).
 - **Gustavo, no PC**: o "No PC de quem fez" da issue (`npm run dev:demo`, andar pelas telas, salvar uma OS, tentar nota, sair, e o `npm run dev` normal).
 - Nenhuma migration.
 

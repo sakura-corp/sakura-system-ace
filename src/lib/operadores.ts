@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { emailInterno } from "./auth";
-import { conexaoAtual } from "./conexao";
+import { fetchDemo } from "@/demo/fetchDemo";
+import { conexaoAtual, modoDemonstracao } from "./conexao";
 import { definirLojasDoOperador } from "./lojas";
 import { supabase } from "./supabase";
 import type { NovoOperador, Operador } from "@/types/operador";
@@ -27,9 +28,13 @@ export function criarClienteTemporario() {
       "Este computador ainda não está ligado a nenhuma empresa. Configure a conexão antes de cadastrar operadores.",
     );
   }
-  return createClient(conexao.url, conexao.chave, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const auth = { persistSession: false, autoRefreshToken: false };
+  // Na demonstração (#384) o cadastro também responde da memória: nada sai
+  // do computador, e o operador novo some ao fechar o programa.
+  if (modoDemonstracao()) {
+    return createClient(conexao.url, conexao.chave, { auth, global: { fetch: fetchDemo } });
+  }
+  return createClient(conexao.url, conexao.chave, { auth });
 }
 
 export async function criarOperador(

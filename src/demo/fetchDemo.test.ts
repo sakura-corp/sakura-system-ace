@@ -123,6 +123,17 @@ describe("fetch de demonstração", () => {
     expect(outros!.length).toBeGreaterThan(0);
   });
 
+  it("cadastrar um login novo (signUp) cria um usuário novo, só na memória", async () => {
+    const { data, error } = await novoCliente().auth.signUp({
+      email: "novo@sakura.local",
+      password: "senha123",
+    });
+    expect(error).toBeNull();
+    expect(data.user?.email).toBe("novo@sakura.local");
+    expect(data.user?.id).toBeTruthy();
+    expect(data.user?.id).not.toBe("20000000-0000-0000-0000-000000000001");
+  });
+
   it("o total com head:true é o de antes da paginação", async () => {
     const c = novoCliente();
     const { count, data } = await c.from("clientes").select("*", { count: "exact", head: true });

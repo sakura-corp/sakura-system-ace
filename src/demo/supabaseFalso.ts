@@ -246,6 +246,20 @@ export function responderComoSupabase(pedido: PedidoDemo): RespostaDemo {
   if (caminho.startsWith("/auth/v1/token")) return json(200, SESSAO);
   if (caminho.startsWith("/auth/v1/user")) return json(200, SESSAO.user); // GET e a troca de senha (PUT)
   if (caminho.startsWith("/auth/v1/logout")) return vazia(204);
+  // Cadastrar operador (#384): um login novo, só na memória. Sem sessão na
+  // resposta, como o Supabase faz quando não loga o recém-criado.
+  if (caminho.startsWith("/auth/v1/signup")) {
+    const novo = (lerJson(pedido.corpo) ?? {}) as { email?: string };
+    const agora = new Date().toISOString();
+    return json(200, {
+      ...SESSAO.user,
+      id: crypto.randomUUID(),
+      email: novo.email ?? "",
+      created_at: agora,
+      updated_at: agora,
+      last_sign_in_at: null,
+    });
+  }
 
   // --- funções do banco (supabase.rpc) ---
   if (caminho.startsWith("/rest/v1/rpc/")) {

@@ -37,8 +37,7 @@ Focus NFe. Pra apresentar sem abrir a Pneus Amigão.
 - **O que dá pra fazer**: andar por todas as telas, abrir e salvar OS, faturar. O que se salva fica
   só na memória e some ao fechar. **Emitir nota** só mostra o aviso "No modo demonstração não sai
   nota."; as outras funções do servidor (ler nota de entrada com IA, redefinir senha) mostram que
-  na demonstração aquilo não funciona. **Cadastrar operador ainda não funciona** na demonstração
-  (mostra "sem conexão"; ver o PR da #384).
+  na demonstração aquilo não funciona. Cadastrar operador também dá certo só na memória.
 - **Como funciona**: o cliente do Supabase é criado com um `fetch` de mentira (`src/demo/fetchDemo.ts`)
   que responde da memória (`src/demo/dados.ts`, os mesmos dados das imagens do site). A CSP do
   programa não muda. O `npm run test:electron` prova que nada vai pra `*.supabase.co` nem pra Focus.
