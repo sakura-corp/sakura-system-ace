@@ -31,7 +31,7 @@
 
 ## O que ficou de fora
 - **Menu de três pontos**: a classe é `sakura-menu-brota`, pronta; quem põe no menu é a tarefa 7 (`AcoesDaLinha` não é desta tarefa).
-- **Leitor de tela e a contagem**: o texto muda sem região viva (nada é anunciado a cada passo), mas quem chega no número durante os 0,75 s ouve um valor parcial. Blindar custa um `span aria-hidden` mais um `span` só pra leitor; decisão da Sofia (README, seção 8).
+- **Leitor de tela e a contagem**: blindado a pedido da Sofia (16/11): durante a contagem o número que passa é `aria-hidden` e um irmão `sr-only` leva o valor final. Teste visto reprovar (tirei o `aria-hidden` e caiu).
 - **`AreaRolavel`** observa só o primeiro filho (a busca global), defeito anterior a esta tarefa; anotado na seção 8, não mexi.
 - **Fio do gráfico** em cartão estreito encolhe um pouco enquanto o número cresce na contagem; só em cartão com menos de ~16 rem e meio.
 - **Mostra das peças**: nenhuma peça nova, então nada a acrescentar.
@@ -41,7 +41,7 @@
 
 ## Os três montes (seção 12 das regras)
 - **Já fez**: só aparência de movimento; nenhum campo, coluna, filtro ou botão mudou ou saiu.
-- **Sugere**: (1) blindar o leitor de tela na contagem; (2) olhar o `AreaRolavel` junto com a próxima tarefa que mexer nele.
+- **Sugere**: (1) olhar o `AreaRolavel` junto com a próxima tarefa que mexer nele.
 - **Virou tarefa**: nenhuma (nada novo que precise de issue).
 
 ## Onde parou

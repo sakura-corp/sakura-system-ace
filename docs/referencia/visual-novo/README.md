@@ -359,9 +359,9 @@ Tudo é CSS no bloco "tarefa 5: o movimento" do `globals.css` (durações em `--
 | Botão | 0,12 s com a curva única (antes 0,15 s). |
 | Reduzir movimento | `@media (prefers-reduced-motion: reduce)` zera todas as animações acima; o teste está em `scripts/testar-electron.mjs` (monta cada movimento com as classes de verdade, confere que tem animação ligado e **nenhuma** com "reduzir movimento"). |
 
-Leitor de tela: a contagem só troca o texto (sem região viva), então nada é anunciado a cada passo;
-quem chega no número durante os 0,75 s ouve um valor parcial (e o HTML de teste/servidor já vem com o
-final). Se a Sofia quiser blindar, a contagem vira um `span` `aria-hidden` ao lado de um só pro leitor.
+Leitor de tela (decisão da Sofia, 16/11): ele ouve só o valor final, nunca os números da contagem.
+Durante os 0,75 s o número que passa fica `aria-hidden` e um irmão `sr-only` leva o valor final; no
+fim os dois saem (teste em `ContagemDoNumero.test.tsx`, visto reprovar).
 
 Conhecido, já existia antes: o `AreaRolavel` observa o tamanho só do primeiro filho da área, que
 no programa é o botão da busca global, e não a tela. A tela que carrega uma lista depois pode ficar com

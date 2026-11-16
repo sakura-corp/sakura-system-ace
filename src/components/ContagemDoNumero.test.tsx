@@ -30,7 +30,14 @@ afterEach(() => {
 
 // O formatador do dinheiro usa espaço que não quebra; no teste vira espaço comum.
 const limpo = (t?: string | null) => t?.replace(/\u00a0/g, " ");
-const textoDoNumero = (c: HTMLElement) => limpo(c.querySelector("[data-cartao-numero] p.font-titulo")?.textContent);
+// Durante a contagem há também a cópia só-pra-leitor (`.sr-only`); aqui interessa o que se VÊ.
+const textoDoNumero = (c: HTMLElement) => {
+  const p = c.querySelector("[data-cartao-numero] p.font-titulo");
+  if (!p) return undefined;
+  const visivel = p.cloneNode(true) as HTMLElement;
+  visivel.querySelectorAll(".sr-only").forEach((n) => n.remove());
+  return limpo(visivel.textContent);
+};
 
 describe("valorDaContagem", () => {
   it("começa em zero, só sobe e termina exatamente no valor (sem conta no fim)", () => {
@@ -66,6 +73,34 @@ describe("a contagem no cartão de número", () => {
       vi.advanceTimersByTime(DURACAO_DA_CONTAGEM_MS);
     });
     expect(textoDoNumero(container)).toBe("R$ 24.815,37");
+  });
+
+  it("o leitor de tela só 'ouve' o valor final, nunca a contagem (e tudo volta ao normal no fim)", () => {
+    ligarMovimento(false);
+    const { container } = render(
+      <CartaoNumero titulo="Recebido no mês">
+        <Valor valor={24815.37} />
+      </CartaoNumero>,
+    );
+    // O que o leitor de tela lê: tudo que NÃO está dentro de um aria-hidden.
+    const lido = (no: Node): string => {
+      if (no.nodeType === Node.TEXT_NODE) return no.textContent ?? "";
+      if (no instanceof Element && no.getAttribute("aria-hidden") === "true") return "";
+      return [...no.childNodes].map(lido).join("");
+    };
+    const numero = () => container.querySelector("[data-cartao-numero] p.font-titulo") as HTMLElement;
+    for (const ms of [0, 100, 200, 300]) {
+      act(() => {
+        vi.advanceTimersByTime(ms === 0 ? 1 : 100);
+      });
+      expect(limpo(lido(numero())), `aos ${ms} ms`).toBe("R$ 24.815,37");
+    }
+    act(() => {
+      vi.advanceTimersByTime(DURACAO_DA_CONTAGEM_MS * 2);
+    });
+    expect(numero().querySelector("[aria-hidden]")).toBeNull();
+    expect(numero().querySelector(".sr-only")).toBeNull();
+    expect(limpo(numero().textContent)).toBe("R$ 24.815,37");
   });
 
   it("prejuízo conta o valor sem o sinal, e o sinal e a seta ficam parados", () => {

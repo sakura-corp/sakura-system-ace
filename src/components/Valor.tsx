@@ -5,34 +5,49 @@ import { ContarAoAparecer, DURACAO_DA_CONTAGEM_MS, valorDaContagem } from "./con
 
 /**
  * Conta de zero até o valor mexendo só no texto do elemento (o mesmo nó de
- * texto que o React escreveu, pra ele continuar dono dele). O HTML nasce com o
- * valor final; o leitor de tela, que não anuncia texto fora de região viva,
- * lê o final. Com "reduzir movimento" ligado não faz nada.
+ * texto que o React escreveu, pra ele continuar dono dele). Com "reduzir
+ * movimento" ligado não faz nada.
+ *
+ * **Leitor de tela**: durante a contagem o número que passa é escondido dele
+ * (`aria-hidden`) e um irmão só-pra-leitor (`sr-only`) leva o valor FINAL; no
+ * fim, os dois saem e o texto de verdade volta a valer. Assim ele nunca ouve
+ * número intermediário, nem quem chega no número no meio dos 0,75 s.
  */
 function useContagem(ref: React.RefObject<HTMLElement | null>, absoluto: number, ativo: boolean) {
   const absolutoRef = useRef(absoluto);
   absolutoRef.current = absoluto;
 
   useLayoutEffect(() => {
-    const no = ref.current?.firstChild;
-    if (!ativo || !no || absolutoRef.current === 0) return;
+    const elemento = ref.current;
+    const no = elemento?.firstChild;
+    if (!ativo || !elemento || !no || absolutoRef.current === 0) return;
     if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
     const final = () => formatarMoeda(absolutoRef.current);
+    const paraLeitor = document.createElement("span");
+    paraLeitor.className = "sr-only";
+    paraLeitor.textContent = final();
+    elemento.after(paraLeitor);
+    elemento.setAttribute("aria-hidden", "true");
     const inicio = performance.now();
     let quadro = 0;
     no.nodeValue = formatarMoeda(0);
-    const passo = (agora: number) => {
-      const progresso = Math.min(1, (agora - inicio) / DURACAO_DA_CONTAGEM_MS);
-      no.nodeValue = progresso >= 1 ? final() : formatarMoeda(valorDaContagem(absolutoRef.current, progresso));
-      if (progresso < 1) quadro = requestAnimationFrame(passo);
-    };
-    quadro = requestAnimationFrame(passo);
-    return () => {
+    const terminar = () => {
       cancelAnimationFrame(quadro);
       no.nodeValue = final();
+      elemento.removeAttribute("aria-hidden");
+      paraLeitor.remove();
     };
+    const passo = (agora: number) => {
+      const progresso = Math.min(1, (agora - inicio) / DURACAO_DA_CONTAGEM_MS);
+      if (progresso >= 1) return terminar();
+      no.nodeValue = formatarMoeda(valorDaContagem(absolutoRef.current, progresso));
+      paraLeitor.textContent = final();
+      quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+    return terminar;
   }, [ref, ativo]);
 }
 
