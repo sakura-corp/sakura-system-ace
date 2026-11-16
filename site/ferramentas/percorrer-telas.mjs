@@ -113,6 +113,17 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
       await secao.click();
       return pagina.waitForTimeout(900);
     }
+    if (passo.enviarArquivo) {
+      // Escolher um arquivo num <input type="file"> (a importação de planilha).
+      const campo = pagina.locator(passo.enviarArquivo.em).first();
+      await campo.waitFor({ state: "attached", timeout: ESPERA_POR_BOTAO });
+      await campo.setInputFiles({
+        name: passo.enviarArquivo.nome,
+        mimeType: passo.enviarArquivo.tipo ?? "text/csv",
+        buffer: Buffer.from(passo.enviarArquivo.conteudo, "utf-8"),
+      });
+      return pagina.waitForTimeout(900);
+    }
     if (passo.digitar !== undefined) {
       // Escrever num campo (ex: o código de barras na venda de balcão).
       // `enter: true` aperta Enter depois, como o leitor faz.

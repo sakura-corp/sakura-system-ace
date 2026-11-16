@@ -9,7 +9,7 @@ import type { StatusOS, TipoOrdem } from "@/types/os";
  * `schemas/retornos.ts`; aqui só se busca e se monta o formato dela.
  */
 
-/** A linha da janela `ordens_servico_clientes` (0075; `servico_id` no item desde a 0083). */
+/** A linha da janela `ordens_servico_clientes` (0075; `servico_id` no item desde a 0084). */
 export interface LinhaOrdemParaRetorno {
   id: string;
   numero: number;
@@ -51,7 +51,7 @@ export function ordemParaRetornoDaJanela(linha: LinhaOrdemParaRetorno): OrdemPar
         : null,
     itens: (linha.itens ?? []).map(({ prazo_garantia_dias: prazo, servico_id: servicoId, ...item }) => ({
       ...item,
-      // Banco ainda sem a 0083: a janela não manda o campo, e o item conta
+      // Banco ainda sem a 0084: a janela não manda o campo, e o item conta
       // como digitado à mão (não gera retorno). Nunca adivinhar pela descrição.
       servico_id: servicoId ?? null,
       peca: prazo != null ? { prazo_garantia_dias: prazo } : null,
@@ -92,7 +92,7 @@ const positivo = (n: number | null | undefined) => n != null && n > 0;
  * Os serviços que têm intervalo de retorno (em dias, em km ou nos dois).
  * Serviço desligado (`ativo === false`) não gera lembrete: sai daqui.
  *
- * `select("*")` de propósito: num banco que ainda não recebeu a 0083, pedir
+ * `select("*")` de propósito: num banco que ainda não recebeu a 0084, pedir
  * `intervalo_dias` pelo nome daria erro de coluna; com `*` os campos só não
  * vêm, viram `null`, e nenhum serviço gera retorno.
  */

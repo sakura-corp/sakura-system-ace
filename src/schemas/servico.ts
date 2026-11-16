@@ -3,7 +3,7 @@ import type { NovoServico, Servico } from "@/types/servico";
 
 // Intervalo de retorno (FN-06, #381): inteiro maior que zero, ou vazio (o
 // serviço não gera lembrete). Texto no formulário, número só na borda. O teto
-// é o mesmo da trava `ck_servicos_intervalo` (0083): sem ele, um número
+// é o mesmo da trava `ck_servicos_intervalo` (0084): sem ele, um número
 // gigante passava aqui e virava erro técnico no banco, ou uma data inválida
 // na conta dos retornos.
 export const INTERVALO_MAXIMO_DIAS = 3650;

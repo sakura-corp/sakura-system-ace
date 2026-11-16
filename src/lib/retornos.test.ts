@@ -106,7 +106,7 @@ describe("listarOrdensParaRetornos", () => {
 });
 
 describe("listarServicosComIntervalo", () => {
-  it("só os que têm intervalo e estão ativos; sem a coluna no banco (antes da 0083), vira nulo e fica de fora", async () => {
+  it("só os que têm intervalo e estão ativos; sem a coluna no banco (antes da 0084), vira nulo e fica de fora", async () => {
     respostas.servicos = [
       { id: "oleo", descricao: "Troca de óleo", intervalo_dias: 180, intervalo_km: 10_000 },
       { id: "alinhamento", descricao: "Alinhamento", intervalo_dias: null, intervalo_km: 10_000 },

@@ -218,6 +218,18 @@ Quatro coisas que valem saber:
   `schemas/clientesSumidos.ts`, a busca em `lib/clientesSumidos.ts`. Quem nunca veio não aparece.
   O total só aparece pra quem tem Caixa ou Relações (`MODULOS_QUE_LEEM_O_CAIXA`). Um clique por
   cliente: nada em massa.
+  **"Importar planilha" (10/11/2026, #457, FN-15 parte 1)**: botão ao lado de "+ Novo cliente",
+  **só pro administrador**. Abre `ImportarClientesModal.tsx` em 4 passos: escolher o `.csv`
+  (`;` ou `,`, UTF-8 ou Latin-1: `schemas/importacaoPlanilha.ts`) → dizer qual coluna é o quê
+  (sugerido pelo nome da coluna) → revisar na tabela editável (entra / já existe / problema, com o
+  motivo: `schemas/importacaoClientes.ts`) → confirmar e ver o relatório, que dá pra copiar. Nada
+  é gravado antes do Confirmar. Só o nome é obrigatório; o veículo se liga ao cliente pelo
+  CPF/CNPJ ou, sem ele, pelo nome; "já existe" (mesmo documento ou mesma placa) **só pula**, nunca
+  atualiza. Cada importação é um **lote** (`importacao_lotes`, migration 0083), e "Importações
+  anteriores", no mesmo modal, desfaz o lote pela função `desfazer_importacao`: quem já ganhou OS,
+  conta a receber ou veículo fora da importação fica, e a tela diz por quê. Gravação em blocos de
+  500 (`lib/importacaoClientes.ts`). Só CSV por enquanto (Excel e peças/contas/histórico ficam pras
+  próximas partes). Planilha de exemplo inventada: `supabase/exemplo/importar-clientes-exemplo.csv`.
 - **Estoque**: 4 abas — Produtos (cadastro completo com campos fiscais NCM/CFOP/CST-CSOSN/ICMS,
   categoria, garantia em dias, margem calculada nos dois sentidos), Movimentações (com filtro por
   produto e campo/coluna de Depósito), Contagem (inventário físico, agora
