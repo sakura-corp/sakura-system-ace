@@ -36,6 +36,8 @@ interface GraficoDeRadarProps {
 const TAMANHO = 260;
 const CENTRO = TAMANHO / 2;
 const RAIO = 88;
+// Sobra de 15% acima do maior valor do eixo, pra ponta não encostar na borda.
+const RESPIRO_DA_ESCALA = 1.15;
 const ANEIS = [0.25, 0.5, 0.75, 1];
 // O laranja do botão (igual nos dois temas): com 3,2:1 no cartão branco passa
 // dos 3:1 que um desenho pede, e o claro não precisa de outro tom.
@@ -69,7 +71,7 @@ export function GraficoDeRadar({
   const anguloPasso = (2 * Math.PI) / n;
   const anguloInicial = -Math.PI / 2;
 
-  const escalas = eixos.map((eixo) => Math.max(eixo.atual, eixo.anterior, 1) * 1.15);
+  const escalas = eixos.map((eixo) => Math.max(eixo.atual, eixo.anterior, 1) * RESPIRO_DA_ESCALA);
 
   const pontosAtual = eixos.map((eixo, i) =>
     ponto(anguloInicial + i * anguloPasso, (eixo.atual / escalas[i]) * RAIO),

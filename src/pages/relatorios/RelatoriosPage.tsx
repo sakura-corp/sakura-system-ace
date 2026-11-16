@@ -171,6 +171,15 @@ export function RelatoriosPage() {
   );
 }
 
+// Cada estado numa string separada (a varredura `npm run contraste` olha
+// string por string: o traço laranja junto da letra clara dava alarme falso).
+const BASE_DA_ABA =
+  "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo transition-colors duration-150 after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-sm motion-reduce:transition-none";
+const ABA_LIGADA = "font-semibold text-texto";
+const ABA_DESLIGADA = "font-medium text-texto-2 hover:bg-passar hover:text-texto";
+const TRACO_LIGADO = "after:bg-acao";
+const TRACO_DESLIGADO = "after:bg-transparent";
+
 const ABAS: { chave: Aba; texto: string }[] = [
   { chave: "graficos", texto: "Gráficos" },
   { chave: "lucratividade", texto: "Lucratividade" },
@@ -209,11 +218,9 @@ function AbaBotao({
       role="tab"
       aria-selected={ativa}
       onClick={onClick}
-      className={`relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo transition-colors duration-150 after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-sm motion-reduce:transition-none ${
-        ativa
-          ? "font-semibold text-texto after:bg-acao"
-          : "font-medium text-texto-2 after:bg-transparent hover:bg-passar hover:text-texto"
-      }`}
+      className={[BASE_DA_ABA, ativa ? ABA_LIGADA : ABA_DESLIGADA, ativa ? TRACO_LIGADO : TRACO_DESLIGADO].join(
+        " ",
+      )}
     >
       {label}
     </button>

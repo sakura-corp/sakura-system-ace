@@ -39,10 +39,10 @@ interface GraficoDeBarrasProps {
 const ALTURA = 240;
 const LARGURA_INICIAL = 640;
 const LARGURA_MINIMA = 420;
-const MARGEM_ESQUERDA = 56;
-const MARGEM_INFERIOR = 28;
-const MARGEM_SUPERIOR = 12;
-const MARGEM_DIREITA = 12;
+const FOLGA_ESQUERDA = 56;
+const FOLGA_INFERIOR = 28;
+const FOLGA_SUPERIOR = 12;
+const FOLGA_DIREITA = 12;
 const ESPESSURA_MAX_BARRA = 28;
 const GAP_BARRA = 3;
 
@@ -81,8 +81,8 @@ export function GraficoDeBarras({
   const raizRef = useRef<HTMLDivElement>(null);
   const largura = useLargura(raizRef);
 
-  const alturaUtil = ALTURA - MARGEM_SUPERIOR - MARGEM_INFERIOR;
-  const larguraUtil = largura - MARGEM_ESQUERDA - MARGEM_DIREITA;
+  const alturaUtil = ALTURA - FOLGA_SUPERIOR - FOLGA_INFERIOR;
+  const larguraUtil = largura - FOLGA_ESQUERDA - FOLGA_DIREITA;
 
   const maiorValor = Math.max(1, ...series.flatMap((s) => valores[s.chave] ?? []));
   const tetoEixo = arredondarTeto(maiorValor);
@@ -120,19 +120,19 @@ export function GraficoDeBarras({
         style={{ height: ALTURA }}
       >
         {marcasEixo.map((marca, i) => {
-          const y = MARGEM_SUPERIOR + alturaUtil - (marca / tetoEixo) * alturaUtil;
+          const y = FOLGA_SUPERIOR + alturaUtil - (marca / tetoEixo) * alturaUtil;
           return (
             <g key={i}>
               <line
-                x1={MARGEM_ESQUERDA}
-                x2={largura - MARGEM_DIREITA}
+                x1={FOLGA_ESQUERDA}
+                x2={largura - FOLGA_DIREITA}
                 y1={y}
                 y2={y}
                 style={{ stroke: "var(--grafico-grade)" }}
                 strokeWidth={1}
               />
               <text
-                x={MARGEM_ESQUERDA - 8}
+                x={FOLGA_ESQUERDA - 8}
                 y={y}
                 textAnchor="end"
                 dominantBaseline="middle"
@@ -146,10 +146,10 @@ export function GraficoDeBarras({
         })}
 
         <line
-          x1={MARGEM_ESQUERDA}
-          x2={largura - MARGEM_DIREITA}
-          y1={MARGEM_SUPERIOR + alturaUtil}
-          y2={MARGEM_SUPERIOR + alturaUtil}
+          x1={FOLGA_ESQUERDA}
+          x2={largura - FOLGA_DIREITA}
+          y1={FOLGA_SUPERIOR + alturaUtil}
+          y2={FOLGA_SUPERIOR + alturaUtil}
           style={{ stroke: "var(--grafico-eixo)" }}
           strokeWidth={1}
         />
@@ -157,7 +157,7 @@ export function GraficoDeBarras({
         {categorias.map((categoria, iCategoria) => {
           const larguraDasBarras = larguraBarra * series.length + GAP_BARRA * (series.length - 1);
           const inicioGrupo =
-            MARGEM_ESQUERDA +
+            FOLGA_ESQUERDA +
             iCategoria * larguraCategoria +
             (larguraCategoria - larguraDasBarras) / 2;
 
@@ -167,7 +167,7 @@ export function GraficoDeBarras({
                 const valor = valores[s.chave]?.[iCategoria] ?? 0;
                 const alturaBarra = (Math.max(valor, 0) / tetoEixo) * alturaUtil;
                 const x = inicioGrupo + iSerie * (larguraBarra + GAP_BARRA);
-                const y = MARGEM_SUPERIOR + alturaUtil - alturaBarra;
+                const y = FOLGA_SUPERIOR + alturaUtil - alturaBarra;
 
                 return (
                   <rect
@@ -196,7 +196,7 @@ export function GraficoDeBarras({
                 );
               })}
               <text
-                x={MARGEM_ESQUERDA + iCategoria * larguraCategoria + larguraCategoria / 2}
+                x={FOLGA_ESQUERDA + iCategoria * larguraCategoria + larguraCategoria / 2}
                 y={ALTURA - 10}
                 textAnchor="middle"
                 className="fill-texto-2"
