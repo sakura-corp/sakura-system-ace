@@ -20,7 +20,9 @@ export function AvisoNaTela({
 }) {
   const cores = tipo === "perigo" ? "bg-perigo/[0.12] text-perigo" : "bg-atencao/[0.12] text-atencao";
   return (
-    <p role="alert" className={`flex items-start gap-2 rounded-xl px-4 py-3 text-corpo ${cores}`}>
+    // O erro interrompe (alert); a atenção é anunciada sem cortar o que o
+    // leitor de tela está lendo (status).
+    <p role={tipo === "perigo" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl px-4 py-3 text-corpo ${cores}`}>
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       <span className="min-w-0">{children}</span>
     </p>

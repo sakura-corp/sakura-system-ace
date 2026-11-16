@@ -33,13 +33,18 @@ export function NotasFiscaisPage() {
   const [aba, setAba] = useState<TipoNotaFiscal>("nfe");
   const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // As setas trocam de aba (o padrão das abas da WAI-ARIA): o Tab sai das
-  // abas direto pra lista, sem passar pela outra aba.
+  // As setas trocam de aba e dão a volta, Home e End vão pras pontas (o
+  // padrão das abas da WAI-ARIA): o Tab sai das abas direto pra lista, sem
+  // passar pela outra aba.
   function aoTeclar(evento: KeyboardEvent<HTMLDivElement>) {
-    if (evento.key !== "ArrowLeft" && evento.key !== "ArrowRight") return;
-    evento.preventDefault();
     const atual = ABAS.findIndex((a) => a.tipo === aba);
-    const proxima = (atual + (evento.key === "ArrowRight" ? 1 : -1) + ABAS.length) % ABAS.length;
+    let proxima: number;
+    if (evento.key === "ArrowRight") proxima = (atual + 1) % ABAS.length;
+    else if (evento.key === "ArrowLeft") proxima = (atual - 1 + ABAS.length) % ABAS.length;
+    else if (evento.key === "Home") proxima = 0;
+    else if (evento.key === "End") proxima = ABAS.length - 1;
+    else return;
+    evento.preventDefault();
     setAba(ABAS[proxima].tipo);
     abasRef.current[proxima]?.focus();
   }

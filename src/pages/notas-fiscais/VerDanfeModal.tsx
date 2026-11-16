@@ -4,11 +4,12 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { Selo } from "@/components/Selo";
 import { mensagemDeErro } from "@/lib/errors";
-import { baixarArquivo, buscarDanfeEmitida } from "@/lib/notasFiscais";
+import { buscarDanfeEmitida } from "@/lib/notasFiscais";
 import { nomeArquivoDanfe } from "@/schemas/danfe";
 import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoNaTela } from "./AvisoNaTela";
+import { useBaixarXml } from "./useBaixarXml";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 
 interface VerDanfeModalProps {
@@ -30,8 +31,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
-  const [erroXml, setErroXml] = useState("");
-  const [baixandoXml, setBaixandoXml] = useState(false);
+  const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
   const [mostrarResumo, setMostrarResumo] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -77,19 +77,6 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
     link.click();
   }
 
-  async function handleBaixarXml() {
-    setErroXml("");
-    setBaixandoXml(true);
-    try {
-      await baixarArquivo(arquivo);
-    } catch (err) {
-      console.error("Erro ao baixar XML:", err);
-      setErroXml(mensagemDeErro(err));
-    } finally {
-      setBaixandoXml(false);
-    }
-  }
-
   // Sem PDF (nota de prefeitura que não tem, ou emitida antes de o programa
   // guardar a referência), a mensagem de erro manda pra "Versão para o
   // cliente": o botão leva direto pra lá, sem fechar e procurar no menu.
@@ -111,7 +98,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
           <Botao variante="fantasma" onClick={onFechar}>
             Fechar
           </Botao>
-          <Botao icone={<FileCode />} onClick={handleBaixarXml} ocupado={baixandoXml}>
+          <Botao icone={<FileCode />} onClick={baixarXml} ocupado={baixandoXml}>
             Baixar o XML (pro contador)
           </Botao>
           {pdfUrl && (

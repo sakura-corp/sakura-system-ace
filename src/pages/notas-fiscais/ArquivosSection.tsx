@@ -37,10 +37,15 @@ function SeloDaNota({ arquivo }: { arquivo: NotaFiscalArquivo }) {
   if (situacao.tom === "cancelada") return <Selo tipo="perigo" palavra={situacao.rotulo} icone={CircleX} />;
   if (situacao.tom === "manual") return <Selo tipo="neutro" palavra={situacao.rotulo} icone={Upload} />;
   const status = arquivo.status ?? "";
-  if (/erro|deneg|rejeit/i.test(status)) return <Selo tipo="perigo" palavra={situacao.rotulo} />;
-  if (/process/i.test(status)) return <Selo tipo="info" palavra={situacao.rotulo} />;
+  if (STATUS_COM_ERRO.has(status)) return <Selo tipo="perigo" palavra={situacao.rotulo} />;
+  if (status.startsWith("processando_")) return <Selo tipo="info" palavra={situacao.rotulo} />;
   return <Selo tipo="neutro" palavra={situacao.rotulo} />;
 }
+
+// As situações de nota com erro: a mesma lista da Central do dia
+// (`STATUS_DE_NOTA_COM_ERRO`, em src/schemas/centralDoDia.ts, que não é
+// exportada; sugestão no PR: exportar de lá e usar aqui).
+const STATUS_COM_ERRO = new Set(["erro_autorizacao", "erro_cancelamento", "denegado"]);
 
 // A coluna "Nota": o número (o que o cliente e o contador falam), com o nome
 // do arquivo embaixo, menor. Nota enviada à mão às vezes não tem número: aí
@@ -205,7 +210,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
     // valendo lá fora, o XML (que precisa ser guardado por 5 anos) some, e a
     // OS volta a aparecer como "falta nota", convidando a emitir uma
     // segunda nota pra mesma venda. Quem quer desfazer a nota usa "Cancelar
-    // nota", que é o botão do lado.
+    // nota", logo acima de "Excluir nota" no "Mais ações".
     const emitidaEValida = arquivo.origem === "automatica" && arquivo.status === "autorizado";
     const aviso = emitidaEValida
       ? `A nota "${arquivo.nome_arquivo}" foi emitida por aqui e está AUTORIZADA.\n\n` +
@@ -377,10 +382,14 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
       {carregando ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
       ) : grupos.size === 0 ? (
+        // Com erro, o aviso vermelho já diz o que houve: "nenhuma nota" ali
+        // faria parecer que as notas sumiram.
+        !erro && (
         <p className="text-corpo text-texto-2">
           Nenhuma nota {tipo === "nfe" ? "das peças" : "dos serviços"} ({NOTA_LABEL[tipo]}) ainda.
           As emitidas pelo programa aparecem aqui sozinhas.
         </p>
+        )
       ) : (
         [...grupos.entries()].map(([chave, arquivosDoMes]) => {
           const mes = formatarCompetencia(arquivosDoMes[0].competencia);

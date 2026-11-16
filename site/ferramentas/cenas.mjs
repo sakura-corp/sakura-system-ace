@@ -230,7 +230,10 @@ export const CENAS = [
     descricao: "O PDF da nota que o sistema emitiu, pra ver, imprimir e mandar ao cliente quando ele volta pedindo. Cada botão de baixar diz o que baixa e pra quem: o PDF pro cliente, o XML pro contador." },
   { arquivo: "39c-versao-para-o-cliente", modulo: "Notas Fiscais", titulo: "Versão para o cliente (resumo do XML)",
     rota: "/notas-fiscais",
-    passos: [{ seletor: 'button[aria-haspopup="menu"]' }, { clicar: "Versão para o cliente (resumo do XML)" }],
+    passos: [
+      { seletor: 'tr:has-text("Autorizada") button[aria-haspopup="menu"]' },
+      { clicar: "Versão para o cliente (resumo do XML)" },
+    ],
     descricao: "Um resumo legível que o programa monta a partir do XML. É o que existe pra nota feita fora do programa, que não tem PDF guardado." },
   { arquivo: "40-notas-nfse", modulo: "Notas Fiscais", titulo: "Notas de serviço (NFS-e)",
     rota: "/notas-fiscais", passos: [{ aba: "Notas dos serviços (NFS-e)" }],
@@ -242,7 +245,8 @@ export const CENAS = [
     // "Cancelar nota" deixou de ser um link solto na linha e passou a viver
     // dentro do menu de três pontinhos (item TR-02.1) — por isso os 2 passos.
     rota: "/notas-fiscais",
-    passos: [{ seletor: 'button[aria-haspopup="menu"]' }, { clicar: "Cancelar nota" }],
+    // "Cancelar nota" só existe na nota autorizada que o programa emitiu.
+    passos: [{ seletor: 'tr:has-text("Autorizada") button[aria-haspopup="menu"]' }, { clicar: "Cancelar nota" }],
     descricao: "Cancela na SEFAZ ou na prefeitura uma nota que o sistema emitiu. Exige uma justificativa de no mínimo 15 caracteres, que é o que o órgão pede." },
 
   // ------------------------------------------------------------ funcionários
