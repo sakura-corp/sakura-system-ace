@@ -237,7 +237,8 @@ Quatro coisas que valem saber:
   (sugerido pelo nome da coluna) → revisar na tabela editável (entra / já existe / problema, com o
   motivo: `schemas/importacaoClientes.ts`) → confirmar e ver o relatório, que dá pra copiar. Nada
   é gravado antes do Confirmar. Só o nome é obrigatório; o veículo se liga ao cliente pelo
-  CPF/CNPJ ou, sem ele, pelo nome; "já existe" (mesmo documento ou mesma placa) **só pula**, nunca
+  CPF/CNPJ ou, sem ele, pelo nome (se esse nome é de um cliente com documento, a linha vira
+  problema: pode ser homônimo); "já existe" (mesmo documento ou mesma placa) **só pula**, nunca
   atualiza. Cada importação é um **lote** (`importacao_lotes`, migration 0083), e "Importações
   anteriores", no mesmo modal, desfaz o lote pela função `desfazer_importacao`: quem já ganhou OS,
   conta a receber ou veículo fora da importação fica, e a tela diz por quê. Gravação em blocos de
