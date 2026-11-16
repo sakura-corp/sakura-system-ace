@@ -282,7 +282,7 @@ Fotos de antes e depois em `andamento/8-ordens/` (1366×768, escuro e claro).
   "Fechamento", "Avaliação" e **"Abrir a OS"**, que é novo: até aqui só o clique do mouse na linha
   abria, e quem usa só o teclado não tinha como. O menu agora anda pelo teclado (setas, Home, End,
   Esc devolve o foco ao botão, Tab fecha) e tem ícone em cada item. Esc dentro de uma janela fecha
-  só o menu. A classe `sakura-menu-acoes` no painel é o gancho da animação da tarefa 5.
+  só o menu. O painel usa a classe `sakura-menu-brota`, a animação de abrir da tarefa 5 (depende do PR #1054; sem ela, o menu só aparece).
 - **O erro de WhatsApp de um item do menu** (o telefone sem DDD) fica embaixo das ações da linha
   dela, em vermelho com o triângulo, e não some sozinho (o menu fecha no clique).
 - **O Faturar em janela** (`FaturamentoCard.tsx`, dentro do `Modal`): título "Faturar OS 148", o

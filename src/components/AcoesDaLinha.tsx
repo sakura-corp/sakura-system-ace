@@ -255,14 +255,15 @@ function MenuDeAcoes({ acoes, descricao }: { acoes: AcaoDaLinha[]; descricao: st
 
       {aberto &&
         createPortal(
-          // `sakura-menu-acoes` é o gancho da animação de abrir (tarefa 5, o
-          // movimento); sem a classe definida, o menu só aparece.
+          // `sakura-menu-brota` é a animação de abrir, nascendo do canto
+          // superior direito (tarefa 5, o movimento, PR #1054). Enquanto a
+          // classe não está na `main`, o menu só aparece.
           <div
             ref={painelRef}
             role="menu"
             aria-label={`Ações — ${descricao}`}
             style={{ top: posicao.top, right: posicao.right }}
-            className="sakura-menu-acoes fixed z-[60] min-w-48 rounded-[14px] border border-linha-forte bg-janela p-1.5 shadow-[0_18px_40px_var(--sombra-forte)]"
+            className="sakura-menu-brota fixed z-[60] min-w-48 rounded-[14px] border border-linha-forte bg-janela p-1.5 shadow-[0_18px_40px_var(--sombra-forte)]"
           >
             {ordenadas.map((acao) => {
               if (acao.tipo !== "menu") return null;
