@@ -22,7 +22,7 @@ import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 const EXPLICACAO = {
   ncm: "Código de 8 dígitos que diz o que é o produto para a Receita. Está na nota fiscal do fornecedor, na linha daquele item. A mesma peça tem sempre o mesmo NCM.",
   cest: "Código de 7 dígitos usado em produtos com substituição tributária (pneus e muita peça automotiva têm). Também vem da nota do fornecedor. Na dúvida, pergunte à contabilidade.",
-  cfop: "Diz o tipo da operação na hora de vender. Para venda de peça dentro do próprio estado, o normal é 5102 (ou 5405, se a peça tem ICMS já pago antes, CSOSN 500); para outro estado, 6102 (ou 6404).",
+  cfop: "Diz o tipo da operação na hora de vender. Na nota do balcão (NFC-e), use 5102 para peça comum ou 5405 se a peça tem ICMS já pago antes (CSOSN 500). Só os 4 números.",
   origem: "De onde a mercadoria veio: nacional, importada, ou nacional com conteúdo importado. Vem da nota do fornecedor.",
   aliquota:
     "Percentual de ICMS da peça. Quem é do Simples Nacional normalmente deixa em branco ou zero — o imposto já está no valor que a empresa recolhe pelo faturamento.",
