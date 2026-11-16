@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Download,
+  LayoutDashboard,
+  MessageCircle,
+  Monitor,
+  Palette,
+  Percent,
+  QrCode,
+  Receipt,
+  ShieldCheck,
+  Store,
+  Tags,
+  UsersRound,
+  Warehouse,
+  Wallet,
+  Wrench,
+} from "lucide-react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
-import { SecaoRecolhivel } from "@/components/SecaoRecolhivel";
+import { Selo } from "@/components/Selo";
 import { listarModelosWhatsapp } from "@/lib/modelosWhatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarCategorias } from "@/lib/categorias";
@@ -16,6 +34,7 @@ import {
   listarJurosParcelas,
 } from "@/lib/configuracoes";
 import { listarDepositos } from "@/lib/depositos";
+import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import { definirLojasDoOperador, listarLojas, listarLojasDoOperador } from "@/lib/lojas";
 import {
@@ -53,6 +72,7 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { AparenciaSection } from "./AparenciaSection";
 import { AtualizacoesComputadorSection } from "./AtualizacoesComputadorSection";
 import { ComputadoresSection } from "./ComputadoresSection";
+import { IconeDeSecao, MensagemDeErro, SecaoDeConfiguracao, TituloDeGrupo } from "./pecas";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
@@ -85,6 +105,7 @@ export function ConfiguracoesPage() {
   const [senhaGerada, setSenhaGerada] = useState<{ operador: Operador; senha: string } | null>(
     null,
   );
+  const [naoCopiou, setNaoCopiou] = useState(false);
 
   // Só a carga mais nova grava (#967, o mesmo jeito das OS, #903): trocar de
   // loja com a carga anterior ainda buscando dispara outra, e a velha pode
@@ -242,41 +263,50 @@ export function ConfiguracoesPage() {
     }
   }
 
+  const secoesDaLoja = !carregando && lojaAtual && dadosSaoDaLoja;
+
+  async function copiarSenha(senha: string) {
+    setNaoCopiou(false);
+    try {
+      await navigator.clipboard.writeText(senha);
+      avisar("Senha copiada");
+    } catch (err) {
+      // A senha só aparece uma vez: sem a área de transferência, a janela diz
+      // isso e a senha continua na tela, pra copiar à mão.
+      console.error("Erro ao copiar a senha:", err);
+      setNaoCopiou(true);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Configurações
-          </h1>
-          <p className="text-corpo text-sakura-muted">
-            Operadores do sistema e permissões de acesso
-          </p>
+          <h1 className="font-titulo text-titulo font-bold text-texto">Configurações</h1>
+          <p className="text-corpo text-texto-2">Operadores do sistema e permissões de acesso</p>
         </div>
       </header>
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+
+      <TituloDeGrupo>Pessoas e lojas</TituloDeGrupo>
 
       <div className="sakura-card p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-corpo font-semibold text-sakura-purple-dark">Operadores</h2>
-            <p className="mt-1 text-rotulo text-sakura-muted">
-              Quem tem login no sistema e quais módulos cada um acessa.
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <IconeDeSecao icone={UsersRound} />
+            <div>
+              <h3 className="text-corpo font-semibold text-texto">Operadores</h3>
+              <p className="mt-1 text-rotulo text-texto-2">
+                Quem tem login no sistema e quais módulos cada um acessa.
+              </p>
+            </div>
           </div>
           {!formulario && (
-            <button
-              onClick={() => abrirFormulario("novo")}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
-            >
+            <Botao variante="principal" onClick={() => abrirFormulario("novo")}>
               + Novo operador
-            </button>
+            </Botao>
           )}
         </div>
 
@@ -293,45 +323,35 @@ export function ConfiguracoesPage() {
         )}
 
         {carregando ? (
-          <p className="mt-4 text-corpo text-sakura-muted">Carregando...</p>
+          <p className="mt-4 text-corpo text-texto-2">Carregando...</p>
         ) : operadores.length === 0 ? (
-          <p className="mt-4 text-corpo text-sakura-muted">
-            Nenhum operador cadastrado ainda.
-          </p>
+          <p className="mt-4 text-corpo text-texto-2">Nenhum operador cadastrado ainda.</p>
         ) : (
-          <div className="mt-4 grid grid-cols-2 gap-4">
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             {operadores.map((op) => (
-              <div key={op.id} className="sakura-card p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-sakura-purple-dark">{op.nome}</p>
-                    <p className="text-corpo text-sakura-muted">@{op.usuario}</p>
+              <div key={op.id} className="rounded-2xl border border-linha bg-fundo/40 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-texto">{op.nome}</p>
+                    <p className="text-corpo text-texto-2">@{op.usuario}</p>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                      op.ativo
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-sakura-gray/20 text-sakura-muted"
-                    }`}
-                  >
-                    {op.ativo ? "Ativo" : "Inativo"}
-                  </span>
+                  {op.ativo ? (
+                    <Selo tipo="ok" palavra="Ativo" />
+                  ) : (
+                    <Selo tipo="neutro" palavra="Inativo" />
+                  )}
                 </div>
 
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {op.admin ? (
-                    <span className="rounded-full bg-sakura-pink-soft px-2.5 py-1 text-rotulo font-medium text-sakura-purple-dark">
-                      Administrador (acesso total)
-                    </span>
+                    <Selo tipo="info" icone={ShieldCheck} palavra="Administrador (acesso total)" />
                   ) : op.permissoes.length === 0 ? (
-                    <span className="text-rotulo text-sakura-muted">
-                      Nenhum módulo liberado
-                    </span>
+                    <span className="text-rotulo text-texto-2">Nenhum módulo liberado</span>
                   ) : (
                     op.permissoes.map((chave) => (
                       <span
                         key={chave}
-                        className="rounded-full bg-sakura-pink-soft px-2.5 py-1 text-rotulo font-medium text-sakura-purple-dark"
+                        className="rounded-full bg-texto/[0.08] px-2.5 py-1 text-rotulo font-medium text-texto"
                       >
                         {MODULOS.find((m) => m.chave === chave)?.label ?? chave}
                       </span>
@@ -367,63 +387,105 @@ export function ConfiguracoesPage() {
         )}
       </div>
 
-      {!carregando && lojaAtual && dadosSaoDaLoja && operadorLogado && (
+      {secoesDaLoja && operadorLogado && (
         <div className="sakura-card p-6">
-          <h2 className="text-corpo font-semibold text-sakura-purple-dark">Lojas</h2>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            Cada loja tem seu próprio estoque, caixa, ordens de serviço e configurações — clientes,
-            peças, serviços e categorias continuam compartilhados entre todas.
-          </p>
-          <LojasSection
-            lojas={lojas}
-            operadorCriadorId={operadorLogado.id}
-            onSalvo={recarregar}
-          />
+          <div className="flex items-start gap-4">
+            <IconeDeSecao icone={Store} />
+            <div>
+              <h3 className="text-corpo font-semibold text-texto">Lojas</h3>
+              <p className="mt-1 text-rotulo text-texto-2">
+                Cada loja tem seu próprio estoque, caixa, ordens de serviço e configurações —
+                clientes, peças, serviços e categorias continuam compartilhados entre todas.
+              </p>
+            </div>
+          </div>
+          <LojasSection lojas={lojas} operadorCriadorId={operadorLogado.id} onSalvo={recarregar} />
         </div>
       )}
 
-      {!carregando && lojaAtual && dadosSaoDaLoja && (
+      {secoesDaLoja && (
         <>
-          <SecaoRecolhivel
+          <TituloDeGrupo>Dinheiro e nota fiscal</TituloDeGrupo>
+
+          <SecaoDeConfiguracao
+            icone={Percent}
             titulo="Juros de parcelamento"
-            descricao='% de juros cobrado sobre o total quando o cliente parcela no cartão de crédito, na hora de faturar uma Ordem de Serviço. 1x é sempre à vista, sem juros.'
+            descricao="% de juros cobrado sobre o total quando o cliente parcela no cartão de crédito, na hora de faturar uma Ordem de Serviço. 1x é sempre à vista, sem juros."
           >
             <JurosParcelasSection
               jurosParcelas={jurosParcelas}
               lojaId={lojaAtual.id}
               onSalvo={recarregar}
             />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={QrCode}
+            titulo="Pix (cobrança e faturamento)"
+            descricao="A chave Pix da loja. Com ela, a mensagem de cobrança ganha o Pix copia e cola e o faturamento mostra o QR code, já com o valor."
+          >
+            <PixSection
+              configuracao={configuracaoPix}
+              lojaId={lojaAtual.id}
+              podeEditar={Boolean(operadorLogado?.admin)}
+              sugestao={{
+                nome: configuracaoFiscal?.nome_fantasia || lojaAtual.nome,
+                cidade: configuracaoFiscal?.cidade || lojaAtual.cidade,
+              }}
+              onMudou={setConfiguracaoPix}
+            />
+          </SecaoDeConfiguracao>
+
+          <SecaoDeConfiguracao
+            icone={Receipt}
+            titulo="Dados fiscais da loja"
+            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). Sem o token do Focus NFe, a emissão automática fica indisponível."
+          >
+            <DadosFiscaisSection
+              configuracao={configuracaoFiscal}
+              lojaId={lojaAtual.id}
+              onSalvo={recarregar}
+            />
+          </SecaoDeConfiguracao>
+
+          <TituloDeGrupo>Cadastros de apoio</TituloDeGrupo>
+
+          <SecaoDeConfiguracao
+            icone={Warehouse}
             titulo="Depósitos"
             descricao="Locais físicos de estoque dentro da loja (ex: Depósito Principal, Fundos). Toda loja já nasce com um depósito padrão — crie mais só se tiver mais de um lugar físico guardando peça."
           >
             <DepositosSection depositos={depositos} lojaId={lojaAtual.id} onSalvo={recarregar} />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={Tags}
             titulo="Categorias de produto"
             descricao="Usadas no cadastro de produtos (aba Estoque → Produtos) para agrupar peças."
           >
             <CategoriasSection categorias={categorias} onSalvo={recarregar} />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={Wrench}
             titulo="Categorias de serviço"
             descricao="Usadas no cadastro de serviços (módulo Serviços) para agrupar por área do veículo (ex: Pneus, Suspensão, Freios)."
           >
             <CategoriasServicoSection categorias={categoriasServico} onSalvo={recarregar} />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={Wallet}
             titulo="Categorias de caixa (Entradas e Saídas)"
             descricao='Usadas nas abas "Entradas" e "Saídas" do Caixa Diário para classificar lançamentos manuais que não vêm de uma OS — ex: aluguel, mercado, limpeza (saída) ou venda de sucata (entrada).'
           >
             <CategoriasCaixaSection categorias={categoriasCaixa} onSalvo={recarregar} />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <TituloDeGrupo>Textos e telas</TituloDeGrupo>
+
+          <SecaoDeConfiguracao
+            icone={ShieldCheck}
             titulo="Texto de garantia"
             descricao={
               <>
@@ -439,9 +501,10 @@ export function ConfiguracoesPage() {
               lojaId={lojaAtual.id}
               onSalvo={recarregar}
             />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={MessageCircle}
             titulo="Mensagens de WhatsApp"
             descricao="Os textos que o sistema abre no WhatsApp — na cobrança de uma conta a receber, no aviso de que o carro está pronto, no pedido de avaliação e no pedido para o fornecedor. O sistema abre a conversa com a mensagem pronta; quem envia é você."
           >
@@ -451,36 +514,10 @@ export function ConfiguracoesPage() {
               linkAvaliacao={linkAvaliacao}
               onSalvo={recarregar}
             />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
 
-          <SecaoRecolhivel
-            titulo="Pix (cobrança e faturamento)"
-            descricao="A chave Pix da loja. Com ela, a mensagem de cobrança ganha o Pix copia e cola e o faturamento mostra o QR code, já com o valor."
-          >
-            <PixSection
-              configuracao={configuracaoPix}
-              lojaId={lojaAtual.id}
-              podeEditar={Boolean(operadorLogado?.admin)}
-              sugestao={{
-                nome: configuracaoFiscal?.nome_fantasia || lojaAtual.nome,
-                cidade: configuracaoFiscal?.cidade || lojaAtual.cidade,
-              }}
-              onMudou={setConfiguracaoPix}
-            />
-          </SecaoRecolhivel>
-
-          <SecaoRecolhivel
-            titulo="Dados fiscais da loja"
-            descricao="Usados na emissão de nota fiscal (NFC-e/NFS-e). Sem o token do Focus NFe, a emissão automática fica indisponível."
-          >
-            <DadosFiscaisSection
-              configuracao={configuracaoFiscal}
-              lojaId={lojaAtual.id}
-              onSalvo={recarregar}
-            />
-          </SecaoRecolhivel>
-
-          <SecaoRecolhivel
+          <SecaoDeConfiguracao
+            icone={LayoutDashboard}
             titulo="Cartões do Início"
             descricao="Escolha até 3 indicadores pra aparecer nos cartões de tendência da tela Início. Vale pra todo mundo que usa o sistema."
           >
@@ -489,57 +526,76 @@ export function ConfiguracoesPage() {
               lojaId={lojaAtual.id}
               onSalvo={recarregar}
             />
-          </SecaoRecolhivel>
+          </SecaoDeConfiguracao>
         </>
       )}
 
-      <SecaoRecolhivel
+      <TituloDeGrupo>Este computador e os outros</TituloDeGrupo>
+
+      <SecaoDeConfiguracao
+        icone={Palette}
         titulo="Aparência deste computador"
         descricao="O programa com o fundo escuro ou com o fundo claro. Vale só para este computador, e troca na hora."
       >
         <AparenciaSection />
-      </SecaoRecolhivel>
+      </SecaoDeConfiguracao>
 
-      <SecaoRecolhivel
+      <SecaoDeConfiguracao
+        icone={Download}
         titulo="Atualizações deste computador"
         descricao="Se este computador recebe cada versão nova assim que ela sai (canal de teste) ou só depois que ela for liberada para todas as lojas (normal). Vale só para este computador."
       >
         <AtualizacoesComputadorSection />
-      </SecaoRecolhivel>
+      </SecaoDeConfiguracao>
 
-      <SecaoRecolhivel
+      <SecaoDeConfiguracao
+        icone={Monitor}
         titulo="Computadores desta empresa"
         descricao="Em que versão está cada computador que abre o sistema, e quando foi usado pela última vez. Serve pra ver quem ficou pra trás numa atualização."
       >
         <ComputadoresSection />
-      </SecaoRecolhivel>
+      </SecaoDeConfiguracao>
 
       {senhaGerada && (
-        <Modal titulo="Senha temporária gerada" onFechar={() => setSenhaGerada(null)}>
-          <p className="text-corpo text-sakura-purple-dark/90">
+        <Modal
+          titulo="Senha temporária gerada"
+          onFechar={() => {
+            setSenhaGerada(null);
+            setNaoCopiou(false);
+          }}
+          rodape={
+            <>
+              <Botao
+                variante="fantasma"
+                onClick={() => copiarSenha(senhaGerada.senha)}
+              >
+                Copiar
+              </Botao>
+              <Botao
+                variante="principal"
+                onClick={() => {
+                  setSenhaGerada(null);
+                  setNaoCopiou(false);
+                }}
+              >
+                Já anotei
+              </Botao>
+            </>
+          }
+        >
+          <p className="text-corpo text-texto">
             Repasse essa senha pra <strong>{senhaGerada.operador.nome}</strong> (WhatsApp,
             pessoalmente etc.). Ela só aparece aqui uma vez — ao fazer login com ela, o sistema
             já vai pedir pra criar uma senha nova.
           </p>
-          <p className="mt-4 select-all rounded-xl border border-sakura-gray/30 bg-poco px-4 py-3 text-center font-mono text-subtitulo tracking-wider text-sakura-pink">
+          <p className="mt-4 select-all rounded-xl border border-linha-forte bg-poco px-4 py-3 text-center font-mono text-subtitulo tracking-wider text-acao-clara">
             {senhaGerada.senha}
           </p>
-          <div className="mt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigator.clipboard.writeText(senhaGerada.senha)}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
-              Copiar
-            </button>
-            <button
-              type="button"
-              onClick={() => setSenhaGerada(null)}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
-            >
-              Já anotei
-            </button>
-          </div>
+          {naoCopiou && (
+            <MensagemDeErro className="mt-4">
+              Não consegui copiar. Selecione a senha acima e copie à mão: ela só aparece uma vez.
+            </MensagemDeErro>
+          )}
         </Modal>
       )}
     </div>

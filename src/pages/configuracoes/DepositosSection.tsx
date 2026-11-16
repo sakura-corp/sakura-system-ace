@@ -1,6 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Pencil, Power, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
+import { Selo } from "@/components/Selo";
 import { atualizarDeposito, atualizarStatusDeposito, criarDeposito } from "@/lib/depositos";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -12,6 +15,7 @@ import {
   type DepositoFormValues,
 } from "@/schemas/deposito";
 import type { Deposito } from "@/types/deposito";
+import { BotaoDeLista, MensagemDeErro } from "./pecas";
 
 interface DepositosSectionProps {
   depositos: Deposito[];
@@ -70,79 +74,77 @@ export function DepositosSection({ depositos, lojaId, onSalvo }: DepositosSectio
 
   return (
     <>
-      {erro && <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
 
-      <form onSubmit={handleSubmit(aoAdicionar)} className="mt-4 flex gap-2">
-        <input
-          type="text"
-          placeholder="Nome do depósito (ex: Depósito Principal, Fundos)"
-          {...register("nome")}
-          className="flex-1 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
-        />
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+      <form onSubmit={handleSubmit(aoAdicionar)} className="mt-4 flex flex-wrap items-end gap-3">
+        <label className="sakura-rotulo min-w-64 flex-1">
+          Nome do depósito
+          <input
+            type="text"
+            placeholder="Ex: Depósito Principal, Fundos"
+            {...register("nome")}
+            className="sakura-campo"
+          />
+        </label>
+        <Botao type="submit" ocupado={isSubmitting} className="h-11">
           {isSubmitting ? "Salvando..." : "+ Novo depósito"}
-        </button>
+        </Botao>
       </form>
 
       {depositos.length === 0 ? (
-        <p className="mt-4 text-corpo text-sakura-muted">Nenhum depósito cadastrado ainda.</p>
+        <p className="mt-4 text-corpo text-texto-2">Nenhum depósito cadastrado ainda.</p>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {depositos.map((deposito) =>
-            editandoId === deposito.id ? (
-              <LinhaEdicaoDeposito
-                key={deposito.id}
-                deposito={deposito}
-                onSalvo={async () => {
-                  setEditandoId(null);
-                  await onSalvo();
-                }}
-                onErro={setErro}
-                onCancelar={() => setEditandoId(null)}
-              />
-            ) : (
-              <span
-                key={deposito.id}
-                className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-rotulo font-medium ${
-                  deposito.ativo
-                    ? "bg-sakura-pink-soft text-sakura-purple-dark"
-                    : "bg-sakura-gray/20 text-sakura-muted"
-                }`}
-              >
-                {deposito.nome}
-                <button
-                  onClick={() => {
-                    setErro(null);
-                    setEditandoId(deposito.id);
+        <ul className="mt-5 divide-y divide-linha overflow-hidden rounded-2xl border border-linha">
+          {depositos.map((deposito) => (
+            <li
+              key={deposito.id}
+              className="flex min-h-[52px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2"
+            >
+              {editandoId === deposito.id ? (
+                <LinhaEdicaoDeposito
+                  deposito={deposito}
+                  onSalvo={async () => {
+                    setEditandoId(null);
+                    await onSalvo();
                   }}
-                  title="Editar depósito"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
-                >
-                  ✎
-                </button>
-                <button
-                  onClick={() => handleAlternarStatus(deposito)}
-                  title={deposito.ativo ? "Inativar depósito" : "Reativar depósito"}
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-texto/10 hover:text-sakura-purple-dark"
-                >
-                  {deposito.ativo ? "×" : "↺"}
-                </button>
-              </span>
-            ),
-          )}
-        </div>
+                  onErro={setErro}
+                  onCancelar={() => setEditandoId(null)}
+                />
+              ) : (
+                <>
+                  <span className="min-w-0 font-medium text-texto">{deposito.nome}</span>
+                  {deposito.ativo ? (
+                    <Selo tipo="ok" palavra="Ativo" />
+                  ) : (
+                    <Selo tipo="neutro" palavra="Inativo" />
+                  )}
+                  <span className="ml-auto flex items-center gap-1">
+                    <BotaoDeLista
+                      rotulo={`Editar o depósito ${deposito.nome}`}
+                      icone={Pencil}
+                      aoClicar={() => {
+                        setErro(null);
+                        setEditandoId(deposito.id);
+                      }}
+                    />
+                    <BotaoDeLista
+                      rotulo={`${deposito.ativo ? "Inativar" : "Reativar"} o depósito ${deposito.nome}`}
+                      icone={deposito.ativo ? Power : RotateCcw}
+                      aoClicar={() => handleAlternarStatus(deposito)}
+                    />
+                  </span>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </>
   );
 }
 
-// Mesmo padrão de LinhaEdicaoLoja em LojasSection.tsx: componente à parte
-// pra cada linha em edição nascer com o `useForm` já preenchido pelo
-// depósito clicado, sem precisar de `reset()` manual.
+// Componente à parte pra cada linha em edição nascer com o `useForm` já
+// preenchido pelo depósito clicado, sem precisar de `reset()` manual.
 function LinhaEdicaoDeposito({
   deposito,
   onSalvo,
@@ -176,28 +178,21 @@ function LinhaEdicaoDeposito({
   return (
     <form
       onSubmit={handleSubmit(aoSalvar)}
-      className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-poco px-3 py-1.5"
+      className="flex w-full flex-wrap items-center gap-2"
     >
       <input
         type="text"
+        aria-label="Nome do depósito"
         autoFocus
         {...register("nome")}
-        className="w-40 rounded-lg border border-sakura-borda-campo px-2 py-1 text-rotulo focus:border-sakura-purple"
+        className="sakura-campo sakura-campo-filtro min-w-48 flex-1"
       />
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="text-rotulo font-medium text-sakura-purple hover:underline disabled:opacity-50"
-      >
+      <Botao type="submit" variante="principal" tamanho="pequeno" ocupado={isSubmitting}>
         Salvar
-      </button>
-      <button
-        type="button"
-        onClick={onCancelar}
-        className="text-rotulo font-medium text-sakura-muted hover:underline"
-      >
+      </Botao>
+      <Botao variante="fantasma" tamanho="pequeno" onClick={onCancelar}>
         Cancelar
-      </button>
+      </Botao>
     </form>
   );
 }
