@@ -881,6 +881,7 @@ export const TABELAS = {
   computadores,
   schema_versao: schemaVersao,
   lojas, clientes, pecas, servicos, depositos,
+  importacao_lotes: [],
   // A janela de peças e o saldo pronto (migration 0073, #366): é por eles que
   // a OS, o balcão, o pedido de compra e a nota leem. Sem eles as telas
   // geradas abririam sem peça nenhuma pra escolher.

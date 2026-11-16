@@ -56,7 +56,7 @@ truncate table
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
   ordens_servico_itens, ordens_servico, funcionario_filhos, funcionarios,
-  depositos, veiculos, clientes, pecas, servicos, fornecedores,
+  depositos, veiculos, clientes, importacao_lotes, pecas, servicos, fornecedores,
   categorias, categorias_servicos, categorias_caixa,
   operador_lojas, operadores, lojas
   restart identity cascade;
@@ -103,6 +103,11 @@ insert into categorias_servicos (id, nome) values
 insert into categorias_caixa (id, nome, tipo) values
   ('dddddddd-2222-0000-0000-0000000000aa', 'Entradas diversas', 'entrada'),
   ('dddddddd-2222-0000-0000-0000000000bb', 'Saídas diversas',   'saida');
+
+-- dois lotes de importação (0083): a tabela é da empresa toda, sem loja
+insert into importacao_lotes (id, operador_id, nome_arquivo) values
+  ('cccccccc-2222-0000-0000-0000000000aa', 'aaaaaaaa-1111-1111-1111-111111111111', 'lote-1.csv'),
+  ('cccccccc-2222-0000-0000-0000000000bb', 'aaaaaaaa-2222-2222-2222-222222222222', 'lote-2.csv');
 
 insert into clientes (id, nome, tipo_pessoa) values
   ('cccccccc-0000-0000-0000-0000000000aa', 'Cliente 1', 'fisica'),

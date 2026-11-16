@@ -38,6 +38,7 @@ import { temPermissao } from "@/types/operador";
 import { AvisoDeErro } from "./AvisoDeErro";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { ImportarClientesModal } from "./ImportarClientesModal";
 import { VeiculosDoClienteModal } from "./VeiculosDoClienteModal";
 
 /** Padrão do filtro "sumiram" — decisão da Sofia, 17/10/2026 (tarefa #455). */
@@ -64,6 +65,7 @@ export function ClientesPage() {
     formulario === "novo" ? "novo" : (formulario?.id ?? null),
   );
   const [veiculosDe, setVeiculosDe] = useState<Cliente | null>(null);
+  const [importando, setImportando] = useState(false);
 
   // Filtro "clientes que sumiram" (FN-11). As ordens só são buscadas quando a
   // pessoa liga o filtro: a lista de clientes comum não precisa delas.
@@ -207,9 +209,16 @@ export function ClientesPage() {
           </div>
         </div>
         {!formulario && (
-          <Botao variante="principal" onClick={() => setFormulario("novo")}>
-            + Novo cliente
-          </Botao>
+          <div className="flex items-center gap-3">
+            {operador?.admin && (
+              <Botao variante="secundario" onClick={() => setImportando(true)}>
+                Importar planilha
+              </Botao>
+            )}
+            <Botao variante="principal" onClick={() => setFormulario("novo")}>
+              + Novo cliente
+            </Botao>
+          </div>
         )}
       </header>
 
@@ -450,6 +459,10 @@ export function ClientesPage() {
 
       {veiculosDe && (
         <VeiculosDoClienteModal cliente={veiculosDe} onFechar={() => setVeiculosDe(null)} />
+      )}
+
+      {importando && operador?.admin && (
+        <ImportarClientesModal onFechar={() => setImportando(false)} onConcluido={carregar} />
       )}
     </div>
   );

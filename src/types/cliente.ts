@@ -74,3 +74,24 @@ export type NovoVeiculo = Omit<Veiculo, "id" | "cliente_id" | "criado_em">;
 // vez de recriar e perder o vínculo com Ordens de Serviço antigas); veículo
 // novo, adicionado na tela, ainda não tem.
 export type VeiculoFormulario = NovoVeiculo & { id?: string };
+
+/** Uma importação de planilha de clientes (migration 0083, tabela `importacao_lotes`). */
+export interface LoteImportacao {
+  id: string;
+  tipo: "clientes";
+  nome_arquivo: string;
+  operador_id: string | null;
+  criado_em: string;
+  total_linhas: number;
+  clientes_criados: number;
+  veiculos_criados: number;
+  desfeito_em: string | null;
+  desfeito_por: string | null;
+}
+
+/** O que a função `desfazer_importacao` devolve: o que apagou e o que ficou. */
+export interface ResultadoDesfazerImportacao {
+  veiculos_apagados: number;
+  clientes_apagados: number;
+  mantidos: { tipo: "cliente" | "veiculo"; id: string; nome: string; motivo: string }[];
+}
