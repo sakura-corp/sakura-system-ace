@@ -73,7 +73,11 @@ function ComAviso({ children }: { children: (aviso: string | null, setAviso: (a:
   return <>{children(aviso, setAviso)}</>;
 }
 
-function montar(pecas: Peca[], onRecarregar = vi.fn().mockResolvedValue(undefined)) {
+function montar(
+  pecas: Peca[],
+  onRecarregar = vi.fn().mockResolvedValue(undefined),
+  saldos: Map<string, number> = new Map(),
+) {
   return renderizar(
     <ComAviso>
       {(aviso, setAviso) => (
@@ -82,7 +86,7 @@ function montar(pecas: Peca[], onRecarregar = vi.fn().mockResolvedValue(undefine
           onAvisoEstoqueInicial={setAviso}
           pecas={pecas}
           categorias={[]}
-          saldos={new Map()}
+          saldos={saldos}
           regime="simples_nacional"
           lojaId="loja-1"
           onRecarregar={onRecarregar}
@@ -245,5 +249,43 @@ describe("ProdutosSection — fechar o formulário continua como antes (#969)", 
     await vi.waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole("searchbox", { name: /Buscar/ })),
     );
+  });
+});
+
+describe("ProdutosSection — o saldo com cor, ícone e palavra (tarefa 9, #990)", () => {
+  // Regra 4 do visual novo: a cor sozinha não avisa. O número continua o
+  // mesmo; o que mudou é que, quando o saldo pede atenção, a palavra aparece
+  // do lado dele (antes era só a cor, com a explicação num balãozinho).
+  it("saldo negativo: o número com o selo 'Negativo'", () => {
+    montar([umaPeca({ id: "a", estoque_minimo: null })], undefined, new Map([["a", -2]]));
+    expect(screen.getByText("Negativo")).toBeTruthy();
+    expect(screen.getByText("-2")).toBeTruthy();
+  });
+
+  it("saldo zerado: 'Sem estoque'", () => {
+    montar([umaPeca({ id: "a" })], undefined, new Map([["a", 0]]));
+    expect(screen.getByText("Sem estoque")).toBeTruthy();
+  });
+
+  it("no mínimo ou abaixo dele: 'Comprar', e o mínimo continua escrito", () => {
+    montar([umaPeca({ id: "a", estoque_minimo: 5 })], undefined, new Map([["a", 3]]));
+    expect(screen.getByText("Comprar")).toBeTruthy();
+    expect(screen.getByText(/mín\. 5/)).toBeTruthy();
+  });
+
+  it("saldo normal: nenhum selo de aviso", () => {
+    montar([umaPeca({ id: "a", estoque_minimo: 2 })], undefined, new Map([["a", 10]]));
+    expect(screen.queryByText("Negativo")).toBeNull();
+    expect(screen.queryByText("Sem estoque")).toBeNull();
+    expect(screen.queryByText("Comprar")).toBeNull();
+  });
+
+  it("o status continua 'Ativo' ou 'Inativo', agora como selo", () => {
+    montar([
+      umaPeca({ id: "a", descricao: "Peça ativa" }),
+      umaPeca({ id: "b", descricao: "Peça parada", ativo: false }),
+    ]);
+    expect(screen.getByText("Ativo")).toBeTruthy();
+    expect(screen.getByText("Inativo")).toBeTruthy();
   });
 });
