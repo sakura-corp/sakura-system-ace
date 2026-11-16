@@ -252,12 +252,15 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
     return "Ver a nota";
   }
 
+  // A dica começa pelo nome do botão: abaixo de 1280 o botão é só o ícone, e
+  // é a dica que diz o que ele é.
   function dicaDoBotaoDaLinha(arquivo: NotaFiscalArquivo) {
+    const nome = rotuloDoBotaoDaLinha(arquivo);
     if (arquivo.origem !== "automatica") {
-      return "Abre o resumo feito do XML (nota feita fora do programa), pra ver, imprimir ou mandar";
+      return `${nome}: abre o resumo feito do XML (nota feita fora do programa), pra ver, imprimir ou mandar`;
     }
-    if (arquivo.status === "autorizado") return "Abre o PDF da nota, pra ver, imprimir ou mandar pro cliente";
-    return "Abre o PDF da nota";
+    if (arquivo.status === "autorizado") return `${nome}: abre o PDF da nota, pra ver, imprimir ou mandar`;
+    return `${nome}: abre o PDF da nota`;
   }
 
   function maisAcoes(arquivo: NotaFiscalArquivo): AcaoDaLinha[] {
@@ -413,16 +416,19 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                     tortas (#876). Assim todas têm as mesmas colunas. */}
                 {/* A Situação e as ações têm largura fixa (o selo e o botão
                     da nota não podem quebrar nem vazar); as de texto se
-                    repartem o resto e cortam com "…". Abaixo de 46rem (zoom
-                    alto, janela estreita) a tabela rola de lado, como antes. */}
-                <table className="sakura-tabela min-w-[46rem] table-fixed">
+                    repartem o resto e cortam com "…". Abaixo de 1280 de janela
+                    o botão da nota fica só com o ícone (o nome continua na
+                    dica e pro leitor de tela), pra caber em 1024 com o menu
+                    aberto. Abaixo de 42rem (zoom alto) a tabela rola de lado,
+                    como antes. */}
+                <table className="sakura-tabela min-w-[42rem] table-fixed">
                   <thead>
                     <tr>
                       <th className="w-[20%]">Nota</th>
                       <th className="w-[9.5rem]">Situação</th>
                       <th>Ordem de Serviço</th>
                       <th className="w-[16%]">Enviado por</th>
-                      <th className="w-[13.5rem]">
+                      <th className="w-[13.5rem] max-[1279px]:w-24">
                         <span className="sr-only">Ações</span>
                       </th>
                     </tr>
@@ -450,8 +456,13 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                                 icone={<FileText />}
                                 aria-label={`${rotuloDoBotaoDaLinha(arquivo)} — ${arquivo.nome_arquivo}`}
                                 onClick={() => abrirANota(arquivo)}
+                                // O `relative` segura o nome escondido
+                                // (`sr-only` é absoluto) dentro do botão: sem
+                                // ele, o nome "vaza" e corta a tela em 1024
+                                // (o mesmo cuidado da tarefa 7).
+                                className="relative max-[1279px]:w-8 max-[1279px]:justify-center max-[1279px]:px-0"
                               >
-                                {rotuloDoBotaoDaLinha(arquivo)}
+                                <span className="max-[1279px]:sr-only">{rotuloDoBotaoDaLinha(arquivo)}</span>
                               </Botao>
                             </Dica>
                             <AcoesDaLinha
