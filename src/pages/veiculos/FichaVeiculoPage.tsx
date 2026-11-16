@@ -11,6 +11,7 @@ import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, diasEntre, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
+import { listarServicosComIntervalo } from "@/lib/retornos";
 import { buscarFichaDoVeiculo, type FichaDoVeiculo } from "@/lib/veiculos";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
@@ -25,6 +26,12 @@ import {
   diasDeVisita,
   type OrdemDaFicha,
 } from "@/schemas/fichaVeiculo";
+import {
+  proximoRetornoDoVeiculo,
+  retornosPrevistos,
+  type OrdemParaRetorno,
+  type ServicoComIntervalo,
+} from "@/schemas/retornos";
 import { nomeOrdem, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
 import { AvisoDeErro } from "../clientes/AvisoDeErro";
@@ -73,7 +80,36 @@ export function FichaVeiculoPage() {
     carregar();
   }, [id, podeVerCadastro]);
 
+  // Os serviços com intervalo, pro "próximo retorno previsto" (FN-06, #381).
+  // Falhar aqui (ou o login não poder ler Serviços) só some com a linha: nunca
+  // derruba a ficha.
+  const [servicosComIntervalo, setServicosComIntervalo] = useState<ServicoComIntervalo[]>([]);
+  useEffect(() => {
+    let valendo = true;
+    listarServicosComIntervalo()
+      .then((lista) => {
+        if (valendo) setServicosComIntervalo(lista);
+      })
+      .catch((err) => console.error("Não foi possível carregar os intervalos de retorno:", err));
+    return () => {
+      valendo = false;
+    };
+  }, []);
+
   const hoje = hojeLocal();
+
+  const proximoRetorno = useMemo(() => {
+    if (!ficha || servicosComIntervalo.length === 0) return null;
+    const { veiculo, ordens } = ficha;
+    // As OS da ficha já são deste carro (e os itens trazem o servico_id da
+    // janela); só falta dizer qual é o carro no formato da conta.
+    const doVeiculo = ordens.map((ordem) => ({
+      ...ordem,
+      veiculo_id: veiculo.id,
+      veiculo: { placa: veiculo.placa, marca: veiculo.marca, modelo: veiculo.modelo },
+    })) as OrdemParaRetorno[];
+    return proximoRetornoDoVeiculo(retornosPrevistos(doVeiculo, servicosComIntervalo, hoje), veiculo.id);
+  }, [ficha, servicosComIntervalo, hoje]);
 
   const dados = useMemo(() => {
     if (!ficha) return null;
@@ -243,6 +279,22 @@ export function FichaVeiculoPage() {
           <span className="text-texto">{dados.visitas.length}</span>
         </CartaoNumero>
       </div>
+
+      {proximoRetorno && (
+        <section className="sakura-card p-4">
+          <h2 className="mb-1 text-corpo font-semibold text-texto">Próximo retorno previsto</h2>
+          <p className="text-corpo text-texto">
+            {proximoRetorno.servico} em {diaBrasileiro(proximoRetorno.prevista)}
+            {proximoRetorno.estimadoPeloKm && " (estimado pelo KM)"}
+            {proximoRetorno.diasDeAtraso > 0 &&
+              ` — atrasado há ${proximoRetorno.diasDeAtraso} ${proximoRetorno.diasDeAtraso === 1 ? "dia" : "dias"}`}
+          </p>
+          <p className="mt-1 text-rotulo text-texto-2">
+            É uma previsão: conta o intervalo do serviço a partir da última vez que ele foi feito neste
+            carro.
+          </p>
+        </section>
+      )}
 
       <section className="sakura-card overflow-hidden pt-4">
         <h2 className="mb-2 px-[18px] text-corpo font-semibold text-texto">Peças na garantia</h2>
