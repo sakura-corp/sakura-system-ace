@@ -2,8 +2,11 @@ import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
 import { atualizarFuncionario, criarFuncionario } from "@/lib/funcionarios";
 import type { Funcionario, NovoFuncionario, NovoFuncionarioFilho } from "@/types/funcionario";
-import { FuncionarioForm } from "./FuncionarioForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
+import { Selo } from "@/components/Selo";
+import { AvisoDaTela } from "./AvisoDaTela";
+import { FuncionarioForm } from "./FuncionarioForm";
 
 interface FuncionariosSectionProps {
   funcionarios: Funcionario[];
@@ -43,12 +46,9 @@ export function FuncionariosSection({
     <div className="space-y-6">
       {!formulario && (
         <div className="flex justify-end">
-          <button
-            onClick={() => setFormulario("novo")}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao hover:opacity-90"
-          >
+          <Botao variante="principal" onClick={() => setFormulario("novo")}>
             + Novo funcionário
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -60,57 +60,64 @@ export function FuncionariosSection({
         />
       )}
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
 
       {funcionarios.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum funcionário cadastrado ainda.</p>
+        <p className="text-corpo text-texto-2">Nenhum funcionário cadastrado ainda.</p>
       ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">Cargo</th>
-                <th className="px-4 py-3 font-medium">Login</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {funcionarios.map((funcionario) => (
-                <tr key={funcionario.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{funcionario.nome}</td>
-                  <td className="px-4 py-3">{funcionario.cargo || "—"}</td>
-                  <td className="px-4 py-3">
-                    {funcionario.operador?.usuario ? `@${funcionario.operador.usuario}` : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                        funcionario.ativo
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
-                    >
-                      {funcionario.ativo ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <AcoesDaLinha
-                      descricao={`o funcionário ${funcionario.nome}`}
-                      acoes={[
-                        { tipo: "editar", aoClicar: () => setFormulario(funcionario) },
-                        {
-                          tipo: funcionario.ativo ? "inativar" : "reativar",
-                          aoClicar: () => handleAlternarStatus(funcionario),
-                        },
-                      ]}
-                    />
-                  </td>
+        <div className="sakura-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="sakura-tabela">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Cargo</th>
+                  <th>Login</th>
+                  <th>Status</th>
+                  <th>
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {funcionarios.map((funcionario) => (
+                  <tr key={funcionario.id}>
+                    <td className="font-medium text-texto">{funcionario.nome}</td>
+                    <td>{funcionario.cargo || <span className="text-texto-2">—</span>}</td>
+                    <td>
+                      {funcionario.operador?.usuario ? (
+                        `@${funcionario.operador.usuario}`
+                      ) : (
+                        <span className="text-texto-2">—</span>
+                      )}
+                    </td>
+                    <td>
+                      {funcionario.ativo ? (
+                        <Selo tipo="ok" palavra="Ativo" />
+                      ) : (
+                        <Selo tipo="neutro" palavra="Inativo" />
+                      )}
+                    </td>
+                    <td className="text-right">
+                      {/* O próximo passo à vista ("Editar"); inativar e reativar
+                          vão pro botão de três pontos (regra da tabela). */}
+                      <AcoesDaLinha
+                        descricao={`o funcionário ${funcionario.nome}`}
+                        acoes={[
+                          { tipo: "texto", rotulo: "Editar", aoClicar: () => setFormulario(funcionario) },
+                          {
+                            tipo: "menu",
+                            rotulo: funcionario.ativo ? "Inativar" : "Reativar",
+                            aoClicar: () => handleAlternarStatus(funcionario),
+                          },
+                        ]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

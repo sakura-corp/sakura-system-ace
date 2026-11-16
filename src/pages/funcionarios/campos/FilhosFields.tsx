@@ -1,5 +1,7 @@
+import { Plus } from "lucide-react";
 import type { Control, UseFormRegister } from "react-hook-form";
 import { useFieldArray } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import type { FuncionarioFormValues } from "@/schemas/funcionario";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
@@ -31,22 +33,24 @@ export function FilhosFields({
                 className={inputClasse}
               />
             </Campo>
-            <button
-              type="button"
+            {/* Só tira a linha do formulário: nada é apagado do cadastro até
+                o "Salvar funcionário". */}
+            <Botao
+              variante="fantasma"
               onClick={() => remove(index)}
-              className="mb-1 text-rotulo font-medium text-red-600 hover:underline"
+              className="text-perigo hover:text-perigo"
             >
               Remover
-            </button>
+            </Botao>
           </div>
         ))}
-        <button
-          type="button"
+        <Botao
+          variante="fantasma"
+          icone={<Plus />}
           onClick={() => append({ nome: "", data_nascimento: "" })}
-          className="text-corpo font-medium text-sakura-purple hover:underline"
         >
-          + Adicionar filho(a)
-        </button>
+          Adicionar filho(a)
+        </Botao>
       </div>
     </Secao>
   );

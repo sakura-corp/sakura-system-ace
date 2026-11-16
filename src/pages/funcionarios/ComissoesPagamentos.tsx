@@ -3,9 +3,11 @@
 // (retrato, comparação, "já pago em outro período") estão em
 // schemas/comissoesPagas.ts — aqui é só tela.
 import { zodResolver } from "@hookform/resolvers/zod";
+import { TriangleAlert } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { diaBrasileiro as dataBr, hojeLocal } from "@/lib/datas";
 import { desfazerComissaoPaga, registrarComissaoPaga } from "@/lib/comissoesFechamentos";
@@ -15,8 +17,9 @@ import type { ComissaoFuncionario } from "@/schemas/comissoes";
 import { retratoDaLinha, type JaPagoEmOutroPeriodo } from "@/schemas/comissoesPagas";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
+import { AvisoDaTela } from "./AvisoDaTela";
 
-const campo = "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const campo = "sakura-campo";
 
 const pagamentoSchema = z.object({
   valorPago: z.string().refine((v) => v.trim() !== "" && Number(v) >= 0, "Informe o valor pago (pode ser zero)."),
@@ -80,63 +83,79 @@ export function RegistrarPagamentoModal({
   }
 
   return (
-    <Modal titulo="Registrar pagamento de comissão" onFechar={onFechar}>
-      <form onSubmit={handleSubmit(aoRegistrar)} className="space-y-3 text-corpo">
-        <p className="text-sakura-purple-dark/85">
-          <strong className="text-sakura-purple-dark">{linha.nome}</strong> — de {dataBr(de)} a {dataBr(ate)}.
-          Calculado: <strong className="text-sakura-purple-dark">{formatarMoeda(linha.comissaoTotal)}</strong>.
+    <Modal
+      titulo="Registrar pagamento de comissão"
+      onFechar={onFechar}
+      rodape={
+        <>
+          <Botao variante="fantasma" onClick={onFechar}>
+            Cancelar
+          </Botao>
+          <Botao type="submit" form="form-registrar-pagamento" variante="principal" ocupado={isSubmitting}>
+            {isSubmitting ? "Registrando..." : "Registrar pagamento"}
+          </Botao>
+        </>
+      }
+    >
+      <form id="form-registrar-pagamento" onSubmit={handleSubmit(aoRegistrar)} className="space-y-3 text-corpo">
+        <p className="text-texto-2">
+          <strong className="text-texto">{linha.nome}</strong> — de {dataBr(de)} a {dataBr(ate)}.
+          Calculado: <strong className="text-texto">{formatarMoeda(linha.comissaoTotal)}</strong>.
         </p>
-        <p className="text-rotulo text-sakura-muted">
+        <p className="text-rotulo text-texto-2">
           O sistema guarda um retrato das OS que formaram esse valor. Se alguma delas for editada
           depois, esta tela avisa — o valor pago não muda sozinho.
         </p>
 
         {jaPago.valor !== 0 && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-800">
+          <AvisoDaTela tipo="atencao">
             Cuidado: {formatarMoeda(jaPago.valor)} desse valor vem de OS que já entraram num pagamento
             anterior (OS {jaPago.numeros.join(", ")}). Confira pra não pagar duas vezes.
-          </p>
+          </AvisoDaTela>
         )}
 
-        {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>}
+        {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
 
         <div className="grid grid-cols-2 gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sakura-purple-dark/85">Valor pago</span>
-            <input type="number" min="0" step="0.01" {...register("valorPago")} className={campo} />
-            {errors.valorPago && <span className="text-rotulo text-red-400">{errors.valorPago.message}</span>}
+          <label className="sakura-rotulo">
+            Valor pago
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              aria-invalid={errors.valorPago ? true : undefined}
+              {...register("valorPago")}
+              className={campo}
+            />
+            {errors.valorPago && <MensagemDeErro>{errors.valorPago.message}</MensagemDeErro>}
           </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-sakura-purple-dark/85">Data do pagamento</span>
-            <input type="date" {...register("dataPagamento")} className={campo} />
-            {errors.dataPagamento && (
-              <span className="text-rotulo text-red-400">{errors.dataPagamento.message}</span>
-            )}
+          <label className="sakura-rotulo">
+            Data do pagamento
+            <input
+              type="date"
+              aria-invalid={errors.dataPagamento ? true : undefined}
+              {...register("dataPagamento")}
+              className={campo}
+            />
+            {errors.dataPagamento && <MensagemDeErro>{errors.dataPagamento.message}</MensagemDeErro>}
           </label>
-          <label className="col-span-2 flex flex-col gap-1">
-            <span className="text-sakura-purple-dark/85">Observação (opcional — vale, adiantamento…)</span>
+          <label className="sakura-rotulo col-span-2">
+            Observação (opcional — vale, adiantamento…)
             <input type="text" {...register("observacao")} className={campo} />
           </label>
         </div>
-
-        <div className="mt-4 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onFechar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting ? "Registrando..." : "Registrar pagamento"}
-          </button>
-        </div>
       </form>
     </Modal>
+  );
+}
+
+/** A mensagem de um campo recusado: ícone e palavra junto da cor (regra 4). */
+function MensagemDeErro({ children }: { children?: string }) {
+  return (
+    <span role="alert" className="flex items-center gap-1.5 text-rotulo text-perigo">
+      <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
+      {children}
+    </span>
   );
 }
 
@@ -152,29 +171,27 @@ export function ReciboComissaoModal({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const html = montarHtmlReciboComissao({ nomeLoja, pagamento });
   return (
-    <Modal titulo={`Recibo de comissão — ${pagamento.funcionario_nome}`} onFechar={onFechar}>
+    <Modal
+      titulo={`Recibo de comissão — ${pagamento.funcionario_nome}`}
+      onFechar={onFechar}
+      rodape={
+        <>
+          <Botao variante="fantasma" onClick={onFechar}>
+            Fechar
+          </Botao>
+          <Botao variante="principal" onClick={() => iframeRef.current?.contentWindow?.print()}>
+            Imprimir
+          </Botao>
+        </>
+      }
+    >
+      {/* O recibo é um papel: fica branco nos dois temas, porque é o que sai na impressora. */}
       <iframe
         ref={iframeRef}
         title="Pré-visualização do recibo de comissão"
         srcDoc={html}
-        className="h-96 w-full rounded-lg border border-sakura-gray/30 bg-white"
+        className="h-96 w-full rounded-xl border border-linha-forte bg-white"
       />
-      <div className="mt-4 flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onFechar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
-          Fechar
-        </button>
-        <button
-          type="button"
-          onClick={() => iframeRef.current?.contentWindow?.print()}
-          className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
-        >
-          Imprimir
-        </button>
-      </div>
     </Modal>
   );
 }
@@ -214,52 +231,52 @@ export function HistoricoPagamentos({
 
   return (
     <section>
-      <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Pagamentos já registrados</h2>
-      {erro && <p className="mb-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      <div className="overflow-x-auto sakura-card">
-        <table className="w-full text-left text-corpo">
-          <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-            <tr>
-              <th className="px-4 py-3 font-medium">Funcionário</th>
-              <th className="px-4 py-3 font-medium">Período</th>
-              <th className="px-4 py-3 font-medium">Pago</th>
-              <th className="px-4 py-3 font-medium">Em</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            {pagamentos.map((p) => (
-              <tr key={p.id} className="border-t border-sakura-gray/20">
-                <td className="px-4 py-3">{p.funcionario_nome}</td>
-                <td className="px-4 py-3">
-                  {dataBr(p.periodo_inicio)} a {dataBr(p.periodo_fim)}
-                </td>
-                <td className="px-4 py-3">{formatarMoeda(p.valor_pago)}</td>
-                <td className="px-4 py-3">{dataBr(p.data_pagamento)}</td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onRecibo(p)}
-                      className="min-h-8 rounded-lg px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-                    >
-                      Recibo
-                    </button>
-                    {podeDesfazer && (
-                      <button
-                        type="button"
-                        onClick={() => desfazer(p)}
-                        className="min-h-8 rounded-lg px-3 text-rotulo font-medium text-sakura-purple-dark/85 hover:bg-sakura-gray/10"
-                      >
-                        Desfazer
-                      </button>
-                    )}
-                  </div>
-                </td>
+      <h2 className="mb-3 text-corpo font-semibold text-texto">Pagamentos já registrados</h2>
+      {erro && (
+        <AvisoDaTela tipo="perigo" className="mb-3">
+          {erro}
+        </AvisoDaTela>
+      )}
+      <div className="sakura-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="sakura-tabela">
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Período</th>
+                <th className="text-right">Pago</th>
+                <th>Em</th>
+                <th>
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pagamentos.map((p) => (
+                <tr key={p.id}>
+                  <td className="font-medium text-texto">{p.funcionario_nome}</td>
+                  <td>
+                    {dataBr(p.periodo_inicio)} a {dataBr(p.periodo_fim)}
+                  </td>
+                  <td className="text-right">{formatarMoeda(p.valor_pago)}</td>
+                  <td>{dataBr(p.data_pagamento)}</td>
+                  <td className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Botao variante="secundario" tamanho="pequeno" onClick={() => onRecibo(p)}>
+                        Recibo
+                      </Botao>
+                      {podeDesfazer && (
+                        <Botao variante="fantasma" tamanho="pequeno" onClick={() => desfazer(p)}>
+                          Desfazer
+                        </Botao>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   );
