@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ClienteFormValues } from "./cliente";
-import { paraVeiculosPreenchidos, veiculoFormVazio } from "./cliente";
+import { paraNovoCliente, paraValoresFormulario, paraVeiculosPreenchidos, veiculoFormVazio } from "./cliente";
 
 function veiculo(sobrescrever: Partial<ClienteFormValues["veiculos"][number]> = {}) {
   return { ...veiculoFormVazio, ...sobrescrever };
@@ -29,5 +29,15 @@ describe("paraVeiculosPreenchidos", () => {
     expect(resultado).toEqual([
       expect.objectContaining({ id: "veiculo-1", marca: "Fiat", modelo: "Uno" }),
     ]);
+  });
+});
+
+describe("nao_avisar no formulário do cliente (#381)", () => {
+  it("nasce falso, e o valor do cliente existente volta pro formulário e pro salvamento", () => {
+    expect(paraValoresFormulario().nao_avisar).toBe(false);
+    const valores = paraValoresFormulario({ nome: "A", nao_avisar: true } as Parameters<typeof paraValoresFormulario>[0]);
+    expect(valores.nao_avisar).toBe(true);
+    expect(paraNovoCliente(valores).nao_avisar).toBe(true);
+    expect(paraNovoCliente({ ...valores, nao_avisar: false }).nao_avisar).toBe(false);
   });
 });

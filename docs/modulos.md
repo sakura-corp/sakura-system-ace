@@ -224,13 +224,6 @@ Quatro coisas que valem saber:
   `schemas/clientesSumidos.ts`, a busca em `lib/clientesSumidos.ts`. Quem nunca veio não aparece.
   O total só aparece pra quem tem Caixa ou Relações (`MODULOS_QUE_LEEM_O_CAIXA`). Um clique por
   cliente: nada em massa.
-  **Lista por página (10/11/2026, #373, TR-03.5)**: a lista principal vem do banco 50 por vez
-  (`listarClientesPagina` + o gancho `useListaPaginada`), com "Mostrando 51 a 100 de 2.340",
-  "Anterior / Próxima" e a ordem clicável em **Nome** e **Cidade/UF**, valendo pra tabela inteira e
-  guardada no computador. A busca (nome, telefone ou CPF/CNPJ, com ou sem pontuação) vai pro banco
-  com `ilike`: ignora maiúscula, mas **não** acento ("joao" não acha "João"; decisão da #373, sem
-  migration). O filtro "sumiram" ainda baixa todos os clientes, só quando é ligado. As caixinhas
-  de escolher cliente e o Início continuam com `listarClientes()` (a lista inteira).
   **"Importar planilha" (10/11/2026, #457, FN-15 parte 1)**: botão ao lado de "+ Novo cliente",
   **só pro administrador**. Abre `ImportarClientesModal.tsx` em 4 passos: escolher o `.csv`
   (`;` ou `,`, UTF-8 ou Latin-1: `schemas/importacaoPlanilha.ts`) → dizer qual coluna é o quê
@@ -244,6 +237,13 @@ Quatro coisas que valem saber:
   conta a receber ou veículo fora da importação fica, e a tela diz por quê. Gravação em blocos de
   500 (`lib/importacaoClientes.ts`). Só CSV por enquanto (Excel e peças/contas/histórico ficam pras
   próximas partes). Planilha de exemplo inventada: `supabase/exemplo/importar-clientes-exemplo.csv`.
+  **Lista por página (10/11/2026, #373, TR-03.5)**: a lista principal vem do banco 50 por vez
+  (`listarClientesPagina` + o gancho `useListaPaginada`), com "Mostrando 51 a 100 de 2.340",
+  "Anterior / Próxima" e a ordem clicável em **Nome** e **Cidade/UF**, valendo pra tabela inteira e
+  guardada no computador. A busca (nome, telefone ou CPF/CNPJ, com ou sem pontuação) vai pro banco
+  com `ilike`: ignora maiúscula, mas **não** acento ("joao" não acha "João"; decisão da #373, sem
+  migration). O filtro "sumiram" ainda baixa todos os clientes, só quando é ligado. As caixinhas
+  de escolher cliente e o Início continuam com `listarClientes()` (a lista inteira).
 - **Estoque**: 4 abas — Produtos (cadastro completo com campos fiscais NCM/CFOP/CST-CSOSN/ICMS,
   categoria, garantia em dias, margem calculada nos dois sentidos), Movimentações (com filtro por
   produto e campo/coluna de Depósito), Contagem (inventário físico, agora

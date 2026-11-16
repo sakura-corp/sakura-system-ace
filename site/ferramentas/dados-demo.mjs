@@ -82,7 +82,12 @@ export const clientes = [
   // O cliente fixo da venda de balcão (migration 0064). O app o deixa de
   // fora das listas com um filtro `neq` — que o banco-falso sabe aplicar.
   { id: "00000000-0000-0000-0000-00000000c000", nome: "Consumidor", tipo_pessoa: "fisica", cpf_cnpj: null, telefone: null, email: null, cep: null, rua: null, numero: null, bairro: null, cidade: null, uf: null, data_nascimento: null, criado_em: dia(-400) },
-].map((c) => ({ ...c, veiculos: veiculos.filter((v) => v.cliente_id === c.id) }));
+]
+  // "Não mandar lembrete" (FN-06, #381): só a Camila pediu. Não a Sandra: ela
+  // está na cena "Clientes que sumiram" (#684), e o "não avisar" a tiraria
+  // de lá também.
+  .map((c) => ({ ...c, nao_avisar: c.id === "c5" }))
+  .map((c) => ({ ...c, veiculos: veiculos.filter((v) => v.cliente_id === c.id) }));
 
 const vlk = (id) => veiculos.find((v) => v.id === id);
 const item = (tipo, id, descricao, qtd, preco) => ({
@@ -149,6 +154,16 @@ const ordensDeQuemSumiu = [
     itens: [item("peca", "p4", "Pastilha de freio dianteira", 1, 189.5), item("servico", "s4", "Troca de pastilha de freio", 1, 90)] },
   { numero: 3, cliente: "c7", veiculo: "v8", status: "faturada", abertura: -300, dataAbertura: diaDeLojaAs(-300, 9, 20), dataFechamento: diaDeLojaAs(-300, 11, 5), km: 109800,
     itens: [item("peca", "p2", "Pneu 205/60 R16", 4, 598), item("servico", "s1", "Alinhamento e balanceamento", 1, 130)] },
+  // Retornos (FN-06, #381): a troca de óleo do Paulo, de 200 dias atrás, já
+  // passou dos 180 do cadastro; a do carro da Sandra também, mas ela pediu pra
+  // não receber lembrete (`nao_avisar`) e por isso não aparece na lista.
+  { numero: 4, cliente: "c6", veiculo: "v7", status: "faturada", abertura: -200, dataAbertura: diaDeLojaAs(-200, 9, 20), dataFechamento: diaDeLojaAs(-200, 11, 5), km: 92300,
+    itens: [item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
+  { numero: 6, cliente: "c7", veiculo: "v8", status: "faturada", abertura: -230, dataAbertura: diaDeLojaAs(-230, 9, 20), dataFechamento: diaDeLojaAs(-230, 11, 5), km: 113000,
+    itens: [item("servico", "s2", "Troca de óleo e filtro", 1, 165)] },
+  // E o rodízio de pneus da Juliana, de 85 dias atrás (90 no cadastro): vence daqui a 5 dias.
+  { numero: 8, cliente: "c3", veiculo: "v3", status: "faturada", abertura: -85, dataAbertura: diaDeLojaAs(-85, 9, 20), dataFechamento: diaDeLojaAs(-85, 11, 5), km: 28700,
+    itens: [item("servico", "s6", "Rodízio de pneus", 1, 80)] },
 ].map(montarOrdem);
 
 // O movimento das últimas 8 semanas: as OS 11 a 142, já faturadas, no
@@ -387,11 +402,12 @@ export const pecas = [
 ];
 
 export const servicos = [
-  { id: "s1", codigo_interno: "SV-ALIN", descricao: "Alinhamento e balanceamento", preco_padrao: 120, custo: 35, categoria_id: "cs4", ativo: true, criado_em: dia(-300) },
-  { id: "s2", codigo_interno: "SV-TROCA-OLEO", descricao: "Troca de óleo e filtro", preco_padrao: 165, custo: 60, categoria_id: "cs5", ativo: true, criado_em: dia(-300) },
-  { id: "s3", codigo_interno: "SV-AMORT", descricao: "Troca de amortecedor", preco_padrao: 260, custo: 90, categoria_id: "cs2", ativo: true, criado_em: dia(-300) },
-  { id: "s4", codigo_interno: "SV-FREIO", descricao: "Troca de pastilha de freio", preco_padrao: 90, custo: 30, categoria_id: "cs3", ativo: true, criado_em: dia(-300) },
-  { id: "s5", codigo_interno: "SV-BAT", descricao: "Instalação de bateria", preco_padrao: 40, custo: 12, categoria_id: "cs5", ativo: true, criado_em: dia(-300) },
+  { id: "s1", codigo_interno: "SV-ALIN", descricao: "Alinhamento e balanceamento", preco_padrao: 120, custo: 35, categoria_id: "cs4", ativo: true, intervalo_dias: 90, intervalo_km: 10000, criado_em: dia(-300) },
+  { id: "s2", codigo_interno: "SV-TROCA-OLEO", descricao: "Troca de óleo e filtro", preco_padrao: 165, custo: 60, categoria_id: "cs5", ativo: true, intervalo_dias: 180, intervalo_km: 10000, criado_em: dia(-300) },
+  { id: "s3", codigo_interno: "SV-AMORT", descricao: "Troca de amortecedor", preco_padrao: 260, custo: 90, categoria_id: "cs2", ativo: true, intervalo_dias: null, intervalo_km: null, criado_em: dia(-300) },
+  { id: "s4", codigo_interno: "SV-FREIO", descricao: "Troca de pastilha de freio", preco_padrao: 90, custo: 30, categoria_id: "cs3", ativo: true, intervalo_dias: null, intervalo_km: null, criado_em: dia(-300) },
+  { id: "s6", codigo_interno: "SV-RODIZIO", descricao: "Rodízio de pneus", preco_padrao: 80, custo: 20, categoria_id: "cs4", ativo: true, intervalo_dias: 90, intervalo_km: null, criado_em: dia(-300) },
+  { id: "s5", codigo_interno: "SV-BAT", descricao: "Instalação de bateria", preco_padrao: 40, custo: 12, categoria_id: "cs5", ativo: true, intervalo_dias: null, intervalo_km: null, criado_em: dia(-300) },
 ];
 
 export const categorias = [
@@ -872,7 +888,7 @@ const janelaOrdensClientes = ordensQueContam.map((o) => ({
   veiculo_marca: o.veiculo ? o.veiculo.marca : null,
   veiculo_modelo: o.veiculo ? o.veiculo.modelo : null,
   itens: o.itens.map((i) => ({
-    ...sub(i, ["id", "tipo", "peca_id", "descricao", "quantidade", "preco_unitario", "desconto"]),
+    ...sub(i, ["id", "tipo", "peca_id", "servico_id", "descricao", "quantidade", "preco_unitario", "desconto"]),
     prazo_garantia_dias: i.peca ? (i.peca.prazo_garantia_dias ?? null) : null,
   })),
 }));
