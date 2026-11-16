@@ -42,6 +42,13 @@ const CLASSE_DO_SELO: Record<LetraABC, string> = {
   C: "bg-texto/[0.08] text-texto-2",
 };
 
+// As cores da rosca: as mesmas do selo da curva.
+const COR_DA_FATIA: Record<LetraABC, string> = {
+  A: "var(--color-ok)",
+  B: "var(--color-atencao)",
+  C: "var(--color-texto-3)",
+};
+
 function formatarPercentual(valor: number): string {
   return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
@@ -237,11 +244,12 @@ function ListaABC<T>({
         <div className="sakura-card hidden shrink-0 p-4 xl:block">
           <GraficoDeRosca
             descricao={`${titulo} por curva`}
-            fatias={[
-              { nome: "Curva A", valor: contagem.A, cor: "var(--color-ok)", texto: `${contagem.A} ${contagem.A === 1 ? "item" : "itens"}` },
-              { nome: "Curva B", valor: contagem.B, cor: "var(--color-atencao)", texto: `${contagem.B} ${contagem.B === 1 ? "item" : "itens"}` },
-              { nome: "Curva C", valor: contagem.C, cor: "var(--color-texto-3)", texto: `${contagem.C} ${contagem.C === 1 ? "item" : "itens"}` },
-            ]}
+            fatias={(["A", "B", "C"] as const).map((letra) => ({
+              nome: `Curva ${letra}`,
+              valor: contagem[letra],
+              cor: COR_DA_FATIA[letra],
+              texto: `${contagem[letra]} ${contagem[letra] === 1 ? "item" : "itens"}`,
+            }))}
           />
         </div>
         </div>

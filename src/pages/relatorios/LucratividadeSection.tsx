@@ -44,6 +44,8 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
   const ehOMesCorrente = dataInicio === primeiroDiaDoMesLocal() && dataFim === hojeLocal();
   const rotuloVendido = ehOMesCorrente ? "Vendido no mês" : "Vendido no período";
 
+  const mostrarRosca = totalCusto >= 0 && totalMargem >= 0 && (totalCusto > 0 || totalMargem > 0);
+
   const avisoDeCusto = (
     <span className="inline-flex items-center gap-1 text-rotulo font-medium text-atencao">
       <TriangleAlert aria-hidden="true" className="size-[13px] shrink-0" strokeWidth={2.25} />
@@ -85,12 +87,12 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         </CartaoNumero>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className={mostrarRosca ? "grid grid-cols-3 gap-4" : undefined}>
       {/* O que já está nos dois cartões de cima (custo e margem), em fatias: a
           margem é a receita menos o custo, então as duas fatias fecham o
           vendido. Com margem negativa não há "fatia", e o cartão já mostra o
           prejuízo em vermelho. */}
-      {totalCusto >= 0 && totalMargem >= 0 && (totalCusto > 0 || totalMargem > 0) && (
+      {mostrarRosca && (
         <section className="sakura-card p-5" aria-labelledby="divisao-do-vendido-titulo">
           <h2
             id="divisao-do-vendido-titulo"
@@ -124,7 +126,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         </section>
       )}
 
-      <p className="col-span-2 flex items-start gap-2 self-center text-rotulo text-texto-2">
+      <p className={`flex items-start gap-2 text-rotulo text-texto-2 ${mostrarRosca ? "col-span-2 self-center" : ""}`}>
         <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
         <span>
           Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos

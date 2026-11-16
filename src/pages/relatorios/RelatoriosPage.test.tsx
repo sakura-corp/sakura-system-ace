@@ -88,3 +88,24 @@ describe("RelatoriosPage — aba Fluxo de caixa (#389)", () => {
     expect(screen.queryByText(/Sem acesso/)).not.toBeInTheDocument();
   });
 });
+
+describe("RelatoriosPage — abas pelo teclado (#990, tarefa 13)", () => {
+  it("a seta pra direita passa pra próxima aba, e só a ligada entra na ordem do Tab", async () => {
+    operador = { id: "op", admin: true, permissoes: [] };
+    const { user: usuario } = renderizar(<RelatoriosPage />);
+    const graficos = await screen.findByRole("tab", { name: "Gráficos" });
+    expect(graficos).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Lucratividade" })).toHaveAttribute("tabindex", "-1");
+
+    graficos.focus();
+    await usuario.keyboard("{ArrowRight}");
+    const lucratividade = screen.getByRole("tab", { name: "Lucratividade" });
+    expect(lucratividade).toHaveAttribute("aria-selected", "true");
+    expect(lucratividade).toHaveFocus();
+
+    await usuario.keyboard("{End}");
+    expect(screen.getByRole("tab", { name: "Fluxo de caixa" })).toHaveAttribute("aria-selected", "true");
+    await usuario.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Gráficos" })).toHaveAttribute("aria-selected", "true");
+  });
+});

@@ -133,7 +133,30 @@ export function RelatoriosPage() {
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div role="tablist" aria-label="O que mostrar" className="flex gap-1 border-b border-linha">
+      <div
+        role="tablist"
+        aria-label="O que mostrar"
+        className="flex gap-1 border-b border-linha"
+        onKeyDown={(e) => {
+          // As setas, o Home e o End trocam de aba (padrão de abas): a ligada é
+          // a única que entra na ordem do Tab, e o foco acompanha a escolha.
+          const atual = ABAS.findIndex((a) => a.chave === aba);
+          const destino =
+            e.key === "ArrowRight"
+              ? (atual + 1) % ABAS.length
+              : e.key === "ArrowLeft"
+                ? (atual + ABAS.length - 1) % ABAS.length
+                : e.key === "Home"
+                  ? 0
+                  : e.key === "End"
+                    ? ABAS.length - 1
+                    : -1;
+          if (destino < 0) return;
+          e.preventDefault();
+          setAba(ABAS[destino].chave);
+          (e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[destino])?.focus();
+        }}
+      >
         {ABAS.map((a) => (
           <AbaBotao
             key={a.chave}
@@ -217,6 +240,7 @@ function AbaBotao({
       type="button"
       role="tab"
       aria-selected={ativa}
+      tabIndex={ativa ? 0 : -1}
       onClick={onClick}
       className={[BASE_DA_ABA, ativa ? ABA_LIGADA : ABA_DESLIGADA, ativa ? TRACO_LIGADO : TRACO_DESLIGADO].join(
         " ",

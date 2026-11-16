@@ -95,9 +95,13 @@ export function GraficoDeBarras({
     (larguraGrupo - GAP_BARRA * (series.length - 1)) / series.length,
   );
 
+  // A raiz fica sempre montada (mesmo sem dados): o observador de largura liga
+  // uma vez só, e se ela sumisse ele nunca ligaria quando os dados chegassem.
   if (categorias.length === 0) {
     return (
-      <p className="text-corpo text-texto-2">Sem dados suficientes pra montar o gráfico ainda.</p>
+      <div ref={raizRef}>
+        <p className="text-corpo text-texto-2">Sem dados suficientes pra montar o gráfico ainda.</p>
+      </div>
     );
   }
 

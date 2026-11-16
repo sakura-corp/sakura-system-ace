@@ -127,7 +127,7 @@ describe("FluxoProjetadoSection", () => {
     // Em 30 dias só a conta real (20/11); a prevista do mês seguinte (20/12) fica de fora.
     await user.click(screen.getByRole("button", { name: /20\/11\/2026/ }));
     expect(screen.getByText("Aluguel")).toBeInTheDocument();
-    expect(screen.queryByText("Prevista")).toBeNull();
+    expect(screen.queryByText(/^prevista$/i)).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "60 dias" }));
     const botaoPrevista = screen.getByRole("button", { name: /20\/12\/2026/ });

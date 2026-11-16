@@ -120,7 +120,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <CartaoNumero
           titulo="Recebido hoje"
           explicacao="Tudo que entrou no caixa hoje: ordens de serviço, contas recebidas e entradas lançadas à mão."
