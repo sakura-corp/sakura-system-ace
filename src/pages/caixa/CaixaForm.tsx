@@ -1,6 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
@@ -59,17 +61,22 @@ export function CaixaForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-5 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">Novo lançamento</h2>
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">Novo lançamento</h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && (
+        <p role="alert" className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-2.5 text-corpo text-perigo">
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Tipo</span>
+        <label className="sakura-rotulo">
+          Tipo
           <select
             {...tipoField}
             onChange={(e) => {
@@ -77,27 +84,29 @@ export function CaixaForm({
               setValue("categoria_id", "");
             }}
             disabled={tipoBloqueado}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple disabled:bg-sakura-gray/10 disabled:text-sakura-muted"
+            className="sakura-campo"
           >
             <option value="entrada">Entrada</option>
             <option value="saida">Saída</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Valor</span>
+        <label className="sakura-rotulo">
+          Valor
           <input
             type="number"
             min="0.01"
             step="0.01"
+            placeholder="0,00"
+            aria-invalid={errors.valor ? true : undefined}
             {...register("valor")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo text-right tabular-nums"
           />
-          {errors.valor && <span className="text-rotulo text-red-400">{errors.valor.message}</span>}
+          {errors.valor && <span className="text-rotulo text-perigo">{errors.valor.message}</span>}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Categoria</span>
+        <label className="sakura-rotulo">
+          Categoria
           <Combobox
             opcoes={categoriasDoTipo.map((categoria) => ({
               valor: categoria.id,
@@ -109,51 +118,38 @@ export function CaixaForm({
             desabilitado={categoriasDoTipo.length === 0}
           />
           {categoriasDoTipo.length === 0 ? (
-            <span className="text-rotulo text-amber-300">
-              Nenhuma categoria de {tipo === "saida" ? "saída" : "entrada"} cadastrada ainda —
-              um administrador cria em Configurações → Categorias de caixa.
+            <span className="flex items-start gap-1.5 text-rotulo font-normal text-atencao">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+              <span className="min-w-0">
+                Nenhuma categoria de {tipo === "saida" ? "saída" : "entrada"} cadastrada ainda —
+                um administrador cria em Configurações → Categorias de caixa.
+              </span>
             </span>
           ) : (
             errors.categoria_id && (
-              <span className="text-rotulo text-red-400">{errors.categoria_id.message}</span>
+              <span className="text-rotulo text-perigo">{errors.categoria_id.message}</span>
             )
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Forma de pagamento</span>
-          <input
-            type="text"
-            {...register("forma_pagamento")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-          />
+        <label className="sakura-rotulo">
+          Forma de pagamento
+          <input type="text" {...register("forma_pagamento")} className="sakura-campo" />
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Descrição</span>
-          <input
-            type="text"
-            {...register("descricao")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-          />
+        <label className="sakura-rotulo col-span-2">
+          Descrição
+          <input type="text" {...register("descricao")} className="sakura-campo" />
         </label>
       </div>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao variante="principal" type="submit" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Registrar"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

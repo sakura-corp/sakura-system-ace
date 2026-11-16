@@ -166,7 +166,7 @@ export const CENAS = [
     rota: "/caixa",
     descricao: "Tudo que entrou e saiu no dia, junto: as ordens faturadas e os lançamentos feitos à mão. Mostra o lucro do dia já descontando o custo das peças e serviços vendidos e as despesas lançadas, e o resumo por forma de recebimento." },
   { arquivo: "27-caixa-form", modulo: "Caixa Diário", titulo: "Lançamento manual no caixa",
-    rota: "/caixa", passos: [{ clicar: "+ Lançamento manual" }],
+    rota: "/caixa", passos: [{ clicar: "Lançamento manual" }],
     descricao: "Dinheiro que entrou ou saiu sem passar por uma ordem de serviço — venda de sucata, pagamento de fornecedor, troco. A categoria é o que faz esses valores aparecerem organizados nos relatórios." },
   { arquivo: "28-caixa-entradas", modulo: "Caixa Diário", titulo: "Entradas",
     rota: "/caixa", passos: [{ aba: "Entradas" }],

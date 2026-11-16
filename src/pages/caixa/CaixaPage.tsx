@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -103,31 +104,29 @@ export function CaixaPage() {
     <div className="space-y-6">
       <header className="flex items-center gap-3">
         <BotaoVoltar />
-        <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Caixa Diário
-          </h1>
-          <p className="text-corpo text-sakura-muted">
+        <div className="min-w-0">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Caixa Diário</h1>
+          <p className="text-corpo text-texto-2">
             Vendas e movimentação do dia, nascendo das ordens de serviço faturadas
           </p>
         </div>
       </header>
 
       {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
+        <p className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo">
+          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span className="min-w-0">{erro}</span>
         </p>
       )}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="Diário" ativa={aba === "diario"} onClick={() => setAba("diario")} />
-        <AbaBotao label="Entradas" ativa={aba === "entradas"} onClick={() => setAba("entradas")} />
-        <AbaBotao label="Saídas" ativa={aba === "saidas"} onClick={() => setAba("saidas")} />
-        <AbaBotao label="Fechamento" ativa={aba === "fechamento"} onClick={() => setAba("fechamento")} />
+      <div role="tablist" aria-label="Partes do caixa" className="flex gap-1 border-b border-linha">
+        {ABAS.map(({ chave, rotulo }) => (
+          <AbaBotao key={chave} label={rotulo} ativa={aba === chave} onClick={() => setAba(chave)} />
+        ))}
       </div>
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
         <DiarioSection
           movimentos={movimentos}
@@ -166,6 +165,23 @@ export function CaixaPage() {
   );
 }
 
+const ABAS: { chave: Aba; rotulo: string }[] = [
+  { chave: "diario", rotulo: "Diário" },
+  { chave: "entradas", rotulo: "Entradas" },
+  { chave: "saidas", rotulo: "Saídas" },
+  { chave: "fechamento", rotulo: "Fechamento" },
+];
+
+/**
+ * A aba do visual novo: o traço laranja embaixo da escolhida (regra 2, "a aba
+ * ativa" é um dos lugares do laranja) e a palavra em negrito na cor do texto,
+ * porque cor sozinha não avisa. A aparência segue o `aria-selected`, o mesmo
+ * estado que o leitor de tela anuncia.
+ *
+ * É o mesmo desenho das abas da tarefa 7 (Ordens de Serviço), que criou a peça
+ * `sakura-aba` no globals.css; esta tarefa partiu de antes dela. Quando as duas
+ * estiverem na `main`, esta aba pode virar a peça (sugestão no PR).
+ */
 function AbaBotao({
   label,
   ativa,
@@ -177,12 +193,20 @@ function AbaBotao({
 }) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={ativa}
       onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
+      className={[
+        "relative rounded-t-[10px] px-4 pb-3 pt-2.5 text-corpo font-medium text-texto-2",
+        "transition-colors hover:bg-passar hover:text-texto",
+        "after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-sm after:content-['']",
+        "aria-selected:font-semibold aria-selected:text-texto",
+        // O traço laranja é só uma linha de 2 px embaixo, não o fundo da
+        // palavra: fica numa string à parte pra varredura de contraste (que
+        // olha string por string) não somar o laranja com a letra.
+        "aria-selected:after:bg-acao",
+      ].join(" ")}
     >
       {label}
     </button>
