@@ -1,3 +1,4 @@
+import { Botao } from "@/components/Botao";
 import { useEffect, useState } from "react";
 import { useConexao } from "@/hooks/useConexao";
 import { mensagemDeErro } from "@/lib/errors";
@@ -7,6 +8,7 @@ import {
   CANAL_ATUALIZACAO_ROTULO,
   type CanalAtualizacao,
 } from "@/schemas/canalAtualizacao";
+import { AvisoDeAtencao, AvisoDeSalvo, MensagemDeErro } from "./pecas";
 
 // Por qual canal ESTE computador recebe versão nova (item TR-09.1). Diferente
 // das outras seções de Configurações, isto não mora no banco: cada computador
@@ -68,7 +70,7 @@ export function AtualizacoesComputadorSection() {
 
   if (!disponivel) {
     return (
-      <p className="text-corpo text-sakura-muted">
+      <p className="text-corpo text-texto-2">
         Esta escolha só existe no programa instalado — aqui não há atualização automática.
       </p>
     );
@@ -76,21 +78,24 @@ export function AtualizacoesComputadorSection() {
 
   if (!atual || !escolha) {
     return erro ? (
-      <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+      <MensagemDeErro>{erro}</MensagemDeErro>
     ) : (
-      <p className="text-corpo text-sakura-muted">Carregando...</p>
+      <p className="text-corpo text-texto-2">Carregando...</p>
     );
   }
 
   return (
     <>
-      {erro && (
-        <p className="mb-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
-      <fieldset className="space-y-3">
+      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="sr-only">Canal de atualização deste computador</legend>
         {CANAIS_ATUALIZACAO.map((canal) => (
-          <label key={canal} className="flex items-start gap-3 text-corpo">
+          <label
+            key={canal}
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-corpo transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-sakura-focus ${
+              escolha === canal ? "border-acao bg-acao/10" : "border-linha-forte hover:bg-passar"
+            }`}
+          >
             <input
               type="radio"
               name="canal-atualizacao"
@@ -99,18 +104,18 @@ export function AtualizacoesComputadorSection() {
                 setEscolha(canal);
                 setSalvo(false);
               }}
-              className="mt-1 h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
+              className="mt-1 size-[18px] shrink-0 accent-acao"
             />
             <span>
-              <span className="font-medium text-sakura-purple-dark">
+              <span className="font-semibold text-texto">
                 {CANAL_ATUALIZACAO_ROTULO[canal]}
                 {canal === atual && (
-                  <span className="ml-2 text-rotulo font-normal text-sakura-muted">
+                  <span className="ml-2 text-rotulo font-normal text-texto-2">
                     (escolha atual)
                   </span>
                 )}
               </span>
-              <span className="mt-0.5 block text-rotulo text-sakura-muted">
+              <span className="mt-0.5 block text-rotulo text-texto-2">
                 {CANAL_ATUALIZACAO_DESCRICAO[canal]}
               </span>
             </span>
@@ -119,36 +124,26 @@ export function AtualizacoesComputadorSection() {
       </fieldset>
 
       {atual === "teste" && escolha === "normal" && (
-        <p className="mt-3 text-rotulo text-sakura-muted">
+        <p className="mt-4 text-rotulo text-texto-2">
           Se este computador já recebeu uma versão que ainda está em teste, ele continua nela até as
           outras lojas passarem dela — nunca volta sozinho para uma versão mais velha.
         </p>
       )}
 
       {semConexao && (
-        <p
-          role="status"
-          className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
-        >
+        <AvisoDeAtencao role="status" className="mt-4 text-rotulo">
           Sem internet o programa não procura atualização: ele procura sozinho da próxima vez que
           for aberto com internet. Trocar o canal aqui funciona mesmo assim.
-        </p>
+        </AvisoDeAtencao>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            Salvo. Vale a partir da próxima vez que o programa for aberto.
-          </p>
+          <AvisoDeSalvo>Salvo. Vale a partir da próxima vez que o programa for aberto.</AvisoDeSalvo>
         )}
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando || escolha === atual}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao type="button" variante="principal" onClick={handleSalvar} ocupado={salvando} disabled={escolha === atual}>
           {salvando ? "Salvando..." : "Salvar"}
-        </button>
+        </Botao>
       </div>
     </>
   );
