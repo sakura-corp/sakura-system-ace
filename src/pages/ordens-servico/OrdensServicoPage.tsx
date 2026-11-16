@@ -1,8 +1,17 @@
-import { FolderOpen, MessageCircle, Plus, Receipt, Star, TriangleAlert } from "lucide-react";
+import {
+  FileText,
+  FolderOpen,
+  MessageCircle,
+  Plus,
+  Receipt,
+  Star,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AcoesDaLinha, type AcaoDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { avisar } from "@/lib/avisoQueSome";
 import { abrirConversaWhatsapp } from "@/lib/whatsapp";
@@ -67,12 +76,18 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { agruparNotasPorOrdem, temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
+import {
+  agruparNotasPorOrdem,
+  ordemEstaFinalizada,
+  situacaoFiscalOrdem,
+  temAlgumaNotaValida,
+} from "@/schemas/situacaoFiscal";
 import { contaNosNumeros, lucroDaOrdemPeloBanco, TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
 import { FaturamentoCard } from "./FaturamentoCard";
+import { NotaDoClienteModal, notasDoCliente } from "./NotaDoClienteModal";
 import { SeloDaOrdem } from "./SeloDaOrdem";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
@@ -132,6 +147,11 @@ export function OrdensServicoPage() {
   const [vendaParaNota, setVendaParaNota] = useState<OrdemServico | null>(null);
   // O erro de uma ação de WhatsApp escolhida no "Mais ações" (ver
   // `abrirWhatsappDaLinha`): fica embaixo das ações da linha dela.
+  // "Nota do cliente" aberta pela linha de uma OS finalizada.
+  const [notaDoCliente, setNotaDoCliente] = useState<{
+    documento: string;
+    notas: NotaFiscalArquivo[];
+  } | null>(null);
   const [erroDaLinha, setErroDaLinha] = useState<{ ordemId: string; texto: string } | null>(
     null,
   );
@@ -611,17 +631,31 @@ export function OrdensServicoPage() {
   // aparece nas mesmas condições de antes (ver a tabela no PR):
   //   • não faturada → "Faturar" (laranja); "Avisar o cliente" (se concluída)
   //     e "Fechamento" (se concluída) vão pro menu;
-  //   • OS faturada → "Avisar" (WhatsApp); "Fechamento" e "Avaliação" no menu;
-  //   • venda faturada → nada na linha (não tem carro pra avisar);
-  //     "Fechamento" e "Avaliação" no menu.
+  //   • faturada que ainda falta nota → "Emitir nota" (abre o Fechamento,
+  //     onde a nota é emitida); "Avisar o cliente" vai pro menu;
+  //   • finalizada (todas as notas saíram) → "Avisar" (WhatsApp, só OS) e
+  //     "Nota do cliente" (ver, imprimir ou mandar a nota), lado a lado;
+  //   • "Fechamento" e "Avaliação" ficam no menu.
+  // As três do meio são decisão da Sofia (16/11) pro pedido dela de 15/11: a
+  // nota do cliente à mão depois de faturar.
   // "Abrir a OS" é novo no menu: até aqui só o clique do mouse na linha abria,
   // e quem usa só o teclado não tinha como.
   function acoesDaLinha(ordem: OrdemServico) {
     const venda = ehVendaBalcao(ordem);
     const aviso = avisoCarroPronto(ordem);
     const avaliacao = pedidoDeAvaliacao(ordem);
-    const proximo: "faturar" | "avisar" | null =
-      ordem.status !== "faturada" ? "faturar" : aviso ? "avisar" : null;
+    const notas = notasPorOrdem.get(ordem.id) ?? [];
+    const situacao = situacaoFiscalOrdem(ordem.itens ?? [], notas);
+    const faltaNota = ordem.status === "faturada" && situacao.pendentes.length > 0;
+    const notasParaVer = ordemEstaFinalizada(ordem, situacao) ? notasDoCliente(notas) : [];
+    const proximo: "faturar" | "emitir" | "avisar" | null =
+      ordem.status !== "faturada"
+        ? "faturar"
+        : faltaNota
+          ? "emitir"
+          : aviso
+            ? "avisar"
+            : null;
 
     const menu: AcaoDaLinha[] = [];
     if (aviso && proximo !== "avisar") {
@@ -670,6 +704,17 @@ export function OrdensServicoPage() {
               Faturar
             </Botao>
           )}
+          {proximo === "emitir" && (
+            <Dica texto={`Falta ${situacao.pendentes.join(" e ")}. Abre o Fechamento, onde a nota é emitida`}>
+              <Botao
+                variante="principal"
+                tamanho="pequeno"
+                onClick={() => abrirOrdem(ordem, "fechamento")}
+              >
+                Emitir nota
+              </Botao>
+            </Dica>
+          )}
           {proximo === "avisar" && aviso && (
             <BotaoWhatsapp
               telefone={aviso.telefone}
@@ -678,6 +723,18 @@ export function OrdensServicoPage() {
               titulo="Avisar o cliente pelo WhatsApp que o carro está pronto"
               aoAbrir={aviso.aoAbrir}
             />
+          )}
+          {notasParaVer.length > 0 && (
+            <Botao
+              tamanho="pequeno"
+              icone={<FileText />}
+              onClick={() => {
+                setErroDaLinha(null);
+                setNotaDoCliente({ documento: nomeDocumento(ordem), notas: notasParaVer });
+              }}
+            >
+              Nota do cliente
+            </Botao>
           )}
           <AcoesDaLinha descricao={nomeDocumento(ordem)} acoes={menu} />
         </div>
@@ -850,6 +907,14 @@ export function OrdensServicoPage() {
             void carregar();
           }}
           onEmitido={() => undefined}
+        />
+      )}
+
+      {notaDoCliente && (
+        <NotaDoClienteModal
+          documento={notaDoCliente.documento}
+          notas={notaDoCliente.notas}
+          onFechar={() => setNotaDoCliente(null)}
         />
       )}
 
