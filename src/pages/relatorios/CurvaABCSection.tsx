@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { Valor } from "@/components/Valor";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
@@ -16,6 +17,8 @@ import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { FiltroDeDatas } from "./FiltroDeDatas";
+import { Segmentos } from "./Segmentos";
 
 interface CurvaABCSectionProps {
   ordens: OrdemServico[];
@@ -23,18 +26,19 @@ interface CurvaABCSectionProps {
   servicos: Servico[];
 }
 
-const CRITERIOS: { chave: CriterioABC; label: string }[] = [
-  { chave: "venda", label: "Por venda" },
-  { chave: "lucro", label: "Por lucro" },
+const CRITERIOS: { chave: CriterioABC; texto: string }[] = [
+  { chave: "venda", texto: "Por venda" },
+  { chave: "lucro", texto: "Por lucro" },
 ];
 
-// Do mais forte pro mais fraco: A cheio, B só o contorno, C contorno discreto.
-// Contorno em vez de fundo claro: no tema escuro o rosa-claro some e o
-// cinza-claro vira o selo mais chamativo da lista (visto na foto da tela).
+// O selo da curva (#990, tarefa 13): a LETRA é a palavra do aviso (regra 4), e a
+// cor só reforça. Do mais importante pro menos: A verde, B amarelo, C cinza.
+// Não usa o `Selo` porque ele pede um ícone com significado de status, e aqui
+// a letra já diz tudo; o tom (fundo da cor a 12%, letra na cor) é o mesmo dele.
 const CLASSE_DO_SELO: Record<LetraABC, string> = {
-  A: "bg-sakura-purple text-sobre-acao",
-  B: "border-2 border-sakura-purple text-sakura-purple-dark",
-  C: "border border-sakura-gray/50 text-sakura-muted",
+  A: "bg-ok/[0.12] text-ok",
+  B: "bg-atencao/[0.12] text-atencao",
+  C: "bg-texto/[0.08] text-texto-2",
 };
 
 function formatarPercentual(valor: number): string {
@@ -73,49 +77,24 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          De:
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
-        </label>
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          Até:
-          <input
-            type="date"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
-        </label>
-        <div
-          role="group"
-          aria-label="Classificar por"
-          className="flex gap-1 rounded-full bg-texto/10 p-1"
-        >
-          {CRITERIOS.map((c) => (
-            <button
-              key={c.chave}
-              type="button"
-              aria-pressed={criterio === c.chave}
-              onClick={() => setCriterio(c.chave)}
-              className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
-                criterio === c.chave
-                  ? "bg-sakura-purple text-sobre-acao"
-                  : "text-sakura-purple-dark/85 hover:bg-texto/10"
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-end gap-4">
+        <FiltroDeDatas
+          de={dataInicio}
+          ate={dataFim}
+          aoMudarDe={setDataInicio}
+          aoMudarAte={setDataFim}
+        />
+        <Segmentos
+          rotulo="Classificar por"
+          opcoes={CRITERIOS}
+          valor={criterio}
+          aoEscolher={setCriterio}
+        />
       </div>
 
-      <p className="text-rotulo text-sakura-muted">
+      <p className="flex items-start gap-2 text-rotulo text-texto-2">
+        <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+        <span>
         {criterio === "venda"
           ? "A curva por venda mostra o que não pode faltar: A são os poucos que fazem a maior parte do que entrou no período."
           : "A curva por lucro mostra o que vale a pena: o que vendeu menos o custo."}{" "}
@@ -125,6 +104,7 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
         {criterio === "lucro"
           ? `Item com ${TEXTO_CUSTO_NAO_INFORMADO}, ou com lucro zero ou negativo, fica no C, fora da conta.`
           : "Item com venda zero fica no C, fora da conta."}
+        </span>
       </p>
 
       <ListaABC
@@ -149,10 +129,10 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
         rotuloValor={rotuloValor}
         rodape={
           curvas.consumidor && (
-            <p className="px-4 py-3 text-corpo text-sakura-purple-dark">
+            <p className="px-[18px] py-3 text-corpo text-texto">
               Venda de balcão sem cliente (fora da curva):{" "}
               {curvas.consumidor.valor === null ? (
-                <span className="text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</span>
+                <span className="text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</span>
               ) : (
                 <span className="font-medium">{formatarMoeda(curvas.consumidor.valor)}</span>
               )}
@@ -184,9 +164,9 @@ function ListaABC<T>({
   return (
     <section aria-label={titulo}>
       <div className="mb-3 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h2 className="text-corpo font-semibold text-sakura-purple-dark">{titulo}</h2>
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">{titulo}</h2>
         {curva.linhas.length > 0 && (
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             {(["A", "B", "C"] as const).map((letra, i) => (
               <span key={letra}>
                 {i > 0 && " · "}
@@ -198,58 +178,58 @@ function ListaABC<T>({
       </div>
       {curva.linhas.length === 0 ? (
         <>
-          <p className="text-corpo text-sakura-muted">{vazio}</p>
-          {rodape && <div className="mt-2 sakura-card">{rodape}</div>}
+          <p className="text-corpo text-texto-2">{vazio}</p>
+          {rodape && <div className="sakura-card mt-2">{rodape}</div>}
         </>
       ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+        <div className="sakura-card overflow-hidden">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="w-20 px-4 py-3 font-medium">Curva</th>
-                <th className="px-4 py-3 font-medium">Nome</th>
-                <th className="px-4 py-3 font-medium">{rotuloValor}</th>
-                <th className="px-4 py-3 font-medium">% do total</th>
-                <th className="px-4 py-3 font-medium">% acumulada</th>
+                <th className="w-24">Curva</th>
+                <th>Nome</th>
+                <th className="text-right">{rotuloValor}</th>
+                <th className="text-right">% do total</th>
+                <th className="text-right">% acumulada</th>
               </tr>
             </thead>
             <tbody>
               {curva.linhas.map((l, i) => (
                 // Duas linhas podem ter o mesmo nome (peça do cadastro e
                 // avulsa iguais): a posição desempata a chave.
-                <tr key={`${i}:${nomeDe(l.linha)}`} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">
+                <tr key={`${i}:${nomeDe(l.linha)}`}>
+                  <td>
                     <span
-                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-rotulo font-semibold ${CLASSE_DO_SELO[l.letra]}`}
+                      className={`inline-flex size-7 items-center justify-center rounded-full text-rotulo font-semibold ${CLASSE_DO_SELO[l.letra]}`}
                       role="img"
                       aria-label={`Curva ${l.letra}`}
                     >
                       {l.letra}
                     </span>
                   </td>
-                  <td className="px-4 py-3">{nomeDe(l.linha)}</td>
-                  <td className="px-4 py-3">
+                  <td>{nomeDe(l.linha)}</td>
+                  <td className="text-right">
                     {l.valor === null ? (
-                      <span className="text-sakura-muted">{TEXTO_CUSTO_NAO_INFORMADO}</span>
+                      <span className="text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</span>
                     ) : (
                       <Valor valor={l.valor} />
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="text-right">
                     {l.participacao === null ? (
-                      <span className="text-sakura-muted">fora da conta</span>
+                      <span className="text-texto-2">fora da conta</span>
                     ) : (
                       formatarPercentual(l.participacao)
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="text-right">
                     {l.acumulada === null ? "" : formatarPercentual(l.acumulada)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {rodape && <div className="border-t border-sakura-gray/20">{rodape}</div>}
+          {rodape && <div className="border-t border-linha">{rodape}</div>}
         </div>
       )}
     </section>

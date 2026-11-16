@@ -48,7 +48,7 @@ beforeEach(() => {
 
 async function abrirFluxo() {
   const { user: usuario } = renderizar(<RelatoriosPage />);
-  await usuario.click(await screen.findByRole("button", { name: "Fluxo de caixa" }));
+  await usuario.click(await screen.findByRole("tab", { name: "Fluxo de caixa" }));
 }
 
 describe("RelatoriosPage — aba Fluxo de caixa (#389)", () => {
@@ -78,11 +78,11 @@ describe("RelatoriosPage — aba Fluxo de caixa (#389)", () => {
     const { user: usuario } = renderizar(<RelatoriosPage />);
 
     // Gráficos: os movimentos carregaram mesmo com as contas falhando.
-    await screen.findByRole("button", { name: "Fluxo de caixa" });
+    await screen.findByRole("tab", { name: "Fluxo de caixa" });
     expect(listarMovimentosCaixa).toHaveBeenCalled();
     expect(screen.queryByText("caiu a internet")).not.toBeInTheDocument();
 
-    await usuario.click(screen.getByRole("button", { name: "Fluxo de caixa" }));
+    await usuario.click(screen.getByRole("tab", { name: "Fluxo de caixa" }));
     expect(await screen.findByText(/Não deu pra carregar as contas/)).toBeInTheDocument();
     expect(screen.getByText(/caiu a internet/)).toBeInTheDocument();
     expect(screen.queryByText(/Sem acesso/)).not.toBeInTheDocument();

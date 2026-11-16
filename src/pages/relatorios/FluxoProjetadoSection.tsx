@@ -1,4 +1,8 @@
+import { ChevronRight } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Selo } from "@/components/Selo";
+import { Valor as ValorEmDinheiro } from "@/components/Valor";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
@@ -8,6 +12,7 @@ import {
 } from "@/schemas/fluxoProjetado";
 import type { ContaPagar } from "@/types/contaPagar";
 import type { ContaReceber } from "@/types/contaReceber";
+import { Segmentos } from "./Segmentos";
 
 interface FluxoProjetadoSectionProps {
   /** null = quem está usando não tem o módulo Contas a Pagar. */
@@ -18,13 +23,14 @@ interface FluxoProjetadoSectionProps {
   hoje?: string;
 }
 
+/**
+ * Um valor do fluxo. `null` é "sem acesso ao módulo": mostra "—", nunca um
+ * R$ 0,00. Negativo ganha seta, sinal e cor (o `Valor` das telas): o saldo
+ * que fica no vermelho não pode passar batido.
+ */
 function Valor({ valor }: { valor: number | null }) {
   if (valor === null) return <>—</>;
-  return (
-    <span className={valor < 0 ? "text-red-300" : undefined}>
-      {formatarMoeda(valor)}
-    </span>
-  );
+  return <ValorEmDinheiro valor={valor} />;
 }
 
 // Toda soma vem de `calcularFluxoProjetado` (`schemas/fluxoProjetado.ts`).
@@ -63,83 +69,63 @@ export function FluxoProjetadoSection({
 
   return (
     <>
-      <div
-        role="group"
-        aria-label="Período"
-        className="flex items-center gap-2"
-      >
-        <span className="text-corpo text-sakura-purple-dark/80">Período:</span>
-        {PERIODOS_FLUXO.map((p) => (
-          <button
-            key={p}
-            type="button"
-            aria-pressed={periodo === p}
-            onClick={() => setPeriodo(p)}
-            className={`rounded-lg border px-3 py-1.5 text-corpo ${
-              periodo === p
-                ? "border-sakura-purple bg-sakura-pink-soft font-medium text-sakura-purple-dark"
-                : "border-sakura-borda-campo text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-            }`}
-          >
-            {p} dias
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-corpo text-texto-2">Período:</span>
+        <Segmentos
+          rotulo="Período"
+          opcoes={PERIODOS_FLUXO.map((p) => ({ chave: p, texto: `${p} dias` }))}
+          valor={periodo}
+          aoEscolher={setPeriodo}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Entra</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            <Valor valor={fluxo.totalEntra} />
-          </p>
-          {fluxo.totalEntra === null && (
-            <p className="text-rotulo text-sakura-muted">
-              Sem acesso a Contas a Receber
-            </p>
-          )}
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Sai</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            <Valor valor={fluxo.totalSai} />
-          </p>
-          {fluxo.totalSai === null && (
-            <p className="text-rotulo text-sakura-muted">
-              Sem acesso a Contas a Pagar
-            </p>
-          )}
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Saldo do período</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            <Valor valor={fluxo.saldo} />
-          </p>
-          {fluxo.saldo === null && (
-            <p className="text-rotulo text-sakura-muted">
-              Precisa de Contas a Pagar e Contas a Receber
-            </p>
-          )}
-        </div>
+        <CartaoNumero
+          titulo="Entra"
+          explicacao="As contas a receber ainda não recebidas que vencem no período. As vencidas contam em hoje."
+          semAcesso={fluxo.totalEntra === null ? "Sem acesso a Contas a Receber" : undefined}
+        >
+          <Valor valor={fluxo.totalEntra} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Sai"
+          explicacao="As contas a pagar ainda não pagas que vencem no período, e as recorrentes que ainda não foram criadas. As vencidas contam em hoje."
+          semAcesso={fluxo.totalSai === null ? "Sem acesso a Contas a Pagar" : undefined}
+        >
+          <Valor valor={fluxo.totalSai} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Saldo do período"
+          explicacao="O que entra menos o que sai, a partir de hoje. Não é o saldo do banco."
+          semAcesso={
+            fluxo.saldo === null ? "Precisa de Contas a Pagar e Contas a Receber" : undefined
+          }
+        >
+          <Valor valor={fluxo.saldo} />
+        </CartaoNumero>
       </div>
 
-      <p className="text-rotulo text-sakura-muted">
+      <p className="text-rotulo text-texto-2">
         O saldo começa do zero hoje: é quanto sobra ou falta a partir de hoje,
         não o saldo do banco. Cartão a receber ainda não entra nesta conta.
       </p>
 
-      <section>
-        <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+      <section aria-labelledby="dia-a-dia-titulo">
+        <h2
+          id="dia-a-dia-titulo"
+          className="mb-3 font-titulo text-subtitulo font-semibold text-texto"
+        >
           Dia a dia
         </h2>
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+        <div className="sakura-card overflow-hidden">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Dia</th>
-                <th className="px-4 py-3 font-medium">Entra</th>
-                <th className="px-4 py-3 font-medium">Sai</th>
-                <th className="px-4 py-3 font-medium">Saldo do dia</th>
-                <th className="px-4 py-3 font-medium">Saldo acumulado</th>
+                <th>Dia</th>
+                <th className="text-right">Entra</th>
+                <th className="text-right">Sai</th>
+                <th className="text-right">Saldo do dia</th>
+                <th className="text-right">Saldo acumulado</th>
               </tr>
             </thead>
             <tbody>
@@ -149,63 +135,63 @@ export function FluxoProjetadoSection({
                 const rotuloDia = `${diaBrasileiro(d.dia)}${d.dia === diaDeHoje ? " (hoje)" : ""}`;
                 return (
                   <Fragment key={d.dia}>
-                    <tr className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">
+                    <tr>
+                      <td>
                         {temItens ? (
+                          // A setinha mostra que a linha abre (antes só o sublinhado
+                          // do mouse dizia, e só com o mouse em cima).
                           <button
                             type="button"
                             aria-expanded={aberto}
                             onClick={() => alternar(d.dia)}
-                            className="font-medium text-sakura-purple-dark underline-offset-2 hover:underline"
+                            className="inline-flex items-center gap-1.5 rounded-md py-1 pr-2 font-semibold text-texto hover:bg-passar"
                           >
+                            <ChevronRight
+                              aria-hidden="true"
+                              className={`size-4 shrink-0 text-texto-2 transition-transform duration-150 motion-reduce:transition-none ${
+                                aberto ? "rotate-90" : ""
+                              }`}
+                            />
                             {rotuloDia}
                           </button>
                         ) : (
-                          <span className="text-sakura-purple-dark">
-                            {rotuloDia}
-                          </span>
+                          <span className="pl-[22px] text-texto">{rotuloDia}</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="text-right">
                         <Valor valor={d.entra} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="text-right">
                         <Valor valor={d.sai} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="text-right">
                         <Valor valor={d.saldoDoDia} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="text-right font-semibold">
                         <Valor valor={d.saldoAcumulado} />
                       </td>
                     </tr>
                     {aberto && temItens && (
-                      <tr className="bg-sakura-pink-soft/40">
-                        <td colSpan={5} className="px-4 py-3">
-                          <ul className="space-y-1">
+                      <tr className="bg-poco">
+                        <td colSpan={5} className="!h-auto py-3 pl-[44px]">
+                          <ul className="space-y-1.5">
                             {d.itens.map((item) => (
                               <li
                                 key={item.chave}
-                                className="flex flex-wrap items-center gap-2 text-corpo text-sakura-purple-dark"
+                                className="flex flex-wrap items-center gap-2 text-corpo text-texto"
                               >
-                                <span>
+                                <span className="text-texto-2">
                                   {item.tipo === "entra" ? "Entra:" : "Sai:"}
                                 </span>
                                 <span>{item.descricao}</span>
-                                <span className="font-medium">
+                                <span className="font-semibold">
                                   {formatarMoeda(item.valor)}
                                 </span>
-                                {item.prevista && (
-                                  <span className="rounded-full border border-sakura-purple px-2 text-rotulo">
-                                    prevista
-                                  </span>
-                                )}
+                                {item.prevista && <Selo tipo="info" palavra="Prevista" />}
                                 {item.atrasada && (
                                   <>
-                                    <span className="rounded-full border border-red-300 px-2 text-rotulo text-red-300">
-                                      atrasada
-                                    </span>
-                                    <span className="text-rotulo text-sakura-muted">
+                                    <Selo tipo="perigo" palavra="Atrasada" />
+                                    <span className="text-rotulo text-texto-2">
                                       venceu em {diaBrasileiro(item.vencimento)}
                                     </span>
                                   </>

@@ -77,7 +77,7 @@ describe("RelatoriosPage — troca de loja (#927)", () => {
     lojaAtual = { id: "loja-b", nome: "Loja B" };
     rerender(<RelatoriosPage />);
 
-    await user.click(await screen.findByRole("button", { name: "Curva ABC" }));
+    await user.click(await screen.findByRole("tab", { name: "Curva ABC" }));
     expect(await screen.findByText("Cliente da loja B")).toBeInTheDocument();
 
     await act(async () => {
@@ -96,7 +96,7 @@ describe("RelatoriosPage — troca de loja (#927)", () => {
         : Promise.reject(new Error("caiu a conexão")),
     );
     const { user, rerender } = renderizar(<RelatoriosPage />);
-    await user.click(await screen.findByRole("button", { name: "Curva ABC" }));
+    await user.click(await screen.findByRole("tab", { name: "Curva ABC" }));
     expect(await screen.findByText("Cliente da loja A")).toBeInTheDocument();
 
     lojaAtual = { id: "loja-b", nome: "Loja B" };
