@@ -185,6 +185,15 @@
      Vira a classe `ease-suave`. O menu é o primeiro a usar; o resto do
      movimento é da tarefa 5. */
   --ease-suave: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* tarefa 5: o movimento. As durações da tabela da seção 8 das regras, num
+     lugar só (a curva é a de cima). Os blocos que usam estão no fim deste
+     arquivo, no bloco "tarefa 5: o movimento". */
+  --duration-tela: 0.42s; /* trocar de tela: cada bloco */
+  --duration-janela: 0.28s; /* abrir janela */
+  --duration-menu-brota: 0.16s; /* menu de três pontos */
+  --duration-botao: 0.12s; /* botão: clarear e encolher */
+  --duration-fio: 0.9s; /* o fio do gráfico */
 }
 
 :root {
@@ -960,4 +969,133 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     radial-gradient(86% 96% at 0% 0%, var(--capa-m1, rgba(225, 29, 72, 0.95)), transparent 66%),
     radial-gradient(60% 62% at 100% 100%, var(--capa-m2, rgba(255, 87, 34, 0.9)), transparent 70%),
     radial-gradient(46% 52% at 92% 0%, var(--capa-m3, rgba(107, 18, 41, 0.9)), transparent 72%);
+}
+
+/* ------------------------------------------------------------------
+   tarefa 5: o movimento (visual novo, #990; tabela da seção 8 das regras)
+
+   Curto e de um jeito só: a curva é a `--ease-suave` e as durações são as
+   `--duration-*` lá de cima (no `@theme`). Só CSS, nada em laço, nada acima de
+   meio segundo (fora o fio). O menu lateral (largura em 0,26 s, fundo do item
+   ativo em 0,3 s) e o botão (0,12 s, no `Botao.tsx`) já usam estes mesmos
+   valores nas classes deles.
+
+   Nada aqui atrasa o clique nem o foco: a animação é só de aparência
+   (`opacity` e `transform`), com `backwards` pra, depois dela, não sobrar
+   `transform` nenhum no elemento (um `transform` que sobra vira "caixa de
+   contenção" e bagunça `sticky` e `fixed` lá dentro).
+
+   QUEM DESLIGOU AS ANIMAÇÕES NO WINDOWS NÃO VÊ NENHUMA: o bloco
+   `prefers-reduced-motion` no fim zera todas. O teste que prova isso está no
+   `scripts/testar-electron.mjs`.
+   ------------------------------------------------------------------ */
+@keyframes sakura-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes sakura-fundo-aparece {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes sakura-janela-abre {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+@keyframes sakura-brota {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes sakura-fio-desenha {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@keyframes sakura-fio-aparece {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Trocar de tela: o `App.tsx` põe um `.sakura-tela` em volta da rota. O filho
+   dele é a tela; os filhos da tela são os blocos, que entram um depois do
+   outro (45 ms de intervalo; do 9º em diante entram juntos, pra tela comprida
+   não demorar). */
+.sakura-tela {
+  display: contents;
+}
+
+.sakura-tela[data-entrando] > * > * {
+  animation: sakura-sobe var(--duration-tela) var(--ease-suave) backwards;
+}
+
+.sakura-tela[data-entrando] > * > :nth-child(2) { animation-delay: 45ms; }
+.sakura-tela[data-entrando] > * > :nth-child(3) { animation-delay: 90ms; }
+.sakura-tela[data-entrando] > * > :nth-child(4) { animation-delay: 135ms; }
+.sakura-tela[data-entrando] > * > :nth-child(5) { animation-delay: 180ms; }
+.sakura-tela[data-entrando] > * > :nth-child(6) { animation-delay: 225ms; }
+.sakura-tela[data-entrando] > * > :nth-child(7) { animation-delay: 270ms; }
+.sakura-tela[data-entrando] > * > :nth-child(8) { animation-delay: 315ms; }
+.sakura-tela[data-entrando] > * > :nth-child(n + 9) { animation-delay: 360ms; }
+
+/* Abrir janela: o fundo escurece e o painel sobe 14 px, de 96% a 100%. */
+.sakura-modal-fundo {
+  animation: sakura-fundo-aparece var(--duration-janela) var(--ease-suave) backwards;
+}
+
+/* A janela costuma nascer como filha direta da tela: aí as regras de atraso por
+   posição (`nth-child`, mais fortes) valeriam pra ela e o fundo ficaria
+   invisível, mas já clicável, por até 0,36 s. Esta empata com elas em força e
+   ganha por vir DEPOIS: não mudar de lugar (o teste do Electron pega). */
+.sakura-tela[data-entrando] > * > .sakura-modal-fundo {
+  animation-delay: 0s;
+}
+
+.sakura-modal-fundo > .sakura-modal {
+  animation: sakura-janela-abre var(--duration-janela) var(--ease-suave) backwards;
+}
+
+/* Menu de três pontos: brota do canto do botão. Quem desenha o menu põe esta
+   classe nele (a tarefa 7 passa por aqui no `AcoesDaLinha`); a origem é o canto
+   de cima à direita, e `--origem-brota` troca isso se o menu abrir pro outro
+   lado. */
+.sakura-menu-brota {
+  transform-origin: var(--origem-brota, top right);
+  animation: sakura-brota var(--duration-menu-brota) var(--ease-suave) backwards;
+}
+
+/* O fio do gráfico: a linha é desenhada da esquerda pra direita (o
+   `pathLength` dela é 1); a área embaixo e a ponta marcada aparecem no fim. */
+[data-fio-de-grafico] .fio-linha {
+  stroke-dasharray: 1 2;
+  animation: sakura-fio-desenha var(--duration-fio) var(--ease-suave) backwards;
+}
+
+[data-fio-de-grafico] .fio-area,
+[data-fio-de-grafico] .fio-ponta {
+  animation: sakura-fio-aparece 0.4s var(--ease-suave) calc(var(--duration-fio) * 0.6) backwards;
+}
+
+/* Reduzir movimento: nenhuma animação roda, em lugar nenhum destes. */
+@media (prefers-reduced-motion: reduce) {
+  .sakura-tela[data-entrando] > * > *,
+  .sakura-modal-fundo,
+  .sakura-modal-fundo > .sakura-modal,
+  .sakura-menu-brota,
+  [data-fio-de-grafico] .fio-linha,
+  [data-fio-de-grafico] .fio-area,
+  [data-fio-de-grafico] .fio-ponta {
+    animation: none !important;
+  }
 }

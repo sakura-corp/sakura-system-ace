@@ -519,6 +519,61 @@ try {
     `foi de ${enderecoAntes} para ${enderecoDepois}`,
   );
 
+  // --- 9. "Reduzir movimento": nenhuma animação roda (tarefa 5, #990) -------
+  // Monta, com as classes de verdade, um pedaço de cada movimento da tabela da
+  // seção 8 das regras (trocar de tela, abrir janela, menu de três pontos, fio
+  // do gráfico) e pergunta ao navegador qual animação cada um tem. Primeiro
+  // com as animações LIGADAS (precisa ter: se não tiver, o teste não prova
+  // nada), depois com "reduzir movimento" ligado (tem que ser nenhuma).
+  await pagina.evaluate(() => {
+    const caixa = document.createElement("div");
+    caixa.id = "movimento-teste";
+    caixa.innerHTML =
+      '<div class="sakura-tela" data-entrando><div><p id="m-bloco-1">a</p><p id="m-bloco-2">b</p>' +
+      '<p>c</p><p>d</p><p>e</p><p>f</p><p>g</p><p>h</p><p>i</p><div class="sakura-modal-fundo" id="m-fundo-na-tela"></div></div></div>' +
+      '<div class="sakura-modal-fundo" id="m-fundo"><div class="sakura-modal" id="m-janela"></div></div>' +
+      '<div class="sakura-menu-brota" id="m-menu"></div>' +
+      '<svg data-fio-de-grafico><path id="m-fio-linha" class="fio-linha" d="M0 0 L1 1"/>' +
+      '<path id="m-fio-area" class="fio-area" d="M0 0 L1 1"/><circle id="m-fio-ponta" class="fio-ponta" r="1"/></svg>';
+    document.body.appendChild(caixa);
+  });
+  const IDS_DO_MOVIMENTO = ["m-bloco-1", "m-bloco-2", "m-fundo", "m-fundo-na-tela", "m-janela", "m-menu", "m-fio-linha", "m-fio-area", "m-fio-ponta"];
+  const animacoesDe = () =>
+    pagina.evaluate(
+      (ids) => Object.fromEntries(ids.map((id) => [id, getComputedStyle(document.getElementById(id)).animationName])),
+      IDS_DO_MOVIMENTO,
+    );
+  await pagina.emulateMedia({ reducedMotion: "no-preference" });
+  const comMovimento = await animacoesDe();
+  conferir(
+    "com as animações ligadas, cada movimento da tabela tem a sua animação",
+    IDS_DO_MOVIMENTO.every((id) => comMovimento[id] && comMovimento[id] !== "none"),
+    JSON.stringify(comMovimento),
+  );
+  const atrasoDaJanelaNaTela = await pagina.evaluate(
+    () => getComputedStyle(document.getElementById("m-fundo-na-tela")).animationDelay,
+  );
+  conferir(
+    "a janela que nasce dentro da tela abre sem o atraso dos blocos (senão fica invisível e clicável)",
+    atrasoDaJanelaNaTela === "0s",
+    atrasoDaJanelaNaTela,
+  );
+  const semEntrando = await pagina.evaluate(() => {
+    const tela = document.querySelector("#movimento-teste .sakura-tela");
+    tela.removeAttribute("data-entrando");
+    return getComputedStyle(document.getElementById("m-bloco-2")).animationName;
+  });
+  conferir("passados os 0,8 s da troca de tela, um bloco novo não repete a entrada", semEntrando === "none", semEntrando);
+  await pagina.evaluate(() => document.querySelector("#movimento-teste .sakura-tela").setAttribute("data-entrando", ""));
+  await pagina.emulateMedia({ reducedMotion: "reduce" });
+  const semMovimento = await animacoesDe();
+  conferir(
+    "com 'reduzir movimento' ligado, NENHUMA animação roda",
+    IDS_DO_MOVIMENTO.every((id) => semMovimento[id] === "none"),
+    JSON.stringify(semMovimento),
+  );
+  await pagina.emulateMedia({ reducedMotion: "no-preference" });
+  await pagina.evaluate(() => document.getElementById("movimento-teste")?.remove());
   // --- A barra da janela (visual novo, #990, tarefa 6) --------------------
   // O Windows não desenha mais a faixa branca: a barra é do programa (faixa de
   // arrastar), e os três botões vêm por cima (`titleBarOverlay`). O que dá pra

@@ -10,6 +10,12 @@ import { useId } from "react";
  * **conta nenhuma é feita aqui**, só o desenho. Com menos de 2 pontos não
  * desenha nada (quem chama decide quando mostrar).
  *
+ * O movimento (tarefa 5): a linha é desenhada da esquerda pra direita em 0,9 s,
+ * só com CSS (`stroke-dashoffset`; as classes `fio-*` estão no bloco "tarefa 5:
+ * o movimento" do `globals.css`). `pathLength={1}` faz o traço medir 1 em
+ * qualquer tamanho de fio. Sem animação (ou com "reduzir movimento"), o fio
+ * aparece inteiro.
+ *
  * A cor é a do laranja de letra do tema (`text-acao-clara`, que no tema claro
  * é a versão mais escura), pra aparecer nos dois temas.
  */
@@ -59,8 +65,10 @@ export function FioDeGrafico({
           <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={area} fill={`url(#${idDoDegrade})`} />
+      <path className="fio-area" d={area} fill={`url(#${idDoDegrade})`} />
       <path
+        className="fio-linha"
+        pathLength={1}
         d={linha}
         fill="none"
         stroke="currentColor"
@@ -68,7 +76,7 @@ export function FioDeGrafico({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={ultimo.x} cy={ultimo.y} r="3.2" fill="currentColor" />
+      <circle className="fio-ponta" cx={ultimo.x} cy={ultimo.y} r="3.2" fill="currentColor" />
     </svg>
   );
 }

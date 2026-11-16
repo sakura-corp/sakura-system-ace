@@ -1,5 +1,55 @@
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
+import { useContext, useLayoutEffect, useRef } from "react";
 import { formatarMoeda } from "@/schemas/dinheiro";
+import { ContarAoAparecer, DURACAO_DA_CONTAGEM_MS, valorDaContagem } from "./contagem";
+
+/**
+ * Conta de zero até o valor mexendo só no texto do elemento (o mesmo nó de
+ * texto que o React escreveu, pra ele continuar dono dele). Com "reduzir
+ * movimento" ligado não faz nada.
+ *
+ * **Leitor de tela**: durante a contagem o número que passa é escondido dele
+ * (`aria-hidden`) e um irmão só-pra-leitor (`sr-only`) leva o valor FINAL; no
+ * fim, os dois saem e o texto de verdade volta a valer. Assim ele nunca ouve
+ * número intermediário, nem quem chega no número no meio dos 0,75 s.
+ */
+function useContagem(ref: React.RefObject<HTMLElement | null>, absoluto: number, ativo: boolean) {
+  const absolutoRef = useRef(absoluto);
+  absolutoRef.current = absoluto;
+
+  useLayoutEffect(() => {
+    const elemento = ref.current;
+    const no = elemento?.firstChild;
+    if (!ativo || !elemento || !no || absolutoRef.current === 0) return;
+    if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const final = () => formatarMoeda(absolutoRef.current);
+    const paraLeitor = document.createElement("span");
+    paraLeitor.className = "sr-only";
+    paraLeitor.textContent = final();
+    elemento.after(paraLeitor);
+    elemento.setAttribute("aria-hidden", "true");
+    const inicio = performance.now();
+    let quadro = 0;
+    no.nodeValue = formatarMoeda(0);
+    const terminar = () => {
+      cancelAnimationFrame(quadro);
+      no.nodeValue = final();
+      elemento.removeAttribute("aria-hidden");
+      paraLeitor.remove();
+    };
+    const passo = (agora: number) => {
+      const progresso = Math.min(1, (agora - inicio) / DURACAO_DA_CONTAGEM_MS);
+      if (progresso >= 1) return terminar();
+      no.nodeValue = formatarMoeda(valorDaContagem(absolutoRef.current, progresso));
+      paraLeitor.textContent = final();
+      quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+    return terminar;
+  }, [ref, ativo]);
+}
 
 /**
  * Um valor em dinheiro, com número negativo parecendo negativo.
@@ -42,6 +92,9 @@ export function Valor({
   tituloDeAcessibilidade?: string;
 }) {
   const negativo = valor < 0;
+  const contar = useContext(ContarAoAparecer);
+  const numeroRef = useRef<HTMLSpanElement>(null);
+  useContagem(numeroRef, Math.abs(valor), contar);
   return (
     <span
       className={`${negativo ? "text-perigo" : classeDeCor} ${className}`.trim()}
@@ -53,7 +106,7 @@ export function Valor({
         </span>
       )}
       {negativo && "−"}
-      {formatarMoeda(Math.abs(valor))}
+      <span ref={numeroRef}>{formatarMoeda(Math.abs(valor))}</span>
     </span>
   );
 }
