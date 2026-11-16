@@ -20,8 +20,10 @@ publica e quem envia é uma pessoa.
 1. Conferir quem trabalha (seção 0 do `PROJETO_STATUS.md`). **Se não é a Sofia, valem as regras da
    equipe** (seção 6).
 2. Ler a **issue inteira**; ler `docs/decisoes.md` (o que é o produto, identidade visual, fases),
-   `docs/visao.md` (pra onde vai), `docs/comparativo-anexar.md` (se for sobre venda) e o
-   `mensagens.md` do caderno de quem está trabalhando (seção 1 do índice).
+   o `mensagens.md` do caderno de quem está trabalhando (seção 1 do índice). A `docs/visao.md`
+   (pra onde vai) e a `docs/comparativo-anexar.md` (se for sobre venda) moram no
+   `sakura-corp/escritorio` (privado): abrir o escritório (`add_repo`) e ler lá; se a sessão não
+   alcança, seguir sem e avisar.
 3. Se mexer no `site/`, ler `site/README.md`.
 4. Explicar à pessoa o que será escrito, pra quem, e o que ela precisa decidir.
 

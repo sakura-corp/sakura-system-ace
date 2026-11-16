@@ -88,8 +88,7 @@ pede**:
 | `docs/pendencias-e-futuro.md` | **"O que depende dela"**; o que não existe; a parte fiscal (playbook por loja nova) | ao planejar, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar**, backup, atualizar bancos, voltar versão | ao publicar, rodar migration ou instalar loja |
 | `docs/historico.md` | estado do Git e os "onde parou" antigos, do mais novo pro mais velho | quando precisar do detalhe de um marco |
-| `docs/visao.md` | **pra onde o SSACE vai**, as quatro frentes e a prioridade das tarefas (ondas) | ao planejar funcionalidade nova ou falar do futuro |
-| `docs/comparativo-anexar.md` | o concorrente Anexar × o que temos (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
+| `docs/visao.md` e `docs/comparativo-anexar.md` (moram no `sakura-corp/escritorio`, privado) | **pra onde o SSACE vai** e o concorrente Anexar × o que temos. **Plano e estratégia novos nascem no escritório**, nunca aqui: este repositório é público (Sofia, 11/11/2026) | ao planejar funcionalidade nova, falar do futuro ou de venda (abrir o escritório com `add_repo`; se a sessão não alcança, seguir sem e avisar) |
 | `docs/jeito-de-trabalhar.md` | **o método com o Claude**: skills, trancas, afazeres, a fila | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/tarefas.md` | **o modelo único de tarefa**, as etiquetas, **a tabela de modelos** e o que fazer quando o modelo falha | ao escrever ou começar uma tarefa, e quando uma sessão falhar por modelo ou crédito |
 | `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
