@@ -1,4 +1,7 @@
+import { MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarModelosWhatsapp, textoDoModelo } from "@/lib/modelosWhatsapp";
@@ -68,21 +71,21 @@ export function BotaoResumoDono({ escolhas }: { escolhas: EscolhaResumoDono[] })
   return (
     <div className="flex min-w-0 flex-col items-end gap-1">
       <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-        {!sozinho && <span className="text-rotulo text-sakura-muted">Resumo pro dono:</span>}
+        {!sozinho && <span className="text-rotulo text-texto-2">Resumo pro dono:</span>}
         {escolhas.map((escolha) => (
-          <button
-            key={escolha.rotulo}
-            type="button"
-            onClick={() => abrir(escolha)}
-            disabled={abrindo !== null}
-            title="Abre o WhatsApp com o resumo pronto; você escolhe o contato e manda"
-            className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:border-sakura-purple disabled:opacity-50"
-          >
-            {abrindo === escolha.rotulo ? "Abrindo..." : escolha.rotulo}
-          </button>
+          <Dica key={escolha.rotulo} texto="Abre o WhatsApp com o resumo pronto; você escolhe o contato e manda">
+            <Botao
+              variante="whatsapp"
+              icone={<MessageCircle aria-hidden="true" />}
+              onClick={() => abrir(escolha)}
+              disabled={abrindo !== null}
+            >
+              {abrindo === escolha.rotulo ? "Abrindo..." : escolha.rotulo}
+            </Botao>
+          </Dica>
         ))}
       </div>
-      {erro && <p className="rounded-lg bg-red-50 px-3 py-1 text-rotulo text-red-700">{erro}</p>}
+      {erro && <p className="rounded-lg bg-perigo/[0.13] px-3 py-1 text-rotulo text-perigo">{erro}</p>}
     </div>
   );
 }

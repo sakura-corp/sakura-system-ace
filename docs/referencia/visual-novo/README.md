@@ -194,7 +194,7 @@ antigas trocam cada uma na tarefa dela (as 8 em diante); até lá convivem os do
 | Selo de aviso | `src/components/Selo.tsx` | `<Selo tipo="atencao" palavra="Concluída" />`. Tipos: `info`, `atencao`, `ok`, `perigo`, `neutro`. **Sem a `palavra` não compila** (regra 4); o ícone tem um padrão por tipo e pode ser trocado. |
 | Placa | `src/components/LinkPlaca.tsx` | `<LinkPlaca veiculoId={…} placa={…} />`, como antes. |
 | Cartão | a classe `sakura-card` | sólido, canto de 18 px. |
-| Cartão de número | `src/components/CartaoNumero.tsx` | o rótulo, o "?", o número (um `<Valor />`) e a `<Variacao contra="outubro" />`. Com `para="/rota"`, o cartão inteiro é clicável. Ainda sem o fio de gráfico. |
+| Cartão de número | `src/components/CartaoNumero.tsx` | o rótulo, o "?", o número (um `<Valor />`) e a `<Variacao contra="outubro" />`. Com `para="/rota"`, o cartão inteiro é clicável. Com `fio={valores}`, desenha o fio de gráfico à direita (sem `fio`, ou com menos de 2 pontos, fica sem). |
 | Tabela | a classe `sakura-tabela` | no `<table>`, dentro de um `sakura-card overflow-hidden`; valor em dinheiro com `text-right`. |
 | Campo | as classes `sakura-campo` e `sakura-rotulo` | `<label class="sakura-rotulo">Nome <input class="sakura-campo" /></label>`. No filtro, somar `sakura-campo-filtro`. Serve pra `input`, `select` e `textarea`. Recusado pela validação: `aria-invalid="true"`. |
 | Janela | `src/components/Modal.tsx` | como antes, e agora com `total={{ rotulo, valor }}` no cabeçalho e `rodape={…}` com as ações (o botão principal por último). |
@@ -283,7 +283,7 @@ de aberto ou encolhido, em `src/lib/menuLateral.ts`. As fotos estão em `andamen
 | O quê | Como ficou |
 |---|---|
 | A moldura | O menu **encosta na borda da janela**, de cima a baixo, como no conceito (antes eram dois cartões soltos). Aberto, a tela ganha uns 36 px de largura; encolhido, 204 px. |
-| O alto do menu | A **flor da logo B** e o nome em letra de verdade. O Login, o ícone do programa e o site continuam com a logo antiga até a tarefa 6. |
+| O alto do menu | A **flor da logo B** e o nome em letra de verdade. O Login, o ícone do programa e o site passaram pra logo nova na tarefa 6. |
 | "Orçamentos" | Aberto, mostra o **número** dos em aberto (num selo laranja); encolhido, o **ponto laranja**. O número não sumiu. |
 | Encolhido | O nome de cada item aparece na dica (à direita) e continua existindo pra leitor de tela. O título do grupo vira um traço. |
 | Quem está logado | As iniciais num círculo, o nome e o usuário. Encolhido, só as iniciais (o nome na dica). |
@@ -303,6 +303,23 @@ com o menu aberto, que é o que deixa menos espaço e o que o CI roda). Fotos co
 - **Diagnóstico** tem o ícone de "informação" (um "i"). Um ícone de socorro (uma boia) diria melhor
   pra que ele serve: é o botão de quem liga pedindo ajuda.
 - **"Relações"** é o nome que a loja usa pros relatórios; o ícone é o de gráfico de barras.
+
+### Como saiu no programa (tarefa 4, 15/11)
+
+O Início é `src/pages/painel/PainelPage.tsx`. As fotos (1366 × 768, escuro e claro, menu aberto e encolhido,
+e a Central do dia com muitos itens e com zero) estão em `andamento/5-inicio/`.
+
+| O quê | Como ficou |
+|---|---|
+| Título | "Início" na letra de títulos; à direita, "Resumo pro dono" com os dois botões do WhatsApp (variante `whatsapp`). O ícone é o de balão da biblioteca, não o logotipo do WhatsApp. Só aparência: quem vê, o que abre e o texto mandado são os de antes. |
+| Central do dia | A capa (mancha, grão, o total em 54 px e "coisas pedem a sua atenção hoje") é **escura no tema escuro e clara no claro** (decisão da Sofia, 15/11; seção 13) e a lista à direita tem **sempre a altura de 4 linhas**, rolando por dentro (`AreaRolavel`). Uma linha = um selo (ícone e palavra), o texto e **todos** os botões de antes. Zero itens: "Tudo em dia". As regras (`schemas/centralDoDia.ts`) não mudaram: o total da capa é o de todas as pendências, e o "e mais N…" continua. |
+| Cartões de número | `CartaoNumero` com a variação, o "?" e o fio. Os nomes são os de verdade ("Recebido no mês", "Lucro do mês"). O fio é o **acumulado do mês, dia a dia**, e o último ponto é exatamente o número do cartão (`schemas/serieDoMes.ts`, com teste). Sem fio: menos de 3 dias do mês, mês sem lançamento, "Contas a pagar vencendo" e quem não tem o módulo. Em cartão estreito (< 16 rem) o fio some em vez de apertar o número. |
+| "Ver relações completas" | Fica junto dos números, à direita, abaixo dos três cartões (no conceito estava dentro de "OS abertas"). |
+| OS abertas | Tabela `sakura-tabela`, com a placa (`LinkPlaca`, que abre a ficha do veículo) e a idade. **Sem o selo "Em andamento"** do conceito (a lista só tem OS aberta). Passando de 5 linhas, a tabela rola por dentro. |
+| Veículos no pátio | Mesmos cartões, em fileiras de três; passando de duas fileiras, rola por dentro. |
+| Calendário | Hoje em laranja com letra escura; pontos por tipo (azul feriado, verde aniversário, amarelo conta a vencer, vermelho conta vencida; no dia de hoje o ponto é escuro); lista de datas com ícone, palavra (pra leitor de tela) e o dia; passando de 3 datas, rola por dentro. Os dias do mês vizinho passaram ao `texto-3` (5,4:1) e a "dívida de contraste" deles foi quitada. |
+
+**Pra conferir com o menu encolhido e a loja de 1366**: `npm run largura:telas -- encolhido`.
 
 ## 8. O movimento
 
@@ -344,6 +361,62 @@ Regra geral: **curto, e sempre de um jeito só**. Movimento serve pra mostrar de
   (1024 px, o do instalador), `src/components/Logo.tsx`, e as cópias em `site/`.
 - **A regra da apresentação comercial continua**: sem a flor na capa e no encerramento, até ela dizer
   o contrário (`docs/decisoes.md`).
+
+### Como saiu no programa (tarefa 6, 15/11)
+
+Fotos em `andamento/6-logo-login/` (o Login em 1366×768 e 1920×1080, escuro e claro, tiradas no
+Electron de verdade; conexão e trocar senha; o ícone em 16, 32, 256 e 1024 px; o topo com a barra).
+
+| O quê | Como ficou |
+|---|---|
+| A logo | A **flor da logo B** em `public/sakura-icon.svg` (a mesma do menu; saiu o `sakura-flor.svg`) e a versão pequena em `public/sakura-icon-mini.svg` (aba e barra da janela). Saíram `sakura-logo.svg` e `sakura-logo-claro.svg`. |
+| O ícone do programa | `build/icon.png` (1024 px): a B no **quadrado claro**, como ela decidiu em 14/11. |
+| `Logo.tsx` | A flor e, embaixo, o nome em letra de verdade (Plus Jakarta Sans 800), "AUTOCENTER EDITION" espaçado e "by Sakura Corp". A flor é a mesma nos dois temas (brilho laranja no escuro, sombra fina no claro); o nome usa `texto` e `texto-2`, que já trocam sozinhos. |
+| Login, conexão, trocar senha | Pelo molde `TelaDeEntrada` (fundo de marca com grão que não rola; cartão `sakura-vidro` que rola por dentro numa janela baixa), com `sakura-campo`, `sakura-rotulo` e `Botao`. Nenhum campo, botão ou texto saiu: o "Bem-vindo de volta" e a frase de baixo ficaram, menores, embaixo da logo. |
+| A versão no canto | Ganhou um fundo pequeno e arredondado e a palavra "versão": sobre a mancha laranja ela sumia. |
+| A barra da janela | `titleBarStyle: "hidden"` com `titleBarOverlay` (40 px, nas cores de `fundo` e `texto` de cada tema) no `electron/main.ts`. A peça `BarraDaJanela` desenha a flor e o nome e é a **faixa de arrastar**; os três botões são do Windows. O tema avisa a janela (`definirTemaDaJanela`) pra faixa dos botões trocar de cor junto. |
+| Nada embaixo dos botões | Com a barra própria, o `#root` começa 40 px abaixo do topo (`:root[data-barra="propria"]` no `globals.css`, bloco "tarefa 6") e as telas `h-screen` ocupam a altura que sobrou. Fora do Electron (navegador, varreduras) e no Mac nada disso existe. |
+| O fundo ao abrir | `backgroundColor` da janela: de `#FFF7FC` (rosa) para `#0A0A0D`. |
+| O canto arredondado | **Não forçado** (recomendação mantida): vem sozinho no Windows 11. |
+| O site | `site/`: o ícone novo e o nome em texto no topo da página (o `site/sakura-logo.svg` ficou: a apresentação comercial ainda o usa como marca-d'água). A flor **não** entrou na capa nem no fim da apresentação comercial. |
+
+**O teste do Electron** (`npm run test:electron`) ganhou sete checagens da barra: a janela sabe que a
+barra é do programa; ela está no topo, com 40 px e de ponta a ponta; é a faixa de arrastar; o
+programa começa abaixo dela; a janela nasce escura; e a faixa dos botões troca de cor com o tema (e
+ignora tema inválido). Vistas reprovar trocando o fundo de volta para o rosa e a cor do tema claro.
+O que ele **não** prova (a sessão é Linux): arrastar, duplo clique, encaixe e os botões de verdade.
+
+**Teste da Sofia no Windows (10 e 11), com o instalador de teste:**
+1. Instalar a versão de teste e abrir o programa. **Deve** aparecer o Login com o fundo escuro desde
+   o primeiro instante (nenhum piscar rosa) e uma barra escura no topo com a flor e "Sakura System ·
+   AutoCenter Edition"; os três botões (minimizar, maximizar, fechar) no canto direito, na mesma cor.
+2. Arrastar a janela segurando em qualquer ponto vazio da barra: **ela se move**.
+3. Dar **duplo clique** na barra: **a janela maximiza**; de novo, **volta**.
+4. Arrastar a janela até a borda esquerda e a direita da tela: **ela encaixa na metade** (Windows 10:
+   solta o mouse; Windows 11: aparece o quadro de encaixe).
+5. Clicar nos três botões, um de cada vez: minimizar esconde, maximizar/restaurar alterna, fechar
+   fecha. Passar o mouse no de fechar: **fica vermelho**.
+6. Entrar, ir em Configurações > Aparência e trocar para o tema claro: **a barra e a faixa dos três
+   botões ficam claras juntas**, com os símbolos escuros. Voltar para o escuro.
+7. Olhar o canto de cima do menu e dos cartões: **nenhum botão do programa fica embaixo dos três da
+   janela**. Abrir uma janela (por exemplo "Faturar"): o fundo escurece só o que está abaixo da barra, e a
+   barra continua no lugar e dá pra arrastar.
+8. Ícone: na área de trabalho, na barra de tarefas e no canto da janela do instalador, **a flor no
+   quadrado claro** (no canto da janela e na barra de tarefas o Windows usa os tamanhos pequenos: se
+   a flor ficar borrada em 16 px, avisar; a versão `mini` existe pra isso).
+9. Windows 11: o canto da janela **é arredondado**. Windows 10: é reto (esperado).
+
+**Os três montes (seção 12):**
+- **Já fez**: a "Sair" da troca de senha virou botão (era um link pequeno, difícil de acertar); as
+  mensagens de erro do Login, da conexão e da troca de senha ganharam `role="alert"` e cor do papel
+  `perigo` (leem melhor nos dois temas); a versão no canto ganhou fundo.
+- **Sugere**: (1) trocar a frase "Bem-vindo de volta / Entre com seu usuário para continuar" por uma
+  só, já que a logo diz onde a pessoa está (não removi: nada some sem ela decidir); (2) a tela de
+  conexão fala de "Project Settings → API Keys, aba Legacy anon", palavras do painel do Supabase que
+  a loja não deveria precisar ler: esse passo é de quem instala, e o texto pode ficar mais curto.
+- **Sugere também**: a dica (`Dica.tsx`) não sabe da barra de 40 px: perto do topo, à direita, ela pode ficar atrás dos três botões do Windows. Só se vê no Windows; conferir no teste.
+- **Virou tarefa**: o `apresentacao/apresentacao.html` ainda usa a logo antiga (de propósito, pela regra da flor); e o `docs/decisoes.md` (linha da "Logo") ainda descreve a logo antiga: é da
+  coordenadora atualizar.
 
 ## 10. Como levar pro programa sem quebrar as 54 telas
 
@@ -471,8 +544,11 @@ a logo pergunta qual é o tema (`useTema()`), porque troca de arquivo.
 | `placa` | `#0E0E13` | `#FFFFFF` | branca com a letra escura, como a placa Mercosul de verdade |
 | `poco` (fundo rebaixado) | preto a 25% | escuro a 5% | novo: entrou no lugar do `bg-black/20` e `/30` |
 
-**(escolhas do Claude)**, todas. O carmesim e o cartão de destaque não mudam: o destaque continua
-escuro nos dois temas, é o momento de marca.
+**(escolhas do Claude)**, todas, menos a capa. O carmesim não muda. **A capa do cartão de destaque
+(a Central do dia) é escura no escuro e CLARA no claro** (creme e pêssego, com a mancha suave, o grão e
+a letra escura, no espírito do Login claro): decisão da Sofia em 15/11, que achou a capa escura
+demais contra a página clara. Antes (escolha do Claude) ela era escura nos dois temas. As cores são as
+variáveis `--capa-*` do `globals.css`.
 
 **Regras pra quem escreve tela** (valem desde já, nos dois temas):
 - **Nada de `text-white`, `bg-white/10`, `border-white/10`, `bg-black/20`** em cima de superfície do

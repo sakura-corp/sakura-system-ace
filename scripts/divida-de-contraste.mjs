@@ -27,32 +27,11 @@
  * (4,14:1) saíram em 14/11/2026, com o visual novo (#990): o botão principal
  * virou laranja com a letra escura (6,1:1) e o laranja como texto dá 5,5:1
  * contra o cartão.
+ *
+ * As entradas `calendario-dias-do-mes-vizinho*` saíram em 15/11/2026, com o
+ * Início novo (tarefa 4): os dias do mês vizinho passaram ao `texto-3`, 5,4:1.
  */
-export const DIVIDA_DE_CONTRASTE = [
-  {
-    id: "calendario-dias-do-mes-vizinho",
-    // 3,04:1. Estes são apagados DE PROPÓSITO: o calendário do Início mostra
-    // a sobra do mês anterior e os primeiros dias do seguinte em cinza, pra
-    // não competir com o mês corrente. Clarear resolve o número e estraga a
-    // ideia. Fica aqui como decisão consciente, não como esquecimento.
-    // É um tom só desde 15/11/2026, quando o cartão virou sólido (visual
-    // novo, #990, tarefa 2): medido com o relógio parado em outubro (com o
-    // feriado de Finados na sobra visível) e em novembro. Enquanto o cartão
-    // era vidro eram dois tons, #616165 e #65656a (2,56:1), porque o fundo do
-    // feriado mudava a mistura do cinza; no tema rosa e roxo, #5a5059 e
-    // #60545e.
-    quando: (g) =>
-      g.tema === "escuro" && g.tipo === "texto" && g.frente === "#65656b" && g.fundo === "#191920",
-  },
-  {
-    id: "calendario-dias-do-mes-vizinho-no-tema-claro",
-    // A mesma decisão, no tema claro (15/11/2026): o mesmo cinza apagado em
-    // cima do cartão branco, 2,19:1. Entrada separada pra a lista perceber
-    // quando só uma das duas for resolvida.
-    quando: (g) =>
-      g.tema === "claro" && g.tipo === "texto" && g.frente === "#afafb1" && g.fundo === "#ffffff",
-  },
-];
+export const DIVIDA_DE_CONTRASTE = [];
 
 export function ehDividaConhecida(grupo) {
   return DIVIDA_DE_CONTRASTE.some((d) => d.quando(grupo));

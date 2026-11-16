@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FileText, Package } from "lucide-react";
+import { AreaRolavel } from "@/components/AreaRolavel";
+import { Botao } from "@/components/Botao";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { Explicacao } from "@/components/Explicacao";
+import { Selo, type TipoDeSelo } from "@/components/Selo";
+import type { LucideIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
@@ -42,17 +47,27 @@ import type { Peca } from "@/types/peca";
  * só abrem a ação: quem confirma é a pessoa.
  */
 
-const COR_DO_TIPO: Record<TipoPendencia, string> = {
-  nota_com_erro: "bg-red-500",
-  caixa_sem_fechar: "bg-red-500",
-  conta_receber_vencida: "bg-amber-500",
-  carro_pronto: "bg-amber-500",
-  conta_pagar_vencendo: "bg-amber-500",
-  os_parada: "bg-sakura-purple",
-  estoque_baixo: "bg-sakura-purple",
-  contabilidade_notas: "bg-sakura-gray",
-  contabilidade_extrato: "bg-sakura-gray",
+/**
+ * O selo de cada linha (regra 4: todo aviso tem ícone e palavra junto da cor).
+ * Vermelho é problema (nota com erro, caixa aberto, conta vencida), amarelo é
+ * atenção, verde é o que está pronto, cinza é o que não é urgência.
+ */
+const SELO_DO_TIPO: Record<TipoPendencia, { tipo: TipoDeSelo; palavra: string; icone?: LucideIcon }> = {
+  nota_com_erro: { tipo: "perigo", palavra: "Com erro" },
+  caixa_sem_fechar: { tipo: "perigo", palavra: "Sem fechar" },
+  conta_receber_vencida: { tipo: "perigo", palavra: "Vencida" },
+  carro_pronto: { tipo: "ok", palavra: "Pronto" },
+  conta_pagar_vencendo: { tipo: "atencao", palavra: "A pagar" },
+  os_parada: { tipo: "atencao", palavra: "Parada" },
+  estoque_baixo: { tipo: "atencao", palavra: "Baixo", icone: Package },
+  contabilidade_notas: { tipo: "neutro", palavra: "Contador", icone: FileText },
+  contabilidade_extrato: { tipo: "neutro", palavra: "Contador", icone: FileText },
 };
+
+/** A altura de cada linha e quantas cabem à vista: o cartão tem sempre 4 linhas (pedido da Sofia, 14/11). */
+const ALTURA_DA_LINHA_PX = 56;
+const LINHAS_A_VISTA = 4;
+const ALTURA_DO_CARTAO_PX = ALTURA_DA_LINHA_PX * LINHAS_A_VISTA;
 
 /** Pra onde vai o "e mais N" de cada tipo. */
 const TELA_DO_TIPO: Record<TipoPendencia, string> = {
@@ -66,10 +81,6 @@ const TELA_DO_TIPO: Record<TipoPendencia, string> = {
   contabilidade_notas: "/notas-fiscais",
   contabilidade_extrato: "/caixa",
 };
-
-const CLASSE_BOTAO =
-  "inline-flex h-8 items-center rounded-lg border border-sakura-borda-campo px-3 text-rotulo " +
-  "font-medium text-sakura-purple-dark transition hover:bg-texto/10";
 
 const EXPLICACAO =
   "O que precisa de atenção hoje, do mais urgente pro menos: nota com problema, caixa sem " +
@@ -255,18 +266,18 @@ export function CentralDoDia({
                 }}
               />
             )}
-            <button type="button" className={CLASSE_BOTAO} onClick={() => abrirOS(p.ordem)}>
+            <Botao tamanho="pequeno" onClick={() => abrirOS(p.ordem)}>
               Abrir a OS
-            </button>
+            </Botao>
           </>
         );
       case "conta_pagar_vencendo":
         return ir("/contas-pagar", "Pagar");
       case "os_parada":
         return (
-          <button type="button" className={CLASSE_BOTAO} onClick={() => abrirOS(p.ordem)}>
+          <Botao tamanho="pequeno" onClick={() => abrirOS(p.ordem)}>
             Abrir a OS
-          </button>
+          </Botao>
         );
       case "estoque_baixo":
         // A linha só aparece pra quem tem Estoque; com Fornecedores também, vai
@@ -286,71 +297,118 @@ export function CentralDoDia({
 
   function ir(para: string, rotulo: string, state?: { aba: string }) {
     return (
-      <button type="button" className={CLASSE_BOTAO} onClick={() => navigate(para, { state })}>
+      <Botao tamanho="pequeno" onClick={() => navigate(para, { state })}>
         {rotulo}
-      </button>
+      </Botao>
     );
   }
 
-  return (
-    <section className="sakura-card p-4" aria-labelledby="central-do-dia-titulo">
-      <div className="mb-3 flex items-start justify-between gap-2">
-        <h2 id="central-do-dia-titulo" className="text-corpo font-semibold text-sakura-purple-dark">
-          Central do dia
-        </h2>
-        <Explicacao titulo="Central do dia" texto={EXPLICACAO} />
-      </div>
+  const total = pendencias.length;
+  const semNada = !erro && !carregando && visiveis.length === 0 && !dadosIncompletos;
 
-      {erro ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700">{erro}</p>
-      ) : carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : visiveis.length === 0 && !dadosIncompletos ? (
-        <p className="text-corpo text-sakura-purple-dark/85">
-          {mensagemDaListaVazia(alcance.parcial)}
-        </p>
-      ) : visiveis.length === 0 ? null : (
-        <ul className="divide-y divide-texto/10">
-          {visiveis.map((p, i) => {
-            const ultimoDoTipo = visiveis[i + 1]?.tipo !== p.tipo;
-            const sobra = ultimoDoTipo ? escondidas.get(p.tipo) : undefined;
-            return (
-              <li key={p.chave} className="py-2">
-                <div className="flex items-center gap-3">
-                  <span
-                    aria-hidden="true"
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${COR_DO_TIPO[p.tipo]}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-corpo font-medium text-sakura-purple-dark">
-                      {p.titulo}
-                    </p>
-                    <p className="truncate text-rotulo text-sakura-muted">{p.detalhe}</p>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-start justify-end gap-2">
-                    {acoes(p)}
-                  </div>
-                </div>
-                {sobra ? (
-                  <button
-                    type="button"
-                    onClick={() => navigate(TELA_DO_TIPO[p.tipo])}
-                    className="mt-1 ml-5 text-rotulo font-medium text-sakura-purple-dark underline-offset-2 hover:underline"
-                  >
-                    e mais {sobra}…
-                  </button>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+  return (
+    <>
+      <section
+        className="sakura-card grid overflow-hidden md:grid-cols-[minmax(15rem,19rem)_minmax(0,1fr)]"
+        aria-labelledby="central-do-dia-titulo"
+      >
+        {/* A capa: a marca, o total e o que ele quer dizer. O total é de TODAS as
+            pendências, não só das linhas à vista: ninguém acha que só existem as 4. */}
+        <div
+          data-capa-central
+          className="sakura-capa-central sakura-grao flex flex-col justify-between p-6"
+          style={{ minHeight: ALTURA_DO_CARTAO_PX }}
+        >
+          <div className="relative z-[2] flex items-center justify-between gap-2">
+            <h2
+              id="central-do-dia-titulo"
+              className="text-meta font-bold uppercase tracking-[0.2em] text-texto"
+            >
+              Central do dia
+            </h2>
+            <Explicacao titulo="Central do dia" texto={EXPLICACAO} />
+          </div>
+          <div className="relative z-[2]">
+            {erro || carregando || (visiveis.length === 0 && dadosIncompletos) ? (
+              <p className="font-titulo text-capa font-extrabold">
+                {carregando ? "…" : "—"}
+              </p>
+            ) : semNada ? (
+              // Com só parte dos módulos a pessoa não sabe da loja inteira: a capa não afirma
+              // "Tudo em dia" (a lista ao lado já diz "nas áreas que você pode ver").
+              <p className="font-titulo text-capa-curto font-extrabold">
+                {alcance.parcial ? "Nada pendente" : "Tudo em dia"}
+              </p>
+            ) : (
+              <>
+                <p data-total-da-central className="font-titulo text-capa font-extrabold">
+                  {total}
+                </p>
+                <p className="mt-2 text-subtitulo font-semibold leading-snug">
+                  {total === 1 ? "coisa pede" : "coisas pedem"} a sua atenção hoje
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="min-w-0" style={{ height: ALTURA_DO_CARTAO_PX }}>
+          {erro ? (
+            <p className="m-5 rounded-xl bg-perigo/[0.13] px-3 py-2 text-perigo">{erro}</p>
+          ) : carregando ? (
+            <p className="p-5 text-corpo text-texto-2">Carregando...</p>
+          ) : semNada ? (
+            <p className="flex h-full items-center px-6 text-corpo text-texto-2">
+              {mensagemDaListaVazia(alcance.parcial)}
+            </p>
+          ) : visiveis.length === 0 ? null : (
+            <AreaRolavel>
+              <ul>
+                {visiveis.map((p, i) => {
+                  const ultimoDoTipo = visiveis[i + 1]?.tipo !== p.tipo;
+                  const sobra = ultimoDoTipo ? escondidas.get(p.tipo) : undefined;
+                  const selo = SELO_DO_TIPO[p.tipo];
+                  return (
+                    <li key={p.chave} className="border-b border-linha last:border-b-0">
+                      <div
+                        data-linha-da-central
+                        className="flex items-center gap-3 px-5"
+                        style={{ height: ALTURA_DA_LINHA_PX }}
+                      >
+                        <span className="w-[6.75rem] shrink-0">
+                          <Selo tipo={selo.tipo} palavra={selo.palavra} icone={selo.icone} />
+                        </span>
+                        <div className="min-w-0 flex-1" title={`${p.titulo} — ${p.detalhe}`}>
+                          <p className="truncate text-corpo font-semibold text-texto">{p.titulo}</p>
+                          <p className="truncate text-rotulo text-texto-2">{p.detalhe}</p>
+                        </div>
+                        <div className="flex shrink-0 items-center justify-end gap-2 pr-2">
+                          {acoes(p)}
+                        </div>
+                      </div>
+                      {sobra ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate(TELA_DO_TIPO[p.tipo])}
+                          className="mb-2 ml-[8.75rem] text-rotulo font-medium text-texto-2 underline-offset-2 hover:text-texto hover:underline"
+                        >
+                          e mais {sobra}…
+                        </button>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </AreaRolavel>
+          )}
+        </div>
+      </section>
 
       {!erro && !carregando && dadosIncompletos && (
-        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+        <p className="rounded-xl bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao">
           Parte do Início não carregou: esta lista pode estar faltando coisa.
         </p>
       )}
-    </section>
+    </>
   );
 }

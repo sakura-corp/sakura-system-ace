@@ -107,6 +107,8 @@ try {
   }));
   const CHAVES_ESPERADAS = [
     "abrirWhatsapp",
+    "barraDaJanela",
+    "definirTemaDaJanela",
     "canalAtualizacao",
     "conexao",
     "diagnostico",
@@ -482,6 +484,9 @@ try {
   await pagina.evaluate(() => {
     const quadro = document.createElement("iframe");
     quadro.id = "recibo-teste";
+    // Fora de baixo da barra do programa (fixa no topo, 40 px), senão ela
+    // "intercepta" o clique do teste.
+    quadro.style.cssText = "position:fixed;top:80px;left:20px;z-index:100;width:300px;height:80px";
     quadro.srcdoc =
       '<a id="outro" href="https://exemplo.test/" target="_blank">outro</a> ' +
       '<a id="portal" href="https://araraquara.giap.com.br/ords/pma/f?p=616:116" target="_blank">portal</a>';
@@ -512,6 +517,87 @@ try {
     "navegar pra fora do app é bloqueado",
     enderecoDepois === enderecoAntes,
     `foi de ${enderecoAntes} para ${enderecoDepois}`,
+  );
+
+  // --- A barra da janela (visual novo, #990, tarefa 6) --------------------
+  // O Windows não desenha mais a faixa branca: a barra é do programa (faixa de
+  // arrastar), e os três botões vêm por cima (`titleBarOverlay`). O que dá pra
+  // provar aqui, no Linux: a janela nasce escura (sem piscar o rosa-claro), a
+  // barra existe no topo e é "arrastável", o programa começa ABAIXO dela (nada
+  // fica embaixo dos botões) e a cor da faixa dos botões acompanha o tema.
+  // Arrastar, duplo clique, encaixe e os botões de verdade: só no Windows.
+  const barra = await pagina.evaluate(() => {
+    const faixa = document.querySelector('[data-testid="barra-da-janela"]');
+    const raiz = document.getElementById("root");
+    const caixa = faixa?.getBoundingClientRect();
+    const caixaRaiz = raiz?.getBoundingClientRect();
+    return {
+      altura: window.sakuraApp?.barraDaJanela,
+      existe: Boolean(faixa),
+      topo: caixa?.top,
+      alturaDaFaixa: caixa?.height,
+      largura: caixa?.width,
+      arrastar: faixa ? getComputedStyle(faixa).getPropertyValue("-webkit-app-region") : "",
+      topoDoPrograma: caixaRaiz?.top,
+      fundoDoPrograma: caixaRaiz ? caixaRaiz.bottom - window.innerHeight : null,
+      larguraDaJanela: window.innerWidth,
+    };
+  });
+  conferir("a janela sabe que a barra é do programa (40 px)", barra.altura === 40, `veio ${barra.altura}`);
+  conferir(
+    "a barra do programa está no topo, de ponta a ponta, com 40 px",
+    barra.existe && barra.topo === 0 && barra.alturaDaFaixa === 40 && barra.largura === barra.larguraDaJanela,
+    JSON.stringify(barra),
+  );
+  conferir("a barra é a faixa de arrastar da janela", barra.arrastar === "drag", `veio "${barra.arrastar}"`);
+  conferir(
+    "o programa começa abaixo da barra, sem passar do pé da janela",
+    barra.topoDoPrograma === 40 && barra.fundoDoPrograma <= 0,
+    JSON.stringify(barra),
+  );
+  const fundoDasJanelas = await pagina.evaluate(() => {
+    const f = document.createElement("div");
+    f.className = "sakura-modal-fundo";
+    document.getElementById("root").appendChild(f);
+    const topo = f.getBoundingClientRect().top;
+    f.remove();
+    return topo;
+  });
+  conferir(
+    "o fundo das janelas (modais) começa abaixo da barra, não embaixo dos três botões",
+    fundoDasJanelas === 40,
+    `veio ${fundoDasJanelas}`,
+  );
+  const fundoDaJanela = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].getBackgroundColor(),
+  );
+  conferir(
+    "a janela nasce no fundo escuro (não no rosa-claro do tema antigo)",
+    fundoDaJanela.toUpperCase() === "#0A0A0D",
+    `veio ${fundoDaJanela}`,
+  );
+  // A faixa dos três botões acompanha o tema: o `setTitleBarOverlay` é
+  // trocado por um que anota o que recebeu.
+  await app.evaluate(({ BrowserWindow }) => {
+    const janela = BrowserWindow.getAllWindows()[0];
+    globalThis.__faixasDosBotoes = [];
+    janela.setTitleBarOverlay = (opcoes) => globalThis.__faixasDosBotoes.push(opcoes);
+  });
+  await pagina.evaluate(() => {
+    window.sakuraApp.definirTemaDaJanela("claro");
+    window.sakuraApp.definirTemaDaJanela("escuro");
+    window.sakuraApp.definirTemaDaJanela("roxo"); // inválido: tem que ser ignorado
+  });
+  await pagina.waitForTimeout(400);
+  const faixas = await app.evaluate(() => globalThis.__faixasDosBotoes);
+  conferir(
+    "a faixa dos três botões troca de cor com o tema (e ignora tema inválido)",
+    faixas.length === 2 &&
+      faixas[0].color.toUpperCase() === "#F3F2EF" &&
+      faixas[0].symbolColor.toUpperCase() === "#1B1B1F" &&
+      faixas[1].color.toUpperCase() === "#0A0A0D" &&
+      faixas[0].height === 40,
+    JSON.stringify(faixas),
   );
 } finally {
   await app.close();

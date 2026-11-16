@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { trocarSenhaPropria } from "@/lib/auth";
 import { mensagemDeErro } from "@/lib/errors";
 import { confirmarTrocaSenha } from "@/lib/operadores";
+import { TelaDeEntrada } from "./TelaDeEntrada";
 
 const TAMANHO_MINIMO_SENHA = 6;
 
@@ -45,62 +47,54 @@ export function TrocarSenhaPage() {
   }
 
   return (
-    <div className="sakura-fundo-marca sakura-grao flex h-screen items-center justify-center">
-      <div className="sakura-vidro relative z-[2] w-full max-w-sm p-8">
-        <div className="mb-6 flex justify-center">
-          <Logo className="drop-shadow-sm" />
-        </div>
+    <TelaDeEntrada>
+      <div className="sakura-vidro w-full max-w-[26rem] p-8">
+        <Logo className="mb-6" />
 
-        <h1 className="text-center text-destaque font-semibold text-sakura-purple-dark">
+        <h1 className="text-center font-titulo text-botao-grande font-semibold text-texto">
           Crie uma senha nova
         </h1>
-        <p className="mb-6 text-center text-corpo text-sakura-purple-dark/90">
+        <p className="mb-6 text-center text-corpo text-texto-2">
           Sua senha foi redefinida por um administrador. Escolha uma senha nova pra continuar.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {erro && (
-            <p className="rounded-lg bg-red-50/90 px-4 py-2 text-corpo text-red-700">{erro}</p>
+            <p role="alert" className="rounded-xl bg-perigo/15 px-4 py-2 text-corpo text-perigo">
+              {erro}
+            </p>
           )}
 
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Nova senha</span>
+          <label className="sakura-rotulo">
+            Nova senha
             <input
               type="password"
               autoFocus
               value={novaSenha}
               onChange={(e) => setNovaSenha(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-[var(--campo-no-vidro)] px-3 py-2.5 text-texto placeholder:text-texto-3 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="sakura-campo"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Confirmar nova senha</span>
+          <label className="sakura-rotulo">
+            Confirmar nova senha
             <input
               type="password"
               value={confirmacao}
               onChange={(e) => setConfirmacao(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-[var(--campo-no-vidro)] px-3 py-2.5 text-texto placeholder:text-texto-3 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="sakura-campo"
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={salvando}
-            className="w-full rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.4)] hover:shadow-[0_0_25px_rgba(255,87,34,0.7)] hover:bg-sakura-purple/90 transition-all disabled:opacity-50"
-          >
+          <Botao type="submit" variante="principal" tamanho="grande" ocupado={salvando} className="w-full">
             {salvando ? "Salvando..." : "Salvar nova senha e entrar"}
-          </button>
+          </Botao>
 
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="w-full text-center text-rotulo font-medium text-sakura-purple-dark/70 hover:text-sakura-purple-dark"
-          >
+          <Botao variante="fantasma" tamanho="grande" onClick={() => logout()} className="w-full">
             Sair
-          </button>
+          </Botao>
         </form>
       </div>
-    </div>
+    </TelaDeEntrada>
   );
 }

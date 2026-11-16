@@ -256,12 +256,13 @@ export function GaleriaDePecas() {
 
       <Bloco
         titulo="Cartão de número"
-        nota="O rótulo com o “?”, o número em 30 e a variação com seta e com o que ela compara. Prejuízo tem cor, seta e sinal. Ainda sem o fio de gráfico, que entra com o Início."
+        nota="O rótulo com o “?”, o número em 30 e a variação com seta e com o que ela compara. Prejuízo tem cor, seta e sinal. O fio de gráfico (opcional, à direita) é o acumulado do mês dia a dia; sem dados, o cartão fica sem ele (o terceiro)."
       >
         <div className="grid grid-cols-4 gap-3.5">
           <CartaoNumero
             titulo="Recebido no mês"
             explicacao="O que entrou no caixa neste mês, já recebido."
+            fio={[1200, 2900, 3100, 5200, 6800, 9100, 9800, 13400, 16200, 19500, 22100, 24815]}
             variacao={<Variacao percentual={16} subirEBom comparadoCom="o mesmo período do mês passado" contra="outubro" />}
           >
             <Valor valor={24815} />
@@ -269,6 +270,7 @@ export function GaleriaDePecas() {
           <CartaoNumero
             titulo="Lucro do mês"
             explicacao="O recebido menos os custos do mês."
+            fio={[800, 1500, 900, -400, -1800, -1200, -2600, -2300, -3100, -3000, -3500, -3344]}
             variacao={<Variacao percentual={-22} subirEBom comparadoCom="o mesmo período do mês passado" contra="outubro" />}
           >
             <Valor valor={-3344} />
@@ -285,7 +287,7 @@ export function GaleriaDePecas() {
             <Valor valor={0} />
           </CartaoNumero>
         </div>
-        <Codigo>{`<CartaoNumero titulo="Recebido no mês" explicacao="…"
+        <Codigo>{`<CartaoNumero titulo="Recebido no mês" explicacao="…" fio={acumuladoPorDia}
   variacao={<Variacao percentual={16} subirEBom comparadoCom="…" contra="outubro" />}>
   <Valor valor={24815} />
 </CartaoNumero>`}</Codigo>
