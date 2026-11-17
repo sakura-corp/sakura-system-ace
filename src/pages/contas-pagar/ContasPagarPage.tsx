@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Plus, Repeat, TriangleAlert, Undo2 } from "lucide-react";
+import { Check, Plus, Repeat, Undo2 } from "lucide-react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Botao } from "@/components/Botao";
 import { CartaoNumero } from "@/components/CartaoNumero";
@@ -26,6 +26,7 @@ import { SeloDoVencimento } from "./SeloDoVencimento";
 import { situacaoDoVencimento } from "./vencimento";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { formatarMoeda, somar } from "@/schemas/dinheiro";
+import { AvisoDeErro } from "@/components/Aviso";
 
 export function ContasPagarPage() {
   const { operador, lojaAtual } = useAuth();
@@ -153,13 +154,7 @@ export function ContasPagarPage() {
       </header>
 
       {erro && (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <AvisoDeErro>{erro}</AvisoDeErro>
       )}
 
       {mostrarFormulario && (

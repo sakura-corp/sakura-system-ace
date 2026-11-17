@@ -294,7 +294,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               Importações anteriores
             </h3>
             {desfeito && (
-              <div className="rounded-lg bg-ok/[0.12] px-4 py-2 text-corpo text-ok">
+              <AvisoDeCerto>
                 <p>
                   Desfeito: {desfeito.lote.nome_arquivo}. Saíram {desfeito.resultado.clientes_apagados} cliente(s) e{" "}
                   {desfeito.resultado.veiculos_apagados} veículo(s).
@@ -313,7 +313,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                     </ul>
                   </div>
                 )}
-              </div>
+              </AvisoDeCerto>
             )}
             {lotes === null ? (
               <p className="text-corpo text-texto-2">Carregando...</p>
@@ -344,14 +344,14 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                           ) : confirmandoLote === lote.id ? (
                             <span className="flex flex-wrap items-center gap-2">
                               <span>Apagar o que esta importação trouxe?</span>
-                              <button
-                                type="button"
+                              <Botao
+                                variante="perigo"
+                                tamanho="pequeno"
                                 disabled={ocupado}
                                 onClick={() => desfazer(lote)}
-                                className="rounded-lg bg-red-600 px-3 py-1 text-white hover:opacity-90 disabled:opacity-50"
                               >
                                 Sim, desfazer
-                              </button>
+                              </Botao>
                               <Botao variante="fantasma" onClick={() => setConfirmandoLote(null)}>
                                 Não
                               </Botao>

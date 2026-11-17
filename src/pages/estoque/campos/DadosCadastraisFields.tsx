@@ -8,7 +8,6 @@ import {
   type PecaFormValues,
 } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
-import { CAMPO_NOVO_NO_COMBOBOX } from "../avisosEAbas";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
 export function DadosCadastraisFields({
@@ -93,7 +92,6 @@ export function DadosCadastraisFields({
 
         <Campo label="Categoria">
           <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={categorias.map((categoria) => ({ valor: categoria.id, rotulo: categoria.nome }))}
             valor={watch("categoria_id")}
             onMudar={(v) => setValue("categoria_id", v)}

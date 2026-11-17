@@ -1,4 +1,5 @@
 import type { SituacaoEsquema } from "@/schemas/versaoEsquema";
+import { AvisoDeAtencao } from "@/components/Aviso";
 
 interface AvisoVersaoBancoProps {
   situacao: SituacaoEsquema;
@@ -30,7 +31,7 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
 
   if (situacao.estado === "app_atrasado") {
     return (
-      <div className="mb-4 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+      <AvisoDeAtencao className="mb-4">
         <p className="font-semibold">
           O banco desta empresa já recebeu uma atualização que este computador ainda não tem.
         </p>
@@ -39,12 +40,12 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
           atualiza sozinho ao abrir. Se o aviso continuar depois de fechar e abrir, avise quem
           cuida do sistema: a versão nova talvez ainda não tenha sido liberada.
         </p>
-      </div>
+      </AvisoDeAtencao>
     );
   }
 
   return (
-    <div className="mb-4 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+    <AvisoDeAtencao className="mb-4">
       <p className="font-semibold">
         O programa foi atualizado, mas o banco desta empresa ainda não.
       </p>
@@ -59,6 +60,6 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
         {situacao.faltando.length > 1 ? "faltam as atualizações" : "falta a atualização"}{" "}
         <span className="font-semibold">{situacao.faltando.join(", ")}</span>).
       </p>
-    </div>
+    </AvisoDeAtencao>
   );
 }

@@ -226,6 +226,7 @@ export function PecasAvulsasAprovacaoModal({
                 {modo === "existente" && (
                   <div className="space-y-1">
                     <Combobox
+                      tamanho="filtro"
                       opcoes={opcoes}
                       valor={escolhidas[item.id] ?? ""}
                       onMudar={(pecaId) => escolherPeca(item.id, pecaId)}

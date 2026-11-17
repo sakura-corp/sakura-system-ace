@@ -97,6 +97,7 @@ export function AuditoriaPage() {
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Tabela</span>
           <Combobox
+            tamanho="filtro"
             className="w-56"
             opcoes={Object.entries(TABELA_AUDITORIA_LABEL).map(([valor, rotulo]) => ({
               valor,
@@ -111,6 +112,7 @@ export function AuditoriaPage() {
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Ação</span>
           <Combobox
+            tamanho="filtro"
             className="w-44"
             opcoes={Object.entries(ACAO_AUDITORIA_LABEL).map(([valor, rotulo]) => ({
               valor,
@@ -125,6 +127,7 @@ export function AuditoriaPage() {
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Operador</span>
           <Combobox
+            tamanho="filtro"
             className="w-56"
             opcoes={operadores.map((op) => ({ valor: op.id, rotulo: op.nome }))}
             valor={filtroOperadorId}
