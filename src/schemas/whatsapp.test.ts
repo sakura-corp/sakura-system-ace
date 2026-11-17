@@ -502,3 +502,19 @@ describe("montarUrlWhatsapp sem número (#397)", () => {
     expect(new URL(url).hostname).toBe("wa.me");
   });
 });
+
+describe("modelo contabilidade (#383)", () => {
+  it("o texto padrão tem os três marcadores e preenche sem sobrar chave", () => {
+    const modelo = modeloPorChave("contabilidade");
+    expect(modelo.marcadores).toEqual(["{contador}", "{loja}", "{mes}"]);
+    const texto = preencherModelo(modelo.padrao, {
+      contador: "Marta",
+      loja: "Loja Centro",
+      mes: "outubro de 2026",
+    });
+    expect(texto).toBe(
+      "Oi, Marta! Aqui é da Loja Centro. Segue o pacote das notas de outubro de 2026 (XML e PDF). " +
+        "O extrato do banco eu mando até o dia 10. Qualquer coisa, é só chamar.",
+    );
+  });
+});

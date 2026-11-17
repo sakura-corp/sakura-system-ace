@@ -392,6 +392,10 @@ describe("FaturamentoCard — a OS mudou em outro computador (#803)", () => {
     await waitFor(() =>
       expect(screen.getByRole("checkbox", { name: /Dividir em mais de uma forma/ })).not.toBeChecked(),
     );
-    expect(screen.getByText(/Total dos itens: R\$\s*1\.150,00/)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Total dos itens").nextElementSibling).toHaveTextContent(
+        /R\$\s*1\.150,00/,
+      ),
+    );
   });
 });

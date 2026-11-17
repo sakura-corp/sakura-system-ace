@@ -1,5 +1,5 @@
 import { CircleX, Download, FileText, Upload } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AcoesDaLinha, type AcaoDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
@@ -14,6 +14,7 @@ import {
   baixarZipDoMes,
   enviarArquivo,
   excluirArquivo,
+  gerarPacoteContabilidade,
   listarArquivos,
   listarOrdensParaNotas,
 } from "@/lib/notasFiscais";
@@ -121,6 +122,17 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
   const [arquivoCancelando, setArquivoCancelando] = useState<NotaFiscalArquivo | null>(null);
   const [arquivoDanfe, setArquivoDanfe] = useState<NotaFiscalArquivo | null>(null);
   const [mesBaixando, setMesBaixando] = useState<string | null>(null);
+  // O pacote pro contador (#383): de que mês, e quantos PDFs já vieram.
+  const [pacote, setPacote] = useState<{ chave: string; feitos: number; total: number } | null>(
+    null,
+  );
+  // A loja de agora (padrão do #974): o pacote que termina depois de uma
+  // troca de loja não baixa nem mexe na tela da loja nova (revisão do #1003).
+  const lojaAtualRef = useRef(lojaAtual?.id);
+  useEffect(() => {
+    lojaAtualRef.current = lojaAtual?.id;
+    setPacote(null);
+  }, [lojaAtual?.id]);
 
   async function carregar() {
     const carga = comecar(lojaAtual?.id);
@@ -200,6 +212,32 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
       setErro(mensagemDeErro(err));
     } finally {
       setMesBaixando(null);
+    }
+  }
+
+  // Só as notas desta aba (o tipo) e deste mês: são as que a tela já tem.
+  async function handlePacoteDoMes(chave: string, arquivosDoMes: NotaFiscalArquivo[]) {
+    if (!lojaAtual) return;
+    const loja = { id: lojaAtual.id, nome: lojaAtual.nome };
+    const mesmaLoja = () => lojaAtualRef.current === loja.id;
+    setErro(null);
+    setPacote({ chave, feitos: 0, total: 0 });
+    try {
+      await gerarPacoteContabilidade({
+        loja,
+        notas: arquivosDoMes,
+        mes: chave,
+        tipo,
+        aoProgredir: (feitos, total) => {
+          if (mesmaLoja()) setPacote({ chave, feitos, total });
+        },
+        aindaValido: mesmaLoja,
+      });
+    } catch (err) {
+      console.error("Erro ao montar o pacote pro contador:", err);
+      if (mesmaLoja()) setErro(mensagemDeErro(err));
+    } finally {
+      if (mesmaLoja()) setPacote(null);
     }
   }
 
@@ -404,19 +442,40 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                 </h2>
                 {/* O pacote do contador (pedido da Sofia, 15/11: cada botão de
                     baixar diz o que baixa e pra quem). */}
-                <Dica
-                  texto={`Baixa um .zip com os ${arquivosDoMes.length} XML de ${mes.toLowerCase()}: o arquivo que o contador pede`}
-                >
-                  <Botao
-                    tamanho="pequeno"
-                    icone={<Download />}
-                    onClick={() => handleBaixarMes(chave, arquivosDoMes)}
-                    disabled={mesBaixando !== null}
-                    ocupado={mesBaixando === chave}
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Dica
+                    texto={`Baixa um .zip com os ${arquivosDoMes.length} XML de ${mes.toLowerCase()}: o arquivo que o contador pede`}
                   >
-                    {mesBaixando === chave ? "Preparando..." : "Baixar os XML do mês, pro contador"}
-                  </Botao>
-                </Dica>
+                    <Botao
+                      tamanho="pequeno"
+                      icone={<Download />}
+                      onClick={() => handleBaixarMes(chave, arquivosDoMes)}
+                      disabled={mesBaixando !== null || pacote !== null}
+                      ocupado={mesBaixando === chave}
+                    >
+                      {mesBaixando === chave ? "Preparando..." : "Baixar os XML do mês, pro contador"}
+                    </Botao>
+                  </Dica>
+                  {/* O pacote pro contador (#383): XML e PDF de cada nota, e um
+                      LEIA-ME com as que ficaram sem PDF. */}
+                  <Dica
+                    texto={`Baixa um .zip com o XML e o PDF de cada nota de ${mes.toLowerCase()}, e um LEIA-ME com as que ficaram sem PDF`}
+                  >
+                    <Botao
+                      tamanho="pequeno"
+                      icone={<FileText />}
+                      onClick={() => handlePacoteDoMes(chave, arquivosDoMes)}
+                      disabled={mesBaixando !== null || pacote !== null}
+                      ocupado={pacote?.chave === chave}
+                    >
+                      {pacote?.chave === chave
+                        ? pacote.total > 0
+                          ? `Buscando PDF ${pacote.feitos} de ${pacote.total}…`
+                          : "Preparando..."
+                        : "Pacote pro contador (XML e PDF)"}
+                    </Botao>
+                  </Dica>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 {/* `table-fixed` com as larguras no cabeçalho: cada mês é uma

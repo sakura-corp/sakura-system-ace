@@ -89,7 +89,11 @@ async function abrirFaturamentoEConfirmar() {
     </MemoryRouter>,
   );
   await usuario.click(await screen.findByRole("button", { name: "Faturar" }));
-  expect(await screen.findByText(/Total dos itens: R\$\s*100,00/)).toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.getByText("Total dos itens").nextElementSibling).toHaveTextContent(
+      /R\$\s*100,00/,
+    ),
+  );
   await usuario.click(screen.getByRole("button", { name: "Confirmar faturamento" }));
 }
 
@@ -117,7 +121,11 @@ describe("OrdensServicoPage — a OS mudou em outro computador na hora de fatura
     await abrirFaturamentoEConfirmar();
 
     expect(await screen.findByText(mensagemMudou)).toBeInTheDocument();
-    expect(await screen.findByText(/Total dos itens: R\$\s*150,00/)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Total dos itens").nextElementSibling).toHaveTextContent(
+        /R\$\s*150,00/,
+      ),
+    );
     expect(listarOrdens).toHaveBeenCalledTimes(2);
     expect(faturarOrdem).toHaveBeenCalledTimes(1);
   });

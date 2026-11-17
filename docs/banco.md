@@ -646,6 +646,10 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `versao-minima-do-programa` (o programa novo grava `nao_avisar` e os intervalos ao salvar
   cliente e serviço, então num banco sem a `0084` salvar falha). Teste em
   `supabase/scripts/testar-retorno-do-cliente.sql`.
+- `0085`: **o contato da contabilidade, por loja** (tarefa #383). Número `0085` por decisão da
+  Sofia (11/11/2026): a ordem na `main` é #985 (`0083`) → #987 (`0084`) → #383 (`0085`). Tabela nova
+  `configuracoes_contabilidade` (ver a seção das tabelas). Tabela nova e opcional: sobe **antes**
+  da versão, sem `versao-minima-do-programa`.
 - `0086`: **faturar a OS com a linha da OS travada e o total conferido no banco** (tarefa #803,
   caso 2; o mesmo caminho da `0071` e da `0079`). Uma função,
   `marcar_ordem_faturada(ordem, forma de pagamento, parcelas, total da tela, operador)`,
@@ -657,7 +661,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   mesmo instante não deixa o Caixa receber o total velho. O Caixa e as Contas a Receber continuam
   com o programa, depois da função. Nenhuma policy muda. Sem `versao-minima-do-programa` (só
   acrescenta), mas sobe **antes** da versão que chama a função. Era a `0083`; renumerada pra `0086`
-  em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003). Teste em
+  em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003; aplicar depois dela). Teste em
   `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
   corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
 
@@ -970,6 +974,15 @@ outro projeto Supabase do zero (ver seção 9).
   `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
   "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
   RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
+- **`configuracoes_contabilidade`** (migration `0085`, #383): loja_id (PK, 1 linha por loja),
+  nome, whatsapp, email, atualizado_em. Pra quem a loja manda o pacote do mês (as notas). Tabela
+  própria, e não colunas nos Dados fiscais (Sofia, 10/11/2026): o contato não é fiscal, e quem
+  mexe nele é quem cuida das mensagens. Travas: `ck_configuracoes_contabilidade_nome` (não só
+  espaço, até 80), `_whatsapp` (só dígitos, 10 a 13; o programa grava só os dígitos), `_email`
+  (um @ com algo dos dois lados, sem espaço, até 120) e `_algum_contato` (WhatsApp **ou** e-mail).
+  **Sem linha, a loja não tem contato**; contato sem nome ou sem nenhum dos dois é linha apagada
+  (`src/lib/contabilidade.ts`). RLS igual à `configuracoes_avaliacao`. Teste em
+  `supabase/scripts/testar-contato-contabilidade.sql`.
 - **`importacao_lotes`** (migration `0083`, #457): id, tipo (`clientes`; as partes 2 e 3 da
   importação somam tipos na trava `ck_importacao_lotes_tipo`), nome_arquivo, operador_id (quem
   importou, `default auth.uid()`), criado_em, total_linhas, clientes_criados, veiculos_criados,

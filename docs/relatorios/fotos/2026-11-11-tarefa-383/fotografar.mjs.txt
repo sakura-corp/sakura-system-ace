@@ -1,0 +1,55 @@
+// Fotos da tarefa #383 (Central do dia, Configurações e Notas Fiscais), com
+// os dados inventados do site/ferramentas. Rodar da raiz, com o servidor de
+// telas no ar em localhost:5199 (npx vite --config site/ferramentas/vite.telas.config.ts,
+// com VITE_SUPABASE_URL=https://demo.supabase.co e VITE_SUPABASE_ANON_KEY=chave-de-mentira).
+// O relógio da página fica em 05/11/2026 pra a linha do pacote (dia 1 ao 7) aparecer.
+import { mkdirSync } from "node:fs";
+import { instalarBancoFalso } from "/home/user/sakura-system-ace/site/ferramentas/banco-falso.mjs";
+import { carregarChromium } from "/home/user/sakura-system-ace/site/ferramentas/playwright.mjs";
+
+const BASE = "http://localhost:5199";
+const SAIDA = process.argv[2];
+mkdirSync(SAIDA, { recursive: true });
+const chromium = await carregarChromium();
+const navegador = await chromium.launch({ args: ["--lang=pt-BR"] });
+const contexto = await navegador.newContext({
+  viewport: { width: 1600, height: 1000 },
+  deviceScaleFactor: 2,
+  locale: "pt-BR",
+  timezoneId: "America/Sao_Paulo",
+  colorScheme: "light",
+});
+await instalarBancoFalso(contexto);
+await contexto.clock.setFixedTime(new Date(2026, 10, 5, 12, 0, 0));
+const pagina = await contexto.newPage();
+pagina.on("console", (m) => m.type() === "error" && console.log("[console]", m.text().slice(0, 160)));
+
+await pagina.goto(BASE, { waitUntil: "networkidle" });
+await pagina.fill('input[type="text"], input:not([type="password"]):visible', "demo");
+await pagina.fill('input[type="password"]', "demo1234");
+await pagina.click('button[type="submit"]');
+await pagina.waitForTimeout(2500);
+
+// 1. Central do dia
+await pagina.goto(`${BASE}/#/`, { waitUntil: "networkidle" });
+await pagina.waitForTimeout(1500);
+const central = pagina.locator('section[aria-labelledby="central-do-dia-titulo"]');
+await central.scrollIntoViewIfNeeded();
+await central.screenshot({ path: `${SAIDA}/1-central-do-dia-pacote.png` });
+
+// 2. Configurações → WhatsApp
+await pagina.goto(`${BASE}/#/configuracoes`, { waitUntil: "networkidle" });
+await pagina.locator("button").filter({ hasText: "Mensagens de WhatsApp" }).first().click();
+await pagina.waitForTimeout(1200);
+const bloco = pagina.locator("form").filter({ hasText: "Contato da contabilidade" }).first();
+await bloco.scrollIntoViewIfNeeded();
+await pagina.waitForTimeout(500);
+await pagina.screenshot({ path: `${SAIDA}/2-configuracoes-contato-contabilidade.png` });
+
+// 3. Notas Fiscais → NFC-e
+await pagina.goto(`${BASE}/#/notas-fiscais`, { waitUntil: "networkidle" });
+await pagina.waitForTimeout(1500);
+await pagina.locator("button").filter({ hasText: "Pacote pro contador (XML e PDF)" }).first().scrollIntoViewIfNeeded();
+await pagina.waitForTimeout(400);
+await pagina.screenshot({ path: `${SAIDA}/3-notas-fiscais-pacote-pro-contador.png` });
+await navegador.close();
