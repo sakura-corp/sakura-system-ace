@@ -11,6 +11,9 @@ import { Link, type LinkProps } from "react-router-dom";
  * - `secundario` (o padrão): sem fundo, com borda.
  * - `fantasma`: sem fundo nem borda ("Cancelar", "Adicionar forma de pagamento").
  * - `whatsapp`: borda e ícone verdes (é o que o `BotaoWhatsapp` usa).
+ * - `perigo`: vermelho cheio com letra branca, só pra confirmar o que não tem
+ *   volta ("Confirmar cancelamento", "Sim, desfazer"). Não é o próximo passo
+ *   da tela: o laranja continua sendo um só.
  *
  * Os três tamanhos: `pequeno` (32 px, linha de tabela), `medio` (40 px, o
  * padrão) e `grande` (48 px, o Login).
@@ -20,7 +23,7 @@ import { Link, type LinkProps } from "react-router-dom";
  * precisa acontecer. Quem quer enviar escreve `type="submit"`.
  */
 
-export type VarianteDoBotao = "principal" | "secundario" | "fantasma" | "whatsapp";
+export type VarianteDoBotao = "principal" | "secundario" | "fantasma" | "whatsapp" | "perigo";
 export type TamanhoDoBotao = "pequeno" | "medio" | "grande";
 
 // Cada estado numa string separada, e não tudo numa linha só: a varredura
@@ -65,6 +68,15 @@ const VARIANTE: Record<VarianteDoBotao, string[]> = {
     "hover:bg-zap/[0.12]",
     "disabled:border-linha disabled:bg-transparent",
     "disabled:text-texto-3 disabled:[&_svg]:text-texto-3",
+  ],
+  perigo: [
+    // O vermelho-600 com letra branca dá 4,8:1 nos dois temas (o `perigo` do
+    // tema escuro é claro demais pra fundo de letra branca).
+    "bg-red-600 text-white",
+    "hover:bg-red-700",
+    // Desligado: cinza sólido, como o principal, pra ler o que ele faria.
+    "disabled:bg-passar",
+    "disabled:text-texto-2",
   ],
 };
 

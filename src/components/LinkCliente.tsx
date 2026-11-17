@@ -47,7 +47,10 @@ export function LinkCliente({
         navigate(`/clientes/${clienteId}`);
       }}
       title={`Ver a ficha de ${nome}`}
-      className="inline-flex min-h-8 min-w-0 max-w-full items-center rounded-lg border border-borda-campo px-2 text-left font-medium text-texto hover:bg-texto/10"
+      // Cara de link (sublinhado), e não de botão com caixa: no meio de uma
+      // tabela, a caixa competia com os botões de verdade da linha. O alvo
+      // de clique continua com 32 px de altura.
+      className="inline-flex min-h-8 min-w-0 max-w-full items-center rounded-md text-left font-medium text-texto underline decoration-texto-3 decoration-1 underline-offset-4 transition-colors hover:text-acao hover:decoration-acao"
     >
       <span className="min-w-0 truncate">{nome}</span>
     </button>

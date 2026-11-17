@@ -2,13 +2,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Info, TriangleAlert } from "lucide-react";
+import { Info } from "lucide-react";
 import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ContaReceber } from "@/types/contaReceber";
 import { fraseDaPrevisao } from "@/pages/contas-pagar/vencimento";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface ReceberContaModalProps {
   conta: ContaReceber;
@@ -65,13 +66,7 @@ export function ReceberContaModal({ conta, hoje, onConfirmar, onFechar }: Recebe
         </p>
 
         {erro && (
-          <p
-            role="alert"
-            className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-3 py-2 text-perigo"
-          >
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span className="min-w-0">{erro}</span>
-          </p>
+          <AvisoDeErro>{erro}</AvisoDeErro>
         )}
 
         <div className="grid grid-cols-2 gap-4">

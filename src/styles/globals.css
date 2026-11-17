@@ -388,7 +388,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    "disabled:opacity-*" das telas; o seletor ~= pega só a classe exata, não
    o "bg-acao/20" nem o "hover:bg-acao". Quando as telas
    passarem a usar o componente Botao, isto sai. */
-:root[data-tema="claro"] :is(button, a)[class~="bg-red-600"]:disabled,
 :is(button, a)[class~="bg-acao"]:disabled {
   background-color: var(--color-passar);
   color: var(--color-texto-2);

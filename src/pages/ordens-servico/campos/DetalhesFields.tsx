@@ -57,6 +57,7 @@ export function DetalhesFields({
     <section className="grid grid-cols-2 gap-4">
       <Campo label="Cliente" obrigatorio erro={errors.cliente_id?.message}>
         <Combobox
+          tamanho="filtro"
           opcoes={clientes.map((cliente) => ({ valor: cliente.id, rotulo: cliente.nome }))}
           valor={clienteId}
           onMudar={escolherCliente}
@@ -68,6 +69,7 @@ export function DetalhesFields({
 
       <Campo label="Veículo">
         <Combobox
+          tamanho="filtro"
           opcoes={veiculosDoCliente.map((veiculo) => ({
             valor: veiculo.id,
             rotulo: `${veiculo.placa} — ${veiculo.marca ?? ""} ${veiculo.modelo ?? ""}`,
@@ -117,6 +119,7 @@ export function DetalhesFields({
 
       <Campo label="Vendedor / atendente">
         <Combobox
+          tamanho="filtro"
           opcoes={funcionarios.map((funcionario) => ({
             valor: funcionario.id,
             rotulo: funcionario.nome,

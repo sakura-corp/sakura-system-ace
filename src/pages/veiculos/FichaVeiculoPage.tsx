@@ -223,15 +223,12 @@ export function FichaVeiculoPage() {
         </div>
       </header>
 
-      {/* O `max-w-[17rem]` das frases embaixo dos números: o `CartaoNumero` não
-          quebra a linha do que vem depois do número (o bloco dele não encolhe),
-          e sem o limite a frase do KM saía do cartão. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <CartaoNumero
           titulo="KM mais recente"
           explicacao="O KM anotado na OS mais recente deste carro — não o maior já digitado, pra um erro de digitação não ficar colado nele. Sem OS com KM, vale o do cadastro."
           variacao={
-            <div className="max-w-[17rem] space-y-1 whitespace-normal text-rotulo text-texto-2">
+            <div className="space-y-1 text-rotulo text-texto-2">
               <p>
                 {!dados.kmAtual
                   ? "Nenhum KM anotado ainda"
@@ -266,7 +263,7 @@ export function FichaVeiculoPage() {
           titulo="Visitas"
           explicacao="Os dias diferentes em que o carro passou pela loja (duas OS no mesmo dia contam como uma visita), e a média de dias entre uma visita e a seguinte."
           variacao={
-            <div className="max-w-[17rem] space-y-1 whitespace-normal text-rotulo text-texto-2">
+            <div className="space-y-1 text-rotulo text-texto-2">
               <p>
                 {ultimaVisita
                   ? `Última: ${tempoDesde(diasEntre(ultimaVisita, hoje))}`

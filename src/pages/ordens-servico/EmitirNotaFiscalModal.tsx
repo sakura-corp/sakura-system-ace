@@ -510,7 +510,7 @@ export function EmitirNotaFiscalModal({
   // Esta SIM tranca (#655): peça sem cadastro ou sem NCM não sai na NFC-e, e a SEFAZ não aceita nota sem NCM.
   // Aparece mesmo sem o token do Focus NFe (#742): a loja vê as duas pendências de uma vez.
   const quadroDasPecasQueImpedem = itensQueImpedem.length > 0 && (
-    <div className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao">
+    <AvisoDeAtencao className="text-rotulo">
       <p>
         <strong>Esta nota não pode sair ainda.</strong>
       </p>
@@ -546,7 +546,7 @@ export function EmitirNotaFiscalModal({
           </li>
         ))}
       </ul>
-    </div>
+    </AvisoDeAtencao>
   );
   const avisoAliquota = avisoAliquotaCompetencia(configuracaoFiscal);
 
@@ -568,13 +568,10 @@ export function EmitirNotaFiscalModal({
 
       {/* #374: aviso, nunca tranca; aparece mesmo quando a configuração não veio. */}
       {!carregando && !resultado && semConexao && (
-        <p
-          role="status"
-          className="mb-3 rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao"
-        >
+        <AvisoDeAtencao role="status" className="mb-3 text-rotulo">
           Sem internet a nota não sai: a SEFAZ e a prefeitura precisam receber. Espere a conexão
           voltar pra emitir.
-        </p>
+        </AvisoDeAtencao>
       )}
 
       {!carregando && !resultado && !configuracaoNaoVeio && !focusNfeConfigurado && (
@@ -666,7 +663,7 @@ export function EmitirNotaFiscalModal({
               do item 33 do PROJETO_STATUS.md). O botão de emitir continua
               liberado. */}
           {pecasComProblemaFiscal.length > 0 && (
-            <div className="rounded-lg bg-atencao/[0.12] px-3 py-2 text-rotulo text-atencao">
+            <AvisoDeAtencao className="text-rotulo">
               <p>
                 <strong>
                   {pecasComProblemaFiscal.length === 1
@@ -684,7 +681,7 @@ export function EmitirNotaFiscalModal({
                   </li>
                 ))}
               </ul>
-            </div>
+            </AvisoDeAtencao>
           )}
 
           {/* A prefeitura recusa a primeira NFS-e do mês enquanto a alíquota

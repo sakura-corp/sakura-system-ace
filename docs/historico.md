@@ -35,6 +35,14 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/11/2026: visual novo, quase todas as telas na `main`
+- **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
+- **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.
+- **Aberto**: em 1024 com o menu aberto, a tabela das OS rola de lado (esconder uma coluna é decisão dela); as sugestões de cada PR.
+- **Próximo**: Relações (sessão rodando) e Configurações com Auditoria e Diagnóstico (#1062); depois a tarefa de tirar os tokens antigos.
+- **Atenção**: as sessões pararam no limite semanal (16/11); a fila está em `docs/rascunhos/visual-novo-tarefas.md`.
+- **Com a Sofia**: no Windows 11, a barra da janela e o ícone do instalador; no fim de semana, as telas novas e o faturar com um login de verdade.
+
 ### 15/11/2026 (tarde): visual novo, o menu novo na `main`
 - **Feito** (#1049, nada publicado): o menu tem quatro grupos com ícones, abre e encolhe (lembrado por computador) e encosta na borda da janela; no alto, a flor da logo B. Regras: seção 7.
 - **Decidido por ela**: o menu fica como está; o atalho de trocar o tema no rodapé do menu fica.

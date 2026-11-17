@@ -10,7 +10,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import type { ContagemEstoque } from "@/types/contagem";
 import type { Deposito } from "@/types/deposito";
 import type { Peca } from "@/types/peca";
-import { CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface ContagemSectionProps {
@@ -137,7 +136,6 @@ export function ContagemSection({
             <label className="sakura-rotulo">
               Produto
               <Combobox
-                className={CAMPO_NOVO_NO_COMBOBOX}
                 opcoes={pecas.map((p) => ({ valor: p.id, rotulo: p.descricao }))}
                 valor={pecaId}
                 onMudar={setPecaId}

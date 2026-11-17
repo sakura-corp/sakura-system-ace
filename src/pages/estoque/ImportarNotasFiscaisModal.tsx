@@ -21,7 +21,6 @@ import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { ItemNotaFiscalExtraido } from "@/types/itemNotaFiscal";
 import type { Peca } from "@/types/peca";
-import { CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface ItemRevisao extends ItemNotaFiscalExtraido {
@@ -294,7 +293,8 @@ export function ImportarNotasFiscaisModal({
                       </td>
                       <td>
                         <Combobox
-                          className={`w-28 ${CAMPO_NOVO_NO_COMBOBOX_FILTRO}`}
+                          className="w-28"
+                          tamanho="filtro"
                           opcoes={categorias.map((categoria) => ({
                             valor: categoria.id,
                             rotulo: categoria.nome,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,7 +24,6 @@ import { ContagemSection } from "./ContagemSection";
 import { MovimentacoesSection } from "./MovimentacoesSection";
 import { ProdutosSection } from "./ProdutosSection";
 import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
-import { AbasDaTela } from "./avisosEAbas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 type Aba = "produtos" | "movimentacoes" | "contagem" | "relatorios";
@@ -153,15 +153,16 @@ export function EstoquePage() {
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <AbasDaTela
+      <Abas
         rotulo="Partes do estoque"
+        className="flex-wrap"
         ativa={aba}
         aoEscolher={setAba}
         abas={[
-          ["produtos", "Produtos"],
-          ["movimentacoes", "Movimentações"],
-          ["contagem", "Contagem"],
-          ["relatorios", "Relatórios"],
+          { valor: "produtos", nome: "Produtos" },
+          { valor: "movimentacoes", nome: "Movimentações" },
+          { valor: "contagem", nome: "Contagem" },
+          { valor: "relatorios", nome: "Relatórios" },
         ]}
       />
 

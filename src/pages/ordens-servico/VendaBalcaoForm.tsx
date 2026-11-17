@@ -190,6 +190,7 @@ export function VendaBalcaoForm({
             <div className="flex flex-col gap-1">
               <Campo label="Cliente" erro={errors.cliente_id?.message}>
                 <Combobox
+                  tamanho="filtro"
                   opcoes={[
                     { valor: CLIENTE_CONSUMIDOR_ID, rotulo: ROTULO_CONSUMIDOR },
                     ...clientes.map((cliente) => ({ valor: cliente.id, rotulo: cliente.nome })),
@@ -219,6 +220,7 @@ export function VendaBalcaoForm({
 
             <Campo label="Vendedor">
               <Combobox
+                tamanho="filtro"
                 opcoes={funcionarios.map((funcionario) => ({
                   valor: funcionario.id,
                   rotulo: funcionario.nome,
