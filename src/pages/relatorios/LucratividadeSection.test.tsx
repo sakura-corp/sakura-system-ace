@@ -69,21 +69,46 @@ describe("LucratividadeSection — peça avulsa", () => {
   });
 });
 
-describe("LucratividadeSection — rosca do vendido (#990, tarefa 13)", () => {
-  it("mostra custo e margem do vendido quando os dois são positivos", () => {
-    render(<LucratividadeSection ordens={[ordem]} pecas={[]} servicos={[]} />);
-    const rosca = screen.getByRole("group", { name: "Divisão do vendido entre custo e margem" });
-    expect(within(rosca).getByText("Custo")).toBeInTheDocument();
-    expect(within(rosca).getByText("Margem")).toBeInTheDocument();
+describe("LucratividadeSection — o cartão de destaque e as bolhas (visual novo, 17/11)", () => {
+  const simples: OrdemServico = {
+    ...ordem,
+    itens: [
+      item({ descricao: "Pneu", preco_unitario: 1000, custo_unitario: 700 }),
+      item({ descricao: "Alinhamento", preco_unitario: 200, custo_unitario: 50 }),
+    ],
+  };
+
+  it("diz quanto fica com a loja de cada R$ 100 vendidos (margem sobre o vendido)", () => {
+    render(<LucratividadeSection ordens={[simples]} pecas={[]} servicos={[]} />);
+    // 1200 vendidos, 450 de margem: 37,50 de cada 100.
+    const capa = screen.getByRole("region", { name: "Margem do período" });
+    expect(capa).toHaveTextContent(/De cada R\$ 100 vendidos,\s*R\$\s?37,50 ficam com a loja/);
   });
 
-  it("com margem negativa não desenha rosca (o cartão já mostra o prejuízo)", () => {
+  it("a coluna Margem % marca, com seta, o que passa da média da loja", () => {
+    render(<LucratividadeSection ordens={[simples]} pecas={[]} servicos={[]} />);
+    const alinhamento = screen.getByRole("row", { name: /Alinhamento/ });
+    expect(alinhamento).toHaveTextContent("75,0%");
+    expect(within(alinhamento).getByLabelText("acima da média")).toBeInTheDocument();
+    const pneu = screen.getByRole("row", { name: /Pneu/ });
+    expect(pneu).toHaveTextContent("30,0%");
+    expect(within(pneu).queryByLabelText("acima da média")).toBeNull();
+  });
+
+  it("uma bolha por item com custo; o de custo não informado fica de fora do gráfico (fica na tabela)", () => {
+    const { container } = render(<LucratividadeSection ordens={[ordem]} pecas={[]} servicos={[]} />);
+    const bolhas = [...container.querySelectorAll("[data-bolha]")].map((b) => b.getAttribute("data-bolha"));
+    expect(bolhas).toEqual(["Palheta"]);
+    expect(screen.getByRole("row", { name: /Farol/ })).toBeInTheDocument();
+  });
+
+  it("com margem negativa não mostra o \"de cada R$ 100\" (o número vermelho já diz)", () => {
     const prejuizo: OrdemServico = {
       ...ordem,
       itens: [item({ descricao: "Pneu", preco_unitario: 100, custo_unitario: 150 })],
     };
     render(<LucratividadeSection ordens={[prejuizo]} pecas={[]} servicos={[]} />);
-    expect(screen.queryByRole("group", { name: "Divisão do vendido entre custo e margem" })).toBeNull();
+    expect(screen.queryByText(/De cada/)).toBeNull();
     expect(screen.getByText("Margem do período")).toBeInTheDocument();
   });
 });

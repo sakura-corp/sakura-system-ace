@@ -218,3 +218,44 @@ export function lucratividadePorCliente({
     totalReceita: todas.reduce((total, l) => total + l.receita, 0),
   };
 }
+
+/**
+ * Quanto da receita sobrou, em % (a "Margem %" da tabela e o "de cada R$ 100"
+ * do cartão de destaque, visual novo de Relações, 17/11/2026). `null` sem
+ * receita: não dá pra dividir, e a tela mostra "—" em vez de inventar.
+ */
+export function margemPercentual(receita: number, margem: number): number | null {
+  return receita > 0 ? (margem / receita) * 100 : null;
+}
+
+export interface PontoDoLucro {
+  descricao: string;
+  quantidade: number;
+  receita: number;
+  margem: number;
+  /** A margem sobre a receita, em %. */
+  percentual: number;
+}
+
+/** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
+export const BOLHAS_NO_GRAFICO = 12;
+
+/**
+ * As bolhas do "Onde está o lucro" (Relações → Lucratividade): uma por peça ou
+ * serviço, as de mais margem em reais primeiro, no máximo `limite` (o resto
+ * continua na tabela de baixo). Fica de fora a linha sem receita (não tem %)
+ * e a de custo não informado (a margem dela seria inventada).
+ */
+export function pontosDoLucro(linhas: readonly LinhaLucro[], limite = BOLHAS_NO_GRAFICO): PontoDoLucro[] {
+  return linhas
+    .filter((l) => !l.custoNaoInformado && l.receita > 0)
+    .map((l) => ({
+      descricao: l.descricao,
+      quantidade: l.quantidade,
+      receita: l.receita,
+      margem: l.margem,
+      percentual: (l.margem / l.receita) * 100,
+    }))
+    .sort((a, b) => b.margem - a.margem)
+    .slice(0, limite);
+}

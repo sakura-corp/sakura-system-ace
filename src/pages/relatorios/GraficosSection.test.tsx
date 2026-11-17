@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 /**
- * Relações → Gráficos no visual novo (#990, tarefa 13): o comparativo em três
- * cartões (no lugar do radar) usa os mesmos números da série do gráfico.
+ * Relações → Gráficos no visual novo (#990; aprovado pela Sofia em 17/11): o
+ * comparativo do período virou uma tabela (Agora, Anterior, Mudou) com os
+ * mesmos números da série do gráfico, e o gráfico é uma linha por série.
  */
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
@@ -27,23 +28,55 @@ function diaAntes(dias: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+function desenhar() {
+  render(
+    <GraficosSection
+      movimentos={[entrada(hojeLocal(), 300), entrada(diaAntes(1), 200)]}
+      ordens={[]}
+      pecas={[]}
+      servicos={[]}
+    />,
+  );
+}
+
 describe("GraficosSection — comparativo do período", () => {
-  it("mostra Vendas, Custos e Lucro de agora e do período anterior, escritos", () => {
-    render(
-      <GraficosSection
-        movimentos={[entrada(hojeLocal(), 300), entrada(diaAntes(1), 200)]}
-        ordens={[]}
-        pecas={[]}
-        servicos={[]}
-      />,
-    );
+  it("mostra Vendas, Custos e Lucro de agora e do período anterior, escritos, com a variação", () => {
+    desenhar();
     const titulo = screen.getByRole("heading", { name: "Comparativo do período" });
     const secao = titulo.closest("section")!;
-    const vendas = within(secao).getByText("Vendas").closest("[data-cartao-comparacao]") as HTMLElement;
-    expect(within(vendas).getByText(/300,00/)).toBeInTheDocument();
-    expect(within(vendas).getByText(/Anterior:/)).toHaveTextContent(/200,00/);
-    expect(within(vendas).getByText("+50%")).toBeInTheDocument();
-    // Custos não tem nada no período anterior (zero): sem porcentagem inventada.
-    expect(within(secao).getAllByText(/contra dia anterior/)).toHaveLength(2);
+    const vendas = secao.querySelector('[data-comparativo="Vendas"]') as HTMLElement;
+    const [, agora, anterior, mudou] = within(vendas).getAllByRole("cell");
+    expect(agora).toHaveTextContent(/300,00/);
+    expect(anterior).toHaveTextContent(/200,00/);
+    expect(mudou).toHaveTextContent("+50%");
+    // Custos não tem nada no período anterior (zero): "sem movimento", sem porcentagem inventada.
+    const custos = secao.querySelector('[data-comparativo="Custos"]') as HTMLElement;
+    expect(within(custos).getAllByRole("cell")[2]).toHaveTextContent("sem movimento");
+    expect(within(custos).queryByText(/%/)).toBeNull();
+  });
+});
+
+describe("GraficosSection — o gráfico em linhas", () => {
+  it("uma linha por série, cada uma com o total à vista, e a margem do período no lucro", () => {
+    desenhar();
+    const grafico = screen.getByRole("group", { name: /Vendas, custos e lucro, diário/ });
+    for (const serie of ["vendas", "custos", "lucro"]) {
+      expect(grafico.querySelector(`[data-linha-do-grafico="${serie}"]`)).not.toBeNull();
+    }
+    const vendas = grafico.querySelector('[data-linha-do-grafico="vendas"]') as HTMLElement;
+    expect(vendas).toHaveTextContent("Vendas · 14 dias");
+    expect(vendas).toHaveTextContent(/500,00/);
+    // Sem custo nenhum, o lucro é tudo: margem de 100%.
+    const lucro = grafico.querySelector('[data-linha-do-grafico="lucro"]') as HTMLElement;
+    expect(lucro).toHaveTextContent("margem de 100,0%");
+    // O ponto de agora vem escrito pro leitor de tela.
+    expect(within(vendas).getByRole("img", { name: /Vendas: R\$\s?300,00 em Hoje/ })).toBeInTheDocument();
+  });
+
+  it("o número grande é o Recebido no mês, e os outros três continuam lá", () => {
+    desenhar();
+    for (const t of ["Recebido no mês", "Recebido hoje", "Recebido esta semana", "Recebido este ano"]) {
+      expect(screen.getByText(t)).toBeInTheDocument();
+    }
   });
 });

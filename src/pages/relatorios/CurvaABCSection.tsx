@@ -18,7 +18,7 @@ import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { FiltroDeDatas } from "./FiltroDeDatas";
-import { GraficoDeRosca } from "./GraficoDeRosca";
+import { CurvaAcumulada } from "./CurvaAcumulada";
 import { Segmentos } from "./Segmentos";
 
 interface CurvaABCSectionProps {
@@ -40,13 +40,6 @@ const CLASSE_DO_SELO: Record<LetraABC, string> = {
   A: "bg-ok/[0.12] text-ok",
   B: "bg-atencao/[0.12] text-atencao",
   C: "bg-texto/[0.08] text-texto-2",
-};
-
-// As cores da rosca: as mesmas do selo da curva.
-const COR_DA_FATIA: Record<LetraABC, string> = {
-  A: "var(--color-ok)",
-  B: "var(--color-atencao)",
-  C: "var(--color-texto-3)",
 };
 
 function formatarPercentual(valor: number): string {
@@ -117,6 +110,8 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
 
       <ListaABC
         titulo="Peças"
+        umItem="peça"
+        variosItens="peças"
         vazio="Nenhuma peça vendida nesse período."
         curva={curvas.pecas}
         nomeDe={(l) => l.descricao}
@@ -124,6 +119,8 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
       />
       <ListaABC
         titulo="Serviços"
+        umItem="serviço"
+        variosItens="serviços"
         vazio="Nenhum serviço vendido nesse período."
         curva={curvas.servicos}
         nomeDe={(l) => l.descricao}
@@ -131,6 +128,8 @@ export function CurvaABCSection({ ordens, pecas, servicos }: CurvaABCSectionProp
       />
       <ListaABC
         titulo="Clientes"
+        umItem="cliente"
+        variosItens="clientes"
         vazio="Nenhum cliente comprou nesse período."
         curva={curvas.clientes}
         nomeDe={(l) => l.nome}
@@ -159,8 +158,12 @@ function ListaABC<T>({
   nomeDe,
   rotuloValor,
   rodape,
+  umItem,
+  variosItens,
 }: {
   titulo: string;
+  umItem: string;
+  variosItens: string;
   vazio: string;
   curva: CurvaABC<T>;
   nomeDe: (linha: T) => string;
@@ -240,16 +243,14 @@ function ListaABC<T>({
           </table>
           {rodape && <div className="border-t border-linha">{rodape}</div>}
         </div>
-        {/* Quantos itens em cada curva: a mesma contagem do "A: 3 · B: 2" de cima. */}
-        <div className="sakura-card hidden shrink-0 p-4 xl:block">
-          <GraficoDeRosca
-            descricao={`${titulo} por curva`}
-            fatias={(["A", "B", "C"] as const).map((letra) => ({
-              nome: `Curva ${letra}`,
-              valor: contagem[letra],
-              cor: COR_DA_FATIA[letra],
-              texto: `${contagem[letra]} ${contagem[letra] === 1 ? "item" : "itens"}`,
-            }))}
+        {/* A curva acumulada (no lugar da rosca, 17/11): a contagem por letra vai embaixo dela. */}
+        <div className="sakura-card hidden w-[440px] shrink-0 p-5 xl:block">
+          <CurvaAcumulada
+            curva={curva}
+            titulo={titulo}
+            umItem={umItem}
+            variosItens={variosItens}
+            contagem={contagem}
           />
         </div>
         </div>
