@@ -53,6 +53,15 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "Este tipo de importação ainda não existe no banco desta empresa. Avise quem cuida do sistema.",
   // Migration 0084 (#381): o intervalo do retorno do cliente, no cadastro do serviço.
   ck_servicos_intervalo: "O intervalo do serviço precisa ser maior que zero e no máximo 3.650 dias ou 1.000.000 km (ou ficar vazio).",
+  // Migration 0085 (#383): o contato da contabilidade.
+  ck_configuracoes_contabilidade_nome:
+    "O nome da contabilidade não pode ficar em branco nem passar de 80 letras.",
+  ck_configuracoes_contabilidade_whatsapp:
+    "O WhatsApp da contabilidade precisa ter o DDD e o número: de 10 a 13 dígitos.",
+  ck_configuracoes_contabilidade_email:
+    "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
+  ck_configuracoes_contabilidade_algum_contato:
+    "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
@@ -150,6 +159,9 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "intervalo_dias",
   "intervalo_km",
   "nao_avisar",
+  // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
+  // programa, mas se alguém publicar sem rodar, a tela cai aqui.
+  "configuracoes_contabilidade",
 ] as const;
 
 /**
