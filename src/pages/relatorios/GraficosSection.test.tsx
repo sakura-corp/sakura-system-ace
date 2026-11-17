@@ -22,6 +22,10 @@ function entrada(dia: string, valor: number): MovimentoCaixa {
   } as unknown as MovimentoCaixa;
 }
 
+function saida(dia: string, valor: number): MovimentoCaixa {
+  return { ...entrada(dia, valor), tipo: "saida" } as MovimentoCaixa;
+}
+
 function diaAntes(dias: number): string {
   const d = new Date(`${hojeLocal()}T12:00:00`);
   d.setDate(d.getDate() - dias);
@@ -49,10 +53,55 @@ describe("GraficosSection — comparativo do período", () => {
     expect(agora).toHaveTextContent(/300,00/);
     expect(anterior).toHaveTextContent(/200,00/);
     expect(mudou).toHaveTextContent("+50%");
-    // Custos não tem nada no período anterior (zero): "sem movimento", sem porcentagem inventada.
+    // Custos zerado ontem (mas teve venda): R$ 0,00 de verdade, sem porcentagem inventada.
     const custos = secao.querySelector('[data-comparativo="Custos"]') as HTMLElement;
-    expect(within(custos).getAllByRole("cell")[2]).toHaveTextContent("sem movimento");
+    expect(within(custos).getAllByRole("cell")[2]).toHaveTextContent(/0,00/);
     expect(within(custos).queryByText(/%/)).toBeNull();
+  });
+
+  it("sem venda nem custo no período anterior, diz \"sem movimento\"", () => {
+    render(<GraficosSection movimentos={[entrada(hojeLocal(), 300)]} ordens={[]} pecas={[]} servicos={[]} />);
+    const vendas = document.querySelector('[data-comparativo="Vendas"]') as HTMLElement;
+    expect(within(vendas).getAllByRole("cell")[2]).toHaveTextContent("sem movimento");
+    expect(within(vendas).getAllByRole("cell")[3]).toHaveTextContent("—");
+  });
+});
+
+describe("GraficosSection — comparativo, os casos que já enganaram", () => {
+  it("custo que sobe aparece como ruim (vermelho), e venda que sobe como bom (verde)", () => {
+    render(
+      <GraficosSection
+        movimentos={[
+          entrada(hojeLocal(), 300),
+          entrada(diaAntes(1), 200),
+          saida(hojeLocal(), 200),
+          saida(diaAntes(1), 100),
+        ]}
+        ordens={[]}
+        pecas={[]}
+        servicos={[]}
+      />,
+    );
+    const linha = (nome: string) => document.querySelector(`[data-comparativo="${nome}"]`) as HTMLElement;
+    const mudou = (nome: string) => within(linha(nome)).getAllByRole("cell")[3].firstElementChild as HTMLElement;
+    expect(mudou("Custos")).toHaveTextContent("+100%");
+    expect(mudou("Custos")).toHaveClass("text-perigo");
+    expect(mudou("Vendas")).toHaveClass("text-ok");
+  });
+
+  it("lucro zero com venda e custo iguais é um zero de verdade, não \"sem movimento\"", () => {
+    render(
+      <GraficosSection
+        movimentos={[entrada(hojeLocal(), 300), entrada(diaAntes(1), 500), saida(diaAntes(1), 500)]}
+        ordens={[]}
+        pecas={[]}
+        servicos={[]}
+      />,
+    );
+    const lucro = document.querySelector('[data-comparativo="Lucro"]') as HTMLElement;
+    const anterior = within(lucro).getAllByRole("cell")[2];
+    expect(anterior).toHaveTextContent(/0,00/);
+    expect(anterior).not.toHaveTextContent("sem movimento");
   });
 });
 

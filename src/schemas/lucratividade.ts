@@ -1,5 +1,6 @@
 import { diaLocal } from "@/lib/datas";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
+import { somar } from "./dinheiro";
 import type { MapaCusto } from "./metricasCaixa";
 import { valorLiquidoDoItem } from "./valorItem";
 import { ehConsumidor } from "@/types/cliente";
@@ -228,6 +229,36 @@ export function margemPercentual(receita: number, margem: number): number | null
   return receita > 0 ? (margem / receita) * 100 : null;
 }
 
+/** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
+export const BOLHAS_NO_GRAFICO = 12;
+/** Das 12, quantas no máximo vão pros itens com prejuízo (os piores primeiro). */
+export const BOLHAS_DE_PREJUIZO = 4;
+
+/**
+ * "De cada R$ 100 vendidos": quanto é custo e quanto fica com a loja, nos 100.
+ * `null` quando não faz sentido dizer assim (sem venda, ou margem fora de 0 a
+ * 100%, como no prejuízo): aí o número grande, vermelho, já diz tudo.
+ */
+export function deCadaCem(receita: number, margem: number): { custo: number; margem: number } | null {
+  const percentual = margemPercentual(receita, margem);
+  if (percentual === null || percentual < 0 || percentual > 100) return null;
+  return { custo: 100 - percentual, margem: percentual };
+}
+
+/**
+ * A margem média da loja pra comparar item com item (a linha tracejada das
+ * bolhas e a seta da "Margem %"): só as linhas com custo informado, que são
+ * as que aparecem no gráfico. A peça avulsa sem custo entraria com 100% de
+ * margem e puxaria a média pra cima, deixando todo o resto "abaixo da média".
+ */
+export function margemMediaComCusto(linhas: readonly LinhaLucro[]): number | null {
+  const comCusto = linhas.filter((l) => !l.custoNaoInformado);
+  return margemPercentual(
+    somar(comCusto.map((l) => l.receita)),
+    somar(comCusto.map((l) => l.margem)),
+  );
+}
+
 export interface PontoDoLucro {
   descricao: string;
   quantidade: number;
@@ -242,20 +273,25 @@ export interface PontoDoLucro {
   peso: number;
 }
 
-/** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
-export const BOLHAS_NO_GRAFICO = 12;
-
 /**
  * As bolhas do "Onde está o lucro" (Relações → Lucratividade): uma por peça ou
- * serviço, as de mais margem em reais primeiro, no máximo `limite` (o resto
- * continua na tabela de baixo). Fica de fora a linha sem receita (não tem %)
- * e a de custo não informado (a margem dela seria inventada).
+ * serviço, no máximo `limite` (o resto continua na tabela de baixo). Entram as
+ * de mais margem em reais e, **sempre**, as que deram prejuízo (as piores, até
+ * `BOLHAS_DE_PREJUIZO`): o gráfico existe pra mostrar o que conferir, e um
+ * prejuízo ficaria sempre no fim da fila, cortado. Fica de fora a linha sem
+ * receita (não tem %) e a de custo não informado (a margem seria inventada).
  */
 export function pontosDoLucro(linhas: readonly LinhaLucro[], limite = BOLHAS_NO_GRAFICO): PontoDoLucro[] {
-  const escolhidas = linhas
-    .filter((l) => !l.custoNaoInformado && l.receita > 0)
+  const validas = linhas.filter((l) => !l.custoNaoInformado && l.receita > 0);
+  const prejuizos = validas
+    .filter((l) => l.margem < 0)
+    .sort((a, b) => a.margem - b.margem)
+    .slice(0, Math.min(BOLHAS_DE_PREJUIZO, limite));
+  const lucros = validas
+    .filter((l) => l.margem >= 0)
     .sort((a, b) => b.margem - a.margem)
-    .slice(0, limite);
+    .slice(0, limite - prejuizos.length);
+  const escolhidas = [...lucros, ...prejuizos];
   const maior = Math.max(...escolhidas.map((l) => Math.abs(l.margem)), 0);
   return escolhidas.map((l) => ({
     descricao: l.descricao,

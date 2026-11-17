@@ -10,7 +10,7 @@ import {
   type CurvaABC,
   type LetraABC,
 } from "@/schemas/curvaABC";
-import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarMoeda, formatarPercentual } from "@/schemas/dinheiro";
 import { lucratividadePorCliente, lucratividadePorItem } from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
 import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
@@ -41,10 +41,6 @@ const CLASSE_DO_SELO: Record<LetraABC, string> = {
   B: "bg-atencao/[0.12] text-atencao",
   C: "bg-texto/[0.08] text-texto-2",
 };
-
-function formatarPercentual(valor: number): string {
-  return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-}
 
 // #390. As contas moram em `schemas/lucratividade.ts` (as mesmas OS e o mesmo
 // período da aba Lucratividade, por isso a soma bate) e `schemas/curvaABC.ts`

@@ -200,15 +200,20 @@ export function GraficoEmLinhas({
                   width={coluna}
                   height={altura}
                   fill="transparent"
-                  onMouseEnter={() =>
+                  onMouseEnter={(e) => {
+                    // Medido do próprio desenho, não da linha: assim o espaço em
+                    // cima dela e a centralização não deslocam a dica.
+                    const desenho = (e.currentTarget as SVGRectElement).ownerSVGElement?.getBoundingClientRect();
+                    const raiz = raizRef.current?.getBoundingClientRect();
+                    if (!desenho || !raiz) return;
                     setDica({
-                      x: 224 + pontos[i][0],
-                      y: (raizRef.current?.querySelector<HTMLElement>(`[data-linha-do-grafico="${linha.chave}"]`)?.offsetTop ?? 0) + pontos[i][1],
+                      x: desenho.left - raiz.left + pontos[i][0],
+                      y: desenho.top - raiz.top + pontos[i][1],
                       categoria: i === ultimo && rotuloDoAtual ? rotuloDoAtual : categorias[i],
                       serie: linha.nome,
                       valor: formatarValor(v),
-                    })
-                  }
+                    });
+                  }}
                   onMouseLeave={() => setDica(null)}
                 />
               ))}
@@ -220,7 +225,7 @@ export function GraficoEmLinhas({
       {/* O eixo dos dias, uma vez só, embaixo de todas as linhas. */}
       <div className="grid grid-cols-[200px_1fr] gap-6" aria-hidden="true">
         <span />
-        <svg viewBox={`0 0 ${largura} ${ALTURA_DO_EIXO}`} className="w-full" style={{ height: ALTURA_DO_EIXO }}>
+        <svg viewBox={`0 0 ${largura} ${ALTURA_DO_EIXO}`} className="w-full overflow-visible" style={{ height: ALTURA_DO_EIXO }}>
           {categorias.map((categoria, i) => (
             <text
               key={categoria}

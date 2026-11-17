@@ -10,11 +10,14 @@
 //   build/icon.png                                    (1024, a escura: instalador e atalho)
 //   public/icone-janela-{claro,escuro}.png            (256, a janela aberta)
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import { marca } from "./logo.mjs";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
-const aqui = new URL(".", import.meta.url).pathname;
-const raiz = new URL("../../../../", import.meta.url).pathname;
+// `fileURLToPath`, e não `.pathname`: no Windows o `.pathname` dá "/C:/..." e
+// troca espaço por "%20", e o script gravaria no lugar errado.
+const aqui = fileURLToPath(new URL(".", import.meta.url));
+const raiz = fileURLToPath(new URL("../../../../", import.meta.url));
 
 /** O quadro é o mesmo da logo: 512 com o centro em (0,0). */
 function icone(tema) {

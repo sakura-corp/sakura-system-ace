@@ -4,19 +4,21 @@ import { CartaoNumero } from "@/components/CartaoNumero";
 import { Explicacao } from "@/components/Explicacao";
 import { Valor } from "@/components/Valor";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
-import { lucratividadePorItem, margemPercentual, pontosDoLucro } from "@/schemas/lucratividade";
+import {
+  deCadaCem,
+  lucratividadePorItem,
+  margemMediaComCusto,
+  margemPercentual,
+  pontosDoLucro,
+} from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
-import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarMoeda, formatarPercentual } from "@/schemas/dinheiro";
 import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { FiltroDeDatas } from "./FiltroDeDatas";
 import { GraficoDeBolhas } from "./GraficoDeBolhas";
-
-function formatarPercentual(valor: number): string {
-  return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-}
 
 interface LucratividadeSectionProps {
   ordens: OrdemServico[];
@@ -52,10 +54,11 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
   // "De cada R$ 100 vendidos, R$ 42 ficam com a loja" (visual novo, 17/11):
   // só faz sentido com venda e margem entre 0 e 100%; fora disso o número
   // grande (vermelho, se for prejuízo) já diz tudo.
-  const percentualDaLoja = margemPercentual(totalReceita, totalMargem);
-  const mostrarCem = percentualDaLoja !== null && percentualDaLoja >= 0 && percentualDaLoja <= 100;
-  const bolinhasDaLoja = mostrarCem ? Math.round(percentualDaLoja) : 0;
+  const cem = deCadaCem(totalReceita, totalMargem);
+  const bolinhasDaLoja = cem ? Math.round(cem.margem) : 0;
   const pontos = useMemo(() => pontosDoLucro(linhas), [linhas]);
+  // A média de comparar item com item: só as linhas com custo (as do gráfico).
+  const mediaDosItens = useMemo(() => margemMediaComCusto(linhas), [linhas]);
 
   const avisoDeCusto = (
     <span className="inline-flex items-center gap-1 text-rotulo font-medium text-atencao">
@@ -95,10 +98,10 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
               <p className="mt-1 whitespace-nowrap font-titulo text-capa font-extrabold tracking-[-0.02em] tabular-nums">
                 <Valor valor={totalMargem} />
               </p>
-              {mostrarCem && (
+              {cem && (
                 <p className="mt-3 text-subtitulo text-texto">
                   De cada <strong>R$ 100</strong> vendidos,{" "}
-                  <strong>{formatarMoeda(percentualDaLoja)}</strong> ficam com a loja.
+                  <strong>{formatarMoeda(cem.margem)}</strong> ficam com a loja.
                 </p>
               )}
               {algumCustoNaoInformado && (
@@ -111,7 +114,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                 </div>
               )}
             </div>
-            {mostrarCem && (
+            {cem && (
               <div aria-hidden="true">
                 {/* 100 bolinhas = R$ 100 vendidos: as apagadas são o custo, as cheias o que fica. */}
                 <div className="grid grid-cols-[repeat(10,14px)] gap-1.5">
@@ -125,11 +128,11 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                 <div className="mt-3 flex gap-5 text-rotulo text-texto-2">
                   <span className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-texto/30" />
-                    Custo {formatarMoeda(100 - percentualDaLoja)}
+                    Custo {formatarMoeda(cem.custo)}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-texto" />
-                    Margem {formatarMoeda(percentualDaLoja)}
+                    Margem {formatarMoeda(cem.margem)}
                   </span>
                 </div>
               </div>
@@ -179,7 +182,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           </p>
           <GraficoDeBolhas
             pontos={pontos}
-            margemMedia={percentualDaLoja}
+            margemMedia={mediaDosItens}
             formatarValor={formatarMoeda}
             formatarPercentual={formatarPercentual}
           />
@@ -232,7 +235,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                       </>
                     )}
                     <td className="text-right">
-                      <MargemPercentual linha={linha} media={percentualDaLoja} />
+                      <MargemPercentual linha={linha} media={mediaDosItens} />
                     </td>
                   </tr>
                 ))}

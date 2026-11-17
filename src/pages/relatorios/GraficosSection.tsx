@@ -17,6 +17,7 @@ import {
   type Periodo,
 } from "@/schemas/graficosVendas";
 import { variacaoPercentual } from "@/schemas/painelInicio";
+import { formatarPercentual } from "@/schemas/dinheiro";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
@@ -43,12 +44,12 @@ const CONTRA: Record<Periodo, string> = {
   anual: "ano anterior",
 };
 
-/** O que está à vista no gráfico, pro "Vendas · 14 dias". */
-const A_VISTA: Record<Periodo, string> = {
-  diario: "14 dias",
-  semanal: "8 semanas",
-  mensal: "6 meses",
-  anual: "5 anos",
+/** O nome do período, pro "Vendas · 14 dias" (a quantidade vem das próprias colunas). */
+const UNIDADE: Record<Periodo, [string, string]> = {
+  diario: ["dia", "dias"],
+  semanal: ["semana", "semanas"],
+  mensal: ["mês", "meses"],
+  anual: ["ano", "anos"],
 };
 
 /** Como o gráfico chama o ponto de agora, no eixo. */
@@ -58,10 +59,6 @@ const AGORA: Record<Periodo, string> = {
   mensal: "Este mês",
   anual: "Este ano",
 };
-
-function formatarPercentual(valor: number): string {
-  return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-}
 
 /** Quantos dias de "Vendas por dia" cabem à vista; com mais, a lista rola por dentro. */
 const DIAS_A_VISTA = 7;
@@ -141,7 +138,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
   const resumo = (nome: string, total: number, extra?: string) => (
     <>
       <p className="text-rotulo text-texto-2">
-        {nome} · {A_VISTA[periodo]}
+        {nome} · {categorias.length} {UNIDADE[periodo][categorias.length === 1 ? 0 : 1]}
       </p>
       <p className="mt-1 whitespace-nowrap font-titulo text-destaque font-bold tabular-nums">
         <Valor valor={total} />
@@ -269,6 +266,9 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
                 {comparativo.map((c) => {
                   const atual = c.serie[ultimoIndice];
                   const anterior = c.serie[penultimoIndice];
+                  // "Sem movimento" só quando o período de antes não teve venda nem custo:
+                  // lucro zero com venda e custo iguais é um zero de verdade.
+                  const semMovimento = vendas[penultimoIndice] === 0 && custos[penultimoIndice] === 0;
                   return (
                     <tr key={c.nome} data-comparativo={c.nome}>
                       <td>
@@ -281,7 +281,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
                         <Valor valor={atual} />
                       </td>
                       <td className="text-right text-texto-2">
-                        {anterior === 0 ? "sem movimento" : <Valor valor={anterior} classeDeCor="text-texto-2" />}
+                        {semMovimento ? "sem movimento" : <Valor valor={anterior} classeDeCor="text-texto-2" />}
                       </td>
                       <td className="text-right">
                         {anterior === 0 ? (
