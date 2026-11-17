@@ -103,6 +103,25 @@ describe("Dica", () => {
     expect(dica.style.top).not.toBe(antes);
   });
 
+  // Com a barra própria da janela (tarefa 6), os três botões do Windows ficam
+  // por cima do programa, no topo: a dica de um botão logo abaixo da barra
+  // não pode subir pra trás deles. Vai pra baixo do botão.
+  it("com a barra da janela, a dica de um botão colado nela vai pra baixo, e não pra trás da barra", () => {
+    document.documentElement.dataset.barra = "propria";
+    document.documentElement.style.setProperty("--barra-janela", "40px");
+    try {
+      const botao = montar();
+      vi.spyOn(botao, "getBoundingClientRect").mockReturnValue({
+        top: 46, bottom: 78, left: 200, right: 280, width: 80, height: 32, x: 200, y: 46,
+      } as DOMRect);
+      chegarPeloTeclado(botao);
+      expect(parseFloat(screen.getByRole("tooltip").style.top)).toBeGreaterThanOrEqual(78);
+    } finally {
+      delete document.documentElement.dataset.barra;
+      document.documentElement.style.removeProperty("--barra-janela");
+    }
+  });
+
   it("se o botão saiu da vista com a rolagem, aí sim a dica fecha", () => {
     const botao = montar();
     const medida = vi.spyOn(botao, "getBoundingClientRect").mockReturnValue({

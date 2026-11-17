@@ -30,7 +30,7 @@ import { AvisoDeErro } from "@/components/Aviso";
 // o admin faz é dar um apelido ("Balcão") e esquecer o que não existe mais.
 //
 // Carrega os próprios dados, como a seção "Atualizações deste computador":
-// só busca quando alguém abre a seção (SecaoRecolhivel não monta o conteúdo
+// só busca quando alguém abre a seção (SecaoDeConfiguracao não monta o conteúdo
 // fechado), então não pesa na abertura de Configurações.
 export function ComputadoresSection() {
   const [computadores, setComputadores] = useState<Computador[] | null>(null);

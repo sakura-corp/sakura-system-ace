@@ -14,6 +14,11 @@ interface ComboboxProps {
   opcaoVazia?: string;
   desabilitado?: boolean;
   className?: string;
+  /**
+   * A altura do campo: `normal` é a dos outros campos do formulário (44 px);
+   * `filtro` é a dos filtros em cima de uma lista (38 px).
+   */
+  tamanho?: "normal" | "filtro";
   id?: string;
   /**
    * Quando `true`, o campo não fica preso à lista de `opcoes`: se o que foi
@@ -63,6 +68,7 @@ export function Combobox({
   opcaoVazia,
   desabilitado,
   className,
+  tamanho = "normal",
   id,
   permitirLivre,
   acaoExtra,
@@ -206,7 +212,9 @@ export function Combobox({
         aria-expanded={aberto}
         aria-autocomplete="list"
         autoComplete="off"
-        className="w-full rounded-lg border border-borda-campo px-3 py-2 focus:border-acao disabled:opacity-50"
+        // O mesmo campo do resto do formulário (a classe `sakura-campo`, com o
+        // anel laranja no foco), em vez da caixa mais baixa de antes.
+        className={tamanho === "filtro" ? "sakura-campo sakura-campo-filtro" : "sakura-campo"}
       />
 
       {aberto && (

@@ -18,7 +18,6 @@ import {
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
-import { CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
 import { AvisoDeErro } from "@/components/Aviso";
 import { PedidoCompraItemRow } from "./PedidoCompraItemRow";
 
@@ -90,7 +89,6 @@ export function PedidoCompraForm({
         <label className="sakura-rotulo">
           <span>Fornecedor <span className="text-perigo">*</span></span>
           <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={fornecedores.map((f) => ({ valor: f.id, rotulo: f.nome }))}
             valor={watch("fornecedor_id")}
             onMudar={(v) => setValue("fornecedor_id", v)}

@@ -5,7 +5,6 @@ import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
-import { CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
 import { AvisoDeErro } from "@/components/Aviso";
 import {
   paraNovoServico,
@@ -118,7 +117,6 @@ export function ServicoForm({
         <label className="sakura-rotulo">
           Categoria
           <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={categorias.map((categoria) => ({ valor: categoria.id, rotulo: categoria.nome }))}
             valor={watch("categoria_id")}
             onMudar={(v) => setValue("categoria_id", v)}

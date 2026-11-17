@@ -44,6 +44,24 @@ describe("Botao", () => {
     expect(classes).not.toContain("text-texto");
   });
 
+  it("o perigo é vermelho com letra branca, e desligado vira cinza legível", () => {
+    render(
+      <>
+        <Botao variante="perigo">Confirmar cancelamento</Botao>
+        <Botao variante="perigo" disabled>
+          Sim, desfazer
+        </Botao>
+      </>,
+    );
+    const ligado = classesDe(screen.getByRole("button", { name: "Confirmar cancelamento" }));
+    expect(ligado).toContain("bg-red-600");
+    expect(ligado).toContain("text-white");
+    expect(ligado).not.toContain("bg-acao");
+    const desligado = classesDe(screen.getByRole("button", { name: "Sim, desfazer" }));
+    expect(desligado).toContain("disabled:bg-passar");
+    expect(desligado).toContain("disabled:text-texto-2");
+  });
+
   it("sem dizer a variante, sai o secundário: laranja é um por tela, e é escolha", () => {
     render(<Botao>Venda de balcão</Botao>);
     const classes = classesDe(screen.getByRole("button", { name: "Venda de balcão" }));

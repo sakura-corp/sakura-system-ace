@@ -344,14 +344,14 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                           ) : confirmandoLote === lote.id ? (
                             <span className="flex flex-wrap items-center gap-2">
                               <span>Apagar o que esta importação trouxe?</span>
-                              <button
-                                type="button"
+                              <Botao
+                                variante="perigo"
+                                tamanho="pequeno"
                                 disabled={ocupado}
                                 onClick={() => desfazer(lote)}
-                                className="rounded-lg bg-red-600 px-3 py-1 text-white hover:opacity-90 disabled:opacity-50"
                               >
                                 Sim, desfazer
-                              </button>
+                              </Botao>
                               <Botao variante="fantasma" onClick={() => setConfirmandoLote(null)}>
                                 Não
                               </Botao>

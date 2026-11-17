@@ -38,6 +38,13 @@ const MARGEM_DA_TELA = 8;
 
 type Lado = "cima" | "direita";
 
+/** A altura da barra própria da janela (0 sem ela: no navegador, ou fora do Windows). */
+function alturaDaBarraDaJanela(): number {
+  if (document.documentElement.dataset.barra !== "propria") return 0;
+  const valor = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barra-janela"));
+  return Number.isFinite(valor) ? valor : 0;
+}
+
 // A última coisa que a pessoa usou: o teclado ou o mouse (ou o dedo). A dica
 // só acende no FOCO quando ele veio do teclado. Sem isto, ela acenderia em
 // dois casos errados: no clique (que também dá foco no botão) e quando o
@@ -107,6 +114,10 @@ export function Dica({
       alvo.bottom < 0 || alvo.top > window.innerHeight || alvo.right < 0 || alvo.left > window.innerWidth;
     if (foraDaVista) return false;
 
+    // O teto da dica: com a barra própria da janela (tarefa 6), os três botões
+    // do Windows ficam por cima do programa, então a dica nunca sobe acima da
+    // barra (senão ficaria atrás deles, no canto de cima à direita).
+    const teto = MARGEM_DA_TELA + alturaDaBarraDaJanela();
     let top: number;
     let left: number;
     if (lado === "direita") {
@@ -116,11 +127,11 @@ export function Dica({
       top = alvo.top - dica.height - VAO;
       left = alvo.left + alvo.width / 2 - dica.width / 2;
       // Sem espaço em cima (primeira linha da tela): vai pra baixo.
-      if (top < MARGEM_DA_TELA) top = alvo.bottom + VAO;
+      if (top < teto) top = alvo.bottom + VAO;
     }
     const maxLeft = window.innerWidth - dica.width - MARGEM_DA_TELA;
     const maxTop = window.innerHeight - dica.height - MARGEM_DA_TELA;
-    const novoTop = Math.max(MARGEM_DA_TELA, Math.min(top, maxTop));
+    const novoTop = Math.max(teto, Math.min(top, maxTop));
     const novoLeft = Math.max(MARGEM_DA_TELA, Math.min(left, maxLeft));
     // Rolar uma lista dispara este cálculo dezenas de vezes por segundo: só
     // redesenha quando a dica mudou de lugar de verdade.

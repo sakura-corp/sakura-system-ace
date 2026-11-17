@@ -94,7 +94,10 @@ export function CartaoNumero({
         </>
       ) : (
         <div className="mt-1.5 flex items-end justify-between gap-3">
-          <div className="shrink-0">
+          {/* O bloco encolhe até a largura do número (que não quebra), e o
+              texto de baixo quebra a linha sozinho: sem isto, uma frase
+              comprida (a do KM, na ficha do veículo) saía do cartão. */}
+          <div className="min-w-[min-content]">
             <p className="whitespace-nowrap font-titulo text-metrica font-bold tracking-[-0.02em] tabular-nums">
               {/* O número conta de zero até o valor (tarefa 5): só aparência. */}
               <ContarAoAparecer.Provider value>{children}</ContarAoAparecer.Provider>

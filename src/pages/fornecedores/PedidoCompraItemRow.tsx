@@ -8,7 +8,6 @@ import { mensagemDeErro } from "@/lib/errors";
 import type { PedidoCompraFormValues } from "@/schemas/pedidoCompra";
 import type { CotacaoPeca } from "@/types/cotacaoPeca";
 import type { PecaJanela } from "@/types/peca";
-import { CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
 
 interface PedidoCompraItemRowProps {
   index: number;
@@ -76,7 +75,6 @@ export function PedidoCompraItemRow({
           <label className="sakura-rotulo">
             Peça
             <Combobox
-              className={CAMPO_NOVO_NO_COMBOBOX}
               opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
               valor={pecaId}
               onMudar={(v) => setValue(`itens.${index}.peca_id`, v)}

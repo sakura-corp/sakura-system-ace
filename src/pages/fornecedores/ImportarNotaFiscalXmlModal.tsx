@@ -24,7 +24,6 @@ import type { Fornecedor } from "@/types/fornecedor";
 import type { ItemNotaFiscalXml, NotaFiscalXmlExtraida } from "@/types/notaFiscalXmlFornecedor";
 import type { PecaJanela } from "@/types/peca";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
-import { CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "@/pages/estoque/avisosEAbas";
 
 const ID_DO_FORMULARIO = "importar-nota-xml-formulario";
 
@@ -422,7 +421,8 @@ export function ImportarNotaFiscalXmlModal({
                       </td>
                       <td>
                         <Combobox
-                          className={`w-52 ${CAMPO_NOVO_NO_COMBOBOX_FILTRO}`}
+                          className="w-52"
+                          tamanho="filtro"
                           opcoes={pecas.map((peca) => ({
                             valor: peca.id,
                             rotulo: peca.descricao,
