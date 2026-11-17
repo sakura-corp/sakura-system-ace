@@ -85,6 +85,8 @@ export const TABELAS_CONFIG_POR_LOJA = [
   // configuração. O histórico de mensagens (`whatsapp_mensagens`) fica de
   // fora de propósito: é dado de negócio e trava a exclusão.
   "configuracoes_whatsapp",
+  // 0085 (#383): o contato da contabilidade também é só configuração.
+  "configuracoes_contabilidade",
   // Tabela nova com loja_id sem cascade: o teste lojas.tabelasDaLoja.test.ts
   // reprova até ela entrar aqui ou na lista das que travam de propósito.
 ] as const;

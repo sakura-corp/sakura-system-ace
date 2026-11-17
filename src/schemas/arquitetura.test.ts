@@ -181,3 +181,63 @@ describe("conta de dinheiro não mora na tela nem em src/lib", () => {
     ).toHaveLength(0);
   });
 });
+
+/**
+ * Dia de calendário (coluna `date`) mostrado com `new Date(...)` (#1005).
+ *
+ * `new Date("2026-11-15")` lê o dia como meia-noite em UTC; no horário de
+ * Brasília isso cai às 21h do dia 14, e a tela mostra um dia antes. Foi assim
+ * no vencimento das contas, na mensagem de cobrança do WhatsApp (que vai pro
+ * cliente) e na data do pedido de compra. É o mesmo padrão dos itens 34, 42 e
+ * 48 de `docs/licoes.md`.
+ *
+ * O jeito certo é o `diaBrasileiro()` de `src/lib/datas.ts`, que só reorganiza
+ * o texto ("2026-11-15" → "15/11/2026"), sem fuso nenhum.
+ *
+ * Só as colunas `date` que já deram o defeito estão aqui. As colunas com hora
+ * (`data_pagamento` das contas, `data_recebimento`, `data_fechamento`,
+ * `data_abertura`) são `timestamptz` e com elas o `new Date` está certo.
+ */
+const PASTAS_DE_TELA = ["src/pages", "src/components"];
+const COLUNAS_SO_DIA = ["vencimento", "data_pedido"];
+const DIA_COM_NEW_DATE = new RegExp(
+  `new Date\\(\\s*[A-Za-z_$][\\w$.?!]*\\.(?:${COLUNAS_SO_DIA.join("|")})\\b`,
+);
+
+/**
+ * Aqui a varredura é linha a linha no texto cru, de propósito: o
+ * `semComentarioNemTexto` apaga o que está entre crases, e a mensagem de
+ * cobrança do WhatsApp (um dos lugares do defeito) é justamente um texto com
+ * crase. Só a linha que é comentário fica de fora.
+ */
+function ehLinhaDeComentario(linha: string): boolean {
+  return /^\s*(\/\/|\/\*|\*)/.test(linha);
+}
+
+describe("dia de calendário (coluna date) não passa por new Date na tela (#1005)", () => {
+  const arquivos = PASTAS_DE_TELA.flatMap((pasta) =>
+    arquivosDeTela(pasta).map((relativo) => `${pasta}/${relativo}`),
+  );
+
+  it.each(PASTAS_DE_TELA)("encontra arquivos pra varrer em %s", (pasta) => {
+    expect(arquivosDeTela(pasta).length).toBeGreaterThan(5);
+  });
+
+  it("nenhuma tela faz new Date(<algo>.vencimento) nem new Date(<algo>.data_pedido)", () => {
+    const achados = arquivos.flatMap((relativo) =>
+      readFileSync(relativo, "utf8")
+        .split("\n")
+        .flatMap((linha, i) =>
+          DIA_COM_NEW_DATE.test(linha) && !ehLinhaDeComentario(linha)
+            ? [`${relativo}:${i + 1}`]
+            : [],
+        ),
+    );
+
+    expect(
+      achados,
+      `Dia de calendário passando por new Date (mostra um dia antes no horário de Brasília). ` +
+        `Use diaBrasileiro() de src/lib/datas.ts. Lugares:\n${achados.join("\n")}`,
+    ).toEqual([]);
+  });
+});

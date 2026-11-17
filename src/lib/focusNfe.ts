@@ -2,6 +2,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { dataHoraLocalComFuso, diaLocal, hojeLocal } from "./datas";
 import { supabase } from "./supabase";
 import { arredondarCentavo as arredondar } from "@/schemas/dinheiro";
+import { cfopSoNumeros } from "@/schemas/tributacao";
 import { valorLiquidoDoItem } from "@/schemas/valorItem";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
@@ -309,7 +310,9 @@ function montarItemNFCe(item: ItemParaNFCe, numeroItem: number): ItemNFCe {
     descricao: peca.descricao,
     quantidade_comercial: quantidade.toFixed(4),
     quantidade_tributavel: quantidade.toFixed(4),
-    cfop: peca.cfop_padrao ?? "5102",
+    // Só os números do CFOP: peça gravada com "5.405" saía com ponto na nota
+    // (#981); o aviso do #968 já lia assim. Sem CFOP continua 5102.
+    cfop: peca.cfop_padrao == null ? "5102" : cfopSoNumeros(peca.cfop_padrao),
     valor_unitario_comercial: precoUnitario.toFixed(10),
     valor_unitario_tributavel: precoUnitario.toFixed(10),
     valor_bruto: formatarValor(valorBruto),
