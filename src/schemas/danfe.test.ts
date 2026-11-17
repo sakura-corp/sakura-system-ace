@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { motivoDanfeIndisponivel, nomeArquivoDanfe, podeVerDanfe } from "./danfe";
+import { extensaoDaNota, motivoDanfeIndisponivel, nomeArquivoDanfe, podeVerDanfe } from "./danfe";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 
 function nota(campos: Partial<NotaFiscalArquivo> = {}): NotaFiscalArquivo {
@@ -54,5 +54,26 @@ describe("nomeArquivoDanfe", () => {
 
   it("sem número, cai na referência interna", () => {
     expect(nomeArquivoDanfe(nota({ numero: null }))).toBe("NFC-e-os12-nfce-1757500000000.pdf");
+  });
+});
+
+// Defeito de 17/11 (loja em produção): a Focus NFe manda a nota da NFC-e em
+// HTML, e o "Baixar a nota (pro cliente)" gravava esse HTML com o nome
+// ".pdf". O arquivo (9 KB) abria em branco no PC e no celular do cliente.
+describe("nota baixada com a extensão do que ela é", () => {
+  it("nota em HTML (a NFC-e da Focus) sai .html, nunca .pdf", () => {
+    expect(nomeArquivoDanfe(nota(), "text/html; charset=utf-8")).toBe("NFC-e-123.html");
+    expect(extensaoDaNota("text/html")).toBe("html");
+  });
+
+  it("nota em PDF continua .pdf", () => {
+    expect(nomeArquivoDanfe(nota({ tipo: "nfse", numero: "15" }), "application/pdf")).toBe(
+      "NFS-e-15.pdf",
+    );
+  });
+
+  it("sem tipo conhecido, continua .pdf como antes", () => {
+    expect(nomeArquivoDanfe(nota())).toBe("NFC-e-123.pdf");
+    expect(extensaoDaNota("application/octet-stream")).toBe("pdf");
   });
 });

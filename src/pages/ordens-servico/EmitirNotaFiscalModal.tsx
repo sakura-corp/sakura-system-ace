@@ -7,6 +7,7 @@ import { buscarConfiguracaoFiscal, confirmarAliquotaCompetencia } from "@/lib/co
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { avisoLimiteNFCeSemDestinatario } from "@/schemas/limiteNFCe";
+import { extensaoDaNota } from "@/schemas/danfe";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   baixarArquivoNota,
@@ -126,6 +127,8 @@ export function EmitirNotaFiscalModal({
   const [codigoMunicipioCliente, setCodigoMunicipioCliente] = useState("");
   const [resultado, setResultado] = useState<RespostaFocusNfe | null>(null);
   const [danfeUrl, setDanfeUrl] = useState<string | null>(null);
+  // O tipo do arquivo da nota (PDF ou HTML, #1113): decide a extensão ao baixar.
+  const [danfeTipo, setDanfeTipo] = useState("");
   const [carregandoPreview, setCarregandoPreview] = useState(false);
   const [erroPreview, setErroPreview] = useState("");
   // Nota enviada cuja resposta não chegou a tempo (ver EsperaVencidaError).
@@ -431,6 +434,7 @@ export function EmitirNotaFiscalModal({
           resposta.ref,
           "danfe",
         );
+        setDanfeTipo(blob.type);
         setDanfeUrl(URL.createObjectURL(blob));
       } catch (erroPreviewCapturado) {
         setErroPreview(mensagemDeErro(erroPreviewCapturado));
@@ -501,7 +505,7 @@ export function EmitirNotaFiscalModal({
     if (!danfeUrl) return;
     const link = document.createElement("a");
     link.href = danfeUrl;
-    link.download = `${tipoNota}-${resultado?.numero ?? resultado?.ref ?? "nota"}.pdf`;
+    link.download = `${tipoNota}-${resultado?.numero ?? resultado?.ref ?? "nota"}.${extensaoDaNota(danfeTipo)}`;
     link.click();
   }
 

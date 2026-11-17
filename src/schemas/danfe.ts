@@ -33,10 +33,18 @@ export function podeVerDanfe(arquivo: NotaFiscalArquivo): boolean {
   return motivoDanfeIndisponivel(arquivo) === null;
 }
 
-// Nome do arquivo na hora de salvar o PDF. Usa o número da nota (que é o que
+// A nota que a Focus NFe devolve nem sempre é PDF: a da NFC-e costuma vir em
+// HTML (src/lib/focusNfe.ts, tipoDoArquivo). O arquivo salvo leva a extensão
+// do que ele é: um HTML com nome ".pdf" abre em branco no PC e no celular do
+// cliente (defeito de 17/11, #1113). Sem tipo conhecido, fica ".pdf" como antes.
+export function extensaoDaNota(tipoConteudo?: string | null): "html" | "pdf" {
+  return tipoConteudo?.toLowerCase().includes("html") ? "html" : "pdf";
+}
+
+// Nome do arquivo na hora de salvar a nota. Usa o número da nota (que é o que
 // o cliente e a contabilidade reconhecem); sem número, cai na referência
 // interna, que pelo menos é única.
-export function nomeArquivoDanfe(arquivo: NotaFiscalArquivo): string {
+export function nomeArquivoDanfe(arquivo: NotaFiscalArquivo, tipoConteudo?: string | null): string {
   const identificador = arquivo.numero ?? arquivo.focus_nfe_ref ?? "nota";
-  return `${NOTA_LABEL[arquivo.tipo]}-${identificador}.pdf`;
+  return `${NOTA_LABEL[arquivo.tipo]}-${identificador}.${extensaoDaNota(tipoConteudo)}`;
 }
