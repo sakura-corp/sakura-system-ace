@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
+import { TelaDeEntrada } from "./TelaDeEntrada";
 
 interface LoginPageProps {
   onConfigurarConexao: () => void;
@@ -29,57 +31,46 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
   }
 
   return (
-    <div
-      className="flex h-screen items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: `url(${import.meta.env.BASE_URL}sakura-login-bg-premium.png)` }}
-    >
-      <div className="sakura-card w-full max-w-sm p-8">
-        <div className="mb-6 flex justify-center">
-          <Logo className="drop-shadow-sm" />
-        </div>
+    <TelaDeEntrada>
+      <div className="sakura-vidro w-full max-w-[26rem] p-8">
+        <Logo className="mb-6" />
 
-        <h1 className="text-center text-destaque font-semibold text-sakura-purple-dark">
+        <h1 className="text-center font-titulo text-botao-grande font-semibold text-texto">
           Bem-vindo de volta
         </h1>
-        <p className="mb-6 text-center text-corpo text-sakura-purple-dark/90">
-          Entre com seu usuário para continuar
-        </p>
+        <p className="mb-6 text-center text-corpo text-texto-2">Entre com seu usuário para continuar</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {erro && (
-            <p className="rounded-lg bg-red-50/90 px-4 py-2 text-corpo text-red-700">
+            <p role="alert" className="rounded-xl bg-perigo/15 px-4 py-2 text-corpo text-perigo">
               {erro}
             </p>
           )}
 
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Usuário</span>
+          <label className="sakura-rotulo">
+            Usuário
             <input
               type="text"
               autoFocus
               value={usuario}
               onChange={(e) => setUsuario(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-black/40 px-3 py-2.5 text-white placeholder:text-white/40 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="sakura-campo"
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Senha</span>
+          <label className="sakura-rotulo">
+            Senha
             <input
               type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="rounded-xl border border-sakura-borda-campo bg-black/40 px-3 py-2.5 text-white placeholder:text-white/40 focus:border-sakura-pink focus:ring-1 focus:ring-sakura-pink transition-all"
+              className="sakura-campo"
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={entrando}
-            className="w-full rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white shadow-[0_0_15px_rgba(182,36,255,0.4)] hover:shadow-[0_0_25px_rgba(182,36,255,0.7)] hover:bg-sakura-purple/90 transition-all disabled:opacity-50"
-          >
+          <Botao type="submit" variante="principal" tamanho="grande" ocupado={entrando} className="w-full">
             {entrando ? "Entrando..." : "Entrar"}
-          </button>
+          </Botao>
         </form>
 
         {/* Fica aqui, e não em Configurações, de propósito: se a conexão
@@ -88,11 +79,11 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
         <button
           type="button"
           onClick={onConfigurarConexao}
-          className="mx-auto mt-6 block text-rotulo text-sakura-muted hover:text-sakura-pink hover:underline"
+          className="mx-auto mt-6 block text-rotulo text-texto-2 underline underline-offset-4 hover:text-texto"
         >
           Configurar a conexão
         </button>
       </div>
-    </div>
+    </TelaDeEntrada>
   );
 }

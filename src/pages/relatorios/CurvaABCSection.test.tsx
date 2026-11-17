@@ -90,7 +90,10 @@ describe("CurvaABCSection", () => {
     // Começa em 96% (1300 de 1350): C.
     expect(within(palheta).getByLabelText("Curva C")).toBeInTheDocument();
     expect(within(palheta).getByText("100,0%")).toBeInTheDocument();
-    expect(within(pecas).getByText(/A: 2/)).toBeInTheDocument();
+    expect(within(pecas).getByText(/^A: 2/)).toBeInTheDocument();
+    // A curva acumulada (no lugar da rosca, 17/11): a frase e a contagem por letra.
+    expect(within(pecas).getByRole("img", { name: /Peças: curva acumulada; 2 peças = / })).toBeInTheDocument();
+    expect(within(pecas).getByText(/Curva A: 2 itens/)).toBeInTheDocument();
 
     expect(within(lista("Serviços")).getByRole("row", { name: /Alinhamento/ })).toBeInTheDocument();
 

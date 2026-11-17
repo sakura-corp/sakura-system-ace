@@ -1,5 +1,8 @@
+import { CircleX, FileUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { Selo, type TipoDeSelo } from "@/components/Selo";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -13,12 +16,14 @@ import type { RecebimentoItem } from "@/lib/pedidosCompra";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra, PedidoCompra } from "@/types/pedidoCompra";
-import { nomePedido, STATUS_PEDIDO_COR, STATUS_PEDIDO_LABEL, totalPedido } from "@/types/pedidoCompra";
+import { nomePedido, STATUS_PEDIDO_LABEL, totalPedido } from "@/types/pedidoCompra";
+import type { StatusPedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
 import { ImportarNotaFiscalXmlModal } from "./ImportarNotaFiscalXmlModal";
 import { PedidoCompraForm } from "./PedidoCompraForm";
 import { ReceberPedidoModal } from "./ReceberPedidoModal";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface PedidosCompraSectionProps {
   pedidos: PedidoCompra[];
@@ -30,24 +35,15 @@ interface PedidosCompraSectionProps {
   onRecarregar: () => Promise<void>;
 }
 
-function IconeArquivo({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <path d="M14 2v6h6" />
-      <path d="M12 18v-6" />
-      <path d="M9 15l3-3 3 3" />
-    </svg>
-  );
-}
+// Cor, ícone e palavra (regra 4 do visual novo): "pendente" e "parcial" ainda
+// pedem uma ação (receber o que falta), então não são verdes. O "parcial" é
+// azul, "em andamento", pra não parecer igual ao "pendente".
+const SELO_DO_PEDIDO: Record<StatusPedidoCompra, { tipo: TipoDeSelo; cancelado?: true }> = {
+  pendente: { tipo: "atencao" },
+  parcial: { tipo: "info" },
+  recebido: { tipo: "ok" },
+  cancelado: { tipo: "neutro", cancelado: true },
+};
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -131,20 +127,16 @@ export function PedidosCompraSection({
     <div className="space-y-6">
       {!mostrarFormulario && !mostrarImportarXml && (
         <div className="flex justify-end gap-3">
-          <button
-            onClick={() => setMostrarImportarXml(true)}
-            className="flex items-center gap-2 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-          >
-            <IconeArquivo className="h-4 w-4" />
+          <Botao icone={<FileUp />} onClick={() => setMostrarImportarXml(true)}>
             Importar XML de nota fiscal
-          </button>
-          <button
+          </Botao>
+          <Botao
+            variante="principal"
             onClick={() => setMostrarFormulario(true)}
             disabled={fornecedores.length === 0 || pecas.length === 0}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             + Novo pedido
-          </button>
+          </Botao>
         </div>
       )}
 
@@ -161,14 +153,14 @@ export function PedidosCompraSection({
       )}
 
       {fornecedores.length === 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Cadastre ao menos um fornecedor na aba "Cadastro" antes de criar um pedido de compra.
-        </p>
+        </AvisoDeAtencao>
       )}
       {fornecedores.length > 0 && pecas.length === 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Cadastre ao menos um produto em Estoque → Produtos antes de criar um pedido de compra.
-        </p>
+        </AvisoDeAtencao>
       )}
 
       {mostrarFormulario && (
@@ -180,96 +172,109 @@ export function PedidosCompraSection({
         />
       )}
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {pedidos.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhum pedido de compra registrado ainda.</p>
+        <p className="text-corpo text-texto-2">Nenhum pedido de compra registrado ainda.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Nº</th>
-                <th className="px-4 py-3 font-medium">Fornecedor</th>
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Total</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
-                <th className="px-4 py-3" />
+                <th>Nº</th>
+                <th>Fornecedor</th>
+                <th>Data</th>
+                <th className="text-right">Total</th>
+                <th>Status</th>
+                <th className="relative">
+                  <span className="sr-only">Avisar o fornecedor</span>
+                </th>
+                <th className="relative">
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {pedidos.map((pedido) => (
-                <tr key={pedido.id} className="border-t border-sakura-gray/20">
-                  <td className="whitespace-nowrap px-4 py-3 text-sakura-purple-dark">
-                    {nomePedido(pedido.numero)}
-                  </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
-                    {pedido.fornecedor?.nome ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
-                    {new Date(pedido.data_pedido).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="px-4 py-3 text-sakura-purple-dark">
-                    {formatarMoeda(totalPedido(pedido.itens ?? []))}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${STATUS_PEDIDO_COR[pedido.status]}`}
-                    >
-                      {STATUS_PEDIDO_LABEL[pedido.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {/* Mandar o pedido pro fornecedor é o gesto seguinte a
-                        criá-lo, e hoje era feito copiando item por item na
-                        mão. Só faz sentido enquanto o pedido ainda não
-                        chegou inteiro. */}
-                    {(pedido.status === "pendente" || pedido.status === "parcial") && (
-                      <BotaoWhatsapp
-                        telefone={
-                          fornecedores.find((f) => f.id === pedido.fornecedor_id)?.telefone
-                        }
-                        texto={textoDoPedido(pedido)}
-                        rotulo="Enviar"
-                        titulo="Mandar este pedido pro fornecedor pelo WhatsApp"
-                        aoAbrir={() =>
-                          registrarMensagemAberta(
-                            lojaId,
-                            "pedido_compra",
-                            pedido.id,
-                            fornecedores.find((f) => f.id === pedido.fornecedor_id)?.telefone ??
-                              null,
-                            operadorId,
-                          )
-                        }
+              {pedidos.map((pedido) => {
+                const selo = SELO_DO_PEDIDO[pedido.status];
+                const aberto = pedido.status === "pendente" || pedido.status === "parcial";
+                return (
+                  <tr key={pedido.id}>
+                    <td className="whitespace-nowrap font-medium">{nomePedido(pedido.numero)}</td>
+                    <td>{pedido.fornecedor?.nome ?? "—"}</td>
+                    <td className="whitespace-nowrap text-texto-2">
+                      {new Date(pedido.data_pedido).toLocaleDateString("pt-BR")}
+                    </td>
+                    <td className="whitespace-nowrap text-right">
+                      {formatarMoeda(totalPedido(pedido.itens ?? []))}
+                    </td>
+                    <td>
+                      <Selo
+                        tipo={selo.tipo}
+                        palavra={STATUS_PEDIDO_LABEL[pedido.status]}
+                        icone={selo.cancelado ? CircleX : undefined}
                       />
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <AcoesDaLinha
-                      descricao={nomePedido(pedido.numero)}
-                      acoes={
-                        pedido.status === "pendente" || pedido.status === "parcial"
-                          ? [
-                              {
-                                tipo: "texto",
-                                rotulo: "Receber",
-                                aoClicar: () => setPedidoRecebendo(pedido),
-                              },
-                              {
-                                tipo: "menu",
-                                rotulo: "Cancelar pedido",
-                                perigosa: true,
-                                aoClicar: () => handleCancelar(pedido),
-                              },
-                            ]
-                          : []
-                      }
-                    />
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      {/* Mandar o pedido pro fornecedor é o gesto seguinte a
+                          criá-lo, e hoje era feito copiando item por item na
+                          mão. Só faz sentido enquanto o pedido ainda não
+                          chegou inteiro. */}
+                      {aberto && (
+                        <BotaoWhatsapp
+                          telefone={
+                            fornecedores.find((f) => f.id === pedido.fornecedor_id)?.telefone
+                          }
+                          texto={textoDoPedido(pedido)}
+                          rotulo="Enviar"
+                          titulo="Mandar este pedido pro fornecedor pelo WhatsApp"
+                          aoAbrir={() =>
+                            registrarMensagemAberta(
+                              lojaId,
+                              "pedido_compra",
+                              pedido.id,
+                              fornecedores.find((f) => f.id === pedido.fornecedor_id)?.telefone ??
+                                null,
+                              operadorId,
+                            )
+                          }
+                        />
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Na linha fica só o próximo passo; cancelar, que não
+                            dá pra desfazer, vai pro menu de três pontos. */}
+                        {aberto && (
+                          <Botao
+                            variante="principal"
+                            tamanho="pequeno"
+                            aria-label={`Receber — ${nomePedido(pedido.numero)}`}
+                            onClick={() => setPedidoRecebendo(pedido)}
+                          >
+                            Receber
+                          </Botao>
+                        )}
+                        <AcoesDaLinha
+                          descricao={nomePedido(pedido.numero)}
+                          acoes={
+                            aberto
+                              ? [
+                                  {
+                                    tipo: "menu",
+                                    rotulo: "Cancelar pedido",
+                                    perigosa: true,
+                                    aoClicar: () => handleCancelar(pedido),
+                                  },
+                                ]
+                              : []
+                          }
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

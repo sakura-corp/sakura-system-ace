@@ -1,3 +1,4 @@
+import { Botao } from "@/components/Botao";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -12,6 +13,8 @@ import {
   type PixFormValues,
 } from "@/schemas/pixForm";
 import type { ConfiguracaoPix } from "@/types/configuracao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface PixSectionProps {
   configuracao: ConfiguracaoPix | null;
@@ -23,9 +26,6 @@ interface PixSectionProps {
   /** Avisa a página do que ficou gravado (null = sem Pix), sem recarregar a tela toda. */
   onMudou: (nova: ConfiguracaoPix | null) => void;
 }
-
-const campoClasse =
-  "w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple disabled:opacity-60";
 
 export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou }: PixSectionProps) {
   const [erro, setErro] = useState<string | null>(null);
@@ -82,91 +82,87 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
 
   return (
     <>
-      <p className="mt-3 text-rotulo text-sakura-muted">
+      <p className="text-rotulo text-texto-2">
         É o Pix estático do Banco Central, sem banco intermediário e sem custo. O sistema não fica
         sabendo que foi pago: a baixa continua à mão.
       </p>
 
-      {erro && <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
       {!podeEditar && (
-        <p className="mt-3 text-rotulo text-sakura-muted">
+        <p className="mt-4 text-rotulo text-texto-2">
           Só quem é administrador da loja pode mudar o Pix.
         </p>
       )}
 
-      <form onSubmit={handleSubmit(aoSalvar)} className="mt-4 space-y-4">
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Chave Pix</span>
+      <form onSubmit={handleSubmit(aoSalvar)} className="mt-5 space-y-4">
+        <label className="sakura-rotulo">
+          Chave Pix
           <input
             type="text"
             autoComplete="off"
             placeholder="CPF, CNPJ, telefone com DDD, e-mail ou chave aleatória"
             disabled={!podeEditar}
+            aria-invalid={errors.chave ? true : undefined}
             {...register("chave")}
-            className={campoClasse}
+            className="sakura-campo"
           />
           {errors.chave ? (
-            <span className="text-rotulo text-red-700">{errors.chave.message}</span>
+            <span className="text-rotulo text-perigo">{errors.chave.message}</span>
           ) : tipo ? (
-            <span className="text-rotulo text-sakura-muted">
+            <span className="text-rotulo text-texto-2">
               Reconhecida como {ROTULO_TIPO_CHAVE_PIX[tipo]}.
             </span>
           ) : null}
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Nome de quem recebe (até 25 letras)</span>
+          <label className="sakura-rotulo">
+            Nome de quem recebe (até 25 letras)
             <input
               type="text"
               maxLength={25}
               disabled={!podeEditar}
+              aria-invalid={errors.nome_recebedor ? true : undefined}
               {...register("nome_recebedor")}
-              className={campoClasse}
+              className="sakura-campo"
             />
             {errors.nome_recebedor && (
-              <span className="text-rotulo text-red-700">{errors.nome_recebedor.message}</span>
+              <span className="text-rotulo text-perigo">{errors.nome_recebedor.message}</span>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Cidade (até 15 letras)</span>
+          <label className="sakura-rotulo">
+            Cidade (até 15 letras)
             <input
               type="text"
               maxLength={15}
               disabled={!podeEditar}
+              aria-invalid={errors.cidade_recebedor ? true : undefined}
               {...register("cidade_recebedor")}
-              className={campoClasse}
+              className="sakura-campo"
             />
             {errors.cidade_recebedor && (
-              <span className="text-rotulo text-red-700">{errors.cidade_recebedor.message}</span>
+              <span className="text-rotulo text-perigo">{errors.cidade_recebedor.message}</span>
             )}
           </label>
         </div>
 
         {podeEditar && (
           <div className="flex flex-wrap items-center justify-end gap-3">
-            {aviso && (
-              <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-                {aviso}
-              </p>
-            )}
+            {aviso && <AvisoDeSalvo>{aviso}</AvisoDeSalvo>}
             {configuracao && (
-              <button
-                type="button"
+              <Botao
+                variante="fantasma"
                 onClick={aoTirar}
-                disabled={isSubmitting || tirando}
-                className="rounded-xl px-4 py-2 text-corpo font-medium text-red-300 hover:underline disabled:opacity-50"
+                disabled={isSubmitting}
+                ocupado={tirando}
+                className="enabled:text-perigo! enabled:hover:bg-perigo/[0.13]!"
               >
                 Tirar o Pix
-              </button>
+              </Botao>
             )}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
+            <Botao type="submit" variante="principal" ocupado={isSubmitting}>
               {isSubmitting ? "Salvando..." : "Salvar Pix"}
-            </button>
+            </Botao>
           </div>
         )}
       </form>

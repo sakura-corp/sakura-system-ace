@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarMovimentosCaixa } from "@/lib/caixa";
 import { listarContasPagar } from "@/lib/contasPagar";
 import { listarContasReceber } from "@/lib/contasReceber";
@@ -19,18 +21,31 @@ import { CurvaABCSection } from "./CurvaABCSection";
 import { FluxoProjetadoSection } from "./FluxoProjetadoSection";
 import { GraficosSection } from "./GraficosSection";
 import { LucratividadeSection } from "./LucratividadeSection";
+import { AvisoDeErro } from "@/components/Aviso";
 
 type Aba = "graficos" | "lucratividade" | "curvaABC" | "fluxo";
+
+const SEM_MOVIMENTOS: MovimentoCaixa[] = [];
+const SEM_ORDENS: OrdemServico[] = [];
+const SEM_PECAS: Peca[] = [];
+const SEM_SERVICOS: Servico[] = [];
 
 export function RelatoriosPage() {
   const { lojaAtual, operador } = useAuth();
   const podeVerPagar = temPermissao(operador, "contas_pagar");
   const podeVerReceber = temPermissao(operador, "contas_receber");
   const [aba, setAba] = useState<Aba>("graficos");
-  const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
-  const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [pecas, setPecas] = useState<Peca[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // #927: só a carga mais nova mexe na tela; e se a da loja nova der erro, os
+  // dados guardados (da loja anterior) não aparecem.
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+  const [movimentosGuardados, setMovimentos] = useState<MovimentoCaixa[]>([]);
+  const [ordensGuardadas, setOrdens] = useState<OrdemServico[]>([]);
+  const [pecasGuardadas, setPecas] = useState<Peca[]>([]);
+  const [servicosGuardados, setServicos] = useState<Servico[]>([]);
+  const movimentos = dadosSaoDaLoja ? movimentosGuardados : SEM_MOVIMENTOS;
+  const ordens = dadosSaoDaLoja ? ordensGuardadas : SEM_ORDENS;
+  const pecas = dadosSaoDaLoja ? pecasGuardadas : SEM_PECAS;
+  const servicos = dadosSaoDaLoja ? servicosGuardados : SEM_SERVICOS;
   const [contasPagar, setContasPagar] = useState<ContaPagar[] | null>(null);
   const [contasReceber, setContasReceber] = useState<ContaReceber[] | null>(null);
   const [erroContas, setErroContas] = useState<string | null>(null);
@@ -40,31 +55,36 @@ export function RelatoriosPage() {
 
   useEffect(() => {
     async function carregar() {
-      if (!lojaAtual) {
-        setCarregando(false);
+      const carga = comecar(lojaAtual?.id);
+      if (!carga) {
+        if (!lojaAtual) setCarregando(false);
         return;
       }
+      setErro(null);
       try {
         const [movimentosCarregados, ordensCarregadas, pecasCarregadas, servicosCarregados] =
           await Promise.all([
-            listarMovimentosCaixa(lojaAtual.id),
-            listarOrdens(lojaAtual.id),
+            listarMovimentosCaixa(carga.lojaId),
+            listarOrdens(carga.lojaId),
             listarPecas(),
             listarServicos(),
           ]);
+        if (!carga.aindaEhAtual()) return;
         setMovimentos(movimentosCarregados);
         setOrdens(ordensCarregadas);
         setPecas(pecasCarregadas);
         setServicos(servicosCarregados);
+        carga.gravou();
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar relações:", err);
         setErro(mensagemDeErro(err));
       } finally {
-        setCarregando(false);
+        if (carga.aindaEhAtual()) setCarregando(false);
       }
     }
     carregar();
-  }, [lojaAtual]);
+  }, [lojaAtual, comecar]);
 
   // As contas do Fluxo de caixa vêm à parte (#389): um erro nelas não pode
   // apagar Gráficos e Lucratividade, nem virar "Sem acesso" pra quem tem o
@@ -105,40 +125,19 @@ export function RelatoriosPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Relações</h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Relações</h1>
+          <p className="text-corpo text-texto-2">
             Vendas, custos, lucro e margem do negócio ao longo do tempo
           </p>
         </div>
       </header>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao
-          label="Gráficos"
-          ativa={aba === "graficos"}
-          onClick={() => setAba("graficos")}
-        />
-        <AbaBotao
-          label="Lucratividade"
-          ativa={aba === "lucratividade"}
-          onClick={() => setAba("lucratividade")}
-        />
-        <AbaBotao
-          label="Curva ABC"
-          ativa={aba === "curvaABC"}
-          onClick={() => setAba("curvaABC")}
-        />
-        <AbaBotao
-          label="Fluxo de caixa"
-          ativa={aba === "fluxo"}
-          onClick={() => setAba("fluxo")}
-        />
-      </div>
+      <Abas rotulo="O que mostrar" ativa={aba} aoEscolher={setAba} abas={ABAS} />
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : aba === "graficos" ? (
         <GraficosSection
           movimentos={movimentos}
@@ -151,11 +150,9 @@ export function RelatoriosPage() {
       ) : aba === "curvaABC" ? (
         <CurvaABCSection ordens={ordens} pecas={pecas} servicos={servicos} />
       ) : carregandoContas ? (
-        <p className="text-corpo text-sakura-muted">Carregando as contas...</p>
+        <p className="text-corpo text-texto-2">Carregando as contas...</p>
       ) : erroContas ? (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          Não deu pra carregar as contas: {erroContas}
-        </p>
+        <AvisoDeErro>Não deu pra carregar as contas: {erroContas}</AvisoDeErro>
       ) : (
         <FluxoProjetadoSection
           contasPagar={contasPagar}
@@ -166,25 +163,11 @@ export function RelatoriosPage() {
   );
 }
 
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// As abas das Relações, com a peça `Abas` (o teclado das setas vem dela).
+const ABAS: { valor: Aba; nome: string }[] = [
+  { valor: "graficos", nome: "Gráficos" },
+  { valor: "lucratividade", nome: "Lucratividade" },
+  { valor: "curvaABC", nome: "Curva ABC" },
+  { valor: "fluxo", nome: "Fluxo de caixa" },
+];
+

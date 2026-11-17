@@ -1,0 +1,28 @@
+Nome;CPF/CNPJ;Telefone;E-mail;CEP;Endereço;Número;Bairro;Cidade;UF;Nascimento;Placa;Marca;Modelo;Ano;Cor;Km
+João da Silva;258.475.022-81;(16) 99123-4567;joao@exemplo.com.br;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;15/03/1980;ABC1234;Fiat;Uno;2010;Branco;150.000
+Maria Conceição;38236626946;16991234568;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;02/11/1975;BRA1A23;Chevrolet;Onix;2020;Prata;42000
+José Antônio Pereira;790.195.181-86;16 3333-4444;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;31/12/1960;DEF-5678;Volkswagen;Gol;2012;Preto;98500
+Ana Beatriz Souza;199.949.365-65;+55 16 99876-5432;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;10/06/1990;BRA-2B34;Hyundai;HB20;2019;Vermelho;61000
+Lúcia Fernandes;93353849688;016 99111-2222;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;05/05/1985;GHI 9012;Ford;Ka;2015;Cinza;80000
+Transportes Pau Brasil Ltda;55.686.477/0001-64;(16) 3322-1100;contato@paubrasil.exemplo;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;JKL3456;Mercedes-Benz;Accelo;2018;Branco;210000
+Auto Peças Ipê ME;06329251000109;1633224455;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;MNO7P89;Fiat;Fiorino;2021;Branco;35000
+Carlos Eduardo Lima;095.205.854-51;(16) 99222-3333;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;PQR4567;Toyota;Corolla;2017;Prata;90000
+Carlos Eduardo Lima;095.205.854-51;(16) 99222-3333;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;STU8V90;Honda;CG 160;2022;Vermelho;12000
+Fátima Rodrigues;;(16) 99333-4444;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;VWX1234;Renault;Kwid;2020;Branco;40000
+Fátima Rodrigues;;;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;YZA5B67;Renault;Sandero;2014;Prata;120000
+;691.822.553-77;(16) 99444-5555;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;BCD2345;Fiat;Palio;2011;Azul;170000
+Patrícia Gonçalves;561.273.132-95;(16) 99555-6666;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;EFG6789;Jeep;Renegade;2019;Cinza;55000
+Patrícia Gonçalves;56127313295;(16) 99555-6666;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;HIJ0K12;Jeep;Compass;2021;Preto;30000
+Rogério Barbosa;523.966.640-78;(16) 99666-7777;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;KLM3456;Nissan;Kicks;2020;Branco;45000
+Oficina Jacarandá Ltda;62.379.371/0001-84;(16) 3355-6677;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;;;;;;
+Tânia Nogueira;284.891.178-61;(16) 99777-8888;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;12-ABC;Fiat;Argo;2022;Branco;20000
+Marcelo Araújo;216.949.659-96;(16) 99888-9999;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;ABC1234;Fiat;Uno;2010;Branco;150000
+Adriana Cardoso;492.139.496-26;12345;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;31/02/1990;NOP4567;Chevrolet;Prisma;vinte;Prata;muito
+Vinícius Teixeira;649.540.949-41;(16) 99999-0000;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;20/08/1992;;;;;;
+"Silva; Irmãos & Cia";32.553.271/0001-60;(16) 3311-2200;;14800-000;"Avenida ""Brasil""; Sala 2";100;Centro;Araraquara;SP;;QRS8T90;Volkswagen;Delivery;2016;Branco;300000
+Renata Moreira;766.554.093-73;(16) 98888-1111;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;01/01/2000;TUV1W23;Citroën;C3;2018;Cinza;70000
+Álvaro Martins;;(16) 97777-2222;;14800-000;Rua das Acácias;100;Centro;Araraquara;sp;;XYZ4567;Peugeot;208;2019;Preto;50000
+Débora Ribeiro;485.190.035-08;(16) 96666-3333;;14800-000;Rua das Acácias;100;Centro;Araraquara;São Paulo;;ZZZ9A99;Kia;Sportage;2023;Branco;8000
+Hélio Campos;953.806.768-12;1699123456;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;AAA1111;Yamaha;Fazer 250;2021;Azul;15000
+Simone Vieira;612.263.871-44;(16) 94444-5555;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;;bbb-2222;Honda;Biz;2020;Rosa;22.000
+Éder Monteiro;371.882.348-92;(16) 93333-6666;;14800-000;Rua das Acácias;100;Centro;Araraquara;SP;07/09/1970;;;;;;

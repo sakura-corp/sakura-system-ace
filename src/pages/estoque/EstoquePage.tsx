@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarCategorias } from "@/lib/categorias";
@@ -10,6 +12,7 @@ import {
   calcularSaldoPorPecaEDeposito,
   listarMovimentos,
 } from "@/lib/estoque";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarPecas } from "@/lib/pecas";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
@@ -21,6 +24,7 @@ import { ContagemSection } from "./ContagemSection";
 import { MovimentacoesSection } from "./MovimentacoesSection";
 import { ProdutosSection } from "./ProdutosSection";
 import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 type Aba = "produtos" | "movimentacoes" | "contagem" | "relatorios";
 
@@ -37,6 +41,10 @@ export function EstoquePage() {
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // O aviso do estoque inicial que não entrou (#909) fica aqui, e não na
+  // seção de Produtos: o `carregar` abaixo troca a seção por "Carregando..."
+  // e ela volta zerada. O `carregar` não limpa; só o próximo salvar.
+  const [avisoEstoqueInicial, setAvisoEstoqueInicial] = useState<string | null>(null);
   // O catálogo do "Juntar peças repetidas" (#721), à parte das listas da tela:
   // ele não depende da loja, e a falha de OUTRA lista (depósitos,
   // configuração) não pode deixar a janela sem peças nem dizer "tudo certo".
@@ -45,7 +53,13 @@ export function EstoquePage() {
   const [catalogo, setCatalogo] = useState<Peca[] | null>(null);
   const [erroCatalogo, setErroCatalogo] = useState<string | null>(null);
 
+  // #927: só a carga mais nova mexe na tela (trocar de loja com a anterior ainda buscando).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
+
   async function carregar() {
+    // Um `carregar` guardado de antes da troca de loja nem começa.
+    const carga = comecar(lojaAtual?.id);
+    if (!carga && lojaAtual) return;
     setCarregando(true);
     setErro(null);
     setErroCatalogo(null);
@@ -65,6 +79,7 @@ export function EstoquePage() {
       setCarregando(false);
       return;
     }
+    if (!carga) return;
     try {
       const [
         pecasCarregadas,
@@ -74,51 +89,54 @@ export function EstoquePage() {
         configFiscal,
       ] = await Promise.all([
         promessaCatalogo,
-        listarMovimentos(lojaAtual.id),
+        listarMovimentos(carga.lojaId),
         listarCategorias(),
-        listarDepositos(lojaAtual.id),
-        buscarConfiguracaoFiscal(lojaAtual.id),
+        listarDepositos(carga.lojaId),
+        buscarConfiguracaoFiscal(carga.lojaId),
       ]);
+      if (!carga.aindaEhAtual()) return;
       setPecas(pecasCarregadas);
       setMovimentos(movimentosCarregados);
       setCategorias(categoriasCarregadas);
       setDepositos(depositosCarregados);
       setRegime(configFiscal?.regime_tributario ?? null);
+      carga.gravou();
     } catch (err) {
       console.error("Erro ao carregar estoque:", err);
+      if (!carga.aindaEhAtual()) return;
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
   useEffect(() => {
+    // Outra loja: o aviso do estoque inicial era de uma peça da anterior.
+    setAvisoEstoqueInicial(null);
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
-  const saldos = calcularSaldoPorPeca(movimentos);
-  const saldosPorDeposito = calcularSaldoPorPecaEDeposito(movimentos);
+  // Carga da loja nova com erro: nada da loja anterior na tela, só o erro.
+  const pecasNaTela = dadosSaoDaLoja ? pecas : [];
+  const movimentosNaTela = dadosSaoDaLoja ? movimentos : [];
+  const depositosNaTela = dadosSaoDaLoja ? depositos : [];
+  const regimeNaTela = dadosSaoDaLoja ? regime : null;
+  const saldos = calcularSaldoPorPeca(movimentosNaTela);
+  const saldosPorDeposito = calcularSaldoPorPecaEDeposito(movimentosNaTela);
 
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center gap-3">
         <BotaoVoltar />
         <div className="mr-auto">
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Estoque
-          </h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Estoque</h1>
+          <p className="text-corpo text-texto-2">
             Produtos, peças e movimentações de estoque
           </p>
         </div>
         {operador?.admin === true && (
-          <button
-            onClick={() => setJuntando(true)}
-            className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-          >
-            Juntar peças repetidas
-          </button>
+          <Botao onClick={() => setJuntando(true)}>Juntar peças repetidas</Botao>
         )}
       </header>
 
@@ -133,92 +151,61 @@ export function EstoquePage() {
         />
       )}
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="Produtos" ativa={aba === "produtos"} onClick={() => setAba("produtos")} />
-        <AbaBotao
-          label="Movimentações"
-          ativa={aba === "movimentacoes"}
-          onClick={() => setAba("movimentacoes")}
-        />
-        <AbaBotao
-          label="Contagem"
-          ativa={aba === "contagem"}
-          onClick={() => setAba("contagem")}
-        />
-        <AbaBotao
-          label="Relatórios"
-          ativa={aba === "relatorios"}
-          onClick={() => setAba("relatorios")}
-        />
-      </div>
+      <Abas
+        rotulo="Partes do estoque"
+        className="flex-wrap"
+        ativa={aba}
+        aoEscolher={setAba}
+        abas={[
+          { valor: "produtos", nome: "Produtos" },
+          { valor: "movimentacoes", nome: "Movimentações" },
+          { valor: "contagem", nome: "Contagem" },
+          { valor: "relatorios", nome: "Relatórios" },
+        ]}
+      />
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : !lojaAtual ? (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Seu usuário não tem loja atribuída. Fale com o administrador.
-        </p>
+        </AvisoDeAtencao>
       ) : aba === "produtos" ? (
         <ProdutosSection
-          pecas={pecas}
+          pecas={pecasNaTela}
           categorias={categorias}
           saldos={saldos}
-          regime={regime}
+          regime={regimeNaTela}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
+          avisoEstoqueInicial={avisoEstoqueInicial}
+          onAvisoEstoqueInicial={setAvisoEstoqueInicial}
         />
       ) : aba === "movimentacoes" ? (
         <MovimentacoesSection
-          pecas={pecas}
-          movimentos={movimentos}
-          depositos={depositos}
+          pecas={pecasNaTela}
+          movimentos={movimentosNaTela}
+          depositos={depositosNaTela}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
         />
       ) : aba === "contagem" ? (
         <ContagemSection
-          pecas={pecas}
-          depositos={depositos}
+          pecas={pecasNaTela}
+          depositos={depositosNaTela}
           saldosPorDeposito={saldosPorDeposito}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
         />
       ) : (
         <RelatoriosEstoqueSection
-          pecas={pecas}
-          movimentos={movimentos}
+          pecas={pecasNaTela}
+          movimentos={movimentosNaTela}
           saldos={saldos}
         />
       )}
     </div>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

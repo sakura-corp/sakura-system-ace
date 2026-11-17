@@ -10,11 +10,12 @@ import { createPortal } from "react-dom";
  * caiu bastante de um dia pro outro. Sem a definição à mão, quem olha conclui
  * que o negócio piorou, e não que a conta foi consertada.
  *
- * O painel é renderizado num portal pro `<body>` porque toda tela do app fica
- * dentro de um `sakura-card`, que tem `backdrop-filter` — e `backdrop-filter`
- * vira bloco de contenção até pra `position: fixed`, ou seja, o balão nasceria
- * recortado dentro do cartão (é o mesmo cuidado do menu de ações de linha,
- * seção 6, item 51).
+ * O painel é renderizado num portal pro `<body>`. Nasceu assim porque o
+ * `sakura-card` era vidro (`backdrop-filter`), e `backdrop-filter` vira bloco
+ * de contenção até pra `position: fixed`: o balão nascia recortado dentro do
+ * cartão (o mesmo cuidado do menu de ações de linha, seção 6, item 51). O
+ * cartão virou sólido no visual novo (#990), mas o portal continua valendo:
+ * dentro de uma tabela com rolagem ou de uma janela, o balão seria cortado.
  */
 export function Explicacao({ titulo, texto }: { titulo: string; texto: string }) {
   const [aberto, setAberto] = useState(false);
@@ -83,7 +84,7 @@ export function Explicacao({ titulo, texto }: { titulo: string; texto: string })
         // o painel existe pra quem usa teclado ou toque.
         title={texto}
         onClick={() => (aberto ? fechar(false) : abrir())}
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/25 text-meta font-semibold text-sakura-muted transition hover:bg-white/10 hover:text-sakura-purple-dark"
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-linha-forte text-meta font-bold text-texto-2 transition-colors hover:bg-passar hover:text-texto"
       >
         ?
       </button>
@@ -95,10 +96,10 @@ export function Explicacao({ titulo, texto }: { titulo: string; texto: string })
             role="dialog"
             aria-label={`O que é ${titulo}`}
             style={{ top: posicao.top, left: posicao.left, width: LARGURA }}
-            className="fixed z-[60] rounded-xl border border-white/10 bg-sakura-pink-soft p-3 shadow-xl"
+            className="fixed z-[60] rounded-xl border border-linha-forte bg-passar p-3 shadow-[0_18px_40px_var(--sombra-forte)]"
           >
-            <p className="text-rotulo font-semibold text-sakura-purple-dark">{titulo}</p>
-            <p className="mt-1 text-rotulo text-sakura-muted">{texto}</p>
+            <p className="text-rotulo font-semibold text-texto">{titulo}</p>
+            <p className="mt-1 text-rotulo text-texto-2">{texto}</p>
           </div>,
           document.body,
         )}

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
+import { Selo } from "@/components/Selo";
 import { hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -17,6 +19,7 @@ import {
   montarSugestaoCompra,
   totalDaLinha,
 } from "@/schemas/estoque";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/components/Aviso";
 
 interface Props {
   lojaId: string;
@@ -148,12 +151,9 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
   // recarga falhou: aí não se pode dizer que a lista abaixo está em dia.
   function avisoDoResultado(listaAtualizada: boolean) {
     if (!resultado) return null;
+    const Aviso = resultado.erro ? AvisoDeErro : AvisoDeCerto;
     return (
-      <div
-        className={`rounded-xl px-4 py-3 text-corpo ${
-          resultado.erro ? "bg-red-50 text-red-700" : "bg-green-50 text-green-800"
-        }`}
-      >
+      <Aviso>
         {resultado.criados.length > 0 && (
           <>
             <p className="font-medium">Pedidos criados:</p>
@@ -186,7 +186,7 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
             </p>
           </>
         )}
-      </div>
+      </Aviso>
     );
   }
 
@@ -194,77 +194,71 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
     return (
       <div className="space-y-4">
         {avisoDoResultado(false)}
-        <div className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <AvisoDeErro>
           <p>Não deu pra carregar a sugestão de compra: {erro}</p>
           {resultado && (
             <p className="mt-1">
               A lista some até carregar de novo, pra não pedir em dobro o que acabou de ser pedido.
             </p>
           )}
-        </div>
-        <button
-          type="button"
-          onClick={() => carregar()}
-          className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-        >
-          Tentar de novo
-        </button>
+        </AvisoDeErro>
+        <Botao onClick={() => carregar()}>Tentar de novo</Botao>
       </div>
     );
   }
-  if (!dados) return <p className="text-corpo text-sakura-muted">Carregando...</p>;
+  if (!dados) return <p className="text-corpo text-texto-2">Carregando...</p>;
 
   return (
     <div className="space-y-4">
-      <p className="text-corpo text-sakura-muted">
+      <p className="text-corpo text-texto-2">
         Peças no estoque mínimo ou que, no ritmo dos últimos {DIAS_DO_RITMO_DE_SAIDA} dias, acabam em
         menos de {DIAS_DE_FOLGA_SUGESTAO} dias. A quantidade sugerida cobre o mínimo mais o que sai em{" "}
         {DIAS_DE_FOLGA_SUGESTAO} dias, menos o que já foi pedido. O fornecedor e o preço são os da
         cotação mais barata.
       </p>
 
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {avisoDoResultado(true)}
 
       {linhas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhuma peça precisa de compra agora.</p>
+        <p className="text-corpo text-texto-2">Nenhuma peça precisa de compra agora.</p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-3 py-3 font-medium">Peça</th>
-                <th className="px-3 py-3 font-medium">Saldo</th>
-                <th className="px-3 py-3 font-medium">Mínimo</th>
-                <th className="px-3 py-3 font-medium">Saída por mês</th>
-                <th className="px-3 py-3 font-medium">Dias que faltam</th>
-                <th className="px-3 py-3 font-medium">Já pedido</th>
-                <th className="px-3 py-3 font-medium">Comprar</th>
-                <th className="px-3 py-3 font-medium">Fornecedor</th>
-                <th className="px-3 py-3 font-medium">Preço</th>
-                <th className="px-3 py-3 font-medium">Total</th>
+                <th>Peça</th>
+                <th className="text-right">Saldo</th>
+                <th className="text-right">Mínimo</th>
+                <th className="text-right">Saída por mês</th>
+                <th className="text-right">Dias que faltam</th>
+                <th className="text-right">Já pedido</th>
+                <th>Comprar</th>
+                <th>Fornecedor</th>
+                <th className="text-right">Preço</th>
+                <th className="text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               {linhas.map((l) => {
                 const quantidade = quantidadeDa(l.peca_id, l.quantidadeSugerida);
                 return (
-                  <tr key={l.peca_id} className="border-t border-sakura-gray/20 text-sakura-purple-dark">
-                    <td className="px-3 py-3">{l.descricao}</td>
-                    <td className="whitespace-nowrap px-3 py-3">
+                  <tr key={l.peca_id}>
+                    <td className="font-medium">{l.descricao}</td>
+                    <td className="whitespace-nowrap text-right">
                       {l.saldo}
                       {l.unidade ? ` ${l.unidade}` : ""}
                     </td>
-                    <td className="px-3 py-3">{l.estoque_minimo ?? "—"}</td>
-                    <td className="px-3 py-3">
+                    <td className="text-right">{l.estoque_minimo ?? "—"}</td>
+                    <td className="text-right">
                       {l.consumoPorDia > 0 ? (l.consumoPorDia * 30).toLocaleString("pt-BR", UM_DECIMAL) : "—"}
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="text-right">
                       {l.diasRestantes === null ? "—" : Math.floor(l.diasRestantes)}
                     </td>
-                    <td className="px-3 py-3">{l.jaPedido}</td>
-                    <td className="px-3 py-3">
+                    <td className="text-right">{l.jaPedido}</td>
+                    <td>
                       <input
                         // Texto, e não "number": a caixa de número não aceita a vírgula
                         // do "2,5" (litro); quem confere é o lerQuantidadeDigitada.
@@ -274,18 +268,16 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
                         value={l.peca_id in editadas ? editadas[l.peca_id] : String(l.quantidadeSugerida)}
                         aria-invalid={quantidade === null}
                         onChange={(e) => setEditadas((antes) => ({ ...antes, [l.peca_id]: e.target.value }))}
-                        className={`h-9 w-20 rounded-lg border px-2 text-corpo ${
-                          quantidade === null ? "border-red-500" : "border-sakura-borda-campo"
-                        }`}
+                        className="sakura-campo sakura-campo-filtro w-24! px-2!"
                       />
                     </td>
-                    <td className="px-3 py-3">
-                      {l.fornecedor ? l.fornecedor.nome : <span className="text-sakura-muted">sem cotação</span>}
+                    <td>
+                      {l.fornecedor ? l.fornecedor.nome : <Selo tipo="atencao" palavra="Sem cotação" />}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3">
+                    <td className="whitespace-nowrap text-right">
                       {l.preco === null ? "—" : formatarMoeda(l.preco)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3">
+                    <td className="whitespace-nowrap text-right">
                       {l.preco === null || quantidade === null
                         ? "—"
                         : formatarMoeda(totalDaLinha(quantidade, l.preco))}
@@ -299,8 +291,8 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
       )}
 
       {grupos.length > 0 && (
-        <div className="sakura-card space-y-1 p-4 text-corpo text-sakura-purple-dark">
-          <p className="font-medium">Total por fornecedor</p>
+        <div className="sakura-card space-y-1 p-4 text-corpo text-texto">
+          <p className="font-titulo font-semibold">Total por fornecedor</p>
           <ul>
             {grupos.map((g) => (
               <li key={g.fornecedor.id}>
@@ -312,53 +304,45 @@ export function SugestaoCompraSection({ lojaId, operadorId, onPedidosCriados }: 
       )}
 
       {semFornecedor > 0 && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           {semFornecedor} {semFornecedor === 1 ? "peça fica fora dos pedidos" : "peças ficam fora dos pedidos"}{" "}
           por não ter fornecedor com cotação. Registre um preço num pedido de compra pra ela entrar.
-        </p>
+        </AvisoDeAtencao>
       )}
 
       {invalidas > 0 && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <AvisoDeErro>
           {invalidas === 1 ? "1 linha tem" : `${invalidas} linhas têm`} quantidade que não dá pra pedir
           (use número sem sinal, com até 2 casas, ex.: 3 ou 2,5). Corrija pra gerar os pedidos.
-        </p>
+        </AvisoDeErro>
       )}
 
       <div className="flex justify-end">
-        <button
-          type="button"
+        <Botao
+          variante="principal"
           onClick={() => setConfirmando(true)}
           disabled={gerando || invalidas > 0 || grupos.length === 0}
-          className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           Gerar pedidos
-        </button>
+        </Botao>
       </div>
 
       {confirmando && (
-        <Modal titulo="Gerar pedidos" onFechar={() => !gerando && setConfirmando(false)}>
-          <div className="space-y-4 text-corpo text-sakura-purple-dark">
-            <p>{textoDaConfirmacao}</p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmando(false)}
-                disabled={gerando}
-                className="rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10 disabled:opacity-50"
-              >
+        <Modal
+          titulo="Gerar pedidos"
+          onFechar={() => !gerando && setConfirmando(false)}
+          rodape={
+            <>
+              <Botao onClick={() => setConfirmando(false)} disabled={gerando}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={criar}
-                disabled={gerando}
-                className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
+              </Botao>
+              <Botao variante="principal" onClick={criar} ocupado={gerando}>
                 {gerando ? "Criando..." : "Criar"}
-              </button>
-            </div>
-          </div>
+              </Botao>
+            </>
+          }
+        >
+          <p className="text-corpo text-texto">{textoDaConfirmacao}</p>
         </Modal>
       )}
     </div>

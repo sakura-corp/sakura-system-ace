@@ -630,7 +630,23 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
 - `0082`: **o link de avaliação no Google, por loja** (tarefa #459; aplicar depois da `0081`,
   o Pix do #941). Tabela nova `configuracoes_avaliacao` (ver a seção das tabelas). Tabela nova e
   opcional: sobe **antes** da versão, sem `versao-minima-do-programa`.
-- `0083`: **faturar a OS com a linha da OS travada e o total conferido no banco** (tarefa #803,
+- `0083`: **os lotes da importação por planilha e o "desfazer"** (tarefa #457, FN-15 parte 1).
+  Tabela nova `importacao_lotes`, a coluna `importacao_lote_id` em `clientes` e `veiculos`, e a
+  função `desfazer_importacao` (ver a seção das tabelas). Também **dois índices que faltavam**:
+  `ordens_servico (veiculo_id)` e `contas_receber (cliente_id)` — sem eles, apagar um veículo lia
+  todas as OS (pra cumprir o `on delete set null`); com 2.000 importados contra 20 mil OS, o
+  desfazer caiu de 2,3 s pra 0,27 s. Só soma: sobe **antes** da versão, sem
+  `versao-minima-do-programa`.
+- `0084`: **o retorno do cliente** (tarefa #381, FN-06; aplicar depois da `0083`). Colunas
+  `servicos.intervalo_dias` (1 a 3.650) e `servicos.intervalo_km` (1 a 1.000.000), opcionais, com
+  a trava `ck_servicos_intervalo`; `clientes.nao_avisar` (padrão falso). A janela
+  `ordens_servico_clientes` passa a mandar o `servico_id` de cada item (o resto igual à `0075`).
+  Nenhuma tabela nova: os retornos são calculados na hora (`src/schemas/retornos.ts`). Nenhum
+  serviço ganha intervalo pela migration. Só soma: sobe **antes** da versão, sem
+  `versao-minima-do-programa` (o programa novo grava `nao_avisar` e os intervalos ao salvar
+  cliente e serviço, então num banco sem a `0084` salvar falha). Teste em
+  `supabase/scripts/testar-retorno-do-cliente.sql`.
+- `0086`: **faturar a OS com a linha da OS travada e o total conferido no banco** (tarefa #803,
   caso 2; o mesmo caminho da `0071` e da `0079`). Uma função,
   `marcar_ordem_faturada(ordem, forma de pagamento, parcelas, total da tela, operador)`,
   `security invoker` e só pra `authenticated`: trava a OS, recusa orçamento/recusado e OS já
@@ -640,8 +656,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   data de fechamento, quem mexeu). Assim, item acrescentado ou corrigido em outro computador no
   mesmo instante não deixa o Caixa receber o total velho. O Caixa e as Contas a Receber continuam
   com o programa, depois da função. Nenhuma policy muda. Sem `versao-minima-do-programa` (só
-  acrescenta), mas sobe **antes** da versão que chama a função. O número pode mudar se outro PR
-  com migration (`0083`) entrar antes; quem mescla depois renumera. Teste em
+  acrescenta), mas sobe **antes** da versão que chama a função. Era a `0083`; renumerada pra `0086`
+  em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003). Teste em
   `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
   corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
 
@@ -733,11 +749,16 @@ outro projeto Supabase do zero (ver seção 9).
   do cadastro e das listas de escolha, e a NFC-e nunca leva documento dele): id, nome (vira "Razão social" na tela quando `tipo_pessoa` é jurídica, mesmo
   campo), tipo_pessoa (`fisica`/`juridica`, default `fisica`), cpf_cnpj (rótulo muda pra "CPF" ou
   "CNPJ" conforme o tipo), telefone, email, cep, rua, numero, bairro, cidade, uf,
-  data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em
+  data_nascimento (usada pro calendário do Início marcar aniversário do mês), criado_em,
+  importacao_lote_id (FK `importacao_lotes`, opcional, `on delete set null` — desde a `0083`: o
+  lote da planilha de onde o cliente veio; vazio no cadastro feito à mão), nao_avisar (boolean,
+  padrão falso — desde a `0084`: o cliente pediu pra não receber mensagem da loja; nunca entra nos
+  Retornos nem nos clientes que sumiram)
 - **`veiculos`** (desde a `0069`, só com o módulo Clientes; sem ele, pela view
   `veiculos_janela`): id, cliente_id (FK), placa, marca, modelo, ano, cor, **tipo**
   (`hatch`/`sedan`/`suv`/`picape`/`moto`, opcional — usado só pra escolher o ícone certo na seção
-  "Veículos no pátio" do Início), km_atual, criado_em
+  "Veículos no pátio" do Início), km_atual, criado_em, importacao_lote_id (como em `clientes`,
+  desde a `0083`)
 - **`pecas`** (desde a `0074`, lida só com Estoque, Relações ou Funcionários; sem eles, pela view
   `pecas_janela`, sem o custo): id, codigo_interno (exibido como "Referência"), codigo_barras, descricao, marca,
   modelo, aplicacao, unidade, preco_custo, preco_venda, ncm, cest, cfop_padrao, origem,
@@ -757,8 +778,10 @@ outro projeto Supabase do zero (ver seção 9).
   nova, mais Óleo e Filtros, Elétrica e Ar-condicionado — migration `0072`).
 - **`servicos`** (catálogo de serviços, análogo a `pecas` mas sem estoque/fiscal): id,
   codigo_interno (opcional), descricao, preco_padrao, categoria_id (FK categorias_servicos,
-  opcional), ativo, criado_em. Vem semeado com ~17 serviços padrão sem preço (migration `0030`);
-  empresa nova recebe mais 39, também sem preço (migration `0072`).
+  opcional), ativo, criado_em, intervalo_dias e intervalo_km (int, opcionais, desde a `0084`: a
+  cada quantos dias ou km o cliente deve voltar pra refazer o serviço; vazios = o serviço não gera
+  retorno; trava `ck_servicos_intervalo`). Vem semeado com ~17 serviços padrão sem preço (migration
+  `0030`); empresa nova recebe mais 39, também sem preço (migration `0072`).
 - **`fornecedores`** (compartilhado entre lojas, migration `0039`): id, nome, cnpj, telefone,
   email, cep/rua/numero/bairro/cidade/uf, ativo, criado_em. Mesmo padrão de `clientes`
   (endereço completo) mas sem veículos nem tipo pessoa física/jurídica — fornecedor é sempre
@@ -947,6 +970,24 @@ outro projeto Supabase do zero (ver seção 9).
   `ck_configuracoes_avaliacao_link_https` exige `https://` e nenhum espaço. **Sem linha, o botão
   "Pedir avaliação" (OS faturada e venda de balcão) não aparece**; apagar o link é apagar a linha.
   RLS igual à `configuracoes_whatsapp`. Teste em `supabase/scripts/testar-link-avaliacao.sql`.
+- **`importacao_lotes`** (migration `0083`, #457): id, tipo (`clientes`; as partes 2 e 3 da
+  importação somam tipos na trava `ck_importacao_lotes_tipo`), nome_arquivo, operador_id (quem
+  importou, `default auth.uid()`), criado_em, total_linhas, clientes_criados, veiculos_criados,
+  desfeito_em, desfeito_por. **Cada importação de planilha é um lote**, sem `loja_id` (clientes e
+  veículos são da empresa toda); `clientes` e `veiculos` guardam o lote em `importacao_lote_id`.
+  **RLS: só o administrador com o módulo Clientes** lê, cria e altera (decisão 3 da Sofia); o lote
+  nasce sempre em nome de quem está logado; **ninguém apaga lote** (sem policy de delete, lacuna
+  declarada na matriz). **Desfazer é pela função `desfazer_importacao(p_lote)`** (`security
+  definer`, só admin com Clientes): apaga os veículos e clientes do lote que não estão em uso,
+  marca `desfeito_em`/`desfeito_por` e devolve
+  `{ veiculos_apagados, clientes_apagados, mantidos: [{ tipo, id, nome, motivo }] }`. Fica (com o
+  motivo em português): veículo ou cliente que alguma tabela aponta (OS, conta a receber, e
+  **qualquer chave futura**: a lista vem do `pg_constraint`, não escrita na função), cliente com
+  veículo de fora do lote, cliente cujo veículo do lote ficou. É `definer` porque a conferência
+  precisa ver as OS de **todas** as lojas: com `invoker`, um admin de uma loja só não veria a OS da
+  outra, e o `on delete set null` de `ordens_servico.veiculo_id` deixaria essa OS sem veículo,
+  calado (medido no teste, checagem 7c). Teste em `supabase/scripts/testar-importacao.sql`, com 16
+  mutações vistas reprovar (anotadas no PR da #457).
 - **`whatsapp_mensagens`** (migration `0052`): id, loja_id, chave, referencia (o id do que
   motivou a mensagem — conta a receber, OS, pedido —, texto e sem FK de propósito, porque aponta
   pra tabelas diferentes conforme a chave), destino, operador_id, criado_em. Registra que a

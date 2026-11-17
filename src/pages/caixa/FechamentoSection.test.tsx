@@ -247,4 +247,37 @@ describe("FechamentoSection", () => {
     expect(listarModelosWhatsapp).toHaveBeenCalledWith("l");
     expect(textoAberto()).toMatch(/^Chefe, hoje \(\d{2}\/\d{2}\/\d{4}\): faltaram R\$ 10,00$/);
   });
+
+  it("histórico (visual novo): cada dia diz Faltou/Sobrou/Bateu, e a soma é saldo com sinal, sem 'Faltaram'", () => {
+    const dias = [
+      fechamento({ id: "a", data: "2026-09-03", saldo_sistema: 500, valor_contado: 450, diferenca: -50 }),
+      fechamento({ id: "b", data: "2026-09-02", saldo_sistema: 300, valor_contado: 320, diferenca: 20 }),
+      fechamento({ id: "c", data: "2026-09-01", diferenca: 0 }),
+    ];
+    renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={dias} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    const rodape = screen.getByText(/Soma das diferenças destes 3 dias/).closest("tr")!;
+    const texto = (el: Element) => el.textContent!.replace(/\u00a0/g, " ");
+    // Faltou 50 num dia e sobrou 20 noutro: o saldo é −30, mostrado como
+    // número com sinal. "Faltaram R$ 30,00" faria parecer que faltou 30 no total.
+    expect(texto(rodape)).toContain("−R$ 30,00");
+    expect(texto(rodape)).not.toMatch(/Faltaram|Sobraram/);
+    const linhas = screen.getAllByRole("row");
+    expect(texto(linhas.find((l) => l.textContent!.includes("03/09/2026"))!)).toContain("Faltou R$ 50,00");
+    expect(texto(linhas.find((l) => l.textContent!.includes("02/09/2026"))!)).toContain("Sobrou R$ 20,00");
+    expect(texto(linhas.find((l) => l.textContent!.includes("01/09/2026"))!)).toContain("Bateu");
+  });
+
+  it("a região que anuncia a diferença já está na tela antes do primeiro número", async () => {
+    const { user, container } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    const regiao = container.querySelector('[aria-live="polite"]');
+    expect(regiao).not.toBeNull();
+    expect(regiao!.textContent).toBe("");
+    await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "0");
+    expect(container.querySelector('[aria-live="polite"]')).toBe(regiao);
+    expect(regiao!.textContent).toContain("Bateu certinho");
+  });
 });

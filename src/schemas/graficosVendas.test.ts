@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   seriesVendasCustosLucro,
+  totaisDoGrafico,
   totaisRecebidos,
   totaisRecebidosPorDia,
   type MovimentoDoGrafico,
@@ -94,5 +95,17 @@ describe("seriesVendasCustosLucro", () => {
     expect(r.categorias).toHaveLength(8);
     expect(r.categorias[7]).toBe("02/11");
     expect(r.vendas[7]).toBe(8);
+  });
+});
+
+describe("totaisDoGrafico (visual novo, 17/11)", () => {
+  it("soma cada série do que está à vista e dá a margem do período", () => {
+    const t = totaisDoGrafico({ vendas: [100, 300], custos: [50, 100], lucro: [50, 200] });
+    expect(t).toMatchObject({ vendas: 400, custos: 150, lucro: 250 });
+    expect(t.margem).toBeCloseTo(62.5);
+  });
+
+  it("sem venda, a margem é null (nunca 0% inventado nem divisão por zero)", () => {
+    expect(totaisDoGrafico({ vendas: [0, 0], custos: [10, 0], lucro: [-10, 0] }).margem).toBeNull();
   });
 });

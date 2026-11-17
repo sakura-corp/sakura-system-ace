@@ -1,0 +1,146 @@
+import { Check, ChevronDown, type LucideIcon } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
+
+// Peças da tarefa 15 do visual novo (#990): Configurações, Auditoria e
+// Diagnóstico, que são da mesma tarefa. Moram aqui, e não em `src/components/`,
+// de propósito: a tarefa não mexe nas peças compartilhadas. Quando uma tela de
+// OUTRA tarefa precisar de uma delas, sobe pra lá. O erro e o aviso de atenção
+// já subiram: são a peça `Aviso` (src/components/Aviso.tsx).
+
+/**
+ * "Salvo." ao lado do botão de salvar. Fica junto do botão (e não vira o aviso
+ * que some embaixo da tela) porque as seções são compridas: quem salvou no pé
+ * da seção vê a confirmação no mesmo lugar do olho, e ela só sai quando a
+ * pessoa mexe de novo.
+ */
+export function AvisoDeSalvo({ children }: { children: ReactNode }) {
+  return (
+    <p
+      role="status"
+      className="inline-flex items-center gap-1.5 rounded-xl bg-ok/[0.12] px-3 py-2 text-corpo font-medium text-ok"
+    >
+      <Check aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.5} />
+      {children}
+    </p>
+  );
+}
+
+/**
+ * O botão só com ícone de uma lista (editar, inativar, excluir), com a dica
+ * dizendo o que ele faz. Entra no lugar do `title` + glifo (✎ × ↺ 🗑): o glifo
+ * muda de tamanho de computador pra computador, o ícone não.
+ */
+export function BotaoDeLista({
+  rotulo,
+  icone: Icone,
+  aoClicar,
+  perigoso = false,
+  desabilitado = false,
+}: {
+  /** O que o botão faz, por extenso ("Editar a loja Centro"): nome e dica. */
+  rotulo: string;
+  icone: LucideIcon;
+  aoClicar: () => void;
+  perigoso?: boolean;
+  desabilitado?: boolean;
+}) {
+  return (
+    <Dica texto={rotulo}>
+      <Botao
+        soIcone
+        variante="fantasma"
+        tamanho="pequeno"
+        aria-label={rotulo}
+        icone={<Icone aria-hidden="true" />}
+        onClick={aoClicar}
+        disabled={desabilitado}
+        className={perigoso ? "hover:bg-perigo/[0.13]! hover:text-perigo!" : ""}
+      />
+    </Dica>
+  );
+}
+
+/**
+ * Uma seção de Configurações: cartão com título, explicação e o conteúdo
+ * (que só é montado quando a seção está aberta, como era: o que carrega os
+ * próprios dados só busca quando alguém abre).
+ *
+ * Faz o que a `SecaoRecolhivel` fazia, no visual novo: ícone do assunto, o
+ * título em destaque, a explicação em cinza, a setinha que gira e o foco do
+ * teclado visível. Diz também `aria-expanded` pro leitor de tela.
+ */
+export function SecaoDeConfiguracao({
+  titulo,
+  descricao,
+  icone: Icone,
+  abertaInicialmente = false,
+  children,
+}: {
+  titulo: string;
+  descricao?: ReactNode;
+  icone: LucideIcon;
+  abertaInicialmente?: boolean;
+  children: ReactNode;
+}) {
+  const [aberta, setAberta] = useState(abertaInicialmente);
+  const idDoConteudo = useId();
+
+  return (
+    <div className="sakura-card p-6">
+      {/* O padrão de sanfona: o título é um <h3> e o botão está DENTRO dele, só
+          com texto corrido (um <button> não aceita <h3> nem <p> por dentro). */}
+      <h3>
+        <button
+          type="button"
+          onClick={() => setAberta((atual) => !atual)}
+          aria-expanded={aberta}
+          aria-controls={aberta ? idDoConteudo : undefined}
+          className="-m-2 flex w-[calc(100%+1rem)] items-start gap-4 rounded-xl p-2 text-left transition-colors hover:bg-passar"
+        >
+          <IconeDeSecao icone={Icone} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-corpo font-semibold text-texto">{titulo}</span>
+            {descricao && (
+              <span className="mt-1 block text-rotulo font-normal text-texto-2">{descricao}</span>
+            )}
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={`mt-2 size-4 shrink-0 text-texto-2 transition-transform duration-(--duration-botao) ease-suave motion-reduce:transition-none ${
+              aberta ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </h3>
+
+      {aberta && (
+        <div id={idDoConteudo} className="mt-5">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** O quadradinho com o ícone do assunto, no começo de cada seção e cartão. */
+export function IconeDeSecao({ icone: Icone }: { icone: LucideIcon }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-texto/[0.08] text-acao-clara"
+    >
+      <Icone className="size-[18px]" />
+    </span>
+  );
+}
+
+/** O título de um grupo de seções ("Dinheiro e nota fiscal"), só pra organizar. */
+export function TituloDeGrupo({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="pt-2 text-meta font-semibold uppercase tracking-[0.12em] text-texto-2">
+      {children}
+    </h2>
+  );
+}

@@ -101,12 +101,12 @@ export function ItemOSRow({
   const avisoCusto = avisoPecaSemCusto(pecaEscolhida);
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-gray/30 p-3">
+    <div className="space-y-2 rounded-lg border border-linha p-3">
       <div className="flex gap-2">
         <select
           value={tipo}
           onChange={(e) => aoMudarTipo(e.target.value as TipoItemOS)}
-          className="w-28 shrink-0 rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo"
+          className="w-28 shrink-0 rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
         >
           <option value="peca">Peça</option>
           <option value="servico">Serviço</option>
@@ -114,6 +114,7 @@ export function ItemOSRow({
 
         {tipo === "peca" ? (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
@@ -123,6 +124,7 @@ export function ItemOSRow({
           />
         ) : (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
             valor={servicoId}
@@ -135,7 +137,7 @@ export function ItemOSRow({
         <button
           type="button"
           onClick={onRemover}
-          className="shrink-0 text-rotulo font-medium text-red-300 hover:underline"
+          className="shrink-0 text-rotulo font-medium text-perigo hover:underline"
         >
           Remover
         </button>
@@ -146,7 +148,7 @@ export function ItemOSRow({
           type="text"
           placeholder="Descrição do serviço"
           {...register(`itens.${index}.descricao`)}
-          className="w-full rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo"
+          className="w-full rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
         />
       )}
 
@@ -156,16 +158,16 @@ export function ItemOSRow({
             type="text"
             placeholder="Descrição da peça"
             {...register(`itens.${index}.descricao`)}
-            className="min-w-0 flex-1 rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo"
+            className="min-w-0 flex-1 rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
           />
-          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-texto/90">
             Custo (opcional)
             <input
               type="number"
               min="0"
               step="0.01"
               {...register(`itens.${index}.custo_unitario`)}
-              className="rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+              className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
             />
           </label>
         </div>
@@ -177,42 +179,43 @@ export function ItemOSRow({
           formulário de OS, que ocupa a largura toda da tela, então a medida
           pela janela basta. */}
       <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Quantidade
           <input
             type="number"
             min="0.01"
             step="0.01"
             {...register(`itens.${index}.quantidade`)}
-            className="rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
           />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Preço unitário
           <input
             type="number"
             min="0"
             step="0.01"
             {...register(`itens.${index}.preco_unitario`)}
-            className="rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
           />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Desconto
           <input
             type="number"
             min="0"
             step="0.01"
             {...register(`itens.${index}.desconto`)}
-            className="rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
           />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Técnico
           <Combobox
+            tamanho="filtro"
             opcoes={funcionarios.map((funcionario) => ({
               valor: funcionario.id,
               rotulo: funcionario.nome,
@@ -227,8 +230,8 @@ export function ItemOSRow({
 
       {(avisoEstoque || avisoCusto) && (
         <div className="space-y-1">
-          {avisoEstoque && <p className="text-rotulo text-amber-300">{avisoEstoque}</p>}
-          {avisoCusto && <p className="text-rotulo text-amber-300">{avisoCusto}</p>}
+          {avisoEstoque && <p className="text-rotulo text-atencao">{avisoEstoque}</p>}
+          {avisoCusto && <p className="text-rotulo text-atencao">{avisoCusto}</p>}
         </div>
       )}
 
@@ -236,16 +239,16 @@ export function ItemOSRow({
         {/* O saldo só aparece aqui quando NÃO há aviso de estoque: o aviso
             já começa dizendo o saldo, e mostrar os dois seguidos era a mesma
             informação repetida em duas linhas coladas. */}
-        <p className="text-rotulo text-sakura-muted">
+        <p className="text-rotulo text-texto-2">
           {pecaEscolhida && saldoCarregado && !avisoEstoque
             ? `Saldo em estoque: ${(saldoDaPeca ?? 0).toLocaleString("pt-BR")}${
                 pecaEscolhida.unidade ? ` ${pecaEscolhida.unidade}` : ""
               }`
             : ""}
         </p>
-        <p className="text-rotulo text-sakura-purple-dark/90">
+        <p className="text-rotulo text-texto/90">
           Total deste item:{" "}
-          <span className="font-semibold text-sakura-purple-dark">
+          <span className="font-semibold text-texto">
             {totalItem.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
           </span>
         </p>

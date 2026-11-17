@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
@@ -22,6 +23,7 @@ import type { NovaPeca, Peca, PecaJanela } from "@/types/peca";
 import { DadosCadastraisFields } from "./campos/DadosCadastraisFields";
 import { PneuFields } from "./campos/PneuFields";
 import { PrecosFields } from "./campos/PrecosFields";
+import { AvisoDeErro } from "@/components/Aviso";
 import { TributosFields } from "./campos/TributosFields";
 
 /** O nome da peça no aviso, com "(inativa)" quando ela está desativada (#708),
@@ -142,17 +144,15 @@ export function PecaForm({
 
   return (
     <>
-      <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+      <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6">
         <div className="flex items-center gap-3">
           <BotaoVoltar onClick={onCancelar} />
-          <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+          <h2 className="font-titulo text-subtitulo font-semibold text-texto">
             {pecaExistente ? "Editar produto" : "Novo produto"}
           </h2>
         </div>
 
-        {erro && (
-          <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-        )}
+        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
         {rascunho.rascunho && (
           <AvisoRascunho
@@ -192,24 +192,16 @@ export function PecaForm({
         />
 
         <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancelar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-          >
+          <Botao variante="fantasma" onClick={onCancelar}>
             Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-          >
+          </Botao>
+          <Botao type="submit" variante="principal" ocupado={isSubmitting}>
             {isSubmitting
               ? "Salvando..."
               : pecaExistente
                 ? "Salvar alterações"
                 : "Salvar peça"}
-          </button>
+          </Botao>
         </div>
       </form>
 
@@ -225,23 +217,28 @@ export function PecaForm({
           onFechar={() => {
             if (!gravandoPendente) setPendente(null);
           }}
+          rodape={
+            <Botao variante="fantasma" onClick={cadastrarMesmoAssim} disabled={gravandoPendente}>
+              {gravandoPendente ? "Salvando..." : "Cadastrar mesmo assim"}
+            </Botao>
+          }
         >
           <div className="space-y-4">
-            <p className="text-corpo text-sakura-purple-dark">
+            <p className="text-corpo text-texto">
               Parece com <em className="font-semibold">{nomeNoAviso(pendente.parecidas[0].peca)}</em>. É a
               mesma?
             </p>
             <ul className="space-y-2">
-              {pendente.parecidas.map(({ peca, motivo }) => (
+              {pendente.parecidas.map(({ peca, motivo }, indice) => (
                 <li
                   key={peca.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-sakura-gray/30 px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-linha px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="break-words text-corpo font-medium text-sakura-purple-dark">
+                    <p className="break-words text-corpo font-medium text-texto">
                       {nomeNoAviso(peca)}
                     </p>
-                    <p className="break-words text-corpo text-sakura-muted">
+                    <p className="break-words text-corpo text-texto-2">
                       {[
                         peca.codigo_interno && `Código ${peca.codigo_interno}`,
                         peca.codigo_barras && `Barras ${peca.codigo_barras}`,
@@ -251,27 +248,17 @@ export function PecaForm({
                         .join(" · ")}
                     </p>
                   </div>
-                  <button
-                    type="button"
+                  {/* Um laranja só: o da primeira peça parecida, que é a mais provável. */}
+                  <Botao
+                    variante={indice === 0 ? "principal" : "secundario"}
                     onClick={() => abrirExistente(peca)}
                     disabled={gravandoPendente}
-                    className="shrink-0 rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
                   >
                     Abrir a que já existe
-                  </button>
+                  </Botao>
                 </li>
               ))}
             </ul>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={cadastrarMesmoAssim}
-                disabled={gravandoPendente}
-                className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
-              >
-                {gravandoPendente ? "Salvando..." : "Cadastrar mesmo assim"}
-              </button>
-            </div>
           </div>
         </Modal>
       )}

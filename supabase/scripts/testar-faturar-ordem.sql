@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0083 (faturar a OS com a ordem travada e o total
+-- TESTE da migration 0086 (faturar a OS com a ordem travada e o total
 -- conferido no banco, tarefa #803, caso 2). NÃO é migration, e NUNCA deve ser
 -- rodado no Supabase de verdade — grava e apaga dado de teste, e abre
 -- ligações de volta pro próprio banco (dblink) pra simular dois computadores

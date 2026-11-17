@@ -20,18 +20,18 @@ export function DadosClienteFields({
             type="radio"
             value="fisica"
             {...register("tipo_pessoa")}
-            className="h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
+            className="h-4 w-4"
           />
-          <span className="text-sakura-purple-dark/80">Pessoa física</span>
+          <span className="text-texto-2">Pessoa física</span>
         </label>
         <label className="flex items-center gap-2 text-corpo">
           <input
             type="radio"
             value="juridica"
             {...register("tipo_pessoa")}
-            className="h-4 w-4 text-sakura-purple focus:ring-sakura-purple"
+            className="h-4 w-4"
           />
-          <span className="text-sakura-purple-dark/80">Pessoa jurídica</span>
+          <span className="text-texto-2">Pessoa jurídica</span>
         </label>
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -40,7 +40,12 @@ export function DadosClienteFields({
           obrigatorio
           erro={errors.nome?.message}
         >
-          <input type="text" {...register("nome")} className={inputClasse} />
+          <input
+            type="text"
+            {...register("nome")}
+            aria-invalid={errors.nome ? "true" : undefined}
+            className={inputClasse}
+          />
         </Campo>
         <Campo label={tipoPessoa === "juridica" ? "CNPJ" : "CPF"}>
           <input type="text" {...register("cpf_cnpj")} className={inputClasse} />
@@ -55,6 +60,17 @@ export function DadosClienteFields({
           <input type="date" {...register("data_nascimento")} className={inputClasse} />
         </Campo>
       </div>
+      <label className="mt-4 flex items-center gap-2 text-corpo">
+        <input
+          type="checkbox"
+          {...register("nao_avisar")}
+          className="h-4 w-4 rounded border-borda-campo text-acao focus:ring-acao"
+        />
+        <span className="text-texto/80">Não mandar lembrete pra este cliente</span>
+      </label>
+      <p className="mt-1 text-rotulo text-texto-2">
+        Ele não aparece na lista de Retornos nem na de clientes que sumiram.
+      </p>
     </Secao>
   );
 }

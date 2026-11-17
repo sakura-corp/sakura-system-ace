@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
+import { Selo } from "@/components/Selo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { listarContagens, registrarContagem } from "@/lib/contagens";
+import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import type { ContagemEstoque } from "@/types/contagem";
 import type { Deposito } from "@/types/deposito";
 import type { Peca } from "@/types/peca";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface ContagemSectionProps {
   pecas: Peca[];
@@ -31,17 +36,26 @@ export function ContagemSection({
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
+
+  // #927: só a busca mais nova mexe na tela (trocar de loja com a anterior ainda andando).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaId);
 
   async function carregarHistorico() {
+    // Um carregar guardado de antes da troca de loja nem começa.
+    const carga = comecar(lojaId);
+    if (!carga) return;
     setCarregandoHistorico(true);
     try {
-      setContagens(await listarContagens(lojaId));
+      const lista = await listarContagens(carga.lojaId);
+      if (!carga.aindaEhAtual()) return;
+      setContagens(lista);
+      carga.gravou();
     } catch (err) {
       console.error("Erro ao carregar histórico de contagens:", err);
+      if (!carga.aindaEhAtual()) return;
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregandoHistorico(false);
+      if (carga.aindaEhAtual()) setCarregandoHistorico(false);
     }
   }
 
@@ -51,6 +65,8 @@ export function ContagemSection({
   }, [lojaId]);
 
   const saldoSistema = saldosPorDeposito.get(pecaId)?.get(depositoId) ?? 0;
+  // Carga da loja nova com erro: o histórico da anterior não aparece.
+  const contagensNaTela = dadosSaoDaLoja ? contagens : [];
   const quantidadeNumero = Number(quantidadeContada);
   const diferenca =
     quantidadeContada !== "" && !isNaN(quantidadeNumero)
@@ -60,7 +76,6 @@ export function ContagemSection({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
-    setSucesso(null);
 
     if (!pecaId) {
       setErro("Selecione um produto.");
@@ -88,7 +103,7 @@ export function ContagemSection({
       );
       setQuantidadeContada("");
       setObservacao("");
-      setSucesso("Contagem registrada.");
+      avisar("Contagem registrada.");
       await Promise.all([carregarHistorico(), onRecarregar()]);
     } catch (err) {
       console.error("Erro ao registrar contagem:", err);
@@ -103,32 +118,23 @@ export function ContagemSection({
   return (
     <div className="space-y-6">
       {pecas.length === 0 ? (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+        <AvisoDeAtencao>
           Cadastre ao menos um produto na aba "Produtos" antes de fazer uma contagem.
-        </p>
+        </AvisoDeAtencao>
       ) : (
         <form onSubmit={handleSubmit} className="sakura-card space-y-4 p-6">
-          <h2 className="text-corpo font-semibold text-sakura-purple-dark">
-            Nova contagem
-          </h2>
-          <p className="text-rotulo text-sakura-muted">
+          <h2 className="font-titulo text-subtitulo font-semibold text-texto">Nova contagem</h2>
+          <p className="text-rotulo text-texto-2">
             Confira a quantidade física do produto e compare com o saldo que o
             sistema calcula. Se houver diferença, um ajuste de estoque é lançado
             automaticamente.
           </p>
 
-          {erro && (
-            <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-          )}
-          {sucesso && (
-            <p className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-              {sucesso}
-            </p>
-          )}
+          {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
           <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Produto</span>
+            <label className="sakura-rotulo">
+              Produto
               <Combobox
                 opcoes={pecas.map((p) => ({ valor: p.id, rotulo: p.descricao }))}
                 valor={pecaId}
@@ -137,12 +143,12 @@ export function ContagemSection({
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Depósito</span>
+            <label className="sakura-rotulo">
+              Depósito
               <select
                 value={depositoId}
                 onChange={(e) => setDepositoId(e.target.value)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="sakura-campo"
               >
                 {depositos.map((deposito) => (
                   <option key={deposito.id} value={deposito.id}>
@@ -152,107 +158,112 @@ export function ContagemSection({
               </select>
             </label>
 
-            <div className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Saldo no sistema</span>
-              <p className="rounded-lg border border-transparent px-3 py-2 font-medium text-sakura-purple-dark">
-                {saldoSistema} {peca?.unidade ?? ""}
-              </p>
+            {/* Saldo, quantidade e diferença lado a lado: é a conta que a pessoa faz. */}
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <div className="sakura-rotulo">
+                Saldo no sistema
+                <p className="flex h-11 items-center text-corpo font-semibold text-texto">
+                  {saldoSistema} {peca?.unidade ?? ""}
+                </p>
+              </div>
+
+              <label className="sakura-rotulo">
+                Quantidade contada
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={quantidadeContada}
+                  onChange={(e) => setQuantidadeContada(e.target.value)}
+                  className="sakura-campo"
+                />
+              </label>
+
+              <div className="sakura-rotulo">
+                Diferença
+                <p
+                  className={`flex h-11 items-center gap-2 text-corpo font-semibold ${
+                    diferenca === null || diferenca === 0
+                      ? "text-texto"
+                      : diferenca > 0
+                        ? "text-ok"
+                        : "text-perigo"
+                  }`}
+                >
+                  {diferenca === null ? "—" : diferenca > 0 ? `+${diferenca}` : diferenca}
+                  {diferenca !== null && diferenca !== 0 && <SeloDaDiferenca diferenca={diferenca} />}
+                </p>
+              </div>
             </div>
 
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Quantidade contada</span>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                value={quantidadeContada}
-                onChange={(e) => setQuantidadeContada(e.target.value)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
-              />
-            </label>
-
-            <div className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Diferença</span>
-              <p
-                className={`rounded-lg px-3 py-2 font-medium ${
-                  diferenca === null || diferenca === 0
-                    ? "text-sakura-purple-dark"
-                    : diferenca > 0
-                      ? "text-emerald-700"
-                      : "text-red-600"
-                }`}
-              >
-                {diferenca === null ? "—" : diferenca > 0 ? `+${diferenca}` : diferenca}
-              </p>
-            </div>
-
-            <label className="col-span-2 flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">
-                Observação (opcional)
-              </span>
+            <label className="sakura-rotulo col-span-2">
+              Observação (opcional)
               <input
                 type="text"
                 value={observacao}
                 onChange={(e) => setObservacao(e.target.value)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="sakura-campo"
               />
             </label>
           </div>
 
           <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
+            <Botao type="submit" variante="principal" ocupado={salvando}>
               {salvando ? "Salvando..." : "Registrar contagem"}
-            </button>
+            </Botao>
           </div>
         </form>
       )}
 
       <section>
-        <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+        <h2 className="mb-3 font-titulo text-subtitulo font-semibold text-texto">
           Histórico de contagens
         </h2>
         {carregandoHistorico ? (
-          <p className="text-corpo text-sakura-muted">Carregando...</p>
-        ) : contagens.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">Nenhuma contagem registrada ainda.</p>
+          <p className="text-corpo text-texto-2">Carregando...</p>
+        ) : contagensNaTela.length === 0 ? (
+          <p className="text-corpo text-texto-2">Nenhuma contagem registrada ainda.</p>
         ) : (
           <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Data</th>
-                  <th className="px-4 py-3 font-medium">Produto</th>
-                  <th className="px-4 py-3 font-medium">Depósito</th>
-                  <th className="px-4 py-3 font-medium">Contado</th>
-                  <th className="px-4 py-3 font-medium">Sistema</th>
-                  <th className="px-4 py-3 font-medium">Diferença</th>
-                  <th className="px-4 py-3 font-medium">Observação</th>
+                  <th>Data</th>
+                  <th>Produto</th>
+                  <th>Depósito</th>
+                  <th className="text-right">Contado</th>
+                  <th className="text-right">Sistema</th>
+                  <th className="text-right">Diferença</th>
+                  <th>Observação</th>
                 </tr>
               </thead>
               <tbody>
-                {contagens.map((contagem) => (
-                  <tr key={contagem.id} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">
+                {contagensNaTela.map((contagem) => (
+                  <tr key={contagem.id}>
+                    <td className="whitespace-nowrap text-texto-2">
                       {new Date(contagem.criado_em).toLocaleString("pt-BR")}
                     </td>
-                    <td className="px-4 py-3">
-                      {pecas.find((p) => p.id === contagem.peca_id)?.descricao ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
+                    <td>{pecas.find((p) => p.id === contagem.peca_id)?.descricao ?? "—"}</td>
+                    <td className="text-texto-2">
                       {depositos.find((d) => d.id === contagem.deposito_id)?.nome ?? "—"}
                     </td>
-                    <td className="px-4 py-3">{contagem.quantidade_contada}</td>
-                    <td className="px-4 py-3">{contagem.saldo_sistema}</td>
-                    <td className="px-4 py-3">
-                      {contagem.diferenca > 0
-                        ? `+${contagem.diferenca}`
-                        : contagem.diferenca}
+                    <td className="text-right">{contagem.quantidade_contada}</td>
+                    <td className="text-right">{contagem.saldo_sistema}</td>
+                    <td
+                      className={`text-right font-medium ${
+                        contagem.diferenca === 0
+                          ? ""
+                          : contagem.diferenca > 0
+                            ? "text-ok"
+                            : "text-perigo"
+                      }`}
+                    >
+                      <span className="inline-flex items-center justify-end gap-2">
+                        {contagem.diferenca > 0 ? `+${contagem.diferenca}` : contagem.diferenca}
+                        {contagem.diferenca !== 0 && <SeloDaDiferenca diferenca={contagem.diferenca} />}
+                      </span>
                     </td>
-                    <td className="px-4 py-3">{contagem.observacao || "—"}</td>
+                    <td className="text-texto-2">{contagem.observacao || "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -261,5 +272,14 @@ export function ContagemSection({
         )}
       </section>
     </div>
+  );
+}
+
+/** O número da diferença já leva o sinal; o selo diz com palavra o que ele quer dizer (regra 4). */
+function SeloDaDiferenca({ diferenca }: { diferenca: number }) {
+  return diferenca > 0 ? (
+    <Selo tipo="ok" palavra="Sobra" />
+  ) : (
+    <Selo tipo="perigo" palavra="Falta" />
   );
 }

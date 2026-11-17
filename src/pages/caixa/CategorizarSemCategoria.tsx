@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
@@ -7,6 +8,7 @@ import { agruparPorCategoria } from "@/schemas/caixa";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, TipoCaixa } from "@/types/caixa";
+import { Aviso } from "@/components/Aviso";
 
 interface CategorizarSemCategoriaProps {
   tipo: TipoCaixa;
@@ -76,26 +78,28 @@ export function CategorizarSemCategoria({
   }
 
   return (
-    <section className="space-y-4 sakura-card p-6 shadow-sm">
+    <section className="space-y-4 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">
           Categorizar {rotulo}s antigas
         </h2>
       </div>
 
-      <p className="text-corpo text-sakura-muted">
+      <p className="text-corpo text-texto-2">
         Escolha a categoria de cada lançamento. O que ficar em branco continua sem categoria e
         pode ser ajustado depois.
       </p>
 
       {erro && (
-        <p className="rounded-lg bg-red-950/60 px-4 py-2 text-corpo text-red-300">{erro}</p>
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
+          {erro}
+        </Aviso>
       )}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl bg-black/20 p-4">
-        <label className="flex flex-1 flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Aplicar a todos que estão em branco</span>
+      <div className="flex flex-wrap items-end gap-3 rounded-xl bg-poco p-4">
+        <label className="sakura-rotulo flex-1">
+          Aplicar a todos que estão em branco
           <Combobox
             opcoes={opcoes}
             valor={categoriaParaTodos}
@@ -103,33 +107,37 @@ export function CategorizarSemCategoria({
             placeholder="Escolha uma categoria"
           />
         </label>
-        <button
-          type="button"
-          onClick={aplicarNosVazios}
-          disabled={!categoriaParaTodos}
-          className="rounded-xl bg-sakura-purple/80 px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-40"
-        >
+        <Botao onClick={aplicarNosVazios} disabled={!categoriaParaTodos}>
           Aplicar
-        </button>
+        </Botao>
       </div>
 
-      <div className="max-h-[24rem] overflow-y-auto rounded-xl border border-sakura-gray/20">
-        <table className="w-full text-left text-corpo">
-          <thead className="sticky top-0 bg-sakura-pink-soft text-sakura-purple-dark">
+      {/* Tamanho fixo, rolando por dentro (regras, seção 6, "O que pode
+          crescer"): a lista pode ter dezenas de linhas. */}
+      <div className="max-h-[24rem] overflow-y-auto rounded-xl border border-linha">
+        <table className="sakura-tabela">
+          {/* O cabeçalho fica parado ao rolar. A linha embaixo dele é uma
+              sombra, e não a borda da tabela: com as bordas coladas
+              (border-collapse) a borda não acompanha a célula que fica parada. */}
+          <thead className="[&_th]:sticky [&_th]:top-0 [&_th]:z-[1] [&_th]:bg-cartao [&_th]:shadow-[inset_0_-1px_0_var(--color-linha)]">
             <tr>
-              <th className="px-4 py-3 font-medium">Data</th>
-              <th className="px-4 py-3 font-medium">Descrição</th>
-              <th className="px-4 py-3 font-medium">Valor</th>
-              <th className="w-64 px-4 py-3 font-medium">Categoria</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th className="text-right">Valor</th>
+              <th className="w-64">Categoria</th>
             </tr>
           </thead>
           <tbody>
             {movimentos.map((m) => (
-              <tr key={m.id} className="border-t border-sakura-gray/20">
-                <td className="px-4 py-3">{new Date(m.data).toLocaleDateString("pt-BR")}</td>
-                <td className="px-4 py-3">{m.descricao || "—"}</td>
-                <td className="px-4 py-3 font-medium">{formatarMoeda(m.valor)}</td>
-                <td className="px-4 py-3">
+              <tr key={m.id}>
+                <td className="whitespace-nowrap text-texto-2">
+                  {new Date(m.data).toLocaleDateString("pt-BR")}
+                </td>
+                <td className="text-texto">{m.descricao || "—"}</td>
+                <td className="whitespace-nowrap text-right font-semibold text-texto">
+                  {formatarMoeda(m.valor)}
+                </td>
+                <td>
                   <Combobox
                     opcoes={opcoes}
                     valor={atribuicoes[m.id] ?? ""}
@@ -143,28 +151,19 @@ export function CategorizarSemCategoria({
         </table>
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-rotulo text-sakura-muted">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-rotulo text-texto-2">
           {escolhidos === 0
             ? "Nenhum lançamento escolhido ainda"
             : `${escolhidos} de ${movimentos.length} prontos para salvar`}
         </p>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onCancelar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-          >
+          <Botao variante="fantasma" onClick={onCancelar}>
             Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={salvar}
-            disabled={salvando || escolhidos === 0}
-            className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-          >
+          </Botao>
+          <Botao variante="principal" onClick={salvar} ocupado={salvando} disabled={escolhidos === 0}>
             {salvando ? "Salvando..." : `Salvar ${escolhidos}`}
-          </button>
+          </Botao>
         </div>
       </div>
     </section>

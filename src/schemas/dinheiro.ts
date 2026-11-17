@@ -73,6 +73,11 @@ export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Percentual com uma casa, do jeito brasileiro: 42,2%. */
+export function formatarPercentual(valor: number): string {
+  return `${valor.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
 /**
  * Reparte um total entre N pedaços, em centavos inteiros, de modo que a soma
  * feche **exatamente** e nenhum pedaço fique negativo.

@@ -197,3 +197,24 @@ export function seriesVendasCustosLucro(
     lucro: vendasArr.map((v, i) => v - custosArr[i]),
   };
 }
+
+export interface TotaisDoGrafico {
+  vendas: number;
+  custos: number;
+  lucro: number;
+  /** Lucro sobre vendas, em % (0 a 100). `null` quando não houve venda: não dá pra dividir. */
+  margem: number | null;
+}
+
+/**
+ * Os totais que ficam ao lado de cada linha do gráfico (visual novo de
+ * Relações, aprovado pela Sofia em 17/11/2026, #990): a soma de cada série no
+ * que está à vista (os 14 dias, as 8 semanas…) e a margem do período.
+ */
+export function totaisDoGrafico(series: Pick<SeriesVendasCustosLucro, "vendas" | "custos" | "lucro">): TotaisDoGrafico {
+  const somar = (valores: readonly number[]) => valores.reduce((total, v) => total + v, 0);
+  const vendas = somar(series.vendas);
+  const custos = somar(series.custos);
+  const lucro = somar(series.lucro);
+  return { vendas, custos, lucro, margem: vendas > 0 ? (lucro / vendas) * 100 : null };
+}

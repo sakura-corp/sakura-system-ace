@@ -11,13 +11,13 @@ sem mesclar, sem publicar.
 
 ## O que cada agente fez
 - **Sessão mãe**: leu a issue, o levantamento, a parte "O levantamento de 25/09 ainda está certo?",
-  a `docs/visao.md`, o roteiro de instalação e a skill `loja-nova`; montou a ordem dos 14 slides e o
+  a `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), o roteiro de instalação e a skill `loja-nova`; montou a ordem dos 14 slides e o
   que entra em cada um; aplicou as correções dos ajudantes.
 - **Redator** (`ajudante-medio`): escreveu `apresentacao/textos-da-apresentacao.md` a partir do plano.
 - **Caçador de vazamento / conferidor de regras** (`ajudante-rapido`): conferiu o texto contra as
   regras (preço, nome, cidade, "Importar por foto", data no "O que vem por aí", formato do slide).
 - **Revisão final / conferidor de fatos** (`ajudante-forte`, esforço alto): conferiu cada função
-  citada contra o levantamento, `docs/modulos.md` e `docs/visao.md`, e se as fotos existem.
+  citada contra o levantamento, `docs/modulos.md` e `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), e se as fotos existem.
 
 ## Modelos usados
 - Planejar os slides: forte (o modelo da tabela de `docs/tarefas.md`), esforço médio. Sem troca.
@@ -70,7 +70,7 @@ sem mesclar, sem publicar.
     do repositório dá esse prazo: o roteiro de instalação diz "dias a semanas", e a skill `loja-nova`
     conta 7 dias **depois** que a parte fiscal da loja fica pronta. Se for arriscado, trocar por
     "a meta é emitir nota em até 7 dias depois que o certificado e as autorizações ficam prontos";
-  - confirmar os 5 itens do "O que vem por aí" (todos da onda 1 da `docs/visao.md`, sem data);
+  - confirmar os 5 itens do "O que vem por aí" (todos da onda 1 da `docs/visao.md`, que mora no `sakura-corp/escritorio`, privado; sem data);
   - o slide 2 não cita a cidade (pra não identificar a loja); se ela quiser "no interior de São
     Paulo", é só acrescentar.
 - **Quem montar o PDF (#785)**: as fotos `10f-orcamentos`, `29b-caixa-fechamento` e `06b-ficha-veiculo`

@@ -57,6 +57,7 @@ export function DetalhesFields({
     <section className="grid grid-cols-2 gap-4">
       <Campo label="Cliente" obrigatorio erro={errors.cliente_id?.message}>
         <Combobox
+          tamanho="filtro"
           opcoes={clientes.map((cliente) => ({ valor: cliente.id, rotulo: cliente.nome }))}
           valor={clienteId}
           onMudar={escolherCliente}
@@ -68,6 +69,7 @@ export function DetalhesFields({
 
       <Campo label="Veículo">
         <Combobox
+          tamanho="filtro"
           opcoes={veiculosDoCliente.map((veiculo) => ({
             valor: veiculo.id,
             rotulo: `${veiculo.placa} — ${veiculo.marca ?? ""} ${veiculo.modelo ?? ""}`,
@@ -99,24 +101,25 @@ export function DetalhesFields({
             HOJE: aceitar o valor antigo no automático estragaria justamente
             o histórico que esse campo existe pra formar. */}
         {ultimoKm != null && (
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             Última passagem: {ultimoKm.toLocaleString("pt-BR")} km
             {kmDigitado.trim() === "" && (
               <button
                 type="button"
                 onClick={() => setValue("km_entrada", String(ultimoKm))}
-                className="ml-2 font-medium text-sakura-pink hover:underline"
+                className="ml-2 font-medium text-acao-clara hover:underline"
               >
                 usar
               </button>
             )}
           </p>
         )}
-        {avisoKm && <p className="text-rotulo text-amber-300">{avisoKm}</p>}
+        {avisoKm && <p className="text-rotulo text-atencao">{avisoKm}</p>}
       </div>
 
       <Campo label="Vendedor / atendente">
         <Combobox
+          tamanho="filtro"
           opcoes={funcionarios.map((funcionario) => ({
             valor: funcionario.id,
             rotulo: funcionario.nome,
