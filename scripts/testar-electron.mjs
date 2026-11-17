@@ -637,6 +637,12 @@ try {
     const janela = BrowserWindow.getAllWindows()[0];
     globalThis.__faixasDosBotoes = [];
     janela.setTitleBarOverlay = (opcoes) => globalThis.__faixasDosBotoes.push(opcoes);
+    globalThis.__iconesDaJanela = [];
+    const setIconDeVerdade = janela.setIcon.bind(janela);
+    janela.setIcon = (icone) => {
+      globalThis.__iconesDaJanela.push(icone);
+      setIconDeVerdade(icone);
+    };
   });
   await pagina.evaluate(() => {
     window.sakuraApp.definirTemaDaJanela("claro");
@@ -653,6 +659,20 @@ try {
       faixas[1].color.toUpperCase() === "#0A0A0D" &&
       faixas[0].height === 40,
     JSON.stringify(faixas),
+  );
+  // O ícone da janela troca junto (Sofia, 17/11/2026, #990), e o arquivo existe
+  // de verdade: um caminho errado no setIcon não dá erro, só deixa a janela sem ícone.
+  const icones = (await app.evaluate(() => globalThis.__iconesDaJanela)).map((c) => ({
+    c,
+    existe: fs.existsSync(c),
+  }));
+  conferir(
+    "o ícone da janela troca com o tema (claro, depois escuro) e os arquivos existem",
+    icones.length === 2 &&
+      icones[0].c.endsWith("icone-janela-claro.png") &&
+      icones[1].c.endsWith("icone-janela-escuro.png") &&
+      icones.every((i) => i.existe),
+    JSON.stringify(icones),
   );
 } finally {
   await app.close();

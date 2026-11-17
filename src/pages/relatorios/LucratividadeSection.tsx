@@ -1,17 +1,24 @@
-import { Info, TriangleAlert } from "lucide-react";
+import { ArrowUp, Info, TriangleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CartaoNumero } from "@/components/CartaoNumero";
+import { Explicacao } from "@/components/Explicacao";
 import { Valor } from "@/components/Valor";
 import { hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
-import { lucratividadePorItem } from "@/schemas/lucratividade";
+import {
+  deCadaCem,
+  lucratividadePorItem,
+  margemMediaComCusto,
+  margemPercentual,
+  pontosDoLucro,
+} from "@/schemas/lucratividade";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
-import { formatarMoeda } from "@/schemas/dinheiro";
+import { formatarMoeda, formatarPercentual } from "@/schemas/dinheiro";
 import { TEXTO_CUSTO_NAO_INFORMADO } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { FiltroDeDatas } from "./FiltroDeDatas";
-import { GraficoDeRosca } from "./GraficoDeRosca";
+import { GraficoDeBolhas } from "./GraficoDeBolhas";
 
 interface LucratividadeSectionProps {
   ordens: OrdemServico[];
@@ -44,7 +51,14 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
   const ehOMesCorrente = dataInicio === primeiroDiaDoMesLocal() && dataFim === hojeLocal();
   const rotuloVendido = ehOMesCorrente ? "Vendido no mês" : "Vendido no período";
 
-  const mostrarRosca = totalCusto >= 0 && totalMargem >= 0 && (totalCusto > 0 || totalMargem > 0);
+  // "De cada R$ 100 vendidos, R$ 42 ficam com a loja" (visual novo, 17/11):
+  // só faz sentido com venda e margem entre 0 e 100%; fora disso o número
+  // grande (vermelho, se for prejuízo) já diz tudo.
+  const cem = deCadaCem(totalReceita, totalMargem);
+  const bolinhasDaLoja = cem ? Math.round(cem.margem) : 0;
+  const pontos = useMemo(() => pontosDoLucro(linhas), [linhas]);
+  // A média de comparar item com item: só as linhas com custo (as do gráfico).
+  const mediaDosItens = useMemo(() => margemMediaComCusto(linhas), [linhas]);
 
   const avisoDeCusto = (
     <span className="inline-flex items-center gap-1 text-rotulo font-medium text-atencao">
@@ -64,69 +78,86 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <CartaoNumero
-          titulo={rotuloVendido}
-          explicacao="O que as ordens de serviço abertas neste período somam, já recebidas ou não. Orçamento fica de fora."
+      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+        {/* O cartão de destaque (o da Central do dia): é a aba que tem que chamar atenção. */}
+        <section
+          aria-labelledby="margem-do-periodo-titulo"
+          className="sakura-capa-central sakura-grao overflow-hidden rounded-[1.125rem] border border-linha p-8"
         >
-          <Valor valor={totalReceita} />
-        </CartaoNumero>
-        <CartaoNumero
-          titulo="Custo do período"
-          explicacao="O que as peças e os serviços dessas ordens custaram pra loja."
-          variacao={algumCustoNaoInformado ? avisoDeCusto : undefined}
-        >
-          <Valor valor={totalCusto} />
-        </CartaoNumero>
-        <CartaoNumero
-          titulo="Margem do período"
-          explicacao="O que sobrou: o vendido menos o custo das peças e dos serviços."
-          variacao={algumCustoNaoInformado ? avisoDeCusto : undefined}
-        >
-          <Valor valor={totalMargem} />
-        </CartaoNumero>
+          <div className="relative z-[2] flex flex-wrap items-center justify-between gap-x-10 gap-y-6">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h2 id="margem-do-periodo-titulo" className="text-rotulo font-medium text-texto-2">
+                  Margem do período
+                </h2>
+                <Explicacao
+                  titulo="Margem do período"
+                  texto="O que sobrou: o vendido menos o custo das peças e dos serviços."
+                />
+              </div>
+              <p className="mt-1 whitespace-nowrap font-titulo text-capa font-extrabold tracking-[-0.02em] tabular-nums">
+                <Valor valor={totalMargem} />
+              </p>
+              {cem && (
+                <p className="mt-3 text-subtitulo text-texto">
+                  De cada <strong>R$ 100</strong> vendidos,{" "}
+                  <strong>{formatarMoeda(cem.margem)}</strong> ficam com a loja.
+                </p>
+              )}
+              {algumCustoNaoInformado && (
+                <div className="mt-3 space-y-1">
+                  {avisoDeCusto}
+                  <p className="text-rotulo text-texto-2">
+                    Item com {TEXTO_CUSTO_NAO_INFORMADO} conta como custo zero: a margem pode estar
+                    maior que a real.
+                  </p>
+                </div>
+              )}
+            </div>
+            {cem && (
+              <div aria-hidden="true">
+                {/* 100 bolinhas = R$ 100 vendidos: as apagadas são o custo, as cheias o que fica. */}
+                <div className="grid grid-cols-[repeat(10,14px)] gap-1.5">
+                  {Array.from({ length: 100 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`size-3.5 rounded-full ${i < 100 - bolinhasDaLoja ? "bg-texto/30" : "bg-texto"}`}
+                    />
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-5 text-rotulo text-texto-2">
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-texto/30" />
+                    Custo {formatarMoeda(cem.custo)}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-texto" />
+                    Margem {formatarMoeda(cem.margem)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <div className="grid gap-4">
+          <CartaoNumero
+            titulo={rotuloVendido}
+            explicacao="O que as ordens de serviço abertas neste período somam, já recebidas ou não. Orçamento fica de fora."
+          >
+            <Valor valor={totalReceita} />
+          </CartaoNumero>
+          <CartaoNumero
+            titulo="Custo do período"
+            explicacao="O que as peças e os serviços dessas ordens custaram pra loja."
+            variacao={algumCustoNaoInformado ? avisoDeCusto : undefined}
+          >
+            <Valor valor={totalCusto} />
+          </CartaoNumero>
+        </div>
       </div>
 
-      <div className={mostrarRosca ? "grid grid-cols-3 gap-4" : undefined}>
-      {/* O que já está nos dois cartões de cima (custo e margem), em fatias: a
-          margem é a receita menos o custo, então as duas fatias fecham o
-          vendido. Com margem negativa não há "fatia", e o cartão já mostra o
-          prejuízo em vermelho. */}
-      {mostrarRosca && (
-        <section className="sakura-card p-5" aria-labelledby="divisao-do-vendido-titulo">
-          <h2
-            id="divisao-do-vendido-titulo"
-            className="mb-4 font-titulo text-subtitulo font-semibold text-texto"
-          >
-            Do vendido, quanto é custo e quanto é margem
-          </h2>
-          <GraficoDeRosca
-            descricao="Divisão do vendido entre custo e margem"
-            fatias={[
-              {
-                nome: "Custo",
-                valor: totalCusto,
-                cor: "var(--color-atencao)",
-                texto: formatarMoeda(totalCusto),
-              },
-              {
-                nome: "Margem",
-                valor: totalMargem,
-                cor: "var(--color-acao)",
-                texto: formatarMoeda(totalMargem),
-              },
-            ]}
-          />
-          {algumCustoNaoInformado && (
-            <p className="mt-3 text-rotulo text-texto-2">
-              Item com {TEXTO_CUSTO_NAO_INFORMADO} conta como custo zero: a margem pode estar maior
-              que a real.
-            </p>
-          )}
-        </section>
-      )}
-
-      <p className={`flex items-start gap-2 text-rotulo text-texto-2 ${mostrarRosca ? "col-span-2 self-center" : ""}`}>
+      <p className="flex items-start gap-2 text-rotulo text-texto-2">
         <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
         <span>
           Vendido conta as OS abertas no período, recebidas ou não. O &quot;Recebido no mês&quot; dos
@@ -134,7 +165,29 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           recebidas.
         </span>
       </p>
-      </div>
+
+      {linhas.length > 0 && (
+        <section className="sakura-card p-6" aria-labelledby="onde-esta-o-lucro-titulo">
+          <div className="flex items-center gap-1.5">
+            <h2 id="onde-esta-o-lucro-titulo" className="font-titulo text-subtitulo font-semibold text-texto">
+              Onde está o lucro
+            </h2>
+            <Explicacao
+              titulo="Onde está o lucro"
+              texto="Cada bolha é uma peça ou serviço (as 12 de mais margem; o resto está na tabela). Mais à direita: vende mais. Mais alto: sobra mais de cada venda. Bolha maior: mais lucro em reais. Item com custo não informado fica de fora."
+            />
+          </div>
+          <p className="mb-4 text-rotulo text-texto-2">
+            Mais à direita: vende mais. Mais alto: sobra mais de cada venda. Bolha maior: mais lucro em reais.
+          </p>
+          <GraficoDeBolhas
+            pontos={pontos}
+            margemMedia={mediaDosItens}
+            formatarValor={formatarMoeda}
+            formatarPercentual={formatarPercentual}
+          />
+        </section>
+      )}
 
       {linhas.length === 0 ? (
         <p className="text-corpo text-texto-2">Nenhuma peça ou serviço vendido nesse período.</p>
@@ -155,6 +208,7 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                   <th className="text-right">Receita</th>
                   <th className="text-right">Custo</th>
                   <th className="text-right">Margem</th>
+                  <th className="text-right">Margem %</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,6 +234,9 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
                         </td>
                       </>
                     )}
+                    <td className="text-right">
+                      <MargemPercentual linha={linha} media={mediaDosItens} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -188,5 +245,28 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
         </section>
       )}
     </>
+  );
+}
+
+/** A "Margem %" da linha: verde com seta quando passa da média da loja (cor e seta juntas, regra 4). */
+function MargemPercentual({
+  linha,
+  media,
+}: {
+  linha: { receita: number; margem: number; custoNaoInformado: boolean };
+  media: number | null;
+}) {
+  if (linha.custoNaoInformado) return <span className="text-texto-2">—</span>;
+  const percentual = margemPercentual(linha.receita, linha.margem);
+  if (percentual === null) return <span className="text-texto-2">—</span>;
+  const acima = media !== null && percentual > media;
+  return (
+    <span
+      className={`inline-flex items-center justify-end gap-1 tabular-nums ${acima ? "font-semibold text-ok" : "text-texto-2"}`}
+      title={acima ? "Acima da margem média da loja no período" : undefined}
+    >
+      {acima && <ArrowUp aria-label="acima da média" className="size-[13px]" strokeWidth={2.5} />}
+      {formatarPercentual(percentual)}
+    </span>
   );
 }
