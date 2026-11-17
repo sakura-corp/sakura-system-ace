@@ -16,7 +16,9 @@ interface ComboboxProps {
   className?: string;
   /**
    * A altura do campo: `normal` é a dos outros campos do formulário (44 px);
-   * `filtro` é a dos filtros em cima de uma lista (38 px).
+   * `filtro` é a dos filtros em cima de uma lista (38 px), e também a dos
+   * formulários que ainda usam o campo antigo (os da OS), pra casar com os
+   * campos do lado.
    */
   tamanho?: "normal" | "filtro";
   id?: string;

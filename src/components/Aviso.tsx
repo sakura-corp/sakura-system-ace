@@ -1,4 +1,4 @@
-import { Check, Info, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Check, CircleAlert, Info, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 /**
@@ -20,7 +20,9 @@ export type TipoDeAviso = "perigo" | "atencao" | "ok" | "info";
 
 const APARENCIA: Record<TipoDeAviso, { classes: string; icone: LucideIcon }> = {
   perigo: { classes: "bg-perigo/[0.13] text-perigo", icone: TriangleAlert },
-  atencao: { classes: "bg-atencao/[0.12] text-atencao", icone: TriangleAlert },
+  // Atenção tem o círculo e erro o triângulo: a FORMA também separa os dois,
+  // pra quem não distingue o vermelho do amarelo (regra 4).
+  atencao: { classes: "bg-atencao/[0.12] text-atencao", icone: CircleAlert },
   ok: { classes: "bg-ok/[0.12] text-ok", icone: Check },
   info: { classes: "bg-info/[0.13] text-info", icone: Info },
 };

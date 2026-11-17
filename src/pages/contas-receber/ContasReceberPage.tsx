@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Plus, TriangleAlert } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -35,6 +35,7 @@ import { ReceberContaModal } from "./ReceberContaModal";
 import { SeloDoVencimento } from "@/pages/contas-pagar/SeloDoVencimento";
 import { situacaoDoVencimento } from "@/pages/contas-pagar/vencimento";
 import { formatarMoeda, somar } from "@/schemas/dinheiro";
+import { AvisoDeErro } from "@/components/Aviso";
 
 export function ContasReceberPage() {
   const { operador, lojaAtual } = useAuth();
@@ -179,13 +180,7 @@ export function ContasReceberPage() {
       </header>
 
       {erro && (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <AvisoDeErro>{erro}</AvisoDeErro>
       )}
 
       {mostrarFormulario && (

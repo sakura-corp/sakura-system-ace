@@ -60,8 +60,8 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
           <Botao
             variante="perigo"
             onClick={handleConfirmar}
-            disabled={!justificativaValida || cancelando}
-            aria-busy={cancelando || undefined}
+            disabled={!justificativaValida}
+            ocupado={cancelando}
           >
             {cancelando ? "Cancelando..." : "Confirmar cancelamento"}
           </Botao>

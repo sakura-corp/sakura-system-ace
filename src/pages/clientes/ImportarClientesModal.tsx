@@ -294,7 +294,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               Importações anteriores
             </h3>
             {desfeito && (
-              <div className="rounded-lg bg-ok/[0.12] px-4 py-2 text-corpo text-ok">
+              <AvisoDeCerto>
                 <p>
                   Desfeito: {desfeito.lote.nome_arquivo}. Saíram {desfeito.resultado.clientes_apagados} cliente(s) e{" "}
                   {desfeito.resultado.veiculos_apagados} veículo(s).
@@ -313,7 +313,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                     </ul>
                   </div>
                 )}
-              </div>
+              </AvisoDeCerto>
             )}
             {lotes === null ? (
               <p className="text-corpo text-texto-2">Carregando...</p>

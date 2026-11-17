@@ -1,4 +1,3 @@
-import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -22,6 +21,7 @@ import { CurvaABCSection } from "./CurvaABCSection";
 import { FluxoProjetadoSection } from "./FluxoProjetadoSection";
 import { GraficosSection } from "./GraficosSection";
 import { LucratividadeSection } from "./LucratividadeSection";
+import { AvisoDeErro } from "@/components/Aviso";
 
 type Aba = "graficos" | "lucratividade" | "curvaABC" | "fluxo";
 
@@ -171,15 +171,3 @@ const ABAS: { valor: Aba; nome: string }[] = [
   { valor: "fluxo", nome: "Fluxo de caixa" },
 ];
 
-/** Erro que não some sozinho: ícone e palavra junto da cor (regra 4). */
-function AvisoDeErro({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      role="alert"
-      className="flex items-start gap-2 rounded-xl bg-perigo/[0.13] px-4 py-3 text-corpo text-perigo"
-    >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span className="min-w-0">{children}</span>
-    </p>
-  );
-}

@@ -1,4 +1,5 @@
 import type { AvisoAliquota } from "@/schemas/aliquotaCompetencia";
+import { AvisoDeAtencao } from "@/components/Aviso";
 
 interface AvisoAliquotaCompetenciaProps {
   aviso: AvisoAliquota;
@@ -23,7 +24,7 @@ export function AvisoAliquotaCompetencia({
   if (!aviso.precisa) return null;
 
   return (
-    <div className="rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
+    <AvisoDeAtencao>
       <p className="font-semibold">
         Antes da primeira nota de serviço de {aviso.mes}, cadastre a alíquota da competência no
         portal da prefeitura.
@@ -45,6 +46,6 @@ export function AvisoAliquotaCompetencia({
           {confirmando ? "Guardando..." : "Já cadastrei"}
         </button>
       )}
-    </div>
+    </AvisoDeAtencao>
   );
 }

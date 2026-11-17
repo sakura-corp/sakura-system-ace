@@ -41,7 +41,9 @@ type Lado = "cima" | "direita";
 /** A altura da barra própria da janela (0 sem ela: no navegador, ou fora do Windows). */
 function alturaDaBarraDaJanela(): number {
   if (document.documentElement.dataset.barra !== "propria") return 0;
-  const valor = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--barra-janela"));
+  // Lido do estilo do próprio <html> (quem põe é o src/lib/barraDaJanela.ts),
+  // e não do getComputedStyle: isto roda a cada passo da rolagem.
+  const valor = parseFloat(document.documentElement.style.getPropertyValue("--barra-janela"));
   return Number.isFinite(valor) ? valor : 0;
 }
 

@@ -165,6 +165,7 @@ export function ItemExistenteRow({
 
         {tipo === "peca" ? (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
@@ -174,6 +175,7 @@ export function ItemExistenteRow({
           />
         ) : (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
             valor={servicoId}
@@ -229,6 +231,7 @@ export function ItemExistenteRow({
         <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Técnico
           <Combobox
+            tamanho="filtro"
             opcoes={funcionarios.map((funcionario) => ({
               valor: funcionario.id,
               rotulo: funcionario.nome,

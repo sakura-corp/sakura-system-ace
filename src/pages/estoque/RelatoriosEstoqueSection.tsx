@@ -81,10 +81,10 @@ export function RelatoriosEstoqueSection({
             ativa={filtroSaldo}
             aoEscolher={setFiltroSaldo}
             abas={[
-              { valor: "todos", nome: `Todos (${pecasAtivas.length})` },
-              { valor: "positivo", nome: `Positivo (${quantosPositivos})` },
-              { valor: "negativo", nome: `Negativo (${quantosNegativos})` },
-              { valor: "zerado", nome: `Zerado (${quantosZerados})` },
+              { valor: "todos", nome: "Todos", conta: pecasAtivas.length },
+              { valor: "positivo", nome: "Positivo", conta: quantosPositivos },
+              { valor: "negativo", nome: "Negativo", conta: quantosNegativos },
+              { valor: "zerado", nome: "Zerado", conta: quantosZerados },
             ]}
           />
         </div>
