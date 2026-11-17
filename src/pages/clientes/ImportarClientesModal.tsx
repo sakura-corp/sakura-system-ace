@@ -22,6 +22,7 @@ import {
 } from "@/schemas/importacaoClientes";
 import { decodificarArquivo, lerCsv } from "@/schemas/importacaoPlanilha";
 import type { LoteImportacao, ResultadoDesfazerImportacao } from "@/types/cliente";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/components/Aviso";
 
 interface ImportarClientesModalProps {
   onFechar: () => void;
@@ -267,33 +268,33 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
       }}
     >
       {erro && (
-        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
+        <AvisoDeErro className="mb-4 text-corpo">
           {erro}
-        </p>
+        </AvisoDeErro>
       )}
 
       {passo === "arquivo" && (
         <div className="space-y-6">
-          <p className="text-rotulo text-sakura-muted">Passo 1 de 4: o arquivo</p>
+          <p className="text-rotulo text-texto-2">Passo 1 de 4: o arquivo</p>
           <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Arquivo da planilha (.csv)</span>
+            <span className="text-texto/80">Arquivo da planilha (.csv)</span>
             <input
               type="file"
               accept=".csv,text/csv"
               onChange={(e) => handleArquivo(e.target.files?.[0])}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+              className="rounded-lg border border-borda-campo px-3 py-2 text-corpo focus:border-acao"
             />
           </label>
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             No Excel ou no Google Planilhas: Arquivo, Salvar como (ou Fazer download), CSV.
           </p>
 
           <section aria-labelledby="titulo-anteriores" className="space-y-2">
-            <h3 id="titulo-anteriores" className="text-corpo font-semibold text-sakura-purple-dark">
+            <h3 id="titulo-anteriores" className="text-corpo font-semibold text-texto">
               Importações anteriores
             </h3>
             {desfeito && (
-              <div className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-800">
+              <div className="rounded-lg bg-ok/[0.12] px-4 py-2 text-corpo text-ok">
                 <p>
                   Desfeito: {desfeito.lote.nome_arquivo}. Saíram {desfeito.resultado.clientes_apagados} cliente(s) e{" "}
                   {desfeito.resultado.veiculos_apagados} veículo(s).
@@ -315,13 +316,13 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               </div>
             )}
             {lotes === null ? (
-              <p className="text-corpo text-sakura-muted">Carregando...</p>
+              <p className="text-corpo text-texto-2">Carregando...</p>
             ) : lotes.length === 0 ? (
-              <p className="text-corpo text-sakura-muted">Nenhuma importação ainda.</p>
+              <p className="text-corpo text-texto-2">Nenhuma importação ainda.</p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+              <div className="overflow-x-auto rounded-xl border border-linha">
                 <table className="w-full text-left text-tabela">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                  <thead className="bg-cartao text-texto">
                     <tr>
                       <th className="px-3 py-2 font-medium">Data</th>
                       <th className="px-3 py-2 font-medium">Arquivo</th>
@@ -332,14 +333,14 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                   </thead>
                   <tbody>
                     {lotes.map((lote) => (
-                      <tr key={lote.id} className="border-t border-sakura-gray/20">
+                      <tr key={lote.id} className="border-t border-linha">
                         <td className="px-3 py-1.5">{dataEHora(lote.criado_em)}</td>
                         <td className="px-3 py-1.5">{lote.nome_arquivo}</td>
                         <td className="px-3 py-1.5">{lote.clientes_criados}</td>
                         <td className="px-3 py-1.5">{lote.veiculos_criados}</td>
                         <td className="px-3 py-1.5">
                           {lote.desfeito_em ? (
-                            <span className="text-sakura-muted">Desfeita em {diaBrasileiro(diaLocal(lote.desfeito_em))}</span>
+                            <span className="text-texto-2">Desfeita em {diaBrasileiro(diaLocal(lote.desfeito_em))}</span>
                           ) : confirmandoLote === lote.id ? (
                             <span className="flex flex-wrap items-center gap-2">
                               <span>Apagar o que esta importação trouxe?</span>
@@ -359,7 +360,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                             <button
                               type="button"
                               onClick={() => setConfirmandoLote(lote.id)}
-                              className="rounded-lg border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50"
+                              className="rounded-lg border border-perigo/50 px-3 py-1 text-perigo hover:bg-perigo/10"
                             >
                               Desfazer
                             </button>
@@ -383,13 +384,13 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
 
       {passo === "colunas" && (
         <div className="space-y-4">
-          <p className="text-rotulo text-sakura-muted">Passo 2 de 4: o que é cada coluna</p>
-          <p className="text-corpo text-sakura-purple-dark/80">
+          <p className="text-rotulo text-texto-2">Passo 2 de 4: o que é cada coluna</p>
+          <p className="text-corpo text-texto/80">
             {comoFoiLido}. {linhas.length} linha(s) de dados.
           </p>
-          <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+          <div className="overflow-x-auto rounded-xl border border-linha">
             <table className="w-full text-left text-tabela">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+              <thead className="bg-cartao text-texto">
                 <tr>
                   <th className="px-3 py-2 font-medium">Coluna da planilha</th>
                   <th className="px-3 py-2 font-medium">Exemplos</th>
@@ -400,9 +401,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                 {cabecalho.map((coluna, i) => {
                   const repetida = mapeamento[i] !== "ignorar" && mapeamento.indexOf(mapeamento[i]) !== i;
                   return (
-                    <tr key={i} className="border-t border-sakura-gray/20 align-top">
+                    <tr key={i} className="border-t border-linha align-top">
                       <td className="px-3 py-1.5 font-medium">{coluna || `(coluna ${i + 1})`}</td>
-                      <td className="px-3 py-1.5 text-sakura-muted">
+                      <td className="px-3 py-1.5 text-texto-2">
                         {exemplos(i).map((e) => (
                           <div key={e}>{e}</div>
                         ))}
@@ -416,7 +417,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                               atual.map((c, j) => (j === i ? (e.target.value as CampoImportacao) : c)),
                             )
                           }
-                          className="rounded border border-sakura-borda-campo px-2 py-1 focus:border-sakura-purple"
+                          className="rounded border border-borda-campo px-2 py-1 focus:border-acao"
                         >
                           {CAMPOS_IMPORTACAO.map((c) => (
                             <option key={c.campo} value={c.campo}>
@@ -425,7 +426,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                           ))}
                         </select>
                         {repetida && (
-                          <p className="mt-1 text-rotulo text-amber-800">
+                          <p className="mt-1 text-rotulo text-atencao">
                             Já escolhido em outra coluna: esta não vai ser usada.
                           </p>
                         )}
@@ -437,9 +438,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
             </table>
           </div>
           {!temNome && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               Escolha qual coluna é o <strong>Nome</strong>: sem ela não dá pra importar.
-            </p>
+            </AvisoDeAtencao>
           )}
           <div className="flex justify-end gap-3">
             <Botao variante="fantasma" onClick={() => setPasso("arquivo")}>
@@ -454,7 +455,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
 
       {passo === "revisar" && conferencia && (
         <div className="space-y-4">
-          <p className="text-rotulo text-sakura-muted">Passo 3 de 4: revisar</p>
+          <p className="text-rotulo text-texto-2">Passo 3 de 4: revisar</p>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             {[
               ["resumo-entram", "Entram", conferencia.resumo.entram],
@@ -463,21 +464,21 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               ["resumo-clientes-novos", "Clientes novos", conferencia.resumo.clientesNovos],
               ["resumo-veiculos-novos", "Veículos novos", conferencia.resumo.veiculosNovos],
             ].map(([id, rotulo, valor]) => (
-              <div key={id} className="rounded-xl bg-sakura-pink-soft px-3 py-2">
-                <dt className="text-rotulo text-sakura-muted">{rotulo}</dt>
-                <dd data-testid={id as string} className="text-titulo font-semibold text-sakura-purple-dark">
+              <div key={id} className="rounded-xl bg-cartao px-3 py-2">
+                <dt className="text-rotulo text-texto-2">{rotulo}</dt>
+                <dd data-testid={id as string} className="text-titulo font-semibold text-texto">
                   {valor}
                 </dd>
               </div>
             ))}
           </dl>
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             Linha que já existe só é pulada: o cadastro de quem já está lá nunca muda. Os campos abaixo dá pra
             corrigir aqui mesmo.
           </p>
 
           <label className="flex items-center gap-2 text-corpo">
-            <span className="text-sakura-purple-dark/80">Mostrar</span>
+            <span className="text-texto/80">Mostrar</span>
             <select
               aria-label="Mostrar"
               value={filtro}
@@ -491,7 +492,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                 );
                 setQuantasMostrar(LINHAS_POR_VEZ);
               }}
-              className="rounded border border-sakura-borda-campo px-2 py-1 focus:border-sakura-purple"
+              className="rounded border border-borda-campo px-2 py-1 focus:border-acao"
             >
               <option value="todas">Todas as linhas</option>
               <option value="problema">Só com problema</option>
@@ -499,9 +500,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
             </select>
           </label>
 
-          <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
+          <div className="overflow-x-auto rounded-xl border border-linha">
             <table className="w-full min-w-[900px] text-left text-tabela">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+              <thead className="bg-cartao text-texto">
                 <tr>
                   <th className="px-2 py-2 font-medium">Linha</th>
                   <th className="px-2 py-2 font-medium">Situação</th>
@@ -515,16 +516,16 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               </thead>
               <tbody>
                 {visiveis.slice(0, quantasMostrar).map(({ linha, indice }) => (
-                  <tr key={indice} data-testid={`linha-${linha.linha}`} className="border-t border-sakura-gray/20 align-top">
+                  <tr key={indice} data-testid={`linha-${linha.linha}`} className="border-t border-linha align-top">
                     <td className="px-2 py-1.5">{linha.linha}</td>
                     <td className="px-2 py-1.5">
                       <span
                         className={
                           linha.situacao === "problema"
-                            ? "rounded bg-red-50 px-1.5 font-medium text-red-700"
+                            ? "rounded bg-perigo/[0.13] px-1.5 font-medium text-perigo"
                             : linha.situacao === "ja_existe"
-                              ? "rounded bg-amber-50 px-1.5 font-medium text-amber-800"
-                              : "rounded bg-emerald-50 px-1.5 font-medium text-emerald-700"
+                              ? "rounded bg-atencao/[0.12] px-1.5 font-medium text-atencao"
+                              : "rounded bg-ok/[0.12] px-1.5 font-medium text-ok"
                         }
                       >
                         {NOME_DA_SITUACAO[linha.situacao]}
@@ -537,18 +538,18 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
                           aria-label={`${ROTULO_DO_CAMPO[mapeamento[c]]} da linha ${linha.linha}`}
                           value={linhas[indice][c] ?? ""}
                           onChange={(e) => editarCelula(indice, c, e.target.value)}
-                          className="w-32 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                          className="w-32 rounded border border-borda-campo px-1.5 py-1 focus:border-acao"
                         />
                       </td>
                     ))}
                     <td className="px-2 py-1.5">
                       {linha.problemas.map((p) => (
-                        <p key={p} className="mb-0.5 w-fit rounded bg-red-50 px-1.5 text-red-700">
+                        <p key={p} className="mb-0.5 w-fit rounded bg-perigo/[0.13] px-1.5 text-perigo">
                           {p}
                         </p>
                       ))}
                       {linha.avisos.map((a) => (
-                        <p key={a} className="mb-0.5 w-fit rounded bg-amber-50 px-1.5 text-amber-800">
+                        <p key={a} className="mb-0.5 w-fit rounded bg-atencao/[0.12] px-1.5 text-atencao">
                           {a}
                         </p>
                       ))}
@@ -558,9 +559,9 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
               </tbody>
             </table>
           </div>
-          {visiveis.length === 0 && <p className="text-corpo text-sakura-muted">Nenhuma linha neste filtro.</p>}
+          {visiveis.length === 0 && <p className="text-corpo text-texto-2">Nenhuma linha neste filtro.</p>}
           {visiveis.length > quantasMostrar && (
-            <p className="flex items-center gap-3 text-corpo text-sakura-muted">
+            <p className="flex items-center gap-3 text-corpo text-texto-2">
               Mostrando {quantasMostrar} de {visiveis.length} linhas: faltam {visiveis.length - quantasMostrar} linhas.
               <Botao variante="fantasma" onClick={() => setQuantasMostrar((n) => n + LINHAS_POR_VEZ)}>
                 Mostrar mais {LINHAS_POR_VEZ}
@@ -585,10 +586,10 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
 
       {passo === "confirmar" && conferencia && (
         <div className="space-y-4">
-          <p className="text-rotulo text-sakura-muted">Passo 4 de 4: confirmar</p>
+          <p className="text-rotulo text-texto-2">Passo 4 de 4: confirmar</p>
           {ocupado ? (
             <div className="space-y-2" aria-live="polite">
-              <p className="text-corpo font-medium text-sakura-purple-dark">Gravando...</p>
+              <p className="text-corpo font-medium text-texto">Gravando...</p>
               <progress
                 className="w-full"
                 max={Math.max(andamento[1], 1)}
@@ -602,12 +603,12 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
           ) : (
             <>
               {gravacaoParou ? (
-                <p className="text-corpo text-sakura-purple-dark">
+                <p className="text-corpo text-texto">
                   A gravação parou. Para não duplicar nada, a conferência será refeita com o cadastro atualizado: o
                   que já entrou vai aparecer como &quot;Já existe&quot;.
                 </p>
               ) : (
-              <p className="text-corpo text-sakura-purple-dark">
+              <p className="text-corpo text-texto">
                 Vão ser gravados <strong>{conferencia.resumo.clientesNovos}</strong> cliente(s) novo(s) e{" "}
                 <strong>{conferencia.resumo.veiculosNovos}</strong> veículo(s) novo(s).{" "}
                 {conferencia.resumo.jaExistem + conferencia.resumo.comProblema > 0 &&
@@ -638,14 +639,14 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
 
       {passo === "feito" && conferencia && entrada && (
         <div className="space-y-4">
-          <p className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-800">
+          <AvisoDeCerto className="text-corpo">
             Pronto: {entrada.clientesCriados} cliente(s) e {entrada.veiculosCriados} veículo(s) entraram.
-          </p>
+          </AvisoDeCerto>
           {entrada.avisoNumerosDoLote && (
-            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+            <AvisoDeAtencao className="text-corpo">
               Os números do lote não foram gravados, mas tudo entrou. Na lista de importações anteriores essa
               importação pode aparecer com 0 cliente(s) e 0 veículo(s); o Desfazer continua valendo.
-            </p>
+            </AvisoDeAtencao>
           )}
           <ul className="list-disc pl-5 text-corpo">
             <li>{conferencia.resumo.jaExistem} linha(s) já existiam e foram puladas.</li>
@@ -653,7 +654,7 @@ export function ImportarClientesModal({ onFechar, onConcluido }: ImportarCliente
           </ul>
           {conferencia.resumo.comProblema > 0 && (
             <div>
-              <p className="text-corpo font-medium text-sakura-purple-dark">Linhas que não entraram:</p>
+              <p className="text-corpo font-medium text-texto">Linhas que não entraram:</p>
               <ul className="list-disc pl-5 text-corpo">
                 {conferencia.linhas
                   .filter((l) => l.situacao === "problema")

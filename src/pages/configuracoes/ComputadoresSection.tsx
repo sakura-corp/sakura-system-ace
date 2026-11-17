@@ -23,7 +23,7 @@ import {
 } from "@/schemas/computadores";
 import { rotuloDeIdade } from "@/schemas/painelInicio";
 import type { Computador } from "@/types/computador";
-import { MensagemDeErro } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // "Em que versão está cada computador da empresa?" (migration 0063). Cada
 // computador se registra sozinho a cada login — nada aqui é cadastro. O que
@@ -81,7 +81,7 @@ export function ComputadoresSection() {
 
   if (!computadores) {
     return erro ? (
-      <MensagemDeErro>{erro}</MensagemDeErro>
+      <AvisoDeErro>{erro}</AvisoDeErro>
     ) : (
       <p className="text-corpo text-texto-2">Carregando...</p>
     );
@@ -175,7 +175,7 @@ export function ComputadoresSection() {
 
   return (
     <>
-      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
 
       <p className="text-corpo text-texto-2">
         Cada computador aparece aqui sozinho, na primeira vez que alguém entra nele numa versão que

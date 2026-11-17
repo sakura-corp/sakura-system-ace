@@ -23,7 +23,7 @@ export function AparenciaSection() {
           return (
             <label
               key={tema}
-              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-sakura-focus ${
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-foco ${
                 escolhido ? "border-acao bg-acao/10" : "border-linha-forte hover:bg-passar"
               }`}
             >

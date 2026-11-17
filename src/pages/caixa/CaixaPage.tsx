@@ -13,7 +13,7 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
-import { Aviso } from "./Aviso";
+import { Aviso } from "@/components/Aviso";
 import { FechamentoSection } from "./FechamentoSection";
 
 type Aba = "diario" | "entradas" | "saidas" | "fechamento";
@@ -133,7 +133,7 @@ export function CaixaPage() {
       </header>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}

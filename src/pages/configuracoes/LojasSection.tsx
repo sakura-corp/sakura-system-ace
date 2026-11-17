@@ -15,7 +15,8 @@ import {
   type LojaFormValues,
 } from "@/schemas/loja";
 import type { Loja } from "@/types/loja";
-import { BotaoDeLista, MensagemDeErro } from "./pecas";
+import { BotaoDeLista } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface LojasSectionProps {
   lojas: Loja[];
@@ -74,7 +75,7 @@ export function LojasSection({ lojas, operadorCriadorId, onSalvo }: LojasSection
 
   return (
     <>
-      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
 
       <form
         onSubmit={handleSubmit(aoAdicionar)}

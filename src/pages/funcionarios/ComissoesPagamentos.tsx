@@ -16,7 +16,7 @@ import type { ComissaoFuncionario } from "@/schemas/comissoes";
 import { retratoDaLinha, type JaPagoEmOutroPeriodo } from "@/schemas/comissoesPagas";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
-import { AvisoDaTela } from "./AvisoDaTela";
+import { Aviso } from "@/components/Aviso";
 import { MensagemDeErro } from "./campos/FormCompartilhado";
 
 const campo = "sakura-campo";
@@ -108,13 +108,13 @@ export function RegistrarPagamentoModal({
         </p>
 
         {jaPago.valor !== 0 && (
-          <AvisoDaTela tipo="atencao">
+          <Aviso tipo="atencao">
             Cuidado: {formatarMoeda(jaPago.valor)} desse valor vem de OS que já entraram num pagamento
             anterior (OS {jaPago.numeros.join(", ")}). Confira pra não pagar duas vezes.
-          </AvisoDaTela>
+          </Aviso>
         )}
 
-        {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
+        {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
         <div className="grid grid-cols-2 gap-4">
           <label className="sakura-rotulo">
@@ -223,9 +223,9 @@ export function HistoricoPagamentos({
     <section>
       <h2 className="mb-3 text-corpo font-semibold text-texto">Pagamentos já registrados</h2>
       {erro && (
-        <AvisoDaTela tipo="perigo" className="mb-3">
+        <Aviso tipo="perigo" role="alert" className="mb-3">
           {erro}
-        </AvisoDaTela>
+        </Aviso>
       )}
       <div className="sakura-card overflow-hidden">
         <div className="overflow-x-auto">

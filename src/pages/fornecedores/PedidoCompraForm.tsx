@@ -18,7 +18,8 @@ import {
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
-import { AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
+import { CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 import { PedidoCompraItemRow } from "./PedidoCompraItemRow";
 
 interface PedidoCompraFormProps {

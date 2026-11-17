@@ -376,7 +376,9 @@ do tema claro são outras, mais escuras.
 
 > **Andamento em 16/11**: na `main`: Clientes, veículo e Garantias (#1057); Estoque, Fornecedores e
 > Serviços (#1059); Caixa (#1058); Contas (#1056); Notas Fiscais (#1060); Funcionários (#1066).
-> Orçamentos entrou na tarefa 7. Faltam: Relações, Configurações/Auditoria/Diagnóstico (#1062) e os tokens.
+> Orçamentos entrou na tarefa 7. Depois: Configurações/Auditoria/Diagnóstico (#1062) e Relações
+> (#1076). **17/11**: a faxina dos tokens antigos e a tarefa das sugestões das telas (os PRs da
+> faxina e das peças, citados na #990).
 
 Uma tarefa por grupo do menu, cada uma depois do "sim" da Sofia no Início:
 Clientes e a ficha do veículo; Orçamentos e Garantias; Estoque, Fornecedores e Serviços; Caixa

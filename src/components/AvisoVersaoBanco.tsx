@@ -30,7 +30,7 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
 
   if (situacao.estado === "app_atrasado") {
     return (
-      <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+      <div className="mb-4 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
         <p className="font-semibold">
           O banco desta empresa já recebeu uma atualização que este computador ainda não tem.
         </p>
@@ -44,7 +44,7 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
   }
 
   return (
-    <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+    <div className="mb-4 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
       <p className="font-semibold">
         O programa foi atualizado, mas o banco desta empresa ainda não.
       </p>
@@ -54,7 +54,7 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
       </p>
       {/* Migration entra só pelo botão "Atualizar o banco de todas as empresas"
           (docs/operacao.md), nunca colada à mão no SQL Editor (#725). */}
-      <p className="mt-2 text-rotulo text-amber-900">
+      <p className="mt-2 text-rotulo text-atencao">
         Quem cuida do sistema precisa atualizar o banco desta empresa (
         {situacao.faltando.length > 1 ? "faltam as atualizações" : "falta a atualização"}{" "}
         <span className="font-semibold">{situacao.faltando.join(", ")}</span>).

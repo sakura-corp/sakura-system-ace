@@ -21,7 +21,7 @@ import { contaNosNumeros } from "@/schemas/orcamento";
 import { NOTA_LABEL, situacaoDaNota } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo, TipoNotaFiscal } from "@/types/notaFiscal";
 import { nomeOrdem, type OrdemParaNotas } from "@/types/os";
-import { AvisoNaTela } from "./AvisoNaTela";
+import { AvisoDeErro } from "@/components/Aviso";
 import { CancelarNotaModal } from "./CancelarNotaModal";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 import { VerDanfeModal } from "./VerDanfeModal";
@@ -302,7 +302,7 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
 
   return (
     <div className="space-y-4">
-      {erro && <AvisoNaTela>{erro}</AvisoNaTela>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {!mostrarFormulario && (
         <div className="flex justify-end">

@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { baixarDiagnostico, coletarDiagnostico } from "@/lib/diagnostico";
 import { mensagemDeErro } from "@/lib/errors";
-import { MensagemDeErro } from "@/pages/configuracoes/pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 import {
   descreverEsquema,
   montarResumo,
@@ -145,7 +145,7 @@ export function DiagnosticoPage() {
         </div>
       </header>
 
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="flex flex-wrap gap-3">
         <Botao

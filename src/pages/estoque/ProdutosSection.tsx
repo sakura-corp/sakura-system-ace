@@ -26,7 +26,7 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { Dica } from "@/components/Dica";
 import { Selo, type TipoDeSelo } from "@/components/Selo";
-import { AvisoDeErro } from "./avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // "Importar por foto/PDF" desligado a pedido dela (25/09/2026), até ela
 // decidir o que fazer com a leitura por IA. O código continua todo aqui:

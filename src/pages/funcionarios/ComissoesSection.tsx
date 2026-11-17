@@ -20,7 +20,7 @@ import {
   pagamentoDoPeriodo,
 } from "@/schemas/comissoesPagas";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
-import { AvisoDaTela } from "./AvisoDaTela";
+import { Aviso } from "@/components/Aviso";
 import {
   HistoricoPagamentos,
   ReciboComissaoModal,
@@ -188,47 +188,47 @@ export function ComissoesSection({
           verdade. Estava dentro do cartão do lucro; com o cartão de número
           (que só leva o valor), a frase ficou logo abaixo dos três cartões. */}
       {colunaLucroSomaMais && (
-        <AvisoDaTela tipo="info">
+        <Aviso tipo="info">
           A coluna "Lucro gerado" soma mais porque o lucro de um item conta pra quem vendeu a OS e
           pra quem fez o item.
-        </AvisoDaTela>
+        </Aviso>
       )}
 
       {totais.comissaoAReceber > 0 && (
-        <AvisoDaTela tipo="atencao">
+        <Aviso tipo="atencao">
           {formatarMoeda(totais.comissaoAReceber)} dessa comissão vem de OS faturada como "a
           receber depois", que o cliente ainda não pagou.
-        </AvisoDaTela>
+        </Aviso>
       )}
 
       {totais.itensSemCusto > 0 && (
-        <AvisoDaTela tipo="atencao">
+        <Aviso tipo="atencao">
           {totais.itensSemCusto === 1
             ? "1 item vendido no período está sem preço de custo cadastrado"
             : `${totais.itensSemCusto} itens vendidos no período estão sem preço de custo cadastrado`}
           . Eles entram como lucro cheio, então a comissão sai maior que a real — vale conferir o
           cadastro dessas peças/serviços antes de pagar.
-        </AvisoDaTela>
+        </Aviso>
       )}
 
       {semPercentual.length > 0 && (
-        <AvisoDaTela tipo="atencao">
+        <Aviso tipo="atencao">
           Sem porcentagem de comissão cadastrada:{" "}
           {semPercentual.map((linha) => linha.nome).join(", ")}. A comissão deles fica em zero até
           preencher o campo "Comissão (%)" no cadastro do funcionário.
-        </AvisoDaTela>
+        </Aviso>
       )}
 
       {semDono && (
-        <AvisoDaTela tipo="atencao">
+        <Aviso tipo="atencao">
           {formatarMoeda(semDono.lucroTotal)} de lucro ficou sem
           dono no período — OS sem vendedor escolhido, ou item sem técnico. Esse valor não gera
           comissão pra ninguém.
-        </AvisoDaTela>
+        </Aviso>
       )}
 
       {divergencias.map(({ pagamento, comparacao }) => (
-        <AvisoDaTela key={pagamento.id} tipo="atencao">
+        <Aviso key={pagamento.id} tipo="atencao">
           <p className="font-medium">
             A comissão de {pagamento.funcionario_nome} mudou depois do pagamento de{" "}
             {diaBrasileiro(pagamento.data_pagamento)}.
@@ -247,14 +247,14 @@ export function ComissoesSection({
               </li>
             ))}
           </ul>
-        </AvisoDaTela>
+        </Aviso>
       ))}
 
       {jaPagosEmOutros.map(({ linha, jaPago }) => (
-        <AvisoDaTela key={linha.funcionarioId} tipo="atencao">
+        <Aviso key={linha.funcionarioId} tipo="atencao">
           {formatarMoeda(jaPago.valor)} da comissão de {linha.nome} neste período vem de OS que já
           entraram num pagamento anterior (OS {jaPago.numeros.join(", ")}). Confira antes de pagar de novo.
-        </AvisoDaTela>
+        </Aviso>
       ))}
 
       {linhas.length === 0 ? (

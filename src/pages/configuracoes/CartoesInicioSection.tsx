@@ -4,7 +4,8 @@ import { salvarConfiguracaoPainelInicio } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { CARTAO_METRICA_LABEL, CARTOES_INICIO_PADRAO } from "@/types/configuracao";
 import type { CartaoMetrica } from "@/types/configuracao";
-import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface CartoesInicioSectionProps {
   cartoes: CartaoMetrica[];
@@ -51,7 +52,7 @@ export function CartoesInicioSection({
 
   return (
     <>
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
       <div className="grid gap-4 sm:grid-cols-3">
         {valores.map((valor, indice) => (
           <label key={indice} className="sakura-rotulo">

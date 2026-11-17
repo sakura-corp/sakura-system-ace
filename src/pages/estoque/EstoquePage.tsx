@@ -23,7 +23,8 @@ import { ContagemSection } from "./ContagemSection";
 import { MovimentacoesSection } from "./MovimentacoesSection";
 import { ProdutosSection } from "./ProdutosSection";
 import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
-import { AbasDaTela, AvisoDeAtencao, AvisoDeErro } from "./avisosEAbas";
+import { AbasDaTela } from "./avisosEAbas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 type Aba = "produtos" | "movimentacoes" | "contagem" | "relatorios";
 

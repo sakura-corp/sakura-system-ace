@@ -16,7 +16,7 @@ import type { OrdemParaComissao } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { ComissoesSection } from "./ComissoesSection";
-import { AvisoDaTela } from "./AvisoDaTela";
+import { Aviso } from "@/components/Aviso";
 import { AbaBotao } from "./campos/FormCompartilhado";
 import { FuncionariosSection } from "./FuncionariosSection";
 
@@ -148,7 +148,7 @@ export function FuncionariosPage() {
         </div>
       </header>
 
-      {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
+      {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
       <div className="flex gap-1 border-b border-linha">
         <AbaBotao label="Cadastro" ativa={aba === "cadastro"} onClick={() => setAba("cadastro")} />
@@ -163,9 +163,9 @@ export function FuncionariosPage() {
         carregando ? (
           <p className="text-corpo text-texto-2">Carregando...</p>
         ) : !lojaAtual ? (
-          <AvisoDaTela tipo="atencao">
+          <Aviso tipo="atencao">
             Seu usuário não tem loja atribuída. Fale com o administrador.
-          </AvisoDaTela>
+          </Aviso>
         ) : (
           <FuncionariosSection
             funcionarios={funcionariosNaTela}

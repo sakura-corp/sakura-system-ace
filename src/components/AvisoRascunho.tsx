@@ -15,20 +15,20 @@ export function AvisoRascunho({
   onDescartar,
 }: AvisoRascunhoProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-atencao/[0.12] px-4 py-2 text-corpo text-atencao">
       <span>Encontramos um rascunho não salvo {descricao}. Restaurar?</span>
       <div className="flex shrink-0 gap-2">
         <button
           type="button"
           onClick={onDescartar}
-          className="rounded-lg px-3 py-1 text-rotulo font-medium text-amber-800 hover:bg-amber-100"
+          className="rounded-lg px-3 py-1 text-rotulo font-medium text-atencao hover:bg-atencao/[0.2]"
         >
           Descartar
         </button>
         <button
           type="button"
           onClick={onRestaurar}
-          className="rounded-lg bg-amber-600 px-3 py-1 text-rotulo font-medium text-white hover:opacity-90"
+          className="rounded-lg bg-atencao px-3 py-1 text-rotulo font-medium text-fundo hover:opacity-90"
         >
           Restaurar
         </button>

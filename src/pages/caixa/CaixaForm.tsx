@@ -14,7 +14,7 @@ import {
 } from "@/schemas/caixa";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { NovoMovimentoCaixa, TipoCaixa } from "@/types/caixa";
-import { Aviso } from "./Aviso";
+import { Aviso } from "@/components/Aviso";
 
 interface CaixaFormProps {
   categorias: CategoriaCaixa[];
@@ -69,7 +69,7 @@ export function CaixaForm({
       </div>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}

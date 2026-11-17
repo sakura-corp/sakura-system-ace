@@ -11,47 +11,9 @@
 
 @theme {
   /* Paleta do visual novo (#990, 14/11/2026): laranja com carmesim, escuro.
-     As regras estão em docs/referencia/visual-novo/README.md.
-
-     ⚠️ Os NOMES abaixo são os antigos, do tema rosa e roxo, e mentem: o
-     "sakura-purple" hoje é o LARANJA de ação, o "sakura-pink" é o laranja
-     claro (passar o mouse, ícone ativo). Foi de propósito: trocar só o valor
-     muda as 54 telas num arquivo só, sem tocar em nenhuma (seção 10 das
-     regras). Tela nova usa os nomes de PAPEL, mais abaixo; os antigos só
-     saem quando nenhuma tela usar mais. */
-  --color-sakura-pink: #ff7a4d; /* = acao-clara */
-  --color-sakura-purple: #ff5722; /* = acao. Letra em cima dele é ESCURA (sobre-acao), nunca branca */
-  --color-sakura-gray: #2c2c35;
-
-  /* Borda dos campos de formulário (input/select/textarea).
-     NÃO é o mesmo cinza das bordas de tabela e de card: os campos ficam em
-     cima do vidro do sakura-card, e ali o sakura-gray a 40% compunha
-     1,15:1 contra o fundo — bem abaixo dos 3:1 que a WCAG 1.4.11 pede pra
-     contorno de componente. Na prática a caixa do campo quase não existia,
-     que foi o achado mais forte da varredura de contraste (TR-01.3).
-     Depois da troca: 3,13:1 medido no cadastro de cliente, e a varredura
-     das 54 telas não acha mais nenhum campo abaixo de 3:1.
-
-     É branco com transparência, e não uma cor sólida, de propósito: assim a
-     borda se compõe com o que estiver atrás dela (o card é translúcido e
-     muda de tom por tela) em vez de virar uma faixa opaca num fundo que não
-     é o previsto. É a mesma linguagem que o próprio sakura-card já usa nas
-     bordas dele. Mexer na opacidade daqui muda TODO formulário do app. */
-  --color-sakura-borda-campo: rgba(255, 255, 255, 0.35);
-
-  /* Superfícies escuras e o texto. O "purple-dark" é uma cor CLARA (o texto
-     principal); o "pink-soft" é o tom do cartão. */
-  --color-sakura-purple-dark: #f4f4f5;
-  --color-sakura-pink-soft: #191920; /* = cartao */
-  --color-sakura-bg: #0a0a0d; /* = fundo */
-
-  /* Texto secundário: 6,8:1 contra o cartão */
-  --color-sakura-muted: #a1a1aa; /* = texto-2 */
-
-  /* Cor do anel de foco de teclado. Clara de propósito: o anel precisa
-     aparecer sobre o fundo quase preto do app e sobre o vidro do
-     sakura-card. Ver o bloco ":focus-visible" mais abaixo. */
-  --color-sakura-focus: #ffb199;
+     As regras estão em docs/referencia/visual-novo/README.md. Os nomes
+     antigos do tema rosa e roxo (`sakura-purple`, `sakura-purple-dark`…)
+     saíram em 17/11/2026: toda tela usa os nomes de PAPEL, logo abaixo. */
 
   /* ------------------------------------------------------------------
      As cores com nome de PAPEL (seção 3 das regras do visual novo).
@@ -76,6 +38,9 @@
   --color-janela: #16161c; /* janela (modal): opaca */
   --color-linha: rgba(255, 255, 255, 0.08); /* divisória de tabela, borda de cartão */
   --color-linha-forte: rgba(255, 255, 255, 0.16); /* borda de botão secundário, de janela */
+  /* A borda de campo NÃO é a das tabelas e cartões: com o cinza delas a caixa
+     do campo quase sumia (1,15:1; TR-01.3). Branco com transparência, pra
+     se compor com o fundo que estiver atrás. Mexer aqui muda todo formulário. */
   --color-borda-campo: rgba(255, 255, 255, 0.35); /* 3,1:1 contra o cartão */
   --color-texto: #ffffff;
   --color-texto-2: #a1a1aa; /* secundário: 6,8:1 no cartão */
@@ -83,7 +48,10 @@
   --color-carmesim: #e11d48; /* só marca (regra 1) */
   --color-carmesim-fundo: #6b1229; /* base do cartão de destaque */
   --color-acao: #ff5722; /* botão principal (regra 2) */
-  --color-acao-clara: #ff7a4d; /* passar o mouse, ícone ativo, anel de foco */
+  --color-acao-clara: #ff7a4d; /* passar o mouse, ícone ativo */
+  /* O anel de foco do teclado (bloco ":focus-visible" mais abaixo): claro de
+     propósito, pra aparecer no fundo quase preto e no cartão. */
+  --color-foco: #ffb199;
   --color-sobre-acao: #1b0b05; /* a letra em cima do laranja (regra 3): 6,1:1 */
   --color-info: #60a5fa; /* em andamento */
   --color-atencao: #facc15;
@@ -100,34 +68,17 @@
      No escuro é o mesmo laranja do botão; no tema claro o laranja do botão em
      cima do branco dá 3,2:1, então a letra usa um laranja mais fundo. O
      Tailwind deixa dar um valor só pra cor de letra (`--text-color-*`): assim
-     `text-sakura-pink` e `bg-sakura-pink` podem ter valores diferentes sem
-     nenhuma tela mudar de classe. */
-  --text-color-sakura-pink: #ff7a4d;
-  --text-color-sakura-purple: #ff5722;
+     `text-acao` e `bg-acao` podem ter valores diferentes sem nenhuma tela
+     mudar de classe. */
   --text-color-acao: #ff5722;
   --text-color-acao-clara: #ff7a4d;
 
-  /* Os tons CLAROS da paleta do Tailwind que as telas antigas usam como letra
-     de aviso (text-red-400, text-amber-300…). No escuro são os de sempre; no
-     tema claro, em fundo branco, dão de 1,3:1 a 3,8:1, e viram as cores de
-     aviso do tema. Mesmo truque do laranja: só a cor de LETRA ganha valor
-     próprio. Saem quando as telas passarem a usar o Selo e os nomes de papel. */
-  --text-color-red-300: oklch(80.8% 0.114 19.571);
-  --text-color-red-400: oklch(70.4% 0.191 22.216);
-  --text-color-red-500: oklch(63.7% 0.237 25.331);
-  --text-color-amber-200: oklch(92.4% 0.12 95.746);
-  --text-color-amber-300: oklch(87.9% 0.169 91.605);
-  --text-color-amber-400: oklch(82.8% 0.189 84.429);
-  --text-color-emerald-300: oklch(84.5% 0.143 164.978);
-  --text-color-emerald-400: oklch(76.5% 0.177 163.223);
-  --background-color-red-950: oklch(25.8% 0.092 26.042); /* a faixa de erro escura (Caixa) */
-  --background-color-amber-950: oklch(27.9% 0.077 45.635); /* a faixa de aviso escura (Comissões, Caixa) */
-  /* O laranja de BORDA e de anel (o foco dos campos antigos): no claro, o
-     laranja do botão contra o fundo dá 2,6:1 a 2,8:1; o contorno pede 3:1. */
-  --border-color-sakura-pink: #ff7a4d;
-  --border-color-sakura-purple: #ff5722;
-  --ring-color-sakura-pink: #ff7a4d;
-  --ring-color-sakura-purple: #ff5722;
+  /* O laranja de BORDA e de anel (o foco dos campos): no claro, o laranja do
+     botão contra o fundo dá 2,6:1 a 2,8:1; o contorno pede 3:1. */
+  --border-color-acao: #ff5722;
+  --border-color-acao-clara: #ff7a4d;
+  --ring-color-acao: #ff5722;
+  --ring-color-acao-clara: #ff7a4d;
 
   /* As duas letras vão DENTRO do programa (importadas no src/main.tsx, dos
      pacotes @fontsource-variable): ele roda sem internet, e em PC sem a Inter
@@ -238,9 +189,8 @@
 
    Liga com `data-tema="claro"` no <html> (quem põe é o src/lib/tema.ts, pela
    escolha guardada neste computador; o padrão é o escuro). Só troca VALOR:
-   nenhuma tela tem classe de tema. Vale pros nomes de papel e pros nomes
-   antigos (`sakura-purple-dark` é o texto, `sakura-pink-soft` é o cartão…),
-   porque as 54 telas ainda usam os antigos.
+   nenhuma tela tem classe de tema: as telas usam os nomes de papel, e só o
+   valor deles muda aqui.
 
    O que muda de ideia, e não só de tom:
      - as cores de aviso são MAIS ESCURAS: o amarelo e o verde do tema escuro
@@ -274,33 +224,13 @@
   --color-sobre-dica: #ffffff;
   --color-placa: #ffffff;
   --color-poco: rgba(27, 17, 10, 0.05);
-  --text-color-sakura-pink: #ad3508;
-  --text-color-sakura-purple: #ad3508;
   --text-color-acao: #ad3508;
   --text-color-acao-clara: #ad3508;
-  --text-color-red-300: #b91c1c;
-  --text-color-red-400: #b91c1c;
-  --text-color-red-500: #b91c1c;
-  --text-color-amber-200: #7a4a00;
-  --text-color-amber-300: #8a5300;
-  --text-color-amber-400: #8a5300;
-  --text-color-emerald-300: #05694d;
-  --text-color-emerald-400: #05694d;
-  --background-color-red-950: #f2a3a3; /* a 60% sobre o branco: um vermelho pálido */
-  --background-color-amber-950: #f0b040; /* a 40% sobre o branco: um amarelo pálido */
-  --border-color-sakura-pink: #d9430f;
-  --border-color-sakura-purple: #d9430f;
-  --ring-color-sakura-pink: #d9430f;
-  --ring-color-sakura-purple: #d9430f;
-
-  /* Os nomes antigos, com o valor do papel que cada um faz. */
-  --color-sakura-bg: #f3f2ef;
-  --color-sakura-pink-soft: #ffffff;
-  --color-sakura-gray: #55555e;
-  --color-sakura-purple-dark: #1b1b1f;
-  --color-sakura-muted: #55555e;
-  --color-sakura-borda-campo: rgba(27, 17, 10, 0.55);
-  --color-sakura-focus: #ad3508;
+  --border-color-acao: #d9430f;
+  --border-color-acao-clara: #d9430f;
+  --ring-color-acao: #d9430f;
+  --ring-color-acao-clara: #d9430f;
+  --color-foco: #ad3508;
 
   --foco-anel-de-dentro: rgba(255, 255, 255, 0.95);
   --foco-brilho: rgba(255, 87, 34, 0.35);
@@ -335,9 +265,9 @@
 }
 
 body {
-  background-color: var(--color-sakura-bg);
+  background-color: var(--color-fundo);
   font-family: var(--font-sans);
-  color: var(--color-sakura-purple-dark);
+  color: var(--color-texto);
 }
 
 /* Título de tela e de seção na letra dos títulos (Plus Jakarta Sans). O
@@ -356,7 +286,7 @@ textarea {
 }
 
 option {
-  background-color: var(--color-sakura-pink-soft); /* o tom do cartão, pra ler bem */
+  background-color: var(--color-cartao); /* o tom do cartão, pra ler bem */
   color: var(--color-texto);
 }
 
@@ -430,7 +360,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    "outline-none" que existiam espalhados nos campos foram removidos: como
    classe do Tailwind, eles estão na camada "utilities", que vence a "base",
    e apagariam este anel justo nos campos de formulário. O
-   "focus:border-sakura-purple" que acompanhava cada um deles continua lá,
+   "focus:border-acao" que acompanhava cada um deles continua lá,
    agora como reforço em vez de único sinal de foco. */
 @layer base {
   a:focus-visible,
@@ -440,7 +370,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   textarea:focus-visible,
   [role="button"]:focus-visible,
   [tabindex]:focus-visible {
-    outline: 2px solid var(--color-sakura-focus);
+    outline: 2px solid var(--color-foco);
     outline-offset: 2px;
     box-shadow:
       0 0 0 2px var(--foco-anel-de-dentro),
@@ -456,9 +386,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    sólido com a letra secundária dá 6:1 e diz "agora não dá" sem competir com
    o botão ligado. Fica fora de camada de propósito, pra vencer o
    "disabled:opacity-*" das telas; o seletor ~= pega só a classe exata, não
-   o "bg-sakura-purple/20" nem o "hover:bg-sakura-purple". Quando as telas
+   o "bg-acao/20" nem o "hover:bg-acao". Quando as telas
    passarem a usar o componente Botao, isto sai. */
-:is(button, a)[class~="bg-sakura-purple"]:disabled,
 :root[data-tema="claro"] :is(button, a)[class~="bg-red-600"]:disabled,
 :is(button, a)[class~="bg-acao"]:disabled {
   background-color: var(--color-passar);
@@ -514,7 +443,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
    em cima à esquerda e de laranja embaixo à direita. SEM grão: atrás de tabela
    e de formulário, ler ganha de enfeitar (seção 5 das regras). */
 @utility sakura-shell-bg {
-  background-color: var(--color-sakura-bg);
+  background-color: var(--color-fundo);
   background-image:
     radial-gradient(circle at 6% 0%, var(--shell-brilho-1), transparent 42%),
     radial-gradient(circle at 96% 100%, var(--shell-brilho-2), transparent 46%);

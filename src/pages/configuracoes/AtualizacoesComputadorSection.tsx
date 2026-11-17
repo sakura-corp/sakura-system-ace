@@ -8,7 +8,8 @@ import {
   CANAL_ATUALIZACAO_ROTULO,
   type CanalAtualizacao,
 } from "@/schemas/canalAtualizacao";
-import { AvisoDeAtencao, AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 // Por qual canal ESTE computador recebe versão nova (item TR-09.1). Diferente
 // das outras seções de Configurações, isto não mora no banco: cada computador
@@ -78,7 +79,7 @@ export function AtualizacoesComputadorSection() {
 
   if (!atual || !escolha) {
     return erro ? (
-      <MensagemDeErro>{erro}</MensagemDeErro>
+      <AvisoDeErro>{erro}</AvisoDeErro>
     ) : (
       <p className="text-corpo text-texto-2">Carregando...</p>
     );
@@ -86,13 +87,13 @@ export function AtualizacoesComputadorSection() {
 
   return (
     <>
-      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="sr-only">Canal de atualização deste computador</legend>
         {CANAIS_ATUALIZACAO.map((canal) => (
           <label
             key={canal}
-            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-corpo transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-sakura-focus ${
+            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-corpo transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-foco ${
               escolha === canal ? "border-acao bg-acao/10" : "border-linha-forte hover:bg-passar"
             }`}
           >

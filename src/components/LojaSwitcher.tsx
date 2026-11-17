@@ -12,7 +12,7 @@ export function LojaSwitcher() {
       value={lojaAtual?.id ?? ""}
       onChange={(e) => definirLojaAtual(e.target.value)}
       aria-label="Loja"
-      className="mt-3 w-full rounded-lg border border-sakura-borda-campo bg-transparent px-2 py-1 text-rotulo text-sakura-purple-dark focus:border-sakura-purple"
+      className="mt-3 w-full rounded-lg border border-borda-campo bg-transparent px-2 py-1 text-rotulo text-texto focus:border-acao"
     >
       {lojasDisponiveis.map((loja) => (
         <option key={loja.id} value={loja.id}>

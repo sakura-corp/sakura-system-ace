@@ -14,7 +14,8 @@ import {
 import type { Deposito } from "@/types/deposito";
 import type { NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
-import { AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface MovimentoFormProps {
   pecas: Peca[];

@@ -23,7 +23,7 @@ import type { NovaPeca, Peca, PecaJanela } from "@/types/peca";
 import { DadosCadastraisFields } from "./campos/DadosCadastraisFields";
 import { PneuFields } from "./campos/PneuFields";
 import { PrecosFields } from "./campos/PrecosFields";
-import { AvisoDeErro } from "./avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 import { TributosFields } from "./campos/TributosFields";
 
 /** O nome da peça no aviso, com "(inativa)" quando ela está desativada (#708),
