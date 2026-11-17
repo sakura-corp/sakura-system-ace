@@ -176,7 +176,7 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
     <>
       {/* 1 número grande + 3 de apoio: o mês é o que mais importa (#990, 17/11). */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-[2fr_1fr_1fr_1fr]">
-        <div className="col-span-2 xl:col-span-1 [&_[data-cartao-numero]]:h-full [&_[data-cartao-numero]_p.font-titulo]:text-[2.5rem]">
+        <div className="col-span-2 xl:col-span-1 [&_[data-cartao-numero]]:h-full [&_[data-cartao-numero]_p.font-titulo]:text-capa-curto">
           <CartaoNumero
             titulo="Recebido no mês"
             explicacao="O que entrou no caixa do dia 1º até hoje. OS aberta e ainda não recebida não entra."

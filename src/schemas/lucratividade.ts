@@ -235,6 +235,11 @@ export interface PontoDoLucro {
   margem: number;
   /** A margem sobre a receita, em %. */
   percentual: number;
+  /**
+   * O tamanho da bolha, de 0 a 1: a margem em reais (sem sinal) sobre a maior
+   * do gráfico. A tela só multiplica pelo raio.
+   */
+  peso: number;
 }
 
 /** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
@@ -247,15 +252,17 @@ export const BOLHAS_NO_GRAFICO = 12;
  * e a de custo não informado (a margem dela seria inventada).
  */
 export function pontosDoLucro(linhas: readonly LinhaLucro[], limite = BOLHAS_NO_GRAFICO): PontoDoLucro[] {
-  return linhas
+  const escolhidas = linhas
     .filter((l) => !l.custoNaoInformado && l.receita > 0)
-    .map((l) => ({
-      descricao: l.descricao,
-      quantidade: l.quantidade,
-      receita: l.receita,
-      margem: l.margem,
-      percentual: (l.margem / l.receita) * 100,
-    }))
     .sort((a, b) => b.margem - a.margem)
     .slice(0, limite);
+  const maior = Math.max(...escolhidas.map((l) => Math.abs(l.margem)), 0);
+  return escolhidas.map((l) => ({
+    descricao: l.descricao,
+    quantidade: l.quantidade,
+    receita: l.receita,
+    margem: l.margem,
+    percentual: (l.margem / l.receita) * 100,
+    peso: maior > 0 ? Math.abs(l.margem) / maior : 0,
+  }));
 }

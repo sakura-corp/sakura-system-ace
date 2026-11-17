@@ -331,5 +331,7 @@ describe("margemPercentual e pontosDoLucro (visual novo, 17/11)", () => {
       ["Óleo", 200],
     ]);
     expect(pontos[0].percentual).toBeCloseTo(30);
+    // O tamanho da bolha: a maior margem vale 1, as outras na proporção.
+    expect(pontos.map((p) => p.peso)).toEqual([1, 200 / 300]);
   });
 });

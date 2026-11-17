@@ -70,8 +70,8 @@ export function GraficoDeBolhas({
   const alturaUtil = ALTURA - FOLGA_TOPO - FOLGA_BAIXO;
   const xDo = (receita: number) => FOLGA_ESQUERDA + (receita / tetoX) * larguraUtil;
   const yDo = (percentual: number) => FOLGA_TOPO + ((tetoY - percentual) / (tetoY - pisoY)) * alturaUtil;
-  const maiorMargem = Math.max(...pontos.map((p) => Math.abs(p.margem)), 1);
-  const raioDo = (margem: number) => RAIO_MIN + Math.sqrt(Math.abs(margem) / maiorMargem) * (RAIO_MAX - RAIO_MIN);
+  // A área da bolha acompanha o peso (a raiz), senão a maior engole as outras.
+  const raioDo = (p: PontoDoLucro) => RAIO_MIN + Math.sqrt(p.peso) * (RAIO_MAX - RAIO_MIN);
   const marcasY: number[] = [];
   for (let v = pisoY; v <= tetoY; v += 20) marcasY.push(v);
   const marcasX = [0, 0.25, 0.5, 0.75, 1].map((f) => tetoX * f);
@@ -79,9 +79,38 @@ export function GraficoDeBolhas({
   const meioX = xDo(tetoX / 2);
   // As grandes desenhadas primeiro e as pequenas por cima (todas com
   // transparência), pra nenhuma ficar escondida atrás de outra.
-  const ordem = [...pontos].sort((a, b) => Math.abs(b.margem) - Math.abs(a.margem));
-  const comNome = new Set(ordem.slice(0, NOMES_ESCRITOS));
+  const ordem = [...pontos].sort((a, b) => b.peso - a.peso);
   const destaque = pontos[0];
+  // O nome vai escrito nas de mais lucro, mas só onde cabe: um nome por cima
+  // de outro não se lê. Quem fica sem nome aparece passando o mouse.
+  const cortar = (texto: string) => (texto.length > 28 ? `${texto.slice(0, 27)}…` : texto);
+  // As bolhas também ocupam lugar: o nome de uma não pode cobrir outra.
+  const caixaDaBolha = (p: PontoDoLucro) => {
+    const r = raioDo(p);
+    return { x0: xDo(p.receita) - r, x1: xDo(p.receita) + r, y0: yDo(p.percentual) - r, y1: yDo(p.percentual) + r };
+  };
+  const ocupados: { x0: number; x1: number; y0: number; y1: number; dono?: PontoDoLucro }[] = pontos.map((p) => ({
+    ...caixaDaBolha(p),
+    dono: p,
+  }));
+  const comNome = new Set<PontoDoLucro>();
+  for (const p of ordem.slice(0, NOMES_ESCRITOS)) {
+    const cx = xDo(p.receita);
+    const cy = yDo(p.percentual);
+    const r = raioDo(p);
+    const larguraDoNome = Math.max(cortar(p.descricao).length, 18) * 6.6;
+    const aDireita = cx < largura * 0.6;
+    const caixa = aDireita
+      ? { x0: cx + r + 4, x1: cx + r + 12 + larguraDoNome, y0: cy - 16, y1: cy + 20 }
+      : { x0: cx - r - 12 - larguraDoNome, x1: cx - r - 4, y0: cy - 16, y1: cy + 20 };
+    const bate = ocupados.some(
+      (o) => o.dono !== p && caixa.x0 < o.x1 && caixa.x1 > o.x0 && caixa.y0 < o.y1 && caixa.y1 > o.y0,
+    );
+    if (!bate) {
+      ocupados.push(caixa);
+      comNome.add(p);
+    }
+  }
 
   return (
     <div ref={raizRef} className="relative">
@@ -136,7 +165,7 @@ export function GraficoDeBolhas({
               style={{ stroke: "var(--color-texto-2)" }}
               strokeDasharray="3 4"
             />
-            <text x={meioX + 8} y={yMedia - 8} fontSize={11} style={{ fill: "var(--color-texto-2)" }}>
+            <text x={largura - FOLGA_DIREITA} y={yMedia - 8} textAnchor="end" fontSize={11} style={{ fill: "var(--color-texto-2)" }}>
               média da loja · {formatarPercentual(margemMedia)}
             </text>
             <text x={FOLGA_ESQUERDA + 16} y={yMedia - 12} fontSize={12} fontWeight={600} style={{ fill: "var(--color-ok)" }}>
@@ -158,7 +187,7 @@ export function GraficoDeBolhas({
         {ordem.map((p, i) => {
           const cx = xDo(p.receita);
           const cy = yDo(p.percentual);
-          const r = raioDo(p.margem);
+          const r = raioDo(p);
           const ehDestaque = p === destaque;
           const prejuizo = p.margem < 0;
           const cor = prejuizo ? "var(--color-perigo)" : ehDestaque ? "var(--color-acao)" : "var(--color-texto)";
@@ -191,7 +220,7 @@ export function GraficoDeBolhas({
                     fontWeight={600}
                     style={{ fill: "var(--color-texto)" }}
                   >
-                    {p.descricao.length > 28 ? `${p.descricao.slice(0, 27)}…` : p.descricao}
+                    {cortar(p.descricao)}
                   </text>
                   <text
                     x={aDireita ? cx + r + 8 : cx - r - 8}
