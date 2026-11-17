@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { CartaoNumero } from "@/components/CartaoNumero";
 import { Selo } from "@/components/Selo";
 import { Valor } from "@/components/Valor";
 import { valorDaPecaEmEstoque, valorDoEstoque } from "@/schemas/valorItem";
 import type { MovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
-import { AbasDaTela } from "./avisosEAbas";
 
 interface RelatoriosEstoqueSectionProps {
   pecas: Peca[];
@@ -75,15 +75,16 @@ export function RelatoriosEstoqueSection({
           Produtos ativos, agrupados pelo saldo atual calculado.
         </p>
         <div className="mt-3">
-          <AbasDaTela
+          <Abas
             rotulo="Situação do saldo"
+            className="flex-wrap"
             ativa={filtroSaldo}
             aoEscolher={setFiltroSaldo}
             abas={[
-              ["todos", `Todos (${pecasAtivas.length})`],
-              ["positivo", `Positivo (${quantosPositivos})`],
-              ["negativo", `Negativo (${quantosNegativos})`],
-              ["zerado", `Zerado (${quantosZerados})`],
+              { valor: "todos", nome: `Todos (${pecasAtivas.length})` },
+              { valor: "positivo", nome: `Positivo (${quantosPositivos})` },
+              { valor: "negativo", nome: `Negativo (${quantosNegativos})` },
+              { valor: "zerado", nome: `Zerado (${quantosZerados})` },
             ]}
           />
         </div>

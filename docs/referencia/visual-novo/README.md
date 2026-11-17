@@ -189,7 +189,7 @@ antigas trocam cada uma na tarefa dela (as 8 em diante); até lá convivem os do
 
 | Peça | Onde | Como usar |
 |---|---|---|
-| Botão | `src/components/Botao.tsx` | `<Botao variante="principal">Faturar</Botao>`. Variantes: `principal`, `secundario` (o padrão), `fantasma`, `whatsapp`. Tamanhos: `pequeno` (32), `medio` (40), `grande` (48). `LinkBotao` é o mesmo botão quando o clique leva pra outra tela. Só com ícone: `soIcone`, e aí o `aria-label` é obrigatório. |
+| Botão | `src/components/Botao.tsx` | `<Botao variante="principal">Faturar</Botao>`. Variantes: `principal`, `secundario` (o padrão), `fantasma`, `whatsapp` e `perigo` (vermelho, só pra confirmar o que não tem volta). Tamanhos: `pequeno` (32), `medio` (40), `grande` (48). `LinkBotao` é o mesmo botão quando o clique leva pra outra tela. Só com ícone: `soIcone`, e aí o `aria-label` é obrigatório. |
 | Botão do WhatsApp | `src/components/BotaoWhatsapp.tsx` | como antes; por dentro é a variante `whatsapp` do `Botao`. |
 | Selo de aviso | `src/components/Selo.tsx` | `<Selo tipo="atencao" palavra="Concluída" />`. Tipos: `info`, `atencao`, `ok`, `perigo`, `neutro`. **Sem a `palavra` não compila** (regra 4); o ícone tem um padrão por tipo e pode ser trocado. |
 | Placa | `src/components/LinkPlaca.tsx` | `<LinkPlaca veiculoId={…} placa={…} />`, como antes. |
@@ -200,6 +200,9 @@ antigas trocam cada uma na tarefa dela (as 8 em diante); até lá convivem os do
 | Janela | `src/components/Modal.tsx` | como antes, e agora com `total={{ rotulo, valor }}` no cabeçalho e `rodape={…}` com as ações (o botão principal por último). |
 | Aviso que some sozinho | `avisar("OS 148 faturada")`, de `src/lib/avisoQueSome.ts` | **só pra confirmação**. Erro não some sozinho: continua do lado do botão que falhou. |
 | Dica | `src/components/Dica.tsx` | `<Dica texto="Mais ações"><button>…</button></Dica>`. Entra no lugar do `title`; **não usar os dois juntos**. Aparece no mouse e no teclado. |
+| Caixa de aviso | `src/components/Aviso.tsx` | o aviso que **fica** na tela: `<AvisoDeErro>{erro}</AvisoDeErro>`, `<AvisoDeAtencao>`, `<AvisoDeCerto>`, ou `<Aviso tipo="info">`. Ícone e frase junto da cor; o erro já anuncia pro leitor de tela. Letra menor: `className="text-rotulo"`. |
+| Campo com lista | `src/components/Combobox.tsx` | já nasce com o `sakura-campo`; no filtro, `tamanho="filtro"`. |
+| Abas | `src/components/Abas.tsx` | `<Abas rotulo="Partes do estoque" ativa={aba} aoEscolher={setAba} abas={[{ valor: "produtos", nome: "Produtos" }]} />`. Com `conta`, o número fica ao lado do nome (e entra no que o leitor de tela lê). Já vem com o teclado (setas, Home e End; só a escolhida no Tab). Com painel: `prefixoId` e `painel`. |
 
 **A mostra das peças.** Todas as peças, desenhadas com o componente de verdade e com a linha de
 código de como usar, estão numa página que **não faz parte do programa das lojas**

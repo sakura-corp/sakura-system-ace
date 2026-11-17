@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
@@ -133,39 +134,7 @@ export function RelatoriosPage() {
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div
-        role="tablist"
-        aria-label="O que mostrar"
-        className="sakura-abas"
-        onKeyDown={(e) => {
-          // As setas, o Home e o End trocam de aba (padrão de abas): a ligada é
-          // a única que entra na ordem do Tab, e o foco acompanha a escolha.
-          const atual = ABAS.findIndex((a) => a.chave === aba);
-          const destino =
-            e.key === "ArrowRight"
-              ? (atual + 1) % ABAS.length
-              : e.key === "ArrowLeft"
-                ? (atual + ABAS.length - 1) % ABAS.length
-                : e.key === "Home"
-                  ? 0
-                  : e.key === "End"
-                    ? ABAS.length - 1
-                    : -1;
-          if (destino < 0) return;
-          e.preventDefault();
-          setAba(ABAS[destino].chave);
-          (e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]')[destino])?.focus();
-        }}
-      >
-        {ABAS.map((a) => (
-          <AbaBotao
-            key={a.chave}
-            label={a.texto}
-            ativa={aba === a.chave}
-            onClick={() => setAba(a.chave)}
-          />
-        ))}
-      </div>
+      <Abas rotulo="O que mostrar" ativa={aba} aoEscolher={setAba} abas={ABAS} />
 
       {carregando ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
@@ -194,11 +163,12 @@ export function RelatoriosPage() {
   );
 }
 
-const ABAS: { chave: Aba; texto: string }[] = [
-  { chave: "graficos", texto: "Gráficos" },
-  { chave: "lucratividade", texto: "Lucratividade" },
-  { chave: "curvaABC", texto: "Curva ABC" },
-  { chave: "fluxo", texto: "Fluxo de caixa" },
+// As abas das Relações, com a peça `Abas` (o teclado das setas vem dela).
+const ABAS: { valor: Aba; nome: string }[] = [
+  { valor: "graficos", nome: "Gráficos" },
+  { valor: "lucratividade", nome: "Lucratividade" },
+  { valor: "curvaABC", nome: "Curva ABC" },
+  { valor: "fluxo", nome: "Fluxo de caixa" },
 ];
 
 /** Erro que não some sozinho: ícone e palavra junto da cor (regra 4). */
@@ -211,30 +181,5 @@ function AvisoDeErro({ children }: { children: React.ReactNode }) {
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
       <span className="min-w-0">{children}</span>
     </p>
-  );
-}
-
-// A aba do visual novo é a peça `sakura-aba` (tarefa 7): o traço laranja só na
-// ligada, e a ligada também em negrito (a cor sozinha não avisa, regra 4).
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={ativa}
-      tabIndex={ativa ? 0 : -1}
-      onClick={onClick}
-      className="sakura-aba"
-    >
-      {label}
-    </button>
   );
 }

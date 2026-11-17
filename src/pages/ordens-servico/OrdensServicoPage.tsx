@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Abas } from "@/components/Abas";
 import { AcoesDaLinha, type AcaoDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { Dica } from "@/components/Dica";
@@ -956,29 +957,18 @@ export function OrdensServicoPage() {
       )}
 
       {!carregando && temOrdens && (
-        <div role="tablist" aria-label="O que mostrar na lista" className="sakura-abas">
-          {(
-            [
-              ["os", "Ordens de serviço", quantasOs],
-              ["vendas", "Vendas de balcão", quantasVendas],
-            ] as const
-          ).map(([valor, rotulo, quantas]) => (
-            <button
-              key={valor}
-              type="button"
-              role="tab"
-              aria-selected={lista === valor}
-              onClick={() => {
-                setLista(valor);
-                setErroDaLinha(null);
-              }}
-              className="sakura-aba"
-            >
-              {rotulo}{" "}
-              <span className="sakura-aba-conta">{quantas}</span>
-            </button>
-          ))}
-        </div>
+        <Abas
+          rotulo="O que mostrar na lista"
+          ativa={lista}
+          aoEscolher={(valor) => {
+            setLista(valor);
+            setErroDaLinha(null);
+          }}
+          abas={[
+            { valor: "os", nome: "Ordens de serviço", conta: quantasOs },
+            { valor: "vendas", nome: "Vendas de balcão", conta: quantasVendas },
+          ]}
+        />
       )}
 
       {!carregando && temOrdens && (

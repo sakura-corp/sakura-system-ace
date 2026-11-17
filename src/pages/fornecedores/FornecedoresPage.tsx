@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
@@ -13,7 +14,6 @@ import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { PedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
-import { AbasDaTela } from "@/pages/estoque/avisosEAbas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { FornecedoresSection } from "./FornecedoresSection";
 import { PedidosCompraSection } from "./PedidosCompraSection";
@@ -97,14 +97,15 @@ export function FornecedoresPage() {
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <AbasDaTela
+      <Abas
         rotulo="Partes dos fornecedores"
+        className="flex-wrap"
         ativa={aba}
         aoEscolher={setAba}
         abas={[
-          ["cadastro", "Cadastro"],
-          ["pedidos", "Pedidos de compra"],
-          ...(podeSugestao ? ([["sugestao", "Sugestão de compra"]] as const) : []),
+          { valor: "cadastro", nome: "Cadastro" },
+          { valor: "pedidos", nome: "Pedidos de compra" },
+          ...(podeSugestao ? [{ valor: "sugestao" as const, nome: "Sugestão de compra" }] : []),
         ]}
       />
 

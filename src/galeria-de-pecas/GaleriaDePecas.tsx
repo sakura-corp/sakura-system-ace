@@ -1,8 +1,11 @@
 import { Ellipsis, FileText, Plus, Wrench } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Abas } from "@/components/Abas";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro, Aviso } from "@/components/Aviso";
 import { Botao, LinkBotao } from "@/components/Botao";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { CartaoNumero } from "@/components/CartaoNumero";
+import { Combobox } from "@/components/Combobox";
 import { Dica } from "@/components/Dica";
 import { LinkPlaca } from "@/components/LinkPlaca";
 import { Modal } from "@/components/Modal";
@@ -120,6 +123,13 @@ export function GaleriaDePecas() {
           </Botao>
           <span className="text-rotulo text-texto-2">desligados: cinza, e ainda dá pra ler o que fariam</span>
         </Linha>
+        <Linha>
+          <Botao variante="perigo">Confirmar cancelamento</Botao>
+          <Botao variante="perigo" disabled>
+            Confirmar cancelamento
+          </Botao>
+          <span className="text-rotulo text-texto-2">perigo: só pra confirmar o que não tem volta</span>
+        </Linha>
         <Codigo>{`<Botao variante="principal" icone={<Plus />}>Nova ordem de serviço</Botao>
 <Botao>Venda de balcão</Botao>   <Botao variante="fantasma">Cancelar</Botao>
 <Botao soIcone aria-label="Mais ações" icone={<Ellipsis />} />`}</Codigo>
@@ -143,6 +153,27 @@ export function GaleriaDePecas() {
         </Linha>
         <Codigo>{`<Selo tipo="atencao" palavra="Concluída" />
 <Selo tipo="ok" palavra="Autorizada" icone={FileText} />`}</Codigo>
+      </Bloco>
+
+      <Bloco
+        titulo="Caixas de aviso"
+        nota="O aviso que fica na tela até a pessoa agir (o que some sozinho é o avisar()). Ícone e frase junto da cor."
+      >
+        <AvisoDeErro>Não deu pra salvar: a internet caiu. Tente de novo.</AvisoDeErro>
+        <AvisoDeAtencao>Falta cadastrar o token do serviço de notas em Configurações.</AvisoDeAtencao>
+        <AvisoDeCerto>12 clientes importados.</AvisoDeCerto>
+        <Aviso tipo="info">A comissão é calculada quando a OS é faturada.</Aviso>
+        <Codigo>{`<AvisoDeErro>{erro}</AvisoDeErro>
+<AvisoDeAtencao>…</AvisoDeAtencao>   <Aviso tipo="info">…</Aviso>`}</Codigo>
+      </Bloco>
+
+      <Bloco titulo="Abas e campo com lista" nota="As setas andam entre as abas. O campo com lista tem a altura dos outros campos.">
+        <AbasDaMostra />
+        <div className="max-w-sm">
+          <ComboboxDaMostra />
+        </div>
+        <Codigo>{`<Abas rotulo="Partes do estoque" abas={[{ valor: "produtos", nome: "Produtos" }]} ativa={aba} aoEscolher={setAba} />
+<Combobox opcoes={opcoes} valor={valor} onMudar={setValor} />`}</Codigo>
       </Bloco>
 
       <Bloco
@@ -367,5 +398,37 @@ avisar("OS 148 faturada")
         </Modal>
       )}
     </div>
+  );
+}
+
+function AbasDaMostra() {
+  const [aba, setAba] = useState<"abertas" | "finalizadas" | "recusadas">("abertas");
+  return (
+    <Abas
+      rotulo="O que mostrar na lista"
+      abas={[
+        { valor: "abertas", nome: "Abertas", conta: 8 },
+        { valor: "finalizadas", nome: "Finalizadas", conta: 31 },
+        { valor: "recusadas", nome: "Recusadas", conta: 2 },
+      ]}
+      ativa={aba}
+      aoEscolher={setAba}
+    />
+  );
+}
+
+function ComboboxDaMostra() {
+  const [valor, setValor] = useState("");
+  return (
+    <Combobox
+      opcoes={[
+        { valor: "1", rotulo: "Pneus" },
+        { valor: "2", rotulo: "Alinhamento" },
+        { valor: "3", rotulo: "Balanceamento" },
+      ]}
+      valor={valor}
+      onMudar={setValor}
+      placeholder="Categoria"
+    />
   );
 }
