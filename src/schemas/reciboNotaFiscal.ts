@@ -35,3 +35,8 @@ export function totalDosServicosDaOs(itens: readonly ItemDaOsComValor[]): number
 export function mesmoValor(a: number, b: number): boolean {
   return paraCentavos(a) === paraCentavos(b);
 }
+
+/** O valor de uma linha da nota já com o desconto da linha (`vProd − vDesc`), no centavo. */
+export function valorDaLinhaComDesconto(valorBruto: number, desconto: number | null): number {
+  return arredondarCentavo(valorBruto - (desconto ?? 0));
+}

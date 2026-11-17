@@ -3,7 +3,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { QRCodeSVG } from "qrcode.react";
 import { escaparHtml } from "@/lib/html";
 import { formatarMoeda } from "@/schemas/dinheiro";
-import { mesmoValor, totalDosServicosDaOs, valorDoItemDaOs } from "@/schemas/reciboNotaFiscal";
+import { podeAbrirNoNavegador } from "@/schemas/linkExterno";
+import {
+  mesmoValor,
+  totalDosServicosDaOs,
+  valorDaLinhaComDesconto,
+  valorDoItemDaOs,
+} from "@/schemas/reciboNotaFiscal";
 import type { TipoNotaFiscal } from "@/types/notaFiscal";
 
 // Sakura System — AutoCenter Edition
@@ -80,6 +86,8 @@ export interface ServicoNfseVisual {
 export interface NotaFiscalVisual {
   reconhecido: boolean;
   tipo: TipoNotaFiscal;
+  /** `ide/mod`: "65" é NFC-e, "55" é NF-e. */
+  modelo: string | null;
   numero: string | null;
   serie: string | null;
   dataEmissao: string | null;
@@ -242,6 +250,7 @@ function notaNaoReconhecida(tipo: TipoNotaFiscal): NotaFiscalVisual {
   return {
     reconhecido: false,
     tipo,
+    modelo: null,
     numero: null,
     serie: null,
     dataEmissao: null,
@@ -353,12 +362,15 @@ function interpretarNFe(doc: Document): NotaFiscalVisual {
   const chave = texto(infProt, "chNFe") ?? idAttr;
 
   const vTotTrib = numero(icmsTot, "vTotTrib");
-  const { tributos, resto } = separarTributos(texto(el(infNFe, "infAdic"), "infCpl"));
+  const infCpl = texto(el(infNFe, "infAdic"), "infCpl");
+  const temVTotTrib = vTotTrib !== null && vTotTrib > 0;
+  const { tributos, resto } = separarTributos(infCpl);
   const descontoTotal = numero(icmsTot, "vDesc");
 
   return {
     ...notaNaoReconhecida("nfe"),
     reconhecido: true,
+    modelo: texto(ide, "mod"),
     numero: texto(ide, "nNF"),
     serie: texto(ide, "serie"),
     dataEmissao: texto(ide, "dhEmi"),
@@ -396,11 +408,12 @@ function interpretarNFe(doc: Document): NotaFiscalVisual {
     troco: numero(pag, "vTroco"),
     qrCode: texto(supl, "qrCode"),
     urlConsulta: texto(supl, "urlChave"),
-    tributosAproximados:
-      vTotTrib !== null && vTotTrib > 0
-        ? `Tributos aproximados: ${formatarMoeda(vTotTrib)} (Lei 12.741/2012)`
-        : tributos,
-    informacoesComplementares: resto,
+    // Com `vTotTrib`, a linha é o valor dele e o `infCpl` sai inteiro, como
+    // informação complementar; sem ele, a linha é o trecho do `infCpl`.
+    tributosAproximados: temVTotTrib
+      ? `Tributos aproximados: ${formatarMoeda(vTotTrib as number)} (Lei 12.741/2012)`
+      : tributos,
+    informacoesComplementares: temVTotTrib ? infCpl : resto,
   };
 }
 
@@ -569,6 +582,8 @@ const e = (valor: string) => escaparHtml(valor);
 
 function formatarData(iso: string | null): string | null {
   if (!iso) return null;
+  // A Giap manda "dd/mm/aaaa": o `Date` leria mês/dia (05/11 viraria 11/05).
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(iso)) return iso;
   const data = new Date(iso);
   if (Number.isNaN(data.getTime())) return iso;
   const dia = data.toLocaleDateString("pt-BR");
@@ -629,6 +644,10 @@ function completarEmitente(
   if (!doXml && !loja) return null;
   const x = doXml ?? pessoaVazia();
   if (!loja) return x;
+  // XML de outra empresa (enviado à mão): não mistura os dados da loja.
+  const digitos = (d: string | null) => d?.replace(/\D/g, "") ?? "";
+  if (x.documento && loja.cnpj && digitos(x.documento) !== digitos(loja.cnpj)) return x;
+  if (x.documento && !loja.cnpj && doXml?.nome) return x;
   return {
     nome: x.nome ?? loja.razaoSocial,
     nomeFantasia: x.nomeFantasia ?? loja.nomeFantasia,
@@ -758,7 +777,7 @@ const ESTILO = `
   .rodape { margin-top: 14px; padding-top: 8px; border-top: 2px solid var(--roxo); text-align: center; }
   .rodape .obrigado { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
   .assinatura { margin: 26px auto 0; max-width: 260px; border-top: 1px solid var(--texto); padding-top: 2px; font-size: 11px; color: var(--suave); }
-  @container (min-width: 560px) {
+  @container (min-width: 640px) {
     .folha { padding: 26px 30px 24px; }
     .loja h1 { font-size: 20px; }
     .logo { width: 52px; height: 52px; font-size: 19px; }
@@ -769,7 +788,7 @@ const ESTILO = `
     .pares { grid-template-columns: 1fr 1fr; gap: 22px; }
     .itens-cab, .item {
       display: grid; gap: 0 10px; align-items: baseline;
-      grid-template-columns: 18px 92px minmax(0, 1fr) 26px 58px 78px 78px 88px;
+      grid-template-columns: 18px 84px minmax(0, 1fr) 26px 50px 76px 76px 86px;
     }
     .itens-cab { padding: 0 0 4px; border-bottom: 1px solid var(--texto); font-size: 10.5px; font-weight: 700; color: var(--suave); text-transform: uppercase; }
     .item > span::before { content: none; }
@@ -798,6 +817,12 @@ const ESTILO = `
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 `;
+
+/** "NFS-e", "NF-e" (modelo 55) ou "NFC-e". */
+function siglaDaNota(dados: NotaFiscalVisual): string {
+  if (dados.tipo === "nfse") return "NFS-e";
+  return dados.modelo === "55" ? "NF-e" : "NFC-e";
+}
 
 function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual | null): string {
   const nfse = dados.tipo === "nfse";
@@ -844,7 +869,7 @@ function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual
         </div>
       </div>
       <div class="nota-id">
-        <p class="tipo">Recibo da ${nfse ? "NFS-e" : "NFC-e"}</p>
+        <p class="tipo">Recibo da ${siglaDaNota(dados)}</p>
         ${numeroNota ? `<p class="num">${numeroNota}</p>` : ""}
         ${linhaSerie ? `<p class="mini">${linhaSerie}</p>` : ""}
         ${linhaDps ? `<p class="mini">${linhaDps}</p>` : ""}
@@ -853,7 +878,9 @@ function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual
 }
 
 function htmlAviso(dados: NotaFiscalVisual): string {
-  const oficial = dados.tipo === "nfse" ? "o DANFSe (o documento oficial da NFS-e)" : "o DANFE NFC-e";
+  const sigla = siglaDaNota(dados);
+  const oficial =
+    sigla === "NFS-e" ? "o DANFSe (o documento oficial da NFS-e)" : sigla === "NF-e" ? "o DANFE" : "o DANFE NFC-e";
   const conferir = dados.qrCode
     ? " confira pelo QR code ou pela chave de acesso no fim desta folha."
     : dados.chaveAcesso && !dados.linkOficial
@@ -864,7 +891,9 @@ function htmlAviso(dados: NotaFiscalVisual): string {
       <b>Recibo para o cliente.</b> Não substitui ${oficial}. O documento fiscal válido é a
       nota autorizada (o XML)${conferir ? `:${conferir}` : "."}
     </p>`;
-  const giap = dados.linkOficial
+  // Só vira link o endereço da prefeitura (https, *.giap.com.br), a mesma
+  // regra de quem abre o link no programa (`linkExterno.ts`).
+  const giap = dados.linkOficial && podeAbrirNoNavegador(dados.linkOficial)
     ? `
     <p class="aviso ok">
       Esta prefeitura confirma a emissão, mas não manda os itens e os valores no arquivo da nota.
@@ -878,7 +907,7 @@ function htmlAviso(dados: NotaFiscalVisual): string {
 function htmlClienteEVeiculo(dados: NotaFiscalVisual, os: OsDoRecibo | null): string {
   const pessoa: PessoaNotaFiscalVisual | null =
     dados.destinatario ??
-    (os?.cliente ? { ...pessoaVazia(), nome: os.cliente.nome, documento: os.cliente.documento } : null);
+    (dados.linkOficial && os?.cliente ? { ...pessoaVazia(), nome: os.cliente.nome, documento: os.cliente.documento } : null);
   const nfse = dados.tipo === "nfse";
   const telefone = pessoa?.telefone ?? os?.telefoneCliente ?? null;
   const contato = juntar([
@@ -999,7 +1028,7 @@ function htmlProdutosNfce(dados: NotaFiscalVisual, os: OsDoRecibo | null): strin
     quantidade: i.quantidade,
     valorUnitario: i.valorUnitario,
     desconto: i.desconto,
-    total: i.valorTotal,
+    total: valorDaLinhaComDesconto(i.valorTotal, i.desconto),
     observacao: null,
   }));
   const pagamentos = dados.formasPagamento
@@ -1164,7 +1193,7 @@ export function montarHtmlVisualNotaFiscal(
 ): string {
   const { os, loja } = contexto;
   const emitente = completarEmitente(dados.emitente, loja);
-  const titulo = dados.tipo === "nfse" ? "Recibo da NFS-e" : "Recibo da NFC-e";
+  const titulo = `Recibo da ${siglaDaNota(dados)}`;
 
   let corpo: string;
   if (dados.tipo === "nfe") corpo = htmlProdutosNfce(dados, os);

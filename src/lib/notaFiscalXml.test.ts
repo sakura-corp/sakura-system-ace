@@ -398,6 +398,70 @@ describe("interpretarXmlNotaFiscal — NFC-e", () => {
   });
 });
 
+describe("recibo — achados da revisão final", () => {
+  it("Giap: a data dd/mm/aaaa sai como veio (05/11 não vira 11/05)", () => {
+    const xml = XML_CONFIRMACAO_GIAP.replace(/27\/08\/2026/g, "05/11/2026");
+    const texto = textoVisivel(montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xml, "nfse")));
+    expect(texto).toContain("05/11/2026");
+    expect(texto).not.toContain("11/05/2026");
+  });
+
+  it("NFC-e sem cliente no XML: não imprime o CPF do cadastro (só a Giap usa o cadastro)", () => {
+    const xml = xmlNfce().replace(/<dest>.*<\/dest>/, "");
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(
+        interpretarXmlNotaFiscal(xml, "nfe"),
+        contexto({ os: os({ cliente: { nome: "Fulano Cadastro", documento: "12345678909" } }) }),
+      ),
+    );
+    expect(texto).not.toContain("123.456.789-09");
+    expect(texto).not.toContain("Fulano Cadastro");
+  });
+
+  it("item com desconto: a coluna Total mostra o valor já com o desconto", () => {
+    const texto = textoVisivel(montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xmlNfce(), "nfe")));
+    // 4 × 489,90 = 1.959,60 − 59,60 = 1.900,00
+    expect(texto).toContain("R$ 1.900,00");
+    expect(texto).not.toContain("R$ 1.959,60");
+  });
+
+  it("NF-e modelo 55: o recibo diz NF-e e DANFE, não NFC-e", () => {
+    const xml = xmlNfce().replace("<mod>65</mod>", "<mod>55</mod>");
+    const texto = textoVisivel(montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xml, "nfe")));
+    expect(texto).toContain("Recibo da NF-e");
+    expect(texto).not.toContain("NFC-e");
+  });
+
+  it("Giap: link que não é da prefeitura (https *.giap.com.br) não vira link clicável", () => {
+    const xml = XML_CONFIRMACAO_GIAP.replace(
+      "https://araraquara.giap.com.br/ords/pma/f?p=616:116",
+      "javascript:alert(1)",
+    );
+    const html = montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xml, "nfse"));
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("Ver documento oficial completo");
+  });
+
+  it("emitente de outro CNPJ (XML de terceiro): não completa com os dados da loja", () => {
+    const html = montarHtmlVisualNotaFiscal(
+      interpretarXmlNotaFiscal(xmlNfce().replace(/<enderEmit>.*<\/enderEmit>/, ""), "nfe"),
+      contexto({
+        loja: {
+          nomeFantasia: "Outra Loja",
+          razaoSocial: null,
+          cnpj: "99888777000166",
+          inscricaoEstadual: null,
+          inscricaoMunicipal: null,
+          telefone: "1640004000",
+          email: null,
+          endereco: "Rua da Outra Loja, 1",
+        },
+      }),
+    );
+    expect(textoVisivel(html)).not.toContain("Rua da Outra Loja");
+  });
+});
+
 describe("interpretarXmlNotaFiscal — XML não reconhecido", () => {
   it("devolve reconhecido: false pra um XML sem os formatos esperados", () => {
     const dados = interpretarXmlNotaFiscal("<algumaCoisa><x>1</x></algumaCoisa>", "nfse");

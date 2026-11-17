@@ -80,11 +80,13 @@ export function montarOsDoRecibo(linha: LinhaOsDoRecibo, extras: ExtrasDaOsDoRec
   };
 }
 
+// `pecas_janela` (migration 0073), e não `pecas`: a tabela só abre pra quem tem
+// Estoque, e o atendente sem esse módulo perderia a garantia calado.
 const SELECT_OS_DO_RECIBO =
   "numero, tipo, km_entrada, vendedor_id, " +
   "veiculo:veiculos_janela(placa, marca, modelo, cor), " +
   "criado_por:operadores!ordens_servico_criado_por_id_fkey(nome), " +
-  "itens:ordens_servico_itens(tipo, descricao, quantidade, preco_unitario, desconto, tecnico_id, peca:pecas(prazo_garantia_dias))";
+  "itens:ordens_servico_itens(tipo, descricao, quantidade, preco_unitario, desconto, tecnico_id, peca:pecas_janela(prazo_garantia_dias))";
 
 /** A OS da nota, pronta pro recibo; `null` se não existe ou não dá pra ler. */
 export async function buscarOsDoRecibo(ordemId: string): Promise<OsDoRecibo | null> {
