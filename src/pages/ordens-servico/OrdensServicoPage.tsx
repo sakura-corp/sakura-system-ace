@@ -45,6 +45,7 @@ import {
   criarOrdem,
   editarItemOrdem,
   faturarOrdem,
+  OrdemMudouError,
   listarOrdens,
   registrarVendaBalcao,
   VendaSemFaturamentoError,
@@ -598,8 +599,35 @@ export function OrdensServicoPage() {
     parcelas: number,
     previsaoRecebimento: string | null,
   ) {
-    if (!ordemFaturando) return;
-    await faturarOrdem(ordemFaturando, pagamentos, parcelas, previsaoRecebimento);
+    if (!ordemFaturando || !operador) return;
+    try {
+      await faturarOrdem(
+        ordemFaturando,
+        pagamentos,
+        parcelas,
+        previsaoRecebimento,
+        operador.id,
+        totalOrdem(ordemFaturando.itens ?? []),
+      );
+    } catch (err) {
+      if (err instanceof OrdemMudouError) {
+        // O banco recusou e nada foi lançado (a lib garante). Recarrega a OS
+        // pra pessoa ver o total novo e conferir antes de faturar de novo.
+        const id = ordemFaturando.id;
+        const recarregadas = await carregar();
+        const atual = recarregadas?.find((o) => o.id === id);
+        if (!atual || atual.status === "faturada") {
+          // Sumiu ou alguém já faturou: não há mais o que faturar aqui. O
+          // `carregar` limpa o aviso, então ele é posto depois.
+          setOrdemFaturando(null);
+          setErro(err.message);
+          return;
+        }
+        setOrdemFaturando(atual);
+      }
+      // O cartão mostra a mensagem (e não cobra nada).
+      throw err;
+    }
     const faturada = ordemFaturando;
     // Deu certo: a janela fecha e sai a confirmação que some sozinha ("OS 148
     // faturada"). Se `faturarOrdem` falhou, nada disto roda: o erro volta pro

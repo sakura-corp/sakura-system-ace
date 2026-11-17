@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, TriangleAlert, X } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Botao } from "@/components/Botao";
@@ -183,6 +183,7 @@ export function FaturamentoCard({
     watch,
     setValue,
     handleSubmit,
+    reset,
     formState: { isSubmitting },
   } = useForm<FaturamentoFormValues>({
     resolver: zodResolver(faturamentoFormSchema),
@@ -193,6 +194,16 @@ export function FaturamentoCard({
     control,
     name: "linhasPagamento",
   });
+
+  // O total mudou com o cartão aberto (a OS foi recarregada depois de alguém
+  // mexer nela em outro computador, #803): os valores que o formulário guarda
+  // são do total velho. Recomeça do total novo, sem apagar o aviso de erro.
+  const totalDaUltimaVez = useRef(total);
+  useEffect(() => {
+    if (totalDaUltimaVez.current === total) return;
+    totalDaUltimaVez.current = total;
+    reset(faturamentoFormVazio(total));
+  }, [total, reset]);
 
   const recebidoAgora = watch("recebidoAgora");
   const dividirPagamento = watch("dividirPagamento");

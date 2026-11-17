@@ -54,6 +54,7 @@ vi.mock("@/lib/ordensServico", () => ({
   faturarOrdem: (...a: unknown[]) => faturarOrdem(...a),
   registrarVendaBalcao: vi.fn(),
   VendaSemFaturamentoError: class extends Error {},
+  OrdemMudouError: class OrdemMudouError extends Error {},
 }));
 vi.mock("@/lib/avisoQueSome", () => ({ avisar: (texto: string) => avisar(texto) }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
