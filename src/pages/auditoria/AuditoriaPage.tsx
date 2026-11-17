@@ -15,7 +15,7 @@ import {
   type RegistroAuditoria,
 } from "@/types/auditoria";
 import type { Operador } from "@/types/operador";
-import { MensagemDeErro } from "@/pages/configuracoes/pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // Cada ação tem a cor, o ícone e a palavra (regra 4 do visual novo). "Editou" é
 // azul, e não amarelo como era: amarelo é "atenção", e editar um cadastro é o
@@ -91,12 +91,13 @@ export function AuditoriaPage() {
         </div>
       </header>
 
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Tabela</span>
           <Combobox
+            tamanho="filtro"
             className="w-56"
             opcoes={Object.entries(TABELA_AUDITORIA_LABEL).map(([valor, rotulo]) => ({
               valor,
@@ -111,6 +112,7 @@ export function AuditoriaPage() {
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Ação</span>
           <Combobox
+            tamanho="filtro"
             className="w-44"
             opcoes={Object.entries(ACAO_AUDITORIA_LABEL).map(([valor, rotulo]) => ({
               valor,
@@ -125,6 +127,7 @@ export function AuditoriaPage() {
         <label className="flex items-center gap-2 text-corpo">
           <span className="text-rotulo font-medium text-texto-2">Operador</span>
           <Combobox
+            tamanho="filtro"
             className="w-56"
             opcoes={operadores.map((op) => ({ valor: op.id, rotulo: op.nome }))}
             valor={filtroOperadorId}

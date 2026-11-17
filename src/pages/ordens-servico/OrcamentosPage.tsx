@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleCheck, FolderOpen, Plus, TriangleAlert } from "lucide-react";
+import { Abas } from "@/components/Abas";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -395,26 +396,15 @@ export function OrcamentosPage() {
 
       {nadaAberto && !carregando && orcamentos.length > 0 && (
         <>
-          <div role="tablist" aria-label="O que mostrar na lista" className="sakura-abas">
-            {(
-              [
-                ["abertos", "Abertos", quantosAbertos],
-                ["recusados", "Recusados", quantosRecusados],
-              ] as const
-            ).map(([valor, rotulo, quantos]) => (
-              <button
-                key={valor}
-                type="button"
-                role="tab"
-                aria-selected={lista === valor}
-                onClick={() => setLista(valor)}
-                className="sakura-aba"
-              >
-                {rotulo}{" "}
-                <span className="sakura-aba-conta">{quantos}</span>
-              </button>
-            ))}
-          </div>
+          <Abas
+            rotulo="O que mostrar na lista"
+            ativa={lista}
+            aoEscolher={setLista}
+            abas={[
+              { valor: "abertos", nome: "Abertos", conta: quantosAbertos },
+              { valor: "recusados", nome: "Recusados", conta: quantosRecusados },
+            ]}
+          />
           <label className="sakura-rotulo w-64">
             Buscar por cliente ou placa
             <input

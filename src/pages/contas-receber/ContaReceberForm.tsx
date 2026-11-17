@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { TriangleAlert } from "lucide-react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
@@ -14,6 +13,7 @@ import {
 } from "@/schemas/contaReceber";
 import type { Cliente } from "@/types/cliente";
 import type { NovaContaReceber } from "@/types/contaReceber";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface ContaReceberFormProps {
   clientes: Cliente[];
@@ -53,13 +53,7 @@ export function ContaReceberForm({ clientes, onSalvar, onCancelar }: ContaRecebe
       </div>
 
       {erro && (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
-        >
-          <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span className="min-w-0">{erro}</span>
-        </p>
+        <AvisoDeErro>{erro}</AvisoDeErro>
       )}
 
       <div className="grid grid-cols-2 gap-4">

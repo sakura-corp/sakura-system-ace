@@ -22,6 +22,7 @@ import {
 } from "@/schemas/retornos";
 import { preencherModelo, telefoneParaWhatsapp } from "@/schemas/whatsapp";
 import type { Cliente } from "@/types/cliente";
+import { AvisoDeErro } from "@/components/Aviso";
 
 /**
  * A lista "Retornos" (FN-06, #381): quem já deveria ter voltado e quem deve
@@ -118,9 +119,9 @@ export function RetornosLista() {
   }, [ordens, servicos, clientes, donos, mostrarAntigos, lojaId]);
 
   if (erro) {
-    return <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>;
+    return <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>;
   }
-  if (!lista) return <p className="text-corpo text-sakura-muted">Carregando...</p>;
+  if (!lista) return <p className="text-corpo text-texto-2">Carregando...</p>;
 
   function texto({ retorno, cliente }: RetornoDoCliente<Cliente>): string {
     return preencherModelo(textoDoModelo(modelos, "retorno"), {
@@ -149,15 +150,15 @@ export function RetornosLista() {
   function tabela(titulo: string, linhas: RetornoDoCliente<Cliente>[], vazio: string) {
     return (
       <section className="space-y-2">
-        <h2 className="text-corpo font-semibold text-sakura-purple-dark">
+        <h2 className="text-corpo font-semibold text-texto">
           {titulo} ({linhas.length})
         </h2>
         {linhas.length === 0 ? (
-          <p className="text-corpo text-sakura-muted">{vazio}</p>
+          <p className="text-corpo text-texto-2">{vazio}</p>
         ) : (
           <div className="overflow-x-auto sakura-card">
             <table className="w-full table-fixed text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+              <thead className="bg-cartao text-texto">
                 <tr>
                   <th className="w-[22%] px-4 py-3 font-medium">Cliente</th>
                   <th className="w-[28%] px-4 py-3 font-medium">Carro</th>
@@ -174,10 +175,10 @@ export function RetornosLista() {
                   const avisoDeste = avisado && diaLocal(avisado) >= retorno.ultimoDia ? avisado : null;
                   const semTelefone = telefoneParaWhatsapp(cliente.telefone) === null;
                   return (
-                    <tr key={referenciaDoRetorno(retorno)} className="border-t border-sakura-gray/20">
+                    <tr key={referenciaDoRetorno(retorno)} className="border-t border-linha">
                       <td className="px-4 py-3">
                         {cliente.nome}
-                        <span className="block text-rotulo text-sakura-muted">{cliente.telefone || "—"}</span>
+                        <span className="block text-rotulo text-texto-2">{cliente.telefone || "—"}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className="mr-2">{retorno.veiculo}</span>
@@ -187,9 +188,9 @@ export function RetornosLista() {
                       <td className="px-4 py-3">
                         <span className="whitespace-nowrap">{diaBrasileiro(retorno.prevista)}</span>
                         {retorno.estimadoPeloKm && (
-                          <span className="block text-rotulo text-sakura-muted">estimado pelo KM</span>
+                          <span className="block text-rotulo text-texto-2">estimado pelo KM</span>
                         )}
-                        <span className="block text-rotulo text-sakura-muted">
+                        <span className="block text-rotulo text-texto-2">
                           {quandoVence(retorno.diasDeAtraso)}
                         </span>
                       </td>
@@ -197,7 +198,7 @@ export function RetornosLista() {
                         <div className="flex items-center justify-end gap-2">
                           {avisoDeste && (
                             <span
-                              className="text-rotulo text-sakura-muted"
+                              className="text-rotulo text-texto-2"
                               title="O sistema só sabe que a conversa foi aberta — se a mensagem foi mesmo enviada, só você sabe."
                             >
                               avisado em {new Date(avisoDeste).toLocaleDateString("pt-BR")}
@@ -208,7 +209,7 @@ export function RetornosLista() {
                               type="button"
                               disabled
                               title="Este cliente está sem telefone válido no cadastro."
-                              className="inline-flex h-8 items-center rounded-lg border border-sakura-borda-campo px-3 text-rotulo text-sakura-muted opacity-60"
+                              className="inline-flex h-8 items-center rounded-lg border border-borda-campo px-3 text-rotulo text-texto-2 opacity-60"
                             >
                               Sem telefone
                             </button>
@@ -239,12 +240,12 @@ export function RetornosLista() {
 
   return (
     <div className="space-y-6">
-      <p className="text-rotulo text-sakura-muted">
+      <p className="text-rotulo text-texto-2">
         É uma previsão: conta o intervalo de cada serviço a partir da última OS faturada do carro. Quem
         está marcado como &quot;não mandar lembrete&quot; no cadastro não aparece.
       </p>
       {nada ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhum retorno pra avisar agora. Só aparece serviço que tem um intervalo (em dias ou em km)
           preenchido no cadastro de Serviços.
         </p>

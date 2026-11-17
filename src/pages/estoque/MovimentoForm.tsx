@@ -14,7 +14,7 @@ import {
 import type { Deposito } from "@/types/deposito";
 import type { NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
-import { AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface MovimentoFormProps {
   pecas: Peca[];
@@ -69,7 +69,6 @@ export function MovimentoForm({ pecas, depositos, onSalvar, onCancelar }: Movime
         <label className="sakura-rotulo">
           Peça
           <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={watch("peca_id")}
             onMudar={(v) => setValue("peca_id", v)}

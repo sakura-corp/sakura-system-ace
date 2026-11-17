@@ -30,16 +30,16 @@ export function PerfilNaoCarregou() {
       <div className="sakura-card max-w-md p-8 text-center">
         {perfilFalhou ? (
           <>
-            <p className="text-corpo font-medium text-sakura-purple-dark">
+            <p className="text-corpo font-medium text-texto">
               Não consegui carregar o seu perfil.
             </p>
-            <p className="mt-2 text-rotulo text-sakura-purple-dark/85">
+            <p className="mt-2 text-rotulo text-texto/85">
               Pode ser a internet ou o banco de dados fora do ar por um instante. Tente de novo; se
               continuar, saia e entre de novo.
             </p>
           </>
         ) : (
-          <p className="text-corpo text-sakura-purple-dark/90">
+          <p className="text-corpo text-texto/90">
             Não achei o perfil de operador deste usuário (sem cadastro nesta empresa, ou desativado).
             Fale com o administrador.
           </p>
@@ -49,7 +49,7 @@ export function PerfilNaoCarregou() {
             <button
               onClick={tentarCarregarPerfil}
               disabled={saindo}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.4)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_25px_rgba(255,87,34,0.7)] disabled:opacity-50"
+              className="rounded-xl bg-acao px-5 py-2.5 text-corpo font-medium text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.4)] transition-all hover:bg-acao/90 hover:shadow-[0_0_25px_rgba(255,87,34,0.7)] disabled:opacity-50"
             >
               Tentar de novo
             </button>
@@ -57,7 +57,7 @@ export function PerfilNaoCarregou() {
           <button
             onClick={() => void sairDaqui()}
             disabled={saindo}
-            className="rounded-xl px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
+            className="rounded-xl px-5 py-2.5 text-corpo font-medium text-texto/90 hover:bg-passar disabled:opacity-50"
           >
             {saindo ? "Saindo…" : "Sair"}
           </button>

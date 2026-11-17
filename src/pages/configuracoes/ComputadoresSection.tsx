@@ -23,14 +23,14 @@ import {
 } from "@/schemas/computadores";
 import { rotuloDeIdade } from "@/schemas/painelInicio";
 import type { Computador } from "@/types/computador";
-import { MensagemDeErro } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // "Em que versão está cada computador da empresa?" (migration 0063). Cada
 // computador se registra sozinho a cada login — nada aqui é cadastro. O que
 // o admin faz é dar um apelido ("Balcão") e esquecer o que não existe mais.
 //
 // Carrega os próprios dados, como a seção "Atualizações deste computador":
-// só busca quando alguém abre a seção (SecaoRecolhivel não monta o conteúdo
+// só busca quando alguém abre a seção (SecaoDeConfiguracao não monta o conteúdo
 // fechado), então não pesa na abertura de Configurações.
 export function ComputadoresSection() {
   const [computadores, setComputadores] = useState<Computador[] | null>(null);
@@ -81,7 +81,7 @@ export function ComputadoresSection() {
 
   if (!computadores) {
     return erro ? (
-      <MensagemDeErro>{erro}</MensagemDeErro>
+      <AvisoDeErro>{erro}</AvisoDeErro>
     ) : (
       <p className="text-corpo text-texto-2">Carregando...</p>
     );
@@ -175,7 +175,7 @@ export function ComputadoresSection() {
 
   return (
     <>
-      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
 
       <p className="text-corpo text-texto-2">
         Cada computador aparece aqui sozinho, na primeira vez que alguém entra nele numa versão que

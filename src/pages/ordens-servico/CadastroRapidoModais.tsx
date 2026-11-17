@@ -16,6 +16,7 @@ import {
 import type { NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { CamposVeiculoRapido } from "./CamposVeiculoRapido";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
+import { AvisoDeErro } from "@/components/Aviso";
 
 /**
  * Cadastro rápido de cliente e de veículo, sem sair da ordem de serviço
@@ -50,18 +51,18 @@ function BotoesDoModal({
   onFechar: () => void;
 }) {
   return (
-    <div className="flex justify-end gap-3 border-t border-sakura-gray/20 pt-4">
+    <div className="flex justify-end gap-3 border-t border-linha pt-4">
       <button
         type="button"
         onClick={onFechar}
-        className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+        className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
       >
         Cancelar
       </button>
       <button
         type="submit"
         disabled={salvando}
-        className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+        className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
       >
         {salvando ? "Salvando..." : rotulo}
       </button>
@@ -104,7 +105,7 @@ export function NovoClienteRapidoModal({
   return (
     <Modal titulo="Cadastrar cliente" onFechar={onFechar}>
       <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4">
-        {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+        {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
         <Campo label="Nome" obrigatorio erro={errors.nome?.message}>
           <input type="text" {...register("nome")} className={inputClasse} />
@@ -114,8 +115,8 @@ export function NovoClienteRapidoModal({
           <input type="text" {...register("telefone")} className={inputClasse} />
         </Campo>
 
-        <div className="space-y-3 rounded-xl border border-sakura-gray/25 p-3">
-          <p className="text-rotulo font-medium text-sakura-muted">
+        <div className="space-y-3 rounded-xl border border-linha p-3">
+          <p className="text-rotulo font-medium text-texto-2">
             Veículo — dá pra deixar em branco e cadastrar depois
           </p>
           <CamposVeiculoRapido
@@ -126,7 +127,7 @@ export function NovoClienteRapidoModal({
           />
         </div>
 
-        <p className="text-rotulo text-sakura-muted">
+        <p className="text-rotulo text-texto-2">
           O resto do cadastro (CPF/CNPJ, endereço, aniversário) fica pra quando der tempo, na
           tela de Clientes.
         </p>
@@ -184,9 +185,9 @@ export function NovoVeiculoRapidoModal({
   return (
     <Modal titulo="Cadastrar veículo" onFechar={onFechar}>
       <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4">
-        {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+        {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Vai ficar no cadastro de <span className="font-medium">{nomeDoCliente}</span>.
         </p>
 
@@ -247,7 +248,7 @@ export function NovoClienteVendaModal({
   return (
     <Modal titulo="Cliente da venda" onFechar={onFechar}>
       <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4">
-        {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+        {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
         <Campo label={juridica ? "Razão social" : "Nome"} obrigatorio erro={errors.nome?.message}>
           <input type="text" {...register("nome")} className={inputClasse} />
@@ -269,7 +270,7 @@ export function NovoClienteVendaModal({
           <input type="text" {...register("telefone")} className={inputClasse} />
         </Campo>
 
-        <p className="text-rotulo text-sakura-muted">
+        <p className="text-rotulo text-texto-2">
           O {juridica ? "CNPJ" : "CPF"} é o que vai na nota. O resto do cadastro (endereço,
           aniversário) fica pra quando der tempo, na tela de Clientes.
         </p>

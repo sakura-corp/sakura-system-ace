@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
@@ -13,7 +14,7 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
-import { Aviso } from "./Aviso";
+import { Aviso } from "@/components/Aviso";
 import { FechamentoSection } from "./FechamentoSection";
 
 type Aba = "diario" | "entradas" | "saidas" | "fechamento";
@@ -81,26 +82,6 @@ export function CaixaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
-  // As setas, Home e End andam entre as abas e já trocam de aba.
-  const abasRef = useRef<(HTMLButtonElement | null)[]>([]);
-  function andarPelasAbas(e: KeyboardEvent<HTMLDivElement>) {
-    const atual = ABAS.findIndex((a) => a.chave === aba);
-    const proxima =
-      e.key === "ArrowRight"
-        ? (atual + 1) % ABAS.length
-        : e.key === "ArrowLeft"
-          ? (atual - 1 + ABAS.length) % ABAS.length
-          : e.key === "Home"
-            ? 0
-            : e.key === "End"
-              ? ABAS.length - 1
-              : null;
-    if (proxima === null) return;
-    e.preventDefault();
-    setAba(ABAS[proxima].chave);
-    abasRef.current[proxima]?.focus();
-  }
-
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     if (!lojaAtual) return;
     // Lançar depois do fechamento não é proibido (regra 7 do guia: aviso,
@@ -133,30 +114,19 @@ export function CaixaPage() {
       </header>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}
 
-      <div
-        role="tablist"
-        aria-label="Partes do caixa"
-        onKeyDown={andarPelasAbas}
-        className="sakura-abas"
-      >
-        {ABAS.map(({ chave, rotulo }, i) => (
-          <AbaBotao
-            key={chave}
-            ref={(el) => {
-              abasRef.current[i] = el;
-            }}
-            id={`caixa-aba-${chave}`}
-            label={rotulo}
-            ativa={aba === chave}
-            onClick={() => setAba(chave)}
-          />
-        ))}
-      </div>
+      <Abas
+        rotulo="Partes do caixa"
+        ativa={aba}
+        aoEscolher={setAba}
+        prefixoId="caixa-aba"
+        painel="caixa-painel"
+        abas={ABAS}
+      />
 
       <div role="tabpanel" id="caixa-painel" aria-labelledby={`caixa-aba-${aba}`}>
       {carregando ? (
@@ -200,47 +170,10 @@ export function CaixaPage() {
   );
 }
 
-const ABAS: { chave: Aba; rotulo: string }[] = [
-  { chave: "diario", rotulo: "Diário" },
-  { chave: "entradas", rotulo: "Entradas" },
-  { chave: "saidas", rotulo: "Saídas" },
-  { chave: "fechamento", rotulo: "Fechamento" },
+// As abas do caixa, com a peça `Abas` (o teclado das setas vem dela).
+const ABAS: { valor: Aba; nome: string }[] = [
+  { valor: "diario", nome: "Diário" },
+  { valor: "entradas", nome: "Entradas" },
+  { valor: "saidas", nome: "Saídas" },
+  { valor: "fechamento", nome: "Fechamento" },
 ];
-
-/**
- * A aba do visual novo: a peça `sakura-aba` (tarefa 7), com o traço laranja
- * embaixo da escolhida e a palavra em negrito. A aparência segue o
- * `aria-selected`, o mesmo estado que o leitor de tela anuncia. As setas entre
- * as abas são desta tela (`andarPelasAbas`).
- */
-function AbaBotao({
-  ref,
-  id,
-  label,
-  ativa,
-  onClick,
-}: {
-  ref: (el: HTMLButtonElement | null) => void;
-  id: string;
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      ref={ref}
-      id={id}
-      type="button"
-      role="tab"
-      aria-selected={ativa}
-      aria-controls="caixa-painel"
-      // Só a aba escolhida entra no Tab; entre as abas, as setas (o jeito de
-      // abas que o leitor de tela anuncia).
-      tabIndex={ativa ? 0 : -1}
-      onClick={onClick}
-      className="sakura-aba"
-    >
-      {label}
-    </button>
-  );
-}

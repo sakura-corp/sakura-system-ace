@@ -2,7 +2,8 @@ import { Botao } from "@/components/Botao";
 import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarTextoGarantia } from "@/lib/configuracoes";
-import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface TextoGarantiaSectionProps {
   texto: string;
@@ -38,7 +39,7 @@ export function TextoGarantiaSection({
 
   return (
     <>
-      {erro && <MensagemDeErro className="mt-3">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <textarea
         value={valor}
         onChange={(e) => {

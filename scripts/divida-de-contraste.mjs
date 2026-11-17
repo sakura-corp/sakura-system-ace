@@ -21,7 +21,7 @@
  *
  * A entrada `borda-de-campo` (51 combinações, 1,15:1) saiu daqui em
  * 12/09/2026: a usuária aprovou clarear a borda, e ela virou o token
- * --color-sakura-borda-campo em globals.css.
+ * --color-borda-campo em globals.css.
  *
  * As entradas `botao-roxo-com-letra-branca` (4,48:1) e `texto-roxo-como-link`
  * (4,14:1) saíram em 14/11/2026, com o visual novo (#990): o botão principal

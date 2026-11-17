@@ -14,7 +14,7 @@ import {
   paraVeiculosPreenchidos,
 } from "@/schemas/cliente";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
-import { AvisoDeErro } from "./AvisoDeErro";
+import { AvisoDeErro } from "@/components/Aviso";
 import { DadosClienteFields } from "./campos/DadosClienteFields";
 import { EnderecoFields } from "./campos/EnderecoFields";
 import { VeiculosFields } from "./campos/VeiculosFields";

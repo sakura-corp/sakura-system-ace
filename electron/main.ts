@@ -392,9 +392,27 @@ const CORES_DA_BARRA = {
   claro: { color: "#F3F2EF", symbolColor: "#1B1B1F" },
 } as const;
 
+// O ícone da janela aberta (barra de tarefas e Alt+Tab) segue o tema do
+// programa, e troca na hora (Sofia, 17/11/2026, #990). O do instalador, do
+// atalho e do ícone fixado com o programa fechado é um só, o escuro
+// (`build/icon.png`): esse o Windows lê do .exe, e o programa não muda. Com o
+// programa fixado na barra, o Windows 11 pode continuar mostrando o do atalho.
+// As imagens vêm de `public/` (geradas por
+// docs/referencia/visual-novo/conceito/icone.mjs), que o Vite copia pra `dist`.
+const PASTA_DOS_ICONES = VITE_DEV_SERVER_URL ? path.join(__dirname, "..", "public") : RENDERER_DIST;
+const ICONE_DA_JANELA = {
+  escuro: path.join(PASTA_DOS_ICONES, "icone-janela-escuro.png"),
+  claro: path.join(PASTA_DOS_ICONES, "icone-janela-claro.png"),
+} as const;
+
 aoAvisoDaTela("janela:tema", (tema: unknown) => {
   if (!TEM_BARRA_PROPRIA || !mainWindow || mainWindow.isDestroyed()) return;
   if (tema !== "escuro" && tema !== "claro") return;
+  try {
+    mainWindow.setIcon(ICONE_DA_JANELA[tema]);
+  } catch (erro) {
+    logErroDaTela(`Ícone da janela: ${String(erro).slice(0, 200)}`);
+  }
   try {
     mainWindow.setTitleBarOverlay({ ...CORES_DA_BARRA[tema], height: ALTURA_DA_BARRA });
     // O fundo da janela também: ao redimensionar, a borda não pisca escura no claro.
@@ -411,6 +429,8 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 700,
     backgroundColor: CORES_DA_BARRA.escuro.color,
+    // Nasce com o do tema padrão; a tela avisa o tema guardado logo ao abrir.
+    icon: ICONE_DA_JANELA.escuro,
     ...(TEM_BARRA_PROPRIA
       ? {
           titleBarStyle: "hidden" as const,

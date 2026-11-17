@@ -88,8 +88,7 @@ pede**:
 | `docs/pendencias-e-futuro.md` | **"O que depende dela"**; o que não existe; a parte fiscal (playbook por loja nova) | ao planejar, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar**, backup, atualizar bancos, voltar versão | ao publicar, rodar migration ou instalar loja |
 | `docs/historico.md` | estado do Git e os "onde parou" antigos, do mais novo pro mais velho | quando precisar do detalhe de um marco |
-| `docs/visao.md` | **pra onde o SSACE vai**, as quatro frentes e a prioridade das tarefas (ondas) | ao planejar funcionalidade nova ou falar do futuro |
-| `docs/comparativo-anexar.md` | o concorrente Anexar × o que temos (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
+| `docs/visao.md` e `docs/comparativo-anexar.md` (moram no `sakura-corp/escritorio`, privado) | **pra onde o SSACE vai** e o concorrente Anexar × o que temos. **Plano e estratégia novos nascem no escritório**, nunca aqui: este repositório é público (Sofia, 11/11/2026) | ao planejar funcionalidade nova, falar do futuro ou de venda (abrir o escritório com `add_repo`; se a sessão não alcança, seguir sem e avisar) |
 | `docs/jeito-de-trabalhar.md` | **o método com o Claude**: skills, trancas, afazeres, a fila | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/tarefas.md` | **o modelo único de tarefa**, as etiquetas, **a tabela de modelos** e o que fazer quando o modelo falha | ao escrever ou começar uma tarefa, e quando uma sessão falhar por modelo ou crédito |
 | `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
@@ -167,10 +166,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 16/11/2026: visual novo, quase todas as telas na `main`
-- **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
-- **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.
-- **Aberto**: em 1024 com o menu aberto, a tabela das OS rola de lado (esconder uma coluna é decisão dela); as sugestões de cada PR.
-- **Próximo**: Relações (sessão rodando) e Configurações com Auditoria e Diagnóstico (#1062); depois a tarefa de tirar os tokens antigos.
-- **Atenção**: as sessões pararam no limite semanal (16/11); a fila está em `docs/rascunhos/visual-novo-tarefas.md`.
-- **Com a Sofia**: no Windows 11, a barra da janela e o ícone do instalador; no fim de semana, as telas novas e o faturar com um login de verdade.
+### 17/11/2026: visual novo, a leva inteira (#990) na `main`
+- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
+- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
+- **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
+- **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
+- **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).

@@ -11,7 +11,8 @@ import {
   type LinkAvaliacaoFormValores,
 } from "@/schemas/whatsapp";
 import { Botao } from "@/components/Botao";
-import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface ModelosWhatsappSectionProps {
   modelos: Record<string, string>;
@@ -103,7 +104,7 @@ function ModeloEditavel({
         <span className="font-medium text-texto">{marcadores.join(", ")}</span>
       </p>
 
-      {erro && <MensagemDeErro className="mt-3">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <textarea
         value={valor}
         onChange={(e) => {
@@ -180,7 +181,7 @@ function LinkAvaliacaoCampo({
         Deixe vazio e salve para apagar.
       </p>
 
-      {erro && <MensagemDeErro className="mt-3">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <input
         id="link-avaliacao"
         type="text"

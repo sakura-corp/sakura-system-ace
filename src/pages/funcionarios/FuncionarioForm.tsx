@@ -14,7 +14,7 @@ import {
   type FuncionarioFormValues,
 } from "@/schemas/funcionario";
 import type { Funcionario, NovoFuncionario, NovoFuncionarioFilho } from "@/types/funcionario";
-import { AvisoDaTela } from "./AvisoDaTela";
+import { Aviso } from "@/components/Aviso";
 import { CargoAdmissaoFields } from "./campos/CargoAdmissaoFields";
 import { ConjugeFields } from "./campos/ConjugeFields";
 import { ContatoFields } from "./campos/ContatoFields";
@@ -94,7 +94,7 @@ export function FuncionarioForm({
         </h2>
       </div>
 
-      {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
+      {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
       {rascunho.rascunho && (
         <AvisoRascunho

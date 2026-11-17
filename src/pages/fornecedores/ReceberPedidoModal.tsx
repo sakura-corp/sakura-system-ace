@@ -6,7 +6,7 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import type { RecebimentoItem } from "@/lib/pedidosCompra";
-import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 import { nomePedido, type PedidoCompra } from "@/types/pedidoCompra";
 
 interface ReceberPedidoModalProps {

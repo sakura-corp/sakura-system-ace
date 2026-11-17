@@ -20,7 +20,8 @@ import type {
   ConfiguracaoFiscalLoja,
   RegimeTributario,
 } from "@/types/configuracao";
-import { AvisoDeAtencao, AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface DadosFiscaisSectionProps {
   configuracao: ConfiguracaoFiscalLoja | null;
@@ -159,7 +160,7 @@ export function DadosFiscaisSection({
 
   return (
     <>
-      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
       <h3 className="text-corpo font-semibold text-texto">Dados da empresa</h3>
       <div className="mt-3 grid grid-cols-3 gap-4">
         <label className="col-span-1 sakura-rotulo">
@@ -403,7 +404,7 @@ export function DadosFiscaisSection({
                   className={campoClasse}
                 />
               </label>
-              {erroPercentual && <MensagemDeErro className="mt-2">{erroPercentual}</MensagemDeErro>}
+              {erroPercentual && <AvisoDeErro className="mt-2">{erroPercentual}</AvisoDeErro>}
               <p className="mt-1 text-rotulo text-texto-2">
                 O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
                 serviço.
@@ -457,7 +458,7 @@ export function DadosFiscaisSection({
 
       <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
         {erroPercentual && (
-          <MensagemDeErro>Não salvou: confira o percentual dos tributos do Simples.</MensagemDeErro>
+          <AvisoDeErro>Não salvou: confira o percentual dos tributos do Simples.</AvisoDeErro>
         )}
         {salvo && (
           <AvisoDeSalvo>Dados fiscais salvos.</AvisoDeSalvo>

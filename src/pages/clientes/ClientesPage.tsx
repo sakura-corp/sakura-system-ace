@@ -35,7 +35,7 @@ import { MODULOS_QUE_LEEM_O_CAIXA } from "@/schemas/painelInicio";
 import { preencherModelo } from "@/schemas/whatsapp";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { temPermissao } from "@/types/operador";
-import { AvisoDeErro } from "./AvisoDeErro";
+import { AvisoDeErro } from "@/components/Aviso";
 import { ClienteForm } from "./ClienteForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { ImportarClientesModal } from "./ImportarClientesModal";

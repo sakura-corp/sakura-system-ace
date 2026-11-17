@@ -17,7 +17,8 @@ issue como "**Pra Sofia decidir**", com a recomendação. O resto da equipe não
 
 ## 1. Juntar o que a tarefa precisa
 1. Se for reescrever: ler a issue inteira e os comentários, e o que ela cita (`MELHORIAS.md`,
-   `docs/visao.md`, `docs/modulos.md` do módulo).
+   `docs/modulos.md` do módulo). A `docs/visao.md` mora no `sakura-corp/escritorio` (privado): abrir
+   o escritório (`add_repo`) e ler lá; se a sessão não alcança, seguir sem e avisar.
 2. Procurar no código (ajudante **rápido**, só lê) os arquivos que mudam, pra lista "Arquivos" ser
    de verdade, com caminho certo.
 3. Separar **o que já está decidido** do que falta. **Cada decisão que falta vira uma issue

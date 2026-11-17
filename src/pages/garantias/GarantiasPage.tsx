@@ -8,7 +8,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { listarItensComGarantia, type ItemGarantia } from "@/lib/garantias";
 import { garantiaVencida, vencimentoDaGarantia } from "@/schemas/garantia";
 import { temPermissao } from "@/types/operador";
-import { AvisoDeErro } from "../clientes/AvisoDeErro";
+import { AvisoDeErro } from "@/components/Aviso";
 
 type FiltroStatus = "todos" | "dentro_do_prazo" | "vencida";
 

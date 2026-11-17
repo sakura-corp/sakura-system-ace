@@ -5,7 +5,7 @@ import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
-import { AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 import {
   paraNovoServico,
   paraValoresFormulario,
@@ -117,7 +117,6 @@ export function ServicoForm({
         <label className="sakura-rotulo">
           Categoria
           <Combobox
-            className={CAMPO_NOVO_NO_COMBOBOX}
             opcoes={categorias.map((categoria) => ({ valor: categoria.id, rotulo: categoria.nome }))}
             valor={watch("categoria_id")}
             onMudar={(v) => setValue("categoria_id", v)}
@@ -127,36 +126,36 @@ export function ServicoForm({
         </label>
 
         <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Retorno a cada (dias)</span>
+          <span className="text-texto/80">Retorno a cada (dias)</span>
           <input
             type="number"
             inputMode="numeric"
             step="1"
             min="1"
             {...register("intervalo_dias")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="rounded-lg border border-borda-campo px-3 py-2 focus:border-acao"
           />
           {errors.intervalo_dias && (
-            <span className="text-rotulo text-red-600">{errors.intervalo_dias.message}</span>
+            <span className="text-rotulo text-perigo">{errors.intervalo_dias.message}</span>
           )}
         </label>
 
         <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Retorno a cada (km)</span>
+          <span className="text-texto/80">Retorno a cada (km)</span>
           <input
             type="number"
             inputMode="numeric"
             step="1"
             min="1"
             {...register("intervalo_km")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="rounded-lg border border-borda-campo px-3 py-2 focus:border-acao"
           />
           {errors.intervalo_km && (
-            <span className="text-rotulo text-red-600">{errors.intervalo_km.message}</span>
+            <span className="text-rotulo text-perigo">{errors.intervalo_km.message}</span>
           )}
         </label>
 
-        <p className="col-span-2 text-rotulo text-sakura-muted">
+        <p className="col-span-2 text-rotulo text-texto-2">
           A cada quantos dias ou quantos km o cliente deve voltar; 6 meses = 180 dias. Vazio: este
           serviço não gera lembrete.
         </p>

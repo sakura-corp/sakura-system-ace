@@ -64,11 +64,11 @@ export function DadosClienteFields({
         <input
           type="checkbox"
           {...register("nao_avisar")}
-          className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+          className="h-4 w-4 rounded border-borda-campo text-acao focus:ring-acao"
         />
-        <span className="text-sakura-purple-dark/80">Não mandar lembrete pra este cliente</span>
+        <span className="text-texto/80">Não mandar lembrete pra este cliente</span>
       </label>
-      <p className="mt-1 text-rotulo text-sakura-muted">
+      <p className="mt-1 text-rotulo text-texto-2">
         Ele não aparece na lista de Retornos nem na de clientes que sumiram.
       </p>
     </Secao>

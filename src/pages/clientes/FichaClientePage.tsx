@@ -25,7 +25,7 @@ import { formatarMoeda } from "@/schemas/dinheiro";
 import { tempoDesde } from "@/schemas/fichaVeiculo";
 import { nomeOrdem, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
-import { AvisoDeErro } from "./AvisoDeErro";
+import { AvisoDeErro } from "@/components/Aviso";
 import { SeloDoStatusDaOrdem } from "./SeloDoStatusDaOrdem";
 
 /**

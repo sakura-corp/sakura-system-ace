@@ -5,7 +5,7 @@ import type { Funcionario, NovoFuncionario, NovoFuncionarioFilho } from "@/types
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { Selo } from "@/components/Selo";
-import { AvisoDaTela } from "./AvisoDaTela";
+import { Aviso } from "@/components/Aviso";
 import { FuncionarioForm } from "./FuncionarioForm";
 
 interface FuncionariosSectionProps {
@@ -60,7 +60,7 @@ export function FuncionariosSection({
         />
       )}
 
-      {erro && <AvisoDaTela tipo="perigo">{erro}</AvisoDaTela>}
+      {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
       {funcionarios.length === 0 ? (
         <p className="text-corpo text-texto-2">Nenhum funcionário cadastrado ainda.</p>

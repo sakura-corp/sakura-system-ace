@@ -3,7 +3,8 @@ import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarJurosParcelas } from "@/lib/configuracoes";
 import type { JurosParcela } from "@/types/configuracao";
-import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface JurosParcelasSectionProps {
   jurosParcelas: JurosParcela[];
@@ -53,7 +54,7 @@ export function JurosParcelasSection({
 
   return (
     <>
-      {erro && <MensagemDeErro className="mb-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
       <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
         {NUMEROS_PARCELA.map((n) => (
           <label key={n} className="sakura-rotulo">

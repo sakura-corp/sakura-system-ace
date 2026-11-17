@@ -76,7 +76,7 @@ export function AbaBotao({
       aria-pressed={ativa}
       className={`border-b-2 px-4 py-2.5 text-corpo font-medium transition-colors ${
         ativa
-          ? "border-sakura-purple text-texto"
+          ? "border-acao text-texto"
           : "border-transparent text-texto-2 hover:text-texto"
       }`}
     >

@@ -7,9 +7,9 @@
 // Existe por causa de um tipo de bug que já apareceu três vezes (ver itens 10,
 // 17 e a varredura desta sessão no PROJETO_STATUS.md, seção 6): sobra de
 // layout do tema claro antigo em cima do tema escuro novo. O caso mais
-// traiçoeiro é o token `sakura-purple-dark`, que apesar do nome virou uma cor
-// CLARA (#e8d5e5) na troca de tema — todo `bg-sakura-purple-dark` que ficou
-// com letra branca em cima virou texto invisível sem ninguém perceber.
+// traiçoeiro foi o token antigo `sakura-purple-dark` (hoje `texto`), que
+// apesar do nome virou uma cor CLARA na troca de tema — todo fundo com ele que
+// ficou com letra branca em cima virou texto invisível sem ninguém perceber.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -31,41 +31,33 @@ const FUNDO_CLARO_FIXO = [
   // abaixo dos 4,5:1 do mínimo: a letra tem que ser a `sobre-acao`, escura
   // (regra 3 de docs/referencia/visual-novo/README.md). Vale também pro
   // `hover:`: passar o mouse não pode apagar o texto do botão. Com "/" (ex.:
-  // bg-sakura-purple/20) é só um véu sobre o fundo, e não entra.
-  /\bbg-sakura-purple(?:\/(?:[7-9]\d|100))?(?![-/\w])/, // de 70% pra cima ainda é laranja
-  /\bbg-sakura-pink(?:\/(?:[7-9]\d|100))?(?![-/\w])/,
-  /\bbg-acao(?:-clara)?(?![-/\w])/,
+  // bg-acao/20) é só um véu sobre o fundo, e não entra; de 70% pra cima ainda
+  // é laranja.
+  /\bbg-acao(?:-clara)?(?:\/(?:[7-9]\d|100))?(?![-/\w])/,
 ];
 const FUNDO_ESCURO_FIXO = [
-  /\bbg-sakura-gray\b(?!\/)/, // cinza escuro nos dois temas
   /\bbg-black\b(?!\/)/,
   /\bbg-\[#[0-1][0-9a-f]/, // hex começando bem escuro, ex: bg-[#160f16]
 ];
 const TEXTO_CLARO_FIXO = [/\btext-white\b(?!\/)/, /\btext-[a-z]+-(?:50|100|200)\b/];
 const TEXTO_ESCURO_FIXO = [
   /\btext-black\b/,
-  /\btext-sakura-gray\b/,
   /\btext-[a-z]+-(?:700|800|900)\b/,
   /\btext-sobre-acao(?![-/\w])/, // a letra escura de cima do laranja
 ];
 
 // As superfícies do tema: escuras no escuro, claras no claro.
 const SUPERFICIE = [
-  /\bbg-sakura-bg\b/,
-  /\bbg-sakura-pink-soft\b/,
   /\bbg-(?:fundo|painel|cartao|passar|campo|janela|placa)(?![-/\w])/,
 ];
-// Os textos do tema: claros no escuro, escuros no claro. O `sakura-purple-dark`,
-// apesar do nome, é o texto principal.
+// Os textos do tema: claros no escuro, escuros no claro.
 const TEXTO_DO_TEMA = [
-  /\btext-sakura-purple-dark\b/,
-  /\btext-sakura-muted\b/,
   /\btext-texto(?:-[23])?(?![-/\w])/,
 ];
 // O avesso do tema: a caixinha da Dica (clara no escuro, escura no claro) e o
 // texto principal usado como FUNDO; e as letras que vão em cima deles.
-const FUNDO_AVESSO = [/\bbg-dica(?![-/\w])/, /\bbg-sakura-purple-dark\b(?!\/)/];
-const TEXTO_AVESSO = [/\btext-sobre-dica(?![-/\w])/, /\btext-sakura-bg\b/];
+const FUNDO_AVESSO = [/\bbg-dica(?![-/\w])/, /\bbg-texto(?![-/\w])/];
+const TEXTO_AVESSO = [/\btext-sobre-dica(?![-/\w])/, /\btext-(?:fundo|cartao)(?![-/\w])/];
 
 const REGRAS = {
   escuro: {

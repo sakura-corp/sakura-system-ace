@@ -38,7 +38,7 @@ function formatarMoeda(valor: number): string {
 }
 
 const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark";
+  "rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto";
 
 // Uma linha da lista "Já lançados nesta OS". Em repouso é o mesmo texto de
 // sempre; clicando em "Editar" ela vira um formulário só dela, salvo na hora
@@ -127,7 +127,7 @@ export function ItemExistenteRow({
 
   if (!editando) {
     return (
-      <div className="flex items-center justify-between gap-3 text-corpo text-sakura-purple-dark/80">
+      <div className="flex items-center justify-between gap-3 text-corpo text-texto/80">
         <span>
           {item.tipo === "peca" ? "Peça" : "Serviço"} — {item.descricao} ({item.quantidade}x)
           {item.tecnico?.nome ? ` · técnico: ${item.tecnico.nome}` : ""}
@@ -141,7 +141,7 @@ export function ItemExistenteRow({
             <button
               type="button"
               onClick={abrirEdicao}
-              className="text-rotulo font-medium text-sakura-pink hover:underline"
+              className="text-rotulo font-medium text-acao-clara hover:underline"
             >
               Editar
             </button>
@@ -152,7 +152,7 @@ export function ItemExistenteRow({
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-sakura-pink/40 bg-poco p-3">
+    <div className="space-y-2 rounded-lg border border-acao-clara/40 bg-poco p-3">
       <div className="flex gap-2">
         <select
           value={tipo}
@@ -165,6 +165,7 @@ export function ItemExistenteRow({
 
         {tipo === "peca" ? (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
@@ -174,6 +175,7 @@ export function ItemExistenteRow({
           />
         ) : (
           <Combobox
+            tamanho="filtro"
             className="flex-1"
             opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
             valor={servicoId}
@@ -201,7 +203,7 @@ export function ItemExistenteRow({
             {...register("descricao")}
             className={`min-w-0 flex-1 ${inputClasse}`}
           />
-          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-texto/90">
             Custo (opcional)
             <input type="number" min="0" step="0.01" {...register("custo_unitario")} className={inputClasse} />
           </label>
@@ -211,24 +213,25 @@ export function ItemExistenteRow({
       {/* A mesma grade do ItemOSRow: quatro colunas a partir de 1280 de
           janela, duas abaixo disso (#425). */}
       <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Quantidade
           <input type="number" min="0.01" step="0.01" {...register("quantidade")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Preço unitário
           <input type="number" min="0" step="0.01" {...register("preco_unitario")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Desconto
           <input type="number" min="0" step="0.01" {...register("desconto")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-sakura-purple-dark/90">
+        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
           Técnico
           <Combobox
+            tamanho="filtro"
             opcoes={funcionarios.map((funcionario) => ({
               valor: funcionario.id,
               rotulo: funcionario.nome,
@@ -242,30 +245,30 @@ export function ItemExistenteRow({
       </div>
 
       {(errors.descricao || errors.quantidade || errors.desconto || errors.custo_unitario) && (
-        <p className="text-rotulo text-red-400">
+        <p className="text-rotulo text-perigo">
           {errors.descricao?.message ??
             errors.quantidade?.message ??
             errors.desconto?.message ??
             errors.custo_unitario?.message}
         </p>
       )}
-      {erro && <p className="text-rotulo text-red-400">{erro}</p>}
+      {erro && <p className="text-rotulo text-perigo">{erro}</p>}
 
-      <p className="text-rotulo text-sakura-muted">
+      <p className="text-rotulo text-texto-2">
         Trocar a peça ou a quantidade ajusta o estoque sozinho — a diferença aparece em Estoque →
         Movimentações.
       </p>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-rotulo text-sakura-purple-dark/90">
+        <p className="text-rotulo text-texto/90">
           Total deste item:{" "}
-          <span className="font-semibold text-sakura-purple-dark">{formatarMoeda(totalItem)}</span>
+          <span className="font-semibold text-texto">{formatarMoeda(totalItem)}</span>
         </p>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setEditando(false)}
-            className="rounded-lg px-3 py-1.5 text-rotulo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+            className="rounded-lg px-3 py-1.5 text-rotulo font-medium text-texto/90 hover:bg-passar"
           >
             Cancelar
           </button>
@@ -273,7 +276,7 @@ export function ItemExistenteRow({
             type="button"
             onClick={handleSubmit(aoSubmeter)}
             disabled={isSubmitting}
-            className="rounded-lg bg-sakura-pink px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-acao-clara px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
           >
             {isSubmitting ? "Salvando..." : "Salvar item"}
           </button>

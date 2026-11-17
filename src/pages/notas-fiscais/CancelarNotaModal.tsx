@@ -5,7 +5,7 @@ import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import { cancelarArquivoEmitido } from "@/lib/notasFiscais";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { AvisoNaTela } from "./AvisoNaTela";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface CancelarNotaModalProps {
   arquivo: NotaFiscalArquivo;
@@ -17,12 +17,6 @@ interface CancelarNotaModalProps {
 // cancelar uma nota — validar aqui evita mandar a chamada só pra ela voltar
 // com um erro de validação sobre o tamanho do texto.
 const TAMANHO_MINIMO_JUSTIFICATIVA = 15;
-
-// O botão de confirmar: vermelho cheio com letra branca quando dá pra
-// clicar; cinza com a letra secundária quando não (como o botão desligado
-// das peças: dá pra ler o que ele faria).
-const VERMELHO_LIGADO = "bg-red-600 text-white hover:bg-red-700 active:scale-[0.97]";
-const CINZA_DESLIGADO = "cursor-not-allowed bg-passar text-texto-2";
 
 export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNotaModalProps) {
   const [justificativa, setJustificativa] = useState("");
@@ -63,17 +57,14 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
           <Botao variante="fantasma" onClick={onFechar}>
             Voltar
           </Botao>
-          <button
-            type="button"
+          <Botao
+            variante="perigo"
             onClick={handleConfirmar}
-            disabled={!justificativaValida || cancelando}
-            aria-busy={cancelando || undefined}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-corpo font-semibold transition ${
-              justificativaValida && !cancelando ? VERMELHO_LIGADO : CINZA_DESLIGADO
-            }`}
+            disabled={!justificativaValida}
+            ocupado={cancelando}
           >
             {cancelando ? "Cancelando..." : "Confirmar cancelamento"}
-          </button>
+          </Botao>
         </>
       }
     >
@@ -103,7 +94,7 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
             : `Falta${faltam === 1 ? "" : "m"} ${faltam} caractere${faltam === 1 ? "" : "s"}.`}
         </p>
 
-        {erro && <AvisoNaTela>{erro}</AvisoNaTela>}
+        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
       </div>
     </Modal>
   );

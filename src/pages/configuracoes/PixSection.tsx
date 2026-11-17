@@ -13,7 +13,8 @@ import {
   type PixFormValues,
 } from "@/schemas/pixForm";
 import type { ConfiguracaoPix } from "@/types/configuracao";
-import { AvisoDeSalvo, MensagemDeErro } from "./pecas";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface PixSectionProps {
   configuracao: ConfiguracaoPix | null;
@@ -86,7 +87,7 @@ export function PixSection({ configuracao, lojaId, podeEditar, sugestao, onMudou
         sabendo que foi pago: a baixa continua à mão.
       </p>
 
-      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
       {!podeEditar && (
         <p className="mt-4 text-rotulo text-texto-2">
           Só quem é administrador da loja pode mudar o Pix.

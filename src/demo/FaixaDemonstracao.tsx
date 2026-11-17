@@ -34,7 +34,7 @@ export function FaixaDemonstracao() {
       `}</style>
       <div
         role="status"
-        className="faixa-demonstracao fixed inset-x-0 z-[1000] flex items-center justify-center gap-4 bg-sakura-pink px-4 text-rotulo font-semibold text-black"
+        className="faixa-demonstracao fixed inset-x-0 z-[1000] flex items-center justify-center gap-4 bg-acao-clara px-4 text-rotulo font-semibold text-black"
         style={{ height: ALTURA }}
       >
         <span>MODO DEMONSTRAÇÃO · nada aqui é de verdade</span>

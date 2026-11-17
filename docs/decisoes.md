@@ -12,9 +12,9 @@
 mercado: o S3Auto (Comsis), um sistema tradicional e completo, mas de tela densa e datada. O
 diferencial do SSACE é ser simples e moderno de usar, sem perder as funções essenciais. Validado o
 SSACE, a ideia é fazer outras edições (ex: Supermarket Edition) reaproveitando a base. O concorrente
-direto que ela acompanha é o Anexar (`docs/comparativo-anexar.md`).
+direto que ela acompanha é o Anexar (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado).
 
-**Pra onde o produto vai** (a visão dela, 12/10/2026): `docs/visao.md`.
+**Pra onde o produto vai** (a visão dela, 12/10/2026): `docs/visao.md` (mora no `sakura-corp/escritorio`, privado).
 
 ### Plano de expansão (definido por ela)
 
@@ -28,7 +28,7 @@ Três fases, nessa ordem, sem pressa de pular etapa:
 2. **Mais 2 ou 3 lojas de conhecidos do pai dela, também em Araraquara**: **é a fase atual**
    (preparar a venda). Duas empresas estão pra entrar: a de um amigo do pai, com 2 lojas, e outra
    com 1 loja. **Elas usam outro sistema, que exporta planilhas** (12/10; não se sabe ainda se
-   exporta tudo): por isso a importação (#457) subiu pra onda 1 de `docs/visao.md`. **Cada empresa (dono diferente) tem o próprio projeto Supabase**, totalmente
+   exporta tudo): por isso a importação (#457) subiu pra onda 1 de `docs/visao.md` (mora no `sakura-corp/escritorio`, privado). **Cada empresa (dono diferente) tem o próprio projeto Supabase**, totalmente
    isolado; várias lojas da mesma empresa usam o multi-loja dentro do mesmo projeto (seção 5). Um
    instalador só serve qualquer empresa: cada computador escolhe a conexão na primeira abertura
    ("Conexão com o banco", seção 7). **Pra começar a usar, nada de código**: cada empresa segue o
@@ -47,56 +47,52 @@ Três fases, nessa ordem, sem pressa de pular etapa:
 
 ### Identidade visual (como está hoje)
 
-> **Mudando** (Sofia, 14/11/2026, #990): o programa está saindo do rosa e roxo neon pro **laranja
-> com carmesim**, escuro, com grão no degradê, **logo B** (flor com a engrenagem no miolo), menu de
-> ícones e dois temas (escuro e claro). As regras estão em `docs/referencia/visual-novo/README.md`,
-> e a ordem das tarefas em `docs/rascunhos/visual-novo-tarefas.md`. **Já entrou** (tarefa 1): as
-> cores, as letras embutidas e o fundo do Login. O que está abaixo vale pro que ainda não mudou
-> (o vidro dos cartões, o menu, a logo); a última tarefa do visual novo reescreve esta seção.
+> **O visual novo** (Sofia, 14/11/2026, #990), na `main` desde 16 e 17/11/2026: **laranja com
+> carmesim**, escuro, com grão no degradê, **logo B** (flor com a engrenagem no miolo), menu de
+> ícones em quatro grupos e **dois temas** (escuro, o padrão, e claro). As regras completas estão em
+> `docs/referencia/visual-novo/README.md`; esta seção é o resumo.
 
-- **Tema escuro, laranja com carmesim**. Tokens `--color-sakura-*` em `src/styles/globals.css`,
-  **com os nomes antigos e os valores novos**: `sakura-purple` é o laranja de ação `#ff5722`,
-  `sakura-pink` o laranja claro `#ff7a4d`, fundo `sakura-bg` `#0a0a0d`, `color-scheme: dark`. Ao
-  lado deles, as cores com **nome de papel** (`acao`, `sobre-acao`, `cartao`, `perigo`…), que são as
-  que tela nova usa. **Letra em cima do laranja é `text-sobre-acao` (escura), nunca branca**: o
-  `npm run contraste` reprova. O tema rosa e roxo neon (a troca feita com o Gemini) valeu até
-  14/11/2026; antes dele, o tema claro/rosa original.
+- **As cores têm nome de PAPEL**, em `src/styles/globals.css`: `fundo`, `painel`, `cartao`,
+  `passar`, `campo`, `janela`, `linha`, `texto`, `texto-2`, `texto-3`, `acao` (o laranja `#ff5722`),
+  `acao-clara`, `sobre-acao`, `foco`, `carmesim` (só marca), e os avisos `info`, `atencao`, `ok`,
+  `perigo`. O tema claro troca **só o valor** (`:root[data-tema="claro"]`); nenhuma tela tem classe
+  de tema. **Os nomes antigos do tema rosa e roxo** (`sakura-purple`, `sakura-purple-dark`,
+  `sakura-pink-soft`, `sakura-muted`, `sakura-gray`…) **saíram em 17/11/2026**: documento ou
+  exemplo antigo que use eles é do tema anterior. O tema rosa e roxo neon valeu até 14/11/2026;
+  antes dele, o tema claro/rosa original.
+  - **As quatro regras**: carmesim é só marca; laranja é só ação (um botão laranja por tela);
+    **letra em cima do laranja é `text-sobre-acao` (escura), nunca branca**; todo aviso tem ícone e
+    palavra junto da cor. O `npm run contraste` reprova a letra branca no laranja.
+  - **Contraste**: conferido por `npm run contraste` (classes) e `npm run contraste:telas` (as 54
+    telas renderizadas, **nos dois temas**), itens 17 e 58 da seção 6.
 - **Letras embutidas** (Sofia, 14/11/2026): Inter (texto) e Plus Jakarta Sans (títulos, `--font-titulo`),
   dos pacotes `@fontsource-variable`, importadas no `src/main.tsx`. O programa roda sem internet, e
-  sem isso caía na letra do Windows em PC sem a Inter. **Ícones**: a biblioteca `lucide-react`
-  (mesma decisão; entra com o menu novo).
-  - **Cuidado com os nomes**: `sakura-purple-dark` é um tom **claro** (`#f4f4f5`) e
-    `sakura-muted` é `#a1a1aa`; os dois são pra texto sobre fundo escuro. Documento ou exemplo
-    antigo que diga "purple-dark é escuro" é do tema anterior. Nunca usar `text-sakura-gray` como
-    texto, nem opacidade baixa em cima de `sakura-card`.
-  - **Contraste**: conferido por `npm run contraste` (classes) e `npm run contraste:telas` (as 54
-    telas renderizadas), itens 17 e 58 da seção 6.
-- **Vidro escuro**: blocos arredondados translúcidos (`sakura-card`, com `backdrop-filter: blur` e
-  um brilho neon sutil) sobre um fundo escuro com brilho difuso (`sakura-shell-bg`), em quase toda
-  tela. **A janela (modal) é a exceção**: painel opaco (`sakura-modal` + `sakura-modal-fundo`),
-  porque no vidro o texto da tela de trás atrapalhava a leitura (#361, escolhido por ela em
-  03/10/2026). O Login usa o fundo de marca (`sakura-fundo-marca` + `sakura-grao`: manchas de
-  carmesim e laranja com o granulado), no lugar da imagem antiga. Os cartões do Início mostram só
-  valor grande + seta `›`, sem gráfico (seção 7).
+  sem isso caía na letra do Windows em PC sem a Inter. **Ícones**: a biblioteca `lucide-react`.
+- **As peças** (`src/components/`): `Botao`, `Selo`, `Aviso` (a caixa de aviso que fica na tela),
+  `avisar()` (o que some sozinho), `LinkPlaca`, `CartaoNumero`, `Modal`, `Dica`, e as classes
+  `sakura-campo`, `sakura-tabela` e `sakura-aba`. Tela nova usa as peças, não escreve a sua.
+- **Cartões sólidos**: o `sakura-card` é opaco (desde 15/11); o vidro ficou só no cartão do Login
+  (`sakura-vidro`). A janela (modal) é opaca (#361). O fundo do programa (`sakura-shell-bg`) tem um
+  brilho fraco de carmesim e laranja, sem grão; o Login usa o fundo de marca com grão. Os cartões do
+  Início têm o fio de gráfico pequeno, sem eixo (muda a decisão de 11/09).
 - **Barra de rolagem própria** (`src/components/AreaRolavel.tsx`): a nativa do Windows não respeita
   canto arredondado, então ela é escondida e o "polegar" é uma div comum, arrastável. Vale no
   `<main>` (App.tsx) e na `Sidebar`; não no `Modal.tsx`. **Cascata do CSS** (item 14 da seção 6):
   CSS escrito solto no `globals.css`, fora de `@layer`, ganha de qualquer classe do Tailwind;
   reset global (`*`, seletores soltos) vai dentro de `@layer base`.
-- **Borda dos campos** (12/09, escolha dela entre fotos de três versões): o token próprio
-  `--color-sakura-borda-campo` (branco a 35%), 3,13:1 contra o vidro. É **só dos campos**: o
-  `sakura-gray` continua desenhando borda de tabela, card e `iframe`, e os botões ficaram como
-  estavam. Login, conexão e troca de senha usam outra classe e foram corrigidos à parte.
+- **Borda dos campos** (12/09, escolha dela entre fotos de três versões): o papel próprio
+  `borda-campo` (branco a 35% no escuro), 3,1:1 contra o cartão. É **só dos campos**: tabela,
+  cartão e `iframe` usam `linha`.
 - **Campos**: checkbox e rádio usam `accent-color` da paleta. O botão do calendário do
   `input[type=date]` é o ícone nativo com `filter: invert(100%)`, com tamanho e fundo arredondado
   (desde 03/09). **Pegadinha**: o `invert` vale pro elemento inteiro, então a cor de fundo é escrita
-  ao contrário (o `rgba(0,0,0,…)` do CSS aparece como cinza claro). A seta do `<select>` continua
-  nativa, de propósito (os ~15 selects têm espaçamentos diferentes).
-- **Logo**: `public/sakura-icon.svg` (a flor, ícone da janela) e `public/sakura-logo.svg` (só o
-  nome, usado no menu por `Logo.tsx`), desenhados à mão, **não** são a arte oficial dela.
-  - A logo oficial dela é um SVG grande (~200 caminhos, saído de um traçador de imagem). **Não
-    tentar transcrever pelo chat**: numa tentativa antiga "Sakura System" virou "Sal u a System".
-    Trocar a logo não é prioridade (item 3 da seção 8).
+  ao contrário (o `rgba(0,0,0,…)` do CSS aparece como cinza claro).
+- **Logo**: a **B** (Sofia, 14/11/2026): `public/sakura-icon.svg` (a flor com a engrenagem) e o
+  nome em letra de verdade (Plus Jakarta Sans) no `Logo.tsx`, que troca de arquivo com o tema; o
+  ícone do programa é a flor no quadrado claro (`build/icon.png`). O `site/sakura-logo.svg` (a logo
+  antiga) só ficou porque a apresentação comercial usa, e a flor não entra nela (regra dela).
+  - A logo oficial antiga dela é um SVG grande (~200 caminhos, saído de um traçador de imagem).
+    **Não tentar transcrever pelo chat**: numa tentativa antiga "Sakura System" virou "Sal u a System".
   - **Anexo que não chega**: às vezes ela anexa um arquivo e ele não aparece na pasta de uploads da
     sessão, só a imagem na conversa. Antes de processar, conferir com
     `find /root/.claude/uploads -type f`. Se não chegou, recriar à mão e mostrar renderizado antes

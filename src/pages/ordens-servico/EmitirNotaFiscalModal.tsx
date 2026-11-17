@@ -41,6 +41,7 @@ import type { ItemOS, OrdemServico } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
 import type { PecaDadosFiscais, PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/components/Aviso";
 
 interface EmitirNotaFiscalModalProps {
   ordem: OrdemServico;
@@ -509,7 +510,7 @@ export function EmitirNotaFiscalModal({
   // Esta SIM tranca (#655): peça sem cadastro ou sem NCM não sai na NFC-e, e a SEFAZ não aceita nota sem NCM.
   // Aparece mesmo sem o token do Focus NFe (#742): a loja vê as duas pendências de uma vez.
   const quadroDasPecasQueImpedem = itensQueImpedem.length > 0 && (
-    <div className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+    <AvisoDeAtencao className="text-rotulo">
       <p>
         <strong>Esta nota não pode sair ainda.</strong>
       </p>
@@ -524,7 +525,7 @@ export function EmitirNotaFiscalModal({
               <button
                 type="button"
                 onClick={() => setItemCadastrando(item)}
-                className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
+                className="rounded-lg border border-atencao/50 px-3 py-1 font-medium text-atencao hover:bg-atencao/[0.2]"
               >
                 Cadastrar agora
               </button>
@@ -536,7 +537,7 @@ export function EmitirNotaFiscalModal({
                 <button
                   type="button"
                   onClick={conferirPecasDeNovo}
-                  className="rounded-lg border border-amber-700 px-3 py-1 font-medium text-amber-900 hover:bg-amber-100"
+                  className="rounded-lg border border-atencao/50 px-3 py-1 font-medium text-atencao hover:bg-atencao/[0.2]"
                 >
                   Já preenchi, conferir de novo
                 </button>
@@ -545,59 +546,56 @@ export function EmitirNotaFiscalModal({
           </li>
         ))}
       </ul>
-    </div>
+    </AvisoDeAtencao>
   );
   const avisoAliquota = avisoAliquotaCompetencia(configuracaoFiscal);
 
   return (
     <>
     <Modal titulo={`Emitir ${tipoNota}`} onFechar={onFechar}>
-      {carregando && <p className="text-corpo text-sakura-muted">Carregando...</p>}
+      {carregando && <p className="text-corpo text-texto-2">Carregando...</p>}
 
       {!carregando && erro && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>
+        <AvisoDeErro className="mb-3 text-corpo">{erro}</AvisoDeErro>
       )}
 
       {!carregando &&
         Object.entries(avisosEstoqueInicial).map(([itemId, aviso]) => (
-          <p key={itemId} className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+          <AvisoDeAtencao key={itemId} className="mb-3 text-corpo">
             {aviso}
-          </p>
+          </AvisoDeAtencao>
         ))}
 
       {/* #374: aviso, nunca tranca; aparece mesmo quando a configuração não veio. */}
       {!carregando && !resultado && semConexao && (
-        <p
-          role="status"
-          className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800"
-        >
+        <AvisoDeAtencao role="status" className="mb-3 text-rotulo">
           Sem internet a nota não sai: a SEFAZ e a prefeitura precisam receber. Espere a conexão
           voltar pra emitir.
-        </p>
+        </AvisoDeAtencao>
       )}
 
       {!carregando && !resultado && !configuracaoNaoVeio && !focusNfeConfigurado && (
         <div className="space-y-3">
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+          <AvisoDeAtencao className="text-corpo">
             Falta cadastrar o token do Focus NFe (e os dados fiscais da loja) em Configurações →
             "Dados fiscais da loja" antes de emitir.
-          </p>
+          </AvisoDeAtencao>
           {quadroDasPecasQueImpedem}
         </div>
       )}
 
       {!carregando && !resultado && focusNfeConfigurado && (
         <div className="space-y-3 text-corpo">
-          <div className="grid grid-cols-2 gap-3 rounded-lg bg-sakura-pink-soft/60 p-3">
+          <div className="grid grid-cols-2 gap-3 rounded-lg bg-cartao/60 p-3">
             <div>
-              <p className="text-rotulo text-sakura-purple-dark/85">Cliente</p>
-              <p className="font-medium text-sakura-purple-dark">{ordem.cliente?.nome ?? "—"}</p>
+              <p className="text-rotulo text-texto/85">Cliente</p>
+              <p className="font-medium text-texto">{ordem.cliente?.nome ?? "—"}</p>
             </div>
             <div>
-              <p className="text-rotulo text-sakura-purple-dark/85">
+              <p className="text-rotulo text-texto/85">
                 {tipoNota === "NFC-e" ? "Total de peças" : "Total de serviços"}
               </p>
-              <p className="font-medium text-sakura-purple-dark">
+              <p className="font-medium text-texto">
                 {(tipoNota === "NFC-e" ? totalPecas : totalServicos).toLocaleString("pt-BR", {
                   style: "currency",
                   currency: "BRL",
@@ -607,13 +605,13 @@ export function EmitirNotaFiscalModal({
           </div>
 
           {tipoNota === "NFS-e" && (
-            <label className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+            <label className="flex flex-col gap-1 text-rotulo text-texto/90">
               Código da cidade do cliente (IBGE)
               <input
                 value={codigoMunicipioCliente}
                 onChange={(e) => setCodigoMunicipioCliente(e.target.value)}
                 placeholder={cliente ? `${cliente.cidade ?? ""}/${cliente.uf ?? ""}` : ""}
-                className="w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple"
+                className="w-full rounded-lg border border-borda-campo px-3 py-2 text-corpo text-texto focus:border-acao"
               />
             </label>
           )}
@@ -626,11 +624,11 @@ export function EmitirNotaFiscalModal({
               exigir a identificação (o aviso do limite logo abaixo, #881). Melhor ela saber disso antes de emitir
               do que descobrir depois. */}
           {tipoNota === "NFC-e" && cliente?.tipo_pessoa === "juridica" && !clienteIdentificado && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               Este cliente é pessoa jurídica, mas está <strong>sem o CNPJ no cadastro</strong> —
               a nota vai sair como consumidor não identificado. Se ele precisa da nota no nome da
               empresa, cadastre o CNPJ dele em Clientes antes de emitir.
-            </p>
+            </AvisoDeAtencao>
           )}
 
           {/* Aviso, nunca tranca (docs/licoes.md, item 33): pessoa física sem CPF
@@ -642,19 +640,19 @@ export function EmitirNotaFiscalModal({
             cliente?.tipo_pessoa === "fisica" &&
             !ehConsumidor(cliente.id) &&
             !clienteIdentificado && (
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+              <AvisoDeAtencao className="text-rotulo">
                 Este cliente está <strong>sem o CPF completo no cadastro</strong>: a nota vai sair
                 como consumidor não identificado, sem o nome dele. Se ele quer a nota no nome dele,
                 cadastre o CPF (11 números) em Clientes antes de emitir.
-              </p>
+              </AvisoDeAtencao>
             )}
 
           {/* Aviso, nunca tranca (#881): o limite pode mudar por UF e por
               legislação, e quem decide é a SEFAZ. */}
           {avisoLimite && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               {avisoLimite}
-            </p>
+            </AvisoDeAtencao>
           )}
 
           {quadroDasPecasQueImpedem}
@@ -665,7 +663,7 @@ export function EmitirNotaFiscalModal({
               do item 33 do PROJETO_STATUS.md). O botão de emitir continua
               liberado. */}
           {pecasComProblemaFiscal.length > 0 && (
-            <div className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               <p>
                 <strong>
                   {pecasComProblemaFiscal.length === 1
@@ -683,7 +681,7 @@ export function EmitirNotaFiscalModal({
                   </li>
                 ))}
               </ul>
-            </div>
+            </AvisoDeAtencao>
           )}
 
           {/* A prefeitura recusa a primeira NFS-e do mês enquanto a alíquota
@@ -692,14 +690,14 @@ export function EmitirNotaFiscalModal({
               cadastrei" fica no Início, onde ela vê antes de precisar. */}
           {tipoNota === "NFS-e" && <AvisoAliquotaCompetencia aviso={avisoAliquota} />}
 
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+          <AvisoDeAtencao className="text-rotulo">
             {configuracaoFiscal?.focus_nfe_ambiente === "homologacao"
               ? "Ambiente de homologação — esta nota é só de teste, sem valor fiscal."
               : "Ambiente de produção — esta nota será emitida de verdade."}
-          </p>
+          </AvisoDeAtencao>
 
           {refPendente && (
-            <p className="break-all text-rotulo text-sakura-muted">
+            <p className="break-all text-rotulo text-texto-2">
               Referência da nota na Focus NFe: {refPendente}
             </p>
           )}
@@ -714,19 +712,19 @@ export function EmitirNotaFiscalModal({
                 <button
                   type="button"
                   onClick={() => setMostrarRegistrarPorRef(true)}
-                  className="text-sakura-purple-dark/85 underline hover:text-sakura-purple-dark"
+                  className="text-texto/85 underline hover:text-texto"
                 >
                   A nota já saiu na Focus NFe, mas não apareceu aqui?
                 </button>
               ) : (
-                <div className="space-y-2 rounded-lg bg-sakura-pink-soft/60 p-3">
-                  <label className="flex flex-col gap-1 text-sakura-purple-dark/90">
+                <div className="space-y-2 rounded-lg bg-cartao/60 p-3">
+                  <label className="flex flex-col gap-1 text-texto/90">
                     Referência da nota no painel da Focus NFe (coluna "Referência")
                     <input
                       value={refDigitada}
                       onChange={(e) => setRefDigitada(e.target.value)}
                       placeholder={`os${ordem.numero}-${tipoNota === "NFC-e" ? "nfce" : "nfse"}-...`}
-                      className="w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple"
+                      className="w-full rounded-lg border border-borda-campo px-3 py-2 text-corpo text-texto focus:border-acao"
                     />
                   </label>
                   <div className="flex justify-end">
@@ -734,7 +732,7 @@ export function EmitirNotaFiscalModal({
                       type="button"
                       onClick={handleRegistrarPorRef}
                       disabled={conferindo || !refDigitada.trim()}
-                      className="rounded-xl border border-sakura-gray/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10 disabled:opacity-50"
+                      className="rounded-xl border border-linha-forte px-4 py-2 text-corpo font-medium text-texto hover:bg-passar disabled:opacity-50"
                     >
                       {conferindo ? "Conferindo..." : "Registrar esta nota"}
                     </button>
@@ -748,7 +746,7 @@ export function EmitirNotaFiscalModal({
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
             >
               {refPendente ? "Fechar" : "Cancelar"}
             </button>
@@ -757,7 +755,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={() => conferirNota(refPendente)}
                 disabled={conferindo}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {conferindo ? "Conferindo..." : "Conferir de novo"}
               </button>
@@ -766,7 +764,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={handleEmitir}
                 disabled={emitindo || conferindo || itensQueImpedem.length > 0}
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {emitindo ? "Emitindo..." : "Confirmar emissão"}
               </button>
@@ -777,29 +775,29 @@ export function EmitirNotaFiscalModal({
 
       {resultado && (
         <div className="space-y-3 text-corpo">
-          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
+          <AvisoDeCerto>
             {tipoNota} emitida com sucesso — número {resultado.numero ?? "—"}.
-          </p>
+          </AvisoDeCerto>
           {resultado.chave_nfe && (
-            <p className="break-all text-rotulo text-sakura-muted">Chave: {resultado.chave_nfe}</p>
+            <p className="break-all text-rotulo text-texto-2">Chave: {resultado.chave_nfe}</p>
           )}
 
           {carregandoPreview && (
-            <p className="text-corpo text-sakura-muted">Gerando pré-visualização do PDF...</p>
+            <p className="text-corpo text-texto-2">Gerando pré-visualização do PDF...</p>
           )}
 
           {!carregandoPreview && erroPreview && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               A nota foi emitida e o XML já está salvo em Notas Fiscais, mas não deu pra carregar a
               pré-visualização do PDF: {erroPreview}
-            </p>
+            </AvisoDeAtencao>
           )}
 
           {!carregandoPreview && !erroPreview && !resultado.caminho_danfe && (
-            <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+            <AvisoDeAtencao className="text-rotulo">
               A nota foi emitida e o XML já está salvo em Notas Fiscais — esse tipo de nota não
               trouxe um PDF de pré-visualização.
-            </p>
+            </AvisoDeAtencao>
           )}
 
           {danfeUrl && (
@@ -807,7 +805,7 @@ export function EmitirNotaFiscalModal({
               ref={iframeRef}
               title="Pré-visualização da nota fiscal"
               src={danfeUrl}
-              className="h-96 w-full rounded-lg border border-sakura-gray/30 bg-white"
+              className="h-96 w-full rounded-lg border border-linha bg-white"
             />
           )}
 
@@ -815,7 +813,7 @@ export function EmitirNotaFiscalModal({
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
             >
               OK
             </button>
@@ -824,14 +822,14 @@ export function EmitirNotaFiscalModal({
                 <button
                   type="button"
                   onClick={handleBaixarPdf}
-                  className="rounded-xl border border-sakura-gray/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+                  className="rounded-xl border border-linha-forte px-4 py-2 text-corpo font-medium text-texto hover:bg-passar"
                 >
                   Baixar PDF
                 </button>
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
+                  className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
                 >
                   Imprimir
                 </button>
