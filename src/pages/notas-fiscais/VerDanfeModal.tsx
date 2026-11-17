@@ -29,6 +29,8 @@ interface VerDanfeModalProps {
 // mandar ao cliente; o XML é o arquivo que o contador pede.
 export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  // PDF ou HTML (a NFC-e da Focus vem em HTML): decide a extensão ao baixar (#1113).
+  const [pdfTipo, setPdfTipo] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
@@ -47,6 +49,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         // se faltar alguma coisa, a mensagem dele já diz o quê.
         const pdf = await buscarDanfeEmitida(arquivo);
         if (!ativo) return;
+        setPdfTipo(pdf.type);
         urlCriada = URL.createObjectURL(pdf);
         setPdfUrl(urlCriada);
       } catch (err) {
@@ -73,7 +76,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
     if (!pdfUrl) return;
     const link = document.createElement("a");
     link.href = pdfUrl;
-    link.download = nomeArquivoDanfe(arquivo);
+    link.download = nomeArquivoDanfe(arquivo, pdfTipo);
     link.click();
   }
 
