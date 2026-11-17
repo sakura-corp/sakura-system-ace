@@ -15,6 +15,9 @@ import {
   type ChaveModeloWhatsapp,
   type LinkAvaliacaoFormValores,
 } from "@/schemas/whatsapp";
+import { Botao } from "@/components/Botao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface ModelosWhatsappSectionProps {
   modelos: Record<string, string>;
@@ -38,7 +41,7 @@ export function ModelosWhatsappSection({
   onSalvo,
 }: ModelosWhatsappSectionProps) {
   return (
-    <div className="mt-4 space-y-8">
+    <div className="space-y-8 [&>section]:border-t [&>section]:border-linha [&>section]:pt-6 [&>section:first-child]:border-t-0 [&>section:first-child]:pt-0">
       <LinkAvaliacaoCampo lojaId={lojaId} linkSalvo={linkAvaliacao} onSalvo={onSalvo} />
       {/* key: trocar de loja remonta o bloco e busca o contato da outra. */}
       <ContatoContabilidadeCampo key={lojaId} lojaId={lojaId} />
@@ -101,16 +104,14 @@ function ModeloEditavel({
 
   return (
     <section>
-      <h4 className="text-corpo font-semibold text-sakura-purple-dark">{titulo}</h4>
-      <p className="mt-1 text-rotulo text-sakura-muted">{descricao}</p>
-      <p className="mt-1 text-rotulo text-sakura-muted">
+      <h4 className="text-corpo font-semibold text-texto">{titulo}</h4>
+      <p className="mt-1 text-rotulo text-texto-2">{descricao}</p>
+      <p className="mt-1 text-rotulo text-texto-2">
         Marcadores que este modelo troca pelo valor de verdade:{" "}
-        <span className="text-sakura-purple-dark">{marcadores.join(", ")}</span>
+        <span className="font-medium text-texto">{marcadores.join(", ")}</span>
       </p>
 
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <textarea
         value={valor}
         onChange={(e) => {
@@ -118,33 +119,24 @@ function ModeloEditavel({
           setSalvo(false);
         }}
         rows={5}
-        className="mt-3 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+        aria-label={titulo}
+        className="sakura-campo mt-3"
       />
 
-      <div className="mt-2 flex items-center justify-end gap-3">
-        {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            Modelo salvo.
-          </p>
-        )}
-        <button
-          type="button"
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+        {salvo && <AvisoDeSalvo>Modelo salvo.</AvisoDeSalvo>}
+        <Botao
+          variante="fantasma"
           onClick={() => {
             setValor(padrao);
             setSalvo(false);
           }}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
         >
           Voltar ao texto padrão
-        </button>
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="button" variante="secundario" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar modelo"}
-        </button>
+        </Botao>
       </div>
     </section>
   );
@@ -187,43 +179,36 @@ function LinkAvaliacaoCampo({
     <form onSubmit={handleSubmit(aoSubmeter)} noValidate>
       <label
         htmlFor="link-avaliacao"
-        className="block text-corpo font-semibold text-sakura-purple-dark"
+        className="block text-corpo font-semibold text-texto"
       >
         Link de avaliação no Google
       </label>
-      <p className="mt-1 text-rotulo text-sakura-muted">
+      <p className="mt-1 text-rotulo text-texto-2">
         Sem o link, o botão Avaliação não aparece na ordem de serviço nem na venda de balcão.
         Deixe vazio e salve para apagar.
       </p>
 
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <input
         id="link-avaliacao"
         type="text"
         inputMode="url"
         placeholder="https://g.page/r/..."
         {...register("link", { onChange: () => setSalvo(false) })}
-        className="mt-3 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+        aria-invalid={errors.link ? true : undefined}
+        className="sakura-campo mt-3"
       />
       {errors.link && (
-        <span className="mt-1 block text-rotulo text-red-600">{errors.link.message}</span>
+        <span className="mt-1 block text-rotulo text-perigo">{errors.link.message}</span>
       )}
 
-      <div className="mt-2 flex items-center justify-end gap-3">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
         {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            Link salvo.
-          </p>
+          <AvisoDeSalvo>Link salvo.</AvisoDeSalvo>
         )}
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao type="submit" variante="secundario" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Salvar link"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

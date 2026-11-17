@@ -14,8 +14,11 @@ interface CadastroPecaAvulsaModalProps {
   /** O cadastro da loja, pro aviso de "peça parecida" ao salvar. */
   pecas: PecaJanela[];
   lojaId: string;
-  /** A peça foi criada: quem abriu decide o que fazer com ela. */
-  onCadastrada: (peca: PecaJanela) => Promise<void> | void;
+  /**
+   * A peça foi criada: quem abriu decide o que fazer com ela. Se o estoque
+   * inicial não entrou, vem o aviso pra mostrar (aviso, nunca tranca: #909).
+   */
+  onCadastrada: (peca: PecaJanela, avisoEstoqueInicial: string | null) => Promise<void> | void;
   /** O aviso de peça parecida levou pra uma que já existe. */
   onAbrirExistente?: (peca: PecaJanela) => void;
   onFechar: () => void;
@@ -46,8 +49,12 @@ export function CadastroPecaAvulsaModal({
         regime={regime}
         csosnSugerido={csosnSugerido}
         onSalvar={async (peca, quantidadeInicial) => {
-          const criada = await cadastrarPecaNova(peca, quantidadeInicial, lojaId);
-          await onCadastrada(criada);
+          const { peca: criada, avisoEstoqueInicial } = await cadastrarPecaNova(
+            peca,
+            quantidadeInicial,
+            lojaId,
+          );
+          await onCadastrada(criada, avisoEstoqueInicial);
         }}
         onCancelar={onFechar}
       />

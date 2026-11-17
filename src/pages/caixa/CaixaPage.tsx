@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
 import { buscarCustoDasOrdens, criarMovimentoCaixa, listarMovimentosCaixa } from "@/lib/caixa";
 import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
 import { hojeLocal } from "@/lib/datas";
@@ -12,6 +14,7 @@ import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
+import { Aviso } from "@/components/Aviso";
 import { FechamentoSection } from "./FechamentoSection";
 
 type Aba = "diario" | "entradas" | "saidas" | "fechamento";
@@ -27,40 +30,50 @@ export function CaixaPage() {
   const [fechamentos, setFechamentos] = useState<FechamentoCaixa[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // Só a carga mais nova mexe na tela (#927).
+  const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
 
   async function carregar() {
-    if (!lojaAtual) {
-      setCarregando(false);
+    const carga = comecar(lojaAtual?.id);
+    if (!carga) {
+      if (!lojaAtual) setCarregando(false);
       return;
     }
     setCarregando(true);
     setErro(null);
     try {
       const [movimentosCarregados, categoriasCarregadas] = await Promise.all([
-        listarMovimentosCaixa(lojaAtual.id),
+        listarMovimentosCaixa(carga.lojaId),
         listarCategoriasCaixa(),
       ]);
+      if (!carga.aindaEhAtual()) return;
       // Sem o custo o lucro sairia inflado: se falhar, a tela mostra o erro.
       const custos = await buscarCustoDasOrdens(
         movimentosCarregados.flatMap((m) => (m.ordem_servico_id ? [m.ordem_servico_id] : [])),
       );
+      if (!carga.aindaEhAtual()) return;
       setMovimentos(movimentosCarregados);
       setCustoDasOrdens(custos);
       setCategorias(categoriasCarregadas);
+      carga.gravou();
       // O fechamento vem à parte e não derruba a tela: num banco que ainda
       // não recebeu a migration 0058, a tabela não existe — o Caixa continua
       // funcionando e a faixa de "banco desatualizado" já explica o resto.
       try {
-        setFechamentos(await listarFechamentosCaixa(lojaAtual.id));
+        const listaFechamentos = await listarFechamentosCaixa(carga.lojaId);
+        if (!carga.aindaEhAtual()) return;
+        setFechamentos(listaFechamentos);
       } catch (err) {
+        if (!carga.aindaEhAtual()) return;
         console.error("Erro ao carregar fechamentos de caixa:", err);
         setFechamentos([]);
       }
     } catch (err) {
+      if (!carga.aindaEhAtual()) return;
       console.error("Erro ao carregar caixa:", err);
       setErro(mensagemDeErro(err));
     } finally {
-      setCarregando(false);
+      if (carga.aindaEhAtual()) setCarregando(false);
     }
   }
 
@@ -92,32 +105,33 @@ export function CaixaPage() {
     <div className="space-y-6">
       <header className="flex items-center gap-3">
         <BotaoVoltar />
-        <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-            Caixa Diário
-          </h1>
-          <p className="text-corpo text-sakura-muted">
+        <div className="min-w-0">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Caixa Diário</h1>
+          <p className="text-corpo text-texto-2">
             Vendas e movimentação do dia, nascendo das ordens de serviço faturadas
           </p>
         </div>
       </header>
 
       {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
-        </p>
+        </Aviso>
       )}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="Diário" ativa={aba === "diario"} onClick={() => setAba("diario")} />
-        <AbaBotao label="Entradas" ativa={aba === "entradas"} onClick={() => setAba("entradas")} />
-        <AbaBotao label="Saídas" ativa={aba === "saidas"} onClick={() => setAba("saidas")} />
-        <AbaBotao label="Fechamento" ativa={aba === "fechamento"} onClick={() => setAba("fechamento")} />
-      </div>
+      <Abas
+        rotulo="Partes do caixa"
+        ativa={aba}
+        aoEscolher={setAba}
+        prefixoId="caixa-aba"
+        painel="caixa-painel"
+        abas={ABAS}
+      />
 
+      <div role="tabpanel" id="caixa-painel" aria-labelledby={`caixa-aba-${aba}`}>
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
-      ) : aba === "diario" ? (
+        <p className="text-corpo text-texto-2">Carregando...</p>
+      ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
         <DiarioSection
           movimentos={movimentos}
           custoDasOrdens={custoDasOrdens}
@@ -129,6 +143,7 @@ export function CaixaPage() {
         <FechamentoSection
           lojaId={lojaAtual.id}
           movimentos={movimentos}
+          custoDasOrdens={custoDasOrdens}
           fechamentos={fechamentos}
           podeDesfazer={operador?.admin === true}
           onAtualizado={carregar}
@@ -150,29 +165,15 @@ export function CaixaPage() {
           onAtualizado={carregar}
         />
       )}
+      </div>
     </div>
   );
 }
 
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// As abas do caixa, com a peça `Abas` (o teclado das setas vem dela).
+const ABAS: { valor: Aba; nome: string }[] = [
+  { valor: "diario", nome: "Diário" },
+  { valor: "entradas", nome: "Entradas" },
+  { valor: "saidas", nome: "Saídas" },
+  { valor: "fechamento", nome: "Fechamento" },
+];

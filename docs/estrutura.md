@@ -24,6 +24,11 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
   dos campos (Enter avança, apagar data limpa, número não muda sem digitar).
 - **`src/contexts/AuthContext.tsx`**: a sessão e o operador logado (`useAuth`).
 - **`src/components/`**: peças reaproveitadas. As que têm regra por trás:
+  - **as peças do visual novo** (#990; a tabela de como usar cada uma está em
+    `docs/referencia/visual-novo/README.md`, seção 6): `Botao.tsx` (com o `LinkBotao`), `Selo.tsx`
+    (o aviso com ícone e palavra; sem a palavra não compila), `CartaoNumero.tsx`, `Dica.tsx` (no
+    lugar do `title`) e `AvisoQueSome.tsx` (quem avisa é o `avisar()` de `src/lib/avisoQueSome.ts`).
+    Tela nova usa a peça, não escreve as classes à mão;
   - `Modal.tsx` (a janela por cima da tela); `Combobox.tsx` (select com busca, usado em toda lista
     que vem do banco; `permitirLivre` aceita valor fora da lista, hoje só na Marca do veículo);
   - `AcoesDaLinha.tsx` (botão pro que é do dia a dia + menu de três pontinhos pro que não se
@@ -35,6 +40,8 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
   - `AreaRolavel.tsx` (a barra de rolagem própria, seção 2), `LojaSwitcher.tsx` (trocar de loja,
     só com 2+ lojas), `LinkPlaca.tsx` (a placa que abre a ficha do veículo), `PermissaoRoute.tsx`
     (guarda de rota por módulo), `VersaoApp.tsx`, `BotaoVoltar.tsx`, `BotaoWhatsapp.tsx`.
+- **`src/galeria-de-pecas/`**: a mostra das peças do visual novo. **Não faz parte do programa das
+  lojas** (nada do programa importa esta pasta); abre por `docs/referencia/visual-novo/pecas.html`.
 - **`src/hooks/`**: `useEnterParaProximoCampo`, `useLimparDataAoApagar` (item 27),
   `useNaoMexerNoNumeroSemDigitar` (item 41), `useRascunhoFormulario` (rascunho salvo a cada 30 s;
   `useRascunho` junta salvar e restaurar), `useSituacaoDoEsquema` (compara a versão do banco com a

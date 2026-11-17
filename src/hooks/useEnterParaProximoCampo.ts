@@ -51,7 +51,15 @@ export function useEnterParaProximoCampo() {
       // Último campo do formulário: leva o foco pro botão de enviar, em vez
       // de já submeter — mais uma tecla Enter confirma, evitando envio sem
       // querer, mas sem exigir o mouse em nenhum momento.
-      formulario.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus();
+      // `elements`, e não `querySelector`: o botão de enviar pode morar FORA
+      // do <form>, ligado a ele pelo atributo `form` (o "Confirmar
+      // faturamento" fica no rodapé da janela, tarefa 7 do visual novo).
+      Array.from(formulario.elements)
+        .find(
+          (campo): campo is HTMLButtonElement =>
+            campo instanceof HTMLButtonElement && campo.type === "submit",
+        )
+        ?.focus();
     }
 
     document.addEventListener("keydown", aoPressionarTecla);

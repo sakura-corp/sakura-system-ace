@@ -11,6 +11,7 @@ import type { OrdemServico } from "@/types/os";
 import { ehVendaBalcao, totalOrdem } from "@/types/os";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
 import { GarantiaVisualModal } from "./GarantiaVisualModal";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface FechamentoTabProps {
   ordem: OrdemServico;
@@ -52,8 +53,8 @@ function BotaoEmitir({
       onClick={onClick}
       className={
         emitida
-          ? "flex-1 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 py-2.5 text-rotulo font-semibold text-emerald-300 transition-all hover:bg-emerald-500/20"
-          : "flex-1 rounded-xl bg-sakura-purple px-3 py-2.5 text-rotulo font-semibold text-white shadow-[0_0_15px_rgba(182,36,255,0.35)] transition-all hover:bg-sakura-purple/90 hover:shadow-[0_0_22px_rgba(182,36,255,0.6)]"
+          ? "flex-1 rounded-xl border border-ok/50 bg-ok/10 px-3 py-2.5 text-rotulo font-semibold text-ok transition-all hover:bg-ok/20"
+          : "flex-1 rounded-xl bg-acao px-3 py-2.5 text-rotulo font-semibold text-sobre-acao shadow-[0_0_15px_rgba(255,87,34,0.35)] transition-all hover:bg-acao/90 hover:shadow-[0_0_22px_rgba(255,87,34,0.6)]"
       }
     >
       {emitida ? `${rotulo} emitida ✓` : `Emitir ${rotulo}`}
@@ -121,47 +122,47 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
 
   return (
     <div className="space-y-6">
-      {erro && <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
       <section className="grid grid-cols-2 gap-4 sakura-card p-4 text-corpo">
         <div>
-          <p className="text-sakura-purple-dark/80">Cliente</p>
-          <p className="font-medium text-sakura-purple-dark">{ordem.cliente?.nome ?? "—"}</p>
+          <p className="text-texto/80">Cliente</p>
+          <p className="font-medium text-texto">{ordem.cliente?.nome ?? "—"}</p>
         </div>
         {ehVenda ? (
           <div>
-            <p className="text-sakura-purple-dark/80">Vendedor</p>
-            <p className="font-medium text-sakura-purple-dark">{ordem.vendedor?.nome ?? "—"}</p>
+            <p className="text-texto/80">Vendedor</p>
+            <p className="font-medium text-texto">{ordem.vendedor?.nome ?? "—"}</p>
           </div>
         ) : (
           <div>
-            <p className="text-sakura-purple-dark/80">Veículo</p>
-            <p className="font-medium text-sakura-purple-dark">{ordem.veiculo?.placa ?? "—"}</p>
+            <p className="text-texto/80">Veículo</p>
+            <p className="font-medium text-texto">{ordem.veiculo?.placa ?? "—"}</p>
           </div>
         )}
         <div>
-          <p className="text-sakura-purple-dark/80">{ehVenda ? "Registrada em" : "Aberta em"}</p>
-          <p className="font-medium text-sakura-purple-dark">
+          <p className="text-texto/80">{ehVenda ? "Registrada em" : "Aberta em"}</p>
+          <p className="font-medium text-texto">
             {formatarData(ordem.data_abertura)}
           </p>
         </div>
         <div>
-          <p className="text-sakura-purple-dark/80">Fechada em</p>
-          <p className="font-medium text-sakura-purple-dark">
+          <p className="text-texto/80">Fechada em</p>
+          <p className="font-medium text-texto">
             {formatarData(ordem.data_fechamento)}
           </p>
         </div>
       </section>
 
       <section className="sakura-card p-4">
-        <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+        <h3 className="mb-3 text-corpo font-semibold text-texto">
           Peças e serviços
         </h3>
         <div className="space-y-1.5">
           {itens.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between text-corpo text-sakura-purple-dark/80"
+              className="flex items-center justify-between text-corpo text-texto/80"
             >
               <span>
                 {item.tipo === "peca" ? "Peça" : "Serviço"} — {item.descricao} (
@@ -171,15 +172,15 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-right text-corpo font-semibold text-sakura-purple-dark">
+        <p className="mt-3 text-right text-corpo font-semibold text-texto">
           Total geral: {formatarMoeda(totalOrdem(itens))}
         </p>
       </section>
 
       <section className="space-y-4 sakura-card p-4">
         <div className="space-y-2">
-          <p className="text-rotulo font-medium text-sakura-purple-dark/85">Nota fiscal</p>
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo font-medium text-texto/85">Nota fiscal</p>
+          <p className="text-rotulo text-texto-2">
             {situacao.pendentes.length === 0
               ? situacao.completa
                 ? `Todas as notas ${desta} já foram emitidas.`
@@ -210,7 +211,7 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
                   key={nota.id}
                   type="button"
                   onClick={() => setNotaParaVerDanfe(nota)}
-                  className="flex-1 rounded-xl border border-sakura-gray/40 px-3 py-2 text-rotulo font-medium text-sakura-purple-dark transition-colors hover:bg-sakura-gray/10"
+                  className="flex-1 rounded-xl border border-linha-forte px-3 py-2 text-rotulo font-medium text-texto transition-colors hover:bg-passar"
                 >
                   {nota.tipo === "nfe" ? "Ver DANFE" : "Ver PDF da NFS-e"}
                 </button>
@@ -220,11 +221,11 @@ export function FechamentoTab({ ordem, onItensMudaram }: FechamentoTabProps) {
         </div>
 
         <div className="space-y-2">
-          <p className="text-rotulo font-medium text-sakura-purple-dark/85">Garantia</p>
+          <p className="text-rotulo font-medium text-texto/85">Garantia</p>
           <button
             type="button"
             onClick={() => setPreviewGarantiaAberta(true)}
-            className="w-full rounded-xl bg-sakura-pink px-3 py-2.5 text-rotulo font-semibold text-sakura-bg shadow-[0_0_15px_rgba(255,77,206,0.35)] transition-all hover:bg-sakura-pink/90 hover:shadow-[0_0_22px_rgba(255,77,206,0.6)]"
+            className="w-full rounded-xl bg-acao-clara px-3 py-2.5 text-rotulo font-semibold text-sobre-acao shadow-[0_0_15px_rgba(255,122,77,0.35)] transition-all hover:bg-acao-clara/90 hover:shadow-[0_0_22px_rgba(255,122,77,0.6)]"
           >
             Ver garantia
           </button>

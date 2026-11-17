@@ -56,7 +56,8 @@ export function mesPorExtenso(competencia: string): string {
 // A loja emite NFS-e? Não existe uma chave dizendo isso — o que existe é a
 // configuração que só quem emite preenche: o token da Focus NFe (que a tela
 // não vê desde o TR-04.2, só sabe que existe — `focus_nfe_configurado`) e a
-// inscrição municipal (que vai no corpo da NFS-e como prestador). Sem isso, o aviso
+// inscrição municipal (que vai como prestador só no caminho municipal, `/v2/nfse`;
+// na NFS-e Nacional ela nunca vai, #948). Sem isso, o aviso
 // mensal seria só chateação pra quem nunca vai emitir nota de serviço.
 export function lojaEmiteNfse(configuracao: ConfiguracaoFiscalLoja | null): boolean {
   return Boolean(configuracao?.focus_nfe_configurado && configuracao?.inscricao_municipal);

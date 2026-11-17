@@ -1,4 +1,8 @@
+import { UserPlus } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Selo } from "@/components/Selo";
+import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
@@ -19,6 +23,9 @@ import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
 import type { ItemNotaFiscalXml, NotaFiscalXmlExtraida } from "@/types/notaFiscalXmlFornecedor";
 import type { PecaJanela } from "@/types/peca";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
+
+const ID_DO_FORMULARIO = "importar-nota-xml-formulario";
 
 interface ItemRevisao extends ItemNotaFiscalXml {
   incluir: boolean;
@@ -92,11 +99,19 @@ export function ImportarNotaFiscalXmlModal({
   // O regime da loja decide se o código do fornecedor serve ou não. Falhar
   // aqui não pode derrubar a importação: sem regime, `codigoParaPecaImportada`
   // simplesmente mantém o comportamento antigo (copia o código da nota).
+  // #927: só a leitura mais nova do regime vale (a loja pode mudar com a anterior ainda andando).
+  const { comecar } = useCargaMaisNova(lojaId);
   useEffect(() => {
-    buscarConfiguracaoFiscal(lojaId)
-      .then((config) => setRegime(config?.regime_tributario ?? null))
+    const carga = comecar(lojaId);
+    if (!carga) return;
+    // O regime da loja anterior não fica valendo enquanto o da nova não chega.
+    setRegime(null);
+    buscarConfiguracaoFiscal(carga.lojaId)
+      .then((config) => {
+        if (carga.aindaEhAtual()) setRegime(config?.regime_tributario ?? null);
+      })
       .catch((err) => console.error("Erro ao carregar o regime tributário da loja:", err));
-  }, [lojaId]);
+  }, [lojaId, comecar]);
 
   async function handleLer() {
     if (!arquivo) return;
@@ -256,68 +271,75 @@ export function ImportarNotaFiscalXmlModal({
       descricao="O arquivo XML que o fornecedor te manda (ou que você baixa no site da Sefaz) — diferente da nota que você emite pro cliente. Cria um pedido de compra já recebido, com entrada no estoque e cotação registrados sozinhos."
       largura="4xl"
       onFechar={onFechar}
+      // Os botões ficam no rodapé da janela, fora da parte que rola: numa nota
+      // com muitos itens, "Importar" está sempre à vista. No segundo passo o
+      // `form` liga o botão ao formulário de dentro; o que ele faz é o mesmo.
+      rodape={
+        <>
+          <Botao variante="fantasma" onClick={onFechar}>
+            Cancelar
+          </Botao>
+          {itens === null ? (
+            <Botao variante="principal" onClick={handleLer} disabled={!arquivo} ocupado={lendo}>
+              {lendo ? "Lendo..." : "Ler arquivo"}
+            </Botao>
+          ) : nota ? (
+            <Botao
+              type="submit"
+              form={ID_DO_FORMULARIO}
+              variante="principal"
+              disabled={quantidadeSelecionada === 0 || !depositoId}
+              ocupado={salvando}
+            >
+              {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
+            </Botao>
+          ) : null}
+        </>
+      }
     >
-      {erro && (
-        <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
 
       {itens === null && (
         <div className="space-y-4">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">Arquivo XML da nota</span>
+          <label className="sakura-rotulo">
+            Arquivo XML da nota
             <input
               type="file"
               accept=".xml,text/xml,application/xml"
               onChange={(e) => setArquivo(e.target.files?.[0] ?? null)}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+              className="sakura-campo h-auto! py-2! text-corpo file:mr-3 file:rounded-lg file:border-0 file:bg-passar file:px-3 file:py-1.5 file:text-rotulo file:font-medium file:text-texto"
             />
           </label>
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleLer}
-              disabled={!arquivo || lendo}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {lendo ? "Lendo..." : "Ler arquivo"}
-            </button>
-          </div>
         </div>
       )}
 
       {itens !== null && nota && (
-        <form onSubmit={handleImportar} className="space-y-4">
+        <form id={ID_DO_FORMULARIO} onSubmit={handleImportar} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg border border-sakura-gray/30 p-3 text-corpo">
-              <span className="text-sakura-purple-dark/70">Fornecedor</span>
-              <p className="font-medium text-sakura-purple-dark">
+            <div className="rounded-xl border border-linha p-3 text-corpo">
+              <span className="text-rotulo font-medium text-texto-2">Fornecedor</span>
+              <p className="font-medium text-texto">
                 {fornecedorEncontrado
                   ? fornecedorEncontrado.nome
                   : (nota.fornecedor_nome ?? "Sem nome no XML")}
               </p>
               {!fornecedorEncontrado && (
-                <p className="mt-1 text-rotulo text-amber-700">
-                  Não achei esse CNPJ cadastrado — um fornecedor novo será criado
-                  automaticamente ao importar.
-                </p>
+                <div className="mt-2">
+                  <Selo tipo="atencao" palavra="Fornecedor novo" icone={UserPlus} />
+                  <p className="mt-1 text-rotulo text-atencao">
+                    Não achei esse CNPJ cadastrado — um fornecedor novo será criado
+                    automaticamente ao importar.
+                  </p>
+                </div>
               )}
             </div>
 
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">
-                Depósito (onde a mercadoria entrou) <span className="text-red-500">*</span>
-              </span>
+            <label className="sakura-rotulo">
+              <span>Depósito (onde a mercadoria entrou) <span className="text-perigo">*</span></span>
               <select
                 value={depositoId}
                 onChange={(e) => setDepositoId(e.target.value)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="sakura-campo"
               >
                 {depositos.map((deposito) => (
                   <option key={deposito.id} value={deposito.id}>
@@ -335,7 +357,7 @@ export function ImportarNotaFiscalXmlModal({
               nome de peça nenhum. */}
           {pecasNovasComCodigoDeOutroRegime.length > 0 && (
             <div className="space-y-3">
-              <p className="rounded-lg bg-amber-50 px-3 py-2 text-rotulo text-amber-800">
+              <AvisoDeAtencao>
                 {pecasNovasComCodigoDeOutroRegime.length === 1
                   ? "Uma peça nova desta nota vem"
                   : `${pecasNovasComCodigoDeOutroRegime.length} peças novas desta nota vêm`}{" "}
@@ -343,39 +365,39 @@ export function ImportarNotaFiscalXmlModal({
                 {regimeUsaCsosn(regime) ? " (Simples Nacional)" : ""}. Escolha abaixo o código
                 que elas devem receber no seu cadastro — em branco, a peça fica sem código e
                 você preenche depois em Estoque → Produtos.
-              </p>
-              <label className="flex flex-col gap-1 text-corpo">
-                <span className="text-sakura-purple-dark/80">
-                  {regimeUsaCsosn(regime) ? "CSOSN" : "CST"} das peças novas
-                </span>
+              </AvisoDeAtencao>
+              <label className="sakura-rotulo">
+                {regimeUsaCsosn(regime) ? "CSOSN" : "CST"} das peças novas
                 <input
                   value={codigoIcmsNovas}
                   onChange={(e) => setCodigoIcmsNovas(e.target.value)}
                   placeholder={regimeUsaCsosn(regime) ? "Ex: 500" : "Ex: 00"}
-                  className="w-32 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+                  className="sakura-campo w-32 text-corpo"
                 />
               </label>
             </div>
           )}
 
           {itens.length === 0 ? (
-            <p className="text-corpo text-sakura-muted">Não encontrei nenhum item nessa nota.</p>
+            <p className="text-corpo text-texto-2">Não encontrei nenhum item nessa nota.</p>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-sakura-gray/30">
-              <table className="w-full min-w-[820px] text-left text-tabela">
-                <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <div className="sakura-card overflow-x-auto">
+              <table className="sakura-tabela min-w-[820px]">
+                <thead>
                   <tr>
-                    <th className="px-2 py-2" />
-                    <th className="px-2 py-2 font-medium">Item da nota</th>
-                    <th className="px-2 py-2 font-medium">Peça no sistema</th>
-                    <th className="px-2 py-2 font-medium">Qtde.</th>
-                    <th className="px-2 py-2 font-medium">Preço unit.</th>
+                    <th className="relative">
+                      <span className="sr-only">Incluir</span>
+                    </th>
+                    <th>Item da nota</th>
+                    <th>Peça no sistema</th>
+                    <th>Qtde.</th>
+                    <th>Preço unit.</th>
                   </tr>
                 </thead>
                 <tbody>
                   {itens.map((item, indice) => (
-                    <tr key={indice} className="border-t border-sakura-gray/20">
-                      <td className="px-2 py-1.5">
+                    <tr key={indice}>
+                      <td>
                         <input
                           type="checkbox"
                           checked={item.incluir}
@@ -384,22 +406,23 @@ export function ImportarNotaFiscalXmlModal({
                           }
                         />
                       </td>
-                      <td className="px-2 py-1.5">
-                        <p className="text-sakura-purple-dark">{item.descricao}</p>
-                        <p className="text-sakura-muted">
+                      <td>
+                        <p className="text-texto">{item.descricao}</p>
+                        <p className="text-texto-2">
                           NCM {item.ncm ?? "—"} · CFOP {item.cfop_padrao ?? "—"}
                         </p>
                         {motivosCfop[indice] && (
-                          <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-rotulo text-amber-800">
+                          <p className="mt-1 rounded-lg bg-atencao/[0.12] px-2 py-1 text-rotulo text-atencao">
                             <strong>CFOP:</strong> {motivosCfop[indice]}. A nota fiscal dessa
                             peça pode ser recusada; dá pra importar assim e acertar depois em
                             Estoque → Produtos.
                           </p>
                         )}
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <Combobox
                           className="w-52"
+                          tamanho="filtro"
                           opcoes={pecas.map((peca) => ({
                             valor: peca.id,
                             rotulo: peca.descricao,
@@ -410,7 +433,7 @@ export function ImportarNotaFiscalXmlModal({
                           placeholder="Selecione a peça"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
                           type="number"
                           step="0.01"
@@ -421,10 +444,10 @@ export function ImportarNotaFiscalXmlModal({
                               quantidadeEditavel: Number(e.target.value),
                             })
                           }
-                          className="w-20 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                          className="sakura-campo sakura-campo-filtro w-20! px-2!"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
                           type="number"
                           step="0.01"
@@ -433,7 +456,7 @@ export function ImportarNotaFiscalXmlModal({
                           onChange={(e) =>
                             atualizarItem(indice, { precoEditavel: Number(e.target.value) })
                           }
-                          className="w-24 rounded border border-sakura-borda-campo px-1.5 py-1 focus:border-sakura-purple"
+                          className="sakura-campo sakura-campo-filtro w-24! px-2!"
                         />
                       </td>
                     </tr>
@@ -442,23 +465,6 @@ export function ImportarNotaFiscalXmlModal({
               </table>
             </div>
           )}
-
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={quantidadeSelecionada === 0 || !depositoId || salvando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
-            </button>
-          </div>
         </form>
       )}
     </Modal>

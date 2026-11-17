@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { listarCategorias } from "@/lib/categorias";
 import { buscarConfiguracaoFiscal } from "@/lib/configuracoes";
+import { mensagemDeErro } from "@/lib/errors";
 import { registrarMovimento } from "@/lib/estoque";
 import { buscarDadosFiscaisDasPecas, cadastrarPecaRapida } from "@/lib/pecas";
 import { margemAPartirDoPreco, type PecaFormValues } from "@/schemas/peca";
@@ -71,15 +72,32 @@ export function useDadosParaCadastroDePeca(lojaId: string, pecas: PecaJanela[]) 
   return { categorias, regime, csosnSugerido };
 }
 
+/** Tira o ponto do fim do motivo, que vai entre parênteses no aviso ("(...loja). Lance"). */
+export function semPontoFinal(texto: string): string {
+  return texto.trim().replace(/\.+$/, "");
+}
+
+/** A peça criada e, se o estoque inicial não entrou, o aviso pra mostrar (#909). */
+export interface PecaNovaCadastrada {
+  peca: Peca & PecaJanela;
+  avisoEstoqueInicial: string | null;
+}
+
 /**
  * Cadastra a peça nova e, se a pessoa informou uma quantidade em estoque,
  * lança a entrada inicial — o mesmo que o cadastro do Estoque faz ao salvar.
+ *
+ * Se a peça não foi criada, o erro sobe (nada ficou no cadastro). Se ela foi
+ * criada e só a entrada falhou, devolve a peça com o aviso, em vez de lançar
+ * o erro: senão a janela não fica sabendo da peça e um novo "Salvar" cria
+ * outra igual (#909). O aviso não manda pra Movimentações: quem aprova o
+ * orçamento pode não ter o módulo Estoque.
  */
 export async function cadastrarPecaNova(
   peca: NovaPeca,
   quantidadeInicial: number | null,
   lojaId: string,
-): Promise<Peca & PecaJanela> {
+): Promise<PecaNovaCadastrada> {
   // Pela função do banco (devolve só o id) e sem `.select()` no movimento: quem
   // não tem o módulo Estoque pode cadastrar e lançar a entrada, mas não ler
   // de volta (#366).
@@ -91,6 +109,17 @@ export async function cadastrarPecaNova(
     sem_custo: pecaSemCusto(peca.preco_custo),
   };
   const estoqueInicial = movimentoDeEstoqueInicial(id, quantidadeInicial);
-  if (estoqueInicial) await registrarMovimento(estoqueInicial, lojaId);
-  return criada;
+  if (!estoqueInicial) return { peca: criada, avisoEstoqueInicial: null };
+  try {
+    await registrarMovimento(estoqueInicial, lojaId);
+    return { peca: criada, avisoEstoqueInicial: null };
+  } catch (err) {
+    console.error("Erro ao lançar o estoque inicial da peça:", err);
+    return {
+      peca: criada,
+      avisoEstoqueInicial:
+        `Peça cadastrada, mas o estoque inicial não entrou (${semPontoFinal(mensagemDeErro(err))}). ` +
+        "Peça a quem cuida do Estoque para lançar a entrada.",
+    };
+  }
 }

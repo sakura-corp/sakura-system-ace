@@ -51,6 +51,7 @@ export function CamposVeiculoRapido<T extends FieldValues>({
       <div className="grid grid-cols-2 gap-3">
         <Campo label="Marca">
           <Combobox
+            tamanho="filtro"
             opcoes={OPCOES_MARCA}
             valor={(watch(caminho("marca")) as string) ?? ""}
             onMudar={(v) => setValue(caminho("marca"), v as never)}

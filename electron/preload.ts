@@ -5,7 +5,17 @@ import { contextBridge, ipcRenderer } from "electron";
 // pelo `.exe`, sem `npm` por trás), essa variável nunca existe, e a versão
 // nunca aparecia na tela. `SAKURA_APP_VERSION` é setada por `electron/main.ts`
 // a partir de `app.getVersion()`, que funciona nos dois casos.
+// Altura da barra que o programa desenha no topo (0 = a janela tem a barra do
+// sistema). Vem pelos argumentos do processo (`additionalArguments` em
+// main.ts), que chegam antes da primeira pintura.
+const barraDaJanela = Number(
+  process.argv.find((a) => a.startsWith("--barra-da-janela="))?.split("=")[1] ?? 0,
+);
+
 contextBridge.exposeInMainWorld("sakuraApp", {
+  barraDaJanela: Number.isFinite(barraDaJanela) ? barraDaJanela : 0,
+  // Avisa a janela qual é o tema, pra faixa dos três botões acompanhar.
+  definirTemaDaJanela: (tema: "escuro" | "claro") => ipcRenderer.send("janela:tema", tema),
   version: process.env.SAKURA_APP_VERSION,
   // Conexão com o Supabase escolhida neste computador (ver o bloco sobre
   // "conexao.json" em main.ts). Vem como valor pronto, não como função, porque

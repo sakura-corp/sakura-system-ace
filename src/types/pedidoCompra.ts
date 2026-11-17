@@ -43,15 +43,6 @@ export const STATUS_PEDIDO_LABEL: Record<StatusPedidoCompra, string> = {
   cancelado: "Cancelado",
 };
 
-// Mesmo espírito das cores de status de OS: "parcial" chama atenção porque
-// ainda exige uma ação (conferir o resto), "pendente" também.
-export const STATUS_PEDIDO_COR: Record<StatusPedidoCompra, string> = {
-  pendente: "bg-amber-50 text-amber-800",
-  parcial: "bg-orange-100 text-orange-800",
-  recebido: "bg-emerald-50 text-emerald-700",
-  cancelado: "bg-sakura-gray/20 text-sakura-muted",
-};
-
 export function nomePedido(numero: number): string {
   return `Pedido ${numero}`;
 }

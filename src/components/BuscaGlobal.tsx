@@ -204,7 +204,7 @@ export function BuscaGlobal() {
       <button
         type="button"
         onClick={abrir}
-        className="mb-4 flex min-h-[40px] w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-sakura-borda-campo px-3 py-2 text-left text-corpo text-sakura-muted hover:border-sakura-purple"
+        className="mb-4 flex min-h-[40px] w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-borda-campo px-3 py-2 text-left text-corpo text-texto-2 hover:border-acao"
       >
         <span className="min-w-0 truncate">Buscar placa, cliente, OS, peça… (Ctrl+K)</span>
       </button>
@@ -238,26 +238,26 @@ export function BuscaGlobal() {
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={aoTeclar}
-              className="min-h-[40px] w-full rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+              className="min-h-[40px] w-full rounded-lg border border-borda-campo px-3 py-2 focus:border-acao"
             />
 
             <div className="mt-2" aria-live="polite">
               {erro && (
-                <p role="alert" className="px-2 py-2 text-corpo text-red-400">
+                <p role="alert" className="px-2 py-2 text-corpo text-perigo">
                   {erro}
                 </p>
               )}
-              {!erro && buscando && <p className="px-2 py-2 text-corpo text-sakura-muted">Buscando…</p>}
-              {!erro && !buscando && aviso && <p className="px-2 py-2 text-corpo text-sakura-muted">{aviso}</p>}
+              {!erro && buscando && <p className="px-2 py-2 text-corpo text-texto-2">Buscando…</p>}
+              {!erro && !buscando && aviso && <p className="px-2 py-2 text-corpo text-texto-2">{aviso}</p>}
               {!erro && !aviso && !buscando && termoValido && itens.length === 0 && (
-                <p className="px-2 py-2 text-corpo text-sakura-muted">Nada encontrado</p>
+                <p className="px-2 py-2 text-corpo text-texto-2">Nada encontrado</p>
               )}
             </div>
 
             <div id={listaId} role="listbox" aria-label="Resultados">
               {grupos.map((grupo) => (
                 <div key={grupo.tipo} role="group" aria-label={grupo.rotulo}>
-                  <p className="px-2 pb-1 pt-2 text-rotulo font-semibold uppercase text-sakura-muted" aria-hidden="true">
+                  <p className="px-2 pb-1 pt-2 text-rotulo font-semibold uppercase text-texto-2" aria-hidden="true">
                     {grupo.rotulo}
                   </p>
                   {grupo.itens.map((item) => {
@@ -274,13 +274,13 @@ export function BuscaGlobal() {
                         onClick={() => abrirItem(item)}
                         className={`flex min-h-[40px] min-w-0 items-center justify-between gap-3 rounded-lg px-2 py-1.5 ${
                           destino ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-                        } ${ativo ? "bg-sakura-purple/20" : ""}`}
+                        } ${ativo ? "bg-acao/20" : ""}`}
                       >
-                        <span className="min-w-0 truncate text-corpo text-sakura-purple-dark">
+                        <span className="min-w-0 truncate text-corpo text-texto">
                           {item.tipo === "os" ? `OS ${item.titulo}` : item.titulo}
                         </span>
                         {item.detalhe && (
-                          <span className="min-w-0 shrink truncate text-rotulo text-sakura-muted">{item.detalhe}</span>
+                          <span className="min-w-0 shrink truncate text-rotulo text-texto-2">{item.detalhe}</span>
                         )}
                       </div>
                     );

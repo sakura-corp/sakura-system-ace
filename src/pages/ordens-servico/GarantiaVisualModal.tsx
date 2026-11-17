@@ -8,6 +8,7 @@ import { buscarClienteEVeiculoDaOrdem } from "@/lib/clientes";
 import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
 import { somar } from "@/schemas/dinheiro";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface GarantiaVisualModalProps {
   ordem: OrdemServico;
@@ -73,14 +74,14 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
   return (
     <Modal titulo="Garantia da OS" onFechar={onFechar}>
       {!textoGarantia ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+        <AvisoDeAtencao className="text-corpo">
           Configure o texto de garantia em Configurações (seção "Texto de garantia") antes de
           imprimir ou baixar.
-        </p>
+        </AvisoDeAtencao>
       ) : (
         <>
-          {carregando && <p className="text-corpo text-sakura-muted">Gerando pré-visualização...</p>}
-          {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-corpo text-red-700">{erro}</p>}
+          {carregando && <p className="text-corpo text-texto-2">Gerando pré-visualização...</p>}
+          {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
           {!carregando && !erro && html && (
             <>
@@ -88,27 +89,27 @@ export function GarantiaVisualModal({ ordem, textoGarantia, onFechar }: Garantia
                 ref={iframeRef}
                 title="Pré-visualização da garantia"
                 srcDoc={html}
-                className="h-96 w-full rounded-lg border border-sakura-gray/30 bg-white"
+                className="h-96 w-full rounded-lg border border-linha bg-white"
               />
               <div className="mt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={onFechar}
-                  className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+                  className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
                 >
                   Fechar
                 </button>
                 <button
                   type="button"
                   onClick={handleBaixarHtml}
-                  className="rounded-xl border border-sakura-gray/40 px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
+                  className="rounded-xl border border-linha-forte px-4 py-2 text-corpo font-medium text-texto hover:bg-passar"
                 >
                   Baixar HTML
                 </button>
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90"
+                  className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90"
                 >
                   Imprimir
                 </button>

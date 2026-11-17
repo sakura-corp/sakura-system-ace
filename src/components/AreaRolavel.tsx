@@ -105,7 +105,7 @@ export function AreaRolavel({ className = "", children }: AreaRolavelProps) {
         <div
           data-testid="barra-rolagem-thumb"
           onPointerDown={aoIniciarArrasto}
-          className="absolute right-1 w-1.5 cursor-pointer rounded-full bg-sakura-purple-dark/35 transition-colors hover:bg-sakura-purple-dark/55"
+          className="absolute right-1 w-1.5 cursor-pointer rounded-full bg-texto/35 transition-colors hover:bg-texto/55"
           style={{ height: thumb.altura, top: thumb.topo }}
         />
       )}

@@ -31,3 +31,13 @@ export function esquecerEscolha(escolhas: EscolhasDaJanela, itemId: string): Esc
     cadastradas: sem(escolhas.cadastradas),
   };
 }
+
+/**
+ * O item já não era avulso quando a peça cadastrada ia ser ligada a ele
+ * (ligado ou apagado em outro computador): a peça nova ficou no cadastro sem
+ * item nenhum. Quem decide se ela sobrou é a pessoa (#720), então a tela só
+ * avisa, nunca apaga sozinha.
+ */
+export const AVISO_PECA_SOBROU =
+  "Este item já tinha sido ligado a uma peça do cadastro, ou foi apagado (talvez em outro " +
+  "computador). A peça que você cadastrou ficou no cadastro: se ela sobrou, inative em Estoque.";

@@ -72,7 +72,7 @@ de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa pa
 cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
 PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
 
-**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
+**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
 instrução de **parar e mandar mensagem pra ela** se quem estiver fazendo não for ela. Desde 19/10/2026
 a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PROJETO_STATUS.md`).
@@ -118,13 +118,13 @@ a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PR
 | #409, #410 | NF-e modelo 55; manifestação do destinatário (MD-e). Fiscal: só com ela |
 | #411 | Boleto (levantamento) |
 | #412 | App de celular pro mecânico (levantamento; decisão estrutural) |
-| **Da visão** (12/10, `docs/visao.md`) | |
+| **Da visão** (12/10, `docs/visao.md`, que mora no `sakura-corp/escritorio`, privado) | |
 | #456 | Pix copia e cola na cobrança e no faturamento |
 | #457 | Importar do sistema antigo, por planilha (`FN-15`); as lojas da fase 2 usam outro sistema |
 | #458 | Desenho do assistente de IA (conversa, sem código) |
 | #459 | Pedir avaliação no Google depois do serviço |
 
-**A ordem** (sem custo primeiro, em ondas) está em `docs/visao.md`, "Prioridade", e cada tarefa
+**A ordem** (sem custo primeiro, em ondas) está em `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), "Prioridade", e cada tarefa
 tem a linha "**Prioridade** (12/10)".
 
 O orçamento rápido no balcão entrou na #379, e a assinatura do cliente na #380. Ficaram **sem
@@ -228,8 +228,9 @@ Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a 
 suporte da Focus (06/11). **A Focus respondeu em 09/11**: na tentativa que eles olharam
 (`os18-nfsen-1793999245429`, 06/11 18:07) a IM **veio do programa**, no corpo enviado; é pra tirar.
 Desde a #948 o programa **nunca** manda a IM na NFS-e Nacional (o campo é opcional no leiaute); o
-campo da loja segue valendo pro caminho municipal. Até essa versão chegar na loja, o contorno é
-deixar a "Inscrição municipal" **vazia** nos Dados fiscais.
+campo da loja segue valendo pro caminho municipal. O conserto entrou na **0.9.57** (liberada em
+09/11/2026, PR #956): desde ela, a "Inscrição municipal" preenchida não atrapalha a NFS-e Nacional.
+(Na Pneus Amigão o campo segue vazio desde o contorno de 06/11, e assim fica: nada o usa hoje.)
 **Segunda recusa (09/11, OS 18, com a IM já vazia)**: "Não é permitido informar alíquota quando não
 há indicação de retenção do ISSQN (tpRetISSQN = 1) para o prestador ME/EPP (opSimpNac = 3) [...] com
 apuração do ISSQN pelo Simples (regApTribISSQN = 1)". Desde o PR desta correção, a loja do Simples
@@ -387,7 +388,10 @@ aceita a combinação errada sem avisar.
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
 7. **NFS-e Nacional**: ligar "Ambiente da NFSe Nacional" na Focus (homologação e produção são
    chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. Até a 0.9.55, o
-   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
+   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839). A **inscrição
+   municipal não vai** na NFS-e Nacional (#948, desde a 0.9.57): o Ambiente Nacional recusa quando
+   o município não tem as informações complementares no CNC NFS-e, como Araraquara. A loja que só
+   emite pelo Nacional pode deixar o campo em branco; a que ainda usa o caminho municipal precisa dele.
 
 **Consequência pro site de assinatura (item 2)**: assinar pode ser instantâneo, emitir nota não.
 Por isso a loja só recebe o sistema quando ele já emite (Sofia, 29/10/2026). A parte C começa no
@@ -409,7 +413,7 @@ nem perguntar; só retomar se ela trouxer.
 ### 4. Refinamentos nos módulos
 
 Conforme o uso real e o que ela pedir. O cardápio de ideias é o `MELHORIAS.md`, e o que o
-concorrente tem e nós não está em `docs/comparativo-anexar.md`. **Nada disso é pra construir sem
+concorrente tem e nós não está em `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado). **Nada disso é pra construir sem
 ela pedir.** Os três ajustes que ela pediu em 28/09 (#361, #362 e #363) foram feitos em 03/10,
 junto da #417 e da #425.
 
@@ -534,7 +538,7 @@ estiver sem suporte, e está certo.
 ### Futuro, só com pedido explícito
 
 Integração com maquininha de cartão (TEF), assistente de IA (a direção dela está em
-`docs/visao.md`), importador de dados de outros sistemas, app de celular, outras edições do Sakura
+`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), importador de dados de outros sistemas, app de celular, outras edições do Sakura
 System. Manter a arquitetura aberta pra isso, sem construir.
 
 ## Linha do tempo (o que cada sessão deixou pronto)

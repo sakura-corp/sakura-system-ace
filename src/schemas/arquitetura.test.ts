@@ -24,7 +24,16 @@ import { describe, expect, it } from "vitest";
  * acrescentar uma exceção aqui embaixo, com o motivo escrito.
  */
 
-const PASTA_TELAS = "src/pages";
+/**
+ * As pastas varridas. `src/lib/` entrou na #915: o documento de garantia
+ * (`lib/garantiaDocumento.ts`) fazia o valor do item, os totais e as parcelas
+ * à mão, e passou batido porque o teste só olhava `src/pages/`.
+ *
+ * Limite conhecido: o que está dentro de texto com crase é apagado antes de
+ * procurar (ver `semComentarioNemTexto`), então uma conta escrita dentro do
+ * HTML de um documento (`${a * b}`) continua invisível pra este teste.
+ */
+const PASTAS_VARRIDAS = ["src/pages", "src/lib"];
 
 /**
  * Casos que já estavam assim antes deste teste existir.
@@ -35,6 +44,7 @@ const PASTA_TELAS = "src/pages";
  * que uma exceção futura precise vir com nome, sobrenome e motivo escrito —
  * nunca afrouxando o teste.
  */
+// A chave é o caminho a partir da raiz (ex.: "src/pages/x/Y.tsx").
 const DIVIDA_CONHECIDA: Record<string, string> = {};
 
 function arquivosDeTela(pasta: string, prefixo = ""): string[] {
@@ -134,19 +144,19 @@ const ONDE_A_CONTA_MORA =
   "conta de dinheiro vive em `src/schemas/` como função pura testada — " +
   "ver PROJETO_STATUS.md, seção 6, item 40";
 
-describe("conta de dinheiro não mora na tela", () => {
-  const arquivos = arquivosDeTela(PASTA_TELAS);
+describe("conta de dinheiro não mora na tela nem em src/lib", () => {
+  const arquivos = PASTAS_VARRIDAS.flatMap((pasta) =>
+    arquivosDeTela(pasta).map((relativo) => `${pasta}/${relativo}`),
+  );
 
-  it("encontra as telas pra varrer", () => {
+  it.each(PASTAS_VARRIDAS)("encontra arquivos pra varrer em %s", (pasta) => {
     // Se a pasta mudar de lugar e este teste passar a varrer o vazio, ele
     // ficaria verde sem checar nada — que é pior que estar vermelho.
-    expect(arquivos.length).toBeGreaterThan(40);
+    expect(arquivosDeTela(pasta).length).toBeGreaterThan(40);
   });
 
   it.each(arquivos)("%s", (relativo) => {
-    const codigo = semComentarioNemTexto(
-      readFileSync(join(PASTA_TELAS, relativo), "utf8"),
-    );
+    const codigo = semComentarioNemTexto(readFileSync(relativo, "utf8"));
 
     const achados = SUSPEITAS.filter(({ padrao }) => padrao.test(codigo)).map(
       ({ nome }) => nome,
@@ -166,7 +176,7 @@ describe("conta de dinheiro não mora na tela", () => {
 
     expect(
       achados,
-      `${relativo} parece fazer conta de dinheiro na tela (${achados.join("; ")}). ` +
+      `${relativo} parece fazer conta de dinheiro fora de src/schemas/ (${achados.join("; ")}). ` +
         `${ONDE_A_CONTA_MORA}.`,
     ).toHaveLength(0);
   });

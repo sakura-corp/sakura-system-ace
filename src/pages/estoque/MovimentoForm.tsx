@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
@@ -13,6 +14,7 @@ import {
 import type { Deposito } from "@/types/deposito";
 import type { NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface MovimentoFormProps {
   pecas: Peca[];
@@ -55,17 +57,17 @@ export function MovimentoForm({ pecas, depositos, onSalvar, onCancelar }: Movime
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">Nova movimentação</h2>
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">Nova movimentação</h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Peça</span>
+        <label className="sakura-rotulo">
+          Peça
           <Combobox
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={watch("peca_id")}
@@ -74,11 +76,11 @@ export function MovimentoForm({ pecas, depositos, onSalvar, onCancelar }: Movime
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Depósito</span>
+        <label className="sakura-rotulo">
+          Depósito
           <select
             {...register("deposito_id")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           >
             {depositos.map((deposito) => (
               <option key={deposito.id} value={deposito.id}>
@@ -88,36 +90,37 @@ export function MovimentoForm({ pecas, depositos, onSalvar, onCancelar }: Movime
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Tipo</span>
+        <label className="sakura-rotulo">
+          Tipo
           <select
             {...register("tipo")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           >
             <option value="entrada">Entrada</option>
             <option value="saida">Saída</option>
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Quantidade</span>
+        <label className="sakura-rotulo">
+          Quantidade
           <input
             type="number"
             step="1"
             min="1"
             {...register("quantidade")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            aria-invalid={errors.quantidade ? true : undefined}
+            className="sakura-campo"
           />
           {errors.quantidade && (
-            <span className="text-rotulo text-red-600">{errors.quantidade.message}</span>
+            <span className="text-rotulo text-perigo">{errors.quantidade.message}</span>
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Motivo</span>
+        <label className="sakura-rotulo">
+          Motivo
           <select
             {...register("motivo")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           >
             {motivos.map((m) => (
               <option key={m.valor} value={m.valor}>
@@ -127,33 +130,28 @@ export function MovimentoForm({ pecas, depositos, onSalvar, onCancelar }: Movime
           </select>
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Referência (opcional — ex: nº da nota, nº da OS)
-          </span>
+        <label className="sakura-rotulo col-span-2">
+          Referência (opcional — ex: nº da nota, nº da OS)
           <input
             type="text"
             {...register("referencia")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
         </label>
       </div>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
+        </Botao>
+        <Botao
           type="submit"
-          disabled={isSubmitting || pecas.length === 0}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+          variante="principal"
+          disabled={pecas.length === 0}
+          ocupado={isSubmitting}
         >
           {isSubmitting ? "Salvando..." : "Registrar movimentação"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

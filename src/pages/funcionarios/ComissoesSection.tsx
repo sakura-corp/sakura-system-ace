@@ -1,4 +1,9 @@
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
+import { Botao } from "@/components/Botao";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Selo } from "@/components/Selo";
+import { Valor } from "@/components/Valor";
 import { diaBrasileiro } from "@/lib/datas";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
 import {
@@ -15,6 +20,7 @@ import {
   pagamentoDoPeriodo,
 } from "@/schemas/comissoesPagas";
 import type { ComissaoFechamento } from "@/types/comissaoFechamento";
+import { Aviso } from "@/components/Aviso";
 import {
   HistoricoPagamentos,
   ReciboComissaoModal,
@@ -125,97 +131,104 @@ export function ComissoesSection({
 
   return (
     <>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-corpo text-texto-2">
           De:
-          <input
-            type="date"
-            value={dataInicio}
-            onChange={(e) => setDataInicio(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
+          <span className="w-44">
+            <input
+              type="date"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="sakura-campo sakura-campo-filtro"
+            />
+          </span>
         </label>
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
+        <label className="flex items-center gap-2 text-corpo text-texto-2">
           Até:
-          <input
-            type="date"
-            value={dataFim}
-            onChange={(e) => setDataFim(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
-          />
+          <span className="w-44">
+            <input
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="sakura-campo sakura-campo-filtro"
+            />
+          </span>
         </label>
       </div>
 
-      <p className="text-rotulo text-sakura-muted">
+      <p className="text-rotulo text-texto-2">
         Conta só OS já faturada, pela data do faturamento. A comissão é calculada sobre o lucro
         (venda − custo), na porcentagem do cadastro de cada funcionário. Serviço sem custo
         cadastrado fica de fora: a comissão sai sobre o lucro das peças.
       </p>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Lucro do período</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totais.lucro)}
-          </p>
-          {/* #876: o dono soma a coluna "Lucro gerado" e dá mais que isto. A
-              conta está certa — só faltava dizer por quê. Só quando é verdade. */}
-          {colunaLucroSomaMais && (
-            <p className="mt-1 text-rotulo text-sakura-muted">
-              A coluna "Lucro gerado" soma mais porque o lucro de um item conta pra quem vendeu a OS
-              e pra quem fez o item.
-            </p>
-          )}
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Total de comissões</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totais.comissao)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Comissão de OS ainda não recebida</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totais.comissaoAReceber)}
-          </p>
-        </div>
+        <CartaoNumero
+          titulo="Lucro do período"
+          explicacao="O que sobrou das OS já faturadas no período: a venda menos o custo cadastrado. Serviço sem custo cadastrado fica de fora."
+        >
+          <Valor valor={totais.lucro} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Total de comissões"
+          explicacao="A soma da comissão de todos os funcionários no período, na porcentagem do cadastro de cada um."
+        >
+          <Valor valor={totais.comissao} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Comissão de OS ainda não recebida"
+          explicacao="A parte da comissão que vem de OS faturada como “a receber depois” e que o cliente ainda não pagou."
+        >
+          <Valor valor={totais.comissaoAReceber} />
+        </CartaoNumero>
       </div>
 
+      {/* #876: o dono soma a coluna "Lucro gerado" e dá mais que o lucro do
+          período. A conta está certa — só faltava dizer por quê. Só quando é
+          verdade. Estava dentro do cartão do lucro; com o cartão de número
+          (que só leva o valor), a frase ficou logo abaixo dos três cartões. */}
+      {colunaLucroSomaMais && (
+        <Aviso tipo="info">
+          A coluna "Lucro gerado" soma mais porque o lucro de um item conta pra quem vendeu a OS e
+          pra quem fez o item.
+        </Aviso>
+      )}
+
       {totais.comissaoAReceber > 0 && (
-        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso tipo="atencao">
           {formatarMoeda(totais.comissaoAReceber)} dessa comissão vem de OS faturada como "a
           receber depois", que o cliente ainda não pagou.
-        </p>
+        </Aviso>
       )}
 
       {totais.itensSemCusto > 0 && (
-        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso tipo="atencao">
           {totais.itensSemCusto === 1
             ? "1 item vendido no período está sem preço de custo cadastrado"
             : `${totais.itensSemCusto} itens vendidos no período estão sem preço de custo cadastrado`}
           . Eles entram como lucro cheio, então a comissão sai maior que a real — vale conferir o
           cadastro dessas peças/serviços antes de pagar.
-        </p>
+        </Aviso>
       )}
 
       {semPercentual.length > 0 && (
-        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso tipo="atencao">
           Sem porcentagem de comissão cadastrada:{" "}
           {semPercentual.map((linha) => linha.nome).join(", ")}. A comissão deles fica em zero até
           preencher o campo "Comissão (%)" no cadastro do funcionário.
-        </p>
+        </Aviso>
       )}
 
       {semDono && (
-        <p className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso tipo="atencao">
           {formatarMoeda(semDono.lucroTotal)} de lucro ficou sem
           dono no período — OS sem vendedor escolhido, ou item sem técnico. Esse valor não gera
           comissão pra ninguém.
-        </p>
+        </Aviso>
       )}
 
       {divergencias.map(({ pagamento, comparacao }) => (
-        <div key={pagamento.id} className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso key={pagamento.id} tipo="atencao">
           <p className="font-medium">
             A comissão de {pagamento.funcionario_nome} mudou depois do pagamento de{" "}
             {diaBrasileiro(pagamento.data_pagamento)}.
@@ -234,54 +247,56 @@ export function ComissoesSection({
               </li>
             ))}
           </ul>
-        </div>
+        </Aviso>
       ))}
 
       {jaPagosEmOutros.map(({ linha, jaPago }) => (
-        <p key={linha.funcionarioId} className="rounded-xl bg-amber-950/40 px-4 py-3 text-corpo text-amber-200">
+        <Aviso key={linha.funcionarioId} tipo="atencao">
           {formatarMoeda(jaPago.valor)} da comissão de {linha.nome} neste período vem de OS que já
           entraram num pagamento anterior (OS {jaPago.numeros.join(", ")}). Confira antes de pagar de novo.
-        </p>
+        </Aviso>
       ))}
 
       {linhas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhuma OS faturada nesse período — nada pra calcular ainda.
         </p>
       ) : (
         <section>
-          <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-            Comissão por funcionário
-          </h2>
-          <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Funcionário</th>
-                  <th className="px-4 py-3 font-medium">Comissão</th>
-                  <th className="px-4 py-3 font-medium">Vendeu</th>
-                  <th className="px-4 py-3 font-medium">Lucro gerado</th>
-                  <th className="px-4 py-3 font-medium">A pagar</th>
-                  <th className="px-4 py-3 font-medium">Pagamento</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {linhas.map((linha) => (
-                  <LinhaFuncionario
-                    key={linha.funcionarioId}
-                    linha={linha}
-                    aberta={abertoId === linha.funcionarioId}
-                    pagamento={pagamentoDoPeriodo(pagamentos, linha.funcionarioId, dataInicio, dataFim)}
-                    onPagar={() => setPagando(linha)}
-                    onRecibo={setRecibo}
-                    onAlternar={() =>
-                      setAbertoId(abertoId === linha.funcionarioId ? null : linha.funcionarioId)
-                    }
-                  />
-                ))}
-              </tbody>
-            </table>
+          <h2 className="mb-3 text-corpo font-semibold text-texto">Comissão por funcionário</h2>
+          <div className="sakura-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="sakura-tabela">
+                <thead>
+                  <tr>
+                    <th>Funcionário</th>
+                    <th className="text-right">Comissão</th>
+                    <th className="text-right">Vendeu</th>
+                    <th className="text-right">Lucro gerado</th>
+                    <th className="text-right">A pagar</th>
+                    <th>Pagamento</th>
+                    <th>
+                      <span className="sr-only">Detalhes</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {linhas.map((linha) => (
+                    <LinhaFuncionario
+                      key={linha.funcionarioId}
+                      linha={linha}
+                      aberta={abertoId === linha.funcionarioId}
+                      pagamento={pagamentoDoPeriodo(pagamentos, linha.funcionarioId, dataInicio, dataFim)}
+                      onPagar={() => setPagando(linha)}
+                      onRecibo={setRecibo}
+                      onAlternar={() =>
+                        setAbertoId(abertoId === linha.funcionarioId ? null : linha.funcionarioId)
+                      }
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}
@@ -332,56 +347,52 @@ function LinhaFuncionario({
 }) {
   return (
     <>
-      <tr className="border-t border-sakura-gray/20">
-        <td className="px-4 py-3">{linha.nome}</td>
-        <td className="px-4 py-3">
+      <tr>
+        <td className="font-medium text-texto">{linha.nome}</td>
+        <td className="text-right">
           {linha.percentual === null ? (
-            <span className="text-sakura-muted">—</span>
+            <span className="text-texto-2">—</span>
           ) : (
             `${linha.percentual}%`
           )}
         </td>
-        <td className="px-4 py-3">{formatarMoeda(linha.vendidoTotal)}</td>
-        <td className="px-4 py-3">{formatarMoeda(linha.lucroTotal)}</td>
-        <td className="px-4 py-3 font-medium">{formatarMoeda(linha.comissaoTotal)}</td>
-        <td className="px-4 py-3">
+        <td className="text-right">{formatarMoeda(linha.vendidoTotal)}</td>
+        <td className="text-right">{formatarMoeda(linha.lucroTotal)}</td>
+        <td className="text-right font-semibold text-texto">{formatarMoeda(linha.comissaoTotal)}</td>
+        <td>
           {linha.funcionarioId === SEM_FUNCIONARIO ? (
-            <span className="text-sakura-muted">—</span>
+            <span className="text-texto-2">—</span>
           ) : pagamento ? (
             <span className="flex flex-wrap items-center gap-2">
-              <span className="whitespace-nowrap text-sakura-purple-dark">
-                ✓ {formatarMoeda(pagamento.valor_pago)} em {diaBrasileiro(pagamento.data_pagamento)}
+              <Selo tipo="ok" palavra="Pago" />
+              <span className="whitespace-nowrap">
+                {formatarMoeda(pagamento.valor_pago)} em {diaBrasileiro(pagamento.data_pagamento)}
               </span>
-              <button
-                type="button"
-                onClick={() => onRecibo(pagamento)}
-                className="min-h-8 rounded-lg px-2 text-rotulo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-              >
+              <Botao variante="fantasma" tamanho="pequeno" onClick={() => onRecibo(pagamento)}>
                 Recibo
-              </button>
+              </Botao>
             </span>
           ) : (
-            <button
-              type="button"
-              onClick={onPagar}
-              className="min-h-8 whitespace-nowrap rounded-lg border border-sakura-gray/40 px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-            >
+            <Botao variante="secundario" tamanho="pequeno" onClick={onPagar}>
               Registrar pagamento
-            </button>
+            </Botao>
           )}
         </td>
-        <td className="px-4 py-3 text-right">
-          <button
+        <td className="text-right">
+          <Botao
+            variante="fantasma"
+            tamanho="pequeno"
             onClick={onAlternar}
-            className="text-rotulo font-medium text-sakura-purple hover:underline"
+            aria-expanded={aberta}
+            icone={aberta ? <ChevronUp /> : <ChevronDown />}
           >
             {aberta ? "Fechar" : "Ver as OS"}
-          </button>
+          </Botao>
         </td>
       </tr>
       {aberta && (
-        <tr className="border-t border-sakura-gray/20">
-          <td colSpan={7} className="px-4 py-4">
+        <tr>
+          <td colSpan={7} className="!h-auto bg-poco !py-4">
             <div className="space-y-4">
               <BlocoDoPapel
                 titulo="Como vendedor (atendeu a OS)"
@@ -412,50 +423,45 @@ function BlocoDoPapel({
 }) {
   return (
     <div>
-      <h3 className="mb-2 text-rotulo font-semibold text-sakura-purple-dark">
+      <h3 className="mb-2 text-rotulo font-semibold text-texto">
         {titulo}
         {papel.ordens.length > 0 && (
-          <span className="ml-2 font-normal text-sakura-muted">
+          <span className="ml-2 font-normal text-texto-2">
             {formatarMoeda(papel.lucro)} de lucro · {formatarMoeda(papel.comissao)} de comissão
           </span>
         )}
       </h3>
       {papel.ordens.length === 0 ? (
-        <p className="text-rotulo text-sakura-muted">{vazio}</p>
+        <p className="text-rotulo text-texto-2">{vazio}</p>
       ) : (
-        <table className="w-full table-fixed text-left text-tabela">
+        <table className="w-full table-fixed text-left text-tabela tabular-nums">
           {/* Largura fixa pra as duas tabelas (vendedor e técnico) ficarem
-              alinhadas uma embaixo da outra, e não cada uma num lugar. */}
-          <thead className="text-sakura-purple-dark/90">
+              alinhadas uma embaixo da outra, e não cada uma num lugar. Valores
+              à direita e em coluna, como na tabela de cima. */}
+          <thead className="text-texto-2">
             <tr>
               <th className="w-[10%] py-1 font-medium">OS</th>
               <th className="w-[14%] py-1 font-medium">Data</th>
-              <th className="w-[30%] py-1 font-medium">Cliente</th>
-              <th className="w-[14%] py-1 font-medium">Vendido</th>
-              <th className="w-[14%] py-1 font-medium">Lucro</th>
-              <th className="py-1 font-medium">Comissão</th>
+              <th className="w-[26%] py-1 font-medium">Cliente</th>
+              <th className="w-[14%] py-1 text-right font-medium">Vendido</th>
+              <th className="w-[14%] py-1 text-right font-medium">Lucro</th>
+              <th className="py-1 text-right font-medium">Comissão</th>
             </tr>
           </thead>
           <tbody>
             {papel.ordens.map((ordem) => (
-              <tr key={`${ordem.ordemId}-${titulo}`} className="border-t border-sakura-gray/20">
+              <tr key={`${ordem.ordemId}-${titulo}`} className="border-t border-linha">
                 <td className="py-1.5">{nomeOrdem(ordem.numero, ordem.tipo)}</td>
                 <td className="py-1.5">{formatarData(ordem.data)}</td>
                 <td className="py-1.5">{ordem.cliente}</td>
-                <td className="py-1.5">{formatarMoeda(ordem.vendido)}</td>
-                <td className="py-1.5">{formatarMoeda(ordem.lucro)}</td>
-                <td className="py-1.5">
-                  {formatarMoeda(ordem.comissao)}
-                  {ordem.aReceber && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-meta text-amber-800">
-                      a receber
-                    </span>
-                  )}
-                  {ordem.itensSemCusto > 0 && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-meta text-amber-800">
-                      sem custo
-                    </span>
-                  )}
+                <td className="py-1.5 text-right">{formatarMoeda(ordem.vendido)}</td>
+                <td className="py-1.5 text-right">{formatarMoeda(ordem.lucro)}</td>
+                <td className="py-1.5 text-right">
+                  <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                    {ordem.aReceber && <Selo tipo="atencao" palavra="A receber" />}
+                    {ordem.itensSemCusto > 0 && <Selo tipo="atencao" palavra="Sem custo" />}
+                    {formatarMoeda(ordem.comissao)}
+                  </span>
                 </td>
               </tr>
             ))}
