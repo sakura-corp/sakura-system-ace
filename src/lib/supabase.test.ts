@@ -15,7 +15,8 @@ import { MENSAGEM_SEM_CONEXAO, ehErroDeRede, mensagemDeErro } from "./errors";
 const { conexaoAtual } = vi.hoisted(() => ({
   conexaoAtual: vi.fn(() => ({ url: "https://exemplo.supabase.co", chave: "chave-de-mentira" })),
 }));
-vi.mock("./conexao", () => ({ conexaoAtual }));
+// Fora do modo demonstração (#384): o cliente de sempre.
+vi.mock("./conexao", () => ({ conexaoAtual, modoDemonstracao: () => false }));
 
 import {
   TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS,

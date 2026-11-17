@@ -12,6 +12,12 @@
 completos), Estoque (entrada/saída, saldo), Ordens de Serviço, Caixa Diário, Relações,
 Painel/Início.
 
+**Modo demonstração** (FN-14, #384): `demo` no endereço da tela de conexão (ou `npm run dev:demo`)
+abre o programa com os dados inventados de `src/demo/dados.ts`, sem banco, com a faixa fixa no topo
+e o "Sair da demonstração". Salvar fica só na memória; nota não sai. Os mesmos dados (uma cópia só)
+alimentam as imagens do site e o catálogo de telas, por `site/ferramentas/dados-demo.mjs`. Como
+usar: `docs/operacao.md`, "Mostrar o sistema a um cliente".
+
 **Ordem do menu lateral**: reorganizada a pedido da usuária, agrupando por fluxo de trabalho —
 Início, Clientes, Ordens de Serviço, Estoque, Serviços, Caixa Diário, Contas a Pagar, Relações,
 Garantias, Notas Fiscais, Funcionários (RH por último, de propósito — é cadastro usado bem menos

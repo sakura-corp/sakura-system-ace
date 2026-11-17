@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { conexaoAtual } from "./conexao";
+import { armazenamentoDemo, CHAVE_SESSAO_DEMO, ENDERECO_DEMO, fetchDemo } from "@/demo/fetchDemo";
+import { conexaoAtual, modoDemonstracao } from "./conexao";
 import { ehErroDeRede } from "./errors";
 
 export type EstadoDaRede = "falhou" | "respondeu";
@@ -164,16 +165,37 @@ export const isSupabaseConfigured = conexao !== null;
 // O cliente precisa existir sempre (todo `lib/*.ts` importa esse módulo), mesmo
 // antes de alguém configurar a conexão — sem conexão o app mostra a tela de
 // configuração e nunca chega a usar esse cliente de mentira.
-export const supabase = createClient(
-  conexao?.url || "https://placeholder.supabase.co",
-  conexao?.chave || "placeholder-anon-key",
-  {
-    // Sem persistir sessão: cada vez que o app abre, pede login de novo — a
-    // pedido do usuário, já que o programa costuma ficar aberto o dia
-    // inteiro (não é algo que se fecha e reabre com frequência).
-    auth: { persistSession: false },
-    // O `fetch` global é chamado na hora de cada pedido (não guardado quando
-    // o módulo carrega), pra os testes poderem trocá-lo.
-    global: { fetch: criarFetchDoPrograma((...args) => fetch(...args)) },
-  },
-);
+// Sinal pras telas: "estou na demonstração?". Fixo até recarregar a janela,
+// que é quando o cliente abaixo é criado (entrar/sair da demonstração recarrega).
+export const emDemonstracao = modoDemonstracao();
+
+// Na demonstração o cliente fala com um endereço de mentira e o `fetchDemo`
+// responde da memória, com dados inventados: nada sai do computador. A sessão
+// de demonstração já vem gravada no `armazenamentoDemo` pra abrir logado, por
+// isso aqui (e só aqui) a sessão persiste. Fora da demonstração o cliente é
+// exatamente o de sempre.
+export const supabase = emDemonstracao
+  ? createClient(ENDERECO_DEMO, "demo-anon-key", {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: false,
+        storage: armazenamentoDemo,
+        storageKey: CHAVE_SESSAO_DEMO,
+      },
+      // Passa pelo mesmo fetch do programa (#374) só pra a faixa de "sem
+      // conexão" ouvir que o "banco" respondeu; quem responde é o fetchDemo.
+      global: { fetch: criarFetchDoPrograma(fetchDemo) },
+    })
+  : createClient(
+      conexao?.url || "https://placeholder.supabase.co",
+      conexao?.chave || "placeholder-anon-key",
+      {
+        // Sem persistir sessão: cada vez que o app abre, pede login de novo — a
+        // pedido do usuário, já que o programa costuma ficar aberto o dia
+        // inteiro (não é algo que se fecha e reabre com frequência).
+        auth: { persistSession: false },
+        // O `fetch` global é chamado na hora de cada pedido (não guardado quando
+        // o módulo carrega), pra os testes poderem trocá-lo.
+        global: { fetch: criarFetchDoPrograma((...args) => fetch(...args)) },
+      },
+    );

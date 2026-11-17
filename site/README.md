@@ -68,7 +68,8 @@ que sair uma versão nova** (`v0.9.22` em diante). Publique uma versão antes de
 
 Quando o visual do aplicativo mudar, dá para refazer as imagens sem tirar print à mão e sem tocar
 no banco de loja nenhuma. A ferramenta abre o aplicativo **de verdade** num navegador e responde as
-chamadas ao Supabase com dados inventados (`ferramentas/dados-demo.mjs`).
+chamadas ao Supabase com dados inventados (`src/demo/dados.ts`, a cópia única que o programa
+usa no modo demonstração; `ferramentas/dados-demo.mjs` só repassa).
 
 Rodando **a partir da raiz do repositório**, em dois terminais:
 
@@ -86,7 +87,7 @@ endereço de mentira ao programar.
 
 Precisa do `playwright` disponível (`npx playwright install chromium`, se não tiver).
 
-Ao mexer em `dados-demo.mjs`, dois cuidados que já custaram retrabalho:
+Ao mexer nos dados (`src/demo/dados.ts`), dois cuidados que já custaram retrabalho:
 
 - **Nunca usar dado de cliente real.** As imagens vão para um site público.
 - `caixa_movimentos.data` é data **com hora** (`timestamptz`). Preencher só `AAAA-MM-DD` faz o

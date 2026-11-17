@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Botao } from "@/components/Botao";
 import { Logo } from "@/components/Logo";
-import { conexaoAtual, salvarConexao, testarConexao } from "@/lib/conexao";
+import {
+  conexaoAtual,
+  ehPalavraDemo,
+  entrarNaDemonstracao,
+  modoDemonstracao,
+  salvarConexao,
+  testarConexao,
+} from "@/lib/conexao";
 import { mensagemDeErro } from "@/lib/errors";
 import { TelaDeEntrada } from "@/pages/login/TelaDeEntrada";
 
@@ -14,7 +21,8 @@ interface ConexaoPageProps {
 export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
   // Só vem preenchido quando a usuária está trocando uma conexão já
   // existente; na primeira abertura os campos nascem vazios de propósito.
-  const inicial = conexaoAtual();
+  // Dentro da demonstração a "conexão atual" é a de mentira: não vai pros campos.
+  const inicial = modoDemonstracao() ? null : conexaoAtual();
   const [url, setUrl] = useState(inicial?.url ?? "");
   const [chave, setChave] = useState(inicial?.chave ?? "");
   const [testando, setTestando] = useState(false);
@@ -23,7 +31,10 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
   const [testeOk, setTesteOk] = useState(false);
   const [podeSalvarAssimMesmo, setPodeSalvarAssimMesmo] = useState(false);
 
-  const dadosPreenchidos = url.trim() !== "" && chave.trim() !== "";
+  // Digitar "demo" no endereço abre a demonstração: não pede chave, não testa
+  // nada e não grava nada no computador.
+  const demonstracao = ehPalavraDemo(url);
+  const dadosPreenchidos = demonstracao || (url.trim() !== "" && chave.trim() !== "");
 
   function aoEditar(novoValor: string, campo: "url" | "chave") {
     setErro(null);
@@ -63,6 +74,10 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+    if (demonstracao) {
+      entrarNaDemonstracao();
+      return;
+    }
     setSalvando(true);
     try {
       // O teste serve pra pegar erro de digitação antes de cair numa tela de
@@ -131,24 +146,34 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
               autoComplete="off"
               spellCheck={false}
             />
+            {/* A dica só num computador ainda sem banco (decisão 3 da #384: a loja
+                não vê o modo). Num computador configurado, a palavra ainda funciona. */}
+            {!onCancelar && (
+              <span className="text-texto-2">
+                Só quer conhecer o sistema? Digite <strong>demo</strong> aqui: abre com dados
+                inventados, sem conectar a nenhuma empresa.
+              </span>
+            )}
           </label>
 
-          <label className="sakura-rotulo">
-            Chave pública (anon / publishable)
-            <textarea
-              value={chave}
-              onChange={(e) => aoEditar(e.target.value, "chave")}
-              placeholder="Cole aqui a chave anon do seu projeto"
-              rows={3}
-              className="sakura-campo resize-none font-mono"
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <span className="text-texto-2">
-              É a chave <strong>anon</strong> (também chamada de publishable) — não a
-              <em> service role</em>, que é secreta e não deve ser usada aqui.
-            </span>
-          </label>
+          {!demonstracao && (
+            <label className="sakura-rotulo">
+              Chave pública (anon / publishable)
+              <textarea
+                value={chave}
+                onChange={(e) => aoEditar(e.target.value, "chave")}
+                placeholder="Cole aqui a chave anon do seu projeto"
+                rows={3}
+                className="sakura-campo resize-none font-mono"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              <span className="text-texto-2">
+                É a chave <strong>anon</strong> (também chamada de publishable) — não a
+                <em> service role</em>, que é secreta e não deve ser usada aqui.
+              </span>
+            </label>
+          )}
 
           <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
             {onCancelar && (
@@ -156,15 +181,21 @@ export function ConexaoPage({ onCancelar }: ConexaoPageProps) {
                 Cancelar
               </Botao>
             )}
-            <Botao onClick={handleTestar} disabled={!dadosPreenchidos || testando || salvando}>
-              {testando ? "Testando..." : "Testar conexão"}
-            </Botao>
+            {!demonstracao && (
+              <Botao onClick={handleTestar} disabled={!dadosPreenchidos || testando || salvando}>
+                {testando ? "Testando..." : "Testar conexão"}
+              </Botao>
+            )}
             <Botao
               type="submit"
               variante="principal"
               disabled={!dadosPreenchidos || testando || salvando}
             >
-              {salvando ? "Salvando..." : "Salvar e entrar"}
+              {demonstracao
+                ? "Entrar na demonstração"
+                : salvando
+                  ? "Salvando..."
+                  : "Salvar e entrar"}
             </Botao>
           </div>
         </form>

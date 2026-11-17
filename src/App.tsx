@@ -10,6 +10,7 @@ import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
 import { Sidebar } from "./components/Sidebar";
 import { VersaoApp } from "./components/VersaoApp";
+import { FaixaDemonstracao } from "./demo/FaixaDemonstracao";
 import { useAuth } from "./contexts/AuthContext";
 import { useEnterParaProximoCampo } from "./hooks/useEnterParaProximoCampo";
 import { useLimparDataAoApagar } from "./hooks/useLimparDataAoApagar";
@@ -88,7 +89,7 @@ function TelaQueEntra({ children }: { children: ReactNode }) {
   );
 }
 
-export default function App() {
+function AppSemFaixa() {
   const { carregando, session, operador, lojaAtual } = useAuth();
   const localizacao = useLocation();
   useEnterParaProximoCampo();
@@ -346,5 +347,16 @@ export default function App() {
         </AreaRolavel>
       </main>
     </div>
+  );
+}
+
+// A faixa da demonstração fica fora de todos os `return` acima de propósito:
+// assim aparece também na tela de conexão, no login e na de carregando.
+export default function App() {
+  return (
+    <>
+      <FaixaDemonstracao />
+      <AppSemFaixa />
+    </>
   );
 }
