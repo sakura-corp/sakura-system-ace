@@ -166,9 +166,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 17/11/2026: visual novo, a leva inteira (#990) em PR
-- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15, com Configurações (#1062) e Relações (#1076, versão intermediária).
-- **Em PR, esperando ela**: a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclar o #1078 primeiro.
+### 17/11/2026: visual novo, a leva inteira (#990) na `main`
+- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
+- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
 - **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
 - **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
 - **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).
