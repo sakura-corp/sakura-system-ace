@@ -43,6 +43,15 @@ function normalizar(codigo: string | null | undefined): string {
   return (codigo ?? "").trim();
 }
 
+/**
+ * O CFOP só com os números ("5.405" vira "5405", " 5102 " vira "5102").
+ * Vazio, nulo ou sem número nenhum vira "". Usada no aviso do CSOSN (#968) e
+ * no item da NFC-e (#981), pra nota e aviso lerem o CFOP do mesmo jeito.
+ */
+export function cfopSoNumeros(cfop: string | null | undefined): string {
+  return normalizar(cfop).replace(/\D/g, "");
+}
+
 export function regimeUsaCsosn(regime: RegimeTributario | null | undefined): boolean {
   return regime === "simples_nacional";
 }
@@ -179,7 +188,7 @@ export function motivoCfopIncompativel(
 
   // Só no CFOP: tira o que não é número ("5.405" vira "5405"). O
   // `normalizar()` serve também ao CSOSN/CST e fica como está.
-  const valorCfop = normalizar(cfop).replace(/\D/g, "");
+  const valorCfop = cfopSoNumeros(cfop);
   const valorCsosn = normalizar(csosn);
   if (!valorCfop || !valorCsosn) return null;
 
