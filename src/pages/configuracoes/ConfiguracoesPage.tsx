@@ -72,7 +72,8 @@ import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { AparenciaSection } from "./AparenciaSection";
 import { AtualizacoesComputadorSection } from "./AtualizacoesComputadorSection";
 import { ComputadoresSection } from "./ComputadoresSection";
-import { IconeDeSecao, MensagemDeErro, SecaoDeConfiguracao, TituloDeGrupo } from "./pecas";
+import { IconeDeSecao, SecaoDeConfiguracao, TituloDeGrupo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
@@ -288,7 +289,7 @@ export function ConfiguracoesPage() {
         </div>
       </header>
 
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <TituloDeGrupo>Pessoas e lojas</TituloDeGrupo>
 
@@ -592,9 +593,9 @@ export function ConfiguracoesPage() {
             {senhaGerada.senha}
           </p>
           {naoCopiou && (
-            <MensagemDeErro className="mt-4">
+            <AvisoDeErro className="mt-4">
               Não consegui copiar. Selecione a senha acima e copie à mão: ela só aparece uma vez.
-            </MensagemDeErro>
+            </AvisoDeErro>
           )}
         </Modal>
       )}

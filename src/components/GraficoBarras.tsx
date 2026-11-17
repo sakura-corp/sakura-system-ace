@@ -64,14 +64,14 @@ export function GraficoBarras({
   );
 
   if (categorias.length === 0) {
-    return <p className="text-corpo text-sakura-muted">Sem dados suficientes pra montar o gráfico ainda.</p>;
+    return <p className="text-corpo text-texto-2">Sem dados suficientes pra montar o gráfico ainda.</p>;
   }
 
   return (
     <div className="relative">
       <div className="mb-3 flex flex-wrap items-center gap-4">
         {series.map((s) => (
-          <span key={s.chave} className="flex items-center gap-1.5 text-rotulo text-sakura-purple-dark/90">
+          <span key={s.chave} className="flex items-center gap-1.5 text-rotulo text-texto/90">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.cor }} />
             {s.nome}
           </span>
@@ -96,7 +96,7 @@ export function GraficoBarras({
                 y={y}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="fill-sakura-muted"
+                className="fill-texto-2"
                 fontSize={10}
               >
                 {marca.toLocaleString("pt-BR")}
@@ -158,7 +158,7 @@ export function GraficoBarras({
                 x={inicioGrupo + larguraGrupo / 2}
                 y={ALTURA - 10}
                 textAnchor="middle"
-                className="fill-sakura-muted"
+                className="fill-texto-2"
                 fontSize={10}
               >
                 {categoria}
@@ -170,7 +170,7 @@ export function GraficoBarras({
 
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-sakura-gray/30 bg-sakura-pink-soft px-2.5 py-1.5 text-rotulo text-texto shadow-lg"
+          className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-linha bg-cartao px-2.5 py-1.5 text-rotulo text-texto shadow-lg"
           style={{ left: tooltip.x, top: tooltip.y - 6 }}
         >
           <p className="font-medium">{tooltip.categoria}</p>

@@ -23,7 +23,7 @@ import { formatarQuantidade as qtd } from "@/schemas/quantidade";
 import { MOTIVO_PARECIDA_ROTULO } from "@/schemas/pecaParecida";
 import type { Categoria } from "@/types/categoria";
 import type { Peca } from "@/types/peca";
-import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "./avisosEAbas";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/components/Aviso";
 
 interface JuntarPecasModalProps {
   categorias: Categoria[];

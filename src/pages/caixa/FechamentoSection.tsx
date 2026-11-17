@@ -30,7 +30,7 @@ import {
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { ModuloChave } from "@/types/operador";
-import { Aviso } from "./Aviso";
+import { Aviso } from "@/components/Aviso";
 
 interface FechamentoSectionProps {
   lojaId: string;
@@ -236,7 +236,7 @@ function FecharDia({
       </h2>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}
@@ -470,7 +470,7 @@ function FechamentoFeito({
       </div>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}

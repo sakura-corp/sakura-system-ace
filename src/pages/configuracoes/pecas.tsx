@@ -1,4 +1,4 @@
-import { Check, ChevronDown, TriangleAlert, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, type LucideIcon } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Botao } from "@/components/Botao";
 import { Dica } from "@/components/Dica";
@@ -6,31 +6,8 @@ import { Dica } from "@/components/Dica";
 // Peças da tarefa 15 do visual novo (#990): Configurações, Auditoria e
 // Diagnóstico, que são da mesma tarefa. Moram aqui, e não em `src/components/`,
 // de propósito: a tarefa não mexe nas peças compartilhadas. Quando uma tela de
-// OUTRA tarefa precisar de uma delas, sobe pra lá (anotado como sugestão no PR);
-// a Auditoria e o Diagnóstico só importam `MensagemDeErro`.
-
-/**
- * O erro de uma ação: continua do lado do botão que falhou (não some sozinho:
- * quem está no balcão perde a mensagem), agora com ícone e palavra junto da cor
- * (regra 4 do visual novo), no mesmo jeito do erro do Início.
- */
-export function MensagemDeErro({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <p
-      role="alert"
-      className={`flex items-start gap-2 rounded-xl bg-perigo/[0.13] px-4 py-3 text-corpo text-perigo ${className}`.trim()}
-    >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.25} />
-      <span className="min-w-0">{children}</span>
-    </p>
-  );
-}
+// OUTRA tarefa precisar de uma delas, sobe pra lá. O erro e o aviso de atenção
+// já subiram: são a peça `Aviso` (src/components/Aviso.tsx).
 
 /**
  * "Salvo." ao lado do botão de salvar. Fica junto do botão (e não vira o aviso
@@ -46,27 +23,6 @@ export function AvisoDeSalvo({ children }: { children: ReactNode }) {
     >
       <Check aria-hidden="true" className="size-4 shrink-0" strokeWidth={2.5} />
       {children}
-    </p>
-  );
-}
-
-/** Um aviso de atenção dentro de uma seção (amarelo, com ícone). */
-export function AvisoDeAtencao({
-  children,
-  className = "",
-  ...resto
-}: {
-  children: ReactNode;
-  className?: string;
-  role?: "status" | "alert";
-}) {
-  return (
-    <p
-      {...resto}
-      className={`flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-3 py-2 text-corpo text-atencao ${className}`.trim()}
-    >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" strokeWidth={2.25} />
-      <span className="min-w-0">{children}</span>
     </p>
   );
 }

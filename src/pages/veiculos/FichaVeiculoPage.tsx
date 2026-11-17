@@ -34,7 +34,7 @@ import {
 } from "@/schemas/retornos";
 import { nomeOrdem, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
-import { AvisoDeErro } from "../clientes/AvisoDeErro";
+import { AvisoDeErro } from "@/components/Aviso";
 import { SeloDoStatusDaOrdem } from "../clientes/SeloDoStatusDaOrdem";
 
 function km(valor: number): string {

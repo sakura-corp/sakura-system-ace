@@ -99,20 +99,20 @@ export function DetalhesFields({
             HOJE: aceitar o valor antigo no automático estragaria justamente
             o histórico que esse campo existe pra formar. */}
         {ultimoKm != null && (
-          <p className="text-rotulo text-sakura-muted">
+          <p className="text-rotulo text-texto-2">
             Última passagem: {ultimoKm.toLocaleString("pt-BR")} km
             {kmDigitado.trim() === "" && (
               <button
                 type="button"
                 onClick={() => setValue("km_entrada", String(ultimoKm))}
-                className="ml-2 font-medium text-sakura-pink hover:underline"
+                className="ml-2 font-medium text-acao-clara hover:underline"
               >
                 usar
               </button>
             )}
           </p>
         )}
-        {avisoKm && <p className="text-rotulo text-amber-300">{avisoKm}</p>}
+        {avisoKm && <p className="text-rotulo text-atencao">{avisoKm}</p>}
       </div>
 
       <Campo label="Vendedor / atendente">

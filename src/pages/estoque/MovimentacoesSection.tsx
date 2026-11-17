@@ -8,7 +8,8 @@ import type { Deposito } from "@/types/deposito";
 import type { MovimentoEstoque, NovoMovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
 import { MovimentoForm } from "./MovimentoForm";
-import { AvisoDeAtencao, CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
+import { CAMPO_NOVO_NO_COMBOBOX_FILTRO } from "./avisosEAbas";
+import { AvisoDeAtencao } from "@/components/Aviso";
 
 interface MovimentacoesSectionProps {
   pecas: Peca[];

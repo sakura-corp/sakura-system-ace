@@ -521,6 +521,14 @@ O que ele **não** prova (a sessão é Linux): arrastar, duplo clique, encaixe e
 3. **A tela-piloto é o Início**, mostrada pra Sofia antes de mexer nas outras (#990).
 4. **As outras telas em grupos**, cada grupo passando no `contraste:telas` e no `largura:telas`.
 5. **Os nomes antigos só saem no fim**, quando nenhuma tela usar mais.
+   **Feito em 17/11/2026** (a faxina): nenhuma tela usa mais os nomes antigos, e eles saíram do
+   `globals.css` nos dois temas. Cada um virou o papel que já fazia: `sakura-purple` → `acao`,
+   `sakura-pink` → `acao-clara`, `sakura-purple-dark` → `texto`, `sakura-muted` → `texto-2`,
+   `sakura-pink-soft` → `cartao`, `sakura-bg` → `fundo`, `sakura-borda-campo` → `borda-campo`,
+   `sakura-focus` → `foco` (papel novo), e o `sakura-gray` de borda virou `linha` (até 30%) ou
+   `linha-forte` (40% ou cheio), o de fundo `passar` ou `poco`. As cores do Tailwind que eram aviso
+   (`text-red-400`, `bg-amber-50`…) viraram `perigo`, `atencao` e `ok`, e as caixas de aviso
+   viraram a peça `Aviso` (`src/components/Aviso.tsx`).
 
 ## 11. O que ficou aberto
 

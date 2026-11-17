@@ -8,7 +8,7 @@ import { buscarDanfeEmitida } from "@/lib/notasFiscais";
 import { nomeArquivoDanfe } from "@/schemas/danfe";
 import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { AvisoNaTela } from "./AvisoNaTela";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { useBaixarXml } from "./useBaixarXml";
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";
 
@@ -132,14 +132,14 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
 
         {!carregando && erro && (
           <div className="space-y-2">
-            <AvisoNaTela tipo="atencao">{erro}</AvisoNaTela>
+            <AvisoDeAtencao role="status">{erro}</AvisoDeAtencao>
             <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
               Abrir a Versão para o cliente
             </Botao>
           </div>
         )}
 
-        {erroXml && <AvisoNaTela>{erroXml}</AvisoNaTela>}
+        {erroXml && <AvisoDeErro>{erroXml}</AvisoDeErro>}
 
         {pdfUrl && (
           <iframe

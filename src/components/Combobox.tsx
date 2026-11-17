@@ -206,11 +206,11 @@ export function Combobox({
         aria-expanded={aberto}
         aria-autocomplete="list"
         autoComplete="off"
-        className="w-full rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple disabled:opacity-50"
+        className="w-full rounded-lg border border-borda-campo px-3 py-2 focus:border-acao disabled:opacity-50"
       />
 
       {aberto && (
-        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-sakura-gray/30 bg-janela py-1 shadow-xl">
+        <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-linha bg-janela py-1 shadow-xl">
           {mostrarOpcaoVazia && (
             <button
               type="button"
@@ -224,8 +224,8 @@ export function Combobox({
                 e.preventDefault();
                 selecionar("");
               }}
-              className={`block w-full px-3 py-1.5 text-left text-corpo text-sakura-muted ${
-                indiceAtivo === 0 ? "bg-sakura-purple/20 text-sakura-pink" : "hover:bg-texto/5"
+              className={`block w-full px-3 py-1.5 text-left text-corpo text-texto-2 ${
+                indiceAtivo === 0 ? "bg-acao/20 text-acao-clara" : "hover:bg-texto/5"
               }`}
             >
               {opcaoVazia}
@@ -239,12 +239,12 @@ export function Combobox({
                   e.preventDefault();
                   selecionar(filtro.trim());
                 }}
-                className="block w-full px-3 py-1.5 text-left text-corpo text-sakura-pink hover:bg-texto/5"
+                className="block w-full px-3 py-1.5 text-left text-corpo text-acao-clara hover:bg-texto/5"
               >
                 Usar "{filtro.trim()}"
               </button>
             ) : (
-              <p className="px-3 py-1.5 text-corpo text-sakura-muted">Nenhum resultado encontrado</p>
+              <p className="px-3 py-1.5 text-corpo text-texto-2">Nenhum resultado encontrado</p>
             )
           ) : (
             opcoesFiltradas.map((opcao, indice) => {
@@ -258,7 +258,7 @@ export function Combobox({
                     selecionar(opcao.valor);
                   }}
                   className={`block w-full px-3 py-1.5 text-left text-corpo text-texto/90 ${
-                    indiceReal === indiceAtivo ? "bg-sakura-purple/20 text-sakura-pink" : "hover:bg-texto/5"
+                    indiceReal === indiceAtivo ? "bg-acao/20 text-acao-clara" : "hover:bg-texto/5"
                   }`}
                 >
                   {opcao.rotulo}
@@ -277,8 +277,8 @@ export function Combobox({
                 e.preventDefault();
                 acionarExtra();
               }}
-              className={`block w-full border-t border-sakura-gray/25 px-3 py-2 text-left text-corpo font-medium text-sakura-pink ${
-                indiceAtivo === indiceAcaoExtra ? "bg-sakura-purple/20" : "hover:bg-texto/5"
+              className={`block w-full border-t border-linha px-3 py-2 text-left text-corpo font-medium text-acao-clara ${
+                indiceAtivo === indiceAcaoExtra ? "bg-acao/20" : "hover:bg-texto/5"
               }`}
             >
               {acaoExtra.rotulo}

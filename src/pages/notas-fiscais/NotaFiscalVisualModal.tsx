@@ -6,7 +6,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { AvisoNaTela } from "./AvisoNaTela";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { useBaixarXml } from "./useBaixarXml";
 
 interface NotaFiscalVisualModalProps {
@@ -92,16 +92,16 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
       <div className="space-y-3">
         {carregando && <p className="text-corpo text-texto-2">Gerando pré-visualização...</p>}
 
-        {erro && <AvisoNaTela>{erro}</AvisoNaTela>}
+        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
         {!carregando && !erro && !reconhecido && (
-          <AvisoNaTela tipo="atencao">
+          <AvisoDeAtencao role="status">
             Não foi possível interpretar automaticamente todos os dados deste XML — o layout deste
             arquivo pode ser diferente do esperado. Confira baixando o XML original.
-          </AvisoNaTela>
+          </AvisoDeAtencao>
         )}
 
-        {erroXml && <AvisoNaTela>{erroXml}</AvisoNaTela>}
+        {erroXml && <AvisoDeErro>{erroXml}</AvisoDeErro>}
 
         {pronto && (
           <iframe

@@ -15,7 +15,7 @@ import {
   type RegistroAuditoria,
 } from "@/types/auditoria";
 import type { Operador } from "@/types/operador";
-import { MensagemDeErro } from "@/pages/configuracoes/pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // Cada ação tem a cor, o ícone e a palavra (regra 4 do visual novo). "Editou" é
 // azul, e não amarelo como era: amarelo é "atenção", e editar um cadastro é o
@@ -91,7 +91,7 @@ export function AuditoriaPage() {
         </div>
       </header>
 
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="flex flex-wrap gap-x-6 gap-y-3">
         <label className="flex items-center gap-2 text-corpo">

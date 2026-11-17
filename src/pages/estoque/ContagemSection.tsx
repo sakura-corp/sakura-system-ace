@@ -10,7 +10,8 @@ import { mensagemDeErro } from "@/lib/errors";
 import type { ContagemEstoque } from "@/types/contagem";
 import type { Deposito } from "@/types/deposito";
 import type { Peca } from "@/types/peca";
-import { AvisoDeAtencao, AvisoDeErro, CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { CAMPO_NOVO_NO_COMBOBOX } from "./avisosEAbas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface ContagemSectionProps {
   pecas: Peca[];

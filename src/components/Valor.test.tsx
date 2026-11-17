@@ -7,8 +7,8 @@ import { Valor, Variacao } from "./Valor";
  * prejuízo**. Então a frase virou teste.
  *
  * O motivo é concreto e recente: a primeira versão recebia a cor do número
- * junto com o tamanho, no mesmo `className`. Com `text-red-400` e
- * `text-sakura-purple-dark` no mesmo elemento, quem vence é a classe que o
+ * junto com o tamanho, no mesmo `className`. Com `text-perigo` e
+ * `text-texto` no mesmo elemento, quem vence é a classe que o
  * Tailwind escreveu por último **no CSS gerado** — e o prejuízo saiu na tela
  * com a cor de sempre. Leitura de código não pegou; renderizar pegou.
  *

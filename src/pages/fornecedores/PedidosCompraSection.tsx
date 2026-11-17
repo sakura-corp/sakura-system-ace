@@ -23,7 +23,7 @@ import { ImportarNotaFiscalXmlModal } from "./ImportarNotaFiscalXmlModal";
 import { PedidoCompraForm } from "./PedidoCompraForm";
 import { ReceberPedidoModal } from "./ReceberPedidoModal";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
-import { AvisoDeAtencao, AvisoDeErro } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface PedidosCompraSectionProps {
   pedidos: PedidoCompra[];

@@ -15,7 +15,8 @@ import {
   type DepositoFormValues,
 } from "@/schemas/deposito";
 import type { Deposito } from "@/types/deposito";
-import { BotaoDeLista, MensagemDeErro } from "./pecas";
+import { BotaoDeLista } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface DepositosSectionProps {
   depositos: Deposito[];
@@ -74,7 +75,7 @@ export function DepositosSection({ depositos, lojaId, onSalvo }: DepositosSectio
 
   return (
     <>
-      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
 
       <form onSubmit={handleSubmit(aoAdicionar)} className="mt-4 flex flex-wrap items-end gap-3">
         <label className="sakura-rotulo min-w-64 flex-1">

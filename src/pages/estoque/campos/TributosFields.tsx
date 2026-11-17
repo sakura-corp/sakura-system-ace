@@ -9,7 +9,7 @@ import { OPCOES_ORIGEM } from "@/lib/origemMercadoria";
 import type { PecaFormValues } from "@/schemas/peca";
 import { motivoCfopIncompativel, motivoCodigoIncompativel, regimeUsaCsosn } from "@/schemas/tributacao";
 import type { RegimeTributario } from "@/types/configuracao";
-import { AvisoDeAtencao } from "../avisosEAbas";
+import { AvisoDeAtencao } from "@/components/Aviso";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
 // Estes campos são a maior fonte de erro do sistema, e o erro deles é

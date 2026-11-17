@@ -12,7 +12,7 @@ import { FornecedorForm } from "./FornecedorForm";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { Selo } from "@/components/Selo";
-import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface FornecedoresSectionProps {
   fornecedores: Fornecedor[];

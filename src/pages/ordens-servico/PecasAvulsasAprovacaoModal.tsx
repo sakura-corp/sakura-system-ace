@@ -19,6 +19,7 @@ import {
   type EscolhasDaJanela,
   type ModoAvulsa as Modo,
 } from "./escolhasAvulsas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 const ROTULO_DO_MODO: Record<Modo, string> = {
   existente: "É uma peça que já tenho",
@@ -170,7 +171,7 @@ export function PecasAvulsasAprovacaoModal({
       >
         <div className="space-y-4">
           {itens.length === 0 && (
-            <p className="text-corpo text-sakura-purple-dark">
+            <p className="text-corpo text-texto">
               Não sobrou nenhuma peça sem cadastro. Pode aprovar.
             </p>
           )}
@@ -196,12 +197,12 @@ export function PecasAvulsasAprovacaoModal({
             return (
               <fieldset
                 key={item.id}
-                className="space-y-3 rounded-xl border border-sakura-gray/30 p-4"
+                className="space-y-3 rounded-xl border border-linha p-4"
               >
-                <legend className="px-1 text-corpo font-semibold text-sakura-purple-dark">
+                <legend className="px-1 text-corpo font-semibold text-texto">
                   {item.descricao}
                 </legend>
-                <p className="text-rotulo text-sakura-muted">
+                <p className="text-rotulo text-texto-2">
                   {item.quantidade}x · {formatarMoeda(item.preco_unitario)} cada
                 </p>
 
@@ -209,7 +210,7 @@ export function PecasAvulsasAprovacaoModal({
                   {(Object.keys(ROTULO_DO_MODO) as Modo[]).map((opcao) => (
                     <label
                       key={opcao}
-                      className="flex items-center gap-2 text-corpo text-sakura-purple-dark"
+                      className="flex items-center gap-2 text-corpo text-texto"
                     >
                       <input
                         type="radio"
@@ -232,11 +233,11 @@ export function PecasAvulsasAprovacaoModal({
                       placeholder="Escolha a peça do cadastro"
                     />
                     {parecidas.length > 0 && (
-                      <p className="text-rotulo text-sakura-muted">
+                      <p className="text-rotulo text-texto-2">
                         As que parecem com “{item.descricao}” estão no topo da lista.
                       </p>
                     )}
-                    <p className="text-rotulo text-sakura-muted">
+                    <p className="text-rotulo text-texto-2">
                       Ao aprovar, ela sai do estoque.
                     </p>
                   </div>
@@ -245,26 +246,26 @@ export function PecasAvulsasAprovacaoModal({
                 {modo === "cadastrar" && (
                   <div className="space-y-1">
                     {cadastradas[item.id] ? (
-                      <p className="text-corpo text-emerald-300">
+                      <p className="text-corpo text-ok">
                         Peça cadastrada: {cadastradas[item.id].descricao}
                       </p>
                     ) : (
                       <button
                         type="button"
                         onClick={() => setCadastrando(item)}
-                        className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-sakura-purple hover:bg-sakura-purple/10"
+                        className="rounded-xl border border-acao/40 px-4 py-2 text-corpo font-medium text-acao hover:bg-acao/10"
                       >
                         Cadastrar a peça
                       </button>
                     )}
-                    <p className="text-rotulo text-sakura-muted">
+                    <p className="text-rotulo text-texto-2">
                       O nome e o preço já vêm preenchidos. Ao aprovar, ela sai do estoque.
                     </p>
                   </div>
                 )}
 
                 {modo === "sem_cadastro" && (
-                  <p className="text-rotulo text-sakura-muted">
+                  <p className="text-rotulo text-texto-2">
                     Não mexe no estoque e não sai na nota fiscal até ser cadastrada.
                   </p>
                 )}
@@ -273,18 +274,18 @@ export function PecasAvulsasAprovacaoModal({
           })}
 
           {Object.entries(avisosEstoqueInicial).map(([itemId, avisoDoEstoque]) => (
-            <p key={itemId} className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">
+            <AvisoDeAtencao key={itemId} className="text-corpo">
               {`${cadastradas[itemId] ? `${cadastradas[itemId].descricao}: ` : ""}${avisoDoEstoque}`}
-            </p>
+            </AvisoDeAtencao>
           ))}
           {aviso && (
-            <p className="rounded-lg bg-amber-50 px-4 py-2 text-corpo text-amber-800">{aviso}</p>
+            <AvisoDeAtencao className="text-corpo">{aviso}</AvisoDeAtencao>
           )}
           {erro && (
-            <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+            <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>
           )}
           {faltam > 0 && (
-            <p className="text-rotulo text-amber-300">
+            <p className="text-rotulo text-atencao">
               {faltam === 1
                 ? "Falta escolher o que fazer com 1 peça."
                 : `Faltam ${faltam} peças para escolher o que fazer.`}
@@ -296,7 +297,7 @@ export function PecasAvulsasAprovacaoModal({
               type="button"
               onClick={onFechar}
               disabled={enviando}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar disabled:opacity-50"
             >
               Voltar
             </button>
@@ -304,7 +305,7 @@ export function PecasAvulsasAprovacaoModal({
               type="button"
               onClick={() => onConfirmar(vinculosDaAprovacao(itens, escolhas))}
               disabled={faltam > 0 || enviando || ligando > 0}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {enviando ? "Aprovando..." : "Aprovar orçamento"}
             </button>

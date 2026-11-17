@@ -13,7 +13,7 @@ import {
 import type { Loja } from "@/types/loja";
 import { MODULOS } from "@/types/operador";
 import type { NovoOperador, Operador } from "@/types/operador";
-import { MensagemDeErro } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // A caixinha de marcar: 18 px, na cor de ação, com o foco do teclado visível.
 const CAIXINHA = "size-[18px] shrink-0 rounded accent-acao";
@@ -70,7 +70,7 @@ export function OperadorForm({
         </h3>
       </div>
 
-      {erro && <MensagemDeErro>{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="sakura-rotulo">

@@ -5,7 +5,7 @@ import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import { cancelarArquivoEmitido } from "@/lib/notasFiscais";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import { AvisoNaTela } from "./AvisoNaTela";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface CancelarNotaModalProps {
   arquivo: NotaFiscalArquivo;
@@ -103,7 +103,7 @@ export function CancelarNotaModal({ arquivo, onFechar, onCancelado }: CancelarNo
             : `Falta${faltam === 1 ? "" : "m"} ${faltam} caractere${faltam === 1 ? "" : "s"}.`}
         </p>
 
-        {erro && <AvisoNaTela>{erro}</AvisoNaTela>}
+        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
       </div>
     </Modal>
   );

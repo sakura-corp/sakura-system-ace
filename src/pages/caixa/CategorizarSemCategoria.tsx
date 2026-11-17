@@ -8,7 +8,7 @@ import { agruparPorCategoria } from "@/schemas/caixa";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { MovimentoCaixa, TipoCaixa } from "@/types/caixa";
-import { Aviso } from "./Aviso";
+import { Aviso } from "@/components/Aviso";
 
 interface CategorizarSemCategoriaProps {
   tipo: TipoCaixa;
@@ -92,7 +92,7 @@ export function CategorizarSemCategoria({
       </p>
 
       {erro && (
-        <Aviso tipo="perigo" alerta className="text-corpo">
+        <Aviso tipo="perigo" role="alert" className="text-corpo">
           {erro}
         </Aviso>
       )}

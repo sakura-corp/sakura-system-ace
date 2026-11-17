@@ -47,7 +47,7 @@ interface AcoesDaLinhaProps {
 }
 
 const CLASSE_BOTAO_ICONE =
-  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-acao transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
 
 // O botão de três pontos do visual novo (tarefa 7, #990): cinza secundário,
 // que acende ao passar o mouse e fica marcado enquanto o menu está aberto.
@@ -55,7 +55,7 @@ const CLASSE_BOTAO_MAIS =
   "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-texto-2 transition-colors hover:bg-passar hover:text-texto aria-expanded:bg-passar aria-expanded:text-texto";
 
 const CLASSE_BOTAO_TEXTO =
-  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-sakura-purple transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-8 items-center justify-center rounded-lg px-3 text-rotulo font-medium text-acao transition hover:bg-texto/10 disabled:cursor-not-allowed disabled:opacity-40";
 
 function IconeLapis() {
   return (

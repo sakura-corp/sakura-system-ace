@@ -1,13 +1,9 @@
-import { Check, TriangleAlert } from "lucide-react";
-import type { KeyboardEvent, ReactNode } from "react";
+import type { KeyboardEvent } from "react";
 
 /**
- * Três pecinhas de tela que o Estoque, os Fornecedores e os Serviços repetem
- * (tarefa 9 do visual novo, #990). Moram aqui, e não em `src/components/`,
- * porque aquela pasta é das peças compartilhadas e a tarefa 9 não mexe nela.
- * Sugestão pro PR: quando as tarefas 7 e 9 estiverem na `main`, virar peças
- * (`Abas` e `AvisoNaTela`), no lugar da cópia que a tela de Ordens fez com o
- * `sakura-abas`.
+ * As abas que o Estoque e os Fornecedores repetem (tarefa 9 do visual novo,
+ * #990). As caixas de aviso que moravam aqui viraram a peça `Aviso`
+ * (src/components/Aviso.tsx).
  */
 
 /**
@@ -75,58 +71,6 @@ export function AbasDaTela<T extends string>({
           {nome}
         </button>
       ))}
-    </div>
-  );
-}
-
-/**
- * O aviso de erro (vermelho, com o triângulo e a frase: regra 4). Erro NÃO
- * some sozinho; fica na tela até a pessoa agir. É um `div`, e não um `p`,
- * porque alguns avisos levam lista e mais de um parágrafo.
- */
-export function AvisoDeErro({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      role="alert"
-      className={`flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo ${className}`.trim()}
-    >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
-
-/** O aviso de atenção (amarelo, com o triângulo): pede uma ação, mas não é erro. */
-export function AvisoDeAtencao({
-  children,
-  className = "",
-  role,
-}: {
-  children: ReactNode;
-  className?: string;
-  /** `status` quando o aviso aparece ou some com a tela aberta (a conexão que cai): o leitor de tela anuncia. */
-  role?: "status";
-}) {
-  return (
-    <div
-      role={role}
-      className={`flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao ${className}`.trim()}
-    >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0">{children}</div>
-    </div>
-  );
-}
-
-/** O aviso de "deu certo" que fica na tela (verde, com o visto). */
-export function AvisoDeCerto({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      role="status"
-      className={`flex items-start gap-2 rounded-xl bg-ok/[0.12] px-4 py-3 text-corpo text-ok ${className}`.trim()}
-    >
-      <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <div className="min-w-0">{children}</div>
     </div>
   );
 }

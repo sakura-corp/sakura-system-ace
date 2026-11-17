@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Botao } from "@/components/Botao";
 import { criarCategoriaCaixa, excluirCategoriaCaixa } from "@/lib/categoriasCaixa";
 import { mensagemDeErro } from "@/lib/errors";
-import { BotaoDeLista, MensagemDeErro } from "./pecas";
+import { BotaoDeLista } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 import type { CategoriaCaixa, TipoCategoriaCaixa } from "@/types/categoriaCaixa";
 
 interface CategoriasCaixaSectionProps {
@@ -79,7 +80,7 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
 
   return (
     <>
-      {erro && <MensagemDeErro className="mt-4">{erro}</MensagemDeErro>}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
 
       <form onSubmit={handleAdicionar} className="mt-4 flex items-center gap-2">
         <select

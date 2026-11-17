@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Selo } from "@/components/Selo";
-import { AvisoDeErro } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeErro } from "@/components/Aviso";
 import { listarCategoriasServico } from "@/lib/categoriasServico";
 import { mensagemDeErro } from "@/lib/errors";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";

@@ -19,7 +19,7 @@ import {
   montarSugestaoCompra,
   totalDaLinha,
 } from "@/schemas/estoque";
-import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/pages/estoque/avisosEAbas";
+import { AvisoDeAtencao, AvisoDeCerto, AvisoDeErro } from "@/components/Aviso";
 
 interface Props {
   lojaId: string;

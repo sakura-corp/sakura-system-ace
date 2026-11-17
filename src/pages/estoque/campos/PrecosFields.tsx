@@ -5,7 +5,7 @@ import {
   precoAPartirDaMargem,
   type PecaFormValues,
 } from "@/schemas/peca";
-import { AvisoDeAtencao } from "../avisosEAbas";
+import { AvisoDeAtencao } from "@/components/Aviso";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
 export function PrecosFields({
