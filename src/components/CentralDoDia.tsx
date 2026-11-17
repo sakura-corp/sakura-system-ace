@@ -397,7 +397,7 @@ export function CentralDoDia({
               <button
                 type="button"
                 onClick={() => navigate("/configuracoes")}
-                className="text-rotulo font-medium text-sakura-purple-dark underline underline-offset-2"
+                className="text-rotulo font-medium text-texto underline underline-offset-2"
               >
                 cadastrar o WhatsApp do contador
               </button>
@@ -405,7 +405,7 @@ export function CentralDoDia({
             {avisoPacote && (
               <p
                 role={avisoPacote.erro ? "alert" : "status"}
-                className={`basis-full text-right text-rotulo ${avisoPacote.erro ? "text-red-300" : "text-emerald-300"}`}
+                className={`basis-full text-right text-rotulo ${avisoPacote.erro ? "text-perigo" : "text-ok"}`}
               >
                 {avisoPacote.texto}
               </p>

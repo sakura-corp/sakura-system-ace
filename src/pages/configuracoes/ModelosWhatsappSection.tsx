@@ -297,25 +297,20 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
     return handleSubmit(gravar)(e);
   };
 
-  const classeCampo =
-    "mt-1 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple";
+  const classeRotulo = "block text-rotulo font-medium text-texto-2";
 
   return (
     <form onSubmit={aoEnviar} noValidate>
-      <h4 className="text-corpo font-semibold text-sakura-purple-dark">Contato da contabilidade</h4>
-      <p className="mt-1 text-rotulo text-sakura-muted">
+      <h4 className="text-corpo font-semibold text-texto">Contato da contabilidade</h4>
+      <p className="mt-1 text-rotulo text-texto-2">
         Pra quem vai o pacote das notas do mês. Com o WhatsApp, a Central do dia ganha o botão
         Abrir conversa. Esvazie os campos e salve (ou use Apagar contato) para remover.
       </p>
 
-      {erro && (
-        <p role="alert" className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <div>
-          <label htmlFor="contab-nome" className="block text-rotulo text-sakura-purple-dark">
+          <label htmlFor="contab-nome" className={classeRotulo}>
             Nome da contabilidade
           </label>
           <input
@@ -323,14 +318,15 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
             type="text"
             disabled={travado}
             {...register("nome", { onChange: () => setSalvo(null) })}
-            className={classeCampo}
+            aria-invalid={errors.nome ? true : undefined}
+            className="sakura-campo mt-1.5"
           />
           {errors.nome && (
-            <span className="mt-1 block text-rotulo text-red-600">{errors.nome.message}</span>
+            <span className="mt-1 block text-rotulo text-perigo">{errors.nome.message}</span>
           )}
         </div>
         <div>
-          <label htmlFor="contab-whatsapp" className="block text-rotulo text-sakura-purple-dark">
+          <label htmlFor="contab-whatsapp" className={classeRotulo}>
             WhatsApp da contabilidade
           </label>
           <input
@@ -340,14 +336,15 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
             placeholder="(11) 90000-0000"
             disabled={travado}
             {...register("whatsapp", { onChange: () => setSalvo(null) })}
-            className={classeCampo}
+            aria-invalid={errors.whatsapp ? true : undefined}
+            className="sakura-campo mt-1.5"
           />
           {errors.whatsapp && (
-            <span className="mt-1 block text-rotulo text-red-600">{errors.whatsapp.message}</span>
+            <span className="mt-1 block text-rotulo text-perigo">{errors.whatsapp.message}</span>
           )}
         </div>
         <div>
-          <label htmlFor="contab-email" className="block text-rotulo text-sakura-purple-dark">
+          <label htmlFor="contab-email" className={classeRotulo}>
             E-mail da contabilidade
           </label>
           <input
@@ -356,35 +353,27 @@ function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
             inputMode="email"
             disabled={travado}
             {...register("email", { onChange: () => setSalvo(null) })}
-            className={classeCampo}
+            aria-invalid={errors.email ? true : undefined}
+            className="sakura-campo mt-1.5"
           />
           {errors.email && (
-            <span className="mt-1 block text-rotulo text-red-600">{errors.email.message}</span>
+            <span className="mt-1 block text-rotulo text-perigo">{errors.email.message}</span>
           )}
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-end gap-3">
-        {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            {salvo}
-          </p>
-        )}
-        <button
-          type="button"
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+        {salvo && <AvisoDeSalvo>{salvo}</AvisoDeSalvo>}
+        <Botao
+          variante="fantasma"
           disabled={isSubmitting || travado}
           onClick={() => gravar(null)}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
         >
           Apagar contato
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting || travado}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="secundario" disabled={travado} ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Salvar contato"}
-        </button>
+        </Botao>
       </div>
     </form>
   );
