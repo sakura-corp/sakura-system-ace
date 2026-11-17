@@ -166,7 +166,15 @@ export function ServicosPage() {
                   <td className="text-texto-2">
                     {categorias.find((c) => c.id === servico.categoria_id)?.nome ?? "—"}
                   </td>
-                  <td className="whitespace-nowrap text-texto-2">{servico.codigo_interno || "—"}</td>
+                  {/* Igual ao código de Produtos (#921, #932): sem quebrar no
+                      hífen, mas com teto, pra um código comprido não alargar a
+                      tabela em 1366. O código inteiro fica no balão do mouse. */}
+                  <td
+                    className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
+                    title={servico.codigo_interno || undefined}
+                  >
+                    {servico.codigo_interno || "—"}
+                  </td>
                   <td className="whitespace-nowrap text-right">{formatarPreco(servico.preco_padrao)}</td>
                   <td className="whitespace-nowrap text-right text-texto-2">{formatarPreco(servico.custo)}</td>
                   <td>
