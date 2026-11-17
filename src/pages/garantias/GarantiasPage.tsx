@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { LinkPlaca } from "@/components/LinkPlaca";
+import { Selo } from "@/components/Selo";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarItensComGarantia, type ItemGarantia } from "@/lib/garantias";
 import { garantiaVencida, vencimentoDaGarantia } from "@/schemas/garantia";
 import { temPermissao } from "@/types/operador";
-import { Etiqueta } from "@/components/Etiqueta";
+import { AvisoDeErro } from "@/components/Aviso";
 
 type FiltroStatus = "todos" | "dentro_do_prazo" | "vencida";
 
@@ -63,18 +64,16 @@ export function GarantiasPage() {
       <header className="flex items-center gap-3">
         <BotaoVoltar />
         <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Garantias</h1>
-          <p className="text-corpo text-sakura-muted">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Garantias</h1>
+          <p className="text-corpo text-texto-2">
             Peças vendidas com prazo de garantia definido no cadastro
           </p>
         </div>
       </header>
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
+      <div role="group" aria-label="Situação da garantia" className="flex gap-1 border-b border-linha">
         <FiltroBotao
           label={`Todos (${linhas.length})`}
           ativo={filtroStatus === "todos"}
@@ -93,62 +92,60 @@ export function GarantiasPage() {
       </div>
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : linhasFiltradas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           {linhas.length === 0
             ? "Nenhuma peça vendida com garantia cadastrada ainda. Defina o prazo de garantia no cadastro do produto (aba Estoque → Produtos)."
             : "Nenhum item nessa situação."}
         </p>
       ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
-              <tr>
-                <th className="px-4 py-3 font-medium">Produto</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Veículo</th>
-                <th className="px-4 py-3 font-medium">Fechamento da OS</th>
-                <th className="px-4 py-3 font-medium">Vence em</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {linhasFiltradas.map(({ item, vencimento, vencida }) => (
-                <tr key={item.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{item.peca?.descricao ?? "—"}</td>
-                  <td className="px-4 py-3">{item.ordem?.cliente?.nome ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {item.ordem?.veiculo && podeVerFicha ? (
-                      <LinkPlaca
-                        veiculoId={item.ordem.veiculo.id}
-                        placa={item.ordem.veiculo.placa}
-                      />
-                    ) : (
-                      (item.ordem?.veiculo?.placa ?? "—")
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {item.ordem?.data_fechamento
-                      ? new Date(item.ordem.data_fechamento).toLocaleDateString("pt-BR")
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3">{diaBrasileiro(vencimento)}</td>
-                  <td className="px-4 py-3">
-                    <Etiqueta
-                      className={
-                        vencida
-                          ? "bg-red-50 text-red-700"
-                          : "bg-emerald-50 text-emerald-700"
-                      }
-                    >
-                      {vencida ? "Vencida" : "Dentro do prazo"}
-                    </Etiqueta>
-                  </td>
+        <div className="sakura-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="sakura-tabela">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Cliente</th>
+                  <th>Veículo</th>
+                  <th>Fechamento da OS</th>
+                  <th>Vence em</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {linhasFiltradas.map(({ item, vencimento, vencida }) => (
+                  <tr key={item.id}>
+                    <td className="font-medium text-texto">{item.peca?.descricao ?? "—"}</td>
+                    <td>{item.ordem?.cliente?.nome ?? "—"}</td>
+                    <td>
+                      {item.ordem?.veiculo && podeVerFicha ? (
+                        <LinkPlaca
+                          veiculoId={item.ordem.veiculo.id}
+                          placa={item.ordem.veiculo.placa}
+                        />
+                      ) : (
+                        (item.ordem?.veiculo?.placa ?? "—")
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {item.ordem?.data_fechamento
+                        ? new Date(item.ordem.data_fechamento).toLocaleDateString("pt-BR")
+                        : "—"}
+                    </td>
+                    <td className="whitespace-nowrap">{diaBrasileiro(vencimento)}</td>
+                    <td>
+                      {vencida ? (
+                        <Selo tipo="perigo" palavra="Vencida" />
+                      ) : (
+                        <Selo tipo="ok" palavra="Dentro do prazo" />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -166,11 +163,13 @@ function FiltroBotao({
 }) {
   return (
     <button
+      type="button"
+      aria-pressed={ativo}
       onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
+      className={`-mb-px px-4 py-2.5 text-corpo font-medium transition-colors ${
         ativo
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
+          ? "border-b-2 border-acao text-texto"
+          : "border-b-2 border-transparent text-texto-2 hover:text-texto"
       }`}
     >
       {label}

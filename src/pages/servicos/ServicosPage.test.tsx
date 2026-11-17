@@ -42,6 +42,8 @@ const ALINHAMENTO: Servico = {
   custo: null,
   categoria_id: null,
   ativo: true,
+  intervalo_dias: null,
+  intervalo_km: null,
   criado_em: "2026-01-01T00:00:00.000Z",
 };
 
@@ -97,5 +99,28 @@ describe("ServicosPage — abrir o formulário rola até ele (#969)", () => {
     await user.click(screen.getByRole("button", { name: /^Editar .*Alinhamento/ }));
 
     expect(document.activeElement).toBe(screen.getByDisplayValue("Alinhamento"));
+  });
+});
+
+describe("ServicosPage — código comprido não alarga a tabela (#932)", () => {
+  it("a célula do código tem teto de largura, corta com \"…\" e mostra o código inteiro no balão", async () => {
+    const codigo = "SV-TROCA-OLEO-FILTRO-01";
+    listarServicos.mockResolvedValue([{ ...ALINHAMENTO, codigo_interno: codigo }]);
+    renderizar(<ServicosPage />);
+
+    const celula = (await screen.findByText(codigo)).closest("td")!;
+    expect(celula.className).toContain("max-w-[10rem]");
+    expect(celula.className).toContain("truncate");
+    expect(celula.className).toContain("whitespace-nowrap");
+    expect(celula.getAttribute("title")).toBe(codigo);
+  });
+
+  it("sem código, mostra \"—\" e não põe balão vazio", async () => {
+    renderizar(<ServicosPage />);
+    await screen.findByText("Alinhamento");
+    // A categoria e o custo também podem mostrar "—": nenhum deles tem balão.
+    const celulas = screen.getAllByText("—", { selector: "td" });
+    expect(celulas.length).toBeGreaterThan(0);
+    for (const celula of celulas) expect(celula.hasAttribute("title")).toBe(false);
   });
 });

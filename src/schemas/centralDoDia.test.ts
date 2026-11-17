@@ -7,6 +7,7 @@ import {
   limitarPorTipo,
   mensagemDaListaVazia,
   montarCentralDoDia,
+  nomeDoMesAnterior,
   alcanceDaCentral,
   marcadoresDaCobranca,
   marcadoresDoCarroPronto,
@@ -441,5 +442,20 @@ describe("as mensagens de WhatsApp", () => {
     expect(m.veiculo).toBe("Fiat Uno");
     expect(m.placa).toBe("ABC1D23");
     expect(m.valor).toMatch(/190,00/);
+  });
+});
+
+// O cartão de número do Início escreve "contra outubro" (visual novo, #990).
+describe("nomeDoMesAnterior", () => {
+  it("em novembro é outubro", () => {
+    expect(nomeDoMesAnterior("2026-11-14")).toBe("outubro");
+  });
+
+  it("em janeiro é dezembro: dá a volta no ano", () => {
+    expect(nomeDoMesAnterior("2027-01-03")).toBe("dezembro");
+  });
+
+  it("em março é fevereiro, mesmo no dia 31, que fevereiro não tem", () => {
+    expect(nomeDoMesAnterior("2026-03-31")).toBe("fevereiro");
   });
 });

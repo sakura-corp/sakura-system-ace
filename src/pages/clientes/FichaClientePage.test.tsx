@@ -169,6 +169,12 @@ describe("FichaClientePage", () => {
     expect(screen.getByText("R$ 480,00 atrasado")).toBeInTheDocument();
     expect(screen.getByText("Atrasada")).toBeInTheDocument();
     expect(screen.getByText("Pendente")).toBeInTheDocument();
+    // O aviso é um selo com palavra e ícone (regra 4 do visual novo), e a cor
+    // acompanha o que a palavra diz: atrasada é problema, pendente é atenção;
+    // o status da OS faturada é "certo".
+    expect(screen.getByText("Atrasada").closest("[data-selo]")).toHaveAttribute("data-selo", "perigo");
+    expect(screen.getByText("Pendente").closest("[data-selo]")).toHaveAttribute("data-selo", "atencao");
+    expect(screen.getAllByText("Faturada")[0].closest("[data-selo]")).toHaveAttribute("data-selo", "ok");
     // total comprado 250 + 480
     expect(screen.getByText("R$ 730,00")).toBeInTheDocument();
     // como pagou: a forma e as parcelas de cada OS faturada
@@ -192,7 +198,12 @@ describe("FichaClientePage", () => {
       contasReceber: false,
     });
     expect(screen.getAllByText("Você não tem acesso a Contas a Receber.").length).toBeGreaterThan(0);
-    expect(screen.queryByText("R$ 0,00")).not.toBeInTheDocument();
+    // O cartão "Deve" (e não a tela inteira): o número do "Total comprado"
+    // conta de R$ 0,00 até o valor (tarefa 5), então um "R$ 0,00" passa por
+    // ali no primeiro quadro da contagem. O que não pode é o "Deve" mostrar.
+    const cartaoDeve = screen.getByText("Deve").closest("[data-cartao-numero]") as HTMLElement;
+    expect(within(cartaoDeve).queryByText(/R\$/)).not.toBeInTheDocument();
+    expect(within(cartaoDeve).getByText("—")).toBeInTheDocument();
     expect(screen.queryByText("Não deve nada")).not.toBeInTheDocument();
     // as compras continuam aparecendo
     const comprou = screen.getByRole("heading", { name: /O que comprou/ }).closest("section")!;

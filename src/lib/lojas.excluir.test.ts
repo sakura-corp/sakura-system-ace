@@ -34,6 +34,12 @@ describe("excluirLoja", () => {
     expect(apagadas.indexOf("configuracoes_avaliacao")).toBeLessThan(apagadas.indexOf("lojas"));
   });
 
+  it("apaga os textos de WhatsApp da loja antes de apagar a loja (#951)", async () => {
+    await excluirLoja("loja-1");
+    expect(apagadas).toContain("configuracoes_whatsapp");
+    expect(apagadas.indexOf("configuracoes_whatsapp")).toBeLessThan(apagadas.indexOf("lojas"));
+  });
+
   it("a loja é a última a sair", async () => {
     await excluirLoja("loja-1");
     expect(apagadas.at(-1)).toBe("lojas");

@@ -327,6 +327,105 @@ describe("PecasAvulsasAprovacaoModal — a peça cadastrada liga ao item na hora
   });
 });
 
+/** Preenche a janela de cadastro aberta, com a quantidade de estoque inicial. */
+async function preencherComEstoque(user: Usuario, nome: string) {
+  const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
+  await waitFor(() => expect(campo("Descrição *")).toHaveValue(nome));
+  await user.type(campo("NCM *"), "40169300");
+  await user.type(campo("C.E.S.T *"), "0100100");
+  await user.type(campo("CFOP padrão *"), "5102");
+  await user.selectOptions(screen.getByLabelText("Origem *"), "0");
+  await user.type(campo("CST / CSOSN *"), "500");
+  await user.type(campo("Qtde. estoque inicial"), "3");
+  await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+}
+
+const AVISO_PALHETA =
+  "Palheta 20 polegadas: Peça cadastrada, mas o estoque inicial não entrou " +
+  "(Nenhum depósito ativo encontrado pra essa loja). Peça a quem cuida do Estoque para lançar a entrada.";
+
+// #909: a peça foi criada, mas o estoque inicial não entrou. A peça fica como
+// o caminho do item (sem cadastrar outra), e a janela avisa, sem travar o Aprovar.
+describe("PecasAvulsasAprovacaoModal — estoque inicial que não entra (#909)", () => {
+  it("liga a peça criada, avisa e não cadastra duas vezes", async () => {
+    cadastrarPecaRapida.mockResolvedValue("p-nova");
+    registrarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    const { user, onConfirmar, onItemLigado } = montar([palheta], { pecas: [] });
+
+    await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await preencherComEstoque(user, "Palheta 20 polegadas");
+
+    expect(await screen.findByText("Peça cadastrada: Palheta 20 polegadas")).toBeInTheDocument();
+    expect(screen.getByText(AVISO_PALHETA)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Salvar peça" })).not.toBeInTheDocument();
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
+    // A peça é ligada ao item na hora (#720), mesmo sem o estoque inicial.
+    await waitFor(() => expect(onItemLigado).toHaveBeenCalledWith("i1"));
+    expect(cadastrarPecaDoItem.mock.calls[0]).toEqual(["i1", "p-nova", "op"]);
+
+    // Aviso, nunca tranca: aprova normalmente com a peça criada.
+    await waitFor(() => expect(aprovar()).toBeEnabled());
+    await user.click(aprovar());
+    expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-nova" }]);
+  });
+
+  // Junção com o #720: ligada a peça, quem abriu a janela tira o item da
+  // lista. O aviso não pode ir embora junto com a linha do item.
+  it("o item sai da lista depois de ligado, e o aviso continua na janela", async () => {
+    cadastrarPecaRapida.mockResolvedValue("p-nova");
+    registrarMovimento.mockRejectedValue(new Error("Nenhum depósito ativo encontrado pra essa loja."));
+    function ComPaiQueTiraOLigado() {
+      const [itens, setItens] = useState<ItemOS[]>([palheta]);
+      const [escolhas, setEscolhas] = useState<EscolhasDaJanela>(ESCOLHAS_VAZIAS);
+      return (
+        <PecasAvulsasAprovacaoModal
+          itens={itens}
+          pecas={[]}
+          lojaId="loja-1"
+          escolhas={escolhas}
+          onMudarEscolhas={setEscolhas}
+          enviando={false}
+          erro={null}
+          onConfirmar={vi.fn()}
+          onItemLigado={async (itemId) => setItens((lista) => lista.filter((item) => item.id !== itemId))}
+          onFechar={vi.fn()}
+        />
+      );
+    }
+    const { user } = renderizar(<ComPaiQueTiraOLigado />);
+
+    await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "Cadastrar agora" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar a peça" }));
+    await preencherComEstoque(user, "Palheta 20 polegadas");
+
+    await waitFor(() => expect(screen.queryByRole("group", { name: "Palheta 20 polegadas" })).toBeNull());
+    expect(screen.getByText(AVISO_PALHETA)).toBeInTheDocument();
+    expect(cadastrarPecaRapida).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PecasAvulsasAprovacaoModal — um aviso por peça (#909, revisão)", () => {
+  it("cadastrar a segunda peça sem problema não apaga o aviso da primeira", async () => {
+    cadastrarPecaRapida.mockResolvedValueOnce("p-nova").mockResolvedValueOnce("p-outra");
+    registrarMovimento.mockRejectedValueOnce(new Error("sem internet")).mockResolvedValue(undefined);
+    const { user } = montar([palheta, filtro], { pecas: [] });
+
+    async function cadastrar(nome: string) {
+      await user.click(secao(nome).getByRole("radio", { name: "Cadastrar agora" }));
+      await user.click(secao(nome).getByRole("button", { name: "Cadastrar a peça" }));
+      await preencherComEstoque(user, nome);
+      await screen.findByText(`Peça cadastrada: ${nome}`);
+    }
+
+    await cadastrar("Palheta 20 polegadas");
+    await cadastrar("Filtro de óleo PSL55");
+
+    expect(screen.getByText(/^Palheta 20 polegadas: .*estoque inicial não entrou \(sem internet\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Filtro de óleo PSL55: .*estoque inicial não entrou/)).not.toBeInTheDocument();
+  });
+});
+
 describe("PecasAvulsasAprovacaoModal — erro da aprovação", () => {
   it("mostra o erro dentro da janela", () => {
     montar([palheta], { erro: "A OS 9 foi aprovada, mas a baixa não entrou" });

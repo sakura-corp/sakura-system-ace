@@ -109,9 +109,10 @@ tiver campo `ativo`), usando o client `supabase` de `src/lib/supabase.ts`. Mesma
 ### 4. `src/pages/<modulo>/<Modulo>Page.tsx` + `<Modulo>Form.tsx`
 
 Lista com estado de carregamento/erro e aviso de "Supabase não configurado" (`isSupabaseConfigured`)
-igual todo módulo já tem. Formulário controlado. Classes Tailwind do design system (`sakura-purple`,
-`sakura-purple-dark`, `sakura-pink-soft`, `sakura-gray`, cards `rounded-2xl border border-sakura-gray/30
-bg-white`) — copie o visual de `ServicosPage.tsx`/`ServicoForm.tsx`, não invente um estilo novo. Se o
+igual todo módulo já tem. Formulário controlado. As cores são as de **papel** (`acao`, `texto`,
+`texto-2`, `cartao`, `linha`, `perigo`…; `docs/referencia/visual-novo/README.md`, seção 3) e as peças
+de `src/components/` (`Botao`, `Selo`, `Aviso`, `Modal`, as classes `sakura-card`, `sakura-campo`,
+`sakura-tabela`) — copie o visual de `ServicosPage.tsx`/`ServicoForm.tsx`, não invente um estilo novo. Se o
 módulo é **por loja**: a página lê `lojaAtual` de `useAuth()` (`src/contexts/AuthContext.tsx`),
 recarrega quando `lojaAtual?.id` muda, e mostra um aviso amigável ("seu usuário não tem loja
 atribuída, fale com o administrador") quando `lojaAtual` é `null` — copie o padrão de

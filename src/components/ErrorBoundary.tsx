@@ -67,26 +67,26 @@ class LimiteDeErro extends Component<Props, Estado> {
 
     return (
       <div className="sakura-card mx-auto max-w-xl space-y-4 p-8 text-center">
-        <h1 className="text-titulo font-semibold text-sakura-purple-dark">
+        <h1 className="text-titulo font-semibold text-texto">
           Alguma coisa quebrou nesta tela
         </h1>
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           O resto do sistema continua funcionando. O erro foi registrado neste computador — se
           acontecer de novo, abra o Diagnóstico e mande o arquivo pro suporte.
         </p>
-        <p className="break-words rounded-xl bg-black/30 p-3 text-meta text-sakura-purple-dark">
+        <p className="break-words rounded-xl bg-poco p-3 text-meta text-texto">
           {this.state.erro.message}
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <button
             onClick={this.props.aoVoltarParaOInicio}
-            className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white transition-all hover:bg-sakura-pink"
+            className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao transition-all hover:bg-acao-clara"
           >
             Voltar ao Início
           </button>
           <button
             onClick={this.props.aoAbrirDiagnostico}
-            className="rounded-xl border border-sakura-borda-campo px-4 py-2 text-corpo font-medium text-sakura-purple-dark transition-all hover:bg-white/10"
+            className="rounded-xl border border-borda-campo px-4 py-2 text-corpo font-medium text-texto transition-all hover:bg-texto/10"
           >
             Abrir diagnóstico
           </button>

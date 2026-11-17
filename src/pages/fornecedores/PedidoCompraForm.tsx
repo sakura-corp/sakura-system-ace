@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
@@ -17,6 +18,7 @@ import {
 import type { Fornecedor } from "@/types/fornecedor";
 import type { NovoItemPedidoCompra, NovoPedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
+import { AvisoDeErro } from "@/components/Aviso";
 import { PedidoCompraItemRow } from "./PedidoCompraItemRow";
 
 interface PedidoCompraFormProps {
@@ -26,8 +28,7 @@ interface PedidoCompraFormProps {
   onCancelar: () => void;
 }
 
-const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+const inputClasse = "sakura-campo";
 
 export function PedidoCompraForm({
   fornecedores,
@@ -68,13 +69,13 @@ export function PedidoCompraForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">Novo pedido de compra</h2>
+        <h2 className="font-titulo text-subtitulo font-semibold text-texto">Novo pedido de compra</h2>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {rascunho.rascunho && (
         <AvisoRascunho
@@ -85,10 +86,8 @@ export function PedidoCompraForm({
       )}
 
       <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Fornecedor <span className="text-red-500">*</span>
-          </span>
+        <label className="sakura-rotulo">
+          <span>Fornecedor <span className="text-perigo">*</span></span>
           <Combobox
             opcoes={fornecedores.map((f) => ({ valor: f.id, rotulo: f.nome }))}
             valor={watch("fornecedor_id")}
@@ -96,37 +95,39 @@ export function PedidoCompraForm({
             placeholder="Selecione o fornecedor"
           />
           {errors.fornecedor_id && (
-            <span className="text-rotulo text-red-600">{errors.fornecedor_id.message}</span>
+            <span className="text-rotulo text-perigo">{errors.fornecedor_id.message}</span>
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Data do pedido <span className="text-red-500">*</span>
-          </span>
-          <input type="date" {...register("data_pedido")} className={inputClasse} />
+        <label className="sakura-rotulo">
+          <span>Data do pedido <span className="text-perigo">*</span></span>
+          <input
+            type="date"
+            {...register("data_pedido")}
+            aria-invalid={errors.data_pedido ? true : undefined}
+            className={inputClasse}
+          />
+          {errors.data_pedido && (
+            <span className="text-rotulo text-perigo">{errors.data_pedido.message}</span>
+          )}
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">Observação (opcional)</span>
+        <label className="sakura-rotulo col-span-2">
+          Observação (opcional)
           <textarea rows={2} {...register("observacao")} className={inputClasse} />
         </label>
       </div>
 
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-corpo font-semibold text-sakura-purple-dark">Itens do pedido</h3>
-          <button
-            type="button"
-            onClick={() => append({ ...itemPedidoVazio })}
-            className="text-rotulo font-medium text-sakura-purple hover:underline"
-          >
+          <h3 className="font-titulo text-corpo font-semibold text-texto">Itens do pedido</h3>
+          <Botao tamanho="pequeno" onClick={() => append({ ...itemPedidoVazio })}>
             + adicionar item
-          </button>
+          </Botao>
         </div>
 
         {errors.itens?.message && (
-          <p className="mb-2 text-rotulo text-red-600">{errors.itens.message}</p>
+          <p className="mb-2 text-rotulo text-perigo">{errors.itens.message}</p>
         )}
 
         <div className="space-y-2">
@@ -147,20 +148,12 @@ export function PedidoCompraForm({
       </section>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Criar pedido"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

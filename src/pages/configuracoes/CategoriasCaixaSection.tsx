@@ -1,6 +1,10 @@
+import { X } from "lucide-react";
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
 import { criarCategoriaCaixa, excluirCategoriaCaixa } from "@/lib/categoriasCaixa";
 import { mensagemDeErro } from "@/lib/errors";
+import { BotaoDeLista } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 import type { CategoriaCaixa, TipoCategoriaCaixa } from "@/types/categoriaCaixa";
 
 interface CategoriasCaixaSectionProps {
@@ -49,24 +53,23 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
   function Lista({ titulo, itens }: { titulo: string; itens: CategoriaCaixa[] }) {
     return (
       <div>
-        <p className="text-rotulo font-medium text-sakura-purple-dark/85">{titulo}</p>
+        <p className="text-rotulo font-medium text-texto-2">{titulo}</p>
         {itens.length === 0 ? (
-          <p className="mt-2 text-corpo text-sakura-muted">Nenhuma categoria ainda.</p>
+          <p className="mt-2 text-corpo text-texto-2">Nenhuma categoria ainda.</p>
         ) : (
           <div className="mt-2 flex flex-wrap gap-2">
             {itens.map((categoria) => (
               <span
                 key={categoria.id}
-                className="flex items-center gap-2 rounded-full bg-sakura-pink-soft px-3 py-1.5 text-rotulo font-medium text-sakura-purple-dark"
+                className="flex items-center gap-1 rounded-full bg-texto/[0.08] py-0.5 pl-3 pr-1 text-rotulo font-medium text-texto"
               >
                 {categoria.nome}
-                <button
-                  onClick={() => handleExcluir(categoria.id)}
-                  title="Excluir categoria"
-                  className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sakura-purple-dark/75 hover:bg-red-500/15 hover:text-red-400"
-                >
-                  ×
-                </button>
+                <BotaoDeLista
+                  rotulo={`Excluir a categoria ${categoria.nome}`}
+                  icone={X}
+                  perigoso
+                  aoClicar={() => handleExcluir(categoria.id)}
+                />
               </span>
             ))}
           </div>
@@ -77,33 +80,29 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
 
   return (
     <>
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro className="mt-4">{erro}</AvisoDeErro>}
 
-      <form onSubmit={handleAdicionar} className="mt-4 flex gap-2">
+      <form onSubmit={handleAdicionar} className="mt-4 flex items-center gap-2">
         <select
+          aria-label="Tipo da categoria"
           value={tipo}
           onChange={(e) => setTipo(e.target.value as TipoCategoriaCaixa)}
-          className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+          className="sakura-campo w-32 shrink-0"
         >
           <option value="saida">Saída</option>
           <option value="entrada">Entrada</option>
         </select>
         <input
           type="text"
+          aria-label="Nome da categoria"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
           placeholder="Nome da categoria (ex: Aluguel, Sucata)"
-          className="flex-1 rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+          className="sakura-campo min-w-0 flex-1"
         />
-        <button
-          type="submit"
-          disabled={salvando || !nome.trim()}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao type="submit" disabled={!nome.trim()} ocupado={salvando} className="h-11">
           {salvando ? "Salvando..." : "+ Adicionar"}
-        </button>
+        </Botao>
       </form>
 
       <div className="mt-4 grid grid-cols-2 gap-4">

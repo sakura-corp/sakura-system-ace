@@ -46,6 +46,7 @@ import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -426,16 +427,16 @@ export function OrdemServicoForm({
       className="space-y-6 sakura-card p-6 shadow-sm"
     >
       {ordemExistente ? (
-        <div className="flex items-center justify-between border-b border-sakura-gray/20 pb-4">
+        <div className="flex items-center justify-between border-b border-linha pb-4">
           <div className="flex items-center gap-3">
             <BotaoVoltar onClick={onCancelar} />
             <div>
-              <p className="text-rotulo text-sakura-muted">
+              <p className="text-rotulo text-texto-2">
                 {nomeDocumento(ordemExistente)} · aberta em{" "}
                 {formatarData(ordemExistente.data_abertura)} · criado por{" "}
                 {ordemExistente.criado_por?.nome ?? "—"}
               </p>
-              <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+              <h2 className="text-subtitulo font-semibold text-texto">
                 {ordemExistente.cliente?.nome ? (
                   <LinkCliente
                     clienteId={ordemExistente.cliente_id}
@@ -452,11 +453,11 @@ export function OrdemServicoForm({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-sakura-pink-soft px-3 py-1 text-rotulo font-medium text-sakura-purple-dark">
+            <span className="rounded-full bg-cartao px-3 py-1 text-rotulo font-medium text-texto">
               {STATUS_LABEL[ordemExistente.status]}
             </span>
             {vencido && (
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-rotulo font-medium text-slate-700">
+              <span className="rounded-full bg-texto/[0.08] px-3 py-1 text-rotulo font-medium text-texto-2">
                 vencido
               </span>
             )}
@@ -466,7 +467,7 @@ export function OrdemServicoForm({
                 type="button"
                 onClick={handleEncerrar}
                 disabled={encerrando}
-                className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {encerrando ? "Encerrando..." : "Encerrar OS"}
               </button>
@@ -476,18 +477,18 @@ export function OrdemServicoForm({
       ) : (
         <div className="flex items-center gap-3">
           <BotaoVoltar onClick={onCancelar} />
-          <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+          <h2 className="text-subtitulo font-semibold text-texto">
             {modoOrcamento ? "Novo orçamento" : "Nova ordem de serviço"}
           </h2>
         </div>
       )}
 
       {erro && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+        <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>
       )}
 
       {ehRecusado && ordemExistente && (
-        <p className="rounded-lg bg-slate-100 px-4 py-2 text-corpo text-slate-700">
+        <p className="rounded-lg bg-texto/[0.08] px-4 py-2 text-corpo text-texto-2">
           Orçamento recusado
           {ordemExistente.motivo_recusa
             ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
@@ -497,19 +498,19 @@ export function OrdemServicoForm({
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
-        <div className="space-y-3 rounded-xl border border-sakura-gray/25 px-4 py-3">
+        <div className="space-y-3 rounded-xl border border-linha px-4 py-3">
           <div className="flex flex-wrap items-end gap-3">
             <button
               type="button"
               onClick={() => setAprovando((aberto) => !aberto)}
               disabled={enviando}
-              className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               Aprovar
             </button>
             {podeRecusar(ordemExistente) && (
               <>
-                <label className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/80">
+                <label className="flex flex-col gap-1 text-rotulo text-texto/80">
                   Motivo da recusa (opcional)
                   <select
                     value={motivoRecusa}
@@ -528,7 +529,7 @@ export function OrdemServicoForm({
                   type="button"
                   onClick={handleRecusar}
                   disabled={enviando}
-                  className="rounded-xl border border-sakura-purple px-4 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40 disabled:opacity-50"
+                  className="rounded-xl border border-acao px-4 py-2 text-corpo font-medium text-texto hover:bg-cartao/40 disabled:opacity-50"
                 >
                   Recusar
                 </button>
@@ -538,10 +539,10 @@ export function OrdemServicoForm({
           {aprovando && (
             <div className="space-y-2">
               {vencido && (
-                <p className="rounded-lg bg-amber-50 px-3 py-2 text-corpo text-amber-800">
+                <AvisoDeAtencao className="text-corpo">
                   Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
                   antes de aprovar. Dá pra aprovar mesmo assim.
-                </p>
+                </AvisoDeAtencao>
               )}
               <div className="flex flex-wrap items-end gap-3">
                 <label className="flex flex-col gap-1 text-corpo">
@@ -558,16 +559,16 @@ export function OrdemServicoForm({
                   type="button"
                   onClick={aoConfirmarAprovacao}
                   disabled={enviando || isDirty}
-                  className="rounded-xl bg-sakura-purple px-4 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+                  className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
                 >
                   Confirmar aprovação
                 </button>
               </div>
-              <p className="text-rotulo text-sakura-muted">
+              <p className="text-rotulo text-texto-2">
                 Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
               </p>
               {isDirty && (
-                <p className="text-rotulo text-amber-300">
+                <p className="text-rotulo text-atencao">
                   Salve as alterações antes de aprovar
                 </p>
               )}
@@ -585,14 +586,14 @@ export function OrdemServicoForm({
       )}
 
       {temFechamento && (
-        <div className="flex gap-2 border-b border-sakura-gray/20">
+        <div className="flex gap-2 border-b border-linha">
           <button
             type="button"
             onClick={() => setAba("detalhes")}
             className={`px-4 py-2 text-corpo font-medium ${
               aba === "detalhes"
-                ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-                : "text-sakura-purple-dark/75 hover:text-sakura-purple-dark"
+                ? "border-b-2 border-acao text-texto"
+                : "text-texto/75 hover:text-texto"
             }`}
           >
             Detalhes
@@ -602,8 +603,8 @@ export function OrdemServicoForm({
             onClick={() => setAba("fechamento")}
             className={`px-4 py-2 text-corpo font-medium ${
               aba === "fechamento"
-                ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-                : "text-sakura-purple-dark/75 hover:text-sakura-purple-dark"
+                ? "border-b-2 border-acao text-texto"
+                : "text-texto/75 hover:text-texto"
             }`}
           >
             Fechamento
@@ -683,18 +684,18 @@ export function OrdemServicoForm({
         ref={barraRef}
         data-rodape-da-os
         className={`${
-          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_rgba(0,0,0,0.65)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3`}
+          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
       >
         {aba === "detalhes" ? (
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span className="text-rotulo text-sakura-muted">
+            <span className="text-rotulo text-texto-2">
               Peças {formatarMoeda(totais.pecas)}
             </span>
-            <span className="text-rotulo text-sakura-muted">
+            <span className="text-rotulo text-texto-2">
               Serviços {formatarMoeda(totais.servicos)}
             </span>
-            <span className="text-corpo font-semibold text-sakura-purple-dark">
+            <span className="text-corpo font-semibold text-texto">
               Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
             </span>
           </div>
@@ -706,7 +707,7 @@ export function OrdemServicoForm({
           <button
             type="button"
             onClick={onCancelar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
+            className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
           >
             {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
                 alguma coisa (#781). */}
@@ -716,7 +717,7 @@ export function OrdemServicoForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting
                 ? "Salvando..."

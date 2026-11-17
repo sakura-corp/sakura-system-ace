@@ -12,10 +12,21 @@
 completos), Estoque (entrada/saída, saldo), Ordens de Serviço, Caixa Diário, Relações,
 Painel/Início.
 
+**Modo demonstração** (FN-14, #384): `demo` no endereço da tela de conexão (ou `npm run dev:demo`)
+abre o programa com os dados inventados de `src/demo/dados.ts`, sem banco, com a faixa fixa no topo
+e o "Sair da demonstração". Salvar fica só na memória; nota não sai. Os mesmos dados (uma cópia só)
+alimentam as imagens do site e o catálogo de telas, por `site/ferramentas/dados-demo.mjs`. Como
+usar: `docs/operacao.md`, "Mostrar o sistema a um cliente".
+
 **Ordem do menu lateral**: reorganizada a pedido da usuária, agrupando por fluxo de trabalho —
 Início, Clientes, Ordens de Serviço, Estoque, Serviços, Caixa Diário, Contas a Pagar, Relações,
 Garantias, Notas Fiscais, Funcionários (RH por último, de propósito — é cadastro usado bem menos
 no dia a dia do balcão do que os módulos anteriores). Ver `MODULOS` em `src/types/operador.ts`.
+**Desde o visual novo (tarefa 3, 15/11/2026)** o menu mostra os itens em quatro grupos, com ícone,
+e pode ser encolhido: Atendimento (Início, Clientes, Ordens de Serviço, Orçamentos, Garantias),
+Estoque (Estoque, Fornecedores, Serviços), Financeiro (Caixa Diário, Contas a Pagar, Contas a
+Receber, Notas Fiscais) e Gestão (Relações, Funcionários). A ordem é provisória. Detalhe em
+`docs/referencia/visual-novo/README.md`, seção 7.
 
 **Enter avança pro próximo campo**: em qualquer formulário do app, apertar Enter move o foco pro
 próximo campo em vez de tentar enviar o formulário — pensado pra quem trabalha só de teclado, sem
@@ -219,6 +230,19 @@ Quatro coisas que valem saber:
   `schemas/clientesSumidos.ts`, a busca em `lib/clientesSumidos.ts`. Quem nunca veio não aparece.
   O total só aparece pra quem tem Caixa ou Relações (`MODULOS_QUE_LEEM_O_CAIXA`). Um clique por
   cliente: nada em massa.
+  **"Importar planilha" (10/11/2026, #457, FN-15 parte 1)**: botão ao lado de "+ Novo cliente",
+  **só pro administrador**. Abre `ImportarClientesModal.tsx` em 4 passos: escolher o `.csv`
+  (`;` ou `,`, UTF-8 ou Latin-1: `schemas/importacaoPlanilha.ts`) → dizer qual coluna é o quê
+  (sugerido pelo nome da coluna) → revisar na tabela editável (entra / já existe / problema, com o
+  motivo: `schemas/importacaoClientes.ts`) → confirmar e ver o relatório, que dá pra copiar. Nada
+  é gravado antes do Confirmar. Só o nome é obrigatório; o veículo se liga ao cliente pelo
+  CPF/CNPJ ou, sem ele, pelo nome (se esse nome é de um cliente com documento, a linha vira
+  problema: pode ser homônimo); "já existe" (mesmo documento ou mesma placa) **só pula**, nunca
+  atualiza. Cada importação é um **lote** (`importacao_lotes`, migration 0083), e "Importações
+  anteriores", no mesmo modal, desfaz o lote pela função `desfazer_importacao`: quem já ganhou OS,
+  conta a receber ou veículo fora da importação fica, e a tela diz por quê. Gravação em blocos de
+  500 (`lib/importacaoClientes.ts`). Só CSV por enquanto (Excel e peças/contas/histórico ficam pras
+  próximas partes). Planilha de exemplo inventada: `supabase/exemplo/importar-clientes-exemplo.csv`.
   **Lista por página (10/11/2026, #373, TR-03.5)**: a lista principal vem do banco 50 por vez
   (`listarClientesPagina` + o gancho `useListaPaginada`), com "Mostrando 51 a 100 de 2.340",
   "Anterior / Próxima" e a ordem clicável em **Nome** e **Cidade/UF**, valendo pra tabela inteira e

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
 import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
@@ -13,6 +14,7 @@ import {
   type FuncionarioFormValues,
 } from "@/schemas/funcionario";
 import type { Funcionario, NovoFuncionario, NovoFuncionarioFilho } from "@/types/funcionario";
+import { Aviso } from "@/components/Aviso";
 import { CargoAdmissaoFields } from "./campos/CargoAdmissaoFields";
 import { ConjugeFields } from "./campos/ConjugeFields";
 import { ContatoFields } from "./campos/ContatoFields";
@@ -20,6 +22,7 @@ import { DocumentosFields } from "./campos/DocumentosFields";
 import { EnderecoFields } from "./campos/EnderecoFields";
 import { FiliacaoFields } from "./campos/FiliacaoFields";
 import { FilhosFields } from "./campos/FilhosFields";
+import { AbaBotao } from "./campos/FormCompartilhado";
 import { IdentificacaoFields } from "./campos/IdentificacaoFields";
 
 interface FuncionarioFormProps {
@@ -82,18 +85,16 @@ export function FuncionarioForm({
   return (
     <form
       onSubmit={handleSubmit(aoSubmeter, aoFalharValidacao)}
-      className="space-y-4 sakura-card p-6 shadow-sm"
+      className="sakura-card space-y-4 p-6"
     >
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h2 className="font-titulo text-subtitulo font-bold text-texto">
           {editando ? "Editar funcionário" : "Novo funcionário"}
         </h2>
       </div>
 
-      {erro && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
       {rascunho.rascunho && (
         <AvisoRascunho
@@ -104,14 +105,14 @@ export function FuncionarioForm({
       )}
 
       {funcionarioExistente?.operador_id && (
-        <p className="rounded-lg bg-sakura-pink-soft/60 px-4 py-2 text-rotulo text-sakura-purple-dark/80">
+        <p className="rounded-xl bg-poco px-4 py-2.5 text-rotulo text-texto-2">
           Também é operador do sistema (login @{funcionarioExistente.operador?.usuario}) — nome e
           status ativo/inativo desse cadastro seguem o que estiver em Configurações →
           Operadores.
         </p>
       )}
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
+      <div className="flex gap-1 border-b border-linha">
         <AbaBotao label="Dados gerais" ativa={aba === "gerais"} onClick={() => setAba("gerais")} />
         <AbaBotao label="Família" ativa={aba === "familia"} onClick={() => setAba("familia")} />
       </div>
@@ -131,45 +132,13 @@ export function FuncionarioForm({
       </div>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Salvar funcionário"}
-        </button>
+        </Botao>
       </div>
     </form>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

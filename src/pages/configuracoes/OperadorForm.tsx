@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -12,6 +13,10 @@ import {
 import type { Loja } from "@/types/loja";
 import { MODULOS } from "@/types/operador";
 import type { NovoOperador, Operador } from "@/types/operador";
+import { AvisoDeErro } from "@/components/Aviso";
+
+// A caixinha de marcar: 18 px, na cor de ação, com o foco do teclado visível.
+const CAIXINHA = "size-[18px] shrink-0 rounded accent-acao";
 
 interface OperadorFormProps {
   operadorExistente?: Operador;
@@ -54,101 +59,95 @@ export function OperadorForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6 shadow-sm">
+    <form
+      onSubmit={handleSubmit(aoSubmeter)}
+      className="space-y-6 rounded-2xl border border-linha bg-fundo/40 p-6"
+    >
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h3 className="text-subtitulo font-semibold text-texto">
           {editando ? "Editar operador" : "Novo operador"}
-        </h2>
+        </h3>
       </div>
 
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Usuário {!editando && <span className="text-red-500">*</span>}
+      <div className="grid gap-4 md:grid-cols-2">
+        <label className="sakura-rotulo">
+          <span>
+            Usuário {!editando && <span className="text-perigo">*</span>}
           </span>
           <input
             type="text"
             disabled={editando}
+            aria-invalid={errors.usuario ? true : undefined}
             {...register("usuario")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple disabled:bg-sakura-gray/10 disabled:text-sakura-muted"
+            className="sakura-campo"
           />
           {errors.usuario && (
-            <span className="text-rotulo text-red-600">{errors.usuario.message}</span>
+            <span className="text-rotulo text-perigo">{errors.usuario.message}</span>
           )}
         </label>
 
-        <label className="flex flex-col gap-1 text-corpo">
-          <span className="text-sakura-purple-dark/80">
-            Nome completo <span className="text-red-500">*</span>
+        <label className="sakura-rotulo">
+          <span>
+            Nome completo <span className="text-perigo">*</span>
           </span>
           <input
             type="text"
+            aria-invalid={errors.nome ? true : undefined}
             {...register("nome")}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+            className="sakura-campo"
           />
-          {errors.nome && <span className="text-rotulo text-red-600">{errors.nome.message}</span>}
+          {errors.nome && <span className="text-rotulo text-perigo">{errors.nome.message}</span>}
         </label>
 
         {!editando && (
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-sakura-purple-dark/80">
-              Senha <span className="text-red-500">*</span>
+          <label className="sakura-rotulo">
+            <span>
+              Senha <span className="text-perigo">*</span>
             </span>
             <input
               type="password"
+              aria-invalid={errors.senha ? true : undefined}
               {...register("senha")}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+              className="sakura-campo"
             />
             {errors.senha && (
-              <span className="text-rotulo text-red-600">{errors.senha.message}</span>
+              <span className="text-rotulo text-perigo">{errors.senha.message}</span>
             )}
           </label>
         )}
 
         {editando && (
-          <label className="flex items-center gap-2 text-corpo">
-            <input
-              type="checkbox"
-              {...register("ativo")}
-              className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
-            />
-            <span className="text-sakura-purple-dark/80">
-              Operador ativo (desmarque para bloquear o login)
-            </span>
+          <label className="flex items-center gap-2 self-end pb-3 text-corpo">
+            <input type="checkbox" {...register("ativo")} className={CAIXINHA} />
+            <span className="text-texto">Operador ativo (desmarque para bloquear o login)</span>
           </label>
         )}
       </div>
 
       <section>
         <label className="flex items-center gap-2 text-corpo">
-          <input
-            type="checkbox"
-            {...register("admin")}
-            className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
-          />
-          <span className="font-medium text-sakura-purple-dark">
+          <input type="checkbox" {...register("admin")} className={CAIXINHA} />
+          <span className="font-medium text-texto">
             Administrador (acesso total, inclusive Configurações)
           </span>
         </label>
 
         {!admin && (
           <div className="mt-4">
-            <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-              Módulos liberados
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <h4 className="mb-3 text-corpo font-semibold text-texto">Módulos liberados</h4>
+            <div className="grid gap-3 sm:grid-cols-2">
               {MODULOS.map((modulo) => (
                 <label key={modulo.chave} className="flex items-center gap-2 text-corpo">
                   <input
                     type="checkbox"
                     value={modulo.chave}
                     {...register("permissoes")}
-                    className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+                    className={CAIXINHA}
                   />
-                  <span className="text-sakura-purple-dark/80">{modulo.label}</span>
+                  <span className="text-texto">{modulo.label}</span>
                 </label>
               ))}
             </div>
@@ -158,17 +157,17 @@ export function OperadorForm({
 
       {lojasDisponiveis.length > 1 && (
         <section>
-          <h3 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Lojas com acesso</h3>
-          <div className="grid grid-cols-2 gap-3">
+          <h4 className="mb-3 text-corpo font-semibold text-texto">Lojas com acesso</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
             {lojasDisponiveis.map((loja) => (
               <label key={loja.id} className="flex items-center gap-2 text-corpo">
                 <input
                   type="checkbox"
                   value={loja.id}
                   {...register("lojaIds")}
-                  className="h-4 w-4 rounded border-sakura-borda-campo text-sakura-purple focus:ring-sakura-purple"
+                  className={CAIXINHA}
                 />
-                <span className="text-sakura-purple-dark/80">{loja.nome}</span>
+                <span className="text-texto">{loja.nome}</span>
               </label>
             ))}
           </div>
@@ -176,20 +175,12 @@ export function OperadorForm({
       )}
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
           {isSubmitting ? "Salvando..." : "Salvar operador"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

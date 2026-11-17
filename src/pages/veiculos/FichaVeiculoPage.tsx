@@ -1,12 +1,17 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { TriangleAlert } from "lucide-react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { CartaoNumero } from "@/components/CartaoNumero";
 import { Explicacao } from "@/components/Explicacao";
 import { LinkCliente } from "@/components/LinkCliente";
+import { Valor } from "@/components/Valor";
 import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { useAuth } from "@/contexts/AuthContext";
 import { diaBrasileiro, diaLocal, diasEntre, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
+import { listarServicosComIntervalo } from "@/lib/retornos";
 import { buscarFichaDoVeiculo, type FichaDoVeiculo } from "@/lib/veiculos";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
@@ -21,9 +26,16 @@ import {
   diasDeVisita,
   type OrdemDaFicha,
 } from "@/schemas/fichaVeiculo";
-import { nomeOrdem, STATUS_COR, STATUS_LABEL, totalOrdem } from "@/types/os";
+import {
+  proximoRetornoDoVeiculo,
+  retornosPrevistos,
+  type OrdemParaRetorno,
+  type ServicoComIntervalo,
+} from "@/schemas/retornos";
+import { nomeOrdem, totalOrdem } from "@/types/os";
 import { temPermissao } from "@/types/operador";
-import { Etiqueta } from "@/components/Etiqueta";
+import { AvisoDeErro } from "@/components/Aviso";
+import { SeloDoStatusDaOrdem } from "../clientes/SeloDoStatusDaOrdem";
 
 function km(valor: number): string {
   return `${valor.toLocaleString("pt-BR")} km`;
@@ -68,7 +80,36 @@ export function FichaVeiculoPage() {
     carregar();
   }, [id, podeVerCadastro]);
 
+  // Os serviços com intervalo, pro "próximo retorno previsto" (FN-06, #381).
+  // Falhar aqui (ou o login não poder ler Serviços) só some com a linha: nunca
+  // derruba a ficha.
+  const [servicosComIntervalo, setServicosComIntervalo] = useState<ServicoComIntervalo[]>([]);
+  useEffect(() => {
+    let valendo = true;
+    listarServicosComIntervalo()
+      .then((lista) => {
+        if (valendo) setServicosComIntervalo(lista);
+      })
+      .catch((err) => console.error("Não foi possível carregar os intervalos de retorno:", err));
+    return () => {
+      valendo = false;
+    };
+  }, []);
+
   const hoje = hojeLocal();
+
+  const proximoRetorno = useMemo(() => {
+    if (!ficha || servicosComIntervalo.length === 0) return null;
+    const { veiculo, ordens } = ficha;
+    // As OS da ficha já são deste carro (e os itens trazem o servico_id da
+    // janela); só falta dizer qual é o carro no formato da conta.
+    const doVeiculo = ordens.map((ordem) => ({
+      ...ordem,
+      veiculo_id: veiculo.id,
+      veiculo: { placa: veiculo.placa, marca: veiculo.marca, modelo: veiculo.modelo },
+    })) as OrdemParaRetorno[];
+    return proximoRetornoDoVeiculo(retornosPrevistos(doVeiculo, servicosComIntervalo, hoje), veiculo.id);
+  }, [ficha, servicosComIntervalo, hoje]);
 
   const dados = useMemo(() => {
     if (!ficha) return null;
@@ -110,9 +151,9 @@ export function FichaVeiculoPage() {
       <div className="space-y-6">
         <header className="flex items-center gap-3">
           <BotaoVoltar onClick={voltar} />
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Ficha do veículo</h1>
+          <h1 className="font-titulo text-titulo font-bold text-texto">Ficha do veículo</h1>
         </header>
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       </div>
     );
   }
@@ -122,12 +163,12 @@ export function FichaVeiculoPage() {
       <div className="space-y-6">
         <header className="flex items-center gap-3">
           <BotaoVoltar onClick={voltar} />
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Ficha do veículo</h1>
+          <h1 className="font-titulo text-titulo font-bold text-texto">Ficha do veículo</h1>
         </header>
         {erro ? (
-          <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">{erro}</p>
+          <AvisoDeErro>{erro}</AvisoDeErro>
         ) : (
-          <p className="text-corpo text-sakura-muted">
+          <p className="text-corpo text-texto-2">
             Veículo não encontrado. Ele pode ter sido excluído do cadastro do cliente.
           </p>
         )}
@@ -151,116 +192,136 @@ export function FichaVeiculoPage() {
         <BotaoVoltar onClick={voltar} />
         <VeiculoIcone tipo={veiculo.tipo} cor={veiculo.cor} className="h-12 w-20 shrink-0" />
         <div className="min-w-0">
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">{veiculo.placa}</h1>
-          <p className="text-corpo text-sakura-muted">{descricaoCarro || "Ficha do veículo"}</p>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Cartao
-          titulo="Dono atual"
-          explicacao="O cliente em cujo cadastro este veículo está hoje. Uma OS antiga pode ter sido aberta em nome de outra pessoa."
-        >
-          <p className="truncate text-destaque font-semibold text-sakura-purple-dark">
+          <h1 className="font-titulo text-titulo font-bold tracking-[0.04em] text-texto">
+            {veiculo.placa}
+          </h1>
+          <p className="text-corpo text-texto-2">{descricaoCarro || "Ficha do veículo"}</p>
+          {/* O dono (antes um cartão à parte, "Dono atual") sobe pro cabeçalho:
+              é a primeira coisa que se pergunta com o carro na frente, e um
+              nome não é um número de bater o olho. O "?" explicou o cartão e
+              continua explicando aqui. */}
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-corpo text-texto-2">
+            <span>Dono atual:</span>
             {veiculo.cliente ? (
               <LinkCliente clienteId={veiculo.cliente.id} nome={veiculo.cliente.nome} podeAbrir />
             ) : (
-              "—"
+              <span className="text-texto">—</span>
             )}
+            {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
+                "sem telefone cadastrado" seria mentira, então a linha some. */}
+            {podeVerCadastro && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{veiculo.cliente?.telefone || "Sem telefone cadastrado"}</span>
+              </>
+            )}
+            <Explicacao
+              titulo="Dono atual"
+              texto="O cliente em cujo cadastro este veículo está hoje. Uma OS antiga pode ter sido aberta em nome de outra pessoa."
+            />
           </p>
-          {/* Sem o módulo Clientes o telefone nem chega (migration 0068):
-              "sem telefone cadastrado" seria mentira, então a linha some. */}
-          {podeVerCadastro && (
-            <p className="mt-1 text-rotulo text-sakura-muted">
-              {veiculo.cliente?.telefone || "Sem telefone cadastrado"}
-            </p>
-          )}
-        </Cartao>
+        </div>
+      </header>
 
-        <Cartao
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <CartaoNumero
           titulo="KM mais recente"
           explicacao="O KM anotado na OS mais recente deste carro — não o maior já digitado, pra um erro de digitação não ficar colado nele. Sem OS com KM, vale o do cadastro."
+          variacao={
+            <div className="space-y-1 text-rotulo text-texto-2">
+              <p>
+                {!dados.kmAtual
+                  ? "Nenhum KM anotado ainda"
+                  : dados.kmAtual.dia
+                    ? `Anotado em ${diaBrasileiro(dados.kmAtual.dia)}`
+                    : "Do cadastro do veículo"}
+              </p>
+              <p>
+                {dados.rodagem.tipo === "estimada"
+                  ? `Roda cerca de ${km(dados.rodagem.kmPorMes)} por mês (estimativa)`
+                  : dados.rodagem.motivo}
+              </p>
+            </div>
+          }
         >
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {dados.kmAtual ? km(dados.kmAtual.km) : "—"}
-          </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {!dados.kmAtual
-              ? "Nenhum KM anotado ainda"
-              : dados.kmAtual.dia
-                ? `Anotado em ${diaBrasileiro(dados.kmAtual.dia)}`
-                : "Do cadastro do veículo"}
-          </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {dados.rodagem.tipo === "estimada"
-              ? `Roda cerca de ${km(dados.rodagem.kmPorMes)} por mês (estimativa)`
-              : dados.rodagem.motivo}
-          </p>
-        </Cartao>
+          <span className="text-texto">{dados.kmAtual ? km(dados.kmAtual.km) : "—"}</span>
+        </CartaoNumero>
 
-        <Cartao
+        <CartaoNumero
           titulo="Total em OS faturadas"
           explicacao="A soma dos itens das OS já faturadas deste carro, com desconto e sem os juros do cartão — o mesmo 'Total' da lista de OS. OS ainda em andamento não entram."
+          variacao={
+            <span className="text-rotulo text-texto-2">
+              {dados.faturadas === 1 ? "1 OS faturada" : `${dados.faturadas} OS faturadas`}
+            </span>
+          }
         >
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(dados.gasto)}
-          </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {dados.faturadas === 1 ? "1 OS faturada" : `${dados.faturadas} OS faturadas`}
-          </p>
-        </Cartao>
+          <Valor valor={dados.gasto} />
+        </CartaoNumero>
 
-        <Cartao
+        <CartaoNumero
           titulo="Visitas"
           explicacao="Os dias diferentes em que o carro passou pela loja (duas OS no mesmo dia contam como uma visita), e a média de dias entre uma visita e a seguinte."
+          variacao={
+            <div className="space-y-1 text-rotulo text-texto-2">
+              <p>
+                {ultimaVisita
+                  ? `Última: ${tempoDesde(diasEntre(ultimaVisita, hoje))}`
+                  : "Ainda não passou pela loja"}
+              </p>
+              {dados.mediaVisitas != null && <p>Volta a cada {dados.mediaVisitas} dias, em média</p>}
+            </div>
+          }
         >
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {dados.visitas.length}
-          </p>
-          <p className="mt-1 text-rotulo text-sakura-muted">
-            {ultimaVisita
-              ? `Última: ${tempoDesde(diasEntre(ultimaVisita, hoje))}`
-              : "Ainda não passou pela loja"}
-          </p>
-          {dados.mediaVisitas != null && (
-            <p className="mt-1 text-rotulo text-sakura-muted">
-              Volta a cada {dados.mediaVisitas} dias, em média
-            </p>
-          )}
-        </Cartao>
+          <span className="text-texto">{dados.visitas.length}</span>
+        </CartaoNumero>
       </div>
 
-      <section className="sakura-card p-4">
-        <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
-          Peças na garantia
-        </h2>
+      {proximoRetorno && (
+        <section className="sakura-card p-4">
+          <h2 className="mb-1 text-corpo font-semibold text-texto">Próximo retorno previsto</h2>
+          <p className="text-corpo text-texto">
+            {proximoRetorno.servico} em {diaBrasileiro(proximoRetorno.prevista)}
+            {proximoRetorno.estimadoPeloKm && " (estimado pelo KM)"}
+            {proximoRetorno.diasDeAtraso > 0 &&
+              ` — atrasado há ${proximoRetorno.diasDeAtraso} ${proximoRetorno.diasDeAtraso === 1 ? "dia" : "dias"}`}
+          </p>
+          <p className="mt-1 text-rotulo text-texto-2">
+            É uma previsão: conta o intervalo do serviço a partir da última vez que ele foi feito neste
+            carro.
+          </p>
+        </section>
+      )}
+
+      <section className="sakura-card overflow-hidden pt-4">
+        <h2 className="mb-2 px-[18px] text-corpo font-semibold text-texto">Peças na garantia</h2>
         {dados.garantia.emVigor.length === 0 ? (
-          <p className="text-corpo text-sakura-purple-dark/85">
+          <p className="px-[18px] pb-4 text-corpo text-texto-2">
             Nenhuma peça deste carro está na garantia agora.
             {dados.garantia.vencidas > 0 &&
               ` ${dados.garantia.vencidas === 1 ? "Uma já venceu" : `${dados.garantia.vencidas} já venceram`}.`}
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-xl border border-sakura-gray/25">
-              <table className="w-full text-left text-corpo">
-                <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+            <div className="overflow-x-auto">
+              <table className="sakura-tabela">
+                <thead>
                   <tr>
-                    <th className="px-4 py-3 font-medium">Peça</th>
-                    <th className="px-4 py-3 font-medium">Qtde.</th>
-                    <th className="px-4 py-3 font-medium">Vendida na</th>
-                    <th className="px-4 py-3 font-medium">Vence em</th>
+                    <th>Peça</th>
+                    <th className="text-right">Qtde.</th>
+                    <th>Vendida na</th>
+                    <th>Vence em</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dados.garantia.emVigor.map((peca) => (
-                    <tr key={peca.itemId} className="border-t border-sakura-gray/20">
-                      <td className="px-4 py-3">{peca.descricao}</td>
-                      <td className="px-4 py-3">{peca.quantidade.toLocaleString("pt-BR")}</td>
-                      <td className="px-4 py-3">{nomeOrdem(peca.numero, peca.tipoOrdem)}</td>
-                      <td className="px-4 py-3">
+                    <tr key={peca.itemId}>
+                      <td className="font-medium text-texto">{peca.descricao}</td>
+                      <td className="text-right">{peca.quantidade.toLocaleString("pt-BR")}</td>
+                      <td>{nomeOrdem(peca.numero, peca.tipoOrdem)}</td>
+                      <td>
                         {diaBrasileiro(peca.vencimento)}
-                        <span className="ml-2 text-rotulo text-sakura-muted">
+                        <span className="ml-2 text-rotulo text-texto-2">
                           {peca.diasRestantes === 0
                             ? "(último dia)"
                             : peca.diasRestantes === 1
@@ -274,7 +335,7 @@ export function FichaVeiculoPage() {
               </table>
             </div>
             {dados.garantia.vencidas > 0 && (
-              <p className="mt-2 text-rotulo text-sakura-muted">
+              <p className="px-[18px] py-3 text-rotulo text-texto-2">
                 {dados.garantia.vencidas === 1
                   ? "Mais uma peça deste carro já saiu da garantia."
                   : `Mais ${dados.garantia.vencidas} peças deste carro já saíram da garantia.`}
@@ -285,11 +346,11 @@ export function FichaVeiculoPage() {
       </section>
 
       <section className="sakura-card p-4">
-        <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+        <h2 className="mb-3 px-1 text-corpo font-semibold text-texto">
           Histórico ({dados.linha.length === 1 ? "1 OS" : `${dados.linha.length} OS`})
         </h2>
         {dados.linha.length === 0 ? (
-          <p className="text-corpo text-sakura-purple-dark/85">
+          <p className="px-1 text-corpo text-texto-2">
             Este carro ainda não passou por nenhuma ordem de serviço.
           </p>
         ) : (
@@ -300,58 +361,50 @@ export function FichaVeiculoPage() {
                 ordem.cliente_id !== veiculo.cliente_id ? ordem.cliente?.nome : null;
               const daLojaAtual = ordem.loja_id === lojaAtual?.id;
               return (
-                <li
-                  key={ordem.id}
-                  className="rounded-xl border border-sakura-gray/25 bg-black/20 p-4"
-                >
+                <li key={ordem.id} className="rounded-xl border border-linha bg-poco p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-corpo font-semibold text-sakura-purple-dark">
+                      <p className="text-corpo font-semibold text-texto">
                         {diaBrasileiro(dia)}
-                        <span className="ml-2 font-normal text-sakura-muted">
+                        <span className="ml-2 font-normal text-texto-2">
                           {tempoDesde(diasEntre(dia, hoje))}
                         </span>
                       </p>
-                      <p className="mt-1 text-rotulo text-sakura-muted">
+                      <p className="mt-1 text-rotulo text-texto-2">
                         {nomeOrdem(ordem.numero, ordem.tipo)}
                         {ordem.km_entrada != null && ` · ${km(ordem.km_entrada)}`}
                         {dados.variasLojas && ` · ${nomeDaLoja(ordem.loja_id)}`}
                         {outroDono && ` · em nome de ${outroDono}`}
                       </p>
                       {dados.kmSuspeitos.has(ordem.id) && (
-                        <p className="mt-1 text-rotulo text-amber-300">
+                        <p className="mt-1 flex items-start gap-1.5 text-rotulo text-atencao">
+                          <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
                           KM menor que o da visita anterior — confira se não faltou um dígito
                           numa das duas.
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <Etiqueta className={STATUS_COR[ordem.status]}>
-                        {STATUS_LABEL[ordem.status]}
-                      </Etiqueta>
-                      <span className="whitespace-nowrap text-corpo font-semibold text-sakura-purple-dark">
+                      <SeloDoStatusDaOrdem status={ordem.status} />
+                      <span className="whitespace-nowrap text-corpo font-semibold tabular-nums text-texto">
                         {formatarMoeda(totalOrdem(ordem.itens ?? []))}
                       </span>
                       {podeAbrirOS && daLojaAtual && (
-                        <button
-                          type="button"
-                          onClick={() => abrirOrdem(ordem)}
-                          className="min-h-8 rounded-lg border border-sakura-borda-campo px-3 text-rotulo font-medium text-sakura-purple-dark hover:bg-white/10"
-                        >
+                        <Botao tamanho="pequeno" onClick={() => abrirOrdem(ordem)}>
                           Abrir OS
-                        </button>
+                        </Botao>
                       )}
                     </div>
                   </div>
                   {(ordem.itens ?? []).length > 0 && (
-                    <ul className="mt-3 space-y-1 border-t border-sakura-gray/20 pt-3">
+                    <ul className="mt-3 space-y-1 border-t border-linha pt-3">
                       {(ordem.itens ?? []).map((item) => (
-                        <li key={item.id} className="flex gap-2 text-corpo text-sakura-purple-dark/90">
-                          <span className="w-10 shrink-0 text-right text-sakura-muted">
+                        <li key={item.id} className="flex gap-2 text-corpo text-texto">
+                          <span className="w-10 shrink-0 text-right text-texto-2">
                             {item.quantidade.toLocaleString("pt-BR")}×
                           </span>
                           <span className="min-w-0 flex-1">{item.descricao}</span>
-                          <span className="shrink-0 text-rotulo text-sakura-muted">
+                          <span className="shrink-0 text-rotulo text-texto-2">
                             {item.tipo === "peca" ? "peça" : "serviço"}
                           </span>
                         </li>
@@ -364,26 +417,6 @@ export function FichaVeiculoPage() {
           </ol>
         )}
       </section>
-    </div>
-  );
-}
-
-function Cartao({
-  titulo,
-  explicacao,
-  children,
-}: {
-  titulo: string;
-  explicacao: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="sakura-card min-w-0 p-5">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-rotulo text-sakura-muted">{titulo}</p>
-        <Explicacao titulo={titulo} texto={explicacao} />
-      </div>
-      <div className="mt-2">{children}</div>
     </div>
   );
 }

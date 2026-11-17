@@ -1,8 +1,11 @@
+import { Botao } from "@/components/Botao";
 import { useState } from "react";
 import { salvarConfiguracaoPainelInicio } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { CARTAO_METRICA_LABEL, CARTOES_INICIO_PADRAO } from "@/types/configuracao";
 import type { CartaoMetrica } from "@/types/configuracao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface CartoesInicioSectionProps {
   cartoes: CartaoMetrica[];
@@ -49,15 +52,15 @@ export function CartoesInicioSection({
 
   return (
     <>
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      <div className="mt-4 grid grid-cols-3 gap-3">
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+      <div className="grid gap-4 sm:grid-cols-3">
         {valores.map((valor, indice) => (
-          <label key={indice} className="flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          <label key={indice} className="sakura-rotulo">
             Cartão {indice + 1}
             <select
               value={valor}
               onChange={(e) => set(indice, e.target.value as CartaoMetrica)}
-              className="rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple"
+              className="sakura-campo"
             >
               {OPCOES.map((opcao) => (
                 <option key={opcao} value={opcao}>
@@ -69,20 +72,13 @@ export function CartoesInicioSection({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-end gap-3">
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
         {salvo && (
-          <p role="status" className="rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-            Cartões salvos.
-          </p>
+          <AvisoDeSalvo>Cartões salvos.</AvisoDeSalvo>
         )}
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        <Botao type="button" variante="principal" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar cartões"}
-        </button>
+        </Botao>
       </div>
     </>
   );

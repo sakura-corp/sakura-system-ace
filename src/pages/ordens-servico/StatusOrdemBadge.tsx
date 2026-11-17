@@ -6,7 +6,6 @@ import { orcamentoVencido } from "@/schemas/orcamento";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
 import { STATUS_COR, STATUS_LABEL } from "@/types/os";
-import { Etiqueta } from "@/components/Etiqueta";
 
 // A OS mostra "Finalizada" quando já foi faturada E todas as notas que ela
 // precisava saíram — enquanto faltar alguma, continua "Faturada" com o aviso
@@ -34,18 +33,20 @@ export function StatusOrdem({
 
   return (
     <div className="flex flex-col items-start gap-1">
-      <Etiqueta className={classe}>
+      <span
+        className={`whitespace-nowrap rounded-full px-2.5 py-1 text-rotulo font-medium ${classe}`}
+      >
         {finalizada ? "Finalizada" : STATUS_LABEL[ordem.status]}
-      </Etiqueta>
+      </span>
       {/* Orçamento passado da validade (#379): etiqueta cinza, sem alarme —
           ainda dá pra aprovar, só avisa que o preço pode ter mudado. */}
       {ordem.status === "orcamento" && orcamentoVencido(ordem.validade) && (
-        <Etiqueta className="bg-slate-100 text-slate-700">
+        <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-rotulo font-medium text-slate-700">
           vencido
-        </Etiqueta>
+        </span>
       )}
       {ordem.status === "faturada" && situacao.pendentes.length > 0 && (
-        <span className="whitespace-nowrap text-meta font-medium text-amber-400">
+        <span className="whitespace-nowrap text-meta font-medium text-atencao">
           falta {situacao.pendentes.join(" e ")}
         </span>
       )}

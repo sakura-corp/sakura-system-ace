@@ -54,9 +54,14 @@ a { color: inherit; }
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .topo .wrap { display: flex; align-items: center; gap: 24px; height: 76px; }
-.topo img {
+.topo .marca {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--texto); text-decoration: none;
+  font-weight: 800; font-size: 1.3rem; letter-spacing: -0.01em;
+}
+.topo .marca img {
   height: 38px; width: auto;
-  filter: drop-shadow(0 0 12px rgba(255, 77, 206, 0.35));
+  filter: drop-shadow(0 0 12px rgba(255, 87, 34, 0.35));
 }
 .topo nav { margin-left: auto; display: flex; gap: 26px; align-items: center; }
 .topo nav a { color: var(--texto-suave); text-decoration: none; font-size: 0.94rem; }

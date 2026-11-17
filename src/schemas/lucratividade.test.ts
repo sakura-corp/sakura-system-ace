@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { lucratividadePorCliente, lucratividadePorItem } from "./lucratividade";
+import {
+  deCadaCem,
+  lucratividadePorCliente,
+  lucratividadePorItem,
+  margemMediaComCusto,
+  margemPercentual,
+  pontosDoLucro,
+  type LinhaLucro,
+} from "./lucratividade";
 import { classificarABC } from "./curvaABC";
 import { somar } from "./dinheiro";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
@@ -294,5 +302,65 @@ describe("lucratividadePorCliente", () => {
     expect(somar([pecas.total, servicos.total])).toBe(lucro.totalReceita);
     expect(somar([curvaClientes.total, clientes.consumidor?.receita ?? 0])).toBe(lucro.totalReceita);
     expect(clientes.totalReceita).toBe(lucro.totalReceita);
+  });
+});
+
+describe("margemPercentual e pontosDoLucro (visual novo, 17/11)", () => {
+  const linha = (descricao: string, receita: number, custo: number, extra: Partial<LinhaLucro> = {}): LinhaLucro => ({
+    descricao,
+    tipo: "peca",
+    quantidade: 1,
+    receita,
+    custo,
+    margem: receita - custo,
+    custoNaoInformado: false,
+    ...extra,
+  });
+
+  it("a margem % é a margem sobre a receita, e sem receita não inventa número", () => {
+    expect(margemPercentual(1000, 422)).toBeCloseTo(42.2);
+    expect(margemPercentual(0, 0)).toBeNull();
+    expect(margemPercentual(100, -20)).toBe(-20);
+  });
+
+  it("as bolhas: a de mais margem em reais primeiro, sem receita zero nem custo não informado, até o limite", () => {
+    const pontos = pontosDoLucro(
+      [
+        linha("Pneu", 1000, 700),
+        linha("Alinhamento", 200, 50),
+        linha("Brinde", 0, 10),
+        linha("Avulsa", 500, 0, { custoNaoInformado: true }),
+        linha("Óleo", 300, 100),
+      ],
+      2,
+    );
+    expect(pontos.map((p) => [p.descricao, p.margem])).toEqual([
+      ["Pneu", 300],
+      ["Óleo", 200],
+    ]);
+    expect(pontos[0].percentual).toBeCloseTo(30);
+    // O tamanho da bolha: a maior margem vale 1, as outras na proporção.
+    expect(pontos.map((p) => p.peso)).toEqual([1, 200 / 300]);
+  });
+
+  it("o prejuízo sempre entra no gráfico, mesmo com muitos itens de lucro na frente", () => {
+    const muitos = Array.from({ length: 20 }, (_, i) => linha(`Item ${i}`, 1000, 500 - i));
+    const pontos = pontosDoLucro([...muitos, linha("Pneu no prejuízo", 300, 500)], 12);
+    expect(pontos).toHaveLength(12);
+    expect(pontos.at(-1)).toMatchObject({ descricao: "Pneu no prejuízo", margem: -200 });
+  });
+
+  it("de cada R$ 100: custo e margem que fecham 100, e nada quando é prejuízo ou não teve venda", () => {
+    const cem = deCadaCem(1000, 422);
+    expect(cem?.custo).toBeCloseTo(57.8);
+    expect(cem?.margem).toBeCloseTo(42.2);
+    expect(deCadaCem(1000, -50)).toBeNull();
+    expect(deCadaCem(0, 0)).toBeNull();
+  });
+
+  it("a média de comparar itens deixa de fora a peça sem custo (ela teria 100% e puxaria a média)", () => {
+    const linhas = [linha("Pneu", 5000, 3500), linha("Avulsa", 5000, 0, { custoNaoInformado: true })];
+    expect(margemMediaComCusto(linhas)).toBeCloseTo(30);
+    expect(margemMediaComCusto([linha("Avulsa", 5000, 0, { custoNaoInformado: true })])).toBeNull();
   });
 });

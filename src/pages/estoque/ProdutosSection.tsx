@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { atualizarPeca, atualizarStatusPeca, criarPeca, excluirPeca } from "@/lib/pecas";
 import { criarMovimento } from "@/lib/estoque";
 import { mensagemDeErro } from "@/lib/errors";
+import { semPontoFinal } from "@/pages/ordens-servico/pecaAvulsaCadastro";
 import {
   acharPorCodigoExato,
   lerSaldo,
@@ -22,7 +23,10 @@ import { ImportarNotasFiscaisModal } from "./ImportarNotasFiscaisModal";
 import { PecaForm } from "./PecaForm";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
-import { Etiqueta } from "@/components/Etiqueta";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
+import { Selo, type TipoDeSelo } from "@/components/Selo";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // "Importar por foto/PDF" desligado a pedido dela (25/09/2026), até ela
 // decidir o que fazer com a leitura por IA. O código continua todo aqui:
@@ -54,6 +58,13 @@ interface ProdutosSectionProps {
   regime: RegimeTributario | null;
   lojaId: string;
   onRecarregar: () => Promise<void>;
+  /**
+   * O aviso do estoque inicial que não entrou (#909). Mora no `EstoquePage`,
+   * não aqui: a recarga depois de salvar troca esta seção por "Carregando..."
+   * e ela volta zerada, levando junto um aviso guardado nela.
+   */
+  avisoEstoqueInicial: string | null;
+  onAvisoEstoqueInicial: (aviso: string | null) => void;
 }
 
 function formatarPreco(valor: number | null): string {
@@ -65,14 +76,21 @@ function formatarPreco(valor: number | null): string {
 // relatório de estoque já tratava assim; a lista de Produtos mostrava o mesmo
 // número em preto, como se fosse normal (item TL-11 do guia).
 //
-// Vermelho claro, e não `text-red-600`: o card é escuro, e vermelho escuro
-// sobre fundo escuro é a sobra do tema claro antigo que já cegou tela neste
-// projeto (PROJETO_STATUS.md, seção 6, itens 14 e 17).
+// No visual novo (#990, regra 4: todo aviso tem cor, ícone E palavra) o número
+// continua na cor do aviso, e do lado dele vem um selo com a palavra: antes
+// "zerado" e "abaixo do mínimo" eram só uma cor amarela, com a explicação
+// escondida num balãozinho. A explicação continua na `Dica` do selo.
 const COR_DO_SALDO: Record<SituacaoSaldo, string> = {
-  negativo: "text-red-300",
-  zerado: "text-amber-300",
-  abaixo_do_minimo: "text-amber-300",
+  negativo: "text-perigo",
+  zerado: "text-atencao",
+  abaixo_do_minimo: "text-atencao",
   normal: "",
+};
+
+const SELO_DO_SALDO: Record<Exclude<SituacaoSaldo, "normal">, { tipo: TipoDeSelo; palavra: string }> = {
+  negativo: { tipo: "perigo", palavra: "Negativo" },
+  zerado: { tipo: "atencao", palavra: "Sem estoque" },
+  abaixo_do_minimo: { tipo: "atencao", palavra: "Comprar" },
 };
 
 export function ProdutosSection({
@@ -82,6 +100,8 @@ export function ProdutosSection({
   regime,
   lojaId,
   onRecarregar,
+  avisoEstoqueInicial,
+  onAvisoEstoqueInicial,
 }: ProdutosSectionProps) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [pecaEmEdicao, setPecaEmEdicao] = useState<Peca | null>(null);
@@ -136,15 +156,32 @@ export function ProdutosSection({
   }
 
   async function handleSalvar(peca: NovaPeca, quantidadeInicial: number | null) {
+    setErro(null);
+    onAvisoEstoqueInicial(null);
     if (pecaEmEdicao) {
       await atualizarPeca(pecaEmEdicao.id, peca);
     } else {
+      // Se a peça não foi criada, o erro sobe e o formulário fica aberto.
       const pecaCriada = await criarPeca(peca);
       const estoqueInicial = movimentoDeEstoqueInicial(pecaCriada.id, quantidadeInicial);
-      if (estoqueInicial) await criarMovimento(estoqueInicial, lojaId);
+      if (estoqueInicial) {
+        // A peça já existe: se só o estoque inicial falha, o erro NÃO sobe
+        // (senão o formulário fica aberto e um novo "Salvar" cria outra peça
+        // igual). Fecha e avisa pra lançar a entrada à mão (#909).
+        try {
+          await criarMovimento(estoqueInicial, lojaId);
+        } catch (err) {
+          console.error("Erro ao lançar o estoque inicial da peça:", err);
+          onAvisoEstoqueInicial(
+            `Peça cadastrada, mas o estoque inicial não entrou (${semPontoFinal(mensagemDeErro(err))}). ` +
+              "Lance a entrada em Estoque → Movimentações.",
+          );
+        }
+      }
     }
     setMostrarFormulario(false);
     setPecaEmEdicao(null);
+    // O `carregar` do EstoquePage captura o próprio erro e nunca falha pra fora.
     await onRecarregar();
   }
 
@@ -187,8 +224,8 @@ export function ProdutosSection({
       {!mostrarFormulario && (
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Buscar ou bipar código</span>
+            <label className="sakura-rotulo w-92">
+              Buscar ou bipar código
               <input
                 ref={campoBusca}
                 type="search"
@@ -197,16 +234,16 @@ export function ProdutosSection({
                 onChange={(e) => setBusca(e.target.value)}
                 onKeyDown={handleTeclaNaBusca}
                 placeholder="Descrição, referência, código, marca ou medida"
-                className="w-92 rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="sakura-campo sakura-campo-filtro"
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">Categoria</span>
+            <label className="sakura-rotulo">
+              Categoria
               <select
                 value={categoriaFiltro}
                 onChange={(e) => setCategoriaFiltro(e.target.value)}
-                className="rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple"
+                className="sakura-campo sakura-campo-filtro"
               >
                 <option value="">Todas</option>
                 {categorias.map((categoria) => (
@@ -217,7 +254,7 @@ export function ProdutosSection({
               </select>
             </label>
 
-            <label className="flex items-center gap-2 py-2.5 text-corpo">
+            <label className="flex h-[2.375rem] items-center gap-2 text-corpo text-texto">
               <input
                 type="checkbox"
                 checked={soPrecisaComprar}
@@ -227,7 +264,7 @@ export function ProdutosSection({
               <span>
                 Precisa comprar
                 {quantasPrecisamComprar > 0 && (
-                  <span className="ml-1 rounded-full bg-amber-300/15 px-2 py-0.5 text-rotulo font-medium text-amber-300">
+                  <span className="ml-1.5 rounded-full bg-atencao/[0.12] px-2 py-0.5 text-rotulo font-semibold text-atencao">
                     {quantasPrecisamComprar}
                   </span>
                 )}
@@ -237,20 +274,13 @@ export function ProdutosSection({
 
           <div className="flex items-center gap-3">
             {IMPORTAR_POR_FOTO_LIGADO && (
-              <button
-                onClick={() => setMostrarImportar(true)}
-                className="flex items-center gap-2 rounded-xl border border-sakura-purple/40 px-5 py-2.5 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-gray/10"
-              >
-                <IconeCamera className="h-4 w-4" />
+              <Botao icone={<IconeCamera />} onClick={() => setMostrarImportar(true)}>
                 Importar por foto/PDF
-              </button>
+              </Botao>
             )}
-            <button
-              onClick={() => setMostrarFormulario(true)}
-              className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-            >
+            <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
               + Novo produto
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -286,37 +316,41 @@ export function ProdutosSection({
         />
       )}
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {avisoEstoqueInicial && <AvisoDeErro>{avisoEstoqueInicial}</AvisoDeErro>}
+
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {pecas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhum produto cadastrado ainda.
         </p>
       ) : pecasFiltradas.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhum produto encontrado com esses filtros.
         </p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Descrição</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Código</th>
-                <th className="px-4 py-3 font-medium">Unidade</th>
-                <th className="px-4 py-3 font-medium">Preço custo</th>
-                <th className="px-4 py-3 font-medium">Preço venda</th>
-                <th className="px-4 py-3 font-medium" title="Sobre a venda: (venda − custo) ÷ venda">
-                  Margem
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Código</th>
+                <th>Unidade</th>
+                <th className="text-right">Preço custo</th>
+                <th className="text-right">Preço venda</th>
+                <th className="text-right">
+                  <Dica texto="Sobre a venda: (venda − custo) ÷ venda">
+                    <span tabIndex={0} className="cursor-help">
+                      Margem
+                    </span>
+                  </Dica>
                 </th>
-                <th className="px-4 py-3 font-medium">Estoque atual</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
+                <th className="text-right">Estoque atual</th>
+                <th>Status</th>
+                <th className="relative">
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -327,63 +361,72 @@ export function ProdutosSection({
                   peca.preco_custo?.toString() ?? "",
                   peca.preco_venda?.toString() ?? "",
                 );
+                const seloDoSaldo =
+                  leitura.situacao === "normal" ? null : SELO_DO_SALDO[leitura.situacao];
 
                 return (
-                  <tr key={peca.id} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">
+                  <tr key={peca.id}>
+                    <td>
                       {peca.descricao}
                       {/* A medida só aparece quando NÃO está na descrição: a
                           maioria das peças de pneu já traz a medida no nome
                           ("Pneu 175/70 R14"), e repetir ao lado vira ruído. */}
                       {peca.medida && !peca.descricao.includes(peca.medida) && (
-                        <span className="ml-2 whitespace-nowrap text-rotulo text-sakura-muted">
+                        <span className="ml-2 whitespace-nowrap text-rotulo text-texto-2">
                           {peca.medida}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="text-texto-2">
                       {categorias.find((c) => c.id === peca.categoria_id)?.nome ?? "—"}
                     </td>
                     {/* Sem quebrar no meio ("PN-" / "17570R14", #876), mas com
                         teto: o código é texto livre, e um EAN ou uma
-                        referência comprida não pode empurrar a tabela. */}
+                        referência comprida não pode empurrar a tabela. O
+                        código inteiro está no balão do mouse (`title`, como
+                        antes): uma `Dica` com foco por linha seriam centenas
+                        de paradas de Tab numa lista grande. */}
                     <td
-                      className="max-w-[10rem] truncate whitespace-nowrap px-4 py-3"
+                      className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
                       title={peca.codigo_interno || undefined}
                     >
                       {peca.codigo_interno || "—"}
                     </td>
-                    <td className="px-4 py-3">{peca.unidade || "—"}</td>
-                    <td className="px-4 py-3">{formatarPreco(peca.preco_custo)}</td>
-                    <td className="px-4 py-3">{formatarPreco(peca.preco_venda)}</td>
-                    <td className="px-4 py-3">
+                    <td className="text-texto-2">{peca.unidade || "—"}</td>
+                    <td className="whitespace-nowrap text-right">{formatarPreco(peca.preco_custo)}</td>
+                    <td className="whitespace-nowrap text-right">{formatarPreco(peca.preco_venda)}</td>
+                    <td className="whitespace-nowrap text-right text-texto-2">
                       {margem === "" ? "—" : `${formatarQuantidade(Number(margem))}%`}
                     </td>
-                    <td className={`px-4 py-3 font-medium ${COR_DO_SALDO[leitura.situacao]}`}>
-                      <span title={SITUACAO_SALDO_ROTULO[leitura.situacao] || undefined}>
-                        {formatarQuantidade(saldo)}
-                      </span>
-                      {peca.estoque_minimo != null && (
-                        <span className="ml-1 text-rotulo font-normal text-sakura-muted">
-                          / mín. {formatarQuantidade(peca.estoque_minimo)}
+                    <td className={`text-right font-medium ${COR_DO_SALDO[leitura.situacao]}`}>
+                      <span className="inline-flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                        <span className="whitespace-nowrap">
+                          {formatarQuantidade(saldo)}
+                          {peca.estoque_minimo != null && (
+                            <span className="ml-1 text-rotulo font-normal text-texto-2">
+                              / mín. {formatarQuantidade(peca.estoque_minimo)}
+                            </span>
+                          )}
                         </span>
-                      )}
-                      {leitura.situacao === "negativo" && (
-                        <span className="ml-2 text-rotulo font-normal">negativo</span>
-                      )}
+                        {seloDoSaldo && (
+                          <Dica texto={SITUACAO_SALDO_ROTULO[leitura.situacao]}>
+                            {/* Sem `tabIndex`: a palavra do selo já diz tudo; a frase
+                                inteira é só um complemento do mouse, e uma parada de
+                                Tab por linha pesaria numa lista grande. */}
+                            <span className="inline-flex">
+                              <Selo tipo={seloDoSaldo.tipo} palavra={seloDoSaldo.palavra} />
+                            </span>
+                          </Dica>
+                        )}
+                      </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <Etiqueta
-                        className={
-                          peca.ativo
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-sakura-gray/20 text-sakura-muted"
-                        }
-                      >
-                        {peca.ativo ? "Ativo" : "Inativo"}
-                      </Etiqueta>
+                    <td>
+                      <Selo
+                        tipo={peca.ativo ? "ok" : "neutro"}
+                        palavra={peca.ativo ? "Ativo" : "Inativo"}
+                      />
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <AcoesDaLinha
                         descricao={`o produto ${peca.descricao}`}
                         acoes={[

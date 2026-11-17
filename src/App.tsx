@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AreaRolavel } from "./components/AreaRolavel";
+import { AvisosQueSomem } from "./components/AvisoQueSome";
 import { AvisoVersaoBanco } from "./components/AvisoVersaoBanco";
 import { BuscaGlobal } from "./components/BuscaGlobal";
 import { FaixaSemConexao } from "./components/FaixaSemConexao";
@@ -9,6 +10,7 @@ import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
 import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
 import { Sidebar } from "./components/Sidebar";
 import { VersaoApp } from "./components/VersaoApp";
+import { FaixaDemonstracao } from "./demo/FaixaDemonstracao";
 import { useAuth } from "./contexts/AuthContext";
 import { useEnterParaProximoCampo } from "./hooks/useEnterParaProximoCampo";
 import { useLimparDataAoApagar } from "./hooks/useLimparDataAoApagar";
@@ -61,15 +63,35 @@ function PaginaInicial() {
 
   return (
     <div className="sakura-card p-8 text-center">
-      <p className="text-corpo text-sakura-purple-dark/90">
+      <p className="text-corpo text-texto/90">
         Nenhum módulo liberado para o seu usuário. Fale com o administrador.
       </p>
     </div>
   );
 }
 
-export default function App() {
+/**
+ * O invólucro que faz os blocos da tela entrarem (tarefa 5). O atributo
+ * `data-entrando` só existe nos primeiros 0,8 s depois de trocar de rota: o
+ * CSS só anima nesse tempo, então um bloco que aparece depois (o fim do
+ * "Carregando", um formulário "Novo...") não repete a entrada.
+ */
+function TelaQueEntra({ children }: { children: ReactNode }) {
+  const [entrando, setEntrando] = useState(true);
+  useEffect(() => {
+    const espera = window.setTimeout(() => setEntrando(false), 800);
+    return () => window.clearTimeout(espera);
+  }, []);
+  return (
+    <div className="sakura-tela" data-entrando={entrando ? "" : undefined}>
+      {children}
+    </div>
+  );
+}
+
+function AppSemFaixa() {
   const { carregando, session, operador, lojaAtual } = useAuth();
+  const localizacao = useLocation();
   useEnterParaProximoCampo();
   useLimparDataAoApagar();
   useNaoMexerNoNumeroSemDigitar();
@@ -121,7 +143,7 @@ export default function App() {
   if (carregando) {
     return (
       <div className="sakura-shell-bg flex h-screen items-center justify-center">
-        <p className="text-corpo text-sakura-purple-dark/90">Carregando...</p>
+        <p className="text-corpo text-texto/90">Carregando...</p>
         <VersaoApp />
       </div>
     );
@@ -157,15 +179,23 @@ export default function App() {
   }
 
   return (
-    <div className="sakura-shell-bg flex h-screen gap-4 overflow-hidden p-4">
+    // O menu encosta na borda da janela, de cima a baixo (visual novo, seção
+    // 7): sem a moldura de antes, sobram uns 36 px de largura pra tela mesmo
+    // com o menu aberto, e 204 px com ele encolhido.
+    <div className="sakura-shell-bg flex h-screen overflow-hidden">
       <VersaoApp />
+      <AvisosQueSomem />
       <Sidebar />
-      <main className="min-h-0 min-w-0 flex-1">
+      <main className="min-h-0 min-w-0 flex-1 p-4">
         <AreaRolavel className="p-4">
           <BuscaGlobal />
           <FaixaSemConexao />
           <AvisoVersaoBanco situacao={situacaoDoEsquema} />
           <ErrorBoundary>
+            {/* Trocar de tela (tarefa 5): o `key` refaz o invólucro a cada rota, e
+                o CSS (`.sakura-tela`) faz os blocos da tela entrarem. Ele não
+                muda o layout (`display: contents`). */}
+            <TelaQueEntra key={localizacao.pathname}>
             <Routes>
               <Route path="/" element={<PaginaInicial />} />
               {/* Sem AdminRoute de propósito: quem pede socorro é o balcão. */}
@@ -312,9 +342,21 @@ export default function App() {
                 }
               />
             </Routes>
+            </TelaQueEntra>
           </ErrorBoundary>
         </AreaRolavel>
       </main>
     </div>
+  );
+}
+
+// A faixa da demonstração fica fora de todos os `return` acima de propósito:
+// assim aparece também na tela de conexão, no login e na de carregando.
+export default function App() {
+  return (
+    <>
+      <FaixaDemonstracao />
+      <AppSemFaixa />
+    </>
   );
 }

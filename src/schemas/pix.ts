@@ -58,7 +58,7 @@ const DDDS = new Set([
  */
 const TAMANHO_MAXIMO_EMAIL = 77;
 
-function cpfValido(digitos: string): boolean {
+export function cpfValido(digitos: string): boolean {
   if (!/^\d{11}$/.test(digitos) || /^(\d)\1{10}$/.test(digitos)) return false;
   for (const tamanho of [9, 10]) {
     let soma = 0;
@@ -69,7 +69,7 @@ function cpfValido(digitos: string): boolean {
   return true;
 }
 
-function cnpjValido(digitos: string): boolean {
+export function cnpjValido(digitos: string): boolean {
   if (!/^\d{14}$/.test(digitos) || /^(\d)\1{13}$/.test(digitos)) return false;
   for (const tamanho of [12, 13]) {
     let soma = 0;

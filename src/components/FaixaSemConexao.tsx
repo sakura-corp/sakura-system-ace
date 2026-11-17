@@ -17,7 +17,7 @@ export function FaixaSemConexao() {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-10 mb-4 min-w-0 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800"
+      className="sticky top-0 z-10 mb-4 min-w-0 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao"
     >
       <p className="font-semibold">
         Sem conexão com o banco: o que você digitar agora não vai ser salvo.
