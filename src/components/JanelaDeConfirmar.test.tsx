@@ -10,6 +10,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { JanelaDeConfirmar, useConfirmar, type PedidoDeConfirmar } from "./JanelaDeConfirmar";
+import { Modal } from "./Modal";
 
 // O jsdom não calcula layout: sem isto, o Modal acharia que nenhum botão
 // aparece na tela e não teria o que focar (o mesmo do Modal.test.tsx).
@@ -61,6 +62,29 @@ describe("JanelaDeConfirmar", () => {
     fireEvent.keyDown(document, { key: "Escape" });
     expect(aoCancelar).toHaveBeenCalledTimes(1);
     expect(aoConfirmar).not.toHaveBeenCalled();
+  });
+
+  it("aberta depois, por cima de outra janela (o faturar), o Esc cancela só a pergunta", async () => {
+    const aoFecharFaturar = vi.fn();
+    const respostas: boolean[] = [];
+    function Faturar() {
+      const { confirmar, janela } = useConfirmar();
+      return (
+        <Modal titulo="Faturar" onFechar={aoFecharFaturar}>
+          <button type="button" onClick={async () => respostas.push(await confirmar(EXCLUIR_PNEU))}>
+            Tirar a forma de pagamento
+          </button>
+          {janela}
+        </Modal>
+      );
+    }
+    render(<Faturar />);
+    fireEvent.click(screen.getByRole("button", { name: "Tirar a forma de pagamento" }));
+    await act(async () => {
+      fireEvent.keyDown(document.activeElement ?? document, { key: "Escape" });
+    });
+    expect(respostas).toEqual([false]);
+    expect(aoFecharFaturar).not.toHaveBeenCalled();
   });
 
   it("clicar fora cancela; clicar dentro não", () => {

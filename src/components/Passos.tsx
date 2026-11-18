@@ -67,7 +67,9 @@ export function Passos({
             <span className={`mt-2 block max-w-full px-1 text-center text-rotulo break-words ${NOME[estado]}`}>
               <span className="sr-only">Passo {indice + 1}: </span>
               {passo.nome}
-              {estado === "feito" && <span className="sr-only"> (feito)</span>}
+              {estado === "feito" && (
+                <span className="sr-only">{aoVoltar ? " (feito; voltar pra este passo)" : " (feito)"}</span>
+              )}
             </span>
           </>
         );

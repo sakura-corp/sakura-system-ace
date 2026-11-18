@@ -67,6 +67,23 @@ export function JanelaDeConfirmar({
   const cancelar = () => responderUmaVez(aoCancelar);
   const confirmar = () => responderUmaVez(aoConfirmar);
 
+  // O Esc é desta pergunta, mesmo aberta por cima de outra janela (o faturar):
+  // cada janela escuta as teclas na página inteira, e a de trás, que começou a
+  // escutar antes, fecharia primeiro, jogando fora o que foi preenchido nela.
+  // Aqui o Esc é pego antes de todos (fase de captura) e marcado como usado; a
+  // janela de trás já ignora Esc marcado (ver Modal.tsx).
+  const cancelarRef = useRef(cancelar);
+  cancelarRef.current = cancelar;
+  useEffect(() => {
+    function aoTeclar(evento: KeyboardEvent) {
+      if (evento.key !== "Escape" || evento.defaultPrevented) return;
+      evento.preventDefault();
+      cancelarRef.current();
+    }
+    document.addEventListener("keydown", aoTeclar, true);
+    return () => document.removeEventListener("keydown", aoTeclar, true);
+  }, []);
+
   return (
     <Modal
       titulo={perguntaDoPedido(pedido)}
@@ -121,11 +138,12 @@ export function useConfirmar(): {
 
   const responder = useCallback((resposta: boolean) => {
     const responderAgora = responderRef.current;
-    // Já respondido (o segundo clique do clique duplo): não faz nada.
-    if (!responderAgora) return;
     responderRef.current = null;
+    // Some sempre, mesmo sem ninguém esperando (no modo de desenvolvimento, o
+    // recarregar sozinho já respondeu "não" e a janela ficaria presa na tela).
     setPedido(null);
-    responderAgora(resposta);
+    // Já respondido (o segundo clique do clique duplo): não responde de novo.
+    responderAgora?.(resposta);
   }, []);
 
   const confirmar = useCallback((novo: PedidoDeConfirmar) => {

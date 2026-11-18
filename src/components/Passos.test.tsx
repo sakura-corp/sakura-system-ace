@@ -56,7 +56,8 @@ describe("Passos", () => {
   it("com aoVoltar, um passo feito vira botão; o atual e os de depois, não", () => {
     const aoVoltar = vi.fn();
     render(<Passos rotulo="Fechar o caixa" passos={FECHAR_CAIXA} atual={2} aoVoltar={aoVoltar} />);
-    fireEvent.click(screen.getByRole("button", { name: /Conferir/ }));
+    // O leitor de tela ouve que o botão VOLTA pro passo, não só o nome dele.
+    fireEvent.click(screen.getByRole("button", { name: /Conferir.*voltar pra este passo/ }));
     expect(aoVoltar).toHaveBeenCalledWith(1);
     expect(screen.queryByRole("button", { name: /Explicar a diferença/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Fechar/ })).toBeNull();
