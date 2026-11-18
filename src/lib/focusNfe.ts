@@ -504,6 +504,8 @@ export async function emitirNFCe(
   // cliente sai da nota; itens, pagamentos e totais são os mesmos.
   const corpo = montarCorpoNFCe(opcoes.semDestinatario ? { ...dados, cliente: null } : dados);
 
+  if (!opcoes.semDestinatario && simularRecusaDoDestinatario()) return recusaSimulada(ref, corpo);
+
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfce", ref, corpo });
 
   const resposta = await aguardarAutorizacao(
@@ -516,6 +518,26 @@ export async function emitirNFCe(
   // e ela é daqui, não da Focus NFe: garante que ela vá junto mesmo se a
   // resposta não a repetir.
   return { ...resposta, ref: resposta.ref ?? ref };
+}
+
+// Teste no PC da #1112: a homologação pode não recusar CNPJ nenhum. Com
+// `VITE_SIMULAR_RECUSA_DESTINATARIO=1 npm run dev`, a emissão normal devolve a
+// recusa de 17/11 sem pedir nada à Focus (o "Emitir sem identificar o
+// cliente" vai de verdade). `import.meta.env.DEV` é falso no programa
+// instalado: lá isto nunca liga, nem com a variável.
+function simularRecusaDoDestinatario(): boolean {
+  return Boolean(import.meta.env.DEV) && (import.meta.env.VITE_SIMULAR_RECUSA_DESTINATARIO || "") === "1";
+}
+
+function recusaSimulada(ref: string, corpo: NFCeCorpo): RespostaFocusNfe {
+  const documento = corpo.cnpj_destinatario
+    ? `CNPJ ${corpo.cnpj_destinatario}`
+    : `CPF ${corpo.cpf_destinatario || ""}`.trim();
+  return {
+    ref,
+    status: "erro_autorizacao",
+    mensagem_sefaz: `Rejeição: ${documento} do destinatário não cadastrado na Receita Federal`,
+  };
 }
 
 export async function consultarNFCe(ref: string, lojaId: string): Promise<RespostaFocusNfe> {

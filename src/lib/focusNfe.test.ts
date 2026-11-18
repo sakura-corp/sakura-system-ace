@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   codigoTributacaoNacional,
   destinatarioIdentificadoNFCe,
@@ -788,4 +788,58 @@ describe("emitirNFCe — semDestinatario", () => {
       expect(enviado.nome_destinatario).toBe("Transportes Exemplo Ltda");
     },
   );
+});
+
+// #1112, teste no PC: a homologação pode não recusar o CNPJ. Só no `npm run dev`
+// (import.meta.env.DEV) e com VITE_SIMULAR_RECUSA_DESTINATARIO=1, a emissão
+// normal devolve a recusa de 17/11 sem pedir nada à Focus; o "Emitir sem
+// identificar o cliente" vai de verdade.
+describe("emitirNFCe — recusa simulada pro teste no PC", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_nome: string, { body }: { body: { acao: string } }) => ({
+      data:
+        body.acao === "emitir"
+          ? { ok: true, status: 202, dados: { status: "processando_autorizacao" } }
+          : { ok: true, status: 200, dados: { status: "autorizado", numero: "7" } },
+      error: null,
+    }));
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  const dados = () => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente: clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-99" }),
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  it("ligada: a emissão normal volta recusada pelo destinatário, sem chamar a Focus", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("erro_autorizacao");
+    expect(resposta.mensagem_sefaz).toMatch(/destinatário não cadastrado/);
+    expect(resposta.ref).toMatch(/^os12-nfce-\d+$/);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("ligada: o 'sem identificar o cliente' emite de verdade", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados(), { semDestinatario: true });
+    expect(resposta.status).toBe("autorizado");
+    expect(invoke).toHaveBeenCalled();
+  });
+
+  it("ligada, mas fora do npm run dev (programa instalado): não simula", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    vi.stubEnv("DEV", false);
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
+  });
+
+  it("desligada: emite normal", async () => {
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
+  });
 });
