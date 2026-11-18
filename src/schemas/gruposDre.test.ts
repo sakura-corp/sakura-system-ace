@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   GRUPOS_DRE,
@@ -7,6 +8,32 @@ import {
   gruposParaTipo,
   rotuloDoGrupo,
 } from "./gruposDre";
+
+describe("gruposDre acompanha a migration 0087", () => {
+  // Lê as travas da migration DE VERDADE: se o banco e este arquivo
+  // divergirem, o dono escolheria na tela um grupo que o banco recusa.
+  const sql = readFileSync("supabase/migrations/0087_grupo_das_categorias_de_caixa.sql", "utf8");
+  const chaves = (trecho: string) => [...trecho.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+  const depoisDe = (marca: string) => {
+    const i = sql.indexOf(marca);
+    expect(i, `não achei "${marca}" na 0087`).toBeGreaterThan(-1);
+    return sql.slice(i + marca.length);
+  };
+
+  it("a lista de grupos é a mesma da trava ck_categorias_caixa_grupo", () => {
+    const bloco = depoisDe("add constraint ck_categorias_caixa_grupo\n").split(");")[0];
+    expect(chaves(bloco)).toEqual(GRUPOS_DRE.map((g) => g.chave).sort());
+  });
+
+  it("os grupos de cada tipo são os mesmos da trava ck_categorias_caixa_grupo_do_tipo", () => {
+    const bloco = depoisDe("add constraint ck_categorias_caixa_grupo_do_tipo").split(");")[0];
+    const dosDois = chaves(/grupo in \(([^)]*)\)/.exec(bloco)![1]);
+    const saida = chaves(/tipo = 'saida' and grupo in \(([^)]*)\)/.exec(bloco)![1]);
+    const entrada = chaves(/tipo = 'entrada' and grupo in \(([^)]*)\)/.exec(bloco)![1]);
+    expect(gruposParaTipo("saida").map((g) => g.chave).sort()).toEqual([...saida, ...dosDois].sort());
+    expect(gruposParaTipo("entrada").map((g) => g.chave).sort()).toEqual([...entrada, ...dosDois].sort());
+  });
+});
 
 describe("gruposDre", () => {
   it("a lista bate com as chaves do banco, na ordem", () => {

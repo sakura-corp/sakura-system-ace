@@ -30,6 +30,9 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
   const [grupo, setGrupo] = useState<GrupoDre>(GRUPO_PADRAO);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // O grupo escolhido enquanto salva: o select mostra a escolha na hora, sem
+  // piscar de volta pro grupo antigo até a lista recarregar.
+  const [escolhas, setEscolhas] = useState<Record<string, GrupoDre>>({});
 
   const categoriasEntrada = categorias.filter((c) => c.tipo === "entrada");
   const categoriasSaida = categorias.filter((c) => c.tipo === "saida");
@@ -42,12 +45,19 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
 
   async function handleTrocarGrupo(categoria: CategoriaCaixa, novo: GrupoDre) {
     setErro(null);
+    setEscolhas((atual) => ({ ...atual, [categoria.id]: novo }));
     try {
       await trocarGrupoCategoriaCaixa(categoria.id, novo);
       await onSalvo();
     } catch (err) {
       console.error("Erro ao trocar o grupo da categoria de caixa:", err);
       setErro(mensagemDeErro(err));
+    } finally {
+      setEscolhas((atual) => {
+        const resto = { ...atual };
+        delete resto[categoria.id];
+        return resto;
+      });
     }
   }
 
@@ -81,7 +91,9 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
     }
   }
 
-  function Lista({ titulo, itens }: { titulo: string; itens: CategoriaCaixa[] }) {
+  // Função comum, não componente: um componente declarado aqui dentro seria
+  // recriado a cada render, e o select perderia o foco ao trocar o grupo.
+  function lista(titulo: string, itens: CategoriaCaixa[]) {
     return (
       <div>
         <p className="text-rotulo font-medium text-texto-2">{titulo}</p>
@@ -96,7 +108,7 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
                 </span>
                 <select
                   aria-label={`Grupo de ${categoria.nome}`}
-                  value={categoria.grupo}
+                  value={escolhas[categoria.id] ?? categoria.grupo}
                   onChange={(e) => handleTrocarGrupo(categoria, e.target.value as GrupoDre)}
                   className="sakura-campo w-52 shrink-0"
                 >
@@ -167,8 +179,8 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
       </form>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Lista titulo="Categorias de entrada" itens={categoriasEntrada} />
-        <Lista titulo="Categorias de saída" itens={categoriasSaida} />
+        {lista("Categorias de entrada", categoriasEntrada)}
+        {lista("Categorias de saída", categoriasSaida)}
       </div>
     </>
   );

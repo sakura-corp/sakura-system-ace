@@ -60,6 +60,20 @@ describe("CategoriasCaixaSection — grupos (#386)", () => {
     await waitFor(() => expect(onSalvo).toHaveBeenCalled());
   });
 
+  it("enquanto salva, o select mostra o grupo escolhido e continua com o foco", async () => {
+    // A lista só volta do banco depois; até lá a escolha não pode piscar de
+    // volta, e o select não pode ser recriado (perderia o foco do teclado).
+    m.trocarGrupoCategoriaCaixa.mockReturnValue(new Promise(() => {}));
+    const { user } = renderizar(<CategoriasCaixaSection categorias={categorias} onSalvo={async () => {}} />);
+    const select = screen.getByLabelText("Grupo de Internet") as HTMLSelectElement;
+    await user.selectOptions(select, "custos");
+    const depois = screen.getByLabelText("Grupo de Internet") as HTMLSelectElement;
+    expect(depois.value).toBe("custos");
+    expect(depois).toBe(select);
+    await user.type(screen.getByLabelText("Nome da categoria"), "x");
+    expect(screen.getByLabelText("Grupo de Internet")).toBe(select);
+  });
+
   it("o select de uma categoria de entrada só traz grupos de entrada", () => {
     renderizar(<CategoriasCaixaSection categorias={categorias} onSalvo={async () => {}} />);
     expect(opcoesDe(screen.getByLabelText("Grupo de Venda de sucata"))).toEqual([
