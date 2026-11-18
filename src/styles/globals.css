@@ -460,6 +460,12 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     radial-gradient(72% 88% at 0% 0%, var(--marca-mancha-1), transparent 64%),
     radial-gradient(66% 86% at 100% 100%, var(--marca-mancha-2), transparent 62%),
     radial-gradient(42% 52% at 88% 0%, var(--marca-mancha-3), transparent 72%);
+  /* O fundo começa na borda e não se repete (#1084): sem isso, o degradê é
+     desenhado por dentro da borda e repete como azulejo, e na faixa da borda
+     aparece o pedaço da mancha do lado oposto (a "risquinha"). A varredura
+     de largura (scripts/medir-largura.mjs, pergunta 5) reprova se voltar. */
+  background-origin: border-box;
+  background-repeat: no-repeat;
 }
 
 /* O grão: uma camada de ruído por cima do degradê (copiada do conceito,
@@ -897,6 +903,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     radial-gradient(86% 96% at 0% 0%, var(--capa-m1, rgba(225, 29, 72, 0.95)), transparent 66%),
     radial-gradient(60% 62% at 100% 100%, var(--capa-m2, rgba(255, 87, 34, 0.9)), transparent 70%),
     radial-gradient(46% 52% at 92% 0%, var(--capa-m3, rgba(107, 18, 41, 0.9)), transparent 72%);
+  /* Começa na borda e não se repete: o mesmo do `sakura-fundo-marca` (#1084). */
+  background-origin: border-box;
+  background-repeat: no-repeat;
 }
 
 /* ------------------------------------------------------------------
