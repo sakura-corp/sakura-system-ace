@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0089 (os tributos aproximados na nota, #1040). NÃO é
+-- TESTE da migration 0087 (os tributos aproximados na nota, #1040). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade — grava dado de
 -- teste (e apaga o que gravou no fim).
 --
@@ -11,7 +11,7 @@
 --   • cada trava aceita 0, 100 e vazio — e recusa -1 e 100,01, pela trava com
 --     o nome que a tela traduz (src/lib/errors.ts);
 --   • rodar a migration de novo não quebra nem duplica as travas;
---   • a versão 89 fica registrada.
+--   • a versão 87 fica registrada.
 --
 -- Os números do teste são de mentira (repositório público).
 -- A rodada usa o arquivo da migration DE VERDADE (\ir), não uma cópia.
@@ -19,10 +19,10 @@
 -- (depois da instalação completa), ou `npm run test:sql -- testar-tributos-aproximados`.
 -- Terminou imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
--- A instalação completa JÁ rodou a 0089; esta segunda rodada é a de
+-- A instalação completa JÁ rodou a 0087; esta segunda rodada é a de
 -- "rodar de novo" (idempotente). E roda mais uma, pra garantir.
-\ir ../migrations/0089_tributos_aproximados.sql
-\ir ../migrations/0089_tributos_aproximados.sql
+\ir ../migrations/0087_tributos_aproximados.sql
+\ir ../migrations/0087_tributos_aproximados.sql
 
 do $$
 declare
@@ -35,8 +35,8 @@ declare
   trava    text;
 begin
   -- 1. a migration grava a versão
-  if not exists (select 1 from schema_versao where versao = 89) then
-    raise exception 'FALHOU 1: a 0089 não gravou a versão 89';
+  if not exists (select 1 from schema_versao where versao = 87) then
+    raise exception 'FALHOU 1: a 0087 não gravou a versão 87';
   end if;
 
   -- 2. os dois percentuais existem, numeric(5,2), aceitam vazio
