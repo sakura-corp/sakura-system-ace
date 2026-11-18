@@ -1,4 +1,6 @@
 import type { RespostaFocusNfe } from "@/types/focusNfe";
+import { LIMITE_NFCE_SEM_DESTINATARIO } from "./limiteNFCe";
+import { cnpjValido, cpfValido } from "./pix";
 
 /**
  * A SEFAZ recusou a NFC-e por causa do CPF/CNPJ do destinatário (#1112)?
@@ -13,7 +15,12 @@ import type { RespostaFocusNfe } from "@/types/focusNfe";
  * "nao cadastrado", "invalido", "cpf" ou "cnpj". O código da SEFAZ
  * (`status_sefaz`) dessa rejeição não foi confirmado (nem na documentação da
  * Focus nem na rejeição real), por isso não entra: código chutado reconheceria
- * a rejeição errada.
+ * a rejeição errada. Só vale pra nota recusada (`erro_autorizacao`) ou pro
+ * corpo de erro da Focus (sem `status`); nota denegada, cancelada ou ainda
+ * processando nunca é esta.
+ *
+ * Quem chama confere também que a nota FOI com o cliente identificado: sem
+ * documento na nota, oferecer "emitir sem identificar" repetiria a recusa.
  *
  * É aviso, nunca tranca (`docs/licoes.md`, item 33): se o texto mudar e não
  * bater, a janela mostra a rejeição crua como antes, e nada piora.
@@ -21,18 +28,38 @@ import type { RespostaFocusNfe } from "@/types/focusNfe";
 export function ehRejeicaoDeDestinatario(resposta: unknown): boolean {
   if (!resposta || typeof resposta !== "object") return false;
   const r = resposta as Partial<RespostaFocusNfe>;
-  if (r.status === "autorizado") return false;
-  const texto = normalizar(textosDaResposta(r).join(" "));
+  if (r.status !== undefined && r.status !== "erro_autorizacao") return false;
+  const texto = semAcento(textosDaResposta(r).join(" ")).toLowerCase();
   if (!texto.includes("destinatario")) return false;
   return ["nao cadastrado", "invalido", "cpf", "cnpj"].some((palavra) => texto.includes(palavra));
 }
 
-/** A frase de balcão no lugar da rejeição crua. */
-export function fraseRejeicaoDeDestinatario(tipoPessoa: "fisica" | "juridica" | null | undefined): string {
-  if (tipoPessoa === "fisica") {
+type ClienteDaFrase = { tipo_pessoa?: string | null; cpf_cnpj?: string | null } | null | undefined;
+
+/**
+ * A frase de balcão no lugar da rejeição crua. Se o documento do cadastro tem
+ * o dígito de conferência errado, o problema É da loja (o cadastro não confere
+ * o dígito): manda corrigir, em vez de falar de empresa nova.
+ */
+export function fraseRejeicaoDeDestinatario(cliente: ClienteDaFrase): string {
+  const documento = (cliente?.cpf_cnpj ?? "").replace(/\D/g, "");
+  const nomeDoDocumento = cliente?.tipo_pessoa === "fisica" ? "CPF" : "CNPJ";
+  const digitoErrado =
+    (documento.length === 14 && !cnpjValido(documento)) ||
+    (documento.length === 11 && !cpfValido(documento));
+
+  if (digitoErrado) {
     return (
-      "A SEFAZ não reconheceu o CPF deste cliente. Se der, confira o CPF no cadastro; " +
-      "se estiver certo, você pode emitir agora sem identificar o cliente."
+      `O ${nomeDoDocumento} no cadastro deste cliente tem um número errado. Se ele quer a nota no ` +
+      "nome dele, corrija em Clientes, feche esta janela e abra de novo. Ou, se preferir, você " +
+      "pode emitir agora sem identificar o cliente."
+    );
+  }
+  if (cliente?.tipo_pessoa === "fisica") {
+    return (
+      "A SEFAZ não reconheceu o CPF deste cliente. Confira o CPF em Clientes: se estiver errado, " +
+      "corrija, feche esta janela e abra de novo. Se estiver certo, você pode emitir agora sem " +
+      "identificar o cliente."
     );
   }
   return (
@@ -42,16 +69,34 @@ export function fraseRejeicaoDeDestinatario(tipoPessoa: "fisica" | "juridica" | 
   );
 }
 
+/**
+ * O aviso do limite da UF (#881) pra nota que vai sair sem o cliente DEPOIS
+ * da recusa: o documento está cadastrado (foi ele que a SEFAZ recusou), então
+ * o "cadastre o documento" do aviso de sempre não serve aqui. Aviso, não tranca.
+ */
+export function avisoLimiteDepoisDaRecusa(total: number): string | null {
+  // Em centavos, como no aviso de sempre (`limiteNFCe.ts`).
+  if (Math.round(total * 100) < LIMITE_NFCE_SEM_DESTINATARIO * 100) return null;
+  return (
+    `Esta nota é de R$ ${LIMITE_NFCE_SEM_DESTINATARIO.toLocaleString("pt-BR")} ou mais: sem o ` +
+    "cliente identificado, a SEFAZ também deve recusar. Se recusar, fale com quem cuida do sistema."
+  );
+}
+
 /** A rejeição como veio da SEFAZ (o "Detalhe da SEFAZ"). */
 export function mensagemCruaDaRejeicao(resposta: Partial<RespostaFocusNfe>): string {
-  return textosDaResposta(resposta).join(" | ") || `A nota voltou com status "${resposta.status ?? "?"}".`;
+  return (
+    textosDaResposta(resposta).join(" | ") ||
+    `A nota voltou com status "${resposta.status ?? "?"}".`
+  );
 }
 
 /**
  * O texto do "Copiar o erro", pra mandar no WhatsApp do suporte: a rejeição
  * crua, o código e a `ref` da tentativa, SEM o nome nem o documento do cliente
  * (a SEFAZ costuma repetir o CNPJ na mensagem). Esconde o documento do
- * cadastro, qualquer número com cara de CPF/CNPJ e o nome do cliente.
+ * cadastro, qualquer sequência de 11 números ou mais (com ou sem ponto, barra
+ * e traço: tem cara de CPF/CNPJ) e o nome do cliente (sem acento e sem caixa).
  */
 export function textoParaCopiarOErro(
   resposta: Partial<RespostaFocusNfe>,
@@ -62,13 +107,12 @@ export function textoParaCopiarOErro(
 
   const documento = (cliente?.cpf_cnpj ?? "").trim();
   if (documento) mensagem = mensagem.split(documento).join("[documento]");
-  // CPF (11) e CNPJ (14), com ou sem ponto, barra e traço.
-  mensagem = mensagem.replace(
-    /\d{2,3}\.?\d{3}\.?\d{3}(?:\/?\d{4})?-?\d{2}/g,
-    (trecho) => ([11, 14].includes(trecho.replace(/\D/g, "").length) ? "[documento]" : trecho),
+  // Do primeiro ao último número, sem número colado dos lados: um CNPJ só com
+  // números não pode ser cortado como se fosse um CPF (sobrariam 3 dígitos).
+  mensagem = mensagem.replace(/(?<!\d)\d[\d./-]*\d(?!\d)/g, (trecho) =>
+    trecho.replace(/\D/g, "").length >= 11 ? "[documento]" : trecho,
   );
-  const nome = (cliente?.nome ?? "").trim();
-  if (nome) mensagem = mensagem.replace(new RegExp(escaparRegex(nome), "gi"), "[cliente]");
+  mensagem = trocarSemAcento(mensagem, (cliente?.nome ?? "").trim(), "[cliente]");
 
   return [
     "NFC-e recusada pela SEFAZ",
@@ -84,17 +128,34 @@ function textosDaResposta(r: Partial<RespostaFocusNfe>): string[] {
   for (const erro of Array.isArray(r.erros) ? r.erros : []) {
     if (typeof erro?.mensagem === "string" && erro.mensagem.trim()) textos.push(erro.mensagem);
   }
-  if (textos.length === 0 && typeof r.mensagem === "string" && r.mensagem.trim()) textos.push(r.mensagem);
+  if (textos.length === 0 && typeof r.mensagem === "string" && r.mensagem.trim()) {
+    textos.push(r.mensagem);
+  }
   return textos;
 }
 
-function normalizar(texto: string): string {
-  return texto
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+// Letra por letra, pra o texto sem acento ter o mesmo tamanho do original
+// (e as posições baterem em `trocarSemAcento`).
+function semAcento(texto: string): string {
+  return Array.from(texto, (letra) => letra.normalize("NFD").replace(/[̀-ͯ]/g, "") || letra).join("");
 }
 
-function escaparRegex(texto: string): string {
-  return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// Troca toda ocorrência de `procurado` em `texto`, sem olhar acento nem caixa.
+function trocarSemAcento(texto: string, procurado: string, troca: string): string {
+  if (!procurado) return texto;
+  const letras = Array.from(texto);
+  const base = Array.from(semAcento(texto).toLowerCase());
+  const alvo = Array.from(semAcento(procurado).toLowerCase());
+  if (base.length !== letras.length) return texto;
+  const saida: string[] = [];
+  for (let i = 0; i < letras.length; ) {
+    if (alvo.every((letra, j) => base[i + j] === letra)) {
+      saida.push(troca);
+      i += alvo.length;
+    } else {
+      saida.push(letras[i]);
+      i += 1;
+    }
+  }
+  return saida.join("");
 }

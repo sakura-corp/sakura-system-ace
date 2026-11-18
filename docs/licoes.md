@@ -1901,4 +1901,6 @@
     (`src/schemas/rejeicaoNFCe.ts`), porque o código da SEFAZ dela não foi confirmado: é aviso,
     nunca tranca (item 33), e se o texto mudar a janela volta a mostrar a rejeição crua. O que vai
     pra Focus só muda quando a pessoa clica no botão novo (`emitirNFCe(dados, { semDestinatario:
-    true })`). O "Copiar o erro" esconde nome e documento do cliente, que a SEFAZ repete na mensagem.
+    true })`). O "Copiar o erro" esconde nome e documento do cliente, que a SEFAZ repete na mensagem
+    (e pode mandar **só com números** enquanto o cadastro guarda com máscara: a revisão do PR achou
+    um CNPJ que saía com 3 dígitos à mostra; o teste agora confere que não sobra pedaço nenhum).

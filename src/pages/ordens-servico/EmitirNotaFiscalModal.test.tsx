@@ -582,7 +582,8 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
 
 describe("EmitirNotaFiscalModal — SEFAZ não reconheceu o destinatário (#1112)", () => {
   // A mensagem real de 17/11 com um CNPJ de exemplo (o repositório é público).
-  const CNPJ = "12.345.678/0001-99";
+  // CNPJ de exemplo com os dígitos certos (o cadastro "certo" do caso de 17/11).
+  const CNPJ = "11.222.333/0001-81";
   const MENSAGEM = `Rejeição: CNPJ ${CNPJ} do destinatário não cadastrado na Receita Federal`;
   const recusada = {
     status: "erro_autorizacao",
@@ -662,7 +663,9 @@ describe("EmitirNotaFiscalModal — SEFAZ não reconheceu o destinatário (#1112
 
   it("acima do limite da UF, o aviso do limite aparece junto do botão novo", async () => {
     await recusarPeloDestinatario(10500);
-    expect(screen.getByText(/R\$ 10\.000 ou mais e vai sair sem CPF\/CNPJ/)).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 10\.000 ou mais: sem o cliente identificado, a SEFAZ também deve recusar/)).toBeInTheDocument();
+    // O "cadastre o documento" do aviso de sempre não serve: o documento foi recusado.
+    expect(screen.queryByText(/cadastre o documento/)).not.toBeInTheDocument();
     expect(botaoSemCliente()).toBeEnabled();
   });
 
@@ -696,9 +699,65 @@ describe("EmitirNotaFiscalModal — SEFAZ não reconheceu o destinatário (#1112
     expect(copiado).toContain("999");
     expect(copiado).toContain("os51-nfce-1763400000000");
     expect(copiado).not.toContain(CNPJ);
-    expect(copiado).not.toContain("12345678000199");
+    expect(copiado).not.toContain("11222333000181");
     expect(copiado).not.toMatch(/Transportes Exemplo/i);
     expect(await screen.findByText(/Copiado/)).toBeInTheDocument();
+  });
+
+  // Revisão do PR: a nota que já foi SEM o documento não pode cair na frase
+  // de novo — o botão repetiria a mesma nota e a mesma recusa, em ciclo.
+  it("cliente sem documento na nota: a recusa aparece crua, sem a frase nem o botão novo", async () => {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao",
+      mensagem_sefaz: "Rejeição: Não informado CPF/CNPJ do destinatário para NFC-e acima do limite",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/Não informado CPF\/CNPJ do destinatário/)).toBeInTheDocument();
+    expect(screen.queryByText(/A SEFAZ não reconheceu/)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("recusada de novo depois do 'sem identificar': mostra a recusa crua, sem oferecer o mesmo botão", async () => {
+    const { user } = await recusarPeloDestinatario();
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao",
+      mensagem_sefaz: "Rejeição: CNPJ do destinatário inválido",
+    });
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByText("Rejeição: CNPJ do destinatário inválido")).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+  });
+
+  it("erro passageiro no 'sem identificar' (ex.: internet): a recusa e o botão novo continuam", async () => {
+    const { user } = await recusarPeloDestinatario();
+    buscarDadosFiscaisDasPecas.mockRejectedValueOnce(new Error("O servidor não respondeu"));
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByText(/O servidor não respondeu/)).toBeInTheDocument();
+    expect(screen.getByText(fraseCnpj)).toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+  });
+
+  it("CNPJ com o dígito errado no cadastro: manda corrigir em vez de falar de empresa nova", async () => {
+    clienteDaOrdem.mockReturnValue({ ...clientePJ, cpf_cnpj: "12.345.678/0001-99" });
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao", mensagem_sefaz: "Rejeição: CNPJ do destinatário inválido",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/O CNPJ no cadastro deste cliente tem um número errado/)).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
   });
 
   it("rejeição de outra família continua como hoje: mensagem crua e Confirmar emissão", async () => {

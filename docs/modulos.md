@@ -439,7 +439,10 @@ Quatro coisas que valem saber:
   o aviso do limite da UF (#881) se a nota passar dele e, pra pessoa jurídica, que a nota no nome da
   empresa é a NF-e modelo 55, que o sistema ainda não emite (#409). Reconhece pelo texto
   (`src/schemas/rejeicaoNFCe.ts`); se não bater, a janela mostra a rejeição como antes. A tentativa
-  recusada não é gravada (precisaria de migration). Ver `docs/licoes.md`, item 102.
+  recusada não é gravada (precisaria de migration). Só reconhece quando a nota foi com o documento
+  (senão o botão repetiria a mesma recusa), e CNPJ/CPF com o dígito errado no cadastro ganha a frase
+  "corrija em Clientes". Ver `docs/licoes.md`, item 102.
+
   Não existe mais seletor manual de status no form — o cabeçalho mostra o status atual (badge) e,
   enquanto "em_andamento", um botão **"Encerrar OS"** que marca como concluída e já abre a tela de
   faturamento na sequência, num fluxo só. Tem rascunho automático (ver "Auto-save de rascunho" no começo desta seção). Técnico por item + vendedor/atendente da OS (ambos listam

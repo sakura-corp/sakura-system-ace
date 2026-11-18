@@ -8,6 +8,7 @@ import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia"
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { avisoLimiteNFCeSemDestinatario } from "@/schemas/limiteNFCe";
 import {
+  avisoLimiteDepoisDaRecusa,
   ehRejeicaoDeDestinatario,
   fraseRejeicaoDeDestinatario,
   mensagemCruaDaRejeicao,
@@ -174,6 +175,9 @@ export function EmitirNotaFiscalModal({
   // frase de balcão e o "Emitir sem identificar o cliente".
   const [recusaDoDestinatario, setRecusaDoDestinatario] = useState<RespostaFocusNfe | null>(null);
   const [erroCopiado, setErroCopiado] = useState<"" | "copiado" | "falhou">("");
+  // O último envio foi pelo "Emitir sem identificar o cliente"? O "Conferir de
+  // novo" de uma nota que demorou precisa saber se ela foi com o documento.
+  const ultimoEnvioSemCliente = useRef(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const itensDaOrdem = (ordem.itens ?? []).map((item) =>
@@ -200,10 +204,9 @@ export function EmitirNotaFiscalModal({
     tipoNota === "NFC-e" && cliente
       ? avisoLimiteNFCeSemDestinatario(totalDaNFCe, clienteIdentificado)
       : null;
-  // O mesmo aviso, pra nota que vai sair SEM o cliente depois da recusa do
+  // O aviso do limite pra nota que vai sair SEM o cliente depois da recusa do
   // destinatário (#1112): acima do limite, a SEFAZ também recusaria.
-  const avisoLimiteSemCliente =
-    tipoNota === "NFC-e" ? avisoLimiteNFCeSemDestinatario(totalDaNFCe, false) : null;
+  const avisoLimiteSemCliente = tipoNota === "NFC-e" ? avisoLimiteDepoisDaRecusa(totalDaNFCe) : null;
 
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
@@ -377,6 +380,7 @@ export function EmitirNotaFiscalModal({
     }
     setErro("");
     setEmitindo(true);
+    ultimoEnvioSemCliente.current = semDestinatario;
     try {
       let resposta: RespostaFocusNfe;
       if (tipoNota === "NFC-e") {
@@ -432,7 +436,7 @@ export function EmitirNotaFiscalModal({
       setRecusaDoDestinatario(null);
     } catch (err) {
       if (err instanceof EsperaVencidaError) setRefPendente(err.ref);
-      mostrarErroDaEmissao(err);
+      mostrarErroDaEmissao(err, !semDestinatario && clienteIdentificado);
     } finally {
       setEmitindo(false);
     }
@@ -441,8 +445,21 @@ export function EmitirNotaFiscalModal({
   // Recusa do destinatário na NFC-e vira a frase de balcão (#1112); qualquer
   // outro erro aparece cru, como sempre (aviso, nunca tranca: se o texto da
   // SEFAZ mudar, nada piora).
-  function mostrarErroDaEmissao(err: unknown) {
-    const recusa = tipoNota === "NFC-e" ? rejeicaoDeDestinatario(err) : null;
+  //
+  // `foiComCliente`: a nota foi com o CPF/CNPJ? Se não foi, a recusa não é "a
+  // SEFAZ não reconhece o documento", e oferecer "emitir sem identificar"
+  // repetiria a mesma nota e a mesma recusa, em ciclo.
+  function mostrarErroDaEmissao(err: unknown, foiComCliente: boolean) {
+    // Erro que não é resposta da Focus (ex.: a internet caiu antes de pedir a
+    // nota): a recusa que está na tela continua valendo, e o botão também.
+    const respostaDaFocus =
+      err instanceof NotaRecusadaError ||
+      Boolean(err && typeof err === "object" && (err as { corpo?: unknown }).corpo);
+    if (recusaDoDestinatario && !respostaDaFocus && !(err instanceof EsperaVencidaError)) {
+      setErro(mensagemDeErro(err));
+      return;
+    }
+    const recusa = tipoNota === "NFC-e" && foiComCliente ? rejeicaoDeDestinatario(err) : null;
     setRecusaDoDestinatario(recusa);
     setErroCopiado("");
     setErro(recusa ? "" : mensagemDeErro(err));
@@ -535,7 +552,7 @@ export function EmitirNotaFiscalModal({
       setRefPendente(null);
       setRecusaDoDestinatario(null);
     } catch (err) {
-      mostrarErroDaEmissao(err);
+      mostrarErroDaEmissao(err, clienteIdentificado && !ultimoEnvioSemCliente.current);
     } finally {
       setConferindo(false);
     }
@@ -633,7 +650,7 @@ export function EmitirNotaFiscalModal({
           pra quem for falar com o suporte. */}
       {!carregando && !resultado && recusaDoDestinatario && (
         <AvisoDeAtencao role="alert" className="mb-3 text-corpo">
-          <p className="font-medium">{fraseRejeicaoDeDestinatario(cliente?.tipo_pessoa)}</p>
+          <p className="font-medium">{fraseRejeicaoDeDestinatario(cliente)}</p>
           <div className="mt-2 text-rotulo text-texto-2">
             <p className="font-medium">Detalhe da SEFAZ</p>
             <p className="break-words">{mensagemCruaDaRejeicao(recusaDoDestinatario)}</p>
