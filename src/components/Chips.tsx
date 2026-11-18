@@ -16,7 +16,8 @@ import type { ReactNode } from "react";
  *
  * Na escolha única, clicar de novo no escolhido não apaga a escolha (sempre
  * tem uma); na de várias, clicar liga e desliga, e a lista devolvida segue a
- * ordem das opções, não a ordem dos cliques.
+ * ordem das opções, não a ordem dos cliques (um valor que não está nas
+ * opções fica no fim, sem sumir).
  *
  * Teclado: cada opção é um botão comum (Tab passa por elas, Espaço ou Enter
  * escolhe). `type="button"`: o grupo pode estar dentro de um formulário, e
@@ -61,10 +62,12 @@ export function Chips<T extends string | number>(props: PropsUnica<T> | PropsVar
   function aoClicar(valor: T) {
     if (props.multipla) {
       const ligado = props.valor.includes(valor);
-      const novos = opcoes
-        .map((o) => o.valor)
-        .filter((v) => (v === valor ? !ligado : props.valor.includes(v)));
-      props.aoEscolher(novos);
+      const daTela = opcoes.map((o) => o.valor);
+      const novos = daTela.filter((v) => (v === valor ? !ligado : props.valor.includes(v)));
+      // Um valor guardado que a tela não oferece mais (uma opção que sumiu)
+      // continua escolhido: clicar em outra opção não pode apagá-lo calado.
+      const deFora = props.valor.filter((v) => !daTela.includes(v));
+      props.aoEscolher([...novos, ...deFora]);
     } else if (props.valor !== valor) {
       props.aoEscolher(valor);
     }

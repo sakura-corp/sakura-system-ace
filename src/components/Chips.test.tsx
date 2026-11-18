@@ -94,6 +94,21 @@ describe("Chips", () => {
     expect(screen.getByRole("button", { name: "Cartão" })).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("várias: um valor guardado que não está nas opções não some ao clicar", async () => {
+    const aoEscolher = vi.fn();
+    const { user } = renderizar(
+      <Chips
+        multipla
+        rotulo="Formas aceitas"
+        opcoes={FORMAS}
+        valor={["boleto" as Forma, "dinheiro"]}
+        aoEscolher={aoEscolher}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Pix" }));
+    expect(aoEscolher).toHaveBeenCalledWith(["dinheiro", "pix", "boleto"]);
+  });
+
   it("só no teclado: Tab chega às opções e Espaço ou Enter escolhe", async () => {
     const { user } = renderizar(<Unica />);
     await user.tab();
