@@ -205,6 +205,7 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
       // Antes de abrir a rota: a tela lê o banco assim que monta.
       await instalarFuncoesDaCena(cena);
       tirarLinhasDaCena(cena);
+      alterarLinhasDaCena(cena);
       await abrirRota(cena.rota);
       await pagina.waitForTimeout(esperaExtra);
       if (!cena.deslogado && !cena.trocarSenha && (await precisouEntrarDeNovo())) {
@@ -223,6 +224,7 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
     } finally {
       await tirarFuncoesDaCena();
       devolverLinhasDaCena();
+      desfazerAlteracoesDaCena();
     }
   }
 
@@ -265,6 +267,25 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
       for (let i = lista.length - 1; i >= 0; i--) {
         if (eDaCena(lista[i])) linhasTiradas.push([lista, i, lista.splice(i, 1)[0]]);
       }
+    }
+  }
+  // E pode MUDAR campos de linhas (`alterarLinhas: { tabela: { id: { campo: valor } } }`),
+  // como o CNPJ de um cliente. Os valores de antes voltam no fim.
+  const camposAlterados = [];
+  function alterarLinhasDaCena(cena) {
+    for (const [tabela, porId] of Object.entries(cena.alterarLinhas ?? {})) {
+      for (const [id, campos] of Object.entries(porId)) {
+        const linha = TABELAS[tabela].find((l) => l.id === id);
+        if (!linha) throw new Error(`alterarLinhas: não achei ${tabela}/${id}`);
+        camposAlterados.push([linha, Object.fromEntries(Object.keys(campos).map((k) => [k, linha[k]]))]);
+        Object.assign(linha, campos);
+      }
+    }
+  }
+  function desfazerAlteracoesDaCena() {
+    while (camposAlterados.length > 0) {
+      const [linha, antes] = camposAlterados.pop();
+      Object.assign(linha, antes);
     }
   }
   function devolverLinhasDaCena() {

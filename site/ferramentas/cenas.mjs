@@ -96,11 +96,13 @@ export const CENAS = [
     rota: "/ordens-servico",
     // A OS 145 já tem as notas dela no catálogo; aqui ela volta a ficar sem NFC-e.
     tirarLinhas: { notas_fiscais_arquivos: (n) => n.ordem_servico_id === "os145" && n.tipo === "nfe" },
+    // O cliente ganha um CNPJ de exemplo válido (o do cadastro de mentira tem o dígito errado).
+    alterarLinhas: { clientes: { c2: { cpf_cnpj: "11.222.333/0001-81" } } },
     funcoesDaCena: {
       "focus-nfe": (corpo) => corpo?.acao === "consultar"
         ? { json: { ok: true, status: 200, dados: {
             status: "erro_autorizacao", status_sefaz: "999", ref: corpo?.ref ?? "os145-nfce-1",
-            mensagem_sefaz: "Rejeição: CNPJ 12.345.678/0001-99 do destinatário não cadastrado na Receita Federal",
+            mensagem_sefaz: "Rejeição: CNPJ 11222333000181 do destinatário não cadastrado na Receita Federal",
           } } }
         : { json: { ok: true, status: 202, dados: { status: "processando_autorizacao" } } },
     },
