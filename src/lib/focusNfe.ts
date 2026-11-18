@@ -208,15 +208,19 @@ async function aguardarAutorizacao(
       ultimaFalha = null;
     } catch (erro) {
       ultimaFalha = erro;
+      // O porteiro RECUSOU (sem permissão, por exemplo): esperar não muda
+      // nada. Sai já, mas ainda com a `ref`, pra conferir depois.
+      if (motivoDaRecusa(erro)) break;
     }
-    await aguardar(intervaloMs);
+    if (i < tentativas - 1) await aguardar(intervaloMs);
   }
   // A `ref` precisa ir junto. Sem ela, o caminho natural seria clicar em
   // "emitir" de novo e acabar com DUAS notas fiscais válidas pra mesma venda.
+  // A mensagem da falha não vai junto: a de rede diz "tente de novo", e aqui
+  // isso seria lido como "emita de novo".
   const motivo = ultimaFalha
-    ? "Não consegui conferir se a nota saiu" +
-      (ultimaFalha instanceof Error && ultimaFalha.message ? ` (${ultimaFalha.message})` : "") +
-      ". A nota já foi enviada e pode sair autorizada"
+    ? "Não consegui conferir se a nota saiu (a internet ou o servidor falhou). A nota já foi " +
+      "enviada e pode sair autorizada"
     : `${quemAutoriza} está demorando mais que o normal pra responder. A nota já foi enviada e ` +
       "deve sair autorizada em instantes";
   throw new EsperaVencidaError(

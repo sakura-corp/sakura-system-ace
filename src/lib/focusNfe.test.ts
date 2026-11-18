@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import {
   codigoTributacaoNacional,
   destinatarioIdentificadoNFCe,
@@ -687,6 +688,28 @@ describe("emissão aceita e a consulta falha (nota dupla)", () => {
       error: null,
     });
     await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+  });
+
+  it("sem internet, o aviso não traz o \"tente de novo\" do erro de rede", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    const resultado = emitirNFCe(dadosNFCe()).then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    expect(((await resultado) as Error).message).not.toMatch(/tente de novo|para emitir/);
+  });
+
+  it("recusa do porteiro na consulta não muda esperando: para na hora, com a ref", async () => {
+    const recusa = () => ({
+      data: null,
+      error: new FunctionsHttpError(
+        new Response(JSON.stringify({ erro: "Sem permissão.", motivo: "sem_permissao" }), { status: 403 }),
+      ),
+    });
+    invoke.mockResolvedValueOnce(aceito).mockImplementation(async () => recusa());
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+    expect(invoke).toHaveBeenCalledTimes(2);
   });
 
   it("uma falha de rede no meio não derruba: a próxima consulta autorizada vale", async () => {
