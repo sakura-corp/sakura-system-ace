@@ -19,6 +19,8 @@ const m = vi.hoisted(() => ({
   buscarTextoGarantia: vi.fn(),
   salvarConfiguracaoFiscal: vi.fn(),
   salvarTextoGarantia: vi.fn(),
+  listarTaxasMaquininha: vi.fn(),
+  salvarTaxasMaquininha: vi.fn(),
 }));
 
 vi.mock("@/lib/configuracoes", async (original) => ({
@@ -31,6 +33,11 @@ vi.mock("@/lib/configuracoes", async (original) => ({
   buscarTextoGarantia: m.buscarTextoGarantia,
   salvarConfiguracaoFiscal: m.salvarConfiguracaoFiscal,
   salvarTextoGarantia: m.salvarTextoGarantia,
+}));
+vi.mock("@/lib/taxasMaquininha", async (original) => ({
+  ...(await original<object>()),
+  listarTaxasMaquininha: m.listarTaxasMaquininha,
+  salvarTaxasMaquininha: m.salvarTaxasMaquininha,
 }));
 vi.mock("@/lib/operadores", async (original) => ({
   ...(await original<object>()),
@@ -79,6 +86,8 @@ beforeEach(() => {
   m.buscarTextoGarantia.mockImplementation(comAtraso("Texto antigo"));
   m.salvarConfiguracaoFiscal.mockResolvedValue(undefined);
   m.salvarTextoGarantia.mockResolvedValue(undefined);
+  m.listarTaxasMaquininha.mockResolvedValue([]);
+  m.salvarTaxasMaquininha.mockResolvedValue(undefined);
 });
 
 describe("Configurações: salvar não pode fechar a seção nem esconder o aviso", () => {
@@ -121,5 +130,19 @@ describe("Configurações: salvar não pode fechar a seção nem esconder o avis
     expect(screen.queryByDisplayValue("Texto novo")).not.toBeInTheDocument();
     await user.click(screen.getByText("Texto de garantia"));
     expect(await screen.findByDisplayValue("Texto novo")).toBeInTheDocument();
+  });
+
+  it("Taxas da maquininha: salva as linhas preenchidas, mostra 'Taxas salvas.' e recarrega", async () => {
+    const { user } = renderizar(<ConfiguracoesPage />);
+    await user.click(await screen.findByText("Taxas da maquininha"));
+    await user.type(await screen.findByRole("textbox", { name: "Taxa do Débito, em porcentagem" }), "1,5");
+    await user.type(screen.getByRole("textbox", { name: "Prazo do Débito, em dias" }), "1");
+    await user.click(screen.getByRole("button", { name: "Salvar taxas" }));
+
+    expect(await screen.findByText("Taxas salvas.")).toBeInTheDocument();
+    expect(m.salvarTaxasMaquininha).toHaveBeenCalledWith("loja-a", [
+      { forma: "cartao_debito", parcelas: 1, taxa_percentual: 1.5, prazo_dias: 1, recebe_tudo_de_uma_vez: false },
+    ]);
+    await waitFor(() => expect(m.listarTaxasMaquininha).toHaveBeenCalledTimes(2));
   });
 });

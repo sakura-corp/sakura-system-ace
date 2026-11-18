@@ -34,6 +34,10 @@ vi.mock("@/lib/configuracoes", async (original) => ({
   buscarTextoGarantia: m.buscarTextoGarantia,
   salvarTextoGarantia: m.salvarTextoGarantia,
 }));
+vi.mock("@/lib/taxasMaquininha", async (original) => ({
+  ...(await original<object>()),
+  listarTaxasMaquininha: vi.fn().mockResolvedValue([]),
+}));
 vi.mock("@/lib/operadores", async (original) => ({
   ...(await original<object>()),
   listarOperadores: vi.fn().mockResolvedValue([operador]),
