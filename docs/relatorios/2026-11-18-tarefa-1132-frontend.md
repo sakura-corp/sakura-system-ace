@@ -3,7 +3,7 @@
 - **Tarefa**: #1132, visual leva 8, peças comuns (1/5): `Passos` e `JanelaDeConfirmar`
 - **Chefe**: frontend
 - **Data**: 2026-11-18
-- **PR**: o PR desta branch (`claude/tarefa-1132-pecas`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1137
 - **Jeito**: com ajudantes (um só, a revisão final)
 
 ## O que cada agente fez
