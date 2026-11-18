@@ -884,7 +884,7 @@ export function EmitirNotaFiscalModal({
             <button
               type="button"
               onClick={onFechar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
+              className="min-h-10 rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
             >
               {refPendente ? "Fechar" : "Cancelar"}
             </button>
@@ -903,7 +903,7 @@ export function EmitirNotaFiscalModal({
                 type="button"
                 onClick={() => handleEmitir({ semDestinatario: true })}
                 disabled={emitindo || conferindo || itensQueImpedem.length > 0}
-                className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+                className="min-h-12 rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
                 {emitindo ? "Emitindo..." : "Emitir sem identificar o cliente"}
               </button>
