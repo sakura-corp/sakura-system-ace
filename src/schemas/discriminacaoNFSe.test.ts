@@ -38,7 +38,7 @@ describe("resumoDosServicos", () => {
     const itens = Array.from({ length: 200 }, (_, i) => servico(`Serviço número ${i + 1}`, 1, 10));
     const resumo = resumoDosServicos(itens, 2000);
     expect(resumo).toHaveLength(LIMITE_DISCRIMINACAO_NFSE);
-    expect(resumo.endsWith("…")).toBe(true);
+    expect(resumo.endsWith("...")).toBe(true);
     expect(resumo.startsWith("Serviço número 1 - R$ 10,00\nServiço número 2 - R$ 10,00")).toBe(true);
   });
 });
@@ -60,7 +60,7 @@ describe("discriminacaoComTributos", () => {
     const resumo = "x".repeat(LIMITE_DISCRIMINACAO_NFSE);
     const texto = discriminacaoComTributos(resumo, LINHA);
     expect(texto).toHaveLength(LIMITE_DISCRIMINACAO_NFSE);
-    expect(texto.endsWith(`…\n${LINHA}`)).toBe(true);
+    expect(texto.endsWith(`...\n${LINHA}`)).toBe(true);
   });
 
   it("o limite é 2000 caracteres (descrição da NFS-e Nacional)", () => {

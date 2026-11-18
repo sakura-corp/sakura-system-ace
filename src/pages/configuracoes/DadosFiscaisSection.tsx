@@ -191,6 +191,14 @@ export function DadosFiscaisSection({
     }
   }
 
+  // Confirmar o mês com números digitados e ainda não salvos faria o aviso
+  // sumir com os números antigos indo na nota: primeiro salvar, depois confirmar.
+  const inicial = valorInicial(configuracao);
+  const percentuaisSemSalvar =
+    valores.percentual_tributos_simples !== inicial.percentual_tributos_simples ||
+    valores.percentual_tributos_pecas !== inicial.percentual_tributos_pecas ||
+    valores.percentual_estimativa_icms_st !== inicial.percentual_estimativa_icms_st;
+
   const competenciaConfirmada = configuracao?.competencia_tributos_confirmada ?? null;
   const mesConfirmado = competenciaConfirmada
     ? `${mesPorExtenso(competenciaConfirmada)} de ${competenciaConfirmada.slice(0, 4)}`
@@ -505,13 +513,16 @@ export function DadosFiscaisSection({
                   variante="secundario"
                   onClick={handleConfirmarTributos}
                   ocupado={confirmandoTributos}
+                  disabled={percentuaisSemSalvar}
                 >
                   Confirmei a alíquota deste mês
                 </Botao>
                 <span className="text-rotulo text-texto-2">
-                  {mesConfirmado
-                    ? `Confirmado em ${mesConfirmado}.`
-                    : "Ainda não confirmado."}
+                  {percentuaisSemSalvar
+                    ? "Salve os números antes de confirmar."
+                    : mesConfirmado
+                      ? `Confirmado em ${mesConfirmado}.`
+                      : "Ainda não confirmado."}
                 </span>
               </div>
               {erroConfirmar && <AvisoDeErro className="mt-2">{erroConfirmar}</AvisoDeErro>}

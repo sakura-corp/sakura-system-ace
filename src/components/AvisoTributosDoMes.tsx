@@ -35,7 +35,9 @@ export function AvisoTributosDoMes({
           : "A nota continua saindo com o último número salvo. Peça os números do mês à contabilidade e atualize, se mudaram."}
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        {onConfirmar && (
+        {/* Sem alíquota nenhuma, confirmar não resolve: o aviso continua até a
+            loja salvar os números. Fica só o caminho pra Configurações. */}
+        {onConfirmar && !semAliquota && (
           <button
             type="button"
             onClick={onConfirmar}

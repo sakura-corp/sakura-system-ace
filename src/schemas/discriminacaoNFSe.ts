@@ -25,7 +25,9 @@ export interface ServicoDaNota {
 
 function cortar(texto: string, limite: number): string {
   if (texto.length <= limite) return texto;
-  return `${texto.slice(0, Math.max(0, limite - 1)).trimEnd()}…`;
+  // Três pontos comuns, não o "…": o leiaute da nota aceita só o latim básico
+  // e os acentos, e um caractere fora disso pode fazer a nota ser recusada.
+  return `${texto.slice(0, Math.max(0, limite - 3)).trimEnd()}...`;
 }
 
 /** Uma linha por serviço, separadas por quebra de linha, no máximo no limite. */

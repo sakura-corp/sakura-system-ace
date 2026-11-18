@@ -50,6 +50,9 @@ describe("AvisoTributosDoMes", () => {
   it("sem alíquota nenhuma: diz que a nota sai sem a linha dos tributos", () => {
     montar(config("2026-11-01", null), vi.fn());
     expect(screen.getByText(/saindo sem a linha dos tributos/)).toBeTruthy();
+    // Confirmar não resolveria (o aviso volta): só o caminho pra Configurações.
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Abrir Dados fiscais")).toBeTruthy();
   });
   it("sem permissão de editar: sem botão", () => {
     montar(config(null));

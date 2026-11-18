@@ -787,9 +787,9 @@ describe("tributos aproximados — NFS-e", () => {
   });
   const LINHA = `Tributos aproximados: R$ 9,75 (6,50%). ${LEI}`;
 
-  it("municipal: a frase vai no fim da discriminação, numa linha nova; o valor não muda", () => {
+  it("municipal: a frase vai no fim da discriminação, separada por \"; \" (sem quebra de linha); o valor não muda", () => {
     const corpo = montarCorpoNFSe(dadosNFSe({ percentual_tributos_simples: 6.5 }));
-    expect(corpo.servico.discriminacao).toBe(`Alinhamento\nBalanceamento\n${LINHA}`);
+    expect(corpo.servico.discriminacao).toBe(`Alinhamento; Balanceamento; ${LINHA}`);
     expect(corpo.servico.valor_servicos).toBe(150);
   });
 
@@ -804,7 +804,7 @@ describe("tributos aproximados — NFS-e", () => {
   });
 
   it("sem a alíquota do serviço: a discriminação sai como veio", () => {
-    expect(montarCorpoNFSe(dadosNFSe()).servico.discriminacao).toBe("Alinhamento\nBalanceamento");
+    expect(montarCorpoNFSe(dadosNFSe()).servico.discriminacao).toBe("Alinhamento; Balanceamento");
     const nacional = montarCorpoNFSeNacional(dadosNFSe({ percentual_tributos_simples: 0 }), {
       agora: new Date("2026-11-02T13:15:00Z"),
       numeroDps: 1,
@@ -818,6 +818,6 @@ describe("tributos aproximados — NFS-e", () => {
       { agora: new Date("2026-11-02T13:15:00Z"), numeroDps: 1 },
     );
     expect(corpo.descricao_servico.length).toBeLessThanOrEqual(2000);
-    expect(corpo.descricao_servico.endsWith(`…\n${LINHA}`)).toBe(true);
+    expect(corpo.descricao_servico.endsWith(`...\n${LINHA}`)).toBe(true);
   });
 });

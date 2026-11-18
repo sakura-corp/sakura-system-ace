@@ -318,6 +318,8 @@ describe("montarCorpoNFCe — teste-ouro", () => {
 
     expect(corpo.valor_total).toBe("686.00");
     expect(corpo.items.map((i) => i.valor_total_tributos)).toEqual(["44.80", "1.84"]);
+    // O total da nota é a soma dos itens (a SEFAZ confere: rejeição 685).
+    expect(corpo.valor_total_tributos).toBe("46.64");
     expect(corpo.informacoes_adicionais_contribuinte).toBe(
       "Tributos aproximados: R$ 46,64 (6,80%), inclui estimativa do ICMS-ST. " +
         "Alíquota efetiva do Simples Nacional, Lei 12.741/2012.",

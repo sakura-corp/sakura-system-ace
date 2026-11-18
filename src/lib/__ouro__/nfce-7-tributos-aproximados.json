@@ -9,6 +9,7 @@
   "nome_destinatario": "",
   "cpf_destinatario": "",
   "informacoes_adicionais_contribuinte": "Tributos aproximados: R$ 46,64 (6,80%), inclui estimativa do ICMS-ST. Alíquota efetiva do Simples Nacional, Lei 12.741/2012.",
+  "valor_total_tributos": "46.64",
   "valor_produtos": "686.00",
   "valor_desconto": "0.00",
   "valor_total": "686.00",

@@ -97,6 +97,9 @@ export interface NFCeCorpo {
   cnpj_destinatario?: string;
   indicador_inscricao_estadual_destinatario?: string;
   informacoes_adicionais_contribuinte?: string;
+  // Tributos aproximados da nota inteira (vTotTrib dos totais, Lei 12.741/2012,
+  // #1040): a soma do `valor_total_tributos` dos itens. Só vai com a alíquota.
+  valor_total_tributos?: string;
   valor_produtos: string;
   valor_desconto: string;
   valor_total: string;

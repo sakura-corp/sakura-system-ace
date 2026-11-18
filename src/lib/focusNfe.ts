@@ -466,7 +466,14 @@ export function montarCorpoNFCe({
     finalidade_emissao: "1",
     cnpj_emitente: (configuracaoFiscal.cnpj ?? "").replace(/\D/g, ""),
     ...montarDestinatarioNFCe(cliente),
-    ...(tributos ? { informacoes_adicionais_contribuinte: textoTributosAproximados(tributos) } : {}),
+    ...(tributos
+      ? {
+          informacoes_adicionais_contribuinte: textoTributosAproximados(tributos),
+          // O total (vTotTrib dos totais) tem que ser a soma dos itens, senão a
+          // SEFAZ recusa; `tributos.total` já é a soma das linhas arredondadas.
+          valor_total_tributos: formatarValor(tributos.total),
+        }
+      : {}),
     valor_produtos: formatarValor(valorProdutos),
     valor_desconto: "0.00",
     valor_total: formatarValor(valorProdutos),
@@ -608,7 +615,13 @@ export function montarCorpoNFSe({
       // corpo é texto com 2 casas), e soma de item em ponto flutuante pode
       // produzir coisa como 90.00000000000001 — que viraria isso no XML.
       aliquota: arredondar(configuracaoFiscal.aliquota_iss ?? 0),
-      discriminacao: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal),
+      // No caminho municipal (ABRASF) cada prefeitura tem o seu marcador de
+      // linha, e a quebra de linha comum pode ser recusada ou sair embolada:
+      // aqui as linhas vão separadas por "; ", como era antes do #1040.
+      discriminacao: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal).replace(
+        /\n/g,
+        "; ",
+      ),
       iss_retido: "false",
       item_lista_servico: configuracaoFiscal.item_lista_servico || "14.01",
       codigo_tributario_municipio: configuracaoFiscal.codigo_tributario_municipio ?? undefined,
