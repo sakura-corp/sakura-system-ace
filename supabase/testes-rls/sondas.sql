@@ -69,6 +69,11 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),
+-- A taxa de cartão (0088) pendurada no lançamento da loja A (que não tem
+-- taxa no cenário). As datas não precisam da fotografia aqui: o `replica`
+-- da rodada desliga a chave estrangeira, e quem decide é a RLS.
+('caixa_taxas_cartao',    $$insert into caixa_taxas_cartao (movimento_id, loja_id, forma, parcelas, taxa_percentual, prazo_dias, valor_bruto, valor_taxa, valor_liquido) values ('55555555-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'cartao_credito', 1, 3.00, 30, 100.00, 3.00, 97.00)$$),
+('caixa_cartao_a_receber', $$insert into caixa_cartao_a_receber (movimento_id, loja_id, numero, data_prevista, valor) values ('55555555-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 1, current_date + 30, 97.00)$$),
 ('fechamentos_caixa',     $$insert into fechamentos_caixa (loja_id, data, saldo_sistema, valor_contado, diferenca) values ('11111111-1111-1111-1111-1111111111aa', current_date, 1.00, 1.00, 0)$$),
 ('comissoes_fechamentos', $$insert into comissoes_fechamentos (loja_id, funcionario_id, funcionario_nome, periodo_inicio, periodo_fim, valor_calculado, valor_pago, data_pagamento) values ('11111111-1111-1111-1111-1111111111aa', '33333333-0000-0000-0000-0000000000aa', 'Funcionário A', '2026-09-01', '2026-09-30', 1.00, 1.00, '2026-10-05')$$),
 ('estoque_movimentos',    $$insert into estoque_movimentos (loja_id, deposito_id, peca_id, tipo, quantidade, motivo) values ('11111111-1111-1111-1111-1111111111aa', '22222222-0000-0000-0000-0000000000aa', 'eeeeeeee-0000-0000-0000-0000000000aa', 'entrada', 1, 'ajuste')$$),
@@ -85,6 +90,7 @@ insert into teste_rls.sondas (tabela, insercao) values
 -- de mensagem); as quatro de chave simples usam a loja A, que o cenário deixou
 -- de propósito sem linha.
 ('configuracoes_juros_parcelas', $$insert into configuracoes_juros_parcelas (loja_id, numero_parcelas, juros_percentual) values ('11111111-1111-1111-1111-1111111111aa', 12, 5.0)$$),
+('configuracoes_taxas_maquininha', $$insert into configuracoes_taxas_maquininha (loja_id, forma, parcelas, taxa_percentual, prazo_dias) values ('11111111-1111-1111-1111-1111111111aa', 'cartao_credito', 3, 4.00, 30)$$),
 ('configuracoes_whatsapp',       $$insert into configuracoes_whatsapp (loja_id, chave, texto) values ('11111111-1111-1111-1111-1111111111aa', 'carro_pronto', 'Sonda')$$),
 ('configuracoes_garantia',       $$insert into configuracoes_garantia (loja_id, texto) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda')$$),
 ('configuracoes_fiscais_loja',   $$insert into configuracoes_fiscais_loja (loja_id) values ('11111111-1111-1111-1111-1111111111aa')$$),

@@ -58,7 +58,7 @@ begin
   delete from contas_receber        where loja_id = loja_exemplo;
   delete from fechamentos_caixa     where loja_id = loja_exemplo;
   delete from comissoes_fechamentos where loja_id = loja_exemplo;
-  delete from caixa_movimentos      where loja_id = loja_exemplo;
+  delete from caixa_movimentos      where loja_id = loja_exemplo;  -- leva a taxa do cartão e as datas junto (0088)
   delete from contagens_estoque     where loja_id = loja_exemplo;
   delete from estoque_movimentos    where loja_id = loja_exemplo;
   delete from pedidos_compra        where loja_id = loja_exemplo;

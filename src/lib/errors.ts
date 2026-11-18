@@ -78,6 +78,16 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_computadores_tamanhos: "O nome ou o apelido do computador está comprido demais (apelido: até 60 letras).",
   // Migration 0064 (venda de balcão). Quem grava o tipo é o próprio programa.
   ck_ordens_servico_tipo: 'O tipo da ordem precisa ser "os" ou "venda_balcao".',
+  // Migration 0088 (taxas da maquininha, #387).
+  ck_taxas_maquininha_forma: "A taxa da maquininha é só pra cartão de débito ou de crédito.",
+  ck_taxas_maquininha_parcelas: "As parcelas vão de 1 a 12, e o débito é sempre à vista (1 parcela).",
+  ck_taxas_maquininha_taxa: "A taxa tem que ser de 0% até menos de 100%.",
+  ck_taxas_maquininha_prazo: "O prazo pra cair na conta vai de 0 a 365 dias.",
+  ck_caixa_taxas_cartao_condicoes:
+    "A taxa do cartão desta venda não fecha (forma, parcelas, taxa ou prazo).",
+  ck_caixa_taxas_cartao_valores: "A taxa do cartão desta venda não fecha (os valores não batem).",
+  ck_caixa_cartao_a_receber_numero: "As datas do cartão a receber não fecham (número da parcela).",
+  ck_caixa_cartao_a_receber_valor: "As datas do cartão a receber não fecham (valor negativo).",
 };
 
 /** A frase da trava, se a mensagem do banco for de uma trava conhecida. */
@@ -158,6 +168,10 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0083 (importação por planilha, #457): a tabela dos lotes e a marca do lote
   // em clientes e veiculos.
   "importacao_lotes",
+  // 0088 (taxas da maquininha, #387): tabelas.
+  "configuracoes_taxas_maquininha",
+  "caixa_taxas_cartao",
+  "caixa_cartao_a_receber",
   "importacao_lote_id",
   // 0084 (retorno do cliente, #381): colunas de servicos e de clientes.
   "intervalo_dias",
