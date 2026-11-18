@@ -52,7 +52,8 @@ Em cada caso quebrei o código de propósito, vi o teste reprovar e depois desfi
 - `npm run test:fusos`: 2639 de 2639 nos dois fusos.
 - `npm run test:sql`: os 31 testes de migration passaram. `npm run test:rls`: 1020 células conferidas, matriz igual.
 - `npm run largura:telas`: 72 telas, nada passando da janela.
-- `npm run contraste:telas`: resultado na descrição do PR.
+- `npm run contraste:telas`: 72 telas nos dois temas, nenhuma reprovação de contraste.
+- Fotos de Configurações → Categorias de caixa (com os dados da demonstração), nos dois temas: `docs/relatorios/tarefa-386/`.
 - O Postgres foi um Postgres 16 local e descartável. **Nenhuma migration foi aplicada em Supabase nenhum.**
 
 ## O que ficou de fora
