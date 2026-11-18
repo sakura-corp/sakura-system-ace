@@ -39,6 +39,7 @@ import {
   buscarConfiguracaoFiscal,
   buscarConfiguracaoPainelInicio,
   confirmarAliquotaCompetencia,
+  confirmarTributosDoMes,
 } from "@/lib/configuracoes";
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { BotaoResumoDono, type EscolhaResumoDono } from "@/components/BotaoResumoDono";
@@ -52,6 +53,8 @@ import { CentralDoDia } from "@/components/CentralDoDia";
 import { nomeDoMesAnterior } from "@/schemas/centralDoDia";
 import { serieDoMesPorDia } from "@/schemas/serieDoMes";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
+import { avisoTributosDoMes, semAliquotaDeTributos } from "@/schemas/avisoTributos";
+import { AvisoTributosDoMes } from "@/components/AvisoTributosDoMes";
 import { listarOrdens } from "@/lib/ordensServico";
 import {
   CARTAO_METRICA_DESCRICAO,
@@ -107,6 +110,7 @@ export function PainelPage() {
   const cartoesConfig = dadosSaoDaLoja ? cartoesGuardados : CARTOES_INICIO_PADRAO;
   const configFiscal = dadosSaoDaLoja ? fiscalGuardada : null;
   const [confirmandoAliquota, setConfirmandoAliquota] = useState(false);
+  const [confirmandoTributos, setConfirmandoTributos] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   // Só o carregamento (não o erro da alíquota): é o que deixa a Central do
@@ -209,6 +213,22 @@ export function PainelPage() {
       setErro(mensagemDeErro(err));
     } finally {
       setConfirmandoAliquota(false);
+    }
+  }
+
+  const avisoTributos = avisoTributosDoMes(configFiscal, hoje);
+
+  async function handleConfirmarTributos() {
+    if (!lojaAtual) return;
+    setConfirmandoTributos(true);
+    try {
+      await confirmarTributosDoMes(lojaAtual.id, avisoTributos.competencia);
+      setConfigFiscal(await buscarConfiguracaoFiscal(lojaAtual.id));
+    } catch (err) {
+      console.error("Erro ao confirmar os tributos do mês:", err);
+      setErro(mensagemDeErro(err));
+    } finally {
+      setConfirmandoTributos(false);
     }
   }
 
@@ -366,6 +386,17 @@ export function PainelPage() {
           aviso={avisoAliquota}
           confirmando={confirmandoAliquota}
           onConfirmar={handleConfirmarAliquota}
+        />
+      )}
+
+      {!carregando && (
+        <AvisoTributosDoMes
+          aviso={avisoTributos}
+          semAliquota={semAliquotaDeTributos(configFiscal)}
+          // Configurações é só do administrador: os outros veem o aviso, sem o botão.
+          onConfirmar={operador?.admin ? handleConfirmarTributos : undefined}
+          confirmando={confirmandoTributos}
+          linkConfiguracoes={operador?.admin ? "/configuracoes" : undefined}
         />
       )}
 

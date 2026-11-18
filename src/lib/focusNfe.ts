@@ -2,7 +2,13 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { dataHoraLocalComFuso, diaLocal, hojeLocal } from "./datas";
 import { supabase } from "./supabase";
 import { arredondarCentavo as arredondar } from "@/schemas/dinheiro";
+import { discriminacaoComTributos } from "@/schemas/discriminacaoNFSe";
 import { cfopSoNumeros } from "@/schemas/tributacao";
+import {
+  textoTributosAproximados,
+  tributosDasPecas,
+  tributosDoServico,
+} from "@/schemas/tributosAproximados";
 import { valorLiquidoDoItem } from "@/schemas/valorItem";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
@@ -439,6 +445,17 @@ export function montarCorpoNFCe({
     const aliquota = item.peca.aliquota_icms ?? 0;
     return aliquota > 0 ? soma + (valorLiquidoItem(item) * aliquota) / 100 : soma;
   }, 0);
+  // Tributos aproximados (Lei 12.741/2012, #1040): com a alíquota das peças
+  // da loja do Simples, cada item leva o seu valor e a nota leva a frase. A
+  // peça com CSOSN 500 (ICMS-ST) soma a estimativa do ST. Sem a alíquota,
+  // nenhum dos dois campos vai e o corpo fica igual ao de antes.
+  const tributos = tributosDasPecas(
+    itens.map((item) => ({
+      valor: valorLiquidoItem(item),
+      temST: (item.peca.cst_ou_csosn ?? "").trim() === "500",
+    })),
+    configuracaoFiscal,
+  );
 
   return {
     natureza_operacao: "VENDA AO CONSUMIDOR",
@@ -449,6 +466,7 @@ export function montarCorpoNFCe({
     finalidade_emissao: "1",
     cnpj_emitente: (configuracaoFiscal.cnpj ?? "").replace(/\D/g, ""),
     ...montarDestinatarioNFCe(cliente),
+    ...(tributos ? { informacoes_adicionais_contribuinte: textoTributosAproximados(tributos) } : {}),
     valor_produtos: formatarValor(valorProdutos),
     valor_desconto: "0.00",
     valor_total: formatarValor(valorProdutos),
@@ -459,7 +477,10 @@ export function montarCorpoNFCe({
     forma_pagamento: "0",
     icms_valor_total: formatarValor(valorIcmsTotal),
     modalidade_frete: "9",
-    items: itens.map((item, indice) => montarItemNFCe(item, indice + 1)),
+    items: itens.map((item, indice) => ({
+      ...montarItemNFCe(item, indice + 1),
+      ...(tributos ? { valor_total_tributos: formatarValor(tributos.linhas[indice]) } : {}),
+    })),
     formas_pagamento: pagamentos.map(
       (pagamento): FormaPagamentoNFCe => ({
         forma_pagamento: codigoFormaPagamentoSefaz(pagamento.formaPagamento),
@@ -533,6 +554,21 @@ export interface DadosEmissaoNFSe {
   configuracaoFiscal: ConfiguracaoFiscalLoja;
 }
 
+// A discriminação da NFS-e com a frase dos tributos aproximados no fim, numa
+// linha nova (Lei 12.741/2012, #1040), quando a loja do Simples informa a
+// alíquota do serviço. A base é o valor dos serviços da nota, que não muda.
+// Não achamos na doc da Focus (fora do alcance na hora) um campo de
+// informações complementares da NFS-e: por isso a frase vai na discriminação.
+// Se passar de 2000 caracteres, corta o resumo, nunca a frase.
+function discriminacaoDaNota(
+  discriminacao: string,
+  valorServicos: number,
+  configuracaoFiscal: ConfiguracaoFiscalLoja,
+): string {
+  const tributos = tributosDoServico(arredondar(valorServicos), configuracaoFiscal);
+  return discriminacaoComTributos(discriminacao, tributos && textoTributosAproximados(tributos));
+}
+
 export function montarCorpoNFSe({
   discriminacao,
   valorServicos,
@@ -572,7 +608,7 @@ export function montarCorpoNFSe({
       // corpo é texto com 2 casas), e soma de item em ponto flutuante pode
       // produzir coisa como 90.00000000000001 — que viraria isso no XML.
       aliquota: arredondar(configuracaoFiscal.aliquota_iss ?? 0),
-      discriminacao,
+      discriminacao: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal),
       iss_retido: "false",
       item_lista_servico: configuracaoFiscal.item_lista_servico || "14.01",
       codigo_tributario_municipio: configuracaoFiscal.codigo_tributario_municipio ?? undefined,
@@ -665,7 +701,7 @@ export function montarCorpoNFSeNacional(
     // O serviço é feito na loja.
     codigo_municipio_prestacao: municipio,
     codigo_tributacao_nacional_iss: codigoTributacaoNacional(configuracaoFiscal.item_lista_servico || "14.01"),
-    descricao_servico: discriminacao,
+    descricao_servico: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal),
     valor_servico: arredondar(valorServicos),
     tributacao_iss: 1, // 1 = operação tributável
     tipo_retencao_iss: 1, // 1 = não retido

@@ -49,6 +49,9 @@ function configuracaoFiscal(sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}):
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
     percentual_tributos_simples: null,
+    percentual_tributos_pecas: null,
+    percentual_estimativa_icms_st: null,
+    competencia_tributos_confirmada: null,
     atualizado_em: new Date().toISOString(),
     ...sobrescrever,
   };
@@ -724,5 +727,97 @@ describe("valorTotalNFCe", () => {
 
   it("desconta o desconto da linha", () => {
     expect(valorTotalNFCe([{ quantidade: 2, precoUnitario: 100, desconto: 15 }])).toBe(185);
+  });
+});
+
+// Tributos aproximados (Lei 12.741/2012, #1040). Alíquotas de teste, nunca as
+// de uma loja de verdade (o repositório é público).
+const LEI = "Alíquota efetiva do Simples Nacional, Lei 12.741/2012.";
+
+describe("tributos aproximados — NFC-e", () => {
+  const dadosNFCe = (sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}) => ({
+    ordem: { numero: 1 } as never,
+    itens: [
+      // CSOSN 500 (com ST): 2 × 250 = 500 → 4% + 3% = R$ 35,00
+      { peca: peca({ id: "p-st", cst_ou_csosn: "500", cfop_padrao: "5405" }), quantidade: 2, precoUnitario: 250, desconto: 0 },
+      // Sem ST, com R$ 10 de desconto: 100 − 10 = 90 → 4% = R$ 3,60
+      { peca: peca({ id: "p-sem" }), quantidade: 1, precoUnitario: 100, desconto: 10 },
+    ],
+    cliente: null,
+    pagamentos: [{ formaPagamento: "dinheiro", valor: 590 }],
+    configuracaoFiscal: configuracaoFiscal(sobrescrever),
+  });
+
+  it("com a alíquota das peças: cada item leva o valor e a nota leva a frase", () => {
+    const corpo = montarCorpoNFCe(
+      dadosNFCe({ percentual_tributos_pecas: 4, percentual_estimativa_icms_st: 3 }),
+    );
+    expect(corpo.items.map((item) => item.valor_total_tributos)).toEqual(["35.00", "3.60"]);
+    // 38,60 ÷ 590 = 6,54%
+    expect(corpo.informacoes_adicionais_contribuinte).toBe(
+      `Tributos aproximados: R$ 38,60 (6,54%), inclui estimativa do ICMS-ST. ${LEI}`,
+    );
+    // O total da nota não muda.
+    expect(corpo.valor_total).toBe("590.00");
+  });
+
+  it("sem estimativa de ST: só a alíquota das peças, e a frase não fala em ST", () => {
+    const corpo = montarCorpoNFCe(dadosNFCe({ percentual_tributos_pecas: 4 }));
+    expect(corpo.items.map((item) => item.valor_total_tributos)).toEqual(["20.00", "3.60"]);
+    expect(corpo.informacoes_adicionais_contribuinte).toBe(`Tributos aproximados: R$ 23,60 (4,00%). ${LEI}`);
+  });
+
+  it("sem a alíquota das peças (vazia ou zero): a nota sai igual a antes", () => {
+    for (const percentual_tributos_pecas of [null, 0]) {
+      const corpo = montarCorpoNFCe(dadosNFCe({ percentual_tributos_pecas, percentual_estimativa_icms_st: 3 }));
+      expect(corpo).not.toHaveProperty("informacoes_adicionais_contribuinte");
+      for (const item of corpo.items) expect(item).not.toHaveProperty("valor_total_tributos");
+    }
+  });
+});
+
+describe("tributos aproximados — NFS-e", () => {
+  const dadosNFSe = (sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}, discriminacao = "Alinhamento\nBalanceamento") => ({
+    ordem: { numero: 1 } as never,
+    discriminacao,
+    valorServicos: 150.000000001,
+    cliente: clientePessoaFisica(),
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: configuracaoFiscal(sobrescrever),
+  });
+  const LINHA = `Tributos aproximados: R$ 9,75 (6,50%). ${LEI}`;
+
+  it("municipal: a frase vai no fim da discriminação, numa linha nova; o valor não muda", () => {
+    const corpo = montarCorpoNFSe(dadosNFSe({ percentual_tributos_simples: 6.5 }));
+    expect(corpo.servico.discriminacao).toBe(`Alinhamento\nBalanceamento\n${LINHA}`);
+    expect(corpo.servico.valor_servicos).toBe(150);
+  });
+
+  it("nacional: a frase vai no fim da descrição do serviço; o valor e o pTotTribSN não mudam", () => {
+    const corpo = montarCorpoNFSeNacional(dadosNFSe({ percentual_tributos_simples: 6.5 }), {
+      agora: new Date("2026-11-02T13:15:00Z"),
+      numeroDps: 1,
+    });
+    expect(corpo.descricao_servico).toBe(`Alinhamento\nBalanceamento\n${LINHA}`);
+    expect(corpo.valor_servico).toBe(150);
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(6.5);
+  });
+
+  it("sem a alíquota do serviço: a discriminação sai como veio", () => {
+    expect(montarCorpoNFSe(dadosNFSe()).servico.discriminacao).toBe("Alinhamento\nBalanceamento");
+    const nacional = montarCorpoNFSeNacional(dadosNFSe({ percentual_tributos_simples: 0 }), {
+      agora: new Date("2026-11-02T13:15:00Z"),
+      numeroDps: 1,
+    });
+    expect(nacional.descricao_servico).toBe("Alinhamento\nBalanceamento");
+  });
+
+  it("discriminação comprida: corta o resumo, nunca a frase dos tributos (2000 caracteres)", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dadosNFSe({ percentual_tributos_simples: 6.5 }, "Serviço ".repeat(400)),
+      { agora: new Date("2026-11-02T13:15:00Z"), numeroDps: 1 },
+    );
+    expect(corpo.descricao_servico.length).toBeLessThanOrEqual(2000);
+    expect(corpo.descricao_servico.endsWith(`…\n${LINHA}`)).toBe(true);
   });
 });

@@ -68,6 +68,10 @@ export interface ItemNFCe {
   ibs_mun_aliquota: string;
   ibs_mun_valor: string;
   ibs_valor_total: string;
+  // Tributos aproximados da linha (Lei 12.741/2012, #1040), texto com 2 casas
+  // como no exemplo oficial da Focus (FocusNFe/php, nfce/v2/autorizar.php).
+  // Só vai quando a loja do Simples informa a alíquota das peças.
+  valor_total_tributos?: string;
 }
 
 export interface FormaPagamentoNFCe {

@@ -739,7 +739,9 @@ export const configuracoesFiscais = [{
   bairro: "Vila Melhado", cidade: "Araraquara", uf: "SP", telefone: "(16) 3333-0000", email: "contato@exemplo.com.br",
   focus_nfe_ambiente: "producao",
   codigo_municipio: "3503208", item_lista_servico: "14.01", aliquota_iss: 3, codigo_tributario_municipio: "452000100",
-  codigo_cnae: "4520001", percentual_tributos_simples: 6.5,
+  codigo_cnae: "4520001", percentual_tributos_simples: 4.0,
+  percentual_tributos_pecas: 3.0, percentual_estimativa_icms_st: 1.5,
+  competencia_tributos_confirmada: "2026-11-01",
 }];
 
 export const jurosParcelas = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => ({

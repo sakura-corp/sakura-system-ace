@@ -158,6 +158,9 @@ const configuracaoFiscal: ConfiguracaoFiscalLoja = {
   competencia_aliquota_confirmada: null,
   aliquota_passo_a_passo: null,
   percentual_tributos_simples: null,
+  percentual_tributos_pecas: null,
+  percentual_estimativa_icms_st: null,
+  competencia_tributos_confirmada: null,
 } as ConfiguracaoFiscalLoja;
 
 const ordem = { id: "33333333-3333-3333-3333-333333333333", numero: 12 } as OrdemServico;
@@ -288,6 +291,39 @@ describe("montarCorpoNFCe — teste-ouro", () => {
     expect(corpo.forma_pagamento).toBe("0");
 
     await ouro(corpo, "nfce-5-mista-pagamento-dividido.json");
+  });
+
+  // #1040: a loja do Simples com a alíquota das peças (números de teste)
+  // manda o valor dos tributos em cada item e a frase da Lei 12.741/2012.
+  // Sem a alíquota (os cenários acima) nada disso vai.
+  it("7. loja do Simples com tributos aproximados — peça com ST e peça sem", async () => {
+    const corpo = montarCorpoNFCe({
+      ordem,
+      itens: [
+        // CSOSN 500 (ST): 2×320 = 640 → 4% + 3% = 44,80
+        item(),
+        // CSOSN 102 (sem ST), com R$ 2 de desconto: 4×12 − 2 = 46 → 4% = 1,84
+        item({
+          peca: peca({ id: "22222222-2222-2222-2222-222222222222", codigo_interno: "VAL-01",
+            descricao: "VALVULA DE PNEU", ncm: "84818099", cst_ou_csosn: "102", cfop_padrao: "5102" }),
+          quantidade: 4,
+          precoUnitario: 12,
+          desconto: 2,
+        }),
+      ],
+      cliente: null,
+      pagamentos: [{ formaPagamento: "dinheiro", valor: 686 }],
+      configuracaoFiscal: { ...configuracaoFiscal, percentual_tributos_pecas: 4, percentual_estimativa_icms_st: 3 },
+    });
+
+    expect(corpo.valor_total).toBe("686.00");
+    expect(corpo.items.map((i) => i.valor_total_tributos)).toEqual(["44.80", "1.84"]);
+    expect(corpo.informacoes_adicionais_contribuinte).toBe(
+      "Tributos aproximados: R$ 46,64 (6,80%), inclui estimativa do ICMS-ST. " +
+        "Alíquota efetiva do Simples Nacional, Lei 12.741/2012.",
+    );
+
+    await ouro(corpo, "nfce-7-tributos-aproximados.json");
   });
 
   it("peça de regime normal destaca ICMS; a do Simples não", async () => {
