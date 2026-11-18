@@ -107,7 +107,7 @@ beforeEach(() => {
 describe("OrdensServicoPage — a OS mudou em outro computador na hora de faturar", () => {
   it("manda o operador e o total que a tela mostrou", async () => {
     listarOrdens.mockResolvedValue([os(100)]);
-    faturarOrdem.mockResolvedValue(undefined);
+    faturarOrdem.mockResolvedValue({ avisoTaxa: null });
     await abrirFaturamentoEConfirmar();
     await waitFor(() => expect(faturarOrdem).toHaveBeenCalledTimes(1));
     const [, , , , operadorId, total] = faturarOrdem.mock.calls[0];
