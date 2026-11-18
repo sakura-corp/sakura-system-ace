@@ -202,6 +202,9 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
 
   async function visitar(cena, esperaExtra) {
     try {
+      // Antes de abrir a rota: a tela lê o banco assim que monta.
+      await instalarFuncoesDaCena(cena);
+      tirarLinhasDaCena(cena);
       await abrirRota(cena.rota);
       await pagina.waitForTimeout(esperaExtra);
       if (!cena.deslogado && !cena.trocarSenha && (await precisouEntrarDeNovo())) {
@@ -217,6 +220,64 @@ export async function percorrerTelas(aoChegar, incluir = () => true, opcoes = {}
       falhas.push([cena.arquivo, String(err).split("\n")[0]]);
       console.log(`  ✗ ${cena.arquivo} — ${String(err).split("\n")[0]}`);
       await fotografarFalha(cena);
+    } finally {
+      await tirarFuncoesDaCena();
+      devolverLinhasDaCena();
+    }
+  }
+
+  // Uma cena pode pedir que uma função de borda (Edge Function) responda
+  // algo diferente do aviso de demonstração, só durante a cena. É assim que
+  // a cena da nota recusada pela SEFAZ mostra a recusa sem emitir nada de
+  // verdade. `funcoesDaCena: { "focus-nfe": (corpo) => ({ status, json }) }`.
+  // O pedido de checagem do navegador (OPTIONS) segue pro banco falso.
+  const funcoesInstaladas = [];
+  async function instalarFuncoesDaCena(cena) {
+    for (const [nome, responder] of Object.entries(cena.funcoesDaCena ?? {})) {
+      const padrao = `**demo.supabase.co/functions/v1/${nome}**`;
+      const tratador = async (rota) => {
+        const req = rota.request();
+        if (req.method() === "OPTIONS") return rota.fallback();
+        let corpo = null;
+        try {
+          corpo = req.postDataJSON();
+        } catch {
+          // corpo ausente ou que não é JSON: responde assim mesmo.
+        }
+        const r = responder(corpo);
+        return rota.fulfill({
+          status: r.status ?? 200,
+          headers: { "access-control-allow-origin": "*", "content-type": "application/json" },
+          body: JSON.stringify(r.json),
+        });
+      };
+      await contexto.route(padrao, tratador);
+      funcoesInstaladas.push([padrao, tratador]);
+    }
+  }
+  // Uma cena também pode pedir pra TIRAR linhas do banco de mentira enquanto
+  // dura (`tirarLinhas: { tabela: (linha) => boolean }`), pra mostrar uma OS
+  // sem a nota que ela tem no catálogo. As linhas voltam ao lugar no fim.
+  const linhasTiradas = [];
+  function tirarLinhasDaCena(cena) {
+    for (const [tabela, eDaCena] of Object.entries(cena.tirarLinhas ?? {})) {
+      const lista = TABELAS[tabela];
+      for (let i = lista.length - 1; i >= 0; i--) {
+        if (eDaCena(lista[i])) linhasTiradas.push([lista, i, lista.splice(i, 1)[0]]);
+      }
+    }
+  }
+  function devolverLinhasDaCena() {
+    // Da última tirada pra primeira, cada uma volta pro índice de onde saiu.
+    while (linhasTiradas.length > 0) {
+      const [lista, i, linha] = linhasTiradas.pop();
+      lista.splice(i, 0, linha);
+    }
+  }
+  async function tirarFuncoesDaCena() {
+    while (funcoesInstaladas.length > 0) {
+      const [padrao, tratador] = funcoesInstaladas.pop();
+      await contexto.unroute(padrao, tratador);
     }
   }
 

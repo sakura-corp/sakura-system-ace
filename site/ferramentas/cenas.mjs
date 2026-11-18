@@ -89,6 +89,28 @@ export const CENAS = [
     ],
     descricao: "Aqui saem os documentos da OS. O sistema sabe de que nota aquela ordem precisa — NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois — e mostra só o botão que faz sentido. A emissão é automática, via Focus NFe, e o PDF aparece na própria tela. O botão de garantia gera o documento pro cliente assinar." },
 
+  // A recusa da SEFAZ por causa do CNPJ do cliente (#1112). O banco de mentira
+  // responde a Focus NFe com a recusa só nesta cena (`funcoesDaCena`) e a OS 145,
+  // de uma empresa (pessoa jurídica), com peça, perde a NFC-e (`tirarLinhas`).
+  { arquivo: "10c-nfce-recusada-cnpj", modulo: "Ordens de Serviço", titulo: "Emitir NFC-e: SEFAZ não reconhece o CNPJ do cliente",
+    rota: "/ordens-servico",
+    // A OS 145 já tem as notas dela no catálogo; aqui ela volta a ficar sem NFC-e.
+    tirarLinhas: { notas_fiscais_arquivos: (n) => n.ordem_servico_id === "os145" && n.tipo === "nfe" },
+    funcoesDaCena: {
+      "focus-nfe": (corpo) => corpo?.acao === "consultar"
+        ? { json: { ok: true, status: 200, dados: {
+            status: "erro_autorizacao", status_sefaz: "999", ref: corpo?.ref ?? "os145-nfce-1",
+            mensagem_sefaz: "Rejeição: CNPJ 12.345.678/0001-99 do destinatário não cadastrado na Receita Federal",
+          } } }
+        : { json: { ok: true, status: 202, dados: { status: "processando_autorizacao" } } },
+    },
+    passos: [
+      { seletor: 'tr:has-text("OS 145") button:has-text("Emitir nota")' },
+      { clicar: "Emitir NFC-e" },
+      { clicar: "Confirmar emissão" },
+    ],
+    descricao: "Quando a SEFAZ recusa a nota porque ainda não reconhece o CNPJ do cliente, a janela explica em português simples o que aconteceu e mostra a mensagem da SEFAZ, com 'Copiar o erro'. Em vez de repetir a mesma recusa, oferece emitir a nota sem identificar o cliente, num botão laranja que avisa o que muda." },
+
   // ------------------------------------------------ venda de balcão (FN-09)
   { arquivo: "10b-venda-balcao", modulo: "Ordens de Serviço", titulo: "Venda de balcão",
     rota: "/ordens-servico",
