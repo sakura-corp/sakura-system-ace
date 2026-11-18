@@ -3,7 +3,7 @@
 - **Tarefa**: #387, DRE parte 2: taxa da maquininha e quando o cartão cai na conta
 - **Chefe**: backend
 - **Data**: 2026-11-18
-- **PR**: (o PR desta branch, `claude/brave-brahmagupta-ptpk1p`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1121
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
