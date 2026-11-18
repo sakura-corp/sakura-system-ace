@@ -472,7 +472,20 @@ export function montarCorpoNFCe({
 const MENSAGEM_SEM_TOKEN =
   "Token do Focus NFe não configurado — cadastre em Configurações → Dados fiscais da loja.";
 
-export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocusNfe> {
+export interface OpcoesEmissaoNFCe {
+  /**
+   * Emite como "consumidor não identificado", mesmo com o cliente tendo CPF ou
+   * CNPJ no cadastro (#1112): é o "Emitir sem identificar o cliente" da tela,
+   * depois que a SEFAZ recusou o documento do destinatário (ex.: CNPJ
+   * recém-aberto que a base dela ainda não tem). Sem a opção, nada muda.
+   */
+  semDestinatario?: boolean;
+}
+
+export async function emitirNFCe(
+  dados: DadosEmissaoNFCe,
+  opcoes: OpcoesEmissaoNFCe = {},
+): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
   const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
@@ -487,7 +500,9 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
 
   const lojaId = configuracaoFiscal.loja_id;
   const ref = montarRefNota(numero, "nfce");
-  const corpo = montarCorpoNFCe(dados);
+  // Sem destinatário = o mesmo corpo de `montarDestinatarioNFCe(null)`: só o
+  // cliente sai da nota; itens, pagamentos e totais são os mesmos.
+  const corpo = montarCorpoNFCe(opcoes.semDestinatario ? { ...dados, cliente: null } : dados);
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfce", ref, corpo });
 

@@ -7,6 +7,12 @@ import { buscarConfiguracaoFiscal, confirmarAliquotaCompetencia } from "@/lib/co
 import { AvisoAliquotaCompetencia } from "@/components/AvisoAliquotaCompetencia";
 import { avisoAliquotaCompetencia } from "@/schemas/aliquotaCompetencia";
 import { avisoLimiteNFCeSemDestinatario } from "@/schemas/limiteNFCe";
+import {
+  ehRejeicaoDeDestinatario,
+  fraseRejeicaoDeDestinatario,
+  mensagemCruaDaRejeicao,
+  textoParaCopiarOErro,
+} from "@/schemas/rejeicaoNFCe";
 import { extensaoDaNota } from "@/schemas/danfe";
 import { mensagemDeErro } from "@/lib/errors";
 import {
@@ -17,7 +23,6 @@ import {
   emitirNFCe,
   emitirNFSe,
   EsperaVencidaError,
-  FocusNfeError,
   refPertenceAOrdem,
   valorTotalNFCe,
   type PagamentoParaNota,
@@ -83,19 +88,44 @@ async function buscarPagamentosParaNota(
   return pagamentos.length > 0 ? pagamentos : [{ formaPagamento: "outros", valor: totalNota }];
 }
 
+// A nota voltou recusada: leva a resposta junto, pra janela reconhecer a
+// rejeição do destinatário (#1112) sem depender da frase.
+class NotaRecusadaError extends Error {
+  constructor(
+    message: string,
+    public resposta: RespostaFocusNfe,
+  ) {
+    super(message);
+    this.name = "NotaRecusadaError";
+  }
+}
+
 // A Focus NFe responde 200 mesmo quando a SEFAZ/prefeitura recusa a nota —
 // só "autorizado" é sucesso de verdade.
-function erroDaResposta(resposta: RespostaFocusNfe): FocusNfeError {
+function erroDaResposta(resposta: RespostaFocusNfe): NotaRecusadaError {
   const mensagensErros = (resposta.erros ?? [])
     .map((e) => (e.campo ? `${e.campo}: ${e.mensagem}` : e.mensagem))
     .filter((m): m is string => Boolean(m))
     .join(" | ");
-  return new FocusNfeError(
+  return new NotaRecusadaError(
     resposta.mensagem_sefaz ??
       (mensagensErros || undefined) ??
       resposta.mensagem ??
       `A nota voltou com status "${resposta.status}".`,
+    resposta,
   );
+}
+
+// A SEFAZ recusou o CPF/CNPJ do destinatário? Pela resposta que voltou na
+// consulta, ou pelo corpo do erro quando a Focus recusou na hora (#1112).
+function rejeicaoDeDestinatario(erro: unknown): RespostaFocusNfe | null {
+  const resposta =
+    erro instanceof NotaRecusadaError
+      ? erro.resposta
+      : erro && typeof erro === "object"
+        ? (erro as { corpo?: unknown }).corpo
+        : null;
+  return ehRejeicaoDeDestinatario(resposta) ? (resposta as RespostaFocusNfe) : null;
 }
 
 export function EmitirNotaFiscalModal({
@@ -140,6 +170,10 @@ export function EmitirNotaFiscalModal({
   // referência que aparece no painel dela.
   const [mostrarRegistrarPorRef, setMostrarRegistrarPorRef] = useState(false);
   const [refDigitada, setRefDigitada] = useState("");
+  // A SEFAZ recusou o CPF/CNPJ do cliente (#1112): no lugar do erro cru, a
+  // frase de balcão e o "Emitir sem identificar o cliente".
+  const [recusaDoDestinatario, setRecusaDoDestinatario] = useState<RespostaFocusNfe | null>(null);
+  const [erroCopiado, setErroCopiado] = useState<"" | "copiado" | "falhou">("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const itensDaOrdem = (ordem.itens ?? []).map((item) =>
@@ -154,20 +188,22 @@ export function EmitirNotaFiscalModal({
   const clienteIdentificado = destinatarioIdentificadoNFCe(cliente);
   // Acima do limite da UF a SEFAZ costuma exigir o cliente identificado (#881).
   // Só depois de carregar o cliente: antes disso toda nota pareceria "sem CPF".
+  // O mesmo total que vai na nota (cada linha arredondada antes de somar).
+  const totalDaNFCe = valorTotalNFCe(
+    itensPeca.map((item) => ({
+      quantidade: item.quantidade,
+      precoUnitario: item.preco_unitario,
+      desconto: item.desconto,
+    })),
+  );
   const avisoLimite =
     tipoNota === "NFC-e" && cliente
-      ? avisoLimiteNFCeSemDestinatario(
-          // O mesmo total que vai na nota (cada linha arredondada antes de somar).
-          valorTotalNFCe(
-            itensPeca.map((item) => ({
-              quantidade: item.quantidade,
-              precoUnitario: item.preco_unitario,
-              desconto: item.desconto,
-            })),
-          ),
-          clienteIdentificado,
-        )
+      ? avisoLimiteNFCeSemDestinatario(totalDaNFCe, clienteIdentificado)
       : null;
+  // O mesmo aviso, pra nota que vai sair SEM o cliente depois da recusa do
+  // destinatário (#1112): acima do limite, a SEFAZ também recusaria.
+  const avisoLimiteSemCliente =
+    tipoNota === "NFC-e" ? avisoLimiteNFCeSemDestinatario(totalDaNFCe, false) : null;
 
   // Nenhuma NFC-e sai com peça faltando nem sem NCM (#655): peça digitada sem
   // cadastro, ou cadastrada sem NCM, trava a emissão até ser resolvida aqui.
@@ -333,7 +369,7 @@ export function EmitirNotaFiscalModal({
     }
   }
 
-  async function handleEmitir() {
+  async function handleEmitir({ semDestinatario = false }: { semDestinatario?: boolean } = {}) {
     if (!configuracaoFiscal || !cliente || !operador || !lojaAtual) return;
     if (itensQueImpedem.length > 0) {
       setErro(MENSAGEM_PECA_PRECISA_CADASTRO);
@@ -367,7 +403,11 @@ export function EmitirNotaFiscalModal({
 
         const pagamentos = await buscarPagamentosParaNota(ordem.id, totalPecas);
 
-        resposta = await emitirNFCe({ ordem, itens, cliente, pagamentos, configuracaoFiscal });
+        const dados = { ordem, itens, cliente, pagamentos, configuracaoFiscal };
+        // Sem a opção, a chamada é a mesma de sempre (#1112).
+        resposta = semDestinatario
+          ? await emitirNFCe(dados, { semDestinatario: true })
+          : await emitirNFCe(dados);
       } else {
         if (itensServico.length === 0) {
           throw new Error("Esta OS não tem nenhum item de serviço pra emitir NFS-e.");
@@ -389,11 +429,34 @@ export function EmitirNotaFiscalModal({
       }
 
       await concluirEmissao(resposta);
+      setRecusaDoDestinatario(null);
     } catch (err) {
       if (err instanceof EsperaVencidaError) setRefPendente(err.ref);
-      setErro(mensagemDeErro(err));
+      mostrarErroDaEmissao(err);
     } finally {
       setEmitindo(false);
+    }
+  }
+
+  // Recusa do destinatário na NFC-e vira a frase de balcão (#1112); qualquer
+  // outro erro aparece cru, como sempre (aviso, nunca tranca: se o texto da
+  // SEFAZ mudar, nada piora).
+  function mostrarErroDaEmissao(err: unknown) {
+    const recusa = tipoNota === "NFC-e" ? rejeicaoDeDestinatario(err) : null;
+    setRecusaDoDestinatario(recusa);
+    setErroCopiado("");
+    setErro(recusa ? "" : mensagemDeErro(err));
+  }
+
+  async function copiarOErro() {
+    if (!recusaDoDestinatario) return;
+    try {
+      await navigator.clipboard.writeText(
+        textoParaCopiarOErro(recusaDoDestinatario, recusaDoDestinatario.ref, cliente),
+      );
+      setErroCopiado("copiado");
+    } catch {
+      setErroCopiado("falhou");
     }
   }
 
@@ -470,8 +533,9 @@ export function EmitirNotaFiscalModal({
       }
       await concluirEmissao(resposta);
       setRefPendente(null);
+      setRecusaDoDestinatario(null);
     } catch (err) {
-      setErro(mensagemDeErro(err));
+      mostrarErroDaEmissao(err);
     } finally {
       setConferindo(false);
     }
@@ -561,6 +625,37 @@ export function EmitirNotaFiscalModal({
 
       {!carregando && erro && (
         <AvisoDeErro className="mb-3 text-corpo">{erro}</AvisoDeErro>
+      )}
+
+      {/* #1112: a SEFAZ recusou o CPF/CNPJ do cliente. Amarelo, não vermelho:
+          não é erro da loja (o cadastro pode estar certo, e o CNPJ só ainda
+          não chegou na base da SEFAZ). A rejeição crua fica embaixo, menor,
+          pra quem for falar com o suporte. */}
+      {!carregando && !resultado && recusaDoDestinatario && (
+        <AvisoDeAtencao role="alert" className="mb-3 text-corpo">
+          <p className="font-medium">{fraseRejeicaoDeDestinatario(cliente?.tipo_pessoa)}</p>
+          <div className="mt-2 text-rotulo text-texto-2">
+            <p className="font-medium">Detalhe da SEFAZ</p>
+            <p className="break-words">{mensagemCruaDaRejeicao(recusaDoDestinatario)}</p>
+            <button
+              type="button"
+              onClick={copiarOErro}
+              className="mt-1 min-h-10 underline hover:text-texto"
+            >
+              Copiar o erro
+            </button>
+            {erroCopiado === "copiado" && (
+              <span role="status" className="ml-2">
+                Copiado, sem o nome e o documento do cliente.
+              </span>
+            )}
+            {erroCopiado === "falhou" && (
+              <span role="status" className="ml-2">
+                Não deu pra copiar: tire um print desta janela.
+              </span>
+            )}
+          </div>
+        </AvisoDeAtencao>
       )}
 
       {!carregando &&
@@ -694,6 +789,28 @@ export function EmitirNotaFiscalModal({
               cadastrei" fica no Início, onde ela vê antes de precisar. */}
           {tipoNota === "NFS-e" && <AvisoAliquotaCompetencia aviso={avisoAliquota} />}
 
+          {/* #1112: o que muda ao emitir sem identificar, junto do botão. */}
+          {recusaDoDestinatario && (
+            <div className="space-y-2 text-rotulo text-texto/90">
+              <p>
+                A nota sai como consumidor não identificado. Ela vale normalmente, mas o cliente
+                não vai ter a nota no nome {cliente?.tipo_pessoa === "fisica" ? "dele" : "da empresa"}.
+              </p>
+              {/* Acima do limite da UF, a nota sem o cliente também seria
+                  recusada (#881). Aviso, não tranca. */}
+              {avisoLimiteSemCliente && (
+                <AvisoDeAtencao className="text-rotulo">{avisoLimiteSemCliente}</AvisoDeAtencao>
+              )}
+              {/* A NF-e modelo 55 ainda não existe no sistema (#409): só o texto. */}
+              {cliente?.tipo_pessoa === "juridica" && (
+                <p>
+                  Se ele precisa da nota no nome da empresa, o documento certo é a NF-e (modelo
+                  55), que o sistema ainda não emite. Fale com quem cuida do sistema.
+                </p>
+              )}
+            </div>
+          )}
+
           <AvisoDeAtencao className="text-rotulo">
             {configuracaoFiscal?.focus_nfe_ambiente === "homologacao"
               ? "Ambiente de homologação — esta nota é só de teste, sem valor fiscal."
@@ -710,7 +827,7 @@ export function EmitirNotaFiscalModal({
               fechada (ou o programa foi reiniciado): sem isto, o único
               caminho era o upload manual do XML, que perde a referência — e
               com ela o "Ver PDF" e o cancelamento por aqui. */}
-          {!refPendente && (
+          {!refPendente && !recusaDoDestinatario && (
             <div className="text-rotulo">
               {!mostrarRegistrarPorRef ? (
                 <button
@@ -763,10 +880,20 @@ export function EmitirNotaFiscalModal({
               >
                 {conferindo ? "Conferindo..." : "Conferir de novo"}
               </button>
+            ) : recusaDoDestinatario ? (
+              // O "Confirmar emissão" some: ele só repetiria a recusa (#1112).
+              <button
+                type="button"
+                onClick={() => handleEmitir({ semDestinatario: true })}
+                disabled={emitindo || conferindo || itensQueImpedem.length > 0}
+                className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+              >
+                {emitindo ? "Emitindo..." : "Emitir sem identificar o cliente"}
+              </button>
             ) : (
               <button
                 type="button"
-                onClick={handleEmitir}
+                onClick={() => handleEmitir()}
                 disabled={emitindo || conferindo || itensQueImpedem.length > 0}
                 className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
               >
