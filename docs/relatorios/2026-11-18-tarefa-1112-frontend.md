@@ -3,7 +3,7 @@
 - **Tarefa**: #1112, NFC-e recusada porque a SEFAZ ainda não reconhece o CNPJ do cliente
 - **Chefe**: frontend
 - **Data**: 2026-11-18
-- **PR**: (o PR desta branch, `claude/tarefa-1112-cnpj-sefaz`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1124
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
