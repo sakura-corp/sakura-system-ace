@@ -43,9 +43,7 @@
 - **Critérios de design da leva 8**: a issue diz que só valem os que o conserto toca (Hierarquia, Acabamento e Legível), e esses estão nas fotos.
 
 ## O que depende de alguém
-- **Tiago, no PC** (caso B, abrir o programa; roteiro em `docs/equipe.md`, "Testar no seu computador o que a sessão da nuvem fez"), na branch `claude/epic-brahmagupta-fqfqmx`:
-  - Relações → Lucratividade com a janela em 1366: a borda do cartão do lucro é uma linha fina igual em volta toda, e as bolinhas ficam ao lado do número.
-  - Sair e ver o Login: o fundo continua igual.
+- **Tiago, no PC** (caso B, banco de teste, `npm run dev`): **feito em 18/11, passou.** Em Relações → Lucratividade, com a tela em 1920, 1366×768 e 1280×720, a borda ficou uma linha fina sem risco, as bolinhas ao lado do número e os cartões do lado sem esticar. O Login ficou igual.
 - **Sofia**: revisar e mesclar o PR. No dia de teste, depois de publicar, conferir num Windows com zoom de 125%.
 
 ## Onde parou
