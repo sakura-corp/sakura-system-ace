@@ -1,8 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   codigoTributacaoNacional,
   destinatarioIdentificadoNFCe,
   emitirNFCe,
+  emitirNFSe,
+  EsperaVencidaError,
   FocusNfeError,
   montarCorpoNFCe,
   montarCorpoNFSe,
@@ -613,6 +615,98 @@ describe("emitirNFCe — peça sem NCM", () => {
     await expect(promessa).rejects.toBeInstanceOf(FocusNfeError);
     await expect(promessa).rejects.toThrow(/Válvula de bico.*NCM/);
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+// Achado na revisão da #1112: o pedido de emissão foi ACEITO, e a consulta
+// seguinte falhou por rede. Antes, o erro subia como um FocusNfeError comum,
+// sem a `ref`, e a tela voltava pro "Confirmar emissão" — clicar de novo dava
+// DUAS notas válidas pra mesma venda. Depois do envio aceito, qualquer falha
+// na consulta tem de virar EsperaVencidaError, com a `ref`.
+describe("emissão aceita e a consulta falha (nota dupla)", () => {
+  const aceito = { data: { ok: true, status: 202, dados: { status: "processando_autorizacao" } }, error: null };
+  const semRede = { data: null, error: new Error("Failed to fetch") };
+  const autorizado = { data: { ok: true, status: 200, dados: { status: "autorizado", numero: "10" } }, error: null };
+
+  beforeEach(() => {
+    invoke.mockReset();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const dadosNFCe = () => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente: null,
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  const dadosNFSe = (sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}) => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    discriminacao: "Alinhamento",
+    valorServicos: 100,
+    cliente: clientePessoaFisica(),
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: configuracaoFiscal(sobrescrever),
+  });
+
+  async function falhaComARef(promessa: Promise<unknown>, prefixoRef: RegExp) {
+    const resultado = promessa.then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    const erro = await resultado;
+    expect(erro).toBeInstanceOf(EsperaVencidaError);
+    expect((erro as EsperaVencidaError).ref).toMatch(prefixoRef);
+    expect((erro as Error).message).toMatch(/não emita de novo/);
+  }
+
+  it("NFC-e: a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+  });
+
+  it("NFS-e pelo Padrão Nacional (Simples): a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(emitirNFSe(dadosNFSe()), /^os12-nfsen-\d+$/);
+  });
+
+  it("NFS-e municipal: a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(
+      emitirNFSe(dadosNFSe({ regime_tributario: "lucro_presumido" })),
+      /^os12-nfse-\d+$/,
+    );
+  });
+
+  it("a consulta que o porteiro recusa também guarda a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue({
+      data: { ok: false, status: 500, dados: { mensagem: "Erro interno" } },
+      error: null,
+    });
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+  });
+
+  it("uma falha de rede no meio não derruba: a próxima consulta autorizada vale", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValueOnce(semRede).mockResolvedValue(autorizado);
+    const promessa = emitirNFCe(dadosNFCe());
+    await vi.runAllTimersAsync();
+    await expect(promessa).resolves.toMatchObject({ status: "autorizado", numero: "10" });
+  });
+
+  it("se o PRÓPRIO envio falha, o erro continua sendo o do envio (nada a conferir)", async () => {
+    invoke.mockResolvedValue(semRede);
+    const promessa = emitirNFCe(dadosNFCe()).then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    const erro = await promessa;
+    expect(erro).toBeInstanceOf(FocusNfeError);
+    expect(erro).not.toBeInstanceOf(EsperaVencidaError);
+    expect(invoke).toHaveBeenCalledTimes(1);
   });
 });
 
