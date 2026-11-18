@@ -145,6 +145,32 @@ describe("Nota do cliente: Baixar o PDF da nota (pro cliente)", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(/Não deu pra gerar o PDF/);
   });
 
+  it("o motivo aparece sem o embrulho do Electron, e a frase aponta a impressora de PDF do Windows", async () => {
+    gerarPdfDaNota.mockRejectedValue(
+      new Error(
+        "Error invoking remote method 'gerar-pdf-da-nota': Error: não deu pra montar o PDF neste computador",
+      ),
+    );
+    const botao = await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    fireEvent.click(botao);
+
+    const aviso = await screen.findByRole("status");
+    expect(aviso).toHaveTextContent("(não deu pra montar o PDF neste computador)");
+    expect(aviso).not.toHaveTextContent(/invoking|remote method/);
+    expect(aviso).toHaveTextContent(/Microsoft Print to PDF/);
+  });
+
+  it("XML que o programa não lê: não gera PDF pela metade, avisa e baixa o de antes", async () => {
+    buscarConteudoArquivo.mockResolvedValue("<algumaCoisa/>");
+    const botao = await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    fireEvent.click(botao);
+
+    await waitFor(() => expect(baixados).toHaveLength(1));
+    expect(baixados[0].nome).toBe("NFC-e-21.html");
+    expect(gerarPdfDaNota).not.toHaveBeenCalled();
+    expect(await screen.findByRole("status")).toHaveTextContent(/não conseguiu ler o XML/);
+  });
+
   it("fora do programa instalado (sem a ponte do Electron), também avisa e baixa o de antes", async () => {
     window.sakuraApp = { version: "0.0.0", salvarConexao: vi.fn() };
     const botao = await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
@@ -164,6 +190,8 @@ describe("Nota do cliente: Baixar o PDF da nota (pro cliente)", () => {
     expect(baixados[0].nome).toBe("NFS-e-7.pdf");
     expect(baixados[0].conteudo).toBe(pdfDaFocus);
     expect(gerarPdfDaNota).not.toHaveBeenCalled();
+    expect(screen.getByText(/O PDF pro cliente é este, como a Focus NFe mandou/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /arquivo original/ })).not.toBeInTheDocument();
   });
 });
 
@@ -183,6 +211,12 @@ describe("Nota do cliente: a prévia do DANFE", () => {
     await waitFor(() => expect(baixados).toHaveLength(1));
     expect(baixados[0].nome).toBe("NFC-e-21.html");
     expect(await baixados[0].conteudo.text()).toBe(HTML_DA_FOCUS);
+  });
+
+  it("a frase embaixo da prévia diz que o PDF é o recibo, e não o DANFE da prévia", async () => {
+    await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    expect(screen.getByText(/O PDF pro cliente é o recibo da nota/)).toBeInTheDocument();
+    expect(screen.getByText(/O documento oficial é o XML/)).toBeInTheDocument();
   });
 
   it("Imprimir e Baixar o XML (pro contador) continuam com os nomes de hoje", async () => {

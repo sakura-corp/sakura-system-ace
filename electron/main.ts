@@ -645,16 +645,25 @@ async function gerarPdfDoHtml(html: string): Promise<Uint8Array> {
   });
   janela.webContents.on("will-navigate", (evento) => evento.preventDefault());
   janela.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // Sem script e sem rede, travar é improvável; se travar, a tela não fica
+  // em "Gerando…" pra sempre: desiste em 30 s (e a tela baixa o de antes).
+  let relogio: ReturnType<typeof setTimeout> | undefined;
+  const desistir = new Promise<never>((_, recusar) => {
+    relogio = setTimeout(() => recusar(new Error("o PDF demorou demais")), 30_000);
+  });
   try {
-    const conteudo = Buffer.from(html, "utf8").toString("base64");
-    await janela.loadURL(`data:text/html;charset=utf-8;base64,${conteudo}`);
-    const pdf = await janela.webContents.printToPDF({
-      pageSize: "A4",
-      printBackground: true,
-      margins: { marginType: "default" },
-    });
-    return new Uint8Array(pdf);
+    const gerar = async () => {
+      const conteudo = Buffer.from(html, "utf8").toString("base64");
+      await janela.loadURL(`data:text/html;charset=utf-8;base64,${conteudo}`);
+      return janela.webContents.printToPDF({
+        pageSize: "A4",
+        printBackground: true,
+        margins: { marginType: "default" },
+      });
+    };
+    return new Uint8Array(await Promise.race([gerar(), desistir]));
   } finally {
+    clearTimeout(relogio);
     janela.destroy();
   }
 }

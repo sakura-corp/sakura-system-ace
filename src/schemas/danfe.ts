@@ -58,12 +58,15 @@ export function nomeArquivoPdfDaNota(arquivo: NotaFiscalArquivo): string {
 // O canal do Electron que gera o PDF ("gerar-pdf-da-nota", electron/main.ts)
 // recebe só o HTML já montado, como texto. O recibo de uma nota tem poucas
 // dezenas de KB; 1 MB de folga cobre nota com muitos itens e recusa o resto.
+// Conta BYTES (acento ocupa 2): vira um endereço `data:` em base64 (+33%), e
+// o Chromium não abre endereço acima de 2 MB.
 export const LIMITE_HTML_DO_PDF = 1_000_000;
 
 export function motivoHtmlRecusadoParaPdf(html: unknown): string | null {
   if (typeof html !== "string") return "O PDF só é gerado a partir de um HTML em texto.";
   if (!html.trim()) return "O HTML da nota veio vazio.";
-  if (html.length > LIMITE_HTML_DO_PDF) return "O HTML da nota é grande demais pra virar PDF.";
+  if (html.length > LIMITE_HTML_DO_PDF || new TextEncoder().encode(html).length > LIMITE_HTML_DO_PDF)
+    return "O HTML da nota é grande demais pra virar PDF.";
   return null;
 }
 
@@ -79,5 +82,32 @@ export function semImagensDeFora(html: string): string {
   );
   if (deFora.length === 0) return html;
   for (const img of deFora) img.remove();
-  return `<!doctype html>\n${doc.documentElement.outerHTML}`;
+  // O mesmo cabeçalho (doctype) de antes, ou nenhum: trocar muda o jeito de o
+  // navegador desenhar a página (tamanho de fonte em tabela, quebra na
+  // impressão).
+  const tipo = doc.doctype;
+  const cabecalho = tipo
+    ? `<!DOCTYPE ${tipo.name}${tipo.publicId ? ` PUBLIC "${tipo.publicId}"` : ""}${
+        tipo.systemId ? `${tipo.publicId ? "" : " SYSTEM"} "${tipo.systemId}"` : ""
+      }>\n`
+    : "";
+  return `${cabecalho}${doc.documentElement.outerHTML}`;
+}
+
+// Lê o HTML da Focus com a codificação dele: a do tipo do arquivo
+// ("charset=..."), senão a do `<meta charset>`, senão UTF-8. Ler um HTML em
+// ISO-8859-1 como UTF-8 estraga os acentos da prévia e do "Imprimir".
+export function textoDoHtml(bytes: Uint8Array, tipoConteudo?: string | null): string {
+  const doTipo = /charset\s*=\s*["']?([\w.:-]+)/i.exec(tipoConteudo ?? "")?.[1];
+  const inicio = new TextDecoder("latin1").decode(bytes.slice(0, 1024));
+  const doMeta = /<meta[^>]+charset\s*=\s*["']?([\w.:-]+)/i.exec(inicio)?.[1];
+  for (const codificacao of [doTipo, doMeta]) {
+    if (!codificacao) continue;
+    try {
+      return new TextDecoder(codificacao).decode(bytes);
+    } catch {
+      // codificação que o navegador não conhece: tenta a próxima
+    }
+  }
+  return new TextDecoder("utf-8").decode(bytes);
 }

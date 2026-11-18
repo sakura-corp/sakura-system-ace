@@ -5,8 +5,15 @@ import { Modal } from "@/components/Modal";
 import { Selo } from "@/components/Selo";
 import { mensagemDeErro } from "@/lib/errors";
 import { interpretarXmlNotaFiscal, montarHtmlVisualNotaFiscal } from "@/lib/notaFiscalXml";
+import { salvarComoDownload } from "@/lib/download";
 import { buscarConteudoArquivo, buscarDanfeEmitida } from "@/lib/notasFiscais";
-import { extensaoDaNota, nomeArquivoDanfe, nomeArquivoPdfDaNota, semImagensDeFora } from "@/schemas/danfe";
+import {
+  extensaoDaNota,
+  nomeArquivoDanfe,
+  nomeArquivoPdfDaNota,
+  semImagensDeFora,
+  textoDoHtml,
+} from "@/schemas/danfe";
 import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
@@ -44,16 +51,6 @@ async function gerarPdfDoRecibo(arquivo: NotaFiscalArquivo): Promise<Blob> {
   return new Blob([bytes as BlobPart], { type: "application/pdf" });
 }
 
-function baixar(conteudo: Blob, nome: string) {
-  const url = URL.createObjectURL(conteudo);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = nome;
-  link.click();
-  // Devolve o endereço depois que o clique já entregou o arquivo.
-  setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
 export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   // O arquivo como a Focus mandou: PDF (NFS-e) ou HTML (NFC-e, #1113). É o que
@@ -82,9 +79,14 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         setOriginal(pdf);
         // A prévia da NFC-e sem as imagens de fora (o logo quebrado do topo):
         // a regra de segurança da janela não carrega imagem de fora (#1115).
+        // Lido com a codificação dele e regravado em UTF-8 (o tipo diz isso,
+        // e vale mais que o <meta charset> que veio dentro).
         const previa =
           extensaoDaNota(pdf.type) === "html"
-            ? new Blob([semImagensDeFora(await pdf.text())], { type: pdf.type })
+            ? new Blob(
+                [semImagensDeFora(textoDoHtml(new Uint8Array(await pdf.arrayBuffer()), pdf.type))],
+                { type: "text/html;charset=utf-8" },
+              )
             : pdf;
         if (!ativo) return;
         urlCriada = URL.createObjectURL(previa);
@@ -110,32 +112,31 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   }
 
   function baixarOriginal() {
-    if (original) baixar(original, nomeArquivoDanfe(arquivo, original.type));
+    if (original) salvarComoDownload(original, nomeArquivoDanfe(arquivo, original.type));
   }
 
   async function handleBaixarPdf() {
     if (!original || gerandoPdf) return;
     setAvisoPdf("");
     if (extensaoDaNota(original.type) === "pdf") {
-      baixar(original, nomeArquivoPdfDaNota(arquivo));
+      salvarComoDownload(original, nomeArquivoPdfDaNota(arquivo));
       return;
     }
     setGerandoPdf(true);
     try {
-      baixar(await gerarPdfDoRecibo(arquivo), nomeArquivoPdfDaNota(arquivo));
+      salvarComoDownload(await gerarPdfDoRecibo(arquivo), nomeArquivoPdfDaNota(arquivo));
     } catch (err) {
       console.error("Erro ao gerar o PDF da nota:", err);
       // O Electron embrulha o erro do processo principal ("Error invoking
-      // remote method ..."): pra pessoa, só o motivo.
-      const texto =
-        err instanceof Error
-          ? err.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, "").replace(/\.$/, "")
-          : "";
+      // remote method ..."): pra pessoa, só o motivo, já traduzido.
+      const texto = mensagemDeErro(err)
+        .replace(/^Error invoking remote method '[^']*': (Error: )?/, "")
+        .replace(/\.$/, "");
       const motivo = texto ? ` (${texto})` : "";
       setAvisoPdf(
         `Não deu pra gerar o PDF${motivo}. Baixamos a nota como a Focus NFe mandou (HTML), ` +
-          'que abre no navegador do computador. Pra mandar em PDF, use "Imprimir" e escolha ' +
-          '"Salvar como PDF".',
+          'que abre no navegador do computador. Pra mandar em PDF, use "Imprimir" e escolha a ' +
+          'impressora "Microsoft Print to PDF".',
       );
       baixarOriginal();
     } finally {
@@ -222,7 +223,12 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
               className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
             />
             <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
-              <p className="min-w-0">PDF da nota pra mandar ao cliente. O documento oficial é o XML.</p>
+              <p className="min-w-0">
+                {original && extensaoDaNota(original.type) === "html"
+                  ? "O PDF pro cliente é o recibo da nota, montado pelo programa (sem o QR code). "
+                  : "O PDF pro cliente é este, como a Focus NFe mandou. "}
+                O documento oficial é o XML.
+              </p>
               {original && extensaoDaNota(original.type) === "html" && (
                 <Botao variante="fantasma" tamanho="pequeno" onClick={baixarOriginal}>
                   Baixar o arquivo original da Focus (HTML)

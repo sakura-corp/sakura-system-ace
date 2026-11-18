@@ -9,6 +9,7 @@ import {
   nomeArquivoPdfDaNota,
   podeVerDanfe,
   semImagensDeFora,
+  textoDoHtml,
 } from "./danfe";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 
@@ -122,6 +123,10 @@ describe("motivoHtmlRecusadoParaPdf", () => {
     expect(motivoHtmlRecusadoParaPdf("x".repeat(LIMITE_HTML_DO_PDF + 1))).toMatch(/grande/);
     expect(motivoHtmlRecusadoParaPdf("x".repeat(LIMITE_HTML_DO_PDF))).toBeNull();
   });
+
+  it("o limite conta bytes, não letras (acento ocupa 2 bytes)", () => {
+    expect(motivoHtmlRecusadoParaPdf("ç".repeat(LIMITE_HTML_DO_PDF / 2 + 1))).toMatch(/grande/);
+  });
 });
 
 // A imagem quebrada no topo da prévia: o HTML da Focus aponta pra imagens de
@@ -142,9 +147,51 @@ describe("semImagensDeFora", () => {
     expect(semImagensDeFora(html)).toContain('src="data:image/png;base64,AAAA"');
   });
 
+  it("mantém o cabeçalho (doctype) que o HTML tinha", () => {
+    const html =
+      '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" ' +
+      '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><body>' +
+      '<img src="https://exemplo.invalid/l.png"><p>x</p></body></html>';
+    expect(semImagensDeFora(html)).toMatch(
+      /^<!DOCTYPE html PUBLIC "-\/\/W3C\/\/DTD XHTML 1.0 Transitional\/\/EN" "http:\/\/www.w3.org\/TR\/xhtml1\/DTD\/xhtml1-transitional.dtd">/,
+    );
+  });
+
+  it("HTML sem cabeçalho continua sem (não muda o jeito de desenhar a página)", () => {
+    const limpo = semImagensDeFora('<html><body><img src="https://exemplo.invalid/l.png"><p>x</p></body></html>');
+    expect(limpo).not.toMatch(/doctype/i);
+    expect(limpo).toContain("<p>x</p>");
+  });
+
   it("HTML sem imagem de fora volta igual por dentro", () => {
     const limpo = semImagensDeFora("<html><head><style>p{color:red}</style></head><body><p>Oi</p></body></html>");
     expect(limpo).toContain("<style>p{color:red}</style>");
     expect(limpo).toContain("<p>Oi</p>");
+  });
+});
+
+// O HTML da Focus pode vir em ISO-8859-1: ler como UTF-8 estraga os acentos
+// da prévia e do "Imprimir" (revisão da #1115).
+describe("textoDoHtml", () => {
+  const latin1 = new Uint8Array([0x3c, 0x70, 0x3e, 0x50, 0x65, 0xe7, 0x61, 0x3c, 0x2f, 0x70, 0x3e]); // <p>Peça</p>
+
+  it("respeita o charset do tipo do arquivo", () => {
+    expect(textoDoHtml(latin1, "text/html; charset=ISO-8859-1")).toBe("<p>Peça</p>");
+  });
+
+  it("respeita o <meta charset> quando o tipo não diz", () => {
+    const comMeta = new Uint8Array([
+      ...new TextEncoder().encode('<meta charset="iso-8859-1">'),
+      ...latin1,
+    ]);
+    expect(textoDoHtml(comMeta, "text/html")).toContain("<p>Peça</p>");
+  });
+
+  it("sem dizer nada, é UTF-8", () => {
+    expect(textoDoHtml(new TextEncoder().encode("<p>Peça</p>"), "text/html")).toBe("<p>Peça</p>");
+  });
+
+  it("charset desconhecido cai no UTF-8 em vez de quebrar", () => {
+    expect(textoDoHtml(new TextEncoder().encode("<p>ok</p>"), "text/html; charset=nao-existe")).toBe("<p>ok</p>");
   });
 });
