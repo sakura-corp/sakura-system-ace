@@ -16,6 +16,8 @@
  *    avisam (#950).
  * 7. Peça com o CFOP que não combina com o CSOSN (5102 + 500) avisa com o
  *    nome da peça, sem travar o botão (#968).
+ * 8. A NFS-e leva o resumo da OS na discriminação (uma linha por serviço) e
+ *    o valor dos serviços não muda (#1040).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
@@ -30,6 +32,7 @@ const listarPecasJanela = vi.fn();
 const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const emitirNFCe = vi.fn();
+const emitirNFSe = vi.fn();
 vi.mock("@/lib/pecas", () => ({
   buscarDadosFiscaisDasPecas: (...a: unknown[]) => buscarDadosFiscaisDasPecas(...a),
   listarPecasJanela: (...a: unknown[]) => listarPecasJanela(...a),
@@ -46,7 +49,7 @@ vi.mock("@/lib/focusNfe", async () => {
     destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
     valorTotalNFCe: real.valorTotalNFCe,
     emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-    emitirNFSe: vi.fn(),
+    emitirNFSe: (...a: unknown[]) => emitirNFSe(...a),
     consultarNFCe: vi.fn(),
     consultarNFSe: vi.fn(),
     baixarArquivoNota: vi.fn(),
@@ -573,5 +576,38 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
     expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
     // As peças também não vieram: não dá pra dizer que falta cadastrar a peça.
     expect(screen.queryByText(/Esta nota não pode sair ainda/)).not.toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — resumo da OS na discriminação da NFS-e (#1040)", () => {
+  const servico = (id: string, descricao: string, quantidade: number, preco_unitario: number, desconto = 0) => ({
+    id, ordem_servico_id: "os-1", tipo: "servico", peca_id: null, servico_id: "s1", tecnico_id: null,
+    descricao, quantidade, preco_unitario, desconto, custo_unitario: null,
+  });
+
+  it("uma linha por serviço, com quantidade e valor; o valor dos serviços é o mesmo de antes", async () => {
+    clienteDaOrdem.mockReturnValue({
+      id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09", codigo_municipio: "3503208",
+    });
+    emitirNFSe.mockResolvedValue({ status: "autorizado", numero: "7", ref: "r1" });
+    const { user } = renderizar(
+      <EmitirNotaFiscalModal
+        ordem={ordem([
+          servico("s-1", "Alinhamento", 1, 80),
+          servico("s-2", "Balanceamento", 4, 15, 10),
+          item("i1", "Pneu 175/70 R13", "peca-1"),
+        ])}
+        tipoNota="NFS-e"
+        onFechar={vi.fn()}
+        onEmitido={vi.fn()}
+        onItensMudaram={vi.fn()}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+    await waitFor(() => expect(emitirNFSe).toHaveBeenCalledTimes(1));
+    const dados = emitirNFSe.mock.calls[0][0];
+    expect(dados.discriminacao).toBe("Alinhamento - R$ 80,00\n4 x Balanceamento - R$ 50,00");
+    expect(dados.valorServicos).toBe(130);
   });
 });
