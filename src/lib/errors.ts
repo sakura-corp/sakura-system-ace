@@ -168,10 +168,6 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0083 (importação por planilha, #457): a tabela dos lotes e a marca do lote
   // em clientes e veiculos.
   "importacao_lotes",
-  // 0088 (taxas da maquininha, #387): tabelas.
-  "configuracoes_taxas_maquininha",
-  "caixa_taxas_cartao",
-  "caixa_cartao_a_receber",
   "importacao_lote_id",
   // 0084 (retorno do cliente, #381): colunas de servicos e de clientes.
   "intervalo_dias",
@@ -182,6 +178,10 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "configuracoes_contabilidade",
   // 0087 (grupo do DRE, #386): coluna de categorias_caixa.
   "grupo",
+  // 0088 (taxas da maquininha, #387): tabelas.
+  "configuracoes_taxas_maquininha",
+  "caixa_taxas_cartao",
+  "caixa_cartao_a_receber",
 ] as const;
 
 /**

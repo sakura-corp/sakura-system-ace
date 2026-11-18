@@ -748,7 +748,7 @@ export async function faturarOrdem(
   // Caixa só recebe o lançamento quando ela for marcada como recebida de
   // verdade (Contas a Receber).
   if (!previsaoRecebimento) {
-    const taxas = new TaxasDoFaturamento(ordem.loja_id);
+    const lancados: { movimentoId: string; pagamento: PagamentoOrdem }[] = [];
     for (const pagamento of pagamentos) {
       const movimentoId = await criarMovimentoCaixa(
         {
@@ -761,6 +761,13 @@ export async function faturarOrdem(
         },
         ordem.loja_id,
       );
+      lancados.push({ movimentoId, pagamento });
+    }
+    // A taxa da maquininha (#387) só depois de TODOS os lançamentos: ela é
+    // informação e não pode atrasar o Pix que vem depois do cartão (se a rede
+    // caísse no meio, o Caixa ficaria sem ele).
+    const taxas = new TaxasDoFaturamento(ordem.loja_id);
+    for (const { movimentoId, pagamento } of lancados) {
       await taxas.gravar(movimentoId, pagamento, parcelas);
     }
     return { avisoTaxa: taxas.aviso() };

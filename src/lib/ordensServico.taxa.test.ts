@@ -17,6 +17,8 @@ interface Insercao {
 const insercoes: Insercao[] = [];
 const leituras: string[] = [];
 const rpcs: { nome: string; args: Record<string, unknown> }[] = [];
+// A ordem de tudo que foi ao banco, pra conferir que a taxa vem DEPOIS do Caixa.
+const eventos: string[] = [];
 const banco = vi.hoisted(() => ({
   tabela: [] as unknown[],
   erroAoLerTabela: null as unknown,
@@ -30,11 +32,13 @@ vi.mock("./supabase", () => ({
       let resposta: () => { data: unknown; error: unknown } = () => ({ data: null, error: null });
       q.insert = (dados: Record<string, unknown>) => {
         insercoes.push({ tabela, dados });
+        eventos.push(`insert:${tabela}`);
         return q;
       };
       q.select = () => {
         if (tabela === "configuracoes_taxas_maquininha") {
           leituras.push(tabela);
+          eventos.push(`select:${tabela}`);
           resposta = () =>
             banco.erroAoLerTabela
               ? { data: null, error: banco.erroAoLerTabela }
@@ -49,6 +53,7 @@ vi.mock("./supabase", () => ({
     },
     rpc: async (nome: string, args: Record<string, unknown>) => {
       rpcs.push({ nome, args });
+      eventos.push(`rpc:${nome}`);
       if (nome === "registrar_taxa_do_cartao" && banco.erroAoGravarTaxa) {
         return { data: null, error: banco.erroAoGravarTaxa };
       }
@@ -102,6 +107,7 @@ beforeEach(() => {
   insercoes.length = 0;
   leituras.length = 0;
   rpcs.length = 0;
+  eventos.length = 0;
   banco.tabela = [];
   banco.erroAoLerTabela = null;
   banco.erroAoGravarTaxa = null;
@@ -136,6 +142,27 @@ describe("faturarOrdem: os lançamentos do Caixa não mudam", () => {
     expect(comTabela).toEqual(semTabela);
     // E nada além do Caixa foi inserido direto (a taxa vai pela função do banco).
     expect(insercoes.every((i) => i.tabela === "caixa_movimentos")).toBe(true);
+  });
+
+  it("a taxa só é lida e gravada depois de TODOS os lançamentos do Caixa entrarem", async () => {
+    // Cartão primeiro e Pix depois: a taxa do cartão não pode atrasar o Pix
+    // (se a rede caísse no meio, o Caixa ficaria sem ele).
+    banco.tabela = tabelaPreenchida;
+    await faturarOrdem(
+      os,
+      [
+        { formaPagamento: "cartao_credito", valor: 70 },
+        { formaPagamento: "pix", valor: 50 },
+      ],
+      1,
+      null,
+      "op-1",
+      120,
+    );
+    const ultimoCaixa = eventos.lastIndexOf("insert:caixa_movimentos");
+    const primeiraTaxa = eventos.findIndex((e) => !e.startsWith("insert:") && !e.startsWith("rpc:marcar"));
+    expect(primeiraTaxa).toBeGreaterThan(ultimoCaixa);
+    expect(gravacoesDeTaxa()).toHaveLength(1);
   });
 
   it("com a gravação da taxa falhando, os lançamentos também são os mesmos", async () => {
