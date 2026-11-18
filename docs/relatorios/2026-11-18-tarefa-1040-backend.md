@@ -63,7 +63,7 @@
 
 ## O que depende de alguém
 - **A Sofia**:
-  - aplicar a migration **0087** pelo "Atualizar o banco" (ensaiar, depois aplicar), **antes** da versão. Não tem `versao-minima-do-programa`.
+  - aplicar a migration **0089** (era 0087; renumerada em 18/11) pelo "Atualizar o banco" (ensaiar, depois aplicar), **antes** da versão. Não tem `versao-minima-do-programa`.
   - **Número**: os PRs #1120 e #1121 também usam a 0087 e a 0088. Quem mesclar depois renumera (o botão só roda número maior que o do banco).
   - **Decisão a conferir**: a alíquota do serviço reaproveita a `percentual_tributos_simples` (a mesma do pTotTribSN), em vez de criar uma coluna nova com o mesmo número.
 - **O Tiago, no PC** (Supabase de teste, homologação):

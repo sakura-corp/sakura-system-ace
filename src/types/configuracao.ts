@@ -62,7 +62,7 @@ export interface ConfiguracaoFiscalLoja {
   // Nacional, só pra loja do Simples): vai no campo pTotTribSN da nota. Quem
   // passa o número é a contabilidade; de 0 a 100, com duas casas. Vazio manda 0.
   percentual_tributos_simples: number | null;
-  // Tributos aproximados na nota (Lei 12.741/2012, migration 0087, #1040). A
+  // Tributos aproximados na nota (Lei 12.741/2012, migration 0089, #1040). A
   // loja do Simples informa a alíquota efetiva do mês, que a contabilidade
   // passa: a do serviço é a percentual_tributos_simples acima (Anexo III, a
   // mesma que já vai no pTotTribSN); a das peças é a percentual_tributos_pecas

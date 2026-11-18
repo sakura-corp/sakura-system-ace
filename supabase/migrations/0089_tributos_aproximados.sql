@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- Migration 0087: os tributos aproximados na nota, pela alíquota do Simples (#1040).
+-- Migration 0089: os tributos aproximados na nota, pela alíquota do Simples (#1040).
 --
 -- O PROBLEMA. A Lei 12.741/2012 (a "Lei da Transparência") manda a nota
 -- dizer quanto, mais ou menos, do valor pago é imposto. Pra loja do Simples,
@@ -30,9 +30,9 @@
 --
 -- ORDEM DE SUBIR. Colunas novas e opcionais: esta migration sobe ANTES da
 -- versão do programa, como as outras (o programa antigo nem sabe que elas
--- existem). Por isso não declara versão mínima do programa. Os PRs #1120 e
--- #1121 também usam a 0087 e a 0088: quem mesclar depois renumera (o botão
--- de atualizar só roda as de número maior que o do banco).
+-- existem). Por isso não declara versão mínima do programa. Era a 0087;
+-- renumerada pra 0089 em 18/11 (a 0087 é do #1120 e a 0088 do #1121; aplicar
+-- depois delas: o botão de atualizar só roda as de número maior que o do banco).
 --
 -- As travas têm nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
 -- frase em português (src/lib/errors.ts). Coluna nova nasce vazia, então
@@ -64,4 +64,4 @@ comment on column configuracoes_fiscais_loja.percentual_estimativa_icms_st is
 comment on column configuracoes_fiscais_loja.competencia_tributos_confirmada is
   'O mês (sempre no dia 1º) em que a loja conferiu os percentuais dos tributos aproximados. Diferente do mês corrente, o Início avisa; a nota sai com o último número salvo.';
 
-insert into schema_versao (versao) values (87) on conflict do nothing;
+insert into schema_versao (versao) values (89) on conflict do nothing;

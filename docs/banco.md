@@ -664,16 +664,16 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003; aplicar depois dela). Teste em
   `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
   corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
-- `0087`: **os tributos aproximados na nota, pela alíquota do Simples** (tarefa #1040, Lei
+- `0089`: **os tributos aproximados na nota, pela alíquota do Simples** (tarefa #1040, Lei
   12.741/2012). Três colunas novas e opcionais em `configuracoes_fiscais_loja`:
   `percentual_tributos_pecas` (alíquota efetiva do Anexo I) e `percentual_estimativa_icms_st`
   (soma só nas peças com CSOSN 500), as duas `numeric(5,2)` de 0 a 100, com as travas
   `ck_config_fiscal_percentual_tributos_pecas` e `ck_config_fiscal_percentual_estimativa_icms_st`
   (frases em `src/lib/errors.ts`); e `competencia_tributos_confirmada` (`date`, o mês no dia 1º em
   que a loja conferiu os números, do jeito da `0049`). O percentual do **serviço** reaproveita a
-  `percentual_tributos_simples` (`0078`). Vazio = a nota sai sem a linha. Os PRs #1120 e #1121
-  também usam a `0087` e a `0088`: quem mesclar depois **renumera** (o botão só roda as de
-  número maior que o do banco). Coluna nova e opcional: sobe **antes** da versão, sem
+  `percentual_tributos_simples` (`0078`). Vazio = a nota sai sem a linha. Era a `0087`;
+  renumerada pra `0089` em 18/11 (a `0087` é do #1120 e a `0088` do #1121; aplicar depois delas, o
+  botão só roda as de número maior que o do banco). Coluna nova e opcional: sobe **antes** da versão, sem
   `versao-minima-do-programa`. Teste em `supabase/scripts/testar-tributos-aproximados.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
