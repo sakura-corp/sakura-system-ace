@@ -418,6 +418,15 @@ describe("recibo — achados da revisão final", () => {
     expect(texto).not.toContain("Fulano Cadastro");
   });
 
+  it("NFC-e sem cliente no XML: também não mostra o telefone do cadastro (pedido da Sofia, 18/11)", () => {
+    const xml = xmlNfce().replace(/<dest>.*<\/dest>/, "");
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xml, "nfe"), contexto({ os: os() })),
+    );
+    expect(texto).not.toContain("(16) 5550-0177");
+    expect(texto).not.toContain("Cliente");
+  });
+
   it("item com desconto: a coluna Total mostra o valor já com o desconto", () => {
     const texto = textoVisivel(montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xmlNfce(), "nfe")));
     // 4 × 489,90 = 1.959,60 − 59,60 = 1.900,00

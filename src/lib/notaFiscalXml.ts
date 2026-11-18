@@ -909,7 +909,9 @@ function htmlClienteEVeiculo(dados: NotaFiscalVisual, os: OsDoRecibo | null): st
     dados.destinatario ??
     (dados.linkOficial && os?.cliente ? { ...pessoaVazia(), nome: os.cliente.nome, documento: os.cliente.documento } : null);
   const nfse = dados.tipo === "nfse";
-  const telefone = pessoa?.telefone ?? os?.telefoneCliente ?? null;
+  // O telefone do cadastro só completa um cliente que a nota tem (ou o da
+  // Giap, pela OS). Nota sem cliente sai sem nenhum dado dele (18/11).
+  const telefone = pessoa ? (pessoa.telefone ?? os?.telefoneCliente ?? null) : null;
   const contato = juntar([
     telefone ? e(formatarTelefone(telefone) ?? "") : null,
     pessoa?.email ? e(pessoa.email) : null,
