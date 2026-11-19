@@ -3,7 +3,7 @@
 - **Tarefa**: #1128, exigir o cadastro da peça digitada ao passar o orçamento pra OS
 - **Chefe**: frontend
 - **Data**: 2026-11-19
-- **PR**: ver a descrição do PR desta branch (`claude/focused-hopper-m5mq4p`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1141
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
