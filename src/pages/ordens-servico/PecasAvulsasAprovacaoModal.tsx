@@ -24,7 +24,6 @@ import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 const ROTULO_DO_MODO: Record<Modo, string> = {
   existente: "É uma peça que já tenho",
   cadastrar: "Cadastrar agora",
-  sem_cadastro: "Seguir sem cadastro",
 };
 
 interface PecasAvulsasAprovacaoModalProps {
@@ -56,10 +55,13 @@ interface PecasAvulsasAprovacaoModalProps {
 }
 
 /**
- * A janela da aprovação do orçamento com peça sem cadastro (#655). Cada peça
- * avulsa precisa de um caminho antes de aprovar: escolher uma do cadastro,
- * cadastrar agora ou seguir sem cadastro (sem estoque e sem nota). As regras
- * (o que falta, o que vincula) são de `schemas/orcamento.ts`; aqui só a tela.
+ * A janela da aprovação do orçamento com peça sem cadastro (#655). Aprovar é
+ * o mesmo passo que virar OS (`aprovar_orcamento`, uma chamada só), e a OS só
+ * nasce com cada peça avulsa ligada ao cadastro (#1128): escolher uma do
+ * cadastro ou cadastrar agora (com NCM, CEST, CFOP, origem e CST/CSOSN, que o
+ * `PecaForm` exige). Não existe mais "seguir sem cadastro": a peça sem NCM só
+ * travava na NFC-e, com a OS já faturada. As regras (o que falta, o que
+ * vincula) são de `schemas/orcamento.ts`; aqui só a tela.
  */
 export function PecasAvulsasAprovacaoModal({
   itens,
@@ -104,8 +106,6 @@ export function PecasAvulsasAprovacaoModal({
         mapa.set(item.id, { caminho: "existente", pecaId: escolhidas[item.id] ?? "" });
       } else if (modo === "cadastrar") {
         mapa.set(item.id, { caminho: "cadastrar", pecaId: cadastradas[item.id]?.id ?? "" });
-      } else if (modo === "sem_cadastro") {
-        mapa.set(item.id, { caminho: "sem_cadastro" });
       }
     }
     return mapa;
@@ -163,7 +163,7 @@ export function PecasAvulsasAprovacaoModal({
     <>
       <Modal
         titulo="Peças sem cadastro"
-        descricao="Estas peças foram digitadas no orçamento. Diga o que fazer com cada uma antes de aprovar."
+        descricao="Estas peças foram digitadas no orçamento. Pra virar ordem de serviço, cada uma precisa estar no cadastro (a nota fiscal precisa do NCM)."
         largura="4xl"
         onFechar={() => {
           if (!enviando) onFechar();
@@ -263,12 +263,6 @@ export function PecasAvulsasAprovacaoModal({
                       O nome e o preço já vêm preenchidos. Ao aprovar, ela sai do estoque.
                     </p>
                   </div>
-                )}
-
-                {modo === "sem_cadastro" && (
-                  <p className="text-rotulo text-texto-2">
-                    Não mexe no estoque e não sai na nota fiscal até ser cadastrada.
-                  </p>
                 )}
               </fieldset>
             );
