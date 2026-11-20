@@ -419,12 +419,82 @@ export function OrdemServicoForm({
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
+  // A barra do rodapé: dentro do <form> nos Detalhes (o "Salvar" é dela) e
+  // fora dele no Fechamento, junto da aba (#1128).
+  /* Barra fixa do rodapé: o total ficava no meio da tela, logo abaixo
+      da lista de itens — então com a OS cheia de peça ele saía de vista,
+      que é justamente quando importa. Grudada aqui embaixo, ele (e o
+      botão de salvar) acompanham a rolagem.
+
+      `sticky` e não `fixed` de propósito: elemento `fixed` dentro de um
+      `sakura-card` se prende ao card por causa do `backdrop-filter`
+      (PROJETO_STATUS.md, seção 6, item 51), e o resultado seria uma
+      barra flutuando no lugar errado. O fundo precisa ser opaco porque a
+      lista de itens passa POR TRÁS dela ao rolar; a sombra em cima mostra
+      que tem mais coisa embaixo.
+
+      No Fechamento ela NÃO gruda (#781): lá não há total nem salvar, só o
+      "Voltar", e grudada ela cobria os botões de DANFE. */
+  const rodape = (
+    <div
+      ref={barraRef}
+      data-rodape-da-os
+      className={`${
+        aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+      } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
+    >
+      {aba === "detalhes" ? (
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="text-rotulo text-texto-2">
+            Peças {formatarMoeda(totais.pecas)}
+          </span>
+          <span className="text-rotulo text-texto-2">
+            Serviços {formatarMoeda(totais.servicos)}
+          </span>
+          <span className="text-corpo font-semibold text-texto">
+            Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
+          </span>
+        </div>
+      ) : (
+        <span />
+      )}
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
+        >
+          {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
+              alguma coisa (#781). */}
+          {aba === "detalhes" ? "Cancelar" : "Voltar"}
+        </button>
+        {aba === "detalhes" && !ehRecusado && (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+          >
+            {isSubmitting
+              ? "Salvando..."
+              : ordemExistente
+                ? "Salvar alterações"
+                : modoOrcamento
+                  ? "Salvar orçamento"
+                  : "Abrir ordem de serviço"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
+    <div className="space-y-6 sakura-card p-6 shadow-sm">
     <form
       onSubmit={handleSubmit(aoSubmeter)}
       onFocus={(e: FocusEvent<HTMLFormElement>) => manterAcimaDaBarra(e.target)}
-      className="space-y-6 sakura-card p-6 shadow-sm"
+      className="space-y-6"
     >
       {ordemExistente ? (
         <div className="flex items-center justify-between border-b border-linha pb-4">
@@ -612,8 +682,6 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {aba === "fechamento" && ordemExistente && <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />}
-
       {aba === "detalhes" && (
         <div className="space-y-6">
           <DetalhesFields
@@ -666,71 +734,19 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {/* Barra fixa do rodapé: o total ficava no meio da tela, logo abaixo
-          da lista de itens — então com a OS cheia de peça ele saía de vista,
-          que é justamente quando importa. Grudada aqui embaixo, ele (e o
-          botão de salvar) acompanham a rolagem.
-
-          `sticky` e não `fixed` de propósito: elemento `fixed` dentro de um
-          `sakura-card` se prende ao card por causa do `backdrop-filter`
-          (PROJETO_STATUS.md, seção 6, item 51), e o resultado seria uma
-          barra flutuando no lugar errado. O fundo precisa ser opaco porque a
-          lista de itens passa POR TRÁS dela ao rolar; a sombra em cima mostra
-          que tem mais coisa embaixo.
-
-          No Fechamento ela NÃO gruda (#781): lá não há total nem salvar, só o
-          "Voltar", e grudada ela cobria os botões de DANFE. */}
-      <div
-        ref={barraRef}
-        data-rodape-da-os
-        className={`${
-          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
-      >
-        {aba === "detalhes" ? (
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span className="text-rotulo text-texto-2">
-              Peças {formatarMoeda(totais.pecas)}
-            </span>
-            <span className="text-rotulo text-texto-2">
-              Serviços {formatarMoeda(totais.servicos)}
-            </span>
-            <span className="text-corpo font-semibold text-texto">
-              Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
-            </span>
-          </div>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onCancelar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
-          >
-            {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
-                alguma coisa (#781). */}
-            {aba === "detalhes" ? "Cancelar" : "Voltar"}
-          </button>
-          {aba === "detalhes" && !ehRecusado && (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-            >
-              {isSubmitting
-                ? "Salvando..."
-                : ordemExistente
-                  ? "Salvar alterações"
-                  : modoOrcamento
-                    ? "Salvar orçamento"
-                    : "Abrir ordem de serviço"}
-            </button>
-          )}
-        </div>
-      </div>
+      {aba === "detalhes" && rodape}
     </form>
+
+    {/* A aba Fechamento fica FORA do <form> da OS (#1128): o "Cadastrar
+        agora" da janela "Emitir NFC-e" abre o formulário da peça, que tem o
+        próprio <form>. Dentro do da OS era um formulário dentro de outro
+        (HTML inválido): o "Salvar peça" enviava também o formulário da OS
+        (o teste OrdemServicoForm.fechamento.test.tsx viu isso). */}
+    {aba === "fechamento" && ordemExistente && (
+      <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />
+    )}
+    {aba === "fechamento" && rodape}
+    </div>
 
     {/* Os modais ficam FORA do <form> da OS: um <form> dentro de outro é
         HTML inválido, e é isso que deixa cada modal ter o próprio botão de
