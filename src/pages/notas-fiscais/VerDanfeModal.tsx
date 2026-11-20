@@ -7,6 +7,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { interpretarXmlNotaFiscal, montarHtmlVisualNotaFiscal } from "@/lib/notaFiscalXml";
 import { salvarComoDownload } from "@/lib/download";
 import { buscarConteudoArquivo, buscarDanfeEmitida } from "@/lib/notasFiscais";
+import { buscarLojaDoRecibo, buscarOsDoRecibo } from "@/lib/reciboNotaFiscal";
 import {
   extensaoDaNota,
   nomeArquivoDanfe,
@@ -45,9 +46,18 @@ interface VerDanfeModalProps {
 async function gerarPdfDoRecibo(arquivo: NotaFiscalArquivo): Promise<Blob> {
   const gerar = window.sakuraApp?.gerarPdfDaNota;
   if (!gerar) throw new Error("o PDF só é gerado no programa instalado");
-  const dados = interpretarXmlNotaFiscal(await buscarConteudoArquivo(arquivo), arquivo.tipo);
+  // Os mesmos dados extras da "Versão para o cliente" (#1118): a OS ligada
+  // (veículo, placa, garantia) e a loja. Sem acesso, o recibo sai sem eles.
+  const [conteudo, os, loja] = await Promise.all([
+    buscarConteudoArquivo(arquivo),
+    arquivo.ordem_servico_id
+      ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
+      : Promise.resolve(null),
+    buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+  ]);
+  const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
   if (!dados.reconhecido) throw new Error("o programa não conseguiu ler o XML desta nota");
-  const bytes = await gerar(montarHtmlVisualNotaFiscal(dados));
+  const bytes = await gerar(montarHtmlVisualNotaFiscal(dados, { os, loja, valorDaNota: null }));
   return new Blob([bytes as BlobPart], { type: "application/pdf" });
 }
 
@@ -228,7 +238,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
               <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
                 <p className="min-w-0">
                   {original && extensaoDaNota(original.type) === "html"
-                    ? "O PDF pro cliente é o recibo da nota, montado pelo programa (sem o QR code). "
+                    ? "O PDF pro cliente é o recibo da nota (com o QR code), montado pelo programa a partir do XML. "
                     : "O PDF pro cliente é este, como a Focus NFe mandou. "}
                   O documento oficial é o XML.
                 </p>
