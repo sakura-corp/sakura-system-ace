@@ -240,6 +240,34 @@ describe("faturarOrdem: grava a taxa de cada linha de cartão", () => {
     });
   });
 
+  it("dividido em dois créditos (R$ 100 à vista + R$ 200 em 3x): cada parte com a sua taxa e as suas datas", async () => {
+    // O caminho inteiro: o formulário vira pagamentos (paraPagamentos) e cada
+    // linha de cartão ganha a taxa das PRÓPRIAS parcelas, não as da OS (3).
+    const { paraPagamentos, faturamentoFormVazio } = await import("@/schemas/faturamento");
+    const pagamentos = paraPagamentos(
+      {
+        ...faturamentoFormVazio(300),
+        dividirPagamento: true,
+        linhasPagamento: [
+          { formaPagamento: "cartao_credito", valor: "100", parcelas: "1" },
+          { formaPagamento: "cartao_credito", valor: "200", parcelas: "3" },
+        ],
+      },
+      300,
+    );
+    banco.tabela = tabelaPreenchida;
+    await faturarOrdem(os, pagamentos, 3, null, "op-1", 300);
+    const [aVista, tresVezes] = gravacoesDeTaxa().map((g) => g.args);
+    expect(aVista).toMatchObject({
+      p_parcelas: 1,
+      p_taxa_percentual: 3,
+      p_valor_taxa: 3,
+      p_recebimentos: [{ numero: 1, data_prevista: "2026-12-18", valor: 97 }],
+    });
+    expect(tresVezes).toMatchObject({ p_parcelas: 3, p_taxa_percentual: 4, p_valor_taxa: 8 });
+    expect((tresVezes.p_recebimentos as unknown[]).length).toBe(3);
+  });
+
   it("só Pix ou dinheiro: nem lê a tabela", async () => {
     banco.tabela = tabelaPreenchida;
     await faturarOrdem(

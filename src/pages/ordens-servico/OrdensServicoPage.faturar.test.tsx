@@ -137,8 +137,8 @@ describe("OrdensServicoPage — o Faturar em janela", () => {
     expect(ordem.id).toBe("os148");
     // 500 no Pix; 500 no cartão em 3x com 5% de juros = 525.
     expect(pagamentos).toEqual([
-      { formaPagamento: "pix", valor: 500 },
-      { formaPagamento: "cartao_credito", valor: 525 },
+      { formaPagamento: "pix", valor: 500, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 525, parcelas: 3 },
     ]);
     expect(parcelas).toBe(3);
     expect(previsao).toBeNull();

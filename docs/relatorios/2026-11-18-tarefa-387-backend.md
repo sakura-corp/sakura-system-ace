@@ -71,17 +71,16 @@
 - `errors.test.ts` e `lojas.tabelasDaLoja.test.ts` reprovaram com a 0088 antes de as frases e as
   listas entrarem.
 
+- **Pagamento dividido com dois créditos** (pedido da Sofia em 18/11, feito em 20/11): o teste
+  "R$ 100 à vista + R$ 200 em 3x" (do formulário até a taxa gravada) e o de `paraPagamentos`
+  reprovaram antes de `paraPagamentos` repassar `parcelas: linha.parcelas`, e passaram depois.
+
 ## O que passou sem eu ter visto reprovar
 - A migration rodando de novo sem erro (rodou 3 vezes a instalação inteira e 2 vezes a 0088
   sozinha; não há como "quebrar" isso de um jeito útil).
 - O `contraste:telas` e o `largura:telas` com as cenas novas (passaram de primeira).
 
 ## O que ficou de fora
-- **Pagamento dividido com duas linhas de crédito de parcelas diferentes** (ex.: R$ 100 à vista +
-  R$ 200 em 3x): as duas linhas gravam a taxa do 3x. O conserto é uma linha em
-  `src/schemas/faturamento.ts` (`paraPagamentos` repassar `parcelas: linha.parcelas`). Esse
-  arquivo está fora da lista da issue e no "Não fazer", então ficou pra Sofia decidir. A lib já
-  aceita, e há teste disso. Com uma linha de crédito só (o caso comum), funciona.
 - **Venda "receber depois" recebida no cartão** em Contas a Receber: fica sem taxa (a issue só
   pedia o faturamento). Pro DRE (#388), "sem taxa" pode ser tabela em branco, venda antiga, falha ao
   gravar ou isso.
@@ -96,8 +95,8 @@
   vem **depois da 0087** do PR #1120 (esta branch está em cima da dele, pela regra de
   `docs/supabase-de-teste.md`). Ordem: 0087 e 0088 no banco, depois a versão do programa.
 - **Sofia**: confirmar a leitura da tabela de taxas por quem só tem a permissão de OS (a issue dizia
-  "Caixa ou Relações"; sem a OS, quem só fatura não acharia a taxa). Também dizer se quer o conserto
-  de uma linha em `faturamento.ts`.
+  "Caixa ou Relações"; sem a OS, quem só fatura não acharia a taxa). **Ela confirmou em 18/11**, e
+  também pediu o conserto do pagamento dividido neste PR (feito em 20/11).
 - **Gustavo, no PC**: os testes do "No PC de quem fez", depois que a Sofia aplicar a migration no
   Supabase de teste.
 

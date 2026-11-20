@@ -112,8 +112,8 @@ describe("paraPagamentos", () => {
       ],
     };
     expect(paraPagamentos(valores, 200)).toEqual([
-      { formaPagamento: "pix", valor: 100 },
-      { formaPagamento: "cartao_credito", valor: 100 },
+      { formaPagamento: "pix", valor: 100, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 100, parcelas: 1 },
     ]);
   });
 
@@ -126,7 +126,7 @@ describe("paraPagamentos", () => {
         { formaPagamento: "cartao_credito", valor: "0", parcelas: "1" },
       ],
     };
-    expect(paraPagamentos(valores, 200)).toEqual([{ formaPagamento: "pix", valor: 200 }]);
+    expect(paraPagamentos(valores, 200)).toEqual([{ formaPagamento: "pix", valor: 200, parcelas: 1 }]);
   });
 
   it("'a receber depois' (recebidoAgora false) sempre vira um pagamento só, mesmo se dividirPagamento estiver true", () => {
@@ -231,9 +231,24 @@ describe("paraPagamentos com parcelamento por forma", () => {
       ],
     };
     expect(paraPagamentos(valores, 400, jurosParcelas)).toEqual([
-      { formaPagamento: "pix", valor: 300 },
-      { formaPagamento: "cartao_credito", valor: 105 },
+      { formaPagamento: "pix", valor: 300, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 105, parcelas: 3 },
     ]);
+  });
+});
+
+describe("paraPagamentos: as parcelas de cada linha (#387)", () => {
+  it("no dividido, cada linha leva as próprias parcelas (a taxa da maquininha depende delas)", () => {
+    const valores: FaturamentoFormValues = {
+      ...faturamentoFormVazio(300),
+      dividirPagamento: true,
+      linhasPagamento: [
+        { formaPagamento: "cartao_credito", valor: "100", parcelas: "1" },
+        { formaPagamento: "cartao_credito", valor: "200", parcelas: "3" },
+        { formaPagamento: "pix", valor: "50", parcelas: "4" },
+      ],
+    };
+    expect(paraPagamentos(valores, 350).map((p) => p.parcelas)).toEqual([1, 3, 1]);
   });
 });
 
