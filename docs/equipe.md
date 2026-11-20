@@ -434,8 +434,8 @@ está no meio de outra coisa, siga.
   Claude diz o que clicar e o que deve aparecer. O que a pessoa viu (ou o print) vai na descrição
   do PR.
 - **O PR**: título curto em português, descrição com o que mudou, como foi testado e o que **não**
-  foi testado. Pede a revisão da **Sofia** e **para**. Enquanto ela não revisa, a pessoa pode
-  pegar outra tarefa da leva, sem mexer no PR que está esperando.
+  foi testado. Pede a revisão do **colega do rodízio** (`docs/revisao-cruzada.md`) e **para**.
+  Enquanto não revisam, a pessoa pode pegar outra tarefa da leva, sem mexer no PR que está esperando.
 - **Ela pediu mudança no PR**: o Claude ajusta na mesma branch, roda as conferências de novo,
   envia e pede a revisão de novo.
 - **O CI ficou vermelho** (o "X" no PR): o Claude lê o erro, conserta e envia. Nunca desligar ou
@@ -525,8 +525,8 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 ## Tamanho da leva
 
-Todo PR da equipe espera a **Sofia revisar**, e ela revisa os três. Por isso:
-- a leva tem **só as tarefas que cabem no tempo dela de revisar**; quando a leva acaba, ela
+Todo PR da equipe espera a **revisão de um colega do rodízio** (`docs/revisao-cruzada.md`), e a Sofia mescla. Por isso:
+- a leva tem **só as tarefas que cabem no tempo de revisar da equipe**; quando a leva acaba, ela
   congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
   Claude dela, e o teste no programa de verdade fica pro dia de teste do fim de semana
