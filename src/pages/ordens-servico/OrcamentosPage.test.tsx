@@ -43,6 +43,11 @@ vi.mock("./CadastroPecaAvulsaModal", () => ({
   ),
 }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+const buscarConfiguracaoFiscal = vi.fn();
+vi.mock("@/lib/configuracoes", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/configuracoes")>()),
+  buscarConfiguracaoFiscal: (...a: unknown[]) => buscarConfiguracaoFiscal(...a),
+}));
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: async () => [
     { id: "c1", nome: "Maria da Silva", telefone: "(16) 99123-4567", veiculos: [] },
@@ -76,6 +81,9 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { OrcamentosPage } = await import("./OrcamentosPage");
+
+/** O espaço que não quebra, que o formatarMoeda põe depois do "R$". */
+const ESPACO_FIXO = String.fromCharCode(160);
 
 function ordem(extra: Partial<OrdemServico>): OrdemServico {
   return {
@@ -123,6 +131,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   listarOrcamentos.mockResolvedValue([noPrazo, vencido, recusado]);
   listarOrdensDoVeiculo.mockResolvedValue([]);
+  buscarConfiguracaoFiscal.mockResolvedValue({ nome_fantasia: "Loja Centro de Exemplo" });
 });
 
 describe("OrcamentosPage", () => {
@@ -137,6 +146,65 @@ describe("OrcamentosPage", () => {
     montar();
     await screen.findByText("Orçamento 1");
     expect(screen.queryAllByTitle("Mandar o orçamento pelo WhatsApp").length).toBeGreaterThan(0);
+  });
+
+  it("Imprimir abre a folha do orçamento com os itens, o total e o telefone; o Imprimir da janela chama a impressão (#1019)", async () => {
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+
+    const linha = screen.getByText("Orçamento 1").closest("tr")!;
+    await user.click(within(linha).getByRole("button", { name: "Imprimir Orçamento 1" }));
+
+    const janela = await screen.findByRole("dialog", { name: "Imprimir Orçamento 1" });
+    const folha = (await within(janela).findByTitle("Pré-visualização do orçamento")) as HTMLIFrameElement;
+    const html = folha.getAttribute("srcdoc") ?? "";
+    expect(html).toContain("Orçamento 1");
+    expect(html).toContain("Loja Centro de Exemplo");
+    expect(html).toContain("Maria da Silva");
+    expect(html).toContain("(16) 99123-4567");
+    expect(html).toContain("Alinhamento");
+    expect(html.replaceAll(ESPACO_FIXO, " ")).toContain("Total R$ 100,00");
+    expect(buscarConfiguracaoFiscal).toHaveBeenCalledWith("loja-a");
+
+    const imprimir = vi.fn();
+    Object.defineProperty(folha.contentWindow!, "print", { value: imprimir, configurable: true });
+    await user.click(within(janela).getByRole("button", { name: "Imprimir" }));
+    expect(imprimir).toHaveBeenCalledTimes(1);
+
+    // O "Fechar" do rodapé (o X do canto tem o mesmo nome).
+    await user.click(within(janela).getAllByRole("button", { name: "Fechar" }).at(-1)!);
+    expect(screen.queryByRole("dialog", { name: "Imprimir Orçamento 1" })).not.toBeInTheDocument();
+  });
+
+  it("sem o módulo Clientes, imprime assim mesmo, só sem o telefone (#1019)", async () => {
+    operadorAtual = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+
+    const linha = screen.getByText("Orçamento 1").closest("tr")!;
+    await user.click(within(linha).getByRole("button", { name: "Imprimir Orçamento 1" }));
+    const janela = await screen.findByRole("dialog", { name: "Imprimir Orçamento 1" });
+    const html =
+      (await within(janela).findByTitle("Pré-visualização do orçamento")).getAttribute("srcdoc") ?? "";
+    expect(html).toContain("Maria da Silva");
+    expect(html).not.toContain("99123-4567");
+  });
+
+  it("orçamento recusado não tem Imprimir (#1019)", async () => {
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
+
+    const linha = screen.getByText("Ana Recusada").closest("tr")!;
+    expect(within(linha).queryByRole("button", { name: /^Imprimir/ })).not.toBeInTheDocument();
+  });
+
+  it("o orçamento aberto também tem Imprimir, ao lado do Enviar (#1019)", async () => {
+    const user = montar();
+    await user.click(await screen.findByText("Orçamento 1"));
+
+    await user.click(screen.getByRole("button", { name: "Imprimir Orçamento 1" }));
+    expect(await screen.findByRole("dialog", { name: "Imprimir Orçamento 1" })).toBeInTheDocument();
   });
 
   it("busca só os orçamentos da loja, nunca a lista inteira de OS", async () => {

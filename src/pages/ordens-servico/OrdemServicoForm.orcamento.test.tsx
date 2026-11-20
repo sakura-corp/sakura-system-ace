@@ -324,6 +324,9 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
     quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: null,
   };
   const servico = { ...avulsa, id: "item-2", tipo: "servico", descricao: "Alinhamento" };
+  const cadastroDaLoja = [
+    { id: "peca-9", descricao: "Palheta Bosch", codigo_interno: null, codigo_barras: null, medida: null },
+  ] as never;
 
   async function ateConfirmar(user: ReturnType<typeof montar>["user"]) {
     await user.click(screen.getByRole("button", { name: "Aprovar" }));
@@ -331,19 +334,37 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
     await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
   }
 
-  it("com peça avulsa abre a janela em vez de aprovar; só aprova depois de escolher o caminho", async () => {
+  it("com peça avulsa abre a janela em vez de aprovar; só aprova depois de ligar a peça ao cadastro", async () => {
     const ordem = orcamento({ itens: [avulsa] as never });
-    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    const { user, onAprovar } = montar({ ordemExistente: ordem, pecas: cadastroDaLoja });
 
     await ateConfirmar(user);
 
     expect(screen.getByRole("dialog", { name: "Peças sem cadastro" })).toBeInTheDocument();
     expect(onAprovar).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta Bosch/ }));
     await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
 
-    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", []);
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", [{ itemId: "item-1", pecaId: "peca-9" }]);
+  });
+
+  // #1128: a peça digitada sem cadastro não tem NCM, e a NFC-e não sai sem
+  // NCM. Antes dava pra "Seguir sem cadastro" e a OS só travava na nota, já
+  // faturada. Agora o orçamento só vira OS com cada peça no cadastro.
+  it("peça digitada sem cadastro não vira OS sem cadastrar (#1128)", async () => {
+    const ordem = orcamento({ itens: [avulsa] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+
+    await ateConfirmar(user);
+
+    const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
+    expect(within(janela).queryByRole("radio", { name: "Seguir sem cadastro" })).not.toBeInTheDocument();
+    expect(within(janela).getByRole("radio", { name: "Cadastrar agora" })).toBeInTheDocument();
+    expect(within(janela).getByRole("button", { name: "Aprovar orçamento" })).toBeDisabled();
+    expect(onAprovar).not.toHaveBeenCalled();
   });
 
   it("sem peça avulsa (só serviço) aprova direto, sem janela", async () => {
@@ -368,11 +389,13 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
 
   it("se a aprovação falha, o erro aparece dentro da janela e ela continua aberta", async () => {
     const ordem = orcamento({ itens: [avulsa] as never });
-    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    const { user, onAprovar } = montar({ ordemExistente: ordem, pecas: cadastroDaLoja });
     onAprovar.mockRejectedValueOnce(new Error("A OS 9 foi aprovada, mas a baixa não entrou"));
 
     await ateConfirmar(user);
-    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta Bosch/ }));
     await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
 
     const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
