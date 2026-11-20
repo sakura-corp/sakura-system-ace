@@ -16,6 +16,10 @@
  *    avisam (#950).
  * 7. Peça com o CFOP que não combina com o CSOSN (5102 + 500) avisa com o
  *    nome da peça, sem travar o botão (#968).
+ * 8. Nota já enviada nunca volta pro "Confirmar emissão": nem quando a
+ *    consulta falha (EsperaVencidaError), nem quando a nota sai autorizada e
+ *    o registro dela no sistema falha. A janela fica no "Conferir de novo",
+ *    com a referência à mostra (achado na revisão da #1112).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
@@ -30,6 +34,8 @@ const listarPecasJanela = vi.fn();
 const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const emitirNFCe = vi.fn();
+const consultarNFCe = vi.fn();
+const salvarArquivoEmitido = vi.fn();
 vi.mock("@/lib/pecas", () => ({
   buscarDadosFiscaisDasPecas: (...a: unknown[]) => buscarDadosFiscaisDasPecas(...a),
   listarPecasJanela: (...a: unknown[]) => listarPecasJanela(...a),
@@ -47,19 +53,21 @@ vi.mock("@/lib/focusNfe", async () => {
     valorTotalNFCe: real.valorTotalNFCe,
     emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
     emitirNFSe: vi.fn(),
-    consultarNFCe: vi.fn(),
+    consultarNFCe: (...a: unknown[]) => consultarNFCe(...a),
     consultarNFSe: vi.fn(),
     baixarArquivoNota: vi.fn(),
-    refPertenceAOrdem: vi.fn(),
-    FocusNfeError: class extends Error {},
-    EsperaVencidaError: class extends Error {},
+    refPertenceAOrdem: real.refPertenceAOrdem,
+    FocusNfeError: real.FocusNfeError,
+    EsperaVencidaError: real.EsperaVencidaError,
   };
 });
 const registrarMovimento = vi.fn();
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: (...a: unknown[]) => registrarMovimento(...a) }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
-vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
+vi.mock("@/lib/notasFiscais", () => ({
+  salvarArquivoEmitido: (...a: unknown[]) => salvarArquivoEmitido(...a),
+}));
 const clienteDaOrdem = vi.fn();
 vi.mock("@/lib/clientes", () => ({
   buscarClienteEVeiculoDaOrdem: async () => ({ cliente: clienteDaOrdem(), veiculo: null }),
@@ -74,6 +82,7 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { EmitirNotaFiscalModal } = await import("./EmitirNotaFiscalModal");
+const { EsperaVencidaError } = await import("@/lib/focusNfe");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
@@ -573,5 +582,56 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
     expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
     // As peças também não vieram: não dá pra dizer que falta cadastrar a peça.
     expect(screen.queryByText(/Esta nota não pode sair ainda/)).not.toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — nota já enviada nunca volta pro emitir (nota dupla)", () => {
+  const REF = "os51-nfce-1795000000000";
+  const autorizada = { status: "autorizado", numero: "10", ref: REF, caminho_xml_nota_fiscal: "/x.xml" };
+  const pneu = () => [item("i1", "Pneu 175/70 R13", "peca-1")];
+
+  it("consulta que falhou depois do envio: Conferir de novo, com a referência, e sem o emitir", async () => {
+    emitirNFCe.mockRejectedValue(
+      new EsperaVencidaError("Não consegui conferir se a nota saiu — não emita de novo.", REF),
+    );
+    const { user } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(REF))).toBeInTheDocument();
+  });
+
+  it("nota autorizada que não foi registrada: Conferir de novo registra, sem emitir outra", async () => {
+    emitirNFCe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockRejectedValueOnce(new Error("Failed to fetch")).mockResolvedValue(undefined);
+    consultarNFCe.mockResolvedValue(autorizada);
+    const { user, onEmitido } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    const conferir = await screen.findByRole("button", { name: "Conferir de novo" });
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(screen.getByText(/autorizada.*não emita de novo/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(REF))).toBeInTheDocument();
+    expect(onEmitido).not.toHaveBeenCalled();
+
+    await user.click(conferir);
+    await waitFor(() => expect(onEmitido).toHaveBeenCalledTimes(1));
+    expect(salvarArquivoEmitido).toHaveBeenCalledTimes(2);
+    expect(consultarNFCe).toHaveBeenCalledWith(REF, "loja-1");
+    expect(emitirNFCe).toHaveBeenCalledTimes(1);
+  });
+
+  it("registrar pela referência e o registro falha: fica no Conferir de novo, sem o emitir", async () => {
+    consultarNFCe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockRejectedValue(new Error("Failed to fetch"));
+    const { user } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: /já saiu na Focus NFe/ }));
+    await user.type(screen.getByPlaceholderText(/os51-nfce-/), REF);
+    await user.click(screen.getByRole("button", { name: "Registrar esta nota" }));
+
+    expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(emitirNFCe).not.toHaveBeenCalled();
   });
 });

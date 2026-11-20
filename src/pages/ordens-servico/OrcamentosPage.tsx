@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CircleCheck, FolderOpen, Plus, TriangleAlert } from "lucide-react";
+import { CircleCheck, FolderOpen, Plus, Printer, TriangleAlert } from "lucide-react";
 import { Abas } from "@/components/Abas";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
@@ -59,6 +59,7 @@ import type {
 import { nomeDocumento, totalOrdem } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { OrcamentoVisualModal } from "./OrcamentoVisualModal";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { SeloDaOrdem } from "./SeloDaOrdem";
 
@@ -96,6 +97,7 @@ export function OrcamentosPage() {
   const [aberto, setAberto] = useState<OrdemServico | null>(null);
   const [lista, setLista] = useState<"abertos" | "recusados">("abertos");
   const [busca, setBusca] = useState("");
+  const [imprimindo, setImprimindo] = useState<OrdemServico | null>(null);
 
   const funcionarioAtualId = funcionarios.find((f) => f.operador_id === operador?.id)?.id ?? "";
   const saldoPorPeca = useMemo(() => saldos ?? new Map<string, number>(), [saldos]);
@@ -316,6 +318,27 @@ export function OrcamentosPage() {
     );
   }
 
+  // Imprimir (#1019) fica ao lado do "Enviar": os dois jeitos de entregar o
+  // orçamento ao cliente. Só no orçamento aberto (o recusado já acabou).
+  function acoesDoOrcamento(ordem: OrdemServico) {
+    if (ordem.status !== "orcamento") return null;
+    return (
+      <>
+        <Botao
+          tamanho="pequeno"
+          icone={<Printer />}
+          title="Imprimir o orçamento pra entregar ao cliente"
+          // Cada linha tem o seu: o leitor de tela diz de qual orçamento é.
+          aria-label={`Imprimir ${nomeDocumento(ordem)}`}
+          onClick={() => setImprimindo(ordem)}
+        >
+          Imprimir
+        </Botao>
+        {botaoWhatsapp(ordem)}
+      </>
+    );
+  }
+
   const formProps = {
     clientes,
     pecas,
@@ -373,8 +396,18 @@ export function OrcamentosPage() {
           key={aberto.id}
           {...formProps}
           ordemExistente={aberto}
-          acoesExtras={botaoWhatsapp(aberto)}
+          acoesExtras={acoesDoOrcamento(aberto)}
           onCancelar={() => setAberto(null)}
+        />
+      )}
+
+      {imprimindo && (
+        <OrcamentoVisualModal
+          ordem={imprimindo}
+          telefoneCliente={
+            podeVerCadastro ? clientes.find((c) => c.id === imprimindo.cliente_id)?.telefone : null
+          }
+          onFechar={() => setImprimindo(null)}
         />
       )}
 
@@ -484,7 +517,7 @@ export function OrcamentosPage() {
                         teclado (até aqui só o clique do mouse na linha abria). */}
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1.5">
-                        {botaoWhatsapp(ordem)}
+                        {acoesDoOrcamento(ordem)}
                         <AcoesDaLinha
                           descricao={nomeDocumento(ordem)}
                           acoes={[
