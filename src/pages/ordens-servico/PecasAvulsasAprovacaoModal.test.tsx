@@ -3,9 +3,11 @@
  * Teste de TELA da janela de aprovação com peça sem cadastro (#655).
  *
  * Promessas guardadas aqui:
- * 1. "Aprovar orçamento" fica travado até CADA peça avulsa ter um caminho.
+ * 1. "Aprovar orçamento" fica travado até CADA peça avulsa estar ligada a uma
+ *    peça do cadastro. Não existe mais "Seguir sem cadastro" (#1128): peça
+ *    sem cadastro não tem NCM, e a OS só descobria isso na hora da NFC-e.
  * 2. Cada caminho manda o vínculo certo: "já tenho" e "cadastrar agora"
- *    mandam a peça; "seguir sem cadastro" não manda nada.
+ *    mandam a peça.
  * 3. As parecidas com o que foi digitado vêm no topo da lista.
  * 4. "Cadastrar agora" abre o cadastro com nome e preço (e custo) já
  *    preenchidos e, ao salvar, guarda a peça nova como caminho.
@@ -107,41 +109,39 @@ describe("PecasAvulsasAprovacaoModal — o Aprovar só libera sem ponta solta", 
     expect(aprovar()).toBeDisabled();
     expect(screen.getByText("Faltam 2 peças para escolher o que fazer.")).toBeInTheDocument();
 
-    await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "Seguir sem cadastro" }));
-    expect(aprovar()).toBeDisabled();
-    expect(screen.getByText("Falta escolher o que fazer com 1 peça.")).toBeInTheDocument();
-
     // "Já tenho" sem escolher a peça ainda é ponta solta.
     await user.click(secao("Filtro de óleo PSL55").getByRole("radio", { name: "É uma peça que já tenho" }));
     expect(aprovar()).toBeDisabled();
 
     await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
     await user.click(screen.getByRole("button", { name: "Amortecedor dianteiro" }));
-    expect(aprovar()).toBeEnabled();
+    expect(aprovar()).toBeDisabled();
+    expect(screen.getByText("Falta escolher o que fazer com 1 peça.")).toBeInTheDocument();
     expect(onConfirmar).not.toHaveBeenCalled();
+  });
+
+  it("não oferece 'Seguir sem cadastro': a OS só nasce com cada peça no cadastro (#1128)", () => {
+    montar([palheta]);
+
+    expect(screen.queryByRole("radio", { name: "Seguir sem cadastro" })).not.toBeInTheDocument();
+    expect(secao("Palheta 20 polegadas").getAllByRole("radio").map((r) => r.closest("label")?.textContent)).toEqual([
+      "É uma peça que já tenho",
+      "Cadastrar agora",
+    ]);
+    expect(aprovar()).toBeDisabled();
   });
 });
 
 describe("PecasAvulsasAprovacaoModal — os caminhos mandam o vínculo certo", () => {
-  it("'já tenho' manda a peça escolhida; 'sem cadastro' não manda nada", async () => {
-    const { user, onConfirmar } = montar([palheta, filtro]);
+  it("'já tenho' manda a peça escolhida", async () => {
+    const { user, onConfirmar } = montar([palheta]);
 
     await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "É uma peça que já tenho" }));
     await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
     await user.click(screen.getByRole("button", { name: "Amortecedor dianteiro" }));
-    await user.click(secao("Filtro de óleo PSL55").getByRole("radio", { name: "Seguir sem cadastro" }));
     await user.click(aprovar());
 
     expect(onConfirmar).toHaveBeenCalledWith([{ itemId: "i1", pecaId: "p-1" }]);
-  });
-
-  it("só 'seguir sem cadastro': aprova mandando lista vazia", async () => {
-    const { user, onConfirmar } = montar([palheta]);
-
-    await user.click(secao("Palheta 20 polegadas").getByRole("radio", { name: "Seguir sem cadastro" }));
-    await user.click(aprovar());
-
-    expect(onConfirmar).toHaveBeenCalledWith([]);
   });
 
   it("as parecidas com o que foi digitado vêm no topo da lista", async () => {

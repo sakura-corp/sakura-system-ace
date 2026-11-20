@@ -249,8 +249,9 @@ describe("ehPecaAvulsa", () => {
   });
 });
 
-// Na aprovação, toda peça avulsa precisa de um caminho: existente, cadastrar
-// ou sem cadastro. Nenhuma ponta solta.
+// Na aprovação (o mesmo passo de virar OS), toda peça avulsa precisa de uma
+// peça do cadastro: existente ou cadastrada agora. Não há "sem cadastro"
+// desde a #1128. Nenhuma ponta solta.
 const itensDoOrcamento = [
   { id: "avulsa-1", tipo: "peca" as const, peca_id: null },
   { id: "pneu", tipo: "peca" as const, peca_id: "pneu-cadastrado" },
@@ -269,7 +270,7 @@ describe("pendenciasDaAprovacao", () => {
   it("com um caminho pra cada avulsa, a lista fica vazia e a aprovação segue", () => {
     const escolhas = new Map<string, CaminhoAvulsa>([
       ["avulsa-1", { caminho: "existente", pecaId: "pneu-cadastrado" }],
-      ["avulsa-2", { caminho: "sem_cadastro" }],
+      ["avulsa-2", { caminho: "cadastrar", pecaId: "peca-nova" }],
     ]);
     expect(pendenciasDaAprovacao(itensDoOrcamento, escolhas)).toEqual([]);
   });
@@ -287,12 +288,11 @@ describe("pendenciasDaAprovacao", () => {
 });
 
 describe("vinculosDaAprovacao", () => {
-  it("existente e cadastrar viram vínculo item → peça; sem cadastro não", () => {
+  it("existente e cadastrar viram vínculo item → peça; avulsa sem escolha não", () => {
     const itens = [...itensDoOrcamento, { id: "avulsa-3", tipo: "peca" as const, peca_id: null }];
     const escolhas = new Map<string, CaminhoAvulsa>([
       ["avulsa-1", { caminho: "existente", pecaId: "pneu-cadastrado" }],
       ["avulsa-2", { caminho: "cadastrar", pecaId: "peca-nova" }],
-      ["avulsa-3", { caminho: "sem_cadastro" }],
     ]);
     expect(vinculosDaAprovacao(itens, escolhas)).toEqual([
       { itemId: "avulsa-1", pecaId: "pneu-cadastrado" },

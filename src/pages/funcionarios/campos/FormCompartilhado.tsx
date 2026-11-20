@@ -54,33 +54,3 @@ export function Campo({
     </label>
   );
 }
-
-/**
- * A aba do alto de uma tela ou de um formulário: laranja só na ativa (regra 2),
- * as outras na cor secundária. É botão de verdade (`type="button"`): dentro de
- * um <form>, um botão sem tipo enviaria o formulário.
- */
-export function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={ativa}
-      className={`border-b-2 px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-acao text-texto"
-          : "border-transparent text-texto-2 hover:text-texto"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}

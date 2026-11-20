@@ -188,6 +188,11 @@ export class EsperaVencidaError extends FocusNfeError {
 // nota continua processando do lado deles; dá pra consultar de novo depois).
 // A prefeitura costuma ser mais lenta que a SEFAZ (em 01/10/2026 a NFS-e
 // passou dos 30s e saiu autorizada logo depois), por isso espera o dobro.
+//
+// Só é chamada DEPOIS de o envio ter sido aceito. Daí em diante, consulta que
+// falha (sem internet, porteiro fora do ar) não quer dizer que a nota não
+// saiu: tenta de novo na próxima volta e, se não der, sai com a `ref` — nunca
+// com um erro comum, que devolveria a tela pro "Confirmar emissão" (#1112).
 async function aguardarAutorizacao(
   consultar: () => Promise<RespostaFocusNfe>,
   ref: string,
@@ -195,17 +200,32 @@ async function aguardarAutorizacao(
   tentativas: number,
 ): Promise<RespostaFocusNfe> {
   const intervaloMs = 3000;
+  let ultimaFalha: unknown = null;
   for (let i = 0; i < tentativas; i++) {
-    const resposta = await consultar();
-    if (resposta.status !== "processando_autorizacao") return resposta;
-    await aguardar(intervaloMs);
+    try {
+      const resposta = await consultar();
+      if (resposta.status !== "processando_autorizacao") return resposta;
+      ultimaFalha = null;
+    } catch (erro) {
+      ultimaFalha = erro;
+      // O porteiro RECUSOU (sem permissão, por exemplo): esperar não muda
+      // nada. Sai já, mas ainda com a `ref`, pra conferir depois.
+      if (motivoDaRecusa(erro)) break;
+    }
+    if (i < tentativas - 1) await aguardar(intervaloMs);
   }
   // A `ref` precisa ir junto. Sem ela, o caminho natural seria clicar em
   // "emitir" de novo e acabar com DUAS notas fiscais válidas pra mesma venda.
+  // A mensagem da falha não vai junto: a de rede diz "tente de novo", e aqui
+  // isso seria lido como "emita de novo".
+  const motivo = ultimaFalha
+    ? "Não consegui conferir se a nota saiu (a internet ou o servidor falhou). A nota já foi " +
+      "enviada e pode sair autorizada"
+    : `${quemAutoriza} está demorando mais que o normal pra responder. A nota já foi enviada e ` +
+      "deve sair autorizada em instantes";
   throw new EsperaVencidaError(
-    `${quemAutoriza} está demorando mais que o normal pra responder. A nota já foi enviada e ` +
-      'deve sair autorizada em instantes — não emita de novo. Espere um pouco e clique em ' +
-      '"Conferir de novo": quando ela sair, o sistema registra aqui.',
+    `${motivo} — não emita de novo. Espere um pouco e clique em "Conferir de novo": quando ` +
+      "ela sair, o sistema registra aqui.",
     ref,
   );
 }
