@@ -27,6 +27,9 @@ const buscarLojaDoRecibo = vi.fn();
 vi.mock("@/lib/reciboNotaFiscal", () => ({
   buscarOsDoRecibo: (...a: unknown[]) => buscarOsDoRecibo(...a),
   buscarLojaDoRecibo: (...a: unknown[]) => buscarLojaDoRecibo(...a),
+  // NFC-e não tem valor guardado (#1142): só a NFS-e.
+  buscarValoresGuardadosDaNota: async () => null,
+  comValoresGuardados: (os: unknown) => ({ os, valorDaNota: null }),
 }));
 
 import { VerDanfeModal } from "./VerDanfeModal";

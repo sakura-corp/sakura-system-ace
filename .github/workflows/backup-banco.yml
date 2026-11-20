@@ -304,6 +304,19 @@ jobs:
 
                   if [ "$CODIGO" = "200" ]; then
                     QUANTAS=$((QUANTAS + 1))
+                    # NFS-e: o valor e os serviços guardados na emissão
+                    # (#1142), num arquivinho ao lado do XML. Nota antiga não
+                    # tem: 404 é normal e não conta como falha.
+                    if [[ "$CAMINHO" == nfse/*.xml ]]; then
+                      VALORES="${CAMINHO%.xml}.valores.json"
+                      DESTINO_VALORES="$PASTA/notas/$(echo "$VALORES" | tr '/' '_')"
+                      CODIGO_VALORES="$(curl -sSL -o "$DESTINO_VALORES" -w '%{http_code}' \
+                        --connect-timeout 15 --max-time 60 --retry 2 \
+                        -H "Authorization: Bearer $SERVICE_KEY" \
+                        -H "apikey: $SERVICE_KEY" \
+                        "$SUPABASE_URL/storage/v1/object/notas-fiscais/$VALORES" || echo "000")"
+                      [ "$CODIGO_VALORES" = "200" ] || rm -f "$DESTINO_VALORES"
+                    fi
                   else
                     # A resposta de erro do Supabase é um JSON curto e NÃO traz
                     # a chave dentro — dá pra mostrar.

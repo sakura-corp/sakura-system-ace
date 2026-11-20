@@ -19,6 +19,9 @@ vi.mock("@/lib/notasFiscais", () => ({
 vi.mock("@/lib/reciboNotaFiscal", () => ({
   buscarOsDoRecibo: vi.fn().mockResolvedValue(null),
   buscarLojaDoRecibo: vi.fn().mockResolvedValue(null),
+  // O valor guardado da NFS-e (#1142) não entra neste teste do botão de PDF.
+  buscarValoresGuardadosDaNota: vi.fn().mockResolvedValue(null),
+  comValoresGuardados: (os: unknown) => ({ os, valorDaNota: null }),
 }));
 
 import { NotaFiscalVisualModal } from "./NotaFiscalVisualModal";

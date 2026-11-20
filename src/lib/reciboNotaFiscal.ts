@@ -10,6 +10,8 @@
 import { supabase } from "./supabase";
 import { buscarClienteEVeiculoDaOrdem } from "./clientes";
 import type { LojaDoRecibo, OsDoRecibo } from "./notaFiscalXml";
+import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import { lerValoresGuardados, type ValoresGuardadosDaNota } from "@/schemas/reciboNotaFiscal";
 
 interface LinhaItemDaOs {
   tipo: "peca" | "servico";
@@ -184,4 +186,72 @@ export async function buscarLojaDoRecibo(lojaId: string): Promise<LojaDoRecibo |
     return null;
   }
   return data ? montarLojaDoRecibo(data as LinhaLojaDoRecibo) : null;
+}
+
+// O valor da NFS-e (#1142), sem migration: na emissão, o programa guarda um
+// arquivinho JSON ao lado do XML, no mesmo lugar (bucket "notas-fiscais"),
+// com o valor e os serviços que foram na nota. A Giap não devolve nada disso.
+// Nota emitida antes desta versão, ou feita fora do programa, não tem o
+// arquivo: o recibo continua como era ("Itens na OS nº X").
+
+/** Onde fica o arquivinho do valor: o caminho do XML, com outro final. */
+export function caminhoDosValores(storagePath: string): string {
+  return `${storagePath.replace(/\.xml$/i, "")}.valores.json`;
+}
+
+/** Guarda o retrato da nota. Nunca falha: a nota já saiu, isto é só um extra. */
+export async function guardarValoresDaNota(
+  storagePath: string,
+  valores: ValoresGuardadosDaNota,
+): Promise<void> {
+  try {
+    const { error } = await supabase.storage
+      .from("notas-fiscais")
+      .upload(caminhoDosValores(storagePath), JSON.stringify(valores), {
+        contentType: "application/json",
+      });
+    if (error) console.warn("Nota fiscal: não deu pra guardar o valor da nota", error);
+  } catch (err) {
+    console.warn("Nota fiscal: não deu pra guardar o valor da nota", err);
+  }
+}
+
+/** O retrato guardado na emissão; `null` se não há (nota antiga, de fora, NFC-e). */
+export async function buscarValoresGuardadosDaNota(
+  arquivo: Pick<NotaFiscalArquivo, "tipo" | "origem" | "storage_path" | "focus_nfe_ref">,
+): Promise<ValoresGuardadosDaNota | null> {
+  if (arquivo.tipo !== "nfse" || arquivo.origem !== "automatica") return null;
+  // A NFS-e do Padrão Nacional ("os<n>-nfsen-") traz o valor no XML: nem procura.
+  if (arquivo.focus_nfe_ref && /-nfsen-/.test(arquivo.focus_nfe_ref)) return null;
+  try {
+    const { data, error } = await supabase.storage
+      .from("notas-fiscais")
+      .download(caminhoDosValores(arquivo.storage_path));
+    if (error || !data) return null;
+    return lerValoresGuardados(JSON.parse(await data.text()));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Junta o retrato ao que o recibo recebe: os serviços da OS dão lugar aos que
+ * foram na nota (com os valores), e o valor da nota passa a ser conhecido.
+ * Sem a OS, o recibo da Giap não tem onde mostrar (fica como era).
+ */
+export function comValoresGuardados(
+  os: OsDoRecibo | null,
+  valores: ValoresGuardadosDaNota | null,
+): { os: OsDoRecibo | null; valorDaNota: number | null } {
+  if (!os || !valores) return { os, valorDaNota: null };
+  return {
+    os: {
+      ...os,
+      itens: [
+        ...os.itens.filter((i) => i.tipo !== "servico"),
+        ...valores.itens.map((i) => ({ tipo: "servico" as const, ...i, garantiaDias: null })),
+      ],
+    },
+    valorDaNota: valores.valorServicos,
+  };
 }
