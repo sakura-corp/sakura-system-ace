@@ -55,7 +55,7 @@ truncate table
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
-  ordens_servico_itens, ordens_servico, funcionario_filhos, funcionarios,
+  ordens_servico_trocas, ordens_servico_itens, ordens_servico, funcionario_filhos, funcionarios,
   depositos, veiculos, clientes, importacao_lotes, pecas, servicos, fornecedores,
   categorias, categorias_servicos, categorias_caixa,
   operador_lojas, operadores, lojas
@@ -163,6 +163,11 @@ insert into ordens_servico (id, numero, loja_id, cliente_id, status, data_fecham
 insert into ordens_servico_itens (id, ordem_servico_id, tipo, descricao, quantidade, preco_unitario) values
   ('44444444-1111-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', 'peca', 'Item da OS da loja A', 1, 100.00),
   ('44444444-1111-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', 'peca', 'Item da OS da loja B', 1, 100.00);
+
+-- Uma troca em OS faturada (0090) em cada loja.
+insert into ordens_servico_trocas (id, ordem_servico_id, loja_id, motivo, total) values
+  ('44444444-2222-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'Troca da loja A', 100.00),
+  ('44444444-2222-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', '11111111-1111-1111-1111-1111111111bb', 'Troca da loja B', 100.00);
 
 insert into caixa_movimentos (id, loja_id, tipo, valor, descricao) values
   ('55555555-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'entrada', 100.00, 'Movimento da loja A'),

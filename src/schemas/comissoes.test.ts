@@ -399,3 +399,44 @@ describe("colunaLucroSomaMaisQueOTotal", () => {
     expect(colunaLucroSomaMaisQueOTotal([])).toBe(false);
   });
 });
+
+// #1145: trocar peça ou serviço de OS faturada com o total igual. A comissão
+// é recalculada pelos itens: o vendido não muda (é o total faturado), e o
+// custo e o lucro passam a ser os da peça que ficou na OS. Quem executou o
+// item novo é quem leva a comissão de técnico dele.
+describe("resumirComissoes — depois de trocar peça numa OS faturada (#1145)", () => {
+  const custoPeca = new Map([
+    ["peca-pneu", 100],
+    ["peca-pneu-certo", 120],
+  ]);
+  const calcular = (o: OrdemServico) =>
+    resumirComissoes({
+      ordens: [o],
+      funcionarios: FUNCIONARIOS,
+      custoPeca,
+      custoServico: CUSTO_SERVICO,
+      ordensAReceber: new Set(),
+      de: "2026-09-01",
+      ate: "2026-09-30",
+    });
+
+  it("o vendido fica igual, e o custo e a comissão seguem a peça nova", () => {
+    const antes = ordem({ vendedor_id: "vend", itens: [item({ id: "i1", tecnico_id: "tec" })] });
+    const depois = ordem({
+      vendedor_id: "vend",
+      itens: [item({ id: "i1", peca_id: "peca-pneu-certo", descricao: "Pneu certo", tecnico_id: "tec" })],
+    });
+
+    const pedroAntes = calcular(antes).find((l) => l.funcionarioId === "vend")!;
+    const pedroDepois = calcular(depois).find((l) => l.funcionarioId === "vend")!;
+    expect(pedroDepois.comoVendedor.vendido).toBe(pedroAntes.comoVendedor.vendido);
+    expect(pedroAntes.comoVendedor.custo).toBe(100);
+    expect(pedroDepois.comoVendedor.custo).toBe(120);
+    // 10% do lucro: 150 − 100 = 50 → 5; 150 − 120 = 30 → 3.
+    expect(pedroAntes.comoVendedor.comissao).toBe(5);
+    expect(pedroDepois.comoVendedor.comissao).toBe(3);
+
+    const marcosDepois = calcular(depois).find((l) => l.funcionarioId === "tec")!;
+    expect(marcosDepois.comoTecnico.custo).toBe(120);
+  });
+});

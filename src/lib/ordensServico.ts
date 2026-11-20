@@ -4,6 +4,8 @@ import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
 import { mensagemDeErro } from "./errors";
+import { diaLocal } from "./datas";
+import type { ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
@@ -24,6 +26,7 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
+  TrocaDeOsFaturada,
 } from "@/types/os";
 
 export interface PagamentoOrdem {
@@ -540,6 +543,75 @@ export async function editarItemOrdem(
     p_operador: operadorId,
   });
   if (error) throw error;
+}
+
+// Trocar peça ou serviço de uma OS JÁ FATURADA, com o total igual (#1145).
+// É o único caminho pra mexer nos itens depois de faturar: `editarItemOrdem`
+// e `adicionarItensOrdem` continuam recusando. Uma chamada só
+// (`trocar_itens_os_faturada`, migration 0090): o banco trava a OS, confere
+// que quem chama é gerente (admin da loja), que não há nota fiscal, que o
+// caixa do dia da fatura está aberto e que o total é o mesmo; troca os itens,
+// acerta o estoque pela diferença de cada peça e grava o histórico. Caixa e
+// contas a receber não mudam. `itens` é a lista FINAL da OS.
+//
+// O dia da fatura vai daqui porque o banco não sabe o fuso da loja (o mesmo
+// motivo do fechamento de caixa, 0058).
+export async function trocarItensOsFaturada(
+  ordem: OrdemServico,
+  itens: ItemDaTroca[],
+  motivo: string,
+  aceitaEstoqueNegativo: boolean,
+  operadorId: string,
+): Promise<void> {
+  if (ordem.status !== "faturada" || !ordem.data_fechamento) {
+    throw new Error("Esta OS ainda não foi faturada: corrija os itens direto na OS.");
+  }
+  const { error } = await supabase.rpc("trocar_itens_os_faturada", {
+    p_ordem: ordem.id,
+    p_itens: itens.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      tipo: item.tipo,
+      peca_id: item.peca_id,
+      servico_id: item.servico_id,
+      tecnico_id: item.tecnico_id,
+      descricao: item.descricao.trim(),
+      quantidade: item.quantidade,
+      preco_unitario: item.preco_unitario,
+      desconto: item.desconto,
+      custo_unitario: item.custo_unitario ?? null,
+    })),
+    p_motivo: motivo.trim(),
+    p_dia_da_fatura: diaLocal(ordem.data_fechamento),
+    p_aceita_estoque_negativo: aceitaEstoqueNegativo,
+    p_operador: operadorId,
+  });
+  if (error) {
+    if ((error as { code?: string }).code === "SKNEG") throw new EstoqueNegativoNaTrocaError(error.message);
+    throw error;
+  }
+}
+
+/**
+ * O banco viu que a troca deixaria peça com estoque negativo e a pessoa não
+ * tinha confirmado (o saldo da tela estava velho). A janela mostra o aviso e
+ * pede a confirmação.
+ */
+export class EstoqueNegativoNaTrocaError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "EstoqueNegativoNaTrocaError";
+  }
+}
+
+/** O histórico das trocas depois de faturada (#1145), da mais nova pra mais velha. */
+export async function listarTrocasDaOrdem(ordemId: string): Promise<TrocaDeOsFaturada[]> {
+  const { data, error } = await supabase
+    .from("ordens_servico_trocas")
+    .select("id, operador_nome, motivo, itens_antes, itens_depois, total, criado_em")
+    .eq("ordem_servico_id", ordemId)
+    .order("criado_em", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as TrocaDeOsFaturada[];
 }
 
 /**

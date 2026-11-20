@@ -137,6 +137,13 @@ ordens_servico_itens,select,2,1,0,0,0,não tem loja_id próprio: herda pela OS; 
 ordens_servico_itens,insert,1,1,0,0,0,só com o módulo OS
 ordens_servico_itens,update,2,1,0,0,0,
 ordens_servico_itens,delete,2,1,0,0,0,
+# O histórico das trocas em OS faturada (0090, #1145): lê quem lê a OS; grava
+# só o admin da loja (pela função trocar_itens_os_faturada); ninguém altera
+# nem apaga.
+ordens_servico_trocas,select,2,1,0,0,0,histórico da troca em OS faturada: lê quem lê a OS
+ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente)
+ordens_servico_trocas,update,0,0,0,0,0,o histórico não se altera
+ordens_servico_trocas,delete,0,0,0,0,0,o histórico não se apaga (sai junto com a OS)
 #
 # As cinco janelas da 0075, uma por tela. Rodam com os direitos do dono: o
 # filtro de loja e o de módulo estão escritos DENTRO de cada uma. Por isso o
