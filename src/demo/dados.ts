@@ -293,15 +293,15 @@ export const orcamentos = [
 ];
 
 export const categoriasCaixa = [
-  { id: "cc1", nome: "Aluguel", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc3", nome: "Energia elétrica", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc4", nome: "Compra de peças", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", criado_em: dia(-400) },
-  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", criado_em: dia(-400) },
-  { id: "cc7", nome: "Internet e telefone", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", criado_em: dia(-400) },
+  { id: "cc1", nome: "Aluguel", tipo: "saida", grupo: "despesas_administrativas", criado_em: dia(-400) },
+  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", grupo: "despesas_pessoal", criado_em: dia(-400) },
+  { id: "cc3", nome: "Energia elétrica", tipo: "saida", grupo: "despesas_administrativas", criado_em: dia(-400) },
+  { id: "cc4", nome: "Compra de peças", tipo: "saida", grupo: "custos", criado_em: dia(-400) },
+  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", grupo: "outras_receitas", criado_em: dia(-400) },
+  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", grupo: "fora_do_resultado", criado_em: dia(-400) },
+  { id: "cc7", nome: "Internet e telefone", tipo: "saida", grupo: "a_classificar", criado_em: dia(-400) },
+  { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", grupo: "a_classificar", criado_em: dia(-400) },
+  { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", grupo: "a_classificar", criado_em: dia(-400) },
 ];
 function nomeDaCategoriaCaixa(id: Qualquer) {
   return categoriasCaixa.find((c) => c.id === id)!.nome;
@@ -746,6 +746,37 @@ export const jurosParcelas = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => ({
   loja_id: LOJA, numero_parcelas: n, juros_percentual: Number((1.99 + (n - 2) * 0.75).toFixed(2)),
 }));
 
+// Taxas da maquininha (#387), inventadas: só débito, crédito à vista e 2x a 6x;
+// o resto fica em branco (a loja não informou).
+export const taxasMaquininha = [
+  { forma: "cartao_debito", parcelas: 1, taxa_percentual: 1.39, prazo_dias: 1, recebe_tudo_de_uma_vez: false },
+  { forma: "cartao_credito", parcelas: 1, taxa_percentual: 3.15, prazo_dias: 30, recebe_tudo_de_uma_vez: false },
+  { forma: "cartao_credito", parcelas: 2, taxa_percentual: 4.2, prazo_dias: 30, recebe_tudo_de_uma_vez: false },
+  { forma: "cartao_credito", parcelas: 3, taxa_percentual: 4.9, prazo_dias: 30, recebe_tudo_de_uma_vez: false },
+  { forma: "cartao_credito", parcelas: 4, taxa_percentual: 5.6, prazo_dias: 30, recebe_tudo_de_uma_vez: true },
+  { forma: "cartao_credito", parcelas: 5, taxa_percentual: 6.3, prazo_dias: 30, recebe_tudo_de_uma_vez: true },
+  { forma: "cartao_credito", parcelas: 6, taxa_percentual: 7, prazo_dias: 30, recebe_tudo_de_uma_vez: true },
+].map((t) => ({ loja_id: LOJA, ...t }));
+
+// O "Cartão a receber" (#387), já com o que a lista traz embutido (a tela lê
+// `taxa:caixa_taxas_cartao(..., movimento:caixa_movimentos(descricao))`).
+const aReceber = (
+  id: string, dias: number, numero: number, valor: number, descricao: string,
+  forma: "cartao_debito" | "cartao_credito", parcelas: number, tudoDeUmaVez = false,
+) => ({
+  id: `cartao-${id}`, loja_id: LOJA, movimento_id: `cx-cartao-${id}`, numero, data_prevista: diaCurto(dias), valor,
+  taxa: { forma, parcelas, recebe_tudo_de_uma_vez: tudoDeUmaVez, movimento: { descricao } },
+});
+export const cartaoAReceber = [
+  aReceber("1", 1, 1, 276.8, "Faturamento da OS 148", "cartao_debito", 1),
+  aReceber("2", 1, 1, 132.45, "Venda de balcão 31", "cartao_debito", 1),
+  aReceber("3", 30, 1, 420.1, "Faturamento da OS 146", "cartao_credito", 3),
+  aReceber("4", 30, 1, 515.37, "Faturamento da OS 147", "cartao_credito", 1),
+  aReceber("5", 60, 2, 420.1, "Faturamento da OS 146", "cartao_credito", 3),
+  aReceber("6", 90, 3, 420.1, "Faturamento da OS 146", "cartao_credito", 3),
+  aReceber("7", 30, 1, 1480.9, "Faturamento da OS 149 (alinhamento e balanceamento)", "cartao_credito", 4, true),
+];
+
 export const configGarantia = [{
   loja_id: LOJA,
   texto:
@@ -947,6 +978,8 @@ export const TABELAS = {
   configuracoes_painel_inicio: [{ loja_id: LOJA, cartoes: ["vendas_mes", "lucro_mes", "ticket_medio_mes"] }],
   configuracoes_fiscais_loja: configuracoesFiscais,
   configuracoes_juros_parcelas: jurosParcelas,
+  configuracoes_taxas_maquininha: taxasMaquininha,
+  caixa_cartao_a_receber: cartaoAReceber,
   configuracoes_garantia: configGarantia,
   notas_fiscais_arquivos: notasFiscais,
   fornecedores,
