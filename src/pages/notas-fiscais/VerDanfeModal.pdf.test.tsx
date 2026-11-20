@@ -128,6 +128,12 @@ describe("Nota do cliente: Baixar o PDF da nota (pro cliente)", () => {
     expect(html).not.toContain("exemplo.invalid");
   });
 
+  it("NFC-e: o texto não diz mais \"sem o QR code\" (o PDF do recibo leva o QR code, #1147)", async () => {
+    await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    expect(screen.queryByText(/sem o QR code/)).not.toBeInTheDocument();
+    expect(screen.getByText(/com o QR code/)).toBeInTheDocument();
+  });
+
   it("o PDF leva os dados da OS e da loja, como a Versão para o cliente (#1118)", async () => {
     buscarOsDoRecibo.mockResolvedValue({
       numero: 4321,
