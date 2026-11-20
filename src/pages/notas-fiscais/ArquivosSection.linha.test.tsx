@@ -62,11 +62,16 @@ function nota(id: string, extra: Partial<NotaFiscalArquivo>): NotaFiscalArquivo 
 const AUTORIZADA = nota("autorizada", { numero: "2202" });
 const CANCELADA = nota("cancelada", { status: "cancelado" });
 const DE_FORA = nota("de-fora", { origem: "manual", status: null, focus_nfe_ref: null });
+const DE_FORA_CANCELADA = nota("de-fora-cancelada", {
+  origem: "manual",
+  status: "cancelado",
+  focus_nfe_ref: null,
+});
 
 beforeEach(() => {
   listarArquivos.mockReset();
   baixarArquivo.mockReset();
-  listarArquivos.mockResolvedValue([AUTORIZADA, CANCELADA, DE_FORA]);
+  listarArquivos.mockResolvedValue([AUTORIZADA, CANCELADA, DE_FORA, DE_FORA_CANCELADA]);
   // A lista carrega sozinha ao montar.
   renderizar(<ArquivosSection tipo="nfe" />);
 });
@@ -95,11 +100,15 @@ describe("ArquivosSection — a linha da nota (visual novo, #990)", () => {
     expect(botao).toHaveTextContent("Ver a nota");
     fireEvent.click(botao);
     expect(screen.getByText("janela do PDF cancelada")).toBeInTheDocument();
-    expect(abrirMaisAcoes("cancelada")).toEqual([
-      "Versão para o cliente (resumo do XML)",
-      "Baixar o XML (pro contador)",
-      "Excluir nota",
-    ]);
+    // Decisão da Sofia (20/11, revisão do #1126): nota cancelada não tem
+    // versão pro cliente; o registro é o XML.
+    expect(abrirMaisAcoes("cancelada")).toEqual(["Baixar o XML (pro contador)", "Excluir nota"]);
+  });
+
+  it("a feita fora e cancelada não abre a versão pro cliente: só o XML no menu", async () => {
+    await screen.findByText("Nº 2202");
+    expect(screen.queryByRole("button", { name: /— de-fora-cancelada\.xml$/ })).not.toBeInTheDocument();
+    expect(abrirMaisAcoes("de-fora-cancelada")).toEqual(["Baixar o XML (pro contador)", "Excluir nota"]);
   });
 
   it("a feita fora abre o resumo do XML, que é o que existe pra ela", async () => {

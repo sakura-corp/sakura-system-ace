@@ -816,6 +816,22 @@ Quatro coisas que valem saber:
   **NFS-e de Araraquara não tem PDF na Focus** (conferido em 23/10 com a NFS-e 30): o "Ver PDF"
   consulta a nota e mostra o aviso de que a prefeitura guarda o documento só no portal dela. É o
   normal, não defeito; pro cliente, o caminho é "Versão para o cliente" no menu "…" da nota.
+  **A janela "Nota do cliente" (o antigo "Ver DANFE") e o PDF pro cliente (#1115, 18/11/2026)**:
+  o cliente abre PDF no celular e no WhatsApp, e a NFC-e da Focus vem em **HTML**. O botão
+  "Baixar o PDF da nota (pro cliente)" salva `NFC-e-<número>.pdf` gerado **do recibo do sistema**
+  (o mesmo da "Versão para o cliente", montado do XML guardado), pelo Electron: canal
+  `gerar-pdf-da-nota` (`electron/main.ts`), `printToPDF` numa janela escondida sem script, sem
+  rede e sem preload; sem biblioteca nova. O canal só aceita o HTML como texto, até 1 MB
+  (`motivoHtmlRecusadoParaPdf`, `schemas/danfe.ts`). A NFS-e já vem em PDF da Focus e baixa esse
+  mesmo (`NFS-e-<número>.pdf`). Se o PDF não sai (fora do programa instalado, XML ilegível, erro),
+  aviso amarelo e o arquivo de antes é baixado (aviso, nunca tranca). A prévia, o "Imprimir" e o
+  "Baixar o XML (pro contador)" seguem com o DANFE oficial; a prévia da NFC-e perde as imagens de
+  fora (o logo quebrado do topo: a CSP não carrega imagem de fora, e não afrouxa), com
+  `semImagensDeFora`. O HTML como veio fica em "Baixar o arquivo original da Focus (HTML)",
+  embaixo da prévia.
+  **Nota cancelada** (Sofia, 20/11, revisão do #1126): não tem PDF pro cliente nem "Versão para o
+  cliente" (nem no "Mais ações", nem no aviso de quando a prévia não carrega); a feita fora e
+  cancelada fica sem o botão da linha. O registro dela é o XML.
 - **Relações** (ex-"Relatórios", label mudou antes; agora também absorveu o módulo antigo
   "Lucratividade" — um módulo só, com abas): aba "Gráficos" — gráfico de barras (Vendas x Custos x
   Lucro, **Diário/Semanal/Mensal/Anual**) + radar comparando o período atual com o anterior, sem
