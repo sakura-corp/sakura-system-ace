@@ -815,6 +815,9 @@ Quatro coisas que valem saber:
   fora (o logo quebrado do topo: a CSP não carrega imagem de fora, e não afrouxa), com
   `semImagensDeFora`. O HTML como veio fica em "Baixar o arquivo original da Focus (HTML)",
   embaixo da prévia.
+  **Nota cancelada** (Sofia, 20/11, revisão do #1126): não tem PDF pro cliente nem "Versão para o
+  cliente" (nem no "Mais ações", nem no aviso de quando a prévia não carrega); a feita fora e
+  cancelada fica sem o botão da linha. O registro dela é o XML.
 - **Relações** (ex-"Relatórios", label mudou antes; agora também absorveu o módulo antigo
   "Lucratividade" — um módulo só, com abas): aba "Gráficos" — gráfico de barras (Vendas x Custos x
   Lucro, **Diário/Semanal/Mensal/Anual**) + radar comparando o período atual com o anterior, sem

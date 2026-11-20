@@ -28,6 +28,12 @@
 - A janela passou de `3xl` pra `4xl`: com o botão novo, o "Imprimir" caía pra uma segunda linha.
 - `docs/modulos.md` atualizado (Notas Fiscais, a janela "Nota do cliente").
 
+- **Depois da revisão da Sofia (20/11)**: na **nota cancelada**, some o "Baixar o PDF da nota (pro
+  cliente)", a frase e o arquivo original embaixo da prévia, o "Abrir a Versão para o cliente" do
+  aviso, e a "Versão para o cliente" do "Mais ações" (`ArquivosSection.tsx`, fora da lista da issue,
+  entrou pela decisão dela). A nota feita fora e cancelada fica sem o botão da linha (ele só abria o
+  resumo do XML). Os 4 testes novos foram vistos reprovar antes do conserto.
+
 ## O que cada agente fez
 - **Revisor (ajudante-forte)**: leu o diff do zero; nenhum achado grave, 10 menores. Consertei 9
   (legenda que dizia "PDF da nota" embaixo do DANFE; acentos do HTML em ISO-8859-1; o doctype

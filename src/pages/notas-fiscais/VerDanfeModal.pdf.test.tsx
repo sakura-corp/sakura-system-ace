@@ -225,3 +225,31 @@ describe("Nota do cliente: a prévia do DANFE", () => {
     expect(screen.getByRole("button", { name: /Baixar o XML \(pro contador\)/ })).toBeInTheDocument();
   });
 });
+
+// Decisão da Sofia (20/11, revisão do #1126): nota cancelada não vale mais, e
+// o PDF dela sairia limpo, sem marca. A janela mostra a nota (pra conferir),
+// mas não oferece o PDF nem a "Versão para o cliente".
+describe("Nota do cliente: nota cancelada", () => {
+  const cancelada: NotaFiscalArquivo = { ...nfce, status: "cancelado" };
+
+  it("não oferece o PDF pro cliente", async () => {
+    buscarDanfeEmitida.mockResolvedValue(new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    renderizar(<VerDanfeModal arquivo={cancelada} onFechar={() => {}} />);
+    expect(await screen.findByRole("button", { name: "Imprimir" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: BOTAO_PDF })).not.toBeInTheDocument();
+    expect(screen.queryByText(/O PDF pro cliente é/)).not.toBeInTheDocument();
+  });
+
+  it("se a nota não carrega, não oferece a Versão para o cliente", async () => {
+    buscarDanfeEmitida.mockRejectedValue(new Error("A Focus NFe não devolveu um PDF pra essa nota."));
+    renderizar(<VerDanfeModal arquivo={cancelada} onFechar={() => {}} />);
+    expect(await screen.findByText(/não devolveu um PDF/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Versão para o cliente/ })).not.toBeInTheDocument();
+  });
+
+  it("a autorizada continua oferecendo a Versão para o cliente quando a nota não carrega", async () => {
+    buscarDanfeEmitida.mockRejectedValue(new Error("A Focus NFe não devolveu um PDF pra essa nota."));
+    renderizar(<VerDanfeModal arquivo={nfce} onFechar={() => {}} />);
+    expect(await screen.findByRole("button", { name: /Abrir a Versão para o cliente/ })).toBeInTheDocument();
+  });
+});

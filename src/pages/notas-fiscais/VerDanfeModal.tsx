@@ -176,13 +176,13 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
           </Botao>
           {pdfUrl && (
             <>
-              <Botao
-                icone={<Download />}
-                onClick={handleBaixarPdf}
-                ocupado={gerandoPdf}
-              >
-                {gerandoPdf ? "Gerando…" : "Baixar o PDF da nota (pro cliente)"}
-              </Botao>
+              {/* Nota cancelada não vale mais: o PDF sairia limpo, sem marca,
+                  e não vai pro cliente (Sofia, 20/11, revisão do #1126). */}
+              {!cancelada && (
+                <Botao icone={<Download />} onClick={handleBaixarPdf} ocupado={gerandoPdf}>
+                  {gerandoPdf ? "Gerando…" : "Baixar o PDF da nota (pro cliente)"}
+                </Botao>
+              )}
               <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
                 Imprimir
               </Botao>
@@ -195,7 +195,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         {cancelada && (
           <p className="flex flex-wrap items-center gap-2 text-texto-2">
             <Selo tipo="perigo" palavra="Cancelada" />
-            Esta nota foi cancelada.
+            Esta nota foi cancelada. O registro dela é o XML.
           </p>
         )}
 
@@ -204,9 +204,11 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         {!carregando && erro && (
           <div className="space-y-2">
             <AvisoDeAtencao role="status">{erro}</AvisoDeAtencao>
-            <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
-              Abrir a Versão para o cliente
-            </Botao>
+            {!cancelada && (
+              <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
+                Abrir a Versão para o cliente
+              </Botao>
+            )}
           </div>
         )}
 
@@ -222,19 +224,21 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
               src={pdfUrl}
               className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
             />
-            <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
-              <p className="min-w-0">
-                {original && extensaoDaNota(original.type) === "html"
-                  ? "O PDF pro cliente é o recibo da nota, montado pelo programa (sem o QR code). "
-                  : "O PDF pro cliente é este, como a Focus NFe mandou. "}
-                O documento oficial é o XML.
-              </p>
-              {original && extensaoDaNota(original.type) === "html" && (
-                <Botao variante="fantasma" tamanho="pequeno" onClick={baixarOriginal}>
-                  Baixar o arquivo original da Focus (HTML)
-                </Botao>
-              )}
-            </div>
+            {!cancelada && (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
+                <p className="min-w-0">
+                  {original && extensaoDaNota(original.type) === "html"
+                    ? "O PDF pro cliente é o recibo da nota, montado pelo programa (sem o QR code). "
+                    : "O PDF pro cliente é este, como a Focus NFe mandou. "}
+                  O documento oficial é o XML.
+                </p>
+                {original && extensaoDaNota(original.type) === "html" && (
+                  <Botao variante="fantasma" tamanho="pequeno" onClick={baixarOriginal}>
+                    Baixar o arquivo original da Focus (HTML)
+                  </Botao>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
