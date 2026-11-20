@@ -63,8 +63,8 @@
 
 ## O que depende de alguém
 - **A Sofia**:
-  - aplicar a migration **0087** pelo "Atualizar o banco" (ensaiar, depois aplicar), **antes** da versão. Não tem `versao-minima-do-programa`.
-  - **Número**: os PRs #1120 e #1121 também usam a 0087 e a 0088. Quem mesclar depois renumera (o botão só roda número maior que o do banco).
+  - aplicar a migration **0089** pelo "Atualizar o banco" (ensaiar, depois aplicar), **depois da 0087 e da 0088** (#1120 e #1121) e **antes** da versão. Não tem `versao-minima-do-programa`.
+  - **Número** (revisão de 20/11): voltou a ser 0089. O teste "sem buraco na numeração" só fica verde depois que a 0087 e a 0088 entrarem na `main` e esta branch for atualizada (e o `gerar-instalacao` rodar de novo).
   - **Decisão a conferir**: a alíquota do serviço reaproveita a `percentual_tributos_simples` (a mesma do pTotTribSN), em vez de criar uma coluna nova com o mesmo número.
 - **O Tiago, no PC** (Supabase de teste, homologação):
   - preencher as alíquotas e confirmar o mês;
@@ -72,8 +72,12 @@
   - emitir uma NFS-e de uma OS com 2 serviços.
 - **Depois de publicar**: a Sofia põe na loja os números da contadora e manda uma nota de cada pra contadora conferir.
 
+## Revisão da Sofia (20/11)
+- Migration renumerada pra **0089**.
+- NFS-e municipal: o corte em 2000 agora vem **depois** de trocar a quebra de linha por "; ". O teste novo (400 linhas) reprovou com 2381 caracteres antes do conserto.
+
 ## Onde parou
-Terminei.
+Falta atualizar a branch com a `main` quando a 0087 e a 0088 entrarem e rodar o `gerar-instalacao` de novo. Depois disso o CI fica verde.
 
 ## Como eu agi
 - **O que a skill me ajudou a fazer**: a lista de regras da migration (idempotente, versão, instalação, teste SQL) e a ordem "quebrar de propósito". O ritual deu o formato dos ajudantes em paralelo e do relatório.

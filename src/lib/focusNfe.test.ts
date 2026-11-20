@@ -820,4 +820,16 @@ describe("tributos aproximados — NFS-e", () => {
     expect(corpo.descricao_servico.length).toBeLessThanOrEqual(2000);
     expect(corpo.descricao_servico.endsWith(`...\n${LINHA}`)).toBe(true);
   });
+
+  it("municipal com OS muito longa: depois de trocar a quebra de linha por \"; \", continua até 2000", () => {
+    // 400 linhas de 4 caracteres com "\n" dão 1999; com "; " passariam de 2000.
+    const resumo = Array.from({ length: 400 }, () => "Serv").join("\n");
+    const comFrase = montarCorpoNFSe(dadosNFSe({ percentual_tributos_simples: 6.5 }, resumo));
+    expect(comFrase.servico.discriminacao.length).toBeLessThanOrEqual(2000);
+    expect(comFrase.servico.discriminacao.endsWith(`...; ${LINHA}`)).toBe(true);
+    expect(comFrase.servico.discriminacao).not.toContain("\n");
+    const semFrase = montarCorpoNFSe(dadosNFSe({}, resumo));
+    expect(semFrase.servico.discriminacao.length).toBeLessThanOrEqual(2000);
+    expect(semFrase.servico.discriminacao).not.toContain("\n");
+  });
 });

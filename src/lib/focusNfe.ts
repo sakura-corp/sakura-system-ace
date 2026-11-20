@@ -571,9 +571,14 @@ function discriminacaoDaNota(
   discriminacao: string,
   valorServicos: number,
   configuracaoFiscal: ConfiguracaoFiscalLoja,
+  separador = "\n",
 ): string {
   const tributos = tributosDoServico(arredondar(valorServicos), configuracaoFiscal);
-  return discriminacaoComTributos(discriminacao, tributos && textoTributosAproximados(tributos));
+  return discriminacaoComTributos(
+    discriminacao,
+    tributos && textoTributosAproximados(tributos),
+    separador,
+  );
 }
 
 export function montarCorpoNFSe({
@@ -618,10 +623,7 @@ export function montarCorpoNFSe({
       // No caminho municipal (ABRASF) cada prefeitura tem o seu marcador de
       // linha, e a quebra de linha comum pode ser recusada ou sair embolada:
       // aqui as linhas vão separadas por "; ", como era antes do #1040.
-      discriminacao: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal).replace(
-        /\n/g,
-        "; ",
-      ),
+      discriminacao: discriminacaoDaNota(discriminacao, valorServicos, configuracaoFiscal, "; "),
       iss_retido: "false",
       item_lista_servico: configuracaoFiscal.item_lista_servico || "14.01",
       codigo_tributario_municipio: configuracaoFiscal.codigo_tributario_municipio ?? undefined,

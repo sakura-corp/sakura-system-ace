@@ -48,9 +48,18 @@ export function resumoDosServicos(itens: readonly ServicoDaNota[], valorServicos
 /**
  * Junta o resumo e a linha dos tributos (no fim, numa linha nova). Se passar
  * do limite, quem é cortado é o resumo, nunca a linha dos tributos.
+ *
+ * `separador` troca a quebra de linha (o caminho municipal usa "; "). A troca
+ * vem ANTES do corte: "; " tem 2 caracteres, e cortar antes deixava a OS muito
+ * longa passar dos 2000 (revisão de 20/11).
  */
-export function discriminacaoComTributos(resumo: string, linhaTributos: string | null): string {
-  if (!linhaTributos) return resumo;
-  const espaco = LIMITE_DISCRIMINACAO_NFSE - linhaTributos.length - 1;
-  return `${cortar(resumo, espaco)}\n${linhaTributos}`;
+export function discriminacaoComTributos(
+  resumo: string,
+  linhaTributos: string | null,
+  separador = "\n",
+): string {
+  const texto = resumo.replace(/\n/g, separador);
+  if (!linhaTributos) return cortar(texto, LIMITE_DISCRIMINACAO_NFSE);
+  const espaco = LIMITE_DISCRIMINACAO_NFSE - linhaTributos.length - separador.length;
+  return `${cortar(texto, espaco)}${separador}${linhaTributos}`;
 }
