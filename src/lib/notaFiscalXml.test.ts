@@ -340,6 +340,18 @@ describe("interpretarXmlNotaFiscal — NFC-e", () => {
     expect(texto).toContain("R$ 99,10");
   });
 
+  it("tributos aproximados: com vTotTrib e a linha no infCpl, sai uma vez só (revisão do Tiago, 18/11)", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(
+        interpretarXmlNotaFiscal(
+          xmlNfce({ infCpl: "Trib aprox R$ 99,10 Fonte: IBPT. Tributos aproximados conforme Lei 12.741", vTotTrib: "99.10" }),
+          "nfe",
+        ),
+      ),
+    );
+    expect(texto.match(/Tributos aproximados/g)).toHaveLength(1);
+  });
+
   it("tributos aproximados: sem vTotTrib e sem a linha no infCpl, não aparece", () => {
     const texto = textoVisivel(
       montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xmlNfce({ infCpl: "" }), "nfe")),

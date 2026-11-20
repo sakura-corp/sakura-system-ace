@@ -408,12 +408,13 @@ function interpretarNFe(doc: Document): NotaFiscalVisual {
     troco: numero(pag, "vTroco"),
     qrCode: texto(supl, "qrCode"),
     urlConsulta: texto(supl, "urlChave"),
-    // Com `vTotTrib`, a linha é o valor dele e o `infCpl` sai inteiro, como
-    // informação complementar; sem ele, a linha é o trecho do `infCpl`.
+    // Com `vTotTrib`, a linha é o valor dele; sem ele, é o `infCpl` que fala
+    // dos tributos. O `infCpl` que fala dos tributos nunca sai de novo como
+    // informação complementar (senão a linha saía duas vezes, revisão de 18/11).
     tributosAproximados: temVTotTrib
       ? `Tributos aproximados: ${formatarMoeda(vTotTrib as number)} (Lei 12.741/2012)`
       : tributos,
-    informacoesComplementares: temVTotTrib ? infCpl : resto,
+    informacoesComplementares: resto,
   };
 }
 
