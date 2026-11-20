@@ -98,7 +98,8 @@ select
 A última coluna é a que ninguém lembra de conferir: se ela vier **zero**, o banco voltou com os
 dados certos e **sem as travas de segurança** — não libere pra loja assim.
 
-6. Subir os XMLs da pasta `notas/` de volta pro bucket `notas-fiscais` do projeto novo
+6. Subir os XMLs da pasta `notas/` de volta pro bucket `notas-fiscais` do projeto novo (junto vão
+   os `.valores.json` das NFS-e: o valor de cada nota da Giap, que a prefeitura não devolve)
 7. **Em cada computador da loja**, reapontar a conexão: abrir o sistema → na tela de login, o link
    discreto de trocar a conexão → colar a URL e a chave `anon` do projeto novo
 

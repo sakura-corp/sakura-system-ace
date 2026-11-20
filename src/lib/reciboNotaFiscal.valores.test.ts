@@ -119,21 +119,25 @@ describe("o arquivinho no bucket", () => {
   });
 
   it("buscar: só procura em NFS-e emitida pelo programa", async () => {
-    expect(await buscarValoresGuardadosDaNota({ tipo: "nfe", origem: "automatica", storage_path: "a.xml" })).toBeNull();
-    expect(await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "manual", storage_path: "a.xml" })).toBeNull();
+    expect(await buscarValoresGuardadosDaNota({ tipo: "nfe", origem: "automatica", storage_path: "a.xml", focus_nfe_ref: "os51-nfse-1" })).toBeNull();
+    expect(await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "manual", storage_path: "a.xml", focus_nfe_ref: "os51-nfse-1" })).toBeNull();
+    // O Padrão Nacional traz o valor no próprio XML: nem procura.
+    expect(
+      await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "automatica", storage_path: "a.xml", focus_nfe_ref: "os51-nfsen-1" }),
+    ).toBeNull();
     expect(storage.download).not.toHaveBeenCalled();
   });
 
   it("buscar: lê o arquivinho; sem ele (nota antiga), devolve null", async () => {
     const json = JSON.stringify(valoresParaGuardar(SERVICOS));
     storage.download.mockResolvedValueOnce({ data: new Blob([json]), error: null });
-    const lido = await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "automatica", storage_path: "n/a.xml" });
+    const lido = await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "automatica", storage_path: "n/a.xml", focus_nfe_ref: "os51-nfse-1" });
     expect(storage.download).toHaveBeenCalledWith("n/a.valores.json");
     expect(lido?.valorServicos).toBe(valoresParaGuardar(SERVICOS).valorServicos);
 
     storage.download.mockResolvedValueOnce({ data: null, error: new Error("Object not found") });
     expect(
-      await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "automatica", storage_path: "n/b.xml" }),
+      await buscarValoresGuardadosDaNota({ tipo: "nfse", origem: "automatica", storage_path: "n/b.xml", focus_nfe_ref: null }),
     ).toBeNull();
   });
 });

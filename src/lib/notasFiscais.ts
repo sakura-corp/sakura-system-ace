@@ -377,19 +377,21 @@ export async function excluirArquivo(arquivo: NotaFiscalArquivo): Promise<void> 
     .from("notas-fiscais")
     .remove([arquivo.storage_path]);
   if (erroStorage) throw erroStorage;
-  // O arquivinho do valor da NFS-e (#1142), se houver. Sem ele, nada acontece.
-  if (arquivo.tipo === "nfse") {
-    await supabase.storage
-      .from("notas-fiscais")
-      .remove([caminhoDosValores(arquivo.storage_path)])
-      .catch(() => undefined);
-  }
 
   const { error: erroMetadados } = await supabase
     .from("notas_fiscais_arquivos")
     .delete()
     .eq("id", arquivo.id);
   if (erroMetadados) throw erroMetadados;
+
+  // O arquivinho do valor da NFS-e (#1142), depois do registro sair. Se
+  // sobrar, não atrapalha nada (só ocupa espaço): fica o aviso no console.
+  if (arquivo.tipo === "nfse" && arquivo.origem === "automatica") {
+    const { error: erroValores } = await supabase.storage
+      .from("notas-fiscais")
+      .remove([caminhoDosValores(arquivo.storage_path)]);
+    if (erroValores) console.warn("Nota fiscal: o arquivo do valor ficou no bucket", erroValores);
+  }
 }
 
 // Busca de novo o PDF de uma nota já emitida pelo sistema. O PDF não fica

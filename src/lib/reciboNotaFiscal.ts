@@ -218,9 +218,11 @@ export async function guardarValoresDaNota(
 
 /** O retrato guardado na emissão; `null` se não há (nota antiga, de fora, NFC-e). */
 export async function buscarValoresGuardadosDaNota(
-  arquivo: Pick<NotaFiscalArquivo, "tipo" | "origem" | "storage_path">,
+  arquivo: Pick<NotaFiscalArquivo, "tipo" | "origem" | "storage_path" | "focus_nfe_ref">,
 ): Promise<ValoresGuardadosDaNota | null> {
   if (arquivo.tipo !== "nfse" || arquivo.origem !== "automatica") return null;
+  // A NFS-e do Padrão Nacional ("os<n>-nfsen-") traz o valor no XML: nem procura.
+  if (arquivo.focus_nfe_ref && /-nfsen-/.test(arquivo.focus_nfe_ref)) return null;
   try {
     const { data, error } = await supabase.storage
       .from("notas-fiscais")

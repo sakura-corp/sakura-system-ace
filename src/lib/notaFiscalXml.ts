@@ -165,8 +165,8 @@ export interface ContextoDoRecibo {
   os: OsDoRecibo | null;
   loja: LojaDoRecibo | null;
   /**
-   * O valor da nota quando o XML não traz (Giap). Hoje o sistema não guarda
-   * esse valor, então chega `null` e o recibo não lista os itens da OS.
+   * O valor da nota quando o XML não traz (Giap): vem do que foi guardado na
+   * emissão (`comValoresGuardados`, #1142). Nota sem isso chega com `null`.
    */
   valorDaNota: number | null;
 }
