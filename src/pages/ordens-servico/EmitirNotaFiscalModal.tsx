@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { valoresParaGuardar, type ValoresGuardadosDaNota } from "@/schemas/reciboNotaFiscal";
 import { useConexao } from "@/hooks/useConexao";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -178,6 +179,10 @@ export function EmitirNotaFiscalModal({
   // O último envio foi pelo "Emitir sem identificar o cliente"? O "Conferir de
   // novo" de uma nota que demorou precisa saber se ela foi com o documento.
   const ultimoEnvioSemCliente = useRef(false);
+  // NFS-e: o valor e os serviços DESTE envio (#1142), pra guardar junto da
+  // nota quando ela sair. Só vale pro envio feito nesta janela: o "Conferir"
+  // de uma referência digitada não sabe o que foi mandado e não guarda nada.
+  const valoresDoEnvio = useRef<ValoresGuardadosDaNota | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const itensDaOrdem = (ordem.itens ?? []).map((item) =>
@@ -421,6 +426,7 @@ export function EmitirNotaFiscalModal({
         }
 
         const discriminacao = itensServico.map((item) => item.descricao).join("; ");
+        valoresDoEnvio.current = valoresParaGuardar(itensServico);
 
         resposta = await emitirNFSe({
           ordem,
@@ -495,6 +501,7 @@ export function EmitirNotaFiscalModal({
         ordemServicoId: ordem.id,
         operadorId: operador.id,
         lojaId: lojaAtual.id,
+        valores: tipoNota === "NFS-e" ? valoresDoEnvio.current : null,
       });
     } catch (erroAoSalvar) {
       if (!resposta.ref) throw erroAoSalvar;
@@ -577,6 +584,7 @@ export function EmitirNotaFiscalModal({
 
   function handleRegistrarPorRef() {
     const ref = refDigitada.trim();
+    valoresDoEnvio.current = null;
     const tipo = tipoNota === "NFC-e" ? "nfce" : "nfse";
     if (ordem.numero === null || !refPertenceAOrdem(ref, ordem.numero, tipo)) {
       setErro(

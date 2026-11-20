@@ -7,7 +7,7 @@ import { mensagemDeErro } from "@/lib/errors";
 import { interpretarXmlNotaFiscal, montarHtmlVisualNotaFiscal } from "@/lib/notaFiscalXml";
 import { salvarComoDownload } from "@/lib/download";
 import { buscarConteudoArquivo, buscarDanfeEmitida } from "@/lib/notasFiscais";
-import { buscarLojaDoRecibo, buscarOsDoRecibo } from "@/lib/reciboNotaFiscal";
+import { buscarLojaDoRecibo, buscarOsDoRecibo, buscarValoresGuardadosDaNota, comValoresGuardados } from "@/lib/reciboNotaFiscal";
 import {
   extensaoDaNota,
   nomeArquivoDanfe,
@@ -48,16 +48,17 @@ async function gerarPdfDoRecibo(arquivo: NotaFiscalArquivo): Promise<Blob> {
   if (!gerar) throw new Error("o PDF só é gerado no programa instalado");
   // Os mesmos dados extras da "Versão para o cliente" (#1118): a OS ligada
   // (veículo, placa, garantia) e a loja. Sem acesso, o recibo sai sem eles.
-  const [conteudo, os, loja] = await Promise.all([
+  const [conteudo, os, loja, valores] = await Promise.all([
     buscarConteudoArquivo(arquivo),
     arquivo.ordem_servico_id
       ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
       : Promise.resolve(null),
     buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+    buscarValoresGuardadosDaNota(arquivo),
   ]);
   const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
   if (!dados.reconhecido) throw new Error("o programa não conseguiu ler o XML desta nota");
-  const bytes = await gerar(montarHtmlVisualNotaFiscal(dados, { os, loja, valorDaNota: null }));
+  const bytes = await gerar(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja }));
   return new Blob([bytes as BlobPart], { type: "application/pdf" });
 }
 

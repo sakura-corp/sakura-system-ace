@@ -12,6 +12,8 @@ import { supabase } from "./supabase";
 import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { salvarComoDownload } from "./download";
 import { criarZip, type ArquivoParaZip } from "./zip";
+import { caminhoDosValores, guardarValoresDaNota } from "./reciboNotaFiscal";
+import type { ValoresGuardadosDaNota } from "@/schemas/reciboNotaFiscal";
 import { motivoDanfeIndisponivel } from "@/schemas/danfe";
 import {
   intervaloDoMes,
@@ -207,6 +209,11 @@ interface SalvarArquivoEmitidoParams {
   ordemServicoId: string;
   operadorId: string;
   lojaId: string;
+  /**
+   * NFS-e: o valor e os serviços que foram na nota (#1142). Guardado ao lado
+   * do XML, só depois de a nota estar registrada; se falhar, a nota segue.
+   */
+  valores?: ValoresGuardadosDaNota | null;
 }
 
 // Na tabela a NFC-e aparece como "nfe" (a aba de Notas Fiscais é "NFC-e"); na
@@ -225,6 +232,7 @@ export async function salvarArquivoEmitido({
   ordemServicoId,
   operadorId,
   lojaId,
+  valores,
 }: SalvarArquivoEmitidoParams): Promise<void> {
   if (!resposta.caminho_xml_nota_fiscal || !resposta.ref) {
     throw new Error(
@@ -265,6 +273,7 @@ export async function salvarArquivoEmitido({
     await supabase.storage.from("notas-fiscais").remove([caminho]);
     throw erroMetadados;
   }
+  if (valores) await guardarValoresDaNota(caminho, valores);
 }
 
 // Cancela uma nota emitida automaticamente pelo Sakura System (origem =
@@ -368,6 +377,13 @@ export async function excluirArquivo(arquivo: NotaFiscalArquivo): Promise<void> 
     .from("notas-fiscais")
     .remove([arquivo.storage_path]);
   if (erroStorage) throw erroStorage;
+  // O arquivinho do valor da NFS-e (#1142), se houver. Sem ele, nada acontece.
+  if (arquivo.tipo === "nfse") {
+    await supabase.storage
+      .from("notas-fiscais")
+      .remove([caminhoDosValores(arquivo.storage_path)])
+      .catch(() => undefined);
+  }
 
   const { error: erroMetadados } = await supabase
     .from("notas_fiscais_arquivos")

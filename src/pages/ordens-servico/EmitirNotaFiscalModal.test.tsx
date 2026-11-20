@@ -24,6 +24,9 @@
  *    consulta falha (EsperaVencidaError), nem quando a nota sai autorizada e
  *    o registro dela no sistema falha. A janela fica no "Conferir de novo",
  *    com a referência à mostra (achado na revisão da #1112).
+ * 10. NFS-e: o valor e os serviços que foram na nota são guardados junto
+ *    dela (#1142), o mesmo valor mandado à prefeitura; o "Registrar esta
+ *    nota" por referência digitada não sabe o que foi mandado e não guarda.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
@@ -38,6 +41,7 @@ const listarPecasJanela = vi.fn();
 const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const emitirNFCe = vi.fn();
+const emitirNFSe = vi.fn();
 const consultarNFCe = vi.fn();
 const salvarArquivoEmitido = vi.fn();
 vi.mock("@/lib/pecas", () => ({
@@ -56,7 +60,7 @@ vi.mock("@/lib/focusNfe", async () => {
     destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
     valorTotalNFCe: real.valorTotalNFCe,
     emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-    emitirNFSe: vi.fn(),
+    emitirNFSe: (...a: unknown[]) => emitirNFSe(...a),
     consultarNFCe: (...a: unknown[]) => consultarNFCe(...a),
     consultarNFSe: vi.fn(),
     baixarArquivoNota: vi.fn(),
@@ -851,5 +855,62 @@ describe("EmitirNotaFiscalModal — nota já enviada nunca volta pro emitir (not
     expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
     expect(emitirNFCe).not.toHaveBeenCalled();
+  });
+});
+
+describe("EmitirNotaFiscalModal — NFS-e guarda o valor que foi na nota (#1142)", () => {
+  const REF = "os51-nfse-1795000000000";
+  const autorizada = { status: "autorizado", numero: "10", ref: REF, caminho_xml_nota_fiscal: "/x.xml" };
+  const servico = (id: string, descricao: string, preco: number, quantidade = 1, desconto = 0) => ({
+    ...item(id, descricao, null, preco),
+    tipo: "servico",
+    quantidade,
+    desconto,
+  });
+  const itens = () => [
+    servico("s1", "Alinhamento 3D", 120.1),
+    servico("s2", "Balanceamento", 20.333, 4, 1.5),
+    item("p1", "Pneu 175/70 R13", "peca-1", 300),
+  ];
+
+  function montarNfse() {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null, codigo_municipio: "3503208" });
+    return renderizar(
+      <EmitirNotaFiscalModal ordem={ordem(itens())} tipoNota="NFS-e" onFechar={vi.fn()} onEmitido={vi.fn()} />,
+    );
+  }
+
+  it("emitida: guarda o mesmo valor mandado à prefeitura, com os serviços (sem a peça)", async () => {
+    emitirNFSe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockResolvedValue(undefined);
+    const { user } = montarNfse();
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    await waitFor(() => expect(salvarArquivoEmitido).toHaveBeenCalledTimes(1));
+    const enviado = emitirNFSe.mock.calls[0][0] as { valorServicos: number };
+    const { valores } = salvarArquivoEmitido.mock.calls[0][0] as {
+      valores: { valorServicos: number; itens: { descricao: string }[] };
+    };
+    // 120,10 + (4 × 20,333 − 1,50) = 199,93
+    expect(valores.valorServicos).toBe(199.93);
+    expect(Math.round(enviado.valorServicos * 100)).toBe(19993);
+    expect(valores.itens.map((i) => i.descricao)).toEqual(["Alinhamento 3D", "Balanceamento"]);
+  });
+
+  it("registrada pela referência digitada: não guarda valor nenhum, nem o de um envio recusado antes", async () => {
+    emitirNFSe.mockRejectedValue(new Error("A prefeitura recusou a nota."));
+    const { user } = montarNfse();
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+    expect(await screen.findByText(/A prefeitura recusou a nota/)).toBeInTheDocument();
+    const { consultarNFSe } = await import("@/lib/focusNfe");
+    vi.mocked(consultarNFSe).mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockResolvedValue(undefined);
+    await user.click(await screen.findByRole("button", { name: /já saiu na Focus NFe/ }));
+    await user.type(screen.getByPlaceholderText(/os51-nfse-/), REF);
+    await user.click(screen.getByRole("button", { name: "Registrar esta nota" }));
+
+    await waitFor(() => expect(salvarArquivoEmitido).toHaveBeenCalledTimes(1));
+    expect((salvarArquivoEmitido.mock.calls[0][0] as { valores: unknown }).valores).toBeNull();
+    expect(emitirNFSe).toHaveBeenCalledTimes(1);
   });
 });

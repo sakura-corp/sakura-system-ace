@@ -5,7 +5,7 @@ import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
-import { buscarLojaDoRecibo, buscarOsDoRecibo } from "@/lib/reciboNotaFiscal";
+import { buscarLojaDoRecibo, buscarOsDoRecibo, buscarValoresGuardadosDaNota, comValoresGuardados } from "@/lib/reciboNotaFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { useBaixarXml } from "./useBaixarXml";
@@ -35,18 +35,19 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
         // O XML manda; a OS (veículo, placa, garantia) e a loja (pra
         // completar o emitente da Giap) só completam, e sem acesso a elas o
         // recibo sai sem aquelas seções (#1031).
-        const [conteudo, os, loja] = await Promise.all([
+        const [conteudo, os, loja, valores] = await Promise.all([
           buscarConteudoArquivo(arquivo),
           arquivo.ordem_servico_id
             ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
             : Promise.resolve(null),
           buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+          buscarValoresGuardadosDaNota(arquivo),
         ]);
         const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
         setReconhecido(dados.reconhecido);
-        // O valor da nota da Giap não está guardado no sistema: sem ele, o
-        // recibo não lista os itens da OS (mostra "Itens na OS nº X").
-        setHtml(montarHtmlVisualNotaFiscal(dados, { os, loja, valorDaNota: null }));
+        // NFS-e da Giap: o valor e os serviços vêm do que foi guardado na
+        // emissão (#1142). Nota sem isso mostra só "Itens na OS nº X".
+        setHtml(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja }));
       } catch (err) {
         console.error("Erro ao gerar versão visual da nota fiscal:", err);
         setErro(mensagemDeErro(err));
