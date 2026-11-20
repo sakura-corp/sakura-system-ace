@@ -255,7 +255,8 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
     que dizer que abriu e falar do seu jeito. Se avisar que não abriu, voltar ao passo 2.
 12. **Fechar**: o relatório da tarefa vai no PR, como em toda tarefa, **sem nada do conteúdo do
     caderno**, mas com **todo passo que estava diferente na tela** (nome de botão, tropeço e o
-    conserto): é assim que este roteiro melhora pra quem vem depois. Pedir a revisão da Sofia.
+    conserto): é assim que este roteiro melhora pra quem vem depois. Pedir a revisão do colega do
+    rodízio (`docs/revisao-cruzada.md`).
 
 ## Como começar uma tarefa
 
@@ -282,7 +283,7 @@ tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
    digitar, o que deve aparecer, e espera ela confirmar antes do próximo passo. Nada de despejar
    dez passos de uma vez.
 6. No fim, faz as conferências (abaixo), confere o "Pronto quando" da tarefa com a pessoa, item
-   por item, e guia a abertura do PR e o pedido de revisão da Sofia. **Não mescla.** Com o PR
+   por item, e guia a abertura do PR e o pedido de revisão ao colega do rodízio (`docs/revisao-cruzada.md`). **Não mescla.** Com o PR
    aberto, passa a acompanhar o PR (veja "As funções da sessão que valem a pena", abaixo).
 7. Escreve a mensagem de WhatsApp pra Sofia (ex: *"Oi Sofia! Terminei a tarefa #455 (clientes
    que sumiram). O PR é o #490, tá esperando sua revisão."*), e a pessoa manda.
@@ -304,7 +305,7 @@ O painel monta um link que abre uma sessão do Claude **na nuvem, no seu login**
 - **O que você revisa**: o relatório (o que cada ajudante fez, o que foi testado **e visto
   reprovar**, o que ficou de fora, o que depende de alguém) e o PR. Se o relatório pedir teste no
   PC, o Claude guia você um passo por vez ("Testar no seu computador o que a sessão da nuvem fez",
-  abaixo). Depois, pede a revisão da Sofia.
+  abaixo). Depois, pede a revisão ao colega do rodízio.
 - **O relatório fica no PR**: o chefe grava o relatório num arquivo em `docs/relatorios/` (sem
   senha, CPF, preço ou dado pessoal; o repositório é público).
 - **Se a sessão falhar logo no começo** com aviso de crédito, limite ou modelo indisponível (ex.:
@@ -433,8 +434,8 @@ está no meio de outra coisa, siga.
   Claude diz o que clicar e o que deve aparecer. O que a pessoa viu (ou o print) vai na descrição
   do PR.
 - **O PR**: título curto em português, descrição com o que mudou, como foi testado e o que **não**
-  foi testado. Pede a revisão da **Sofia** e **para**. Enquanto ela não revisa, a pessoa pode
-  pegar outra tarefa da leva, sem mexer no PR que está esperando.
+  foi testado. Pede a revisão do **colega do rodízio** (`docs/revisao-cruzada.md`) e **para**.
+  Enquanto não revisam, a pessoa pode pegar outra tarefa da leva, sem mexer no PR que está esperando.
 - **Ela pediu mudança no PR**: o Claude ajusta na mesma branch, roda as conferências de novo,
   envia e pede a revisão de novo.
 - **O CI ficou vermelho** (o "X" no PR): o Claude lê o erro, conserta e envia. Nunca desligar ou
@@ -524,8 +525,8 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 ## Tamanho da leva
 
-Todo PR da equipe espera a **Sofia revisar**, e ela revisa os três. Por isso:
-- a leva tem **só as tarefas que cabem no tempo dela de revisar**; quando a leva acaba, ela
+Todo PR da equipe espera a **revisão de um colega do rodízio** (`docs/revisao-cruzada.md`; a Sofia pode revisar qualquer PR, e a revisão dela vale no lugar da do colega), e a Sofia mescla. Por isso:
+- a leva tem **só as tarefas que cabem no tempo de revisar da equipe**; quando a leva acaba, ela
   congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
   Claude dela, e o teste no programa de verdade fica pro dia de teste do fim de semana

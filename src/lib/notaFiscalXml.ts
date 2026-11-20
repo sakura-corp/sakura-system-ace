@@ -1022,6 +1022,17 @@ function htmlGarantia(os: OsDoRecibo | null): string {
     </div>`;
 }
 
+// "Pago em pix" e "Pago em outros" soavam estranho no recibo (Sofia, 20/11,
+// #1147): o Pix com maiúscula, e o "Outros" da SEFAZ (tPag 99) vira
+// "Pago (outra forma)".
+export function rotuloDoPagamento(forma: string | null): string {
+  if (!forma) return "Pago";
+  const minuscula = forma.toLowerCase();
+  if (minuscula === "outros") return "Pago (outra forma)";
+  if (minuscula === "pix") return "Pago em Pix";
+  return `Pago em ${minuscula}`;
+}
+
 function htmlProdutosNfce(dados: NotaFiscalVisual, os: OsDoRecibo | null): string {
   const linhas: LinhaDeItem[] = dados.itens.map((i) => ({
     codigo: i.codigo,
@@ -1034,7 +1045,7 @@ function htmlProdutosNfce(dados: NotaFiscalVisual, os: OsDoRecibo | null): strin
     observacao: null,
   }));
   const pagamentos = dados.formasPagamento
-    .map((fp) => linhaValor(fp.forma ? `Pago em ${fp.forma.toLowerCase() === "pix" ? "Pix" : fp.forma.toLowerCase()}` : "Pago", fp.valor))
+    .map((fp) => linhaValor(rotuloDoPagamento(fp.forma), fp.valor))
     .join("");
   const mostrarSubtotal = dados.descontoTotal !== null && dados.subtotal !== null;
   const valores = `

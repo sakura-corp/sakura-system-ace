@@ -7,6 +7,7 @@
 // (4.00) e da NFS-e Nacional (1.00).
 import { describe, expect, it } from "vitest";
 import {
+  rotuloDoPagamento,
   interpretarXmlNotaFiscal,
   montarHtmlVisualNotaFiscal,
   type ContextoDoRecibo,
@@ -475,5 +476,25 @@ describe("interpretarXmlNotaFiscal — XML não reconhecido", () => {
   it("devolve reconhecido: false pra um XML sem os formatos esperados", () => {
     const dados = interpretarXmlNotaFiscal("<algumaCoisa><x>1</x></algumaCoisa>", "nfse");
     expect(dados.reconhecido).toBe(false);
+  });
+});
+
+describe("recibo — como o pagamento aparece (#1147)", () => {
+  it('o "Outros" da SEFAZ sai "Pago (outra forma)", não "Pago em outros"', () => {
+    expect(rotuloDoPagamento("Outros")).toBe("Pago (outra forma)");
+  });
+  it("o Pix sai com maiúscula, as outras formas em minúscula", () => {
+    expect(rotuloDoPagamento("Pix")).toBe("Pago em Pix");
+    expect(rotuloDoPagamento("Cartão de crédito")).toBe("Pago em cartão de crédito");
+    expect(rotuloDoPagamento("Dinheiro")).toBe("Pago em dinheiro");
+  });
+  it("sem forma conhecida, só \"Pago\"", () => {
+    expect(rotuloDoPagamento(null)).toBe("Pago");
+  });
+  it("no recibo da NFC-e com tPag 99", () => {
+    const xml = xmlNfce({}).replace("<tPag>01</tPag>", "<tPag>99</tPag>");
+    const html = montarHtmlVisualNotaFiscal(interpretarXmlNotaFiscal(xml, "nfe"));
+    expect(html).toContain("Pago (outra forma)");
+    expect(html).not.toContain("Pago em outros");
   });
 });
