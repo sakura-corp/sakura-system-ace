@@ -35,7 +35,8 @@ import { Botao } from "../Botao";
  *
  * "Ver todos": passando do `limite`, a lista mostra só o começo e o botão no
  * fim, com a conta. Sem `aoVerTodos`, abre ali mesmo (e volta a cortar quando
- * a busca ou o filtro mudam); com, a tela decide (abrir em outro lugar).
+ * a busca muda ou quando aparecem outros itens, como num filtro trocado); com,
+ * a tela decide (abrir em outro lugar).
  *
  * Teclado: botão que some depois do clique ("Limpar a busca", "Ver todos",
  * "Tentar de novo") devolve o foco pra um lugar que faz sentido (o campo de
@@ -158,9 +159,13 @@ export function MoldeLista<T>(props: PropsDoMoldeLista<T>) {
   const [focarDepois, setFocarDepois] = useState<"lista" | "cartao" | null>(null);
 
   const termo = busca?.valor.trim() ?? "";
-  // O "Ver todos" vale pra busca e filtro em que foi aberto: mudou um dos
-  // dois, a lista volta a mostrar só o começo.
-  const consultaAtual = `${termo}|${filtroAtivo}`;
+  // O "Ver todos" vale pra lista em que foi aberto: mudou a busca, ou mudou
+  // QUAIS itens aparecem (um filtro trocado por outro, mesmo com o mesmo
+  // tanto de linhas), a lista volta a mostrar só o começo. Guardar só "tem
+  // filtro ligado" não bastava: Matão → Araraquara continuava aberto
+  // (revisão do Tiago no #1140). A lista recarregar com os mesmos itens
+  // (mesmas chaves) não fecha.
+  const consultaAtual = `${termo}\u0000${itens.map(chave).join("\u0000")}`;
   const [abertaEm, setAbertaEm] = useState<string | null>(null);
   const abriuTodos = abertaEm === consultaAtual;
 
@@ -271,7 +276,9 @@ export function MoldeLista<T>(props: PropsDoMoldeLista<T>) {
           tabIndex={-1}
           aria-label={rotulo}
           aria-busy={estado === "carregando" || undefined}
-          className="outline-none"
+          // O anel de foco do programa (globals.css) desenha POR FORA, e o cartão
+          // em volta corta o que passa da borda: aqui o anel vem pra dentro.
+          className="focus-visible:-outline-offset-4"
         >
           {visiveis.map((item) => (
             <Fragment key={chave(item)}>{linha(item)}</Fragment>
@@ -327,7 +334,7 @@ export function MoldeLista<T>(props: PropsDoMoldeLista<T>) {
       <div
         ref={cartaoRef}
         tabIndex={-1}
-        className="sakura-card min-w-0 overflow-hidden outline-none"
+        className="sakura-card min-w-0 overflow-hidden"
       >
         {corpo}
       </div>

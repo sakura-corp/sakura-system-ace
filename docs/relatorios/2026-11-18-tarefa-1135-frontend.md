@@ -51,6 +51,16 @@ Cada achado foi conferido no código antes de mexer; todos procediam.
   reservadas e a altura mínima pela classe (o jsdom não mede altura); a medida real (64 px, a
   mesma da linha de verdade) foi tirada na tela renderizada.
 
+## Revisão do Tiago no PR (20/11) e o que mudou
+- **"Ver todos" não voltava a cortar ao trocar um filtro ligado por outro** (Matão → Araraquara):
+  o molde guardava só *se* havia filtro. Agora guarda a busca e **quais** itens aparecem (as
+  chaves); recarregar com os mesmos itens não fecha. Teste novo visto reprovar antes (8 linhas em
+  vez de 5) e outro pra recarga.
+- **`outline-none` na lista e no cartão** apagava o anel de foco do programa: saiu do cartão; na
+  lista, o anel vem pra dentro (`-outline-offset-4`), porque o cartão corta o que passa da borda.
+  Visto na tela renderizada: Enter no "Ver todos" → o anel aparece inteiro em volta da lista.
+- A `main` (com o #1139) foi trazida pra branch.
+
 ## O que testei e VI reprovar
 - **Sem as peças**: os dois arquivos de teste reprovam inteiros.
 - **Quebrando de propósito, um pedaço por vez** (cada um reprovou o teste dele):

@@ -320,6 +320,61 @@ describe("MoldeLista: Ver todos", () => {
     expect(screen.getByRole("button", { name: "Ver todos (8)" })).toBeInTheDocument();
   });
 
+  it("aberto o 'Ver todos', trocar um filtro ligado por outro também volta a cortar (revisão do Tiago no #1140)", async () => {
+    // Duas cidades com o mesmo tanto de clientes: "tem filtro ligado" não
+    // muda, só QUAL filtro. A lista tem que voltar a cortar mesmo assim.
+    const DUAS: Cliente[] = [
+      ...Array.from({ length: 8 }, (_, i) => ({ id: `m${i}`, nome: `Matão ${i + 1}`, cidade: "Matão" })),
+      ...Array.from({ length: 8 }, (_, i) => ({ id: `a${i}`, nome: `Araraquara ${i + 1}`, cidade: "Araraquara" })),
+    ];
+    function ComFiltro() {
+      const [cidade, setCidade] = useState("Matão");
+      return (
+        <Lista
+          itens={DUAS.filter((c) => c.cidade === cidade)}
+          limite={5}
+          filtros={
+            <Chips
+              rotulo="Cidade"
+              opcoes={[
+                { valor: "Matão", nome: "Matão" },
+                { valor: "Araraquara", nome: "Araraquara" },
+              ]}
+              valor={cidade}
+              aoEscolher={setCidade}
+            />
+          }
+          filtroAtivo
+          aoLimparFiltros={() => setCidade("Matão")}
+        />
+      );
+    }
+    const { user } = renderizar(<ComFiltro />);
+    await user.click(screen.getByRole("button", { name: "Ver todos (8)" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
+    await user.click(screen.getByRole("button", { name: "Araraquara" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent("Araraquara 1");
+  });
+
+  it("aberto o 'Ver todos', a lista recarregar com os mesmos itens não fecha", async () => {
+    function Recarrega() {
+      const [versao, setVersao] = useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setVersao((v) => v + 1)}>
+            Recarregar
+          </button>
+          <Lista itens={MUITOS.map((c) => ({ ...c, cidade: `${c.cidade} ${versao}` }))} limite={5} />
+        </>
+      );
+    }
+    const { user } = renderizar(<Recarrega />);
+    await user.click(screen.getByRole("button", { name: "Ver todos (8)" }));
+    await user.click(screen.getByRole("button", { name: "Recarregar" }));
+    expect(screen.getAllByRole("listitem")).toHaveLength(8);
+  });
+
   it("com aoVerTodos, o botão chama a tela (pra abrir a lista inteira em outro lugar)", async () => {
     const aoVerTodos = vi.fn();
     const { user } = renderizar(<Lista itens={MUITOS} limite={5} aoVerTodos={aoVerTodos} />);
