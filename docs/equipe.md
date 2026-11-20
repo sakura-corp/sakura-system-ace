@@ -525,7 +525,7 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 ## Tamanho da leva
 
-Todo PR da equipe espera a **revisão de um colega do rodízio** (`docs/revisao-cruzada.md`), e a Sofia mescla. Por isso:
+Todo PR da equipe espera a **revisão de um colega do rodízio** (`docs/revisao-cruzada.md`; a Sofia pode revisar qualquer PR, e a revisão dela vale no lugar da do colega), e a Sofia mescla. Por isso:
 - a leva tem **só as tarefas que cabem no tempo de revisar da equipe**; quando a leva acaba, ela
   congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
