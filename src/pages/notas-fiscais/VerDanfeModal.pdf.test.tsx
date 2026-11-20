@@ -20,6 +20,15 @@ vi.mock("@/lib/notasFiscais", () => ({
   buscarDanfeEmitida: (...a: unknown[]) => buscarDanfeEmitida(...a),
 }));
 
+// O recibo do PDF usa os mesmos dados extras da "Versão para o cliente" (#1118):
+// a OS ligada (veículo, placa) e os dados da loja. Sem acesso, sai sem eles.
+const buscarOsDoRecibo = vi.fn();
+const buscarLojaDoRecibo = vi.fn();
+vi.mock("@/lib/reciboNotaFiscal", () => ({
+  buscarOsDoRecibo: (...a: unknown[]) => buscarOsDoRecibo(...a),
+  buscarLojaDoRecibo: (...a: unknown[]) => buscarLojaDoRecibo(...a),
+}));
+
 import { VerDanfeModal } from "./VerDanfeModal";
 
 const nfce: NotaFiscalArquivo = {
@@ -83,6 +92,8 @@ beforeEach(() => {
     baixados.push({ nome: this.download, conteudo: blobs.get(this.getAttribute("href") ?? "")! });
   });
   buscarConteudoArquivo.mockResolvedValue(XML_NFCE);
+  buscarOsDoRecibo.mockReset().mockResolvedValue(null);
+  buscarLojaDoRecibo.mockReset().mockResolvedValue(null);
   gerarPdfDaNota.mockReset();
   window.sakuraApp = { version: "0.0.0", salvarConexao: vi.fn(), gerarPdfDaNota };
 });
@@ -115,6 +126,52 @@ describe("Nota do cliente: Baixar o PDF da nota (pro cliente)", () => {
     expect(typeof html).toBe("string");
     expect(html).toContain("Pneu de exemplo");
     expect(html).not.toContain("exemplo.invalid");
+  });
+
+  it("o PDF leva os dados da OS e da loja, como a Versão para o cliente (#1118)", async () => {
+    buscarOsDoRecibo.mockResolvedValue({
+      numero: 4321,
+      tipo: "os",
+      veiculo: "Carro de Exemplo 2020",
+      placa: "ABC1D23",
+      km: null,
+      atendente: null,
+      mecanico: null,
+      telefoneCliente: null,
+      cliente: null,
+      itens: [],
+    });
+    buscarLojaDoRecibo.mockResolvedValue({
+      nomeFantasia: "Loja de Exemplo",
+      razaoSocial: null,
+      cnpj: null,
+      inscricaoEstadual: null,
+      inscricaoMunicipal: null,
+      telefone: "(00) 0000-0000",
+      email: null,
+      endereco: null,
+    });
+    gerarPdfDaNota.mockResolvedValue(new TextEncoder().encode("%PDF-1.4 recibo"));
+    const botao = await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    fireEvent.click(botao);
+
+    await waitFor(() => expect(gerarPdfDaNota).toHaveBeenCalledTimes(1));
+    expect(buscarOsDoRecibo).toHaveBeenCalledWith("os-1");
+    expect(buscarLojaDoRecibo).toHaveBeenCalledWith("loja-1");
+    const html = gerarPdfDaNota.mock.calls[0][0] as string;
+    expect(html).toContain("ABC1D23");
+    expect(html).toContain("Carro de Exemplo 2020");
+  });
+
+  it("sem acesso à OS e à loja, o PDF sai assim mesmo (sem aquelas seções)", async () => {
+    buscarOsDoRecibo.mockRejectedValue(new Error("sem permissão"));
+    buscarLojaDoRecibo.mockRejectedValue(new Error("sem permissão"));
+    gerarPdfDaNota.mockResolvedValue(new TextEncoder().encode("%PDF-1.4 recibo"));
+    const botao = await abrir(nfce, new Blob([HTML_DA_FOCUS], { type: "text/html" }));
+    fireEvent.click(botao);
+
+    await waitFor(() => expect(baixados).toHaveLength(1));
+    expect(baixados[0].nome).toBe("NFC-e-21.pdf");
   });
 
   it("enquanto gera, o botão diz 'Gerando…' e fica desabilitado: 2 cliques, 1 PDF", async () => {
