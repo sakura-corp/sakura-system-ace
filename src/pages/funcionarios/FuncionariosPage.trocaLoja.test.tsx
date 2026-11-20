@@ -127,7 +127,7 @@ describe("Funcionários (Comissões): troca de loja no meio da carga (#927)", ()
   it("os dados de comissão da A chegam depois da B: a tela fica com os da B", async () => {
     const { a, b } = porLoja<OrdemParaComissao[]>(m.listarOrdensParaComissoes);
     const { user, rerender } = renderizar(<FuncionariosPage />);
-    await user.click(screen.getByRole("button", { name: "Comissões" }));
+    await user.click(screen.getByRole("tab", { name: "Comissões" }));
     await vi.waitFor(() => expect(m.listarOrdensParaComissoes).toHaveBeenCalledWith("loja-a"));
     await trocarPraB(rerender, m.listarOrdensParaComissoes);
 
@@ -146,7 +146,7 @@ describe("Funcionários (Comissões): troca de loja no meio da carga (#927)", ()
   it("os dados da A já estão na tela e a loja muda: a B é carregada e a tela fica com os da B", async () => {
     m.listarOrdensParaComissoes.mockImplementation(async (loja: string) => [os(loja === "loja-a" ? "da-a" : "da-b")]);
     const { user, rerender } = renderizar(<FuncionariosPage />);
-    await user.click(screen.getByRole("button", { name: "Comissões" }));
+    await user.click(screen.getByRole("tab", { name: "Comissões" }));
     expect(await screen.findByText("OS da-a")).toBeInTheDocument();
 
     await trocarPraB(rerender, m.listarOrdensParaComissoes);
@@ -163,7 +163,7 @@ describe("Funcionários (Comissões): troca de loja no meio da carga (#927)", ()
       loja === "loja-a" ? [os("da-a")] : b.promessa,
     );
     const { user, rerender } = renderizar(<FuncionariosPage />);
-    await user.click(screen.getByRole("button", { name: "Comissões" }));
+    await user.click(screen.getByRole("tab", { name: "Comissões" }));
     expect(await screen.findByText("OS da-a")).toBeInTheDocument();
 
     await trocarPraB(rerender, m.listarOrdensParaComissoes);
@@ -184,7 +184,7 @@ describe("Funcionários (Comissões): troca de loja no meio da carga (#927)", ()
   it("os pagamentos da A chegam depois da B: a tela fica com os da B", async () => {
     const { a, b } = porLoja<ComissaoFechamento[]>(m.listarComissoesPagas);
     const { user, rerender } = renderizar(<FuncionariosPage />);
-    await user.click(screen.getByRole("button", { name: "Comissões" }));
+    await user.click(screen.getByRole("tab", { name: "Comissões" }));
     await vi.waitFor(() => expect(m.listarComissoesPagas).toHaveBeenCalledWith("loja-a"));
     await trocarPraB(rerender, m.listarComissoesPagas);
 

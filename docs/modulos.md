@@ -553,6 +553,13 @@ Quatro coisas que valem saber:
   - **Validade**: 7 dias, editável. Passou: etiqueta cinza **"vencido"**; ainda dá pra aprovar,
     com aviso de que o preço pode ter mudado.
   - **Aprovar** pede "quem aprovou" (texto livre, ex. "pelo telefone") e leva pra OS que nasceu.
+    Aprovar e virar OS são **o mesmo passo** (`aprovar_orcamento`, uma chamada só).
+  - **Peça digitada sem cadastro** (#655): o orçamento salva sem pedir nada. Ao aprovar, a janela
+    "Peças sem cadastro" exige ligar cada uma ao cadastro ("É uma peça que já tenho" ou
+    "Cadastrar agora", com NCM, CEST, CFOP, origem e CST/CSOSN). **Desde a #1128 não existe mais
+    "Seguir sem cadastro"**: a peça sem NCM só travava na NFC-e, com a OS já faturada. A trava é
+    da tela; o banco ainda aceita (OS antigas podem ter peça avulsa, e a janela da nota cadastra).
+    A aba Fechamento fica fora do `<form>` da OS (#1128), senão o "Salvar peça" da nota enviava a OS.
     **Recusar** é um clique, com motivo opcional (preço, prazo, foi em outro lugar, desistiu,
     outro); o recusado vira histórico, na aba "Recusados".
   - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).

@@ -483,13 +483,30 @@ export function EmitirNotaFiscalModal({
     if (!configuracaoFiscal || !operador || !lojaAtual) return;
     if (resposta.status !== "autorizado") throw erroDaResposta(resposta);
 
-    await salvarArquivoEmitido({
-      tipo: tipoNota === "NFC-e" ? "nfe" : "nfse",
-      resposta,
-      ordemServicoId: ordem.id,
-      operadorId: operador.id,
-      lojaId: lojaAtual.id,
-    });
+    // Daqui em diante a nota JÁ ESTÁ autorizada na SEFAZ/prefeitura. Se o
+    // registro dela aqui falhar, a janela fica no "Conferir de novo" (que
+    // consulta pela `ref` e registra) — nunca volta pro "Confirmar emissão",
+    // que daria duas notas pra mesma venda. Tentar de novo é seguro: o
+    // salvarArquivoEmitido apaga o arquivo se o registro não entrar.
+    try {
+      await salvarArquivoEmitido({
+        tipo: tipoNota === "NFC-e" ? "nfe" : "nfse",
+        resposta,
+        ordemServicoId: ordem.id,
+        operadorId: operador.id,
+        lojaId: lojaAtual.id,
+      });
+    } catch (erroAoSalvar) {
+      if (!resposta.ref) throw erroAoSalvar;
+      setRefPendente(resposta.ref);
+      // A nota saiu: a recusa de antes (#1112) não vale mais, só o "Conferir de novo".
+      setRecusaDoDestinatario(null);
+      throw new Error(
+        "A nota saiu autorizada, mas não consegui registrá-la aqui no sistema " +
+          `(${mensagemDeErro(erroAoSalvar)}) — não emita de novo. Clique em "Conferir de novo" ` +
+          "pra registrar.",
+      );
+    }
 
     setResultado(resposta);
     onEmitido();
