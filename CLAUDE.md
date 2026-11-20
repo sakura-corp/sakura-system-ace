@@ -8,3 +8,7 @@
 `list_sessions`, `mine: true`, `limit: 25`): "Abri: <tarefa/PR>, vou <o quê>" e "Feito/Travei/Preciso:
 <link>; falta <o quê, de quem>". Nada no meio. Detalhe (id no pedido, madrugada, sessão filha, não
 achou): `docs/recepcao.md`.
+
+## Revisão cruzada da equipe
+
+PR da equipe espera um colega: rótulos `esperando-revisao` e `revisando-<login>`, um revisor por PR. Passos e comandos: `docs/revisao-cruzada.md`.

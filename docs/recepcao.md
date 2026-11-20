@@ -13,6 +13,8 @@ outras sessões. Toda sessão manda **uma linha** pra ela em dois momentos, e s�
 | **Se travar** esperando alguém | `Travei: <link>; falta <o quê, de quem>` | "Travei: <link da sessão>; falta a Sofia decidir X" |
 | **Se precisar** de algo da Sofia ou de alguém | `Preciso: <link>; falta <o quê, de quem>` | "Preciso: <link>; falta a Sofia aplicar a migration" |
 
+Revisão cruzada: "Abri: PR #N esperando revisão", "Abri: pego a revisão do PR #N" e "Feito: revisão do PR #N" (`docs/revisao-cruzada.md`).
+
 Nunca no meio, nunca "comecei" sem dizer o quê. Sempre com link (PR, issue ou a própria sessão).
 
 ## Como achar a Recepção
