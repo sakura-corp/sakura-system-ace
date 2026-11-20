@@ -69,7 +69,7 @@ export type ItemDaTrocaGravado = Pick<
   | "desconto"
 >;
 
-/** Uma troca de peça/serviço feita depois de faturar (#1145, migration 0090). */
+/** Uma troca de peça/serviço feita depois de faturar (#1145, migration 0087). */
 export interface TrocaDeOsFaturada {
   id: string;
   operador_nome: string | null;

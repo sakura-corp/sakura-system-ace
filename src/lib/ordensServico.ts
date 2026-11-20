@@ -548,7 +548,7 @@ export async function editarItemOrdem(
 // Trocar peça ou serviço de uma OS JÁ FATURADA, com o total igual (#1145).
 // É o único caminho pra mexer nos itens depois de faturar: `editarItemOrdem`
 // e `adicionarItensOrdem` continuam recusando. Uma chamada só
-// (`trocar_itens_os_faturada`, migration 0090): o banco trava a OS, confere
+// (`trocar_itens_os_faturada`, migration 0087): o banco trava a OS, confere
 // que quem chama é gerente (admin da loja), que não há nota fiscal, que o
 // caixa do dia da fatura está aberto e que o total é o mesmo; troca os itens,
 // acerta o estoque pela diferença de cada peça e grava o histórico. Caixa e

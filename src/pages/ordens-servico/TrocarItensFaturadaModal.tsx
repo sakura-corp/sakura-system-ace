@@ -27,7 +27,7 @@ import type { Servico } from "@/types/servico";
  * total novo lado a lado; (2) a conferência "antes e depois": o que sai, o
  * que entra, o total (igual), o aviso de estoque negativo e o motivo
  * obrigatório. Quem confere tudo de novo, com a OS travada, é o banco
- * (migration 0090); esta janela só avisa antes.
+ * (migration 0087); esta janela só avisa antes.
  */
 
 interface Linha {

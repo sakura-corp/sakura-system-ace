@@ -119,7 +119,7 @@ interface OrdemServicoFormProps {
   /**
    * Trocar peça ou serviço de OS JÁ FATURADA, com o total igual (#1145). Só
    * aparece com `gerente` (admin da loja) e sem nota fiscal; quem decide de
-   * verdade é o banco (migration 0090).
+   * verdade é o banco (migration 0087).
    */
   gerente?: boolean;
   onTrocarItensFaturada?: (

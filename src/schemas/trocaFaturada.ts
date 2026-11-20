@@ -2,7 +2,7 @@
  * Trocar peça ou serviço de uma OS já faturada, com o total igual (#1145).
  *
  * As contas da janela "antes e depois". Quem decide de verdade é o banco
- * (`trocar_itens_os_faturada`, migration 0090): ele confere o total, o
+ * (`trocar_itens_os_faturada`, migration 0087): ele confere o total, o
  * gerente, a nota, o caixa do dia e o estoque de novo, com a OS travada. Aqui
  * é só pra a tela avisar antes, em português, sem a pessoa precisar errar.
  *

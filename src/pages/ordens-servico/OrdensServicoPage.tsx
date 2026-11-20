@@ -388,7 +388,7 @@ export function OrdensServicoPage() {
   }, [location.key]);
 
   // O histórico só existe em OS faturada. Se não carregar (banco ainda sem a
-  // migration 0090), a OS segue sem ele: é só um registro.
+  // migration 0087), a OS segue sem ele: é só um registro.
   const idDaFaturadaAberta = ordemEmEdicao?.status === "faturada" ? ordemEmEdicao.id : null;
   useEffect(() => {
     setTrocasDaOrdem([]);

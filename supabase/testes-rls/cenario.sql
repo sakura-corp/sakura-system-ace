@@ -164,7 +164,7 @@ insert into ordens_servico_itens (id, ordem_servico_id, tipo, descricao, quantid
   ('44444444-1111-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', 'peca', 'Item da OS da loja A', 1, 100.00),
   ('44444444-1111-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', 'peca', 'Item da OS da loja B', 1, 100.00);
 
--- Uma troca em OS faturada (0090) em cada loja.
+-- Uma troca em OS faturada (0087) em cada loja.
 insert into ordens_servico_trocas (id, ordem_servico_id, loja_id, motivo, total) values
   ('44444444-2222-0000-0000-0000000000aa', '44444444-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'Troca da loja A', 100.00),
   ('44444444-2222-0000-0000-0000000000bb', '44444444-0000-0000-0000-0000000000bb', '11111111-1111-1111-1111-1111111111bb', 'Troca da loja B', 100.00);

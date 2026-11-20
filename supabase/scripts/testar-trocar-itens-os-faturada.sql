@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0090 (trocar peça ou serviço de OS já faturada, com o
+-- TESTE da migration 0087 (trocar peça ou serviço de OS já faturada, com o
 -- total igual, tarefa #1145). NÃO é migration, e NUNCA deve ser rodado no
 -- Supabase de verdade: grava e apaga dado de teste.
 --

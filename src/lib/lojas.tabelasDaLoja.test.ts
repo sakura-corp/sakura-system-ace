@@ -35,7 +35,7 @@ const TRAVAM_DE_PROPOSITO: Record<string, string> = {
   whatsapp_mensagens: "histórico de mensagens abertas, responde 'já cobrei?' (0052)",
   fechamentos_caixa: "fechamentos de caixa conferidos (0058)",
   comissoes_fechamentos: "fechamentos de comissão pagos (0059)",
-  ordens_servico_trocas: "histórico das trocas em OS faturada (0090, #1145)",
+  ordens_servico_trocas: "histórico das trocas em OS faturada (0087, #1145)",
 };
 
 /** Tira os comentários `/* ... *\/` e `-- ...` (podem citar `references lojas` ou ter `;`). */

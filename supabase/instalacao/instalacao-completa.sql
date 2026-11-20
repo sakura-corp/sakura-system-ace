@@ -9189,11 +9189,11 @@ insert into schema_versao (versao) values (86) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0090_trocar_itens_os_faturada.sql
+-- 0087_trocar_itens_os_faturada.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0090: trocar peça ou serviço de uma OS JÁ FATURADA, com o total
+-- Migration 0087: trocar peça ou serviço de uma OS JÁ FATURADA, com o total
 -- igual (tarefa #1145, a "opção A" que a Sofia pediu em 20/11/2026: "As
 -- mudanças mesmo que eu tô tendo que editar é peça e serviço mesmo. O valor é
 -- uma consequência").
@@ -9579,4 +9579,4 @@ comment on function trocar_itens_os_faturada(uuid, jsonb, text, date, boolean, u
 revoke all on function trocar_itens_os_faturada(uuid, jsonb, text, date, boolean, uuid) from public, anon;
 grant execute on function trocar_itens_os_faturada(uuid, jsonb, text, date, boolean, uuid) to authenticated;
 
-insert into schema_versao (versao) values (90) on conflict do nothing;
+insert into schema_versao (versao) values (87) on conflict do nothing;
