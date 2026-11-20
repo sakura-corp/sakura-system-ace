@@ -429,6 +429,20 @@ Quatro coisas que valem saber:
   lista pelo nome as que não servem ("BIEL SUSP GM DT ACO LD/LE — está com o CST 00, que é do
   regime normal — sua loja é Simples Nacional e usa CSOSN"). Substitui o `[nItem:1]` enigmático
   que a SEFAZ devolve. **Não bloqueia a emissão** — ver item 47 da seção 6.
+
+  **SEFAZ não reconhece o CPF/CNPJ do cliente (18/11/2026, #1112)**: quando a NFC-e volta recusada
+  pelo documento do destinatário (ex.: CNPJ recém-aberto que a base da SEFAZ ainda não tem), a
+  janela troca a rejeição crua por uma frase de balcão (amarela, não vermelha: não é erro da loja),
+  com o "Detalhe da SEFAZ" embaixo e o link "Copiar o erro" (mensagem, código e `ref`, sem nome nem
+  documento do cliente). O "Confirmar emissão" dá lugar ao **"Emitir sem identificar o cliente"**,
+  que emite de novo como consumidor não identificado sem fechar a janela; junto dele, o que muda,
+  o aviso do limite da UF (#881) se a nota passar dele e, pra pessoa jurídica, que a nota no nome da
+  empresa é a NF-e modelo 55, que o sistema ainda não emite (#409). Reconhece pelo texto
+  (`src/schemas/rejeicaoNFCe.ts`); se não bater, a janela mostra a rejeição como antes. A tentativa
+  recusada não é gravada (precisaria de migration). Só reconhece quando a nota foi com o documento
+  (senão o botão repetiria a mesma recusa), e CNPJ/CPF com o dígito errado no cadastro ganha a frase
+  "corrija em Clientes". Ver `docs/licoes.md`, item 102.
+
   Não existe mais seletor manual de status no form — o cabeçalho mostra o status atual (badge) e,
   enquanto "em_andamento", um botão **"Encerrar OS"** que marca como concluída e já abre a tela de
   faturamento na sequência, num fluxo só. Tem rascunho automático (ver "Auto-save de rascunho" no começo desta seção). Técnico por item + vendedor/atendente da OS (ambos listam

@@ -492,7 +492,20 @@ export function montarCorpoNFCe({
 const MENSAGEM_SEM_TOKEN =
   "Token do Focus NFe não configurado — cadastre em Configurações → Dados fiscais da loja.";
 
-export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocusNfe> {
+export interface OpcoesEmissaoNFCe {
+  /**
+   * Emite como "consumidor não identificado", mesmo com o cliente tendo CPF ou
+   * CNPJ no cadastro (#1112): é o "Emitir sem identificar o cliente" da tela,
+   * depois que a SEFAZ recusou o documento do destinatário (ex.: CNPJ
+   * recém-aberto que a base dela ainda não tem). Sem a opção, nada muda.
+   */
+  semDestinatario?: boolean;
+}
+
+export async function emitirNFCe(
+  dados: DadosEmissaoNFCe,
+  opcoes: OpcoesEmissaoNFCe = {},
+): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
   const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
@@ -507,7 +520,11 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
 
   const lojaId = configuracaoFiscal.loja_id;
   const ref = montarRefNota(numero, "nfce");
-  const corpo = montarCorpoNFCe(dados);
+  // Sem destinatário = o mesmo corpo de `montarDestinatarioNFCe(null)`: só o
+  // cliente sai da nota; itens, pagamentos e totais são os mesmos.
+  const corpo = montarCorpoNFCe(opcoes.semDestinatario ? { ...dados, cliente: null } : dados);
+
+  if (!opcoes.semDestinatario && simularRecusaDoDestinatario()) return recusaSimulada(ref, corpo);
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfce", ref, corpo });
 
@@ -521,6 +538,26 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
   // e ela é daqui, não da Focus NFe: garante que ela vá junto mesmo se a
   // resposta não a repetir.
   return { ...resposta, ref: resposta.ref ?? ref };
+}
+
+// Teste no PC da #1112: a homologação pode não recusar CNPJ nenhum. Com
+// `VITE_SIMULAR_RECUSA_DESTINATARIO=1 npm run dev`, a emissão normal devolve a
+// recusa de 17/11 sem pedir nada à Focus (o "Emitir sem identificar o
+// cliente" vai de verdade). `import.meta.env.DEV` é falso no programa
+// instalado: lá isto nunca liga, nem com a variável.
+function simularRecusaDoDestinatario(): boolean {
+  return Boolean(import.meta.env.DEV) && (import.meta.env.VITE_SIMULAR_RECUSA_DESTINATARIO || "") === "1";
+}
+
+function recusaSimulada(ref: string, corpo: NFCeCorpo): RespostaFocusNfe {
+  const documento = corpo.cnpj_destinatario
+    ? `CNPJ ${corpo.cnpj_destinatario}`
+    : `CPF ${corpo.cpf_destinatario || ""}`.trim();
+  return {
+    ref,
+    status: "erro_autorizacao",
+    mensagem_sefaz: `Rejeição: ${documento} do destinatário não cadastrado na Receita Federal`,
+  };
 }
 
 export async function consultarNFCe(ref: string, lojaId: string): Promise<RespostaFocusNfe> {
