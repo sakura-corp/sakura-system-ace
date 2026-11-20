@@ -481,14 +481,22 @@ export function OrdensServicoPage() {
     motivo: string,
     aceitaEstoqueNegativo: boolean,
   ) {
-    if (!operador || !lojaAtual) return;
+    if (!operador || !lojaAtual) throw new Error("Entre de novo no programa e tente outra vez.");
     await trocarItensOsFaturada(ordem, itens, motivo, aceitaEstoqueNegativo, operador.id);
+    // Daqui pra baixo a troca já está gravada: recarregar é só mostrar. Se
+    // falhar, a janela fecha do mesmo jeito (tentar de novo seria trocar de
+    // novo uma lista que já mudou).
     avisar(`${nomeDocumento(ordem)}: troca feita, com o mesmo total.`);
-    await recarregarOrdemEmEdicao();
     setVersaoDasTrocas((v) => v + 1);
     listarSaldos(lojaAtual.id)
       .then(setSaldoPorPeca)
       .catch((err) => console.error("Erro ao recarregar o saldo depois da troca:", err));
+    try {
+      await recarregarOrdemEmEdicao();
+    } catch (err) {
+      console.error("A troca foi feita, mas a OS não recarregou:", err);
+      avisar("A troca foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
+    }
   }
 
   // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou

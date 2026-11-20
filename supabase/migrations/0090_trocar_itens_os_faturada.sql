@@ -296,6 +296,19 @@ begin
       using errcode = 'SKTOT';
   end if;
 
+  -- Peça sem cadastro (avulsa, 0066) só se já estava na OS assim: a peça
+  -- nova ou trocada tem que ser do cadastro, que é a que mexe no estoque.
+  if exists (
+    select 1 from jsonb_array_elements(v_depois) d
+     where d ->> 'tipo' = 'peca' and nullif(d ->> 'peca_id', '') is null
+       and not exists (
+         select 1 from jsonb_array_elements(v_antes) a
+          where a ->> 'id' = d ->> 'id' and a ->> 'tipo' = 'peca' and nullif(a ->> 'peca_id', '') is null
+       )
+  ) then
+    raise exception 'Escolha a peça do cadastro em cada linha de peça.';
+  end if;
+
   -- 8. O estoque, pela diferença de cada peça do cadastro (a mesma conta do
   -- editar_item_ordem da 0071, agora com a OS inteira).
   v_referencia := nome_documento_ordem(v_ordem.status, v_ordem.numero, v_ordem.numero_orcamento, v_ordem.tipo)

@@ -819,6 +819,7 @@ export function OrdemServicoForm({
         servicos={servicos}
         funcionarios={funcionarios}
         saldoPorPeca={saldoPorPeca}
+        saldoCarregado={saldoCarregado}
         onConfirmar={async (itens, motivo, aceita) => {
           await onTrocarItensFaturada(ordemExistente, itens, motivo, aceita);
           setJanelaTroca(false);

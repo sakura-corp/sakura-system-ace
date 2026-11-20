@@ -10,6 +10,7 @@ import {
   pecasQueFicamNegativas,
   problemaDaTroca,
   resumoDaTroca,
+  totalDaLista,
   type ItemDaTroca,
 } from "@/schemas/trocaFaturada";
 import { somarValoresLiquidos, valorLiquidoDoItem } from "@/schemas/valorItem";
@@ -49,6 +50,8 @@ interface TrocarItensFaturadaModalProps {
   servicos: Servico[];
   funcionarios: FuncionarioPublico[];
   saldoPorPeca: Map<string, number>;
+  /** Sem o saldo carregado a janela não avisa nada (o banco avisa, com SKNEG). */
+  saldoCarregado: boolean;
   onConfirmar: (itens: ItemDaTroca[], motivo: string, aceitaEstoqueNegativo: boolean) => Promise<void>;
   onFechar: () => void;
 }
@@ -136,6 +139,7 @@ export function TrocarItensFaturadaModal({
   servicos,
   funcionarios,
   saldoPorPeca,
+  saldoCarregado,
   onConfirmar,
   onFechar,
 }: TrocarItensFaturadaModalProps) {
@@ -151,15 +155,26 @@ export function TrocarItensFaturadaModal({
   const depois = linhas.map(paraItem);
   const problema = problemaDaTroca(antes, depois);
   const totalFaturado = somarValoresLiquidos(antes);
-  const totalNovo = depois.every((i) => Number.isFinite(i.quantidade * i.preco_unitario - i.desconto))
-    ? somarValoresLiquidos(depois)
-    : NaN;
+  const totalNovo = totalDaLista(depois);
   const nomePorPeca = useMemo(() => new Map(pecas.map((p) => [p.id, p.descricao])), [pecas]);
-  const negativas = pecasQueFicamNegativas(antes, depois, saldoPorPeca, nomePorPeca);
+  const negativas = saldoCarregado
+    ? pecasQueFicamNegativas(antes, depois, saldoPorPeca, nomePorPeca)
+    : [];
+  const avulsasDeAntes = useMemo(
+    () => new Set(antes.filter((i) => i.tipo === "peca" && !i.peca_id).map((i) => i.id)),
+    [antes],
+  );
   const { saem, entram } = resumoDaTroca(antes, depois);
   const precisaConfirmarEstoque = negativas.length > 0 || bancoAvisouNegativo !== null;
 
+  // Mudou a lista: a confirmação de estoque dada antes não vale pra ela.
+  function esquecerConfirmacao() {
+    setAceitaNegativo(false);
+    setBancoAvisouNegativo(null);
+  }
+
   function mudar(chave: string, mudanca: Partial<Linha>) {
+    esquecerConfirmacao();
     setLinhas((atuais) => atuais.map((l) => (l.chave === chave ? { ...l, ...mudanca } : l)));
   }
 
@@ -180,6 +195,7 @@ export function TrocarItensFaturadaModal({
   }
 
   function acrescentar() {
+    esquecerConfirmacao();
     proximaChave += 1;
     setLinhas((atuais) => [
       ...atuais,
@@ -213,8 +229,13 @@ export function TrocarItensFaturadaModal({
       await onConfirmar(depois, motivo.trim(), aceitaNegativo);
     } catch (err) {
       console.error("Erro ao trocar itens da OS faturada:", err);
-      if (err instanceof EstoqueNegativoNaTrocaError) setBancoAvisouNegativo(err.message);
-      setErro(mensagemDeErro(err));
+      if (err instanceof EstoqueNegativoNaTrocaError) {
+        // O aviso amarelo já diz isso, com a caixinha: sem repetir no vermelho.
+        setBancoAvisouNegativo(err.message);
+        setErro(null);
+      } else {
+        setErro(mensagemDeErro(err));
+      }
       setEnviando(false);
     }
   }
@@ -231,7 +252,14 @@ export function TrocarItensFaturadaModal({
       </>
     ) : (
       <>
-        <Botao variante="fantasma" onClick={() => setPasso("editar")} disabled={enviando}>
+        <Botao
+          variante="fantasma"
+          onClick={() => {
+            esquecerConfirmacao();
+            setPasso("editar");
+          }}
+          disabled={enviando}
+        >
           Voltar
         </Botao>
         <Botao variante="principal" onClick={confirmar} disabled={enviando}>
@@ -250,8 +278,7 @@ export function TrocarItensFaturadaModal({
       notaDoRodape={
         passo === "editar" ? (
           <span>
-            Total novo:{" "}
-            <strong>{Number.isFinite(totalNovo) ? formatarMoeda(totalNovo) : "—"}</strong>
+            Total novo: <strong>{totalNovo === null ? "—" : formatarMoeda(totalNovo)}</strong>
           </span>
         ) : undefined
       }
@@ -278,7 +305,11 @@ export function TrocarItensFaturadaModal({
                     opcoes={pecas.map((p) => ({ valor: p.id, rotulo: p.descricao }))}
                     valor={linha.peca_id}
                     onMudar={(v) => aoMudarPeca(linha.chave, v)}
-                    opcaoVazia="Selecione a peça"
+                    opcaoVazia={
+                      linha.id && avulsasDeAntes.has(linha.id)
+                        ? `Sem cadastro: ${linha.descricao}`
+                        : "Selecione a peça"
+                    }
                     placeholder="Selecione a peça"
                   />
                 ) : (
@@ -295,7 +326,10 @@ export function TrocarItensFaturadaModal({
                 <Botao
                   variante="fantasma"
                   tamanho="pequeno"
-                  onClick={() => setLinhas((atuais) => atuais.filter((l) => l.chave !== linha.chave))}
+                  onClick={() => {
+                    esquecerConfirmacao();
+                    setLinhas((atuais) => atuais.filter((l) => l.chave !== linha.chave));
+                  }}
                 >
                   Tirar
                 </Botao>
@@ -377,7 +411,7 @@ export function TrocarItensFaturadaModal({
           </div>
 
           <p className="text-corpo text-texto">
-            Total: <strong>{formatarMoeda(totalNovo)}</strong> (igual ao faturado). O pagamento, o
+            Total: <strong>{formatarMoeda(totalNovo ?? totalFaturado)}</strong> (igual ao faturado). O pagamento, o
             Caixa e a conta a receber não mudam. A peça que sai volta pro estoque e a que entra
             baixa.
           </p>
@@ -385,11 +419,11 @@ export function TrocarItensFaturadaModal({
           {precisaConfirmarEstoque && (
             <AvisoDeAtencao>
               <p>
-                O estoque vai ficar negativo:{" "}
                 {negativas.length > 0
-                  ? negativas.map((n) => `${n.descricao} (fica ${n.saldoDepois})`).join(", ")
+                  ? `O estoque vai ficar negativo: ${negativas
+                      .map((n) => `${n.descricao} (fica ${n.saldoDepois})`)
+                      .join(", ")}.`
                   : bancoAvisouNegativo}
-                .
               </p>
               <label className="mt-2 flex items-center gap-2">
                 <input

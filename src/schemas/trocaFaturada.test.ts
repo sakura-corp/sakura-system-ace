@@ -5,6 +5,7 @@ import {
   problemaDaTroca,
   resumoDaTroca,
   totalConfere,
+  totalDaLista,
   type ItemDaTroca,
 } from "./trocaFaturada";
 
@@ -157,5 +158,29 @@ describe("motivoParaNaoTrocar", () => {
     expect(motivoParaNaoTrocar({ faturada: true, gerente: false, temNota: false })).toMatch(/gerente/);
     expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: true })).toMatch(/nota fiscal/);
     expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: false })).toBeNull();
+  });
+});
+
+describe("peça sem cadastro (avulsa) que já estava na OS", () => {
+  const avulsa: ItemDaTroca = { ...pneuErrado, id: "i3", peca_id: null, descricao: "Válvula", quantidade: 1, preco_unitario: 10 };
+
+  it("pode ficar como está enquanto se troca outro item", () => {
+    const a = [pneuErrado, avulsa];
+    const d = [{ ...pneuErrado, peca_id: "p2", descricao: "Pneu 175/65 R14" }, avulsa];
+    expect(problemaDaTroca(a, d)).toBeNull();
+  });
+
+  it("item novo sem peça do cadastro continua recusado", () => {
+    const novo: ItemDaTroca = { ...avulsa, id: undefined };
+    expect(problemaDaTroca([pneuErrado, avulsa], [avulsa, { ...novo, preco_unitario: 600 }])).toMatch(
+      /Escolha a peça/,
+    );
+  });
+});
+
+describe("totalDaLista", () => {
+  it("devolve null com número inválido", () => {
+    expect(totalDaLista([{ ...pneuErrado, quantidade: Number.NaN }])).toBeNull();
+    expect(totalDaLista(antes)).toBe(650);
   });
 });

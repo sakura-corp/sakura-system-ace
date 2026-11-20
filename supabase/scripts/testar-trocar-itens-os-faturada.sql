@@ -251,6 +251,15 @@ begin
     raise exception 'FALHOU (B10): estoque negativo sem confirmação não recusou com SKNEG: % %', t.codigo, t.mensagem;
   end if;
 
+  -- B10b. Peça nova sem cadastro (avulsa) não entra.
+  t := pg_temp.t1145_tentar(os_neg,
+    jsonb_build_array(jsonb_build_object('tipo', 'peca', 'peca_id', null, 'descricao', 'Peça digitada',
+                                         'quantidade', 1, 'preco_unitario', 50)),
+    'era peça, não serviço', dia_fech, true);
+  if t.codigo is null or t.mensagem not like 'Escolha a peça do cadastro%' then
+    raise exception 'FALHOU (B10b): peça nova sem cadastro entrou: % %', t.codigo, t.mensagem;
+  end if;
+
   -- Nada do que foi recusado gravou.
   reset role;
   if (select count(*) from ordens_servico_trocas where loja_id in (loja_a, loja_b)) <> 0 then

@@ -28,6 +28,15 @@ export interface ItemDaTroca {
   custo_unitario?: number | null;
 }
 
+/**
+ * O total da lista, ou `null` se algum número ainda não é número (campo
+ * vazio ou digitado pela metade): a tela mostra "—" em vez de NaN.
+ */
+export function totalDaLista(itens: readonly ItemDaTroca[]): number | null {
+  const total = somarValoresLiquidos(itens);
+  return Number.isFinite(total) ? total : null;
+}
+
 /** O total novo é o faturado? (até meio centavo, como o banco). */
 export function totalConfere(antes: readonly ItemDaTroca[], depois: readonly ItemDaTroca[]): boolean {
   return Math.abs(somarValoresLiquidos(antes) - somarValoresLiquidos(depois)) <= 0.005;
@@ -76,8 +85,16 @@ export function problemaDaTroca(
   depois: readonly ItemDaTroca[],
 ): string | null {
   if (depois.length === 0) return "A OS precisa continuar com pelo menos um item.";
+  // Peça sem cadastro (avulsa, #655) que já estava na OS e continua avulsa
+  // pode ficar; peça nova ou trocada precisa ser do cadastro (é ela que mexe
+  // no estoque).
+  const avulsasDeAntes = new Set(
+    antes.filter((i) => i.tipo === "peca" && !i.peca_id && i.id).map((i) => i.id),
+  );
   for (const item of depois) {
-    if (item.tipo === "peca" && !item.peca_id) return "Escolha a peça do cadastro em cada linha de peça.";
+    if (item.tipo === "peca" && !item.peca_id && !(item.id && avulsasDeAntes.has(item.id))) {
+      return "Escolha a peça do cadastro em cada linha de peça.";
+    }
     if (!item.descricao.trim()) return "Cada item precisa de uma descrição.";
     if (!(item.quantidade > 0)) return "A quantidade de cada item precisa ser maior que zero.";
     if (item.preco_unitario < 0 || item.desconto < 0) return "Preço e desconto não podem ser negativos.";

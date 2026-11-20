@@ -62,6 +62,7 @@ function montar(saldo = new Map([["p1", 5], ["p2", 5]]), onConfirmar = vi.fn().m
       servicos={servicos}
       funcionarios={funcionarios}
       saldoPorPeca={saldo}
+      saldoCarregado
       onConfirmar={onConfirmar}
       onFechar={vi.fn()}
     />,
