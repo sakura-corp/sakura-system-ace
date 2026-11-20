@@ -416,6 +416,11 @@ Quatro coisas que valem saber:
     já entrou no Caixa com o total antigo — mesma razão do item 31 da seção 6) e OS que já tem
     **nota fiscal emitida** e não cancelada (corrigir aqui deixaria a nota diferente da OS). No
     segundo caso o caminho é cancelar a nota antes (Notas Fiscais → "Cancelar nota").
+  - **Troca depois de faturada** (#1145, migration `0087`): na OS faturada, o gerente (admin da
+    loja) tem o botão "Trocar peça ou serviço": edita a lista, confere o "antes e depois" com o
+    motivo obrigatório e o total tem que ficar igual (mudar valor é a próxima etapa). Bloqueia com
+    nota fiscal e com o caixa do dia da fatura fechado. Estoque acertado na hora; o histórico
+    aparece na própria OS ("Trocas depois de faturada").
   - **Não tem "Remover"** — só editar. Um item lançado por engano ainda precisa ser transformado em
     outro item pela edição; excluir de vez não foi construído (não foi pedido, e teria a mesma
     conversa de estoque/nota). Fácil de acrescentar depois, se fizer falta.

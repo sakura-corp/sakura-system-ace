@@ -664,6 +664,17 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003; aplicar depois dela). Teste em
   `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
   corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
+- `0087`: **trocar peça ou serviço de OS já faturada, com o total igual** (tarefa #1145; Sofia,
+  20/11/2026). Tabela nova `ordens_servico_trocas` (o histórico: quem, quando, motivo, itens antes e
+  depois, total; lê quem lê a OS, grava só o admin da loja, ninguém altera nem apaga) e a função
+  `trocar_itens_os_faturada(ordem, lista final de itens, motivo, dia da fatura, aceita estoque
+  negativo, operador)`, `security invoker`: trava a OS, só OS faturada, só admin da loja, recusa nota
+  fiscal não cancelada, caixa do dia da fatura fechado e motivo vazio; troca os itens e confere o
+  total no centavo (diferente: código **`SKTOT`**, nada gravado); acerta o estoque pela diferença de
+  cada peça (referência "OS N (troca depois de faturada)"); peça que fica negativa sem confirmação:
+  código **`SKNEG`**. Caixa e contas a receber não mudam. As travas da `0071` continuam. Número
+  `0087` por decisão da Sofia (20/11/2026: entra antes, pra loja usar logo); as de #1120, #1121 e
+  #1123 passam a `0088`, `0089` e `0090`. Teste em `supabase/scripts/testar-trocar-itens-os-faturada.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

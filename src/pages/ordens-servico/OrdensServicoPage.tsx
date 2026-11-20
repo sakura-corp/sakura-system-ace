@@ -47,7 +47,9 @@ import {
   faturarOrdem,
   OrdemMudouError,
   listarOrdens,
+  listarTrocasDaOrdem,
   registrarVendaBalcao,
+  trocarItensOsFaturada,
   VendaSemFaturamentoError,
 } from "@/lib/ordensServico";
 import type {
@@ -69,6 +71,7 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
+  TrocaDeOsFaturada,
 } from "@/types/os";
 import {
   STATUS_COM_FECHAMENTO,
@@ -78,6 +81,7 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import type { ItemDaTroca } from "@/schemas/trocaFaturada";
 import {
   agruparNotasPorOrdem,
   ordemEstaFinalizada,
@@ -146,6 +150,9 @@ export function OrdensServicoPage() {
   // significa "ainda não veio", e nesse estado os avisos de estoque ficam
   // calados em vez de anunciar "saldo zero" pra tudo.
   const [saldoPorPeca, setSaldoPorPeca] = useState<Map<string, number> | null>(null);
+  // O histórico das trocas depois de faturada da OS aberta (#1145).
+  const [trocasDaOrdem, setTrocasDaOrdem] = useState<TrocaDeOsFaturada[]>([]);
+  const [versaoDasTrocas, setVersaoDasTrocas] = useState(0);
   // Custo de cada OS da lista, calculado pelo banco (`custo_das_ordens`): a
   // coluna Lucro não depende de ler o cadastro de peças (#366).
   const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
@@ -380,6 +387,23 @@ export function OrdensServicoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
+  // O histórico só existe em OS faturada. Se não carregar (banco ainda sem a
+  // migration 0087), a OS segue sem ele: é só um registro.
+  const idDaFaturadaAberta = ordemEmEdicao?.status === "faturada" ? ordemEmEdicao.id : null;
+  useEffect(() => {
+    setTrocasDaOrdem([]);
+    if (!idDaFaturadaAberta) return;
+    let cancelado = false;
+    listarTrocasDaOrdem(idDaFaturadaAberta)
+      .then((lista) => {
+        if (!cancelado) setTrocasDaOrdem(lista);
+      })
+      .catch((err) => console.error("Erro ao carregar o histórico de trocas da OS:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [idDaFaturadaAberta, versaoDasTrocas]);
+
   // Recarrega a cada abertura do formulário (em vez de guardar pra sempre):
   // lançar peça numa OS mexe no estoque, então um saldo guardado da vez
   // anterior mostraria número velho na próxima abertura.
@@ -446,6 +470,33 @@ export function OrdensServicoPage() {
     }
     await editarItemOrdem(item, patch, operador.id);
     await recarregarOrdemEmEdicao();
+  }
+
+  // Trocar peça ou serviço de OS já faturada, com o total igual (#1145). O
+  // banco confere tudo de novo (gerente, nota, caixa do dia, total, estoque).
+  // Depois: a OS, o histórico e o saldo recarregam (a troca mexeu no estoque).
+  async function handleTrocarItensFaturada(
+    ordem: OrdemServico,
+    itens: ItemDaTroca[],
+    motivo: string,
+    aceitaEstoqueNegativo: boolean,
+  ) {
+    if (!operador || !lojaAtual) throw new Error("Entre de novo no programa e tente outra vez.");
+    await trocarItensOsFaturada(ordem, itens, motivo, aceitaEstoqueNegativo, operador.id);
+    // Daqui pra baixo a troca já está gravada: recarregar é só mostrar. Se
+    // falhar, a janela fecha do mesmo jeito (tentar de novo seria trocar de
+    // novo uma lista que já mudou).
+    avisar(`${nomeDocumento(ordem)}: troca feita, com o mesmo total.`);
+    setVersaoDasTrocas((v) => v + 1);
+    listarSaldos(lojaAtual.id)
+      .then(setSaldoPorPeca)
+      .catch((err) => console.error("Erro ao recarregar o saldo depois da troca:", err));
+    try {
+      await recarregarOrdemEmEdicao();
+    } catch (err) {
+      console.error("A troca foi feita, mas a OS não recarregou:", err);
+      avisar("A troca foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
+    }
   }
 
   // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
@@ -890,6 +941,9 @@ export function OrdensServicoPage() {
           temNotaEmitida={temAlgumaNotaValida(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
           abaInicial={abaInicialEdicao}
           onItensMudaram={recarregarOrdemEmEdicao}
+          gerente={operador.admin}
+          onTrocarItensFaturada={handleTrocarItensFaturada}
+          trocas={trocasDaOrdem}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
           onEditarItem={handleEditarItem}

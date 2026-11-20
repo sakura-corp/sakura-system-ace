@@ -64,6 +64,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
+  ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
   ck_comissoes_fechamentos_valores:
     "O valor pago não pode ser negativo, e o fim do período não pode vir antes do início.",

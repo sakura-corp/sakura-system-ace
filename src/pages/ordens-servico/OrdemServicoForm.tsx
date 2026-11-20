@@ -47,6 +47,10 @@ import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
+import { Botao } from "@/components/Botao";
+import { motivoParaNaoTrocar, resumoDaTroca, type ItemDaTroca } from "@/schemas/trocaFaturada";
+import type { TrocaDeOsFaturada } from "@/types/os";
+import { TrocarItensFaturadaModal } from "./TrocarItensFaturadaModal";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -112,6 +116,20 @@ interface OrdemServicoFormProps {
    * ordem aberta.
    */
   onItensMudaram?: () => void | Promise<void>;
+  /**
+   * Trocar peça ou serviço de OS JÁ FATURADA, com o total igual (#1145). Só
+   * aparece com `gerente` (admin da loja) e sem nota fiscal; quem decide de
+   * verdade é o banco (migration 0087).
+   */
+  gerente?: boolean;
+  onTrocarItensFaturada?: (
+    ordem: OrdemServico,
+    itens: ItemDaTroca[],
+    motivo: string,
+    aceitaEstoqueNegativo: boolean,
+  ) => Promise<void>;
+  /** O histórico das trocas depois de faturada, da mais nova pra mais velha. */
+  trocas?: TrocaDeOsFaturada[];
 }
 
 function formatarMoeda(valor: number): string {
@@ -166,7 +184,11 @@ export function OrdemServicoForm({
   onRecusar,
   acoesExtras,
   onItensMudaram,
+  gerente = false,
+  onTrocarItensFaturada,
+  trocas = [],
 }: OrdemServicoFormProps) {
+  const [janelaTroca, setJanelaTroca] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   const [aprovando, setAprovando] = useState(false);
@@ -241,12 +263,17 @@ export function OrdemServicoForm({
   const ehFaturada = ordemExistente?.status === "faturada";
   const podeAdicionarItem = !ehFaturada && !ehRecusado;
   const podeEditarItem = !!ordemExistente && !ehFaturada && !ehRecusado && !temNotaEmitida;
+  const porQueNaoTroca =
+    ehFaturada && onTrocarItensFaturada
+      ? motivoParaNaoTrocar({ faturada: true, gerente, temNota: temNotaEmitida })
+      : null;
+  const podeTrocarFaturada = ehFaturada && !!onTrocarItensFaturada && porQueNaoTroca === null;
   const vencido = modoOrcamento && orcamentoVencido(ordemExistente?.validade);
   const avisoItens = ehRecusado
     ? "Orçamento recusado: fica só como histórico, não dá pra mexer nos itens."
     : ehFaturada
-      ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então, " +
-      "então não dá pra acrescentar nem corrigir item. Pra qualquer mudança, abra uma OS nova."
+      ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então. " +
+        "Dá pra trocar peça ou serviço mantendo o mesmo total (só gerente, sem nota fiscal)."
     : temNotaEmitida
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
         "da OS. Cancele a nota em Notas Fiscais antes de mexer."
@@ -710,6 +737,39 @@ export function OrdemServicoForm({
             </section>
           )}
 
+          {ehFaturada && onTrocarItensFaturada && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linha p-3">
+              <p className="text-rotulo text-texto-2">
+                {podeTrocarFaturada
+                  ? "Peça ou serviço lançado errado? Troque mantendo o mesmo total."
+                  : porQueNaoTroca}
+              </p>
+              {podeTrocarFaturada && (
+                <Botao tamanho="pequeno" onClick={() => setJanelaTroca(true)}>
+                  Trocar peça ou serviço
+                </Botao>
+              )}
+            </div>
+          )}
+
+          {trocas.length > 0 && (
+            <section className="rounded-lg bg-poco p-3">
+              <p className="mb-1 text-rotulo font-medium text-texto/85">Trocas depois de faturada</p>
+              <ul className="space-y-1 text-rotulo text-texto/90">
+                {trocas.map((troca) => {
+                  const { saem, entram } = resumoDaTroca(troca.itens_antes, troca.itens_depois);
+                  return (
+                    <li key={troca.id}>
+                      {formatarData(troca.criado_em)} · {troca.operador_nome ?? "—"} · saiu{" "}
+                      {saem.map((i) => i.descricao).join(", ") || "nada"}, entrou{" "}
+                      {entram.map((i) => i.descricao).join(", ") || "nada"} · motivo: {troca.motivo}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           <ItensFields
             control={control}
             register={register}
@@ -752,6 +812,21 @@ export function OrdemServicoForm({
         HTML inválido, e é isso que deixa cada modal ter o próprio botão de
         enviar — o que faz o Enter avançar de campo aqui dentro igual ao
         resto do app, sem tratamento especial. */}
+    {janelaTroca && ordemExistente && onTrocarItensFaturada && (
+      <TrocarItensFaturadaModal
+        ordem={ordemExistente}
+        pecas={pecas}
+        servicos={servicos}
+        funcionarios={funcionarios}
+        saldoPorPeca={saldoPorPeca}
+        saldoCarregado={saldoCarregado}
+        onConfirmar={async (itens, motivo, aceita) => {
+          await onTrocarItensFaturada(ordemExistente, itens, motivo, aceita);
+          setJanelaTroca(false);
+        }}
+        onFechar={() => setJanelaTroca(false)}
+      />
+    )}
     {janelaAvulsas && ordemExistente && (
       <PecasAvulsasAprovacaoModal
         itens={avulsasDoOrcamento}
