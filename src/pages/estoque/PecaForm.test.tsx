@@ -414,7 +414,13 @@ describe("PecaForm — os erros aparecem junto do botão Salvar (#1129)", () => 
   /** O rodapé do formulário: o bloco que tem o botão Salvar. */
   const rodape = () => screen.getByTestId("rodape-peca");
 
-  afterEach(() => vi.restoreAllMocks());
+  // O jsdom não tem scrollIntoView: os testes põem um falso no protótipo, e
+  // ele sai no fim de cada um, pra não vazar pros outros.
+  const scrollOriginal = Element.prototype.scrollIntoView;
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Element.prototype.scrollIntoView = scrollOriginal;
+  });
 
   it("permissão negada: a mensagem aparece no rodapé, junto do botão, sem o texto cru do banco", async () => {
     const recusa = {
@@ -485,5 +491,57 @@ describe("PecaForm — os erros aparecem junto do botão Salvar (#1129)", () => 
     expect(aviso).toHaveTextContent(/demorou/i);
     await waitFor(() => expect(salvar()).toHaveTextContent("Salvar peça"));
     expect(salvar()).toBeEnabled();
+  });
+
+  it("clicar de novo depois do prazo, com a primeira gravação ainda andando, não grava outra peça", async () => {
+    // A primeira pode ainda chegar ao banco: um segundo onSalvar cadastraria a
+    // mesma peça duas vezes (o aviso de parecida não pega, a lista é a de antes).
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user, onSalvar } = montar({
+      onSalvar: () => new Promise<void>(() => {}),
+      prazoParaSalvarMs: 50,
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+    await within(rodape()).findByText(/demorou/i);
+    await waitFor(() => expect(salvar()).toBeEnabled());
+    await user.click(salvar());
+
+    expect(await within(rodape()).findByText(/ainda esperando/i)).toBeInTheDocument();
+    expect(onSalvar).toHaveBeenCalledTimes(1);
+  });
+
+  it("o erro do banco de uma tentativa antiga some quando a nova barra na validação", async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({
+      onSalvar: () =>
+        Promise.reject({ code: "42501", message: "new row violates row-level security policy" }),
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+    await within(rodape()).findByText(/não tem permissão/);
+
+    await user.clear(campo("Descrição *"));
+    await user.click(salvar());
+
+    await within(rodape()).findByText("Descrição");
+    expect(within(rodape()).queryByText(/não tem permissão/)).not.toBeInTheDocument();
+  });
+
+  it("campo de pneu com erro, fora da tela, diz como chegar nele", async () => {
+    // Medida, índice e DOT só aparecem com a categoria Pneus: sem a dica, a
+    // lista apontaria um campo que a pessoa não acha.
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({ valoresIniciais: { dot: 2024 as unknown as string } });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+
+    const lista = await within(rodape()).findByRole("alert");
+    expect(lista).toHaveTextContent(/DOT.*categoria Pneus/);
   });
 });
