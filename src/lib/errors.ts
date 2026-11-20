@@ -1,3 +1,5 @@
+import { MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES } from "@/schemas/percentualTributosSimples";
+
 /**
  * A frase em português de cada trava do banco (migrations 0058 a 0060).
  *
@@ -36,6 +38,30 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_juros_percentual: "O juro de parcelamento precisa estar entre 0 e 100%.",
   ck_config_fiscal_aliquota_iss: "A alíquota de ISS precisa estar entre 0 e 10%.",
   ck_config_fiscal_cnpj: "O CNPJ da loja está incompleto — ele tem 14 caracteres.",
+  // Migration 0078 (#866).
+  ck_config_fiscal_percentual_tributos_simples: MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+  // Migration 0081 (#456): os limites do código do Pix (BR Code).
+  ck_config_pix_chave: "A chave Pix não pode ficar em branco nem passar de 77 letras.",
+  ck_config_pix_nome_recebedor: "O nome de quem recebe o Pix não pode ficar em branco nem passar de 25 letras.",
+  ck_config_pix_cidade_recebedor: "A cidade de quem recebe o Pix não pode ficar em branco nem passar de 15 letras.",
+  // Migration 0082 (#459): o link de avaliação no Google.
+  ck_configuracoes_avaliacao_link_https:
+    "O link de avaliação precisa começar com https:// e não pode ter espaço.",
+  // Importação por planilha (#457, migration 0083): só o tipo "clientes" existe
+  // na parte 1; um programa mais novo que o banco cairia aqui.
+  ck_importacao_lotes_tipo:
+    "Este tipo de importação ainda não existe no banco desta empresa. Avise quem cuida do sistema.",
+  // Migration 0084 (#381): o intervalo do retorno do cliente, no cadastro do serviço.
+  ck_servicos_intervalo: "O intervalo do serviço precisa ser maior que zero e no máximo 3.650 dias ou 1.000.000 km (ou ficar vazio).",
+  // Migration 0085 (#383): o contato da contabilidade.
+  ck_configuracoes_contabilidade_nome:
+    "O nome da contabilidade não pode ficar em branco nem passar de 80 letras.",
+  ck_configuracoes_contabilidade_whatsapp:
+    "O WhatsApp da contabilidade precisa ter o DDD e o número: de 10 a 13 dígitos.",
+  ck_configuracoes_contabilidade_email:
+    "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
+  ck_configuracoes_contabilidade_algum_contato:
+    "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
@@ -68,7 +94,16 @@ export const MENSAGEM_SEM_PERMISSAO =
   "Você não tem permissão pra fazer isso. Peça a um administrador pra liberar o módulo no seu cadastro (Configurações → Operadores).";
 
 /**
- * O programa pediu uma coluna que o banco desta empresa ainda não tem: a
+ * Dois computadores se travaram um esperando o outro (deadlock, código 40P01
+ * do Postgres): o banco desfaz um dos dois por inteiro e o outro segue. Raro
+ * (ex.: juntar peças enquanto outra tela mexe nas mesmas peças), mas a frase
+ * do Postgres vinha em inglês (#803).
+ */
+export const MENSAGEM_TRAVAMENTO_MUTUO =
+  "Outro computador estava mexendo nas mesmas informações ao mesmo tempo, e este pedido não foi gravado. Atualize a tela e tente de novo.";
+
+/**
+ * O programa pediu uma coluna ou view que o banco desta empresa ainda não tem: a
  * versão nova chegou antes da migration (a ordem certa é o banco primeiro,
  * mas migration com `versao-minima-do-programa` faz o contrário de
  * propósito — ex.: criar orçamento antes da 0065). Sem isto, a tela mostrava
@@ -78,11 +113,16 @@ export const MENSAGEM_BANCO_DESATUALIZADO =
   "O banco desta empresa ainda não foi atualizado pra esta versão do programa, então isto ainda não funciona. Avise quem cuida do sistema.";
 
 /**
- * Colunas que chegam com a 0065 (e o custo da peça avulsa, da 0066). Só elas viram o aviso de banco desatualizado:
- * uma coluna qualquer que falta é erro de programação (nome errado), e mandar
- * "atualizar o banco" ali só esconderia o defeito.
+ * Colunas e views novas do banco (da 0065 em diante). Só elas viram o aviso de
+ * banco desatualizado: uma coluna ou tabela qualquer que falta é erro de
+ * programação (nome errado), e mandar "atualizar o banco" ali só esconderia o
+ * defeito.
+ *
+ * Migration nova que acrescenta coluna ou cria view entra aqui: o teste em
+ * `errors.test.ts` lê `supabase/migrations/` e reprova se faltar.
  */
-export const COLUNAS_DA_0065 = [
+export const OBJETOS_NOVOS_DO_BANCO = [
+  // 0065 (orçamento): colunas de ordens_servico.
   "numero_orcamento",
   "validade",
   "aprovado_por",
@@ -90,29 +130,141 @@ export const COLUNAS_DA_0065 = [
   "motivo_recusa",
   "recusado_em",
   "orcado_em",
+  // 0066 (peça avulsa): coluna de ordens_servico_itens.
   "custo_unitario",
+  // 0068 (clientes por janela): views.
+  "clientes_janela",
+  "veiculos_janela",
+  // 0073 (peças por janela): views.
+  "pecas_janela",
+  "estoque_saldos",
+  // 0075 (OS por janela): views.
+  "ordens_servico_caixa",
+  "ordens_servico_comissoes",
+  "ordens_servico_garantias",
+  "ordens_servico_notas",
+  "ordens_servico_clientes",
+  // 0078 (percentual dos tributos do Simples): coluna de configuracoes_fiscais_loja.
+  "percentual_tributos_simples",
+  // 0081 (Pix da loja): tabela.
+  "configuracoes_pix",
+  // 0082 (link de avaliação, #459): tabela nova. Sobe antes do programa, mas
+  // se alguém publicar sem rodar, a tela de Configurações cai aqui.
+  "configuracoes_avaliacao",
+  // 0083 (importação por planilha, #457): a tabela dos lotes e a marca do lote
+  // em clientes e veiculos.
+  "importacao_lotes",
+  "importacao_lote_id",
+  // 0084 (retorno do cliente, #381): colunas de servicos e de clientes.
+  "intervalo_dias",
+  "intervalo_km",
+  "nao_avisar",
+  // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
+  // programa, mas se alguém publicar sem rodar, a tela cai aqui.
+  "configuracoes_contabilidade",
 ] as const;
 
-/** O nome da coluna que falta, do jeito do PostgREST ou do Postgres; null se não é esse erro. */
-function colunaQueFalta(mensagem: string): string | null {
-  const doPostgrest = /Could not find the '([^']+)' column/.exec(mensagem);
-  if (doPostgrest) return doPostgrest[1];
+/**
+ * O nome da coluna, tabela ou view que falta, do jeito do PostgREST ou do
+ * Postgres; null se não é esse erro.
+ */
+function objetoQueFalta(mensagem: string): string | null {
+  const colunaDoPostgrest = /Could not find the '([^']+)' column/.exec(mensagem);
+  if (colunaDoPostgrest) return colunaDoPostgrest[1];
   // "column ordens_servico.validade does not exist" ou
   // 'column "validade" of relation "ordens_servico" does not exist'
-  const doPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
-  return doPostgres ? doPostgres[1] : null;
+  const colunaDoPostgres = /column "?(?:[\w]+\.)?([\w]+)"?(?: of relation "[^"]+")? does not exist/.exec(mensagem);
+  if (colunaDoPostgres) return colunaDoPostgres[1];
+  // "Could not find the table 'public.clientes_janela' in the schema cache"
+  const tabelaDoPostgrest = /Could not find the table '(?:[\w]+\.)?([\w]+)'/.exec(mensagem);
+  if (tabelaDoPostgrest) return tabelaDoPostgrest[1];
+  // 'relation "clientes_janela" does not exist' (ou "public.clientes_janela")
+  const tabelaDoPostgres = /relation "(?:[\w]+\.)?([\w]+)" does not exist/.exec(mensagem);
+  return tabelaDoPostgres ? tabelaDoPostgres[1] : null;
+}
+
+/**
+ * A internet da loja caiu (#374): o pedido nem chegou ao Supabase. Sem isto, a
+ * tela mostrava "TypeError: Failed to fetch", que não diz o que fazer.
+ */
+export const MENSAGEM_SEM_CONEXAO = "Sem conexão com a internet. Confira a rede e tente de novo.";
+
+/**
+ * A frase que cada navegador põe no `TypeError` do fetch quando a rede cai:
+ * Chromium/Electron, Firefox, Safari e o polyfill do React Native, nessa
+ * ordem. Inteira (com `^` e `$`) de propósito: uma frase nossa que só cita a
+ * do navegador não é a queda. Aceita o nome do erro na frente, como o
+ * postgrest-js escreve ("TypeError: Failed to fetch"), e o endereço entre
+ * parênteses no fim, que o Chromium passou a acrescentar em algumas versões.
+ */
+const FRASE_DE_QUEDA =
+  /^(?:\w*Error:\s*)?(?:Failed to fetch|NetworkError when attempting to fetch resource\.?|Load failed|Network request failed)(?:\s*\([^)]*\))?$/i;
+
+/** Quem chamou desistiu do pedido (AbortError): isso não é queda de rede. */
+function foiCancelado(erro: { name?: unknown; code?: unknown; message?: unknown }): boolean {
+  if (erro.name === "AbortError" || erro.code === "ABORT_ERR") return true;
+  // O postgrest-js e o auth-js copiam só a frase: "AbortError: This operation was aborted".
+  return typeof erro.message === "string" && /^AbortError\b|\baborted\b/i.test(erro.message);
+}
+
+/**
+ * A rede caiu? Reconhece a queda em todas as formas que chegam às telas: o
+ * `TypeError` do navegador; o objeto `{ message, details, hint, code: "" }` que
+ * o PostgREST (`.from`/`.rpc`) devolve; o `AuthRetryableFetchError` do login
+ * (com `status` 0, que é "nem houve resposta" — com 5xx o servidor respondeu);
+ * o `StorageUnknownError` dos arquivos e o `FunctionsFetchError` das funções,
+ * que guardam o erro do navegador dentro (`originalError` e `context`).
+ *
+ * Nunca confunde com recusa do banco: erro com `code` do Postgres/PostgREST
+ * preenchido (RLS 42501, trava 23514, 42P01, PGRST205, deadlock 40P01…) não é
+ * rede, e cancelamento (AbortError) também não.
+ */
+export function ehErroDeRede(erro: unknown): boolean {
+  return quedaDeRede(erro, 0);
+}
+
+// A profundidade só protege de um erro que guarda a si mesmo dentro.
+function quedaDeRede(erro: unknown, profundidade: number): boolean {
+  if (!erro || typeof erro !== "object" || profundidade > 3) return false;
+  const e = erro as {
+    name?: unknown;
+    code?: unknown;
+    message?: unknown;
+    status?: unknown;
+    originalError?: unknown;
+    context?: unknown;
+  };
+  if (foiCancelado(e)) return false;
+  if (typeof e.code === "string" && e.code !== "") return false;
+  switch (e.name) {
+    case "AuthRetryableFetchError":
+      // status 0: o fetch lançou, nem houve resposta. 5xx: o servidor respondeu.
+      return e.status === 0;
+    case "StorageUnknownError":
+      return quedaDeRede(e.originalError, profundidade + 1);
+    case "FunctionsFetchError":
+      return quedaDeRede(e.context, profundidade + 1);
+  }
+  return typeof e.message === "string" && FRASE_DE_QUEDA.test(e.message.trim());
 }
 
 function traduzir(mensagem: string): string {
   if (/violates row-level security policy/.test(mensagem)) return MENSAGEM_SEM_PERMISSAO;
-  const coluna = colunaQueFalta(mensagem);
-  if (coluna && (COLUNAS_DA_0065 as readonly string[]).includes(coluna)) {
+  if (/\bdeadlock detected\b/.test(mensagem)) return MENSAGEM_TRAVAMENTO_MUTUO;
+  const objeto = objetoQueFalta(mensagem);
+  if (objeto && (OBJETOS_NOVOS_DO_BANCO as readonly string[]).includes(objeto)) {
     return MENSAGEM_BANCO_DESATUALIZADO;
   }
   return traduzirTrava(mensagem) ?? mensagem;
 }
 
 export function mensagemDeErro(erro: unknown): string {
+  // Primeiro a queda de rede: a frase do navegador (em inglês) não diz o que fazer.
+  if (ehErroDeRede(erro)) return MENSAGEM_SEM_CONEXAO;
+  // Pelo código, que não depende do idioma do banco nem de quem embrulhou a frase.
+  if (erro && typeof erro === "object" && (erro as { code?: unknown }).code === "40P01") {
+    return MENSAGEM_TRAVAMENTO_MUTUO;
+  }
   if (erro && typeof erro === "object" && "message" in erro) {
     const mensagem = (erro as { message?: unknown }).message;
     if (typeof mensagem === "string" && mensagem.length > 0) return traduzir(mensagem);

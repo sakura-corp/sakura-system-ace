@@ -232,7 +232,12 @@ export function modoGit(modo, entrada, cwd = process.cwd()) {
     for (const linha of entrada.split("\n").filter(Boolean)) {
       const [, local, , remoto] = linha.split(" ");
       if (!local || zeros.test(local)) continue; // apagar branch não leva commit
-      const faixa = remoto && !zeros.test(remoto) ? [`${remoto}..${local}`] : [local, "--not", "--remotes"];
+      // Só o que ainda não está no remoto: `remoto..local` sozinho incluía os
+      // commits da `main` trazidos num merge, que já saíram (barrava à toa,
+      // 06/11). O `--not --remotes` tira tudo que qualquer branch remota já tem.
+      const faixa = remoto && !zeros.test(remoto)
+        ? [local, `^${remoto}`, "--not", "--remotes"]
+        : [local, "--not", "--remotes"];
       const commits = (git(["rev-list", "--max-count=200", ...faixa], cwd) ?? "").split("\n").filter(Boolean);
       for (const sha of commits) diff += git(["show", "--unified=0", "--no-color", "--format=", sha], cwd) ?? "";
     }

@@ -72,7 +72,7 @@ de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa pa
 cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
 PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
 
-**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`)
+**O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
 instrução de **parar e mandar mensagem pra ela** se quem estiver fazendo não for ela. Desde 19/10/2026
 a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PROJETO_STATUS.md`).
@@ -118,13 +118,13 @@ a equipe também pega essas, sempre contra o Supabase de teste (seção 0 do `PR
 | #409, #410 | NF-e modelo 55; manifestação do destinatário (MD-e). Fiscal: só com ela |
 | #411 | Boleto (levantamento) |
 | #412 | App de celular pro mecânico (levantamento; decisão estrutural) |
-| **Da visão** (12/10, `docs/visao.md`) | |
+| **Da visão** (12/10, `docs/visao.md`, que mora no `sakura-corp/escritorio`, privado) | |
 | #456 | Pix copia e cola na cobrança e no faturamento |
 | #457 | Importar do sistema antigo, por planilha (`FN-15`); as lojas da fase 2 usam outro sistema |
 | #458 | Desenho do assistente de IA (conversa, sem código) |
 | #459 | Pedir avaliação no Google depois do serviço |
 
-**A ordem** (sem custo primeiro, em ondas) está em `docs/visao.md`, "Prioridade", e cada tarefa
+**A ordem** (sem custo primeiro, em ondas) está em `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), "Prioridade", e cada tarefa
 tem a linha "**Prioridade** (12/10)".
 
 O orçamento rápido no balcão entrou na #379, e a assinatura do cliente na #380. Ficaram **sem
@@ -216,6 +216,90 @@ testando em produção) → autenticação com a prefeitura → CNAE faltando.
 > - **Senha do portal** (não vai na Focus): portal da NFS-e → **Alterar Senha**. Avisar a
 >   contabilidade, que entra lá todo mês pra cadastrar a alíquota.
 
+#### NFS-e pelo Padrão Nacional (#837; o código entrou na 0.9.56, liberada em 06/11/2026)
+
+**Estado em 06/11/2026, noite**: o porteiro novo (`focus-nfe`) está publicado na Pneus Amigão, os
+dois computadores estão na 0.9.56, o banco está na **0080**, a "NFSe Nacional – Produção" está ligada
+na Focus (série 1) e o **6%** está nos Dados fiscais. **A primeira nota (OS 18, real) foi recusada**
+pelo Ambiente Nacional: "IM do prestador não deve ser informado, pois não existem informações
+complementares registradas no CNC NFS-e do município emissor informado na DPS". A inscrição
+municipal foi apagada no programa (Dados fiscais) e no cadastro da empresa na Focus (aba
+Identificação), com a NFSe municipal já desligada, e **o erro continuou**: a pergunta está com o
+suporte da Focus (06/11). **A Focus respondeu em 09/11**: na tentativa que eles olharam
+(`os18-nfsen-1793999245429`, 06/11 18:07) a IM **veio do programa**, no corpo enviado; é pra tirar.
+Desde a #948 o programa **nunca** manda a IM na NFS-e Nacional (o campo é opcional no leiaute); o
+campo da loja segue valendo pro caminho municipal. O conserto entrou na **0.9.57** (liberada em
+09/11/2026, PR #956): desde ela, a "Inscrição municipal" preenchida não atrapalha a NFS-e Nacional.
+(Na Pneus Amigão o campo segue vazio desde o contorno de 06/11, e assim fica: nada o usa hoje.)
+**Segunda recusa (09/11, OS 18, com a IM já vazia)**: "Não é permitido informar alíquota quando não
+há indicação de retenção do ISSQN (tpRetISSQN = 1) para o prestador ME/EPP (opSimpNac = 3) [...] com
+apuração do ISSQN pelo Simples (regApTribISSQN = 1)". Desde o PR desta correção, a loja do Simples
+**não manda a alíquota** na NFS-e Nacional (o ISS vai no DAS) e não precisa mais dela cadastrada pra
+emitir; fora do Simples, nada muda. Na 0.9.56 não há contorno (apagar a alíquota trava a emissão):
+precisa da versão nova.
+
+**A Focus respondeu em 05/11/2026** (suporte): Araraquara não está no convênio da **homologação**
+nacional (quem cadastra é a prefeitura, e nem sempre faz). Recomendação deles: **testar em produção**,
+com uma nota de valor baixo, e **cancelar em seguida** pela API. Os tributos aproximados são exigidos
+pelo `percentual_total_tributos_simples_nacional` **ou** pelos `percentual_total_tributos_federais`,
+`_estaduais` e `_municipais`; o que não se aplica vai zero. O programa manda o do Simples (6% na
+Pneus Amigão, contabilidade, 05/11).
+
+**No ensaio em produção, conferir** (achados da revisão de 06/11): o XML da nota nacional pode vir
+num endereço do S3, e aí o porteiro recusa e o registro falha depois da nota autorizada ("Conferir
+de novo", nunca emitir de novo); a chave de 50 dígitos no `url` da consulta; o relógio do Windows no
+automático (a hora de emissão vai junto e não pode passar da do servidor). Cliente sem CPF/CNPJ sai
+**sem tomador**; endereço do cliente só vai com bairro.
+
+
+Desde **01/11/2026** a empresa do **Simples** em Araraquara só emite NFS-e pelo **Padrão Nacional**
+(comunicado da prefeitura de 19/10, Resolução CGSN nº 191/2026); o Giap deixa de emitir pra ela.
+**Como o programa decide**: regime "Simples Nacional" nos dados fiscais → caminho nacional
+(`/v2/nfsen`); os outros regimes continuam no municipal (`/v2/nfse`). Sem coluna nova. A nota
+nacional ganha a `ref` `os<numero>-nfsen-<instante>`, e é a `ref` que diz por onde consultar,
+cancelar e baixar (nota antiga do Giap continua indo pelo municipal).
+
+**Confirmado na documentação da Focus NFe** (lida em 29/10/2026):
+- Emitir: `POST /v2/nfsen?ref=<ref>`, corpo "achatado" (sem objetos `prestador`/`tomador`/`servico`),
+  resposta `processando_autorizacao` e consulta depois
+  ([Emitir](https://doc.focusnfe.com.br/reference/emitir_dps_nacional);
+  [lista completa dos campos](https://campos.focusnfe.com.br/nfse_nacional/EmissaoDPSXml.html)).
+  Obrigatórios usados: `data_emissao` (com fuso), `serie_dps` (API: 1 a 49999), `numero_dps`,
+  `data_competencia`, `emitente_dps`, `codigo_municipio_emissora`, `cnpj_prestador`,
+  `codigo_opcao_simples_nacional`, `regime_especial_tributacao`, `cpf_tomador`/`cnpj_tomador`,
+  `codigo_municipio_prestacao`, `codigo_tributacao_nacional_iss` (6 dígitos), `descricao_servico`,
+  `valor_servico`, `tributacao_iss`.
+- Consultar: `GET /v2/nfsen/<ref>`; os status são os mesmos da municipal; a autorizada traz
+  `numero`, `codigo_verificacao`, `url` (consulta pública, com a chave de 50 dígitos),
+  `caminho_xml_nota_fiscal` e `url_danfse` (PDF num endereço do S3 da Focus)
+  ([Consultar](https://doc.focusnfe.com.br/reference/consultar_nfse_nacional)).
+- Cancelar: `DELETE /v2/nfsen/<ref>` com `{ "justificativa": ... }`, resposta síncrona `cancelado`
+  ou `erro_cancelamento` ([Cancelar](https://doc.focusnfe.com.br/reference/cancelar_nfse_nacional)).
+
+**Respondido em 30/10/2026** (suporte da Focus por e-mail; contabilidade pelo WhatsApp):
+- **Focus**: habilitar o documento **"Ambiente da NFSe Nacional"** no cadastro da empresa (painel →
+  empresa → **Documentos Fiscais**; há um interruptor pra Homologação e outro pra Produção, cada um
+  com "Série" e "Próximo número"). **O token do Giap deixa de ser necessário**: a nota nacional usa
+  só o certificado digital. A Pneus Amigão está com a **homologação ligada** desde 30/10; a produção
+  liga depois do ensaio.
+- **IBS e CBS** (`finalidade_emissao`, `consumidor_final`, `indicador_destinatario`,
+  `ibs_cbs_situacao_tributaria`, `ibs_cbs_classificacao_tributaria`): **só obrigatórios em 2027**
+  (as duas responderam igual). O programa segue sem mandar; os valores de 2027 ficam na #838.
+
+**Ainda em aberto** (com a contabilidade; o ensaio em homologação também mostra):
+1. O **código de tributação nacional**: o programa usa o item da LC 116 + desdobro `01`
+   (`14.01` → `140101`; item em branco vale `14.01`). Outro desdobro se digita como `14.01.02`.
+2. A **alíquota** (`percentual_aliquota_relativa_municipio`): o programa manda a da competência.
+   A documentação diz que, se o município está no sistema nacional, ela vem parametrizada.
+3. `codigo_opcao_simples_nacional = 3` (ME/EPP) e `regime_tributario_simples_nacional = 1`
+   (tudo pelo Simples).
+4. O **número da DPS** é o instante em milissegundos (não se repete, nem com dois computadores).
+   A contabilidade disse "o DPS não precisa selecionar, pode deixar em branco", sem dizer qual
+   campo. E o painel da Focus tem um "Próximo número" próprio: o ensaio mostra qual número vale.
+
+**O ensaio** (roteiro no PR #839): no `ssace-teste`, com o token de homologação guardado na loja de
+exemplo (#832, opção a; tirar depois, #842).
+
 #### O que ainda está frágil na parte fiscal
 
 Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de confirmação de fora.
@@ -228,8 +312,10 @@ Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de 
    - o nome do destinatário é opcional (o sistema manda quando tem);
    - **entrega a domicílio exige o endereço completo** do destinatário, que o sistema não manda
      (hoje é só venda presencial, `presenca_comprador: "1"`);
-   - **acima do limite da UF (em geral R$ 10.000)** a SEFAZ exige o destinatário identificado, e
-     o sistema não avisa disso antes.
+   - **acima do limite da UF (em geral R$ 10.000)** a SEFAZ exige o destinatário identificado.
+     **Desde a #881 a tela de emissão avisa** (OS e venda de balcão), sem travar; o limite é um
+     só pra todas as UFs (`LIMITE_NFCE_SEM_DESTINATARIO`, `src/schemas/limiteNFCe.ts`): conferir
+     o da UF ao instalar loja de outro estado.
 2. **CSOSN `500` vai sem os campos de ICMS-ST** (`vBCSTRet`, `vICMSSTRet` e afins). A Focus **não**
    completa campo fiscal que a gente não manda (suporte, 03/09). **Respondido pela contabilidade
    (13/10)**: o CSOSN 500 quer dizer que o ICMS já foi recolhido antes, e na venda ao
@@ -273,6 +359,8 @@ processo principal (sem CORS); e o erro real da Focus na tela.
 razão social, IE e IM, regime, endereço, telefone, token da Focus e, só pra NFS-e, código IBGE do
 município, item da LC 116, alíquota de ISS, código tributário do município e **CNAE** (está no Cartão
 CNPJ; sem ele o programa para com "Código CNAE da loja não configurado", visto no ensaio de 04/11).
+**Percentual aproximado dos tributos do Simples**: pedir à contabilidade
+(na Pneus Amigão, 6%); vazio, a NFS-e Nacional manda 0% (a tela avisa, sem travar).
 **Campo em branco aqui vira erro que parece bug** (ex: `prestador.cnpj não informado` era o CNPJ vazio).
 E **cada peça** (Estoque → Produtos) leva NCM, CEST, CFOP e CSOSN **que combinem**: com o CSOSN
 `500` (ICMS já pago antes, por substituição), na venda dentro do estado o CFOP é o `5405` (confirmar
@@ -291,8 +379,8 @@ aceita a combinação errada sem avisar.
    (`nfce.fazenda.sp.gov.br`). **Varia por estado.** É o passo mais pesado.
 3. **Conferir a numeração de RPS antes da primeira NFS-e**, se a loja já emitia nota de serviço:
    ajustar o contador da Focus pra bem acima do maior já usado.
-4. **Cadastrar a alíquota da competência todo mês** (pelo menos em Araraquara; **a confirmar,
-   #853**). É tarefa recorrente da contabilidade, não de instalação.
+4. **Cadastrar a alíquota da competência todo mês** (só no caminho municipal: a loja do Simples, pelo Padrão Nacional, não
+   precisa; contabilidade, 05/11, #853). É tarefa recorrente da contabilidade, não de instalação.
 5. **Acesso ao portal da prefeitura pra NFS-e**, **só se o município não aderiu ao Padrão
    Nacional**: varia por município, inclusive o fornecedor do sistema municipal (Araraquara usava o
    Giap; pro Simples, desde 01/11/2026 é o Padrão Nacional, item 7).
@@ -300,7 +388,10 @@ aceita a combinação errada sem avisar.
    SEFAZ rejeita código incompatível com o regime, mas não confere se é o código certo do produto.
 7. **NFS-e Nacional**: ligar "Ambiente da NFSe Nacional" na Focus (homologação e produção são
    chaves separadas); o percentual de tributos do Simples Nacional vem da contabilidade. Até a 0.9.55, o
-   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839).
+   programa só emite a NFS-e municipal; a Nacional chega com a 0.9.56 (#839). A **inscrição
+   municipal não vai** na NFS-e Nacional (#948, desde a 0.9.57): o Ambiente Nacional recusa quando
+   o município não tem as informações complementares no CNC NFS-e, como Araraquara. A loja que só
+   emite pelo Nacional pode deixar o campo em branco; a que ainda usa o caminho municipal precisa dele.
 
 **Consequência pro site de assinatura (item 2)**: assinar pode ser instantâneo, emitir nota não.
 Por isso a loja só recebe o sistema quando ele já emite (Sofia, 29/10/2026). A parte C começa no
@@ -322,7 +413,7 @@ nem perguntar; só retomar se ela trouxer.
 ### 4. Refinamentos nos módulos
 
 Conforme o uso real e o que ela pedir. O cardápio de ideias é o `MELHORIAS.md`, e o que o
-concorrente tem e nós não está em `docs/comparativo-anexar.md`. **Nada disso é pra construir sem
+concorrente tem e nós não está em `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado). **Nada disso é pra construir sem
 ela pedir.** Os três ajustes que ela pediu em 28/09 (#361, #362 e #363) foram feitos em 03/10,
 junto da #417 e da #425.
 
@@ -456,7 +547,7 @@ estiver sem suporte, e está certo.
 ### Futuro, só com pedido explícito
 
 Integração com maquininha de cartão (TEF), assistente de IA (a direção dela está em
-`docs/visao.md`), importador de dados de outros sistemas, app de celular, outras edições do Sakura
+`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), importador de dados de outros sistemas, app de celular, outras edições do Sakura
 System. Manter a arquitetura aberta pra isso, sem construir.
 
 ## Linha do tempo (o que cada sessão deixou pronto)

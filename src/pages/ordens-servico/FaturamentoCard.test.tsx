@@ -23,10 +23,27 @@
  * `getByRole("combobox", { name: "Forma de pagamento" })` e ficam melhores.
  */
 import { describe, expect, it, vi } from "vitest";
-import { renderizar, screen, within } from "@/testes/tela";
+import { renderizar, screen, waitFor, within } from "@/testes/tela";
 import { FaturamentoCard } from "./FaturamentoCard";
 import type { JurosParcela } from "@/types/configuracao";
 import type { ItemOS, OrdemServico } from "@/types/os";
+
+// O cartão lê o Pix da loja e a loja atual. Aqui o Pix vem de `pixDaLoja`
+// (null = loja sem Pix, como as lojas de hoje).
+const pixDaLoja = vi.hoisted(() => ({
+  atual: null as null | {
+    loja_id: string;
+    chave: string;
+    nome_recebedor: string;
+    cidade_recebedor: string;
+  },
+}));
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ lojaAtual: { id: "loja-1" } }),
+}));
+vi.mock("@/lib/configuracoes", () => ({
+  buscarConfiguracaoPix: async () => pixDaLoja.atual,
+}));
 
 const jurosParcelas: JurosParcela[] = [
   { loja_id: "loja-1", numero_parcelas: 2, juros_percentual: 3 },
@@ -270,5 +287,115 @@ describe("FaturamentoCard — parcelamento sem dividir o pagamento", () => {
     montar();
     const [, parcelas] = screen.getAllByRole("combobox");
     expect(parcelas).toBeDisabled();
+  });
+});
+
+describe("FaturamentoCard — Pix da loja (#456)", () => {
+  const PIX = {
+    loja_id: "loja-1",
+    chave: "pix-teste@exemplo.com.br",
+    nome_recebedor: "Loja Exemplo",
+    cidade_recebedor: "Araraquara",
+  };
+
+  it("sem Pix configurado, nada aparece (a tela é a de hoje)", async () => {
+    pixDaLoja.atual = null;
+    montar();
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByTestId("qr-pix")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Copiar código" })).toBeNull();
+  });
+
+  it("forma única Pix com Pix configurado: mostra o QR, o código com o valor e o botão de copiar", async () => {
+    pixDaLoja.atual = PIX;
+    montar();
+    const codigo = await screen.findByTestId("codigo-pix");
+    expect(screen.getByTestId("qr-pix").querySelector("svg")).not.toBeNull();
+    expect(codigo.textContent).toContain("54071000.00"); // campo 54, tamanho 07, "1000.00"
+    expect(codigo.textContent).toContain("pix-teste@exemplo.com.br");
+    expect(screen.getByRole("button", { name: "Copiar código" })).toBeInTheDocument();
+  });
+
+  it("trocar pra dinheiro esconde o QR", async () => {
+    pixDaLoja.atual = PIX;
+    const { user } = montar();
+    await screen.findByTestId("qr-pix");
+    await user.selectOptions(screen.getAllByRole("combobox")[0], "dinheiro");
+    expect(screen.queryByTestId("qr-pix")).toBeNull();
+  });
+
+  it("dividido: o QR leva o valor da linha Pix, não o total", async () => {
+    pixDaLoja.atual = PIX;
+    const { user } = montar();
+    await screen.findByTestId("qr-pix");
+    await dividirPagamento(user);
+    const primeira = linhaDePagamento(0);
+    await user.clear(primeira.valor);
+    await user.type(primeira.valor, "300");
+    // Enquanto as linhas não fecham o total, nada de QR: o valor ainda vai mudar.
+    await waitFor(() => expect(screen.queryByTestId("qr-pix")).not.toBeInTheDocument());
+    const segunda = linhaDePagamento(1);
+    await user.clear(segunda.valor);
+    await user.type(segunda.valor, "700");
+    await waitFor(() =>
+      expect(screen.getByTestId("codigo-pix").textContent).toContain("5406300.00"),
+    );
+  });
+
+  it('"Copiar código" copia o código e avisa "Copiado"', async () => {
+    pixDaLoja.atual = PIX;
+    const { user } = montar();
+    const codigo = (await screen.findByTestId("codigo-pix")).textContent;
+    await user.click(screen.getByRole("button", { name: "Copiar código" }));
+    expect(await screen.findByText("Copiado")).toBeInTheDocument();
+    expect(await navigator.clipboard.readText()).toBe(codigo);
+  });
+});
+
+describe("FaturamentoCard — a OS mudou em outro computador (#803)", () => {
+  it("quando a OS recarregada chega com outro total, o formulário recomeça do total novo", async () => {
+    // A página troca a `ordem` do cartão pela recarregada depois da recusa do
+    // banco. Os valores digitados eram do total velho (R$ 600 + R$ 400 de
+    // R$ 1.000); se ficassem, a pessoa cobraria com as contas de antes.
+    const { user, rerender } = montar();
+    await dividirPagamento(user);
+    await user.clear(linhaDePagamento(0).valor);
+    await user.type(linhaDePagamento(0).valor, "600");
+    await user.clear(linhaDePagamento(1).valor);
+    await user.type(linhaDePagamento(1).valor, "400");
+
+    const recarregada = ordemDeMil();
+    recarregada.itens = [
+      ...(recarregada.itens ?? []),
+      {
+        id: "item-3",
+        ordem_servico_id: "os-1",
+        tipo: "peca",
+        peca_id: "peca-2",
+        servico_id: null,
+        tecnico_id: null,
+        descricao: "Válvula",
+        quantidade: 1,
+        preco_unitario: 150,
+        desconto: 0,
+      } as ItemOS,
+    ];
+    rerender(
+      <FaturamentoCard
+        ordem={recarregada}
+        jurosParcelas={jurosParcelas}
+        onConfirmar={vi.fn()}
+        onCancelar={vi.fn()}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: /Dividir em mais de uma forma/ })).not.toBeChecked(),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Total dos itens").nextElementSibling).toHaveTextContent(
+        /R\$\s*1\.150,00/,
+      ),
+    );
   });
 });

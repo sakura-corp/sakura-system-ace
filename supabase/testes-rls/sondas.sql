@@ -38,6 +38,7 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('categorias_caixa',      $$insert into categorias_caixa (nome, tipo) values ('Sonda', 'entrada')$$),
 ('clientes',              $$insert into clientes (nome) values ('Cliente sonda')$$),
 ('veiculos',              $$insert into veiculos (cliente_id, placa) values ('cccccccc-0000-0000-0000-0000000000aa', 'SON1D01')$$),
+('importacao_lotes',      $$insert into importacao_lotes (nome_arquivo) values ('sonda.csv')$$),
 ('pecas',                 $$insert into pecas (descricao) values ('Peça sonda')$$),
 ('servicos',              $$insert into servicos (descricao) values ('Serviço sonda')$$),
 ('fornecedores',          $$insert into fornecedores (nome) values ('Fornecedor sonda')$$),
@@ -81,13 +82,16 @@ insert into teste_rls.sondas (tabela, insercao) values
 
 -- ---------- configurações da loja A --------------------------------------
 -- As duas de chave composta usam uma chave livre (12 parcelas / outro modelo
--- de mensagem); as três de chave simples usam a loja A, que o cenário deixou
+-- de mensagem); as quatro de chave simples usam a loja A, que o cenário deixou
 -- de propósito sem linha.
 ('configuracoes_juros_parcelas', $$insert into configuracoes_juros_parcelas (loja_id, numero_parcelas, juros_percentual) values ('11111111-1111-1111-1111-1111111111aa', 12, 5.0)$$),
 ('configuracoes_whatsapp',       $$insert into configuracoes_whatsapp (loja_id, chave, texto) values ('11111111-1111-1111-1111-1111111111aa', 'carro_pronto', 'Sonda')$$),
 ('configuracoes_garantia',       $$insert into configuracoes_garantia (loja_id, texto) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda')$$),
 ('configuracoes_fiscais_loja',   $$insert into configuracoes_fiscais_loja (loja_id) values ('11111111-1111-1111-1111-1111111111aa')$$),
 ('configuracoes_painel_inicio',  $$insert into configuracoes_painel_inicio (loja_id, cartoes) values ('11111111-1111-1111-1111-1111111111aa', array['vendas_mes'])$$),
+('configuracoes_pix',            $$insert into configuracoes_pix (loja_id, chave, nome_recebedor, cidade_recebedor) values ('11111111-1111-1111-1111-1111111111aa', 'sonda@exemplo.com.br', 'Sonda', 'Araraquara')$$),
+('configuracoes_avaliacao',      $$insert into configuracoes_avaliacao (loja_id, link_google) values ('11111111-1111-1111-1111-1111111111aa', 'https://g.page/r/sonda/review')$$),
+('configuracoes_contabilidade',  $$insert into configuracoes_contabilidade (loja_id, nome, email) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda', 'sonda@exemplo.com.br')$$),
 -- O cofre do TR-04.2: nem o admin da loja escreve direto aqui — só pela
 -- função definir_token_focus_nfe(). Esta sonda é o que prova isso.
 ('segredos_fiscais_loja',        $$insert into segredos_fiscais_loja (loja_id, focus_nfe_token) values ('11111111-1111-1111-1111-1111111111aa', 'sonda')$$),

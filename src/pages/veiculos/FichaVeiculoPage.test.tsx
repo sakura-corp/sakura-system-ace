@@ -19,7 +19,11 @@ const buscarFichaDoVeiculo = vi.fn();
 vi.mock("@/lib/veiculos", () => ({
   buscarFichaDoVeiculo: (...a: unknown[]) => buscarFichaDoVeiculo(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+const listarServicosComIntervalo = vi.fn();
+vi.mock("@/lib/retornos", () => ({
+  listarServicosComIntervalo: () => listarServicosComIntervalo(),
+}));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 const LOJA_A = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
 const LOJA_B = { id: "loja-b", nome: "Loja Vila", cidade: null, uf: null, ativo: true, criado_em: "" };
@@ -123,6 +127,8 @@ function montar() {
 beforeEach(() => {
   operador = { id: "op", admin: true, permissoes: [] };
   buscarFichaDoVeiculo.mockReset();
+  listarServicosComIntervalo.mockReset();
+  listarServicosComIntervalo.mockResolvedValue([]);
 });
 
 describe("FichaVeiculoPage", () => {
@@ -215,6 +221,22 @@ describe("FichaVeiculoPage", () => {
     expect(screen.queryByText("Sem telefone cadastrado")).not.toBeInTheDocument();
   });
 
+  it("o dono fica no cabeçalho, com o telefone; sem telefone, a frase diz isso", async () => {
+    operador = { id: "op", admin: true, permissoes: [] };
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([]));
+    const { unmount } = montar();
+    expect(await screen.findByText("Dono atual:")).toBeInTheDocument();
+    expect(screen.getByText("Ricardo Menezes")).toBeInTheDocument();
+    expect(screen.getByText("(16) 99000-1122")).toBeInTheDocument();
+    unmount();
+
+    const f = ficha([]);
+    f.veiculo.cliente = { id: "c1", nome: "Ricardo Menezes", telefone: null };
+    buscarFichaDoVeiculo.mockResolvedValue(f);
+    montar();
+    expect(await screen.findByText("Sem telefone cadastrado")).toBeInTheDocument();
+  });
+
   it("diz em português quando o veículo não existe mais", async () => {
     buscarFichaDoVeiculo.mockResolvedValue(null);
     montar();
@@ -244,5 +266,64 @@ describe("LinkPlaca", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: "RTA-4B71" }));
     expect(screen.getByText("ficha aberta")).toBeInTheDocument();
     expect(cliqueNaLinha).not.toHaveBeenCalled();
+  });
+});
+
+describe("FichaVeiculoPage — próximo retorno previsto (#381)", () => {
+  const oleo = { id: "oleo", descricao: "Troca de óleo", intervalo_dias: 180, intervalo_km: null };
+  const ordemComOleo = {
+    ...ordemRecente,
+    itens: [
+      {
+        id: "i9",
+        tipo: "servico" as const,
+        peca_id: null,
+        servico_id: "oleo",
+        descricao: "Troca de óleo",
+        quantidade: 1,
+        preco_unitario: 120,
+        desconto: 0,
+        peca: null,
+      },
+    ],
+  };
+
+  it("mostra o serviço e a data prevista, deixando claro que é previsão", async () => {
+    listarServicosComIntervalo.mockResolvedValue([oleo]);
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
+    montar();
+
+    await screen.findByRole("heading", { name: "RTA-4B71" });
+    expect(await screen.findByRole("heading", { name: "Próximo retorno previsto" })).toBeInTheDocument();
+    expect(screen.getByText(/^Troca de óleo em \d{2}\/\d{2}\/\d{4}$/)).toBeInTheDocument();
+    expect(screen.getByText(/É uma previsão/)).toBeInTheDocument();
+  });
+
+  it("retorno que já passou da data diz que está atrasado, e há quantos dias", async () => {
+    // Faturada há 10 dias, a cada 3 dias: venceu há 7.
+    listarServicosComIntervalo.mockResolvedValue([{ ...oleo, intervalo_dias: 3 }]);
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
+    montar();
+
+    await screen.findByRole("heading", { name: "Próximo retorno previsto" });
+    expect(screen.getByText(/Troca de óleo em .* atrasado há 7 dias$/)).toBeInTheDocument();
+  });
+
+  it("sem serviço com intervalo, não mostra nada", async () => {
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
+    montar();
+
+    await screen.findByRole("heading", { name: "RTA-4B71" });
+    expect(screen.queryByText("Próximo retorno previsto")).not.toBeInTheDocument();
+  });
+
+  it("falhar ao ler os serviços (ou o login não poder lê-los) não quebra a ficha", async () => {
+    operador = { id: "op", admin: false, permissoes: ["ordens_servico"] };
+    listarServicosComIntervalo.mockRejectedValue(new Error("sem permissão"));
+    buscarFichaDoVeiculo.mockResolvedValue(ficha([ordemComOleo]));
+    montar();
+
+    expect(await screen.findByRole("heading", { name: "RTA-4B71" })).toBeInTheDocument();
+    expect(screen.queryByText("Próximo retorno previsto")).not.toBeInTheDocument();
   });
 });

@@ -63,6 +63,15 @@ veiculos,insert,1,1,0,0,0,
 veiculos,update,2,2,0,0,0,
 veiculos,delete,2,2,0,0,0,
 #
+# Os lotes de importação da planilha de clientes (0083, #457): só o
+# administrador com o módulo Clientes (decisão 3 da Sofia: importar é gravação
+# em massa de dado pessoal). Ninguém apaga lote — o histórico fica e o
+# "desfazer" é pela função desfazer_importacao, testada em testar-importacao.sql.
+importacao_lotes,select,2,2,0,0,0,só admin com o módulo Clientes
+importacao_lotes,insert,1,1,0,0,0,e só em nome de quem está logado
+importacao_lotes,update,2,2,0,0,0,
+importacao_lotes,delete,0,0,0,0,0,ninguém apaga lote: desfazer é pela função
+#
 # As views da 0068. Como a funcionarios_publico, rodam com os direitos do dono:
 # o 2,2,2,0,0 da leitura é o where (operador ativo com alguma loja) escrito
 # dentro delas — o órfão fica de fora. As escritas zeradas são o revoke.
@@ -97,14 +106,18 @@ servicos,select,2,2,2,2,0,
 servicos,insert,1,1,1,1,0,
 servicos,update,2,2,2,2,0,
 servicos,delete,2,2,2,2,0,
-fornecedores,select,2,2,2,2,0,
-fornecedores,insert,1,1,1,1,0,
-fornecedores,update,2,2,2,2,0,
-fornecedores,delete,2,2,2,2,0,
-cotacoes_pecas,select,2,2,2,2,0,
-cotacoes_pecas,insert,1,1,1,1,0,
-cotacoes_pecas,update,2,2,2,2,0,
-cotacoes_pecas,delete,2,2,2,2,0,
+#
+# TR-04.1 lote 7 (migration 0080): fornecedores e cotações exigem o módulo
+# Fornecedores (o preço de compra costuma ser o custo da peça). O balconista
+# (só Caixa) e o órfão zeraram.
+fornecedores,select,2,2,0,0,0,só com o módulo Fornecedores
+fornecedores,insert,1,1,0,0,0,
+fornecedores,update,2,2,0,0,0,
+fornecedores,delete,2,2,0,0,0,
+cotacoes_pecas,select,2,2,0,0,0,só com o módulo Fornecedores (é o preço de compra)
+cotacoes_pecas,insert,1,1,0,0,0,
+cotacoes_pecas,update,2,2,0,0,0,
+cotacoes_pecas,delete,2,2,0,0,0,
 
 # ---------------------------------------------------------------------------
 # DADO DE NEGÓCIO DA LOJA — o isolamento que sustenta a multi-loja
@@ -199,14 +212,14 @@ notas_fiscais_arquivos,select,2,1,1,0,0,
 notas_fiscais_arquivos,insert,1,1,1,0,0,
 notas_fiscais_arquivos,update,2,1,1,0,0,
 notas_fiscais_arquivos,delete,2,1,1,0,0,
-pedidos_compra,select,2,1,1,0,0,
-pedidos_compra,insert,1,1,1,0,0,
-pedidos_compra,update,2,1,1,0,0,
-pedidos_compra,delete,2,1,1,0,0,
-pedidos_compra_itens,select,2,1,1,0,0,herda a loja pelo pedido
-pedidos_compra_itens,insert,1,1,1,0,0,
-pedidos_compra_itens,update,2,1,1,0,0,
-pedidos_compra_itens,delete,2,1,1,0,0,
+pedidos_compra,select,2,1,0,0,0,só com o módulo Fornecedores, na loja dele (0080)
+pedidos_compra,insert,1,1,0,0,0,
+pedidos_compra,update,2,1,0,0,0,
+pedidos_compra,delete,2,1,0,0,0,
+pedidos_compra_itens,select,2,1,0,0,0,herda a loja pelo pedido; só com o módulo Fornecedores (0080)
+pedidos_compra_itens,insert,1,1,0,0,0,
+pedidos_compra_itens,update,2,1,0,0,0,
+pedidos_compra_itens,delete,2,1,0,0,0,
 #
 # TR-04.3 (migration 0056): dado de RH exige o módulo "Funcionários", e não
 # só acesso à loja. É por isso que o balconista zerou nas oito linhas abaixo
@@ -242,7 +255,7 @@ whatsapp_mensagens,delete,2,1,1,0,0,
 
 # ---------------------------------------------------------------------------
 # CONFIGURAÇÃO DA LOJA
-# As três de chave simples (garantia, fiscal, painel) têm linha SÓ na loja B
+# As seis de chave simples (garantia, fiscal, painel, Pix, avaliação, contabilidade) têm linha SÓ na loja B
 # no cenário — por isso a leitura delas é 1,0,0,0,0 e não 2,1,1,0,0. O motivo
 # está no cabeçalho de cenario.sql (item 1).
 # ---------------------------------------------------------------------------
@@ -258,6 +271,14 @@ configuracoes_garantia,select,1,0,0,0,0,linha só na loja B
 configuracoes_garantia,insert,1,1,1,0,0,
 configuracoes_garantia,update,1,0,0,0,0,
 configuracoes_garantia,delete,1,0,0,0,0,
+configuracoes_avaliacao,select,1,0,0,0,0,linha só na loja B (o link de avaliação, #459)
+configuracoes_avaliacao,insert,1,1,1,0,0,
+configuracoes_avaliacao,update,1,0,0,0,0,
+configuracoes_avaliacao,delete,1,0,0,0,0,
+configuracoes_contabilidade,select,1,0,0,0,0,linha só na loja B (o contato da contabilidade, #383)
+configuracoes_contabilidade,insert,1,1,1,0,0,
+configuracoes_contabilidade,update,1,0,0,0,0,
+configuracoes_contabilidade,delete,1,0,0,0,0,
 configuracoes_fiscais_loja,select,1,0,0,0,0,ainda carrega uma cópia do token até a parte 2 do TR-04.2 limpar a coluna
 configuracoes_fiscais_loja,insert,1,1,1,0,0,
 configuracoes_fiscais_loja,update,1,0,0,0,0,
@@ -270,6 +291,12 @@ configuracoes_painel_inicio,select,1,0,0,0,0,
 configuracoes_painel_inicio,insert,1,1,1,0,0,
 configuracoes_painel_inicio,update,1,0,0,0,0,
 configuracoes_painel_inicio,delete,1,0,0,0,0,
+# Pix da loja (#456): todo mundo da loja lê (precisa pra montar a cobrança),
+# mas só o admin daquela loja escreve — a chave é pra onde vai o dinheiro.
+configuracoes_pix,select,1,0,0,0,0,linha só na loja B
+configuracoes_pix,insert,1,1,0,0,0,
+configuracoes_pix,update,1,0,0,0,0,
+configuracoes_pix,delete,1,0,0,0,0,
 
 # ---------------------------------------------------------------------------
 # ADMINISTRAÇÃO — aqui o balconista tem que parar

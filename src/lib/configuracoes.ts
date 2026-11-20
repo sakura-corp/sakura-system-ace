@@ -4,6 +4,7 @@ import type {
   CartaoMetrica,
   ConfiguracaoFiscalLoja,
   ConfiguracaoGarantia,
+  ConfiguracaoPix,
   ConfiguracaoPainelInicio,
   JurosParcela,
 } from "@/types/configuracao";
@@ -52,6 +53,70 @@ export async function salvarTextoGarantia(lojaId: string, texto: string): Promis
   if (error) throw error;
 }
 
+// O Pix da loja (#456). Se a leitura falhar (banco ainda sem a migration 0081,
+// ou sem rede), a resposta é "sem Pix": a cobrança e o faturamento não podem
+// quebrar por causa disso — mesmo jeito do `lojaTemTokenFocusNfe`.
+export async function buscarConfiguracaoPix(lojaId: string): Promise<ConfiguracaoPix | null> {
+  const { data, error } = await supabase
+    .from("configuracoes_pix")
+    .select("loja_id, chave, nome_recebedor, cidade_recebedor")
+    .eq("loja_id", lojaId)
+    .maybeSingle();
+  if (error) {
+    console.error("Não deu pra ler o Pix da loja:", error);
+    return null;
+  }
+  return (data as ConfiguracaoPix | null) ?? null;
+}
+
+export async function salvarConfiguracaoPix(
+  lojaId: string,
+  dados: Pick<ConfiguracaoPix, "chave" | "nome_recebedor" | "cidade_recebedor">,
+): Promise<void> {
+  const { error } = await supabase
+    .from("configuracoes_pix")
+    .upsert(
+      { loja_id: lojaId, ...dados, atualizado_em: new Date().toISOString() },
+      { onConflict: "loja_id" },
+    );
+  if (error) throw error;
+}
+
+// "Tirar o Pix": apaga a linha da loja. Só admin da loja (a RLS recusa o resto).
+export async function apagarConfiguracaoPix(lojaId: string): Promise<void> {
+  const { error } = await supabase.from("configuracoes_pix").delete().eq("loja_id", lojaId);
+  if (error) throw error;
+}
+
+/** O link de avaliação no Google da loja (migration 0082); `null` = sem link. */
+export async function buscarLinkAvaliacao(lojaId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("configuracoes_avaliacao")
+    .select("link_google")
+    .eq("loja_id", lojaId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { link_google: string } | null)?.link_google || null;
+}
+
+/** Salva o link; vazio ou `null` apaga a linha (sem link = sem linha). */
+export async function salvarLinkAvaliacao(lojaId: string, link: string | null): Promise<void> {
+  const limpo = link?.trim() ?? "";
+  if (limpo === "") {
+    const { error } = await supabase.from("configuracoes_avaliacao").delete().eq("loja_id", lojaId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("configuracoes_avaliacao")
+    .upsert(
+      { loja_id: lojaId, link_google: limpo, atualizado_em: new Date().toISOString() },
+      { onConflict: "loja_id" },
+    );
+  if (error) throw error;
+}
+
 // As colunas que a tela lê, uma por uma — e NUNCA `select("*")`: a tabela
 // ainda tem a coluna antiga do token da Focus NFe (`focus_nfe_token`). A
 // migration 0070 (parte 2 do TR-04.2) a deixa vazia, mas num banco que ainda
@@ -81,6 +146,7 @@ const COLUNAS_FISCAIS = [
   "codigo_cnae",
   "competencia_aliquota_confirmada",
   "aliquota_passo_a_passo",
+  "percentual_tributos_simples",
   "atualizado_em",
 ].join(",");
 
@@ -156,10 +222,18 @@ export async function salvarConfiguracaoPainelInicio(
 // emissão de NFS-e autorizada), não o formulário de dados fiscais — senão
 // salvar um telefone novo poderia apagar, sem querer, a confirmação feita no
 // computador do lado.
+//
+// O percentual dos tributos do Simples (#866) é opcional pelo mesmo motivo:
+// fora do Simples a tela não o manda, e o banco guarda o que já tem.
 export type DadosFiscaisEditaveis = Omit<
   ConfiguracaoFiscalLoja,
-  "loja_id" | "atualizado_em" | "competencia_aliquota_confirmada" | "focus_nfe_configurado"
->;
+  | "loja_id"
+  | "atualizado_em"
+  | "competencia_aliquota_confirmada"
+  | "focus_nfe_configurado"
+  | "percentual_tributos_simples"
+> &
+  Partial<Pick<ConfiguracaoFiscalLoja, "percentual_tributos_simples">>;
 
 export async function salvarConfiguracaoFiscal(
   lojaId: string,

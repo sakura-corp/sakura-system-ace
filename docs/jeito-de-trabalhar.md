@@ -78,6 +78,12 @@ renova a cada 7 dias; em 23/10, primeiro dia da semana, já estava em 13 a 14%).
   banco → versão → computadores → banco. Essa fica marcada pro dia de teste.
 - Uma versão que precisa sair **sozinha** (como o Electron 40, #385) continua num número só dela;
   o teste dela vai pro mesmo dia.
+- **Revisão em nome da Sofia é sempre decisiva** (Sofia, 11/11/2026): "Aprovar" (com o que falta,
+  ex.: o teste no PC) ou "Pedir mudança", **nunca só um comentário**. O painel só conta essas duas pra
+  dizer com quem está a bola; um comentário solto deixa a tarefa em "Em revisão", como se faltasse algo
+  dela (escritorio#119 melhora o caso do commit que só mexe no relatório).
+- **Antes de dizer que um PR não andou**, olhar **todos** os commits desde a última revisão, não só o
+  último: em 11/11 o último do #1003 era só o relatório, e o conserto pedido estava no anterior.
 
 ## Como usar o `/fechar` e o aviso de conversa comprida (S1 + A3)
 
@@ -110,6 +116,26 @@ automações, as issues, o escritório com o caderno, o privado), cada um devolv
 gravidade; depois **um PR por repositório** (docs), as tarefas novas, o fechamento das já feitas
 (com a prova no comentário) e um PR de código pequeno com `/code-review`. Nada publicado. Repetir
 quando sobrar cota; o resultado de 04/11 está nas #868 e #886.
+
+## A madrugada de cota sobrando (05/11/2026)
+
+Com a cota da semana sobrando perto da renovação, ela pediu pra "queimar os tokens" tirando
+coisinhas chatas do futuro enquanto dormia. Funcionou assim (lista na #934, ~30 PRs mesclados):
+- **Antes de ela dormir, perguntar tudo de uma vez**: a lista, o que pode mesclar, se abre o
+  privado, o que fazer se sobrar tempo. Depois, ninguém pergunta nada.
+- **Uma coordenadora leve** (só coordena, não programa) e **uma sessão filha por tarefa ou lote**,
+  todas com a tag `madrugada-<data>`. Cada filha recebe as regras da madrugada no topo (`Second
+  brain: não precisa`, `Closes #N`, `/code-review high`, mesclar só com o CI todo verde) e manda
+  **uma** mensagem final pra coordenadora.
+- **No máximo 4 ou 5 filhas ao mesmo tempo, com "high"**: 9 de uma vez com "max" gastaram o
+  limite de 5h em ~25 min, e tudo parou por horas. Abrir as próximas conforme as primeiras acabam.
+- **Ficam abertos pro teste dela**: o que é grande (Electron, versão grande de biblioteca), o que
+  tem migration e o que é ambíguo (PR rascunho com opções). **Conferir a numeração das migrations
+  entre os PRs abertos**: em 05/11 quatro PRs disputavam dois números.
+- **Lembretes** (`send_later`): um no meio da madrugada e outro logo depois que o limite de 5h
+  renova, pra retomar com "continue de onde parou" as filhas que pararam.
+- **Fora das levas da equipe** e longe de PR aberto dela. No fim: arquivar tudo, um resumo curto
+  e a lista do que saiu da fila do Tiago.
 
 ## O aviso das pendências no começo da sessão (28/10/2026)
 
@@ -203,7 +229,9 @@ As novas:
   impedido de publicar, liberar, mexer em banco ou adicionar o repositório privado. Com o Claude
   Team, isso se trava de um lugar só.
 - **T3.** As regras de código da seção 3 do índice que ainda são só texto viram lint (o `??` no
-  `import.meta.env`, o `toISOString().slice`, o `window.prompt`).
+  `import.meta.env`, o `toISOString().slice`, o `window.prompt`): **feita em 05/11/2026** (#873),
+  as três são erro no `npm run lint` (`eslint.config.js`; o que o lint não pega do `??` está no
+  item 8 de `docs/licoes.md`).
 - **T4.** Um aviso automático se o índice da memória passar de **15 KB** (era 30 KB; baixou em 17/10, no A1 do plano de memória): **feita em 17/10**, um passo do CI ("Tamanho do índice da memória") que só avisa, nunca reprova; a skill `fechar` também mede.
 
 ### Afazeres

@@ -30,8 +30,9 @@
 -- Três decisões que parecem estranhas e não são:
 --
 --   1. `configuracoes_garantia`, `configuracoes_fiscais_loja`,
---      `configuracoes_painel_inicio` e `segredos_fiscais_loja` têm linha só
---      na loja B, de propósito.
+--      `configuracoes_painel_inicio`, `configuracoes_pix`,
+--      `configuracoes_avaliacao`, `configuracoes_contabilidade` e
+--      `segredos_fiscais_loja` têm linha só na loja B, de propósito.
 --      A chave primária delas é o `loja_id` sozinho, então, com a loja A já
 --      ocupada, a sonda de INSERT bateria na chave duplicada — e um erro de
 --      chave se pareceria com "a RLS bloqueou", que é justamente a confusão
@@ -50,12 +51,12 @@ set session_replication_role = replica;
 truncate table
   computadores, schema_versao, auditoria, fechamentos_caixa, comissoes_fechamentos, whatsapp_mensagens, configuracoes_whatsapp,
   configuracoes_juros_parcelas, configuracoes_painel_inicio,
-  configuracoes_fiscais_loja, configuracoes_garantia, segredos_fiscais_loja,
+  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, configuracoes_contabilidade, segredos_fiscais_loja,
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
   ordens_servico_itens, ordens_servico, funcionario_filhos, funcionarios,
-  depositos, veiculos, clientes, pecas, servicos, fornecedores,
+  depositos, veiculos, clientes, importacao_lotes, pecas, servicos, fornecedores,
   categorias, categorias_servicos, categorias_caixa,
   operador_lojas, operadores, lojas
   restart identity cascade;
@@ -102,6 +103,11 @@ insert into categorias_servicos (id, nome) values
 insert into categorias_caixa (id, nome, tipo) values
   ('dddddddd-2222-0000-0000-0000000000aa', 'Entradas diversas', 'entrada'),
   ('dddddddd-2222-0000-0000-0000000000bb', 'Saídas diversas',   'saida');
+
+-- dois lotes de importação (0083): a tabela é da empresa toda, sem loja
+insert into importacao_lotes (id, operador_id, nome_arquivo) values
+  ('cccccccc-2222-0000-0000-0000000000aa', 'aaaaaaaa-1111-1111-1111-111111111111', 'lote-1.csv'),
+  ('cccccccc-2222-0000-0000-0000000000bb', 'aaaaaaaa-2222-2222-2222-222222222222', 'lote-2.csv');
 
 insert into clientes (id, nome, tipo_pessoa) values
   ('cccccccc-0000-0000-0000-0000000000aa', 'Cliente 1', 'fisica'),
@@ -211,7 +217,7 @@ insert into configuracoes_whatsapp (loja_id, chave, texto) values
   ('11111111-1111-1111-1111-1111111111aa', 'cobranca', 'Texto da loja A'),
   ('11111111-1111-1111-1111-1111111111bb', 'cobranca', 'Texto da loja B');
 
--- E estas quatro têm o `loja_id` como chave primária inteira: recebem linha SÓ
+-- E estas sete têm o `loja_id` como chave primária inteira: recebem linha SÓ
 -- na loja B, pra deixar a loja A livre pra sonda de INSERT (ver o item 1 do
 -- cabeçalho). É por isso que a leitura delas na matriz é "1,0,0,0,0".
 insert into configuracoes_garantia (loja_id, texto) values
@@ -222,6 +228,17 @@ insert into configuracoes_fiscais_loja (loja_id, cnpj, razao_social) values
 
 insert into configuracoes_painel_inicio (loja_id, cartoes) values
   ('11111111-1111-1111-1111-1111111111bb', array['vendas_mes']);
+
+-- A chave Pix da loja (#456). Chave inventada, de exemplo.
+insert into configuracoes_pix (loja_id, chave, nome_recebedor, cidade_recebedor) values
+  ('11111111-1111-1111-1111-1111111111bb', 'pix-teste@exemplo.com.br', 'Loja B', 'Araraquara');
+
+insert into configuracoes_avaliacao (loja_id, link_google) values
+  ('11111111-1111-1111-1111-1111111111bb', 'https://g.page/r/loja-b/review');
+
+-- O contato da contabilidade (#383). Contato inventado, de exemplo.
+insert into configuracoes_contabilidade (loja_id, nome, email) values
+  ('11111111-1111-1111-1111-1111111111bb', 'Contabilidade da loja B', 'contabilidade@exemplo.com.br');
 
 -- O cofre do token da Focus NFe (TR-04.2). Tem linha na loja B pra que o
 -- "0" do dono na leitura queira dizer "a tabela recusou", e não "estava

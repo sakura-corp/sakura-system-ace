@@ -26,7 +26,7 @@ painel do Supabase (as telas podem ter mudado de nome) e o programa aberto contr
 
 **Situação (19/10/2026)**: os passos 1 a 7 foram feitos pela Sofia, e as telas já estão descritas
 como eram nesse dia (a #517). O banco existe, com o esquema na versão 64, a loja de exemplo e quatro
-logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. **Em 29/10/2026** a Sofia decidiu que a equipe vira admin neste banco, pros testes de permissão (Passo 6, "Teste de permissão"). Os Sends
+logins (`sofia`, admin; `gustavo`, `lazaro` e `tiago`, sem admin, só a loja de exemplo). **Em 22/10/2026** a Sofia colou de novo o `instalacao-completa.sql`: o esquema está na **67** (com a 0065, a 0066 e a 0067 da leva 3), sem nenhum `ERROR`. **Em 28/10/2026**, colado da branch do PR #818 (a #367): o esquema está na **76**. Com a 0076, login sem o módulo OS não lê as OS, e o código da `main` mostra o lucro do Caixa zerado pra ele até o #818 entrar. **Em 05/11/2026**, colado da branch do PR #936 (a 0078, o percentual dos tributos do Simples, pro ensaio da NFS-e do #839): o esquema está na **78**, ainda **sem a 0077** (#857); quando ela chegar na `main`, colar a instalação de novo. **Em 29/10/2026** a Sofia decidiu que a equipe vira admin neste banco, pros testes de permissão (Passo 6, "Teste de permissão"). Os Sends **Em 09/11/2026**, colado da `main`: o esquema está na **82**. O `dados-de-exemplo.sql` para no "PAREI: este banco tem token da Focus NFe guardado" (o token de homologação, até o ensaio de 14 e 15/11, #842): por isso só o `update` do fiscal das peças (#960) foi rodado à mão. Depois que o token sair, rodar o script inteiro de novo. **Em 10/11/2026**, colado da branch do PR #985 (a 0083, a importação de clientes da #457): o esquema está na **83**; o script de exemplo parou de novo no token, e só o CEST das 12 peças (#977, #982) foi rodado à mão.
 ficaram prontos, mas ela só manda os links quando o caderno (`segundo-cerebro`) de cada um estiver
 pronto; eles vencem em 26/10, e depois disso é só criar um Send novo com o mesmo texto.
 
@@ -115,7 +115,8 @@ diferentes da mesma página:
    `https://raw.githubusercontent.com/sakura-corp/sakura-system-ace/main/supabase/exemplo/dados-de-exemplo.sql`
 2. **SQL Editor** → **New query** → cole → **Run**.
 
-Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 12 peças."**
+Embaixo deve aparecer: **"Dados de exemplo prontos: 8 clientes, 14 ordens, 2 orçamentos, 12 peças."**
+(Antes da #872 a frase não tinha os orçamentos: se ela aparecer sem eles, o link abriu um script antigo.)
 
 Se aparecer uma frase começando com **"PAREI"**, o script não gravou nada. Leia a frase: quase
 sempre é sinal de que você está no projeto errado. Me mande o print.
@@ -268,6 +269,12 @@ migration. (O teste fica **fora** do botão "Atualizar o banco de todas as empre
 Antes, confira que a branch está em dia com a `main` (senão falta migration de outro PR) e que a
 última linha traz o número **novo** (`values (71)`, por exemplo). Feito assim pela primeira vez em
 27/10/2026, na 0071 do PR #802.
+
+**Dois PRs com o mesmo número de migration** (10/11/2026: a 0083 do #985 e a do #987): fica com o
+número o que **já foi aplicado aqui**; o outro renumera pro seguinte **em cima da branch do primeiro**
+(juntando ela), pra instalação dele trazer as duas e a Sofia colar uma vez só. Nunca colar uma
+instalação com o mesmo número de uma que já está aqui: o `schema_versao` não muda, e o aviso de banco
+desatualizado deixa de valer.
 
 **Começar do zero de verdade** (raro): Project Settings → General → **Delete project**, e refazer
 do Passo 2. Os logins somem junto; refaça o Passo 6 e mande Sends novos.

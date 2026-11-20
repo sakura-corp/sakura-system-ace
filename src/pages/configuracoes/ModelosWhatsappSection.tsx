@@ -1,11 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { buscarContatoContabilidade, salvarContatoContabilidade } from "@/lib/contabilidade";
+import { salvarLinkAvaliacao } from "@/lib/configuracoes";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarModeloWhatsapp, textoDoModelo } from "@/lib/modelosWhatsapp";
-import { MODELOS_WHATSAPP, type ChaveModeloWhatsapp } from "@/schemas/whatsapp";
+import {
+  contatoContabilidadeSchema,
+  type ContatoContabilidadeFormValores,
+} from "@/schemas/contatoContabilidade";
+import {
+  linkAvaliacaoSchema,
+  MODELOS_WHATSAPP,
+  type ChaveModeloWhatsapp,
+  type LinkAvaliacaoFormValores,
+} from "@/schemas/whatsapp";
+import { Botao } from "@/components/Botao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface ModelosWhatsappSectionProps {
   modelos: Record<string, string>;
   lojaId: string;
+  /** O link de avaliação no Google já salvo; "" quando a loja não tem. */
+  linkAvaliacao: string;
   onSalvo: () => Promise<void>;
 }
 
@@ -19,10 +37,14 @@ interface ModelosWhatsappSectionProps {
 export function ModelosWhatsappSection({
   modelos,
   lojaId,
+  linkAvaliacao,
   onSalvo,
 }: ModelosWhatsappSectionProps) {
   return (
-    <div className="mt-4 space-y-8">
+    <div className="space-y-8 [&>section]:border-t [&>section]:border-linha [&>section]:pt-6 [&>section:first-child]:border-t-0 [&>section:first-child]:pt-0">
+      <LinkAvaliacaoCampo lojaId={lojaId} linkSalvo={linkAvaliacao} onSalvo={onSalvo} />
+      {/* key: trocar de loja remonta o bloco e busca o contato da outra. */}
+      <ContatoContabilidadeCampo key={lojaId} lojaId={lojaId} />
       {MODELOS_WHATSAPP.map((modelo) => (
         <ModeloEditavel
           key={modelo.chave}
@@ -82,22 +104,14 @@ function ModeloEditavel({
 
   return (
     <section>
-      <h4 className="text-corpo font-semibold text-sakura-purple-dark">{titulo}</h4>
-      <p className="mt-1 text-rotulo text-sakura-muted">{descricao}</p>
-      <p className="mt-1 text-rotulo text-sakura-muted">
+      <h4 className="text-corpo font-semibold text-texto">{titulo}</h4>
+      <p className="mt-1 text-rotulo text-texto-2">{descricao}</p>
+      <p className="mt-1 text-rotulo text-texto-2">
         Marcadores que este modelo troca pelo valor de verdade:{" "}
-        <span className="text-sakura-purple-dark">{marcadores.join(", ")}</span>
+        <span className="font-medium text-texto">{marcadores.join(", ")}</span>
       </p>
 
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Modelo salvo.
-        </p>
-      )}
-
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
       <textarea
         value={valor}
         onChange={(e) => {
@@ -105,29 +119,262 @@ function ModeloEditavel({
           setSalvo(false);
         }}
         rows={5}
-        className="mt-3 w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo focus:border-sakura-purple"
+        aria-label={titulo}
+        className="sakura-campo mt-3"
       />
 
-      <div className="mt-2 flex justify-end gap-3">
-        <button
-          type="button"
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+        {salvo && <AvisoDeSalvo>Modelo salvo.</AvisoDeSalvo>}
+        <Botao
+          variante="fantasma"
           onClick={() => {
             setValor(padrao);
             setSalvo(false);
           }}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
         >
           Voltar ao texto padrão
-        </button>
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="button" variante="secundario" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar modelo"}
-        </button>
+        </Botao>
       </div>
     </section>
+  );
+}
+
+function LinkAvaliacaoCampo({
+  lojaId,
+  linkSalvo,
+  onSalvo,
+}: {
+  lojaId: string;
+  linkSalvo: string;
+  onSalvo: () => Promise<void>;
+}) {
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LinkAvaliacaoFormValores>({
+    resolver: zodResolver(linkAvaliacaoSchema),
+    defaultValues: { link: linkSalvo },
+  });
+
+  async function aoSubmeter(valores: LinkAvaliacaoFormValores) {
+    setErro(null);
+    setSalvo(false);
+    try {
+      await salvarLinkAvaliacao(lojaId, valores.link || null);
+      await onSalvo();
+      setSalvo(true);
+    } catch (err) {
+      console.error("Erro ao salvar o link de avaliação:", err);
+      setErro(mensagemDeErro(err));
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(aoSubmeter)} noValidate>
+      <label
+        htmlFor="link-avaliacao"
+        className="block text-corpo font-semibold text-texto"
+      >
+        Link de avaliação no Google
+      </label>
+      <p className="mt-1 text-rotulo text-texto-2">
+        Sem o link, o botão Avaliação não aparece na ordem de serviço nem na venda de balcão.
+        Deixe vazio e salve para apagar.
+      </p>
+
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
+      <input
+        id="link-avaliacao"
+        type="text"
+        inputMode="url"
+        placeholder="https://g.page/r/..."
+        {...register("link", { onChange: () => setSalvo(false) })}
+        aria-invalid={errors.link ? true : undefined}
+        className="sakura-campo mt-3"
+      />
+      {errors.link && (
+        <span className="mt-1 block text-rotulo text-perigo">{errors.link.message}</span>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+        {salvo && (
+          <AvisoDeSalvo>Link salvo.</AvisoDeSalvo>
+        )}
+        <Botao type="submit" variante="secundario" ocupado={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar link"}
+        </Botao>
+      </div>
+    </form>
+  );
+}
+
+const VAZIO: ContatoContabilidadeFormValores = { nome: "", whatsapp: "", email: "" };
+
+/**
+ * O contato da contabilidade da loja (#383): pra quem o pacote do mês é
+ * mandado. Por loja, e fora do `onSalvo` da página: ele não é da tabela de
+ * configurações, é de `configuracoes_contabilidade`.
+ */
+function ContatoContabilidadeCampo({ lojaId }: { lojaId: string }) {
+  const [erro, setErro] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState<string | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  // Carga que falhou: os campos ficam travados, senão um "Salvar" em branco
+  // apagaria o contato que está guardado e a tela não chegou a mostrar.
+  const [cargaFalhou, setCargaFalhou] = useState(false);
+  const travado = carregando || cargaFalhou;
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContatoContabilidadeFormValores>({
+    resolver: zodResolver(contatoContabilidadeSchema),
+    defaultValues: VAZIO,
+  });
+
+  useEffect(() => {
+    let cancelado = false;
+    buscarContatoContabilidade(lojaId)
+      .then((contato) => {
+        if (cancelado) return;
+        reset(
+          contato
+            ? { nome: contato.nome, whatsapp: contato.whatsapp ?? "", email: contato.email ?? "" }
+            : VAZIO,
+        );
+      })
+      .catch((err) => {
+        if (cancelado) return;
+        console.error("Erro ao carregar o contato da contabilidade:", err);
+        setCargaFalhou(true);
+        setErro(mensagemDeErro(err));
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [lojaId, reset]);
+
+  async function gravar(contato: ContatoContabilidadeFormValores | null) {
+    if (contato === null && !confirm("Apagar o contato da contabilidade desta loja?")) return;
+    setErro(null);
+    setSalvo(null);
+    try {
+      await salvarContatoContabilidade(lojaId, contato);
+      if (contato) {
+        setSalvo("Contato salvo.");
+      } else {
+        reset(VAZIO);
+        setSalvo("Contato apagado.");
+      }
+    } catch (err) {
+      console.error("Erro ao salvar o contato da contabilidade:", err);
+      setErro(mensagemDeErro(err));
+    }
+  }
+
+  const estaVazio = () => {
+    const v = getValues();
+    return !v.nome.trim() && !v.whatsapp.trim() && !v.email.trim();
+  };
+
+  // Tudo vazio quer dizer "apagar": não passa pela validação (que pede nome).
+  const aoEnviar = (e: React.FormEvent<HTMLFormElement>) => {
+    if (estaVazio()) {
+      e.preventDefault();
+      return gravar(null);
+    }
+    return handleSubmit(gravar)(e);
+  };
+
+  const classeRotulo = "block text-rotulo font-medium text-texto-2";
+
+  return (
+    <form onSubmit={aoEnviar} noValidate>
+      <h4 className="text-corpo font-semibold text-texto">Contato da contabilidade</h4>
+      <p className="mt-1 text-rotulo text-texto-2">
+        Pra quem vai o pacote das notas do mês. Com o WhatsApp, a Central do dia ganha o botão
+        Abrir conversa. Esvazie os campos e salve (ou use Apagar contato) para remover.
+      </p>
+
+      {erro && <AvisoDeErro className="mt-3">{erro}</AvisoDeErro>}
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <div>
+          <label htmlFor="contab-nome" className={classeRotulo}>
+            Nome da contabilidade
+          </label>
+          <input
+            id="contab-nome"
+            type="text"
+            disabled={travado}
+            {...register("nome", { onChange: () => setSalvo(null) })}
+            aria-invalid={errors.nome ? true : undefined}
+            className="sakura-campo mt-1.5"
+          />
+          {errors.nome && (
+            <span className="mt-1 block text-rotulo text-perigo">{errors.nome.message}</span>
+          )}
+        </div>
+        <div>
+          <label htmlFor="contab-whatsapp" className={classeRotulo}>
+            WhatsApp da contabilidade
+          </label>
+          <input
+            id="contab-whatsapp"
+            type="text"
+            inputMode="tel"
+            placeholder="(11) 90000-0000"
+            disabled={travado}
+            {...register("whatsapp", { onChange: () => setSalvo(null) })}
+            aria-invalid={errors.whatsapp ? true : undefined}
+            className="sakura-campo mt-1.5"
+          />
+          {errors.whatsapp && (
+            <span className="mt-1 block text-rotulo text-perigo">{errors.whatsapp.message}</span>
+          )}
+        </div>
+        <div>
+          <label htmlFor="contab-email" className={classeRotulo}>
+            E-mail da contabilidade
+          </label>
+          <input
+            id="contab-email"
+            type="text"
+            inputMode="email"
+            disabled={travado}
+            {...register("email", { onChange: () => setSalvo(null) })}
+            aria-invalid={errors.email ? true : undefined}
+            className="sakura-campo mt-1.5"
+          />
+          {errors.email && (
+            <span className="mt-1 block text-rotulo text-perigo">{errors.email.message}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-3">
+        {salvo && <AvisoDeSalvo>{salvo}</AvisoDeSalvo>}
+        <Botao
+          variante="fantasma"
+          disabled={isSubmitting || travado}
+          onClick={() => gravar(null)}
+        >
+          Apagar contato
+        </Botao>
+        <Botao type="submit" variante="secundario" disabled={travado} ocupado={isSubmitting}>
+          {isSubmitting ? "Salvando..." : "Salvar contato"}
+        </Botao>
+      </div>
+    </form>
   );
 }

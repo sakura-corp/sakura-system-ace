@@ -169,6 +169,7 @@ export function resumirPorCliente(ordens: readonly OrdemDoCliente[]): Map<string
  *
  * - "Mais de 6 meses" é estrito: hoje 30/10, quem veio em 30/04 faz 6 meses
  *   hoje e ainda não entra; quem veio em 29/04, entra.
+ * - Quem tem `nao_avisar` (pediu pra não receber lembrete) não entra.
  * - Quem nunca teve ordem faturada não entra: ele não "parou de vir", nunca
  *   veio. (Cadastro feito por orçamento que não fechou, por exemplo.)
  * - Empate no total: quem sumiu há mais tempo primeiro; depois o id, só pra
@@ -176,7 +177,7 @@ export function resumirPorCliente(ordens: readonly OrdemDoCliente[]): Map<string
  * - `meses` errado (zero, negativo, quebrado) vira um número inteiro de pelo
  *   menos 1. A tela já valida; isto é só rede, pra nunca virar "todo mundo".
  */
-export function clientesSumidos<C extends { id: string }>(
+export function clientesSumidos<C extends { id: string; nao_avisar?: boolean | null }>(
   clientes: readonly C[],
   resumos: Map<string, ResumoDoCliente>,
   hoje: string,
@@ -187,6 +188,8 @@ export function clientesSumidos<C extends { id: string }>(
 
   const sumidos: { cliente: C; resumo: ResumoDoCliente }[] = [];
   for (const cliente of clientes) {
+    // Quem pediu pra não receber lembrete (#381) nunca entra na lista de chamar de volta.
+    if (cliente.nao_avisar) continue;
     const resumo = resumos.get(cliente.id);
     // Dia em "YYYY-MM-DD": comparar o texto é comparar o calendário.
     if (resumo && resumo.ultimaVisita < limite) sumidos.push({ cliente, resumo });

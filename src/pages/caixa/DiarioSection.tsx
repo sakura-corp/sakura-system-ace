@@ -5,8 +5,17 @@ import {
   resumirMovimentos,
   type CustoDoBanco,
 } from "@/schemas/metricasCaixa";
+import { Plus } from "lucide-react";
+import { Botao } from "@/components/Botao";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Dica } from "@/components/Dica";
+import { Selo } from "@/components/Selo";
 import { Valor } from "@/components/Valor";
-import { chaveDaForma, lancamentosDepoisDoFechamento, rotuloDaForma } from "@/schemas/fechamentoCaixa";
+import {
+  lancamentosDepoisDoFechamento,
+  rotuloDaForma,
+  totaisPorFormaDePagamento,
+} from "@/schemas/fechamentoCaixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import { nomeOrdem } from "@/types/os";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
@@ -58,19 +67,10 @@ export function DiarioSection({
   const entradas = resumo.entradas;
   const saidas = resumo.saidas;
 
-  const porFormaPagamento = useMemo(() => {
-    // Pela chave (#790): o faturamento grava "cartao_debito" e o lançamento
-    // manual pode ter "Cartão de débito"; os dois caem no mesmo cartão, com o nome.
-    const mapa = new Map<string, [string, number]>();
-    for (const m of movimentosDoDia) {
-      if (m.tipo !== "entrada") continue;
-      const chave = m.forma_pagamento ? chaveDaForma(m.forma_pagamento) : "";
-      const rotulo = m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "Não informado";
-      const [, total] = mapa.get(chave) ?? [rotulo, 0];
-      mapa.set(chave, [rotulo, total + m.valor]);
-    }
-    return [...mapa.values()].sort((a, b) => b[1] - a[1]);
-  }, [movimentosDoDia]);
+  const porFormaPagamento = useMemo(
+    () => totaisPorFormaDePagamento(movimentosDoDia),
+    [movimentosDoDia],
+  );
 
   // Lucro de cada linha: numa OS paga em duas formas, o lucro da OS é
   // repartido entre os lançamentos — antes cada linha mostrava o lucro
@@ -90,23 +90,20 @@ export function DiarioSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-corpo text-sakura-purple-dark/80">
-          Dia:
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <label className="sakura-rotulo w-44">
+          Dia
           <input
             type="date"
             value={dataFiltro}
             onChange={(e) => setDataFiltro(e.target.value)}
-            className="rounded-lg border border-sakura-borda-campo px-3 py-1.5"
+            className="sakura-campo sakura-campo-filtro"
           />
         </label>
         {!mostrarFormulario && (
-          <button
-            onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-          >
-            + Lançamento manual
-          </button>
+          <Botao variante="principal" icone={<Plus />} onClick={() => setMostrarFormulario(true)}>
+            Lançamento manual
+          </Botao>
         )}
       </div>
 
@@ -118,46 +115,39 @@ export function DiarioSection({
         />
       )}
 
-      <div className="grid grid-cols-4 gap-4">
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Entradas do dia</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(entradas)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Saídas do dia</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(saidas)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Saldo do dia</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(entradas - saidas)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Lucro do dia</p>
-          {/* Dia de prejuízo existe (o lucro desconta custo de aquisição e as
-              saídas lançadas à mão) e precisa parecer prejuízo — daí o
-              <Valor>, o mesmo dos cartões do Início. */}
-          <p>
-            <Valor valor={totalLucro} className="text-destaque font-semibold" />
-          </p>
-        </div>
+      {/* Quatro lado a lado só quando cabem (a largura da TELA, não da janela:
+          o menu aberto come 236 px). Abaixo disso, dois por linha: o número
+          tem 30 px e não quebra, e "R$ 12.345,67" não cabe num quarto de 980 px. */}
+      <div className="@container">
+      <div className="grid grid-cols-2 gap-4 @5xl:grid-cols-4">
+        <CartaoNumero titulo="Entradas do dia" explicacao={EXPLICA.entradas}>
+          <Valor valor={entradas} />
+        </CartaoNumero>
+        <CartaoNumero titulo="Saídas do dia" explicacao={EXPLICA.saidas}>
+          <Valor valor={saidas} />
+        </CartaoNumero>
+        <CartaoNumero titulo="Saldo do dia" explicacao={EXPLICA.saldo}>
+          <Valor valor={entradas - saidas} />
+        </CartaoNumero>
+        {/* Dia de prejuízo existe (o lucro desconta custo de aquisição e as
+            saídas lançadas à mão) e precisa parecer prejuízo — daí o
+            <Valor>, o mesmo dos cartões do Início. */}
+        <CartaoNumero titulo="Lucro do dia" explicacao={EXPLICA.lucro}>
+          <Valor valor={totalLucro} />
+        </CartaoNumero>
+      </div>
       </div>
 
       {porFormaPagamento.length > 0 && (
         <section>
-          <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">
+          <h2 className="mb-3 font-titulo text-corpo font-semibold text-texto">
             Formas de recebimento
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {porFormaPagamento.map(([forma, valor]) => (
               <div key={forma} className="sakura-card px-4 py-3">
-                <p className="text-rotulo text-sakura-muted">{forma}</p>
-                <p className="text-destaque font-semibold text-sakura-purple-dark">
+                <p className="text-rotulo font-medium text-texto-2">{forma}</p>
+                <p className="mt-0.5 font-titulo text-destaque font-semibold tabular-nums text-texto">
                   {formatarMoeda(valor)}
                 </p>
               </div>
@@ -167,70 +157,82 @@ export function DiarioSection({
       )}
 
       {movimentosDoDia.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">Nenhuma movimentação neste dia.</p>
+        <p className="sakura-card px-[18px] py-4 text-corpo text-texto-2">
+          Nenhuma movimentação neste dia.
+        </p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Horário</th>
-                <th className="px-4 py-3 font-medium">Origem</th>
-                <th className="px-4 py-3 font-medium">Cliente</th>
-                <th className="px-4 py-3 font-medium">Forma de pagamento</th>
-                <th className="px-4 py-3 font-medium">Valor</th>
-                <th className="px-4 py-3 font-medium">Lucro</th>
+                <th>Horário</th>
+                <th>Origem</th>
+                <th>Cliente</th>
+                <th>Forma de pagamento</th>
+                <th className="text-right">Valor</th>
+                <th className="text-right">Lucro</th>
               </tr>
             </thead>
             <tbody>
               {movimentosDoDia.map((m) => {
                 const lucro = lucrosPorMovimento.get(m.id) ?? null;
                 return (
-                  <tr key={m.id} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">
+                  <tr key={m.id}>
+                    <td className="whitespace-nowrap text-texto-2">
                       {new Date(m.data).toLocaleTimeString("pt-BR")}
                     </td>
-                    <td className="px-4 py-3">
-                      {m.ordem_servico_id
-                        ? m.ordem_servico?.numero
-                          ? nomeOrdem(m.ordem_servico.numero, m.ordem_servico.tipo)
-                          : "OS"
-                        : m.categoria?.nome || m.descricao || "Lançamento manual"}
+                    <td className="text-texto">
+                      <span className="font-medium">
+                        {m.ordem_servico_id
+                          ? m.ordem_servico?.numero
+                            ? nomeOrdem(m.ordem_servico.numero, m.ordem_servico.tipo)
+                            : "OS"
+                          : m.categoria?.nome || m.descricao || "Lançamento manual"}
+                      </span>
                       {idsDepoisDoFechamento.has(m.id) && (
-                        <span
-                          className="ml-2 whitespace-nowrap rounded-full bg-amber-50 px-2 py-0.5 text-meta text-amber-800"
-                          title="Entrou depois de o caixa do dia ser fechado — não estava na gaveta quando ela foi contada."
-                        >
-                          depois do fechamento
-                        </span>
+                        <Dica texto="Entrou depois de o caixa do dia ser fechado — não estava na gaveta quando ela foi contada.">
+                          <span tabIndex={0} className="ml-2 inline-flex rounded-full align-middle">
+                            <Selo tipo="atencao" palavra="Depois do fechamento" />
+                            {/* A explicação também no texto, pro leitor de
+                                tela ouvir lendo a linha (a dica só aparece com
+                                o mouse ou o foco). */}
+                            <span className="sr-only">
+                              : entrou depois de o caixa do dia ser fechado, não estava na gaveta quando
+                              ela foi contada.
+                            </span>
+                          </span>
+                        </Dica>
                       )}
                     </td>
-                    <td className="px-4 py-3">{m.ordem_servico?.cliente?.nome ?? "—"}</td>
-                    <td className="px-4 py-3">{m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}</td>
+                    <td className="text-texto">{m.ordem_servico?.cliente?.nome ?? "—"}</td>
+                    <td className="text-texto-2">
+                      {m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "—"}
+                    </td>
                     <td
-                      className={`px-4 py-3 font-medium ${
-                        m.tipo === "saida" ? "text-red-700" : ""
+                      className={`whitespace-nowrap text-right font-semibold ${
+                        m.tipo === "saida" ? "text-perigo" : "text-texto"
                       }`}
                     >
                       {m.tipo === "saida" ? "− " : ""}
                       {formatarMoeda(m.valor)}
                     </td>
-                    <td className="px-4 py-3">
-                      {lucro !== null ? <Valor valor={lucro} classeDeCor="" /> : "—"}
+                    <td className="whitespace-nowrap text-right text-texto-2">
+                      {lucro !== null ? <Valor valor={lucro} classeDeCor="text-texto-2" /> : "—"}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t border-sakura-gray/30 bg-sakura-pink-soft/50 font-semibold text-sakura-purple-dark">
-                <td className="px-4 py-3" colSpan={4}>
+              <tr className="border-t border-linha-forte bg-poco font-semibold">
+                <td className="text-texto" colSpan={4}>
                   Total do dia
                 </td>
-                <td className="px-4 py-3">
-                  <Valor valor={entradas - saidas} classeDeCor="" />
+                <td className="whitespace-nowrap text-right">
+                  <Valor valor={entradas - saidas} />
                 </td>
-                <td className="px-4 py-3">
-                  <Valor valor={totalLucro} classeDeCor="" />
+                <td className="whitespace-nowrap text-right">
+                  <Valor valor={totalLucro} />
                 </td>
               </tr>
             </tfoot>
@@ -240,3 +242,18 @@ export function DiarioSection({
     </div>
   );
 }
+
+/**
+ * A frase do "?" de cada cartão: o que o número quer dizer, em palavras de
+ * balcão. Só texto: a conta continua em `schemas/metricasCaixa.ts`.
+ */
+const EXPLICA = {
+  entradas:
+    "Tudo que entrou no caixa neste dia: o que as ordens de serviço e as vendas de balcão receberam, as contas a receber pagas, as entradas lançadas à mão e a sobra de caixa do fechamento.",
+  saidas:
+    "Tudo que saiu do caixa neste dia: as contas pagas, as saídas lançadas à mão e a quebra de caixa do fechamento.",
+  saldo:
+    "Entradas menos saídas do dia. Não é o dinheiro da gaveta: Pix e cartão também entram aqui. Pra conferir a gaveta, use a aba Fechamento.",
+  lucro:
+    "Entradas menos saídas, menos o custo das peças e dos serviços das ordens e vendas de balcão que receberam neste dia. Fica vermelho, com a seta pra baixo, quando o dia deu prejuízo.",
+};

@@ -2,9 +2,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
-import { mensagemDeErro } from "@/lib/errors";
+import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
 import {
   type ClienteFormValues,
   clienteFormSchema,
@@ -13,6 +14,7 @@ import {
   paraVeiculosPreenchidos,
 } from "@/schemas/cliente";
 import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
+import { AvisoDeErro } from "@/components/Aviso";
 import { DadosClienteFields } from "./campos/DadosClienteFields";
 import { EnderecoFields } from "./campos/EnderecoFields";
 import { VeiculosFields } from "./campos/VeiculosFields";
@@ -56,6 +58,8 @@ export function ClienteForm({
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar cliente:", err);
+      // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
+      if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
     }
   }
@@ -64,16 +68,12 @@ export function ClienteForm({
     <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <h2 className="text-subtitulo font-semibold text-texto">
           {clienteExistente ? "Editar cliente" : "Novo cliente"}
         </h2>
       </div>
 
-      {erro && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {rascunho.rascunho && (
         <AvisoRascunho
@@ -83,7 +83,7 @@ export function ClienteForm({
         />
       )}
 
-      <div className="space-y-6 sakura-card p-6 shadow-sm">
+      <div className="sakura-card space-y-6 p-6">
         <DadosClienteFields
           register={register}
           errors={errors}
@@ -92,29 +92,21 @@ export function ClienteForm({
         <EnderecoFields register={register} setValue={setValue} />
       </div>
 
-      <div className="sakura-card p-6 shadow-sm">
+      <div className="sakura-card p-6">
         <VeiculosFields control={control} register={register} watch={watch} setValue={setValue} />
       </div>
 
       <div className="flex justify-end gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-        >
+        <Botao variante="fantasma" onClick={onCancelar}>
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+        </Botao>
+        <Botao type="submit" variante="principal" disabled={isSubmitting}>
           {isSubmitting
             ? "Salvando..."
             : clienteExistente
               ? "Salvar alterações"
               : "Salvar cliente"}
-        </button>
+        </Botao>
       </div>
     </form>
   );

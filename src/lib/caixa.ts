@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { mensagemDeErro } from "./errors";
+import { IDS_POR_BLOCO, buscarTudoEmPaginas } from "./paginacao";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 import type { ItemParaVenda, StatusOS, TipoOrdem } from "@/types/os";
@@ -137,19 +138,34 @@ export async function definirCategoriaDosMovimentos(
   ids: string[],
   categoriaId: string,
 ): Promise<void> {
-  if (ids.length === 0) return;
+  const unicos = [...new Set(ids)];
+  if (unicos.length === 0) return;
 
-  const { data, error } = await supabase
-    .from("caixa_movimentos")
-    .update({ categoria_id: categoriaId })
-    .in("id", ids)
-    .select("id");
+  // Em blocos (#897): os ids vão no endereço, e uma lista enorme é recusada;
+  // um bloco pequeno também devolve menos de 1.000 linhas, então a contagem
+  // abaixo não é cortada pelo limite do Supabase. Se um bloco do meio falhar,
+  // os anteriores já ficaram gravados: tentar de novo termina o resto.
+  let atualizados = 0;
+  for (let i = 0; i < unicos.length; i += IDS_POR_BLOCO) {
+    const { data, error } = await supabase
+      .from("caixa_movimentos")
+      .update({ categoria_id: categoriaId })
+      .in("id", unicos.slice(i, i + IDS_POR_BLOCO))
+      .select("id");
+    if (error) {
+      if (atualizados === 0) throw error;
+      // Os blocos de antes já ficaram gravados: a pessoa precisa saber.
+      throw new Error(
+        `Só ${atualizados} de ${unicos.length} lançamentos foram atualizados antes do erro ` +
+          `(${mensagemDeErro(error)}). Recarregue a tela e tente de novo.`,
+      );
+    }
+    atualizados += data?.length ?? 0;
+  }
 
-  if (error) throw error;
-
-  if ((data?.length ?? 0) !== ids.length) {
+  if (atualizados !== unicos.length) {
     throw new Error(
-      `Só ${data?.length ?? 0} de ${ids.length} lançamentos foram atualizados. ` +
+      `Só ${atualizados} de ${unicos.length} lançamentos foram atualizados. ` +
         "Recarregue a tela e tente de novo.",
     );
   }

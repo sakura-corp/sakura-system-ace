@@ -152,6 +152,8 @@ function politicaDeSeguranca(): string {
   ].join("; ");
 }
 
+const VISUALIZADOR_DE_PDF = "chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/";
+
 function aplicarPoliticaDeSeguranca() {
   // Só no app empacotado: o servidor de desenvolvimento do Vite precisa de
   // script embutido e `eval` pro recarregamento automático, então uma CSP
@@ -159,6 +161,12 @@ function aplicarPoliticaDeSeguranca() {
   // proteger o app que vai pra loja, que é sempre o empacotado.
   if (VITE_DEV_SERVER_URL) return;
   session.defaultSession.webRequest.onHeadersReceived((detalhes, responder) => {
+    // O visualizador de PDF do próprio Electron (a prévia do DANFE) é uma
+    // página chrome-extension://: com a CSP do app, os scripts dele não rodam
+    // e o quadro fica escuro e vazio (#965). A exceção é só pra ele (o ID é
+    // o fixo do visualizador do Chromium); qualquer outra página continua com
+    // a CSP. Se uma atualização do Electron trocar o ID, o test:electron reprova.
+    if (detalhes.url.startsWith(VISUALIZADOR_DE_PDF)) return responder({});
     responder({
       responseHeaders: {
         ...detalhes.responseHeaders,
@@ -363,15 +371,77 @@ aoPedidoDaTela("whatsapp:abrir", async (url: unknown): Promise<boolean> => {
 // barra nativa.
 Menu.setApplicationMenu(null);
 
+// A barra da janela (visual novo, #990, tarefa 6). O Windows desenhava uma
+// faixa branca em cima do programa; agora a barra é do programa (na cor dele,
+// com a flor e o nome), e o Windows só põe por cima os três botões de verdade
+// (minimizar, maximizar, fechar) — `titleBarStyle: "hidden"` com
+// `titleBarOverlay`. Arrastar pelo topo, duplo clique, encaixe na lateral e
+// os três botões continuam sendo do sistema. NÃO se força canto arredondado:
+// no Windows 11 ele vem sozinho; no 10 exigiria janela transparente, que perde
+// a sombra e o encaixe (decisão em docs/referencia/visual-novo/README.md,
+// seção 12). No Mac o Electron mantém a barra de sempre (o programa é só Windows).
+const ALTURA_DA_BARRA = 40;
+const TEM_BARRA_PROPRIA = process.platform !== "darwin";
+
+// Mesmos valores de `fundo` e `texto` de cada tema em src/styles/globals.css:
+// a faixa dos botões é pintada pelo sistema, então precisa casar com a barra
+// que o programa desenha. O fundo da janela, enquanto a tela carrega, é o
+// escuro (o padrão); era o rosa-claro do tema antigo e piscava ao abrir.
+const CORES_DA_BARRA = {
+  escuro: { color: "#0A0A0D", symbolColor: "#FFFFFF" },
+  claro: { color: "#F3F2EF", symbolColor: "#1B1B1F" },
+} as const;
+
+// O ícone da janela aberta (barra de tarefas e Alt+Tab) segue o tema do
+// programa, e troca na hora (Sofia, 17/11/2026, #990). O do instalador, do
+// atalho e do ícone fixado com o programa fechado é um só, o escuro
+// (`build/icon.png`): esse o Windows lê do .exe, e o programa não muda. Com o
+// programa fixado na barra, o Windows 11 pode continuar mostrando o do atalho.
+// As imagens vêm de `public/` (geradas por
+// docs/referencia/visual-novo/conceito/icone.mjs), que o Vite copia pra `dist`.
+const PASTA_DOS_ICONES = VITE_DEV_SERVER_URL ? path.join(__dirname, "..", "public") : RENDERER_DIST;
+const ICONE_DA_JANELA = {
+  escuro: path.join(PASTA_DOS_ICONES, "icone-janela-escuro.png"),
+  claro: path.join(PASTA_DOS_ICONES, "icone-janela-claro.png"),
+} as const;
+
+aoAvisoDaTela("janela:tema", (tema: unknown) => {
+  if (!TEM_BARRA_PROPRIA || !mainWindow || mainWindow.isDestroyed()) return;
+  if (tema !== "escuro" && tema !== "claro") return;
+  try {
+    mainWindow.setIcon(ICONE_DA_JANELA[tema]);
+  } catch (erro) {
+    logErroDaTela(`Ícone da janela: ${String(erro).slice(0, 200)}`);
+  }
+  try {
+    mainWindow.setTitleBarOverlay({ ...CORES_DA_BARRA[tema], height: ALTURA_DA_BARRA });
+    // O fundo da janela também: ao redimensionar, a borda não pisca escura no claro.
+    mainWindow.setBackgroundColor(CORES_DA_BARRA[tema].color);
+  } catch (erro) {
+    logErroDaTela(`Barra da janela: ${String(erro).slice(0, 200)}`);
+  }
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1024,
     minHeight: 700,
-    backgroundColor: "#FFF7FC",
+    backgroundColor: CORES_DA_BARRA.escuro.color,
+    // Nasce com o do tema padrão; a tela avisa o tema guardado logo ao abrir.
+    icon: ICONE_DA_JANELA.escuro,
+    ...(TEM_BARRA_PROPRIA
+      ? {
+          titleBarStyle: "hidden" as const,
+          titleBarOverlay: { ...CORES_DA_BARRA.escuro, height: ALTURA_DA_BARRA },
+        }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs"),
+      // A tela precisa saber, já na primeira pintura, se a barra é dela (o
+      // preload lê isto; ver `barraDaJanela`).
+      additionalArguments: [`--barra-da-janela=${TEM_BARRA_PROPRIA ? ALTURA_DA_BARRA : 0}`],
       backgroundThrottling: false,
       // Os quatro abaixo já são o padrão do Electron 33 — foram conferidos
       // ligados, rodando o app de verdade, antes de serem escritos aqui.

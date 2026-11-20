@@ -182,6 +182,45 @@ describe("os ganchos do git (pre-commit e pre-push)", () => {
     expect(git(remoto, "show-ref").stdout).toBe(""); // o remoto continua vazio
   });
 
+  // 06/11: trazer a `main` pra uma branch antiga barrava o push por uma linha
+  // que já estava no GitHub (a "chave" de mentira dos próprios testes daqui):
+  // o gancho olhava `remoto..local`, que inclui os commits da `main` trazidos
+  // no merge. O que já está no remoto já saiu; só o que é novo conta.
+  it("o push de uma branch que trouxe a main não barra o que a main já tinha", () => {
+    const { local, remoto, git } = repo();
+    writeFileSync(join(local, "a.txt"), "base\n");
+    git(local, "add", "a.txt");
+    expect(git(local, "commit", "-m", "base").status).toBe(0);
+    expect(git(local, "push", "origin", "HEAD:refs/heads/main").status).toBe(0);
+    expect(git(local, "push", "origin", "HEAD:refs/heads/tarefa").status).toBe(0);
+    // A main anda com um commit que o verificador estranharia, e já está no remoto.
+    writeFileSync(join(local, "teste.txt"), `exemplo = ${chaveAnthropic()}\n`);
+    git(local, "add", "teste.txt");
+    expect(git(local, "commit", "--no-verify", "-m", "na main").status).toBe(0);
+    expect(git(local, "push", "--no-verify", "origin", "HEAD:refs/heads/main").status).toBe(0);
+    // A branch da tarefa traz a main e ganha um commit limpo.
+    git(local, "checkout", "-q", "-b", "tarefa", "HEAD~1");
+    expect(git(local, "fetch", "-q", "origin").status).toBe(0);
+    expect(git(local, "merge", "-q", "--no-edit", "origin/main").status).toBe(0);
+    writeFileSync(join(local, "b.txt"), "trabalho novo\n");
+    git(local, "add", "b.txt");
+    expect(git(local, "commit", "-m", "novo").status).toBe(0);
+    const r = git(local, "push", "origin", "HEAD:refs/heads/tarefa");
+    expect(r.stderr).not.toContain("BARRADO");
+    expect(r.status).toBe(0);
+
+    // Mas um commit NOVO com chave, no mesmo caminho, continua barrado.
+    writeFileSync(join(local, "c.txt"), `outra = ${chaveSupabase()}\n`);
+    git(local, "add", "c.txt");
+    expect(git(local, "commit", "--no-verify", "-m", "chave nova").status).toBe(0);
+    const r2 = git(local, "push", "origin", "HEAD:refs/heads/tarefa");
+    expect(r2.status).not.toBe(0);
+    expect(r2.stderr).toContain("BARRADO");
+    expect(git(remoto, "rev-parse", "refs/heads/tarefa").stdout.trim()).toBe(
+      git(local, "rev-parse", "HEAD~1").stdout.trim(),
+    );
+  });
+
   it("o push de commit limpo passa", () => {
     const { local, remoto, git } = repo();
     writeFileSync(join(local, "a.txt"), "tudo certo\n");

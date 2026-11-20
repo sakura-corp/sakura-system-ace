@@ -12,6 +12,13 @@
  */
 import { describe, expect, it, onTestFinished, vi } from "vitest";
 import type { ReactNode } from "react";
+// O FaturamentoCard lê a loja atual e o Pix dela; aqui a loja não tem Pix.
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ lojaAtual: { id: "loja-1" } }),
+}));
+vi.mock("@/lib/configuracoes", () => ({
+  buscarConfiguracaoPix: async () => null,
+}));
 import { useEnterParaProximoCampo } from "@/hooks/useEnterParaProximoCampo";
 import { renderizar, screen, within } from "@/testes/tela";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";

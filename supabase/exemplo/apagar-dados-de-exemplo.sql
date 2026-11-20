@@ -15,7 +15,9 @@
 --   • tudo o que é da loja de exemplo e é movimento: ordens de serviço e
 --     vendas (com os itens), caixa, fechamentos, contas a pagar e a receber,
 --     estoque (movimentos e contagens), pedidos de compra, comissões,
---     mensagens de WhatsApp registradas;
+--     orçamentos, mensagens de WhatsApp registradas;
+--   • as cotações das peças e dos fornecedores de exemplo, e o computador
+--     de exemplo;
 --   • os funcionários SEM login da loja de exemplo;
 --   • o cadastro de exemplo (o que tem ID começando com "eeee"): clientes,
 --     veículos, peças, fornecedores e categorias de despesa.
@@ -60,7 +62,14 @@ begin
   delete from contagens_estoque     where loja_id = loja_exemplo;
   delete from estoque_movimentos    where loja_id = loja_exemplo;
   delete from pedidos_compra        where loja_id = loja_exemplo;
-  delete from ordens_servico        where loja_id = loja_exemplo;  -- leva os itens junto
+  delete from ordens_servico        where loja_id = loja_exemplo;  -- leva os itens junto (e os orçamentos)
+  -- Cotação não é de loja: sai a das peças e fornecedores de exemplo (senão
+  -- ela segura a peça e o fornecedor, que ficariam "em uso").
+  delete from cotacoes_pecas
+   where id::text like 'eeee%' or peca_id::text like 'eeee%' or fornecedor_id::text like 'eeee%';
+  -- O computador inventado pelo exemplo (os de verdade, de quem entrou na
+  -- loja de exemplo, ficam: o programa regrava a linha a cada login).
+  delete from computadores          where id::text like 'eeee%';
 
   -- Funcionários sem login da loja de exemplo; o cadastro de exemplo.
   -- Um por um: o que ainda estiver em uso em outro lugar é pulado, sem erro.

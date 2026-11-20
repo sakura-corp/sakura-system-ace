@@ -7,6 +7,7 @@ import {
   movimentosSemCategoria,
   paraNovoMovimentoCaixa,
   resumirSemCategoria,
+  totaisPorCategoria,
 } from "./caixa";
 import type { MovimentoCaixa, TipoCaixa } from "@/types/caixa";
 
@@ -130,5 +131,25 @@ describe("agrupar as escolhas antes de gravar", () => {
 
   it("não grava nada quando ninguém escolheu", () => {
     expect(agruparPorCategoria({ a: "", b: "" })).toEqual([]);
+  });
+});
+
+describe("totaisPorCategoria (Caixa → Entradas/Saídas, #875)", () => {
+  it("soma por nome de categoria, do maior pro menor; sem categoria tem rótulo próprio", () => {
+    const movimentos = [
+      movimento({ id: "1", valor: 30, categoria: { nome: "Aluguel" } }),
+      movimento({ id: "2", valor: 20.1, categoria: null }),
+      movimento({ id: "3", valor: 100, categoria: { nome: "Luz" } }),
+      movimento({ id: "4", valor: 40, categoria: { nome: "Aluguel" } }),
+    ];
+    expect(totaisPorCategoria(movimentos)).toEqual([
+      ["Luz", 100],
+      ["Aluguel", 70],
+      ["Sem categoria", 20.1],
+    ]);
+  });
+
+  it("nada lançado dá lista vazia", () => {
+    expect(totaisPorCategoria([])).toEqual([]);
   });
 });

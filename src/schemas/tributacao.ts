@@ -43,6 +43,15 @@ function normalizar(codigo: string | null | undefined): string {
   return (codigo ?? "").trim();
 }
 
+/**
+ * O CFOP só com os números ("5.405" vira "5405", " 5102 " vira "5102").
+ * Vazio, nulo ou sem número nenhum vira "". Usada no aviso do CSOSN (#968) e
+ * no item da NFC-e (#981), pra nota e aviso lerem o CFOP do mesmo jeito.
+ */
+export function cfopSoNumeros(cfop: string | null | undefined): string {
+  return normalizar(cfop).replace(/\D/g, "");
+}
+
 export function regimeUsaCsosn(regime: RegimeTributario | null | undefined): boolean {
   return regime === "simples_nacional";
 }
@@ -131,4 +140,64 @@ export function codigoParaPecaImportada(
   const daNota = normalizar(codigoDaNota);
   if (!motivoCodigoIncompativel(daNota, regime)) return daNota || null;
   return normalizar(padraoDaLoja) || null;
+}
+
+// O CFOP da peça também precisa combinar com o CSOSN dela. Peça com ICMS já
+// pago antes (substituição tributária / monofásico, CSOSN 500) sai com 5405
+// dentro do estado e 6404 para outro estado; peça comum (CSOSN 101, 102, 103,
+// 300 e 400) sai com 5102 dentro e 6102 fora. Com o par trocado a SEFAZ
+// recusa a nota. Provado no ensaio de 04/11/2026 e confirmado pela
+// contabilidade em 05/11/2026.
+//
+// Na NFC-e só vale o par de dentro do estado (5102/5405): o par de fora
+// (6102/6404) fica na tabela, mas `motivoCfopIncompativel` avisa dele também
+// (Sofia, 09/11/2026, #968).
+//
+// Mudar a regra é mudar só esta tabela. CSOSN fora dela (201, 202, 203, 900)
+// fica sem opinião de propósito.
+const PECA_COMUM = { dentro: "5102", fora: "6102", peca: "peça comum, sem ICMS pago antes" };
+
+const CFOP_ESPERADO_POR_CSOSN: Record<string, { dentro: string; fora: string; peca: string }> = {
+  "101": PECA_COMUM,
+  "102": PECA_COMUM,
+  "103": PECA_COMUM,
+  "300": PECA_COMUM,
+  "400": PECA_COMUM,
+  "500": { dentro: "5405", fora: "6404", peca: "peça com ICMS já pago antes" },
+};
+
+/**
+ * Por que esse CFOP não combina com o CSOSN da peça — ou `null` quando está
+ * tudo certo ou quando não dá pra afirmar nada. É **aviso, nunca tranca**
+ * (docs/licoes.md, item 33): a tabela pode envelhecer com mudança de
+ * legislação, e quem decide no fim é a SEFAZ.
+ *
+ * Só fala no Simples Nacional (no regime normal o código é CST, e a regra é
+ * outra). Fica calado com o regime vazio, e com CFOP ou CSOSN em branco —
+ * esses já têm aviso próprio. A sugestão é sempre o par de dentro do estado
+ * (5102 ou 5405): a NFC-e só aceita CFOP que começa com 5 (Sofia, 09/11/2026,
+ * #968). Por isso o par de fora do estado (6102/6404), mesmo combinando com o
+ * CSOSN, também ganha aviso.
+ */
+export function motivoCfopIncompativel(
+  cfop: string | null | undefined,
+  csosn: string | null | undefined,
+  regime: RegimeTributario | null | undefined,
+): string | null {
+  if (!regimeUsaCsosn(regime)) return null;
+
+  // Só no CFOP: tira o que não é número ("5.405" vira "5405"). O
+  // `normalizar()` serve também ao CSOSN/CST e fica como está.
+  const valorCfop = cfopSoNumeros(cfop);
+  const valorCsosn = normalizar(csosn);
+  if (!valorCfop || !valorCsosn) return null;
+
+  const esperado = CFOP_ESPERADO_POR_CSOSN[valorCsosn];
+  if (!esperado) return null;
+  if (valorCfop === esperado.dentro) return null;
+  if (valorCfop === esperado.fora) {
+    return `o CFOP ${valorCfop} é de venda para outro estado, e a NFC-e só aceita CFOP de dentro do estado: use ${esperado.dentro}`;
+  }
+
+  return `o CFOP ${valorCfop} não combina com o CSOSN ${valorCsosn} (${esperado.peca}); use ${esperado.dentro}`;
 }

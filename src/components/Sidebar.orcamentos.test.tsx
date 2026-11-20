@@ -8,11 +8,11 @@ const contar = vi.fn();
 vi.mock("@/lib/ordensServico", () => ({
   contarOrcamentosAbertosDaLoja: (...a: unknown[]) => contar(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ isSupabaseConfigured: true, supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador, lojaAtual: { id: "loja-a" }, logout: vi.fn() }),
+  useAuth: () => ({ operador, lojaAtual: { id: "loja-a" }, lojasDisponiveis: [], logout: vi.fn() }),
 }));
 vi.mock("./LojaSwitcher", () => ({ LojaSwitcher: () => null }));
 // A barra de rolagem própria (AreaRolavel) mede com ResizeObserver, que o jsdom não tem.
@@ -23,6 +23,7 @@ vi.mock("./AreaRolavel", () => ({
 const { Sidebar } = await import("./Sidebar");
 
 beforeEach(() => {
+  window.localStorage.clear();
   contar.mockReset();
   contar.mockResolvedValue(3);
 });
@@ -35,6 +36,15 @@ describe("Sidebar — Orçamentos", () => {
     expect(screen.getByRole("link", { name: /Orçamentos/ })).toHaveAttribute("href", "/orcamentos");
     expect(await screen.findByLabelText("3 em aberto")).toBeInTheDocument();
     expect(contar).toHaveBeenCalledWith("loja-a");
+  });
+
+  it("com o menu encolhido, o número vira um ponto, que continua dizendo quantos são", async () => {
+    window.localStorage.setItem("sakura.menu", "encolhido");
+    operador = { id: "op", nome: "Ana", usuario: "ana", admin: false, permissoes: ["ordens_servico"] };
+    renderizar(<Sidebar />);
+
+    const ponto = await screen.findByLabelText("3 em aberto");
+    expect(ponto).toBeEmptyDOMElement();
   });
 
   it("sem nenhum orçamento aberto, não mostra número", async () => {

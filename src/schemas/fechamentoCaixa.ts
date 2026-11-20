@@ -203,3 +203,23 @@ export function fundoSugerido(
 export function somarDiferencas(fechamentos: readonly Pick<FechamentoCaixa, "diferenca">[]): number {
   return somar(fechamentos.map((f) => f.diferenca));
 }
+
+/**
+ * Quanto entrou em cada forma de pagamento (Caixa → Diário), da maior pra
+ * menor, como pares [rótulo, total]. Pela chave (#790): "cartao_debito" do
+ * faturamento e "Cartão de débito" do lançamento manual caem juntos, com o
+ * rótulo do primeiro que apareceu. Saiu da tela na #875, sem mudar a conta.
+ */
+export function totaisPorFormaDePagamento(
+  movimentos: readonly Pick<MovimentoCaixa, "tipo" | "forma_pagamento" | "valor">[],
+): [string, number][] {
+  const mapa = new Map<string, [string, number]>();
+  for (const m of movimentos) {
+    if (m.tipo !== "entrada") continue;
+    const chave = m.forma_pagamento ? chaveDaForma(m.forma_pagamento) : "";
+    const rotulo = m.forma_pagamento ? rotuloDaForma(m.forma_pagamento) : "Não informado";
+    const [, total] = mapa.get(chave) ?? [rotulo, 0];
+    mapa.set(chave, [rotulo, total + m.valor]);
+  }
+  return [...mapa.values()].sort((a, b) => b[1] - a[1]);
+}

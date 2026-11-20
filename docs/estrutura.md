@@ -24,6 +24,11 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
   dos campos (Enter avança, apagar data limpa, número não muda sem digitar).
 - **`src/contexts/AuthContext.tsx`**: a sessão e o operador logado (`useAuth`).
 - **`src/components/`**: peças reaproveitadas. As que têm regra por trás:
+  - **as peças do visual novo** (#990; a tabela de como usar cada uma está em
+    `docs/referencia/visual-novo/README.md`, seção 6): `Botao.tsx` (com o `LinkBotao`), `Selo.tsx`
+    (o aviso com ícone e palavra; sem a palavra não compila), `CartaoNumero.tsx`, `Dica.tsx` (no
+    lugar do `title`) e `AvisoQueSome.tsx` (quem avisa é o `avisar()` de `src/lib/avisoQueSome.ts`).
+    Tela nova usa a peça, não escreve as classes à mão;
   - `Modal.tsx` (a janela por cima da tela); `Combobox.tsx` (select com busca, usado em toda lista
     que vem do banco; `permitirLivre` aceita valor fora da lista, hoje só na Marca do veículo);
   - `AcoesDaLinha.tsx` (botão pro que é do dia a dia + menu de três pontinhos pro que não se
@@ -35,10 +40,12 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
   - `AreaRolavel.tsx` (a barra de rolagem própria, seção 2), `LojaSwitcher.tsx` (trocar de loja,
     só com 2+ lojas), `LinkPlaca.tsx` (a placa que abre a ficha do veículo), `PermissaoRoute.tsx`
     (guarda de rota por módulo), `VersaoApp.tsx`, `BotaoVoltar.tsx`, `BotaoWhatsapp.tsx`.
+- **`src/galeria-de-pecas/`**: a mostra das peças do visual novo. **Não faz parte do programa das
+  lojas** (nada do programa importa esta pasta); abre por `docs/referencia/visual-novo/pecas.html`.
 - **`src/hooks/`**: `useEnterParaProximoCampo`, `useLimparDataAoApagar` (item 27),
   `useNaoMexerNoNumeroSemDigitar` (item 41), `useRascunhoFormulario` (rascunho salvo a cada 30 s;
-  `useRascunho` junta salvar e restaurar) e `useSituacaoDoEsquema` (compara a versão do banco com a
-  esperada, `TR-05.7`).
+  `useRascunho` junta salvar e restaurar), `useSituacaoDoEsquema` (compara a versão do banco com a
+  esperada, `TR-05.7`) e `useListaPaginada` (a lista por página, ver "Lista que pode crescer").
 - **`src/lib/`**: uma por entidade, com o acesso ao Supabase (`listar`, `criar`, `excluir`…); toda
   tabela que é por loja recebe `lojaId` explícito. E a infraestrutura:
   - `supabase.ts` + `conexao.ts` (com qual banco este computador fala), `errors.ts`
@@ -147,6 +154,16 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   (funções que usam o cliente `supabase`), `pages/<modulo>/<Modulo>Page.tsx` (lista, com
   carregando e erro) e `<Modulo>Form.tsx`.
 - Erro do Supabase **não é `instanceof Error`**: sempre `mensagemDeErro()` de `src/lib/errors.ts`.
+- **Lista que pode crescer** (`src/lib/paginacao.ts`): o Supabase corta toda resposta em 1.000
+  linhas, sem erro. Lista inteira → `buscarTudoEmPaginas`; filtro por lista de ids (`.in`) →
+  `buscarPorIdsEmBlocos` (blocos de 100 ids, senão o endereço fica grande demais). As duas pedem
+  ordem total (último `.order()` em `id`). #509 e #498.
+  **Lista que a pessoa vê e que cresce** (Clientes desde a #373; as outras entram uma tela por vez):
+  `useListaPaginada` (`src/hooks/`). A tela passa uma função que pede ao banco **uma página**
+  (`.range(de, ate)`, `.order()` terminando em `id`, o filtro e a busca no servidor, e
+  `count: "exact"` pro total); o gancho cuida da página, da ordem guardada por tela, da espera da
+  busca e de só gravar a resposta mais nova (#903). Modelo: `listarClientesPagina` em
+  `lib/clientes.ts` (inclusive como escapar a busca dentro do `.or()`) e `ClientesPage.tsx`.
 - **Nunca `window.prompt()`**: o Electron não suporta. `alert()` e `confirm()` funcionam.
 - Toda tabela nova precisa de RLS e policy (item 1 da seção 6).
 - Valor padrão a partir de `import.meta.env.VITE_*`: usar `||`, nunca `??`. O Vite injeta variável

@@ -1,3 +1,5 @@
+import type { TipoOrdem } from "./os";
+
 export type TipoNotaFiscal = "nfe" | "nfse";
 export type OrigemNotaFiscal = "manual" | "automatica";
 
@@ -16,6 +18,14 @@ export interface NotaFiscalArquivo {
   chave_acesso: string | null;
   status: string | null;
   focus_nfe_ref: string | null;
-  ordem_servico?: { cliente?: { nome: string } | null } | null;
+  /**
+   * A OS (ou venda de balcão) da nota, pela janela `ordens_servico_notas`:
+   * o número e o tipo pro nome ("OS 147", "Venda 149") e o nome do cliente.
+   */
+  ordem_servico?: {
+    numero?: number | null;
+    tipo?: TipoOrdem | null;
+    cliente?: { nome: string } | null;
+  } | null;
   operador?: { nome: string } | null;
 }

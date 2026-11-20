@@ -1,7 +1,10 @@
+import { Botao } from "@/components/Botao";
 import { useState } from "react";
 import { mensagemDeErro } from "@/lib/errors";
 import { salvarJurosParcelas } from "@/lib/configuracoes";
 import type { JurosParcela } from "@/types/configuracao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeErro } from "@/components/Aviso";
 
 interface JurosParcelasSectionProps {
   jurosParcelas: JurosParcela[];
@@ -51,45 +54,36 @@ export function JurosParcelasSection({
 
   return (
     <>
-      {erro && (
-        <p className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Juros salvos.
-        </p>
-      )}
-
-      <div className="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-6">
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
+      <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
         {NUMEROS_PARCELA.map((n) => (
-          <label key={n} className="flex flex-col gap-1 text-rotulo">
-            <span className="text-sakura-purple-dark/90">{n}x</span>
-            <div className="flex items-center gap-1">
+          <label key={n} className="sakura-rotulo">
+            <span>{n}x</span>
+            <div className="flex items-center gap-2">
               <input
                 type="number"
                 step="0.1"
                 min="0"
                 value={valores[n]}
-                onChange={(e) =>
-                  setValores((atual) => ({ ...atual, [n]: e.target.value }))
-                }
-                className="w-full rounded-lg border border-sakura-borda-campo px-2 py-1.5 text-corpo text-sakura-purple-dark"
+                onChange={(e) => {
+                  setValores((atual) => ({ ...atual, [n]: e.target.value }));
+                  setSalvo(false);
+                }}
+                className="sakura-campo"
               />
-              <span className="text-sakura-muted">%</span>
+              <span className="text-texto-2">%</span>
             </div>
           </label>
         ))}
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+      <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+        {salvo && (
+          <AvisoDeSalvo>Juros salvos.</AvisoDeSalvo>
+        )}
+        <Botao type="button" variante="principal" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar juros"}
-        </button>
+        </Botao>
       </div>
     </>
   );

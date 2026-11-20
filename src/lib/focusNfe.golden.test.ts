@@ -94,7 +94,8 @@ const peca = (parcial: Partial<Peca>): Peca => ({
   preco_venda: 320,
   ncm: "40111000",
   cest: null,
-  cfop_padrao: "5102",
+  // CSOSN 500 (ICMS já pago antes) pede CFOP 5405: com 5102 a SEFAZ recusa (#864).
+  cfop_padrao: "5405",
   origem: "0",
   // Simples Nacional: CSOSN de 3 dígitos (o 500 é o que esta loja usa, e foi
   // confirmado pela contabilidade em 31/08/2026).
@@ -126,6 +127,7 @@ const cliente = (parcial: Partial<Cliente>): Cliente => ({
   uf: null,
   codigo_municipio: null,
   data_nascimento: null,
+  nao_avisar: false,
   criado_em: "2026-01-10T12:00:00.000Z",
   ...parcial,
 });
@@ -155,6 +157,7 @@ const configuracaoFiscal: ConfiguracaoFiscalLoja = {
   codigo_cnae: "4520-0/01",
   competencia_aliquota_confirmada: null,
   aliquota_passo_a_passo: null,
+  percentual_tributos_simples: null,
 } as ConfiguracaoFiscalLoja;
 
 const ordem = { id: "33333333-3333-3333-3333-333333333333", numero: 12 } as OrdemServico;

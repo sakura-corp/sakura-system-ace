@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { buscarTudoEmPaginas } from "./paginacao";
 import type { ItemDaFicha, OrdemDaFicha } from "@/schemas/fichaVeiculo";
 import { contaNosNumeros } from "@/schemas/orcamento";
 import type { Veiculo } from "@/types/cliente";
@@ -80,21 +81,26 @@ export async function buscarFichaDoVeiculo(
   // As OS do carro vêm pela janela `ordens_servico_clientes` (migration 0075,
   // #367): só o que a ficha mostra — número, datas, KM, cliente, itens e o
   // prazo de garantia da peça. Nunca custo, observação nem forma de pagamento.
-  const { data: ordens, error: erroOrdens } = await supabase
-    .from("ordens_servico_clientes")
-    .select(
-      "id, loja_id, numero, tipo, status, data_abertura, data_fechamento, cliente_id, " +
-        "cliente_nome, km_entrada, itens",
-    )
-    .eq("veiculo_id", veiculoId)
-    .order("data_abertura", { ascending: false });
-  if (erroOrdens) throw erroOrdens;
+  // Por páginas (#498): o Supabase corta em 1.000 linhas. `id` desempata
+  // aberturas iguais.
+  const ordens = await buscarTudoEmPaginas((de, ate) =>
+    supabase
+      .from("ordens_servico_clientes")
+      .select(
+        "id, loja_id, numero, tipo, status, data_abertura, data_fechamento, cliente_id, " +
+          "cliente_nome, km_entrada, itens",
+      )
+      .eq("veiculo_id", veiculoId)
+      .order("data_abertura", { ascending: false })
+      .order("id", { ascending: false })
+      .range(de, ate),
+  );
 
   return {
     veiculo: completarVeiculoDaJanela(veiculo as unknown as Partial<VeiculoDaFicha>),
     // Orçamento (#379) não é visita: aberto ou recusado, fica fora da
     // história do carro (linha do tempo, KM, total gasto, garantia).
-    ordens: ((ordens ?? []) as unknown as LinhaOrdemDaFicha[]).map(ordemDaFichaDaJanela).filter(contaNosNumeros),
+    ordens: (ordens as unknown as LinhaOrdemDaFicha[]).map(ordemDaFichaDaJanela).filter(contaNosNumeros),
   };
 }
 

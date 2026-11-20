@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { Selo } from "@/components/Selo";
+import { AvisoDeErro } from "@/components/Aviso";
 import { listarCategoriasServico } from "@/lib/categoriasServico";
 import { mensagemDeErro } from "@/lib/errors";
+import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import {
   atualizarServico,
   atualizarStatusServico,
@@ -9,7 +13,6 @@ import {
   excluirServico,
   listarServicos,
 } from "@/lib/servicos";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { CategoriaServico } from "@/types/categoriaServico";
 import type { NovoServico, Servico } from "@/types/servico";
 import { ServicoForm } from "./ServicoForm";
@@ -27,12 +30,12 @@ export function ServicosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
+  // Uma caixa pra cada formulário: os dois podem estar abertos juntos, e o
+  // cursor vai pro que acabou de abrir.
+  const caixaDoNovo = useRolarAteOFormulario(mostrarFormulario ? "novo" : null);
+  const caixaDaEdicao = useRolarAteOFormulario(servicoEditando?.id ?? null);
 
   async function carregar() {
-    if (!isSupabaseConfigured) {
-      setCarregando(false);
-      return;
-    }
     setCarregando(true);
     setErro(null);
     try {
@@ -89,94 +92,98 @@ export function ServicosPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <BotaoVoltar />
           <div>
-            <h1 className="text-titulo font-semibold text-sakura-purple-dark">
-              Serviços
-            </h1>
-            <p className="text-corpo text-sakura-muted">
+            <h1 className="font-titulo text-titulo font-bold text-texto">Serviços</h1>
+            <p className="text-corpo text-texto-2">
               Catálogo de serviços oferecidos, com preço padrão
             </p>
           </div>
         </div>
         {!mostrarFormulario && !servicoEditando && (
-          <button
-            onClick={() => setMostrarFormulario(true)}
-            className="rounded-xl bg-sakura-purple px-5 py-2.5 text-corpo font-medium text-white hover:opacity-90"
-          >
+          <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
             + Novo serviço
-          </button>
+          </Botao>
         )}
       </header>
 
       {mostrarFormulario && (
-        <ServicoForm
-          categorias={categorias}
-          onSalvar={handleSalvar}
-          onCancelar={() => setMostrarFormulario(false)}
-        />
+        <div ref={caixaDoNovo} className="scroll-mt-4">
+          <ServicoForm
+            categorias={categorias}
+            onSalvar={handleSalvar}
+            onCancelar={() => setMostrarFormulario(false)}
+          />
+        </div>
       )}
 
       {servicoEditando && (
-        <ServicoForm
-          categorias={categorias}
-          servicoExistente={servicoEditando}
-          onSalvar={handleSalvar}
-          onSalvarEdicao={handleSalvarEdicao}
-          onCancelar={() => setServicoEditando(null)}
-        />
+        <div ref={caixaDaEdicao} className="scroll-mt-4">
+          {/* key: a lista fica na tela com o formulário aberto, e sem ela trocar
+              de canetinha mantinha os valores do anterior (defaultValues só
+              valem na montagem); salvar gravava esses dados no outro (#969). */}
+          <ServicoForm
+            key={servicoEditando.id}
+            categorias={categorias}
+            servicoExistente={servicoEditando}
+            onSalvar={handleSalvar}
+            onSalvarEdicao={handleSalvarEdicao}
+            onCancelar={() => setServicoEditando(null)}
+          />
+        </div>
       )}
 
-      {erro && (
-        <p className="rounded-xl bg-red-50 px-4 py-3 text-corpo text-red-700">
-          {erro}
-        </p>
-      )}
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {carregando ? (
-        <p className="text-corpo text-sakura-muted">Carregando...</p>
+        <p className="text-corpo text-texto-2">Carregando...</p>
       ) : servicos.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
+        <p className="text-corpo text-texto-2">
           Nenhum serviço cadastrado ainda.
         </p>
       ) : (
         <div className="overflow-x-auto sakura-card">
-          <table className="w-full text-left text-corpo">
-            <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+          <table className="sakura-tabela">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Descrição</th>
-                <th className="px-4 py-3 font-medium">Categoria</th>
-                <th className="px-4 py-3 font-medium">Código</th>
-                <th className="px-4 py-3 font-medium">Preço padrão</th>
-                <th className="px-4 py-3 font-medium">Custo</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Código</th>
+                <th className="text-right">Preço padrão</th>
+                <th className="text-right">Custo</th>
+                <th>Status</th>
+                <th className="relative">
+                  <span className="sr-only">Ações</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {servicos.map((servico) => (
-                <tr key={servico.id} className="border-t border-sakura-gray/20">
-                  <td className="px-4 py-3">{servico.descricao}</td>
-                  <td className="px-4 py-3">
+                <tr key={servico.id}>
+                  <td className="font-medium">{servico.descricao}</td>
+                  <td className="text-texto-2">
                     {categorias.find((c) => c.id === servico.categoria_id)?.nome ?? "—"}
                   </td>
-                  <td className="px-4 py-3">{servico.codigo_interno || "—"}</td>
-                  <td className="px-4 py-3">{formatarPreco(servico.preco_padrao)}</td>
-                  <td className="px-4 py-3">{formatarPreco(servico.custo)}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-rotulo font-medium ${
-                        servico.ativo
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-sakura-gray/20 text-sakura-muted"
-                      }`}
-                    >
-                      {servico.ativo ? "Ativo" : "Inativo"}
-                    </span>
+                  {/* Igual ao código de Produtos (#921, #932): sem quebrar no
+                      hífen, mas com teto, pra um código comprido não alargar a
+                      tabela em 1366. O código inteiro fica no balão do mouse. */}
+                  <td
+                    className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
+                    title={servico.codigo_interno || undefined}
+                  >
+                    {servico.codigo_interno || "—"}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="whitespace-nowrap text-right">{formatarPreco(servico.preco_padrao)}</td>
+                  <td className="whitespace-nowrap text-right text-texto-2">{formatarPreco(servico.custo)}</td>
+                  <td>
+                    <Selo
+                      tipo={servico.ativo ? "ok" : "neutro"}
+                      palavra={servico.ativo ? "Ativo" : "Inativo"}
+                    />
+                  </td>
+                  <td className="text-right">
                     <AcoesDaLinha
                       descricao={`o serviço ${servico.descricao}`}
                       acoes={[

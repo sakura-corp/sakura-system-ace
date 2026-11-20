@@ -1,7 +1,10 @@
 import { diaLocal } from "@/lib/datas";
 import { contaNosNumeros, custoUnitarioDoItem } from "./orcamento";
+import { somar } from "./dinheiro";
 import type { MapaCusto } from "./metricasCaixa";
-import type { OrdemServico } from "@/types/os";
+import { valorLiquidoDoItem } from "./valorItem";
+import { ehConsumidor } from "@/types/cliente";
+import type { ItemOS, OrdemServico, TipoItemOS } from "@/types/os";
 
 /**
  * Relações → Lucratividade: receita, custo e margem por peça/serviço, no
@@ -15,6 +18,11 @@ import type { OrdemServico } from "@/types/os";
 
 export interface LinhaLucro {
   descricao: string;
+  /**
+   * Peça ou serviço (#390, pra curva ABC separar as duas listas). Vem do
+   * primeiro item da linha; não muda conta nenhuma.
+   */
+  tipo: TipoItemOS;
   quantidade: number;
   receita: number;
   custo: number;
@@ -40,6 +48,30 @@ export interface Lucratividade {
   algumCustoNaoInformado: boolean;
 }
 
+/** As OS que entram nos números do período: dia de abertura no fuso local, orçamento fora. */
+function ordensDoPeriodo(ordens: OrdemServico[], de: string, ate: string): OrdemServico[] {
+  return ordens.filter((ordem) => {
+    if (!contaNosNumeros(ordem)) return false;
+    const dia = diaLocal(ordem.data_abertura);
+    return dia >= de && dia <= ate;
+  });
+}
+
+/**
+ * Quanto um item vende e custa. É o pedaço que a Lucratividade por item e a
+ * por cliente (#390) usam — a mesma conta, num lugar só.
+ */
+function contaDoItem(
+  item: ItemOS,
+  custoPeca: MapaCusto,
+  custoServico: MapaCusto,
+): { receita: number; custo: number; custoNaoInformado: boolean } {
+  const receita = valorLiquidoDoItem(item);
+  const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
+  const custo = item.quantidade * (custoUnitario ?? 0);
+  return { receita, custo, custoNaoInformado: custoUnitario === null };
+}
+
 export function lucratividadePorItem({
   ordens,
   custoPeca,
@@ -61,15 +93,9 @@ export function lucratividadePorItem({
 }): Lucratividade {
   const mapa = new Map<string, LinhaLucro>();
 
-  for (const ordem of ordens) {
-    if (!contaNosNumeros(ordem)) continue;
-    const dia = diaLocal(ordem.data_abertura);
-    if (dia < de || dia > ate) continue;
-
+  for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
     for (const item of ordem.itens ?? []) {
-      const receita = item.quantidade * item.preco_unitario - item.desconto;
-      const custoUnitario = custoUnitarioDoItem(item, custoPeca, custoServico);
-      const custo = item.quantidade * (custoUnitario ?? 0);
+      const { receita, custo, custoNaoInformado } = contaDoItem(item, custoPeca, custoServico);
 
       // #744: o item ligado ao cadastro guarda o nome digitado no orçamento
       // ("Bico de valvula cromado"); a linha é a da peça do cadastro, senão a
@@ -86,6 +112,7 @@ export function lucratividadePorItem({
           : undefined;
       const existente = mapa.get(chave) ?? {
         descricao: nomeDoCadastro ?? item.descricao,
+        tipo: item.tipo,
         quantidade: 0,
         receita: 0,
         custo: 0,
@@ -96,7 +123,7 @@ export function lucratividadePorItem({
       existente.receita += receita;
       existente.custo += custo;
       existente.margem += receita - custo;
-      if (custoUnitario === null) existente.custoNaoInformado = true;
+      if (custoNaoInformado) existente.custoNaoInformado = true;
       mapa.set(chave, existente);
     }
   }
@@ -113,4 +140,165 @@ export function lucratividadePorItem({
     totalMargem: linhas.reduce((total, l) => total + l.margem, 0),
     algumCustoNaoInformado: linhas.some((l) => l.custoNaoInformado),
   };
+}
+
+export interface LinhaLucroCliente {
+  clienteId: string;
+  /** O nome vem da `clientes_janela` (aparece mesmo sem o módulo Clientes). */
+  nome: string;
+  receita: number;
+  custo: number;
+  margem: number;
+  /** Mesmo sentido da `LinhaLucro`: algum item sem custo informado. */
+  custoNaoInformado: boolean;
+}
+
+export interface LucratividadePorCliente {
+  /** Um por cliente de verdade, o de maior venda primeiro. */
+  linhas: LinhaLucroCliente[];
+  /**
+   * A venda de balcão sem cliente escolhido (o Consumidor), à parte: não é
+   * um cliente de verdade e tomaria o lugar de quem a loja quer enxergar
+   * (#390, pergunta 3). `null` quando não houve.
+   */
+  consumidor: LinhaLucroCliente | null;
+  /** Com o Consumidor: bate com o `totalReceita` da `lucratividadePorItem`. */
+  totalReceita: number;
+}
+
+export const NOME_CLIENTE_SEM_NOME = "Cliente sem nome";
+
+/**
+ * #390: a mesma conta da `lucratividadePorItem` (mesmas OS, mesmo período,
+ * mesmo valor e custo de cada item), agrupada pelo cliente da OS.
+ */
+export function lucratividadePorCliente({
+  ordens,
+  custoPeca,
+  custoServico,
+  de,
+  ate,
+}: {
+  ordens: OrdemServico[];
+  custoPeca: MapaCusto;
+  custoServico: MapaCusto;
+  de: string;
+  ate: string;
+}): LucratividadePorCliente {
+  const mapa = new Map<string, LinhaLucroCliente>();
+
+  for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
+    // OS sem item não vendeu nada: não cria um cliente com R$ 0 na lista.
+    if (!ordem.itens?.length) continue;
+    const existente = mapa.get(ordem.cliente_id) ?? {
+      clienteId: ordem.cliente_id,
+      nome: ordem.cliente?.nome || NOME_CLIENTE_SEM_NOME,
+      receita: 0,
+      custo: 0,
+      margem: 0,
+      custoNaoInformado: false,
+    };
+    for (const item of ordem.itens ?? []) {
+      const { receita, custo, custoNaoInformado } = contaDoItem(item, custoPeca, custoServico);
+      existente.receita += receita;
+      existente.custo += custo;
+      existente.margem += receita - custo;
+      if (custoNaoInformado) existente.custoNaoInformado = true;
+    }
+    mapa.set(ordem.cliente_id, existente);
+  }
+
+  const todas = [...mapa.values()];
+  const consumidor = todas.find((l) => ehConsumidor(l.clienteId)) ?? null;
+  const linhas = todas
+    .filter((l) => !ehConsumidor(l.clienteId))
+    .sort((a, b) => b.receita - a.receita || a.nome.localeCompare(b.nome, "pt-BR"));
+  return {
+    linhas,
+    consumidor,
+    totalReceita: todas.reduce((total, l) => total + l.receita, 0),
+  };
+}
+
+/**
+ * Quanto da receita sobrou, em % (a "Margem %" da tabela e o "de cada R$ 100"
+ * do cartão de destaque, visual novo de Relações, 17/11/2026). `null` sem
+ * receita: não dá pra dividir, e a tela mostra "—" em vez de inventar.
+ */
+export function margemPercentual(receita: number, margem: number): number | null {
+  return receita > 0 ? (margem / receita) * 100 : null;
+}
+
+/** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
+export const BOLHAS_NO_GRAFICO = 12;
+/** Das 12, quantas no máximo vão pros itens com prejuízo (os piores primeiro). */
+export const BOLHAS_DE_PREJUIZO = 4;
+
+/**
+ * "De cada R$ 100 vendidos": quanto é custo e quanto fica com a loja, nos 100.
+ * `null` quando não faz sentido dizer assim (sem venda, ou margem fora de 0 a
+ * 100%, como no prejuízo): aí o número grande, vermelho, já diz tudo.
+ */
+export function deCadaCem(receita: number, margem: number): { custo: number; margem: number } | null {
+  const percentual = margemPercentual(receita, margem);
+  if (percentual === null || percentual < 0 || percentual > 100) return null;
+  return { custo: 100 - percentual, margem: percentual };
+}
+
+/**
+ * A margem média da loja pra comparar item com item (a linha tracejada das
+ * bolhas e a seta da "Margem %"): só as linhas com custo informado, que são
+ * as que aparecem no gráfico. A peça avulsa sem custo entraria com 100% de
+ * margem e puxaria a média pra cima, deixando todo o resto "abaixo da média".
+ */
+export function margemMediaComCusto(linhas: readonly LinhaLucro[]): number | null {
+  const comCusto = linhas.filter((l) => !l.custoNaoInformado);
+  return margemPercentual(
+    somar(comCusto.map((l) => l.receita)),
+    somar(comCusto.map((l) => l.margem)),
+  );
+}
+
+export interface PontoDoLucro {
+  descricao: string;
+  quantidade: number;
+  receita: number;
+  margem: number;
+  /** A margem sobre a receita, em %. */
+  percentual: number;
+  /**
+   * O tamanho da bolha, de 0 a 1: a margem em reais (sem sinal) sobre a maior
+   * do gráfico. A tela só multiplica pelo raio.
+   */
+  peso: number;
+}
+
+/**
+ * As bolhas do "Onde está o lucro" (Relações → Lucratividade): uma por peça ou
+ * serviço, no máximo `limite` (o resto continua na tabela de baixo). Entram as
+ * de mais margem em reais e, **sempre**, as que deram prejuízo (as piores, até
+ * `BOLHAS_DE_PREJUIZO`): o gráfico existe pra mostrar o que conferir, e um
+ * prejuízo ficaria sempre no fim da fila, cortado. Fica de fora a linha sem
+ * receita (não tem %) e a de custo não informado (a margem seria inventada).
+ */
+export function pontosDoLucro(linhas: readonly LinhaLucro[], limite = BOLHAS_NO_GRAFICO): PontoDoLucro[] {
+  const validas = linhas.filter((l) => !l.custoNaoInformado && l.receita > 0);
+  const prejuizos = validas
+    .filter((l) => l.margem < 0)
+    .sort((a, b) => a.margem - b.margem)
+    .slice(0, Math.min(BOLHAS_DE_PREJUIZO, limite));
+  const lucros = validas
+    .filter((l) => l.margem >= 0)
+    .sort((a, b) => b.margem - a.margem)
+    .slice(0, limite - prejuizos.length);
+  const escolhidas = [...lucros, ...prejuizos];
+  const maior = Math.max(...escolhidas.map((l) => Math.abs(l.margem)), 0);
+  return escolhidas.map((l) => ({
+    descricao: l.descricao,
+    quantidade: l.quantidade,
+    receita: l.receita,
+    margem: l.margem,
+    percentual: (l.margem / l.receita) * 100,
+    peso: maior > 0 ? Math.abs(l.margem) / maior : 0,
+  }));
 }

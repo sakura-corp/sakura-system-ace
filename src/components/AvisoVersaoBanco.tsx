@@ -1,4 +1,5 @@
 import type { SituacaoEsquema } from "@/schemas/versaoEsquema";
+import { AvisoDeAtencao } from "@/components/Aviso";
 
 interface AvisoVersaoBancoProps {
   situacao: SituacaoEsquema;
@@ -30,21 +31,21 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
 
   if (situacao.estado === "app_atrasado") {
     return (
-      <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+      <AvisoDeAtencao className="mb-4">
         <p className="font-semibold">
           O banco desta empresa já recebeu uma atualização que este computador ainda não tem.
         </p>
         <p className="mt-1 text-rotulo">
-          Não é erro, e dá pra continuar trabalhando. Feche e abra o programa: ele se atualiza
-          sozinho ao abrir. Se depois de duas aberturas continuar aparecendo, avise quem cuida do
-          sistema.
+          Não é erro, e dá pra continuar trabalhando. Se tiver versão nova, o programa se
+          atualiza sozinho ao abrir. Se o aviso continuar depois de fechar e abrir, avise quem
+          cuida do sistema: a versão nova talvez ainda não tenha sido liberada.
         </p>
-      </div>
+      </AvisoDeAtencao>
     );
   }
 
   return (
-    <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-corpo text-amber-800">
+    <AvisoDeAtencao className="mb-4">
       <p className="font-semibold">
         O programa foi atualizado, mas o banco desta empresa ainda não.
       </p>
@@ -52,12 +53,13 @@ export function AvisoVersaoBanco({ situacao }: AvisoVersaoBancoProps) {
         Dá pra continuar trabalhando normalmente — mas, se alguma tela reclamar que “uma coluna
         não existe”, é por causa disto, e não é defeito do que você fez.
       </p>
-      <p className="mt-2 text-rotulo text-amber-900">
-        Quem cuida do sistema precisa abrir o painel do Supabase desta empresa → SQL Editor → New
-        query, e rodar, na ordem, os arquivos que começam com{" "}
-        <span className="font-semibold">{situacao.faltando.join(", ")}</span> da pasta{" "}
-        <span className="font-semibold">supabase/migrations</span>.
+      {/* Migration entra só pelo botão "Atualizar o banco de todas as empresas"
+          (docs/operacao.md), nunca colada à mão no SQL Editor (#725). */}
+      <p className="mt-2 text-rotulo text-atencao">
+        Quem cuida do sistema precisa atualizar o banco desta empresa (
+        {situacao.faltando.length > 1 ? "faltam as atualizações" : "falta a atualização"}{" "}
+        <span className="font-semibold">{situacao.faltando.join(", ")}</span>).
       </p>
-    </div>
+    </AvisoDeAtencao>
   );
 }

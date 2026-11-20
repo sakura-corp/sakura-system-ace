@@ -35,6 +35,7 @@ export const clienteFormSchema = z.object({
   uf: z.string(),
   codigo_municipio: z.string(),
   data_nascimento: z.string(),
+  nao_avisar: z.boolean(),
   veiculos: z.array(veiculoFormSchema),
 });
 
@@ -66,6 +67,7 @@ export function paraValoresFormulario(cliente?: Cliente): ClienteFormValues {
     uf: cliente?.uf ?? "",
     codigo_municipio: cliente?.codigo_municipio ?? "",
     data_nascimento: cliente?.data_nascimento ?? "",
+    nao_avisar: cliente?.nao_avisar ?? false,
     veiculos: cliente?.veiculos?.length
       ? cliente.veiculos.map((veiculo) => ({
           id: veiculo.id,
@@ -96,6 +98,7 @@ export function paraNovoCliente(valores: ClienteFormValues): NovoCliente {
     uf: valores.uf,
     codigo_municipio: valores.codigo_municipio || null,
     data_nascimento: valores.data_nascimento || null,
+    nao_avisar: valores.nao_avisar,
   };
 }
 

@@ -1,10 +1,17 @@
+import { FlaskConical, Receipt } from "lucide-react";
 import { useState } from "react";
+import { Botao } from "@/components/Botao";
+import { Selo } from "@/components/Selo";
 import {
   definirTokenFocusNfe,
   salvarConfiguracaoFiscal,
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
-import { PASSO_A_PASSO_ALIQUOTA_PADRAO } from "@/schemas/aliquotaCompetencia";
+import { passoAPassoAliquotaPadrao } from "@/schemas/aliquotaCompetencia";
+import {
+  avisoPercentualTributosSimplesVazio,
+  percentualTributosSimplesParaSalvar,
+} from "@/schemas/percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
 import { REGIME_TRIBUTARIO_LABEL } from "@/types/configuracao";
@@ -13,6 +20,8 @@ import type {
   ConfiguracaoFiscalLoja,
   RegimeTributario,
 } from "@/types/configuracao";
+import { AvisoDeSalvo } from "./pecas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 interface DadosFiscaisSectionProps {
   configuracao: ConfiguracaoFiscalLoja | null;
@@ -20,7 +29,8 @@ interface DadosFiscaisSectionProps {
   onSalvo: () => Promise<void>;
 }
 
-type FormularioFiscal = DadosFiscaisEditaveis;
+// Na tela o percentual sempre existe (vazio é null); no salvar ele é opcional.
+type FormularioFiscal = DadosFiscaisEditaveis & { percentual_tributos_simples: number | null };
 
 function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFiscal {
   return {
@@ -45,14 +55,14 @@ function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFi
       configuracao?.aliquota_iss !== undefined && configuracao?.aliquota_iss !== null
         ? configuracao.aliquota_iss
         : null,
+    percentual_tributos_simples: configuracao?.percentual_tributos_simples ?? null,
     codigo_tributario_municipio: configuracao?.codigo_tributario_municipio ?? "",
     codigo_cnae: configuracao?.codigo_cnae ?? "",
     aliquota_passo_a_passo: configuracao?.aliquota_passo_a_passo ?? "",
   };
 }
 
-const campoClasse =
-  "w-full rounded-lg border border-sakura-borda-campo px-3 py-2 text-corpo text-sakura-purple-dark focus:border-sakura-purple";
+const campoClasse = "sakura-campo";
 
 export function DadosFiscaisSection({
   configuracao,
@@ -67,15 +77,18 @@ export function DadosFiscaisSection({
   const tokenCadastrado = Boolean(configuracao?.focus_nfe_configurado);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [erroPercentual, setErroPercentual] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
     setValores((atual) => ({ ...atual, [campo]: valor }));
+    setSalvo(false);
   }
 
   async function aoSairDoCep(valor: string) {
     const endereco = await buscarEnderecoPorCep(valor);
     if (!endereco) return;
+    setSalvo(false);
     setValores((atual) => ({
       ...atual,
       rua: endereco.logradouro,
@@ -88,11 +101,25 @@ export function DadosFiscaisSection({
 
   async function handleSalvar() {
     setErro(null);
+    setErroPercentual(null);
     setSalvo(false);
+    const percentual = percentualTributosSimplesParaSalvar(
+      valores.regime_tributario,
+      valores.percentual_tributos_simples,
+    );
+    if (percentual.erro) {
+      // Perto do campo e do botão: a faixa de erro do topo fica fora da vista.
+      setErroPercentual(percentual.erro);
+      return;
+    }
+    // Fora do Simples o campo não vai: `campos` vem vazio e o banco guarda o que já tem.
+    const { percentual_tributos_simples: _naTela, ...semPercentual } = valores;
+    void _naTela;
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
-        ...valores,
+        ...semPercentual,
+        ...percentual.campos,
         cnpj: valores.cnpj || null,
         razao_social: valores.razao_social || null,
         nome_fantasia: valores.nome_fantasia || null,
@@ -126,17 +153,17 @@ export function DadosFiscaisSection({
     }
   }
 
+  const avisoPercentual = avisoPercentualTributosSimplesVazio(
+    valores.regime_tributario,
+    valores.percentual_tributos_simples,
+  );
+
   return (
     <>
-      {erro && <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>}
-      {salvo && (
-        <p className="mt-3 rounded-lg bg-emerald-50 px-4 py-2 text-corpo text-emerald-700">
-          Dados fiscais salvos.
-        </p>
-      )}
-
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
+      <h3 className="text-corpo font-semibold text-texto">Dados da empresa</h3>
+      <div className="mt-3 grid grid-cols-3 gap-4">
+        <label className="col-span-1 sakura-rotulo">
           CNPJ
           <input
             value={valores.cnpj ?? ""}
@@ -144,7 +171,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Inscrição estadual
           <input
             value={valores.inscricao_estadual ?? ""}
@@ -152,7 +179,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Inscrição municipal
           <input
             value={valores.inscricao_municipal ?? ""}
@@ -161,7 +188,7 @@ export function DadosFiscaisSection({
           />
         </label>
 
-        <label className="col-span-2 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-2 sakura-rotulo">
           Razão social
           <input
             value={valores.razao_social ?? ""}
@@ -169,7 +196,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Nome fantasia
           <input
             value={valores.nome_fantasia ?? ""}
@@ -178,13 +205,15 @@ export function DadosFiscaisSection({
           />
         </label>
 
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Regime tributário
           <select
             value={valores.regime_tributario ?? ""}
-            onChange={(e) =>
-              set("regime_tributario", (e.target.value || null) as RegimeTributario | null)
-            }
+            onChange={(e) => {
+              // Fora do Simples o campo some: o erro dele não pode ficar na tela.
+              setErroPercentual(null);
+              set("regime_tributario", (e.target.value || null) as RegimeTributario | null);
+            }}
             className={campoClasse}
           >
             <option value="">Selecione...</option>
@@ -195,7 +224,7 @@ export function DadosFiscaisSection({
             ))}
           </select>
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Telefone
           <input
             value={valores.telefone ?? ""}
@@ -203,7 +232,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           E-mail
           <input
             type="email"
@@ -213,7 +242,7 @@ export function DadosFiscaisSection({
           />
         </label>
 
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           CEP
           <input
             value={valores.cep ?? ""}
@@ -222,7 +251,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Rua
           <input
             value={valores.rua ?? ""}
@@ -230,7 +259,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Número
           <input
             value={valores.numero ?? ""}
@@ -239,7 +268,7 @@ export function DadosFiscaisSection({
           />
         </label>
 
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Bairro
           <input
             value={valores.bairro ?? ""}
@@ -247,7 +276,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           Cidade
           <input
             value={valores.cidade ?? ""}
@@ -255,7 +284,7 @@ export function DadosFiscaisSection({
             className={campoClasse}
           />
         </label>
-        <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="col-span-1 sakura-rotulo">
           UF
           <input
             value={valores.uf ?? ""}
@@ -266,30 +295,45 @@ export function DadosFiscaisSection({
         </label>
       </div>
 
-      <div className="mt-6 border-t border-sakura-gray/20 pt-4">
-        <p className="text-rotulo font-medium text-sakura-purple-dark/90">Integração Focus NFe</p>
-        <p className="mt-1 text-rotulo text-sakura-muted">
+      <div className="mt-6 border-t border-linha pt-4">
+        <h3 className="text-corpo font-semibold text-texto">Integração Focus NFe</h3>
+        <p className="mt-1 text-rotulo text-texto-2">
           Cole aqui o token de acesso da loja, que fica no painel do Focus NFe. Use o ambiente de
           homologação pra testar sem gerar nota de verdade.
         </p>
-        <p className="mt-2 text-rotulo text-sakura-muted">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {tokenCadastrado ? (
+            <Selo tipo="ok" palavra="Token cadastrado" />
+          ) : (
+            <Selo tipo="atencao" palavra="Sem token" />
+          )}
+          {(configuracao?.focus_nfe_ambiente ?? "homologacao") === "producao" ? (
+            <Selo tipo="ok" icone={Receipt} palavra="Produção: a nota vale de verdade" />
+          ) : (
+            <Selo tipo="atencao" icone={FlaskConical} palavra="Teste: não gera nota de verdade" />
+          )}
+        </div>
+        <p className="mt-2 text-rotulo text-texto-2">
           {tokenCadastrado
-            ? "✓ Já existe um token cadastrado. Ele não aparece aqui de propósito — o token emite e cancela nota no CNPJ da loja, então fica guardado num lugar que nenhum computador lê. Pra trocar, cole o novo e salve; em branco, o atual continua valendo."
+            ? "Já existe um token cadastrado. Ele não aparece aqui de propósito — o token emite e cancela nota no CNPJ da loja, então fica guardado num lugar que nenhum computador lê. Pra trocar, cole o novo e salve; em branco, o atual continua valendo."
             : "Nenhum token cadastrado ainda. Depois de salvo, ele não aparece mais aqui — de propósito."}
         </p>
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          <label className="col-span-2 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          <label className="col-span-2 sakura-rotulo">
             {tokenCadastrado ? "Trocar o token" : "Token de acesso"}
             <input
               type="password"
               value={novoToken}
-              onChange={(e) => setNovoToken(e.target.value)}
+              onChange={(e) => {
+                setNovoToken(e.target.value);
+                setSalvo(false);
+              }}
               placeholder={tokenCadastrado ? "Em branco, mantém o atual" : ""}
               autoComplete="off"
               className={campoClasse}
             />
           </label>
-          <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          <label className="col-span-1 sakura-rotulo">
             Ambiente
             <select
               value={valores.focus_nfe_ambiente}
@@ -303,17 +347,17 @@ export function DadosFiscaisSection({
         </div>
       </div>
 
-      <div className="mt-6 border-t border-sakura-gray/20 pt-4">
-        <p className="text-rotulo font-medium text-sakura-purple-dark/90">Emissão de NFS-e (serviço)</p>
-        <p className="mt-1 text-rotulo text-sakura-muted">
+      <div className="mt-6 border-t border-linha pt-4">
+        <h3 className="text-corpo font-semibold text-texto">Emissão de NFS-e (serviço)</h3>
+        <p className="mt-1 text-rotulo text-texto-2">
           Só usados na emissão de NFS-e — a de NFC-e (peça) não precisa de nenhum destes. O código
           do município é o código IBGE da cidade da loja; o item da lista de serviço já vem com o
           padrão de oficina/autocenter ("14.01"), mas confira com seu contador se é o certo pra sua
           atividade. O código tributário do município varia de prefeitura pra prefeitura — só
           preencha se a sua exigir (a emissão vai avisar se faltar algo obrigatório).
         </p>
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          <label className="col-span-1 sakura-rotulo">
             Código da cidade (IBGE)
             <input
               value={valores.codigo_municipio ?? ""}
@@ -321,7 +365,7 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
-          <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          <label className="col-span-1 sakura-rotulo">
             Item lista de serviço (LC 116)
             <input
               value={valores.item_lista_servico ?? ""}
@@ -329,7 +373,7 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
-          <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          <label className="col-span-1 sakura-rotulo">
             Alíquota ISS (%)
             <input
               type="number"
@@ -339,7 +383,38 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
-          <label className="col-span-2 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          {valores.regime_tributario === "simples_nacional" && (
+            <div className="col-span-3">
+              <label className="sakura-rotulo max-w-sm">
+                Percentual aproximado dos tributos do Simples (%)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={valores.percentual_tributos_simples ?? ""}
+                  onChange={(e) => {
+                    setErroPercentual(null);
+                    set(
+                      "percentual_tributos_simples",
+                      e.target.value === "" ? null : Number(e.target.value),
+                    );
+                  }}
+                  aria-invalid={erroPercentual ? true : undefined}
+                  className={campoClasse}
+                />
+              </label>
+              {erroPercentual && <AvisoDeErro className="mt-2">{erroPercentual}</AvisoDeErro>}
+              <p className="mt-1 text-rotulo text-texto-2">
+                O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
+                serviço.
+              </p>
+              {avisoPercentual && (
+                <AvisoDeAtencao className="mt-2">{avisoPercentual}</AvisoDeAtencao>
+              )}
+            </div>
+          )}
+          <label className="col-span-2 sakura-rotulo">
             Código tributário do município (se a prefeitura exigir)
             <input
               value={valores.codigo_tributario_municipio ?? ""}
@@ -347,7 +422,7 @@ export function DadosFiscaisSection({
               className={campoClasse}
             />
           </label>
-          <label className="col-span-1 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+          <label className="col-span-1 sakura-rotulo">
             Código CNAE
             <input
               value={valores.codigo_cnae ?? ""}
@@ -357,38 +432,40 @@ export function DadosFiscaisSection({
             />
           </label>
         </div>
-        <p className="mt-2 text-rotulo text-sakura-muted">
+        <p className="mt-2 text-rotulo text-texto-2">
           O código CNAE está no Cartão CNPJ da empresa, em "Atividade econômica principal" —
-          algumas prefeituras (Araraquara incluída) exigem esse campo pra autorizar a NFS-e.
+          algumas prefeituras exigem esse campo pra autorizar a NFS-e.
         </p>
 
-        <label className="mt-4 flex flex-col gap-1 text-rotulo text-sakura-purple-dark/90">
+        <label className="mt-4 sakura-rotulo">
           Como cadastrar a alíquota no portal da prefeitura
           <textarea
             value={valores.aliquota_passo_a_passo ?? ""}
             onChange={(e) => set("aliquota_passo_a_passo", e.target.value)}
             rows={5}
-            placeholder={PASSO_A_PASSO_ALIQUOTA_PADRAO}
+            placeholder={passoAPassoAliquotaPadrao(valores.codigo_municipio)}
             className={campoClasse}
           />
         </label>
-        <p className="mt-2 text-rotulo text-sakura-muted">
+        <p className="mt-2 text-rotulo text-texto-2">
           Todo mês, a prefeitura só autoriza a primeira NFS-e depois que a alíquota daquele mês
           for cadastrada no portal dela. O Início avisa quando chega a hora, e mostra este texto
-          junto — deixe em branco pra usar o caminho do portal de Araraquara, ou escreva o da sua
-          cidade.
+          junto. Escreva aqui o caminho no portal da prefeitura da loja (a contabilidade sabe qual
+          é); em branco, o aviso mostra o texto que aparece apagado no campo, que depende do código
+          IBGE da cidade.
         </p>
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={handleSalvar}
-          disabled={salvando}
-          className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-        >
+      <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+        {erroPercentual && (
+          <AvisoDeErro>Não salvou: confira o percentual dos tributos do Simples.</AvisoDeErro>
+        )}
+        {salvo && (
+          <AvisoDeSalvo>Dados fiscais salvos.</AvisoDeSalvo>
+        )}
+        <Botao type="button" variante="principal" onClick={handleSalvar} ocupado={salvando}>
           {salvando ? "Salvando..." : "Salvar dados fiscais"}
-        </button>
+        </Botao>
       </div>
     </>
   );

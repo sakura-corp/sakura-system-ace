@@ -27,7 +27,10 @@ estão na **seção 0 do `PROJETO_STATUS.md`**; este manual explica como trabalh
 **O que precisa ter antes** (os convites e as chaves, a Sofia manda):
 - a **conta do Claude Team da Sakura**, pelo convite que chega no **e-mail da Sakura**;
 - a **conta do GitHub com o e-mail da Sakura**, com a **verificação em duas etapas** ligada, e o
-  convite pra organização `sakura-corp` aceito;
+  convite pra organização `sakura-corp` aceito. **A Sofia dá "Write"** a essa conta em
+  `sakura-system-ace`, `escritorio` e `secundarios` (repositório → Settings → Collaborators → Add
+  people): só ser da organização dá leitura, e sem o "Write" não dá pra enviar trabalho nem abrir PR
+  (06/11, com a conta nova do Lázaro);
 - **quem vai trabalhar no programa das lojas**: o endereço e a chave do **Supabase de teste** e o
   **login de teste** de cada um. Tudo isso chega **só por um link do Bitwarden Send**, que se
   apaga sozinho. **Nunca** por WhatsApp, e-mail, conversa com o Claude nem pelo repositório.
@@ -49,7 +52,12 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >
 > Hoje o objetivo é **só deixar meu computador pronto**, sem programar nada:
 > 1. Confira o que já tenho instalado e me ajude a instalar o que faltar: **Git**, **Node.js
->    versão 22** e **GitHub CLI** (o programa `gh`).
+>    22, a 22.12 ou mais nova da linha 22** (a mesma do CI) e **GitHub CLI** (o programa `gh`).
+>    Pra conferir o Node, rode `node -v`: se aparecer um número abaixo de `v22.12.0` (ex.:
+>    `v22.11.0` ou `v20…`), me ajude a instalar a versão 22 mais nova. Se o Node antigo veio de
+>    um gerenciador (nvm, nvm-windows, Volta ou Homebrew), atualize **por ele**; senão, pelo
+>    site nodejs.org, escolhendo a v22, por cima do antigo. Depois confira de novo com `node -v`
+>    num terminal novo. Com Node mais velho, o `npm install` quebra ao baixar o Electron.
 > 2. Me ajude a entrar na minha conta do GitHub (a do e-mail da Sakura) pelo GitHub CLI
 >    (`gh auth login`, pelo navegador), e a configurar o Git com o **meu nome e o e-mail da
 >    Sakura**.
@@ -95,6 +103,31 @@ precisa mexer na trava de segurança do Windows.
 automática). Pra programar ele abre igual, mas se alguma coisa só funcionar no Windows, a pessoa
 anota na descrição do PR e a Sofia testa no dela.
 
+## O Claude na nuvem (GitHub, ambiente e celular)
+
+Escrito em 05/11/2026, na volta do Lázaro. Serve pras sessões do `claude.ai/code` (as do botão
+"Começar com o Claude"), que seguem a pessoa em qualquer aparelho. **Um passo por vez**; tela
+diferente da descrita: print antes de clicar.
+
+1. **A conta do GitHub**: no github.com, a foto (canto de cima à direita) tem que mostrar a conta
+   **do e-mail da Sakura**. Se for a pessoal: **Sign out** e entrar na da Sakura.
+2. **A conta do Claude**: no claude.ai, a **conta da Sakura (Team)**.
+3. **Ligar o GitHub ao Claude**: no mesmo navegador, abrir https://claude.ai/connect-github,
+   conectar, conferir de novo a conta no GitHub e clicar em **Authorize** (com o código de duas
+   etapas, se pedir). Se aparecer **Install** ou uma lista de organizações: **não instalar nada na
+   `sakura-corp`** (a Sofia já instalou); mandar print a ela.
+4. **O ambiente na nuvem** (uma vez só): no `claude.ai/code`, perto da caixa de texto, a escolha do
+   ambiente → criar um novo. **Nome**: `sakura`. **Network access** (ou "Acesso à rede"): **Total**,
+   o mesmo do ambiente da Sofia (06/11). **Variáveis e segredos: vazios, sempre** (nenhuma chave vai ali).
+   **Setup script**: vazio.
+5. **Abrir a sessão**: antes da primeira mensagem, o ambiente `sakura`, o repositório
+   `sakura-corp/sakura-system-ace` e o modo **Auto**, se aparecer ("As funções da sessão", abaixo).
+6. **No celular e no tablet**: o app do Claude, com a mesma conta e as notificações ligadas. A
+   sessão aberta no navegador aparece no app (parte do Code): começa num aparelho e continua no outro.
+
+A sessão da nuvem **não alcança o PC**: abrir o programa e testar é no Claude Code do PC ("Primeiro
+dia", acima, e "Testar no seu computador o que a sessão da nuvem fez", abaixo).
+
 ## A primeira tarefa: o seu caderno (`segundo-cerebro`)
 
 Antes de qualquer tarefa da leva, cada um monta o **seu caderno**: notas que dizem ao Claude **como
@@ -130,7 +163,9 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
    em https://github.com/apps/claude/installations/select_target escolha a **sua conta** (não a
    `sakura-corp`) → **Only select repositories** → `segundo-cerebro` → **Install** (ou **Save**,
    se já estava instalado). Se mesmo assim não der, confira em https://claude.ai/connect-github
-   que o GitHub ligado é o da conta da Sakura. Depois, o Claude tenta de novo.
+   que o GitHub ligado é o da conta da Sakura. Ali pode aparecer o aviso **"1 organização do GitHub
+   não foi vinculada"** (a `sakura-corp`): **não clicar nele** (com o Lázaro, 06/11, deu certo sem
+   mexer). Depois, o Claude tenta de novo.
 3. **Não mandar a pasta do Obsidian**: o Claude grava no caderno um `.gitignore` com a linha
    `.obsidian/`. (Sem isso, o primeiro envio da Sofia levou 255 KB do próprio plugin, e essa pasta
    muda toda hora, até ao trocar de aba.)
@@ -194,13 +229,15 @@ Os passos, um por vez (o Claude guia e espera o seu "feito"):
 8. **O plugin Git** (só depois do passo 7, com o `segundo-cerebro` aberto): **o plugin é por
    cofre**, então quem já instalou num outro cofre instala de novo aqui dentro. Engrenagem ⚙️
    (canto de baixo à esquerda) → **Plugins não oficiais** (é esse
-   o nome em português) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
+   o nome no menu; dentro da página, a parte se chama **"Plugins da comunidade"**: é a mesma) → em **Modo restrito**, se o botão disser "Desligar", clicar (se disser
    "Ligar", já está liberado) → **Procurar** → buscar `Git` → o **Git, por Vinzent** (antigo
    "Obsidian Git") → **Instalar** → **Ativar**. Ele fica em "Plugins instalados" com o interruptor
    roxo, e no rodapé do Obsidian aparece `✓ main`.
-9. **Puxar e enviar sozinho**: engrenagem → **Plugins não oficiais** → **Git**. As opções estão
-   em inglês e em páginas: **Automatic** → `Auto commit-and-sync interval (minutes)` = `10` e
-   `Auto pull interval (minutes)` = `10`; setinha `<` → **Sync** → ligar **Pull on startup** (os
+9. **Puxar e enviar sozinho**: engrenagem → **role o menu da esquerda até o fim**: lá embaixo há um
+   segundo título **Plugins não oficiais** → **Git** (a lista de plugins do passo 8 não é essa
+   página). As opções estão em inglês e em páginas: **Automatic** → `Auto commit-and-sync interval (minutes)` = `10` e
+   `Auto pull interval (minutes)` = `10`; o **Pull on startup não fica na Automatic**: setinha `<` →
+   **Sync** → ligar **Pull on startup** (os
    dois "on commit-and-sync" já vêm ligados).
 10. **Testar a ida e a volta**: o Claude grava uma nota de teste no caderno; no Obsidian,
     **Ctrl + P** (Mac: **Cmd + P**) → `Git: Pull` → aparece "Pulled 1 file from remote" e a nota.
@@ -302,7 +339,9 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
 2. **Trazer a branch da nuvem**: `git fetch origin` e depois `git switch <branch>`, com o nome que
    a sessão disser (ex: `claude/tarefa-511-...`). Deve aparecer *"Switched to a new branch"* (ou
    *"Switched to branch"*, se você já testou essa branch antes; aí rode também `git pull`, pra
-   pegar o que a sessão enviou depois).
+   pegar o que a sessão enviou depois). Confira que o nome entre parênteses no fim da linha do
+   terminal mudou pra branch nova. Se aparecer *"fatal: only one reference expected"*, ou se o nome
+   não mudou, o comando chegou embaralhado ao colar (em 16/11 o `claude/` sumiu): **digite à mão**.
 3. **Instalar as dependências**: `npm install` (na primeira vez demora uns minutos). No Git Bash e
    no Mac é assim mesmo; no **PowerShell**, se aparecer o erro de scripts desabilitados,
    `npm.cmd install` (ver "Primeiro dia").
@@ -339,6 +378,18 @@ overwritten*, **não apague nada**: copie a mensagem pra sessão e espere.
      4. Pro próximo perfil, crie outro login, ou volte pro seu e troque os módulos desse.
      Não mexa nos logins dos outros nem salve token da Focus NFe (`docs/supabase-de-teste.md`,
      "Teste de permissão"). Isso é usar o programa, não rodar SQL: a regra abaixo continua igual.
+   - **Trocar a sua senha de teste por uma fácil de lembrar** (Sofia, 11/11/2026; a gerada pelo
+     Bitwarden é difícil de digitar). Pode, e é pelo próprio programa, com o seu login:
+     1. **Configurações**, na parte dos operadores: na **sua** linha, no menu, **Redefinir senha**.
+        Confirme. Aparece uma senha temporária: anote.
+     2. Saia (**Sair**, na barra da esquerda) e entre com o seu usuário e a senha temporária. O
+        programa abre sozinho a tela de **criar a senha nova**: escolha uma fácil de lembrar, mas
+        **que você não usa em mais nada** (e-mail, banco, GitHub).
+     3. No Bitwarden, abra o item `SSACE teste – login <seu nome>`, troque a senha pela nova e salve.
+     Só a sua: nunca a de outra pessoa nem a dos logins de perfil dos outros. Se o passo 1 der erro
+     (a função de redefinir senha pode não estar instalada no banco de teste), pare e avise a Sofia.
+     Esse erro aparece como *"Sem conexão com a internet"*, mesmo com o resto do programa
+     funcionando (16/11): não é a internet, é a função que falta.
    - Pra fechar: `Ctrl+C` no terminal (no Mac também é `Control+C`, não `Cmd`).
 6. **Levar o resultado pro PR**: mande o print ou o texto **pra conversa com a sessão da nuvem**;
    ela põe na descrição do PR e no relatório. Antes de mandar o print, confira que **não aparece o

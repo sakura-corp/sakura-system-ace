@@ -6,7 +6,7 @@
 -- ARQUIVO GERADO AUTOMATICAMENTE — não editar à mão.
 -- Para regerar: npm run gerar-instalacao
 --
--- Contém as 76 migrations de supabase/migrations/, na ordem.
+-- Contém as 86 migrations de supabase/migrations/, na ordem.
 --
 -- Como usar: painel do Supabase → SQL Editor → New query → colar TUDO
 -- deste arquivo → Run. Leva alguns segundos.
@@ -7558,3 +7558,1631 @@ create policy "ordens_servico_itens_exclusao" on ordens_servico_itens
   );
 
 insert into schema_versao (versao) values (76) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0077_busca_global.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0077: a BUSCA GERAL do Ctrl+K (tarefa #372).
+--
+-- O QUE É. Uma caixa só, aberta com Ctrl+K em qualquer tela, que acha
+-- veículo pela placa, cliente pelo nome, OS pelo número, peça pela descrição,
+-- código ou código de barras, e fornecedor pelo nome ou CNPJ. O programa faz
+-- UMA chamada, `buscar_global()`, e recebe até 5 resultados de cada tipo.
+--
+-- POR QUE UMA FUNÇÃO, E NÃO CINCO CONSULTAS DA TELA. Desde o TR-04.1 as
+-- tabelas de clientes, veículos, OS e peças estão fechadas pra quem não tem o
+-- módulo (0069, 0074, 0076). A busca precisa olhar as cinco de uma vez, cada
+-- uma com a sua regra, e devolver SÓ o que a pessoa pode ver. Escrever essa
+-- regra num lugar só, no banco, é o que garante que ninguém acha pela busca o
+-- que não acharia pela tela.
+--
+-- QUEM VÊ O QUÊ (o operador precisa estar ativo e ter alguma loja):
+--   • veículo e cliente: quem tem Clientes OU Ordens de Serviço. Sai só o que
+--     a janela da 0068 já mostra pra quem tem OS: nome do cliente e placa,
+--     marca, modelo e cor do carro. NUNCA telefone, CPF ou endereço.
+--   • OS: quem tem Ordens de Serviço, e só da loja aberta no programa (e só se
+--     a pessoa tem acesso a ela).
+--   • peça: quem tem Estoque. Nunca o custo. Só a peça ativa.
+--   • fornecedor: quem tem Fornecedores. Só o fornecedor ativo.
+--
+-- A FUNÇÃO NÃO CONFIA NA TELA. Ela mesma limpa o termo: tira espaço das
+-- pontas, acento e maiúscula pro nome; tira tudo que não é letra ou número
+-- pra placa ("abc-1d23" e "ABC1D23" são a mesma); e só procura OS quando o
+-- termo é só número (pode ter # e espaço). Termo com menos de 2 letras não
+-- procura nada.
+--
+-- OS ÍNDICES. Sem eles, cada letra digitada leria as tabelas inteiras. Com
+-- eles, a placa responde em poucos milissegundos mesmo com dez lojas (medido
+-- na tarefa). O nome usa o índice "trigrama" (extensão pg_trgm), que serve
+-- pra "contém"; a placa, um índice comum, que serve pra "começa com".
+--
+-- POR QUE `sem_acento` E NÃO A EXTENSÃO `unaccent`. Índice só aceita função
+-- que dá sempre o mesmo resultado (immutable), e a `unaccent` não é. A
+-- `sem_acento` é um `translate` simples, com as letras do português.
+--
+-- ORDEM DE SUBIR. Esta migration só ACRESCENTA (duas funções de apoio, a
+-- busca e os índices) e não muda nada pra versão atual do programa. Mas o
+-- botão "Atualizar o banco de todas as empresas" segura tudo que vem depois
+-- da 0076 até os computadores chegarem na 0.9.56 — esta inclusive. A linha
+-- abaixo só deixa isso escrito, pra o aviso do programa ("o banco está
+-- atrasado") não acender nas lojas enquanto o botão espera (#757). A tela
+-- da busca precisa funcionar (calada) num banco que ainda não tem a função.
+-- versao-minima-do-programa: 0.9.56
+--
+-- Idempotente: seguro rodar de novo. Apaga e recria a busca, os índices e as
+-- funções de apoio, nessa ordem (os índices dependem das funções).
+
+-- ===================================================================
+-- 1. A extensão do índice trigrama
+-- ===================================================================
+
+-- No Supabase as extensões ficam no schema `extensions`; num Postgres comum
+-- (o dos testes), ele não existe e a extensão vai pro `public`. Se ela já
+-- estiver instalada em qualquer lugar, nada muda.
+do $$
+begin
+  if not exists (select 1 from pg_extension where extname = 'pg_trgm') then
+    if exists (select 1 from pg_namespace where nspname = 'extensions') then
+      create extension pg_trgm with schema extensions;
+    else
+      create extension pg_trgm;
+    end if;
+  end if;
+end
+$$;
+
+-- ===================================================================
+-- 2. Apaga o que esta migration cria (pra recriar igual)
+-- ===================================================================
+
+drop function if exists buscar_global(text, uuid, integer);
+
+drop index if exists clientes_nome_busca_idx;
+drop index if exists fornecedores_nome_busca_idx;
+drop index if exists pecas_descricao_busca_idx;
+drop index if exists pecas_codigo_interno_busca_idx;
+drop index if exists pecas_codigo_barras_idx;
+drop index if exists veiculos_placa_busca_idx;
+drop index if exists ordens_servico_numero_busca_idx;
+
+drop function if exists sem_acento(text);
+drop function if exists placa_normalizada(text);
+
+-- ===================================================================
+-- 3. As duas funções de apoio (as mesmas no índice e na busca)
+-- ===================================================================
+
+-- "João Peçanha" → "joao pecanha". Minúscula e sem acento.
+--
+-- SEM `set search_path` DE PROPÓSITO, e com `pg_catalog.` escrito em cada
+-- função de dentro: com o `set`, o Postgres não consegue "abrir" a função
+-- dentro da consulta e a chama uma vez por linha, com custo — medido com dez
+-- lojas, a busca por nome levava mais de 10 vezes mais (135 ms contra 10). Escrevendo o `pg_catalog.`, ninguém troca o
+-- `translate` por outro, e a função continua pequena o bastante pra abrir.
+create function sem_acento(p_texto text)
+returns text
+language sql
+immutable
+parallel safe
+as $$
+  select pg_catalog.translate(pg_catalog.lower(p_texto),
+                              'áàâãäéèêëíìîïóòôõöúùûüçñ',
+                              'aaaaaeeeeiiiiooooouuuucn');
+$$;
+
+comment on function sem_acento(text) is
+  'Busca geral (0077). Minúscula e sem acento, pra "joao" achar "João". '
+  'Immutable de propósito: é a expressão dos índices da busca, então NUNCA '
+  'mudar o corpo sem recriar os índices (a migration apaga e recria tudo).';
+
+-- "abc-1d23" → "ABC1D23". Só letra e número, em maiúscula.
+-- Sem `set search_path`, pelo mesmo motivo da sem_acento.
+create function placa_normalizada(p_placa text)
+returns text
+language sql
+immutable
+parallel safe
+as $$
+  select pg_catalog.upper(pg_catalog.regexp_replace(p_placa, '[^A-Za-z0-9]', '', 'g'));
+$$;
+
+comment on function placa_normalizada(text) is
+  'Busca geral (0077). A placa só com letra e número, em maiúscula, pra '
+  '"abc-1d23" achar "ABC1D23". Immutable: é a expressão do índice da placa.';
+
+-- São funções puras (não leem tabela nenhuma), então qualquer um pode usar.
+-- A busca, que lê as tabelas, é que fica fechada.
+
+-- ===================================================================
+-- 4. Os índices
+-- ===================================================================
+
+-- O trigrama precisa do nome da classe de operador com o schema da extensão,
+-- que muda entre o Supabase (`extensions`) e o Postgres dos testes (`public`).
+do $$
+declare
+  v_esquema text;
+begin
+  select n.nspname into v_esquema
+    from pg_extension e
+    join pg_namespace n on n.oid = e.extnamespace
+   where e.extname = 'pg_trgm';
+
+  execute format(
+    'create index clientes_nome_busca_idx on clientes using gin (sem_acento(nome) %I.gin_trgm_ops)',
+    v_esquema);
+  execute format(
+    'create index fornecedores_nome_busca_idx on fornecedores using gin (sem_acento(nome) %I.gin_trgm_ops)',
+    v_esquema);
+  execute format(
+    'create index pecas_descricao_busca_idx on pecas using gin (sem_acento(descricao) %I.gin_trgm_ops)',
+    v_esquema);
+end
+$$;
+
+-- "Começa com": índice comum com text_pattern_ops (o que faz o `like 'ABC%'`
+-- usar o índice em qualquer idioma do banco).
+create index veiculos_placa_busca_idx
+  on veiculos (placa_normalizada(placa) text_pattern_ops);
+
+create index pecas_codigo_interno_busca_idx
+  on pecas (lower(codigo_interno) text_pattern_ops);
+
+create index pecas_codigo_barras_idx
+  on pecas (codigo_barras);
+
+-- A OS pelo número: o índice da 0037 (loja_id, numero) acha o número
+-- exato, mas não o "começa com" (9876 → 98761), que é texto. Sem este, a
+-- busca lia todas as OS da loja a cada tecla.
+create index ordens_servico_numero_busca_idx
+  on ordens_servico (loja_id, (numero::text) text_pattern_ops)
+  where numero is not null;
+
+-- Os índices de expressão só ganham estatística com o ANALYZE; sem ela, o
+-- Postgres escolhe mal o caminho até o autovacuum passar (medido: a placa
+-- lia a tabela de clientes inteira).
+analyze clientes;
+analyze veiculos;
+analyze ordens_servico;
+analyze pecas;
+analyze fornecedores;
+
+-- ===================================================================
+-- 5. A busca
+-- ===================================================================
+
+create function buscar_global(p_termo text, p_loja_id uuid, p_limite integer default 5)
+returns table (tipo text, id uuid, titulo text, detalhe text, veiculo_id uuid)
+language plpgsql
+security definer
+set search_path = public
+stable
+as $$
+#variable_conflict use_column
+declare
+  v_limite    integer := least(greatest(coalesce(p_limite, 5), 1), 20);
+  v_termo     text    := sem_acento(btrim(coalesce(p_termo, '')));
+  -- O termo dentro do `like`, com % e _ escapados: senão "_" acharia tudo.
+  v_like      text;
+  v_placa     text    := placa_normalizada(coalesce(p_termo, ''));
+  v_digitos   text    := regexp_replace(coalesce(p_termo, ''), '\D', '', 'g');
+  v_so_numero boolean := regexp_replace(btrim(coalesce(p_termo, '')), '[\s#]', '', 'g') ~ '^[0-9]+$';
+  -- CNPJ só quando o termo não tem letra (números, ponto, barra, traço):
+  -- senão a placa "ABC1D23" viraria "123" e traria fornecedor pelo CNPJ.
+  v_cnpj      boolean := btrim(coalesce(p_termo, '')) ~ '^[0-9./\s-]+$';
+  v_barras    text    := btrim(coalesce(p_termo, ''));
+  v_clientes  boolean;
+  v_os        boolean;
+begin
+  if not (select operador_ativo_com_loja()) then
+    return;
+  end if;
+  if length(v_termo) < 2 then
+    return;
+  end if;
+
+  v_like     := replace(replace(replace(v_termo, '\', '\\'), '%', '\%'), '_', '\_');
+  v_clientes := (select operador_tem_permissao('clientes'));
+  v_os       := (select operador_tem_permissao('ordens_servico'));
+
+  -- ---- veículo, pela placa (começa com) ----------------------------
+  if (v_clientes or v_os) and length(v_placa) >= 2 then
+    return query
+      select 'veiculo'::text,
+             v.id,
+             v.placa,
+             nullif(concat_ws(' · ',
+                              nullif(btrim(concat_ws(' ', v.marca, v.modelo)), ''),
+                              nullif(btrim(v.cor), ''),
+                              c.nome), ''),
+             v.id
+        from veiculos v
+        join clientes c on c.id = v.cliente_id
+       where placa_normalizada(v.placa) like v_placa || '%'
+       order by placa_normalizada(v.placa), v.id
+       limit v_limite;
+  end if;
+
+  -- ---- cliente, pelo nome (contém; quem começa com vem antes) --------
+  if v_clientes or v_os then
+    return query
+      select 'cliente'::text,
+             a.id,
+             a.nome,
+             carros.placas,
+             carros.primeiro
+        from (
+          select c.id, c.nome, (sem_acento(c.nome) like v_like || '%') as comeca
+            from clientes c
+           where sem_acento(c.nome) like '%' || v_like || '%'
+             and c.id <> '00000000-0000-0000-0000-00000000c000'
+           order by 3 desc, c.nome, c.id
+           limit v_limite
+        ) a
+        left join lateral (
+          -- Só as placas: nunca telefone, CPF ou endereço.
+          -- Em ordem pela placa limpa: "abc-1d23" e "ABC1D24" ficam juntas
+          -- em qualquer idioma do banco.
+          select string_agg(v.placa, ', ' order by placa_normalizada(v.placa), v.id) as placas,
+                 (array_agg(v.id order by placa_normalizada(v.placa), v.id))[1] as primeiro
+            from veiculos v
+           where v.cliente_id = a.id
+        ) carros on true
+       order by a.comeca desc, a.nome, a.id;
+  end if;
+
+  -- ---- OS, pelo número, só da loja aberta ---------------------------
+  if v_os and v_so_numero and v_digitos <> ''
+     and p_loja_id is not null and operador_tem_acesso_loja(p_loja_id) then
+    return query
+      select 'os'::text,
+             o.id,
+             o.numero::text,
+             concat_ws(' · ',
+                       c.nome,
+                       v.placa,
+                       case o.status
+                         when 'em_andamento' then 'Em andamento'
+                         when 'concluida'    then 'Concluída'
+                         when 'faturada'     then 'Faturada'
+                         else o.status
+                       end),
+             o.veiculo_id
+        from ordens_servico o
+        join clientes c      on c.id = o.cliente_id
+        left join veiculos v on v.id = o.veiculo_id
+       where o.loja_id = p_loja_id
+         and o.numero is not null
+         and o.numero::text like v_digitos || '%'
+       -- Pelo tamanho e depois pelo número (12, 120, 121...): dá a mesma
+       -- ordem que pelo número, mas sem isto o Postgres preferia andar o
+       -- índice da 0037 em ordem e ler todas as OS da loja (medido).
+       order by length(o.numero::text), o.numero
+       limit v_limite;
+  end if;
+
+  -- ---- peça: descrição (contém), código (começa com), código de barras
+  if (select operador_tem_permissao('estoque')) then
+    return query
+      select 'peca'::text,
+             p.id,
+             p.descricao,
+             -- Nunca o custo.
+             nullif(concat_ws(' · ',
+                              nullif(btrim(p.codigo_interno), ''),
+                              nullif(btrim(p.marca), ''),
+                              nullif(btrim(p.medida), '')), ''),
+             null::uuid
+        from pecas p
+       -- Só a peça em uso: a desativada continua achável na tela do Estoque
+       -- (pedido da Sofia no PR #857).
+       where p.ativo
+         and (sem_acento(p.descricao) like '%' || v_like || '%'
+              or lower(p.codigo_interno) like v_like || '%'
+              or p.codigo_barras = v_barras)
+       order by (p.codigo_barras = v_barras or lower(p.codigo_interno) like v_like || '%'
+                 or sem_acento(p.descricao) like v_like || '%') desc nulls last,
+                p.descricao, p.id
+       limit v_limite;
+  end if;
+
+  -- ---- fornecedor: nome (contém) ou CNPJ (começa com) -----------------
+  if (select operador_tem_permissao('fornecedores')) then
+    return query
+      select 'fornecedor'::text,
+             f.id,
+             f.nome,
+             coalesce(nullif(btrim(f.cnpj), ''),
+                      nullif(concat_ws('/', nullif(btrim(f.cidade), ''), nullif(btrim(f.uf), '')), '')),
+             null::uuid
+        from fornecedores f
+       -- Só o fornecedor em uso, como a peça acima (PR #857).
+       where f.ativo
+         and (sem_acento(f.nome) like '%' || v_like || '%'
+              or (v_cnpj and length(v_digitos) >= 2
+                  and regexp_replace(coalesce(f.cnpj, ''), '\D', '', 'g') like v_digitos || '%'))
+       order by (sem_acento(f.nome) like v_like || '%') desc, f.nome, f.id
+       limit v_limite;
+  end if;
+end;
+$$;
+
+comment on function buscar_global(text, uuid, integer) is
+  'Busca geral do Ctrl+K (0077). Até p_limite (1 a 20) resultados por tipo: '
+  'veiculo e cliente (Clientes ou OS), os (OS, só da loja p_loja_id e com '
+  'acesso a ela), peca (Estoque) e fornecedor (Fornecedores). Limpa o termo '
+  'sozinha. Nunca devolve telefone, CPF, endereço ou custo: só nome, placa, '
+  'marca, modelo, cor, número e status.';
+
+revoke all on function buscar_global(text, uuid, integer) from public, anon;
+grant execute on function buscar_global(text, uuid, integer) to authenticated;
+
+insert into schema_versao (versao) values (77) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0078_percentual_tributos_simples.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0078: o percentual dos tributos do Simples, por loja (#866).
+--
+-- O PROBLEMA. A NFS-e Nacional (a da loja do Simples, PR #839) exige o grupo
+-- totTrib: sem ele o Ambiente Nacional recusa a nota (ensaio de 03/11). Pro
+-- optante do Simples, o que vai ali é o pTotTribSN, o percentual aproximado
+-- dos tributos que a empresa paga no Simples. Esse número muda de empresa pra
+-- empresa (depende da faixa do faturamento) e quem sabe é a contabilidade, não
+-- o sistema. Até aqui o programa mandava 0 fixo, provisório.
+--
+-- A DECISÃO (Sofia, 04/11/2026). Uma coluna nos Dados fiscais da loja:
+--   • `percentual_tributos_simples`, de 0 a 100, com duas casas — a mesma
+--     precisão da `aliquota_iss` (0048);
+--   • opcional: vazio manda 0 na nota, pra não travar a emissão de quem
+--     ainda não recebeu o número da contabilidade;
+--   • só é usada na NFS-e Nacional, e só pela loja do Simples. NFC-e e a
+--     NFS-e municipal não leem.
+--
+-- ORDEM DE SUBIR. Coluna nova e opcional: esta migration sobe ANTES da
+-- versão do programa, como as outras (o programa antigo nem sabe que ela
+-- existe). Por isso não declara versão mínima do programa.
+--
+-- A trava tem nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
+-- frase em português (src/lib/errors.ts). Coluna nova nasce vazia, então
+-- nenhum dado que já existe pode ficar fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+alter table configuracoes_fiscais_loja
+  add column if not exists percentual_tributos_simples numeric(5,2);
+
+alter table configuracoes_fiscais_loja
+  drop constraint if exists ck_config_fiscal_percentual_tributos_simples;
+alter table configuracoes_fiscais_loja
+  add constraint ck_config_fiscal_percentual_tributos_simples
+  check (percentual_tributos_simples between 0 and 100);
+
+comment on column configuracoes_fiscais_loja.percentual_tributos_simples is
+  'Percentual aproximado dos tributos do Simples (pTotTribSN da NFS-e Nacional), de 0 a 100. Vem da contabilidade. Vazio: a nota vai com 0.';
+
+insert into schema_versao (versao) values (78) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0079_cadastrar_peca_do_item_trava.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0079: ligar a peça avulsa ao cadastro com a ordem travada
+-- (tarefa #803, caso 1). O mesmo caminho da 0071 (#706).
+--
+-- O PROBLEMA. "Cadastrar agora" na emissão da nota (#655) liga um item de
+-- peça avulsa a uma peça do cadastro e, se a ordem já é OS, baixa o estoque.
+-- Até aqui quem fazia isso era o programa (cadastrarPecaDoItem, em
+-- src/lib/ordensServico.ts), em pedidos separados ao banco: gravava o
+-- vínculo e decidia a baixa pela situação da ordem QUE ESTAVA NA TELA. Se
+-- outro computador aprovava o orçamento no mesmo instante, a aprovação lia
+-- os itens antes do vínculo (a peça ainda avulsa, sem baixa) e este
+-- computador, achando que ainda era orçamento, também não baixava: a OS
+-- ficava com uma peça do cadastro que nunca saiu do estoque.
+--
+-- O QUE ESTA MIGRATION CRIA: cadastrar_peca_do_item(item, peça, operador),
+-- uma transação só:
+--   1. trava a linha da ordem (`select ... for update`, decisão 1 da 0071):
+--      uma aprovação no meio espera, ou é esperada;
+--   2. liga a peça, só se o item ainda é peça avulsa desta ordem (nunca troca
+--      a peça de um item do cadastro nem põe peça num serviço);
+--   3. se a ordem já é OS (qualquer situação fora orçamento/recusado,
+--      inclusive faturada, que é quando a nota sai), baixa a quantidade do
+--      item COMO ESTÁ NO BANCO, no depósito padrão, com o nome do documento —
+--      as mesmas duas funções pequenas da 0071;
+--   4. marca quem mexeu por último.
+-- Devolve true se ligou; false se não achou o item (ou a ordem, pela RLS de
+-- quem chama) ou se o item já não é peça avulsa (outro computador ligou
+-- antes). Nada é gravado nesses casos.
+--
+-- TUDO OU NADA (decisão 2 da 0071). Antes, se a baixa falhava a peça ficava
+-- ligada mesmo assim e a tela mandava lançar a saída à mão. Agora, sem
+-- depósito ativo, ligar a peça numa OS falha INTEIRO: o item continua
+-- avulso, e a mensagem diz pra cadastrar ou reativar um depósito.
+--
+-- RODA COMO QUEM CHAMA (`security invoker`, decisão 3 da 0071): não
+-- atravessa a RLS; quem não enxerga a ordem recebe false. Nenhuma policy muda.
+--
+-- ORDEM AO SUBIR: migration ANTES da versão do programa que chama esta
+-- função (a de antes não usa e continua igual, com o mesmo risco raro). Só
+-- acrescenta uma função; por isso NÃO tem a linha de versão mínima.
+--
+-- Idempotente: seguro rodar de novo.
+
+drop function if exists cadastrar_peca_do_item(uuid, uuid, uuid);
+
+create or replace function cadastrar_peca_do_item(
+  p_item uuid,
+  p_peca uuid,
+  p_operador uuid
+)
+returns boolean
+language plpgsql
+volatile
+security invoker
+set search_path = public
+as $$
+declare
+  v_ordem_id uuid;
+  v_ordem ordens_servico%rowtype;
+  v_item ordens_servico_itens%rowtype;
+begin
+  select ordem_servico_id into v_ordem_id from ordens_servico_itens where id = p_item;
+  if not found then
+    return false;
+  end if;
+
+  -- A trava (decisão 1 da 0071).
+  select * into v_ordem from ordens_servico where id = v_ordem_id for update;
+  if not found then
+    return false;
+  end if;
+
+  -- Só agora, com a ordem presa, o vínculo: só pega o item se ele ainda é
+  -- peça avulsa desta ordem.
+  update ordens_servico_itens
+     set peca_id = p_peca
+   where id = p_item
+     and ordem_servico_id = v_ordem.id
+     and tipo = 'peca'
+     and peca_id is null
+  returning * into v_item;
+  if not found then
+    return false;
+  end if;
+
+  -- Já é OS: a peça sai do estoque agora, com a quantidade do banco.
+  if v_ordem.status not in ('orcamento', 'recusado') then
+    insert into estoque_movimentos
+      (peca_id, deposito_id, tipo, quantidade, motivo, referencia, loja_id)
+    values
+      (v_item.peca_id, deposito_padrao_da_loja(v_ordem.loja_id), 'saida', v_item.quantidade, 'uso_em_os',
+       nome_documento_ordem(v_ordem.status, v_ordem.numero, v_ordem.numero_orcamento, v_ordem.tipo),
+       v_ordem.loja_id);
+  end if;
+
+  update ordens_servico set atualizado_por_id = p_operador where id = v_ordem.id;
+  return true;
+end;
+$$;
+
+comment on function cadastrar_peca_do_item(uuid, uuid, uuid) is
+  '#803. Liga a peça do cadastro a um item de peça avulsa, com a linha da ordem '
+  'travada (for update) até o fim; se a ordem já é OS (inclusive faturada), baixa a '
+  'quantidade do item na mesma transação ("saida", "uso_em_os", referência = nome do '
+  'documento). Devolve false se não achou o item/ordem ou se o item já não é peça '
+  'avulsa. Pela RLS de quem chama.';
+
+-- O Postgres dá EXECUTE a PUBLIC (e o Supabase ao `anon`) em toda função
+-- nova. Mesmo rodando como quem chama, só quem está logado.
+revoke all on function cadastrar_peca_do_item(uuid, uuid, uuid) from public, anon;
+grant execute on function cadastrar_peca_do_item(uuid, uuid, uuid) to authenticated;
+
+insert into schema_versao (versao) values (79) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0080_fornecedores_so_com_permissao.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0080: Fornecedores, pedidos de compra e cotações só pra quem tem
+-- o módulo — o lote 7 do TR-04.1 (tarefa #880).
+--
+-- O PROBLEMA. Quem não tem o módulo Fornecedores não vê a tela, mas a RLS de
+-- `fornecedores` e `cotacoes_pecas` só exigia login (0039, 0042) e a de
+-- `pedidos_compra` e `pedidos_compra_itens` só o acesso à loja (0039): com a
+-- chave que está no computador dava pra ler e mexer em tudo pela API. E o
+-- preço de compra da cotação e do item do pedido costuma ser o mesmo número
+-- do custo da peça, que o lote 5 (0074) escondeu: este lote fecha de vez
+-- (docs/licoes.md, item 1).
+--
+-- QUEM FICA COM O QUÊ (o mesmo padrão dos lotes 4 a 6, Sofia, #782):
+--   • `fornecedores` e `cotacoes_pecas` (catálogo da empresa toda): ler e
+--     gravar só com Fornecedores (ou admin).
+--   • `pedidos_compra` e `pedidos_compra_itens`: só com Fornecedores (ou
+--     admin) E na loja dele, como antes; o item herda a loja pelo pedido,
+--     pela função `pedido_compra_acessivel` (seção 4).
+--
+-- NENHUMA JANELA. O mapa de quem lê e grava (#880, 05/11/2026): só as telas
+-- de src/pages/fornecedores/ (por src/lib/fornecedores.ts, pedidosCompra.ts e
+-- cotacoesPecas.ts), atrás do módulo Fornecedores. A `juntar_pecas` (0067)
+-- mexe nos itens de pedido e nas cotações, mas é `security definer` e só de
+-- admin: não muda. A entrada da compra no estoque é a porta estreita que a
+-- 0074 já abriu pra Fornecedores.
+--
+-- ORDEM DE SUBIR. Só fecha o que a versão atual do programa já esconde atrás
+-- do módulo, então não precisa esperar versão nenhuma: NÃO tem a linha de
+-- versão mínima do programa. O botão "Atualizar o banco de todas as
+-- empresas" aplica em ordem, então ela entra depois da 0076 (que espera a
+-- 0.9.56) e da 0077, da 0078 e da 0079.
+--
+-- Os quatro comandos em policies separadas, pelo motivo de sempre (0056):
+-- uma `for all` sobrevivente reabriria o que a nova fecha, e comando sem
+-- policy filtra a zero linhas sem erro nenhum (§6 item 15). A função de
+-- permissão vai sempre dentro de `(select ...)`: assim o Postgres a calcula
+-- uma vez por consulta, não uma vez por linha.
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ===================================================================
+-- 1. fornecedores: só Fornecedores
+-- ===================================================================
+
+drop policy if exists "fornecedores_acesso_autenticados" on fornecedores;
+drop policy if exists "fornecedores_leitura" on fornecedores;
+drop policy if exists "fornecedores_insercao" on fornecedores;
+drop policy if exists "fornecedores_alteracao" on fornecedores;
+drop policy if exists "fornecedores_exclusao" on fornecedores;
+
+create policy "fornecedores_leitura" on fornecedores
+  for select to authenticated
+  using ((select operador_tem_permissao('fornecedores')));
+
+create policy "fornecedores_insercao" on fornecedores
+  for insert to authenticated
+  with check ((select operador_tem_permissao('fornecedores')));
+
+create policy "fornecedores_alteracao" on fornecedores
+  for update to authenticated
+  using ((select operador_tem_permissao('fornecedores')))
+  with check ((select operador_tem_permissao('fornecedores')));
+
+create policy "fornecedores_exclusao" on fornecedores
+  for delete to authenticated
+  using ((select operador_tem_permissao('fornecedores')));
+
+-- ===================================================================
+-- 2. cotacoes_pecas: só Fornecedores
+-- ===================================================================
+
+drop policy if exists "cotacoes_pecas_acesso_autenticados" on cotacoes_pecas;
+drop policy if exists "cotacoes_pecas_leitura" on cotacoes_pecas;
+drop policy if exists "cotacoes_pecas_insercao" on cotacoes_pecas;
+drop policy if exists "cotacoes_pecas_alteracao" on cotacoes_pecas;
+drop policy if exists "cotacoes_pecas_exclusao" on cotacoes_pecas;
+
+create policy "cotacoes_pecas_leitura" on cotacoes_pecas
+  for select to authenticated
+  using ((select operador_tem_permissao('fornecedores')));
+
+create policy "cotacoes_pecas_insercao" on cotacoes_pecas
+  for insert to authenticated
+  with check ((select operador_tem_permissao('fornecedores')));
+
+create policy "cotacoes_pecas_alteracao" on cotacoes_pecas
+  for update to authenticated
+  using ((select operador_tem_permissao('fornecedores')))
+  with check ((select operador_tem_permissao('fornecedores')));
+
+create policy "cotacoes_pecas_exclusao" on cotacoes_pecas
+  for delete to authenticated
+  using ((select operador_tem_permissao('fornecedores')));
+
+-- ===================================================================
+-- 3. pedidos_compra: só Fornecedores, na loja dele
+-- ===================================================================
+
+drop policy if exists "pedidos_compra_acesso_por_loja" on pedidos_compra;
+drop policy if exists "pedidos_compra_leitura" on pedidos_compra;
+drop policy if exists "pedidos_compra_insercao" on pedidos_compra;
+drop policy if exists "pedidos_compra_alteracao" on pedidos_compra;
+drop policy if exists "pedidos_compra_exclusao" on pedidos_compra;
+
+create policy "pedidos_compra_leitura" on pedidos_compra
+  for select to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and operador_tem_acesso_loja(loja_id));
+
+create policy "pedidos_compra_insercao" on pedidos_compra
+  for insert to authenticated
+  with check ((select operador_tem_permissao('fornecedores')) and operador_tem_acesso_loja(loja_id));
+
+create policy "pedidos_compra_alteracao" on pedidos_compra
+  for update to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and operador_tem_acesso_loja(loja_id))
+  with check ((select operador_tem_permissao('fornecedores')) and operador_tem_acesso_loja(loja_id));
+
+create policy "pedidos_compra_exclusao" on pedidos_compra
+  for delete to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and operador_tem_acesso_loja(loja_id));
+
+-- ===================================================================
+-- 4. pedidos_compra_itens: só Fornecedores, na loja do pedido
+-- ===================================================================
+-- O item não tem loja própria: ela vem do pedido. Antes (0039) era um
+-- `exists` em `pedidos_compra`, que roda com a RLS de quem pergunta — e,
+-- agora que o pedido exige o módulo, ele HERDARIA a regra: um teste que tira
+-- o módulo da policy do item passaria verde (aconteceu na #880, a mesma
+-- lição do lote 6, docs/licoes.md item 1). Como na 0076, a loja vai por uma
+-- função `security definer` que só confere a loja, e o módulo fica escrito
+-- num lugar só: aqui.
+
+drop policy if exists "pedidos_compra_itens_acesso_por_loja" on pedidos_compra_itens;
+drop policy if exists "pedidos_compra_itens_leitura" on pedidos_compra_itens;
+drop policy if exists "pedidos_compra_itens_insercao" on pedidos_compra_itens;
+drop policy if exists "pedidos_compra_itens_alteracao" on pedidos_compra_itens;
+drop policy if exists "pedidos_compra_itens_exclusao" on pedidos_compra_itens;
+-- (as policies que usam a função saem antes dela: senão, na segunda rodada,
+-- o `drop function` pararia na dependência — §6 item 12)
+drop function if exists pedido_compra_acessivel(uuid);
+
+create function pedido_compra_acessivel(p_pedido uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+      from pedidos_compra pc
+      join operador_lojas ol
+        on ol.loja_id = pc.loja_id
+       and ol.operador_id = auth.uid()
+     where pc.id = p_pedido
+  );
+$$;
+
+comment on function pedido_compra_acessivel(uuid) is
+  'TR-04.1 lote 7 (0080). Sim se o pedido de compra existe e é de uma loja de '
+  'quem pergunta. É a conferência de loja das policies de pedidos_compra_itens '
+  '(o item não tem loja própria). Não confere módulo: isso é da policy.';
+
+-- `security definer` + o EXECUTE que o Postgres dá a PUBLIC: sem o revoke,
+-- o anônimo chamaria a função.
+revoke all on function pedido_compra_acessivel(uuid) from public, anon;
+grant execute on function pedido_compra_acessivel(uuid) to authenticated;
+
+create policy "pedidos_compra_itens_leitura" on pedidos_compra_itens
+  for select to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id));
+
+create policy "pedidos_compra_itens_insercao" on pedidos_compra_itens
+  for insert to authenticated
+  with check ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id));
+
+create policy "pedidos_compra_itens_alteracao" on pedidos_compra_itens
+  for update to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id))
+  with check ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id));
+
+create policy "pedidos_compra_itens_exclusao" on pedidos_compra_itens
+  for delete to authenticated
+  using ((select operador_tem_permissao('fornecedores')) and pedido_compra_acessivel(pedido_compra_id));
+
+insert into schema_versao (versao) values (80) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0081_pix_da_loja.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0081: a chave Pix da loja (#456).
+--
+-- O PROBLEMA. Na cobrança (a mensagem de WhatsApp de conta a receber) e no
+-- faturamento da OS, o cliente pergunta "qual o Pix?" e alguém dita ou digita
+-- a chave na mão, todo dia. A tarefa #456 põe ali o Pix "copia e cola" (e o
+-- QR do faturamento), montado pelo próprio programa. Pra montar, o programa
+-- precisa saber, por loja: a chave Pix, o nome de quem recebe e a cidade —
+-- os três vão dentro do código do Pix (o "BR Code" do Banco Central).
+--
+-- A DECISÃO. Uma tabela `configuracoes_pix`, uma linha por loja (a chave
+-- primária é o `loja_id`, como `configuracoes_garantia`):
+--   • `chave`: a chave Pix como a loja cadastrou no banco dela (CPF/CNPJ só
+--     com números, e-mail, telefone com +55 ou a chave aleatória). Até 77
+--     letras, o limite do campo da chave dentro do BR Code;
+--   • `nome_recebedor`: até 25 letras, o limite do BR Code;
+--   • `cidade_recebedor`: até 15 letras, o limite do BR Code;
+--   • as três travas não deixam campo em branco (só espaço também não vale).
+--
+-- A SEGURANÇA. A chave Pix é pra onde vai o dinheiro do cliente. Se o
+-- balconista pudesse trocá-la pela dele, o cliente pagaria certinho, pra
+-- pessoa errada, e ninguém perceberia até fechar o caixa. Por isso:
+--   • LER: quem tem acesso à loja (o balconista precisa, pra montar a
+--     cobrança e o QR do faturamento);
+--   • GRAVAR, ALTERAR e APAGAR: só o admin daquela loja.
+-- Uma policy por comando (nunca uma `for all`): as policies se somam com OU,
+-- então uma `for all` aberta reabriria a escrita pra todo mundo. E a tabela
+-- entra na trilha de auditoria (0053): se a chave mudar, fica registrado
+-- quem mudou, o valor antigo e o novo.
+--
+-- ORDEM DE SUBIR. Tabela nova e opcional: esta migration sobe ANTES da
+-- versão do programa, como as outras (o programa antigo nem sabe que ela
+-- existe). Por isso não declara versão mínima do programa. E a tela tem que
+-- funcionar com a tabela ausente (sem Pix configurado, a cobrança sai como
+-- antes, sem o copia e cola).
+--
+-- As travas têm nome `ck_<tabela>_<regra>` porque a tela traduz cada uma
+-- numa frase em português (src/lib/errors.ts). Tabela nova nasce vazia,
+-- então nenhum dado que já existe pode ficar fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+create table if not exists configuracoes_pix (
+  loja_id uuid primary key references lojas (id),
+  chave text not null,
+  nome_recebedor text not null,
+  cidade_recebedor text not null,
+  atualizado_em timestamptz not null default now()
+);
+
+-- As travas: em branco não vale, e o tamanho é o máximo que cabe no BR Code
+-- (o tamanho conta o texto inteiro, do jeito que vai pro código do Pix).
+alter table configuracoes_pix drop constraint if exists ck_config_pix_chave;
+alter table configuracoes_pix
+  add constraint ck_config_pix_chave
+  check (char_length(btrim(chave)) >= 1 and char_length(chave) <= 77);
+
+alter table configuracoes_pix drop constraint if exists ck_config_pix_nome_recebedor;
+alter table configuracoes_pix
+  add constraint ck_config_pix_nome_recebedor
+  check (char_length(btrim(nome_recebedor)) >= 1 and char_length(nome_recebedor) <= 25);
+
+alter table configuracoes_pix drop constraint if exists ck_config_pix_cidade_recebedor;
+alter table configuracoes_pix
+  add constraint ck_config_pix_cidade_recebedor
+  check (char_length(btrim(cidade_recebedor)) >= 1 and char_length(cidade_recebedor) <= 15);
+
+comment on table configuracoes_pix is
+  'A chave Pix da loja, pro Pix copia e cola da cobrança e do faturamento (#456). Uma linha por loja. Todo mundo da loja lê; só o admin da loja grava.';
+
+alter table configuracoes_pix enable row level security;
+
+-- LER: quem tem acesso à loja.
+drop policy if exists "configuracoes_pix_leitura" on configuracoes_pix;
+create policy "configuracoes_pix_leitura" on configuracoes_pix
+  for select to authenticated
+  using (operador_tem_acesso_loja(loja_id));
+
+-- GRAVAR, ALTERAR, APAGAR: só o admin daquela loja (a chave é pra onde vai
+-- o dinheiro do cliente).
+drop policy if exists "configuracoes_pix_insercao" on configuracoes_pix;
+create policy "configuracoes_pix_insercao" on configuracoes_pix
+  for insert to authenticated
+  with check (operador_e_admin_da_loja(loja_id));
+
+drop policy if exists "configuracoes_pix_alteracao" on configuracoes_pix;
+create policy "configuracoes_pix_alteracao" on configuracoes_pix
+  for update to authenticated
+  using (operador_e_admin_da_loja(loja_id))
+  with check (operador_e_admin_da_loja(loja_id));
+
+drop policy if exists "configuracoes_pix_exclusao" on configuracoes_pix;
+create policy "configuracoes_pix_exclusao" on configuracoes_pix
+  for delete to authenticated
+  using (operador_e_admin_da_loja(loja_id));
+
+-- A trilha de auditoria (0053): quem trocou a chave, de qual pra qual.
+drop trigger if exists trigger_auditoria on configuracoes_pix;
+create trigger trigger_auditoria
+  after insert or update or delete on configuracoes_pix
+  for each row execute function registrar_auditoria('loja_id');
+
+insert into schema_versao (versao) values (81) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0082_link_avaliacao.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0082: o link de avaliação no Google, por loja (#459).
+--
+-- O PROBLEMA. Avaliação no Google é o que traz cliente novo pra borracharia,
+-- e quem pede é o balcão, na hora em que o cliente está satisfeito. Hoje isso
+-- depende de alguém lembrar de mandar o link, procurando em outro lugar.
+--
+-- A DECISÃO (Sofia, 22/10/2026). Um botão "Pedir avaliação" na OS faturada e
+-- na venda de balcão, que abre o WhatsApp com o link da loja:
+--   • o link fica nas Configurações, um por loja (cada loja tem a própria
+--     página no Google);
+--   • o botão SÓ aparece quando a loja tem link: sem link, nada muda na tela;
+--   • o link precisa começar com https:// (é o que o Google entrega, e um
+--     link quebrado na mensagem pro cliente é pior que nenhum).
+--
+-- POR QUE UMA TABELA SÓ PRA ISSO, e não uma coluna nos Dados fiscais: o link
+-- não tem nada de fiscal, e a tela de WhatsApp já é quem cuida das mensagens.
+-- O desenho é o da `configuracoes_garantia` (0018): uma linha por loja, com o
+-- `loja_id` de chave. A linha só existe quando a loja tem link; apagar o link
+-- é apagar a linha. Nada a semear: loja sem linha é loja sem botão.
+--
+-- QUEM LÊ E GRAVA. Mesma regra das outras configurações por loja
+-- (`configuracoes_whatsapp`, 0052): quem tem acesso à loja lê e grava. O "só
+-- admin edita" é da tela, como no resto de Configurações.
+--
+-- ORDEM DE SUBIR. Tabela nova e opcional: esta migration sobe ANTES da versão
+-- do programa, como as outras (o programa antigo nem sabe que ela existe). Por
+-- isso não declara versão mínima do programa.
+--
+-- A trava tem nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
+-- frase em português (src/lib/errors.ts). Tabela nova nasce vazia, então
+-- nenhum dado que já existe pode ficar fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+create table if not exists configuracoes_avaliacao (
+  loja_id uuid primary key references lojas (id),
+  link_google text not null,
+  atualizado_em timestamptz not null default now()
+);
+
+-- O link começa com https://, tem alguma coisa depois e não tem espaço em
+-- branco no meio (um espaço quebra o link dentro da mensagem do WhatsApp).
+alter table configuracoes_avaliacao
+  drop constraint if exists ck_configuracoes_avaliacao_link_https;
+alter table configuracoes_avaliacao
+  add constraint ck_configuracoes_avaliacao_link_https
+  check (link_google ~ '^https://[^[:space:]]+$');
+
+comment on table configuracoes_avaliacao is
+  'O link de avaliação no Google de cada loja (#459). Uma linha por loja; sem linha, o botão "Pedir avaliação" não aparece.';
+
+alter table configuracoes_avaliacao enable row level security;
+
+drop policy if exists "configuracoes_avaliacao_acesso_por_loja" on configuracoes_avaliacao;
+create policy "configuracoes_avaliacao_acesso_por_loja" on configuracoes_avaliacao
+  for all
+  using (operador_tem_acesso_loja(loja_id))
+  with check (operador_tem_acesso_loja(loja_id));
+
+insert into schema_versao (versao) values (82) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0083_importacao_lotes.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0083: os lotes de importação de clientes e veículos, e o
+-- "desfazer" (tarefa #457, FN-15 parte 1).
+--
+-- O PROBLEMA. Uma loja que já usa outro sistema não troca pra recadastrar
+-- 2.000 clientes na mão. O programa passa a importar a planilha de clientes e
+-- veículos que o sistema antigo exporta — e uma importação errada (coluna
+-- trocada, arquivo errado) precisa ter volta sem ninguém apagar cliente por
+-- cliente.
+--
+-- O DESENHO.
+--   • Cada importação é um LOTE (`importacao_lotes`): quem importou, quando, o
+--     nome do arquivo, quantas linhas e quantos clientes/veículos entraram, e
+--     se foi desfeito (quando e por quem). Sem `loja_id`: `clientes` e
+--     `veiculos` são da empresa inteira, e o lote também.
+--   • `clientes` e `veiculos` ganham `importacao_lote_id` (opcional): a marca
+--     de "veio daquele lote". Cadastro feito à mão fica com ela vazia.
+--   • `desfazer_importacao(lote)` apaga o que veio do lote e DEVOLVE o que não
+--     pôde apagar, com o motivo (seção 4).
+--   • "Já existe" só pula (decisão 2 da Sofia, 10/11): o lote nunca altera um
+--     cliente que já estava lá, então desfazer é só apagar o que ele criou.
+--
+-- QUEM PODE (decisão 3 da Sofia, 10/11). Importar é gravação em massa de dado
+-- pessoal: só o ADMINISTRADOR, com o módulo Clientes. Ler, criar e alterar
+-- lote exige as duas coisas; apagar lote, ninguém (o histórico fica, e não há
+-- policy de delete — lacuna declarada em supabase/testes-rls/). Os clientes e
+-- veículos em si continuam gravados pelas policies que já existem (0069): a
+-- marca do lote é só mais uma coluna.
+--
+-- ORDEM DE SUBIR. Só soma (tabela, coluna opcional, função): o programa
+-- antigo nem sabe que elas existem. Por isso NÃO declara versão mínima do
+-- programa, e sobe antes da versão, como as outras.
+--
+-- Idempotente: seguro rodar de novo. A coluna nova usa `add column if not
+-- exists` (dropar a coluna apagaria a marca de todo lote já importado); o
+-- resto segue a regra de dropar o nome final antes de criar.
+
+-- ===================================================================
+-- 1. a tabela dos lotes
+-- ===================================================================
+
+create table if not exists importacao_lotes (
+  id               uuid primary key default gen_random_uuid(),
+  tipo             text not null default 'clientes',
+  nome_arquivo     text,
+  operador_id      uuid default auth.uid() references operadores (id) on delete set null,
+  criado_em        timestamptz not null default now(),
+  total_linhas     int not null default 0,
+  clientes_criados int not null default 0,
+  veiculos_criados int not null default 0,
+  desfeito_em      timestamptz,
+  desfeito_por     uuid references operadores (id) on delete set null
+);
+
+-- As partes 2 (peças) e 3 (contas a receber) da importação vão somar tipos a
+-- esta lista, cada uma na sua migration.
+alter table importacao_lotes drop constraint if exists ck_importacao_lotes_tipo;
+alter table importacao_lotes
+  add constraint ck_importacao_lotes_tipo check (tipo in ('clientes'));
+
+comment on table importacao_lotes is
+  'Cada importação por planilha (#457). Desfazer é pela função desfazer_importacao; o lote nunca é apagado.';
+
+-- ===================================================================
+-- 2. a marca do lote em clientes e veículos
+-- ===================================================================
+-- `on delete set null`: o programa nunca apaga lote, mas, se alguém apagar
+-- um pelo SQL Editor, o cliente fica — perde só a marca. Um `cascade` aqui
+-- apagaria os clientes junto, calado.
+
+alter table clientes
+  add column if not exists importacao_lote_id uuid
+  references importacao_lotes (id) on delete set null;
+alter table veiculos
+  add column if not exists importacao_lote_id uuid
+  references importacao_lotes (id) on delete set null;
+
+-- Quase todo cliente tem a marca vazia: o índice só guarda os que têm.
+drop index if exists clientes_importacao_lote_id_idx;
+create index clientes_importacao_lote_id_idx on clientes (importacao_lote_id)
+  where importacao_lote_id is not null;
+drop index if exists veiculos_importacao_lote_id_idx;
+create index veiculos_importacao_lote_id_idx on veiculos (importacao_lote_id)
+  where importacao_lote_id is not null;
+
+-- As duas chaves que apontam pra clientes/veículos e não tinham índice. Sem
+-- elas, cada veículo apagado faz o banco ler TODAS as OS (pra cumprir o
+-- `on delete set null`), e cada cliente, todas as contas. Medido com 2.000
+-- importados contra 20 mil OS: o desfazer caiu de 2,3 s pra 0,27 s. Servem
+-- também pra apagar veículo e cliente à mão, e pra ficha do veículo.
+drop index if exists ordens_servico_veiculo_id_idx;
+create index ordens_servico_veiculo_id_idx on ordens_servico (veiculo_id)
+  where veiculo_id is not null;
+drop index if exists contas_receber_cliente_id_idx;
+create index contas_receber_cliente_id_idx on contas_receber (cliente_id)
+  where cliente_id is not null;
+
+-- ===================================================================
+-- 3. RLS: só o administrador com o módulo Clientes
+-- ===================================================================
+-- Uma policy por comando (0056): uma `for all` sobrevivente reabriria o que
+-- estas fecham. As funções vão dentro de `(select ...)`: o Postgres as calcula
+-- uma vez por consulta, não uma por linha. Sem policy de delete, de propósito.
+
+alter table importacao_lotes enable row level security;
+
+drop policy if exists "importacao_lotes_leitura" on importacao_lotes;
+drop policy if exists "importacao_lotes_insercao" on importacao_lotes;
+drop policy if exists "importacao_lotes_alteracao" on importacao_lotes;
+drop policy if exists "importacao_lotes_exclusao" on importacao_lotes;
+
+create policy "importacao_lotes_leitura" on importacao_lotes
+  for select to authenticated
+  using ((select operador_tem_permissao('clientes'))
+         and (select operador_atual_e_admin_de_alguma_loja()));
+
+-- O lote nasce em nome de quem está logado, nunca de outra pessoa.
+create policy "importacao_lotes_insercao" on importacao_lotes
+  for insert to authenticated
+  with check ((select operador_tem_permissao('clientes'))
+              and (select operador_atual_e_admin_de_alguma_loja())
+              and operador_id = (select auth.uid()));
+
+create policy "importacao_lotes_alteracao" on importacao_lotes
+  for update to authenticated
+  using ((select operador_tem_permissao('clientes'))
+         and (select operador_atual_e_admin_de_alguma_loja()))
+  with check ((select operador_tem_permissao('clientes'))
+              and (select operador_atual_e_admin_de_alguma_loja()));
+
+-- ===================================================================
+-- 4. desfazer_importacao: apaga o lote e diz o que ficou
+-- ===================================================================
+-- Decisão 4 da Sofia (10/11): desfaz o que der e lista o que ficou, com o
+-- motivo. Devolve
+--   { "veiculos_apagados": n, "clientes_apagados": n,
+--     "mantidos": [ { "tipo": "cliente"|"veiculo", "id", "nome", "motivo" } ] }
+-- ("nome" é o nome do cliente, ou a placa do veículo).
+--
+-- O PERIGO SÃO AS CHAVES QUE NÃO DÃO ERRO. `veiculos.cliente_id` é `on delete
+-- cascade` (0001): apagar um cliente do lote levaria junto um veículo
+-- cadastrado à mão depois. `ordens_servico.veiculo_id` é `on delete set null`
+-- (0005): apagar um veículo do lote que ganhou OS deixaria a OS sem veículo.
+-- Nenhum dos dois avisa. Por isso a função CONFERE POR EXISTÊNCIA antes de
+-- apagar, e só pega o `foreign_key_violation` como rede de segurança.
+--
+-- E A LISTA DE CHAVES VEM DO PRÓPRIO BANCO (pg_constraint), não escrita aqui:
+-- hoje são `ordens_servico` (cliente e veículo) e `contas_receber` (cliente),
+-- mas uma tabela nova que aponte pra `clientes` ou `veiculos` (agendamento,
+-- venda...) entra na conferência sozinha, sem ninguém lembrar desta função. O
+-- teste prova isso com uma tabela inventada de `on delete set null`.
+--
+-- POR QUE `security definer` (docs/licoes.md, itens 13, 69, 74 e 75). Com
+-- `security invoker`, a conferência obedeceria à RLS de quem chama — e um
+-- admin de uma loja só NÃO ENXERGA a OS da outra loja. A conferência diria
+-- "sem OS", o `delete` passaria, e o `on delete set null` (que roda como dono
+-- da tabela, por cima da RLS) tiraria o veículo da OS da outra loja, calado.
+-- O teste monta exatamente esse caso (checagem 7c). Como `definer` passa por
+-- cima da RLS, a função confere a permissão ela mesma, logo na entrada (as
+-- mesmas duas regras das policies do lote), só mexe em linha marcada com
+-- AQUELE lote, tem `search_path` fixo e não é executável pelo anônimo.
+--
+-- CORRIDA. Os clientes e veículos do lote são travados (`for update`) antes de
+-- conferir: uma OS ou um veículo novo apontando pra eles, gravado ao mesmo
+-- tempo, espera o desfazer terminar (e então falha pela chave, porque a linha
+-- sumiu) — nunca entra entre a conferência e o `delete`.
+--
+-- O que fica continua com a marca do lote: dá pra saber de onde veio.
+
+drop function if exists desfazer_importacao(uuid);
+
+create function desfazer_importacao(p_lote uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_lote              importacao_lotes%rowtype;
+  v_mantidos          jsonb := '[]'::jsonb;
+  v_veiculos_ficam    uuid[] := '{}';
+  v_clientes_ficam    uuid[] := '{}';
+  v_veiculos_apagados int := 0;
+  v_clientes_apagados int := 0;
+  v_ids               uuid[];
+  v_motivo            text;
+  fk                  record;
+  r                   record;
+begin
+  if not (operador_tem_permissao('clientes') and operador_atual_e_admin_de_alguma_loja()) then
+    raise exception 'Só o administrador, com o módulo Clientes, pode desfazer uma importação.'
+      using errcode = '42501';
+  end if;
+
+  -- a trava do lote também impede dois "desfazer" ao mesmo tempo
+  select * into v_lote from importacao_lotes where id = p_lote for update;
+  if not found then
+    raise exception 'Essa importação não existe.' using errcode = 'P0002';
+  end if;
+  if v_lote.desfeito_em is not null then
+    raise exception 'Essa importação já foi desfeita.';
+  end if;
+
+  perform 1 from veiculos where importacao_lote_id = p_lote for update;
+  perform 1 from clientes where importacao_lote_id = p_lote for update;
+
+  -- ---- veículos: fica o que alguma tabela aponta ---------------------------
+  -- (a OS primeiro, pra que o motivo dela ganhe de um genérico)
+  for fk in
+    select c.conrelid::regclass as tabela, a.attname as coluna
+      from pg_constraint c
+      join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
+     where c.contype = 'f'
+       and c.confrelid = 'veiculos'::regclass
+       and cardinality(c.conkey) = 1
+     order by (c.conrelid = 'ordens_servico'::regclass) desc, c.conrelid::regclass::text, a.attname
+  loop
+    execute format(
+      'select coalesce(array_agg(distinct t.%1$I), ''{}'') from %2$s t
+        where t.%1$I in (select v.id from veiculos v where v.importacao_lote_id = $1)',
+      fk.coluna, fk.tabela)
+      into v_ids using p_lote;
+    v_motivo := case fk.tabela::text
+                  when 'ordens_servico' then 'já tem ordem de serviço'
+                  else 'é usado em ' || fk.tabela::text
+                end;
+    for r in
+      select v.id, v.placa from veiculos v
+       where v.id = any (v_ids) and not (v.id = any (v_veiculos_ficam))
+       order by v.placa
+    loop
+      v_veiculos_ficam := v_veiculos_ficam || r.id;
+      v_mantidos := v_mantidos || jsonb_build_object(
+        'tipo', 'veiculo', 'id', r.id, 'nome', r.placa, 'motivo', v_motivo);
+    end loop;
+  end loop;
+
+  for r in
+    select v.id, v.placa from veiculos v
+     where v.importacao_lote_id = p_lote and not (v.id = any (v_veiculos_ficam))
+     order by v.placa
+  loop
+    begin
+      delete from veiculos where id = r.id;
+      v_veiculos_apagados := v_veiculos_apagados + 1;
+    exception when foreign_key_violation or restrict_violation then
+      v_veiculos_ficam := v_veiculos_ficam || r.id;
+      v_mantidos := v_mantidos || jsonb_build_object(
+        'tipo', 'veiculo', 'id', r.id, 'nome', r.placa, 'motivo', 'está em uso em outro cadastro');
+    end;
+  end loop;
+
+  -- ---- clientes: fica o que alguma tabela aponta ---------------------------
+  -- (`veiculos` fica de fora daqui: é tratado logo abaixo, com motivo próprio)
+  for fk in
+    select c.conrelid::regclass as tabela, a.attname as coluna
+      from pg_constraint c
+      join pg_attribute a on a.attrelid = c.conrelid and a.attnum = c.conkey[1]
+     where c.contype = 'f'
+       and c.confrelid = 'clientes'::regclass
+       and c.conrelid <> 'veiculos'::regclass
+       and cardinality(c.conkey) = 1
+     order by (c.conrelid = 'ordens_servico'::regclass) desc,
+              (c.conrelid = 'contas_receber'::regclass) desc,
+              c.conrelid::regclass::text, a.attname
+  loop
+    execute format(
+      'select coalesce(array_agg(distinct t.%1$I), ''{}'') from %2$s t
+        where t.%1$I in (select c.id from clientes c where c.importacao_lote_id = $1)',
+      fk.coluna, fk.tabela)
+      into v_ids using p_lote;
+    v_motivo := case fk.tabela::text
+                  when 'ordens_servico' then 'já tem ordem de serviço'
+                  when 'contas_receber' then 'tem conta a receber'
+                  else 'é usado em ' || fk.tabela::text
+                end;
+    for r in
+      select c.id, c.nome from clientes c
+       where c.id = any (v_ids) and not (c.id = any (v_clientes_ficam))
+       order by c.nome
+    loop
+      v_clientes_ficam := v_clientes_ficam || r.id;
+      v_mantidos := v_mantidos || jsonb_build_object(
+        'tipo', 'cliente', 'id', r.id, 'nome', r.nome, 'motivo', v_motivo);
+    end loop;
+  end loop;
+
+  -- cliente com veículo que não veio deste lote (o cascade levaria o veículo)
+  for r in
+    select c.id, c.nome from clientes c
+     where c.importacao_lote_id = p_lote
+       and not (c.id = any (v_clientes_ficam))
+       and exists (select 1 from veiculos v
+                    where v.cliente_id = c.id
+                      and v.importacao_lote_id is distinct from p_lote)
+     order by c.nome
+  loop
+    v_clientes_ficam := v_clientes_ficam || r.id;
+    v_mantidos := v_mantidos || jsonb_build_object(
+      'tipo', 'cliente', 'id', r.id, 'nome', r.nome,
+      'motivo', 'tem veículo cadastrado fora da importação');
+  end loop;
+
+  -- cliente cujo veículo deste lote ficou (os outros já foram apagados acima)
+  for r in
+    select c.id, c.nome, string_agg(v.placa, ', ' order by v.placa) as placas
+      from clientes c
+      join veiculos v on v.cliente_id = c.id
+     where c.importacao_lote_id = p_lote
+       and not (c.id = any (v_clientes_ficam))
+     group by c.id, c.nome
+     order by c.nome
+  loop
+    v_clientes_ficam := v_clientes_ficam || r.id;
+    v_mantidos := v_mantidos || jsonb_build_object(
+      'tipo', 'cliente', 'id', r.id, 'nome', r.nome,
+      'motivo', 'o veículo dele (' || r.placas || ') ficou');
+  end loop;
+
+  for r in
+    select c.id, c.nome from clientes c
+     where c.importacao_lote_id = p_lote and not (c.id = any (v_clientes_ficam))
+     order by c.nome
+  loop
+    begin
+      delete from clientes where id = r.id;
+      v_clientes_apagados := v_clientes_apagados + 1;
+    exception when foreign_key_violation or restrict_violation then
+      v_clientes_ficam := v_clientes_ficam || r.id;
+      v_mantidos := v_mantidos || jsonb_build_object(
+        'tipo', 'cliente', 'id', r.id, 'nome', r.nome, 'motivo', 'está em uso em outro cadastro');
+    end;
+  end loop;
+
+  update importacao_lotes
+     set desfeito_em = now(), desfeito_por = auth.uid()
+   where id = p_lote;
+
+  return jsonb_build_object(
+    'veiculos_apagados', v_veiculos_apagados,
+    'clientes_apagados', v_clientes_apagados,
+    'mantidos', v_mantidos);
+end;
+$$;
+
+comment on function desfazer_importacao(uuid) is
+  '#457 (0083). Apaga os veículos e clientes do lote que não estão em uso e '
+  'devolve o que ficou, com o motivo. Só admin com o módulo Clientes. '
+  'security definer: a conferência precisa ver as OS de todas as lojas.';
+
+-- `security definer` + o EXECUTE que o Postgres dá a PUBLIC: sem o revoke, o
+-- anônimo chamaria a função (ela recusaria por dentro, mas a porta é o grant).
+revoke all on function desfazer_importacao(uuid) from public, anon;
+grant execute on function desfazer_importacao(uuid) to authenticated;
+
+insert into schema_versao (versao) values (83) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0084_retorno_do_cliente.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0084: o retorno do cliente (lembrete de revisão, FN-06, #381).
+--
+-- O PROBLEMA. O sistema sabe o que foi feito em cada carro, quando e com que
+-- KM, mas não usa isso pra chamar o cliente de volta na hora da próxima
+-- revisão (alinhamento a cada 10 mil km ou 6 meses, por exemplo).
+--
+-- A DECISÃO (Sofia, 10/11/2026). O "retorno previsto" é CALCULADO NA HORA pelo
+-- programa, a partir das OS faturadas e do intervalo de cada serviço, como os
+-- "clientes que sumiram" (#455): sem tabela nova e sem RLS nova. O banco só
+-- precisa guardar três coisas:
+--   • em `servicos`, o intervalo opcional, em dias e em km. Sem valor = o
+--     serviço não gera retorno. NENHUM serviço ganha intervalo aqui: quem quer
+--     o lembrete preenche no cadastro de Serviços;
+--   • em `clientes`, o "não avisar" (padrão falso): cliente marcado nunca
+--     entra na lista de retornos, nem na dos que sumiram;
+--   • na janela `ordens_servico_clientes` (0075), o `servico_id` de cada item,
+--     pra conta saber qual serviço do cadastro foi feito (o serviço digitado à
+--     mão, sem cadastro, vem com `servico_id` nulo e não gera retorno).
+--
+-- POR QUE A JANELA E NÃO A TABELA. Quem tem só o módulo Clientes não lê
+-- `ordens_servico_itens` (0075); a lista de Retornos mora em Clientes e lê
+-- pela mesma janela da ficha do veículo. O `servico_id` não é custo nem
+-- observação (o que a janela nunca pode entregar): é só "qual serviço".
+--
+-- ORDEM DE SUBIR. Só acrescenta colunas opcionais (com padrão) e uma chave a
+-- mais dentro do jsonb da janela: o programa antigo não pede nenhuma delas e
+-- continua funcionando igual. Por isso sobe ANTES da versão do programa, como
+-- as outras, e não declara versão mínima do programa.
+--
+-- A trava tem nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
+-- frase em português (src/lib/errors.ts). As colunas nascem vazias, então
+-- nenhum serviço que já existe fica fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ===================================================================
+-- 1. O intervalo do serviço (em dias e em km), opcional
+-- ===================================================================
+
+alter table servicos add column if not exists intervalo_dias integer;
+alter table servicos add column if not exists intervalo_km integer;
+
+-- Cada um maior que zero, ou vazio. Zero ou negativo faria o carro "voltar"
+-- no mesmo dia (ou antes) e encheria a lista de retorno falso.
+alter table servicos drop constraint if exists ck_servicos_intervalo;
+alter table servicos
+  add constraint ck_servicos_intervalo
+  check (
+    (intervalo_dias is null or intervalo_dias between 1 and 3650)
+    and (intervalo_km is null or intervalo_km between 1 and 1000000)
+  );
+
+comment on column servicos.intervalo_dias is
+  'FN-06 (0084). A cada quantos dias o cliente deve voltar pra este serviço (6 meses = 180). Vazio = este serviço não gera retorno pelo tempo.';
+comment on column servicos.intervalo_km is
+  'FN-06 (0084). A cada quantos km o cliente deve voltar pra este serviço. Vazio = este serviço não gera retorno pelo KM. A previsão pelo KM é sempre uma estimativa.';
+
+-- ===================================================================
+-- 2. "Não mandar lembrete pra este cliente"
+-- ===================================================================
+
+alter table clientes add column if not exists nao_avisar boolean not null default false;
+
+comment on column clientes.nao_avisar is
+  'FN-06 (0084). O cliente pediu pra não receber mensagem da loja: nunca entra na lista de retornos nem na de clientes que sumiram.';
+
+-- ===================================================================
+-- 3. A janela de Clientes passa a dizer QUAL serviço foi feito
+-- ===================================================================
+
+-- Igual à da 0075 em tudo, menos o `servico_id` dentro de cada item. As
+-- colunas da view não mudam (só o conteúdo do jsonb `itens`), por isso dá pra
+-- trocar no lugar, sem derrubar.
+create or replace view ordens_servico_clientes
+with (security_invoker = false, security_barrier = true)
+as
+  select o.id,
+         o.loja_id,
+         o.numero,
+         o.tipo,
+         o.status,
+         o.data_abertura,
+         o.data_fechamento,
+         o.cliente_id,
+         (select c.nome from clientes c where c.id = o.cliente_id) as cliente_nome,
+         o.veiculo_id,
+         o.km_entrada,
+         v.placa  as veiculo_placa,
+         v.marca  as veiculo_marca,
+         v.modelo as veiculo_modelo,
+         coalesce(
+           (select jsonb_agg(jsonb_build_object(
+                     'id',                  i.id,
+                     'tipo',                i.tipo,
+                     'peca_id',             i.peca_id,
+                     'servico_id',          i.servico_id,
+                     'descricao',           i.descricao,
+                     'quantidade',          i.quantidade,
+                     'preco_unitario',      i.preco_unitario,
+                     'desconto',            i.desconto,
+                     'prazo_garantia_dias', p.prazo_garantia_dias))
+              from ordens_servico_itens i
+              left join pecas p on p.id = i.peca_id
+             where i.ordem_servico_id = o.id),
+           '[]'::jsonb
+         ) as itens
+    from ordens_servico o
+    left join veiculos v on v.id = o.veiculo_id
+   where o.status not in ('orcamento', 'recusado')
+     and operador_tem_acesso_loja(o.loja_id)
+     and (
+       (select operador_tem_permissao('clientes'))
+       or (select operador_tem_permissao('ordens_servico'))
+     );
+
+comment on view ordens_servico_clientes is
+  'TR-04.1 lote 6 (0075), servico_id na 0084 (FN-06). As OS do jeito que a '
+  'ficha do veículo, a lista "clientes que sumiram" e a lista de retornos '
+  'mostram: número, datas, km, cliente, veículo e os itens com descrição, '
+  'quantidade, preço, desconto, o serviço do cadastro (servico_id) e o prazo '
+  'de garantia da peça. Sem orçamento nem recusado. Exige Clientes ou OS, e '
+  'só as lojas de quem pergunta (o where daqui). Só SELECT. NUNCA acrescentar '
+  'custo nem observação.';
+
+revoke all on ordens_servico_clientes from anon, authenticated;
+grant select on ordens_servico_clientes to authenticated;
+
+insert into schema_versao (versao) values (84) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0085_contato_contabilidade.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0085: o contato da contabilidade, por loja (#383).
+--
+-- O PROBLEMA. Todo mês a loja manda pra contabilidade as notas do mês (o
+-- pacote do mês). Hoje quem manda precisa procurar o WhatsApp ou o e-mail do
+-- escritório em outro lugar, toda vez.
+--
+-- A DECISÃO (Sofia, 10/11/2026). O contato da contabilidade fica guardado no
+-- programa, um por loja (cada loja pode ter o próprio escritório):
+--   • nome do escritório (ou da pessoa), obrigatório;
+--   • WhatsApp e e-mail, cada um opcional, mas pelo menos UM dos dois: um
+--     contato sem nenhum dos dois não serve pra mandar nada, então a tela
+--     apaga a linha em vez de gravar pela metade;
+--   • o WhatsApp é gravado só com os dígitos (o programa limpa antes).
+--
+-- POR QUE UMA TABELA SÓ PRA ISSO, e não colunas nos Dados fiscais: o contato
+-- não tem nada de fiscal, e quem mexe nele é quem cuida das mensagens. O
+-- desenho é o da `configuracoes_avaliacao` (0082): uma linha por loja, com o
+-- `loja_id` de chave. A linha só existe quando a loja tem contato; apagar o
+-- contato é apagar a linha. Nada a semear: loja sem linha é loja sem contato.
+--
+-- QUEM LÊ E GRAVA. Mesma regra das outras configurações por loja
+-- (`configuracoes_whatsapp`, 0052; `configuracoes_avaliacao`, 0082): quem tem
+-- acesso à loja lê e grava. O "só admin edita" é da tela, como no resto de
+-- Configurações.
+--
+-- ORDEM DE SUBIR. Tabela nova e opcional: esta migration sobe ANTES da versão
+-- do programa, como as outras (o programa antigo nem sabe que ela existe). Por
+-- isso não declara versão mínima do programa.
+--
+-- As travas têm nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
+-- frase em português (src/lib/errors.ts). Só trava o que é certo; o resto
+-- (se o número existe, se o e-mail chega) não tem como o banco saber. Tabela
+-- nova nasce vazia, então nenhum dado que já existe pode ficar fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+create table if not exists configuracoes_contabilidade (
+  loja_id uuid primary key references lojas (id),
+  nome text not null,
+  whatsapp text,
+  email text,
+  atualizado_em timestamptz not null default now()
+);
+
+-- O nome não pode ser só espaço e tem no máximo 80 letras.
+alter table configuracoes_contabilidade
+  drop constraint if exists ck_configuracoes_contabilidade_nome;
+alter table configuracoes_contabilidade
+  add constraint ck_configuracoes_contabilidade_nome
+  check (btrim(nome) <> '' and char_length(nome) <= 80);
+
+-- O WhatsApp, quando houver, é só dígitos, com DDD: de 10 a 13 dígitos
+-- (fixo com DDD tem 10; celular, 11; com o 55 do Brasil, 12 ou 13).
+alter table configuracoes_contabilidade
+  drop constraint if exists ck_configuracoes_contabilidade_whatsapp;
+alter table configuracoes_contabilidade
+  add constraint ck_configuracoes_contabilidade_whatsapp
+  check (whatsapp is null or whatsapp ~ '^[0-9]{10,13}$');
+
+-- O e-mail, quando houver: sem espaço, um @ só, alguma coisa dos dois lados,
+-- e no máximo 120 letras.
+alter table configuracoes_contabilidade
+  drop constraint if exists ck_configuracoes_contabilidade_email;
+alter table configuracoes_contabilidade
+  add constraint ck_configuracoes_contabilidade_email
+  check (email is null or (email ~ '^[^[:space:]@]+@[^[:space:]@]+$' and char_length(email) <= 120));
+
+-- Pelo menos um jeito de falar com a contabilidade.
+alter table configuracoes_contabilidade
+  drop constraint if exists ck_configuracoes_contabilidade_algum_contato;
+alter table configuracoes_contabilidade
+  add constraint ck_configuracoes_contabilidade_algum_contato
+  check (whatsapp is not null or email is not null);
+
+comment on table configuracoes_contabilidade is
+  'O contato da contabilidade de cada loja (#383): nome, WhatsApp (só dígitos) e e-mail, pelo menos um dos dois. Uma linha por loja; sem linha, a loja não cadastrou contato.';
+
+alter table configuracoes_contabilidade enable row level security;
+
+drop policy if exists "configuracoes_contabilidade_acesso_por_loja" on configuracoes_contabilidade;
+create policy "configuracoes_contabilidade_acesso_por_loja" on configuracoes_contabilidade
+  for all
+  using (operador_tem_acesso_loja(loja_id))
+  with check (operador_tem_acesso_loja(loja_id));
+
+insert into schema_versao (versao) values (85) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0086_faturar_ordem_trava.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0086: faturar a OS com a linha da ordem travada e o total
+-- conferido no banco (tarefa #803, caso 2). O mesmo caminho da 0071 (#706)
+-- e da 0079 (#803, caso 1).
+--
+-- O PROBLEMA. Faturar é a tela somar os itens que ELA tem, cobrar o cliente
+-- por esse total e mandar o banco marcar a OS como faturada. Até aqui o
+-- programa (faturarOrdem, em src/lib/ordensServico.ts) mandava só um
+-- `update ordens_servico set status = 'faturada'`, sem olhar os itens. Se
+-- outro computador acrescentava ou corrigia uma peça na mesma OS no mesmo
+-- instante, a OS era faturada com um total que já não era o do banco: o
+-- Caixa recebia o valor velho, e a OS (e a nota) ficava com o novo. Quem
+-- acrescenta já recusa OS faturada (decisão 5 da 0071), mas só se o
+-- faturamento chegar PRIMEIRO; se o item chega antes, nada avisava.
+--
+-- O QUE ESTA MIGRATION CRIA: marcar_ordem_faturada(ordem, forma de
+-- pagamento, parcelas, total da tela, operador), uma transação só:
+--   1. trava a linha da ordem (`select ... for update`, decisão 1 da 0071):
+--      quem acrescenta ou corrige item no meio espera, ou é esperado;
+--   2. recusa orçamento/recusado (com a mesma frase do programa) e OS já
+--      faturada (outro computador faturou antes);
+--   3. soma os itens COMO ESTÃO NO BANCO (quantidade × preço − desconto) e
+--      compara, no centavo, com o total que a tela cobrou. Diferente (ou
+--      sem total) → recusa com o código próprio SK803, pra o programa
+--      reconhecer e pedir pra atualizar a tela. Nada é gravado;
+--   4. bateu → marca faturada, com a forma de pagamento, as parcelas, a
+--      data de fechamento e quem mexeu por último.
+-- O Caixa e as Contas a Receber continuam sendo lançados pelo programa,
+-- DEPOIS desta função dar certo (é ela quem decide se o total vale).
+--
+-- A ESPERA É O QUE FAZ A CONTA VALER. Sem a trava, o faturamento podia ler
+-- os itens antes de o item do outro computador gravar (a soma "bate" com a
+-- tela velha) e marcar faturada logo depois do item entrar. Com a trava, ou
+-- o item entra antes (e a soma daqui já o vê: recusa) ou depois (e quem
+-- acrescenta vê "já foi faturada": recusa, pela 0071).
+--
+-- O STATUS. A troca pra 'faturada' passa pelo gatilho da 0065
+-- (definir_numero_ordem_servico, `update of status`): de em_andamento,
+-- concluida (inclusive a venda de balcão, que nasce concluída, 0064) ou
+-- faturada ele não faz nada; de orçamento/recusado recusaria, mas esta
+-- função já recusa antes, com a frase da tela. A data de fechamento é
+-- `now()`, como o programa fazia; a trava de datas da 0060 aceita.
+--
+-- RODA COMO QUEM CHAMA (`security invoker`, decisão 3 da 0071): não
+-- atravessa a RLS; quem não enxerga a ordem (outra loja, ou sem o módulo
+-- OS) recebe "não encontrada" e nada é gravado. Nenhuma policy muda.
+--
+-- ORDEM AO SUBIR: migration ANTES da versão do programa que chama esta
+-- função. Só acrescenta uma função; a versão anterior do programa continua
+-- faturando do jeito de hoje (com o mesmo risco raro), por isso NÃO tem a
+-- linha de versão mínima do programa.
+--
+-- Era a 0083; renumerada pra 0086 em 17/11/2026 (a 0083 e a 0084 entraram
+-- antes, e a 0085 é do #1003).
+--
+-- Idempotente: seguro rodar de novo.
+
+drop function if exists marcar_ordem_faturada(uuid, text, integer, numeric, uuid);
+
+create or replace function marcar_ordem_faturada(
+  p_ordem uuid,
+  p_forma_pagamento text,
+  p_parcelas integer,
+  p_total_da_tela numeric,
+  p_operador uuid
+)
+returns void
+language plpgsql
+volatile
+security invoker
+set search_path = public
+as $$
+declare
+  v_ordem ordens_servico%rowtype;
+  v_total_do_banco numeric;
+begin
+  -- A trava (decisão 1 da 0071).
+  select * into v_ordem from ordens_servico where id = p_ordem for update;
+  if not found then
+    raise exception 'Esta ordem não foi encontrada (talvez tenha sido apagada em outro computador). Atualize a lista.';
+  end if;
+
+  if v_ordem.status in ('orcamento', 'recusado') then
+    raise exception 'Orçamento não é faturado: aprove o orçamento antes (ele vira OS).';
+  end if;
+
+  if v_ordem.status = 'faturada' then
+    raise exception 'Esta OS já foi faturada (talvez em outro computador). Atualize a lista.';
+  end if;
+
+  -- Só agora, com a ordem presa, a soma dos itens como estão no banco.
+  select coalesce(sum(quantidade * preco_unitario - desconto), 0)
+    into v_total_do_banco
+    from ordens_servico_itens
+   where ordem_servico_id = v_ordem.id;
+
+  -- Compara pela DIFERENÇA, não arredondando cada lado: com quantidade
+  -- quebrada o total cai no meio centavo (1,5 × 85,35 = 128,025 aqui e
+  -- 128.02499999999998 na tela), e arredondar os dois separados dava 128,03
+  -- × 128,02, recusando pra sempre uma OS que não mudou (revisão da #803).
+  -- Até meio centavo é a mesma conta; qualquer mudança de verdade (um item,
+  -- um preço, um desconto) mexe pelo menos 1 centavo.
+  if p_total_da_tela is null or abs(v_total_do_banco - p_total_da_tela) > 0.005 then
+    raise exception 'Esta OS mudou em outro computador. Atualize a tela e fature de novo.'
+      using errcode = 'SK803';
+  end if;
+
+  update ordens_servico
+     set status = 'faturada',
+         forma_pagamento = p_forma_pagamento,
+         parcelas = p_parcelas,
+         data_fechamento = now(),
+         atualizado_por_id = p_operador
+   where id = v_ordem.id;
+  -- Defesa barata: se a RLS deixasse ler e travar mas não gravar, o update
+  -- passaria calado e a tela lançaria o Caixa de uma OS que não faturou.
+  if not found then
+    raise exception 'Você não tem permissão pra faturar esta OS.';
+  end if;
+end;
+$$;
+
+comment on function marcar_ordem_faturada(uuid, text, integer, numeric, uuid) is
+  '#803. Marca a OS como faturada (forma de pagamento, parcelas, data de fechamento, '
+  'quem mexeu) com a linha da ordem travada (for update) até o fim, só se a soma dos '
+  'itens no banco bate no centavo com o total que a tela cobrou; senão recusa com o '
+  'código SK803 e não grava nada. Recusa orçamento/recusado e OS já faturada. Pela RLS '
+  'de quem chama.';
+
+-- O Postgres dá EXECUTE a PUBLIC (e o Supabase ao `anon`) em toda função
+-- nova. Mesmo rodando como quem chama, só quem está logado.
+revoke all on function marcar_ordem_faturada(uuid, text, integer, numeric, uuid) from public, anon;
+grant execute on function marcar_ordem_faturada(uuid, text, integer, numeric, uuid) to authenticated;
+
+insert into schema_versao (versao) values (86) on conflict do nothing;

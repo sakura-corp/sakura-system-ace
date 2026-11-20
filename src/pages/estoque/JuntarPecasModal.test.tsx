@@ -6,7 +6,12 @@
  * `schemas/juntarPecas.test.ts`. Aqui se guarda a LIGAÇÃO: que a tela lista
  * os pares, mostra a frase, manda pro banco só os campos que a pessoa
  * escolheu, e não deixa juntar quando o banco diz que falta acesso.
+ *
+ * Desde a #721 a janela não busca o catálogo sozinha: usa a lista que a tela
+ * de Estoque já tem, e depois de juntar pede pra ela recarregar UMA vez. O
+ * `TelaDeEstoque` abaixo faz o papel da tela: `catalogo` é o que ela carrega.
  */
+import { useCallback, useEffect, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { Peca } from "@/types/peca";
@@ -65,19 +70,56 @@ function resumo(extra: Partial<ResumoPecaJuntar>): ResumoPecaJuntar {
   };
 }
 
+/** O catálogo como a tela de Estoque carrega. */
+const catalogo = vi.fn<() => Promise<Peca[]>>();
+
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(listarPecas).mockResolvedValue([velha, nova]);
+  catalogo.mockResolvedValue([velha, nova]);
   vi.mocked(resumoPecaParaJuntar).mockImplementation(async (id) =>
     id === "a" ? resumo({}) : resumo({ os: 12, compras: 3, contagens: 1, estoque: [{ loja_id: "l1", loja_nome: "Matriz", saldo: 2 }] }),
   );
-  vi.mocked(juntarPecas).mockResolvedValue(resumo({}));
+  vi.mocked(juntarPecas).mockResolvedValue(undefined);
   vi.mocked(buscarPecasPorIds).mockResolvedValue([velha, nova]);
 });
 
+/** O papel da tela de Estoque: carrega o catálogo e o recarrega quando pedem. */
+function TelaDeEstoque({ onRecarregou }: { onRecarregou: () => void }) {
+  const [pecas, setPecas] = useState<Peca[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    setErro(null);
+    try {
+      setPecas(await catalogo());
+    } catch (err) {
+      setErro((err as Error).message);
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+  return (
+    <JuntarPecasModal
+      categorias={[]}
+      pecas={pecas}
+      carregando={carregando}
+      erroAoCarregar={erro}
+      onFechar={vi.fn()}
+      onRecarregar={async () => {
+        onRecarregou();
+        await carregar();
+      }}
+    />
+  );
+}
+
 function montar() {
-  const onJuntado = vi.fn().mockResolvedValue(undefined);
-  const r = renderizar(<JuntarPecasModal categorias={[]} onFechar={vi.fn()} onJuntado={onJuntado} />);
+  const onJuntado = vi.fn();
+  const r = renderizar(<TelaDeEstoque onRecarregou={onJuntado} />);
   return { ...r, onJuntado };
 }
 
@@ -95,7 +137,7 @@ describe("JuntarPecasModal", () => {
   });
 
   it("se a busca falha, não diz que está tudo certo e deixa tentar de novo", async () => {
-    vi.mocked(listarPecas).mockRejectedValueOnce(new Error("sem internet"));
+    catalogo.mockRejectedValueOnce(new Error("sem internet"));
     const { user } = montar();
     expect(await screen.findByRole("alert")).toHaveTextContent(/sem internet/);
     expect(screen.queryByText(/Está tudo certo/)).not.toBeInTheDocument();
@@ -104,7 +146,7 @@ describe("JuntarPecasModal", () => {
   });
 
   it("sem pares, diz que não achou", async () => {
-    vi.mocked(listarPecas).mockResolvedValue([velha]);
+    catalogo.mockResolvedValue([velha]);
     montar();
     expect(await screen.findByText(/Não achei peças repetidas/)).toBeInTheDocument();
   });
@@ -138,6 +180,21 @@ describe("JuntarPecasModal", () => {
     );
     expect(await screen.findByRole("status")).toHaveTextContent(/Pronto/);
     await waitFor(() => expect(onJuntado).toHaveBeenCalled());
+  });
+
+  // #721: a janela usava a própria busca (além da lista da tela) e, depois de
+  // juntar, o catálogo era carregado duas vezes.
+  it("usa a lista da tela de Estoque e, depois de juntar, recarrega uma vez só", async () => {
+    const { user, onJuntado } = montar();
+    await abrirPar(user);
+    expect(catalogo).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
+    await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(/Pronto/);
+    await waitFor(() => expect(onJuntado).toHaveBeenCalledTimes(1));
+    expect(catalogo).toHaveBeenCalledTimes(2);
+    expect(listarPecas).not.toHaveBeenCalled();
   });
 
   it("prévia velha recusada: busca a prévia de novo, mostra os números novos e junta com eles", async () => {
@@ -179,7 +236,7 @@ describe("JuntarPecasModal", () => {
     const { user } = montar();
     await abrirPar(user);
     vi.mocked(buscarPecasPorIds).mockResolvedValue([velha]);
-    vi.mocked(listarPecas).mockResolvedValue([velha]);
+    catalogo.mockResolvedValue([velha]);
     await user.click(screen.getByRole("button", { name: "Juntar estas duas" }));
     await user.click(screen.getByRole("button", { name: "Sim, juntar" }));
     expect(await screen.findByText(/Não achei peças repetidas/)).toBeInTheDocument();
@@ -220,6 +277,25 @@ describe("JuntarPecasModal", () => {
         sai: expect.objectContaining({ os: 0 }),
       }),
     );
+  });
+
+  // #721: o lucro e a comissão das OS antigas usam o custo atual da peça.
+  it("custo diferente: a prévia avisa que o lucro das OS antigas muda; custo igual, não", async () => {
+    catalogo.mockResolvedValue([{ ...velha, preco_custo: 100 }, { ...nova, preco_custo: 80 }]);
+    const { user } = montar();
+    await abrirPar(user);
+    expect(screen.getByText(/preço de custo diferente/)).toHaveTextContent(/passam a usar R\$\s?100,00/);
+
+    // Escolher o custo da que sai muda o aviso junto.
+    const grupo = screen.getByRole("group", { name: "Preço custo" });
+    await user.click(grupo.querySelectorAll<HTMLInputElement>("input")[1]);
+    expect(screen.getByText(/preço de custo diferente/)).toHaveTextContent(/passam a usar R\$\s?80,00/);
+  });
+
+  it("custo igual: sem aviso de custo", async () => {
+    const { user } = montar();
+    await abrirPar(user);
+    expect(screen.queryByText(/preço de custo diferente/)).not.toBeInTheDocument();
   });
 
   it("sem acesso a todas as lojas, mostra a frase e não oferece juntar", async () => {

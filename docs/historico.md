@@ -35,6 +35,207 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 16/11/2026: visual novo, quase todas as telas na `main`
+- **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
+- **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.
+- **Aberto**: em 1024 com o menu aberto, a tabela das OS rola de lado (esconder uma coluna é decisão dela); as sugestões de cada PR.
+- **Próximo**: Relações (sessão rodando) e Configurações com Auditoria e Diagnóstico (#1062); depois a tarefa de tirar os tokens antigos.
+- **Atenção**: as sessões pararam no limite semanal (16/11); a fila está em `docs/rascunhos/visual-novo-tarefas.md`.
+- **Com a Sofia**: no Windows 11, a barra da janela e o ícone do instalador; no fim de semana, as telas novas e o faturar com um login de verdade.
+
+### 15/11/2026 (tarde): visual novo, o menu novo na `main`
+- **Feito** (#1049, nada publicado): o menu tem quatro grupos com ícones, abre e encolhe (lembrado por computador) e encosta na borda da janela; no alto, a flor da logo B. Regras: seção 7.
+- **Decidido por ela**: o menu fica como está; o atalho de trocar o tema no rodapé do menu fica.
+- **Aberto** (sugestões, ela não decidiu): um ícone de socorro pro Diagnóstico; a ordem dos grupos; a opção "Automático" do tema. A logo nova no Login e no ícone é da tarefa 6.
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **Início** (tarefa 4, a tela-piloto, que ela aprova antes das outras; ainda sem sessão); depois o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: toda tela vale nos dois temas (regras, seção 13). Módulo novo precisa de grupo em `MODULOS` e de ícone no `Sidebar.tsx`.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, o menu (encolher, fechar e abrir de novo; um login só com Caixa), o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
+### 15/11/2026: visual novo, o tema claro na `main`
+- **Feito** (#1046, nada publicado): o programa tem dois temas. Troca em Configurações → "Aparência deste computador" (por computador, lembrado; o padrão é o escuro); a logo troca junto. As cores do claro: regras, seção 13.
+- **Decidido por ela**: a cara do tema claro fica como está, por enquanto.
+- **Aberto** (sugestões, ela não decidiu): um atalho de tema no rodapé do menu (Configurações só o administrador abre) e a opção "Automático"; a logo nova nas duas versões é da tarefa 6.
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **menu** (tarefa 3) já tem sessão aberta; depois o Início, o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: toda tela vale nos dois temas. Nada de `text-white`, `bg-white/N` ou `bg-black/N` em cima de superfície (é `text-texto`, `bg-texto/N`, `bg-poco`); `contraste` e `contraste:telas` rodam nos dois.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, o tema claro, a letra nova com o Wi-Fi desligado, a placa e o fundo desfocado das janelas; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
+### 15/11/2026 (madrugada): visual novo, a tarefa 2 na `main` (as peças)
+- **Feito** (#1045, nada publicado): as peças (`Botao`, `Selo`, `Dica`, `CartaoNumero`, o aviso que some, a placa, a janela, campo e tabela). O cartão virou sólido; o vidro ficou só no Login. A mostra: `docs/referencia/visual-novo/pecas.html`.
+- **Pedidos dela em 15/11** (regras, seção 12): quem mexe numa tela procura o que a deixaria menos confusa; a barra da janela na cor do programa (tarefa 6); a nota do cliente fácil de achar e os botões de baixar claros (Notas Fiscais e tarefa 7).
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: o **tema claro** já tem sessão aberta (ela vê por imagem antes); depois o menu, o Início, o movimento, a logo com o Login e as OS.
+- **Atenção, equipe**: tela nova usa as peças (regras, seção 6); botão `bg-sakura-purple` com `text-white` reprova no `contraste` (a letra é `text-sobre-acao`).
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, a letra nova com o Wi-Fi desligado, a placa com a faixa azul e o fundo desfocado das janelas (em 03/10: nítido); #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
+### 14/11/2026 (noite): visual novo, a tarefa 1 na `main` (cores e letras)
+- **Feito** (#1043, nada publicado): o programa trocou o rosa e roxo pelo laranja com carmesim, só nos valores das cores; letra escura nos botões laranja; Inter e Plus Jakarta Sans embutidas; fundo novo com grão no Login. O layout e a logo ainda são os antigos.
+- **Decidido por ela**: letras embutidas; ícones pela `lucide-react`; tema claro logo depois da tarefa 2; **nada cresce sem limite** (a Central do dia com 4 linhas, rolando por dentro); **o conceito vale pela aparência, não pelo conteúdo** (regras, seções 1 e 6).
+- **Próximo**: uma tarefa por sessão, na ordem de `docs/rascunhos/visual-novo-tarefas.md`: a 2 (as peças) já tem sessão aberta; depois o tema claro, o menu, o Início, o movimento, a logo e as OS.
+- **Atenção, equipe**: botão `bg-sakura-purple` com `text-white` agora reprova no `npm run contraste`; a letra é `text-sobre-acao`.
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
+- **Com a Sofia**: no teste do fim de semana, ver a letra nova com o Wi-Fi desligado; #1023, **#1011 (trocar o CSC)**, #976 (falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
+### 14/11/2026: o visual novo decidido (logo B, laranja com carmesim) e a base pré-escrita
+- **Decidido** (#990): o programa vai pro laranja com carmesim, escuro, com grão no degradê; **logo B**, ícone no quadrado claro; dois temas (escuro e claro) com configuração; menu de ícones em 4 grupos.
+- **Pronto**: as regras (`docs/referencia/visual-novo/README.md`), o conceito clicável com as fotos (`conceito/`, na mesma pasta) e as tarefas pré-escritas (`docs/rascunhos/visual-novo-tarefas.md`). **Nada mudou no programa.**
+- **Próximo**: uma sessão nova aplica a base (tarefas 1 a 7, um PR por tarefa, nada publicado): cores, letras, logo, Login e menu primeiro; Início e OS por último, pra não bater com a leva 8. Antes, três perguntas a ela: letras embutidas, biblioteca de ícones, tema claro já.
+- **Aberto**: o tema claro não foi desenhado; as outras telas ficam com a equipe (tarefas 8 em diante).
+- **Leva 8** (18 tarefas): como em 13/11 (`docs/historico.md`); as cinco migrations entram uma de cada vez. Leva 7: 10 tarefas sem ninguém.
+- **Com a Sofia**: #1023, **#1011 (trocar o CSC)**, #976 (passou no teste de 14/11, falta fechar), o ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos em **22/11** e **30/11**, às 8h.
+
+### 12 e 13/11/2026: a leva 8 planejada e montada (18 tarefas, 100 h)
+- **Feito**: a leva 8 no modelo, com a etiqueta `leva-8`: o DRE (#386 → #387 → #388), o orçamento (#1019, #888), a nota de compra pelo XML com as contas a pagar (#1020), a origem do cliente (#1021 o campo, #1022 o relatório), a #979 e a #376 (ativação fiscal). **13/11**: entram a #1031 (o recibo novo da nota, 12 h) e a #1033 (o que ele precisa da loja, 5 h). Prioridade: #1031, #386, #387, #1019, #1021, #1020, #1033.
+- **Ampliada à tarde**: #1000 (aviso de banco), #988, #1016, #1017 (juntou a #1018), #993 (espera a #457) e #856 (Central do dia abre o item).
+- **Entra depois**: "consertar nota" (#855 com a #369), rascunho do Tiago; a Sofia aprova antes da `leva-8`.
+- **Ficou pra leva 9**: o leitor de nota em PDF (**ela vai pensar melhor antes**), a #394 e a #399, com o vídeo (#995/#996) e o material de venda. O visual novo (#990), janeiro.
+- **Atenção**: cinco migrations na leva 8 (#386, #387, #1021, #376, #1033) mexem em `VERSAO_ESQUEMA_ESPERADA`: entram uma de cada vez. A Sofia aplica no `ssace-teste`, guiada por outra sessão.
+- **Leva 7**: 10 tarefas sem ninguém; a leva 8 só aparece no painel quando virar a atual.
+- **Com a Sofia**: #1023 (a parte dela da leva 8), **#1011 (trocar o CSC)**, #976 antes do ensaio de 14 e 15/11 (#877), #513, #504, #998, #501, #842.
+- Meta: em 30/11, a leva 8 completa e a leva 9 encaminhada. Levantamentos marcados pra **22/11** e **30/11**, às 8h.
+
+### 11/11/2026 (noite, 2): o levantamento das pontas soltas; a leva 8 até 30/11
+- **Feito**: o levantamento das pontas soltas dos 4 repositórios (o plano fica no privado da Sofia); a **#978** (a garantia sem tratar "<" e "&") **entrou na leva 7**. Sem código nesta sessão.
+- **Leva 7** (sem mudança desde a tarde): #986, #1007, #1009 e #1003 aprovados esperando o teste no PC do Tiago (o #1003 só entra depois do #985 e do #987: o CI dele falha de verdade com a 0085 antes da 0084); devolvidos #1008, #985 e #987; o #384 (Gusta) tem branch sem PR.
+- **A ordem** (Sofia, 11/11): **até 30/11, a leva 8 completa e a leva 9 encaminhada**. A leva 8 ela planeja **quinta 12/11, às 9h**; a #979 vai nela. A leva 9: o vídeo (#995/#996) e o material de venda. O visual novo (#990) fica pra janeiro.
+- **No escritório**: a leva 4 montada (sakura-corp/escritorio#120 a #122, #119, #37, #66, #84, #117); o plano e a estratégia novos nascem lá (escritorio#121 tira a visão e o comparativo daqui).
+- **Com a Sofia** (12/11, a lista dela): **#1011 (trocar o CSC)**, #513 (Focus), #504 (contador), #976 antes do ensaio de 14 e 15/11 (#877), #998 quando o Gusta avisar, #501, #842 depois do ensaio; a Recepção dela (escritorio#123).
+- Levantamentos novos marcados sozinhos pra **22/11** e **30/11**, às 8h.
+
+### 11/11/2026 (noite): a leva 7 revisada inteira; quatro aprovados esperando o teste no PC
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (sem o teste no PC), #973, #974, #977, #975, #984, #989 e #1004.
+- **Leva 7, aprovados, falta o teste no PC**: #986 (#374), #1007 (#390), #1009 (#393) e #1003 (#383, a **0085**, que entra depois do #985 e do #987). **Devolvidos**: #1008 (#909, Lázaro: o aviso do estoque some na recarga), #985 e #987 (Gusta). **10 sem ninguém**, entre elas a #1005 (as datas um dia antes). A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**.
+- **Revisão em nome da Sofia é sempre "Aprovar" ou "Pedir mudança"** (`docs/jeito-de-trabalhar.md`); o painel melhora com a escritorio#119 (aprovada, o Tiago põe na leva).
+- **Faxina**: fechadas #809, #871, #517, #874, #934 e #474; o que sobrou da #934 é a **#1011**. A equipe troca a própria senha de teste pelo programa (#1010, `docs/equipe.md`).
+- **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Vídeo (#995) adiado; visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982).
+- **Com a Sofia**: **#1011 (trocar o CSC da NFC-e)**; a 0084 (#998) e a 0085 no `ssace-teste` quando avisarem; a função de senha no `ssace-teste` se o Tiago avisar erro; publicar e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #842, #906, escritorio#20 (22/11).
+
+### 11/11/2026 (tarde): as revisões de hoje, o #989 e o #1004 na `main`, a #1005 na leva 7
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (sem o teste no PC), #973, #974, #977, #975, #984, **#989 (sugestão de compra) e #1004 (fluxo de caixa)**.
+- **Leva 7**: **#1003 devolvido ao Tiago** (a migration vira **0085** e a loja entra no nome do pacote); #985 e #987 com o Gusta; o **#986 espera o teste do Tiago no PC**. A ordem do banco: #985 (0083) → #987 (0084) → #1003 (0085). A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
+- **#1005 entrou na leva 7** (Sofia, 11/11): as datas um dia antes em 8 lugares (vencimento das contas, a cobrança do WhatsApp, os pedidos de compra), já nas lojas. Livre, 2 h.
+- **Vídeo (#995) adiado**; a #996 espera. **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar) e a 0085 quando chegar a vez do #1003; publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).
+
+### 11/11/2026 (madrugada): a ordem das próximas semanas e o vídeo adiado
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373).
+- **Leva 7** (20 tarefas): **devolvidos ao Gusta**: #985 (importação) e #987 (retornos, a **0084** em cima do #985); **#986 e #989 aprovados**, falta o teste do Tiago no PC. **15 sem ninguém.** A ordem (Sofia, 10/11): **fechar a leva 7 inteira, tudo testado**, antes da próxima.
+- **Vídeo (#995) adiado** (Sofia, 10/11): saiu da leva 7 e do painel; volta depois, no Opus. A #996 espera.
+- **Leva 8**: planejada pela Sofia na **quinta 12/11 de manhã** (o plano fica no privado). Visual novo (#990) depois.
+- **`ssace-teste` na 83**; o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; o ensaio de 14 e 15/11 (#877); #513, #501, #934, #842, #906, escritorio#20 (22/11).
+
+### 10/11/2026 (noite): revisões da leva 7, o banco de teste na 83 e o painel com "com quem está a bola"
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC), #973, #974, #977, #975 (#969) e #984 (#373, Clientes por página).
+- **Leva 7** (21 tarefas, com a #995): **devolvidos, esperando o Gusta**: #985 (importação; opção A no homônimo) e #987 (retornos: vira **0084** em cima do #985, atrasados até 12 meses); **#986 e #989 aprovados** (o #989 já desconta a devolução da OS), falta o teste do Tiago no PC. Novas sem leva: #988, #992, #993, #1000 (e #978, #979). O #929 fechou (opção B; a C virou a #1000).
+- **`ssace-teste` na 83** (a 0083 do #985); o CEST das peças foi à mão (#982; falta a equipe abrir e salvar uma peça).
+- **Painel**: o "Em revisão" diz com quem está a bola (Em revisão / Devolvido / Em revisão de novo / Aprovado, falta teste no PC; escritorio#115 e #116).
+- **Vídeo de divulgação**: roteiro aprovado na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois a sessão final dela, #996. Ideia: aba "Produção de vídeo" (escritorio#114).
+- **Com a Sofia**: #998 (a 0084 no `ssace-teste`, quando o Gusta avisar); publicar a próxima versão e o teste do fim de semana; #996; #513 (pergunta mandada à Focus, esperando), #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e a folha enviadas à equipe; esperando os conceitos.
+
+### 10/11/2026 (noite): o vídeo de divulgação planejado e no painel (#995, #996)
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 e o #994 também já entraram.
+- **Leva 7**: 21 tarefas no modelo (as 20 de 10/11 e a #995). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`. PRs abertos da leva: #985 (Gusta) e #986 (Tiago).
+- **Vídeo de divulgação**: roteiro aprovado (atemporal, vertical, voz feminina por IA, sem contato) na #995 (equipe, no **Fable até 16/11**, terminar até 14/11); depois, a sessão final dela, #996 (escolher a voz ouvindo e fechar). Ideia guardada: aba "Produção de vídeo" no painel (escritorio#114).
+- **Com a Sofia**: #982 (dados de exemplo no `ssace-teste`); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #996; #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos.
+
+### 10/11/2026 (tarde): fotos das telas pra equipe e o plano do visual novo (#990)
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). A #969 entrou na `main` pelo #975; da leva 7, o #984 também já entrou.
+- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
+- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
+- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+- **Visual novo (#990)**: fotos e folha "o que cada tela precisa ter" enviadas à equipe em 10/11; pode mudar tudo, até a marca. Esperando os conceitos. Antes vem o **vídeo de divulgação** (sessão própria).
+
+### 10/11/2026: a leva 6 aprovada (#980) e a leva 7 aberta, com 20 tarefas
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. Na `main`, pra próxima versão: #971 (prévia do PDF, sem o teste no PC: o banco de teste não emite), #973, #974 e #977.
+- **Leva 6 aprovada** com os testes adiados (`docs/relatorios/leva-6.md`). Aberta só a #969: o #975 voltou pro Gusta (falta a `key` em Clientes).
+- **Leva 7**: 20 tarefas no modelo, com as recomendações aceitas por ela (#373, #374, #381 a #384, #389, #390, #393, #397, #457, #720, #803, #909, #915, #927, #932, #948, #951, #981). A #381 e a #383 trazem migration: o teste no PC espera ela aplicar no `ssace-teste`.
+- **Novas sem leva**: #978 (garantia sem escapar o HTML) e #979 (parcela calculada na tela). Fora da leva, esperando perguntas: #380, #399, #400, #371 e o DRE.
+- **Com a Sofia**: rodar o `dados-de-exemplo.sql` no `ssace-teste` (#982); publicar a próxima versão e o teste do fim de semana (seção 5 do relatório da leva 6); #513, #501, #934, #842 (depois do ensaio de 14 e 15/11), #906, escritorio#20 (22/11).
+
+### 09/11/2026, tarde: o #953 mesclado; o #971 esperando o teste no PC
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada. A NFS-e nº 1 saiu autorizada (OS 18); a prévia do PDF na janela fica vazia (#965), o "Baixar PDF" funciona.
+- **Mesclados hoje**: #960, #961, #963, #964, **#953** (peça parecida: LE/LD, 82T × 86T, "(inativa)") e escritorio#107.
+- **#971** (#965, prévia do PDF): aprovado e com o CI verde; a CSP do app fica fora só do visualizador de PDF do Electron (decidido). **Falta o Tiago testar no PC** (app buildado), e aí ele entra.
+- **Leva 6**: #966, #967, #968 e #969 ainda **sem PR**. A próxima sessão revisa o que chegar.
+- **Escritório**: a leva 3 fechou e a leva nova ficou **adiada** (candidatas: escritorio#37 e #13; rascunhos do Tiago quando ela quiser).
+- **Com a Sofia**: #513 (CNPJ com letras, destrava o #962); #501 (texto de garantia); os tributos aproximados com "-" no DANFSe; o QR do Pix e o "API Keys" (#934); faxina das `sofia` antigas.
+- **Seguem valendo**: #842 (token, depois do ensaio de 14 e 15/11, #877); #951, a troca do CSC; #906 (fim de semana); #912 caso 2; escritorio#20 (22/11).
+
+### 09/11/2026: a primeira NFS-e Nacional autorizada; a 0.9.57 liberada; leva 6 reaberta
+- **Pneus Amigão**: banco na **0082**, a **0.9.57** liberada (sem a IM, #956, e sem a alíquota pro Simples, #958). A **NFS-e nº 1 saiu autorizada** (OS 18); a #837 fechou. A prévia do PDF na janela fica vazia (#965); o "Baixar PDF" funciona.
+- **Mesclados**: #960, #961, #963, #964 (a leva 6 de hoje) e escritorio#107. O **#953** voltou pro Tiago com "Request changes" (82T × 86T e o `/code-review`).
+- **Leva 6 reaberta** com #965, #966, #967, #968 e #969 (todas pegáveis). Triagem #886 fechada; proposta do spa adiada (secundarios#4); #888 respondida.
+- **`ssace-teste`** na 82, com o fiscal das peças de exemplo; o `dados-de-exemplo.sql` inteiro espera o token sair (#842, depois do ensaio de 14 e 15/11, #877).
+- **Com a Sofia**: a pergunta do CNPJ com letras pra Focus (#513, destrava o #962); o "Texto de garantia" (#501); a linha dos tributos aproximados com "-" no DANFSe (contabilidade); ler o QR do Pix e o "API Keys" (#934); faxina das `sofia` antigas.
+- **Seguem valendo**: #951, a troca do CSC; #906 (fim de semana); #912 caso 2; escritorio#20 (22/11).
+
+### 07/11/2026: a avaliação no Google (0082) e os textos do #865 na `main`
+- **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e seguimos **esperando a Focus** (#837; o conserto do programa é a #948).
+- **Mesclados hoje**: o #945 (avaliação no Google pelo WhatsApp, **migration 0082**; `VERSAO_ESQUEMA_ESPERADA` = 82) e o #954 (os textos "API Keys" e o do computador atrasado, #865).
+- **#953** (peça parecida, #708): voltou pro Tiago. Decidido: "82T" × "86T" são peças diferentes (só "com × sem índice" avisa); falta o `/code-review` colado.
+- **Antes da próxima versão**: aplicar a **0081 e depois a 0082** nas empresas e no `ssace-teste`. Depois de publicar: ler o QR do Pix no app do banco e conferir "API Keys" num computador novo (#934).
+- **Seguem valendo**: #950, #951, #947, a troca do CSC, escritorio#106; o resto da #934; #906 (fim de semana); #912 caso 2; #842 (11/11); escritorio#20 (22/11).
+
+### 06/11/2026, noite: a fila da equipe revisada; o Pix (0081) na `main`
+- **Pneus Amigão**: banco na 0080, os 2 PCs na 0.9.56. A primeira NFS-e Nacional foi recusada pela IM e estamos **esperando a Focus** (#837; o conserto do programa é a #948).
+- **Mesclados à noite**: o #944 (NFC-e de pessoa física sem CPF) e o #941 (Pix na cobrança e QR no faturamento, **migration 0081**, `qrcode.react`); `VERSAO_ESQUEMA_ESPERADA` = 81. No escritório: o #102, o #103 e o #104.
+- **#945** (avaliação no Google, 0082): voltou pro Tiago (rebase sobre o #941 e a tabela na exclusão de loja). Decidido: botões numa linha. A 0082 vai **depois** da 0081.
+- **Antes da próxima versão**: aplicar a 0081 nas empresas e no `ssace-teste`. Depois de publicar: ler o QR do Pix no app do banco (#934).
+- **Novos**: #950 (aviso de CPF na NFC-e), #951 (excluir loja com textos de WhatsApp), escritorio#106 (limite de etiquetas do painel); e seguem a #947 e a troca do CSC.
+- **Seguem valendo**: o resto da #934; #906 (fim de semana); #912 caso 2; #842 (11/11); escritorio#20 (22/11).
+
+### 06/11/2026, noite: banco na 0080 na loja; a primeira NFS-e Nacional recusada pela IM
+- **Pneus Amigão**: os 2 computadores na 0.9.56; "Atualizar o banco" aplicado (0075 → **0080**); Início conferido; Focus com "NFSe Nacional – Produção" ligada (série 1); **6%** nos Dados fiscais.
+- **Primeira nota** (OS 18, real, sem OS de teste por escolha dela): **recusada**, "IM do prestador não deve ser informado". A inscrição municipal foi apagada no programa e no cadastro da Focus, e o erro continua. **Mensagem mandada ao suporte da Focus** (06/11). Detalhe na #837; conserto do programa na #948.
+- **Próximo**: a resposta da Focus → emitir a OS 18 → as notas atrasadas desde 01/11 → fechar a #837. Plano B se demorar: Emissor Nacional.
+- **Novos**: #947 (Configurações: o "salvo" não aparece e a tela pula pro topo); trocar o CSC da NFC-e (apareceu num print; item na #934).
+- **Seguem valendo**: o resto da #934 (`ssace-teste` 0077 a 0080, o Send do Lázaro, #941, #944, #945); #906 (fim de semana); #912 caso 2; #842 (11/11), escritorio#20 (22/11).
+
+### 06/11/2026: a fila do banco e a NFS-e Nacional na 0.9.56 (liberada); o Lázaro de volta
+- **Na `main`**: #857 (terminado pela Sofia), #936, #912, #923 (0077 a 0080), #839 (NFS-e Nacional), #938 (#853), #939 (verificador de senhas), #942/#943 (Lázaro e roteiro). **0.9.56 publicada e liberada**; porteiro `focus-nfe` novo publicado na loja.
+- **NFS-e, próximos passos**: Balcão e DESKTOP-PKJ2A3B na 0.9.56 (pedido na loja) → "Atualizar o banco" (ensaiar, aplicar: 0076 a 0080) → conferir os números do Início → Focus: "NFSe Nacional – Produção" → **6%** nos Dados fiscais → ensaio em produção (emitir e cancelar; conferir XML, chave e relógio, `docs/pendencias-e-futuro.md`) → notas atrasadas desde 01/11 → fechar a #837.
+- **Passar pra #934** (o GitHub da sessão caiu no fim): os passos acima; aplicar 0077 a 0080 no `ssace-teste`; apagar o Send do Lázaro; revisar o #941 (Tiago, Pix, 0081) numa sessão própria.
+- **Lázaro**: conta nova `2oraza` (a `1oraza` saiu), Write nos 3 repositórios, ambiente `sakura` (rede Total), caderno pronto (#619). Pega tarefa pelo painel.
+- **Seguem valendo**: #906 (Electron 44, fim de semana); #912 caso 2 (A/B/C, #803); #933 (apt do Playwright); #879; #842 (11/11), escritorio#20 (22/11).
+
+### 05/11/2026, tarde: a fila do banco destravada do #839; a contabilidade respondeu
+- **Banco, nesta ordem**: #857 (0077, Gustavo, com pedido de mudança formal) → #936 (0078, separada do #882 pra não esperar a Focus) → #912 (0079) → #923 (0080). O banco de teste já está na 78. O #882 (Tiago) entrou na branch do #839.
+- **Contabilidade (05/11)**: percentual do Simples **6%** (cadastrar nos Dados fiscais quando o #839 chegar na loja); a alíquota do mês no Giap acabou (libera a #853); CSOSN 500 vai com CFOP 5405 (#864).
+- **NFS-e Nacional (#839)**: espera só a Focus (Araraquara na homologação).
+- **Sofia (#934)**: o Electron 44 (#906) no fim de semana e as decisões da lista; passar ao Lázaro o nível de rede do ambiente na nuvem.
+- **Equipe**: o Lázaro voltou com o PC (montar com o "Primeiro dia" e o "Claude na nuvem" do `docs/equipe.md`); o Tiago no ensaio da NFS-e; a #853 sem dono.
+- **Seguem valendo**: #933 (apt do Playwright); #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
+### 05/11/2026: a madrugada de cota; ~30 PRs mesclados (lista e pendências na #934)
+- **Entrou**: #870 (dependências), #498 e #897 (loja grande), #875 (contas pra `src/schemas`), #876 (telas), #720/#721, #881, #903, #911, #872 e 6 pequenas; no escritório, #33, #89, #83 e #95. Privado: a medição do CI (#442).
+- **Banco, nesta ordem**: #857 (0077) → #882 (0078, Tiago) → #912 (0079) → #923 (0080). O CI dos dois últimos fica vermelho no "sem buraco" até lá.
+- **Sofia (#934)**: testar o Electron 44 (#906) no fim de semana; decidir #896, #929, #720, a cor dos avisos e o faturar do #912; conferir no PC; fechar à mão as issues que o "Fecha" não fechou.
+- **O Tiago**: os pedidos de mudança no #882 e no escritorio#99; a #888; triar a #886.
+- **CI**: o apt do Playwright ainda derruba job de tela quando o espelho fica lento (#933).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #879 (skills em rascunho); #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
+### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
+- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
+- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
+- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
+- **Sessões**: todas arquivadas (#519, fechada).
+- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
+- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
+- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+
 ### 04/11/2026, noite: a varredura geral dos 4 repositórios; docs em dia; 20 tarefas novas
 - **Varredura** (6 ajudantes, só leitura) e o que veio dela: docs em dia e textos simples na tela (#868, mesclado), 12 tarefas fechadas, 20 novas (#869 a #881, #883 a #886; escritorio#89 a #91).
 - **O mais sério**: o Electron 40 sem suporte (#869, depois do teste dela da 40) e 4 alertas nas dependências (#870).
@@ -947,7 +1148,7 @@ em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `d
 - **Assuntos da empresa com a equipe**, decididos e revisados pelo advogado em 14/10: ficam **no
   privado** (`EMPRESA.md` e `contratos/README.md` do `caranovavidanova/sakura-corp`).
 - **A equipe vai mexer também no programa das lojas** (decidido em 13/10): uma pessoa no painel e
-  duas no programa, com tarefas da onda 1 de `docs/visao.md`, primeiro as que deixam a entrada de
+  duas no programa, com tarefas da onda 1 de `docs/visao.md` (mora no `sakura-corp/escritorio`, privado), primeiro as que deixam a entrada de
   loja nova mais rápida (ex.: a #457). Detalhe no privado, `EQUIPE.md`.
 - **O painel estava parado em 13/10**: a tarefa 2 (#351) com o Gustavo desde 01/10, sem PR.
 
@@ -970,7 +1171,7 @@ em 08/10; banco na **`0064`**. O marco anterior (12 e 13/10) está no topo de `d
 em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/historico.md`.
 
 #### O que foi feito
-- **A visão dela, documentada e aprovada** (`docs/visao.md`), a partir do artigo "Services: The
+- **A visão dela, documentada e aprovada** (`docs/visao.md`, que mora no `sakura-corp/escritorio`, privado), a partir do artigo "Services: The
   New Software" (Sequoia): um programa só pra loja inteira, o máximo automático, integração com o
   WhatsApp e, mais pra frente, um assistente de IA. Os princípios que ela confirmou: **a IA
   sugere, a pessoa confirma**, com a dinâmica do assistente muito bem planejada antes de qualquer
@@ -1005,7 +1206,7 @@ em 08/10; banco na **`0064`**. O marco anterior (08/10) está no topo de `docs/h
      14/10;
    - o WhatsApp e o horário do suporte;
    - o **acordo de vesting ou memorando com os amigos**, que o advogado pediu pra não demorar.
-5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md`.
+5. **Quando ela quiser construir**: a onda 1 de `docs/visao.md` (mora no `sakura-corp/escritorio`, privado).
 6. **Ainda vale**:
    - o Balcão pegar a `v0.9.51` (conferir no Diagnóstico);
    - o salto 2 do Electron (40);
@@ -1389,7 +1590,7 @@ falta virou tarefa, #361 a #412) está no topo de `docs/historico.md`.
 3. **Quando ela disser "faz a tarefa N"**: ler a issue inteira, fazer as perguntas do "Precisa da
    Sofia?" antes de começar, e o PR fecha a issue (`Closes #N`); a linha sai da tabela da seção 8.
    Sugestão de ordem, se ela perguntar: os ajustes rápidos (#361 a #363) e depois o
-   `docs/comparativo-anexar.md`, "Sugestão de ordem".
+   `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado), "Sugestão de ordem".
 4. **A lista "O que depende dela"** (seção 8). Com data (a alíquota de 10/2026
    foi cadastrada em 1º/10): a fatura da Focus em 10/10; o que vem do CNPJ depois de 16/10 (no
    privado).
@@ -1418,7 +1619,7 @@ travas, senhas e o painel) está no topo de `docs/historico.md`.
   - #386 a #412 (etiqueta `guia`): o que o concorrente tem e nós não, inclusive o **DRE em três
     partes, nesta ordem** (#386, #387, #388). O orçamento rápido entrou na #379 e a assinatura na
     #380. A tabela com todas está na seção 8; o número de cada uma também está em
-    `docs/comparativo-anexar.md`.
+    `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado).
 
 #### Por onde a próxima sessão começa
 1. **Gustavo (`kalendoscope`) já está dentro** (30/09, à noite): membro da `sakura-corp`, **Write**
@@ -1431,7 +1632,7 @@ travas, senhas e o painel) está no topo de `docs/historico.md`.
 4. **Quando ela disser "faz a tarefa N"**: ler a issue inteira, fazer as perguntas do "Precisa da
    Sofia?" antes de começar, e o PR fecha a issue (`Closes #N`); a linha sai da tabela da seção 8.
    Sugestão de ordem, se ela perguntar: os ajustes rápidos (#361 a #363) e depois o
-   `docs/comparativo-anexar.md`, "Sugestão de ordem".
+   `docs/comparativo-anexar.md` (mora no `sakura-corp/escritorio`, privado), "Sugestão de ordem".
 5. **A lista "O que depende dela"** (seção 8). Com data: **1º/10, a alíquota de 10/2026** no
    portal da prefeitura; o CNPJ (contratado em 30/09, sai em 10 a 20 dias; detalhe no privado); a
    fatura da Focus em 10/10.
@@ -1621,7 +1822,7 @@ ele deixou em aberto continua valendo**.
 
 **Estado do código**: não mudou. `main` na **`v0.9.46`** (publicada e liberada), banco na **`0064`**.
 
-- **Comparativo com o Anexar** (`docs/comparativo-anexar.md`): ela mandou 8 prints do site do
+- **Comparativo com o Anexar** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado): ela mandou 8 prints do site do
   concorrente. Dos 56 recursos que eles anunciam, temos 12, temos em parte 10 e faltam 34. Os que
   mais pesam: orçamento (`FN-01`), checklist com fotos e assinatura (`FN-02`), agenda (`FN-05`),
   devolução (`FN-08`), DRE, curva ABC, fluxo de caixa projetado e o app de celular. **É lista de

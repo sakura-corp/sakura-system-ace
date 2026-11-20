@@ -9,16 +9,38 @@ import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 // nome da loja. O que o sistema pode fazer é lembrar antes de falhar, que é
 // justamente o que ele faz bem.
 //
-// O passo a passo abaixo é o de Araraquara (portal Giap). Como isso muda de
-// município pra município, ele é só o PADRÃO — a loja pode trocar o texto em
-// Configurações → Dados fiscais, e aí o que vale é o texto dela.
-export const PASSO_A_PASSO_ALIQUOTA_PADRAO = [
+// O caminho dentro do portal muda de município pra município. A loja pode
+// escrever o dela em Configurações → Dados fiscais, e aí o que vale é o texto
+// dela. Em branco, vale o PADRÃO da cidade da loja (pelo código IBGE): o
+// caminho do portal de Araraquara (Giap) só pra loja de Araraquara, e pras
+// outras um texto geral (#876 — antes o de Araraquara aparecia pra todas).
+export const CODIGO_IBGE_ARARAQUARA = "3503208";
+
+export const PASSO_A_PASSO_ALIQUOTA_ARARAQUARA = [
   "1. Entre no portal da prefeitura (site da prefeitura → Serviços Empresa → Nota Fiscal",
   "   Eletrônica → Contribuintes).",
   "2. Menu “Emissor/Consulta NFS-e” → tela “Cadastro de Alíquota”.",
   "3. Preencha Mês/Ano (a competência deste mês), a Alíquota e a Atividade.",
   "4. Clique em “Replicar Alíquota” — é o botão que salva (o outro é “Voltar”).",
 ].join("\n");
+
+// Aparece também na janela de emissão de NFS-e, pra quem não abre
+// Configurações: por isso fala em "quem administra o sistema".
+export const PASSO_A_PASSO_ALIQUOTA_GERAL =
+  "Peça à contabilidade o caminho no portal da prefeitura da sua cidade. Quem administra " +
+  "o sistema pode deixá-lo escrito em Configurações → Dados fiscais, e aí ele aparece aqui.";
+
+/**
+ * O passo a passo de quando a loja não escreveu o dela, pela cidade (código
+ * IBGE). O campo do código é texto livre: só os dígitos contam, e vale também
+ * o código de 6 dígitos (sem o dígito verificador), que alguns sistemas usam.
+ */
+export function passoAPassoAliquotaPadrao(codigoMunicipio: string | null | undefined): string {
+  const digitos = (codigoMunicipio ?? "").replace(/\D/g, "");
+  const ehAraraquara =
+    digitos === CODIGO_IBGE_ARARAQUARA || digitos === CODIGO_IBGE_ARARAQUARA.slice(0, 6);
+  return ehAraraquara ? PASSO_A_PASSO_ALIQUOTA_ARARAQUARA : PASSO_A_PASSO_ALIQUOTA_GERAL;
+}
 
 /** O mês corrente como competência ("YYYY-MM-01"), no fuso de quem usa. */
 export function competenciaDoMes(hoje: Date = new Date()): string {
@@ -34,10 +56,20 @@ export function mesPorExtenso(competencia: string): string {
 // A loja emite NFS-e? Não existe uma chave dizendo isso — o que existe é a
 // configuração que só quem emite preenche: o token da Focus NFe (que a tela
 // não vê desde o TR-04.2, só sabe que existe — `focus_nfe_configurado`) e a
-// inscrição municipal (que vai no corpo da NFS-e como prestador). Sem isso, o aviso
+// inscrição municipal (que vai como prestador só no caminho municipal, `/v2/nfse`;
+// na NFS-e Nacional ela nunca vai, #948). Sem isso, o aviso
 // mensal seria só chateação pra quem nunca vai emitir nota de serviço.
 export function lojaEmiteNfse(configuracao: ConfiguracaoFiscalLoja | null): boolean {
   return Boolean(configuracao?.focus_nfe_configurado && configuracao?.inscricao_municipal);
+}
+
+// #853: desde 01/11/2026, a loja do Simples Nacional emite a NFS-e pelo
+// Padrão Nacional (PR #839 escolhe o caminho pela mesma regra: o regime nos
+// Dados fiscais). Lá não existe o cadastro mensal da alíquota no portal da
+// prefeitura (confirmado pela contabilidade em 05/11), então o aviso é só
+// pra quem continua no caminho municipal.
+export function nfsePeloPadraoNacional(configuracao: ConfiguracaoFiscalLoja | null): boolean {
+  return configuracao?.regime_tributario === "simples_nacional";
 }
 
 export interface AvisoAliquota {
@@ -47,7 +79,7 @@ export interface AvisoAliquota {
   competencia: string;
   /** O mês por extenso, pro texto do aviso ("setembro"). */
   mes: string;
-  /** O caminho dentro do portal — o da loja, ou o padrão de Araraquara. */
+  /** O caminho dentro do portal — o da loja, ou o padrão da cidade dela. */
   passoAPasso: string;
 }
 
@@ -62,9 +94,14 @@ export function avisoAliquotaCompetencia(
     // Comparado por mês, não por data exata: a coluna guarda sempre o dia 1º,
     // mas um valor gravado à mão com outro dia não deveria fazer o aviso
     // aparecer o mês inteiro.
-    precisa: lojaEmiteNfse(configuracao) && confirmada?.slice(0, 7) !== competencia.slice(0, 7),
+    precisa:
+      lojaEmiteNfse(configuracao) &&
+      !nfsePeloPadraoNacional(configuracao) &&
+      confirmada?.slice(0, 7) !== competencia.slice(0, 7),
     competencia,
     mes: mesPorExtenso(competencia),
-    passoAPasso: configuracao?.aliquota_passo_a_passo?.trim() || PASSO_A_PASSO_ALIQUOTA_PADRAO,
+    passoAPasso:
+      configuracao?.aliquota_passo_a_passo?.trim() ||
+      passoAPassoAliquotaPadrao(configuracao?.codigo_municipio),
   };
 }

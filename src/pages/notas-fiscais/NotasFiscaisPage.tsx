@@ -1,54 +1,44 @@
 import { useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import type { TipoNotaFiscal } from "@/types/notaFiscal";
 import { ArquivosSection } from "./ArquivosSection";
 
+// As abas dizem o que tem em cada uma, com a sigla junto (visual novo,
+// tarefa 12, #990): "NFC-e" sozinho é nome de quem programa. Os mesmos nomes
+// da "Nota do cliente" das Ordens de Serviço (tarefa 7).
+const ABAS: { valor: TipoNotaFiscal; nome: string }[] = [
+  { valor: "nfe", nome: "Notas das peças (NFC-e)" },
+  { valor: "nfse", nome: "Notas dos serviços (NFS-e)" },
+];
+
 export function NotasFiscaisPage() {
   const [aba, setAba] = useState<TipoNotaFiscal>("nfe");
-
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-3">
+      <header className="flex items-start gap-3">
         <BotaoVoltar />
-        <div>
-          <h1 className="text-titulo font-semibold text-sakura-purple-dark">Notas Fiscais</h1>
-          <p className="text-corpo text-sakura-muted">
+        <div className="min-w-0">
+          <h1 className="font-titulo text-titulo font-bold text-texto">Notas Fiscais</h1>
+          <p className="text-corpo text-texto-2">
             As notas de cada mês: as emitidas pelo sistema entram aqui sozinhas, e as feitas
             por fora você envia pelo XML.
           </p>
         </div>
       </header>
 
-      <div className="flex gap-1 border-b border-sakura-gray/30">
-        <AbaBotao label="NFe" ativa={aba === "nfe"} onClick={() => setAba("nfe")} />
-        <AbaBotao label="NFS-e" ativa={aba === "nfse"} onClick={() => setAba("nfse")} />
+      <Abas
+        rotulo="Qual tipo de nota"
+        ativa={aba}
+        aoEscolher={setAba}
+        prefixoId="aba-notas"
+        painel="painel-notas"
+        abas={ABAS}
+      />
+
+      <div role="tabpanel" id="painel-notas" aria-labelledby={`aba-notas-${aba}`}>
+        <ArquivosSection tipo={aba} />
       </div>
-
-      {isSupabaseConfigured && <ArquivosSection tipo={aba} />}
     </div>
-  );
-}
-
-function AbaBotao({
-  label,
-  ativa,
-  onClick,
-}: {
-  label: string;
-  ativa: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 text-corpo font-medium transition-colors ${
-        ativa
-          ? "border-b-2 border-sakura-purple text-sakura-purple-dark"
-          : "text-sakura-purple-dark/85 hover:text-sakura-purple-dark"
-      }`}
-    >
-      {label}
-    </button>
   );
 }

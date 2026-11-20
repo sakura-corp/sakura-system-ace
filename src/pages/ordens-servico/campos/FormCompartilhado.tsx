@@ -1,5 +1,5 @@
 export const inputClasse =
-  "rounded-lg border border-sakura-borda-campo px-3 py-2 focus:border-sakura-purple";
+  "rounded-lg border border-borda-campo px-3 py-2 focus:border-acao";
 
 export function Campo({
   label,
@@ -16,12 +16,12 @@ export function Campo({
 }) {
   return (
     <label className={`flex flex-col gap-1 text-corpo ${className ?? ""}`}>
-      <span className="text-sakura-purple-dark/80">
+      <span className="text-texto/80">
         {label}
-        {obrigatorio && <span className="text-red-500"> *</span>}
+        {obrigatorio && <span className="text-perigo"> *</span>}
       </span>
       {children}
-      {erro && <span className="text-rotulo text-red-300">{erro}</span>}
+      {erro && <span className="text-rotulo text-perigo">{erro}</span>}
     </label>
   );
 }

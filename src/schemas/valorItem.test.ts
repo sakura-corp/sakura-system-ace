@@ -1,0 +1,166 @@
+import { describe, expect, it } from "vitest";
+import { arredondarCentavo } from "./dinheiro";
+import {
+  somarValoresLiquidos,
+  totaisDoDocumento,
+  totalDoPedidoCompra,
+  valorDaPecaEmEstoque,
+  valorDoEstoque,
+  valorLiquidoDoItem,
+} from "./valorItem";
+
+describe("valorLiquidoDoItem", () => {
+  it("sem desconto: quantidade × preço", () => {
+    expect(valorLiquidoDoItem({ quantidade: 4, preco_unitario: 250, desconto: 0 })).toBe(1000);
+  });
+
+  it("com desconto: tira o desconto da linha inteira", () => {
+    expect(valorLiquidoDoItem({ quantidade: 2, preco_unitario: 100, desconto: 15 })).toBe(185);
+  });
+
+  it("quantidade quebrada: não arredonda (quem grava ou manda pra nota arredonda)", () => {
+    // 1,5 × 33,33 = 49,995. Fica com a cauda, igual à conta que estava
+    // espalhada pelas telas; a nota fiscal arredonda por cima (focusNfe).
+    expect(valorLiquidoDoItem({ quantidade: 1.5, preco_unitario: 33.33, desconto: 0 })).toBe(
+      1.5 * 33.33,
+    );
+    expect(valorLiquidoDoItem({ quantidade: 0.5, preco_unitario: 9.9, desconto: 1 })).toBe(
+      0.5 * 9.9 - 1,
+    );
+  });
+});
+
+describe("somarValoresLiquidos", () => {
+  it("lista vazia dá zero", () => {
+    expect(somarValoresLiquidos([])).toBe(0);
+  });
+
+  it("soma as linhas com desconto", () => {
+    expect(
+      somarValoresLiquidos([
+        { quantidade: 2, preco_unitario: 100, desconto: 15 },
+        { quantidade: 1, preco_unitario: 50, desconto: 0 },
+      ]),
+    ).toBe(235);
+  });
+
+  it("dá EXATAMENTE o número da conta antiga, bit a bit (é só mudança de lugar)", () => {
+    // A conta antiga, copiada de src/types/os.ts e de comissoes.ts. A ordem
+    // das operações importa no ponto flutuante: (total + q×p) − d.
+    const antiga = (itens: { quantidade: number; preco_unitario: number; desconto: number }[]) =>
+      itens.reduce(
+        (total, item) => total + item.quantidade * item.preco_unitario - item.desconto,
+        0,
+      );
+    let semente = 7;
+    const sorteio = () => {
+      semente = (semente * 16807) % 2147483647;
+      return semente / 2147483647;
+    };
+    for (let rodada = 0; rodada < 500; rodada++) {
+      const itens = Array.from({ length: 1 + Math.floor(sorteio() * 6) }, () => ({
+        quantidade: Math.round(sorteio() * 400) / 100,
+        preco_unitario: Math.round(sorteio() * 100000) / 100,
+        desconto: Math.round(sorteio() * 2000) / 100,
+      }));
+      expect(somarValoresLiquidos(itens)).toBe(antiga(itens));
+    }
+  });
+
+  it("um item só dá o mesmo que valorLiquidoDoItem", () => {
+    const item = { quantidade: 1.5, preco_unitario: 33.33, desconto: 0.07 };
+    expect(somarValoresLiquidos([item])).toBe(valorLiquidoDoItem(item));
+  });
+});
+
+describe("totalDoPedidoCompra", () => {
+  it("soma quantidade pedida × preço; preço vazio conta zero", () => {
+    expect(
+      totalDoPedidoCompra([
+        { quantidade_pedida: 3, preco_unitario: 10.5 },
+        { quantidade_pedida: 2, preco_unitario: null },
+        { quantidade_pedida: 1, preco_unitario: 4 },
+      ]),
+    ).toBe(35.5);
+  });
+
+  it("lista vazia dá zero", () => {
+    expect(totalDoPedidoCompra([])).toBe(0);
+  });
+});
+
+describe("valorDoEstoque", () => {
+  const pecas = [
+    { id: "a", preco_custo: 10 },
+    { id: "b", preco_custo: null },
+    { id: "c", preco_custo: 2.5 },
+    { id: "d", preco_custo: 7 },
+  ];
+
+  it("saldo × preço de custo; sem custo ou sem saldo conta zero", () => {
+    const saldos = new Map([
+      ["a", 3],
+      ["b", 5],
+      ["c", 4],
+    ]);
+    expect(valorDoEstoque(pecas, saldos)).toBe(40);
+  });
+
+  it("saldo negativo entra negativo (igual à tela de hoje)", () => {
+    expect(valorDoEstoque([{ id: "a", preco_custo: 10 }], new Map([["a", -2]]))).toBe(-20);
+  });
+});
+
+describe("valorDaPecaEmEstoque", () => {
+  it("saldo × preço de custo; sem custo conta zero", () => {
+    expect(valorDaPecaEmEstoque(4, 2.5)).toBe(10);
+    expect(valorDaPecaEmEstoque(4, null)).toBe(0);
+    expect(valorDaPecaEmEstoque(-1, 3)).toBe(-3);
+  });
+});
+
+describe("totaisDoDocumento (#915, documento de garantia)", () => {
+  const itens = [
+    { tipo: "peca", quantidade: 4, preco_unitario: 89.9, desconto: 10 },
+    { tipo: "servico", quantidade: 1, preco_unitario: 60, desconto: 0 },
+    { tipo: "servico", quantidade: 1, preco_unitario: 35.5, desconto: 5.5 },
+    { tipo: "peca", quantidade: 3, preco_unitario: 33.33, desconto: 0.01 },
+  ] as const;
+
+  it("peças e serviços BRUTOS (antes do desconto), os descontos à parte", () => {
+    const totais = totaisDoDocumento(itens);
+    // Bit a bit iguais à conta que o documento fazia à mão.
+    expect(totais.brutoPecas).toBe(0 + 4 * 89.9 + 3 * 33.33);
+    expect(totais.brutoServicos).toBe(0 + 1 * 60 + 1 * 35.5);
+    expect(totais.descontos).toBe(0 + 10 + 0 + 5.5 + 0.01);
+    expect(totais.subtotal).toBe(totais.brutoPecas + totais.brutoServicos);
+  });
+
+  it("o total é a soma dos valores líquidos, fechada no centavo", () => {
+    const totais = totaisDoDocumento(itens);
+    expect(totais.total).toBe(arredondarCentavo(somarValoresLiquidos(itens)));
+    // E fecha com subtotal − descontos (no centavo).
+    expect(totais.total).toBeCloseTo(totais.subtotal - totais.descontos, 9);
+    expect(totais.total).toBeCloseTo(359.6 + 95.5 + 99.99 - 15.51, 9);
+  });
+
+  it("quantidade quebrada: fecha no centavo pra cima, como o valor cobrado (Sofia, 13/11)", () => {
+    // 3,22 × 9,75 − 4,82 + 190,82 = 217,395. Somando linha a linha, o
+    // computador chega em 217,39499999999998; sem arredondar, sairia 217,39.
+    const quebrada = [
+      { tipo: "peca", quantidade: 3.22, preco_unitario: 9.75, desconto: 4.82 },
+      { tipo: "servico", quantidade: 1, preco_unitario: 190.82, desconto: 0 },
+    ];
+    expect(totaisDoDocumento(quebrada).total).toBe(217.4);
+  });
+
+  it("sem itens: tudo zero", () => {
+    expect(totaisDoDocumento([])).toEqual({
+      brutoPecas: 0,
+      brutoServicos: 0,
+      subtotal: 0,
+      descontos: 0,
+      total: 0,
+    });
+  });
+});

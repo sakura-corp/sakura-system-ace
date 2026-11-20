@@ -1,3 +1,6 @@
+import { ChevronLeft, ChevronRight, Clock, Gift, Star, TriangleAlert, type LucideIcon } from "lucide-react";
+import { AreaRolavel } from "@/components/AreaRolavel";
+import { Botao } from "@/components/Botao";
 import { chaveData, diasDoCalendario } from "@/lib/calendario";
 
 export interface EventoCalendario {
@@ -34,8 +37,22 @@ const NOMES_MES = [
   "Dezembro",
 ];
 
-const CLASSE_SETA =
-  "inline-flex h-8 w-8 items-center justify-center rounded-lg text-sakura-purple transition hover:bg-white/10";
+/**
+ * Cada tipo de evento: a cor do ponto no dia, e o ícone e a cor da linha da
+ * lista de datas (regra 4: a cor nunca avisa sozinha, a lista traz ícone e
+ * palavra). Azul é feriado, verde aniversário, amarelo conta a vencer e
+ * vermelho conta vencida: laranja é só de ação (hoje).
+ */
+const APARENCIA_DO_EVENTO: Record<EventoCalendario["tipo"], { ponto: string; cor: string; icone: LucideIcon; nome: string }> = {
+  feriado: { ponto: "bg-info", cor: "text-info", icone: Star, nome: "Feriado" },
+  aniversario: { ponto: "bg-ok", cor: "text-ok", icone: Gift, nome: "Aniversário" },
+  conta_a_vencer: { ponto: "bg-atencao", cor: "text-atencao", icone: Clock, nome: "Conta a vencer" },
+  conta_vencida: { ponto: "bg-perigo", cor: "text-perigo", icone: TriangleAlert, nome: "Conta vencida" },
+};
+
+/** Quantas datas cabem à vista na lista; com mais, ela rola por dentro (nada cresce sem limite). */
+const DATAS_A_VISTA = 3;
+const ALTURA_DA_LISTA_PX = 148;
 
 export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendarioProps) {
   const agora = new Date();
@@ -56,59 +73,85 @@ export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendario
     aoMudarMes?.(destino.getFullYear(), destino.getMonth());
   }
 
+  const datas = [...eventos].sort((a, b) => a.data.localeCompare(b.data));
+  const lista = (
+    <ul className="space-y-1.5 pr-3">
+      {datas.map((evento, i) => {
+        const [, mesEvento, diaEvento] = evento.data.split("-");
+        const deOutroMes = Number(mesEvento) - 1 !== mes;
+        const aparencia = APARENCIA_DO_EVENTO[evento.tipo];
+        const Icone = aparencia.icone;
+        return (
+          <li key={i} className="flex items-start gap-2 text-rotulo text-texto-2">
+            <Icone aria-hidden="true" className={`mt-0.5 size-4 shrink-0 ${aparencia.cor}`} />
+            <span className="w-11 shrink-0 font-semibold text-texto">
+              {deOutroMes ? `${diaEvento}/${mesEvento}` : diaEvento}
+            </span>
+            <span className="min-w-0">
+              <span className="sr-only">{aparencia.nome}: </span>
+              {evento.nome}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div className="sakura-card p-4">
       <div className="mb-3 flex items-center justify-between gap-1">
-        {aoMudarMes && (
-          <button
-            type="button"
-            onClick={() => irParaMes(-1)}
+        {aoMudarMes ? (
+          <Botao
+            variante="fantasma"
+            tamanho="pequeno"
+            soIcone
             aria-label="Mês anterior"
-            title="Mês anterior"
-            className={CLASSE_SETA}
-          >
-            ‹
-          </button>
+            icone={<ChevronLeft aria-hidden="true" />}
+            onClick={() => irParaMes(-1)}
+          />
+        ) : (
+          <span />
         )}
-        <p className="text-corpo font-semibold text-sakura-purple-dark">
+        <p className="font-titulo text-subtitulo font-semibold text-texto">
           {NOMES_MES[mes]} de {ano}
         </p>
-        {aoMudarMes && (
-          <button
-            type="button"
-            onClick={() => irParaMes(1)}
+        {aoMudarMes ? (
+          <Botao
+            variante="fantasma"
+            tamanho="pequeno"
+            soIcone
             aria-label="Próximo mês"
-            title="Próximo mês"
-            className={CLASSE_SETA}
-          >
-            ›
-          </button>
+            icone={<ChevronRight aria-hidden="true" />}
+            onClick={() => irParaMes(1)}
+          />
+        ) : (
+          <span />
         )}
       </div>
 
       {aoMudarMes && !noMesDeHoje && (
-        <button
-          type="button"
+        <Botao
+          variante="secundario"
+          tamanho="pequeno"
+          className="mb-3 w-full justify-center"
           onClick={() => aoMudarMes(agora.getFullYear(), agora.getMonth())}
-          className="mb-3 w-full rounded-lg bg-white/10 py-1 text-rotulo font-medium text-sakura-pink hover:bg-white/20"
         >
           Voltar para hoje
-        </button>
+        </Botao>
       )}
 
       <div className="grid grid-cols-7 gap-1 text-center text-rotulo">
         {DIAS_SEMANA.map((dia, i) => (
-          <div key={i} className="py-1 font-medium text-sakura-purple-dark/75">
+          <div key={i} className="py-1 text-meta font-semibold text-texto-2">
             {dia}
           </div>
         ))}
         {diasDoCalendario(ano, mes).map((data) => {
           const chave = chaveData(data);
           const eventosDoDia = eventosPorData.get(chave) ?? [];
-          const feriado = eventosDoDia.find((e) => e.tipo === "feriado");
-          const aniversario = eventosDoDia.find((e) => e.tipo === "aniversario");
-          const contaVencida = eventosDoDia.find((e) => e.tipo === "conta_vencida");
-          const contaAVencer = eventosDoDia.find((e) => e.tipo === "conta_a_vencer");
+          const tipos = (["feriado", "aniversario", "conta_a_vencer", "conta_vencida"] as const).filter(
+            (t) => eventosDoDia.some((e) => e.tipo === t),
+          );
           const ehHoje = chave === chaveDeHoje;
           // Dia de outro mês: fica visível, mas apagado, pra ler como "isso
           // não é deste mês" sem esconder um vencimento que está chegando.
@@ -117,54 +160,39 @@ export function MiniCalendario({ ano, mes, eventos, aoMudarMes }: MiniCalendario
           return (
             <div
               key={chave}
+              data-dia={chave}
+              data-hoje={ehHoje ? "" : undefined}
               title={eventosDoDia.map((e) => e.nome).join(", ") || undefined}
-              className={`flex flex-col items-center gap-0.5 rounded-lg py-1 ${
+              className={`flex h-9 flex-col items-center justify-center gap-0.5 rounded-[10px] ${
                 ehHoje
-                  ? "bg-sakura-purple text-white"
+                  ? "bg-acao font-bold text-sobre-acao"
                   : deOutroMes
-                    ? "text-sakura-purple-dark/35"
-                    : "text-sakura-purple-dark"
-              } ${feriado && !ehHoje ? "bg-sakura-pink-soft" : ""} ${
-                deOutroMes && !ehHoje ? "opacity-80" : ""
+                    ? "text-texto-3"
+                    : "text-texto"
               }`}
             >
-              <span>{data.getDate()}</span>
-              {(feriado || aniversario || contaVencida || contaAVencer) && (
-                <span className="flex gap-0.5">
-                  {feriado && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-sakura-purple" />
-                  )}
-                  {aniversario && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                  )}
-                  {contaAVencer && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
-                  )}
-                  {contaVencida && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-                  )}
-                </span>
-              )}
+              <span className="leading-none">{data.getDate()}</span>
+              <span className="flex h-1.5 gap-0.5">
+                {tipos.map((t) => (
+                  <span
+                    key={t}
+                    className={`size-1.5 rounded-full ${ehHoje ? "bg-sobre-acao" : APARENCIA_DO_EVENTO[t].ponto}`}
+                  />
+                ))}
+              </span>
             </div>
           );
         })}
       </div>
-      {eventos.length > 0 && (
-        <div className="mt-3 space-y-1 border-t border-sakura-gray/20 pt-3">
-          {[...eventos]
-            .sort((a, b) => a.data.localeCompare(b.data))
-            .map((evento, i) => {
-              const [, mesEvento, diaEvento] = evento.data.split("-");
-              const deOutroMes = Number(mesEvento) - 1 !== mes;
-              return (
-                <p key={i} className="text-rotulo text-sakura-muted">
-                  <span className="font-medium text-sakura-purple-dark">
-                    {deOutroMes ? `${diaEvento}/${mesEvento}` : diaEvento}
-                  </span>{" "}
-                  — {evento.nome}
-                </p>
-              );
-            })}
+      {datas.length > 0 && (
+        <div className="mt-3 border-t border-linha pt-3">
+          {datas.length > DATAS_A_VISTA ? (
+            <div style={{ height: ALTURA_DA_LISTA_PX }}>
+              <AreaRolavel>{lista}</AreaRolavel>
+            </div>
+          ) : (
+            lista
+          )}
         </div>
       )}
     </div>

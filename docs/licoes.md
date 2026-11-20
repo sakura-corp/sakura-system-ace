@@ -7,7 +7,7 @@
 
 ## 6. Dívidas técnicas / pontos de atenção — IMPORTANTE
 
-1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes, Peças/Estoque e Ordens de Serviço; nas outras tabelas, só na tela** — um operador
+1. **Permissão por módulo: no banco em RH, contas, Caixa, Clientes, Peças/Estoque, Ordens de Serviço e (escrito, #880) Fornecedores; nas outras tabelas, só na tela** — um operador
    logado com permissão só de "Caixa", por exemplo, ainda consegue chamar a API do Supabase
    direto pra mexer em "Clientes" se tentar de propósito. RLS exige **login** pra tudo (fecha o
    acesso sem estar logado), mas não reforça por módulo. **Enquanto quem opera é o pai dela e os
@@ -33,8 +33,8 @@
    estoque eram feitas por funções do banco; boa parte era o programa gravando direto, e gravar
    com `.select()` pede a policy de leitura junto. Antes de fechar uma tabela, mapear **quem
    grava**, não só quem lê. **E o custo não mora só em `pecas`**: o preço de compra em
-   `cotacoes_pecas` e `pedidos_compra_itens` (ainda abertas) costuma ser o mesmo número; o lote de
-   Fornecedores é que fecha de vez. **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
+   `cotacoes_pecas` e `pedidos_compra_itens` costuma ser o mesmo número; o lote de
+   Fornecedores é que fecha de vez (lote 7, abaixo). **O lote 6 foi escrito em 28/10/2026** (migrations `0075` e
    `0076`, tarefa #367; a `0075` aplicada, a `0076` esperando os computadores na 0.9.56): `ordens_servico` e `ordens_servico_itens`, lidas
    inteiras só por OS e Relações; Caixa, Garantias, Comissões, Notas, a ficha do veículo e "clientes
    que sumiram" leem por cinco janelas (`ordens_servico_caixa`, `_comissoes`, `_garantias`,
@@ -45,8 +45,19 @@
    silêncio. A pergunta foi pra uma função `security definer` (`ordem_servico_da_loja`). E o
    contrário também vale: nos itens, o `exists` na OS **herdava** a regra de módulo da OS, e um teste
    que tirava o módulo da policy dos itens passou verde; com a função, a regra ficou escrita num
-   lugar só e o teste reprova. As outras **continuam como sempre foram** — o
-   parágrafo acima segue valendo pra fornecedores e o resto (o exemplo do balconista lendo
+   lugar só e o teste reprova. **O lote 7 foi escrito em 05/11/2026** (migration `0080`, tarefa
+   #880, esperando ela aplicar depois da `0076`): `fornecedores`, `cotacoes_pecas`,
+   `pedidos_compra` e `pedidos_compra_itens`, só com Fornecedores (os pedidos, na loja dele). Sem
+   janela: só as telas de Fornecedores leem essas tabelas, e a `juntar_pecas` é `security definer`
+   de admin. Com ele, o preço de compra fecha junto com o custo da peça. A lição do lote 6 se
+   repetiu igual: o item do pedido herdava o módulo pelo `exists` no pedido, e a mutação passava
+   verde; foi pra função `pedido_compra_acessivel`. E uma armadilha do teste: um UPDATE ou DELETE
+   com `where id = ...` (ou com `returning`) passa também pela policy de leitura, então tirar o
+   módulo só da policy de alteração passava verde. O teste certo é o UPDATE/DELETE **sem** `where`
+   e sem `returning`, contando as linhas: aí só a policy do próprio comando decide.
+   As outras **continuam como sempre foram** — o
+   parágrafo acima segue valendo pras tabelas que ainda não têm lote (e pra Fornecedores até a
+   `0080` ser aplicada) (o exemplo do balconista lendo
    Clientes, lá em cima, deixa de valer quando a `0069` for aplicada). **Duas lições novas do
    lote 4**: (1) **quando o programa novo lê por uma janela nova pra TODO MUNDO, abrir a janela
    e fechar a porta são duas migrations** — numa só, ou a versão nova chega antes da janela, ou
@@ -190,7 +201,13 @@
 8. **Padrão de bug: fallback com `??` em vez de `||`** — `src/lib/supabase.ts` já teve um bug real
    assim (tela em branco: `.env` copiado do `.env.example` define variáveis como **string vazia**,
    não ausente, e `??` só troca `null`/`undefined`). Sempre usar `||` pra fallback de
-   `import.meta.env.VITE_*`.
+   `import.meta.env.VITE_*`. **Desde 05/11/2026 o lint pega** (#873; regra `sakura/env-sem-nullish` em
+   `eslint.config.js`, provada em `scripts/regras-de-lint.test.ts`): `??` e `??=` cujo valor da
+   esquerda pode ser um valor do `import.meta.env` (inclusive com `?.`, `.trim()`, `as`, `["X"]`,
+   em cadeia `a ?? env.X ?? y` ou num ramo de `? :`) e o valor padrão ao desestruturar o
+   `import.meta.env`. **Não pega** quem guarda o env numa variável antes
+   (`const env = import.meta.env; env.X ?? y`) ou o copia com spread (`{ ...import.meta.env }`):
+   nesses casos, olhar à mão.
 9. **Padrão de bug: caminho absoluto de asset quebra só no instalador** — `src="/..."` ou
    `url(/...)` funciona em `npm run dev` (Vite serve a partir de `/`) mas quebra no app empacotado
    (Electron carrega via `file://`, onde `/` tenta ler a raiz do disco). Usar sempre
@@ -1750,6 +1767,8 @@
     O relatório do Tiago dizia "Fecha #620": o PR mesclou e a #620 ficou aberta, e foi fechada à
     mão. **Regra**: sempre `Closes #N` (já está em `docs/equipe.md`, "O dia a dia"); quem confere
     o PR olha se a issue fechou junto.
+    **De novo em 05/11/2026** (a madrugada): 9 issues ficaram abertas com o PR mesclado (lista na
+    #934). A mensagem pras sessões filhas agora diz `Closes #N` com todas as letras.
 
 85. **Link de Send num print de conversa (19/10/2026).** Um print do WhatsApp mandado pra sessão
     mostrava o link inteiro de um Bitwarden Send (o que vem depois do `#` é a chave que abre). A
@@ -1830,4 +1849,43 @@
     estava toda fechada, mas o `docs/relatorios/leva-5.md` não estava na `main`. Sem ele a leva 5 fica em
     "Testando", e a leva seguinte fica em "Montando", que não deixa ninguém pegar tarefa. **Regra**: quando
     a equipe disser que não há o que pegar, conferir primeiro se a leva anterior tem o relatório na `main`;
-    o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar.
+    o conserto é escrever o relatório (`docs/relatorios/modelo-leva.md`) e a Sofia mesclar. **Aconteceu
+    de novo em 10/11** (a leva 7 em "Montando" atrás da 6, #980): ao abrir uma leva nova, já conferir se a
+    anterior tem o relatório na `main`.
+
+96. **Mesclar com o CI ainda rodando (05/11/2026, #925).** Uma sessão filha mesclou antes de os jobs
+    de tela terminarem. Um deles caiu porque a máquina do GitHub demorou mais de 8 min no apt
+    instalando o Playwright, não por causa do PR. Não quebrou nada (o #931, que já tinha o #925,
+    passou nos 7), mas foi sorte. **Regra**: mesclar só com **todos** os jobs terminados e verdes.
+    Se um cair por causa da máquina, rodar de novo só os que falharam ("Re-run failed jobs") e
+    esperar. O conserto do apt é a #933.
+97. **Migration num PR que aponta pra branch de outro PR prende a fila (05/11/2026, #882 → #936).**
+    O #882 levava a 0078, mas a base dele era a branch do #839, que espera a Focus. Como a 0079 e a
+    0080 vêm depois, o #912 e o #923 ficaram presos sem prazo, mesmo prontos. **Regra**: migration
+    vai sempre num PR direto pra `main`. Se o resto do trabalho depende de outro PR, separar só a
+    migration num PR pequeno (foi o #936, igual byte a byte).
+98. **Pedido de mudança só num comentário não chega na pessoa (05/11/2026, #857).** Os pedidos de
+    04/11 ao Gustavo ficaram num comentário comum, e o PR continuou aparecendo como "esperando a
+    revisão da Sofia": cada um achava que a vez era do outro. **Regra**: pedir mudança sempre pelo
+    "Review changes" → **Request changes** (e pôr a pessoa como responsável do PR). Assim o GitHub
+    mostra "Changes requested" e a sessão dela lista isso nas pendências (seção 0).
+
+99. **NFS-e Nacional do Simples: o Ambiente Nacional recusa campo "a mais" (06 a 09/11/2026, #837).**
+    A primeira nota da Pneus Amigão foi recusada duas vezes por campos que o leiaute aceita mas o
+    governo não quer naquele caso: a **IM do prestador** (Araraquara não tem as informações
+    complementares no CNC NFS-e) e a **alíquota do ISS** (ME/EPP do Simples, com o ISS apurado pelo
+    Simples e sem retenção: o ISS vai no DAS). Os dois foram tirados (#956, #958) e a nota saiu.
+    **Regra**: na nota nacional, mandar só o que é obrigatório pro caso da loja; campo opcional
+    entra só quando a documentação ou a recusa mostrar que é preciso. E a mensagem de recusa da
+    DPS diz o campo e o motivo: ler antes de abrir ticket (a Focus levou 3 dias pra apontar a IM).
+100. **"Fecha #N" no PR não fecha a issue (09 e 10/11/2026, #956 → #948).** O PR consertou a #948 e
+    entrou na 0.9.57, mas a issue ficou aberta e quase voltou pra leva 7 como tarefa nova. O GitHub só
+    fecha a issue sozinho com as palavras em inglês: `Closes #N`, `Fixes #N` ou `Resolves #N`.
+    **Regra**: no PR, sempre `Closes #N` (pode vir com a explicação em português depois). Ao montar
+    uma leva, conferir se alguma issue aberta já tem PR mesclado.
+101. **Botão desligado com meia opacidade some quando a letra é escura (14/11/2026, #1043).** As telas
+    desligam o botão com `disabled:opacity-50`, e com a letra branca do tema antigo isso se lia. No
+    visual novo a letra do botão laranja é escura, e a meia opacidade deu 2,4:1 em dois botões
+    ("+ Adicionar", "Ler arquivo"): o `contraste:telas` pegou, o `npm run contraste` não tinha como.
+    **Regra**: botão desligado troca de cor (cinza sólido, letra secundária), não só de opacidade. Há
+    uma regra de ponte no `globals.css` pros botões antigos; o componente `Botao` novo já nasce assim.

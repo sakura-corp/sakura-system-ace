@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
+import { useAuth } from "@/contexts/AuthContext";
+import { mensagemDeErro } from "@/lib/errors";
+import { cadastrarPecaDoItem } from "@/lib/ordensServico";
 import {
   pendenciasDaAprovacao,
   vinculosDaAprovacao,
@@ -11,8 +14,12 @@ import { acharPecasParecidas, LIMITE_NOME_PARA_ORDENAR } from "@/schemas/pecaPar
 import type { ItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import { CadastroPecaAvulsaModal } from "./CadastroPecaAvulsaModal";
-
-type Modo = "existente" | "cadastrar" | "sem_cadastro";
+import {
+  AVISO_PECA_SOBROU,
+  type EscolhasDaJanela,
+  type ModoAvulsa as Modo,
+} from "./escolhasAvulsas";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 const ROTULO_DO_MODO: Record<Modo, string> = {
   existente: "É uma peça que já tenho",
@@ -26,11 +33,25 @@ interface PecasAvulsasAprovacaoModalProps {
   /** O cadastro da loja: de onde se escolhe a peça que "já tenho". */
   pecas: PecaJanela[];
   lojaId: string;
+  /**
+   * O que a pessoa já escolheu nesta aprovação. Mora em quem abre a janela,
+   * não nela: com "Voltar" a janela fecha, e as escolhas (principalmente a
+   * peça já cadastrada) têm que estar lá quando ela abrir de novo, senão a
+   * pessoa cadastra outra e a primeira sobra no cadastro (#720).
+   */
+  escolhas: EscolhasDaJanela;
+  onMudarEscolhas: (mudar: (atual: EscolhasDaJanela) => EscolhasDaJanela) => void;
   /** Aprovando agora: trava os botões até a resposta voltar. */
   enviando: boolean;
   /** Erro da aprovação, mostrado aqui dentro pra janela não esconder. */
   erro: string | null;
   onConfirmar: (vinculos: { itemId: string; pecaId: string }[]) => void;
+  /**
+   * A peça cadastrada aqui foi ligada ao item na hora (#720), ou o item já
+   * não era avulso: ele sai da lista, e quem abriu a janela recarrega o
+   * orçamento.
+   */
+  onItemLigado: (itemId: string) => void | Promise<void>;
   onFechar: () => void;
 }
 
@@ -44,15 +65,33 @@ export function PecasAvulsasAprovacaoModal({
   itens,
   pecas,
   lojaId,
+  escolhas: escolhasDaJanela,
+  onMudarEscolhas,
   enviando,
   erro,
   onConfirmar,
+  onItemLigado,
   onFechar,
 }: PecasAvulsasAprovacaoModalProps) {
-  const [modos, setModos] = useState<Record<string, Modo>>({});
-  const [escolhidas, setEscolhidas] = useState<Record<string, string>>({});
-  const [cadastradas, setCadastradas] = useState<Record<string, PecaJanela>>({});
+  const { operador } = useAuth();
+  const { modos, escolhidas, cadastradas } = escolhasDaJanela;
+  const setModos = (mudar: (m: Record<string, Modo>) => Record<string, Modo>) =>
+    onMudarEscolhas((e) => ({ ...e, modos: mudar(e.modos) }));
+  const setEscolhidas = (mudar: (m: Record<string, string>) => Record<string, string>) =>
+    onMudarEscolhas((e) => ({ ...e, escolhidas: mudar(e.escolhidas) }));
+  const setCadastradas = (
+    mudar: (m: Record<string, PecaJanela>) => Record<string, PecaJanela>,
+  ) => onMudarEscolhas((e) => ({ ...e, cadastradas: mudar(e.cadastradas) }));
   const [cadastrando, setCadastrando] = useState<ItemOS | null>(null);
+  // A peça foi cadastrada, mas o estoque inicial não entrou (#909): só avisa,
+  // um aviso por item (pra um não apagar o outro). Fica na área de avisos da
+  // janela, e não na linha do item: ligada a peça (#720), o item sai da lista.
+  const [avisosEstoqueInicial, setAvisosEstoqueInicial] = useState<Record<string, string>>({});
+  // Quantas peças recém-cadastradas estão sendo ligadas agora: o Aprovar
+  // espera TODAS, pra não mandar o vínculo de um item que o banco está ligando
+  // (uma contagem, e não sim/não: a primeira a acabar não pode soltar o botão).
+  const [ligando, setLigando] = useState(0);
+  const [aviso, setAviso] = useState<string | null>(null);
 
   // O que a pessoa escolheu, no formato que as regras entendem. "Existente"
   // sem peça escolhida e "cadastrar" sem peça criada ficam com id vazio, e
@@ -83,6 +122,38 @@ export function PecasAvulsasAprovacaoModal({
     return [...pecas, ...new Map(novas.map((peca) => [peca.id, peca])).values()];
   }, [pecas, cadastradas]);
 
+  // A peça nasceu no cadastro: liga ao item JÁ (#720), como a janela da nota
+  // faz. Esperar a aprovação deixava a peça solta se a pessoa fechasse o
+  // orçamento ou outro computador aprovasse antes. Em orçamento o banco só
+  // liga, sem baixar (migration 0079); a aprovação é que baixa.
+  async function aoCadastrar(item: ItemOS, peca: PecaJanela) {
+    // Guardada como caminho antes de tudo: se ligar falhar, a aprovação liga.
+    setCadastradas((c) => ({ ...c, [item.id]: peca }));
+    setModos((m) => ({ ...m, [item.id]: "cadastrar" }));
+    setCadastrando(null);
+    setAviso(null);
+    if (!operador) {
+      setAviso("A peça foi cadastrada, mas não foi ligada ao item agora: o login caiu. Ao aprovar, ela é ligada.");
+      return;
+    }
+    setLigando((n) => n + 1);
+    try {
+      const ligou = await cadastrarPecaDoItem(item.id, peca.id, operador.id);
+      if (!ligou) setAviso(AVISO_PECA_SOBROU);
+    } catch (err) {
+      console.error("Erro ao ligar a peça cadastrada ao item do orçamento:", err);
+      setAviso(
+        `A peça foi cadastrada, mas não foi ligada ao item agora: ${mensagemDeErro(err)}. ` +
+          "Ao aprovar, ela é ligada.",
+      );
+      return;
+    } finally {
+      setLigando((n) => n - 1);
+    }
+    // Ligou (ou o item já não era avulso): sai da lista e o orçamento recarrega.
+    await onItemLigado(item.id);
+  }
+
   function escolherPeca(itemId: string, pecaId: string) {
     setModos((m) => ({ ...m, [itemId]: "existente" }));
     setEscolhidas((e) => ({ ...e, [itemId]: pecaId }));
@@ -99,6 +170,11 @@ export function PecasAvulsasAprovacaoModal({
         }}
       >
         <div className="space-y-4">
+          {itens.length === 0 && (
+            <p className="text-corpo text-texto">
+              Não sobrou nenhuma peça sem cadastro. Pode aprovar.
+            </p>
+          )}
           {itens.map((item) => {
             const modo = modos[item.id];
             // As parecidas com o que foi digitado vão no topo da lista. Aqui só ordena, então o limite é mais baixo (#741).
@@ -121,12 +197,12 @@ export function PecasAvulsasAprovacaoModal({
             return (
               <fieldset
                 key={item.id}
-                className="space-y-3 rounded-xl border border-sakura-gray/30 p-4"
+                className="space-y-3 rounded-xl border border-linha p-4"
               >
-                <legend className="px-1 text-corpo font-semibold text-sakura-purple-dark">
+                <legend className="px-1 text-corpo font-semibold text-texto">
                   {item.descricao}
                 </legend>
-                <p className="text-rotulo text-sakura-muted">
+                <p className="text-rotulo text-texto-2">
                   {item.quantidade}x · {formatarMoeda(item.preco_unitario)} cada
                 </p>
 
@@ -134,7 +210,7 @@ export function PecasAvulsasAprovacaoModal({
                   {(Object.keys(ROTULO_DO_MODO) as Modo[]).map((opcao) => (
                     <label
                       key={opcao}
-                      className="flex items-center gap-2 text-corpo text-sakura-purple-dark"
+                      className="flex items-center gap-2 text-corpo text-texto"
                     >
                       <input
                         type="radio"
@@ -150,6 +226,7 @@ export function PecasAvulsasAprovacaoModal({
                 {modo === "existente" && (
                   <div className="space-y-1">
                     <Combobox
+                      tamanho="filtro"
                       opcoes={opcoes}
                       valor={escolhidas[item.id] ?? ""}
                       onMudar={(pecaId) => escolherPeca(item.id, pecaId)}
@@ -157,11 +234,11 @@ export function PecasAvulsasAprovacaoModal({
                       placeholder="Escolha a peça do cadastro"
                     />
                     {parecidas.length > 0 && (
-                      <p className="text-rotulo text-sakura-muted">
+                      <p className="text-rotulo text-texto-2">
                         As que parecem com “{item.descricao}” estão no topo da lista.
                       </p>
                     )}
-                    <p className="text-rotulo text-sakura-muted">
+                    <p className="text-rotulo text-texto-2">
                       Ao aprovar, ela sai do estoque.
                     </p>
                   </div>
@@ -170,26 +247,26 @@ export function PecasAvulsasAprovacaoModal({
                 {modo === "cadastrar" && (
                   <div className="space-y-1">
                     {cadastradas[item.id] ? (
-                      <p className="text-corpo text-emerald-300">
+                      <p className="text-corpo text-ok">
                         Peça cadastrada: {cadastradas[item.id].descricao}
                       </p>
                     ) : (
                       <button
                         type="button"
                         onClick={() => setCadastrando(item)}
-                        className="rounded-xl border border-sakura-purple/40 px-4 py-2 text-corpo font-medium text-sakura-purple hover:bg-sakura-purple/10"
+                        className="rounded-xl border border-acao/40 px-4 py-2 text-corpo font-medium text-acao hover:bg-acao/10"
                       >
                         Cadastrar a peça
                       </button>
                     )}
-                    <p className="text-rotulo text-sakura-muted">
+                    <p className="text-rotulo text-texto-2">
                       O nome e o preço já vêm preenchidos. Ao aprovar, ela sai do estoque.
                     </p>
                   </div>
                 )}
 
                 {modo === "sem_cadastro" && (
-                  <p className="text-rotulo text-sakura-muted">
+                  <p className="text-rotulo text-texto-2">
                     Não mexe no estoque e não sai na nota fiscal até ser cadastrada.
                   </p>
                 )}
@@ -197,11 +274,19 @@ export function PecasAvulsasAprovacaoModal({
             );
           })}
 
+          {Object.entries(avisosEstoqueInicial).map(([itemId, avisoDoEstoque]) => (
+            <AvisoDeAtencao key={itemId} className="text-corpo">
+              {`${cadastradas[itemId] ? `${cadastradas[itemId].descricao}: ` : ""}${avisoDoEstoque}`}
+            </AvisoDeAtencao>
+          ))}
+          {aviso && (
+            <AvisoDeAtencao className="text-corpo">{aviso}</AvisoDeAtencao>
+          )}
           {erro && (
-            <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+            <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>
           )}
           {faltam > 0 && (
-            <p className="text-rotulo text-amber-300">
+            <p className="text-rotulo text-atencao">
               {faltam === 1
                 ? "Falta escolher o que fazer com 1 peça."
                 : `Faltam ${faltam} peças para escolher o que fazer.`}
@@ -213,15 +298,15 @@ export function PecasAvulsasAprovacaoModal({
               type="button"
               onClick={onFechar}
               disabled={enviando}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10 disabled:opacity-50"
+              className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar disabled:opacity-50"
             >
               Voltar
             </button>
             <button
               type="button"
               onClick={() => onConfirmar(vinculosDaAprovacao(itens, escolhas))}
-              disabled={faltam > 0 || enviando}
-              className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
+              disabled={faltam > 0 || enviando || ligando > 0}
+              className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
             >
               {enviando ? "Aprovando..." : "Aprovar orçamento"}
             </button>
@@ -234,10 +319,11 @@ export function PecasAvulsasAprovacaoModal({
           item={cadastrando}
           pecas={pecasDaJanela}
           lojaId={lojaId}
-          onCadastrada={(peca) => {
-            setCadastradas((c) => ({ ...c, [cadastrando.id]: peca }));
-            setModos((m) => ({ ...m, [cadastrando.id]: "cadastrar" }));
-            setCadastrando(null);
+          onCadastrada={(peca, avisoDoEstoque) => {
+            if (avisoDoEstoque) {
+              setAvisosEstoqueInicial((a) => ({ ...a, [cadastrando.id]: avisoDoEstoque }));
+            }
+            void aoCadastrar(cadastrando, peca);
           }}
           onAbrirExistente={(peca) => {
             escolherPeca(cadastrando.id, peca.id);

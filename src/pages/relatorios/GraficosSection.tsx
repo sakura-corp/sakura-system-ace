@@ -1,113 +1,68 @@
 import { useMemo, useState } from "react";
+import { hojeLocal } from "@/lib/datas";
+import { AreaRolavel } from "@/components/AreaRolavel";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Explicacao } from "@/components/Explicacao";
+import { Valor, Variacao } from "@/components/Valor";
 import {
   custoDosItens,
   mapaCustoPecas,
   mapaCustoServicos,
 } from "@/schemas/metricasCaixa";
-import { GraficoBarras } from "@/components/GraficoBarras";
-import { GraficoRadar } from "@/components/GraficoRadar";
+import {
+  seriesVendasCustosLucro,
+  totaisDoGrafico,
+  totaisRecebidos,
+  totaisRecebidosPorDia,
+  type Periodo,
+} from "@/schemas/graficosVendas";
+import { variacaoPercentual } from "@/schemas/painelInicio";
+import { formatarPercentual } from "@/schemas/dinheiro";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { OrdemServico } from "@/types/os";
 import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
-
-type Periodo = "diario" | "semanal" | "mensal" | "anual";
-
-// Quantas colunas o gráfico mostra em cada modo. No anual são 5 anos: menos
-// que isso não deixa comparar nada, e mais só vai mostrar coluna zerada de
-// antes da loja usar o sistema.
-const QTD_BUCKETS: Record<Periodo, number> = { diario: 14, semanal: 8, mensal: 6, anual: 5 };
-
-const CORES = { vendas: "#1baf7a", custos: "#eb6834", lucro: "#4a3aa7" };
+import { GraficoEmLinhas } from "./GraficoEmLinhas";
+import { Segmentos } from "./Segmentos";
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function paraDataLocal(dataIso: string): string {
-  return new Date(dataIso).toLocaleDateString("sv-SE");
-}
-
-function inicioDaSemana(data: Date): Date {
-  const dia = data.getDay();
-  const diff = (dia + 6) % 7; // segunda-feira como início da semana
-  const inicio = new Date(data);
-  inicio.setDate(data.getDate() - diff);
-  inicio.setHours(0, 0, 0, 0);
-  return inicio;
-}
-
-function chaveDoMovimento(dataIso: string, periodo: Periodo): string {
-  const d = new Date(dataIso);
-  if (periodo === "anual") {
-    return String(d.getFullYear());
-  }
-  if (periodo === "mensal") {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  }
-  if (periodo === "semanal") {
-    return paraDataLocal(inicioDaSemana(d).toISOString());
-  }
-  return paraDataLocal(dataIso);
-}
-
-function gerarChavesBuckets(periodo: Periodo, hoje: Date): string[] {
-  const qtd = QTD_BUCKETS[periodo];
-  const chaves: string[] = [];
-  for (let i = qtd - 1; i >= 0; i--) {
-    if (periodo === "anual") {
-      chaves.push(String(hoje.getFullYear() - i));
-    } else if (periodo === "diario") {
-      const d = new Date(hoje);
-      d.setDate(d.getDate() - i);
-      chaves.push(paraDataLocal(d.toISOString()));
-    } else if (periodo === "semanal") {
-      const d = new Date(hoje);
-      d.setDate(d.getDate() - i * 7);
-      chaves.push(paraDataLocal(inicioDaSemana(d).toISOString()));
-    } else {
-      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-      chaves.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-    }
-  }
-  return chaves;
-}
-
-const MESES_ABREV = [
-  "Jan",
-  "Fev",
-  "Mar",
-  "Abr",
-  "Mai",
-  "Jun",
-  "Jul",
-  "Ago",
-  "Set",
-  "Out",
-  "Nov",
-  "Dez",
+const PERIODOS: { chave: Periodo; texto: string }[] = [
+  { chave: "diario", texto: "Diário" },
+  { chave: "semanal", texto: "Semanal" },
+  { chave: "mensal", texto: "Mensal" },
+  { chave: "anual", texto: "Anual" },
 ];
 
-function rotuloBucket(chave: string, periodo: Periodo): string {
-  if (periodo === "anual") {
-    return chave;
-  }
-  if (periodo === "mensal") {
-    const [ano, mes] = chave.split("-").map(Number);
-    return `${MESES_ABREV[mes - 1]}/${String(ano).slice(2)}`;
-  }
-  return new Date(`${chave}T00:00:00`).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-}
+/** Com o que o período atual é comparado, pro "+16% contra o dia anterior". */
+const CONTRA: Record<Periodo, string> = {
+  diario: "dia anterior",
+  semanal: "semana anterior",
+  mensal: "mês anterior",
+  anual: "ano anterior",
+};
 
-const PERIODOS: { chave: Periodo; label: string }[] = [
-  { chave: "diario", label: "Diário" },
-  { chave: "semanal", label: "Semanal" },
-  { chave: "mensal", label: "Mensal" },
-  { chave: "anual", label: "Anual" },
-];
+/** O nome do período, pro "Vendas · 14 dias" (a quantidade vem das próprias colunas). */
+const UNIDADE: Record<Periodo, [string, string]> = {
+  diario: ["dia", "dias"],
+  semanal: ["semana", "semanas"],
+  mensal: ["mês", "meses"],
+  anual: ["ano", "anos"],
+};
+
+/** Como o gráfico chama o ponto de agora, no eixo. */
+const AGORA: Record<Periodo, string> = {
+  diario: "Hoje",
+  semanal: "Esta semana",
+  mensal: "Este mês",
+  anual: "Este ano",
+};
+
+/** Quantos dias de "Vendas por dia" cabem à vista; com mais, a lista rola por dentro. */
+const DIAS_A_VISTA = 7;
+const ALTURA_DA_LINHA_PX = 52;
 
 interface GraficosSectionProps {
   movimentos: MovimentoCaixa[];
@@ -132,194 +87,247 @@ export function GraficosSection({ movimentos, ordens, pecas, servicos }: Grafico
 
   const entradas = useMemo(() => movimentos.filter((m) => m.tipo === "entrada"), [movimentos]);
 
-  const totaisPorDia = useMemo(() => {
-    const mapa = new Map<string, number>();
-    for (const m of entradas) {
-      const dia = paraDataLocal(m.data);
-      mapa.set(dia, (mapa.get(dia) ?? 0) + m.valor);
-    }
-    return [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
-  }, [entradas]);
+  const totaisPorDia = useMemo(() => totaisRecebidosPorDia(entradas), [entradas]);
 
   const hoje = new Date();
-  const hojeStr = paraDataLocal(hoje.toISOString());
-  const inicioSemana = inicioDaSemana(hoje);
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+  const {
+    hoje: totalHoje,
+    semana: totalSemana,
+    mes: totalMes,
+    ano: totalAno,
+  } = totaisRecebidos(entradas, hoje);
 
-  const totalHoje = totaisPorDia.find(([dia]) => dia === hojeStr)?.[1] ?? 0;
-  const totalSemana = entradas
-    .filter((m) => new Date(m.data) >= inicioSemana)
-    .reduce((total, m) => total + m.valor, 0);
-  const totalMes = entradas
-    .filter((m) => new Date(m.data) >= inicioMes)
-    .reduce((total, m) => total + m.valor, 0);
-  const totalAno = entradas
-    .filter((m) => new Date(m.data) >= inicioAno)
-    .reduce((total, m) => total + m.valor, 0);
-
-  const { categorias, vendas, custos, lucro } = useMemo(() => {
-    const chaves = gerarChavesBuckets(periodo, hoje);
-    const vendasMap = new Map<string, number>();
-    const custosMap = new Map<string, number>();
-    // Uma OS faturada com pagamento dividido em mais de uma forma gera vários
-    // caixa_movimentos — soma o custo dela uma vez só por período, não uma vez por lançamento.
-    const ordensJaContadas = new Set<string>();
-    for (const m of movimentos) {
-      const chave = chaveDoMovimento(m.data, periodo);
-      if (m.tipo === "entrada") {
-        vendasMap.set(chave, (vendasMap.get(chave) ?? 0) + m.valor);
-        if (m.ordem_servico_id) {
-          const marcador = `${chave}|${m.ordem_servico_id}`;
-          if (!ordensJaContadas.has(marcador)) {
-            ordensJaContadas.add(marcador);
-            const custoOrdem = custoPorOrdem.get(m.ordem_servico_id) ?? 0;
-            custosMap.set(chave, (custosMap.get(chave) ?? 0) + custoOrdem);
-          }
-        }
-      } else {
-        custosMap.set(chave, (custosMap.get(chave) ?? 0) + m.valor);
-      }
-    }
-    const vendasArr = chaves.map((c) => vendasMap.get(c) ?? 0);
-    const custosArr = chaves.map((c) => custosMap.get(c) ?? 0);
-    return {
-      categorias: chaves.map((c) => rotuloBucket(c, periodo)),
-      vendas: vendasArr,
-      custos: custosArr,
-      lucro: vendasArr.map((v, i) => v - custosArr[i]),
-    };
+  const { categorias, vendas, custos, lucro } = useMemo(
+    () => seriesVendasCustosLucro(movimentos, periodo, hoje, custoPorOrdem),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [movimentos, periodo, custoPorOrdem]);
+    [movimentos, periodo, custoPorOrdem],
+  );
 
   const ultimoIndice = vendas.length - 1;
   const penultimoIndice = vendas.length - 2;
+  const totais = totaisDoGrafico({ vendas, custos, lucro });
+  const diaDeHoje = hojeLocal();
+
+  const tabelaDosDias = (
+    <table className="sakura-tabela">
+      <thead>
+        <tr>
+          <th className="sticky top-0 z-[1] bg-cartao">Dia</th>
+          <th className="sticky top-0 z-[1] bg-cartao text-right">Total vendido</th>
+        </tr>
+      </thead>
+      <tbody>
+        {totaisPorDia.map(([dia, total]) => {
+          const ehHoje = dia === diaDeHoje;
+          return (
+            <tr key={dia} className={ehHoje ? "font-semibold" : undefined}>
+              {/* Hoje marcado com o traço laranja E a palavra (a cor sozinha não avisa). */}
+              <td className={ehHoje ? "shadow-[inset_2px_0_0_var(--color-acao)]" : undefined}>
+                {ehHoje && "Hoje, "}
+                {new Date(dia).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+              </td>
+              <td className="text-right">{formatarMoeda(total)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+
+  /** O que fica à esquerda de cada linha do gráfico: o nome, o período e o total. */
+  const resumo = (nome: string, total: number, extra?: string) => (
+    <>
+      <p className="text-rotulo text-texto-2">
+        {nome} · {categorias.length} {UNIDADE[periodo][categorias.length === 1 ? 0 : 1]}
+      </p>
+      <p className="mt-1 whitespace-nowrap font-titulo text-destaque font-bold tabular-nums">
+        <Valor valor={total} />
+      </p>
+      {extra && <p className="mt-0.5 text-meta text-texto-2">{extra}</p>}
+    </>
+  );
+
+  const comparativo = [
+    {
+      nome: "Vendas",
+      explicacao: "O que entrou no caixa no período, comparado com o período de antes.",
+      serie: vendas,
+      subirEBom: true,
+    },
+    {
+      nome: "Custos",
+      explicacao:
+        "O que as peças e os serviços das ordens recebidas no período custaram, mais as saídas lançadas no caixa, comparado com o período de antes. Aqui subir não é bom.",
+      serie: custos,
+      subirEBom: false,
+    },
+    {
+      nome: "Lucro",
+      explicacao: "Vendas menos custos no período, comparado com o período de antes.",
+      serie: lucro,
+      subirEBom: true,
+    },
+  ];
 
   return (
     <>
-      <div className="grid grid-cols-4 gap-4">
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Recebido hoje</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalHoje)}
-          </p>
+      {/* 1 número grande + 3 de apoio: o mês é o que mais importa (#990, 17/11). */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-[2fr_1fr_1fr_1fr]">
+        <div className="col-span-2 xl:col-span-1 [&_[data-cartao-numero]]:h-full [&_[data-cartao-numero]_p.font-titulo]:text-capa-curto">
+          <CartaoNumero
+            titulo="Recebido no mês"
+            explicacao="O que entrou no caixa do dia 1º até hoje. OS aberta e ainda não recebida não entra."
+          >
+            <Valor valor={totalMes} />
+          </CartaoNumero>
         </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Recebido esta semana</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalSemana)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Recebido no mês</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalMes)}
-          </p>
-        </div>
-        <div className="sakura-card p-4">
-          <p className="text-rotulo text-sakura-muted">Recebido este ano</p>
-          <p className="text-destaque font-semibold text-sakura-purple-dark">
-            {formatarMoeda(totalAno)}
-          </p>
-        </div>
+        <CartaoNumero
+          titulo="Recebido hoje"
+          explicacao="Tudo que entrou no caixa hoje: ordens de serviço, contas recebidas e entradas lançadas à mão."
+        >
+          <Valor valor={totalHoje} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Recebido esta semana"
+          explicacao="O que entrou no caixa desde a segunda-feira, contando hoje."
+        >
+          <Valor valor={totalSemana} />
+        </CartaoNumero>
+        <CartaoNumero
+          titulo="Recebido este ano"
+          explicacao="O que entrou no caixa de 1º de janeiro até hoje."
+        >
+          <Valor valor={totalAno} />
+        </CartaoNumero>
       </div>
 
-      <section className="sakura-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-corpo font-semibold text-sakura-purple-dark">
-            Vendas x Custos x Lucro
-          </h2>
-          <div className="flex gap-1 rounded-full bg-white/10 p-1">
-            {PERIODOS.map((p) => (
-              <button
-                key={p.chave}
-                onClick={() => setPeriodo(p.chave)}
-                className={`rounded-full px-3 py-1 text-rotulo font-medium transition ${
-                  periodo === p.chave
-                    ? "bg-sakura-purple text-white"
-                    : "text-sakura-purple-dark/85 hover:bg-white/10"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+      <section className="sakura-card p-6" aria-labelledby="grafico-vcl-titulo">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5">
+            <h2 id="grafico-vcl-titulo" className="font-titulo text-subtitulo font-semibold text-texto">
+              Vendas x Custos x Lucro
+            </h2>
+            <Explicacao
+              titulo="Vendas x Custos x Lucro"
+              texto="Vendas é o que entrou no caixa. Custos é o que as peças e os serviços das ordens recebidas no período custaram, mais as saídas lançadas no caixa. Lucro é vendas menos custos. As três linhas usam a mesma escala; o ponto laranja é o período de agora."
+            />
           </div>
+          <Segmentos
+            rotulo="Período do gráfico"
+            opcoes={PERIODOS}
+            valor={periodo}
+            aoEscolher={setPeriodo}
+          />
         </div>
-        <GraficoBarras
-          series={[
-            { chave: "vendas", nome: "Vendas", cor: CORES.vendas },
-            { chave: "custos", nome: "Custos", cor: CORES.custos },
-            { chave: "lucro", nome: "Lucro", cor: CORES.lucro },
-          ]}
+        <GraficoEmLinhas
+          descricao={`Vendas, custos e lucro, ${PERIODOS.find((p) => p.chave === periodo)?.texto.toLowerCase()}`}
           categorias={categorias}
-          valores={{ vendas, custos, lucro }}
+          rotuloDoAtual={AGORA[periodo]}
           formatarValor={formatarMoeda}
+          linhas={[
+            { chave: "vendas", nome: "Vendas", valores: vendas, resumo: resumo("Vendas", totais.vendas) },
+            { chave: "custos", nome: "Custos", valores: custos, resumo: resumo("Custos", totais.custos) },
+            {
+              chave: "lucro",
+              nome: "Lucro",
+              valores: lucro,
+              resumo: resumo(
+                "Lucro",
+                totais.lucro,
+                totais.margem === null ? undefined : `margem de ${formatarPercentual(totais.margem)}`,
+              ),
+            },
+          ]}
         />
       </section>
 
-      {penultimoIndice >= 0 && (
-        <section className="sakura-card p-5">
-          <h2 className="mb-1 text-corpo font-semibold text-sakura-purple-dark">
-            Comparativo do período
-          </h2>
-          <p className="mb-4 text-rotulo text-sakura-muted">
-            {PERIODOS.find((p) => p.chave === periodo)?.label} atual comparado com o anterior.
-          </p>
-          <GraficoRadar
-            eixos={[
-              {
-                chave: "vendas",
-                nome: "Vendas",
-                atual: vendas[ultimoIndice],
-                anterior: vendas[penultimoIndice],
-              },
-              {
-                chave: "custos",
-                nome: "Custos",
-                atual: custos[ultimoIndice],
-                anterior: custos[penultimoIndice],
-              },
-              {
-                chave: "lucro",
-                nome: "Lucro",
-                atual: Math.max(lucro[ultimoIndice], 0),
-                anterior: Math.max(lucro[penultimoIndice], 0),
-              },
-            ]}
-            formatarValor={formatarMoeda}
-          />
-        </section>
-      )}
-
-      {totaisPorDia.length === 0 ? (
-        <p className="text-corpo text-sakura-muted">
-          Nenhuma venda registrada ainda (faturamentos de OS aparecem aqui automaticamente).
-        </p>
-      ) : (
-        <section>
-          <h2 className="mb-3 text-corpo font-semibold text-sakura-purple-dark">Vendas por dia</h2>
-          <div className="overflow-x-auto sakura-card">
-            <table className="w-full text-left text-corpo">
-              <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+      <div className="grid gap-4 xl:grid-cols-2">
+        {penultimoIndice >= 0 && (
+          <section className="sakura-card p-6" aria-labelledby="grafico-comparativo-titulo">
+            <h2
+              id="grafico-comparativo-titulo"
+              className="font-titulo text-subtitulo font-semibold text-texto"
+            >
+              Comparativo do período
+            </h2>
+            <p className="mb-4 text-rotulo text-texto-2">
+              {AGORA[periodo]} contra {periodo === "semanal" ? "a" : "o"} {CONTRA[periodo]}
+            </p>
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 font-medium">Dia</th>
-                  <th className="px-4 py-3 font-medium">Total vendido</th>
+                  <th></th>
+                  <th className="text-right">Agora</th>
+                  <th className="text-right">Anterior</th>
+                  <th className="text-right">Mudou</th>
                 </tr>
               </thead>
               <tbody>
-                {totaisPorDia.map(([dia, total]) => (
-                  <tr key={dia} className="border-t border-sakura-gray/20">
-                    <td className="px-4 py-3">
-                      {new Date(dia).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
-                    </td>
-                    <td className="px-4 py-3">{formatarMoeda(total)}</td>
-                  </tr>
-                ))}
+                {comparativo.map((c) => {
+                  const atual = c.serie[ultimoIndice];
+                  const anterior = c.serie[penultimoIndice];
+                  // "Sem movimento" só quando o período de antes não teve venda nem custo:
+                  // lucro zero com venda e custo iguais é um zero de verdade.
+                  const semMovimento = vendas[penultimoIndice] === 0 && custos[penultimoIndice] === 0;
+                  return (
+                    <tr key={c.nome} data-comparativo={c.nome}>
+                      <td>
+                        <span className="inline-flex items-center gap-1.5">
+                          {c.nome}
+                          <Explicacao titulo={c.nome} texto={c.explicacao} />
+                        </span>
+                      </td>
+                      <td className="text-right font-semibold">
+                        <Valor valor={atual} />
+                      </td>
+                      <td className="text-right text-texto-2">
+                        {semMovimento ? "sem movimento" : <Valor valor={anterior} classeDeCor="text-texto-2" />}
+                      </td>
+                      <td className="text-right">
+                        {anterior === 0 ? (
+                          <span className="text-rotulo text-texto-2">—</span>
+                        ) : (
+                          <Variacao
+                            percentual={variacaoPercentual(atual, anterior)}
+                            subirEBom={c.subirEBom}
+                            comparadoCom={CONTRA[periodo]}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+
+        {totaisPorDia.length === 0 ? (
+          <p className="text-corpo text-texto-2">
+            Nenhuma venda registrada ainda (faturamentos de OS aparecem aqui automaticamente).
+          </p>
+        ) : (
+          <section className="sakura-card overflow-hidden" aria-labelledby="vendas-por-dia-titulo">
+            <h2
+              id="vendas-por-dia-titulo"
+              className="px-6 pb-1 pt-6 font-titulo text-subtitulo font-semibold text-texto"
+            >
+              Vendas por dia
+            </h2>
+            {totaisPorDia.length > DIAS_A_VISTA ? (
+              // Passando de uma semana, a lista tem tamanho fixo e rola por
+              // dentro (regra "o que pode crescer"): ela só cresce, um dia por
+              // vez, e empurrava o resto da tela pra baixo. A última linha
+              // à vista aparece cortada, pra mostrar que tem mais.
+              <div style={{ height: ALTURA_DA_LINHA_PX * (DIAS_A_VISTA + 0.5) + 40 }}>
+                <AreaRolavel>{tabelaDosDias}</AreaRolavel>
+              </div>
+            ) : (
+              tabelaDosDias
+            )}
+          </section>
+        )}
+      </div>
     </>
   );
 }

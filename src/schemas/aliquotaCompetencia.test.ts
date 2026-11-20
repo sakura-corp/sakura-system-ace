@@ -4,7 +4,9 @@ import {
   competenciaDoMes,
   lojaEmiteNfse,
   mesPorExtenso,
-  PASSO_A_PASSO_ALIQUOTA_PADRAO,
+  PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
+  PASSO_A_PASSO_ALIQUOTA_GERAL,
+  passoAPassoAliquotaPadrao,
 } from "./aliquotaCompetencia";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 
@@ -16,7 +18,9 @@ function config(campos: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFisca
     nome_fantasia: null,
     inscricao_estadual: null,
     inscricao_municipal: "30016580",
-    regime_tributario: "simples_nacional",
+    // O cadastro mensal da alíquota é do caminho municipal: a base dos
+    // testes é uma loja fora do Simples (a do Simples tem os testes dela).
+    regime_tributario: "lucro_presumido",
     cep: null,
     rua: null,
     numero: null,
@@ -34,6 +38,7 @@ function config(campos: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFisca
     codigo_cnae: "452000100",
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
+    percentual_tributos_simples: null,
     atualizado_em: "2026-09-01T00:00:00Z",
     ...campos,
   };
@@ -110,10 +115,37 @@ describe("avisoAliquotaCompetencia", () => {
     expect(aviso.precisa).toBe(false);
   });
 
-  it("usa o passo a passo padrão quando a loja não escreveu o dela", () => {
+  // #853: desde 01/11/2026 a loja do Simples emite a NFS-e pelo Padrão
+  // Nacional (PR #839), onde não existe o cadastro mensal da alíquota no
+  // portal da prefeitura (confirmado pela contabilidade em 05/11).
+  it("não avisa a loja do Simples, que emite pelo Padrão Nacional", () => {
+    const aviso = avisoAliquotaCompetencia(config({ regime_tributario: "simples_nacional" }), setembro);
+    expect(aviso.precisa).toBe(false);
+  });
+
+  it("continua avisando a loja de outro regime (caminho municipal)", () => {
+    expect(avisoAliquotaCompetencia(config({ regime_tributario: "lucro_real" }), setembro).precisa).toBe(true);
+    expect(avisoAliquotaCompetencia(config({ regime_tributario: null }), setembro).precisa).toBe(true);
+  });
+
+  it("loja de Araraquara sem texto próprio: o caminho do portal de Araraquara", () => {
     expect(avisoAliquotaCompetencia(config(), setembro).passoAPasso).toBe(
-      PASSO_A_PASSO_ALIQUOTA_PADRAO,
+      PASSO_A_PASSO_ALIQUOTA_ARARAQUARA,
     );
+  });
+
+  // #876: o passo a passo do portal de Araraquara aparecia pra loja de
+  // qualquer cidade — numa demonstração em São Carlos, o dono lia o caminho
+  // de um portal que não é o dele.
+  it("loja de outra cidade sem texto próprio: o texto geral, sem Araraquara", () => {
+    const aviso = avisoAliquotaCompetencia(config({ codigo_municipio: "3548906" }), setembro);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
+    expect(aviso.passoAPasso).not.toMatch(/Araraquara|Giap|Replicar/);
+  });
+
+  it("loja sem código do município: o texto geral", () => {
+    const aviso = avisoAliquotaCompetencia(config({ codigo_municipio: null }), setembro);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
   });
 
   it("usa o passo a passo da loja quando ela escreveu um", () => {
@@ -124,8 +156,36 @@ describe("avisoAliquotaCompetencia", () => {
     expect(aviso.passoAPasso).toBe("Portal de São Carlos → Alíquotas");
   });
 
-  it("passo a passo só com espaços cai no padrão", () => {
+  it("passo a passo só com espaços cai no padrão da cidade", () => {
     const aviso = avisoAliquotaCompetencia(config({ aliquota_passo_a_passo: "   " }), setembro);
-    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_PADRAO);
+    expect(aviso.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    const outraCidade = avisoAliquotaCompetencia(
+      config({ aliquota_passo_a_passo: "   ", codigo_municipio: "3548906" }),
+      setembro,
+    );
+    expect(outraCidade.passoAPasso).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
+  });
+});
+
+describe("passoAPassoAliquotaPadrao", () => {
+  it("é o de Araraquara só pro código IBGE de Araraquara (3503208)", () => {
+    expect(passoAPassoAliquotaPadrao("3503208")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    expect(passoAPassoAliquotaPadrao(" 3503208 ")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+  });
+
+  it("aceita o código digitado com pontuação ou com 6 dígitos", () => {
+    expect(passoAPassoAliquotaPadrao("3503-208")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+    expect(passoAPassoAliquotaPadrao("350320")).toBe(PASSO_A_PASSO_ALIQUOTA_ARARAQUARA);
+  });
+
+  it("é o geral pra qualquer outro código, vazio ou nulo", () => {
+    for (const codigo of ["3548906", "", null, undefined]) {
+      expect(passoAPassoAliquotaPadrao(codigo)).toBe(PASSO_A_PASSO_ALIQUOTA_GERAL);
+    }
+  });
+
+  it("o texto geral manda pedir o caminho à contabilidade, sem citar cidade", () => {
+    expect(PASSO_A_PASSO_ALIQUOTA_GERAL).toMatch(/contabilidade/);
+    expect(PASSO_A_PASSO_ALIQUOTA_GERAL).not.toMatch(/Araraquara/);
   });
 });

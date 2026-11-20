@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { emitirNFCe, FocusNfeError, montarCorpoNFCe, montarCorpoNFSe } from "./focusNfe";
+import {
+  codigoTributacaoNacional,
+  destinatarioIdentificadoNFCe,
+  emitirNFCe,
+  FocusNfeError,
+  montarCorpoNFCe,
+  montarCorpoNFSe,
+  montarCorpoNFSeNacional,
+  montarDestinatarioNFCe,
+  padraoNFSe,
+  valorTotalNFCe,
+} from "./focusNfe";
 import type { OrdemServico } from "@/types/os";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
 import type { Cliente } from "@/types/cliente";
@@ -37,6 +48,7 @@ function configuracaoFiscal(sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}):
     codigo_cnae: "4520-0/01",
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
+    percentual_tributos_simples: null,
     atualizado_em: new Date().toISOString(),
     ...sobrescrever,
   };
@@ -88,6 +100,7 @@ function clientePessoaFisica(sobrescrever: Partial<Cliente> = {}): Cliente {
     uf: "SP",
     codigo_municipio: "3503208",
     data_nascimento: null,
+    nao_avisar: false,
     criado_em: new Date().toISOString(),
     ...sobrescrever,
   };
@@ -153,6 +166,32 @@ describe("montarCorpoNFCe", () => {
 
     expect(corpo.items[0].valor_bruto).toBe("900.00");
     expect(Number(corpo.items[0].valor_unitario_comercial)).toBeCloseTo(225, 10);
+  });
+
+  // #981: o CFOP sai na nota só com os números, mesmo gravado com ponto ou
+  // espaço na peça (o aviso do #968 já comparava assim).
+  function cfopDoItem(cfop: string | null): string {
+    const corpo = montarCorpoNFCe({
+      ordem: { numero: 1 } as never,
+      itens: [{ peca: peca({ cfop_padrao: cfop }), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+      cliente: clientePessoaFisica(),
+      pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+      configuracaoFiscal: configuracaoFiscal(),
+    });
+    return corpo.items[0].cfop;
+  }
+
+  it("tira o ponto do CFOP gravado na peça (\"5.405\" sai \"5405\")", () => {
+    expect(cfopDoItem("5.405")).toBe("5405");
+  });
+
+  it("tira os espaços do CFOP gravado na peça (\" 5102 \" sai \"5102\")", () => {
+    expect(cfopDoItem(" 5102 ")).toBe("5102");
+  });
+
+  it("peça sem CFOP continua saindo 5102, e CFOP vazio continua vazio", () => {
+    expect(cfopDoItem(null)).toBe("5102");
+    expect(cfopDoItem("")).toBe("");
   });
 
   it("usa o valor já com desconto como base do IBS/CBS e do ICMS", () => {
@@ -335,6 +374,219 @@ describe("montarCorpoNFSe", () => {
   });
 });
 
+// NFS-e pelo Padrão Nacional (#837). Nomes dos campos conferidos na
+// documentação da Focus NFe (doc.focusnfe.com.br, "NFSe Nacional → Emitir",
+// e a lista completa em campos.focusnfe.com.br/nfse_nacional) — ver
+// docs/pendencias-e-futuro.md. O que ainda depende do suporte está lá também.
+describe("padraoNFSe", () => {
+  it("empresa do Simples Nacional emite pelo Padrão Nacional", () => {
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: "simples_nacional" }))).toBe("nacional");
+  });
+
+  it("os outros regimes (e regime em branco) continuam no caminho municipal de hoje", () => {
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: "lucro_presumido" }))).toBe("municipal");
+    expect(padraoNFSe(configuracaoFiscal({ regime_tributario: null }))).toBe("municipal");
+  });
+});
+
+describe("codigoTributacaoNacional", () => {
+  it("o item da LC 116 vira os 6 dígitos do código nacional, com o desdobro 01", () => {
+    expect(codigoTributacaoNacional("14.01")).toBe("140101");
+    expect(codigoTributacaoNacional("7.02")).toBe("070201");
+  });
+
+  it("código já com o desdobro (14.01.02) é usado como está", () => {
+    expect(codigoTributacaoNacional("14.01.02")).toBe("140102");
+  });
+
+  it("vazio ou fora do formato devolve vazio (quem emite recusa)", () => {
+    expect(codigoTributacaoNacional(null)).toBe("");
+    expect(codigoTributacaoNacional("abc")).toBe("");
+  });
+});
+
+describe("montarCorpoNFSeNacional", () => {
+  const agora = new Date("2026-11-02T13:15:00Z");
+  const dados = (sobrescrever: Partial<Parameters<typeof montarCorpoNFSeNacional>[0]> = {}) => ({
+    ordem: { numero: 1 } as never,
+    discriminacao: "Alinhamento e balanceamento",
+    valorServicos: 150.000000001,
+    cliente: clientePessoaFisica(),
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: configuracaoFiscal(),
+    ...sobrescrever,
+  });
+
+  it("monta o corpo achatado da DPS, com prestador, serviço e tributação", () => {
+    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1793632500 });
+    expect(corpo).toMatchObject({
+      data_competencia: "2026-11-02",
+      serie_dps: 1,
+      numero_dps: 1793632500,
+      emitente_dps: 1,
+      codigo_municipio_emissora: 3503208,
+      cnpj_prestador: "51916585000125",
+      codigo_opcao_simples_nacional: 3,
+      regime_tributario_simples_nacional: 1,
+      regime_especial_tributacao: 0,
+      codigo_municipio_prestacao: 3503208,
+      codigo_tributacao_nacional_iss: "140101",
+      descricao_servico: "Alinhamento e balanceamento",
+      valor_servico: 150,
+      tributacao_iss: 1,
+      tipo_retencao_iss: 1,
+    });
+    expect(corpo.data_emissao).toMatch(/^2026-11-02T\d{2}:15:00[+-]\d{2}:\d{2}$/);
+    // Nada do formato municipal vai junto.
+    expect(corpo).not.toHaveProperty("prestador");
+    expect(corpo).not.toHaveProperty("servico");
+  });
+
+  // #948: o Ambiente Nacional recusa a DPS com a IM quando o município não
+  // registra as informações complementares no CNC NFS-e (Araraquara, 06/11;
+  // a Focus confirmou em 09/11: "remova a IM dos dados enviados"). A IM é
+  // opcional no leiaute, então ela nunca vai, mesmo preenchida na loja.
+  it("loja com a inscrição municipal preenchida: a IM não vai no corpo (#948)", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ inscricao_municipal: "30016580" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("inscricao_municipal_prestador");
+  });
+
+  it("tomador pessoa física: CPF, nome e endereço com os nomes _tomador", () => {
+    const corpo = montarCorpoNFSeNacional(dados(), { agora, numeroDps: 1 });
+    expect(corpo).toMatchObject({
+      cpf_tomador: "12345678909",
+      razao_social_tomador: "Cliente Exemplo da Silva",
+      logradouro_tomador: "Rua Exemplo",
+      numero_tomador: "100",
+      bairro_tomador: "Centro",
+      codigo_municipio_tomador: 3503208,
+      cep_tomador: "14800000",
+    });
+    expect(corpo).not.toHaveProperty("cnpj_tomador");
+  });
+
+  it("tomador pessoa jurídica vai pelo CNPJ, sem CPF", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ cliente: clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "66.217.744/0001-70" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.cnpj_tomador).toBe("66217744000170");
+    expect(corpo).not.toHaveProperty("cpf_tomador");
+  });
+
+  // No leiaute da DPS, o grupo do tomador exige CPF, CNPJ ou NIF; o nome
+  // sozinho é recusado pelo esquema (revisão de 06/11). O tomador é opcional:
+  // sem documento, não vai nenhum campo dele.
+  it("cliente sem CPF/CNPJ: a nota sai sem tomador (nenhum campo _tomador)", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ cpf_cnpj: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(Object.keys(corpo).filter((k) => k.endsWith("_tomador"))).toEqual([]);
+  });
+
+  // O bairro do endereço precisa ter pelo menos uma letra no leiaute da DPS.
+  it("cliente sem bairro não manda endereço pela metade", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ bairro: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(corpo).not.toHaveProperty("bairro_tomador");
+    expect(corpo).not.toHaveProperty("logradouro_tomador");
+    expect(corpo.cpf_tomador).toBe("12345678909");
+  });
+
+  it("loja sem o item da lista de serviços usa o 14.01, como no caminho municipal", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ item_lista_servico: null }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.codigo_tributacao_nacional_iss).toBe("140101");
+  });
+
+  it("cliente sem rua ou CEP não manda endereço pela metade", () => {
+    const corpo = montarCorpoNFSeNacional(dados({ cliente: clientePessoaFisica({ rua: null }) }), {
+      agora,
+      numeroDps: 1,
+    });
+    expect(corpo).not.toHaveProperty("logradouro_tomador");
+    expect(corpo).not.toHaveProperty("cep_tomador");
+  });
+
+  // Ensaio de 03/11: sem o grupo totTrib o Ambiente Nacional recusa a DPS
+  // ("Element trib: Missing child element(s). Expected is one of (tribFed, totTrib)").
+  // O percentual vem dos Dados fiscais da loja (#866, migration 0078).
+  it("empresa do Simples manda o percentual dos tributos do Simples cadastrado na loja (totTrib)", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: 6.5 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(6.5);
+  });
+
+  it("percentual com mais de duas casas sai arredondado em duas", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: 6.456 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(6.46);
+  });
+
+  // Vazio não trava a emissão: o grupo totTrib continua indo, com 0.
+  it("empresa do Simples sem o percentual cadastrado manda 0", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ percentual_tributos_simples: null }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_total_tributos_simples_nacional).toBe(0);
+  });
+
+  it("empresa fora do Simples não manda o percentual do Simples, mesmo cadastrado", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({
+        configuracaoFiscal: configuracaoFiscal({
+          regime_tributario: "lucro_presumido",
+          percentual_tributos_simples: 6.5,
+        }),
+      }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("percentual_total_tributos_simples_nacional");
+  });
+
+  // Recusa da OS 18 em 09/11 (#837): pro ME/EPP do Simples (opSimpNac 3,
+  // ISS apurado pelo Simples) sem retenção, o Ambiente Nacional não aceita a
+  // alíquota ("Não é permitido informar alíquota quando não há indicação de
+  // retenção do ISSQN..."). O ISS vai dentro do DAS.
+  it("loja do Simples sem retenção: a alíquota do ISS não vai, mesmo cadastrada", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ aliquota_iss: 2 }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo).not.toHaveProperty("percentual_aliquota_relativa_municipio");
+  });
+
+  it("empresa fora do Simples continua mandando a alíquota do ISS", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ regime_tributario: "lucro_presumido" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.percentual_aliquota_relativa_municipio).toBe(5);
+  });
+
+  it("empresa fora do Simples sai como não optante, sem o regime do Simples", () => {
+    const corpo = montarCorpoNFSeNacional(
+      dados({ configuracaoFiscal: configuracaoFiscal({ regime_tributario: "lucro_presumido" }) }),
+      { agora, numeroDps: 1 },
+    );
+    expect(corpo.codigo_opcao_simples_nacional).toBe(1);
+    expect(corpo).not.toHaveProperty("regime_tributario_simples_nacional");
+  });
+});
+
 // Nenhuma nota sai sem NCM (#655). A tela já avisa antes (itensQueImpedemNFCe),
 // mas esta é a última trava: nem pede a nota à Focus.
 describe("emitirNFCe — peça sem NCM", () => {
@@ -361,5 +613,116 @@ describe("emitirNFCe — peça sem NCM", () => {
     await expect(promessa).rejects.toBeInstanceOf(FocusNfeError);
     await expect(promessa).rejects.toThrow(/Válvula de bico.*NCM/);
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+// #861: pessoa física sem CPF (ou com CPF pela metade) mandava o nome sem o
+// CPF, e a Focus recusa o `xNome` sozinho antes da SEFAZ ("Expected is one of
+// CNPJ, CPF, idEstrangeiro"). A regra é a do comentário da função: documento
+// faltando ou incompleto → consumidor não identificado, igual à pessoa jurídica.
+describe("montarDestinatarioNFCe", () => {
+  it.each([null, "", "   ", "123.456.789", "123.456.789-0", "123.456.789-091"])(
+    "pessoa física com CPF %j: consumidor não identificado, sem o nome",
+    (cpf) => {
+      expect(montarDestinatarioNFCe(clientePessoaFisica({ cpf_cnpj: cpf }))).toEqual({
+        nome_destinatario: "",
+        cpf_destinatario: "",
+      });
+    },
+  );
+
+  it("pessoa física com CPF de 11 números: nome e CPF só com os números", () => {
+    expect(
+      montarDestinatarioNFCe(
+        clientePessoaFisica({ nome: "Maria da Silva", cpf_cnpj: "123.456.789-09" }),
+      ),
+    ).toEqual({ nome_destinatario: "Maria da Silva", cpf_destinatario: "12345678909" });
+  });
+
+  it.each([null, "", "12.345.678", "12.345.678/0001-9"])(
+    "pessoa jurídica com CNPJ %j: consumidor não identificado, sem o nome",
+    (cnpj) => {
+      expect(
+        montarDestinatarioNFCe(clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: cnpj })),
+      ).toEqual({ nome_destinatario: "" });
+    },
+  );
+
+  it("pessoa jurídica com CNPJ de 14 números: nome, CNPJ e indicador 9", () => {
+    expect(
+      montarDestinatarioNFCe(
+        clientePessoaFisica({
+          nome: "Transportes Exemplo Ltda",
+          tipo_pessoa: "juridica",
+          cpf_cnpj: "12.345.678/0001-99",
+        }),
+      ),
+    ).toEqual({
+      nome_destinatario: "Transportes Exemplo Ltda",
+      cnpj_destinatario: "12345678000199",
+      indicador_inscricao_estadual_destinatario: "9",
+    });
+  });
+});
+
+// O aviso do limite da NFC-e (#881) pergunta "a nota vai sair com o cliente
+// identificado?". A resposta é o que `montarDestinatarioNFCe` manda pra Focus,
+// e não uma regra copiada: se a regra do destinatário mudar, o aviso muda junto.
+describe("destinatarioIdentificadoNFCe", () => {
+  it("sem cliente: não identificado", () => {
+    expect(destinatarioIdentificadoNFCe(null)).toBe(false);
+  });
+
+  it("cliente Consumidor da venda de balcão: não identificado, mesmo com documento", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ id: CLIENTE_CONSUMIDOR_ID, cpf_cnpj: "123.456.789-09" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("pessoa física com CPF: identificado", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: "123.456.789-09" }))).toBe(
+      true,
+    );
+  });
+
+  it("pessoa física sem CPF: não identificado", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: null }))).toBe(false);
+  });
+
+  it("pessoa física com CPF incompleto: não identificado (#861)", () => {
+    expect(destinatarioIdentificadoNFCe(clientePessoaFisica({ cpf_cnpj: "123.456.789" }))).toBe(
+      false,
+    );
+  });
+
+  it("pessoa jurídica com CNPJ de 14 números: identificado", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-99" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("pessoa jurídica com CNPJ incompleto: não identificado", () => {
+    expect(
+      destinatarioIdentificadoNFCe(
+        clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678" }),
+      ),
+    ).toBe(false);
+  });
+});
+
+// O aviso do limite (#881) compara o MESMO total que vai na nota: cada linha
+// arredondada no centavo antes de somar, como o `valor_total` da NFC-e.
+describe("valorTotalNFCe", () => {
+  it("arredonda cada linha antes de somar, como a nota", () => {
+    const linha = { quantidade: 1, precoUnitario: 4999.995, desconto: 0 };
+    expect(valorTotalNFCe([linha, linha])).toBe(10000);
+  });
+
+  it("desconta o desconto da linha", () => {
+    expect(valorTotalNFCe([{ quantidade: 2, precoUnitario: 100, desconto: 15 }])).toBe(185);
   });
 });

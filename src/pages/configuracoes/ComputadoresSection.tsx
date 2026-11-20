@@ -1,7 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { Botao } from "@/components/Botao";
+import { Dica } from "@/components/Dica";
+import { Selo } from "@/components/Selo";
 import {
   definirApelidoComputador,
   esquecerComputador,
@@ -19,13 +23,14 @@ import {
 } from "@/schemas/computadores";
 import { rotuloDeIdade } from "@/schemas/painelInicio";
 import type { Computador } from "@/types/computador";
+import { AvisoDeErro } from "@/components/Aviso";
 
 // "Em que versão está cada computador da empresa?" (migration 0063). Cada
 // computador se registra sozinho a cada login — nada aqui é cadastro. O que
 // o admin faz é dar um apelido ("Balcão") e esquecer o que não existe mais.
 //
 // Carrega os próprios dados, como a seção "Atualizações deste computador":
-// só busca quando alguém abre a seção (SecaoRecolhivel não monta o conteúdo
+// só busca quando alguém abre a seção (SecaoDeConfiguracao não monta o conteúdo
 // fechado), então não pesa na abertura de Configurações.
 export function ComputadoresSection() {
   const [computadores, setComputadores] = useState<Computador[] | null>(null);
@@ -76,9 +81,9 @@ export function ComputadoresSection() {
 
   if (!computadores) {
     return erro ? (
-      <p className="rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
+      <AvisoDeErro>{erro}</AvisoDeErro>
     ) : (
-      <p className="text-corpo text-sakura-muted">Carregando...</p>
+      <p className="text-corpo text-texto-2">Carregando...</p>
     );
   }
 
@@ -92,8 +97,8 @@ export function ComputadoresSection() {
     const destacarVersao = situacao.emUso && situacao.maisAntigaQueEste;
     if (editandoId === computador.id) {
       return (
-        <tr key={computador.id} className="border-t border-sakura-gray/20">
-          <td colSpan={5} className="px-4 py-3">
+        <tr key={computador.id}>
+          <td colSpan={5}>
             <FormularioApelido
               computador={computador}
               onSalvo={async () => {
@@ -108,53 +113,43 @@ export function ComputadoresSection() {
       );
     }
     return (
-      <tr
-        key={computador.id}
-        className={`border-t border-sakura-gray/20 ${situacao.emUso ? "" : "text-sakura-muted"}`}
-      >
-        <td className="px-4 py-3">
-          <span className="font-medium text-sakura-purple-dark">
+      <tr key={computador.id} className={situacao.emUso ? "" : "text-texto-2"}>
+        <td>
+          <span className={`font-medium ${situacao.emUso ? "text-texto" : "text-texto-2"}`}>
             {nomeDoComputador(computador)}
           </span>
           {computador.id === esteId && (
-            <span className="ml-2 rounded-full border border-sakura-purple/60 px-2 py-0.5 text-meta text-sakura-purple-dark">
-              este computador
-            </span>
+            <Selo tipo="info" icone={Monitor} palavra="este computador" className="ml-2" />
           )}
           {computador.apelido && computador.nome_maquina && (
-            <span className="block text-meta text-sakura-muted">{computador.nome_maquina}</span>
+            <span className="block text-meta text-texto-2">{computador.nome_maquina}</span>
           )}
         </td>
-        <td className="whitespace-nowrap px-4 py-3">
-          <span
-            className={destacarVersao ? "font-medium text-amber-400" : ""}
-            title={
-              situacao.maisAntigaQueEste
-                ? `Mais antiga que a deste computador (${versaoDeste}).`
-                : undefined
-            }
-          >
-            {computador.versao_app}
-            {destacarVersao && " · mais antiga"}
-          </span>
+        <td className="whitespace-nowrap">
+          {situacao.maisAntigaQueEste ? (
+            <Dica texto={`Mais antiga que a deste computador (${versaoDeste}).`}>
+              <span className={destacarVersao ? "font-medium text-texto" : ""}>
+                {computador.versao_app}
+              </span>
+            </Dica>
+          ) : (
+            <span>{computador.versao_app}</span>
+          )}
+          {destacarVersao && <Selo tipo="atencao" palavra="mais antiga" className="ml-2" />}
           {computador.canal === "teste" && (
-            <span className="ml-2 rounded-full border border-sakura-borda-campo px-2 py-0.5 text-meta text-sakura-muted">
-              canal de teste
-            </span>
+            <Selo tipo="neutro" palavra="canal de teste" className="ml-2" />
           )}
         </td>
-        <td className="px-4 py-3">{computador.loja?.nome ?? "—"}</td>
-        <td className="whitespace-nowrap px-4 py-3">
-          <span title={new Date(computador.visto_em).toLocaleString("pt-BR")}>
-            {rotuloDeIdade(situacao.diasSemAparecer)}
-          </span>
+        <td>{computador.loja?.nome ?? "—"}</td>
+        <td className="whitespace-nowrap">
+          <Dica texto={new Date(computador.visto_em).toLocaleString("pt-BR")}>
+            <span>{rotuloDeIdade(situacao.diasSemAparecer)}</span>
+          </Dica>
           {computador.operador?.nome && (
-            <span className="block text-meta text-sakura-muted">
-              por {computador.operador.nome}
-            </span>
+            <span className="block text-meta text-texto-2">por {computador.operador.nome}</span>
           )}
         </td>
-        <td className="px-4 py-3 text-right">
+        <td className="text-right">
           <AcoesDaLinha
             descricao={`o computador ${nomeDoComputador(computador)}`}
             acoes={[
@@ -180,26 +175,24 @@ export function ComputadoresSection() {
 
   return (
     <>
-      {erro && (
-        <p className="mb-3 rounded-lg bg-red-50 px-4 py-2 text-corpo text-red-700">{erro}</p>
-      )}
+      {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
 
-      <p className="text-corpo text-sakura-muted">
+      <p className="text-corpo text-texto-2">
         Cada computador aparece aqui sozinho, na primeira vez que alguém entra nele numa versão que
         já registra isso. Um computador que ainda não abriu uma versão assim não aparece.
       </p>
 
       {computadores.length === 0 ? (
-        <p className="mt-4 text-corpo text-sakura-muted">Nenhum computador registrado ainda.</p>
+        <p className="mt-4 text-corpo text-texto-2">Nenhum computador registrado ainda.</p>
       ) : (
         <>
-          <p className="mt-4 text-corpo text-sakura-purple-dark">
+          <p className="mt-4 text-corpo text-texto">
             {emUso.length === 1
               ? "1 computador em uso"
               : `${emUso.length} computadores em uso`}{" "}
             nos últimos {DIAS_PARA_CONSIDERAR_EM_USO} dias
             {maisAntigos > 0 && versaoDeste && (
-              <span className="text-amber-400">
+              <span className="font-medium text-atencao">
                 {" "}
                 · {maisAntigos === 1 ? "1 numa versão" : `${maisAntigos} numa versão`} mais antiga
                 que a deste computador ({versaoDeste})
@@ -208,21 +201,21 @@ export function ComputadoresSection() {
             .
           </p>
           {maisAntigos > 0 && (
-            <p className="mt-1 text-rotulo text-sakura-muted">
+            <p className="mt-1 text-rotulo text-texto-2">
               Um computador se atualiza sozinho quando o programa é fechado e aberto de novo — e só
               recebe versões liberadas para todas as lojas, a menos que esteja no canal de teste.
             </p>
           )}
 
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-corpo">
-              <thead className="text-rotulo text-sakura-muted">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-linha">
+            <table className="sakura-tabela">
+              <thead>
                 <tr>
-                  <th className="px-4 py-2 font-medium">Computador</th>
-                  <th className="px-4 py-2 font-medium">Versão</th>
-                  <th className="px-4 py-2 font-medium">Loja</th>
-                  <th className="px-4 py-2 font-medium">Última vez</th>
-                  <th className="px-4 py-2">
+                  <th>Computador</th>
+                  <th>Versão</th>
+                  <th>Loja</th>
+                  <th>Última vez</th>
+                  <th>
                     <span className="sr-only">Ações</span>
                   </th>
                 </tr>
@@ -230,8 +223,8 @@ export function ComputadoresSection() {
               <tbody>
                 {emUso.map(linha)}
                 {sumidos.length > 0 && (
-                  <tr className="border-t border-sakura-gray/20">
-                    <td colSpan={5} className="px-4 pb-1 pt-4 text-rotulo text-sakura-muted">
+                  <tr>
+                    <td colSpan={5} className="text-rotulo text-texto-2">
                       Sem aparecer há {DIAS_PARA_CONSIDERAR_EM_USO} dias ou mais — não contam como
                       em uso. Se não existirem mais, dá pra esquecer.
                     </td>
@@ -280,8 +273,8 @@ function FormularioApelido({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSalvar)} className="flex flex-wrap items-center gap-2">
-      <label className="text-rotulo text-sakura-muted" htmlFor={`apelido-${computador.id}`}>
+    <form onSubmit={handleSubmit(aoSalvar)} className="flex flex-wrap items-center gap-2 py-1">
+      <label className="text-rotulo text-texto-2" htmlFor={`apelido-${computador.id}`}>
         Apelido de {computador.nome_maquina || "este computador"}:
       </label>
       <input
@@ -290,26 +283,19 @@ function FormularioApelido({
         autoFocus
         placeholder="ex: Balcão, Notebook da Carol"
         {...register("apelido")}
-        className="w-64 rounded-lg border border-sakura-borda-campo px-3 py-1.5 text-corpo focus:border-sakura-purple"
+        aria-invalid={errors.apelido ? true : undefined}
+        className="sakura-campo sakura-campo-filtro w-64"
       />
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-xl bg-sakura-purple px-4 py-1.5 text-corpo font-medium text-white hover:opacity-90 disabled:opacity-50"
-      >
+      <Botao type="submit" variante="principal" tamanho="pequeno" ocupado={isSubmitting}>
         {isSubmitting ? "Salvando..." : "Salvar"}
-      </button>
-      <button
-        type="button"
-        onClick={onCancelar}
-        className="text-rotulo font-medium text-sakura-muted hover:underline"
-      >
+      </Botao>
+      <Botao variante="fantasma" tamanho="pequeno" onClick={onCancelar}>
         Cancelar
-      </button>
+      </Botao>
       {errors.apelido && (
-        <p className="w-full text-rotulo text-red-400">{errors.apelido.message}</p>
+        <p className="w-full text-rotulo text-perigo">{errors.apelido.message}</p>
       )}
-      <p className="w-full text-meta text-sakura-muted">Em branco, volta a aparecer o nome da máquina.</p>
+      <p className="w-full text-meta text-texto-2">Em branco, volta a aparecer o nome da máquina.</p>
     </form>
   );
 }

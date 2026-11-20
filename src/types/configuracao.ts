@@ -54,9 +54,14 @@ export interface ConfiguracaoFiscalLoja {
   // cadastrada no portal da prefeitura — enquanto for diferente do mês
   // corrente, o Início avisa. aliquota_passo_a_passo é o caminho dentro do
   // portal, editável porque muda de município pra município (em branco, vale
-  // o padrão de Araraquara em schemas/aliquotaCompetencia.ts).
+  // o padrão da cidade pelo codigo_municipio — o de Araraquara só pra loja de
+  // lá, um texto geral pras outras — em schemas/aliquotaCompetencia.ts, #876).
   competencia_aliquota_confirmada: string | null;
   aliquota_passo_a_passo: string | null;
+  // Percentual aproximado dos tributos do Simples (migration 0078, só NFS-e
+  // Nacional, só pra loja do Simples): vai no campo pTotTribSN da nota. Quem
+  // passa o número é a contabilidade; de 0 a 100, com duas casas. Vazio manda 0.
+  percentual_tributos_simples: number | null;
   atualizado_em: string;
 }
 
@@ -121,4 +126,12 @@ export const CARTOES_INICIO_PADRAO: CartaoMetrica[] = [
 export interface ConfiguracaoPainelInicio {
   loja_id: string;
   cartoes: CartaoMetrica[];
+}
+
+// O Pix da loja (migration 0081, tarefa #456): os dados do Pix estático.
+export interface ConfiguracaoPix {
+  loja_id: string;
+  chave: string;
+  nome_recebedor: string;
+  cidade_recebedor: string;
 }

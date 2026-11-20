@@ -46,7 +46,7 @@ export function StatusOrdem({
         </span>
       )}
       {ordem.status === "faturada" && situacao.pendentes.length > 0 && (
-        <span className="whitespace-nowrap text-meta font-medium text-amber-400">
+        <span className="whitespace-nowrap text-meta font-medium text-atencao">
           falta {situacao.pendentes.join(" e ")}
         </span>
       )}

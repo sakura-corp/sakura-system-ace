@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { buscarTudoEmPaginas } from "./paginacao";
+import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
@@ -12,7 +12,7 @@ import {
   STATUS_DE_ORCAMENTO,
 } from "@/schemas/orcamento";
 import type { MotivoRecusa } from "@/schemas/orcamento";
-import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, nomeDocumento, totalOrdem } from "@/types/os";
 import type {
   ItemOS,
   ItemParaComissao,
@@ -174,12 +174,15 @@ async function buscarNomesDeFuncionarios(
   const ids = idsDeFuncionarios(ordens);
   if (ids.length === 0) return new Map();
 
-  const { data, error } = await supabase
-    .from("funcionarios_publico")
-    .select("id, nome")
-    .in("id", ids);
-
-  if (error) throw error;
+  // Em blocos e por páginas (#498): uma loja grande cita centenas.
+  const data = await buscarPorIdsEmBlocos(ids, (bloco, de, ate) =>
+    supabase
+      .from("funcionarios_publico")
+      .select("id, nome")
+      .in("id", bloco)
+      .order("id")
+      .range(de, ate),
+  );
   return new Map((data as { id: string; nome: string }[]).map((f) => [f.id, f.nome]));
 }
 
@@ -420,62 +423,32 @@ export async function aprovarOrcamento(
 /**
  * A peça avulsa ganhou cadastro depois da aprovação (#655) — o caminho da
  * nota: a NFC-e precisa do NCM, e a tela cadastra a peça ali. O item passa a
- * apontar pra peça e, se a ordem já é OS (`contaNosNumeros`), baixa o estoque
- * dele, igual ao "cadastrar" da aprovação. Em orçamento só vincula: a
- * aprovação é que baixa.
+ * apontar pra peça e, se a ordem já é OS, baixa o estoque dele. Em orçamento
+ * só vincula: a aprovação é que baixa.
+ *
+ * Uma chamada só (`cadastrar_peca_do_item`, migration 0079, #803): o banco
+ * trava a OS, liga, decide a baixa pela situação da ordem NO BANCO (não a da
+ * tela) e baixa a quantidade gravada, tudo numa transação. Assim, aprovar o
+ * orçamento em outro computador no mesmo instante não deixa a peça sem
+ * baixa. Se a baixa falha (sem depósito ativo), a peça também não fica ligada.
  *
  * Só pega o item se ele ainda for avulso: chamado duas vezes (clique duplo,
  * outro computador), a segunda não troca a peça nem baixa de novo.
  *
- * @returns se o item foi vinculado agora (false: já tinha peça)
+ * @returns se o item foi vinculado agora (false: já tinha peça, ou sumiu)
  */
 export async function cadastrarPecaDoItem(
-  item: ItemOS,
+  itemId: string,
   pecaId: string,
-  lojaId: string,
-  ordem: OrdemServico,
+  operadorId: string,
 ): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("ordens_servico_itens")
-    .update({ peca_id: pecaId })
-    .eq("id", item.id)
-    .eq("ordem_servico_id", ordem.id)
-    .eq("tipo", "peca")
-    .is("peca_id", null)
-    .select();
+  const { data, error } = await supabase.rpc("cadastrar_peca_do_item", {
+    p_item: itemId,
+    p_peca: pecaId,
+    p_operador: operadorId,
+  });
   if (error) throw error;
-  const vinculados = (data ?? []) as Pick<NovoItemOS, "tipo" | "peca_id" | "quantidade">[];
-  if (vinculados.length === 0) return false;
-
-  // Baixa o item como está no banco agora (quantidade de lá), não o da tela.
-  // Daqui pra frente o item JÁ está ligado: se a baixa falhar, o erro diz
-  // isso, pra ninguém cadastrar a peça de novo achando que não entrou.
-  if (contaNosNumeros(ordem)) {
-    try {
-      await baixarEstoqueDasPecas(vinculados, nomeDocumento(ordem), lojaId);
-    } catch (erroEstoque) {
-      throw new PecaLigadaSemEstoqueError(ordem, mensagemDeErro(erroEstoque));
-    }
-  }
-  return true;
-}
-
-/**
- * A peça foi ligada ao item da OS, mas a baixa no estoque não entrou. Como no
- * `AprovadoSemEstoqueError`, a reação certa é NÃO tentar de novo (o item já
- * tem a peça) e lançar a saída à mão em Movimentações.
- */
-export class PecaLigadaSemEstoqueError extends Error {
-  constructor(
-    readonly ordem: OrdemServico,
-    motivo: string,
-  ) {
-    super(
-      `A peça foi ligada à ${nomeDocumento(ordem)}, mas a baixa no estoque não entrou: ` +
-        `${motivo}. Lance a saída à mão em Movimentações.`,
-    );
-    this.name = "PecaLigadaSemEstoqueError";
-  }
+  return data === true;
 }
 
 /**
@@ -589,6 +562,21 @@ export class VendaSemFaturamentoError extends Error {
   }
 }
 
+/**
+ * A OS foi mexida em outro computador entre a tela abrir e o "Confirmar" (#803):
+ * o total que o banco tem não é o que a pessoa viu. Nada foi cobrado nem
+ * lançado; a tela recarrega a OS e a pessoa confere o total novo.
+ */
+export class OrdemMudouError extends Error {
+  constructor(readonly ordem: OrdemServico) {
+    super(
+      `A ${nomeDocumento(ordem)} mudou em outro computador (alguém acrescentou ou corrigiu ` +
+        `um item). Nada foi cobrado: atualize a tela e fature de novo.`,
+    );
+    this.name = "OrdemMudouError";
+  }
+}
+
 export interface DadosVendaBalcao {
   cliente_id: string;
   vendedor_id: string | null;
@@ -664,8 +652,15 @@ export async function registrarVendaBalcao(
       pagamento.pagamentos,
       pagamento.parcelas,
       pagamento.previsaoRecebimento,
+      operadorId,
+      // A ordem recém-criada não tem itens carregados: o total é o dos itens
+      // que acabaram de entrar.
+      totalOrdem(itens),
     );
   } catch (erroPagamento) {
+    // Inclui OrdemMudouError: numa venda que acabou de nascer ninguém mais a
+    // conhece, então é praticamente impossível; se vier, o aviso de "fature
+    // pela lista" também é o certo.
     throw new VendaSemFaturamentoError(ordem, mensagemDeErro(erroPagamento));
   }
 
@@ -683,6 +678,11 @@ export async function faturarOrdem(
   pagamentos: PagamentoOrdem[],
   parcelas: number,
   previsaoRecebimento: string | null,
+  operadorId: string,
+  // O "Total dos itens" que a tela mostrou (não a soma dos pagamentos: os
+  // juros do cartão deixam o cobrado maior). O banco confere com o que está
+  // gravado e recusa se a OS mudou em outro computador.
+  totalDosItens: number,
 ): Promise<void> {
   // Orçamento não é venda (#379): não entra no caixa nem em contas a
   // receber. Aprovar antes faz dele uma OS.
@@ -701,17 +701,21 @@ export async function faturarOrdem(
     .map((forma) => FORMA_PAGAMENTO_LABEL[forma] ?? forma)
     .join(" + ");
 
-  const { error: erroOrdem } = await supabase
-    .from("ordens_servico")
-    .update({
-      status: "faturada",
-      forma_pagamento: formaPagamentoResumo,
-      parcelas,
-      data_fechamento: new Date().toISOString(),
-    })
-    .eq("id", ordem.id);
-
-  if (erroOrdem) throw erroOrdem;
+  // O banco trava a OS, confere o total e marca como faturada numa transação
+  // só. Só depois de ele aceitar é que o caixa / a conta a receber são lançados.
+  const { error: erroOrdem } = await supabase.rpc("marcar_ordem_faturada", {
+    p_ordem: ordem.id,
+    p_forma_pagamento: formaPagamentoResumo,
+    p_parcelas: parcelas,
+    // Sem arredondar: o banco compara pela diferença (até meio centavo), e
+    // arredondar aqui jogaria o meio centavo pro lado errado.
+    p_total_da_tela: totalDosItens,
+    p_operador: operadorId,
+  });
+  if (erroOrdem) {
+    if ((erroOrdem as { code?: string }).code === "SK803") throw new OrdemMudouError(ordem);
+    throw erroOrdem;
+  }
 
   // Sem previsão de recebimento = cliente já pagou na hora, lança a Entrada
   // no Caixa direto (comportamento de sempre) — um lançamento por forma de

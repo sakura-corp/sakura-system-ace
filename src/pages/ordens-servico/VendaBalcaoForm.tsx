@@ -23,6 +23,7 @@ import type { JurosParcela } from "@/types/configuracao";
 import type { FuncionarioPublico } from "@/types/funcionario";
 import type { NovoItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
+import { Botao } from "@/components/Botao";
 import { NovoClienteVendaModal } from "./CadastroRapidoModais";
 import { FaturamentoCard } from "./FaturamentoCard";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
@@ -91,7 +92,6 @@ export function VendaBalcaoForm({
   const [itensDoPagamento, setItensDoPagamento] = useState<NovoItemOS[] | null>(null);
   const [cadastrandoCliente, setCadastrandoCliente] = useState(false);
   const buscaRef = useRef<HTMLInputElement>(null);
-  const pagamentoRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -119,11 +119,6 @@ export function VendaBalcaoForm({
   useEffect(() => {
     buscaRef.current?.focus();
   }, []);
-
-  useEffect(() => {
-    // `?.` de propósito: o ambiente de teste (jsdom) não tem scrollIntoView.
-    if (noPagamento) pagamentoRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-  }, [noPagamento]);
 
   function adicionar(peca: PecaJanela) {
     replace(incluirPeca(watch("itens"), peca));
@@ -180,10 +175,10 @@ export function VendaBalcaoForm({
         <div className="flex items-center gap-3">
           <BotaoVoltar onClick={onCancelar} />
           <div>
-            <h2 className="text-subtitulo font-semibold text-sakura-purple-dark">
+            <h2 className="text-subtitulo font-semibold text-texto">
               Venda de balcão
             </h2>
-            <p className="text-rotulo text-sakura-muted">
+            <p className="text-rotulo text-texto-2">
               Peça pra quem não vai deixar o carro. Baixa o estoque, lança no caixa e emite a
               NFC-e.
             </p>
@@ -195,6 +190,7 @@ export function VendaBalcaoForm({
             <div className="flex flex-col gap-1">
               <Campo label="Cliente" erro={errors.cliente_id?.message}>
                 <Combobox
+                  tamanho="filtro"
                   opcoes={[
                     { valor: CLIENTE_CONSUMIDOR_ID, rotulo: ROTULO_CONSUMIDOR },
                     ...clientes.map((cliente) => ({ valor: cliente.id, rotulo: cliente.nome })),
@@ -211,7 +207,7 @@ export function VendaBalcaoForm({
                   }}
                 />
               </Campo>
-              <p className="text-rotulo text-sakura-muted">
+              <p className="text-rotulo text-texto-2">
                 {ehConsumidor(clienteId)
                   ? "A nota sai sem identificação. Se pedir CPF na nota, escolha ou cadastre o cliente."
                   : !podeVerCadastro
@@ -224,6 +220,7 @@ export function VendaBalcaoForm({
 
             <Campo label="Vendedor">
               <Combobox
+                tamanho="filtro"
                 opcoes={funcionarios.map((funcionario) => ({
                   valor: funcionario.id,
                   rotulo: funcionario.nome,
@@ -239,7 +236,7 @@ export function VendaBalcaoForm({
 
           <section className="space-y-2">
             <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-sakura-purple-dark/80">
+              <span className="text-texto/80">
                 Passe o leitor ou procure a peça
               </span>
               <input
@@ -256,10 +253,10 @@ export function VendaBalcaoForm({
                 autoComplete="off"
               />
             </label>
-            {avisoBusca && <p className="text-rotulo text-amber-300">{avisoBusca}</p>}
+            {avisoBusca && <p className="text-rotulo text-atencao">{avisoBusca}</p>}
 
             {sugestoes.length > 0 && (
-              <ul className="divide-y divide-sakura-gray/20 overflow-hidden rounded-xl border border-sakura-gray/25">
+              <ul className="divide-y divide-linha overflow-hidden rounded-xl border border-linha">
                 {sugestoes.map((peca) => {
                   const saldo = saldoPorPeca.get(peca.id) ?? 0;
                   return (
@@ -267,15 +264,15 @@ export function VendaBalcaoForm({
                       <button
                         type="button"
                         onClick={() => adicionar(peca)}
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-corpo hover:bg-sakura-pink-soft/40"
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-corpo hover:bg-cartao/40"
                       >
-                        <span className="text-sakura-purple-dark">
+                        <span className="text-texto">
                           {peca.descricao}
                           {peca.codigo_interno && (
-                            <span className="text-sakura-muted"> · {peca.codigo_interno}</span>
+                            <span className="text-texto-2"> · {peca.codigo_interno}</span>
                           )}
                         </span>
-                        <span className="whitespace-nowrap text-rotulo text-sakura-muted">
+                        <span className="whitespace-nowrap text-rotulo text-texto-2">
                           {saldoCarregado ? `saldo ${saldo.toLocaleString("pt-BR")} · ` : ""}
                           {peca.preco_venda != null ? formatarMoeda(peca.preco_venda) : "sem preço"}
                         </span>
@@ -289,13 +286,13 @@ export function VendaBalcaoForm({
 
           <section className="space-y-2">
             {fields.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-sakura-gray/30 px-4 py-6 text-center text-corpo text-sakura-muted">
+              <p className="rounded-xl border border-dashed border-linha px-4 py-6 text-center text-corpo text-texto-2">
                 Nenhuma peça ainda.
               </p>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-sakura-gray/25">
+              <div className="overflow-x-auto rounded-xl border border-linha">
                 <table className="w-full text-left text-corpo">
-                  <thead className="bg-sakura-pink-soft text-sakura-purple-dark">
+                  <thead className="bg-cartao text-texto">
                     <tr>
                       <th className="px-3 py-2 font-medium">Peça</th>
                       <th className="w-24 px-3 py-2 font-medium">Qtd.</th>
@@ -319,15 +316,15 @@ export function VendaBalcaoForm({
                         errors.itens?.[indice]?.quantidade?.message ??
                         errors.itens?.[indice]?.desconto?.message;
                       return (
-                        <tr key={campo.id} className="border-t border-sakura-gray/20 align-top">
+                        <tr key={campo.id} className="border-t border-linha align-top">
                           <td className="px-3 py-2">
-                            <p className="text-sakura-purple-dark">{item?.descricao}</p>
+                            <p className="text-texto">{item?.descricao}</p>
                             {avisos.map((aviso) => (
-                              <p key={aviso} className="text-rotulo text-amber-300">
+                              <p key={aviso} className="text-rotulo text-atencao">
                                 {aviso}
                               </p>
                             ))}
-                            {erroItem && <p className="text-rotulo text-red-300">{erroItem}</p>}
+                            {erroItem && <p className="text-rotulo text-perigo">{erroItem}</p>}
                           </td>
                           <td className="px-3 py-2">
                             <input
@@ -359,7 +356,7 @@ export function VendaBalcaoForm({
                               className={`${inputClasse} w-full`}
                             />
                           </td>
-                          <td className="px-3 py-2 text-right text-sakura-purple-dark">
+                          <td className="px-3 py-2 text-right text-texto">
                             {item ? formatarMoeda(totalDoItem(item)) : "—"}
                           </td>
                           <td className="px-3 py-2 text-right">
@@ -368,7 +365,7 @@ export function VendaBalcaoForm({
                               onClick={() => remove(indice)}
                               aria-label={`Tirar ${item?.descricao ?? "peça"} da venda`}
                               title="Tirar da venda"
-                              className="h-8 w-8 rounded-lg text-corpo text-red-300 hover:bg-red-500/10"
+                              className="h-8 w-8 rounded-lg text-corpo text-perigo hover:bg-perigo/10"
                             >
                               ×
                             </button>
@@ -380,70 +377,60 @@ export function VendaBalcaoForm({
                 </table>
               </div>
             )}
-            {erroDosItens && <p className="text-rotulo text-red-300">{erroDosItens}</p>}
+            {erroDosItens && <p className="text-rotulo text-perigo">{erroDosItens}</p>}
           </section>
         </fieldset>
 
         {/* Mesma barra grudada no rodapé da OS (e pelo mesmo motivo: com a
             venda cheia, o total não pode sair de vista). `sticky`, nunca
             `fixed` — ver o comentário em OrdemServicoForm. */}
-        <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sakura-gray/25 bg-[#160f16] px-4 py-3">
-          <span className="text-subtitulo font-semibold text-sakura-purple-dark">
+        <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3">
+          <span className="text-subtitulo font-semibold text-texto">
             Total {formatarMoeda(total)}
           </span>
+          {/* Com o pagamento aberto (na janela, por cima), estes botões ficam
+              atrás dela, sem clique (a janela trava o fundo). Continuam na
+              tela de propósito: ao fechar a janela, o foco volta pro "Ir para
+              o pagamento" que a abriu. "Mudar as peças" é o botão de desistir
+              da própria janela. */}
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancelar}
-              className="rounded-xl px-4 py-2 text-corpo font-medium text-sakura-purple-dark/90 hover:bg-sakura-gray/10"
-            >
+            <Botao variante="fantasma" onClick={onCancelar}>
               Cancelar
-            </button>
-            {noPagamento ? (
-              <button
-                type="button"
-                onClick={() => setItensDoPagamento(null)}
-                className="rounded-xl border border-sakura-purple px-5 py-2 text-corpo font-medium text-sakura-purple-dark hover:bg-sakura-pink-soft/40"
-              >
-                Mudar as peças
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="rounded-xl bg-sakura-purple px-5 py-2 text-corpo font-medium text-white hover:opacity-90"
-              >
-                Ir para o pagamento
-              </button>
-            )}
+            </Botao>
+            <Botao variante="principal" type="submit">
+              Ir para o pagamento
+            </Botao>
           </div>
         </div>
       </form>
 
       {/* Fora do <form> das peças: o pagamento é outro <form>, e um dentro
-          do outro é HTML inválido. */}
+          do outro é HTML inválido. Abre numa janela (visual novo, tarefa 7):
+          as peças ficam travadas atrás dela, e "Mudar as peças" volta pra
+          elas. */}
       {itensDoPagamento && (
-        <div ref={pagamentoRef}>
-          <FaturamentoCard
-            ordem={{
-              numero: 0,
-              tipo: "venda_balcao",
-              cliente_id: clienteId,
-              cliente: { nome: nomeDoCliente },
-              itens: comoItensDaOrdem(itensDoPagamento),
-            }}
-            titulo={`Pagamento da venda — ${nomeDoCliente}`}
-            rotuloConfirmar="Confirmar venda"
-            jurosParcelas={jurosParcelas}
-            onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
-              onRegistrar(
-                { cliente_id: clienteId, vendedor_id: vendedorId || null },
-                itensDoPagamento,
-                { pagamentos, parcelas, previsaoRecebimento },
-              )
-            }
-            onCancelar={() => setItensDoPagamento(null)}
-          />
-        </div>
+        <FaturamentoCard
+          ordem={{
+            numero: 0,
+            tipo: "venda_balcao",
+            cliente_id: clienteId,
+            cliente: { nome: nomeDoCliente },
+            itens: comoItensDaOrdem(itensDoPagamento),
+          }}
+          titulo="Pagamento da venda"
+          descricao={nomeDoCliente}
+          rotuloConfirmar="Confirmar venda"
+          rotuloCancelar="Mudar as peças"
+          jurosParcelas={jurosParcelas}
+          onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
+            onRegistrar(
+              { cliente_id: clienteId, vendedor_id: vendedorId || null },
+              itensDoPagamento,
+              { pagamentos, parcelas, previsaoRecebimento },
+            )
+          }
+          onCancelar={() => setItensDoPagamento(null)}
+        />
       )}
 
       {cadastrandoCliente && (

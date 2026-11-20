@@ -15,6 +15,7 @@ vi.mock("./supabase", () => ({ supabase: { functions: { invoke: (...a: unknown[]
 const {
   baixarArquivoNota,
   cancelarNFSe,
+  consultarNFSe,
   emitirNFCe,
   emitirNFSe,
   EsperaVencidaError,
@@ -173,6 +174,48 @@ describe("baixar o PDF/XML", () => {
     expect(Array.from(new Uint8Array(await blob.arrayBuffer()))).toEqual(bytes);
   });
 
+  // #965: o S3 da NFS-e Nacional pode servir o DANFSe como "binary/octet-stream"
+  // (ou sem tipo). Um Blob assim o iframe da prévia não mostra (o Electron trata
+  // como download); se os bytes começam com "%PDF", é PDF, venha com o tipo que vier.
+  function envelopeDoArquivo(conteudo: string, tipo_conteudo?: string) {
+    return {
+      data: { ok: true, status: 200, tipo_conteudo, conteudo_base64: btoa(conteudo) },
+      error: null,
+    };
+  }
+  const PDF = "%PDF-1.4\n1 0 obj\n<< >>\nendobj\n%%EOF\n";
+
+  it.each([["binary/octet-stream"], ["application/octet-stream"], [undefined], [""]])(
+    "DANFE com bytes de PDF sai como application/pdf (tipo do porteiro: %s)",
+    async (tipo) => {
+      invoke.mockResolvedValue(envelopeDoArquivo(PDF, tipo));
+      const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "danfe");
+      expect(blob.type).toBe("application/pdf");
+      expect(await blob.text()).toBe(PDF);
+    },
+  );
+
+  it("DANFE que não é PDF (o HTML da NFC-e) fica com o tipo que veio", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<html><body>DANFE</body></html>", "text/html"));
+    const blob = await baixarArquivoNota(LOJA, "nfce", "os12-nfce-1", "danfe");
+    expect(blob.type).toBe("text/html");
+  });
+
+  it("o XML continua com o tipo de antes, mesmo vindo octet-stream", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<NFe/>", "binary/octet-stream"));
+    const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "xml");
+    expect(blob.type).toBe("binary/octet-stream");
+    invoke.mockResolvedValue(envelopeDoArquivo("<NFe/>"));
+    const semTipo = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "xml");
+    expect(semTipo.type).toBe("application/octet-stream");
+  });
+
+  it("DANFE com %PDF só no meio (não no começo) não vira PDF", async () => {
+    invoke.mockResolvedValue(envelopeDoArquivo("<x>%PDF</x>", "application/octet-stream"));
+    const blob = await baixarArquivoNota(LOJA, "nfsen", "os18-nfsen-1", "danfe");
+    expect(blob.type).toBe("application/octet-stream");
+  });
+
   it("arquivo que não veio vira erro, não um PDF vazio", async () => {
     invoke.mockResolvedValue({ data: { ok: false, status: 404, conteudo_base64: null }, error: null });
     await expect(baixarArquivoNota(LOJA, "nfse", "os12-nfse-1", "xml")).rejects.toThrow(/HTTP 404/);
@@ -267,5 +310,81 @@ describe("orçamento nunca emite nota", () => {
     } as Parameters<typeof emitirNFSe>[0];
     await expect(emitirNFSe(dadosNFSe)).rejects.toThrow(/orçamento/i);
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+// NFS-e pelo Padrão Nacional (#837). A `ref` é que diz por onde a nota saiu
+// ("os12-nfsen-..." = nacional), então consultar, cancelar e baixar uma nota
+// antiga do caminho municipal continua indo pro /v2/nfse — sem coluna nova.
+describe("NFS-e Nacional: o pedido vai pelo tipo nfsen", () => {
+  const dadosNacional = {
+    ordem: { id: "os-1", numero: 15 } as OrdemServico,
+    discriminacao: "Alinhamento",
+    valorServicos: 100,
+    cliente: { nome: "Cliente", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09" },
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: {
+      ...configuracaoFiscal,
+      regime_tributario: "simples_nacional",
+      codigo_municipio: "3503208",
+      item_lista_servico: "14.01",
+      aliquota_iss: 2,
+    } as ConfiguracaoFiscalLoja,
+  } as Parameters<typeof emitirNFSe>[0];
+
+  it("loja do Simples emite sem a alíquota do ISS cadastrada (o ISS vai no DAS)", async () => {
+    invoke.mockResolvedValue(repassou({ status: "autorizado" }));
+    const semAliquota = {
+      ...dadosNacional,
+      configuracaoFiscal: { ...dadosNacional.configuracaoFiscal, aliquota_iss: null },
+    } as Parameters<typeof emitirNFSe>[0];
+    await emitirNFSe(semAliquota);
+    expect(invoke.mock.calls[0][1].body).toMatchObject({ acao: "emitir", tipo: "nfsen" });
+  });
+
+  it("loja do Simples emite com tipo nfsen, ref os15-nfsen-..., corpo nacional — e sem pedir CNAE", async () => {
+    invoke.mockResolvedValue(repassou({ status: "autorizado" }));
+    const resposta = await emitirNFSe(dadosNacional);
+    const { body } = invoke.mock.calls[0][1];
+    expect(body).toMatchObject({ loja_id: LOJA, acao: "emitir", tipo: "nfsen" });
+    expect(body.ref).toMatch(/^os15-nfsen-\d+$/);
+    expect(body.corpo).toMatchObject({ cnpj_prestador: "12345678000190", codigo_tributacao_nacional_iss: "140101" });
+    expect(invoke.mock.calls[1][1].body).toMatchObject({ acao: "consultar", tipo: "nfsen", ref: body.ref });
+    expect(resposta.ref).toBe(body.ref);
+  });
+
+  it("consultar e cancelar escolhem o caminho pela ref", async () => {
+    invoke.mockResolvedValue(repassou({ status: "cancelado" }));
+    await consultarNFSe("os12-nfsen-1", LOJA);
+    await cancelarNFSe("os12-nfsen-1", "Serviço lançado em duplicidade", LOJA);
+    await consultarNFSe("os12-nfse-1", LOJA);
+    expect(invoke.mock.calls.map((c) => c[1].body.tipo)).toEqual(["nfsen", "nfsen", "nfse"]);
+  });
+
+  it("baixar uma NFS-e nacional pedida como nfse vai como nfsen", async () => {
+    invoke.mockResolvedValue({ data: { ok: true, status: 200, conteudo_base64: btoa("x") }, error: null });
+    await baixarArquivoNota(LOJA, "nfse", "os12-nfsen-1", "xml");
+    expect(invoke.mock.calls[0][1].body).toMatchObject({ tipo: "nfsen", ref: "os12-nfsen-1" });
+  });
+
+  it("a consulta nacional devolve o PDF e a chave nos campos que o resto do programa já lê", async () => {
+    invoke.mockResolvedValue(
+      repassou({
+        status: "autorizado",
+        numero: "74798",
+        url: "https://www.nfse.gov.br/consultapublica/?tpc=1&chave=42054072212345678000123000000007479826039913594189",
+        url_danfse: "https://focusnfe.s3.sa-east-1.amazonaws.com/arquivos/x.pdf",
+        caminho_xml_nota_fiscal: "/arquivos/x-nfse.xml",
+      }),
+    );
+    const r = await consultarNFSe("os12-nfsen-1", LOJA);
+    expect(r.caminho_danfe).toBe("https://focusnfe.s3.sa-east-1.amazonaws.com/arquivos/x.pdf");
+    expect(r.chave_nfe).toBe("42054072212345678000123000000007479826039913594189");
+  });
+
+  it("a ref nacional também é reconhecida como NFS-e da OS", () => {
+    expect(refPertenceAOrdem("os12-nfsen-1727200000000", 12, "nfse")).toBe(true);
+    expect(refPertenceAOrdem("os12-nfsen-1727200000000", 13, "nfse")).toBe(false);
+    expect(refPertenceAOrdem("os12-nfsen-1727200000000", 12, "nfce")).toBe(false);
   });
 });

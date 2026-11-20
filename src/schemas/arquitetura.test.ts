@@ -24,26 +24,28 @@ import { describe, expect, it } from "vitest";
  * acrescentar uma exceção aqui embaixo, com o motivo escrito.
  */
 
-const PASTA_TELAS = "src/pages";
+/**
+ * As pastas varridas. `src/lib/` entrou na #915: o documento de garantia
+ * (`lib/garantiaDocumento.ts`) fazia o valor do item, os totais e as parcelas
+ * à mão, e passou batido porque o teste só olhava `src/pages/`.
+ *
+ * Limite conhecido: o que está dentro de texto com crase é apagado antes de
+ * procurar (ver `semComentarioNemTexto`), então uma conta escrita dentro do
+ * HTML de um documento (`${a * b}`) continua invisível pra este teste.
+ */
+const PASTAS_VARRIDAS = ["src/pages", "src/lib"];
 
 /**
  * Casos que já estavam assim antes deste teste existir.
  *
- * Nenhum deles é "legítimo": é a mesma dívida de sempre, conta de dinheiro
- * dentro da tela. Está anotada aqui, com nome e sobrenome, em vez de o teste
- * ser afrouxado — assim a dívida fica contável e a próxima sessão sabe
- * exatamente o que falta mover. Eram duas telas; a `LucratividadeSection`
- * saiu da lista na tarefa #379 (a conta foi pra `schemas/lucratividade.ts`).
- *
- * Mexer na tela que sobrou é trabalho de outro item do guia (é refatoração
- * de tela, que pede preview renderizado pra conferir). O que este teste
- * garante desde já é que a lista **não cresce**.
+ * Ficou vazia na #875 (a última, o valor do estoque da
+ * `RelatoriosEstoqueSection`, foi pra `schemas/valorItem.ts`). Antes dela a
+ * `LucratividadeSection` tinha saído na #379. A lista fica aqui, vazia, pra
+ * que uma exceção futura precise vir com nome, sobrenome e motivo escrito —
+ * nunca afrouxando o teste.
  */
-const DIVIDA_CONHECIDA: Record<string, string> = {
-  "estoque/RelatoriosEstoqueSection.tsx":
-    "Calcula o valor financeiro do estoque (saldo × preço de custo) dentro do " +
-    "componente. Mesmo destino: função pura em src/schemas/.",
-};
+// A chave é o caminho a partir da raiz (ex.: "src/pages/x/Y.tsx").
+const DIVIDA_CONHECIDA: Record<string, string> = {};
 
 function arquivosDeTela(pasta: string, prefixo = ""): string[] {
   return readdirSync(pasta, { withFileTypes: true }).flatMap((entrada) => {
@@ -117,25 +119,44 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
     nome: "juros ou alíquota virando porcentagem",
     padrao: /\b[A-Za-z_$.]*(juros|aliquota|alíquota)[A-Za-z_$]*\s*\/\s*100|\*\s*1\.\d/i,
   },
+  {
+    nome: "valor do item (quantidade × preço) calculado na tela",
+    // #875: o `arquitetura.test.ts` procurava só "lucro" e "preco_custo", e a
+    // linha `quantidade * preco_unitario - desconto` passou batido em duas
+    // telas da OS. Ela mora em `schemas/valorItem.ts` (`valorLiquidoDoItem`).
+    // Aceita a conta embrulhada, como `paraNumero(item.quantidade) *
+    // paraNumero(item.preco_unitario)` (revisão da #875).
+    padrao:
+      /\bquantidade\w*\)?\s*\*\s*[A-Za-z_$.(]*preco_unitario|preco_unitario\w*\)?\s*\*\s*[A-Za-z_$.(]*quantidade/,
+  },
+  {
+    nome: "soma de valores em dinheiro feita na tela",
+    // #875: `reduce((soma, m) => soma + m.valor, 0)` e o acumulador de mapa
+    // `(mapa.get(x) ?? 0) + m.valor`, e o acumulador solto `total + m.valor`
+    // (era assim no Diário do Caixa, que a primeira versão deixou passar). Soma de dinheiro usa o `somar` de
+    // `schemas/dinheiro.ts` (fecha no centavo) ou uma função de `src/schemas/`.
+    padrao:
+      /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b|\b(?:soma|total)\w*\s*\+\s*\w+\.valor\b/i,
+  },
 ];
 
 const ONDE_A_CONTA_MORA =
   "conta de dinheiro vive em `src/schemas/` como função pura testada — " +
   "ver PROJETO_STATUS.md, seção 6, item 40";
 
-describe("conta de dinheiro não mora na tela", () => {
-  const arquivos = arquivosDeTela(PASTA_TELAS);
+describe("conta de dinheiro não mora na tela nem em src/lib", () => {
+  const arquivos = PASTAS_VARRIDAS.flatMap((pasta) =>
+    arquivosDeTela(pasta).map((relativo) => `${pasta}/${relativo}`),
+  );
 
-  it("encontra as telas pra varrer", () => {
+  it.each(PASTAS_VARRIDAS)("encontra arquivos pra varrer em %s", (pasta) => {
     // Se a pasta mudar de lugar e este teste passar a varrer o vazio, ele
     // ficaria verde sem checar nada — que é pior que estar vermelho.
-    expect(arquivos.length).toBeGreaterThan(40);
+    expect(arquivosDeTela(pasta).length).toBeGreaterThan(40);
   });
 
   it.each(arquivos)("%s", (relativo) => {
-    const codigo = semComentarioNemTexto(
-      readFileSync(join(PASTA_TELAS, relativo), "utf8"),
-    );
+    const codigo = semComentarioNemTexto(readFileSync(relativo, "utf8"));
 
     const achados = SUSPEITAS.filter(({ padrao }) => padrao.test(codigo)).map(
       ({ nome }) => nome,
@@ -155,8 +176,68 @@ describe("conta de dinheiro não mora na tela", () => {
 
     expect(
       achados,
-      `${relativo} parece fazer conta de dinheiro na tela (${achados.join("; ")}). ` +
+      `${relativo} parece fazer conta de dinheiro fora de src/schemas/ (${achados.join("; ")}). ` +
         `${ONDE_A_CONTA_MORA}.`,
     ).toHaveLength(0);
+  });
+});
+
+/**
+ * Dia de calendário (coluna `date`) mostrado com `new Date(...)` (#1005).
+ *
+ * `new Date("2026-11-15")` lê o dia como meia-noite em UTC; no horário de
+ * Brasília isso cai às 21h do dia 14, e a tela mostra um dia antes. Foi assim
+ * no vencimento das contas, na mensagem de cobrança do WhatsApp (que vai pro
+ * cliente) e na data do pedido de compra. É o mesmo padrão dos itens 34, 42 e
+ * 48 de `docs/licoes.md`.
+ *
+ * O jeito certo é o `diaBrasileiro()` de `src/lib/datas.ts`, que só reorganiza
+ * o texto ("2026-11-15" → "15/11/2026"), sem fuso nenhum.
+ *
+ * Só as colunas `date` que já deram o defeito estão aqui. As colunas com hora
+ * (`data_pagamento` das contas, `data_recebimento`, `data_fechamento`,
+ * `data_abertura`) são `timestamptz` e com elas o `new Date` está certo.
+ */
+const PASTAS_DE_TELA = ["src/pages", "src/components"];
+const COLUNAS_SO_DIA = ["vencimento", "data_pedido"];
+const DIA_COM_NEW_DATE = new RegExp(
+  `new Date\\(\\s*[A-Za-z_$][\\w$.?!]*\\.(?:${COLUNAS_SO_DIA.join("|")})\\b`,
+);
+
+/**
+ * Aqui a varredura é linha a linha no texto cru, de propósito: o
+ * `semComentarioNemTexto` apaga o que está entre crases, e a mensagem de
+ * cobrança do WhatsApp (um dos lugares do defeito) é justamente um texto com
+ * crase. Só a linha que é comentário fica de fora.
+ */
+function ehLinhaDeComentario(linha: string): boolean {
+  return /^\s*(\/\/|\/\*|\*)/.test(linha);
+}
+
+describe("dia de calendário (coluna date) não passa por new Date na tela (#1005)", () => {
+  const arquivos = PASTAS_DE_TELA.flatMap((pasta) =>
+    arquivosDeTela(pasta).map((relativo) => `${pasta}/${relativo}`),
+  );
+
+  it.each(PASTAS_DE_TELA)("encontra arquivos pra varrer em %s", (pasta) => {
+    expect(arquivosDeTela(pasta).length).toBeGreaterThan(5);
+  });
+
+  it("nenhuma tela faz new Date(<algo>.vencimento) nem new Date(<algo>.data_pedido)", () => {
+    const achados = arquivos.flatMap((relativo) =>
+      readFileSync(relativo, "utf8")
+        .split("\n")
+        .flatMap((linha, i) =>
+          DIA_COM_NEW_DATE.test(linha) && !ehLinhaDeComentario(linha)
+            ? [`${relativo}:${i + 1}`]
+            : [],
+        ),
+    );
+
+    expect(
+      achados,
+      `Dia de calendário passando por new Date (mostra um dia antes no horário de Brasília). ` +
+        `Use diaBrasileiro() de src/lib/datas.ts. Lugares:\n${achados.join("\n")}`,
+    ).toEqual([]);
   });
 });

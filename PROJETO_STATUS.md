@@ -28,7 +28,9 @@ tranca.
 **Depois, abrir o caderno de quem está trabalhando** (seção 1, item 4): `add_repo`, com escrita,
 de `<usuário>/segundo-cerebro` (no Claude do PC, que não tem `add_repo`: a pasta `segundo-cerebro`
 na pasta do usuário, a que o Obsidian abre), só o da própria pessoa, e seguir o `CLAUDE.md` de lá,
-**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). Se não abrir (não
+**a não ser que a tarefa diga `Second brain: não precisa`** (`docs/tarefas.md`). **Vale mesmo quando a
+primeira mensagem é uma pergunta curta**: abrir antes de responder (em 2 sessões novas, #618 e #619,
+o caderno só abriu quando a pessoa perguntou). Se não abrir (não
 existe ainda, ou a sessão não alcança): avisar, dizer se dá ou não pra fazer a tarefa sem ele e
 **perguntar se a pessoa quer seguir**. É aviso, nunca tranca.
 
@@ -86,8 +88,7 @@ pede**:
 | `docs/pendencias-e-futuro.md` | **"O que depende dela"**; o que não existe; a parte fiscal (playbook por loja nova) | ao planejar, e quando ela perguntar "o que falta?" |
 | `docs/operacao.md` | rodar, instalar empresa nova, **publicar/liberar**, backup, atualizar bancos, voltar versão | ao publicar, rodar migration ou instalar loja |
 | `docs/historico.md` | estado do Git e os "onde parou" antigos, do mais novo pro mais velho | quando precisar do detalhe de um marco |
-| `docs/visao.md` | **pra onde o SSACE vai**, as quatro frentes e a prioridade das tarefas (ondas) | ao planejar funcionalidade nova ou falar do futuro |
-| `docs/comparativo-anexar.md` | o concorrente Anexar × o que temos (#386 a #412) | ao planejar funcionalidade nova ou falar de venda |
+| `docs/visao.md` e `docs/comparativo-anexar.md` (moram no `sakura-corp/escritorio`, privado) | **pra onde o SSACE vai** e o concorrente Anexar × o que temos. **Plano e estratégia novos nascem no escritório**, nunca aqui: este repositório é público (Sofia, 11/11/2026) | ao planejar funcionalidade nova, falar do futuro ou de venda (abrir o escritório com `add_repo`; se a sessão não alcança, seguir sem e avisar) |
 | `docs/jeito-de-trabalhar.md` | **o método com o Claude**: skills, trancas, afazeres, a fila | ao mexer em skill, gatilho ou tarefa agendada, e na revisão do mês |
 | `docs/tarefas.md` | **o modelo único de tarefa**, as etiquetas, **a tabela de modelos** e o que fazer quando o modelo falha | ao escrever ou começar uma tarefa, e quando uma sessão falhar por modelo ou crédito |
 | `docs/projetos-secundarios.md` | **os projetos secundários**: o fluxo da proposta, quem faz o quê, as etiquetas | quando o assunto for projeto secundário ou proposta |
@@ -165,11 +166,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 05/11/2026, noite: as pendências da varredura resolvidas; 134 branches apagadas
-- **Branches** (#884, fechada): 10 aqui, 21 no escritório e 103 no privado, apagadas por ela; só ficam a `main` e as dos PRs abertos. O privado agora apaga sozinho ao mesclar.
-- **Orçamento no balcão** (#885, fechada): ficou fora da #379; virou a #888 (rascunho pro Tiago, com 3 perguntas pra ela). Docs alinhados (#889).
-- **Privado** (caranovavidanova/sakura-corp#156): 3 das 4 decisões gravadas; falta o valor de lançamento, depois da conversa dela com o pai.
-- **Sessões**: todas arquivadas (#519, fechada).
-- **O Tiago**: o CI vermelho da #882; escrever a #888; pôr nas levas as tarefas novas e triar a #886.
-- **Próximas sessões dela**: #871 e #878 juntas (workflows e Vercel); depois a #879 (as skills em rascunho e a R1).
-- **Seguem valendo**: NFS-e (#839) esperando a Focus e a contabilidade; #520 (06/11), #842 (11/11), escritorio#20 (22/11).
+### 17/11/2026: visual novo, a leva inteira (#990) na `main`
+- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
+- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
+- **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
+- **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
+- **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).
