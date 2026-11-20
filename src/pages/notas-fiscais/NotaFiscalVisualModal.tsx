@@ -5,6 +5,7 @@ import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
+import { buscarLojaDoRecibo, buscarOsDoRecibo } from "@/lib/reciboNotaFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { useBaixarXml } from "./useBaixarXml";
@@ -14,8 +15,8 @@ interface NotaFiscalVisualModalProps {
   onFechar: () => void;
 }
 
-// A "Versão para o cliente": um resumo da nota que o programa monta a partir
-// do XML. É o que existe pra nota feita fora do programa (que não tem PDF
+// A "Versão para o cliente": o recibo da nota (modelo novo, #1031) que o
+// programa monta a partir do XML, da OS ligada e dos dados da loja. É o que existe pra nota feita fora do programa (que não tem PDF
 // guardado). Visual novo (tarefa 12, #990): diz o que é, e cada botão de
 // baixar diz o que baixa e pra quem (pedido da Sofia, 15/11).
 export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualModalProps) {
@@ -31,10 +32,21 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
       setCarregando(true);
       setErro(null);
       try {
-        const conteudo = await buscarConteudoArquivo(arquivo);
+        // O XML manda; a OS (veículo, placa, garantia) e a loja (pra
+        // completar o emitente da Giap) só completam, e sem acesso a elas o
+        // recibo sai sem aquelas seções (#1031).
+        const [conteudo, os, loja] = await Promise.all([
+          buscarConteudoArquivo(arquivo),
+          arquivo.ordem_servico_id
+            ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
+            : Promise.resolve(null),
+          buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+        ]);
         const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
         setReconhecido(dados.reconhecido);
-        setHtml(montarHtmlVisualNotaFiscal(dados));
+        // O valor da nota da Giap não está guardado no sistema: sem ele, o
+        // recibo não lista os itens da OS (mostra "Itens na OS nº X").
+        setHtml(montarHtmlVisualNotaFiscal(dados, { os, loja, valorDaNota: null }));
       } catch (err) {
         console.error("Erro ao gerar versão visual da nota fiscal:", err);
         setErro(mensagemDeErro(err));
@@ -108,7 +120,7 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
             ref={iframeRef}
             title="Pré-visualização da nota fiscal"
             srcDoc={html}
-            className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
+            className="h-[75vh] min-h-96 w-full rounded-xl border border-linha bg-white"
           />
         )}
       </div>
