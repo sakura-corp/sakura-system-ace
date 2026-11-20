@@ -293,15 +293,15 @@ export const orcamentos = [
 ];
 
 export const categoriasCaixa = [
-  { id: "cc1", nome: "Aluguel", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc3", nome: "Energia elétrica", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc4", nome: "Compra de peças", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", criado_em: dia(-400) },
-  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", criado_em: dia(-400) },
-  { id: "cc7", nome: "Internet e telefone", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", criado_em: dia(-400) },
-  { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", criado_em: dia(-400) },
+  { id: "cc1", nome: "Aluguel", tipo: "saida", grupo: "despesas_administrativas", criado_em: dia(-400) },
+  { id: "cc2", nome: "Folha de pagamento", tipo: "saida", grupo: "despesas_pessoal", criado_em: dia(-400) },
+  { id: "cc3", nome: "Energia elétrica", tipo: "saida", grupo: "despesas_administrativas", criado_em: dia(-400) },
+  { id: "cc4", nome: "Compra de peças", tipo: "saida", grupo: "custos", criado_em: dia(-400) },
+  { id: "cc5", nome: "Venda de sucata", tipo: "entrada", grupo: "outras_receitas", criado_em: dia(-400) },
+  { id: "cc6", nome: "Aporte do sócio", tipo: "entrada", grupo: "fora_do_resultado", criado_em: dia(-400) },
+  { id: "cc7", nome: "Internet e telefone", tipo: "saida", grupo: "a_classificar", criado_em: dia(-400) },
+  { id: "cc8", nome: "Manutenção e limpeza", tipo: "saida", grupo: "a_classificar", criado_em: dia(-400) },
+  { id: "cc9", nome: "Recebimento de cliente", tipo: "entrada", grupo: "a_classificar", criado_em: dia(-400) },
 ];
 function nomeDaCategoriaCaixa(id: Qualquer) {
   return categoriasCaixa.find((c) => c.id === id)!.nome;

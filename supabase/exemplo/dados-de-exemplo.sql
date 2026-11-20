@@ -506,11 +506,12 @@ on conflict do nothing;
 -- 8. Caixa, contas a pagar e contas a receber
 -- ---------------------------------------------------------------------------
 -- Categorias de despesa (catálogo da empresa; se já existir uma com o mesmo
--- nome, usa a que existe).
-insert into categorias_caixa (id, nome, tipo) values
-  ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida'),
-  ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida'),
-  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida')
+-- nome, usa a que existe, com o grupo que ela já tem). Cada uma já entra no
+-- grupo do DRE (migration 0087), como a loja faria em Configurações.
+insert into categorias_caixa (id, nome, tipo, grupo) values
+  ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida', 'despesas_administrativas'),
+  ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida', 'despesas_administrativas'),
+  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida', 'custos')
 on conflict do nothing;
 
 insert into caixa_movimentos (id, loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
