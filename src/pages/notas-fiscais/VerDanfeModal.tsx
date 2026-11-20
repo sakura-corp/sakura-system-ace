@@ -238,7 +238,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
               <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
                 <p className="min-w-0">
                   {original && extensaoDaNota(original.type) === "html"
-                    ? "O PDF pro cliente é o recibo da nota, montado pelo programa (sem o QR code). "
+                    ? "O PDF pro cliente é o recibo da nota (com o QR code), montado pelo programa a partir do XML. "
                     : "O PDF pro cliente é este, como a Focus NFe mandou. "}
                   O documento oficial é o XML.
                 </p>
