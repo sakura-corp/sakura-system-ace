@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { Botao } from "@/components/Botao";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useRascunho } from "@/hooks/useRascunhoFormulario";
 import { ehErroDeRede, mensagemDeErro } from "@/lib/errors";
@@ -22,7 +23,6 @@ import { DocumentosFields } from "./campos/DocumentosFields";
 import { EnderecoFields } from "./campos/EnderecoFields";
 import { FiliacaoFields } from "./campos/FiliacaoFields";
 import { FilhosFields } from "./campos/FilhosFields";
-import { AbaBotao } from "./campos/FormCompartilhado";
 import { IdentificacaoFields } from "./campos/IdentificacaoFields";
 
 interface FuncionarioFormProps {
@@ -112,12 +112,24 @@ export function FuncionarioForm({
         </p>
       )}
 
-      <div className="flex gap-1 border-b border-linha">
-        <AbaBotao label="Dados gerais" ativa={aba === "gerais"} onClick={() => setAba("gerais")} />
-        <AbaBotao label="Família" ativa={aba === "familia"} onClick={() => setAba("familia")} />
-      </div>
+      <Abas
+        rotulo="Partes do cadastro do funcionário"
+        prefixoId="aba-funcionario"
+        ativa={aba}
+        aoEscolher={setAba}
+        abas={[
+          { valor: "gerais", nome: "Dados gerais" },
+          { valor: "familia", nome: "Família" },
+        ]}
+      />
 
-      <div className={aba === "gerais" ? "space-y-5" : "hidden"}>
+      {/* Os dois painéis ficam montados (só um aparece): o formulário guarda o
+          que foi digitado na outra aba. */}
+      <div
+        role="tabpanel"
+        aria-labelledby="aba-funcionario-gerais"
+        className={aba === "gerais" ? "space-y-5" : "hidden"}
+      >
         <IdentificacaoFields register={register} errors={errors} />
         <DocumentosFields register={register} />
         <EnderecoFields register={register} setValue={setValue} />
@@ -125,7 +137,11 @@ export function FuncionarioForm({
         <CargoAdmissaoFields register={register} />
       </div>
 
-      <div className={aba === "familia" ? "space-y-5" : "hidden"}>
+      <div
+        role="tabpanel"
+        aria-labelledby="aba-funcionario-familia"
+        className={aba === "familia" ? "space-y-5" : "hidden"}
+      >
         <FiliacaoFields register={register} />
         <ConjugeFields register={register} />
         <FilhosFields control={control} register={register} />

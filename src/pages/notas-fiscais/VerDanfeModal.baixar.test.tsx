@@ -4,6 +4,11 @@
  * NFC-e em HTML, e o "Baixar a nota (pro cliente)" salvava esse HTML com o
  * nome "NFC-e-<número>.pdf". O arquivo abria em branco no PC e no celular do
  * cliente. A nota baixada leva a extensão do que ela é.
+ *
+ * Desde a #1115, o botão do cliente é "Baixar o PDF da nota (pro cliente)" (o
+ * PDF gerado do recibo, testado em VerDanfeModal.pdf.test.tsx) e o HTML da
+ * Focus fica em "Baixar o arquivo original da Focus (HTML)", embaixo da
+ * prévia. A regra do #1113 vale pros dois: HTML nunca sai com nome ".pdf".
  */
 import { fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -51,20 +56,26 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-async function baixarANota(conteudo: Blob) {
+async function baixarANota(conteudo: Blob, botao: RegExp) {
   buscarDanfeEmitida.mockResolvedValue(conteudo);
   renderizar(<VerDanfeModal arquivo={nota} onFechar={() => {}} />);
-  fireEvent.click(await screen.findByRole("button", { name: /Baixar a nota/ }));
+  fireEvent.click(await screen.findByRole("button", { name: botao }));
 }
 
-describe("Nota do cliente: Baixar a nota (pro cliente)", () => {
+describe("Nota do cliente: o arquivo baixado leva a extensão do que ele é", () => {
   it("NFC-e que a Focus manda em HTML é salva como .html, não como .pdf vazio", async () => {
-    await baixarANota(new Blob(["<html><body>DANFE</body></html>"], { type: "text/html" }));
+    await baixarANota(
+      new Blob(["<html><body>DANFE</body></html>"], { type: "text/html" }),
+      /Baixar o arquivo original da Focus/,
+    );
     expect(baixados).toEqual(["NFC-e-21.html"]);
   });
 
   it("nota em PDF continua saindo .pdf", async () => {
-    await baixarANota(new Blob(["%PDF-1.4"], { type: "application/pdf" }));
+    await baixarANota(
+      new Blob(["%PDF-1.4"], { type: "application/pdf" }),
+      /Baixar o PDF da nota \(pro cliente\)/,
+    );
     expect(baixados).toEqual(["NFC-e-21.pdf"]);
   });
 });

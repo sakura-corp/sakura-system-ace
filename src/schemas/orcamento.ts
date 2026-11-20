@@ -138,7 +138,10 @@ export function valoresMensagemOrcamento(
 /**
  * Peça avulsa: digitada no orçamento sem escolher do cadastro (`peca_id`
  * nulo). Não mexe no estoque e não sai em NFC-e (não tem NCM) até ganhar um
- * cadastro. Só o orçamento cria; uma OS aprovada com "sem cadastro" mantém.
+ * cadastro. Só o orçamento cria. Desde a #1128 o orçamento só vira OS com
+ * cada peça avulsa ligada ao cadastro; OS antigas, aprovadas quando ainda
+ * existia "seguir sem cadastro", podem ter peça avulsa (a janela da nota
+ * cadastra).
  */
 export function ehPecaAvulsa(item: Pick<ItemOS, "tipo" | "peca_id">): boolean {
   return item.tipo === "peca" && !item.peca_id;
@@ -149,22 +152,22 @@ export function pecasAvulsas<T extends Pick<ItemOS, "tipo" | "peca_id">>(itens: 
 }
 
 /**
- * O que fazer com cada peça avulsa ao aprovar o orçamento:
+ * O que fazer com cada peça avulsa ao aprovar o orçamento (que é o mesmo
+ * passo de virar OS):
  *   • "existente": é uma peça que já está no cadastro → o item passa a
  *     apontar pra ela e baixa estoque;
  *   • "cadastrar": a tela cadastrou a peça na hora (`pecaId` é o da nova) →
- *     idem;
- *   • "sem_cadastro": fica avulsa, sem estoque (e sem NFC-e até cadastrar).
+ *     idem.
+ * Não existe mais "seguir sem cadastro" (#1128): peça sem cadastro não tem
+ * NCM, e a OS só descobria isso na hora da NFC-e, já faturada.
  */
 export type CaminhoAvulsa =
   | { caminho: "existente"; pecaId: string }
-  | { caminho: "cadastrar"; pecaId: string }
-  | { caminho: "sem_cadastro" };
+  | { caminho: "cadastrar"; pecaId: string };
 
-/** O caminho está completo? "existente"/"cadastrar" só valem com a peça escolhida. */
+/** O caminho está completo? Só vale com a peça escolhida (ou cadastrada). */
 function caminhoCompleto(escolha: CaminhoAvulsa | undefined): boolean {
   if (!escolha) return false;
-  if (escolha.caminho === "sem_cadastro") return true;
   return escolha.pecaId.trim() !== "";
 }
 
@@ -181,8 +184,8 @@ export function pendenciasDaAprovacao<T extends Pick<ItemOS, "id" | "tipo" | "pe
 
 /**
  * Os itens que ganham `peca_id` na aprovação ("existente" e "cadastrar"),
- * pra `aprovarOrcamento` gravar antes de baixar o estoque. "Sem cadastro"
- * não vincula, e escolha pra item que não é avulso é ignorada.
+ * pra `aprovarOrcamento` gravar antes de baixar o estoque. Escolha pra item
+ * que não é avulso é ignorada.
  */
 export function vinculosDaAprovacao(
   itens: readonly Pick<ItemOS, "id" | "tipo" | "peca_id">[],
@@ -190,7 +193,7 @@ export function vinculosDaAprovacao(
 ): { itemId: string; pecaId: string }[] {
   return pecasAvulsas(itens).flatMap((item) => {
     const escolha = escolhas.get(item.id);
-    if (!escolha || escolha.caminho === "sem_cadastro" || !caminhoCompleto(escolha)) return [];
+    if (!escolha || !caminhoCompleto(escolha)) return [];
     return [{ itemId: item.id, pecaId: escolha.pecaId }];
   });
 }

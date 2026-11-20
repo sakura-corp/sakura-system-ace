@@ -188,6 +188,11 @@ export class EsperaVencidaError extends FocusNfeError {
 // nota continua processando do lado deles; dá pra consultar de novo depois).
 // A prefeitura costuma ser mais lenta que a SEFAZ (em 01/10/2026 a NFS-e
 // passou dos 30s e saiu autorizada logo depois), por isso espera o dobro.
+//
+// Só é chamada DEPOIS de o envio ter sido aceito. Daí em diante, consulta que
+// falha (sem internet, porteiro fora do ar) não quer dizer que a nota não
+// saiu: tenta de novo na próxima volta e, se não der, sai com a `ref` — nunca
+// com um erro comum, que devolveria a tela pro "Confirmar emissão" (#1112).
 async function aguardarAutorizacao(
   consultar: () => Promise<RespostaFocusNfe>,
   ref: string,
@@ -195,17 +200,32 @@ async function aguardarAutorizacao(
   tentativas: number,
 ): Promise<RespostaFocusNfe> {
   const intervaloMs = 3000;
+  let ultimaFalha: unknown = null;
   for (let i = 0; i < tentativas; i++) {
-    const resposta = await consultar();
-    if (resposta.status !== "processando_autorizacao") return resposta;
-    await aguardar(intervaloMs);
+    try {
+      const resposta = await consultar();
+      if (resposta.status !== "processando_autorizacao") return resposta;
+      ultimaFalha = null;
+    } catch (erro) {
+      ultimaFalha = erro;
+      // O porteiro RECUSOU (sem permissão, por exemplo): esperar não muda
+      // nada. Sai já, mas ainda com a `ref`, pra conferir depois.
+      if (motivoDaRecusa(erro)) break;
+    }
+    if (i < tentativas - 1) await aguardar(intervaloMs);
   }
   // A `ref` precisa ir junto. Sem ela, o caminho natural seria clicar em
   // "emitir" de novo e acabar com DUAS notas fiscais válidas pra mesma venda.
+  // A mensagem da falha não vai junto: a de rede diz "tente de novo", e aqui
+  // isso seria lido como "emita de novo".
+  const motivo = ultimaFalha
+    ? "Não consegui conferir se a nota saiu (a internet ou o servidor falhou). A nota já foi " +
+      "enviada e pode sair autorizada"
+    : `${quemAutoriza} está demorando mais que o normal pra responder. A nota já foi enviada e ` +
+      "deve sair autorizada em instantes";
   throw new EsperaVencidaError(
-    `${quemAutoriza} está demorando mais que o normal pra responder. A nota já foi enviada e ` +
-      'deve sair autorizada em instantes — não emita de novo. Espere um pouco e clique em ' +
-      '"Conferir de novo": quando ela sair, o sistema registra aqui.',
+    `${motivo} — não emita de novo. Espere um pouco e clique em "Conferir de novo": quando ` +
+      "ela sair, o sistema registra aqui.",
     ref,
   );
 }
@@ -472,7 +492,20 @@ export function montarCorpoNFCe({
 const MENSAGEM_SEM_TOKEN =
   "Token do Focus NFe não configurado — cadastre em Configurações → Dados fiscais da loja.";
 
-export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocusNfe> {
+export interface OpcoesEmissaoNFCe {
+  /**
+   * Emite como "consumidor não identificado", mesmo com o cliente tendo CPF ou
+   * CNPJ no cadastro (#1112): é o "Emitir sem identificar o cliente" da tela,
+   * depois que a SEFAZ recusou o documento do destinatário (ex.: CNPJ
+   * recém-aberto que a base dela ainda não tem). Sem a opção, nada muda.
+   */
+  semDestinatario?: boolean;
+}
+
+export async function emitirNFCe(
+  dados: DadosEmissaoNFCe,
+  opcoes: OpcoesEmissaoNFCe = {},
+): Promise<RespostaFocusNfe> {
   const { configuracaoFiscal, ordem } = dados;
   const numero = numeroParaNota(ordem);
   if (!configuracaoFiscal.focus_nfe_configurado) throw new FocusNfeError(MENSAGEM_SEM_TOKEN);
@@ -487,7 +520,11 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
 
   const lojaId = configuracaoFiscal.loja_id;
   const ref = montarRefNota(numero, "nfce");
-  const corpo = montarCorpoNFCe(dados);
+  // Sem destinatário = o mesmo corpo de `montarDestinatarioNFCe(null)`: só o
+  // cliente sai da nota; itens, pagamentos e totais são os mesmos.
+  const corpo = montarCorpoNFCe(opcoes.semDestinatario ? { ...dados, cliente: null } : dados);
+
+  if (!opcoes.semDestinatario && simularRecusaDoDestinatario()) return recusaSimulada(ref, corpo);
 
   await chamarFocusNfe<RespostaFocusNfe>(lojaId, { acao: "emitir", tipo: "nfce", ref, corpo });
 
@@ -501,6 +538,26 @@ export async function emitirNFCe(dados: DadosEmissaoNFCe): Promise<RespostaFocus
   // e ela é daqui, não da Focus NFe: garante que ela vá junto mesmo se a
   // resposta não a repetir.
   return { ...resposta, ref: resposta.ref ?? ref };
+}
+
+// Teste no PC da #1112: a homologação pode não recusar CNPJ nenhum. Com
+// `VITE_SIMULAR_RECUSA_DESTINATARIO=1 npm run dev`, a emissão normal devolve a
+// recusa de 17/11 sem pedir nada à Focus (o "Emitir sem identificar o
+// cliente" vai de verdade). `import.meta.env.DEV` é falso no programa
+// instalado: lá isto nunca liga, nem com a variável.
+function simularRecusaDoDestinatario(): boolean {
+  return Boolean(import.meta.env.DEV) && (import.meta.env.VITE_SIMULAR_RECUSA_DESTINATARIO || "") === "1";
+}
+
+function recusaSimulada(ref: string, corpo: NFCeCorpo): RespostaFocusNfe {
+  const documento = corpo.cnpj_destinatario
+    ? `CNPJ ${corpo.cnpj_destinatario}`
+    : `CPF ${corpo.cpf_destinatario || ""}`.trim();
+  return {
+    ref,
+    status: "erro_autorizacao",
+    mensagem_sefaz: `Rejeição: ${documento} do destinatário não cadastrado na Receita Federal`,
+  };
 }
 
 export async function consultarNFCe(ref: string, lojaId: string): Promise<RespostaFocusNfe> {

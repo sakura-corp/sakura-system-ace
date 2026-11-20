@@ -239,17 +239,18 @@ describe("OrdemServicoForm — ligar falhou: as escolhas não se perdem no Volta
     expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", [{ itemId: "item-1", pecaId: "p-nova" }]);
   });
 
-  it("vale a última escolha: cadastrou e depois mudou pra 'sem cadastro'", async () => {
+  it("vale a última escolha: cadastrou e depois mudou pra 'já tenho' sem escolher a peça", async () => {
     const { user, onAprovar } = montar(ordem);
     await abrirJanela(user);
     await cadastrarNaJanela(user);
-    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
 
     await voltarEAbrirDeNovo(user);
 
-    expect(screen.getByRole("radio", { name: "Seguir sem cadastro" })).toBeChecked();
-    await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
-    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", []);
+    // Sem peça escolhida, a OS não nasce (#1128): não há mais "sem cadastro".
+    expect(screen.getByRole("radio", { name: "É uma peça que já tenho" })).toBeChecked();
+    expect(screen.getByRole("button", { name: "Aprovar orçamento" })).toBeDisabled();
+    expect(onAprovar).not.toHaveBeenCalled();
   });
 
   it("item corrigido depois do Voltar perde a escolha: a peça de antes pode não ser a dele", async () => {

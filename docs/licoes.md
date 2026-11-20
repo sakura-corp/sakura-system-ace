@@ -1889,3 +1889,18 @@
     ("+ Adicionar", "Ler arquivo"): o `contraste:telas` pegou, o `npm run contraste` não tinha como.
     **Regra**: botão desligado troca de cor (cinza sólido, letra secundária), não só de opacidade. Há
     uma regra de ponte no `globals.css` pros botões antigos; o componente `Botao` novo já nasce assim.
+
+102. **Rejeição que não é erro do cadastro (17/11/2026, #1112).** Venda pra um cliente pessoa
+    jurídica com CNPJ recém-aberto (ativo na Receita): a NFC-e voltou "CNPJ [...] do destinatário
+    não cadastrado na Receita Federal", e a NFS-e da mesma venda saiu. A base da SEFAZ demora a
+    receber CNPJ novo, então **o cadastro estava certo e a loja não tinha o que corrigir**; a
+    janela só mostrava a rejeição crua e o mesmo "Confirmar emissão", e o balcão travou.
+    **Regra**: antes de mostrar uma rejeição da SEFAZ como está, perguntar "a loja tem o que
+    corrigir?". Se não tem, dizer o que aconteceu e oferecer a saída (aqui, emitir sem identificar
+    o cliente, que vale na NFC-e abaixo do limite da UF). Reconhecer a rejeição é **pelo texto**
+    (`src/schemas/rejeicaoNFCe.ts`), porque o código da SEFAZ dela não foi confirmado: é aviso,
+    nunca tranca (item 33), e se o texto mudar a janela volta a mostrar a rejeição crua. O que vai
+    pra Focus só muda quando a pessoa clica no botão novo (`emitirNFCe(dados, { semDestinatario:
+    true })`). O "Copiar o erro" esconde nome e documento do cliente, que a SEFAZ repete na mensagem
+    (e pode mandar **só com números** enquanto o cadastro guarda com máscara: a revisão do PR achou
+    um CNPJ que saía com 3 dígitos à mostra; o teste agora confere que não sobra pedaço nenhum).

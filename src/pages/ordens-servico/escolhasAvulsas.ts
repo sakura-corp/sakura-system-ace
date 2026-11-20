@@ -5,7 +5,7 @@ import type { PecaJanela } from "@/types/peca";
  * quem abre a janela (`OrdemServicoForm`), não nela, pra não se perder no
  * "Voltar" (#720).
  */
-export type ModoAvulsa = "existente" | "cadastrar" | "sem_cadastro";
+export type ModoAvulsa = "existente" | "cadastrar";
 
 /** As escolhas da janela, por id do item avulso. */
 export interface EscolhasDaJanela {
