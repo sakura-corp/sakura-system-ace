@@ -167,7 +167,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
 ### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
-- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. Nada publicado além da 0.9.60.
-- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\soso\Empresa\`. O programa instalado dele aponta pro `ssace-teste`: trocar antes de usar numa loja.
+- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. A v0.9.60 tem o PR da versão (#1153) mesclado e o Release verde (canal de teste); o "Liberar versão" pras lojas só acontece depois do teste real de segunda, 23/11.
+- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\<seu usuário>\Empresa\`. O programa instalado do notebook já foi ligado ao banco certo (21/11).
 - **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
 - **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).
