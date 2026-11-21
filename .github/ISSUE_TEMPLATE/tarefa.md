@@ -43,4 +43,4 @@ Prioridade: <opcional: 1, 2, 3… (1 é a mais importante); apague a linha se n�
 - <...>
 
 ---
-Segue o ritual da skill `ritual-de-tarefa` (sessão mãe, modelos, relatório). Não mesclar.
+Segue o ritual da skill `ritual-de-tarefa` (sessão mãe, modelos, relatório). Não mesclar (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md).

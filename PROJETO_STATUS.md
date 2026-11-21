@@ -39,18 +39,18 @@ na frente de qualquer outra deste arquivo:
 - **Escopo**: os três (Gustavo, Lázaro e Tiago), **o programa das lojas**, com o mesmo acesso,
   sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
   Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
-- **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão de um colega (rodízio em
-  `docs/revisao-cruzada.md`) e para ali. A `main` pede 1 aprovação de qualquer pessoa da equipe; em
-  PR de banco, dinheiro ou nota a Sofia também confere (combinado, não trava). **Antes de
+- **Trabalha em branch e abre PR, mas nunca mescla.** Revisão de colega só em PR de banco,
+  dinheiro ou nota (aí a Sofia também confere); nos outros é opcional (regra única:
+  `docs/revisao-cruzada.md`, "A regra, em um lugar só"). **Antes de
   pedir**, roda o `/code-review` e cola o resumo no PR (a revisão gasta a cota de quem fez).
 - **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
   do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
   escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
   avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
-  revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
+  revisão do Claude colada (colega só em `banco-dinheiro-nota`). Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase de loja ou produção. **No de teste
-  pode** (ensaio e migration, contando no PR). Migration nova vai no PR; em produção, ela aplica.
+  (`ssace-teste`) pode** (ensaio e migration, contando no PR). Migration nova vai no PR; em produção, ela aplica.
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
 - **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do
@@ -132,7 +132,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 ## 3. Regras que valem em toda sessão (o resto está em `docs/decisoes.md` e `docs/estrutura.md`)
 
 - **Git**: branch de trabalho → PR → **mesclar direto na `main`**, sem esperar aprovação (até existir
-  uma v1.0). **Só quando quem trabalha é a Sofia** (seção 0); os outros abrem o PR e param. Depois, dizer a ela em português simples o que mudou e o que ela precisa fazer.
+  uma v1.0). **Só quando quem trabalha é a Sofia** (seção 0) **ou sessão com ordem escrita dela** (frase "Quem mescla" do `CLAUDE.md`); os outros abrem o PR e param. Depois, dizer a ela em português simples o que mudou e o que ela precisa fazer.
 - **Migration nova**: idempotente (dropar o nome **final** do objeto antes de criar); termina com
   `insert into schema_versao (versao) values (N) on conflict do nothing;`; sobe
   `VERSAO_ESQUEMA_ESPERADA`; rodar `npm run gerar-instalacao`; ganha um

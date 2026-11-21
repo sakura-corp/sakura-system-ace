@@ -46,8 +46,7 @@ Focus NFe. Pra apresentar sem abrir a Pneus Amigão.
 
 ### Em que versão está o banco de cada empresa
 
-**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0075` aplicadas** (a `0076` espera os computadores
-na 0.9.56, #809). Daqui
+**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0087` aplicadas** (a última migration da `main` é a `0087`; confira em `supabase/migrations/`). Daqui
 pra frente, migration entra **pelo botão "Atualizar o banco de todas as empresas"** (abaixo), nunca
 colada à mão no SQL Editor. Pra saber a versão de um banco: a tabela `schema_versao`, a tela de
 Diagnóstico ou um ensaio do botão.

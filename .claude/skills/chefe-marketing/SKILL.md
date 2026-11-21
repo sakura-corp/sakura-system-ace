@@ -71,7 +71,7 @@ aponta para esse arquivo. O repositório é público: **nada de credencial, CPF,
 ou dado pessoal** no relatório.
 
 ## 6. Limites (valem sempre)
-**Nunca**: publicar, enviar mensagem, postar ou mexer em conta de rede social; mesclar; liberar
+**Nunca**: publicar, enviar mensagem, postar ou mexer em conta de rede social; mesclar (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md); liberar
 versão; mexer em secret, cofre, ruleset, tag, configuração ou workflow; rodar SQL; adicionar o
 repositório privado `sakura-corp`; mexer no "Onde parou". Dúvida sobre **o que** a tarefa quer:
 parar e escrever à Sofia uma mensagem curta e completa.
