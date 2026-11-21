@@ -69,9 +69,10 @@ export const CENAS = [
   // -------------------------------------------------------- ordens de serviço
   { arquivo: "07-ordens", modulo: "Ordens de Serviço", titulo: "Lista de ordens de serviço",
     rota: "/ordens-servico",
-    // A lista inteira cabe em 1366 (o Balcão), sem rolar de lado (#425).
-    // Conferido pelo `npm run largura:telas`.
-    semRolarAPartirDe: 1366,
+    // A lista inteira cabe em 1024 com o menu aberto (a janela mais estreita
+    // que o Electron deixa), sem rolar de lado: a #425 pedia 1366, e a #1091
+    // desceu pra 1024 com o molde de lista. Conferido pelo `npm run largura:telas`.
+    semRolarAPartirDe: 1024,
     descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra total e lucro de cada ordem (e, em tela larga, quanto foi de peças e de serviços)." },
   { arquivo: "08-os-form", modulo: "Ordens de Serviço", titulo: "Abertura de ordem de serviço",
     rota: "/ordens-servico", passos: [{ clicar: "Nova ordem de serviço" }],
@@ -81,10 +82,11 @@ export const CENAS = [
     descricao: "Fecha a conta com o cliente. Dá pra dividir o pagamento em mais de uma forma (metade Pix, metade cartão), parcelar só a parte do cartão com os juros configurados, e escolher entre receber na hora — que lança a entrada no caixa — ou deixar como conta a receber." },
   { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechamento: notas fiscais e garantia",
     // Desde a tarefa 7 do visual novo, "Fechamento" mora no "Mais ações" da
-    // linha (o primeiro que tem é o de uma OS concluída ou faturada).
+    // linha (o primeiro que tem é o de uma OS concluída ou faturada). Desde a
+    // #1091 a lista é o molde de lista: cada OS é um <li>, não mais um <tr>.
     rota: "/ordens-servico",
     passos: [
-      { seletor: 'tr:has-text("Concluída") button[aria-label^="Mais ações"]' },
+      { seletor: 'li:has-text("Concluída") button[aria-label^="Mais ações"]' },
       { clicar: "Fechamento" },
     ],
     descricao: "Aqui saem os documentos da OS. O sistema sabe de que nota aquela ordem precisa — NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois — e mostra só o botão que faz sentido. A emissão é automática, via Focus NFe, e o PDF aparece na própria tela. O botão de garantia gera o documento pro cliente assinar." },
@@ -107,7 +109,7 @@ export const CENAS = [
         : { json: { ok: true, status: 202, dados: { status: "processando_autorizacao" } } },
     },
     passos: [
-      { seletor: 'tr:has-text("OS 145") button:has-text("Emitir nota")' },
+      { seletor: 'li:has-text("OS 145") button:has-text("Emitir nota")' },
       { clicar: "Emitir NFC-e" },
       { clicar: "Confirmar emissão" },
     ],
@@ -145,16 +147,22 @@ export const CENAS = [
   // --------------------------------------------------------- orçamentos (#379)
   { arquivo: "10f-orcamentos", modulo: "Ordens de Serviço", titulo: "Lista de orçamentos",
     rota: "/orcamentos",
-    // Cabe em 1366 sem rolar de lado, como a lista de OS.
-    semRolarAPartirDe: 1366,
+    // Cabe em 1024 sem rolar de lado, como a lista de OS (#1091).
+    semRolarAPartirDe: 1024,
     descricao: "Os orçamentos que esperam resposta do cliente, com número próprio, total e até quando valem. Passou da validade ganha a etiqueta 'vencido' (ainda dá pra aprovar). Os recusados ficam numa aba à parte. Um orçamento não é venda: não baixa estoque nem entra em número nenhum até ser aprovado." },
   { arquivo: "10g-orcamento-form", modulo: "Ordens de Serviço", titulo: "Novo orçamento",
     rota: "/orcamentos", passos: [{ clicar: "Novo orçamento" }],
     descricao: "O mesmo formulário da ordem de serviço, com a validade (7 dias, se ninguém mudar) e sem baixa de estoque." },
   { arquivo: "10h-orcamento-aprovar", modulo: "Ordens de Serviço", titulo: "Aprovar um orçamento vencido",
     rota: "/orcamentos",
-    passos: [{ seletor: 'tr:has-text("Orçamento 2")' }, { clicar: "Aprovar" }],
-    descricao: "Aprovar pede só quem aprovou (por exemplo, 'pelo telefone'). Se o orçamento passou da validade, avisa que o preço pode ter mudado, mas deixa aprovar. Ao aprovar, vira OS em andamento e as peças saem do estoque." },
+    // O "Aprovar" é a ação da linha (#1091): abre o orçamento já com a janela.
+    passos: [{ seletor: 'button[aria-label="Aprovar — Orçamento 2"]' }],
+    descricao: "Aprovar abre uma janela que pede só quem aprovou (por exemplo, 'pelo telefone'). Se o orçamento passou da validade, avisa que o preço pode ter mudado, mas deixa aprovar. Ao aprovar, vira OS em andamento e as peças saem do estoque." },
+  { arquivo: "10i-orcamento-recusar", modulo: "Ordens de Serviço", titulo: "Recusar um orçamento",
+    // "Recusar" mora no fim do "Mais ações" da linha, longe do "Aprovar" (#1091).
+    rota: "/orcamentos",
+    passos: [{ seletor: 'button[aria-label="Mais ações — Orçamento 2"]' }, { clicar: "Recusar" }],
+    descricao: "Recusar fica longe do Aprovar, no fim do menu de três pontos, e abre a sua própria janela: só ali aparece o motivo (opcional, um clique). O orçamento recusado vai pra aba Recusados e fica como histórico." },
 
   // ----------------------------------------------------------------- estoque
   { arquivo: "11-estoque-produtos", modulo: "Estoque", titulo: "Produtos",

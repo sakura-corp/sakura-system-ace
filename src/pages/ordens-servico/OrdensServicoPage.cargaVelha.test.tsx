@@ -136,7 +136,7 @@ describe("OrdensServicoPage — carga velha que chega depois da nova (#903)", ()
 
     lojaAtual = { id: "loja-b", nome: "Loja B" };
     rerender();
-    const linha = (await screen.findByText("Cliente X")).closest("tr") as HTMLElement;
+    const linha = (await screen.findByText("Cliente X")).closest("li") as HTMLElement;
     expect(await within(linha).findByText(/70,00/)).toBeInTheDocument();
 
     await act(async () => {
@@ -144,7 +144,7 @@ describe("OrdensServicoPage — carga velha que chega depois da nova (#903)", ()
       await custoVelho.promessa;
     });
 
-    const linhaDepois = screen.getByText("Cliente X").closest("tr") as HTMLElement;
+    const linhaDepois = screen.getByText("Cliente X").closest("li") as HTMLElement;
     expect(within(linhaDepois).queryByText(TEXTO_CUSTO_NAO_INFORMADO)).not.toBeInTheDocument();
     expect(within(linhaDepois).getByText(/70,00/)).toBeInTheDocument();
   });

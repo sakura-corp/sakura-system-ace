@@ -111,7 +111,7 @@ async function faturarMetadePixMetadeCartao3x() {
       <OrdensServicoPage />
     </MemoryRouter>,
   );
-  await user.click(await screen.findByRole("button", { name: "Faturar" }));
+  await user.click(await screen.findByRole("button", { name: /^Faturar — / }));
   const janela = screen.getByRole("dialog", { name: "Faturar OS 148" });
   await user.click(within(janela).getByRole("checkbox", { name: /Dividir em mais de uma forma/ }));
   await user.clear(within(janela).getByRole("spinbutton", { name: "Valor da forma 1" }));

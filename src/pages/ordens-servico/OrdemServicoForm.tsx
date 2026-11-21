@@ -48,9 +48,13 @@ import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
+import { Modal } from "@/components/Modal";
 import { motivoParaNaoTrocar, resumoDaTroca, type ItemDaTroca } from "@/schemas/trocaFaturada";
 import type { TrocaDeOsFaturada } from "@/types/os";
 import { TrocarItensFaturadaModal } from "./TrocarItensFaturadaModal";
+
+/** As duas janelas do orçamento aberto (#1091): aprovar e recusar. */
+export type JanelaDoOrcamento = "aprovar" | "recusar";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -108,6 +112,11 @@ interface OrdemServicoFormProps {
     vinculos?: { itemId: string; pecaId: string }[],
   ) => Promise<void>;
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
+  /**
+   * O orçamento abre já com esta janela por cima (#1091): o "Aprovar" da
+   * linha da lista e o "Recusar" do "⋯".
+   */
+  janelaInicial?: JanelaDoOrcamento | null;
   /** Botões a mais no cabeçalho do orçamento aberto (WhatsApp). */
   acoesExtras?: ReactNode;
   /**
@@ -182,6 +191,7 @@ export function OrdemServicoForm({
   modoOrcamento = false,
   onAprovar,
   onRecusar,
+  janelaInicial = null,
   acoesExtras,
   onItensMudaram,
   gerente = false,
@@ -191,7 +201,14 @@ export function OrdemServicoForm({
   const [janelaTroca, setJanelaTroca] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
-  const [aprovando, setAprovando] = useState(false);
+  // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
+  // quando o orçamento ainda pode ser aprovado (ou recusado).
+  const [janelaOrcamento, setJanelaOrcamento] = useState<JanelaDoOrcamento | null>(() => {
+    if (!modoOrcamento || !ordemExistente) return null;
+    if (janelaInicial === "aprovar" && podeAprovar(ordemExistente)) return "aprovar";
+    if (janelaInicial === "recusar" && podeRecusar(ordemExistente)) return "recusar";
+    return null;
+  });
   const [janelaAvulsas, setJanelaAvulsas] = useState(false);
   // O que foi escolhido na janela da aprovação (#720): fica aqui pra não se
   // perder quando a janela fecha no "Voltar".
@@ -363,6 +380,9 @@ export function OrdemServicoForm({
         return;
       }
       setErro(null);
+      // A de aprovar fecha antes (#1091): duas janelas abertas brigavam pelo
+      // Esc e pelo Tab. O "Voltar" da de avulsas reabre a de aprovar.
+      setJanelaOrcamento(null);
       setJanelaAvulsas(true);
       return;
     }
@@ -580,7 +600,9 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {erro && (
+      {/* Com a janela do orçamento aberta, o erro aparece dentro dela (#1091),
+          e não repetido aqui atrás. */}
+      {erro && !janelaOrcamento && !janelaAvulsas && (
         <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>
       )}
 
@@ -595,82 +617,40 @@ export function OrdemServicoForm({
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
-        <div className="space-y-3 rounded-xl border border-linha px-4 py-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <button
-              type="button"
-              onClick={() => setAprovando((aberto) => !aberto)}
+        // Aprovar e recusar em janela (#1091): na faixa ficam só os dois
+        // botões, longe um do outro (Fitts). "Aprovar" é o laranja, à direita;
+        // "Recusar" é discreto, à esquerda. O motivo só aparece na janela do
+        // "Recusar" (antes ele vinha ANTES do "Aprovar", na mesma faixa).
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-linha px-4 py-3">
+          {podeRecusar(ordemExistente) ? (
+            <Botao
+              variante="fantasma"
+              onClick={() => {
+                setErro(null);
+                setJanelaOrcamento("recusar");
+              }}
               disabled={enviando}
-              className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+            >
+              Recusar
+            </Botao>
+          ) : (
+            <span />
+          )}
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-4">
+            <p className="min-w-0 text-rotulo text-texto-2">
+              Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
+            </p>
+            <Botao
+              variante="principal"
+              onClick={() => {
+                setErro(null);
+                setJanelaOrcamento("aprovar");
+              }}
+              disabled={enviando}
             >
               Aprovar
-            </button>
-            {podeRecusar(ordemExistente) && (
-              <>
-                <label className="flex flex-col gap-1 text-rotulo text-texto/80">
-                  Motivo da recusa (opcional)
-                  <select
-                    value={motivoRecusa}
-                    onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa | "")}
-                    className={inputClasse}
-                  >
-                    <option value="">Sem motivo</option>
-                    {MOTIVOS_RECUSA.map((motivo) => (
-                      <option key={motivo} value={motivo}>
-                        {MOTIVO_RECUSA_LABEL[motivo]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleRecusar}
-                  disabled={enviando}
-                  className="rounded-xl border border-acao px-4 py-2 text-corpo font-medium text-texto hover:bg-cartao/40 disabled:opacity-50"
-                >
-                  Recusar
-                </button>
-              </>
-            )}
+            </Botao>
           </div>
-          {aprovando && (
-            <div className="space-y-2">
-              {vencido && (
-                <AvisoDeAtencao className="text-corpo">
-                  Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
-                  antes de aprovar. Dá pra aprovar mesmo assim.
-                </AvisoDeAtencao>
-              )}
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="flex flex-col gap-1 text-corpo">
-                  Quem aprovou?
-                  <input
-                    type="text"
-                    value={aprovadoPor}
-                    onChange={(e) => setAprovadoPor(e.target.value)}
-                    placeholder="Ex.: o cliente, pelo telefone"
-                    className={`${inputClasse} w-72`}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={aoConfirmarAprovacao}
-                  disabled={enviando || isDirty}
-                  className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-                >
-                  Confirmar aprovação
-                </button>
-              </div>
-              <p className="text-rotulo text-texto-2">
-                Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
-              </p>
-              {isDirty && (
-                <p className="text-rotulo text-atencao">
-                  Salve as alterações antes de aprovar
-                </p>
-              )}
-            </div>
-          )}
         </div>
       )}
 
@@ -812,6 +792,104 @@ export function OrdemServicoForm({
         HTML inválido, e é isso que deixa cada modal ter o próprio botão de
         enviar — o que faz o Enter avançar de campo aqui dentro igual ao
         resto do app, sem tratamento especial. */}
+    {/* As janelas do orçamento (#1091). A das peças sem cadastro (logo
+        abaixo) abre POR CIMA da de aprovar, e o "Voltar" dela volta pra cá. */}
+    {janelaOrcamento === "aprovar" && ordemExistente && (
+      <Modal
+        titulo={`Aprovar o ${nomeDocumento(ordemExistente)}`}
+        descricao="Ao aprovar, vira uma OS em andamento e as peças saem do estoque."
+        // Esc, ✕ e clique fora não fecham no meio do envio (como a de avulsas).
+        onFechar={() => {
+          if (!enviando) setJanelaOrcamento(null);
+        }}
+        rodape={
+          <>
+            <Botao variante="fantasma" onClick={() => setJanelaOrcamento(null)} disabled={enviando}>
+              Cancelar
+            </Botao>
+            <Botao
+              variante="principal"
+              onClick={aoConfirmarAprovacao}
+              disabled={isDirty}
+              ocupado={enviando}
+            >
+              Confirmar aprovação
+            </Botao>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erro && !janelaAvulsas && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
+          {vencido && (
+            <AvisoDeAtencao className="text-corpo">
+              Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
+              antes de aprovar. Dá pra aprovar mesmo assim.
+            </AvisoDeAtencao>
+          )}
+          {isDirty && (
+            <AvisoDeAtencao className="text-corpo">
+              Salve as alterações antes de aprovar: feche esta janela e clique em "Salvar alterações".
+            </AvisoDeAtencao>
+          )}
+          <label className="flex flex-col gap-2 text-corpo">
+            Quem aprovou?
+            <input
+              type="text"
+              value={aprovadoPor}
+              onChange={(e) => setAprovadoPor(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter confirma, como o botão (a janela não tem <form>).
+                if (e.key === "Enter" && !isDirty && !enviando) {
+                  e.preventDefault();
+                  aoConfirmarAprovacao();
+                }
+              }}
+              placeholder="Ex.: o cliente, pelo telefone"
+              className={inputClasse}
+            />
+          </label>
+        </div>
+      </Modal>
+    )}
+    {janelaOrcamento === "recusar" && ordemExistente && (
+      <Modal
+        titulo={`Recusar o ${nomeDocumento(ordemExistente)}?`}
+        descricao="O orçamento vai pra aba Recusados e fica só como histórico."
+        // Esc, ✕ e clique fora não fecham no meio do envio (como a de avulsas).
+        onFechar={() => {
+          if (!enviando) setJanelaOrcamento(null);
+        }}
+        rodape={
+          <>
+            <Botao variante="fantasma" onClick={() => setJanelaOrcamento(null)} disabled={enviando}>
+              Cancelar
+            </Botao>
+            <Botao variante="perigo" onClick={handleRecusar} ocupado={enviando}>
+              Recusar orçamento
+            </Botao>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
+          <label className="flex flex-col gap-2 text-corpo">
+            Motivo da recusa (opcional)
+            <select
+              value={motivoRecusa}
+              onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa | "")}
+              className={inputClasse}
+            >
+              <option value="">Sem motivo</option>
+              {MOTIVOS_RECUSA.map((motivo) => (
+                <option key={motivo} value={motivo}>
+                  {MOTIVO_RECUSA_LABEL[motivo]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </Modal>
+    )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (
       <TrocarItensFaturadaModal
         ordem={ordemExistente}
@@ -838,7 +916,10 @@ export function OrdemServicoForm({
         erro={erro}
         onConfirmar={handleAprovar}
         onItemLigado={aoLigarNaJanela}
-        onFechar={() => setJanelaAvulsas(false)}
+        onFechar={() => {
+          setJanelaAvulsas(false);
+          setJanelaOrcamento("aprovar");
+        }}
       />
     )}
     {cadastroRapido === "cliente" && (

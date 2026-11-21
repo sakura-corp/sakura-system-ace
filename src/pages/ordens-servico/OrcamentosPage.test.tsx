@@ -135,25 +135,54 @@ beforeEach(() => {
 });
 
 describe("OrcamentosPage", () => {
-  it("sem o módulo Clientes, o botão de mandar pelo WhatsApp some (o telefone não chega pela janela)", async () => {
+  // Desde a #1091 (molde de lista), "Enviar" e "Imprimir" moram no "Mais
+  // ações" da linha; a ação da linha é o "Aprovar".
+  async function abrirMaisAcoes(user: ReturnType<typeof userEvent.setup>, documento: string) {
+    await user.click(await screen.findByRole("button", { name: `Mais ações — ${documento}` }));
+  }
+
+  it("sem o módulo Clientes, o mandar pelo WhatsApp some (o telefone não chega pela janela)", async () => {
     operadorAtual = { id: "op", admin: false, permissoes: ["ordens_servico"] };
-    montar();
-    await screen.findByText("Orçamento 1");
-    expect(screen.queryAllByTitle("Mandar o orçamento pelo WhatsApp")).toHaveLength(0);
+    const user = montar();
+    await abrirMaisAcoes(user, "Orçamento 1");
+    expect(screen.queryByRole("menuitem", { name: "Enviar pelo WhatsApp" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Imprimir" })).toBeInTheDocument();
   });
 
-  it("com o módulo Clientes, o botão de mandar pelo WhatsApp continua", async () => {
-    montar();
-    await screen.findByText("Orçamento 1");
-    expect(screen.queryAllByTitle("Mandar o orçamento pelo WhatsApp").length).toBeGreaterThan(0);
+  it("com o módulo Clientes, o mandar pelo WhatsApp continua, no Mais ações", async () => {
+    const user = montar();
+    await abrirMaisAcoes(user, "Orçamento 1");
+    expect(screen.getByRole("menuitem", { name: "Enviar pelo WhatsApp" })).toBeInTheDocument();
+  });
+
+  it("a linha tem uma ação só, o Aprovar, e ele abre o orçamento já com a janela de aprovar, sem motivo", async () => {
+    const user = montar();
+    await user.click(await screen.findByRole("button", { name: "Aprovar — Orçamento 1" }));
+    const janela = screen.getByRole("dialog", { name: "Aprovar o Orçamento 1" });
+    expect(within(janela).getByLabelText("Quem aprovou?")).toBeInTheDocument();
+    expect(within(janela).queryByLabelText("Motivo da recusa (opcional)")).not.toBeInTheDocument();
+  });
+
+  it("o Recusar mora no fim do Mais ações e abre a janela que pede o motivo", async () => {
+    recusarOrcamento.mockResolvedValue(undefined);
+    const user = montar();
+    await abrirMaisAcoes(user, "Orçamento 1");
+    const itens = screen.getAllByRole("menuitem").map((item) => item.textContent);
+    expect(itens.at(-1)).toBe("Recusar");
+    await user.click(screen.getByRole("menuitem", { name: "Recusar" }));
+    const janela = screen.getByRole("dialog", { name: "Recusar o Orçamento 1?" });
+    expect(within(janela).queryByLabelText("Quem aprovou?")).not.toBeInTheDocument();
+    await user.selectOptions(within(janela).getByLabelText("Motivo da recusa (opcional)"), "prazo");
+    await user.click(within(janela).getByRole("button", { name: "Recusar orçamento" }));
+    expect(recusarOrcamento).toHaveBeenCalledWith("o1", "prazo", "op");
   });
 
   it("Imprimir abre a folha do orçamento com os itens, o total e o telefone; o Imprimir da janela chama a impressão (#1019)", async () => {
     const user = montar();
     await screen.findByText("Orçamento 1");
 
-    const linha = screen.getByText("Orçamento 1").closest("tr")!;
-    await user.click(within(linha).getByRole("button", { name: "Imprimir Orçamento 1" }));
+    await abrirMaisAcoes(user, "Orçamento 1");
+    await user.click(screen.getByRole("menuitem", { name: "Imprimir" }));
 
     const janela = await screen.findByRole("dialog", { name: "Imprimir Orçamento 1" });
     const folha = (await within(janela).findByTitle("Pré-visualização do orçamento")) as HTMLIFrameElement;
@@ -181,8 +210,8 @@ describe("OrcamentosPage", () => {
     const user = montar();
     await screen.findByText("Orçamento 1");
 
-    const linha = screen.getByText("Orçamento 1").closest("tr")!;
-    await user.click(within(linha).getByRole("button", { name: "Imprimir Orçamento 1" }));
+    await abrirMaisAcoes(user, "Orçamento 1");
+    await user.click(screen.getByRole("menuitem", { name: "Imprimir" }));
     const janela = await screen.findByRole("dialog", { name: "Imprimir Orçamento 1" });
     const html =
       (await within(janela).findByTitle("Pré-visualização do orçamento")).getAttribute("srcdoc") ?? "";
@@ -195,8 +224,12 @@ describe("OrcamentosPage", () => {
     await screen.findByText("Orçamento 1");
     await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
 
-    const linha = screen.getByText("Ana Recusada").closest("tr")!;
-    expect(within(linha).queryByRole("button", { name: /^Imprimir/ })).not.toBeInTheDocument();
+    // Nem Imprimir, nem Aprovar, nem Recusar: o recusado já acabou.
+    expect(screen.queryByRole("button", { name: /^Aprovar/ })).not.toBeInTheDocument();
+    await abrirMaisAcoes(user, "Orçamento 3");
+    expect(screen.queryByRole("menuitem", { name: "Imprimir" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Recusar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Abrir o orçamento" })).toBeInTheDocument();
   });
 
   it("o orçamento aberto também tem Imprimir, ao lado do Enviar (#1019)", async () => {
@@ -335,6 +368,9 @@ describe("OrcamentosPage", () => {
     await user.click(screen.getByRole("button", { name: "Salvar peça de mentira" }));
     const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
     await user.click(within(janela).getByRole("button", { name: "Voltar" }));
+    // A janela de aprovar continua por baixo: fecha ela e depois o orçamento.
+    const aprovar = screen.getByRole("dialog", { name: "Aprovar o Orçamento 4" });
+    await user.click(within(aprovar).getByRole("button", { name: "Cancelar" }));
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(screen.queryByRole("button", { name: "Confirmar aprovação" })).not.toBeInTheDocument();
 
@@ -373,8 +409,11 @@ describe("OrcamentosPage", () => {
     const user = montar();
 
     await user.click(await screen.findByText("Orçamento 1"));
-    await user.selectOptions(screen.getByLabelText("Motivo da recusa (opcional)"), "prazo");
+    // O motivo só aparece depois do "Recusar", na janela dele (#1091).
+    expect(screen.queryByLabelText("Motivo da recusa (opcional)")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Recusar" }));
+    await user.selectOptions(screen.getByLabelText("Motivo da recusa (opcional)"), "prazo");
+    await user.click(screen.getByRole("button", { name: "Recusar orçamento" }));
 
     expect(recusarOrcamento).toHaveBeenCalledWith("o1", "prazo", "op");
   });

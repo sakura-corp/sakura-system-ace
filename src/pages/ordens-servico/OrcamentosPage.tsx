@@ -1,13 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { CircleCheck, FolderOpen, Plus, Printer, TriangleAlert } from "lucide-react";
+import {
+  CarFront,
+  CircleCheck,
+  CircleX,
+  FolderOpen,
+  MessageCircle,
+  Plus,
+  Printer,
+  TriangleAlert,
+} from "lucide-react";
 import { Abas } from "@/components/Abas";
-import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
-import { LinkPlaca } from "@/components/LinkPlaca";
+import { LinhaDeLista, type ItemDoMais } from "@/components/molde/LinhaDeLista";
+import { MoldeLista } from "@/components/molde/MoldeLista";
 import { useAuth } from "@/contexts/AuthContext";
+import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import {
   cadastrarClienteRapido,
   cadastrarVeiculoRapido,
@@ -60,8 +70,30 @@ import { nomeDocumento, totalOrdem } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { OrcamentoVisualModal } from "./OrcamentoVisualModal";
-import { OrdemServicoForm } from "./OrdemServicoForm";
+import { OrdemServicoForm, type JanelaDoOrcamento } from "./OrdemServicoForm";
 import { SeloDaOrdem } from "./SeloDaOrdem";
+
+/** O detalhe da linha: cada pedaço no seu lugar, separados por " · ". */
+// Ver o comentário em volta da lista. A caixa das ações também tem largura
+// fixa (o botão + o "⋯"): linha sem botão (o recusado, a OS já sem próximo
+// passo) não desalinha o selo e o valor. (Escrita por extenso: o Tailwind só
+// gera a classe que acha inteira.)
+const CLASSE_DA_LISTA =
+  "min-w-0 [&_li>div:last-child]:min-w-48 [&_li>div:last-child]:justify-end [&_li>div:last-child>button]:min-w-36 [&_li>div:last-child>button]:justify-center";
+
+function DetalheDaLinha({ partes }: { partes: ReactNode[] }) {
+  const comAlgo = partes.filter((parte) => parte !== null && parte !== undefined && parte !== false && parte !== "");
+  return (
+    <>
+      {comAlgo.map((parte, i) => (
+        <Fragment key={i}>
+          {i > 0 && " · "}
+          <span>{parte}</span>
+        </Fragment>
+      ))}
+    </>
+  );
+}
 
 const SEM_ORDENS: OrdemServico[] = [];
 const SEM_FUNCIONARIOS: FuncionarioPublico[] = [];
@@ -95,6 +127,9 @@ export function OrcamentosPage() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [aberto, setAberto] = useState<OrdemServico | null>(null);
+  // A janela que o orçamento abre já mostrando (o "Aprovar" da linha, o
+  // "Recusar" do "⋯"). Abrindo pelo nome, nenhuma.
+  const [janelaInicial, setJanelaInicial] = useState<JanelaDoOrcamento | null>(null);
   const [lista, setLista] = useState<"abertos" | "recusados">("abertos");
   const [busca, setBusca] = useState("");
   const [imprimindo, setImprimindo] = useState<OrdemServico | null>(null);
@@ -118,6 +153,19 @@ export function OrcamentosPage() {
   }, [orcamentos, lista, busca]);
 
   const nadaAberto = !mostrarFormulario && !aberto;
+  // A lista nem chegou: o erro fica dentro dela, com o "Tentar de novo".
+  const listaComErro = !!erro && nadaAberto && ordens.length === 0;
+  // O erro de uma ação da linha (o WhatsApp, por exemplo) aparece no aviso lá
+  // em cima: com a lista rolada até a OS 40, ninguém o veria. A tela rola até
+  // ele (#1091, revisão).
+  const avisoDeErroRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!erro) return;
+    const reduzir =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    avisoDeErroRef.current?.scrollIntoView?.({ block: "nearest", behavior: reduzir ? "auto" : "smooth" });
+  }, [erro]);
 
   async function carregar(): Promise<OrdemServico[] | null> {
     const carga = comecar(lojaAtual?.id);
@@ -318,6 +366,115 @@ export function OrcamentosPage() {
     );
   }
 
+  function abrirNovo() {
+    setAviso(null);
+    setMostrarFormulario(true);
+  }
+
+  // Abre o orçamento; com `janela`, já com a janela de aprovar ou de recusar
+  // aberta por cima (a ação da linha e o "⋯").
+  function abrir(ordem: OrdemServico, janela: JanelaDoOrcamento | null = null) {
+    setAviso(null);
+    setErro(null);
+    setJanelaInicial(janela);
+    setAberto(ordem);
+  }
+
+  // O "Enviar" do "⋯": o menu fecha no clique, então o erro do WhatsApp (o
+  // mais comum: telefone sem DDD) vai pro aviso de erro da tela, com o nome
+  // do orçamento na frente, e não some sozinho.
+  async function enviarPeloWhatsapp(ordem: OrdemServico) {
+    const telefone = clientes.find((c) => c.id === ordem.cliente_id)?.telefone ?? null;
+    setErro(null);
+    try {
+      await abrirConversaWhatsapp(telefone, textoOrcamento(ordem));
+      if (lojaAtual) {
+        registrarMensagemAberta(lojaAtual.id, "orcamento", ordem.id, telefone, operador?.id ?? null);
+      }
+    } catch (err) {
+      console.error("Erro ao abrir o WhatsApp:", err);
+      setErro(`${nomeDocumento(ordem)}: ${mensagemDeErro(err)}`);
+    }
+  }
+
+  // Uma linha do molde (#1091). No aberto, a ação da linha é o próximo passo,
+  // "Aprovar" (abre o orçamento já com a janela de aprovar); "Enviar",
+  // "Imprimir", "Abrir" e "Recusar" (no fim, longe do dedo) ficam no "⋯".
+  // Nenhuma ação sumiu: o "Enviar" e o "Imprimir" saíram da linha pro menu.
+  function linhaDoOrcamento(ordem: OrdemServico) {
+    const carro = [ordem.veiculo?.marca, ordem.veiculo?.modelo].filter(Boolean).join(" ");
+    const aberto = ordem.status === "orcamento";
+    const detalhe = (
+      <DetalheDaLinha
+        partes={[
+          nomeDocumento(ordem),
+          ordem.veiculo?.placa,
+          `feito ${dataCurta(ordem.data_abertura)}`,
+          ordem.validade ? (
+            <>
+              vale até <span>{diaBrasileiro(ordem.validade)}</span>
+            </>
+          ) : null,
+        ]}
+      />
+    );
+    const mais: ItemDoMais[] = [];
+    // Sem o módulo Clientes o telefone não chega (a janela da migration 0068
+    // só tem o nome): o "Enviar" diria "cadastro sem telefone", que é mentira.
+    if (aberto && podeVerCadastro) {
+      mais.push({
+        rotulo: "Enviar pelo WhatsApp",
+        icone: <MessageCircle />,
+        aoClicar: () => void enviarPeloWhatsapp(ordem),
+      });
+    }
+    if (aberto) {
+      mais.push({ rotulo: "Imprimir", icone: <Printer />, aoClicar: () => setImprimindo(ordem) });
+    }
+    if (ordem.veiculo_id) {
+      const veiculoId = ordem.veiculo_id;
+      mais.push({
+        rotulo: "Ficha do veículo",
+        icone: <CarFront />,
+        aoClicar: () => navigate(`/veiculos/${veiculoId}`),
+      });
+    }
+    mais.push({ rotulo: "Abrir o orçamento", icone: <FolderOpen />, aoClicar: () => abrir(ordem) });
+    if (aberto) {
+      mais.push({
+        rotulo: "Recusar",
+        icone: <CircleX />,
+        perigosa: true,
+        aoClicar: () => abrir(ordem, "recusar"),
+      });
+    }
+    return (
+      <LinhaDeLista
+        nome={
+          <>
+            <span>{ordem.cliente?.nome ?? "—"}</span>
+            {carro && <span className="font-normal text-texto-2"> · {carro}</span>}
+          </>
+        }
+        descricao={nomeDocumento(ordem)}
+        detalhe={detalhe}
+        aoAbrir={() => abrir(ordem)}
+        lado={
+          <div className="flex items-center gap-4">
+            <div className="w-36">
+              <SeloDaOrdem ordem={ordem} notas={[]} />
+            </div>
+            <span className="w-32 whitespace-nowrap text-right text-corpo font-semibold text-texto tabular-nums">
+              {formatarMoeda(totalOrdem(ordem.itens ?? []))}
+            </span>
+          </div>
+        }
+        acao={aberto ? { rotulo: "Aprovar", aoClicar: () => abrir(ordem, "aprovar") } : undefined}
+        mais={mais}
+      />
+    );
+  }
+
   // Imprimir (#1019) fica ao lado do "Enviar": os dois jeitos de entregar o
   // orçamento ao cliente. Só no orçamento aberto (o recusado já acabou).
   function acoesDoOrcamento(ordem: OrdemServico) {
@@ -377,10 +534,7 @@ export function OrcamentosPage() {
           <Botao
             variante="principal"
             icone={<Plus />}
-            onClick={() => {
-              setAviso(null);
-              setMostrarFormulario(true);
-            }}
+            onClick={abrirNovo}
           >
             Novo orçamento
           </Botao>
@@ -396,6 +550,7 @@ export function OrcamentosPage() {
           key={aberto.id}
           {...formProps}
           ordemExistente={aberto}
+          janelaInicial={janelaInicial}
           acoesExtras={acoesDoOrcamento(aberto)}
           onCancelar={() => setAberto(null)}
         />
@@ -417,8 +572,9 @@ export function OrcamentosPage() {
           <span className="min-w-0">{aviso}</span>
         </p>
       )}
-      {erro && (
+      {erro && !listaComErro && (
         <p
+          ref={avisoDeErroRef}
           role="alert"
           className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
         >
@@ -427,119 +583,58 @@ export function OrcamentosPage() {
         </p>
       )}
 
-      {nadaAberto && !carregando && orcamentos.length > 0 && (
-        <>
-          <Abas
-            rotulo="O que mostrar na lista"
-            ativa={lista}
-            aoEscolher={setLista}
-            abas={[
-              { valor: "abertos", nome: "Abertos", conta: quantosAbertos },
-              { valor: "recusados", nome: "Recusados", conta: quantosRecusados },
-            ]}
-          />
-          <label className="sakura-rotulo w-64">
-            Buscar por cliente ou placa
-            <input
-              type="text"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Ex: João ou ABC1D23"
-              className="sakura-campo sakura-campo-filtro"
-            />
-          </label>
-        </>
+      {nadaAberto && orcamentos.length > 0 && (
+        <Abas
+          rotulo="O que mostrar na lista"
+          ativa={lista}
+          aoEscolher={setLista}
+          abas={[
+            { valor: "abertos", nome: "Abertos", conta: quantosAbertos },
+            { valor: "recusados", nome: "Recusados", conta: quantosRecusados },
+          ]}
+        />
       )}
 
-      {nadaAberto &&
-        (carregando ? (
-          <p className="text-corpo text-texto-2">Carregando...</p>
-        ) : orcamentos.length === 0 ? (
-          <p className="text-corpo text-texto-2">Nenhum orçamento ainda.</p>
-        ) : daLista.length === 0 ? (
-          <p className="text-corpo text-texto-2">
-            {lista === "abertos"
-              ? "Nenhum orçamento aberto com esse filtro."
-              : "Nenhum orçamento recusado com esse filtro."}
-          </p>
-        ) : (
-          <div className="overflow-x-auto sakura-card">
-            <table className="sakura-tabela">
-              <thead>
-                <tr>
-                  <th>Nº</th>
-                  <th>Cliente</th>
-                  <th>Veículo</th>
-                  <th>Feito em</th>
-                  <th>Validade</th>
-                  <th>Status</th>
-                  <th className="text-right">Total</th>
-                  <th>
-                    <span className="sr-only">Ações</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {daLista.map((ordem) => (
-                  <tr
-                    key={ordem.id}
-                    onClick={() => {
-                      setAviso(null);
-                      setAberto(ordem);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
-                    <td className="font-medium text-texto [overflow-wrap:break-word]">
-                      {ordem.cliente?.nome ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap">
-                      {ordem.veiculo_id && ordem.veiculo?.placa ? (
-                        <LinkPlaca veiculoId={ordem.veiculo_id} placa={ordem.veiculo.placa} />
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap text-texto-2">
-                      {dataCurta(ordem.data_abertura)}
-                    </td>
-                    <td className="whitespace-nowrap text-texto-2">
-                      {ordem.validade ? diaBrasileiro(ordem.validade) : "—"}
-                    </td>
-                    <td>
-                      <SeloDaOrdem ordem={ordem} notas={[]} />
-                    </td>
-                    <td className="whitespace-nowrap text-right font-semibold text-texto">
-                      {formatarMoeda(totalOrdem(ordem.itens ?? []))}
-                    </td>
-                    {/* Na linha, o próximo passo (mandar pelo WhatsApp); no
-                        "Mais ações", abrir o orçamento, pra quem usa só o
-                        teclado (até aqui só o clique do mouse na linha abria). */}
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1.5">
-                        {acoesDoOrcamento(ordem)}
-                        <AcoesDaLinha
-                          descricao={nomeDocumento(ordem)}
-                          acoes={[
-                            {
-                              tipo: "menu",
-                              rotulo: "Abrir o orçamento",
-                              icone: <FolderOpen />,
-                              aoClicar: () => {
-                                setAviso(null);
-                                setAberto(ordem);
-                              },
-                            },
-                          ]}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
+      {/* O molde de lista (#1135), igual ao das OS (#1091): o cliente e o
+          carro em cima, o número e as datas embaixo, o selo e o total à
+          direita, nas mesmas larguras da lista de OS. */}
+      {nadaAberto && lojaAtual && (
+        // O botão da linha tem sempre a mesma largura ("Faturar" e "Nota do
+        // cliente"), nas listas de OS e de Orçamentos: o selo e o valor batem
+        // em coluna, linha a linha e de uma lista pra outra (#1091).
+        <div className={CLASSE_DA_LISTA}>
+          <MoldeLista
+            rotulo={lista === "abertos" ? "Orçamentos abertos" : "Orçamentos recusados"}
+            estado={carregando ? "carregando" : erro && ordens.length === 0 ? "erro" : "pronto"}
+            itens={daLista}
+            chave={(ordem) => ordem.id}
+            linha={linhaDoOrcamento}
+            // Sem orçamento nenhum ainda, sem busca: só a frase e o botão.
+            busca={
+              orcamentos.length > 0
+                ? {
+                    valor: busca,
+                    aoMudar: setBusca,
+                    rotulo: "Buscar por cliente ou placa",
+                    dica: "Ex: João ou ABC1D23",
+                  }
+                : undefined
+            }
+            vazio={
+              lista === "abertos"
+                ? {
+                    frase: "Nenhum orçamento aberto. O preço combinado antes de virar OS aparece aqui.",
+                    acao:
+                      operador && clientes.length > 0
+                        ? { rotulo: "Novo orçamento", aoClicar: abrirNovo }
+                        : undefined,
+                  }
+                : { frase: "Nenhum orçamento recusado. O que o cliente não quis fica guardado aqui." }
+            }
+            erro={erro ? { mensagem: erro, tentarDeNovo: () => void carregar() } : undefined}
+          />
+        </div>
+      )}
     </div>
   );
 }
