@@ -19,15 +19,14 @@ Esta lista era de texto, e lista de texto envelhece. Agora **cada item é uma ta
 - **Tudo o que depende dela, no sistema e na loja**: [github.com/sakura-corp/sakura-system-ace/issues?q=is:issue+is:open+label:sofia](https://github.com/sakura-corp/sakura-system-ace/issues?q=is%3Aissue+is%3Aopen+label%3Asofia).
   Quando surgir algo novo que dependa dela, abrir a tarefa com a etiqueta `sofia` (e a **data no título**
   quando houver, ex.: "Até 09/10/2027: renovar a chave `TOKEN_VERSOES`"). Feito, fecha a tarefa.
-- **Já tinham tarefa antes e continuam valendo**: a equipe no programa das lojas (#474), enxugar o CI
-  (#442), a paginação das listas (#373, que cobre `listarClientes()` e a busca de ordens, cortadas em
-  1.000 linhas pelo Supabase). Os lotes de permissão no banco (#365 a #367), o token antigo da Focus
+- **Tinham tarefa e já foram feitas**: a equipe no programa das lojas (#474, fechada em 11/11), enxugar o CI
+  (#442, fechada em 05/11, PR #523) e a paginação de Clientes (#373, PR #984; as outras listas entram uma por vez). Os lotes de permissão no banco (#365 a #367), o token antigo da Focus
   (#368), o salto do Electron pra 40 (#385) e o operador no programa instalado (#482) foram feitos.
   O painel em tempo real (#355) saiu daqui: feito e testado ao vivo em 17/10.
 - **Assuntos da EMPRESA ficam no repositório privado** (`caranovavidanova/sakura-corp`), nunca aqui, e não
   são detalhados neste arquivo. Os que continuam pendentes, só pelo nome: **a TFE; o capital; o Claude Team
-  (assinatura marcada para 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
-  novas; o Termo de Colaboração, a cessão e o memorando da equipe; a conversa com o contador sobre o dinheiro
+  (assinado em 19/10); a troca do plano da Focus antes do 2º CNPJ; o preço/mensalidade das lojas
+  novas; (os termos da equipe já foram assinados); a conversa com o contador sobre o dinheiro
   que entrou; o que falta da LGPD (item 10: o registro de operações de tratamento e o que acontece
   quando o contrato acaba; o contrato em si foi revisado em 12/10); e o que falta da abertura da empresa e da 1ª NFS-e da Pneus Amigão.** Pra tratar de qualquer um, adicionar o privado à sessão
   (`add_repo`, com a autorização dela) e ler lá.
@@ -69,8 +68,8 @@ privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A 
 **As primeiras tarefas do programa** (ela, 14/10): uma de **aquecimento** pra cada um, pequena e
 sem dinheiro, nota nem migration (#455 e #459); depois, a **1ª parte da #457**: importar clientes
 de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa parte não depende do
-cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: com três pessoas, todo
-PR espera a aprovação dela; o tamanho das levas tem que caber no tempo dela de revisar.
+cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: o tamanho das levas tem que caber
+no tempo dela de revisar (revisão de colega: só em banco, dinheiro ou nota; `docs/revisao-cruzada.md`).
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a
@@ -341,7 +340,9 @@ Não são bugs pra sair corrigindo: são limites conhecidos, e parte depende de 
    a montagem da nota tira tudo que não é dígito, em `src/lib/focusNfe.ts`, no porteiro
    (`supabase/functions/focus-nfe/index.ts`), em `EmitirNotaFiscalModal.tsx` e em
    `src/lib/notaFiscalXmlFornecedor.ts`. Com uma empresa dessas, a nota sairia com o CNPJ mutilado
-   ou o porteiro recusaria. **Antes de mexer**, confirmar com a Focus o formato que a API espera.
+   ou o porteiro recusaria. **A Focus respondeu em 11/11/2026** (#513): o CNPJ alfanumérico já funciona na API, no campo de texto, com
+   letras maiúsculas e números e sem pontuação (ex.: `12ABC34501DE35`); o cadastro da empresa emitente não
+   muda; a API aceita quando o CNPJ já é válido na SEFAZ. Falta ajustar o programa (proposta do #962).
    **Pesa na fase 2**: loja aberta de julho pra cá já nasce assim.
 
 #### Playbook de habilitação fiscal por loja nova

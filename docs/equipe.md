@@ -285,7 +285,7 @@ tarefa (ex: *"quero fazer a tarefa #455"*). A partir daí, o Claude:
    digitar, o que deve aparecer, e espera ela confirmar antes do próximo passo. Nada de despejar
    dez passos de uma vez.
 6. No fim, faz as conferências (abaixo), confere o "Pronto quando" da tarefa com a pessoa, item
-   por item, e guia a abertura do PR e o pedido de revisão ao colega do rodízio (`docs/revisao-cruzada.md`). **Não mescla.** Com o PR
+   por item, e guia a abertura do PR e, quando couber, o pedido de revisão ao colega do rodízio (`docs/revisao-cruzada.md`). **Não mescla.** Com o PR
    aberto, passa a acompanhar o PR (veja "As funções da sessão que valem a pena", abaixo).
 7. Escreve a mensagem de WhatsApp pra Sofia (ex: *"Oi Sofia! Terminei a tarefa #455 (clientes
    que sumiram). O PR é o #490, tá esperando sua revisão."*), e a pessoa manda.
@@ -436,7 +436,7 @@ está no meio de outra coisa, siga.
   Claude diz o que clicar e o que deve aparecer. O que a pessoa viu (ou o print) vai na descrição
   do PR.
 - **O PR**: título curto em português, descrição com o que mudou, como foi testado e o que **não**
-  foi testado. Pede a revisão do **colega do rodízio** (`docs/revisao-cruzada.md`) e **para**.
+  foi testado. Pede a revisão do colega do rodízio **só se for banco, dinheiro ou nota** (`docs/revisao-cruzada.md`, "A regra, em um lugar só"; nos outros PRs é opcional) e **para**.
   Enquanto não revisam, a pessoa pode pegar outra tarefa da leva, sem mexer no PR que está esperando.
 - **Ela pediu mudança no PR**: o Claude ajusta na mesma branch, roda as conferências de novo,
   envia e pede a revisão de novo.
@@ -497,8 +497,8 @@ trabalho que não precisa ser dela passa a rodar na cota do Tiago. **As decisõe
    regras de lá ficam no próprio repositório.
 3. **O plantão.** Só quando a Sofia avisar que a cota dela acabou (ela manda "plantão ligado" e
    depois "plantão desligado"), o Tiago pode mesclar PR **só de documentação (`.md`)** (o painel mora no
-   `sakura-corp/escritorio`), com: o CI verde, a revisão de código colada no PR, e a **aprovação de
-   outro da equipe** no GitHub (a `main` pede uma aprovação). Programa das lojas, migration, workflow,
+   `sakura-corp/escritorio`), com: o CI verde e a revisão de código do Claude colada no PR (colega só se
+   for `banco-dinheiro-nota`; `docs/revisao-cruzada.md`, "A regra, em um lugar só"). Programa das lojas, migration, workflow,
    publicar e liberar **nunca**: esses esperam a Sofia. Depois de mesclar, um comentário no PR:
    "mesclado no plantão", pra ela ver na volta.
 
@@ -510,8 +510,8 @@ As regras completas são as da seção 0 do `PROJETO_STATUS.md`. Em resumo, **nu
   (`docs/projetos-secundarios.md`). No SSACE, ninguém da equipe mescla, fora o **plantão do Tiago**
   ("As funções do Tiago", acima);
 - **publicar ou liberar** versão, nem disparar o "Atualizar o banco";
-- **rodar SQL ou migration** em Supabase nenhum, **nem no de teste**. Se a tarefa precisar de
-  migration, ela vem escrita no PR, e quem aplica é a Sofia;
+- **rodar SQL ou migration** em Supabase de loja ou de produção. **No de teste (`ssace-teste`) pode**
+  (ensaio e migration, contando no PR). Migration nova vai no PR; em loja e produção, quem aplica é a Sofia;
 - usar o banco de uma loja (o `.env` aponta **só** pro Supabase de teste);
 - mexer em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) ou configuração, nem por um workflow novo ou modificado;
@@ -527,7 +527,7 @@ responde; dúvida sobre **o que** a tarefa quer, é com a Sofia.
 
 ## Tamanho da leva
 
-Todo PR da equipe espera a **revisão de um colega do rodízio** (`docs/revisao-cruzada.md`; a Sofia pode revisar qualquer PR, e a revisão dela vale no lugar da do colega), e a Sofia mescla. Por isso:
+Só o PR com `banco-dinheiro-nota` espera a **revisão de um colega do rodízio**; nos outros é opcional (`docs/revisao-cruzada.md`, "A regra, em um lugar só"). A Sofia (ou sessão com ordem escrita dela) mescla. Por isso:
 - a leva tem **só as tarefas que cabem no tempo de revisar da equipe**; quando a leva acaba, ela
   congela, todo mundo testa e só então vem a próxima (`docs/painel.md` do `sakura-corp/escritorio`, "Fim de uma leva");
 - **a Sofia não testa no meio da semana** (23/10/2026): o PR entra com o CI verde e a revisão do
