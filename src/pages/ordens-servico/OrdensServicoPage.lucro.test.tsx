@@ -87,10 +87,10 @@ describe("OrdensServicoPage — lucro com custo não informado", () => {
       </MemoryRouter>,
     );
 
-    const linhaSemCusto = (await screen.findByText("Cliente sem custo")).closest("tr") as HTMLElement;
+    const linhaSemCusto = (await screen.findByText("Cliente sem custo")).closest("li") as HTMLElement;
     expect(within(linhaSemCusto).getByText(TEXTO_CUSTO_NAO_INFORMADO)).toBeInTheDocument();
 
-    const linhaComCusto = screen.getByText("Cliente com custo").closest("tr") as HTMLElement;
+    const linhaComCusto = screen.getByText("Cliente com custo").closest("li") as HTMLElement;
     expect(within(linhaComCusto).queryByText(TEXTO_CUSTO_NAO_INFORMADO)).not.toBeInTheDocument();
     // 100 de venda − 30 de custo.
     expect(within(linhaComCusto).getAllByText(/70,00/)).toHaveLength(1);

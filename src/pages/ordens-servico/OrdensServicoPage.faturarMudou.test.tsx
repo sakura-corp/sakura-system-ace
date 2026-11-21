@@ -88,7 +88,7 @@ async function abrirFaturamentoEConfirmar() {
       <OrdensServicoPage />
     </MemoryRouter>,
   );
-  await usuario.click(await screen.findByRole("button", { name: "Faturar" }));
+  await usuario.click(await screen.findByRole("button", { name: /^Faturar — / }));
   await waitFor(() =>
     expect(screen.getByText("Total dos itens").nextElementSibling).toHaveTextContent(
       /R\$\s*100,00/,

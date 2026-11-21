@@ -90,7 +90,7 @@ describe("OrdensServicoPage — sem orçamento", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Nenhuma ordem de serviço aberta ainda.")).toBeInTheDocument();
+    expect(await screen.findByText(/^Nenhuma ordem de serviço ainda./)).toBeInTheDocument();
     expect(screen.queryByRole("tab", { name: /Ordens de serviço/ })).not.toBeInTheDocument();
   });
 });
