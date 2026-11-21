@@ -3,7 +3,7 @@
 - **Tarefa**: #1130, varredura de `<form>` dentro de `<form>` e trava automática pra não voltar
 - **Chefe**: frontend
 - **Data**: 2026-11-21
-- **PR**: (o PR desta branch, `claude/tarefa-1130-form-aninhado`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1154
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
