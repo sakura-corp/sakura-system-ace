@@ -64,6 +64,7 @@ O painel usa "assignee" nas tarefas, então **não misturar**. Rótulos:
 ## 3. Regras
 
 - **A Sofia pode revisar qualquer PR**, inclusive os que são do colega do rodízio; a revisão dela vale no lugar da do colega (a revisão cruzada existia só enquanto ela estava sem tokens) (Sofia, 20/11/2026).
+- **PR da própria Sofia** entra pela exceção de administradora da regra "main protegida" (Repository admin, Always allow), sem aprovação de colega, porque ela não consegue aprovar o próprio PR (Sofia, 21/11/2026). A sessão dela só usa a exceção com o "sim" dela **para aquele PR**. Se a aprovação obrigatória continua ou não: #1161.
 - **Prazo**: passou de 1 dia útil sem andar, avisa no grupo pra outro cobrir.
 - **Regra de ouro**: a aprovação cai com commit novo (o painel mostra "Em revisão de novo"). Quem revisa de novo avisa do mesmo jeito.
 - **`banco-dinheiro-nota`**: o colega revisa **e** a Sofia (ou sessão dela com ordem direta) também confere. Só a aprovação do colega não basta. O teste real no PC é obrigatório.

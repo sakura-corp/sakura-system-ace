@@ -1904,3 +1904,14 @@
     true })`). O "Copiar o erro" esconde nome e documento do cliente, que a SEFAZ repete na mensagem
     (e pode mandar **só com números** enquanto o cadastro guarda com máscara: a revisão do PR achou
     um CNPJ que saía com 3 dígitos à mostra; o teste agora confere que não sobra pedaço nenhum).
+103. **O programa de teste e o instalado dividiam a pasta de dados, e a documentação apontava pro
+    banco de uma loja (21/11/2026, #1157, #1158).** Num notebook novo, o `npm run dev` abriu no banco
+    de uma loja e o login de teste deu "Invalid login credentials". Duas causas somadas: a seção 11
+    do `docs/operacao.md` trazia o endereço do banco de uma loja (texto de antes do `ssace-teste`), e
+    o Electron escolhe a pasta de dados pelo `"name"` do package.json, então o `npm run dev` e o
+    programa instalado liam o mesmo `conexao.json`: trocar o banco num trocava no outro. **Regra**:
+    o `npm run dev` tem pasta própria (`-dev`, `src/schemas/pastaDeDados.ts`) e endereço de banco
+    nenhum fica escrito em documento. Ele ainda conecta em qualquer banco colado na tela: a trava é
+    a #1160. No mesmo notebook, o `npm ci` parou no Electron com `ERR_DLOPEN_FAILED` (o binário
+    nativo do `extract-zip` não carregava). Faltava o Visual C++ Redistributable, e o Node foi trocado
+    do 26 pro 22 ao mesmo tempo, então **não se sabe se o 26 sozinho quebra**: instalar os dois.

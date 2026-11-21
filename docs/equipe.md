@@ -58,6 +58,8 @@ Sakura**, e cola isto como **primeira mensagem**, trocando o que está entre col
 >    um gerenciador (nvm, nvm-windows, Volta ou Homebrew), atualize **por ele**; senão, pelo
 >    site nodejs.org, escolhendo a v22, por cima do antigo. Depois confira de novo com `node -v`
 >    num terminal novo. Com Node mais velho, o `npm install` quebra ao baixar o Electron.
+>    No Windows, instale também o **Visual C++ Redistributable** (x64, do site da Microsoft): sem
+>    ele o `npm install` pode parar no Electron com `ERR_DLOPEN_FAILED` (21/11/2026).
 > 2. Me ajude a entrar na minha conta do GitHub (a do e-mail da Sakura) pelo GitHub CLI
 >    (`gh auth login`, pelo navegador), e a configurar o Git com o **meu nome e o e-mail da
 >    Sakura**.

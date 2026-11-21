@@ -166,9 +166,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 17/11/2026: visual novo, a leva inteira (#990) na `main`
-- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
-- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
-- **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
-- **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
-- **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).
+### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
+- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. Nada publicado além da 0.9.60.
+- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\soso\Empresa\`. O programa instalado dele aponta pro `ssace-teste`: trocar antes de usar numa loja.
+- **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
+- **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).
