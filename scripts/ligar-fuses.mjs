@@ -8,7 +8,7 @@
 // definitiva naquele binário — não dá pra mudar por configuração, por
 // variável de ambiente nem por argumento de linha de comando.
 //
-// O que se ganha aqui: sem estas quatro chavinhas, quem tiver o
+// O que se ganha aqui: sem estas chavinhas, quem tiver o
 // `SakuraSystem-Setup.exe` instalado na máquina consegue rodar o executável
 // do sistema como se fosse um Node.js comum (`ELECTRON_RUN_AS_NODE=1`), ou
 // com o depurador acoplado, e a partir daí ler tudo que o processo
@@ -16,14 +16,20 @@
 // continua abrindo normalmente pra quem usa; o que deixa de existir é esse
 // atalho.
 //
-// **Uma chavinha ficou de fora de propósito**:
-// `EnableEmbeddedAsarIntegrityValidation`, que é a que confere se o
-// `app.asar` foi adulterado. Ela só funciona quando o empacotador grava o
-// hash do asar junto no executável, e o electron-builder 25 (o que este
-// projeto usa) ainda não faz isso — ligá-la sozinha produziria um
-// instalador que **não abre**, e o estrago só apareceria na loja, depois da
-// atualização automática. Isso passa a ser possível ao subir o
-// electron-builder pra 26, que é decisão dela (ver PROJETO_STATUS.md §9).
+// **A quinta chavinha, `EnableEmbeddedAsarIntegrityValidation`** (a que
+// confere se o `app.asar` foi adulterado), ficou de fora até a #869. Ela só
+// funciona quando o empacotador grava o hash do asar dentro do executável
+// (o recurso `INTEGRITY/ELECTRONASAR` do .exe, no passo "updating asar
+// integrity executable resource", que roda ANTES deste afterPack); se o hash
+// não bater, o programa **não abre**, e o estrago só apareceria na loja,
+// depois da atualização automática. O electron-builder 25 já gravava esse
+// hash, mas com um defeito (#9607 deles, corrigido na 26.8.2): com o cache
+// do executável, um build repetido podia gravar o hash de um asar antigo.
+// Mexer nas chavinhas aqui não muda o asar, então o hash continua valendo.
+// Conferido na #869, no .exe final de `release/win-unpacked`: o hash gravado
+// é igual ao do cabeçalho do `app.asar`. **O que só o Windows de verdade
+// prova é o programa abrir com ela ligada**: se o instalador do canal de
+// teste não abrir, é esta linha que se desliga (e o resto continua igual).
 
 import { flipFuses, FuseVersion, FuseV1Options } from "@electron/fuses";
 import path from "node:path";
@@ -66,6 +72,10 @@ export default async function ligarFuses(contexto) {
     // Só carrega o código de dentro do app.asar — sem isso, deixar uma
     // pasta `app/` ao lado do executável substitui o programa inteiro.
     [FuseV1Options.OnlyLoadAppFromAsar]: true,
+    // Recusa abrir se o `app.asar` não bater com o hash que o
+    // electron-builder grava no .exe antes deste afterPack (ver o comentário
+    // do topo). Vale no Windows e no macOS; no Linux o Electron não confere.
+    [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
     // `resetAdHocDarwinSignature` só vale pra macOS, que este projeto não
     // empacota; fica de fora pra não mexer no que não é usado.
   });
