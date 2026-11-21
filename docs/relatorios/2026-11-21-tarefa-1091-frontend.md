@@ -3,7 +3,7 @@
 - **Tarefa**: #1091, lista de OS e de Orçamentos no molde novo, sem rolar de lado em 1024
 - **Chefe**: frontend
 - **Data**: 2026-11-21
-- **PR**: (link no PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1155
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
