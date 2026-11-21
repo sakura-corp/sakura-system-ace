@@ -46,9 +46,28 @@ describe("a trava de <form> dentro de <form> (#1130)", () => {
       );
     });
     expect(mensagem).toContain('<form "Cadastrar peça"> está dentro de <form "Ordem de serviço">');
-    // O aviso do próprio React também foi pego (React 19 escreve
-    // "In HTML, <form> cannot be a descendant of <form>").
+  });
+
+  it("pega também o aviso do React, mesmo sem nada aninhado na tela", () => {
+    // Do jeito que o React 19 escreve (o texto com %s e as palavras soltas).
+    // Chamado direto, e não montando um <form> aninhado, porque o React só
+    // avisa uma vez por arquivo: dependeria da ordem dos testes.
+    const mensagem = vigiar(() => {
+      console.error(
+        "In HTML, %s cannot be a descendant of <%s>.\nThis will cause a hydration error.%s",
+        "<form>",
+        "form",
+        "",
+      );
+    });
     expect(mensagem).toContain("aviso do React");
+  });
+
+  it("não confunde outro aviso do React com o do <form>", () => {
+    const mensagem = vigiar(() => {
+      console.error("In HTML, %s cannot be a descendant of <%s>.", "<div>", "p");
+    });
+    expect(mensagem).toBeNull();
   });
 
   it("reprova mesmo se a janela abre e fecha no meio do teste", async () => {

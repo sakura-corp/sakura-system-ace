@@ -10,14 +10,17 @@
  * nesse buraco sem ninguém perceber.
  *
  * Como trava: todo teste de TELA que usa `@/testes/tela` liga isto sozinho
- * (os que não usam chamam `vigiarFormDentroDeForm()` no topo). Se, em
- * qualquer momento do teste, aparecer um `<form>` dentro de outro na tela
- * montada, o teste reprova no fim, dizendo onde. Vigia de dois jeitos, porque
- * cada um pega o que o outro pode perder:
- * 1. o aviso que o próprio React escreve no console ("<form> cannot be a
- *    descendant of <form>");
- * 2. uma olhada no HTML a cada mudança da tela (`form form`), que pega também
- *    a janela que abre e fecha no meio do teste.
+ * (os 4 da tela de OS que não usam chamam `vigiarFormDentroDeForm()` no
+ * topo; os outros testes jsdom que não usam nenhum dos dois ficam de fora).
+ * Se, em qualquer momento do teste, aparecer um `<form>` dentro de outro na
+ * tela montada, o teste reprova no fim, dizendo onde. Quem pega de verdade é
+ * a olhada no HTML (`form form`) a cada mudança da tela, que vê também a
+ * janela que abre e fecha no meio do teste. O aviso do React no console é só
+ * um reforço: ele sai uma vez por arquivo, e some num teste que troca o
+ * `console.error` por um espião.
+ *
+ * **Ela só vê a janela que o teste abre.** Janela nova com formulário ganha
+ * um teste que clica pra abrir (ver `janelasComFormulario.test.tsx`).
  *
  * O conserto, quando reprovar: desenhar a janela FORA do `<form>` (como a aba
  * Fechamento em `OrdemServicoForm.tsx`) — nunca tirar esta trava.

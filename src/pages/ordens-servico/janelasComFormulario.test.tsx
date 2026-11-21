@@ -8,14 +8,19 @@
  * reprova qualquer teste de tela; aqui ela é chamada também por extenso, pra
  * o motivo do teste ficar à vista.
  *
- * As outras telas principais já passam pela trava nos testes delas: o
- * orçamento (`OrcamentosPage.test`, `OrdemServicoForm.orcamento.test` e
- * `.avulsas.test`, com a janela da peça avulsa), a aba Fechamento
- * (`OrdemServicoForm.fechamentoCadastrar.test`), o pagamento da venda de
- * balcão (`VendaBalcaoForm.test`), o estoque (`EstoquePage.*`, `PecaForm.test`),
- * os fornecedores (`FornecedoresPage.test`, `ReceberPedidoModal.test`,
- * `ImportarNotaFiscalXmlModal.test`) e os clientes (`ClientesPage.test`,
- * `ClienteForm.test`).
+ * As janelas das outras telas principais já são abertas, com a trava
+ * ligada, nos testes delas: a peça avulsa do orçamento
+ * (`OrdemServicoForm.orcamento.test`, `.avulsas.test`, `OrcamentosPage.test`),
+ * o cadastro de peça da aba Fechamento (`OrdemServicoForm.fechamentoCadastrar.test`),
+ * o pagamento da venda de balcão (`VendaBalcaoForm.test`), a importação de
+ * notas do estoque (`ImportarNotasFiscaisModal.test`), o recebimento e o XML
+ * dos fornecedores (`ReceberPedidoModal.test`, `ImportarNotaFiscalXmlModal.test`)
+ * e a importação de clientes (`ClientesPage.test`).
+ *
+ * Fora daqui (a trava não vê): "+ Novo fornecedor", "+ Novo pedido" e o
+ * movimento do estoque não são abertos por teste nenhum. Hoje eles não abrem
+ * janela com formulário por dentro (varredura de 20/11/2026); se um dia
+ * abrirem, essa janela ganha um teste aqui.
  */
 import { describe, expect, it, vi } from "vitest";
 import { acharFormDentroDeForm } from "@/testes/semFormDentroDeForm";
