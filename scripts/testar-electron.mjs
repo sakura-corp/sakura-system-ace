@@ -344,6 +344,24 @@ try {
   // processo principal lê na abertura seguinte. O arquivo que existia antes
   // do teste é devolvido no fim, pra rodada nenhuma mudar o computador.
   const pastaDados = await app.evaluate(({ app: electronApp }) => electronApp.getPath("userData"));
+
+  // #1157: fora do instalador (como aqui), a pasta de dados é só do
+  // desenvolvimento, nunca a do programa instalado. E o Chromium (login
+  // guardado, sessionStorage) vai junto pra ela.
+  const pastasDoChromium = await app.evaluate(({ app: electronApp }) => ({
+    empacotado: electronApp.isPackaged,
+    sessao: electronApp.getPath("sessionData"),
+  }));
+  conferir(
+    "fora do instalador, a pasta de dados é a do desenvolvimento (-dev), não a do programa instalado",
+    !pastasDoChromium.empacotado && pastaDados.endsWith("-dev"),
+    pastaDados,
+  );
+  conferir(
+    "os dados do Chromium ficam na mesma pasta do desenvolvimento",
+    pastasDoChromium.sessao === pastaDados,
+    pastasDoChromium.sessao,
+  );
   const arquivoCanal = path.join(pastaDados, "atualizacao.json");
   const canalAntes = fs.existsSync(arquivoCanal) ? fs.readFileSync(arquivoCanal, "utf8") : null;
   const canalNaAbertura = (() => {

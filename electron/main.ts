@@ -20,6 +20,13 @@ import {
   type IdentidadeComputador,
 } from "../src/schemas/identidadeComputador";
 import { podeAbrirNoNavegador } from "../src/schemas/linkExterno";
+import { pastaDeDadosDoDesenvolvimento } from "../src/schemas/pastaDeDados";
+
+// O `npm run dev` usa uma pasta de dados só dele (#1157), pra não dividir a
+// conexão (e o resto) com o programa instalado no mesmo computador. Precisa
+// vir antes de qualquer `app.getPath("userData")` e do `app.whenReady()`.
+const pastaDoDesenvolvimento = pastaDeDadosDoDesenvolvimento(app.getPath("userData"), app.isPackaged);
+if (pastaDoDesenvolvimento) app.setPath("userData", pastaDoDesenvolvimento);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
