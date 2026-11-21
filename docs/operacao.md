@@ -439,7 +439,9 @@ a chave anon saem do painel do `ssace-teste` (passo a passo em `docs/supabase-de
 fica escrito aqui. Até 21/11/2026 esta seção trazia o endereço do banco de uma loja, e um
 computador novo configurado por ela entrou no banco da loja em vez do de teste.
 
-**Cuidado com o programa instalado no mesmo computador**: o `npm run dev` e o programa instalado
-guardam a conexão no mesmo lugar (`%APPDATA%\sakura-system-autocenter\conexao.json`). Trocar a
-conexão num troca no outro. Antes de usar o programa instalado numa loja de verdade, conferir em
-**Configurar a conexão** pra qual banco ele aponta.
+**Programa instalado no mesmo computador**: desde a #1157, o `npm run dev` guarda a conexão (e o
+resto: canal, identidade do computador, logs, login) numa pasta só dele,
+`%APPDATA%\sakura-system-autocenter-dev`; o programa instalado continua na
+`%APPDATA%\sakura-system-autocenter`. Trocar a conexão num não mexe mais no outro. Antes da #1157
+os dois dividiam a pasta: num computador que já usou as duas coisas, conferir em **Configurar a
+conexão** pra qual banco o programa instalado aponta.
