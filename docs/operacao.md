@@ -423,13 +423,23 @@ saíram 132 branches de uma vez (PR #449). Não procurar outro jeito de contorna
 ## 11. Trabalhando de outro computador
 
 Código no GitHub e banco no Supabase: dá pra continuar de qualquer computador com internet. Em
-cada computador novo, clonar, `npm install` e criar o `.env` (nunca vai pro Git):
+cada computador novo: Git, **Node 22** (a versão do CI) e, no Windows, o Visual C++
+Redistributable (sem ele o `npm ci` para na instalação do Electron, visto em 21/11/2026). Depois:
 
 ```bash
 git clone https://github.com/sakura-corp/sakura-system-ace.git
 cd sakura-system-ace
-npm install
-cp .env.example .env   # VITE_SUPABASE_URL=https://rlgdjiowvnfzsedehyga.supabase.co
-                       # VITE_SUPABASE_ANON_KEY=<chave anon, em Settings -> API no Supabase>
+npm ci
 npm run dev
 ```
+
+**O `npm run dev` é sempre contra o `ssace-teste`, nunca contra o banco de uma loja.** O endereço e
+a chave anon saem do painel do `ssace-teste` (passo a passo em `docs/supabase-de-teste.md`, Passos
+7 e 8) e vão no `.env` ou na tela **Configurar a conexão** do programa; o endereço de banco nenhum
+fica escrito aqui. Até 21/11/2026 esta seção trazia o endereço do banco de uma loja, e um
+computador novo configurado por ela entrou no banco da loja em vez do de teste.
+
+**Cuidado com o programa instalado no mesmo computador**: o `npm run dev` e o programa instalado
+guardam a conexão no mesmo lugar (`%APPDATA%\sakura-system-autocenter\conexao.json`). Trocar a
+conexão num troca no outro. Antes de usar o programa instalado numa loja de verdade, conferir em
+**Configurar a conexão** pra qual banco ele aponta.
