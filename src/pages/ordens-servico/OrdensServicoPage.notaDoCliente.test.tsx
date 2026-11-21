@@ -12,6 +12,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { vigiarFormDentroDeForm } from "@/testes/semFormDentroDeForm";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { Operador } from "@/types/operador";
 
@@ -124,6 +125,8 @@ beforeAll(() => {
   URL.revokeObjectURL = () => undefined;
 });
 afterEach(cleanup);
+// A trava de <form> dentro de <form> (#1130): este arquivo não usa o @/testes/tela.
+vigiarFormDentroDeForm();
 beforeEach(() => {
   itens = [PECA];
   notas = [];

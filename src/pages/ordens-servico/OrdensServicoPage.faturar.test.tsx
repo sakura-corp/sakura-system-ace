@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { vigiarFormDentroDeForm } from "@/testes/semFormDentroDeForm";
 import type { Operador } from "@/types/operador";
 
 const faturarOrdem = vi.fn();
@@ -97,6 +98,8 @@ vi.mock("@/contexts/AuthContext", () => ({
 const { OrdensServicoPage } = await import("./OrdensServicoPage");
 
 afterEach(cleanup);
+// A trava de <form> dentro de <form> (#1130): este arquivo não usa o @/testes/tela.
+vigiarFormDentroDeForm();
 beforeEach(() => {
   faturarOrdem.mockReset();
   avisar.mockReset();
