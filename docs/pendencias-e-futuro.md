@@ -69,7 +69,7 @@ privado, `EQUIPE.md`). Um no painel (o Gustavo) e dois no programa das lojas. A 
 sem dinheiro, nota nem migration (#455 e #459); depois, a **1ª parte da #457**: importar clientes
 de uma planilha qualquer, com a pessoa escolhendo qual coluna é o quê. Essa parte não depende do
 cabeçalho do sistema antigo das lojas, que ainda não chegou. **Cuidado**: o tamanho das levas tem que caber
-no tempo dela de revisar (revisão de colega: só em banco, dinheiro ou nota; `docs/revisao-cruzada.md`).
+no tempo dela de revisar (a aprovação é dela em todo PR; revisão de colega não é exigida, `docs/revisao-cruzada.md`).
 
 **O que falta do guia de melhorias e o que o concorrente tem e nós não** (`docs/comparativo-anexar.md`, que mora no `sakura-corp/escritorio`, privado)
 **viraram tarefa no GitHub** (30/09, etiqueta `guia`, #365 a #385 e #386 a #412), cada uma com o que fazer, onde, "Pronto quando", o que não fazer e, quando depende dela, a

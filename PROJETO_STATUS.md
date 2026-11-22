@@ -39,15 +39,15 @@ na frente de qualquer outra deste arquivo:
 - **Escopo**: os três (Gustavo, Lázaro e Tiago), **o programa das lojas**, com o mesmo acesso,
   sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
   Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
-- **Trabalha em branch e abre PR, mas nunca mescla.** Revisão de colega só em PR de banco,
-  dinheiro ou nota (aí a Sofia também confere); nos outros é opcional (regra única:
-  `docs/revisao-cruzada.md`, "A regra, em um lugar só"). **Antes de
+- **Trabalha em branch e abre PR, mas nunca mescla.** Toda PR precisa da aprovação da
+  Sofia; revisão de colega não é exigida, só reserva quando ela estiver sem tokens (#1161; regra única:
+  `docs/revisao-cruzada.md`). **Antes de
   pedir**, roda o `/code-review` e cola o resumo no PR (a revisão gasta a cota de quem fez).
 - **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
   do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
   escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
   avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
-  revisão do Claude colada (colega só em `banco-dinheiro-nota`). Programa das lojas, banco e publicar, nunca.
+  revisão do Claude colada. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
   "Atualizar o banco". Não roda SQL nem migration em Supabase de loja ou produção. **No de teste
   (`ssace-teste`) pode** (ensaio e migration, contando no PR). Migration nova vai no PR; em produção, ela aplica.

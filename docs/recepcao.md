@@ -17,8 +17,8 @@ outras sessões. Toda sessão manda **uma linha** pra ela em dois momentos, e s�
 | **Se travar** esperando alguém | `Travei: <link>; falta <o quê, de quem>` | "Travei: <link da sessão>; falta a Sofia decidir X" |
 | **Se precisar** de algo da Sofia ou de alguém | `Preciso: <link>; falta <o quê, de quem>` | "Preciso: <link>; falta a Sofia aplicar a migration" |
 
-Revisão de PR: só em PR `banco-dinheiro-nota` o colega revisa (e a Sofia também confere); nos outros é
-opcional (`docs/revisao-cruzada.md`, "A regra, em um lugar só"). Quando houver revisão, as linhas são
+Revisão de PR: a aprovação é da Sofia em todo PR; revisão de colega não é exigida, só reserva quando ela
+estiver sem tokens (`docs/revisao-cruzada.md`). Quando houver revisão de colega, as linhas são
 "Abri: pego a revisão do PR #N" e "Feito: revisão do PR #N".
 
 Nunca no meio, nunca "comecei" sem dizer o quê. Sempre com link (PR, issue ou a própria sessão).
