@@ -7,8 +7,12 @@ import { render, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Operador } from "@/types/operador";
+import { vigiarFormDentroDeForm } from "@/testes/semFormDentroDeForm";
 
 const listarClientesParaEscolha = vi.fn();
+// A trava de <form> dentro de <form> (#1130): este arquivo não usa o @/testes/tela.
+vigiarFormDentroDeForm();
+
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: (...a: unknown[]) => listarClientesParaEscolha(...a),
   cadastrarClienteRapido: vi.fn(),
