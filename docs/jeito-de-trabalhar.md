@@ -64,7 +64,7 @@ Até 14/10 a memória fazia tudo isso sozinha. Agora cada coisa vai pra **gaveta
 renova a cada 7 dias; em 23/10, primeiro dia da semana, já estava em 13 a 14%).
 
 - **Durante a semana**: PR da equipe entra na `main` com o CI verde e uma revisão do Claude dela
-  (código, "Pronto quando", relatório; colega só em `banco-dinheiro-nota`, `docs/revisao-cruzada.md`). **Ela não testa** pra aprovar o próximo.
+  (código, "Pronto quando", relatório; aprovação da Sofia; colega não é exigido, `docs/revisao-cruzada.md`). **Ela não testa** pra aprovar o próximo.
 - **Quem fez testa antes do PR**: no próprio PC, no Supabase de teste, guiado pelo Claude, o que
   a tarefa pede em "No PC de quem fez" (`docs/tarefas.md`). Pra ela sobra **o mínimo**: só o que
   não dá pra ver fora da loja (impressora, nota de verdade, o `.exe`), já em passos exatos.
