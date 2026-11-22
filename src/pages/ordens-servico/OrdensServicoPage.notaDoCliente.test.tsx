@@ -4,8 +4,9 @@
  * por ela em 16/11; visual novo, tarefa 7):
  *   • OS faturada que ainda falta nota: o próximo passo da linha é "Emitir
  *     nota", e o "Avisar" vai pro "Mais ações";
- *   • OS finalizada: "Avisar" e "Nota do cliente" na própria linha; a nota abre
- *     a janela de nota que já existe; com duas notas, escolhe-se qual.
+ *   • OS finalizada: "Nota do cliente" na própria linha (o molde de lista deixa
+ *     UMA ação na linha, #1091) e o "Avisar" no "Mais ações"; a nota abre a
+ *     janela de nota que já existe; com duas notas, escolhe-se qual.
  */
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -145,19 +146,22 @@ async function montar() {
 describe("OrdensServicoPage — a nota do cliente à mão", () => {
   it("faturada sem a nota: 'Emitir nota' na linha, e o 'Avisar' no Mais ações", async () => {
     const user = await montar();
-    expect(screen.getByRole("button", { name: "Emitir nota" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Avisar" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Emitir nota — OS 141" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Avisar/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /Nota do cliente/ })).toBeNull();
     await user.click(screen.getByRole("button", { name: /^Mais ações/ }));
     expect(screen.getByRole("menuitem", { name: "Avisar o cliente" })).toBeInTheDocument();
   });
 
-  it("finalizada com uma nota: 'Avisar' e 'Nota do cliente' na linha; a nota abre direto", async () => {
+  it("finalizada com uma nota: 'Nota do cliente' na linha e o 'Avisar' no Mais ações; a nota abre direto", async () => {
     notas = [nota("n1", "nfe")];
     const user = await montar();
-    expect(screen.queryByRole("button", { name: "Emitir nota" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Avisar" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Nota do cliente" }));
+    expect(screen.queryByRole("button", { name: "Emitir nota — OS 141" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Avisar/ })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Mais ações/ }));
+    expect(screen.getByRole("menuitem", { name: "Avisar o cliente" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Nota do cliente — OS 141" }));
     expect(await screen.findByRole("dialog", { name: "Nota do cliente" })).toBeInTheDocument();
   });
 
@@ -165,7 +169,7 @@ describe("OrdensServicoPage — a nota do cliente à mão", () => {
     itens = [PECA, SERVICO];
     notas = [nota("n1", "nfe"), nota("n2", "nfse")];
     const user = await montar();
-    await user.click(screen.getByRole("button", { name: "Nota do cliente" }));
+    await user.click(screen.getByRole("button", { name: "Nota do cliente — OS 141" }));
     const escolha = screen.getByRole("dialog", { name: "Nota do cliente · OS 141" });
     expect(within(escolha).getByRole("button", { name: "Nota das peças (NFC-e)" })).toBeInTheDocument();
     await user.click(within(escolha).getByRole("button", { name: "Nota do serviço (NFS-e)" }));
@@ -175,7 +179,7 @@ describe("OrdensServicoPage — a nota do cliente à mão", () => {
   it("nota cancelada não conta: volta a pedir 'Emitir nota'", async () => {
     notas = [{ ...nota("n1", "nfe"), status: "cancelado" }];
     await montar();
-    expect(screen.getByRole("button", { name: "Emitir nota" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Nota do cliente" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Emitir nota — OS 141" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Nota do cliente/ })).toBeNull();
   });
 });
