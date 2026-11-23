@@ -1,8 +1,11 @@
+import { criarContasPagar } from "./contasPagar";
 import { registrarCotacoes } from "./cotacoesPecas";
 import { hojeLocal } from "./datas";
+import { mensagemDeErro } from "./errors";
 import { registrarMovimento } from "./estoque";
 import { supabase } from "./supabase";
 import { buscarTudoEmPaginas } from "./paginacao";
+import type { NovaContaPagar } from "@/types/contaPagar";
 import { nomePedido } from "@/types/pedidoCompra";
 import type {
   NovoItemPedidoCompra,
@@ -62,16 +65,69 @@ export async function criarPedido(
   return pedidoCriado as PedidoCompra;
 }
 
+// A observação do pedido importado guarda o número e a CHAVE da nota: é por
+// ela que a próxima importação descobre que a nota já entrou (#1020). Sem
+// migration: `contas_pagar` e `pedidos_compra` não têm coluna pra chave.
+export function observacaoDaImportacao(numero: string | null, chaveAcesso: string | null): string {
+  if (!numero) return "Importado de nota fiscal XML";
+  return chaveAcesso
+    ? `Importado da NFe nº ${numero} (chave ${chaveAcesso})`
+    : `Importado da NFe nº ${numero}`;
+}
+
+/**
+ * O pedido em que esta nota (pela chave de acesso) já foi importada, ou null.
+ * Só acha notas importadas a partir da #1020 (as de antes não guardavam a
+ * chave). Procura em todas as lojas que a pessoa enxerga: a mesma nota em
+ * outra loja também seria estoque e conta em dobro.
+ */
+export async function buscarPedidoDaNota(chaveAcesso: string): Promise<{ numero: number } | null> {
+  // A chave é só dígitos (validada na leitura do XML): não tem % nem _ pra escapar.
+  const { data, error } = await supabase
+    .from("pedidos_compra")
+    .select("numero")
+    .ilike("observacao", `%chave ${chaveAcesso}%`)
+    .limit(1);
+  if (error) throw error;
+  const achado = (data as { numero: number }[] | null)?.[0];
+  return achado ? { numero: achado.numero } : null;
+}
+
+export class NotaJaImportadaError extends Error {
+  constructor(numeroPedido: number) {
+    super(
+      `Esta nota já foi importada (${nomePedido(numeroPedido)}). Nada foi lançado de novo: ` +
+        "nem estoque, nem contas a pagar.",
+    );
+    this.name = "NotaJaImportadaError";
+  }
+}
+
 export interface ItemImportacaoXml {
   pecaId: string;
   quantidade: number;
   precoUnitario: number;
 }
 
+export interface ResultadoImportacaoNota {
+  pedido: PedidoCompra;
+  /** Quantas contas a pagar entraram (0 se a caixa estava desmarcada). */
+  contasLancadas: number;
+  /** O pedido entrou, mas as contas a pagar não: o motivo, pra mostrar. */
+  erroContas: string | null;
+}
+
 // Diferente de criarPedido() + receberItensPedido() (fluxo em duas etapas:
 // primeiro planeja, depois confere o que chegou): a nota fiscal XML já é a
 // prova de que a mercadoria chegou, então o pedido nasce direto "recebido"
 // — sem passar por "pendente". Usada por ImportarNotaFiscalXmlModal.tsx.
+//
+// #1020: também lança as contas a pagar (as parcelas que a pessoa confirmou
+// na janela), DEPOIS do pedido, do estoque e da cotação, e num insert só
+// (todas ou nenhuma). Se elas falharem, o pedido já entrou: a função não
+// lança erro, devolve `erroContas`, pra janela dizer exatamente o que entrou
+// e o que não entrou. Nota já importada (mesma chave) é recusada antes de
+// gravar qualquer coisa.
 export async function importarNotaFiscalCompra(
   fornecedorId: string,
   itens: ItemImportacaoXml[],
@@ -79,7 +135,23 @@ export async function importarNotaFiscalCompra(
   lojaId: string,
   operadorId: string | null,
   observacao: string | null,
-): Promise<PedidoCompra> {
+  extras: { chaveAcesso: string | null; contas: NovaContaPagar[] } = {
+    chaveAcesso: null,
+    contas: [],
+  },
+): Promise<ResultadoImportacaoNota> {
+  if (extras.chaveAcesso) {
+    let jaImportada: { numero: number } | null = null;
+    try {
+      jaImportada = await buscarPedidoDaNota(extras.chaveAcesso);
+    } catch (err) {
+      // Conferir é aviso, nunca tranca (docs/licoes.md, item 33): a janela já
+      // avisou que não deu pra conferir.
+      console.error("Erro ao conferir se a nota já foi importada:", err);
+    }
+    if (jaImportada) throw new NotaJaImportadaError(jaImportada.numero);
+  }
+
   const { data: pedidoCriado, error: erroPedido } = await supabase
     .from("pedidos_compra")
     .insert({
@@ -131,7 +203,19 @@ export async function importarNotaFiscalCompra(
       })),
   );
 
-  return pedidoCriado as PedidoCompra;
+  let contasLancadas = 0;
+  let erroContas: string | null = null;
+  if (extras.contas.length > 0) {
+    try {
+      await criarContasPagar(extras.contas, lojaId);
+      contasLancadas = extras.contas.length;
+    } catch (err) {
+      console.error("Erro ao lançar as contas a pagar da nota:", err);
+      erroContas = mensagemDeErro(err);
+    }
+  }
+
+  return { pedido: pedidoCriado as PedidoCompra, contasLancadas, erroContas };
 }
 
 export async function cancelarPedido(id: string): Promise<void> {

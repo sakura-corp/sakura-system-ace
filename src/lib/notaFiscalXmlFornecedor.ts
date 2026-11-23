@@ -1,4 +1,8 @@
-import type { ItemNotaFiscalXml, NotaFiscalXmlExtraida } from "@/types/notaFiscalXmlFornecedor";
+import type {
+  DuplicataNotaFiscalXml,
+  ItemNotaFiscalXml,
+  NotaFiscalXmlExtraida,
+} from "@/types/notaFiscalXmlFornecedor";
 
 // `File.text()` sempre decodifica como UTF-8, mas boa parte dos emissores de
 // NFe (ERPs mais antigos, algumas SEFAZ) gera o XML em ISO-8859-1 — decodificar
@@ -87,10 +91,40 @@ export function extrairNotaFiscalXml(xmlTexto: string): NotaFiscalXmlExtraida {
     };
   });
 
+  // As parcelas (#1020). O vencimento é dia de calendário e fica como texto:
+  // passar por `new Date()` jogaria o dia pra trás no fuso do Brasil (#1005).
+  const cobr = infNFe.getElementsByTagName("cobr")[0] ?? null;
+  const duplicatas: DuplicataNotaFiscalXml[] = cobr
+    ? Array.from(cobr.getElementsByTagName("dup")).map((dup) => {
+        const vencimento = textoDe(dup, "dVenc");
+        return {
+          numero: textoDe(dup, "nDup"),
+          vencimento: vencimento && /^\d{4}-\d{2}-\d{2}$/.test(vencimento) ? vencimento : null,
+          valor: numeroDe(dup, "vDup") ?? 0,
+        };
+      })
+    : [];
+
+  const total = infNFe.getElementsByTagName("ICMSTot")[0] ?? null;
+
   return {
     fornecedor_cnpj: textoDe(emit, "CNPJ"),
     fornecedor_nome: textoDe(emit, "xNome"),
     numero: textoDe(ide, "nNF"),
+    chave_acesso: chaveDeAcesso(doc, infNFe),
+    valor_total: numeroDe(total, "vNF"),
     itens,
+    duplicatas,
   };
+}
+
+// A chave de acesso (44 dígitos) identifica a nota no país inteiro: é ela que
+// impede importar a mesma nota duas vezes (#1020). Vem do protocolo de
+// autorização (`chNFe`) ou, sem ele, do `Id="NFe<chave>"` do infNFe.
+function chaveDeAcesso(doc: Document, infNFe: Element): string | null {
+  const candidatas = [
+    doc.getElementsByTagName("chNFe")[0]?.textContent?.trim() ?? "",
+    (infNFe.getAttribute("Id") ?? "").replace(/^NFe/, ""),
+  ];
+  return candidatas.find((c) => /^\d{44}$/.test(c)) ?? null;
 }
