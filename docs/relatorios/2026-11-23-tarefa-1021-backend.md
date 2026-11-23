@@ -29,6 +29,14 @@
 - **Sessões filhas**: nenhuma
 - **`/goal`**: não usei
 
+## Fotos (programa de verdade, dados inventados do modo demonstração)
+Em `docs/relatorios/fotos/2026-11-23-tarefa-1021/` (claro e escuro; roteiro em `fotografar.mjs.txt`):
+1. Clientes → Novo cliente, com "Indicação" e "Zé da padaria".
+2. Nova OS com um cliente que veio por indicação: o campo já vem "Indicação", com o aviso
+   "Veio do cadastro do cliente; dá pra trocar".
+3. Novo orçamento, trocado pra "Google".
+4. Venda de balcão no Consumidor, com "Passou na frente".
+
 ## O que testei e VI reprovar
 - **Banco** (`testar-origem-do-cliente.sql`, num Postgres local descartável): quebrei a migration de
   8 jeitos, um por vez, e cada um reprovou no ponto certo: a trava aceitando qualquer valor
@@ -48,7 +56,10 @@
 - A matriz de RLS (`npm run test:rls`): verde, 1040 células; nenhuma policy mudou, então não havia o
   que quebrar.
 - Os outros 31 testes SQL (`npm run test:sql`): todos verdes com a 0091.
-- `typecheck`, `lint` (só os 2 avisos que já existiam), `contraste`, `contraste:telas`, `largura:telas`.
+- `typecheck`, `lint` (só os 2 avisos que já existiam), `contraste`, `largura:telas` (74 telas × 5
+  larguras) e `contraste:telas` (nenhuma combinação ilegível; na primeira rodada, as duas telas de
+  Pedidos de compra, que não mexi, não abriram a tempo enquanto os testes de banco rodavam juntos).
+- `test:fusos`: os dois fusos só reprovam no teste da numeração (ver abaixo).
 
 ## O que ficou de fora
 - **CI vermelho num teste só, de propósito**: `scripts/atualizar-bancos.test.ts` ("sem buraco na

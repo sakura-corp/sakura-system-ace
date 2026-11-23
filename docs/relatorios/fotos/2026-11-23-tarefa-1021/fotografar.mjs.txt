@@ -7,6 +7,7 @@
 // "Indicação" nas respostas do banco falso, pra a OS mostrar a sugestão.
 import { mkdirSync } from "node:fs";
 import { instalarBancoFalso } from "/home/user/sakura-system-ace/site/ferramentas/banco-falso.mjs";
+import { responderComoSupabase } from "/home/user/sakura-system-ace/site/ferramentas/dados-demo.mjs";
 import { carregarChromium } from "/home/user/sakura-system-ace/site/ferramentas/playwright.mjs";
 
 const BASE = "http://localhost:5199";
@@ -25,9 +26,14 @@ const contexto = await navegador.newContext({
 await instalarBancoFalso(contexto);
 // Depois do banco falso: a rota registrada por último é a que responde primeiro.
 await contexto.route(/demo\.supabase\.co\/rest\/v1\/clientes\?/, async (rota) => {
-  const resposta = await rota.fetch().catch(() => null);
-  if (!resposta) return rota.fallback();
-  let corpo = await resposta.text();
+  const req = rota.request();
+  const r = responderComoSupabase({
+    metodo: req.method(),
+    url: req.url(),
+    cabecalhos: req.headers(),
+    corpo: req.postData(),
+  });
+  let corpo = r.corpo;
   try {
     const dados = JSON.parse(corpo);
     const marcar = (c) => (c && c.id === "c1" ? { ...c, origem: "indicacao", origem_detalhe: "Zé da padaria" } : c);
@@ -35,7 +41,7 @@ await contexto.route(/demo\.supabase\.co\/rest\/v1\/clientes\?/, async (rota) =>
   } catch {
     /* não é JSON: devolve como veio */
   }
-  return rota.fulfill({ response: resposta, body: corpo });
+  return rota.fulfill({ status: r.status, headers: r.cabecalhos, body: corpo });
 });
 const pagina = await contexto.newPage();
 pagina.on("console", (m) => m.type() === "error" && console.log("[console]", m.text().slice(0, 160)));
@@ -55,7 +61,8 @@ async function mostrarCampo(nome) {
 }
 
 async function escolherCliente(nome) {
-  const caixa = pagina.getByPlaceholder("Selecione o cliente").first();
+  // O Combobox é um <input role="combobox">; o da OS que vem primeiro é o do cliente.
+  const caixa = pagina.locator('input[role="combobox"]').first();
   await caixa.click();
   await caixa.fill(nome.split(" ")[0]);
   await pagina.getByRole("button", { name: nome }).first().click();
@@ -91,18 +98,5 @@ await pagina.getByRole("button", { name: "Venda de balcão" }).click();
 await pagina.waitForTimeout(800);
 await pagina.selectOption('select[name="origem"]', "passou_na_frente");
 await mostrarCampo("4-venda-balcao-consumidor");
-
-// 5. O cadastro rápido de dentro da OS
-await pagina.goto(`${BASE}/#/ordens-servico`, { waitUntil: "networkidle" });
-await pagina.getByRole("button", { name: "Nova ordem de serviço" }).click();
-await pagina.waitForTimeout(800);
-const caixa = pagina.getByPlaceholder("Selecione o cliente").first();
-await caixa.click();
-await pagina.getByRole("button", { name: "+ Cadastrar cliente novo" }).click();
-await pagina.waitForTimeout(600);
-await pagina.selectOption('[role="dialog"] select[name="origem"]', "anuncio_redes");
-await pagina.fill('[role="dialog"] input[name="origem_detalhe"]', "IG-pneu-nov");
-await pagina.waitForTimeout(300);
-await pagina.screenshot({ path: `${SAIDA}/5-cadastro-rapido-${process.argv[3] ?? "claro"}.png` });
 
 await navegador.close();
