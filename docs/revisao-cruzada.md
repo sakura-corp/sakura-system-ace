@@ -18,8 +18,8 @@
 - **PR da própria Sofia** entra pela exceção de administradora da `main` (Repository admin, Always
   allow), porque ela não aprova o próprio PR.
 - **Banco, dinheiro e nota** (`banco-dinheiro-nota`): o rótulo pode continuar nos PRs pra avisar que
-  é área sensível. Teste real no PC continua valendo. Migration em loja ou produção: só a Sofia;
-  no banco de teste (`ssace-teste`) a equipe pode ensaiar e contar no PR.
+  é área sensível. Teste real no PC continua valendo. Migration em loja, produção ou no banco de
+  teste (`ssace-teste`): só a Sofia aplica (`docs/supabase-de-teste.md`, "Quem aplica migration").
 - Nada de nome civil, valor ou dado de cliente em comentário de PR: o repositório é público.
 
 ## Se a reserva for ligada (a Sofia sem tokens)
