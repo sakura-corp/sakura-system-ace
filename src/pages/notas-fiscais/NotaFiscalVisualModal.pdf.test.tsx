@@ -16,6 +16,10 @@ vi.mock("@/lib/notasFiscais", () => ({
   baixarArquivo: vi.fn(),
   buscarConteudoArquivo: (...a: unknown[]) => buscarConteudoArquivo(...a),
 }));
+// WhatsApp, horário e garantia das Configurações (#1033) não entram neste teste.
+vi.mock("@/lib/configuracoes", () => ({
+  buscarConfiguracaoAtendimento: vi.fn().mockResolvedValue(null),
+}));
 vi.mock("@/lib/reciboNotaFiscal", () => ({
   buscarOsDoRecibo: vi.fn().mockResolvedValue(null),
   buscarLojaDoRecibo: vi.fn().mockResolvedValue(null),

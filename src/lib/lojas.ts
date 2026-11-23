@@ -87,6 +87,8 @@ export const TABELAS_CONFIG_POR_LOJA = [
   "configuracoes_whatsapp",
   // 0085 (#383): o contato da contabilidade também é só configuração.
   "configuracoes_contabilidade",
+  // 0092 (#1033): o atendimento e a garantia dos serviços também são só configuração.
+  "configuracoes_atendimento",
   // Tabela nova com loja_id sem cascade: o teste lojas.tabelasDaLoja.test.ts
   // reprova até ela entrar aqui ou na lista das que travam de propósito.
 ] as const;

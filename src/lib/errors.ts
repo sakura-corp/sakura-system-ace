@@ -62,6 +62,13 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
   ck_configuracoes_contabilidade_algum_contato:
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
+  // Migration 0092 (#1033): o atendimento e a garantia dos serviços.
+  ck_configuracoes_atendimento_whatsapp:
+    "O WhatsApp da loja precisa ter o DDD e o número: de 10 a 13 dígitos.",
+  ck_configuracoes_atendimento_horario:
+    "O horário de funcionamento não pode ficar em branco nem passar de 80 letras.",
+  ck_configuracoes_atendimento_garantia:
+    "A garantia dos serviços precisa ser de 1 a 3.650 dias.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
@@ -163,6 +170,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
+  // 0092 (atendimento e garantia dos serviços, #1033): tabela nova.
+  "configuracoes_atendimento",
 ] as const;
 
 /**

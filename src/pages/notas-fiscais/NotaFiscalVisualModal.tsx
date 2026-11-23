@@ -4,6 +4,7 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
+import { buscarConfiguracaoAtendimento } from "@/lib/configuracoes";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
 import { buscarLojaDoRecibo, buscarOsDoRecibo, buscarValoresGuardadosDaNota, comValoresGuardados } from "@/lib/reciboNotaFiscal";
 import { salvarComoDownload } from "@/lib/download";
@@ -45,19 +46,29 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
         // O XML manda; a OS (veículo, placa, garantia) e a loja (pra
         // completar o emitente da Giap) só completam, e sem acesso a elas o
         // recibo sai sem aquelas seções (#1031).
-        const [conteudo, os, loja, valores] = await Promise.all([
+        const [conteudo, os, loja, valores, atend] = await Promise.all([
           buscarConteudoArquivo(arquivo),
           arquivo.ordem_servico_id
             ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
             : Promise.resolve(null),
           buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
           buscarValoresGuardadosDaNota(arquivo),
+          // WhatsApp, horário e garantia das Configurações (#1033): melhor
+          // esforço, sem acesso ou sem a tabela o recibo sai sem essas linhas.
+          buscarConfiguracaoAtendimento(arquivo.loja_id).catch(() => null),
         ]);
+        const atendimento = atend
+          ? {
+              whatsapp: atend.whatsapp,
+              horario: atend.horario_funcionamento,
+              garantiaServicoDias: atend.garantia_servico_dias,
+            }
+          : null;
         const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
         setReconhecido(dados.reconhecido);
         // NFS-e da Giap: o valor e os serviços vêm do que foi guardado na
         // emissão (#1142). Nota sem isso mostra só "Itens na OS nº X".
-        setHtml(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja }));
+        setHtml(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja, atendimento }));
       } catch (err) {
         console.error("Erro ao gerar versão visual da nota fiscal:", err);
         setErro(mensagemDeErro(err));

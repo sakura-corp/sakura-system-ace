@@ -169,6 +169,17 @@ export interface ContextoDoRecibo {
    * emissão (`comValoresGuardados`, #1142). Nota sem isso chega com `null`.
    */
   valorDaNota: number | null;
+  /**
+   * O que a loja cadastrou em Configurações (#1033): WhatsApp, horário e
+   * garantia dos serviços. Tudo opcional: campo vazio, a linha não aparece.
+   */
+  atendimento?: AtendimentoDoRecibo | null;
+}
+
+export interface AtendimentoDoRecibo {
+  whatsapp: string | null;
+  horario: string | null;
+  garantiaServicoDias: number | null;
 }
 
 const CONTEXTO_VAZIO: ContextoDoRecibo = { os: null, loja: null, valorDaNota: null };
@@ -824,7 +835,21 @@ function siglaDaNota(dados: NotaFiscalVisual): string {
   return dados.modelo === "55" ? "NF-e" : "NFC-e";
 }
 
-function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual | null): string {
+// "WhatsApp (16) 95550-0199 · Seg a sex, 8h às 18h" (só o que foi cadastrado).
+function linhaAtendimento(atendimento: AtendimentoDoRecibo | null | undefined): string | null {
+  const whatsapp = atendimento?.whatsapp ? formatarTelefone(atendimento.whatsapp) : null;
+  const horario = atendimento?.horario?.trim() || null;
+  return juntar([
+    whatsapp ? `WhatsApp ${e(whatsapp)}` : null,
+    horario ? `Horário: ${e(horario)}` : null,
+  ]);
+}
+
+function htmlCabecalho(
+  dados: NotaFiscalVisual,
+  emitente: PessoaNotaFiscalVisual | null,
+  atendimento: AtendimentoDoRecibo | null | undefined,
+): string {
   const nfse = dados.tipo === "nfse";
   const nomePrincipal = emitente?.nomeFantasia ?? emitente?.nome ?? null;
   const razao = emitente?.nomeFantasia && emitente.nome !== emitente.nomeFantasia ? emitente.nome : null;
@@ -841,6 +866,8 @@ function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual
     emitente?.telefone ? e(formatarTelefone(emitente.telefone) ?? "") : null,
     emitente?.email ? e(emitente.email) : null,
   ]);
+
+  const linhaAtend = linhaAtendimento(atendimento);
 
   const dataEmissao = formatarData(dados.dataEmissao);
   const numeroNota = dados.numero ? `Nº ${e(dados.numero)}` : null;
@@ -866,6 +893,7 @@ function htmlCabecalho(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual
           ${linhaDocs ? `<p class="mini">${linhaDocs}</p>` : ""}
           ${emitente?.endereco ? `<p class="mini">${e(emitente.endereco)}</p>` : ""}
           ${linhaContato ? `<p class="mini">${linhaContato}</p>` : ""}
+          ${linhaAtend ? `<p class="mini">${linhaAtend}</p>` : ""}
         </div>
       </div>
       <div class="nota-id">
@@ -999,8 +1027,17 @@ function prazoPorExtenso(dias: number): string {
   return `${dias} dias`;
 }
 
-// A garantia que o sistema conhece hoje é a das peças (cadastro da peça), e as
-// peças vão na NFC-e. A garantia do serviço ainda não tem cadastro (#1033).
+// A garantia das peças vem do cadastro da peça e vai na NFC-e. A garantia dos
+// serviços vem das Configurações da loja (#1033) e vai só na NFS-e.
+function htmlGarantiaServicos(dias: number | null | undefined): string {
+  if (!dias || dias <= 0) return "";
+  return `
+    <div class="caixa">
+      <h3>Garantia</h3>
+      <ul><li>Serviços: garantia de ${prazoPorExtenso(dias)}, a contar desta nota.</li></ul>
+    </div>`;
+}
+
 function htmlGarantia(os: OsDoRecibo | null): string {
   if (!os) return "";
   const comGarantia = os.itens.filter((i) => i.tipo === "peca" && i.garantiaDias && i.garantiaDias > 0);
@@ -1184,7 +1221,12 @@ function htmlDadosFiscais(dados: NotaFiscalVisual): string {
     </section>`;
 }
 
-function htmlRodape(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual | null): string {
+function htmlRodape(
+  dados: NotaFiscalVisual,
+  emitente: PessoaNotaFiscalVisual | null,
+  atendimento: AtendimentoDoRecibo | null | undefined,
+): string {
+  const linhaAtend = linhaAtendimento(atendimento);
   const primeiroNome = dados.destinatario?.nome?.split(/\s+/)[0] ?? null;
   const pessoaFisica = (dados.destinatario?.documento?.replace(/\D/g, "").length ?? 0) === 11;
   const obrigado = primeiroNome && pessoaFisica ? `Obrigado pela preferência, ${e(primeiroNome)}!` : "Obrigado pela preferência!";
@@ -1195,6 +1237,7 @@ function htmlRodape(dados: NotaFiscalVisual, emitente: PessoaNotaFiscalVisual | 
     <footer class="rodape">
       <p class="obrigado">${obrigado}</p>
       ${contato ? `<p class="mini">${contato}</p>` : ""}
+      ${linhaAtend ? `<p class="mini">${linhaAtend}</p>` : ""}
       <p class="mini">Emitido pelo Sakura System</p>
       ${dados.tipo === "nfse" ? `<p class="assinatura">Assinatura do cliente</p>` : ""}
     </footer>`;
@@ -1204,7 +1247,7 @@ export function montarHtmlVisualNotaFiscal(
   dados: NotaFiscalVisual,
   contexto: ContextoDoRecibo = CONTEXTO_VAZIO,
 ): string {
-  const { os, loja } = contexto;
+  const { os, loja, atendimento } = contexto;
   const emitente = completarEmitente(dados.emitente, loja);
   const titulo = `Recibo da ${siglaDaNota(dados)}`;
 
@@ -1224,12 +1267,13 @@ export function montarHtmlVisualNotaFiscal(
 <body>
   <article class="doc">
     <div class="folha">
-      ${htmlCabecalho(dados, emitente)}
+      ${htmlCabecalho(dados, emitente, atendimento)}
       ${htmlAviso(dados)}
       ${htmlClienteEVeiculo(dados, os)}
       ${corpo}
+      ${dados.tipo === "nfse" ? htmlGarantiaServicos(atendimento?.garantiaServicoDias) : ""}
       ${htmlDadosFiscais(dados)}
-      ${htmlRodape(dados, emitente)}
+      ${htmlRodape(dados, emitente, atendimento)}
     </div>
   </article>
 </body>

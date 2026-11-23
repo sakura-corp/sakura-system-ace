@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { CARTOES_INICIO_PADRAO } from "@/types/configuracao";
 import type {
   CartaoMetrica,
+  ConfiguracaoAtendimento,
   ConfiguracaoFiscalLoja,
   ConfiguracaoGarantia,
   ConfiguracaoPix,
@@ -112,6 +113,46 @@ export async function salvarLinkAvaliacao(lojaId: string, link: string | null): 
     .from("configuracoes_avaliacao")
     .upsert(
       { loja_id: lojaId, link_google: limpo, atualizado_em: new Date().toISOString() },
+      { onConflict: "loja_id" },
+    );
+  if (error) throw error;
+}
+
+/**
+ * O atendimento e a garantia dos serviços da loja (migration 0092, #1033);
+ * `null` = a loja não informou nada. Lança o erro: quem chama decide (a tela
+ * avisa; o recibo segue sem a linha).
+ */
+export async function buscarConfiguracaoAtendimento(lojaId: string): Promise<ConfiguracaoAtendimento | null> {
+  const { data, error } = await supabase
+    .from("configuracoes_atendimento")
+    .select("loja_id, whatsapp, horario_funcionamento, garantia_servico_dias")
+    .eq("loja_id", lojaId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as ConfiguracaoAtendimento | null) ?? null;
+}
+
+/** Tudo vazio apaga a linha da loja (sem dado = sem linha); senão grava por loja. */
+export async function salvarConfiguracaoAtendimento(
+  lojaId: string,
+  dados: { whatsapp: string | null; horario_funcionamento: string | null; garantia_servico_dias: number | null },
+): Promise<void> {
+  if (dados.whatsapp === null && dados.horario_funcionamento === null && dados.garantia_servico_dias === null) {
+    const { error } = await supabase.from("configuracoes_atendimento").delete().eq("loja_id", lojaId);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await supabase
+    .from("configuracoes_atendimento")
+    .upsert(
+      {
+        loja_id: lojaId,
+        whatsapp: dados.whatsapp,
+        horario_funcionamento: dados.horario_funcionamento,
+        garantia_servico_dias: dados.garantia_servico_dias,
+        atualizado_em: new Date().toISOString(),
+      },
       { onConflict: "loja_id" },
     );
   if (error) throw error;
