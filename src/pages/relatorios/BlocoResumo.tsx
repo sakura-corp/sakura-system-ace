@@ -89,6 +89,9 @@ export function BlocoResumo({
                 com a loja.
               </p>
             )}
+            {!cem && resumo.vendido === 0 && (
+              <p className="mt-3 text-subtitulo text-texto">Nenhuma OS aberta neste período.</p>
+            )}
             {resumo.algumCustoNaoInformado && (
               <div className="mt-3 space-y-1">
                 <span className="inline-flex items-center gap-1 text-rotulo font-medium text-atencao">

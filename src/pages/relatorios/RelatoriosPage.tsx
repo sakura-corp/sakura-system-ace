@@ -285,15 +285,10 @@ export function RelatoriosPage() {
           ) : (
             <>
               <div className="grid grid-cols-12 gap-6">
-                <BlocoMes ordens={ordens} periodo={periodo} hoje={hoje} className="col-span-12 xl:col-span-6" />
-                <BlocoPonte
-                  resumo={resumo}
-                  movimentos={movimentos}
-                  periodo={periodo}
-                  className="col-span-12 xl:col-span-6"
-                />
+                <BlocoMes ordens={ordens} periodo={periodo} hoje={hoje} className="col-span-12 xl:col-span-5" />
+                <BlocoDiaADia ordens={ordens} periodo={periodo} hoje={hoje} className="col-span-12 xl:col-span-7" />
               </div>
-              <BlocoDiaADia ordens={ordens} periodo={periodo} hoje={hoje} />
+              <BlocoPonte resumo={resumo} movimentos={movimentos} periodo={periodo} />
               <BlocoPorItem linhas={lucro.linhas} />
               <BlocoCurvaABC
                 ordens={ordens}

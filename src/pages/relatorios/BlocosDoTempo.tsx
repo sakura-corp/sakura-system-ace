@@ -109,6 +109,13 @@ export function BlocoPonte({
     [resumo.vendido, resumo.custo, despesas],
   );
 
+  // As contas guardam o tamanho do degrau (sempre positivo); o desenho precisa do sinal
+  // do total (um "Sobrou" negativo sai vermelho, com "−" e ▼).
+  const degrausDoGrafico = useMemo(
+    () => ponte.degraus.map((d) => (d.tipo === "total" ? { ...d, valor: d.ate } : d)),
+    [ponte.degraus],
+  );
+
   const tabelaDaPonte = (
     <TabelaDoGrafico
       legenda="Do vendido ao que sobrou"
@@ -154,7 +161,7 @@ export function BlocoPonte({
           : undefined
       }
     >
-      <GraficoPonte degraus={ponte.degraus} formatarCurto={formatarMoedaCurta} />
+      <GraficoPonte degraus={degrausDoGrafico} formatarCurto={formatarMoedaCurta} />
     </CartaoDeGrafico>
   );
 }

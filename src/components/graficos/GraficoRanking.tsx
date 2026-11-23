@@ -34,6 +34,18 @@ const ESPACO_DA_BARRA = 70;
  *
  * Só desenho: os valores, a ordem e o percentual chegam prontos.
  */
+/**
+ * O número do "de cada R$ 100" fica do lado do ponto que está longe da linha
+ * tracejada da média (nunca atravessando ela); nas pontas, onde não cabe, vai
+ * pro lado que tem espaço.
+ */
+function rotuloAEsquerda(percentual: number, media: number | null): boolean {
+  const p = Math.min(100, Math.max(0, percentual));
+  if (p > 88) return true;
+  if (p < 12) return false;
+  return media === null ? p > 70 : p >= media ? false : true;
+}
+
 export function GraficoRanking({
   linhas,
   media,
@@ -70,7 +82,7 @@ export function GraficoRanking({
     <div className="min-w-0">
       <div
         aria-hidden="true"
-        className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(7rem,10rem)] gap-x-4 pb-2 text-meta text-texto-2"
+        className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(9rem,13rem)] gap-x-4 pb-2 text-meta text-texto-2"
       >
         <span>Item</span>
         <span>{nomeDoValor}</span>
@@ -84,7 +96,7 @@ export function GraficoRanking({
           return (
             <li
               key={l.chave}
-              className="grid min-h-10 grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(7rem,10rem)] items-center gap-x-4 py-1"
+              className="grid min-h-10 grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(9rem,13rem)] items-center gap-x-4 py-1"
             >
               <span className="line-clamp-2 text-corpo break-words text-texto">{l.nome}</span>
 
@@ -159,7 +171,7 @@ export function GraficoRanking({
                     <span
                       className="absolute top-1/2 -translate-y-1/2 text-meta whitespace-nowrap tabular-nums text-texto-2"
                       style={
-                        l.percentual > 70
+                        rotuloAEsquerda(l.percentual, media)
                           ? { right: `calc(${100 - limitar(l.percentual)}% + 10px)` }
                           : { left: `calc(${limitar(l.percentual)}% + 10px)` }
                       }

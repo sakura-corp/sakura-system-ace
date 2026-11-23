@@ -18,8 +18,10 @@ export interface DegrauDaPonte {
 }
 
 const ALTURA = 264;
-const TOPO = 28;
-const BASE = 44; // até 2 linhas de rótulo
+const TOPO_BASE = 28;
+const ELEVACAO = 16; // quanto sobe o valor de uma barra sim, outra não, quando as faixas são estreitas
+const BASE_2_LINHAS = 44;
+const BASE_3_LINHAS = 58;
 
 /**
  * "Quanto sobrou de verdade?" (#1086, bloco Do vendido ao que sobrou): a ponte
@@ -40,12 +42,15 @@ export function GraficoPonte({
   const [largura, medidor] = useLargura();
   const marcas = useMarcasNavegaveis(degraus.length);
 
+  const apertado = largura > 0 && degraus.length > 1 && (largura - 80) / degraus.length < 96;
+  const TOPO = apertado ? TOPO_BASE + ELEVACAO : TOPO_BASE;
+
   const extremos = degraus.flatMap((d) => [d.de, d.ate]);
   const eixo = marcasDoEixo(Math.min(0, ...extremos), Math.max(0, ...extremos), 4);
   const esquerda = Math.max(...eixo.map((m) => larguraDoTexto(formatarCurto(m)))) + 12;
   const x0 = esquerda;
   const x1 = Math.max(x0 + 80, largura - 8);
-  const yBase = ALTURA - BASE;
+  const yBase = ALTURA - (apertado ? BASE_3_LINHAS : BASE_2_LINHAS);
   // Com barra abaixo do zero, o valor dela vai escrito embaixo: reserva o lugar.
   const folgaEmbaixo = eixo[0] < 0 ? 24 : 8;
   const y = escalaLinear([eixo[0], eixo[eixo.length - 1]], [yBase - folgaEmbaixo, TOPO]);
@@ -65,6 +70,21 @@ export function GraficoPonte({
     if (i === ultimoTotal) return d.valor < 0 ? COR.perigo : COR.destaque;
     return d.tipo === "total" ? COR.neutroForte : COR.neutro;
   };
+
+  // Onde cada valor é escrito (em cima da barra). Com faixas estreitas, dois valores vizinhos
+  // podiam se tocar: da esquerda pra direita, o que encostaria no anterior sobe uma linha.
+  const yDoValor: number[] = [];
+  let anterior: { direita: number; y: number } | null = null;
+  degraus.forEach((d, i) => {
+    let yv = y(Math.max(d.de, d.ate)) - VAO_DO_ROTULO;
+    const meia = larguraDoTexto(textoDoValor(d, i)) / 2;
+    const esquerdaDoTexto = centro(i) - meia;
+    if (apertado && anterior && esquerdaDoTexto < anterior.direita + 6 && Math.abs(yv - anterior.y) < 15) {
+      yv = anterior.y - ELEVACAO;
+    }
+    yDoValor.push(yv);
+    anterior = { direita: centro(i) + meia, y: yv };
+  });
 
   const ativa = marcas.ativa !== null ? degraus[marcas.ativa] : undefined;
   const dica =
@@ -125,7 +145,7 @@ export function GraficoPonte({
                 {textoDoValor(d, i)}
               </RotuloDireto>
             ) : (
-              <RotuloDireto x={xc} y={topo - VAO_DO_ROTULO} ancora="middle" base="auto" cor={corDoTexto} forte={i === ultimoTotal}>
+              <RotuloDireto x={xc} y={yDoValor[i]} ancora="middle" base="auto" cor={corDoTexto} forte={i === ultimoTotal}>
                 {textoDoValor(d, i)}
               </RotuloDireto>
             )}
@@ -141,7 +161,7 @@ export function GraficoPonte({
         rotulos={degraus.map((d, i) => ({
           chave: d.chave,
           x: centro(i),
-          linhas: quebrarEmLinhas(d.rotulo, banda / 6.5, 2),
+          linhas: quebrarEmLinhas(d.rotulo, banda / 6.5, apertado ? 3 : 2),
           destaque: i === ultimoTotal && d.valor >= 0,
         }))}
       />

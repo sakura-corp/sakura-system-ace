@@ -260,7 +260,7 @@ export const CENAS = [
   // ---------------------------------------------------------------- relações
   { arquivo: "36-relacoes", modulo: "Relações", titulo: "Relações: o resumo e os gráficos do período",
     rota: "/relatorios",
-    descricao: "Tudo numa página só, com um período lá em cima (hoje, esta semana, este mês, mês passado, este ano, ou as datas que quiser) e os botões Ir para. Em destaque, a Sobra das OS (o vendido menos o custo das peças e dos serviços), e ao lado Vendido, Recebido e Falta receber, cada um comparado com o mês anterior. Abaixo, o mês até hoje contra o anterior, a ponte do vendido ao que sobrou (com as despesas) e o dia a dia. Cada gráfico tem como título a resposta, e o Ver como tabela mostra os mesmos números." },
+    descricao: "Tudo numa página só, com um período lá em cima (hoje, esta semana, este mês, mês passado, este ano, ou as datas que quiser) e os botões Ir para. Em destaque, a Sobra das OS (o vendido menos o custo das peças e dos serviços), e ao lado Vendido, Recebido e Falta receber, cada um comparado com o mês anterior. Abaixo, o mês até hoje contra o anterior e o dia a dia lado a lado, e a ponte do vendido ao que sobrou (com as despesas). Cada gráfico tem como título a resposta, e o Ver como tabela mostra os mesmos números." },
   { arquivo: "37-por-item", modulo: "Relações", titulo: "O que me dá dinheiro",
     rota: "/relatorios", passos: [{ clicar: "Por item" }],
     descricao: "Ranking das peças e serviços pela Sobra das OS de cada um, do que mais dá pro que menos dá, com o de cada R$ 100, sobra e a média da loja. Item sem custo informado avisa e leva a cadastrar o custo. O Ver todos abre a tabela completa." },

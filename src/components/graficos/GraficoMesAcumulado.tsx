@@ -73,6 +73,12 @@ export function GraficoMesAcumulado({
     }
   }
 
+  // Se o mês de agora está ACIMA do anterior no dia de hoje, o espaço de cima da
+  // linha está livre e a diferença vai pra lá; senão a cinza passa por cima e
+  // ela vai embaixo.
+  const anteriorDeHoje = hoje ? pontosAnterior[pontosAnterior.length > 0 ? Math.min(pontosAtual.length, pontosAnterior.length) - 1 : 0] : undefined;
+  const diferencaEmCima = Boolean(hoje && anteriorDeHoje && hoje.y < anteriorDeHoje.y - 12);
+
   const larguraDaFaixa = (x1 - x0) / Math.max(1, totalDeDias - 1);
   const passoDoEixo = larguraDaFaixa >= 18 ? 1 : 5;
   const diasDoEixo = Array.from({ length: totalDeDias }, (_, i) => i + 1).filter(
@@ -153,7 +159,7 @@ export function GraficoMesAcumulado({
             // (a linha de hoje sobe da esquerda: embaixo, à esquerda, está livre).
             <RotuloDireto
               x={hoje.x > (x0 + x1) / 2 ? hoje.x - VAO_DO_ROTULO * 2 : hoje.x + VAO_DO_ROTULO * 2}
-              y={Math.min(yBase - 8, hoje.y + 20)}
+              y={diferencaEmCima ? Math.max(TOPO + 6, hoje.y - 20) : Math.min(yBase - 8, hoje.y + 20)}
               ancora={hoje.x > (x0 + x1) / 2 ? "end" : "start"}
               cor={COR.texto}
               forte

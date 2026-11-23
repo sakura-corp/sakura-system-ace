@@ -125,6 +125,25 @@ export function BlocoProximos({
     );
   }
 
+  // Loja nova (ou conta nenhuma no período): sem nada a pagar nem a receber, o
+  // gráfico seria uma reta no zero com um título que não diz nada.
+  if (fluxo.totalEntra === 0 && fluxo.totalSai === 0) {
+    return (
+      <CartaoDeGrafico
+        id="proximos-30-dias"
+        nome={nome}
+        titulo={`Nada previsto pra entrar nem sair nos próximos ${dias} dias`}
+        acoes={acoes}
+        className={className}
+        tabela={<TabelaDoFluxo fluxo={fluxo} hoje={diaDeHoje} />}
+      >
+        <p className="text-corpo text-texto-2">
+          Quando você cadastrar contas a pagar e a receber, o saldo em degraus aparece aqui, com o dia mais apertado.
+        </p>
+      </CartaoDeGrafico>
+    );
+  }
+
   return (
     <CartaoDeGrafico
       id="proximos-30-dias"
