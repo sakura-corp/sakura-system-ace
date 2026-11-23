@@ -208,6 +208,16 @@ formulário no app, no lugar do antigo `useState` por campo. As regras:
   `servico_id` vazio) **não pode usar `register()`**: o select "desmarca" sozinho. Deixar controlado
   de verdade (`value={watch(...)}` + `onChange` com `setValue()` traduzindo o sentinela), como em
   `ItemOSRow.tsx`.
+- **Janela com formulário nunca é desenhada dentro de outro `<form>`** (#1130): o `Modal` não usa
+  portal, então ele fica onde aparece no JSX. Desenhe a janela **depois** do `</form>` da tela (como
+  os modais e a aba Fechamento em `OrdemServicoForm.tsx`). Um `<form>` dentro de outro é HTML
+  inválido: o "Salvar" de dentro envia o de fora junto, e nada visível acontece (foi assim que uma
+  nota travou na loja). **A trava é automática**: todo teste de tela (`@/testes/tela`) reprova se
+  aparecer `<form>` dentro de `<form>` (`src/testes/semFormDentroDeForm.ts`); mas ela só vê a
+  janela que o teste **abre**.
+
+**Na revisão de PR** (o `/code-review` e quem revisa), conferir também:
+- [ ] **Janela com formulário dentro de outro formulário? Tem teste que abre essa janela?** (#1130)
 
 **Skill `/gerar-modulo`** (`.claude/skills/gerar-modulo/SKILL.md`): cria um módulo novo inteiro
 (migration, types, lib, página, formulário e registro em `MODULOS`/`App.tsx`) nesse padrão. Usar

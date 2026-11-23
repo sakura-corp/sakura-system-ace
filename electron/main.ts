@@ -13,12 +13,20 @@ import {
   lerCanal,
   type CanalAtualizacao,
 } from "../src/schemas/canalAtualizacao";
+import { motivoHtmlRecusadoParaPdf } from "../src/schemas/danfe";
 import {
   conteudoDaIdentidade,
   lerIdentidadeComputador,
   type IdentidadeComputador,
 } from "../src/schemas/identidadeComputador";
 import { podeAbrirNoNavegador } from "../src/schemas/linkExterno";
+import { pastaDeDadosDoDesenvolvimento } from "../src/schemas/pastaDeDados";
+
+// O `npm run dev` usa uma pasta de dados só dele (#1157), pra não dividir a
+// conexão (e o resto) com o programa instalado no mesmo computador. Precisa
+// vir antes de qualquer `app.getPath("userData")` e do `app.whenReady()`.
+const pastaDoDesenvolvimento = pastaDeDadosDoDesenvolvimento(app.getPath("userData"), app.isPackaged);
+if (pastaDoDesenvolvimento) app.setPath("userData", pastaDoDesenvolvimento);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -602,6 +610,80 @@ aoPedidoDaTela("diagnostico:logs", async (linhas: unknown) => {
     erros: lerFinalDoArquivo(CAMINHO_LOG_ERROS(), quantas),
     atualizacoes: lerFinalDoArquivo(CAMINHO_LOG_ATUALIZACAO(), quantas),
   };
+});
+
+// --- O PDF da nota pro cliente (#1115) ------------------------------------
+//
+// O cliente abre PDF no celular e no WhatsApp; a NFC-e da Focus vem em HTML.
+// A tela monta o recibo da nota (do XML guardado) e manda só esse HTML, como
+// texto; aqui ele vira PDF numa janela escondida, com o `printToPDF` do
+// próprio Chromium: sem biblioteca nova e sem peso no instalador.
+//
+// A janela escondida é mais fechada que a do app: sem preload (nenhuma ponte),
+// sem script (`javascript: false`), numa sessão só dela que não deixa sair
+// nada pra rede (só o próprio `data:` do documento), sem navegar e sem abrir
+// janela. A CSP e o preload da tela não mudam. A janela some no fim, dê certo
+// ou não, e a tela, se isto falhar, avisa e baixa o arquivo de antes.
+const SESSAO_DO_PDF = "gerar-pdf-da-nota";
+let sessaoDoPdfPronta = false;
+
+function prepararSessaoDoPdf() {
+  if (sessaoDoPdfPronta) return;
+  session.fromPartition(SESSAO_DO_PDF).webRequest.onBeforeRequest((detalhes, responder) => {
+    responder({ cancel: !detalhes.url.startsWith("data:") });
+  });
+  sessaoDoPdfPronta = true;
+}
+
+async function gerarPdfDoHtml(html: string): Promise<Uint8Array> {
+  prepararSessaoDoPdf();
+  const janela = new BrowserWindow({
+    show: false,
+    width: 794, // A4 em 96 dpi: o recibo se arruma como no papel.
+    height: 1123,
+    webPreferences: {
+      partition: SESSAO_DO_PDF,
+      javascript: false,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+    },
+  });
+  janela.webContents.on("will-navigate", (evento) => evento.preventDefault());
+  janela.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  // Sem script e sem rede, travar é improvável; se travar, a tela não fica
+  // em "Gerando…" pra sempre: desiste em 30 s (e a tela baixa o de antes).
+  let relogio: ReturnType<typeof setTimeout> | undefined;
+  const desistir = new Promise<never>((_, recusar) => {
+    relogio = setTimeout(() => recusar(new Error("o PDF demorou demais")), 30_000);
+  });
+  try {
+    const gerar = async () => {
+      const conteudo = Buffer.from(html, "utf8").toString("base64");
+      await janela.loadURL(`data:text/html;charset=utf-8;base64,${conteudo}`);
+      return janela.webContents.printToPDF({
+        pageSize: "A4",
+        printBackground: true,
+        margins: { marginType: "default" },
+      });
+    };
+    return new Uint8Array(await Promise.race([gerar(), desistir]));
+  } finally {
+    clearTimeout(relogio);
+    janela.destroy();
+  }
+}
+
+aoPedidoDaTela("gerar-pdf-da-nota", async (html: unknown) => {
+  const motivo = motivoHtmlRecusadoParaPdf(html);
+  if (motivo) throw new Error(motivo);
+  try {
+    return await gerarPdfDoHtml(html as string);
+  } catch (erro) {
+    logErroDaTela(`PDF da nota: ${String(erro).slice(0, 200)}`);
+    throw new Error("não deu pra montar o PDF neste computador");
+  }
 });
 
 app.whenReady().then(() => {

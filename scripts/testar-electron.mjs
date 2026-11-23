@@ -20,6 +20,9 @@
 //     atualizador procura no canal que estava gravado (item TR-09.1);
 //   - nada navega pra fora do app nem abre janela nova; só o link do portal
 //     da prefeitura (documento oficial da NFS-e) abre no navegador (#773);
+//   - o PDF da nota pro cliente (#1115) sai de verdade, o canal só aceita
+//     HTML em texto, a janela escondida não roda script nem busca nada fora e
+//     some depois;
 //   - no modo demonstração nada sai do computador (nem pro Supabase, nem pra
 //     Focus NFe), a CSP é a mesma e o conexao.json não muda (#384).
 //
@@ -116,6 +119,7 @@ try {
     "canalAtualizacao",
     "conexao",
     "diagnostico",
+    "gerarPdfDaNota",
     "identidadeComputador",
     "lerLogs",
     "registrarErro",
@@ -340,6 +344,24 @@ try {
   // processo principal lê na abertura seguinte. O arquivo que existia antes
   // do teste é devolvido no fim, pra rodada nenhuma mudar o computador.
   const pastaDados = await app.evaluate(({ app: electronApp }) => electronApp.getPath("userData"));
+
+  // #1157: fora do instalador (como aqui), a pasta de dados é só do
+  // desenvolvimento, nunca a do programa instalado. E o Chromium (login
+  // guardado, sessionStorage) vai junto pra ela.
+  const pastasDoChromium = await app.evaluate(({ app: electronApp }) => ({
+    empacotado: electronApp.isPackaged,
+    sessao: electronApp.getPath("sessionData"),
+  }));
+  conferir(
+    "fora do instalador, a pasta de dados é a do desenvolvimento (-dev), não a do programa instalado",
+    !pastasDoChromium.empacotado && pastaDados.endsWith("-dev"),
+    pastaDados,
+  );
+  conferir(
+    "os dados do Chromium ficam na mesma pasta do desenvolvimento",
+    pastasDoChromium.sessao === pastaDados,
+    pastasDoChromium.sessao,
+  );
   const arquivoCanal = path.join(pastaDados, "atualizacao.json");
   const canalAntes = fs.existsSync(arquivoCanal) ? fs.readFileSync(arquivoCanal, "utf8") : null;
   const canalNaAbertura = (() => {
@@ -463,6 +485,110 @@ try {
   } finally {
     if (identidadeAntes === null) fs.rmSync(arquivoIdentidade, { force: true });
     else fs.writeFileSync(arquivoIdentidade, identidadeAntes);
+  }
+
+  // --- 7e. O PDF da nota pro cliente (#1115) -----------------------------
+  //
+  // A tela manda o HTML do recibo já montado; o processo principal abre uma
+  // janela escondida, sem script e sem rede, e devolve os bytes do PDF. O que
+  // se prova: sai um PDF de verdade; o canal recusa o que não é texto (e o
+  // texto grande demais); script do HTML não roda e endereço de fora não é
+  // buscado; e a janela escondida não fica pra trás.
+  const pedidosDeFora = [];
+  await app.evaluate(({ session }) => {
+    globalThis.__pedidosDoPdf = { completos: [], recusados: [] };
+    // Só observa (onCompleted/onErrorOccurred não mudam nada): a trava da
+    // sessão do PDF é o onBeforeRequest dela, em electron/main.ts.
+    const pedidos = session.fromPartition("gerar-pdf-da-nota").webRequest;
+    pedidos.onCompleted((d) => globalThis.__pedidosDoPdf.completos.push(d.url));
+    pedidos.onErrorOccurred((d) =>
+      globalThis.__pedidosDoPdf.recusados.push({ url: d.url, erro: d.error }),
+    );
+  });
+  const pdfDaNota = await pagina.evaluate(async () => {
+    const html =
+      "<!doctype html><html><head><meta charset='utf-8'><title>t</title></head><body>" +
+      "<h1>NFC-e nº 21</h1><p>Pneu de exemplo · R$ 100,00</p>" +
+      "<img src='https://endereco-que-nao-deveria-passar.invalid/logo.png'>" +
+      // Se script rodasse aqui, ele tentaria buscar este endereço.
+      "<script>new Image().src = 'https://script-rodou.invalid/x.png'</script>" +
+      "</body></html>";
+    const saida = {};
+    try {
+      const bytes = await window.sakuraApp.gerarPdfDaNota(html);
+      saida.tipo = Object.prototype.toString.call(bytes);
+      saida.tamanho = bytes.length;
+      saida.comeco = String.fromCharCode(...bytes.slice(0, 5));
+      saida.base64 = btoa(String.fromCharCode(...bytes.slice(0, 200000)));
+    } catch (erro) {
+      saida.erro = String(erro?.message ?? erro);
+    }
+    async function recusa(valor) {
+      try {
+        await window.sakuraApp.gerarPdfDaNota(valor);
+        return false;
+      } catch {
+        return true;
+      }
+    }
+    saida.recusaNumero = await recusa(42);
+    saida.recusaObjeto = await recusa({ html: "<p>x</p>" });
+    saida.recusaBytes = await recusa(new Uint8Array([60, 112, 62]));
+    saida.recusaVazio = await recusa("   ");
+    saida.recusaGrande = await recusa("x".repeat(1_000_001));
+    return saida;
+  });
+  const pedidosDoPdf = await app.evaluate(() => globalThis.__pedidosDoPdf);
+  // Fora do computador = tudo que não é o próprio `data:` do documento. Tem
+  // que ter sido barrado pela trava (ERR_BLOCKED_BY_CLIENT), e não só ter
+  // falhado: o endereço de teste não existe, então "não completou" provaria
+  // nada.
+  pedidosDeFora.push(
+    ...pedidosDoPdf.completos.filter((u) => !u.startsWith("data:")),
+    ...pedidosDoPdf.recusados
+      .filter((p) => !p.url.startsWith("data:") && p.erro !== "net::ERR_BLOCKED_BY_CLIENT")
+      .map((p) => `${p.url} (${p.erro})`),
+  );
+  const tentativas = [...pedidosDoPdf.completos, ...pedidosDoPdf.recusados.map((p) => p.url)];
+  const janelasDepoisDoPdf = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().length);
+  conferir(
+    "o PDF da nota sai de verdade (bytes de PDF, não texto)",
+    !pdfDaNota.erro && pdfDaNota.comeco === "%PDF-" && pdfDaNota.tamanho > 1000,
+    pdfDaNota.erro ?? `${pdfDaNota.tipo}, ${pdfDaNota.tamanho} bytes, começa com "${pdfDaNota.comeco}"`,
+  );
+  conferir(
+    "o canal do PDF só aceita HTML em texto (número, objeto, bytes, vazio e grande demais: recusados)",
+    pdfDaNota.recusaNumero &&
+      pdfDaNota.recusaObjeto &&
+      pdfDaNota.recusaBytes &&
+      pdfDaNota.recusaVazio &&
+      pdfDaNota.recusaGrande,
+    JSON.stringify({
+      numero: pdfDaNota.recusaNumero,
+      objeto: pdfDaNota.recusaObjeto,
+      bytes: pdfDaNota.recusaBytes,
+      vazio: pdfDaNota.recusaVazio,
+      grande: pdfDaNota.recusaGrande,
+    }),
+  );
+  conferir(
+    "o script do HTML não roda na janela do PDF",
+    !tentativas.some((u) => u.includes("script-rodou")),
+    tentativas.join(", "),
+  );
+  conferir(
+    "a janela do PDF não busca nada fora do computador (a imagem de fora foi barrada)",
+    pedidosDeFora.length === 0 &&
+      pedidosDoPdf.recusados.some((p) => p.url.includes("endereco-que-nao-deveria-passar")),
+    pedidosDeFora.join(", ") || "a imagem de fora nem foi pedida (o teste não provou a trava)",
+  );
+  conferir(
+    "a janela escondida do PDF não fica pra trás",
+    janelasDepoisDoPdf === 1,
+    `${janelasDepoisDoPdf} janelas abertas`,
+  );
+  if (process.env.PDF_DA_NOTA && pdfDaNota.base64) {
+    fs.writeFileSync(path.resolve(RAIZ, process.env.PDF_DA_NOTA), Buffer.from(pdfDaNota.base64, "base64"));
   }
 
   // --- 8. Nada abre janela nova nem navega pra fora ----------------------

@@ -108,7 +108,7 @@ Como esta sessão funciona:
   Obrigatório: ao começar, se travar e **sempre ao abrir o PR**.
 - Esta tarefa corre **em paralelo** com <#outras>, em outras sessões: mexa só nos arquivos da
   lista da issue.
-- Não adicione o repositório privado. Não mescle, não publique, não mexa em banco. Trabalhe na
+- Não adicione o repositório privado. Não mescle (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md), não publique, não mexa em banco. Trabalhe na
   branch `claude/tarefa-N-<curto>`, abra o PR (`Closes #N`) e pare.
 ```
 
@@ -135,7 +135,7 @@ Como esta sessão funciona:
 
 ## 7. Conferir um PR antes de dizer "pronto pra mesclar"
 1. **Os arquivos do PR contra a lista "Arquivos" da tarefa.** Arquivo fora da lista: pergunte à
-   sessão por quê e leve à Sofia; não mescla.
+   sessão por quê e leve à Sofia; não mescla (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md).
 2. **O CI do último commit**: todo verde. Vermelho: devolva à sessão, com o nome do passo que falhou.
 3. **O "Pronto quando" no PR**, item por item, e o relatório em `docs/relatorios/`.
    **Com o `/goal` ligado na sessão da tarefa, só está pronto quando o `/goal` der a meta por

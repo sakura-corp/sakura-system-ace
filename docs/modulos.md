@@ -416,6 +416,11 @@ Quatro coisas que valem saber:
     já entrou no Caixa com o total antigo — mesma razão do item 31 da seção 6) e OS que já tem
     **nota fiscal emitida** e não cancelada (corrigir aqui deixaria a nota diferente da OS). No
     segundo caso o caminho é cancelar a nota antes (Notas Fiscais → "Cancelar nota").
+  - **Troca depois de faturada** (#1145, migration `0087`): na OS faturada, o gerente (admin da
+    loja) tem o botão "Trocar peça ou serviço": edita a lista, confere o "antes e depois" com o
+    motivo obrigatório e o total tem que ficar igual (mudar valor é a próxima etapa). Bloqueia com
+    nota fiscal e com o caixa do dia da fatura fechado. Estoque acertado na hora; o histórico
+    aparece na própria OS ("Trocas depois de faturada").
   - **Não tem "Remover"** — só editar. Um item lançado por engano ainda precisa ser transformado em
     outro item pela edição; excluir de vez não foi construído (não foi pedido, e teria a mesma
     conversa de estoque/nota). Fácil de acrescentar depois, se fizer falta.
@@ -429,6 +434,20 @@ Quatro coisas que valem saber:
   lista pelo nome as que não servem ("BIEL SUSP GM DT ACO LD/LE — está com o CST 00, que é do
   regime normal — sua loja é Simples Nacional e usa CSOSN"). Substitui o `[nItem:1]` enigmático
   que a SEFAZ devolve. **Não bloqueia a emissão** — ver item 47 da seção 6.
+
+  **SEFAZ não reconhece o CPF/CNPJ do cliente (18/11/2026, #1112)**: quando a NFC-e volta recusada
+  pelo documento do destinatário (ex.: CNPJ recém-aberto que a base da SEFAZ ainda não tem), a
+  janela troca a rejeição crua por uma frase de balcão (amarela, não vermelha: não é erro da loja),
+  com o "Detalhe da SEFAZ" embaixo e o link "Copiar o erro" (mensagem, código e `ref`, sem nome nem
+  documento do cliente). O "Confirmar emissão" dá lugar ao **"Emitir sem identificar o cliente"**,
+  que emite de novo como consumidor não identificado sem fechar a janela; junto dele, o que muda,
+  o aviso do limite da UF (#881) se a nota passar dele e, pra pessoa jurídica, que a nota no nome da
+  empresa é a NF-e modelo 55, que o sistema ainda não emite (#409). Reconhece pelo texto
+  (`src/schemas/rejeicaoNFCe.ts`); se não bater, a janela mostra a rejeição como antes. A tentativa
+  recusada não é gravada (precisaria de migration). Só reconhece quando a nota foi com o documento
+  (senão o botão repetiria a mesma recusa), e CNPJ/CPF com o dígito errado no cadastro ganha a frase
+  "corrija em Clientes". Ver `docs/licoes.md`, item 102.
+
   Não existe mais seletor manual de status no form — o cabeçalho mostra o status atual (badge) e,
   enquanto "em_andamento", um botão **"Encerrar OS"** que marca como concluída e já abre a tela de
   faturamento na sequência, num fluxo só. Tem rascunho automático (ver "Auto-save de rascunho" no começo desta seção). Técnico por item + vendedor/atendente da OS (ambos listam
@@ -539,6 +558,13 @@ Quatro coisas que valem saber:
   - **Validade**: 7 dias, editável. Passou: etiqueta cinza **"vencido"**; ainda dá pra aprovar,
     com aviso de que o preço pode ter mudado.
   - **Aprovar** pede "quem aprovou" (texto livre, ex. "pelo telefone") e leva pra OS que nasceu.
+    Aprovar e virar OS são **o mesmo passo** (`aprovar_orcamento`, uma chamada só).
+  - **Peça digitada sem cadastro** (#655): o orçamento salva sem pedir nada. Ao aprovar, a janela
+    "Peças sem cadastro" exige ligar cada uma ao cadastro ("É uma peça que já tenho" ou
+    "Cadastrar agora", com NCM, CEST, CFOP, origem e CST/CSOSN). **Desde a #1128 não existe mais
+    "Seguir sem cadastro"**: a peça sem NCM só travava na NFC-e, com a OS já faturada. A trava é
+    da tela; o banco ainda aceita (OS antigas podem ter peça avulsa, e a janela da nota cadastra).
+    A aba Fechamento fica fora do `<form>` da OS (#1128), senão o "Salvar peça" da nota enviava a OS.
     **Recusar** é um clique, com motivo opcional (preço, prazo, foi em outro lugar, desistiu,
     outro); o recusado vira histórico, na aba "Recusados".
   - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).
@@ -767,10 +793,20 @@ Quatro coisas que valem saber:
   compressão: XML de nota é arquivo pequeno, comprimir não mudaria o tamanho de forma relevante).
   Cuidados cobertos por teste: nome repetido no mesmo mês vira `nota (2).xml` (senão o
   descompactador perde um dos dois), nome com acento sai certo no Windows, e o download é feito
-  em lotes de 5 pra um mês cheio não disparar dezenas de requisições juntas. Botão "Versão para o cliente" interpreta o XML
-  e monta um recibo HTML (não é o DANFE oficial, sem código de barras/QR code). Na NFS-e do Giap
+  em lotes de 5 pra um mês cheio não disparar dezenas de requisições juntas. Botão "Versão para o cliente" monta o **recibo da nota**
+  no modelo aprovado em 13/11 (#1031, `src/lib/notaFiscalXml.ts`): loja, cliente, veículo e placa,
+  itens com código, unidade e desconto, total, pagamentos, troco, QR code e chave em blocos. Chave,
+  protocolo, QR code, troco e tributos aproximados saem **só do XML** (sem o dado, a linha não sai;
+  nunca "—"); veículo, km, atendente e garantia das peças vêm da OS ligada à nota
+  (`src/lib/reciboNotaFiscal.ts`), e nota sem OS sai sem essas seções. Não substitui o DANFE nem o
+  DANFSe (o aviso fica no topo; os oficiais continuam em "Ver DANFE"/"Ver PDF"). Na NFS-e Nacional
+  a loja vem de `infNFSe/emit` (antes saía "—", #1029). Todo texto passa por `escaparHtml` (#1071).
+  Na NFS-e do Giap
   (Araraquara), o recibo traz o link "Ver documento oficial completo", que desde 23/10 (#774)
   abre no navegador do computador (`src/schemas/linkExterno.ts`: só `https` e `*.giap.com.br`;
+  a loja é completada pelas Configurações, e com a OS o recibo mostra "Itens na OS nº X"; os itens
+  só seriam listados se o total dos serviços batesse com o valor da nota, que o sistema ainda não
+  guarda;
   o resto continua negado). No PC o link baixa o PDF oficial; **no celular do cliente não abre**
   (#773: a ideia é o programa guardar esse PDF junto com a nota). **Botão "Cancelar
   nota"**: até aqui, cancelar uma nota emitida automaticamente (NFC-e/NFS-e via
@@ -795,6 +831,22 @@ Quatro coisas que valem saber:
   **NFS-e de Araraquara não tem PDF na Focus** (conferido em 23/10 com a NFS-e 30): o "Ver PDF"
   consulta a nota e mostra o aviso de que a prefeitura guarda o documento só no portal dela. É o
   normal, não defeito; pro cliente, o caminho é "Versão para o cliente" no menu "…" da nota.
+  **A janela "Nota do cliente" (o antigo "Ver DANFE") e o PDF pro cliente (#1115, 18/11/2026)**:
+  o cliente abre PDF no celular e no WhatsApp, e a NFC-e da Focus vem em **HTML**. O botão
+  "Baixar o PDF da nota (pro cliente)" salva `NFC-e-<número>.pdf` gerado **do recibo do sistema**
+  (o mesmo da "Versão para o cliente", montado do XML guardado), pelo Electron: canal
+  `gerar-pdf-da-nota` (`electron/main.ts`), `printToPDF` numa janela escondida sem script, sem
+  rede e sem preload; sem biblioteca nova. O canal só aceita o HTML como texto, até 1 MB
+  (`motivoHtmlRecusadoParaPdf`, `schemas/danfe.ts`). A NFS-e já vem em PDF da Focus e baixa esse
+  mesmo (`NFS-e-<número>.pdf`). Se o PDF não sai (fora do programa instalado, XML ilegível, erro),
+  aviso amarelo e o arquivo de antes é baixado (aviso, nunca tranca). A prévia, o "Imprimir" e o
+  "Baixar o XML (pro contador)" seguem com o DANFE oficial; a prévia da NFC-e perde as imagens de
+  fora (o logo quebrado do topo: a CSP não carrega imagem de fora, e não afrouxa), com
+  `semImagensDeFora`. O HTML como veio fica em "Baixar o arquivo original da Focus (HTML)",
+  embaixo da prévia.
+  **Nota cancelada** (Sofia, 20/11, revisão do #1126): não tem PDF pro cliente nem "Versão para o
+  cliente" (nem no "Mais ações", nem no aviso de quando a prévia não carrega); a feita fora e
+  cancelada fica sem o botão da linha. O registro dela é o XML.
 - **Relações** (ex-"Relatórios", label mudou antes; agora também absorveu o módulo antigo
   "Lucratividade" — um módulo só, com abas): aba "Gráficos" — gráfico de barras (Vendas x Custos x
   Lucro, **Diário/Semanal/Mensal/Anual**) + radar comparando o período atual com o anterior, sem

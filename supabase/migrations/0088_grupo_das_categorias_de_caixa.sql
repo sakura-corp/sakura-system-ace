@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- Migration 0087: o grupo de cada categoria de caixa (tarefa #386).
+-- Migration 0088: o grupo de cada categoria de caixa (tarefa #386).
 --
 -- Por quê. O DRE (o relatório de "quanto a loja ganhou de verdade no mês")
 -- precisa saber, de cada saída e de cada entrada do caixa, em que linha ela
@@ -79,4 +79,4 @@ update categorias_caixa c
    and not exists (select 1 from ordens_servico)
    and not exists (select 1 from caixa_movimentos);
 
-insert into schema_versao (versao) values (87) on conflict do nothing;
+insert into schema_versao (versao) values (88) on conflict do nothing;

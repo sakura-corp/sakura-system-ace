@@ -1,5 +1,5 @@
 import {
-  FileText,
+  CarFront,
   FolderOpen,
   MessageCircle,
   Plus,
@@ -7,13 +7,15 @@ import {
   Star,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Abas } from "@/components/Abas";
-import { AcoesDaLinha, type AcaoDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
-import { Dica } from "@/components/Dica";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { Chips } from "@/components/Chips";
+import { LinhaDeLista, type AcaoDaLinhaDoMolde, type ItemDoMais } from "@/components/molde/LinhaDeLista";
+import { MoldeLista } from "@/components/molde/MoldeLista";
+import { Valor } from "@/components/Valor";
 import { avisar } from "@/lib/avisoQueSome";
 import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,8 +24,6 @@ import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/dat
 import { mensagemDeErro } from "@/lib/errors";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { buscarCustoDasOrdens } from "@/lib/caixa";
-import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
-import { LinkPlaca } from "@/components/LinkPlaca";
 import {
   cadastrarClienteRapido,
   cadastrarVeiculoRapido,
@@ -47,7 +47,9 @@ import {
   faturarOrdem,
   OrdemMudouError,
   listarOrdens,
+  listarTrocasDaOrdem,
   registrarVendaBalcao,
+  trocarItensOsFaturada,
   VendaSemFaturamentoError,
 } from "@/lib/ordensServico";
 import type {
@@ -69,6 +71,7 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
+  TrocaDeOsFaturada,
 } from "@/types/os";
 import {
   STATUS_COM_FECHAMENTO,
@@ -78,6 +81,7 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import type { ItemDaTroca } from "@/schemas/trocaFaturada";
 import {
   agruparNotasPorOrdem,
   ordemEstaFinalizada,
@@ -96,27 +100,51 @@ import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
 
-// Coluna que só aparece em janela de 1600px ou mais. Ver o comentário em
-// cima da tabela. Não é o `2xl` (1536) do Tailwind de propósito: em 1536 a
-// tabela com as duas colunas precisa de 1202px e a caixa tem 1198, então a
-// lista voltava a rolar de lado — e 1536 é a largura de um notebook Full HD
-// com o zoom de 125% do Windows.
-const SO_EM_TELA_GRANDE = "hidden min-[1600px]:table-cell";
+/**
+ * Como a linha da OS cabe numa janela de 1024 com o menu aberto (#1091; #1079,
+ * item 24). As duas opções estão prontas, e a Sofia escolhe pela foto no PR:
+ *
+ * - `"esconder-lucro"` (opção 1): abaixo de 1280 de janela, a linha mostra só
+ *   o total; o lucro aparece de 1280 em diante (e "Peças · Serviços", embaixo
+ *   do total, de 1600 em diante, como era a tabela).
+ * - `"pecas-no-total"` (opção 2): o lucro fica sempre, e "Peças · Serviços"
+ *   vai embaixo do total, em letra pequena, em qualquer largura.
+ *
+ * Nenhum número some de vez: dentro da OS estão todos.
+ */
+type ComoCabeEm1024 = "esconder-lucro" | "pecas-no-total";
+const COMO_CABE_EM_1024: ComoCabeEm1024 = "esconder-lucro";
 
-// A coluna do próximo passo fica grudada na direita da tabela (tarefa 7,
-// pedido de 16/11): numa janela estreita (1024 com o menu aberto) a tabela
-// rola de lado, mas o "Faturar" fica sempre à vista. Precisa de fundo próprio,
-// senão o que rola passa por baixo dela aparecendo; ao passar o mouse na
-// linha, ganha por cima o mesmo tom da linha (a cor da linha é transparente).
-// O começo da célula (o respiro da esquerda) é transparente, esmaecendo até a
-// cor do cartão: o que rola por baixo some aos poucos, em vez de aparecer
-// cortado ao meio. Com a tabela cabendo, o respiro é só cartão e não aparece.
-// (Classes escritas por extenso: o Tailwind só gera a classe que acha inteira.)
-const COLUNA_GRUDADA = [
-  "sticky right-0 z-[1] !pl-4",
-  "[background-image:linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
-  "group-hover:[background-image:linear-gradient(var(--linha-passar),var(--linha-passar)),linear-gradient(to_right,transparent,var(--color-cartao)_1rem)]",
-].join(" ");
+// O período da lista: em botões (o molde de lista, #1135). "Escolher datas"
+// mostra os dois campos de data de antes; nenhum filtro sumiu.
+type Periodo = "mes" | "tudo" | "datas";
+const OPCOES_DE_PERIODO = [
+  { valor: "mes" as const, nome: "Este mês" },
+  { valor: "tudo" as const, nome: "Todo o histórico" },
+  { valor: "datas" as const, nome: "Escolher datas" },
+];
+
+/** O detalhe da linha: cada pedaço no seu lugar, separados por " · ". */
+// Ver o comentário em volta da lista. A caixa das ações também tem largura
+// fixa (o botão + o "⋯"): linha sem botão (o recusado, a OS já sem próximo
+// passo) não desalinha o selo e o valor. (Escrita por extenso: o Tailwind só
+// gera a classe que acha inteira.)
+const CLASSE_DA_LISTA =
+  "min-w-0 [&_li>div:last-child]:min-w-48 [&_li>div:last-child]:justify-end [&_li>div:last-child>button]:min-w-36 [&_li>div:last-child>button]:justify-center";
+
+function DetalheDaLinha({ partes }: { partes: ReactNode[] }) {
+  const comAlgo = partes.filter((parte) => parte !== null && parte !== undefined && parte !== false && parte !== "");
+  return (
+    <>
+      {comAlgo.map((parte, i) => (
+        <Fragment key={i}>
+          {i > 0 && " · "}
+          <span>{parte}</span>
+        </Fragment>
+      ))}
+    </>
+  );
+}
 
 function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -146,6 +174,9 @@ export function OrdensServicoPage() {
   // significa "ainda não veio", e nesse estado os avisos de estoque ficam
   // calados em vez de anunciar "saldo zero" pra tudo.
   const [saldoPorPeca, setSaldoPorPeca] = useState<Map<string, number> | null>(null);
+  // O histórico das trocas depois de faturada da OS aberta (#1145).
+  const [trocasDaOrdem, setTrocasDaOrdem] = useState<TrocaDeOsFaturada[]>([]);
+  const [versaoDasTrocas, setVersaoDasTrocas] = useState(0);
   // Custo de cada OS da lista, calculado pelo banco (`custo_das_ordens`): a
   // coluna Lucro não depende de ler o cadastro de peças (#366).
   const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
@@ -163,23 +194,19 @@ export function OrdensServicoPage() {
   const [mostrarVenda, setMostrarVenda] = useState(false);
   const [vendaAberta, setVendaAberta] = useState<OrdemServico | null>(null);
   const [vendaParaNota, setVendaParaNota] = useState<OrdemServico | null>(null);
-  // O erro de uma ação de WhatsApp escolhida no "Mais ações" (ver
-  // `abrirWhatsappDaLinha`): fica embaixo das ações da linha dela.
   // "Nota do cliente" aberta pela linha de uma OS finalizada.
   const [notaDoCliente, setNotaDoCliente] = useState<{
     documento: string;
     venda: boolean;
     notas: NotaFiscalArquivo[];
   } | null>(null);
-  const [erroDaLinha, setErroDaLinha] = useState<{ ordemId: string; texto: string } | null>(
-    null,
-  );
   // A OS (ou venda) foi aberta por uma ficha (do cliente ou do veículo) que
   // pediu `voltarAoFechar` (#393): o Voltar leva de volta pra ficha, em vez de
   // ficar na lista. Quem abre pela lista, pelo Início ou pela busca não pede,
   // e o Voltar continua fechando a OS aqui mesmo.
   const [voltarAoFechar, setVoltarAoFechar] = useState(false);
   const [lista, setLista] = useState<"os" | "vendas">("os");
+  const [periodo, setPeriodo] = useState<Periodo>("mes");
   const [dataInicio, setDataInicio] = useState(primeiroDiaDoMesLocal());
   const [dataFim, setDataFim] = useState(hojeLocal());
   const [busca, setBusca] = useState("");
@@ -198,9 +225,49 @@ export function OrdensServicoPage() {
   function textoLucro(ordem: OrdemServico) {
     const { lucro } = lucroDaOrdemPeloBanco(ordem.itens ?? [], custoDasOrdens.get(ordem.id));
     if (lucro === null) {
-      return <span className="text-rotulo text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
+      return <span className="text-meta text-texto-2">{TEXTO_CUSTO_NAO_INFORMADO}</span>;
     }
-    return <span className="whitespace-nowrap">{formatarMoeda(lucro)}</span>;
+    // Verde quando ganhou; o prejuízo o `Valor` já mostra em vermelho, com
+    // seta e "−" (a cor nunca avisa sozinha).
+    return (
+      <span className="whitespace-nowrap text-meta text-texto-2">
+        lucro <Valor valor={lucro} classeDeCor="text-ok" className="font-medium" />
+      </span>
+    );
+  }
+
+  // O lado direito da linha: o selo (sempre da mesma largura, pra coluna
+  // bater) e o valor, que é o número em destaque, alinhado à direita.
+  function ladoDaLinha(ordem: OrdemServico) {
+    const itens = ordem.itens ?? [];
+    const opcao1 = COMO_CABE_EM_1024 === "esconder-lucro";
+    return (
+      <div className="flex items-center gap-4">
+        <div className="w-36">
+          <SeloDaOrdem ordem={ordem} notas={notasPorOrdem.get(ordem.id) ?? []} />
+        </div>
+        {/* Na opção 1, em 1600 a coluna cresce pra "peças · serv." caber numa
+            linha só; na 2, cada um vai numa linha, pra coluna continuar
+            estreita em 1024. A coluna do valor bate em toda linha. */}
+        <div
+          className={`${opcao1 ? "w-32 min-[1600px]:w-52" : "w-36"} flex flex-col items-end gap-0.5 text-right`}
+        >
+          <span className="whitespace-nowrap text-corpo font-semibold text-texto tabular-nums">
+            {formatarMoeda(totalOrdem(itens))}
+          </span>
+          {!ehVendaBalcao(ordem) && (
+            <span
+              className={`${opcao1 ? "hidden min-[1600px]:block" : "flex flex-col items-end"} whitespace-nowrap text-meta text-texto-2 tabular-nums`}
+            >
+              <span>peças {formatarMoeda(totalPorTipo(itens, "peca"))}</span>
+              {opcao1 ? " · " : null}
+              <span>serv. {formatarMoeda(totalPorTipo(itens, "servico"))}</span>
+            </span>
+          )}
+          <span className={opcao1 ? "hidden min-[1280px]:block" : ""}>{textoLucro(ordem)}</span>
+        </div>
+      </div>
+    );
   }
 
   // Ordens em aberto (ainda não faturadas) sempre aparecem, não importa a
@@ -221,14 +288,16 @@ export function OrdensServicoPage() {
         const placa = ordem.veiculo?.placa?.toLowerCase() ?? "";
         return nomeCliente.includes(buscaNormalizada) || placa.includes(buscaNormalizada);
       }
-      if (ordem.status !== "faturada") return true;
+      if (ordem.status !== "faturada" || periodo === "tudo") return true;
       // `data_abertura` vem do banco em UTC: o dia tem de ser o do fuso local
       // (`diaLocal`), senão uma OS aberta depois das ~21h vira "amanhã" e
       // some do filtro "Até: hoje".
       const dia = diaLocal(ordem.data_abertura);
-      return dia >= dataInicio && dia <= dataFim;
+      const [de, ate] =
+        periodo === "mes" ? [primeiroDiaDoMesLocal(), hojeLocal()] : [dataInicio, dataFim];
+      return dia >= de && dia <= ate;
     });
-  }, [ordens, busca, dataInicio, dataFim]);
+  }, [ordens, busca, periodo, dataInicio, dataFim]);
 
   // Loja que só tem orçamento ainda não tem OS nenhuma: abas, filtro e o
   // "nenhuma OS" olham isto, não o total que veio do banco.
@@ -241,8 +310,27 @@ export function OrdensServicoPage() {
   const ordensDaLista = ordensFiltradas.filter(
     (ordem) => ehVendaBalcao(ordem) === (lista === "vendas"),
   );
+  // A aba tem alguma coisa, em qualquer época? Lista vazia com o período
+  // ligado diz "nada nesse período" e oferece limpar, e não "comece aqui".
+  const abaTemAlgo = ordens.some(
+    (ordem) => contaNosNumeros(ordem) && ehVendaBalcao(ordem) === (lista === "vendas"),
+  );
   const nadaAberto =
     !mostrarFormulario && !ordemEmEdicao && !mostrarVenda && !vendaAberta && !ordemFaturando;
+  // A lista nem chegou: o erro fica dentro dela, com o "Tentar de novo". Com
+  // a lista na tela, o erro (de faturar, do WhatsApp) fica no aviso de cima.
+  const listaComErro = !!erro && ordens.length === 0;
+  // O erro de uma ação da linha (o WhatsApp, por exemplo) aparece no aviso lá
+  // em cima: com a lista rolada até a OS 40, ninguém o veria. A tela rola até
+  // ele (#1091, revisão).
+  const avisoDeErroRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (!erro) return;
+    const reduzir =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    avisoDeErroRef.current?.scrollIntoView?.({ block: "nearest", behavior: reduzir ? "auto" : "smooth" });
+  }, [erro]);
 
   // Devolve as ordens recarregadas (ou null se nem chegou a consultar): quem
   // corrige um item precisa da versão nova da OS que está aberta na tela, e
@@ -367,6 +455,9 @@ export function OrdensServicoPage() {
   }
 
   useEffect(() => {
+    // Loja nova começa na aba das OS: sem isto, a loja anterior em "Vendas"
+    // deixava a nova falando de venda de balcão (#1091, revisão).
+    setLista("os");
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
@@ -379,6 +470,23 @@ export function OrdensServicoPage() {
     abrirOrdemPedida(ordens);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
+
+  // O histórico só existe em OS faturada. Se não carregar (banco ainda sem a
+  // migration 0087), a OS segue sem ele: é só um registro.
+  const idDaFaturadaAberta = ordemEmEdicao?.status === "faturada" ? ordemEmEdicao.id : null;
+  useEffect(() => {
+    setTrocasDaOrdem([]);
+    if (!idDaFaturadaAberta) return;
+    let cancelado = false;
+    listarTrocasDaOrdem(idDaFaturadaAberta)
+      .then((lista) => {
+        if (!cancelado) setTrocasDaOrdem(lista);
+      })
+      .catch((err) => console.error("Erro ao carregar o histórico de trocas da OS:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [idDaFaturadaAberta, versaoDasTrocas]);
 
   // Recarrega a cada abertura do formulário (em vez de guardar pra sempre):
   // lançar peça numa OS mexe no estoque, então um saldo guardado da vez
@@ -446,6 +554,33 @@ export function OrdensServicoPage() {
     }
     await editarItemOrdem(item, patch, operador.id);
     await recarregarOrdemEmEdicao();
+  }
+
+  // Trocar peça ou serviço de OS já faturada, com o total igual (#1145). O
+  // banco confere tudo de novo (gerente, nota, caixa do dia, total, estoque).
+  // Depois: a OS, o histórico e o saldo recarregam (a troca mexeu no estoque).
+  async function handleTrocarItensFaturada(
+    ordem: OrdemServico,
+    itens: ItemDaTroca[],
+    motivo: string,
+    aceitaEstoqueNegativo: boolean,
+  ) {
+    if (!operador || !lojaAtual) throw new Error("Entre de novo no programa e tente outra vez.");
+    await trocarItensOsFaturada(ordem, itens, motivo, aceitaEstoqueNegativo, operador.id);
+    // Daqui pra baixo a troca já está gravada: recarregar é só mostrar. Se
+    // falhar, a janela fecha do mesmo jeito (tentar de novo seria trocar de
+    // novo uma lista que já mudou).
+    avisar(`${nomeDocumento(ordem)}: troca feita, com o mesmo total.`);
+    setVersaoDasTrocas((v) => v + 1);
+    listarSaldos(lojaAtual.id)
+      .then(setSaldoPorPeca)
+      .catch((err) => console.error("Erro ao recarregar o saldo depois da troca:", err));
+    try {
+      await recarregarOrdemEmEdicao();
+    } catch (err) {
+      console.error("A troca foi feita, mas a OS não recarregou:", err);
+      avisar("A troca foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
+    }
   }
 
   // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
@@ -583,7 +718,6 @@ export function OrdensServicoPage() {
     setOrdemFaturando(null);
     setMostrarVenda(false);
     setVendaAberta(null);
-    setErroDaLinha(null);
   }
 
   async function handleEncerrar(ordem: OrdemServico) {
@@ -644,21 +778,21 @@ export function OrdensServicoPage() {
     }
   }
 
-  // As ações de WhatsApp que moram no "Mais ações" (Avisar, quando não é o
-  // próximo passo, e Avaliação). O menu fecha no clique, então o erro (o mais
-  // comum: telefone sem DDD) não pode ficar no botão como no `BotaoWhatsapp`:
-  // fica embaixo das ações da linha dela, e não some sozinho.
+  // As ações de WhatsApp da linha (Avisar e Avaliação). O botão da linha (e o
+  // menu, que fecha no clique) não têm onde guardar o erro (o mais comum:
+  // telefone sem DDD), então ele vai pro aviso de erro da tela, com o nome da
+  // OS na frente, e não some sozinho.
   async function abrirWhatsappDaLinha(
     ordem: OrdemServico,
     pedido: { telefone: string | null | undefined; texto: string; aoAbrir: () => void },
   ) {
-    setErroDaLinha(null);
+    setErro(null);
     try {
       await abrirConversaWhatsapp(pedido.telefone, pedido.texto);
       pedido.aoAbrir();
     } catch (err) {
       console.error("Erro ao abrir o WhatsApp:", err);
-      setErroDaLinha({ ordemId: ordem.id, texto: mensagemDeErro(err) });
+      setErro(`${nomeDocumento(ordem)}: ${mensagemDeErro(err)}`);
     }
   }
 
@@ -672,21 +806,20 @@ export function OrdensServicoPage() {
     setOrdemEmEdicao(ordem);
   }
 
-  // As ações de uma linha (visual novo, tarefa 7): na linha fica SÓ o próximo
-  // passo; o resto vai pro "Mais ações". Nenhuma ação sumiu, e cada uma
-  // aparece nas mesmas condições de antes (ver a tabela no PR):
-  //   • não faturada → "Faturar" (laranja); "Avisar o cliente" (se concluída)
-  //     e "Fechamento" (se concluída) vão pro menu;
+  // As ações de uma linha (molde de lista, #1091): na linha fica UMA ação, o
+  // próximo passo; o resto vai pro "⋯". Nenhuma ação sumiu, e cada uma
+  // aparece nas mesmas condições de antes:
+  //   • não faturada → "Faturar"; "Avisar o cliente" (se concluída) e
+  //     "Fechamento" (se concluída) vão pro menu;
   //   • faturada que ainda falta nota → "Emitir nota" (abre o Fechamento,
   //     onde a nota é emitida); "Avisar o cliente" vai pro menu;
-  //   • finalizada (todas as notas saíram) → "Avisar" (WhatsApp, só OS) e
-  //     "Nota do cliente" (ver, imprimir ou mandar a nota), lado a lado;
-  //   • "Fechamento" e "Avaliação" ficam no menu.
-  // As três do meio são decisão da Sofia (16/11) pro pedido dela de 15/11: a
-  // nota do cliente à mão depois de faturar.
-  // "Abrir a OS" é novo no menu: até aqui só o clique do mouse na linha abria,
-  // e quem usa só o teclado não tinha como.
-  function acoesDaLinha(ordem: OrdemServico) {
+  //   • finalizada (todas as notas saíram) → "Nota do cliente" (o pedido da
+  //     Sofia de 15/11: a nota à mão depois de faturar), e o "Avisar o
+  //     cliente" vai pro menu (antes os dois ficavam lado a lado; o molde
+  //     deixa um só na linha). Sem nota pra mostrar, o "Avisar" volta pra linha;
+  //   • "Fechamento", "Avaliação", a ficha do veículo (antes, a placa na
+  //     tabela) e "Abrir a OS" ficam no menu.
+  function acoesDaLinha(ordem: OrdemServico): { acao?: AcaoDaLinhaDoMolde; mais: ItemDoMais[] } {
     const venda = ehVendaBalcao(ordem);
     const aviso = avisoCarroPronto(ordem);
     const avaliacao = pedidoDeAvaliacao(ordem);
@@ -694,112 +827,108 @@ export function OrdensServicoPage() {
     const situacao = situacaoFiscalOrdem(ordem.itens ?? [], notas);
     const faltaNota = ordem.status === "faturada" && situacao.pendentes.length > 0;
     const notasParaVer = ordemEstaFinalizada(ordem, situacao) ? notasDoCliente(notas) : [];
-    const proximo: "faturar" | "emitir" | "avisar" | null =
+    const proximo: "faturar" | "emitir" | "nota" | "avisar" | null =
       ordem.status !== "faturada"
         ? "faturar"
         : faltaNota
           ? "emitir"
-          : aviso
-            ? "avisar"
-            : null;
+          : notasParaVer.length > 0
+            ? "nota"
+            : aviso
+              ? "avisar"
+              : null;
 
-    const menu: AcaoDaLinha[] = [];
+    let acao: AcaoDaLinhaDoMolde | undefined;
+    if (proximo === "faturar") {
+      acao = {
+        rotulo: "Faturar",
+        aoClicar: () => {
+          fecharPaineis();
+          setOrdemFaturando(ordem);
+        },
+      };
+    } else if (proximo === "emitir") {
+      acao = { rotulo: "Emitir nota", aoClicar: () => abrirOrdem(ordem, "fechamento") };
+    } else if (proximo === "nota") {
+      acao = {
+        rotulo: "Nota do cliente",
+        aoClicar: () => {
+          setErro(null);
+          setNotaDoCliente({ documento: nomeDocumento(ordem), venda, notas: notasParaVer });
+        },
+      };
+    } else if (proximo === "avisar" && aviso) {
+      acao = { rotulo: "Avisar", aoClicar: () => void abrirWhatsappDaLinha(ordem, aviso) };
+    }
+
+    const mais: ItemDoMais[] = [];
     if (aviso && proximo !== "avisar") {
-      menu.push({
-        tipo: "menu",
+      mais.push({
         rotulo: "Avisar o cliente",
         icone: <MessageCircle />,
         aoClicar: () => void abrirWhatsappDaLinha(ordem, aviso),
       });
     }
     if (STATUS_COM_FECHAMENTO.includes(ordem.status)) {
-      menu.push({
-        tipo: "menu",
+      mais.push({
         rotulo: "Fechamento",
         icone: <Receipt />,
         aoClicar: () => abrirOrdem(ordem, "fechamento"),
       });
     }
     if (avaliacao) {
-      menu.push({
-        tipo: "menu",
+      mais.push({
         rotulo: "Avaliação",
         icone: <Star />,
         aoClicar: () => void abrirWhatsappDaLinha(ordem, avaliacao),
       });
     }
-    menu.push({
-      tipo: "menu",
+    if (!venda && ordem.veiculo_id) {
+      const veiculoId = ordem.veiculo_id;
+      mais.push({
+        rotulo: "Ficha do veículo",
+        icone: <CarFront />,
+        aoClicar: () => navigate(`/veiculos/${veiculoId}`),
+      });
+    }
+    mais.push({
       rotulo: venda ? "Abrir a venda" : "Abrir a OS",
       icone: <FolderOpen />,
       aoClicar: () => abrirOrdem(ordem),
     });
+    return { acao, mais };
+  }
 
+  // Uma linha do molde: o cliente e o carro em cima; embaixo, o número, a
+  // placa e o dia. Clicar no nome abre a OS (ou a venda).
+  function linhaDaOrdem(ordem: OrdemServico) {
+    const venda = ehVendaBalcao(ordem);
+    const carro = [ordem.veiculo?.marca, ordem.veiculo?.modelo].filter(Boolean).join(" ");
+    const { acao, mais } = acoesDaLinha(ordem);
+    const detalhe = (
+      <DetalheDaLinha
+        partes={[
+          nomeDocumento(ordem),
+          !venda ? ordem.veiculo?.placa : null,
+          `${venda ? "" : "aberta "}${dataCurta(ordem.data_abertura)}`,
+        ]}
+      />
+    );
     return (
-      <div className="flex flex-col items-end gap-1">
-        <div className="flex items-center justify-end gap-1.5">
-          {proximo === "faturar" && (
-            <Botao
-              variante="principal"
-              tamanho="pequeno"
-              onClick={() => {
-                fecharPaineis();
-                setOrdemFaturando(ordem);
-              }}
-            >
-              Faturar
-            </Botao>
-          )}
-          {proximo === "emitir" && (
-            <Dica texto={`Falta ${situacao.pendentes.join(" e ")}. Abre o Fechamento, onde a nota é emitida`}>
-              <Botao
-                variante="principal"
-                tamanho="pequeno"
-                onClick={() => abrirOrdem(ordem, "fechamento")}
-              >
-                Emitir nota
-              </Botao>
-            </Dica>
-          )}
-          {proximo === "avisar" && aviso && (
-            <BotaoWhatsapp
-              telefone={aviso.telefone}
-              texto={aviso.texto}
-              rotulo="Avisar"
-              titulo="Avisar o cliente pelo WhatsApp que o carro está pronto"
-              aoAbrir={aviso.aoAbrir}
-            />
-          )}
-          {notasParaVer.length > 0 && (
-            // Abaixo de 1366 só o ícone (o nome continua pro leitor de tela e
-            // na dica): é o que faz a linha da finalizada caber em 1024 com o
-            // menu encolhido (pedido da Sofia, 16/11). O `relative` segura o
-            // nome escondido (`sr-only` é absoluto) dentro do botão: sem ele,
-            // o nome "vazava" e cortava a tela em 1024 (achado pelo
-            // largura:telas).
-            <Dica texto="Ver, imprimir ou mandar a nota do cliente">
-              <Botao
-                tamanho="pequeno"
-                icone={<FileText />}
-                className="relative max-[1365px]:w-8 max-[1365px]:justify-center max-[1365px]:px-0"
-                onClick={() => {
-                  setErroDaLinha(null);
-                  setNotaDoCliente({ documento: nomeDocumento(ordem), venda, notas: notasParaVer });
-                }}
-              >
-                <span className="max-[1365px]:sr-only">Nota do cliente</span>
-              </Botao>
-            </Dica>
-          )}
-          <AcoesDaLinha descricao={nomeDocumento(ordem)} acoes={menu} />
-        </div>
-        {erroDaLinha?.ordemId === ordem.id && (
-          <p role="alert" className="flex max-w-64 items-start gap-1 text-left text-rotulo text-perigo">
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-            <span className="min-w-0">{erroDaLinha.texto}</span>
-          </p>
-        )}
-      </div>
+      <LinhaDeLista
+        nome={
+          <>
+            <span>{ordem.cliente?.nome ?? "—"}</span>
+            {carro && <span className="font-normal text-texto-2"> · {carro}</span>}
+          </>
+        }
+        descricao={nomeDocumento(ordem)}
+        detalhe={detalhe}
+        aoAbrir={() => abrirOrdem(ordem)}
+        lado={ladoDaLinha(ordem)}
+        acao={acao}
+        mais={mais}
+      />
     );
   }
 
@@ -890,6 +1019,9 @@ export function OrdensServicoPage() {
           temNotaEmitida={temAlgumaNotaValida(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
           abaInicial={abaInicialEdicao}
           onItensMudaram={recarregarOrdemEmEdicao}
+          gerente={operador.admin}
+          onTrocarItensFaturada={handleTrocarItensFaturada}
+          trocas={trocasDaOrdem}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
           onEditarItem={handleEditarItem}
@@ -974,8 +1106,9 @@ export function OrdensServicoPage() {
         />
       )}
 
-      {erro && (
+      {erro && !listaComErro && (
         <p
+          ref={avisoDeErroRef}
           role="alert"
           className="flex items-start gap-2 rounded-xl bg-perigo/[0.12] px-4 py-3 text-corpo text-perigo"
         >
@@ -984,14 +1117,11 @@ export function OrdensServicoPage() {
         </p>
       )}
 
-      {!carregando && temOrdens && (
+      {temOrdens && (
         <Abas
           rotulo="O que mostrar na lista"
           ativa={lista}
-          aoEscolher={(valor) => {
-            setLista(valor);
-            setErroDaLinha(null);
-          }}
+          aoEscolher={setLista}
           abas={[
             { valor: "os", nome: "Ordens de serviço", conta: quantasOs },
             { valor: "vendas", nome: "Vendas de balcão", conta: quantasVendas },
@@ -999,133 +1129,96 @@ export function OrdensServicoPage() {
         />
       )}
 
-      {!carregando && temOrdens && (
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="sakura-rotulo w-64">
-            Buscar por cliente ou placa
-            <input
-              type="text"
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Ex: João ou ABC1D23"
-              className="sakura-campo sakura-campo-filtro"
-            />
-          </label>
-          <label className="sakura-rotulo w-44">
-            De
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-              disabled={!!busca.trim()}
-              className="sakura-campo sakura-campo-filtro"
-            />
-          </label>
-          <label className="sakura-rotulo w-44">
-            Até
-            <input
-              type="date"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-              disabled={!!busca.trim()}
-              className="sakura-campo sakura-campo-filtro"
-            />
-          </label>
-          <p className="min-w-0 flex-1 basis-64 pb-1 text-rotulo text-texto-2">
-            {busca.trim()
-              ? "Buscando em todo o histórico, sem limite de data."
-              : lista === "vendas"
-                ? "Venda sem pagamento sempre aparece, não importa a data. O período filtra só as já faturadas."
-                : "OS em aberto sempre aparecem, não importa a data. O período filtra só o histórico já faturado."}
-          </p>
+      {/* O molde de lista (#1135): busca e período em cima, uma linha por OS
+          com o nome em cima e o detalhe embaixo, uma ação na linha. Cabe numa
+          janela de 1024 com o menu aberto, sem rolar de lado (#1091). */}
+      {lojaAtual && (
+        // O botão da linha tem sempre a mesma largura ("Faturar" e "Nota do
+        // cliente"), nas listas de OS e de Orçamentos: o selo e o valor batem
+        // em coluna, linha a linha e de uma lista pra outra (#1091).
+        <div className={CLASSE_DA_LISTA}>
+          <MoldeLista
+            rotulo={lista === "vendas" ? "Vendas de balcão" : "Ordens de serviço"}
+            estado={carregando ? "carregando" : listaComErro ? "erro" : "pronto"}
+            itens={ordensDaLista}
+            chave={(ordem) => ordem.id}
+            linha={linhaDaOrdem}
+            // Lista ainda sem nada (loja nova, ou só com orçamento): sem busca
+            // nem período, como antes; só a frase e o botão pra começar.
+            busca={
+              temOrdens
+                ? {
+                    valor: busca,
+                    aoMudar: setBusca,
+                    rotulo: "Buscar por cliente ou placa",
+                    dica: "Ex: João ou ABC1D23",
+                  }
+                : undefined
+            }
+            filtros={
+              temOrdens && (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                <Chips
+                  rotulo="Período"
+                  opcoes={OPCOES_DE_PERIODO.map((opcao) => ({ ...opcao, desligada: !!busca.trim() }))}
+                  valor={periodo}
+                  aoEscolher={setPeriodo}
+                />
+                {periodo === "datas" && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="date"
+                      aria-label="De"
+                      value={dataInicio}
+                      onChange={(e) => setDataInicio(e.target.value)}
+                      disabled={!!busca.trim()}
+                      className="sakura-campo sakura-campo-filtro !w-44"
+                    />
+                    <span className="text-rotulo text-texto-2">até</span>
+                    <input
+                      type="date"
+                      aria-label="Até"
+                      value={dataFim}
+                      onChange={(e) => setDataFim(e.target.value)}
+                      disabled={!!busca.trim()}
+                      className="sakura-campo sakura-campo-filtro !w-44"
+                    />
+                  </div>
+                )}
+              </div>
+              )
+            }
+            filtroAtivo={abaTemAlgo && periodo !== "tudo" && !busca.trim()}
+            aoLimparFiltros={() => setPeriodo("tudo")}
+            vazio={
+              lista === "vendas"
+                ? {
+                    frase: "Nenhuma venda de balcão ainda. A venda de uma peça sem carro aparece aqui.",
+                    acao:
+                      nadaAberto && operador
+                        ? { rotulo: "Venda de balcão", aoClicar: () => setMostrarVenda(true) }
+                        : undefined,
+                  }
+                : {
+                    frase: "Nenhuma ordem de serviço ainda. Cada carro atendido aparece aqui.",
+                    acao:
+                      nadaAberto && operador && clientes.length > 0
+                        ? { rotulo: "Nova OS", aoClicar: () => setMostrarFormulario(true) }
+                        : undefined,
+                  }
+            }
+            erro={erro ? { mensagem: erro, tentarDeNovo: () => void carregar() } : undefined}
+          />
         </div>
       )}
-
-      {carregando ? (
-        <p className="text-corpo text-texto-2">Carregando...</p>
-      ) : !temOrdens ? (
-        <p className="text-corpo text-texto-2">Nenhuma ordem de serviço aberta ainda.</p>
-      ) : ordensDaLista.length === 0 ? (
-        <p className="text-corpo text-texto-2">
-          {lista === "vendas"
-            ? "Nenhuma venda de balcão neste período."
-            : "Nenhuma ordem de serviço encontrada com esse filtro."}
+      {temOrdens && !carregando && (
+        <p className="text-rotulo text-texto-2">
+          {busca.trim()
+            ? "Buscando em todo o histórico, sem limite de data."
+            : lista === "vendas"
+              ? "Venda sem pagamento sempre aparece, não importa a data. O período filtra só as já faturadas."
+              : "OS em aberto sempre aparecem, não importa a data. O período filtra só o histórico já faturado."}
         </p>
-      ) : (
-        <div className="overflow-x-auto sakura-card">
-          {/* A lista precisa caber numa janela de 1366, a do Balcão (#425, versão
-              "B", escolhida por ela pela imagem em 03/10/2026): abaixo de
-              1600, Peças e Serviços somem (o Total e o Lucro ficam, e o
-              detalhe está dentro da OS); a data perde o ano quando é do ano
-              corrente; nome de cliente comprido quebra só entre as palavras
-              (16/11: quebrar no meio da sílaba, "Ricar / do", não serve). Coluna nova aqui precisa caber na folga —
-              `npm run largura:telas` confere em 1366, 1536 e 1600.
-              A tabela principal rola com a página, sem altura fixa ("O que
-              pode crescer", regras, seção 6). */}
-          {/* Respiro das células um pouco menor que o das outras tabelas
-              (8 px, era 9), como já era antes (#425): é o que faz a linha
-              caber em 1024 com o menu encolhido. A primeira e a última
-              coluna mantêm a margem da tabela. */}
-          <table className="sakura-tabela [&_:is(td,th)]:px-2">
-            <thead>
-              <tr>
-                <th>Nº</th>
-                <th>Cliente</th>
-                {lista === "os" && <th>Veículo</th>}
-                <th>{lista === "os" ? "Abertura" : "Data"}</th>
-                <th>Status</th>
-                {lista === "os" && <th className={`${SO_EM_TELA_GRANDE} text-right`}>Peças</th>}
-                {lista === "os" && <th className={`${SO_EM_TELA_GRANDE} text-right`}>Serviços</th>}
-                <th className="text-right">Total</th>
-                <th className="text-right">Lucro</th>
-                <th className={COLUNA_GRUDADA}>
-                  <span className="sr-only">Ações</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordensDaLista.map((ordem) => (
-                <tr key={ordem.id} onClick={() => abrirOrdem(ordem)} className="group cursor-pointer">
-                  <td className="whitespace-nowrap text-texto-2">{nomeDocumento(ordem)}</td>
-                  <td className="font-medium text-texto [overflow-wrap:break-word]">
-                    {ordem.cliente?.nome ?? "—"}
-                  </td>
-                  {lista === "os" && (
-                    <td className="whitespace-nowrap">
-                      {ordem.veiculo_id && ordem.veiculo?.placa ? (
-                        <LinkPlaca veiculoId={ordem.veiculo_id} placa={ordem.veiculo.placa} />
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  )}
-                  <td className="whitespace-nowrap text-texto-2">{dataCurta(ordem.data_abertura)}</td>
-                  <td>
-                    <SeloDaOrdem ordem={ordem} notas={notasPorOrdem.get(ordem.id) ?? []} />
-                  </td>
-                  {lista === "os" && (
-                    <td className={`${SO_EM_TELA_GRANDE} whitespace-nowrap text-right`}>
-                      {formatarMoeda(totalPorTipo(ordem.itens ?? [], "peca"))}
-                    </td>
-                  )}
-                  {lista === "os" && (
-                    <td className={`${SO_EM_TELA_GRANDE} whitespace-nowrap text-right`}>
-                      {formatarMoeda(totalPorTipo(ordem.itens ?? [], "servico"))}
-                    </td>
-                  )}
-                  <td className="whitespace-nowrap text-right font-semibold text-texto">
-                    {formatarMoeda(totalOrdem(ordem.itens ?? []))}
-                  </td>
-                  <td className="text-right">{textoLucro(ordem)}</td>
-                  {/* O clique nas ações não abre a OS junto. */}
-                  <td onClick={(e) => e.stopPropagation()} className={COLUNA_GRUDADA}>
-                    {acoesDaLinha(ordem)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       )}
     </div>
   );

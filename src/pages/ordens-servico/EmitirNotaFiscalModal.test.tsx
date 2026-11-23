@@ -16,6 +16,17 @@
  *    avisam (#950).
  * 7. Peça com o CFOP que não combina com o CSOSN (5102 + 500) avisa com o
  *    nome da peça, sem travar o botão (#968).
+ * 8. A SEFAZ recusou o CPF/CNPJ do destinatário (#1112): a frase de balcão, o
+ *    "Detalhe da SEFAZ" e o botão "Emitir sem identificar o cliente", que
+ *    emite de novo sem o destinatário; rejeição de outra família continua
+ *    como antes; "Copiar o erro" não leva nome nem documento do cliente.
+ * 9. Nota já enviada nunca volta pro "Confirmar emissão": nem quando a
+ *    consulta falha (EsperaVencidaError), nem quando a nota sai autorizada e
+ *    o registro dela no sistema falha. A janela fica no "Conferir de novo",
+ *    com a referência à mostra (achado na revisão da #1112).
+ * 10. NFS-e: o valor e os serviços que foram na nota são guardados junto
+ *    dela (#1142), o mesmo valor mandado à prefeitura; o "Registrar esta
+ *    nota" por referência digitada não sabe o que foi mandado e não guarda.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
@@ -30,6 +41,9 @@ const listarPecasJanela = vi.fn();
 const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const emitirNFCe = vi.fn();
+const emitirNFSe = vi.fn();
+const consultarNFCe = vi.fn();
+const salvarArquivoEmitido = vi.fn();
 vi.mock("@/lib/pecas", () => ({
   buscarDadosFiscaisDasPecas: (...a: unknown[]) => buscarDadosFiscaisDasPecas(...a),
   listarPecasJanela: (...a: unknown[]) => listarPecasJanela(...a),
@@ -46,20 +60,22 @@ vi.mock("@/lib/focusNfe", async () => {
     destinatarioIdentificadoNFCe: real.destinatarioIdentificadoNFCe,
     valorTotalNFCe: real.valorTotalNFCe,
     emitirNFCe: (...a: unknown[]) => emitirNFCe(...a),
-    emitirNFSe: vi.fn(),
-    consultarNFCe: vi.fn(),
+    emitirNFSe: (...a: unknown[]) => emitirNFSe(...a),
+    consultarNFCe: (...a: unknown[]) => consultarNFCe(...a),
     consultarNFSe: vi.fn(),
     baixarArquivoNota: vi.fn(),
-    refPertenceAOrdem: vi.fn(),
-    FocusNfeError: class extends Error {},
-    EsperaVencidaError: class extends Error {},
+    refPertenceAOrdem: real.refPertenceAOrdem,
+    FocusNfeError: real.FocusNfeError,
+    EsperaVencidaError: real.EsperaVencidaError,
   };
 });
 const registrarMovimento = vi.fn();
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: (...a: unknown[]) => registrarMovimento(...a) }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
 vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
-vi.mock("@/lib/notasFiscais", () => ({ salvarArquivoEmitido: vi.fn() }));
+vi.mock("@/lib/notasFiscais", () => ({
+  salvarArquivoEmitido: (...a: unknown[]) => salvarArquivoEmitido(...a),
+}));
 const clienteDaOrdem = vi.fn();
 vi.mock("@/lib/clientes", () => ({
   buscarClienteEVeiculoDaOrdem: async () => ({ cliente: clienteDaOrdem(), veiculo: null }),
@@ -74,6 +90,7 @@ vi.mock("@/contexts/AuthContext", () => ({
 }));
 
 const { EmitirNotaFiscalModal } = await import("./EmitirNotaFiscalModal");
+const { EsperaVencidaError } = await import("@/lib/focusNfe");
 
 const pecaComNcm = { id: "peca-1", descricao: "Pneu 175/70 R13", ncm: "40111000", cst_ou_csosn: "500" } as unknown as Peca;
 const pecaSemNcm = { id: "peca-2", descricao: "Filtro", ncm: "", cst_ou_csosn: "500" } as unknown as Peca;
@@ -132,6 +149,8 @@ beforeEach(() => {
   reiniciarConexaoParaTeste();
   localStorage.clear();
   vi.clearAllMocks();
+  // O `clearAllMocks` não desfaz um `mockRejectedValue` de um teste anterior.
+  salvarArquivoEmitido.mockReset();
   clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
   buscarConfiguracaoFiscal.mockResolvedValue(configuracao(true));
   listarPecasJanela.mockResolvedValue([pecaComNcm]);
@@ -573,5 +592,325 @@ describe("EmitirNotaFiscalModal — sem internet (#374)", () => {
     expect(screen.queryByText(/Falta cadastrar o token/)).not.toBeInTheDocument();
     // As peças também não vieram: não dá pra dizer que falta cadastrar a peça.
     expect(screen.queryByText(/Esta nota não pode sair ainda/)).not.toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — SEFAZ não reconheceu o destinatário (#1112)", () => {
+  // A mensagem real de 17/11 com um CNPJ de exemplo (o repositório é público).
+  // CNPJ de exemplo com os dígitos certos (o cadastro "certo" do caso de 17/11).
+  const CNPJ = "11.222.333/0001-81";
+  const MENSAGEM = `Rejeição: CNPJ ${CNPJ} do destinatário não cadastrado na Receita Federal`;
+  const recusada = {
+    status: "erro_autorizacao",
+    status_sefaz: "999",
+    mensagem_sefaz: MENSAGEM,
+    ref: "os51-nfce-1763400000000",
+  };
+  const clientePJ = {
+    id: "c1", nome: "Transportes Exemplo Ltda", tipo_pessoa: "juridica", cpf_cnpj: CNPJ,
+  };
+  const botaoSemCliente = () =>
+    screen.queryByRole("button", { name: "Emitir sem identificar o cliente" });
+  const fraseCnpj = /A SEFAZ ainda não reconhece o CNPJ deste cliente/;
+
+  async function recusarPeloDestinatario(preco = 80) {
+    clienteDaOrdem.mockReturnValue(clientePJ);
+    emitirNFCe.mockResolvedValueOnce(recusada);
+    const tela = montar([item("i1", "Pneu 175/70 R13", "peca-1", preco)]);
+    await tela.user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+    await screen.findByText(fraseCnpj);
+    return tela;
+  }
+
+  it("mostra a frase, o Detalhe da SEFAZ, o aviso de ambiente e o botão novo no lugar do de antes", async () => {
+    await recusarPeloDestinatario();
+
+    expect(screen.getByText("Detalhe da SEFAZ")).toBeInTheDocument();
+    expect(screen.getByText(MENSAGEM)).toBeInTheDocument();
+    expect(screen.getByText(/Ambiente de homologação/)).toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+    expect(
+      screen.getByText(/A nota sai como consumidor não identificado\. Ela vale normalmente/),
+    ).toBeInTheDocument();
+    // O "Confirmar emissão" só repetiria a recusa, e o link da nota que "já
+    // saiu na Focus" não tem nada a ver com o caso.
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/A nota já saiu na Focus NFe/)).not.toBeInTheDocument();
+    // Um botão laranja só.
+    expect(document.querySelectorAll("button.bg-acao")).toHaveLength(1);
+  });
+
+  it("clicar emite sem destinatário, com os mesmos itens, e termina como uma emissão normal", async () => {
+    const { user, onEmitido } = await recusarPeloDestinatario();
+    emitirNFCe.mockResolvedValueOnce({ status: "autorizado", numero: "11", ref: "os51-nfce-2" });
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByText(/NFC-e emitida com sucesso — número 11/)).toBeInTheDocument();
+    expect(emitirNFCe).toHaveBeenCalledTimes(2);
+    const [primeira, segunda] = emitirNFCe.mock.calls;
+    expect(primeira[1]?.semDestinatario ?? false).toBe(false);
+    expect(segunda[1]).toEqual({ semDestinatario: true });
+    expect(segunda[0].itens).toEqual(primeira[0].itens);
+    expect(segunda[0].pagamentos).toEqual(primeira[0].pagamentos);
+    expect(onEmitido).toHaveBeenCalledTimes(1);
+  });
+
+  it("clicar 2 vezes não emite 2 notas: o botão trava enquanto emite", async () => {
+    const { user } = await recusarPeloDestinatario();
+    let liberar: (v: unknown) => void = () => {};
+    emitirNFCe.mockReturnValueOnce(new Promise((r) => (liberar = r)));
+
+    await user.click(botaoSemCliente()!);
+    const emitindo = await screen.findByRole("button", { name: "Emitindo..." });
+    expect(emitindo).toBeDisabled();
+    await user.click(emitindo);
+    expect(emitirNFCe).toHaveBeenCalledTimes(2);
+
+    await act(async () => liberar({ status: "autorizado", numero: "12", ref: "os51-nfce-3" }));
+    expect(await screen.findByText(/NFC-e emitida com sucesso/)).toBeInTheDocument();
+  });
+
+  it("cliente PJ: aponta pra NF-e (modelo 55)", async () => {
+    await recusarPeloDestinatario();
+    expect(screen.getByText(/o documento certo é a NF-e \(modelo 55\)/)).toBeInTheDocument();
+  });
+
+  it("acima do limite da UF, o aviso do limite aparece junto do botão novo", async () => {
+    await recusarPeloDestinatario(10500);
+    expect(screen.getByText(/R\$ 10\.000 ou mais: sem o cliente identificado, a SEFAZ também deve recusar/)).toBeInTheDocument();
+    // O "cadastre o documento" do aviso de sempre não serve: o documento foi recusado.
+    expect(screen.queryByText(/cadastre o documento/)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+  });
+
+  it("abaixo do limite, sem o aviso do limite", async () => {
+    await recusarPeloDestinatario(80);
+    expect(screen.queryByText(/R\$ 10\.000 ou mais/)).not.toBeInTheDocument();
+  });
+
+  it("pessoa física: a frase do CPF, sem a parte da empresa nem a da NF-e", async () => {
+    clienteDaOrdem.mockReturnValue({
+      id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: "123.456.789-09",
+    });
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao", mensagem_sefaz: "Rejeição: CPF do destinatário inválido",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/A SEFAZ não reconheceu o CPF deste cliente/)).toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+    expect(screen.queryByText(/modelo 55/)).not.toBeInTheDocument();
+  });
+
+  it("\"Copiar o erro\" leva a mensagem, o código e a referência, sem o nome nem o CNPJ", async () => {
+    const { user } = await recusarPeloDestinatario();
+
+    await user.click(screen.getByRole("button", { name: "Copiar o erro" }));
+
+    const copiado = await navigator.clipboard.readText();
+    expect(copiado).toContain("do destinatário não cadastrado na Receita Federal");
+    expect(copiado).toContain("999");
+    expect(copiado).toContain("os51-nfce-1763400000000");
+    expect(copiado).not.toContain(CNPJ);
+    expect(copiado).not.toContain("11222333000181");
+    expect(copiado).not.toMatch(/Transportes Exemplo/i);
+    expect(await screen.findByText(/Copiado/)).toBeInTheDocument();
+  });
+
+  // Revisão do PR: a nota que já foi SEM o documento não pode cair na frase
+  // de novo — o botão repetiria a mesma nota e a mesma recusa, em ciclo.
+  it("cliente sem documento na nota: a recusa aparece crua, sem a frase nem o botão novo", async () => {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null });
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao",
+      mensagem_sefaz: "Rejeição: Não informado CPF/CNPJ do destinatário para NFC-e acima do limite",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/Não informado CPF\/CNPJ do destinatário/)).toBeInTheDocument();
+    expect(screen.queryByText(/A SEFAZ não reconheceu/)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it("recusada de novo depois do 'sem identificar': mostra a recusa crua, sem oferecer o mesmo botão", async () => {
+    const { user } = await recusarPeloDestinatario();
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao",
+      mensagem_sefaz: "Rejeição: CNPJ do destinatário inválido",
+    });
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByText("Rejeição: CNPJ do destinatário inválido")).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+  });
+
+  it("erro passageiro no 'sem identificar' (ex.: internet): a recusa e o botão novo continuam", async () => {
+    const { user } = await recusarPeloDestinatario();
+    buscarDadosFiscaisDasPecas.mockRejectedValueOnce(new Error("O servidor não respondeu"));
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByText(/O servidor não respondeu/)).toBeInTheDocument();
+    expect(screen.getByText(fraseCnpj)).toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+  });
+
+  it("CNPJ com o dígito errado no cadastro: manda corrigir em vez de falar de empresa nova", async () => {
+    clienteDaOrdem.mockReturnValue({ ...clientePJ, cpf_cnpj: "12.345.678/0001-99" });
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao", mensagem_sefaz: "Rejeição: CNPJ do destinatário inválido",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/O CNPJ no cadastro deste cliente tem um número errado/)).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).toBeEnabled();
+  });
+
+  // Revisão de 20/11: a nota "sem identificar" saiu, mas o registro falhou.
+  // O que vale agora é o "Conferir de novo" (#1122), não a recusa de antes.
+  it("sem identificar autorizada e o registro falha: a faixa da recusa some, fica o Conferir de novo", async () => {
+    const { user } = await recusarPeloDestinatario();
+    emitirNFCe.mockResolvedValueOnce({ status: "autorizado", numero: "11", ref: "os51-nfce-2" });
+    salvarArquivoEmitido.mockRejectedValueOnce(new Error("Failed to fetch"));
+
+    await user.click(botaoSemCliente()!);
+
+    expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+  });
+
+  it("rejeição de outra família continua como hoje: mensagem crua e Confirmar emissão", async () => {
+    clienteDaOrdem.mockReturnValue(clientePJ);
+    emitirNFCe.mockResolvedValueOnce({
+      status: "erro_autorizacao",
+      mensagem_sefaz: "Rejeição: CSOSN incompatível na operação com Não Contribuinte [nItem:1]",
+    });
+    const { user } = montar([item("i1", "Pneu 175/70 R13", "peca-1")]);
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByText(/CSOSN incompatível/)).toBeInTheDocument();
+    expect(screen.queryByText(fraseCnpj)).not.toBeInTheDocument();
+    expect(botaoSemCliente()).not.toBeInTheDocument();
+    expect(screen.queryByText("Detalhe da SEFAZ")).not.toBeInTheDocument();
+    expect(confirmar()).toBeEnabled();
+    expect(screen.getByText(/A nota já saiu na Focus NFe/)).toBeInTheDocument();
+  });
+});
+
+describe("EmitirNotaFiscalModal — nota já enviada nunca volta pro emitir (nota dupla)", () => {
+  const REF = "os51-nfce-1795000000000";
+  const autorizada = { status: "autorizado", numero: "10", ref: REF, caminho_xml_nota_fiscal: "/x.xml" };
+  const pneu = () => [item("i1", "Pneu 175/70 R13", "peca-1")];
+
+  it("consulta que falhou depois do envio: Conferir de novo, com a referência, e sem o emitir", async () => {
+    emitirNFCe.mockRejectedValue(
+      new EsperaVencidaError("Não consegui conferir se a nota saiu — não emita de novo.", REF),
+    );
+    const { user } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(REF))).toBeInTheDocument();
+  });
+
+  it("nota autorizada que não foi registrada: Conferir de novo registra, sem emitir outra", async () => {
+    emitirNFCe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockRejectedValueOnce(new Error("Failed to fetch")).mockResolvedValue(undefined);
+    consultarNFCe.mockResolvedValue(autorizada);
+    const { user, onEmitido } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    const conferir = await screen.findByRole("button", { name: "Conferir de novo" });
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(screen.getByText(/autorizada.*não emita de novo/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(REF))).toBeInTheDocument();
+    expect(onEmitido).not.toHaveBeenCalled();
+
+    await user.click(conferir);
+    await waitFor(() => expect(onEmitido).toHaveBeenCalledTimes(1));
+    expect(salvarArquivoEmitido).toHaveBeenCalledTimes(2);
+    expect(consultarNFCe).toHaveBeenCalledWith(REF, "loja-1");
+    expect(emitirNFCe).toHaveBeenCalledTimes(1);
+  });
+
+  it("registrar pela referência e o registro falha: fica no Conferir de novo, sem o emitir", async () => {
+    consultarNFCe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockRejectedValue(new Error("Failed to fetch"));
+    const { user } = montar(pneu());
+    await user.click(await screen.findByRole("button", { name: /já saiu na Focus NFe/ }));
+    await user.type(screen.getByPlaceholderText(/os51-nfce-/), REF);
+    await user.click(screen.getByRole("button", { name: "Registrar esta nota" }));
+
+    expect(await screen.findByRole("button", { name: "Conferir de novo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirmar emissão" })).not.toBeInTheDocument();
+    expect(emitirNFCe).not.toHaveBeenCalled();
+  });
+});
+
+describe("EmitirNotaFiscalModal — NFS-e guarda o valor que foi na nota (#1142)", () => {
+  const REF = "os51-nfse-1795000000000";
+  const autorizada = { status: "autorizado", numero: "10", ref: REF, caminho_xml_nota_fiscal: "/x.xml" };
+  const servico = (id: string, descricao: string, preco: number, quantidade = 1, desconto = 0) => ({
+    ...item(id, descricao, null, preco),
+    tipo: "servico",
+    quantidade,
+    desconto,
+  });
+  const itens = () => [
+    servico("s1", "Alinhamento 3D", 120.1),
+    servico("s2", "Balanceamento", 20.333, 4, 1.5),
+    item("p1", "Pneu 175/70 R13", "peca-1", 300),
+  ];
+
+  function montarNfse() {
+    clienteDaOrdem.mockReturnValue({ id: "c1", nome: "Maria", tipo_pessoa: "fisica", cpf_cnpj: null, codigo_municipio: "3503208" });
+    return renderizar(
+      <EmitirNotaFiscalModal ordem={ordem(itens())} tipoNota="NFS-e" onFechar={vi.fn()} onEmitido={vi.fn()} />,
+    );
+  }
+
+  it("emitida: guarda o mesmo valor mandado à prefeitura, com os serviços (sem a peça)", async () => {
+    emitirNFSe.mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockResolvedValue(undefined);
+    const { user } = montarNfse();
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+
+    await waitFor(() => expect(salvarArquivoEmitido).toHaveBeenCalledTimes(1));
+    const enviado = emitirNFSe.mock.calls[0][0] as { valorServicos: number };
+    const { valores } = salvarArquivoEmitido.mock.calls[0][0] as {
+      valores: { valorServicos: number; itens: { descricao: string }[] };
+    };
+    // 120,10 + (4 × 20,333 − 1,50) = 199,93
+    expect(valores.valorServicos).toBe(199.93);
+    expect(Math.round(enviado.valorServicos * 100)).toBe(19993);
+    expect(valores.itens.map((i) => i.descricao)).toEqual(["Alinhamento 3D", "Balanceamento"]);
+  });
+
+  it("registrada pela referência digitada: não guarda valor nenhum, nem o de um envio recusado antes", async () => {
+    emitirNFSe.mockRejectedValue(new Error("A prefeitura recusou a nota."));
+    const { user } = montarNfse();
+    await user.click(await screen.findByRole("button", { name: "Confirmar emissão" }));
+    expect(await screen.findByText(/A prefeitura recusou a nota/)).toBeInTheDocument();
+    const { consultarNFSe } = await import("@/lib/focusNfe");
+    vi.mocked(consultarNFSe).mockResolvedValue(autorizada);
+    salvarArquivoEmitido.mockResolvedValue(undefined);
+    await user.click(await screen.findByRole("button", { name: /já saiu na Focus NFe/ }));
+    await user.type(screen.getByPlaceholderText(/os51-nfse-/), REF);
+    await user.click(screen.getByRole("button", { name: "Registrar esta nota" }));
+
+    await waitFor(() => expect(salvarArquivoEmitido).toHaveBeenCalledTimes(1));
+    expect((salvarArquivoEmitido.mock.calls[0][0] as { valores: unknown }).valores).toBeNull();
+    expect(emitirNFSe).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,11 @@
 # Avisar a Recepção (começo e fim da sessão)
 
-> Decidido pela Sofia em 13/11/2026 (o mesmo texto está no `sakura-corp/escritorio`). O `CLAUDE.md`
-> traz o resumo; aqui está o detalhe.
+> **A fonte única é o `docs/recepcao.md` do escritório; este arquivo só aponta pra ele**
+> ([sakura-corp/escritorio, docs/recepcao.md](https://github.com/sakura-corp/escritorio/blob/main/docs/recepcao.md),
+> atualizado em escritorio#156; repositório privado). Aqui fica só o que o SSACE precisa: como a
+> sessão avisa a Recepção. Se os dois divergirem, vale o do escritório.
+>
+> Decidido pela Sofia em 13/11/2026. O `CLAUDE.md` traz o resumo; aqui está o detalhe.
 
 A **Recepção** é a sessão do dia de quem trabalha (título exato "Recepção DD/MM"), que acompanha as
 outras sessões. Toda sessão manda **uma linha** pra ela em dois momentos, e só neles:
@@ -12,6 +16,10 @@ outras sessões. Toda sessão manda **uma linha** pra ela em dois momentos, e s�
 | **No fim**, ao terminar | `Feito: <link>; falta <o quê, de quem>` | "Feito: PR <link>; falta a Sofia mesclar" |
 | **Se travar** esperando alguém | `Travei: <link>; falta <o quê, de quem>` | "Travei: <link da sessão>; falta a Sofia decidir X" |
 | **Se precisar** de algo da Sofia ou de alguém | `Preciso: <link>; falta <o quê, de quem>` | "Preciso: <link>; falta a Sofia aplicar a migration" |
+
+Revisão de PR: a aprovação é da Sofia em todo PR; revisão de colega não é exigida, só reserva quando ela
+estiver sem tokens (`docs/revisao-cruzada.md`). Quando houver revisão de colega, as linhas são
+"Abri: pego a revisão do PR #N" e "Feito: revisão do PR #N".
 
 Nunca no meio, nunca "comecei" sem dizer o quê. Sempre com link (PR, issue ou a própria sessão).
 

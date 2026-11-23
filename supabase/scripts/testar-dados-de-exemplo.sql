@@ -509,7 +509,7 @@ begin
       linha.codigo_interno, linha.ncm, coalesce(linha.cest, '(vazio)');
   end loop;
 
-  -- B18. as categorias de caixa inventadas já entram no grupo do DRE (0087,
+  -- B18. as categorias de caixa inventadas já entram no grupo do DRE (0088,
   -- #386), nenhuma em "a_classificar".
   if (select count(*) from categorias_caixa
        where id::text like 'eeee000e%'

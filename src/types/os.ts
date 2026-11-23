@@ -56,6 +56,31 @@ export type NovoItemOS = Omit<ItemOS, "id" | "ordem_servico_id" | "tecnico">;
 // comparar com o valor antigo pra acertar a diferença.
 export type PatchItemOS = NovoItemOS;
 
+export type ItemDaTrocaGravado = Pick<
+  ItemOS,
+  | "id"
+  | "tipo"
+  | "peca_id"
+  | "servico_id"
+  | "tecnico_id"
+  | "descricao"
+  | "quantidade"
+  | "preco_unitario"
+  | "desconto"
+>;
+
+/** Uma troca de peça/serviço feita depois de faturar (#1145, migration 0087). */
+export interface TrocaDeOsFaturada {
+  id: string;
+  operador_nome: string | null;
+  motivo: string;
+  /** Os itens como estavam e como ficaram (com id, peça, serviço, quantidade, preço e desconto). */
+  itens_antes: ItemDaTrocaGravado[];
+  itens_depois: ItemDaTrocaGravado[];
+  total: number;
+  criado_em: string;
+}
+
 export interface OrdemServico {
   id: string;
   /**

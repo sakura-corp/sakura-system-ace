@@ -141,5 +141,38 @@ export const MEDIR_LARGURA = ({ semRolar = false } = {}) => {
     }
   }
 
+  // 5. O fundo de degradê que "vaza" na borda (#1084). O fundo começa a ser
+  //    desenhado por DENTRO da borda (background-origin padding-box), mas
+  //    pinta por baixo dela também, e o degradê se repete como azulejo: na
+  //    faixa de 1 px da borda aparecia o pedaço da mancha do lado oposto
+  //    (risquinha laranja em cima e à esquerda do cartão do lucro, vermelha
+  //    embaixo). O fundo de marca e a capa ficam sempre com
+  //    `background-origin: border-box` e sem repetir. Só essas duas classes:
+  //    o degradê da coluna fixa das tabelas é outra coisa (um esfumado que
+  //    pode repetir sem aparecer).
+  for (const elemento of document.querySelectorAll(".sakura-capa-central, .sakura-fundo-marca")) {
+    if (!(elemento instanceof HTMLElement) || !visivel(elemento)) continue;
+    const estilo = getComputedStyle(elemento);
+    const borda = Math.max(
+      parseFloat(estilo.borderTopWidth) || 0,
+      parseFloat(estilo.borderRightWidth) || 0,
+      parseFloat(estilo.borderBottomWidth) || 0,
+      parseFloat(estilo.borderLeftWidth) || 0,
+    );
+    // Uma camada por degradê: todas têm que começar na borda e não repetir.
+    const origens = estilo.backgroundOrigin.split(",").map((valor) => valor.trim());
+    const repeticoes = estilo.backgroundRepeat.split(",").map((valor) => valor.trim());
+    const vaza =
+      origens.some((valor) => valor !== "border-box") ||
+      repeticoes.some((valor) => valor !== "no-repeat");
+    if (vaza) {
+      achados.push({
+        tipo: "o fundo de degradê repete e vaza na borda (background-origin/repeat)",
+        caminho: caminho(elemento),
+        excesso: borda,
+      });
+    }
+  }
+
   return achados;
 };
