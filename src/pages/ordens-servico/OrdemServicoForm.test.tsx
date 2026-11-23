@@ -166,7 +166,8 @@ async function escolherNoCombobox(
 const tipoDoItem = () =>
   screen
     .getAllByRole("combobox")
-    .filter((elemento) => elemento.tagName === "SELECT")[0] as HTMLSelectElement;
+    // O "De onde veio" (#1021) também é um <select>, antes dos itens.
+    .filter((elemento) => elemento.tagName === "SELECT" && elemento.getAttribute("name") !== "origem")[0] as HTMLSelectElement;
 
 /** Uma OS nova já nasce com UMA linha de item em branco; uma OS existente, com nenhuma. */
 const salvar = (user: ReturnType<typeof montar>["user"]) =>

@@ -82,7 +82,8 @@ async function escolherMarca(
   indice: number,
   marca: string,
 ) {
-  const campos = screen.getAllByRole("combobox");
+  // Sem o <select> do "De onde veio" (#1021), que vem antes dos veículos.
+  const campos = screen.getAllByRole("combobox").filter((campo) => campo.getAttribute("name") !== "origem");
   await user.click(campos[indice]);
   await user.type(campos[indice], marca);
   await user.click(screen.getByRole("button", { name: marca }));

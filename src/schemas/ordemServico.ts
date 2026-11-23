@@ -9,6 +9,7 @@ import type {
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
 import { ehPecaAvulsa } from "./orcamento";
+import { origemParaGravar } from "./origemCliente";
 import { somarValoresLiquidos } from "./valorItem";
 
 // Mesma ideia dos outros schemas: formulário trabalha só com strings (mesmo
@@ -42,6 +43,10 @@ export const ordemServicoFormSchema = z.object({
   // completa com "" o rascunho gravado pela versão anterior, que não tem o
   // campo: sem ele, o "Salvar" da OS travava sem mensagem nenhuma.
   validade: z.string().catch(""),
+  // "De onde veio" (#1021): opcional, "" = Não informado. Vale pra OS e pro
+  // orçamento. O `catch` completa o rascunho da versão anterior, sem o campo.
+  origem: z.string().catch(""),
+  origem_detalhe: z.string().catch(""),
   itens: z.array(itemFormSchema),
 });
 
@@ -71,6 +76,10 @@ export function paraValoresFormulario(
     descricao_problema: ordemExistente?.descricao_problema ?? "",
     vendedor_id: ordemExistente?.vendedor_id ?? funcionarioAtualId,
     validade: ordemExistente?.validade ?? "",
+    // A origem DESTA OS. Na OS nova começa vazia: a do cliente entra quando
+    // ele é escolhido (`origemSugerida`, em DetalhesFields).
+    origem: ordemExistente?.origem ?? "",
+    origem_detalhe: ordemExistente?.origem_detalhe ?? "",
     itens: ordemExistente ? [] : [itemFormVazio],
   };
 }
@@ -84,6 +93,7 @@ export function paraCamposComuns(
     km_entrada: valores.km_entrada.trim() === "" ? null : Number(valores.km_entrada),
     descricao_problema: valores.descricao_problema.trim() || null,
     vendedor_id: valores.vendedor_id || null,
+    ...origemParaGravar(valores.origem, valores.origem_detalhe),
   };
 }
 

@@ -40,6 +40,8 @@ describe("vendaVazia", () => {
     expect(vendaVazia("func-1")).toEqual({
       cliente_id: CLIENTE_CONSUMIDOR_ID,
       vendedor_id: "func-1",
+      origem: "",
+      origem_detalhe: "",
       itens: [],
     });
   });

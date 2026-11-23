@@ -17,6 +17,7 @@ import type { NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { CamposVeiculoRapido } from "./CamposVeiculoRapido";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { AvisoDeErro } from "@/components/Aviso";
+import { CampoOrigem } from "@/components/CampoOrigem";
 
 /**
  * Cadastro rápido de cliente e de veículo, sem sair da ordem de serviço
@@ -114,6 +115,11 @@ export function NovoClienteRapidoModal({
         <Campo label="Telefone">
           <input type="text" {...register("telefone")} className={inputClasse} />
         </Campo>
+
+        <CampoOrigem
+          registroOrigem={register("origem")}
+          registroDetalhe={register("origem_detalhe")}
+        />
 
         <div className="space-y-3 rounded-xl border border-linha p-3">
           <p className="text-rotulo font-medium text-texto-2">
@@ -269,6 +275,11 @@ export function NovoClienteVendaModal({
         <Campo label="Telefone">
           <input type="text" {...register("telefone")} className={inputClasse} />
         </Campo>
+
+        <CampoOrigem
+          registroOrigem={register("origem")}
+          registroDetalhe={register("origem_detalhe")}
+        />
 
         <p className="text-rotulo text-texto-2">
           O {juridica ? "CNPJ" : "CPF"} é o que vai na nota. O resto do cadastro (endereço,

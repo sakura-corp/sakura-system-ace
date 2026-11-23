@@ -1,5 +1,6 @@
 import type { TipoVeiculo } from "@/types/cliente";
 import type { MotivoRecusa } from "@/schemas/orcamento";
+import type { OrigemCliente } from "@/schemas/origemCliente";
 import { somarValoresLiquidos } from "@/schemas/valorItem";
 
 /**
@@ -131,6 +132,13 @@ export interface OrdemServico {
    * aprovação, o banco guarda aqui a data antiga e põe a da aprovação em
    * `data_abertura`. */
   orcado_em?: string | null;
+  /**
+   * "De onde veio" DESTA vez (#1021, migration 0091) — na OS, no orçamento e
+   * na venda de balcão. Opcionais: banco anterior à 0091 não tem as colunas.
+   * Nulo = "Não informado".
+   */
+  origem?: OrigemCliente | null;
+  origem_detalhe?: string | null;
 }
 
 /** Guarda de tipo: a ordem já tem número de OS (não é orçamento). */
@@ -193,6 +201,9 @@ export interface NovaOrdemServico {
    */
   tipo?: TipoOrdem;
   status?: StatusOS;
+  /** "De onde veio" (#1021). Opcionais aqui: quem não manda grava nulo. */
+  origem?: OrigemCliente | null;
+  origem_detalhe?: string | null;
 }
 
 export type PatchOrdemServico = Partial<
@@ -205,6 +216,8 @@ export type PatchOrdemServico = Partial<
     | "vendedor_id"
     | "status"
     | "validade"
+    | "origem"
+    | "origem_detalhe"
   >
 >;
 

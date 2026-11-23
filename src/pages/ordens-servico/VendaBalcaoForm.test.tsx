@@ -189,7 +189,12 @@ describe("VendaBalcaoForm", () => {
 
     expect(onRegistrar).toHaveBeenCalledTimes(1);
     const [venda, itens, pagamento] = onRegistrar.mock.calls[0];
-    expect(venda).toEqual({ cliente_id: CLIENTE_CONSUMIDOR_ID, vendedor_id: "func-1" });
+    expect(venda).toEqual({
+      cliente_id: CLIENTE_CONSUMIDOR_ID,
+      vendedor_id: "func-1",
+      origem: null,
+      origem_detalhe: null,
+    });
     expect(itens.map((i: { peca_id: string; quantidade: number; tipo: string }) => [i.peca_id, i.quantidade, i.tipo])).toEqual([
       ["palheta", 2, "peca"],
       ["bateria", 1, "peca"],
