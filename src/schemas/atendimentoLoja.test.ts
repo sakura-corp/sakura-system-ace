@@ -20,6 +20,10 @@ describe("atendimentoLojaSchema (#1033)", () => {
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.issues[0].message).toMatch(/de 10 a 13 números/);
   });
+  it("WhatsApp com letra é recusado (não descarta a letra calado)", () => {
+    expect(ok({ whatsapp: "16 99999-9999 ramal 2" }).success).toBe(false);
+    expect(ok({ whatsapp: "+55 (16) 95550-0199" }).success).toBe(true);
+  });
   it("horário: até 80 letras", () => {
     expect(ok({ horario_funcionamento: "a".repeat(80) }).success).toBe(true);
     expect(ok({ horario_funcionamento: "a".repeat(81) }).success).toBe(false);

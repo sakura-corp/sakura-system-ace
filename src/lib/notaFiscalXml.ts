@@ -626,6 +626,8 @@ function formatarTelefone(fone: string | null): string | null {
   const d = fone.replace(/\D/g, "");
   if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  // Com o 55 do Brasil na frente (o WhatsApp da loja aceita, #1033).
+  if ((d.length === 12 || d.length === 13) && d.startsWith("55")) return `+55 ${formatarTelefone(d.slice(2))}`;
   return fone;
 }
 
@@ -1034,7 +1036,7 @@ function htmlGarantiaServicos(dias: number | null | undefined): string {
   return `
     <div class="caixa">
       <h3>Garantia</h3>
-      <ul><li>Serviços: garantia de ${prazoPorExtenso(dias)}, a contar desta nota.</li></ul>
+      <ul><li>Serviços: garantia de ${dias} ${dias === 1 ? "dia" : "dias"}, a contar desta nota.</li></ul>
     </div>`;
 }
 

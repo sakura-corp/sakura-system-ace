@@ -9583,11 +9583,11 @@ insert into schema_versao (versao) values (87) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0092_atendimento_da_loja.sql
+-- 0088_atendimento_da_loja.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0092: o atendimento da loja, por loja (#1033).
+-- Migration 0088: o atendimento da loja, por loja (#1033).
 --
 -- O PROBLEMA. O recibo e as mensagens pro cliente não dizem como falar com a
 -- loja, quando ela abre nem quanto tempo vale a garantia do serviço. Quem
@@ -9664,4 +9664,4 @@ create policy "configuracoes_atendimento_acesso_por_loja" on configuracoes_atend
   using (operador_tem_acesso_loja(loja_id))
   with check (operador_tem_acesso_loja(loja_id));
 
-insert into schema_versao (versao) values (92) on conflict do nothing;
+insert into schema_versao (versao) values (88) on conflict do nothing;

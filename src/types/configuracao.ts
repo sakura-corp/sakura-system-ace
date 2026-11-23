@@ -136,7 +136,7 @@ export interface ConfiguracaoPix {
   cidade_recebedor: string;
 }
 
-// O atendimento e a garantia dos serviços da loja (migration 0092, tarefa #1033).
+// O atendimento e a garantia dos serviços da loja (migration 0088, tarefa #1033).
 // Tudo opcional: `null` = a loja não informou.
 export interface ConfiguracaoAtendimento {
   loja_id: string;

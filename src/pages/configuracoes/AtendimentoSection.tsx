@@ -15,13 +15,13 @@ import { AvisoDeSalvo } from "./pecas";
 
 interface AtendimentoSectionProps {
   lojaId: string;
-  /** Só o admin da loja grava (a RLS também recusa os outros). */
+  /** Só o admin edita: a regra é da tela (a RLS deixa quem tem acesso à loja, como nas outras configurações). */
   podeEditar: boolean;
 }
 
 /**
  * WhatsApp, horário e garantia dos serviços da loja (#1033). Carrega a própria
- * linha (tabela `configuracoes_atendimento`, migration 0092): quem usa põe
+ * linha (tabela `configuracoes_atendimento`, migration 0088): quem usa põe
  * `key={lojaId}` pra trocar de loja recarregar do zero.
  */
 export function AtendimentoSection({ lojaId, podeEditar }: AtendimentoSectionProps) {

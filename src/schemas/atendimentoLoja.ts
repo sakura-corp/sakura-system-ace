@@ -5,13 +5,14 @@ import type { ConfiguracaoAtendimento } from "@/types/configuracao";
  * O atendimento e a garantia dos serviços da loja, como a tela de Configurações
  * os valida (#1033): WhatsApp (10 a 13 dígitos), horário de funcionamento (até
  * 80 letras) e garantia em dias (1 a 3650). Tudo opcional. O banco tem as mesmas
- * travas (migration 0092); aqui a mensagem chega antes do erro dele.
+ * travas (migration 0088); aqui a mensagem chega antes do erro dele.
  */
 export const atendimentoLojaSchema = z.object({
   whatsapp: z
     .string()
     .trim()
-    .refine((v) => v === "" || /^\d{10,13}$/.test(v.replace(/\D/g, "")), {
+    // Só número e os sinais da máscara: letra ("ramal 2") é recusada, nunca descartada calada.
+    .refine((v) => v === "" || (/^[\d\s()+.-]+$/.test(v) && /^\d{10,13}$/.test(v.replace(/\D/g, ""))), {
       message: "O WhatsApp precisa ter de 10 a 13 números, com o DDD.",
     }),
   horario_funcionamento: z.string().trim().max(80, "O horário pode ter no máximo 80 letras."),

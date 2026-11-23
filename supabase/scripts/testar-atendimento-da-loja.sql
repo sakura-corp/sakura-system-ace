@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0092 (o atendimento da loja, #1033). NÃO é migration, e
+-- TESTE da migration 0088 (o atendimento da loja, #1033). NÃO é migration, e
 -- NUNCA deve ser rodado no Supabase de verdade — grava dado de teste (e apaga
 -- o que gravou no fim). Só dado inventado: nenhum WhatsApp de verdade.
 --
@@ -22,9 +22,9 @@
 -- Como rodar: `npm run test:sql -- testar-atendimento-da-loja`. Terminou
 -- imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
--- A instalação completa JÁ rodou a 0092; esta segunda rodada é a de
+-- A instalação completa JÁ rodou a 0088; esta segunda rodada é a de
 -- "rodar de novo" (idempotente).
-\ir ../migrations/0092_atendimento_da_loja.sql
+\ir ../migrations/0088_atendimento_da_loja.sql
 
 do $$
 declare
@@ -41,8 +41,8 @@ begin
   -- 1 a 3. A estrutura
   -- ===================================================================
   -- 1. a migration grava a versão
-  if not exists (select 1 from schema_versao where versao = 92) then
-    raise exception 'FALHOU 1: a 0092 não gravou a versão 92';
+  if not exists (select 1 from schema_versao where versao = 88) then
+    raise exception 'FALHOU 1: a 0088 não gravou a versão 88';
   end if;
 
   -- 2. as colunas, com o tipo e o "pode ficar vazio" certos, e o loja_id é

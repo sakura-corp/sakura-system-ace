@@ -516,6 +516,21 @@ describe("montarHtmlVisualNotaFiscal — atendimento da loja (#1033)", () => {
     expect(texto).toContain("Serviços: garantia de 90 dias, a contar desta nota");
   });
 
+  it("garantia dos serviços sempre em dias, como na tarefa (365 não vira \"1 ano\")", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: { ...ATENDIMENTO, garantiaServicoDias: 365 } })),
+    );
+    expect(texto).toContain("Serviços: garantia de 365 dias, a contar desta nota");
+  });
+
+  it("WhatsApp gravado com o 55 sai com máscara", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: { ...ATENDIMENTO, whatsapp: "5516955500199" } })),
+    );
+    expect(texto).toContain("+55 (16) 95550-0199");
+    expect(texto).not.toContain("5516955500199");
+  });
+
   it("sem nada cadastrado (null, ou os três null): nenhuma linha, nenhum traço, nenhum rótulo solto", () => {
     const vazio = { whatsapp: null, horario: null, garantiaServicoDias: null };
     for (const atendimento of [null, vazio]) {

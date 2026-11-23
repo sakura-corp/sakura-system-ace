@@ -119,7 +119,7 @@ export async function salvarLinkAvaliacao(lojaId: string, link: string | null): 
 }
 
 /**
- * O atendimento e a garantia dos serviços da loja (migration 0092, #1033);
+ * O atendimento e a garantia dos serviços da loja (migration 0088, #1033);
  * `null` = a loja não informou nada. Lança o erro: quem chama decide (a tela
  * avisa; o recibo segue sem a linha).
  */
