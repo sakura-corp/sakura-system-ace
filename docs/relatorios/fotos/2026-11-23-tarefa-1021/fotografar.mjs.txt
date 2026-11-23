@@ -1,0 +1,108 @@
+// Fotos da tarefa #1021 ("De onde veio"), com os dados inventados do modo
+// demonstração. Rodar da raiz, com o servidor de telas no ar em localhost:5199
+// (npx vite --config site/ferramentas/vite.telas.config.ts, com
+// VITE_SUPABASE_URL=https://demo.supabase.co e VITE_SUPABASE_ANON_KEY=chave-de-mentira):
+//   node fotografar.mjs <pasta-de-saida> [claro|escuro]
+// Só pra foto: o cliente inventado "Ricardo Menezes" (c1) ganha a origem
+// "Indicação" nas respostas do banco falso, pra a OS mostrar a sugestão.
+import { mkdirSync } from "node:fs";
+import { instalarBancoFalso } from "/home/user/sakura-system-ace/site/ferramentas/banco-falso.mjs";
+import { carregarChromium } from "/home/user/sakura-system-ace/site/ferramentas/playwright.mjs";
+
+const BASE = "http://localhost:5199";
+const SAIDA = process.argv[2];
+const TEMA = process.argv[3] === "escuro" ? "dark" : "light";
+mkdirSync(SAIDA, { recursive: true });
+const chromium = await carregarChromium();
+const navegador = await chromium.launch({ args: ["--lang=pt-BR"] });
+const contexto = await navegador.newContext({
+  viewport: { width: 1366, height: 900 },
+  deviceScaleFactor: 2,
+  locale: "pt-BR",
+  timezoneId: "America/Sao_Paulo",
+  colorScheme: TEMA,
+});
+await instalarBancoFalso(contexto);
+// Depois do banco falso: a rota registrada por último é a que responde primeiro.
+await contexto.route(/demo\.supabase\.co\/rest\/v1\/clientes\?/, async (rota) => {
+  const resposta = await rota.fetch().catch(() => null);
+  if (!resposta) return rota.fallback();
+  let corpo = await resposta.text();
+  try {
+    const dados = JSON.parse(corpo);
+    const marcar = (c) => (c && c.id === "c1" ? { ...c, origem: "indicacao", origem_detalhe: "Zé da padaria" } : c);
+    corpo = JSON.stringify(Array.isArray(dados) ? dados.map(marcar) : marcar(dados));
+  } catch {
+    /* não é JSON: devolve como veio */
+  }
+  return rota.fulfill({ response: resposta, body: corpo });
+});
+const pagina = await contexto.newPage();
+pagina.on("console", (m) => m.type() === "error" && console.log("[console]", m.text().slice(0, 160)));
+
+await pagina.goto(BASE, { waitUntil: "networkidle" });
+await pagina.fill('input[type="text"], input:not([type="password"]):visible', "demo");
+await pagina.fill('input[type="password"]', "demo1234");
+await pagina.click('button[type="submit"]');
+await pagina.waitForTimeout(2500);
+
+async function mostrarCampo(nome) {
+  const campo = pagina.locator('select[name="origem"]').first();
+  await campo.scrollIntoViewIfNeeded();
+  await pagina.evaluate(() => window.scrollBy(0, 0));
+  await pagina.waitForTimeout(400);
+  await pagina.screenshot({ path: `${SAIDA}/${nome}-${process.argv[3] ?? "claro"}.png` });
+}
+
+async function escolherCliente(nome) {
+  const caixa = pagina.getByPlaceholder("Selecione o cliente").first();
+  await caixa.click();
+  await caixa.fill(nome.split(" ")[0]);
+  await pagina.getByRole("button", { name: nome }).first().click();
+  await pagina.waitForTimeout(500);
+}
+
+// 1. Clientes → + Novo cliente
+await pagina.goto(`${BASE}/#/clientes`, { waitUntil: "networkidle" });
+await pagina.getByRole("button", { name: "+ Novo cliente" }).click();
+await pagina.waitForTimeout(800);
+await pagina.selectOption('select[name="origem"]', "indicacao");
+await pagina.fill('input[name="origem_detalhe"]', "Zé da padaria");
+await mostrarCampo("1-cliente-novo");
+
+// 2. Ordens de Serviço → Nova OS, com o cliente que veio por indicação
+await pagina.goto(`${BASE}/#/ordens-servico`, { waitUntil: "networkidle" });
+await pagina.getByRole("button", { name: "Nova ordem de serviço" }).click();
+await pagina.waitForTimeout(800);
+await escolherCliente("Ricardo Menezes");
+await mostrarCampo("2-os-nova-sugere-origem");
+
+// 3. Orçamentos → Novo orçamento
+await pagina.goto(`${BASE}/#/orcamentos`, { waitUntil: "networkidle" });
+await pagina.getByRole("button", { name: "Novo orçamento" }).click();
+await pagina.waitForTimeout(800);
+await escolherCliente("Ricardo Menezes");
+await pagina.selectOption('select[name="origem"]', "google");
+await mostrarCampo("3-orcamento-trocado-pra-google");
+
+// 4. Venda de balcão no Consumidor
+await pagina.goto(`${BASE}/#/ordens-servico`, { waitUntil: "networkidle" });
+await pagina.getByRole("button", { name: "Venda de balcão" }).click();
+await pagina.waitForTimeout(800);
+await pagina.selectOption('select[name="origem"]', "passou_na_frente");
+await mostrarCampo("4-venda-balcao-consumidor");
+
+// 5. O cadastro rápido de dentro da OS
+await pagina.goto(`${BASE}/#/ordens-servico`, { waitUntil: "networkidle" });
+await pagina.getByRole("button", { name: "Nova ordem de serviço" }).click();
+await pagina.waitForTimeout(800);
+const caixa = pagina.getByPlaceholder("Selecione o cliente").first();
+await caixa.click();
+await pagina.getByRole("button", { name: "+ Cadastrar cliente novo" }).click();
+await pagina.waitForTimeout(600);
+await pagina.selectOption('[role="dialog"] select[name="origem"]', "anuncio_redes");
+await pagina.fill('[role="dialog"] input[name="origem_detalhe"]', "IG-pneu-nov");
+await pagina.waitForTimeout(300);
+await pagina.screenshot({ path: `${SAIDA}/5-cadastro-rapido-${process.argv[3] ?? "claro"}.png` });
+
+await navegador.close();

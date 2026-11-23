@@ -201,6 +201,17 @@ begin
     raise exception 'FALHOU 12: preencher a origem na edição da OS não passou pro cliente';
   end if;
 
+  -- 12b. cliente sem origem mas com o "quem indicou" já escrito: herda a
+  --      origem da OS e NÃO perde o detalhe que tinha
+  insert into clientes (id, nome, origem_detalhe)
+    values ('10212222-0000-0000-0000-000000000007', 'Só com detalhe (#1021)', 'Zé da padaria');
+  insert into ordens_servico (loja_id, cliente_id, origem)
+    values (loja, '10212222-0000-0000-0000-000000000007', 'indicacao');
+  select * into linha from clientes where id = '10212222-0000-0000-0000-000000000007';
+  if linha.origem is distinct from 'indicacao' or linha.origem_detalhe is distinct from 'Zé da padaria' then
+    raise exception 'FALHOU 12b: o cliente só com detalhe ficou %/% (devia ser indicacao/Zé da padaria)', linha.origem, linha.origem_detalhe;
+  end if;
+
   -- ===================================================================
   -- Quem tem só o módulo OS: não grava em clientes, e a herança vale igual
   -- ===================================================================

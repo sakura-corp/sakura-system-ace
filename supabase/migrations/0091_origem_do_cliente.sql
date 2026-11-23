@@ -114,9 +114,11 @@ begin
     return new;
   end if;
 
+  -- O detalhe que o cliente já tinha (escrito com a origem em branco) fica;
+  -- o da OS só entra se ele não tinha nenhum.
   update clientes
      set origem = new.origem,
-         origem_detalhe = new.origem_detalhe
+         origem_detalhe = coalesce(origem_detalhe, new.origem_detalhe)
    where id = new.cliente_id
      and origem is null;
 

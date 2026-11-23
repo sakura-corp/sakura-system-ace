@@ -671,6 +671,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   código **`SKNEG`**. Caixa e contas a receber não mudam. As travas da `0071` continuam. Número
   `0087` por decisão da Sofia (20/11/2026: entra antes, pra loja usar logo); as de #1120, #1121 e
   #1123 passam a `0088`, `0089` e `0090`. Teste em `supabase/scripts/testar-trocar-itens-os-faturada.sql`.
+- `0091`: **"De onde veio", a origem do cliente** (tarefa #1021). Colunas opcionais `origem` e
+  `origem_detalhe` em `clientes` e em `ordens_servico` (OS, orçamento e venda de balcão). Lista fixa
+  (`anuncio_redes`, `google`, `indicacao`, `passou_na_frente`, `parceiro`, `ja_era_cliente`, `outro`;
+  os rótulos moram em `src/schemas/origemCliente.ts`), travas `ck_clientes_origem`,
+  `ck_ordens_servico_origem`, `ck_*_origem_detalhe` (até 80 letras) e
+  `ck_clientes_consumidor_sem_origem` (o Consumidor nunca tem origem). Gatilho
+  `trigger_origem_da_ordem_no_cliente` (`security definer`, porque quem tem só OS não grava em
+  `clientes`): cliente **sem** origem pega a da OS (o detalhe que ele já tinha fica); nunca troca uma
+  origem existente nem mexe no Consumidor. `cadastrar_cliente_rapido` (0068) passa a gravar a origem.
+  Nenhuma policy nem janela muda (a `clientes_janela` segue só com id e nome). Sem
+  `versao-minima-do-programa`; sobe **antes** da versão (o programa novo grava as colunas). Número
+  `0091` porque `0088`–`0090` estão reservadas (acima): **aplicar depois delas**. Teste em
+  `supabase/scripts/testar-origem-do-cliente.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
