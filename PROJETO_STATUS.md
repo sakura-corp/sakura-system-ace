@@ -49,8 +49,8 @@ na frente de qualquer outra deste arquivo:
   avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
   revisão do Claude colada. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
-  "Atualizar o banco". Não roda SQL nem migration em Supabase de loja ou produção. **No de teste
-  (`ssace-teste`) pode** (ensaio e migration, contando no PR). Migration nova vai no PR; em produção, ela aplica.
+  "Atualizar o banco". Não roda SQL nem migration em Supabase de loja, produção **nem no de teste**:
+  migration nova vai no PR e a Sofia aplica (regra única: `docs/supabase-de-teste.md`, "Quem aplica migration").
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
 - **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do

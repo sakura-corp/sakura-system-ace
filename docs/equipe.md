@@ -509,8 +509,8 @@ As regras completas são as da seção 0 do `PROJETO_STATUS.md`. Em resumo, **nu
   (`docs/projetos-secundarios.md`). No SSACE, ninguém da equipe mescla, fora o **plantão do Tiago**
   ("As funções do Tiago", acima);
 - **publicar ou liberar** versão, nem disparar o "Atualizar o banco";
-- **rodar SQL ou migration** em Supabase de loja ou de produção. **No de teste (`ssace-teste`) pode**
-  (ensaio e migration, contando no PR). Migration nova vai no PR; em loja e produção, quem aplica é a Sofia;
+- **rodar SQL ou migration** em Supabase de loja, de produção **nem no de teste (`ssace-teste`)**.
+  Migration nova vai no PR e a Sofia aplica (regra única: `docs/supabase-de-teste.md`, "Quem aplica migration");
 - usar o banco de uma loja (o `.env` aponta **só** pro Supabase de teste);
 - mexer em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) ou configuração, nem por um workflow novo ou modificado;
