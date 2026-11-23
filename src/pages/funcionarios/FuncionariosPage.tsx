@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { listarComissoesPagas } from "@/lib/comissoesFechamentos";
@@ -17,7 +18,6 @@ import type { Peca } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { ComissoesSection } from "./ComissoesSection";
 import { Aviso } from "@/components/Aviso";
-import { AbaBotao } from "./campos/FormCompartilhado";
 import { FuncionariosSection } from "./FuncionariosSection";
 
 type Aba = "cadastro" | "comissoes";
@@ -150,14 +150,15 @@ export function FuncionariosPage() {
 
       {erro && <Aviso tipo="perigo" role="alert">{erro}</Aviso>}
 
-      <div className="flex gap-1 border-b border-linha">
-        <AbaBotao label="Cadastro" ativa={aba === "cadastro"} onClick={() => setAba("cadastro")} />
-        <AbaBotao
-          label="Comissões"
-          ativa={aba === "comissoes"}
-          onClick={() => setAba("comissoes")}
-        />
-      </div>
+      <Abas
+        rotulo="Partes de Funcionários"
+        ativa={aba}
+        aoEscolher={setAba}
+        abas={[
+          { valor: "cadastro", nome: "Cadastro" },
+          { valor: "comissoes", nome: "Comissões" },
+        ]}
+      />
 
       {aba === "cadastro" ? (
         carregando ? (

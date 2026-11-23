@@ -45,6 +45,73 @@ function enderecoLoja(loja: ConfiguracaoFiscalLoja | null): string | null {
   return partes.length > 0 ? escaparHtml(partes.join(" — ")) : null;
 }
 
+/**
+ * O estilo dos documentos impressos da OS (garantia e orçamento, #1019): o
+ * mesmo papel, a mesma cara.
+ */
+export const ESTILO_DOCUMENTO = `  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    color: #3a2a3f;
+    max-width: 720px;
+    margin: 24px auto;
+    padding: 0 16px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+  .subtitulo { text-align: center; font-size: 12px; color: #6a5a6a; margin: 0; }
+  .cabecalho { border-bottom: 2px solid #b38dac; padding-bottom: 12px; margin-bottom: 16px; }
+  .titulo-secao {
+    background: #fff0fb;
+    color: #6e4d68;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin: 18px 0 8px;
+  }
+  .grid { display: flex; flex-wrap: wrap; gap: 16px; }
+  .bloco { flex: 1 1 200px; }
+  .rotulo { font-size: 10px; color: #8a7a8a; margin: 0 0 2px; text-transform: uppercase; }
+  .valor { font-size: 13px; margin: 0 0 6px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5dde5; }
+  th { color: #8a7a8a; font-weight: 600; font-size: 10px; text-transform: uppercase; }
+  td.numero, th.numero { text-align: right; }
+  .totais { display: flex; justify-content: flex-end; gap: 24px; margin-top: 8px; font-size: 12px; }
+  .totais strong { display: block; font-size: 13px; }
+  .total-geral { text-align: right; font-size: 16px; font-weight: 700; margin-top: 10px; }
+  .texto-garantia { white-space: pre-wrap; font-size: 12px; line-height: 1.5; }
+  .assinaturas { display: flex; gap: 16px; margin-top: 48px; }
+  .assinatura { flex: 1; text-align: center; font-size: 11px; color: #6a5a6a; }
+  .linha-assinatura { border-top: 1px solid #3a2a3f; margin-bottom: 4px; padding-top: 4px; }
+  @media print {
+    body { margin: 0; }
+  }
+`;
+
+/**
+ * O cabeçalho da loja no topo do documento (nome, endereço, contato) e a
+ * linha que diz que documento é. `linhaDoDocumento` já vem escapada por quem
+ * chama.
+ */
+export function cabecalhoDaLojaHtml(
+  loja: ConfiguracaoFiscalLoja | null,
+  linhaDoDocumento: string,
+): string {
+  const nomeLoja = escaparHtml(loja?.nome_fantasia || loja?.razao_social || "—");
+  const contatoLoja = escaparHtml([loja?.telefone, loja?.email].filter(Boolean).join(" · "));
+  const enderecoDaLoja = enderecoLoja(loja);
+  return `<div class="cabecalho">
+    <h1>${nomeLoja}</h1>
+    ${enderecoDaLoja ? `<p class="subtitulo">${enderecoDaLoja}</p>` : ""}
+    ${contatoLoja ? `<p class="subtitulo">${contatoLoja}</p>` : ""}
+    <p class="subtitulo" style="margin-top:8px;font-weight:600;">
+      ${linhaDoDocumento}
+    </p>
+  </div>`;
+}
+
 function enderecoCliente(cliente: Cliente | null): string | null {
   if (!cliente) return null;
   const partes = [
@@ -92,10 +159,7 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
   // contado do fechamento, como antes.
   const listaParcelas = parcelas > 1 ? calcularListaParcelas(valorFinal, parcelas, dataBase) : [];
 
-  const nomeLoja = escaparHtml(loja?.nome_fantasia || loja?.razao_social || "—");
-  const contatoLoja = escaparHtml([loja?.telefone, loja?.email].filter(Boolean).join(" · "));
   const nomeDoc = escaparHtml(nomeDocumento(ordem));
-  const enderecoDaLoja = enderecoLoja(loja);
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -103,56 +167,10 @@ export function montarHtmlGarantiaOS(dados: DadosGarantiaDocumento): string {
 <meta charset="utf-8" />
 <title>Garantia — ${nomeDoc}</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
-    color: #3a2a3f;
-    max-width: 720px;
-    margin: 24px auto;
-    padding: 0 16px;
-  }
-  h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
-  .subtitulo { text-align: center; font-size: 12px; color: #6a5a6a; margin: 0; }
-  .cabecalho { border-bottom: 2px solid #b38dac; padding-bottom: 12px; margin-bottom: 16px; }
-  .titulo-secao {
-    background: #fff0fb;
-    color: #6e4d68;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 6px 10px;
-    border-radius: 6px;
-    margin: 18px 0 8px;
-  }
-  .grid { display: flex; flex-wrap: wrap; gap: 16px; }
-  .bloco { flex: 1 1 200px; }
-  .rotulo { font-size: 10px; color: #8a7a8a; margin: 0 0 2px; text-transform: uppercase; }
-  .valor { font-size: 13px; margin: 0 0 6px; font-weight: 600; }
-  table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 12px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5dde5; }
-  th { color: #8a7a8a; font-weight: 600; font-size: 10px; text-transform: uppercase; }
-  td.numero, th.numero { text-align: right; }
-  .totais { display: flex; justify-content: flex-end; gap: 24px; margin-top: 8px; font-size: 12px; }
-  .totais strong { display: block; font-size: 13px; }
-  .total-geral { text-align: right; font-size: 16px; font-weight: 700; margin-top: 10px; }
-  .texto-garantia { white-space: pre-wrap; font-size: 12px; line-height: 1.5; }
-  .assinaturas { display: flex; gap: 16px; margin-top: 48px; }
-  .assinatura { flex: 1; text-align: center; font-size: 11px; color: #6a5a6a; }
-  .linha-assinatura { border-top: 1px solid #3a2a3f; margin-bottom: 4px; padding-top: 4px; }
-  @media print {
-    body { margin: 0; }
-  }
-</style>
+${ESTILO_DOCUMENTO}</style>
 </head>
 <body>
-  <div class="cabecalho">
-    <h1>${nomeLoja}</h1>
-    ${enderecoDaLoja ? `<p class="subtitulo">${enderecoDaLoja}</p>` : ""}
-    ${contatoLoja ? `<p class="subtitulo">${contatoLoja}</p>` : ""}
-    <p class="subtitulo" style="margin-top:8px;font-weight:600;">
-      Garantia — ${nomeDoc} · ${formatarData(ordem.data_fechamento)}
-    </p>
-  </div>
+  ${cabecalhoDaLojaHtml(loja, `Garantia — ${nomeDoc} · ${formatarData(ordem.data_fechamento)}`)}
 
   <div class="titulo-secao">Dados do cliente</div>
   <div class="grid">

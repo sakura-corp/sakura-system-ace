@@ -290,6 +290,13 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
     else setArquivoVisualizando(arquivo);
   }
 
+  // Nota cancelada não tem versão pro cliente (Sofia, 20/11, revisão do
+  // #1126): o registro dela é o XML. A feita fora só tinha o resumo do XML pra
+  // abrir, então, cancelada, fica sem botão na linha.
+  function podeAbrirANota(arquivo: NotaFiscalArquivo) {
+    return arquivo.origem === "automatica" || arquivo.status !== "cancelado";
+  }
+
   function rotuloDoBotaoDaLinha(arquivo: NotaFiscalArquivo) {
     if (arquivo.origem === "automatica" && arquivo.status === "autorizado") return "Nota do cliente";
     return "Ver a nota";
@@ -308,8 +315,9 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
 
   function maisAcoes(arquivo: NotaFiscalArquivo): AcaoDaLinha[] {
     const acoes: AcaoDaLinha[] = [];
-    // Na nota feita fora, a "Versão para o cliente" já é o botão da linha.
-    if (arquivo.origem === "automatica") {
+    // Na nota feita fora, a "Versão para o cliente" já é o botão da linha. Na
+    // cancelada, não tem.
+    if (arquivo.origem === "automatica" && arquivo.status !== "cancelado") {
       acoes.push({
         tipo: "menu",
         rotulo: "Versão para o cliente (resumo do XML)",
@@ -518,21 +526,23 @@ export function ArquivosSection({ tipo }: ArquivosSectionProps) {
                         </td>
                         <td>
                           <div className="flex items-center justify-end gap-1.5">
-                            <Dica texto={dicaDoBotaoDaLinha(arquivo)}>
-                              <Botao
-                                tamanho="pequeno"
-                                icone={<FileText />}
-                                aria-label={`${rotuloDoBotaoDaLinha(arquivo)} — ${arquivo.nome_arquivo}`}
-                                onClick={() => abrirANota(arquivo)}
-                                // O `relative` segura o nome escondido
-                                // (`sr-only` é absoluto) dentro do botão: sem
-                                // ele, o nome "vaza" e corta a tela em 1024
-                                // (o mesmo cuidado da tarefa 7).
-                                className="relative max-[1279px]:w-8 max-[1279px]:justify-center max-[1279px]:px-0"
-                              >
-                                <span className="max-[1279px]:sr-only">{rotuloDoBotaoDaLinha(arquivo)}</span>
-                              </Botao>
-                            </Dica>
+                            {podeAbrirANota(arquivo) && (
+                              <Dica texto={dicaDoBotaoDaLinha(arquivo)}>
+                                <Botao
+                                  tamanho="pequeno"
+                                  icone={<FileText />}
+                                  aria-label={`${rotuloDoBotaoDaLinha(arquivo)} — ${arquivo.nome_arquivo}`}
+                                  onClick={() => abrirANota(arquivo)}
+                                  // O `relative` segura o nome escondido
+                                  // (`sr-only` é absoluto) dentro do botão: sem
+                                  // ele, o nome "vaza" e corta a tela em 1024
+                                  // (o mesmo cuidado da tarefa 7).
+                                  className="relative max-[1279px]:w-8 max-[1279px]:justify-center max-[1279px]:px-0"
+                                >
+                                  <span className="max-[1279px]:sr-only">{rotuloDoBotaoDaLinha(arquivo)}</span>
+                                </Botao>
+                              </Dica>
+                            )}
                             <AcoesDaLinha
                               descricao={`a nota ${arquivo.nome_arquivo}`}
                               acoes={maisAcoes(arquivo)}

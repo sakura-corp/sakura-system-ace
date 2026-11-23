@@ -47,6 +47,14 @@ import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
+import { Botao } from "@/components/Botao";
+import { Modal } from "@/components/Modal";
+import { motivoParaNaoTrocar, resumoDaTroca, type ItemDaTroca } from "@/schemas/trocaFaturada";
+import type { TrocaDeOsFaturada } from "@/types/os";
+import { TrocarItensFaturadaModal } from "./TrocarItensFaturadaModal";
+
+/** As duas janelas do orçamento aberto (#1091): aprovar e recusar. */
+export type JanelaDoOrcamento = "aprovar" | "recusar";
 
 interface OrdemServicoFormProps {
   clientes: Cliente[];
@@ -104,6 +112,11 @@ interface OrdemServicoFormProps {
     vinculos?: { itemId: string; pecaId: string }[],
   ) => Promise<void>;
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
+  /**
+   * O orçamento abre já com esta janela por cima (#1091): o "Aprovar" da
+   * linha da lista e o "Recusar" do "⋯".
+   */
+  janelaInicial?: JanelaDoOrcamento | null;
   /** Botões a mais no cabeçalho do orçamento aberto (WhatsApp). */
   acoesExtras?: ReactNode;
   /**
@@ -112,6 +125,20 @@ interface OrdemServicoFormProps {
    * ordem aberta.
    */
   onItensMudaram?: () => void | Promise<void>;
+  /**
+   * Trocar peça ou serviço de OS JÁ FATURADA, com o total igual (#1145). Só
+   * aparece com `gerente` (admin da loja) e sem nota fiscal; quem decide de
+   * verdade é o banco (migration 0087).
+   */
+  gerente?: boolean;
+  onTrocarItensFaturada?: (
+    ordem: OrdemServico,
+    itens: ItemDaTroca[],
+    motivo: string,
+    aceitaEstoqueNegativo: boolean,
+  ) => Promise<void>;
+  /** O histórico das trocas depois de faturada, da mais nova pra mais velha. */
+  trocas?: TrocaDeOsFaturada[];
 }
 
 function formatarMoeda(valor: number): string {
@@ -164,12 +191,24 @@ export function OrdemServicoForm({
   modoOrcamento = false,
   onAprovar,
   onRecusar,
+  janelaInicial = null,
   acoesExtras,
   onItensMudaram,
+  gerente = false,
+  onTrocarItensFaturada,
+  trocas = [],
 }: OrdemServicoFormProps) {
+  const [janelaTroca, setJanelaTroca] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
-  const [aprovando, setAprovando] = useState(false);
+  // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
+  // quando o orçamento ainda pode ser aprovado (ou recusado).
+  const [janelaOrcamento, setJanelaOrcamento] = useState<JanelaDoOrcamento | null>(() => {
+    if (!modoOrcamento || !ordemExistente) return null;
+    if (janelaInicial === "aprovar" && podeAprovar(ordemExistente)) return "aprovar";
+    if (janelaInicial === "recusar" && podeRecusar(ordemExistente)) return "recusar";
+    return null;
+  });
   const [janelaAvulsas, setJanelaAvulsas] = useState(false);
   // O que foi escolhido na janela da aprovação (#720): fica aqui pra não se
   // perder quando a janela fecha no "Voltar".
@@ -241,12 +280,17 @@ export function OrdemServicoForm({
   const ehFaturada = ordemExistente?.status === "faturada";
   const podeAdicionarItem = !ehFaturada && !ehRecusado;
   const podeEditarItem = !!ordemExistente && !ehFaturada && !ehRecusado && !temNotaEmitida;
+  const porQueNaoTroca =
+    ehFaturada && onTrocarItensFaturada
+      ? motivoParaNaoTrocar({ faturada: true, gerente, temNota: temNotaEmitida })
+      : null;
+  const podeTrocarFaturada = ehFaturada && !!onTrocarItensFaturada && porQueNaoTroca === null;
   const vencido = modoOrcamento && orcamentoVencido(ordemExistente?.validade);
   const avisoItens = ehRecusado
     ? "Orçamento recusado: fica só como histórico, não dá pra mexer nos itens."
     : ehFaturada
-      ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então, " +
-      "então não dá pra acrescentar nem corrigir item. Pra qualquer mudança, abra uma OS nova."
+      ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então. " +
+        "Dá pra trocar peça ou serviço mantendo o mesmo total (só gerente, sem nota fiscal)."
     : temNotaEmitida
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
         "da OS. Cancele a nota em Notas Fiscais antes de mexer."
@@ -336,6 +380,9 @@ export function OrdemServicoForm({
         return;
       }
       setErro(null);
+      // A de aprovar fecha antes (#1091): duas janelas abertas brigavam pelo
+      // Esc e pelo Tab. O "Voltar" da de avulsas reabre a de aprovar.
+      setJanelaOrcamento(null);
       setJanelaAvulsas(true);
       return;
     }
@@ -419,12 +466,82 @@ export function OrdemServicoForm({
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
+  // A barra do rodapé: dentro do <form> nos Detalhes (o "Salvar" é dela) e
+  // fora dele no Fechamento, junto da aba (#1128).
+  /* Barra fixa do rodapé: o total ficava no meio da tela, logo abaixo
+      da lista de itens — então com a OS cheia de peça ele saía de vista,
+      que é justamente quando importa. Grudada aqui embaixo, ele (e o
+      botão de salvar) acompanham a rolagem.
+
+      `sticky` e não `fixed` de propósito: elemento `fixed` dentro de um
+      `sakura-card` se prende ao card por causa do `backdrop-filter`
+      (PROJETO_STATUS.md, seção 6, item 51), e o resultado seria uma
+      barra flutuando no lugar errado. O fundo precisa ser opaco porque a
+      lista de itens passa POR TRÁS dela ao rolar; a sombra em cima mostra
+      que tem mais coisa embaixo.
+
+      No Fechamento ela NÃO gruda (#781): lá não há total nem salvar, só o
+      "Voltar", e grudada ela cobria os botões de DANFE. */
+  const rodape = (
+    <div
+      ref={barraRef}
+      data-rodape-da-os
+      className={`${
+        aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+      } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
+    >
+      {aba === "detalhes" ? (
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="text-rotulo text-texto-2">
+            Peças {formatarMoeda(totais.pecas)}
+          </span>
+          <span className="text-rotulo text-texto-2">
+            Serviços {formatarMoeda(totais.servicos)}
+          </span>
+          <span className="text-corpo font-semibold text-texto">
+            Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
+          </span>
+        </div>
+      ) : (
+        <span />
+      )}
+
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
+        >
+          {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
+              alguma coisa (#781). */}
+          {aba === "detalhes" ? "Cancelar" : "Voltar"}
+        </button>
+        {aba === "detalhes" && !ehRecusado && (
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+          >
+            {isSubmitting
+              ? "Salvando..."
+              : ordemExistente
+                ? "Salvar alterações"
+                : modoOrcamento
+                  ? "Salvar orçamento"
+                  : "Abrir ordem de serviço"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
+    <div className="space-y-6 sakura-card p-6 shadow-sm">
     <form
       onSubmit={handleSubmit(aoSubmeter)}
       onFocus={(e: FocusEvent<HTMLFormElement>) => manterAcimaDaBarra(e.target)}
-      className="space-y-6 sakura-card p-6 shadow-sm"
+      className="space-y-6"
     >
       {ordemExistente ? (
         <div className="flex items-center justify-between border-b border-linha pb-4">
@@ -483,7 +600,9 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {erro && (
+      {/* Com a janela do orçamento aberta, o erro aparece dentro dela (#1091),
+          e não repetido aqui atrás. */}
+      {erro && !janelaOrcamento && !janelaAvulsas && (
         <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>
       )}
 
@@ -498,82 +617,40 @@ export function OrdemServicoForm({
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
-        <div className="space-y-3 rounded-xl border border-linha px-4 py-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <button
-              type="button"
-              onClick={() => setAprovando((aberto) => !aberto)}
+        // Aprovar e recusar em janela (#1091): na faixa ficam só os dois
+        // botões, longe um do outro (Fitts). "Aprovar" é o laranja, à direita;
+        // "Recusar" é discreto, à esquerda. O motivo só aparece na janela do
+        // "Recusar" (antes ele vinha ANTES do "Aprovar", na mesma faixa).
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-linha px-4 py-3">
+          {podeRecusar(ordemExistente) ? (
+            <Botao
+              variante="fantasma"
+              onClick={() => {
+                setErro(null);
+                setJanelaOrcamento("recusar");
+              }}
               disabled={enviando}
-              className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
+            >
+              Recusar
+            </Botao>
+          ) : (
+            <span />
+          )}
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-4">
+            <p className="min-w-0 text-rotulo text-texto-2">
+              Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
+            </p>
+            <Botao
+              variante="principal"
+              onClick={() => {
+                setErro(null);
+                setJanelaOrcamento("aprovar");
+              }}
+              disabled={enviando}
             >
               Aprovar
-            </button>
-            {podeRecusar(ordemExistente) && (
-              <>
-                <label className="flex flex-col gap-1 text-rotulo text-texto/80">
-                  Motivo da recusa (opcional)
-                  <select
-                    value={motivoRecusa}
-                    onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa | "")}
-                    className={inputClasse}
-                  >
-                    <option value="">Sem motivo</option>
-                    {MOTIVOS_RECUSA.map((motivo) => (
-                      <option key={motivo} value={motivo}>
-                        {MOTIVO_RECUSA_LABEL[motivo]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleRecusar}
-                  disabled={enviando}
-                  className="rounded-xl border border-acao px-4 py-2 text-corpo font-medium text-texto hover:bg-cartao/40 disabled:opacity-50"
-                >
-                  Recusar
-                </button>
-              </>
-            )}
+            </Botao>
           </div>
-          {aprovando && (
-            <div className="space-y-2">
-              {vencido && (
-                <AvisoDeAtencao className="text-corpo">
-                  Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
-                  antes de aprovar. Dá pra aprovar mesmo assim.
-                </AvisoDeAtencao>
-              )}
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="flex flex-col gap-1 text-corpo">
-                  Quem aprovou?
-                  <input
-                    type="text"
-                    value={aprovadoPor}
-                    onChange={(e) => setAprovadoPor(e.target.value)}
-                    placeholder="Ex.: o cliente, pelo telefone"
-                    className={`${inputClasse} w-72`}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={aoConfirmarAprovacao}
-                  disabled={enviando || isDirty}
-                  className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-                >
-                  Confirmar aprovação
-                </button>
-              </div>
-              <p className="text-rotulo text-texto-2">
-                Ao aprovar, vira uma OS em andamento e as peças saem do estoque.
-              </p>
-              {isDirty && (
-                <p className="text-rotulo text-atencao">
-                  Salve as alterações antes de aprovar
-                </p>
-              )}
-            </div>
-          )}
         </div>
       )}
 
@@ -612,8 +689,6 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {aba === "fechamento" && ordemExistente && <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />}
-
       {aba === "detalhes" && (
         <div className="space-y-6">
           <DetalhesFields
@@ -642,6 +717,39 @@ export function OrdemServicoForm({
             </section>
           )}
 
+          {ehFaturada && onTrocarItensFaturada && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linha p-3">
+              <p className="text-rotulo text-texto-2">
+                {podeTrocarFaturada
+                  ? "Peça ou serviço lançado errado? Troque mantendo o mesmo total."
+                  : porQueNaoTroca}
+              </p>
+              {podeTrocarFaturada && (
+                <Botao tamanho="pequeno" onClick={() => setJanelaTroca(true)}>
+                  Trocar peça ou serviço
+                </Botao>
+              )}
+            </div>
+          )}
+
+          {trocas.length > 0 && (
+            <section className="rounded-lg bg-poco p-3">
+              <p className="mb-1 text-rotulo font-medium text-texto/85">Trocas depois de faturada</p>
+              <ul className="space-y-1 text-rotulo text-texto/90">
+                {trocas.map((troca) => {
+                  const { saem, entram } = resumoDaTroca(troca.itens_antes, troca.itens_depois);
+                  return (
+                    <li key={troca.id}>
+                      {formatarData(troca.criado_em)} · {troca.operador_nome ?? "—"} · saiu{" "}
+                      {saem.map((i) => i.descricao).join(", ") || "nada"}, entrou{" "}
+                      {entram.map((i) => i.descricao).join(", ") || "nada"} · motivo: {troca.motivo}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           <ItensFields
             control={control}
             register={register}
@@ -666,76 +774,137 @@ export function OrdemServicoForm({
         </div>
       )}
 
-      {/* Barra fixa do rodapé: o total ficava no meio da tela, logo abaixo
-          da lista de itens — então com a OS cheia de peça ele saía de vista,
-          que é justamente quando importa. Grudada aqui embaixo, ele (e o
-          botão de salvar) acompanham a rolagem.
-
-          `sticky` e não `fixed` de propósito: elemento `fixed` dentro de um
-          `sakura-card` se prende ao card por causa do `backdrop-filter`
-          (PROJETO_STATUS.md, seção 6, item 51), e o resultado seria uma
-          barra flutuando no lugar errado. O fundo precisa ser opaco porque a
-          lista de itens passa POR TRÁS dela ao rolar; a sombra em cima mostra
-          que tem mais coisa embaixo.
-
-          No Fechamento ela NÃO gruda (#781): lá não há total nem salvar, só o
-          "Voltar", e grudada ela cobria os botões de DANFE. */}
-      <div
-        ref={barraRef}
-        data-rodape-da-os
-        className={`${
-          aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
-        } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
-      >
-        {aba === "detalhes" ? (
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <span className="text-rotulo text-texto-2">
-              Peças {formatarMoeda(totais.pecas)}
-            </span>
-            <span className="text-rotulo text-texto-2">
-              Serviços {formatarMoeda(totais.servicos)}
-            </span>
-            <span className="text-corpo font-semibold text-texto">
-              Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
-            </span>
-          </div>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onCancelar}
-            className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
-          >
-            {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
-                alguma coisa (#781). */}
-            {aba === "detalhes" ? "Cancelar" : "Voltar"}
-          </button>
-          {aba === "detalhes" && !ehRecusado && (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-            >
-              {isSubmitting
-                ? "Salvando..."
-                : ordemExistente
-                  ? "Salvar alterações"
-                  : modoOrcamento
-                    ? "Salvar orçamento"
-                    : "Abrir ordem de serviço"}
-            </button>
-          )}
-        </div>
-      </div>
+      {aba === "detalhes" && rodape}
     </form>
+
+    {/* A aba Fechamento fica FORA do <form> da OS (#1128): o "Cadastrar
+        agora" da janela "Emitir NFC-e" abre o formulário da peça, que tem o
+        próprio <form>. Dentro do da OS era um formulário dentro de outro
+        (HTML inválido): o "Salvar peça" enviava também o formulário da OS
+        (o teste OrdemServicoForm.fechamento.test.tsx viu isso). */}
+    {aba === "fechamento" && ordemExistente && (
+      <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />
+    )}
+    {aba === "fechamento" && rodape}
+    </div>
 
     {/* Os modais ficam FORA do <form> da OS: um <form> dentro de outro é
         HTML inválido, e é isso que deixa cada modal ter o próprio botão de
         enviar — o que faz o Enter avançar de campo aqui dentro igual ao
         resto do app, sem tratamento especial. */}
+    {/* As janelas do orçamento (#1091). A das peças sem cadastro (logo
+        abaixo) abre POR CIMA da de aprovar, e o "Voltar" dela volta pra cá. */}
+    {janelaOrcamento === "aprovar" && ordemExistente && (
+      <Modal
+        titulo={`Aprovar o ${nomeDocumento(ordemExistente)}`}
+        descricao="Ao aprovar, vira uma OS em andamento e as peças saem do estoque."
+        // Esc, ✕ e clique fora não fecham no meio do envio (como a de avulsas).
+        onFechar={() => {
+          if (!enviando) setJanelaOrcamento(null);
+        }}
+        rodape={
+          <>
+            <Botao variante="fantasma" onClick={() => setJanelaOrcamento(null)} disabled={enviando}>
+              Cancelar
+            </Botao>
+            <Botao
+              variante="principal"
+              onClick={aoConfirmarAprovacao}
+              disabled={isDirty}
+              ocupado={enviando}
+            >
+              Confirmar aprovação
+            </Botao>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erro && !janelaAvulsas && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
+          {vencido && (
+            <AvisoDeAtencao className="text-corpo">
+              Este orçamento passou da validade: o preço pode ter mudado. Confira os valores
+              antes de aprovar. Dá pra aprovar mesmo assim.
+            </AvisoDeAtencao>
+          )}
+          {isDirty && (
+            <AvisoDeAtencao className="text-corpo">
+              Salve as alterações antes de aprovar: feche esta janela e clique em "Salvar alterações".
+            </AvisoDeAtencao>
+          )}
+          <label className="flex flex-col gap-2 text-corpo">
+            Quem aprovou?
+            <input
+              type="text"
+              value={aprovadoPor}
+              onChange={(e) => setAprovadoPor(e.target.value)}
+              onKeyDown={(e) => {
+                // Enter confirma, como o botão (a janela não tem <form>).
+                if (e.key === "Enter" && !isDirty && !enviando) {
+                  e.preventDefault();
+                  aoConfirmarAprovacao();
+                }
+              }}
+              placeholder="Ex.: o cliente, pelo telefone"
+              className={inputClasse}
+            />
+          </label>
+        </div>
+      </Modal>
+    )}
+    {janelaOrcamento === "recusar" && ordemExistente && (
+      <Modal
+        titulo={`Recusar o ${nomeDocumento(ordemExistente)}?`}
+        descricao="O orçamento vai pra aba Recusados e fica só como histórico."
+        // Esc, ✕ e clique fora não fecham no meio do envio (como a de avulsas).
+        onFechar={() => {
+          if (!enviando) setJanelaOrcamento(null);
+        }}
+        rodape={
+          <>
+            <Botao variante="fantasma" onClick={() => setJanelaOrcamento(null)} disabled={enviando}>
+              Cancelar
+            </Botao>
+            <Botao variante="perigo" onClick={handleRecusar} ocupado={enviando}>
+              Recusar orçamento
+            </Botao>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
+          <label className="flex flex-col gap-2 text-corpo">
+            Motivo da recusa (opcional)
+            <select
+              value={motivoRecusa}
+              onChange={(e) => setMotivoRecusa(e.target.value as MotivoRecusa | "")}
+              className={inputClasse}
+            >
+              <option value="">Sem motivo</option>
+              {MOTIVOS_RECUSA.map((motivo) => (
+                <option key={motivo} value={motivo}>
+                  {MOTIVO_RECUSA_LABEL[motivo]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </Modal>
+    )}
+    {janelaTroca && ordemExistente && onTrocarItensFaturada && (
+      <TrocarItensFaturadaModal
+        ordem={ordemExistente}
+        pecas={pecas}
+        servicos={servicos}
+        funcionarios={funcionarios}
+        saldoPorPeca={saldoPorPeca}
+        saldoCarregado={saldoCarregado}
+        onConfirmar={async (itens, motivo, aceita) => {
+          await onTrocarItensFaturada(ordemExistente, itens, motivo, aceita);
+          setJanelaTroca(false);
+        }}
+        onFechar={() => setJanelaTroca(false)}
+      />
+    )}
     {janelaAvulsas && ordemExistente && (
       <PecasAvulsasAprovacaoModal
         itens={avulsasDoOrcamento}
@@ -747,7 +916,10 @@ export function OrdemServicoForm({
         erro={erro}
         onConfirmar={handleAprovar}
         onItemLigado={aoLigarNaJanela}
-        onFechar={() => setJanelaAvulsas(false)}
+        onFechar={() => {
+          setJanelaAvulsas(false);
+          setJanelaOrcamento("aprovar");
+        }}
       />
     )}
     {cadastroRapido === "cliente" && (

@@ -84,8 +84,13 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           aria-labelledby="margem-do-periodo-titulo"
           className="sakura-capa-central sakura-grao overflow-hidden rounded-[1.125rem] border border-linha p-8"
         >
-          <div className="relative z-[2] flex flex-wrap items-center justify-between gap-x-10 gap-y-6">
-            <div className="min-w-0">
+          {/* A partir de 1280 (#1084) as bolinhas ficam ao lado do texto, sem
+              descer: a frase quebra em duas linhas no lugar. De 1280 a 1535 as
+              bolinhas têm 12 px (com 14 px, o número de cinco dígitos encostava
+              nelas em 1280 com o menu aberto); a partir de 1536, 14 px. Abaixo
+              de 1280 o cartão vira coluna, com as bolinhas de 10 px embaixo. */}
+          <div className="relative z-[2] flex flex-col items-start gap-6 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
+            <div className="min-w-0 xl:flex-1">
               <div className="flex items-center gap-1.5">
                 <h2 id="margem-do-periodo-titulo" className="text-rotulo font-medium text-texto-2">
                   Margem do período
@@ -115,17 +120,19 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
               )}
             </div>
             {cem && (
-              <div aria-hidden="true">
+              <div aria-hidden="true" className="shrink-0">
                 {/* 100 bolinhas = R$ 100 vendidos: as apagadas são o custo, as cheias o que fica. */}
-                <div className="grid grid-cols-[repeat(10,14px)] gap-1.5">
+                <div className="grid grid-cols-[repeat(10,10px)] gap-1 xl:grid-cols-[repeat(10,12px)] 2xl:grid-cols-[repeat(10,14px)] 2xl:gap-1.5">
                   {Array.from({ length: 100 }, (_, i) => (
                     <span
                       key={i}
-                      className={`size-3.5 rounded-full ${i < 100 - bolinhasDaLoja ? "bg-texto/30" : "bg-texto"}`}
+                      className={`size-2.5 rounded-full xl:size-3 2xl:size-3.5 ${i < 100 - bolinhasDaLoja ? "bg-texto/30" : "bg-texto"}`}
                     />
                   ))}
                 </div>
-                <div className="mt-3 flex gap-5 text-rotulo text-texto-2">
+                {/* Ao lado do texto, a legenda vai em duas linhas: numa linha só ela
+                    é mais larga que as bolinhas e empurra o número (#1084). */}
+                <div className="mt-3 flex gap-5 text-rotulo text-texto-2 xl:flex-col xl:gap-1">
                   <span className="flex items-center gap-1.5">
                     <span className="size-2.5 rounded-full bg-texto/30" />
                     Custo {formatarMoeda(cem.custo)}
@@ -140,7 +147,9 @@ export function LucratividadeSection({ ordens, pecas, servicos }: LucratividadeS
           </div>
         </section>
 
-        <div className="grid gap-4">
+        {/* `content-start`: os dois cartões ficam do tamanho do conteúdo, em
+            vez de esticar até a altura da capa e sobrar vazios (#1084). */}
+        <div className="grid content-start gap-4">
           <CartaoNumero
             titulo={rotuloVendido}
             explicacao="O que as ordens de serviço abertas neste período somam, já recebidas ou não. Orçamento fica de fora."

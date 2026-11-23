@@ -35,6 +35,13 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 17/11/2026: visual novo, a leva inteira (#990) na `main`
+- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
+- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
+- **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
+- **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
+- **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).
+
 ### 16/11/2026: visual novo, quase todas as telas na `main`
 - **Na `main`** (nada publicado): o Início (#1052), a logo, o Login e a barra da janela (#1051; passou no Windows 10), o movimento (#1054), Ordens e o Faturar em janela (#1055), Contas (#1056), Clientes (#1057), Caixa (#1058 e #1064), Estoque (#1059), Notas Fiscais (#1060) e Funcionários (#1066). Contas, Caixa e Ordens passaram na revisão de dinheiro.
 - **Decidido por ela**: a "Nota do cliente" é botão na linha da OS, ao lado do "Avisar"; a contagem do número diz só o valor final ao leitor de tela.

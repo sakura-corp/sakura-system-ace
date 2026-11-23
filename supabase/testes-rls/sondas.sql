@@ -68,6 +68,7 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('ordens_servico_clientes',  $$insert into ordens_servico_clientes (loja_id, numero) values ('11111111-1111-1111-1111-1111111111aa', 904)$$),
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
+('ordens_servico_trocas', $$insert into ordens_servico_trocas (ordem_servico_id, loja_id, motivo, total) values ('44444444-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'Troca sonda', 100.00)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),
 ('fechamentos_caixa',     $$insert into fechamentos_caixa (loja_id, data, saldo_sistema, valor_contado, diferenca) values ('11111111-1111-1111-1111-1111111111aa', current_date, 1.00, 1.00, 0)$$),
 ('comissoes_fechamentos', $$insert into comissoes_fechamentos (loja_id, funcionario_id, funcionario_nome, periodo_inicio, periodo_fim, valor_calculado, valor_pago, data_pagamento) values ('11111111-1111-1111-1111-1111111111aa', '33333333-0000-0000-0000-0000000000aa', 'Funcionário A', '2026-09-01', '2026-09-30', 1.00, 1.00, '2026-10-05')$$),

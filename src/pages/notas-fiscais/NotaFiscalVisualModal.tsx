@@ -5,6 +5,9 @@ import { Modal } from "@/components/Modal";
 import { mensagemDeErro } from "@/lib/errors";
 import { montarHtmlVisualNotaFiscal, interpretarXmlNotaFiscal } from "@/lib/notaFiscalXml";
 import { buscarConteudoArquivo } from "@/lib/notasFiscais";
+import { buscarLojaDoRecibo, buscarOsDoRecibo, buscarValoresGuardadosDaNota, comValoresGuardados } from "@/lib/reciboNotaFiscal";
+import { salvarComoDownload } from "@/lib/download";
+import { nomeArquivoPdfDaNota } from "@/schemas/danfe";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { useBaixarXml } from "./useBaixarXml";
@@ -14,15 +17,23 @@ interface NotaFiscalVisualModalProps {
   onFechar: () => void;
 }
 
-// A "Versão para o cliente": um resumo da nota que o programa monta a partir
-// do XML. É o que existe pra nota feita fora do programa (que não tem PDF
+// A "Versão para o cliente": o recibo da nota (modelo novo, #1031) que o
+// programa monta a partir do XML, da OS ligada e dos dados da loja. É o que existe pra nota feita fora do programa (que não tem PDF
 // guardado). Visual novo (tarefa 12, #990): diz o que é, e cada botão de
 // baixar diz o que baixa e pra quem (pedido da Sofia, 15/11).
+//
+// #1147: a NFS-e da Giap (Araraquara) não tem PDF na Focus NFe, e o resumo
+// baixava em HTML, que abre mal no celular e no WhatsApp (o mesmo problema do
+// #1113). Agora "Baixar o PDF (pro cliente)" gera o PDF deste mesmo recibo
+// pelo Electron (`gerar-pdf-da-nota`, #1126). Se não der, avisa e baixa o
+// HTML de antes (aviso, nunca tranca: docs/licoes.md, item 33).
 export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualModalProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [reconhecido, setReconhecido] = useState(true);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [avisoPdf, setAvisoPdf] = useState("");
   const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -31,10 +42,22 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
       setCarregando(true);
       setErro(null);
       try {
-        const conteudo = await buscarConteudoArquivo(arquivo);
+        // O XML manda; a OS (veículo, placa, garantia) e a loja (pra
+        // completar o emitente da Giap) só completam, e sem acesso a elas o
+        // recibo sai sem aquelas seções (#1031).
+        const [conteudo, os, loja, valores] = await Promise.all([
+          buscarConteudoArquivo(arquivo),
+          arquivo.ordem_servico_id
+            ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
+            : Promise.resolve(null),
+          buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+          buscarValoresGuardadosDaNota(arquivo),
+        ]);
         const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
         setReconhecido(dados.reconhecido);
-        setHtml(montarHtmlVisualNotaFiscal(dados));
+        // NFS-e da Giap: o valor e os serviços vêm do que foi guardado na
+        // emissão (#1142). Nota sem isso mostra só "Itens na OS nº X".
+        setHtml(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja }));
       } catch (err) {
         console.error("Erro ao gerar versão visual da nota fiscal:", err);
         setErro(mensagemDeErro(err));
@@ -49,15 +72,40 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
     iframeRef.current?.contentWindow?.print();
   }
 
-  function handleBaixarHtml() {
+  function baixarHtml() {
     if (!html) return;
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${arquivo.nome_arquivo.replace(/\.xml$/i, "")}.html`;
-    link.click();
-    URL.revokeObjectURL(url);
+    salvarComoDownload(blob, `${arquivo.nome_arquivo.replace(/\.xml$/i, "")}.html`);
+  }
+
+  async function handleBaixarPdf() {
+    if (!html || gerandoPdf) return;
+    setAvisoPdf("");
+    setGerandoPdf(true);
+    try {
+      const gerar = window.sakuraApp?.gerarPdfDaNota;
+      if (!gerar) throw new Error("o PDF só é gerado no programa instalado");
+      const bytes = await gerar(html);
+      salvarComoDownload(
+        new Blob([bytes as BlobPart], { type: "application/pdf" }),
+        nomeArquivoPdfDaNota(arquivo),
+      );
+    } catch (err) {
+      console.error("Erro ao gerar o PDF da versão para o cliente:", err);
+      // O Electron embrulha o erro do processo principal ("Error invoking
+      // remote method ..."): pra pessoa, só o motivo.
+      const texto = mensagemDeErro(err)
+        .replace(/^Error invoking remote method '[^']*': (Error: )?/, "")
+        .replace(/\.$/, "");
+      const motivo = texto ? ` (${texto})` : "";
+      setAvisoPdf(
+        `Não deu pra gerar o PDF${motivo}. Baixamos o resumo em HTML, que abre no navegador do ` +
+          'computador. Pra mandar em PDF, use "Imprimir" e escolha a impressora "Microsoft Print to PDF".',
+      );
+      baixarHtml();
+    } finally {
+      setGerandoPdf(false);
+    }
   }
 
   const pronto = !carregando && !erro && html;
@@ -78,8 +126,8 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
           </Botao>
           {pronto && (
             <>
-              <Botao icone={<Download />} onClick={handleBaixarHtml}>
-                Baixar o resumo (pro cliente)
+              <Botao icone={<Download />} onClick={handleBaixarPdf} ocupado={gerandoPdf}>
+                {gerandoPdf ? "Gerando…" : "Baixar o PDF (pro cliente)"}
               </Botao>
               <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
                 Imprimir
@@ -103,12 +151,14 @@ export function NotaFiscalVisualModal({ arquivo, onFechar }: NotaFiscalVisualMod
 
         {erroXml && <AvisoDeErro>{erroXml}</AvisoDeErro>}
 
+        {avisoPdf && <AvisoDeAtencao role="status">{avisoPdf}</AvisoDeAtencao>}
+
         {pronto && (
           <iframe
             ref={iframeRef}
             title="Pré-visualização da nota fiscal"
             srcDoc={html}
-            className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
+            className="h-[75vh] min-h-96 w-full rounded-xl border border-linha bg-white"
           />
         )}
       </div>

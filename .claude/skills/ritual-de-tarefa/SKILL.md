@@ -17,7 +17,7 @@ A sessão em que a tarefa começou é a **mãe**. Ela:
 - distribui as etapas (ajudantes, e filhas se a issue pedir);
 - **recebe o progresso** de todas e junta tudo numa branch só;
 - **fecha**: um PR só (`Closes #N`) e **o relatório** (`docs/relatorios/`).
-Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica.
+Ninguém mais abre PR da tarefa. A mãe nunca mescla nem publica (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md).
 
 ## 2. Antes de começar (nesta ordem)
 1. Conferir quem trabalha (seção 0 do `PROJETO_STATUS.md`) e **avisar a Recepção** que abriu ("Abri:
@@ -151,7 +151,7 @@ O aviso típico: "**requires usage credits**", limite atingido ou modelo indispo
    <link>; falta <o quê, de quem>"), seção "Avisar a Recepção" do `CLAUDE.md` (detalhe: `docs/recepcao.md`).
 
 ## 7. Limites (valem sempre)
-Os da skill do chefe e da seção 0 do `PROJETO_STATUS.md`: nunca mesclar, publicar, liberar, rodar
+Os da skill do chefe e da seção 0 do `PROJETO_STATUS.md`: nunca mesclar (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md), publicar, liberar, rodar
 SQL em Supabase, mexer em secret, cofre, ruleset, tag, configuração ou workflow, nem adicionar o
 repositório privado. Filha herda os mesmos limites (diga isso no `prompt` dela). Repositório
 **público**: nada de preço, sócio, dado pessoal ou credencial em mensagem, commit ou relatório.

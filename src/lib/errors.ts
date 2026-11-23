@@ -66,12 +66,13 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
   ck_configuracoes_contabilidade_algum_contato:
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
-  // Migration 0089 (#1040): os tributos aproximados na nota (Lei 12.741/2012).
+  // Migration 0090 (#1040): os tributos aproximados na nota (Lei 12.741/2012).
   // A mesma frase da tela (src/schemas/percentualTributosSimples.ts).
   ck_config_fiscal_percentual_tributos_pecas: MENSAGEM_PERCENTUAL_PECAS,
   ck_config_fiscal_percentual_estimativa_icms_st: MENSAGEM_PERCENTUAL_ICMS_ST,
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
+  ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
   ck_comissoes_fechamentos_valores:
     "O valor pago não pode ser negativo, e o fim do período não pode vir antes do início.",
@@ -170,7 +171,7 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
-  // 0089 (tributos aproximados, #1040): colunas de configuracoes_fiscais_loja.
+  // 0090 (tributos aproximados, #1040): colunas de configuracoes_fiscais_loja.
   "percentual_tributos_pecas",
   "percentual_estimativa_icms_st",
   "competencia_tributos_confirmada",

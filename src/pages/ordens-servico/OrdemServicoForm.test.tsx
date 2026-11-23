@@ -178,7 +178,67 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
 
     expect(screen.queryByRole("button", { name: /adicionar item/ })).not.toBeInTheDocument();
     expect(screen.getByText(/já foi faturada/)).toBeInTheDocument();
-    expect(screen.getByText(/abra uma OS nova/)).toBeInTheDocument();
+    expect(screen.getByText(/mantendo o mesmo total/)).toBeInTheDocument();
+  });
+
+  // #1145: a troca de peça ou serviço com o total igual. O banco confere tudo
+  // de novo; aqui é só quem vê o botão.
+  it("o gerente vê o Trocar peça ou serviço numa OS faturada sem nota", async () => {
+    const onTrocarItensFaturada = vi.fn().mockResolvedValue(undefined);
+    const { user } = montar({ ordemExistente: ordemFaturada(), gerente: true, onTrocarItensFaturada });
+
+    await user.click(screen.getByRole("button", { name: "Trocar peça ou serviço" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    // Continua sem o + adicionar item do caminho comum.
+    expect(screen.getAllByRole("button", { name: /adicionar item/ })).toHaveLength(1);
+  });
+
+  it("quem não é gerente não vê o botão, e lê por quê", () => {
+    montar({ ordemExistente: ordemFaturada(), gerente: false, onTrocarItensFaturada: vi.fn() });
+
+    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Só quem é gerente/)).toBeInTheDocument();
+  });
+
+  it("com nota fiscal emitida, nem o gerente troca", () => {
+    montar({
+      ordemExistente: ordemFaturada(),
+      gerente: true,
+      temNotaEmitida: true,
+      onTrocarItensFaturada: vi.fn(),
+    });
+
+    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.getByText(/a nota ficaria diferente da OS/)).toBeInTheDocument();
+  });
+
+  it("mostra o histórico das trocas com o motivo", () => {
+    montar({
+      ordemExistente: ordemFaturada(),
+      gerente: true,
+      onTrocarItensFaturada: vi.fn(),
+      trocas: [
+        {
+          id: "t1",
+          operador_nome: "Sofia",
+          motivo: "medida errada",
+          total: 800,
+          criado_em: "2026-11-20T15:00:00.000Z",
+          itens_antes: [
+            { id: "item-1", tipo: "peca", peca_id: "peca-0", servico_id: null, tecnico_id: null,
+              descricao: "PNEU 175/70 R13", quantidade: 2, preco_unitario: 400, desconto: 0 },
+          ],
+          itens_depois: [
+            { id: "item-1", tipo: "peca", peca_id: "peca-1", servico_id: null, tecnico_id: null,
+              descricao: "PNEU 175/70 R14", quantidade: 2, preco_unitario: 400, desconto: 0 },
+          ],
+        },
+      ],
+    });
+
+    expect(
+      screen.getByText(/Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
+    ).toBeInTheDocument();
   });
 
   it("OS só concluída AINDA deixa acrescentar item", () => {

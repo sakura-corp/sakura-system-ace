@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { vigiarFormDentroDeForm } from "@/testes/semFormDentroDeForm";
 import type { Operador } from "@/types/operador";
 
 const faturarOrdem = vi.fn();
@@ -97,6 +98,8 @@ vi.mock("@/contexts/AuthContext", () => ({
 const { OrdensServicoPage } = await import("./OrdensServicoPage");
 
 afterEach(cleanup);
+// A trava de <form> dentro de <form> (#1130): este arquivo não usa o @/testes/tela.
+vigiarFormDentroDeForm();
 beforeEach(() => {
   faturarOrdem.mockReset();
   avisar.mockReset();
@@ -111,7 +114,7 @@ async function faturarMetadePixMetadeCartao3x() {
       <OrdensServicoPage />
     </MemoryRouter>,
   );
-  await user.click(await screen.findByRole("button", { name: "Faturar" }));
+  await user.click(await screen.findByRole("button", { name: /^Faturar — / }));
   const janela = screen.getByRole("dialog", { name: "Faturar OS 148" });
   await user.click(within(janela).getByRole("checkbox", { name: /Dividir em mais de uma forma/ }));
   await user.clear(within(janela).getByRole("spinbutton", { name: "Valor da forma 1" }));

@@ -7,16 +7,12 @@
 
 ## 5. Modelagem de dados (Supabase / Postgres) — como está hoje
 
-**Estado (04/11/2026)**: as migrations `0001` a `0075` estão aplicadas no banco da Pneus Amigão,
-a única empresa até agora. A `0076` (ordens de serviço só com o módulo, a segunda metade da tarefa
-#367) já está escrita e **espera os computadores da loja chegarem na 0.9.56** antes de ser aplicada
-(#809). O que veio depois da `0064`, pra achar a tarefa: a `0065` (orçamento, #379), a `0066` (peça
+**Estado (21/11/2026)**: as migrations `0001` a `0087` estão aplicadas no banco da Pneus Amigão,
+a única empresa até agora (a `0087` é a última da `main`; confira em `supabase/migrations/`). O que veio depois da `0064`, pra achar a tarefa: a `0065` (orçamento, #379), a `0066` (peça
 avulsa, #655), a `0067` (juntar peças, #656), a `0068` e a `0069` (clientes só com o módulo, #365),
 a `0070` (limpa a cópia antiga do token da Focus NFe, #368), a `0071` (item e aprovação com a OS
 travada, #706), a `0072` (serviços padrão da empresa nova, #787), a `0073` e a `0074` (peças e
-estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). A `0079` (cadastrar peça do item
-com a OS travada, #803) e a `0080` (fornecedores só com o módulo, #880) estão escritas nos PRs e
-esperam ela aplicar, depois da `0077` (a busca geral, #857) e da `0078` (o percentual de tributos, #882). Todas são idempotentes; migration nova entra pelo botão "Atualizar o
+estoque só com o módulo, #366) e a `0075` e a `0076` (ordens de serviço só com o módulo, #367). Da `0077` em diante, cada migration está descrita abaixo, na ordem. Todas são idempotentes; migration nova entra pelo botão "Atualizar o
 banco de todas as empresas" (seção 9). **Coluna ou view nova entra em `OBJETOS_NOVOS_DO_BANCO`
 (`src/lib/errors.ts`); o teste avisa se faltar** (#874): é o que troca o inglês do Supabase pelo aviso
 de "banco ainda não atualizado" quando o programa chega antes da migration. As `0001` a `0027` criam a base (cadastros, OS, estoque,
@@ -664,15 +660,26 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   em 17/11 (a `0083` e a `0084` entraram antes, e a `0085` é do #1003; aplicar depois dela). Teste em
   `supabase/scripts/testar-faturar-ordem.sql`, com corridas de verdade (`dblink`): acrescentar ou
   corrigir item enquanto fatura, e a ordem inversa; sem o `for update`, a corrida reprova.
-- `0089`: **os tributos aproximados na nota, pela alíquota do Simples** (tarefa #1040, Lei
+- `0087`: **trocar peça ou serviço de OS já faturada, com o total igual** (tarefa #1145; Sofia,
+  20/11/2026). Tabela nova `ordens_servico_trocas` (o histórico: quem, quando, motivo, itens antes e
+  depois, total; lê quem lê a OS, grava só o admin da loja, ninguém altera nem apaga) e a função
+  `trocar_itens_os_faturada(ordem, lista final de itens, motivo, dia da fatura, aceita estoque
+  negativo, operador)`, `security invoker`: trava a OS, só OS faturada, só admin da loja, recusa nota
+  fiscal não cancelada, caixa do dia da fatura fechado e motivo vazio; troca os itens e confere o
+  total no centavo (diferente: código **`SKTOT`**, nada gravado); acerta o estoque pela diferença de
+  cada peça (referência "OS N (troca depois de faturada)"); peça que fica negativa sem confirmação:
+  código **`SKNEG`**. Caixa e contas a receber não mudam. As travas da `0071` continuam. Número
+  `0087` por decisão da Sofia (20/11/2026: entra antes, pra loja usar logo); as de #1120, #1121 e
+  #1123 passam a `0088`, `0089` e `0090`. Teste em `supabase/scripts/testar-trocar-itens-os-faturada.sql`.
+- `0090`: **os tributos aproximados na nota, pela alíquota do Simples** (tarefa #1040, Lei
   12.741/2012). Três colunas novas e opcionais em `configuracoes_fiscais_loja`:
   `percentual_tributos_pecas` (alíquota efetiva do Anexo I) e `percentual_estimativa_icms_st`
   (soma só nas peças com CSOSN 500), as duas `numeric(5,2)` de 0 a 100, com as travas
   `ck_config_fiscal_percentual_tributos_pecas` e `ck_config_fiscal_percentual_estimativa_icms_st`
   (frases em `src/lib/errors.ts`); e `competencia_tributos_confirmada` (`date`, o mês no dia 1º em
   que a loja conferiu os números, do jeito da `0049`). O percentual do **serviço** reaproveita a
-  `percentual_tributos_simples` (`0078`). Vazio = a nota sai sem a linha. Número `0089` porque
-  os PRs #1120 e #1121 usam a `0087` e a `0088`: **aplicar depois delas** (o botão só roda as de
+  `percentual_tributos_simples` (`0078`). Vazio = a nota sai sem a linha. Número `0090` (Sofia,
+  20/11: #1146 é a `0087`, #1120 a `0088`, #1121 a `0089`): **aplicar depois delas** (o botão só roda as de
   número maior que o do banco). Coluna nova e opcional: sobe **antes** da versão, sem
   `versao-minima-do-programa`. Teste em `supabase/scripts/testar-tributos-aproximados.sql`.
 

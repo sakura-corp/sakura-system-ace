@@ -6,7 +6,8 @@
  * 1. Orçamento novo já traz a validade padrão (hoje + 7 dias) e a manda ao salvar.
  * 2. "Aprovar" pede quem aprovou (texto livre) e só então chama `onAprovar`.
  * 3. Orçamento vencido avisa que o preço pode ter mudado, mas DEIXA aprovar.
- * 4. "Recusar" é um clique, com motivo opcional.
+ * 4. Aprovar e recusar abrem cada um a sua janela (#1091): o motivo
+ *    (opcional) só aparece na do "Recusar"; a do "Aprovar" não pede motivo.
  * 5. Orçamento recusado é histórico: sem Aprovar, sem Recusar, sem Salvar.
  * 6. Não aprova com mudança sem salvar (senão ela se perderia), e aprovar
  *    apaga o rascunho do orçamento.
@@ -160,14 +161,18 @@ describe("OrdemServicoForm — aprovar", () => {
 describe("OrdemServicoForm — aprovar com mudança sem salvar", () => {
   it("bloqueia a aprovação enquanto houver mudança sem salvar", async () => {
     const { user, onAprovar } = montar({ ordemExistente: orcamento({ descricao_problema: "antes" }) });
+    // Sem mudança, a janela deixa confirmar.
     await user.click(screen.getByRole("button", { name: "Aprovar" }));
     await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone");
     expect(screen.getByRole("button", { name: "Confirmar aprovação" })).toBeEnabled();
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
 
+    // Mudou e não salvou: a janela abre, mas trava o confirmar e diz por quê.
     await user.type(screen.getByLabelText("Observação"), " mudei");
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
 
     expect(screen.getByRole("button", { name: "Confirmar aprovação" })).toBeDisabled();
-    expect(screen.getByText("Salve as alterações antes de aprovar")).toBeInTheDocument();
+    expect(screen.getByText(/Salve as alterações antes de aprovar/)).toBeInTheDocument();
     expect(onAprovar).not.toHaveBeenCalled();
   });
 
@@ -201,23 +206,57 @@ describe("OrdemServicoForm — aviso de KM só com o veículo escolhido", () => 
 });
 
 describe("OrdemServicoForm — recusar", () => {
+  it("recusar pede o motivo, numa janela; aprovar não pede (#1091)", async () => {
+    const { user } = montar({ ordemExistente: orcamento() });
+    // Na faixa, antes de qualquer clique, não tem motivo nenhum.
+    expect(screen.queryByLabelText("Motivo da recusa (opcional)")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    const aprovar = screen.getByRole("dialog", { name: "Aprovar o Orçamento 7" });
+    expect(within(aprovar).queryByLabelText("Motivo da recusa (opcional)")).not.toBeInTheDocument();
+    await user.click(within(aprovar).getByRole("button", { name: "Cancelar" }));
+
+    await user.click(screen.getByRole("button", { name: "Recusar" }));
+    const recusar = screen.getByRole("dialog", { name: "Recusar o Orçamento 7?" });
+    expect(within(recusar).getByLabelText("Motivo da recusa (opcional)")).toBeInTheDocument();
+    expect(within(recusar).queryByLabelText("Quem aprovou?")).not.toBeInTheDocument();
+  });
+
   it("recusa com o motivo escolhido", async () => {
     const ordem = orcamento();
     const { user, onRecusar } = montar({ ordemExistente: ordem });
 
-    await user.selectOptions(screen.getByLabelText("Motivo da recusa (opcional)"), "preco");
     await user.click(screen.getByRole("button", { name: "Recusar" }));
+    await user.selectOptions(screen.getByLabelText("Motivo da recusa (opcional)"), "preco");
+    await user.click(screen.getByRole("button", { name: "Recusar orçamento" }));
 
     expect(onRecusar).toHaveBeenCalledWith(ordem, "preco");
   });
 
-  it("recusa de um clique, sem motivo", async () => {
+  it("recusa sem motivo: a janela não obriga a escolher", async () => {
     const ordem = orcamento();
     const { user, onRecusar } = montar({ ordemExistente: ordem });
 
     await user.click(screen.getByRole("button", { name: "Recusar" }));
+    await user.click(screen.getByRole("button", { name: "Recusar orçamento" }));
 
     expect(onRecusar).toHaveBeenCalledWith(ordem, null);
+  });
+
+  it("Esc fecha a janela do recusar sem recusar", async () => {
+    const { user, onRecusar } = montar({ ordemExistente: orcamento() });
+    await user.click(screen.getByRole("button", { name: "Recusar" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onRecusar).not.toHaveBeenCalled();
+  });
+
+  it("Enter no 'Quem aprovou?' confirma, como o botão", async () => {
+    const ordem = orcamento();
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    await user.click(screen.getByRole("button", { name: "Aprovar" }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "pelo telefone{Enter}");
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone");
   });
 
   it("orçamento recusado é só histórico: sem aprovar, recusar nem salvar", () => {
@@ -324,6 +363,9 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
     quantidade: 1, preco_unitario: 80, desconto: 0, custo_unitario: null,
   };
   const servico = { ...avulsa, id: "item-2", tipo: "servico", descricao: "Alinhamento" };
+  const cadastroDaLoja = [
+    { id: "peca-9", descricao: "Palheta Bosch", codigo_interno: null, codigo_barras: null, medida: null },
+  ] as never;
 
   async function ateConfirmar(user: ReturnType<typeof montar>["user"]) {
     await user.click(screen.getByRole("button", { name: "Aprovar" }));
@@ -331,19 +373,45 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
     await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
   }
 
-  it("com peça avulsa abre a janela em vez de aprovar; só aprova depois de escolher o caminho", async () => {
+  it("com peça avulsa abre a janela em vez de aprovar; só aprova depois de ligar a peça ao cadastro", async () => {
     const ordem = orcamento({ itens: [avulsa] as never });
-    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    const { user, onAprovar } = montar({ ordemExistente: ordem, pecas: cadastroDaLoja });
 
     await ateConfirmar(user);
 
     expect(screen.getByRole("dialog", { name: "Peças sem cadastro" })).toBeInTheDocument();
     expect(onAprovar).not.toHaveBeenCalled();
+    // Uma janela por vez (#1091, revisão): a de aprovar fecha enquanto a das
+    // peças está aberta (as duas brigavam pelo Esc e pelo Tab)...
+    expect(screen.queryByRole("dialog", { name: "Aprovar o Orçamento 7" })).not.toBeInTheDocument();
+    // ...e o Esc fecha a das peças e volta pra de aprovar, com o que já foi digitado.
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Peças sem cadastro" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Quem aprovou?")).toHaveValue("pelo telefone");
+    await user.click(screen.getByRole("button", { name: "Confirmar aprovação" }));
 
-    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta Bosch/ }));
     await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
 
-    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", []);
+    expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone", [{ itemId: "item-1", pecaId: "peca-9" }]);
+  });
+
+  // #1128: a peça digitada sem cadastro não tem NCM, e a NFC-e não sai sem
+  // NCM. Antes dava pra "Seguir sem cadastro" e a OS só travava na nota, já
+  // faturada. Agora o orçamento só vira OS com cada peça no cadastro.
+  it("peça digitada sem cadastro não vira OS sem cadastrar (#1128)", async () => {
+    const ordem = orcamento({ itens: [avulsa] as never });
+    const { user, onAprovar } = montar({ ordemExistente: ordem });
+
+    await ateConfirmar(user);
+
+    const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });
+    expect(within(janela).queryByRole("radio", { name: "Seguir sem cadastro" })).not.toBeInTheDocument();
+    expect(within(janela).getByRole("radio", { name: "Cadastrar agora" })).toBeInTheDocument();
+    expect(within(janela).getByRole("button", { name: "Aprovar orçamento" })).toBeDisabled();
+    expect(onAprovar).not.toHaveBeenCalled();
   });
 
   it("sem peça avulsa (só serviço) aprova direto, sem janela", async () => {
@@ -352,7 +420,7 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
 
     await ateConfirmar(user);
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Peças sem cadastro" })).not.toBeInTheDocument();
     expect(onAprovar).toHaveBeenCalledWith(ordem, "pelo telefone");
   });
 
@@ -362,17 +430,19 @@ describe("OrdemServicoForm — aprovar com peça sem cadastro (#655)", () => {
 
     await ateConfirmar(user);
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Peças sem cadastro" })).not.toBeInTheDocument();
     expect(onAprovar).toHaveBeenCalledTimes(1);
   });
 
   it("se a aprovação falha, o erro aparece dentro da janela e ela continua aberta", async () => {
     const ordem = orcamento({ itens: [avulsa] as never });
-    const { user, onAprovar } = montar({ ordemExistente: ordem });
+    const { user, onAprovar } = montar({ ordemExistente: ordem, pecas: cadastroDaLoja });
     onAprovar.mockRejectedValueOnce(new Error("A OS 9 foi aprovada, mas a baixa não entrou"));
 
     await ateConfirmar(user);
-    await user.click(screen.getByRole("radio", { name: "Seguir sem cadastro" }));
+    await user.click(screen.getByRole("radio", { name: "É uma peça que já tenho" }));
+    await user.click(screen.getByDisplayValue("Escolha a peça do cadastro"));
+    await user.click(screen.getByRole("button", { name: /^Palheta Bosch/ }));
     await user.click(screen.getByRole("button", { name: "Aprovar orçamento" }));
 
     const janela = screen.getByRole("dialog", { name: "Peças sem cadastro" });

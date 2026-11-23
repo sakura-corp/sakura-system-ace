@@ -72,7 +72,7 @@ aponta para esse arquivo. O repositório é público: **nada de credencial, CPF,
 ou dado pessoal** no relatório.
 
 ## 6. Limites (valem sempre)
-**Nunca**: mudar secret, cofre (environment), ruleset, configuração, tag ou workflow; mesclar;
+**Nunca**: mudar secret, cofre (environment), ruleset, configuração, tag ou workflow; mesclar (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md);
 publicar ou liberar; rodar SQL ou migration em Supabase nenhum; adicionar o repositório privado
 `sakura-corp`; mexer no "Onde parou". Nenhuma credencial, CPF, preço ou dado de cliente no
 repositório. Achado grave fora da tarefa: avise a Sofia por mensagem curta, sem detalhar o segredo.

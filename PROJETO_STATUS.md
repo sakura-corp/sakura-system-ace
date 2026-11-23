@@ -39,18 +39,18 @@ na frente de qualquer outra deste arquivo:
 - **Escopo**: os três (Gustavo, Lázaro e Tiago), **o programa das lojas**, com o mesmo acesso,
   sempre contra o **Supabase de teste**, nunca o de uma loja (decidido em 19/10/2026; antes o
   Gustavo era só o painel). Mudar isso é com a Sofia, e esta linha muda.
-- **Trabalha em branch e abre PR, mas nunca mescla.** Pede a revisão da Sofia no PR e para ali. A
-  `main` nem aceita sem a aprovação dela (ruleset `main protegida`). **Antes de pedir**, roda o
-  `/code-review` na própria sessão e cola o resumo no PR (27/10: a revisão gasta a cota de quem fez,
-  não a dela).
+- **Trabalha em branch e abre PR, mas nunca mescla.** Toda PR precisa da aprovação da
+  Sofia; revisão de colega não é exigida, só reserva quando ela estiver sem tokens (#1161; regra única:
+  `docs/revisao-cruzada.md`). **Antes de
+  pedir**, roda o `/code-review` e cola o resumo no PR (a revisão gasta a cota de quem fez).
 - **O Tiago tem três funções a mais** (Sofia, 27/10/2026; detalhe em `docs/equipe.md`, "As funções
   do Tiago"): **escreve o rascunho das tarefas** (etiqueta `rascunho`; ela aprova); **lidera o
   escritório** (o repositório privado `sakura-corp/escritorio`); e **o plantão**: quando a Sofia
   avisar que a cota dela acabou, mescla PR **só de documentação**, com o CI verde, a
-  revisão colada e a aprovação de outro da equipe. Programa das lojas, banco e publicar, nunca.
+  revisão do Claude colada. Programa das lojas, banco e publicar, nunca.
 - **Não publica, não libera e não mexe em banco.** Não dispara o Release, o "Liberar versão" nem o
-  "Atualizar o banco". Não roda SQL nem migration em Supabase nenhum, nem no de teste. Migration
-  nova pode ser escrita num PR, mas quem aplica é ela.
+  "Atualizar o banco". Não roda SQL nem migration em Supabase de loja ou produção. **No de teste
+  (`ssace-teste`) pode** (ensaio e migration, contando no PR). Migration nova vai no PR; em produção, ela aplica.
 - **Não mexe em versão publicada, tag, senha (secret), cofre (environment), regra do repositório
   (ruleset) nem configuração**, nem por um workflow novo ou modificado.
 - **Não substitui o "Onde parou"**, que é da Sofia. O andamento vai na descrição do PR (o do
@@ -132,7 +132,7 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 ## 3. Regras que valem em toda sessão (o resto está em `docs/decisoes.md` e `docs/estrutura.md`)
 
 - **Git**: branch de trabalho → PR → **mesclar direto na `main`**, sem esperar aprovação (até existir
-  uma v1.0). **Só quando quem trabalha é a Sofia** (seção 0); os outros abrem o PR e param. Depois, dizer a ela em português simples o que mudou e o que ela precisa fazer.
+  uma v1.0). **Só quando quem trabalha é a Sofia** (seção 0) **ou sessão com ordem escrita dela** (frase "Quem mescla" do `CLAUDE.md`); os outros abrem o PR e param. Depois, dizer a ela em português simples o que mudou e o que ela precisa fazer.
 - **Migration nova**: idempotente (dropar o nome **final** do objeto antes de criar); termina com
   `insert into schema_versao (versao) values (N) on conflict do nothing;`; sobe
   `VERSAO_ESQUEMA_ESPERADA`; rodar `npm run gerar-instalacao`; ganha um
@@ -166,9 +166,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 17/11/2026: visual novo, a leva inteira (#990) na `main`
-- **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
-- **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
-- **Com a Sofia**: as 26 sugestões que mexem em costume, conta ou banco, cada uma com a recomendação (#1079, `sofia`); no fim de semana, as telas novas e o faturar com um login de verdade; no Windows 11, a barra da janela e o ícone.
-- **Pontas soltas**: `StatusOrdemBadge` e `STATUS_COR` saem depois do #1038; as cenas do catálogo sem Diagnóstico, Pix, WhatsApp e Cartões do Início; as peças que ainda moram nas telas (`AvisoDeSalvo`, `BotaoDeLista`, `SecaoDeConfiguracao`, `SeloDoVencimento`, `Segmentos`, o cartão pequeno do Caixa).
-- **Atenção**: em 1024 com o menu aberto, a tabela das OS ainda rola de lado (item 24 da #1079).
+### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
+- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. A v0.9.60 tem o PR da versão (#1153) mesclado e o Release verde (canal de teste); o "Liberar versão" pras lojas só acontece depois do teste real de segunda, 23/11.
+- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\<seu usuário>\Empresa\`. O programa instalado do notebook já foi ligado ao banco certo (21/11).
+- **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
+- **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).

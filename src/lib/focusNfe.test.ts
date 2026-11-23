@@ -1,8 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import {
   codigoTributacaoNacional,
   destinatarioIdentificadoNFCe,
   emitirNFCe,
+  emitirNFSe,
+  EsperaVencidaError,
   FocusNfeError,
   montarCorpoNFCe,
   montarCorpoNFSe,
@@ -619,6 +622,120 @@ describe("emitirNFCe — peça sem NCM", () => {
   });
 });
 
+// Achado na revisão da #1112: o pedido de emissão foi ACEITO, e a consulta
+// seguinte falhou por rede. Antes, o erro subia como um FocusNfeError comum,
+// sem a `ref`, e a tela voltava pro "Confirmar emissão" — clicar de novo dava
+// DUAS notas válidas pra mesma venda. Depois do envio aceito, qualquer falha
+// na consulta tem de virar EsperaVencidaError, com a `ref`.
+describe("emissão aceita e a consulta falha (nota dupla)", () => {
+  const aceito = { data: { ok: true, status: 202, dados: { status: "processando_autorizacao" } }, error: null };
+  const semRede = { data: null, error: new Error("Failed to fetch") };
+  const autorizado = { data: { ok: true, status: 200, dados: { status: "autorizado", numero: "10" } }, error: null };
+
+  beforeEach(() => {
+    invoke.mockReset();
+    vi.useFakeTimers();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const dadosNFCe = () => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente: null,
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  const dadosNFSe = (sobrescrever: Partial<ConfiguracaoFiscalLoja> = {}) => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    discriminacao: "Alinhamento",
+    valorServicos: 100,
+    cliente: clientePessoaFisica(),
+    codigoMunicipioCliente: "3503208",
+    configuracaoFiscal: configuracaoFiscal(sobrescrever),
+  });
+
+  async function falhaComARef(promessa: Promise<unknown>, prefixoRef: RegExp) {
+    const resultado = promessa.then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    const erro = await resultado;
+    expect(erro).toBeInstanceOf(EsperaVencidaError);
+    expect((erro as EsperaVencidaError).ref).toMatch(prefixoRef);
+    expect((erro as Error).message).toMatch(/não emita de novo/);
+  }
+
+  it("NFC-e: a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+  });
+
+  it("NFS-e pelo Padrão Nacional (Simples): a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(emitirNFSe(dadosNFSe()), /^os12-nfsen-\d+$/);
+  });
+
+  it("NFS-e municipal: a consulta sem internet vira EsperaVencidaError com a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    await falhaComARef(
+      emitirNFSe(dadosNFSe({ regime_tributario: "lucro_presumido" })),
+      /^os12-nfse-\d+$/,
+    );
+  });
+
+  it("a consulta que o porteiro recusa também guarda a ref", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue({
+      data: { ok: false, status: 500, dados: { mensagem: "Erro interno" } },
+      error: null,
+    });
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+  });
+
+  it("sem internet, o aviso não traz o \"tente de novo\" do erro de rede", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValue(semRede);
+    const resultado = emitirNFCe(dadosNFCe()).then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    expect(((await resultado) as Error).message).not.toMatch(/tente de novo|para emitir/);
+  });
+
+  it("recusa do porteiro na consulta não muda esperando: para na hora, com a ref", async () => {
+    const recusa = () => ({
+      data: null,
+      error: new FunctionsHttpError(
+        new Response(JSON.stringify({ erro: "Sem permissão.", motivo: "sem_permissao" }), { status: 403 }),
+      ),
+    });
+    invoke.mockResolvedValueOnce(aceito).mockImplementation(async () => recusa());
+    await falhaComARef(emitirNFCe(dadosNFCe()), /^os12-nfce-\d+$/);
+    expect(invoke).toHaveBeenCalledTimes(2);
+  });
+
+  it("uma falha de rede no meio não derruba: a próxima consulta autorizada vale", async () => {
+    invoke.mockResolvedValueOnce(aceito).mockResolvedValueOnce(semRede).mockResolvedValue(autorizado);
+    const promessa = emitirNFCe(dadosNFCe());
+    await vi.runAllTimersAsync();
+    await expect(promessa).resolves.toMatchObject({ status: "autorizado", numero: "10" });
+  });
+
+  it("se o PRÓPRIO envio falha, o erro continua sendo o do envio (nada a conferir)", async () => {
+    invoke.mockResolvedValue(semRede);
+    const promessa = emitirNFCe(dadosNFCe()).then(
+      () => null,
+      (erro: unknown) => erro,
+    );
+    await vi.runAllTimersAsync();
+    const erro = await promessa;
+    expect(erro).toBeInstanceOf(FocusNfeError);
+    expect(erro).not.toBeInstanceOf(EsperaVencidaError);
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+});
+
 // #861: pessoa física sem CPF (ou com CPF pela metade) mandava o nome sem o
 // CPF, e a Focus recusa o `xNome` sozinho antes da SEFAZ ("Expected is one of
 // CNPJ, CPF, idEstrangeiro"). A regra é a do comentário da função: documento
@@ -831,5 +948,122 @@ describe("tributos aproximados — NFS-e", () => {
     const semFrase = montarCorpoNFSe(dadosNFSe({}, resumo));
     expect(semFrase.servico.discriminacao.length).toBeLessThanOrEqual(2000);
     expect(semFrase.servico.discriminacao).not.toContain("\n");
+  });
+});
+
+// #1112: a SEFAZ recusou o CNPJ/CPF do destinatário (CNPJ recém-aberto que a
+// base dela ainda não tem). "Emitir sem identificar o cliente" manda a mesma
+// nota sem o destinatário; sem a opção, o corpo é o de sempre.
+describe("emitirNFCe — semDestinatario", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_nome: string, { body }: { body: { acao: string } }) => ({
+      data:
+        body.acao === "emitir"
+          ? { ok: true, status: 202, dados: { status: "processando_autorizacao" } }
+          : { ok: true, status: 200, dados: { status: "autorizado", numero: "7" } },
+      error: null,
+    }));
+  });
+
+  const clientePJ = clientePessoaFisica({
+    nome: "Transportes Exemplo Ltda",
+    tipo_pessoa: "juridica",
+    cpf_cnpj: "12.345.678/0001-99",
+  });
+  const dados = (cliente: Cliente | null) => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente,
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+  const corpoEnviado = () =>
+    invoke.mock.calls.find(([, { body }]) => body.acao === "emitir")?.[1].body.corpo;
+
+  it("com semDestinatario: o corpo sai sem CPF, CNPJ, nome e indicador de IE", async () => {
+    await emitirNFCe(dados(clientePJ), { semDestinatario: true });
+    const corpo = corpoEnviado();
+    expect(corpo).not.toHaveProperty("cnpj_destinatario");
+    expect(corpo).not.toHaveProperty("indicador_inscricao_estadual_destinatario");
+    expect(corpo.cpf_destinatario ?? "").toBe("");
+    expect(corpo.nome_destinatario ?? "").toBe("");
+    // O mesmo resultado de montarDestinatarioNFCe(null), o consumidor não identificado.
+    expect(corpo).toMatchObject(montarDestinatarioNFCe(null));
+  });
+
+  it("com semDestinatario, o resto da nota não muda", async () => {
+    await emitirNFCe(dados(clientePJ), { semDestinatario: true });
+    const comOpcao = corpoEnviado();
+    invoke.mockClear();
+    await emitirNFCe(dados(null));
+    const semCliente = corpoEnviado();
+    expect({ ...comOpcao, data_emissao: "" }).toEqual({ ...semCliente, data_emissao: "" });
+  });
+
+  it.each([undefined, {}, { semDestinatario: false }])(
+    "sem a opção (%j): o corpo é idêntico ao de hoje, com o CNPJ do cliente",
+    async (opcoes) => {
+      await emitirNFCe(dados(clientePJ), opcoes);
+      // A hora da emissão é a única coisa que muda de uma chamada pra outra.
+      const enviado = { ...corpoEnviado(), data_emissao: "" };
+      expect(enviado).toEqual({ ...montarCorpoNFCe(dados(clientePJ)), data_emissao: "" });
+      expect(enviado.cnpj_destinatario).toBe("12345678000199");
+      expect(enviado.nome_destinatario).toBe("Transportes Exemplo Ltda");
+    },
+  );
+});
+
+// #1112, teste no PC: a homologação pode não recusar o CNPJ. Só no `npm run dev`
+// (import.meta.env.DEV) e com VITE_SIMULAR_RECUSA_DESTINATARIO=1, a emissão
+// normal devolve a recusa de 17/11 sem pedir nada à Focus; o "Emitir sem
+// identificar o cliente" vai de verdade.
+describe("emitirNFCe — recusa simulada pro teste no PC", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_nome: string, { body }: { body: { acao: string } }) => ({
+      data:
+        body.acao === "emitir"
+          ? { ok: true, status: 202, dados: { status: "processando_autorizacao" } }
+          : { ok: true, status: 200, dados: { status: "autorizado", numero: "7" } },
+      error: null,
+    }));
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  const dados = () => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente: clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-99" }),
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  it("ligada: a emissão normal volta recusada pelo destinatário, sem chamar a Focus", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("erro_autorizacao");
+    expect(resposta.mensagem_sefaz).toMatch(/destinatário não cadastrado/);
+    expect(resposta.ref).toMatch(/^os12-nfce-\d+$/);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("ligada: o 'sem identificar o cliente' emite de verdade", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados(), { semDestinatario: true });
+    expect(resposta.status).toBe("autorizado");
+    expect(invoke).toHaveBeenCalled();
+  });
+
+  it("ligada, mas fora do npm run dev (programa instalado): não simula", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    vi.stubEnv("DEV", false);
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
+  });
+
+  it("desligada: emite normal", async () => {
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
   });
 });
