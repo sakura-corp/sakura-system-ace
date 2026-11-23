@@ -58,7 +58,8 @@ Em `docs/relatorios/fotos/2026-11-23-tarefa-1021/` (claro e escuro; roteiro em `
 - Os outros 31 testes SQL (`npm run test:sql`): todos verdes com a 0091.
 - `typecheck`, `lint` (só os 2 avisos que já existiam), `contraste`, `largura:telas` (74 telas × 5
   larguras) e `contraste:telas` (nenhuma combinação ilegível; na primeira rodada, as duas telas de
-  Pedidos de compra, que não mexi, não abriram a tempo enquanto os testes de banco rodavam juntos).
+  Pedidos de compra, que não mexi, não abriram a tempo enquanto os testes de banco rodavam juntos;
+  na segunda rodada, sozinha, as 74 telas passaram).
 - `test:fusos`: os dois fusos só reprovam no teste da numeração (ver abaixo).
 
 ## O que ficou de fora
