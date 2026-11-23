@@ -33,6 +33,11 @@ export interface LinhaLucro {
    * `TEXTO_CUSTO_NAO_INFORMADO` no lugar.
    */
   custoNaoInformado: boolean;
+  /**
+   * O `peca_id` do primeiro item da linha (#1086, pro link "cadastre o custo
+   * da peça"). `null` no serviço e na peça avulsa. Não muda conta nenhuma.
+   */
+  pecaId: string | null;
 }
 
 export interface Lucratividade {
@@ -118,6 +123,7 @@ export function lucratividadePorItem({
         custo: 0,
         margem: 0,
         custoNaoInformado: false,
+        pecaId: item.peca_id ?? null,
       };
       existente.quantidade += item.quantidade;
       existente.receita += receita;

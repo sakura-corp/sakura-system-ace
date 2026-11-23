@@ -79,8 +79,8 @@ describe("lucratividadePorItem", () => {
     // Pneu: 3 un., receita 600-20+300 = 880, custo 3x200 = 600, margem 280.
     // Alinhamento: receita 80, custo 30, margem 50.
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", tipo: "peca", quantidade: 3, receita: 880, custo: 600, margem: 280, custoNaoInformado: false },
-      { descricao: "Alinhamento", tipo: "servico", quantidade: 1, receita: 80, custo: 30, margem: 50, custoNaoInformado: false },
+      { descricao: "Pneu", tipo: "peca", quantidade: 3, receita: 880, custo: 600, margem: 280, custoNaoInformado: false, pecaId: "pneu" },
+      { descricao: "Alinhamento", tipo: "servico", quantidade: 1, receita: 80, custo: 30, margem: 50, custoNaoInformado: false, pecaId: null },
     ]);
     expect(resultado.totalReceita).toBe(960);
     expect(resultado.totalCusto).toBe(630);
@@ -113,7 +113,7 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
+      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false, pecaId: "pneu" },
     ]);
   });
 
@@ -137,9 +137,9 @@ describe("lucratividadePorItem", () => {
     });
     // Pneu: 300 − 200 = 100. Palheta: 100 − 2x40 = 20. Farol: sem custo.
     expect(resultado.linhas).toEqual([
-      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false },
-      { descricao: "Palheta", tipo: "peca", quantidade: 2, receita: 100, custo: 80, margem: 20, custoNaoInformado: false },
-      { descricao: "Farol", tipo: "peca", quantidade: 1, receita: 500, custo: 0, margem: 500, custoNaoInformado: true },
+      { descricao: "Pneu", tipo: "peca", quantidade: 1, receita: 300, custo: 200, margem: 100, custoNaoInformado: false, pecaId: "pneu" },
+      { descricao: "Palheta", tipo: "peca", quantidade: 2, receita: 100, custo: 80, margem: 20, custoNaoInformado: false, pecaId: null },
+      { descricao: "Farol", tipo: "peca", quantidade: 1, receita: 500, custo: 0, margem: 500, custoNaoInformado: true, pecaId: null },
     ]);
     expect(resultado.algumCustoNaoInformado).toBe(true);
   });
@@ -175,7 +175,7 @@ describe("lucratividadePorItem", () => {
       ...periodo,
     });
     expect(resultado.linhas).toEqual([
-      { descricao: "Bico de válvula (exemplo)", tipo: "peca", quantidade: 2, receita: 22, custo: 8, margem: 14, custoNaoInformado: false },
+      { descricao: "Bico de válvula (exemplo)", tipo: "peca", quantidade: 2, receita: 22, custo: 8, margem: 14, custoNaoInformado: false, pecaId: "bico" },
     ]);
   });
 
@@ -314,6 +314,7 @@ describe("margemPercentual e pontosDoLucro (visual novo, 17/11)", () => {
     custo,
     margem: receita - custo,
     custoNaoInformado: false,
+    pecaId: null,
     ...extra,
   });
 
