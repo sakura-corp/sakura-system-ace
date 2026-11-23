@@ -65,6 +65,15 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
+  // Migration 0091 (#1021): "De onde veio", a origem do cliente.
+  ck_clientes_origem:
+    "Esta origem do cliente não existe no banco desta empresa. Escolha uma da lista ou deixe \"Não informado\".",
+  ck_ordens_servico_origem:
+    "Esta origem do cliente não existe no banco desta empresa. Escolha uma da lista ou deixe \"Não informado\".",
+  ck_clientes_origem_detalhe: "O \"qual anúncio ou quem indicou\" pode ter no máximo 80 letras.",
+  ck_ordens_servico_origem_detalhe: "O \"qual anúncio ou quem indicou\" pode ter no máximo 80 letras.",
+  ck_clientes_consumidor_sem_origem:
+    "O cliente Consumidor não guarda origem. A origem desta venda fica só na venda.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
   ck_comissoes_fechamentos_valores:
     "O valor pago não pode ser negativo, e o fim do período não pode vir antes do início.",
@@ -163,6 +172,11 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
+  // 0091 (origem do cliente, #1021): colunas de clientes e de ordens_servico.
+  // Sobe antes do programa; se alguém publicar sem rodar, salvar cliente, OS,
+  // orçamento ou venda cai aqui.
+  "origem",
+  "origem_detalhe",
 ] as const;
 
 /**
