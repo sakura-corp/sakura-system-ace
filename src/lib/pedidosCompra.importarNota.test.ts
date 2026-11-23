@@ -51,8 +51,20 @@ function construtor(tabela: string) {
 }
 
 vi.mock("./supabase", () => ({ supabase: { from: (t: string) => construtor(t) } }));
-vi.mock("./estoque", () => ({ registrarMovimento: vi.fn(async () => undefined) }));
-vi.mock("./cotacoesPecas", () => ({ registrarCotacoes: vi.fn(async () => undefined) }));
+let falharMovimentoNo = 0; // 0 = nunca; n = o n-ésimo movimento de estoque falha
+let movimentos = 0;
+let falharCotacao = false;
+vi.mock("./estoque", () => ({
+  registrarMovimento: vi.fn(async () => {
+    movimentos += 1;
+    if (movimentos === falharMovimentoNo) throw { message: "caiu a internet" };
+  }),
+}));
+vi.mock("./cotacoesPecas", () => ({
+  registrarCotacoes: vi.fn(async () => {
+    if (falharCotacao) throw { message: "caiu a internet" };
+  }),
+}));
 
 const { importarNotaFiscalCompra, NotaJaImportadaError, buscarPedidoDaNota, observacaoDaImportacao } =
   await import("./pedidosCompra");
@@ -65,10 +77,14 @@ const CONTAS: NovaContaPagar[] = [
   { descricao: "NF 1234 — Fornecedor Exemplo (3/3)", valor: 333.33, vencimento: "2027-01-30", categoria_id: "cat-1", recorrente: false, recorrente_ate: null },
 ];
 
-function importar(contas: NovaContaPagar[], chave: string | null = CHAVE) {
+function importar(
+  contas: NovaContaPagar[],
+  chave: string | null = CHAVE,
+  itens = [{ pecaId: "peca-1", quantidade: 4, precoUnitario: 250 }],
+) {
   return importarNotaFiscalCompra(
     "forn-1",
-    [{ pecaId: "peca-1", quantidade: 4, precoUnitario: 250 }],
+    itens,
     "dep-1",
     "loja-1",
     "op-1",
@@ -82,6 +98,9 @@ beforeEach(() => {
   falharEm = null;
   falharBusca = false;
   proximoNumero = 1;
+  falharMovimentoNo = 0;
+  movimentos = 0;
+  falharCotacao = false;
 });
 
 describe("importarNotaFiscalCompra com as contas a pagar (#1020)", () => {
@@ -150,10 +169,45 @@ describe("importarNotaFiscalCompra com as contas a pagar (#1020)", () => {
   });
 });
 
+describe("importarNotaFiscalCompra quando falha no meio, depois do pedido (#1020)", () => {
+  const DOIS_ITENS = [
+    { pecaId: "peca-1", quantidade: 4, precoUnitario: 250 },
+    { pecaId: "peca-2", quantidade: 1, precoUnitario: 0 },
+  ];
+
+  it("itens falham: não lança erro solto, diz que o pedido entrou sem itens e que nada mais entrou", async () => {
+    falharEm = "pedidos_compra_itens";
+    const resultado = await importar(CONTAS, CHAVE, DOIS_ITENS);
+    expect(resultado.pedido.numero).toBe(1);
+    expect(resultado.contasLancadas).toBe(0);
+    expect(resultado.erroAntesDasContas).toMatch(/Pedido 1.*itens/);
+    expect(resultado.erroAntesDasContas).toMatch(/row-level security|permissão/i);
+    expect(tabelas.contas_pagar).toBeUndefined();
+  });
+
+  it("estoque falha no 2º item: diz quantas entradas entraram, e as contas não são lançadas", async () => {
+    falharMovimentoNo = 2;
+    const resultado = await importar(CONTAS, CHAVE, DOIS_ITENS);
+    expect(resultado.erroAntesDasContas).toMatch(/1 de 2/);
+    expect(resultado.contasLancadas).toBe(0);
+    expect(tabelas.contas_pagar).toBeUndefined();
+  });
+
+  it("só a cotação falha: é aviso, as contas entram mesmo assim", async () => {
+    falharCotacao = true;
+    const resultado = await importar(CONTAS);
+    expect(resultado.erroAntesDasContas).toBeNull();
+    expect(resultado.avisoCotacao).toMatch(/cotação/i);
+    expect(resultado.contasLancadas).toBe(3);
+  });
+});
+
 describe("buscarPedidoDaNota e observacaoDaImportacao", () => {
   it("a observação guarda o número e a chave da nota", () => {
     expect(observacaoDaImportacao("1234", CHAVE)).toBe(`Importado da NFe nº 1234 (chave ${CHAVE})`);
     expect(observacaoDaImportacao(null, null)).toBe("Importado de nota fiscal XML");
+    // Sem número, a chave ainda é guardada: senão a nota nunca seria reconhecida.
+    expect(observacaoDaImportacao(null, CHAVE)).toBe(`Importado de nota fiscal XML (chave ${CHAVE})`);
     expect(observacaoDaImportacao("1234", null)).toBe("Importado da NFe nº 1234");
   });
 

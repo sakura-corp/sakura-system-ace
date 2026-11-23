@@ -196,10 +196,24 @@ describe("ImportarNotaFiscalXmlModal — contas a pagar da nota (#1020)", () => 
     const { user, onFechar } = await lerNota(TRES);
     await user.click(screen.getByRole("button", { name: /Importar 1 item/ }));
     expect(
-      await screen.findByText(/O pedido 7, a entrada no estoque e a cotação foram gravados\. As contas a pagar desta nota NÃO foram lançadas \(Sem permissão\)/),
+      await screen.findByText(/O pedido 7 e a entrada no estoque foram gravados\. As contas a pagar desta nota NÃO foram lançadas \(Sem permissão\)/),
     ).toBeInTheDocument();
     expect(onFechar).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Importar/ })).toBeNull();
+  });
+
+  it("falhou depois do pedido (itens ou estoque): mostra o que entrou e não fecha", async () => {
+    importarNotaFiscalCompra.mockResolvedValue({
+      pedido: { numero: 7 },
+      contasLancadas: 0,
+      erroContas: null,
+      erroAntesDasContas: "O Pedido 7 foi criado, mas só 1 de 2 entradas no estoque foram lançadas.",
+      avisoCotacao: null,
+    });
+    const { user, onFechar } = await lerNota(TRES);
+    await user.click(screen.getByRole("button", { name: /Importar 1 item/ }));
+    expect(await screen.findByText(/só 1 de 2 entradas.*Não importe a nota de novo/)).toBeInTheDocument();
+    expect(onFechar).not.toHaveBeenCalled();
   });
 });

@@ -69,10 +69,8 @@ export async function criarPedido(
 // ela que a próxima importação descobre que a nota já entrou (#1020). Sem
 // migration: `contas_pagar` e `pedidos_compra` não têm coluna pra chave.
 export function observacaoDaImportacao(numero: string | null, chaveAcesso: string | null): string {
-  if (!numero) return "Importado de nota fiscal XML";
-  return chaveAcesso
-    ? `Importado da NFe nº ${numero} (chave ${chaveAcesso})`
-    : `Importado da NFe nº ${numero}`;
+  const base = numero ? `Importado da NFe nº ${numero}` : "Importado de nota fiscal XML";
+  return chaveAcesso ? `${base} (chave ${chaveAcesso})` : base;
 }
 
 /**
@@ -115,6 +113,13 @@ export interface ResultadoImportacaoNota {
   contasLancadas: number;
   /** O pedido entrou, mas as contas a pagar não: o motivo, pra mostrar. */
   erroContas: string | null;
+  /**
+   * O pedido entrou, mas um passo depois dele (itens ou estoque) falhou: o
+   * que entrou e o que não entrou, pra mostrar. As contas não são lançadas.
+   */
+  erroAntesDasContas: string | null;
+  /** A cotação falhou (só aviso: o resto entrou). */
+  avisoCotacao: string | null;
 }
 
 // Diferente de criarPedido() + receberItensPedido() (fluxo em duas etapas:
@@ -166,42 +171,78 @@ export async function importarNotaFiscalCompra(
     .single();
   if (erroPedido) throw erroPedido;
 
+  const pedido = pedidoCriado as PedidoCompra;
+  const nome = nomePedido(pedido.numero);
+  // Daqui pra frente o pedido (com a chave da nota) já existe: falhar não pode
+  // virar um erro solto, senão a pessoa não sabe o que entrou, e a próxima
+  // tentativa ainda esbarra na "nota já importada".
+  const parcial = (erroAntesDasContas: string): ResultadoImportacaoNota => ({
+    pedido,
+    contasLancadas: 0,
+    erroContas: null,
+    erroAntesDasContas,
+    avisoCotacao: null,
+  });
+
   const { error: erroItens } = await supabase.from("pedidos_compra_itens").insert(
     itens.map((item) => ({
-      pedido_compra_id: pedidoCriado.id,
+      pedido_compra_id: pedido.id,
       peca_id: item.pecaId,
       quantidade_pedida: item.quantidade,
       preco_unitario: item.precoUnitario,
       quantidade_recebida: item.quantidade,
     })),
   );
-  if (erroItens) throw erroItens;
-
-  for (const item of itens) {
-    await registrarMovimento(
-      {
-        peca_id: item.pecaId,
-        deposito_id: depositoId,
-        tipo: "entrada",
-        quantidade: item.quantidade,
-        motivo: "compra",
-        referencia: nomePedido(pedidoCriado.numero),
-      },
-      lojaId,
+  if (erroItens) {
+    console.error("Erro ao gravar os itens do pedido importado:", erroItens);
+    return parcial(
+      `O ${nome} foi criado, mas os itens dele não foram gravados (${mensagemDeErro(erroItens)}). ` +
+        "Nada entrou no estoque e as contas a pagar não foram lançadas.",
     );
+  }
+
+  let entradas = 0;
+  for (const item of itens) {
+    try {
+      await registrarMovimento(
+        {
+          peca_id: item.pecaId,
+          deposito_id: depositoId,
+          tipo: "entrada",
+          quantidade: item.quantidade,
+          motivo: "compra",
+          referencia: nome,
+        },
+        lojaId,
+      );
+      entradas += 1;
+    } catch (err) {
+      console.error("Erro ao lançar a entrada no estoque do pedido importado:", err);
+      return parcial(
+        `O ${nome} foi criado com os itens, mas só ${entradas} de ${itens.length} entradas ` +
+          `no estoque foram lançadas (${mensagemDeErro(err)}). As contas a pagar não foram lançadas.`,
+      );
+    }
   }
 
   // Mesma regra de criarPedido(): preço 0 (ex: NFe sem `vUnCom`) não vira
   // cotação, senão quebra o `check (preco > 0)` de cotacoes_pecas.
-  await registrarCotacoes(
-    itens
-      .filter((item) => item.precoUnitario > 0)
-      .map((item) => ({
-        peca_id: item.pecaId,
-        fornecedor_id: fornecedorId,
-        preco: item.precoUnitario,
-      })),
-  );
+  // A cotação é só referência de preço: falhar é aviso, as contas seguem.
+  let avisoCotacao: string | null = null;
+  try {
+    await registrarCotacoes(
+      itens
+        .filter((item) => item.precoUnitario > 0)
+        .map((item) => ({
+          peca_id: item.pecaId,
+          fornecedor_id: fornecedorId,
+          preco: item.precoUnitario,
+        })),
+    );
+  } catch (err) {
+    console.error("Erro ao registrar a cotação do pedido importado:", err);
+    avisoCotacao = `A cotação de preço não foi registrada (${mensagemDeErro(err)}).`;
+  }
 
   let contasLancadas = 0;
   let erroContas: string | null = null;
@@ -215,7 +256,7 @@ export async function importarNotaFiscalCompra(
     }
   }
 
-  return { pedido: pedidoCriado as PedidoCompra, contasLancadas, erroContas };
+  return { pedido, contasLancadas, erroContas, erroAntesDasContas: null, avisoCotacao };
 }
 
 export async function cancelarPedido(id: string): Promise<void> {

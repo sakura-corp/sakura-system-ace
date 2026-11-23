@@ -302,7 +302,16 @@ export function ImportarNotaFiscalXmlModal({
       await onImportado();
 
       // A pessoa precisa saber exatamente o que entrou e o que não entrou.
-      const pedidoEntrou = `O pedido ${resultado.pedido.numero}, a entrada no estoque e a cotação foram gravados.`;
+      if (resultado.erroAntesDasContas) {
+        setResultadoParcial(
+          `${resultado.erroAntesDasContas} Não importe a nota de novo: confira o pedido e ` +
+            "acerte à mão o que faltou.",
+        );
+        return;
+      }
+      const pedidoEntrou =
+        `O pedido ${resultado.pedido.numero} e a entrada no estoque foram gravados.` +
+        (resultado.avisoCotacao ? ` ${resultado.avisoCotacao}` : "");
       if (resultado.erroContas) {
         setResultadoParcial(
           `${pedidoEntrou} As contas a pagar desta nota NÃO foram lançadas (${resultado.erroContas}). ` +
@@ -315,6 +324,10 @@ export function ImportarNotaFiscalXmlModal({
           `${pedidoEntrou} As contas a pagar NÃO foram lançadas: ${motivoParcelas} ` +
             "Lance as parcelas à mão em Contas a pagar.",
         );
+        return;
+      }
+      if (resultado.avisoCotacao) {
+        setResultadoParcial(`${pedidoEntrou} As contas a pagar foram lançadas.`);
         return;
       }
       onFechar();
