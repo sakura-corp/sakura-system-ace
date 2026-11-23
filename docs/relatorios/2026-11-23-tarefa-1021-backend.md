@@ -3,7 +3,7 @@
 - **Tarefa**: #1021, "De onde veio": a origem do cliente no cadastro, na OS, no orçamento e na venda de balcão
 - **Chefe**: backend
 - **Data**: 2026-11-23
-- **PR**: (o PR desta branch, `claude/eager-allen-14y3ca`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1171
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
