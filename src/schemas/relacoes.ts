@@ -1,7 +1,8 @@
 import { diaLocal } from "@/lib/datas";
 import { arredondarCentavo, deCentavos, paraCentavos } from "./dinheiro";
 import type { FluxoProjetado } from "./fluxoProjetado";
-import { lucratividadePorItem } from "./lucratividade";
+import type { CurvaABC, LetraABC } from "./curvaABC";
+import { lucratividadePorItem, margemPercentual, type LinhaLucro } from "./lucratividade";
 import type { MapaCusto } from "./metricasCaixa";
 import { contaNosNumeros } from "./orcamento";
 import { valorLiquidoDoItem, type ItemComValor } from "./valorItem";
@@ -545,7 +546,7 @@ const MESES = [
   "dezembro",
 ];
 
-function nomeDoMes(mes: number): string {
+export function nomeDoMes(mes: number): string {
   return MESES[(((mes - 1) % 12) + 12) % 12];
 }
 
@@ -631,4 +632,209 @@ export function fraseDoDiaADia({ porDia, hoje }: { porDia: readonly VendidoNoDia
   const diferenca = paraCentavos(dia.valor) - paraCentavos(media);
   const comparacao = diferenca > 0 ? "acima da média" : diferenca < 0 ? "abaixo da média" : "na média";
   return `${rotulo}: ${formatarMoedaCurta(dia.valor)}, ${comparacao} de ${formatarMoedaCurta(media)} por dia aberto`;
+}
+
+// ---------------------------------------------------------------------------
+// 13. A montagem pra página: o que cada gráfico recebe pronto (#1086)
+
+/** Quantos itens o ranking e o Pareto mostram à vista; o resto vai no "Ver todos". */
+export const ITENS_A_VISTA = 7;
+
+export interface LinhaDoRankingDaSobra {
+  chave: string;
+  nome: string;
+  /** A Sobra das OS do item, em R$. */
+  valor: number;
+  /** "De cada R$ 100, sobra" (0 a 100); `null` sem custo pra calcular. */
+  percentual: number | null;
+  tipo: "peca" | "servico";
+  custoNaoInformado: boolean;
+  pecaId: string | null;
+}
+
+/** As linhas da Lucratividade (já do maior pro menor) no formato do ranking. */
+export function linhasDoRanking(linhas: readonly LinhaLucro[]): LinhaDoRankingDaSobra[] {
+  return linhas.map((l, i) => ({
+    chave: `${i}:${l.descricao}`,
+    nome: l.descricao,
+    valor: l.margem,
+    percentual: l.custoNaoInformado ? null : margemPercentual(l.receita, l.margem),
+    tipo: l.tipo,
+    custoNaoInformado: l.custoNaoInformado,
+    pecaId: l.pecaId,
+  }));
+}
+
+/**
+ * As linhas à vista: no máximo `limite`, na ordem em que vieram. Passando do
+ * limite, até 2 vagas no fim ficam com os itens de custo não informado: é
+ * neles que está o "cadastre o custo da peça", e atrás do corte ninguém veria.
+ */
+export function itensAVista<T extends { custoNaoInformado: boolean }>(
+  linhas: readonly T[],
+  limite = ITENS_A_VISTA,
+): T[] {
+  if (linhas.length <= limite) return [...linhas];
+  const semCusto = linhas.filter((l) => l.custoNaoInformado);
+  const comCusto = linhas.filter((l) => !l.custoNaoInformado);
+  const reservadas = Math.min(semCusto.length, 2);
+  return [...comCusto.slice(0, limite - reservadas), ...semCusto.slice(0, reservadas)];
+}
+
+export interface ResumoDaCurva {
+  /** Quantos itens a curva tem (todos, inclusive os fora da conta, no C). */
+  total: number;
+  quantosNoA: number;
+  /** Quanto o grupo A faz do total, em % (0 a 100). */
+  percentualDoA: number;
+  grupos: { letra: LetraABC; parte: number; quantos: number }[];
+}
+
+export function resumoDaCurva<T>(curva: CurvaABC<T>): ResumoDaCurva {
+  const letras: LetraABC[] = ["A", "B", "C"];
+  const grupos = letras.map((letra) => {
+    const dele = curva.linhas.filter((l) => l.letra === letra);
+    return {
+      letra,
+      quantos: dele.length,
+      parte: dele.reduce((soma, l) => soma + (l.participacao ?? 0), 0),
+    };
+  });
+  return {
+    total: curva.linhas.length,
+    quantosNoA: grupos[0].quantos,
+    percentualDoA: grupos[0].parte,
+    grupos,
+  };
+}
+
+export interface ItemDoPareto {
+  chave: string;
+  nome: string;
+  letra: LetraABC;
+  valor: number;
+  parte: number;
+  acumulado: number;
+}
+
+/** Os itens que entraram na conta, do maior pro menor, até `limite`. */
+export function itensDoPareto<T>(
+  curva: CurvaABC<T>,
+  nomeDe: (linha: T) => string,
+  limite = ITENS_A_VISTA,
+): ItemDoPareto[] {
+  const itens: ItemDoPareto[] = [];
+  curva.linhas.forEach((l, i) => {
+    if (l.foraDaConta || l.valor === null || l.participacao === null || l.acumulada === null) return;
+    itens.push({
+      chave: `${i}:${nomeDe(l.linha)}`,
+      nome: nomeDe(l.linha),
+      letra: l.letra,
+      valor: l.valor,
+      parte: l.participacao,
+      acumulado: l.acumulada,
+    });
+  });
+  return itens.slice(0, limite);
+}
+
+/** Período mais longo que isso: o Dia a dia passa a mostrar mês a mês. */
+export const LIMITE_DE_DIAS_NO_DIA_A_DIA = 62;
+
+const DIAS_DA_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+
+export interface ColunaDoDiaADia {
+  chave: string;
+  /** O dia da semana ("seg"), ou o mês ("nov"). */
+  rotulo: string;
+  /** O dia ("17"), ou o ano. */
+  sub: string;
+  valor: number;
+  dica: string;
+  /** Pra tabela: "seg, 17/11/2026", ou "novembro de 2026". */
+  nomeCompleto: string;
+}
+
+function diaDaSemana(dia: string): string {
+  const [ano, mes, d] = partes(dia);
+  return DIAS_DA_SEMANA[new Date(ano, mes - 1, d).getDay()];
+}
+
+/** Uma coluna por dia, inclusive o domingo e o dia sem venda. */
+export function colunasPorDia(porDia: readonly VendidoNoDia[], hoje: string): ColunaDoDiaADia[] {
+  return porDia.map((d) => {
+    const [ano, mes, dia] = partes(d.dia);
+    const semana = diaDaSemana(d.dia);
+    const quando = `${semana} ${diaEMes(d.dia)}`;
+    const oQue = d.valor > 0 ? formatarMoedaCurta(d.valor) : "sem venda";
+    return {
+      chave: d.dia,
+      rotulo: semana,
+      sub: dois(dia),
+      valor: d.valor,
+      dica: `${d.dia === hoje ? "Hoje, " : ""}${quando}: ${oQue}`,
+      nomeCompleto: `${semana}, ${dois(dia)}/${dois(mes)}/${ano}`,
+    };
+  });
+}
+
+/** Uma coluna por mês (período longo). */
+export function colunasPorMes(porMes: readonly VendidoNoMes[]): ColunaDoDiaADia[] {
+  return porMes.map((m) => {
+    const [ano, mes] = partes(`${m.mes}-01`);
+    const nome = nomeDoMes(mes);
+    return {
+      chave: m.mes,
+      rotulo: nome.slice(0, 3),
+      sub: String(ano),
+      valor: m.valor,
+      dica: `${nome} de ${ano}: ${m.valor > 0 ? formatarMoedaCurta(m.valor) : "sem venda"}`,
+      nomeCompleto: `${nome} de ${ano}`,
+    };
+  });
+}
+
+export interface PontosDoFluxo {
+  dias: { chave: string; rotulo: string; entra: number; sai: number; saldo: number }[];
+  /** O dia mais baixo, quando há o que apontar: o índice e o texto. */
+  maisBaixo: { indice: number; texto: string } | null;
+  /** O fim do período, escrito na ponta ("R$ 3,4 mil em 22/12"). */
+  fim: string;
+}
+
+/**
+ * O fluxo no formato do gráfico de degraus. Sem o "quanto tenho hoje", o dia
+ * mais baixo só é apontado se for negativo (é o "quanto falta cobrir").
+ */
+export function pontosDoFluxo(saldo: SaldoAPartirDoInformado, fluxo: FluxoProjetado): PontosDoFluxo {
+  const dias = fluxo.dias.map((d, i) => ({
+    chave: d.dia,
+    rotulo: diaEMes(d.dia),
+    entra: d.entra ?? 0,
+    sai: d.sai ?? 0,
+    saldo: saldo.pontos[i]?.saldo ?? 0,
+  }));
+  const baixo = saldo.diaMaisBaixo;
+  const apontar = baixo !== null && (saldo.comecouDoInformado || Math.round(baixo.saldo) < 0);
+  const maisBaixo =
+    baixo && apontar
+      ? {
+          indice: Math.max(0, fluxo.dias.findIndex((d) => d.dia === baixo.dia)),
+          texto: `${formatarMoedaCurta(baixo.saldo)} em ${diaEMes(baixo.dia)}${baixo.motivo ? `: ${baixo.motivo}` : ""}`,
+        }
+      : null;
+  const ultimo = fluxo.dias.at(-1);
+  return {
+    dias,
+    maisBaixo,
+    fim: ultimo ? `${formatarMoedaCurta(saldo.saldoFinal)} em ${diaEMes(ultimo.dia)}` : "",
+  };
+}
+
+/** A diferença escrita ao lado do ponto de hoje: "R$ 2 mil acima", "R$ 2 mil abaixo", "igual". */
+export function diferencaEscrita(diferenca: number | null): string | undefined {
+  if (diferenca === null) return undefined;
+  const reais = Math.round(diferenca);
+  if (reais === 0) return "igual";
+  return `${formatarMoedaCurta(Math.abs(reais))} ${reais > 0 ? "acima" : "abaixo"}`;
 }

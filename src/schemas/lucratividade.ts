@@ -235,11 +235,6 @@ export function margemPercentual(receita: number, margem: number): number | null
   return receita > 0 ? (margem / receita) * 100 : null;
 }
 
-/** Quantas bolhas cabem no "Onde está o lucro" sem virar um borrão. */
-export const BOLHAS_NO_GRAFICO = 12;
-/** Das 12, quantas no máximo vão pros itens com prejuízo (os piores primeiro). */
-export const BOLHAS_DE_PREJUIZO = 4;
-
 /**
  * "De cada R$ 100 vendidos": quanto é custo e quanto fica com a loja, nos 100.
  * `null` quando não faz sentido dizer assim (sem venda, ou margem fora de 0 a
@@ -252,8 +247,8 @@ export function deCadaCem(receita: number, margem: number): { custo: number; mar
 }
 
 /**
- * A margem média da loja pra comparar item com item (a linha tracejada das
- * bolhas e a seta da "Margem %"): só as linhas com custo informado, que são
+ * A margem média da loja pra comparar item com item (a linha tracejada do
+ * ranking e a palavra "acima da média"): só as linhas com custo informado, que são
  * as que aparecem no gráfico. A peça avulsa sem custo entraria com 100% de
  * margem e puxaria a média pra cima, deixando todo o resto "abaixo da média".
  */
@@ -263,48 +258,4 @@ export function margemMediaComCusto(linhas: readonly LinhaLucro[]): number | nul
     somar(comCusto.map((l) => l.receita)),
     somar(comCusto.map((l) => l.margem)),
   );
-}
-
-export interface PontoDoLucro {
-  descricao: string;
-  quantidade: number;
-  receita: number;
-  margem: number;
-  /** A margem sobre a receita, em %. */
-  percentual: number;
-  /**
-   * O tamanho da bolha, de 0 a 1: a margem em reais (sem sinal) sobre a maior
-   * do gráfico. A tela só multiplica pelo raio.
-   */
-  peso: number;
-}
-
-/**
- * As bolhas do "Onde está o lucro" (Relações → Lucratividade): uma por peça ou
- * serviço, no máximo `limite` (o resto continua na tabela de baixo). Entram as
- * de mais margem em reais e, **sempre**, as que deram prejuízo (as piores, até
- * `BOLHAS_DE_PREJUIZO`): o gráfico existe pra mostrar o que conferir, e um
- * prejuízo ficaria sempre no fim da fila, cortado. Fica de fora a linha sem
- * receita (não tem %) e a de custo não informado (a margem seria inventada).
- */
-export function pontosDoLucro(linhas: readonly LinhaLucro[], limite = BOLHAS_NO_GRAFICO): PontoDoLucro[] {
-  const validas = linhas.filter((l) => !l.custoNaoInformado && l.receita > 0);
-  const prejuizos = validas
-    .filter((l) => l.margem < 0)
-    .sort((a, b) => a.margem - b.margem)
-    .slice(0, Math.min(BOLHAS_DE_PREJUIZO, limite));
-  const lucros = validas
-    .filter((l) => l.margem >= 0)
-    .sort((a, b) => b.margem - a.margem)
-    .slice(0, limite - prejuizos.length);
-  const escolhidas = [...lucros, ...prejuizos];
-  const maior = Math.max(...escolhidas.map((l) => Math.abs(l.margem)), 0);
-  return escolhidas.map((l) => ({
-    descricao: l.descricao,
-    quantidade: l.quantidade,
-    receita: l.receita,
-    margem: l.margem,
-    percentual: (l.margem / l.receita) * 100,
-    peso: maior > 0 ? Math.abs(l.margem) / maior : 0,
-  }));
 }

@@ -258,18 +258,18 @@ export const CENAS = [
     descricao: "Ao confirmar o recebimento, a entrada é lançada no caixa daquele dia — é o que evita cobrar duas vezes ou esquecer de dar baixa." },
 
   // ---------------------------------------------------------------- relações
-  { arquivo: "36-graficos", modulo: "Relações", titulo: "Gráficos de vendas, custos e lucro",
+  { arquivo: "36-relacoes", modulo: "Relações", titulo: "Relações: o resumo e os gráficos do período",
     rota: "/relatorios",
-    descricao: "Vendas, custos e lucro por dia, semana, mês ou ano, mais um gráfico comparando o período atual com o anterior. Os gráficos são desenhados pelo próprio sistema, sem depender de biblioteca de fora." },
-  { arquivo: "37-lucratividade", modulo: "Relações", titulo: "Lucratividade por item",
-    rota: "/relatorios", passos: [{ aba: "Lucratividade" }],
-    descricao: "Quanto cada peça e cada serviço deu de margem no período. É o que mostra o que vende muito mas dá pouco lucro." },
+    descricao: "Tudo numa página só, com um período lá em cima (hoje, esta semana, este mês, mês passado, este ano, ou as datas que quiser) e os botões Ir para. Em destaque, a Sobra das OS (o vendido menos o custo das peças e dos serviços), e ao lado Vendido, Recebido e Falta receber, cada um comparado com o mês anterior. Abaixo, o mês até hoje contra o anterior, a ponte do vendido ao que sobrou (com as despesas) e o dia a dia. Cada gráfico tem como título a resposta, e o Ver como tabela mostra os mesmos números." },
+  { arquivo: "37-por-item", modulo: "Relações", titulo: "O que me dá dinheiro",
+    rota: "/relatorios", passos: [{ clicar: "Por item" }],
+    descricao: "Ranking das peças e serviços pela Sobra das OS de cada um, do que mais dá pro que menos dá, com o de cada R$ 100, sobra e a média da loja. Item sem custo informado avisa e leva a cadastrar o custo. O Ver todos abre a tabela completa." },
   { arquivo: "37a-curva-abc", modulo: "Relações", titulo: "Curva ABC",
-    rota: "/relatorios", passos: [{ aba: "Curva ABC" }],
-    descricao: "Peças, serviços e clientes em A, B e C pelo quanto rendem no período, por venda ou por lucro. O A são os poucos que fazem a maior parte: o que não pode faltar no estoque e os clientes mais importantes." },
-  { arquivo: "37b-fluxo-de-caixa", modulo: "Relações", titulo: "Fluxo de caixa projetado",
-    rota: "/relatorios", passos: [{ aba: "Fluxo de caixa" }],
-    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, dia a dia, com o saldo andando a partir de hoje. As contas recorrentes que ainda não foram criadas aparecem como \"prevista\", e as vencidas e não pagas entram no dia de hoje como \"atrasada\"." },
+    rota: "/relatorios", passos: [{ clicar: "Curva ABC" }],
+    descricao: "Peças, serviços e clientes em A, B e C pelo quanto rendem no período, por venda ou por lucro. O A são os poucos que fazem a maior parte: o que não pode faltar no estoque e os clientes mais importantes. Com menos de 10 itens, o título avisa que a curva ainda não diz muito." },
+  { arquivo: "37b-proximos-dias", modulo: "Relações", titulo: "Próximos 30 dias",
+    rota: "/relatorios", passos: [{ clicar: "Próximos 30 dias" }],
+    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, com o saldo em degraus a partir de hoje: o título diz quanto falta cobrir e o dia mais apertado vem apontado. O Ver como tabela abre dia a dia, com as contas previstas e atrasadas." },
 
   // --------------------------------------------------------------- garantias
   { arquivo: "38-garantias", modulo: "Garantias", titulo: "Garantias em vigor",

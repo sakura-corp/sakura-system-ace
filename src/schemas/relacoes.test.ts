@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { classificarABC } from "./curvaABC";
+import type { LinhaLucro } from "./lucratividade";
 import {
+  LIMITE_DE_DIAS_NO_DIA_A_DIA,
+  diferencaEscrita,
+  colunasPorDia,
+  colunasPorMes,
+  itensAVista,
+  itensDoPareto,
+  linhasDoRanking,
+  nomeDoMes,
+  pontosDoFluxo,
+  resumoDaCurva,
   POUCOS_ITENS_ABC,
   atalhoDoPeriodo,
   despesasPorTipo,
@@ -569,5 +581,176 @@ describe("as frases-título", () => {
       "Hoje: R$ 0, abaixo da média de R$ 400 por dia aberto",
     );
     expect(fraseDoDiaADia({ porDia: [{ dia: "2026-11-26", valor: 0 }], hoje: "2026-11-26" })).toBe("Nenhuma venda no período");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A montagem pra página (#1086): as contas que a tela só chama.
+
+
+function linhaLucro(parcial: Partial<LinhaLucro>): LinhaLucro {
+  return {
+    descricao: "Item",
+    tipo: "peca",
+    quantidade: 1,
+    receita: 100,
+    custo: 60,
+    margem: 40,
+    custoNaoInformado: false,
+    pecaId: null,
+    ...parcial,
+  };
+}
+
+describe("linhasDoRanking e itensAVista", () => {
+  it("a Sobra das OS e o 'de cada R$ 100, sobra' de cada item; sem custo, sem percentual", () => {
+    const linhas = linhasDoRanking([
+      linhaLucro({ descricao: "Pneu", receita: 800, custo: 600, margem: 200 }),
+      linhaLucro({ descricao: "Farol", receita: 500, custo: 0, margem: 500, custoNaoInformado: true, pecaId: "p9" }),
+    ]);
+    expect(linhas[0]).toMatchObject({ nome: "Pneu", valor: 200, percentual: 25, tipo: "peca", custoNaoInformado: false });
+    expect(linhas[1]).toMatchObject({ nome: "Farol", percentual: null, custoNaoInformado: true, pecaId: "p9" });
+  });
+
+  it("7 à vista; o item sem custo não fica escondido atrás do corte", () => {
+    const comCusto = Array.from({ length: 9 }, (_, i) => linhaLucro({ descricao: `Item ${i}`, margem: 90 - i }));
+    const semCusto = linhaLucro({ descricao: "Sem custo", custoNaoInformado: true });
+    const vista = itensAVista(linhasDoRanking([...comCusto, semCusto]));
+    expect(vista).toHaveLength(7);
+    expect(vista[0].nome).toBe("Item 0");
+    expect(vista.at(-1)?.nome).toBe("Sem custo");
+    expect(vista.map((l) => l.nome)).not.toContain("Item 6");
+    // Cabe tudo: nada é cortado.
+    expect(itensAVista(linhasDoRanking(comCusto.slice(0, 3)))).toHaveLength(3);
+  });
+});
+
+describe("resumoDaCurva e itensDoPareto", () => {
+  const curva = classificarABC(
+    [
+      { nome: "Pneu", valor: 800 },
+      { nome: "Farol", valor: 150 },
+      { nome: "Palheta", valor: 40 },
+      { nome: "Bico", valor: 10 },
+    ],
+    (l) => l.valor,
+  );
+
+  it("o resumo diz quantos itens, quantos no A e quanto cada grupo faz do total", () => {
+    const r = resumoDaCurva(curva);
+    expect(r.total).toBe(4);
+    expect(r.quantosNoA).toBe(1);
+    expect(r.percentualDoA).toBeCloseTo(80);
+    expect(r.grupos.map((g) => [g.letra, g.quantos])).toEqual([
+      ["A", 1],
+      ["B", 1],
+      ["C", 2],
+    ]);
+    expect(r.grupos.reduce((s, g) => s + g.parte, 0)).toBeCloseTo(100);
+  });
+
+  it("o Pareto leva só 7 itens, na ordem, com a parte e o acumulado", () => {
+    const itens = itensDoPareto(curva, (l) => l.nome);
+    expect(itens.map((i) => i.nome)).toEqual(["Pneu", "Farol", "Palheta", "Bico"]);
+    expect(itens[0]).toMatchObject({ letra: "A", valor: 800 });
+    expect(itens[0].parte).toBeCloseTo(80);
+    expect(itens[1].acumulado).toBeCloseTo(95);
+    const muitos = classificarABC(
+      Array.from({ length: 12 }, (_, i) => ({ nome: `n${i}`, valor: 100 - i })),
+      (l) => l.valor,
+    );
+    expect(itensDoPareto(muitos, (l) => l.nome)).toHaveLength(7);
+  });
+
+  it("item fora da conta não entra no Pareto nem na parte dos grupos", () => {
+    const comZero = classificarABC(
+      [
+        { nome: "Bom", valor: 100 },
+        { nome: "Zero", valor: 0 },
+      ],
+      (l) => l.valor,
+    );
+    expect(itensDoPareto(comZero, (l) => l.nome).map((i) => i.nome)).toEqual(["Bom"]);
+    expect(resumoDaCurva(comZero).total).toBe(2);
+  });
+});
+
+describe("colunasPorDia e colunasPorMes", () => {
+  it("todo dia vira coluna, com o dia da semana; o dia sem venda aparece", () => {
+    const colunas = colunasPorDia(
+      [
+        { dia: "2026-11-22", valor: 300 },
+        { dia: "2026-11-23", valor: 0 },
+      ],
+      "2026-11-23",
+    );
+    // 22/11/2026 é domingo.
+    expect(colunas[0]).toMatchObject({ rotulo: "dom", sub: "22", valor: 300 });
+    expect(colunas[1]).toMatchObject({ rotulo: "seg", sub: "23", valor: 0 });
+    expect(colunas[0].dica).toBe("dom 22/11: R$ 300");
+    expect(colunas[1].dica).toBe("Hoje, seg 23/11: sem venda");
+  });
+
+  it("com período longo, uma coluna por mês", () => {
+    const colunas = colunasPorMes([
+      { mes: "2026-10", valor: 12000 },
+      { mes: "2026-11", valor: 0 },
+    ]);
+    expect(colunas.map((c) => [c.rotulo, c.sub, c.valor])).toEqual([
+      ["out", "2026", 12000],
+      ["nov", "2026", 0],
+    ]);
+    expect(LIMITE_DE_DIAS_NO_DIA_A_DIA).toBe(62);
+    expect(nomeDoMes(11)).toBe("novembro");
+  });
+});
+
+describe("pontosDoFluxo", () => {
+  const fluxo: FluxoProjetado = {
+    totalEntra: 250,
+    totalSai: 1000,
+    saldo: -750,
+    dias: [
+      { dia: "2026-11-24", entra: 0, sai: 0, saldoDoDia: 0, saldoAcumulado: 0, itens: [] },
+      {
+        dia: "2026-11-25",
+        entra: 250,
+        sai: 1000,
+        saldoDoDia: -750,
+        saldoAcumulado: -750,
+        itens: [
+          { chave: "a", tipo: "sai", descricao: "Aluguel", valor: 1000, vencimento: "2026-11-25", atrasada: false, prevista: false },
+        ],
+      },
+    ],
+  };
+
+  it("sem o 'quanto tenho hoje': aponta o dia que falta cobrir, com a data e o motivo", () => {
+    const saldo = saldoAPartirDoInformado(fluxo, null)!;
+    const p = pontosDoFluxo(saldo, fluxo);
+    expect(p.dias.map((d) => [d.rotulo, d.entra, d.sai, d.saldo])).toEqual([
+      ["24/11", 0, 0, 0],
+      ["25/11", 250, 1000, -750],
+    ]);
+    expect(p.maisBaixo).toEqual({ indice: 1, texto: "−R$ 750 em 25/11: Aluguel" });
+    expect(p.fim).toBe("−R$ 750 em 25/11");
+  });
+
+  it("sem aperto (nada negativo e sem valor informado): não aponta dia nenhum", () => {
+    const folgado: FluxoProjetado = {
+      ...fluxo,
+      dias: fluxo.dias.map((d) => ({ ...d, saldoAcumulado: 0, saldoDoDia: 0, itens: [] })),
+    };
+    const p = pontosDoFluxo(saldoAPartirDoInformado(folgado, null)!, folgado);
+    expect(p.maisBaixo).toBeNull();
+  });
+});
+
+describe("diferencaEscrita", () => {
+  it("escreve a diferença do mês contra o anterior", () => {
+    expect(diferencaEscrita(2000)).toBe("R$ 2 mil acima");
+    expect(diferencaEscrita(-2600)).toBe("R$ 2,6 mil abaixo");
+    expect(diferencaEscrita(0.4)).toBe("igual");
+    expect(diferencaEscrita(null)).toBeUndefined();
   });
 });
