@@ -31,8 +31,9 @@
 --
 --   1. `configuracoes_garantia`, `configuracoes_fiscais_loja`,
 --      `configuracoes_painel_inicio`, `configuracoes_pix`,
---      `configuracoes_avaliacao`, `configuracoes_contabilidade` e
---      `segredos_fiscais_loja` têm linha só na loja B, de propósito.
+--      `configuracoes_avaliacao`, `configuracoes_contabilidade`,
+--      `configuracoes_atendimento` e `segredos_fiscais_loja` têm linha só
+--      na loja B, de propósito.
 --      A chave primária delas é o `loja_id` sozinho, então, com a loja A já
 --      ocupada, a sonda de INSERT bateria na chave duplicada — e um erro de
 --      chave se pareceria com "a RLS bloqueou", que é justamente a confusão
@@ -51,7 +52,7 @@ set session_replication_role = replica;
 truncate table
   computadores, schema_versao, auditoria, fechamentos_caixa, comissoes_fechamentos, whatsapp_mensagens, configuracoes_whatsapp,
   configuracoes_juros_parcelas, configuracoes_painel_inicio,
-  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, configuracoes_contabilidade, segredos_fiscais_loja,
+  configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, configuracoes_contabilidade, configuracoes_atendimento, segredos_fiscais_loja,
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
   notas_fiscais_arquivos, contas_receber, contas_pagar,
   contagens_estoque, estoque_movimentos, caixa_movimentos,
@@ -244,6 +245,10 @@ insert into configuracoes_avaliacao (loja_id, link_google) values
 -- O contato da contabilidade (#383). Contato inventado, de exemplo.
 insert into configuracoes_contabilidade (loja_id, nome, email) values
   ('11111111-1111-1111-1111-1111111111bb', 'Contabilidade da loja B', 'contabilidade@exemplo.com.br');
+
+-- O atendimento da loja (#1033). WhatsApp inventado, de exemplo.
+insert into configuracoes_atendimento (loja_id, whatsapp, horario_funcionamento, garantia_servico_dias) values
+  ('11111111-1111-1111-1111-1111111111bb', '16955500199', 'Seg a sex, 8h às 18h', 90);
 
 -- O cofre do token da Focus NFe (TR-04.2). Tem linha na loja B pra que o
 -- "0" do dono na leitura queira dizer "a tabela recusou", e não "estava
