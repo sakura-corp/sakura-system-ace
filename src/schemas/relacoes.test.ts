@@ -417,6 +417,17 @@ describe("oMesAteHoje", () => {
     expect(m.diferencaNoMesmoDia).toBe(40);
   });
 
+  it("no mês corrente, para no fim do período escolhido (não vai até hoje)", () => {
+    const m = oMesAteHoje({ ordens, periodo: { de: "2026-11-01", ate: "2026-11-02" }, hoje: "2026-11-03" });
+    expect(m.diaDeReferencia).toBe(2);
+    expect(m.atual).toEqual([30, 30]);
+  });
+
+  it("período que passa de hoje usa o mês de hoje, nunca um mês que ainda não veio", () => {
+    const m = oMesAteHoje({ ordens, periodo: { de: "2026-11-01", ate: "2026-12-31" }, hoje: "2026-11-03" });
+    expect(m).toMatchObject({ mes: 11, diaDeReferencia: 3, ehMesCorrente: true });
+  });
+
   it("loja com um mês só: sem anterior, sem diferença", () => {
     const m = oMesAteHoje({ ordens: ordens.slice(3), periodo: { de: "2026-11-01", ate: "2026-11-03" }, hoje: "2026-11-03" });
     expect(m.anterior).toBeNull();
@@ -529,6 +540,9 @@ describe("as frases-título", () => {
     expect(fraseDaABC({ quantosNoA: 1, total: 10, percentual: 80, umItem: "peça", variosItens: "peças" })).toBe(
       "1 de 10 peças faz 80% do que entrou",
     );
+    expect(
+      fraseDaABC({ quantosNoA: 3, total: 12, percentual: 81.4, umItem: "peça", variosItens: "peças", criterio: "lucro" }),
+    ).toBe("3 de 12 peças fazem 81% do lucro");
     expect(POUCOS_ITENS_ABC).toBe(10);
     expect(fraseDaABC({ quantosNoA: 3, total: 5, percentual: 81, umItem: "peça", variosItens: "peças" })).toBe(
       "Poucos itens: a curva ainda não diz muito",

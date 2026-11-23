@@ -148,15 +148,7 @@ export function BlocoResumo({
         </CartaoNumero>
         <CartaoNumero
           titulo="Falta receber"
-          explicacao="Das OS abertas neste período, o que ainda não entrou no Caixa: Vendido menos o que já foi recebido delas."
-          variacao={
-            <Comparacao
-              atual={resumo.faltaReceber}
-              anterior={anterior?.faltaReceber}
-              subirEBom={false}
-              contra={contra}
-            />
-          }
+          explicacao="Das OS abertas neste período, o que ainda não entrou no Caixa: Vendido menos o que já foi recebido delas. Não tem comparação com o mês anterior: o que falta dele hoje já foi quase todo recebido, e a seta não diria nada."
         >
           <Valor valor={resumo.faltaReceber} />
         </CartaoNumero>

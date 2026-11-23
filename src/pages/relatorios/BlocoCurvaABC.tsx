@@ -176,6 +176,7 @@ export function BlocoCurvaABC({
         percentual: resumo.percentualDoA,
         umItem: textos.umItem,
         variosItens: textos.variosItens,
+        criterio,
       })}
       className={className}
       acoes={

@@ -247,6 +247,11 @@ export function RelatoriosPage() {
         aoEscolherAtalho={(atalho) => escolherPeriodo(periodoDoAtalho(atalho, hoje))}
         aoMudarDe={mudarDe}
         aoMudarAte={mudarAte}
+        aviso={
+          diaValido(campos.de) && diaValido(campos.ate) && campos.de > campos.ate
+            ? "A data De precisa ser antes da Até. Os números ainda são do período anterior."
+            : null
+        }
         destinos={destinos}
       />
 

@@ -167,7 +167,7 @@ export function BlocoProximos({
         dias={pontos.dias}
         maisBaixo={pontos.maisBaixo}
         fim={pontos.fim}
-        nomeDoSaldo="Falta cobrir"
+        nomeDoSaldo="Saldo a partir de hoje"
         formatarCurto={formatarMoedaCurta}
       />
     </CartaoDeGrafico>

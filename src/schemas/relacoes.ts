@@ -425,11 +425,14 @@ export function oMesAteHoje({
   periodo: PeriodoRelacoes;
   hoje: string;
 }): MesAteHoje {
-  const [ano, mes] = partes(periodo.ate);
-  const [anoHoje, mesHoje, diaHoje] = partes(hoje);
+  // O fim do período, mas nunca depois de hoje: um mês que ainda não veio não tem o que mostrar.
+  const fim = periodo.ate > hoje ? hoje : periodo.ate;
+  const [ano, mes, diaDoFim] = partes(fim);
+  const [anoHoje, mesHoje] = partes(hoje);
   const diasNoMes = ultimoDiaDoMes(ano, mes);
   const ehMesCorrente = ano === anoHoje && mes === mesHoje;
-  const diaDeReferencia = ehMesCorrente ? diaHoje : diasNoMes;
+  // No mês corrente, para no fim do período (que é hoje, ou antes); num mês passado, vai até o último dia.
+  const diaDeReferencia = ehMesCorrente ? diaDoFim : diasNoMes;
 
   const primeiroDia = montarDia(ano, mes, 1);
   const atual = acumulado(vendidoPorDia(ordens, { de: primeiroDia, ate: montarDia(ano, mes, diaDeReferencia) }));
@@ -595,6 +598,7 @@ export function fraseDaABC({
   total,
   percentual,
   variosItens,
+  criterio = "venda",
 }: {
   quantosNoA: number;
   total: number;
@@ -603,11 +607,14 @@ export function fraseDaABC({
   /** "peça", "serviço", "cliente" (fica pra quando a frase precisar do singular). */
   umItem: string;
   variosItens: string;
+  /** Por venda o total é o que entrou; por lucro, é o lucro. */
+  criterio?: "venda" | "lucro";
 }): string {
   if (total === 0) return `Sem ${variosItens} no período`;
   if (total < POUCOS_ITENS_ABC) return "Poucos itens: a curva ainda não diz muito";
   const verbo = quantosNoA === 1 ? "faz" : "fazem";
-  return `${quantosNoA} de ${total} ${variosItens} ${verbo} ${Math.round(percentual)}% do que entrou`;
+  const doQue = criterio === "lucro" ? "do lucro" : "do que entrou";
+  return `${quantosNoA} de ${total} ${variosItens} ${verbo} ${Math.round(percentual)}% ${doQue}`;
 }
 
 export function fraseDoFluxo(saldo: SaldoAPartirDoInformado): string {

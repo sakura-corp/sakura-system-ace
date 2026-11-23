@@ -150,6 +150,24 @@ describe("RelatoriosPage — o período único (#1086)", () => {
     expect(cartao("Vendido")).not.toHaveTextContent(/contra/);
   });
 
+  it("Falta receber não compara com o mês anterior (o de lá já foi quase todo recebido)", async () => {
+    listarOrdens.mockResolvedValue(DOIS_MESES);
+    renderizar(<RelatoriosPage />);
+    await screen.findByRole("heading", { name: "Sobra das OS" });
+    expect(cartao("Vendido")).toHaveTextContent(/contra/);
+    expect(cartao("Falta receber")).not.toHaveTextContent(/contra/);
+  });
+
+  it("De depois de Até: avisa ao lado das datas", async () => {
+    listarOrdens.mockResolvedValue(DOIS_MESES);
+    const { user } = renderizar(<RelatoriosPage />);
+    await screen.findByRole("heading", { name: "Sobra das OS" });
+    const de = screen.getByLabelText("De");
+    await user.clear(de);
+    await user.type(de, "2099-12-31");
+    expect(screen.getByRole("alert")).toHaveTextContent("A data De precisa ser antes da Até");
+  });
+
   it("período sem venda: a frase e o botão que volta pro mês", async () => {
     listarOrdens.mockResolvedValue([]);
     const { user } = renderizar(<RelatoriosPage />);

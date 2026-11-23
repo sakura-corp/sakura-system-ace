@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { Botao } from "@/components/Botao";
 import { Chips } from "@/components/Chips";
 import {
@@ -47,7 +48,10 @@ export function PeriodoEIrPara({
   aoMudarDe,
   aoMudarAte,
   destinos,
+  aviso = null,
 }: {
+  /** Aviso ao lado das datas (ex.: De depois de Até). */
+  aviso?: string | null;
   periodo: PeriodoRelacoes;
   hoje: string;
   de: string;
@@ -72,6 +76,12 @@ export function PeriodoEIrPara({
         <div className="flex flex-wrap items-end gap-4">
           <FiltroDeDatas de={de} ate={ate} aoMudarDe={aoMudarDe} aoMudarAte={aoMudarAte} />
         </div>
+        {aviso && (
+          <p role="alert" className="flex min-w-0 items-center gap-1.5 self-center text-rotulo font-medium text-atencao">
+            <TriangleAlert aria-hidden="true" className="size-[13px] shrink-0" strokeWidth={2.25} />
+            {aviso}
+          </p>
+        )}
       </div>
       <nav aria-label="Ir para" className="flex min-w-0 flex-wrap items-center gap-2">
         <span className="text-rotulo font-medium text-texto-2">Ir para</span>
