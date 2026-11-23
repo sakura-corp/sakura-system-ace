@@ -799,7 +799,7 @@ Quatro coisas que valem saber:
   protocolo, QR code, troco e tributos aproximados saem **só do XML** (sem o dado, a linha não sai;
   nunca "—"); veículo, km, atendente e garantia das peças vêm da OS ligada à nota
   (`src/lib/reciboNotaFiscal.ts`), e nota sem OS sai sem essas seções. Não substitui o DANFE nem o
-  DANFSe (o aviso fica no topo; os oficiais continuam em "Ver DANFE"/"Ver PDF"). Na NFS-e Nacional
+  DANFSe (o aviso fica no topo; os oficiais continuam em "Ver DANFE"/"Ver PDF"). O WhatsApp e o horário da loja (cabeçalho e rodapé) e, na NFS-e, "Serviços: garantia de N dias, a contar desta nota" vêm de Configurações → "Atendimento e garantia dos serviços" (#1033, tabela `configuracoes_atendimento`, uma por loja; só o admin edita); campo vazio, a linha não aparece. Na NFS-e Nacional
   a loja vem de `infNFSe/emit` (antes saía "—", #1029). Todo texto passa por `escaparHtml` (#1071).
   Na NFS-e do Giap
   (Araraquara), o recibo traz o link "Ver documento oficial completo", que desde 23/10 (#774)
