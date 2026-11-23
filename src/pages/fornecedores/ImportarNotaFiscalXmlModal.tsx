@@ -10,7 +10,22 @@ import { mensagemDeErro } from "@/lib/errors";
 import { criarFornecedor } from "@/lib/fornecedores";
 import { extrairNotaFiscalXml, lerTextoXml, normalizarCnpj } from "@/lib/notaFiscalXmlFornecedor";
 import { buscarDadosFiscaisDasPecas, cadastrarPecaRapida } from "@/lib/pecas";
-import { importarNotaFiscalCompra } from "@/lib/pedidosCompra";
+import { listarCategoriasCaixa } from "@/lib/categoriasCaixa";
+import {
+  buscarPedidoDaNota,
+  importarNotaFiscalCompra,
+  NotaJaImportadaError,
+  observacaoDaImportacao,
+} from "@/lib/pedidosCompra";
+import { formatarMoeda } from "@/schemas/dinheiro";
+import {
+  conferirParcelas,
+  contasPagarDaNota,
+  motivoParaNaoLancarParcelas,
+  sugerirParcelas,
+  totalDaNota,
+  type ParcelaDaNota,
+} from "@/schemas/parcelasDaNotaDeCompra";
 import {
   codigoParaPecaImportada,
   csosnMaisUsado,
@@ -18,6 +33,7 @@ import {
   motivoCodigoIncompativel,
   regimeUsaCsosn,
 } from "@/schemas/tributacao";
+import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { RegimeTributario } from "@/types/configuracao";
 import type { Deposito } from "@/types/deposito";
 import type { Fornecedor } from "@/types/fornecedor";
@@ -41,6 +57,8 @@ interface ImportarNotaFiscalXmlModalProps {
   depositos: Deposito[];
   lojaId: string;
   operadorId: string | null;
+  /** Quem não tem Contas a pagar não lança as parcelas (o banco recusaria). */
+  podeLancarContas?: boolean;
   onFechar: () => void;
   onImportado: () => Promise<void>;
 }
@@ -63,6 +81,7 @@ export function ImportarNotaFiscalXmlModal({
   depositos,
   lojaId,
   operadorId,
+  podeLancarContas = false,
   onFechar,
   onImportado,
 }: ImportarNotaFiscalXmlModalProps) {
@@ -75,6 +94,30 @@ export function ImportarNotaFiscalXmlModal({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [regime, setRegime] = useState<RegimeTributario | null>(null);
+  // #1020: as parcelas da nota, que viram contas a pagar. O sistema sugere
+  // (das duplicatas), a pessoa confere e edita, e só então grava.
+  const [parcelas, setParcelas] = useState<ParcelaDaNota[]>([]);
+  const [lancarContas, setLancarContas] = useState(podeLancarContas);
+  const [categoriaId, setCategoriaId] = useState("");
+  const [categoriasSaida, setCategoriasSaida] = useState<CategoriaCaixa[]>([]);
+  // A mesma nota (pela chave de acesso) já entrou num pedido: não importa de novo.
+  const [pedidoDaNota, setPedidoDaNota] = useState<number | null>(null);
+  const [naoDeuPraConferir, setNaoDeuPraConferir] = useState(false);
+  // O pedido entrou, mas as contas a pagar não: o que dizer à pessoa.
+  const [resultadoParcial, setResultadoParcial] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!podeLancarContas) return;
+    let cancelado = false;
+    listarCategoriasCaixa()
+      .then((categorias) => {
+        if (!cancelado) setCategoriasSaida(categorias.filter((c) => c.tipo === "saida"));
+      })
+      .catch((err) => console.error("Erro ao carregar as categorias de saída:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [podeLancarContas]);
   // O código de ICMS que as peças novas vão receber. Nasce com o que a loja
   // mais usa no próprio cadastro — não com o do fornecedor, que pode ser de
   // outro regime (ver `codigoParaPecaImportada`).
@@ -127,6 +170,19 @@ export function ImportarNotaFiscalXmlModal({
 
       setNota(extraida);
       setFornecedorEncontrado(fornecedor);
+      setParcelas(sugerirParcelas(extraida));
+      setPedidoDaNota(null);
+      setNaoDeuPraConferir(false);
+      if (extraida.chave_acesso) {
+        try {
+          const jaImportada = await buscarPedidoDaNota(extraida.chave_acesso);
+          setPedidoDaNota(jaImportada?.numero ?? null);
+        } catch (err) {
+          // Aviso, nunca tranca: a importação confere de novo antes de gravar.
+          console.error("Erro ao conferir se a nota já foi importada:", err);
+          setNaoDeuPraConferir(true);
+        }
+      }
       setItens(
         extraida.itens.map((item) => {
           const pecaCorrespondente = encontrarPecaCorrespondente(item, pecas);
@@ -155,9 +211,13 @@ export function ImportarNotaFiscalXmlModal({
     );
   }
 
+  function atualizarParcela(indice: number, mudanca: Partial<ParcelaDaNota>) {
+    setParcelas((atual) => atual.map((p, i) => (i === indice ? { ...p, ...mudanca } : p)));
+  }
+
   async function handleImportar(e: React.FormEvent) {
     e.preventDefault();
-    if (!nota || !itens || !depositoId) return;
+    if (!nota || !itens || !depositoId || pedidoDaNota !== null) return;
     const selecionados = itens.filter((item) => item.incluir && item.quantidadeEditavel > 0);
     if (selecionados.length === 0) return;
 
@@ -219,19 +279,61 @@ export function ImportarNotaFiscalXmlModal({
         });
       }
 
-      await importarNotaFiscalCompra(
+      const vaiLancar = lancarContasAgora && motivoParcelas === null;
+      const contas = vaiLancar
+        ? contasPagarDaNota(parcelas, {
+            numeroNota: nota.numero,
+            fornecedorNome:
+              fornecedorEncontrado?.nome ?? nota.fornecedor_nome ?? "Fornecedor sem nome",
+            categoriaId,
+          })
+        : [];
+
+      const resultado = await importarNotaFiscalCompra(
         fornecedorId,
         itensParaImportar,
         depositoId,
         lojaId,
         operadorId,
-        nota.numero ? `Importado da NFe nº ${nota.numero}` : "Importado de nota fiscal XML",
+        observacaoDaImportacao(nota.numero, nota.chave_acesso),
+        { chaveAcesso: nota.chave_acesso, contas },
       );
 
       await onImportado();
+
+      // A pessoa precisa saber exatamente o que entrou e o que não entrou.
+      if (resultado.erroAntesDasContas) {
+        setResultadoParcial(
+          `${resultado.erroAntesDasContas} Não importe a nota de novo: confira o pedido e ` +
+            "acerte à mão o que faltou.",
+        );
+        return;
+      }
+      const pedidoEntrou =
+        `O pedido ${resultado.pedido.numero} e a entrada no estoque foram gravados.` +
+        (resultado.avisoCotacao ? ` ${resultado.avisoCotacao}` : "");
+      if (resultado.erroContas) {
+        setResultadoParcial(
+          `${pedidoEntrou} As contas a pagar desta nota NÃO foram lançadas (${resultado.erroContas}). ` +
+            "Lance as parcelas à mão em Contas a pagar; não importe a nota de novo.",
+        );
+        return;
+      }
+      if (lancarContasAgora && motivoParcelas !== null) {
+        setResultadoParcial(
+          `${pedidoEntrou} As contas a pagar NÃO foram lançadas: ${motivoParcelas} ` +
+            "Lance as parcelas à mão em Contas a pagar.",
+        );
+        return;
+      }
+      if (resultado.avisoCotacao) {
+        setResultadoParcial(`${pedidoEntrou} As contas a pagar foram lançadas.`);
+        return;
+      }
       onFechar();
     } catch (err) {
       console.error("Erro ao importar nota fiscal XML:", err);
+      if (err instanceof NotaJaImportadaError) setPedidoDaNota(pedidoDaNota ?? -1);
       setErro(mensagemDeErro(err));
     } finally {
       setSalvando(false);
@@ -265,6 +367,10 @@ export function ImportarNotaFiscalXmlModal({
   const quantidadeSelecionada =
     itens?.filter((item) => item.incluir && item.quantidadeEditavel > 0).length ?? 0;
 
+  const lancarContasAgora = podeLancarContas && lancarContas;
+  const motivoParcelas = motivoParaNaoLancarParcelas(parcelas);
+  const conferencia = nota ? conferirParcelas(parcelas, totalDaNota(nota)) : null;
+
   return (
     <Modal
       titulo="Importar XML de nota fiscal do fornecedor"
@@ -277,9 +383,9 @@ export function ImportarNotaFiscalXmlModal({
       rodape={
         <>
           <Botao variante="fantasma" onClick={onFechar}>
-            Cancelar
+            {resultadoParcial !== null ? "Fechar" : "Cancelar"}
           </Botao>
-          {itens === null ? (
+          {resultadoParcial !== null ? null : itens === null ? (
             <Botao variante="principal" onClick={handleLer} disabled={!arquivo} ocupado={lendo}>
               {lendo ? "Lendo..." : "Ler arquivo"}
             </Botao>
@@ -288,7 +394,7 @@ export function ImportarNotaFiscalXmlModal({
               type="submit"
               form={ID_DO_FORMULARIO}
               variante="principal"
-              disabled={quantidadeSelecionada === 0 || !depositoId}
+              disabled={quantidadeSelecionada === 0 || !depositoId || pedidoDaNota !== null}
               ocupado={salvando}
             >
               {salvando ? "Importando..." : `Importar ${quantidadeSelecionada} item(ns)`}
@@ -298,6 +404,8 @@ export function ImportarNotaFiscalXmlModal({
       }
     >
       {erro && <AvisoDeErro className="mb-4">{erro}</AvisoDeErro>}
+
+      {resultadoParcial !== null && <AvisoDeAtencao>{resultadoParcial}</AvisoDeAtencao>}
 
       {itens === null && (
         <div className="space-y-4">
@@ -313,7 +421,7 @@ export function ImportarNotaFiscalXmlModal({
         </div>
       )}
 
-      {itens !== null && nota && (
+      {itens !== null && nota && resultadoParcial === null && (
         <form id={ID_DO_FORMULARIO} onSubmit={handleImportar} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-xl border border-linha p-3 text-corpo">
@@ -355,6 +463,19 @@ export function ImportarNotaFiscalXmlModal({
               SEFAZ recusa numa nota do Simples Nacional — e o erro só
               aparecia lá na frente, ao emitir, dizendo "[nItem:1]" sem
               nome de peça nenhum. */}
+          {pedidoDaNota !== null && (
+            <AvisoDeErro>
+              Esta nota já foi importada
+              {pedidoDaNota > 0 ? ` (Pedido ${pedidoDaNota})` : ""}. Importar de novo lançaria o
+              estoque e as contas a pagar em dobro.
+            </AvisoDeErro>
+          )}
+          {naoDeuPraConferir && (
+            <AvisoDeAtencao>
+              Não deu pra conferir se esta nota já foi importada. Se você já importou, cancele.
+            </AvisoDeAtencao>
+          )}
+
           {pecasNovasComCodigoDeOutroRegime.length > 0 && (
             <div className="space-y-3">
               <AvisoDeAtencao>
@@ -465,6 +586,113 @@ export function ImportarNotaFiscalXmlModal({
               </table>
             </div>
           )}
+
+          <section className="space-y-3 rounded-xl border border-linha p-3">
+            <h3 className="text-corpo font-medium text-texto">Contas a pagar desta nota</h3>
+            {!podeLancarContas ? (
+              <p className="text-rotulo text-texto-2">
+                Você não tem acesso a Contas a pagar: as parcelas desta nota não serão lançadas.
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-end gap-4">
+                  <label className="flex items-center gap-2 text-corpo text-texto">
+                    <input
+                      type="checkbox"
+                      checked={lancarContas}
+                      onChange={(e) => setLancarContas(e.target.checked)}
+                    />
+                    Lançar em Contas a pagar
+                  </label>
+                  {lancarContas && (
+                    <label className="sakura-rotulo">
+                      Categoria
+                      <select
+                        value={categoriaId}
+                        onChange={(e) => setCategoriaId(e.target.value)}
+                        className="sakura-campo w-56"
+                      >
+                        <option value="">Sem categoria</option>
+                        {categoriasSaida.map((categoria) => (
+                          <option key={categoria.id} value={categoria.id}>
+                            {categoria.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+
+                {lancarContas && (
+                  <>
+                    <div className="sakura-card overflow-x-auto">
+                      <table className="sakura-tabela">
+                        <thead>
+                          <tr>
+                            <th>Parcela</th>
+                            <th>Vencimento</th>
+                            <th>Valor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {parcelas.map((parcela, indice) => (
+                            <tr key={indice}>
+                              <td>
+                                {indice + 1}/{parcelas.length}
+                                {parcela.numero ? (
+                                  <span className="text-texto-2"> · nº {parcela.numero}</span>
+                                ) : null}
+                              </td>
+                              <td>
+                                <input
+                                  type="date"
+                                  aria-label={`Vencimento da parcela ${indice + 1}`}
+                                  value={parcela.vencimento}
+                                  onChange={(e) =>
+                                    atualizarParcela(indice, { vencimento: e.target.value })
+                                  }
+                                  className="sakura-campo sakura-campo-filtro w-40!"
+                                />
+                              </td>
+                              <td>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  aria-label={`Valor da parcela ${indice + 1}`}
+                                  value={parcela.valor}
+                                  onChange={(e) =>
+                                    atualizarParcela(indice, {
+                                      valor: Number(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="sakura-campo sakura-campo-filtro w-28! px-2!"
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {conferencia && !conferencia.bate && (
+                      <AvisoDeAtencao>
+                        As parcelas somam {formatarMoeda(conferencia.soma)}, e a nota é de{" "}
+                        {formatarMoeda(conferencia.total)} (diferença de{" "}
+                        {formatarMoeda(Math.abs(conferencia.diferenca))}). Confira antes de
+                        importar; dá pra lançar assim mesmo.
+                      </AvisoDeAtencao>
+                    )}
+                    {motivoParcelas && (
+                      <AvisoDeAtencao>
+                        {motivoParcelas} Sem isso, as contas a pagar não serão lançadas (o
+                        pedido e o estoque entram mesmo assim).
+                      </AvisoDeAtencao>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </section>
         </form>
       )}
     </Modal>

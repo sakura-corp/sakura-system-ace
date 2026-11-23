@@ -50,6 +50,17 @@ function filtrarEOrdenar(linhasOriginais: Linha[], parametros: URLSearchParams):
     } else if (valor.startsWith("eq.")) {
       const alvo = valor.slice(3);
       linhas = linhas.filter((l) => l[campo] === undefined || String(l[campo]) === alvo);
+    } else if (valor.startsWith("ilike.")) {
+      // O ".ilike()" acha a nota de compra já importada pela chave (#1020).
+      // Sem ele, toda nota aparecia como "já importada" no modo demonstração.
+      // `%` (ou `*`, como o PostgREST manda) é "qualquer coisa"; sem diferenciar maiúscula.
+      const padrao = valor
+        .slice(6)
+        .split(/[%*]/)
+        .map((parte) => parte.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+        .join(".*");
+      const regex = new RegExp(`^${padrao}$`, "is");
+      linhas = linhas.filter((l) => l[campo] !== null && l[campo] !== undefined && regex.test(String(l[campo])));
     } else if (valor.startsWith("in.(") && valor.endsWith(")")) {
       const lista = valor
         .slice(4, -1)

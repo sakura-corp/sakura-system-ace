@@ -29,6 +29,23 @@ describe("fetch de demonstração", () => {
     expect(fetchDeVerdade).not.toHaveBeenCalled();
   });
 
+  it("o filtro ilike casa por trecho, sem diferenciar maiúscula (#1020: nota já importada)", async () => {
+    const cliente = novoCliente();
+    const nenhum = await cliente
+      .from("pedidos_compra")
+      .select("numero")
+      .ilike("observacao", "%chave 99999999999999999999999999999999999999999999%");
+    expect(nenhum.error).toBeNull();
+    expect(nenhum.data).toEqual([]);
+
+    const { data: todos } = await cliente.from("clientes").select("nome");
+    const nome = String((todos ?? [])[0]?.nome ?? "");
+    const trecho = nome.slice(1, 4).toUpperCase();
+    const { data: achados } = await cliente.from("clientes").select("nome").ilike("nome", `%${trecho}%`);
+    expect((achados ?? []).length).toBeGreaterThan(0);
+    expect((achados ?? []).every((c) => String(c.nome).toUpperCase().includes(trecho))).toBe(true);
+  });
+
   it("lista com filtro e ordem", async () => {
     const { data, error } = await novoCliente()
       .from("clientes")

@@ -20,6 +20,7 @@ import type { NovoItemPedidoCompra, NovoPedidoCompra, PedidoCompra } from "@/typ
 import { nomePedido, STATUS_PEDIDO_LABEL, totalPedido } from "@/types/pedidoCompra";
 import type { StatusPedidoCompra } from "@/types/pedidoCompra";
 import type { PecaJanela } from "@/types/peca";
+import { temPermissao } from "@/types/operador";
 import { ImportarNotaFiscalXmlModal } from "./ImportarNotaFiscalXmlModal";
 import { PedidoCompraForm } from "./PedidoCompraForm";
 import { ReceberPedidoModal } from "./ReceberPedidoModal";
@@ -63,7 +64,7 @@ export function PedidosCompraSection({
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarImportarXml, setMostrarImportarXml] = useState(false);
   const [pedidoRecebendo, setPedidoRecebendo] = useState<PedidoCompra | null>(null);
-  const { lojaAtual } = useAuth();
+  const { lojaAtual, operador } = useAuth();
   const [modelosWhatsapp, setModelosWhatsapp] = useState<Record<string, string>>({});
 
   // Carregado aqui, e não junto do resto da página, pra não deixar mais lenta
@@ -148,6 +149,7 @@ export function PedidosCompraSection({
           depositos={depositos}
           lojaId={lojaId}
           operadorId={operadorId}
+          podeLancarContas={temPermissao(operador, "contas_pagar")}
           onFechar={() => setMostrarImportarXml(false)}
           onImportado={onRecarregar}
         />
