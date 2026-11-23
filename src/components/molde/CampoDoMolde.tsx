@@ -32,6 +32,11 @@ import { useId, type ReactNode } from "react";
  *
  * Select com valor "sentinela" continua SEM `register` (docs/estrutura.md): é
  * só espalhar o `campo` e controlar o valor com `watch`/`setValue`.
+ *
+ * **Com o `Combobox`, NÃO espalhar o `campo`**: o Combobox põe o `className`
+ * na caixa de fora (ficaria uma caixa de 48 px com outra de 44 dentro) e não
+ * aceita os `aria-*` (somem sem aviso). Ali, só `id={campo.id}`, pro rótulo
+ * focar o campo; ligar o erro e a ajuda ao Combobox é mudança nele, à parte.
  */
 export type PropsDoCampo = {
   id: string;

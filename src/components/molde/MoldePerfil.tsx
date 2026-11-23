@@ -81,11 +81,21 @@ export type PropsDoMoldePerfil = {
   outrasAcoes?: ItemDoMais[];
   numeroPrincipal: NumeroPrincipalDoPerfil;
   numerosDeApoio?: NumerosDeApoio;
-  // Cada lista tem o tipo dela (OS, veículos): o `any` é o "qualquer tipo"
-  // da lista, e cada `ListaDoPerfil` continua conferida por dentro.
+  // Cada lista tem o tipo dela (OS, veículos): o `any` deixa um array juntar
+  // listas de tipos diferentes, mas NÃO confere se `itens`, `chave` e `linha`
+  // batem entre si. Pra conferir, monte cada uma com `listaDoPerfil(...)`.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   listas?: ReadonlyArray<ListaDoPerfil<any>>;
 };
+
+/**
+ * Monta uma lista do perfil conferindo o tipo: `itens`, `chave` e `linha`
+ * têm que falar do mesmo item (sem isto, o `any` de `listas` deixaria passar
+ * `itens: Veiculo[]` com `chave: (o: OS) => …`).
+ */
+export function listaDoPerfil<T>(lista: ListaDoPerfil<T>): ListaDoPerfil<T> {
+  return lista;
+}
 
 /** Quantas linhas cada lista mostra antes do "Ver todos". */
 export const LINHAS_POR_LISTA_DO_PERFIL = 6;
@@ -125,7 +135,13 @@ function CartaoDoNumero({
         <p id={idDoRotulo} className="text-rotulo font-medium text-texto-2">
           {numero.rotulo}
         </p>
-        {numero.explicacao && <Explicacao titulo={numero.rotulo} texto={numero.explicacao} />}
+        {numero.explicacao && (
+          // O "?" desenha 24 px; a área de clique vai a 40 (o mínimo da leva 8)
+          // por uma camada invisível em volta, sem mexer na peça nem no visual.
+          <span className="inline-flex [&_button]:relative [&_button]:after:absolute [&_button]:after:-inset-2 [&_button]:after:content-['']">
+            <Explicacao titulo={numero.rotulo} texto={numero.explicacao} />
+          </span>
+        )}
       </div>
       <p
         data-numero
@@ -172,7 +188,9 @@ export function MoldePerfil({
 }: PropsDoMoldePerfil) {
   const quantos = numerosDeApoio.length;
   return (
-    <div className="@container flex min-w-0 flex-col gap-8">
+    // `w-full`: o container mede a si mesmo; dentro de um pai flex sem
+    // esticar, sem ele a largura cairia pra 0 e a grade nunca abriria.
+    <div className="@container flex w-full min-w-0 flex-col gap-8">
       <header className="flex min-w-0 flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div className="flex min-w-0 flex-1 basis-64 flex-col gap-2">
           {acimaDoNome}
@@ -210,15 +228,17 @@ export function MoldePerfil({
           comparacao={numeroPrincipal.comparacao}
           className={VAO_DO_PRINCIPAL[quantos]}
         />
-        {numerosDeApoio.map((numero) => (
-          <CartaoDoNumero key={numero.rotulo} numero={numero} grande={false} />
+        {numerosDeApoio.map((numero, i) => (
+          // Pela posição: são no máximo 3 e não mudam de ordem; dois rótulos
+          // iguais não podem misturar os cartões.
+          <CartaoDoNumero key={i} numero={numero} grande={false} />
         ))}
       </div>
 
       {listas.length > 0 && (
         <div className={`grid min-w-0 grid-cols-1 gap-8 ${listas.length > 1 ? "@5xl:grid-cols-2" : ""}`}>
-          {listas.map((lista) => (
-            <SecaoDaLista key={lista.titulo} lista={lista} />
+          {listas.map((lista, i) => (
+            <SecaoDaLista key={`${i}-${lista.titulo}`} lista={lista} />
           ))}
         </div>
       )}

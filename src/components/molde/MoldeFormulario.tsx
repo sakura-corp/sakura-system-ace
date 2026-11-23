@@ -7,6 +7,7 @@ import {
   useState,
   type BaseSyntheticEvent,
   type ComponentProps,
+  type FocusEvent,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -59,15 +60,19 @@ import { Modal } from "../Modal";
  * jogaria o foco pro começo da tela.
  *
  * **Janela com formulário nunca dentro de outro `<form>`** (#1130): o molde em
- * janela é desenhado DEPOIS do `</form>` da tela, como os outros modais.
+ * janela é desenhado DEPOIS do `</form>` da tela, como os outros modais. E na
+ * página o próprio molde É o `<form>`: uma janela aberta de dentro dele
+ * ("Cadastrar veículo") vai como IRMÃ do `<MoldeFormulario>`, nunca nos filhos.
  */
 type Comum = {
   titulo: string;
   /** Uma linha embaixo do título (lida junto pelo leitor de tela, na janela). */
   descricao?: string;
   /**
-   * O envio: o `handleSubmit(salvar)` do react-hook-form. Devolvendo uma
-   * promessa, o molde segura o segundo envio até ela terminar.
+   * O envio: o `handleSubmit(salvar)` do react-hook-form, passado direto.
+   * Devolvendo uma promessa, o molde segura o segundo envio até ela terminar.
+   * Embrulhar sem `return` (`(e) => { handleSubmit(salvar)(e); }`) perde
+   * essa proteção. O `salvar` trata o próprio erro e mostra pelo `erro`.
    */
   aoEnviar: (evento?: BaseSyntheticEvent) => unknown;
   /** O verbo do botão principal: "Salvar cliente", "Cadastrar peça". Nunca "OK". */
@@ -117,10 +122,18 @@ function useEnvioUnico(aoEnviar: Comum["aoEnviar"]) {
     if (typeof (resultado as PromiseLike<unknown> | undefined)?.then === "function") {
       enviandoRef.current = true;
       setEnviando(true);
-      // O erro (se houver) segue pra quem chamou: o molde só destrava o botão.
-      void Promise.resolve(resultado).finally(() => {
+      const destravar = () => {
         enviandoRef.current = false;
         setEnviando(false);
+      };
+      Promise.resolve(resultado).then(destravar, (falha: unknown) => {
+        destravar();
+        // O `salvar` deixou escapar um erro (o `handleSubmit` lança de novo):
+        // é defeito da tela. Vai pro registro de erros do programa
+        // (`registrarErros.ts`, que ouve o "error" da janela), com a pilha, e
+        // o botão volta a funcionar pra pessoa tentar de novo.
+        const erro = falha instanceof Error ? falha : new Error(String(falha));
+        window.dispatchEvent(new ErrorEvent("error", { message: erro.message, error: erro }));
       });
     }
   }
@@ -161,6 +174,26 @@ export function MoldeFormulario(props: PropsDoMoldeFormulario) {
   const formRef = useRef<HTMLFormElement>(null);
   const { enviando, aoSubmeter } = useEnvioUnico(aoEnviar);
   const naJanela = props.em === "janela";
+  const rodapeRef = useRef<HTMLDivElement>(null);
+
+  // No meio do "Salvando…", fechar a janela (Esc, ✕, clique fora) deixaria a
+  // pessoa achando que desistiu, e o registro seria gravado assim mesmo.
+  function cancelar() {
+    if (!enviando) props.aoCancelar?.();
+  }
+
+  // Na página, o rodapé fica colado embaixo da tela e pode cobrir o campo que
+  // acabou de receber o foco (Tab, o Enter que pula de campo, o foco no campo
+  // com erro): aí a tela rola o campo pra cima do rodapé (WCAG 2.4.11).
+  function aoFocarNaPagina(evento: FocusEvent<HTMLFormElement>) {
+    const alvo = evento.target;
+    const rodape = rodapeRef.current;
+    if (!rodape || rodape.contains(alvo)) return;
+    const topoDoRodape = rodape.getBoundingClientRect().top;
+    if (alvo.getBoundingClientRect().bottom > topoDoRodape - 8) {
+      alvo.scrollIntoView?.({ block: "nearest" });
+    }
+  }
 
   // Na janela, o foco vai pro primeiro campo. Este efeito roda DEPOIS do
   // efeito do Modal (o Modal é filho, e o efeito do filho roda antes), que
@@ -188,11 +221,11 @@ export function MoldeFormulario(props: PropsDoMoldeFormulario) {
         titulo={titulo}
         descricao={descricao}
         largura={props.largura}
-        onFechar={props.aoCancelar}
+        onFechar={cancelar}
         notaDoRodape={avisoDeErro}
         rodape={
           <>
-            <Botao variante="fantasma" tamanho="grande" onClick={props.aoCancelar}>
+            <Botao variante="fantasma" tamanho="grande" onClick={cancelar}>
               Cancelar
             </Botao>
             {botaoDeEnviar}
@@ -205,7 +238,6 @@ export function MoldeFormulario(props: PropsDoMoldeFormulario) {
             id={formId}
             noValidate
             onSubmit={aoSubmeter}
-            aria-label={titulo}
             className="@container flex min-w-0 flex-col gap-8"
           >
             {children}
@@ -222,8 +254,11 @@ export function MoldeFormulario(props: PropsDoMoldeFormulario) {
         id={formId}
         noValidate
         onSubmit={aoSubmeter}
+        onFocus={aoFocarNaPagina}
         aria-labelledby={`${formId}titulo`}
-        className="@container flex w-full min-w-0 max-w-5xl flex-col gap-6"
+        // A margem de rolagem embaixo (um pouco mais que o rodapé, de 81 px)
+        // é o que faz o `scrollIntoView` parar o campo ACIMA do rodapé.
+        className="@container flex w-full min-w-0 max-w-5xl flex-col gap-6 [&_:is(input,select,textarea,button)]:scroll-mb-24"
       >
         <header className="flex min-w-0 flex-col gap-2">
           {props.acimaDoTitulo}
@@ -237,12 +272,13 @@ export function MoldeFormulario(props: PropsDoMoldeFormulario) {
             vista no formulário comprido, no canto do próximo passo (embaixo à
             direita). */}
         <div
+          ref={rodapeRef}
           data-rodape-do-formulario
           className="sticky bottom-0 z-[1] flex min-w-0 flex-wrap items-center justify-end gap-2 border-t border-linha bg-fundo py-4"
         >
           {avisoDeErro && <div className="mr-auto min-w-0">{avisoDeErro}</div>}
           {props.aoCancelar && (
-            <Botao variante="fantasma" tamanho="grande" onClick={props.aoCancelar}>
+            <Botao variante="fantasma" tamanho="grande" onClick={cancelar}>
               Cancelar
             </Botao>
           )}

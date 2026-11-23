@@ -151,17 +151,40 @@ describe("MoldeFormulario em janela (o formulário curto)", () => {
     expect(salvar).toHaveBeenCalledTimes(2);
   });
 
-  it("se o salvar der erro, o botão volta a aceitar clique", async () => {
-    const salvar = vi.fn().mockRejectedValueOnce(new Error("caiu")).mockResolvedValueOnce(undefined);
-    // O erro é da tela (ela mostra pelo `erro`); o molde só não pode travar.
-    const aoEnviar = (e?: React.BaseSyntheticEvent) => {
-      e?.preventDefault();
-      return salvar().catch(() => {});
-    };
-    const { user } = renderizar(<FormularioDeCliente aoEnviar={aoEnviar} />);
+  it("se o salvar deixar escapar um erro, o botão destrava e o erro vai pro registro", async () => {
+    // O `handleSubmit` de verdade, com um `salvar` que rejeita: o handleSubmit
+    // lança de novo, e o molde não pode ficar preso no "Salvando…".
+    const salvar = vi.fn().mockRejectedValueOnce(new Error("caiu a conexão")).mockResolvedValueOnce(undefined);
+    const registrados: unknown[] = [];
+    const ouvir = (e: ErrorEvent) => registrados.push(e.error);
+    window.addEventListener("error", ouvir);
+    try {
+      const { user } = renderizar(<FormularioDeCliente salvar={salvar} />);
+      await user.keyboard("Maria");
+      await user.click(screen.getByRole("button", { name: "Salvar cliente" }));
+      await user.click(await screen.findByRole("button", { name: "Salvar cliente" }));
+      expect(salvar).toHaveBeenCalledTimes(2);
+      // O registro de erros do programa (`registrarErros.ts`) ouve o "error" da janela.
+      expect(registrados).toHaveLength(1);
+      expect(String((registrados[0] as Error).message)).toBe("caiu a conexão");
+    } finally {
+      window.removeEventListener("error", ouvir);
+    }
+  });
+
+  it("no meio do \"Salvando…\", Esc e \"Cancelar\" não fecham a janela", async () => {
+    let terminar = () => {};
+    const salvar = vi.fn(() => new Promise<void>((r) => (terminar = r)));
+    const aoCancelar = vi.fn();
+    const { user } = renderizar(<FormularioDeCliente salvar={salvar} aoCancelar={aoCancelar} />);
+    await user.keyboard("Maria");
     await user.click(screen.getByRole("button", { name: "Salvar cliente" }));
-    await user.click(await screen.findByRole("button", { name: "Salvar cliente" }));
-    expect(salvar).toHaveBeenCalledTimes(2);
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(aoCancelar).not.toHaveBeenCalled();
+    await act(async () => terminar());
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(aoCancelar).toHaveBeenCalledTimes(1);
   });
 
   it("o erro ao salvar fica do lado do botão, e é avisado", () => {
@@ -217,6 +240,27 @@ describe("MoldeFormulario em página (o formulário longo)", () => {
     expect(screen.getByRole("button", { name: "Salvar cliente" })).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(salvar).toHaveBeenCalledTimes(1);
+  });
+
+  it("o campo que ganha o foco embaixo do rodapé rola pra cima dele", () => {
+    renderizar(<FormularioDeCliente em="pagina" />);
+    const telefone = screen.getByRole("textbox", { name: /Telefone/ });
+    const nome = screen.getByRole("textbox", { name: /Nome/ });
+    const rodape = screen.getByRole("button", { name: "Salvar cliente" }).closest<HTMLElement>("[data-rodape-do-formulario]")!;
+    // O jsdom não desenha: as posições são as de uma tela de 700 px com o rodapé em 620.
+    const caixa = (topo: number, altura: number) => () => ({ top: topo, bottom: topo + altura }) as DOMRect;
+    rodape.getBoundingClientRect = caixa(620, 81);
+    nome.getBoundingClientRect = caixa(200, 48);
+    telefone.getBoundingClientRect = caixa(640, 48); // coberto pelo rodapé
+    nome.scrollIntoView = vi.fn();
+    telefone.scrollIntoView = vi.fn();
+
+    nome.focus();
+    expect(nome.scrollIntoView).not.toHaveBeenCalled();
+    telefone.focus();
+    expect(telefone.scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
+    // E a margem que faz ele parar acima do rodapé vale pros campos do formulário.
+    expect(telefone.closest("form")?.className).toMatch(/scroll-mb-24/);
   });
 
   it("sem \"Cancelar\" quando a tela não dá como cancelar", () => {

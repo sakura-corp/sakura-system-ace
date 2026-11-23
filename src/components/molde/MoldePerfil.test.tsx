@@ -19,7 +19,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderizar, screen, within } from "@/testes/tela";
 import { LinhaDeLista } from "./LinhaDeLista";
-import { MoldePerfil, type PropsDoMoldePerfil } from "./MoldePerfil";
+import { listaDoPerfil, MoldePerfil, type PropsDoMoldePerfil } from "./MoldePerfil";
 
 type OS = { id: string; numero: number };
 const OS_DA_MARIA: OS[] = Array.from({ length: 9 }, (_, i) => ({ id: String(i), numero: 140 + i }));
@@ -134,6 +134,16 @@ describe("MoldePerfil: os números", () => {
   });
 });
 
+describe("MoldePerfil: o \"?\" dos números", () => {
+  it("o \"?\" ganha a área de clique de 40 px (24 desenhados + 8 de cada lado)", () => {
+    renderizar(
+      <Perfil numeroPrincipal={{ rotulo: "Gasto no ano", valor: "R$ 4.210,00", explicacao: "Soma das OS do ano." }} />,
+    );
+    const pergunta = screen.getByRole("button", { name: "O que é Gasto no ano?" });
+    expect(pergunta.parentElement?.className).toMatch(/\[&_button\]:after:-inset-2/);
+  });
+});
+
 describe("MoldePerfil: as listas embaixo", () => {
   it("cada lista tem o título e mostra 6 linhas, com o \"Ver todos\" no fim", () => {
     renderizar(<Perfil />);
@@ -163,6 +173,22 @@ describe("MoldePerfil: as listas embaixo", () => {
     );
     await user.click(screen.getByRole("button", { name: "Ver todos (9)" }));
     expect(aoVerTodos).toHaveBeenCalledTimes(1);
+  });
+
+  it("listaDoPerfil confere que itens, chave e linha falam do mesmo item", () => {
+    type Veiculo = { placa: string };
+    const lista = listaDoPerfil({
+      titulo: "Veículos",
+      lista: {
+        estado: "pronto",
+        itens: [{ placa: "ABC1D23" }] as Veiculo[],
+        // @ts-expect-error a chave é de OS, e os itens são veículos.
+        chave: (o: OS) => o.id,
+        linha: (v: Veiculo) => <LinhaDeLista nome={v.placa} />,
+        vazio: { frase: "Nenhum veículo." },
+      },
+    });
+    expect(lista.titulo).toBe("Veículos");
   });
 
   it("lista vazia mostra a frase do vazio", () => {
