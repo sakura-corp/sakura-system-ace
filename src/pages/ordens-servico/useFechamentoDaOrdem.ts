@@ -5,6 +5,7 @@ import { passoDaOrdem, type PassoDaOs } from "@/schemas/passoDaOrdem";
 import { situacaoFiscalOrdem } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
+import { STATUS_COM_FECHAMENTO } from "@/types/os";
 
 /**
  * O fechar a OS passo a passo (#1088): conferir peças e serviços → receber →
@@ -43,22 +44,39 @@ export interface FechamentoDaOrdem {
 }
 
 export function useFechamentoDaOrdem(ordem: OrdemServico | undefined): FechamentoDaOrdem {
-  const [notas, setNotas] = useState<NotaFiscalArquivo[]>([]);
-  const [avisadoEm, setAvisadoEm] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(false);
-  const [concluidoSemAviso, setConcluidoSemAviso] = useState(false);
-  const [notaParaEmitir, setNotaParaEmitir] = useState<NotaDaOs | null>(null);
-
   const id = ordem?.id;
   const status = ordem?.status;
-  // Só a OS faturada depende das notas e do aviso pra saber o passo; as outras
-  // (em andamento, concluída) não buscam nada no banco.
-  const buscar = status === "faturada";
+  // A concluída e a faturada buscam as notas (a concluída pode ter emitido
+  // nota antes de receber, como a venda de balcão que ficou sem pagamento); só
+  // a faturada busca também o aviso, e só nela o passo depende dos dois.
+  const buscar = !!status && STATUS_COM_FECHAMENTO.includes(status);
+  const chave = buscar && id ? `${id}:${status}` : null;
+
+  // Tudo que é desta OS zera quando outra OS abre na mesma tela (a busca do
+  // Ctrl+K reaproveita o formulário): o "concluído sem avisar" de uma não pode
+  // valer pra outra. É o ajuste de estado durante o desenho, do React.
+  const [idDoEstado, setIdDoEstado] = useState(id);
+  const [notas, setNotas] = useState<NotaFiscalArquivo[]>([]);
+  const [avisadoEm, setAvisadoEm] = useState<string | null>(null);
+  const [concluidoSemAviso, setConcluidoSemAviso] = useState(false);
+  const [notaParaEmitir, setNotaParaEmitir] = useState<NotaDaOs | null>(null);
+  // Pra qual OS e status a busca já terminou. Enquanto não bate com o atual,
+  // está carregando: já no primeiro desenho, e não só depois que a busca
+  // começa (senão a OS faturada aparecia um instante no passo errado).
+  const [buscadoPara, setBuscadoPara] = useState<string | null>(null);
+  if (id !== idDoEstado) {
+    setIdDoEstado(id);
+    setNotas([]);
+    setAvisadoEm(null);
+    setConcluidoSemAviso(false);
+    setNotaParaEmitir(null);
+  }
+  const carregando = status === "faturada" && chave !== null && buscadoPara !== chave;
 
   useEffect(() => {
-    if (!id || !buscar) return;
+    if (!id || !chave) return;
     let ativo = true;
-    setCarregando(true);
+    const comAviso = status === "faturada";
     // Cada busca falha sozinha: sem as notas, a trilha fica na nota fiscal (o
     // passo mais cedo, que não promete o que não sabe); sem o aviso, fica em
     // "garantia e avisar". Aviso, nunca tranca (licoes.md, item 33).
@@ -67,20 +85,22 @@ export function useFechamentoDaOrdem(ordem: OrdemServico | undefined): Fechament
         console.error("Erro ao carregar as notas fiscais da OS:", err);
         return null;
       }),
-      quandoAvisouCarroPronto(id).catch((err) => {
-        console.error("Erro ao ver se o cliente já foi avisado:", err);
-        return null;
-      }),
+      comAviso
+        ? quandoAvisouCarroPronto(id).catch((err) => {
+            console.error("Erro ao ver se o cliente já foi avisado:", err);
+            return null;
+          })
+        : Promise.resolve(null),
     ]).then(([lista, avisado]) => {
       if (!ativo) return;
       if (lista) setNotas(lista);
       setAvisadoEm(avisado);
-      setCarregando(false);
+      setBuscadoPara(chave);
     });
     return () => {
       ativo = false;
     };
-  }, [id, status, buscar]);
+  }, [id, status, chave]);
 
   const recarregarNotas = useCallback(async () => {
     if (!id) return;

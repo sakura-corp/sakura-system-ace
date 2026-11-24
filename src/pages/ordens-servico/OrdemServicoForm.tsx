@@ -599,7 +599,12 @@ export function OrdemServicoForm({
       ref={barraRef}
       data-rodape-da-os
       className={`${
-        aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+        // No Fechamento ela também gruda quando traz o botão do próximo passo
+        // (#1088): em 1366 × 768 ele ficava abaixo da dobra. Sem o botão (um
+        // passo feito, só com o "Voltar"), continua solta, como na #781.
+        aba === "detalhes" || acaoDoPasso
+          ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]"
+          : ""
       } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
     >
       {aba === "detalhes" ? (

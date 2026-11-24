@@ -437,9 +437,14 @@ describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
     return rolar;
   }
 
-  it("no Fechamento a barra não gruda; nos Detalhes, gruda", async () => {
+  // Desde a #1088 a barra do Fechamento gruda quando traz o botão do próximo
+  // passo (senão ele ficava abaixo da dobra); vendo um passo já feito, só com
+  // o "Voltar", ela continua solta, como na #781.
+  it("no Fechamento, vendo um passo feito, a barra não gruda; com o botão do passo e nos Detalhes, gruda", async () => {
     const { user } = montar({ ordemExistente: ordemFaturada(), abaInicial: "fechamento" });
     await screen.findByText("aba fechamento");
+    expect(barra().className).toMatch(/\bsticky\b/);
+    await user.click(screen.getByRole("button", { name: /Receber.*voltar/ }));
     expect(barra().className).not.toMatch(/\bsticky\b/);
     await user.click(screen.getByRole("button", { name: /Conferir peças e serviços.*voltar/ }));
     expect(barra().className).toMatch(/\bsticky\b/);

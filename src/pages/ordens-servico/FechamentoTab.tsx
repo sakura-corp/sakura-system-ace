@@ -214,32 +214,6 @@ function PainelDoFechamento({
     <div className="space-y-6">
       {erro && <AvisoDeErro className="text-corpo">{erro}</AvisoDeErro>}
 
-      {/* Quem e quando: o mesmo de antes, em qualquer passo. */}
-      <section className="grid grid-cols-2 gap-4 rounded-2xl border border-linha p-4 text-corpo lg:grid-cols-4">
-        <div className="min-w-0">
-          <p className="text-rotulo text-texto-2">Cliente</p>
-          <p className="truncate font-medium text-texto">{ordem.cliente?.nome ?? "—"}</p>
-        </div>
-        {ehVenda ? (
-          <div className="min-w-0">
-            <p className="text-rotulo text-texto-2">Vendedor</p>
-            <p className="truncate font-medium text-texto">{ordem.vendedor?.nome ?? "—"}</p>
-          </div>
-        ) : (
-          <div className="min-w-0">
-            <p className="text-rotulo text-texto-2">Veículo</p>
-            <p className="font-medium text-texto">{ordem.veiculo?.placa ?? "—"}</p>
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="text-rotulo text-texto-2">{ehVenda ? "Registrada em" : "Aberta em"}</p>
-          <p className="font-medium tabular-nums text-texto">{formatarData(ordem.data_abertura)}</p>
-        </div>
-        <div className="min-w-0">
-          <p className="text-rotulo text-texto-2">Fechada em</p>
-          <p className="font-medium tabular-nums text-texto">{formatarData(ordem.data_fechamento)}</p>
-        </div>
-      </section>
 
       {passo === "receber" && (
         <section aria-label="Receber" className="space-y-6 rounded-2xl border border-linha p-6">
@@ -248,7 +222,7 @@ function PainelDoFechamento({
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="text-rotulo font-semibold text-texto-2">
-                {faturada ? "Faturado" : "A receber"}
+                {faturada ? "Total da OS" : "A receber"}
               </p>
               <p className="text-metrica font-semibold tabular-nums text-texto">{formatarMoeda(total)}</p>
               {faturada && (
@@ -283,6 +257,31 @@ function PainelDoFechamento({
               ))}
             </ul>
           </div>
+          {!faturada && (
+            // O que a aba Fechamento já deixava fazer antes de receber continua
+            // aqui, discreto: a nota e a garantia não precisam esperar o
+            // pagamento (nenhuma ação sumiu, #1088).
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-linha pt-4">
+              <p className="text-rotulo text-texto-2">Dá pra adiantar a nota e a garantia antes de receber.</p>
+              <div className="flex flex-wrap justify-end gap-2">
+                {situacao.precisaNfce && !situacao.temNfce && (
+                  <Botao tamanho="medio" onClick={() => setNotaParaEmitir("NFC-e")}>
+                    Emitir NFC-e
+                  </Botao>
+                )}
+                {situacao.precisaNfse && !situacao.temNfse && (
+                  <Botao tamanho="medio" onClick={() => setNotaParaEmitir("NFS-e")}>
+                    Emitir NFS-e
+                  </Botao>
+                )}
+                {botoesDanfe("nfe")}
+                {botoesDanfe("nfse")}
+                <Botao tamanho="medio" onClick={() => setPreviewGarantiaAberta(true)}>
+                  Ver garantia
+                </Botao>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -364,8 +363,8 @@ function PainelDoFechamento({
           <ul className="divide-y divide-linha">
             <LinhaFeito
               feito
-              titulo={`Faturado ${formatarMoeda(total)}`}
-              detalhe={`faturada em ${formatarData(ordem.data_fechamento)}`}
+              titulo={`Faturada: total ${formatarMoeda(total)}`}
+              detalhe={`em ${formatarData(ordem.data_fechamento)} (com os juros do cartão, se houve, o cobrado é maior)`}
             />
             <LinhaFeito
               feito
@@ -383,6 +382,35 @@ function PainelDoFechamento({
           </ul>
         </section>
       )}
+
+      {/* Quem e quando: o mesmo de antes, em qualquer passo. Embaixo, de apoio:
+          em cima fica o que decide o passo, pra caber em 1366 × 768 com o
+          botão do próximo passo à vista. */}
+      <section className="grid grid-cols-2 gap-4 rounded-2xl border border-linha p-4 text-corpo lg:grid-cols-4">
+        <div className="min-w-0">
+          <p className="text-rotulo text-texto-2">Cliente</p>
+          <p className="truncate font-medium text-texto">{ordem.cliente?.nome ?? "—"}</p>
+        </div>
+        {ehVenda ? (
+          <div className="min-w-0">
+            <p className="text-rotulo text-texto-2">Vendedor</p>
+            <p className="truncate font-medium text-texto">{ordem.vendedor?.nome ?? "—"}</p>
+          </div>
+        ) : (
+          <div className="min-w-0">
+            <p className="text-rotulo text-texto-2">Veículo</p>
+            <p className="font-medium text-texto">{ordem.veiculo?.placa ?? "—"}</p>
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-rotulo text-texto-2">{ehVenda ? "Registrada em" : "Aberta em"}</p>
+          <p className="font-medium tabular-nums text-texto">{formatarData(ordem.data_abertura)}</p>
+        </div>
+        <div className="min-w-0">
+          <p className="text-rotulo text-texto-2">Fechada em</p>
+          <p className="font-medium tabular-nums text-texto">{formatarData(ordem.data_fechamento)}</p>
+        </div>
+      </section>
 
       {notaParaEmitir && (
         <EmitirNotaFiscalModal

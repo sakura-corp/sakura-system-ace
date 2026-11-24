@@ -167,7 +167,7 @@ describe("OrdemServicoForm — a trilha do fechamento (#1088)", () => {
     expect(aoAbrir).toHaveBeenCalledTimes(1);
     // O fim claro: o resumo e o "Pronto".
     expect(await within(trilha()).findByText(/Tudo feito/)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Resumo do fechamento" })).toHaveTextContent(/Faturado R\$\s*860,00/);
+    expect(screen.getByRole("region", { name: "Resumo do fechamento" })).toHaveTextContent(/Faturada: total R\$\s*860,00/);
     expect(botaoLaranja()).toHaveTextContent("Pronto");
   });
 
@@ -212,6 +212,64 @@ describe("OrdemServicoForm — a trilha do fechamento (#1088)", () => {
     expect(screen.queryByRole("button", { name: "Emitir NFC-e" })).toBeNull();
     await user.click(within(trilha()).getByRole("button", { name: /Voltar pro passo atual/ }));
     await waitFor(() => expect(botaoLaranja()).toHaveTextContent("Emitir NFC-e"));
+  });
+
+  // Achado da revisão: a OS faturada nascia com o passo "nota" (as notas
+  // ainda não tinham chegado) e, quando chegavam, a troca de passo jogava pra
+  // fora dos Detalhes quem tinha aberto a OS por "Abrir a OS".
+  it("aberta em Detalhes, a OS já fechada continua nos Detalhes quando as notas chegam", async () => {
+    listarArquivosDasOrdens.mockResolvedValue([nota("nfe"), nota("nfse")]);
+    quandoAvisouCarroPronto.mockResolvedValue("2026-09-02T15:00:00.000Z");
+    montar(ordem("faturada"), { abaInicial: "detalhes" });
+    // Nem por um instante o passo errado com o botão dele.
+    expect(screen.queryByRole("button", { name: "Emitir NFC-e" })).toBeNull();
+    expect(await within(trilha()).findByText(/Tudo feito/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Resumo do fechamento" })).toBeNull();
+  });
+
+  // Achado da revisão: na aba Fechamento de antes, a OS concluída já deixava
+  // emitir a nota e ver a garantia antes de receber. Continua dando.
+  it("concluída: dá pra adiantar a nota e a garantia, discretas, antes de receber", async () => {
+    montar(ordem("concluida"));
+    expect(await screen.findByRole("button", { name: "Emitir NFC-e" })).not.toHaveClass("bg-acao");
+    expect(screen.getByRole("button", { name: "Emitir NFS-e" }).className).not.toMatch(/bg-acao/);
+    expect(screen.getByRole("button", { name: "Ver garantia" })).toBeInTheDocument();
+    expect(botaoLaranja()).toHaveTextContent(/^Receber/);
+  });
+
+  // Achado da revisão: abrir outra OS na mesma tela (busca do Ctrl+K) levava
+  // junto o "concluído sem avisar" da anterior.
+  it("outra OS aberta na mesma tela não herda o 'Concluir' da anterior", async () => {
+    listarArquivosDasOrdens.mockResolvedValue([nota("nfe"), nota("nfse")]);
+    const { user, rerender } = montar(ordem("faturada"));
+    await within(trilha()).findByText(/Passo 4 de 4/);
+    await user.click(botaoLaranja());
+    expect(await within(trilha()).findByText(/Tudo feito/)).toBeInTheDocument();
+
+    const outra = { ...ordem("faturada"), id: "os-2", numero: 13 } as OrdemServico;
+    rerender(
+      <OrdemServicoForm
+        ordemExistente={outra}
+        abaInicial="fechamento"
+        clientes={clientes}
+        pecas={[]}
+        servicos={[]}
+        funcionarios={funcionarios}
+        funcionarioAtualId="func-1"
+        ordens={[]}
+        saldoPorPeca={new Map()}
+        saldoCarregado
+        onSalvarNova={vi.fn()}
+        onSalvarEdicao={vi.fn().mockResolvedValue(undefined)}
+        onEditarItem={vi.fn().mockResolvedValue(undefined)}
+        onEncerrar={vi.fn()}
+        onCadastrarCliente={vi.fn()}
+        onCadastrarVeiculo={vi.fn()}
+        onCancelar={vi.fn()}
+      />,
+    );
+    expect(await within(trilha()).findByText(/Passo 4 de 4/)).toBeInTheDocument();
   });
 
   it("orçamento não tem trilha", () => {
