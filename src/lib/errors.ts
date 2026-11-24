@@ -1,4 +1,8 @@
-import { MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES } from "@/schemas/percentualTributosSimples";
+import {
+  MENSAGEM_PERCENTUAL_ICMS_ST,
+  MENSAGEM_PERCENTUAL_PECAS,
+  MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+} from "@/schemas/percentualTributosSimples";
 
 /**
  * A frase em português de cada trava do banco (migrations 0058 a 0060).
@@ -66,6 +70,10 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_categorias_caixa_grupo: "Esse grupo não existe. Escolha um dos grupos da lista.",
   ck_categorias_caixa_grupo_do_tipo:
     "Esse grupo não serve pro tipo da categoria: categoria de entrada só vai em grupo de entrada, e de saída em grupo de saída.",
+  // Migration 0090 (#1040): os tributos aproximados na nota (Lei 12.741/2012).
+  // A mesma frase da tela (src/schemas/percentualTributosSimples.ts).
+  ck_config_fiscal_percentual_tributos_pecas: MENSAGEM_PERCENTUAL_PECAS,
+  ck_config_fiscal_percentual_estimativa_icms_st: MENSAGEM_PERCENTUAL_ICMS_ST,
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
@@ -80,6 +88,16 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_computadores_tamanhos: "O nome ou o apelido do computador está comprido demais (apelido: até 60 letras).",
   // Migration 0064 (venda de balcão). Quem grava o tipo é o próprio programa.
   ck_ordens_servico_tipo: 'O tipo da ordem precisa ser "os" ou "venda_balcao".',
+  // Migration 0089 (taxas da maquininha, #387).
+  ck_taxas_maquininha_forma: "A taxa da maquininha é só pra cartão de débito ou de crédito.",
+  ck_taxas_maquininha_parcelas: "As parcelas vão de 1 a 12, e o débito é sempre à vista (1 parcela).",
+  ck_taxas_maquininha_taxa: "A taxa tem que ser de 0% até menos de 100%.",
+  ck_taxas_maquininha_prazo: "O prazo pra cair na conta vai de 0 a 365 dias.",
+  ck_caixa_taxas_cartao_condicoes:
+    "A taxa do cartão desta venda não fecha (forma, parcelas, taxa ou prazo).",
+  ck_caixa_taxas_cartao_valores: "A taxa do cartão desta venda não fecha (os valores não batem).",
+  ck_caixa_cartao_a_receber_numero: "As datas do cartão a receber não fecham (número da parcela).",
+  ck_caixa_cartao_a_receber_valor: "As datas do cartão a receber não fecham (valor negativo).",
 };
 
 /** A frase da trava, se a mensagem do banco for de uma trava conhecida. */
@@ -170,6 +188,14 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "configuracoes_contabilidade",
   // 0088 (grupo do DRE, #386): coluna de categorias_caixa.
   "grupo",
+  // 0089 (taxas da maquininha, #387): tabelas.
+  "configuracoes_taxas_maquininha",
+  "caixa_taxas_cartao",
+  "caixa_cartao_a_receber",
+  // 0090 (tributos aproximados, #1040): colunas de configuracoes_fiscais_loja.
+  "percentual_tributos_pecas",
+  "percentual_estimativa_icms_st",
+  "competencia_tributos_confirmada",
   // 0093 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
   "tipo",
 ] as const;

@@ -16,8 +16,9 @@ import { DiarioSection } from "./DiarioSection";
 import { EntradaSaidaSection } from "./EntradaSaidaSection";
 import { Aviso } from "@/components/Aviso";
 import { FechamentoSection } from "./FechamentoSection";
+import { CartaoAReceberSection } from "./CartaoAReceberSection";
 
-type Aba = "diario" | "entradas" | "saidas" | "fechamento";
+type Aba = "diario" | "entradas" | "saidas" | "fechamento" | "cartao";
 
 export function CaixaPage() {
   const { lojaAtual, operador } = useAuth();
@@ -148,6 +149,8 @@ export function CaixaPage() {
           podeDesfazer={operador?.admin === true}
           onAtualizado={carregar}
         />
+      ) : aba === "cartao" && lojaAtual ? (
+        <CartaoAReceberSection key={lojaAtual.id} lojaId={lojaAtual.id} />
       ) : aba === "entradas" ? (
         <EntradaSaidaSection
           tipo="entrada"
@@ -176,4 +179,5 @@ const ABAS: { valor: Aba; nome: string }[] = [
   { valor: "entradas", nome: "Entradas" },
   { valor: "saidas", nome: "Saídas" },
   { valor: "fechamento", nome: "Fechamento" },
+  { valor: "cartao", nome: "Cartão a receber" },
 ];

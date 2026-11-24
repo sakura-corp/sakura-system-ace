@@ -671,6 +671,17 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   código **`SKNEG`**. Caixa e contas a receber não mudam. As travas da `0071` continuam. Número
   `0087` por decisão da Sofia (20/11/2026: entra antes, pra loja usar logo); as de #1120, #1121 e
   #1123 passam a `0088`, `0089` e `0090`. Teste em `supabase/scripts/testar-trocar-itens-os-faturada.sql`.
+- `0090`: **os tributos aproximados na nota, pela alíquota do Simples** (tarefa #1040, Lei
+  12.741/2012). Três colunas novas e opcionais em `configuracoes_fiscais_loja`:
+  `percentual_tributos_pecas` (alíquota efetiva do Anexo I) e `percentual_estimativa_icms_st`
+  (soma só nas peças com CSOSN 500), as duas `numeric(5,2)` de 0 a 100, com as travas
+  `ck_config_fiscal_percentual_tributos_pecas` e `ck_config_fiscal_percentual_estimativa_icms_st`
+  (frases em `src/lib/errors.ts`); e `competencia_tributos_confirmada` (`date`, o mês no dia 1º em
+  que a loja conferiu os números, do jeito da `0049`). O percentual do **serviço** reaproveita a
+  `percentual_tributos_simples` (`0078`). Vazio = a nota sai sem a linha. Número `0090` (Sofia,
+  20/11: #1146 é a `0087`, #1120 a `0088`, #1121 a `0089`): **aplicar depois delas** (o botão só roda as de
+  número maior que o do banco). Coluna nova e opcional: sobe **antes** da versão, sem
+  `versao-minima-do-programa`. Teste em `supabase/scripts/testar-tributos-aproximados.sql`.
 - `0093`: **reabrir orçamento recusado, com motivo e histórico** (tarefa #1181; Sofia, 24/11/2026).
   `ordens_servico_trocas` vira o **histórico único da OS**: coluna nova `tipo` (`troca` pro que já
   existia, `reabertura`, e já `correcao_valor` pra #1182), check `ck_ordens_servico_trocas_tipo`. A
@@ -684,7 +695,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `sakura.reabrir_orcamento` = id da OS, ligada pela função dentro da transação: o update direto
   continua recusado. OS aprovada nunca volta. O "Já aprovar agora" da tela chama a `aprovar_orcamento`
   de sempre, depois. Matriz de RLS sem mudança (a sonda grava `troca` e continua só admin). Teste em
-  `supabase/scripts/testar-reabrir-orcamento.sql`. Entra depois da fila `0089` a `0092`.
+  `supabase/scripts/testar-reabrir-orcamento.sql`. Entra depois da `0091` e da `0092` (#1171 e #1174, ainda em PR em 24/11): o botão só roda as de número maior que o do banco.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

@@ -4,9 +4,15 @@ import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
 import { ehErroDeRede, mensagemDeErro } from "./errors";
-import { diaLocal } from "./datas";
+import { diaLocal, hojeLocal } from "./datas";
+import { listarTaxasMaquininha, registrarTaxaDoCartao } from "./taxasMaquininha";
 import type { ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
+import {
+  calcularTaxaDaMaquininha,
+  formaECartao,
+  type TaxaMaquininha,
+} from "@/schemas/taxaMaquininha";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
@@ -32,6 +38,21 @@ import type {
 export interface PagamentoOrdem {
   formaPagamento: string;
   valor: number;
+  /**
+   * As parcelas desta linha na maquininha (#387, pra achar a taxa). Sem ele,
+   * o cartão de crédito usa as `parcelas` do faturamento, e o resto, 1.
+   */
+  parcelas?: number;
+}
+
+/** O que o faturamento devolve além de ter dado certo. */
+export interface ResultadoFaturamento {
+  /**
+   * A venda foi faturada, mas a taxa da maquininha de alguma linha de cartão
+   * não foi guardada (#387). A frase já vem pronta pra mostrar; `null` quando
+   * deu tudo certo ou a loja não informou a taxa (em branco não é aviso).
+   */
+  avisoTaxa: string | null;
 }
 
 // Os nomes de vendedor e técnico NÃO vêm mais por join embutido aqui.
@@ -736,7 +757,7 @@ export async function registrarVendaBalcao(
   pagamento: PagamentoDaVenda,
   operadorId: string,
   lojaId: string,
-): Promise<OrdemServico> {
+): Promise<{ ordem: OrdemServico } & ResultadoFaturamento> {
   if (itens.length === 0) throw new Error("A venda não tem nenhuma peça.");
 
   const { data, error } = await supabase
@@ -772,8 +793,9 @@ export async function registrarVendaBalcao(
     throw erroItens;
   }
 
+  let resultado: ResultadoFaturamento;
   try {
-    await faturarOrdem(
+    resultado = await faturarOrdem(
       ordem,
       pagamento.pagamentos,
       pagamento.parcelas,
@@ -790,7 +812,7 @@ export async function registrarVendaBalcao(
     throw new VendaSemFaturamentoError(ordem, mensagemDeErro(erroPagamento));
   }
 
-  return ordem;
+  return { ordem, avisoTaxa: resultado.avisoTaxa };
 }
 
 // Marca a OS como "concluída" — usado pelo botão "Encerrar OS", que já leva
@@ -809,7 +831,7 @@ export async function faturarOrdem(
   // juros do cartão deixam o cobrado maior). O banco confere com o que está
   // gravado e recusa se a OS mudou em outro computador.
   totalDosItens: number,
-): Promise<void> {
+): Promise<ResultadoFaturamento> {
   // Orçamento não é venda (#379): não entra no caixa nem em contas a
   // receber. Aprovar antes faz dele uma OS.
   if (!contaNosNumeros(ordem)) {
@@ -851,8 +873,9 @@ export async function faturarOrdem(
   // Caixa só recebe o lançamento quando ela for marcada como recebida de
   // verdade (Contas a Receber).
   if (!previsaoRecebimento) {
+    const lancados: { movimentoId: string; pagamento: PagamentoOrdem }[] = [];
     for (const pagamento of pagamentos) {
-      await criarMovimentoCaixa(
+      const movimentoId = await criarMovimentoCaixa(
         {
           ordem_servico_id: ordem.id,
           tipo: "entrada",
@@ -863,7 +886,16 @@ export async function faturarOrdem(
         },
         ordem.loja_id,
       );
+      lancados.push({ movimentoId, pagamento });
     }
+    // A taxa da maquininha (#387) só depois de TODOS os lançamentos: ela é
+    // informação e não pode atrasar o Pix que vem depois do cartão (se a rede
+    // caísse no meio, o Caixa ficaria sem ele).
+    const taxas = new TaxasDoFaturamento(ordem.loja_id);
+    for (const { movimentoId, pagamento } of lancados) {
+      await taxas.gravar(movimentoId, pagamento, parcelas);
+    }
+    return { avisoTaxa: taxas.aviso() };
   } else {
     await criarContaReceber(
       {
@@ -875,5 +907,64 @@ export async function faturarOrdem(
       },
       ordem.loja_id,
     );
+    // "Receber depois" não passa pela maquininha agora: sem taxa (#387).
+    return { avisoTaxa: null };
+  }
+}
+
+/**
+ * A taxa da maquininha de um faturamento (#387): lê a tabela da loja uma vez
+ * só (e só se houver alguma linha de cartão), calcula e grava a taxa de cada
+ * lançamento de cartão.
+ *
+ * A taxa é informação, não a venda: nada aqui lança erro. Se ler a tabela ou
+ * gravar a taxa falhar, registra no console e junta o motivo pro aviso que o
+ * faturamento devolve. Tabela sem a linha (a loja não informou) não é erro e
+ * não avisa: o DRE mostra "não informada".
+ */
+class TaxasDoFaturamento {
+  private tabela: Promise<readonly TaxaMaquininha[] | null> | null = null;
+  private readonly motivos: string[] = [];
+  private readonly dia = hojeLocal();
+
+  constructor(private readonly lojaId: string) {}
+
+  private lerTabela(): Promise<readonly TaxaMaquininha[] | null> {
+    this.tabela ??= listarTaxasMaquininha(this.lojaId).catch((erro: unknown) => {
+      console.error("Não deu pra ler a tabela de taxas da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+      return null;
+    });
+    return this.tabela;
+  }
+
+  async gravar(movimentoId: string, pagamento: PagamentoOrdem, parcelasDoFaturamento: number) {
+    if (!formaECartao(pagamento.formaPagamento)) return;
+    // Só aqui, na primeira linha de cartão, a tabela é lida (e uma vez só).
+    const tabela = await this.lerTabela();
+    if (!tabela) return;
+    const parcelas =
+      pagamento.parcelas ??
+      (pagamento.formaPagamento === "cartao_credito" ? parcelasDoFaturamento : 1);
+    const calculo = calcularTaxaDaMaquininha(
+      pagamento.valor,
+      pagamento.formaPagamento,
+      parcelas,
+      tabela,
+      this.dia,
+    );
+    if (!calculo.informada) return;
+    try {
+      await registrarTaxaDoCartao(movimentoId, calculo);
+    } catch (erro) {
+      console.error("Não deu pra guardar a taxa da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+    }
+  }
+
+  aviso(): string | null {
+    const motivos = [...new Set(this.motivos)];
+    if (motivos.length === 0) return null;
+    return `A venda foi faturada, mas a taxa da maquininha não foi guardada: ${motivos.join("; ")}`;
   }
 }
