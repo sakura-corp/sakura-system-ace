@@ -78,6 +78,13 @@ export interface TrocaDeOsFaturada {
   itens_antes: ItemDaTrocaGravado[];
   itens_depois: ItemDaTrocaGravado[];
   total: number;
+  /**
+   * A correção de valor (#1182, migration 0094): o total antes e depois e
+   * como a diferença foi acertada. Nulos nas trocas de total igual antigas.
+   */
+  total_antes?: number | null;
+  total_depois?: number | null;
+  acerto?: "conta_aberta" | "pago_agora" | "a_receber" | "devolvido" | null;
   criado_em: string;
 }
 
