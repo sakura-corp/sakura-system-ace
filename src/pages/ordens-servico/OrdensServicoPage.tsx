@@ -7,7 +7,7 @@ import {
   Star,
   TriangleAlert,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Abas } from "@/components/Abas";
 import { Botao } from "@/components/Botao";
@@ -96,6 +96,12 @@ import { FaturamentoCard } from "./FaturamentoCard";
 import { NotaDoClienteModal } from "./NotaDoClienteModal";
 import { notasDoCliente } from "./notaDoCliente";
 import { SeloDaOrdem } from "./SeloDaOrdem";
+import {
+  devolverRolagem,
+  posicaoDaRolagem,
+  rolarParaOTopo,
+  type PosicaoDeRolagem,
+} from "./rolagemDaLista";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
@@ -317,6 +323,41 @@ export function OrdensServicoPage() {
   );
   const nadaAberto =
     !mostrarFormulario && !ordemEmEdicao && !mostrarVenda && !vendaAberta && !ordemFaturando;
+  // OS ou venda aberta ocupa a tela inteira, sem a lista (visual novo, #1087).
+  // A lista só deixa de ser desenhada: busca, período e aba continuam no state
+  // da página, e o Voltar devolve a rolagem de onde ela estava.
+  const paginaPropria = mostrarFormulario || !!ordemEmEdicao || mostrarVenda || !!vendaAberta;
+  const raizRef = useRef<HTMLDivElement>(null);
+  const rolagemDaListaRef = useRef<PosicaoDeRolagem | null>(null);
+  const paginaPropriaRef = useRef(paginaPropria);
+  paginaPropriaRef.current = paginaPropria;
+  const estavaEmPaginaPropria = useRef(false);
+
+  useEffect(() => {
+    // Rolagem não borbulha: escuta na captura, no documento, e guarda a
+    // posição de quem rolou (a área do conteúdo no app) enquanto a lista
+    // está na tela.
+    function aoRolar(evento: Event) {
+      if (paginaPropriaRef.current || !raizRef.current) return;
+      const posicao = posicaoDaRolagem(evento.target, raizRef.current);
+      if (posicao) rolagemDaListaRef.current = posicao;
+    }
+    document.addEventListener("scroll", aoRolar, true);
+    return () => document.removeEventListener("scroll", aoRolar, true);
+  }, []);
+
+  useLayoutEffect(() => {
+    const raiz = raizRef.current;
+    if (paginaPropria) {
+      if (raiz) rolarParaOTopo(raiz, rolagemDaListaRef.current);
+    } else if (estavaEmPaginaPropria.current) {
+      devolverRolagem(rolagemDaListaRef.current);
+      // Depois da pintura, caso o layout ainda tenha mexido na altura.
+      requestAnimationFrame(() => devolverRolagem(rolagemDaListaRef.current));
+    }
+    estavaEmPaginaPropria.current = paginaPropria;
+  }, [paginaPropria]);
+
   // A lista nem chegou: o erro fica dentro dela, com o "Tentar de novo". Com
   // a lista na tela, o erro (de faturar, do WhatsApp) fica no aviso de cima.
   const listaComErro = !!erro && ordens.length === 0;
@@ -945,7 +986,9 @@ export function OrdensServicoPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={raizRef} className="space-y-6">
+      {!paginaPropria && (
+      <>
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
@@ -995,6 +1038,8 @@ export function OrdensServicoPage() {
           <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.
         </p>
+      )}
+      </>
       )}
 
       {mostrarFormulario && operador && (
@@ -1129,7 +1174,7 @@ export function OrdensServicoPage() {
         </p>
       )}
 
-      {temOrdens && (
+      {!paginaPropria && temOrdens && (
         <Abas
           rotulo="O que mostrar na lista"
           ativa={lista}
@@ -1144,7 +1189,7 @@ export function OrdensServicoPage() {
       {/* O molde de lista (#1135): busca e período em cima, uma linha por OS
           com o nome em cima e o detalhe embaixo, uma ação na linha. Cabe numa
           janela de 1024 com o menu aberto, sem rolar de lado (#1091). */}
-      {lojaAtual && (
+      {!paginaPropria && lojaAtual && (
         // O botão da linha tem sempre a mesma largura ("Faturar" e "Nota do
         // cliente"), nas listas de OS e de Orçamentos: o selo e o valor batem
         // em coluna, linha a linha e de uma lista pra outra (#1091).
@@ -1223,7 +1268,7 @@ export function OrdensServicoPage() {
           />
         </div>
       )}
-      {temOrdens && !carregando && (
+      {!paginaPropria && temOrdens && !carregando && (
         <p className="text-rotulo text-texto-2">
           {busca.trim()
             ? "Buscando em todo o histórico, sem limite de data."

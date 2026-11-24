@@ -47,7 +47,10 @@ vi.mock("@/lib/focusNfe", async () => {
 });
 vi.mock("@/lib/estoque", () => ({ registrarMovimento: vi.fn() }));
 vi.mock("@/lib/categorias", () => ({ listarCategorias: async () => [] }));
-vi.mock("@/lib/caixa", () => ({ listarMovimentosCaixaPorOrdem: async () => [] }));
+vi.mock("@/lib/caixa", () => ({
+  listarMovimentosCaixaPorOrdem: async () => [],
+  buscarCustoDasOrdens: async () => new Map(),
+}));
 vi.mock("@/lib/notasFiscais", () => ({
   salvarArquivoEmitido: vi.fn(),
   listarArquivosDasOrdens: async () => [],
@@ -69,7 +72,7 @@ vi.mock("@/lib/configuracoes", () => ({
   buscarTextoGarantia: async () => "",
 }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
 }));
 
 const { OrdemServicoForm } = await import("./OrdemServicoForm");
