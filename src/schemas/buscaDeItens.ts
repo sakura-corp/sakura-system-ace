@@ -165,7 +165,7 @@ function ehOMesmo(item: ItemFormValues, escolha: ResultadoDaBusca): boolean {
 
 /**
  * Põe o escolhido nos itens NOVOS da OS. Se ele já está lá (mesma peça ou
- * mesmo serviço do cadastro), soma 1 na quantidade em vez de criar outra
+ * mesmo serviço do cadastro, com o mesmo técnico), soma 1 na quantidade em vez de criar outra
  * linha: passar o leitor duas vezes no mesmo pneu é o jeito natural de
  * lançar dois (como `incluirPeca`, na venda de balcão). Senão, linha nova no
  * fim, com quantidade 1, o preço do cadastro (em branco se ele não tem) e o
@@ -176,7 +176,12 @@ export function incluirNaOS(
   escolha: ResultadoDaBusca,
   tecnicoPadrao: string,
 ): ItemFormValues[] {
-  const indice = itens.findIndex((item) => ehOMesmo(item, escolha));
+  // Só junta com a linha do MESMO técnico: a comissão é por técnico do item
+  // (`schemas/comissoes.ts`), e somar no item de outro técnico tiraria a parte
+  // de quem fez (achado da revisão da #1087).
+  const indice = itens.findIndex(
+    (item) => ehOMesmo(item, escolha) && item.tecnico_id === tecnicoPadrao,
+  );
   if (indice >= 0) {
     return itens.map((item, i) =>
       i === indice ? { ...item, quantidade: String(quantidadeDigitada(item.quantidade) + 1) } : item,

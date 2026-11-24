@@ -192,6 +192,23 @@ describe("incluirNaOS", () => {
     ]);
   });
 
+  it("o mesmo serviço com OUTRO técnico vira outra linha (a comissão é por técnico do item)", () => {
+    const comA = incluirNaOS([], escolhaMontagem, "tec-A");
+    const resultado = incluirNaOS(comA, escolhaMontagem, "tec-B");
+    expect(resultado).toHaveLength(2);
+    expect(resultado.map((item) => [item.tecnico_id, item.quantidade])).toEqual([
+      ["tec-A", "1"],
+      ["tec-B", "1"],
+    ]);
+  });
+
+  it("a mesma peça com o mesmo técnico soma 1 na linha que já existe", () => {
+    const comA = incluirNaOS([], escolhaPneu, "tec-A");
+    const resultado = incluirNaOS(comA, escolhaPneu, "tec-A");
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].quantidade).toBe("2");
+  });
+
   it("serviço novo vira uma linha de serviço, no fim da lista", () => {
     const comPneu = incluirNaOS([], escolhaPneu, "tec-1");
     const resultado = incluirNaOS(comPneu, escolhaMontagem, "tec-2");

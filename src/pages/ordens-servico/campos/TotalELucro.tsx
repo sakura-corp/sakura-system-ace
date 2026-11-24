@@ -15,24 +15,31 @@ export function ApoioDoTotal({
   pecas,
   servicos,
   lucro,
+  calculando = false,
 }: {
-  pecas: number;
-  /** Sem isto (venda de balcão, que só vende peça) a linha de serviços some. */
+  /**
+   * Peças e serviços, separados. A venda de balcão (que só vende peça) não
+   * passa nenhum dos dois: "Peças" ali seria o próprio total repetido.
+   */
+  pecas?: number;
   servicos?: number;
   lucro: LucroPrevisto;
+  /** O custo ainda não chegou: "calculando…", nunca um número com custo velho. */
+  calculando?: boolean;
 }) {
   return (
     <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-rotulo text-texto-2">
-      <span className="tabular-nums">{`Peças ${formatarMoeda(pecas)}`}</span>
+      {pecas !== undefined && <span className="tabular-nums">{`Peças ${formatarMoeda(pecas)}`}</span>}
       {servicos !== undefined && (
         <span className="tabular-nums">{`Serviços ${formatarMoeda(servicos)}`}</span>
       )}
-      <LucroPrevistoNaTela lucro={lucro} />
+      <LucroPrevistoNaTela lucro={lucro} calculando={calculando} />
     </div>
   );
 }
 
-function LucroPrevistoNaTela({ lucro }: { lucro: LucroPrevisto }) {
+function LucroPrevistoNaTela({ lucro, calculando }: { lucro: LucroPrevisto; calculando: boolean }) {
+  if (calculando) return <span>lucro previsto: calculando…</span>;
   if (lucro.lucro === null) {
     return (
       <span>

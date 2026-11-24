@@ -253,17 +253,15 @@ export function OrdemServicoForm({
 
   // O lucro previsto do rodapé (#1087): o custo dos itens já gravados vem do
   // banco, o das peças só pra quem tem o módulo Estoque.
-  const { custoDosExistentes, custoPeca } = useCustosDoLucro(ordemExistente);
+  const { custoDosExistentes, custoPeca, calculando } = useCustosDoLucro(ordemExistente);
   const custoServico = useMemo(() => mapaCustoServicos(servicos), [servicos]);
 
-  // O foco ao abrir (#1087): OS ou orçamento existente abre na busca, pra
-  // lançar o item. Numa nova, a conversa do balcão começa pelo Cliente (o
-  // primeiro campo); só se o cliente já veio preenchido o foco vai pra busca.
+  // O foco ao abrir (#1087, "a busca única em cima, com o foco ao abrir"):
+  // nova ou existente, a OS abre na busca, pronta pro leitor de código.
   const buscaRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (ordemExistente || watch("cliente_id")) buscaRef.current?.focus();
+    buscaRef.current?.focus();
     // Só ao abrir: depois o foco é de quem está digitando.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Passagens do veículo escolhido, só quando o pai não passou a lista pronta.
@@ -513,7 +511,12 @@ export function OrdemServicoForm({
       } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
     >
       {aba === "detalhes" ? (
-        <ApoioDoTotal pecas={totais.pecas} servicos={totais.servicos} lucro={lucro} />
+        <ApoioDoTotal
+          pecas={totais.pecas}
+          servicos={totais.servicos}
+          lucro={lucro}
+          calculando={calculando}
+        />
       ) : (
         <span />
       )}

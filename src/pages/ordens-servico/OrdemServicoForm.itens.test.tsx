@@ -177,9 +177,9 @@ describe("OrdemServicoForm — a busca única e a tabela de itens", () => {
     expect(busca()).toHaveFocus();
   });
 
-  it("numa OS nova o foco não vai pra busca (a conversa começa pelo Cliente)", () => {
+  it("numa OS nova o foco também cai na busca (a issue: 'a busca única em cima, com o foco ao abrir')", () => {
     montar();
-    expect(busca()).not.toHaveFocus();
+    expect(busca()).toHaveFocus();
   });
 });
 
@@ -263,6 +263,40 @@ describe("OrdemServicoForm — total grande e lucro previsto no rodapé", () => 
     expect(buscarCustoDasOrdens).toHaveBeenCalledWith(["os-1"]);
     // 800 de venda − 500 de custo = 300
     await waitFor(() => expect(within(rodape()).getByText(/lucro previsto/)).toHaveTextContent(/R\$\s*300,00/));
+  });
+
+  it("item corrigido recarrega a OS: até o custo novo chegar, o lucro diz 'calculando', nunca o número velho", async () => {
+    buscarCustoDasOrdens.mockResolvedValueOnce(new Map([["os-1", { custo: 500, completo: true }]]));
+    const { rerender } = montar({ ordemExistente: ordemComPneus() });
+    await waitFor(() => expect(within(rodape()).getByText(/lucro previsto/)).toHaveTextContent(/R\$\s*300,00/));
+
+    // A OS volta do banco com 3 pneus; o custo novo ainda não chegou.
+    buscarCustoDasOrdens.mockReturnValueOnce(new Promise(() => {}));
+    const comTres = ordemComPneus();
+    comTres.itens = comTres.itens!.map((item) => ({ ...item, quantidade: 3 }));
+    rerender(
+      <OrdemServicoForm
+        clientes={clientes}
+        pecas={pecas}
+        servicos={servicos}
+        funcionarios={funcionarios}
+        funcionarioAtualId="func-1"
+        ordens={[]}
+        saldoPorPeca={new Map([["peca-1", 10], ["peca-2", 10]])}
+        saldoCarregado
+        ordemExistente={comTres}
+        onSalvarNova={vi.fn()}
+        onSalvarEdicao={vi.fn()}
+        onEditarItem={vi.fn()}
+        onEncerrar={vi.fn()}
+        onCadastrarCliente={vi.fn()}
+        onCadastrarVeiculo={vi.fn()}
+        onCancelar={vi.fn()}
+      />,
+    );
+    // 1200 de venda − 500 do custo VELHO daria 700, um lucro que não existe.
+    expect(within(rodape()).getByText(/lucro previsto/)).toHaveTextContent(/calculando/);
+    expect(rodape()).not.toHaveTextContent(/700,00/);
   });
 
   it("erro ao buscar o custo não derruba a tela: o lucro fica 'custo não informado'", async () => {

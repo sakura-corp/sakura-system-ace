@@ -485,6 +485,8 @@ describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
     posicionar(barra(), 680, 740);
     posicionar(busca, 700, 730);
     const rolar = espiarRolagem();
+    // A busca já abre com o foco (#1087): tira e devolve, como quem volta a ela.
+    busca.blur();
     await user.click(busca);
     // A busca de 700 a 730 contra a barra em 680: sobe 62.
     expect(rolar).toHaveBeenCalledWith({ top: 62 });

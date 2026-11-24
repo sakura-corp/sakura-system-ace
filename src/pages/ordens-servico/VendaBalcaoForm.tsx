@@ -117,7 +117,7 @@ export function VendaBalcaoForm({
   const total = totalDaVenda(itens);
   const noPagamento = itensDoPagamento !== null;
   // O lucro previsto do rodapé (#1087): o mesmo hook da OS, sem OS aberta.
-  const { custoPeca } = useCustosDoLucro();
+  const { custoPeca, calculando } = useCustosDoLucro();
   const lucro = lucroPrevistoDaVenda(itens, custoPeca);
   const clienteEscolhido = clientes.find((c) => c.id === clienteId);
   const nomeDoCliente = ehConsumidor(clienteId) ? "Consumidor" : (clienteEscolhido?.nome ?? "");
@@ -312,7 +312,7 @@ export function VendaBalcaoForm({
             venda cheia, o total não pode sair de vista). `sticky`, nunca
             `fixed` — ver o comentário em OrdemServicoForm. */}
         <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3">
-          <ApoioDoTotal pecas={total} lucro={lucro} />
+          <ApoioDoTotal lucro={lucro} calculando={calculando} />
           {/* Com o pagamento aberto (na janela, por cima), estes botões ficam
               atrás dela, sem clique (a janela trava o fundo). Continuam na
               tela de propósito: ao fechar a janela, o foco volta pro "Ir para
