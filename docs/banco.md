@@ -671,6 +671,20 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   código **`SKNEG`**. Caixa e contas a receber não mudam. As travas da `0071` continuam. Número
   `0087` por decisão da Sofia (20/11/2026: entra antes, pra loja usar logo); as de #1120, #1121 e
   #1123 passam a `0088`, `0089` e `0090`. Teste em `supabase/scripts/testar-trocar-itens-os-faturada.sql`.
+- `0093`: **reabrir orçamento recusado, com motivo e histórico** (tarefa #1181; Sofia, 24/11/2026).
+  `ordens_servico_trocas` vira o **histórico único da OS**: coluna nova `tipo` (`troca` pro que já
+  existia, `reabertura`, e já `correcao_valor` pra #1182), check `ck_ordens_servico_trocas_tipo`. A
+  policy de inserção continua aceitando o admin da loja e passa a aceitar a linha `reabertura` de quem
+  tem o módulo OS na loja, em nome de si mesmo e só numa OS que já voltou a orçamento. Função
+  `reabrir_orcamento(ordem, motivo, validade, operador)`, `security invoker`: trava a OS, só recusado,
+  só quem tem o módulo OS na loja (quem pode recusar), motivo obrigatório; volta pra `orcamento` com o
+  **mesmo** `numero_orcamento`, limpa `motivo_recusa`/`recusado_em`, grava a validade e a linha do
+  histórico (o texto, montado pela tela no relógio da loja, leva a recusa antiga). O gatilho
+  `definir_numero_ordem_servico` (versão da 0065) aceita recusado → orçamento **só** com a marca
+  `sakura.reabrir_orcamento` = id da OS, ligada pela função dentro da transação: o update direto
+  continua recusado. OS aprovada nunca volta. O "Já aprovar agora" da tela chama a `aprovar_orcamento`
+  de sempre, depois. Matriz de RLS sem mudança (a sonda grava `troca` e continua só admin). Teste em
+  `supabase/scripts/testar-reabrir-orcamento.sql`. Entra depois da fila `0089` a `0092`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

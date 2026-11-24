@@ -43,6 +43,8 @@ import {
   editarItemOrdem,
   listarOrcamentos,
   listarOrdensDoVeiculo,
+  listarTrocasDaOrdem,
+  reabrirOrcamento,
   recusarOrcamento,
 } from "@/lib/ordensServico";
 import { listarPecasJanela } from "@/lib/pecas";
@@ -51,6 +53,7 @@ import { avisarOrcamentosMudaram } from "@/hooks/useOrcamentosAbertos";
 import {
   contarOrcamentosAbertos,
   ehOrcamento,
+  podeReabrir,
   valoresMensagemOrcamento,
   type MotivoRecusa,
 } from "@/schemas/orcamento";
@@ -65,12 +68,14 @@ import type {
   OrdemServico,
   PatchItemOS,
   PatchOrdemServico,
+  TrocaDeOsFaturada,
 } from "@/types/os";
 import { nomeDocumento, totalOrdem } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { OrcamentoVisualModal } from "./OrcamentoVisualModal";
 import { OrdemServicoForm, type JanelaDoOrcamento } from "./OrdemServicoForm";
+import { ReabrirOrcamentoModal } from "./ReabrirOrcamentoModal";
 import { SeloDaOrdem } from "./SeloDaOrdem";
 
 /** O detalhe da linha: cada pedaço no seu lugar, separados por " · ". */
@@ -133,6 +138,11 @@ export function OrcamentosPage() {
   const [lista, setLista] = useState<"abertos" | "recusados">("abertos");
   const [busca, setBusca] = useState("");
   const [imprimindo, setImprimindo] = useState<OrdemServico | null>(null);
+  // A janela "Reabrir o Orçamento N?" (#1181): da linha da aba Recusados ou
+  // da faixa do recusado aberto.
+  const [reabrindo, setReabrindo] = useState<OrdemServico | null>(null);
+  // O "Histórico da OS" do orçamento aberto (reaberturas, #1181).
+  const [historico, setHistorico] = useState<TrocaDeOsFaturada[]>([]);
 
   const funcionarioAtualId = funcionarios.find((f) => f.operador_id === operador?.id)?.id ?? "";
   const saldoPorPeca = useMemo(() => saldos ?? new Map<string, number>(), [saldos]);
@@ -229,6 +239,23 @@ export function OrcamentosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formularioAberto, lojaAtual?.id]);
 
+  // O histórico do orçamento aberto. Se não carregar (banco ainda sem a
+  // migration 0093), o orçamento segue sem ele: é só um registro.
+  const idAberto = aberto?.id ?? null;
+  useEffect(() => {
+    setHistorico([]);
+    if (!idAberto) return;
+    let cancelado = false;
+    listarTrocasDaOrdem(idAberto)
+      .then((lista) => {
+        if (!cancelado) setHistorico(lista);
+      })
+      .catch((err) => console.error("Erro ao carregar o histórico do orçamento:", err));
+    return () => {
+      cancelado = true;
+    };
+  }, [idAberto]);
+
   async function handleSalvarNova(
     dados: NovaOrdemServico,
     itens: NovoItemOS[],
@@ -320,6 +347,39 @@ export function OrcamentosPage() {
     await carregar();
   }
 
+  // Reabrir (#1181). Erro da reabertura sobe pra janela, que continua aberta.
+  // Com "Já aprovar agora": aprovou → leva pra OS, como o Aprovar; a
+  // aprovação falhou → o orçamento fica reaberto (nada se perde) e a tela diz
+  // o erro.
+  async function handleReabrir(
+    orcamento: OrdemServico,
+    motivo: string,
+    validade: string,
+    aprovarAgora: { aprovadoPor: string } | null,
+  ) {
+    if (!operador) return;
+    const resultado = await reabrirOrcamento(orcamento, motivo, validade, operador.id, aprovarAgora ?? undefined);
+    avisarOrcamentosMudaram();
+    setReabrindo(null);
+    if (resultado.aprovada && !resultado.erroDaAprovacao) {
+      navigate("/ordens-servico", { state: { abrirOrdemId: resultado.aprovada.id } });
+      return;
+    }
+    setAberto(null);
+    setLista("abertos");
+    await carregar();
+    if (resultado.erroDaAprovacao) {
+      // Peça que não ligou ao cadastro já nasceu OS: a mensagem diz isso.
+      setErro(
+        resultado.aprovada
+          ? resultado.erroDaAprovacao
+          : `${nomeDocumento(orcamento)} foi reaberto, mas não foi aprovado: ${resultado.erroDaAprovacao}`,
+      );
+      return;
+    }
+    setAviso(`${nomeDocumento(orcamento)} reaberto.`);
+  }
+
   async function handleCadastrarCliente(cliente: NovoCliente, veiculos: VeiculoFormulario[]) {
     // Vai por função do banco (migration 0068): quem tem OS pode não ter Clientes.
     const { clienteId, veiculoId } = await cadastrarClienteRapido(cliente, veiculos[0] ?? null);
@@ -378,6 +438,12 @@ export function OrcamentosPage() {
     setErro(null);
     setJanelaInicial(janela);
     setAberto(ordem);
+  }
+
+  function pedirReabertura(ordem: OrdemServico) {
+    setAviso(null);
+    setErro(null);
+    setReabrindo(ordem);
   }
 
   // O "Enviar" do "⋯": o menu fecha no clique, então o erro do WhatsApp (o
@@ -469,7 +535,15 @@ export function OrcamentosPage() {
             </span>
           </div>
         }
-        acao={aberto ? { rotulo: "Aprovar", aoClicar: () => abrir(ordem, "aprovar") } : undefined}
+        // No recusado, a ação é "Reabrir" (#1181), secundária: o laranja da
+        // tela continua sendo o "Novo orçamento".
+        acao={
+          aberto
+            ? { rotulo: "Aprovar", aoClicar: () => abrir(ordem, "aprovar") }
+            : podeReabrir(ordem)
+              ? { rotulo: "Reabrir", aoClicar: () => pedirReabertura(ordem) }
+              : undefined
+        }
         mais={mais}
       />
     );
@@ -514,6 +588,7 @@ export function OrcamentosPage() {
     onEncerrar: async () => undefined,
     onAprovar: handleAprovar,
     onRecusar: handleRecusar,
+    onReabrir: pedirReabertura,
     onCadastrarCliente: handleCadastrarCliente,
     onCadastrarVeiculo: handleCadastrarVeiculo,
   };
@@ -552,7 +627,18 @@ export function OrcamentosPage() {
           ordemExistente={aberto}
           janelaInicial={janelaInicial}
           acoesExtras={acoesDoOrcamento(aberto)}
+          trocas={historico}
           onCancelar={() => setAberto(null)}
+        />
+      )}
+
+      {reabrindo && (
+        <ReabrirOrcamentoModal
+          ordem={reabrindo}
+          onConfirmar={(motivo, validade, aprovarAgora) =>
+            handleReabrir(reabrindo, motivo, validade, aprovarAgora)
+          }
+          onFechar={() => setReabrindo(null)}
         />
       )}
 

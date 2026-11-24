@@ -7,10 +7,13 @@ import { render } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, userEvent, within } from "@/testes/tela";
+import { validadePadrao } from "@/schemas/orcamento";
 import type { OrdemServico } from "@/types/os";
 
 const aprovarOrcamento = vi.fn();
 const recusarOrcamento = vi.fn();
+const reabrirOrcamento = vi.fn();
+const listarTrocasDaOrdem = vi.fn();
 const listarOrcamentos = vi.fn();
 const listarOrdens = vi.fn();
 const listarOrdensDoVeiculo = vi.fn();
@@ -20,6 +23,8 @@ vi.mock("@/lib/ordensServico", () => ({
   listarOrdensDoVeiculo: (...a: unknown[]) => listarOrdensDoVeiculo(...a),
   aprovarOrcamento: (...a: unknown[]) => aprovarOrcamento(...a),
   recusarOrcamento: (...a: unknown[]) => recusarOrcamento(...a),
+  reabrirOrcamento: (...a: unknown[]) => reabrirOrcamento(...a),
+  listarTrocasDaOrdem: (...a: unknown[]) => listarTrocasDaOrdem(...a),
   criarOrcamento: vi.fn(),
   atualizarOrdem: vi.fn(),
   adicionarItensOrdem: vi.fn(),
@@ -131,6 +136,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   listarOrcamentos.mockResolvedValue([noPrazo, vencido, recusado]);
   listarOrdensDoVeiculo.mockResolvedValue([]);
+  listarTrocasDaOrdem.mockResolvedValue([]);
   buscarConfiguracaoFiscal.mockResolvedValue({ nome_fantasia: "Loja Centro de Exemplo" });
 });
 
@@ -416,5 +422,107 @@ describe("OrcamentosPage", () => {
     await user.click(screen.getByRole("button", { name: "Recusar orçamento" }));
 
     expect(recusarOrcamento).toHaveBeenCalledWith("o1", "prazo", "op");
+  });
+});
+
+// #1181: o recusado reabre pela ação da linha na aba "Recusados" e pela faixa
+// do orçamento aberto; as duas abrem a mesma janela.
+describe("OrcamentosPage — reabrir orçamento recusado", () => {
+  const recusadoComRecusa = {
+    ...recusado,
+    motivo_recusa: "preco",
+    recusado_em: "2026-11-23T14:00:00",
+  } as unknown as OrdemServico;
+
+  beforeEach(() => {
+    listarOrcamentos.mockResolvedValue([noPrazo, vencido, recusadoComRecusa]);
+  });
+
+  it("a linha do recusado tem a ação Reabrir; reabrir chama a lib, avisa e volta pra aba Abertos", async () => {
+    reabrirOrcamento.mockResolvedValue({ aprovada: null, erroDaAprovacao: null });
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
+
+    await user.click(screen.getByRole("button", { name: /^Reabrir — / }));
+    const janela = screen.getByRole("dialog", { name: "Reabrir o Orçamento 3?" });
+    await user.click(within(janela).getByRole("button", { name: "Reabrir" }));
+
+    expect(reabrirOrcamento).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "o3" }),
+      "Cliente voltou e aceitou (tinha sido recusado em 23/11, motivo: Preço)",
+      validadePadrao(),
+      "op",
+      undefined,
+    );
+    expect(await screen.findByText("Orçamento 3 reaberto.")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Abertos/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("com 'Já aprovar agora', leva pra OS que nasceu", async () => {
+    reabrirOrcamento.mockResolvedValue({
+      aprovada: { ...recusadoComRecusa, numero: 52, status: "em_andamento" },
+      erroDaAprovacao: null,
+    });
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
+    await user.click(screen.getByRole("button", { name: /^Reabrir — / }));
+
+    await user.click(screen.getByRole("checkbox", { name: /Já aprovar agora/ }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "o cliente");
+    await user.click(screen.getByRole("button", { name: "Reabrir" }));
+
+    expect(reabrirOrcamento).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "o3" }),
+      expect.any(String),
+      validadePadrao(),
+      "op",
+      { aprovadoPor: "o cliente" },
+    );
+    expect(await screen.findByTestId("local")).toHaveTextContent('/ordens-servico{"abrirOrdemId":"o3"}');
+  });
+
+  it("a aprovação falhou: o orçamento fica reaberto e a tela diz o erro", async () => {
+    reabrirOrcamento.mockResolvedValue({
+      aprovada: null,
+      erroDaAprovacao: "O orçamento não foi aprovado e continua orçamento: Nenhum depósito ativo",
+    });
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
+    await user.click(screen.getByRole("button", { name: /^Reabrir — / }));
+    await user.click(screen.getByRole("checkbox", { name: /Já aprovar agora/ }));
+    await user.type(screen.getByLabelText("Quem aprovou?"), "o cliente");
+    await user.click(screen.getByRole("button", { name: "Reabrir" }));
+
+    expect(
+      await screen.findByText(/Orçamento 3 foi reaberto, mas não foi aprovado: .*Nenhum depósito ativo/),
+    ).toBeInTheDocument();
+  });
+
+  it("o recusado aberto tem o botão na faixa e mostra o histórico da OS", async () => {
+    reabrirOrcamento.mockResolvedValue({ aprovada: null, erroDaAprovacao: null });
+    listarTrocasDaOrdem.mockResolvedValue([
+      {
+        id: "h1",
+        tipo: "reabertura",
+        operador_nome: "Ana",
+        motivo: "Recusado por engano (tinha sido recusado em 20/11, sem motivo)",
+        total: 100,
+        criado_em: "2026-11-21T12:00:00.000Z",
+        itens_antes: [],
+        itens_depois: [],
+      },
+    ]);
+    const user = montar();
+    await screen.findByText("Orçamento 1");
+    await user.click(screen.getByRole("tab", { name: "Recusados 1" }));
+    await user.click(screen.getByText("Ana Recusada"));
+
+    expect(listarTrocasDaOrdem).toHaveBeenCalledWith("o3");
+    expect(await screen.findByText(/Reabertura · Ana · motivo: Recusado por engano/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reabrir orçamento" }));
+    expect(screen.getByRole("dialog", { name: "Reabrir o Orçamento 3?" })).toBeInTheDocument();
   });
 });
