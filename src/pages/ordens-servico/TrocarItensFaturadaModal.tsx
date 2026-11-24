@@ -198,8 +198,11 @@ export function TrocarItensFaturadaModal({
   const [enviando, setEnviando] = useState(false);
   // O estado só muda no próximo desenho: o ref segura o 2º clique rápido.
   const enviandoRef = useRef(false);
-  // Uma chave por janela aberta (mesmo depois de um erro): o banco não lança 2 vezes.
-  const [chave] = useState(() => crypto.randomUUID());
+  // A chave do pedido: a MESMA enquanto o pedido for o mesmo (clique duplo, ou
+  // tentar de novo depois de a resposta se perder: o banco não lança 2 vezes);
+  // NOVA quando a pessoa muda a lista, o acerto, a forma, o vencimento ou o
+  // motivo (senão o banco devolveria a correção antiga sem aplicar a nova).
+  const ultimoPedido = useRef<{ assinatura: string; chave: string } | null>(null);
   const hoje = useMemo(() => hojeLocal(), []);
   const [situacao, setSituacao] = useState<SituacaoDaCorrecao | null>(null);
   const [erroDaSituacao, setErroDaSituacao] = useState<string | null>(null);
@@ -241,14 +244,17 @@ export function TrocarItensFaturadaModal({
   const { saem, entram } = resumoDaTroca(antes, depois);
   const diferenca = totalNovo === null ? 0 : diferencaDaCorrecao(antes, depois);
   const contaEmAberto = situacao?.contaDoFaturamentoEmAberto ?? null;
+  const aReceberDeCorrecoes = situacao?.aReceberDeCorrecoes ?? 0;
   const { opcoes: opcoesDeAcerto, padrao: acertoPadrao } = acertosDaCorrecao({
     diferenca,
     contaDoFaturamentoEmAberto: contaEmAberto !== null,
+    aReceberDeCorrecoes,
   });
   const acerto = acertoEscolhido && opcoesDeAcerto.includes(acertoEscolhido) ? acertoEscolhido : acertoPadrao;
   const problemaDoPasso2 = problemaDoAcerto({
     diferenca,
     contaDoFaturamentoEmAberto: contaEmAberto !== null,
+    aReceberDeCorrecoes,
     acerto,
     formaPagamento,
     vencimento,
@@ -344,15 +350,23 @@ export function TrocarItensFaturadaModal({
       setErro("Confirme que sabe que o estoque vai ficar negativo, ou volte e troque a peça.");
       return;
     }
+    const formaDoPedido = acerto === "pago_agora" || acerto === "devolvido" ? formaPagamento : null;
+    const vencimentoDoPedido = acerto === "a_receber" ? vencimento : null;
+    const acertoDoPedido = diferenca === 0 ? null : acerto;
+    const assinatura = JSON.stringify([depois, motivo.trim(), acertoDoPedido, formaDoPedido, vencimentoDoPedido]);
+    if (ultimoPedido.current?.assinatura !== assinatura) {
+      ultimoPedido.current = { assinatura, chave: crypto.randomUUID() };
+    }
+    const chave = ultimoPedido.current.chave;
     enviandoRef.current = true;
     setEnviando(true);
     try {
       await onConfirmar({
         itens: depois,
         motivo: motivo.trim(),
-        acerto: diferenca === 0 ? null : acerto,
-        formaPagamento: acerto === "pago_agora" || acerto === "devolvido" ? formaPagamento : null,
-        vencimento: acerto === "a_receber" ? vencimento : null,
+        acerto: acertoDoPedido,
+        formaPagamento: formaDoPedido,
+        vencimento: vencimentoDoPedido,
         chave,
         aceitaEstoqueNegativo: aceitaNegativo,
         totalFaturado,
@@ -430,6 +444,7 @@ export function TrocarItensFaturadaModal({
               hoje,
               vencimento,
               valorDaConta: contaEmAberto?.valor,
+              aReceberDeCorrecoes,
             })}
           </span>
         ) : undefined
@@ -609,7 +624,16 @@ export function TrocarItensFaturadaModal({
               nada.
             </p>
           )}
-          {opcoesDeAcerto.length > 0 && !contaEmAberto && (
+          {diferenca < 0 && !contaEmAberto && opcoesDeAcerto.includes("conta_aberta") && (
+            <p className="text-corpo text-texto">
+              Esta OS ainda tem {formatarMoeda(aReceberDeCorrecoes)} a receber de uma correção anterior: a
+              diferença abate essa conta, e nada sai do Caixa.
+            </p>
+          )}
+          {diferenca !== 0 && opcoesDeAcerto.length === 0 && problemaDoPasso2 && (
+            <AvisoDeErro>{problemaDoPasso2}</AvisoDeErro>
+          )}
+          {opcoesDeAcerto.length > 0 && !contaEmAberto && !opcoesDeAcerto.includes("conta_aberta") && (
             <fieldset className="space-y-1">
               <legend className="mb-1 text-rotulo font-medium text-texto/85">Como acertar a diferença</legend>
               {opcoesDeAcerto.map((opcao) => (

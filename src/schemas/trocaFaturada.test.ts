@@ -344,3 +344,41 @@ describe("problemaDoAcerto (#1182)", () => {
     expect(problemaDoAcerto({ ...base, contaDoFaturamentoEmAberto: true, acerto: "conta_aberta" })).toBeNull();
   });
 });
+
+describe("diferença de correção anterior ainda a receber (achado da revisão, #1182)", () => {
+  const hoje = "2026-11-24";
+
+  it("paga e desceu, cabendo no que falta receber: abate a conta, nada sai do Caixa", () => {
+    expect(
+      acertosDaCorrecao({ diferenca: -80, contaDoFaturamentoEmAberto: false, aReceberDeCorrecoes: 80 }),
+    ).toEqual({ opcoes: ["conta_aberta"], padrao: "conta_aberta" });
+  });
+
+  it("desce mais do que falta receber: recusa e explica como fazer em duas vezes", () => {
+    expect(
+      acertosDaCorrecao({ diferenca: -100, contaDoFaturamentoEmAberto: false, aReceberDeCorrecoes: 80 }),
+    ).toEqual({ opcoes: [], padrao: null });
+    const problema = problemaDoAcerto({
+      diferenca: -100,
+      contaDoFaturamentoEmAberto: false,
+      aReceberDeCorrecoes: 80,
+      acerto: "devolvido",
+      formaPagamento: "dinheiro",
+      hoje,
+    })?.replace(/\s/g, " ");
+    expect(problema).toContain("R$ 80,00 de correção a receber");
+    expect(problema).toContain("duas vezes");
+  });
+
+  it("subir não muda: paga agora ou fica a receber", () => {
+    expect(
+      acertosDaCorrecao({ diferenca: 20, contaDoFaturamentoEmAberto: false, aReceberDeCorrecoes: 80 }).opcoes,
+    ).toEqual(["pago_agora", "a_receber"]);
+  });
+
+  it("o rodapé diz que abate a diferença a receber", () => {
+    expect(
+      textoDoAcerto({ acerto: "conta_aberta", diferenca: -80, hoje, aReceberDeCorrecoes: 80 }).replace(/\s/g, " "),
+    ).toBe("Abate R$ 80,00 da diferença que ainda está a receber de uma correção anterior. Nada sai do Caixa.");
+  });
+});

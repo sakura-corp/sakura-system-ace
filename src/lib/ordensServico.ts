@@ -687,6 +687,11 @@ export interface SituacaoDaCorrecao {
   caixaDeHojeFechado: boolean;
   /** Já foi registrado pagamento de comissão num período que pega o dia da fatura. */
   comissaoDoPeriodoPaga: boolean;
+  /**
+   * O que ainda falta receber de correções ANTERIORES desta OS ("fica a
+   * receber"): quando o total desce, é abatido antes de devolver dinheiro.
+   */
+  aReceberDeCorrecoes: number;
 }
 
 export async function buscarSituacaoDaCorrecao(
@@ -694,7 +699,7 @@ export async function buscarSituacaoDaCorrecao(
   hoje: string,
 ): Promise<SituacaoDaCorrecao> {
   const diaDaFatura = ordem.data_fechamento ? diaLocal(ordem.data_fechamento) : null;
-  const [conta, fechamento, comissao] = await Promise.all([
+  const [conta, correcoes, fechamento, comissao] = await Promise.all([
     supabase
       .from("contas_receber")
       .select("id, valor")
@@ -702,6 +707,12 @@ export async function buscarSituacaoDaCorrecao(
       .eq("origem", "faturamento")
       .eq("status", "pendente")
       .maybeSingle(),
+    supabase
+      .from("contas_receber")
+      .select("valor")
+      .eq("ordem_servico_id", ordem.id)
+      .eq("origem", "correcao")
+      .eq("status", "pendente"),
     supabase
       .from("fechamentos_caixa")
       .select("id")
@@ -719,6 +730,7 @@ export async function buscarSituacaoDaCorrecao(
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (conta.error) throw conta.error;
+  if (correcoes.error) throw correcoes.error;
   if (fechamento.error) throw fechamento.error;
   if (comissao.error) throw comissao.error;
   const linhaConta = conta.data as { id: string; valor: number | string } | null;
@@ -726,6 +738,7 @@ export async function buscarSituacaoDaCorrecao(
     contaDoFaturamentoEmAberto: linhaConta ? { id: linhaConta.id, valor: Number(linhaConta.valor) } : null,
     caixaDeHojeFechado: fechamento.data !== null,
     comissaoDoPeriodoPaga: (comissao.data ?? []).length > 0,
+    aReceberDeCorrecoes: somar(((correcoes.data ?? []) as { valor: number | string }[]).map((c) => Number(c.valor))),
   };
 }
 

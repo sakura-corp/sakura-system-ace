@@ -72,6 +72,7 @@ function ordem(): OrdemServico {
 
 const SEM_CONTA: SituacaoDaCorrecao = {
   contaDoFaturamentoEmAberto: null,
+  aReceberDeCorrecoes: 0,
   caixaDeHojeFechado: false,
   comissaoDoPeriodoPaga: false,
 };
@@ -409,6 +410,39 @@ describe("TrocarItensFaturadaModal", () => {
     expect(onConfirmar).toHaveBeenCalledTimes(2);
     expect(onConfirmar.mock.calls[1][0].chave).toBe(
       onConfirmar.mock.calls[0][0].chave,
+    );
+  });
+
+  it("depois de um erro, mudar o pedido (o motivo) manda uma chave NOVA", async () => {
+    const onConfirmar = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("falhou"))
+      .mockResolvedValue(undefined);
+    const { user } = montar(undefined, onConfirmar);
+    await trocarPeloPneuCerto(user);
+    await irParaOAcerto(user);
+    await user.type(screen.getByLabelText(/Motivo/), "medida errada");
+    await user.click(screen.getByRole("button", { name: "Corrigir" }));
+    await screen.findByRole("alert");
+    await user.type(screen.getByLabelText(/Motivo/), " do pneu");
+    await user.click(screen.getByRole("button", { name: "Corrigir" }));
+    expect(onConfirmar).toHaveBeenCalledTimes(2);
+    expect(onConfirmar.mock.calls[1][0].chave).not.toBe(onConfirmar.mock.calls[0][0].chave);
+  });
+
+  it("desce numa OS com diferença ainda a receber: abate a conta, sem devolver (#1182, revisão)", async () => {
+    const { user, onConfirmar } = montar(undefined, undefined, { aReceberDeCorrecoes: 80 });
+    await mudarPreco(user, "275");
+    await irParaOAcerto(user);
+
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Forma de pagamento")).not.toBeInTheDocument();
+    expect(screen.getByText(/Esta OS ainda tem R\$\s80,00 a receber/)).toBeInTheDocument();
+    expect(screen.getByText(/Abate R\$\s50,00/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/Motivo/), "serviço não foi feito");
+    await user.click(screen.getByRole("button", { name: "Corrigir" }));
+    expect(onConfirmar).toHaveBeenCalledWith(
+      expect.objectContaining({ acerto: "conta_aberta", formaPagamento: null }),
     );
   });
 

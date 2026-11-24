@@ -100,6 +100,7 @@ declare
   k5  uuid := '11829999-0000-0000-0000-000000000006';
   k6  uuid := '11829999-0000-0000-0000-000000000007';
   kx  uuid := '11829999-0000-0000-0000-0000000000ff';  -- usada só nas recusas
+  k7  uuid := '11829999-0000-0000-0000-000000000008';
   ontem     timestamptz := now() - interval '1 day';
   hoje      date := (now() at time zone 'UTC')::date;
   dia_fat   date := ((now() - interval '1 day') at time zone 'UTC')::date;
@@ -216,8 +217,8 @@ begin
                                        total_antes, total_depois, acerto)
     values (os_pago, loja_a, 'correcao_valor', balcao, 'à mão', 150, 100, 150, 'pago_agora');
     raise exception 'FALHOU (B1b): quem não é gerente gravou correção direto no histórico';
-  exception when others then
-    if sqlerrm like 'FALHOU%' then raise; end if;
+  exception when insufficient_privilege then
+    null;  -- 42501: a policy recusou, que é o que se espera
   end;
 
   -- B2. Admin de OUTRA loja.
@@ -225,7 +226,7 @@ begin
   t := pg_temp.t1182_tentar(os_pago,
     jsonb_build_array(jsonb_build_object('id', i_pago, 'preco_unitario', 150)),
     'faltou o balanceamento', hoje, 100, 'pago_agora', 'pix', null, kx, false);
-  if t.codigo is null then
+  if t.codigo is null or t.mensagem not like 'Esta ordem não foi encontrada%' then
     raise exception 'FALHOU (B2): o admin da loja B corrigiu OS da loja A';
   end if;
 
@@ -491,6 +492,46 @@ begin
     raise exception 'FALHOU (C14): o histórico não aponta pra conta da diferença';
   end if;
 
+  -- C14b. Correção que DESCE numa OS paga que ainda tem diferença a receber
+  -- (a dos 80 do C9): abate a conta da diferença, nada sai do Caixa. Achado
+  -- da revisão: antes, isso obrigava a "devolver" um dinheiro que o cliente
+  -- nunca pagou, e a conta dos 80 ficava em aberto.
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', gerente::text, true);
+  -- Desce 100, mas só faltam 80: recusa, pedindo pra corrigir em duas vezes.
+  t := pg_temp.t1182_tentar(os_arec,
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 180)),
+    'serviço não foi feito', hoje, 280, 'conta_aberta', null, null, k7, false);
+  if t.codigo is distinct from 'SKMUD' or t.mensagem not like 'Esta OS ainda tem R$ 80,00 de correção a receber%' then
+    raise exception 'FALHOU (C14b): descer mais do que falta receber não recusou: % %', t.codigo, t.mensagem;
+  end if;
+  -- Volta pros 200: "devolver" não vale (faltam 80 a receber).
+  t := pg_temp.t1182_tentar(os_arec,
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 200)),
+    'serviço não foi feito', hoje, 280, 'devolvido', 'dinheiro', null, k7, false);
+  if t.codigo is distinct from 'SKMUD' then
+    raise exception 'FALHOU (C14c): devolveu dinheiro que ainda estava a receber: % %', t.codigo, t.mensagem;
+  end if;
+  -- Volta pros 200 abatendo a conta: passa.
+  t := pg_temp.t1182_tentar(os_arec,
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 200)),
+    'serviço não foi feito', hoje, 280, 'conta_aberta', null, null, k7, false);
+  if t.codigo is not null then
+    raise exception 'FALHOU (C14d): abater a diferença a receber foi recusado: % %', t.codigo, t.mensagem;
+  end if;
+  reset role;
+  if (select count(*) from contas_receber where ordem_servico_id = os_arec and origem = 'correcao') <> 0 then
+    raise exception 'FALHOU (C14e): a conta da diferença de 80 não foi abatida (apagada ao zerar)';
+  end if;
+  if (select count(*) from caixa_movimentos where ordem_servico_id = os_arec) <> 1
+     or exists (select 1 from caixa_movimentos where ordem_servico_id = os_arec and tipo = 'saida') then
+    raise exception 'FALHOU (C14f): abater a diferença a receber mexeu no Caixa';
+  end if;
+  if (select acerto from ordens_servico_trocas where chave = k7) is distinct from 'conta_aberta'
+     or (select valor from contas_receber where id = conta_arec) is distinct from 200 then
+    raise exception 'FALHOU (C14g): o histórico não diz conta_aberta, ou a conta do faturamento mudou';
+  end if;
+
   -- C15. Conta do faturamento em aberto: desce, a conta muda de valor, nada
   -- no Caixa. Depois sobe, e a conta acompanha.
   set local role authenticated;
@@ -615,7 +656,7 @@ begin
   end if;
   reset role;
   if pg_temp.t1182_saldo(p3, loja_a) <> -1
-     or (select valor from caixa_movimentos where ordem_servico_id = os_neg and (data at time zone 'UTC')::date = hoje) <> 30 then
+     or (select valor from caixa_movimentos where ordem_servico_id = os_neg and (data at time zone 'UTC')::date = hoje) is distinct from 30 then
     raise exception 'FALHOU (C34): a peça não baixou ou a diferença de 30 não entrou hoje';
   end if;
 

@@ -10463,6 +10463,10 @@ insert into schema_versao (versao) values (91) on conflict do nothing;
 --          valor ('conta_aberta'), nada no Caixa;
 --        • senão, subiu → 'pago_agora' (Entrada no Caixa de hoje) ou
 --          'a_receber' (conta nova só da diferença, com vencimento);
+--        • senão, desceu e ainda falta receber de uma correção anterior
+--          ("fica a receber") pelo menos a diferença → abate essa(s) conta(s)
+--          ('conta_aberta'), nada sai do Caixa; se falta menos que a
+--          diferença, recusa (SKMUD) pedindo pra corrigir em duas vezes;
 --        • senão, desceu → 'devolvido' (Saída "Devolução ao cliente" no Caixa
 --          de hoje);
 --        • diferença zero → sem acerto (é a troca de total igual de sempre).
@@ -10614,6 +10618,10 @@ declare
   v_negativas text;
   v_conta contas_receber%rowtype;
   v_conta_em_aberto boolean;
+  v_pendente_correcao numeric := 0;
+  v_resto numeric;
+  v_abate numeric;
+  v_c record;
   v_acerto_vale boolean;
   v_categoria uuid;
   v_movimento uuid;
@@ -10794,12 +10802,31 @@ begin
    for update;
   v_conta_em_aberto := found and v_conta.status = 'pendente';
 
+  -- O que ainda falta receber de correções ANTERIORES ("fica a receber").
+  -- Quando o total desce, isso é abatido antes de qualquer devolução: senão
+  -- sairia do Caixa um dinheiro que o cliente nunca pagou, e a conta da
+  -- diferença continuaria em aberto.
+  perform 1 from contas_receber
+   where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente'
+   for update;
+  select coalesce(sum(valor), 0) into v_pendente_correcao
+    from contas_receber
+   where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente';
+
   if v_diferenca = 0 then
     v_acerto_vale := p_acerto is null;
   elsif v_conta_em_aberto then
     v_acerto_vale := p_acerto = 'conta_aberta';
   elsif v_diferenca > 0 then
     v_acerto_vale := p_acerto in ('pago_agora', 'a_receber');
+  elsif v_pendente_correcao >= -v_diferenca then
+    -- Desce e cabe no que ainda falta receber das correções: abate a(s)
+    -- conta(s), nada sai do Caixa.
+    v_acerto_vale := p_acerto = 'conta_aberta';
+  elsif v_pendente_correcao > 0 then
+    raise exception 'Esta OS ainda tem % de correção a receber, menos que a diferença de %. Corrija primeiro descendo só %, que abate essa conta, e depois corrija o resto.',
+      dinheiro_br(v_pendente_correcao), dinheiro_br(-v_diferenca), dinheiro_br(v_pendente_correcao)
+      using errcode = 'SKMUD';
   else
     v_acerto_vale := p_acerto = 'devolvido';
   end if;
@@ -10872,7 +10899,31 @@ begin
 
   -- 12. O dinheiro. `now()` é o momento de agora, que no relógio da loja é
   -- `p_hoje`: a diferença cai no Caixa de hoje, nunca no dia da fatura.
-  if p_acerto = 'conta_aberta' then
+  if p_acerto = 'conta_aberta' and not v_conta_em_aberto then
+    -- Abate o que falta receber das correções anteriores, da mais nova pra
+    -- mais velha. A conta que zera é apagada (conta a receber de R$ 0,00 não
+    -- tem o que cobrar); a que sobra fica no histórico.
+    v_resto := -v_diferenca;
+    for v_c in
+      select id, valor from contas_receber
+       where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente'
+       order by criado_em desc, id desc
+    loop
+      exit when v_resto <= 0;
+      v_abate := least(v_c.valor, v_resto);
+      if v_c.valor - v_abate <= 0 then
+        delete from contas_receber where id = v_c.id;
+      else
+        update contas_receber set valor = v_c.valor - v_abate where id = v_c.id;
+        v_conta_id := v_c.id;
+      end if;
+      if not found then
+        raise exception 'Você não tem permissão pra mudar a conta a receber desta OS.';
+      end if;
+      v_resto := v_resto - v_abate;
+    end loop;
+
+  elsif p_acerto = 'conta_aberta' then
     if v_conta.valor + v_diferenca < 0 then
       raise exception 'A conta a receber desta OS ficaria negativa (% + %). Confira os itens.',
         dinheiro_br(v_conta.valor), dinheiro_br(v_diferenca);

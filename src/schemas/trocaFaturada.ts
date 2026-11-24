@@ -213,10 +213,20 @@ export type AcertoDaCorrecao = "conta_aberta" | "pago_agora" | "a_receber" | "de
 export function acertosDaCorrecao(situacao: {
   diferenca: number;
   contaDoFaturamentoEmAberto: boolean;
+  /**
+   * O que ainda falta receber de correções ANTERIORES ("fica a receber").
+   * Quando o total desce, isso é abatido antes de qualquer devolução: senão
+   * sairia do Caixa um dinheiro que o cliente nunca pagou.
+   */
+  aReceberDeCorrecoes?: number;
 }): { opcoes: AcertoDaCorrecao[]; padrao: AcertoDaCorrecao | null } {
+  const aReceber = situacao.aReceberDeCorrecoes ?? 0;
   if (situacao.diferenca === 0) return { opcoes: [], padrao: null };
   if (situacao.contaDoFaturamentoEmAberto) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
   if (situacao.diferenca > 0) return { opcoes: ["pago_agora", "a_receber"], padrao: "pago_agora" };
+  if (aReceber >= -situacao.diferenca) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
+  // Desce mais do que falta receber: nenhum acerto serve (problemaDoAcerto explica).
+  if (aReceber > 0) return { opcoes: [], padrao: null };
   return { opcoes: ["devolvido"], padrao: "devolvido" };
 }
 
@@ -266,6 +276,8 @@ export function textoDoAcerto(dados: {
   hoje: string;
   vencimento?: string;
   valorDaConta?: number;
+  /** Faltando receber de correção anterior (sem conta do faturamento em aberto). */
+  aReceberDeCorrecoes?: number;
 }): string {
   const valor = formatarMoeda(Math.abs(dados.diferenca));
   switch (dados.diferenca === 0 ? null : dados.acerto) {
@@ -280,6 +292,9 @@ export function textoDoAcerto(dados: {
         ". Nada entra no Caixa hoje."
       );
     case "conta_aberta": {
+      if (dados.valorDaConta === undefined && (dados.aReceberDeCorrecoes ?? 0) > 0) {
+        return `Abate ${valor} da diferença que ainda está a receber de uma correção anterior. Nada sai do Caixa.`;
+      }
       const contaAntes = dados.valorDaConta ?? 0;
       const contaDepois = arredondarCentavo(contaAntes + dados.diferenca);
       return `A conta a receber da OS passa de ${formatarMoeda(contaAntes)} para ${formatarMoeda(contaDepois)}. Nada entra no Caixa.`;
@@ -297,12 +312,21 @@ export function textoDoAcerto(dados: {
 export function problemaDoAcerto(dados: {
   diferenca: number;
   contaDoFaturamentoEmAberto: boolean;
+  aReceberDeCorrecoes?: number;
   acerto: AcertoDaCorrecao | null;
   formaPagamento?: string;
   vencimento?: string;
   hoje: string;
 }): string | null {
   const { opcoes } = acertosDaCorrecao(dados);
+  const aReceber = dados.aReceberDeCorrecoes ?? 0;
+  if (opcoes.length === 0 && dados.diferenca < 0 && !dados.contaDoFaturamentoEmAberto && aReceber > 0) {
+    return (
+      `Esta OS ainda tem ${formatarMoeda(aReceber)} de correção a receber, menos que a diferença de ` +
+      `${formatarMoeda(-dados.diferenca)}. Corrija em duas vezes: primeiro descendo só ${formatarMoeda(aReceber)} ` +
+      `(abate essa conta), depois o resto.`
+    );
+  }
   if (opcoes.length === 0) return null;
   if (!dados.acerto || !opcoes.includes(dados.acerto)) return "Escolha como acertar a diferença.";
   if ((dados.acerto === "pago_agora" || dados.acerto === "devolvido") && !dados.formaPagamento) {
