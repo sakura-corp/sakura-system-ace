@@ -421,6 +421,13 @@ Quatro coisas que valem saber:
     motivo obrigatório e o total tem que ficar igual (mudar valor é a próxima etapa). Bloqueia com
     nota fiscal e com o caixa do dia da fatura fechado. Estoque acertado na hora; o histórico
     aparece na própria OS ("Trocas depois de faturada").
+  - **Corrigir a OS** (#1182, migration `0094`; substitui o botão acima): "Precisa corrigir? Peça,
+    serviço ou valor" → janela "Corrigir a OS N", também na venda de balcão. O total pode mudar: o
+    2º passo "Conferir e acertar" mostra Faturado → Total novo = Diferença e o acerto (conta do
+    faturamento em aberto: a conta muda de valor; paga e subiu: "Cliente paga agora" ou "Fica a
+    receber"; paga e desceu: "Devolver agora"; ou o atalho "Manter o total", que vira desconto nos
+    itens), e o rodapé diz o que vai lançar. A diferença entra no Caixa de HOJE; trava só o caixa
+    de hoje fechado. Nota emitida leva ao "Cancelar nota". Regras em `src/schemas/trocaFaturada.ts`.
   - **Não tem "Remover"** — só editar. Um item lançado por engano ainda precisa ser transformado em
     outro item pela edição; excluir de vez não foi construído (não foi pedido, e teria a mesma
     conversa de estoque/nota). Fácil de acrescentar depois, se fizer falta.
