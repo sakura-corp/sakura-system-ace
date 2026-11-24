@@ -45,11 +45,12 @@ import {
   criarOrdem,
   editarItemOrdem,
   faturarOrdem,
+  buscarSituacaoDaCorrecao,
+  corrigirOrdemFaturada,
   OrdemMudouError,
   listarOrdens,
   listarTrocasDaOrdem,
   registrarVendaBalcao,
-  trocarItensOsFaturada,
   VendaSemFaturamentoError,
 } from "@/lib/ordensServico";
 import type {
@@ -81,7 +82,7 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import type { ItemDaTroca } from "@/schemas/trocaFaturada";
+import type { ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 import {
   agruparNotasPorOrdem,
   ordemEstaFinalizada,
@@ -150,6 +151,27 @@ function DetalheDaLinha({ partes }: { partes: ReactNode[] }) {
       ))}
     </>
   );
+}
+
+// O que o aviso de sucesso diz que foi lançado (#1182).
+function avisoDaCorrecao(c: ConfirmacaoDaCorrecao): string {
+  switch (c.acerto) {
+    case "pago_agora":
+      return "corrigida; a diferença entrou no Caixa de hoje.";
+    case "devolvido":
+      return "corrigida; a devolução saiu do Caixa de hoje.";
+    case "a_receber":
+      return "corrigida; a diferença ficou como conta a receber.";
+    case "conta_aberta":
+      return "corrigida; a conta a receber mudou de valor.";
+    default:
+      return "corrigida, com o mesmo total.";
+  }
+}
+
+// A nota que ainda vale (não cancelada): a janela de corrigir leva a cancelá-la.
+function notaVigenteDaOrdem(notas: NotaFiscalArquivo[]): NotaFiscalArquivo | undefined {
+  return notas.find((n) => temAlgumaNotaValida([n]));
 }
 
 function formatarMoeda(valor: number): string {
@@ -597,30 +619,34 @@ export function OrdensServicoPage() {
     await recarregarOrdemEmEdicao();
   }
 
-  // Trocar peça ou serviço de OS já faturada, com o total igual (#1145). O
-  // banco confere tudo de novo (gerente, nota, caixa do dia, total, estoque).
-  // Depois: a OS, o histórico e o saldo recarregam (a troca mexeu no estoque).
-  async function handleTrocarItensFaturada(
-    ordem: OrdemServico,
-    itens: ItemDaTroca[],
-    motivo: string,
-    aceitaEstoqueNegativo: boolean,
-  ) {
+  // Corrigir peça, serviço e valor de OS ou venda já faturada (#1145, #1182).
+  // O banco confere tudo de novo (gerente, nota, caixa de hoje, total, estoque).
+  // Depois: a OS, o histórico e o saldo recarregam (a correção mexeu no estoque).
+  function situacaoDaCorrecao(ordem: OrdemServico) {
+    return buscarSituacaoDaCorrecao(ordem, hojeLocal());
+  }
+
+  async function handleTrocarItensFaturada(ordem: OrdemServico, correcao: ConfirmacaoDaCorrecao) {
     if (!operador || !lojaAtual) throw new Error("Entre de novo no programa e tente outra vez.");
-    await trocarItensOsFaturada(ordem, itens, motivo, aceitaEstoqueNegativo, operador.id);
+    await corrigirOrdemFaturada({ ordem, ...correcao, hoje: hojeLocal(), operadorId: operador.id });
     // Daqui pra baixo a troca já está gravada: recarregar é só mostrar. Se
     // falhar, a janela fecha do mesmo jeito (tentar de novo seria trocar de
     // novo uma lista que já mudou).
-    avisar(`${nomeDocumento(ordem)}: troca feita, com o mesmo total.`);
+    avisar(`${nomeDocumento(ordem)}: ${avisoDaCorrecao(correcao)}`);
     setVersaoDasTrocas((v) => v + 1);
     listarSaldos(lojaAtual.id)
       .then(setSaldoPorPeca)
       .catch((err) => console.error("Erro ao recarregar o saldo depois da troca:", err));
     try {
-      await recarregarOrdemEmEdicao();
+      const atualizadas = await carregar();
+      const atualizada = atualizadas?.find((o) => o.id === ordem.id);
+      if (atualizada) {
+        if (ordemEmEdicao?.id === ordem.id) setOrdemEmEdicao(atualizada);
+        if (vendaAberta?.id === ordem.id) setVendaAberta(atualizada);
+      }
     } catch (err) {
-      console.error("A troca foi feita, mas a OS não recarregou:", err);
-      avisar("A troca foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
+      console.error("A correção foi feita, mas a OS não recarregou:", err);
+      avisar("A correção foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
     }
   }
 
@@ -1066,6 +1092,8 @@ export function OrdensServicoPage() {
           onItensMudaram={recarregarOrdemEmEdicao}
           gerente={operador.admin}
           onTrocarItensFaturada={handleTrocarItensFaturada}
+          buscarSituacaoDaCorrecao={situacaoDaCorrecao}
+          notaParaCancelar={notaVigenteDaOrdem(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
           trocas={trocasDaOrdem}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
@@ -1105,6 +1133,16 @@ export function OrdensServicoPage() {
           notas={notasPorOrdem.get(vendaAberta.id) ?? []}
           onFaturar={() => setOrdemFaturando(vendaAberta)}
           pedirAvaliacao={pedidoDeAvaliacao(vendaAberta)}
+          correcao={{
+            gerente: operador?.admin ?? false,
+            pecas,
+            servicos,
+            funcionarios,
+            saldoPorPeca: saldosParaForm,
+            saldoCarregado: saldoPorPeca !== null,
+            buscarSituacao: () => situacaoDaCorrecao(vendaAberta),
+            onConfirmar: (c) => handleTrocarItensFaturada(vendaAberta, c),
+          }}
           onVoltar={() => {
             if (voltarAoFechar) {
               navigate(-1);
