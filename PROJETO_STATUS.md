@@ -168,6 +168,6 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ### 24/11/2026: os 3 socorros da tela da OS planejados, e a #1179 na `main`
 - **Na `main`**: a busca única da OS (#1179, fecha #1087). Regra nova do sistema, "corrigir com registro" (`docs/decisoes.md`): tudo que foi fechado tem como corrigir ou reabrir, com motivo e histórico; a diferença de dinheiro entra no Caixa de hoje. Lição 104.
-- **Andando** (coordenação do Lázaro, uma sessão por tarefa): busca pela medida do pneu (#1180, PR #1183, sem banco); reabrir orçamento recusado (#1181); corrigir valor de OS ou venda faturada (#1182, empilhada na #1181). A migration de cada uma é o próximo número livre na hora do PR.
-- **Com a Sofia**: aplicar no `ssace-teste` a fila 0089 a 0092 e depois as da #1181 e #1182, conferindo os números (#1185); aprovar os PRs. Seguem abertas a #1161 e a #1079.
+- **Andando** (coordenação do Lázaro, uma sessão por tarefa): busca pela medida do pneu (#1180, PR #1183, sem banco); reabrir orçamento recusado (#1181); corrigir valor de OS ou venda faturada (#1182, empilhada na #1181). As migrations são a 0091 e a 0092; a #1171 e a #1174 passam pra 0093 e 0094.
+- **Com a Sofia**: aplicar no `ssace-teste` a 0091 a 0094, na ordem (#1185; a 0089 e a 0090 já foram aplicadas em 24/11); aprovar os PRs. Seguem abertas a #1161 e a #1079.
 - **Depois**: comissão da diferença "a receber" (#1184); busca do topo pela medida (#1186); a trava do `npm run dev` (#1160).
