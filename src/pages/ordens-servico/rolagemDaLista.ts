@@ -34,7 +34,7 @@ export function posicaoDaRolagem(alvo: EventTarget | null, raiz: HTMLElement): P
 }
 
 export function devolverRolagem(posicao: PosicaoDeRolagem | null): void {
-  void posicao;
+  if (posicao) posicao.area.scrollTop = posicao.topo;
 }
 
 export function rolarParaOTopo(raiz: HTMLElement, guardada: PosicaoDeRolagem | null): void {

@@ -402,5 +402,115 @@ describe("lucroPrevistoDaOrdem", () => {
       expect(lucro).toEqual({ lucro: null, falta: "aparece-ao-salvar" });
       expect(TEXTO_LUCRO_APARECE_AO_SALVAR).toBe("aparece ao salvar");
     });
+
+    it("itens gravados sem o custo do banco: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("peca", 1, 150)],
+        custoDosExistentes: undefined,
+        itensFormulario: [],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("itens gravados com custo incompleto no banco: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("peca", 1, 150)],
+        custoDosExistentes: { custo: 90, completo: false },
+        itensFormulario: [],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("peça avulsa nova sem custo: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("servico", "1", "60"), avulsa("")],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("custo não informado passa na frente do aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150"), avulsa("")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("gravados sem custo do banco também passam na frente do aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("servico", 1, 60)],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+  });
+
+  it("serviço e peça avulsa com custo não precisam do custo das peças", () => {
+    // Serviço: 60 − 10 = 50. Avulsa: 50 − 30 = 20. Lucro 70.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [
+        novo("servico", "1", "60"),
+        { ...novo("peca", "1", "50"), peca_id: "", descricao: "Válvula", custo_unitario: "30" },
+      ],
+      custoPeca: null,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 70, falta: null });
+  });
+
+  it("sem item nenhum, o lucro é zero", () => {
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [],
+      custoPeca: null,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 0, falta: null });
+  });
+
+  it("ignora a linha vazia e a de descrição em branco", () => {
+    // A linha em branco tem peça do cadastro e preço, mas não seria gravada:
+    // não pode virar lucro nem pedir "aparece ao salvar".
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [
+        { ...itemFormVazio },
+        { ...novo("peca", "1", "150"), descricao: "   " },
+        novo("servico", "1", "60"),
+      ],
+      custoPeca: null,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 50, falta: null });
+  });
+
+  it("vender abaixo do custo dá lucro negativo", () => {
+    // Peça vendida a 80 com custo 100: prejuízo de 20.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [novo("peca", "1", "80")],
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: -20, falta: null });
   });
 });

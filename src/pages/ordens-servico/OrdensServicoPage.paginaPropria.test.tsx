@@ -7,7 +7,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
-import { screen, within } from "@/testes/tela";
+import { screen } from "@/testes/tela";
 import { hojeLocal } from "@/lib/datas";
 import type { OrdemServico } from "@/types/os";
 import userEvent from "@testing-library/user-event";
