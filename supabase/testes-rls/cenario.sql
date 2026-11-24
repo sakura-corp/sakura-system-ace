@@ -36,7 +36,10 @@
 --      A chave primária delas é o `loja_id` sozinho, então, com a loja A já
 --      ocupada, a sonda de INSERT bateria na chave duplicada — e um erro de
 --      chave se pareceria com "a RLS bloqueou", que é justamente a confusão
---      que este teste existe pra não deixar acontecer.
+--      que este teste existe pra não deixar acontecer. Pelo mesmo motivo,
+--      `caixa_taxas_cartao` e `caixa_cartao_a_receber` (0089) também têm
+--      linha só na loja B: a chave da taxa é o lançamento, e o único
+--      lançamento da loja A fica livre pra sonda.
 --   2. `auditoria` recebe uma linha plantada à mão. Sem ela, a leitura daria
 --      zero pra todo mundo e o teste não distinguiria admin de balconista.
 --   3. Os UUIDs são fixos e falantes (…aa = loja A, …bb = loja B). Facilita
@@ -50,6 +53,7 @@ set session_replication_role = replica;
 
 truncate table
   computadores, schema_versao, auditoria, fechamentos_caixa, comissoes_fechamentos, whatsapp_mensagens, configuracoes_whatsapp,
+  caixa_cartao_a_receber, caixa_taxas_cartao, configuracoes_taxas_maquininha,
   configuracoes_juros_parcelas, configuracoes_painel_inicio,
   configuracoes_fiscais_loja, configuracoes_garantia, configuracoes_pix, configuracoes_avaliacao, configuracoes_contabilidade, segredos_fiscais_loja,
   cotacoes_pecas, pedidos_compra_itens, pedidos_compra,
@@ -222,6 +226,12 @@ insert into configuracoes_whatsapp (loja_id, chave, texto) values
   ('11111111-1111-1111-1111-1111111111aa', 'cobranca', 'Texto da loja A'),
   ('11111111-1111-1111-1111-1111111111bb', 'cobranca', 'Texto da loja B');
 
+-- A taxa da maquininha (#387): chave (loja, forma, parcelas), então cabe uma
+-- linha em cada loja e a sonda usa outra parcela. Taxa inventada.
+insert into configuracoes_taxas_maquininha (loja_id, forma, parcelas, taxa_percentual, prazo_dias) values
+  ('11111111-1111-1111-1111-1111111111aa', 'cartao_credito', 2, 4.00, 30),
+  ('11111111-1111-1111-1111-1111111111bb', 'cartao_credito', 2, 4.00, 30);
+
 -- E estas sete têm o `loja_id` como chave primária inteira: recebem linha SÓ
 -- na loja B, pra deixar a loja A livre pra sonda de INSERT (ver o item 1 do
 -- cabeçalho). É por isso que a leitura delas na matriz é "1,0,0,0,0".
@@ -250,6 +260,20 @@ insert into configuracoes_contabilidade (loja_id, nome, email) values
 -- vazia" — o dono tem acesso à loja B em toda outra tabela da matriz.
 insert into segredos_fiscais_loja (loja_id, focus_nfe_token) values
   ('11111111-1111-1111-1111-1111111111bb', 'token-de-mentira-naopodevazar');
+
+-- ---------- a taxa de cartão de um lançamento (migration 0089) -----------
+-- Só na loja B, de propósito, como as configurações de chave simples (item 1
+-- do cabeçalho): a chave da fotografia é o `movimento_id`, e o único
+-- lançamento da loja A fica livre pra sonda de INSERT pendurar a taxa nele.
+-- As datas acompanham a fotografia (uma linha, também só na loja B).
+insert into caixa_taxas_cartao (movimento_id, loja_id, forma, parcelas, taxa_percentual, prazo_dias,
+                                valor_bruto, valor_taxa, valor_liquido) values
+  ('55555555-0000-0000-0000-0000000000bb', '11111111-1111-1111-1111-1111111111bb', 'cartao_credito', 1, 3.00, 30,
+   100.00, 3.00, 97.00);
+
+insert into caixa_cartao_a_receber (id, movimento_id, loja_id, numero, data_prevista, valor) values
+  ('55555555-2222-0000-0000-0000000000bb', '55555555-0000-0000-0000-0000000000bb', '11111111-1111-1111-1111-1111111111bb',
+   1, current_date + 30, 97.00);
 
 -- ---------- um computador em cada loja (migration 0063) -------------------
 -- A leitura e o "esquecer" são do admin da loja em que o computador foi

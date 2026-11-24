@@ -69,9 +69,17 @@ export type ItemDaTrocaGravado = Pick<
   | "desconto"
 >;
 
-/** Uma troca de peça/serviço feita depois de faturar (#1145, migration 0087). */
+/** O que cada linha do histórico da OS registra (coluna `tipo`, migration 0091). */
+export type TipoDoHistoricoOS = "troca" | "reabertura" | "correcao_valor";
+
+/**
+ * Uma linha do histórico da OS: troca de peça/serviço feita depois de faturar
+ * (#1145, migration 0087), reabertura de orçamento recusado (#1181) ou
+ * correção de valor (#1182).
+ */
 export interface TrocaDeOsFaturada {
   id: string;
+  tipo: TipoDoHistoricoOS;
   operador_nome: string | null;
   motivo: string;
   /** Os itens como estavam e como ficaram (com id, peça, serviço, quantidade, preço e desconto). */
@@ -79,7 +87,7 @@ export interface TrocaDeOsFaturada {
   itens_depois: ItemDaTrocaGravado[];
   total: number;
   /**
-   * A correção de valor (#1182, migration 0094): o total antes e depois e
+   * A correção de valor (#1182, migration 0092): o total antes e depois e
    * como a diferença foi acertada. Nulos nas trocas de total igual antigas.
    */
   total_antes?: number | null;

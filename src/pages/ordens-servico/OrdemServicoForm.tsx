@@ -13,6 +13,7 @@ import {
   orcamentoVencido,
   pecasAvulsas,
   podeAprovar,
+  podeReabrir,
   podeRecusar,
   validadePadrao,
   type MotivoRecusa,
@@ -120,6 +121,11 @@ interface OrdemServicoFormProps {
   ) => Promise<void>;
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
   /**
+   * "Reabrir orçamento" na faixa do recusado (#1181). A janela é da página,
+   * que é a mesma da ação da linha na aba "Recusados".
+   */
+  onReabrir?: (orcamento: OrdemServico) => void;
+  /**
    * O orçamento abre já com esta janela por cima (#1091): o "Aprovar" da
    * linha da lista e o "Recusar" do "⋯".
    */
@@ -143,16 +149,46 @@ interface OrdemServicoFormProps {
   buscarSituacaoDaCorrecao?: (ordem: OrdemServico) => Promise<SituacaoDaCorrecao>;
   /** A nota emitida da OS, pra a janela levar ao "Cancelar nota". */
   notaParaCancelar?: NotaFiscalArquivo;
-  /** O histórico das trocas depois de faturada, da mais nova pra mais velha. */
+  /**
+   * O histórico da OS (trocas depois de faturada, reaberturas de orçamento,
+   * correções de valor), da mais nova pra mais velha.
+   */
   trocas?: TrocaDeOsFaturada[];
 }
 
+/** O nome de cada tipo de linha do "Histórico da OS" (#1181). */
+const ROTULO_DO_HISTORICO: Record<TrocaDeOsFaturada["tipo"], string> = {
+  troca: "Troca",
+  reabertura: "Reabertura",
+  correcao_valor: "Correção de valor",
+};
+
+/** Como a diferença da correção de valor foi acertada (#1182). */
 const ACERTO_NO_HISTORICO = {
   conta_aberta: "a conta a receber mudou de valor",
   pago_agora: "cliente pagou a diferença",
   a_receber: "diferença ficou a receber",
   devolvido: "diferença devolvida ao cliente",
 } as const;
+
+/** O texto de uma linha do histórico, sem a data. Linha antiga, sem tipo, é troca. */
+function textoDoHistorico(linha: TrocaDeOsFaturada): string {
+  const tipo = linha.tipo ?? "troca";
+  const quem = linha.operador_nome ?? "—";
+  if (tipo === "troca" || tipo === "correcao_valor") {
+    const { saem, entram } = resumoDaTroca(linha.itens_antes, linha.itens_depois);
+    const total =
+      tipo === "correcao_valor" && linha.total_antes != null && linha.total_depois != null
+        ? ` · total ${formatarMoeda(linha.total_antes)} → ${formatarMoeda(linha.total_depois)}` +
+          (linha.acerto ? ` · ${ACERTO_NO_HISTORICO[linha.acerto]}` : "")
+        : "";
+    return (
+      `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · saiu ${saem.map((i) => i.descricao).join(", ") || "nada"}, ` +
+      `entrou ${entram.map((i) => i.descricao).join(", ") || "nada"}${total} · motivo: ${linha.motivo}`
+    );
+  }
+  return `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · motivo: ${linha.motivo}`;
+}
 
 function formatarData(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -200,6 +236,7 @@ export function OrdemServicoForm({
   modoOrcamento = false,
   onAprovar,
   onRecusar,
+  onReabrir,
   janelaInicial = null,
   acoesExtras,
   onItensMudaram,
@@ -628,13 +665,22 @@ export function OrdemServicoForm({
       )}
 
       {ehRecusado && ordemExistente && (
-        <p className="rounded-lg bg-texto/[0.08] px-4 py-2 text-corpo text-texto-2">
-          Orçamento recusado
-          {ordemExistente.motivo_recusa
-            ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
-            : " — sem motivo informado"}
-          .
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-texto/[0.08] px-4 py-2">
+          <p className="min-w-0 text-corpo text-texto-2">
+            Orçamento recusado
+            {ordemExistente.motivo_recusa
+              ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
+              : " — sem motivo informado"}
+            .
+          </p>
+          {/* #1181: o cliente voltou? Reabre com o mesmo número (sem laranja:
+              o laranja da tela é o "Novo orçamento"). */}
+          {modoOrcamento && onReabrir && podeReabrir(ordemExistente) && (
+            <Botao tamanho="pequeno" onClick={() => onReabrir(ordemExistente)}>
+              Reabrir orçamento
+            </Botao>
+          )}
+        </div>
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
@@ -755,28 +801,13 @@ export function OrdemServicoForm({
 
           {trocas.length > 0 && (
             <section className="rounded-lg bg-poco p-3">
-              <p className="mb-1 text-rotulo font-medium text-texto/85">Trocas depois de faturada</p>
+              <p className="mb-1 text-rotulo font-medium text-texto/85">Histórico da OS</p>
               <ul className="space-y-1 text-rotulo text-texto/90">
-                {trocas.map((troca) => {
-                  const { saem, entram } = resumoDaTroca(troca.itens_antes, troca.itens_depois);
-                  return (
-                    <li key={troca.id}>
-                      {formatarData(troca.criado_em)} · {troca.operador_nome ?? "—"} · saiu{" "}
-                      {saem.map((i) => i.descricao).join(", ") || "nada"}, entrou{" "}
-                      {entram.map((i) => i.descricao).join(", ") || "nada"}
-                      {troca.total_antes != null &&
-                        troca.total_depois != null &&
-                        troca.total_antes !== troca.total_depois && (
-                          <>
-                            {" "}
-                            · total {formatarMoeda(troca.total_antes)} → {formatarMoeda(troca.total_depois)}
-                            {troca.acerto && ` · ${ACERTO_NO_HISTORICO[troca.acerto]}`}
-                          </>
-                        )}{" "}
-                      · motivo: {troca.motivo}
-                    </li>
-                  );
-                })}
+                {trocas.map((linha) => (
+                  <li key={linha.id}>
+                    {formatarData(linha.criado_em)} · {textoDoHistorico(linha)}
+                  </li>
+                ))}
               </ul>
             </section>
           )}

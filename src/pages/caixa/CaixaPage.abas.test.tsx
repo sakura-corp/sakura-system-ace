@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * As abas do Caixa no visual novo (tarefa 10, #990): o leitor de tela anuncia
- * "aba 1 de 4", então as setas, Home e End têm de andar entre elas, e só a
+ * "aba 1 de 5", então as setas, Home e End têm de andar entre elas, e só a
  * escolhida entra no Tab.
  */
 import { describe, expect, it, vi } from "vitest";
@@ -18,6 +18,9 @@ vi.mock("@/lib/caixa", () => ({
 vi.mock("@/lib/categoriasCaixa", () => ({ listarCategoriasCaixa: async () => [] }));
 vi.mock("@/lib/fechamentoCaixa", () => ({ listarFechamentosCaixa: async () => [] }));
 vi.mock("./DiarioSection", () => ({ DiarioSection: () => <p>parte: diário</p> }));
+vi.mock("./CartaoAReceberSection", () => ({
+  CartaoAReceberSection: ({ lojaId }: { lojaId: string }) => <p>parte: cartão a receber {lojaId}</p>,
+}));
 vi.mock("./FechamentoSection", () => ({ FechamentoSection: () => <p>parte: fechamento</p> }));
 vi.mock("./EntradaSaidaSection", () => ({
   EntradaSaidaSection: ({ tipo }: { tipo: string }) => <p>parte: {tipo}</p>,
@@ -43,18 +46,28 @@ describe("Caixa: as abas no teclado", () => {
     expect(screen.getByText("parte: entrada")).toBeInTheDocument();
 
     await user.keyboard("{End}");
-    expect(screen.getByRole("tab", { name: "Fechamento" })).toHaveFocus();
-    expect(screen.getByText("parte: fechamento")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Cartão a receber" })).toHaveFocus();
+    expect(screen.getByText("parte: cartão a receber l")).toBeInTheDocument();
 
     // Da última, a seta pra direita volta pra primeira.
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("tab", { name: "Diário" })).toHaveFocus();
 
     await user.keyboard("{ArrowLeft}");
-    expect(screen.getByRole("tab", { name: "Fechamento" })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "Cartão a receber" })).toHaveFocus();
 
     await user.keyboard("{Home}");
     expect(screen.getByRole("tab", { name: "Diário" })).toHaveFocus();
     expect(screen.getByText("parte: diário")).toBeInTheDocument();
+  });
+});
+
+describe("Caixa: aba Cartão a receber", () => {
+  it("a aba existe e abre a lista da loja atual", async () => {
+    const { user } = renderizar(<CaixaPage />);
+    await screen.findByText("parte: diário");
+    expect(screen.getAllByRole("tab")).toHaveLength(5);
+    await user.click(screen.getByRole("tab", { name: "Cartão a receber" }));
+    expect(await screen.findByText("parte: cartão a receber l")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- Migration 0094: corrigir peça, serviço E VALOR de uma OS (ou venda de
+-- Migration 0092: corrigir peça, serviço E VALOR de uma OS (ou venda de
 -- balcão) JÁ FATURADA, com a diferença no Caixa de HOJE (tarefa #1182;
 -- decisões da Sofia em 24/11/2026).
 --
@@ -20,7 +20,7 @@
 --      ela nasce na primeira devolução, em "a_classificar" (a loja escolhe o
 --      grupo do DRE, como em toda categoria em uso, 0088). Se já existe uma com
 --      esse nome, é ela que é usada.
---   3. Em `ordens_servico_trocas` (o histórico da OS, 0087/0093): o total
+--   3. Em `ordens_servico_trocas` (o histórico da OS, 0087/0091): o total
 --      antes e depois, o acerto ('conta_aberta', 'pago_agora', 'a_receber',
 --      'devolvido'), o lançamento de caixa e a conta a receber que a correção
 --      criou ou mudou, e a CHAVE (uma por janela aberta: a mesma chamada duas
@@ -59,7 +59,7 @@
 -- RODA COMO QUEM CHAMA (`security invoker`, decisão 3 da 0071): a RLS de cada
 -- tabela vale como se a pessoa tivesse feito cada passo. Nenhuma policy muda:
 -- o admin da loja já pode lançar no Caixa (tem todos os módulos, 0062/0075),
--- criar e mudar conta a receber (0061/0075) e gravar no histórico (0093).
+-- criar e mudar conta a receber (0061/0075) e gravar no histórico (0091).
 --
 -- ORDEM AO SUBIR: migration ANTES da versão do programa que tem a janela
 -- "Corrigir a OS". Só acrescenta (colunas com padrão, um índice no lugar de
@@ -537,4 +537,4 @@ comment on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text,
 revoke all on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid) from public, anon;
 grant execute on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid) to authenticated;
 
-insert into schema_versao (versao) values (94) on conflict do nothing;
+insert into schema_versao (versao) values (92) on conflict do nothing;

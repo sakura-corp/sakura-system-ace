@@ -229,6 +229,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       trocas: [
         {
           id: "t1",
+          tipo: "troca",
           operador_nome: "Sofia",
           motivo: "medida errada",
           total: 800,
@@ -245,8 +246,9 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       ],
     });
 
+    expect(screen.getByText("Histórico da OS")).toBeInTheDocument();
     expect(
-      screen.getByText(/Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
+      screen.getByText(/Troca · Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
     ).toBeInTheDocument();
   });
 
@@ -258,6 +260,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       trocas: [
         {
           id: "t2",
+          tipo: "correcao_valor",
           operador_nome: "Sofia",
           motivo: "serviço a mais",
           total: 900,

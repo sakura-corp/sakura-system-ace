@@ -3,10 +3,16 @@ import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
-import { mensagemDeErro } from "./errors";
-import { diaLocal } from "./datas";
+import { ehErroDeRede, mensagemDeErro } from "./errors";
+import { diaLocal, hojeLocal } from "./datas";
+import { listarTaxasMaquininha, registrarTaxaDoCartao } from "./taxasMaquininha";
 import type { AcertoDaCorrecao, ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
+import {
+  calcularTaxaDaMaquininha,
+  formaECartao,
+  type TaxaMaquininha,
+} from "@/schemas/taxaMaquininha";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
@@ -32,6 +38,21 @@ import type {
 export interface PagamentoOrdem {
   formaPagamento: string;
   valor: number;
+  /**
+   * As parcelas desta linha na maquininha (#387, pra achar a taxa). Sem ele,
+   * o cartão de crédito usa as `parcelas` do faturamento, e o resto, 1.
+   */
+  parcelas?: number;
+}
+
+/** O que o faturamento devolve além de ter dado certo. */
+export interface ResultadoFaturamento {
+  /**
+   * A venda foi faturada, mas a taxa da maquininha de alguma linha de cartão
+   * não foi guardada (#387). A frase já vem pronta pra mostrar; `null` quando
+   * deu tudo certo ou a loja não informou a taxa (em branco não é aviso).
+   */
+  avisoTaxa: string | null;
 }
 
 // Os nomes de vendedor e técnico NÃO vêm mais por join embutido aqui.
@@ -479,6 +500,57 @@ export async function recusarOrcamento(
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
 }
 
+/** O que voltou da reabertura: a OS, se "Já aprovar agora" deu certo, ou o erro da aprovação. */
+export interface ResultadoDaReabertura {
+  aprovada: OrdemServico | null;
+  erroDaAprovacao: string | null;
+}
+
+/**
+ * Reabre o orçamento recusado (#1181): volta pra orçamento aberto, com o mesmo
+ * número, a validade nova e uma linha no histórico da OS. Uma chamada só
+ * (`reabrir_orcamento`, migration 0091); erro dela sobe e nada muda.
+ *
+ * Com `aprovarAgora` ("Já aprovar agora"), chama em seguida a aprovação de
+ * sempre (`aprovarOrcamento`). Se a aprovação falhar, o orçamento continua
+ * reaberto (nada se perde) e o erro volta em `erroDaAprovacao` pra tela
+ * mostrar. Peça que não ligou ao cadastro já nasce OS: devolve a OS e o aviso.
+ *
+ * `motivo` é o texto do histórico, já com a recusa antiga (`textoDaReabertura`).
+ */
+export async function reabrirOrcamento(
+  orcamento: Pick<OrdemServico, "id">,
+  motivo: string,
+  validade: string,
+  operadorId: string,
+  aprovarAgora?: { aprovadoPor: string },
+): Promise<ResultadoDaReabertura> {
+  const { error } = await supabase.rpc("reabrir_orcamento", {
+    p_ordem: orcamento.id,
+    p_motivo: motivo.trim(),
+    p_validade: validade,
+    p_operador: operadorId,
+  });
+  if (error) throw error;
+  if (!aprovarAgora) return { aprovada: null, erroDaAprovacao: null };
+  try {
+    const aprovada = await aprovarOrcamento(orcamento, aprovarAgora.aprovadoPor, operadorId);
+    return { aprovada, erroDaAprovacao: null };
+  } catch (err) {
+    if (err instanceof AprovadoSemEstoqueError) return { aprovada: err.ordem, erroDaAprovacao: err.message };
+    // Sem resposta do banco, a aprovação pode ter entrado (ver aprovarOrcamento):
+    // não dá pra dizer que não aprovou.
+    if (ehErroDeRede(err)) {
+      return {
+        aprovada: null,
+        erroDaAprovacao:
+          "A conexão caiu durante a aprovação: confira na lista de OS se ela entrou antes de aprovar de novo.",
+      };
+    }
+    return { aprovada: null, erroDaAprovacao: mensagemDeErro(err) };
+  }
+}
+
 export async function atualizarOrdem(
   id: string,
   patch: PatchOrdemServico,
@@ -679,7 +751,7 @@ export interface CorrecaoDaOrdem {
 }
 
 // Corrigir uma OS (ou venda) JÁ FATURADA: peça, serviço e valor (#1182). Uma
-// chamada só (`corrigir_os_faturada`, migration 0094), tudo ou nada: o banco
+// chamada só (`corrigir_os_faturada`, migration 0092), tudo ou nada: o banco
 // trava a OS, confere gerente, nota, o caixa de HOJE, o total faturado e o
 // acerto que vale pro caso; troca os itens, acerta o estoque, lança a
 // diferença (Caixa de hoje ou conta a receber) e grava o histórico. Com o
@@ -752,11 +824,14 @@ export class CorrecaoMudouError extends Error {
   }
 }
 
-/** O histórico das trocas depois de faturada (#1145), da mais nova pra mais velha. */
+/**
+ * O histórico da OS (#1145, #1181, #1182): trocas depois de faturada, reaberturas de
+ * orçamento e correções de valor, da mais nova pra mais velha.
+ */
 export async function listarTrocasDaOrdem(ordemId: string): Promise<TrocaDeOsFaturada[]> {
   const { data, error } = await supabase
     .from("ordens_servico_trocas")
-    .select("id, operador_nome, motivo, itens_antes, itens_depois, total, total_antes, total_depois, acerto, criado_em")
+    .select("id, tipo, operador_nome, motivo, itens_antes, itens_depois, total, total_antes, total_depois, acerto, criado_em")
     .eq("ordem_servico_id", ordemId)
     .order("criado_em", { ascending: false });
   if (error) throw error;
@@ -831,7 +906,7 @@ export async function registrarVendaBalcao(
   pagamento: PagamentoDaVenda,
   operadorId: string,
   lojaId: string,
-): Promise<OrdemServico> {
+): Promise<{ ordem: OrdemServico } & ResultadoFaturamento> {
   if (itens.length === 0) throw new Error("A venda não tem nenhuma peça.");
 
   const { data, error } = await supabase
@@ -867,8 +942,9 @@ export async function registrarVendaBalcao(
     throw erroItens;
   }
 
+  let resultado: ResultadoFaturamento;
   try {
-    await faturarOrdem(
+    resultado = await faturarOrdem(
       ordem,
       pagamento.pagamentos,
       pagamento.parcelas,
@@ -885,7 +961,7 @@ export async function registrarVendaBalcao(
     throw new VendaSemFaturamentoError(ordem, mensagemDeErro(erroPagamento));
   }
 
-  return ordem;
+  return { ordem, avisoTaxa: resultado.avisoTaxa };
 }
 
 // Marca a OS como "concluída" — usado pelo botão "Encerrar OS", que já leva
@@ -904,7 +980,7 @@ export async function faturarOrdem(
   // juros do cartão deixam o cobrado maior). O banco confere com o que está
   // gravado e recusa se a OS mudou em outro computador.
   totalDosItens: number,
-): Promise<void> {
+): Promise<ResultadoFaturamento> {
   // Orçamento não é venda (#379): não entra no caixa nem em contas a
   // receber. Aprovar antes faz dele uma OS.
   if (!contaNosNumeros(ordem)) {
@@ -946,8 +1022,9 @@ export async function faturarOrdem(
   // Caixa só recebe o lançamento quando ela for marcada como recebida de
   // verdade (Contas a Receber).
   if (!previsaoRecebimento) {
+    const lancados: { movimentoId: string; pagamento: PagamentoOrdem }[] = [];
     for (const pagamento of pagamentos) {
-      await criarMovimentoCaixa(
+      const movimentoId = await criarMovimentoCaixa(
         {
           ordem_servico_id: ordem.id,
           tipo: "entrada",
@@ -958,7 +1035,16 @@ export async function faturarOrdem(
         },
         ordem.loja_id,
       );
+      lancados.push({ movimentoId, pagamento });
     }
+    // A taxa da maquininha (#387) só depois de TODOS os lançamentos: ela é
+    // informação e não pode atrasar o Pix que vem depois do cartão (se a rede
+    // caísse no meio, o Caixa ficaria sem ele).
+    const taxas = new TaxasDoFaturamento(ordem.loja_id);
+    for (const { movimentoId, pagamento } of lancados) {
+      await taxas.gravar(movimentoId, pagamento, parcelas);
+    }
+    return { avisoTaxa: taxas.aviso() };
   } else {
     await criarContaReceber(
       {
@@ -970,5 +1056,64 @@ export async function faturarOrdem(
       },
       ordem.loja_id,
     );
+    // "Receber depois" não passa pela maquininha agora: sem taxa (#387).
+    return { avisoTaxa: null };
+  }
+}
+
+/**
+ * A taxa da maquininha de um faturamento (#387): lê a tabela da loja uma vez
+ * só (e só se houver alguma linha de cartão), calcula e grava a taxa de cada
+ * lançamento de cartão.
+ *
+ * A taxa é informação, não a venda: nada aqui lança erro. Se ler a tabela ou
+ * gravar a taxa falhar, registra no console e junta o motivo pro aviso que o
+ * faturamento devolve. Tabela sem a linha (a loja não informou) não é erro e
+ * não avisa: o DRE mostra "não informada".
+ */
+class TaxasDoFaturamento {
+  private tabela: Promise<readonly TaxaMaquininha[] | null> | null = null;
+  private readonly motivos: string[] = [];
+  private readonly dia = hojeLocal();
+
+  constructor(private readonly lojaId: string) {}
+
+  private lerTabela(): Promise<readonly TaxaMaquininha[] | null> {
+    this.tabela ??= listarTaxasMaquininha(this.lojaId).catch((erro: unknown) => {
+      console.error("Não deu pra ler a tabela de taxas da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+      return null;
+    });
+    return this.tabela;
+  }
+
+  async gravar(movimentoId: string, pagamento: PagamentoOrdem, parcelasDoFaturamento: number) {
+    if (!formaECartao(pagamento.formaPagamento)) return;
+    // Só aqui, na primeira linha de cartão, a tabela é lida (e uma vez só).
+    const tabela = await this.lerTabela();
+    if (!tabela) return;
+    const parcelas =
+      pagamento.parcelas ??
+      (pagamento.formaPagamento === "cartao_credito" ? parcelasDoFaturamento : 1);
+    const calculo = calcularTaxaDaMaquininha(
+      pagamento.valor,
+      pagamento.formaPagamento,
+      parcelas,
+      tabela,
+      this.dia,
+    );
+    if (!calculo.informada) return;
+    try {
+      await registrarTaxaDoCartao(movimentoId, calculo);
+    } catch (erro) {
+      console.error("Não deu pra guardar a taxa da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+    }
+  }
+
+  aviso(): string | null {
+    const motivos = [...new Set(this.motivos)];
+    if (motivos.length === 0) return null;
+    return `A venda foi faturada, mas a taxa da maquininha não foi guardada: ${motivos.join("; ")}`;
   }
 }

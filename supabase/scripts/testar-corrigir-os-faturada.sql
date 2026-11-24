@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0094 (corrigir peça, serviço e valor de OS já faturada,
+-- TESTE da migration 0092 (corrigir peça, serviço e valor de OS já faturada,
 -- com a diferença no Caixa de hoje, tarefa #1182). NÃO é migration, e NUNCA
 -- deve ser rodado no Supabase de verdade: grava e apaga dado de teste.
 --

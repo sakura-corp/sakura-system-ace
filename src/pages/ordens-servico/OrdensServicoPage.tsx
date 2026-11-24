@@ -754,11 +754,20 @@ export function OrdensServicoPage() {
   ) {
     if (!operador || !lojaAtual) return;
     try {
-      const criada = await registrarVendaBalcao(venda, itens, pagamento, operador.id, lojaAtual.id);
+      const { ordem: criada, avisoTaxa } = await registrarVendaBalcao(
+        venda,
+        itens,
+        pagamento,
+        operador.id,
+        lojaAtual.id,
+      );
       setMostrarVenda(false);
       setLista("vendas");
       const recarregadas = await carregar();
       avisar(`${nomeDocumento(criada)} registrada`);
+      // A venda saiu; só a taxa da maquininha não foi guardada (#387). Depois
+      // do `carregar`, que limpa o aviso do topo.
+      if (avisoTaxa) setErro(avisoTaxa);
       const completa = recarregadas?.find((o) => o.id === criada.id);
       if (completa) setVendaParaNota(completa);
     } catch (err) {
@@ -801,15 +810,16 @@ export function OrdensServicoPage() {
     previsaoRecebimento: string | null,
   ) {
     if (!ordemFaturando || !operador) return;
+    let avisoTaxa: string | null;
     try {
-      await faturarOrdem(
+      ({ avisoTaxa } = await faturarOrdem(
         ordemFaturando,
         pagamentos,
         parcelas,
         previsaoRecebimento,
         operador.id,
         totalOrdem(ordemFaturando.itens ?? []),
-      );
+      ));
     } catch (err) {
       if (err instanceof OrdemMudouError) {
         // O banco recusou e nada foi lançado (a lib garante). Recarrega a OS
@@ -837,6 +847,8 @@ export function OrdensServicoPage() {
     setVendaAberta(null);
     avisar(`${nomeDocumento(faturada)} faturada`);
     const recarregadas = await carregar();
+    // Faturada; só a taxa da maquininha não foi guardada (#387).
+    if (avisoTaxa) setErro(avisoTaxa);
     // Venda de balcão faturada pela lista (a que ficou sem pagamento) segue
     // pro mesmo lugar que uma venda nova: a NFC-e.
     if (ehVendaBalcao(faturada)) {

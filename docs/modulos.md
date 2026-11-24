@@ -420,8 +420,9 @@ Quatro coisas que valem saber:
     loja) tem o botão "Trocar peça ou serviço": edita a lista, confere o "antes e depois" com o
     motivo obrigatório e o total tem que ficar igual (mudar valor é a próxima etapa). Bloqueia com
     nota fiscal e com o caixa do dia da fatura fechado. Estoque acertado na hora; o histórico
-    aparece na própria OS ("Trocas depois de faturada").
-  - **Corrigir a OS** (#1182, migration `0094`; substitui o botão acima): "Precisa corrigir? Peça,
+    aparece na própria OS ("Histórico da OS", que desde a #1181 mostra também as reaberturas, e
+    desde a #1182 as correções de valor).
+  - **Corrigir a OS** (#1182, migration `0092`; substitui o botão acima): "Precisa corrigir? Peça,
     serviço ou valor" → janela "Corrigir a OS N", também na venda de balcão. O total pode mudar: o
     2º passo "Conferir e acertar" mostra Faturado → Total novo = Diferença e o acerto (conta do
     faturamento em aberto: a conta muda de valor; paga e subiu: "Cliente paga agora" ou "Fica a
@@ -574,6 +575,13 @@ Quatro coisas que valem saber:
     A aba Fechamento fica fora do `<form>` da OS (#1128), senão o "Salvar peça" da nota enviava a OS.
     **Recusar** é um clique, com motivo opcional (preço, prazo, foi em outro lugar, desistiu,
     outro); o recusado vira histórico, na aba "Recusados".
+    **Reabrir** (#1181, migration `0091`): o recusado volta pra orçamento aberto, **com o mesmo
+    número**, pelo botão "Reabrir orçamento" na faixa do recusado ou pela ação "Reabrir" da linha na
+    aba "Recusados". A janela pede o motivo em um clique ("Cliente voltou e aceitou", já marcado;
+    "Recusado por engano"; "Outro", com texto), a validade nova (hoje + 7) e tem a caixinha "Já
+    aprovar agora" (pede quem aprovou e faz a aprovação de sempre; se ela falhar, o orçamento fica
+    reaberto e a tela diz o erro; com peça digitada sem cadastro a caixinha fica desligada). Quem pode
+    recusar pode reabrir. Fica no "Histórico da OS" do orçamento, com quem, quando e o motivo.
   - **WhatsApp**: botão "Enviar" com o modelo `orcamento` (texto aprovado por ela em 19/10).
     **Impressão**: a OS não tem impressão própria hoje, então o orçamento também não.
   - **Fora**: orçamento no balcão (comentário de 30/09 na `#379`; virou a `#888`), peça avulsa, link de aprovação
