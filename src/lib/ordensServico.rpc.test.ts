@@ -29,6 +29,7 @@ const {
   OrdemMudouError,
   registrarVendaBalcao,
   PecaNaoLigadaNaAprovacaoError,
+  reabrirOrcamento,
 } = await import("./ordensServico");
 
 const pneu: NovoItemOS = {
@@ -320,5 +321,74 @@ describe("registrarVendaBalcao", () => {
     );
     const fatura = sb.rpc.mock.calls.find((c) => c[0] === "marcar_ordem_faturada");
     expect(fatura?.[1]).toMatchObject({ p_ordem: "venda-1", p_total_da_tela: 1200, p_operador: "op-1" });
+  });
+});
+
+// #1181: reabrir o orçamento recusado é UMA chamada (reabrir_orcamento,
+// migration 0093). Com "Já aprovar agora", a aprovação de sempre vem DEPOIS,
+// e se ela falhar o orçamento continua reaberto (nada se perde).
+describe("reabrirOrcamento", () => {
+  it("manda motivo, validade e operador numa chamada só", async () => {
+    sb.rpc.mockResolvedValue({ data: "linha-1", error: null });
+    const resultado = await reabrirOrcamento({ id: "ordem-1" }, "  Cliente voltou e aceitou  ", "2026-12-01", "op-2");
+    expect(sb.rpc).toHaveBeenCalledTimes(1);
+    expect(sb.rpc).toHaveBeenCalledWith("reabrir_orcamento", {
+      p_ordem: "ordem-1",
+      p_motivo: "Cliente voltou e aceitou",
+      p_validade: "2026-12-01",
+      p_operador: "op-2",
+    });
+    expect(resultado).toEqual({ aprovada: null, erroDaAprovacao: null });
+    expect(sb.from).not.toHaveBeenCalled();
+  });
+
+  it("erro do banco ao reabrir sobe e não tenta aprovar", async () => {
+    sb.rpc.mockResolvedValue({ data: null, error: { message: "Este orçamento não está recusado", code: "P0001" } });
+    await expect(
+      reabrirOrcamento({ id: "ordem-1" }, "Cliente voltou", "2026-12-01", "op-2", { aprovadoPor: "o cliente" }),
+    ).rejects.toMatchObject({ message: "Este orçamento não está recusado" });
+    expect(sb.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("'Já aprovar agora': reabre e depois chama a aprovação de sempre, devolvendo a OS", async () => {
+    sb.rpc
+      .mockResolvedValueOnce({ data: "linha-1", error: null })
+      .mockResolvedValueOnce({ data: { ordem: ordemAprovada, nao_ligados: [] }, error: null });
+    const resultado = await reabrirOrcamento({ id: "ordem-1" }, "Cliente voltou", "2026-12-01", "op-2", {
+      aprovadoPor: " o cliente ",
+    });
+    expect(sb.rpc.mock.calls.map((c) => c[0])).toEqual(["reabrir_orcamento", "aprovar_orcamento"]);
+    expect(sb.rpc).toHaveBeenLastCalledWith("aprovar_orcamento", {
+      p_ordem: "ordem-1",
+      p_aprovado_por: "o cliente",
+      p_operador: "op-2",
+      p_vinculos: [],
+    });
+    expect(resultado).toEqual({ aprovada: ordemAprovada, erroDaAprovacao: null });
+  });
+
+  it("a aprovação falhou: o orçamento fica reaberto e o erro volta pra tela", async () => {
+    sb.rpc
+      .mockResolvedValueOnce({ data: "linha-1", error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: "Nenhum depósito ativo", code: "P0001" } });
+    const resultado = await reabrirOrcamento({ id: "ordem-1" }, "Cliente voltou", "2026-12-01", "op-2", {
+      aprovadoPor: "o cliente",
+    });
+    expect(resultado.aprovada).toBeNull();
+    expect(resultado.erroDaAprovacao).toMatch(/não foi aprovado e continua orçamento: Nenhum depósito ativo/);
+  });
+});
+
+describe("reabrirOrcamento — a conexão caiu na aprovação", () => {
+  it("não afirma que não aprovou: pede pra conferir antes de aprovar de novo", async () => {
+    sb.rpc
+      .mockResolvedValueOnce({ data: "linha-1", error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: "TypeError: Failed to fetch", code: "" } });
+    const resultado = await reabrirOrcamento({ id: "ordem-1" }, "Cliente voltou", "2026-12-01", "op-2", {
+      aprovadoPor: "o cliente",
+    });
+    expect(resultado.aprovada).toBeNull();
+    expect(resultado.erroDaAprovacao).toMatch(/conexão caiu durante a aprovação/);
+    expect(resultado.erroDaAprovacao).not.toMatch(/não foi aprovado/);
   });
 });

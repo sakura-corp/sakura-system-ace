@@ -3,7 +3,7 @@ import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
-import { mensagemDeErro } from "./errors";
+import { ehErroDeRede, mensagemDeErro } from "./errors";
 import { diaLocal, hojeLocal } from "./datas";
 import { listarTaxasMaquininha, registrarTaxaDoCartao } from "./taxasMaquininha";
 import type { ItemDaTroca } from "@/schemas/trocaFaturada";
@@ -500,6 +500,57 @@ export async function recusarOrcamento(
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
 }
 
+/** O que voltou da reabertura: a OS, se "Já aprovar agora" deu certo, ou o erro da aprovação. */
+export interface ResultadoDaReabertura {
+  aprovada: OrdemServico | null;
+  erroDaAprovacao: string | null;
+}
+
+/**
+ * Reabre o orçamento recusado (#1181): volta pra orçamento aberto, com o mesmo
+ * número, a validade nova e uma linha no histórico da OS. Uma chamada só
+ * (`reabrir_orcamento`, migration 0091); erro dela sobe e nada muda.
+ *
+ * Com `aprovarAgora` ("Já aprovar agora"), chama em seguida a aprovação de
+ * sempre (`aprovarOrcamento`). Se a aprovação falhar, o orçamento continua
+ * reaberto (nada se perde) e o erro volta em `erroDaAprovacao` pra tela
+ * mostrar. Peça que não ligou ao cadastro já nasce OS: devolve a OS e o aviso.
+ *
+ * `motivo` é o texto do histórico, já com a recusa antiga (`textoDaReabertura`).
+ */
+export async function reabrirOrcamento(
+  orcamento: Pick<OrdemServico, "id">,
+  motivo: string,
+  validade: string,
+  operadorId: string,
+  aprovarAgora?: { aprovadoPor: string },
+): Promise<ResultadoDaReabertura> {
+  const { error } = await supabase.rpc("reabrir_orcamento", {
+    p_ordem: orcamento.id,
+    p_motivo: motivo.trim(),
+    p_validade: validade,
+    p_operador: operadorId,
+  });
+  if (error) throw error;
+  if (!aprovarAgora) return { aprovada: null, erroDaAprovacao: null };
+  try {
+    const aprovada = await aprovarOrcamento(orcamento, aprovarAgora.aprovadoPor, operadorId);
+    return { aprovada, erroDaAprovacao: null };
+  } catch (err) {
+    if (err instanceof AprovadoSemEstoqueError) return { aprovada: err.ordem, erroDaAprovacao: err.message };
+    // Sem resposta do banco, a aprovação pode ter entrado (ver aprovarOrcamento):
+    // não dá pra dizer que não aprovou.
+    if (ehErroDeRede(err)) {
+      return {
+        aprovada: null,
+        erroDaAprovacao:
+          "A conexão caiu durante a aprovação: confira na lista de OS se ela entrou antes de aprovar de novo.",
+      };
+    }
+    return { aprovada: null, erroDaAprovacao: mensagemDeErro(err) };
+  }
+}
+
 export async function atualizarOrdem(
   id: string,
   patch: PatchOrdemServico,
@@ -624,11 +675,14 @@ export class EstoqueNegativoNaTrocaError extends Error {
   }
 }
 
-/** O histórico das trocas depois de faturada (#1145), da mais nova pra mais velha. */
+/**
+ * O histórico da OS (#1145, #1181): trocas depois de faturada, reaberturas de
+ * orçamento e correções de valor, da mais nova pra mais velha.
+ */
 export async function listarTrocasDaOrdem(ordemId: string): Promise<TrocaDeOsFaturada[]> {
   const { data, error } = await supabase
     .from("ordens_servico_trocas")
-    .select("id, operador_nome, motivo, itens_antes, itens_depois, total, criado_em")
+    .select("id, tipo, operador_nome, motivo, itens_antes, itens_depois, total, criado_em")
     .eq("ordem_servico_id", ordemId)
     .order("criado_em", { ascending: false });
   if (error) throw error;
