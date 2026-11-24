@@ -42,7 +42,8 @@ interface BuscaDeItensProps {
   permitePecaAvulsa?: boolean;
   desabilitado?: boolean;
   onEscolher: (escolha: ResultadoDaBusca) => void;
-  onAvulso: (tipo: "peca" | "servico", descricao: string) => void;
+  /** Sem isto não há "sem cadastro" (a venda de balcão não tem). */
+  onAvulso?: (tipo: "peca" | "servico", descricao: string) => void;
   inputRef?: RefObject<HTMLInputElement | null>;
   className?: string;
 }
@@ -96,7 +97,7 @@ export function BuscaDeItens({
 
   function escolher(opcao: Opcao) {
     if (opcao.origem === "catalogo") onEscolher(opcao.resultado);
-    else onAvulso(opcao.avulso.tipo, opcao.avulso.descricao);
+    else onAvulso?.(opcao.avulso.tipo, opcao.avulso.descricao);
     limpar();
     // O foco volta pra busca: o próximo item (ou a próxima passada do leitor)
     // começa onde terminou o anterior.

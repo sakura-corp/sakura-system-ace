@@ -145,10 +145,6 @@ interface OrdemServicoFormProps {
   trocas?: TrocaDeOsFaturada[];
 }
 
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function formatarData(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleString("pt-BR", {

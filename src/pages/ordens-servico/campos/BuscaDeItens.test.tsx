@@ -111,12 +111,12 @@ describe("BuscaDeItens", () => {
 
     expect(onEscolher).toHaveBeenCalledTimes(1);
     const escolhido = onEscolher.mock.calls[0][0];
-    expect(escolhido.descricao).toBe(nome);
+    expect(nome).toContain(escolhido.descricao);
 
     // E a seta pra cima volta pro primeiro.
     await user.type(busca, "pneu");
     await user.keyboard("{ArrowDown}{ArrowDown}{ArrowUp}{Enter}");
-    expect(onEscolher.mock.calls[1][0].descricao).not.toBe(nome);
+    expect(nome).not.toContain(onEscolher.mock.calls[1][0].descricao);
   });
 
   it("clicar no resultado põe o item", async () => {

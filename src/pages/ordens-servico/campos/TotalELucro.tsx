@@ -23,13 +23,9 @@ export function ApoioDoTotal({
 }) {
   return (
     <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-rotulo text-texto-2">
-      <span>
-        Peças <span className="tabular-nums">{formatarMoeda(pecas)}</span>
-      </span>
+      <span className="tabular-nums">{`Peças ${formatarMoeda(pecas)}`}</span>
       {servicos !== undefined && (
-        <span>
-          Serviços <span className="tabular-nums">{formatarMoeda(servicos)}</span>
-        </span>
+        <span className="tabular-nums">{`Serviços ${formatarMoeda(servicos)}`}</span>
       )}
       <LucroPrevistoNaTela lucro={lucro} />
     </div>
