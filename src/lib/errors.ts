@@ -18,7 +18,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
   // Esta vem do gatilho (um CHECK não vê o status de antes), com a mesma frase de um CHECK.
   ck_ordens_servico_transicao_orcamento:
-    "Orçamento só pode ser aprovado ou recusado, e recusado não muda mais. Atualize a tela e confira.",
+    "Orçamento só pode ser aprovado ou recusado; recusado só volta pelo botão \"Reabrir orçamento\". Atualize a tela e confira.",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",

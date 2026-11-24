@@ -58,7 +58,7 @@ describe("mensagemDeErro", () => {
       message:
         'new row for relation "ordens_servico" violates check constraint "ck_ordens_servico_transicao_orcamento"',
     };
-    expect(mensagemDeErro(erro)).toMatch(/recusado não muda mais/);
+    expect(mensagemDeErro(erro)).toMatch(/recusado só volta pelo botão "Reabrir orçamento"/);
   });
 
   it("coluna que o banco ainda não tem vira o aviso de banco desatualizado", () => {
