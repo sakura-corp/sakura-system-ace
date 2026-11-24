@@ -26,12 +26,14 @@ const categorias: CategoriaCaixa[] = [
     id: "cat-1",
     nome: "Aluguel",
     tipo: "saida",
+    grupo: "a_classificar",
     criado_em: "2026-01-01T00:00:00.000Z",
   },
   {
     id: "cat-2",
     nome: "Sucata",
     tipo: "entrada",
+    grupo: "a_classificar",
     criado_em: "2026-01-01T00:00:00.000Z",
   },
 ];

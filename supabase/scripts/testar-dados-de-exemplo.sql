@@ -508,6 +508,16 @@ begin
     raise exception 'FALHOU (B16b): a peça % (NCM %) saiu com o CEST errado ou vazio: %',
       linha.codigo_interno, linha.ncm, coalesce(linha.cest, '(vazio)');
   end loop;
+
+  -- B18. as categorias de caixa inventadas já entram no grupo do DRE (0088,
+  -- #386), nenhuma em "a_classificar".
+  if (select count(*) from categorias_caixa
+       where id::text like 'eeee000e%'
+         and (nome, tipo, grupo) in (('Aluguel', 'saida', 'despesas_administrativas'),
+                                     ('Energia e internet', 'saida', 'despesas_administrativas'),
+                                     ('Fornecedores', 'saida', 'custos'))) <> 3 then
+    raise exception 'FALHOU (B18): as 3 categorias de caixa de exemplo não estão no grupo certo';
+  end if;
 end $$;
 
 -- B17. O fiscal da peça nunca é sobrescrito (#957): a pessoa mudou a origem

@@ -62,6 +62,10 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
   ck_configuracoes_contabilidade_algum_contato:
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
+  // Migration 0088 (#386): o grupo do DRE da categoria de caixa.
+  ck_categorias_caixa_grupo: "Esse grupo não existe. Escolha um dos grupos da lista.",
+  ck_categorias_caixa_grupo_do_tipo:
+    "Esse grupo não serve pro tipo da categoria: categoria de entrada só vai em grupo de entrada, e de saída em grupo de saída.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
@@ -163,6 +167,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
+  // 0088 (grupo do DRE, #386): coluna de categorias_caixa.
+  "grupo",
 ] as const;
 
 /**
