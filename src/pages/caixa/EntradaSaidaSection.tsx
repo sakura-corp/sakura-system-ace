@@ -127,7 +127,7 @@ export function EntradaSaidaSection({
       <div className="grid grid-cols-4 gap-4">
         <CartaoNumero
           titulo={`Total de ${rotulo}s (todo o período)`}
-          explicacao={`A soma de todas as ${rotulo}s desta loja que não vieram de uma ordem de serviço, desde o primeiro lançamento. O faturamento das ordens está na aba Diário.`}
+          explicacao={`A soma de todas as ${rotulo}s desta loja lançadas direto no caixa (as saídas incluem a devolução ao cliente de uma correção de OS), desde o primeiro lançamento. O faturamento das ordens está na aba Diário.`}
         >
           <Valor valor={total} />
         </CartaoNumero>

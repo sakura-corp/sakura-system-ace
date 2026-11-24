@@ -59,6 +59,7 @@ import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { TrocaDeOsFaturada } from "@/types/os";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
 import { TrocarItensFaturadaModal, type ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 
 /** As duas janelas do orçamento aberto (#1091): aprovar e recusar. */
@@ -149,6 +150,8 @@ interface OrdemServicoFormProps {
   buscarSituacaoDaCorrecao?: (ordem: OrdemServico) => Promise<SituacaoDaCorrecao>;
   /** A nota emitida da OS, pra a janela levar ao "Cancelar nota". */
   notaParaCancelar?: NotaFiscalArquivo;
+  /** Depois de cancelar a nota pela faixa: a página recarrega as notas da OS (#1182). */
+  onNotaCancelada?: () => void;
   /**
    * O histórico da OS (trocas depois de faturada, reaberturas de orçamento,
    * correções de valor), da mais nova pra mais velha.
@@ -244,9 +247,11 @@ export function OrdemServicoForm({
   onTrocarItensFaturada,
   buscarSituacaoDaCorrecao,
   notaParaCancelar,
+  onNotaCancelada,
   trocas = [],
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
@@ -796,6 +801,11 @@ export function OrdemServicoForm({
                   Corrigir a OS
                 </Botao>
               )}
+              {temNotaEmitida && gerente && notaParaCancelar && (
+                <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+                  Cancelar a nota
+                </Botao>
+              )}
             </div>
           )}
 
@@ -953,6 +963,13 @@ export function OrdemServicoForm({
         </div>
       </Modal>
     )}
+    {cancelandoNota && notaParaCancelar && (
+      <CancelarNotaModal
+        arquivo={notaParaCancelar}
+        onFechar={() => setCancelandoNota(false)}
+        onCancelado={() => onNotaCancelada?.()}
+      />
+    )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (
       <TrocarItensFaturadaModal
         ordem={ordemExistente}
@@ -964,7 +981,7 @@ export function OrdemServicoForm({
         buscarSituacao={() =>
           buscarSituacaoDaCorrecao
             ? buscarSituacaoDaCorrecao(ordemExistente)
-            : Promise.resolve({ contaDoFaturamentoEmAberto: null, caixaDeHojeFechado: false, comissaoDoPeriodoPaga: false })
+            : Promise.resolve({ contaDoFaturamentoEmAberto: null, caixaDeHojeFechado: false, comissaoDoPeriodoPaga: false, aReceberDeCorrecoes: 0 })
         }
         notaParaCancelar={notaParaCancelar}
         onConfirmar={async (correcao) => {

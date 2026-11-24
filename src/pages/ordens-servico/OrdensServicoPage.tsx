@@ -653,6 +653,17 @@ export function OrdensServicoPage() {
   // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
   // a peça avulsa que ganhou cadastro na janela da nota (#655), senão a aba
   // Fechamento continuaria mostrando a peça como avulsa.
+  // Depois de cancelar a nota pela faixa "Corrigir a OS" (#1182): só as notas,
+  // pra faixa voltar a mostrar "Corrigir a OS". Falhar não derruba nada.
+  async function recarregarNotas() {
+    try {
+      const notas = await listarArquivosDasOrdens(ordens.map((o) => o.id));
+      setNotasPorOrdem(agruparNotasPorOrdem(notas));
+    } catch (err) {
+      console.error("Erro ao recarregar as notas fiscais das ordens:", err);
+    }
+  }
+
   async function recarregarOrdemEmEdicao() {
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
@@ -1106,6 +1117,7 @@ export function OrdensServicoPage() {
           onTrocarItensFaturada={handleTrocarItensFaturada}
           buscarSituacaoDaCorrecao={situacaoDaCorrecao}
           notaParaCancelar={notaVigenteDaOrdem(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
+          onNotaCancelada={recarregarNotas}
           trocas={trocasDaOrdem}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
@@ -1154,6 +1166,7 @@ export function OrdensServicoPage() {
             saldoCarregado: saldoPorPeca !== null,
             buscarSituacao: () => situacaoDaCorrecao(vendaAberta),
             onConfirmar: (c) => handleTrocarItensFaturada(vendaAberta, c),
+            onNotaCancelada: recarregarNotas,
           }}
           onVoltar={() => {
             if (voltarAoFechar) {

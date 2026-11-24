@@ -14,6 +14,7 @@ import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
 import { FechamentoTab } from "./FechamentoTab";
 import { SeloDaOrdem } from "./SeloDaOrdem";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
 import { TrocarItensFaturadaModal, type ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 
 /** O que o botão "Corrigir a OS" precisa (#1182). Ausente = sem botão. */
@@ -26,6 +27,8 @@ export interface CorrecaoDaVenda {
   saldoCarregado: boolean;
   buscarSituacao: () => Promise<SituacaoDaCorrecao>;
   onConfirmar: (correcao: ConfirmacaoDaCorrecao) => Promise<void>;
+  /** Depois de cancelar a nota pela faixa: recarrega as notas da venda. */
+  onNotaCancelada?: () => void;
 }
 
 /**
@@ -58,6 +61,7 @@ export function VendaBalcaoDetalhe({
   correcao?: CorrecaoDaVenda;
 }) {
   const [janelaCorrecao, setJanelaCorrecao] = useState(false);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
   const temNota = temAlgumaNotaValida(notas);
   const porQueNaoCorrige = correcao
     ? motivoParaNaoTrocar({ faturada: ordem.status === "faturada", gerente: correcao.gerente, temNota })
@@ -121,10 +125,23 @@ export function VendaBalcaoDetalhe({
               Corrigir a OS
             </Botao>
           )}
+          {temNota && correcao.gerente && notaParaCancelar && (
+            <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+              Cancelar a nota
+            </Botao>
+          )}
         </div>
       )}
 
       <FechamentoTab ordem={ordem} />
+
+      {cancelandoNota && notaParaCancelar && (
+        <CancelarNotaModal
+          arquivo={notaParaCancelar}
+          onFechar={() => setCancelandoNota(false)}
+          onCancelado={() => correcao?.onNotaCancelada?.()}
+        />
+      )}
 
       {janelaCorrecao && correcao && (
         <TrocarItensFaturadaModal

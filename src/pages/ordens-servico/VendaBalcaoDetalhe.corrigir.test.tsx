@@ -9,6 +9,8 @@ import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
 
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+const { cancelarArquivoEmitido } = vi.hoisted(() => ({ cancelarArquivoEmitido: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/notasFiscais", () => ({ cancelarArquivoEmitido }));
 vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => null }));
 
 const { VendaBalcaoDetalhe } = await import("./VendaBalcaoDetalhe");
@@ -45,6 +47,7 @@ function montar(
     status?: string;
     gerente?: boolean;
     notas?: NotaFiscalArquivo[];
+    onNotaCancelada?: () => void;
   } = {},
 ) {
   return renderizar(
@@ -63,10 +66,12 @@ function montar(
         buscarSituacao: () =>
           Promise.resolve({
             contaDoFaturamentoEmAberto: null,
+            aReceberDeCorrecoes: 0,
             caixaDeHojeFechado: false,
             comissaoDoPeriodoPaga: false,
           }),
         onConfirmar: vi.fn().mockResolvedValue(undefined),
+        onNotaCancelada: opcoes.onNotaCancelada,
       }}
     />,
   );
@@ -104,5 +109,30 @@ describe("VendaBalcaoDetalhe — Corrigir a OS", () => {
   it("venda não faturada não tem o botão", () => {
     montar({ status: "concluida" });
     expect(screen.queryByRole("button", { name: "Corrigir a OS" })).toBeNull();
+  });
+});
+
+// Tarefa #1182: nota emitida ganha o caminho "Cancelar a nota" pra gerente.
+describe("VendaBalcaoDetalhe — Cancelar a nota", () => {
+  const nota = {
+    id: "n1",
+    nome_arquivo: "NFCe-7",
+    status: "autorizado",
+  } as unknown as NotaFiscalArquivo;
+
+  it("o gerente vê 'Cancelar a nota', abre a janela e o callback de recarregar é chamado", async () => {
+    const onNotaCancelada = vi.fn();
+    const { user } = montar({ notas: [nota], onNotaCancelada });
+    await user.click(screen.getByRole("button", { name: "Cancelar a nota" }));
+    expect(screen.getByText("Cancelar nota fiscal")).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox"), "nota emitida por engano");
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelamento" }));
+    expect(cancelarArquivoEmitido).toHaveBeenCalledOnce();
+    expect(onNotaCancelada).toHaveBeenCalledOnce();
+  });
+
+  it("quem não é gerente não vê 'Cancelar a nota'", () => {
+    montar({ notas: [nota], gerente: false });
+    expect(screen.queryByRole("button", { name: "Cancelar a nota" })).toBeNull();
   });
 });
