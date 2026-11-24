@@ -553,10 +553,10 @@ export function OrdemServicoForm({
       className="space-y-6"
     >
       {ordemExistente ? (
-        <div className="flex items-center justify-between border-b border-linha pb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-4 border-b border-linha pb-4">
+          <div className="flex min-w-0 items-center gap-3">
             <BotaoVoltar onClick={onCancelar} />
-            <div>
+            <div className="min-w-0">
               <p className="text-rotulo text-texto-2">
                 {nomeDocumento(ordemExistente)} · aberta em{" "}
                 {formatarData(ordemExistente.data_abertura)} · criado por{" "}
@@ -578,8 +578,10 @@ export function OrdemServicoForm({
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-cartao px-3 py-1 text-rotulo font-medium text-texto">
+          {/* `shrink-0` e `whitespace-nowrap`: em 1024 o "Em andamento" quebrava
+              em duas linhas (#1087). */}
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="whitespace-nowrap rounded-full bg-cartao px-3 py-1 text-rotulo font-medium text-texto">
               {STATUS_LABEL[ordemExistente.status]}
             </span>
             {vencido && (

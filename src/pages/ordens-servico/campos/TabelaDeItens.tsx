@@ -67,7 +67,7 @@ export function TabelaDeItens({
           Desconto
         </span>
         {comTecnico && (
-          <span role="columnheader" className="hidden xl:col-start-5 xl:block">
+          <span role="columnheader" className="hidden xl:col-start-5 xl:block xl:pl-3.5">
             Técnico
           </span>
         )}
