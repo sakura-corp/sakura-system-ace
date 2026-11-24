@@ -1,35 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
 import { Modal } from "@/components/Modal";
+import { hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
-import { EstoqueNegativoNaTrocaError } from "@/lib/ordensServico";
+import {
+  CaixaDeHojeFechadoError,
+  CorrecaoMudouError,
+  EstoqueNegativoNaTrocaError,
+  NotaEmitidaNaCorrecaoError,
+  type SituacaoDaCorrecao,
+} from "@/lib/ordensServico";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
+  acertosDaCorrecao,
+  diferencaDaCorrecao,
+  manterOTotal,
+  motivoParaNaoTrocar,
   pecasQueFicamNegativas,
   problemaDaTroca,
+  problemaDoAcerto,
   resumoDaTroca,
-  totalConfere,
+  textoDoAcerto,
   totalDaLista,
+  type AcertoDaCorrecao,
   type ItemDaTroca,
 } from "@/schemas/trocaFaturada";
 import { somarValoresLiquidos, valorLiquidoDoItem } from "@/schemas/valorItem";
 import type { FuncionarioPublico } from "@/types/funcionario";
+import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { ItemOS, OrdemServico, TipoItemOS } from "@/types/os";
-import { nomeDocumento } from "@/types/os";
+import { FORMA_PAGAMENTO_LABEL, nomeDocumento } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 
 /**
- * Trocar peça ou serviço de uma OS já faturada, com o total igual (#1145).
+ * Corrigir uma OS (ou venda) já faturada: peça, serviço e valor (#1145, #1182).
  *
  * Dois passos: (1) a lista de itens como deve ficar, com o total faturado e o
- * total novo lado a lado; (2) a conferência "antes e depois": o que sai, o
- * que entra, o total (igual), o aviso de estoque negativo e o motivo
+ * total novo lado a lado; (2) "Conferir e acertar": o que sai, o que entra,
+ * Faturado, Total novo e Diferença, como a diferença é acertada (Caixa de
+ * hoje, conta a receber ou devolução), o aviso de estoque negativo e o motivo
  * obrigatório. Quem confere tudo de novo, com a OS travada, é o banco
- * (migration 0087); esta janela só avisa antes.
+ * (`corrigir_os_faturada`); esta janela só avisa antes.
  */
+
+/** Tudo que a janela manda quando a pessoa confirma. A página junta o resto (hoje, operador). */
+export interface ConfirmacaoDaCorrecao {
+  itens: ItemDaTroca[];
+  motivo: string;
+  /** Nulo quando o total não muda. */
+  acerto: AcertoDaCorrecao | null;
+  formaPagamento: string | null;
+  vencimento: string | null;
+  /** Uma por janela aberta: a mesma chamada 2 vezes não lança 2 vezes. */
+  chave: string;
+  aceitaEstoqueNegativo: boolean;
+  /** O total que a janela mostrou como faturado. */
+  totalFaturado: number;
+}
 
 interface Linha {
   chave: string;
@@ -53,7 +84,11 @@ interface TrocarItensFaturadaModalProps {
   saldoPorPeca: Map<string, number>;
   /** Sem o saldo carregado a janela não avisa nada (o banco avisa, com SKNEG). */
   saldoCarregado: boolean;
-  onConfirmar: (itens: ItemDaTroca[], motivo: string, aceitaEstoqueNegativo: boolean) => Promise<void>;
+  /** Busca a situação da OS (conta em aberto, caixa de hoje, comissão) quando a janela abre. */
+  buscarSituacao: () => Promise<SituacaoDaCorrecao>;
+  /** A nota emitida da OS, pra levar à janela "Cancelar nota" se o banco recusar por causa dela. */
+  notaParaCancelar?: NotaFiscalArquivo;
+  onConfirmar: (correcao: ConfirmacaoDaCorrecao) => Promise<void>;
   onFechar: () => void;
 }
 
@@ -110,6 +145,13 @@ function paraItemDoBanco(item: ItemOS): ItemDaTroca {
   };
 }
 
+const ROTULO_DO_ACERTO: Record<AcertoDaCorrecao, string> = {
+  conta_aberta: "A conta a receber muda de valor",
+  pago_agora: "Cliente paga agora",
+  a_receber: "Fica a receber",
+  devolvido: "Devolver agora",
+};
+
 let proximaChave = 0;
 
 function ListaDeItens({ titulo, itens }: { titulo: string; itens: ItemDaTroca[] }) {
@@ -141,6 +183,8 @@ export function TrocarItensFaturadaModal({
   funcionarios,
   saldoPorPeca,
   saldoCarregado,
+  buscarSituacao,
+  notaParaCancelar,
   onConfirmar,
   onFechar,
 }: TrocarItensFaturadaModalProps) {
@@ -152,19 +196,38 @@ export function TrocarItensFaturadaModal({
   const [bancoAvisouNegativo, setBancoAvisouNegativo] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  // O estado só muda no próximo desenho: o ref segura o 2º clique rápido.
+  const enviandoRef = useRef(false);
+  // Uma chave por janela aberta (mesmo depois de um erro): o banco não lança 2 vezes.
+  const [chave] = useState(() => crypto.randomUUID());
+  const hoje = useMemo(() => hojeLocal(), []);
+  const [situacao, setSituacao] = useState<SituacaoDaCorrecao | null>(null);
+  const [erroDaSituacao, setErroDaSituacao] = useState<string | null>(null);
+  const [acertoEscolhido, setAcertoEscolhido] = useState<AcertoDaCorrecao | null>(null);
+  const [formaPagamento, setFormaPagamento] = useState("");
+  const [vencimento, setVencimento] = useState(hoje);
+  const [notaEmitida, setNotaEmitida] = useState<string | null>(null);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    buscarSituacao()
+      .then((s) => {
+        if (!cancelado) setSituacao(s);
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar a situação da OS:", err);
+        if (!cancelado) setErroDaSituacao(mensagemDeErro(err));
+      });
+    return () => {
+      cancelado = true;
+    };
+    // Só na abertura da janela.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const depois = linhas.map(paraItem);
-  // TEMPORÁRIO (#1182, em andamento): a regra já aceita total diferente, mas
-  // o 2º passo "Conferir e acertar" e a função nova do banco ainda não
-  // existem. Até lá a janela segura o total igual, pra não mandar ao banco
-  // uma troca que ele recusaria. Sai junto com o 2º passo, nesta tarefa.
-  const problema =
-    problemaDaTroca(antes, depois) ??
-    (totalConfere(antes, depois)
-      ? null
-      : `O total ficaria ${formatarMoeda(somarValoresLiquidos(depois))}, e a OS foi faturada por ` +
-        `${formatarMoeda(somarValoresLiquidos(antes))}. Por enquanto, numa OS faturada só dá pra ` +
-        `trocar peça ou serviço mantendo o mesmo total; mudar o valor vem numa próxima etapa.`);
+  const problema = problemaDaTroca(antes, depois);
   const totalFaturado = somarValoresLiquidos(antes);
   const totalNovo = totalDaLista(depois);
   const nomePorPeca = useMemo(() => new Map(pecas.map((p) => [p.id, p.descricao])), [pecas]);
@@ -176,6 +239,30 @@ export function TrocarItensFaturadaModal({
     [antes],
   );
   const { saem, entram } = resumoDaTroca(antes, depois);
+  const diferenca = totalNovo === null ? 0 : diferencaDaCorrecao(antes, depois);
+  const contaEmAberto = situacao?.contaDoFaturamentoEmAberto ?? null;
+  const { opcoes: opcoesDeAcerto, padrao: acertoPadrao } = acertosDaCorrecao({
+    diferenca,
+    contaDoFaturamentoEmAberto: contaEmAberto !== null,
+  });
+  const acerto = acertoEscolhido && opcoesDeAcerto.includes(acertoEscolhido) ? acertoEscolhido : acertoPadrao;
+  const problemaDoPasso2 = problemaDoAcerto({
+    diferenca,
+    contaDoFaturamentoEmAberto: contaEmAberto !== null,
+    acerto,
+    formaPagamento,
+    vencimento,
+    hoje,
+  });
+  const travaDoCaixa = situacao
+    ? motivoParaNaoTrocar({
+        faturada: true,
+        gerente: true,
+        temNota: false,
+        caixaDeHojeFechado: situacao.caixaDeHojeFechado,
+      })
+    : null;
+  const atalhoManterTotal = manterOTotal(antes, depois);
   const precisaConfirmarEstoque = negativas.length > 0 || bancoAvisouNegativo !== null;
 
   // Mudou a lista: a confirmação de estoque dada antes não vale pra ela.
@@ -225,28 +312,67 @@ export function TrocarItensFaturadaModal({
     ]);
   }
 
+  function manterOTotalFaturado() {
+    if (!atalhoManterTotal) return;
+    esquecerConfirmacao();
+    setLinhas((atuais) =>
+      atuais.map((l, i) => ({ ...l, desconto: String(atalhoManterTotal[i]?.desconto ?? l.desconto) })),
+    );
+    setAcertoEscolhido(null);
+  }
+
   async function confirmar() {
+    if (enviandoRef.current) return;
     setErro(null);
+    if (!situacao) {
+      setErro("Ainda carregando a situação da OS. Espere um instante.");
+      return;
+    }
+    if (travaDoCaixa) {
+      setErro(travaDoCaixa);
+      return;
+    }
     if (motivo.trim().length < 3) {
-      setErro('Diga o motivo da troca (por exemplo: "medida do pneu estava errada").');
+      setErro('Diga o motivo da correção (por exemplo: "medida do pneu estava errada").');
+      return;
+    }
+    if (problemaDoPasso2) {
+      setErro(problemaDoPasso2);
       return;
     }
     if (precisaConfirmarEstoque && !aceitaNegativo) {
       setErro("Confirme que sabe que o estoque vai ficar negativo, ou volte e troque a peça.");
       return;
     }
+    enviandoRef.current = true;
     setEnviando(true);
     try {
-      await onConfirmar(depois, motivo.trim(), aceitaNegativo);
+      await onConfirmar({
+        itens: depois,
+        motivo: motivo.trim(),
+        acerto: diferenca === 0 ? null : acerto,
+        formaPagamento: acerto === "pago_agora" || acerto === "devolvido" ? formaPagamento : null,
+        vencimento: acerto === "a_receber" ? vencimento : null,
+        chave,
+        aceitaEstoqueNegativo: aceitaNegativo,
+        totalFaturado,
+      });
     } catch (err) {
-      console.error("Erro ao trocar itens da OS faturada:", err);
+      console.error("Erro ao corrigir a OS faturada:", err);
       if (err instanceof EstoqueNegativoNaTrocaError) {
         // O aviso amarelo já diz isso, com a caixinha: sem repetir no vermelho.
         setBancoAvisouNegativo(err.message);
         setErro(null);
+      } else if (err instanceof NotaEmitidaNaCorrecaoError) {
+        setNotaEmitida(err.message);
+        setErro(null);
+      } else if (err instanceof CaixaDeHojeFechadoError || err instanceof CorrecaoMudouError) {
+        setNotaEmitida(null);
+        setErro(err.message);
       } else {
         setErro(mensagemDeErro(err));
       }
+      enviandoRef.current = false;
       setEnviando(false);
     }
   }
@@ -273,16 +399,21 @@ export function TrocarItensFaturadaModal({
         >
           Voltar
         </Botao>
-        <Botao variante="principal" onClick={confirmar} disabled={enviando}>
-          {enviando ? "Trocando..." : "Confirmar troca"}
+        <Botao
+          variante="principal"
+          onClick={confirmar}
+          disabled={enviando || !situacao || travaDoCaixa !== null}
+        >
+          {enviando ? "Corrigindo..." : "Corrigir"}
         </Botao>
       </>
     );
 
   return (
+    <>
     <Modal
-      titulo={`Trocar peça ou serviço — ${nomeDocumento(ordem)}`}
-      descricao="A OS já foi faturada: dá pra trocar peça ou serviço mantendo o mesmo total. O pagamento, o Caixa e a conta a receber não mudam."
+      titulo={`Corrigir a ${nomeDocumento(ordem)}`}
+      descricao="A OS já foi faturada: dá pra corrigir peça, serviço e valor. O dia da fatura não muda; se o total mudar, a diferença é acertada no Caixa de hoje."
       largura="4xl"
       total={{ rotulo: "Faturado", valor: formatarMoeda(totalFaturado) }}
       rodape={rodape}
@@ -290,6 +421,16 @@ export function TrocarItensFaturadaModal({
         passo === "editar" ? (
           <span>
             Total novo: <strong>{totalNovo === null ? "—" : formatarMoeda(totalNovo)}</strong>
+          </span>
+        ) : situacao ? (
+          <span>
+            {textoDoAcerto({
+              acerto,
+              diferenca,
+              hoje,
+              vencimento,
+              valorDaConta: contaEmAberto?.valor,
+            })}
           </span>
         ) : undefined
       }
@@ -421,11 +562,98 @@ export function TrocarItensFaturadaModal({
             <ListaDeItens titulo="Entra" itens={entram} />
           </div>
 
-          <p className="text-corpo text-texto">
-            Total: <strong>{formatarMoeda(totalNovo ?? totalFaturado)}</strong> (igual ao faturado). O pagamento, o
-            Caixa e a conta a receber não mudam. A peça que sai volta pro estoque e a que entra
-            baixa.
-          </p>
+          <h3 className="text-corpo font-semibold text-texto">Conferir e acertar</h3>
+          <div className="rounded-lg border border-linha p-3 text-corpo text-texto">
+            <p>
+              Faturado <strong>{formatarMoeda(totalFaturado)}</strong> → Total novo{" "}
+              <strong>{formatarMoeda(totalNovo ?? totalFaturado)}</strong> = Diferença{" "}
+              <strong>
+                {diferenca > 0 ? "+" : diferenca < 0 ? "−" : ""}
+                {formatarMoeda(Math.abs(diferenca))}
+              </strong>
+              {diferenca === 0 && " (igual ao faturado)"}
+            </p>
+            {diferenca === 0 && (
+              <p className="mt-1 text-rotulo text-texto-2">
+                O pagamento, o Caixa e a conta a receber não mudam. A peça que sai volta pro estoque e a que
+                entra baixa.
+              </p>
+            )}
+            {atalhoManterTotal && (
+              <div className="mt-2">
+                <Botao tamanho="pequeno" onClick={manterOTotalFaturado}>
+                  Manter o total de {formatarMoeda(totalFaturado)}
+                </Botao>
+                <span className="ml-2 text-rotulo text-texto-2">
+                  (a loja não cobra a diferença: ela vira desconto nos itens)
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!situacao && !erroDaSituacao && (
+            <p className="text-rotulo text-texto-2">Carregando a situação da OS...</p>
+          )}
+          {erroDaSituacao && <AvisoDeErro>{erroDaSituacao}</AvisoDeErro>}
+          {travaDoCaixa && <AvisoDeErro>{travaDoCaixa}</AvisoDeErro>}
+          {situacao?.comissaoDoPeriodoPaga && (
+            <AvisoDeAtencao>
+              A comissão do período desta OS já foi paga. Corrigir os itens muda a comissão que ela
+              deveria ter dado: confira com quem fecha a comissão antes de confirmar.
+            </AvisoDeAtencao>
+          )}
+
+          {diferenca !== 0 && contaEmAberto && (
+            <p className="text-corpo text-texto">
+              A conta a receber desta OS ainda está em aberto: ela muda de valor sozinha, sem você escolher
+              nada.
+            </p>
+          )}
+          {opcoesDeAcerto.length > 0 && !contaEmAberto && (
+            <fieldset className="space-y-1">
+              <legend className="mb-1 text-rotulo font-medium text-texto/85">Como acertar a diferença</legend>
+              {opcoesDeAcerto.map((opcao) => (
+                <label key={opcao} className="flex items-center gap-2 text-corpo text-texto">
+                  <input
+                    type="radio"
+                    name="acerto-da-correcao"
+                    checked={acerto === opcao}
+                    onChange={() => setAcertoEscolhido(opcao)}
+                  />
+                  {ROTULO_DO_ACERTO[opcao]}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          {(acerto === "pago_agora" || acerto === "devolvido") && (
+            <label className="flex flex-col gap-1 text-rotulo text-texto/90">
+              Forma de pagamento
+              <select
+                value={formaPagamento}
+                onChange={(e) => setFormaPagamento(e.target.value)}
+                className={inputClasse}
+              >
+                <option value="">Escolha a forma</option>
+                {Object.entries(FORMA_PAGAMENTO_LABEL).map(([valor, rotulo]) => (
+                  <option key={valor} value={valor}>
+                    {rotulo}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {acerto === "a_receber" && (
+            <label className="flex flex-col gap-1 text-rotulo text-texto/90">
+              Vencimento da diferença
+              <input
+                type="date"
+                value={vencimento}
+                min={hoje}
+                onChange={(e) => setVencimento(e.target.value)}
+                className={inputClasse}
+              />
+            </label>
+          )}
 
           {precisaConfirmarEstoque && (
             <AvisoDeAtencao>
@@ -448,7 +676,7 @@ export function TrocarItensFaturadaModal({
           )}
 
           <label className="flex flex-col gap-1 text-rotulo text-texto/90">
-            Motivo da troca (obrigatório)
+            Motivo da correção (obrigatório)
             <textarea
               value={motivo}
               onChange={(e) => setMotivo(e.target.value)}
@@ -459,8 +687,28 @@ export function TrocarItensFaturadaModal({
           </label>
 
           {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+          {notaEmitida && (
+            <AvisoDeErro>
+              <p>{notaEmitida}</p>
+              {notaParaCancelar && (
+                <div className="mt-2">
+                  <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+                    Cancelar a nota
+                  </Botao>
+                </div>
+              )}
+            </AvisoDeErro>
+          )}
         </div>
       )}
     </Modal>
+    {cancelandoNota && notaParaCancelar && (
+      <CancelarNotaModal
+        arquivo={notaParaCancelar}
+        onFechar={() => setCancelandoNota(false)}
+        onCancelado={onFechar}
+      />
+    )}
+    </>
   );
 }
