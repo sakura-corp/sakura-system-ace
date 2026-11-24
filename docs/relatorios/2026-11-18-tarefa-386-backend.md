@@ -1,5 +1,7 @@
 # Relatório: tarefa #386, chefe backend
 
+> **23/11/2026**: a migration passou de 0087 pra **0088** (a 0087 ficou com a #1146, urgente pra loja). O branch recebeu a `main`, e o número foi trocado no arquivo, no teste SQL, no teste do schema, em `src/lib/errors.ts`, nos dados de exemplo e na instalação completa. `VERSAO_ESQUEMA_ESPERADA` subiu pra 88. Os 32 testes de migration e a matriz de RLS passaram de novo. O teste novo foi visto reprovar com a versão errada (`FALHOU 1: a 0088 não gravou a versão 88`).
+
 - **Tarefa**: #386, DRE parte 1: as categorias do Caixa ganham um grupo
 - **Chefe**: backend
 - **Data**: 2026-11-18
@@ -8,7 +10,7 @@
 
 ## O que cada agente fez
 - **Sessão mãe**: leu a issue e planejou. Achou sozinha onde as categorias padrão nascem (0050 e 0058) e o sinal de "empresa nova" que a 0072 já usa, então não chamou o explorador rápido. Juntou o trabalho, consertou o que a revisão achou, acrescentou as frases das travas em `src/lib/errors.ts`, rodou as conferências e tirou as fotos.
-- **Ajudante forte (banco)**: escreveu a migration 0087 e `testar-grupos-das-categorias.sql` (17 checagens), subiu `VERSAO_ESQUEMA_ESPERADA` pra 87, regenerou a instalação completa e deu grupo às categorias inventadas de `supabase/exemplo/dados-de-exemplo.sql`, com a checagem B18 nova em `testar-dados-de-exemplo.sql`.
+- **Ajudante forte (banco)**: escreveu a migration 0088 e `testar-grupos-das-categorias.sql` (17 checagens), subiu `VERSAO_ESQUEMA_ESPERADA` pra 87, regenerou a instalação completa e deu grupo às categorias inventadas de `supabase/exemplo/dados-de-exemplo.sql`, com a checagem B18 nova em `testar-dados-de-exemplo.sql`.
 - **Ajudante médio (código e tela)**: escreveu `src/schemas/gruposDre.ts` com o teste, o tipo, `trocarGrupoCategoriaCaixa` e a tela de Configurações → Categorias de caixa com o teste dela, sempre com o teste antes do código.
 - **Ajudante forte (revisão final)**: revisou o diff do zero e achou 5 pontos: as frases das travas faltando (o CI ficaria vermelho), o select que perdia o foco, a demonstração sem grupo, o teste que não lia a migration, e um aviso sobre o banco de teste. A mãe conferiu cada um antes de mexer.
 
@@ -37,7 +39,7 @@ Em cada caso quebrei o código de propósito, vi o teste reprovar e depois desfi
 - **Lançamentos** (SQL): uma migration que mexesse em lançamento dava `FALHOU 15: os lançamentos de caixa mudaram`. O teste compara a contagem e um md5 das linhas de `caixa_movimentos` e `contas_pagar`, antes e depois.
 - **Dados de exemplo** (SQL): com Fornecedores no grupo errado, `FALHOU (B18)`.
 - **Schema**: sem a linha `custos`, 3 de 6 testes reprovaram.
-- **Schema × migration** (teste novo, depois da revisão): tirando `outras_despesas` da trava da 0087, reprovou "a lista de grupos é a mesma da trava…". Tirando `receitas_financeiras` da trava do tipo, reprovou "os grupos de cada tipo são os mesmos…".
+- **Schema × migration** (teste novo, depois da revisão): tirando `outras_despesas` da trava da 0088, reprovou "a lista de grupos é a mesma da trava…". Tirando `receitas_financeiras` da trava do tipo, reprovou "os grupos de cada tipo são os mesmos…".
 - **Tela, os testes da primeira versão**: os 7 testes que dependem do componente reprovaram antes de ele existir. Cada uma destas quebras derrubou 1 teste: tirar o reset do grupo ao trocar o tipo; salvar sempre `a_classificar`; listar sempre os grupos de saída; desligar o aviso.
 - **Tela, o foco** (teste novo): com a tela de antes da revisão, o teste reprovou (`Expected "custos"`, `Received "a_classificar"`). Voltando só a `Lista` como componente, ele reprovou de novo (o select foi recriado).
 - **`src/lib/errors.test.ts`**: reprovou sem as frases das travas novas e sem `grupo` na lista de objetos novos. Passou depois do conserto.
@@ -59,14 +61,14 @@ Em cada caso quebrei o código de propósito, vi o teste reprovar e depois desfi
 ## O que ficou de fora
 - A tela do DRE (#388) e a taxa da maquininha (#387), como manda a issue.
 - **Fora da lista de arquivos da issue, mexi em 3 (a Sofia confere):**
-  - `src/lib/errors.ts`: frases das duas travas novas e `grupo` em `OBJETOS_NOVOS_DO_BANCO`. É obrigatório: `errors.test.ts` reprova sem isso, e o dono veria mensagem crua num banco sem a 0087.
+  - `src/lib/errors.ts`: frases das duas travas novas e `grupo` em `OBJETOS_NOVOS_DO_BANCO`. É obrigatório: `errors.test.ts` reprova sem isso, e o dono veria mensagem crua num banco sem a 0088.
   - `src/demo/dados.ts`: grupo nas 9 categorias da demonstração (6 com grupo e 3 em "A classificar"). Sem isso, a demonstração mostrava "Deduções da venda" como se já estivesse escolhido, e o aviso não aparecia.
   - `src/pages/contas-pagar/ContaPagarForm.test.tsx`: só pus `grupo` nas 2 categorias de mentira, pro typecheck passar.
-- No banco de teste da equipe, as 3 categorias de exemplo que já existem lá continuam em "A classificar" depois da 0087: aquele banco tem OS, e o `on conflict do nothing` não atualiza linha que já existe. A checagem B18 vale num banco limpo.
+- No banco de teste da equipe, as 3 categorias de exemplo que já existem lá continuam em "A classificar" depois da 0088: aquele banco tem OS, e o `on conflict do nothing` não atualiza linha que já existe. A checagem B18 vale num banco limpo.
 
 ## O que depende de alguém
-- **Sofia**: revisar e mesclar o PR, e aplicar a **migration 0087** pelo "Atualizar o banco de todas as empresas" (ensaiar e depois aplicar), **antes** da versão do programa. A 0087 **não tem** `versao-minima-do-programa`: o programa de hoje continua funcionando com ela, porque a coluna tem padrão e nenhuma coluna saiu.
-- **Tiago, no PC**: depois que a Sofia aplicar a 0087 no Supabase de teste, fazer o "Pronto quando no PC" da issue.
+- **Sofia**: revisar e mesclar o PR, e aplicar a **migration 0088** pelo "Atualizar o banco de todas as empresas" (ensaiar e depois aplicar), **antes** da versão do programa. A 0088 **não tem** `versao-minima-do-programa`: o programa de hoje continua funcionando com ela, porque a coluna tem padrão e nenhuma coluna saiu.
+- **Tiago, no PC**: depois que a Sofia aplicar a 0088 no Supabase de teste, fazer o "Pronto quando no PC" da issue.
 - **Sofia, depois de publicar**: pôr o grupo de cada categoria na Pneus Amigão (é a tarefa `sofia` desta leva).
 
 ## Onde parou

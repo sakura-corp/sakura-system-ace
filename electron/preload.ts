@@ -35,6 +35,11 @@ contextBridge.exposeInMainWorld("sakuraApp", {
   // pro sistema operacional — ver o handler "whatsapp:abrir" em main.ts.
   // Devolve `false` quando a URL não passa na checagem.
   abrirWhatsapp: (url: string): Promise<boolean> => ipcRenderer.invoke("whatsapp:abrir", url),
+  // O PDF da nota pro cliente (#1115): manda o HTML do recibo, já montado, e
+  // recebe os bytes do PDF. O processo principal confere que é texto e gera
+  // numa janela escondida, sem script e sem rede — ver "gerar-pdf-da-nota".
+  gerarPdfDaNota: (html: string): Promise<Uint8Array> =>
+    ipcRenderer.invoke("gerar-pdf-da-nota", html),
   // Manda um erro da tela pro processo principal gravar em "erros.log" (na
   // pasta de dados do app). É de mão única (`send`, não `invoke`): quem
   // reporta erro não precisa de resposta, e se o log falhar não faz sentido

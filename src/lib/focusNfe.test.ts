@@ -843,3 +843,120 @@ describe("valorTotalNFCe", () => {
     expect(valorTotalNFCe([{ quantidade: 2, precoUnitario: 100, desconto: 15 }])).toBe(185);
   });
 });
+
+// #1112: a SEFAZ recusou o CNPJ/CPF do destinatário (CNPJ recém-aberto que a
+// base dela ainda não tem). "Emitir sem identificar o cliente" manda a mesma
+// nota sem o destinatário; sem a opção, o corpo é o de sempre.
+describe("emitirNFCe — semDestinatario", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_nome: string, { body }: { body: { acao: string } }) => ({
+      data:
+        body.acao === "emitir"
+          ? { ok: true, status: 202, dados: { status: "processando_autorizacao" } }
+          : { ok: true, status: 200, dados: { status: "autorizado", numero: "7" } },
+      error: null,
+    }));
+  });
+
+  const clientePJ = clientePessoaFisica({
+    nome: "Transportes Exemplo Ltda",
+    tipo_pessoa: "juridica",
+    cpf_cnpj: "12.345.678/0001-99",
+  });
+  const dados = (cliente: Cliente | null) => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente,
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+  const corpoEnviado = () =>
+    invoke.mock.calls.find(([, { body }]) => body.acao === "emitir")?.[1].body.corpo;
+
+  it("com semDestinatario: o corpo sai sem CPF, CNPJ, nome e indicador de IE", async () => {
+    await emitirNFCe(dados(clientePJ), { semDestinatario: true });
+    const corpo = corpoEnviado();
+    expect(corpo).not.toHaveProperty("cnpj_destinatario");
+    expect(corpo).not.toHaveProperty("indicador_inscricao_estadual_destinatario");
+    expect(corpo.cpf_destinatario ?? "").toBe("");
+    expect(corpo.nome_destinatario ?? "").toBe("");
+    // O mesmo resultado de montarDestinatarioNFCe(null), o consumidor não identificado.
+    expect(corpo).toMatchObject(montarDestinatarioNFCe(null));
+  });
+
+  it("com semDestinatario, o resto da nota não muda", async () => {
+    await emitirNFCe(dados(clientePJ), { semDestinatario: true });
+    const comOpcao = corpoEnviado();
+    invoke.mockClear();
+    await emitirNFCe(dados(null));
+    const semCliente = corpoEnviado();
+    expect({ ...comOpcao, data_emissao: "" }).toEqual({ ...semCliente, data_emissao: "" });
+  });
+
+  it.each([undefined, {}, { semDestinatario: false }])(
+    "sem a opção (%j): o corpo é idêntico ao de hoje, com o CNPJ do cliente",
+    async (opcoes) => {
+      await emitirNFCe(dados(clientePJ), opcoes);
+      // A hora da emissão é a única coisa que muda de uma chamada pra outra.
+      const enviado = { ...corpoEnviado(), data_emissao: "" };
+      expect(enviado).toEqual({ ...montarCorpoNFCe(dados(clientePJ)), data_emissao: "" });
+      expect(enviado.cnpj_destinatario).toBe("12345678000199");
+      expect(enviado.nome_destinatario).toBe("Transportes Exemplo Ltda");
+    },
+  );
+});
+
+// #1112, teste no PC: a homologação pode não recusar o CNPJ. Só no `npm run dev`
+// (import.meta.env.DEV) e com VITE_SIMULAR_RECUSA_DESTINATARIO=1, a emissão
+// normal devolve a recusa de 17/11 sem pedir nada à Focus; o "Emitir sem
+// identificar o cliente" vai de verdade.
+describe("emitirNFCe — recusa simulada pro teste no PC", () => {
+  beforeEach(() => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (_nome: string, { body }: { body: { acao: string } }) => ({
+      data:
+        body.acao === "emitir"
+          ? { ok: true, status: 202, dados: { status: "processando_autorizacao" } }
+          : { ok: true, status: 200, dados: { status: "autorizado", numero: "7" } },
+      error: null,
+    }));
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  const dados = () => ({
+    ordem: { id: "os-1", numero: 12, status: "faturada" } as OrdemServico,
+    itens: [{ peca: peca(), quantidade: 1, precoUnitario: 250, desconto: 0 }],
+    cliente: clientePessoaFisica({ tipo_pessoa: "juridica", cpf_cnpj: "12.345.678/0001-99" }),
+    pagamentos: [{ formaPagamento: "pix", valor: 250 }],
+    configuracaoFiscal: configuracaoFiscal(),
+  });
+
+  it("ligada: a emissão normal volta recusada pelo destinatário, sem chamar a Focus", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("erro_autorizacao");
+    expect(resposta.mensagem_sefaz).toMatch(/destinatário não cadastrado/);
+    expect(resposta.ref).toMatch(/^os12-nfce-\d+$/);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("ligada: o 'sem identificar o cliente' emite de verdade", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    const resposta = await emitirNFCe(dados(), { semDestinatario: true });
+    expect(resposta.status).toBe("autorizado");
+    expect(invoke).toHaveBeenCalled();
+  });
+
+  it("ligada, mas fora do npm run dev (programa instalado): não simula", async () => {
+    vi.stubEnv("VITE_SIMULAR_RECUSA_DESTINATARIO", "1");
+    vi.stubEnv("DEV", false);
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
+  });
+
+  it("desligada: emite normal", async () => {
+    const resposta = await emitirNFCe(dados());
+    expect(resposta.status).toBe("autorizado");
+  });
+});

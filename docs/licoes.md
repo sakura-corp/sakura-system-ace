@@ -1889,3 +1889,29 @@
     ("+ Adicionar", "Ler arquivo"): o `contraste:telas` pegou, o `npm run contraste` não tinha como.
     **Regra**: botão desligado troca de cor (cinza sólido, letra secundária), não só de opacidade. Há
     uma regra de ponte no `globals.css` pros botões antigos; o componente `Botao` novo já nasce assim.
+
+102. **Rejeição que não é erro do cadastro (17/11/2026, #1112).** Venda pra um cliente pessoa
+    jurídica com CNPJ recém-aberto (ativo na Receita): a NFC-e voltou "CNPJ [...] do destinatário
+    não cadastrado na Receita Federal", e a NFS-e da mesma venda saiu. A base da SEFAZ demora a
+    receber CNPJ novo, então **o cadastro estava certo e a loja não tinha o que corrigir**; a
+    janela só mostrava a rejeição crua e o mesmo "Confirmar emissão", e o balcão travou.
+    **Regra**: antes de mostrar uma rejeição da SEFAZ como está, perguntar "a loja tem o que
+    corrigir?". Se não tem, dizer o que aconteceu e oferecer a saída (aqui, emitir sem identificar
+    o cliente, que vale na NFC-e abaixo do limite da UF). Reconhecer a rejeição é **pelo texto**
+    (`src/schemas/rejeicaoNFCe.ts`), porque o código da SEFAZ dela não foi confirmado: é aviso,
+    nunca tranca (item 33), e se o texto mudar a janela volta a mostrar a rejeição crua. O que vai
+    pra Focus só muda quando a pessoa clica no botão novo (`emitirNFCe(dados, { semDestinatario:
+    true })`). O "Copiar o erro" esconde nome e documento do cliente, que a SEFAZ repete na mensagem
+    (e pode mandar **só com números** enquanto o cadastro guarda com máscara: a revisão do PR achou
+    um CNPJ que saía com 3 dígitos à mostra; o teste agora confere que não sobra pedaço nenhum).
+103. **O programa de teste e o instalado dividiam a pasta de dados, e a documentação apontava pro
+    banco de uma loja (21/11/2026, #1157, #1158).** Num notebook novo, o `npm run dev` abriu no banco
+    de uma loja e o login de teste deu "Invalid login credentials". Duas causas somadas: a seção 11
+    do `docs/operacao.md` trazia o endereço do banco de uma loja (texto de antes do `ssace-teste`), e
+    o Electron escolhe a pasta de dados pelo `"name"` do package.json, então o `npm run dev` e o
+    programa instalado liam o mesmo `conexao.json`: trocar o banco num trocava no outro. **Regra**:
+    o `npm run dev` tem pasta própria (`-dev`, `src/schemas/pastaDeDados.ts`) e endereço de banco
+    nenhum fica escrito em documento. Ele ainda conecta em qualquer banco colado na tela: a trava é
+    a #1160. No mesmo notebook, o `npm ci` parou no Electron com `ERR_DLOPEN_FAILED` (o binário
+    nativo do `extract-zip` não carregava). Faltava o Visual C++ Redistributable, e o Node foi trocado
+    do 26 pro 22 ao mesmo tempo, então **não se sabe se o 26 sozinho quebra**: instalar os dois.

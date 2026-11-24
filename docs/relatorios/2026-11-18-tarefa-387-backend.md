@@ -11,7 +11,7 @@
   do banco e API). Fez os ajustes de `src/lib/errors.ts`, `src/lib/lojas.ts` e do teste de tabelas
   por loja. Alinhou a conta com o banco (parcela de R$ 0,00) e consertou a ordem da gravação depois
   da revisão. Rodou as conferências e escreveu o relatório e o PR.
-- **Ajudante forte (migration)**: escreveu a `0088_taxas_da_maquininha.sql` (3 tabelas, a função
+- **Ajudante forte (migration)**: escreveu a `0089_taxas_da_maquininha.sql` (3 tabelas, a função
   `registrar_taxa_do_cartao` e a RLS), o `testar-taxas-da-maquininha.sql`, a matriz de RLS, os dados
   de exemplo (taxas inventadas) e regerou a instalação. Testou num Postgres descartável.
 - **Ajudante forte (conta e faturamento)**: escreveu `src/schemas/taxaMaquininha.ts` com teste
@@ -68,7 +68,7 @@
   operador dela só tem uma loja (lição 73); quem pega é o teste SQL.
 - **As telas**: salvar sem converter as linhas; formulário sem validação; total do dia errado; aba
   fora da lista. Os 4 testes reprovaram.
-- `errors.test.ts` e `lojas.tabelasDaLoja.test.ts` reprovaram com a 0088 antes de as frases e as
+- `errors.test.ts` e `lojas.tabelasDaLoja.test.ts` reprovaram com a 0089 antes de as frases e as
   listas entrarem.
 
 - **Pagamento dividido com dois créditos** (pedido da Sofia em 18/11, feito em 20/11): o teste
@@ -76,7 +76,7 @@
   reprovaram antes de `paraPagamentos` repassar `parcelas: linha.parcelas`, e passaram depois.
 
 ## O que passou sem eu ter visto reprovar
-- A migration rodando de novo sem erro (rodou 3 vezes a instalação inteira e 2 vezes a 0088
+- A migration rodando de novo sem erro (rodou 3 vezes a instalação inteira e 2 vezes a 0089
   sozinha; não há como "quebrar" isso de um jeito útil).
 - O `contraste:telas` e o `largura:telas` com as cenas novas (passaram de primeira).
 
@@ -91,9 +91,9 @@
   mesmo sem mudança).
 
 ## O que depende de alguém
-- **Sofia**: aplicar a migration **0088**, sem `versao-minima-do-programa` (só cria coisa nova). Ela
-  vem **depois da 0087** do PR #1120 (esta branch está em cima da dele, pela regra de
-  `docs/supabase-de-teste.md`). Ordem: 0087 e 0088 no banco, depois a versão do programa.
+- **Sofia**: aplicar a migration **0089**, sem `versao-minima-do-programa` (só cria coisa nova). Ela
+  vem **depois da 0088** do PR #1120 (esta branch está em cima da dele, pela regra de
+  `docs/supabase-de-teste.md`). Ordem: 0088 e 0089 no banco, depois a versão do programa.
 - **Sofia**: confirmar a leitura da tabela de taxas por quem só tem a permissão de OS (a issue dizia
   "Caixa ou Relações"; sem a OS, quem só fatura não acharia a taxa). **Ela confirmou em 18/11**, e
   também pediu o conserto do pagamento dividido neste PR (feito em 20/11).

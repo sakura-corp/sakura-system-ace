@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -33,6 +33,52 @@ function nomeNoAviso(peca: PecaJanela): string {
   return peca.ativo ? peca.descricao : `${peca.descricao} (inativa)`;
 }
 
+/** Quanto tempo o "Salvando..." espera o banco antes de desistir e avisar (#1129). */
+const PRAZO_PARA_SALVAR_MS = 30_000;
+
+const MENSAGEM_DEMOROU =
+  "Salvar demorou demais e o programa parou de esperar. Confira a internet. Antes de tentar de novo, veja na lista se o produto já apareceu, pra não cadastrar duas vezes.";
+
+/**
+ * O nome de cada campo na lista de erros junto do botão (#1129), igual ao
+ * rótulo da tela e na ordem dela. A lista existe porque só os 7 obrigatórios
+ * mostram texto embaixo do campo; um campo inválido fora deles (rascunho
+ * antigo restaurado, por exemplo) barrava o Salvar sem mensagem nenhuma.
+ */
+const NOME_DO_CAMPO: Record<keyof PecaFormValues, string> = {
+  descricao: "Descrição",
+  codigo_barras: "Código de barras",
+  codigo_interno: "Referência",
+  marca: "Marca",
+  modelo: "Modelo",
+  unidade: "Unidade",
+  categoria_id: "Categoria",
+  estoque_minimo: "Estoque mínimo",
+  prazo_garantia_dias: "Garantia",
+  aplicacao: "Aplicação",
+  medida: "Medida",
+  indice_carga_velocidade: "Índice de carga e velocidade",
+  dot: "DOT",
+  ncm: "NCM",
+  cest: "C.E.S.T",
+  cfop_padrao: "CFOP padrão",
+  origem: "Origem",
+  cst_ou_csosn: "CST / CSOSN",
+  aliquota_icms: "Alíquota ICMS",
+  preco_custo: "Aquisição (custo)",
+  margem: "Acréscimo sobre o custo %",
+  preco_venda: "Preço final",
+  quantidade_inicial: "Qtde. estoque inicial",
+};
+
+const ORDEM_DOS_CAMPOS = Object.keys(NOME_DO_CAMPO) as (keyof PecaFormValues)[];
+
+/** Os campos do bloco de pneu, que só aparece com a categoria Pneus. */
+const CAMPOS_DE_PNEU = new Set<keyof PecaFormValues>(["medida", "indice_carga_velocidade", "dot"]);
+
+const MENSAGEM_AINDA_ESPERANDO =
+  "Ainda esperando a gravação anterior terminar. Veja na lista se o produto já apareceu antes de tentar de novo.";
+
 interface PecaFormProps {
   pecaExistente?: Peca;
   /** Campos já preenchidos numa peça NOVA (ex.: nome e preço da peça avulsa
@@ -55,6 +101,8 @@ interface PecaFormProps {
   onAbrirExistente?: (peca: PecaJanela) => void;
   onSalvar: (peca: NovaPeca, quantidadeInicial: number | null) => Promise<void>;
   onCancelar: () => void;
+  /** Só pros testes: o prazo do "Salvando..." (o normal é 30 s). */
+  prazoParaSalvarMs?: number;
 }
 
 export function PecaForm({
@@ -67,8 +115,17 @@ export function PecaForm({
   onAbrirExistente,
   onSalvar,
   onCancelar,
+  prazoParaSalvarMs = PRAZO_PARA_SALVAR_MS,
 }: PecaFormProps) {
   const [erro, setErro] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // A gravação que passou do prazo e ainda não respondeu: enquanto ela anda,
+  // um novo "Salvar" não chama onSalvar de novo (seria a peça duas vezes).
+  const gravacaoPendurada = useRef(false);
+  // O relógio do prazo morre junto com o formulário: fechado, ele não grava
+  // rascunho nem mexe na tela depois.
+  const relogioDoPrazo = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(relogioDoPrazo.current), []);
   // Quando o aviso de "peça parecida" está aberto, guarda o que foi digitado
   // e as parecidas; o modal fechado volta pro formulário sem perder nada.
   const [pendente, setPendente] = useState<{
@@ -86,6 +143,9 @@ export function PecaForm({
     formState: { errors, isSubmitting },
   } = useForm<PecaFormValues>({
     resolver: zodResolver(pecaFormSchema),
+    // O foco no primeiro campo com erro é feito por `aoRecusar`, na ordem da
+    // tela e rolando até ele; o do react-hook-form viria depois e passaria por cima.
+    shouldFocusError: false,
     defaultValues: pecaExistente
       ? paraValoresFormulario(pecaExistente)
       : { ...paraValoresFormulario(undefined), ...valoresIniciais },
@@ -100,17 +160,75 @@ export function PecaForm({
   );
 
   async function gravar(valores: PecaFormValues) {
+    if (gravacaoPendurada.current) {
+      setErro(MENSAGEM_AINDA_ESPERANDO);
+      return;
+    }
     setErro(null);
+    const prazo = new Promise<"prazo">((resolver) => {
+      relogioDoPrazo.current = setTimeout(() => resolver("prazo"), prazoParaSalvarMs);
+    });
     try {
-      await onSalvar(paraNovaPeca(valores), paraQuantidadeInicial(valores));
+      // Dentro do try: um onSalvar que falha antes de devolver a promessa
+      // também vira mensagem na tela.
+      const gravacao = onSalvar(paraNovaPeca(valores), paraQuantidadeInicial(valores));
+      const resultado = await Promise.race([gravacao.then(() => "gravou" as const), prazo]);
+      if (resultado === "prazo") {
+        // "Salvando..." sem fim (#1129): solta o botão e diz o que aconteceu.
+        // A gravação pode ainda chegar ao banco; por isso a mensagem manda
+        // conferir a lista antes de tentar de novo.
+        console.error(`Salvar peça passou do prazo de ${prazoParaSalvarMs} ms`);
+        rascunho.salvarAgora();
+        setErro(MENSAGEM_DEMOROU);
+        gravacaoPendurada.current = true;
+        gravacao.then(
+          () => {
+            gravacaoPendurada.current = false;
+            rascunho.limpar();
+            setErro(null);
+          },
+          (err) => {
+            gravacaoPendurada.current = false;
+            console.error("Erro ao salvar peça (depois do prazo):", err);
+            setErro(mensagemDeErro(err));
+          },
+        );
+        return;
+      }
       rascunho.limpar();
     } catch (err) {
       console.error("Erro ao salvar peça:", err);
       // Sem rede: o que foi digitado vai pro rascunho na hora, não só aos 30 s.
       if (ehErroDeRede(err)) rascunho.salvarAgora();
       setErro(mensagemDeErro(err));
+    } finally {
+      clearTimeout(relogioDoPrazo.current);
     }
   }
+
+  // Campo inválido (#1129): registra no log, rola até o primeiro da tela e
+  // foca nele. A lista dos campos aparece junto do botão (ver o rodapé).
+  function aoRecusar(erros: FieldErrors<PecaFormValues>) {
+    // O erro do banco era da tentativa anterior; o que vale agora é a lista.
+    setErro(null);
+    console.error(
+      "Peça não salva: campos com erro",
+      Object.fromEntries(
+        Object.entries(erros).map(([nome, e]) => [nome, String(e?.message || e?.type || "inválido")]),
+      ),
+    );
+    const primeiro = Array.from(
+      formRef.current?.querySelectorAll<HTMLElement>("[name]") ?? [],
+    ).find((campo) => (campo.getAttribute("name") ?? "") in erros);
+    if (!primeiro) return;
+    primeiro.focus({ preventScroll: true });
+    primeiro.scrollIntoView?.({ block: "center", behavior: "smooth" });
+  }
+
+  const camposComErro = ORDEM_DOS_CAMPOS.filter((nome) => errors[nome]);
+  const blocoDePneuNaTela = ehCategoriaDePneu(
+    categorias.find((c) => c.id === watch("categoria_id"))?.nome,
+  );
 
   // Aviso, nunca tranca (item 33 do docs/licoes.md): só ao salvar peça NOVA, e
   // a pessoa pode seguir com "Cadastrar mesmo assim". Editar nunca pergunta.
@@ -144,15 +262,17 @@ export function PecaForm({
 
   return (
     <>
-      <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6 sakura-card p-6">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit(aoSubmeter, aoRecusar)}
+        className="space-y-6 sakura-card p-6"
+      >
         <div className="flex items-center gap-3">
           <BotaoVoltar onClick={onCancelar} />
           <h2 className="font-titulo text-subtitulo font-semibold text-texto">
             {pecaExistente ? "Editar produto" : "Novo produto"}
           </h2>
         </div>
-
-        {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
         {rascunho.rascunho && (
           <AvisoRascunho
@@ -172,7 +292,7 @@ export function PecaForm({
         {/* O bloco de pneu só aparece quando a categoria escolhida é a de
             pneus — é a peça que essa loja mais vende, e a medida ficava
             afogada na descrição em texto livre. */}
-        {ehCategoriaDePneu(categorias.find((c) => c.id === watch("categoria_id"))?.nome) && (
+        {blocoDePneuNaTela && (
           <PneuFields register={register} />
         )}
         <TributosFields
@@ -191,17 +311,38 @@ export function PecaForm({
           editando={Boolean(pecaExistente)}
         />
 
-        <div className="flex justify-end gap-3">
-          <Botao variante="fantasma" onClick={onCancelar}>
-            Cancelar
-          </Botao>
-          <Botao type="submit" variante="principal" ocupado={isSubmitting}>
-            {isSubmitting
-              ? "Salvando..."
-              : pecaExistente
-                ? "Salvar alterações"
-                : "Salvar peça"}
-          </Botao>
+        {/* Os erros moram aqui, junto do botão Salvar, e não no topo (#1129):
+            é pra onde a pessoa está olhando quando clica, e o topo de um
+            formulário comprido fica fora da vista. */}
+        <div data-testid="rodape-peca" className="space-y-3">
+          {camposComErro.length > 0 && (
+            <AvisoDeErro>
+              <p>Não deu pra salvar. Confira {camposComErro.length === 1 ? "este campo" : "estes campos"}:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {camposComErro.map((nome) => (
+                  <li key={nome}>
+                    {NOME_DO_CAMPO[nome]}
+                    {CAMPOS_DE_PNEU.has(nome) && !blocoDePneuNaTela && (
+                      <> (aparece ao escolher a categoria Pneus)</>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </AvisoDeErro>
+          )}
+          {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+          <div className="flex justify-end gap-3">
+            <Botao variante="fantasma" onClick={onCancelar}>
+              Cancelar
+            </Botao>
+            <Botao type="submit" variante="principal" ocupado={isSubmitting}>
+              {isSubmitting
+                ? "Salvando..."
+                : pecaExistente
+                  ? "Salvar alterações"
+                  : "Salvar peça"}
+            </Botao>
+          </div>
         </div>
       </form>
 

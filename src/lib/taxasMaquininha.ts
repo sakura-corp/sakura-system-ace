@@ -4,7 +4,7 @@ import type { CalculoTaxa, FormaCartao, TaxaMaquininha } from "@/schemas/taxaMaq
 
 /**
  * A taxa da maquininha (#387): a tabela de cada loja
- * (`configuracoes_taxas_maquininha`, migration 0088), a taxa guardada em cada
+ * (`configuracoes_taxas_maquininha`, migration 0089), a taxa guardada em cada
  * recebimento em cartão (`caixa_taxas_cartao` + `caixa_cartao_a_receber`,
  * gravadas juntas pela função `registrar_taxa_do_cartao`) e a lista do
  * "Cartão a receber". A conta mora em `src/schemas/taxaMaquininha.ts`.

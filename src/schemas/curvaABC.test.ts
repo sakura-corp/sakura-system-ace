@@ -200,6 +200,7 @@ describe("curvasABC", () => {
     custo,
     margem: receita - custo,
     custoNaoInformado,
+    pecaId: null,
   });
   const cliente = (clienteId: string, nome: string, receita: number, custo: number, custoNaoInformado = false) => ({
     clienteId,

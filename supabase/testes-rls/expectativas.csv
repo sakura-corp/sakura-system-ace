@@ -137,6 +137,13 @@ ordens_servico_itens,select,2,1,0,0,0,não tem loja_id próprio: herda pela OS; 
 ordens_servico_itens,insert,1,1,0,0,0,só com o módulo OS
 ordens_servico_itens,update,2,1,0,0,0,
 ordens_servico_itens,delete,2,1,0,0,0,
+# O histórico das trocas em OS faturada (0087, #1145): lê quem lê a OS; grava
+# só o admin da loja (pela função trocar_itens_os_faturada); ninguém altera
+# nem apaga.
+ordens_servico_trocas,select,2,1,0,0,0,histórico da troca em OS faturada: lê quem lê a OS
+ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente)
+ordens_servico_trocas,update,0,0,0,0,0,o histórico não se altera
+ordens_servico_trocas,delete,0,0,0,0,0,o histórico não se apaga (sai junto com a OS)
 #
 # As cinco janelas da 0075, uma por tela. Rodam com os direitos do dono: o
 # filtro de loja e o de módulo estão escritos DENTRO de cada uma. Por isso o
@@ -167,7 +174,7 @@ caixa_movimentos,select,2,1,1,0,0,Caixa (0062): exige a loja E o módulo — ou 
 caixa_movimentos,insert,1,1,1,0,0,o balconista deste cenário TEM o Caixa: por isso nada muda aqui
 caixa_movimentos,update,2,1,1,0,0,
 caixa_movimentos,delete,2,1,1,0,0,
-# A taxa da maquininha de cada lançamento de cartão (0088, #387): lê quem tem
+# A taxa da maquininha de cada lançamento de cartão (0089, #387): lê quem tem
 # Caixa ou Relações; grava quem tem Caixa ou OS, pendurada numa entrada da
 # mesma loja. Ninguém altera nem apaga (some junto com o lançamento). Linha
 # só na loja B no cenário — por isso a leitura é 1,0,0,0,0 (o motivo está
@@ -277,7 +284,7 @@ configuracoes_juros_parcelas,select,2,1,1,0,0,
 configuracoes_juros_parcelas,insert,1,1,1,0,0,
 configuracoes_juros_parcelas,update,2,1,1,0,0,
 configuracoes_juros_parcelas,delete,2,1,1,0,0,
-# A tabela de taxas da maquininha (0088, #387): lê quem tem Caixa, Relações
+# A tabela de taxas da maquininha (0089, #387): lê quem tem Caixa, Relações
 # ou OS; grava só o admin daquela loja, como o Pix.
 configuracoes_taxas_maquininha,select,2,1,1,0,0,o balconista do caixa lê a taxa (o lucro do Caixa desconta ela)
 configuracoes_taxas_maquininha,insert,1,1,0,0,0,só o admin da loja grava a taxa

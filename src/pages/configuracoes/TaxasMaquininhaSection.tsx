@@ -16,7 +16,7 @@ import {
 import { AvisoDeSalvo } from "./pecas";
 
 interface TaxasMaquininhaSectionProps {
-  /** A tabela da loja; `null` quando não deu pra ler (banco ainda sem a migration 0088, por exemplo). */
+  /** A tabela da loja; `null` quando não deu pra ler (banco ainda sem a migration 0089, por exemplo). */
   tabela: TaxaMaquininha[] | null;
   lojaId: string;
   /** Só o admin da loja grava (a RLS também recusa os outros). */

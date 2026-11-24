@@ -23,6 +23,9 @@ interface Window {
     // o app também roda no navegador (preview/catálogo de telas), onde
     // essa ponte não existe — ver lib/whatsapp.ts.
     abrirWhatsapp?: (url: string) => Promise<boolean>;
+    // Gera o PDF da nota pro cliente a partir do HTML do recibo (#1115).
+    // Opcional: fora do Electron não existe, e a janela baixa o arquivo de antes.
+    gerarPdfDaNota?: (html: string) => Promise<Uint8Array>;
     // Tela de Diagnóstico (item TR-08.1). Opcionais pelo mesmo motivo do
     // abrirWhatsapp: fora do Electron essas pontes não existem, e a tela
     // precisa continuar abrindo (mostrando o que conseguir descobrir).

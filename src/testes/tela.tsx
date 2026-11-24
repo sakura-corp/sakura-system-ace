@@ -24,8 +24,14 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement, ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach } from "vitest";
+import { vigiarFormDentroDeForm } from "./semFormDentroDeForm";
 
 afterEach(cleanup);
+
+// Todo teste de tela reprova se aparecer um <form> dentro de outro (#1130).
+// Ligada DEPOIS do cleanup de propósito: o vitest roda os afterEach do último
+// pro primeiro, então a trava olha a tela ainda montada.
+vigiarFormDentroDeForm();
 
 /** Monta o componente já dentro do Router, e devolve o `user` pronto. */
 export function renderizar(ui: ReactElement, opcoes?: Omit<RenderOptions, "wrapper">) {

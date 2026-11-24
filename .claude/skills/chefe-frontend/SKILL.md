@@ -85,7 +85,7 @@ aponta para esse arquivo. O repositório é público: **nada de credencial, CPF,
 ou dado pessoal** no relatório.
 
 ## 6. Limites (valem sempre)
-**Nunca**: mesclar PR (nem o próprio); publicar ou liberar versão; mexer em secret, cofre
+**Nunca**: mesclar (sem ordem escrita da Sofia; com ordem dela vale a frase 'Quem mescla' do CLAUDE.md) PR (nem o próprio); publicar ou liberar versão; mexer em secret, cofre
 (environment), ruleset, tag, configuração ou workflow; rodar SQL ou migration em qualquer Supabase;
 adicionar à sessão o repositório privado `sakura-corp`; mexer no "Onde parou". O repositório é
 **público**: nenhuma senha, chave, token, CPF, preço ou dado de cliente de verdade, nem em teste ou

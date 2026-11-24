@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0088 (a taxa da maquininha, #387). NÃO é migration, e
+-- TESTE da migration 0089 (a taxa da maquininha, #387). NÃO é migration, e
 -- NUNCA deve ser rodado no Supabase de verdade — grava dado de teste (e
 -- apaga o que gravou no fim).
 --
@@ -28,9 +28,9 @@
 -- Como rodar: `npm run test:sql -- testar-taxas-da-maquininha`.
 -- Terminou imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
--- A instalação completa JÁ rodou a 0088; esta segunda rodada é a de
+-- A instalação completa JÁ rodou a 0089; esta segunda rodada é a de
 -- "rodar de novo" (idempotente).
-\ir ../migrations/0088_taxas_da_maquininha.sql
+\ir ../migrations/0089_taxas_da_maquininha.sql
 
 do $$
 declare
@@ -63,8 +63,8 @@ begin
   -- =====================================================================
   -- A. A estrutura
   -- =====================================================================
-  if not exists (select 1 from schema_versao where versao = 88) then
-    raise exception 'FALHOU A1: a 0088 não gravou a versão 88';
+  if not exists (select 1 from schema_versao where versao = 89) then
+    raise exception 'FALHOU A1: a 0089 não gravou a versão 89';
   end if;
 
   select count(*) into n from pg_class

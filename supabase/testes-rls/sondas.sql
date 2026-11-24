@@ -68,8 +68,9 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('ordens_servico_clientes',  $$insert into ordens_servico_clientes (loja_id, numero) values ('11111111-1111-1111-1111-1111111111aa', 904)$$),
 ('ordens_servico',        $$insert into ordens_servico (numero, loja_id, cliente_id) values (900, '11111111-1111-1111-1111-1111111111aa', 'cccccccc-0000-0000-0000-0000000000aa')$$),
 ('ordens_servico_itens',  $$insert into ordens_servico_itens (ordem_servico_id, tipo, descricao, quantidade) values ('44444444-0000-0000-0000-0000000000aa', 'servico', 'Item sonda', 1)$$),
+('ordens_servico_trocas', $$insert into ordens_servico_trocas (ordem_servico_id, loja_id, motivo, total) values ('44444444-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'Troca sonda', 100.00)$$),
 ('caixa_movimentos',      $$insert into caixa_movimentos (loja_id, tipo, valor) values ('11111111-1111-1111-1111-1111111111aa', 'entrada', 1.00)$$),
--- A taxa de cartão (0088) pendurada no lançamento da loja A (que não tem
+-- A taxa de cartão (0089) pendurada no lançamento da loja A (que não tem
 -- taxa no cenário). As datas não precisam da fotografia aqui: o `replica`
 -- da rodada desliga a chave estrangeira, e quem decide é a RLS.
 ('caixa_taxas_cartao',    $$insert into caixa_taxas_cartao (movimento_id, loja_id, forma, parcelas, taxa_percentual, prazo_dias, valor_bruto, valor_taxa, valor_liquido) values ('55555555-0000-0000-0000-0000000000aa', '11111111-1111-1111-1111-1111111111aa', 'cartao_credito', 1, 3.00, 30, 100.00, 3.00, 97.00)$$),

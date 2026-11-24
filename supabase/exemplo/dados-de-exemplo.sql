@@ -153,7 +153,7 @@ insert into configuracoes_juros_parcelas (loja_id, numero_parcelas, juros_percen
   ('eeee0001-0000-4000-8000-000000000001', 6, 4.9)
 on conflict do nothing;
 
--- A taxa da maquininha (migration 0088, #387). TAXA INVENTADA, só pra ter o
+-- A taxa da maquininha (migration 0089, #387). TAXA INVENTADA, só pra ter o
 -- que ver na tela: débito 1,9% em 1 dia; crédito à vista 3,1% em 30 dias;
 -- de 2x a 6x, 4,2% com cada parcela caindo de 30 em 30 dias.
 insert into configuracoes_taxas_maquininha (loja_id, forma, parcelas, taxa_percentual, prazo_dias, recebe_tudo_de_uma_vez)
@@ -522,7 +522,7 @@ on conflict do nothing;
 -- ---------------------------------------------------------------------------
 -- Categorias de despesa (catálogo da empresa; se já existir uma com o mesmo
 -- nome, usa a que existe, com o grupo que ela já tem). Cada uma já entra no
--- grupo do DRE (migration 0087), como a loja faria em Configurações.
+-- grupo do DRE (migration 0088), como a loja faria em Configurações.
 insert into categorias_caixa (id, nome, tipo, grupo) values
   ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida', 'despesas_administrativas'),
   ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida', 'despesas_administrativas'),
@@ -555,7 +555,7 @@ from (values
 ) as v(id, dias, hora, os, tipo, forma, valor, menos, descricao, categoria)
 on conflict do nothing;
 
--- A taxa da maquininha das duas vendas no cartão (migration 0088), do jeito
+-- A taxa da maquininha das duas vendas no cartão (migration 0089), do jeito
 -- que registrar_taxa_do_cartao grava: a OS 3 no crédito em 3x (4,2%, uma
 -- parcela a cada 30 dias) e a OS 7 no débito (1,9%, cai no dia seguinte).
 -- A taxa é arredondada no centavo; o líquido é repartido em partes iguais

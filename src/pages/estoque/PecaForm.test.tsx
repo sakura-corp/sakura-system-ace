@@ -15,11 +15,12 @@
  * CST/CSOSN pré-preenchido com o código que a loja usa (item 47 da seção 6 —
  * o código errado só aparece semanas depois, numa nota recusada).
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen, waitFor } from "@/testes/tela";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderizar, screen, waitFor, within } from "@/testes/tela";
 import { PecaForm } from "./PecaForm";
+import type { PecaFormValues } from "@/schemas/peca";
 import type { Categoria } from "@/types/categoria";
-import type { Peca, PecaJanela } from "@/types/peca";
+import type { NovaPeca, Peca, PecaJanela } from "@/types/peca";
 
 beforeEach(() => localStorage.clear());
 
@@ -33,13 +34,20 @@ function montar(
     csosnSugerido?: string | null;
     pecasDoCadastro?: PecaJanela[];
     pecaExistente?: Peca;
+    valoresIniciais?: Partial<PecaFormValues>;
+    onSalvar?: (peca: NovaPeca, quantidade: number | null) => Promise<void>;
+    prazoParaSalvarMs?: number;
   } = {},
 ) {
-  const onSalvar = vi.fn().mockResolvedValue(undefined);
+  const onSalvar = vi.fn<(peca: NovaPeca, quantidade: number | null) => Promise<void>>(
+    opcoes.onSalvar ?? (() => Promise.resolve()),
+  );
   const onAbrirExistente = vi.fn();
   const resultado = renderizar(
     <PecaForm
       pecaExistente={opcoes.pecaExistente}
+      valoresIniciais={opcoes.valoresIniciais}
+      prazoParaSalvarMs={opcoes.prazoParaSalvarMs}
       pecasDoCadastro={opcoes.pecasDoCadastro}
       onAbrirExistente={onAbrirExistente}
       categorias={categorias}
@@ -392,5 +400,148 @@ describe("PecaForm — aviso de peça parecida", () => {
     const aviso = await screen.findByRole("dialog");
     expect(aviso).toHaveTextContent("PNEU 175/70 R13 PIRELLI");
     expect(aviso).not.toHaveTextContent("(inativa)");
+  });
+});
+
+/**
+ * Os erros do "Salvar" (#1129). Em produção uma peça deixou de ser cadastrada
+ * sem ninguém entender por quê: o erro aparecia só no topo do formulário, fora
+ * da vista de quem está no botão, e campo inválido fora dos obrigatórios
+ * barrava sem texto nenhum. Aqui se confere que a mensagem fica JUNTO do botão
+ * (no mesmo rodapé), que é onde a pessoa está olhando quando clica.
+ */
+describe("PecaForm — os erros aparecem junto do botão Salvar (#1129)", () => {
+  /** O rodapé do formulário: o bloco que tem o botão Salvar. */
+  const rodape = () => screen.getByTestId("rodape-peca");
+
+  // O jsdom não tem scrollIntoView: os testes põem um falso no protótipo, e
+  // ele sai no fim de cada um, pra não vazar pros outros.
+  const scrollOriginal = Element.prototype.scrollIntoView;
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Element.prototype.scrollIntoView = scrollOriginal;
+  });
+
+  it("permissão negada: a mensagem aparece no rodapé, junto do botão, sem o texto cru do banco", async () => {
+    const recusa = {
+      code: "42501",
+      message: 'new row violates row-level security policy for table "pecas"',
+    };
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({ onSalvar: () => Promise.reject(recusa) });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+
+    const aviso = await within(rodape()).findByRole("alert");
+    expect(aviso).toHaveTextContent(/não tem permissão/);
+    expect(aviso).not.toHaveTextContent(/row-level security/);
+    expect(within(rodape()).getByRole("button", { name: /^Salvar/ })).toBeEnabled();
+  });
+
+  it("campo inválido fora dos obrigatórios: lista o campo, rola até ele, foca e registra no log", async () => {
+    // Rascunho antigo restaurado com a garantia em número (o esquema espera
+    // texto): antes barrava o Salvar sem mensagem nenhuma.
+    const rolar = vi.fn();
+    Element.prototype.scrollIntoView = rolar;
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user, onSalvar } = montar({
+      valoresIniciais: { prazo_garantia_dias: 90 as unknown as string },
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+
+    const lista = await within(rodape()).findByRole("alert");
+    expect(lista).toHaveTextContent("Garantia");
+    expect(onSalvar).not.toHaveBeenCalled();
+    const garantia = campo("Garantia (dias, opcional)");
+    expect(garantia).toHaveFocus();
+    expect(rolar.mock.contexts).toContain(garantia);
+    expect(log).toHaveBeenCalledWith(
+      expect.stringMatching(/não salva/i),
+      expect.objectContaining({ prazo_garantia_dias: expect.any(String) }),
+    );
+  });
+
+  it("vários campos com erro: lista todos, na ordem da tela, e foca o primeiro", async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar();
+
+    await user.click(salvar());
+
+    const lista = await within(rodape()).findByRole("alert");
+    const itens = within(lista)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+    expect(itens).toEqual(["Descrição", "NCM", "C.E.S.T", "CFOP padrão", "Origem", "CST / CSOSN"]);
+    expect(campo("Descrição *")).toHaveFocus();
+  });
+
+  it("'Salvando...' preso: passado o prazo, aparece a mensagem e o botão volta", async () => {
+    // Uma gravação que nunca responde (rede caída no meio, por exemplo).
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({ onSalvar: () => new Promise<void>(() => {}), prazoParaSalvarMs: 50 });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+
+    const aviso = await within(rodape()).findByRole("alert");
+    expect(aviso).toHaveTextContent(/demorou/i);
+    await waitFor(() => expect(salvar()).toHaveTextContent("Salvar peça"));
+    expect(salvar()).toBeEnabled();
+  });
+
+  it("clicar de novo depois do prazo, com a primeira gravação ainda andando, não grava outra peça", async () => {
+    // A primeira pode ainda chegar ao banco: um segundo onSalvar cadastraria a
+    // mesma peça duas vezes (o aviso de parecida não pega, a lista é a de antes).
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user, onSalvar } = montar({
+      onSalvar: () => new Promise<void>(() => {}),
+      prazoParaSalvarMs: 50,
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+    await within(rodape()).findByText(/demorou/i);
+    await waitFor(() => expect(salvar()).toBeEnabled());
+    await user.click(salvar());
+
+    expect(await within(rodape()).findByText(/ainda esperando/i)).toBeInTheDocument();
+    expect(onSalvar).toHaveBeenCalledTimes(1);
+  });
+
+  it("o erro do banco de uma tentativa antiga some quando a nova barra na validação", async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({
+      onSalvar: () =>
+        Promise.reject({ code: "42501", message: "new row violates row-level security policy" }),
+    });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+    await within(rodape()).findByText(/não tem permissão/);
+
+    await user.clear(campo("Descrição *"));
+    await user.click(salvar());
+
+    await within(rodape()).findByText("Descrição");
+    expect(within(rodape()).queryByText(/não tem permissão/)).not.toBeInTheDocument();
+  });
+
+  it("campo de pneu com erro, fora da tela, diz como chegar nele", async () => {
+    // Medida, índice e DOT só aparecem com a categoria Pneus: sem a dica, a
+    // lista apontaria um campo que a pessoa não acha.
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { user } = montar({ valoresIniciais: { dot: 2024 as unknown as string } });
+
+    await preencherObrigatorios(user, "PASTILHA DE FREIO");
+    await user.click(salvar());
+
+    const lista = await within(rodape()).findByRole("alert");
+    expect(lista).toHaveTextContent(/DOT.*categoria Pneus/);
   });
 });

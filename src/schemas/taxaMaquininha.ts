@@ -63,7 +63,7 @@ export function formaECartao(forma: string): forma is FormaCartao {
  *   líquido inteiro;
  * - o líquido é repartido com `repartirEmCentavos` (o centavo que sobra vai
  *   pra última). Uma parcela que dá R$ 0,00 (valor pequeno demais pra tantas
- *   parcelas) continua na lista: o banco (0088) quer as parcelas numeradas
+ *   parcelas) continua na lista: o banco (0089) quer as parcelas numeradas
  *   de 1 a N, sem buraco, e aceita valor zero.
  *
  * @param dia O dia do faturamento, "AAAA-MM-DD" (de `hojeLocal()`). A conta

@@ -110,7 +110,7 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
                   aria-label={`Grupo de ${categoria.nome}`}
                   value={escolhas[categoria.id] ?? categoria.grupo}
                   onChange={(e) => handleTrocarGrupo(categoria, e.target.value as GrupoDre)}
-                  className="sakura-campo w-52 shrink-0"
+                  className="sakura-campo w-64 shrink-0"
                 >
                   {gruposParaTipo(categoria.tipo).map((g) => (
                     <option key={g.chave} value={g.chave}>
@@ -157,7 +157,7 @@ export function CategoriasCaixaSection({ categorias, onSalvo }: CategoriasCaixaS
           aria-label="Grupo da nova categoria"
           value={grupo}
           onChange={(e) => setGrupo(e.target.value as GrupoDre)}
-          className="sakura-campo w-52 shrink-0"
+          className="sakura-campo w-64 shrink-0"
         >
           {gruposParaTipo(tipo).map((g) => (
             <option key={g.chave} value={g.chave}>

@@ -9,14 +9,14 @@ import {
   rotuloDoGrupo,
 } from "./gruposDre";
 
-describe("gruposDre acompanha a migration 0087", () => {
+describe("gruposDre acompanha a migration 0088", () => {
   // Lê as travas da migration DE VERDADE: se o banco e este arquivo
   // divergirem, o dono escolheria na tela um grupo que o banco recusa.
-  const sql = readFileSync("supabase/migrations/0087_grupo_das_categorias_de_caixa.sql", "utf8");
+  const sql = readFileSync("supabase/migrations/0088_grupo_das_categorias_de_caixa.sql", "utf8");
   const chaves = (trecho: string) => [...trecho.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
   const depoisDe = (marca: string) => {
     const i = sql.indexOf(marca);
-    expect(i, `não achei "${marca}" na 0087`).toBeGreaterThan(-1);
+    expect(i, `não achei "${marca}" na 0088`).toBeGreaterThan(-1);
     return sql.slice(i + marca.length);
   };
 

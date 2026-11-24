@@ -46,8 +46,7 @@ Focus NFe. Pra apresentar sem abrir a Pneus Amigão.
 
 ### Em que versão está o banco de cada empresa
 
-**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0075` aplicadas** (a `0076` espera os computadores
-na 0.9.56, #809). Daqui
+**Hoje só existe uma empresa: a Pneus Amigão, com `0001` a `0087` aplicadas** (a última migration da `main` é a `0087`; confira em `supabase/migrations/`). Daqui
 pra frente, migration entra **pelo botão "Atualizar o banco de todas as empresas"** (abaixo), nunca
 colada à mão no SQL Editor. Pra saber a versão de um banco: a tabela `schema_versao`, a tela de
 Diagnóstico ou um ensaio do botão.
@@ -423,13 +422,25 @@ saíram 132 branches de uma vez (PR #449). Não procurar outro jeito de contorna
 ## 11. Trabalhando de outro computador
 
 Código no GitHub e banco no Supabase: dá pra continuar de qualquer computador com internet. Em
-cada computador novo, clonar, `npm install` e criar o `.env` (nunca vai pro Git):
+cada computador novo: Git, **Node 22** (a versão do CI) e, no Windows, o Visual C++
+Redistributable (sem ele o `npm ci` para na instalação do Electron, visto em 21/11/2026). Depois:
 
 ```bash
 git clone https://github.com/sakura-corp/sakura-system-ace.git
 cd sakura-system-ace
-npm install
-cp .env.example .env   # VITE_SUPABASE_URL=https://rlgdjiowvnfzsedehyga.supabase.co
-                       # VITE_SUPABASE_ANON_KEY=<chave anon, em Settings -> API no Supabase>
+npm ci
 npm run dev
 ```
+
+**O `npm run dev` é sempre contra o `ssace-teste`, nunca contra o banco de uma loja.** O endereço e
+a chave anon saem do painel do `ssace-teste` (passo a passo em `docs/supabase-de-teste.md`, Passos
+7 e 8) e vão no `.env` ou na tela **Configurar a conexão** do programa; o endereço de banco nenhum
+fica escrito aqui. Até 21/11/2026 esta seção trazia o endereço do banco de uma loja, e um
+computador novo configurado por ela entrou no banco da loja em vez do de teste.
+
+**Programa instalado no mesmo computador**: desde a #1157, o `npm run dev` guarda a conexão (e o
+resto: canal, identidade do computador, logs, login) numa pasta só dele,
+`%APPDATA%\sakura-system-autocenter-dev`; o programa instalado continua na
+`%APPDATA%\sakura-system-autocenter`. Trocar a conexão num não mexe mais no outro. Antes da #1157
+os dois dividiam a pasta: num computador que já usou as duas coisas, conferir em **Configurar a
+conexão** pra qual banco o programa instalado aponta.

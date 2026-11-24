@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0087 (o grupo de cada categoria de caixa, pro DRE,
+-- TESTE da migration 0088 (o grupo de cada categoria de caixa, pro DRE,
 -- tarefa #386). NÃO é migration, e NUNCA deve ser rodado no Supabase de
 -- verdade — grava e apaga dado de teste.
 --
@@ -23,16 +23,16 @@
 -- Terminou imprimindo "TODAS AS CHECAGENS PASSARAM", passou.
 
 -- ===================================================================
--- PARTE A: empresa nova. A instalação completa JÁ rodou a 0087 (o banco do
--- teste nasce sem OS e sem caixa). Sem a linha 87 e sem a coluna, a checagem
+-- PARTE A: empresa nova. A instalação completa JÁ rodou a 0088 (o banco do
+-- teste nasce sem OS e sem caixa). Sem a linha 88 e sem a coluna, a checagem
 -- só passa se as rodadas abaixo fizerem tudo de novo; a segunda rodada é a
 -- de "rodar de novo".
 -- ===================================================================
 alter table categorias_caixa drop column grupo;
-delete from schema_versao where versao = 87;
+delete from schema_versao where versao = 88;
 
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
 
 do $$
 declare
@@ -40,8 +40,8 @@ declare
   trava text;
 begin
   -- 1. a migration grava a versão
-  if not exists (select 1 from schema_versao where versao = 87) then
-    raise exception 'FALHOU 1: a 0087 não gravou a versão 87';
+  if not exists (select 1 from schema_versao where versao = 88) then
+    raise exception 'FALHOU 1: a 0088 não gravou a versão 88';
   end if;
 
   -- 2. a coluna: texto, obrigatória, começando em a_classificar
@@ -204,7 +204,7 @@ begin
 end $$;
 
 -- 11. rodar de novo (ainda empresa nova) não desfaz o que a loja escolheu
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
 
 do $$
 begin
@@ -226,7 +226,7 @@ end $$;
 -- PARTE C: banco EM USO, com lançamento de caixa (e ainda SEM nenhuma OS:
 -- prova o segundo sinal, o do caixa). Simula um banco antigo: categorias
 -- criadas pela loja, lançamentos no caixa e em contas a pagar, e só então
--- a 0087 chega (sem a coluna, sem a linha 87).
+-- a 0088 chega (sem a coluna, sem a linha 88).
 -- ===================================================================
 insert into lojas (id, nome, cidade, uf)
   values ('03860000-0000-0000-0000-0000000000b1', 'Loja (teste #386)', 'Araraquara', 'SP');
@@ -244,9 +244,9 @@ insert into contas_pagar (id, loja_id, descricao, valor, vencimento, categoria_i
   ('03860000-0000-0000-0000-0000000000d2', '03860000-0000-0000-0000-0000000000b1', 'Energia de outubro', 310.40, '2026-10-20', '03860000-0000-0000-0000-0000000000a3', 'pendente', null, null),
   ('03860000-0000-0000-0000-0000000000d3', '03860000-0000-0000-0000-0000000000b1', 'Folha de outubro', 2500.00, '2026-11-05', '03860000-0000-0000-0000-0000000000a4', 'pendente', null, null);
 
--- O banco antigo não tem a coluna (nem as travas, que caem junto) nem a 87.
+-- O banco antigo não tem a coluna (nem as travas, que caem junto) nem a 88.
 alter table categorias_caixa drop column grupo;
-delete from schema_versao where versao = 87;
+delete from schema_versao where versao = 88;
 
 create temp table retrato_antes as
 select (select count(*) from caixa_movimentos) as n_caixa,
@@ -256,7 +256,7 @@ select (select count(*) from caixa_movimentos) as n_caixa,
        (select count(*) from categorias_caixa) as n_cat,
        (select md5(string_agg(id::text || '/' || nome || '/' || tipo, '|' order by id)) from categorias_caixa) as h_cat;
 
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
 
 do $$
 declare
@@ -266,8 +266,8 @@ begin
   select * into antes from retrato_antes;
 
   -- 12. a versão e as duas travas voltaram
-  if not exists (select 1 from schema_versao where versao = 87) then
-    raise exception 'FALHOU 12: a 0087 não gravou a versão 87 no banco em uso';
+  if not exists (select 1 from schema_versao where versao = 88) then
+    raise exception 'FALHOU 12: a 0088 não gravou a versão 88 no banco em uso';
   end if;
   if (select count(*) from pg_constraint
        where conrelid = 'categorias_caixa'::regclass
@@ -315,9 +315,9 @@ insert into ordens_servico (id, loja_id, cliente_id, status)
           '03860000-0000-0000-0000-0000000000e1', 'orcamento');
 
 alter table categorias_caixa drop column grupo;
-delete from schema_versao where versao = 87;
+delete from schema_versao where versao = 88;
 
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
 
 do $$
 declare
@@ -334,7 +334,7 @@ end $$;
 
 -- 17. rodar de novo no banco em uso não duplica trava nem desfaz a escolha
 update categorias_caixa set grupo = 'despesas_pessoal' where id = '03860000-0000-0000-0000-0000000000a4';
-\ir ../migrations/0087_grupo_das_categorias_de_caixa.sql
+\ir ../migrations/0088_grupo_das_categorias_de_caixa.sql
 
 do $$
 begin

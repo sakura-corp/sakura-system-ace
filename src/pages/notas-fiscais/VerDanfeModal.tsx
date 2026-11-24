@@ -4,8 +4,17 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { Selo } from "@/components/Selo";
 import { mensagemDeErro } from "@/lib/errors";
-import { buscarDanfeEmitida } from "@/lib/notasFiscais";
-import { nomeArquivoDanfe } from "@/schemas/danfe";
+import { interpretarXmlNotaFiscal, montarHtmlVisualNotaFiscal } from "@/lib/notaFiscalXml";
+import { salvarComoDownload } from "@/lib/download";
+import { buscarConteudoArquivo, buscarDanfeEmitida } from "@/lib/notasFiscais";
+import { buscarLojaDoRecibo, buscarOsDoRecibo, buscarValoresGuardadosDaNota, comValoresGuardados } from "@/lib/reciboNotaFiscal";
+import {
+  extensaoDaNota,
+  nomeArquivoDanfe,
+  nomeArquivoPdfDaNota,
+  semImagensDeFora,
+  textoDoHtml,
+} from "@/schemas/danfe";
 import { NOTA_LABEL } from "@/schemas/situacaoFiscal";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
@@ -27,10 +36,39 @@ interface VerDanfeModalProps {
 // lista de OS (tarefa 7) e pelo Fechamento da OS. Cada botão de baixar diz o
 // que baixa e pra quem (pedido da Sofia, 15/11): a nota é pra ler, imprimir e
 // mandar ao cliente; o XML é o arquivo que o contador pede.
+//
+// #1115: o cliente abre PDF no celular e no WhatsApp, e a NFC-e da Focus vem
+// em HTML. Então "Baixar o PDF da nota (pro cliente)" gera um PDF do recibo do
+// sistema (o mesmo da "Versão para o cliente", montado do XML guardado, sem
+// imagem de fora) pelo Electron (`gerar-pdf-da-nota`, electron/main.ts). A
+// NFS-e já vem em PDF da Focus e baixa esse mesmo. Se não der pra gerar,
+// avisa e baixa o arquivo de antes (aviso, nunca tranca: docs/licoes.md, 33).
+async function gerarPdfDoRecibo(arquivo: NotaFiscalArquivo): Promise<Blob> {
+  const gerar = window.sakuraApp?.gerarPdfDaNota;
+  if (!gerar) throw new Error("o PDF só é gerado no programa instalado");
+  // Os mesmos dados extras da "Versão para o cliente" (#1118): a OS ligada
+  // (veículo, placa, garantia) e a loja. Sem acesso, o recibo sai sem eles.
+  const [conteudo, os, loja, valores] = await Promise.all([
+    buscarConteudoArquivo(arquivo),
+    arquivo.ordem_servico_id
+      ? buscarOsDoRecibo(arquivo.ordem_servico_id).catch(() => null)
+      : Promise.resolve(null),
+    buscarLojaDoRecibo(arquivo.loja_id).catch(() => null),
+    buscarValoresGuardadosDaNota(arquivo),
+  ]);
+  const dados = interpretarXmlNotaFiscal(conteudo, arquivo.tipo);
+  if (!dados.reconhecido) throw new Error("o programa não conseguiu ler o XML desta nota");
+  const bytes = await gerar(montarHtmlVisualNotaFiscal(dados, { ...comValoresGuardados(os, valores), loja }));
+  return new Blob([bytes as BlobPart], { type: "application/pdf" });
+}
+
 export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  // PDF ou HTML (a NFC-e da Focus vem em HTML): decide a extensão ao baixar (#1113).
-  const [pdfTipo, setPdfTipo] = useState("");
+  // O arquivo como a Focus mandou: PDF (NFS-e) ou HTML (NFC-e, #1113). É o que
+  // baixa quando o PDF do recibo não sai, e pelo "arquivo original".
+  const [original, setOriginal] = useState<Blob | null>(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [avisoPdf, setAvisoPdf] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const { baixarXml, baixandoXml, erroXml } = useBaixarXml(arquivo);
@@ -49,8 +87,20 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         // se faltar alguma coisa, a mensagem dele já diz o quê.
         const pdf = await buscarDanfeEmitida(arquivo);
         if (!ativo) return;
-        setPdfTipo(pdf.type);
-        urlCriada = URL.createObjectURL(pdf);
+        setOriginal(pdf);
+        // A prévia da NFC-e sem as imagens de fora (o logo quebrado do topo):
+        // a regra de segurança da janela não carrega imagem de fora (#1115).
+        // Lido com a codificação dele e regravado em UTF-8 (o tipo diz isso,
+        // e vale mais que o <meta charset> que veio dentro).
+        const previa =
+          extensaoDaNota(pdf.type) === "html"
+            ? new Blob(
+                [semImagensDeFora(textoDoHtml(new Uint8Array(await pdf.arrayBuffer()), pdf.type))],
+                { type: "text/html;charset=utf-8" },
+              )
+            : pdf;
+        if (!ativo) return;
+        urlCriada = URL.createObjectURL(previa);
         setPdfUrl(urlCriada);
       } catch (err) {
         console.error("Erro ao buscar o PDF da nota fiscal:", err);
@@ -72,12 +122,37 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
     iframeRef.current?.contentWindow?.print();
   }
 
-  function handleBaixarPdf() {
-    if (!pdfUrl) return;
-    const link = document.createElement("a");
-    link.href = pdfUrl;
-    link.download = nomeArquivoDanfe(arquivo, pdfTipo);
-    link.click();
+  function baixarOriginal() {
+    if (original) salvarComoDownload(original, nomeArquivoDanfe(arquivo, original.type));
+  }
+
+  async function handleBaixarPdf() {
+    if (!original || gerandoPdf) return;
+    setAvisoPdf("");
+    if (extensaoDaNota(original.type) === "pdf") {
+      salvarComoDownload(original, nomeArquivoPdfDaNota(arquivo));
+      return;
+    }
+    setGerandoPdf(true);
+    try {
+      salvarComoDownload(await gerarPdfDoRecibo(arquivo), nomeArquivoPdfDaNota(arquivo));
+    } catch (err) {
+      console.error("Erro ao gerar o PDF da nota:", err);
+      // O Electron embrulha o erro do processo principal ("Error invoking
+      // remote method ..."): pra pessoa, só o motivo, já traduzido.
+      const texto = mensagemDeErro(err)
+        .replace(/^Error invoking remote method '[^']*': (Error: )?/, "")
+        .replace(/\.$/, "");
+      const motivo = texto ? ` (${texto})` : "";
+      setAvisoPdf(
+        `Não deu pra gerar o PDF${motivo}. Baixamos a nota como a Focus NFe mandou (HTML), ` +
+          'que abre no navegador do computador. Pra mandar em PDF, use "Imprimir" e escolha a ' +
+          'impressora "Microsoft Print to PDF".',
+      );
+      baixarOriginal();
+    } finally {
+      setGerandoPdf(false);
+    }
   }
 
   // Sem PDF (nota de prefeitura que não tem, ou emitida antes de o programa
@@ -98,7 +173,9 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
           ? `${nome}. Cancelada: não vale mais como nota.`
           : `${nome}. A nota pra ver, imprimir e mandar ao cliente.`
       }
-      largura="3xl"
+      // 4xl: os quatro botões cabem numa linha só com o "Baixar o PDF da
+      // nota (pro cliente)" (#1115); em 3xl o "Imprimir" caía pra baixo.
+      largura="4xl"
       onFechar={onFechar}
       rodape={
         <>
@@ -110,11 +187,13 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
           </Botao>
           {pdfUrl && (
             <>
-              <Botao icone={<Download />} onClick={handleBaixarPdf}>
-                {/* "a nota", e não "o PDF": a da NFC-e a Focus pode mandar
-                    em HTML (src/lib/focusNfe.ts, tipoDoArquivo). */}
-                Baixar a nota (pro cliente)
-              </Botao>
+              {/* Nota cancelada não vale mais: o PDF sairia limpo, sem marca,
+                  e não vai pro cliente (Sofia, 20/11, revisão do #1126). */}
+              {!cancelada && (
+                <Botao icone={<Download />} onClick={handleBaixarPdf} ocupado={gerandoPdf}>
+                  {gerandoPdf ? "Gerando…" : "Baixar o PDF da nota (pro cliente)"}
+                </Botao>
+              )}
               <Botao variante="principal" icone={<Printer />} onClick={handleImprimir}>
                 Imprimir
               </Botao>
@@ -127,7 +206,7 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         {cancelada && (
           <p className="flex flex-wrap items-center gap-2 text-texto-2">
             <Selo tipo="perigo" palavra="Cancelada" />
-            Esta nota foi cancelada.
+            Esta nota foi cancelada. O registro dela é o XML.
           </p>
         )}
 
@@ -136,21 +215,42 @@ export function VerDanfeModal({ arquivo, onFechar }: VerDanfeModalProps) {
         {!carregando && erro && (
           <div className="space-y-2">
             <AvisoDeAtencao role="status">{erro}</AvisoDeAtencao>
-            <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
-              Abrir a Versão para o cliente
-            </Botao>
+            {!cancelada && (
+              <Botao tamanho="pequeno" onClick={() => setMostrarResumo(true)}>
+                Abrir a Versão para o cliente
+              </Botao>
+            )}
           </div>
         )}
 
         {erroXml && <AvisoDeErro>{erroXml}</AvisoDeErro>}
 
+        {avisoPdf && <AvisoDeAtencao role="status">{avisoPdf}</AvisoDeAtencao>}
+
         {pdfUrl && (
-          <iframe
-            ref={iframeRef}
-            title={`Nota do cliente: ${nome}`}
-            src={pdfUrl}
-            className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
-          />
+          <>
+            <iframe
+              ref={iframeRef}
+              title={`Nota do cliente: ${nome}`}
+              src={pdfUrl}
+              className="h-[60vh] min-h-80 w-full rounded-xl border border-linha bg-white"
+            />
+            {!cancelada && (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-rotulo text-texto-2">
+                <p className="min-w-0">
+                  {original && extensaoDaNota(original.type) === "html"
+                    ? "O PDF pro cliente é o recibo da nota (com o QR code), montado pelo programa a partir do XML. "
+                    : "O PDF pro cliente é este, como a Focus NFe mandou. "}
+                  O documento oficial é o XML.
+                </p>
+                {original && extensaoDaNota(original.type) === "html" && (
+                  <Botao variante="fantasma" tamanho="pequeno" onClick={baixarOriginal}>
+                    Baixar o arquivo original da Focus (HTML)
+                  </Botao>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Modal>

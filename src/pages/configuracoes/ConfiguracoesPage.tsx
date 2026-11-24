@@ -85,7 +85,7 @@ export function ConfiguracoesPage() {
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [depositos, setDepositos] = useState<Deposito[]>([]);
   const [jurosParcelas, setJurosParcelas] = useState<JurosParcela[]>([]);
-  // null = não deu pra ler (banco sem a migration 0088): a seção avisa, a página segue.
+  // null = não deu pra ler (banco sem a migration 0089): a seção avisa, a página segue.
   const [taxasMaquininha, setTaxasMaquininha] = useState<TaxaMaquininha[] | null>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasCaixa, setCategoriasCaixa] = useState<CategoriaCaixa[]>([]);
@@ -181,7 +181,7 @@ export function ConfiguracoesPage() {
       } catch (err) {
         console.error("Erro ao carregar o link de avaliação:", err);
       }
-      // Idem as taxas da maquininha (#387): banco sem a migration 0088.
+      // Idem as taxas da maquininha (#387): banco sem a migration 0089.
       let taxasCarregadas: TaxaMaquininha[] | null = null;
       try {
         taxasCarregadas = await listarTaxasMaquininha(lojaId);

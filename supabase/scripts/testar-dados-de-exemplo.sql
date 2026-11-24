@@ -512,7 +512,7 @@ begin
       linha.codigo_interno, linha.ncm, coalesce(linha.cest, '(vazio)');
   end loop;
 
-  -- B18. as categorias de caixa inventadas já entram no grupo do DRE (0087,
+  -- B18. as categorias de caixa inventadas já entram no grupo do DRE (0088,
   -- #386), nenhuma em "a_classificar".
   if (select count(*) from categorias_caixa
        where id::text like 'eeee000e%'
@@ -522,7 +522,7 @@ begin
     raise exception 'FALHOU (B18): as 3 categorias de caixa de exemplo não estão no grupo certo';
   end if;
 
-  -- B19. a taxa da maquininha (0088, #387): cada venda no cartão tem a
+  -- B19. a taxa da maquininha (0089, #387): cada venda no cartão tem a
   -- fotografia da taxa, do mesmo valor e forma do lançamento, e as datas
   -- (uma por parcela) somam exatamente o líquido.
   for linha in

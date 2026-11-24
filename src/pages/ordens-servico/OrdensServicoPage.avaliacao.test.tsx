@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { vigiarFormDentroDeForm } from "@/testes/semFormDentroDeForm";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { Operador } from "@/types/operador";
 
@@ -90,6 +91,8 @@ function montar() {
 }
 
 afterEach(cleanup);
+// A trava de <form> dentro de <form> (#1130): este arquivo não usa o @/testes/tela.
+vigiarFormDentroDeForm();
 
 beforeEach(() => {
   localStorage.clear();
