@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0093 (reabrir orçamento recusado, tarefa #1181). NÃO é
+-- TESTE da migration 0091 (reabrir orçamento recusado, tarefa #1181). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade: grava e apaga
 -- dado de teste.
 --

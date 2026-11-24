@@ -23,7 +23,7 @@ import { nomeDocumento } from "@/types/os";
  * "Já aprovar agora", que depois de reabrir faz a aprovação de sempre.
  *
  * Quem confere de verdade (recusado, loja, permissão) é o banco
- * (`reabrir_orcamento`, migration 0093); esta janela só monta o texto do
+ * (`reabrir_orcamento`, migration 0091); esta janela só monta o texto do
  * histórico, com a recusa antiga, e confere o que falta antes de mandar.
  */
 

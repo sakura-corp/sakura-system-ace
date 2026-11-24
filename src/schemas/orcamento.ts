@@ -52,7 +52,7 @@ export const STATUS_AO_APROVAR = "em_andamento" as const satisfies StatusOS;
  * Dá pra ir de `de` pra `para`?
  *   • orçamento → em andamento (aprovado) ou recusado;
  *   • recusado → só orçamento aberto, pelo "Reabrir" (#1181; no banco, só
- *     pela função `reabrir_orcamento`, migration 0093). Nunca vira OS direto:
+ *     pela função `reabrir_orcamento`, migration 0091). Nunca vira OS direto:
  *     a aprovação é sempre a partir do orçamento aberto;
  *   • OS → nunca volta a orçamento (já tem número de OS, e o banco também
  *     proíbe: `ck_ordens_servico_numero_orcamento`);

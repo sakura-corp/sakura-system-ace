@@ -240,7 +240,7 @@ export function OrcamentosPage() {
   }, [formularioAberto, lojaAtual?.id]);
 
   // O histórico do orçamento aberto. Se não carregar (banco ainda sem a
-  // migration 0093), o orçamento segue sem ele: é só um registro.
+  // migration 0091), o orçamento segue sem ele: é só um registro.
   const idAberto = aberto?.id ?? null;
   useEffect(() => {
     setHistorico([]);

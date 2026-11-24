@@ -10151,11 +10151,11 @@ insert into schema_versao (versao) values (90) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0093_reabrir_orcamento.sql
+-- 0091_reabrir_orcamento.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0093: reabrir um orçamento recusado, com motivo e histórico
+-- Migration 0091: reabrir um orçamento recusado, com motivo e histórico
 -- (tarefa #1181; decisões da Sofia em 24/11/2026).
 --
 -- O PROBLEMA. Desde a 0065, "recusado" é o fim da linha: o gatilho
@@ -10215,7 +10215,7 @@ alter table ordens_servico_trocas add constraint ck_ordens_servico_trocas_tipo
 
 comment on column ordens_servico_trocas.tipo is
   '#1181. O que aconteceu: troca (peça/serviço em OS faturada, 0087), reabertura '
-  '(orçamento recusado reaberto, 0093) ou correcao_valor (#1182).';
+  '(orçamento recusado reaberto, 0091) ou correcao_valor (#1182).';
 
 comment on table ordens_servico_trocas is
   'O histórico da OS (#1145, #1181): trocas de peça/serviço em OS faturada, reaberturas de '
@@ -10418,4 +10418,4 @@ comment on function reabrir_orcamento(uuid, text, date, uuid) is
 revoke all on function reabrir_orcamento(uuid, text, date, uuid) from public, anon;
 grant execute on function reabrir_orcamento(uuid, text, date, uuid) to authenticated;
 
-insert into schema_versao (versao) values (93) on conflict do nothing;
+insert into schema_versao (versao) values (91) on conflict do nothing;

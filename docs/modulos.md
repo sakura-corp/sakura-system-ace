@@ -567,7 +567,7 @@ Quatro coisas que valem saber:
     A aba Fechamento fica fora do `<form>` da OS (#1128), senão o "Salvar peça" da nota enviava a OS.
     **Recusar** é um clique, com motivo opcional (preço, prazo, foi em outro lugar, desistiu,
     outro); o recusado vira histórico, na aba "Recusados".
-    **Reabrir** (#1181, migration `0093`): o recusado volta pra orçamento aberto, **com o mesmo
+    **Reabrir** (#1181, migration `0091`): o recusado volta pra orçamento aberto, **com o mesmo
     número**, pelo botão "Reabrir orçamento" na faixa do recusado ou pela ação "Reabrir" da linha na
     aba "Recusados". A janela pede o motivo em um clique ("Cliente voltou e aceitou", já marcado;
     "Recusado por engano"; "Outro", com texto), a validade nova (hoje + 7) e tem a caixinha "Já

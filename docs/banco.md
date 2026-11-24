@@ -682,7 +682,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   20/11: #1146 é a `0087`, #1120 a `0088`, #1121 a `0089`): **aplicar depois delas** (o botão só roda as de
   número maior que o do banco). Coluna nova e opcional: sobe **antes** da versão, sem
   `versao-minima-do-programa`. Teste em `supabase/scripts/testar-tributos-aproximados.sql`.
-- `0093`: **reabrir orçamento recusado, com motivo e histórico** (tarefa #1181; Sofia, 24/11/2026).
+- `0091`: **reabrir orçamento recusado, com motivo e histórico** (tarefa #1181; Sofia, 24/11/2026).
   `ordens_servico_trocas` vira o **histórico único da OS**: coluna nova `tipo` (`troca` pro que já
   existia, `reabertura`, e já `correcao_valor` pra #1182), check `ck_ordens_servico_trocas_tipo`. A
   policy de inserção continua aceitando o admin da loja e passa a aceitar a linha `reabertura` de quem
@@ -695,7 +695,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `sakura.reabrir_orcamento` = id da OS, ligada pela função dentro da transação: o update direto
   continua recusado. OS aprovada nunca volta. O "Já aprovar agora" da tela chama a `aprovar_orcamento`
   de sempre, depois. Matriz de RLS sem mudança (a sonda grava `troca` e continua só admin). Teste em
-  `supabase/scripts/testar-reabrir-orcamento.sql`. Entra depois da `0091` e da `0092` (#1171 e #1174, ainda em PR em 24/11): o botão só roda as de número maior que o do banco.
+  `supabase/scripts/testar-reabrir-orcamento.sql`. Número `0091` por decisão da Sofia (24/11/2026: a `main` e o banco de teste estavam na `0090`); a #1182 é a `0092`, e a #1171 e a #1174 passam a `0093` e `0094`. Aplicação acompanhada na #1185.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

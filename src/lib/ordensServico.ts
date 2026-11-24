@@ -509,7 +509,7 @@ export interface ResultadoDaReabertura {
 /**
  * Reabre o orçamento recusado (#1181): volta pra orçamento aberto, com o mesmo
  * número, a validade nova e uma linha no histórico da OS. Uma chamada só
- * (`reabrir_orcamento`, migration 0093); erro dela sobe e nada muda.
+ * (`reabrir_orcamento`, migration 0091); erro dela sobe e nada muda.
  *
  * Com `aprovarAgora` ("Já aprovar agora"), chama em seguida a aprovação de
  * sempre (`aprovarOrcamento`). Se a aprovação falhar, o orçamento continua

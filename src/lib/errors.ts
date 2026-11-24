@@ -196,7 +196,7 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "percentual_tributos_pecas",
   "percentual_estimativa_icms_st",
   "competencia_tributos_confirmada",
-  // 0093 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
+  // 0091 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
   "tipo",
 ] as const;
 

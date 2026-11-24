@@ -69,7 +69,7 @@ export type ItemDaTrocaGravado = Pick<
   | "desconto"
 >;
 
-/** O que cada linha do histórico da OS registra (coluna `tipo`, migration 0093). */
+/** O que cada linha do histórico da OS registra (coluna `tipo`, migration 0091). */
 export type TipoDoHistoricoOS = "troca" | "reabertura" | "correcao_valor";
 
 /**

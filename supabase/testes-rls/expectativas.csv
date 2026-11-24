@@ -141,7 +141,7 @@ ordens_servico_itens,delete,2,1,0,0,0,
 # só o admin da loja (pela função trocar_itens_os_faturada); ninguém altera
 # nem apaga.
 ordens_servico_trocas,select,2,1,0,0,0,histórico da troca em OS faturada: lê quem lê a OS
-ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente); desde a 0093 também a linha tipo reabertura de quem tem o módulo OS na loja só de dentro de reabrir_orcamento (nenhum papel daqui tem OS sem ser admin; provado em testar-reabrir-orcamento.sql)
+ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente); desde a 0091 também a linha tipo reabertura de quem tem o módulo OS na loja só de dentro de reabrir_orcamento (nenhum papel daqui tem OS sem ser admin; provado em testar-reabrir-orcamento.sql)
 ordens_servico_trocas,update,0,0,0,0,0,o histórico não se altera
 ordens_servico_trocas,delete,0,0,0,0,0,o histórico não se apaga (sai junto com a OS)
 #
