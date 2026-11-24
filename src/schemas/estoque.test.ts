@@ -130,8 +130,8 @@ describe("pecaCasaComBusca", () => {
       const outra = { ...base, descricao: "Pneu 12/3 R14", medida: null };
       expect(pecaCasaComBusca(outra, "2314")).toBe(false);
       expect(pecaCasaComBusca(outra, "12314")).toBe(true); // 5 dígitos: entra
-      // "13" continua achando só onde está escrito "13" (jeito 1)
-      expect(pecaCasaComBusca({ ...base, descricao: "Pneu 14", medida: null }, "13")).toBe(false);
+      // dígitos soltos "1" e "3" juntam "13", mas 2 dígitos não bastam pro jeito 3
+      expect(pecaCasaComBusca({ ...base, descricao: "Pneu 1 R3", medida: null }, "13")).toBe(false);
     });
   });
 
