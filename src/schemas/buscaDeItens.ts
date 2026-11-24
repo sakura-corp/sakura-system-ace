@@ -110,11 +110,30 @@ export function buscarNoCatalogo(
   }
 
   // `sort` é estável: dentro do mesmo grupo, fica a ordem de chegada.
-  return achados
-    .sort((a, b) => a.posicao - b.posicao)
-    .slice(0, limite)
-    .map((achado) => achado.resultado);
+  const ordenados = achados.sort((a, b) => a.posicao - b.posicao);
+
+  // Cada tipo guarda até VAGAS_GARANTIDAS lugares quando o outro enche a
+  // lista: numa borracharia, "pneu" acha dezenas de pneus, e sem isso o
+  // serviço ("Montagem de pneu") nunca aparecia (teste no PC da #1087).
+  const quantos = (tipo: ResultadoDaBusca["tipo"]) =>
+    ordenados.filter((achado) => achado.resultado.tipo === tipo).length;
+  const teto = {
+    peca: limite - Math.min(quantos("servico"), VAGAS_GARANTIDAS),
+    servico: limite - Math.min(quantos("peca"), VAGAS_GARANTIDAS),
+  };
+  const usados = { peca: 0, servico: 0 };
+  const escolhidos: ResultadoDaBusca[] = [];
+  for (const { resultado } of ordenados) {
+    if (escolhidos.length >= limite) break;
+    if (usados[resultado.tipo] >= teto[resultado.tipo]) continue;
+    usados[resultado.tipo]++;
+    escolhidos.push(resultado);
+  }
+  return escolhidos;
 }
+
+/** Quantos lugares da lista cada tipo guarda (ver `buscarNoCatalogo`). */
+const VAGAS_GARANTIDAS = 3;
 
 /**
  * O que entra na OS com o Enter na busca. O leitor de código de barras se
