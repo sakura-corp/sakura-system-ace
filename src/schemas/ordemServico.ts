@@ -318,12 +318,33 @@ export function nomearFuncionarios(
 // Lucro previsto, enquanto a OS ainda está sendo montada (#1087)
 // ---------------------------------------------------------------------------
 
+/**
+ * O lucro que a OS (ou o orçamento, ou a venda de balcão) vai dar, mostrado
+ * enquanto ela ainda está sendo montada. Ou é um número, ou diz por que não
+ * há número:
+ *   • "custo-nao-informado": algum item não tem custo (peça avulsa sem custo,
+ *     ou itens gravados cujo custo o banco não completou) — qualquer número
+ *     seria lucro inventado. A tela mostra `TEXTO_CUSTO_NAO_INFORMADO`.
+ *   • "aparece-ao-salvar": quem está na tela não lê o custo das peças do
+ *     cadastro (sem o módulo Estoque, #366); depois de gravar, o banco
+ *     calcula. A tela mostra `TEXTO_LUCRO_APARECE_AO_SALVAR`.
+ */
 export type LucroPrevisto =
   | { lucro: number; falta: null }
   | { lucro: null; falta: "custo-nao-informado" | "aparece-ao-salvar" };
 
 export const TEXTO_LUCRO_APARECE_AO_SALVAR = "aparece ao salvar";
 
+/**
+ * Lucro previsto = lucro dos itens já gravados + lucro dos itens em
+ * digitação, arredondado ao centavo. Não é uma conta nova: os gravados usam
+ * `lucroDaOrdemPeloBanco` (o custo que o banco calculou pra esta OS) e os
+ * novos usam `lucroDaOrdem` (os mapas de custo), as mesmas do resto do
+ * programa — assim o número de antes de salvar bate com o de depois.
+ *
+ * "custo-nao-informado" passa na frente de "aparece-ao-salvar": se falta um
+ * custo, nem depois de salvar vai haver número.
+ */
 export function lucroPrevistoDaOrdem(args: {
   itensExistentes: ItemOS[];
   custoDosExistentes: { custo: number; completo: boolean } | undefined;

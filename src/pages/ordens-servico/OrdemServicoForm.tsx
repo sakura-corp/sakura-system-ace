@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
@@ -17,7 +17,9 @@ import {
   validadePadrao,
   type MotivoRecusa,
 } from "@/schemas/orcamento";
+import { mapaCustoServicos } from "@/schemas/metricasCaixa";
 import {
+  lucroPrevistoDaOrdem,
   ordemServicoFormSchema,
   paraCamposComuns,
   paraItensValidos,
@@ -42,6 +44,8 @@ import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
 import { DetalhesFields } from "./campos/DetalhesFields";
 import { ItensFields } from "./campos/ItensFields";
+import { ApoioDoTotal, TotalGrande } from "./campos/TotalELucro";
+import { useCustosDoLucro } from "./useCustosDoLucro";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
@@ -250,6 +254,21 @@ export function OrdemServicoForm({
   );
 
   const itensExistentes = ordemExistente?.itens ?? [];
+
+  // O lucro previsto do rodapé (#1087): o custo dos itens já gravados vem do
+  // banco, o das peças só pra quem tem o módulo Estoque.
+  const { custoDosExistentes, custoPeca } = useCustosDoLucro(ordemExistente);
+  const custoServico = useMemo(() => mapaCustoServicos(servicos), [servicos]);
+
+  // O foco ao abrir (#1087): OS ou orçamento existente abre na busca, pra
+  // lançar o item. Numa nova, a conversa do balcão começa pelo Cliente (o
+  // primeiro campo); só se o cliente já veio preenchido o foco vai pra busca.
+  const buscaRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ordemExistente || watch("cliente_id")) buscaRef.current?.focus();
+    // Só ao abrir: depois o foco é de quem está digitando.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Passagens do veículo escolhido, só quando o pai não passou a lista pronta.
   const veiculoEscolhido = watch("veiculo_id");
@@ -463,6 +482,13 @@ export function OrdemServicoForm({
   }
 
   const totais = totaisDaOrdem(itensExistentes, watch("itens"));
+  const lucro = lucroPrevistoDaOrdem({
+    itensExistentes,
+    custoDosExistentes,
+    itensFormulario: watch("itens"),
+    custoPeca,
+    custoServico,
+  });
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
@@ -491,46 +517,33 @@ export function OrdemServicoForm({
       } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
     >
       {aba === "detalhes" ? (
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className="text-rotulo text-texto-2">
-            Peças {formatarMoeda(totais.pecas)}
-          </span>
-          <span className="text-rotulo text-texto-2">
-            Serviços {formatarMoeda(totais.servicos)}
-          </span>
-          <span className="text-corpo font-semibold text-texto">
-            Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
-          </span>
-        </div>
+        <ApoioDoTotal pecas={totais.pecas} servicos={totais.servicos} lucro={lucro} />
       ) : (
         <span />
       )}
 
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
-        >
+      <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2">
+        {aba === "detalhes" && (
+          <TotalGrande rotulo={`Total ${ordemExistente ? "geral" : "previsto"}`} valor={totais.total} />
+        )}
+        <div className="flex gap-3">
           {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
               alguma coisa (#781). */}
-          {aba === "detalhes" ? "Cancelar" : "Voltar"}
-        </button>
-        {aba === "detalhes" && !ehRecusado && (
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting
-              ? "Salvando..."
-              : ordemExistente
-                ? "Salvar alterações"
-                : modoOrcamento
-                  ? "Salvar orçamento"
-                  : "Abrir ordem de serviço"}
-          </button>
-        )}
+          <Botao variante="fantasma" tamanho="grande" onClick={onCancelar}>
+            {aba === "detalhes" ? "Cancelar" : "Voltar"}
+          </Botao>
+          {aba === "detalhes" && !ehRecusado && (
+            <Botao variante="principal" tamanho="grande" type="submit" ocupado={isSubmitting}>
+              {isSubmitting
+                ? "Salvando..."
+                : ordemExistente
+                  ? "Salvar alterações"
+                  : modoOrcamento
+                    ? "Salvar orçamento"
+                    : "Abrir ordem de serviço"}
+            </Botao>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -580,14 +593,10 @@ export function OrdemServicoForm({
             )}
             {modoOrcamento && acoesExtras}
             {ordemExistente.status === "em_andamento" && (
-              <button
-                type="button"
-                onClick={handleEncerrar}
-                disabled={encerrando}
-                className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-              >
+              // Secundário: o laranja da tela é o "Salvar" do rodapé (um por tela).
+              <Botao variante="secundario" onClick={handleEncerrar} ocupado={encerrando}>
                 {encerrando ? "Encerrando..." : "Encerrar OS"}
-              </button>
+              </Botao>
             )}
           </div>
         </div>
@@ -770,6 +779,7 @@ export function OrdemServicoForm({
             saldoPorPeca={saldoPorPeca}
             saldoCarregado={saldoCarregado}
             permitePecaAvulsa={modoOrcamento}
+            buscaRef={buscaRef}
           />
         </div>
       )}

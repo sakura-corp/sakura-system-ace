@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Botao } from "@/components/Botao";
 import { Combobox } from "@/components/Combobox";
 import { mensagemDeErro } from "@/lib/errors";
 import { ehPecaAvulsa } from "@/schemas/orcamento";
@@ -17,6 +18,7 @@ import type { FuncionarioPublico } from "@/types/funcionario";
 import type { ItemOS, PatchItemOS, TipoItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import { LinhaDeItem } from "./campos/TabelaDeItens";
 
 interface ItemExistenteRowProps {
   item: ItemOS;
@@ -37,11 +39,14 @@ function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const inputClasse =
-  "rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto";
+function numeroPtBr(valor: number): string {
+  return valor.toLocaleString("pt-BR");
+}
 
-// Uma linha da lista "Já lançados nesta OS". Em repouso é o mesmo texto de
-// sempre; clicando em "Editar" ela vira um formulário só dela, salvo na hora
+const inputClasse = "sakura-campo";
+
+// Uma linha dos itens já lançados, na mesma tabela dos novos (#1087). Em
+// repouso é uma linha de leitura (as mesmas colunas); clicando em "Editar" ela vira um formulário só dela, salvo na hora
 // (não espera o "Salvar alterações" da OS inteira, que só cuida dos campos de
 // cima e dos itens novos).
 //
@@ -127,45 +132,59 @@ export function ItemExistenteRow({
 
   if (!editando) {
     return (
-      <div className="flex items-center justify-between gap-3 text-corpo text-texto/80">
-        <span>
-          {item.tipo === "peca" ? "Peça" : "Serviço"} — {item.descricao} ({item.quantidade}x)
-          {item.tecnico?.nome ? ` · técnico: ${item.tecnico.nome}` : ""}
-          {ehPecaAvulsa(item) && item.custo_unitario != null
-            ? ` · custo ${formatarMoeda(item.custo_unitario)}`
-            : ""}
-        </span>
-        <span className="flex shrink-0 items-center gap-3">
-          <span>{formatarMoeda(valorLiquidoDoItem(item))}</span>
-          {podeEditar && (
-            <button
-              type="button"
-              onClick={abrirEdicao}
-              className="text-rotulo font-medium text-acao-clara hover:underline"
-            >
+      <LinhaDeItem
+        comTecnico
+        tipo={item.tipo}
+        descricaoParaLeitor={item.descricao}
+        descricao={item.descricao}
+        avisos={
+          ehPecaAvulsa(item) && item.custo_unitario != null ? (
+            <p className="text-rotulo text-texto-2">custo {formatarMoeda(item.custo_unitario)}</p>
+          ) : null
+        }
+        quantidade={<span className="w-full text-right tabular-nums">{numeroPtBr(item.quantidade)}</span>}
+        preco={<span className="w-full text-right tabular-nums">{formatarMoeda(item.preco_unitario)}</span>}
+        desconto={
+          <span className="w-full text-right tabular-nums text-texto-2">
+            {item.desconto > 0 ? formatarMoeda(item.desconto) : "—"}
+          </span>
+        }
+        tecnico={
+          <p className="min-h-11 py-3 text-corpo text-texto-2 xl:py-3">
+            <span className="xl:hidden">Técnico: </span>
+            {item.tecnico?.nome ?? "sem técnico"}
+          </p>
+        }
+        total={valorLiquidoDoItem(item)}
+        acao={
+          podeEditar ? (
+            <Botao variante="fantasma" tamanho="pequeno" onClick={abrirEdicao}>
               Editar
-            </button>
-          )}
-        </span>
-      </div>
+            </Botao>
+          ) : null
+        }
+      />
     );
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-acao-clara/40 bg-poco p-3">
+    <div role="row" className="p-2">
+    <div role="cell" className="space-y-2 rounded-xl border border-linha-forte bg-poco p-3">
       <div className="flex gap-2">
-        <select
-          value={tipo}
-          onChange={(e) => aoMudarTipo(e.target.value as TipoItemOS)}
-          className={`w-28 shrink-0 ${inputClasse}`}
-        >
-          <option value="peca">Peça</option>
-          <option value="servico">Serviço</option>
-        </select>
+        <div className="w-28 shrink-0">
+          <select
+            value={tipo}
+            aria-label="Tipo do item"
+            onChange={(e) => aoMudarTipo(e.target.value as TipoItemOS)}
+            className={inputClasse}
+          >
+            <option value="peca">Peça</option>
+            <option value="servico">Serviço</option>
+          </select>
+        </div>
 
         {tipo === "peca" ? (
           <Combobox
-            tamanho="filtro"
             className="flex-1"
             opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
             valor={pecaId}
@@ -175,7 +194,6 @@ export function ItemExistenteRow({
           />
         ) : (
           <Combobox
-            tamanho="filtro"
             className="flex-1"
             opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
             valor={servicoId}
@@ -191,7 +209,7 @@ export function ItemExistenteRow({
           type="text"
           placeholder="Descrição do serviço"
           {...register("descricao")}
-          className={`w-full ${inputClasse}`}
+          className={`${inputClasse}`}
         />
       )}
 
@@ -203,7 +221,7 @@ export function ItemExistenteRow({
             {...register("descricao")}
             className={`min-w-0 flex-1 ${inputClasse}`}
           />
-          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-texto/90">
+          <label className="sakura-rotulo w-44 shrink-0">
             Custo (opcional)
             <input type="number" min="0" step="0.01" {...register("custo_unitario")} className={inputClasse} />
           </label>
@@ -212,26 +230,25 @@ export function ItemExistenteRow({
 
       {/* A mesma grade do ItemOSRow: quatro colunas a partir de 1280 de
           janela, duas abaixo disso (#425). */}
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <label className="sakura-rotulo min-w-0">
           Quantidade
           <input type="number" min="0.01" step="0.01" {...register("quantidade")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
+        <label className="sakura-rotulo min-w-0">
           Preço unitário
           <input type="number" min="0" step="0.01" {...register("preco_unitario")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
+        <label className="sakura-rotulo min-w-0">
           Desconto
           <input type="number" min="0" step="0.01" {...register("desconto")} className={inputClasse} />
         </label>
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
+        <label className="sakura-rotulo min-w-0">
           Técnico
           <Combobox
-            tamanho="filtro"
             opcoes={funcionarios.map((funcionario) => ({
               valor: funcionario.id,
               rotulo: funcionario.nome,
@@ -265,23 +282,16 @@ export function ItemExistenteRow({
           <span className="font-semibold text-texto">{formatarMoeda(totalItem)}</span>
         </p>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setEditando(false)}
-            className="rounded-lg px-3 py-1.5 text-rotulo font-medium text-texto/90 hover:bg-passar"
-          >
+          <Botao variante="fantasma" onClick={() => setEditando(false)}>
             Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit(aoSubmeter)}
-            disabled={isSubmitting}
-            className="rounded-lg bg-acao-clara px-3 py-1.5 text-rotulo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-          >
+          </Botao>
+          {/* Secundário: o laranja da tela é o "Salvar" da barra de baixo. */}
+          <Botao variante="secundario" onClick={handleSubmit(aoSubmeter)} ocupado={isSubmitting}>
             {isSubmitting ? "Salvando..." : "Salvar item"}
-          </button>
+          </Botao>
         </div>
       </div>
+    </div>
     </div>
   );
 }

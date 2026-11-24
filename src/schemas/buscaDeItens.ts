@@ -1,4 +1,5 @@
 import { acharPorCodigoExato, pecaCasaComBusca, type PecaBuscavel } from "./estoque";
+import { itemFormVazio, paraDisplayNumero, type ItemFormValues } from "./ordemServico";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 
@@ -113,4 +114,104 @@ export function buscarNoCatalogo(
     .sort((a, b) => a.posicao - b.posicao)
     .slice(0, limite)
     .map((achado) => achado.resultado);
+}
+
+/**
+ * O que entra na OS com o Enter na busca. O leitor de código de barras se
+ * comporta como um teclado que digita o código e aperta Enter, então:
+ *   1. código de barras ou código interno EXATO de uma peça → ela;
+ *   2. senão, código interno exato de um serviço → ele;
+ *   3. senão, se a busca achou uma coisa só → ela;
+ *   4. senão, nada (`null`): a lista fica aberta pra pessoa escolher.
+ *
+ * A peça vem primeiro de propósito: o leitor só lê peça, e um serviço com o
+ * código no meio do nome não pode "roubar" o Enter. Código repetido (duas
+ * peças com o mesmo) não entra: nunca chutar entre duas (mesma regra da
+ * lista de Produtos e da venda de balcão). Inativo nunca entra.
+ */
+export function itemDoEnter(
+  pecas: PecaJanela[],
+  servicos: Servico[],
+  termo: string,
+): ResultadoDaBusca | null {
+  if (termo.trim() === "") return null;
+
+  const pecasAtivas = pecas.filter((peca) => peca.ativo);
+  const peca = acharPorCodigoExato(pecasAtivas, termo);
+  if (peca) return resultadoDaPeca(peca);
+
+  const servicosAtivos = servicos
+    .filter((servico) => servico.ativo)
+    .map((servico) => ({ ...servicoBuscavel(servico), servico }));
+  const servico = acharPorCodigoExato(servicosAtivos, termo);
+  if (servico) return resultadoDoServico(servico.servico);
+
+  const achados = buscarNoCatalogo(pecas, servicos, termo, 2);
+  return achados.length === 1 ? achados[0] : null;
+}
+
+// Quantidade digitada → número; ilegível conta zero (mesma leitura de
+// `paraNumero` em `ordemServico.ts` e `vendaBalcao.ts`).
+function quantidadeDigitada(valor: string): number {
+  const numero = Number(valor);
+  return Number.isNaN(numero) ? 0 : numero;
+}
+
+/** A linha já é desta peça (ou deste serviço) do cadastro? */
+function ehOMesmo(item: ItemFormValues, escolha: ResultadoDaBusca): boolean {
+  if (escolha.tipo === "peca") return item.tipo === "peca" && item.peca_id === escolha.id;
+  return item.tipo === "servico" && item.servico_id === escolha.id;
+}
+
+/**
+ * Põe o escolhido nos itens NOVOS da OS. Se ele já está lá (mesma peça ou
+ * mesmo serviço do cadastro), soma 1 na quantidade em vez de criar outra
+ * linha: passar o leitor duas vezes no mesmo pneu é o jeito natural de
+ * lançar dois (como `incluirPeca`, na venda de balcão). Senão, linha nova no
+ * fim, com quantidade 1, o preço do cadastro (em branco se ele não tem) e o
+ * técnico padrão.
+ */
+export function incluirNaOS(
+  itens: ItemFormValues[],
+  escolha: ResultadoDaBusca,
+  tecnicoPadrao: string,
+): ItemFormValues[] {
+  const indice = itens.findIndex((item) => ehOMesmo(item, escolha));
+  if (indice >= 0) {
+    return itens.map((item, i) =>
+      i === indice ? { ...item, quantidade: String(quantidadeDigitada(item.quantidade) + 1) } : item,
+    );
+  }
+  return [
+    ...itens,
+    {
+      ...itemFormVazio,
+      tipo: escolha.tipo,
+      peca_id: escolha.tipo === "peca" ? escolha.id : "",
+      servico_id: escolha.tipo === "servico" ? escolha.id : "",
+      descricao: escolha.descricao,
+      quantidade: "1",
+      preco_unitario: paraDisplayNumero(escolha.preco ?? 0),
+      tecnico_id: tecnicoPadrao,
+    },
+  ];
+}
+
+/**
+ * Item sem cadastro, com o texto que a pessoa digitou na busca: serviço
+ * avulso (sempre pode) ou peça avulsa (#655; só no orçamento, e quem decide
+ * é a tela que chama). Sai sem id do cadastro, então nunca se junta com
+ * outra linha: é sempre uma linha nova, que quem chama põe no fim da lista.
+ */
+export function itemAvulso(
+  tipo: "peca" | "servico",
+  descricao: string,
+  tecnicoPadrao: string,
+): ItemFormValues {
+  return { ...itemFormVazio, tipo, descricao: descricao.trim(), tecnico_id: tecnicoPadrao };
+}
+
+/** "Técnico pra todos": o mesmo técnico em todas as linhas novas. */
+export function aplicarTecnicoATodos(itens: ItemFormValues[], tecnicoId: string): ItemFormValues[] {
+  return itens.map((item) => ({ ...item, tecnico_id: tecnicoId }));
 }
