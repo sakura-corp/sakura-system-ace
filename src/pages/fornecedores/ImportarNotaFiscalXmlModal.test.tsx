@@ -48,6 +48,9 @@ function nota(itens: ReturnType<typeof itemDaNota>[]): NotaFiscalXmlExtraida {
     numero: "123",
     fornecedor_nome: "Distribuidora de exemplo",
     fornecedor_cnpj: null,
+    chave_acesso: null,
+    valor_total: null,
+    duplicatas: [],
     itens,
   } as unknown as NotaFiscalXmlExtraida;
 }

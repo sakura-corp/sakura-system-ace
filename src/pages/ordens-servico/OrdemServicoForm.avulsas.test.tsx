@@ -41,7 +41,12 @@ vi.mock("@/lib/ordensServico", async (original) => ({
   cadastrarPecaDoItem: (...a: unknown[]) => cadastrarPecaDoItem(...a),
 }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
+}));
+// O rodapé busca o custo dos itens (lucro previsto, #1087); aqui o banco responde "sem custo".
+vi.mock("@/lib/caixa", async (importar) => ({
+  ...(await importar<typeof import("@/lib/caixa")>()),
+  buscarCustoDasOrdens: async () => new Map(),
 }));
 
 beforeEach(() => {
