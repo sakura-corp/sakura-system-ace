@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  acertosDaCorrecao,
+  diferencaDaCorrecao,
+  manterOTotal,
   motivoParaNaoTrocar,
   pecasQueFicamNegativas,
   problemaDaTroca,
+  problemaDoAcerto,
   resumoDaTroca,
+  textoDoAcerto,
   totalConfere,
   totalDaLista,
   type ItemDaTroca,
@@ -63,12 +68,11 @@ describe("totalConfere", () => {
 });
 
 describe("problemaDaTroca", () => {
-  it("explica que mudar o valor vem numa próxima etapa", () => {
-    const depois = [{ ...pneuErrado, preco_unitario: 310 }, balanceamento];
-    const problema = problemaDaTroca(antes, depois)?.replace(/\s/g, " ");
-    expect(problema).toContain("R$ 650,00");
-    expect(problema).toContain("R$ 670,00");
-    expect(problema).toContain("próxima etapa");
+  it("aceita total diferente: a diferença é acertada no Caixa de hoje (#1182)", () => {
+    const subiu = [{ ...pneuErrado, preco_unitario: 310 }, balanceamento];
+    const desceu = [pneuErrado];
+    expect(problemaDaTroca(antes, subiu)).toBeNull();
+    expect(problemaDaTroca(antes, desceu)).toBeNull();
   });
 
   it("não deixa a OS sem item", () => {
@@ -159,6 +163,19 @@ describe("motivoParaNaoTrocar", () => {
     expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: true })).toMatch(/nota fiscal/);
     expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: false })).toBeNull();
   });
+
+  it("a nota emitida manda cancelar antes, avisando do prazo (#1182)", () => {
+    const motivo = motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: true });
+    expect(motivo).toMatch(/Cancele a nota/);
+    expect(motivo).toMatch(/prazo/);
+  });
+
+  it("trava só pelo caixa de HOJE fechado (#1182)", () => {
+    expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: false, caixaDeHojeFechado: true })).toMatch(
+      /desfaça o fechamento de hoje/,
+    );
+    expect(motivoParaNaoTrocar({ faturada: true, gerente: true, temNota: false, caixaDeHojeFechado: false })).toBeNull();
+  });
 });
 
 describe("peça sem cadastro (avulsa) que já estava na OS", () => {
@@ -182,5 +199,148 @@ describe("totalDaLista", () => {
   it("devolve null com número inválido", () => {
     expect(totalDaLista([{ ...pneuErrado, quantidade: Number.NaN }])).toBeNull();
     expect(totalDaLista(antes)).toBe(650);
+  });
+});
+
+describe("diferencaDaCorrecao (#1182)", () => {
+  it("é o total novo menos o faturado, no centavo", () => {
+    expect(diferencaDaCorrecao(antes, [{ ...pneuErrado, preco_unitario: 310 }, balanceamento])).toBe(20);
+    expect(diferencaDaCorrecao(antes, [pneuErrado])).toBe(-50);
+  });
+
+  it("a cauda do ponto flutuante vira zero, não um resto de centavo", () => {
+    const a = [{ ...balanceamento, preco_unitario: 0.3 }];
+    const d = [
+      { ...balanceamento, preco_unitario: 0.1 },
+      { ...balanceamento, id: undefined, preco_unitario: 0.2 },
+    ];
+    expect(diferencaDaCorrecao(a, d)).toBe(0);
+    expect(diferencaDaCorrecao([{ ...balanceamento, preco_unitario: 0.1 }], [{ ...balanceamento, preco_unitario: 0.3 }])).toBe(0.2);
+  });
+});
+
+describe("acertosDaCorrecao (#1182)", () => {
+  it("total igual: não tem acerto (o caminho de sempre)", () => {
+    expect(acertosDaCorrecao({ diferenca: 0, contaDoFaturamentoEmAberto: false })).toEqual({ opcoes: [], padrao: null });
+    expect(acertosDaCorrecao({ diferenca: 0, contaDoFaturamentoEmAberto: true })).toEqual({ opcoes: [], padrao: null });
+  });
+
+  it("conta do faturamento em aberto: a conta muda de valor, sem escolha (sobe ou desce)", () => {
+    expect(acertosDaCorrecao({ diferenca: 20, contaDoFaturamentoEmAberto: true })).toEqual({
+      opcoes: ["conta_aberta"],
+      padrao: "conta_aberta",
+    });
+    expect(acertosDaCorrecao({ diferenca: -50, contaDoFaturamentoEmAberto: true })).toEqual({
+      opcoes: ["conta_aberta"],
+      padrao: "conta_aberta",
+    });
+  });
+
+  it("paga e subiu: cliente paga agora (já marcado) ou fica a receber", () => {
+    expect(acertosDaCorrecao({ diferenca: 20, contaDoFaturamentoEmAberto: false })).toEqual({
+      opcoes: ["pago_agora", "a_receber"],
+      padrao: "pago_agora",
+    });
+  });
+
+  it("paga e desceu: devolver agora", () => {
+    expect(acertosDaCorrecao({ diferenca: -50, contaDoFaturamentoEmAberto: false })).toEqual({
+      opcoes: ["devolvido"],
+      padrao: "devolvido",
+    });
+  });
+});
+
+describe("manterOTotal (#1182)", () => {
+  it("põe a diferença como desconto no item que entrou: o total volta ao faturado", () => {
+    const alinhamento: ItemDaTroca = { ...balanceamento, id: undefined, servico_id: "s2", descricao: "Alinhamento", preco_unitario: 50 };
+    const depois = manterOTotal(antes, [...antes, alinhamento]);
+    expect(depois?.map((i) => i.desconto)).toEqual([0, 0, 50]);
+    expect(totalConfere(antes, depois ?? [])).toBe(true);
+  });
+
+  it("reparte entre os itens que mudaram, pelo valor de cada um, fechando no centavo", () => {
+    const pneuMaisCaro = { ...pneuErrado, preco_unitario: 310 }; // 620
+    const novo: ItemDaTroca = { ...balanceamento, id: undefined, descricao: "Válvula", preco_unitario: 100 };
+    // diferença 120: 120 × 620/720 = 103,33 e 120 × 100/720 = 16,67
+    const depois = manterOTotal(antes, [pneuMaisCaro, balanceamento, novo]);
+    expect(depois?.map((i) => i.desconto)).toEqual([103.33, 0, 16.67]);
+    expect(diferencaDaCorrecao(antes, depois ?? [])).toBe(0);
+  });
+
+  it("soma ao desconto que o item já tinha", () => {
+    const comDesconto = { ...pneuErrado, preco_unitario: 310, desconto: 5 }; // 615, diferença 15
+    expect(manterOTotal(antes, [comDesconto, balanceamento])?.map((i) => i.desconto)).toEqual([20, 0]);
+  });
+
+  it("só existe quando o total subiu", () => {
+    expect(manterOTotal(antes, [pneuErrado])).toBeNull();
+    expect(manterOTotal(antes, antes)).toBeNull();
+  });
+});
+
+describe("textoDoAcerto (#1182): o rodapé diz exatamente o que vai lançar", () => {
+  const hoje = "2026-11-24";
+  const limpo = (t: string) => t.replace(/\s/g, " ");
+
+  it("pago agora: Entrada no Caixa de hoje", () => {
+    expect(limpo(textoDoAcerto({ acerto: "pago_agora", diferenca: 20, hoje }))).toBe(
+      "Lança R$ 20,00 como Entrada no Caixa de hoje, 24/11.",
+    );
+  });
+
+  it("devolvido: Saída (Devolução ao cliente) no Caixa de hoje", () => {
+    expect(limpo(textoDoAcerto({ acerto: "devolvido", diferenca: -50, hoje }))).toBe(
+      "Lança R$ 50,00 como Saída (Devolução ao cliente) no Caixa de hoje, 24/11.",
+    );
+  });
+
+  it("fica a receber: conta nova só da diferença, a do faturamento não muda", () => {
+    expect(limpo(textoDoAcerto({ acerto: "a_receber", diferenca: 20, hoje, vencimento: "2026-12-10" }))).toBe(
+      "Cria uma conta a receber de R$ 20,00, com vencimento em 10/12/2026. Nada entra no Caixa hoje.",
+    );
+  });
+
+  it("conta em aberto: a conta muda de valor, nada no Caixa", () => {
+    expect(limpo(textoDoAcerto({ acerto: "conta_aberta", diferenca: -50, hoje, valorDaConta: 650 }))).toBe(
+      "A conta a receber da OS passa de R$ 650,00 para R$ 600,00. Nada entra no Caixa.",
+    );
+  });
+
+  it("total igual: nada no Caixa", () => {
+    expect(textoDoAcerto({ acerto: null, diferenca: 0, hoje })).toBe("O total não muda: nada entra no Caixa.");
+  });
+});
+
+describe("problemaDoAcerto (#1182)", () => {
+  const hoje = "2026-11-24";
+  const base = { diferenca: 20, contaDoFaturamentoEmAberto: false, hoje };
+
+  it("total igual não pede acerto", () => {
+    expect(problemaDoAcerto({ ...base, diferenca: 0, acerto: null })).toBeNull();
+  });
+
+  it("com diferença, pede um acerto que valha pro caso", () => {
+    expect(problemaDoAcerto({ ...base, acerto: null })).toMatch(/como acertar/);
+    expect(problemaDoAcerto({ ...base, acerto: "devolvido", formaPagamento: "pix" })).toMatch(/como acertar/);
+    expect(problemaDoAcerto({ ...base, contaDoFaturamentoEmAberto: true, acerto: "pago_agora", formaPagamento: "pix" })).toMatch(
+      /como acertar/,
+    );
+  });
+
+  it("pago agora e devolvido pedem a forma de pagamento", () => {
+    expect(problemaDoAcerto({ ...base, acerto: "pago_agora" })).toMatch(/forma de pagamento/);
+    expect(problemaDoAcerto({ ...base, diferenca: -5, acerto: "devolvido", formaPagamento: "" })).toMatch(/forma de pagamento/);
+    expect(problemaDoAcerto({ ...base, acerto: "pago_agora", formaPagamento: "pix" })).toBeNull();
+  });
+
+  it("fica a receber pede o vencimento, de hoje em diante", () => {
+    expect(problemaDoAcerto({ ...base, acerto: "a_receber" })).toMatch(/vencimento/);
+    expect(problemaDoAcerto({ ...base, acerto: "a_receber", vencimento: "2026-11-23" })).toMatch(/antes de hoje/);
+    expect(problemaDoAcerto({ ...base, acerto: "a_receber", vencimento: "2026-11-24" })).toBeNull();
+  });
+
+  it("conta em aberto não pede nada", () => {
+    expect(problemaDoAcerto({ ...base, contaDoFaturamentoEmAberto: true, acerto: "conta_aberta" })).toBeNull();
   });
 });

@@ -10,6 +10,7 @@ import {
   pecasQueFicamNegativas,
   problemaDaTroca,
   resumoDaTroca,
+  totalConfere,
   totalDaLista,
   type ItemDaTroca,
 } from "@/schemas/trocaFaturada";
@@ -153,7 +154,17 @@ export function TrocarItensFaturadaModal({
   const [enviando, setEnviando] = useState(false);
 
   const depois = linhas.map(paraItem);
-  const problema = problemaDaTroca(antes, depois);
+  // TEMPORÁRIO (#1182, em andamento): a regra já aceita total diferente, mas
+  // o 2º passo "Conferir e acertar" e a função nova do banco ainda não
+  // existem. Até lá a janela segura o total igual, pra não mandar ao banco
+  // uma troca que ele recusaria. Sai junto com o 2º passo, nesta tarefa.
+  const problema =
+    problemaDaTroca(antes, depois) ??
+    (totalConfere(antes, depois)
+      ? null
+      : `O total ficaria ${formatarMoeda(somarValoresLiquidos(depois))}, e a OS foi faturada por ` +
+        `${formatarMoeda(somarValoresLiquidos(antes))}. Por enquanto, numa OS faturada só dá pra ` +
+        `trocar peça ou serviço mantendo o mesmo total; mudar o valor vem numa próxima etapa.`);
   const totalFaturado = somarValoresLiquidos(antes);
   const totalNovo = totalDaLista(depois);
   const nomePorPeca = useMemo(() => new Map(pecas.map((p) => [p.id, p.descricao])), [pecas]);
