@@ -8,7 +8,9 @@ import type {
   PatchOrdemServico,
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
-import { ehPecaAvulsa } from "./orcamento";
+import { arredondarCentavo } from "./dinheiro";
+import { ehPecaAvulsa, lucroDaOrdemPeloBanco } from "./orcamento";
+import type { MapaCusto } from "./metricasCaixa";
 import { somarValoresLiquidos } from "./valorItem";
 
 // Mesma ideia dos outros schemas: formulário trabalha só com strings (mesmo
@@ -71,7 +73,10 @@ export function paraValoresFormulario(
     descricao_problema: ordemExistente?.descricao_problema ?? "",
     vendedor_id: ordemExistente?.vendedor_id ?? funcionarioAtualId,
     validade: ordemExistente?.validade ?? "",
-    itens: ordemExistente ? [] : [itemFormVazio],
+    // Começa sem item nenhum, nova ou não (#1087): a tabela de itens diz
+    // "Nenhum item ainda" e o item entra pela busca única. Na OS existente
+    // os itens já gravados vêm à parte (`ordem.itens`), nunca por aqui.
+    itens: [],
   };
 }
 
@@ -307,4 +312,33 @@ export function nomearFuncionarios(
     vendedor: nomear(ordem.vendedor_id),
     itens: ordem.itens?.map((item) => ({ ...item, tecnico: nomear(item.tecnico_id) })),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Lucro previsto, enquanto a OS ainda está sendo montada (#1087)
+// ---------------------------------------------------------------------------
+
+export type LucroPrevisto =
+  | { lucro: number; falta: null }
+  | { lucro: null; falta: "custo-nao-informado" | "aparece-ao-salvar" };
+
+export const TEXTO_LUCRO_APARECE_AO_SALVAR = "aparece ao salvar";
+
+export function lucroPrevistoDaOrdem(args: {
+  itensExistentes: ItemOS[];
+  custoDosExistentes: { custo: number; completo: boolean } | undefined;
+  itensFormulario: ItemFormValues[];
+  custoPeca: MapaCusto | null;
+  custoServico: MapaCusto;
+}): LucroPrevisto {
+  const { itensExistentes, custoDosExistentes } = args;
+  // Os itens já gravados: o custo vem pronto do banco (`custo_das_ordens`),
+  // pela mesma conta do resto do programa. Sem item gravado não há o que
+  // pedir ao banco, e essa parte é zero.
+  const lucroExistentes =
+    itensExistentes.length > 0
+      ? lucroDaOrdemPeloBanco(itensExistentes, custoDosExistentes)
+      : { lucro: 0, custoNaoInformado: false as const };
+  if (lucroExistentes.custoNaoInformado) return { lucro: null, falta: "custo-nao-informado" };
+  return { lucro: arredondarCentavo(lucroExistentes.lucro), falta: null };
 }

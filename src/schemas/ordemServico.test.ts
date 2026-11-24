@@ -8,10 +8,13 @@ import {
   ordemServicoFormSchema,
   paraItensValidos,
   paraPatchItem,
+  paraValoresFormulario,
   paraValoresItemExistente,
+  lucroPrevistoDaOrdem,
   totaisDaOrdem,
   type ItemFormValues,
 } from "./ordemServico";
+import { lucroDaOrdem } from "./orcamento";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
 function itemLancado(
@@ -288,5 +291,71 @@ describe("custo da peça avulsa", () => {
       message: "O custo não pode ser negativo.",
       path: ["custo_unitario"],
     });
+  });
+});
+
+describe("paraValoresFormulario", () => {
+  // A tabela nova de itens diz "Nenhum item ainda" (#1087): a OS e o
+  // orçamento novos começam sem linha em branco pra preencher.
+  it("OS ou orçamento novo começa sem item nenhum", () => {
+    expect(paraValoresFormulario(undefined, "func-1").itens).toEqual([]);
+  });
+
+  it("começa com o vendedor sendo quem está logado", () => {
+    expect(paraValoresFormulario(undefined, "func-1").vendedor_id).toBe("func-1");
+  });
+});
+
+describe("lucroPrevistoDaOrdem", () => {
+  const semCusto = new Map<string, number>();
+  const custoServico = new Map([["s1", 10]]);
+  const custoPeca = new Map([["p1", 100]]);
+
+  it("só com itens já gravados: usa o custo que veio do banco", () => {
+    // 2 × 150 + 1 × 60 = 360 vendidos; o banco diz que custou 200.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("peca", 2, 150), itemLancado("servico", 1, 60)],
+      custoDosExistentes: { custo: 200, completo: true },
+      itensFormulario: [],
+      custoPeca: null,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 160, falta: null });
+  });
+
+  // Item em digitação já escolhido do cadastro (peça p1 / serviço s1).
+  function novo(
+    tipo: "peca" | "servico",
+    quantidade: string,
+    preco: string,
+    desconto = "",
+  ): ItemFormValues {
+    return {
+      ...itemFormVazio,
+      tipo,
+      peca_id: tipo === "peca" ? "p1" : "",
+      servico_id: tipo === "servico" ? "s1" : "",
+      descricao: tipo === "peca" ? "Pneu" : "Montagem",
+      quantidade,
+      preco_unitario: preco,
+      desconto,
+    };
+  }
+
+  it("só com itens em digitação: a mesma conta do lucro da ordem", () => {
+    // Peça: 2 × 150 − 20 = 280, custo 2 × 100 = 200. Serviço: 60, custo 10.
+    // Vendido 340, custou 210: lucro 130.
+    const itensFormulario = [novo("peca", "2", "150", "20"), novo("servico", "1", "60")];
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario,
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 130, falta: null });
+    expect(lucro.lucro).toBe(
+      lucroDaOrdem(paraItensValidos(itensFormulario), custoPeca, custoServico).lucro,
+    );
   });
 });
