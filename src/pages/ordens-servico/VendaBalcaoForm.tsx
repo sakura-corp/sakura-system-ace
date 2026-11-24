@@ -1,16 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
+import { Dica } from "@/components/Dica";
 import type { DadosVendaBalcao, PagamentoDaVenda } from "@/lib/ordensServico";
 import { avisoPecaSemCusto, avisoSaldoInsuficiente } from "@/schemas/avisosOrdemServico";
+import type { ResultadoDaBusca } from "@/schemas/buscaDeItens";
 import {
-  buscarPecasDaVenda,
   comoItensDaOrdem,
   incluirPeca,
+  lucroPrevistoDaVenda,
   paraItensDaVenda,
-  pecaDoEnter,
   totalDaVenda,
   totalDoItem,
   vendaBalcaoFormSchema,
@@ -26,7 +28,16 @@ import type { PecaJanela } from "@/types/peca";
 import { Botao } from "@/components/Botao";
 import { NovoClienteVendaModal } from "./CadastroRapidoModais";
 import { FaturamentoCard } from "./FaturamentoCard";
-import { Campo, inputClasse } from "./campos/FormCompartilhado";
+import { BuscaDeItens } from "./campos/BuscaDeItens";
+import { Campo } from "./campos/FormCompartilhado";
+import {
+  AvisoDaLinha,
+  CLASSE_CAMPO_DA_LINHA,
+  LinhaDeItem,
+  TabelaDeItens,
+} from "./campos/TabelaDeItens";
+import { ApoioDoTotal, TotalGrande } from "./campos/TotalELucro";
+import { useCustosDoLucro } from "./useCustosDoLucro";
 
 /**
  * Venda de balcão (item FN-09 do guia, migration 0064): vender uma peça pra
@@ -67,10 +78,6 @@ interface VendaBalcaoFormProps {
   onCancelar: () => void;
 }
 
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 const ROTULO_CONSUMIDOR = "Consumidor (não se identificou)";
 
 export function VendaBalcaoForm({
@@ -87,8 +94,6 @@ export function VendaBalcaoForm({
   onCancelar,
 }: VendaBalcaoFormProps) {
   const pecasAtivas = useMemo(() => pecas.filter((peca) => peca.ativo), [pecas]);
-  const [busca, setBusca] = useState("");
-  const [avisoBusca, setAvisoBusca] = useState<string | null>(null);
   const [itensDoPagamento, setItensDoPagamento] = useState<NovoItemOS[] | null>(null);
   const [cadastrandoCliente, setCadastrandoCliente] = useState(false);
   const buscaRef = useRef<HTMLInputElement>(null);
@@ -111,7 +116,9 @@ export function VendaBalcaoForm({
   const itens = watch("itens");
   const total = totalDaVenda(itens);
   const noPagamento = itensDoPagamento !== null;
-  const sugestoes = buscarPecasDaVenda(pecasAtivas, busca);
+  // O lucro previsto do rodapé (#1087): o mesmo hook da OS, sem OS aberta.
+  const { custoPeca, calculando } = useCustosDoLucro();
+  const lucro = lucroPrevistoDaVenda(itens, custoPeca);
   const clienteEscolhido = clientes.find((c) => c.id === clienteId);
   const nomeDoCliente = ehConsumidor(clienteId) ? "Consumidor" : (clienteEscolhido?.nome ?? "");
   const erroDosItens = errors.itens?.message ?? errors.itens?.root?.message;
@@ -120,39 +127,13 @@ export function VendaBalcaoForm({
     buscaRef.current?.focus();
   }, []);
 
-  function adicionar(peca: PecaJanela) {
+  // A busca única entrega o resultado já escolhido (clique, Enter ou o
+  // leitor de código de barras: o Enter dela PARA de subir, pelo motivo
+  // explicado em `BuscaDeItens`). Aqui só vira linha da venda: repetida soma 1.
+  function adicionar(escolha: ResultadoDaBusca) {
+    const peca = pecasAtivas.find((p) => p.id === escolha.id);
+    if (!peca) return;
     replace(incluirPeca(watch("itens"), peca));
-    setBusca("");
-    setAvisoBusca(null);
-    buscaRef.current?.focus();
-  }
-
-  // O leitor de código de barras se comporta como um teclado que digita o
-  // código e aperta Enter. Aqui o Enter põe a peça na venda — e por isso ele
-  // PARA de subir: senão o atalho global do app (Enter pula pro próximo
-  // campo, `useEnterParaProximoCampo`) tiraria o foco da busca a cada peça, e
-  // passar a segunda peça no leitor cairia no campo errado.
-  function aoTeclarNaBusca(evento: React.KeyboardEvent<HTMLInputElement>) {
-    if (evento.key === "Escape") {
-      setBusca("");
-      setAvisoBusca(null);
-      return;
-    }
-    if (evento.key !== "Enter") return;
-    evento.preventDefault();
-    evento.stopPropagation();
-    if (busca.trim() === "") return;
-
-    const peca = pecaDoEnter(pecasAtivas, busca);
-    if (peca) {
-      adicionar(peca);
-      return;
-    }
-    setAvisoBusca(
-      sugestoes.length === 0
-        ? `Nenhuma peça com "${busca.trim()}". Confira o código ou procure pelo nome.`
-        : "Mais de uma peça parecida — escolha na lista.",
-    );
   }
 
   function irParaPagamento(valores: VendaBalcaoFormValues) {
@@ -234,149 +215,95 @@ export function VendaBalcaoForm({
             </Campo>
           </section>
 
-          <section className="space-y-2">
-            <label className="flex flex-col gap-1 text-corpo">
-              <span className="text-texto/80">
-                Passe o leitor ou procure a peça
-              </span>
-              <input
-                ref={buscaRef}
-                type="text"
-                value={busca}
-                onChange={(e) => {
-                  setBusca(e.target.value);
-                  setAvisoBusca(null);
-                }}
-                onKeyDown={aoTeclarNaBusca}
-                placeholder="Código de barras, referência, nome ou medida"
-                className={`${inputClasse} w-full`}
-                autoComplete="off"
-              />
-            </label>
-            {avisoBusca && <p className="text-rotulo text-atencao">{avisoBusca}</p>}
+          <section className="space-y-4">
+            <BuscaDeItens
+              pecas={pecasAtivas}
+              saldoPorPeca={saldoPorPeca}
+              saldoCarregado={saldoCarregado}
+              desabilitado={noPagamento}
+              onEscolher={adicionar}
+              inputRef={buscaRef}
+            />
 
-            {sugestoes.length > 0 && (
-              <ul className="divide-y divide-linha overflow-hidden rounded-xl border border-linha">
-                {sugestoes.map((peca) => {
-                  const saldo = saldoPorPeca.get(peca.id) ?? 0;
-                  return (
-                    <li key={peca.id}>
-                      <button
-                        type="button"
-                        onClick={() => adicionar(peca)}
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-corpo hover:bg-cartao/40"
-                      >
-                        <span className="text-texto">
-                          {peca.descricao}
-                          {peca.codigo_interno && (
-                            <span className="text-texto-2"> · {peca.codigo_interno}</span>
-                          )}
-                        </span>
-                        <span className="whitespace-nowrap text-rotulo text-texto-2">
-                          {saldoCarregado ? `saldo ${saldo.toLocaleString("pt-BR")} · ` : ""}
-                          {peca.preco_venda != null ? formatarMoeda(peca.preco_venda) : "sem preço"}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          <section className="space-y-2">
-            {fields.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-linha px-4 py-6 text-center text-corpo text-texto-2">
-                Nenhuma peça ainda.
-              </p>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-linha">
-                <table className="w-full text-left text-corpo">
-                  <thead className="bg-cartao text-texto">
-                    <tr>
-                      <th className="px-3 py-2 font-medium">Peça</th>
-                      <th className="w-24 px-3 py-2 font-medium">Qtd.</th>
-                      <th className="w-32 px-3 py-2 font-medium">Preço un.</th>
-                      <th className="w-28 px-3 py-2 font-medium">Desconto</th>
-                      <th className="w-32 px-3 py-2 text-right font-medium">Total</th>
-                      <th className="w-12 px-3 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fields.map((campo, indice) => {
-                      const item = itens[indice];
-                      const peca = pecasAtivas.find((p) => p.id === item?.peca_id);
-                      const avisos = [
-                        saldoCarregado && item
-                          ? avisoSaldoInsuficiente(item.quantidade, saldoPorPeca.get(item.peca_id))
-                          : null,
-                        avisoPecaSemCusto(peca),
-                      ].filter((aviso): aviso is string => aviso !== null);
-                      const erroItem =
-                        errors.itens?.[indice]?.quantidade?.message ??
-                        errors.itens?.[indice]?.desconto?.message;
-                      return (
-                        <tr key={campo.id} className="border-t border-linha align-top">
-                          <td className="px-3 py-2">
-                            <p className="text-texto">{item?.descricao}</p>
-                            {avisos.map((aviso) => (
-                              <p key={aviso} className="text-rotulo text-atencao">
-                                {aviso}
-                              </p>
-                            ))}
-                            {erroItem && <p className="text-rotulo text-perigo">{erroItem}</p>}
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              aria-label={`Quantidade de ${item?.descricao ?? "peça"}`}
-                              {...register(`itens.${indice}.quantidade`)}
-                              className={`${inputClasse} w-full`}
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              aria-label={`Preço de ${item?.descricao ?? "peça"}`}
-                              {...register(`itens.${indice}.preco_unitario`)}
-                              className={`${inputClasse} w-full`}
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              aria-label={`Desconto de ${item?.descricao ?? "peça"}`}
-                              {...register(`itens.${indice}.desconto`)}
-                              className={`${inputClasse} w-full`}
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-right text-texto">
-                            {item ? formatarMoeda(totalDoItem(item)) : "—"}
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => remove(indice)}
-                              aria-label={`Tirar ${item?.descricao ?? "peça"} da venda`}
-                              title="Tirar da venda"
-                              className="h-8 w-8 rounded-lg text-corpo text-perigo hover:bg-perigo/10"
-                            >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <TabelaDeItens
+              comTecnico={false}
+              vazio={fields.length === 0}
+              textoVazio="Nenhuma peça ainda: passe o leitor ou procure a peça acima."
+            >
+              {fields.map((campo, indice) => {
+                const item = itens[indice];
+                const peca = pecasAtivas.find((p) => p.id === item?.peca_id);
+                const nome = item?.descricao ?? "peça";
+                const avisos = [
+                  saldoCarregado && item
+                    ? avisoSaldoInsuficiente(item.quantidade, saldoPorPeca.get(item.peca_id))
+                    : null,
+                  avisoPecaSemCusto(peca),
+                ].filter((aviso): aviso is string => aviso !== null);
+                const erroItem =
+                  errors.itens?.[indice]?.quantidade?.message ??
+                  errors.itens?.[indice]?.desconto?.message;
+                return (
+                  <LinhaDeItem
+                    key={campo.id}
+                    comTecnico={false}
+                    tipo="peca"
+                    descricaoParaLeitor={nome}
+                    descricao={item?.descricao}
+                    avisos={
+                      <>
+                        {avisos.map((aviso) => (
+                          <AvisoDaLinha key={aviso}>{aviso}</AvisoDaLinha>
+                        ))}
+                        {erroItem && <p className="text-rotulo text-perigo">{erroItem}</p>}
+                      </>
+                    }
+                    quantidade={
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        aria-label={`Quantidade de ${nome}`}
+                        {...register(`itens.${indice}.quantidade`)}
+                        className={CLASSE_CAMPO_DA_LINHA}
+                      />
+                    }
+                    preco={
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        aria-label={`Preço de ${nome}`}
+                        {...register(`itens.${indice}.preco_unitario`)}
+                        className={CLASSE_CAMPO_DA_LINHA}
+                      />
+                    }
+                    desconto={
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        aria-label={`Desconto de ${nome}`}
+                        {...register(`itens.${indice}.desconto`)}
+                        className={CLASSE_CAMPO_DA_LINHA}
+                      />
+                    }
+                    total={item ? totalDoItem(item) : null}
+                    acao={
+                      <Dica texto="Tirar da venda">
+                        <Botao
+                          soIcone
+                          variante="fantasma"
+                          icone={<Trash2 />}
+                          aria-label={`Tirar ${nome} da venda`}
+                          onClick={() => remove(indice)}
+                        />
+                      </Dica>
+                    }
+                  />
+                );
+              })}
+            </TabelaDeItens>
             {erroDosItens && <p className="text-rotulo text-perigo">{erroDosItens}</p>}
           </section>
         </fieldset>
@@ -385,21 +312,22 @@ export function VendaBalcaoForm({
             venda cheia, o total não pode sair de vista). `sticky`, nunca
             `fixed` — ver o comentário em OrdemServicoForm. */}
         <div className="sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3">
-          <span className="text-subtitulo font-semibold text-texto">
-            Total {formatarMoeda(total)}
-          </span>
+          <ApoioDoTotal lucro={lucro} calculando={calculando} />
           {/* Com o pagamento aberto (na janela, por cima), estes botões ficam
               atrás dela, sem clique (a janela trava o fundo). Continuam na
               tela de propósito: ao fechar a janela, o foco volta pro "Ir para
               o pagamento" que a abriu. "Mudar as peças" é o botão de desistir
               da própria janela. */}
-          <div className="flex gap-3">
-            <Botao variante="fantasma" onClick={onCancelar}>
-              Cancelar
-            </Botao>
-            <Botao variante="principal" type="submit">
-              Ir para o pagamento
-            </Botao>
+          <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2">
+            <TotalGrande rotulo="Total" valor={total} />
+            <div className="flex gap-3">
+              <Botao variante="fantasma" tamanho="grande" onClick={onCancelar}>
+                Cancelar
+              </Botao>
+              <Botao variante="principal" tamanho="grande" type="submit">
+                Ir para o pagamento
+              </Botao>
+            </div>
           </div>
         </div>
       </form>

@@ -30,7 +30,12 @@ import type { Funcionario } from "@/types/funcionario";
 import type { OrdemServico } from "@/types/os";
 
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
+}));
+// O rodapé busca o custo dos itens (lucro previsto, #1087); aqui o banco responde "sem custo".
+vi.mock("@/lib/caixa", async (importar) => ({
+  ...(await importar<typeof import("@/lib/caixa")>()),
+  buscarCustoDasOrdens: async () => new Map(),
 }));
 vi.mock("@/lib/configuracoes", () => ({
   buscarConfiguracaoPix: async () => null,

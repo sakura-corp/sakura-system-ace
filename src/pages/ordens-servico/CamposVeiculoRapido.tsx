@@ -2,14 +2,15 @@ import type { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-
 import type { FieldValues, Path } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import { MARCAS_VEICULO } from "@/lib/marcasVeiculo";
+import { TIPO_VEICULO_LABEL, type TipoVeiculo } from "@/types/cliente";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 
 const OPCOES_MARCA = MARCAS_VEICULO.map((marca) => ({ valor: marca, rotulo: marca }));
 
 /**
- * Placa, marca e modelo — o mínimo pra identificar o carro que acabou de
+ * Placa, marca, modelo, tipo e cor — o mínimo pra identificar o carro que acabou de
  * chegar. Os dois modais de cadastro rápido (cliente novo e carro novo de
- * cliente que já existe) mostram exatamente esses três campos, então eles
+ * cliente que já existe) mostram exatamente esses campos, então eles
  * vivem aqui em vez de aparecerem escritos duas vezes.
  *
  * `prefixo` é o caminho do veículo dentro do formulário que estiver usando:
@@ -62,6 +63,26 @@ export function CamposVeiculoRapido<T extends FieldValues>({
 
         <Campo label="Modelo">
           <input type="text" {...register(caminho("modelo"))} className={inputClasse} />
+        </Campo>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Campo label="Tipo">
+          {/* A lista vem de TIPO_VEICULO_LABEL: quando a trilha C (#1096)
+              trocar os tipos, é só trocar lá; aqui nada muda. Vazio é
+              permitido (aviso, nunca tranca). */}
+          <select {...register(caminho("tipo"))} className={inputClasse}>
+            <option value="">Escolha o tipo</option>
+            {(Object.keys(TIPO_VEICULO_LABEL) as TipoVeiculo[]).map((chave) => (
+              <option key={chave} value={chave}>
+                {TIPO_VEICULO_LABEL[chave]}
+              </option>
+            ))}
+          </select>
+        </Campo>
+
+        <Campo label="Cor">
+          <input type="text" {...register(caminho("cor"))} className={inputClasse} />
         </Campo>
       </div>
     </>
