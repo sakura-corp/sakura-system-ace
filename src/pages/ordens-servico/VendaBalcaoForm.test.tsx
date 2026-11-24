@@ -192,7 +192,6 @@ describe("VendaBalcaoForm", () => {
   });
 
   it("no Consumidor, registra com o que a pessoa viu e não oferece 'a receber depois'", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const { user, busca, onRegistrar } = montar();
     await user.type(busca, "7891234567890{Enter}7891234567890{Enter}BAT60{Enter}");
     await user.click(screen.getByRole("button", { name: "Ir para o pagamento" }));
@@ -201,6 +200,8 @@ describe("VendaBalcaoForm", () => {
     expect(screen.getByText(/Venda no Consumidor é recebida na hora/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Confirmar venda" }));
+    // A pergunta de antes de fechar é a janela do programa, não mais o confirm() (#1088).
+    await user.click(await screen.findByRole("button", { name: "Fechar a venda" }));
 
     expect(onRegistrar).toHaveBeenCalledTimes(1);
     const [venda, itens, pagamento] = onRegistrar.mock.calls[0];

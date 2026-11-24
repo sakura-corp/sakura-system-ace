@@ -22,6 +22,8 @@ import type { Peca } from "@/types/peca";
 const cadastrarPecaRapida = vi.fn();
 const cadastrarPecaDoItem = vi.fn();
 const buscarDadosFiscaisDasPecas = vi.fn();
+// Se o cliente já foi avisado (o passo "garantia e avisar", #1088): aqui, nunca.
+vi.mock("@/lib/avisoDaOrdem", () => ({ quandoAvisouCarroPronto: async () => null }));
 vi.mock("@/lib/pecas", () => ({
   buscarDadosFiscaisDasPecas: (...a: unknown[]) => buscarDadosFiscaisDasPecas(...a),
   listarPecasJanela: async () => [],

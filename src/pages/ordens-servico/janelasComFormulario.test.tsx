@@ -29,6 +29,8 @@ import type { Cliente } from "@/types/cliente";
 import type { Funcionario } from "@/types/funcionario";
 import type { OrdemServico } from "@/types/os";
 
+// Se o cliente já foi avisado (o passo "garantia e avisar", #1088): aqui, nunca.
+vi.mock("@/lib/avisoDaOrdem", () => ({ quandoAvisouCarroPronto: async () => null }));
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
 }));

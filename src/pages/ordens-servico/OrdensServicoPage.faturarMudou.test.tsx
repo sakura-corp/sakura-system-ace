@@ -95,13 +95,14 @@ async function abrirFaturamentoEConfirmar() {
     ),
   );
   await usuario.click(screen.getByRole("button", { name: "Confirmar faturamento" }));
+  // A pergunta de antes de faturar é a janela do programa, não mais o confirm() (#1088).
+  await usuario.click(await screen.findByRole("button", { name: "Faturar" }));
 }
 
 beforeEach(() => {
   localStorage.clear();
   listarOrdens.mockReset();
   faturarOrdem.mockReset();
-  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 describe("OrdensServicoPage — a OS mudou em outro computador na hora de faturar", () => {

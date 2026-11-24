@@ -29,6 +29,11 @@ const BOLINHA = {
   depois: "bg-cartao text-texto-2 ring-1 ring-linha-forte",
 } as const;
 
+// O atual em azul ("em andamento", regra 4 do visual novo): pra tela em que o
+// laranja já é o botão do próximo passo (o fechar a OS, #1088), e a trilha não
+// pode virar um segundo laranja.
+const BOLINHA_ATUAL_EM_ANDAMENTO = "bg-info/15 text-info ring-2 ring-info/60";
+
 const NOME = {
   feito: "text-texto",
   atual: "font-semibold text-texto",
@@ -40,6 +45,7 @@ export function Passos({
   passos,
   atual,
   aoVoltar,
+  tomDoAtual = "acao",
 }: {
   /** O que a trilha é, pro leitor de tela: "Fechar o caixa". */
   rotulo: string;
@@ -48,6 +54,8 @@ export function Passos({
   atual: number;
   /** Com isto, os passos feitos viram botão pra voltar neles. */
   aoVoltar?: (indice: number) => void;
+  /** "acao" (o padrão): o atual no laranja. "andamento": no azul, quando o laranja da tela é outro botão. */
+  tomDoAtual?: "acao" | "andamento";
 }) {
   return (
     <ol aria-label={rotulo} className="flex w-full min-w-0 items-start">
@@ -57,7 +65,11 @@ export function Passos({
 
         const conteudo = (
           <>
-            <span className={`${BOLINHA_BASE} ${BOLINHA[estado]}`}>
+            <span
+              className={`${BOLINHA_BASE} ${
+                estado === "atual" && tomDoAtual === "andamento" ? BOLINHA_ATUAL_EM_ANDAMENTO : BOLINHA[estado]
+              }`}
+            >
               {estado === "feito" ? (
                 <Check data-passo-feito aria-hidden="true" strokeWidth={3} className="size-4" />
               ) : (
