@@ -1915,3 +1915,11 @@
     a #1160. No mesmo notebook, o `npm ci` parou no Electron com `ERR_DLOPEN_FAILED` (o binário
     nativo do `extract-zip` não carregava). Faltava o Visual C++ Redistributable, e o Node foi trocado
     do 26 pro 22 ao mesmo tempo, então **não se sabe se o 26 sozinho quebra**: instalar os dois.
+
+104. **A busca só achava o que estava escrito igualzinho (24/11/2026, #1180, #1186).** Numa loja,
+    digitar a medida "1757513" na OS deu "Nenhum resultado encontrado", e o pneu "175/75 R13"
+    existia. A busca tirava só acento e maiúscula, então a barra, o espaço e o "R" impediam o
+    casamento; a da OS ainda olhava só o nome, sem a medida. **Regra**: busca compara também a
+    versão "só letras e números" dos dois lados e, com termo só de números (5 ou mais dígitos), a
+    versão "só números", numa função só (`pecaCasaComBusca`, `src/schemas/estoque.ts`) usada por
+    todas as telas. A busca do topo roda no banco e precisa da mesma regra (#1186).
