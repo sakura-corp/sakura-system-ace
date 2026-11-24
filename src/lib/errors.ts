@@ -18,7 +18,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
   // Esta vem do gatilho (um CHECK não vê o status de antes), com a mesma frase de um CHECK.
   ck_ordens_servico_transicao_orcamento:
-    "Orçamento só pode ser aprovado ou recusado, e recusado não muda mais. Atualize a tela e confira.",
+    "Orçamento só pode ser aprovado ou recusado; recusado só volta pelo botão \"Reabrir orçamento\". Atualize a tela e confira.",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",
@@ -69,6 +69,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
+  ck_ordens_servico_trocas_tipo: "Esse tipo de registro não existe no histórico da OS.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
   ck_comissoes_fechamentos_valores:
     "O valor pago não pode ser negativo, e o fim do período não pode vir antes do início.",
@@ -169,6 +170,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "configuracoes_contabilidade",
   // 0088 (grupo do DRE, #386): coluna de categorias_caixa.
   "grupo",
+  // 0093 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
+  "tipo",
 ] as const;
 
 /**
