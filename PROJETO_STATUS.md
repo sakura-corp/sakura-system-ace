@@ -166,8 +166,8 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
-- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. A v0.9.60 tem o PR da versão (#1153) mesclado e o Release verde (canal de teste); o "Liberar versão" pras lojas só acontece depois do teste real de segunda, 23/11.
-- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\<seu usuário>\Empresa\`. O programa instalado do notebook já foi ligado ao banco certo (21/11).
-- **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
-- **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).
+### 24/11/2026: os 3 socorros da tela da OS planejados, e a #1179 na `main`
+- **Na `main`**: a busca única da OS (#1179, fecha #1087). Regra nova do sistema, "corrigir com registro" (`docs/decisoes.md`): tudo que foi fechado tem como corrigir ou reabrir, com motivo e histórico; a diferença de dinheiro entra no Caixa de hoje. Lição 104.
+- **Andando** (coordenação do Lázaro, uma sessão por tarefa): busca pela medida do pneu (#1180, PR #1183, sem banco); reabrir orçamento recusado (#1181); corrigir valor de OS ou venda faturada (#1182, empilhada na #1181). A migration de cada uma é o próximo número livre na hora do PR.
+- **Com a Sofia**: aplicar no `ssace-teste` a fila 0089 a 0092 e depois as da #1181 e #1182, conferindo os números (#1185); aprovar os PRs. Seguem abertas a #1161 e a #1079.
+- **Depois**: comissão da diferença "a receber" (#1184); busca do topo pela medida (#1186); a trava do `npm run dev` (#1160).
