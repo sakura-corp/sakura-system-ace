@@ -378,3 +378,17 @@ describe("reabrirOrcamento", () => {
     expect(resultado.erroDaAprovacao).toMatch(/não foi aprovado e continua orçamento: Nenhum depósito ativo/);
   });
 });
+
+describe("reabrirOrcamento — a conexão caiu na aprovação", () => {
+  it("não afirma que não aprovou: pede pra conferir antes de aprovar de novo", async () => {
+    sb.rpc
+      .mockResolvedValueOnce({ data: "linha-1", error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: "TypeError: Failed to fetch", code: "" } });
+    const resultado = await reabrirOrcamento({ id: "ordem-1" }, "Cliente voltou", "2026-12-01", "op-2", {
+      aprovadoPor: "o cliente",
+    });
+    expect(resultado.aprovada).toBeNull();
+    expect(resultado.erroDaAprovacao).toMatch(/conexão caiu durante a aprovação/);
+    expect(resultado.erroDaAprovacao).not.toMatch(/não foi aprovado/);
+  });
+});

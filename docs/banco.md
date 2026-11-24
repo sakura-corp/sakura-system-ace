@@ -675,7 +675,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `ordens_servico_trocas` vira o **histórico único da OS**: coluna nova `tipo` (`troca` pro que já
   existia, `reabertura`, e já `correcao_valor` pra #1182), check `ck_ordens_servico_trocas_tipo`. A
   policy de inserção continua aceitando o admin da loja e passa a aceitar a linha `reabertura` de quem
-  tem o módulo OS na loja, em nome de si mesmo e só numa OS que já voltou a orçamento. Função
+  tem o módulo OS na loja, em nome de si mesmo, só numa OS que já voltou a orçamento e só de dentro da função (a mesma marca do gatilho: à mão pelo PostgREST não entra). Função
   `reabrir_orcamento(ordem, motivo, validade, operador)`, `security invoker`: trava a OS, só recusado,
   só quem tem o módulo OS na loja (quem pode recusar), motivo obrigatório; volta pra `orcamento` com o
   **mesmo** `numero_orcamento`, limpa `motivo_recusa`/`recusado_em`, grava a validade e a linha do

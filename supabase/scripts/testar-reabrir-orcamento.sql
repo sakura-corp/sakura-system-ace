@@ -14,7 +14,8 @@
 --     módulo OS; sem login não chama;
 --   • a trava de sempre continua: um update DIRETO de recusado pra orçamento
 --     (e de recusado pra OS) é recusado pelo banco, mesmo pra quem pode
---     reabrir; a linha de reabertura não se grava à mão num recusado; o
+--     reabrir; a linha de reabertura não se grava à mão (nem num recusado,
+--     nem num orçamento aberto: só a função grava); o
 --     histórico antigo ficou com o tipo 'troca'.
 --
 -- Como rodar: `npm run test:sql -- testar-reabrir-orcamento` (no CI, sozinho).
@@ -216,6 +217,14 @@ begin
     orc2, loja_a, 'reabertura', balcao, 'à mão'));
   if t.codigo is null then
     raise exception 'FALHOU (B9): a balconista gravou reabertura à mão num recusado';
+  end if;
+  -- B9b. Nem num orçamento ABERTO (nunca recusado): sem a marca da função,
+  -- uma "reabertura" falsa (com o nome de outra pessoa) não entra.
+  t := pg_temp.t1181_update(format(
+    'insert into ordens_servico_trocas (ordem_servico_id, loja_id, tipo, operador_id, operador_nome, motivo, total) values (%L, %L, %L, %L, %L, %L, 0)',
+    orc_ab, loja_a, 'reabertura', balcao, 'Gerente A (teste #1181)', 'reabertura falsa'));
+  if t.codigo is null then
+    raise exception 'FALHOU (B9b): a balconista gravou reabertura falsa à mão num orçamento aberto';
   end if;
   -- E nem uma "troca" (só o gerente grava troca).
   t := pg_temp.t1181_update(format(

@@ -357,7 +357,8 @@ export function OrcamentosPage() {
     validade: string,
     aprovarAgora: { aprovadoPor: string } | null,
   ) {
-    if (!operador) return;
+    // Sem operador a janela ficaria "enviando" pra sempre: vira erro nela.
+    if (!operador) throw new Error("Sua sessão não foi encontrada. Saia e entre de novo.");
     const resultado = await reabrirOrcamento(orcamento, motivo, validade, operador.id, aprovarAgora ?? undefined);
     avisarOrcamentosMudaram();
     setReabrindo(null);
@@ -369,11 +370,12 @@ export function OrcamentosPage() {
     setLista("abertos");
     await carregar();
     if (resultado.erroDaAprovacao) {
-      // Peça que não ligou ao cadastro já nasceu OS: a mensagem diz isso.
+      // Peça que não ligou ao cadastro já nasceu OS: a mensagem diz isso. A
+      // frase da aprovação diz se não aprovou ou se não dá pra saber (rede).
       setErro(
         resultado.aprovada
           ? resultado.erroDaAprovacao
-          : `${nomeDocumento(orcamento)} foi reaberto, mas não foi aprovado: ${resultado.erroDaAprovacao}`,
+          : `${nomeDocumento(orcamento)} foi reaberto. ${resultado.erroDaAprovacao}`,
       );
       return;
     }

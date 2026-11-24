@@ -497,7 +497,7 @@ describe("OrcamentosPage — reabrir orçamento recusado", () => {
     await user.click(screen.getByRole("button", { name: "Reabrir" }));
 
     expect(
-      await screen.findByText(/Orçamento 3 foi reaberto, mas não foi aprovado: .*Nenhum depósito ativo/),
+      await screen.findByText(/Orçamento 3 foi reaberto. O orçamento não foi aprovado e continua orçamento: Nenhum depósito ativo/),
     ).toBeInTheDocument();
   });
 

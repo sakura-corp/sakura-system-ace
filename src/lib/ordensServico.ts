@@ -3,7 +3,7 @@ import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
-import { mensagemDeErro } from "./errors";
+import { ehErroDeRede, mensagemDeErro } from "./errors";
 import { diaLocal } from "./datas";
 import type { ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
@@ -517,6 +517,15 @@ export async function reabrirOrcamento(
     return { aprovada, erroDaAprovacao: null };
   } catch (err) {
     if (err instanceof AprovadoSemEstoqueError) return { aprovada: err.ordem, erroDaAprovacao: err.message };
+    // Sem resposta do banco, a aprovação pode ter entrado (ver aprovarOrcamento):
+    // não dá pra dizer que não aprovou.
+    if (ehErroDeRede(err)) {
+      return {
+        aprovada: null,
+        erroDaAprovacao:
+          "A conexão caiu durante a aprovação: confira na lista de OS se ela entrou antes de aprovar de novo.",
+      };
+    }
     return { aprovada: null, erroDaAprovacao: mensagemDeErro(err) };
   }
 }

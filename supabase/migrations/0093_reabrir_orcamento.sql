@@ -13,8 +13,9 @@
 --      'correcao_valor' pra a #1182 não mexer na tabela de novo);
 --   2. a policy de inserção do histórico passa a aceitar, além do admin da
 --      loja (igual antes), a linha de REABERTURA gravada por quem pode
---      recusar (módulo OS na loja), só por ela mesma e só numa OS que já
---      voltou a ser orçamento;
+--      recusar (módulo OS na loja), só por ela mesma, só numa OS que já
+--      voltou a ser orçamento e só vindo da função (a mesma marca do gatilho,
+--      abaixo): ninguém grava "reabertura" à mão pelo PostgREST;
 --   3. a função `reabrir_orcamento(p_ordem, p_motivo, p_validade, p_operador)`,
 --      no padrão da 0087 (uma transação, OS travada, pela RLS de quem chama):
 --      só da loja de quem chama, só se o status for 'recusado'; volta pra
@@ -26,7 +27,8 @@
 --
 -- COMO O GATILHO SABE QUE VEIO DA FUNÇÃO. A função liga, só dentro da
 -- transação dela (`set_config(..., true)`), a marca
--- `sakura.reabrir_orcamento` com o id da OS, faz o update e desliga. Pelo
+-- `sakura.reabrir_orcamento` com o id da OS, faz o update e grava o
+-- histórico (a policy de inserção também confere a marca) e desliga. Pelo
 -- PostgREST cada chamada é uma transação própria e não dá pra ligar a marca
 -- antes de um update direto; mesmo que desse, ela vale só pra aquela OS.
 --
@@ -85,6 +87,9 @@ create policy "ordens_servico_trocas_insercao" on ordens_servico_trocas
       operador_e_admin_da_loja(loja_id)
       or (
         tipo = 'reabertura'
+        -- Só de dentro da reabrir_orcamento(), que liga esta marca com o id
+        -- da OS só na transação dela (pelo PostgREST não dá pra ligar).
+        and coalesce(current_setting('sakura.reabrir_orcamento', true), '') = ordem_servico_id::text
         and operador_id = auth.uid()
         and operador_tem_acesso_loja(loja_id)
         and (select operador_tem_permissao('ordens_servico'))
@@ -209,7 +214,8 @@ begin
   end if;
 
   -- Volta pra orçamento aberto, com o mesmo número. A marca deixa o gatilho
-  -- aceitar a saída de recusado, só pra esta OS e só até o fim do update.
+  -- aceitar a saída de recusado e a policy aceitar a linha do histórico, só
+  -- pra esta OS e só até o fim desta função.
   perform set_config('sakura.reabrir_orcamento', v_ordem.id::text, true);
   update ordens_servico
      set status            = 'orcamento',
@@ -222,7 +228,6 @@ begin
     perform set_config('sakura.reabrir_orcamento', '', true);
     raise exception 'Você não tem permissão pra mudar este orçamento.';
   end if;
-  perform set_config('sakura.reabrir_orcamento', '', true);
 
   -- O histórico: quem, quando, por quê, e os itens como estão (nada mudou).
   select coalesce(sum(quantidade * preco_unitario - desconto), 0),
@@ -243,6 +248,7 @@ begin
   )
   returning id into v_linha;
 
+  perform set_config('sakura.reabrir_orcamento', '', true);
   return v_linha;
 end;
 $$;
