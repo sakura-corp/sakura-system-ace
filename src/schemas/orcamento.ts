@@ -91,7 +91,7 @@ const MINIMO_DO_MOTIVO = 3;
 export function textoDaReabertura(
   motivo: MotivoReabertura,
   outroTexto: string,
-  recusa: { recusado_em: string | null | undefined; motivo_recusa: MotivoRecusa | null | undefined },
+  recusa: { recusado_em?: string | null; motivo_recusa?: MotivoRecusa | null },
 ): string {
   const principal = motivo === "outro" ? outroTexto.trim() : MOTIVO_REABERTURA_LABEL[motivo];
   const quando = recusa.recusado_em ? ` em ${diaBrasileiro(diaLocal(recusa.recusado_em)).slice(0, 5)}` : "";
