@@ -1,4 +1,8 @@
-import { MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES } from "@/schemas/percentualTributosSimples";
+import {
+  MENSAGEM_PERCENTUAL_ICMS_ST,
+  MENSAGEM_PERCENTUAL_PECAS,
+  MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+} from "@/schemas/percentualTributosSimples";
 
 /**
  * A frase em português de cada trava do banco (migrations 0058 a 0060).
@@ -62,10 +66,14 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
   ck_configuracoes_contabilidade_algum_contato:
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
-  // Migration 0089 (#386): o grupo do DRE da categoria de caixa.
+  // Migration 0088 (#386): o grupo do DRE da categoria de caixa.
   ck_categorias_caixa_grupo: "Esse grupo não existe. Escolha um dos grupos da lista.",
   ck_categorias_caixa_grupo_do_tipo:
     "Esse grupo não serve pro tipo da categoria: categoria de entrada só vai em grupo de entrada, e de saída em grupo de saída.",
+  // Migration 0090 (#1040): os tributos aproximados na nota (Lei 12.741/2012).
+  // A mesma frase da tela (src/schemas/percentualTributosSimples.ts).
+  ck_config_fiscal_percentual_tributos_pecas: MENSAGEM_PERCENTUAL_PECAS,
+  ck_config_fiscal_percentual_estimativa_icms_st: MENSAGEM_PERCENTUAL_ICMS_ST,
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
@@ -177,12 +185,16 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
-  // 0089 (grupo do DRE, #386): coluna de categorias_caixa.
+  // 0088 (grupo do DRE, #386): coluna de categorias_caixa.
   "grupo",
   // 0089 (taxas da maquininha, #387): tabelas.
   "configuracoes_taxas_maquininha",
   "caixa_taxas_cartao",
   "caixa_cartao_a_receber",
+  // 0090 (tributos aproximados, #1040): colunas de configuracoes_fiscais_loja.
+  "percentual_tributos_pecas",
+  "percentual_estimativa_icms_st",
+  "competencia_tributos_confirmada",
 ] as const;
 
 /**

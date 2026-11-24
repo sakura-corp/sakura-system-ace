@@ -3,14 +3,16 @@ import { useState } from "react";
 import { Botao } from "@/components/Botao";
 import { Selo } from "@/components/Selo";
 import {
+  confirmarTributosDoMes,
   definirTokenFocusNfe,
   salvarConfiguracaoFiscal,
   type DadosFiscaisEditaveis,
 } from "@/lib/configuracoes";
-import { passoAPassoAliquotaPadrao } from "@/schemas/aliquotaCompetencia";
+import { competenciaDoMes, mesPorExtenso, passoAPassoAliquotaPadrao } from "@/schemas/aliquotaCompetencia";
 import {
   avisoPercentualTributosSimplesVazio,
   percentualTributosSimplesParaSalvar,
+  percentuaisDasPecasParaSalvar,
 } from "@/schemas/percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 import { buscarEnderecoPorCep } from "@/lib/viaCep";
@@ -30,7 +32,11 @@ interface DadosFiscaisSectionProps {
 }
 
 // Na tela o percentual sempre existe (vazio é null); no salvar ele é opcional.
-type FormularioFiscal = DadosFiscaisEditaveis & { percentual_tributos_simples: number | null };
+type FormularioFiscal = DadosFiscaisEditaveis & {
+  percentual_tributos_simples: number | null;
+  percentual_tributos_pecas: number | null;
+  percentual_estimativa_icms_st: number | null;
+};
 
 function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFiscal {
   return {
@@ -56,6 +62,8 @@ function valorInicial(configuracao: ConfiguracaoFiscalLoja | null): FormularioFi
         ? configuracao.aliquota_iss
         : null,
     percentual_tributos_simples: configuracao?.percentual_tributos_simples ?? null,
+    percentual_tributos_pecas: configuracao?.percentual_tributos_pecas ?? null,
+    percentual_estimativa_icms_st: configuracao?.percentual_estimativa_icms_st ?? null,
     codigo_tributario_municipio: configuracao?.codigo_tributario_municipio ?? "",
     codigo_cnae: configuracao?.codigo_cnae ?? "",
     aliquota_passo_a_passo: configuracao?.aliquota_passo_a_passo ?? "",
@@ -79,6 +87,8 @@ export function DadosFiscaisSection({
   const [erro, setErro] = useState<string | null>(null);
   const [erroPercentual, setErroPercentual] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
+  const [confirmandoTributos, setConfirmandoTributos] = useState(false);
+  const [erroConfirmar, setErroConfirmar] = useState<string | null>(null);
 
   function set<K extends keyof FormularioFiscal>(campo: K, valor: FormularioFiscal[K]) {
     setValores((atual) => ({ ...atual, [campo]: valor }));
@@ -107,19 +117,33 @@ export function DadosFiscaisSection({
       valores.regime_tributario,
       valores.percentual_tributos_simples,
     );
-    if (percentual.erro) {
+    const pecas = percentuaisDasPecasParaSalvar(
+      valores.regime_tributario,
+      valores.percentual_tributos_pecas,
+      valores.percentual_estimativa_icms_st,
+    );
+    const erroDosPercentuais = percentual.erro ?? pecas.erro;
+    if (erroDosPercentuais) {
       // Perto do campo e do botão: a faixa de erro do topo fica fora da vista.
-      setErroPercentual(percentual.erro);
+      setErroPercentual(erroDosPercentuais);
       return;
     }
     // Fora do Simples o campo não vai: `campos` vem vazio e o banco guarda o que já tem.
-    const { percentual_tributos_simples: _naTela, ...semPercentual } = valores;
+    const {
+      percentual_tributos_simples: _naTela,
+      percentual_tributos_pecas: _pecasNaTela,
+      percentual_estimativa_icms_st: _icmsStNaTela,
+      ...semPercentual
+    } = valores;
     void _naTela;
+    void _pecasNaTela;
+    void _icmsStNaTela;
     setSalvando(true);
     try {
       await salvarConfiguracaoFiscal(lojaId, {
         ...semPercentual,
         ...percentual.campos,
+        ...pecas.campos,
         cnpj: valores.cnpj || null,
         razao_social: valores.razao_social || null,
         nome_fantasia: valores.nome_fantasia || null,
@@ -152,6 +176,33 @@ export function DadosFiscaisSection({
       setSalvando(false);
     }
   }
+
+  async function handleConfirmarTributos() {
+    setErroConfirmar(null);
+    setConfirmandoTributos(true);
+    try {
+      await confirmarTributosDoMes(lojaId, competenciaDoMes());
+      await onSalvo();
+    } catch (err) {
+      console.error("Erro ao confirmar os tributos do mês:", err);
+      setErroConfirmar(mensagemDeErro(err));
+    } finally {
+      setConfirmandoTributos(false);
+    }
+  }
+
+  // Confirmar o mês com números digitados e ainda não salvos faria o aviso
+  // sumir com os números antigos indo na nota: primeiro salvar, depois confirmar.
+  const inicial = valorInicial(configuracao);
+  const percentuaisSemSalvar =
+    valores.percentual_tributos_simples !== inicial.percentual_tributos_simples ||
+    valores.percentual_tributos_pecas !== inicial.percentual_tributos_pecas ||
+    valores.percentual_estimativa_icms_st !== inicial.percentual_estimativa_icms_st;
+
+  const competenciaConfirmada = configuracao?.competencia_tributos_confirmada ?? null;
+  const mesConfirmado = competenciaConfirmada
+    ? `${mesPorExtenso(competenciaConfirmada)} de ${competenciaConfirmada.slice(0, 4)}`
+    : null;
 
   const avisoPercentual = avisoPercentualTributosSimplesVazio(
     valores.regime_tributario,
@@ -385,33 +436,96 @@ export function DadosFiscaisSection({
           </label>
           {valores.regime_tributario === "simples_nacional" && (
             <div className="col-span-3">
-              <label className="sakura-rotulo max-w-sm">
-                Percentual aproximado dos tributos do Simples (%)
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={valores.percentual_tributos_simples ?? ""}
-                  onChange={(e) => {
-                    setErroPercentual(null);
-                    set(
-                      "percentual_tributos_simples",
-                      e.target.value === "" ? null : Number(e.target.value),
-                    );
-                  }}
-                  aria-invalid={erroPercentual ? true : undefined}
-                  className={campoClasse}
-                />
-              </label>
+              <h4 className="text-corpo font-semibold text-texto">Tributos aproximados na nota</h4>
+              <p className="mt-1 text-rotulo text-texto-2">
+                Lei da Transparência (12.741/2012). Os números vêm da contabilidade da loja, todo
+                mês, e vão na linha dos tributos da nota.
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-4">
+                <label className="sakura-rotulo">
+                  Alíquota efetiva do Simples — serviços (Anexo III) (%)
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={valores.percentual_tributos_simples ?? ""}
+                    onChange={(e) => {
+                      setErroPercentual(null);
+                      set(
+                        "percentual_tributos_simples",
+                        e.target.value === "" ? null : Number(e.target.value),
+                      );
+                    }}
+                    aria-invalid={erroPercentual ? true : undefined}
+                    className={campoClasse}
+                  />
+                </label>
+                <label className="sakura-rotulo">
+                  Alíquota efetiva do Simples — peças (Anexo I) (%)
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={valores.percentual_tributos_pecas ?? ""}
+                    onChange={(e) => {
+                      setErroPercentual(null);
+                      set(
+                        "percentual_tributos_pecas",
+                        e.target.value === "" ? null : Number(e.target.value),
+                      );
+                    }}
+                    aria-invalid={erroPercentual ? true : undefined}
+                    className={campoClasse}
+                  />
+                </label>
+                <label className="sakura-rotulo">
+                  Estimativa do ICMS-ST (só peças com substituição, CSOSN 500) (%)
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={valores.percentual_estimativa_icms_st ?? ""}
+                    onChange={(e) => {
+                      setErroPercentual(null);
+                      set(
+                        "percentual_estimativa_icms_st",
+                        e.target.value === "" ? null : Number(e.target.value),
+                      );
+                    }}
+                    aria-invalid={erroPercentual ? true : undefined}
+                    className={campoClasse}
+                  />
+                </label>
+              </div>
               {erroPercentual && <AvisoDeErro className="mt-2">{erroPercentual}</AvisoDeErro>}
               <p className="mt-1 text-rotulo text-texto-2">
-                O número vem da contabilidade da loja (Lei da Transparência). Vai na nota de
-                serviço.
+                A alíquota de serviços também vai na NFS-e Nacional.
               </p>
               {avisoPercentual && (
                 <AvisoDeAtencao className="mt-2">{avisoPercentual}</AvisoDeAtencao>
               )}
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <Botao
+                  type="button"
+                  variante="secundario"
+                  onClick={handleConfirmarTributos}
+                  ocupado={confirmandoTributos}
+                  disabled={percentuaisSemSalvar}
+                >
+                  Confirmei a alíquota deste mês
+                </Botao>
+                <span className="text-rotulo text-texto-2">
+                  {percentuaisSemSalvar
+                    ? "Salve os números antes de confirmar."
+                    : mesConfirmado
+                      ? `Confirmado em ${mesConfirmado}.`
+                      : "Ainda não confirmado."}
+                </span>
+              </div>
+              {erroConfirmar && <AvisoDeErro className="mt-2">{erroConfirmar}</AvisoDeErro>}
             </div>
           )}
           <label className="col-span-2 sakura-rotulo">
