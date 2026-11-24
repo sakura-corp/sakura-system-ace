@@ -80,14 +80,14 @@ export const CENAS = [
   // "carregando" não têm cena: o banco de mentira não sabe falhar nem
   // demorar só numa cena; eles estão provados nos testes do MoldeLista.
   { arquivo: "07a-ordens-busca-sem-nada", modulo: "Ordens de Serviço", titulo: "Lista de OS: a busca que não achou nada",
-    rota: "/ordens-servico",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
     passos: [{ digitar: "Placa que não existe", em: 'input[type="search"]' }],
     descricao: "O vazio de uma busca é diferente do vazio de uma loja nova: a lista diz o que foi buscado e oferece limpar a busca, em vez de \"nenhuma OS cadastrada\" (que assusta quem tem centenas). Os chips do período ficam apagados enquanto a busca vale, porque a busca olha o histórico inteiro." },
   { arquivo: "07b-ordens-escolher-datas", modulo: "Ordens de Serviço", titulo: "Lista de OS: escolher o período",
-    rota: "/ordens-servico", passos: [{ clicar: "Escolher datas" }],
+    rota: "/ordens-servico", semRolarAPartirDe: 1024, passos: [{ clicar: "Escolher datas" }],
     descricao: "Os chips do período: um só escolhido por vez, marcado também pelo visto (✓) e pela palavra em negrito, não só pela cor. \"Escolher datas\" abre os dois campos de data ao lado, sem janela." },
   { arquivo: "07c-ordens-loja-nova", modulo: "Ordens de Serviço", titulo: "Lista de OS de uma loja que ainda não atendeu ninguém",
-    rota: "/ordens-servico",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
     // Só as OS saem (orçamento e recusado ficam, como numa loja que só orçou).
     tirarLinhas: { ordens_servico: (o) => !["orcamento", "recusado"].includes(o.status) },
     descricao: "O vazio de começo: uma frase do que vai aparecer ali e o botão pra começar (\"Nova OS\"), sem busca nem filtro, que não teriam o que procurar." },

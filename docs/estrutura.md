@@ -196,7 +196,7 @@ são as de `docs/referencia/visual-novo/README.md`. Cada tela troca pras peças 
 
 | Peça (em `src/components/`) | Quando usar | Quando NÃO usar |
 |---|---|---|
-| `Abas.tsx` | trocar de **visão dentro da mesma tela** (Produtos / Movimentações; Ordens / Vendas). É a única aba do programa: o `AbaBotao` antigo saiu | escolher um valor ou filtrar (isso é `Chips`); passos em ordem (isso é `Passos`) |
+| `Abas.tsx` | trocar de **visão dentro da mesma tela** (Produtos / Movimentações; Ordens / Vendas). É a única aba do programa: o `AbaBotao` antigo saiu | escolher um valor ou filtrar (isso é `Chips`; a "Situação do saldo" dos Relatórios do Estoque e o "Abertos / Recusados" dos Orçamentos ainda são abas e trocam na tarefa da tela); passos em ordem (isso é `Passos`) |
 | `Chips.tsx` | escolher **um valor entre poucos, à vista** (período, forma de pagamento, "Tudo / Entradas / Saídas"); `multipla` pra filtro de vários | mais de uns 6 valores (vira `Combobox`); trocar de visão (`Abas`) |
 | `Passos.tsx` | tarefa **em ordem, de 3 a 5 passos**, que a pessoa não pode pular (fechar o caixa, fechar a OS). A tela guarda o passo; a trilha só mostra | formulário comum, mesmo comprido (vai em seções do `MoldeFormulario`) |
 | `JanelaDeConfirmar.tsx` (e o `useConfirmar()`) | **toda** pergunta antes de apagar, cancelar ou fazer o que não tem volta, no lugar do `confirm()`. Diz o nome do item, o foco começa no "Cancelar", o botão diz o verbo ("Excluir produto"). `tom: "normal"` pra confirmar o que não é apagar (fechar o caixa) | o que se desfaz sozinho (mudar um filtro, abrir uma janela): ali não se pergunta nada |
@@ -207,7 +207,8 @@ são as de `docs/referencia/visual-novo/README.md`. Cada tela troca pras peças 
 **No catálogo das telas** (`site/ferramentas/cenas.mjs`, que também alimenta o `contraste:telas` e o
 `largura:telas`): as cenas `07-ordens` a `07c-ordens-loja-nova` mostram o `MoldeLista`, a
 `LinhaDeLista` e os `Chips` (lista cheia, busca sem resultado, período escolhido e loja sem OS); as
-de Estoque, Funcionários, Caixa, Fornecedores e Notas mostram as `Abas`. O erro e o esqueleto do
+de Ordens (a própria `07-ordens`), Orçamentos, Estoque, Funcionários, Caixa, Fornecedores, Notas e a
+Curva ABC das Relações mostram as `Abas`. O erro e o esqueleto do
 molde de lista não têm cena (o banco de mentira não falha nem demora numa cena só): estão provados
 nos testes do `MoldeLista`. `Passos`, `JanelaDeConfirmar`, `MoldePerfil` e `MoldeFormulario`
 ainda não têm cena: o catálogo só fotografa telas de verdade do programa, e nenhuma tela usa essas
