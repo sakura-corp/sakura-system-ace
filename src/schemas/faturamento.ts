@@ -190,7 +190,13 @@ export function paraPagamentos(
   if (valores.recebidoAgora && valores.dividirPagamento) {
     return calcularLinhasPagamento(valores.linhasPagamento, jurosParcelas)
       .filter((linha) => linha.valorBase > 0)
-      .map((linha) => ({ formaPagamento: linha.formaPagamento, valor: linha.valorCobrado }));
+      // As parcelas de cada linha vão junto (#387): no dividido, cada parte de
+      // cartão tem a sua taxa da maquininha (à vista ≠ 3x). Não mexe nos juros.
+      .map((linha) => ({
+        formaPagamento: linha.formaPagamento,
+        valor: linha.valorCobrado,
+        parcelas: linha.parcelas,
+      }));
   }
   return [{ formaPagamento: valores.formaPagamento, valor: valorCobrado }];
 }
