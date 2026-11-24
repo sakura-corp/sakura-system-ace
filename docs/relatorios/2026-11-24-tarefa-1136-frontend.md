@@ -63,15 +63,20 @@
     `cenas.mjs` diz `1024` (ficou velho na #1091).
 - O aviso à Recepção: não achei a sessão "Recepção 24/11" entre as minhas sessões.
 
+## Teste no PC (Tiago, 24/11, caso B, Supabase de teste)
+- Funcionários e Estoque: as abas abrem e mostram o mesmo de antes. **Ok.**
+- Ordens de Serviço, escuro: a busca `ZZZ9Z99` mostra "Nada encontrado" e "Limpar a busca"; o
+  "Escolher datas" fica com o ✓ e as duas datas ao lado. **Ok.**
+- Ordens de Serviço, claro: busca e período juntos, com as datas apagadas enquanto a busca vale.
+  **Ok.**
+- Prints em `docs/relatorios/tarefa-1136/pc-*.jpg`, com o login borrado. A faixa amarela de "banco
+  com atualização" é do banco de teste na frente da v0.9.60, não desta tarefa.
+
 ## O que depende de alguém
 - **A Sofia**: decidir se `Passos`, `JanelaDeConfirmar`, `MoldePerfil` e `MoldeFormulario` ganham
   uma tela de demonstração pro catálogo agora, ou se esperam a primeira tela que usar cada uma.
   Também aprovar e mesclar o PR.
-- **O Tiago, no PC** (caso B, abrir o programa; `docs/equipe.md`, "Testar no seu computador o que
-  a sessão da nuvem fez"), na branch `claude/awesome-lamport-p8jw7f`, no Supabase de teste:
-  Funcionários e Estoque, as abas abrem e mostram o mesmo de antes; Ordens de Serviço, buscar uma
-  placa que não existe (aparece "Nada encontrado" e "Limpar a busca") e clicar em "Escolher datas";
-  trocar o tema e repetir.
+- O teste no PC: **feito pelo Tiago em 24/11, tudo ok** (seção acima).
 
 ## Onde parou
 Terminei.
