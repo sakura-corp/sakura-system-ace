@@ -41,6 +41,7 @@ import {
   ratearPagamentos,
 } from "@/schemas/faturamento";
 import { pecasAvulsas } from "@/schemas/orcamento";
+import { resumoDosServicos } from "@/schemas/discriminacaoNFSe";
 import { motivoCfopIncompativel, motivoCodigoIncompativel } from "@/schemas/tributacao";
 import { ehConsumidor, type Cliente } from "@/types/cliente";
 import type { ConfiguracaoFiscalLoja } from "@/types/configuracao";
@@ -425,7 +426,9 @@ export function EmitirNotaFiscalModal({
           throw new Error("Informe o código do município do cliente pra emitir a NFS-e.");
         }
 
-        const discriminacao = itensServico.map((item) => item.descricao).join("; ");
+        // Resumo da OS, uma linha por serviço (#1040); a frase dos tributos
+        // aproximados entra no fim, em lib/focusNfe.ts.
+        const discriminacao = resumoDosServicos(itensServico, totalServicos);
         valoresDoEnvio.current = valoresParaGuardar(itensServico);
 
         resposta = await emitirNFSe({

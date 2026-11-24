@@ -45,3 +45,35 @@ export function percentualTributosSimplesParaSalvar(
     digitado === null || !Number.isFinite(digitado) ? digitado : Math.round(digitado * 100) / 100;
   return { campos: { percentual_tributos_simples: valor }, erro: erroPercentualTributosSimples(valor) };
 }
+
+// Os dois percentuais novos (#1040): alíquota efetiva das peças (Anexo I) e
+// estimativa do ICMS-ST. Mesmo molde do de serviço: só no Simples, 2 casas,
+// vazio = null, e fora do Simples nem vão no salvar.
+export const MENSAGEM_PERCENTUAL_PECAS =
+  "A alíquota efetiva das peças precisa estar entre 0 e 100%.";
+export const MENSAGEM_PERCENTUAL_ICMS_ST =
+  "A estimativa do ICMS-ST precisa estar entre 0 e 100%.";
+
+function arredondar(v: number | null): number | null {
+  return v === null || !Number.isFinite(v) ? v : Math.round(v * 100) / 100;
+}
+
+export function percentuaisDasPecasParaSalvar(
+  regime: RegimeTributario | null,
+  pecas: number | null,
+  icmsSt: number | null,
+): {
+  campos: { percentual_tributos_pecas?: number | null; percentual_estimativa_icms_st?: number | null };
+  erro: string | null;
+} {
+  if (regime !== "simples_nacional") return { campos: {}, erro: null };
+  const p = arredondar(pecas);
+  const i = arredondar(icmsSt);
+  const erro =
+    erroPercentualTributosSimples(p) !== null
+      ? MENSAGEM_PERCENTUAL_PECAS
+      : erroPercentualTributosSimples(i) !== null
+        ? MENSAGEM_PERCENTUAL_ICMS_ST
+        : null;
+  return { campos: { percentual_tributos_pecas: p, percentual_estimativa_icms_st: i }, erro };
+}
