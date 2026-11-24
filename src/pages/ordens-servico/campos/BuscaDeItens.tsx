@@ -85,9 +85,7 @@ export function BuscaDeItens({
   }, [resultados, termoLimpo, comServicos, permitePecaAvulsa]);
 
   const semResultado = termoLimpo !== "" && resultados.length === 0;
-  const textoSemResultado = comServicos
-    ? `Nenhuma peça ou serviço com "${termoLimpo}".`
-    : `Nenhuma peça com "${termoLimpo}". Confira o código ou procure pelo nome.`;
+  const textoSemResultado = `Nenhuma peça com “${termoLimpo}”. Procurei no nome, código, marca e medida.`;
 
   function limpar() {
     setTermo("");

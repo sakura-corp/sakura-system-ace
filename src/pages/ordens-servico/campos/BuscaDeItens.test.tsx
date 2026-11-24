@@ -155,7 +155,7 @@ describe("BuscaDeItens", () => {
     const { user, busca, onAvulso } = montar();
     await user.type(busca, "xyz");
 
-    expect(screen.getByText(/Nenhuma peça ou serviço com "xyz"/)).toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma peça com “xyz”. Procurei no nome, código, marca e medida./)).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Peça sem cadastro/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole("option", { name: /Serviço sem cadastro: "xyz"/ }));
     expect(onAvulso).toHaveBeenCalledWith("servico", "xyz");
