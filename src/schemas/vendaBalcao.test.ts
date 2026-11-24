@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buscarPecasDaVenda,
   incluirPeca,
+  lucroPrevistoDaVenda,
   paraItensDaVenda,
   pecaDoEnter,
   podeReceberDepois,
@@ -10,6 +11,7 @@ import {
   vendaVazia,
   type ItemVendaValues,
 } from "./vendaBalcao";
+import { lucroDaOrdem } from "./orcamento";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 
 function peca(sobrescrever: Partial<Parameters<typeof incluirPeca>[1]> = {}) {
@@ -181,5 +183,31 @@ describe("podeReceberDepois", () => {
 
   it("com cliente de verdade, sim", () => {
     expect(podeReceberDepois("cliente-1")).toBe(true);
+  });
+});
+
+describe("lucroPrevistoDaVenda", () => {
+  const custoPeca = new Map([
+    ["palheta", 20],
+    ["bateria", 400],
+  ]);
+  // Palheta: 2 × 35 − 5 = 65, custo 40 → 25. Bateria: 520, custo 400 → 120.
+  const itens: ItemVendaValues[] = [
+    { ...incluirPeca(incluirPeca([], peca()), peca())[0], desconto: "5" },
+    incluirPeca([], bateria)[0],
+  ];
+
+  it("é o lucro da ordem com os mesmos itens", () => {
+    const lucro = lucroPrevistoDaVenda(itens, custoPeca);
+    expect(lucro).toEqual({ lucro: 145, falta: null });
+    expect(lucro.lucro).toBe(lucroDaOrdem(paraItensDaVenda(itens), custoPeca, new Map()).lucro);
+  });
+
+  it("quem não lê o custo das peças vê o lucro só ao salvar", () => {
+    expect(lucroPrevistoDaVenda(itens, null)).toEqual({ lucro: null, falta: "aparece-ao-salvar" });
+  });
+
+  it("venda vazia dá lucro zero", () => {
+    expect(lucroPrevistoDaVenda([], custoPeca)).toEqual({ lucro: 0, falta: null });
   });
 });

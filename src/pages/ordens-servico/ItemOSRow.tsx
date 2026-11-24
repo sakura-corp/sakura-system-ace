@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { useId, useState } from "react";
 import type { UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import { avisoPecaSemCusto, avisoSaldoInsuficiente } from "@/schemas/avisosOrdemServico";
@@ -10,6 +12,12 @@ import type { FuncionarioPublico } from "@/types/funcionario";
 import type { TipoItemOS } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
+import {
+  AvisoDaLinha,
+  BotaoAbrirItem,
+  CLASSE_CAMPO_DA_LINHA,
+  LinhaDeItem,
+} from "./campos/TabelaDeItens";
 
 interface ItemOSRowProps {
   index: number;
@@ -36,6 +44,12 @@ interface ItemOSRowProps {
   onRemover: () => void;
 }
 
+/**
+ * Uma linha de item NOVO da OS (ainda não gravado), na tabela de itens
+ * (#1087). Quantidade, preço, desconto e técnico se editam na linha; o resto
+ * (trocar tipo e peça/serviço, descrição, custo, saldo) fica no "Abrir o
+ * item". Item sem cadastro já nasce aberto, pra digitar a descrição.
+ */
 export function ItemOSRow({
   index,
   register,
@@ -52,9 +66,16 @@ export function ItemOSRow({
   const tipo = watch(`itens.${index}.tipo`);
   const pecaId = watch(`itens.${index}.peca_id`);
   const servicoId = watch(`itens.${index}.servico_id`);
+  const descricao = watch(`itens.${index}.descricao`);
+  const item = watch(`itens.${index}`);
+  const idDoTecnico = useId();
 
-  function aoMudarTipo(tipo: TipoItemOS) {
-    setValue(`itens.${index}.tipo`, tipo);
+  const servicoEhAvulso = tipo === "servico" && !servicoId;
+  const pecaEhAvulsa = permitePecaAvulsa && tipo === "peca" && !pecaId;
+  const [aberto, setAberto] = useState(servicoEhAvulso || pecaEhAvulsa);
+
+  function aoMudarTipo(novoTipo: TipoItemOS) {
+    setValue(`itens.${index}.tipo`, novoTipo);
     setValue(`itens.${index}.peca_id`, "");
     setValue(`itens.${index}.servico_id`, "");
     setValue(`itens.${index}.descricao`, "");
@@ -62,30 +83,23 @@ export function ItemOSRow({
     setValue(`itens.${index}.custo_unitario`, "");
   }
 
-  function aoMudarPeca(pecaId: string) {
-    const peca = pecas.find((p) => p.id === pecaId);
-    setValue(`itens.${index}.peca_id`, pecaId);
+  function aoMudarPeca(novaPecaId: string) {
+    const peca = pecas.find((p) => p.id === novaPecaId);
+    setValue(`itens.${index}.peca_id`, novaPecaId);
     setValue(`itens.${index}.custo_unitario`, "");
     setValue(`itens.${index}.descricao`, peca?.descricao ?? "");
     setValue(`itens.${index}.preco_unitario`, paraDisplayNumero(peca?.preco_venda ?? 0));
   }
 
-  function aoMudarServico(servicoId: string) {
-    const servico = servicos.find((s) => s.id === servicoId);
-    setValue(`itens.${index}.servico_id`, servicoId);
+  function aoMudarServico(novoServicoId: string) {
+    const servico = servicos.find((s) => s.id === novoServicoId);
+    setValue(`itens.${index}.servico_id`, novoServicoId);
     setValue(`itens.${index}.descricao`, servico?.descricao ?? "");
     setValue(`itens.${index}.preco_unitario`, paraDisplayNumero(servico?.preco_padrao ?? 0));
   }
 
-  const servicoEhAvulso = tipo === "servico" && !servicoId;
-  const pecaEhAvulsa = permitePecaAvulsa && tipo === "peca" && !pecaId;
   const textoPecaVazia = permitePecaAvulsa ? "Peça sem cadastro (digitar abaixo)" : "Selecione a peça";
-
-  // Total da linha (quantidade x preço − desconto) — reaproveita a mesma
-  // conta do total geral, com um item só, pra não haver duas fórmulas
-  // diferentes convivendo. Ajuda a conferir par de peça (2x pneu, por ex.)
-  // sem ter que multiplicar de cabeça.
-  const item = watch(`itens.${index}`);
+  const nome = descricao || "item novo";
   const totalItem = item ? totalItensFormulario([item]) : 0;
 
   // Os dois avisos de peça (item TL-08 do guia). Nenhum deles impede de
@@ -96,126 +110,146 @@ export function ItemOSRow({
   const saldoDaPeca = pecaEscolhida ? saldoPorPeca.get(pecaEscolhida.id) : undefined;
   const avisoEstoque =
     pecaEscolhida && saldoCarregado
-      ? avisoSaldoInsuficiente(watch(`itens.${index}.quantidade`), saldoDaPeca)
+      ? avisoSaldoInsuficiente(item?.quantidade ?? "", saldoDaPeca)
       : null;
   const avisoCusto = avisoPecaSemCusto(pecaEscolhida);
+  const semDescricao = (servicoEhAvulso || pecaEhAvulsa) && descricao.trim() === "";
 
-  return (
-    <div className="space-y-2 rounded-lg border border-linha p-3">
-      <div className="flex gap-2">
-        <select
-          value={tipo}
-          onChange={(e) => aoMudarTipo(e.target.value as TipoItemOS)}
-          className="w-28 shrink-0 rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
-        >
-          <option value="peca">Peça</option>
-          <option value="servico">Serviço</option>
-        </select>
+  const detalhe = aberto && (
+    <div className="space-y-3 rounded-xl bg-poco p-3">
+      <div className="flex min-w-0 flex-wrap gap-3">
+        <label className="sakura-rotulo w-32 shrink-0">
+          Tipo
+          <select
+            value={tipo}
+            onChange={(e) => aoMudarTipo(e.target.value as TipoItemOS)}
+            className="sakura-campo"
+          >
+            <option value="peca">Peça</option>
+            <option value="servico">Serviço</option>
+          </select>
+        </label>
 
-        {tipo === "peca" ? (
-          <Combobox
-            tamanho="filtro"
-            className="flex-1"
-            opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
-            valor={pecaId}
-            onMudar={aoMudarPeca}
-            opcaoVazia={textoPecaVazia}
-            placeholder={textoPecaVazia}
-          />
-        ) : (
-          <Combobox
-            tamanho="filtro"
-            className="flex-1"
-            opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
-            valor={servicoId}
-            onMudar={aoMudarServico}
-            opcaoVazia="Serviço avulso (digitar abaixo)"
-            placeholder="Serviço avulso (digitar abaixo)"
-          />
-        )}
-
-        <button
-          type="button"
-          onClick={onRemover}
-          className="shrink-0 text-rotulo font-medium text-perigo hover:underline"
-        >
-          Remover
-        </button>
+        <div className="sakura-rotulo min-w-0 flex-1 basis-64">
+          {tipo === "peca" ? "Peça do cadastro" : "Serviço do cadastro"}
+          {tipo === "peca" ? (
+            <Combobox
+              opcoes={pecas.map((peca) => ({ valor: peca.id, rotulo: peca.descricao }))}
+              valor={pecaId}
+              onMudar={aoMudarPeca}
+              opcaoVazia={textoPecaVazia}
+              placeholder={textoPecaVazia}
+            />
+          ) : (
+            <Combobox
+              opcoes={servicos.map((servico) => ({ valor: servico.id, rotulo: servico.descricao }))}
+              valor={servicoId}
+              onMudar={aoMudarServico}
+              opcaoVazia="Serviço avulso (digitar abaixo)"
+              placeholder="Serviço avulso (digitar abaixo)"
+            />
+          )}
+        </div>
       </div>
 
       {servicoEhAvulso && (
         <input
           type="text"
           placeholder="Descrição do serviço"
+          aria-label="Descrição do serviço"
           {...register(`itens.${index}.descricao`)}
-          className="w-full rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
+          className="sakura-campo"
         />
       )}
 
       {pecaEhAvulsa && (
-        <div className="flex gap-2">
+        <div className="flex min-w-0 flex-wrap gap-3">
           <input
             type="text"
             placeholder="Descrição da peça"
+            aria-label="Descrição da peça"
             {...register(`itens.${index}.descricao`)}
-            className="min-w-0 flex-1 rounded-lg border border-borda-campo px-2 py-1.5 text-corpo"
+            className="sakura-campo min-w-0 flex-1 basis-64"
           />
-          <label className="flex w-40 shrink-0 flex-col gap-0.5 text-rotulo text-texto/90">
+          <label className="sakura-rotulo w-44 shrink-0">
             Custo (opcional)
             <input
               type="number"
               min="0"
               step="0.01"
               {...register(`itens.${index}.custo_unitario`)}
-              className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
+              className="sakura-campo tabular-nums"
             />
           </label>
         </div>
       )}
 
-      {/* Quatro colunas a partir de 1280 de janela; duas abaixo disso
-          (#425). Era uma linha flex, e em 1024 o campo Técnico ficava
-          espremido ("Ser") e saía pra fora do cartão. O item só aparece no
-          formulário de OS, que ocupa a largura toda da tela, então a medida
-          pela janela basta. */}
-      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
-          Quantidade
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            {...register(`itens.${index}.quantidade`)}
-            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
-          />
-        </label>
+      {/* O saldo só aparece aqui quando NÃO há aviso de estoque: o aviso já
+          começa dizendo o saldo, e mostrar os dois seguidos era a mesma
+          informação repetida em duas linhas coladas. */}
+      {pecaEscolhida && saldoCarregado && !avisoEstoque && (
+        <p className="text-rotulo text-texto-2">
+          {`Saldo em estoque: ${(saldoDaPeca ?? 0).toLocaleString("pt-BR")}${
+            pecaEscolhida.unidade ? ` ${pecaEscolhida.unidade}` : ""
+          }`}
+        </p>
+      )}
+    </div>
+  );
 
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
-          Preço unitário
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register(`itens.${index}.preco_unitario`)}
-            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
-          />
-        </label>
-
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
-          Desconto
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            {...register(`itens.${index}.desconto`)}
-            className="rounded-lg border border-borda-campo px-2 py-1.5 text-corpo text-texto"
-          />
-        </label>
-
-        <label className="flex min-w-0 flex-col gap-0.5 text-rotulo text-texto/90">
-          Técnico
+  return (
+    <LinhaDeItem
+      comTecnico
+      tipo={tipo}
+      descricaoParaLeitor={nome}
+      descricao={descricao || <span className="text-texto-2">Sem descrição ainda</span>}
+      avisos={
+        <>
+          {avisoEstoque && <AvisoDaLinha>{avisoEstoque}</AvisoDaLinha>}
+          {avisoCusto && <AvisoDaLinha>{avisoCusto}</AvisoDaLinha>}
+          {semDescricao && (
+            <AvisoDaLinha>Escreva a descrição: item sem descrição não é salvo.</AvisoDaLinha>
+          )}
+        </>
+      }
+      quantidade={
+        <input
+          type="number"
+          min="0.01"
+          step="0.01"
+          aria-label={`Quantidade de ${nome}`}
+          {...register(`itens.${index}.quantidade`)}
+          className={CLASSE_CAMPO_DA_LINHA}
+        />
+      }
+      preco={
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          aria-label={`Preço de ${nome}`}
+          {...register(`itens.${index}.preco_unitario`)}
+          className={CLASSE_CAMPO_DA_LINHA}
+        />
+      }
+      desconto={
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          aria-label={`Desconto de ${nome}`}
+          {...register(`itens.${index}.desconto`)}
+          className={CLASSE_CAMPO_DA_LINHA}
+        />
+      }
+      tecnico={
+        <div className="flex min-w-0 items-center gap-2 xl:block">
+          <label htmlFor={idDoTecnico} className="shrink-0 text-meta text-texto-2 xl:sr-only">
+            Técnico
+          </label>
           <Combobox
-            tamanho="filtro"
+            id={idDoTecnico}
+            className="min-w-0 flex-1"
             opcoes={funcionarios.map((funcionario) => ({
               valor: funcionario.id,
               rotulo: funcionario.nome,
@@ -225,34 +259,22 @@ export function ItemOSRow({
             opcaoVazia="Sem técnico definido"
             placeholder="Sem técnico definido"
           />
-        </label>
-      </div>
-
-      {(avisoEstoque || avisoCusto) && (
-        <div className="space-y-1">
-          {avisoEstoque && <p className="text-rotulo text-atencao">{avisoEstoque}</p>}
-          {avisoCusto && <p className="text-rotulo text-atencao">{avisoCusto}</p>}
         </div>
-      )}
-
-      <div className="flex items-center justify-between gap-3">
-        {/* O saldo só aparece aqui quando NÃO há aviso de estoque: o aviso
-            já começa dizendo o saldo, e mostrar os dois seguidos era a mesma
-            informação repetida em duas linhas coladas. */}
-        <p className="text-rotulo text-texto-2">
-          {pecaEscolhida && saldoCarregado && !avisoEstoque
-            ? `Saldo em estoque: ${(saldoDaPeca ?? 0).toLocaleString("pt-BR")}${
-                pecaEscolhida.unidade ? ` ${pecaEscolhida.unidade}` : ""
-              }`
-            : ""}
-        </p>
-        <p className="text-rotulo text-texto/90">
-          Total deste item:{" "}
-          <span className="font-semibold text-texto">
-            {totalItem.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-          </span>
-        </p>
-      </div>
-    </div>
+      }
+      total={totalItem}
+      acao={<BotaoAbrirItem aberto={aberto} nome={nome} aoClicar={() => setAberto((a) => !a)} />}
+      noMenu={[
+        {
+          tipo: "menu",
+          rotulo: "Tirar da OS",
+          icone: <Trash2 />,
+          perigosa: true,
+          // Item novo, ainda não salvo: sem janela de confirmação, é desfeito só
+          // tirando (e buscando de novo).
+          aoClicar: onRemover,
+        },
+      ]}
+      embaixo={detalhe}
+    />
   );
 }

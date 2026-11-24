@@ -177,6 +177,9 @@ begin
       ('orcamentos',          (select count(*) from ordens_servico where loja_id = loja and numero is null), 2),
       ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 38),
       ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 15),
+      ('configuracoes_taxas_maquininha', (select count(*) from configuracoes_taxas_maquininha where loja_id = loja), 7),
+      ('caixa_taxas_cartao',  (select count(*) from caixa_taxas_cartao where loja_id = loja), 2),
+      ('caixa_cartao_a_receber', (select count(*) from caixa_cartao_a_receber where loja_id = loja), 4),
       ('fechamentos_caixa',   (select count(*) from fechamentos_caixa where loja_id = loja), 2),
       ('comissoes_fechamentos',(select count(*) from comissoes_fechamentos where loja_id = loja), 1),
       ('computadores',        (select count(*) from computadores where loja_id = loja), 1),
@@ -517,6 +520,30 @@ begin
                                      ('Energia e internet', 'saida', 'despesas_administrativas'),
                                      ('Fornecedores', 'saida', 'custos'))) <> 3 then
     raise exception 'FALHOU (B18): as 3 categorias de caixa de exemplo não estão no grupo certo';
+  end if;
+
+  -- B19. a taxa da maquininha (0089, #387): cada venda no cartão tem a
+  -- fotografia da taxa, do mesmo valor e forma do lançamento, e as datas
+  -- (uma por parcela) somam exatamente o líquido.
+  for linha in
+    select t.movimento_id, t.parcelas, t.valor_liquido,
+           (select count(*) from caixa_cartao_a_receber r where r.movimento_id = t.movimento_id) as datas,
+           (select sum(r.valor) from caixa_cartao_a_receber r where r.movimento_id = t.movimento_id) as soma,
+           c.valor = t.valor_bruto and c.forma_pagamento = t.forma as bate_com_o_caixa
+      from caixa_taxas_cartao t
+      join caixa_movimentos c on c.id = t.movimento_id
+     where t.loja_id = loja
+  loop
+    if linha.datas <> linha.parcelas or linha.soma is distinct from linha.valor_liquido
+       or not linha.bate_com_o_caixa then
+      raise exception 'FALHOU (B19): a taxa do lançamento % não fecha (% datas pra % parcelas, soma % de líquido %)',
+        linha.movimento_id, linha.datas, linha.parcelas, linha.soma, linha.valor_liquido;
+    end if;
+  end loop;
+  if exists (select 1 from caixa_movimentos c
+              where c.loja_id = loja and c.forma_pagamento in ('cartao_debito', 'cartao_credito')
+                and not exists (select 1 from caixa_taxas_cartao t where t.movimento_id = c.id)) then
+    raise exception 'FALHOU (B19): venda no cartão da loja de exemplo sem a taxa da maquininha';
   end if;
 end $$;
 
