@@ -107,6 +107,14 @@ describe("buscarNoCatalogo", () => {
     ]);
   });
 
+  it("medida digitada sem barras conta como 'começa com' na ordem (#1180)", () => {
+    // "1757513" casa as duas pelos dígitos; só a "comeca" tem a medida
+    // começando com ele, então vem antes mesmo chegando depois.
+    const contem = peca({ id: "contem", codigo_interno: null, codigo_barras: null, descricao: "Pneu 99 175/75 R13", medida: null });
+    const comeca = peca({ id: "comeca", codigo_interno: null, codigo_barras: null, descricao: "Pneu Exemplo", medida: "175/75 R13" });
+    expect(ids(buscarNoCatalogo([contem, comeca], [], "1757513"))).toEqual(["comeca", "contem"]);
+  });
+
   it("a descrição que começa com o termo vem antes da que só contém", () => {
     // Os dois são serviço; o que só contém "pneu" vem primeiro na lista.
     const rodizio = servico({ id: "rodizio", codigo_interno: null, descricao: "Rodízio de pneu" });

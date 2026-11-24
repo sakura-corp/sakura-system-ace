@@ -1,4 +1,9 @@
-import { acharPorCodigoExato, pecaCasaComBusca, type PecaBuscavel } from "./estoque";
+import {
+  acharPorCodigoExato,
+  pecaCasaComBusca,
+  pecaComecaComBusca,
+  type PecaBuscavel,
+} from "./estoque";
 import { itemFormVazio, paraDisplayNumero, type ItemFormValues } from "./ordemServico";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
@@ -61,25 +66,14 @@ function resultadoDoServico(servico: Servico): ResultadoDaBusca {
   };
 }
 
-// Só pra decidir a ORDEM da lista ("começa com" antes de "contém"). O que
-// entra na lista é sempre decidido pela busca de `estoque.ts`; se esta
-// cópia um dia divergir de lá, muda só a ordem, nunca o que aparece.
-function normalizar(texto: string | null | undefined): string {
-  return (texto ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // tira acento
-    .toLowerCase()
-    .trim();
-}
-
-/** 0 = código exato; 1 = descrição ou código começa com o termo; 2 = o resto. */
+/**
+ * 0 = código exato; 1 = descrição, código, marca, modelo ou medida começa
+ * com o termo (inclusive medida sem barras, #1180); 2 = o resto. Só decide
+ * a ORDEM: o que entra na lista é sempre decidido por `pecaCasaComBusca`.
+ */
 function posicao(item: PecaBuscavel, termo: string): number {
   if (acharPorCodigoExato([item], termo)) return 0;
-  const busca = normalizar(termo);
-  const comeca = [item.descricao, item.codigo_interno, item.codigo_barras].some((campo) =>
-    normalizar(campo).startsWith(busca),
-  );
-  return comeca ? 1 : 2;
+  return pecaComecaComBusca(item, termo) ? 1 : 2;
 }
 
 /**

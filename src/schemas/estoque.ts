@@ -118,24 +118,47 @@ const MIN_DIGITOS_BUSCA_NUMERICA = 5;
  *    5 ou mais dígitos (pra "13" não achar meio estoque).
  */
 export function pecaCasaComBusca(peca: PecaBuscavel, termo: string): boolean {
-  const busca = normalizar(termo);
-  if (busca === "") return true;
-  const buscaAlfa = soLetrasENumeros(busca);
-  const buscaNumerica =
-    /^[0-9]+$/.test(buscaAlfa) && buscaAlfa.length >= MIN_DIGITOS_BUSCA_NUMERICA ? buscaAlfa : null;
-  return [
-    peca.descricao,
-    peca.codigo_interno,
-    peca.codigo_barras,
-    peca.marca,
-    peca.modelo,
-    peca.medida,
-  ].some((campo) => {
-    const texto = normalizar(campo);
-    if (texto.includes(busca)) return true;
-    if (buscaAlfa !== "" && soLetrasENumeros(texto).includes(buscaAlfa)) return true;
-    return buscaNumerica !== null && texto.replace(/[^0-9]/g, "").includes(buscaNumerica);
-  });
+  const busca = prepararBusca(termo);
+  if (busca.normal === "") return true;
+  return camposBuscaveis(peca).some((campo) => campoCasa(campo, busca, "contem"));
+}
+
+/**
+ * Só pra ORDENAR a lista da busca única (#1180): o campo "começa com" o
+ * termo, pelos mesmos 3 jeitos de `pecaCasaComBusca`. Quem digita a medida
+ * sem barras ("1757513") vem antes de quem só tem aquilo no meio do texto.
+ */
+export function pecaComecaComBusca(peca: PecaBuscavel, termo: string): boolean {
+  const busca = prepararBusca(termo);
+  return camposBuscaveis(peca).some((campo) => campoCasa(campo, busca, "comeca"));
+}
+
+interface BuscaPreparada {
+  normal: string;
+  alfa: string;
+  /** Só preenchida quando o termo é só número e tem 5 ou mais dígitos. */
+  numerica: string | null;
+}
+
+function prepararBusca(termo: string): BuscaPreparada {
+  const normal = normalizar(termo);
+  const alfa = soLetrasENumeros(normal);
+  const numerica =
+    /^[0-9]+$/.test(alfa) && alfa.length >= MIN_DIGITOS_BUSCA_NUMERICA ? alfa : null;
+  return { normal, alfa, numerica };
+}
+
+function camposBuscaveis(peca: PecaBuscavel): (string | null)[] {
+  return [peca.descricao, peca.codigo_interno, peca.codigo_barras, peca.marca, peca.modelo, peca.medida];
+}
+
+function campoCasa(campo: string | null, busca: BuscaPreparada, modo: "contem" | "comeca"): boolean {
+  const casa = (texto: string, parte: string) =>
+    modo === "contem" ? texto.includes(parte) : texto.startsWith(parte);
+  const texto = normalizar(campo);
+  if (casa(texto, busca.normal)) return true;
+  if (busca.alfa !== "" && casa(soLetrasENumeros(texto), busca.alfa)) return true;
+  return busca.numerica !== null && casa(texto.replace(/[^0-9]/g, ""), busca.numerica);
 }
 
 /**
