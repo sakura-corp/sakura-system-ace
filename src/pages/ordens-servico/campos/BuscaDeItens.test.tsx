@@ -60,6 +60,23 @@ function montar(extra: Partial<Parameters<typeof BuscaDeItens>[0]> = {}) {
 }
 
 describe("BuscaDeItens", () => {
+  it("ao abrir, a lista rola pra ficar à vista, acima da barra do total (teste no PC da #1087)", async () => {
+    const rolar = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = rolar;
+    try {
+      const { user, busca } = montar();
+      await user.type(busca, "pneu");
+      const lista = screen.getByRole("listbox", { name: "Resultados da busca" });
+      expect(rolar).toHaveBeenCalledWith({ block: "nearest" });
+      expect(rolar.mock.contexts.at(-1)).toBe(lista);
+      // A margem de baixo é o que deixa a lista acima da barra grudada no rodapé.
+      expect(lista.className).toMatch(/scroll-mb-/);
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it("acha peça e serviço juntos, cada um com a palavra Peça ou Serviço, código, saldo e preço", async () => {
     const { user, busca } = montar();
     await user.type(busca, "pneu");

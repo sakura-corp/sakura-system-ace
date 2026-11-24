@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useId, useMemo, useState, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import {
   buscarNoCatalogo,
@@ -149,6 +149,16 @@ export function BuscaDeItens({
 
   const idDaOpcao = (indice: number) => `${idDaLista}-${indice}`;
 
+  // A lista abre embaixo do campo, e na OS a barra do total fica grudada no
+  // pé da tela: os últimos resultados ficavam escondidos atrás dela (teste
+  // no PC da #1087). Ao abrir, a tela rola o que falta pra lista aparecer
+  // inteira; a margem de baixo (`scroll-mb-40`) é a altura da barra.
+  const listaRef = useRef<HTMLUListElement>(null);
+  const listaAberta = opcoes.length > 0;
+  useEffect(() => {
+    if (listaAberta) listaRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [listaAberta]);
+
   return (
     <div className={`min-w-0 ${className}`}>
       <label className="sakura-rotulo">
@@ -190,10 +200,11 @@ export function BuscaDeItens({
 
       {opcoes.length > 0 && (
         <ul
+          ref={listaRef}
           id={idDaLista}
           role="listbox"
           aria-label="Resultados da busca"
-          className="mt-2 divide-y divide-linha overflow-hidden rounded-xl border border-linha bg-janela"
+          className="mt-2 scroll-mb-40 divide-y divide-linha overflow-hidden rounded-xl border border-linha bg-janela"
         >
           {opcoes.map((opcao, indice) => (
             <li
