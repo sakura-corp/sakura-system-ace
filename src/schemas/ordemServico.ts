@@ -9,7 +9,7 @@ import type {
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
 import { arredondarCentavo } from "./dinheiro";
-import { ehPecaAvulsa, lucroDaOrdemPeloBanco } from "./orcamento";
+import { ehPecaAvulsa, lucroDaOrdem, lucroDaOrdemPeloBanco } from "./orcamento";
 import type { MapaCusto } from "./metricasCaixa";
 import { somarValoresLiquidos } from "./valorItem";
 
@@ -331,7 +331,7 @@ export function lucroPrevistoDaOrdem(args: {
   custoPeca: MapaCusto | null;
   custoServico: MapaCusto;
 }): LucroPrevisto {
-  const { itensExistentes, custoDosExistentes } = args;
+  const { itensExistentes, custoDosExistentes, itensFormulario, custoPeca, custoServico } = args;
   // Os itens já gravados: o custo vem pronto do banco (`custo_das_ordens`),
   // pela mesma conta do resto do programa. Sem item gravado não há o que
   // pedir ao banco, e essa parte é zero.
@@ -340,5 +340,22 @@ export function lucroPrevistoDaOrdem(args: {
       ? lucroDaOrdemPeloBanco(itensExistentes, custoDosExistentes)
       : { lucro: 0, custoNaoInformado: false as const };
   if (lucroExistentes.custoNaoInformado) return { lucro: null, falta: "custo-nao-informado" };
-  return { lucro: arredondarCentavo(lucroExistentes.lucro), falta: null };
+
+  // Os itens em digitação: só as linhas que seriam gravadas
+  // (`paraItensValidos` descarta a linha em branco), com a conta de sempre.
+  // Sem o mapa de custo das peças, o mapa vazio aqui só serve pra achar a
+  // peça avulsa sem custo: a peça do cadastro sairia com custo zero, e por
+  // isso ela é barrada logo abaixo.
+  const novos = paraItensValidos(itensFormulario);
+  const lucroNovos = lucroDaOrdem(novos, custoPeca ?? new Map(), custoServico);
+  if (lucroNovos.custoNaoInformado) return { lucro: null, falta: "custo-nao-informado" };
+
+  // Quem não tem o módulo Estoque não lê o custo da peça do cadastro: o
+  // número só existe depois de gravar, quando o banco calcula
+  // (`custo_das_ordens`). Mostrar antes seria lucro com custo zero.
+  if (custoPeca === null && novos.some((item) => item.tipo === "peca" && !ehPecaAvulsa(item))) {
+    return { lucro: null, falta: "aparece-ao-salvar" };
+  }
+
+  return { lucro: arredondarCentavo(lucroExistentes.lucro + lucroNovos.lucro), falta: null };
 }

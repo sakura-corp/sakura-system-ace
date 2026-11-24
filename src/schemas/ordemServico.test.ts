@@ -11,6 +11,7 @@ import {
   paraValoresFormulario,
   paraValoresItemExistente,
   lucroPrevistoDaOrdem,
+  TEXTO_LUCRO_APARECE_AO_SALVAR,
   totaisDaOrdem,
   type ItemFormValues,
 } from "./ordemServico";
@@ -357,5 +358,49 @@ describe("lucroPrevistoDaOrdem", () => {
     expect(lucro.lucro).toBe(
       lucroDaOrdem(paraItensValidos(itensFormulario), custoPeca, custoServico).lucro,
     );
+  });
+
+  it("com gravados e em digitação: soma os dois lucros", () => {
+    // 160 dos gravados (exemplo de cima) + 130 dos novos (exemplo de cima).
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("peca", 2, 150), itemLancado("servico", 1, 60)],
+      custoDosExistentes: { custo: 200, completo: true },
+      itensFormulario: [novo("peca", "2", "150", "20"), novo("servico", "1", "60")],
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 290, falta: null });
+  });
+
+  it("soma com centavos sem deixar cauda", () => {
+    // Gravado: 10,10 vendido, custo 0 = 10,10. Novo serviço: 0,20, custo 0.
+    // 10,1 + 0,2 em ponto flutuante dá 10,299999…; o lucro sai 10,30.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("servico", 1, 10.1)],
+      custoDosExistentes: { custo: 0, completo: true },
+      itensFormulario: [novo("servico", "1", "0.2")],
+      custoPeca,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 10.3, falta: null });
+  });
+
+  describe("quando não há número", () => {
+    // Peça digitada sem cadastro (avulsa, só no orçamento), com ou sem custo.
+    function avulsa(custo: string): ItemFormValues {
+      return { ...novo("peca", "1", "50"), peca_id: "", descricao: "Válvula", custo_unitario: custo };
+    }
+
+    it("peça do cadastro, mas quem está na tela não lê o custo das peças: aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "aparece-ao-salvar" });
+      expect(TEXTO_LUCRO_APARECE_AO_SALVAR).toBe("aparece ao salvar");
+    });
   });
 });
