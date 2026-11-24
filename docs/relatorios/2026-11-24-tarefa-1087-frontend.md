@@ -3,7 +3,7 @@
 - **Tarefa**: #1087, peças e serviços na OS com uma busca só, e a OS em página própria (leva 8, trilha B)
 - **Chefe**: frontend
 - **Data**: 2026-11-24
-- **PR**: o desta branch (`claude/jolly-mayer-9aj2fd`), com `Closes #1087`
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1179
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
