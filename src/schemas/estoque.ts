@@ -97,14 +97,32 @@ function normalizar(texto: string | null | undefined): string {
     .trim();
 }
 
+/** Só letras e números: tira barra, espaço, ponto, traço. */
+function soLetrasENumeros(texto: string): string {
+  return texto.replace(/[^a-z0-9]/g, "");
+}
+
+/** Quantos dígitos o termo precisa ter pro jeito "só números" valer (#1180). */
+const MIN_DIGITOS_BUSCA_NUMERICA = 5;
+
 /**
  * Casa por qualquer campo que alguém usaria pra achar a peça no balcão —
  * inclusive a `medida` do pneu (migration 0051), que é justamente o que
  * permite responder "tem 175/70 R14?" sem ler peça por peça.
+ *
+ * A medida é digitada de qualquer jeito ("1757513", "175 75 13", "175/75r13"),
+ * então o campo casa se o termo aparecer de um destes 3 jeitos (#1180):
+ * 1. como veio (sem acento e sem maiúscula);
+ * 2. só letras e números dos dois lados;
+ * 3. só números dos dois lados — apenas quando o termo é só número e tem
+ *    5 ou mais dígitos (pra "13" não achar meio estoque).
  */
 export function pecaCasaComBusca(peca: PecaBuscavel, termo: string): boolean {
   const busca = normalizar(termo);
   if (busca === "") return true;
+  const buscaAlfa = soLetrasENumeros(busca);
+  const buscaNumerica =
+    /^[0-9]+$/.test(buscaAlfa) && buscaAlfa.length >= MIN_DIGITOS_BUSCA_NUMERICA ? buscaAlfa : null;
   return [
     peca.descricao,
     peca.codigo_interno,
@@ -112,7 +130,12 @@ export function pecaCasaComBusca(peca: PecaBuscavel, termo: string): boolean {
     peca.marca,
     peca.modelo,
     peca.medida,
-  ].some((campo) => normalizar(campo).includes(busca));
+  ].some((campo) => {
+    const texto = normalizar(campo);
+    if (texto.includes(busca)) return true;
+    if (buscaAlfa !== "" && soLetrasENumeros(texto).includes(buscaAlfa)) return true;
+    return buscaNumerica !== null && texto.replace(/[^0-9]/g, "").includes(buscaNumerica);
+  });
 }
 
 /**
