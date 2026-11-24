@@ -45,6 +45,13 @@ describe("ehDinheiro", () => {
 });
 
 describe("resumirDiaParaFechamento", () => {
+  it("a devolução em dinheiro ligada a uma OS (#1182) sai da gaveta no esperado", () => {
+    const devolucao = { ...mov("saida", 50, "dinheiro"), ordem_servico_id: "os-1" };
+    const r = resumirDiaParaFechamento([mov("entrada", 200, "dinheiro"), devolucao], 100);
+    expect(r.saidasDinheiro).toBe(50);
+    expect(r.esperado).toBe(250);
+  });
+
   it("esperado = fundo + entradas em dinheiro − saídas em dinheiro; Pix e cartão ficam de fora", () => {
     const r = resumirDiaParaFechamento(
       [

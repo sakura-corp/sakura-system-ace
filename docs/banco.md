@@ -684,8 +684,9 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   dia da fatura não trava mais); total faturado da tela ≠ banco ou acerto que não vale pro caso
   **`SKMUD`**; estoque **`SKNEG`**. O caso é decidido no banco: conta do faturamento em aberto → a
   conta muda de valor; paga e subiu → Entrada no Caixa de hoje (com a OS) ou conta nova `correcao`
-  só da diferença; paga e desceu → Saída "Devolução ao cliente" **sem `ordem_servico_id`** (senão
-  entraria como pagamento da OS na NFC-e e na garantia; a ligação fica no histórico). A categoria
+  só da diferença; paga e desceu → Saída "Devolução ao cliente" **ligada à OS** (Sofia, 24/11: é
+  "recebido a menos" da OS; o programa a desconta do recebido nas Relações, mostra nas Saídas do
+  Caixa e deixa fora dos pagamentos da OS na NFC-e e na garantia). A categoria
   nasce na primeira devolução, "a classificar". A `0087` fica pra versão antiga do programa; a nova
   chama só esta, também com o total igual. Teste em `supabase/scripts/testar-corrigir-os-faturada.sql`.
 

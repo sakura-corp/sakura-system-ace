@@ -547,13 +547,8 @@ begin
   end if;
   select custo into custo_depois from custo_das_ordens(array[os_dev]);
   reset role;
-  -- A saída NÃO leva a OS (senão entraria como pagamento dela na NFC-e e na
-  -- garantia): a ligação fica no histórico.
-  select count(*) into n from caixa_movimentos
-   where tipo = 'saida' and loja_id = loja_a and descricao = 'Devolução da correção da OS 9104';
-  if (select count(*) from caixa_movimentos where ordem_servico_id = os_dev and tipo = 'saida') <> 0 then
-    raise exception 'FALHOU (C23b): a saída da devolução ficou ligada à OS';
-  end if;
+  -- A saída leva a OS (Sofia, 24/11: é "recebido a menos" daquela OS).
+  select count(*) into n from caixa_movimentos where ordem_servico_id = os_dev and tipo = 'saida';
   if n <> 1 then
     raise exception 'FALHOU (C23): paga e desceu deveria ter 1 saída (tem %)', n;
   end if;

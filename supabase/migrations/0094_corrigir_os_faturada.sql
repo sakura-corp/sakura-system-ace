@@ -491,15 +491,14 @@ begin
          where nome = 'Devolução ao cliente' and tipo = 'saida';
       end if;
     end if;
-    -- SEM `ordem_servico_id`, de propósito: o programa lê os lançamentos de
-    -- uma OS como PAGAMENTOS dela (as formas da NFC-e, a garantia, o lucro
-    -- por lançamento), e uma saída ali entraria como se fosse pagamento. A
-    -- ligação com a OS fica no histórico (`caixa_movimento_id`) e na
-    -- descrição; no Caixa ela aparece como as outras saídas com categoria.
+    -- LIGADA à OS (Sofia, 24/11/2026): é "recebido a menos" daquela OS. O
+    -- programa trata a saída ligada a uma OS assim: desconta do recebido nas
+    -- Relações (não é despesa), aparece nas Saídas do Caixa (é dinheiro que
+    -- saiu da gaveta) e fica fora dos pagamentos da OS (NFC-e, garantia).
     insert into caixa_movimentos
       (loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
     values
-      (v_ordem.loja_id, now(), null, 'saida', v_forma, abs(v_diferenca),
+      (v_ordem.loja_id, now(), v_ordem.id, 'saida', v_forma, abs(v_diferenca),
        'Devolução da correção da ' || v_nome, v_categoria)
     returning id into v_movimento;
   end if;
