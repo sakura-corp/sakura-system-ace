@@ -74,6 +74,23 @@ export const CENAS = [
     // desceu pra 1024 com o molde de lista. Conferido pelo `npm run largura:telas`.
     semRolarAPartirDe: 1024,
     descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra total e lucro de cada ordem (e, em tela larga, quanto foi de peças e de serviços)." },
+
+  // Os estados do molde de lista e dos chips (#1085, parte 5/5 #1136), na
+  // primeira tela que usa o molde. O estado de erro e o esqueleto do
+  // "carregando" não têm cena: o banco de mentira não sabe falhar nem
+  // demorar só numa cena; eles estão provados nos testes do MoldeLista.
+  { arquivo: "07a-ordens-busca-sem-nada", modulo: "Ordens de Serviço", titulo: "Lista de OS: a busca que não achou nada",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
+    passos: [{ digitar: "Placa que não existe", em: 'input[type="search"]' }],
+    descricao: "O vazio de uma busca é diferente do vazio de uma loja nova: a lista diz o que foi buscado e oferece limpar a busca, em vez de \"nenhuma OS cadastrada\" (que assusta quem tem centenas). Os chips do período ficam apagados enquanto a busca vale, porque a busca olha o histórico inteiro." },
+  { arquivo: "07b-ordens-escolher-datas", modulo: "Ordens de Serviço", titulo: "Lista de OS: escolher o período",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024, passos: [{ clicar: "Escolher datas" }],
+    descricao: "Os chips do período: um só escolhido por vez, marcado também pelo visto (✓) e pela palavra em negrito, não só pela cor. \"Escolher datas\" abre os dois campos de data ao lado, sem janela." },
+  { arquivo: "07c-ordens-loja-nova", modulo: "Ordens de Serviço", titulo: "Lista de OS de uma loja que ainda não atendeu ninguém",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
+    // Só as OS saem (orçamento e recusado ficam, como numa loja que só orçou).
+    tirarLinhas: { ordens_servico: (o) => !["orcamento", "recusado"].includes(o.status) },
+    descricao: "O vazio de começo: uma frase do que vai aparecer ali e o botão pra começar (\"Nova OS\"), sem busca nem filtro, que não teriam o que procurar." },
   { arquivo: "08-os-form", modulo: "Ordens de Serviço", titulo: "Abertura de ordem de serviço",
     rota: "/ordens-servico", passos: [{ clicar: "Nova ordem de serviço" }],
     // Desde a #1087 a OS abre numa página só dela (a lista sai da tela e volta
