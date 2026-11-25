@@ -61,3 +61,15 @@ export function indiceDoPasso(passo: PassoDaOs): number {
   if (passo === "pronto") return PASSOS_DA_OS.length;
   return PASSOS_DA_OS.findIndex((p) => p.passo === passo);
 }
+
+/**
+ * Se a OS pode mostrar o passo `visto` estando no passo `atual`: o atual e os
+ * já feitos, nunca um de depois. A exceção é a garantia e o aviso com a nota
+ * ainda pendente (#1203): a nota que não sai (a prefeitura recusou a NFS-e)
+ * não pode segurar o carro no pátio. A OS continua no passo da nota (a nota
+ * segue faltando); só dá pra adiantar a garantia e o aviso.
+ */
+export function podeVerPasso(visto: PassoDaOs, atual: PassoDaOs): boolean {
+  if (visto === "garantia" && atual === "nota") return true;
+  return indiceDoPasso(visto) <= indiceDoPasso(atual);
+}

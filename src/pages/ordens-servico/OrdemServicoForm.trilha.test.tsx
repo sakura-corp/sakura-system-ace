@@ -272,6 +272,46 @@ describe("OrdemServicoForm — a trilha do fechamento (#1088)", () => {
     expect(await within(trilha()).findByText(/Passo 4 de 4/)).toBeInTheDocument();
   });
 
+  // #1203 (teste da Sofia, 25/11): a NFS-e recusada pela prefeitura deixava a
+  // OS parada no passo da nota, sem a garantia nem o "Avisar o cliente".
+  it("nota pendente não trava: dá pra ir pra garantia e avisar, e a nota continua faltando", async () => {
+    const aoAbrir = vi.fn();
+    const { user } = montar(ordem("faturada"), {
+      avisoCarroPronto: { telefone: "16999990000", texto: "Seu carro está pronto", aoAbrir },
+    });
+    await within(trilha()).findByText(/Passo 3 de 4/);
+    await user.click(screen.getByRole("button", { name: "Garantia e avisar sem a nota" }));
+
+    const passo = screen.getByRole("region", { name: "Garantia e avisar" });
+    // A nota pendente continua à vista, como aviso.
+    expect(passo).toHaveTextContent(/Ainda faltam a NFC-e e a NFS-e/);
+    expect(within(passo).getByRole("button", { name: "Ver garantia" })).toBeInTheDocument();
+    expect(botaoLaranja()).toHaveTextContent("Avisar o cliente");
+    expect(screen.getByRole("button", { name: "Concluir sem avisar" })).toBeInTheDocument();
+    // Dá pra voltar pra nota pela trilha.
+    expect(within(trilha()).getByRole("button", { name: /Voltar pro passo atual: Nota fiscal/ })).toBeInTheDocument();
+
+    await user.click(botaoLaranja());
+    expect(abrirConversaWhatsapp).toHaveBeenCalledWith("16999990000", "Seu carro está pronto");
+    expect(aoAbrir).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/Cliente avisado em/)).toBeInTheDocument();
+    // Avisar não pula a nota: a OS continua no passo 3, e o aviso não é oferecido de novo.
+    expect(within(trilha()).getByText(/Passo 3 de 4/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Avisar o cliente" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Concluir sem avisar" })).toBeNull();
+  });
+
+  it("com a nota pendente, 'Concluir sem avisar' marca e a OS continua no passo da nota", async () => {
+    const { user } = montar(ordem("faturada"), {
+      avisoCarroPronto: { telefone: "16999990000", texto: "x", aoAbrir: vi.fn() },
+    });
+    await within(trilha()).findByText(/Passo 3 de 4/);
+    await user.click(screen.getByRole("button", { name: "Garantia e avisar sem a nota" }));
+    await user.click(screen.getByRole("button", { name: "Concluir sem avisar" }));
+    expect(await screen.findByText(/Concluído sem o aviso/)).toBeInTheDocument();
+    expect(within(trilha()).getByText(/Passo 3 de 4/)).toBeInTheDocument();
+  });
+
   it("orçamento não tem trilha", () => {
     montar(ordem("orcamento"), { modoOrcamento: true });
     expect(screen.queryByRole("region", { name: "Fechar a OS" })).toBeNull();
