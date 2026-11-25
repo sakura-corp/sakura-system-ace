@@ -11,6 +11,7 @@ import {
   lancamentosDepoisDoFechamento,
   momentoDoLancamento,
   resumirDiaParaFechamento,
+  rotuloDaForma,
   situacaoDaDiferenca,
   somarDiferencas,
   totaisParaGravar,
@@ -44,7 +45,31 @@ describe("ehDinheiro", () => {
   });
 });
 
+describe("rotuloDaForma", () => {
+  it("dá nome às seis formas da lista do lançamento manual (#1089)", () => {
+    expect(rotuloDaForma("dinheiro")).toBe("Dinheiro");
+    expect(rotuloDaForma("pix")).toBe("Pix");
+    expect(rotuloDaForma("cartao_debito")).toBe("Cartão de débito");
+    expect(rotuloDaForma("cartao_credito")).toBe("Cartão de crédito");
+    expect(rotuloDaForma("transferencia")).toBe("Transferência");
+    expect(rotuloDaForma("outro")).toBe("Outro");
+  });
+
+  it("o texto livre antigo aparece como foi escrito; o que tem chave conhecida ganha o nome certo", () => {
+    expect(rotuloDaForma("Vale da loja")).toBe("Vale da loja");
+    expect(rotuloDaForma("PIX")).toBe("Pix");
+    expect(rotuloDaForma("Transferência")).toBe("Transferência");
+  });
+});
+
 describe("resumirDiaParaFechamento", () => {
+  it("a devolução em dinheiro ligada a uma OS (#1182) sai da gaveta no esperado", () => {
+    const devolucao = { ...mov("saida", 50, "dinheiro"), ordem_servico_id: "os-1" };
+    const r = resumirDiaParaFechamento([mov("entrada", 200, "dinheiro"), devolucao], 100);
+    expect(r.saidasDinheiro).toBe(50);
+    expect(r.esperado).toBe(250);
+  });
+
   it("esperado = fundo + entradas em dinheiro − saídas em dinheiro; Pix e cartão ficam de fora", () => {
     const r = resumirDiaParaFechamento(
       [

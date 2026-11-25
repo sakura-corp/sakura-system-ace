@@ -9,6 +9,7 @@
  */
 import { diaLocal } from "@/lib/datas";
 import type { TipoCaixa } from "@/types/caixa";
+import { ehAcertoDeCorrecao } from "./metricasCaixa";
 
 export type Periodo = "diario" | "semanal" | "mensal" | "anual";
 
@@ -18,6 +19,8 @@ export interface MovimentoDoGrafico {
   tipo: TipoCaixa;
   valor: number;
   ordem_servico_id: string | null;
+  /** Pra reconhecer a diferença de uma correção de OS faturada (#1182). */
+  descricao?: string | null;
 }
 
 // Quantas colunas o gráfico mostra em cada modo. No anual são 5 anos: menos
@@ -176,7 +179,8 @@ export function seriesVendasCustosLucro(
     const chave = chaveDoMovimento(m.data, periodo);
     if (m.tipo === "entrada") {
       vendasMap.set(chave, (vendasMap.get(chave) ?? 0) + m.valor);
-      if (m.ordem_servico_id) {
+      // A diferença de uma correção não leva o custo da OS (#1182): ele fica no dia da fatura.
+      if (m.ordem_servico_id && !ehAcertoDeCorrecao(m)) {
         const marcador = `${chave}|${m.ordem_servico_id}`;
         if (!ordensJaContadas.has(marcador)) {
           ordensJaContadas.add(marcador);

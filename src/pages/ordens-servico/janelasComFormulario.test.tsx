@@ -139,9 +139,9 @@ describe("nenhuma janela com formulário dentro do formulário da tela (#1130)",
     confereJanela();
   });
 
-  it("OS faturada: 'Trocar peça ou serviço'", async () => {
+  it("OS faturada: 'Corrigir a OS'", async () => {
     const { user } = montarOS(ordem("faturada"));
-    await user.click(screen.getByRole("button", { name: "Trocar peça ou serviço" }));
+    await user.click(screen.getByRole("button", { name: "Corrigir a OS" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     // A janela da troca pode não ter <form> próprio; o que importa é não
     // estar dentro do da OS.

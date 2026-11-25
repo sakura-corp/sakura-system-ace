@@ -189,16 +189,17 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
     expect(screen.queryByRole("combobox", { name: "Buscar peça ou serviço" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /adicionar item/ })).not.toBeInTheDocument();
     expect(screen.getByText(/já foi faturada/)).toBeInTheDocument();
-    expect(screen.getByText(/mantendo o mesmo total/)).toBeInTheDocument();
+    expect(screen.getByText(/corrigir peça, serviço ou valor/)).toBeInTheDocument();
   });
 
   // #1145: a troca de peça ou serviço com o total igual. O banco confere tudo
   // de novo; aqui é só quem vê o botão.
-  it("o gerente vê o Trocar peça ou serviço numa OS faturada sem nota", async () => {
+  it("o gerente vê o Corrigir a OS numa OS faturada sem nota", async () => {
     const onTrocarItensFaturada = vi.fn().mockResolvedValue(undefined);
     const { user } = montar({ ordemExistente: ordemFaturada(), gerente: true, onTrocarItensFaturada });
 
-    await user.click(screen.getByRole("button", { name: "Trocar peça ou serviço" }));
+    expect(screen.getByText("Precisa corrigir? Peça, serviço ou valor")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Corrigir a OS" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     // Continua sem o + adicionar item do caminho comum.
     expect(screen.getAllByRole("button", { name: /adicionar item/ })).toHaveLength(1);
@@ -207,7 +208,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
   it("quem não é gerente não vê o botão, e lê por quê", () => {
     montar({ ordemExistente: ordemFaturada(), gerente: false, onTrocarItensFaturada: vi.fn() });
 
-    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Corrigir a OS" })).not.toBeInTheDocument();
     expect(screen.getByText(/Só quem é gerente/)).toBeInTheDocument();
   });
 
@@ -219,7 +220,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       onTrocarItensFaturada: vi.fn(),
     });
 
-    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Corrigir a OS" })).not.toBeInTheDocument();
     expect(screen.getByText(/a nota ficaria diferente da OS/)).toBeInTheDocument();
   });
 
@@ -231,6 +232,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       trocas: [
         {
           id: "t1",
+          tipo: "troca",
           operador_nome: "Sofia",
           motivo: "medida errada",
           total: 800,
@@ -247,9 +249,41 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       ],
     });
 
+    expect(screen.getByText("Histórico da OS")).toBeInTheDocument();
     expect(
-      screen.getByText(/Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
+      screen.getByText(/Troca · Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
     ).toBeInTheDocument();
+  });
+
+  it("o histórico mostra a correção de valor: total antes → depois e o acerto", () => {
+    montar({
+      ordemExistente: ordemFaturada(),
+      gerente: true,
+      onTrocarItensFaturada: vi.fn(),
+      trocas: [
+        {
+          id: "t2",
+          tipo: "correcao_valor",
+          operador_nome: "Sofia",
+          motivo: "serviço a mais",
+          total: 900,
+          total_antes: 800,
+          total_depois: 900,
+          acerto: "pago_agora",
+          criado_em: "2026-11-24T15:00:00.000Z",
+          itens_antes: [],
+          itens_depois: [
+            { id: "item-2", tipo: "servico", peca_id: null, servico_id: null, tecnico_id: null,
+              descricao: "Alinhamento", quantidade: 1, preco_unitario: 100, desconto: 0 },
+          ],
+        },
+      ],
+    });
+
+    const linha = screen.getByText(/Sofia · saiu nada, entrou Alinhamento/);
+    expect(linha).toHaveTextContent(/total R\$\s800,00 → R\$\s900,00/);
+    expect(linha).toHaveTextContent(/cliente pagou a diferença/);
+    expect(linha).toHaveTextContent(/motivo: serviço a mais/);
   });
 
   it("OS só concluída AINDA deixa acrescentar item", () => {

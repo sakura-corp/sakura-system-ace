@@ -58,6 +58,26 @@ const palheta = peca({
 });
 
 describe("buscarNoCatalogo", () => {
+  it("com muitos pneus no cadastro, o serviço de pneu ainda aparece (teste no PC da #1087)", () => {
+    const pneus = Array.from({ length: 12 }, (_, i) =>
+      peca({ id: `pneu-${i}`, codigo_interno: `PN${i}`, codigo_barras: `789${i}`, descricao: `Pneu ${i}` }),
+    );
+    const resultado = buscarNoCatalogo(pneus, [montagem], "pneu");
+    expect(resultado).toHaveLength(8);
+    expect(resultado.some((r) => r.tipo === "servico" && r.id === "montagem")).toBe(true);
+  });
+
+  it("com muitos serviços, as peças também guardam lugar", () => {
+    const servicos = Array.from({ length: 12 }, (_, i) =>
+      servico({ id: `sv-${i}`, codigo_interno: `SV${i}`, descricao: `Pneu: serviço ${i}` }),
+    );
+    // A peça NÃO começa com "pneu": sem vaga guardada, os 12 serviços a tirariam.
+    const camara = peca({ id: "camara", codigo_interno: "CA1", codigo_barras: "7000", descricao: "Câmara de ar pra pneu" });
+    const resultado = buscarNoCatalogo([camara], servicos, "pneu");
+    expect(resultado).toHaveLength(8);
+    expect(resultado.some((r) => r.tipo === "peca" && r.id === "camara")).toBe(true);
+  });
+
   it("acha a peça e o serviço juntos com o mesmo termo", () => {
     expect(buscarNoCatalogo([pneu, palheta], [montagem, alinhamento], "pneu")).toEqual([
       {
@@ -105,6 +125,14 @@ describe("buscarNoCatalogo", () => {
       "comeca",
       "contem",
     ]);
+  });
+
+  it("medida digitada sem barras conta como 'começa com' na ordem (#1180)", () => {
+    // "1757513" casa as duas pelos dígitos; só a "comeca" tem a medida
+    // começando com ele, então vem antes mesmo chegando depois.
+    const contem = peca({ id: "contem", codigo_interno: null, codigo_barras: null, descricao: "Pneu 99 175/75 R13", medida: null });
+    const comeca = peca({ id: "comeca", codigo_interno: null, codigo_barras: null, descricao: "Pneu Exemplo", medida: "175/75 R13" });
+    expect(ids(buscarNoCatalogo([contem, comeca], [], "1757513"))).toEqual(["comeca", "contem"]);
   });
 
   it("a descrição que começa com o termo vem antes da que só contém", () => {

@@ -279,6 +279,48 @@ describe("OrdemServicoForm — recusar", () => {
   });
 });
 
+// #1181: o recusado reabre pela faixa dele (a janela é da página).
+describe("OrdemServicoForm — reabrir orçamento recusado", () => {
+  it("a faixa do recusado tem o botão, e ele pede a reabertura deste orçamento", async () => {
+    const onReabrir = vi.fn();
+    const ordem = orcamento({ status: "recusado", motivo_recusa: "preco" });
+    const { user } = montar({ ordemExistente: ordem, onReabrir });
+
+    await user.click(screen.getByRole("button", { name: "Reabrir orçamento" }));
+    expect(onReabrir).toHaveBeenCalledWith(ordem);
+    // Continua sem Aprovar: aprova depois de reaberto (ou pela caixinha da janela).
+    expect(screen.queryByRole("button", { name: "Aprovar" })).not.toBeInTheDocument();
+  });
+
+  it("orçamento aberto não tem o botão", () => {
+    montar({ ordemExistente: orcamento(), onReabrir: vi.fn() });
+    expect(screen.queryByRole("button", { name: "Reabrir orçamento" })).not.toBeInTheDocument();
+  });
+
+  it("o Histórico da OS mostra a reabertura, quem fez e o motivo", () => {
+    montar({
+      ordemExistente: orcamento(),
+      trocas: [
+        {
+          id: "h1",
+          tipo: "reabertura",
+          operador_nome: "Ana",
+          motivo: "Cliente voltou e aceitou (tinha sido recusado em 23/11, motivo: Preço)",
+          total: 680,
+          criado_em: "2026-11-24T15:00:00.000Z",
+          itens_antes: [],
+          itens_depois: [],
+        },
+      ],
+    });
+
+    expect(screen.getByText("Histórico da OS")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Reabertura · Ana · motivo: Cliente voltou e aceitou \(tinha sido recusado em 23\/11, motivo: Preço\)/),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("OrdemServicoForm — a OS de sempre não muda", () => {
   it("fora do modo orçamento não tem Validade nem Aprovar", () => {
     montar({ modoOrcamento: false, ordemExistente: undefined });

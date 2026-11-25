@@ -1,12 +1,35 @@
 import { TriangleAlert } from "lucide-react";
+import { useState } from "react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
+import { temAlgumaNotaValida } from "@/schemas/situacaoFiscal";
+import { motivoParaNaoTrocar } from "@/schemas/trocaFaturada";
+import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
+import type { FuncionarioPublico } from "@/types/funcionario";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
+import type { PecaJanela } from "@/types/peca";
+import type { Servico } from "@/types/servico";
 import type { OrdemServico } from "@/types/os";
 import { nomeDocumento } from "@/types/os";
 import { FechamentoTab } from "./FechamentoTab";
 import { SeloDaOrdem } from "./SeloDaOrdem";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
+import { TrocarItensFaturadaModal, type ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
+
+/** O que o botão "Corrigir a OS" precisa (#1182). Ausente = sem botão. */
+export interface CorrecaoDaVenda {
+  gerente: boolean;
+  pecas: PecaJanela[];
+  servicos: Servico[];
+  funcionarios: FuncionarioPublico[];
+  saldoPorPeca: Map<string, number>;
+  saldoCarregado: boolean;
+  buscarSituacao: () => Promise<SituacaoDaCorrecao>;
+  onConfirmar: (correcao: ConfirmacaoDaCorrecao) => Promise<void>;
+  /** Depois de cancelar a nota pela faixa: recarrega as notas da venda. */
+  onNotaCancelada?: () => void;
+}
 
 /**
  * Uma venda de balcão já registrada, aberta pela lista (item FN-09).
@@ -23,6 +46,7 @@ export function VendaBalcaoDetalhe({
   onFaturar,
   onVoltar,
   pedirAvaliacao,
+  correcao,
 }: {
   ordem: OrdemServico;
   notas: NotaFiscalArquivo[];
@@ -33,7 +57,16 @@ export function VendaBalcaoDetalhe({
    * link e o operador vê o cadastro; ausente = sem botão.
    */
   pedirAvaliacao?: { telefone: string | null | undefined; texto: string; aoAbrir: () => void };
+  /** Corrigir peça, serviço e valor de uma venda já faturada (#1182). */
+  correcao?: CorrecaoDaVenda;
 }) {
+  const [janelaCorrecao, setJanelaCorrecao] = useState(false);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
+  const temNota = temAlgumaNotaValida(notas);
+  const porQueNaoCorrige = correcao
+    ? motivoParaNaoTrocar({ faturada: ordem.status === "faturada", gerente: correcao.gerente, temNota })
+    : null;
+  const notaParaCancelar = notas.find((n) => temAlgumaNotaValida([n]));
   return (
     <div className="space-y-6 sakura-card p-6">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-linha pb-4">
@@ -82,7 +115,51 @@ export function VendaBalcaoDetalhe({
         </p>
       )}
 
+      {correcao && ordem.status === "faturada" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linha p-3">
+          <p className="text-rotulo text-texto-2">
+            {porQueNaoCorrige ?? "Precisa corrigir? Peça, serviço ou valor"}
+          </p>
+          {porQueNaoCorrige === null && (
+            <Botao tamanho="pequeno" onClick={() => setJanelaCorrecao(true)}>
+              Corrigir a OS
+            </Botao>
+          )}
+          {temNota && correcao.gerente && notaParaCancelar && (
+            <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+              Cancelar a nota
+            </Botao>
+          )}
+        </div>
+      )}
+
       <FechamentoTab ordem={ordem} />
+
+      {cancelandoNota && notaParaCancelar && (
+        <CancelarNotaModal
+          arquivo={notaParaCancelar}
+          onFechar={() => setCancelandoNota(false)}
+          onCancelado={() => correcao?.onNotaCancelada?.()}
+        />
+      )}
+
+      {janelaCorrecao && correcao && (
+        <TrocarItensFaturadaModal
+          ordem={ordem}
+          pecas={correcao.pecas}
+          servicos={correcao.servicos}
+          funcionarios={correcao.funcionarios}
+          saldoPorPeca={correcao.saldoPorPeca}
+          saldoCarregado={correcao.saldoCarregado}
+          buscarSituacao={correcao.buscarSituacao}
+          notaParaCancelar={notaParaCancelar}
+          onConfirmar={async (c) => {
+            await correcao.onConfirmar(c);
+            setJanelaCorrecao(false);
+          }}
+          onFechar={() => setJanelaCorrecao(false)}
+        />
+      )}
     </div>
   );
 }

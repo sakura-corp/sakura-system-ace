@@ -15,10 +15,11 @@ import type { OrdemServico } from "@/types/os";
  * O dicionário da página (uma palavra = uma conta, sempre a mesma):
  * - **Vendido**: o que as OS abertas no período venderam (o `totalReceita`
  *   da `lucratividadePorItem`).
- * - **Recebido**: as entradas do caixa no período.
+ * - **Recebido**: as entradas do caixa no período, menos as devoluções de
+ *   OS (a saída ligada a uma OS, da correção de OS faturada, #1182).
  * - **Falta receber**: das OS do período, o que ainda não entrou no caixa.
  * - **Sobra das OS**: Vendido − custo das peças e serviços (o `totalMargem`).
- * - **Despesas**: as saídas do caixa no período.
+ * - **Despesas**: as saídas do caixa no período, fora as devoluções de OS.
  * - **Sobrou**: Sobra das OS − Despesas.
  *
  * Nenhuma conta antiga foi refeita aqui: a Sobra vem da Lucratividade e o
@@ -165,9 +166,28 @@ function ordensDoPeriodo<O extends OrdemDasRelacoes>(ordens: readonly O[], perio
   return ordens.filter((o) => contaNosNumeros(o) && noPeriodo(diaLocal(o.data_abertura), periodo));
 }
 
-function centavosDe(movimentos: readonly MovimentoDasRelacoes[], tipo: MovimentoDasRelacoes["tipo"], periodo: PeriodoRelacoes): number {
+/**
+ * Saída ligada a uma OS é a devolução de uma correção de OS faturada (#1182):
+ * "recebido a menos" daquela OS, nunca despesa (Sofia, 24/11/2026).
+ */
+function ehDevolucaoDeOS(m: MovimentoDasRelacoes): boolean {
+  return m.tipo === "saida" && !!m.ordem_servico_id;
+}
+
+/** Entradas menos as devoluções de OS: o que ficou recebido de fato. */
+function centavosRecebidos(movimentos: readonly MovimentoDasRelacoes[], periodo: PeriodoRelacoes): number {
   return movimentos
-    .filter((m) => m.tipo === tipo && noPeriodo(diaLocal(m.data), periodo))
+    .filter((m) => noPeriodo(diaLocal(m.data), periodo))
+    .reduce((soma, m) => {
+      if (m.tipo === "entrada") return soma + paraCentavos(m.valor);
+      return ehDevolucaoDeOS(m) ? soma - paraCentavos(m.valor) : soma;
+    }, 0);
+}
+
+/** As saídas do período que são despesa (a devolução de OS não é). */
+function centavosDeDespesa(movimentos: readonly MovimentoDasRelacoes[], periodo: PeriodoRelacoes): number {
+  return movimentos
+    .filter((m) => m.tipo === "saida" && !ehDevolucaoDeOS(m) && noPeriodo(diaLocal(m.data), periodo))
     .reduce((soma, m) => soma + paraCentavos(m.valor), 0);
 }
 
@@ -219,21 +239,23 @@ export function resumoDoPeriodo({
 
   const recebidoPorOrdem = new Map<string, number>();
   for (const m of movimentos) {
-    if (m.tipo !== "entrada" || !m.ordem_servico_id) continue;
-    recebidoPorOrdem.set(m.ordem_servico_id, (recebidoPorOrdem.get(m.ordem_servico_id) ?? 0) + paraCentavos(m.valor));
+    if (!m.ordem_servico_id) continue;
+    // A devolução (saída ligada à OS, #1182) desconta do que entrou por ela.
+    const sinal = m.tipo === "entrada" ? 1 : -1;
+    recebidoPorOrdem.set(m.ordem_servico_id, (recebidoPorOrdem.get(m.ordem_servico_id) ?? 0) + sinal * paraCentavos(m.valor));
   }
   const faltaC = ordensDoPeriodo(ordens, periodo).reduce(
     (soma, o) => soma + Math.max(0, paraCentavos(vendidoDaOrdem(o)) - (recebidoPorOrdem.get(o.id) ?? 0)),
     0,
   );
 
-  const despesasC = centavosDe(movimentos, "saida", periodo);
+  const despesasC = centavosDeDespesa(movimentos, periodo);
   return {
     vendido: deCentavos(vendidoC),
     custo: deCentavos(vendidoC - sobraC),
     sobraDasOS: deCentavos(sobraC),
     algumCustoNaoInformado: lucro.algumCustoNaoInformado,
-    recebido: deCentavos(centavosDe(movimentos, "entrada", periodo)),
+    recebido: deCentavos(centavosRecebidos(movimentos, periodo)),
     faltaReceber: deCentavos(faltaC),
     despesas: deCentavos(despesasC),
     sobrou: deCentavos(sobraC - despesasC),
@@ -263,7 +285,7 @@ export function despesasPorTipo(
 ): DespesaPorTipo[] {
   const porTipo = new Map<string, number>();
   for (const m of movimentos) {
-    if (m.tipo !== "saida" || !noPeriodo(diaLocal(m.data), periodo)) continue;
+    if (m.tipo !== "saida" || ehDevolucaoDeOS(m) || !noPeriodo(diaLocal(m.data), periodo)) continue;
     const tipo = m.categoria?.nome || SEM_TIPO;
     porTipo.set(tipo, (porTipo.get(tipo) ?? 0) + paraCentavos(m.valor));
   }

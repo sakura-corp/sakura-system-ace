@@ -17,6 +17,11 @@ import {
   orcamentoVencido,
   podeAprovar,
   podeRecusar,
+  podeReabrir,
+  MOTIVOS_REABERTURA,
+  MOTIVO_REABERTURA_LABEL,
+  textoDaReabertura,
+  erroDaReabertura,
   transicaoPermitida,
   validadePadrao,
   VALIDADE_PADRAO_DIAS,
@@ -78,8 +83,9 @@ describe("transicaoPermitida", () => {
     expect(transicaoPermitida("orcamento", "faturada")).toBe(false);
   });
 
-  it("recusado é o fim: não volta a orçamento nem vira OS", () => {
-    for (const para of ["orcamento", "em_andamento", "concluida", "faturada"] as const) {
+  it("recusado só volta a orçamento aberto (reabrir, #1181); nunca vira OS direto", () => {
+    expect(transicaoPermitida("recusado", "orcamento")).toBe(true);
+    for (const para of ["em_andamento", "concluida", "faturada"] as const) {
       expect(transicaoPermitida("recusado", para)).toBe(false);
     }
   });
@@ -395,5 +401,57 @@ describe("lucroDaOrdem", () => {
       custoNaoInformado: true,
     });
     expect(lucroDaOrdemPeloBanco(itens, undefined)).toEqual({ lucro: null, custoNaoInformado: true });
+  });
+});
+
+// Reabrir um orçamento recusado (#1181): volta pra orçamento aberto, com o
+// mesmo número, motivo obrigatório e a recusa antiga no texto do histórico.
+describe("reabrir orçamento recusado", () => {
+  it("só o recusado pode ser reaberto", () => {
+    expect(podeReabrir({ status: "recusado" })).toBe(true);
+    for (const status of ["orcamento", "em_andamento", "concluida", "faturada"] as const) {
+      expect(podeReabrir({ status })).toBe(false);
+    }
+  });
+
+  it("os três motivos, com o 'cliente voltou' primeiro (já marcado)", () => {
+    expect(MOTIVOS_REABERTURA[0]).toBe("cliente_voltou");
+    expect(MOTIVOS_REABERTURA.map((m) => MOTIVO_REABERTURA_LABEL[m])).toEqual([
+      "Cliente voltou e aceitou",
+      "Recusado por engano",
+      "Outro",
+    ]);
+  });
+
+  it("o texto do histórico leva o motivo e a recusa antiga", () => {
+    expect(
+      textoDaReabertura("cliente_voltou", "", { recusado_em: "2026-11-23T14:00:00", motivo_recusa: "preco" }),
+    ).toBe("Cliente voltou e aceitou (tinha sido recusado em 23/11, motivo: Preço)");
+    expect(
+      textoDaReabertura("engano", "", { recusado_em: "2026-11-23T14:00:00", motivo_recusa: null }),
+    ).toBe("Recusado por engano (tinha sido recusado em 23/11, sem motivo)");
+  });
+
+  it("'Outro' usa o texto digitado, sem espaço sobrando", () => {
+    expect(
+      textoDaReabertura("outro", "  pediu pra trocar a marca  ", { recusado_em: null, motivo_recusa: "prazo" }),
+    ).toBe("pediu pra trocar a marca (tinha sido recusado, motivo: Prazo)");
+  });
+
+  it("a recusa em dia de calendário local, não de UTC (23h no Brasil ainda é dia 23)", () => {
+    // 23/11 às 23h no relógio da loja; em UTC já é 24/11.
+    const recusadoEm = new Date(2026, 10, 23, 23, 0).toISOString();
+    expect(textoDaReabertura("engano", "", { recusado_em: recusadoEm, motivo_recusa: null })).toContain(
+      "em 23/11",
+    );
+  });
+
+  it("confere antes de mandar: 'Outro' sem texto e validade vazia ou no passado", () => {
+    expect(erroDaReabertura("cliente_voltou", "", "2026-12-01", "2026-11-24")).toBeNull();
+    expect(erroDaReabertura("outro", " a ", "2026-12-01", "2026-11-24")).toMatch(/motivo/);
+    expect(erroDaReabertura("outro", "pediu de novo", "2026-12-01", "2026-11-24")).toBeNull();
+    expect(erroDaReabertura("engano", "", "", "2026-11-24")).toMatch(/validade/);
+    expect(erroDaReabertura("engano", "", "2026-11-23", "2026-11-24")).toMatch(/validade/);
+    expect(erroDaReabertura("engano", "", "2026-11-24", "2026-11-24")).toBeNull();
   });
 });

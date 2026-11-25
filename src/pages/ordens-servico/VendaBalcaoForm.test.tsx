@@ -284,7 +284,7 @@ describe("VendaBalcaoForm", () => {
     const { user, busca } = montar();
     await user.type(busca, "zzzz");
 
-    expect(screen.getByText(/Nenhuma peça com "zzzz"/)).toBeInTheDocument();
+    expect(screen.getByText(/Nenhuma peça com “zzzz”/)).toBeInTheDocument();
     expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 });
