@@ -427,7 +427,7 @@ export function TrocarItensFaturadaModal({
     <>
     <Modal
       titulo={`Corrigir a ${nomeDocumento(ordem)}`}
-      descricao="A OS já foi faturada: dá pra corrigir peça, serviço e valor. O dia da fatura não muda; se o total mudar, a diferença é acertada no Caixa de hoje."
+      descricao={`${ordem.tipo === "venda_balcao" ? "A venda" : "A OS"} já foi faturada: dá pra corrigir peça, serviço e valor. O dia da fatura não muda; se o total mudar, a diferença é acertada no Caixa de hoje.`}
       largura="4xl"
       total={{ rotulo: "Faturado", valor: formatarMoeda(totalFaturado) }}
       rodape={rodape}
