@@ -104,10 +104,10 @@ describe("ServicosPage — o formulário abre em janela", () => {
     expect(screen.getByDisplayValue("Alinhamento")).toBeTruthy();
   });
 
-  it("o \"+ Novo serviço\" abre a janela e Esc fecha", async () => {
+  it("o \"Novo serviço\" abre a janela e Esc fecha", async () => {
     const { user } = renderizar(<ServicosPage />);
     await screen.findByText("Alinhamento");
-    await user.click(screen.getByRole("button", { name: "+ Novo serviço" }));
+    await user.click(screen.getByRole("button", { name: "Novo serviço" }));
     expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true);
 
     await user.keyboard("{Escape}");

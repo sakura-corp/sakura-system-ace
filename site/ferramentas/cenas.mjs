@@ -256,8 +256,12 @@ export const CENAS = [
   { arquivo: "24-servicos", modulo: "Serviços", titulo: "Catálogo de serviços",
     rota: "/servicos",
     descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), com busca pelo nome ou código e filtro Todos / Ativos / Inativos. Cada linha mostra o preço padrão; o custo, que permite calcular o lucro de verdade nos relatórios, fica no cadastro." },
+  // Sem nenhum serviço: a frase e o botão pra começar (o estado vazio do molde, #1093).
+  { arquivo: "24b-servicos-vazio", modulo: "Serviços", titulo: "Catálogo de serviços vazio",
+    rota: "/servicos", tirarLinhas: { servicos: () => true },
+    descricao: "Loja que ainda não cadastrou nenhum serviço: a lista diz isso numa frase e oferece o botão pra cadastrar o primeiro." },
   { arquivo: "25-servico-form", modulo: "Serviços", titulo: "Cadastro de serviço",
-    rota: "/servicos", passos: [{ clicar: "+ Novo serviço" }],
+    rota: "/servicos", passos: [{ clicar: "Novo serviço" }],
     descricao: "Abre numa janela por cima da lista. Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
 
   // ------------------------------------------------------------------- caixa

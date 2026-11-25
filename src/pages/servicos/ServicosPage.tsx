@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
@@ -129,8 +130,8 @@ export function ServicosPage() {
             </p>
           </div>
         </div>
-        <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
-          + Novo serviço
+        <Botao variante="principal" tamanho="grande" icone={<Plus />} onClick={() => setMostrarFormulario(true)}>
+          Novo serviço
         </Botao>
       </header>
 
