@@ -56,7 +56,7 @@ import { formatarMoeda } from "@/schemas/dinheiro";
 import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
-import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
+import { Aviso, AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { motivoParaNaoTrocar, resumoDaTroca } from "@/schemas/trocaFaturada";
@@ -785,22 +785,27 @@ export function OrdemServicoForm({
       )}
 
       {ehRecusado && ordemExistente && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-texto/[0.08] px-4 py-2">
-          <p className="min-w-0 text-corpo text-texto-2">
-            Orçamento recusado
-            {ordemExistente.motivo_recusa
-              ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
-              : " — sem motivo informado"}
-            .
-          </p>
-          {/* #1181: o cliente voltou? Reabre com o mesmo número (sem laranja:
-              o laranja da tela é o "Novo orçamento"). */}
-          {modoOrcamento && onReabrir && podeReabrir(ordemExistente) && (
-            <Botao tamanho="pequeno" onClick={() => onReabrir(ordemExistente)}>
-              Reabrir orçamento
-            </Botao>
-          )}
-        </div>
+        // #1191: a faixa é o aviso de perigo (vermelho e ícone), não mais cinza.
+        // `[&>div]:flex-1`: o miolo do aviso ocupa a largura, e o botão fica
+        // na direita, como antes.
+        <Aviso tipo="perigo" className="[&>div]:flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="min-w-0">
+              Orçamento recusado
+              {ordemExistente.motivo_recusa
+                ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
+                : " — sem motivo informado"}
+              .
+            </p>
+            {/* #1181: o cliente voltou? Reabre com o mesmo número (sem laranja:
+                o laranja da tela é o "Novo orçamento"). */}
+            {modoOrcamento && onReabrir && podeReabrir(ordemExistente) && (
+              <Botao tamanho="pequeno" onClick={() => onReabrir(ordemExistente)}>
+                Reabrir orçamento
+              </Botao>
+            )}
+          </div>
+        </Aviso>
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
@@ -843,7 +848,7 @@ export function OrdemServicoForm({
 
       {rascunho.rascunho && (
         <AvisoRascunho
-          descricao="desta ordem de serviço"
+          descricao={modoOrcamento ? "deste orçamento" : "desta ordem de serviço"}
           onRestaurar={rascunho.restaurar}
           onDescartar={rascunho.descartar}
         />
