@@ -446,6 +446,23 @@ describe("TrocarItensFaturadaModal", () => {
     );
   });
 
+  it("desce mais do que falta receber: numa correção só, abate tudo e devolve o excesso (Sofia, 24/11)", async () => {
+    const { user, onConfirmar } = montar(undefined, undefined, { aReceberDeCorrecoes: 20 });
+    await mudarPreco(user, "275"); // 600 → 550: desce 50, faltam 20 a receber
+    await irParaOAcerto(user);
+
+    expect(screen.getByText(/essa conta\s+é encerrada/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Abate R\$\s20,00 que ainda está a receber .* lança R\$\s30,00 como Saída/),
+    ).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Forma de pagamento"), "dinheiro");
+    await user.type(screen.getByLabelText(/Motivo/), "serviço não foi feito");
+    await user.click(screen.getByRole("button", { name: "Corrigir" }));
+    expect(onConfirmar).toHaveBeenCalledWith(
+      expect.objectContaining({ acerto: "devolvido", formaPagamento: "dinheiro" }),
+    );
+  });
+
   it("nota emitida: mostra a mensagem e leva à janela de cancelar a nota", async () => {
     const onConfirmar = vi
       .fn()

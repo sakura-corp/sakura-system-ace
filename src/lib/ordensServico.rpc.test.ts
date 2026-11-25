@@ -325,7 +325,7 @@ describe("registrarVendaBalcao", () => {
 });
 
 // #1181: reabrir o orçamento recusado é UMA chamada (reabrir_orcamento,
-// migration 0093). Com "Já aprovar agora", a aprovação de sempre vem DEPOIS,
+// migration 0091). Com "Já aprovar agora", a aprovação de sempre vem DEPOIS,
 // e se ela falhar o orçamento continua reaberto (nada se perde).
 describe("reabrirOrcamento", () => {
   it("manda motivo, validade e operador numa chamada só", async () => {

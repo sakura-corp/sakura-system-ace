@@ -611,6 +611,7 @@ export function TrocarItensFaturadaModal({
           )}
           {erroDaSituacao && <AvisoDeErro>{erroDaSituacao}</AvisoDeErro>}
           {travaDoCaixa && <AvisoDeErro>{travaDoCaixa}</AvisoDeErro>}
+          {/* A comissão da diferença que fica "a receber" (a OS inteira aparece como a receber) é a #1184. */}
           {situacao?.comissaoDoPeriodoPaga && (
             <AvisoDeAtencao>
               A comissão do período desta OS já foi paga. Corrigir os itens muda a comissão que ela
@@ -628,6 +629,12 @@ export function TrocarItensFaturadaModal({
             <p className="text-corpo text-texto">
               Esta OS ainda tem {formatarMoeda(aReceberDeCorrecoes)} a receber de uma correção anterior: a
               diferença abate essa conta, e nada sai do Caixa.
+            </p>
+          )}
+          {diferenca < 0 && !contaEmAberto && opcoesDeAcerto.includes("devolvido") && aReceberDeCorrecoes > 0 && (
+            <p className="text-corpo text-texto">
+              Esta OS ainda tem {formatarMoeda(aReceberDeCorrecoes)} a receber de uma correção anterior: essa conta
+              é encerrada, e só o que passar disso é devolvido.
             </p>
           )}
           {diferenca !== 0 && opcoesDeAcerto.length === 0 && problemaDoPasso2 && (

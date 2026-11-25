@@ -224,9 +224,10 @@ export function acertosDaCorrecao(situacao: {
   if (situacao.diferenca === 0) return { opcoes: [], padrao: null };
   if (situacao.contaDoFaturamentoEmAberto) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
   if (situacao.diferenca > 0) return { opcoes: ["pago_agora", "a_receber"], padrao: "pago_agora" };
-  if (aReceber >= -situacao.diferenca) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
-  // Desce mais do que falta receber: nenhum acerto serve (problemaDoAcerto explica).
-  if (aReceber > 0) return { opcoes: [], padrao: null };
+  if (aReceber > 0 && aReceber >= -situacao.diferenca) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
+  // Desce mais do que falta receber (ou não falta nada): devolve. O que falta
+  // receber é abatido antes, e só o excesso sai do Caixa, numa correção só
+  // (Sofia, 24/11/2026).
   return { opcoes: ["devolvido"], padrao: "devolvido" };
 }
 
@@ -283,8 +284,15 @@ export function textoDoAcerto(dados: {
   switch (dados.diferenca === 0 ? null : dados.acerto) {
     case "pago_agora":
       return `Lança ${valor} como Entrada no Caixa de hoje, ${diaEMes(dados.hoje)}.`;
-    case "devolvido":
-      return `Lança ${valor} como Saída (Devolução ao cliente) no Caixa de hoje, ${diaEMes(dados.hoje)}.`;
+    case "devolvido": {
+      // Ainda faltava receber de correção anterior: abate isso e devolve só o excesso.
+      const abate = Math.min(dados.aReceberDeCorrecoes ?? 0, Math.abs(dados.diferenca));
+      const devolve = formatarMoeda(arredondarCentavo(Math.abs(dados.diferenca) - abate));
+      const saida = `como Saída (Devolução ao cliente) no Caixa de hoje, ${diaEMes(dados.hoje)}.`;
+      return abate > 0
+        ? `Abate ${formatarMoeda(abate)} que ainda está a receber de uma correção anterior e lança ${devolve} ${saida}`
+        : `Lança ${valor} ${saida}`;
+    }
     case "a_receber":
       return (
         `Cria uma conta a receber de ${valor}` +
@@ -319,14 +327,6 @@ export function problemaDoAcerto(dados: {
   hoje: string;
 }): string | null {
   const { opcoes } = acertosDaCorrecao(dados);
-  const aReceber = dados.aReceberDeCorrecoes ?? 0;
-  if (opcoes.length === 0 && dados.diferenca < 0 && !dados.contaDoFaturamentoEmAberto && aReceber > 0) {
-    return (
-      `Esta OS ainda tem ${formatarMoeda(aReceber)} de correção a receber, menos que a diferença de ` +
-      `${formatarMoeda(-dados.diferenca)}. Corrija em duas vezes: primeiro descendo só ${formatarMoeda(aReceber)} ` +
-      `(abate essa conta), depois o resto.`
-    );
-  }
   if (opcoes.length === 0) return null;
   if (!dados.acerto || !opcoes.includes(dados.acerto)) return "Escolha como acertar a diferença.";
   if ((dados.acerto === "pago_agora" || dados.acerto === "devolvido") && !dados.formaPagamento) {

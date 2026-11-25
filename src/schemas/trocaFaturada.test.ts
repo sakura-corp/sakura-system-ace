@@ -354,20 +354,26 @@ describe("diferença de correção anterior ainda a receber (achado da revisão,
     ).toEqual({ opcoes: ["conta_aberta"], padrao: "conta_aberta" });
   });
 
-  it("desce mais do que falta receber: recusa e explica como fazer em duas vezes", () => {
+  it("desce mais do que falta receber: numa correção só, abate tudo e devolve o excesso (Sofia, 24/11)", () => {
+    // OS de 100 paga, +50 a receber; corrigir pra 80 → desce 70: a conta de 50 zera e devolve 20.
     expect(
-      acertosDaCorrecao({ diferenca: -100, contaDoFaturamentoEmAberto: false, aReceberDeCorrecoes: 80 }),
-    ).toEqual({ opcoes: [], padrao: null });
-    const problema = problemaDoAcerto({
-      diferenca: -100,
-      contaDoFaturamentoEmAberto: false,
-      aReceberDeCorrecoes: 80,
-      acerto: "devolvido",
-      formaPagamento: "dinheiro",
-      hoje,
-    })?.replace(/\s/g, " ");
-    expect(problema).toContain("R$ 80,00 de correção a receber");
-    expect(problema).toContain("duas vezes");
+      acertosDaCorrecao({ diferenca: -70, contaDoFaturamentoEmAberto: false, aReceberDeCorrecoes: 50 }),
+    ).toEqual({ opcoes: ["devolvido"], padrao: "devolvido" });
+    expect(
+      problemaDoAcerto({
+        diferenca: -70,
+        contaDoFaturamentoEmAberto: false,
+        aReceberDeCorrecoes: 50,
+        acerto: "devolvido",
+        formaPagamento: "dinheiro",
+        hoje,
+      }),
+    ).toBeNull();
+    expect(
+      textoDoAcerto({ acerto: "devolvido", diferenca: -70, hoje, aReceberDeCorrecoes: 50 }).replace(/\s/g, " "),
+    ).toBe(
+      "Abate R$ 50,00 que ainda está a receber de uma correção anterior e lança R$ 20,00 como Saída (Devolução ao cliente) no Caixa de hoje, 24/11.",
+    );
   });
 
   it("subir não muda: paga agora ou fica a receber", () => {

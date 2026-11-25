@@ -8,7 +8,7 @@
 
 ## O que cada agente fez
 - sessão mãe: as regras em `src/schemas/trocaFaturada.ts` (teste primeiro), a lib, a junção com a #1181, a renumeração pra 0092, Relações e Caixa (decisões da Sofia), o conserto do achado principal da revisão.
-- ajudante forte (migration): a `0092` (escrita como 0094) e o `testar-corrigir-os-faturada.sql`.
+- ajudante forte (migration): a `0092` e o `testar-corrigir-os-faturada.sql`.
 - ajudante médio (tela): a janela "Corrigir a OS", a faixa no Form, a venda de balcão e a ligação na página.
 - ajudante forte (revisão do zero): achou 2 problemas importantes (devolução indevida na 2ª correção; nota emitida sem caminho pro "Cancelar nota") e 3 detalhes no teste SQL.
 - ajudante médio (achado 2 da revisão): o botão "Cancelar a nota" na faixa e o texto da aba Saídas.

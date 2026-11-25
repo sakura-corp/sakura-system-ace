@@ -101,6 +101,8 @@ declare
   k6  uuid := '11829999-0000-0000-0000-000000000007';
   kx  uuid := '11829999-0000-0000-0000-0000000000ff';  -- usada só nas recusas
   k7  uuid := '11829999-0000-0000-0000-000000000008';
+  k8  uuid := '11829999-0000-0000-0000-000000000009';
+  conta_dif uuid;
   ontem     timestamptz := now() - interval '1 day';
   hoje      date := (now() at time zone 'UTC')::date;
   dia_fat   date := ((now() - interval '1 day') at time zone 'UTC')::date;
@@ -493,43 +495,78 @@ begin
   end if;
 
   -- C14b. Correção que DESCE numa OS paga que ainda tem diferença a receber
-  -- (a dos 80 do C9): abate a conta da diferença, nada sai do Caixa. Achado
-  -- da revisão: antes, isso obrigava a "devolver" um dinheiro que o cliente
-  -- nunca pagou, e a conta dos 80 ficava em aberto.
+  -- (a dos 80 do C9). Cabe no que falta receber: abate a conta da diferença,
+  -- nada sai do Caixa. Achado da revisão: antes, isso obrigava a "devolver"
+  -- um dinheiro que o cliente nunca pagou, e a conta dos 80 ficava em aberto.
+  select id into conta_dif from contas_receber where ordem_servico_id = os_arec and origem = 'correcao';
   set local role authenticated;
   perform set_config('request.jwt.claim.sub', gerente::text, true);
-  -- Desce 100, mas só faltam 80: recusa, pedindo pra corrigir em duas vezes.
+  -- 280 → 230 (desce 50, faltam 80): "devolver" não vale.
   t := pg_temp.t1182_tentar(os_arec,
-    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 180)),
-    'serviço não foi feito', hoje, 280, 'conta_aberta', null, null, k7, false);
-  if t.codigo is distinct from 'SKMUD' or t.mensagem not like 'Esta OS ainda tem R$ 80,00 de correção a receber%' then
-    raise exception 'FALHOU (C14b): descer mais do que falta receber não recusou: % %', t.codigo, t.mensagem;
-  end if;
-  -- Volta pros 200: "devolver" não vale (faltam 80 a receber).
-  t := pg_temp.t1182_tentar(os_arec,
-    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 200)),
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 230)),
     'serviço não foi feito', hoje, 280, 'devolvido', 'dinheiro', null, k7, false);
   if t.codigo is distinct from 'SKMUD' then
     raise exception 'FALHOU (C14c): devolveu dinheiro que ainda estava a receber: % %', t.codigo, t.mensagem;
   end if;
-  -- Volta pros 200 abatendo a conta: passa.
+  -- Abatendo a conta: passa, e a conta dos 80 vira 30.
   t := pg_temp.t1182_tentar(os_arec,
-    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 200)),
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 230)),
     'serviço não foi feito', hoje, 280, 'conta_aberta', null, null, k7, false);
   if t.codigo is not null then
     raise exception 'FALHOU (C14d): abater a diferença a receber foi recusado: % %', t.codigo, t.mensagem;
   end if;
   reset role;
-  if (select count(*) from contas_receber where ordem_servico_id = os_arec and origem = 'correcao') <> 0 then
-    raise exception 'FALHOU (C14e): a conta da diferença de 80 não foi abatida (apagada ao zerar)';
+  select * into linha from contas_receber where id = conta_dif;
+  if linha.valor is distinct from 30 or linha.status is distinct from 'pendente' then
+    raise exception 'FALHOU (C14e): a conta da diferença não foi abatida pra 30: %', linha;
   end if;
   if (select count(*) from caixa_movimentos where ordem_servico_id = os_arec) <> 1
      or exists (select 1 from caixa_movimentos where ordem_servico_id = os_arec and tipo = 'saida') then
     raise exception 'FALHOU (C14f): abater a diferença a receber mexeu no Caixa';
   end if;
   if (select acerto from ordens_servico_trocas where chave = k7) is distinct from 'conta_aberta'
+     or (select conta_receber_id from ordens_servico_trocas where chave = k7) is distinct from conta_dif
      or (select valor from contas_receber where id = conta_arec) is distinct from 200 then
-    raise exception 'FALHOU (C14g): o histórico não diz conta_aberta, ou a conta do faturamento mudou';
+    raise exception 'FALHOU (C14g): o histórico não diz conta_aberta com a conta, ou a conta do faturamento mudou';
+  end if;
+
+  -- C14h. Desce MAIS do que falta receber (Sofia, 24/11/2026): numa correção
+  -- só, abate tudo o que falta e devolve o excesso. 230 → 180 com 30 a
+  -- receber: a conta dos 30 zera (encerrada, não apagada) e devolve 20.
+  set local role authenticated;
+  perform set_config('request.jwt.claim.sub', gerente::text, true);
+  -- "Abater" sozinho não serve mais (passa do que falta).
+  t := pg_temp.t1182_tentar(os_arec,
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 180)),
+    'serviço não foi feito', hoje, 230, 'conta_aberta', null, null, k8, false);
+  if t.codigo is distinct from 'SKMUD' then
+    raise exception 'FALHOU (C14h): descer além do que falta receber aceitou só abater: % %', t.codigo, t.mensagem;
+  end if;
+  t := pg_temp.t1182_tentar(os_arec,
+    jsonb_build_array(jsonb_build_object('id', i_arec, 'preco_unitario', 180)),
+    'serviço não foi feito', hoje, 230, 'devolvido', 'dinheiro', null, k8, false);
+  if t.codigo is not null then
+    raise exception 'FALHOU (C14i): abater tudo e devolver o excesso foi recusado: % %', t.codigo, t.mensagem;
+  end if;
+  reset role;
+  select * into linha from contas_receber where id = conta_dif;
+  if not found or linha.valor is distinct from 0 or linha.status is distinct from 'recebido'
+     or linha.caixa_movimento_id is not null or linha.data_recebimento is null then
+    raise exception 'FALHOU (C14j): a conta da diferença não ficou encerrada com zero (ou foi apagada): %', linha;
+  end if;
+  if (select count(*) from caixa_movimentos where ordem_servico_id = os_arec and tipo = 'saida') <> 1
+     or (select valor from caixa_movimentos where ordem_servico_id = os_arec and tipo = 'saida') <> 20 then
+    raise exception 'FALHOU (C14k): deveria sair só o excesso de R$ 20 do Caixa';
+  end if;
+  select * into linha from ordens_servico_trocas where chave = k8;
+  if linha.acerto is distinct from 'devolvido' or linha.conta_receber_id is distinct from conta_dif
+     or linha.caixa_movimento_id is distinct from
+        (select id from caixa_movimentos where ordem_servico_id = os_arec and tipo = 'saida')
+     or linha.total_antes is distinct from 230 or linha.total_depois is distinct from 180 then
+    raise exception 'FALHOU (C14l): o histórico não aponta pra conta zerada e pra devolução: %', linha;
+  end if;
+  if (select valor from contas_receber where id = conta_arec) is distinct from 200 then
+    raise exception 'FALHOU (C14m): a conta do faturamento mudou';
   end if;
 
   -- C15. Conta do faturamento em aberto: desce, a conta muda de valor, nada
