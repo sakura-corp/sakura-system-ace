@@ -206,9 +206,12 @@ export const CENAS = [
   // ----------------------------------------------------------------- estoque
   { arquivo: "11-estoque-produtos", modulo: "Estoque", titulo: "Produtos",
     rota: "/estoque",
-    descricao: "O catálogo de peças, com saldo atual, preço de custo e de venda. Compartilhado entre as lojas da mesma empresa — o saldo é que fica separado por loja." },
+    descricao: "O catálogo de peças no molde de lista: em cima, quantas peças estão no mínimo ou abaixo dele; em cada linha, a barra do estoque contra o mínimo (vermelho quando falta, amarelo perto, verde ok, sempre com o número e a palavra), a última saída e, quando falta, o botão 'Comprar', que leva à Sugestão de compra. Busca (que também aceita o leitor de código de barras) e filtros em botões. Compartilhado entre as lojas da mesma empresa — o saldo é que fica separado por loja." },
+  { arquivo: "11b-estoque-perfil-peca", modulo: "Estoque", titulo: "Perfil da peça",
+    rota: "/estoque", passos: [{ seletor: 'ul[aria-label="Produtos"] li button' }],
+    descricao: "Clicar no nome de uma peça abre o perfil dela: o saldo grande contra o mínimo, o preço e a última saída de apoio, as movimentações da peça (entrada com '+', saída com '−') e onde ela foi usada (as OS e vendas). Quando falta, o botão principal é 'Comprar'." },
   { arquivo: "12-produto-form", modulo: "Estoque", titulo: "Cadastro de produto",
-    rota: "/estoque", passos: [{ clicar: "+ Novo produto" }],
+    rota: "/estoque", passos: [{ clicar: "Novo produto" }],
     descricao: "Além dos dados comuns, guarda tudo que a nota fiscal exige (NCM, CFOP, CSOSN, alíquota de ICMS, origem) e o prazo de garantia da peça, que é o que alimenta o módulo de Garantias. Custo, margem e preço final se calculam entre si nos dois sentidos." },
   // "13-importar-foto" saiu da lista junto com o botão "Importar por foto/PDF",
   // desligado a pedido dela em 25/09/2026 (IMPORTAR_POR_FOTO_LIGADO em
@@ -217,16 +220,16 @@ export const CENAS = [
   //   rota: "/estoque", passos: [{ clicar: "Importar por foto/PDF" }],
   //   descricao: "Lê a nota fiscal do fornecedor por foto ou PDF usando inteligência artificial e devolve os produtos já separados numa tabela editável, pra cadastrar em lote em vez de digitar um por um. A chave da IA fica guardada no servidor, nunca dentro do programa instalado." },
   { arquivo: "14-movimentacoes", modulo: "Estoque", titulo: "Movimentações",
-    rota: "/estoque", passos: [{ aba: "Movimentações" }],
-    descricao: "O extrato de tudo que entrou e saiu do estoque, com o motivo (compra, venda, uso em OS, ajuste) e a referência de onde veio. É aqui que se descobre a origem de um saldo estranho." },
+    rota: "/estoque", passos: [{ clicar: "Movimentações" }],
+    descricao: "O extrato de tudo que entrou e saiu do estoque, com o motivo (compra, venda, uso em OS, ajuste) e a referência de onde veio, filtrável por Tudo / Entradas / Saídas, por período e por produto. É aqui que se descobre a origem de um saldo estranho." },
   { arquivo: "15-movimento-form", modulo: "Estoque", titulo: "Registrar movimentação manual",
-    rota: "/estoque", passos: [{ aba: "Movimentações" }, { clicar: "+ Registrar movimentação" }],
+    rota: "/estoque", passos: [{ clicar: "Movimentações" }, { clicar: "Registrar movimentação" }],
     descricao: "Entrada ou saída lançada à mão, quando não veio de uma compra nem de uma OS — perda, devolução, transferência entre depósitos." },
   { arquivo: "16-contagem", modulo: "Estoque", titulo: "Contagem de estoque (inventário)",
-    rota: "/estoque", passos: [{ aba: "Contagem" }],
+    rota: "/estoque", passos: [{ clicar: "Contagem" }],
     descricao: "Inventário físico por depósito: digita-se quanto foi contado de verdade, o sistema mostra quanto deveria ter e, havendo diferença, gera o ajuste no estoque sozinho." },
   { arquivo: "17-estoque-relatorios", modulo: "Estoque", titulo: "Relatórios de estoque",
-    rota: "/estoque", passos: [{ aba: "Relatórios" }],
+    rota: "/estoque", passos: [{ clicar: "Relatórios" }],
     descricao: "Quanto dinheiro está parado em peça, o que está com saldo negativo (sinal de erro de lançamento) e o que não tem movimentação há tempo demais." },
 
   // ------------------------------------------------------------ fornecedores
@@ -252,10 +255,10 @@ export const CENAS = [
   // ---------------------------------------------------------------- serviços
   { arquivo: "24-servicos", modulo: "Serviços", titulo: "Catálogo de serviços",
     rota: "/servicos",
-    descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), cada uma com preço padrão e custo — o custo é o que permite calcular o lucro de verdade nos relatórios." },
+    descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), com busca pelo nome ou código e filtro Todos / Ativos / Inativos. Cada linha mostra o preço padrão; o custo, que permite calcular o lucro de verdade nos relatórios, fica no cadastro." },
   { arquivo: "25-servico-form", modulo: "Serviços", titulo: "Cadastro de serviço",
     rota: "/servicos", passos: [{ clicar: "+ Novo serviço" }],
-    descricao: "Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
+    descricao: "Abre numa janela por cima da lista. Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
 
   // ------------------------------------------------------------------- caixa
   { arquivo: "26-caixa-diario", modulo: "Caixa Diário", titulo: "Caixa do dia",

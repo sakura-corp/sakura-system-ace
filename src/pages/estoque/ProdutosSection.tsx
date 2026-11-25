@@ -1,16 +1,15 @@
-import { useMemo, useRef, useState } from "react";
+import { Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { atualizarPeca, atualizarStatusPeca, criarPeca, excluirPeca } from "@/lib/pecas";
 import { criarMovimento } from "@/lib/estoque";
+import { dataCurta } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { semPontoFinal } from "@/pages/ordens-servico/pecaAvulsaCadastro";
 import {
   acharPorCodigoExato,
-  lerSaldo,
   movimentoDeEstoqueInicial,
   pecaCasaComBusca,
   precisaComprar,
-  SITUACAO_SALDO_ROTULO,
-  type SituacaoSaldo,
 } from "@/schemas/estoque";
 import { csosnMaisUsado } from "@/schemas/tributacao";
 import { formatarQuantidade } from "@/schemas/quantidade";
@@ -21,12 +20,17 @@ import type { NovaPeca, Peca } from "@/types/peca";
 import { pecaSemCusto } from "@/schemas/avisosOrdemServico";
 import { ImportarNotasFiscaisModal } from "./ImportarNotasFiscaisModal";
 import { PecaForm } from "./PecaForm";
+import { BarraDoEstoque } from "./BarraDoEstoque";
+import { lerBarraDoEstoque } from "./barraDoEstoque";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
-import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
-import { Dica } from "@/components/Dica";
-import { Selo, type TipoDeSelo } from "@/components/Selo";
+import { Chips } from "@/components/Chips";
+import { CartaoNumero } from "@/components/CartaoNumero";
+import { Selo } from "@/components/Selo";
 import { AvisoDeErro } from "@/components/Aviso";
+import { useConfirmar } from "@/components/JanelaDeConfirmar";
+import { LinhaDeLista } from "@/components/molde/LinhaDeLista";
+import { MoldeLista } from "@/components/molde/MoldeLista";
 
 // "Importar por foto/PDF" desligado a pedido dela (25/09/2026), até ela
 // decidir o que fazer com a leitura por IA. O código continua todo aqui:
@@ -55,6 +59,8 @@ interface ProdutosSectionProps {
   pecas: Peca[];
   categorias: Categoria[];
   saldos: Map<string, number>;
+  /** A saída mais nova de cada peça (`criado_em`), pra coluna "última saída". */
+  ultimaSaida?: Map<string, string>;
   regime: RegimeTributario | null;
   lojaId: string;
   onRecarregar: () => Promise<void>;
@@ -65,6 +71,15 @@ interface ProdutosSectionProps {
    */
   avisoEstoqueInicial: string | null;
   onAvisoEstoqueInicial: (aviso: string | null) => void;
+  /** Clicar no nome abre o perfil da peça (#1093). */
+  onAbrirPeca?: (peca: Peca) => void;
+  /**
+   * O "Comprar" da linha leva à Sugestão de compra. Sem ele (quem não tem
+   * Fornecedores, onde a sugestão mora), a linha não oferece o botão.
+   */
+  onComprar?: () => void;
+  /** Abre já editando esta peça (o "Editar" do perfil da peça). */
+  editarAoAbrir?: Peca | null;
 }
 
 function formatarPreco(valor: number | null): string {
@@ -72,49 +87,46 @@ function formatarPreco(valor: number | null): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Saldo negativo é ERRO DE LANÇAMENTO, não pouco estoque — precisa gritar. O
-// relatório de estoque já tratava assim; a lista de Produtos mostrava o mesmo
-// número em preto, como se fosse normal (item TL-11 do guia).
-//
-// No visual novo (#990, regra 4: todo aviso tem cor, ícone E palavra) o número
-// continua na cor do aviso, e do lado dele vem um selo com a palavra: antes
-// "zerado" e "abaixo do mínimo" eram só uma cor amarela, com a explicação
-// escondida num balãozinho. A explicação continua na `Dica` do selo.
-const COR_DO_SALDO: Record<SituacaoSaldo, string> = {
-  negativo: "text-perigo",
-  zerado: "text-atencao",
-  abaixo_do_minimo: "text-atencao",
-  normal: "",
-};
-
-const SELO_DO_SALDO: Record<Exclude<SituacaoSaldo, "normal">, { tipo: TipoDeSelo; palavra: string }> = {
-  negativo: { tipo: "perigo", palavra: "Negativo" },
-  zerado: { tipo: "atencao", palavra: "Sem estoque" },
-  abaixo_do_minimo: { tipo: "atencao", palavra: "Comprar" },
-};
+type Situacao = "todos" | "comprar" | "inativos";
 
 export function ProdutosSection({
   pecas,
   categorias,
   saldos,
+  ultimaSaida,
   regime,
   lojaId,
   onRecarregar,
   avisoEstoqueInicial,
   onAvisoEstoqueInicial,
+  onAbrirPeca,
+  onComprar,
+  editarAoAbrir = null,
 }: ProdutosSectionProps) {
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [pecaEmEdicao, setPecaEmEdicao] = useState<Peca | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(editarAoAbrir !== null);
+  const [pecaEmEdicao, setPecaEmEdicao] = useState<Peca | null>(editarAoAbrir);
   const [mostrarImportar, setMostrarImportar] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const { confirmar, janela } = useConfirmar();
 
   const [busca, setBusca] = useState("");
   const [categoriaFiltro, setCategoriaFiltro] = useState("");
-  const [soPrecisaComprar, setSoPrecisaComprar] = useState(false);
-  const campoBusca = useRef<HTMLInputElement>(null);
+  const [situacao, setSituacao] = useState<Situacao>("todos");
+  // O campo de busca é do molde de lista: acha-se ele por dentro desta caixa.
+  const caixaDaLista = useRef<HTMLDivElement>(null);
   const caixaDoFormulario = useRolarAteOFormulario(
     mostrarFormulario ? (pecaEmEdicao?.id ?? "nova") : null,
   );
+
+  function focarBusca() {
+    caixaDaLista.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
+  }
+
+  // No balcão a busca costuma ser um bipe de leitor: o campo já nasce focado.
+  useEffect(() => {
+    if (!mostrarFormulario) focarBusca();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // O código que a própria loja mais usa — vira a sugestão de uma peça nova,
   // em vez do campo em branco de antes. Sai do cadastro DELA, nunca de um
@@ -128,25 +140,36 @@ export function ProdutosSection({
     () =>
       pecas.filter((peca) => {
         if (categoriaFiltro && peca.categoria_id !== categoriaFiltro) return false;
-        if (soPrecisaComprar && !precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo)) {
+        if (situacao === "comprar" && !precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo)) {
           return false;
         }
+        if (situacao === "inativos" && peca.ativo) return false;
         return pecaCasaComBusca(peca, busca);
       }),
-    [pecas, saldos, busca, categoriaFiltro, soPrecisaComprar],
+    [pecas, saldos, busca, categoriaFiltro, situacao],
   );
 
+  // O número que decide a tela: quantas peças ativas estão no mínimo ou abaixo.
+  const ativas = useMemo(() => pecas.filter((peca) => peca.ativo), [pecas]);
   const quantasPrecisamComprar = useMemo(
-    () =>
-      pecas.filter((peca) => precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo)).length,
-    [pecas, saldos],
+    () => ativas.filter((peca) => precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo)).length,
+    [ativas, saldos],
   );
+  const quantasComMinimo = useMemo(() => ativas.filter((peca) => peca.estoque_minimo != null).length, [ativas]);
+  const quantasNegativas = useMemo(
+    () => ativas.filter((peca) => (saldos.get(peca.id) ?? 0) < 0).length,
+    [ativas, saldos],
+  );
+  const quantasInativas = pecas.length - ativas.length;
 
   // O leitor de código de barras se comporta como um teclado: digita o código
   // e aperta Enter. Com correspondência exata, o Enter abre a peça direto —
-  // o mesmo campo serve pra busca por texto de sempre.
-  function handleTeclaNaBusca(evento: React.KeyboardEvent<HTMLInputElement>) {
+  // o mesmo campo serve pra busca por texto de sempre. O campo é do molde: o
+  // Enter sobe até a caixa da lista e é pego aqui.
+  function handleTeclaNaLista(evento: React.KeyboardEvent<HTMLDivElement>) {
     if (evento.key !== "Enter") return;
+    const alvo = evento.target as HTMLElement;
+    if (!(alvo instanceof HTMLInputElement) || alvo.type !== "search") return;
     evento.preventDefault();
     const achada = acharPorCodigoExato(pecas, busca);
     if (achada) {
@@ -190,7 +213,7 @@ export function ProdutosSection({
     setPecaEmEdicao(null);
     // Quem fecha o cadastro quase sempre vai procurar a próxima peça — e no
     // balcão isso costuma ser um bipe de leitor, que precisa do campo focado.
-    setTimeout(() => campoBusca.current?.focus(), 0);
+    setTimeout(focarBusca, 0);
   }
 
   function handleEditar(peca: Peca) {
@@ -198,10 +221,16 @@ export function ProdutosSection({
     setMostrarFormulario(true);
   }
 
-  async function handleExcluir(id: string) {
-    if (!confirm("Excluir este produto?")) return;
+  async function handleExcluir(peca: Peca) {
+    const sim = await confirmar({
+      acao: "Excluir o produto",
+      item: peca.descricao,
+      explicacao: "Ele sai do cadastro. Isso não tem volta: se só parou de vender, prefira Inativar.",
+      botao: "Excluir produto",
+    });
+    if (!sim) return;
     try {
-      await excluirPeca(id);
+      await excluirPeca(peca.id);
       await onRecarregar();
     } catch (err) {
       console.error("Erro ao excluir produto:", err);
@@ -219,67 +248,102 @@ export function ProdutosSection({
     }
   }
 
+  function linhaDaPeca(peca: Peca) {
+    const saldo = saldos.get(peca.id) ?? 0;
+    const barra = lerBarraDoEstoque(saldo, peca.estoque_minimo);
+    const margem = margemSobreAVenda(peca.preco_custo?.toString() ?? "", peca.preco_venda?.toString() ?? "");
+    const categoria = categorias.find((c) => c.id === peca.categoria_id)?.nome;
+    // A medida só entra quando NÃO está na descrição: a maioria das peças de
+    // pneu já traz a medida no nome ("Pneu 175/70 R14"), e repetir vira ruído.
+    const medida = peca.medida && !peca.descricao.includes(peca.medida) ? peca.medida : null;
+    const partes = [
+      medida,
+      categoria,
+      peca.codigo_interno ? `cód. ${peca.codigo_interno}` : null,
+      `venda ${formatarPreco(peca.preco_venda)}`,
+      margem === "" ? null : `margem ${formatarQuantidade(Number(margem))}%`,
+    ].filter((parte): parte is string => !!parte);
+    const saida = ultimaSaida?.get(peca.id);
+
+    return (
+      <LinhaDeLista
+        nome={peca.descricao}
+        descricao={`o produto ${peca.descricao}`}
+        detalhe={
+          <>
+            {!peca.ativo && (
+              <span className="mr-2 inline-flex align-middle">
+                <Selo tipo="neutro" palavra="Inativo" />
+              </span>
+            )}
+            {partes.join(" · ")}
+          </>
+        }
+        aoAbrir={onAbrirPeca ? () => onAbrirPeca(peca) : undefined}
+        lado={
+          <div className="flex items-center gap-6">
+            <BarraDoEstoque saldo={saldo} estoqueMinimo={peca.estoque_minimo} />
+            {/* Some na janela estreita: a barra e o "Comprar" são o principal. */}
+            <div className="hidden w-24 text-right text-rotulo text-texto-2 @4xl:block">
+              <span className="block">última saída</span>
+              <span className="block font-medium text-texto tabular-nums">{saida ? dataCurta(saida) : "—"}</span>
+            </div>
+          </div>
+        }
+        acao={
+          barra.precisaComprar && onComprar && peca.ativo ? { rotulo: "Comprar", aoClicar: onComprar } : undefined
+        }
+        mais={[
+          { rotulo: "Editar", aoClicar: () => handleEditar(peca) },
+          { rotulo: peca.ativo ? "Inativar" : "Reativar", aoClicar: () => handleAlternarStatus(peca) },
+          { rotulo: "Excluir produto", perigosa: true, aoClicar: () => handleExcluir(peca) },
+        ]}
+      />
+    );
+  }
+
+  const filtroAtivo = situacao !== "todos" || categoriaFiltro !== "";
+
   return (
     <div className="space-y-6">
+      {janela}
       {!mostrarFormulario && (
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="sakura-rotulo w-92">
-              Buscar ou bipar código
-              <input
-                ref={campoBusca}
-                type="search"
-                autoFocus
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                onKeyDown={handleTeclaNaBusca}
-                placeholder="Descrição, referência, código, marca ou medida"
-                className="sakura-campo sakura-campo-filtro"
-              />
-            </label>
-
-            <label className="sakura-rotulo">
-              Categoria
-              <select
-                value={categoriaFiltro}
-                onChange={(e) => setCategoriaFiltro(e.target.value)}
-                className="sakura-campo sakura-campo-filtro"
-              >
-                <option value="">Todas</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex h-[2.375rem] items-center gap-2 text-corpo text-texto">
-              <input
-                type="checkbox"
-                checked={soPrecisaComprar}
-                onChange={(e) => setSoPrecisaComprar(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <span>
-                Precisa comprar
-                {quantasPrecisamComprar > 0 && (
-                  <span className="ml-1.5 rounded-full bg-atencao/[0.12] px-2 py-0.5 text-rotulo font-semibold text-atencao">
-                    {quantasPrecisamComprar}
-                  </span>
-                )}
+        <div className="flex flex-wrap items-stretch gap-4">
+          {/* 1 número grande (o que decide) + 2 de apoio. */}
+          <div className="min-w-0 flex-[1.6] basis-64">
+            <CartaoNumero
+              titulo="Abaixo do mínimo"
+              explicacao="Peças ativas no estoque mínimo ou abaixo dele: é hora de comprar. Peça sem mínimo cadastrado não entra."
+              variacao={
+                <span className="text-rotulo text-texto-2">
+                  de {quantasComMinimo} {quantasComMinimo === 1 ? "peça" : "peças"} com mínimo
+                </span>
+              }
+            >
+              <span className={quantasPrecisamComprar > 0 ? "text-perigo" : "text-texto"}>
+                {quantasPrecisamComprar} {quantasPrecisamComprar === 1 ? "peça" : "peças"}
               </span>
-            </label>
+            </CartaoNumero>
           </div>
-
-          <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1 basis-40">
+            <CartaoNumero titulo="Produtos ativos">{ativas.length}</CartaoNumero>
+          </div>
+          <div className="min-w-0 flex-1 basis-40">
+            <CartaoNumero
+              titulo="Saldo negativo"
+              explicacao="Saiu peça que não entrou: erro de lançamento. Confira na Contagem."
+            >
+              <span className={quantasNegativas > 0 ? "text-perigo" : "text-texto"}>{quantasNegativas}</span>
+            </CartaoNumero>
+          </div>
+          <div className="flex shrink-0 items-start gap-2">
             {IMPORTAR_POR_FOTO_LIGADO && (
               <Botao icone={<IconeCamera />} onClick={() => setMostrarImportar(true)}>
                 Importar por foto/PDF
               </Botao>
             )}
-            <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
-              + Novo produto
+            <Botao variante="principal" tamanho="grande" icone={<Plus />} onClick={() => setMostrarFormulario(true)}>
+              Novo produto
             </Botao>
           </div>
         </div>
@@ -320,137 +384,67 @@ export function ProdutosSection({
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      {pecas.length === 0 ? (
-        <p className="text-corpo text-texto-2">
-          Nenhum produto cadastrado ainda.
-        </p>
-      ) : pecasFiltradas.length === 0 ? (
-        <p className="text-corpo text-texto-2">
-          Nenhum produto encontrado com esses filtros.
-        </p>
-      ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="sakura-tabela">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Código</th>
-                <th>Unidade</th>
-                <th className="text-right">Preço custo</th>
-                <th className="text-right">Preço venda</th>
-                <th className="text-right">
-                  <Dica texto="Sobre a venda: (venda − custo) ÷ venda">
-                    <span tabIndex={0} className="cursor-help">
-                      Margem
-                    </span>
-                  </Dica>
-                </th>
-                <th className="text-right">Estoque atual</th>
-                <th>Status</th>
-                <th className="relative">
-                  <span className="sr-only">Ações</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pecasFiltradas.map((peca) => {
-                const saldo = saldos.get(peca.id) ?? 0;
-                const leitura = lerSaldo(saldo, peca.estoque_minimo);
-                const margem = margemSobreAVenda(
-                  peca.preco_custo?.toString() ?? "",
-                  peca.preco_venda?.toString() ?? "",
-                );
-                const seloDoSaldo =
-                  leitura.situacao === "normal" ? null : SELO_DO_SALDO[leitura.situacao];
-
-                return (
-                  <tr key={peca.id}>
-                    <td>
-                      {peca.descricao}
-                      {/* A medida só aparece quando NÃO está na descrição: a
-                          maioria das peças de pneu já traz a medida no nome
-                          ("Pneu 175/70 R14"), e repetir ao lado vira ruído. */}
-                      {peca.medida && !peca.descricao.includes(peca.medida) && (
-                        <span className="ml-2 whitespace-nowrap text-rotulo text-texto-2">
-                          {peca.medida}
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-texto-2">
-                      {categorias.find((c) => c.id === peca.categoria_id)?.nome ?? "—"}
-                    </td>
-                    {/* Sem quebrar no meio ("PN-" / "17570R14", #876), mas com
-                        teto: o código é texto livre, e um EAN ou uma
-                        referência comprida não pode empurrar a tabela. O
-                        código inteiro está no balão do mouse (`title`, como
-                        antes): uma `Dica` com foco por linha seriam centenas
-                        de paradas de Tab numa lista grande. */}
-                    <td
-                      className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
-                      title={peca.codigo_interno || undefined}
-                    >
-                      {peca.codigo_interno || "—"}
-                    </td>
-                    <td className="text-texto-2">{peca.unidade || "—"}</td>
-                    <td className="whitespace-nowrap text-right">{formatarPreco(peca.preco_custo)}</td>
-                    <td className="whitespace-nowrap text-right">{formatarPreco(peca.preco_venda)}</td>
-                    <td className="whitespace-nowrap text-right text-texto-2">
-                      {margem === "" ? "—" : `${formatarQuantidade(Number(margem))}%`}
-                    </td>
-                    <td className={`text-right font-medium ${COR_DO_SALDO[leitura.situacao]}`}>
-                      <span className="inline-flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                        <span className="whitespace-nowrap">
-                          {formatarQuantidade(saldo)}
-                          {peca.estoque_minimo != null && (
-                            <span className="ml-1 text-rotulo font-normal text-texto-2">
-                              / mín. {formatarQuantidade(peca.estoque_minimo)}
-                            </span>
-                          )}
-                        </span>
-                        {seloDoSaldo && (
-                          <Dica texto={SITUACAO_SALDO_ROTULO[leitura.situacao]}>
-                            {/* Sem `tabIndex`: a palavra do selo já diz tudo; a frase
-                                inteira é só um complemento do mouse, e uma parada de
-                                Tab por linha pesaria numa lista grande. */}
-                            <span className="inline-flex">
-                              <Selo tipo={seloDoSaldo.tipo} palavra={seloDoSaldo.palavra} />
-                            </span>
-                          </Dica>
-                        )}
-                      </span>
-                    </td>
-                    <td>
-                      <Selo
-                        tipo={peca.ativo ? "ok" : "neutro"}
-                        palavra={peca.ativo ? "Ativo" : "Inativo"}
-                      />
-                    </td>
-                    <td className="text-right">
-                      <AcoesDaLinha
-                        descricao={`o produto ${peca.descricao}`}
-                        acoes={[
-                          { tipo: "editar", aoClicar: () => handleEditar(peca) },
-                          {
-                            tipo: peca.ativo ? "inativar" : "reativar",
-                            aoClicar: () => handleAlternarStatus(peca),
-                          },
-                          {
-                            tipo: "menu",
-                            rotulo: "Excluir produto",
-                            perigosa: true,
-                            aoClicar: () => handleExcluir(peca.id),
-                          },
-                        ]}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* `@container`: a coluna "última saída" só aparece quando a lista é larga. */}
+      <div ref={caixaDaLista} onKeyDown={handleTeclaNaLista} className="@container min-w-0">
+        <MoldeLista
+          rotulo="Produtos"
+          estado="pronto"
+          itens={pecasFiltradas}
+          chave={(peca) => peca.id}
+          linha={linhaDaPeca}
+          limite={50}
+          busca={
+            pecas.length > 0
+              ? {
+                  valor: busca,
+                  aoMudar: setBusca,
+                  rotulo: "Buscar ou bipar código",
+                  dica: "Descrição, referência, código, marca ou medida",
+                }
+              : undefined
+          }
+          filtros={
+            pecas.length > 0 && (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                <Chips
+                  rotulo="Situação"
+                  valor={situacao}
+                  aoEscolher={setSituacao}
+                  opcoes={[
+                    { valor: "todos", nome: "Todos" },
+                    { valor: "comprar", nome: `Comprar (${quantasPrecisamComprar})` },
+                    ...(quantasInativas > 0 ? [{ valor: "inativos" as const, nome: `Inativos (${quantasInativas})` }] : []),
+                  ]}
+                />
+                {categorias.length > 0 && (
+                  <select
+                    aria-label="Categoria"
+                    value={categoriaFiltro}
+                    onChange={(e) => setCategoriaFiltro(e.target.value)}
+                    className="sakura-campo sakura-campo-filtro !h-10 !w-48"
+                  >
+                    <option value="">Todas as categorias</option>
+                    {categorias.map((categoria) => (
+                      <option key={categoria.id} value={categoria.id}>
+                        {categoria.nome}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )
+          }
+          filtroAtivo={filtroAtivo}
+          aoLimparFiltros={() => {
+            setSituacao("todos");
+            setCategoriaFiltro("");
+          }}
+          vazio={{
+            frase: "Nenhum produto cadastrado ainda.",
+            acao: { rotulo: "Cadastrar o primeiro produto", aoClicar: () => setMostrarFormulario(true) },
+          }}
+        />
+      </div>
     </div>
   );
 }

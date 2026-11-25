@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
-import { Selo } from "@/components/Selo";
+import { Chips } from "@/components/Chips";
+import { useConfirmar } from "@/components/JanelaDeConfirmar";
+import { Modal } from "@/components/Modal";
 import { AvisoDeErro } from "@/components/Aviso";
+import { LinhaDeLista } from "@/components/molde/LinhaDeLista";
+import { MoldeLista } from "@/components/molde/MoldeLista";
 import { listarCategoriasServico } from "@/lib/categoriasServico";
 import { mensagemDeErro } from "@/lib/errors";
-import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import {
   atualizarServico,
   atualizarStatusServico,
@@ -16,7 +19,15 @@ import {
 import type { CategoriaServico } from "@/types/categoriaServico";
 import type { NovoServico, Servico } from "@/types/servico";
 import { ServicoForm } from "./ServicoForm";
-import { AcoesDaLinha } from "@/components/AcoesDaLinha";
+import { servicoCasaComBusca } from "./buscaDeServico";
+
+type FiltroDeStatus = "todos" | "ativos" | "inativos";
+
+const OPCOES_DE_STATUS = [
+  { valor: "todos", nome: "Todos" },
+  { valor: "ativos", nome: "Ativos" },
+  { valor: "inativos", nome: "Inativos" },
+] as const;
 
 function formatarPreco(valor: number | null): string {
   if (valor === null) return "—";
@@ -30,10 +41,9 @@ export function ServicosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
-  // Uma caixa pra cada formulário: os dois podem estar abertos juntos, e o
-  // cursor vai pro que acabou de abrir.
-  const caixaDoNovo = useRolarAteOFormulario(mostrarFormulario ? "novo" : null);
-  const caixaDaEdicao = useRolarAteOFormulario(servicoEditando?.id ?? null);
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<FiltroDeStatus>("todos");
+  const { confirmar, janela } = useConfirmar();
 
   async function carregar() {
     setCarregando(true);
@@ -69,10 +79,17 @@ export function ServicosPage() {
     await carregar();
   }
 
-  async function handleExcluir(id: string) {
-    if (!confirm("Excluir este serviço?")) return;
+  async function handleExcluir(servico: Servico) {
+    if (
+      !(await confirmar({
+        acao: "Excluir o serviço",
+        item: servico.descricao,
+        botao: "Excluir serviço",
+      }))
+    )
+      return;
     try {
-      await excluirServico(id);
+      await excluirServico(servico.id);
       await carregar();
     } catch (err) {
       console.error("Erro ao excluir serviço:", err);
@@ -90,6 +107,16 @@ export function ServicosPage() {
     }
   }
 
+  const visiveis = useMemo(
+    () =>
+      servicos.filter(
+        (s) =>
+          (filtro === "todos" || (filtro === "ativos") === s.ativo) && servicoCasaComBusca(s, busca),
+      ),
+    [servicos, filtro, busca],
+  );
+  const nomeDaCategoria = (id: string | null) => categorias.find((c) => c.id === id)?.nome;
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -102,111 +129,96 @@ export function ServicosPage() {
             </p>
           </div>
         </div>
-        {!mostrarFormulario && !servicoEditando && (
-          <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
-            + Novo serviço
-          </Botao>
-        )}
+        <Botao variante="principal" onClick={() => setMostrarFormulario(true)}>
+          + Novo serviço
+        </Botao>
       </header>
 
       {mostrarFormulario && (
-        <div ref={caixaDoNovo} className="scroll-mt-4">
+        <Modal titulo="Novo serviço" onFechar={() => setMostrarFormulario(false)}>
           <ServicoForm
+            emJanela
             categorias={categorias}
             onSalvar={handleSalvar}
             onCancelar={() => setMostrarFormulario(false)}
           />
-        </div>
+        </Modal>
       )}
 
       {servicoEditando && (
-        <div ref={caixaDaEdicao} className="scroll-mt-4">
-          {/* key: a lista fica na tela com o formulário aberto, e sem ela trocar
-              de canetinha mantinha os valores do anterior (defaultValues só
-              valem na montagem); salvar gravava esses dados no outro (#969). */}
+        <Modal titulo="Editar serviço" onFechar={() => setServicoEditando(null)}>
+          {/* key: sem ela o formulário guarda os valores do serviço anterior
+              (defaultValues só valem na montagem); salvar gravava esses dados
+              no outro (#969). */}
           <ServicoForm
             key={servicoEditando.id}
+            emJanela
             categorias={categorias}
             servicoExistente={servicoEditando}
             onSalvar={handleSalvar}
             onSalvarEdicao={handleSalvarEdicao}
             onCancelar={() => setServicoEditando(null)}
           />
-        </div>
+        </Modal>
       )}
 
-      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+      {/* Erro de excluir/inativar (a carga que falhou mostra o dela na lista). */}
+      {erro && !carregando && servicos.length > 0 && <AvisoDeErro>{erro}</AvisoDeErro>}
 
-      {carregando ? (
-        <p className="text-corpo text-texto-2">Carregando...</p>
-      ) : servicos.length === 0 ? (
-        <p className="text-corpo text-texto-2">
-          Nenhum serviço cadastrado ainda.
-        </p>
-      ) : (
-        <div className="overflow-x-auto sakura-card">
-          <table className="sakura-tabela">
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Código</th>
-                <th className="text-right">Preço padrão</th>
-                <th className="text-right">Custo</th>
-                <th>Status</th>
-                <th className="relative">
-                  <span className="sr-only">Ações</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {servicos.map((servico) => (
-                <tr key={servico.id}>
-                  <td className="font-medium">{servico.descricao}</td>
-                  <td className="text-texto-2">
-                    {categorias.find((c) => c.id === servico.categoria_id)?.nome ?? "—"}
-                  </td>
-                  {/* Igual ao código de Produtos (#921, #932): sem quebrar no
-                      hífen, mas com teto, pra um código comprido não alargar a
-                      tabela em 1366. O código inteiro fica no balão do mouse. */}
-                  <td
-                    className="max-w-[10rem] truncate whitespace-nowrap text-texto-2"
-                    title={servico.codigo_interno || undefined}
-                  >
-                    {servico.codigo_interno || "—"}
-                  </td>
-                  <td className="whitespace-nowrap text-right">{formatarPreco(servico.preco_padrao)}</td>
-                  <td className="whitespace-nowrap text-right text-texto-2">{formatarPreco(servico.custo)}</td>
-                  <td>
-                    <Selo
-                      tipo={servico.ativo ? "ok" : "neutro"}
-                      palavra={servico.ativo ? "Ativo" : "Inativo"}
-                    />
-                  </td>
-                  <td className="text-right">
-                    <AcoesDaLinha
-                      descricao={`o serviço ${servico.descricao}`}
-                      acoes={[
-                        { tipo: "editar", aoClicar: () => setServicoEditando(servico) },
-                        {
-                          tipo: servico.ativo ? "inativar" : "reativar",
-                          aoClicar: () => handleAlternarStatus(servico),
-                        },
-                        {
-                          tipo: "menu",
-                          rotulo: "Excluir serviço",
-                          perigosa: true,
-                          aoClicar: () => handleExcluir(servico.id),
-                        },
-                      ]}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <MoldeLista
+        rotulo="Serviços"
+        estado={carregando ? "carregando" : erro && servicos.length === 0 ? "erro" : "pronto"}
+        itens={visiveis}
+        chave={(s) => s.id}
+        busca={{
+          valor: busca,
+          aoMudar: setBusca,
+          rotulo: "Buscar serviço",
+          dica: "Nome ou código do serviço",
+        }}
+        filtros={
+          <Chips
+            rotulo="Situação do serviço"
+            opcoes={OPCOES_DE_STATUS}
+            valor={filtro}
+            aoEscolher={setFiltro}
+          />
+        }
+        filtroAtivo={filtro !== "todos"}
+        aoLimparFiltros={() => setFiltro("todos")}
+        vazio={{
+          frase: "Nenhum serviço cadastrado ainda.",
+          acao: { rotulo: "Cadastrar o primeiro serviço", aoClicar: () => setMostrarFormulario(true) },
+        }}
+        erro={{ mensagem: erro ?? "", tentarDeNovo: carregar }}
+        linha={(servico) => (
+          <LinhaDeLista
+            nome={servico.descricao}
+            detalhe={[
+              nomeDaCategoria(servico.categoria_id),
+              servico.codigo_interno || undefined,
+              servico.ativo ? undefined : "Inativo",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            lado={<span className="w-28 text-right">{formatarPreco(servico.preco_padrao)}</span>}
+            aoAbrir={() => setServicoEditando(servico)}
+            mais={[
+              { rotulo: "Editar", aoClicar: () => setServicoEditando(servico) },
+              {
+                rotulo: servico.ativo ? "Inativar" : "Reativar",
+                aoClicar: () => handleAlternarStatus(servico),
+              },
+              {
+                rotulo: "Excluir serviço",
+                perigosa: true,
+                aoClicar: () => handleExcluir(servico),
+              },
+            ]}
+          />
+        )}
+      />
+      {janela}
     </div>
   );
 }
