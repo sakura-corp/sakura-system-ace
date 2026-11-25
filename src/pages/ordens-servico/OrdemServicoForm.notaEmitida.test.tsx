@@ -14,8 +14,11 @@ import { renderizar, screen, waitFor, within } from "@/testes/tela";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
-const { listarArquivosDasOrdens } = vi.hoisted(() => ({ listarArquivosDasOrdens: vi.fn() }));
-vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens, cancelarArquivoEmitido: vi.fn() }));
+const { listarArquivosDasOrdens, cancelarArquivoEmitido } = vi.hoisted(() => ({
+  listarArquivosDasOrdens: vi.fn(),
+  cancelarArquivoEmitido: vi.fn(),
+}));
+vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens, cancelarArquivoEmitido }));
 vi.mock("@/lib/avisoDaOrdem", () => ({ quandoAvisouCarroPronto: async () => null }));
 vi.mock("@/lib/configuracoes", () => ({ buscarTextoGarantia: async () => "" }));
 vi.mock("@/contexts/AuthContext", () => ({
@@ -44,6 +47,7 @@ const nfce = {
 beforeEach(() => {
   localStorage.clear();
   listarArquivosDasOrdens.mockReset().mockResolvedValue([]);
+  cancelarArquivoEmitido.mockReset().mockResolvedValue(undefined);
 });
 
 const ordem = {
@@ -59,34 +63,39 @@ const ordem = {
   ] as unknown as ItemOS[],
 } as unknown as OrdemServico;
 
+function montar(extra: { onNotaCancelada?: () => void } = {}) {
+  return renderizar(
+    <OrdemServicoForm
+      clientes={[]}
+      pecas={[]}
+      servicos={[]}
+      funcionarios={[]}
+      funcionarioAtualId="func-1"
+      ordens={[]}
+      saldoPorPeca={new Map()}
+      saldoCarregado
+      ordemExistente={ordem}
+      abaInicial="fechamento"
+      gerente
+      // A página ainda não sabe da nota nova (ela só busca de novo ao fechar a OS).
+      temNotaEmitida={false}
+      notaParaCancelar={undefined}
+      onTrocarItensFaturada={vi.fn()}
+      onSalvarNova={vi.fn()}
+      onSalvarEdicao={vi.fn()}
+      onEditarItem={vi.fn()}
+      onEncerrar={vi.fn()}
+      onCadastrarCliente={vi.fn()}
+      onCadastrarVeiculo={vi.fn()}
+      onCancelar={vi.fn()}
+      {...extra}
+    />,
+  );
+}
+
 describe("OrdemServicoForm — a faixa depois de emitir a nota na OS (#1204)", () => {
   it("emitiu a NFC-e: some o 'Corrigir a OS' e aparece o 'Cancelar a nota', sem fechar a OS", async () => {
-    const { user } = renderizar(
-      <OrdemServicoForm
-        clientes={[]}
-        pecas={[]}
-        servicos={[]}
-        funcionarios={[]}
-        funcionarioAtualId="func-1"
-        ordens={[]}
-        saldoPorPeca={new Map()}
-        saldoCarregado
-        ordemExistente={ordem}
-        abaInicial="fechamento"
-        gerente
-        // A página ainda não sabe da nota nova (ela só busca de novo ao fechar a OS).
-        temNotaEmitida={false}
-        notaParaCancelar={undefined}
-        onTrocarItensFaturada={vi.fn()}
-        onSalvarNova={vi.fn()}
-        onSalvarEdicao={vi.fn()}
-        onEditarItem={vi.fn()}
-        onEncerrar={vi.fn()}
-        onCadastrarCliente={vi.fn()}
-        onCadastrarVeiculo={vi.fn()}
-        onCancelar={vi.fn()}
-      />,
-    );
+    const { user } = montar();
     const trilha = () => screen.getByRole("region", { name: "Fechar a OS" });
     await within(trilha()).findByText(/Passo 3 de 4/);
 
@@ -105,5 +114,28 @@ describe("OrdemServicoForm — a faixa depois de emitir a nota na OS (#1204)", (
     await user.click(within(trilha()).getByRole("button", { name: /Conferir peças e serviços.*voltar/ }));
     await waitFor(() => expect(screen.queryByRole("button", { name: "Corrigir a OS" })).toBeNull());
     expect(screen.getByRole("button", { name: "Cancelar a nota" })).toBeInTheDocument();
+  });
+
+  // Achado da revisão: a faixa passou a confiar também nas notas da trilha.
+  // Se elas não chegarem de novo depois de cancelar, a nota cancelada aqui
+  // não pode seguir travando a OS nem ser oferecida pra cancelar de novo.
+  it("cancelou a nota e a busca das notas falhou: a faixa não fica presa na nota cancelada", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    listarArquivosDasOrdens.mockResolvedValue([nfce]);
+    const onNotaCancelada = vi.fn();
+    const { user } = montar({ onNotaCancelada });
+    const trilha = () => screen.getByRole("region", { name: "Fechar a OS" });
+    await within(trilha()).findByText(/Passo 4 de 4/);
+    await user.click(within(trilha()).getByRole("button", { name: /Conferir peças e serviços.*voltar/ }));
+
+    listarArquivosDasOrdens.mockRejectedValue(new Error("sem rede"));
+    await user.click(screen.getByRole("button", { name: "Cancelar a nota" }));
+    await user.type(screen.getByPlaceholderText(/nota emitida por engano, valor errado/), "nota emitida por engano");
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelamento" }));
+    expect(cancelarArquivoEmitido).toHaveBeenCalledOnce();
+    expect(onNotaCancelada).toHaveBeenCalledOnce();
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Cancelar a nota" })).toBeNull());
+    expect(screen.getByRole("button", { name: "Corrigir a OS" })).toBeInTheDocument();
   });
 });

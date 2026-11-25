@@ -312,6 +312,43 @@ describe("OrdemServicoForm — a trilha do fechamento (#1088)", () => {
     expect(within(trilha()).getByText(/Passo 3 de 4/)).toBeInTheDocument();
   });
 
+  // Achado da revisão do #1203: o atalho da garantia não pode valer pra outra
+  // OS aberta na mesma tela (busca do Ctrl+K).
+  it("outra OS aberta na mesma tela não herda a garantia adiantada da anterior", async () => {
+    const aviso = { telefone: "16999990000", texto: "x", aoAbrir: vi.fn() };
+    const { user, rerender } = montar(ordem("faturada"), { avisoCarroPronto: aviso });
+    await within(trilha()).findByText(/Passo 3 de 4/);
+    await user.click(screen.getByRole("button", { name: "Garantia e avisar sem a nota" }));
+    expect(botaoLaranja()).toHaveTextContent("Avisar o cliente");
+
+    const outra = { ...ordem("faturada"), id: "os-2", numero: 13 } as OrdemServico;
+    rerender(
+      <OrdemServicoForm
+        ordemExistente={outra}
+        abaInicial="fechamento"
+        clientes={clientes}
+        pecas={[]}
+        servicos={[]}
+        funcionarios={funcionarios}
+        funcionarioAtualId="func-1"
+        ordens={[]}
+        saldoPorPeca={new Map()}
+        saldoCarregado
+        onSalvarNova={vi.fn()}
+        onSalvarEdicao={vi.fn().mockResolvedValue(undefined)}
+        onEditarItem={vi.fn().mockResolvedValue(undefined)}
+        onEncerrar={vi.fn()}
+        onCadastrarCliente={vi.fn()}
+        onCadastrarVeiculo={vi.fn()}
+        onCancelar={vi.fn()}
+        avisoCarroPronto={aviso}
+      />,
+    );
+    await within(trilha()).findByText(/Passo 3 de 4/);
+    await waitFor(() => expect(botaoLaranja()).toHaveTextContent("Emitir NFC-e"));
+    expect(screen.queryByRole("region", { name: "Garantia e avisar" })).toBeNull();
+  });
+
   it("orçamento não tem trilha", () => {
     montar(ordem("orcamento"), { modoOrcamento: true });
     expect(screen.queryByRole("region", { name: "Fechar a OS" })).toBeNull();

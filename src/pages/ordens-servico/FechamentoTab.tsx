@@ -328,10 +328,12 @@ function PainelDoFechamento({
             // caminho normal é emitir a nota.
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-linha pt-4">
               <p className="text-rotulo text-texto-2">
-                A nota não saiu? Dá pra entregar a garantia e avisar o cliente; a nota continua faltando aqui.
+                {avisado
+                  ? `${avisado}; a nota continua faltando aqui.`
+                  : "A nota não saiu? Dá pra entregar a garantia e avisar o cliente; a nota continua faltando aqui."}
               </p>
               <Botao tamanho="medio" onClick={aoAdiantarGarantia}>
-                Garantia e avisar sem a nota
+                {avisado ? "Ver a garantia" : "Garantia e avisar sem a nota"}
               </Botao>
             </div>
           )}

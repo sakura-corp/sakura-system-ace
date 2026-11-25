@@ -269,6 +269,7 @@ export function OrdemServicoForm({
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
   const [cancelandoNota, setCancelandoNota] = useState(false);
+  const [canceladasAqui, setCanceladasAqui] = useState<ReadonlySet<string>>(new Set());
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
@@ -305,6 +306,14 @@ export function OrdemServicoForm({
   // em vez de ficar parada no que a pessoa tinha aberto. Só conta o passo já
   // assentado: enquanto as notas chegam do banco, ele ainda pode pular.
   const [passoAssentado, setPassoAssentado] = useState<PassoDaOs | null>(null);
+  // Outra OS aberta na mesma tela (a busca do Ctrl+K reaproveita o
+  // formulário): a garantia adiantada com a nota pendente (#1203) era da
+  // anterior e não vale pra esta.
+  const [idDoPassoEscolhido, setIdDoPassoEscolhido] = useState(ordemExistente?.id);
+  if (ordemExistente?.id !== idDoPassoEscolhido) {
+    setIdDoPassoEscolhido(ordemExistente?.id);
+    if (passoEscolhido === "garantia") setPassoEscolhido(null);
+  }
   if (passoAtual && !fechamento.carregando && passoAtual !== passoAssentado) {
     if (passoAssentado !== null) setPassoEscolhido(null);
     setPassoAssentado(passoAtual);
@@ -392,7 +401,11 @@ export function OrdemServicoForm({
   // buscar (#1204). A página só busca as notas de novo quando a OS fecha; a
   // trilha busca logo depois de emitir. Sem isto, a faixa seguia oferecendo
   // "Corrigir a OS" (que é só pra OS sem nota) com a nota já emitida.
-  const notaVigenteDaTrilha = fechamento.notas.find((nota) => nota.status !== "cancelado");
+  // A nota cancelada aqui não conta mais, mesmo se a busca das notas que vem
+  // depois falhar: a lista da trilha ficaria com ela ainda valendo.
+  const notaVigenteDaTrilha = fechamento.notas.find(
+    (nota) => nota.status !== "cancelado" && !canceladasAqui.has(nota.id),
+  );
   const temNota = temNotaEmitida || !!notaVigenteDaTrilha;
   const notaDaFaixa = notaParaCancelar ?? notaVigenteDaTrilha;
   const podeAdicionarItem = !ehFaturada && !ehRecusado;
@@ -1095,6 +1108,7 @@ export function OrdemServicoForm({
         arquivo={notaDaFaixa}
         onFechar={() => setCancelandoNota(false)}
         onCancelado={() => {
+          setCanceladasAqui((ids) => new Set(ids).add(notaDaFaixa.id));
           // A página recarrega as notas dela (a faixa); a trilha (#1088), as
           // suas: a nota cancelada volta a faltar e o passo volta pra nota.
           onNotaCancelada?.();
