@@ -47,7 +47,8 @@ export function paraNovoMovimentoCaixa(valores: CaixaFormValues): NovoMovimentoC
  * ele é venda, aparece na aba Diário, e não é despesa nem entrada avulsa pra
  * classificar. Por isso tudo nesta parte do módulo (as abas Entradas e
  * Saídas, o bloco "Por categoria" e o conserto do histórico abaixo) olha
- * sempre para o mesmo recorte: `ordem_servico_id` nulo.
+ * sempre para o mesmo recorte: `ordem_servico_id` nulo (a não ser a saída
+ * ligada a uma OS, a devolução da #1182, que é saída como as outras).
  *
  * Os lançamentos que a conta a pagar/receber gera AO SER quitada entram aqui
  * de propósito — eles herdam a categoria da conta, que também é opcional, e
@@ -57,7 +58,10 @@ export function movimentosManuais(
   movimentos: readonly MovimentoCaixa[],
   tipo: TipoCaixa,
 ): MovimentoCaixa[] {
-  return movimentos.filter((m) => m.tipo === tipo && !m.ordem_servico_id);
+  // A saída ligada a uma OS (a devolução da correção de OS faturada, #1182)
+  // entra: é dinheiro que saiu da gaveta, com categoria, como qualquer saída
+  // (Sofia, 24/11/2026). Só a ENTRADA de OS (o faturamento) fica de fora.
+  return movimentos.filter((m) => m.tipo === tipo && (!m.ordem_servico_id || m.tipo === "saida"));
 }
 
 /**

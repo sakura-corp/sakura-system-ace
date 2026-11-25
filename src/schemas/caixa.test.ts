@@ -74,6 +74,16 @@ describe("o recorte de lançamento manual", () => {
     expect(movimentosManuais(movimentos, "saida").map((m) => m.id)).toEqual(["a"]);
   });
 
+  it("a devolução da correção de OS (saída ligada à OS, #1182) aparece nas Saídas", () => {
+    const comDevolucao = [
+      ...movimentos,
+      movimento({ id: "d", tipo: "saida", ordem_servico_id: "os-1", categoria_id: "devolucao" }),
+    ];
+    expect(movimentosManuais(comDevolucao, "saida").map((m) => m.id)).toEqual(["a", "d"]);
+    // A entrada da OS continua fora.
+    expect(movimentosManuais(comDevolucao, "entrada").map((m) => m.id)).toEqual(["b"]);
+  });
+
   it("nunca oferece uma OS faturada pra categorizar", () => {
     // Se a OS entrasse aqui, o conserto do histórico convidaria a classificar
     // venda como se fosse despesa avulsa.

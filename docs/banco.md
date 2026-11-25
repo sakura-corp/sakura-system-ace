@@ -696,6 +696,29 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   continua recusado. OS aprovada nunca volta. O "Já aprovar agora" da tela chama a `aprovar_orcamento`
   de sempre, depois. Matriz de RLS sem mudança (a sonda grava `troca` e continua só admin). Teste em
   `supabase/scripts/testar-reabrir-orcamento.sql`. Número `0091` por decisão da Sofia (24/11/2026: a `main` e o banco de teste estavam na `0090`); a #1182 é a `0092`, e a #1171 e a #1174 passam a `0093` e `0094`. Aplicação acompanhada na #1185.
+- `0092`: **corrigir peça, serviço e VALOR de OS (ou venda) já faturada, com a diferença no Caixa
+  de hoje** (tarefa #1182; Sofia, 24/11/2026). `contas_receber.origem` (`faturamento`/`correcao`):
+  a constraint `contas_receber_ordem_id_unique` vira o índice único parcial
+  `contas_receber_faturamento_unique` (uma conta de FATURAMENTO por OS; as da correção podem ser
+  várias). Em `ordens_servico_trocas` (tipo `correcao_valor`, da `0091`): `total_antes`,
+  `total_depois`, `acerto` (`conta_aberta`, `pago_agora`, `a_receber`, `devolvido`),
+  `caixa_movimento_id`, `conta_receber_id` e `chave` (única: a mesma chamada duas vezes não lança
+  duas vezes). Função `corrigir_os_faturada(ordem, itens, motivo, hoje, total faturado, acerto,
+  forma, vencimento, chave, aceita estoque negativo, operador)`, `security invoker`, no padrão da
+  `0087`: só admin da loja; nota não cancelada **`SKNOT`**; caixa de HOJE fechado **`SKCXH`** (o do
+  dia da fatura não trava mais); total faturado da tela ≠ banco ou acerto que não vale pro caso
+  **`SKMUD`**; estoque **`SKNEG`**. O caso é decidido no banco: conta do faturamento em aberto → a
+  conta muda de valor; paga e subiu → Entrada no Caixa de hoje (com a OS) ou conta nova `correcao`
+  só da diferença; paga e desceu → Saída "Devolução ao cliente" **ligada à OS** (Sofia, 24/11: é
+  "recebido a menos" da OS; o programa a desconta do recebido nas Relações, mostra nas Saídas do
+  Caixa e deixa fora dos pagamentos da OS na NFC-e e na garantia). Paga, desceu e ainda falta
+  receber de correção anterior: abate essa conta primeiro (`conta_aberta`, nada sai do Caixa); se a
+  descida passa do que falta, numa correção só abate tudo e devolve só o excesso (`devolvido`;
+  Sofia, 24/11: OS de 100 paga, +50 a receber, corrigir pra 80 → a conta de 50 zera e devolve 20).
+  A conta que zera não é apagada: fica `recebido` com valor zero, sem lançamento no Caixa, e o
+  `conta_receber_id` do histórico aponta pra ela. A categoria
+  nasce na primeira devolução, "a classificar". A `0087` fica pra versão antiga do programa; a nova
+  chama só esta, também com o total igual. Teste em `supabase/scripts/testar-corrigir-os-faturada.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -982,7 +1005,8 @@ outro projeto Supabase do zero (ver seção 9).
   **"Desfazer pagamento"** (`desfazerPagamento()` em `lib/contasPagar.ts`) volta a conta pra
   pendente e apaga a Saída que tinha sido gerada.
 - **`contas_receber`**: id, loja_id (FK lojas), cliente_id (FK clientes), ordem_servico_id (FK
-  ordens_servico, opcional e único — 1 conta a receber por OS faturada), descricao, valor,
+  ordens_servico, opcional; desde a `0092` só a conta de `origem = 'faturamento'` é única por OS, e
+  as da correção de valor, `origem = 'correcao'`, podem ser várias), descricao, valor,
   vencimento (date, aqui é "previsão de recebimento"), status (`pendente`/`recebido`),
   data_recebimento (opcional), caixa_movimento_id (FK, opcional — a Entrada gerada ao marcar como
   recebido), operador_id (FK operadores), criado_em. Nasce de dois jeitos: (a) **automaticamente**,

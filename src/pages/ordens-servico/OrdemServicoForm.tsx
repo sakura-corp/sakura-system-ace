@@ -54,9 +54,13 @@ import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escol
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
-import { motivoParaNaoTrocar, resumoDaTroca, type ItemDaTroca } from "@/schemas/trocaFaturada";
+import { motivoParaNaoTrocar, resumoDaTroca } from "@/schemas/trocaFaturada";
+import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
+import { formatarMoeda } from "@/schemas/dinheiro";
+import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { TrocaDeOsFaturada } from "@/types/os";
-import { TrocarItensFaturadaModal } from "./TrocarItensFaturadaModal";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
+import { TrocarItensFaturadaModal, type ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 
 /** As duas janelas do orçamento aberto (#1091): aprovar e recusar. */
 export type JanelaDoOrcamento = "aprovar" | "recusar";
@@ -136,17 +140,18 @@ interface OrdemServicoFormProps {
    */
   onItensMudaram?: () => void | Promise<void>;
   /**
-   * Trocar peça ou serviço de OS JÁ FATURADA, com o total igual (#1145). Só
+   * Corrigir peça, serviço e valor de OS JÁ FATURADA (#1145, #1182). Só
    * aparece com `gerente` (admin da loja) e sem nota fiscal; quem decide de
-   * verdade é o banco (migration 0087).
+   * verdade é o banco.
    */
   gerente?: boolean;
-  onTrocarItensFaturada?: (
-    ordem: OrdemServico,
-    itens: ItemDaTroca[],
-    motivo: string,
-    aceitaEstoqueNegativo: boolean,
-  ) => Promise<void>;
+  onTrocarItensFaturada?: (ordem: OrdemServico, correcao: ConfirmacaoDaCorrecao) => Promise<void>;
+  /** A situação da OS pra janela (conta em aberto, caixa de hoje, comissão). */
+  buscarSituacaoDaCorrecao?: (ordem: OrdemServico) => Promise<SituacaoDaCorrecao>;
+  /** A nota emitida da OS, pra a janela levar ao "Cancelar nota". */
+  notaParaCancelar?: NotaFiscalArquivo;
+  /** Depois de cancelar a nota pela faixa: a página recarrega as notas da OS (#1182). */
+  onNotaCancelada?: () => void;
   /**
    * O histórico da OS (trocas depois de faturada, reaberturas de orçamento,
    * correções de valor), da mais nova pra mais velha.
@@ -161,15 +166,28 @@ const ROTULO_DO_HISTORICO: Record<TrocaDeOsFaturada["tipo"], string> = {
   correcao_valor: "Correção de valor",
 };
 
+/** Como a diferença da correção de valor foi acertada (#1182). */
+const ACERTO_NO_HISTORICO = {
+  conta_aberta: "a conta a receber mudou de valor",
+  pago_agora: "cliente pagou a diferença",
+  a_receber: "diferença ficou a receber",
+  devolvido: "diferença devolvida ao cliente",
+} as const;
+
 /** O texto de uma linha do histórico, sem a data. Linha antiga, sem tipo, é troca. */
 function textoDoHistorico(linha: TrocaDeOsFaturada): string {
   const tipo = linha.tipo ?? "troca";
   const quem = linha.operador_nome ?? "—";
-  if (tipo === "troca") {
+  if (tipo === "troca" || tipo === "correcao_valor") {
     const { saem, entram } = resumoDaTroca(linha.itens_antes, linha.itens_depois);
+    const total =
+      tipo === "correcao_valor" && linha.total_antes != null && linha.total_depois != null
+        ? ` · total ${formatarMoeda(linha.total_antes)} → ${formatarMoeda(linha.total_depois)}` +
+          (linha.acerto ? ` · ${ACERTO_NO_HISTORICO[linha.acerto]}` : "")
+        : "";
     return (
-      `${ROTULO_DO_HISTORICO.troca} · ${quem} · saiu ${saem.map((i) => i.descricao).join(", ") || "nada"}, ` +
-      `entrou ${entram.map((i) => i.descricao).join(", ") || "nada"} · motivo: ${linha.motivo}`
+      `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · saiu ${saem.map((i) => i.descricao).join(", ") || "nada"}, ` +
+      `entrou ${entram.map((i) => i.descricao).join(", ") || "nada"}${total} · motivo: ${linha.motivo}`
     );
   }
   return `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · motivo: ${linha.motivo}`;
@@ -227,9 +245,13 @@ export function OrdemServicoForm({
   onItensMudaram,
   gerente = false,
   onTrocarItensFaturada,
+  buscarSituacaoDaCorrecao,
+  notaParaCancelar,
+  onNotaCancelada,
   trocas = [],
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
@@ -334,7 +356,7 @@ export function OrdemServicoForm({
     ? "Orçamento recusado: fica só como histórico, não dá pra mexer nos itens."
     : ehFaturada
       ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então. " +
-        "Dá pra trocar peça ou serviço mantendo o mesmo total (só gerente, sem nota fiscal)."
+        "Dá pra corrigir peça, serviço ou valor (só gerente, sem nota fiscal)."
     : temNotaEmitida
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
         "da OS. Cancele a nota em Notas Fiscais antes de mexer."
@@ -771,12 +793,17 @@ export function OrdemServicoForm({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linha p-3">
               <p className="text-rotulo text-texto-2">
                 {podeTrocarFaturada
-                  ? "Peça ou serviço lançado errado? Troque mantendo o mesmo total."
+                  ? "Precisa corrigir? Peça, serviço ou valor"
                   : porQueNaoTroca}
               </p>
               {podeTrocarFaturada && (
                 <Botao tamanho="pequeno" onClick={() => setJanelaTroca(true)}>
-                  Trocar peça ou serviço
+                  Corrigir a OS
+                </Botao>
+              )}
+              {temNotaEmitida && gerente && notaParaCancelar && (
+                <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+                  Cancelar a nota
                 </Botao>
               )}
             </div>
@@ -936,6 +963,13 @@ export function OrdemServicoForm({
         </div>
       </Modal>
     )}
+    {cancelandoNota && notaParaCancelar && (
+      <CancelarNotaModal
+        arquivo={notaParaCancelar}
+        onFechar={() => setCancelandoNota(false)}
+        onCancelado={() => onNotaCancelada?.()}
+      />
+    )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (
       <TrocarItensFaturadaModal
         ordem={ordemExistente}
@@ -944,8 +978,14 @@ export function OrdemServicoForm({
         funcionarios={funcionarios}
         saldoPorPeca={saldoPorPeca}
         saldoCarregado={saldoCarregado}
-        onConfirmar={async (itens, motivo, aceita) => {
-          await onTrocarItensFaturada(ordemExistente, itens, motivo, aceita);
+        buscarSituacao={() =>
+          buscarSituacaoDaCorrecao
+            ? buscarSituacaoDaCorrecao(ordemExistente)
+            : Promise.resolve({ contaDoFaturamentoEmAberto: null, caixaDeHojeFechado: false, comissaoDoPeriodoPaga: false, aReceberDeCorrecoes: 0 })
+        }
+        notaParaCancelar={notaParaCancelar}
+        onConfirmar={async (correcao) => {
+          await onTrocarItensFaturada(ordemExistente, correcao);
           setJanelaTroca(false);
         }}
         onFechar={() => setJanelaTroca(false)}

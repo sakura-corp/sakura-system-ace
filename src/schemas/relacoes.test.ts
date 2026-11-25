@@ -237,6 +237,43 @@ describe("resumoDoPeriodo (o dicionário)", () => {
   });
 });
 
+describe("devolução da correção de OS (#1182): é recebido a menos, não despesa", () => {
+  // OS faturada por 650 e paga; corrigida pra 600, a loja devolveu 50
+  // (saída ligada à OS). Mais um aluguel de 40, que é despesa de verdade.
+  const ordens = [ordem({ id: "c", itens: [item({ preco_unitario: 600 })] })];
+  const movimentos = [
+    mov({ ordem_servico_id: "c", valor: 650, dia: "2026-11-10" }),
+    mov({ ordem_servico_id: "c", tipo: "saida", valor: 50, categoria: { nome: "Devolução ao cliente" }, dia: "2026-11-24" }),
+    mov({ tipo: "saida", valor: 40, categoria: { nome: "Aluguel" }, dia: "2026-11-05" }),
+  ];
+  const resumo = resumoDoPeriodo({ ordens, movimentos, custoPeca, custoServico, periodo: novembro });
+
+  it("desconta do Recebido e fica fora das Despesas", () => {
+    expect(resumo.recebido).toBe(600);
+    expect(resumo.despesas).toBe(40);
+  });
+
+  it("desconta do que entrou pela OS: o Falta receber fecha em zero", () => {
+    expect(resumo.faltaReceber).toBe(0);
+  });
+
+  it("desconta do que entrou pela OS: corrigida de novo pra 620, faltam os 20", () => {
+    // 650 entrou, 50 voltou: a OS recebeu 600 e vendeu 620.
+    const r = resumoDoPeriodo({
+      ordens: [ordem({ id: "c", itens: [item({ preco_unitario: 620 })] })],
+      movimentos,
+      custoPeca,
+      custoServico,
+      periodo: novembro,
+    });
+    expect(r.faltaReceber).toBe(20);
+  });
+
+  it("não aparece nas despesas por tipo", () => {
+    expect(despesasPorTipo(movimentos, novembro)).toEqual([{ tipo: "Aluguel", valor: 40 }]);
+  });
+});
+
 describe("despesasPorTipo", () => {
   it("agrupa as saídas do período pelo tipo, do maior pro menor, e o resto vira Outras", () => {
     const movimentos = [

@@ -78,6 +78,11 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
   ck_ordens_servico_trocas_tipo: "Esse tipo de registro não existe no histórico da OS.",
+  // Migration 0092 (#1182): a correção de valor de OS faturada.
+  ck_ordens_servico_trocas_acerto: "Esse jeito de acertar a diferença não existe. Atualize a OS e tente de novo.",
+  ck_ordens_servico_trocas_correcao:
+    "A correção de valor ficou sem o total de antes, o de depois ou o acerto. Atualize a OS e tente de novo.",
+  ck_contas_receber_origem: "Essa origem de conta a receber não existe. Atualize a tela e tente de novo.",
   ck_fechamentos_caixa_valores: "O valor contado e o troco não podem ser negativos.",
   ck_comissoes_fechamentos_valores:
     "O valor pago não pode ser negativo, e o fim do período não pode vir antes do início.",
@@ -198,6 +203,14 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "competencia_tributos_confirmada",
   // 0091 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
   "tipo",
+  // 0092 (corrigir OS faturada, #1182): coluna de contas_receber e do histórico.
+  "origem",
+  "total_antes",
+  "total_depois",
+  "acerto",
+  "caixa_movimento_id",
+  "conta_receber_id",
+  "chave",
 ] as const;
 
 /**

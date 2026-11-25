@@ -10,8 +10,8 @@
  * de meio centavo da migration 0086): a OS foi faturada por ela.
  */
 
-import { formatarMoeda } from "./dinheiro";
-import { somarValoresLiquidos } from "./valorItem";
+import { arredondarCentavo, formatarMoeda, repartirEmCentavos } from "./dinheiro";
+import { somarValoresLiquidos, valorLiquidoDoItem } from "./valorItem";
 import type { TipoItemOS } from "@/types/os";
 
 /** Um item da lista final. Com `id`: um que já existe e fica; sem: novo. */
@@ -104,13 +104,8 @@ export function problemaDaTroca(
   }
   const { saem, entram } = resumoDaTroca(antes, depois);
   if (saem.length === 0 && entram.length === 0) return "Nada mudou nos itens.";
-  if (!totalConfere(antes, depois)) {
-    return (
-      `O total ficaria ${formatarMoeda(somarValoresLiquidos(depois))}, e a OS foi faturada por ` +
-      `${formatarMoeda(somarValoresLiquidos(antes))}. Por enquanto, numa OS faturada só dá pra ` +
-      `trocar peça ou serviço mantendo o mesmo total; mudar o valor vem numa próxima etapa.`
-    );
-  }
+  // Total diferente agora pode (#1182): a diferença é acertada no Caixa de
+  // hoje (ou na conta a receber), no 2º passo da janela.
   return null;
 }
 
@@ -163,13 +158,184 @@ export function motivoParaNaoTrocar(situacao: {
   faturada: boolean;
   gerente: boolean;
   temNota: boolean;
+  /**
+   * O caixa de HOJE já foi fechado (#1182): a diferença entra nele, então
+   * trava. O caixa do dia da fatura fechado não trava mais.
+   */
+  caixaDeHojeFechado?: boolean;
 }): string | null {
   if (!situacao.faturada) return "Só OS faturada passa por esta troca.";
   if (!situacao.gerente) {
     return "Só quem é gerente (administrador da loja) pode trocar peça ou serviço de uma OS faturada.";
   }
   if (situacao.temNota) {
-    return "Esta OS já tem nota fiscal emitida: não dá pra trocar peça ou serviço, porque a nota ficaria diferente da OS.";
+    return (
+      "Esta OS já tem nota fiscal emitida: não dá pra trocar peça ou serviço, porque a nota ficaria diferente da OS. " +
+      "Cancele a nota antes (o cancelamento tem prazo) e depois corrija."
+    );
+  }
+  if (situacao.caixaDeHojeFechado) {
+    return "O caixa de hoje já foi fechado: desfaça o fechamento de hoje antes de corrigir a OS.";
+  }
+  return null;
+}
+
+/**
+ * Quanto o total muda com a correção (#1182): o total novo menos o faturado,
+ * fechado no centavo. Positivo = subiu; negativo = desceu; zero = o caminho de
+ * total igual de sempre (#1145).
+ */
+export function diferencaDaCorrecao(
+  antes: readonly ItemDaTroca[],
+  depois: readonly ItemDaTroca[],
+): number {
+  // `|| 0` tira o "-0" (desceu nada), que a tela mostraria como "-R$ 0,00".
+  return arredondarCentavo(somarValoresLiquidos(depois) - somarValoresLiquidos(antes)) || 0;
+}
+
+/**
+ * Como a diferença é acertada (#1182). Os mesmos nomes da coluna `acerto` de
+ * `ordens_servico_trocas`:
+ * - `conta_aberta`: a OS foi faturada "a receber" e a conta ainda não foi
+ *   recebida → a conta muda de valor, nada entra no Caixa;
+ * - `pago_agora`: o cliente paga a diferença agora → Entrada no Caixa de hoje;
+ * - `a_receber`: a diferença fica a receber → conta a receber nova, só dela;
+ * - `devolvido`: a loja devolve a diferença agora → Saída no Caixa de hoje
+ *   ("Devolução ao cliente").
+ */
+export type AcertoDaCorrecao = "conta_aberta" | "pago_agora" | "a_receber" | "devolvido";
+
+/**
+ * Quais acertos a janela oferece, e qual já vem marcado (decisão da Sofia,
+ * 24/11/2026). Total igual não tem acerto. "Paga" é tudo que não é a conta do
+ * faturamento ainda em aberto: recebido na hora, ou a conta já recebida.
+ */
+export function acertosDaCorrecao(situacao: {
+  diferenca: number;
+  contaDoFaturamentoEmAberto: boolean;
+  /**
+   * O que ainda falta receber de correções ANTERIORES ("fica a receber").
+   * Quando o total desce, isso é abatido antes de qualquer devolução: senão
+   * sairia do Caixa um dinheiro que o cliente nunca pagou.
+   */
+  aReceberDeCorrecoes?: number;
+}): { opcoes: AcertoDaCorrecao[]; padrao: AcertoDaCorrecao | null } {
+  const aReceber = situacao.aReceberDeCorrecoes ?? 0;
+  if (situacao.diferenca === 0) return { opcoes: [], padrao: null };
+  if (situacao.contaDoFaturamentoEmAberto) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
+  if (situacao.diferenca > 0) return { opcoes: ["pago_agora", "a_receber"], padrao: "pago_agora" };
+  if (aReceber > 0 && aReceber >= -situacao.diferenca) return { opcoes: ["conta_aberta"], padrao: "conta_aberta" };
+  // Desce mais do que falta receber (ou não falta nada): devolve. O que falta
+  // receber é abatido antes, e só o excesso sai do Caixa, numa correção só
+  // (Sofia, 24/11/2026).
+  return { opcoes: ["devolvido"], padrao: "devolvido" };
+}
+
+/**
+ * O atalho "Manter o total de R$ X" (#1182, é o "a loja não cobra"): a
+ * diferença vira desconto nos itens que entraram ou mudaram, repartida pelo
+ * valor de cada um, e a correção segue o caminho de total igual. Cabe sempre:
+ * a diferença é o que entrou menos o que saiu, então nunca passa do valor do
+ * que entrou. Só existe quando o total subiu (`null` nos outros casos).
+ */
+export function manterOTotal(
+  antes: readonly ItemDaTroca[],
+  depois: readonly ItemDaTroca[],
+): ItemDaTroca[] | null {
+  const diferenca = diferencaDaCorrecao(antes, depois);
+  if (!(diferenca > 0)) return null;
+  const { entram } = resumoDaTroca(antes, depois);
+  const partes = repartirEmCentavos(
+    diferenca,
+    entram.map((item) => Math.max(0, valorLiquidoDoItem(item))),
+  );
+  const descontoExtra = new Map(entram.map((item, indice) => [item, partes[indice]]));
+  return depois.map((item) => {
+    const extra = descontoExtra.get(item);
+    return extra ? { ...item, desconto: arredondarCentavo(item.desconto + extra) } : item;
+  });
+}
+
+/** "2026-11-24" → "24/11"; "2026-12-10" → "10/12/2026" (sem `new Date`, que leria em UTC). */
+function diaEMes(dia: string): string {
+  const [, mes, d] = dia.split("-");
+  return `${d}/${mes}`;
+}
+function diaMesAno(dia: string): string {
+  const [ano, mes, d] = dia.split("-");
+  return `${d}/${mes}/${ano}`;
+}
+
+/**
+ * O rodapé do 2º passo: o que a correção vai lançar, com o valor e o dia
+ * (#1182). `hoje` e `vencimento` são dias de calendário ("YYYY-MM-DD");
+ * `valorDaConta` é o valor de hoje da conta do faturamento em aberto.
+ */
+export function textoDoAcerto(dados: {
+  acerto: AcertoDaCorrecao | null;
+  diferenca: number;
+  hoje: string;
+  vencimento?: string;
+  valorDaConta?: number;
+  /** Faltando receber de correção anterior (sem conta do faturamento em aberto). */
+  aReceberDeCorrecoes?: number;
+}): string {
+  const valor = formatarMoeda(Math.abs(dados.diferenca));
+  switch (dados.diferenca === 0 ? null : dados.acerto) {
+    case "pago_agora":
+      return `Lança ${valor} como Entrada no Caixa de hoje, ${diaEMes(dados.hoje)}.`;
+    case "devolvido": {
+      // Ainda faltava receber de correção anterior: abate isso e devolve só o excesso.
+      const abate = Math.min(dados.aReceberDeCorrecoes ?? 0, Math.abs(dados.diferenca));
+      const devolve = formatarMoeda(arredondarCentavo(Math.abs(dados.diferenca) - abate));
+      const saida = `como Saída (Devolução ao cliente) no Caixa de hoje, ${diaEMes(dados.hoje)}.`;
+      return abate > 0
+        ? `Abate ${formatarMoeda(abate)} que ainda está a receber de uma correção anterior e lança ${devolve} ${saida}`
+        : `Lança ${valor} ${saida}`;
+    }
+    case "a_receber":
+      return (
+        `Cria uma conta a receber de ${valor}` +
+        (dados.vencimento ? `, com vencimento em ${diaMesAno(dados.vencimento)}` : "") +
+        ". Nada entra no Caixa hoje."
+      );
+    case "conta_aberta": {
+      if (dados.valorDaConta === undefined && (dados.aReceberDeCorrecoes ?? 0) > 0) {
+        return `Abate ${valor} da diferença que ainda está a receber de uma correção anterior. Nada sai do Caixa.`;
+      }
+      const contaAntes = dados.valorDaConta ?? 0;
+      const contaDepois = arredondarCentavo(contaAntes + dados.diferenca);
+      return `A conta a receber da OS passa de ${formatarMoeda(contaAntes)} para ${formatarMoeda(contaDepois)}. Nada entra no Caixa.`;
+    }
+    default:
+      return "O total não muda: nada entra no Caixa.";
+  }
+}
+
+/**
+ * Por que o 2º passo ainda não pode confirmar (ou `null`): o acerto tem que
+ * valer pro caso, e cada acerto pede o que precisa (#1182). O banco confere
+ * tudo de novo; aqui é só pra a tela avisar antes.
+ */
+export function problemaDoAcerto(dados: {
+  diferenca: number;
+  contaDoFaturamentoEmAberto: boolean;
+  aReceberDeCorrecoes?: number;
+  acerto: AcertoDaCorrecao | null;
+  formaPagamento?: string;
+  vencimento?: string;
+  hoje: string;
+}): string | null {
+  const { opcoes } = acertosDaCorrecao(dados);
+  if (opcoes.length === 0) return null;
+  if (!dados.acerto || !opcoes.includes(dados.acerto)) return "Escolha como acertar a diferença.";
+  if ((dados.acerto === "pago_agora" || dados.acerto === "devolvido") && !dados.formaPagamento) {
+    return "Escolha a forma de pagamento.";
+  }
+  if (dados.acerto === "a_receber") {
+    if (!dados.vencimento) return "Informe o vencimento da diferença.";
+    // "YYYY-MM-DD" compara certo como texto.
+    if (dados.vencimento < dados.hoje) return "O vencimento não pode ser antes de hoje.";
   }
   return null;
 }

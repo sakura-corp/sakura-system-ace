@@ -96,6 +96,32 @@ export function custoDaOrdemPeloBanco(custos: CustoDoBanco): CustoDaOrdem {
   return (ordemId) => custos.get(ordemId)?.custo ?? 0;
 }
 
+/**
+ * Os textos que o banco grava nos lançamentos da correção de OS faturada
+ * (`corrigir_os_faturada`, migration 0092): a Entrada da diferença ("Correção
+ * da OS N"), a conta da diferença que fica a receber ("Diferença da correção
+ * da OS N", copiada pra Entrada quando é recebida) e a devolução.
+ */
+const DESCRICOES_DA_CORRECAO = ["Correção da ", "Diferença da correção da ", "Devolução da correção da "];
+
+/**
+ * O lançamento é o acerto de uma correção de OS faturada (#1182)? Decisão da
+ * Sofia (24/11/2026): o lucro e o custo da OS ficam só no dia da fatura (já
+ * com os itens novos); a Entrada da diferença e a "Devolução ao cliente"
+ * entram no dinheiro do dia com lucro e custo ZERO. Saída ligada a uma OS só
+ * existe na devolução da correção (ver `src/schemas/caixa.ts`).
+ */
+export function ehAcertoDeCorrecao(movimento: {
+  tipo: string;
+  ordem_servico_id: string | null;
+  descricao?: string | null;
+}): boolean {
+  if (!movimento.ordem_servico_id) return false;
+  if (movimento.tipo === "saida") return true;
+  const descricao = movimento.descricao ?? "";
+  return DESCRICOES_DA_CORRECAO.some((inicio) => descricao.startsWith(inicio));
+}
+
 export interface ResumoCaixa {
   /** Tudo que entrou (vendas de OS + entradas manuais). */
   entradas: number;
@@ -138,7 +164,9 @@ export function resumirMovimentos<I extends ItemParaVenda = ItemParaVenda>(
     entradas += movimento.valor;
 
     const ordemId = movimento.ordem_servico_id;
-    if (!ordemId) continue;
+    // A diferença de uma correção é dinheiro do dia, sem o custo da OS e fora
+    // do ticket médio (#1182): o custo fica no dia da fatura.
+    if (!ordemId || ehAcertoDeCorrecao(movimento)) continue;
 
     if (!ehVendaBalcao(movimento.ordem_servico)) {
       totalDeOrdens += movimento.valor;
@@ -173,7 +201,7 @@ export function lucroPorMovimento<I extends ItemParaVenda = ItemParaVenda>(
 ): Map<string, number> {
   const pagoPorOrdem = new Map<string, number>();
   for (const movimento of movimentos) {
-    if (movimento.tipo !== "entrada" || !movimento.ordem_servico_id) continue;
+    if (movimento.tipo !== "entrada" || !movimento.ordem_servico_id || ehAcertoDeCorrecao(movimento)) continue;
     const atual = pagoPorOrdem.get(movimento.ordem_servico_id) ?? 0;
     pagoPorOrdem.set(movimento.ordem_servico_id, atual + movimento.valor);
   }
@@ -182,6 +210,11 @@ export function lucroPorMovimento<I extends ItemParaVenda = ItemParaVenda>(
   for (const movimento of movimentos) {
     const ordem = movimento.ordem_servico;
     if (movimento.tipo !== "entrada" || !movimento.ordem_servico_id || !ordem) continue;
+    // A diferença de uma correção: lucro zero, o da OS fica no dia da fatura (#1182).
+    if (ehAcertoDeCorrecao(movimento)) {
+      lucros.set(movimento.id, 0);
+      continue;
+    }
 
     const lucroDaOrdem =
       totalOrdem(ordem.itens ?? []) - custoDaOrdem(movimento.ordem_servico_id, ordem.itens ?? []);

@@ -6,7 +6,7 @@ import { buscarDepositoPadraoId } from "./depositos";
 import { ehErroDeRede, mensagemDeErro } from "./errors";
 import { diaLocal, hojeLocal } from "./datas";
 import { listarTaxasMaquininha, registrarTaxaDoCartao } from "./taxasMaquininha";
-import type { ItemDaTroca } from "@/schemas/trocaFaturada";
+import type { AcertoDaCorrecao, ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
 import {
   calcularTaxaDaMaquininha,
@@ -676,13 +676,175 @@ export class EstoqueNegativoNaTrocaError extends Error {
 }
 
 /**
- * O histórico da OS (#1145, #1181): trocas depois de faturada, reaberturas de
+ * O que a janela "Corrigir a OS" precisa saber antes de abrir o 2º passo
+ * (#1182). Só pra avisar e escolher as opções: o banco decide tudo de novo,
+ * com a OS travada.
+ */
+export interface SituacaoDaCorrecao {
+  /** A conta a receber do FATURAMENTO desta OS, se ainda não foi recebida. */
+  contaDoFaturamentoEmAberto: { id: string; valor: number } | null;
+  /** O caixa de hoje já foi fechado: a correção não pode lançar nele. */
+  caixaDeHojeFechado: boolean;
+  /** Já foi registrado pagamento de comissão num período que pega o dia da fatura. */
+  comissaoDoPeriodoPaga: boolean;
+  /**
+   * O que ainda falta receber de correções ANTERIORES desta OS ("fica a
+   * receber"): quando o total desce, é abatido antes de devolver dinheiro.
+   */
+  aReceberDeCorrecoes: number;
+}
+
+export async function buscarSituacaoDaCorrecao(
+  ordem: OrdemServico,
+  hoje: string,
+): Promise<SituacaoDaCorrecao> {
+  const diaDaFatura = ordem.data_fechamento ? diaLocal(ordem.data_fechamento) : null;
+  const [conta, correcoes, fechamento, comissao] = await Promise.all([
+    supabase
+      .from("contas_receber")
+      .select("id, valor")
+      .eq("ordem_servico_id", ordem.id)
+      .eq("origem", "faturamento")
+      .eq("status", "pendente")
+      .maybeSingle(),
+    supabase
+      .from("contas_receber")
+      .select("valor")
+      .eq("ordem_servico_id", ordem.id)
+      .eq("origem", "correcao")
+      .eq("status", "pendente"),
+    supabase
+      .from("fechamentos_caixa")
+      .select("id")
+      .eq("loja_id", ordem.loja_id)
+      .eq("data", hoje)
+      .maybeSingle(),
+    diaDaFatura
+      ? supabase
+          .from("comissoes_fechamentos")
+          .select("id")
+          .eq("loja_id", ordem.loja_id)
+          .lte("periodo_inicio", diaDaFatura)
+          .gte("periodo_fim", diaDaFatura)
+          .limit(1)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (conta.error) throw conta.error;
+  if (correcoes.error) throw correcoes.error;
+  if (fechamento.error) throw fechamento.error;
+  if (comissao.error) throw comissao.error;
+  const linhaConta = conta.data as { id: string; valor: number | string } | null;
+  return {
+    contaDoFaturamentoEmAberto: linhaConta ? { id: linhaConta.id, valor: Number(linhaConta.valor) } : null,
+    caixaDeHojeFechado: fechamento.data !== null,
+    comissaoDoPeriodoPaga: (comissao.data ?? []).length > 0,
+    aReceberDeCorrecoes: somar(((correcoes.data ?? []) as { valor: number | string }[]).map((c) => Number(c.valor))),
+  };
+}
+
+export interface CorrecaoDaOrdem {
+  ordem: OrdemServico;
+  /** A lista FINAL de itens da OS. */
+  itens: ItemDaTroca[];
+  motivo: string;
+  /** O total que a janela mostrou como faturado: se o banco tiver outro, a OS mudou. */
+  totalFaturado: number;
+  /** Nulo quando o total não muda. */
+  acerto: AcertoDaCorrecao | null;
+  /** A chave da forma de pagamento (pago agora e devolvido). */
+  formaPagamento: string | null;
+  /** "YYYY-MM-DD" (fica a receber). */
+  vencimento: string | null;
+  /** O dia de hoje no relógio da loja: o Caixa em que a diferença entra. */
+  hoje: string;
+  /** Uma por janela aberta: a mesma chamada 2 vezes não lança 2 vezes. */
+  chave: string;
+  aceitaEstoqueNegativo: boolean;
+  operadorId: string;
+}
+
+// Corrigir uma OS (ou venda) JÁ FATURADA: peça, serviço e valor (#1182). Uma
+// chamada só (`corrigir_os_faturada`, migration 0092), tudo ou nada: o banco
+// trava a OS, confere gerente, nota, o caixa de HOJE, o total faturado e o
+// acerto que vale pro caso; troca os itens, acerta o estoque, lança a
+// diferença (Caixa de hoje ou conta a receber) e grava o histórico. Com o
+// total igual também passa por aqui (acerto nulo): o caixa do dia da fatura
+// fechado não trava mais. A `trocarItensOsFaturada` (0087) fica pra versão
+// antiga do programa.
+export async function corrigirOrdemFaturada(c: CorrecaoDaOrdem): Promise<void> {
+  if (c.ordem.status !== "faturada") {
+    throw new Error("Esta OS ainda não foi faturada: corrija os itens direto na OS.");
+  }
+  const { error } = await supabase.rpc("corrigir_os_faturada", {
+    p_ordem: c.ordem.id,
+    p_itens: c.itens.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      tipo: item.tipo,
+      peca_id: item.peca_id,
+      servico_id: item.servico_id,
+      tecnico_id: item.tecnico_id,
+      descricao: item.descricao.trim(),
+      quantidade: item.quantidade,
+      preco_unitario: item.preco_unitario,
+      desconto: item.desconto,
+      custo_unitario: item.custo_unitario ?? null,
+    })),
+    p_motivo: c.motivo.trim(),
+    p_hoje: c.hoje,
+    // Sem arredondar: o banco compara com a folga de meio centavo (0086).
+    p_total_faturado: c.totalFaturado,
+    p_acerto: c.acerto,
+    p_forma_pagamento: c.formaPagamento,
+    p_vencimento: c.vencimento,
+    p_chave: c.chave,
+    p_aceita_estoque_negativo: c.aceitaEstoqueNegativo,
+    p_operador: c.operadorId,
+  });
+  if (error) {
+    const codigo = (error as { code?: string }).code;
+    if (codigo === "SKNEG") throw new EstoqueNegativoNaTrocaError(error.message);
+    if (codigo === "SKNOT") throw new NotaEmitidaNaCorrecaoError(error.message);
+    if (codigo === "SKCXH") throw new CaixaDeHojeFechadoError(error.message);
+    if (codigo === "SKMUD") throw new CorrecaoMudouError(error.message);
+    throw error;
+  }
+}
+
+/** A OS tem nota fiscal emitida (#1182): a janela leva ao "Cancelar nota". */
+export class NotaEmitidaNaCorrecaoError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "NotaEmitidaNaCorrecaoError";
+  }
+}
+
+/** O caixa de hoje foi fechado (#1182): desfazer o fechamento de hoje antes. */
+export class CaixaDeHojeFechadoError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "CaixaDeHojeFechadoError";
+  }
+}
+
+/**
+ * A OS ou a conta dela mudou em outro computador (#1182): o total faturado ou
+ * o acerto escolhido não valem mais. A janela pede pra atualizar.
+ */
+export class CorrecaoMudouError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "CorrecaoMudouError";
+  }
+}
+
+/**
+ * O histórico da OS (#1145, #1181, #1182): trocas depois de faturada, reaberturas de
  * orçamento e correções de valor, da mais nova pra mais velha.
  */
 export async function listarTrocasDaOrdem(ordemId: string): Promise<TrocaDeOsFaturada[]> {
   const { data, error } = await supabase
     .from("ordens_servico_trocas")
-    .select("id, tipo, operador_nome, motivo, itens_antes, itens_depois, total, criado_em")
+    .select("id, tipo, operador_nome, motivo, itens_antes, itens_depois, total, total_antes, total_depois, acerto, criado_em")
     .eq("ordem_servico_id", ordemId)
     .order("criado_em", { ascending: false });
   if (error) throw error;
