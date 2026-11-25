@@ -28,7 +28,7 @@ import { MovimentacoesSection } from "./MovimentacoesSection";
 import { PerfilDaPeca } from "./PerfilDaPeca";
 import { ProdutosSection } from "./ProdutosSection";
 import { RelatoriosEstoqueSection } from "./RelatoriosEstoqueSection";
-import { ultimaSaidaPorPeca } from "./barraDoEstoque";
+import { ultimaSaidaPorPeca } from "./contaDaBarra";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 /**

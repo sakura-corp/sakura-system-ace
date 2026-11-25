@@ -21,7 +21,7 @@ import { pecaSemCusto } from "@/schemas/avisosOrdemServico";
 import { ImportarNotasFiscaisModal } from "./ImportarNotasFiscaisModal";
 import { PecaForm } from "./PecaForm";
 import { BarraDoEstoque } from "./BarraDoEstoque";
-import { lerBarraDoEstoque } from "./barraDoEstoque";
+import { lerBarraDoEstoque } from "./contaDaBarra";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import { Botao } from "@/components/Botao";
 import { Chips } from "@/components/Chips";
