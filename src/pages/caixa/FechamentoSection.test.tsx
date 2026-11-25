@@ -9,6 +9,7 @@
  * (a conta certa, usada com o campo errado — §6 item 62).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent } from "@testing-library/react";
 import { renderizar, screen, within } from "@/testes/tela";
 import { hojeLocal } from "@/lib/datas";
 import type { MovimentoCaixa } from "@/types/caixa";
@@ -19,6 +20,7 @@ const desfazerFechamentoCaixa = vi.fn();
 vi.mock("@/lib/fechamentoCaixa", () => ({
   fecharCaixa: (...a: unknown[]) => fecharCaixa(...a),
   desfazerFechamentoCaixa: (...a: unknown[]) => desfazerFechamentoCaixa(...a),
+  LIMITE_DE_FECHAMENTOS: 60,
 }));
 
 // Resumo pro dono (#397): o WhatsApp, as OS, as contas e os modelos.
@@ -439,5 +441,43 @@ describe("FechamentoSection", () => {
     expect(aoMudarRascunho).toHaveBeenLastCalledWith(true);
     unmount();
     expect(aoMudarRascunho).toHaveBeenLastCalledWith(false);
+  });
+
+  // Achados da revisão final (#1090).
+  it("clicar 2 vezes no botão laranja anda um passo só", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await irAte(user, "contar");
+    await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "10");
+    await user.dblClick(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+    const trilha = screen.getByRole("list", { name: "Fechar o caixa" });
+    expect(within(trilha).getAllByRole("listitem")[2]).toHaveAttribute("aria-current", "step");
+  });
+
+  it("apagar as notas da ajuda também apaga o contado que veio delas", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await irAte(user, "contar");
+    await user.click(screen.getByRole("button", { name: "Ajuda pra contar as notas" }));
+    await user.type(screen.getByLabelText("Notas de R$ 50"), "1");
+    expect(screen.getByLabelText("Quanto tem na gaveta agora (contado)")).toHaveValue(50);
+    await user.clear(screen.getByLabelText("Notas de R$ 50"));
+    expect(screen.getByLabelText("Quanto tem na gaveta agora (contado)")).toHaveValue(null);
+  });
+
+  it("lista de fechamentos cortada no limite: não diz 'primeiro fechamento' (pode haver um mais antigo)", () => {
+    const muitos = Array.from({ length: 60 }, (_, i) =>
+      fechamento({ id: `f${i}`, data: `2026-${String(10 + Math.floor(i / 28)).padStart(2, "0")}-${String((i % 28) + 1).padStart(2, "0")}` }),
+    );
+    renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={muitos} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    // um dia ANTES de todos os 60: pela lista, seria o primeiro; mas a lista
+    // vem cortada nos 60 mais novos, então pode haver um fechamento mais antigo.
+    fireEvent.change(screen.getByLabelText("Dia"), { target: { value: "2026-01-05" } });
+    expect(screen.getByLabelText("Troco que já estava na gaveta ao abrir")).toBeInTheDocument();
+    expect(screen.queryByText(/diga quanto tinha na gaveta ao abrir/)).not.toBeInTheDocument();
   });
 });

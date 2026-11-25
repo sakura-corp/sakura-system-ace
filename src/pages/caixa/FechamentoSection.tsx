@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, ArrowUp, Calculator, Check, ChevronDown, TriangleAlert, Undo2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { useForm, type UseFormRegister } from "react-hook-form";
+import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { z } from "zod";
 import { Botao } from "@/components/Botao";
 import { BotaoResumoDono } from "@/components/BotaoResumoDono";
@@ -12,7 +12,7 @@ import { Valor } from "@/components/Valor";
 import { diaLocal, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarContasPagar } from "@/lib/contasPagar";
-import { desfazerFechamentoCaixa, fecharCaixa } from "@/lib/fechamentoCaixa";
+import { desfazerFechamentoCaixa, fecharCaixa, LIMITE_DE_FECHAMENTOS } from "@/lib/fechamentoCaixa";
 import { listarOrdens } from "@/lib/ordensServico";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import { custoDaOrdemPeloBanco, type CustoDoBanco } from "@/schemas/metricasCaixa";
@@ -164,7 +164,9 @@ export function FechamentoSection({
           hoje={hoje}
           movimentosDoDia={movimentosDoDia}
           fundoInicial={fundoSugerido(fechamentos, dia)}
-          primeiroFechamento={ehPrimeiroFechamento(fechamentos, dia)}
+          // A lista traz só os fechamentos mais novos: cheia, pode haver um
+          // mais antigo que ela não mostra, e aí não dá pra dizer "o primeiro".
+          primeiroFechamento={fechamentos.length < LIMITE_DE_FECHAMENTOS && ehPrimeiroFechamento(fechamentos, dia)}
           aoMudarRascunho={aoMudarRascunho}
           onAtualizado={onAtualizado}
         />
@@ -244,9 +246,18 @@ function FecharDia({
   // A conta mora em schemas/fechamentoCaixa.ts (somarAGaveta).
   const contagem = somarAGaveta(notasPelaNota(notas), moedas);
   const algoNaAjuda = Object.values(notas).some((v) => v.trim() !== "") || moedas.trim() !== "";
+  // `contadoDaAjuda`: o valor do campo veio da soma (e não da mão). Apagar as
+  // notas apaga junto o que veio delas; o que foi digitado à mão fica.
+  const contadoDaAjuda = useRef(false);
   useEffect(() => {
-    if (!ajudaAberta || !algoNaAjuda) return;
-    setValue("contado", String(contagem.total), { shouldDirty: true, shouldValidate: true });
+    if (!ajudaAberta) return;
+    if (algoNaAjuda) {
+      setValue("contado", contagem.total.toFixed(2), { shouldDirty: true, shouldValidate: true });
+      contadoDaAjuda.current = true;
+    } else if (contadoDaAjuda.current) {
+      setValue("contado", "", { shouldDirty: true });
+      contadoDaAjuda.current = false;
+    }
   }, [ajudaAberta, algoNaAjuda, contagem.total, setValue]);
 
   // Quem abriu a janela pergunta antes de fechar com valor digitado (Esc).
@@ -273,10 +284,19 @@ function FecharDia({
     return () => clearTimeout(t);
   }, [passo, proximoId, fecharId]);
 
+  // Anda a partir do passo DESTE desenho (e não do mais novo): clicar 2 vezes
+  // no laranja, antes de a tela trocar, leva pro mesmo passo, sem pular um.
   async function avancar() {
     if (passo === 0 && !(await trigger("fundo"))) return;
     if (passo === 1 && !(await trigger("contado"))) return;
-    setPasso((p) => Math.min(p + 1, PASSOS_DO_FECHAMENTO.length - 1));
+    setPasso(Math.min(passo + 1, PASSOS_DO_FECHAMENTO.length - 1));
+  }
+
+  // O formulário inteiro é conferido no fim: se algo faltar, volta pro passo
+  // do campo, onde a mensagem aparece (senão o "Fechar" não faria nada).
+  function voltarProCampoComErro(erros: FieldErrors<FechamentoValues>) {
+    if (erros.fundo) setPasso(0);
+    else if (erros.contado) setPasso(1);
   }
 
   async function aoFechar(valores: FechamentoValues) {
@@ -323,7 +343,7 @@ function FecharDia({
   function aoEnviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (passo < PASSOS_DO_FECHAMENTO.length - 1) void avancar();
-    else void handleSubmit(aoFechar)(evento);
+    else void handleSubmit(aoFechar, voltarProCampoComErro)(evento);
   }
 
   // Enter no campo do passo já segue pro próximo (sem isto, o Enter do
@@ -357,7 +377,7 @@ function FecharDia({
           </Aviso>
         )}
 
-        <div className="min-h-72">
+        <div>
           {passo === 0 && (
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
@@ -419,6 +439,10 @@ function FecharDia({
                     readOnly={ajudaAberta && algoNaAjuda}
                     aria-invalid={errors.contado ? true : undefined}
                     {...contadoCampo}
+                    onChange={(e) => {
+                      contadoDaAjuda.current = false;
+                      return contadoCampo.onChange(e);
+                    }}
                     ref={(el) => {
                       contadoCampo.ref(el);
                       contadoRef.current = el;
@@ -437,7 +461,9 @@ function FecharDia({
                 />
               </div>
 
-              <div className="min-w-0 space-y-4">
+              {/* Grudada no alto: contando as notas lá embaixo, a diferença
+                  continua à vista. */}
+              <div className="min-w-0 space-y-4 self-start md:sticky md:-top-[18px]">
                 {/* Anunciado ao digitar: quem conta a gaveta olhando pro
                     dinheiro ouve se bateu sem tirar o olho dele. A região fica
                     sempre na tela (vazia antes do primeiro número): se ela
@@ -522,7 +548,11 @@ function FecharDia({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-4 border-t border-linha pt-4">
+        {/* Grudado no pé da janela: numa tela baixa (1366 × 700), o passo
+            rola e o "Voltar" e o laranja continuam à vista. O −18 px é o
+            respiro de baixo do corpo da janela (o `py-[18px]` do Modal): sem
+            ele, o que rola apareceria por baixo do rodapé. */}
+        <div className="sticky -bottom-[18px] z-10 -mx-6 -mb-6 flex items-center justify-between gap-4 rounded-b-[1.125rem] border-t border-linha bg-cartao px-6 py-4">
           {passo > 0 ? (
             <Botao variante="fantasma" icone={<ArrowLeft />} onClick={() => setPasso((p) => p - 1)}>
               Voltar
@@ -531,7 +561,18 @@ function FecharDia({
             <span />
           )}
           {passo < PASSOS_DO_FECHAMENTO.length - 1 ? (
-            <Botao id={proximoId} variante="principal" tamanho="grande" type="submit" icone={<ArrowRight />}>
+            <Botao
+              id={proximoId}
+              variante="principal"
+              tamanho="grande"
+              type="submit"
+              icone={<ArrowRight />}
+              // O 2º clique de um clique duplo cairia no mesmo botão, já com o
+              // nome do passo seguinte, e pularia um passo: ele é ignorado.
+              onClick={(e) => {
+                if (e.detail > 1) e.preventDefault();
+              }}
+            >
               {PROXIMO[passo]}
             </Botao>
           ) : (
@@ -575,13 +616,12 @@ function DiferencaGrande({ diferenca, esperado }: { diferenca: number; esperado:
         <span className="min-w-0">{frase}</span>
       </p>
       <p className="mt-2 text-rotulo text-texto-2">
-        contra {formatarMoeda(esperado)} que devia ter na gaveta
         {situacao !== "bateu" && (
           <>
-            {" "}
-            (<DiferencaComSinal diferenca={diferenca} className="font-semibold" />)
+            <DiferencaComSinal diferenca={diferenca} className="font-semibold" />{" "}
           </>
         )}
+        contra {formatarMoeda(esperado)} que devia ter na gaveta
       </p>
       <p className={`mt-1 text-rotulo font-medium ${aparencia.cor}`}>
         {situacao === "bateu" ? "Nenhum lançamento é feito." : `A diferença ${consequenciaDaDiferenca(diferenca)}.`}
@@ -632,6 +672,7 @@ function AjudaDasNotas({
       </button>
       {aberta && (
         <div id={corpoId} className="space-y-2 border-t border-linha px-4 py-3">
+          <p className="text-rotulo text-texto-2">Com a ajuda aberta, o valor contado é a soma daqui.</p>
           {contagem.linhas.map((linha) => (
             <div key={linha.nota} className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,7rem)] items-center gap-2">
               <label htmlFor={`${corpoId}-n${linha.nota}`} className="text-corpo text-texto-2">
