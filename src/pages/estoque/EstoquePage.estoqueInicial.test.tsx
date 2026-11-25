@@ -15,7 +15,7 @@ import type { Peca } from "@/types/peca";
 
 const auth = vi.hoisted(() => ({ lojaAtual: { id: "l1", nome: "Matriz" } }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ lojaAtual: auth.lojaAtual, operador: { id: "op", admin: false } }),
+  useAuth: () => ({ lojaAtual: auth.lojaAtual, operador: { id: "op", admin: false, permissoes: ["estoque"] } }),
 }));
 const listarPecas = vi.fn();
 const criarPeca = vi.fn();
@@ -74,7 +74,7 @@ beforeEach(() => {
 
 async function cadastrarNova(user: ReturnType<typeof renderizar>["user"]) {
   const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true });
-  await user.click(await screen.findByRole("button", { name: "+ Novo produto" }));
+  await user.click(await screen.findByRole("button", { name: "Novo produto" }));
   await user.type(campo("Descrição *"), "TESTE 909 Palheta");
   await user.type(campo("NCM *"), "40169300");
   await user.type(campo("C.E.S.T *"), "0100100");
@@ -115,7 +115,7 @@ describe("EstoquePage — o aviso do estoque inicial sobrevive à recarga (#909)
     rerender(<EstoquePage />);
     await waitFor(() => expect(listarPecas).toHaveBeenCalledTimes(3));
     await waitFor(() => expect(screen.queryByText("Carregando...")).toBeNull());
-    expect(screen.getByRole("button", { name: "+ Novo produto" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Novo produto" })).toBeInTheDocument();
     expect(screen.queryByText(AVISO)).toBeNull();
   });
 

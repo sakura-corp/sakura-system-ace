@@ -58,7 +58,9 @@ beforeEach(() => {
 
 async function abrirJanela() {
   const r = renderizar(<EstoquePage />);
-  await r.user.click(await screen.findByRole("button", { name: "Juntar peças repetidas" }));
+  // Fica no "⋯" do topo (#1093): é raro, e o topo tem as partes do estoque.
+  await r.user.click(await screen.findByRole("button", { name: "Mais ações — o estoque" }));
+  await r.user.click(screen.getByRole("menuitem", { name: "Juntar peças repetidas" }));
   return r;
 }
 

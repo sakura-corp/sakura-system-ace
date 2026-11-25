@@ -21,6 +21,8 @@ interface ServicoFormProps {
   onSalvar: (servico: NovoServico) => Promise<void>;
   onSalvarEdicao?: (id: string, servico: NovoServico) => Promise<void>;
   onCancelar: () => void;
+  /** Dentro de uma janela (Modal): sem cartão nem título próprios, a janela já tem. */
+  emJanela?: boolean;
 }
 
 export function ServicoForm({
@@ -29,6 +31,7 @@ export function ServicoForm({
   onSalvar,
   onSalvarEdicao,
   onCancelar,
+  emJanela = false,
 }: ServicoFormProps) {
   const [erro, setErro] = useState<string | null>(null);
 
@@ -59,13 +62,18 @@ export function ServicoForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4 sakura-card p-6">
-      <div className="flex items-center gap-3">
-        <BotaoVoltar onClick={onCancelar} />
-        <h2 className="font-titulo text-subtitulo font-semibold text-texto">
-          {servicoExistente ? "Editar serviço" : "Novo serviço"}
-        </h2>
-      </div>
+    <form
+      onSubmit={handleSubmit(aoSubmeter)}
+      className={emJanela ? "space-y-4" : "space-y-4 sakura-card p-6"}
+    >
+      {!emJanela && (
+        <div className="flex items-center gap-3">
+          <BotaoVoltar onClick={onCancelar} />
+          <h2 className="font-titulo text-subtitulo font-semibold text-texto">
+            {servicoExistente ? "Editar serviço" : "Novo serviço"}
+          </h2>
+        </div>
+      )}
 
       {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
 

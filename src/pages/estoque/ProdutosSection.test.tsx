@@ -77,6 +77,7 @@ function montar(
   pecas: Peca[],
   onRecarregar = vi.fn().mockResolvedValue(undefined),
   saldos: Map<string, number> = new Map(),
+  extra: { onComprar?: () => void; onAbrirPeca?: (p: Peca) => void; ultimaSaida?: Map<string, string> } = {},
 ) {
   return renderizar(
     <ComAviso>
@@ -90,30 +91,38 @@ function montar(
           regime="simples_nacional"
           lojaId="loja-1"
           onRecarregar={onRecarregar}
+          {...extra}
         />
       )}
     </ComAviso>,
   );
 }
 
+// O "Editar" mora no "⋯" da linha (molde de lista, #1093).
+async function abrirEdicao(user: ReturnType<typeof montar>["user"], descricao: string) {
+  await user.click(screen.getByRole("button", { name: `Mais ações — o produto ${descricao}` }));
+  await user.click(screen.getByRole("menuitem", { name: "Editar" }));
+}
+
 describe("ProdutosSection — margem", () => {
   it("mostra a margem sobre a venda, com vírgula: custo 245, venda 389,90 → 37,2%", () => {
     montar([umaPeca({ preco_custo: 245, preco_venda: 389.9 })]);
-    expect(screen.getByText("37,2%")).toBeTruthy();
-    expect(screen.queryByText("37.2%")).toBeNull();
+    // A margem agora vai no detalhe da linha (molde de lista, #1093).
+    expect(screen.getByText(/margem 37,2%/)).toBeTruthy();
+    expect(screen.queryByText(/37\.2%/)).toBeNull();
     // Sobre o custo (o "markup") daria 59,1%: não é o que a tela mostra.
-    expect(screen.queryByText("59,1%")).toBeNull();
+    expect(screen.queryByText(/59,1%/)).toBeNull();
   });
 
   it("margem inteira não ganha casa decimal: custo 100, venda 200 → 50%", () => {
     montar([umaPeca({ preco_custo: 100, preco_venda: 200 })]);
-    expect(screen.getByText("50%")).toBeTruthy();
+    expect(screen.getByText(/margem 50%/)).toBeTruthy();
   });
 
   it("sem custo, mostra o traço", () => {
     montar([umaPeca({ preco_custo: null, preco_venda: 150 })]);
-    const linha = screen.getByText("PNEU 175/70 R13 PIRELLI").closest("tr")!;
-    expect(linha.textContent).not.toContain("%");
+    const linha = screen.getByText("PNEU 175/70 R13 PIRELLI").closest("li")!;
+    expect(linha.textContent).not.toContain("margem");
   });
 });
 
@@ -131,7 +140,7 @@ describe("ProdutosSection — abrir o formulário rola até ele (#969)", () => {
     Element.prototype.scrollIntoView = rolar;
     const { user, container } = montar([umaPeca({ descricao: "PNEU 175/70 R13 PIRELLI" })]);
 
-    await user.click(screen.getByRole("button", { name: /^Editar .*PNEU 175\/70 R13 PIRELLI/ }));
+    await abrirEdicao(user, "PNEU 175/70 R13 PIRELLI");
 
     const formulario = container.querySelector("form")!;
     expect(formulario).toBeTruthy();
@@ -144,7 +153,7 @@ describe("ProdutosSection — abrir o formulário rola até ele (#969)", () => {
     Element.prototype.scrollIntoView = rolar;
     const { user, container } = montar([umaPeca({})]);
 
-    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    await user.click(screen.getByRole("button", { name: "Novo produto" }));
 
     const formulario = container.querySelector("form")!;
     expect(document.activeElement).toBe(formulario.querySelector(SELETOR_CAMPO));
@@ -161,7 +170,7 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
   const campo = (rotulo: string) => screen.getByLabelText(rotulo, { exact: true }) as HTMLInputElement;
 
   async function cadastrarNova(user: ReturnType<typeof montar>["user"], quantidade: string | null) {
-    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    await user.click(screen.getByRole("button", { name: "Novo produto" }));
     await user.type(campo("Descrição *"), "TESTE 909 Palheta");
     await user.type(campo("NCM *"), "40169300");
     await user.type(campo("C.E.S.T *"), "0100100");
@@ -199,7 +208,7 @@ describe("ProdutosSection — estoque inicial que não entra (#909)", () => {
     // O rascunho foi limpo: reabrir o "Novo produto" não oferece a peça de
     // volta (a faixa "Restaurar?" não aparece), e não cria outra.
     expect(localStorage.getItem("rascunho-peca-nova")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "+ Novo produto" }));
+    await user.click(screen.getByRole("button", { name: "Novo produto" }));
     expect(screen.queryByText(/rascunho não salvo/)).toBeNull();
     expect(criarPeca).toHaveBeenCalledTimes(1);
   });
@@ -244,7 +253,7 @@ describe("ProdutosSection — fechar o formulário continua como antes (#969)", 
   it("\"Cancelar\" devolve o cursor pra busca", async () => {
     Element.prototype.scrollIntoView = vi.fn();
     const { user } = montar([umaPeca({})]);
-    await user.click(screen.getByRole("button", { name: /^Editar .*PNEU 175\/70 R13 PIRELLI/ }));
+    await abrirEdicao(user, "PNEU 175/70 R13 PIRELLI");
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
     await vi.waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole("searchbox", { name: /Buscar/ })),
@@ -252,40 +261,147 @@ describe("ProdutosSection — fechar o formulário continua como antes (#969)", 
   });
 });
 
-describe("ProdutosSection — o saldo com cor, ícone e palavra (tarefa 9, #990)", () => {
-  // Regra 4 do visual novo: a cor sozinha não avisa. O número continua o
-  // mesmo; o que mudou é que, quando o saldo pede atenção, a palavra aparece
-  // do lado dele (antes era só a cor, com a explicação num balãozinho).
-  it("saldo negativo: o número com o selo 'Negativo'", () => {
-    montar([umaPeca({ id: "a", estoque_minimo: null })], undefined, new Map([["a", -2]]));
-    expect(screen.getByText("Negativo")).toBeTruthy();
-    expect(screen.getByText("-2")).toBeTruthy();
+describe("ProdutosSection — a barra do estoque contra o mínimo (#1093)", () => {
+  // Regra 4 do visual novo: a cor sozinha não avisa. Cada linha tem o número,
+  // o mínimo, a palavra ("falta 2") e a barra; o "Comprar" é a única ação da
+  // linha e só aparece quando falta.
+  const comprar = vi.fn();
+  const linhaDe = (descricao: string) => screen.getByText(descricao).closest("li")!;
+
+  it("abaixo do mínimo: a barra diz 'falta' e o 'Comprar' aparece e leva à compra", async () => {
+    const { user } = montar(
+      [umaPeca({ id: "a", descricao: "Filtro de óleo", estoque_minimo: 5 })],
+      undefined,
+      new Map([["a", 3]]),
+      { onComprar: comprar },
+    );
+    const linha = linhaDe("Filtro de óleo");
+    expect(linha.textContent).toContain("falta 2");
+    expect(linha.textContent).toContain("/ mín. 5");
+    expect(linha.querySelector("[data-barra-do-estoque]")!.getAttribute("data-barra-do-estoque")).toBe("falta");
+    await user.click(screen.getByRole("button", { name: "Comprar — o produto Filtro de óleo" }));
+    expect(comprar).toHaveBeenCalledTimes(1);
   });
 
-  it("saldo zerado: 'Sem estoque'", () => {
-    montar([umaPeca({ id: "a" })], undefined, new Map([["a", 0]]));
-    expect(screen.getByText("Sem estoque")).toBeTruthy();
+  it("acima do mínimo, ou sem mínimo: sem 'falta' e sem 'Comprar'", () => {
+    montar(
+      [
+        umaPeca({ id: "a", descricao: "Pneu folgado", estoque_minimo: 2 }),
+        umaPeca({ id: "b", descricao: "Pneu perto", estoque_minimo: 10 }),
+        umaPeca({ id: "c", descricao: "Peça sem mínimo", estoque_minimo: null }),
+      ],
+      undefined,
+      new Map([
+        ["a", 10],
+        ["b", 12],
+        ["c", 1],
+      ]),
+      { onComprar: comprar },
+    );
+    expect(linhaDe("Pneu folgado").textContent).toContain("ok");
+    expect(linhaDe("Pneu perto").textContent).toContain("perto do mínimo");
+    expect(linhaDe("Peça sem mínimo").textContent).toContain("sem mínimo");
+    expect(screen.queryByText(/falta/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Comprar — / })).toBeNull();
   });
 
-  it("no mínimo ou abaixo dele: 'Comprar', e o mínimo continua escrito", () => {
-    montar([umaPeca({ id: "a", estoque_minimo: 5 })], undefined, new Map([["a", 3]]));
-    expect(screen.getByText("Comprar")).toBeTruthy();
-    expect(screen.getByText(/mín\. 5/)).toBeTruthy();
+  it("sem acesso à Sugestão de compra, falta mas não oferece o 'Comprar'", () => {
+    montar([umaPeca({ id: "a", descricao: "Filtro", estoque_minimo: 5 })], undefined, new Map([["a", 1]]));
+    expect(linhaDe("Filtro").textContent).toContain("falta 4");
+    expect(screen.queryByRole("button", { name: /^Comprar — / })).toBeNull();
   });
 
-  it("saldo normal: nenhum selo de aviso", () => {
-    montar([umaPeca({ id: "a", estoque_minimo: 2 })], undefined, new Map([["a", 10]]));
-    expect(screen.queryByText("Negativo")).toBeNull();
-    expect(screen.queryByText("Sem estoque")).toBeNull();
-    expect(screen.queryByText("Comprar")).toBeNull();
+  it("saldo negativo: o número com o menos de verdade e a palavra 'negativo', sem 'Comprar'", () => {
+    montar([umaPeca({ id: "a", estoque_minimo: 3 })], undefined, new Map([["a", -2]]), { onComprar: comprar });
+    const linha = linhaDe("PNEU 175/70 R13 PIRELLI");
+    expect(linha.textContent).toContain("−2");
+    expect(linha.textContent).toContain("negativo");
+    expect(screen.queryByRole("button", { name: /^Comprar — / })).toBeNull();
   });
 
-  it("o status continua 'Ativo' ou 'Inativo', agora como selo", () => {
+  it("o número de cima conta as peças ativas que precisam comprar", () => {
+    montar(
+      [
+        umaPeca({ id: "a", descricao: "A", estoque_minimo: 5 }),
+        umaPeca({ id: "b", descricao: "B", estoque_minimo: 5 }),
+        umaPeca({ id: "c", descricao: "C", estoque_minimo: 5, ativo: false }),
+      ],
+      undefined,
+      new Map([
+        ["a", 1],
+        ["b", 9],
+        ["c", 0],
+      ]),
+    );
+    expect(screen.getByText("1 peça")).toBeTruthy();
+    expect(screen.getByText("de 2 peças com mínimo")).toBeTruthy();
+  });
+
+  it("o filtro 'Comprar' deixa só as que faltam", async () => {
+    const { user } = montar(
+      [umaPeca({ id: "a", descricao: "Falta", estoque_minimo: 5 }), umaPeca({ id: "b", descricao: "Sobra", estoque_minimo: 1 })],
+      undefined,
+      new Map([
+        ["a", 1],
+        ["b", 9],
+      ]),
+    );
+    await user.click(screen.getByRole("button", { name: /Comprar \(1\)/ }));
+    expect(screen.getByText("Falta")).toBeTruthy();
+    expect(screen.queryByText("Sobra")).toBeNull();
+  });
+
+  it("o filtro 'Comprar' bate com o número do chip: a inativa fica de fora", async () => {
+    const { user } = montar(
+      [
+        umaPeca({ id: "a", descricao: "Ativa faltando", estoque_minimo: 5 }),
+        umaPeca({ id: "b", descricao: "Inativa faltando", estoque_minimo: 5, ativo: false }),
+      ],
+      undefined,
+      new Map([
+        ["a", 1],
+        ["b", 1],
+      ]),
+    );
+    await user.click(screen.getByRole("button", { name: /Comprar \(1\)/ }));
+    expect(screen.getByText("Ativa faltando")).toBeTruthy();
+    expect(screen.queryByText("Inativa faltando")).toBeNull();
+  });
+
+  it("a última saída aparece na linha", () => {
+    montar([umaPeca({ id: "a" })], undefined, new Map([["a", 4]]), {
+      ultimaSaida: new Map([["a", "2025-03-07T15:00:00"]]),
+    });
+    expect(screen.getByText("07/03/2025")).toBeTruthy();
+  });
+
+  it("clicar no nome abre o perfil da peça", async () => {
+    const abrir = vi.fn();
+    const { user } = montar([umaPeca({ id: "a", descricao: "Pneu X" })], undefined, new Map(), { onAbrirPeca: abrir });
+    await user.click(screen.getByRole("button", { name: /^Pneu X/ }));
+    expect(abrir).toHaveBeenCalledWith(expect.objectContaining({ id: "a" }));
+  });
+
+  it("só a peça inativa ganha selo ('Inativo'); a ativa não repete 'Ativo'", () => {
     montar([
       umaPeca({ id: "a", descricao: "Peça ativa" }),
       umaPeca({ id: "b", descricao: "Peça parada", ativo: false }),
     ]);
-    expect(screen.getByText("Ativo")).toBeTruthy();
-    expect(screen.getByText("Inativo")).toBeTruthy();
+    expect(screen.queryByText("Ativo")).toBeNull();
+    expect(linhaDe("Peça parada").textContent).toContain("Inativo");
+  });
+});
+
+describe("ProdutosSection — excluir pela janela do programa (#1093)", () => {
+  it("pergunta com o nome do produto, e 'Cancelar' não exclui", async () => {
+    const confirmar = vi.spyOn(window, "confirm");
+    const { user } = montar([umaPeca({ id: "a", descricao: "Palheta 22" })]);
+    await user.click(screen.getByRole("button", { name: "Mais ações — o produto Palheta 22" }));
+    await user.click(screen.getByRole("menuitem", { name: "Excluir produto" }));
+    expect(await screen.findByRole("dialog", { name: "Excluir o produto Palheta 22?" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(confirmar).not.toHaveBeenCalled();
+    confirmar.mockRestore();
   });
 });
