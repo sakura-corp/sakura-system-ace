@@ -11,7 +11,7 @@
 import { FORMA_PAGAMENTO_LABEL } from "@/types/os";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
-import { arredondarCentavo, somar } from "./dinheiro";
+import { arredondarCentavo, formatarMoeda, somar } from "./dinheiro";
 
 /** Tira acento, espaço e maiúscula: "Espécie " e "especie" são a mesma coisa. */
 function normalizar(texto: string): string {
@@ -167,6 +167,73 @@ export type SituacaoDaDiferenca = "bateu" | "faltou" | "sobrou";
 export function situacaoDaDiferenca(diferenca: number): SituacaoDaDiferenca {
   if (diferenca === 0) return "bateu";
   return diferenca < 0 ? "faltou" : "sobrou";
+}
+
+/**
+ * A diferença em palavras, pro número grande do fechamento passo a passo
+ * (#1090): "Faltam R$ 69,00", "Sobram R$ 5,00", "Bateu certinho". O valor vai
+ * sem sinal (a palavra já diz o lado); a cor e o ícone a tela escolhe pela
+ * `situacao`. Qualquer centavo já é falta ou sobra: nada é arredondado pra
+ * "bateu".
+ */
+export function fraseDaDiferenca(diferenca: number): { situacao: SituacaoDaDiferenca; frase: string } {
+  const situacao = situacaoDaDiferenca(diferenca);
+  if (situacao === "bateu") return { situacao, frase: "Bateu certinho" };
+  const valor = formatarMoeda(Math.abs(diferenca));
+  return { situacao, frase: situacao === "faltou" ? `Faltam ${valor}` : `Sobram ${valor}` };
+}
+
+/** As notas que existem, da maior pra menor (a ajuda pra contar a gaveta). */
+export const NOTAS_DA_GAVETA = [200, 100, 50, 20, 10, 5, 2] as const;
+
+export interface LinhaDaContagem {
+  nota: number;
+  quantidade: number;
+  /** nota × quantidade. */
+  valor: number;
+}
+
+/** "3" → 3; vazio, letra ou negativo → 0; "1.9" → 1 (não existe meia nota). */
+function quantidadeDeNotas(texto: string | undefined): number {
+  const n = Number((texto ?? "").trim());
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.trunc(n);
+}
+
+/** "3,75" ou "3.75" → 3,75; vazio, letra ou negativo → 0. */
+function valorDasMoedas(texto: string | undefined): number {
+  const n = Number((texto ?? "").trim().replace(",", "."));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return arredondarCentavo(n);
+}
+
+/**
+ * A ajuda OPCIONAL pra contar a gaveta (#1090): quantas notas de cada valor e
+ * o valor das moedas, somados no centavo. O resultado vai pro campo "contado";
+ * a conta do fechamento continua a mesma (contado − esperado).
+ *
+ * @param notas a quantidade digitada de cada nota, pela nota ("100": "2")
+ * @param moedas o valor das moedas, como foi digitado ("3,75")
+ */
+export function somarAGaveta(
+  notas: Readonly<Record<string, string | undefined>>,
+  moedas: string | undefined,
+): { linhas: LinhaDaContagem[]; moedas: number; total: number } {
+  const linhas = NOTAS_DA_GAVETA.map((nota) => {
+    const quantidade = quantidadeDeNotas(notas[String(nota)]);
+    return { nota, quantidade, valor: somar([nota * quantidade]) };
+  });
+  const valorMoedas = valorDasMoedas(moedas);
+  return { linhas, moedas: valorMoedas, total: somar([...linhas.map((l) => l.valor), valorMoedas]) };
+}
+
+/**
+ * É o primeiro fechamento da loja? (#1090, #1079 item 13) Sem nenhum
+ * fechamento ANTES do dia, o troco da manhã não tem de onde vir sugerido, e a
+ * tela pede: "diga quanto tinha na gaveta ao abrir".
+ */
+export function ehPrimeiroFechamento(fechamentos: readonly Pick<FechamentoCaixa, "data">[], dia: string): boolean {
+  return !fechamentos.some((f) => f.data < dia);
 }
 
 /**

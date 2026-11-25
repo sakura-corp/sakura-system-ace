@@ -9,7 +9,7 @@
  * (a conta certa, usada com o campo errado — §6 item 62).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
+import { renderizar, screen, within } from "@/testes/tela";
 import { hojeLocal } from "@/lib/datas";
 import type { MovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
@@ -74,10 +74,30 @@ function fechamento(dados: Partial<FechamentoCaixa>): FechamentoCaixa {
   };
 }
 
+/** #1090: o fechamento anda em 4 passos. Leva do passo 1 até o passo pedido. */
+async function irAte(user: ReturnType<typeof renderizar>["user"], passo: "contar" | "pix" | "conferir") {
+  await user.click(screen.getByRole("button", { name: "Contar a gaveta" }));
+  if (passo === "contar") return;
+  await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+  if (passo === "pix") return;
+  await user.click(screen.getByRole("button", { name: "Conferir e fechar" }));
+}
+
+/** O último clique: "Fechar o caixa de…" e o "Fechar caixa" da janela do programa. */
+async function fecharEConfirmar(user: ReturnType<typeof renderizar>["user"]) {
+  await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
+  const janela = screen.getByRole("dialog", { name: /^Fechar o caixa de/ });
+  await user.click(within(janela).getByRole("button", { name: "Fechar caixa" }));
+}
+
 beforeEach(() => {
   fecharCaixa.mockReset().mockResolvedValue("novo-id");
   desfazerFechamentoCaixa.mockReset().mockResolvedValue(undefined);
-  vi.spyOn(window, "confirm").mockReturnValue(true);
+  // #1090: o Caixa não usa mais o confirm() do navegador. Se alguém chamar,
+  // o teste "nenhum confirm()" pega.
+  window.confirm = vi.fn(() => {
+    throw new Error("confirm() do navegador no Caixa");
+  });
   abrirWhatsappSemNumero.mockReset().mockResolvedValue(undefined);
   listarOrdens.mockReset().mockResolvedValue([{ id: "o1", status: "em_andamento" }]);
   listarContasPagar.mockReset().mockResolvedValue([]);
@@ -108,10 +128,13 @@ describe("FechamentoSection", () => {
     expect(screen.getByText("R$ 230,00")).toBeInTheDocument();
     expect(screen.getByDisplayValue("100")).toBeInTheDocument();
 
+    await irAte(user, "contar");
     await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "200");
     expect(screen.getByText(/Faltam R\$ 30,00/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
+    await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+    await user.click(screen.getByRole("button", { name: "Conferir e fechar" }));
+    await fecharEConfirmar(user);
 
     expect(fecharCaixa).toHaveBeenCalledTimes(1);
     expect(fecharCaixa.mock.calls[0][0]).toMatchObject({
@@ -130,23 +153,30 @@ describe("FechamentoSection", () => {
     const { user } = renderizar(
       <FechamentoSection lojaId="l" movimentos={[]} custoDasOrdens={new Map()} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
     );
-    await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
+    // #1090: sem o contado, o passo 2 não deixa seguir (e o "Fechar" nem aparece).
+    await irAte(user, "contar");
+    await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
     expect(fecharCaixa).not.toHaveBeenCalled();
     expect(screen.getByText(/Informe quanto tem na gaveta/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Fechar o caixa de/ })).not.toBeInTheDocument();
   });
 
   it("desistir na confirmação não fecha nada", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
     const { user } = renderizar(
       <FechamentoSection lojaId="l" movimentos={[]} custoDasOrdens={new Map()} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
     );
+    await irAte(user, "contar");
     await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "0");
+    await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+    await user.click(screen.getByRole("button", { name: "Conferir e fechar" }));
     await user.click(screen.getByRole("button", { name: /^Fechar o caixa de/ }));
+    await user.click(within(screen.getByRole("dialog", { name: /^Fechar o caixa de/ })).getByRole("button", { name: "Cancelar" }));
     expect(fecharCaixa).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("avisa do lançamento sem forma de pagamento, que ficou fora da conta", () => {
-    renderizar(
+  it("avisa do lançamento sem forma de pagamento, que ficou fora da conta", async () => {
+    const { user } = renderizar(
       <FechamentoSection
         lojaId="l"
         custoDasOrdens={new Map()}
@@ -156,6 +186,8 @@ describe("FechamentoSection", () => {
         onAtualizado={vi.fn()}
       />,
     );
+    // #1090: o aviso fica no passo de contar, ao lado da diferença que ele explica.
+    await irAte(user, "contar");
     expect(screen.getByText(/sem forma de pagamento/)).toBeInTheDocument();
   });
 
@@ -273,11 +305,139 @@ describe("FechamentoSection", () => {
     const { user, container } = renderizar(
       <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
     );
+    await irAte(user, "contar");
     const regiao = container.querySelector('[aria-live="polite"]');
     expect(regiao).not.toBeNull();
     expect(regiao!.textContent).toBe("");
     await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "0");
     expect(container.querySelector('[aria-live="polite"]')).toBe(regiao);
     expect(regiao!.textContent).toContain("Bateu certinho");
+  });
+
+  // ------------------------------------------------------------ #1090
+  it("os 4 passos têm nome, e a trilha diz em qual se está", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    const trilha = screen.getByRole("list", { name: "Fechar o caixa" });
+    const passos = within(trilha).getAllByRole("listitem");
+    expect(passos.map((p) => p.textContent!.replace(/^\d?Passo \d: /, "").replace(/ \(feito.*$/, ""))).toEqual([
+      "Troco da manhã",
+      "Contar a gaveta",
+      "Pix e cartão",
+      "Conferir e fechar",
+    ]);
+    expect(passos[0]).toHaveAttribute("aria-current", "step");
+    await irAte(user, "contar");
+    expect(within(trilha).getAllByRole("listitem")[1]).toHaveAttribute("aria-current", "step");
+    // o passo feito vira botão pra voltar nele
+    await user.click(within(trilha).getByRole("button", { name: /Troco da manhã/ }));
+    expect(screen.getByLabelText("Troco que já estava na gaveta ao abrir")).toBeInTheDocument();
+  });
+
+  it("Enter no troco já leva pro passo de contar", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await user.type(screen.getByLabelText("Troco que já estava na gaveta ao abrir"), "50{Enter}");
+    expect(screen.getByLabelText("Quanto tem na gaveta agora (contado)")).toBeInTheDocument();
+  });
+
+  it("primeiro fechamento: pede o troco ao abrir; com fechamento anterior, não", () => {
+    const props = { lojaId: "l", custoDasOrdens: new Map(), movimentos: [], podeDesfazer: false, onAtualizado: vi.fn() };
+    const { unmount } = renderizar(<FechamentoSection {...props} fechamentos={[]} />);
+    expect(screen.getByText(/diga quanto tinha na gaveta ao abrir/)).toBeInTheDocument();
+    unmount();
+
+    renderizar(<FechamentoSection {...props} fechamentos={[fechamento({ data: "2020-01-01", fundo_troco: 80 })]} />);
+    expect(screen.queryByText(/diga quanto tinha na gaveta ao abrir/)).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue("80")).toBeInTheDocument();
+  });
+
+  it("ajuda pra contar as notas: a soma vai pro contado, a diferença sai em palavras, e é ela que vai pro banco", async () => {
+    const { user } = renderizar(
+      <FechamentoSection
+        lojaId="l"
+        custoDasOrdens={new Map()}
+        movimentos={[mov("a", "entrada", 130, "dinheiro")]}
+        fechamentos={[fechamento({ data: "2020-01-01", fundo_troco: 100 })]}
+        podeDesfazer={false}
+        onAtualizado={vi.fn().mockResolvedValue(undefined)}
+      />,
+    );
+    await irAte(user, "contar");
+    await user.click(screen.getByRole("button", { name: "Ajuda pra contar as notas" }));
+    await user.type(screen.getByLabelText("Notas de R$ 100"), "2");
+    await user.type(screen.getByLabelText("Notas de R$ 20"), "1");
+    await user.type(screen.getByLabelText("Moedas (o valor)"), "0,50");
+    // 100 + 130 = 230 esperado; contado 220,50
+    expect(screen.getByLabelText("Quanto tem na gaveta agora (contado)")).toHaveValue(220.5);
+    expect(screen.getByText(/Faltam R\$ 9,50/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+    await user.click(screen.getByRole("button", { name: "Conferir e fechar" }));
+    await fecharEConfirmar(user);
+    expect(fecharCaixa.mock.calls[0][0]).toMatchObject({ esperado: 230, contado: 220.5 });
+  });
+
+  it("sobra em amarelo com a palavra, e o que acontece com ela", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await irAte(user, "contar");
+    await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "5");
+    expect(screen.getByText(/^Sobram R\$\s5,00$/)).toBeInTheDocument();
+    expect(screen.getByText(/vira uma Entrada "Sobra de caixa"/)).toBeInTheDocument();
+  });
+
+  it("desfazer o fechamento pergunta na janela do programa, com o dia no título", async () => {
+    const fechado = fechamento({ data: hoje, diferenca: -12.5, caixa_movimento_id: "quebra" });
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[fechado]} podeDesfazer onAtualizado={vi.fn()} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Desfazer fechamento" }));
+    let janela = screen.getByRole("dialog", { name: /^Desfazer o fechamento de \d{2}\/\d{2}\/\d{4}\?$/ });
+    expect(within(janela).getByText(/quebra de caixa/)).toBeInTheDocument();
+    await user.click(within(janela).getByRole("button", { name: "Cancelar" }));
+    expect(desfazerFechamentoCaixa).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Desfazer fechamento" }));
+    janela = screen.getByRole("dialog", { name: /^Desfazer o fechamento de/ });
+    await user.click(within(janela).getByRole("button", { name: "Desfazer fechamento" }));
+    expect(desfazerFechamentoCaixa).toHaveBeenCalledWith("f1");
+  });
+
+  it("nenhum confirm() do navegador: fechar e desfazer passam só pela janela do programa", async () => {
+    const { user } = renderizar(
+      <FechamentoSection lojaId="l" custoDasOrdens={new Map()} movimentos={[]} fechamentos={[]} podeDesfazer={false} onAtualizado={vi.fn()} />,
+    );
+    await irAte(user, "contar");
+    await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "0");
+    await user.click(screen.getByRole("button", { name: "Ver Pix e cartão" }));
+    await user.click(screen.getByRole("button", { name: "Conferir e fechar" }));
+    await fecharEConfirmar(user);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(fecharCaixa).toHaveBeenCalledTimes(1);
+  });
+
+  it("avisa quem está em volta quando há valor digitado (pro Esc perguntar antes de fechar)", async () => {
+    const aoMudarRascunho = vi.fn();
+    const { user, unmount } = renderizar(
+      <FechamentoSection
+        lojaId="l"
+        custoDasOrdens={new Map()}
+        movimentos={[]}
+        fechamentos={[]}
+        podeDesfazer={false}
+        onAtualizado={vi.fn()}
+        aoMudarRascunho={aoMudarRascunho}
+      />,
+    );
+    expect(aoMudarRascunho).not.toHaveBeenLastCalledWith(true);
+    await irAte(user, "contar");
+    await user.type(screen.getByLabelText("Quanto tem na gaveta agora (contado)"), "10");
+    expect(aoMudarRascunho).toHaveBeenLastCalledWith(true);
+    unmount();
+    expect(aoMudarRascunho).toHaveBeenLastCalledWith(false);
   });
 });

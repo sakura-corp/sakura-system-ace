@@ -92,6 +92,9 @@ export function DiarioSection({
   const [filtro, setFiltro] = useState<FiltroDoCaixa>("tudo");
   const [lancando, setLancando] = useState<{ tipo: "entrada" | "saida" } | null>(null);
   const [fechamentoAberto, setFechamentoAberto] = useState(false);
+  // Há valor digitado no fechamento? Então o Esc, o ✕ e o clique fora
+  // perguntam antes de jogar a contagem fora (#1090).
+  const [rascunhoNoFechamento, setRascunhoNoFechamento] = useState(false);
   const [cartaoAberto, setCartaoAberto] = useState(false);
   const [categorizando, setCategorizando] = useState(false);
   const [vendoTodasAsSaidas, setVendoTodasAsSaidas] = useState(false);
@@ -147,6 +150,19 @@ export function DiarioSection({
       if (!certo) return;
     }
     setLancando({ tipo: filtro === "saida" ? "saida" : "entrada" });
+  }
+
+  async function fecharJanelaDoFechamento() {
+    if (rascunhoNoFechamento) {
+      const certo = await confirmar({
+        acao: "Sair sem fechar o caixa",
+        explicacao: "O que você digitou na contagem se perde, e o caixa continua aberto.",
+        botao: "Sair sem fechar",
+      });
+      if (!certo) return;
+    }
+    setRascunhoNoFechamento(false);
+    setFechamentoAberto(false);
   }
 
   async function salvarLancamento(movimento: NovoMovimentoCaixa) {
@@ -477,8 +493,9 @@ export function DiarioSection({
         />
       )}
       {fechamentoAberto && (
-        <Modal titulo="Fechamento do caixa" largura="4xl" onFechar={() => setFechamentoAberto(false)}>
+        <Modal titulo="Fechamento do caixa" largura="4xl" onFechar={() => void fecharJanelaDoFechamento()}>
           <FechamentoSection
+            aoMudarRascunho={setRascunhoNoFechamento}
             lojaId={lojaId}
             movimentos={movimentos}
             custoDasOrdens={custoDasOrdens}
