@@ -40,6 +40,11 @@
 - O teste SQL (`testar-corrigir-os-faturada.sql`): não há Postgres nesta máquina; ele roda no CI.
 - Parte dos testes de tela da venda de balcão e do Form veio depois do código.
 
+## Ajustes do comentário da Sofia (24/11, antes do PR)
+- Descida maior do que o que falta receber de correção anterior: numa correção só, abate tudo e devolve o excesso; a conta que zera fica "recebido" com valor zero (não é mais apagada) e o histórico aponta pra ela. Teste SQL C14h a C14m; regras e janela com teste visto reprovar.
+- Lucro dobrado: a Entrada da diferença (e a recebida depois, da conta "fica a receber") tem lucro e custo zero na linha, no resumo do dia, no Painel e no gráfico; o custo da OS fica no dia da fatura. Teste com o exemplo dela (400/240 → +50/270), visto reprovar.
+- Trazida a `main` (a #1181 entrou pelo #1188); a migration continua `0092`. Achei e tirei marcas de conflito que tinham ficado no `docs/banco.md` numa junção anterior.
+
 ## O que ficou de fora
 - Comissões: com uma diferença "fica a receber" pendente, a OS inteira aparece como "a receber". A Sofia decidiu deixar assim nesta tarefa; o acerto é a #1184.
 - Receber uma conta com a tela de Contas a Receber desatualizada pode lançar o valor antigo, agora que a conta muda de valor (achado da revisão; já dava pra digitar outro valor antes).
