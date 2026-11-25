@@ -696,6 +696,7 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   continua recusado. OS aprovada nunca volta. O "Já aprovar agora" da tela chama a `aprovar_orcamento`
   de sempre, depois. Matriz de RLS sem mudança (a sonda grava `troca` e continua só admin). Teste em
   `supabase/scripts/testar-reabrir-orcamento.sql`. Número `0091` por decisão da Sofia (24/11/2026: a `main` e o banco de teste estavam na `0090`); a #1182 é a `0092`, e a #1171 e a #1174 passam a `0093` e `0094`. Aplicação acompanhada na #1185.
+<<<<<<< HEAD
 - `0092`: **corrigir peça, serviço e VALOR de OS (ou venda) já faturada, com a diferença no Caixa
   de hoje** (tarefa #1182; Sofia, 24/11/2026). `contas_receber.origem` (`faturamento`/`correcao`):
   a constraint `contas_receber_ordem_id_unique` vira o índice único parcial
@@ -714,6 +715,8 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   Caixa e deixa fora dos pagamentos da OS na NFC-e e na garantia). A categoria
   nasce na primeira devolução, "a classificar". A `0087` fica pra versão antiga do programa; a nova
   chama só esta, também com o total igual. Teste em `supabase/scripts/testar-corrigir-os-faturada.sql`.
+=======
+>>>>>>> origin/main
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

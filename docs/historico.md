@@ -35,6 +35,12 @@ deles envelhecem** ("falta", "ainda não"). O que continua valendo foi levado pr
 `docs/`; o que depende dela está em "O que depende dela", na seção 8. Na dúvida, vale o arquivo de
 `docs/`, não o marco.
 
+### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
+- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. A v0.9.60 tem o PR da versão (#1153) mesclado e o Release verde (canal de teste); o "Liberar versão" pras lojas só acontece depois do teste real de segunda, 23/11.
+- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\<seu usuário>\Empresa\`. O programa instalado do notebook já foi ligado ao banco certo (21/11).
+- **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
+- **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).
+
 ### 17/11/2026: visual novo, a leva inteira (#990) na `main`
 - **Na `main`** (nada publicado além da 0.9.58): as tarefas 1 a 15 (com Configurações #1062 e Relações #1076), a faxina (#1078: saem os nomes de cor antigos; as caixas de aviso viram a peça `Aviso`) e as sugestões (#1080: `Abas`, Combobox no campo novo, botão `perigo`, Dica abaixo da barra, peças sem uso apagadas). Mesclados pela ordem dela de 17/11 ("uma versão só, depois de Relações").
 - **Próximo**: publicar a versão do visual novo inteiro, quando ela pedir (canal de teste, depois o "Liberar").
