@@ -3,7 +3,7 @@
 - **Tarefa**: #1093, listas do Estoque no molde novo, o perfil da peça e a busca em Serviços (leva 8, trilha C)
 - **Chefe**: frontend
 - **Data**: 2026-11-25
-- **PR**: (o link vai na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1199
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
