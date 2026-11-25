@@ -38,9 +38,10 @@ export function ehDinheiro(forma: string | null | undefined): boolean {
 }
 
 /**
- * A chave de agrupamento de uma forma de pagamento. Hoje tudo grava a chave
- * ("pix", "cartao_credito"), mas o lançamento manual antigo (antes da #1089)
- * tem texto livre — "Pix", "PIX" e "Cartão de crédito" precisam cair no mesmo
+ * A chave de agrupamento de uma forma de pagamento. O faturamento e o
+ * lançamento manual (desde a #1089) gravam a chave ("pix", "cartao_credito"),
+ * mas o lançamento manual antigo e as janelas de pagar e receber conta ainda
+ * têm texto livre — "Pix", "PIX" e "Cartão de crédito" precisam cair no mesmo
  * grupo, senão a conferência com o extrato mostraria o Pix do dia partido em
  * dois.
  */

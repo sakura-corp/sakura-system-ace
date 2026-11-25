@@ -155,3 +155,79 @@ describe("Caixa: uma página só", () => {
     expect(screen.queryByRole("button", { name: "Fechar o caixa de hoje" })).not.toBeInTheDocument();
   });
 });
+
+// Os achados da revisão final (#1089), cada um visto reprovar antes do conserto.
+describe("Caixa: o que a revisão pegou", () => {
+  async function preencherEGuardar(user: ReturnType<typeof renderizar>["user"], cliques = 1) {
+    const janela = screen.getByRole("dialog", { name: "Novo lançamento" });
+    await user.type(within(janela).getByLabelText("Valor"), "25");
+    await user.click(within(janela).getByRole("combobox", { name: /Categoria/ }));
+    await user.click(within(janela).getByRole("button", { name: "Venda avulsa" }));
+    const registrar = within(janela).getByRole("button", { name: "Registrar lançamento" });
+    for (let i = 0; i < cliques; i++) fireEvent.click(registrar);
+  }
+
+  it("a descrição do lançamento com categoria aparece embaixo, e o sem categoria ganha o selo", async () => {
+    dados.movimentos = [
+      { ...mov("1", "saida", 800, "Pagamento: Aluguel de novembro"), categoria_id: "c", categoria: { nome: "Aluguel" } },
+      mov("2", "entrada", 10, "Sucata"),
+    ];
+    renderizar(<CaixaPage />);
+    const tabela = await screen.findByRole("table");
+    expect(within(tabela).getByText("Aluguel")).toBeInTheDocument();
+    expect(within(tabela).getByText("Pagamento: Aluguel de novembro")).toBeInTheDocument();
+    expect(within(tabela).getByText("Sem categoria")).toBeInTheDocument();
+  });
+
+  it("olhando outro dia, não oferece 'Ver o fechamento' (a janela abriria o dia de hoje)", async () => {
+    renderizar(<CaixaPage />);
+    await screen.findByRole("button", { name: "Fechar o caixa de hoje" });
+    fireEvent.change(screen.getByLabelText("Dia"), { target: { value: diaDeAntes } });
+    expect(screen.queryByRole("button", { name: "Ver o fechamento" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Fechar o caixa de hoje" })).not.toBeInTheDocument();
+  });
+
+  it("lançar olhando outro dia volta pra hoje, onde o lançamento entrou", async () => {
+    const { user } = renderizar(<CaixaPage />);
+    await screen.findByText("Nenhum lançamento hoje");
+    fireEvent.change(screen.getByLabelText("Dia"), { target: { value: diaDeAntes } });
+    expect(screen.getByText("Nenhum lançamento neste dia")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Novo lançamento" }));
+    await preencherEGuardar(user);
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByLabelText("Dia")).toHaveValue(new Date().toLocaleDateString("sv-SE"));
+  });
+
+  it("clique duplo em 'Registrar lançamento' grava uma vez só", async () => {
+    let terminar!: () => void;
+    dados.criarMovimentoCaixa.mockImplementation(() => new Promise<void>((r) => (terminar = r)));
+    const { user } = renderizar(<CaixaPage />);
+    await user.click(await screen.findByRole("button", { name: "Novo lançamento" }));
+    await preencherEGuardar(user, 2);
+    await vi.waitFor(() => expect(dados.criarMovimentoCaixa).toHaveBeenCalled());
+    terminar();
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(dados.criarMovimentoCaixa).toHaveBeenCalledTimes(1);
+  });
+
+  it("enquanto grava, Cancelar não fecha a janela (o erro do banco precisa aparecer nela)", async () => {
+    let falhar!: (e: Error) => void;
+    dados.criarMovimentoCaixa.mockImplementation(() => new Promise<void>((_, rej) => (falhar = rej)));
+    const { user } = renderizar(<CaixaPage />);
+    await user.click(await screen.findByRole("button", { name: "Novo lançamento" }));
+    await preencherEGuardar(user);
+    await vi.waitFor(() => expect(dados.criarMovimentoCaixa).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    falhar(new Error("sem conexão com o banco"));
+    expect(await screen.findByText(/sem conexão com o banco/)).toBeInTheDocument();
+  });
+
+  it("'Cancelar' na pergunta de lançar depois do fechamento não abre a janela", async () => {
+    dados.fechamentos = [fechamentoDeHoje()];
+    const { user } = renderizar(<CaixaPage />);
+    await user.click(await screen.findByRole("button", { name: "Novo lançamento" }));
+    const pergunta = screen.getByRole("dialog", { name: /Lançar depois do fechamento/ });
+    await user.click(within(pergunta).getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

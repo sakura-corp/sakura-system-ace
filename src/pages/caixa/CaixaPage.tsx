@@ -133,6 +133,7 @@ export function CaixaPage() {
           podeDesfazer={operador?.admin === true}
           onSalvar={handleSalvar}
           onAtualizado={() => carregar(true)}
+          aoVoltarPraHoje={() => setDia(hojeLocal())}
         />
       )}
     </div>

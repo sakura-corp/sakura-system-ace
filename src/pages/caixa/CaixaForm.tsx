@@ -198,13 +198,19 @@ export function JanelaDoLancamento({ categorias, tipoInicial, onSalvar, onFechar
     document.getElementById(idDoValor)?.focus();
   }, [idDoValor]);
 
+  // Enquanto grava, a janela não fecha (Cancelar, ✕ e Esc): se o banco
+  // recusar, o erro tem de aparecer aqui, e não num formulário que já sumiu.
+  function fecharSeLivre() {
+    if (!ocupado) onFechar();
+  }
+
   return (
     <Modal
       titulo="Novo lançamento"
-      onFechar={onFechar}
+      onFechar={fecharSeLivre}
       rodape={
         <>
-          <Botao variante="fantasma" onClick={onFechar}>
+          <Botao variante="fantasma" onClick={fecharSeLivre} disabled={ocupado}>
             Cancelar
           </Botao>
           <Botao variante="principal" type="submit" form={idDoForm} ocupado={ocupado}>

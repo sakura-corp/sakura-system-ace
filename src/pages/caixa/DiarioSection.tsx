@@ -55,6 +55,8 @@ interface DiarioSectionProps {
   onSalvar: (movimento: NovoMovimentoCaixa) => Promise<void>;
   /** Recarrega o caixa depois de mexer no que já estava gravado. */
   onAtualizado?: () => Promise<void>;
+  /** Volta o campo "Dia" pra hoje (o lançamento manual sempre entra hoje). */
+  aoVoltarPraHoje?: () => void;
 }
 
 const FILTROS = [
@@ -85,6 +87,7 @@ export function DiarioSection({
   podeDesfazer = false,
   onSalvar,
   onAtualizado = async () => {},
+  aoVoltarPraHoje,
 }: DiarioSectionProps) {
   const [filtro, setFiltro] = useState<FiltroDoCaixa>("tudo");
   const [lancando, setLancando] = useState<{ tipo: "entrada" | "saida" } | null>(null);
@@ -149,7 +152,13 @@ export function DiarioSection({
   async function salvarLancamento(movimento: NovoMovimentoCaixa) {
     await onSalvar(movimento);
     setLancando(null);
-    avisar("Lançamento registrado");
+    // O banco grava o lançamento na hora de agora. Olhando outro dia, a lista
+    // continuaria sem ele e pareceria que não salvou: volta pra hoje, onde ele está.
+    if (!ehHoje) {
+      aoVoltarPraHoje?.();
+      setFiltro("tudo");
+    }
+    avisar(ehHoje ? "Lançamento registrado" : "Lançamento registrado no caixa de hoje");
   }
 
   function escolherFiltro(novo: FiltroDoCaixa) {
@@ -198,19 +207,30 @@ export function DiarioSection({
                 {fechamentoDoDia && (
                   <Selo tipo="ok" palavra={`Fechado às ${horaDe(fechamentoDoDia.criado_em)}`} />
                 )}
-                {ehHoje && !fechamentoDoDia ? (
-                  <Botao variante="principal" tamanho="grande" onClick={() => setFechamentoAberto(true)}>
-                    Fechar o caixa de hoje
-                  </Botao>
-                ) : (
-                  <Botao onClick={() => setFechamentoAberto(true)}>Ver o fechamento</Botao>
-                )}
+                {/* O botão só aparece hoje: a janela do fechamento abre no dia
+                    de hoje, e um "Ver o fechamento" olhando outro dia abriria o
+                    dia errado. Os dias passados ficam no "Ver fechamentos" ao
+                    lado, onde se escolhe o dia. Com o "Categorizar" aberto, o
+                    próximo passo é o "Salvar" de lá: este vira secundário (um
+                    botão laranja por tela). */}
+                {ehHoje &&
+                  (fechamentoDoDia ? (
+                    <Botao onClick={() => setFechamentoAberto(true)}>Ver o fechamento</Botao>
+                  ) : (
+                    <Botao
+                      variante={categorizando ? "secundario" : "principal"}
+                      tamanho="grande"
+                      onClick={() => setFechamentoAberto(true)}
+                    >
+                      Fechar o caixa de hoje
+                    </Botao>
+                  ))}
               </div>
             </div>
           </section>
 
           <div className="grid grid-cols-1 gap-4 @xl:grid-cols-3">
-            <NumeroDeApoio titulo="Dinheiro na gaveta" explicacao={EXPLICA.gaveta}>
+            <NumeroDeApoio titulo="Dinheiro do dia" explicacao={EXPLICA.gaveta}>
               <Valor valor={resumo.gaveta} />
             </NumeroDeApoio>
             <NumeroDeApoio titulo="Pix e cartão" explicacao={EXPLICA.pixECartao}>
@@ -296,6 +316,18 @@ export function DiarioSection({
                                   : "OS"
                                 : m.categoria?.nome || m.descricao || "Lançamento manual"}
                             </span>
+                            {/* Sem OS, a categoria é o nome e a descrição vem
+                                embaixo (a aba Entradas/Saídas tinha as duas
+                                colunas: "Pagamento: Aluguel de novembro" não
+                                pode virar só "Aluguel"). */}
+                            {!m.ordem_servico_id && !m.categoria_id && (
+                              <span className="ml-2 inline-flex align-middle">
+                                <Selo tipo="neutro" palavra="Sem categoria" />
+                              </span>
+                            )}
+                            {!m.ordem_servico_id && m.categoria?.nome && m.descricao && (
+                              <span className="mt-0.5 block text-rotulo text-texto-2">{m.descricao}</span>
+                            )}
                             {idsDepoisDoFechamento.has(m.id) && (
                               <Dica texto="Entrou depois de o caixa do dia ser fechado — não estava na gaveta quando ela foi contada.">
                                 <span tabIndex={0} className="ml-2 inline-flex rounded-full align-middle">
@@ -497,8 +529,8 @@ const EXPLICA = {
   saldo:
     "Entradas menos saídas do dia. Pix e cartão também entram aqui: não é o dinheiro da gaveta.",
   gaveta:
-    "O que entrou menos o que saiu em dinheiro neste dia, sem o troco da manhã. A conferência com o que está na gaveta é no fechamento do caixa.",
-  pixECartao: "O que entrou neste dia por Pix e cartão, e não pela gaveta.",
+    "O dinheiro vivo que entrou menos o que saiu da gaveta neste dia, sem o troco da manhã. O \"Esperado na gaveta\" do fechamento é este número mais o troco.",
+  pixECartao: "O que entrou menos o que saiu por Pix e cartão neste dia: não passa pela gaveta.",
   lucro:
     "Entradas menos saídas, menos o custo das peças e dos serviços das ordens e vendas de balcão que receberam neste dia. Fica vermelho, com a seta pra baixo, quando o dia deu prejuízo.",
 };
