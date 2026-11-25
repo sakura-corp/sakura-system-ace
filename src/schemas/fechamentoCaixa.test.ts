@@ -11,6 +11,7 @@ import {
   lancamentosDepoisDoFechamento,
   momentoDoLancamento,
   resumirDiaParaFechamento,
+  rotuloDaForma,
   situacaoDaDiferenca,
   somarDiferencas,
   totaisParaGravar,
@@ -41,6 +42,23 @@ describe("ehDinheiro", () => {
     for (const f of ["pix", "cartao_credito", "Cartão de débito", "", null, undefined, "dinheiro e pix"]) {
       expect(ehDinheiro(f), String(f)).toBe(false);
     }
+  });
+});
+
+describe("rotuloDaForma", () => {
+  it("dá nome às seis formas da lista do lançamento manual (#1089)", () => {
+    expect(rotuloDaForma("dinheiro")).toBe("Dinheiro");
+    expect(rotuloDaForma("pix")).toBe("Pix");
+    expect(rotuloDaForma("cartao_debito")).toBe("Cartão de débito");
+    expect(rotuloDaForma("cartao_credito")).toBe("Cartão de crédito");
+    expect(rotuloDaForma("transferencia")).toBe("Transferência");
+    expect(rotuloDaForma("outro")).toBe("Outro");
+  });
+
+  it("o texto livre antigo aparece como foi escrito; o que tem chave conhecida ganha o nome certo", () => {
+    expect(rotuloDaForma("Vale da loja")).toBe("Vale da loja");
+    expect(rotuloDaForma("PIX")).toBe("Pix");
+    expect(rotuloDaForma("Transferência")).toBe("Transferência");
   });
 });
 
