@@ -9,8 +9,12 @@ import { renderizar, screen } from "@/testes/tela";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { OrdemServico } from "@/types/os";
 
-const { cancelarArquivoEmitido } = vi.hoisted(() => ({ cancelarArquivoEmitido: vi.fn() }));
-vi.mock("@/lib/notasFiscais", () => ({ cancelarArquivoEmitido }));
+const { cancelarArquivoEmitido, listarArquivosDasOrdens } = vi.hoisted(() => ({
+  cancelarArquivoEmitido: vi.fn(),
+  // A trilha do fechamento (#1088) busca as notas da OS sozinha.
+  listarArquivosDasOrdens: vi.fn(),
+}));
+vi.mock("@/lib/notasFiscais", () => ({ cancelarArquivoEmitido, listarArquivosDasOrdens }));
 vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => <div>aba fechamento</div> }));
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({ operador: { admin: true, permissoes: [] } }),
@@ -23,6 +27,7 @@ const { OrdemServicoForm } = await import("./OrdemServicoForm");
 beforeEach(() => {
   localStorage.clear();
   cancelarArquivoEmitido.mockReset().mockResolvedValue(undefined);
+  listarArquivosDasOrdens.mockReset().mockResolvedValue([]);
 });
 
 const ordem = {
@@ -92,5 +97,14 @@ describe("OrdemServicoForm — Cancelar a nota pela faixa do Corrigir a OS", () 
     await user.click(screen.getByRole("button", { name: "Confirmar cancelamento" }));
     expect(cancelarArquivoEmitido).toHaveBeenCalledOnce();
     expect(onNotaCancelada).toHaveBeenCalledOnce();
+  });
+
+  it("depois de cancelada, a trilha da OS busca as notas de novo (não fica em 'nota feita')", async () => {
+    const { user } = montar({ gerente: true });
+    await vi.waitFor(() => expect(listarArquivosDasOrdens).toHaveBeenCalledTimes(1));
+    await user.click(screen.getByRole("button", { name: "Cancelar a nota" }));
+    await user.type(screen.getByPlaceholderText(/nota emitida por engano, valor errado/), "nota emitida por engano");
+    await user.click(screen.getByRole("button", { name: "Confirmar cancelamento" }));
+    await vi.waitFor(() => expect(listarArquivosDasOrdens).toHaveBeenCalledTimes(2));
   });
 });

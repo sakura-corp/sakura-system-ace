@@ -61,7 +61,6 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { motivoParaNaoTrocar, resumoDaTroca } from "@/schemas/trocaFaturada";
 import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
-import { formatarMoeda } from "@/schemas/dinheiro";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { TrocaDeOsFaturada } from "@/types/os";
 import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
@@ -1076,7 +1075,12 @@ export function OrdemServicoForm({
       <CancelarNotaModal
         arquivo={notaParaCancelar}
         onFechar={() => setCancelandoNota(false)}
-        onCancelado={() => onNotaCancelada?.()}
+        onCancelado={() => {
+          // A página recarrega as notas dela (a faixa); a trilha (#1088), as
+          // suas: a nota cancelada volta a faltar e o passo volta pra nota.
+          onNotaCancelada?.();
+          void fechamento.recarregarNotas();
+        }}
       />
     )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (
