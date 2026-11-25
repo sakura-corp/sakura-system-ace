@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { Botao } from "@/components/Botao";
 import { Dica } from "@/components/Dica";
+import { useConfirmar } from "@/components/JanelaDeConfirmar";
 import { Modal } from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { buscarConfiguracaoPix } from "@/lib/configuracoes";
@@ -173,6 +174,9 @@ export function FaturamentoCard({
     };
   }, [lojaId]);
   const ehVenda = ehVendaBalcao(ordem);
+  // A pergunta antes de faturar, na janela do programa (#1088; #1079, item 1),
+  // não mais na caixinha cinza do navegador.
+  const { confirmar, janela: janelaDeConfirmar } = useConfirmar();
   // Venda no Consumidor não fica "a receber": não há de quem cobrar, e a
   // conta nasceria no nome de "ninguém" (migration 0064).
   const permiteAReceber = !ehConsumidor(ordem.cliente_id);
@@ -269,17 +273,30 @@ export function FaturamentoCard({
       return;
     }
 
-    if (
-      !confirm(
-        ehVenda
-          ? "Confirmar a venda? Ela baixa o estoque e lança o pagamento — depois disso as " +
-              "peças dela não mudam mais."
-          : "Confirmar o faturamento? Depois disso não dá mais pra acrescentar peça ou serviço " +
-              "nessa OS — se esquecer algo, só numa OS nova.",
-      )
-    ) {
-      return;
-    }
+    // O foco começa no "Cancelar": um Enter no automático não fatura. O valor
+    // é o mesmo da conta embaixo da janela (com os juros, se houver).
+    const cobrado =
+      valores.recebidoAgora && valores.dividirPagamento ? totalCobradoDividido : valorCobrado;
+    const seguir = await confirmar(
+      ehVenda
+        ? {
+            acao: "Confirmar a venda de",
+            item: formatarMoeda(cobrado),
+            explicacao:
+              "Ela baixa o estoque e lança o pagamento. Depois disso as peças dela não mudam mais.",
+            botao: "Fechar a venda",
+            tom: "normal",
+          }
+        : {
+            acao: `Faturar a ${nomeDocumento(ordem)} em`,
+            item: formatarMoeda(cobrado),
+            explicacao:
+              "Depois disso não dá mais pra acrescentar peça ou serviço nesta OS. Se esquecer algo, só numa OS nova.",
+            botao: "Faturar",
+            tom: "normal",
+          },
+    );
+    if (!seguir) return;
 
     const recebidoAgora = valores.recebidoAgora || !permiteAReceber;
     try {
@@ -606,6 +623,7 @@ export function FaturamentoCard({
 
         {codigoPix && valorQrPix !== null && <PixQrCode codigo={codigoPix} valor={valorQrPix} />}
       </form>
+      {janelaDeConfirmar}
     </Modal>
   );
 }

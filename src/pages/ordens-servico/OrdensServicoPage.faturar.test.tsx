@@ -103,7 +103,6 @@ vigiarFormDentroDeForm();
 beforeEach(() => {
   faturarOrdem.mockReset();
   avisar.mockReset();
-  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 /** Abre a janela pela linha e preenche metade no Pix, metade no cartão em 3x. */
@@ -128,6 +127,8 @@ async function faturarMetadePixMetadeCartao3x() {
   // A conta que a pessoa vê embaixo, antes de confirmar.
   expect(within(janela).getByText(/Com os juros do cartão:\s*R\$\s*1\.025,00/)).toBeInTheDocument();
   await user.click(within(janela).getByRole("button", { name: "Confirmar faturamento" }));
+  // A pergunta de antes de faturar é a janela do programa, não mais o confirm() (#1088).
+  await user.click(await screen.findByRole("button", { name: "Faturar" }));
   return janela;
 }
 

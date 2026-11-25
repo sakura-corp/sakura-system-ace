@@ -223,8 +223,9 @@ describe("FaturamentoCard — pagamento dividido", () => {
     await user.clear(segunda.valor);
     await user.type(segunda.valor, "300");
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     await user.click(botaoConfirmar());
+    // A pergunta de antes de faturar é a janela do programa (#1088).
+    await user.click(await screen.findByRole("button", { name: "Faturar" }));
 
     expect(onConfirmar).toHaveBeenCalledTimes(1);
     const [pagamentos] = onConfirmar.mock.calls[0];
@@ -240,11 +241,16 @@ describe("FaturamentoCard — pagamento dividido", () => {
     // ignorada, não serve pra nada.
     const onConfirmar = vi.fn().mockResolvedValue(undefined);
     const { user } = montar(onConfirmar);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-
     await user.click(botaoConfirmar());
+    // A janela do programa (#1088): diz o valor, o foco começa no "Cancelar"
+    // (um Enter no automático não fatura) e o "Cancelar" não fatura.
+    const pergunta = await screen.findByRole("dialog", { name: /^Faturar a OS .* em R\$/ });
+    const cancelar = within(pergunta).getByRole("button", { name: "Cancelar" });
+    expect(cancelar).toHaveFocus();
+    await user.click(cancelar);
 
     expect(onConfirmar).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: /^Faturar a OS/ })).not.toBeInTheDocument();
   });
 });
 

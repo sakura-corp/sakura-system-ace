@@ -309,9 +309,23 @@ describe("OrdemServicoForm — total grande e lucro previsto no rodapé", () => 
     expect(screen.getByRole("button", { name: "Salvar alterações" })).toBeInTheDocument();
   });
 
-  it("só um botão laranja: o Encerrar OS é secundário e o Salvar do rodapé é o principal", () => {
+  // Desde a trilha do fechamento (#1088), o "Encerrar OS" é o botão do passo
+  // "conferir" ("Encerrar e receber"), embaixo à direita. Um laranja só: sem
+  // nada mudado, é ele; com alteração sem salvar, é o "Salvar" (e o encerrar
+  // espera, pra não perder o que foi mudado).
+  it("só um botão laranja: sem alteração, o Encerrar e receber; o Salvar fica discreto", () => {
     montar({ ordemExistente: ordemComPneus() });
-    expect(screen.getByRole("button", { name: "Encerrar OS" }).className).not.toMatch(/bg-acao/);
+    expect(screen.getByRole("button", { name: "Encerrar e receber" }).className).toMatch(/bg-acao/);
+    expect(screen.getByRole("button", { name: "Salvar alterações" }).className).not.toMatch(/bg-acao/);
+    expect(screen.queryByRole("button", { name: "Encerrar OS" })).toBeNull();
+  });
+
+  it("com alteração sem salvar, o laranja é o Salvar e o Encerrar espera", async () => {
+    const { user } = montar({ ordemExistente: ordemComPneus() });
+    await user.type(document.querySelector('input[name="km_entrada"]') as HTMLInputElement, "1");
     expect(screen.getByRole("button", { name: "Salvar alterações" }).className).toMatch(/bg-acao/);
+    const encerrar = screen.getByRole("button", { name: "Encerrar e receber" });
+    expect(encerrar).toBeDisabled();
+    expect(encerrar.className).not.toMatch(/bg-acao/);
   });
 });

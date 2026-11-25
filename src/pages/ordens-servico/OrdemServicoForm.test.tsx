@@ -30,6 +30,9 @@ import type { Servico } from "@/types/servico";
 
 // A aba Fechamento busca notas e caixa no banco; aqui só interessa o rodapé
 // do formulário em volta dela (#781), então ela entra vazia.
+// Se o cliente já foi avisado (o passo "garantia e avisar", #1088): aqui, nunca.
+vi.mock("@/lib/avisoDaOrdem", () => ({ quandoAvisouCarroPronto: async () => null }));
+vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens: async () => [] }));
 vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => <div>aba fechamento</div> }));
 // O rodapé mostra o lucro previsto (#1087): o operador, o custo gravado e o custo das peças.
 const { operadorDoTeste, buscarCustoDasOrdens, listarPecas } = vi.hoisted(() => ({
@@ -423,12 +426,13 @@ describe("OrdemServicoForm — o rodapé no Fechamento (#781)", () => {
   it("no Fechamento o botão do rodapé é Voltar; nos Detalhes continua Cancelar", async () => {
     const onCancelar = vi.fn();
     const { user } = montar({ ordemExistente: ordemFaturada(), abaInicial: "fechamento", onCancelar });
-    expect(screen.getByText("aba fechamento")).toBeTruthy();
+    expect(await screen.findByText("aba fechamento")).toBeTruthy();
     expect(screen.queryByText("Cancelar", { selector: "button" })).toBeNull();
     await user.click(screen.getByText("Voltar", { selector: "button" }));
     expect(onCancelar).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole("button", { name: "Detalhes" }));
+    // Os Detalhes são o passo "conferir" da trilha (#1088): um passo feito, que se clica.
+    await user.click(screen.getByRole("button", { name: /Conferir peças e serviços.*voltar/ }));
     expect(screen.getByText("Cancelar", { selector: "button" })).toBeTruthy();
     expect(screen.queryByText("Voltar", { selector: "button" })).toBeNull();
   });
@@ -467,10 +471,16 @@ describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
     return rolar;
   }
 
-  it("no Fechamento a barra não gruda; nos Detalhes, gruda", async () => {
+  // Desde a #1088 a barra do Fechamento gruda quando traz o botão do próximo
+  // passo (senão ele ficava abaixo da dobra); vendo um passo já feito, só com
+  // o "Voltar", ela continua solta, como na #781.
+  it("no Fechamento, vendo um passo feito, a barra não gruda; com o botão do passo e nos Detalhes, gruda", async () => {
     const { user } = montar({ ordemExistente: ordemFaturada(), abaInicial: "fechamento" });
+    await screen.findByText("aba fechamento");
+    expect(barra().className).toMatch(/\bsticky\b/);
+    await user.click(screen.getByRole("button", { name: /Receber.*voltar/ }));
     expect(barra().className).not.toMatch(/\bsticky\b/);
-    await user.click(screen.getByRole("button", { name: "Detalhes" }));
+    await user.click(screen.getByRole("button", { name: /Conferir peças e serviços.*voltar/ }));
     expect(barra().className).toMatch(/\bsticky\b/);
   });
 

@@ -39,7 +39,7 @@ import type {
   PatchItemOS,
   PatchOrdemServico,
 } from "@/types/os";
-import { STATUS_COM_FECHAMENTO, STATUS_LABEL, nomeDocumento } from "@/types/os";
+import { STATUS_LABEL, nomeDocumento, totalOrdem } from "@/types/os";
 import type { PecaJanela } from "@/types/peca";
 import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
@@ -49,6 +49,11 @@ import { ApoioDoTotal, TotalGrande } from "./campos/TotalELucro";
 import { useCustosDoLucro } from "./useCustosDoLucro";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
+import { TrilhaDaOrdem } from "./TrilhaDaOrdem";
+import { useFechamentoDaOrdem } from "./useFechamentoDaOrdem";
+import { indiceDoPasso, type PassoDaOs } from "@/schemas/passoDaOrdem";
+import { formatarMoeda } from "@/schemas/dinheiro";
+import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
 import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escolhasAvulsas";
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
@@ -56,7 +61,6 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { motivoParaNaoTrocar, resumoDaTroca } from "@/schemas/trocaFaturada";
 import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
-import { formatarMoeda } from "@/schemas/dinheiro";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { TrocaDeOsFaturada } from "@/types/os";
 import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
@@ -157,6 +161,17 @@ interface OrdemServicoFormProps {
    * correções de valor), da mais nova pra mais velha.
    */
   trocas?: TrocaDeOsFaturada[];
+  /**
+   * O passo "receber" da trilha (#1088): abre a janela "Faturar" por cima da
+   * OS. Sem isto, o passo não tem botão (o faturar é da página).
+   */
+  onReceber?: (ordem: OrdemServico) => void;
+  /**
+   * O "Avisar o cliente" do passo "garantia e avisar" (#1088): o WhatsApp com a
+   * mensagem de carro pronto, montado pela página (como o "Avisar" da lista).
+   * Ausente (sem o módulo Clientes): o passo termina no "Concluir".
+   */
+  avisoCarroPronto?: { telefone: string | null | undefined; texto: string; aoAbrir: () => void };
 }
 
 /** O nome de cada tipo de linha do "Histórico da OS" (#1181). */
@@ -249,6 +264,8 @@ export function OrdemServicoForm({
   notaParaCancelar,
   onNotaCancelada,
   trocas = [],
+  onReceber,
+  avisoCarroPronto,
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
   const [cancelandoNota, setCancelandoNota] = useState(false);
@@ -274,11 +291,34 @@ export function OrdemServicoForm({
   const [motivoRecusa, setMotivoRecusa] = useState<MotivoRecusa | "">("");
   const [enviando, setEnviando] = useState(false);
   const [cadastroRapido, setCadastroRapido] = useState<"cliente" | "veiculo" | null>(null);
-  const temFechamento =
-    !!ordemExistente && STATUS_COM_FECHAMENTO.includes(ordemExistente.status);
-  const [aba, setAba] = useState<"detalhes" | "fechamento">(
-    temFechamento ? abaInicial : "detalhes",
+  // A trilha do fechamento (#1088): o passo em que a OS está sai do que já
+  // está gravado (status, notas, aviso). A OS mostra o passo atual, ou um passo
+  // já feito que a pessoa clicou na trilha; "conferir" são os Detalhes (os
+  // itens), os outros são o painel do fechamento. Era a aba "Detalhes" /
+  // "Fechamento"; o `abaInicial` continua dizendo onde a OS abre.
+  const fechamento = useFechamentoDaOrdem(modoOrcamento ? undefined : ordemExistente);
+  const passoAtual = ordemExistente && !modoOrcamento ? fechamento.passo : null;
+  const [passoEscolhido, setPassoEscolhido] = useState<PassoDaOs | null>(
+    abaInicial === "detalhes" ? "conferir" : null,
   );
+  // O passo andou (faturou, emitiu a nota, avisou): a OS vai pro passo novo,
+  // em vez de ficar parada no que a pessoa tinha aberto. Só conta o passo já
+  // assentado: enquanto as notas chegam do banco, ele ainda pode pular.
+  const [passoAssentado, setPassoAssentado] = useState<PassoDaOs | null>(null);
+  if (passoAtual && !fechamento.carregando && passoAtual !== passoAssentado) {
+    if (passoAssentado !== null) setPassoEscolhido(null);
+    setPassoAssentado(passoAtual);
+  }
+  // Só um passo já feito (ou o atual) pode ser visto: nunca um de depois.
+  const passoVisto: PassoDaOs | null =
+    passoAtual === null
+      ? null
+      : passoEscolhido && indiceDoPasso(passoEscolhido) <= indiceDoPasso(passoAtual)
+        ? passoEscolhido
+        : passoAtual;
+  const aba: "detalhes" | "fechamento" =
+    passoVisto === null || passoVisto === "conferir" ? "detalhes" : "fechamento";
+  const [erroAviso, setErroAviso] = useState<string | null>(null);
 
   const {
     register,
@@ -536,6 +576,57 @@ export function OrdemServicoForm({
     custoPeca,
     custoServico,
   });
+  // O "Avisar o cliente" do passo "garantia e avisar": abre o WhatsApp com a
+  // mensagem de carro pronto e registra (como o "Avisar" da lista). O erro (o
+  // mais comum: telefone sem DDD) aparece no próprio passo.
+  async function avisarCliente() {
+    if (!avisoCarroPronto) return;
+    setErroAviso(null);
+    try {
+      await abrirConversaWhatsapp(avisoCarroPronto.telefone, avisoCarroPronto.texto);
+      avisoCarroPronto.aoAbrir();
+      fechamento.marcarAvisado();
+    } catch (err) {
+      console.error("Erro ao abrir o WhatsApp:", err);
+      setErroAviso(mensagemDeErro(err));
+    }
+  }
+
+  // O botão do próximo passo (#1088): um só, laranja, embaixo à direita, e só
+  // quando a pessoa está vendo o passo atual. Diz o que faz ("Receber R$ 250,00",
+  // "Emitir NFC-e"), nunca "OK".
+  const acaoDoPasso: { rotulo: string; aoClicar: () => void; ocupado?: boolean } | null = (() => {
+    if (!ordemExistente || !passoAtual || fechamento.carregando || passoVisto !== passoAtual) return null;
+    switch (passoAtual) {
+      case "conferir":
+        return {
+          rotulo: encerrando ? "Encerrando..." : "Encerrar e receber",
+          aoClicar: () => void handleEncerrar(),
+          ocupado: encerrando,
+        };
+      case "receber":
+        return onReceber
+          ? {
+              rotulo: `Receber ${formatarMoeda(totalOrdem(ordemExistente.itens ?? []))}`,
+              aoClicar: () => onReceber(ordemExistente),
+            }
+          : null;
+      case "nota": {
+        const nota = fechamento.proximaNota;
+        return nota ? { rotulo: `Emitir ${nota}`, aoClicar: () => fechamento.setNotaParaEmitir(nota) } : null;
+      }
+      case "garantia":
+        return avisoCarroPronto
+          ? { rotulo: "Avisar o cliente", aoClicar: () => void avisarCliente() }
+          : { rotulo: "Concluir", aoClicar: fechamento.concluirSemAvisar };
+      case "pronto":
+        return { rotulo: "Pronto", aoClicar: onCancelar };
+    }
+  })();
+  // No "conferir", com alteração sem salvar, o laranja é o "Salvar" e o
+  // "Encerrar" espera (encerrar sem salvar perderia o que foi mudado).
+  const encerrarEspera = passoVisto === "conferir" && isDirty;
+
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
@@ -560,7 +651,12 @@ export function OrdemServicoForm({
       ref={barraRef}
       data-rodape-da-os
       className={`${
-        aba === "detalhes" ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]" : ""
+        // No Fechamento ela também gruda quando traz o botão do próximo passo
+        // (#1088): em 1366 × 768 ele ficava abaixo da dobra. Sem o botão (um
+        // passo feito, só com o "Voltar"), continua solta, como na #781.
+        aba === "detalhes" || acaoDoPasso
+          ? "sticky bottom-0 z-10 shadow-[0_-14px_18px_-6px_var(--sombra-forte)]"
+          : ""
       } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
     >
       {aba === "detalhes" ? (
@@ -584,8 +680,19 @@ export function OrdemServicoForm({
           <Botao variante="fantasma" tamanho="grande" onClick={onCancelar}>
             {aba === "detalhes" ? "Cancelar" : "Voltar"}
           </Botao>
+          {passoVisto === "garantia" && acaoDoPasso && avisoCarroPronto && (
+            // Cliente sem WhatsApp, ou avisado no balcão: dá pra fechar sem o aviso.
+            <Botao variante="fantasma" tamanho="grande" onClick={fechamento.concluirSemAvisar}>
+              Concluir sem avisar
+            </Botao>
+          )}
           {aba === "detalhes" && !ehRecusado && (
-            <Botao variante="principal" tamanho="grande" type="submit" ocupado={isSubmitting}>
+            <Botao
+              variante={acaoDoPasso && !encerrarEspera ? "secundario" : "principal"}
+              tamanho="grande"
+              type="submit"
+              ocupado={isSubmitting}
+            >
               {isSubmitting
                 ? "Salvando..."
                 : ordemExistente
@@ -593,6 +700,18 @@ export function OrdemServicoForm({
                   : modoOrcamento
                     ? "Salvar orçamento"
                     : "Abrir ordem de serviço"}
+            </Botao>
+          )}
+          {acaoDoPasso && (
+            <Botao
+              variante={encerrarEspera ? "secundario" : "principal"}
+              tamanho="grande"
+              onClick={acaoDoPasso.aoClicar}
+              ocupado={acaoDoPasso.ocupado}
+              disabled={encerrarEspera}
+              title={encerrarEspera ? "Salve as alterações antes de encerrar." : undefined}
+            >
+              {acaoDoPasso.rotulo}
             </Botao>
           )}
         </div>
@@ -646,12 +765,8 @@ export function OrdemServicoForm({
               </span>
             )}
             {modoOrcamento && acoesExtras}
-            {ordemExistente.status === "em_andamento" && (
-              // Secundário: o laranja da tela é o "Salvar" do rodapé (um por tela).
-              <Botao variante="secundario" onClick={handleEncerrar} ocupado={encerrando}>
-                {encerrando ? "Encerrando..." : "Encerrar OS"}
-              </Botao>
-            )}
+            {/* O "Encerrar OS" de antes virou o botão do passo "conferir",
+                embaixo à direita: "Encerrar e receber" (#1088). */}
           </div>
         </div>
       ) : (
@@ -734,31 +849,13 @@ export function OrdemServicoForm({
         />
       )}
 
-      {temFechamento && (
-        <div className="flex gap-2 border-b border-linha">
-          <button
-            type="button"
-            onClick={() => setAba("detalhes")}
-            className={`px-4 py-2 text-corpo font-medium ${
-              aba === "detalhes"
-                ? "border-b-2 border-acao text-texto"
-                : "text-texto/75 hover:text-texto"
-            }`}
-          >
-            Detalhes
-          </button>
-          <button
-            type="button"
-            onClick={() => setAba("fechamento")}
-            className={`px-4 py-2 text-corpo font-medium ${
-              aba === "fechamento"
-                ? "border-b-2 border-acao text-texto"
-                : "text-texto/75 hover:text-texto"
-            }`}
-          >
-            Fechamento
-          </button>
-        </div>
+      {passoAtual && passoVisto && (
+        <TrilhaDaOrdem
+          passo={passoAtual}
+          carregando={fechamento.carregando}
+          passoVisto={passoVisto}
+          aoVer={setPassoEscolhido}
+        />
       )}
 
       {aba === "detalhes" && (
@@ -855,8 +952,19 @@ export function OrdemServicoForm({
         próprio <form>. Dentro do da OS era um formulário dentro de outro
         (HTML inválido): o "Salvar peça" enviava também o formulário da OS
         (o teste OrdemServicoForm.fechamento.test.tsx viu isso). */}
-    {aba === "fechamento" && ordemExistente && (
-      <FechamentoTab ordem={ordemExistente} onItensMudaram={onItensMudaram} />
+    {aba === "fechamento" && ordemExistente && passoVisto && passoVisto !== "conferir" && (
+      fechamento.carregando ? (
+        // As notas ainda chegando: o lugar do passo fica guardado, sem pular.
+        <div aria-hidden="true" className="h-48 animate-pulse rounded-2xl bg-poco motion-reduce:animate-none" />
+      ) : (
+        <FechamentoTab
+          ordem={ordemExistente}
+          passo={passoVisto}
+          fechamento={fechamento}
+          erroAviso={erroAviso}
+          onItensMudaram={onItensMudaram}
+        />
+      )
     )}
     {aba === "fechamento" && rodape}
     </div>
@@ -967,7 +1075,12 @@ export function OrdemServicoForm({
       <CancelarNotaModal
         arquivo={notaParaCancelar}
         onFechar={() => setCancelandoNota(false)}
-        onCancelado={() => onNotaCancelada?.()}
+        onCancelado={() => {
+          // A página recarrega as notas dela (a faixa); a trilha (#1088), as
+          // suas: a nota cancelada volta a faltar e o passo volta pra nota.
+          onNotaCancelada?.();
+          void fechamento.recarregarNotas();
+        }}
       />
     )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (

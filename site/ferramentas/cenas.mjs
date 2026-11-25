@@ -115,20 +115,45 @@ export const CENAS = [
       { clicar: "Abrir a OS" },
     ],
     semRolarAPartirDe: 1024,
-    descricao: "A OS já gravada, na página dela: os itens lançados aparecem na mesma tabela (cada um com 'Editar', que salva na hora), a busca fica pronta pra pôr mais, e o rodapé mostra o total e o lucro previsto calculado pelo banco." },
+    descricao: "A OS já gravada, na página dela. Em cima, a trilha do fechamento: conferir peças e serviços → receber → nota fiscal → garantia e avisar, no passo 1 de 4. Os itens lançados aparecem na mesma tabela (cada um com 'Editar', que salva na hora), a busca fica pronta pra pôr mais, e o rodapé mostra o total, o lucro previsto e um botão laranja só: o do próximo passo, 'Encerrar e receber' (com alteração sem salvar, o laranja passa pro 'Salvar')." },
   { arquivo: "09-os-faturamento", modulo: "Ordens de Serviço", titulo: "Faturamento da ordem",
     rota: "/ordens-servico", passos: [{ clicar: "Faturar" }],
     descricao: "Fecha a conta com o cliente. Dá pra dividir o pagamento em mais de uma forma (metade Pix, metade cartão), parcelar só a parte do cartão com os juros configurados, e escolher entre receber na hora — que lança a entrada no caixa — ou deixar como conta a receber." },
-  { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechamento: notas fiscais e garantia",
-    // Desde a tarefa 7 do visual novo, "Fechamento" mora no "Mais ações" da
-    // linha (o primeiro que tem é o de uma OS concluída ou faturada). Desde a
-    // #1091 a lista é o molde de lista: cada OS é um <li>, não mais um <tr>.
+  { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechar a OS: receber (passo 2 de 4)",
+    // O "Fechamento" do "Mais ações" abre a OS no passo em que ela parou (#1088).
+    // Desde a #1091 a lista é o molde de lista: cada OS é um <li>.
     rota: "/ordens-servico",
     passos: [
       { seletor: 'li:has-text("Concluída") button[aria-label^="Mais ações"]' },
       { clicar: "Fechamento" },
     ],
-    descricao: "Aqui saem os documentos da OS. O sistema sabe de que nota aquela ordem precisa — NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois — e mostra só o botão que faz sentido. A emissão é automática, via Focus NFe, e o PDF aparece na própria tela. O botão de garantia gera o documento pro cliente assinar." },
+    descricao: "Fechar a OS é uma trilha de 4 passos no topo da própria OS: conferir peças e serviços, receber, nota fiscal, e garantia e avisar. O passo feito fica verde com ✓, o atual azul, e a frase 'Passo 2 de 4' diz onde se está. No receber, o número grande é o que falta receber, com o total e o que já foi pago de apoio; embaixo à direita, um botão laranja só, 'Receber R$ …', que abre a janela de faturar. O passo sai do que já está gravado: fechar o programa no meio e abrir a OS de novo mostra o passo em que ela parou." },
+  { arquivo: "10f-os-passo-nota", modulo: "Ordens de Serviço", titulo: "Fechar a OS: nota fiscal (passo 3 de 4)",
+    rota: "/ordens-servico",
+    // A OS 145 (peça e serviço) volta a ficar sem a NFC-e: falta uma das duas notas.
+    tirarLinhas: { notas_fiscais_arquivos: (n) => n.ordem_servico_id === "os145" && n.tipo === "nfe" },
+    passos: [{ seletor: 'li:has-text("OS 145") button:has-text("Emitir nota")' }],
+    descricao: "Faturada, a OS anda sozinha pra nota fiscal. O sistema sabe de que nota ela precisa (NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois) e mostra cada uma com ✓ 'feito' ou ! 'falta'. A que é o próximo passo sai pelo botão laranja, embaixo à direita ('Emitir NFC-e'); a emitida tem o 'Ver DANFE' do lado. A emissão é automática, via Focus NFe." },
+  { arquivo: "10g-os-passo-garantia", modulo: "Ordens de Serviço", titulo: "Fechar a OS: garantia e avisar (passo 4 de 4)",
+    rota: "/ordens-servico",
+    passos: [
+      { seletor: 'li:has-text("OS 144") button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
+    descricao: "Com as notas emitidas, o último passo: o documento de garantia pro cliente assinar ('Ver garantia') e o aviso de carro pronto pelo WhatsApp, que é o botão laranja ('Avisar o cliente'). Cliente sem WhatsApp, ou avisado no balcão: 'Concluir sem avisar'." },
+  { arquivo: "10h-os-pronto", modulo: "Ordens de Serviço", titulo: "Fechar a OS: o resumo do fim",
+    rota: "/ordens-servico",
+    // A mensagem de WhatsApp de exemplo vira o "carro pronto" da OS 143: o cliente já foi avisado.
+    alterarLinhas: { whatsapp_mensagens: { wa1: { chave: "carro_pronto", referencia: "os143" } } },
+    passos: [
+      { seletor: 'li:has-text("OS 143") button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
+    descricao: "O fim claro: os 4 passos com ✓ e o resumo do que foi feito (faturado, notas emitidas, cliente avisado e quando), com o DANFE e a garantia à mão. O botão laranja é o 'Pronto', que volta pra lista." },
+  { arquivo: "10i-os-faturar-confirmar", modulo: "Ordens de Serviço", titulo: "Faturar: a pergunta antes de lançar",
+    rota: "/ordens-servico",
+    passos: [{ clicar: "Faturar" }, { clicar: "Confirmar faturamento" }],
+    descricao: "Faturar não tem volta (depois não se acrescenta peça nem serviço), então o programa pergunta antes, numa janela dele e não mais na caixinha cinza do Windows: diz a OS e o valor, explica o que muda, e o foco começa no 'Cancelar', pra um Enter no automático não faturar." },
 
   // A recusa da SEFAZ por causa do CNPJ do cliente (#1112). O banco de mentira
   // responde a Focus NFe com a recusa só nesta cena (`funcoesDaCena`) e a OS 145,

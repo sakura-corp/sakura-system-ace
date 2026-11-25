@@ -810,8 +810,11 @@ export function OrdensServicoPage() {
   async function handleEncerrar(ordem: OrdemServico) {
     if (!operador) return;
     await concluirOrdem(ordem.id, operador.id);
-    setOrdemEmEdicao(null);
-    setOrdemFaturando({ ...ordem, status: "concluida" });
+    // A OS continua aberta, agora no passo "receber" da trilha (#1088), e o
+    // Faturar abre por cima dela: faturou, ela já mostra o passo da nota.
+    const concluida: OrdemServico = { ...ordem, status: "concluida" };
+    setOrdemEmEdicao(concluida);
+    setOrdemFaturando(concluida);
     await carregar();
   }
 
@@ -840,7 +843,9 @@ export function OrdensServicoPage() {
         const atual = recarregadas?.find((o) => o.id === id);
         if (!atual || atual.status === "faturada") {
           // Sumiu ou alguém já faturou: não há mais o que faturar aqui. O
-          // `carregar` limpa o aviso, então ele é posto depois.
+          // `carregar` limpa o aviso, então ele é posto depois. A OS aberta
+          // (o passo "receber" da trilha, #1088) ganha o status novo.
+          if (atual) setOrdemEmEdicao((aberta) => (aberta?.id === atual.id ? atual : aberta));
           setOrdemFaturando(null);
           setErro(err.message);
           return;
@@ -857,7 +862,15 @@ export function OrdensServicoPage() {
     setOrdemFaturando(null);
     setVendaAberta(null);
     avisar(`${nomeDocumento(faturada)} faturada`);
+    // A OS aberta (o passo "receber" da trilha, #1088) anda na hora, sem
+    // esperar a lista: o "Receber" não fica na tela pra um segundo clique.
+    setOrdemEmEdicao((atual) => (atual?.id === faturada.id ? { ...atual, status: "faturada" } : atual));
     const recarregadas = await carregar();
+    // Faturada de dentro da OS aberta (o passo "receber" da trilha, #1088): a
+    // OS aberta ganha o status novo e a trilha anda pra nota fiscal.
+    // Com a lista nova, a OS aberta ganha o resto (a data de fechamento).
+    const aberta = recarregadas?.find((o) => o.id === faturada.id);
+    if (aberta) setOrdemEmEdicao((atual) => (atual?.id === aberta.id ? aberta : atual));
     // Faturada; só a taxa da maquininha não foi guardada (#387).
     if (avisoTaxa) setErro(avisoTaxa);
     // Venda de balcão faturada pela lista (a que ficou sem pagamento) segue
@@ -1114,6 +1127,8 @@ export function OrdensServicoPage() {
           abaInicial={abaInicialEdicao}
           onItensMudaram={recarregarOrdemEmEdicao}
           gerente={operador.admin}
+          onReceber={(ordem) => setOrdemFaturando(ordem)}
+          avisoCarroPronto={avisoCarroPronto(ordemEmEdicao)}
           onTrocarItensFaturada={handleTrocarItensFaturada}
           buscarSituacaoDaCorrecao={situacaoDaCorrecao}
           notaParaCancelar={notaVigenteDaOrdem(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
