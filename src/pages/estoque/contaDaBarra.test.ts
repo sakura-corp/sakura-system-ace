@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lerBarraDoEstoque, ultimaSaidaPorPeca } from "./barraDoEstoque";
+import { lerBarraDoEstoque, ultimaSaidaPorPeca } from "./contaDaBarra";
 import type { MovimentoEstoque } from "@/types/estoque";
 
 describe("lerBarraDoEstoque — a barra do estoque contra o mínimo (#1093)", () => {

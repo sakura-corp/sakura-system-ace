@@ -16,7 +16,7 @@ import type { Deposito } from "@/types/deposito";
 import type { MovimentoEstoque } from "@/types/estoque";
 import type { Peca } from "@/types/peca";
 import { BarraDoEstoque } from "./BarraDoEstoque";
-import { lerBarraDoEstoque } from "./barraDoEstoque";
+import { lerBarraDoEstoque } from "./contaDaBarra";
 import { LinhaDoMovimento } from "./MovimentacoesSection";
 import { MOTIVO_DO_MOVIMENTO } from "./filtroDeMovimentos";
 
