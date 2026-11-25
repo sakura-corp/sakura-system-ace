@@ -77,6 +77,14 @@ describe("seriesVendasCustosLucro", () => {
     expect(r.lucro).toEqual([0, 0, 0, 0, 25, 45]);
   });
 
+  it("a diferença de uma correção de OS faturada não leva o custo da OS (#1182)", () => {
+    const diferenca = { ...entrada(em(2026, 11, 24), 50, "os-1"), descricao: "Correção da OS 1" };
+    const r = seriesVendasCustosLucro([diferenca], "mensal", HOJE, custoPorOrdem);
+    expect(r.vendas.at(-1)).toBe(50);
+    expect(r.custos.at(-1)).toBe(0);
+    expect(r.lucro.at(-1)).toBe(50);
+  });
+
   it("anual: 5 anos, o último é o de hoje", () => {
     const r = seriesVendasCustosLucro([entrada(em(2024, 3, 1), 9)], "anual", HOJE, new Map());
     expect(r.categorias).toEqual(["2022", "2023", "2024", "2025", "2026"]);

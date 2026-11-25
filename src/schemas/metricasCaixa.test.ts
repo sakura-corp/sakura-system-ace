@@ -227,3 +227,44 @@ describe("custo pelo mapa do banco = custo pelos mapas", () => {
     expect(custoDaOrdemPeloBanco(new Map())("os-x", [])).toBe(0);
   });
 });
+
+// #1182, decisão da Sofia (24/11): o lucro e o custo da OS ficam só no dia
+// da fatura. A Entrada da diferença de uma correção e a "Devolução ao
+// cliente" entram no dinheiro do dia com lucro e custo ZERO.
+describe("diferença de correção de OS faturada (#1182)", () => {
+  // OS de 400 (custo 240) faturada em 20/11; corrigida em 24/11 pra 450
+  // (custo 270), +50 no Pix. O dia 24 tem só a Entrada da diferença.
+  const itensNovos = [item("servico", "alinhamento", 1, 450)];
+  const custoNovo = custoDaOrdemPeloBanco(new Map([["os-400", { custo: 270, completo: true }]]));
+  const diferenca: MovimentoCaixa<ItemOS> = {
+    ...entrada("m-dif", 50, "os-400", itensNovos),
+    descricao: "Correção da OS 1",
+  };
+
+  it("a linha da diferença tem lucro zero (não o lucro da OS inteira)", () => {
+    expect(lucroPorMovimento([diferenca], custoNovo).get("m-dif")).toBe(0);
+  });
+
+  it("o resumo do dia não põe o custo da OS na diferença", () => {
+    const resumo = resumirMovimentos([diferenca], custoNovo);
+    expect(resumo.entradas).toBe(50);
+    expect(resumo.custoDeAquisicao).toBe(0);
+    expect(resumo.lucro).toBe(50);
+    expect(resumo.ordensDistintas).toBe(0);
+  });
+
+  it("a diferença recebida depois (fica a receber) também não leva o custo da OS", () => {
+    const recebida = { ...diferenca, id: "m-rec", descricao: "Diferença da correção da OS 1" };
+    expect(resumirMovimentos([recebida], custoNovo).custoDeAquisicao).toBe(0);
+    expect(lucroPorMovimento([recebida], custoNovo).get("m-rec")).toBe(0);
+  });
+
+  it("no mesmo dia da fatura, o lucro da OS fica todo na entrada do faturamento", () => {
+    const fatura = { ...entrada("m-fat", 400, "os-400", itensNovos), descricao: "Faturamento da OS 1" };
+    const lucros = lucroPorMovimento([fatura, diferenca], custoNovo);
+    expect(lucros.get("m-dif")).toBe(0);
+    expect(lucros.get("m-fat")).toBe(180); // 450 − 270, inteiro na linha do faturamento
+    const resumo = resumirMovimentos([fatura, diferenca], custoNovo);
+    expect(resumo.custoDeAquisicao).toBe(270);
+  });
+});
