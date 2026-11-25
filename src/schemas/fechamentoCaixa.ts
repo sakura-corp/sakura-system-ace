@@ -25,9 +25,11 @@ function normalizar(texto: string): string {
 /**
  * A forma de pagamento é dinheiro vivo?
  *
- * O faturamento de OS e o pagamento de conta gravam a chave `dinheiro`; o
- * lançamento manual tem um campo de texto livre que já nasce com "dinheiro",
- * mas aceita qualquer coisa — daí aceitar os jeitos comuns de escrever.
+ * O faturamento de OS, o pagamento de conta e o lançamento manual gravam a
+ * chave `dinheiro` (o lançamento manual escolhe numa lista desde a #1089).
+ * Antes disso o lançamento manual era um campo de texto livre que aceitava
+ * qualquer coisa, e esse histórico continua no banco — daí aceitar os jeitos
+ * comuns de escrever.
  */
 export function ehDinheiro(forma: string | null | undefined): boolean {
   if (!forma) return false;
@@ -36,19 +38,36 @@ export function ehDinheiro(forma: string | null | undefined): boolean {
 }
 
 /**
- * A chave de agrupamento de uma forma de pagamento. O faturamento grava a
- * chave ("pix", "cartao_credito"), mas o lançamento manual tem texto livre —
- * "Pix", "PIX" e "Cartão de crédito" precisam cair no mesmo grupo, senão a
- * conferência com o extrato mostraria o Pix do dia partido em dois.
+ * A chave de agrupamento de uma forma de pagamento. Hoje tudo grava a chave
+ * ("pix", "cartao_credito"), mas o lançamento manual antigo (antes da #1089)
+ * tem texto livre — "Pix", "PIX" e "Cartão de crédito" precisam cair no mesmo
+ * grupo, senão a conferência com o extrato mostraria o Pix do dia partido em
+ * dois.
  */
 export function chaveDaForma(forma: string): string {
   const f = normalizar(forma).replace(/\s+de\s+/g, "_").replace(/\s+/g, "_");
   return f;
 }
 
-/** O nome que a tela mostra pra uma forma de pagamento gravada. */
+/**
+ * As duas formas que só o lançamento manual tem (a lista de
+ * `FORMAS_DO_LANCAMENTO`, em `./caixa`, #1089). Ficam aqui, e não no
+ * `FORMA_PAGAMENTO_LABEL`, porque aquele alimenta o faturar da OS, que não
+ * oferece transferência nem "outro".
+ */
+const ROTULO_SO_DO_LANCAMENTO: Record<string, string> = {
+  transferencia: "Transferência",
+  outro: "Outro",
+};
+
+/**
+ * O nome que a tela mostra pra uma forma de pagamento gravada. A chave vira
+ * o nome ("pix" → "Pix"); o texto livre antigo que não é chave conhecida
+ * aparece como foi escrito ("Vale da loja").
+ */
 export function rotuloDaForma(forma: string): string {
-  return FORMA_PAGAMENTO_LABEL[chaveDaForma(forma)] ?? forma;
+  const chave = chaveDaForma(forma);
+  return FORMA_PAGAMENTO_LABEL[chave] ?? ROTULO_SO_DO_LANCAMENTO[chave] ?? forma;
 }
 
 export interface TotalDaForma {
