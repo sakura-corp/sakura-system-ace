@@ -3,7 +3,7 @@
 - **Tarefa**: #1089, Caixa Diário numa página só, com o lançamento em janela (visual leva 8, trilha A)
 - **Chefe**: frontend
 - **Data**: 2026-11-25
-- **PR**: (link na descrição do PR desta branch, `claude/adoring-wright-uva9xl`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1194
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
