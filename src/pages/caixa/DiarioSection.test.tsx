@@ -2,13 +2,17 @@
 /**
  * Teste de TELA do Caixa Diário (#790): o faturamento grava a CHAVE da forma
  * de pagamento ("cartao_debito"), e a tela tem que mostrar o NOME ("Cartão de
- * débito"), na tabela e nos cartões das formas de recebimento. Os dados de
+ * débito"), na tabela e na lista das formas de pagamento do dia. Os dados de
  * exemplo gravam o nome, por isso as fotos não mostravam o problema.
  */
 import { describe, expect, it, vi } from "vitest";
 import { renderizar, screen, within } from "@/testes/tela";
 import type { MovimentoCaixa } from "@/types/caixa";
+import { hojeLocal } from "@/lib/datas";
 import { DiarioSection } from "./DiarioSection";
+
+vi.mock("./FechamentoSection", () => ({ FechamentoSection: () => null }));
+vi.mock("./CartaoAReceberSection", () => ({ CartaoAReceberSection: () => null }));
 
 const agora = new Date().toISOString();
 
@@ -18,7 +22,7 @@ function mov(id: string, valor: number, forma: string | null): MovimentoCaixa {
 
 function abrir(movimentos: MovimentoCaixa[]) {
   return renderizar(
-    <DiarioSection movimentos={movimentos} custoDasOrdens={new Map()} categorias={[]} onSalvar={vi.fn()} />,
+    <DiarioSection dia={hojeLocal()} lojaId="l" movimentos={movimentos} custoDasOrdens={new Map()} categorias={[]} onSalvar={vi.fn()} />,
   );
 }
 
@@ -31,9 +35,9 @@ describe("DiarioSection", () => {
     expect(screen.queryByText("cartao_debito")).toBeNull();
   });
 
-  it("a chave e o nome digitado à mão caem no mesmo cartão de recebimento", () => {
+  it("a chave e o nome digitado à mão caem no mesmo lugar na lista de formas do dia", () => {
     abrir([mov("1", 50, "cartao_debito"), mov("2", 30, "Cartão de débito")]);
-    const cartoes = screen.getByRole("heading", { name: "Formas de recebimento" }).parentElement!;
+    const cartoes = screen.getByRole("heading", { name: "Formas de pagamento do dia" }).parentElement!;
     expect(within(cartoes).getAllByText("Cartão de débito")).toHaveLength(1);
     expect(within(cartoes).getByText(/80,00/)).toBeTruthy();
   });
