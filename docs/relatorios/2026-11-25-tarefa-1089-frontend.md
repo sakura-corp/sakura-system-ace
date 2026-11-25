@@ -63,7 +63,8 @@
 - **"'Cancelar' na pergunta de lançar depois do fechamento não abre a janela"**: o código já fazia certo.
 - Os 3 testes antigos do `DiarioSection.test.tsx` (nome da forma e não a chave, texto livre antigo como foi escrito), ajustados às props novas.
 - **`npm run largura:telas`**: todas as telas, em 5 larguras, deram "Nenhum conteúdo passando da janela". A medição foi da versão de antes dos consertos da revisão; o meu roteiro só das 6 cenas do Caixa (1024, 1366 × 700 e 1600) mediu de novo depois.
-- **`npm run contraste`**: passou. **`npm run contraste:telas`**: ainda rodando quando este relatório foi gravado (o resultado vai na descrição do PR e no CI). Não quebrei nenhum dos dois de propósito.
+- **`npm run contraste`** e **`npm run contraste:telas`** (81 telas, nos dois temas, "Nenhuma reprovação de contraste"): passaram. Não quebrei nenhum dos dois de propósito.
+- **Fotos** (em `docs/referencia/visual-novo/andamento/18-caixa-pagina/`): a página em 1024, 1366 e 1600, nos dois temas; cada janela e cada filtro em 1366 × 700; os estados carregando (esqueleto) e erro ("Tentar de novo"), com a resposta do banco de mentira segurada e falhada de propósito só no roteiro das fotos. O vazio é a foto do filtro "Saídas".
 - **`npm run test:fusos`**: 3.417 testes passaram nos dois fusos.
 - **`typecheck` e `lint`**: passaram, com 3 avisos antigos em arquivos que não mexi.
 
