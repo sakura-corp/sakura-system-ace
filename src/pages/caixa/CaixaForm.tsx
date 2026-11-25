@@ -135,38 +135,42 @@ export function CaixaForm({
         )}
       </div>
 
-      <div className="sakura-rotulo">
-        <label htmlFor={idDaCategoria}>Categoria</label>
-        <Combobox
-          id={idDaCategoria}
-          opcoes={categoriasDoTipo.map((categoria) => ({
-            valor: categoria.id,
-            rotulo: categoria.nome,
-          }))}
-          valor={watch("categoria_id")}
-          onMudar={(v) => setValue("categoria_id", v, { shouldValidate: true })}
-          placeholder="Escolha uma categoria"
-          desabilitado={categoriasDoTipo.length === 0}
-        />
-        {categoriasDoTipo.length === 0 ? (
-          <span className="flex items-start gap-2 text-rotulo font-normal text-atencao">
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span className="min-w-0">
-              Nenhuma categoria de {tipo === "saida" ? "saída" : "entrada"} cadastrada ainda — um
-              administrador cria em Configurações → Categorias de caixa.
+      {/* Categoria e descrição lado a lado: assim a janela cabe inteira em
+          1366 × 700 sem rolar (antes a Descrição ficava escondida embaixo). */}
+      <div className="grid grid-cols-2 items-start gap-4">
+        <div className="sakura-rotulo min-w-0">
+          <label htmlFor={idDaCategoria}>Categoria</label>
+          <Combobox
+            id={idDaCategoria}
+            opcoes={categoriasDoTipo.map((categoria) => ({
+              valor: categoria.id,
+              rotulo: categoria.nome,
+            }))}
+            valor={watch("categoria_id")}
+            onMudar={(v) => setValue("categoria_id", v, { shouldValidate: true })}
+            placeholder="Escolha uma categoria"
+            desabilitado={categoriasDoTipo.length === 0}
+          />
+          {categoriasDoTipo.length === 0 ? (
+            <span className="flex items-start gap-2 text-rotulo font-normal text-atencao">
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              <span className="min-w-0">
+                Nenhuma categoria de {tipo === "saida" ? "saída" : "entrada"} cadastrada ainda — um
+                administrador cria em Configurações → Categorias de caixa.
+              </span>
             </span>
-          </span>
-        ) : (
-          errors.categoria_id && (
-            <span className="text-rotulo text-perigo">{errors.categoria_id.message}</span>
-          )
-        )}
-      </div>
+          ) : (
+            errors.categoria_id && (
+              <span className="text-rotulo text-perigo">{errors.categoria_id.message}</span>
+            )
+          )}
+        </div>
 
-      <label className="sakura-rotulo">
-        Descrição
-        <input type="text" {...register("descricao")} className="sakura-campo" />
-      </label>
+        <label className="sakura-rotulo min-w-0">
+          Descrição
+          <input type="text" {...register("descricao")} className="sakura-campo" />
+        </label>
+      </div>
     </form>
   );
 }
