@@ -2,7 +2,10 @@ import { supabase } from "./supabase";
 import type { FechamentoCaixa, NovoFechamentoCaixa } from "@/types/fechamentoCaixa";
 
 /** Os fechamentos mais recentes da loja, do mais novo pro mais velho. */
-export async function listarFechamentosCaixa(lojaId: string, limite = 60): Promise<FechamentoCaixa[]> {
+/** Quantos fechamentos a lista traz (os mais novos). Mais antigos ficam de fora. */
+export const LIMITE_DE_FECHAMENTOS = 60;
+
+export async function listarFechamentosCaixa(lojaId: string, limite = LIMITE_DE_FECHAMENTOS): Promise<FechamentoCaixa[]> {
   const { data, error } = await supabase
     .from("fechamentos_caixa")
     .select("*, operador:operadores(nome)")

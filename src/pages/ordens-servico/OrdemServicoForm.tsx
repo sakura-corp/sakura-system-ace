@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FocusEvent, type ReactNode } from "react";
 import type { OrdemParaKmDoVeiculo } from "@/lib/ordensServico";
 import { useForm } from "react-hook-form";
 import { AvisoRascunho } from "@/components/AvisoRascunho";
@@ -13,11 +13,14 @@ import {
   orcamentoVencido,
   pecasAvulsas,
   podeAprovar,
+  podeReabrir,
   podeRecusar,
   validadePadrao,
   type MotivoRecusa,
 } from "@/schemas/orcamento";
+import { mapaCustoServicos } from "@/schemas/metricasCaixa";
 import {
+  lucroPrevistoDaOrdem,
   ordemServicoFormSchema,
   paraCamposComuns,
   paraItensValidos,
@@ -42,6 +45,8 @@ import type { Servico } from "@/types/servico";
 import { NovoClienteRapidoModal, NovoVeiculoRapidoModal } from "./CadastroRapidoModais";
 import { DetalhesFields } from "./campos/DetalhesFields";
 import { ItensFields } from "./campos/ItensFields";
+import { ApoioDoTotal, TotalGrande } from "./campos/TotalELucro";
+import { useCustosDoLucro } from "./useCustosDoLucro";
 import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
@@ -49,9 +54,13 @@ import { ESCOLHAS_VAZIAS, esquecerEscolha, type EscolhasDaJanela } from "./escol
 import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
-import { motivoParaNaoTrocar, resumoDaTroca, type ItemDaTroca } from "@/schemas/trocaFaturada";
+import { motivoParaNaoTrocar, resumoDaTroca } from "@/schemas/trocaFaturada";
+import type { SituacaoDaCorrecao } from "@/lib/ordensServico";
+import { formatarMoeda } from "@/schemas/dinheiro";
+import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { TrocaDeOsFaturada } from "@/types/os";
-import { TrocarItensFaturadaModal } from "./TrocarItensFaturadaModal";
+import { CancelarNotaModal } from "@/pages/notas-fiscais/CancelarNotaModal";
+import { TrocarItensFaturadaModal, type ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 
 /** As duas janelas do orçamento aberto (#1091): aprovar e recusar. */
 export type JanelaDoOrcamento = "aprovar" | "recusar";
@@ -113,6 +122,11 @@ interface OrdemServicoFormProps {
   ) => Promise<void>;
   onRecusar?: (orcamento: OrdemServico, motivo: MotivoRecusa | null) => Promise<void>;
   /**
+   * "Reabrir orçamento" na faixa do recusado (#1181). A janela é da página,
+   * que é a mesma da ação da linha na aba "Recusados".
+   */
+  onReabrir?: (orcamento: OrdemServico) => void;
+  /**
    * O orçamento abre já com esta janela por cima (#1091): o "Aprovar" da
    * linha da lista e o "Recusar" do "⋯".
    */
@@ -126,23 +140,57 @@ interface OrdemServicoFormProps {
    */
   onItensMudaram?: () => void | Promise<void>;
   /**
-   * Trocar peça ou serviço de OS JÁ FATURADA, com o total igual (#1145). Só
+   * Corrigir peça, serviço e valor de OS JÁ FATURADA (#1145, #1182). Só
    * aparece com `gerente` (admin da loja) e sem nota fiscal; quem decide de
-   * verdade é o banco (migration 0087).
+   * verdade é o banco.
    */
   gerente?: boolean;
-  onTrocarItensFaturada?: (
-    ordem: OrdemServico,
-    itens: ItemDaTroca[],
-    motivo: string,
-    aceitaEstoqueNegativo: boolean,
-  ) => Promise<void>;
-  /** O histórico das trocas depois de faturada, da mais nova pra mais velha. */
+  onTrocarItensFaturada?: (ordem: OrdemServico, correcao: ConfirmacaoDaCorrecao) => Promise<void>;
+  /** A situação da OS pra janela (conta em aberto, caixa de hoje, comissão). */
+  buscarSituacaoDaCorrecao?: (ordem: OrdemServico) => Promise<SituacaoDaCorrecao>;
+  /** A nota emitida da OS, pra a janela levar ao "Cancelar nota". */
+  notaParaCancelar?: NotaFiscalArquivo;
+  /** Depois de cancelar a nota pela faixa: a página recarrega as notas da OS (#1182). */
+  onNotaCancelada?: () => void;
+  /**
+   * O histórico da OS (trocas depois de faturada, reaberturas de orçamento,
+   * correções de valor), da mais nova pra mais velha.
+   */
   trocas?: TrocaDeOsFaturada[];
 }
 
-function formatarMoeda(valor: number): string {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+/** O nome de cada tipo de linha do "Histórico da OS" (#1181). */
+const ROTULO_DO_HISTORICO: Record<TrocaDeOsFaturada["tipo"], string> = {
+  troca: "Troca",
+  reabertura: "Reabertura",
+  correcao_valor: "Correção de valor",
+};
+
+/** Como a diferença da correção de valor foi acertada (#1182). */
+const ACERTO_NO_HISTORICO = {
+  conta_aberta: "a conta a receber mudou de valor",
+  pago_agora: "cliente pagou a diferença",
+  a_receber: "diferença ficou a receber",
+  devolvido: "diferença devolvida ao cliente",
+} as const;
+
+/** O texto de uma linha do histórico, sem a data. Linha antiga, sem tipo, é troca. */
+function textoDoHistorico(linha: TrocaDeOsFaturada): string {
+  const tipo = linha.tipo ?? "troca";
+  const quem = linha.operador_nome ?? "—";
+  if (tipo === "troca" || tipo === "correcao_valor") {
+    const { saem, entram } = resumoDaTroca(linha.itens_antes, linha.itens_depois);
+    const total =
+      tipo === "correcao_valor" && linha.total_antes != null && linha.total_depois != null
+        ? ` · total ${formatarMoeda(linha.total_antes)} → ${formatarMoeda(linha.total_depois)}` +
+          (linha.acerto ? ` · ${ACERTO_NO_HISTORICO[linha.acerto]}` : "")
+        : "";
+    return (
+      `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · saiu ${saem.map((i) => i.descricao).join(", ") || "nada"}, ` +
+      `entrou ${entram.map((i) => i.descricao).join(", ") || "nada"}${total} · motivo: ${linha.motivo}`
+    );
+  }
+  return `${ROTULO_DO_HISTORICO[tipo]} · ${quem} · motivo: ${linha.motivo}`;
 }
 
 function formatarData(iso: string | null | undefined): string {
@@ -191,14 +239,19 @@ export function OrdemServicoForm({
   modoOrcamento = false,
   onAprovar,
   onRecusar,
+  onReabrir,
   janelaInicial = null,
   acoesExtras,
   onItensMudaram,
   gerente = false,
   onTrocarItensFaturada,
+  buscarSituacaoDaCorrecao,
+  notaParaCancelar,
+  onNotaCancelada,
   trocas = [],
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
+  const [cancelandoNota, setCancelandoNota] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
@@ -251,6 +304,19 @@ export function OrdemServicoForm({
 
   const itensExistentes = ordemExistente?.itens ?? [];
 
+  // O lucro previsto do rodapé (#1087): o custo dos itens já gravados vem do
+  // banco, o das peças só pra quem tem o módulo Estoque.
+  const { custoDosExistentes, custoPeca, calculando } = useCustosDoLucro(ordemExistente);
+  const custoServico = useMemo(() => mapaCustoServicos(servicos), [servicos]);
+
+  // O foco ao abrir (#1087, "a busca única em cima, com o foco ao abrir"):
+  // nova ou existente, a OS abre na busca, pronta pro leitor de código.
+  const buscaRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    buscaRef.current?.focus();
+    // Só ao abrir: depois o foco é de quem está digitando.
+  }, []);
+
   // Passagens do veículo escolhido, só quando o pai não passou a lista pronta.
   const veiculoEscolhido = watch("veiculo_id");
   const [ordensDoVeiculo, setOrdensDoVeiculo] = useState<OrdemParaKmDoVeiculo[]>([]);
@@ -290,7 +356,7 @@ export function OrdemServicoForm({
     ? "Orçamento recusado: fica só como histórico, não dá pra mexer nos itens."
     : ehFaturada
       ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então. " +
-        "Dá pra trocar peça ou serviço mantendo o mesmo total (só gerente, sem nota fiscal)."
+        "Dá pra corrigir peça, serviço ou valor (só gerente, sem nota fiscal)."
     : temNotaEmitida
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
         "da OS. Cancele a nota em Notas Fiscais antes de mexer."
@@ -463,6 +529,13 @@ export function OrdemServicoForm({
   }
 
   const totais = totaisDaOrdem(itensExistentes, watch("itens"));
+  const lucro = lucroPrevistoDaOrdem({
+    itensExistentes,
+    custoDosExistentes,
+    itensFormulario: watch("itens"),
+    custoPeca,
+    custoServico,
+  });
   const nomeDoClienteEscolhido =
     clientes.find((c) => c.id === watch("cliente_id"))?.nome ?? "este cliente";
 
@@ -491,46 +564,38 @@ export function OrdemServicoForm({
       } -mx-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-linha bg-janela px-4 py-3`}
     >
       {aba === "detalhes" ? (
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className="text-rotulo text-texto-2">
-            Peças {formatarMoeda(totais.pecas)}
-          </span>
-          <span className="text-rotulo text-texto-2">
-            Serviços {formatarMoeda(totais.servicos)}
-          </span>
-          <span className="text-corpo font-semibold text-texto">
-            Total {ordemExistente ? "geral" : "previsto"} {formatarMoeda(totais.total)}
-          </span>
-        </div>
+        <ApoioDoTotal
+          pecas={totais.pecas}
+          servicos={totais.servicos}
+          lucro={lucro}
+          calculando={calculando}
+        />
       ) : (
         <span />
       )}
 
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancelar}
-          className="rounded-xl px-4 py-2 text-corpo font-medium text-texto/90 hover:bg-passar"
-        >
+      <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2">
+        {aba === "detalhes" && (
+          <TotalGrande rotulo={`Total ${ordemExistente ? "geral" : "previsto"}`} valor={totais.total} />
+        )}
+        <div className="flex gap-3">
           {/* O Fechamento só mostra dados: "Cancelar" ali parecia desfazer
               alguma coisa (#781). */}
-          {aba === "detalhes" ? "Cancelar" : "Voltar"}
-        </button>
-        {aba === "detalhes" && !ehRecusado && (
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-acao px-5 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting
-              ? "Salvando..."
-              : ordemExistente
-                ? "Salvar alterações"
-                : modoOrcamento
-                  ? "Salvar orçamento"
-                  : "Abrir ordem de serviço"}
-          </button>
-        )}
+          <Botao variante="fantasma" tamanho="grande" onClick={onCancelar}>
+            {aba === "detalhes" ? "Cancelar" : "Voltar"}
+          </Botao>
+          {aba === "detalhes" && !ehRecusado && (
+            <Botao variante="principal" tamanho="grande" type="submit" ocupado={isSubmitting}>
+              {isSubmitting
+                ? "Salvando..."
+                : ordemExistente
+                  ? "Salvar alterações"
+                  : modoOrcamento
+                    ? "Salvar orçamento"
+                    : "Abrir ordem de serviço"}
+            </Botao>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -544,10 +609,10 @@ export function OrdemServicoForm({
       className="space-y-6"
     >
       {ordemExistente ? (
-        <div className="flex items-center justify-between border-b border-linha pb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-4 border-b border-linha pb-4">
+          <div className="flex min-w-0 items-center gap-3">
             <BotaoVoltar onClick={onCancelar} />
-            <div>
+            <div className="min-w-0">
               <p className="text-rotulo text-texto-2">
                 {nomeDocumento(ordemExistente)} · aberta em{" "}
                 {formatarData(ordemExistente.data_abertura)} · criado por{" "}
@@ -569,8 +634,10 @@ export function OrdemServicoForm({
               </h2>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-cartao px-3 py-1 text-rotulo font-medium text-texto">
+          {/* `shrink-0` e `whitespace-nowrap`: em 1024 o "Em andamento" quebrava
+              em duas linhas (#1087). */}
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="whitespace-nowrap rounded-full bg-cartao px-3 py-1 text-rotulo font-medium text-texto">
               {STATUS_LABEL[ordemExistente.status]}
             </span>
             {vencido && (
@@ -580,14 +647,10 @@ export function OrdemServicoForm({
             )}
             {modoOrcamento && acoesExtras}
             {ordemExistente.status === "em_andamento" && (
-              <button
-                type="button"
-                onClick={handleEncerrar}
-                disabled={encerrando}
-                className="rounded-xl bg-acao px-4 py-2 text-corpo font-medium text-sobre-acao hover:opacity-90 disabled:opacity-50"
-              >
+              // Secundário: o laranja da tela é o "Salvar" do rodapé (um por tela).
+              <Botao variante="secundario" onClick={handleEncerrar} ocupado={encerrando}>
                 {encerrando ? "Encerrando..." : "Encerrar OS"}
-              </button>
+              </Botao>
             )}
           </div>
         </div>
@@ -607,13 +670,22 @@ export function OrdemServicoForm({
       )}
 
       {ehRecusado && ordemExistente && (
-        <p className="rounded-lg bg-texto/[0.08] px-4 py-2 text-corpo text-texto-2">
-          Orçamento recusado
-          {ordemExistente.motivo_recusa
-            ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
-            : " — sem motivo informado"}
-          .
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-texto/[0.08] px-4 py-2">
+          <p className="min-w-0 text-corpo text-texto-2">
+            Orçamento recusado
+            {ordemExistente.motivo_recusa
+              ? ` — motivo: ${MOTIVO_RECUSA_LABEL[ordemExistente.motivo_recusa]}`
+              : " — sem motivo informado"}
+            .
+          </p>
+          {/* #1181: o cliente voltou? Reabre com o mesmo número (sem laranja:
+              o laranja da tela é o "Novo orçamento"). */}
+          {modoOrcamento && onReabrir && podeReabrir(ordemExistente) && (
+            <Botao tamanho="pequeno" onClick={() => onReabrir(ordemExistente)}>
+              Reabrir orçamento
+            </Botao>
+          )}
+        </div>
       )}
 
       {modoOrcamento && ordemExistente && podeAprovar(ordemExistente) && (
@@ -721,12 +793,17 @@ export function OrdemServicoForm({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-linha p-3">
               <p className="text-rotulo text-texto-2">
                 {podeTrocarFaturada
-                  ? "Peça ou serviço lançado errado? Troque mantendo o mesmo total."
+                  ? "Precisa corrigir? Peça, serviço ou valor"
                   : porQueNaoTroca}
               </p>
               {podeTrocarFaturada && (
                 <Botao tamanho="pequeno" onClick={() => setJanelaTroca(true)}>
-                  Trocar peça ou serviço
+                  Corrigir a OS
+                </Botao>
+              )}
+              {temNotaEmitida && gerente && notaParaCancelar && (
+                <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
+                  Cancelar a nota
                 </Botao>
               )}
             </div>
@@ -734,18 +811,13 @@ export function OrdemServicoForm({
 
           {trocas.length > 0 && (
             <section className="rounded-lg bg-poco p-3">
-              <p className="mb-1 text-rotulo font-medium text-texto/85">Trocas depois de faturada</p>
+              <p className="mb-1 text-rotulo font-medium text-texto/85">Histórico da OS</p>
               <ul className="space-y-1 text-rotulo text-texto/90">
-                {trocas.map((troca) => {
-                  const { saem, entram } = resumoDaTroca(troca.itens_antes, troca.itens_depois);
-                  return (
-                    <li key={troca.id}>
-                      {formatarData(troca.criado_em)} · {troca.operador_nome ?? "—"} · saiu{" "}
-                      {saem.map((i) => i.descricao).join(", ") || "nada"}, entrou{" "}
-                      {entram.map((i) => i.descricao).join(", ") || "nada"} · motivo: {troca.motivo}
-                    </li>
-                  );
-                })}
+                {trocas.map((linha) => (
+                  <li key={linha.id}>
+                    {formatarData(linha.criado_em)} · {textoDoHistorico(linha)}
+                  </li>
+                ))}
               </ul>
             </section>
           )}
@@ -770,6 +842,7 @@ export function OrdemServicoForm({
             saldoPorPeca={saldoPorPeca}
             saldoCarregado={saldoCarregado}
             permitePecaAvulsa={modoOrcamento}
+            buscaRef={buscaRef}
           />
         </div>
       )}
@@ -890,6 +963,13 @@ export function OrdemServicoForm({
         </div>
       </Modal>
     )}
+    {cancelandoNota && notaParaCancelar && (
+      <CancelarNotaModal
+        arquivo={notaParaCancelar}
+        onFechar={() => setCancelandoNota(false)}
+        onCancelado={() => onNotaCancelada?.()}
+      />
+    )}
     {janelaTroca && ordemExistente && onTrocarItensFaturada && (
       <TrocarItensFaturadaModal
         ordem={ordemExistente}
@@ -898,8 +978,14 @@ export function OrdemServicoForm({
         funcionarios={funcionarios}
         saldoPorPeca={saldoPorPeca}
         saldoCarregado={saldoCarregado}
-        onConfirmar={async (itens, motivo, aceita) => {
-          await onTrocarItensFaturada(ordemExistente, itens, motivo, aceita);
+        buscarSituacao={() =>
+          buscarSituacaoDaCorrecao
+            ? buscarSituacaoDaCorrecao(ordemExistente)
+            : Promise.resolve({ contaDoFaturamentoEmAberto: null, caixaDeHojeFechado: false, comissaoDoPeriodoPaga: false, aReceberDeCorrecoes: 0 })
+        }
+        notaParaCancelar={notaParaCancelar}
+        onConfirmar={async (correcao) => {
+          await onTrocarItensFaturada(ordemExistente, correcao);
           setJanelaTroca(false);
         }}
         onFechar={() => setJanelaTroca(false)}

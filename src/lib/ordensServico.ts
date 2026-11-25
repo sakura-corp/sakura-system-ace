@@ -3,10 +3,16 @@ import { buscarPorIdsEmBlocos, buscarTudoEmPaginas } from "./paginacao";
 import { criarMovimentoCaixa } from "./caixa";
 import { criarContaReceber } from "./contasReceber";
 import { buscarDepositoPadraoId } from "./depositos";
-import { mensagemDeErro } from "./errors";
-import { diaLocal } from "./datas";
-import type { ItemDaTroca } from "@/schemas/trocaFaturada";
+import { ehErroDeRede, mensagemDeErro } from "./errors";
+import { diaLocal, hojeLocal } from "./datas";
+import { listarTaxasMaquininha, registrarTaxaDoCartao } from "./taxasMaquininha";
+import type { AcertoDaCorrecao, ItemDaTroca } from "@/schemas/trocaFaturada";
 import { somar } from "@/schemas/dinheiro";
+import {
+  calcularTaxaDaMaquininha,
+  formaECartao,
+  type TaxaMaquininha,
+} from "@/schemas/taxaMaquininha";
 import { idsDeFuncionarios, nomearFuncionarios } from "@/schemas/ordemServico";
 import {
   baixaEstoqueAoLancarItem,
@@ -32,6 +38,21 @@ import type {
 export interface PagamentoOrdem {
   formaPagamento: string;
   valor: number;
+  /**
+   * As parcelas desta linha na maquininha (#387, pra achar a taxa). Sem ele,
+   * o cartão de crédito usa as `parcelas` do faturamento, e o resto, 1.
+   */
+  parcelas?: number;
+}
+
+/** O que o faturamento devolve além de ter dado certo. */
+export interface ResultadoFaturamento {
+  /**
+   * A venda foi faturada, mas a taxa da maquininha de alguma linha de cartão
+   * não foi guardada (#387). A frase já vem pronta pra mostrar; `null` quando
+   * deu tudo certo ou a loja não informou a taxa (em branco não é aviso).
+   */
+  avisoTaxa: string | null;
 }
 
 // Os nomes de vendedor e técnico NÃO vêm mais por join embutido aqui.
@@ -479,6 +500,57 @@ export async function recusarOrcamento(
   if (!data) throw new Error(MENSAGEM_JA_RESPONDIDO);
 }
 
+/** O que voltou da reabertura: a OS, se "Já aprovar agora" deu certo, ou o erro da aprovação. */
+export interface ResultadoDaReabertura {
+  aprovada: OrdemServico | null;
+  erroDaAprovacao: string | null;
+}
+
+/**
+ * Reabre o orçamento recusado (#1181): volta pra orçamento aberto, com o mesmo
+ * número, a validade nova e uma linha no histórico da OS. Uma chamada só
+ * (`reabrir_orcamento`, migration 0091); erro dela sobe e nada muda.
+ *
+ * Com `aprovarAgora` ("Já aprovar agora"), chama em seguida a aprovação de
+ * sempre (`aprovarOrcamento`). Se a aprovação falhar, o orçamento continua
+ * reaberto (nada se perde) e o erro volta em `erroDaAprovacao` pra tela
+ * mostrar. Peça que não ligou ao cadastro já nasce OS: devolve a OS e o aviso.
+ *
+ * `motivo` é o texto do histórico, já com a recusa antiga (`textoDaReabertura`).
+ */
+export async function reabrirOrcamento(
+  orcamento: Pick<OrdemServico, "id">,
+  motivo: string,
+  validade: string,
+  operadorId: string,
+  aprovarAgora?: { aprovadoPor: string },
+): Promise<ResultadoDaReabertura> {
+  const { error } = await supabase.rpc("reabrir_orcamento", {
+    p_ordem: orcamento.id,
+    p_motivo: motivo.trim(),
+    p_validade: validade,
+    p_operador: operadorId,
+  });
+  if (error) throw error;
+  if (!aprovarAgora) return { aprovada: null, erroDaAprovacao: null };
+  try {
+    const aprovada = await aprovarOrcamento(orcamento, aprovarAgora.aprovadoPor, operadorId);
+    return { aprovada, erroDaAprovacao: null };
+  } catch (err) {
+    if (err instanceof AprovadoSemEstoqueError) return { aprovada: err.ordem, erroDaAprovacao: err.message };
+    // Sem resposta do banco, a aprovação pode ter entrado (ver aprovarOrcamento):
+    // não dá pra dizer que não aprovou.
+    if (ehErroDeRede(err)) {
+      return {
+        aprovada: null,
+        erroDaAprovacao:
+          "A conexão caiu durante a aprovação: confira na lista de OS se ela entrou antes de aprovar de novo.",
+      };
+    }
+    return { aprovada: null, erroDaAprovacao: mensagemDeErro(err) };
+  }
+}
+
 export async function atualizarOrdem(
   id: string,
   patch: PatchOrdemServico,
@@ -603,11 +675,176 @@ export class EstoqueNegativoNaTrocaError extends Error {
   }
 }
 
-/** O histórico das trocas depois de faturada (#1145), da mais nova pra mais velha. */
+/**
+ * O que a janela "Corrigir a OS" precisa saber antes de abrir o 2º passo
+ * (#1182). Só pra avisar e escolher as opções: o banco decide tudo de novo,
+ * com a OS travada.
+ */
+export interface SituacaoDaCorrecao {
+  /** A conta a receber do FATURAMENTO desta OS, se ainda não foi recebida. */
+  contaDoFaturamentoEmAberto: { id: string; valor: number } | null;
+  /** O caixa de hoje já foi fechado: a correção não pode lançar nele. */
+  caixaDeHojeFechado: boolean;
+  /** Já foi registrado pagamento de comissão num período que pega o dia da fatura. */
+  comissaoDoPeriodoPaga: boolean;
+  /**
+   * O que ainda falta receber de correções ANTERIORES desta OS ("fica a
+   * receber"): quando o total desce, é abatido antes de devolver dinheiro.
+   */
+  aReceberDeCorrecoes: number;
+}
+
+export async function buscarSituacaoDaCorrecao(
+  ordem: OrdemServico,
+  hoje: string,
+): Promise<SituacaoDaCorrecao> {
+  const diaDaFatura = ordem.data_fechamento ? diaLocal(ordem.data_fechamento) : null;
+  const [conta, correcoes, fechamento, comissao] = await Promise.all([
+    supabase
+      .from("contas_receber")
+      .select("id, valor")
+      .eq("ordem_servico_id", ordem.id)
+      .eq("origem", "faturamento")
+      .eq("status", "pendente")
+      .maybeSingle(),
+    supabase
+      .from("contas_receber")
+      .select("valor")
+      .eq("ordem_servico_id", ordem.id)
+      .eq("origem", "correcao")
+      .eq("status", "pendente"),
+    supabase
+      .from("fechamentos_caixa")
+      .select("id")
+      .eq("loja_id", ordem.loja_id)
+      .eq("data", hoje)
+      .maybeSingle(),
+    diaDaFatura
+      ? supabase
+          .from("comissoes_fechamentos")
+          .select("id")
+          .eq("loja_id", ordem.loja_id)
+          .lte("periodo_inicio", diaDaFatura)
+          .gte("periodo_fim", diaDaFatura)
+          .limit(1)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (conta.error) throw conta.error;
+  if (correcoes.error) throw correcoes.error;
+  if (fechamento.error) throw fechamento.error;
+  if (comissao.error) throw comissao.error;
+  const linhaConta = conta.data as { id: string; valor: number | string } | null;
+  return {
+    contaDoFaturamentoEmAberto: linhaConta ? { id: linhaConta.id, valor: Number(linhaConta.valor) } : null,
+    caixaDeHojeFechado: fechamento.data !== null,
+    comissaoDoPeriodoPaga: (comissao.data ?? []).length > 0,
+    aReceberDeCorrecoes: somar(((correcoes.data ?? []) as { valor: number | string }[]).map((c) => Number(c.valor))),
+  };
+}
+
+export interface CorrecaoDaOrdem {
+  ordem: OrdemServico;
+  /** A lista FINAL de itens da OS. */
+  itens: ItemDaTroca[];
+  motivo: string;
+  /** O total que a janela mostrou como faturado: se o banco tiver outro, a OS mudou. */
+  totalFaturado: number;
+  /** Nulo quando o total não muda. */
+  acerto: AcertoDaCorrecao | null;
+  /** A chave da forma de pagamento (pago agora e devolvido). */
+  formaPagamento: string | null;
+  /** "YYYY-MM-DD" (fica a receber). */
+  vencimento: string | null;
+  /** O dia de hoje no relógio da loja: o Caixa em que a diferença entra. */
+  hoje: string;
+  /** Uma por janela aberta: a mesma chamada 2 vezes não lança 2 vezes. */
+  chave: string;
+  aceitaEstoqueNegativo: boolean;
+  operadorId: string;
+}
+
+// Corrigir uma OS (ou venda) JÁ FATURADA: peça, serviço e valor (#1182). Uma
+// chamada só (`corrigir_os_faturada`, migration 0092), tudo ou nada: o banco
+// trava a OS, confere gerente, nota, o caixa de HOJE, o total faturado e o
+// acerto que vale pro caso; troca os itens, acerta o estoque, lança a
+// diferença (Caixa de hoje ou conta a receber) e grava o histórico. Com o
+// total igual também passa por aqui (acerto nulo): o caixa do dia da fatura
+// fechado não trava mais. A `trocarItensOsFaturada` (0087) fica pra versão
+// antiga do programa.
+export async function corrigirOrdemFaturada(c: CorrecaoDaOrdem): Promise<void> {
+  if (c.ordem.status !== "faturada") {
+    throw new Error("Esta OS ainda não foi faturada: corrija os itens direto na OS.");
+  }
+  const { error } = await supabase.rpc("corrigir_os_faturada", {
+    p_ordem: c.ordem.id,
+    p_itens: c.itens.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      tipo: item.tipo,
+      peca_id: item.peca_id,
+      servico_id: item.servico_id,
+      tecnico_id: item.tecnico_id,
+      descricao: item.descricao.trim(),
+      quantidade: item.quantidade,
+      preco_unitario: item.preco_unitario,
+      desconto: item.desconto,
+      custo_unitario: item.custo_unitario ?? null,
+    })),
+    p_motivo: c.motivo.trim(),
+    p_hoje: c.hoje,
+    // Sem arredondar: o banco compara com a folga de meio centavo (0086).
+    p_total_faturado: c.totalFaturado,
+    p_acerto: c.acerto,
+    p_forma_pagamento: c.formaPagamento,
+    p_vencimento: c.vencimento,
+    p_chave: c.chave,
+    p_aceita_estoque_negativo: c.aceitaEstoqueNegativo,
+    p_operador: c.operadorId,
+  });
+  if (error) {
+    const codigo = (error as { code?: string }).code;
+    if (codigo === "SKNEG") throw new EstoqueNegativoNaTrocaError(error.message);
+    if (codigo === "SKNOT") throw new NotaEmitidaNaCorrecaoError(error.message);
+    if (codigo === "SKCXH") throw new CaixaDeHojeFechadoError(error.message);
+    if (codigo === "SKMUD") throw new CorrecaoMudouError(error.message);
+    throw error;
+  }
+}
+
+/** A OS tem nota fiscal emitida (#1182): a janela leva ao "Cancelar nota". */
+export class NotaEmitidaNaCorrecaoError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "NotaEmitidaNaCorrecaoError";
+  }
+}
+
+/** O caixa de hoje foi fechado (#1182): desfazer o fechamento de hoje antes. */
+export class CaixaDeHojeFechadoError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "CaixaDeHojeFechadoError";
+  }
+}
+
+/**
+ * A OS ou a conta dela mudou em outro computador (#1182): o total faturado ou
+ * o acerto escolhido não valem mais. A janela pede pra atualizar.
+ */
+export class CorrecaoMudouError extends Error {
+  constructor(mensagem: string) {
+    super(mensagem);
+    this.name = "CorrecaoMudouError";
+  }
+}
+
+/**
+ * O histórico da OS (#1145, #1181, #1182): trocas depois de faturada, reaberturas de
+ * orçamento e correções de valor, da mais nova pra mais velha.
+ */
 export async function listarTrocasDaOrdem(ordemId: string): Promise<TrocaDeOsFaturada[]> {
   const { data, error } = await supabase
     .from("ordens_servico_trocas")
-    .select("id, operador_nome, motivo, itens_antes, itens_depois, total, criado_em")
+    .select("id, tipo, operador_nome, motivo, itens_antes, itens_depois, total, total_antes, total_depois, acerto, criado_em")
     .eq("ordem_servico_id", ordemId)
     .order("criado_em", { ascending: false });
   if (error) throw error;
@@ -682,7 +919,7 @@ export async function registrarVendaBalcao(
   pagamento: PagamentoDaVenda,
   operadorId: string,
   lojaId: string,
-): Promise<OrdemServico> {
+): Promise<{ ordem: OrdemServico } & ResultadoFaturamento> {
   if (itens.length === 0) throw new Error("A venda não tem nenhuma peça.");
 
   const { data, error } = await supabase
@@ -718,8 +955,9 @@ export async function registrarVendaBalcao(
     throw erroItens;
   }
 
+  let resultado: ResultadoFaturamento;
   try {
-    await faturarOrdem(
+    resultado = await faturarOrdem(
       ordem,
       pagamento.pagamentos,
       pagamento.parcelas,
@@ -736,7 +974,7 @@ export async function registrarVendaBalcao(
     throw new VendaSemFaturamentoError(ordem, mensagemDeErro(erroPagamento));
   }
 
-  return ordem;
+  return { ordem, avisoTaxa: resultado.avisoTaxa };
 }
 
 // Marca a OS como "concluída" — usado pelo botão "Encerrar OS", que já leva
@@ -755,7 +993,7 @@ export async function faturarOrdem(
   // juros do cartão deixam o cobrado maior). O banco confere com o que está
   // gravado e recusa se a OS mudou em outro computador.
   totalDosItens: number,
-): Promise<void> {
+): Promise<ResultadoFaturamento> {
   // Orçamento não é venda (#379): não entra no caixa nem em contas a
   // receber. Aprovar antes faz dele uma OS.
   if (!contaNosNumeros(ordem)) {
@@ -797,8 +1035,9 @@ export async function faturarOrdem(
   // Caixa só recebe o lançamento quando ela for marcada como recebida de
   // verdade (Contas a Receber).
   if (!previsaoRecebimento) {
+    const lancados: { movimentoId: string; pagamento: PagamentoOrdem }[] = [];
     for (const pagamento of pagamentos) {
-      await criarMovimentoCaixa(
+      const movimentoId = await criarMovimentoCaixa(
         {
           ordem_servico_id: ordem.id,
           tipo: "entrada",
@@ -809,7 +1048,16 @@ export async function faturarOrdem(
         },
         ordem.loja_id,
       );
+      lancados.push({ movimentoId, pagamento });
     }
+    // A taxa da maquininha (#387) só depois de TODOS os lançamentos: ela é
+    // informação e não pode atrasar o Pix que vem depois do cartão (se a rede
+    // caísse no meio, o Caixa ficaria sem ele).
+    const taxas = new TaxasDoFaturamento(ordem.loja_id);
+    for (const { movimentoId, pagamento } of lancados) {
+      await taxas.gravar(movimentoId, pagamento, parcelas);
+    }
+    return { avisoTaxa: taxas.aviso() };
   } else {
     await criarContaReceber(
       {
@@ -821,5 +1069,64 @@ export async function faturarOrdem(
       },
       ordem.loja_id,
     );
+    // "Receber depois" não passa pela maquininha agora: sem taxa (#387).
+    return { avisoTaxa: null };
+  }
+}
+
+/**
+ * A taxa da maquininha de um faturamento (#387): lê a tabela da loja uma vez
+ * só (e só se houver alguma linha de cartão), calcula e grava a taxa de cada
+ * lançamento de cartão.
+ *
+ * A taxa é informação, não a venda: nada aqui lança erro. Se ler a tabela ou
+ * gravar a taxa falhar, registra no console e junta o motivo pro aviso que o
+ * faturamento devolve. Tabela sem a linha (a loja não informou) não é erro e
+ * não avisa: o DRE mostra "não informada".
+ */
+class TaxasDoFaturamento {
+  private tabela: Promise<readonly TaxaMaquininha[] | null> | null = null;
+  private readonly motivos: string[] = [];
+  private readonly dia = hojeLocal();
+
+  constructor(private readonly lojaId: string) {}
+
+  private lerTabela(): Promise<readonly TaxaMaquininha[] | null> {
+    this.tabela ??= listarTaxasMaquininha(this.lojaId).catch((erro: unknown) => {
+      console.error("Não deu pra ler a tabela de taxas da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+      return null;
+    });
+    return this.tabela;
+  }
+
+  async gravar(movimentoId: string, pagamento: PagamentoOrdem, parcelasDoFaturamento: number) {
+    if (!formaECartao(pagamento.formaPagamento)) return;
+    // Só aqui, na primeira linha de cartão, a tabela é lida (e uma vez só).
+    const tabela = await this.lerTabela();
+    if (!tabela) return;
+    const parcelas =
+      pagamento.parcelas ??
+      (pagamento.formaPagamento === "cartao_credito" ? parcelasDoFaturamento : 1);
+    const calculo = calcularTaxaDaMaquininha(
+      pagamento.valor,
+      pagamento.formaPagamento,
+      parcelas,
+      tabela,
+      this.dia,
+    );
+    if (!calculo.informada) return;
+    try {
+      await registrarTaxaDoCartao(movimentoId, calculo);
+    } catch (erro) {
+      console.error("Não deu pra guardar a taxa da maquininha:", erro);
+      this.motivos.push(mensagemDeErro(erro));
+    }
+  }
+
+  aviso(): string | null {
+    const motivos = [...new Set(this.motivos)];
+    if (motivos.length === 0) return null;
+    return `A venda foi faturada, mas a taxa da maquininha não foi guardada: ${motivos.join("; ")}`;
   }
 }

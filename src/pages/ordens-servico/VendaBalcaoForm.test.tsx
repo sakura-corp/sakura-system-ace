@@ -10,12 +10,18 @@
  *   • venda no Consumidor não oferece "a receber depois";
  *   • as peças ficam travadas enquanto o pagamento está aberto.
  */
-import { describe, expect, it, onTestFinished, vi } from "vitest";
+import { beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import type { ReactNode } from "react";
 // O FaturamentoCard lê a loja atual e o Pix dela; aqui a loja não tem Pix.
-vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ lojaAtual: { id: "loja-1" } }),
+// O rodapé mostra o lucro previsto (#1087): o custo das peças só vem pra quem tem o Estoque.
+const { operadorDoTeste, listarPecas } = vi.hoisted(() => ({
+  operadorDoTeste: { admin: false, permissoes: [] as string[] },
+  listarPecas: vi.fn(),
 }));
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({ lojaAtual: { id: "loja-1" }, operador: operadorDoTeste }),
+}));
+vi.mock("@/lib/pecas", () => ({ listarPecas }));
 vi.mock("@/lib/configuracoes", () => ({
   buscarConfiguracaoPix: async () => null,
 }));
@@ -25,6 +31,11 @@ import { VendaBalcaoForm } from "./VendaBalcaoForm";
 import { CLIENTE_CONSUMIDOR_ID } from "@/types/cliente";
 import type { Cliente } from "@/types/cliente";
 import type { PecaJanela } from "@/types/peca";
+
+beforeEach(() => {
+  operadorDoTeste.permissoes = [];
+  listarPecas.mockReset().mockResolvedValue([]);
+});
 
 const pecas = [
   {
@@ -79,7 +90,7 @@ function montar(sobrescrever: Partial<Parameters<typeof VendaBalcaoForm>[0]> = {
       {...sobrescrever}
     />,
   );
-  const busca = screen.getByPlaceholderText(/Código de barras/);
+  const busca = screen.getByPlaceholderText(/passe o leitor/);
   return { ...tela, onRegistrar, busca };
 }
 
@@ -88,6 +99,10 @@ function ComAtalhoDoEnter({ children }: { children: ReactNode }) {
   useEnterParaProximoCampo();
   return <>{children}</>;
 }
+
+/** O total grande da barra do rodapé (#1087): o rótulo em cima, o valor embaixo. */
+// ("Total" também é o cabeçalho da coluna da tabela; a barra vem depois dela.)
+const totalDaBarra = () => screen.getAllByText("Total").at(-1)!.parentElement as HTMLElement;
 
 function linhas() {
   return screen.queryAllByRole("row").slice(1); // tira o cabeçalho
@@ -107,7 +122,7 @@ describe("VendaBalcaoForm", () => {
     await user.type(busca, "7891234567890{Enter}");
     expect(linhas()).toHaveLength(1);
     expect(screen.getByLabelText(/Quantidade de Palheta 20/)).toHaveValue(2);
-    expect(screen.getByText("Total R$ 70,00")).toBeInTheDocument();
+    expect(totalDaBarra()).toHaveTextContent(/R\$\s*70,00/);
   });
 
   it("com o atalho global do Enter ligado, o leitor continua na busca pra próxima peça", async () => {
@@ -145,7 +160,7 @@ describe("VendaBalcaoForm", () => {
         />
       </ComAtalhoDoEnter>,
     );
-    const busca = screen.getByPlaceholderText(/Código de barras/);
+    const busca = screen.getByPlaceholderText(/passe o leitor/);
     await user.type(busca, "BAT60{Enter}7891234567890{Enter}");
     expect(busca).toHaveFocus();
     expect(linhas()).toHaveLength(2);
@@ -158,7 +173,7 @@ describe("VendaBalcaoForm", () => {
     expect(linhas()).toHaveLength(0);
     expect(screen.getByText(/Mais de uma peça parecida/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Palheta 22"/ }));
+    await user.click(screen.getByRole("option", { name: /Palheta 22"/ }));
     expect(screen.getByLabelText(/Quantidade de Palheta 22/)).toHaveValue(1);
   });
 
@@ -244,6 +259,31 @@ describe("VendaBalcaoForm", () => {
     const linha = linhas()[0];
     await user.click(within(linha).getByRole("button", { name: /Tirar Bateria/ }));
     expect(linhas()).toHaveLength(0);
-    expect(screen.getByText("Total R$ 0,00")).toBeInTheDocument();
+    expect(totalDaBarra()).toHaveTextContent(/R\$\s*0,00/);
+  });
+
+  it("o rodapé mostra o lucro previsto com o custo das peças (só com o módulo Estoque)", async () => {
+    operadorDoTeste.permissoes = ["estoque"];
+    listarPecas.mockResolvedValue([{ id: "palheta", preco_custo: 18 }]);
+    const { user, busca } = montar();
+    await user.type(busca, "7891234567890{Enter}7891234567890{Enter}"); // 2 × (35 − 18)
+
+    expect(await screen.findByText(/lucro previsto/)).toHaveTextContent(/▲.*R\$\s*34,00/);
+  });
+
+  it("sem a permissão do Estoque, o lucro 'aparece ao salvar' (o custo não chega)", async () => {
+    const { user, busca } = montar();
+    await user.type(busca, "7891234567890{Enter}");
+
+    expect(screen.getByText(/lucro previsto: aparece ao salvar/)).toBeInTheDocument();
+    expect(listarPecas).not.toHaveBeenCalled();
+  });
+
+  it("a venda só procura peça: sem serviço e sem 'sem cadastro'", async () => {
+    const { user, busca } = montar();
+    await user.type(busca, "zzzz");
+
+    expect(screen.getByText(/Nenhuma peça com “zzzz”/)).toBeInTheDocument();
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
   });
 });

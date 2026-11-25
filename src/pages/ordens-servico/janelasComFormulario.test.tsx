@@ -30,7 +30,12 @@ import type { Funcionario } from "@/types/funcionario";
 import type { OrdemServico } from "@/types/os";
 
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
+}));
+// O rodapé busca o custo dos itens (lucro previsto, #1087); aqui o banco responde "sem custo".
+vi.mock("@/lib/caixa", async (importar) => ({
+  ...(await importar<typeof import("@/lib/caixa")>()),
+  buscarCustoDasOrdens: async () => new Map(),
 }));
 vi.mock("@/lib/configuracoes", () => ({
   buscarConfiguracaoPix: async () => null,
@@ -132,9 +137,9 @@ describe("nenhuma janela com formulário dentro do formulário da tela (#1130)",
     confereJanela();
   });
 
-  it("OS faturada: 'Trocar peça ou serviço'", async () => {
+  it("OS faturada: 'Corrigir a OS'", async () => {
     const { user } = montarOS(ordem("faturada"));
-    await user.click(screen.getByRole("button", { name: "Trocar peça ou serviço" }));
+    await user.click(screen.getByRole("button", { name: "Corrigir a OS" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     // A janela da troca pode não ter <form> próprio; o que importa é não
     // estar dentro do da OS.

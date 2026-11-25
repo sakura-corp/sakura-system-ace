@@ -5,7 +5,7 @@ import type { ConfiguracaoAtendimento } from "@/types/configuracao";
  * O atendimento e a garantia dos serviços da loja, como a tela de Configurações
  * os valida (#1033): WhatsApp (10 a 13 dígitos), horário de funcionamento (até
  * 80 letras) e garantia em dias (1 a 3650). Tudo opcional. O banco tem as mesmas
- * travas (migration 0088); aqui a mensagem chega antes do erro dele.
+ * travas (migration 0094); aqui a mensagem chega antes do erro dele.
  */
 export const atendimentoLojaSchema = z.object({
   whatsapp: z

@@ -39,6 +39,9 @@ function config(campos: Partial<ConfiguracaoFiscalLoja> = {}): ConfiguracaoFisca
     competencia_aliquota_confirmada: null,
     aliquota_passo_a_passo: null,
     percentual_tributos_simples: null,
+    percentual_tributos_pecas: null,
+    percentual_estimativa_icms_st: null,
+    competencia_tributos_confirmada: null,
     atualizado_em: "2026-09-01T00:00:00Z",
     ...campos,
   };

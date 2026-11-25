@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Abas } from "@/components/Abas";
+import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mensagemDeErro } from "@/lib/errors";
@@ -13,15 +13,11 @@ import type { MovimentoCaixa, NovoMovimentoCaixa } from "@/types/caixa";
 import type { FechamentoCaixa } from "@/types/fechamentoCaixa";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { DiarioSection } from "./DiarioSection";
-import { EntradaSaidaSection } from "./EntradaSaidaSection";
 import { Aviso } from "@/components/Aviso";
-import { FechamentoSection } from "./FechamentoSection";
-
-type Aba = "diario" | "entradas" | "saidas" | "fechamento";
 
 export function CaixaPage() {
   const { lojaAtual, operador } = useAuth();
-  const [aba, setAba] = useState<Aba>("diario");
+  const [dia, setDia] = useState(() => hojeLocal());
   const [movimentos, setMovimentos] = useState<MovimentoCaixa[]>([]);
   // Custo de cada OS que aparece nos lançamentos, calculado pelo banco
   // (`custo_das_ordens`): o Caixa não lê o cadastro de peças (#366).
@@ -33,13 +29,15 @@ export function CaixaPage() {
   // Só a carga mais nova mexe na tela (#927).
   const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
 
-  async function carregar() {
+  // `silencioso`: recarrega por baixo, sem trocar a página pelo esqueleto
+  // (depois de lançar, o filtro e o dia escolhidos continuam onde estavam).
+  async function carregar(silencioso = false) {
     const carga = comecar(lojaAtual?.id);
     if (!carga) {
       if (!lojaAtual) setCarregando(false);
       return;
     }
-    setCarregando(true);
+    if (!silencioso) setCarregando(true);
     setErro(null);
     try {
       const [movimentosCarregados, categoriasCarregadas] = await Promise.all([
@@ -84,96 +82,111 @@ export function CaixaPage() {
 
   async function handleSalvar(movimento: NovoMovimentoCaixa) {
     if (!lojaAtual) return;
-    // Lançar depois do fechamento não é proibido (regra 7 do guia: aviso,
-    // nunca tranca) — mas é o que faz a gaveta deixar de bater com o que foi
-    // contado, então pede confirmação e o lançamento aparece marcado.
-    const fechamentoDeHoje = fechamentos.find((f) => f.data === hojeLocal());
-    if (
-      fechamentoDeHoje &&
-      !confirm(
-        `O caixa de hoje já foi fechado às ${new Date(fechamentoDeHoje.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}.\n\n` +
-          "Este lançamento vai aparecer marcado como feito depois do fechamento. Lançar mesmo assim?",
-      )
-    ) {
-      return;
-    }
+    // A pergunta "lançar depois do fechamento?" é feita antes de abrir a
+    // janela do lançamento (DiarioSection), com a janela do programa.
     await criarMovimentoCaixa(movimento, lojaAtual.id);
-    await carregar();
+    await carregar(true);
   }
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-3">
-        <BotaoVoltar />
-        <div className="min-w-0">
-          <h1 className="font-titulo text-titulo font-bold text-texto">Caixa Diário</h1>
-          <p className="text-corpo text-texto-2">
-            Vendas e movimentação do dia, nascendo das ordens de serviço faturadas
-          </p>
+      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <BotaoVoltar />
+          <div className="min-w-0">
+            <h1 className="font-titulo text-titulo font-bold text-texto">Caixa Diário</h1>
+            <p className="text-corpo text-texto-2">O dia do caixa: o saldo, o que entrou e o que saiu</p>
+          </div>
         </div>
+        <label className="sakura-rotulo w-44">
+          Dia
+          <input
+            type="date"
+            value={dia}
+            onChange={(e) => e.target.value && setDia(e.target.value)}
+            className="sakura-campo sakura-campo-filtro"
+          />
+        </label>
       </header>
 
       {erro && (
         <Aviso tipo="perigo" role="alert" className="text-corpo">
-          {erro}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <span className="min-w-0">{erro}</span>
+            <Botao tamanho="pequeno" onClick={() => carregar()}>
+              Tentar de novo
+            </Botao>
+          </div>
         </Aviso>
       )}
 
-      <Abas
-        rotulo="Partes do caixa"
-        ativa={aba}
-        aoEscolher={setAba}
-        prefixoId="caixa-aba"
-        painel="caixa-painel"
-        abas={ABAS}
-      />
-
-      <div role="tabpanel" id="caixa-painel" aria-labelledby={`caixa-aba-${aba}`}>
       {carregando ? (
-        <p className="text-corpo text-texto-2">Carregando...</p>
-      ) : !dadosSaoDaLoja ? null : aba === "diario" ? (
+        <EsqueletoDoCaixa />
+      ) : !dadosSaoDaLoja || !lojaAtual ? null : (
         <DiarioSection
-          movimentos={movimentos}
-          custoDasOrdens={custoDasOrdens}
-          categorias={categorias}
-          fechamentos={fechamentos}
-          onSalvar={handleSalvar}
-        />
-      ) : aba === "fechamento" && lojaAtual ? (
-        <FechamentoSection
+          dia={dia}
           lojaId={lojaAtual.id}
           movimentos={movimentos}
           custoDasOrdens={custoDasOrdens}
+          categorias={categorias}
           fechamentos={fechamentos}
           podeDesfazer={operador?.admin === true}
-          onAtualizado={carregar}
-        />
-      ) : aba === "entradas" ? (
-        <EntradaSaidaSection
-          tipo="entrada"
-          movimentos={movimentos}
-          categorias={categorias}
           onSalvar={handleSalvar}
-          onAtualizado={carregar}
-        />
-      ) : (
-        <EntradaSaidaSection
-          tipo="saida"
-          movimentos={movimentos}
-          categorias={categorias}
-          onSalvar={handleSalvar}
-          onAtualizado={carregar}
+          onAtualizado={() => carregar(true)}
+          aoVoltarPraHoje={() => setDia(hojeLocal())}
         />
       )}
-      </div>
     </div>
   );
 }
 
-// As abas do caixa, com a peça `Abas` (o teclado das setas vem dela).
-const ABAS: { valor: Aba; nome: string }[] = [
-  { valor: "diario", nome: "Diário" },
-  { valor: "entradas", nome: "Entradas" },
-  { valor: "saidas", nome: "Saídas" },
-  { valor: "fechamento", nome: "Fechamento" },
-];
+function Barra({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-md bg-linha-forte motion-reduce:animate-none ${className}`} />;
+}
+
+/**
+ * O lugar da página enquanto os dados chegam: o saldo, os três números, a
+ * lista e a lateral, na altura dos de verdade (a tela não pula quando eles
+ * aparecem).
+ */
+function EsqueletoDoCaixa() {
+  return (
+    <div role="status" aria-busy="true" className="@container">
+      <p className="sr-only">Carregando o caixa...</p>
+      <div aria-hidden="true" className="flex flex-col gap-6 @4xl:flex-row @4xl:items-start">
+        <div className="@container min-w-0 flex-1 space-y-6">
+          <div className="sakura-card h-40 p-6">
+            <Barra className="h-3 w-24" />
+            <Barra className="mt-4 h-9 w-56" />
+            <Barra className="mt-4 h-3 w-32" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 @xl:grid-cols-3">
+            {[0, 1, 2].map((n) => (
+              <div key={n} className="sakura-card h-20 px-4 py-3">
+                <Barra className="h-3 w-24" />
+                <Barra className="mt-3 h-5 w-28" />
+              </div>
+            ))}
+          </div>
+          <div className="sakura-card h-[26rem] p-6">
+            <Barra className="h-5 w-48" />
+            <Barra className="mt-6 h-4 w-full" />
+            <Barra className="mt-4 h-4 w-full" />
+            <Barra className="mt-4 h-4 w-full" />
+          </div>
+        </div>
+        <div className="w-full space-y-6 @4xl:w-80 @4xl:shrink-0">
+          <div className="sakura-card h-40 p-6">
+            <Barra className="h-4 w-40" />
+          </div>
+          <div className="sakura-card h-40 p-6">
+            <Barra className="h-4 w-32" />
+          </div>
+          <div className="sakura-card h-32 p-6">
+            <Barra className="h-4 w-36" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

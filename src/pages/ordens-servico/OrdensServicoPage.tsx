@@ -7,7 +7,7 @@ import {
   Star,
   TriangleAlert,
 } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Abas } from "@/components/Abas";
 import { Botao } from "@/components/Botao";
@@ -45,11 +45,12 @@ import {
   criarOrdem,
   editarItemOrdem,
   faturarOrdem,
+  buscarSituacaoDaCorrecao,
+  corrigirOrdemFaturada,
   OrdemMudouError,
   listarOrdens,
   listarTrocasDaOrdem,
   registrarVendaBalcao,
-  trocarItensOsFaturada,
   VendaSemFaturamentoError,
 } from "@/lib/ordensServico";
 import type {
@@ -81,7 +82,7 @@ import {
   totalPorTipo,
 } from "@/types/os";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
-import type { ItemDaTroca } from "@/schemas/trocaFaturada";
+import type { ConfirmacaoDaCorrecao } from "./TrocarItensFaturadaModal";
 import {
   agruparNotasPorOrdem,
   ordemEstaFinalizada,
@@ -96,6 +97,12 @@ import { FaturamentoCard } from "./FaturamentoCard";
 import { NotaDoClienteModal } from "./NotaDoClienteModal";
 import { notasDoCliente } from "./notaDoCliente";
 import { SeloDaOrdem } from "./SeloDaOrdem";
+import {
+  devolverRolagem,
+  posicaoDaRolagem,
+  rolarParaOTopo,
+  type PosicaoDeRolagem,
+} from "./rolagemDaLista";
 import { OrdemServicoForm } from "./OrdemServicoForm";
 import { VendaBalcaoDetalhe } from "./VendaBalcaoDetalhe";
 import { VendaBalcaoForm } from "./VendaBalcaoForm";
@@ -144,6 +151,27 @@ function DetalheDaLinha({ partes }: { partes: ReactNode[] }) {
       ))}
     </>
   );
+}
+
+// O que o aviso de sucesso diz que foi lançado (#1182).
+function avisoDaCorrecao(c: ConfirmacaoDaCorrecao): string {
+  switch (c.acerto) {
+    case "pago_agora":
+      return "corrigida; a diferença entrou no Caixa de hoje.";
+    case "devolvido":
+      return "corrigida; a devolução saiu do Caixa de hoje.";
+    case "a_receber":
+      return "corrigida; a diferença ficou como conta a receber.";
+    case "conta_aberta":
+      return "corrigida; a conta a receber mudou de valor.";
+    default:
+      return "corrigida, com o mesmo total.";
+  }
+}
+
+// A nota que ainda vale (não cancelada): a janela de corrigir leva a cancelá-la.
+function notaVigenteDaOrdem(notas: NotaFiscalArquivo[]): NotaFiscalArquivo | undefined {
+  return notas.find((n) => temAlgumaNotaValida([n]));
 }
 
 function formatarMoeda(valor: number): string {
@@ -317,6 +345,41 @@ export function OrdensServicoPage() {
   );
   const nadaAberto =
     !mostrarFormulario && !ordemEmEdicao && !mostrarVenda && !vendaAberta && !ordemFaturando;
+  // OS ou venda aberta ocupa a tela inteira, sem a lista (visual novo, #1087).
+  // A lista só deixa de ser desenhada: busca, período e aba continuam no state
+  // da página, e o Voltar devolve a rolagem de onde ela estava.
+  const paginaPropria = mostrarFormulario || !!ordemEmEdicao || mostrarVenda || !!vendaAberta;
+  const raizRef = useRef<HTMLDivElement>(null);
+  const rolagemDaListaRef = useRef<PosicaoDeRolagem | null>(null);
+  const paginaPropriaRef = useRef(paginaPropria);
+  paginaPropriaRef.current = paginaPropria;
+  const estavaEmPaginaPropria = useRef(false);
+
+  useEffect(() => {
+    // Rolagem não borbulha: escuta na captura, no documento, e guarda a
+    // posição de quem rolou (a área do conteúdo no app) enquanto a lista
+    // está na tela.
+    function aoRolar(evento: Event) {
+      if (paginaPropriaRef.current || !raizRef.current) return;
+      const posicao = posicaoDaRolagem(evento.target, raizRef.current);
+      if (posicao) rolagemDaListaRef.current = posicao;
+    }
+    document.addEventListener("scroll", aoRolar, true);
+    return () => document.removeEventListener("scroll", aoRolar, true);
+  }, []);
+
+  useLayoutEffect(() => {
+    const raiz = raizRef.current;
+    if (paginaPropria) {
+      if (raiz) rolarParaOTopo(raiz, rolagemDaListaRef.current);
+    } else if (estavaEmPaginaPropria.current) {
+      devolverRolagem(rolagemDaListaRef.current);
+      // Depois da pintura, caso o layout ainda tenha mexido na altura.
+      requestAnimationFrame(() => devolverRolagem(rolagemDaListaRef.current));
+    }
+    estavaEmPaginaPropria.current = paginaPropria;
+  }, [paginaPropria]);
+
   // A lista nem chegou: o erro fica dentro dela, com o "Tentar de novo". Com
   // a lista na tela, o erro (de faturar, do WhatsApp) fica no aviso de cima.
   const listaComErro = !!erro && ordens.length === 0;
@@ -556,36 +619,51 @@ export function OrdensServicoPage() {
     await recarregarOrdemEmEdicao();
   }
 
-  // Trocar peça ou serviço de OS já faturada, com o total igual (#1145). O
-  // banco confere tudo de novo (gerente, nota, caixa do dia, total, estoque).
-  // Depois: a OS, o histórico e o saldo recarregam (a troca mexeu no estoque).
-  async function handleTrocarItensFaturada(
-    ordem: OrdemServico,
-    itens: ItemDaTroca[],
-    motivo: string,
-    aceitaEstoqueNegativo: boolean,
-  ) {
+  // Corrigir peça, serviço e valor de OS ou venda já faturada (#1145, #1182).
+  // O banco confere tudo de novo (gerente, nota, caixa de hoje, total, estoque).
+  // Depois: a OS, o histórico e o saldo recarregam (a correção mexeu no estoque).
+  function situacaoDaCorrecao(ordem: OrdemServico) {
+    return buscarSituacaoDaCorrecao(ordem, hojeLocal());
+  }
+
+  async function handleTrocarItensFaturada(ordem: OrdemServico, correcao: ConfirmacaoDaCorrecao) {
     if (!operador || !lojaAtual) throw new Error("Entre de novo no programa e tente outra vez.");
-    await trocarItensOsFaturada(ordem, itens, motivo, aceitaEstoqueNegativo, operador.id);
+    await corrigirOrdemFaturada({ ordem, ...correcao, hoje: hojeLocal(), operadorId: operador.id });
     // Daqui pra baixo a troca já está gravada: recarregar é só mostrar. Se
     // falhar, a janela fecha do mesmo jeito (tentar de novo seria trocar de
     // novo uma lista que já mudou).
-    avisar(`${nomeDocumento(ordem)}: troca feita, com o mesmo total.`);
+    avisar(`${nomeDocumento(ordem)}: ${avisoDaCorrecao(correcao)}`);
     setVersaoDasTrocas((v) => v + 1);
     listarSaldos(lojaAtual.id)
       .then(setSaldoPorPeca)
       .catch((err) => console.error("Erro ao recarregar o saldo depois da troca:", err));
     try {
-      await recarregarOrdemEmEdicao();
+      const atualizadas = await carregar();
+      const atualizada = atualizadas?.find((o) => o.id === ordem.id);
+      if (atualizada) {
+        if (ordemEmEdicao?.id === ordem.id) setOrdemEmEdicao(atualizada);
+        if (vendaAberta?.id === ordem.id) setVendaAberta(atualizada);
+      }
     } catch (err) {
-      console.error("A troca foi feita, mas a OS não recarregou:", err);
-      avisar("A troca foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
+      console.error("A correção foi feita, mas a OS não recarregou:", err);
+      avisar("A correção foi feita, mas a OS não recarregou. Feche e abra a OS de novo pra ver.");
     }
   }
 
   // Traz a OS aberta de novo depois de mexer num item: a corrigida acima, ou
   // a peça avulsa que ganhou cadastro na janela da nota (#655), senão a aba
   // Fechamento continuaria mostrando a peça como avulsa.
+  // Depois de cancelar a nota pela faixa "Corrigir a OS" (#1182): só as notas,
+  // pra faixa voltar a mostrar "Corrigir a OS". Falhar não derruba nada.
+  async function recarregarNotas() {
+    try {
+      const notas = await listarArquivosDasOrdens(ordens.map((o) => o.id));
+      setNotasPorOrdem(agruparNotasPorOrdem(notas));
+    } catch (err) {
+      console.error("Erro ao recarregar as notas fiscais das ordens:", err);
+    }
+  }
+
   async function recarregarOrdemEmEdicao() {
     const ordensAtualizadas = await carregar();
     const ordemAtualizada = ordensAtualizadas?.find((o) => o.id === ordemEmEdicao?.id);
@@ -687,11 +765,20 @@ export function OrdensServicoPage() {
   ) {
     if (!operador || !lojaAtual) return;
     try {
-      const criada = await registrarVendaBalcao(venda, itens, pagamento, operador.id, lojaAtual.id);
+      const { ordem: criada, avisoTaxa } = await registrarVendaBalcao(
+        venda,
+        itens,
+        pagamento,
+        operador.id,
+        lojaAtual.id,
+      );
       setMostrarVenda(false);
       setLista("vendas");
       const recarregadas = await carregar();
       avisar(`${nomeDocumento(criada)} registrada`);
+      // A venda saiu; só a taxa da maquininha não foi guardada (#387). Depois
+      // do `carregar`, que limpa o aviso do topo.
+      if (avisoTaxa) setErro(avisoTaxa);
       const completa = recarregadas?.find((o) => o.id === criada.id);
       if (completa) setVendaParaNota(completa);
     } catch (err) {
@@ -734,15 +821,16 @@ export function OrdensServicoPage() {
     previsaoRecebimento: string | null,
   ) {
     if (!ordemFaturando || !operador) return;
+    let avisoTaxa: string | null;
     try {
-      await faturarOrdem(
+      ({ avisoTaxa } = await faturarOrdem(
         ordemFaturando,
         pagamentos,
         parcelas,
         previsaoRecebimento,
         operador.id,
         totalOrdem(ordemFaturando.itens ?? []),
-      );
+      ));
     } catch (err) {
       if (err instanceof OrdemMudouError) {
         // O banco recusou e nada foi lançado (a lib garante). Recarrega a OS
@@ -770,6 +858,8 @@ export function OrdensServicoPage() {
     setVendaAberta(null);
     avisar(`${nomeDocumento(faturada)} faturada`);
     const recarregadas = await carregar();
+    // Faturada; só a taxa da maquininha não foi guardada (#387).
+    if (avisoTaxa) setErro(avisoTaxa);
     // Venda de balcão faturada pela lista (a que ficou sem pagamento) segue
     // pro mesmo lugar que uma venda nova: a NFC-e.
     if (ehVendaBalcao(faturada)) {
@@ -933,7 +1023,9 @@ export function OrdensServicoPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={raizRef} className="space-y-6">
+      {!paginaPropria && (
+      <>
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <BotaoVoltar />
@@ -984,6 +1076,8 @@ export function OrdensServicoPage() {
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.
         </p>
       )}
+      </>
+      )}
 
       {mostrarFormulario && operador && (
         <OrdemServicoForm
@@ -1021,6 +1115,9 @@ export function OrdensServicoPage() {
           onItensMudaram={recarregarOrdemEmEdicao}
           gerente={operador.admin}
           onTrocarItensFaturada={handleTrocarItensFaturada}
+          buscarSituacaoDaCorrecao={situacaoDaCorrecao}
+          notaParaCancelar={notaVigenteDaOrdem(notasPorOrdem.get(ordemEmEdicao.id) ?? [])}
+          onNotaCancelada={recarregarNotas}
           trocas={trocasDaOrdem}
           onSalvarNova={handleSalvarNova}
           onSalvarEdicao={handleSalvarEdicao}
@@ -1060,6 +1157,17 @@ export function OrdensServicoPage() {
           notas={notasPorOrdem.get(vendaAberta.id) ?? []}
           onFaturar={() => setOrdemFaturando(vendaAberta)}
           pedirAvaliacao={pedidoDeAvaliacao(vendaAberta)}
+          correcao={{
+            gerente: operador?.admin ?? false,
+            pecas,
+            servicos,
+            funcionarios,
+            saldoPorPeca: saldosParaForm,
+            saldoCarregado: saldoPorPeca !== null,
+            buscarSituacao: () => situacaoDaCorrecao(vendaAberta),
+            onConfirmar: (c) => handleTrocarItensFaturada(vendaAberta, c),
+            onNotaCancelada: recarregarNotas,
+          }}
           onVoltar={() => {
             if (voltarAoFechar) {
               navigate(-1);
@@ -1117,7 +1225,7 @@ export function OrdensServicoPage() {
         </p>
       )}
 
-      {temOrdens && (
+      {!paginaPropria && temOrdens && (
         <Abas
           rotulo="O que mostrar na lista"
           ativa={lista}
@@ -1132,7 +1240,7 @@ export function OrdensServicoPage() {
       {/* O molde de lista (#1135): busca e período em cima, uma linha por OS
           com o nome em cima e o detalhe embaixo, uma ação na linha. Cabe numa
           janela de 1024 com o menu aberto, sem rolar de lado (#1091). */}
-      {lojaAtual && (
+      {!paginaPropria && lojaAtual && (
         // O botão da linha tem sempre a mesma largura ("Faturar" e "Nota do
         // cliente"), nas listas de OS e de Orçamentos: o selo e o valor batem
         // em coluna, linha a linha e de uma lista pra outra (#1091).
@@ -1211,7 +1319,7 @@ export function OrdensServicoPage() {
           />
         </div>
       )}
-      {temOrdens && !carregando && (
+      {!paginaPropria && temOrdens && !carregando && (
         <p className="text-rotulo text-texto-2">
           {busca.trim()
             ? "Buscando em todo o histórico, sem limite de data."

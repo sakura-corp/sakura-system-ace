@@ -166,8 +166,9 @@ Focus NFe. Fase atual: preparar a venda pra outras empresas (fase 2). Detalhe em
 
 ## 4. Onde parou (no máximo 8 linhas; os anteriores estão em `docs/historico.md`)
 
-### 21/11/2026: notebook novo pronto, e o programa de teste com pasta própria
-- **Na `main`**: o `npm run dev` usa uma pasta de dados só dele, separada da do programa instalado (#1158, fecha #1157); a seção 11 do `docs/operacao.md` não aponta mais pro banco de uma loja (#1156). Lição 103. A v0.9.60 tem o PR da versão (#1153) mesclado e o Release verde (canal de teste); o "Liberar versão" pras lojas só acontece depois do teste real de segunda, 23/11.
-- **Notebook novo**: Git, Node 22, GitHub CLI e Visual C++ instalados; os dois repositórios em `C:\Users\<seu usuário>\Empresa\`. O programa instalado do notebook já foi ligado ao banco certo (21/11).
-- **Próximo**: a trava do `npm run dev` (#1160, marca no banco de teste, sem leva ainda); publicar o visual novo quando ela pedir.
-- **Com a Sofia**: decidir a regra de 1 aprovação na `main` (#1161; os PRs dela entram pela exceção de administradora); as 26 sugestões do visual novo (#1079).
+### 25/11/2026: os 3 socorros da OS na loja (v0.9.61 liberada)
+- **Liberada pras lojas a v0.9.61** (25/11): busca pela medida do pneu (#1183), reabrir orçamento recusado (#1188, 0091), corrigir valor de OS ou venda faturada com a diferença no Caixa de hoje (#1192, 0092), serviço que não some na busca (#1189). Bancos das lojas e o `ssace-teste` na 0092.
+- **Regra da correção** (`docs/decisoes.md`): desce mais do que falta receber → abate e devolve o excesso numa correção só; a diferença entra no Caixa Diário com lucro e custo zero.
+- **Andando**: #1190 (fechar a OS passo a passo) traz a `main` e acerta a junção com a #1182, depois teste no programa; #1171 e #1174 renumeram pra 0093 e 0094 (#1185).
+- **Próximo**: #1195 (detalhes da correção: taxa no cartão, Receber com trava, textos); #1191 (3 detalhes de tela, leva 8); #1184 (comissão da diferença); #1186 (busca do topo pela medida).
+- **Com a Sofia**: conferir na loja, com o dono, uma correção numa OS sem nota e o Caixa do dia; aplicar a 0093 e a 0094 quando os PRs ficarem prontos. Seguem abertas a #1161 e a #1079.

@@ -1,5 +1,5 @@
 /**
- * O atendimento e a garantia dos serviços da loja (#1033, migration 0088):
+ * O atendimento e a garantia dos serviços da loja (#1033, migration 0094):
  * tudo vazio apaga a linha; senão grava (upsert por loja) e carimba a hora.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";

@@ -36,6 +36,9 @@ const nota = {
   numero: "123",
   fornecedor_nome: "Distribuidora de exemplo",
   fornecedor_cnpj: null,
+  chave_acesso: null,
+  valor_total: null,
+  duplicatas: [],
   itens: [
     {
       descricao: "Pneu 175/70 R13",

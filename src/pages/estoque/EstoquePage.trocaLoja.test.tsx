@@ -80,7 +80,7 @@ describe("EstoquePage — troca de loja (#927)", () => {
     const { user, rerender } = renderizar(<EstoquePage />);
     auth.lojaAtual = lojaB;
     rerender(<EstoquePage />);
-    await user.click(await screen.findByRole("tab", { name: "Movimentações" }));
+    await user.click(await screen.findByRole("button", { name: "Movimentações" }));
     expect(await screen.findByText("Movimento da loja B")).toBeInTheDocument();
 
     await act(async () => {
@@ -98,7 +98,7 @@ describe("EstoquePage — troca de loja (#927)", () => {
       loja === "loja-a" ? Promise.resolve([mov("a", "Movimento da loja A")]) : b.promessa,
     );
     const { user, rerender } = renderizar(<EstoquePage />);
-    await user.click(await screen.findByRole("tab", { name: "Movimentações" }));
+    await user.click(await screen.findByRole("button", { name: "Movimentações" }));
     expect(await screen.findByText("Movimento da loja A")).toBeInTheDocument();
 
     auth.lojaAtual = lojaB;

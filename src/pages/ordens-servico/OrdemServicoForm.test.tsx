@@ -31,8 +31,22 @@ import type { Servico } from "@/types/servico";
 // A aba Fechamento busca notas e caixa no banco; aqui só interessa o rodapé
 // do formulário em volta dela (#781), então ela entra vazia.
 vi.mock("./FechamentoTab", () => ({ FechamentoTab: () => <div>aba fechamento</div> }));
+// O rodapé mostra o lucro previsto (#1087): o operador, o custo gravado e o custo das peças.
+const { operadorDoTeste, buscarCustoDasOrdens, listarPecas } = vi.hoisted(() => ({
+  operadorDoTeste: { admin: false, permissoes: [] as string[] },
+  buscarCustoDasOrdens: vi.fn(),
+  listarPecas: vi.fn(),
+}));
+vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ operador: operadorDoTeste }) }));
+vi.mock("@/lib/caixa", () => ({ buscarCustoDasOrdens }));
+vi.mock("@/lib/pecas", () => ({ listarPecas }));
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  operadorDoTeste.permissoes = [];
+  buscarCustoDasOrdens.mockReset().mockResolvedValue(new Map());
+  listarPecas.mockReset().mockResolvedValue([]);
+});
 
 const pecas = [
   { id: "peca-1", descricao: "PNEU 175/70 R14", preco_venda: 400, sem_custo: false },
@@ -132,8 +146,12 @@ function montar(extra: Partial<Parameters<typeof OrdemServicoForm>[0]> = {}) {
   return { ...resultado, onSalvarNova, onSalvarEdicao };
 }
 
-const adicionarItem = (user: ReturnType<typeof montar>["user"]) =>
-  user.click(screen.getByRole("button", { name: /adicionar item/ }));
+/** O campo da busca única de peça e serviço (#1087). */
+const buscaDeItens = () => screen.getByRole("combobox", { name: "Buscar peça ou serviço" });
+
+/** Lança um item pela busca: digita e aperta Enter (o que o leitor faz). */
+const lancar = (user: ReturnType<typeof montar>["user"], termo: string) =>
+  user.type(buscaDeItens(), `${termo}{Enter}`);
 
 /**
  * Escolhe uma opção num Combobox. Não é um `<select>`: abre ao receber foco e
@@ -157,37 +175,28 @@ async function escolherNoCombobox(
   await user.click(screen.getByRole("button", { name: rotulo }));
 }
 
-/**
- * O `<select>` de tipo (Peça/Serviço) da PRIMEIRA linha de item. É o único
- * `<select>` nativo do formulário, então dá pra achá-lo pelas opções que ele
- * tem — os outros "combobox" da tela são o componente `Combobox`, que é um
- * `<input>`.
- */
-const tipoDoItem = () =>
-  screen
-    .getAllByRole("combobox")
-    .filter((elemento) => elemento.tagName === "SELECT")[0] as HTMLSelectElement;
-
-/** Uma OS nova já nasce com UMA linha de item em branco; uma OS existente, com nenhuma. */
+/** Uma OS nova nasce sem item nenhum: eles entram pela busca. */
 const salvar = (user: ReturnType<typeof montar>["user"]) =>
   user.click(screen.getByRole("button", { name: /Abrir ordem de serviço|Salvar alterações/ }));
 
 describe("OrdemServicoForm — a trava de item depois de faturada", () => {
-  it("OS faturada não mostra o + adicionar item, e diz por quê", () => {
+  it("OS faturada não mostra a busca de item, e diz por quê", () => {
     montar({ ordemExistente: ordemFaturada() });
 
+    expect(screen.queryByRole("combobox", { name: "Buscar peça ou serviço" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /adicionar item/ })).not.toBeInTheDocument();
     expect(screen.getByText(/já foi faturada/)).toBeInTheDocument();
-    expect(screen.getByText(/mantendo o mesmo total/)).toBeInTheDocument();
+    expect(screen.getByText(/corrigir peça, serviço ou valor/)).toBeInTheDocument();
   });
 
   // #1145: a troca de peça ou serviço com o total igual. O banco confere tudo
   // de novo; aqui é só quem vê o botão.
-  it("o gerente vê o Trocar peça ou serviço numa OS faturada sem nota", async () => {
+  it("o gerente vê o Corrigir a OS numa OS faturada sem nota", async () => {
     const onTrocarItensFaturada = vi.fn().mockResolvedValue(undefined);
     const { user } = montar({ ordemExistente: ordemFaturada(), gerente: true, onTrocarItensFaturada });
 
-    await user.click(screen.getByRole("button", { name: "Trocar peça ou serviço" }));
+    expect(screen.getByText("Precisa corrigir? Peça, serviço ou valor")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Corrigir a OS" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     // Continua sem o + adicionar item do caminho comum.
     expect(screen.getAllByRole("button", { name: /adicionar item/ })).toHaveLength(1);
@@ -196,7 +205,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
   it("quem não é gerente não vê o botão, e lê por quê", () => {
     montar({ ordemExistente: ordemFaturada(), gerente: false, onTrocarItensFaturada: vi.fn() });
 
-    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Corrigir a OS" })).not.toBeInTheDocument();
     expect(screen.getByText(/Só quem é gerente/)).toBeInTheDocument();
   });
 
@@ -208,7 +217,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       onTrocarItensFaturada: vi.fn(),
     });
 
-    expect(screen.queryByRole("button", { name: "Trocar peça ou serviço" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Corrigir a OS" })).not.toBeInTheDocument();
     expect(screen.getByText(/a nota ficaria diferente da OS/)).toBeInTheDocument();
   });
 
@@ -220,6 +229,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       trocas: [
         {
           id: "t1",
+          tipo: "troca",
           operador_nome: "Sofia",
           motivo: "medida errada",
           total: 800,
@@ -236,9 +246,41 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
       ],
     });
 
+    expect(screen.getByText("Histórico da OS")).toBeInTheDocument();
     expect(
-      screen.getByText(/Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
+      screen.getByText(/Troca · Sofia · saiu PNEU 175\/70 R13, entrou PNEU 175\/70 R14 · motivo: medida errada/),
     ).toBeInTheDocument();
+  });
+
+  it("o histórico mostra a correção de valor: total antes → depois e o acerto", () => {
+    montar({
+      ordemExistente: ordemFaturada(),
+      gerente: true,
+      onTrocarItensFaturada: vi.fn(),
+      trocas: [
+        {
+          id: "t2",
+          tipo: "correcao_valor",
+          operador_nome: "Sofia",
+          motivo: "serviço a mais",
+          total: 900,
+          total_antes: 800,
+          total_depois: 900,
+          acerto: "pago_agora",
+          criado_em: "2026-11-24T15:00:00.000Z",
+          itens_antes: [],
+          itens_depois: [
+            { id: "item-2", tipo: "servico", peca_id: null, servico_id: null, tecnico_id: null,
+              descricao: "Alinhamento", quantidade: 1, preco_unitario: 100, desconto: 0 },
+          ],
+        },
+      ],
+    });
+
+    const linha = screen.getByText(/Sofia · saiu nada, entrou Alinhamento/);
+    expect(linha).toHaveTextContent(/total R\$\s800,00 → R\$\s900,00/);
+    expect(linha).toHaveTextContent(/cliente pagou a diferença/);
+    expect(linha).toHaveTextContent(/motivo: serviço a mais/);
   });
 
   it("OS só concluída AINDA deixa acrescentar item", () => {
@@ -247,7 +289,7 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
     const concluida = { ...ordemFaturada(), status: "concluida" } as OrdemServico;
     montar({ ordemExistente: concluida });
 
-    expect(screen.getByRole("button", { name: /adicionar item/ })).toBeInTheDocument();
+    expect(buscaDeItens()).toBeInTheDocument();
   });
 
   it("OS com nota fiscal emitida deixa acrescentar, mas não corrigir o que já foi lançado", () => {
@@ -262,23 +304,27 @@ describe("OrdemServicoForm — a trava de item depois de faturada", () => {
 });
 
 describe("OrdemServicoForm — lançar item", () => {
-  it("escolher a peça preenche descrição e preço sozinho", async () => {
+  it("lançar a peça pela busca preenche descrição e preço sozinho", async () => {
     const { user } = montar();
 
-    await escolherNoCombobox(user, "Selecione a peça", "PNEU 175/70 R14");
+    await lancar(user, "PNEU");
 
-    expect(screen.getByLabelText(/Preço unitário/)).toHaveValue(400);
+    expect(screen.getByText("PNEU 175/70 R14")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Preço de PNEU/)).toHaveValue(400);
   });
 
-  it("trocar o tipo pra Serviço troca a lista de escolha, e o preço vem do catálogo", async () => {
+  it("trocar o tipo pra Serviço (no item aberto) troca a lista de escolha, e o preço vem do catálogo", async () => {
     // O `<select>` de tipo é controlado na mão — é o caso do valor-sentinela
-    // "serviço avulso" descrito na seção 4 do PROJETO_STATUS.
+    // "serviço avulso" descrito na seção 4 do PROJETO_STATUS. Agora mora no
+    // "Abrir o item" da linha (#1087).
     const { user } = montar();
+    await lancar(user, "PNEU");
+    await user.click(screen.getByRole("button", { name: /Abrir o item/ }));
 
-    await user.selectOptions(tipoDoItem(), "servico");
+    await user.selectOptions(screen.getByLabelText("Tipo"), "servico");
     await escolherNoCombobox(user, /Serviço avulso/, "Alinhamento");
 
-    expect(screen.getByLabelText(/Preço unitário/)).toHaveValue(60);
+    expect(screen.getByLabelText(/Preço de Alinhamento/)).toHaveValue(60);
   });
 
   it("o total do rodapé soma o que já estava lançado com o que está sendo digitado", async () => {
@@ -287,14 +333,14 @@ describe("OrdemServicoForm — lançar item", () => {
     // dar R$ 860 — e separado por peças e serviços.
     const concluida = { ...ordemFaturada(), status: "concluida" } as OrdemServico;
     const { user } = montar({ ordemExistente: concluida });
-    await adicionarItem(user);
 
-    await user.selectOptions(tipoDoItem(), "servico");
-    await escolherNoCombobox(user, /Serviço avulso/, "Alinhamento");
+    await lancar(user, "Alinhamento");
 
     expect(screen.getByText(/Peças\s*R\$\s*800,00/)).toBeInTheDocument();
     expect(screen.getByText(/Serviços\s*R\$\s*60,00/)).toBeInTheDocument();
-    expect(screen.getByText(/Total geral\s*R\$\s*860,00/)).toBeInTheDocument();
+    // O total é o número grande, com o rótulo em cima (#1087).
+    const total = screen.getByText("Total geral").parentElement as HTMLElement;
+    expect(total).toHaveTextContent(/R\$\s*860,00/);
   });
 });
 
@@ -302,9 +348,9 @@ describe("OrdemServicoForm — os avisos avisam, e não trancam", () => {
   it("quantidade acima do saldo avisa, e o salvar continua funcionando", async () => {
     const { user, onSalvarNova } = montar();
     await escolherNoCombobox(user, "Selecione o cliente", "Maria da Silva");
-    await escolherNoCombobox(user, "Selecione a peça", "PNEU 175/70 R14");
+    await lancar(user, "PNEU");
 
-    const quantidade = screen.getByLabelText(/Quantidade/);
+    const quantidade = screen.getByLabelText(/Quantidade de PNEU/);
     await user.clear(quantidade);
     await user.type(quantidade, "4"); // saldo é 2
 
@@ -324,7 +370,7 @@ describe("OrdemServicoForm — os avisos avisam, e não trancam", () => {
     // `sem_custo` da janela (sim/não), sem a tela ler o custo.
     const { user } = montar();
 
-    await escolherNoCombobox(user, "Selecione a peça", "PASTILHA DE FREIO");
+    await lancar(user, "PASTILHA");
 
     expect(screen.getByText(/sem preço de custo cadastrado/)).toBeInTheDocument();
     expect(screen.getByText(/comissão/)).toBeInTheDocument();
@@ -338,9 +384,9 @@ describe("OrdemServicoForm — item impossível (as travas da migration 0060)", 
     // Por isso a conferência é ANTES de gravar, e com a frase do problema.
     const { user, onSalvarNova } = montar();
     await escolherNoCombobox(user, "Selecione o cliente", "Maria da Silva");
-    await escolherNoCombobox(user, "Selecione a peça", "PNEU 175/70 R14"); // 400,00
+    await lancar(user, "PNEU"); // 400,00
 
-    await user.type(screen.getByLabelText(/Desconto/), "500");
+    await user.type(screen.getByLabelText(/Desconto de PNEU/), "500");
     await salvar(user);
 
     expect(onSalvarNova).not.toHaveBeenCalled();
@@ -451,39 +497,33 @@ describe("OrdemServicoForm — nada fica atrás da barra fixa (#781)", () => {
 
   // Botão recebe o foco já no "apertar" do mouse: se a tela rolasse ali, o
   // "soltar" cairia em outro lugar e o clique se perdia (o "Remover" de um
-  // item meio coberto não removia). Só campo de digitar rola.
+  // item meio coberto não removia). Só campo de digitar rola. Desde a #1087 o
+  // botão da linha é o "Abrir o item".
   it("botão meio coberto pela barra não rola ao receber o foco", async () => {
     const { user } = montar();
+    await lancar(user, "PNEU");
     posicionar(barra(), 680, 740);
-    const remover = screen.getByRole("button", { name: "Remover" });
-    posicionar(remover, 670, 700);
+    const abrir = screen.getByRole("button", { name: /Abrir o item/ });
+    posicionar(abrir, 670, 700);
     const rolar = espiarRolagem();
-    await user.click(remover);
+    await user.click(abrir);
     expect(rolar).not.toHaveBeenCalled();
   });
 
-  it("o item recém-adicionado recebe o cursor e, se nasceu atrás da barra, sobe", async () => {
+  // Desde a #1087 o item novo não recebe o cursor (ele volta pra busca, pra o
+  // próximo item), então quem precisa subir quando nasce atrás da barra é a
+  // própria busca.
+  it("a busca de itens, se está atrás da barra, sobe ao receber o cursor", async () => {
     const { user } = montar();
-    const botao = screen.getByRole("button", { name: /adicionar item/ });
-    // A barra de 680 a 740, o botão à vista (600 a 630), e o resto (o item
-    // que vai nascer) atrás da barra, de 700 a 730.
+    const busca = buscaDeItens();
+    posicionar(barra(), 680, 740);
+    posicionar(busca, 700, 730);
     const rolar = espiarRolagem();
-    const caixa = (top: number, bottom: number) =>
-      ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top,
-         toJSON: () => ({}) }) as DOMRect;
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
-      this: HTMLElement,
-    ) {
-      if (this.hasAttribute("data-rodape-da-os")) return caixa(680, 740);
-      if (this === botao) return caixa(600, 630);
-      return caixa(700, 730);
-    });
-    const antes = document.activeElement;
-    await user.click(botao);
-    const focado = document.activeElement as HTMLElement;
-    expect(focado).not.toBe(antes);
-    expect(focado).not.toBe(botao);
-    // O campo novo nasceu de 700 a 730, contra a barra em 680: sobe 62.
+    // A busca já abre com o foco (#1087): tira e devolve, como quem volta a ela.
+    busca.blur();
+    await user.click(busca);
+    // A busca de 700 a 730 contra a barra em 680: sobe 62.
     expect(rolar).toHaveBeenCalledWith({ top: 62 });
+    expect(busca).toHaveFocus();
   });
 });

@@ -29,6 +29,19 @@ export async function criarContaPagar(
   if (error) throw error;
 }
 
+// Várias contas de uma vez, num único insert (#1020, as parcelas da nota de
+// compra): ou entram todas, ou nenhuma — nunca metade das parcelas.
+export async function criarContasPagar(
+  contas: NovaContaPagar[],
+  lojaId: string,
+): Promise<void> {
+  if (contas.length === 0) return;
+  const { error } = await supabase
+    .from("contas_pagar")
+    .insert(contas.map((conta) => ({ ...conta, loja_id: lojaId })));
+  if (error) throw error;
+}
+
 export async function excluirContaPagar(id: string): Promise<void> {
   const { error } = await supabase.from("contas_pagar").delete().eq("id", id);
   if (error) throw error;

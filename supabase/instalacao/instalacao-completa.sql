@@ -6,7 +6,7 @@
 -- ARQUIVO GERADO AUTOMATICAMENTE — não editar à mão.
 -- Para regerar: npm run gerar-instalacao
 --
--- Contém as 88 migrations de supabase/migrations/, na ordem.
+-- Contém as 93 migrations de supabase/migrations/, na ordem.
 --
 -- Como usar: painel do Supabase → SQL Editor → New query → colar TUDO
 -- deste arquivo → Run. Leva alguns segundos.
@@ -9583,11 +9583,1468 @@ insert into schema_versao (versao) values (87) on conflict do nothing;
 
 
 -- -------------------------------------------------------------------
--- 0088_atendimento_da_loja.sql
+-- 0088_grupo_das_categorias_de_caixa.sql
 -- -------------------------------------------------------------------
 
 -- Sakura System — AutoCenter Edition
--- Migration 0088: o atendimento da loja, por loja (#1033).
+-- Migration 0088: o grupo de cada categoria de caixa (tarefa #386).
+--
+-- Por quê. O DRE (o relatório de "quanto a loja ganhou de verdade no mês")
+-- precisa saber, de cada saída e de cada entrada do caixa, em que linha ela
+-- cai: custo, despesa com pessoal, despesa administrativa... A categoria
+-- ("Aluguel", "Sucata", "Mercado") é escolhida pela loja e tem nome livre,
+-- então o banco não tem como adivinhar. Esta migration dá a cada categoria
+-- um GRUPO, que a loja escolhe uma vez, em Configurações → Categorias de
+-- caixa, e o DRE soma por ele.
+--
+-- DECISÕES (Sofia, tarefa #386):
+--   • LISTA FIXA de grupos, guardada como texto (a mesma lista mora em
+--     src/schemas/gruposDre.ts, que traduz cada chave pro nome da tela):
+--       - só de saída: deducoes_venda, custos, despesas_pessoal,
+--         despesas_administrativas, despesas_comerciais,
+--         despesas_financeiras, outras_despesas;
+--       - só de entrada: outras_receitas, receitas_financeiras;
+--       - dos dois tipos: fora_do_resultado (dinheiro que passa pelo caixa
+--         mas não é ganho nem gasto, como retirada de sócio) e a_classificar
+--         (a loja ainda não escolheu).
+--     Duas travas no banco: o grupo tem que ser um da lista
+--     (ck_categorias_caixa_grupo) e tem que combinar com o tipo da categoria
+--     (ck_categorias_caixa_grupo_do_tipo) — categoria de entrada nunca cai em
+--     despesa, e categoria de saída nunca cai em receita.
+--   • NADA DE LOJA EM USO É CLASSIFICADO SOZINHO. Toda categoria que já
+--     existe fica em "a_classificar", e a loja escolhe. Nenhum lançamento
+--     (caixa_movimentos, contas_pagar) é tocado, e nenhuma categoria muda de
+--     nome nem de tipo.
+--   • SÓ EMPRESA NOVA ganha as categorias semeadas já no grupo certo: as da
+--     0050 ("Outros" de entrada e de saída) e as da 0058 ("Quebra de caixa"
+--     e "Sobra de caixa"). O sinal de "empresa nova" é o mesmo da 0072
+--     (banco sem nenhuma ordem de serviço) e mais um: sem nenhum lançamento
+--     de caixa. Mesmo assim, só muda quem ainda está em "a_classificar" —
+--     escolha da loja nunca é desfeita.
+--   • Sem mudança de policy: a coluna nova segue a policy que a tabela já
+--     tem.
+--
+-- Idempotente: a coluna entra com `if not exists`, cada trava é apagada pelo
+-- nome final antes de ser criada, e o acerto da empresa nova só olha quem
+-- está em "a_classificar". Rodar de novo não duplica trava nem desfaz grupo
+-- escolhido.
+
+alter table categorias_caixa
+  add column if not exists grupo text not null default 'a_classificar';
+
+alter table categorias_caixa drop constraint if exists ck_categorias_caixa_grupo;
+alter table categorias_caixa add constraint ck_categorias_caixa_grupo
+  check (grupo in (
+    'deducoes_venda', 'custos', 'despesas_pessoal', 'despesas_administrativas',
+    'despesas_comerciais', 'despesas_financeiras', 'outras_despesas',
+    'outras_receitas', 'receitas_financeiras',
+    'fora_do_resultado', 'a_classificar'
+  ));
+
+alter table categorias_caixa drop constraint if exists ck_categorias_caixa_grupo_do_tipo;
+alter table categorias_caixa add constraint ck_categorias_caixa_grupo_do_tipo
+  check (
+    grupo in ('fora_do_resultado', 'a_classificar')
+    or (tipo = 'saida' and grupo in (
+      'deducoes_venda', 'custos', 'despesas_pessoal', 'despesas_administrativas',
+      'despesas_comerciais', 'despesas_financeiras', 'outras_despesas'
+    ))
+    or (tipo = 'entrada' and grupo in ('outras_receitas', 'receitas_financeiras'))
+  );
+
+-- Empresa nova: as quatro categorias semeadas já nascem no grupo certo.
+update categorias_caixa c
+   set grupo = v.grupo
+  from (values
+    ('Outros', 'saida', 'outras_despesas'),
+    ('Outros', 'entrada', 'outras_receitas'),
+    ('Quebra de caixa', 'saida', 'outras_despesas'),
+    ('Sobra de caixa', 'entrada', 'outras_receitas')
+  ) as v(nome, tipo, grupo)
+ where c.nome = v.nome
+   and c.tipo = v.tipo
+   and c.grupo = 'a_classificar'
+   and not exists (select 1 from ordens_servico)
+   and not exists (select 1 from caixa_movimentos);
+
+insert into schema_versao (versao) values (88) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0089_taxas_da_maquininha.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0089: a taxa da maquininha de cartão (tarefa #387).
+--
+-- O PROBLEMA. Quando o cliente paga no cartão, a loja não recebe o valor
+-- cheio: a maquininha fica com uma taxa (um pouco no débito, mais no
+-- crédito, mais ainda no parcelado) e o dinheiro cai na conta dias depois
+-- (no débito, no dia seguinte; no crédito, 30 dias depois de cada parcela).
+-- Hoje o Caixa lança o valor cheio no dia da venda. O lucro aparece maior do
+-- que é, e ninguém sabe quanto vai cair na conta em cada dia.
+--
+-- O QUE ESTA MIGRATION CRIA (três tabelas e uma função):
+--
+--   1. configuracoes_taxas_maquininha — a tabela de taxas DA LOJA, que o
+--      admin preenche em Configurações: pra cada forma (débito ou crédito)
+--      e número de parcelas, a taxa em %, em quantos dias cai e se a
+--      maquininha paga tudo de uma vez (antecipação) ou parcela por parcela.
+--      Loja que não preencheu não tem linha, e o faturamento segue como
+--      antes, sem taxa.
+--
+--   2. caixa_taxas_cartao — uma linha por lançamento de cartão faturado: a
+--      taxa e o prazo COMO ESTAVAM no dia da venda, o valor cheio, a taxa em
+--      reais e o que sobra pra loja. É uma "fotografia": se a loja mudar a
+--      tabela amanhã, a venda de hoje continua com a taxa de hoje. Nunca
+--      muda depois de gravada; some junto com o lançamento do Caixa (on
+--      delete cascade), que é o jeito de desfazer.
+--
+--   3. caixa_cartao_a_receber — o que vai cair na conta, uma linha por data
+--      (no crédito em 3x sem antecipação, três linhas). É o que a lista
+--      "Cartão a receber" mostra. Também nunca muda e some junto com a
+--      fotografia (e, portanto, com o lançamento).
+--
+--   4. registrar_taxa_do_cartao(...) — grava a fotografia e as datas numa
+--      transação só: ou entram as duas, ou nenhuma. A conta (quanto é a taxa,
+--      em que dia cai cada parcela) é feita pelo programa
+--      (src/schemas/taxaMaquininha.ts); a função confere o que dá pra
+--      conferir e recusa o que não fecha:
+--        • o lançamento existe, é uma ENTRADA, da forma de cartão informada e
+--          do mesmo valor cheio (senão a taxa ficaria pendurada no lançamento
+--          errado);
+--        • a quantidade de datas bate (uma só se a maquininha paga tudo de
+--          uma vez; uma por parcela se não), numeradas de 1 em diante;
+--        • a soma das datas fecha com o valor líquido (diferença menor que
+--          meio centavo).
+--      O `loja_id` vem do próprio lançamento, nunca do programa.
+--
+-- QUEM LÊ E QUEM GRAVA (decisões da tarefa #387):
+--
+--   • A TABELA DE TAXAS (1): lê quem tem acesso à loja E um destes módulos:
+--     Caixa, Relações ou Ordens de Serviço. A OS entra porque quem fatura
+--     precisa ler a taxa pra calcular (a decisão de deixar a OS ler está pra
+--     ela confirmar). Gravar, alterar e apagar: só o admin daquela loja, como
+--     o Pix (0081) — a taxa muda o lucro que aparece pra loja inteira.
+--
+--   • A FOTOGRAFIA E AS DATAS (2 e 3): lê quem tem acesso à loja E Caixa ou
+--     Relações (é dinheiro, como os lançamentos, 0062). Grava quem tem acesso
+--     à loja E Caixa ou OS — quem fatura grava a taxa da venda que acabou de
+--     lançar —, e só pendurada numa ENTRADA do Caixa da mesma loja. Quem só
+--     tem OS grava, mas não lê: a gravação não pede a linha de volta. A
+--     conferência "a entrada existe e é desta loja" é um `exists` em
+--     caixa_movimentos, que roda com a RLS de quem grava: quem só tem OS
+--     enxerga ali só os lançamentos de OS (0062), então só consegue pendurar
+--     a taxa num lançamento de OS. É de propósito: não dá pra pendurar taxa
+--     em lançamento que a pessoa nem enxerga.
+--     Sem policy de alterar nem de apagar: ninguém altera nem apaga pela API.
+--     Apagar o lançamento do Caixa leva as duas junto (a cascata da chave
+--     estrangeira não passa pela RLS). As lacunas estão declaradas em
+--     supabase/testes-rls/lacunas-de-proposito.csv.
+--
+-- A função roda como QUEM CHAMA (`security invoker`): a RLS das tabelas vale
+-- inteira, ela não abre porta nenhuma — é só o "as duas ou nenhuma".
+--
+-- AUDITORIA. A tabela de taxas entra na trilha (0053), como os juros das
+-- parcelas: se a taxa mudar, fica registrado quem mudou, de quanto pra
+-- quanto. A fotografia e as datas NÃO entram: nascem junto com um
+-- lançamento do Caixa que já é auditado, e nunca mudam.
+--
+-- AS TRAVAS têm nome `ck_<tabela>_<regra>` porque a tela traduz cada uma
+-- numa frase (src/lib/errors.ts). Tabelas novas nascem vazias, então nenhum
+-- dado que já existe pode ficar fora da regra. O dinheiro tem o mesmo tipo
+-- de caixa_movimentos.valor (numeric(12,2)).
+--
+-- ORDEM DE SUBIR. Só cria coisa nova: esta migration sobe ANTES da versão do
+-- programa, como as outras (o programa antigo nem sabe que ela existe). Por
+-- isso não declara versão mínima do programa.
+--
+-- Idempotente: as tabelas entram com `if not exists`, cada trava, policy,
+-- gatilho e a função são apagados pelo nome final antes de serem criados.
+
+-- ---------------------------------------------------------------------------
+-- 1. A tabela de taxas da loja
+-- ---------------------------------------------------------------------------
+create table if not exists configuracoes_taxas_maquininha (
+  loja_id uuid not null references lojas (id),
+  forma text not null,
+  parcelas smallint not null,
+  taxa_percentual numeric(5, 2) not null,
+  prazo_dias smallint not null,
+  recebe_tudo_de_uma_vez boolean not null default false,
+  atualizado_em timestamptz not null default now(),
+  primary key (loja_id, forma, parcelas)
+);
+
+-- Só cartão: Pix, dinheiro e boleto não têm maquininha.
+alter table configuracoes_taxas_maquininha drop constraint if exists ck_taxas_maquininha_forma;
+alter table configuracoes_taxas_maquininha add constraint ck_taxas_maquininha_forma
+  check (forma in ('cartao_debito', 'cartao_credito'));
+
+-- De 1 a 12 parcelas, e débito é sempre à vista (1).
+alter table configuracoes_taxas_maquininha drop constraint if exists ck_taxas_maquininha_parcelas;
+alter table configuracoes_taxas_maquininha add constraint ck_taxas_maquininha_parcelas
+  check (parcelas between 1 and 12 and (forma <> 'cartao_debito' or parcelas = 1));
+
+-- A taxa é um percentual de 0 até menos de 100 (100% seria a maquininha
+-- ficar com a venda inteira).
+alter table configuracoes_taxas_maquininha drop constraint if exists ck_taxas_maquininha_taxa;
+alter table configuracoes_taxas_maquininha add constraint ck_taxas_maquininha_taxa
+  check (taxa_percentual >= 0 and taxa_percentual < 100);
+
+-- Em quantos dias cai: de 0 (no mesmo dia) até um ano.
+alter table configuracoes_taxas_maquininha drop constraint if exists ck_taxas_maquininha_prazo;
+alter table configuracoes_taxas_maquininha add constraint ck_taxas_maquininha_prazo
+  check (prazo_dias between 0 and 365);
+
+comment on table configuracoes_taxas_maquininha is
+  'A taxa da maquininha de cartão de cada loja (#387): por forma (débito/crédito) e parcelas, a taxa em %, o prazo em dias e se recebe tudo de uma vez. Sem linha, a loja não informou a taxa. Lê quem tem Caixa, Relações ou OS; grava só o admin da loja.';
+
+alter table configuracoes_taxas_maquininha enable row level security;
+
+-- Uma policy por comando (nunca uma `for all`): as policies se somam com OU,
+-- e uma `for all` aberta reabriria a escrita.
+drop policy if exists "configuracoes_taxas_maquininha_leitura" on configuracoes_taxas_maquininha;
+create policy "configuracoes_taxas_maquininha_leitura" on configuracoes_taxas_maquininha
+  for select to authenticated
+  using (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('caixa'))
+      or (select operador_tem_permissao('relatorios'))
+      or (select operador_tem_permissao('ordens_servico'))
+    )
+  );
+
+drop policy if exists "configuracoes_taxas_maquininha_insercao" on configuracoes_taxas_maquininha;
+create policy "configuracoes_taxas_maquininha_insercao" on configuracoes_taxas_maquininha
+  for insert to authenticated
+  with check (operador_e_admin_da_loja(loja_id));
+
+drop policy if exists "configuracoes_taxas_maquininha_alteracao" on configuracoes_taxas_maquininha;
+create policy "configuracoes_taxas_maquininha_alteracao" on configuracoes_taxas_maquininha
+  for update to authenticated
+  using (operador_e_admin_da_loja(loja_id))
+  with check (operador_e_admin_da_loja(loja_id));
+
+drop policy if exists "configuracoes_taxas_maquininha_exclusao" on configuracoes_taxas_maquininha;
+create policy "configuracoes_taxas_maquininha_exclusao" on configuracoes_taxas_maquininha
+  for delete to authenticated
+  using (operador_e_admin_da_loja(loja_id));
+
+-- A trilha de auditoria (0053): quem mudou a taxa, de quanto pra quanto. A
+-- chave é composta, então o `registro_id` é o loja_id (como os juros das
+-- parcelas); a forma e as parcelas vão na linha inteira, antes e depois.
+drop trigger if exists trigger_auditoria on configuracoes_taxas_maquininha;
+create trigger trigger_auditoria
+  after insert or update or delete on configuracoes_taxas_maquininha
+  for each row execute function registrar_auditoria('loja_id');
+
+-- ---------------------------------------------------------------------------
+-- 2. A fotografia da taxa de cada lançamento de cartão
+-- ---------------------------------------------------------------------------
+create table if not exists caixa_taxas_cartao (
+  movimento_id uuid primary key references caixa_movimentos (id) on delete cascade,
+  loja_id uuid not null references lojas (id),
+  forma text not null,
+  parcelas smallint not null,
+  taxa_percentual numeric(5, 2) not null,
+  prazo_dias smallint not null,
+  recebe_tudo_de_uma_vez boolean not null default false,
+  valor_bruto numeric(12, 2) not null,
+  valor_taxa numeric(12, 2) not null,
+  valor_liquido numeric(12, 2) not null,
+  criado_em timestamptz not null default now()
+);
+
+-- As mesmas regras da tabela de taxas, numa trava só (a fotografia copia uma
+-- linha de lá).
+alter table caixa_taxas_cartao drop constraint if exists ck_caixa_taxas_cartao_condicoes;
+alter table caixa_taxas_cartao add constraint ck_caixa_taxas_cartao_condicoes
+  check (
+    forma in ('cartao_debito', 'cartao_credito')
+    and parcelas between 1 and 12
+    and (forma <> 'cartao_debito' or parcelas = 1)
+    and taxa_percentual >= 0 and taxa_percentual < 100
+    and prazo_dias between 0 and 365
+  );
+
+-- Nada negativo, e o líquido é exatamente o cheio menos a taxa.
+alter table caixa_taxas_cartao drop constraint if exists ck_caixa_taxas_cartao_valores;
+alter table caixa_taxas_cartao add constraint ck_caixa_taxas_cartao_valores
+  check (
+    valor_bruto >= 0
+    and valor_taxa >= 0
+    and valor_liquido >= 0
+    and valor_liquido = valor_bruto - valor_taxa
+  );
+
+comment on table caixa_taxas_cartao is
+  'A taxa da maquininha de cada lançamento de cartão do Caixa (#387), como estava no dia da venda. Nunca muda; some junto com o lançamento. Lê quem tem Caixa ou Relações; grava quem tem Caixa ou OS (pela função registrar_taxa_do_cartao).';
+
+alter table caixa_taxas_cartao enable row level security;
+
+drop policy if exists "caixa_taxas_cartao_leitura" on caixa_taxas_cartao;
+create policy "caixa_taxas_cartao_leitura" on caixa_taxas_cartao
+  for select to authenticated
+  using (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('caixa'))
+      or (select operador_tem_permissao('relatorios'))
+    )
+  );
+
+drop policy if exists "caixa_taxas_cartao_insercao" on caixa_taxas_cartao;
+create policy "caixa_taxas_cartao_insercao" on caixa_taxas_cartao
+  for insert to authenticated
+  with check (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('caixa'))
+      or (select operador_tem_permissao('ordens_servico'))
+    )
+    and exists (
+      select 1 from caixa_movimentos m
+       where m.id = caixa_taxas_cartao.movimento_id
+         and m.loja_id = caixa_taxas_cartao.loja_id
+         and m.tipo = 'entrada'
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 3. O que vai cair na conta, uma linha por data
+-- ---------------------------------------------------------------------------
+create table if not exists caixa_cartao_a_receber (
+  id uuid primary key default gen_random_uuid(),
+  movimento_id uuid not null references caixa_taxas_cartao (movimento_id) on delete cascade,
+  loja_id uuid not null references lojas (id),
+  numero smallint not null,
+  data_prevista date not null,
+  valor numeric(12, 2) not null,
+  unique (movimento_id, numero)
+);
+
+-- Parcela de 1 a 12.
+alter table caixa_cartao_a_receber drop constraint if exists ck_caixa_cartao_a_receber_numero;
+alter table caixa_cartao_a_receber add constraint ck_caixa_cartao_a_receber_numero
+  check (numero between 1 and 12);
+
+-- Nunca negativo. Zero é aceito de propósito: uma venda de poucos centavos
+-- em 12x pode ter parcela de R$ 0,00 na conta de centavos, e recusar ali
+-- faria a taxa inteira da venda não ser gravada.
+alter table caixa_cartao_a_receber drop constraint if exists ck_caixa_cartao_a_receber_valor;
+alter table caixa_cartao_a_receber add constraint ck_caixa_cartao_a_receber_valor
+  check (valor >= 0);
+
+-- A lista "Cartão a receber" busca por loja, a partir de um dia.
+create index if not exists caixa_cartao_a_receber_loja_data_idx
+  on caixa_cartao_a_receber (loja_id, data_prevista);
+
+comment on table caixa_cartao_a_receber is
+  'O que a maquininha vai depositar de cada lançamento de cartão (#387), uma linha por data. Nunca muda; some junto com o lançamento. Lê quem tem Caixa ou Relações; grava quem tem Caixa ou OS (pela função registrar_taxa_do_cartao).';
+
+alter table caixa_cartao_a_receber enable row level security;
+
+drop policy if exists "caixa_cartao_a_receber_leitura" on caixa_cartao_a_receber;
+create policy "caixa_cartao_a_receber_leitura" on caixa_cartao_a_receber
+  for select to authenticated
+  using (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('caixa'))
+      or (select operador_tem_permissao('relatorios'))
+    )
+  );
+
+drop policy if exists "caixa_cartao_a_receber_insercao" on caixa_cartao_a_receber;
+create policy "caixa_cartao_a_receber_insercao" on caixa_cartao_a_receber
+  for insert to authenticated
+  with check (
+    operador_tem_acesso_loja(loja_id)
+    and (
+      (select operador_tem_permissao('caixa'))
+      or (select operador_tem_permissao('ordens_servico'))
+    )
+    and exists (
+      select 1 from caixa_movimentos m
+       where m.id = caixa_cartao_a_receber.movimento_id
+         and m.loja_id = caixa_cartao_a_receber.loja_id
+         and m.tipo = 'entrada'
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 4. A função que grava as duas de uma vez
+-- ---------------------------------------------------------------------------
+drop function if exists registrar_taxa_do_cartao(
+  uuid, text, integer, numeric, integer, boolean, numeric, numeric, numeric, jsonb
+);
+
+create or replace function registrar_taxa_do_cartao(
+  p_movimento uuid,
+  p_forma text,
+  p_parcelas integer,
+  p_taxa_percentual numeric,
+  p_prazo_dias integer,
+  p_recebe_tudo_de_uma_vez boolean,
+  p_valor_bruto numeric,
+  p_valor_taxa numeric,
+  p_valor_liquido numeric,
+  -- [{"numero":1,"data_prevista":"2026-12-18","valor":97.00}, ...]
+  p_recebimentos jsonb
+)
+returns void
+language plpgsql
+volatile
+security invoker
+set search_path = public
+as $$
+declare
+  v_mov caixa_movimentos%rowtype;
+  v_quantas_esperadas integer;
+  v_quantas integer;
+  v_numeros integer[];
+  v_soma numeric;
+begin
+  -- O lançamento, com a RLS de quem chama: quem não enxerga recebe "não
+  -- encontrado" e nada é gravado.
+  select * into v_mov from caixa_movimentos where id = p_movimento;
+  if not found then
+    raise exception 'O lançamento do Caixa desta venda não foi encontrado, então a taxa do cartão não foi registrada.';
+  end if;
+  if v_mov.tipo <> 'entrada' then
+    raise exception 'A taxa do cartão só vale pra uma entrada do Caixa.';
+  end if;
+  if v_mov.forma_pagamento is distinct from p_forma then
+    raise exception 'A forma de pagamento da taxa (%) não é a do lançamento do Caixa (%).',
+      p_forma, coalesce(v_mov.forma_pagamento, 'nenhuma');
+  end if;
+  if p_valor_bruto is null or abs(v_mov.valor - p_valor_bruto) >= 0.005 then
+    raise exception 'O valor da taxa do cartão (%) não é o do lançamento do Caixa (%).',
+      p_valor_bruto, v_mov.valor;
+  end if;
+
+  -- As datas: uma só se a maquininha paga tudo de uma vez; uma por parcela
+  -- se não. Numeradas de 1 em diante, sem buraco nem repetição.
+  if p_recebimentos is null or jsonb_typeof(p_recebimentos) <> 'array' then
+    raise exception 'Faltaram as datas em que o cartão vai cair.';
+  end if;
+  v_quantas_esperadas := case when coalesce(p_recebe_tudo_de_uma_vez, false) then 1 else p_parcelas end;
+  select count(*), array_agg(r.numero order by r.numero), sum(round(r.valor, 2))
+    into v_quantas, v_numeros, v_soma
+    from jsonb_to_recordset(p_recebimentos) as r(numero integer, data_prevista date, valor numeric);
+  if v_quantas is distinct from v_quantas_esperadas
+     or v_numeros is distinct from array(select generate_series(1, v_quantas)) then
+    raise exception 'As datas do cartão não batem com as parcelas: esperava %, vieram %.',
+      v_quantas_esperadas, v_quantas;
+  end if;
+
+  -- A soma das datas fecha com o líquido.
+  if p_valor_liquido is null or v_soma is null or abs(v_soma - p_valor_liquido) >= 0.005 then
+    raise exception 'A soma do que vai cair do cartão (%) não fecha com o valor líquido (%).',
+      v_soma, p_valor_liquido;
+  end if;
+
+  -- O loja_id vem do lançamento, nunca de quem chama. Sem `returning`: quem
+  -- só tem OS grava, mas não lê estas tabelas.
+  insert into caixa_taxas_cartao (
+    movimento_id, loja_id, forma, parcelas, taxa_percentual, prazo_dias,
+    recebe_tudo_de_uma_vez, valor_bruto, valor_taxa, valor_liquido
+  ) values (
+    v_mov.id, v_mov.loja_id, p_forma, p_parcelas, p_taxa_percentual, p_prazo_dias,
+    coalesce(p_recebe_tudo_de_uma_vez, false), p_valor_bruto, p_valor_taxa, p_valor_liquido
+  );
+
+  insert into caixa_cartao_a_receber (movimento_id, loja_id, numero, data_prevista, valor)
+  select v_mov.id, v_mov.loja_id, r.numero, r.data_prevista, r.valor
+    from jsonb_to_recordset(p_recebimentos) as r(numero integer, data_prevista date, valor numeric);
+end;
+$$;
+
+comment on function registrar_taxa_do_cartao(
+  uuid, text, integer, numeric, integer, boolean, numeric, numeric, numeric, jsonb
+) is
+  'Grava a taxa da maquininha de um lançamento de cartão e as datas em que ele cai, numa transação só (#387). Roda como quem chama: a RLS das tabelas vale.';
+
+revoke all on function registrar_taxa_do_cartao(
+  uuid, text, integer, numeric, integer, boolean, numeric, numeric, numeric, jsonb
+) from public, anon;
+grant execute on function registrar_taxa_do_cartao(
+  uuid, text, integer, numeric, integer, boolean, numeric, numeric, numeric, jsonb
+) to authenticated;
+
+insert into schema_versao (versao) values (89) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0090_tributos_aproximados.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0090: os tributos aproximados na nota, pela alíquota do Simples (#1040).
+--
+-- O PROBLEMA. A Lei 12.741/2012 (a "Lei da Transparência") manda a nota
+-- dizer quanto, mais ou menos, do valor pago é imposto. Pra loja do Simples,
+-- o número certo é a alíquota efetiva do Simples do mês, que muda com o
+-- faturamento dos últimos 12 meses e que quem calcula é a contabilidade, não
+-- o sistema. O serviço e a peça caem em anexos diferentes do Simples (serviço
+-- no Anexo III, peça no Anexo I), então são dois números. E a peça com
+-- substituição tributária (CSOSN 500) já teve o ICMS pago antes, na compra:
+-- esse pedaço não está na alíquota do Simples e entra como uma estimativa à
+-- parte.
+--
+-- A DECISÃO (#1040). Três colunas novas nos Dados fiscais da loja:
+--   • `percentual_tributos_pecas`, a alíquota efetiva do Anexo I (peças);
+--   • `percentual_estimativa_icms_st`, a estimativa do ICMS-ST, somada só
+--     nas peças com CSOSN 500;
+--   • `competencia_tributos_confirmada`, o mês (sempre no dia 1º) em que a
+--     loja conferiu esses números, do mesmo jeito da
+--     `competencia_aliquota_confirmada` (0049): diferente do mês corrente, o
+--     Início avisa. É aviso, nunca tranca: a nota sai com o último número
+--     salvo.
+-- O percentual do SERVIÇO não ganha coluna nova: é a
+-- `percentual_tributos_simples` (0078), o mesmo número do Anexo III que já
+-- vai no pTotTribSN da NFS-e Nacional.
+--
+-- Os dois percentuais vão de 0 a 100, com duas casas (a mesma precisão da
+-- 0078). Tudo opcional: vazio = a nota sai sem a linha dos tributos, pra não
+-- travar a emissão de quem ainda não recebeu os números da contabilidade.
+--
+-- ORDEM DE SUBIR. Colunas novas e opcionais: esta migration sobe ANTES da
+-- versão do programa, como as outras (o programa antigo nem sabe que elas
+-- existem). Por isso não declara versão mínima do programa. Número 0090
+-- (Sofia, 20/11): #1146 é a 0087, #1120 a 0088 e #1121 a 0089. Aplicar DEPOIS
+-- delas (o botão de atualizar só roda as de número maior que o do banco).
+--
+-- As travas têm nome `ck_<tabela>_<regra>` porque a tela traduz cada uma numa
+-- frase em português (src/lib/errors.ts). Coluna nova nasce vazia, então
+-- nenhum dado que já existe pode ficar fora da regra.
+--
+-- Idempotente: seguro rodar de novo.
+
+alter table configuracoes_fiscais_loja
+  add column if not exists percentual_tributos_pecas numeric(5,2),
+  add column if not exists percentual_estimativa_icms_st numeric(5,2),
+  add column if not exists competencia_tributos_confirmada date;
+
+alter table configuracoes_fiscais_loja
+  drop constraint if exists ck_config_fiscal_percentual_tributos_pecas;
+alter table configuracoes_fiscais_loja
+  add constraint ck_config_fiscal_percentual_tributos_pecas
+  check (percentual_tributos_pecas between 0 and 100);
+
+alter table configuracoes_fiscais_loja
+  drop constraint if exists ck_config_fiscal_percentual_estimativa_icms_st;
+alter table configuracoes_fiscais_loja
+  add constraint ck_config_fiscal_percentual_estimativa_icms_st
+  check (percentual_estimativa_icms_st between 0 and 100);
+
+comment on column configuracoes_fiscais_loja.percentual_tributos_pecas is
+  'Alíquota efetiva do Simples das peças (Anexo I), de 0 a 100, pros tributos aproximados da nota (Lei 12.741/2012). Vem da contabilidade. Vazio: a nota sai sem a linha.';
+comment on column configuracoes_fiscais_loja.percentual_estimativa_icms_st is
+  'Estimativa do ICMS-ST, de 0 a 100, somada aos tributos aproximados só nas peças com CSOSN 500. Vem da contabilidade. Vazio: não soma nada.';
+comment on column configuracoes_fiscais_loja.competencia_tributos_confirmada is
+  'O mês (sempre no dia 1º) em que a loja conferiu os percentuais dos tributos aproximados. Diferente do mês corrente, o Início avisa; a nota sai com o último número salvo.';
+
+insert into schema_versao (versao) values (90) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0091_reabrir_orcamento.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0091: reabrir um orçamento recusado, com motivo e histórico
+-- (tarefa #1181; decisões da Sofia em 24/11/2026).
+--
+-- O PROBLEMA. Desde a 0065, "recusado" é o fim da linha: o gatilho
+-- `definir_numero_ordem_servico` recusa qualquer saída de recusado. Na loja,
+-- o cliente recusa e volta no dia seguinte aceitando; hoje a saída é fazer
+-- outro orçamento, com outro número.
+--
+-- O QUE ESTA MIGRATION FAZ:
+--   1. `ordens_servico_trocas` (0087) vira o HISTÓRICO ÚNICO da OS: ganha a
+--      coluna `tipo` ('troca' pro que já existe, 'reabertura', e já
+--      'correcao_valor' pra a #1182 não mexer na tabela de novo);
+--   2. a policy de inserção do histórico passa a aceitar, além do admin da
+--      loja (igual antes), a linha de REABERTURA gravada por quem pode
+--      recusar (módulo OS na loja), só por ela mesma, só numa OS que já
+--      voltou a ser orçamento e só vindo da função (a mesma marca do gatilho,
+--      abaixo): ninguém grava "reabertura" à mão pelo PostgREST;
+--   3. a função `reabrir_orcamento(p_ordem, p_motivo, p_validade, p_operador)`,
+--      no padrão da 0087 (uma transação, OS travada, pela RLS de quem chama):
+--      só da loja de quem chama, só se o status for 'recusado'; volta pra
+--      'orcamento' com o MESMO número de orçamento, limpa `motivo_recusa` e
+--      `recusado_em`, grava a validade nova e a linha do histórico;
+--   4. o gatilho `definir_numero_ordem_servico` (última versão na 0065)
+--      aceita recusado → orçamento SÓ vindo dessa função. Um update direto
+--      continua recusado pela trava de sempre.
+--
+-- COMO O GATILHO SABE QUE VEIO DA FUNÇÃO. A função liga, só dentro da
+-- transação dela (`set_config(..., true)`), a marca
+-- `sakura.reabrir_orcamento` com o id da OS, faz o update e grava o
+-- histórico (a policy de inserção também confere a marca) e desliga. Pelo
+-- PostgREST cada chamada é uma transação própria e não dá pra ligar a marca
+-- antes de um update direto; mesmo que desse, ela vale só pra aquela OS.
+--
+-- NÃO MUDA, de propósito: o jeito de recusar; a aprovação (o "Já aprovar
+-- agora" da tela chama a `aprovar_orcamento` de sempre, depois); uma OS já
+-- aprovada nunca volta a orçamento (a numeração das OS não pode ter buraco:
+-- `ck_ordens_servico_numero_orcamento` e o gatilho seguem proibindo).
+-- Reaberto, o orçamento continua fora de todo número (comissão, lucro,
+-- caixa): é só orçamento aberto de novo.
+--
+-- ORDEM AO SUBIR: migration ANTES da versão do programa que tem o botão. Só
+-- acrescenta (coluna com padrão, função e uma saída a mais no gatilho); a
+-- versão anterior continua igual. NÃO tem a linha de versão mínima do
+-- programa.
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ---------------------------------------------------------------------------
+-- 1. O tipo de cada linha do histórico
+-- ---------------------------------------------------------------------------
+
+alter table ordens_servico_trocas
+  add column if not exists tipo text not null default 'troca';
+
+alter table ordens_servico_trocas drop constraint if exists ck_ordens_servico_trocas_tipo;
+alter table ordens_servico_trocas add constraint ck_ordens_servico_trocas_tipo
+  check (tipo in ('troca', 'reabertura', 'correcao_valor'));
+
+comment on column ordens_servico_trocas.tipo is
+  '#1181. O que aconteceu: troca (peça/serviço em OS faturada, 0087), reabertura '
+  '(orçamento recusado reaberto, 0091) ou correcao_valor (#1182).';
+
+comment on table ordens_servico_trocas is
+  'O histórico da OS (#1145, #1181): trocas de peça/serviço em OS faturada, reaberturas de '
+  'orçamento recusado e correções de valor. Quem, quando, o motivo e os itens antes e depois. '
+  'Gravado só pelas funções do banco; ninguém altera nem apaga.';
+
+-- ---------------------------------------------------------------------------
+-- 2. Quem grava no histórico
+-- ---------------------------------------------------------------------------
+
+drop policy if exists "ordens_servico_trocas_insercao" on ordens_servico_trocas;
+
+-- O admin da loja, como antes (a troca da 0087). E a linha de REABERTURA, por
+-- quem pode recusar (módulo OS na loja): só em nome de si mesmo e só numa OS
+-- desta loja que já voltou a ser orçamento (a função reabre e grava na mesma
+-- transação, então o insert vê a OS já reaberta).
+create policy "ordens_servico_trocas_insercao" on ordens_servico_trocas
+  for insert to authenticated
+  with check (
+    exists (
+      select 1 from ordens_servico o
+       where o.id = ordem_servico_id and o.loja_id = ordens_servico_trocas.loja_id
+    )
+    and (
+      operador_e_admin_da_loja(loja_id)
+      or (
+        tipo = 'reabertura'
+        -- Só de dentro da reabrir_orcamento(), que liga esta marca com o id
+        -- da OS só na transação dela (pelo PostgREST não dá pra ligar).
+        and coalesce(current_setting('sakura.reabrir_orcamento', true), '') = ordem_servico_id::text
+        and operador_id = auth.uid()
+        and operador_tem_acesso_loja(loja_id)
+        and (select operador_tem_permissao('ordens_servico'))
+        and exists (
+          select 1 from ordens_servico o
+           where o.id = ordem_servico_id and o.status = 'orcamento'
+        )
+      )
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 3. O gatilho dos números (substitui o da 0065; só a saída de recusado mudou)
+-- ---------------------------------------------------------------------------
+
+create or replace function definir_numero_ordem_servico()
+returns trigger
+language plpgsql
+as $$
+declare
+  eh_orcamento boolean := new.status in ('orcamento', 'recusado');
+begin
+  if tg_op = 'INSERT' then
+    if eh_orcamento then
+      if new.numero_orcamento is null then
+        perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
+        select coalesce(max(numero_orcamento), 0) + 1 into new.numero_orcamento
+        from ordens_servico
+        where loja_id = new.loja_id;
+      end if;
+    elsif new.numero is null then
+      perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
+      select coalesce(max(numero), 0) + 1 into new.numero
+      from ordens_servico
+      where loja_id = new.loja_id;
+    end if;
+  elsif (old.status = 'orcamento' and new.status not in ('orcamento', 'em_andamento', 'recusado'))
+     or (old.status = 'recusado' and new.status <> 'recusado'
+         -- #1181: recusado → orçamento só pela reabrir_orcamento(), que liga
+         -- esta marca com o id DESTA OS, só dentro da transação dela.
+         and not (new.status = 'orcamento'
+                  and coalesce(current_setting('sakura.reabrir_orcamento', true), '') = old.id::text)) then
+    raise exception using
+      errcode    = 'check_violation',
+      message    = 'new row for relation "ordens_servico" violates check constraint "ck_ordens_servico_transicao_orcamento"',
+      detail     = format('Orçamento só vira OS (em_andamento) ou recusado; recusado só volta a orçamento pelo "Reabrir". Pedido: de %s pra %s.',
+                          old.status, new.status),
+      table      = 'ordens_servico',
+      constraint = 'ck_ordens_servico_transicao_orcamento';
+  elsif old.status = 'orcamento' and new.status = 'em_andamento' then
+    -- Aprovado: a OS começa hoje (ver a 0065). A data do orçamento fica em
+    -- orcado_em.
+    new.orcado_em := old.data_abertura;
+    new.data_abertura := now();
+    if new.numero is null then
+      perform pg_advisory_xact_lock(hashtextextended('ordens_servico.numero:' || new.loja_id::text, 0));
+      select coalesce(max(numero), 0) + 1 into new.numero
+      from ordens_servico
+      where loja_id = new.loja_id;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trigger_definir_numero_ordem_servico on ordens_servico;
+create trigger trigger_definir_numero_ordem_servico
+  before insert or update of status on ordens_servico
+  for each row
+  execute function definir_numero_ordem_servico();
+
+-- ---------------------------------------------------------------------------
+-- 4. Reabrir
+-- ---------------------------------------------------------------------------
+-- p_motivo: o texto do histórico, já com a recusa antiga (a tela monta, porque
+--   o dia da recusa é no relógio da loja; ver textoDaReabertura).
+-- p_validade: a validade nova (a tela sugere hoje + 7).
+-- Devolve o id da linha do histórico.
+
+drop function if exists reabrir_orcamento(uuid, text, date, uuid);
+
+create or replace function reabrir_orcamento(
+  p_ordem uuid,
+  p_motivo text,
+  p_validade date,
+  p_operador uuid
+)
+returns uuid
+language plpgsql
+volatile
+security invoker
+set search_path = public
+as $$
+declare
+  v_ordem ordens_servico%rowtype;
+  v_motivo text := trim(coalesce(p_motivo, ''));
+  v_itens jsonb;
+  v_total numeric;
+  v_linha uuid;
+begin
+  -- A trava (decisão 1 da 0071). Pela RLS, OS de outra loja nem aparece.
+  select * into v_ordem from ordens_servico where id = p_ordem for update;
+  if not found then
+    raise exception 'Este orçamento não foi encontrado (talvez tenha sido apagado em outro computador). Atualize a lista.';
+  end if;
+
+  -- Quem pode recusar pode reabrir: o módulo OS, nesta loja.
+  if not (operador_tem_acesso_loja(v_ordem.loja_id) and operador_tem_permissao('ordens_servico')) then
+    raise exception 'Você não tem acesso às ordens de serviço desta loja.';
+  end if;
+
+  if v_ordem.status <> 'recusado' then
+    raise exception 'Este orçamento não está recusado (talvez já tenha sido reaberto em outro computador). Atualize a lista.';
+  end if;
+
+  if length(v_motivo) < 3 then
+    raise exception 'Diga o motivo da reabertura (por exemplo: "cliente voltou e aceitou").';
+  end if;
+
+  if p_validade is null then
+    raise exception 'Escolha a nova validade do orçamento.';
+  end if;
+
+  -- Volta pra orçamento aberto, com o mesmo número. A marca deixa o gatilho
+  -- aceitar a saída de recusado e a policy aceitar a linha do histórico, só
+  -- pra esta OS e só até o fim desta função.
+  perform set_config('sakura.reabrir_orcamento', v_ordem.id::text, true);
+  update ordens_servico
+     set status            = 'orcamento',
+         motivo_recusa     = null,
+         recusado_em       = null,
+         validade          = p_validade,
+         atualizado_por_id = p_operador
+   where id = v_ordem.id;
+  if not found then
+    perform set_config('sakura.reabrir_orcamento', '', true);
+    raise exception 'Você não tem permissão pra mudar este orçamento.';
+  end if;
+
+  -- O histórico: quem, quando, por quê, e os itens como estão (nada mudou).
+  select coalesce(sum(quantidade * preco_unitario - desconto), 0),
+         coalesce(jsonb_agg(jsonb_build_object(
+           'id', id, 'tipo', tipo, 'peca_id', peca_id, 'servico_id', servico_id, 'tecnico_id', tecnico_id,
+           'descricao', descricao, 'quantidade', quantidade,
+           'preco_unitario', preco_unitario, 'desconto', desconto) order by id), '[]'::jsonb)
+    into v_total, v_itens
+    from ordens_servico_itens
+   where ordem_servico_id = v_ordem.id;
+
+  insert into ordens_servico_trocas
+    (ordem_servico_id, loja_id, tipo, operador_id, operador_nome, motivo, itens_antes, itens_depois, total)
+  values (
+    v_ordem.id, v_ordem.loja_id, 'reabertura', auth.uid(),
+    (select nome from operadores where id = auth.uid()),
+    v_motivo, v_itens, v_itens, round(v_total, 2)
+  )
+  returning id into v_linha;
+
+  perform set_config('sakura.reabrir_orcamento', '', true);
+  return v_linha;
+end;
+$$;
+
+comment on function reabrir_orcamento(uuid, text, date, uuid) is
+  '#1181. Reabre um orçamento RECUSADO: volta pra orcamento com o mesmo número, limpa a '
+  'recusa, grava a validade nova e uma linha tipo reabertura no histórico '
+  '(ordens_servico_trocas). Quem tem o módulo OS na loja; motivo obrigatório. Única '
+  'saída de recusado (o gatilho recusa o update direto). Pela RLS de quem chama.';
+
+revoke all on function reabrir_orcamento(uuid, text, date, uuid) from public, anon;
+grant execute on function reabrir_orcamento(uuid, text, date, uuid) to authenticated;
+
+insert into schema_versao (versao) values (91) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0092_corrigir_os_faturada.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0092: corrigir peça, serviço E VALOR de uma OS (ou venda de
+-- balcão) JÁ FATURADA, com a diferença no Caixa de HOJE (tarefa #1182;
+-- decisões da Sofia em 24/11/2026).
+--
+-- O PROBLEMA. A troca da 0087 só aceita o mesmo total ("mudar o valor vem
+-- numa próxima etapa"). Na loja, a OS já faturada e paga às vezes precisa de
+-- um serviço a mais, ou de uma peça mais barata, e o total muda. Esta é a
+-- próxima etapa: a diferença entra no Caixa de HOJE e o dia da fatura nunca
+-- muda (não se reescreve o passado).
+--
+-- O QUE ESTA MIGRATION CRIA:
+--   1. `contas_receber.origem` ('faturamento' ou 'correcao'). Até aqui era UMA
+--      conta por OS (`contas_receber_ordem_id_unique`, 0036). Agora a regra de
+--      "uma só" vale só pra conta do FATURAMENTO (índice único parcial); a
+--      diferença que fica a receber vira uma conta nova, de origem 'correcao'.
+--      O faturar do programa não manda `origem` e cai no padrão 'faturamento':
+--      nada muda pra ele.
+--   2. A categoria de caixa "Devolução ao cliente" (saída) NÃO é semeada:
+--      ela nasce na primeira devolução, em "a_classificar" (a loja escolhe o
+--      grupo do DRE, como em toda categoria em uso, 0088). Se já existe uma com
+--      esse nome, é ela que é usada.
+--   3. Em `ordens_servico_trocas` (o histórico da OS, 0087/0091): o total
+--      antes e depois, o acerto ('conta_aberta', 'pago_agora', 'a_receber',
+--      'devolvido'), o lançamento de caixa e a conta a receber que a correção
+--      criou ou mudou, e a CHAVE (uma por janela aberta: a mesma chamada duas
+--      vezes não lança duas vezes).
+--   4. A função `corrigir_os_faturada(...)`, uma transação só, no padrão da
+--      0087: trava a OS; só faturada; só o gerente (admin da loja); nota
+--      fiscal não cancelada bloqueia (SKNOT); motivo obrigatório; caixa de
+--      HOJE fechado bloqueia (SKCXH; o do dia da fatura fechado NÃO trava
+--      mais); o total que a tela mostrou como faturado tem que ser o do banco
+--      (SKMUD); itens, estoque e peça avulsa exatamente como a 0087 (SKNEG).
+--      Depois acerta a diferença, decidindo o caso AQUI, sem confiar na tela:
+--        • a conta a receber do faturamento ainda em aberto → a conta muda de
+--          valor ('conta_aberta'), nada no Caixa;
+--        • senão, subiu → 'pago_agora' (Entrada no Caixa de hoje) ou
+--          'a_receber' (conta nova só da diferença, com vencimento);
+--        • senão, desceu e ainda falta receber de uma correção anterior
+--          ("fica a receber") pelo menos a diferença → abate essa(s) conta(s)
+--          ('conta_aberta'), nada sai do Caixa;
+--        • senão, desceu → 'devolvido' (Saída "Devolução ao cliente" no Caixa
+--          de hoje). Se ainda faltava receber de correção anterior, mas menos
+--          que a diferença, é numa correção só (Sofia, 24/11/2026): abate tudo
+--          o que falta e devolve só o EXCESSO. Ex.: OS de 100 paga, +50 a
+--          receber; corrigir pra 80 → a conta de 50 zera e devolve 20.
+--          A conta que zera NÃO é apagada: fica "recebido" com valor zero
+--          (sem lançamento no Caixa), ligada ao histórico (conta_receber_id);
+--        • diferença zero → sem acerto (é a troca de total igual de sempre).
+--      Acerto que não vale pro caso → SKMUD (a situação mudou em outro
+--      computador). E grava a linha do histórico.
+--
+-- A 0087 (`trocar_itens_os_faturada`) FICA como está: a versão anterior do
+-- programa ainda a usa. A versão nova chama só esta, também com o total igual
+-- (acerto nulo).
+--
+-- O QUE NÃO MUDA, de propósito: a nota fiscal (só a mensagem leva à janela de
+-- cancelar que já existe); o dia da fatura e o que foi lançado nele; a conta
+-- do faturamento quando ela já foi recebida; a forma de pagamento da OS.
+-- Comissão, custo e lucro são recalculados dos itens e seguem os novos.
+--
+-- POR QUE O "HOJE" VEM DA TELA. O banco não sabe o fuso da loja (a mesma
+-- razão do `p_momento` da 0058 e do dia da fatura da 0087): o caixa de hoje é
+-- o dia no relógio da loja. O banco só aceita um dia a até 1 dia da data de
+-- agora em UTC, pra não dar pra fugir da trava mandando uma data qualquer.
+--
+-- RODA COMO QUEM CHAMA (`security invoker`, decisão 3 da 0071): a RLS de cada
+-- tabela vale como se a pessoa tivesse feito cada passo. Nenhuma policy muda:
+-- o admin da loja já pode lançar no Caixa (tem todos os módulos, 0062/0075),
+-- criar e mudar conta a receber (0061/0075) e gravar no histórico (0091).
+--
+-- ORDEM AO SUBIR: migration ANTES da versão do programa que tem a janela
+-- "Corrigir a OS". Só acrescenta (colunas com padrão, um índice no lugar de
+-- uma constraint que diz a mesma coisa pro faturamento, e uma função); a versão anterior continua igual. NÃO tem a linha de versão mínima
+-- do programa.
+--
+-- Idempotente: seguro rodar de novo.
+
+-- ---------------------------------------------------------------------------
+-- 1. Contas a receber: de onde a conta veio
+-- ---------------------------------------------------------------------------
+
+alter table contas_receber
+  add column if not exists origem text not null default 'faturamento';
+
+alter table contas_receber drop constraint if exists ck_contas_receber_origem;
+alter table contas_receber add constraint ck_contas_receber_origem
+  check (origem in ('faturamento', 'correcao'));
+
+comment on column contas_receber.origem is
+  '#1182. faturamento: a conta criada ao faturar a OS "a receber depois" (uma só por OS). '
+  'correcao: a diferença de uma correção de OS faturada que ficou a receber (pode haver várias).';
+
+-- A conta do faturamento continua uma só por OS; as da correção, não.
+alter table contas_receber drop constraint if exists contas_receber_ordem_id_unique;
+drop index if exists contas_receber_ordem_id_unique;
+drop index if exists contas_receber_faturamento_unique;
+create unique index contas_receber_faturamento_unique
+  on contas_receber (ordem_servico_id)
+  where origem = 'faturamento' and ordem_servico_id is not null;
+
+-- As contas de uma OS (a do faturamento e as das correções) são lidas pela OS.
+create index if not exists contas_receber_ordem_servico_idx
+  on contas_receber (ordem_servico_id);
+
+-- ---------------------------------------------------------------------------
+-- 3. O histórico ganha o acerto
+-- ---------------------------------------------------------------------------
+
+alter table ordens_servico_trocas add column if not exists total_antes numeric(12,2);
+alter table ordens_servico_trocas add column if not exists total_depois numeric(12,2);
+alter table ordens_servico_trocas add column if not exists acerto text;
+alter table ordens_servico_trocas
+  add column if not exists caixa_movimento_id uuid references caixa_movimentos (id) on delete set null;
+alter table ordens_servico_trocas
+  add column if not exists conta_receber_id uuid references contas_receber (id) on delete set null;
+alter table ordens_servico_trocas add column if not exists chave uuid;
+
+alter table ordens_servico_trocas drop constraint if exists ck_ordens_servico_trocas_acerto;
+alter table ordens_servico_trocas add constraint ck_ordens_servico_trocas_acerto
+  check (acerto is null or acerto in ('conta_aberta', 'pago_agora', 'a_receber', 'devolvido'));
+
+-- A linha de correção de valor sempre diz o antes, o depois e o acerto.
+alter table ordens_servico_trocas drop constraint if exists ck_ordens_servico_trocas_correcao;
+alter table ordens_servico_trocas add constraint ck_ordens_servico_trocas_correcao
+  check (tipo <> 'correcao_valor'
+         or (acerto is not null and total_antes is not null and total_depois is not null));
+
+drop index if exists ordens_servico_trocas_chave_unique;
+create unique index ordens_servico_trocas_chave_unique
+  on ordens_servico_trocas (chave)
+  where chave is not null;
+
+comment on column ordens_servico_trocas.acerto is
+  '#1182. Como a diferença da correção foi acertada: conta_aberta (a conta do faturamento '
+  'mudou de valor), pago_agora (Entrada no Caixa do dia), a_receber (conta nova só da '
+  'diferença) ou devolvido (Saída "Devolução ao cliente"). Nulo quando o total não mudou.';
+comment on column ordens_servico_trocas.chave is
+  '#1182. Uma por janela aberta: a mesma correção mandada duas vezes devolve a mesma linha '
+  'e não lança nada de novo.';
+
+-- ---------------------------------------------------------------------------
+-- 4. A correção
+-- ---------------------------------------------------------------------------
+-- p_itens: a LISTA FINAL de itens da OS (como na 0087: com "id" fica, sem
+--   "id" é novo, o que não está na lista sai).
+-- p_hoje: o dia de hoje no relógio da loja (o Caixa em que a diferença entra).
+-- p_total_faturado: o total que a tela mostrou como faturado.
+-- p_acerto: nulo quando o total não muda; senão um dos quatro (ver o
+--   cabeçalho). p_forma_pagamento: pago_agora e devolvido. p_vencimento:
+--   a_receber.
+-- p_chave: uma por janela aberta (idempotência).
+-- p_aceita_estoque_negativo: a pessoa viu o aviso de estoque e confirmou.
+-- Devolve o id da linha do histórico.
+
+drop function if exists corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid);
+
+create or replace function corrigir_os_faturada(
+  p_ordem uuid,
+  p_itens jsonb,
+  p_motivo text,
+  p_hoje date,
+  p_total_faturado numeric,
+  p_acerto text,
+  p_forma_pagamento text,
+  p_vencimento date,
+  p_chave uuid,
+  p_aceita_estoque_negativo boolean,
+  p_operador uuid
+)
+returns uuid
+language plpgsql
+volatile
+security invoker
+set search_path = public
+as $$
+declare
+  v_ordem ordens_servico%rowtype;
+  v_motivo text := trim(coalesce(p_motivo, ''));
+  v_forma text := nullif(trim(coalesce(p_forma_pagamento, '')), '');
+  v_nome text;
+  v_existente record;
+  v_antes jsonb;
+  v_depois jsonb;
+  v_total_antes numeric;
+  v_total_depois numeric;
+  v_diferenca numeric(12,2);
+  v_ids_lista uuid[];
+  v_item jsonb;
+  v_original ordens_servico_itens%rowtype;
+  v_novo ordens_servico_itens%rowtype;
+  v_deposito uuid;
+  v_referencia text;
+  v_dif record;
+  v_negativas text;
+  v_conta contas_receber%rowtype;
+  v_conta_em_aberto boolean;
+  v_pendente_correcao numeric := 0;
+  v_resto numeric;
+  v_abate numeric;
+  v_c record;
+  v_acerto_vale boolean;
+  v_categoria uuid;
+  v_movimento uuid;
+  v_conta_id uuid;
+  v_linha uuid;
+begin
+  if p_chave is null then
+    raise exception 'Faltou a identificação desta correção. Feche a janela, abra de novo e tente outra vez.';
+  end if;
+
+  -- 1. A trava (decisão 1 da 0071).
+  select * into v_ordem from ordens_servico where id = p_ordem for update;
+  if not found then
+    raise exception 'Esta ordem não foi encontrada (talvez tenha sido apagada em outro computador). Atualize a lista.';
+  end if;
+
+  -- 2. Só o gerente (admin da loja da OS).
+  if not operador_e_admin_da_loja(v_ordem.loja_id) then
+    raise exception 'Só quem é gerente (administrador da loja) pode corrigir uma OS já faturada.';
+  end if;
+
+  -- 3. A mesma correção de novo (clique duplo, ou a resposta se perdeu):
+  -- devolve a linha que já foi gravada e não faz mais nada. Vem DEPOIS da
+  -- trava: uma segunda chamada simultânea espera a primeira terminar e então
+  -- enxerga a linha dela.
+  select id, ordem_servico_id into v_existente
+    from ordens_servico_trocas
+   where chave = p_chave;
+  if found then
+    if v_existente.ordem_servico_id <> v_ordem.id then
+      raise exception 'Esta correção já foi usada em outra OS. Feche a janela, abra de novo e tente outra vez.';
+    end if;
+    return v_existente.id;
+  end if;
+
+  -- 4. Só OS faturada: as outras corrigem item pelo caminho comum.
+  if v_ordem.status <> 'faturada' then
+    raise exception 'Esta OS ainda não foi faturada: corrija os itens direto na OS.';
+  end if;
+
+  -- 5. Nota fiscal emitida (não cancelada) bloqueia: a nota ficaria
+  -- diferente da OS. A tela leva à janela de cancelar a nota.
+  if exists (
+    select 1 from notas_fiscais_arquivos
+     where ordem_servico_id = v_ordem.id
+       and coalesce(status, '') <> 'cancelado'
+  ) then
+    raise exception 'Esta OS já tem nota fiscal emitida: não dá pra corrigir, porque a nota ficaria diferente da OS. Cancele a nota antes (o cancelamento tem prazo) e depois corrija.'
+      using errcode = 'SKNOT';
+  end if;
+
+  -- 6. O caixa de HOJE (o dia no relógio da loja) fechado bloqueia: a
+  -- diferença entraria nele. O do dia da fatura não trava mais.
+  if p_hoje is null
+     or abs(p_hoje - (now() at time zone 'UTC')::date) > 1 then
+    raise exception 'Não deu pra saber o dia de hoje (confira a data e a hora deste computador) e tente de novo.';
+  end if;
+  if exists (
+    select 1 from fechamentos_caixa
+     where loja_id = v_ordem.loja_id and data = p_hoje
+  ) then
+    raise exception 'O caixa de hoje já foi fechado: desfaça o fechamento de hoje no Caixa antes de corrigir a OS.'
+      using errcode = 'SKCXH';
+  end if;
+
+  -- 7. O motivo.
+  if length(v_motivo) < 3 then
+    raise exception 'Diga o motivo da correção (por exemplo: "faltou lançar o alinhamento").';
+  end if;
+
+  if p_itens is null or jsonb_typeof(p_itens) <> 'array' or jsonb_array_length(p_itens) = 0 then
+    raise exception 'A OS precisa continuar com pelo menos um item.';
+  end if;
+
+  if p_acerto is not null
+     and p_acerto not in ('conta_aberta', 'pago_agora', 'a_receber', 'devolvido') then
+    raise exception 'Jeito de acertar a diferença desconhecido. Atualize o programa e tente de novo.';
+  end if;
+
+  -- 8. Os itens como estão AGORA no banco (presos até o fim), e o total
+  -- faturado que a tela mostrou tem que ser este (a folga de meio centavo da
+  -- 0086).
+  perform 1 from ordens_servico_itens where ordem_servico_id = v_ordem.id for update;
+
+  select coalesce(sum(quantidade * preco_unitario - desconto), 0),
+         coalesce(jsonb_agg(jsonb_build_object(
+           'id', id, 'tipo', tipo, 'peca_id', peca_id, 'servico_id', servico_id, 'tecnico_id', tecnico_id,
+           'descricao', descricao, 'quantidade', quantidade,
+           'preco_unitario', preco_unitario, 'desconto', desconto) order by id), '[]'::jsonb)
+    into v_total_antes, v_antes
+    from ordens_servico_itens
+   where ordem_servico_id = v_ordem.id;
+
+  if p_total_faturado is null or abs(v_total_antes - p_total_faturado) > 0.005 then
+    raise exception 'A OS mudou em outro computador. Atualize e tente de novo.'
+      using errcode = 'SKMUD';
+  end if;
+
+  -- Os ids da lista precisam ser desta OS, e cada um uma vez só.
+  select coalesce(array_agg((e ->> 'id')::uuid), '{}')
+    into v_ids_lista
+    from jsonb_array_elements(p_itens) e
+   where nullif(e ->> 'id', '') is not null;
+  if (select count(distinct x) from unnest(v_ids_lista) x) <> coalesce(array_length(v_ids_lista, 1), 0) then
+    raise exception 'A lista de itens veio com um item repetido. Atualize a OS e tente de novo.';
+  end if;
+  if exists (
+    select 1 from unnest(v_ids_lista) x
+     where not exists (select 1 from ordens_servico_itens i where i.id = x and i.ordem_servico_id = v_ordem.id)
+  ) then
+    raise exception 'Um dos itens não é mais desta OS (talvez tenha mudado em outro computador). Atualize a OS e tente de novo.';
+  end if;
+
+  -- 9. Sai o que não está na lista; corrige os que ficam e grava os novos
+  -- (igual à 0087).
+  delete from ordens_servico_itens
+   where ordem_servico_id = v_ordem.id
+     and not (id = any (v_ids_lista));
+
+  for v_item in select e from jsonb_array_elements(p_itens) e loop
+    if nullif(v_item ->> 'id', '') is not null then
+      select * into v_original from ordens_servico_itens where id = (v_item ->> 'id')::uuid;
+      v_novo := jsonb_populate_record(v_original, v_item - 'id' - 'ordem_servico_id');
+      update ordens_servico_itens
+         set tipo           = v_novo.tipo,
+             peca_id        = v_novo.peca_id,
+             servico_id     = v_novo.servico_id,
+             tecnico_id     = v_novo.tecnico_id,
+             descricao      = v_novo.descricao,
+             quantidade     = v_novo.quantidade,
+             preco_unitario = v_novo.preco_unitario,
+             desconto       = v_novo.desconto,
+             custo_unitario = v_novo.custo_unitario
+       where id = v_original.id;
+    else
+      v_novo := jsonb_populate_record(null::ordens_servico_itens, v_item - 'id');
+      insert into ordens_servico_itens
+        (ordem_servico_id, tipo, peca_id, servico_id, tecnico_id, descricao,
+         quantidade, preco_unitario, desconto, custo_unitario)
+      values
+        (v_ordem.id, v_novo.tipo, v_novo.peca_id, v_novo.servico_id, v_novo.tecnico_id, v_novo.descricao,
+         v_novo.quantidade, coalesce(v_novo.preco_unitario, 0), coalesce(v_novo.desconto, 0), v_novo.custo_unitario);
+    end if;
+  end loop;
+
+  select coalesce(sum(quantidade * preco_unitario - desconto), 0),
+         coalesce(jsonb_agg(jsonb_build_object(
+           'id', id, 'tipo', tipo, 'peca_id', peca_id, 'servico_id', servico_id, 'tecnico_id', tecnico_id,
+           'descricao', descricao, 'quantidade', quantidade,
+           'preco_unitario', preco_unitario, 'desconto', desconto) order by id), '[]'::jsonb)
+    into v_total_depois, v_depois
+    from ordens_servico_itens
+   where ordem_servico_id = v_ordem.id;
+
+  -- Peça sem cadastro (avulsa, 0066) só se já estava na OS assim (igual à 0087).
+  if exists (
+    select 1 from jsonb_array_elements(v_depois) d
+     where d ->> 'tipo' = 'peca' and nullif(d ->> 'peca_id', '') is null
+       and not exists (
+         select 1 from jsonb_array_elements(v_antes) a
+          where a ->> 'id' = d ->> 'id' and a ->> 'tipo' = 'peca' and nullif(a ->> 'peca_id', '') is null
+       )
+  ) then
+    raise exception 'Escolha a peça do cadastro em cada linha de peça.';
+  end if;
+
+  -- 10. A diferença, no centavo (até meio centavo é zero, como na 0086), e o
+  -- acerto que vale pro caso, decidido AQUI com a conta do faturamento presa.
+  if abs(v_total_depois - v_total_antes) <= 0.005 then
+    v_diferenca := 0;
+  else
+    v_diferenca := round(v_total_depois - v_total_antes, 2);
+  end if;
+
+  select * into v_conta
+    from contas_receber
+   where ordem_servico_id = v_ordem.id and origem = 'faturamento'
+   for update;
+  v_conta_em_aberto := found and v_conta.status = 'pendente';
+
+  -- O que ainda falta receber de correções ANTERIORES ("fica a receber").
+  -- Quando o total desce, isso é abatido antes de qualquer devolução: senão
+  -- sairia do Caixa um dinheiro que o cliente nunca pagou, e a conta da
+  -- diferença continuaria em aberto.
+  perform 1 from contas_receber
+   where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente'
+   for update;
+  select coalesce(sum(valor), 0) into v_pendente_correcao
+    from contas_receber
+   where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente';
+
+  if v_diferenca = 0 then
+    v_acerto_vale := p_acerto is null;
+  elsif v_conta_em_aberto then
+    v_acerto_vale := p_acerto = 'conta_aberta';
+  elsif v_diferenca > 0 then
+    v_acerto_vale := p_acerto in ('pago_agora', 'a_receber');
+  elsif v_pendente_correcao >= -v_diferenca then
+    -- Desce e cabe no que ainda falta receber das correções: abate a(s)
+    -- conta(s), nada sai do Caixa.
+    v_acerto_vale := p_acerto = 'conta_aberta';
+  else
+    -- Desce mais do que falta receber (ou não falta nada): devolve. O que
+    -- ainda faltava receber das correções é abatido antes, no passo 12, e só
+    -- o excesso sai do Caixa (Sofia, 24/11/2026: numa correção só).
+    v_acerto_vale := p_acerto = 'devolvido';
+  end if;
+  if not coalesce(v_acerto_vale, false) then
+    raise exception 'A situação desta OS mudou (o total, ou a conta a receber dela, mudou em outro computador). Atualize e tente de novo.'
+      using errcode = 'SKMUD';
+  end if;
+
+  -- O que cada acerto precisa, antes de mexer em estoque e dinheiro.
+  if p_acerto in ('pago_agora', 'devolvido') and v_forma is null then
+    raise exception 'Escolha a forma de pagamento.';
+  end if;
+  if p_acerto = 'a_receber' then
+    if p_vencimento is null then
+      raise exception 'Informe o vencimento da diferença.';
+    end if;
+    if p_vencimento < p_hoje then
+      raise exception 'O vencimento não pode ser antes de hoje.';
+    end if;
+  end if;
+
+  -- 11. O estoque, pela diferença de cada peça do cadastro (igual à 0087).
+  v_nome := nome_documento_ordem(v_ordem.status, v_ordem.numero, v_ordem.numero_orcamento, v_ordem.tipo);
+  v_referencia := v_nome || ' (correção depois de faturada)';
+  for v_dif in
+    select d.peca_id, sum(d.quantidade) as diferenca
+      from (
+        select (e ->> 'peca_id')::uuid as peca_id, (e ->> 'quantidade')::numeric as quantidade
+          from jsonb_array_elements(v_depois) e
+         where e ->> 'tipo' = 'peca' and nullif(e ->> 'peca_id', '') is not null
+        union all
+        select (e ->> 'peca_id')::uuid, -(e ->> 'quantidade')::numeric
+          from jsonb_array_elements(v_antes) e
+         where e ->> 'tipo' = 'peca' and nullif(e ->> 'peca_id', '') is not null
+      ) d
+     group by d.peca_id
+    having sum(d.quantidade) <> 0
+     order by d.peca_id
+  loop
+    if v_deposito is null then
+      v_deposito := deposito_padrao_da_loja(v_ordem.loja_id);
+    end if;
+    insert into estoque_movimentos
+      (peca_id, deposito_id, tipo, quantidade, motivo, referencia, loja_id)
+    values (
+      v_dif.peca_id,
+      v_deposito,
+      case when v_dif.diferenca > 0 then 'saida' else 'entrada' end,
+      abs(v_dif.diferenca),
+      case when v_dif.diferenca > 0 then 'uso_em_os' else 'ajuste' end,
+      v_referencia,
+      v_ordem.loja_id
+    );
+
+    -- Peça que baixou e ficou negativa, sem a pessoa ter confirmado.
+    if v_dif.diferenca > 0 and not coalesce(p_aceita_estoque_negativo, false) then
+      if (select coalesce(sum(case tipo when 'entrada' then quantidade else -quantidade end), 0)
+            from estoque_movimentos
+           where peca_id = v_dif.peca_id and loja_id = v_ordem.loja_id) < 0 then
+        v_negativas := concat_ws(', ', v_negativas,
+          (select descricao from pecas where id = v_dif.peca_id));
+      end if;
+    end if;
+  end loop;
+
+  if v_negativas is not null then
+    raise exception 'O estoque ficaria negativo: %. Confira e confirme de novo se quiser seguir assim.', v_negativas
+      using errcode = 'SKNEG';
+  end if;
+
+  -- 12. O dinheiro. `now()` é o momento de agora, que no relógio da loja é
+  -- `p_hoje`: a diferença cai no Caixa de hoje, nunca no dia da fatura.
+  -- Desceu sem a conta do faturamento em aberto: primeiro abate o que falta
+  -- receber das correções anteriores, da mais nova pra mais velha. A conta
+  -- que zera NÃO é apagada (Sofia, 24/11/2026): fica encerrada ("recebido",
+  -- valor zero, sem lançamento no Caixa), e o histórico guarda a ligação. O
+  -- que passar do abatido (v_resto) é devolvido no 'devolvido', abaixo.
+  v_resto := 0;
+  if v_diferenca < 0 and not v_conta_em_aberto and p_acerto in ('conta_aberta', 'devolvido') then
+    v_resto := -v_diferenca;
+    for v_c in
+      select id, valor from contas_receber
+       where ordem_servico_id = v_ordem.id and origem = 'correcao' and status = 'pendente'
+       order by criado_em desc, id desc
+    loop
+      exit when v_resto <= 0;
+      v_abate := least(v_c.valor, v_resto);
+      if v_c.valor - v_abate <= 0 then
+        update contas_receber
+           set valor = 0,
+               status = 'recebido',
+               data_recebimento = now(),
+               descricao = descricao || ' (abatida na correção)'
+         where id = v_c.id;
+      else
+        update contas_receber set valor = v_c.valor - v_abate where id = v_c.id;
+      end if;
+      if not found then
+        raise exception 'Você não tem permissão pra mudar a conta a receber desta OS.';
+      end if;
+      -- A primeira mexida (a mais nova) é a que o histórico aponta.
+      v_conta_id := coalesce(v_conta_id, v_c.id);
+      v_resto := round(v_resto - v_abate, 2);
+    end loop;
+  end if;
+
+  if p_acerto = 'conta_aberta' and not v_conta_em_aberto then
+    -- Já abatido acima: cabia inteiro no que faltava receber.
+    if v_resto > 0 then
+      raise exception 'A situação desta OS mudou (a conta a receber dela mudou em outro computador). Atualize e tente de novo.'
+        using errcode = 'SKMUD';
+    end if;
+
+  elsif p_acerto = 'conta_aberta' then
+    if v_conta.valor + v_diferenca < 0 then
+      raise exception 'A conta a receber desta OS ficaria negativa (% + %). Confira os itens.',
+        dinheiro_br(v_conta.valor), dinheiro_br(v_diferenca);
+    end if;
+    update contas_receber
+       set valor = v_conta.valor + v_diferenca
+     where id = v_conta.id;
+    if not found then
+      raise exception 'Você não tem permissão pra mudar a conta a receber desta OS.';
+    end if;
+    v_conta_id := v_conta.id;
+
+  elsif p_acerto = 'pago_agora' then
+    insert into caixa_movimentos
+      (loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
+    values
+      (v_ordem.loja_id, now(), v_ordem.id, 'entrada', v_forma, v_diferenca,
+       'Correção da ' || v_nome, null)
+    returning id into v_movimento;
+
+  elsif p_acerto = 'a_receber' then
+    insert into contas_receber
+      (loja_id, cliente_id, ordem_servico_id, descricao, valor, vencimento, status, origem)
+    values
+      (v_ordem.loja_id, v_ordem.cliente_id, v_ordem.id, 'Diferença da correção da ' || v_nome,
+       v_diferenca, p_vencimento, 'pendente', 'correcao')
+    returning id into v_conta_id;
+
+  elsif p_acerto = 'devolvido' then
+    select id into v_categoria
+      from categorias_caixa
+     where nome = 'Devolução ao cliente' and tipo = 'saida';
+    if v_categoria is null then
+      -- A primeira devolução cria a categoria, "a classificar" (0088: o grupo
+      -- do DRE é a loja que escolhe; nada é classificado sozinho).
+      insert into categorias_caixa (nome, tipo, grupo)
+      values ('Devolução ao cliente', 'saida', 'a_classificar')
+      on conflict (nome, tipo) do nothing
+      returning id into v_categoria;
+      if v_categoria is null then
+        select id into v_categoria
+          from categorias_caixa
+         where nome = 'Devolução ao cliente' and tipo = 'saida';
+      end if;
+    end if;
+    -- LIGADA à OS (Sofia, 24/11/2026): é "recebido a menos" daquela OS. O
+    -- programa trata a saída ligada a uma OS assim: desconta do recebido nas
+    -- Relações (não é despesa), aparece nas Saídas do Caixa (é dinheiro que
+    -- saiu da gaveta) e fica fora dos pagamentos da OS (NFC-e, garantia).
+    -- Só o que passou do abatido (sem correção a receber: a diferença toda).
+    insert into caixa_movimentos
+      (loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
+    values
+      (v_ordem.loja_id, now(), v_ordem.id, 'saida', v_forma, v_resto,
+       'Devolução da correção da ' || v_nome, v_categoria)
+    returning id into v_movimento;
+  end if;
+
+  -- 13. O histórico, e quem mexeu por último.
+  insert into ordens_servico_trocas
+    (ordem_servico_id, loja_id, tipo, operador_id, operador_nome, motivo, itens_antes, itens_depois,
+     total, total_antes, total_depois, acerto, caixa_movimento_id, conta_receber_id, chave)
+  values (
+    v_ordem.id, v_ordem.loja_id,
+    case when v_diferenca = 0 then 'troca' else 'correcao_valor' end,
+    auth.uid(),
+    (select nome from operadores where id = auth.uid()),
+    v_motivo, v_antes, v_depois,
+    round(v_total_depois, 2), round(v_total_antes, 2), round(v_total_depois, 2),
+    case when v_diferenca = 0 then null else p_acerto end,
+    v_movimento, v_conta_id, p_chave
+  )
+  returning id into v_linha;
+
+  update ordens_servico set atualizado_por_id = p_operador where id = v_ordem.id;
+
+  return v_linha;
+end;
+$$;
+
+comment on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid) is
+  '#1182. Corrige peça, serviço e valor de uma OS FATURADA, com a OS travada, numa '
+  'transação só. Só admin da loja; nota fiscal não cancelada (SKNOT), caixa de hoje '
+  'fechado (SKCXH) e sem motivo recusam; total faturado diferente do banco ou acerto que '
+  'não vale pro caso: SKMUD; estoque negativo sem confirmação: SKNEG. A diferença: conta '
+  'do faturamento em aberto muda de valor; senão Entrada no Caixa de hoje, conta nova só '
+  'da diferença, ou Saída "Devolução ao cliente". Mesma p_chave de novo devolve a mesma '
+  'linha sem lançar nada. Grava o histórico em ordens_servico_trocas. Pela RLS de quem chama.';
+
+revoke all on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid) from public, anon;
+grant execute on function corrigir_os_faturada(uuid, jsonb, text, date, numeric, text, text, date, uuid, boolean, uuid) to authenticated;
+
+insert into schema_versao (versao) values (92) on conflict do nothing;
+
+
+-- -------------------------------------------------------------------
+-- 0094_atendimento_da_loja.sql
+-- -------------------------------------------------------------------
+
+-- Sakura System — AutoCenter Edition
+-- Migration 0094: o atendimento da loja, por loja (#1033).
 --
 -- O PROBLEMA. O recibo e as mensagens pro cliente não dizem como falar com a
 -- loja, quando ela abre nem quanto tempo vale a garantia do serviço. Quem
@@ -9664,4 +11121,4 @@ create policy "configuracoes_atendimento_acesso_por_loja" on configuracoes_atend
   using (operador_tem_acesso_loja(loja_id))
   with check (operador_tem_acesso_loja(loja_id));
 
-insert into schema_versao (versao) values (88) on conflict do nothing;
+insert into schema_versao (versao) values (94) on conflict do nothing;

@@ -75,7 +75,9 @@ export async function listarMovimentosCaixaPorOrdem(
     .eq("ordem_servico_id", ordemServicoId);
 
   if (error) throw error;
-  return data as MovimentoCaixa[];
+  // Só as ENTRADAS são pagamento da OS (as formas da NFC-e, a garantia). A
+  // saída ligada à OS é a devolução de uma correção (#1182): fica de fora.
+  return (data as MovimentoCaixa[]).filter((m) => m.tipo === "entrada");
 }
 
 /**

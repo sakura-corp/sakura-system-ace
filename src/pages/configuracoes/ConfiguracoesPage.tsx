@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  CreditCard,
   Download,
   LayoutDashboard,
   MessageCircle,
@@ -34,6 +35,8 @@ import {
   listarJurosParcelas,
 } from "@/lib/configuracoes";
 import { listarDepositos } from "@/lib/depositos";
+import { listarTaxasMaquininha } from "@/lib/taxasMaquininha";
+import type { TaxaMaquininha } from "@/schemas/taxaMaquininha";
 import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import { definirLojasDoOperador, listarLojas, listarLojasDoOperador } from "@/lib/lojas";
@@ -63,6 +66,7 @@ import { CategoriasServicoSection } from "./CategoriasServicoSection";
 import { DadosFiscaisSection } from "./DadosFiscaisSection";
 import { DepositosSection } from "./DepositosSection";
 import { JurosParcelasSection } from "./JurosParcelasSection";
+import { TaxasMaquininhaSection } from "./TaxasMaquininhaSection";
 import { LojasSection } from "./LojasSection";
 import { OperadorForm } from "./OperadorForm";
 import { AtendimentoSection } from "./AtendimentoSection";
@@ -82,6 +86,8 @@ export function ConfiguracoesPage() {
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [depositos, setDepositos] = useState<Deposito[]>([]);
   const [jurosParcelas, setJurosParcelas] = useState<JurosParcela[]>([]);
+  // null = não deu pra ler (banco sem a migration 0089): a seção avisa, a página segue.
+  const [taxasMaquininha, setTaxasMaquininha] = useState<TaxaMaquininha[] | null>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasCaixa, setCategoriasCaixa] = useState<CategoriaCaixa[]>([]);
   const [categoriasServico, setCategoriasServico] = useState<CategoriaServico[]>([]);
@@ -176,7 +182,15 @@ export function ConfiguracoesPage() {
       } catch (err) {
         console.error("Erro ao carregar o link de avaliação:", err);
       }
+      // Idem as taxas da maquininha (#387): banco sem a migration 0089.
+      let taxasCarregadas: TaxaMaquininha[] | null = null;
+      try {
+        taxasCarregadas = await listarTaxasMaquininha(lojaId);
+      } catch (err) {
+        console.error("Erro ao carregar as taxas da maquininha:", err);
+      }
       if (!aindaEhAtual()) return;
+      setTaxasMaquininha(taxasCarregadas);
       setLinkAvaliacao(linkCarregado);
       setOperadores(operadoresCarregados);
       setLojas(lojasCarregadas);
@@ -417,6 +431,19 @@ export function ConfiguracoesPage() {
             <JurosParcelasSection
               jurosParcelas={jurosParcelas}
               lojaId={lojaAtual.id}
+              onSalvo={recarregar}
+            />
+          </SecaoDeConfiguracao>
+
+          <SecaoDeConfiguracao
+            icone={CreditCard}
+            titulo="Taxas da maquininha"
+            descricao="Quanto a maquininha cobra da loja e em quantos dias o cartão cai na conta."
+          >
+            <TaxasMaquininhaSection
+              tabela={taxasMaquininha}
+              lojaId={lojaAtual.id}
+              podeEditar={Boolean(operadorLogado?.admin)}
               onSalvo={recarregar}
             />
           </SecaoDeConfiguracao>

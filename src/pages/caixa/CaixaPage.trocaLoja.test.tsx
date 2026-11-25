@@ -31,8 +31,6 @@ vi.mock("./DiarioSection", () => ({
     <ul>{movimentos.map((m) => <li key={m.id}>{m.descricao}</li>)}</ul>
   ),
 }));
-vi.mock("./FechamentoSection", () => ({ FechamentoSection: () => null }));
-vi.mock("./EntradaSaidaSection", () => ({ EntradaSaidaSection: () => null }));
 
 const { CaixaPage } = await import("./CaixaPage");
 

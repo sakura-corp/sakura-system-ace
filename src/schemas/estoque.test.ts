@@ -107,6 +107,34 @@ describe("pecaCasaComBusca", () => {
     expect(pecaCasaComBusca(peca, "SuSpEnSÃo")).toBe(true);
   });
 
+  describe("medida escrita de qualquer jeito (#1180)", () => {
+    const base = { codigo_interno: null, codigo_barras: null, marca: null, modelo: null };
+    const pelaDescricao = { ...base, descricao: "Pneu 175/75 R13 Exemplo", medida: null };
+    const pelaMedida = { ...base, descricao: "Pneu Exemplo Direction", medida: "175/75 R13" };
+
+    it.each(["1757513", "175 75 13", "175/75r13", "17575R13", "175-75.13"])(
+      "'%s' acha o pneu pelo nome e pela medida",
+      (termo) => {
+        expect(pecaCasaComBusca(pelaDescricao, termo)).toBe(true);
+        expect(pecaCasaComBusca(pelaMedida, termo)).toBe(true);
+      },
+    );
+
+    it("medida diferente não acha", () => {
+      expect(pecaCasaComBusca(pelaDescricao, "1757514")).toBe(false);
+      expect(pecaCasaComBusca(pelaMedida, "1757514")).toBe(false);
+    });
+
+    it("número curto (menos de 5 dígitos) não usa o jeito 'só números'", () => {
+      // dígitos do nome juntos: "12314"; o termo "2314" só apareceria assim
+      const outra = { ...base, descricao: "Pneu 12/3 R14", medida: null };
+      expect(pecaCasaComBusca(outra, "2314")).toBe(false);
+      expect(pecaCasaComBusca(outra, "12314")).toBe(true); // 5 dígitos: entra
+      // dígitos soltos "1" e "3" juntam "13", mas 2 dígitos não bastam pro jeito 3
+      expect(pecaCasaComBusca({ ...base, descricao: "Pneu 1 R3", medida: null }, "13")).toBe(false);
+    });
+  });
+
   it("busca vazia deixa tudo passar", () => {
     expect(pecaCasaComBusca(peca, "   ")).toBe(true);
   });

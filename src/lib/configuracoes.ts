@@ -119,7 +119,7 @@ export async function salvarLinkAvaliacao(lojaId: string, link: string | null): 
 }
 
 /**
- * O atendimento e a garantia dos serviços da loja (migration 0088, #1033);
+ * O atendimento e a garantia dos serviços da loja (migration 0094, #1033);
  * `null` = a loja não informou nada. Lança o erro: quem chama decide (a tela
  * avisa; o recibo segue sem a linha).
  */
@@ -188,6 +188,9 @@ const COLUNAS_FISCAIS = [
   "competencia_aliquota_confirmada",
   "aliquota_passo_a_passo",
   "percentual_tributos_simples",
+  "percentual_tributos_pecas",
+  "percentual_estimativa_icms_st",
+  "competencia_tributos_confirmada",
   "atualizado_em",
 ].join(",");
 
@@ -272,9 +275,17 @@ export type DadosFiscaisEditaveis = Omit<
   | "atualizado_em"
   | "competencia_aliquota_confirmada"
   | "focus_nfe_configurado"
+  | "competencia_tributos_confirmada"
   | "percentual_tributos_simples"
+  | "percentual_tributos_pecas"
+  | "percentual_estimativa_icms_st"
 > &
-  Partial<Pick<ConfiguracaoFiscalLoja, "percentual_tributos_simples">>;
+  Partial<
+    Pick<
+      ConfiguracaoFiscalLoja,
+      "percentual_tributos_simples" | "percentual_tributos_pecas" | "percentual_estimativa_icms_st"
+    >
+  >;
 
 export async function salvarConfiguracaoFiscal(
   lojaId: string,
@@ -305,6 +316,23 @@ export async function confirmarAliquotaCompetencia(
     {
       loja_id: lojaId,
       competencia_aliquota_confirmada: competencia,
+      atualizado_em: new Date().toISOString(),
+    },
+    { onConflict: "loja_id" },
+  );
+
+  if (error) throw error;
+}
+
+// "Confirmei a alíquota deste mês" dos tributos aproximados (#1040): o mesmo
+// jeito do confirmarAliquotaCompetencia acima (upsert, fora do formulário),
+// pra salvar os dados fiscais num computador não apagar a confirmação feita
+// no outro.
+export async function confirmarTributosDoMes(lojaId: string, competencia: string): Promise<void> {
+  const { error } = await supabase.from("configuracoes_fiscais_loja").upsert(
+    {
+      loja_id: lojaId,
+      competencia_tributos_confirmada: competencia,
       atualizado_em: new Date().toISOString(),
     },
     { onConflict: "loja_id" },

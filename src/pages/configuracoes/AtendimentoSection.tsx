@@ -21,7 +21,7 @@ interface AtendimentoSectionProps {
 
 /**
  * WhatsApp, horário e garantia dos serviços da loja (#1033). Carrega a própria
- * linha (tabela `configuracoes_atendimento`, migration 0088): quem usa põe
+ * linha (tabela `configuracoes_atendimento`, migration 0094): quem usa põe
  * `key={lojaId}` pra trocar de loja recarregar do zero.
  */
 export function AtendimentoSection({ lojaId, podeEditar }: AtendimentoSectionProps) {

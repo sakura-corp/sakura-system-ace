@@ -35,7 +35,7 @@ export function baixaEstoqueAoLancarItem(status: StatusOS): boolean {
   return contaNosNumeros({ status });
 }
 
-/** Só orçamento aberto pode ser aprovado (recusado é o fim da linha). */
+/** Só orçamento aberto pode ser aprovado (o recusado precisa ser reaberto antes). */
 export function podeAprovar(ordem: { status: StatusOS }): boolean {
   return ordem.status === "orcamento";
 }
@@ -51,15 +51,72 @@ export const STATUS_AO_APROVAR = "em_andamento" as const satisfies StatusOS;
 /**
  * Dá pra ir de `de` pra `para`?
  *   • orçamento → em andamento (aprovado) ou recusado;
- *   • recusado → nada (é o fim);
+ *   • recusado → só orçamento aberto, pelo "Reabrir" (#1181; no banco, só
+ *     pela função `reabrir_orcamento`, migration 0091). Nunca vira OS direto:
+ *     a aprovação é sempre a partir do orçamento aberto;
  *   • OS → nunca volta a orçamento (já tem número de OS, e o banco também
  *     proíbe: `ck_ordens_servico_numero_orcamento`);
  *   • entre os status de OS, nada muda nesta tarefa.
  */
 export function transicaoPermitida(de: StatusOS, para: StatusOS): boolean {
   if (de === "orcamento") return para === STATUS_AO_APROVAR || para === "recusado";
-  if (de === "recusado") return false;
+  if (de === "recusado") return para === "orcamento";
   return contaNosNumeros({ status: para });
+}
+
+/** Só o orçamento recusado pode ser reaberto (#1181). OS aprovada nunca volta. */
+export function podeReabrir(ordem: { status: StatusOS }): boolean {
+  return ordem.status === "recusado";
+}
+
+/** Por que o orçamento está sendo reaberto (obrigatório, um clique). */
+export const MOTIVOS_REABERTURA = ["cliente_voltou", "engano", "outro"] as const;
+export type MotivoReabertura = (typeof MOTIVOS_REABERTURA)[number];
+
+export const MOTIVO_REABERTURA_LABEL: Record<MotivoReabertura, string> = {
+  cliente_voltou: "Cliente voltou e aceitou",
+  engano: "Recusado por engano",
+  outro: "Outro",
+};
+
+/** O mínimo do motivo digitado no "Outro" (o mesmo check do histórico, 0087). */
+const MINIMO_DO_MOTIVO = 3;
+
+/**
+ * O texto que vai pro histórico da OS: o motivo e a recusa antiga, que o
+ * banco apaga da OS ao reabrir ("Cliente voltou e aceitou (tinha sido
+ * recusado em 23/11, motivo: Preço)"). O dia sai no relógio da loja
+ * (`diaLocal`): o banco não sabe o fuso.
+ */
+export function textoDaReabertura(
+  motivo: MotivoReabertura,
+  outroTexto: string,
+  recusa: { recusado_em?: string | null; motivo_recusa?: MotivoRecusa | null },
+): string {
+  const principal = motivo === "outro" ? outroTexto.trim() : MOTIVO_REABERTURA_LABEL[motivo];
+  const quando = recusa.recusado_em ? ` em ${diaBrasileiro(diaLocal(recusa.recusado_em)).slice(0, 5)}` : "";
+  const porque = recusa.motivo_recusa
+    ? `motivo: ${MOTIVO_RECUSA_LABEL[recusa.motivo_recusa]}`
+    : "sem motivo";
+  return `${principal} (tinha sido recusado${quando}, ${porque})`;
+}
+
+/**
+ * O que falta na janela de reabrir, ou `null` se dá pra mandar. A validade
+ * nova não pode ser vazia nem antes de hoje (dia de calendário).
+ */
+export function erroDaReabertura(
+  motivo: MotivoReabertura,
+  outroTexto: string,
+  validade: string,
+  hoje: string = hojeLocal(),
+): string | null {
+  if (motivo === "outro" && outroTexto.trim().length < MINIMO_DO_MOTIVO) {
+    return "Escreva o motivo da reabertura (pelo menos 3 letras).";
+  }
+  if (!validade) return "Escolha a nova validade do orçamento.";
+  if (validade < hoje) return "A nova validade não pode ser antes de hoje.";
+  return null;
 }
 
 /** Quantos dias o orçamento vale, se ninguém mudar (pedido da tarefa #379). */

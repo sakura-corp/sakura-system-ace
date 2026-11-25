@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nota de compra INVENTADA pro teste da #1020 (CNPJ e chave fictícios). 3 parcelas, total R$ 1.000,00. -->
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe>
+    <infNFe Id="NFe35261112345678000199550010000012341000012345" versao="4.00">
+      <ide><nNF>1234</nNF><dhEmi>2026-11-23T10:00:00-03:00</dhEmi></ide>
+      <emit><CNPJ>12345678000199</CNPJ><xNome>Distribuidora Exemplo LTDA</xNome></emit>
+      <det nItem="1">
+        <prod>
+          <cProd>P001</cProd><cEAN>SEM GTIN</cEAN><xProd>Pneu 175/70 R14 exemplo</xProd>
+          <NCM>40111000</NCM><CFOP>5405</CFOP><uCom>UN</uCom>
+          <qCom>4.0000</qCom><vUnCom>250.00</vUnCom>
+        </prod>
+        <imposto><ICMS><ICMSSN500><orig>0</orig><CSOSN>500</CSOSN></ICMSSN500></ICMS></imposto>
+      </det>
+      <total><ICMSTot><vProd>1000.00</vProd><vNF>1000.00</vNF></ICMSTot></total>
+      <cobr>
+        <fat><nFat>1234</nFat><vOrig>1000.00</vOrig><vLiq>1000.00</vLiq></fat>
+        <dup><nDup>001</nDup><dVenc>2026-12-23</dVenc><vDup>333.34</vDup></dup>
+        <dup><nDup>002</nDup><dVenc>2027-01-22</dVenc><vDup>333.33</vDup></dup>
+        <dup><nDup>003</nDup><dVenc>2027-02-21</dVenc><vDup>333.33</vDup></dup>
+      </cobr>
+    </infNFe>
+  </NFe>
+</nfeProc>

@@ -133,25 +133,37 @@ async function faturarMetadePixMetadeCartao3x() {
 
 describe("OrdensServicoPage — o Faturar em janela", () => {
   it("grava o mesmo de antes: a mesma OS, as mesmas formas, valores e parcelas", async () => {
-    faturarOrdem.mockResolvedValue(undefined);
+    faturarOrdem.mockResolvedValue({ avisoTaxa: null });
     await faturarMetadePixMetadeCartao3x();
     await waitFor(() => expect(faturarOrdem).toHaveBeenCalledTimes(1));
     const [ordem, pagamentos, parcelas, previsao] = faturarOrdem.mock.calls[0];
     expect(ordem.id).toBe("os148");
     // 500 no Pix; 500 no cartão em 3x com 5% de juros = 525.
     expect(pagamentos).toEqual([
-      { formaPagamento: "pix", valor: 500 },
-      { formaPagamento: "cartao_credito", valor: 525 },
+      { formaPagamento: "pix", valor: 500, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 525, parcelas: 3 },
     ]);
     expect(parcelas).toBe(3);
     expect(previsao).toBeNull();
   });
 
   it("deu certo: a janela fecha e sai o aviso 'OS 148 faturada'", async () => {
-    faturarOrdem.mockResolvedValue(undefined);
+    faturarOrdem.mockResolvedValue({ avisoTaxa: null });
     await faturarMetadePixMetadeCartao3x();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(avisar).toHaveBeenCalledWith("OS 148 faturada");
+  });
+
+  it("faturou, mas a taxa da maquininha não foi guardada (#387): a janela fecha, sai o 'faturada' e o aviso fica no topo", async () => {
+    faturarOrdem.mockResolvedValue({
+      avisoTaxa: "A venda foi faturada, mas a taxa da maquininha não foi guardada: sem rede",
+    });
+    await faturarMetadePixMetadeCartao3x();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(avisar).toHaveBeenCalledWith("OS 148 faturada");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A venda foi faturada, mas a taxa da maquininha não foi guardada: sem rede",
+    );
   });
 
   it("deu errado: a janela fica aberta, com o erro dentro dela, e nenhum aviso de sucesso", async () => {
