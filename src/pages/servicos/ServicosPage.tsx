@@ -198,6 +198,9 @@ export function ServicosPage() {
             detalhe={[
               nomeDaCategoria(servico.categoria_id),
               servico.codigo_interno || undefined,
+              // O custo saía numa coluna da tabela antiga: continua à vista
+              // (nenhum campo some, #1093), mais fraco que o preço.
+              servico.custo === null ? undefined : `custo ${formatarPreco(servico.custo)}`,
               servico.ativo ? undefined : "Inativo",
             ]
               .filter(Boolean)

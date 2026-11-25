@@ -92,6 +92,12 @@ describe("ServicosPage — a lista no molde", () => {
     await screen.findByText("Alinhamento");
     expect(screen.getByText(/80,00/)).toBeTruthy();
   });
+
+  it("o custo continua à vista na linha (era uma coluna da tabela)", async () => {
+    listarServicos.mockResolvedValue([{ ...ALINHAMENTO, custo: 25 }]);
+    renderizar(<ServicosPage />);
+    expect(await screen.findByText(/custo R\$\s?25,00/)).toBeTruthy();
+  });
 });
 
 describe("ServicosPage — o formulário abre em janela", () => {

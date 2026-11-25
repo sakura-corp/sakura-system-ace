@@ -351,6 +351,23 @@ describe("ProdutosSection — a barra do estoque contra o mínimo (#1093)", () =
     expect(screen.queryByText("Sobra")).toBeNull();
   });
 
+  it("o filtro 'Comprar' bate com o número do chip: a inativa fica de fora", async () => {
+    const { user } = montar(
+      [
+        umaPeca({ id: "a", descricao: "Ativa faltando", estoque_minimo: 5 }),
+        umaPeca({ id: "b", descricao: "Inativa faltando", estoque_minimo: 5, ativo: false }),
+      ],
+      undefined,
+      new Map([
+        ["a", 1],
+        ["b", 1],
+      ]),
+    );
+    await user.click(screen.getByRole("button", { name: /Comprar \(1\)/ }));
+    expect(screen.getByText("Ativa faltando")).toBeTruthy();
+    expect(screen.queryByText("Inativa faltando")).toBeNull();
+  });
+
   it("a última saída aparece na linha", () => {
     montar([umaPeca({ id: "a" })], undefined, new Map([["a", 4]]), {
       ultimaSaida: new Map([["a", "2025-03-07T15:00:00"]]),

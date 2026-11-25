@@ -60,6 +60,11 @@ describe("lerBarraDoEstoque — a barra do estoque contra o mínimo (#1093)", ()
     expect(barra.precisaComprar).toBe(false);
   });
 
+  it("negativo sem mínimo: sem barra (não há risquinho de mínimo pra mostrar)", () => {
+    expect(lerBarraDoEstoque(-1, null).preenchido).toBeNull();
+    expect(lerBarraDoEstoque(-1, 4).preenchido).toBe(0);
+  });
+
   it("quantidade quebrada sai com vírgula: 'falta 1,5'", () => {
     expect(lerBarraDoEstoque(2.5, 4).palavra).toBe("falta 1,5");
   });

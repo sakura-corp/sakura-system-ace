@@ -80,6 +80,12 @@ interface ProdutosSectionProps {
   onComprar?: () => void;
   /** Abre já editando esta peça (o "Editar" do perfil da peça). */
   editarAoAbrir?: Peca | null;
+  /**
+   * Avisa que o `editarAoAbrir` já foi usado, pra quem guarda o pedido
+   * apagá-lo. Sem isso, cada recarga (que monta a seção de novo) reabria o
+   * formulário com a peça de ANTES da edição (revisão final da #1093).
+   */
+  onEditarAoAbrirUsado?: () => void;
 }
 
 function formatarPreco(valor: number | null): string {
@@ -102,6 +108,7 @@ export function ProdutosSection({
   onAbrirPeca,
   onComprar,
   editarAoAbrir = null,
+  onEditarAoAbrirUsado,
 }: ProdutosSectionProps) {
   const [mostrarFormulario, setMostrarFormulario] = useState(editarAoAbrir !== null);
   const [pecaEmEdicao, setPecaEmEdicao] = useState<Peca | null>(editarAoAbrir);
@@ -125,6 +132,7 @@ export function ProdutosSection({
   // No balcão a busca costuma ser um bipe de leitor: o campo já nasce focado.
   useEffect(() => {
     if (!mostrarFormulario) focarBusca();
+    if (editarAoAbrir) onEditarAoAbrirUsado?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -136,17 +144,26 @@ export function ProdutosSection({
     [pecas],
   );
 
+  // Reativou a última inativa com o filtro "Inativos" ligado: o chip some, e o
+  // filtro não pode ficar preso escondendo a lista.
+  const temInativa = pecas.some((peca) => !peca.ativo);
+  const situacaoNaTela: Situacao = situacao === "inativos" && !temInativa ? "todos" : situacao;
+
   const pecasFiltradas = useMemo(
     () =>
       pecas.filter((peca) => {
         if (categoriaFiltro && peca.categoria_id !== categoriaFiltro) return false;
-        if (situacao === "comprar" && !precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo)) {
+        // Igual ao número do chip: só as ativas (a inativa nem tem o "Comprar").
+        if (
+          situacaoNaTela === "comprar" &&
+          (!peca.ativo || !precisaComprar(saldos.get(peca.id) ?? 0, peca.estoque_minimo))
+        ) {
           return false;
         }
-        if (situacao === "inativos" && peca.ativo) return false;
+        if (situacaoNaTela === "inativos" && peca.ativo) return false;
         return pecaCasaComBusca(peca, busca);
       }),
-    [pecas, saldos, busca, categoriaFiltro, situacao],
+    [pecas, saldos, busca, categoriaFiltro, situacaoNaTela],
   );
 
   // O número que decide a tela: quantas peças ativas estão no mínimo ou abaixo.
@@ -302,7 +319,7 @@ export function ProdutosSection({
     );
   }
 
-  const filtroAtivo = situacao !== "todos" || categoriaFiltro !== "";
+  const filtroAtivo = situacaoNaTela !== "todos" || categoriaFiltro !== "";
 
   return (
     <div className="space-y-6">
@@ -408,7 +425,7 @@ export function ProdutosSection({
               <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
                 <Chips
                   rotulo="Situação"
-                  valor={situacao}
+                  valor={situacaoNaTela}
                   aoEscolher={setSituacao}
                   opcoes={[
                     { valor: "todos", nome: "Todos" },

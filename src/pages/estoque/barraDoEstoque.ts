@@ -43,7 +43,8 @@ export function lerBarraDoEstoque(saldo: number, estoqueMinimo: number | null | 
   const { situacao, faltam } = lerSaldo(saldo, estoqueMinimo);
 
   if (situacao === "negativo") {
-    return { tom: "negativo", palavra: "negativo", preenchido: 0, precisaComprar: false };
+    // Sem mínimo, sem barra: o risquinho do mínimo no meio mentiria.
+    return { tom: "negativo", palavra: "negativo", preenchido: estoqueMinimo == null ? null : 0, precisaComprar: false };
   }
   if (estoqueMinimo == null) {
     return saldo === 0

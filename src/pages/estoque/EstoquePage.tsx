@@ -265,6 +265,7 @@ export function EstoquePage() {
           onAbrirPeca={abrirPeca}
           onComprar={onComprar}
           editarAoAbrir={vista.tipo === "produtos" ? (vista.editar ?? null) : null}
+          onEditarAoAbrirUsado={voltarALista}
         />
       )}
     </div>
