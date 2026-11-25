@@ -204,11 +204,14 @@ export const CENAS = [
     descricao: "Recusar fica longe do Aprovar, no fim do menu de três pontos, e abre a sua própria janela: só ali aparece o motivo (opcional, um clique). O orçamento recusado vai pra aba Recusados e fica como histórico." },
 
   // ----------------------------------------------------------------- estoque
+  // Os dados de mentira não têm peça abaixo do mínimo: a cena sobe o mínimo de
+  // duas, pra foto mostrar o "falta" com o "Comprar" e o "perto" (#1093).
   { arquivo: "11-estoque-produtos", modulo: "Estoque", titulo: "Produtos",
-    rota: "/estoque",
+    rota: "/estoque", alterarLinhas: { pecas: { p1: { estoque_minimo: 20 }, p4: { estoque_minimo: 6 } } },
     descricao: "O catálogo de peças no molde de lista: em cima, quantas peças estão no mínimo ou abaixo dele; em cada linha, a barra do estoque contra o mínimo (vermelho quando falta, amarelo perto, verde ok, sempre com o número e a palavra), a última saída e, quando falta, o botão 'Comprar', que leva à Sugestão de compra. Busca (que também aceita o leitor de código de barras) e filtros em botões. Compartilhado entre as lojas da mesma empresa — o saldo é que fica separado por loja." },
   { arquivo: "11b-estoque-perfil-peca", modulo: "Estoque", titulo: "Perfil da peça",
-    rota: "/estoque", passos: [{ seletor: 'ul[aria-label="Produtos"] li button' }],
+    rota: "/estoque", alterarLinhas: { pecas: { p1: { estoque_minimo: 20 } } },
+    passos: [{ seletor: 'ul[aria-label="Produtos"] li button:has-text("Pneu 175/70 R14")' }],
     descricao: "Clicar no nome de uma peça abre o perfil dela: o saldo grande contra o mínimo, o preço e a última saída de apoio, as movimentações da peça (entrada com '+', saída com '−') e onde ela foi usada (as OS e vendas). Quando falta, o botão principal é 'Comprar'." },
   { arquivo: "12-produto-form", modulo: "Estoque", titulo: "Cadastro de produto",
     rota: "/estoque", passos: [{ clicar: "Novo produto" }],

@@ -171,19 +171,21 @@ export function ServicosPage() {
         estado={carregando ? "carregando" : erro && servicos.length === 0 ? "erro" : "pronto"}
         itens={visiveis}
         chave={(s) => s.id}
-        busca={{
-          valor: busca,
-          aoMudar: setBusca,
-          rotulo: "Buscar serviço",
-          dica: "Nome ou código do serviço",
-        }}
+        // Sem nenhum serviço, não há o que buscar: só a frase e o botão (igual ao Estoque).
+        busca={
+          servicos.length > 0
+            ? { valor: busca, aoMudar: setBusca, rotulo: "Buscar serviço", dica: "Nome ou código do serviço" }
+            : undefined
+        }
         filtros={
-          <Chips
-            rotulo="Situação do serviço"
-            opcoes={OPCOES_DE_STATUS}
-            valor={filtro}
-            aoEscolher={setFiltro}
-          />
+          servicos.length > 0 && (
+            <Chips
+              rotulo="Situação do serviço"
+              opcoes={OPCOES_DE_STATUS}
+              valor={filtro}
+              aoEscolher={setFiltro}
+            />
+          )
         }
         filtroAtivo={filtro !== "todos"}
         aoLimparFiltros={() => setFiltro("todos")}

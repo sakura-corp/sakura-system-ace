@@ -305,10 +305,24 @@ export function ProdutosSection({
               <span className="block">última saída</span>
               <span className="block font-medium text-texto tabular-nums">{saida ? dataCurta(saida) : "—"}</span>
             </div>
+            {/* A UMA ação da linha mora aqui, e não no `acao` do molde: o lugar
+                dela fica reservado em toda linha (com ou sem o botão), e a barra
+                e a última saída batem em coluna de uma linha pra outra. */}
+            {onComprar && (
+              <div className="flex w-24 justify-end">
+                {barra.precisaComprar && peca.ativo && (
+                  <Botao
+                    variante="secundario"
+                    tamanho="medio"
+                    onClick={onComprar}
+                    aria-label={`Comprar — o produto ${peca.descricao}`}
+                  >
+                    Comprar
+                  </Botao>
+                )}
+              </div>
+            )}
           </div>
-        }
-        acao={
-          barra.precisaComprar && onComprar && peca.ativo ? { rotulo: "Comprar", aoClicar: onComprar } : undefined
         }
         mais={[
           { rotulo: "Editar", aoClicar: () => handleEditar(peca) },
