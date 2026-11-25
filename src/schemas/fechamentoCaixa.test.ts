@@ -6,6 +6,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MovimentoCaixa } from "@/types/caixa";
 import {
   diferencaDoFechamento,
+  ehPrimeiroFechamento,
+  fraseDaDiferenca,
+  NOTAS_DA_GAVETA,
+  somarAGaveta,
   ehDinheiro,
   fundoSugerido,
   lancamentosDepoisDoFechamento,
@@ -241,5 +245,62 @@ describe("totaisPorFormaDePagamento (Caixa → Diário, #875)", () => {
 
   it("sem entrada, lista vazia", () => {
     expect(totaisPorFormaDePagamento([mov("saida", 5, "pix")])).toEqual([]);
+  });
+});
+
+// #1090 — o fechamento passo a passo: a ajuda pra contar as notas e a
+// diferença em palavras. A conta do fechamento não muda; estas só ajudam a
+// chegar no "contado" e a dizer o resultado.
+describe("somarAGaveta (a ajuda pra contar as notas)", () => {
+  it("soma quantas notas de cada valor mais as moedas, no centavo", () => {
+    const r = somarAGaveta({ "100": "2", "50": "1", "20": "3", "2": "4" }, "3,75");
+    expect(r.total).toBe(321.75); // 200 + 50 + 60 + 8 + 3,75
+    expect(r.linhas.find((l) => l.nota === 100)).toEqual({ nota: 100, quantidade: 2, valor: 200 });
+    expect(r.linhas.find((l) => l.nota === 5)).toEqual({ nota: 5, quantidade: 0, valor: 0 });
+    expect(r.moedas).toBe(3.75);
+  });
+
+  it("traz as notas que existem, da maior pra menor", () => {
+    expect(somarAGaveta({}, "").linhas.map((l) => l.nota)).toEqual([200, 100, 50, 20, 10, 5, 2]);
+    expect(NOTAS_DA_GAVETA).toEqual([200, 100, 50, 20, 10, 5, 2]);
+  });
+
+  it("campo vazio, negativo ou com letra conta zero; quantidade quebrada vira a parte inteira", () => {
+    const r = somarAGaveta({ "100": "", "50": "-2", "20": "abc", "10": "1.9" }, "-5");
+    expect(r.total).toBe(10);
+    expect(r.moedas).toBe(0);
+  });
+
+  it("moedas aceitam vírgula ou ponto e fecham no centavo", () => {
+    expect(somarAGaveta({}, "0,1").total).toBe(0.1);
+    expect(somarAGaveta({}, "0.35").total).toBe(0.35);
+    // 0,1 + 0,2 no ponto flutuante daria 0,30000000000000004
+    expect(somarAGaveta({ "2": "1" }, "0,3").total).toBe(2.3);
+  });
+});
+
+describe("fraseDaDiferenca (o resultado em palavras)", () => {
+  it("falta, sobra e bateu, com o valor sem sinal", () => {
+    expect(fraseDaDiferenca(-69)).toEqual({ situacao: "faltou", frase: "Faltam R$ 69,00" });
+    expect(fraseDaDiferenca(5)).toEqual({ situacao: "sobrou", frase: "Sobram R$ 5,00" });
+    expect(fraseDaDiferenca(0)).toEqual({ situacao: "bateu", frase: "Bateu certinho" });
+  });
+
+  it("um centavo já é falta (não arredonda pra 'bateu')", () => {
+    expect(fraseDaDiferenca(diferencaDoFechamento(100, 99.99)).frase).toBe("Faltam R$ 0,01");
+  });
+});
+
+describe("ehPrimeiroFechamento (a frase do troco da primeira vez)", () => {
+  it("sem fechamento antes do dia: é o primeiro", () => {
+    expect(ehPrimeiroFechamento([], "2026-11-25")).toBe(true);
+    // um fechamento DEPOIS (fechando um dia antigo) não conta como anterior
+    expect(ehPrimeiroFechamento([{ data: "2026-11-26" }], "2026-11-25")).toBe(true);
+    // o próprio dia também não
+    expect(ehPrimeiroFechamento([{ data: "2026-11-25" }], "2026-11-25")).toBe(true);
+  });
+
+  it("com algum fechamento antes: não é", () => {
+    expect(ehPrimeiroFechamento([{ data: "2026-11-24" }], "2026-11-25")).toBe(false);
   });
 });
