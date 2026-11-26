@@ -78,7 +78,9 @@ interface ItemDoMenu {
 // O número ao lado do nome (#1092): a cor diz o tipo (vermelho, amarelo, verde;
 // nunca o laranja da ação), e a palavra vai na dica e no aria-label.
 const NUMERO_BASE =
-  "grid h-[18px] min-w-[22px] flex-none place-items-center rounded-full px-1.5 text-meta font-bold tabular-nums";
+  // `-ml-1`: colado no nome (8 px, não os 12 do ícone), pra "Ordens de Serviço"
+  // caber inteiro com o número do lado no menu aberto.
+  "-ml-1 grid h-[18px] min-w-[20px] flex-none place-items-center rounded-full px-1 text-meta font-bold tabular-nums";
 const NUMERO_PERIGO = "bg-perigo/[0.13] text-perigo";
 const NUMERO_ATENCAO = "bg-atencao/[0.12] text-atencao";
 const NUMERO_OK = "bg-ok/[0.12] text-ok";
