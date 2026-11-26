@@ -47,6 +47,8 @@
 - **O menu**: busca de novo depois de gravar (uma vez só, mesmo com várias gravações juntas), e trocar de loja apaga na hora o número da loja anterior. Os 2 testes reprovaram com o número velho na tela antes do conserto.
 - **"Zero não mostra nada"**: reescrevi esse teste, que passava sem provar nada. Ele reprovou quando pus de propósito um segundo número ("expected … to have a length of 1 but got 2").
 
+- **O CI pegou o que eu não tinha rodado**: o "Electron de verdade" reprovou 2 checagens ("anda pelo menu" e "pedir a nota na demonstração"), porque o teste acha o link pelo nome exato "Ordens de Serviço" e o número tinha entrado no nome do link ("Ordens de Serviço 1 OS pronta pra retirar"). Conserto: a frase virou a **descrição** do link (`aria-describedby`), e o nome ficou só o do menu, que é também o certo pra quem usa leitor de tela. Os testes novos do menu (nome exato + descrição) reprovaram antes do conserto (4 de 5) e passaram depois; o `test:electron` rodado no PC passou 64 de 64. **Lição**: mexeu no menu, rodar `npm run test:electron` antes do PR (a skill do chefe só pede isso pra mudança em `electron/`).
+
 ## O que passou sem eu ter visto reprovar
 - Os testes de antes da Central do dia (`centralDoDia.test.ts`, `CentralDoDia.test.tsx`) seguem verdes. Isso mostra que a Central não mudou.
 - O número encolhido vira um ponto na cor do tipo, com a dica.

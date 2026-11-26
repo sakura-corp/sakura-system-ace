@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /** #379 e #1092: os números do menu (Orçamentos, OS, Contas a Pagar e a Receber), sem permissão nova. */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
+import { renderizar, screen, waitFor } from "@/testes/tela";
 import type { Operador } from "@/types/operador";
 
 const buscar = vi.fn();
@@ -35,20 +35,32 @@ beforeEach(() => {
   buscar.mockResolvedValue(TODOS);
 });
 
+/**
+ * O item do menu, achado pelo nome EXATO: o número não entra no nome do link
+ * (o teste do Electron e o leitor de tela procuram "Ordens de Serviço", não
+ * "Ordens de Serviço 2 OS prontas..."). A frase vai na descrição do link.
+ */
+const item = (nome: string) => screen.getByRole("link", { name: nome });
+const numeroDo = (nome: string) => item(nome).querySelector("[data-numero-do-menu]");
+
 describe("Sidebar — os números do menu", () => {
-  it("os quatro menus mostram o número, com a dica em palavras no aria-label", async () => {
+  it("os quatro menus mostram o número; o nome do link não muda e a frase vai na descrição", async () => {
     operador = { id: "op", nome: "Ana", usuario: "ana", admin: true, permissoes: [] };
     renderizar(<Sidebar />);
 
-    expect(screen.getByRole("link", { name: /Orçamentos/ })).toHaveAttribute("href", "/orcamentos");
-    const orcamentos = await screen.findByLabelText("3 orçamentos: 1 vencido e 2 vencendo");
-    expect(orcamentos).toHaveTextContent("3");
-    expect(orcamentos.className).toContain("text-perigo");
-    expect(orcamentos.className).not.toContain("acao");
-    expect(await screen.findByLabelText("2 OS prontas pra retirar")).toHaveTextContent("2");
-    expect((await screen.findByLabelText("2 OS prontas pra retirar")).className).toContain("text-ok");
-    expect((await screen.findByLabelText("1 conta vencendo hoje")).className).toContain("text-atencao");
-    expect(await screen.findByLabelText("4 contas atrasadas")).toHaveTextContent("4");
+    expect(item("Orçamentos")).toHaveAttribute("href", "/orcamentos");
+    await waitFor(() => expect(item("Orçamentos")).toHaveAccessibleDescription("3 orçamentos: 1 vencido e 2 vencendo"));
+    expect(numeroDo("Orçamentos")).toHaveTextContent("3");
+    expect(numeroDo("Orçamentos")?.className).toContain("text-perigo");
+    expect(numeroDo("Orçamentos")?.className).not.toContain("acao");
+
+    expect(item("Ordens de Serviço")).toHaveAccessibleDescription("2 OS prontas pra retirar");
+    expect(numeroDo("Ordens de Serviço")).toHaveTextContent("2");
+    expect(numeroDo("Ordens de Serviço")?.className).toContain("text-ok");
+    expect(item("Contas a Pagar")).toHaveAccessibleDescription("1 conta vencendo hoje");
+    expect(numeroDo("Contas a Pagar")?.className).toContain("text-atencao");
+    expect(item("Contas a Receber")).toHaveAccessibleDescription("4 contas atrasadas");
+    expect(numeroDo("Contas a Receber")).toHaveTextContent("4");
     expect(buscar).toHaveBeenCalledWith("loja-a", {
       ordens_servico: true,
       contas_pagar: true,
@@ -56,14 +68,15 @@ describe("Sidebar — os números do menu", () => {
     });
   });
 
-  it("com o menu encolhido, o número vira um ponto na cor do tipo, com a dica", async () => {
+  it("com o menu encolhido, o número vira um ponto na cor do tipo, e a frase continua na descrição", async () => {
     window.localStorage.setItem("sakura.menu", "encolhido");
     operador = { id: "op", nome: "Ana", usuario: "ana", admin: false, permissoes: ["ordens_servico"] };
     renderizar(<Sidebar />);
 
-    const ponto = await screen.findByLabelText("3 orçamentos: 1 vencido e 2 vencendo");
+    await waitFor(() => expect(item("Orçamentos")).toHaveAccessibleDescription("3 orçamentos: 1 vencido e 2 vencendo"));
+    const ponto = numeroDo("Orçamentos");
     expect(ponto).toBeEmptyDOMElement();
-    expect(ponto.className).toContain("bg-perigo");
+    expect(ponto?.className).toContain("bg-perigo");
   });
 
   it("zero não mostra nada: só o menu que tem número ganha a bolinha", async () => {
@@ -74,11 +87,12 @@ describe("Sidebar — os números do menu", () => {
       contas_receber: null,
     });
     operador = { id: "op", nome: "Ana", usuario: "ana", admin: true, permissoes: [] };
-    renderizar(<Sidebar />);
+    const { container } = renderizar(<Sidebar />);
 
     // Espera a resposta chegar à tela (o número da OS aparece) antes de conferir os zeros.
-    await screen.findByLabelText(TODOS.ordens_servico.dica);
-    expect(screen.getAllByRole("img")).toHaveLength(1);
+    await waitFor(() => expect(numeroDo("Ordens de Serviço")).not.toBeNull());
+    expect(container.querySelectorAll("[data-numero-do-menu]")).toHaveLength(1);
+    expect(item("Orçamentos")).not.toHaveAccessibleDescription();
   });
 
   it("quem não tem o módulo não vê o número nem busca a lista dele", async () => {
@@ -86,7 +100,7 @@ describe("Sidebar — os números do menu", () => {
     buscar.mockResolvedValue({ orcamentos: TODOS.orcamentos, ordens_servico: TODOS.ordens_servico });
     renderizar(<Sidebar />);
 
-    await screen.findByLabelText("2 OS prontas pra retirar");
+    await waitFor(() => expect(item("Ordens de Serviço")).toHaveAccessibleDescription("2 OS prontas pra retirar"));
     expect(buscar).toHaveBeenCalledWith("loja-a", {
       ordens_servico: true,
       contas_pagar: false,

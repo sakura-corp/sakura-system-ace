@@ -22,7 +22,7 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNumerosDoMenu } from "@/hooks/useNumerosDoMenu";
@@ -373,6 +373,7 @@ export function Sidebar() {
 function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: boolean }) {
   const Icone = item.icone;
   const numero = item.numero ?? null;
+  const idDaFrase = useId();
   return (
     // A dica fica no link inteiro (não só no número): assim ela aparece também
     // pra quem chega pelo Tab, não só pra quem passa o mouse. Aberto, o nome
@@ -385,20 +386,30 @@ function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: bool
         to={item.rota}
         end={item.chave === "painel"}
         className={({ isActive }) => `${ITEM_BASE} ${isActive ? ITEM_ATIVO : ITEM_PARADO}`}
+        // A frase do número é a DESCRIÇÃO do link, não parte do nome: o nome
+        // continua "Ordens de Serviço" (é por ele que o leitor de tela e os
+        // testes acham o item), e a frase vem logo depois.
+        aria-describedby={numero ? idDaFrase : undefined}
       >
         {({ isActive }) => (
           <>
             <Icone aria-hidden strokeWidth={1.9} className={isActive ? ICONE_ATIVO : ICONE_PARADO} />
             <span className={encolhido ? "sr-only" : "min-w-0 truncate"}>{item.label}</span>
-            {numero &&
-              (encolhido ? (
-                // Encolhido não cabe o número: um ponto, na cor do tipo.
-                <span role="img" aria-label={numero.dica} className={`${PONTO_BASE} ${PONTO_DO_TIPO[numero.cor]}`} />
-              ) : (
-                <span role="img" aria-label={numero.dica} className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
-                  {numero.quantos}
+            {numero && (
+              <>
+                {encolhido ? (
+                  // Encolhido não cabe o número: um ponto, na cor do tipo.
+                  <span aria-hidden data-numero-do-menu className={`${PONTO_BASE} ${PONTO_DO_TIPO[numero.cor]}`} />
+                ) : (
+                  <span aria-hidden data-numero-do-menu className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
+                    {numero.quantos}
+                  </span>
+                )}
+                <span id={idDaFrase} hidden>
+                  {numero.dica}
                 </span>
-              ))}
+              </>
+            )}
           </>
         )}
       </NavLink>
