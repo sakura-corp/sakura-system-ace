@@ -1,121 +1,177 @@
-import type { Control, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
-import { useFieldArray } from "react-hook-form";
+import { type ReactNode, useState } from "react";
+import { type Control, type UseFormRegister, type UseFormWatch, useFieldArray } from "react-hook-form";
+import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
-import { Combobox } from "@/components/Combobox";
-import { MARCAS_VEICULO } from "@/lib/marcasVeiculo";
-import { type ClienteFormValues, veiculoFormVazio } from "@/schemas/cliente";
-import { TIPO_VEICULO_LABEL, type TipoVeiculo } from "@/types/cliente";
-import { Campo, inputClasse, Secao } from "./FormCompartilhado";
+import { JanelaDeConfirmar } from "@/components/JanelaDeConfirmar";
+import { VeiculoIcone } from "@/components/VeiculoIcone";
+import { JanelaVeiculo } from "@/pages/veiculos/JanelaVeiculo";
+import { type ClienteFormValues, type VeiculoFormValues, veiculoFormVazio } from "@/schemas/cliente";
+import type { TipoVeiculo } from "@/types/cliente";
+import { Secao } from "./FormCompartilhado";
 
-const OPCOES_MARCA = MARCAS_VEICULO.map((marca) => ({ valor: marca, rotulo: marca }));
+/**
+ * Os veículos no cadastro do cliente (#1096): uma linha por carro (o desenho,
+ * a placa e o resto escrito), e cada um abre a JANELA do veículo
+ * (`JanelaVeiculo`) pra cadastrar ou mexer. Antes era uma grade de 7 campos
+ * por carro, aqui dentro.
+ *
+ * Por que um hook que devolve DUAS partes: a lista mora dentro do `<form>` do
+ * cliente, e a janela tem o próprio `<form>` (o molde). Um `<form>` dentro de
+ * outro trava o "Salvar" (#1130), então a janela vai DEPOIS do `</form>` do
+ * cliente, e a lista e a janela precisam do mesmo `useFieldArray`:
+ *
+ *     const veiculos = useVeiculosDoCliente({ control, register });
+ *     <form>… {veiculos.lista} …</form>
+ *     {veiculos.janelas}
+ *
+ * Nada vai pro banco aqui: a janela devolve o veículo pra lista, e quem grava
+ * é o "Salvar cliente", como sempre (`paraVeiculosPreenchidos`).
+ */
 
-export function VeiculosFields({
+const TIPOS: string[] = ["hatch", "sedan", "suv", "picape", "moto"];
+
+function temAlgumDado(veiculo: VeiculoFormValues | undefined): boolean {
+  if (!veiculo) return false;
+  return Object.entries(veiculo).some(([chave, valor]) => chave !== "id" && Boolean(valor?.trim()));
+}
+
+function nomeDoVeiculo(veiculo: VeiculoFormValues): string {
+  const carro = [veiculo.marca, veiculo.modelo].map((t) => t.trim()).filter(Boolean).join(" ");
+  return veiculo.placa.trim() || carro || "sem placa";
+}
+
+function descricao(veiculo: VeiculoFormValues): string {
+  return [
+    [veiculo.marca, veiculo.modelo].map((t) => t.trim()).filter(Boolean).join(" "),
+    veiculo.ano.trim(),
+    veiculo.cor.trim(),
+    veiculo.km_atual.trim() ? `${Number(veiculo.km_atual).toLocaleString("pt-BR")} km` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+type Aberta = { indice: number | null };
+
+export function useVeiculosDoCliente({
   control,
   register,
   watch,
-  setValue,
 }: {
   control: Control<ClienteFormValues>;
   register: UseFormRegister<ClienteFormValues>;
   watch: UseFormWatch<ClienteFormValues>;
-  setValue: UseFormSetValue<ClienteFormValues>;
-}) {
-  const { fields, append, remove } = useFieldArray({ control, name: "veiculos" });
+}): { lista: ReactNode; janelas: ReactNode } {
+  const { fields, append, update, remove } = useFieldArray({ control, name: "veiculos" });
+  const valores = watch("veiculos");
+  const [aberta, setAberta] = useState<Aberta | null>(null);
+  const [paraRemover, setParaRemover] = useState<number | null>(null);
 
-  return (
+  // A linha 100% em branco com que todo cliente novo nasce (veiculoFormVazio)
+  // não aparece: ela é ignorada no salvar, e mostrar um "sem placa" vazio
+  // confundiria.
+  const visiveis = fields
+    .map((campo, indice) => ({ campo, indice, veiculo: valores?.[indice] }))
+    .filter(({ veiculo }) => Boolean(veiculo?.id) || temAlgumDado(veiculo));
+
+  function salvarDaJanela(veiculo: VeiculoFormValues) {
+    if (aberta?.indice != null) {
+      update(aberta.indice, veiculo);
+    } else {
+      append(veiculo);
+    }
+    setAberta(null);
+  }
+
+  const lista = (
     <Secao titulo="Veículos">
-      <div className="space-y-4">
-        {fields.map((campo, index) => {
-          const placa = register(`veiculos.${index}.placa`);
-          return (
-            <div key={campo.id} className="relative rounded-xl border border-linha bg-poco p-4">
-              {fields.length > 1 && (
-                <div className="mb-3 flex items-center justify-between">
-                  <p className="text-rotulo font-medium text-texto-2">Veículo {index + 1}</p>
-                  <Botao
-                    tamanho="pequeno"
-                    variante="fantasma"
-                    onClick={() => remove(index)}
-                    className="text-perigo hover:text-perigo"
+      {visiveis.length === 0 ? (
+        <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed border-linha-forte px-6 py-6">
+          <p className="text-corpo text-texto-2">
+            Nenhum veículo ainda. O carro cadastrado aqui aparece na OS e no pátio do Início.
+          </p>
+          <Botao onClick={() => setAberta({ indice: null })}>+ Adicionar veículo</Botao>
+        </div>
+      ) : (
+        <>
+          <ul className="flex flex-col gap-2">
+            {visiveis.map(({ campo, indice, veiculo }) => {
+              const v = veiculo as VeiculoFormValues;
+              const tipo = TIPOS.includes(v.tipo) ? (v.tipo as TipoVeiculo) : null;
+              return (
+                <li
+                  key={campo.id}
+                  className="flex min-w-0 items-center gap-4 rounded-xl border border-linha bg-poco px-4 py-3"
+                >
+                  {/* O id do banco anda com a linha (docs/licoes.md, item 28). */}
+                  <input type="hidden" {...register(`veiculos.${indice}.id`)} />
+                  <VeiculoIcone tipo={tipo} cor={v.cor} className="h-8 w-16 shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => setAberta({ indice })}
+                    className="flex min-h-10 min-w-0 flex-1 flex-col items-start rounded-lg text-left focus-visible:outline-2 focus-visible:outline-acao-clara"
                   >
-                    Remover
-                  </Botao>
-                </div>
-              )}
-              <input type="hidden" {...register(`veiculos.${index}.id`)} />
-              <div className="grid grid-cols-3 gap-4">
-                <Campo label="Placa">
-                  <input
-                    type="text"
-                    {...placa}
-                    onChange={(e) => {
-                      e.target.value = e.target.value.toUpperCase();
-                      placa.onChange(e);
-                    }}
-                    className={inputClasse}
+                    <span className="text-corpo font-bold tracking-[0.08em] text-texto">
+                      {v.placa.trim() || "Sem placa"}
+                    </span>
+                    <span className="max-w-full truncate text-rotulo text-texto-2">
+                      {descricao(v) || "Sem marca e modelo"}
+                    </span>
+                  </button>
+                  <AcoesDaLinha
+                    descricao={`o veículo ${nomeDoVeiculo(v)}`}
+                    acoes={[
+                      { tipo: "editar", aoClicar: () => setAberta({ indice }) },
+                      {
+                        tipo: "menu",
+                        rotulo: "Remover veículo",
+                        perigosa: true,
+                        aoClicar: () => setParaRemover(indice),
+                      },
+                    ]}
                   />
-                </Campo>
-                <Campo label="Marca">
-                  <Combobox
-                    opcoes={OPCOES_MARCA}
-                    valor={watch(`veiculos.${index}.marca`)}
-                    onMudar={(v) => setValue(`veiculos.${index}.marca`, v)}
-                    opcaoVazia="Sem marca"
-                    placeholder="Selecione ou digite..."
-                    permitirLivre
-                  />
-                </Campo>
-                <Campo label="Modelo">
-                  <input
-                    type="text"
-                    {...register(`veiculos.${index}.modelo`)}
-                    className={inputClasse}
-                  />
-                </Campo>
-                <Campo label="Ano">
-                  <input
-                    type="number"
-                    {...register(`veiculos.${index}.ano`)}
-                    className={inputClasse}
-                  />
-                </Campo>
-                <Campo label="Cor">
-                  <input
-                    type="text"
-                    {...register(`veiculos.${index}.cor`)}
-                    className={inputClasse}
-                  />
-                </Campo>
-                <Campo label="KM atual">
-                  <input
-                    type="number"
-                    {...register(`veiculos.${index}.km_atual`)}
-                    className={inputClasse}
-                  />
-                </Campo>
-                <Campo label="Tipo">
-                  <select {...register(`veiculos.${index}.tipo`)} className={inputClasse}>
-                    <option value="">Selecione...</option>
-                    {(Object.keys(TIPO_VEICULO_LABEL) as TipoVeiculo[]).map((chave) => (
-                      <option key={chave} value={chave}>
-                        {TIPO_VEICULO_LABEL[chave]}
-                      </option>
-                    ))}
-                  </select>
-                </Campo>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <Botao
-        tamanho="pequeno"
-        className="mt-4"
-        onClick={() => append({ ...veiculoFormVazio })}
-      >
-        + Adicionar veículo
-      </Botao>
+                </li>
+              );
+            })}
+          </ul>
+          <Botao tamanho="pequeno" className="mt-4" onClick={() => setAberta({ indice: null })}>
+            + Adicionar veículo
+          </Botao>
+        </>
+      )}
     </Secao>
   );
+
+  const veiculoAberto =
+    aberta?.indice != null ? (valores?.[aberta.indice] ?? veiculoFormVazio) : veiculoFormVazio;
+  const veiculoParaRemover = paraRemover != null ? valores?.[paraRemover] : undefined;
+
+  const janelas = (
+    <>
+      {aberta && (
+        <JanelaVeiculo
+          inicial={veiculoAberto}
+          aoSalvar={salvarDaJanela}
+          aoCancelar={() => setAberta(null)}
+        />
+      )}
+      {paraRemover != null && veiculoParaRemover && (
+        <JanelaDeConfirmar
+          pedido={{
+            acao: "Remover o veículo",
+            item: nomeDoVeiculo(veiculoParaRemover),
+            explicacao: "Ele sai do cadastro deste cliente quando você salvar. As OS antigas continuam, mas deixam de apontar pra este carro.",
+            botao: "Remover veículo",
+          }}
+          aoConfirmar={() => {
+            remove(paraRemover);
+            setParaRemover(null);
+          }}
+          aoCancelar={() => setParaRemover(null)}
+        />
+      )}
+    </>
+  );
+
+  return { lista, janelas };
 }

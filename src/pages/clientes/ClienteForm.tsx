@@ -17,7 +17,7 @@ import type { Cliente, NovoCliente, VeiculoFormulario } from "@/types/cliente";
 import { AvisoDeErro } from "@/components/Aviso";
 import { DadosClienteFields } from "./campos/DadosClienteFields";
 import { EnderecoFields } from "./campos/EnderecoFields";
-import { VeiculosFields } from "./campos/VeiculosFields";
+import { useVeiculosDoCliente } from "./campos/VeiculosFields";
 
 interface ClienteFormProps {
   clienteExistente?: Cliente;
@@ -45,6 +45,9 @@ export function ClienteForm({
     defaultValues: paraValoresFormulario(clienteExistente),
   });
 
+  // A lista fica dentro do <form>; a janela do veículo, depois dele (#1130).
+  const veiculos = useVeiculosDoCliente({ control, register, watch });
+
   const rascunho = useRascunho(
     `rascunho-cliente-${clienteExistente?.id ?? "novo"}`,
     watch,
@@ -65,6 +68,7 @@ export function ClienteForm({
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-6">
       <div className="flex items-center gap-3">
         <BotaoVoltar onClick={onCancelar} />
@@ -93,7 +97,7 @@ export function ClienteForm({
       </div>
 
       <div className="sakura-card p-6">
-        <VeiculosFields control={control} register={register} watch={watch} setValue={setValue} />
+        {veiculos.lista}
       </div>
 
       <div className="flex justify-end gap-3">
@@ -109,5 +113,7 @@ export function ClienteForm({
         </Botao>
       </div>
     </form>
+    {veiculos.janelas}
+    </>
   );
 }

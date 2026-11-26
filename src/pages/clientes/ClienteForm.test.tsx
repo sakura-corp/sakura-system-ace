@@ -20,7 +20,7 @@
  * faixa "restaurar rascunho?" no teste seguinte.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderizar, screen } from "@/testes/tela";
+import { renderizar, screen, within } from "@/testes/tela";
 import { ClienteForm } from "./ClienteForm";
 import type { Cliente } from "@/types/cliente";
 
@@ -74,19 +74,23 @@ function montar(clienteExistente?: Cliente) {
   return { ...resultado, onSalvar };
 }
 
-const botaoSalvar = () => screen.getByRole("button", { name: /^Salvar/ });
+const botaoSalvar = () => screen.getByRole("button", { name: /^Salvar (cliente|alterações)/ });
 
-/** O campo Marca é um Combobox (não um <select>): abre ao focar e escolhe no mousedown. */
-async function escolherMarca(
-  user: ReturnType<typeof montar>["user"],
-  indice: number,
-  marca: string,
-) {
-  const campos = screen.getAllByRole("combobox");
-  await user.click(campos[indice]);
-  await user.type(campos[indice], marca);
-  await user.click(screen.getByRole("button", { name: marca }));
+type Usuario = ReturnType<typeof montar>["user"];
+
+/** Os campos de lista da janela são `Combobox`: abrem ao focar e escolhem no clique. */
+async function escolher(user: Usuario, rotulo: string, opcao: string) {
+  const campo = screen.getByRole("combobox", { name: rotulo });
+  await user.click(campo);
+  await user.type(campo, opcao);
+  await user.click(screen.getByRole("button", { name: opcao }));
 }
+
+const abrirNovoVeiculo = (user: Usuario) =>
+  user.click(screen.getByRole("button", { name: /Adicionar veículo/ }));
+
+const salvarVeiculo = (user: Usuario) =>
+  user.click(screen.getByRole("button", { name: "Salvar veículo" }));
 
 describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
   it("salva um veículo que tem Marca e Modelo mas ainda NÃO tem placa", async () => {
@@ -97,21 +101,30 @@ describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
     const { user, onSalvar } = montar();
 
     await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
-    await escolherMarca(user, 0, "Fiat");
-    await user.type(screen.getByLabelText("Modelo"), "Uno");
+    await abrirNovoVeiculo(user);
+    await escolher(user, "Marca", "Fiat");
+    await escolher(user, "Modelo", "Uno");
+    await salvarVeiculo(user);
+
+    // A janela fechou e o carro apareceu na lista, com o tipo que veio do modelo.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText("Sem placa")).toBeInTheDocument();
 
     await user.click(botaoSalvar());
 
     expect(onSalvar).toHaveBeenCalledTimes(1);
     const [, veiculos] = onSalvar.mock.calls[0];
     expect(veiculos).toHaveLength(1);
-    expect(veiculos[0]).toMatchObject({ placa: "", marca: "Fiat", modelo: "Uno" });
+    expect(veiculos[0]).toMatchObject({ placa: "", marca: "Fiat", modelo: "Uno", tipo: "hatch" });
   });
 
   it("mas NÃO salva a linha de veículo 100% em branco que o formulário nasce com", async () => {
     // O outro lado da mesma regra — sem isto, "aceitar veículo sem placa"
     // viraria um carro fantasma em todo cliente cadastrado.
     const { user, onSalvar } = montar();
+
+    // E a linha em branco nem aparece: no lugar dela, o convite pra adicionar.
+    expect(screen.getByText(/Nenhum veículo ainda/)).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
     await user.click(botaoSalvar());
@@ -131,8 +144,11 @@ describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
     // "invalid input syntax for type uuid".
     const { user, onSalvar } = montar(clienteComUmVeiculo());
 
-    await user.click(screen.getByRole("button", { name: /Adicionar veículo/ }));
-    await user.type(screen.getAllByLabelText("Placa")[1], "xyz9z88");
+    await abrirNovoVeiculo(user);
+    // A janela de um carro novo abre vazia, mesmo com outro carro na lista.
+    expect(screen.getByRole("heading", { name: "Novo veículo" })).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Placa"), "xyz9z88");
+    await salvarVeiculo(user);
 
     await user.click(botaoSalvar());
 
@@ -145,20 +161,55 @@ describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
     expect(veiculos[1].placa).toBe("XYZ9Z88");
   });
 
-  it("remover um veículo tira só ele, e os outros não trocam de id", async () => {
+  it("editar um veículo pela janela muda só ele, e ele continua com o id do banco", async () => {
+    const { user, onSalvar } = montar(clienteComUmVeiculo());
+
+    await user.click(screen.getByRole("button", { name: /^ABC1D23/ }));
+    expect(screen.getByRole("heading", { name: "Editar veículo" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Placa")).toHaveValue("ABC1D23");
+    await user.click(screen.getByRole("radio", { name: "Vermelho" }));
+    await salvarVeiculo(user);
+
+    await user.click(botaoSalvar());
+
+    const [, veiculos] = onSalvar.mock.calls[0];
+    expect(veiculos).toEqual([
+      {
+        id: "veiculo-1",
+        placa: "ABC1D23",
+        marca: "Ford",
+        modelo: "Ka",
+        ano: 2015,
+        cor: "Vermelho",
+        tipo: "hatch",
+        km_atual: 82000,
+      },
+    ]);
+  });
+
+  it("cancelar a janela não muda nada no veículo", async () => {
+    const { user, onSalvar } = montar(clienteComUmVeiculo());
+
+    await user.click(screen.getByRole("button", { name: /^ABC1D23/ }));
+    await user.click(screen.getByRole("radio", { name: "Vermelho" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+
+    await user.click(botaoSalvar());
+
+    const [, veiculos] = onSalvar.mock.calls[0];
+    expect(veiculos[0].cor).toBe("Prata");
+  });
+
+  it("remover um veículo pede confirmação com o nome dele, tira só ele, e os outros não trocam de id", async () => {
     // `useFieldArray` reordena o array ao remover, e o id do banco tem que
     // andar junto com a linha certa — trocar os ids aqui desconectaria uma OS
     // antiga do carro dela.
     //
     // Uma observação medida, não suposta: apagar o `<input type="hidden">` de
-    // `id` do `VeiculosFields` NÃO faz estes dois testes falharem — nesta
-    // versão do react-hook-form o `useFieldArray` guarda o valor do item no
-    // estado do formulário, com ou sem campo registrado. Ou seja, o que estes
-    // testes protegem é a PROMESSA (o id segue a linha), não aquele mecanismo
-    // em particular. O hidden input continua onde está: tirá-lo é outra
-    // conversa, e a convenção da seção 4 do PROJETO_STATUS pode estar
-    // guardando algum outro caminho (restaurar rascunho, por exemplo) que
-    // estes testes não exercitam.
+    // `id` do `VeiculosFields` NÃO faz este teste falhar — nesta versão do
+    // react-hook-form o `useFieldArray` guarda o valor do item no estado do
+    // formulário, com ou sem campo registrado. O hidden input continua onde
+    // está (docs/licoes.md, item 28).
     const cliente = clienteComUmVeiculo();
     cliente.veiculos = [
       cliente.veiculos![0],
@@ -166,9 +217,10 @@ describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
     ];
     const { user, onSalvar } = montar(cliente);
 
-    // Com 2 veículos aparece um "Remover" por linha; o primeiro é o do
-    // veículo 1.
-    await user.click(screen.getAllByRole("button", { name: "Remover" })[0]);
+    await user.click(screen.getByRole("button", { name: "Mais ações — o veículo ABC1D23" }));
+    await user.click(screen.getByRole("menuitem", { name: /Remover veículo/ }));
+    expect(screen.getByRole("heading", { name: "Remover o veículo ABC1D23?" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remover veículo" }));
     await user.click(botaoSalvar());
 
     const [, veiculos] = onSalvar.mock.calls[0];
@@ -206,8 +258,10 @@ describe("ClienteForm — validação e tipo de pessoa", () => {
     const { user, onSalvar } = montar();
 
     await user.type(screen.getByLabelText(/Nome completo/), "João Pereira");
+    await abrirNovoVeiculo(user);
     await user.type(screen.getByLabelText("Placa"), "ABC1D23");
     await user.type(screen.getByLabelText("KM atual"), "82000");
+    await salvarVeiculo(user);
 
     await user.click(botaoSalvar());
 
