@@ -126,4 +126,27 @@ describe("OrdensServicoPage — sem internet (#1017)", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(listarOrdens.mock.calls.length).toBe(chamadas);
   });
+
+  it("internet oscilando durante a recarga: não recomeça a carga que ainda está buscando", async () => {
+    let soltar!: (v: OrdemServico[]) => void;
+    listarOrdens
+      .mockRejectedValueOnce(ERRO_DE_REDE)
+      .mockImplementationOnce(() => new Promise<OrdemServico[]>((r) => (soltar = r)))
+      .mockResolvedValue([OS]);
+    const tela = renderizar(<OrdensServicoPage />);
+    await screen.findByRole("button", { name: "Tentar de novo" });
+    // Voltou: começa a recarga (ainda buscando)…
+    conexao.semConexao = true;
+    tela.rerender(<OrdensServicoPage />);
+    conexao.semConexao = false;
+    tela.rerender(<OrdensServicoPage />);
+    // …e a rede pisca de novo no meio dela.
+    conexao.semConexao = true;
+    tela.rerender(<OrdensServicoPage />);
+    conexao.semConexao = false;
+    tela.rerender(<OrdensServicoPage />);
+    expect(listarOrdens).toHaveBeenCalledTimes(2);
+    soltar([OS]);
+    expect(await screen.findByText("Maria Souza")).toBeInTheDocument();
+  });
 });

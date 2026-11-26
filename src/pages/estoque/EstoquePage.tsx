@@ -146,12 +146,14 @@ export function EstoquePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lojaAtual?.id]);
 
-  // A carga que falhou (sem internet) busca de novo sozinha quando a internet
-  // volta; a que está funcionando não recarrega (#1017).
-  useRecarregarQuandoVoltar(!!erro || !!erroCatalogo, () => void carregar());
-
   // Carga da loja nova com erro: nada da loja anterior na tela, só o erro.
   const pecasNaTela = dadosSaoDaLoja ? pecas : [];
+  // A carga que falhou (sem internet) busca de novo sozinha quando a internet
+  // volta; a que está funcionando não recarrega (#1017). Só com a tela SEM
+  // peça: a recarga troca tudo por "Carregando..." e levaria junto o produto
+  // ou a contagem que a pessoa estiver digitando (revisão final). Com peças
+  // na tela, fica o aviso de cima e o próximo salvar recarrega.
+  useRecarregarQuandoVoltar((!!erro || !!erroCatalogo) && pecasNaTela.length === 0, () => void carregar());
   const movimentosNaTela = useMemo(() => (dadosSaoDaLoja ? movimentos : []), [dadosSaoDaLoja, movimentos]);
   const depositosNaTela = dadosSaoDaLoja ? depositos : [];
   const regimeNaTela = dadosSaoDaLoja ? regime : null;

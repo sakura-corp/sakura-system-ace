@@ -429,6 +429,9 @@ export function OrdensServicoPage() {
       lojaId === lojaNaTela.current ? ordens : null;
     setCarregando(true);
     setErro(null);
+    // Enquanto busca, não está "no erro": se a rede piscar no meio, a volta
+    // não recomeça esta carga (revisão final da #1017).
+    setCargaFalhou(false);
     try {
       const [
         ordensCarregadas,
