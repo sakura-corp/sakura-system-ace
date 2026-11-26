@@ -122,7 +122,7 @@ const MESES = [
 const DIAS_DA_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 
 /** "YYYY-MM-DD" somado de N dias, sem passar por UTC. */
-function somarDias(dia: string, dias: number): string {
+export function somarDias(dia: string, dias: number): string {
   const [a, m, d] = dia.split("-").map(Number);
   return diaLocal(new Date(a, m - 1, d + dias));
 }
@@ -218,9 +218,20 @@ function caixaSemFechar(e: EntradaCentralDoDia): Pendencia[] {
   ];
 }
 
+/**
+ * Conta a receber vencida: pendente e com vencimento antes de hoje. Mora aqui
+ * pra o número do menu (#1092) usar exatamente a mesma conta da Central.
+ */
+export function contaReceberAtrasada(
+  c: Pick<ContaReceber, "status" | "vencimento">,
+  hoje: string,
+): boolean {
+  return c.status === "pendente" && c.vencimento < hoje;
+}
+
 function contasReceberVencidas(e: EntradaCentralDoDia): Pendencia[] {
   return e.contasReceber
-    .filter((c) => c.status === "pendente" && c.vencimento < e.hoje)
+    .filter((c) => contaReceberAtrasada(c, e.hoje))
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
     .map((conta) => ({
       tipo: "conta_receber_vencida",
@@ -237,13 +248,21 @@ function placaEModelo(ordem: OrdemServico): string | null {
 }
 
 /**
+ * OS pronta pra retirar: concluída e que não é venda de balcão. A mesma regra
+ * da linha "carro pronto" da Central, usada também pelo número do menu (#1092).
+ */
+export function osProntaPraRetirar(o: Pick<OrdemServico, "status" | "tipo">): boolean {
+  return o.status === "concluida" && o.tipo !== "venda_balcao";
+}
+
+/**
  * OS concluída e ainda não faturada: o carro está pronto e o cliente não veio.
  * A OS não guarda quando foi concluída (`data_fechamento` só nasce no
  * faturamento), então a idade que aparece é a da abertura, e diz isso.
  */
 function carrosProntos(e: EntradaCentralDoDia): Pendencia[] {
   return e.ordens
-    .filter((o) => o.status === "concluida" && o.tipo !== "venda_balcao")
+    .filter(osProntaPraRetirar)
     .sort((a, b) => a.data_abertura.localeCompare(b.data_abertura))
     .map((ordem) => ({
       tipo: "carro_pronto",
@@ -258,10 +277,22 @@ function carrosProntos(e: EntradaCentralDoDia): Pendencia[] {
     }));
 }
 
+/**
+ * Conta a pagar pendente que vence até `limite` (dia "YYYY-MM-DD"; a vencida
+ * também entra). A Central usa hoje + `DIAS_CONTA_PAGAR_VENCENDO`; o número do
+ * menu (#1092) usa o próprio hoje.
+ */
+export function contaPagarVenceAte(
+  c: Pick<ContaPagar, "status" | "vencimento">,
+  limite: string,
+): boolean {
+  return c.status === "pendente" && c.vencimento <= limite;
+}
+
 function contasPagarVencendo(e: EntradaCentralDoDia): Pendencia[] {
   const limite = somarDias(e.hoje, DIAS_CONTA_PAGAR_VENCENDO);
   return e.contasPagar
-    .filter((c) => c.status === "pendente" && c.vencimento <= limite)
+    .filter((c) => contaPagarVenceAte(c, limite))
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
     .map((conta) => ({
       tipo: "conta_pagar_vencendo",

@@ -25,9 +25,10 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrcamentosAbertos } from "@/hooks/useOrcamentosAbertos";
+import { useNumerosDoMenu } from "@/hooks/useNumerosDoMenu";
 import { guardarMenuEncolhido, lerMenuEncolhido } from "@/lib/menuLateral";
 import { definirTema, useTema } from "@/lib/tema";
+import type { CorDoNumero, NumeroDoMenu } from "@/schemas/numerosDoMenu";
 import { GRUPOS_DO_MENU, MODULOS, type GrupoDoMenu, type ModuloChave } from "@/types/operador";
 import { AreaRolavel } from "./AreaRolavel";
 import { Dica } from "./Dica";
@@ -71,8 +72,27 @@ interface ItemDoMenu {
   rota: string;
   grupo: GrupoDoMenu;
   icone: typeof FileText;
-  numero?: number;
+  numero?: NumeroDoMenu | null;
 }
+
+// O número ao lado do nome (#1092): a cor diz o tipo (vermelho, amarelo, verde;
+// nunca o laranja da ação), e a palavra vai na dica e no aria-label.
+const NUMERO_BASE =
+  "grid h-[18px] min-w-[22px] flex-none place-items-center rounded-full px-1.5 text-meta font-bold tabular-nums";
+const NUMERO_PERIGO = "bg-perigo/[0.13] text-perigo";
+const NUMERO_ATENCAO = "bg-atencao/[0.12] text-atencao";
+const NUMERO_OK = "bg-ok/[0.12] text-ok";
+const NUMERO_DO_TIPO: Record<CorDoNumero, string> = {
+  perigo: NUMERO_PERIGO,
+  atencao: NUMERO_ATENCAO,
+  ok: NUMERO_OK,
+};
+const PONTO_BASE = "absolute right-[9px] top-[7px] h-1.5 w-1.5 rounded-full";
+const PONTO_DO_TIPO: Record<CorDoNumero, string> = {
+  perigo: "bg-perigo",
+  atencao: "bg-atencao",
+  ok: "bg-ok",
+};
 
 // Os estados em strings separadas: o `npm run contraste` mede string por string.
 const ITEM_BASE =
@@ -111,23 +131,32 @@ export function Sidebar() {
 
   // "Orçamentos" (#379) não é um módulo à parte: é do mesmo módulo das OS,
   // então aparece pra quem tem "ordens_servico" e não ganha permissão nova.
-  const temOrdens = modulosLiberados.some((modulo) => modulo.chave === "ordens_servico");
-  const orcamentosAbertos = useOrcamentosAbertos(lojaAtual?.id, temOrdens);
-  const itensDoMenu: ItemDoMenu[] = modulosLiberados.flatMap((modulo) =>
-    modulo.chave === "ordens_servico"
+  const temModulo = (chave: ModuloChave) => modulosLiberados.some((modulo) => modulo.chave === chave);
+  const temOrdens = temModulo("ordens_servico");
+  // Os números do menu (#1092): cada busca só roda pra quem tem o módulo.
+  const numeros = useNumerosDoMenu(lojaAtual?.id, {
+    ordens_servico: temOrdens,
+    contas_pagar: temModulo("contas_pagar"),
+    contas_receber: temModulo("contas_receber"),
+  });
+  const numeroDoModulo = (chave: string): NumeroDoMenu | null =>
+    (numeros as Record<string, NumeroDoMenu | null | undefined>)[chave] ?? null;
+  const itensDoMenu: ItemDoMenu[] = modulosLiberados.flatMap((modulo) => {
+    const doModulo: ItemDoMenu = { ...modulo, numero: numeroDoModulo(modulo.chave) };
+    return modulo.chave === "ordens_servico"
       ? [
-          modulo,
+          doModulo,
           {
             chave: "orcamentos",
             label: "Orçamentos",
             rota: "/orcamentos",
             grupo: modulo.grupo,
             icone: FileText,
-            numero: orcamentosAbertos,
+            numero: numeroDoModulo("orcamentos"),
           },
         ]
-      : [modulo],
-  );
+      : [doModulo];
+  });
   // Grupo sem nenhum item liberado some inteiro (não fica um título sozinho).
   const grupos = GRUPOS_DO_MENU.map((grupo) => ({
     ...grupo,
@@ -341,8 +370,9 @@ export function Sidebar() {
 
 function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: boolean }) {
   const Icone = item.icone;
+  const numero = item.numero ?? null;
   return (
-    <Dica texto={encolhido ? item.label : ""} lado="direita">
+    <Dica texto={encolhido ? (numero ? `${item.label} · ${numero.dica}` : item.label) : ""} lado="direita">
       <NavLink
         to={item.rota}
         end={item.chave === "painel"}
@@ -351,23 +381,17 @@ function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: bool
         {({ isActive }) => (
           <>
             <Icone aria-hidden strokeWidth={1.9} className={isActive ? ICONE_ATIVO : ICONE_PARADO} />
-            <span className={encolhido ? "sr-only" : "min-w-0 flex-1 truncate"}>{item.label}</span>
-            {!!item.numero &&
+            <span className={encolhido ? "sr-only" : "min-w-0 truncate"}>{item.label}</span>
+            {numero &&
               (encolhido ? (
-                // Encolhido não cabe o número: um ponto laranja avisa que tem.
-                <span
-                  role="img"
-                  aria-label={`${item.numero} em aberto`}
-                  className="absolute right-[9px] top-[7px] h-1.5 w-1.5 rounded-full bg-acao"
-                />
+                // Encolhido não cabe o número: um ponto, na cor do tipo.
+                <span role="img" aria-label={numero.dica} className={`${PONTO_BASE} ${PONTO_DO_TIPO[numero.cor]}`} />
               ) : (
-                <span
-                  role="img"
-                  aria-label={`${item.numero} em aberto`}
-                  className="flex-none rounded-full bg-acao/20 px-[7px] py-px text-meta font-bold tabular-nums text-acao-clara"
-                >
-                  {item.numero}
-                </span>
+                <Dica texto={numero.dica} lado="direita">
+                  <span role="img" aria-label={numero.dica} className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
+                    {numero.quantos}
+                  </span>
+                </Dica>
               ))}
           </>
         )}

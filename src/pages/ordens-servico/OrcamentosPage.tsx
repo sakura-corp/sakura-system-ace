@@ -49,7 +49,7 @@ import {
 } from "@/lib/ordensServico";
 import { listarPecasJanela } from "@/lib/pecas";
 import { listarServicos } from "@/lib/servicos";
-import { avisarOrcamentosMudaram } from "@/hooks/useOrcamentosAbertos";
+import { avisarOrcamentosMudaram } from "@/hooks/useNumerosDoMenu";
 import {
   contarOrcamentosAbertos,
   ehOrcamento,
