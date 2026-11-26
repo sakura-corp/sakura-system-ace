@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Combobox } from "@/components/Combobox";
 import { CampoDoMolde } from "@/components/molde/CampoDoMolde";
@@ -8,7 +8,7 @@ import { MoldeFormulario, SecaoDoFormulario } from "@/components/molde/MoldeForm
 import { VeiculoIcone } from "@/components/VeiculoIcone";
 import { corVeiculoParaHex } from "@/lib/corVeiculo";
 import { hojeLocal } from "@/lib/datas";
-import { anosDoModelo, modelosDaMarca, opcoesDeMarca, tipoDoModelo } from "@/lib/marcasVeiculo";
+import { acharModelo, anosDoModelo, modelosDaMarca, opcoesDeMarca, tipoDoModelo } from "@/lib/marcasVeiculo";
 import { type VeiculoFormValues, veiculoFormSchema } from "@/schemas/cliente";
 import { TIPO_VEICULO_LABEL, type TipoVeiculo } from "@/types/cliente";
 import { mascararPlaca, placaNoPadrao } from "./placa";
@@ -115,6 +115,9 @@ export function JanelaVeiculo({
 
   // Cor que já veio escrita e não é de nenhuma bolinha: "Outra", com o texto.
   const [corLivre, setCorLivre] = useState(() => inicial.cor.trim() !== "" && !corDaBolinha(inicial.cor));
+  // O último texto do "Outra": passar por uma bolinha e voltar não pode apagar o que estava escrito.
+  const ultimaCorLivre = useRef(corLivre ? inicial.cor : "");
+  const [erro, setErro] = useState<string | undefined>();
 
   const opcoesMarca = useMemo(() => opcoesDeMarca().map((m) => ({ valor: m, rotulo: m })), []);
   const opcoesModelo = useMemo(
@@ -122,7 +125,8 @@ export function JanelaVeiculo({
     [marca],
   );
   const opcoesAno = useMemo(
-    () => anosDoModelo(marca, modelo, anoAtual).map((a) => ({ valor: String(a), rotulo: String(a) })),
+    // Até o ano que vem: o carro do ano-modelo seguinte já sai no fim do ano.
+    () => anosDoModelo(marca, modelo, anoAtual + 1).map((a) => ({ valor: String(a), rotulo: String(a) })),
     [marca, modelo, anoAtual],
   );
 
@@ -136,17 +140,24 @@ export function JanelaVeiculo({
   }
 
   function mudarModelo(valor: string) {
-    setValue("modelo", valor, { shouldDirty: true });
+    // "strada" digitado vira "Strada": o nome do catálogo, igual pra todo mundo.
+    setValue("modelo", acharModelo(marca, valor)?.nome ?? valor, { shouldDirty: true });
     const doCatalogo = tipoDoModelo(marca, valor);
     if (doCatalogo) setValue("tipo", doCatalogo, { shouldDirty: true });
   }
 
   function salvar(valores: VeiculoFormValues) {
+    // Janela vazia: avisa, em vez de fechar e não aparecer nada na lista.
+    if (!temAlgumDado(valores)) {
+      setErro("Preencha pelo menos a placa, a marca ou o modelo.");
+      return;
+    }
     aoSalvar({ ...valores, tipo: ehTipo(valores.tipo) ? valores.tipo : "" });
   }
 
   const placaCampo = register("placa");
   const kmCampo = register("km_atual");
+  const corCampo = register("cor");
 
   const nomeDaCor = corLivre ? cor.trim() : (corDaBolinha(cor) ?? cor.trim());
   const nomeDoTipo = tipoDesenhado ? TIPO_VEICULO_LABEL[tipoDesenhado] : "Veículo";
@@ -164,6 +175,7 @@ export function JanelaVeiculo({
       rotuloDoEnviar="Salvar veículo"
       aoEnviar={handleSubmit(salvar)}
       aoCancelar={aoCancelar}
+      erro={erro}
     >
       <div className="grid min-w-0 grid-cols-1 gap-8 @[44rem]:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -279,7 +291,7 @@ export function JanelaVeiculo({
                   checked={corLivre}
                   onChange={() => {
                     setCorLivre(true);
-                    setValue("cor", "", { shouldDirty: true });
+                    setValue("cor", ultimaCorLivre.current, { shouldDirty: true });
                   }}
                 />
                 <span
@@ -294,7 +306,18 @@ export function JanelaVeiculo({
             {corLivre && (
               <div className="mt-2 max-w-xs">
                 <CampoDoMolde rotulo="Qual cor?">
-                  {(campo) => <input {...campo} {...register("cor")} autoComplete="off" placeholder="Azul Netuno" />}
+                  {(campo) => (
+                    <input
+                      {...campo}
+                      {...corCampo}
+                      autoComplete="off"
+                      placeholder="Azul Netuno"
+                      onChange={(e) => {
+                        ultimaCorLivre.current = e.target.value;
+                        void corCampo.onChange(e);
+                      }}
+                    />
+                  )}
                 </CampoDoMolde>
               </div>
             )}
@@ -310,7 +333,8 @@ export function JanelaVeiculo({
                   autoComplete="off"
                   className={`${campo.className} tabular-nums`}
                   onChange={(e) => {
-                    e.target.value = e.target.value.replace(/\D/g, "");
+                    // Até 7 algarismos: o banco guarda o KM num inteiro, e 9.999.999 km já sobra.
+                    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 7);
                     void kmCampo.onChange(e);
                   }}
                 />

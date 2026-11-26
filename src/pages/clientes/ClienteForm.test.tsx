@@ -187,6 +187,25 @@ describe("ClienteForm — o veículo preenchido precisa chegar inteiro", () => {
     ]);
   });
 
+  it("\"Salvar veículo\" com a janela vazia avisa e não fecha (não some sem dizer nada)", async () => {
+    const { user } = montar();
+
+    await abrirNovoVeiculo(user);
+    await salvarVeiculo(user);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/Preencha pelo menos a placa/)).toBeInTheDocument();
+  });
+
+  it("depois de salvar a janela, o foco volta pra linha do veículo", async () => {
+    const { user } = montar(clienteComUmVeiculo());
+
+    await user.click(screen.getByRole("button", { name: /^ABC1D23/ }));
+    await salvarVeiculo(user);
+
+    expect(screen.getByRole("button", { name: /^ABC1D23/ })).toHaveFocus();
+  });
+
   it("cancelar a janela não muda nada no veículo", async () => {
     const { user, onSalvar } = montar(clienteComUmVeiculo());
 

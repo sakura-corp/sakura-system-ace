@@ -177,7 +177,7 @@ const DESENHOS: Record<TipoVeiculo, (p: { tinta: Tinta }) => ReactNode> = {
 export function VeiculoIcone({ tipo, cor, className, rotulo }: VeiculoIconeProps) {
   const idBase = useId().replace(/:/g, "");
   const corHex = corVeiculoParaHex(cor);
-  const tipoDesenhado: TipoVeiculo = tipo && tipo in DESENHOS ? tipo : "hatch";
+  const tipoDesenhado: TipoVeiculo = tipo && Object.hasOwn(DESENHOS, tipo) ? tipo : "hatch";
   const Desenho = DESENHOS[tipoDesenhado];
   const tinta: Tinta = {
     cor: corHex,

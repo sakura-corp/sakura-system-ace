@@ -254,6 +254,36 @@ describe("JanelaVeiculo — placa, cor e a prévia", () => {
     expect(aoSalvar.mock.calls[0][0].cor).toBe("Azul Netuno");
   });
 
+  it("passar por uma bolinha e voltar pra \"Outra\" não apaga a cor que estava escrita", async () => {
+    const { user, aoSalvar } = montar({ ...veiculoFormVazio, placa: "ABC1D23", cor: "Prata metálico" });
+
+    await user.click(screen.getByRole("radio", { name: "Vinho" }));
+    await user.click(screen.getByRole("radio", { name: "Outra" }));
+    expect(screen.getByLabelText("Qual cor?")).toHaveValue("Prata metálico");
+
+    await salvar(user);
+    expect(aoSalvar.mock.calls[0][0].cor).toBe("Prata metálico");
+  });
+
+  it("o KM aceita no máximo 7 algarismos (o banco guarda até uns 2 bilhões)", async () => {
+    const { user, aoSalvar } = montar();
+
+    await user.type(screen.getByLabelText("KM atual"), "123456789012");
+    await salvar(user);
+
+    expect(aoSalvar.mock.calls[0][0].km_atual).toBe("1234567");
+  });
+
+  it("modelo digitado em minúsculas vira o nome do catálogo", async () => {
+    const { user, aoSalvar } = montar();
+
+    await escolher(user, "Marca", "Fiat");
+    await digitarLivre(user, "Modelo", "strada");
+    await salvar(user);
+
+    expect(aoSalvar.mock.calls[0][0]).toMatchObject({ modelo: "Strada", tipo: "picape" });
+  });
+
   it("Cancelar fecha sem salvar", async () => {
     const { user, aoSalvar, aoCancelar } = montar();
 

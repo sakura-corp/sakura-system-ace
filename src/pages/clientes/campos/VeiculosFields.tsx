@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { type Control, type UseFormRegister, type UseFormWatch, useFieldArray } from "react-hook-form";
 import { AcoesDaLinha } from "@/components/AcoesDaLinha";
 import { Botao } from "@/components/Botao";
@@ -66,6 +66,16 @@ export function useVeiculosDoCliente({
   const valores = watch("veiculos");
   const [aberta, setAberta] = useState<Aberta | null>(null);
   const [paraRemover, setParaRemover] = useState<number | null>(null);
+  // Depois de salvar a janela, o foco vai pra linha do carro: o botão que
+  // abriu a janela é desenhado de novo (o `update` troca a chave da linha),
+  // e o Modal não acharia pra onde devolver o foco.
+  const listaRef = useRef<HTMLDivElement>(null);
+  const [focarIndice, setFocarIndice] = useState<number | null>(null);
+  useEffect(() => {
+    if (focarIndice == null) return;
+    listaRef.current?.querySelector<HTMLElement>(`[data-veiculo-indice="${focarIndice}"]`)?.focus();
+    setFocarIndice(null);
+  }, [focarIndice, fields]);
 
   // A linha 100% em branco com que todo cliente novo nasce (veiculoFormVazio)
   // não aparece: ela é ignorada no salvar, e mostrar um "sem placa" vazio
@@ -77,14 +87,17 @@ export function useVeiculosDoCliente({
   function salvarDaJanela(veiculo: VeiculoFormValues) {
     if (aberta?.indice != null) {
       update(aberta.indice, veiculo);
+      setFocarIndice(aberta.indice);
     } else {
       append(veiculo);
+      setFocarIndice(fields.length);
     }
     setAberta(null);
   }
 
   const lista = (
     <Secao titulo="Veículos">
+      <div ref={listaRef}>
       {visiveis.length === 0 ? (
         <div className="flex flex-col items-start gap-4 rounded-xl border border-dashed border-linha-forte px-6 py-6">
           <p className="text-corpo text-texto-2">
@@ -108,6 +121,7 @@ export function useVeiculosDoCliente({
                   <VeiculoIcone tipo={tipo} cor={v.cor} className="h-8 w-16 shrink-0" />
                   <button
                     type="button"
+                    data-veiculo-indice={indice}
                     onClick={() => setAberta({ indice })}
                     className="flex min-h-10 min-w-0 flex-1 flex-col items-start rounded-lg text-left focus-visible:outline-2 focus-visible:outline-acao-clara"
                   >
@@ -139,6 +153,7 @@ export function useVeiculosDoCliente({
           </Botao>
         </>
       )}
+      </div>
     </Secao>
   );
 
