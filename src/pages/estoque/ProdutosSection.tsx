@@ -65,6 +65,12 @@ interface ProdutosSectionProps {
   lojaId: string;
   onRecarregar: () => Promise<void>;
   /**
+   * A carga do estoque falhou (sem internet, por exemplo; #1017). Sem peça
+   * nenhuma na tela, a lista mostra só o erro e o "Tentar de novo", e nunca o
+   * "Nenhum produto cadastrado" (pareceria que os cadastros sumiram).
+   */
+  erroAoCarregar?: string | null;
+  /**
    * O aviso do estoque inicial que não entrou (#909). Mora no `EstoquePage`,
    * não aqui: a recarga depois de salvar troca esta seção por "Carregando..."
    * e ela volta zerada, levando junto um aviso guardado nela.
@@ -103,6 +109,7 @@ export function ProdutosSection({
   regime,
   lojaId,
   onRecarregar,
+  erroAoCarregar = null,
   avisoEstoqueInicial,
   onAvisoEstoqueInicial,
   onAbrirPeca,
@@ -419,7 +426,8 @@ export function ProdutosSection({
       <div ref={caixaDaLista} onKeyDown={handleTeclaNaLista} className="@container min-w-0">
         <MoldeLista
           rotulo="Produtos"
-          estado="pronto"
+          estado={erroAoCarregar && pecas.length === 0 ? "erro" : "pronto"}
+          erro={erroAoCarregar ? { mensagem: erroAoCarregar, tentarDeNovo: () => void onRecarregar() } : undefined}
           itens={pecasFiltradas}
           chave={(peca) => peca.id}
           linha={linhaDaPeca}

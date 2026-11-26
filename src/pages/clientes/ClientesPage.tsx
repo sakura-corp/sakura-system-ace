@@ -3,8 +3,10 @@ import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { BotaoWhatsapp } from "@/components/BotaoWhatsapp";
 import { Dica } from "@/components/Dica";
+import { ErroDeCarga } from "@/components/ErroDeCarga";
 import { LinkCliente } from "@/components/LinkCliente";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRecarregarQuandoVoltar } from "@/hooks/useRecarregarQuandoVoltar";
 import { useRolarAteOFormulario } from "@/hooks/useRolarAteOFormulario";
 import { useListaPaginada, type OrdemDaLista } from "@/hooks/useListaPaginada";
 import {
@@ -57,6 +59,9 @@ export function ClientesPage() {
     ordemPadrao: ORDEM_PADRAO,
     colunas: COLUNAS_DA_LISTA_DE_CLIENTES,
   });
+  // A lista que não carregou (sem internet) busca de novo sozinha quando a
+  // internet volta; a que está funcionando não pisca (#1017).
+  useRecarregarQuandoVoltar(!!lista.erro, lista.recarregar);
   // O filtro "sumiram" ainda precisa de TODOS os clientes (cruza com as OS),
   // e só é buscado quando a pessoa liga a caixinha.
   const [todosClientes, setTodosClientes] = useState<Cliente[]>([]);
@@ -239,8 +244,12 @@ export function ClientesPage() {
         </div>
       )}
 
-      {(erro || lista.erro) && (
-        <AvisoDeErro>{erro || lista.erro}</AvisoDeErro>
+      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+
+      {/* A lista não carregou: o erro e o "Tentar de novo", e nunca o "Nenhum
+          cliente cadastrado" junto (#1017). O que já estava na tela fica. */}
+      {lista.erro && !soSumidos && !verRetornos && (
+        <ErroDeCarga mensagem={lista.erro} tentarDeNovo={lista.recarregar} />
       )}
 
       {temClientes && (
@@ -386,7 +395,7 @@ export function ClientesPage() {
             </div>
           </div>
         )
-      ) : lista.total === 0 ? (
+      ) : lista.total === 0 && lista.erro ? null : lista.total === 0 ? (
         <p className="text-corpo text-texto-2">
           {lista.buscaDaTela
             ? `Nenhum cliente encontrado com "${lista.buscaDaTela}".`

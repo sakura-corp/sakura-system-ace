@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { buscarLinkAvaliacao, listarJurosParcelas } from "@/lib/configuracoes";
 import { dataCurta, diaLocal, hojeLocal, primeiroDiaDoMesLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
+import { useRecarregarQuandoVoltar } from "@/hooks/useRecarregarQuandoVoltar";
 import type { CustoDoBanco } from "@/schemas/metricasCaixa";
 import { buscarCustoDasOrdens } from "@/lib/caixa";
 import {
@@ -210,6 +211,10 @@ export function OrdensServicoPage() {
   const [custoDasOrdens, setCustoDasOrdens] = useState<CustoDoBanco>(() => new Map());
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  // A ÚLTIMA carga da tela falhou (sem internet, por exemplo; #1017). À parte
+  // do `erro`, que também guarda o erro de uma ação (faturar, WhatsApp): só a
+  // carga que falhou busca de novo quando a internet volta.
+  const [cargaFalhou, setCargaFalhou] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [ordemEmEdicao, setOrdemEmEdicao] = useState<OrdemServico | null>(null);
   const [abaInicialEdicao, setAbaInicialEdicao] = useState<"detalhes" | "fechamento">("detalhes");
@@ -484,6 +489,7 @@ export function OrdensServicoPage() {
         console.error("Erro ao carregar as notas fiscais das ordens:", notas.reason);
       }
 
+      setCargaFalhou(false);
       abrirOrdemPedida(ordensCarregadas);
 
       return ordensCarregadas;
@@ -491,6 +497,7 @@ export function OrdensServicoPage() {
       if (!aindaEhAtual()) return null;
       console.error("Erro ao carregar ordens de serviço:", err);
       setErro(mensagemDeErro(err));
+      setCargaFalhou(true);
       return null;
     } finally {
       if (aindaEhAtual()) setCarregando(false);
@@ -516,6 +523,10 @@ export function OrdensServicoPage() {
     }
     navigate(location.pathname, { replace: true, state: null });
   }
+
+  // A carga que falhou busca de novo sozinha quando a internet volta; a lista
+  // que está funcionando não recarrega (#1017).
+  useRecarregarQuandoVoltar(cargaFalhou, () => void carregar());
 
   useEffect(() => {
     // Loja nova começa na aba das OS: sem isto, a loja anterior em "Vendas"
@@ -1083,7 +1094,9 @@ export function OrdensServicoPage() {
         </p>
       )}
 
-      {!carregando && lojaAtual && clientes.length === 0 && (
+      {/* Sem a carga (sem internet), a lista de clientes também não veio: o
+          aviso diria que não há cliente cadastrado (#1017). */}
+      {!carregando && lojaAtual && !cargaFalhou && clientes.length === 0 && (
         <p className="flex items-start gap-2 rounded-xl bg-atencao/[0.12] px-4 py-3 text-corpo text-atencao">
           <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Cadastre ao menos um cliente antes de abrir uma ordem de serviço.

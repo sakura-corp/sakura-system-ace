@@ -22,7 +22,8 @@ vi.mock("@/lib/ordensServico", () => ({
   registrarVendaBalcao: vi.fn(),
   VendaSemFaturamentoError: class extends Error {},
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A tela ouve a rede pelo `useConexao` (#1017): o banco de mentira avisa nada.
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoMudarARede: () => () => {} }));
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: async () => [{ id: "c1", nome: "Maria", telefone: null, veiculos: [] }],
   cadastrarClienteRapido: vi.fn(),
