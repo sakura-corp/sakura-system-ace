@@ -3,7 +3,7 @@
 - **Tarefa**: #979, o valor de cada parcela era calculado dentro da tela do faturamento
 - **Chefe**: frontend
 - **Data**: 2026-11-26
-- **PR**: o desta branch (`claude/elegant-feynman-tbp1em`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1209
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
@@ -32,7 +32,7 @@
 ## O que passou sem eu ter visto reprovar
 - `npm run typecheck` (sem erro); `npm run lint` (0 erros; os 3 avisos já existiam, em arquivos que não mexi).
 - `npm run test:fusos`: 3532 testes, nos dois fusos.
-- `npm run contraste` e `npm run contraste:telas` (90 telas, nenhuma reprovação); `npm run largura:telas`: ver a descrição do PR.
+- `npm run contraste` e `npm run contraste:telas` (90 telas, nenhuma reprovação); `npm run largura:telas`: 90 telas em 5 larguras, nada passando da janela (a tela 10-os-fechamento só passou na segunda chance, por tempo esgotado na primeira; não é a tela mexida).
 - O teste que confere se o texto bate com `calcularListaParcelas` em R$ 100,01, R$ 100,02, R$ 99,99 e R$ 1.234,56.
 
 ## O que ficou de fora
