@@ -77,7 +77,15 @@ function semComentarioNemTexto(codigo: string): string {
     .replace(/\/\/[^\n]*/g, " ")
     .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
     .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
-    .replace(/`(?:[^`\\]|\\.)*`/g, "``")
+    // O texto da template string some, mas o que está dentro de `${…}` fica:
+    // a conta pode morar ali (#979: "3x de ${formatarMoeda(valor / parcelas)}"
+    // passou batido porque a template inteira virava "``"). Aceita um nível
+    // de chaves dentro da interpolação.
+    .replace(
+      /`(?:[^`\\]|\\.)*`/g,
+      (template) =>
+        "``" + (template.match(/\$\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) ?? []).join(" "),
+    )
     .replace(/<\/[A-Za-z][^>]*>/g, " ")
     .replace(/\/>/g, " ");
 }
@@ -137,6 +145,15 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
     // `schemas/dinheiro.ts` (fecha no centavo) ou uma função de `src/schemas/`.
     padrao:
       /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b|\b(?:soma|total)\w*\s*\+\s*\w+\.valor\b/i,
+  },
+  {
+    nome: "valor dividido pelas parcelas na tela",
+    // #979: o faturamento mostrava "3x de R$ …" com `linha.valorCobrado /
+    // linha.parcelas`, e R$100 em 3x aparecia como 3x de R$33,33 (R$99,99),
+    // enquanto as parcelas de verdade somam R$100. O texto sai de
+    // `textoDasParcelas` e a lista de `calcularListaParcelas`
+    // (`schemas/faturamento.ts`).
+    padrao: /\/\s*(?:[A-Za-z_$][\w$]*\??\.)*parcelas\b/i,
   },
 ];
 
