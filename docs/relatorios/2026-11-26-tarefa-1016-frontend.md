@@ -23,7 +23,7 @@
   o perfil chegar, e a tela só monta depois.
 
 ## O que cada agente fez
-- **ajudante-forte (revisor)**: revisão final do diff, do zero, com olhar adversarial (resultado abaixo).
+- **ajudante-forte (revisor)**: revisão final do diff, do zero. **Nenhum defeito real**: nenhum caminho abre tela sem permissão; admin, chave desconhecida e perfil vazio certos; a ordem bate com a do `Sidebar`. Apontou 3 detalhes (ver "O que ficou de fora").
 - As outras etapas (função, testes, conserto) foram pequenas e a sessão mãe fez direto, pra não gastar cota.
 
 ## Modelos usados
@@ -37,6 +37,7 @@
 - **Uso da sessão mãe**: não medido (a sessão não lê o próprio consumo).
 - **Ajudantes**: 1 (forte, esforço alto); tokens não medidos.
 - **Sessões filhas**: nenhuma
+- **Revisor**: ~90 mil tokens (via aviso).
 - **`/goal`**: não usei (a tarefa coube em poucos turnos).
 
 ## O que testei e VI reprovar
@@ -63,6 +64,11 @@
   diferem: no menu, Garantias (Atendimento) vem antes de Relações (Gestão); em `MODULOS`, depois.
   Segui **a ordem que a pessoa vê no menu** (grupo por grupo). Se a Sofia preferir a ordem crua de
   `MODULOS`, é uma linha na função e um teste.
+
+- **Detalhes da revisão, fora da lista de arquivos da issue** (não mexi; a issue manda perguntar):
+  o menu vazio do `Sidebar.tsx` ainda diz "Fale com o administrador"; a ordem do menu está escrita
+  em dois lugares (`primeiraRota.ts` e `Sidebar.tsx`) sem teste que compare os dois; e o teste das
+  rotas monta as rotas dele, não as do `App.tsx` (as 12 de verdade foram conferidas à mão).
 
 ## O que depende de alguém
 - **Sofia**: revisar e mesclar (depois do #1206); confirmar a escolha da ordem do menu.
