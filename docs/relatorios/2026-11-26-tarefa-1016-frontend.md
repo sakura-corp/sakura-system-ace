@@ -54,7 +54,8 @@
 - "Login só de Relações numa tela do Caixa não mostra o Caixa" e "perfil não carregado não mostra
   a tela": já valiam antes (o `PermissaoRoute` já barrava); ficam de guarda.
 - `typecheck`, `lint` (só os 3 avisos que já existiam), `contraste`, `test:fusos` (a suíte inteira,
-  nos dois fusos).
+  nos dois fusos), `contraste:telas` e `largura:telas` (90 telas, sem reprovação). A mensagem nova
+  usa o mesmo cartão e as mesmas classes da antiga; não tirei foto dela em separado.
 
 ## O que ficou de fora
 - **O caminho "depois de entrar"**: é do PR #1206 (#1191). Este PR não repete o conserto, pra não
