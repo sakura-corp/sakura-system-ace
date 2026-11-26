@@ -455,7 +455,18 @@ function BlocoDoPapel({
                 <td className="py-1.5 text-right">{formatarMoeda(ordem.lucro)}</td>
                 <td className="py-1.5 text-right">
                   <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
-                    {ordem.aReceber && <Selo tipo="atencao" palavra="A receber" />}
+                    {ordem.aReceber && (
+                      <Selo
+                        tipo="atencao"
+                        palavra={
+                          // #1184: OS corrigida com a diferença a receber: só
+                          // essa parte da comissão está a receber.
+                          ordem.comissaoAReceber < ordem.comissao
+                            ? `${formatarMoeda(ordem.comissaoAReceber)} a receber`
+                            : "A receber"
+                        }
+                      />
+                    )}
                     {ordem.itensSemCusto > 0 && <Selo tipo="atencao" palavra="Sem custo" />}
                     {formatarMoeda(ordem.comissao)}
                   </span>

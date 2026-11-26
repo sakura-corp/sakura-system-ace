@@ -410,4 +410,3 @@ export function colunaLucroSomaMaisQueOTotal(linhas: ComissaoFuncionario[]): boo
   const somaDaColuna = linhas.reduce((soma, linha) => soma + linha.lucroTotal, 0);
   return arredondar(somaDaColuna) > arredondar(totaisComissoes(linhas).lucro);
 }
-
