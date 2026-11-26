@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 
+// Radio (as bolinhas) fica de fora do caminho do Enter (#1096): ali o Enter não
+// marca nada, e parar nele deixava o Enter preso no meio do formulário. As
+// bolinhas se escolhem com Tab e as setas.
 const SELETOR_CAMPOS =
-  "input:not([type=hidden]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
+  "input:not([type=hidden]):not([type=radio]):not(:disabled):not([readonly]), select:not(:disabled), textarea:not(:disabled)";
 
 function ehCampoIgnorado(alvo: HTMLElement): boolean {
   if (alvo.tagName === "TEXTAREA") return true; // Enter deve quebrar linha normalmente
