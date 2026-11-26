@@ -7,6 +7,7 @@ import { Valor } from "@/components/Valor";
 import { diaBrasileiro } from "@/lib/datas";
 import { mapaCustoPecas, mapaCustoServicos } from "@/schemas/metricasCaixa";
 import {
+  recebimentoDasOrdens,
   resumirComissoes,
   totaisComissoes,
   SEM_FUNCIONARIO,
@@ -90,11 +91,7 @@ export function ComissoesSection({
         funcionarios,
         custoPeca: mapaCustoPecas(pecas),
         custoServico: mapaCustoServicos(servicos),
-        ordensAReceber: new Set(
-          contasReceber
-            .filter((conta) => conta.status === "pendente" && conta.ordem_servico_id)
-            .map((conta) => conta.ordem_servico_id as string),
-        ),
+        ...recebimentoDasOrdens(contasReceber),
         de: dataInicio,
         ate: dataFim,
       }),
@@ -177,7 +174,7 @@ export function ComissoesSection({
         </CartaoNumero>
         <CartaoNumero
           titulo="Comissão de OS ainda não recebida"
-          explicacao="A parte da comissão que vem de OS faturada como “a receber depois” e que o cliente ainda não pagou."
+          explicacao="A parte da comissão que vem de OS faturada como “a receber depois” e que o cliente ainda não pagou. Numa OS corrigida com a diferença a receber, só a parte da diferença."
         >
           <Valor valor={totais.comissaoAReceber} />
         </CartaoNumero>
@@ -196,8 +193,8 @@ export function ComissoesSection({
 
       {totais.comissaoAReceber > 0 && (
         <Aviso tipo="atencao">
-          {formatarMoeda(totais.comissaoAReceber)} dessa comissão vem de OS faturada como "a
-          receber depois", que o cliente ainda não pagou.
+          {formatarMoeda(totais.comissaoAReceber)} dessa comissão vem de valor que o cliente ainda
+          não pagou: OS faturada como "a receber depois" ou diferença de correção a receber.
         </Aviso>
       )}
 
