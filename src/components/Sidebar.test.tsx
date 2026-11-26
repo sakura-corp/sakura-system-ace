@@ -7,7 +7,7 @@ import type { Operador } from "@/types/operador";
 vi.mock("@/lib/numerosDoMenu", () => ({
   buscarNumerosDoMenu: () => Promise.resolve({}),
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoGravarNoBanco: () => () => {} }));
 
 let operador: Partial<Operador> = {};
 const logout = vi.fn();

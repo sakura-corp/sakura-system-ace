@@ -372,7 +372,13 @@ function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: bool
   const Icone = item.icone;
   const numero = item.numero ?? null;
   return (
-    <Dica texto={encolhido ? (numero ? `${item.label} · ${numero.dica}` : item.label) : ""} lado="direita">
+    // A dica fica no link inteiro (não só no número): assim ela aparece também
+    // pra quem chega pelo Tab, não só pra quem passa o mouse. Aberto, o nome
+    // já está à vista, e a dica diz só o que o número quer dizer.
+    <Dica
+      texto={encolhido ? (numero ? `${item.label} · ${numero.dica}` : item.label) : (numero?.dica ?? "")}
+      lado="direita"
+    >
       <NavLink
         to={item.rota}
         end={item.chave === "painel"}
@@ -387,11 +393,9 @@ function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: bool
                 // Encolhido não cabe o número: um ponto, na cor do tipo.
                 <span role="img" aria-label={numero.dica} className={`${PONTO_BASE} ${PONTO_DO_TIPO[numero.cor]}`} />
               ) : (
-                <Dica texto={numero.dica} lado="direita">
-                  <span role="img" aria-label={numero.dica} className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
-                    {numero.quantos}
-                  </span>
-                </Dica>
+                <span role="img" aria-label={numero.dica} className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
+                  {numero.quantos}
+                </span>
               ))}
           </>
         )}

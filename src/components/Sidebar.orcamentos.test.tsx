@@ -8,7 +8,7 @@ const buscar = vi.fn();
 vi.mock("@/lib/numerosDoMenu", () => ({
   buscarNumerosDoMenu: (...a: unknown[]) => buscar(...a),
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoGravarNoBanco: () => () => {} }));
 
 let operador: Partial<Operador> = {};
 vi.mock("@/contexts/AuthContext", () => ({
@@ -66,19 +66,19 @@ describe("Sidebar — os números do menu", () => {
     expect(ponto.className).toContain("bg-perigo");
   });
 
-  it("zero não mostra nada", async () => {
+  it("zero não mostra nada: só o menu que tem número ganha a bolinha", async () => {
     buscar.mockResolvedValue({
       orcamentos: null,
-      ordens_servico: null,
+      ordens_servico: TODOS.ordens_servico,
       contas_pagar: null,
       contas_receber: null,
     });
     operador = { id: "op", nome: "Ana", usuario: "ana", admin: true, permissoes: [] };
     renderizar(<Sidebar />);
 
-    await screen.findByRole("link", { name: "Orçamentos" });
-    await vi.waitFor(() => expect(buscar).toHaveBeenCalled());
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    // Espera a resposta chegar à tela (o número da OS aparece) antes de conferir os zeros.
+    await screen.findByLabelText(TODOS.ordens_servico.dica);
+    expect(screen.getAllByRole("img")).toHaveLength(1);
   });
 
   it("quem não tem o módulo não vê o número nem busca a lista dele", async () => {
