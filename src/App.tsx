@@ -7,7 +7,7 @@ import { BuscaGlobal } from "./components/BuscaGlobal";
 import { FaixaSemConexao } from "./components/FaixaSemConexao";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { PerfilNaoCarregou } from "./components/PerfilNaoCarregou";
-import { AdminRoute, PermissaoRoute } from "./components/PermissaoRoute";
+import { AdminRoute, NenhumModuloLiberado, PermissaoRoute } from "./components/PermissaoRoute";
 import { Sidebar } from "./components/Sidebar";
 import { VersaoApp } from "./components/VersaoApp";
 import { FaixaDemonstracao } from "./demo/FaixaDemonstracao";
@@ -41,33 +41,20 @@ import { RelatoriosPage } from "./pages/relatorios/RelatoriosPage";
 import { ServicosPage } from "./pages/servicos/ServicosPage";
 import { FichaVeiculoPage } from "./pages/veiculos/FichaVeiculoPage";
 import { FichaClientePage } from "./pages/clientes/FichaClientePage";
-import { MODULOS, temPermissao } from "./types/operador";
+import { primeiraRotaPermitida } from "./schemas/primeiraRota";
 
 // Se o operador não tiver permissão pro Início (o "/" padrão),
-// manda ele direto pro primeiro módulo que ele acessa, em vez de cair numa
-// tela de "sem permissão" logo depois de fazer login.
-function PaginaInicial() {
+// manda ele direto pro primeiro módulo do menu que ele acessa, em vez de cair
+// numa tela de "sem permissão" (#1016). Todo caminho que leva pro Início (o
+// fim do login, o botão de voltar ao Início) passa por aqui.
+export function PaginaInicial() {
   const { operador } = useAuth();
+  if (!operador) return null;
 
-  if (temPermissao(operador, "painel")) {
-    return <PainelPage />;
-  }
-
-  const primeiroModulo = MODULOS.find(
-    (modulo) =>
-      modulo.chave !== "painel" && temPermissao(operador, modulo.chave),
-  );
-  if (primeiroModulo) {
-    return <Navigate to={primeiroModulo.rota} replace />;
-  }
-
-  return (
-    <div className="sakura-card p-8 text-center">
-      <p className="text-corpo text-texto/90">
-        Nenhum módulo liberado para o seu usuário. Fale com o administrador.
-      </p>
-    </div>
-  );
+  const rota = primeiraRotaPermitida(operador.permissoes, operador.admin);
+  if (rota === "/") return <PainelPage />;
+  if (rota) return <Navigate to={rota} replace />;
+  return <NenhumModuloLiberado />;
 }
 
 /**
