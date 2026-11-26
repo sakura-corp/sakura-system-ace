@@ -3,7 +3,7 @@
 - **Tarefa**: #1096, formulário de veículo em janela (marca → modelo → ano → tipo) e desenhos novos dos carros
 - **Chefe**: frontend
 - **Data**: 2026-11-26
-- **PR**: ver a descrição do PR que fecha a #1096 (branch `claude/tarefa-1096-veiculo-janela`)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1211
 - **Jeito**: com ajudantes
 
 ## O que cada agente fez
