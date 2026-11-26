@@ -18,7 +18,9 @@ import { mensagemDeErro } from "@/lib/errors";
  *   página 1; trocar a ordem também volta pra página 1;
  * - só a resposta MAIS NOVA grava (o mesmo cuidado do #903): digitar rápido
  *   dispara várias consultas, e uma velha pode chegar depois da nova;
- * - se a página ficou vazia (excluiu o último da última página), volta uma.
+ * - se a página ficou vazia (excluiu o último da última página), volta uma;
+ * - se o banco recusa a página por passar do total (PGRST103, #988), volta
+ *   pra página 1 sem mostrar erro.
  */
 export interface OrdemDaLista<C extends string> {
   coluna: C;
@@ -84,6 +86,10 @@ function guardarOrdem<C extends string>(chave: string, ordem: OrdemDaLista<C>) {
   } catch {
     // Não guardou: a ordem vale só até fechar a tela, sem atrapalhar.
   }
+}
+
+function codigoDoErro(err: unknown): unknown {
+  return typeof err === "object" && err !== null ? (err as { code?: unknown }).code : undefined;
 }
 
 export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPaginada<T, C>) {
@@ -160,6 +166,14 @@ export function useListaPaginada<T, C extends string>(opcoes: OpcoesDaListaPagin
       });
     } catch (err) {
       if (!aindaEhAtual()) return;
+      // A página passou do total (outro computador apagou linhas): com
+      // `count: "exact"` o banco não devolve página vazia, recusa com
+      // PGRST103 (#988). Volta pra página 1, sem erro; lá a consulta é refeita
+      // uma vez só: se falhar de novo, `pagina` já é 0 e o erro aparece.
+      if (pagina > 0 && codigoDoErro(err) === "PGRST103") {
+        setPagina(0);
+        return;
+      }
       console.error(`Erro ao carregar a lista (${chave}):`, err);
       setErro(mensagemDeErro(err));
     } finally {
