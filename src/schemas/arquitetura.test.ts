@@ -29,9 +29,10 @@ import { describe, expect, it } from "vitest";
  * (`lib/garantiaDocumento.ts`) fazia o valor do item, os totais e as parcelas
  * à mão, e passou batido porque o teste só olhava `src/pages/`.
  *
- * Limite conhecido: o que está dentro de texto com crase é apagado antes de
- * procurar (ver `semComentarioNemTexto`), então uma conta escrita dentro do
- * HTML de um documento (`${a * b}`) continua invisível pra este teste.
+ * Limite conhecido: o texto com crase é apagado antes de procurar, mas o que
+ * está dentro de `${…}` fica (#979; ver `semComentarioNemTexto`). Ainda
+ * escapam a template dentro de outra template (`${c ? `…` : a * b}`) e a
+ * interpolação com chaves em dois níveis.
  */
 const PASTAS_VARRIDAS = ["src/pages", "src/lib"];
 
@@ -153,7 +154,9 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
     // enquanto as parcelas de verdade somam R$100. O texto sai de
     // `textoDasParcelas` e a lista de `calcularListaParcelas`
     // (`schemas/faturamento.ts`).
-    padrao: /\/\s*(?:[A-Za-z_$][\w$]*\??\.)*parcelas\b/i,
+    // Aceita a divisão embrulhada: `/ Number(linha.parcelas)`, `/ (n.parcelas || 1)`
+    // e nomes como `numeroParcelas`.
+    padrao: /\/\s*(?:Number\s*\(\s*|\(\s*)*(?:[A-Za-z_$][\w$]*\??\.)*\w*parcelas\b/i,
   },
 ];
 
