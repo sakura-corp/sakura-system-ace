@@ -15,7 +15,7 @@ import { Botao } from "@/components/Botao";
 import { EmitirNotaFiscalModal } from "./EmitirNotaFiscalModal";
 import { GarantiaVisualModal } from "./GarantiaVisualModal";
 import { useFechamentoDaOrdem, type FechamentoDaOrdem, type NotaDaOs } from "./useFechamentoDaOrdem";
-import { AvisoDeErro } from "@/components/Aviso";
+import { AvisoDeAtencao, AvisoDeErro } from "@/components/Aviso";
 
 /**
  * O que a OS mostra em cada passo do fechamento depois do "conferir" (#1088):
@@ -41,6 +41,11 @@ interface FechamentoTabProps {
   erroAviso?: string | null;
   /** Uma peça avulsa ganhou cadastro na janela da nota (#655): recarrega a OS. */
   onItensMudaram?: () => void | Promise<void>;
+  /**
+   * Ir pra garantia e o aviso com a nota ainda faltando (#1203): a nota que
+   * não sai não segura o carro. Sem isto (a venda de balcão), não aparece.
+   */
+  aoAdiantarGarantia?: () => void;
 }
 
 function formatarData(iso: string | null | undefined): string {
@@ -111,6 +116,7 @@ function PainelDoFechamento({
   fechamento,
   erroAviso,
   onItensMudaram,
+  aoAdiantarGarantia,
 }: FechamentoTabProps & { fechamento: FechamentoDaOrdem }) {
   const tudo = passo === "tudo";
   const itens = ordem.itens ?? [];
@@ -316,6 +322,21 @@ function PainelDoFechamento({
                 : `${estaOrdem} precisa de ${situacao.pendentes.join(" e ")}.`}
           </p>
           {!nenhumaNota && <ul className="divide-y divide-linha">{notasNecessarias}</ul>}
+          {passo === "nota" && aoAdiantarGarantia && situacao.pendentes.length > 0 && (
+            // A nota não saiu (a prefeitura recusou, a SEFAZ fora do ar): a
+            // garantia e o aviso não esperam por ela (#1203). Discreto: o
+            // caminho normal é emitir a nota.
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-linha pt-4">
+              <p className="text-rotulo text-texto-2">
+                {avisado
+                  ? `${avisado}; a nota continua faltando aqui.`
+                  : "A nota não saiu? Dá pra entregar a garantia e avisar o cliente; a nota continua faltando aqui."}
+              </p>
+              <Botao tamanho="medio" onClick={aoAdiantarGarantia}>
+                {avisado ? "Ver a garantia" : "Garantia e avisar sem a nota"}
+              </Botao>
+            </div>
+          )}
         </section>
       )}
 
@@ -337,6 +358,14 @@ function PainelDoFechamento({
           <p className="text-rotulo text-texto-2">
             Entregue a garantia pro cliente assinar e avise que o carro está pronto.
           </p>
+          {situacao.pendentes.length > 0 && (
+            // Adiantado com a nota faltando (#1203): a nota continua à vista.
+            <AvisoDeAtencao className="text-corpo">
+              {situacao.pendentes.length > 1
+                ? `Ainda faltam a ${situacao.pendentes.join(" e a ")}: elas continuam no passo da nota fiscal.`
+                : `Ainda falta a ${situacao.pendentes[0]}: ela continua no passo da nota fiscal.`}
+            </AvisoDeAtencao>
+          )}
           <ul className="divide-y divide-linha">
             <LinhaFeito feito={null} titulo="Garantia" detalhe="o documento pro cliente assinar">
               <Botao tamanho="medio" onClick={() => setPreviewGarantiaAberta(true)}>

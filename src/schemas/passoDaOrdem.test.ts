@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { NotaFiscalArquivo } from "@/types/notaFiscal";
 import type { ItemOS, OrdemServico, StatusOS } from "@/types/os";
-import { indiceDoPasso, PASSOS_DA_OS, passoDaOrdem } from "./passoDaOrdem";
+import { indiceDoPasso, PASSOS_DA_OS, passoDaOrdem, podeVerPasso } from "./passoDaOrdem";
 
 // O passo em que a OS parou sai SÓ do que já está gravado (#1088): o status
 // da OS, as notas ligadas a ela e se o "carro pronto" já foi aberto no
@@ -89,5 +89,19 @@ describe("indiceDoPasso", () => {
     expect(indiceDoPasso("nota")).toBe(2);
     expect(indiceDoPasso("garantia")).toBe(3);
     expect(indiceDoPasso("pronto")).toBe(4);
+  });
+});
+
+describe("podeVerPasso", () => {
+  it("o atual e os feitos podem ser vistos; os de depois, não", () => {
+    expect(podeVerPasso("conferir", "receber")).toBe(true);
+    expect(podeVerPasso("receber", "receber")).toBe(true);
+    expect(podeVerPasso("nota", "receber")).toBe(false);
+    expect(podeVerPasso("garantia", "receber")).toBe(false);
+  });
+
+  it("nota pendente não trava a garantia e o aviso (#1203)", () => {
+    expect(podeVerPasso("garantia", "nota")).toBe(true);
+    expect(podeVerPasso("pronto", "nota")).toBe(false);
   });
 });

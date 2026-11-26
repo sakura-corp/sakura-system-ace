@@ -51,7 +51,7 @@ import { Campo, inputClasse } from "./campos/FormCompartilhado";
 import { FechamentoTab } from "./FechamentoTab";
 import { TrilhaDaOrdem } from "./TrilhaDaOrdem";
 import { useFechamentoDaOrdem } from "./useFechamentoDaOrdem";
-import { indiceDoPasso, type PassoDaOs } from "@/schemas/passoDaOrdem";
+import { podeVerPasso, type PassoDaOs } from "@/schemas/passoDaOrdem";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import { abrirConversaWhatsapp } from "@/lib/whatsapp";
 import { PecasAvulsasAprovacaoModal } from "./PecasAvulsasAprovacaoModal";
@@ -269,6 +269,7 @@ export function OrdemServicoForm({
 }: OrdemServicoFormProps) {
   const [janelaTroca, setJanelaTroca] = useState(false);
   const [cancelandoNota, setCancelandoNota] = useState(false);
+  const [canceladasAqui, setCanceladasAqui] = useState<ReadonlySet<string>>(new Set());
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
   // A janela de aprovar ou de recusar o orçamento (#1091). Só abre sozinha
@@ -305,17 +306,29 @@ export function OrdemServicoForm({
   // em vez de ficar parada no que a pessoa tinha aberto. Só conta o passo já
   // assentado: enquanto as notas chegam do banco, ele ainda pode pular.
   const [passoAssentado, setPassoAssentado] = useState<PassoDaOs | null>(null);
+  // Outra OS aberta na mesma tela (a busca do Ctrl+K reaproveita o
+  // formulário): a garantia adiantada com a nota pendente (#1203) era da
+  // anterior e não vale pra esta.
+  const [idDoPassoEscolhido, setIdDoPassoEscolhido] = useState(ordemExistente?.id);
+  if (ordemExistente?.id !== idDoPassoEscolhido) {
+    setIdDoPassoEscolhido(ordemExistente?.id);
+    if (passoEscolhido === "garantia") setPassoEscolhido(null);
+  }
   if (passoAtual && !fechamento.carregando && passoAtual !== passoAssentado) {
     if (passoAssentado !== null) setPassoEscolhido(null);
     setPassoAssentado(passoAtual);
   }
-  // Só um passo já feito (ou o atual) pode ser visto: nunca um de depois.
+  // Só um passo já feito (ou o atual) pode ser visto: nunca um de depois. A
+  // exceção é a garantia e o aviso com a nota pendente (#1203).
   const passoVisto: PassoDaOs | null =
     passoAtual === null
       ? null
-      : passoEscolhido && indiceDoPasso(passoEscolhido) <= indiceDoPasso(passoAtual)
+      : passoEscolhido && podeVerPasso(passoEscolhido, passoAtual)
         ? passoEscolhido
         : passoAtual;
+  // A garantia e o aviso adiantados, com a nota ainda faltando (#1203): o
+  // passo de verdade continua sendo a nota.
+  const garantiaSemANota = passoAtual === "nota" && passoVisto === "garantia";
   const aba: "detalhes" | "fechamento" =
     passoVisto === null || passoVisto === "conferir" ? "detalhes" : "fechamento";
   const [erroAviso, setErroAviso] = useState<string | null>(null);
@@ -384,11 +397,22 @@ export function OrdemServicoForm({
   // deixaria de bater com a OS, e isso não se conserta sozinho.
   const ehRecusado = ordemExistente?.status === "recusado";
   const ehFaturada = ordemExistente?.status === "faturada";
+  // Se a OS já tem nota: o que a página sabe, ou o que a trilha acabou de
+  // buscar (#1204). A página só busca as notas de novo quando a OS fecha; a
+  // trilha busca logo depois de emitir. Sem isto, a faixa seguia oferecendo
+  // "Corrigir a OS" (que é só pra OS sem nota) com a nota já emitida.
+  // A nota cancelada aqui não conta mais, mesmo se a busca das notas que vem
+  // depois falhar: a lista da trilha ficaria com ela ainda valendo.
+  const notaVigenteDaTrilha = fechamento.notas.find(
+    (nota) => nota.status !== "cancelado" && !canceladasAqui.has(nota.id),
+  );
+  const temNota = temNotaEmitida || !!notaVigenteDaTrilha;
+  const notaDaFaixa = notaParaCancelar ?? notaVigenteDaTrilha;
   const podeAdicionarItem = !ehFaturada && !ehRecusado;
-  const podeEditarItem = !!ordemExistente && !ehFaturada && !ehRecusado && !temNotaEmitida;
+  const podeEditarItem = !!ordemExistente && !ehFaturada && !ehRecusado && !temNota;
   const porQueNaoTroca =
     ehFaturada && onTrocarItensFaturada
-      ? motivoParaNaoTrocar({ faturada: true, gerente, temNota: temNotaEmitida })
+      ? motivoParaNaoTrocar({ faturada: true, gerente, temNota })
       : null;
   const podeTrocarFaturada = ehFaturada && !!onTrocarItensFaturada && porQueNaoTroca === null;
   const vencido = modoOrcamento && orcamentoVencido(ordemExistente?.validade);
@@ -397,7 +421,7 @@ export function OrdemServicoForm({
     : ehFaturada
       ? "Esta OS já foi faturada — o pagamento já foi lançado no Caixa com o total de então. " +
         "Dá pra corrigir peça, serviço ou valor (só gerente, sem nota fiscal)."
-    : temNotaEmitida
+    : temNota
       ? "Esta OS já tem nota fiscal emitida — corrigir um item aqui deixaria a nota diferente " +
         "da OS. Cancele a nota em Notas Fiscais antes de mexer."
       : null;
@@ -596,8 +620,15 @@ export function OrdemServicoForm({
   // quando a pessoa está vendo o passo atual. Diz o que faz ("Receber R$ 250,00",
   // "Emitir NFC-e"), nunca "OK".
   const acaoDoPasso: { rotulo: string; aoClicar: () => void; ocupado?: boolean } | null = (() => {
-    if (!ordemExistente || !passoAtual || fechamento.carregando || passoVisto !== passoAtual) return null;
-    switch (passoAtual) {
+    if (!ordemExistente || !passoAtual || !passoVisto || fechamento.carregando) return null;
+    if (garantiaSemANota) {
+      // Já avisou (ou concluiu sem avisar) com a nota faltando: nada a
+      // oferecer aqui; o que falta é a nota, no passo atual da trilha.
+      if (fechamento.avisadoEm || fechamento.concluidoSemAviso) return null;
+    } else if (passoVisto !== passoAtual) {
+      return null;
+    }
+    switch (passoVisto) {
       case "conferir":
         return {
           rotulo: encerrando ? "Encerrando..." : "Encerrar e receber",
@@ -898,7 +929,7 @@ export function OrdemServicoForm({
                   Corrigir a OS
                 </Botao>
               )}
-              {temNotaEmitida && gerente && notaParaCancelar && (
+              {temNota && gerente && notaDaFaixa && (
                 <Botao tamanho="pequeno" onClick={() => setCancelandoNota(true)}>
                   Cancelar a nota
                 </Botao>
@@ -963,6 +994,7 @@ export function OrdemServicoForm({
           fechamento={fechamento}
           erroAviso={erroAviso}
           onItensMudaram={onItensMudaram}
+          aoAdiantarGarantia={() => setPassoEscolhido("garantia")}
         />
       )
     )}
@@ -1071,11 +1103,12 @@ export function OrdemServicoForm({
         </div>
       </Modal>
     )}
-    {cancelandoNota && notaParaCancelar && (
+    {cancelandoNota && notaDaFaixa && (
       <CancelarNotaModal
-        arquivo={notaParaCancelar}
+        arquivo={notaDaFaixa}
         onFechar={() => setCancelandoNota(false)}
         onCancelado={() => {
+          setCanceladasAqui((ids) => new Set(ids).add(notaDaFaixa.id));
           // A página recarrega as notas dela (a faixa); a trilha (#1088), as
           // suas: a nota cancelada volta a faltar e o passo volta pra nota.
           onNotaCancelada?.();
@@ -1096,7 +1129,7 @@ export function OrdemServicoForm({
             ? buscarSituacaoDaCorrecao(ordemExistente)
             : Promise.resolve({ contaDoFaturamentoEmAberto: null, caixaDeHojeFechado: false, comissaoDoPeriodoPaga: false, aReceberDeCorrecoes: 0 })
         }
-        notaParaCancelar={notaParaCancelar}
+        notaParaCancelar={notaDaFaixa}
         onConfirmar={async (correcao) => {
           await onTrocarItensFaturada(ordemExistente, correcao);
           setJanelaTroca(false);
