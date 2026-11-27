@@ -1,6 +1,6 @@
 import { AlertTriangle, CircleAlert, CircleCheck, Minus } from "lucide-react";
 import { formatarQuantidade } from "@/schemas/quantidade";
-import { lerBarraDoEstoque, type TomDaBarra } from "./barraDoEstoque";
+import { lerBarraDoEstoque, type TomDaBarra } from "./contaDaBarra";
 
 /**
  * A barra do estoque contra o mínimo (#1093): o número, o mínimo, a palavra
@@ -11,7 +11,7 @@ import { lerBarraDoEstoque, type TomDaBarra } from "./barraDoEstoque";
  *     ███████░░░░░░│░░░░░░░░░░░░░░░
  *
  * Largura fixa (`w-48`): numa lista, as barras de uma linha batem com as da
- * outra. A regra mora em `barraDoEstoque.ts`.
+ * outra. A regra mora em `contaDaBarra.ts`.
  */
 const COR_DO_TEXTO: Record<TomDaBarra, string> = {
   falta: "text-perigo",
