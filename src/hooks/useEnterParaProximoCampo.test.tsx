@@ -46,3 +46,34 @@ describe("useEnterParaProximoCampo", () => {
     expect(screen.getByRole("button", { name: "Confirmar faturamento" })).toHaveFocus();
   });
 });
+
+function TelaComBolinhas() {
+  useEnterParaProximoCampo();
+  return (
+    <form onSubmit={(e) => e.preventDefault()}>
+      <input aria-label="Ano" />
+      <label>
+        <input type="radio" name="cor" aria-label="Branco" />
+      </label>
+      <label>
+        <input type="radio" name="cor" aria-label="Preto" />
+      </label>
+      <input aria-label="KM atual" />
+      <button type="submit">Salvar veículo</button>
+    </form>
+  );
+}
+
+describe("useEnterParaProximoCampo — bolinhas (radio)", () => {
+  it("o Enter pula as bolinhas: do Ano vai pro KM, e do KM pro botão (#1096)", async () => {
+    // Num radio o Enter não marca nada (o gancho ignora o Enter ali), então
+    // parar o foco numa bolinha deixava quem usa só o Enter preso no meio do
+    // formulário. As bolinhas se escolhem com Tab e as setas.
+    const { user } = renderizar(<TelaComBolinhas />);
+    await user.click(screen.getByRole("textbox", { name: "Ano" }));
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("textbox", { name: "KM atual" })).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByRole("button", { name: "Salvar veículo" })).toHaveFocus();
+  });
+});

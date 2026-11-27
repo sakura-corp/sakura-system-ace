@@ -321,6 +321,36 @@ describe("OrdemServicoForm — reabrir orçamento recusado", () => {
   });
 });
 
+// #1191: a faixa do recusado é um aviso de perigo (vermelho, com ícone).
+describe("OrdemServicoForm — faixa do orçamento recusado (#1191)", () => {
+  it("é o aviso de perigo, com ícone, e o texto e o botão de sempre", () => {
+    montar({
+      ordemExistente: orcamento({ status: "recusado", motivo_recusa: "preco" }),
+      onReabrir: vi.fn(),
+    });
+    const texto = screen.getByText(/Orçamento recusado — motivo: Preço\./);
+    const faixa = texto.closest(".text-perigo");
+    expect(faixa).not.toBeNull();
+    expect(faixa!.querySelector("svg")).not.toBeNull();
+    expect(within(faixa as HTMLElement).getByRole("button", { name: "Reabrir orçamento" })).toBeInTheDocument();
+  });
+});
+
+// #1191: o aviso de rascunho fala do que a tela é.
+describe("OrdemServicoForm — aviso de rascunho (#1191)", () => {
+  it("no orçamento diz \"deste orçamento\"", () => {
+    localStorage.setItem("rascunho-orcamento-orc-1", JSON.stringify({ descricao_problema: "velho" }));
+    montar({ ordemExistente: orcamento() });
+    expect(screen.getByText(/rascunho não salvo deste orçamento/)).toBeInTheDocument();
+  });
+
+  it("na OS continua \"desta ordem de serviço\"", () => {
+    localStorage.setItem("rascunho-os-orc-1", JSON.stringify({ descricao_problema: "velho" }));
+    montar({ modoOrcamento: false, ordemExistente: orcamento({ status: "em_andamento", numero: 12 }) });
+    expect(screen.getByText(/rascunho não salvo desta ordem de serviço/)).toBeInTheDocument();
+  });
+});
+
 describe("OrdemServicoForm — a OS de sempre não muda", () => {
   it("fora do modo orçamento não tem Validade nem Aprovar", () => {
     montar({ modoOrcamento: false, ordemExistente: undefined });

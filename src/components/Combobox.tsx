@@ -78,6 +78,9 @@ export function Combobox({
   const [aberto, setAberto] = useState(false);
   const [filtro, setFiltro] = useState("");
   const [indiceAtivo, setIndiceAtivo] = useState(0);
+  // Se a pessoa andou pela lista com as setas desde que ela abriu. Sem isso
+  // (e sem nada digitado), o Enter não escolhe nada: ver `aoTeclar`.
+  const [andouPelasSetas, setAndouPelasSetas] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const rotuloSelecionado =
@@ -106,6 +109,7 @@ export function Combobox({
     if (desabilitado) return;
     setFiltro("");
     setIndiceAtivo(0);
+    setAndouPelasSetas(false);
     setAberto(true);
   }
 
@@ -154,12 +158,23 @@ export function Combobox({
     const total = deslocamento + opcoesFiltradas.length + (acaoExtra ? 1 : 0);
     if (e.key === "ArrowDown") {
       e.preventDefault();
+      setAndouPelasSetas(true);
       setIndiceAtivo((i) => Math.min(i + 1, total - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
+      setAndouPelasSetas(true);
       setIndiceAtivo((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
+      // Nada digitado e sem andar pelas setas: o Enter só fecha a lista e
+      // mantém o valor (#1096). Antes ele escolhia a 1ª opção da lista
+      // inteira, e quem passava pelos campos com Enter trocava o que já
+      // estava escolhido ("Ford" virava "Fiat") sem perceber. O Enter do
+      // balcão (`useEnterParaProximoCampo`) segue pro próximo campo.
+      if (filtro.trim() === "" && !andouPelasSetas) {
+        setAberto(false);
+        return;
+      }
       if (mostrarOpcaoVazia && indiceAtivo === 0) {
         selecionar("");
       } else if (acaoExtra && indiceAtivo === indiceAcaoExtra) {
