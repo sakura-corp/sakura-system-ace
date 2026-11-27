@@ -3,7 +3,7 @@
 - **Tarefa**: #1094, Contas a Pagar e a Receber no molde novo (atrasadas, filtro por mês, valor pago diferente), leva 8, trilha A
 - **Chefe**: frontend
 - **Data**: 2026-11-27
-- **PR**: (o link vai na descrição do PR)
+- **PR**: https://github.com/sakura-corp/sakura-system-ace/pull/1224
 - **Jeito**: com ajudantes (só o revisor)
 
 ## O que cada agente fez
