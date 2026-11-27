@@ -25,7 +25,7 @@ const { Sidebar } = await import("./Sidebar");
 const TODOS = {
   orcamentos: { quantos: 3, cor: "perigo", dica: "3 orçamentos: 1 vencido e 2 vencendo" },
   ordens_servico: { quantos: 2, cor: "ok", dica: "2 OS prontas pra retirar" },
-  contas_pagar: { quantos: 1, cor: "atencao", dica: "1 conta vencendo hoje" },
+  contas_pagar: { quantos: 1, cor: "atencao", dica: "1 conta vencendo" },
   contas_receber: { quantos: 4, cor: "perigo", dica: "4 contas atrasadas" },
 };
 
@@ -57,7 +57,7 @@ describe("Sidebar — os números do menu", () => {
     expect(item("Ordens de Serviço")).toHaveAccessibleDescription("2 OS prontas pra retirar");
     expect(numeroDo("Ordens de Serviço")).toHaveTextContent("2");
     expect(numeroDo("Ordens de Serviço")?.className).toContain("text-ok");
-    expect(item("Contas a Pagar")).toHaveAccessibleDescription("1 conta vencendo hoje");
+    expect(item("Contas a Pagar")).toHaveAccessibleDescription("1 conta vencendo");
     expect(numeroDo("Contas a Pagar")?.className).toContain("text-atencao");
     expect(item("Contas a Receber")).toHaveAccessibleDescription("4 contas atrasadas");
     expect(numeroDo("Contas a Receber")).toHaveTextContent("4");

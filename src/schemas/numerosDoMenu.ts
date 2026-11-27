@@ -1,4 +1,5 @@
 import {
+  DIAS_CONTA_PAGAR_VENCENDO,
   contaPagarVenceAte,
   contaReceberAtrasada,
   osProntaPraRetirar,
@@ -12,9 +13,8 @@ import type { OrdemServico } from "@/types/os";
 /**
  * O número ao lado do nome de quatro menus (#1092): Orçamentos, Ordens de
  * Serviço, Contas a Pagar e Contas a Receber. É a mesma conta da Central do
- * dia (`centralDoDia.ts`), pra o menu e o Início nunca discordarem. A diferença
- * única é Contas a Pagar: o menu conta só até hoje, a Central olha 3 dias à
- * frente.
+ * dia (`centralDoDia.ts`), pra o menu e o Início nunca discordarem. Contas a
+ * Pagar também olha 3 dias à frente, igual à Central (decidido em 26/11).
  *
  * Função pura: a tela só desenha. Zero vira `null` (nada aparece).
  */
@@ -46,7 +46,7 @@ function plural(n: number, singular: string, mais: string): string {
   return n === 1 ? singular : mais;
 }
 
-/** "3 contas: 1 atrasada e 2 vencendo hoje" quando há dos dois jeitos. */
+/** "3 contas: 1 atrasada e 2 vencendo" quando há dos dois jeitos. */
 function juntarDicas(
   total: number,
   nome: [string, string],
@@ -98,9 +98,10 @@ function dasOrdens(e: EntradaNumerosDoMenu): NumeroDoMenu | null {
 }
 
 function dasContasAPagar(e: EntradaNumerosDoMenu): NumeroDoMenu | null {
-  const ate = e.contasPagar.filter((c) => contaPagarVenceAte(c, e.hoje));
+  const limite = somarDias(e.hoje, DIAS_CONTA_PAGAR_VENCENDO);
+  const ate = e.contasPagar.filter((c) => contaPagarVenceAte(c, limite));
   const atrasadas = ate.filter((c) => c.vencimento < e.hoje).length;
-  const hoje = ate.length - atrasadas;
+  const vencendo = ate.length - atrasadas;
   if (ate.length === 0) return null;
   return {
     quantos: ate.length,
@@ -109,7 +110,7 @@ function dasContasAPagar(e: EntradaNumerosDoMenu): NumeroDoMenu | null {
       ate.length,
       ["conta", "contas"],
       { n: atrasadas, um: "atrasada", varios: "atrasadas" },
-      { n: hoje, um: "vencendo hoje", varios: "vencendo hoje" },
+      { n: vencendo, um: "vencendo", varios: "vencendo" },
     ),
   };
 }

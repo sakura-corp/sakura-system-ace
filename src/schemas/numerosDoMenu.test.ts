@@ -76,23 +76,32 @@ describe("numerosDoMenu: Ordens de Serviço", () => {
 });
 
 describe("numerosDoMenu: Contas a Pagar", () => {
-  it("ontem e hoje contam; amanhã e paga não", () => {
+  it("ontem, hoje, amanhã e hoje+3 contam; hoje+4 e paga não", () => {
     const r = numerosDoMenu(
       entrada({
         contasPagar: [
           pagar("a", "2026-11-25"),
           pagar("b", "2026-11-26"),
-          pagar("c", "2026-11-27"),
-          pagar("d", "2026-11-20", "paga"),
+          pagar("c", "2026-11-27"), // amanhã
+          pagar("d", "2026-11-29"), // hoje+3
+          pagar("e", "2026-11-30"), // hoje+4: não
+          pagar("f", "2026-11-20", "paga"),
         ],
       }),
     );
-    expect(r.contas_pagar).toEqual({ quantos: 2, cor: "perigo", dica: "2 contas: 1 atrasada e 1 vencendo hoje" });
+    expect(r.contas_pagar).toEqual({ quantos: 4, cor: "perigo", dica: "4 contas: 1 atrasada e 3 vencendo" });
   });
 
-  it("só vencendo hoje é atenção", () => {
-    const r = numerosDoMenu(entrada({ contasPagar: [pagar("a", "2026-11-26"), pagar("b", "2026-11-26")] }));
-    expect(r.contas_pagar).toEqual({ quantos: 2, cor: "atencao", dica: "2 contas vencendo hoje" });
+  it("virada de mês: hoje+3 passando do fim do mês", () => {
+    const r = numerosDoMenu(
+      entrada({ hoje: "2026-11-29", contasPagar: [pagar("a", "2026-12-02"), pagar("b", "2026-12-03")] }),
+    );
+    expect(r.contas_pagar).toEqual({ quantos: 1, cor: "atencao", dica: "1 conta vencendo" });
+  });
+
+  it("só vencendo é atenção", () => {
+    const r = numerosDoMenu(entrada({ contasPagar: [pagar("a", "2026-11-26"), pagar("b", "2026-11-28")] }));
+    expect(r.contas_pagar).toEqual({ quantos: 2, cor: "atencao", dica: "2 contas vencendo" });
   });
 
   it("só atrasada, singular", () => {
@@ -100,11 +109,11 @@ describe("numerosDoMenu: Contas a Pagar", () => {
     expect(r.contas_pagar).toEqual({ quantos: 1, cor: "perigo", dica: "1 conta atrasada" });
   });
 
-  it("3 contas: 1 atrasada e 2 vencendo hoje", () => {
+  it("3 contas: 1 atrasada e 2 vencendo", () => {
     const r = numerosDoMenu(
-      entrada({ contasPagar: [pagar("a", "2026-11-01"), pagar("b", "2026-11-26"), pagar("c", "2026-11-26")] }),
+      entrada({ contasPagar: [pagar("a", "2026-11-01"), pagar("b", "2026-11-26"), pagar("c", "2026-11-28")] }),
     );
-    expect(r.contas_pagar?.dica).toBe("3 contas: 1 atrasada e 2 vencendo hoje");
+    expect(r.contas_pagar?.dica).toBe("3 contas: 1 atrasada e 2 vencendo");
   });
 });
 
@@ -161,8 +170,7 @@ describe("o número do menu é igual ao da Central do dia", () => {
 
     expect(n.ordens_servico?.quantos).toBe(linhas.filter((l) => l.tipo === "carro_pronto").length);
     expect(n.contas_receber?.quantos).toBe(linhas.filter((l) => l.tipo === "conta_receber_vencida").length);
-    const pagarAteHoje = linhas.filter((l) => l.tipo === "conta_pagar_vencendo" && l.conta.vencimento <= HOJE);
-    expect(n.contas_pagar?.quantos).toBe(pagarAteHoje.length);
-    expect(n.contas_pagar?.quantos).toBe(2);
+    expect(n.contas_pagar?.quantos).toBe(linhas.filter((l) => l.tipo === "conta_pagar_vencendo").length);
+    expect(n.contas_pagar?.quantos).toBe(4);
   });
 });

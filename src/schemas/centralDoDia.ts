@@ -279,8 +279,8 @@ function carrosProntos(e: EntradaCentralDoDia): Pendencia[] {
 
 /**
  * Conta a pagar pendente que vence até `limite` (dia "YYYY-MM-DD"; a vencida
- * também entra). A Central usa hoje + `DIAS_CONTA_PAGAR_VENCENDO`; o número do
- * menu (#1092) usa o próprio hoje.
+ * também entra). A Central e o número do menu (#1092) usam o mesmo limite:
+ * hoje + `DIAS_CONTA_PAGAR_VENCENDO`.
  */
 export function contaPagarVenceAte(
   c: Pick<ContaPagar, "status" | "vencimento">,
