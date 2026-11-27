@@ -397,6 +397,14 @@ export const CENAS = [
     rota: "/relatorios", passos: [{ clicar: "Próximos 30 dias" }],
     descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, com o saldo em degraus a partir de hoje: o título diz quanto falta cobrir e o dia mais apertado vem apontado. O Ver como tabela abre dia a dia, com as contas previstas e atrasadas." },
 
+  { arquivo: "36c-relacoes-dre", modulo: "Relações", titulo: "Relações: o DRE mês a mês",
+    rota: "/relatorios", passos: [{ clicar: "DRE" }],
+    descricao: "A aba DRE conta o dinheiro da loja de cima pra baixo, um mês por coluna e o total no fim: receita bruta, o que saiu pra vender, o resultado bruto, as despesas e o resultado do mês. Cada valor traz embaixo quanto é da receita. Lançamento do Caixa sem grupo aparece numa faixa no topo com o botão Classificar, e o botão Imprimir / salvar em PDF gera o documento." },
+  { arquivo: "36d-relacoes-dre-despesas", modulo: "Relações", titulo: "Relações: o DRE com as despesas abertas",
+    // O botão da linha leva o sinal "(−)" junto do rótulo: não casa por texto exato.
+    rota: "/relatorios", passos: [{ clicar: "DRE" }, { seletor: 'button[aria-expanded]:has-text("Despesas operacionais")' }],
+    descricao: "Clicando numa linha com seta, o detalhe abre: as despesas operacionais mostram cada grupo e, dentro dele, as categorias do Caixa. Dentro das despesas, cada valor traz também quanto é do resultado bruto, pra ver o peso de cada gasto no que sobrou das vendas." },
+
   // --------------------------------------------------------------- garantias
   { arquivo: "38-garantias", modulo: "Garantias", titulo: "Garantias em vigor",
     rota: "/garantias",

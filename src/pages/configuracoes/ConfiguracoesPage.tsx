@@ -17,6 +17,7 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
@@ -81,6 +82,10 @@ import { AvisoDeErro } from "@/components/Aviso";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
+  // `?secao=categorias-caixa` (o "Classificar" do DRE, #388): a seção já abre e entra na tela.
+  const [parametros] = useSearchParams();
+  const abrirCategoriasCaixa = parametros.get("secao") === "categorias-caixa";
+  const categoriasCaixaRef = useRef<HTMLDivElement>(null);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [depositos, setDepositos] = useState<Deposito[]>([]);
@@ -279,6 +284,12 @@ export function ConfiguracoesPage() {
   }
 
   const secoesDaLoja = !carregando && lojaAtual && dadosSaoDaLoja;
+
+  useEffect(() => {
+    if (!secoesDaLoja || !abrirCategoriasCaixa) return;
+    // `scrollIntoView` não existe em todo ambiente (o jsdom, por exemplo).
+    categoriasCaixaRef.current?.scrollIntoView?.({ block: "start" });
+  }, [secoesDaLoja, abrirCategoriasCaixa]);
 
   async function copiarSenha(senha: string) {
     setNaoCopiou(false);
@@ -502,13 +513,16 @@ export function ConfiguracoesPage() {
             <CategoriasServicoSection categorias={categoriasServico} onSalvo={recarregar} />
           </SecaoDeConfiguracao>
 
+          <div ref={categoriasCaixaRef}>
           <SecaoDeConfiguracao
             icone={Wallet}
+            abertaInicialmente={abrirCategoriasCaixa}
             titulo="Categorias de caixa (Entradas e Saídas)"
             descricao='Usadas nas abas "Entradas" e "Saídas" do Caixa Diário para classificar lançamentos manuais que não vêm de uma OS — ex: aluguel, mercado, limpeza (saída) ou venda de sucata (entrada).'
           >
             <CategoriasCaixaSection categorias={categoriasCaixa} onSalvo={recarregar} />
           </SecaoDeConfiguracao>
+          </div>
 
           <TituloDeGrupo>Textos e telas</TituloDeGrupo>
 

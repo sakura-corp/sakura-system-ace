@@ -37,6 +37,10 @@ vi.mock("@/lib/ordensServico", () => ({ listarOrdens: (...a: unknown[]) => lista
 vi.mock("@/lib/pecas", () => ({ listarPecas: async () => [] }));
 vi.mock("@/lib/servicos", () => ({ listarServicos: async () => [] }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A aba DRE (#388) lê categorias e taxas à parte; a conta é a `montarDre` de verdade.
+const carregarDadosDoDre = vi.fn();
+vi.mock("@/lib/relatorios", () => ({ carregarDadosDoDre: (...a: unknown[]) => carregarDadosDoDre(...a) }));
+vi.mock("@/lib/configuracoes", () => ({ buscarConfiguracaoFiscal: async () => null }));
 
 const LOJA = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
 let operador: Partial<Operador> = { id: "op", admin: true, permissoes: [] };
@@ -97,6 +101,7 @@ beforeEach(() => {
   listarContasReceber.mockReset().mockResolvedValue([]);
   listarMovimentosCaixa.mockReset().mockResolvedValue([]);
   listarOrdens.mockReset().mockResolvedValue([]);
+  carregarDadosDoDre.mockReset().mockResolvedValue({ categorias: [], taxas: [] });
 });
 
 function cartao(nome: string): HTMLElement {
@@ -239,5 +244,43 @@ describe("RelatoriosPage — Próximos dias (#389)", () => {
     expect(await screen.findByText(/Não deu pra carregar as relações: sem rede/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
     expect(await screen.findByRole("heading", { name: "Sobra das OS" })).toBeInTheDocument();
+  });
+});
+
+describe("RelatoriosPage: a aba DRE (#388)", () => {
+  it("a Visão geral é a de sempre; clicar em DRE troca pro DRE e voltar traz tudo de volta", async () => {
+    listarOrdens.mockResolvedValue(DOIS_MESES);
+    const { user } = renderizar(<RelatoriosPage />);
+    await screen.findByRole("heading", { name: "Sobra das OS" });
+    const abas = within(screen.getByRole("tablist", { name: "Partes de Relações" }));
+    expect(abas.getByRole("tab", { name: "Visão geral" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("heading", { name: "DRE" })).toBeNull();
+    expect(carregarDadosDoDre).not.toHaveBeenCalled();
+
+    await user.click(abas.getByRole("tab", { name: "DRE" }));
+    expect(await screen.findByRole("heading", { name: "DRE" })).toBeInTheDocument();
+    expect(abas.getByRole("tab", { name: "DRE" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("heading", { name: "Sobra das OS" })).toBeNull();
+    expect(carregarDadosDoDre).toHaveBeenCalledWith("loja-a");
+
+    await user.click(abas.getByRole("tab", { name: "Visão geral" }));
+    expect(await screen.findByRole("heading", { name: "Sobra das OS" })).toBeInTheDocument();
+  });
+
+  it("o DRE de verdade (montarDre) mostra a receita da OS do mês", async () => {
+    listarOrdens.mockResolvedValue(DOIS_MESES);
+    const { user } = renderizar(<RelatoriosPage />);
+    await screen.findByRole("heading", { name: "Sobra das OS" });
+    await user.click(screen.getByRole("tab", { name: "DRE" }));
+    const tabela = await screen.findByRole("table");
+    expect(within(tabela).getByRole("row", { name: /Receita bruta/ })).toHaveTextContent(/R\$\s1\.000,00/);
+  });
+
+  it("erro de carga da página aparece também na aba DRE", async () => {
+    listarOrdens.mockRejectedValue(new Error("sem internet"));
+    const { user } = renderizar(<RelatoriosPage />);
+    await user.click(await screen.findByRole("tab", { name: "DRE" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Não deu pra carregar as relações/);
+    expect(screen.queryByRole("heading", { name: "DRE" })).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Abas } from "@/components/Abas";
 import { AvisoDeErro } from "@/components/Aviso";
 import { Botao } from "@/components/Botao";
 import { BotaoResumoDono } from "@/components/BotaoResumoDono";
@@ -36,6 +37,7 @@ import { BlocoPorItem } from "./BlocoPorItem";
 import { BlocoProximos } from "./BlocoProximos";
 import { BlocoResumo } from "./BlocoResumo";
 import { BlocoDiaADia, BlocoMes, BlocoPonte } from "./BlocosDoTempo";
+import { DreSection } from "./DreSection";
 import { EsqueletoDeRelacoes } from "./EsqueletoDeRelacoes";
 import { PeriodoEIrPara, type DestinoDoIrPara } from "./PeriodoEIrPara";
 import { useResumoDoDono } from "./useResumoDoDono";
@@ -59,6 +61,13 @@ function diaValido(dia: string): boolean {
   const data = new Date(ano, mes - 1, d);
   return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === d;
 }
+
+type ParteDeRelacoes = "visao" | "dre";
+
+const PARTES: ReadonlyArray<{ valor: ParteDeRelacoes; nome: string }> = [
+  { valor: "visao", nome: "Visão geral" },
+  { valor: "dre", nome: "DRE" },
+];
 
 export function RelatoriosPage() {
   const { lojaAtual, operador } = useAuth();
@@ -90,6 +99,7 @@ export function RelatoriosPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [tentativa, setTentativa] = useState(0);
+  const [parte, setParte] = useState<ParteDeRelacoes>("visao");
 
   useEffect(() => {
     async function carregar() {
@@ -239,6 +249,9 @@ export function RelatoriosPage() {
         {pronto && <BotaoResumoDono escolhas={escolhasDoResumo} />}
       </header>
 
+      <Abas rotulo="Partes de Relações" abas={PARTES} ativa={parte} aoEscolher={setParte} />
+
+      {parte === "visao" && (
       <PeriodoEIrPara
         periodo={periodo}
         hoje={hoje}
@@ -254,6 +267,7 @@ export function RelatoriosPage() {
         }
         destinos={destinos}
       />
+      )}
 
       {erro ? (
         <div className="space-y-4">
@@ -272,6 +286,8 @@ export function RelatoriosPage() {
         </div>
       ) : carregando ? (
         <EsqueletoDeRelacoes />
+      ) : parte === "dre" ? (
+        <DreSection ordens={ordens} movimentos={movimentos} pecas={pecas} servicos={servicos} />
       ) : (
         <>
           <BlocoResumo resumo={resumo} anterior={resumoAnterior} contra={nomeDoMesAnterior} />
