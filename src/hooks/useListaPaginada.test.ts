@@ -316,3 +316,61 @@ describe("useListaPaginada — achados da revisão final", () => {
     await waitFor(() => expect(result.current.primeira).toBe(51));
   });
 });
+
+describe("useListaPaginada — página que deixou de existir no banco (PGRST103, #988)", () => {
+  // Com `count: "exact"`, quando o começo da página passa do total o banco não
+  // devolve página vazia: recusa com PGRST103 ("Requested range not
+  // satisfiable"). Acontece quando outro computador apaga clientes enquanto a
+  // pessoa está numa página alta.
+  const FORA_DO_TOTAL = { code: "PGRST103", message: "Requested range not satisfiable" };
+
+  async function irParaATerceiraPagina(buscarPagina: ReturnType<typeof vi.fn>) {
+    const gancho = montar(buscarPagina as never);
+    const { result } = gancho;
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+    act(() => result.current.proxima());
+    await waitFor(() => expect(result.current.primeira).toBe(51));
+    act(() => result.current.proxima());
+    await waitFor(() => expect(result.current.primeira).toBe(101));
+    return gancho;
+  }
+
+  it("na página 3, o banco recusa com PGRST103: volta pra página 1, busca de novo e não mostra erro", async () => {
+    let apagaram = false;
+    const buscarPagina = vi.fn((pedido: PedidoDePagina<Coluna>) =>
+      apagaram && pedido.de > 0 ? Promise.reject(FORA_DO_TOTAL) : bancoDeMentira(pedido),
+    );
+    const { result } = await irParaATerceiraPagina(buscarPagina);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    apagaram = true;
+    buscarPagina.mockClear();
+    act(() => result.current.recarregar());
+
+    await waitFor(() => expect(result.current.pagina).toBe(0));
+    await waitFor(() => expect(result.current.primeira).toBe(1));
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+    expect(result.current.erro).toBeNull();
+    expect(buscarPagina).toHaveBeenLastCalledWith({ de: 0, ate: 49, ordem: PADRAO, busca: "" });
+  });
+
+  it("se a página 1 também falha, mostra o erro e não fica tentando de novo", async () => {
+    let apagaram = false;
+    const buscarPagina = vi.fn((pedido: PedidoDePagina<Coluna>) =>
+      apagaram ? Promise.reject(FORA_DO_TOTAL) : bancoDeMentira(pedido),
+    );
+    const { result } = await irParaATerceiraPagina(buscarPagina);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    apagaram = true;
+    buscarPagina.mockClear();
+    act(() => result.current.recarregar());
+
+    await waitFor(() => expect(result.current.erro).not.toBeNull());
+    await waitFor(() => expect(result.current.carregando).toBe(false));
+    expect(result.current.pagina).toBe(0);
+    // Uma tentativa na página 3 e UMA na página 1; nada de laço.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(buscarPagina).toHaveBeenCalledTimes(2);
+  });
+});
