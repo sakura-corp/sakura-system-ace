@@ -18,6 +18,7 @@ import { formatarMoeda, formatarPercentual } from "@/schemas/dinheiro";
 import {
   FRASE_DO_MES_DO_DRE,
   MESES_PADRAO,
+  MAXIMO_DE_MESES,
   mesesEntre,
   montarDre,
   rotuloDoMes,
@@ -269,6 +270,8 @@ export function DreSection({
   const [periodo, setPeriodo] = useState(periodoPadrao);
   const [campos, setCampos] = useState(periodo);
   const meses = useMemo(() => mesesEntre(periodo.de, periodo.ate), [periodo]);
+  // mesesEntre fica só com os mais novos quando passa do máximo: a tela avisa.
+  const periodoCortado = meses.length > 0 && meses[0] !== periodo.de;
 
   const { comecar, dadosSaoDaLoja } = useCargaMaisNova(lojaAtual?.id);
   const [categoriasGuardadas, setCategorias] =
@@ -344,6 +347,12 @@ export function DreSection({
     erro,
     carregando,
   ]);
+  // Algum mês com venda no cartão sem taxa: na tela fechada as Deduções não mostram isso.
+  const taxaFaltando = !!dre?.linhas
+    .find((l) => l.chave === "deducoes")
+    ?.filhas.find((f) => f.chave === "taxa_maquininha")
+    ?.colunas.some((c) => c.naoInformado || c.parcial);
+
 
   const [abertas, setAbertas] = useState<ReadonlySet<string>>(() => new Set());
   const [imprimindo, setImprimindo] = useState(false);
@@ -445,6 +454,23 @@ export function DreSection({
         <p className="text-corpo text-texto-2">Carregando o DRE...</p>
       ) : (
         <>
+          {periodoCortado && (
+            <AvisoDeAtencao>
+              O DRE mostra no máximo {MAXIMO_DE_MESES} meses: ficaram os mais
+              novos, de {rotuloDoMes(dre.meses[0])} a{" "}
+              {rotuloDoMes(dre.meses[dre.meses.length - 1])}. O Total soma só
+              esses meses.
+            </AvisoDeAtencao>
+          )}
+
+          {taxaFaltando && (
+            <AvisoDeAtencao>
+              Falta a taxa da maquininha de parte das vendas no cartão: as
+              Deduções podem estar menores do que são. Abra “Deduções” pra ver
+              em que meses.
+            </AvisoDeAtencao>
+          )}
+
           {dre.semGrupo.quantidade > 0 && (
             <AvisoDeAtencao>
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -452,7 +478,10 @@ export function DreSection({
                   {formatarMoeda(dre.semGrupo.total)} em{" "}
                   {dre.semGrupo.quantidade}{" "}
                   {dre.semGrupo.quantidade === 1 ? "lançamento" : "lançamentos"}{" "}
-                  ainda sem grupo: não entram no DRE.
+                  ainda sem grupo: não entram no DRE. Pode ser categoria em “A
+                  classificar” (acerta em Configurações → Categorias de caixa) ou
+                  lançamento sem categoria nenhuma (acerta no Caixa, em
+                  “Categorizar agora”).
                   {!ehAdmin &&
                     " Peça a quem administra a loja pra classificar em Configurações → Categorias de caixa."}
                 </span>
@@ -533,6 +562,8 @@ export function DreSection({
                   ? "lançamento"
                   : "lançamentos"
               }.`}
+            {dre.devolucoesDeOs.quantidade > 0 &&
+              ` As devoluções de OS corrigida (${formatarMoeda(dre.devolucoesDeOs.total)}) também não são despesa: a venda da OS já entra corrigida na Receita bruta.`}
           </p>
         </>
       )}

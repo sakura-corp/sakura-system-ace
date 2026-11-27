@@ -172,6 +172,55 @@ describe("DreSection", () => {
     expect(screen.getByText(/Categorias em “Fora do resultado” não entram\./)).toHaveTextContent(/R\$\s80,00 em 2 lançamentos/);
   });
 
+  it("faixa sem grupo explica os dois casos: categoria a classificar e lançamento sem categoria", async () => {
+    montarDre.mockImplementation(() => dreDeExemplo({ semGrupo: { quantidade: 2, total: 30 } }));
+    renderizar(<DreSection {...PROPS} />);
+    await pronto();
+    expect(screen.getByText(/ainda sem grupo/)).toHaveTextContent(/no Caixa, em “Categorizar agora”/);
+  });
+
+  it("devolução de OS corrigida aparece no pé, fora das despesas", async () => {
+    montarDre.mockImplementation(() => dreDeExemplo({ devolucoesDeOs: { quantidade: 1, total: 80 } }));
+    renderizar(<DreSection {...PROPS} />);
+    await pronto();
+    expect(screen.getByText(/Categorias em “Fora do resultado” não entram\./)).toHaveTextContent(
+      /devoluções de OS corrigida \(R\$\s80,00\) também não são despesa/,
+    );
+  });
+
+  it("taxa faltando dentro das Deduções: avisa na tela fechada", async () => {
+    const base = dreDeExemplo();
+    montarDre.mockImplementation(() => ({
+      ...base,
+      linhas: [
+        base.linhas[0],
+        linha("deducoes", "Deduções", "-", 0, [
+          linha("taxa_maquininha", "Taxa da maquininha", "-", 10, [], { parcial: true }),
+        ]),
+        ...base.linhas.slice(2),
+      ],
+    }));
+    renderizar(<DreSection {...PROPS} />);
+    await pronto();
+    expect(screen.getByText(/Falta a taxa da maquininha de parte das vendas no cartão/)).toBeInTheDocument();
+  });
+
+  it("sem taxa faltando, não há aviso de taxa", async () => {
+    renderizar(<DreSection {...PROPS} />);
+    await pronto();
+    expect(screen.queryByText(/Falta a taxa da maquininha/)).toBeNull();
+  });
+
+  it("período maior que o máximo: avisa que ficaram só os meses mais novos", async () => {
+    const { user } = renderizar(<DreSection {...PROPS} />);
+    await pronto();
+    expect(screen.queryByText(/no máximo 24 meses/)).toBeNull();
+    const de = screen.getByLabelText("De");
+    await user.clear(de);
+    await user.type(de, "2020-01");
+    expect(await screen.findByText(/no máximo 24 meses/)).toBeInTheDocument();
+  });
+
   it("De depois de Até: avisa e mantém os números do período anterior", async () => {
     const { user } = renderizar(<DreSection {...PROPS} />);
     await pronto();
