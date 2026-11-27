@@ -14,6 +14,7 @@ import {
   somarLinhasCobradas,
   ratearPagamentos,
   somarLinhasPagamento,
+  textoDasParcelas,
   type FaturamentoFormValues,
 } from "./faturamento";
 import type { JurosParcela } from "@/types/configuracao";
@@ -392,5 +393,43 @@ describe("itensQueImpedemNFCe", () => {
   it("as frases que a tela mostra", () => {
     expect(MENSAGEM_PECA_PRECISA_CADASTRO).toBe("Essa peça precisa ser cadastrada pra sair na nota.");
     expect(MENSAGEM_PECA_SEM_NCM).toMatch(/sem NCM.*sair na nota/);
+  });
+});
+
+describe("textoDasParcelas (#979)", () => {
+  // O toLocaleString põe espaço sem quebra depois do "R$"; aqui só importa o texto.
+  const texto = (valor: number, parcelas: number) =>
+    textoDasParcelas(valor, parcelas).replace(/\s/g, " ");
+
+  it("R$ 100 em 3x mostra as parcelas de verdade, que somam R$ 100", () => {
+    expect(texto(100, 3)).toBe("2x de R$ 33,33 + 1x de R$ 33,34");
+  });
+
+  it("parcelas iguais viram um grupo só", () => {
+    expect(texto(120, 3)).toBe("3x de R$ 40,00");
+  });
+
+  it('à vista não tem "x"', () => {
+    expect(texto(50, 1)).toBe("R$ 50,00");
+  });
+
+  it("segue a mesma repartição de calcularListaParcelas, seja qual for a parcela que difere", () => {
+    const casos: [number, number][] = [
+      [100.01, 3],
+      [100.02, 3],
+      [99.99, 7],
+      [1234.56, 12],
+    ];
+    for (const [valor, parcelas] of casos) {
+      const lista = calcularListaParcelas(valor, parcelas).map((p) => p.valor);
+      const doTexto = texto(valor, parcelas)
+        .split(" + ")
+        .flatMap((grupo) => {
+          const [, quantidade, numero] = grupo.match(/^(\d+)x de R\$ ([\d.,]+)$/) ?? [];
+          const valorDoGrupo = Number(numero.replace(/\./g, "").replace(",", "."));
+          return Array<number>(Number(quantidade)).fill(valorDoGrupo);
+        });
+      expect(doTexto).toEqual(lista);
+    }
   });
 });

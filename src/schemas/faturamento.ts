@@ -1,4 +1,4 @@
-import { arredondarCentavo, repartirEmCentavos } from "./dinheiro";
+import { arredondarCentavo, formatarMoeda, repartirEmCentavos } from "./dinheiro";
 import { z } from "zod";
 import type { PagamentoOrdem } from "@/lib/ordensServico";
 import type { JurosParcela } from "@/types/configuracao";
@@ -96,6 +96,23 @@ export function calcularListaParcelas(
     vencimento: addMeses(apartirDe, i + 1),
     valor,
   }));
+}
+
+// O texto "3x de R$ …" mostrado no faturamento (#979). Sai das mesmas
+// parcelas de `calcularListaParcelas`, então soma exatamente o valor cobrado:
+// R$100 em 3x vira "2x de R$ 33,33 + 1x de R$ 33,34", e não "3x de R$ 33,33"
+// (que soma R$99,99). Parcelas vizinhas iguais viram um grupo só; à vista
+// mostra só o valor, sem "x".
+export function textoDasParcelas(valorCobrado: number, parcelas: number): string {
+  const valores = calcularListaParcelas(valorCobrado, parcelas).map((p) => p.valor);
+  if (valores.length <= 1) return formatarMoeda(valores[0] ?? valorCobrado);
+  const grupos: { quantidade: number; valor: number }[] = [];
+  for (const valor of valores) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.valor === valor) ultimo.quantidade += 1;
+    else grupos.push({ quantidade: 1, valor });
+  }
+  return grupos.map((g) => `${g.quantidade}x de ${formatarMoeda(g.valor)}`).join(" + ");
 }
 
 export function somarLinhasPagamento(linhas: LinhaPagamentoValues[]): number {

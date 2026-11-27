@@ -24,6 +24,7 @@ import {
   parcelasDaOrdem,
   somarLinhasCobradas,
   somarLinhasPagamento,
+  textoDasParcelas,
   type FaturamentoFormValues,
 } from "@/schemas/faturamento";
 import { montarPixCopiaECola, valorDoQrPix } from "@/schemas/pix";
@@ -538,14 +539,13 @@ export function FaturamentoCard({
                   {linha && linha.parcelas > 1 && linha.valorBase > 0 && (
                     <p className="text-right text-rotulo text-texto-2">
                       {linha.jurosPercentual > 0
-                        ? `${linha.parcelas}x de ${formatarMoeda(
-                            linha.valorCobrado / linha.parcelas,
+                        ? `${textoDasParcelas(
+                            linha.valorCobrado,
+                            linha.parcelas,
                           )} — com ${linha.jurosPercentual.toLocaleString("pt-BR")}% de juros, essa forma fecha em ${formatarMoeda(
                             linha.valorCobrado,
                           )}`
-                        : `${linha.parcelas}x de ${formatarMoeda(
-                            linha.valorCobrado / linha.parcelas,
-                          )} — sem juros`}
+                        : `${textoDasParcelas(linha.valorCobrado, linha.parcelas)} — sem juros`}
                     </p>
                   )}
                 </div>
