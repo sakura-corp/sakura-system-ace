@@ -47,7 +47,7 @@
 ## O que passou sem eu ter visto reprovar
 - Os 3 testes novos de `RelatoriosPage.test.tsx` (troca de aba, DRE real, erro de carga).
 - O teste de `carregarDadosDoDre` (`relatorios.test.ts`).
-- `contraste:telas` e `largura:telas` nas cenas novas `36c` e `36d`.
+- `contraste:telas` e `largura:telas` inteiros, sem nenhuma reprovação (as cenas novas `36c` e `36d` incluídas).
 - A suíte inteira (278 arquivos, 3.662 testes), `test:fusos`, `typecheck` e `lint` (0 erros).
 
 ## O que ficou de fora
@@ -61,6 +61,7 @@
   - peça avulsa e serviço avulso com a mesma descrição podem trocar entre Produtos e Serviços (o total da receita continua certo);
   - diferença de 1 centavo possível entre a coluna Total (soma dos meses) e a Sobra das OS do período inteiro, só com quantidade quebrada.
 - **Arquivo fora da lista da issue**: mexi em `src/pages/configuracoes/ConfiguracoesPage.tsx` (abrir a seção pelo endereço), porque o botão "Classificar" do Pronto quando precisa disso. Mudança pequena e com teste.
+- **Outro arquivo fora da lista**: `supabase/scripts/testar-dados-de-exemplo.sql`. O CI reprovou (B1: 21 lançamentos de exemplo, esperava 15) por causa das despesas novas do exemplo. Subi as contagens (21 lançamentos, 6 categorias com grupo) e o teste passou num Postgres descartável.
 - **O PDF** do período padrão (6 meses, todas as linhas abertas) sai em 2 páginas de A4 deitado.
 
 ## O que depende de alguém
