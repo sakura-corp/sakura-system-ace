@@ -12,6 +12,15 @@
 | **Reserva** | Só quando a Sofia estiver sem tokens: um colega pode revisar no lugar dela, e a Sofia decide depois se confere. Ela avisa quando for o caso. |
 | **O que o PR leva** | CI verde e a revisão de código do Claude colada na descrição. |
 
+- **A marca do painel (última linha da revisão do Claude colada no PR).** O painel lê uma marca
+  escondida no comentário da revisão, só quando o comentário é da conta da Sofia. Termine a revisão
+  com uma destas linhas, com o commit revisado (o `headRefOid` do PR, 40 letras):
+  - pode aprovar (mesmo com teste à mão devido): `<!-- painel:revisao=aprovada commit=<sha> -->`
+  - devolvido (o que falta é de quem fez): `<!-- painel:revisao=devolvida commit=<sha> -->`
+
+  **Escreva no PR o que falta**: teste à mão com os passos exatos, ou o ajuste pedido. Uma marca por
+  revisão; commit novo depois: cole uma revisão nova, com o commit novo. Não edite a marca de uma
+  revisão antiga. De outra conta, o painel ignora.
 - **Quem mescla:** só a Sofia, ou sessão com ordem escrita dela (frase "Quem mescla" no topo do
   `CLAUDE.md`). O **plantão do Tiago** (PR só de documentação, quando a Sofia avisar que a cota
   acabou) segue o mesmo: CI verde e revisão do Claude colada.

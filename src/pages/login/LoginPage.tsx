@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Botao } from "@/components/Botao";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +12,7 @@ interface LoginPageProps {
 
 export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [usuario, setUsuario] = useState("");
   const [senha, setSenha] = useState("");
   const [entrando, setEntrando] = useState(false);
@@ -22,6 +24,10 @@ export function LoginPage({ onConfigurarConexao }: LoginPageProps) {
     setEntrando(true);
     try {
       await login(usuario, senha);
+      // Entrar = Início (#1191). O HashRouter guarda a última tela do login
+      // anterior; sem isto, quem entra sem aquele módulo via "sem permissão".
+      // Quem não tem o Início vai pro primeiro módulo dele (PaginaInicial).
+      navigate("/", { replace: true });
     } catch (err) {
       console.error("Erro ao entrar:", err);
       setErro(mensagemDeErro(err));
