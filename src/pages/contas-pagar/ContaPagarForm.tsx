@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Botao } from "@/components/Botao";
-import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
+import { CampoDoMolde } from "@/components/molde/CampoDoMolde";
+import { MoldeFormulario, SecaoDoFormulario } from "@/components/molde/MoldeFormulario";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   contaPagarFormSchema,
@@ -13,7 +13,6 @@ import {
 } from "@/schemas/contaPagar";
 import type { CategoriaCaixa } from "@/types/categoriaCaixa";
 import type { NovaContaPagar } from "@/types/contaPagar";
-import { AvisoDeErro } from "@/components/Aviso";
 
 interface ContaPagarFormProps {
   categorias: CategoriaCaixa[];
@@ -21,8 +20,14 @@ interface ContaPagarFormProps {
   onCancelar: () => void;
 }
 
+/**
+ * A "Nova conta" de Contas a Pagar, em janela (molde de formulário da leva 8,
+ * #1094): antes o formulário abria em cima da lista e empurrava tudo pra
+ * baixo. Os campos na ordem da conversa: o que é, quanto, quando vence, a
+ * categoria e se repete todo mês.
+ */
 export function ContaPagarForm({ categorias, onSalvar, onCancelar }: ContaPagarFormProps) {
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | undefined>();
   const categoriasSaida = categorias.filter((c) => c.tipo === "saida");
 
   const {
@@ -30,14 +35,14 @@ export function ContaPagarForm({ categorias, onSalvar, onCancelar }: ContaPagarF
     watch,
     setValue,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ContaPagarFormValues>({
     resolver: zodResolver(contaPagarFormSchema),
     defaultValues: contaPagarFormVazio,
   });
 
   async function aoSubmeter(valores: ContaPagarFormValues) {
-    setErro(null);
+    setErro(undefined);
     try {
       await onSalvar(paraNovaContaPagar(valores));
     } catch (err) {
@@ -47,109 +52,69 @@ export function ContaPagarForm({ categorias, onSalvar, onCancelar }: ContaPagarF
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-5 sakura-card p-6">
-      <div className="flex items-center gap-3">
-        <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-texto">Nova conta</h2>
-      </div>
+    <MoldeFormulario
+      em="janela"
+      titulo="Nova conta a pagar"
+      descricao="Conta com vencimento (aluguel, luz, fornecedor). Ao pagar, sai do Caixa sozinha."
+      rotuloDoEnviar="Cadastrar conta"
+      aoEnviar={handleSubmit(aoSubmeter)}
+      aoCancelar={onCancelar}
+      erro={erro}
+    >
+      <SecaoDoFormulario>
+        <CampoDoMolde rotulo="Descrição" obrigatorio largura="inteira" erro={errors.descricao?.message}>
+          {(campo) => <input {...campo} type="text" placeholder="Ex: Aluguel" {...register("descricao")} />}
+        </CampoDoMolde>
 
-      {erro && (
-        <AvisoDeErro>{erro}</AvisoDeErro>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <label className="sakura-rotulo col-span-2">
-          <span>
-            Descrição <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="text"
-            placeholder="Ex: Aluguel"
-            aria-invalid={errors.descricao ? "true" : undefined}
-            {...register("descricao")}
-            className="sakura-campo"
-          />
-          {errors.descricao && (
-            <span className="text-rotulo font-normal text-perigo">{errors.descricao.message}</span>
+        <CampoDoMolde rotulo="Valor" obrigatorio erro={errors.valor?.message}>
+          {(campo) => (
+            <input
+              {...campo}
+              type="number"
+              min="0.01"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="0,00"
+              className={`${campo.className} text-right tabular-nums`}
+              {...register("valor")}
+            />
           )}
-        </label>
+        </CampoDoMolde>
 
-        <label className="sakura-rotulo">
-          <span>
-            Valor <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            aria-invalid={errors.valor ? "true" : undefined}
-            {...register("valor")}
-            className="sakura-campo"
-          />
-          {errors.valor && <span className="text-rotulo font-normal text-perigo">{errors.valor.message}</span>}
-        </label>
+        <CampoDoMolde rotulo="Vencimento" obrigatorio erro={errors.vencimento?.message}>
+          {(campo) => <input {...campo} type="date" {...register("vencimento")} />}
+        </CampoDoMolde>
 
-        <label className="sakura-rotulo">
-          <span>
-            Vencimento <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="date"
-            aria-invalid={errors.vencimento ? "true" : undefined}
-            {...register("vencimento")}
-            className="sakura-campo"
-          />
-          {errors.vencimento && (
-            <span className="text-rotulo font-normal text-perigo">{errors.vencimento.message}</span>
+        <CampoDoMolde rotulo="Categoria" largura="inteira" ajuda="Opcional. É a mesma lista das Saídas do Caixa.">
+          {(campo) => (
+            <Combobox
+              id={campo.id}
+              opcoes={categoriasSaida.map((categoria) => ({
+                valor: categoria.id,
+                rotulo: categoria.nome,
+              }))}
+              valor={watch("categoria_id")}
+              onMudar={(v) => setValue("categoria_id", v)}
+              opcaoVazia="Sem categoria"
+              placeholder="Sem categoria"
+            />
           )}
-        </label>
+        </CampoDoMolde>
 
-        <label className="sakura-rotulo">
-          <span>Categoria (opcional)</span>
-          <Combobox
-            opcoes={categoriasSaida.map((categoria) => ({
-              valor: categoria.id,
-              rotulo: categoria.nome,
-            }))}
-            valor={watch("categoria_id")}
-            onMudar={(v) => setValue("categoria_id", v)}
-            opcaoVazia="Sem categoria"
-            placeholder="Sem categoria"
-          />
-        </label>
-
-        <label className="col-span-2 flex items-center gap-2.5 text-corpo text-texto">
-          <input
-            type="checkbox"
-            {...register("recorrente")}
-            className="size-4 shrink-0 accent-acao"
-          />
+        <label className="col-span-full flex min-h-10 items-center gap-3 text-corpo text-texto">
+          <input type="checkbox" {...register("recorrente")} className="size-5 shrink-0 accent-acao" />
           Conta mensal recorrente (ao pagar, já cria a próxima automaticamente)
         </label>
 
         {watch("recorrente") && (
-          <label className="sakura-rotulo">
-            <span>Recorrente até (opcional)</span>
-            <input
-              type="date"
-              {...register("recorrente_ate")}
-              className="sakura-campo"
-            />
-            <span className="text-rotulo font-normal text-texto-2">
-              Deixe em branco pra continuar repetindo sem data pra parar.
-            </span>
-          </label>
+          <CampoDoMolde
+            rotulo="Recorrente até"
+            ajuda="Opcional. Deixe em branco pra continuar repetindo sem data pra parar."
+          >
+            {(campo) => <input {...campo} type="date" {...register("recorrente_ate")} />}
+          </CampoDoMolde>
         )}
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Botao variante="fantasma" onClick={onCancelar}>
-          Cancelar
-        </Botao>
-        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
-          {isSubmitting ? "Salvando..." : "Cadastrar"}
-        </Botao>
-      </div>
-    </form>
+      </SecaoDoFormulario>
+    </MoldeFormulario>
   );
 }

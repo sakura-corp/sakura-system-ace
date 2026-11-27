@@ -7,6 +7,7 @@
 import type { ReactElement } from "react";
 import { act } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { hojeLocal } from "@/lib/datas";
 import { renderizar, screen } from "@/testes/tela";
 import type { ContaPagar } from "@/types/contaPagar";
 
@@ -41,7 +42,8 @@ function adiada<T>() {
 
 function conta(id: string, lojaId: string, descricao: string): ContaPagar {
   return {
-    id, loja_id: lojaId, descricao, valor: 100, vencimento: "2099-01-01", categoria_id: null,
+    // Vence hoje: a lista abre no mês de hoje (#1094).
+    id, loja_id: lojaId, descricao, valor: 100, vencimento: hojeLocal(), categoria_id: null,
     recorrente: false, recorrente_ate: null, status: "pendente", data_pagamento: null,
     caixa_movimento_id: null, operador_id: null, criado_em: "2026-01-01T00:00:00Z",
   };
@@ -95,6 +97,7 @@ describe("Contas a Pagar: troca de loja no meio da carga (#927)", () => {
 
     expect(await screen.findByText(/Falha da loja B/)).toBeInTheDocument();
     expect(screen.queryByText("Conta da loja A")).not.toBeInTheDocument();
-    expect(screen.queryByText("Total pendente")).not.toBeInTheDocument();
+    // Nem os números da loja A nos cartões de cima.
+    expect(screen.queryByText("Atrasadas", { selector: "p" })).not.toBeInTheDocument();
   });
 });

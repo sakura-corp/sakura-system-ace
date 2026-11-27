@@ -78,7 +78,7 @@ describe("ContaPagarForm — recorrência", () => {
     await marcarRecorrente(user);
     await user.type(screen.getByLabelText(/Recorrente até/), "2027-03-01");
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     expect(onSalvar).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -95,7 +95,7 @@ describe("ContaPagarForm — recorrência", () => {
     await preencherBasico(user);
     await marcarRecorrente(user);
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     expect(onSalvar).toHaveBeenCalledWith(
       expect.objectContaining({ recorrente: true, recorrente_ate: null }),
@@ -112,7 +112,7 @@ describe("ContaPagarForm — recorrência", () => {
     await user.type(screen.getByLabelText(/Recorrente até/), "2027-03-01");
     await marcarRecorrente(user);
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     expect(onSalvar).toHaveBeenCalledWith(
       expect.objectContaining({ recorrente: false, recorrente_ate: null }),
@@ -137,7 +137,7 @@ describe("ContaPagarForm — o resto do formulário", () => {
   it("não salva sem descrição, sem valor e sem vencimento — e diz cada motivo", async () => {
     const { user, onSalvar } = montar();
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     expect(
       await screen.findByText("Descrição é obrigatória."),
@@ -165,7 +165,7 @@ describe("ContaPagarForm — o resto do formulário", () => {
     await user.type(screen.getByLabelText(/Valor/), "0");
     await user.type(screen.getByLabelText(/Vencimento/), "2026-10-31");
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     expect(onSalvar).not.toHaveBeenCalled();
   });
@@ -187,7 +187,7 @@ describe("ContaPagarForm — o resto do formulário", () => {
     const { user, onSalvar } = montar();
     await preencherBasico(user);
 
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar conta" }));
 
     const [conta] = onSalvar.mock.calls[0];
     expect(conta.valor).toBe(2500);

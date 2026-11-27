@@ -1,9 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Botao } from "@/components/Botao";
-import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Combobox } from "@/components/Combobox";
+import { CampoDoMolde } from "@/components/molde/CampoDoMolde";
+import { MoldeFormulario, SecaoDoFormulario } from "@/components/molde/MoldeFormulario";
 import { mensagemDeErro } from "@/lib/errors";
 import {
   contaReceberFormSchema,
@@ -13,7 +13,6 @@ import {
 } from "@/schemas/contaReceber";
 import type { Cliente } from "@/types/cliente";
 import type { NovaContaReceber } from "@/types/contaReceber";
-import { AvisoDeErro } from "@/components/Aviso";
 
 interface ContaReceberFormProps {
   clientes: Cliente[];
@@ -21,22 +20,27 @@ interface ContaReceberFormProps {
   onCancelar: () => void;
 }
 
+/**
+ * A "Nova conta" de Contas a Receber, em janela (molde de formulário da leva
+ * 8, #1094). Na ordem da conversa do balcão: quem deve, o quê, quanto e
+ * quando promete pagar.
+ */
 export function ContaReceberForm({ clientes, onSalvar, onCancelar }: ContaReceberFormProps) {
-  const [erro, setErro] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | undefined>();
 
   const {
     register,
     watch,
     setValue,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ContaReceberFormValues>({
     resolver: zodResolver(contaReceberFormSchema),
     defaultValues: contaReceberFormVazio,
   });
 
   async function aoSubmeter(valores: ContaReceberFormValues) {
-    setErro(null);
+    setErro(undefined);
     try {
       await onSalvar(paraNovaContaReceber(valores));
     } catch (err) {
@@ -46,90 +50,61 @@ export function ContaReceberForm({ clientes, onSalvar, onCancelar }: ContaRecebe
   }
 
   return (
-    <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-5 sakura-card p-6">
-      <div className="flex items-center gap-3">
-        <BotaoVoltar onClick={onCancelar} />
-        <h2 className="text-subtitulo font-semibold text-texto">Nova conta a receber</h2>
-      </div>
-
-      {erro && (
-        <AvisoDeErro>{erro}</AvisoDeErro>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <label className="sakura-rotulo col-span-2">
-          <span>
-            Cliente <span className="text-perigo">*</span>
-          </span>
-          <Combobox
-            opcoes={clientes.map((cliente) => ({
-              valor: cliente.id,
-              rotulo: cliente.nome,
-            }))}
-            valor={watch("cliente_id")}
-            onMudar={(v) => setValue("cliente_id", v, { shouldValidate: true })}
-            placeholder="Escolha o cliente"
-          />
-          {errors.cliente_id && (
-            <span className="text-rotulo font-normal text-perigo">{errors.cliente_id.message}</span>
+    <MoldeFormulario
+      em="janela"
+      titulo="Nova conta a receber"
+      descricao="Pra cobrança que não passou por OS. As de OS faturada “a receber” já aparecem sozinhas."
+      rotuloDoEnviar="Cadastrar conta"
+      aoEnviar={handleSubmit(aoSubmeter)}
+      aoCancelar={onCancelar}
+      erro={erro}
+    >
+      <SecaoDoFormulario>
+        <CampoDoMolde rotulo="Cliente" obrigatorio largura="inteira" erro={errors.cliente_id?.message}>
+          {(campo) => (
+            <Combobox
+              id={campo.id}
+              opcoes={clientes.map((cliente) => ({
+                valor: cliente.id,
+                rotulo: cliente.nome,
+              }))}
+              valor={watch("cliente_id")}
+              onMudar={(v) => setValue("cliente_id", v, { shouldValidate: true })}
+              placeholder="Escolha o cliente"
+            />
           )}
-        </label>
+        </CampoDoMolde>
 
-        <label className="sakura-rotulo col-span-2">
-          <span>
-            Descrição <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="text"
-            placeholder="Ex: Acerto de serviço fora de OS"
-            aria-invalid={errors.descricao ? "true" : undefined}
-            {...register("descricao")}
-            className="sakura-campo"
-          />
-          {errors.descricao && (
-            <span className="text-rotulo font-normal text-perigo">{errors.descricao.message}</span>
+        <CampoDoMolde rotulo="Descrição" obrigatorio largura="inteira" erro={errors.descricao?.message}>
+          {(campo) => (
+            <input
+              {...campo}
+              type="text"
+              placeholder="Ex: Acerto de serviço fora de OS"
+              {...register("descricao")}
+            />
           )}
-        </label>
+        </CampoDoMolde>
 
-        <label className="sakura-rotulo">
-          <span>
-            Valor <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            aria-invalid={errors.valor ? "true" : undefined}
-            {...register("valor")}
-            className="sakura-campo"
-          />
-          {errors.valor && <span className="text-rotulo font-normal text-perigo">{errors.valor.message}</span>}
-        </label>
-
-        <label className="sakura-rotulo">
-          <span>
-            Previsão de recebimento <span className="text-perigo">*</span>
-          </span>
-          <input
-            type="date"
-            aria-invalid={errors.vencimento ? "true" : undefined}
-            {...register("vencimento")}
-            className="sakura-campo"
-          />
-          {errors.vencimento && (
-            <span className="text-rotulo font-normal text-perigo">{errors.vencimento.message}</span>
+        <CampoDoMolde rotulo="Valor" obrigatorio erro={errors.valor?.message}>
+          {(campo) => (
+            <input
+              {...campo}
+              type="number"
+              min="0.01"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="0,00"
+              className={`${campo.className} text-right tabular-nums`}
+              {...register("valor")}
+            />
           )}
-        </label>
-      </div>
+        </CampoDoMolde>
 
-      <div className="flex justify-end gap-2">
-        <Botao variante="fantasma" onClick={onCancelar}>
-          Cancelar
-        </Botao>
-        <Botao type="submit" variante="principal" ocupado={isSubmitting}>
-          {isSubmitting ? "Salvando..." : "Cadastrar"}
-        </Botao>
-      </div>
-    </form>
+        <CampoDoMolde rotulo="Previsão de recebimento" obrigatorio erro={errors.vencimento?.message}>
+          {(campo) => <input {...campo} type="date" {...register("vencimento")} />}
+        </CampoDoMolde>
+      </SecaoDoFormulario>
+    </MoldeFormulario>
   );
 }
