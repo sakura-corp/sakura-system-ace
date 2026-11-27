@@ -46,7 +46,24 @@ export const CENAS = [
     descricao: "Quem já deveria ter voltado (atrasados) e quem deve voltar nesta semana, calculado a partir do intervalo cadastrado em cada serviço (em dias ou em km) e da última OS faturada do carro. A data é uma previsão; quando vem do KM, diz 'estimado pelo KM'. O botão do WhatsApp abre a conversa com a mensagem pronta e a tela mostra quando o aviso foi aberto pela última vez. Quem está marcado como 'não mandar lembrete' não aparece." },
   { arquivo: "06-cliente-form", modulo: "Clientes", titulo: "Cadastro de cliente e veículos",
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
-    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP a caixinha 'Não mandar lembrete pra este cliente' e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
+    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP a caixinha 'Não mandar lembrete pra este cliente' e a lista de veículos do cliente: uma linha por carro, com o desenho na cor dele, a placa, a marca, o modelo e o ano. Cada carro abre na janela do veículo pra cadastrar ou mexer." },
+
+  // A janela do veículo (#1096), preenchida: marca → modelo → ano, o tipo que veio do modelo e a cor.
+  { arquivo: "06e-veiculo-janela", modulo: "Clientes", titulo: "Janela do veículo",
+    rota: "/clientes",
+    passos: [
+      { clicar: "+ Novo cliente" },
+      { clicar: "+ Adicionar veículo" },
+      { digitar: "QWE1R23", em: '[role="dialog"] input[placeholder="ABC1D23"]' },
+      { digitar: "Fiat", em: '[role="dialog"] input[role="combobox"] >> nth=0' },
+      { clicar: "Fiat" },
+      { digitar: "Strada", em: '[role="dialog"] input[role="combobox"] >> nth=1' },
+      { clicar: "Strada" },
+      { digitar: "2021", em: '[role="dialog"] input[role="combobox"] >> nth=2' },
+      { clicar: "2021" },
+      { seletor: '[role="dialog"] label:has-text("Vermelho")' },
+    ],
+    descricao: "Cada carro do cliente tem a sua janela. A placa vem primeiro; a marca sugere as 15 mais vendidas, o modelo sugere só os da marca e o ano só os anos daquele modelo, e tudo aceita digitar o que não está na lista. O tipo (hatch, sedã, SUV, picape ou moto) vem sozinho do modelo e dá pra trocar clicando no desenho; a cor é escolhida nas bolinhas. À direita, a prévia mostra o carro como ele vai aparecer no pátio do Início, na cor escolhida." },
 
   // Planilha inventada: uma linha sem nome (problema) e uma placa que já está no cadastro de mentira.
   { arquivo: "06c-clientes-importar", modulo: "Clientes", titulo: "Importar clientes de uma planilha",
