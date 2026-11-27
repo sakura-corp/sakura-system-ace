@@ -32,7 +32,8 @@ vi.mock("@/lib/ordensServico", () => ({
     }
   },
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A tela ouve a rede pelo `useConexao` (#1017): o banco de mentira avisa nada.
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoMudarARede: () => () => {} }));
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: async () => [],
   cadastrarClienteRapido: vi.fn(),

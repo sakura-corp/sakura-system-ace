@@ -67,6 +67,9 @@ vi.mock("@/lib/importacaoClientes", () => ({
   desfazerImportacao: (...a: unknown[]) => desfazerImportacao(...a),
 }));
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A rede de mentira (#1017): o teste liga e desliga o "sem conexão".
+const conexao = vi.hoisted(() => ({ semConexao: false }));
+vi.mock("@/hooks/useConexao", () => ({ useConexao: () => ({ semConexao: conexao.semConexao }) }));
 
 const LOJA_A = { id: "loja-a", nome: "Loja Centro", cidade: null, uf: null, ativo: true, criado_em: "" };
 const LOJA_B = { id: "loja-b", nome: "Loja Vila", cidade: null, uf: null, ativo: true, criado_em: "" };
@@ -150,6 +153,7 @@ function bancoComOsClientes(todos: Cliente[]) {
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  conexao.semConexao = false;
   operador = { id: "op", admin: true, permissoes: [] };
   lojaAtual = LOJA_A;
   const quatro = [
@@ -644,3 +648,53 @@ describe("ClientesPage — a lista por página (#373)", () => {
   });
 });
 
+
+describe("ClientesPage — sem internet (#1017)", () => {
+  const ERRO_DE_REDE = new TypeError("Failed to fetch");
+
+  it("a busca falhou: mostra só o erro e o 'Tentar de novo', sem o 'Nenhum cliente cadastrado'", async () => {
+    listarClientesPagina.mockRejectedValue(ERRO_DE_REDE);
+    renderizar(<ClientesPage />);
+    expect(await screen.findByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(/conex/i);
+    expect(screen.queryByText(/Nenhum cliente/)).not.toBeInTheDocument();
+  });
+
+  it("a busca deu certo e voltou vazia: mostra o 'Nenhum cliente cadastrado ainda.'", async () => {
+    listarClientesPagina.mockResolvedValue({ linhas: [], total: 0 });
+    renderizar(<ClientesPage />);
+    expect(await screen.findByText("Nenhum cliente cadastrado ainda.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tentar de novo" })).not.toBeInTheDocument();
+  });
+
+  it("'Tentar de novo' busca de novo e mostra a lista", async () => {
+    listarClientesPagina.mockRejectedValueOnce(ERRO_DE_REDE);
+    const tela = renderizar(<ClientesPage />);
+    await tela.user.click(await screen.findByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByText("Cliente Pouco")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tentar de novo" })).not.toBeInTheDocument();
+  });
+
+  it("a internet voltou: a lista no erro busca de novo sozinha", async () => {
+    listarClientesPagina.mockRejectedValueOnce(ERRO_DE_REDE);
+    const tela = renderizar(<ClientesPage />);
+    await screen.findByRole("button", { name: "Tentar de novo" });
+    conexao.semConexao = true;
+    tela.rerender(<ClientesPage />);
+    conexao.semConexao = false;
+    tela.rerender(<ClientesPage />);
+    expect(await screen.findByText("Cliente Pouco")).toBeInTheDocument();
+  });
+
+  it("a internet caiu e voltou com a lista funcionando: não busca de novo", async () => {
+    const tela = renderizar(<ClientesPage />);
+    await screen.findByText("Cliente Pouco");
+    const chamadas = listarClientesPagina.mock.calls.length;
+    conexao.semConexao = true;
+    tela.rerender(<ClientesPage />);
+    conexao.semConexao = false;
+    tela.rerender(<ClientesPage />);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(listarClientesPagina.mock.calls.length).toBe(chamadas);
+  });
+});

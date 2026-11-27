@@ -16,6 +16,7 @@ import {
   listarMovimentos,
 } from "@/lib/estoque";
 import { useCargaMaisNova } from "@/hooks/useCargaMaisNova";
+import { useRecarregarQuandoVoltar } from "@/hooks/useRecarregarQuandoVoltar";
 import { listarPecas } from "@/lib/pecas";
 import type { Categoria } from "@/types/categoria";
 import type { RegimeTributario } from "@/types/configuracao";
@@ -147,6 +148,12 @@ export function EstoquePage() {
 
   // Carga da loja nova com erro: nada da loja anterior na tela, só o erro.
   const pecasNaTela = dadosSaoDaLoja ? pecas : [];
+  // A carga que falhou (sem internet) busca de novo sozinha quando a internet
+  // volta; a que está funcionando não recarrega (#1017). Só com a tela SEM
+  // peça: a recarga troca tudo por "Carregando..." e levaria junto o produto
+  // ou a contagem que a pessoa estiver digitando (revisão final). Com peças
+  // na tela, fica o aviso de cima e o próximo salvar recarrega.
+  useRecarregarQuandoVoltar((!!erro || !!erroCatalogo) && pecasNaTela.length === 0, () => void carregar());
   const movimentosNaTela = useMemo(() => (dadosSaoDaLoja ? movimentos : []), [dadosSaoDaLoja, movimentos]);
   const depositosNaTela = dadosSaoDaLoja ? depositos : [];
   const regimeNaTela = dadosSaoDaLoja ? regime : null;
@@ -160,6 +167,9 @@ export function EstoquePage() {
   const parte = vista.tipo === "movimentacoes" || vista.tipo === "contagem" || vista.tipo === "relatorios"
     ? TITULO_DA_PARTE[vista.tipo]
     : null;
+  // Na lista de Produtos ainda vazia, o erro da carga vai DENTRO dela, com o
+  // "Tentar de novo" (#1017); em cima ficaria repetido.
+  const erroDentroDosProdutos = !!erro && !pecaDoPerfil && !parte && pecasNaTela.length === 0;
 
   return (
     <div className="space-y-6">
@@ -208,7 +218,7 @@ export function EstoquePage() {
         />
       )}
 
-      {erro && <AvisoDeErro>{erro}</AvisoDeErro>}
+      {erro && !erroDentroDosProdutos && <AvisoDeErro>{erro}</AvisoDeErro>}
 
       {carregando ? (
         <p className="text-corpo text-texto-2">Carregando...</p>
@@ -260,6 +270,7 @@ export function EstoquePage() {
           regime={regimeNaTela}
           lojaId={lojaAtual.id}
           onRecarregar={carregar}
+          erroAoCarregar={erro}
           avisoEstoqueInicial={avisoEstoqueInicial}
           onAvisoEstoqueInicial={setAvisoEstoqueInicial}
           onAbrirPeca={abrirPeca}
