@@ -19,6 +19,9 @@ import type { ItemParaComissao, OrdemParaComissao, TipoOrdem } from "@/types/os"
  * 3. Só conta OS **faturada**, pela data do faturamento — com a parte ainda
  *    não recebida (OS faturada como "a receber depois") destacada à parte,
  *    pra não pagar comissão de cliente que ainda não pagou sem perceber.
+ *    OS já paga e corrigida pra mais com a diferença "a receber" (#1182):
+ *    só a parte proporcional à diferença em aberto fica "a receber" (#1184).
+ *    Ver `recebimentoDasOrdens`.
  * 4. Serviço sem custo cadastrado fica fora da conta e do aviso (#836):
  *    a comissão sai sobre o lucro das peças. Ver `itensDaComissao`.
  *
@@ -44,8 +47,17 @@ export interface OrdemDaComissao {
   custo: number;
   lucro: number;
   comissao: number;
-  /** OS faturada como "a receber depois" e ainda não recebida. */
+  /**
+   * Alguma parte desta OS ainda não foi recebida: a conta do faturamento
+   * ("a receber depois") ou a diferença de uma correção ("fica a receber").
+   */
   aReceber: boolean;
+  /**
+   * Quanto da `comissao` desta OS ainda depende do cliente pagar: ela inteira
+   * se a conta do faturamento está em aberto; só a parte proporcional à
+   * diferença em aberto se o que falta é de uma correção (#1184).
+   */
+  comissaoAReceber: number;
   /** Itens que entraram com custo zero — ver `itensSemCusto` abaixo. */
   itensSemCusto: number;
 }
@@ -91,8 +103,13 @@ export interface EntradaComissoes {
   funcionarios: { id: string; nome: string; comissao: number | null }[];
   custoPeca: MapaCusto;
   custoServico: MapaCusto;
-  /** Ids de OS com conta a receber ainda pendente. */
-  ordensAReceber: Set<string>;
+  /** Ids de OS com a conta a receber DO FATURAMENTO ainda pendente: a OS inteira está a receber. */
+  ordensAReceber: ReadonlySet<string>;
+  /**
+   * Por OS, o que ainda falta receber de correções ("fica a receber", #1182).
+   * Só a parte proporcional disso fica "a receber" (#1184). Ausente = nenhuma.
+   */
+  aReceberDeCorrecoes?: ReadonlyMap<string, number>;
   de: string;
   ate: string;
 }
@@ -137,6 +154,62 @@ export function itensDaComissao<T extends ItemParaComissao>(
   );
 }
 
+/**
+ * Que parte da comissão de uma OS ainda depende do cliente pagar (0 a 1).
+ *
+ * - Conta do faturamento em aberto: a OS inteira (1), como sempre foi.
+ * - Só diferença de correção em aberto (#1182): a parte dela no valor da OS
+ *   (#1184). OS de R$ 1.100 com R$ 100 a receber → 1/11 da comissão. O valor
+ *   da OS é o mesmo que o banco usa pra achar a diferença (todos os itens,
+ *   líquidos de desconto, inclusive serviço sem custo).
+ * - Nada em aberto: 0.
+ *
+ * Nunca passa de 1 (a comissão a receber não passa da comissão inteira).
+ */
+export function fracaoAReceber(
+  contaDoFaturamentoEmAberto: boolean,
+  aReceberDeCorrecoes: number,
+  valorDaOrdem: number,
+): number {
+  if (contaDoFaturamentoEmAberto) return 1;
+  if (aReceberDeCorrecoes <= 0) return 0;
+  if (valorDaOrdem <= 0) return 1;
+  return Math.min(1, aReceberDeCorrecoes / valorDaOrdem);
+}
+
+/** O mínimo de uma conta a receber que as comissões precisam olhar. */
+export interface ContaParaComissao {
+  ordem_servico_id: string | null;
+  status: string;
+  valor: number | string;
+  /** 'faturamento' ou 'correcao' (migration 0092). Ausente = faturamento. */
+  origem?: string | null;
+}
+
+/**
+ * Lê as contas a receber pra montar a entrada das comissões: quais OS ainda
+ * têm a conta DO FATURAMENTO em aberto (a OS inteira a receber) e, por OS,
+ * quanto falta receber de correções (só a parte proporcional, #1184).
+ * Conta sem OS ou já recebida não conta.
+ */
+export function recebimentoDasOrdens(contas: readonly ContaParaComissao[]): {
+  ordensAReceber: Set<string>;
+  aReceberDeCorrecoes: Map<string, number>;
+} {
+  const ordensAReceber = new Set<string>();
+  const aReceberDeCorrecoes = new Map<string, number>();
+  for (const conta of contas) {
+    if (conta.status !== "pendente" || !conta.ordem_servico_id) continue;
+    if (conta.origem === "correcao") {
+      const atual = aReceberDeCorrecoes.get(conta.ordem_servico_id) ?? 0;
+      aReceberDeCorrecoes.set(conta.ordem_servico_id, arredondar(atual + Number(conta.valor)));
+    } else {
+      ordensAReceber.add(conta.ordem_servico_id);
+    }
+  }
+  return { ordensAReceber, aReceberDeCorrecoes };
+}
+
 function papelVazio(): ResumoPapel {
   return {
     vendido: 0,
@@ -176,6 +249,7 @@ export function resumirComissoes({
   custoPeca,
   custoServico,
   ordensAReceber,
+  aReceberDeCorrecoes,
   de,
   ate,
 }: EntradaComissoes): ComissaoFuncionario[] {
@@ -213,20 +287,22 @@ export function resumirComissoes({
     papel: ResumoPapel,
     ordem: OrdemNumeradaParaComissao,
     itens: ItemParaComissao[],
+    fracaoAReceber: number,
   ): void {
     const percentual = linha.percentual;
     const vendido = valorDosItens(itens);
     const custo = custoDosItens(itens, custoPeca, custoServico);
     const lucro = vendido - custo;
     const comissao = arredondar(lucro * ((percentual ?? 0) / 100));
-    const aReceber = ordensAReceber.has(ordem.id);
+    const aReceber = fracaoAReceber > 0;
+    const comissaoAReceber = arredondar(comissao * fracaoAReceber);
     const itensSemCusto = contarItensSemCusto(itens, custoPeca, custoServico);
 
     papel.vendido += vendido;
     papel.custo += custo;
     papel.lucro += lucro;
     papel.comissao += comissao;
-    if (aReceber) papel.comissaoAReceber += comissao;
+    papel.comissaoAReceber += comissaoAReceber;
     papel.itensSemCusto += itensSemCusto;
     const jaSomadas = ordensJaSomadas.get(linha.funcionarioId) ?? new Set<string>();
     if (!jaSomadas.has(ordem.id)) {
@@ -247,6 +323,7 @@ export function resumirComissoes({
       lucro,
       comissao,
       aReceber,
+      comissaoAReceber,
       itensSemCusto,
     });
   }
@@ -254,11 +331,16 @@ export function resumirComissoes({
   for (const ordem of ordensDoPeriodo(ordens, de, ate)) {
     const itens = itensDaComissao(ordem.itens ?? [], custoServico);
     if (itens.length === 0) continue;
+    const fracao = fracaoAReceber(
+      ordensAReceber.has(ordem.id),
+      aReceberDeCorrecoes?.get(ordem.id) ?? 0,
+      valorDosItens(ordem.itens ?? []),
+    );
 
     // Vendedor: leva pela OS inteira que atendeu.
     const idVendedor = ordem.vendedor_id ?? SEM_FUNCIONARIO;
     const linhaVendedor = linhaDe(idVendedor);
-    somar(linhaVendedor, linhaVendedor.comoVendedor, ordem, itens);
+    somar(linhaVendedor, linhaVendedor.comoVendedor, ordem, itens, fracao);
 
     // Técnico: leva só pelos itens que executou, então a OS é dividida por
     // técnico antes de somar (uma OS pode ter itens de gente diferente).
@@ -271,7 +353,7 @@ export function resumirComissoes({
     }
     for (const [idTecnico, itensDele] of itensPorTecnico) {
       const linhaTecnico = linhaDe(idTecnico);
-      somar(linhaTecnico, linhaTecnico.comoTecnico, ordem, itensDele);
+      somar(linhaTecnico, linhaTecnico.comoTecnico, ordem, itensDele, fracao);
     }
   }
 

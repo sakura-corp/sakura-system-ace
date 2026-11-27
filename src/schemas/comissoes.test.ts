@@ -4,7 +4,9 @@ import {
   totaisComissoes,
   colunaLucroSomaMaisQueOTotal,
   ordensDoPeriodo,
+  recebimentoDasOrdens,
   SEM_FUNCIONARIO,
+  type ContaParaComissao,
 } from "./comissoes";
 import type { ItemOS, OrdemServico, StatusOS } from "@/types/os";
 
@@ -438,5 +440,115 @@ describe("resumirComissoes — depois de trocar peça numa OS faturada (#1145)",
 
     const marcosDepois = calcular(depois).find((l) => l.funcionarioId === "tec")!;
     expect(marcosDepois.comoTecnico.custo).toBe(120);
+  });
+});
+
+// #1184: depois da #1182, uma OS já paga pode ser corrigida pra mais com a
+// diferença "a receber" numa conta nova, de origem 'correcao'. A comissão já
+// recebida não pode virar "a receber" por causa disso: só a parte da
+// diferença em aberto, proporcional ao valor da OS.
+describe("resumirComissoes — OS corrigida com a diferença a receber (#1184)", () => {
+  const custoPeca = new Map([["peca-barata", 50]]);
+  // OS de R$ 1.000 paga, corrigida pra R$ 1.100: 11 × R$ 100, custo R$ 50 cada.
+  // Lucro 550, 10% de comissão do vendedor = 55. A diferença (R$ 100) é 1/11
+  // da OS: 5 a receber, 50 já recebidos.
+  const corrigida = ordem({
+    id: "os-corrigida",
+    vendedor_id: "vend",
+    itens: [item({ peca_id: "peca-barata", quantidade: 11, preco_unitario: 100 })],
+  });
+
+  function calcular(contas: ContaParaComissao[]) {
+    return resumirComissoes({
+      ordens: [corrigida],
+      funcionarios: FUNCIONARIOS,
+      custoPeca,
+      custoServico: CUSTO_SERVICO,
+      ...recebimentoDasOrdens(contas),
+      de: "2026-09-01",
+      ate: "2026-09-30",
+    });
+  }
+
+  it("só a comissão da diferença em aberto fica a receber", () => {
+    const linhas = calcular([
+      { ordem_servico_id: "os-corrigida", status: "recebido", valor: 1000, origem: "faturamento" },
+      { ordem_servico_id: "os-corrigida", status: "pendente", valor: 100, origem: "correcao" },
+    ]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    expect(pedro.comoVendedor.comissao).toBe(55);
+    expect(pedro.comoVendedor.comissaoAReceber).toBe(5);
+    expect(pedro.comoVendedor.ordens[0].aReceber).toBe(true);
+    expect(pedro.comoVendedor.ordens[0].comissaoAReceber).toBe(5);
+    expect(totaisComissoes(linhas).comissaoAReceber).toBe(5);
+  });
+
+  it("vale também pro técnico, na parte dele", () => {
+    const comTecnico = ordem({
+      ...corrigida,
+      itens: [item({ peca_id: "peca-barata", quantidade: 11, preco_unitario: 100, tecnico_id: "tec" })],
+    });
+    const linhas = resumirComissoes({
+      ordens: [comTecnico],
+      funcionarios: FUNCIONARIOS,
+      custoPeca,
+      custoServico: CUSTO_SERVICO,
+      ...recebimentoDasOrdens([
+        { ordem_servico_id: "os-corrigida", status: "pendente", valor: 100, origem: "correcao" },
+      ]),
+      de: "2026-09-01",
+      ate: "2026-09-30",
+    });
+    const marcos = linhas.find((l) => l.funcionarioId === "tec")!;
+    // 5% de 550 = 27,50; 1/11 disso = 2,50.
+    expect(marcos.comoTecnico.comissao).toBe(27.5);
+    expect(marcos.comoTecnico.comissaoAReceber).toBe(2.5);
+  });
+
+  it("diferença já recebida: nada fica a receber", () => {
+    const linhas = calcular([
+      { ordem_servico_id: "os-corrigida", status: "recebido", valor: 1000, origem: "faturamento" },
+      { ordem_servico_id: "os-corrigida", status: "recebido", valor: 100, origem: "correcao" },
+    ]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    expect(pedro.comoVendedor.comissaoAReceber).toBe(0);
+    expect(pedro.comoVendedor.ordens[0].aReceber).toBe(false);
+  });
+
+  it("conta do faturamento ainda em aberto: a OS inteira continua a receber (como antes)", () => {
+    const linhas = calcular([
+      { ordem_servico_id: "os-corrigida", status: "pendente", valor: 1000, origem: "faturamento" },
+      { ordem_servico_id: "os-corrigida", status: "pendente", valor: 100, origem: "correcao" },
+    ]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    expect(pedro.comoVendedor.comissaoAReceber).toBe(55);
+  });
+
+  it("conta sem origem (banco anterior à 0092) conta como faturamento: a OS inteira", () => {
+    const linhas = calcular([{ ordem_servico_id: "os-corrigida", status: "pendente", valor: 1100 }]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    expect(pedro.comoVendedor.comissaoAReceber).toBe(55);
+  });
+
+  it("a diferença em aberto nunca passa da comissão inteira", () => {
+    const linhas = calcular([
+      { ordem_servico_id: "os-corrigida", status: "pendente", valor: 5000, origem: "correcao" },
+    ]);
+    const pedro = linhas.find((l) => l.funcionarioId === "vend")!;
+    expect(pedro.comoVendedor.comissaoAReceber).toBe(55);
+  });
+});
+
+describe("recebimentoDasOrdens", () => {
+  it("separa a conta do faturamento das correções e ignora conta sem OS e já recebida", () => {
+    const { ordensAReceber, aReceberDeCorrecoes } = recebimentoDasOrdens([
+      { ordem_servico_id: "a", status: "pendente", valor: 300, origem: "faturamento" },
+      { ordem_servico_id: "b", status: "pendente", valor: 40, origem: "correcao" },
+      { ordem_servico_id: "b", status: "pendente", valor: 10.5, origem: "correcao" },
+      { ordem_servico_id: "c", status: "recebido", valor: 99, origem: "correcao" },
+      { ordem_servico_id: null, status: "pendente", valor: 70 },
+    ]);
+    expect([...ordensAReceber]).toEqual(["a"]);
+    expect([...aReceberDeCorrecoes]).toEqual([["b", 50.5]]);
   });
 });

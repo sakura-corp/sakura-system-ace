@@ -22,6 +22,7 @@ function ordem(ordemId: string, numero: number, comissao: number): OrdemDaComiss
     lucro: 0,
     comissao,
     aReceber: false,
+    comissaoAReceber: 0,
     itensSemCusto: 0,
   };
 }
