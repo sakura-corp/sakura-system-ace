@@ -526,7 +526,11 @@ on conflict do nothing;
 insert into categorias_caixa (id, nome, tipo, grupo) values
   ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida', 'despesas_administrativas'),
   ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida', 'despesas_administrativas'),
-  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida', 'custos')
+  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida', 'custos'),
+  -- Mais três, pra o DRE (#388) ter despesa com grupo em mais de um mês.
+  ('eeee000e-0000-4000-8000-000000000004', 'Salários', 'saida', 'despesas_pessoal'),
+  ('eeee000e-0000-4000-8000-000000000005', 'Propaganda', 'saida', 'despesas_comerciais'),
+  ('eeee000e-0000-4000-8000-000000000006', 'Tarifa do banco', 'saida', 'despesas_financeiras')
 on conflict do nothing;
 
 insert into caixa_movimentos (id, loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
@@ -551,7 +555,14 @@ from (values
   ('eeee000a-0000-4000-8000-000000000011', 5,  '16:00', null, 'entrada', 'dinheiro',     40.00, 0, 'Venda de pneus velhos pra reciclagem (exemplo)', 'Outros'),
   ('eeee000a-0000-4000-8000-000000000012', 1,  '17:30', null, 'saida', 'dinheiro',       35.50, 0, 'Café e material de limpeza (exemplo)', 'Outros'),
   ('eeee000a-0000-4000-8000-000000000013', 200, '10:30', 13, 'entrada', 'pix',            null, 0, 'Faturamento da OS 13', null),
-  ('eeee000a-0000-4000-8000-000000000014', 330, '11:00', 14, 'entrada', 'dinheiro',       null, 0, 'Faturamento da OS 14', null)
+  ('eeee000a-0000-4000-8000-000000000014', 330, '11:00', 14, 'entrada', 'dinheiro',       null, 0, 'Faturamento da OS 14', null),
+  -- Despesas de meses passados (#388): o DRE mostra mais de um mês com grupo.
+  ('eeee000a-0000-4000-8000-000000000015', 50, '09:00', null, 'saida', 'pix',            1800.00, 0, 'Aluguel (exemplo)', 'Aluguel'),
+  ('eeee000a-0000-4000-8000-000000000016', 35, '18:00', null, 'saida', 'pix',            2400.00, 0, 'Salário do mês (exemplo)', 'Salários'),
+  ('eeee000a-0000-4000-8000-000000000017', 5,  '18:00', null, 'saida', 'pix',            2400.00, 0, 'Salário do mês (exemplo)', 'Salários'),
+  ('eeee000a-0000-4000-8000-000000000018', 40, '11:00', null, 'saida', 'pix',            150.00, 0, 'Anúncio na rádio (exemplo)', 'Propaganda'),
+  ('eeee000a-0000-4000-8000-000000000019', 33, '08:00', null, 'saida', 'pix',            29.90, 0, 'Tarifa da conta (exemplo)', 'Tarifa do banco'),
+  ('eeee000a-0000-4000-8000-000000000020', 3,  '08:00', null, 'saida', 'pix',            29.90, 0, 'Tarifa da conta (exemplo)', 'Tarifa do banco')
 ) as v(id, dias, hora, os, tipo, forma, valor, menos, descricao, categoria)
 on conflict do nothing;
 

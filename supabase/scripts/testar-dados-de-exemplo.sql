@@ -176,7 +176,7 @@ begin
       ('ordens_servico',      (select count(*) from ordens_servico where loja_id = loja and numero is not null), 14),
       ('orcamentos',          (select count(*) from ordens_servico where loja_id = loja and numero is null), 2),
       ('ordens_servico_itens',(select count(*) from ordens_servico_itens i join ordens_servico o on o.id = i.ordem_servico_id where o.loja_id = loja), 38),
-      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 15),
+      ('caixa_movimentos',    (select count(*) from caixa_movimentos where loja_id = loja), 21),
       ('configuracoes_taxas_maquininha', (select count(*) from configuracoes_taxas_maquininha where loja_id = loja), 7),
       ('caixa_taxas_cartao',  (select count(*) from caixa_taxas_cartao where loja_id = loja), 2),
       ('caixa_cartao_a_receber', (select count(*) from caixa_cartao_a_receber where loja_id = loja), 4),
@@ -518,8 +518,12 @@ begin
        where id::text like 'eeee000e%'
          and (nome, tipo, grupo) in (('Aluguel', 'saida', 'despesas_administrativas'),
                                      ('Energia e internet', 'saida', 'despesas_administrativas'),
-                                     ('Fornecedores', 'saida', 'custos'))) <> 3 then
-    raise exception 'FALHOU (B18): as 3 categorias de caixa de exemplo não estão no grupo certo';
+                                     ('Fornecedores', 'saida', 'custos'),
+                                     -- #388: despesa com grupo em mais de um mês, pro DRE
+                                     ('Salários', 'saida', 'despesas_pessoal'),
+                                     ('Propaganda', 'saida', 'despesas_comerciais'),
+                                     ('Tarifa do banco', 'saida', 'despesas_financeiras'))) <> 6 then
+    raise exception 'FALHOU (B18): as 6 categorias de caixa de exemplo não estão no grupo certo';
   end if;
 
   -- B19. a taxa da maquininha (0089, #387): cada venda no cartão tem a
@@ -672,8 +676,8 @@ begin
     raise exception 'FALHOU (D): pela RLS, a equipe enxerga % OS (esperava as 14 e os 2 orçamentos da loja de exemplo, e nenhuma da Loja 1)', quantas;
   end if;
   select count(*) into quantas from caixa_movimentos;
-  if quantas <> 15 then
-    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 15)', quantas;
+  if quantas <> 21 then
+    raise exception 'FALHOU (D): pela RLS, a equipe enxerga % lançamentos de caixa (esperava 21)', quantas;
   end if;
   select count(*) into quantas from clientes where id::text like 'eeee%';
   if quantas <> 8 then
