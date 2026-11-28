@@ -1,6 +1,8 @@
 import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { CampoOrigem } from "@/components/CampoOrigem";
 import { Combobox } from "@/components/Combobox";
 import { avisoKmMenor, ultimoKmConhecido } from "@/schemas/avisosOrdemServico";
+import { origemSugerida } from "@/schemas/origemCliente";
 import type { OrdemServicoFormValues } from "@/schemas/ordemServico";
 import type { Cliente } from "@/types/cliente";
 import type { FuncionarioPublico } from "@/types/funcionario";
@@ -129,6 +131,16 @@ export function DetalhesFields({
           placeholder="Selecione o vendedor"
         />
       </Campo>
+
+      {/* "De onde veio" DESTA vez (#1021). Na OS/orçamento novo, já vem com
+          a do cliente; na edição, mostra a gravada na OS (sem sugestão). */}
+      <CampoOrigem
+        registroOrigem={register("origem")}
+        registroDetalhe={register("origem_detalhe")}
+        sugestao={ordemAtualId ? undefined : origemSugerida(clienteEscolhido)}
+        origemAtual={watch("origem")}
+        onSugerir={(origem) => setValue("origem", origem)}
+      />
 
       <Campo label="Observação" className="col-span-2">
         <textarea rows={2} {...register("descricao_problema")} className={inputClasse} />

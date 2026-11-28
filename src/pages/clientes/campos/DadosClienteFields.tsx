@@ -1,6 +1,7 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import type { ClienteFormValues } from "@/schemas/cliente";
 import type { TipoPessoa } from "@/types/cliente";
+import { CampoOrigem } from "@/components/CampoOrigem";
 import { Campo, inputClasse, Secao } from "./FormCompartilhado";
 
 export function DadosClienteFields({
@@ -59,6 +60,10 @@ export function DadosClienteFields({
         <Campo label="Data de nascimento">
           <input type="date" {...register("data_nascimento")} className={inputClasse} />
         </Campo>
+        <CampoOrigem
+          registroOrigem={register("origem")}
+          registroDetalhe={register("origem_detalhe")}
+        />
       </div>
       <label className="mt-4 flex items-center gap-2 text-corpo">
         <input

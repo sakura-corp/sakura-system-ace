@@ -49,6 +49,10 @@ export const vendaBalcaoFormSchema = z
   .object({
     cliente_id: z.string().min(1, "Escolha o cliente (ou deixe o Consumidor)."),
     vendedor_id: z.string(),
+    // "De onde veio" (#1021): opcional, "" = Não informado. Na venda no
+    // Consumidor ela fica só na venda (o banco nunca a põe nele).
+    origem: z.string().catch(""),
+    origem_detalhe: z.string().catch(""),
     itens: z.array(itemVendaSchema),
   })
   .superRefine((venda, ctx) => {
@@ -86,7 +90,13 @@ export type VendaBalcaoFormValues = z.infer<typeof vendaBalcaoFormSchema>;
 
 /** Toda venda começa no Consumidor, com o vendedor sendo quem está logado. */
 export function vendaVazia(funcionarioAtualId: string): VendaBalcaoFormValues {
-  return { cliente_id: CLIENTE_CONSUMIDOR_ID, vendedor_id: funcionarioAtualId, itens: [] };
+  return {
+    cliente_id: CLIENTE_CONSUMIDOR_ID,
+    vendedor_id: funcionarioAtualId,
+    origem: "",
+    origem_detalhe: "",
+    itens: [],
+  };
 }
 
 interface PecaDaVenda extends PecaBuscavel {

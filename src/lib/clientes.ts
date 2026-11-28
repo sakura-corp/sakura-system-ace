@@ -287,11 +287,12 @@ function veiculoParaFuncao(veiculo: VeiculoFormulario) {
  * Vai por uma função do banco (migration 0068), e não por `criarCliente`,
  * porque quem tem OS pode não ter o módulo Clientes — e aí o insert direto
  * na tabela é recusado. A função grava só o que as janelinhas de cadastro
- * rápido pedem (nome, telefone, tipo e CPF/CNPJ, e um veículo) e devolve só
- * os ids.
+ * rápido pedem (nome, telefone, tipo e CPF/CNPJ, a origem — #1021, migration
+ * 0093 — e um veículo) e devolve só os ids. Banco anterior à 0093 ignora as
+ * chaves da origem e cadastra igual.
  */
 export async function cadastrarClienteRapido(
-  cliente: Pick<NovoCliente, "nome" | "telefone" | "tipo_pessoa" | "cpf_cnpj">,
+  cliente: Pick<NovoCliente, "nome" | "telefone" | "tipo_pessoa" | "cpf_cnpj" | "origem" | "origem_detalhe">,
   veiculo: VeiculoFormulario | null,
 ): Promise<{ clienteId: string; veiculoId: string | null }> {
   const { data, error } = await supabase.rpc("cadastrar_cliente_rapido", {
@@ -300,6 +301,8 @@ export async function cadastrarClienteRapido(
       telefone: cliente.telefone,
       tipo_pessoa: cliente.tipo_pessoa,
       cpf_cnpj: cliente.cpf_cnpj,
+      origem: cliente.origem ?? null,
+      origem_detalhe: cliente.origem_detalhe ?? null,
     },
     p_veiculo: veiculo ? veiculoParaFuncao(veiculo) : null,
   });

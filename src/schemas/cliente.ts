@@ -5,6 +5,7 @@ import type {
   TipoVeiculo,
   VeiculoFormulario,
 } from "@/types/cliente";
+import { origemParaGravar } from "./origemCliente";
 
 // Mesma ideia do schema de funcionário: formulário trabalha só com strings
 // (inclusive ano/km_atual, que no banco são number | null) — a conversão pra
@@ -36,6 +37,10 @@ export const clienteFormSchema = z.object({
   codigo_municipio: z.string(),
   data_nascimento: z.string(),
   nao_avisar: z.boolean(),
+  // "De onde veio" (#1021): opcional, "" = Não informado. O `catch` completa
+  // com "" o que vier sem o campo (o formulário de antes).
+  origem: z.string().catch(""),
+  origem_detalhe: z.string().catch(""),
   veiculos: z.array(veiculoFormSchema),
 });
 
@@ -68,6 +73,8 @@ export function paraValoresFormulario(cliente?: Cliente): ClienteFormValues {
     codigo_municipio: cliente?.codigo_municipio ?? "",
     data_nascimento: cliente?.data_nascimento ?? "",
     nao_avisar: cliente?.nao_avisar ?? false,
+    origem: cliente?.origem ?? "",
+    origem_detalhe: cliente?.origem_detalhe ?? "",
     veiculos: cliente?.veiculos?.length
       ? cliente.veiculos.map((veiculo) => ({
           id: veiculo.id,
@@ -99,6 +106,7 @@ export function paraNovoCliente(valores: ClienteFormValues): NovoCliente {
     codigo_municipio: valores.codigo_municipio || null,
     data_nascimento: valores.data_nascimento || null,
     nao_avisar: valores.nao_avisar,
+    ...origemParaGravar(valores.origem, valores.origem_detalhe),
   };
 }
 

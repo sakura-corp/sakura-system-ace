@@ -205,7 +205,12 @@ describe("VendaBalcaoForm", () => {
 
     expect(onRegistrar).toHaveBeenCalledTimes(1);
     const [venda, itens, pagamento] = onRegistrar.mock.calls[0];
-    expect(venda).toEqual({ cliente_id: CLIENTE_CONSUMIDOR_ID, vendedor_id: "func-1" });
+    expect(venda).toEqual({
+      cliente_id: CLIENTE_CONSUMIDOR_ID,
+      vendedor_id: "func-1",
+      origem: null,
+      origem_detalhe: null,
+    });
     expect(itens.map((i: { peca_id: string; quantidade: number; tipo: string }) => [i.peca_id, i.quantidade, i.tipo])).toEqual([
       ["palheta", 2, "peca"],
       ["bateria", 1, "peca"],
@@ -285,6 +290,7 @@ describe("VendaBalcaoForm", () => {
     await user.type(busca, "zzzz");
 
     expect(screen.getByText(/Nenhuma peça com “zzzz”/)).toBeInTheDocument();
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    // Fora o <select> do "De onde veio" (#1021): nenhuma opção na lista da busca.
+    expect(screen.queryAllByRole("option").filter((o) => !o.closest("select"))).toHaveLength(0);
   });
 });

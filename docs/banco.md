@@ -719,6 +719,19 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `conta_receber_id` do histórico aponta pra ela. A categoria
   nasce na primeira devolução, "a classificar". A `0087` fica pra versão antiga do programa; a nova
   chama só esta, também com o total igual. Teste em `supabase/scripts/testar-corrigir-os-faturada.sql`.
+- `0093`: **"De onde veio", a origem do cliente** (tarefa #1021). Colunas opcionais `origem` e
+  `origem_detalhe` em `clientes` e em `ordens_servico` (OS, orçamento e venda de balcão). Lista fixa
+  (`anuncio_redes`, `google`, `indicacao`, `passou_na_frente`, `parceiro`, `ja_era_cliente`, `outro`;
+  os rótulos moram em `src/schemas/origemCliente.ts`), travas `ck_clientes_origem`,
+  `ck_ordens_servico_origem`, `ck_*_origem_detalhe` (até 80 letras) e
+  `ck_clientes_consumidor_sem_origem` (o Consumidor nunca tem origem). Gatilho
+  `trigger_origem_da_ordem_no_cliente` (`security definer`, porque quem tem só OS não grava em
+  `clientes`): cliente **sem** origem pega a da OS (o detalhe que ele já tinha fica); nunca troca uma
+  origem existente nem mexe no Consumidor. `cadastrar_cliente_rapido` (0068) passa a gravar a origem.
+  Nenhuma policy nem janela muda (a `clientes_janela` segue só com id e nome). Sem
+  `versao-minima-do-programa`; sobe **antes** da versão (o programa novo grava as colunas). Número
+  `0093` (Sofia, 24/11, #1185; nasceu `0091`): **aplicar depois da `0092`**. Teste em
+  `supabase/scripts/testar-origem-do-cliente.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido

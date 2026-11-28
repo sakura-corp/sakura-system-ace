@@ -3,11 +3,13 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { CampoOrigem } from "@/components/CampoOrigem";
 import { Combobox } from "@/components/Combobox";
 import { Dica } from "@/components/Dica";
 import type { DadosVendaBalcao, PagamentoDaVenda } from "@/lib/ordensServico";
 import { avisoPecaSemCusto, avisoSaldoInsuficiente } from "@/schemas/avisosOrdemServico";
 import type { ResultadoDaBusca } from "@/schemas/buscaDeItens";
+import { origemParaGravar, origemSugerida } from "@/schemas/origemCliente";
 import {
   comoItensDaOrdem,
   incluirPeca,
@@ -213,6 +215,16 @@ export function VendaBalcaoForm({
                 desabilitado={noPagamento}
               />
             </Campo>
+
+            {/* "De onde veio" (#1021). No Consumidor começa em branco e fica
+                só na venda; com um cliente, vem a origem dele. */}
+            <CampoOrigem
+              registroOrigem={register("origem")}
+              registroDetalhe={register("origem_detalhe")}
+              sugestao={origemSugerida(clienteEscolhido ?? { id: clienteId })}
+              origemAtual={watch("origem")}
+              onSugerir={(origem) => setValue("origem", origem)}
+            />
           </section>
 
           <section className="space-y-4">
@@ -352,7 +364,11 @@ export function VendaBalcaoForm({
           jurosParcelas={jurosParcelas}
           onConfirmar={(pagamentos, parcelas, previsaoRecebimento) =>
             onRegistrar(
-              { cliente_id: clienteId, vendedor_id: vendedorId || null },
+              {
+                cliente_id: clienteId,
+                vendedor_id: vendedorId || null,
+                ...origemParaGravar(watch("origem"), watch("origem_detalhe")),
+              },
               itensDoPagamento,
               { pagamentos, parcelas, previsaoRecebimento },
             )

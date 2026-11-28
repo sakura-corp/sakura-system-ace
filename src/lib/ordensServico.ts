@@ -20,6 +20,7 @@ import {
   STATUS_DE_ORCAMENTO,
 } from "@/schemas/orcamento";
 import type { MotivoRecusa } from "@/schemas/orcamento";
+import type { OrigemCliente } from "@/schemas/origemCliente";
 import { FORMA_PAGAMENTO_LABEL, nomeDocumento, totalOrdem } from "@/types/os";
 import type {
   ItemOS,
@@ -874,6 +875,9 @@ export class OrdemMudouError extends Error {
 export interface DadosVendaBalcao {
   cliente_id: string;
   vendedor_id: string | null;
+  /** "De onde veio" (#1021). Sem ela, grava nulo ("Não informado"). */
+  origem?: OrigemCliente | null;
+  origem_detalhe?: string | null;
 }
 
 export interface PagamentoDaVenda {
@@ -912,6 +916,8 @@ export async function registrarVendaBalcao(
     .insert({
       cliente_id: venda.cliente_id,
       vendedor_id: venda.vendedor_id,
+      origem: venda.origem ?? null,
+      origem_detalhe: venda.origem_detalhe ?? null,
       veiculo_id: null,
       km_entrada: null,
       descricao_problema: null,
