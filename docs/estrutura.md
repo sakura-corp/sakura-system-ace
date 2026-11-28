@@ -29,6 +29,7 @@ Pro resto, um `ls` resolve. O que cada tela faz está na seção 7.
     (o aviso com ícone e palavra; sem a palavra não compila), `CartaoNumero.tsx`, `Dica.tsx` (no
     lugar do `title`) e `AvisoQueSome.tsx` (quem avisa é o `avisar()` de `src/lib/avisoQueSome.ts`).
     Tela nova usa a peça, não escreve as classes à mão;
+  - **as peças comuns da leva 8** (#1085): ver "Peças comuns e moldes da leva 8", mais abaixo;
   - `Modal.tsx` (a janela por cima da tela); `Combobox.tsx` (select com busca, usado em toda lista
     que vem do banco; `permitirLivre` aceita valor fora da lista, hoje só na Marca do veículo);
   - `AcoesDaLinha.tsx` (botão pro que é do dia a dia + menu de três pontinhos pro que não se
@@ -164,7 +165,8 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
   `count: "exact"` pro total); o gancho cuida da página, da ordem guardada por tela, da espera da
   busca e de só gravar a resposta mais nova (#903). Modelo: `listarClientesPagina` em
   `lib/clientes.ts` (inclusive como escapar a busca dentro do `.or()`) e `ClientesPage.tsx`.
-- **Nunca `window.prompt()`**: o Electron não suporta. `alert()` e `confirm()` funcionam.
+- **Nunca `window.prompt()`**: o Electron não suporta. `alert()` funciona; o `confirm()` também,
+  mas **sai** (#1079, item 1): perguntar antes de apagar é com a `JanelaDeConfirmar` (abaixo).
 - Toda tabela nova precisa de RLS e policy (item 1 da seção 6).
 - Valor padrão a partir de `import.meta.env.VITE_*`: usar `||`, nunca `??`. O Vite injeta variável
   ausente como **string vazia** (item 8 da seção 6).
@@ -183,6 +185,35 @@ Outros: `scripts/ligar-fuses.mjs` (as "chavinhas" de segurança gravadas no exec
     9). Migration que só acrescenta não leva a linha. Versão torta na linha recusa a rodada inteira;
   - ganha um `supabase/scripts/testar-*.sql` e, se mexer em policy, entra na matriz de RLS;
   - nunca tirar nem renomear coluna em uso na mesma versão que passa a usar a nova.
+
+## Peças comuns e moldes da leva 8 (#1085)
+
+Tela nova, ou tela que vai pro visual da leva 8, **usa estas peças e não desenha à mão** abas,
+trilha de passos, pergunta de apagar, lista, ficha ou formulário. Cada peça explica o detalhe no
+comentário do próprio arquivo; aqui fica **qual usar quando**. As regras de cor, letra e espaço
+são as de `docs/referencia/visual-novo/README.md`. Cada tela troca pras peças **na sua tarefa**
+(as trilhas A, B e C da leva 8), nunca de carona em outra.
+
+| Peça (em `src/components/`) | Quando usar | Quando NÃO usar |
+|---|---|---|
+| `Abas.tsx` | trocar de **visão dentro da mesma tela** (Produtos / Movimentações; Ordens / Vendas). É a única aba do programa: o `AbaBotao` antigo saiu | escolher um valor ou filtrar (isso é `Chips`; a "Situação do saldo" dos Relatórios do Estoque e o "Abertos / Recusados" dos Orçamentos ainda são abas e trocam na tarefa da tela); passos em ordem (isso é `Passos`) |
+| `Chips.tsx` | escolher **um valor entre poucos, à vista** (período, forma de pagamento, "Tudo / Entradas / Saídas"); `multipla` pra filtro de vários | mais de uns 6 valores (vira `Combobox`); trocar de visão (`Abas`) |
+| `Passos.tsx` | tarefa **em ordem, de 3 a 5 passos**, que a pessoa não pode pular (fechar o caixa, fechar a OS). A tela guarda o passo; a trilha só mostra | formulário comum, mesmo comprido (vai em seções do `MoldeFormulario`) |
+| `JanelaDeConfirmar.tsx` (e o `useConfirmar()`) | **toda** pergunta antes de apagar, cancelar ou fazer o que não tem volta, no lugar do `confirm()`. Diz o nome do item, o foco começa no "Cancelar", o botão diz o verbo ("Excluir produto"). `tom: "normal"` pra confirmar o que não é apagar (fechar o caixa) | o que se desfaz sozinho (mudar um filtro, abrir uma janela): ali não se pergunta nada |
+| `molde/MoldeLista.tsx` + `molde/LinhaDeLista.tsx` | **toda lista de coisas** (clientes, peças, contas, garantias, notas): busca e `Chips` em cima, uma linha por item (nome em cima, detalhe embaixo, **uma** ação + o "⋯"), "Ver todos" quando passa do limite, e os estados prontos: carregando (esqueleto só depois de 0,4 s), vazio de começo (frase + botão), vazio de busca (o que buscou + "Limpar a busca") e erro (a frase do `mensagemDeErro()` + "Tentar de novo"). A tela busca e filtra; o molde só mostra | tabela de números pra comparar coluna com coluna (Relações, Curva ABC) |
+| `molde/MoldePerfil.tsx` | **a ficha de uma coisa só** (cliente, veículo, funcionário, peça): o nome como título, **uma** ação laranja, **1 número grande + até 3 de apoio** (o tipo não deixa passar de 3), e as listas embaixo, cada uma um `MoldeLista` de 6 linhas. Os números chegam prontos (conta de dinheiro nunca no molde) | a lista de várias coisas (`MoldeLista`); o painel do dia (Início, Relações) |
+| `molde/MoldeFormulario.tsx` + `molde/CampoDoMolde.tsx` | **todo formulário**. **Curto (até uns 6 campos): `em="janela"`** (Esc fecha, foco no primeiro campo). **Longo: `em="pagina"`**, cada seção num `SecaoDoFormulario`, ações no rodapé, e o Esc **não** fecha. O campo é o `CampoDoMolde` (rótulo em cima, "obrigatório" escrito, erro e ajuda embaixo, 48 px). Clicar 2 vezes não salva 2 vezes | — (o padrão abaixo continua valendo: o `useForm`, o esquema e o mapeamento são da tela) |
+
+**No catálogo das telas** (`site/ferramentas/cenas.mjs`, que também alimenta o `contraste:telas` e o
+`largura:telas`): as cenas `07-ordens` a `07c-ordens-loja-nova` mostram o `MoldeLista`, a
+`LinhaDeLista` e os `Chips` (lista cheia, busca sem resultado, período escolhido e loja sem OS); as
+de Ordens (a própria `07-ordens`), Orçamentos, Estoque, Funcionários, Caixa, Fornecedores, Notas e a
+Curva ABC das Relações mostram as `Abas`. O erro e o esqueleto do
+molde de lista não têm cena (o banco de mentira não falha nem demora numa cena só): estão provados
+nos testes do `MoldeLista`. `Passos`, `JanelaDeConfirmar`, `MoldePerfil` e `MoldeFormulario`
+ainda não têm cena: o catálogo só fotografa telas de verdade do programa, e nenhuma tela usa essas
+peças ainda. Ganham cena quando a primeira tela as usar (as tarefas das trilhas), ou antes, se a
+Sofia decidir por uma tela de demonstração (pergunta aberta na #1136).
 
 ## Padrão de formulário: `react-hook-form` + `zod` (todo o app já está assim)
 

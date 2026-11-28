@@ -16,6 +16,8 @@ vi.mock("@/lib/ordensServico", () => ({
   listarOrdensDoVeiculo: async () => [],
   aprovarOrcamento: vi.fn(),
   recusarOrcamento: vi.fn(),
+  reabrirOrcamento: vi.fn(),
+  listarTrocasDaOrdem: async () => [],
   criarOrcamento: vi.fn(),
   atualizarOrdem: vi.fn(),
   adicionarItensOrdem: vi.fn(),

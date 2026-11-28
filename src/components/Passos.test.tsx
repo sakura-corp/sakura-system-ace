@@ -73,4 +73,13 @@ describe("Passos", () => {
     expect(container.querySelectorAll("[data-passo-feito]")).toHaveLength(4);
     expect(container.querySelector('[aria-current="step"]')).toBeNull();
   });
+
+  it("o atual em azul (andamento) quando o laranja da tela é outro botão (#1088)", () => {
+    const { container } = render(
+      <Passos rotulo="Fechar a OS" passos={FECHAR_CAIXA} atual={1} tomDoAtual="andamento" />,
+    );
+    const bolinha = container.querySelector('[aria-current="step"] > div > span') as HTMLElement;
+    expect(bolinha.className).toMatch(/text-info/);
+    expect(bolinha.className).not.toMatch(/bg-acao/);
+  });
 });

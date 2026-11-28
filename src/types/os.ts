@@ -70,15 +70,30 @@ export type ItemDaTrocaGravado = Pick<
   | "desconto"
 >;
 
-/** Uma troca de peça/serviço feita depois de faturar (#1145, migration 0087). */
+/** O que cada linha do histórico da OS registra (coluna `tipo`, migration 0091). */
+export type TipoDoHistoricoOS = "troca" | "reabertura" | "correcao_valor";
+
+/**
+ * Uma linha do histórico da OS: troca de peça/serviço feita depois de faturar
+ * (#1145, migration 0087), reabertura de orçamento recusado (#1181) ou
+ * correção de valor (#1182).
+ */
 export interface TrocaDeOsFaturada {
   id: string;
+  tipo: TipoDoHistoricoOS;
   operador_nome: string | null;
   motivo: string;
   /** Os itens como estavam e como ficaram (com id, peça, serviço, quantidade, preço e desconto). */
   itens_antes: ItemDaTrocaGravado[];
   itens_depois: ItemDaTrocaGravado[];
   total: number;
+  /**
+   * A correção de valor (#1182, migration 0092): o total antes e depois e
+   * como a diferença foi acertada. Nulos nas trocas de total igual antigas.
+   */
+  total_antes?: number | null;
+  total_depois?: number | null;
+  acerto?: "conta_aberta" | "pago_agora" | "a_receber" | "devolvido" | null;
   criado_em: string;
 }
 
@@ -133,8 +148,8 @@ export interface OrdemServico {
    * `data_abertura`. */
   orcado_em?: string | null;
   /**
-   * "De onde veio" DESTA vez (#1021, migration 0091) — na OS, no orçamento e
-   * na venda de balcão. Opcionais: banco anterior à 0091 não tem as colunas.
+   * "De onde veio" DESTA vez (#1021, migration 0093) — na OS, no orçamento e
+   * na venda de balcão. Opcionais: banco anterior à 0093 não tem as colunas.
    * Nulo = "Não informado".
    */
   origem?: OrigemCliente | null;

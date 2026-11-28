@@ -1,4 +1,8 @@
-import { MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES } from "@/schemas/percentualTributosSimples";
+import {
+  MENSAGEM_PERCENTUAL_ICMS_ST,
+  MENSAGEM_PERCENTUAL_PECAS,
+  MENSAGEM_PERCENTUAL_TRIBUTOS_SIMPLES,
+} from "@/schemas/percentualTributosSimples";
 
 /**
  * A frase em português de cada trava do banco (migrations 0058 a 0060).
@@ -18,7 +22,7 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "Motivo de recusa inválido: escolha um da lista (preço, prazo, outro lugar, desistiu ou outro).",
   // Esta vem do gatilho (um CHECK não vê o status de antes), com a mesma frase de um CHECK.
   ck_ordens_servico_transicao_orcamento:
-    "Orçamento só pode ser aprovado ou recusado, e recusado não muda mais. Atualize a tela e confira.",
+    "Orçamento só pode ser aprovado ou recusado; recusado só volta pelo botão \"Reabrir orçamento\". Atualize a tela e confira.",
   ck_ordens_servico_itens_preco: "O preço do item não pode ser negativo.",
   ck_ordens_servico_itens_desconto:
     "O desconto do item não pode ser negativo nem maior que o valor do item (quantidade × preço).",
@@ -62,10 +66,24 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
     "O e-mail da contabilidade não está certo: precisa ter um @, sem espaço, e no máximo 120 letras.",
   ck_configuracoes_contabilidade_algum_contato:
     "Informe o WhatsApp ou o e-mail da contabilidade (pelo menos um dos dois).",
+  // Migration 0088 (#386): o grupo do DRE da categoria de caixa.
+  ck_categorias_caixa_grupo: "Esse grupo não existe. Escolha um dos grupos da lista.",
+  ck_categorias_caixa_grupo_do_tipo:
+    "Esse grupo não serve pro tipo da categoria: categoria de entrada só vai em grupo de entrada, e de saída em grupo de saída.",
+  // Migration 0090 (#1040): os tributos aproximados na nota (Lei 12.741/2012).
+  // A mesma frase da tela (src/schemas/percentualTributosSimples.ts).
+  ck_config_fiscal_percentual_tributos_pecas: MENSAGEM_PERCENTUAL_PECAS,
+  ck_config_fiscal_percentual_estimativa_icms_st: MENSAGEM_PERCENTUAL_ICMS_ST,
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
-  // Migration 0091 (#1021): "De onde veio", a origem do cliente.
+  ck_ordens_servico_trocas_tipo: "Esse tipo de registro não existe no histórico da OS.",
+  // Migration 0092 (#1182): a correção de valor de OS faturada.
+  ck_ordens_servico_trocas_acerto: "Esse jeito de acertar a diferença não existe. Atualize a OS e tente de novo.",
+  ck_ordens_servico_trocas_correcao:
+    "A correção de valor ficou sem o total de antes, o de depois ou o acerto. Atualize a OS e tente de novo.",
+  ck_contas_receber_origem: "Essa origem de conta a receber não existe. Atualize a tela e tente de novo.",
+  // Migration 0093 (#1021): "De onde veio", a origem do cliente.
   ck_clientes_origem:
     "Esta origem do cliente não existe no banco desta empresa. Escolha uma da lista ou deixe \"Não informado\".",
   ck_ordens_servico_origem:
@@ -84,6 +102,16 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   ck_computadores_tamanhos: "O nome ou o apelido do computador está comprido demais (apelido: até 60 letras).",
   // Migration 0064 (venda de balcão). Quem grava o tipo é o próprio programa.
   ck_ordens_servico_tipo: 'O tipo da ordem precisa ser "os" ou "venda_balcao".',
+  // Migration 0089 (taxas da maquininha, #387).
+  ck_taxas_maquininha_forma: "A taxa da maquininha é só pra cartão de débito ou de crédito.",
+  ck_taxas_maquininha_parcelas: "As parcelas vão de 1 a 12, e o débito é sempre à vista (1 parcela).",
+  ck_taxas_maquininha_taxa: "A taxa tem que ser de 0% até menos de 100%.",
+  ck_taxas_maquininha_prazo: "O prazo pra cair na conta vai de 0 a 365 dias.",
+  ck_caixa_taxas_cartao_condicoes:
+    "A taxa do cartão desta venda não fecha (forma, parcelas, taxa ou prazo).",
+  ck_caixa_taxas_cartao_valores: "A taxa do cartão desta venda não fecha (os valores não batem).",
+  ck_caixa_cartao_a_receber_numero: "As datas do cartão a receber não fecham (número da parcela).",
+  ck_caixa_cartao_a_receber_valor: "As datas do cartão a receber não fecham (valor negativo).",
 };
 
 /** A frase da trava, se a mensagem do banco for de uma trava conhecida. */
@@ -172,10 +200,29 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   // 0085 (contato da contabilidade, #383): tabela nova. Sobe antes do
   // programa, mas se alguém publicar sem rodar, a tela cai aqui.
   "configuracoes_contabilidade",
-  // 0091 (origem do cliente, #1021): colunas de clientes e de ordens_servico.
-  // Sobe antes do programa; se alguém publicar sem rodar, salvar cliente, OS,
-  // orçamento ou venda cai aqui.
+  // 0088 (grupo do DRE, #386): coluna de categorias_caixa.
+  "grupo",
+  // 0089 (taxas da maquininha, #387): tabelas.
+  "configuracoes_taxas_maquininha",
+  "caixa_taxas_cartao",
+  "caixa_cartao_a_receber",
+  // 0090 (tributos aproximados, #1040): colunas de configuracoes_fiscais_loja.
+  "percentual_tributos_pecas",
+  "percentual_estimativa_icms_st",
+  "competencia_tributos_confirmada",
+  // 0091 (reabrir orçamento, #1181): coluna de ordens_servico_trocas.
+  "tipo",
+  // 0092 (corrigir OS faturada, #1182): coluna de contas_receber e do histórico.
   "origem",
+  "total_antes",
+  "total_depois",
+  "acerto",
+  "caixa_movimento_id",
+  "conta_receber_id",
+  "chave",
+  // 0093 (origem do cliente, #1021): colunas de clientes e de ordens_servico
+  // (o "origem" já está na lista, pela 0092). Sobe antes do programa; se
+  // alguém publicar sem rodar, salvar cliente, OS, orçamento ou venda cai aqui.
   "origem_detalhe",
 ] as const;
 

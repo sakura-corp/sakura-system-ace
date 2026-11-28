@@ -4,7 +4,14 @@ import {
   pecaCasaComBusca,
   type PecaBuscavel,
 } from "./estoque";
-import { problemaDoItem, totalItensFormulario, type ItemFormValues } from "./ordemServico";
+import {
+  lucroPrevistoDaOrdem,
+  problemaDoItem,
+  totalItensFormulario,
+  type ItemFormValues,
+  type LucroPrevisto,
+} from "./ordemServico";
+import type { MapaCusto } from "./metricasCaixa";
 import { CLIENTE_CONSUMIDOR_ID, ehConsumidor } from "@/types/cliente";
 import type { ItemOS, NovoItemOS } from "@/types/os";
 
@@ -193,4 +200,23 @@ export function comoItensDaOrdem(itens: NovoItemOS[]): ItemOS[] {
  */
 export function podeReceberDepois(clienteId: string): boolean {
   return !ehConsumidor(clienteId);
+}
+
+/**
+ * Lucro previsto da venda, enquanto ela está sendo montada (#1087). É o
+ * mesmo lucro previsto da OS, sem item gravado e sem serviço (a venda só tem
+ * peça): uma conta só pras duas telas. Quem não lê o custo das peças
+ * (`custoPeca` nulo) vê "aparece ao salvar", nunca um lucro com custo zero.
+ */
+export function lucroPrevistoDaVenda(
+  itens: ItemVendaValues[],
+  custoPeca: MapaCusto | null,
+): LucroPrevisto {
+  return lucroPrevistoDaOrdem({
+    itensExistentes: [],
+    custoDosExistentes: undefined,
+    itensFormulario: itens.map(comoItemDoFormulario),
+    custoPeca,
+    custoServico: new Map(),
+  });
 }

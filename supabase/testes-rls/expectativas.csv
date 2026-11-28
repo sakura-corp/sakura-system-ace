@@ -141,7 +141,7 @@ ordens_servico_itens,delete,2,1,0,0,0,
 # só o admin da loja (pela função trocar_itens_os_faturada); ninguém altera
 # nem apaga.
 ordens_servico_trocas,select,2,1,0,0,0,histórico da troca em OS faturada: lê quem lê a OS
-ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente)
+ordens_servico_trocas,insert,1,1,0,0,0,só admin da loja (o gerente); desde a 0091 também a linha tipo reabertura de quem tem o módulo OS na loja só de dentro de reabrir_orcamento (nenhum papel daqui tem OS sem ser admin; provado em testar-reabrir-orcamento.sql)
 ordens_servico_trocas,update,0,0,0,0,0,o histórico não se altera
 ordens_servico_trocas,delete,0,0,0,0,0,o histórico não se apaga (sai junto com a OS)
 #
@@ -174,6 +174,20 @@ caixa_movimentos,select,2,1,1,0,0,Caixa (0062): exige a loja E o módulo — ou 
 caixa_movimentos,insert,1,1,1,0,0,o balconista deste cenário TEM o Caixa: por isso nada muda aqui
 caixa_movimentos,update,2,1,1,0,0,
 caixa_movimentos,delete,2,1,1,0,0,
+# A taxa da maquininha de cada lançamento de cartão (0089, #387): lê quem tem
+# Caixa ou Relações; grava quem tem Caixa ou OS, pendurada numa entrada da
+# mesma loja. Ninguém altera nem apaga (some junto com o lançamento). Linha
+# só na loja B no cenário — por isso a leitura é 1,0,0,0,0 (o motivo está
+# em cenario.sql); que o Caixa lê a da loja dele, e que quem só tem OS grava
+# sem ler, está em testar-taxas-da-maquininha.sql.
+caixa_taxas_cartao,select,1,0,0,0,0,linha só na loja B
+caixa_taxas_cartao,insert,1,1,1,0,0,o balconista do caixa (e quem fatura OS) grava a taxa da venda
+caixa_taxas_cartao,update,0,0,0,0,0,a fotografia da taxa não se altera
+caixa_taxas_cartao,delete,0,0,0,0,0,sai junto com o lançamento do Caixa (on delete cascade)
+caixa_cartao_a_receber,select,1,0,0,0,0,linha só na loja B
+caixa_cartao_a_receber,insert,1,1,1,0,0,
+caixa_cartao_a_receber,update,0,0,0,0,0,as datas do cartão não se alteram
+caixa_cartao_a_receber,delete,0,0,0,0,0,saem junto com a fotografia (on delete cascade)
 fechamentos_caixa,select,2,1,1,0,0,fechamento de caixa (TR-06.4): exige a loja E o módulo Caixa
 fechamentos_caixa,insert,1,1,1,0,0,o balconista do caixa fecha o dia
 fechamentos_caixa,update,0,0,0,0,0,ninguém altera um fechamento: contou errado desfaz e fecha de novo
@@ -270,6 +284,12 @@ configuracoes_juros_parcelas,select,2,1,1,0,0,
 configuracoes_juros_parcelas,insert,1,1,1,0,0,
 configuracoes_juros_parcelas,update,2,1,1,0,0,
 configuracoes_juros_parcelas,delete,2,1,1,0,0,
+# A tabela de taxas da maquininha (0089, #387): lê quem tem Caixa, Relações
+# ou OS; grava só o admin daquela loja, como o Pix.
+configuracoes_taxas_maquininha,select,2,1,1,0,0,o balconista do caixa lê a taxa (o lucro do Caixa desconta ela)
+configuracoes_taxas_maquininha,insert,1,1,0,0,0,só o admin da loja grava a taxa
+configuracoes_taxas_maquininha,update,2,1,0,0,0,
+configuracoes_taxas_maquininha,delete,2,1,0,0,0,
 configuracoes_whatsapp,select,2,1,1,0,0,
 configuracoes_whatsapp,insert,1,1,1,0,0,
 configuracoes_whatsapp,update,2,1,1,0,0,

@@ -14,6 +14,7 @@ import {
   somarLinhasCobradas,
   ratearPagamentos,
   somarLinhasPagamento,
+  textoDasParcelas,
   type FaturamentoFormValues,
 } from "./faturamento";
 import type { JurosParcela } from "@/types/configuracao";
@@ -112,8 +113,8 @@ describe("paraPagamentos", () => {
       ],
     };
     expect(paraPagamentos(valores, 200)).toEqual([
-      { formaPagamento: "pix", valor: 100 },
-      { formaPagamento: "cartao_credito", valor: 100 },
+      { formaPagamento: "pix", valor: 100, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 100, parcelas: 1 },
     ]);
   });
 
@@ -126,7 +127,7 @@ describe("paraPagamentos", () => {
         { formaPagamento: "cartao_credito", valor: "0", parcelas: "1" },
       ],
     };
-    expect(paraPagamentos(valores, 200)).toEqual([{ formaPagamento: "pix", valor: 200 }]);
+    expect(paraPagamentos(valores, 200)).toEqual([{ formaPagamento: "pix", valor: 200, parcelas: 1 }]);
   });
 
   it("'a receber depois' (recebidoAgora false) sempre vira um pagamento só, mesmo se dividirPagamento estiver true", () => {
@@ -231,9 +232,24 @@ describe("paraPagamentos com parcelamento por forma", () => {
       ],
     };
     expect(paraPagamentos(valores, 400, jurosParcelas)).toEqual([
-      { formaPagamento: "pix", valor: 300 },
-      { formaPagamento: "cartao_credito", valor: 105 },
+      { formaPagamento: "pix", valor: 300, parcelas: 1 },
+      { formaPagamento: "cartao_credito", valor: 105, parcelas: 3 },
     ]);
+  });
+});
+
+describe("paraPagamentos: as parcelas de cada linha (#387)", () => {
+  it("no dividido, cada linha leva as próprias parcelas (a taxa da maquininha depende delas)", () => {
+    const valores: FaturamentoFormValues = {
+      ...faturamentoFormVazio(300),
+      dividirPagamento: true,
+      linhasPagamento: [
+        { formaPagamento: "cartao_credito", valor: "100", parcelas: "1" },
+        { formaPagamento: "cartao_credito", valor: "200", parcelas: "3" },
+        { formaPagamento: "pix", valor: "50", parcelas: "4" },
+      ],
+    };
+    expect(paraPagamentos(valores, 350).map((p) => p.parcelas)).toEqual([1, 3, 1]);
   });
 });
 
@@ -377,5 +393,43 @@ describe("itensQueImpedemNFCe", () => {
   it("as frases que a tela mostra", () => {
     expect(MENSAGEM_PECA_PRECISA_CADASTRO).toBe("Essa peça precisa ser cadastrada pra sair na nota.");
     expect(MENSAGEM_PECA_SEM_NCM).toMatch(/sem NCM.*sair na nota/);
+  });
+});
+
+describe("textoDasParcelas (#979)", () => {
+  // O toLocaleString põe espaço sem quebra depois do "R$"; aqui só importa o texto.
+  const texto = (valor: number, parcelas: number) =>
+    textoDasParcelas(valor, parcelas).replace(/\s/g, " ");
+
+  it("R$ 100 em 3x mostra as parcelas de verdade, que somam R$ 100", () => {
+    expect(texto(100, 3)).toBe("2x de R$ 33,33 + 1x de R$ 33,34");
+  });
+
+  it("parcelas iguais viram um grupo só", () => {
+    expect(texto(120, 3)).toBe("3x de R$ 40,00");
+  });
+
+  it('à vista não tem "x"', () => {
+    expect(texto(50, 1)).toBe("R$ 50,00");
+  });
+
+  it("segue a mesma repartição de calcularListaParcelas, seja qual for a parcela que difere", () => {
+    const casos: [number, number][] = [
+      [100.01, 3],
+      [100.02, 3],
+      [99.99, 7],
+      [1234.56, 12],
+    ];
+    for (const [valor, parcelas] of casos) {
+      const lista = calcularListaParcelas(valor, parcelas).map((p) => p.valor);
+      const doTexto = texto(valor, parcelas)
+        .split(" + ")
+        .flatMap((grupo) => {
+          const [, quantidade, numero] = grupo.match(/^(\d+)x de R\$ ([\d.,]+)$/) ?? [];
+          const valorDoGrupo = Number(numero.replace(/\./g, "").replace(",", "."));
+          return Array<number>(Number(quantidade)).fill(valorDoGrupo);
+        });
+      expect(doTexto).toEqual(lista);
+    }
   });
 });

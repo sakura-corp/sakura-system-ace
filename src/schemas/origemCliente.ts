@@ -1,7 +1,7 @@
 import { ehConsumidor } from "@/types/cliente";
 
 /**
- * "De onde veio" — a origem do cliente (#1021, migration 0091).
+ * "De onde veio" — a origem do cliente (#1021, migration 0093).
  *
  * A loja quer saber se o dinheiro gasto em divulgação volta: de onde vêm os
  * clientes (anúncio, indicação, passou na frente). A origem fica guardada em
@@ -14,7 +14,7 @@ import { ehConsumidor } from "@/types/cliente";
  *   • SEMPRE OPCIONAL: em branco é "Não informado", nunca impede salvar;
  *   • a OS nova já vem com a origem do cliente e pode ser trocada; trocar na
  *     OS não muda o cliente. Cliente sem origem que ganha uma OS com origem
- *     passa a ter aquela — isso é feito pelo banco (gatilho da 0091), pra
+ *     passa a ter aquela — isso é feito pelo banco (gatilho da 0093), pra
  *     valer também pra quem tem só o módulo OS;
  *   • o Consumidor nunca tem origem: a da venda anônima fica só na venda.
  */

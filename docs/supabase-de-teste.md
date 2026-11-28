@@ -258,6 +258,13 @@ O que a equipe cadastrou fora do exemplo (um cliente novo, por exemplo) fica, e 
 exemplo**. Se a equipe apagou uma OS de exemplo ou abriu uma nova no meio (o número dela pode coincidir
 com o de uma do exemplo), o script pode parar com erro: aí use o "zerar e recomeçar" acima.
 
+**Quem aplica migration no `ssace-teste`: só a Sofia** (decisão de 23/11/2026; corrige o #1164, que
+dizia que a equipe podia). A equipe **não tem login** no painel do Supabase de teste, então não
+consegue aplicar. A equipe **escreve** a migration, o teste SQL e o **roteiro de ensaio** (que não
+grava nada) no PR e **avisa a Sofia**. Ela aplica pelo caminho abaixo, conta o resultado no PR, e aí
+a equipe segue com o "Como testar no PC". Em loja e em produção, também só a Sofia. **Esta é a regra
+única**: os outros documentos apontam pra cá.
+
 **Quando sair migration nova**: colar de novo o `instalacao-completa.sql` (Passo 3) no
 `ssace-teste`. É seguro rodar de novo. Faça isso **antes** de a equipe testar o PR que depende da
 migration. (O teste fica **fora** do botão "Atualizar o banco de todas as empresas": decidido pela Sofia em

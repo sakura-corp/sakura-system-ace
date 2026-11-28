@@ -8,7 +8,9 @@ import type {
   PatchOrdemServico,
 } from "@/types/os";
 import { totalPorTipo } from "@/types/os";
-import { ehPecaAvulsa } from "./orcamento";
+import { arredondarCentavo } from "./dinheiro";
+import { ehPecaAvulsa, lucroDaOrdem, lucroDaOrdemPeloBanco } from "./orcamento";
+import type { MapaCusto } from "./metricasCaixa";
 import { origemParaGravar } from "./origemCliente";
 import { somarValoresLiquidos } from "./valorItem";
 
@@ -80,7 +82,10 @@ export function paraValoresFormulario(
     // ele é escolhido (`origemSugerida`, em DetalhesFields).
     origem: ordemExistente?.origem ?? "",
     origem_detalhe: ordemExistente?.origem_detalhe ?? "",
-    itens: ordemExistente ? [] : [itemFormVazio],
+    // Começa sem item nenhum, nova ou não (#1087): a tabela de itens diz
+    // "Nenhum item ainda" e o item entra pela busca única. Na OS existente
+    // os itens já gravados vêm à parte (`ordem.itens`), nunca por aqui.
+    itens: [],
   };
 }
 
@@ -317,4 +322,71 @@ export function nomearFuncionarios(
     vendedor: nomear(ordem.vendedor_id),
     itens: ordem.itens?.map((item) => ({ ...item, tecnico: nomear(item.tecnico_id) })),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Lucro previsto, enquanto a OS ainda está sendo montada (#1087)
+// ---------------------------------------------------------------------------
+
+/**
+ * O lucro que a OS (ou o orçamento, ou a venda de balcão) vai dar, mostrado
+ * enquanto ela ainda está sendo montada. Ou é um número, ou diz por que não
+ * há número:
+ *   • "custo-nao-informado": algum item não tem custo (peça avulsa sem custo,
+ *     ou itens gravados cujo custo o banco não completou) — qualquer número
+ *     seria lucro inventado. A tela mostra `TEXTO_CUSTO_NAO_INFORMADO`.
+ *   • "aparece-ao-salvar": quem está na tela não lê o custo das peças do
+ *     cadastro (sem o módulo Estoque, #366); depois de gravar, o banco
+ *     calcula. A tela mostra `TEXTO_LUCRO_APARECE_AO_SALVAR`.
+ */
+export type LucroPrevisto =
+  | { lucro: number; falta: null }
+  | { lucro: null; falta: "custo-nao-informado" | "aparece-ao-salvar" };
+
+export const TEXTO_LUCRO_APARECE_AO_SALVAR = "aparece ao salvar";
+
+/**
+ * Lucro previsto = lucro dos itens já gravados + lucro dos itens em
+ * digitação, arredondado ao centavo. Não é uma conta nova: os gravados usam
+ * `lucroDaOrdemPeloBanco` (o custo que o banco calculou pra esta OS) e os
+ * novos usam `lucroDaOrdem` (os mapas de custo), as mesmas do resto do
+ * programa — assim o número de antes de salvar bate com o de depois.
+ *
+ * "custo-nao-informado" passa na frente de "aparece-ao-salvar": se falta um
+ * custo, nem depois de salvar vai haver número.
+ */
+export function lucroPrevistoDaOrdem(args: {
+  itensExistentes: ItemOS[];
+  custoDosExistentes: { custo: number; completo: boolean } | undefined;
+  itensFormulario: ItemFormValues[];
+  custoPeca: MapaCusto | null;
+  custoServico: MapaCusto;
+}): LucroPrevisto {
+  const { itensExistentes, custoDosExistentes, itensFormulario, custoPeca, custoServico } = args;
+  // Os itens já gravados: o custo vem pronto do banco (`custo_das_ordens`),
+  // pela mesma conta do resto do programa. Sem item gravado não há o que
+  // pedir ao banco, e essa parte é zero.
+  const lucroExistentes =
+    itensExistentes.length > 0
+      ? lucroDaOrdemPeloBanco(itensExistentes, custoDosExistentes)
+      : { lucro: 0, custoNaoInformado: false as const };
+  if (lucroExistentes.custoNaoInformado) return { lucro: null, falta: "custo-nao-informado" };
+
+  // Os itens em digitação: só as linhas que seriam gravadas
+  // (`paraItensValidos` descarta a linha em branco), com a conta de sempre.
+  // Sem o mapa de custo das peças, o mapa vazio aqui só serve pra achar a
+  // peça avulsa sem custo: a peça do cadastro sairia com custo zero, e por
+  // isso ela é barrada logo abaixo.
+  const novos = paraItensValidos(itensFormulario);
+  const lucroNovos = lucroDaOrdem(novos, custoPeca ?? new Map(), custoServico);
+  if (lucroNovos.custoNaoInformado) return { lucro: null, falta: "custo-nao-informado" };
+
+  // Quem não tem o módulo Estoque não lê o custo da peça do cadastro: o
+  // número só existe depois de gravar, quando o banco calcula
+  // (`custo_das_ordens`). Mostrar antes seria lucro com custo zero.
+  if (custoPeca === null && novos.some((item) => item.tipo === "peca" && !ehPecaAvulsa(item))) {
+    return { lucro: null, falta: "aparece-ao-salvar" };
+  }
+
+  return { lucro: arredondarCentavo(lucroExistentes.lucro + lucroNovos.lucro), falta: null };
 }

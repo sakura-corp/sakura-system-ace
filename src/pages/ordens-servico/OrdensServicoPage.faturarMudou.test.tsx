@@ -32,7 +32,8 @@ vi.mock("@/lib/ordensServico", () => ({
     }
   },
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+// A tela ouve a rede pelo `useConexao` (#1017): o banco de mentira avisa nada.
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoMudarARede: () => () => {} }));
 vi.mock("@/lib/clientes", () => ({
   listarClientesParaEscolha: async () => [],
   cadastrarClienteRapido: vi.fn(),
@@ -95,19 +96,20 @@ async function abrirFaturamentoEConfirmar() {
     ),
   );
   await usuario.click(screen.getByRole("button", { name: "Confirmar faturamento" }));
+  // A pergunta de antes de faturar é a janela do programa, não mais o confirm() (#1088).
+  await usuario.click(await screen.findByRole("button", { name: "Faturar" }));
 }
 
 beforeEach(() => {
   localStorage.clear();
   listarOrdens.mockReset();
   faturarOrdem.mockReset();
-  vi.spyOn(window, "confirm").mockReturnValue(true);
 });
 
 describe("OrdensServicoPage — a OS mudou em outro computador na hora de faturar", () => {
   it("manda o operador e o total que a tela mostrou", async () => {
     listarOrdens.mockResolvedValue([os(100)]);
-    faturarOrdem.mockResolvedValue(undefined);
+    faturarOrdem.mockResolvedValue({ avisoTaxa: null });
     await abrirFaturamentoEConfirmar();
     await waitFor(() => expect(faturarOrdem).toHaveBeenCalledTimes(1));
     const [, , , , operadorId, total] = faturarOrdem.mock.calls[0];

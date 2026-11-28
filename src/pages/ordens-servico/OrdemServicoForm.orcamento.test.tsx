@@ -23,7 +23,12 @@ import type { OrdemServico } from "@/types/os";
 
 // A janela da peça sem cadastro usa o login (pra ligar a peça cadastrada, #720).
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
+}));
+// O rodapé busca o custo dos itens (lucro previsto, #1087); aqui o banco responde "sem custo".
+vi.mock("@/lib/caixa", async (importar) => ({
+  ...(await importar<typeof import("@/lib/caixa")>()),
+  buscarCustoDasOrdens: async () => new Map(),
 }));
 
 beforeEach(() => localStorage.clear());
@@ -90,6 +95,9 @@ function montar(extra: Partial<Parameters<typeof OrdemServicoForm>[0]> = {}) {
   );
   return { ...resultado, onSalvarNova, onAprovar, onRecusar };
 }
+
+/** O campo da busca única de peça e serviço (#1087). */
+const buscaDeItens = () => screen.getByRole("combobox", { name: "Buscar peça ou serviço" });
 
 describe("OrdemServicoForm — orçamento novo", () => {
   it("traz a validade padrão e manda a validade ao salvar", async () => {
@@ -271,6 +279,78 @@ describe("OrdemServicoForm — recusar", () => {
   });
 });
 
+// #1181: o recusado reabre pela faixa dele (a janela é da página).
+describe("OrdemServicoForm — reabrir orçamento recusado", () => {
+  it("a faixa do recusado tem o botão, e ele pede a reabertura deste orçamento", async () => {
+    const onReabrir = vi.fn();
+    const ordem = orcamento({ status: "recusado", motivo_recusa: "preco" });
+    const { user } = montar({ ordemExistente: ordem, onReabrir });
+
+    await user.click(screen.getByRole("button", { name: "Reabrir orçamento" }));
+    expect(onReabrir).toHaveBeenCalledWith(ordem);
+    // Continua sem Aprovar: aprova depois de reaberto (ou pela caixinha da janela).
+    expect(screen.queryByRole("button", { name: "Aprovar" })).not.toBeInTheDocument();
+  });
+
+  it("orçamento aberto não tem o botão", () => {
+    montar({ ordemExistente: orcamento(), onReabrir: vi.fn() });
+    expect(screen.queryByRole("button", { name: "Reabrir orçamento" })).not.toBeInTheDocument();
+  });
+
+  it("o Histórico da OS mostra a reabertura, quem fez e o motivo", () => {
+    montar({
+      ordemExistente: orcamento(),
+      trocas: [
+        {
+          id: "h1",
+          tipo: "reabertura",
+          operador_nome: "Ana",
+          motivo: "Cliente voltou e aceitou (tinha sido recusado em 23/11, motivo: Preço)",
+          total: 680,
+          criado_em: "2026-11-24T15:00:00.000Z",
+          itens_antes: [],
+          itens_depois: [],
+        },
+      ],
+    });
+
+    expect(screen.getByText("Histórico da OS")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Reabertura · Ana · motivo: Cliente voltou e aceitou \(tinha sido recusado em 23\/11, motivo: Preço\)/),
+    ).toBeInTheDocument();
+  });
+});
+
+// #1191: a faixa do recusado é um aviso de perigo (vermelho, com ícone).
+describe("OrdemServicoForm — faixa do orçamento recusado (#1191)", () => {
+  it("é o aviso de perigo, com ícone, e o texto e o botão de sempre", () => {
+    montar({
+      ordemExistente: orcamento({ status: "recusado", motivo_recusa: "preco" }),
+      onReabrir: vi.fn(),
+    });
+    const texto = screen.getByText(/Orçamento recusado — motivo: Preço\./);
+    const faixa = texto.closest(".text-perigo");
+    expect(faixa).not.toBeNull();
+    expect(faixa!.querySelector("svg")).not.toBeNull();
+    expect(within(faixa as HTMLElement).getByRole("button", { name: "Reabrir orçamento" })).toBeInTheDocument();
+  });
+});
+
+// #1191: o aviso de rascunho fala do que a tela é.
+describe("OrdemServicoForm — aviso de rascunho (#1191)", () => {
+  it("no orçamento diz \"deste orçamento\"", () => {
+    localStorage.setItem("rascunho-orcamento-orc-1", JSON.stringify({ descricao_problema: "velho" }));
+    montar({ ordemExistente: orcamento() });
+    expect(screen.getByText(/rascunho não salvo deste orçamento/)).toBeInTheDocument();
+  });
+
+  it("na OS continua \"desta ordem de serviço\"", () => {
+    localStorage.setItem("rascunho-os-orc-1", JSON.stringify({ descricao_problema: "velho" }));
+    montar({ modoOrcamento: false, ordemExistente: orcamento({ status: "em_andamento", numero: 12 }) });
+    expect(screen.getByText(/rascunho não salvo desta ordem de serviço/)).toBeInTheDocument();
+  });
+});
+
 describe("OrdemServicoForm — a OS de sempre não muda", () => {
   it("fora do modo orçamento não tem Validade nem Aprovar", () => {
     montar({ modoOrcamento: false, ordemExistente: undefined });
@@ -280,7 +360,7 @@ describe("OrdemServicoForm — a OS de sempre não muda", () => {
 });
 
 describe("OrdemServicoForm — peça sem cadastro no orçamento (#655)", () => {
-  const pecaCadastrada = { id: "peca-1", descricao: "Pneu 175/70 R13", preco_venda: 300 } as never;
+  const pecaCadastrada = { id: "peca-1", descricao: "Pneu 175/70 R13", preco_venda: 300, ativo: true } as never;
 
   it("no orçamento a peça pode ser digitada sem cadastro, com custo opcional, e vai sem peca_id", async () => {
     const { user, onSalvarNova } = montar({ pecas: [pecaCadastrada] });
@@ -288,10 +368,13 @@ describe("OrdemServicoForm — peça sem cadastro no orçamento (#655)", () => {
     await user.click(screen.getByDisplayValue("Selecione o cliente"));
     await user.click(screen.getByRole("button", { name: "Maria da Silva" }));
 
-    // A linha que o formulário novo já traz nasce como "peça sem cadastro": descrição e custo à vista.
+    // A peça sem cadastro entra pela busca (#1087) e a linha já nasce aberta:
+    // descrição e custo à vista, como "peça sem cadastro".
+    await user.type(buscaDeItens(), "Palheta 20 polegadas");
+    await user.click(screen.getByRole("option", { name: /Peça sem cadastro: "Palheta 20 polegadas"/ }));
     expect(screen.getByDisplayValue("Peça sem cadastro (digitar abaixo)")).toBeInTheDocument();
-    await user.type(screen.getByPlaceholderText("Descrição da peça"), "Palheta 20 polegadas");
-    await user.type(screen.getByLabelText("Preço unitário"), "80");
+    expect(screen.getByPlaceholderText("Descrição da peça")).toHaveValue("Palheta 20 polegadas");
+    await user.type(screen.getByLabelText("Preço de Palheta 20 polegadas"), "80");
     await user.type(screen.getByLabelText("Custo (opcional)"), "35");
     await user.click(screen.getByRole("button", { name: "Salvar orçamento" }));
 
@@ -302,6 +385,8 @@ describe("OrdemServicoForm — peça sem cadastro no orçamento (#655)", () => {
 
   it("escolhendo uma peça do cadastro, some a descrição e o custo", async () => {
     const { user } = montar({ pecas: [pecaCadastrada] });
+    await user.type(buscaDeItens(), "avulsa qualquer");
+    await user.click(screen.getByRole("option", { name: /Peça sem cadastro/ }));
 
     await user.click(screen.getByDisplayValue("Peça sem cadastro (digitar abaixo)"));
     await user.click(screen.getByRole("button", { name: "Pneu 175/70 R13" }));
@@ -310,11 +395,21 @@ describe("OrdemServicoForm — peça sem cadastro no orçamento (#655)", () => {
     expect(screen.queryByLabelText("Custo (opcional)")).not.toBeInTheDocument();
   });
 
-  it("fora do orçamento (OS comum) a peça continua só do cadastro", () => {
-    montar({ modoOrcamento: false, pecas: [pecaCadastrada] });
+  it("fora do orçamento (OS comum) a peça continua só do cadastro", async () => {
+    const { user } = montar({ modoOrcamento: false, pecas: [pecaCadastrada] });
 
-    expect(screen.getByDisplayValue("Selecione a peça")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue(/Peça sem cadastro/)).not.toBeInTheDocument();
+    // Sem resultado, a busca só oferece o serviço sem cadastro: peça sem cadastro é do orçamento.
+    await user.type(buscaDeItens(), "xyz");
+    expect(screen.getByRole("option", { name: /Serviço sem cadastro/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Peça sem cadastro/ })).not.toBeInTheDocument();
+
+    // Uma peça do cadastro, aberta: a lista dela não tem a opção "sem cadastro".
+    await user.clear(buscaDeItens());
+    await user.type(buscaDeItens(), "Pneu{Enter}");
+    await user.click(screen.getByRole("button", { name: /Abrir o item/ }));
+    await user.click(screen.getByDisplayValue("Pneu 175/70 R13"));
+    expect(screen.getByRole("button", { name: "Selecione a peça" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Peça sem cadastro/ })).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("Descrição da peça")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Custo (opcional)")).not.toBeInTheDocument();
   });

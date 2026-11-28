@@ -17,6 +17,9 @@ import type { Funcionario } from "@/types/funcionario";
 import type { OrdemServico } from "@/types/os";
 
 const salvarPecaDeMentira = vi.fn();
+// Se o cliente já foi avisado (o passo "garantia e avisar", #1088): aqui, nunca.
+vi.mock("@/lib/avisoDaOrdem", () => ({ quandoAvisouCarroPronto: async () => null }));
+vi.mock("@/lib/notasFiscais", () => ({ listarArquivosDasOrdens: async () => [] }));
 vi.mock("./FechamentoTab", () => ({
   FechamentoTab: () => (
     <form
@@ -31,7 +34,12 @@ vi.mock("./FechamentoTab", () => ({
   ),
 }));
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ operador: { id: "op" }, lojaAtual: { id: "loja-1" } }),
+  useAuth: () => ({ operador: { id: "op", admin: false, permissoes: [] }, lojaAtual: { id: "loja-1" } }),
+}));
+// O rodapé busca o custo dos itens (lucro previsto, #1087); aqui o banco responde "sem custo".
+vi.mock("@/lib/caixa", async (importar) => ({
+  ...(await importar<typeof import("@/lib/caixa")>()),
+  buscarCustoDasOrdens: async () => new Map(),
 }));
 
 beforeEach(() => {
@@ -100,15 +108,16 @@ function montar() {
 }
 
 describe("OrdemServicoForm — a aba Fechamento fica fora do <form> da OS (#1128)", () => {
-  it("o formulário da peça não fica dentro do formulário da OS", () => {
+  it("o formulário da peça não fica dentro do formulário da OS", async () => {
     montar();
-    const formDaPeca = screen.getByRole("form", { name: "Cadastrar peça" });
+    // O passo da OS (a nota fiscal, #1088) aparece quando as notas chegam do banco.
+    const formDaPeca = await screen.findByRole("form", { name: "Cadastrar peça" });
     expect(formDaPeca.parentElement?.closest("form")).toBeNull();
   });
 
   it("'Salvar peça' na aba Fechamento salva a peça, e não a OS", async () => {
     const { user, onSalvarEdicao } = montar();
-    await user.click(screen.getByRole("button", { name: "Salvar peça" }));
+    await user.click(await screen.findByRole("button", { name: "Salvar peça" }));
     expect(salvarPecaDeMentira).toHaveBeenCalledTimes(1);
     expect(onSalvarEdicao).not.toHaveBeenCalled();
   });

@@ -68,8 +68,8 @@ export interface Cliente {
   /** Pediu pra não receber lembrete de retorno (FN-06, #381): some da lista de retornos. */
   nao_avisar: boolean;
   /**
-   * "De onde veio" na primeira vez (#1021, migration 0091). Opcionais: banco
-   * anterior à 0091 não tem as colunas, e a janela estreita (quem não tem o
+   * "De onde veio" na primeira vez (#1021, migration 0093). Opcionais: banco
+   * anterior à 0093 não tem as colunas, e a janela estreita (quem não tem o
    * módulo Clientes) não as traz. Nulo = "Não informado". Nunca no Consumidor.
    */
   origem?: OrigemCliente | null;

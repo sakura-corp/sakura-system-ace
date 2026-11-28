@@ -46,7 +46,24 @@ export const CENAS = [
     descricao: "Quem já deveria ter voltado (atrasados) e quem deve voltar nesta semana, calculado a partir do intervalo cadastrado em cada serviço (em dias ou em km) e da última OS faturada do carro. A data é uma previsão; quando vem do KM, diz 'estimado pelo KM'. O botão do WhatsApp abre a conversa com a mensagem pronta e a tela mostra quando o aviso foi aberto pela última vez. Quem está marcado como 'não mandar lembrete' não aparece." },
   { arquivo: "06-cliente-form", modulo: "Clientes", titulo: "Cadastro de cliente e veículos",
     rota: "/clientes", passos: [{ clicar: "+ Novo cliente" }],
-    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP a caixinha 'Não mandar lembrete pra este cliente' e a lista de veículos do cliente — cada um com placa, marca, modelo, cor e tipo, que é o que desenha o ícone do carro na tela de início." },
+    descricao: "Cadastro de pessoa física ou jurídica (os rótulos mudam sozinhos entre CPF/CNPJ e nome/razão social), endereço preenchido pelo CEP a caixinha 'Não mandar lembrete pra este cliente' e a lista de veículos do cliente: uma linha por carro, com o desenho na cor dele, a placa, a marca, o modelo e o ano. Cada carro abre na janela do veículo pra cadastrar ou mexer." },
+
+  // A janela do veículo (#1096), preenchida: marca → modelo → ano, o tipo que veio do modelo e a cor.
+  { arquivo: "06e-veiculo-janela", modulo: "Clientes", titulo: "Janela do veículo",
+    rota: "/clientes",
+    passos: [
+      { clicar: "+ Novo cliente" },
+      { clicar: "+ Adicionar veículo" },
+      { digitar: "QWE1R23", em: '[role="dialog"] input[placeholder="ABC1D23"]' },
+      { digitar: "Fiat", em: '[role="dialog"] input[role="combobox"] >> nth=0' },
+      { clicar: "Fiat" },
+      { digitar: "Strada", em: '[role="dialog"] input[role="combobox"] >> nth=1' },
+      { clicar: "Strada" },
+      { digitar: "2021", em: '[role="dialog"] input[role="combobox"] >> nth=2' },
+      { clicar: "2021" },
+      { seletor: '[role="dialog"] label:has-text("Vermelho")' },
+    ],
+    descricao: "Cada carro do cliente tem a sua janela. A placa vem primeiro; a marca sugere as 15 mais vendidas, o modelo sugere só os da marca e o ano só os anos daquele modelo, e tudo aceita digitar o que não está na lista. O tipo (hatch, sedã, SUV, picape ou moto) vem sozinho do modelo e dá pra trocar clicando no desenho; a cor é escolhida nas bolinhas. À direita, a prévia mostra o carro como ele vai aparecer no pátio do Início, na cor escolhida." },
 
   // Planilha inventada: uma linha sem nome (problema) e uma placa que já está no cadastro de mentira.
   { arquivo: "06c-clientes-importar", modulo: "Clientes", titulo: "Importar clientes de uma planilha",
@@ -74,22 +91,86 @@ export const CENAS = [
     // desceu pra 1024 com o molde de lista. Conferido pelo `npm run largura:telas`.
     semRolarAPartirDe: 1024,
     descricao: "O coração do sistema. Cada OS tem número sequencial por loja e passa por três etapas: em andamento, concluída e faturada — mais o estado 'finalizada', que o sistema deduz sozinho quando todas as notas fiscais daquela OS já saíram. A lista mostra total e lucro de cada ordem (e, em tela larga, quanto foi de peças e de serviços)." },
+
+  // Os estados do molde de lista e dos chips (#1085, parte 5/5 #1136), na
+  // primeira tela que usa o molde. O estado de erro e o esqueleto do
+  // "carregando" não têm cena: o banco de mentira não sabe falhar nem
+  // demorar só numa cena; eles estão provados nos testes do MoldeLista.
+  { arquivo: "07a-ordens-busca-sem-nada", modulo: "Ordens de Serviço", titulo: "Lista de OS: a busca que não achou nada",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
+    passos: [{ digitar: "Placa que não existe", em: 'input[type="search"]' }],
+    descricao: "O vazio de uma busca é diferente do vazio de uma loja nova: a lista diz o que foi buscado e oferece limpar a busca, em vez de \"nenhuma OS cadastrada\" (que assusta quem tem centenas). Os chips do período ficam apagados enquanto a busca vale, porque a busca olha o histórico inteiro." },
+  { arquivo: "07b-ordens-escolher-datas", modulo: "Ordens de Serviço", titulo: "Lista de OS: escolher o período",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024, passos: [{ clicar: "Escolher datas" }],
+    descricao: "Os chips do período: um só escolhido por vez, marcado também pelo visto (✓) e pela palavra em negrito, não só pela cor. \"Escolher datas\" abre os dois campos de data ao lado, sem janela." },
+  { arquivo: "07c-ordens-loja-nova", modulo: "Ordens de Serviço", titulo: "Lista de OS de uma loja que ainda não atendeu ninguém",
+    rota: "/ordens-servico", semRolarAPartirDe: 1024,
+    // Só as OS saem (orçamento e recusado ficam, como numa loja que só orçou).
+    tirarLinhas: { ordens_servico: (o) => !["orcamento", "recusado"].includes(o.status) },
+    descricao: "O vazio de começo: uma frase do que vai aparecer ali e o botão pra começar (\"Nova OS\"), sem busca nem filtro, que não teriam o que procurar." },
   { arquivo: "08-os-form", modulo: "Ordens de Serviço", titulo: "Abertura de ordem de serviço",
     rota: "/ordens-servico", passos: [{ clicar: "Nova ordem de serviço" }],
-    descricao: "Escolhe cliente e veículo, quilometragem de entrada, vendedor responsável e vai lançando os itens — peça ou serviço, cada um com quantidade, preço, desconto e o técnico que executou. Peça lançada aqui já dá baixa no estoque sozinha." },
+    // Desde a #1087 a OS abre numa página só dela (a lista sai da tela e volta
+    // no mesmo lugar pelo "Voltar"), com uma busca só pra peça e serviço.
+    semRolarAPartirDe: 1024,
+    descricao: "Escolhe cliente e veículo, quilometragem de entrada e vendedor, e lança os itens por uma busca só: o mesmo campo acha peça e serviço (pelo nome, código, medida, ou passando o leitor de código de barras). A OS abre numa página só dela; o 'Voltar' devolve a lista no mesmo lugar. Peça lançada aqui já dá baixa no estoque sozinha." },
+  { arquivo: "08b-os-itens", modulo: "Ordens de Serviço", titulo: "Itens da OS: busca única e tabela",
+    rota: "/ordens-servico",
+    passos: [
+      { clicar: "Nova ordem de serviço" },
+      { digitar: "7891234567890", em: 'input[aria-label="Buscar peça ou serviço"]', enter: true },
+      { digitar: "7891234567890", em: 'input[aria-label="Buscar peça ou serviço"]', enter: true },
+      { digitar: "SV-ALIN", em: 'input[aria-label="Buscar peça ou serviço"]', enter: true },
+      { digitar: "pneu", em: 'input[aria-label="Buscar peça ou serviço"]' },
+    ],
+    semRolarAPartirDe: 1024,
+    descricao: "Os itens numa tabela só: peça e serviço com o mesmo tipo de linha, quantidade, preço, desconto e técnico editáveis na própria linha, e o resto (trocar a peça, descrição, custo) ao abrir o item. O 'Técnico pra todos' vale pros itens novos. Passar o leitor duas vezes no mesmo pneu põe 2 unidades. Embaixo, o total grande e, de apoio, peças, serviços e o lucro previsto (verde com ▲, ou vermelho com ▼ se der prejuízo)." },
+  { arquivo: "08c-os-aberta", modulo: "Ordens de Serviço", titulo: "Uma OS em andamento aberta",
+    rota: "/ordens-servico",
+    passos: [
+      { seletor: 'li:has-text("Em andamento") button[aria-label^="Mais ações"]' },
+      { clicar: "Abrir a OS" },
+    ],
+    semRolarAPartirDe: 1024,
+    descricao: "A OS já gravada, na página dela. Em cima, a trilha do fechamento: conferir peças e serviços → receber → nota fiscal → garantia e avisar, no passo 1 de 4. Os itens lançados aparecem na mesma tabela (cada um com 'Editar', que salva na hora), a busca fica pronta pra pôr mais, e o rodapé mostra o total, o lucro previsto e um botão laranja só: o do próximo passo, 'Encerrar e receber' (com alteração sem salvar, o laranja passa pro 'Salvar')." },
   { arquivo: "09-os-faturamento", modulo: "Ordens de Serviço", titulo: "Faturamento da ordem",
     rota: "/ordens-servico", passos: [{ clicar: "Faturar" }],
     descricao: "Fecha a conta com o cliente. Dá pra dividir o pagamento em mais de uma forma (metade Pix, metade cartão), parcelar só a parte do cartão com os juros configurados, e escolher entre receber na hora — que lança a entrada no caixa — ou deixar como conta a receber." },
-  { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechamento: notas fiscais e garantia",
-    // Desde a tarefa 7 do visual novo, "Fechamento" mora no "Mais ações" da
-    // linha (o primeiro que tem é o de uma OS concluída ou faturada). Desde a
-    // #1091 a lista é o molde de lista: cada OS é um <li>, não mais um <tr>.
+  { arquivo: "10-os-fechamento", modulo: "Ordens de Serviço", titulo: "Fechar a OS: receber (passo 2 de 4)",
+    // O "Fechamento" do "Mais ações" abre a OS no passo em que ela parou (#1088).
+    // Desde a #1091 a lista é o molde de lista: cada OS é um <li>.
     rota: "/ordens-servico",
     passos: [
       { seletor: 'li:has-text("Concluída") button[aria-label^="Mais ações"]' },
       { clicar: "Fechamento" },
     ],
-    descricao: "Aqui saem os documentos da OS. O sistema sabe de que nota aquela ordem precisa — NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois — e mostra só o botão que faz sentido. A emissão é automática, via Focus NFe, e o PDF aparece na própria tela. O botão de garantia gera o documento pro cliente assinar." },
+    descricao: "Fechar a OS é uma trilha de 4 passos no topo da própria OS: conferir peças e serviços, receber, nota fiscal, e garantia e avisar. O passo feito fica verde com ✓, o atual azul, e a frase 'Passo 2 de 4' diz onde se está. No receber, o número grande é o que falta receber, com o total e o que já foi pago de apoio; embaixo à direita, um botão laranja só, 'Receber R$ …', que abre a janela de faturar. O passo sai do que já está gravado: fechar o programa no meio e abrir a OS de novo mostra o passo em que ela parou." },
+  { arquivo: "10f-os-passo-nota", modulo: "Ordens de Serviço", titulo: "Fechar a OS: nota fiscal (passo 3 de 4)",
+    rota: "/ordens-servico",
+    // A OS 145 (peça e serviço) volta a ficar sem a NFC-e: falta uma das duas notas.
+    tirarLinhas: { notas_fiscais_arquivos: (n) => n.ordem_servico_id === "os145" && n.tipo === "nfe" },
+    passos: [{ seletor: 'li:has-text("OS 145") button:has-text("Emitir nota")' }],
+    descricao: "Faturada, a OS anda sozinha pra nota fiscal. O sistema sabe de que nota ela precisa (NFC-e se tem peça, NFS-e se tem serviço, as duas se tem os dois) e mostra cada uma com ✓ 'feito' ou ! 'falta'. A que é o próximo passo sai pelo botão laranja, embaixo à direita ('Emitir NFC-e'); a emitida tem o 'Ver DANFE' do lado. A emissão é automática, via Focus NFe." },
+  { arquivo: "10g-os-passo-garantia", modulo: "Ordens de Serviço", titulo: "Fechar a OS: garantia e avisar (passo 4 de 4)",
+    rota: "/ordens-servico",
+    passos: [
+      { seletor: 'li:has-text("OS 144") button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
+    descricao: "Com as notas emitidas, o último passo: o documento de garantia pro cliente assinar ('Ver garantia') e o aviso de carro pronto pelo WhatsApp, que é o botão laranja ('Avisar o cliente'). Cliente sem WhatsApp, ou avisado no balcão: 'Concluir sem avisar'." },
+  { arquivo: "10h-os-pronto", modulo: "Ordens de Serviço", titulo: "Fechar a OS: o resumo do fim",
+    rota: "/ordens-servico",
+    // A mensagem de WhatsApp de exemplo vira o "carro pronto" da OS 143: o cliente já foi avisado.
+    alterarLinhas: { whatsapp_mensagens: { wa1: { chave: "carro_pronto", referencia: "os143" } } },
+    passos: [
+      { seletor: 'li:has-text("OS 143") button[aria-label^="Mais ações"]' },
+      { clicar: "Fechamento" },
+    ],
+    descricao: "O fim claro: os 4 passos com ✓ e o resumo do que foi feito (faturado, notas emitidas, cliente avisado e quando), com o DANFE e a garantia à mão. O botão laranja é o 'Pronto', que volta pra lista." },
+  { arquivo: "10i-os-faturar-confirmar", modulo: "Ordens de Serviço", titulo: "Faturar: a pergunta antes de lançar",
+    rota: "/ordens-servico",
+    passos: [{ clicar: "Faturar" }, { clicar: "Confirmar faturamento" }],
+    descricao: "Faturar não tem volta (depois não se acrescenta peça nem serviço), então o programa pergunta antes, numa janela dele e não mais na caixinha cinza do Windows: diz a OS e o valor, explica o que muda, e o foco começa no 'Cancelar', pra um Enter no automático não faturar." },
 
   // A recusa da SEFAZ por causa do CNPJ do cliente (#1112). O banco de mentira
   // responde a Focus NFe com a recusa só nesta cena (`funcoesDaCena`) e a OS 145,
@@ -120,15 +201,15 @@ export const CENAS = [
     rota: "/ordens-servico",
     passos: [
       { clicar: "Venda de balcão" },
-      { digitar: "7891234567894", em: 'input[placeholder^="Código de barras"]', enter: true },
-      { digitar: "pneu", em: 'input[placeholder^="Código de barras"]' },
+      { digitar: "7891234567894", em: 'input[aria-label="Buscar peça"]', enter: true },
+      { digitar: "pneu", em: 'input[aria-label="Buscar peça"]' },
     ],
     descricao: "Vender uma peça pra quem não vai deixar o carro, numa tela só: passa o leitor de código de barras (ou procura pelo nome ou pela medida), confere quantidade e preço, e segue pro pagamento. Quem não se identifica compra como 'Consumidor'; quem pede CPF na nota é escolhido ou cadastrado ali mesmo. Baixa o estoque, lança no caixa e abre a NFC-e — tudo o que a OS já fazia." },
   { arquivo: "10c-venda-pagamento", modulo: "Ordens de Serviço", titulo: "Pagamento da venda de balcão",
     rota: "/ordens-servico",
     passos: [
       { clicar: "Venda de balcão" },
-      { digitar: "7891234567894", em: 'input[placeholder^="Código de barras"]', enter: true },
+      { digitar: "7891234567894", em: 'input[aria-label="Buscar peça"]', enter: true },
       { clicar: "Ir para o pagamento" },
     ],
     descricao: "O mesmo pagamento da OS — dividir em formas, parcelar o cartão com os juros da loja. Venda no Consumidor é sempre recebida na hora: pra deixar a receber, é preciso saber de quem cobrar." },
@@ -165,11 +246,17 @@ export const CENAS = [
     descricao: "Recusar fica longe do Aprovar, no fim do menu de três pontos, e abre a sua própria janela: só ali aparece o motivo (opcional, um clique). O orçamento recusado vai pra aba Recusados e fica como histórico." },
 
   // ----------------------------------------------------------------- estoque
+  // Os dados de mentira não têm peça abaixo do mínimo: a cena sobe o mínimo de
+  // duas, pra foto mostrar o "falta" com o "Comprar" e o "perto" (#1093).
   { arquivo: "11-estoque-produtos", modulo: "Estoque", titulo: "Produtos",
-    rota: "/estoque",
-    descricao: "O catálogo de peças, com saldo atual, preço de custo e de venda. Compartilhado entre as lojas da mesma empresa — o saldo é que fica separado por loja." },
+    rota: "/estoque", alterarLinhas: { pecas: { p1: { estoque_minimo: 20 }, p4: { estoque_minimo: 6 } } },
+    descricao: "O catálogo de peças no molde de lista: em cima, quantas peças estão no mínimo ou abaixo dele; em cada linha, a barra do estoque contra o mínimo (vermelho quando falta, amarelo perto, verde ok, sempre com o número e a palavra), a última saída e, quando falta, o botão 'Comprar', que leva à Sugestão de compra. Busca (que também aceita o leitor de código de barras) e filtros em botões. Compartilhado entre as lojas da mesma empresa — o saldo é que fica separado por loja." },
+  { arquivo: "11b-estoque-perfil-peca", modulo: "Estoque", titulo: "Perfil da peça",
+    rota: "/estoque", alterarLinhas: { pecas: { p1: { estoque_minimo: 20 } } },
+    passos: [{ seletor: 'ul[aria-label="Produtos"] li button:has-text("Pneu 175/70 R14")' }],
+    descricao: "Clicar no nome de uma peça abre o perfil dela: o saldo grande contra o mínimo, o preço e a última saída de apoio, as movimentações da peça (entrada com '+', saída com '−') e onde ela foi usada (as OS e vendas). Quando falta, o botão principal é 'Comprar'." },
   { arquivo: "12-produto-form", modulo: "Estoque", titulo: "Cadastro de produto",
-    rota: "/estoque", passos: [{ clicar: "+ Novo produto" }],
+    rota: "/estoque", passos: [{ clicar: "Novo produto" }],
     descricao: "Além dos dados comuns, guarda tudo que a nota fiscal exige (NCM, CFOP, CSOSN, alíquota de ICMS, origem) e o prazo de garantia da peça, que é o que alimenta o módulo de Garantias. Custo, margem e preço final se calculam entre si nos dois sentidos." },
   // "13-importar-foto" saiu da lista junto com o botão "Importar por foto/PDF",
   // desligado a pedido dela em 25/09/2026 (IMPORTAR_POR_FOTO_LIGADO em
@@ -178,16 +265,16 @@ export const CENAS = [
   //   rota: "/estoque", passos: [{ clicar: "Importar por foto/PDF" }],
   //   descricao: "Lê a nota fiscal do fornecedor por foto ou PDF usando inteligência artificial e devolve os produtos já separados numa tabela editável, pra cadastrar em lote em vez de digitar um por um. A chave da IA fica guardada no servidor, nunca dentro do programa instalado." },
   { arquivo: "14-movimentacoes", modulo: "Estoque", titulo: "Movimentações",
-    rota: "/estoque", passos: [{ aba: "Movimentações" }],
-    descricao: "O extrato de tudo que entrou e saiu do estoque, com o motivo (compra, venda, uso em OS, ajuste) e a referência de onde veio. É aqui que se descobre a origem de um saldo estranho." },
+    rota: "/estoque", passos: [{ clicar: "Movimentações" }],
+    descricao: "O extrato de tudo que entrou e saiu do estoque, com o motivo (compra, venda, uso em OS, ajuste) e a referência de onde veio, filtrável por Tudo / Entradas / Saídas, por período e por produto. É aqui que se descobre a origem de um saldo estranho." },
   { arquivo: "15-movimento-form", modulo: "Estoque", titulo: "Registrar movimentação manual",
-    rota: "/estoque", passos: [{ aba: "Movimentações" }, { clicar: "+ Registrar movimentação" }],
+    rota: "/estoque", passos: [{ clicar: "Movimentações" }, { clicar: "Registrar movimentação" }],
     descricao: "Entrada ou saída lançada à mão, quando não veio de uma compra nem de uma OS — perda, devolução, transferência entre depósitos." },
   { arquivo: "16-contagem", modulo: "Estoque", titulo: "Contagem de estoque (inventário)",
-    rota: "/estoque", passos: [{ aba: "Contagem" }],
+    rota: "/estoque", passos: [{ clicar: "Contagem" }],
     descricao: "Inventário físico por depósito: digita-se quanto foi contado de verdade, o sistema mostra quanto deveria ter e, havendo diferença, gera o ajuste no estoque sozinho." },
   { arquivo: "17-estoque-relatorios", modulo: "Estoque", titulo: "Relatórios de estoque",
-    rota: "/estoque", passos: [{ aba: "Relatórios" }],
+    rota: "/estoque", passos: [{ clicar: "Relatórios" }],
     descricao: "Quanto dinheiro está parado em peça, o que está com saldo negativo (sinal de erro de lançamento) e o que não tem movimentação há tempo demais." },
 
   // ------------------------------------------------------------ fornecedores
@@ -213,27 +300,66 @@ export const CENAS = [
   // ---------------------------------------------------------------- serviços
   { arquivo: "24-servicos", modulo: "Serviços", titulo: "Catálogo de serviços",
     rota: "/servicos",
-    descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), cada uma com preço padrão e custo — o custo é o que permite calcular o lucro de verdade nos relatórios." },
+    descricao: "A lista de mão de obra que a loja vende (alinhamento, troca de óleo, montagem), com busca pelo nome ou código e filtro Todos / Ativos / Inativos. Cada linha mostra o preço padrão; o custo, que permite calcular o lucro de verdade nos relatórios, fica no cadastro." },
+  // Sem nenhum serviço: a frase e o botão pra começar (o estado vazio do molde, #1093).
+  { arquivo: "24b-servicos-vazio", modulo: "Serviços", titulo: "Catálogo de serviços vazio",
+    rota: "/servicos", tirarLinhas: { servicos: () => true },
+    descricao: "Loja que ainda não cadastrou nenhum serviço: a lista diz isso numa frase e oferece o botão pra cadastrar o primeiro." },
   { arquivo: "25-servico-form", modulo: "Serviços", titulo: "Cadastro de serviço",
-    rota: "/servicos", passos: [{ clicar: "+ Novo serviço" }],
-    descricao: "Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
+    rota: "/servicos", passos: [{ clicar: "Novo serviço" }],
+    descricao: "Abre numa janela por cima da lista. Descrição, código, categoria, preço padrão e custo, e de quanto em quanto tempo o cliente deve voltar (em dias ou em km; vazio = não gera lembrete). O preço padrão é só uma sugestão: na ordem de serviço dá pra mudar item a item." },
 
   // ------------------------------------------------------------------- caixa
   { arquivo: "26-caixa-diario", modulo: "Caixa Diário", titulo: "Caixa do dia",
     rota: "/caixa",
-    descricao: "Tudo que entrou e saiu no dia, junto: as ordens faturadas e os lançamentos feitos à mão. Mostra o lucro do dia já descontando o custo das peças e serviços vendidos e as despesas lançadas, e o resumo por forma de recebimento." },
+    descricao: "Uma página só: o saldo do dia em destaque (com o de ontem pra comparar) e o botão de fechar o caixa, logo abaixo o dinheiro na gaveta, o Pix e cartão e o lucro do dia, e a lista dos lançamentos do dia escolhido. Do lado: as formas de pagamento do dia, as saídas do mês e os últimos fechamentos." },
   { arquivo: "27-caixa-form", modulo: "Caixa Diário", titulo: "Lançamento manual no caixa",
-    rota: "/caixa", passos: [{ clicar: "Lançamento manual" }],
-    descricao: "Dinheiro que entrou ou saiu sem passar por uma ordem de serviço — venda de sucata, pagamento de fornecedor, troco. A categoria é o que faz esses valores aparecerem organizados nos relatórios." },
+    rota: "/caixa", passos: [{ clicar: "Novo lançamento" }],
+    descricao: "Dinheiro que entrou ou saiu sem passar por uma ordem de serviço — venda de sucata, pagamento de fornecedor, troco. Na ordem do balcão: entrada ou saída, o valor, a forma de pagamento escolhida na lista e a categoria, que é o que faz esses valores aparecerem organizados nos relatórios." },
   { arquivo: "28-caixa-entradas", modulo: "Caixa Diário", titulo: "Entradas",
-    rota: "/caixa", passos: [{ aba: "Entradas" }],
-    descricao: "Só o dinheiro que entrou por fora das ordens de serviço, com filtro por período e por categoria." },
+    rota: "/caixa", passos: [{ clicar: "Entradas" }],
+    descricao: "O filtro Entradas da lista do dia: só o dinheiro que entrou no dia escolhido, com o total embaixo." },
   { arquivo: "29-caixa-saidas", modulo: "Caixa Diário", titulo: "Saídas",
-    rota: "/caixa", passos: [{ aba: "Saídas" }],
-    descricao: "As despesas do dia a dia. É o outro lado do Contas a Pagar: aqui fica o que já saiu, lá fica o que ainda vai vencer." },
-  { arquivo: "29b-caixa-fechamento", modulo: "Caixa Diário", titulo: "Fechamento do caixa",
-    rota: "/caixa", passos: [{ aba: "Fechamento" }],
-    descricao: "No fim do dia, conta-se o dinheiro da gaveta e o sistema compara com o que ele esperava. Se faltou ou sobrou, a diferença vira um lançamento de verdade (Quebra ou Sobra de caixa) — ela nunca some. Pix e cartão aparecem à parte, pra conferir com o extrato." },
+    rota: "/caixa", passos: [{ clicar: "Saídas" }],
+    descricao: "O filtro Saídas da lista do dia: as despesas do dia escolhido. É o outro lado do Contas a Pagar: aqui fica o que já saiu, lá fica o que ainda vai vencer." },
+  { arquivo: "29c-caixa-cartao-a-receber", modulo: "Caixa Diário", titulo: "Cartão a receber",
+    rota: "/caixa", passos: [{ clicar: "Cartão a receber" }],
+    descricao: "O que as maquininhas ainda vão depositar, dia a dia e já sem a taxa, numa janela aberta pelo botão do lado da página. É só uma previsão pra saber quando o dinheiro do cartão chega: não vira conta a receber nem lançamento no Caixa." },
+  // O fechamento em 4 passos (#1090): uma foto por passo.
+  { arquivo: "29b-caixa-fechamento", modulo: "Caixa Diário", titulo: "Fechamento do caixa: o troco da manhã",
+    rota: "/caixa", passos: [{ clicar: "Fechar o caixa de hoje" }],
+    descricao: "O fechamento anda em 4 passos com nome: troco da manhã, contar a gaveta, Pix e cartão, conferir e fechar. No primeiro, o troco que já estava na gaveta ao abrir (vem o do último fechamento; no primeiro fechamento da loja, o programa pede) e a conta do que devia estar na gaveta. Abre numa janela pelo botão laranja do saldo do dia." },
+  { arquivo: "29d-caixa-fechamento-contar", modulo: "Caixa Diário", titulo: "Fechamento do caixa: contar a gaveta",
+    rota: "/caixa",
+    passos: [
+      { clicar: "Fechar o caixa de hoje" },
+      { clicar: "Contar a gaveta" },
+      { clicar: "Ajuda pra contar as notas" },
+      { digitar: "3", em: 'input[id$="-n100"]' },
+      { digitar: "4", em: 'input[id$="-n50"]' },
+      { digitar: "6", em: 'input[id$="-n20"]' },
+      { digitar: "12,50", em: 'input[id$="-moedas"]' },
+    ],
+    descricao: "Um campo grande pro valor contado e, se quiser, a ajuda pra contar as notas: quantas de 200, 100, 50… e o valor das moedas, com a soma indo sozinha pro campo. A diferença aparece na hora, grande e em palavras (\"Faltam R$ 69,00\", \"Sobram R$ 5,00\", \"Bateu certinho\"), contra o que devia estar na gaveta." },
+  { arquivo: "29e-caixa-fechamento-pix", modulo: "Caixa Diário", titulo: "Fechamento do caixa: Pix e cartão",
+    rota: "/caixa",
+    passos: [
+      { clicar: "Fechar o caixa de hoje" },
+      { clicar: "Contar a gaveta" },
+      { digitar: "500", em: 'input[name="contado"]' },
+      { clicar: "Ver Pix e cartão" },
+    ],
+    descricao: "Pix e cartão não passam pela gaveta: aparecem à parte, pra conferir com o extrato do banco e da maquininha, sem mudar a conta da gaveta." },
+  { arquivo: "29f-caixa-fechamento-conferir", modulo: "Caixa Diário", titulo: "Fechamento do caixa: conferir e fechar",
+    rota: "/caixa",
+    passos: [
+      { clicar: "Fechar o caixa de hoje" },
+      { clicar: "Contar a gaveta" },
+      { digitar: "500", em: 'input[name="contado"]' },
+      { clicar: "Ver Pix e cartão" },
+      { clicar: "Conferir e fechar" },
+    ],
+    descricao: "O resumo antes de fechar: a diferença em palavras, o troco, o que devia ter e o contado, e a observação. Se faltou ou sobrou, a diferença vira um lançamento de verdade (Quebra ou Sobra de caixa) e nunca some. O fechar pergunta na janela do programa; no fim, \"Caixa fechado\" com o Resumo pro dono." },
 
   // ---------------------------------------------------------- contas a pagar
   { arquivo: "30-contas-pagar", modulo: "Contas a Pagar", titulo: "Contas a pagar",
@@ -258,18 +384,26 @@ export const CENAS = [
     descricao: "Ao confirmar o recebimento, a entrada é lançada no caixa daquele dia — é o que evita cobrar duas vezes ou esquecer de dar baixa." },
 
   // ---------------------------------------------------------------- relações
-  { arquivo: "36-graficos", modulo: "Relações", titulo: "Gráficos de vendas, custos e lucro",
+  { arquivo: "36-relacoes", modulo: "Relações", titulo: "Relações: o resumo e os gráficos do período",
     rota: "/relatorios",
-    descricao: "Vendas, custos e lucro por dia, semana, mês ou ano, mais um gráfico comparando o período atual com o anterior. Os gráficos são desenhados pelo próprio sistema, sem depender de biblioteca de fora." },
-  { arquivo: "37-lucratividade", modulo: "Relações", titulo: "Lucratividade por item",
-    rota: "/relatorios", passos: [{ aba: "Lucratividade" }],
-    descricao: "Quanto cada peça e cada serviço deu de margem no período. É o que mostra o que vende muito mas dá pouco lucro." },
+    descricao: "Tudo numa página só, com um período lá em cima (hoje, esta semana, este mês, mês passado, este ano, ou as datas que quiser) e os botões Ir para. Em destaque, a Sobra das OS (o vendido menos o custo das peças e dos serviços), e ao lado Vendido, Recebido e Falta receber, cada um comparado com o mês anterior. Abaixo, o mês até hoje contra o anterior e o dia a dia lado a lado, e a ponte do vendido ao que sobrou (com as despesas). Cada gráfico tem como título a resposta, e o Ver como tabela mostra os mesmos números." },
+  { arquivo: "37-por-item", modulo: "Relações", titulo: "O que me dá dinheiro",
+    rota: "/relatorios", passos: [{ clicar: "Por item" }],
+    descricao: "Ranking das peças e serviços pela Sobra das OS de cada um, do que mais dá pro que menos dá, com o de cada R$ 100, sobra e a média da loja. Item sem custo informado avisa e leva a cadastrar o custo. O Ver todos abre a tabela completa." },
   { arquivo: "37a-curva-abc", modulo: "Relações", titulo: "Curva ABC",
-    rota: "/relatorios", passos: [{ aba: "Curva ABC" }],
-    descricao: "Peças, serviços e clientes em A, B e C pelo quanto rendem no período, por venda ou por lucro. O A são os poucos que fazem a maior parte: o que não pode faltar no estoque e os clientes mais importantes." },
-  { arquivo: "37b-fluxo-de-caixa", modulo: "Relações", titulo: "Fluxo de caixa projetado",
-    rota: "/relatorios", passos: [{ aba: "Fluxo de caixa" }],
-    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, dia a dia, com o saldo andando a partir de hoje. As contas recorrentes que ainda não foram criadas aparecem como \"prevista\", e as vencidas e não pagas entram no dia de hoje como \"atrasada\"." },
+    rota: "/relatorios", passos: [{ clicar: "Curva ABC" }],
+    descricao: "Peças, serviços e clientes em A, B e C pelo quanto rendem no período, por venda ou por lucro. O A são os poucos que fazem a maior parte: o que não pode faltar no estoque e os clientes mais importantes. Com menos de 10 itens, o título avisa que a curva ainda não diz muito." },
+  { arquivo: "37b-proximos-dias", modulo: "Relações", titulo: "Próximos 30 dias",
+    rota: "/relatorios", passos: [{ clicar: "Próximos 30 dias" }],
+    descricao: "O que vai entrar (contas a receber) e sair (contas a pagar) nos próximos 7, 30, 60 ou 90 dias, com o saldo em degraus a partir de hoje: o título diz quanto falta cobrir e o dia mais apertado vem apontado. O Ver como tabela abre dia a dia, com as contas previstas e atrasadas." },
+
+  { arquivo: "36c-relacoes-dre", modulo: "Relações", titulo: "Relações: o DRE mês a mês",
+    rota: "/relatorios", passos: [{ clicar: "DRE" }],
+    descricao: "A aba DRE conta o dinheiro da loja de cima pra baixo, um mês por coluna e o total no fim: receita bruta, o que saiu pra vender, o resultado bruto, as despesas e o resultado do mês. Cada valor traz embaixo quanto é da receita. Lançamento do Caixa sem grupo aparece numa faixa no topo com o botão Classificar, e o botão Imprimir / salvar em PDF gera o documento." },
+  { arquivo: "36d-relacoes-dre-despesas", modulo: "Relações", titulo: "Relações: o DRE com as despesas abertas",
+    // O botão da linha leva o sinal "(−)" junto do rótulo: não casa por texto exato.
+    rota: "/relatorios", passos: [{ clicar: "DRE" }, { seletor: 'button[aria-expanded]:has-text("Despesas operacionais")' }],
+    descricao: "Clicando numa linha com seta, o detalhe abre: as despesas operacionais mostram cada grupo e, dentro dele, as categorias do Caixa. Dentro das despesas, cada valor traz também quanto é do resultado bruto, pra ver o peso de cada gasto no que sobrou das vendas." },
 
   // --------------------------------------------------------------- garantias
   { arquivo: "38-garantias", modulo: "Garantias", titulo: "Garantias em vigor",
@@ -333,6 +467,9 @@ export const CENAS = [
   { arquivo: "50-config-juros", modulo: "Configurações", titulo: "Juros de parcelamento",
     rota: "/configuracoes", passos: [{ secao: "Juros de parcelamento" }, { rolar: 500 }],
     descricao: "O percentual cobrado em cada número de parcelas no cartão. É o que o faturamento da OS usa pra calcular o valor da parcela na frente do cliente." },
+  { arquivo: "50b-config-taxas-maquininha", modulo: "Configurações", titulo: "Taxas da maquininha",
+    rota: "/configuracoes", passos: [{ secao: "Taxas da maquininha" }, { rolar: 500 }],
+    descricao: "O que a maquininha cobra da loja em cada venda no cartão e em quantos dias o dinheiro cai. Linha em branco, o programa não calcula. Não muda o que o cliente paga nem o Caixa." },
   { arquivo: "51-config-categorias", modulo: "Configurações", titulo: "Categorias e depósitos",
     rota: "/configuracoes", passos: [{ secao: "Depósitos" }, { secao: "Categorias de produto" }, { rolar: 700 }],
     descricao: "Depósitos são os lugares físicos onde a peça fica guardada dentro da loja. As categorias organizam produtos, serviços e lançamentos de caixa — e são o que deixa os relatórios agrupados de um jeito que faz sentido pra loja." },

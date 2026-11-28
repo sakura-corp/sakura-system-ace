@@ -22,12 +22,13 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOrcamentosAbertos } from "@/hooks/useOrcamentosAbertos";
+import { useNumerosDoMenu } from "@/hooks/useNumerosDoMenu";
 import { guardarMenuEncolhido, lerMenuEncolhido } from "@/lib/menuLateral";
 import { definirTema, useTema } from "@/lib/tema";
+import type { CorDoNumero, NumeroDoMenu } from "@/schemas/numerosDoMenu";
 import { GRUPOS_DO_MENU, MODULOS, type GrupoDoMenu, type ModuloChave } from "@/types/operador";
 import { AreaRolavel } from "./AreaRolavel";
 import { Dica } from "./Dica";
@@ -71,8 +72,29 @@ interface ItemDoMenu {
   rota: string;
   grupo: GrupoDoMenu;
   icone: typeof FileText;
-  numero?: number;
+  numero?: NumeroDoMenu | null;
 }
+
+// O número ao lado do nome (#1092): a cor diz o tipo (vermelho, amarelo, verde;
+// nunca o laranja da ação), e a palavra vai na dica e no aria-label.
+const NUMERO_BASE =
+  // `-ml-1`: colado no nome (8 px, não os 12 do ícone), pra "Ordens de Serviço"
+  // caber inteiro com o número do lado no menu aberto.
+  "-ml-1 grid h-[18px] min-w-[20px] flex-none place-items-center rounded-full px-1 text-meta font-bold tabular-nums";
+const NUMERO_PERIGO = "bg-perigo/[0.13] text-perigo";
+const NUMERO_ATENCAO = "bg-atencao/[0.12] text-atencao";
+const NUMERO_OK = "bg-ok/[0.12] text-ok";
+const NUMERO_DO_TIPO: Record<CorDoNumero, string> = {
+  perigo: NUMERO_PERIGO,
+  atencao: NUMERO_ATENCAO,
+  ok: NUMERO_OK,
+};
+const PONTO_BASE = "absolute right-[9px] top-[7px] h-1.5 w-1.5 rounded-full";
+const PONTO_DO_TIPO: Record<CorDoNumero, string> = {
+  perigo: "bg-perigo",
+  atencao: "bg-atencao",
+  ok: "bg-ok",
+};
 
 // Os estados em strings separadas: o `npm run contraste` mede string por string.
 const ITEM_BASE =
@@ -111,23 +133,32 @@ export function Sidebar() {
 
   // "Orçamentos" (#379) não é um módulo à parte: é do mesmo módulo das OS,
   // então aparece pra quem tem "ordens_servico" e não ganha permissão nova.
-  const temOrdens = modulosLiberados.some((modulo) => modulo.chave === "ordens_servico");
-  const orcamentosAbertos = useOrcamentosAbertos(lojaAtual?.id, temOrdens);
-  const itensDoMenu: ItemDoMenu[] = modulosLiberados.flatMap((modulo) =>
-    modulo.chave === "ordens_servico"
+  const temModulo = (chave: ModuloChave) => modulosLiberados.some((modulo) => modulo.chave === chave);
+  const temOrdens = temModulo("ordens_servico");
+  // Os números do menu (#1092): cada busca só roda pra quem tem o módulo.
+  const numeros = useNumerosDoMenu(lojaAtual?.id, {
+    ordens_servico: temOrdens,
+    contas_pagar: temModulo("contas_pagar"),
+    contas_receber: temModulo("contas_receber"),
+  });
+  const numeroDoModulo = (chave: string): NumeroDoMenu | null =>
+    (numeros as Record<string, NumeroDoMenu | null | undefined>)[chave] ?? null;
+  const itensDoMenu: ItemDoMenu[] = modulosLiberados.flatMap((modulo) => {
+    const doModulo: ItemDoMenu = { ...modulo, numero: numeroDoModulo(modulo.chave) };
+    return modulo.chave === "ordens_servico"
       ? [
-          modulo,
+          doModulo,
           {
             chave: "orcamentos",
             label: "Orçamentos",
             rota: "/orcamentos",
             grupo: modulo.grupo,
             icone: FileText,
-            numero: orcamentosAbertos,
+            numero: numeroDoModulo("orcamentos"),
           },
         ]
-      : [modulo],
-  );
+      : [doModulo];
+  });
   // Grupo sem nenhum item liberado some inteiro (não fica um título sozinho).
   const grupos = GRUPOS_DO_MENU.map((grupo) => ({
     ...grupo,
@@ -341,34 +372,44 @@ export function Sidebar() {
 
 function ItemDoMenuLink({ item, encolhido }: { item: ItemDoMenu; encolhido: boolean }) {
   const Icone = item.icone;
+  const numero = item.numero ?? null;
+  const idDaFrase = useId();
   return (
-    <Dica texto={encolhido ? item.label : ""} lado="direita">
+    // A dica fica no link inteiro (não só no número): assim ela aparece também
+    // pra quem chega pelo Tab, não só pra quem passa o mouse. Aberto, o nome
+    // já está à vista, e a dica diz só o que o número quer dizer.
+    <Dica
+      texto={encolhido ? (numero ? `${item.label} · ${numero.dica}` : item.label) : (numero?.dica ?? "")}
+      lado="direita"
+    >
       <NavLink
         to={item.rota}
         end={item.chave === "painel"}
         className={({ isActive }) => `${ITEM_BASE} ${isActive ? ITEM_ATIVO : ITEM_PARADO}`}
+        // A frase do número é a DESCRIÇÃO do link, não parte do nome: o nome
+        // continua "Ordens de Serviço" (é por ele que o leitor de tela e os
+        // testes acham o item), e a frase vem logo depois.
+        aria-describedby={numero ? idDaFrase : undefined}
       >
         {({ isActive }) => (
           <>
             <Icone aria-hidden strokeWidth={1.9} className={isActive ? ICONE_ATIVO : ICONE_PARADO} />
-            <span className={encolhido ? "sr-only" : "min-w-0 flex-1 truncate"}>{item.label}</span>
-            {!!item.numero &&
-              (encolhido ? (
-                // Encolhido não cabe o número: um ponto laranja avisa que tem.
-                <span
-                  role="img"
-                  aria-label={`${item.numero} em aberto`}
-                  className="absolute right-[9px] top-[7px] h-1.5 w-1.5 rounded-full bg-acao"
-                />
-              ) : (
-                <span
-                  role="img"
-                  aria-label={`${item.numero} em aberto`}
-                  className="flex-none rounded-full bg-acao/20 px-[7px] py-px text-meta font-bold tabular-nums text-acao-clara"
-                >
-                  {item.numero}
+            <span className={encolhido ? "sr-only" : "min-w-0 truncate"}>{item.label}</span>
+            {numero && (
+              <>
+                {encolhido ? (
+                  // Encolhido não cabe o número: um ponto, na cor do tipo.
+                  <span aria-hidden data-numero-do-menu className={`${PONTO_BASE} ${PONTO_DO_TIPO[numero.cor]}`} />
+                ) : (
+                  <span aria-hidden data-numero-do-menu className={`${NUMERO_BASE} ${NUMERO_DO_TIPO[numero.cor]}`}>
+                    {numero.quantos}
+                  </span>
+                )}
+                <span id={idDaFrase} hidden>
+                  {numero.dica}
                 </span>
-              ))}
+              </>
+            )}
           </>
         )}
       </NavLink>

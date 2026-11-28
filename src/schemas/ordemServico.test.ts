@@ -8,10 +8,14 @@ import {
   ordemServicoFormSchema,
   paraItensValidos,
   paraPatchItem,
+  paraValoresFormulario,
   paraValoresItemExistente,
+  lucroPrevistoDaOrdem,
+  TEXTO_LUCRO_APARECE_AO_SALVAR,
   totaisDaOrdem,
   type ItemFormValues,
 } from "./ordemServico";
+import { lucroDaOrdem } from "./orcamento";
 import type { ItemOS, OrdemServico } from "@/types/os";
 
 function itemLancado(
@@ -288,5 +292,225 @@ describe("custo da peça avulsa", () => {
       message: "O custo não pode ser negativo.",
       path: ["custo_unitario"],
     });
+  });
+});
+
+describe("paraValoresFormulario", () => {
+  // A tabela nova de itens diz "Nenhum item ainda" (#1087): a OS e o
+  // orçamento novos começam sem linha em branco pra preencher.
+  it("OS ou orçamento novo começa sem item nenhum", () => {
+    expect(paraValoresFormulario(undefined, "func-1").itens).toEqual([]);
+  });
+
+  it("começa com o vendedor sendo quem está logado", () => {
+    expect(paraValoresFormulario(undefined, "func-1").vendedor_id).toBe("func-1");
+  });
+});
+
+describe("lucroPrevistoDaOrdem", () => {
+  const semCusto = new Map<string, number>();
+  const custoServico = new Map([["s1", 10]]);
+  const custoPeca = new Map([["p1", 100]]);
+
+  it("só com itens já gravados: usa o custo que veio do banco", () => {
+    // 2 × 150 + 1 × 60 = 360 vendidos; o banco diz que custou 200.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("peca", 2, 150), itemLancado("servico", 1, 60)],
+      custoDosExistentes: { custo: 200, completo: true },
+      itensFormulario: [],
+      custoPeca: null,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 160, falta: null });
+  });
+
+  // Item em digitação já escolhido do cadastro (peça p1 / serviço s1).
+  function novo(
+    tipo: "peca" | "servico",
+    quantidade: string,
+    preco: string,
+    desconto = "",
+  ): ItemFormValues {
+    return {
+      ...itemFormVazio,
+      tipo,
+      peca_id: tipo === "peca" ? "p1" : "",
+      servico_id: tipo === "servico" ? "s1" : "",
+      descricao: tipo === "peca" ? "Pneu" : "Montagem",
+      quantidade,
+      preco_unitario: preco,
+      desconto,
+    };
+  }
+
+  it("só com itens em digitação: a mesma conta do lucro da ordem", () => {
+    // Peça: 2 × 150 − 20 = 280, custo 2 × 100 = 200. Serviço: 60, custo 10.
+    // Vendido 340, custou 210: lucro 130.
+    const itensFormulario = [novo("peca", "2", "150", "20"), novo("servico", "1", "60")];
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario,
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 130, falta: null });
+    expect(lucro.lucro).toBe(
+      lucroDaOrdem(paraItensValidos(itensFormulario), custoPeca, custoServico).lucro,
+    );
+  });
+
+  it("com gravados e em digitação: soma os dois lucros", () => {
+    // 160 dos gravados (exemplo de cima) + 130 dos novos (exemplo de cima).
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("peca", 2, 150), itemLancado("servico", 1, 60)],
+      custoDosExistentes: { custo: 200, completo: true },
+      itensFormulario: [novo("peca", "2", "150", "20"), novo("servico", "1", "60")],
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 290, falta: null });
+  });
+
+  it("soma com centavos sem deixar cauda", () => {
+    // Gravado: 10,10 vendido, custo 0 = 10,10. Novo serviço: 0,20, custo 0.
+    // 10,1 + 0,2 em ponto flutuante dá 10,299999…; o lucro sai 10,30.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [itemLancado("servico", 1, 10.1)],
+      custoDosExistentes: { custo: 0, completo: true },
+      itensFormulario: [novo("servico", "1", "0.2")],
+      custoPeca,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 10.3, falta: null });
+  });
+
+  describe("quando não há número", () => {
+    // Peça digitada sem cadastro (avulsa, só no orçamento), com ou sem custo.
+    function avulsa(custo: string): ItemFormValues {
+      return { ...novo("peca", "1", "50"), peca_id: "", descricao: "Válvula", custo_unitario: custo };
+    }
+
+    it("peça do cadastro, mas quem está na tela não lê o custo das peças: aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "aparece-ao-salvar" });
+      expect(TEXTO_LUCRO_APARECE_AO_SALVAR).toBe("aparece ao salvar");
+    });
+
+    it("itens gravados sem o custo do banco: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("peca", 1, 150)],
+        custoDosExistentes: undefined,
+        itensFormulario: [],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("itens gravados com custo incompleto no banco: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("peca", 1, 150)],
+        custoDosExistentes: { custo: 90, completo: false },
+        itensFormulario: [],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("peça avulsa nova sem custo: custo não informado", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("servico", "1", "60"), avulsa("")],
+        custoPeca,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("custo não informado passa na frente do aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150"), avulsa("")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+
+    it("gravados sem custo do banco também passam na frente do aparece ao salvar", () => {
+      const lucro = lucroPrevistoDaOrdem({
+        itensExistentes: [itemLancado("servico", 1, 60)],
+        custoDosExistentes: undefined,
+        itensFormulario: [novo("peca", "1", "150")],
+        custoPeca: null,
+        custoServico,
+      });
+      expect(lucro).toEqual({ lucro: null, falta: "custo-nao-informado" });
+    });
+  });
+
+  it("serviço e peça avulsa com custo não precisam do custo das peças", () => {
+    // Serviço: 60 − 10 = 50. Avulsa: 50 − 30 = 20. Lucro 70.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [
+        novo("servico", "1", "60"),
+        { ...novo("peca", "1", "50"), peca_id: "", descricao: "Válvula", custo_unitario: "30" },
+      ],
+      custoPeca: null,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 70, falta: null });
+  });
+
+  it("sem item nenhum, o lucro é zero", () => {
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [],
+      custoPeca: null,
+      custoServico: semCusto,
+    });
+    expect(lucro).toEqual({ lucro: 0, falta: null });
+  });
+
+  it("ignora a linha vazia e a de descrição em branco", () => {
+    // A linha em branco tem peça do cadastro e preço, mas não seria gravada:
+    // não pode virar lucro nem pedir "aparece ao salvar".
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [
+        { ...itemFormVazio },
+        { ...novo("peca", "1", "150"), descricao: "   " },
+        novo("servico", "1", "60"),
+      ],
+      custoPeca: null,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: 50, falta: null });
+  });
+
+  it("vender abaixo do custo dá lucro negativo", () => {
+    // Peça vendida a 80 com custo 100: prejuízo de 20.
+    const lucro = lucroPrevistoDaOrdem({
+      itensExistentes: [],
+      custoDosExistentes: undefined,
+      itensFormulario: [novo("peca", "1", "80")],
+      custoPeca,
+      custoServico,
+    });
+    expect(lucro).toEqual({ lucro: -20, falta: null });
   });
 });

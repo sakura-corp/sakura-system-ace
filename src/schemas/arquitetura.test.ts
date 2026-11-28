@@ -29,9 +29,10 @@ import { describe, expect, it } from "vitest";
  * (`lib/garantiaDocumento.ts`) fazia o valor do item, os totais e as parcelas
  * à mão, e passou batido porque o teste só olhava `src/pages/`.
  *
- * Limite conhecido: o que está dentro de texto com crase é apagado antes de
- * procurar (ver `semComentarioNemTexto`), então uma conta escrita dentro do
- * HTML de um documento (`${a * b}`) continua invisível pra este teste.
+ * Limite conhecido: o texto com crase é apagado antes de procurar, mas o que
+ * está dentro de `${…}` fica (#979; ver `semComentarioNemTexto`). Ainda
+ * escapam a template dentro de outra template (`${c ? `…` : a * b}`) e a
+ * interpolação com chaves em dois níveis.
  */
 const PASTAS_VARRIDAS = ["src/pages", "src/lib"];
 
@@ -77,7 +78,15 @@ function semComentarioNemTexto(codigo: string): string {
     .replace(/\/\/[^\n]*/g, " ")
     .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
     .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
-    .replace(/`(?:[^`\\]|\\.)*`/g, "``")
+    // O texto da template string some, mas o que está dentro de `${…}` fica:
+    // a conta pode morar ali (#979: "3x de ${formatarMoeda(valor / parcelas)}"
+    // passou batido porque a template inteira virava "``"). Aceita um nível
+    // de chaves dentro da interpolação.
+    .replace(
+      /`(?:[^`\\]|\\.)*`/g,
+      (template) =>
+        "``" + (template.match(/\$\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g) ?? []).join(" "),
+    )
     .replace(/<\/[A-Za-z][^>]*>/g, " ")
     .replace(/\/>/g, " ");
 }
@@ -137,6 +146,17 @@ const SUSPEITAS: { nome: string; padrao: RegExp }[] = [
     // `schemas/dinheiro.ts` (fecha no centavo) ou uma função de `src/schemas/`.
     padrao:
       /reduce\(\s*\(\s*\w+\s*,\s*\w+\s*\)\s*=>\s*\w+\s*\+\s*\w+\.(?:valor|total)\b|\?\?\s*0\)\s*\+\s*\w+\.valor\b|\b(?:soma|total)\w*\s*\+\s*\w+\.valor\b/i,
+  },
+  {
+    nome: "valor dividido pelas parcelas na tela",
+    // #979: o faturamento mostrava "3x de R$ …" com `linha.valorCobrado /
+    // linha.parcelas`, e R$100 em 3x aparecia como 3x de R$33,33 (R$99,99),
+    // enquanto as parcelas de verdade somam R$100. O texto sai de
+    // `textoDasParcelas` e a lista de `calcularListaParcelas`
+    // (`schemas/faturamento.ts`).
+    // Aceita a divisão embrulhada: `/ Number(linha.parcelas)`, `/ (n.parcelas || 1)`
+    // e nomes como `numeroParcelas`.
+    padrao: /\/\s*(?:Number\s*\(\s*|\(\s*)*(?:[A-Za-z_$][\w$]*\??\.)*\w*parcelas\b/i,
   },
 ];
 

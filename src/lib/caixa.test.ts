@@ -15,13 +15,14 @@ import type { ContaPagar } from "@/types/contaPagar";
 type Chamada = { tabela: string; passos: string[]; dados?: unknown };
 const chamadas: Chamada[] = [];
 let linhasApagadas: { id: string }[] = [{ id: "mov-1" }];
+let linhasLidas: unknown[] | null = null;
 
 function construtor(tabela: string) {
   const chamada: Chamada = { tabela, passos: [] };
   chamadas.push(chamada);
   const resposta = () => {
     const apagou = chamada.passos.includes("delete");
-    return { data: apagou ? linhasApagadas : null, error: null };
+    return { data: apagou ? linhasApagadas : linhasLidas, error: null };
   };
   const q = {
     insert(dados: unknown) {
@@ -55,7 +56,7 @@ function construtor(tabela: string) {
 
 vi.mock("./supabase", () => ({ supabase: { from: (t: string) => construtor(t) } }));
 
-const { criarMovimentoCaixa, excluirMovimentoCaixa } = await import("./caixa");
+const { criarMovimentoCaixa, excluirMovimentoCaixa, listarMovimentosCaixaPorOrdem } = await import("./caixa");
 const { desfazerPagamento, pagarConta } = await import("./contasPagar");
 
 const LOJA = "00000000-0000-0000-0000-000000000001";
@@ -131,5 +132,16 @@ describe("excluirMovimentoCaixa", () => {
   it("avisa quando o banco apagou zero linhas, em vez de fingir que deu certo", async () => {
     linhasApagadas = [];
     await expect(excluirMovimentoCaixa("mov-1")).rejects.toThrow(/permissão/);
+  });
+});
+
+describe("listarMovimentosCaixaPorOrdem", () => {
+  it("devolve só os PAGAMENTOS da OS: a devolução da correção (#1182) fica de fora", async () => {
+    linhasLidas = [
+      { id: "e1", tipo: "entrada", valor: 650, forma_pagamento: "pix", ordem_servico_id: "os-1" },
+      { id: "s1", tipo: "saida", valor: 50, forma_pagamento: "dinheiro", ordem_servico_id: "os-1" },
+    ];
+    const movimentos = await listarMovimentosCaixaPorOrdem("os-1");
+    expect(movimentos.map((m) => m.id)).toEqual(["e1"]);
   });
 });

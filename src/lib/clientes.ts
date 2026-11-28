@@ -288,7 +288,7 @@ function veiculoParaFuncao(veiculo: VeiculoFormulario) {
  * porque quem tem OS pode não ter o módulo Clientes — e aí o insert direto
  * na tabela é recusado. A função grava só o que as janelinhas de cadastro
  * rápido pedem (nome, telefone, tipo e CPF/CNPJ, a origem — #1021, migration
- * 0091 — e um veículo) e devolve só os ids. Banco anterior à 0091 ignora as
+ * 0093 — e um veículo) e devolve só os ids. Banco anterior à 0093 ignora as
  * chaves da origem e cadastra igual.
  */
 export async function cadastrarClienteRapido(

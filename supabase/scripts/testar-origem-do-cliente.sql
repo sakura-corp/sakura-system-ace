@@ -1,5 +1,5 @@
 -- Sakura System — AutoCenter Edition
--- TESTE da migration 0091 ("De onde veio", a origem do cliente, #1021). NÃO é
+-- TESTE da migration 0093 ("De onde veio", a origem do cliente, #1021). NÃO é
 -- migration, e NUNCA deve ser rodado no Supabase de verdade — grava dado de
 -- teste (dentro de uma transação que é desfeita no fim, então não sobra nada).
 --
@@ -30,7 +30,7 @@ insert into clientes (id, nome, origem, origem_detalhe) values
   ('10210000-0000-0000-0000-0000000000c9', 'Cliente que já tinha origem (#1021)', 'google', 'busca "pneu araraquara"');
 
 -- A segunda rodada: idempotente, sem erro.
-\ir ../migrations/0091_origem_do_cliente.sql
+\ir ../migrations/0093_origem_do_cliente.sql
 
 do $$
 declare
@@ -49,8 +49,8 @@ declare
   n          int;
 begin
   -- 1. a migration grava a versão, e a segunda rodada não estragou o que havia
-  if not exists (select 1 from schema_versao where versao = 91) then
-    raise exception 'FALHOU 1: a 0091 não gravou a versão 91';
+  if not exists (select 1 from schema_versao where versao = 93) then
+    raise exception 'FALHOU 1: a 0093 não gravou a versão 93';
   end if;
   select * into linha from clientes where id = '10210000-0000-0000-0000-0000000000c9';
   if linha.origem is distinct from 'google' or linha.origem_detalhe is distinct from 'busca "pneu araraquara"' then

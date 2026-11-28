@@ -4,6 +4,7 @@ import {
   avisoPercentualTributosSimplesVazio,
   erroPercentualTributosSimples,
   percentualTributosSimplesParaSalvar,
+  percentuaisDasPecasParaSalvar,
 } from "./percentualTributosSimples";
 import { mensagemDeErro } from "@/lib/errors";
 
@@ -66,5 +67,21 @@ describe("percentualTributosSimplesParaSalvar", () => {
       erro: null,
     });
     expect(percentualTributosSimplesParaSalvar(null, 6.5)).toEqual({ campos: {}, erro: null });
+  });
+});
+
+describe("percentuaisDasPecasParaSalvar", () => {
+  it("no Simples, arredonda em 2 casas e vazio vira null", () => {
+    expect(percentuaisDasPecasParaSalvar("simples_nacional", 3.456, null)).toEqual({
+      campos: { percentual_tributos_pecas: 3.46, percentual_estimativa_icms_st: null },
+      erro: null,
+    });
+  });
+  it("recusa fora de 0 a 100, nos dois campos", () => {
+    expect(percentuaisDasPecasParaSalvar("simples_nacional", 101, 1).erro).toMatch(/peças/);
+    expect(percentuaisDasPecasParaSalvar("simples_nacional", 1, -1).erro).toMatch(/ICMS-ST/);
+  });
+  it("fora do Simples não manda nada", () => {
+    expect(percentuaisDasPecasParaSalvar("lucro_presumido", 500, 500)).toEqual({ campos: {}, erro: null });
   });
 });

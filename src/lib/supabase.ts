@@ -30,6 +30,31 @@ function avisar(estado: EstadoDaRede) {
   }
 }
 
+const ouvintesDaGravacao = new Set<() => void>();
+
+/**
+ * Avisa depois de cada gravação no banco que deu certo (POST/PATCH/PUT/DELETE
+ * no `/rest/v1/`, o `rpc` incluído). O número do menu (#1092) ouve isto pra
+ * mudar logo depois de pagar, receber, concluir ou faturar, sem depender de
+ * cada tela lembrar de avisar. Leitura não avisa. Devolve a função que cancela.
+ */
+export function aoGravarNoBanco(ouvinte: () => void): () => void {
+  ouvintesDaGravacao.add(ouvinte);
+  return () => {
+    ouvintesDaGravacao.delete(ouvinte);
+  };
+}
+
+function avisarGravacao() {
+  for (const ouvinte of [...ouvintesDaGravacao]) {
+    try {
+      ouvinte();
+    } catch (erro) {
+      console.error("Ouvinte da gravação falhou:", erro);
+    }
+  }
+}
+
 // #374: quanto esperar antes de cada nova tentativa de uma leitura que caiu.
 const ESPERAS_ENTRE_TENTATIVAS_MS = [1000, 2000, 4000];
 
@@ -138,6 +163,7 @@ export function criarFetchDoPrograma(
           : await fetchBase(input, init);
         redeCaiu = false;
         avisar("respondeu");
+        if (!ehLeitura && resposta.ok && enderecoDoPedido(input).includes("/rest/v1/")) avisarGravacao();
         return resposta;
       } catch (erro) {
         if (!ehErroDeRede(erro)) throw erro;

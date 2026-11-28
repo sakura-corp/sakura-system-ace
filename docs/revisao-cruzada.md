@@ -12,14 +12,23 @@
 | **Reserva** | Só quando a Sofia estiver sem tokens: um colega pode revisar no lugar dela, e a Sofia decide depois se confere. Ela avisa quando for o caso. |
 | **O que o PR leva** | CI verde e a revisão de código do Claude colada na descrição. |
 
+- **A marca do painel (última linha da revisão do Claude colada no PR).** O painel lê uma marca
+  escondida no comentário da revisão, só quando o comentário é da conta da Sofia. Termine a revisão
+  com uma destas linhas, com o commit revisado (o `headRefOid` do PR, 40 letras):
+  - pode aprovar (mesmo com teste à mão devido): `<!-- painel:revisao=aprovada commit=<sha> -->`
+  - devolvido (o que falta é de quem fez): `<!-- painel:revisao=devolvida commit=<sha> -->`
+
+  **Escreva no PR o que falta**: teste à mão com os passos exatos, ou o ajuste pedido. Uma marca por
+  revisão; commit novo depois: cole uma revisão nova, com o commit novo. Não edite a marca de uma
+  revisão antiga. De outra conta, o painel ignora.
 - **Quem mescla:** só a Sofia, ou sessão com ordem escrita dela (frase "Quem mescla" no topo do
   `CLAUDE.md`). O **plantão do Tiago** (PR só de documentação, quando a Sofia avisar que a cota
   acabou) segue o mesmo: CI verde e revisão do Claude colada.
 - **PR da própria Sofia** entra pela exceção de administradora da `main` (Repository admin, Always
   allow), porque ela não aprova o próprio PR.
 - **Banco, dinheiro e nota** (`banco-dinheiro-nota`): o rótulo pode continuar nos PRs pra avisar que
-  é área sensível. Teste real no PC continua valendo. Migration em loja ou produção: só a Sofia;
-  no banco de teste (`ssace-teste`) a equipe pode ensaiar e contar no PR.
+  é área sensível. Teste real no PC continua valendo. Migration em loja, produção ou no banco de
+  teste (`ssace-teste`): só a Sofia aplica (`docs/supabase-de-teste.md`, "Quem aplica migration").
 - Nada de nome civil, valor ou dado de cliente em comentário de PR: o repositório é público.
 
 ## Se a reserva for ligada (a Sofia sem tokens)

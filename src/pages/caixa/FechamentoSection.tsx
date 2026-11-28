@@ -1,16 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUp, Check, TriangleAlert, Undo2 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { ArrowLeft, ArrowRight, ArrowUp, Calculator, Check, ChevronDown, TriangleAlert, Undo2 } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useForm, type FieldErrors, type UseFormRegister } from "react-hook-form";
 import { z } from "zod";
 import { Botao } from "@/components/Botao";
 import { BotaoResumoDono } from "@/components/BotaoResumoDono";
+import { useConfirmar } from "@/components/JanelaDeConfirmar";
+import { Passos } from "@/components/Passos";
 import { Selo } from "@/components/Selo";
 import { Valor } from "@/components/Valor";
 import { diaLocal, hojeLocal } from "@/lib/datas";
 import { mensagemDeErro } from "@/lib/errors";
 import { listarContasPagar } from "@/lib/contasPagar";
-import { desfazerFechamentoCaixa, fecharCaixa } from "@/lib/fechamentoCaixa";
+import { desfazerFechamentoCaixa, fecharCaixa, LIMITE_DE_FECHAMENTOS } from "@/lib/fechamentoCaixa";
 import { listarOrdens } from "@/lib/ordensServico";
 import { formatarMoeda } from "@/schemas/dinheiro";
 import { custoDaOrdemPeloBanco, type CustoDoBanco } from "@/schemas/metricasCaixa";
@@ -18,12 +20,16 @@ import { mostraBlocosDeOS } from "@/schemas/painelInicio";
 import { numerosDoResumoDono, periodoDoResumo, textoResumoDono } from "@/schemas/whatsapp";
 import {
   diferencaDoFechamento,
+  ehPrimeiroFechamento,
+  fraseDaDiferenca,
   fundoSugerido,
+  NOTAS_DA_GAVETA,
   lancamentosDepoisDoFechamento,
   momentoDoLancamento,
   resumirDiaParaFechamento,
   rotuloDaForma,
   situacaoDaDiferenca,
+  somarAGaveta,
   somarDiferencas,
   totaisParaGravar,
 } from "@/schemas/fechamentoCaixa";
@@ -41,6 +47,11 @@ interface FechamentoSectionProps {
   /** Só admin da loja desfaz — o banco confere de novo (migration 0058). */
   podeDesfazer: boolean;
   onAtualizado: () => Promise<void>;
+  /**
+   * Avisa quem abriu a janela se há valor digitado no fechamento (#1090): com
+   * valor, o Esc e o ✕ perguntam antes de jogar a contagem fora.
+   */
+  aoMudarRascunho?: (temValorDigitado: boolean) => void;
 }
 
 // Schema pequeno, de um formulário que não é cadastro de entidade — mesmo
@@ -52,6 +63,9 @@ const fechamentoSchema = z.object({
     .string()
     .refine((v) => v.trim() !== "" && Number(v) >= 0, "Informe quanto tem na gaveta (pode ser zero)."),
   observacao: z.string(),
+  // A ajuda pra contar as notas (#1090): só ajuda a chegar no contado.
+  notas: z.record(z.string(), z.string()),
+  moedas: z.string(),
 });
 type FechamentoValues = z.infer<typeof fechamentoSchema>;
 
@@ -99,6 +113,7 @@ export function FechamentoSection({
   fechamentos,
   podeDesfazer,
   onAtualizado,
+  aoMudarRascunho,
 }: FechamentoSectionProps) {
   const hoje = hojeLocal();
   const [dia, setDia] = useState(hoje);
@@ -149,6 +164,10 @@ export function FechamentoSection({
           hoje={hoje}
           movimentosDoDia={movimentosDoDia}
           fundoInicial={fundoSugerido(fechamentos, dia)}
+          // A lista traz só os fechamentos mais novos: cheia, pode haver um
+          // mais antigo que ela não mostra, e aí não dá pra dizer "o primeiro".
+          primeiroFechamento={fechamentos.length < LIMITE_DE_FECHAMENTOS && ehPrimeiroFechamento(fechamentos, dia)}
+          aoMudarRascunho={aoMudarRascunho}
           onAtualizado={onAtualizado}
         />
       )}
@@ -158,12 +177,25 @@ export function FechamentoSection({
   );
 }
 
+/** Os 4 passos do fechamento (#1090), na ordem da conversa no balcão. */
+const PASSOS_DO_FECHAMENTO = [
+  { nome: "Troco da manhã" },
+  { nome: "Contar a gaveta" },
+  { nome: "Pix e cartão" },
+  { nome: "Conferir e fechar" },
+] as const;
+
+/** O botão laranja de cada passo diz pra onde vai (o último é o "Fechar"). */
+const PROXIMO = ["Contar a gaveta", "Ver Pix e cartão", "Conferir e fechar"] as const;
+
 function FecharDia({
   lojaId,
   dia,
   hoje,
   movimentosDoDia,
   fundoInicial,
+  primeiroFechamento,
+  aoMudarRascunho,
   onAtualizado,
 }: {
   lojaId: string;
@@ -171,46 +203,123 @@ function FecharDia({
   hoje: string;
   movimentosDoDia: MovimentoCaixa[];
   fundoInicial: number;
+  primeiroFechamento: boolean;
+  aoMudarRascunho?: (temValorDigitado: boolean) => void;
   onAtualizado: () => Promise<void>;
 }) {
   const [erro, setErro] = useState<string | null>(null);
+  const [passo, setPasso] = useState(0);
+  const [ajudaAberta, setAjudaAberta] = useState(false);
+  const [fechando, setFechando] = useState(false);
+  const { confirmar, janela } = useConfirmar();
+  const proximoId = useId();
+  const fecharId = useId();
+  const fundoRef = useRef<HTMLInputElement | null>(null);
+  const contadoRef = useRef<HTMLInputElement | null>(null);
   const {
     register,
     watch,
+    trigger,
+    setValue,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isDirty },
   } = useForm<FechamentoValues>({
     resolver: zodResolver(fechamentoSchema),
-    defaultValues: { fundo: fundoInicial ? String(fundoInicial) : "", contado: "", observacao: "" },
+    defaultValues: {
+      fundo: fundoInicial ? String(fundoInicial) : "",
+      contado: "",
+      observacao: "",
+      notas: NOTAS_VAZIAS,
+      moedas: "",
+    },
   });
 
   const fundo = Number(watch("fundo")) || 0;
   const contadoTexto = watch("contado");
+  const notas = watch("notas");
+  const moedas = watch("moedas");
   const resumo = resumirDiaParaFechamento(movimentosDoDia, fundo);
   const temContado = contadoTexto.trim() !== "" && Number(contadoTexto) >= 0;
   const diferenca = temContado ? diferencaDoFechamento(resumo.esperado, Number(contadoTexto)) : null;
-  const situacao = diferenca === null ? null : situacaoDaDiferenca(diferenca);
+
+  // A ajuda pra contar as notas (opcional): a soma vai pro campo do contado.
+  // A conta mora em schemas/fechamentoCaixa.ts (somarAGaveta).
+  const contagem = somarAGaveta(notasPelaNota(notas), moedas);
+  const algoNaAjuda = Object.values(notas).some((v) => v.trim() !== "") || moedas.trim() !== "";
+  // `contadoDaAjuda`: o valor do campo veio da soma (e não da mão). Apagar as
+  // notas apaga junto o que veio delas; o que foi digitado à mão fica.
+  const contadoDaAjuda = useRef(false);
+  useEffect(() => {
+    if (!ajudaAberta) return;
+    if (algoNaAjuda) {
+      setValue("contado", contagem.total.toFixed(2), { shouldDirty: true, shouldValidate: true });
+      contadoDaAjuda.current = true;
+    } else if (contadoDaAjuda.current) {
+      setValue("contado", "", { shouldDirty: true });
+      contadoDaAjuda.current = false;
+    }
+  }, [ajudaAberta, algoNaAjuda, contagem.total, setValue]);
+
+  // Quem abriu a janela pergunta antes de fechar com valor digitado (Esc).
+  useEffect(() => {
+    aoMudarRascunho?.(isDirty);
+  }, [isDirty, aoMudarRascunho]);
+  const aoMudarRascunhoRef = useRef(aoMudarRascunho);
+  aoMudarRascunhoRef.current = aoMudarRascunho;
+  useEffect(() => () => aoMudarRascunhoRef.current?.(false), []);
+
+  // O foco vai pro que se faz no passo: o campo do troco, o campo do contado,
+  // e nos dois últimos o botão laranja (Enter segue). Depois do quadro de
+  // agora: a janela em volta põe o foco no ✕ ao abrir, e ela vem depois.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const alvo =
+        passo === 0
+          ? fundoRef.current
+          : passo === 1
+            ? contadoRef.current
+            : document.getElementById(passo === 2 ? proximoId : fecharId);
+      alvo?.focus();
+    });
+    return () => clearTimeout(t);
+  }, [passo, proximoId, fecharId]);
+
+  // Anda a partir do passo DESTE desenho (e não do mais novo): clicar 2 vezes
+  // no laranja, antes de a tela trocar, leva pro mesmo passo, sem pular um.
+  async function avancar() {
+    if (passo === 0 && !(await trigger("fundo"))) return;
+    if (passo === 1 && !(await trigger("contado"))) return;
+    setPasso(Math.min(passo + 1, PASSOS_DO_FECHAMENTO.length - 1));
+  }
+
+  // O formulário inteiro é conferido no fim: se algo faltar, volta pro passo
+  // do campo, onde a mensagem aparece (senão o "Fechar" não faria nada).
+  function voltarProCampoComErro(erros: FieldErrors<FechamentoValues>) {
+    if (erros.fundo) setPasso(0);
+    else if (erros.contado) setPasso(1);
+  }
 
   async function aoFechar(valores: FechamentoValues) {
     setErro(null);
     const contado = Number(valores.contado);
     const dif = diferencaDoFechamento(resumo.esperado, contado);
-    const consequencia =
-      dif === 0
-        ? "O caixa bateu certinho — nenhum lançamento será feito."
-        : dif < 0
-          ? `Faltaram ${formatarMoeda(-dif)}. Isso vira uma Saída "Quebra de caixa" em dinheiro.`
-          : `Sobraram ${formatarMoeda(dif)}. Isso vira uma Entrada "Sobra de caixa" em dinheiro.`;
-    if (
-      !confirm(
-        `Fechar o caixa de ${diaBonito(dia)}?\n\n` +
-          `Esperado na gaveta: ${formatarMoeda(resumo.esperado)}\n` +
-          `Contado: ${formatarMoeda(contado)}\n\n${consequencia}\n\n` +
-          "Depois de fechado, só um administrador consegue desfazer.",
-      )
-    ) {
-      return;
-    }
+    const certo = await confirmar({
+      acao: `Fechar o caixa de ${diaBonito(dia)}`,
+      explicacao: (
+        <>
+          <p>
+            {dif === 0
+              ? "Bateu certinho: nenhum lançamento é feito."
+              : `${fraseDaDiferenca(dif).frase}: ${consequenciaDaDiferenca(dif)}.`}
+          </p>
+          <p className="mt-2">Depois de fechado, só um administrador consegue desfazer.</p>
+        </>
+      ),
+      botao: "Fechar caixa",
+      tom: "normal",
+    });
+    if (!certo) return;
+    setFechando(true);
     try {
       await fecharCaixa({
         lojaId,
@@ -226,128 +335,383 @@ function FecharDia({
     } catch (err) {
       console.error("Erro ao fechar o caixa:", err);
       setErro(mensagemDeErro(err));
+    } finally {
+      setFechando(false);
     }
   }
 
+  function aoEnviar(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (passo < PASSOS_DO_FECHAMENTO.length - 1) void avancar();
+    else void handleSubmit(aoFechar, voltarProCampoComErro)(evento);
+  }
+
+  // Enter no campo do passo já segue pro próximo (sem isto, o Enter do
+  // programa inteiro levaria o foco pro botão, e precisaria de outro Enter).
+  function enterSegue(evento: KeyboardEvent<HTMLInputElement>) {
+    if (evento.key !== "Enter") return;
+    evento.preventDefault();
+    evento.stopPropagation();
+    void avancar();
+  }
+
+  const fundoCampo = register("fundo");
+  const contadoCampo = register("contado");
+
   return (
-    <form onSubmit={handleSubmit(aoFechar)} className="space-y-5 sakura-card p-6">
-      <h2 className="font-titulo text-subtitulo font-semibold text-texto">
-        Fechar o caixa de {diaBonito(dia)}
-      </h2>
+    <>
+      <form onSubmit={aoEnviar} noValidate className="sakura-card space-y-6 p-6">
+        <div className="space-y-4">
+          <h2 className="font-titulo text-subtitulo font-semibold text-texto">Fechar o caixa de {diaBonito(dia)}</h2>
+          <Passos
+            rotulo="Fechar o caixa"
+            passos={PASSOS_DO_FECHAMENTO}
+            atual={passo}
+            aoVoltar={(indice) => setPasso(indice)}
+          />
+        </div>
 
-      {erro && (
-        <Aviso tipo="perigo" role="alert" className="text-corpo">
-          {erro}
-        </Aviso>
-      )}
+        {erro && (
+          <Aviso tipo="perigo" role="alert" className="text-corpo">
+            {erro}
+          </Aviso>
+        )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-3">
-          <p className="text-corpo font-semibold text-texto">Dinheiro que devia estar na gaveta</p>
-          <label className="flex items-center justify-between gap-3 text-corpo">
-            <span className="text-texto-2">Troco que já estava na gaveta ao abrir</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0,00"
-              aria-invalid={errors.fundo ? true : undefined}
-              {...register("fundo")}
-              className={`${campo} w-36 text-right tabular-nums`}
-            />
-          </label>
-          {errors.fundo && <p className="text-rotulo text-perigo">{errors.fundo.message}</p>}
-          <LinhaConta rotulo="+ Entradas em dinheiro" valor={resumo.entradasDinheiro} />
-          <LinhaConta rotulo="− Saídas em dinheiro" valor={-resumo.saidasDinheiro} />
-          <div className="flex items-center justify-between border-t border-linha-forte pt-3">
-            <span className="text-corpo font-semibold text-texto">= Esperado na gaveta</span>
-            <Valor valor={resumo.esperado} className="font-titulo text-destaque font-semibold tabular-nums" />
-          </div>
+        <div>
+          {passo === 0 && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="sakura-rotulo">
+                  Troco que já estava na gaveta ao abrir
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    aria-invalid={errors.fundo ? true : undefined}
+                    {...fundoCampo}
+                    ref={(el) => {
+                      fundoCampo.ref(el);
+                      fundoRef.current = el;
+                    }}
+                    onKeyDown={enterSegue}
+                    className={`${campo} h-12 text-right font-titulo text-destaque font-semibold tabular-nums`}
+                  />
+                </label>
+                {errors.fundo && <p className="text-rotulo text-perigo">{errors.fundo.message}</p>}
+                {primeiroFechamento ? (
+                  <Aviso tipo="info" className="text-rotulo">
+                    Primeiro fechamento: diga quanto tinha na gaveta ao abrir, o troco da manhã. Nos próximos, o
+                    programa já traz o do último fechamento.
+                  </Aviso>
+                ) : (
+                  <p className="text-rotulo text-texto-2">
+                    Já vem o troco do último fechamento. Mude se hoje começou com outro valor.
+                  </p>
+                )}
+              </div>
 
-          {resumo.semForma.quantidade > 0 && (
-            <Aviso tipo="atencao" icone={TriangleAlert} className="text-rotulo">
-              {resumo.semForma.quantidade === 1
-                ? "1 lançamento está"
-                : `${resumo.semForma.quantidade} lançamentos estão`}{" "}
-              sem forma de pagamento ({formatarMoeda(resumo.semForma.entradas)} de entrada,{" "}
-              {formatarMoeda(resumo.semForma.saidas)} de saída) e não entraram nesta conta. Se foram em
-              dinheiro, é provável que a diferença venha daí.
-            </Aviso>
+              <div className="space-y-2 rounded-xl bg-poco p-4">
+                <p className="text-corpo font-semibold text-texto">Dinheiro que devia estar na gaveta</p>
+                <LinhaConta rotulo="Troco ao abrir" valor={resumo.fundoTroco} />
+                <LinhaConta rotulo="+ Entradas em dinheiro" valor={resumo.entradasDinheiro} />
+                <LinhaConta rotulo="− Saídas em dinheiro" valor={-resumo.saidasDinheiro} />
+                <div className="flex items-center justify-between gap-4 border-t border-linha-forte pt-2">
+                  <span className="text-corpo font-semibold text-texto">= Devia ter na gaveta</span>
+                  <span className="font-titulo text-destaque font-semibold tabular-nums text-texto">
+                    {formatarMoeda(resumo.esperado)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {passo === 1 && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="min-w-0 space-y-4">
+                <label className="sakura-rotulo">
+                  Quanto tem na gaveta agora (contado)
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    readOnly={ajudaAberta && algoNaAjuda}
+                    aria-invalid={errors.contado ? true : undefined}
+                    {...contadoCampo}
+                    onChange={(e) => {
+                      contadoDaAjuda.current = false;
+                      return contadoCampo.onChange(e);
+                    }}
+                    ref={(el) => {
+                      contadoCampo.ref(el);
+                      contadoRef.current = el;
+                    }}
+                    onKeyDown={enterSegue}
+                    className={`${campo} h-12 text-right font-titulo text-destaque font-semibold tabular-nums`}
+                  />
+                </label>
+                {errors.contado && <p className="text-rotulo text-perigo">{errors.contado.message}</p>}
+
+                <AjudaDasNotas
+                  aberta={ajudaAberta}
+                  aoAlternar={() => setAjudaAberta((a) => !a)}
+                  contagem={contagem}
+                  registrar={register}
+                />
+              </div>
+
+              {/* Grudada no alto: contando as notas lá embaixo, a diferença
+                  continua à vista. */}
+              <div className="min-w-0 space-y-4 self-start md:sticky md:-top-[18px]">
+                {/* Anunciado ao digitar: quem conta a gaveta olhando pro
+                    dinheiro ouve se bateu sem tirar o olho dele. A região fica
+                    sempre na tela (vazia antes do primeiro número): se ela
+                    nascesse junto com o aviso, o leitor de tela pularia o
+                    primeiro. */}
+                <div aria-live="polite">
+                  {diferenca !== null && <DiferencaGrande diferenca={diferenca} esperado={resumo.esperado} />}
+                </div>
+                {diferenca === null && (
+                  <div className="rounded-xl border border-linha px-4 py-4">
+                    <p className="text-rotulo text-texto-2">Devia ter na gaveta</p>
+                    <p className="font-titulo text-metrica font-semibold tabular-nums text-texto">
+                      {formatarMoeda(resumo.esperado)}
+                    </p>
+                    <p className="mt-1 text-rotulo text-texto-2">
+                      Conte o dinheiro e digite ao lado: a diferença aparece aqui.
+                    </p>
+                  </div>
+                )}
+
+                {resumo.semForma.quantidade > 0 && (
+                  <Aviso tipo="atencao" icone={TriangleAlert} className="text-rotulo">
+                    {resumo.semForma.quantidade === 1
+                      ? "1 lançamento está"
+                      : `${resumo.semForma.quantidade} lançamentos estão`}{" "}
+                    sem forma de pagamento ({formatarMoeda(resumo.semForma.entradas)} de entrada,{" "}
+                    {formatarMoeda(resumo.semForma.saidas)} de saída) e não entraram nesta conta. Se foram em
+                    dinheiro, é provável que a diferença venha daí.
+                  </Aviso>
+                )}
+              </div>
+            </div>
+          )}
+
+          {passo === 2 && (
+            <div className="space-y-4">
+              <p className="text-corpo text-texto-2">
+                Pix e cartão não passam pela gaveta. Confira com o extrato do banco e da maquininha: eles não mudam a
+                conta da gaveta.
+              </p>
+              {resumo.outrasFormas.length > 0 ? (
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {resumo.outrasFormas.map((f) => (
+                    <li key={f.forma} className="rounded-xl border border-linha px-4 py-3">
+                      <p className="text-rotulo font-medium text-texto-2">{f.rotulo}</p>
+                      <p className="text-right font-titulo text-destaque font-semibold tabular-nums text-texto">
+                        {formatarMoeda(f.entradas)}
+                      </p>
+                      {f.saidas > 0 && (
+                        <p className="text-right text-rotulo tabular-nums text-texto-2">
+                          saídas: {formatarMoeda(f.saidas)}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="rounded-xl border border-linha px-4 py-4 text-corpo text-texto-2">
+                  Neste dia não entrou Pix nem cartão. Pode seguir.
+                </p>
+              )}
+            </div>
+          )}
+
+          {passo === 3 && (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="min-w-0 space-y-4">
+                {diferenca !== null && <DiferencaGrande diferenca={diferenca} esperado={resumo.esperado} />}
+              </div>
+              <div className="min-w-0 space-y-4">
+                <div className="space-y-2 rounded-xl bg-poco p-4">
+                  <LinhaConta rotulo="Troco ao abrir" valor={resumo.fundoTroco} />
+                  <LinhaConta rotulo="Devia ter na gaveta" valor={resumo.esperado} />
+                  <LinhaConta rotulo="Contado" valor={Number(contadoTexto) || 0} />
+                </div>
+                <label className="sakura-rotulo">
+                  Observação (se sobrou ou faltou, o que pode ter sido)
+                  <textarea rows={3} {...register("observacao")} className={campo} />
+                </label>
+              </div>
+            </div>
           )}
         </div>
 
-        <div className="space-y-3">
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="font-semibold text-texto">Quanto tem na gaveta agora (contado)</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="0,00"
-              autoFocus
-              aria-invalid={errors.contado ? true : undefined}
-              {...register("contado")}
-              className={`${campo} h-12 font-titulo text-destaque font-semibold tabular-nums`}
-            />
-            {errors.contado && <span className="text-rotulo text-perigo">{errors.contado.message}</span>}
-          </label>
-
-          {/* Anunciado ao digitar: quem conta a gaveta olhando pro dinheiro
-              ouve se bateu sem tirar o olho dele. A região fica sempre na
-              tela (vazia antes do primeiro número): se ela nascesse junto com
-              o aviso, o leitor de tela pularia o primeiro. */}
-          <div aria-live="polite">
-            {situacao && diferenca !== null && (
-              <Aviso
-                tipo={situacao === "bateu" ? "ok" : situacao === "faltou" ? "perigo" : "atencao"}
-                icone={situacao === "bateu" ? Check : situacao === "faltou" ? TriangleAlert : ArrowUp}
-                className="text-corpo font-semibold"
-              >
-                {situacao === "bateu"
-                  ? "Bateu certinho."
-                  : situacao === "faltou"
-                    ? `Faltam ${formatarMoeda(-diferenca)} — vira uma Saída "Quebra de caixa".`
-                    : `Sobram ${formatarMoeda(diferenca)} — vira uma Entrada "Sobra de caixa".`}
-              </Aviso>
-            )}
-          </div>
-
-          <label className="flex flex-col gap-1 text-corpo">
-            <span className="text-texto-2">Observação (se sobrou ou faltou, o que pode ter sido)</span>
-            <textarea rows={2} {...register("observacao")} className={campo} />
-          </label>
+        {/* Grudado no pé da janela: numa tela baixa (1366 × 700), o passo
+            rola e o "Voltar" e o laranja continuam à vista. O −18 px é o
+            respiro de baixo do corpo da janela (o `py-[18px]` do Modal): sem
+            ele, o que rola apareceria por baixo do rodapé. */}
+        <div className="sticky -bottom-[18px] z-10 -mx-6 -mb-6 flex items-center justify-between gap-4 rounded-b-[1.125rem] border-t border-linha bg-cartao px-6 py-4">
+          {passo > 0 ? (
+            <Botao variante="fantasma" icone={<ArrowLeft />} onClick={() => setPasso((p) => p - 1)}>
+              Voltar
+            </Botao>
+          ) : (
+            <span />
+          )}
+          {passo < PASSOS_DO_FECHAMENTO.length - 1 ? (
+            <Botao
+              id={proximoId}
+              variante="principal"
+              tamanho="grande"
+              type="submit"
+              icone={<ArrowRight />}
+              // O 2º clique de um clique duplo cairia no mesmo botão, já com o
+              // nome do passo seguinte, e pularia um passo: ele é ignorado.
+              onClick={(e) => {
+                if (e.detail > 1) e.preventDefault();
+              }}
+            >
+              {PROXIMO[passo]}
+            </Botao>
+          ) : (
+            <Botao id={fecharId} variante="principal" tamanho="grande" type="submit" ocupado={fechando}>
+              {fechando ? "Fechando..." : `Fechar o caixa de ${diaBonito(dia)}`}
+            </Botao>
+          )}
         </div>
-      </div>
+      </form>
+      {janela}
+    </>
+  );
+}
 
-      {resumo.outrasFormas.length > 0 && (
-        <div>
-          <p className="mb-2 text-corpo font-semibold text-texto">
-            Não passa pela gaveta — confira com o extrato
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {resumo.outrasFormas.map((f) => (
-              <div key={f.forma} className="rounded-xl bg-poco px-4 py-3">
-                <p className="text-rotulo font-medium text-texto-2">{f.rotulo}</p>
-                <p className="text-corpo font-semibold tabular-nums text-texto">
-                  {formatarMoeda(f.entradas)}
-                  {f.saidas > 0 && (
-                    <span className="block text-rotulo font-normal text-texto-2">
-                      saídas: {formatarMoeda(f.saidas)}
-                    </span>
-                  )}
-                </p>
-              </div>
-            ))}
+/** O que acontece com a diferença, em palavras (o lançamento que o banco faz). */
+function consequenciaDaDiferenca(diferenca: number): string {
+  return diferenca < 0
+    ? 'vira uma Saída "Quebra de caixa" em dinheiro'
+    : 'vira uma Entrada "Sobra de caixa" em dinheiro';
+}
+
+/**
+ * O número que decide o fechamento (#1090): a diferença, grande e em
+ * palavras, contra o que devia estar na gaveta. Bateu em verde com ✓, falta
+ * em vermelho com o triângulo e o "−", sobra em amarelo com a seta e o "+":
+ * a palavra e o ícone dizem o mesmo que a cor.
+ */
+function DiferencaGrande({ diferenca, esperado }: { diferenca: number; esperado: number }) {
+  const { situacao, frase } = fraseDaDiferenca(diferenca);
+  const aparencia =
+    situacao === "bateu"
+      ? { Icone: Check, cor: "text-ok", fundo: "bg-ok/[0.12]" }
+      : situacao === "faltou"
+        ? { Icone: TriangleAlert, cor: "text-perigo", fundo: "bg-perigo/[0.13]" }
+        : { Icone: ArrowUp, cor: "text-atencao", fundo: "bg-atencao/[0.12]" };
+  const { Icone } = aparencia;
+  return (
+    <div className={`rounded-xl px-4 py-4 ${aparencia.fundo}`}>
+      <p className={`flex items-center gap-2 font-titulo text-metrica font-semibold tabular-nums ${aparencia.cor}`}>
+        <Icone aria-hidden="true" className="size-7 shrink-0" strokeWidth={2.5} />
+        <span className="min-w-0">{frase}</span>
+      </p>
+      <p className="mt-2 text-rotulo text-texto-2">
+        {situacao !== "bateu" && (
+          <>
+            <DiferencaComSinal diferenca={diferenca} className="font-semibold" />{" "}
+          </>
+        )}
+        contra {formatarMoeda(esperado)} que devia ter na gaveta
+      </p>
+      <p className={`mt-1 text-rotulo font-medium ${aparencia.cor}`}>
+        {situacao === "bateu" ? "Nenhum lançamento é feito." : `A diferença ${consequenciaDaDiferenca(diferenca)}.`}
+      </p>
+    </div>
+  );
+}
+
+/** Os campos das notas usam a chave "n100" (o "100" sozinho o formulário leria como posição de lista). */
+const NOTAS_VAZIAS: Record<string, string> = Object.fromEntries(NOTAS_DA_GAVETA.map((n) => [`n${n}`, ""]));
+
+function notasPelaNota(notas: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(NOTAS_DA_GAVETA.map((n) => [String(n), notas[`n${n}`] ?? ""]));
+}
+
+/**
+ * A ajuda opcional pra contar as notas (#1090): quantas de 200, 100, 50…,
+ * em coluna, com o valor de cada linha alinhado à direita e a soma no fim. A
+ * soma vai sozinha pro campo do contado.
+ */
+function AjudaDasNotas({
+  aberta,
+  aoAlternar,
+  contagem,
+  registrar,
+}: {
+  aberta: boolean;
+  aoAlternar: () => void;
+  contagem: ReturnType<typeof somarAGaveta>;
+  registrar: UseFormRegister<FechamentoValues>;
+}) {
+  const corpoId = useId();
+  return (
+    <div className="rounded-xl border border-linha">
+      <button
+        type="button"
+        aria-expanded={aberta}
+        aria-controls={corpoId}
+        onClick={aoAlternar}
+        className="flex min-h-10 w-full items-center gap-2 rounded-xl px-4 py-2 text-left text-corpo font-medium text-texto hover:bg-passar"
+      >
+        <Calculator aria-hidden="true" className="size-4 shrink-0 text-texto-2" />
+        <span className="min-w-0 flex-1">Ajuda pra contar as notas</span>
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-4 shrink-0 text-texto-2 transition-transform duration-(--duration-botao) motion-reduce:transition-none ${aberta ? "rotate-180" : ""}`}
+        />
+      </button>
+      {aberta && (
+        <div id={corpoId} className="space-y-2 border-t border-linha px-4 py-3">
+          <p className="text-rotulo text-texto-2">Com a ajuda aberta, o valor contado é a soma daqui.</p>
+          {contagem.linhas.map((linha) => (
+            <div key={linha.nota} className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,7rem)] items-center gap-2">
+              <label htmlFor={`${corpoId}-n${linha.nota}`} className="text-corpo text-texto-2">
+                Notas de {formatarMoeda(linha.nota).replace(/,00$/, "")}
+              </label>
+              <input
+                id={`${corpoId}-n${linha.nota}`}
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                placeholder="0"
+                {...registrar(`notas.n${linha.nota}`)}
+                className={`${campo} text-right tabular-nums`}
+              />
+              <span className="text-right text-corpo tabular-nums text-texto">{formatarMoeda(linha.valor)}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-[minmax(0,1fr)_5rem_minmax(0,7rem)] items-center gap-2">
+            <label htmlFor={`${corpoId}-moedas`} className="text-corpo text-texto-2">
+              Moedas (o valor)
+            </label>
+            <input
+              id={`${corpoId}-moedas`}
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              {...registrar("moedas")}
+              className={`${campo} text-right tabular-nums`}
+            />
+            <span className="text-right text-corpo tabular-nums text-texto">{formatarMoeda(contagem.moedas)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 border-t border-linha-forte pt-2">
+            <span className="text-corpo font-semibold text-texto">Soma da gaveta</span>
+            <span className="text-corpo font-semibold tabular-nums text-texto">{formatarMoeda(contagem.total)}</span>
           </div>
         </div>
       )}
-
-      <div className="flex justify-end">
-        <Botao variante="principal" type="submit" ocupado={isSubmitting}>
-          {isSubmitting ? "Fechando..." : `Fechar o caixa de ${diaBonito(dia)}`}
-        </Botao>
-      </div>
-    </form>
+    </div>
   );
 }
 
@@ -379,21 +743,28 @@ function FechamentoFeito({
 }) {
   const [erro, setErro] = useState<string | null>(null);
   const [desfazendo, setDesfazendo] = useState(false);
+  const { confirmar, janela } = useConfirmar();
   const depois = lancamentosDepoisDoFechamento(movimentosDoDia, fechamento);
   const situacao = situacaoDaDiferenca(fechamento.diferenca);
 
   async function desfazer() {
-    if (
-      !confirm(
-        `Desfazer o fechamento de ${diaBonito(fechamento.data)}?\n\n` +
-          (fechamento.caixa_movimento_id
-            ? `O lançamento de ${situacao === "faltou" ? "quebra" : "sobra"} de caixa (${formatarMoeda(Math.abs(fechamento.diferenca))}) também sai do caixa.\n\n`
-            : "") +
-          "O dia volta a ficar aberto pra ser contado e fechado de novo. Fica registrado na Auditoria quem desfez.",
-      )
-    ) {
-      return;
-    }
+    const certo = await confirmar({
+      acao: "Desfazer o fechamento de",
+      item: diaBonito(fechamento.data),
+      explicacao: (
+        <>
+          {fechamento.caixa_movimento_id && (
+            <p className="mb-2">
+              O lançamento de {situacao === "faltou" ? "quebra" : "sobra"} de caixa (
+              {formatarMoeda(Math.abs(fechamento.diferenca))}) também sai do caixa.
+            </p>
+          )}
+          <p>O dia volta a ficar aberto pra ser contado e fechado de novo. Fica registrado na Auditoria quem desfez.</p>
+        </>
+      ),
+      botao: "Desfazer fechamento",
+    });
+    if (!certo) return;
     setErro(null);
     setDesfazendo(true);
     try {
@@ -446,16 +817,18 @@ function FechamentoFeito({
     });
   }
 
+  // O fim do fechamento (#1090, pico-fim): "Caixa fechado" com o ✓, o dia,
+  // quem fechou, e o "Resumo pro dono" logo ao lado.
   return (
     <section className="space-y-4 sakura-card p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 font-titulo text-subtitulo font-semibold text-texto">
             <Check aria-hidden="true" className="size-5 shrink-0 text-ok" strokeWidth={2.5} />
-            Caixa de {diaBonito(fechamento.data)} fechado
+            Caixa fechado
           </h2>
           <p className="text-rotulo text-texto-2">
-            {fechamento.operador?.nome ? `por ${fechamento.operador.nome}, ` : ""}
+            {diaBonito(fechamento.data)}, {fechamento.operador?.nome ? `por ${fechamento.operador.nome}, ` : ""}
             em {new Date(fechamento.criado_em).toLocaleString("pt-BR")}
           </p>
         </div>
@@ -523,6 +896,7 @@ function FechamentoFeito({
           </ul>
         </Aviso>
       )}
+      {janela}
     </section>
   );
 }

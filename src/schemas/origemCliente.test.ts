@@ -26,8 +26,8 @@ describe("a lista de origens", () => {
 
   // A lista mora num lugar só no código; o banco tem a dele na trava. Se uma
   // mudar sem a outra, salvar com o valor novo dá erro na loja.
-  it("é exatamente a que a trava do banco aceita (migration 0091)", () => {
-    const sql = readFileSync("supabase/migrations/0091_origem_do_cliente.sql", "utf8");
+  it("é exatamente a que a trava do banco aceita (migration 0093)", () => {
+    const sql = readFileSync("supabase/migrations/0093_origem_do_cliente.sql", "utf8");
     for (const trava of ["ck_clientes_origem", "ck_ordens_servico_origem"]) {
       const casou = new RegExp(`add constraint ${trava}\\s+check \\(origem is null or origem in \\(([^)]*)\\)`).exec(
         sql,

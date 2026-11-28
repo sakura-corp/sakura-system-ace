@@ -13,7 +13,8 @@
 -- serviços padrão, 2 fornecedores, 14 ordens de serviço e vendas de balcão (2 antigas, de clientes que "sumiram")
 -- em todas as fases (em andamento, concluída, faturada à vista, dividida,
 -- parcelada no cartão, a prazo), uma peça avulsa (sem cadastro), 2 orçamentos
--- (um aberto e um recusado), lançamentos de caixa, contas a pagar e a
+-- (um aberto e um recusado), lançamentos de caixa (com a taxa inventada da
+-- maquininha nas duas vendas no cartão), contas a pagar e a
 -- receber (pagas, abertas e atrasadas), 2 fechamentos de caixa, 1 comissão
 -- paga, 2 pedidos de compra (um recebido e um aberto) com as cotações, 2
 -- contagens de estoque e 1 computador da loja. As datas são contadas a partir do dia
@@ -150,6 +151,20 @@ insert into configuracoes_juros_parcelas (loja_id, numero_parcelas, juros_percen
   ('eeee0001-0000-4000-8000-000000000001', 3, 0),
   ('eeee0001-0000-4000-8000-000000000001', 4, 2.5),
   ('eeee0001-0000-4000-8000-000000000001', 6, 4.9)
+on conflict do nothing;
+
+-- A taxa da maquininha (migration 0089, #387). TAXA INVENTADA, só pra ter o
+-- que ver na tela: débito 1,9% em 1 dia; crédito à vista 3,1% em 30 dias;
+-- de 2x a 6x, 4,2% com cada parcela caindo de 30 em 30 dias.
+insert into configuracoes_taxas_maquininha (loja_id, forma, parcelas, taxa_percentual, prazo_dias, recebe_tudo_de_uma_vez)
+select 'eeee0001-0000-4000-8000-000000000001'::uuid, v.forma, v.parcelas, v.taxa, v.prazo, false
+from (values
+  ('cartao_debito',  1, 1.90,  1),
+  ('cartao_credito', 1, 3.10, 30)
+) as v(forma, parcelas, taxa, prazo)
+union all
+select 'eeee0001-0000-4000-8000-000000000001', 'cartao_credito', p, 4.20, 30, false
+from generate_series(2, 6) as p
 on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -506,11 +521,16 @@ on conflict do nothing;
 -- 8. Caixa, contas a pagar e contas a receber
 -- ---------------------------------------------------------------------------
 -- Categorias de despesa (catálogo da empresa; se já existir uma com o mesmo
--- nome, usa a que existe).
-insert into categorias_caixa (id, nome, tipo) values
-  ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida'),
-  ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida'),
-  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida')
+-- nome, usa a que existe, com o grupo que ela já tem). Cada uma já entra no
+-- grupo do DRE (migration 0088), como a loja faria em Configurações.
+insert into categorias_caixa (id, nome, tipo, grupo) values
+  ('eeee000e-0000-4000-8000-000000000001', 'Aluguel', 'saida', 'despesas_administrativas'),
+  ('eeee000e-0000-4000-8000-000000000002', 'Energia e internet', 'saida', 'despesas_administrativas'),
+  ('eeee000e-0000-4000-8000-000000000003', 'Fornecedores', 'saida', 'custos'),
+  -- Mais três, pra o DRE (#388) ter despesa com grupo em mais de um mês.
+  ('eeee000e-0000-4000-8000-000000000004', 'Salários', 'saida', 'despesas_pessoal'),
+  ('eeee000e-0000-4000-8000-000000000005', 'Propaganda', 'saida', 'despesas_comerciais'),
+  ('eeee000e-0000-4000-8000-000000000006', 'Tarifa do banco', 'saida', 'despesas_financeiras')
 on conflict do nothing;
 
 insert into caixa_movimentos (id, loja_id, data, ordem_servico_id, tipo, forma_pagamento, valor, descricao, categoria_id)
@@ -535,8 +555,44 @@ from (values
   ('eeee000a-0000-4000-8000-000000000011', 5,  '16:00', null, 'entrada', 'dinheiro',     40.00, 0, 'Venda de pneus velhos pra reciclagem (exemplo)', 'Outros'),
   ('eeee000a-0000-4000-8000-000000000012', 1,  '17:30', null, 'saida', 'dinheiro',       35.50, 0, 'Café e material de limpeza (exemplo)', 'Outros'),
   ('eeee000a-0000-4000-8000-000000000013', 200, '10:30', 13, 'entrada', 'pix',            null, 0, 'Faturamento da OS 13', null),
-  ('eeee000a-0000-4000-8000-000000000014', 330, '11:00', 14, 'entrada', 'dinheiro',       null, 0, 'Faturamento da OS 14', null)
+  ('eeee000a-0000-4000-8000-000000000014', 330, '11:00', 14, 'entrada', 'dinheiro',       null, 0, 'Faturamento da OS 14', null),
+  -- Despesas de meses passados (#388): o DRE mostra mais de um mês com grupo.
+  ('eeee000a-0000-4000-8000-000000000015', 50, '09:00', null, 'saida', 'pix',            1800.00, 0, 'Aluguel (exemplo)', 'Aluguel'),
+  ('eeee000a-0000-4000-8000-000000000016', 35, '18:00', null, 'saida', 'pix',            2400.00, 0, 'Salário do mês (exemplo)', 'Salários'),
+  ('eeee000a-0000-4000-8000-000000000017', 5,  '18:00', null, 'saida', 'pix',            2400.00, 0, 'Salário do mês (exemplo)', 'Salários'),
+  ('eeee000a-0000-4000-8000-000000000018', 40, '11:00', null, 'saida', 'pix',            150.00, 0, 'Anúncio na rádio (exemplo)', 'Propaganda'),
+  ('eeee000a-0000-4000-8000-000000000019', 33, '08:00', null, 'saida', 'pix',            29.90, 0, 'Tarifa da conta (exemplo)', 'Tarifa do banco'),
+  ('eeee000a-0000-4000-8000-000000000020', 3,  '08:00', null, 'saida', 'pix',            29.90, 0, 'Tarifa da conta (exemplo)', 'Tarifa do banco')
 ) as v(id, dias, hora, os, tipo, forma, valor, menos, descricao, categoria)
+on conflict do nothing;
+
+-- A taxa da maquininha das duas vendas no cartão (migration 0089), do jeito
+-- que registrar_taxa_do_cartao grava: a OS 3 no crédito em 3x (4,2%, uma
+-- parcela a cada 30 dias) e a OS 7 no débito (1,9%, cai no dia seguinte).
+-- A taxa é arredondada no centavo; o líquido é repartido em partes iguais
+-- e o centavo que sobra vai pras últimas parcelas (repartirEmCentavos).
+-- As datas contam do dia da venda, então parte já caiu e parte vai cair.
+insert into caixa_taxas_cartao (movimento_id, loja_id, forma, parcelas, taxa_percentual, prazo_dias,
+                                recebe_tudo_de_uma_vez, valor_bruto, valor_taxa, valor_liquido)
+select c.id, c.loja_id, c.forma_pagamento, v.parcelas, v.taxa, v.prazo, false,
+       c.valor, round(c.valor * v.taxa / 100, 2), c.valor - round(c.valor * v.taxa / 100, 2)
+from (values
+  ('eeee000a-0000-4000-8000-000000000004'::uuid, 3, 4.20, 30),
+  ('eeee000a-0000-4000-8000-000000000006'::uuid, 1, 1.90, 1)
+) as v(movimento, parcelas, taxa, prazo)
+join caixa_movimentos c on c.id = v.movimento
+on conflict do nothing;
+
+insert into caixa_cartao_a_receber (id, movimento_id, loja_id, numero, data_prevista, valor)
+select ('eeee0016-0000-4000-8000-000000000' || right(t.movimento_id::text, 2) || n)::uuid,
+       t.movimento_id, t.loja_id, n,
+       (c.data at time zone 'America/Sao_Paulo')::date + t.prazo_dias * n,
+       (floor(t.valor_liquido * 100 / t.parcelas)
+        + case when n > t.parcelas - (t.valor_liquido * 100)::bigint % t.parcelas then 1 else 0 end) / 100
+from caixa_taxas_cartao t
+join caixa_movimentos c on c.id = t.movimento_id
+cross join lateral generate_series(1, t.parcelas::int) as n
+where t.loja_id = 'eeee0001-0000-4000-8000-000000000001'
 on conflict do nothing;
 
 insert into contas_pagar (id, loja_id, descricao, valor, vencimento, categoria_id, recorrente,

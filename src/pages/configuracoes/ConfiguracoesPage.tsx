@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  CreditCard,
   Download,
   LayoutDashboard,
   MessageCircle,
@@ -16,6 +17,7 @@ import {
   Wallet,
   Wrench,
 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { Botao } from "@/components/Botao";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Modal } from "@/components/Modal";
@@ -34,6 +36,8 @@ import {
   listarJurosParcelas,
 } from "@/lib/configuracoes";
 import { listarDepositos } from "@/lib/depositos";
+import { listarTaxasMaquininha } from "@/lib/taxasMaquininha";
+import type { TaxaMaquininha } from "@/schemas/taxaMaquininha";
 import { avisar } from "@/lib/avisoQueSome";
 import { mensagemDeErro } from "@/lib/errors";
 import { definirLojasDoOperador, listarLojas, listarLojasDoOperador } from "@/lib/lojas";
@@ -63,6 +67,7 @@ import { CategoriasServicoSection } from "./CategoriasServicoSection";
 import { DadosFiscaisSection } from "./DadosFiscaisSection";
 import { DepositosSection } from "./DepositosSection";
 import { JurosParcelasSection } from "./JurosParcelasSection";
+import { TaxasMaquininhaSection } from "./TaxasMaquininhaSection";
 import { LojasSection } from "./LojasSection";
 import { OperadorForm } from "./OperadorForm";
 import { PixSection } from "./PixSection";
@@ -77,10 +82,16 @@ import { AvisoDeErro } from "@/components/Aviso";
 
 export function ConfiguracoesPage() {
   const { operador: operadorLogado, lojaAtual } = useAuth();
+  // `?secao=categorias-caixa` (o "Classificar" do DRE, #388): a seção já abre e entra na tela.
+  const [parametros] = useSearchParams();
+  const abrirCategoriasCaixa = parametros.get("secao") === "categorias-caixa";
+  const categoriasCaixaRef = useRef<HTMLDivElement>(null);
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [lojas, setLojas] = useState<Loja[]>([]);
   const [depositos, setDepositos] = useState<Deposito[]>([]);
   const [jurosParcelas, setJurosParcelas] = useState<JurosParcela[]>([]);
+  // null = não deu pra ler (banco sem a migration 0089): a seção avisa, a página segue.
+  const [taxasMaquininha, setTaxasMaquininha] = useState<TaxaMaquininha[] | null>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasCaixa, setCategoriasCaixa] = useState<CategoriaCaixa[]>([]);
   const [categoriasServico, setCategoriasServico] = useState<CategoriaServico[]>([]);
@@ -175,7 +186,15 @@ export function ConfiguracoesPage() {
       } catch (err) {
         console.error("Erro ao carregar o link de avaliação:", err);
       }
+      // Idem as taxas da maquininha (#387): banco sem a migration 0089.
+      let taxasCarregadas: TaxaMaquininha[] | null = null;
+      try {
+        taxasCarregadas = await listarTaxasMaquininha(lojaId);
+      } catch (err) {
+        console.error("Erro ao carregar as taxas da maquininha:", err);
+      }
       if (!aindaEhAtual()) return;
+      setTaxasMaquininha(taxasCarregadas);
       setLinkAvaliacao(linkCarregado);
       setOperadores(operadoresCarregados);
       setLojas(lojasCarregadas);
@@ -265,6 +284,12 @@ export function ConfiguracoesPage() {
   }
 
   const secoesDaLoja = !carregando && lojaAtual && dadosSaoDaLoja;
+
+  useEffect(() => {
+    if (!secoesDaLoja || !abrirCategoriasCaixa) return;
+    // `scrollIntoView` não existe em todo ambiente (o jsdom, por exemplo).
+    categoriasCaixaRef.current?.scrollIntoView?.({ block: "start" });
+  }, [secoesDaLoja, abrirCategoriasCaixa]);
 
   async function copiarSenha(senha: string) {
     setNaoCopiou(false);
@@ -421,6 +446,19 @@ export function ConfiguracoesPage() {
           </SecaoDeConfiguracao>
 
           <SecaoDeConfiguracao
+            icone={CreditCard}
+            titulo="Taxas da maquininha"
+            descricao="Quanto a maquininha cobra da loja e em quantos dias o cartão cai na conta."
+          >
+            <TaxasMaquininhaSection
+              tabela={taxasMaquininha}
+              lojaId={lojaAtual.id}
+              podeEditar={Boolean(operadorLogado?.admin)}
+              onSalvo={recarregar}
+            />
+          </SecaoDeConfiguracao>
+
+          <SecaoDeConfiguracao
             icone={QrCode}
             titulo="Pix (cobrança e faturamento)"
             descricao="A chave Pix da loja. Com ela, a mensagem de cobrança ganha o Pix copia e cola e o faturamento mostra o QR code, já com o valor."
@@ -475,13 +513,16 @@ export function ConfiguracoesPage() {
             <CategoriasServicoSection categorias={categoriasServico} onSalvo={recarregar} />
           </SecaoDeConfiguracao>
 
+          <div ref={categoriasCaixaRef}>
           <SecaoDeConfiguracao
             icone={Wallet}
+            abertaInicialmente={abrirCategoriasCaixa}
             titulo="Categorias de caixa (Entradas e Saídas)"
             descricao='Usadas nas abas "Entradas" e "Saídas" do Caixa Diário para classificar lançamentos manuais que não vêm de uma OS — ex: aluguel, mercado, limpeza (saída) ou venda de sucata (entrada).'
           >
             <CategoriasCaixaSection categorias={categoriasCaixa} onSalvo={recarregar} />
           </SecaoDeConfiguracao>
+          </div>
 
           <TituloDeGrupo>Textos e telas</TituloDeGrupo>
 
