@@ -147,3 +147,13 @@ export interface ConfiguracaoPix {
   nome_recebedor: string;
   cidade_recebedor: string;
 }
+
+// O atendimento e a garantia dos serviços da loja (migration 0094, tarefa #1033).
+// Tudo opcional: `null` = a loja não informou.
+export interface ConfiguracaoAtendimento {
+  loja_id: string;
+  /** Só os dígitos, com DDD (10 a 13). */
+  whatsapp: string | null;
+  horario_funcionamento: string | null;
+  garantia_servico_dias: number | null;
+}

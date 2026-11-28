@@ -719,6 +719,12 @@ das seguintes trouxe, e as decisões que valem saber antes de mexer:
   `conta_receber_id` do histórico aponta pra ela. A categoria
   nasce na primeira devolução, "a classificar". A `0087` fica pra versão antiga do programa; a nova
   chama só esta, também com o total igual. Teste em `supabase/scripts/testar-corrigir-os-faturada.sql`.
+- `0094`: **o atendimento da loja: WhatsApp, horário de funcionamento e garantia dos serviços**
+  (tarefa #1033; Sofia, 13/11/2026), pro recibo da nota fiscal. Tabela nova `configuracoes_atendimento`
+  (ver a seção das tabelas). Tabela nova e opcional: sobe **antes** da versão, sem
+  `versao-minima-do-programa`. Nasceu como `0088` (23/11) e passou a `0094` por decisão da Sofia
+  (24/11/2026; a #1171 é a `0093`): **aplicar depois da `0093`**. Não usa nada das migrations 0088 a
+  0093. Aplicação acompanhada na #1185. Teste em `supabase/scripts/testar-atendimento-da-loja.sql`.
 
 **Inventário de tipos de coluna (conferido em 11/09/2026 — não precisa checar de novo)**. Feito
 rodando a instalação completa num Postgres local e consultando o `information_schema`, a pedido
@@ -1039,6 +1045,16 @@ outro projeto Supabase do zero (ver seção 9).
   **Sem linha, a loja não tem contato**; contato sem nome ou sem nenhum dos dois é linha apagada
   (`src/lib/contabilidade.ts`). RLS igual à `configuracoes_avaliacao`. Teste em
   `supabase/scripts/testar-contato-contabilidade.sql`.
+- **`configuracoes_atendimento`** (migration `0088`, #1033): loja_id (PK, 1 linha por loja),
+  whatsapp, horario_funcionamento, garantia_servico_dias, atualizado_em, todas opcionais. O que o
+  recibo da nota mostra da loja: o WhatsApp e o horário (cabeçalho e rodapé) e, na NFS-e, "Serviços:
+  garantia de N dias, a contar desta nota". É um prazo único da loja; a garantia das peças continua
+  em `pecas.prazo_garantia_dias`. O WhatsApp é outro campo, não o telefone dos Dados fiscais.
+  Travas: `ck_configuracoes_atendimento_whatsapp` (só dígitos, 10 a 13; o programa grava só os
+  dígitos), `_horario` (não só espaço, até 80) e `_garantia` (1 a 3650 dias). **Campo vazio, a linha
+  do recibo não aparece**; os três vazios é linha apagada. RLS igual à `configuracoes_avaliacao`
+  (quem tem acesso à loja lê e grava; o "só admin edita" é da tela). Teste em
+  `supabase/scripts/testar-atendimento-da-loja.sql`.
 - **`importacao_lotes`** (migration `0083`, #457): id, tipo (`clientes`; as partes 2 e 3 da
   importação somam tipos na trava `ck_importacao_lotes_tipo`), nome_arquivo, operador_id (quem
   importou, `default auth.uid()`), criado_em, total_linhas, clientes_criados, veiculos_criados,

@@ -74,6 +74,13 @@ export const MENSAGEM_DA_TRAVA: Record<string, string> = {
   // A mesma frase da tela (src/schemas/percentualTributosSimples.ts).
   ck_config_fiscal_percentual_tributos_pecas: MENSAGEM_PERCENTUAL_PECAS,
   ck_config_fiscal_percentual_estimativa_icms_st: MENSAGEM_PERCENTUAL_ICMS_ST,
+  // Migration 0094 (#1033): o atendimento e a garantia dos serviços.
+  ck_configuracoes_atendimento_whatsapp:
+    "O WhatsApp da loja precisa ter o DDD e o número: de 10 a 13 dígitos.",
+  ck_configuracoes_atendimento_horario:
+    "O horário de funcionamento não pode ficar em branco nem passar de 80 letras.",
+  ck_configuracoes_atendimento_garantia:
+    "A garantia dos serviços precisa ser de 1 a 3.650 dias.",
   ck_clientes_cnpj_juridica:
     "O CNPJ está incompleto — ele tem 14 caracteres. Complete ou deixe o campo em branco.",
   ck_ordens_servico_trocas_motivo: "Diga o motivo da troca (pelo menos 3 letras).",
@@ -211,6 +218,8 @@ export const OBJETOS_NOVOS_DO_BANCO = [
   "caixa_movimento_id",
   "conta_receber_id",
   "chave",
+  // 0094 (atendimento e garantia dos serviços, #1033): tabela nova.
+  "configuracoes_atendimento",
 ] as const;
 
 /**

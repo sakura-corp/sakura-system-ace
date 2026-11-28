@@ -99,6 +99,7 @@ insert into teste_rls.sondas (tabela, insercao) values
 ('configuracoes_pix',            $$insert into configuracoes_pix (loja_id, chave, nome_recebedor, cidade_recebedor) values ('11111111-1111-1111-1111-1111111111aa', 'sonda@exemplo.com.br', 'Sonda', 'Araraquara')$$),
 ('configuracoes_avaliacao',      $$insert into configuracoes_avaliacao (loja_id, link_google) values ('11111111-1111-1111-1111-1111111111aa', 'https://g.page/r/sonda/review')$$),
 ('configuracoes_contabilidade',  $$insert into configuracoes_contabilidade (loja_id, nome, email) values ('11111111-1111-1111-1111-1111111111aa', 'Sonda', 'sonda@exemplo.com.br')$$),
+('configuracoes_atendimento',    $$insert into configuracoes_atendimento (loja_id, whatsapp) values ('11111111-1111-1111-1111-1111111111aa', '16955500199')$$),
 -- O cofre do TR-04.2: nem o admin da loja escreve direto aqui — só pela
 -- função definir_token_focus_nfe(). Esta sonda é o que prova isso.
 ('segredos_fiscais_loja',        $$insert into segredos_fiscais_loja (loja_id, focus_nfe_token) values ('11111111-1111-1111-1111-1111111111aa', 'sonda')$$),

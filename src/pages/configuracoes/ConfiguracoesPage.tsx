@@ -70,6 +70,7 @@ import { JurosParcelasSection } from "./JurosParcelasSection";
 import { TaxasMaquininhaSection } from "./TaxasMaquininhaSection";
 import { LojasSection } from "./LojasSection";
 import { OperadorForm } from "./OperadorForm";
+import { AtendimentoSection } from "./AtendimentoSection";
 import { PixSection } from "./PixSection";
 import { TextoGarantiaSection } from "./TextoGarantiaSection";
 import { ModelosWhatsappSection } from "./ModelosWhatsappSection";
@@ -472,6 +473,19 @@ export function ConfiguracoesPage() {
                 cidade: configuracaoFiscal?.cidade || lojaAtual.cidade,
               }}
               onMudou={setConfiguracaoPix}
+            />
+          </SecaoDeConfiguracao>
+
+          <SecaoDeConfiguracao
+            icone={MessageCircle}
+            titulo="Atendimento e garantia dos serviços"
+            descricao="O WhatsApp e o horário da loja e a garantia dos serviços, pra sair no recibo da nota de serviço."
+          >
+            {/* key: trocar de loja remonta a seção e busca os dados da outra. */}
+            <AtendimentoSection
+              key={lojaAtual.id}
+              lojaId={lojaAtual.id}
+              podeEditar={Boolean(operadorLogado?.admin)}
             />
           </SecaoDeConfiguracao>
 

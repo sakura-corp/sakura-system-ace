@@ -498,3 +498,73 @@ describe("recibo — como o pagamento aparece (#1147)", () => {
     expect(html).not.toContain("Pago em outros");
   });
 });
+
+describe("montarHtmlVisualNotaFiscal — atendimento da loja (#1033)", () => {
+  const ATENDIMENTO = {
+    whatsapp: "16955500199",
+    horario: "Seg a sex, 8h às 18h · Sáb, 8h às 12h",
+    garantiaServicoDias: 90,
+  };
+  const nfse = () => interpretarXmlNotaFiscal(XML_NFSE_NACIONAL, "nfse");
+  const nfce = () => interpretarXmlNotaFiscal(xmlNfce(), "nfe");
+
+  it("NFS-e com os três cadastrados: WhatsApp, horário (cabeçalho e rodapé) e garantia do serviço", () => {
+    const html = montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: ATENDIMENTO }));
+    const texto = textoVisivel(html);
+    expect(texto.match(/\(16\) 95550-0199/g)).toHaveLength(2);
+    expect(texto.match(/Seg a sex, 8h às 18h · Sáb, 8h às 12h/g)).toHaveLength(2);
+    expect(texto).toContain("Serviços: garantia de 90 dias, a contar desta nota");
+  });
+
+  it("garantia dos serviços sempre em dias, como na tarefa (365 não vira \"1 ano\")", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: { ...ATENDIMENTO, garantiaServicoDias: 365 } })),
+    );
+    expect(texto).toContain("Serviços: garantia de 365 dias, a contar desta nota");
+  });
+
+  it("WhatsApp gravado com o 55 sai com máscara", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: { ...ATENDIMENTO, whatsapp: "5516955500199" } })),
+    );
+    expect(texto).toContain("+55 (16) 95550-0199");
+    expect(texto).not.toContain("5516955500199");
+  });
+
+  it("sem nada cadastrado (null, ou os três null): nenhuma linha, nenhum traço, nenhum rótulo solto", () => {
+    const vazio = { whatsapp: null, horario: null, garantiaServicoDias: null };
+    for (const atendimento of [null, vazio]) {
+      for (const dados of [nfse(), nfce()]) {
+        const texto = textoVisivel(montarHtmlVisualNotaFiscal(dados, contexto({ atendimento })));
+        expect(texto).not.toContain("WhatsApp");
+        expect(texto).not.toContain("Horário");
+        expect(texto).not.toContain("garantia de");
+        expect(texto).not.toContain("—");
+      }
+    }
+  });
+
+  it("NFC-e: mostra WhatsApp e horário, mas a garantia dos serviços não (só NFS-e)", () => {
+    const texto = textoVisivel(montarHtmlVisualNotaFiscal(nfce(), contexto({ atendimento: ATENDIMENTO })));
+    expect(texto).toContain("(16) 95550-0199");
+    expect(texto).toContain("Seg a sex, 8h às 18h");
+    expect(texto).not.toContain("Serviços: garantia");
+  });
+
+  it("só o WhatsApp cadastrado: o horário não aparece", () => {
+    const texto = textoVisivel(
+      montarHtmlVisualNotaFiscal(nfse(), contexto({ atendimento: { ...ATENDIMENTO, horario: null, garantiaServicoDias: null } })),
+    );
+    expect(texto).toContain("(16) 95550-0199");
+    expect(texto).not.toContain("Horário");
+  });
+
+  it("o horário é escapado (nada de HTML do cadastro no recibo)", () => {
+    const html = montarHtmlVisualNotaFiscal(
+      nfse(),
+      contexto({ atendimento: { ...ATENDIMENTO, horario: "Seg <b>a</b> sex" } }),
+    );
+    expect(html).not.toContain("<b>a</b>");
+    expect(html).toContain("Seg &lt;b&gt;a&lt;/b&gt; sex");
+  });
+});
