@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderizar, screen, within } from "@/testes/tela";
 import type { Operador } from "@/types/operador";
 
-vi.mock("@/lib/ordensServico", () => ({
-  contarOrcamentosAbertosDaLoja: () => Promise.resolve(0),
+vi.mock("@/lib/numerosDoMenu", () => ({
+  buscarNumerosDoMenu: () => Promise.resolve({}),
 }));
-vi.mock("@/lib/supabase", () => ({ supabase: {} }));
+vi.mock("@/lib/supabase", () => ({ supabase: {}, aoGravarNoBanco: () => () => {} }));
 
 let operador: Partial<Operador> = {};
 const logout = vi.fn();

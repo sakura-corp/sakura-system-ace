@@ -21,6 +21,7 @@ vi.mock("./conexao", () => ({ conexaoAtual, modoDemonstracao: () => false }));
 import {
   TEMPO_LIMITE_LEITURA_COM_A_REDE_CAIDA_MS,
   TEMPO_LIMITE_LEITURA_MS,
+  aoGravarNoBanco,
   aoMudarARede,
   criarFetchDoPrograma,
   supabase,
@@ -496,5 +497,62 @@ describe("criarFetchDoPrograma: leitura que fica sem resposta", () => {
     const { error } = await pedido;
     expect(mensagemDeErro(error)).toBe(MENSAGEM_SEM_CONEXAO);
     expect(fetchBase).toHaveBeenCalledTimes(4);
+  });
+});
+
+// #1092: o número do menu (OS prontas, contas atrasadas) tem que mudar logo
+// depois de pagar, receber, concluir ou faturar, sem a pessoa trocar de tela.
+// Toda gravação passa por aqui, então o aviso sai daqui, de um lugar só.
+describe("aoGravarNoBanco", () => {
+  const TABELA = `${URL_BASE}/rest/v1/contas_pagar`;
+  const RPC = `${URL_BASE}/rest/v1/rpc/marcar_ordem_faturada`;
+  const ok = () => vi.fn<typeof fetch>(async () => new Response("[]", { status: 200 }));
+
+  function ouvirGravacoes() {
+    let vezes = 0;
+    cancelarOuvintes.push(aoGravarNoBanco(() => vezes++));
+    return () => vezes;
+  }
+
+  it("avisa depois de uma gravação que deu certo (PATCH na tabela e rpc)", async () => {
+    const vezes = ouvirGravacoes();
+    const meuFetch = criarFetchDoPrograma(ok());
+    await meuFetch(TABELA, { method: "PATCH" });
+    await meuFetch(RPC, { method: "POST" });
+    expect(vezes()).toBe(2);
+  });
+
+  it("leitura não avisa (senão o menu, que só lê, se chamaria sem parar)", async () => {
+    const vezes = ouvirGravacoes();
+    await criarFetchDoPrograma(ok())(TABELA);
+    expect(vezes()).toBe(0);
+  });
+
+  it("gravação que o banco recusou, ou que caiu por rede, não avisa", async () => {
+    const vezes = ouvirGravacoes();
+    const recusou = vi.fn<typeof fetch>(async () => new Response("{}", { status: 400 }));
+    await criarFetchDoPrograma(recusou)(TABELA, { method: "POST" });
+    await expect(criarFetchDoPrograma(redeCaida())(TABELA, { method: "POST" })).rejects.toThrow();
+    expect(vezes()).toBe(0);
+  });
+
+  it("gravar arquivo (storage) ou mexer no login não avisa: só o banco", async () => {
+    const vezes = ouvirGravacoes();
+    const meuFetch = criarFetchDoPrograma(ok());
+    await meuFetch(ARQUIVO, { method: "POST" });
+    await meuFetch(`${URL_BASE}/auth/v1/token`, { method: "POST" });
+    expect(vezes()).toBe(0);
+  });
+
+  it("um ouvinte com defeito não derruba a gravação", async () => {
+    cancelarOuvintes.push(
+      aoGravarNoBanco(() => {
+        throw new Error("defeito");
+      }),
+    );
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    const resposta = await criarFetchDoPrograma(ok())(TABELA, { method: "PATCH" });
+    expect(resposta.status).toBe(200);
+    erro.mockRestore();
   });
 });
