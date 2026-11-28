@@ -1,4 +1,4 @@
-import { diaBrasileiro } from "@/lib/datas";
+import { diaBrasileiro, diasEntre } from "@/lib/datas";
 
 /**
  * Como uma conta ainda não paga (ou não recebida) está em relação a hoje.
@@ -10,11 +10,24 @@ import { diaBrasileiro } from "@/lib/datas";
  * do visual novo (`vencimento < hoje` = vencida); o que é novo é separar o
  * "vence hoje" do "a vencer", só na palavra do selo.
  */
-export type SituacaoDoVencimento = "atrasada" | "vence_hoje" | "a_vencer";
+export type SituacaoDoVencimento = "atrasada" | "vence_hoje" | "vence_logo" | "a_vencer";
+
+/**
+ * Até quantos dias pra frente a conta "vence logo" (o selo amarelo do visual
+ * da leva 8, #1094). Três dias é o tempo de separar o dinheiro ou ligar pro
+ * cliente; mais que isso, o amarelo em meia lista deixaria de chamar atenção.
+ */
+export const DIAS_DO_VENCE_LOGO = 3;
+
+/** Quantos dias faltam do `hoje` até o `vencimento` (os dois "AAAA-MM-DD"). */
+export function diasParaVencer(vencimento: string, hoje: string): number {
+  return diasEntre(hoje, vencimento);
+}
 
 export function situacaoDoVencimento(vencimento: string, hoje: string): SituacaoDoVencimento {
   if (vencimento < hoje) return "atrasada";
   if (vencimento === hoje) return "vence_hoje";
+  if (diasParaVencer(vencimento, hoje) <= DIAS_DO_VENCE_LOGO) return "vence_logo";
   return "a_vencer";
 }
 

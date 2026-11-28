@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 /**
- * Contas a Receber no visual novo (tarefa 11 da #990): os selos, o dia da
- * previsão e o da mensagem de cobrança sem o erro de fuso (#1005), o "Abrir a
- * OS" no "Mais ações" e o recebimento chegando no `receberConta` com o mesmo
- * valor e a mesma forma de antes. Roda nos dois fusos (`npm run test:fusos`).
+ * Contas a Receber no molde de lista da leva 8 (#1094; antes, tarefa 11 da
+ * #990): o cartão "Atrasadas" com a soma, o filtro por mês, os selos, o dia da
+ * previsão e o da mensagem de cobrança sem o erro de fuso (#1005), o "Cobrar"
+ * e o "Abrir a OS" no "⋯", e o recebimento com o aviso de valor diferente e a
+ * forma escolhida na lista. Roda nos dois fusos (`npm run test:fusos`).
  */
 import { within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -65,6 +66,7 @@ beforeEach(() => {
   listarContasReceber.mockResolvedValue([
     conta({ id: "a", descricao: "Serviço da frota", vencimento: "2026-11-13", valor: 1340 }),
     conta({ id: "b", descricao: "Faturamento da OS 145", vencimento: "2026-11-20", valor: 2588, ordem_servico_id: "os145" }),
+    conta({ id: "e", descricao: "Acerto antigo", vencimento: "2026-10-02", valor: 200 }),
     conta({
       id: "c", descricao: "Parcela 2/2", vencimento: "2026-10-05", valor: 720,
       status: "recebido", data_recebimento: "2026-10-06T13:00:00Z",
@@ -76,31 +78,58 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function linhaDe(texto: string) {
-  const linha = screen.getByText(texto).closest("tr");
+function linhaDe(texto: string | RegExp) {
+  const linha = screen.getByText(texto).closest("li");
   if (!linha) throw new Error(`sem linha pra ${texto}`);
   return within(linha);
 }
 
-describe("Contas a Receber, visual novo", () => {
-  it("selos, o dia da previsão e o 'cobrado em' embaixo do status", async () => {
+describe("Contas a Receber, molde de lista (#1094)", () => {
+  it("o cartão Atrasadas soma as atrasadas de qualquer mês, contra o total do mês", async () => {
     renderizar(<ContasReceberPage />);
-    await screen.findByText("Serviço da frota");
+    await screen.findByText(/Serviço da frota/);
 
-    expect(linhaDe("Serviço da frota").getByText("Atrasada")).toBeInTheDocument();
-    expect(linhaDe("Serviço da frota").getByText("13/11/2026")).toBeInTheDocument();
-    expect(linhaDe("Serviço da frota").getByText(/cobrado em/)).toBeInTheDocument();
-    expect(linhaDe("Faturamento da OS 145").getByText("A vencer")).toBeInTheDocument();
-    expect(linhaDe("Faturamento da OS 145").getByText("20/11/2026")).toBeInTheDocument();
-    expect(linhaDe("Parcela 2/2").getByText(/^Recebida em /)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Pendentes/ })).toHaveTextContent("1 atrasada");
+    const atrasadas = screen.getByText("Atrasadas", { selector: "p" }).closest("[data-cartao-numero]") as HTMLElement;
+    expect(atrasadas).toHaveTextContent("R$ 1.540,00"); // 1.340 (novembro) + 200 (outubro)
+    expect(screen.getByText("Total em novembro de 2026").closest("[data-cartao-numero]")).toHaveTextContent(
+      "R$ 3.928,00",
+    );
+    expect(screen.getByText("Falta receber em novembro de 2026").closest("[data-cartao-numero]")).toHaveTextContent(
+      "R$ 3.928,00",
+    );
   });
 
-  it("a cobrança do WhatsApp leva o dia certo do vencimento (#1005)", async () => {
-    const { user } = renderizar(<ContasReceberPage />);
-    await screen.findByText("Serviço da frota");
+  it("selos, o dia da previsão e o 'cobrado em' na linha de baixo", async () => {
+    renderizar(<ContasReceberPage />);
+    await screen.findByText(/Serviço da frota/);
 
-    await user.click(linhaDe("Serviço da frota").getByRole("button", { name: /Cobrar/ }));
+    expect(linhaDe(/Serviço da frota/).getByText("Atrasada")).toBeInTheDocument();
+    expect(linhaDe(/Serviço da frota/).getByText("13/11/2026")).toBeInTheDocument();
+    expect(linhaDe(/Serviço da frota/).getByText(/cobrado em/)).toBeInTheDocument();
+    expect(linhaDe(/Faturamento da OS 145/).getByText("A vencer")).toBeInTheDocument();
+    expect(linhaDe(/Faturamento da OS 145/).getByText("20/11/2026")).toBeInTheDocument();
+    // A conta de outubro não aparece no mês de hoje, mas o aviso diz que ela existe.
+    expect(screen.queryByText(/Acerto antigo/)).toBeNull();
+    expect(screen.getByText(/1 conta atrasada de outro mês/)).toBeInTheDocument();
+  });
+
+  it("filtro por mês: outubro mostra a recebida, com o selo verde e sem o 'Receber'", async () => {
+    const { user } = renderizar(<ContasReceberPage />);
+    await screen.findByText(/Serviço da frota/);
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Mês do vencimento" }), "2026-10");
+    expect(linhaDe(/Parcela 2\/2/).getByText("Recebida")).toBeInTheDocument();
+    expect(linhaDe(/Parcela 2\/2/).getByText(/recebida em 06\/10/)).toBeInTheDocument();
+    expect(linhaDe(/Parcela 2\/2/).queryByRole("button", { name: /^Receber/ })).toBeNull();
+    expect(linhaDe(/Acerto antigo/).getByText("Atrasada")).toBeInTheDocument();
+  });
+
+  it("a cobrança do WhatsApp (no ⋯) leva o dia certo do vencimento (#1005)", async () => {
+    const { user } = renderizar(<ContasReceberPage />);
+    await screen.findByText(/Serviço da frota/);
+
+    await user.click(linhaDe(/Serviço da frota/).getByRole("button", { name: /Mais ações/ }));
+    await user.click(await screen.findByRole("menuitem", { name: "Cobrar no WhatsApp" }));
     await vi.waitFor(() => expect(abrirConversaWhatsapp).toHaveBeenCalledTimes(1));
     expect(abrirConversaWhatsapp).toHaveBeenCalledWith(
       "16991234567",
@@ -108,34 +137,41 @@ describe("Contas a Receber, visual novo", () => {
     );
   });
 
-  it("'Abrir a OS' fica no Mais ações da conta que veio de uma OS", async () => {
+  it("'Abrir a OS' fica no ⋯ só da conta que veio de uma OS", async () => {
     const { user } = renderizar(<ContasReceberPage />);
-    await screen.findByText("Faturamento da OS 145");
+    await screen.findByText(/Faturamento da OS 145/);
 
-    expect(linhaDe("Serviço da frota").queryByRole("button", { name: /Mais ações/ })).toBeNull();
-    await user.click(linhaDe("Faturamento da OS 145").getByRole("button", { name: /Mais ações/ }));
+    await user.click(linhaDe(/Serviço da frota/).getByRole("button", { name: /Mais ações/ }));
+    expect(screen.queryByRole("menuitem", { name: "Abrir a OS" })).toBeNull();
+    await user.keyboard("{Escape}");
+
+    await user.click(linhaDe(/Faturamento da OS 145/).getByRole("button", { name: /Mais ações/ }));
     await user.click(await screen.findByRole("menuitem", { name: "Abrir a OS" }));
     expect(navegar).toHaveBeenCalledWith("/ordens-servico", { state: { abrirOrdemId: "os145" } });
   });
 
-  it("receber: o recebimento sai igual ao de antes", async () => {
+  it("receber com valor diferente: avisa e salva assim mesmo, com a forma da lista", async () => {
     receberConta.mockResolvedValue(undefined);
     const { user } = renderizar(<ContasReceberPage />);
-    await screen.findByText("Serviço da frota");
+    await screen.findByText(/Serviço da frota/);
 
-    await user.click(linhaDe("Serviço da frota").getByRole("button", { name: /Marcar como recebido/ }));
+    await user.click(linhaDe(/Serviço da frota/).getByRole("button", { name: /^Receber/ }));
     const janela = within(await screen.findByRole("dialog"));
     expect(janela.getByText(/previsto para 13\/11\/2026 \(atrasada\)/)).toBeInTheDocument();
-    expect(janela.getByLabelText("Valor recebido")).toHaveValue(1340);
-    // A linha não abre nada por baixo da janela (a conta não tem OS).
-    expect(navegar).not.toHaveBeenCalled();
+    const valor = janela.getByLabelText("Valor recebido");
+    expect(valor).toHaveValue(1340);
 
+    await user.clear(valor);
+    await user.type(valor, "1000");
+    expect(document.querySelector("[data-aviso-do-valor]")).toHaveTextContent("R$ 340,00 a menos que a conta");
+
+    await user.click(janela.getByRole("button", { name: /Cartão de débito/ }));
     await user.click(janela.getByRole("button", { name: "Confirmar recebimento" }));
     await vi.waitFor(() => expect(receberConta).toHaveBeenCalledTimes(1));
     expect(receberConta).toHaveBeenCalledWith({
       conta: expect.objectContaining({ id: "a" }),
-      valorRecebido: 1340,
-      formaPagamento: "dinheiro",
+      valorRecebido: 1000,
+      formaPagamento: "cartao_debito",
       operadorId: "op",
     });
   });

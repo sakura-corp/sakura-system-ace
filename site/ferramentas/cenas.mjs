@@ -362,26 +362,39 @@ export const CENAS = [
     descricao: "O resumo antes de fechar: a diferença em palavras, o troco, o que devia ter e o contado, e a observação. Se faltou ou sobrou, a diferença vira um lançamento de verdade (Quebra ou Sobra de caixa) e nunca some. O fechar pergunta na janela do programa; no fim, \"Caixa fechado\" com o Resumo pro dono." },
 
   // ---------------------------------------------------------- contas a pagar
+  // No molde de lista da leva 8 (#1094). O erro e o esqueleto do "carregando"
+  // não têm cena (o banco de mentira não sabe falhar só numa cena): estão nos
+  // testes do MoldeLista.
   { arquivo: "30-contas-pagar", modulo: "Contas a Pagar", titulo: "Contas a pagar",
-    rota: "/contas-pagar",
-    descricao: "O que a loja ainda deve, com vencimento. As vencidas aparecem destacadas e também no calendário do início. Conta marcada como mensal se recria sozinha depois de paga." },
+    rota: "/contas-pagar", semRolarAPartirDe: 1024,
+    descricao: "O que a loja ainda deve, com vencimento. Em cima, o número que decide: a soma das contas atrasadas (de qualquer mês), ao lado do total do mês e do que falta pagar nele. A busca e o filtro por mês ficam juntos em cima da lista, e o atrasado aparece primeiro: vermelho \"Atrasada\", amarelo \"Vence hoje\" ou \"Vence em 2 dias\", sempre com a palavra. Cada linha tem uma ação (Pagar); excluir fica no ⋯. Conta marcada como mensal se recria sozinha depois de paga." },
+  { arquivo: "30a-contas-pagar-atrasadas", modulo: "Contas a Pagar", titulo: "Contas a pagar: só as atrasadas",
+    rota: "/contas-pagar", semRolarAPartirDe: 1024, passos: [{ clicar: "Ver as atrasadas" }],
+    descricao: "O \"Ver as atrasadas\" do cartão mostra só as contas vencidas e não pagas, de todos os meses, da mais velha pra mais nova." },
+  { arquivo: "30b-contas-pagar-vazio", modulo: "Contas a Pagar", titulo: "Contas a pagar de uma loja que ainda não lançou nenhuma",
+    rota: "/contas-pagar", semRolarAPartirDe: 1024, tirarLinhas: { contas_pagar: () => true },
+    descricao: "Sem nenhuma conta: a lista diz isso numa frase e oferece o botão pra cadastrar. Num mês sem conta, a frase é \"Nenhuma conta neste mês\"." },
   { arquivo: "31-conta-pagar-form", modulo: "Contas a Pagar", titulo: "Nova conta a pagar",
     rota: "/contas-pagar", passos: [{ clicar: "Nova conta" }],
-    descricao: "Descrição, valor, vencimento e categoria. Marcando 'conta mensal', dá pra dizer até quando ela se repete — em branco, repete pra sempre." },
-  { arquivo: "32-pagar-conta", modulo: "Contas a Pagar", titulo: "Marcar conta como paga",
-    rota: "/contas-pagar", passos: [{ clicar: "Marcar como paga" }],
-    descricao: "Confirma a data e a forma de pagamento. O sistema lança a saída no caixa sozinho e, se a conta for mensal, já cria a ocorrência do mês seguinte. Dá pra desfazer se foi engano." },
+    descricao: "Abre numa janela por cima da lista. Descrição, valor, vencimento e categoria. Marcando 'conta mensal', dá pra dizer até quando ela se repete — em branco, repete pra sempre." },
+  { arquivo: "32-pagar-conta", modulo: "Contas a Pagar", titulo: "Pagar uma conta (com valor diferente)",
+    rota: "/contas-pagar",
+    passos: [{ clicar: "Pagar" }, { digitar: "9999", em: '[role="dialog"] input[type="number"]' }],
+    descricao: "O valor vem preenchido com o da conta. Se o valor digitado for diferente, aparece em amarelo logo embaixo quanto é a mais ou a menos que a conta: é só um aviso, dá pra salvar assim mesmo (juros, pagamento de uma parte). A forma de pagamento é escolhida na mesma lista do Caixa. O sistema lança a saída no caixa sozinho e, se a conta for mensal, já cria a do mês seguinte. Dá pra desfazer no ⋯ se foi engano." },
 
   // -------------------------------------------------------- contas a receber
   { arquivo: "33-contas-receber", modulo: "Contas a Receber", titulo: "Contas a receber",
-    rota: "/contas-receber",
-    descricao: "O espelho do Contas a Pagar: o que a loja tem pra receber. Nasce sozinha quando uma OS é faturada como 'a receber depois', e também pode ser lançada à mão pra cobrança que não passou por ordem nenhuma." },
+    rota: "/contas-receber", semRolarAPartirDe: 1024,
+    descricao: "O espelho do Contas a Pagar, com as mesmas colunas: o que a loja tem pra receber, o cartão das atrasadas em cima, a busca pelo cliente e o filtro por mês. Cada linha tem uma ação (Receber); cobrar no WhatsApp, abrir a OS e a ficha do cliente ficam no ⋯. Nasce sozinha quando uma OS é faturada como 'a receber depois', e também pode ser lançada à mão." },
+  { arquivo: "33a-contas-receber-atrasadas", modulo: "Contas a Receber", titulo: "Contas a receber: só as atrasadas",
+    rota: "/contas-receber", semRolarAPartirDe: 1024, passos: [{ clicar: "Ver as atrasadas" }],
+    descricao: "Quem já devia ter pago e não pagou, de todos os meses, do mais velho pro mais novo: a lista de quem cobrar." },
   { arquivo: "34-conta-receber-form", modulo: "Contas a Receber", titulo: "Nova conta a receber",
     rota: "/contas-receber", passos: [{ clicar: "Nova conta" }],
-    descricao: "Cliente, descrição, valor e previsão de recebimento." },
-  { arquivo: "35-receber-conta", modulo: "Contas a Receber", titulo: "Marcar como recebido",
-    rota: "/contas-receber", passos: [{ clicar: "Marcar como recebido" }],
-    descricao: "Ao confirmar o recebimento, a entrada é lançada no caixa daquele dia — é o que evita cobrar duas vezes ou esquecer de dar baixa." },
+    descricao: "Abre numa janela. Cliente, descrição, valor e previsão de recebimento." },
+  { arquivo: "35-receber-conta", modulo: "Contas a Receber", titulo: "Receber uma conta",
+    rota: "/contas-receber", passos: [{ clicar: "Receber" }],
+    descricao: "Ao confirmar o recebimento, a entrada é lançada no caixa daquele dia — é o que evita cobrar duas vezes ou esquecer de dar baixa. Valor diferente da conta só avisa, e a forma de pagamento é escolhida na lista." },
 
   // ---------------------------------------------------------------- relações
   { arquivo: "36-relacoes", modulo: "Relações", titulo: "Relações: o resumo e os gráficos do período",
